@@ -27,8 +27,8 @@
 
   <style>
     :root {
-      --brand: #0056b3;          /* Azul NutriPlant */
-      --brand-2: #1a6ed8;        /* Azul claro */
+      --brand: #0056b3;
+      --brand-2: #1a6ed8;
       --text: #0f172a;
       --muted: #64748b;
       --bg: #f4f7fb;
@@ -36,10 +36,10 @@
       --card-soft: #f8fafc;
       --border: #e2e8f0;
 
-      --btn-green: #25D366;      /* WhatsApp */
+      --btn-green: #25D366;
       --btn-green-hover: #1ebe5d;
 
-      --btn-blue: #1a6ed8;       /* Botones tools */
+      --btn-blue: #1a6ed8;
       --btn-blue-hover: #165fc0;
     }
 
@@ -92,57 +92,16 @@
     }
 
     .tagline {
-      margin: 0 auto 10px;
+      margin: 0 auto 14px;
       font-size: clamp(14px, 2.3vw, 18px);
       color: var(--muted);
       max-width: 52ch;
       line-height: 1.45;
     }
 
-    /* Nuevo texto (lo que definimos) */
-    .pitch {
-      margin: 10px auto 18px;
-      font-size: 15px;
-      color: #475569;
-      max-width: 66ch;
-      line-height: 1.5;
-    }
-    .pitch strong { color: var(--text); }
-
-    .contact {
-      margin: 18px 0 10px;
-      font-size: 16px;
-    }
-    .contact a {
-      color: var(--brand);
-      text-decoration: none;
-      font-weight: 700;
-    }
-    .contact a:hover { text-decoration: underline }
-
-    /* Botón WhatsApp como tu ejemplo */
-    .btn-whatsapp{
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 18px;
-      background-color: var(--btn-green);
-      color: #fff;
-      border-radius: 8px;
-      font-weight: 700;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      margin-top: 10px;
-    }
-    .btn-whatsapp:hover{
-      background-color: var(--btn-green-hover);
-      transform: translateY(-1px);
-    }
-    .btn-whatsapp svg { width: 18px; height: 18px; fill: currentColor; }
-
     /* Bloque tools */
     .tools {
-      margin-top: 18px;
+      margin-top: 10px;
       border-top: 1px solid var(--border);
       padding-top: 18px;
       text-align: left;
@@ -210,6 +169,50 @@
       box-shadow: 0 10px 18px rgba(0,86,179,.18);
     }
 
+    /* Nuevo texto (va DESPUÉS de tools) */
+    .pitch {
+      margin: 18px auto 14px;
+      font-size: 15px;
+      color: #475569;
+      max-width: 66ch;
+      line-height: 1.5;
+      text-align: center;
+    }
+    .pitch strong { color: var(--text); }
+
+    .contact {
+      margin: 10px 0 10px;
+      font-size: 16px;
+      text-align: center;
+    }
+    .contact a {
+      color: var(--brand);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .contact a:hover { text-decoration: underline }
+
+    /* Botón WhatsApp (letras blancas forzadas) */
+    .btn-whatsapp{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background-color: var(--btn-green);
+      color: #fff !important;
+      border-radius: 8px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      margin-top: 10px;
+    }
+    .btn-whatsapp:hover{
+      background-color: var(--btn-green-hover);
+      transform: translateY(-1px);
+      color: #fff !important;
+    }
+    .btn-whatsapp svg { width: 18px; height: 18px; fill: currentColor; }
+
     .follow {
       margin-top: 16px;
       font-size: 14px;
@@ -251,10 +254,6 @@
       font-size: 12px;
       color: #94a3b8;
     }
-    .sr-only {
-      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
-    }
   </style>
 </head>
 
@@ -268,30 +267,7 @@
 
     <p class="tagline">“Diseña, ajusta y nutre. Inteligencia artificial para la nutrición vegetal.”</p>
 
-    <p class="pitch">
-      <strong>Con NutriPlant PRO diseñarás programas completos de nutrición vegetal:</strong><br>
-      fertilización granular, fertirriego, soluciones nutritivas y enmiendas,<br>
-      integrando la interpretación de análisis de suelo, agua, foliar, solución nutritiva y VPD.
-    </p>
-
-    <p class="contact">
-      Contacto: <a href="mailto:admin@nutriplantpro.com">admin@nutriplantpro.com</a>
-      <br>
-      <a
-        href="https://wa.me/13868044542?text=Hola,%20quiero%20informaci%C3%B3n%20sobre%20NutriPlant%20PRO"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="btn-whatsapp"
-        aria-label="Abrir chat de WhatsApp con NutriPlant PRO">
-        <!-- Ícono WhatsApp (SVG) -->
-        <svg viewBox="0 0 32 32" aria-hidden="true">
-          <path d="M19.11 17.06c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.66.15-.2.3-.76.97-.94 1.17-.17.2-.34.22-.64.07-.3-.15-1.25-.46-2.38-1.46-.88-.78-1.48-1.74-1.65-2.03-.17-.3-.02-.46.13-.6.13-.13.3-.34.45-.5.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.58-.9-2.17-.24-.58-.48-.5-.66-.5h-.56c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.5 0 1.48 1.08 2.9 1.23 3.1.15.2 2.13 3.26 5.17 4.57.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.76-.72 2-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.56-.35z"/>
-          <path d="M26.9 5.1A13.8 13.8 0 0 0 16 1.5C8.54 1.5 2.5 7.55 2.5 15.02c0 2.37.62 4.68 1.8 6.72L2.4 30.5l8.93-1.85a13.5 13.5 0 0 0 4.67.81h.01c7.46 0 13.5-6.05 13.5-13.52 0-3.6-1.4-6.97-3.9-9.44zm-10.9 22.1h-.01c-1.5 0-2.97-.4-4.25-1.14l-.3-.18-5.3 1.1 1.12-5.16-.2-.33a11.2 11.2 0 0 1-1.7-6.0c0-6.2 5.05-11.25 11.26-11.25 3.0 0 5.82 1.17 7.93 3.27a11.16 11.16 0 0 1 3.3 7.96c0 6.21-5.05 11.26-11.25 11.26z"/>
-        </svg>
-        WhatsApp
-      </a>
-    </p>
-
+    <!-- 1) BLOQUE CALCULADORAS (va inmediatamente después del slogan) -->
     <section class="tools" aria-label="Herramientas técnicas disponibles">
       <h2>🧰 Herramientas técnicas disponibles</h2>
       <p class="tools-sub">Accesos públicos mientras terminamos la plataforma completa.</p>
@@ -317,25 +293,45 @@
       </div>
     </section>
 
+    <!-- 2) TEXTO + CONTACTO (va DESPUÉS de calculadoras y ANTES de Síguenos) -->
+    <p class="pitch">
+      <strong>Con NutriPlant PRO diseñarás programas completos de nutrición vegetal:</strong><br>
+      fertilización granular, fertirriego, soluciones nutritivas y enmiendas,<br>
+      integrando la interpretación de análisis de suelo, agua, foliar, solución nutritiva y VPD.
+    </p>
+
+    <p class="contact">
+      Contacto: <a href="mailto:admin@nutriplantpro.com">admin@nutriplantpro.com</a>
+      <br>
+      <a
+        href="https://wa.me/13868044542?text=Hola,%20quiero%20informaci%C3%B3n%20sobre%20NutriPlant%20PRO"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-whatsapp"
+        aria-label="Abrir chat de WhatsApp con NutriPlant PRO">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M19.11 17.06c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.66.15-.2.3-.76.97-.94 1.17-.17.2-.34.22-.64.07-.3-.15-1.25-.46-2.38-1.46-.88-.78-1.48-1.74-1.65-2.03-.17-.3-.02-.46.13-.6.13-.13.3-.34.45-.5.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.58-.9-2.17-.24-.58-.48-.5-.66-.5h-.56c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.5 0 1.48 1.08 2.9 1.23 3.1.15.2 2.13 3.26 5.17 4.57.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.76-.72 2-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.56-.35z"/>
+          <path d="M26.9 5.1A13.8 13.8 0 0 0 16 1.5C8.54 1.5 2.5 7.55 2.5 15.02c0 2.37.62 4.68 1.8 6.72L2.4 30.5l8.93-1.85a13.5 13.5 0 0 0 4.67.81h.01c7.46 0 13.5-6.05 13.5-13.52 0-3.6-1.4-6.97-3.9-9.44zm-10.9 22.1h-.01c-1.5 0-2.97-.4-4.25-1.14l-.3-.18-5.3 1.1 1.12-5.16-.2-.33a11.2 11.2 0 0 1-1.7-6.0c0-6.2 5.05-11.25 11.26-11.25 3.0 0 5.82 1.17 7.93 3.27a11.16 11.16 0 0 1 3.3 7.96c0 6.21-5.05 11.26-11.25 11.26z"/>
+        </svg>
+        WhatsApp
+      </a>
+    </p>
+
+    <!-- 3) SIGUENOS -->
     <div class="follow"><b>Síguenos:</b></div>
     <nav class="social" aria-label="Redes sociales NutriPlant PRO">
-      <!-- Facebook -->
       <a class="icon" href="https://www.facebook.com/share/1B1891TV6d/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 9H16V6h-2.5C11.57 6 10 7.57 10 9.5V11H8v3h2v7h3v-7h2.1l.9-3H13v-1.5c0-.28.22-.5.5-.5z"/></svg>
       </a>
-      <!-- Instagram -->
       <a class="icon" href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZscmw1dDl2cw==" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm5 3.5A5.5 5.5 0 1 1 6.5 13 5.5 5.5 0 0 1 12 7.5zm0 2A3.5 3.5 0 1 0 15.5 13 3.5 3.5 0 0 0 12 9.5zM18 6.5a1 1 0 1 1-1 1 1 0 0 1 1-1z"/></svg>
       </a>
-      <!-- TikTok -->
       <a class="icon" href="https://www.tiktok.com/@nutriplantpro?_t=ZS-8zha7GhZmvY&_r=1" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 3h3.1c.3 1.7 1.6 3.1 3.3 3.5v3.1a7.6 7.6 0 0 1-3.5-1v6.3a6.9 6.9 0 1 1-6.9-6.9c.4 0 .8 0 1.2.1v3.2a3.7 3.7 0 1 0 2.8 3.6V3z"/></svg>
       </a>
-      <!-- YouTube -->
       <a class="icon" href="https://youtube.com/@nutriplantpro?si=3iW90eiXRA6gZxI_" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 8.2a4 4 0 0 0-2.8-2.8C18.3 5 12 5 12 5s-6.3 0-8.2.4A4 4 0 0 0 1 8.2 41.5 41.5 0 0 0 .6 12 41.5 41.5 0 0 0 1 15.8 4 4 0 0 0 3.8 18.6C5.7 19 12 19 12 19s6.3 0 8.2-.4a4 4 0 0 0 2.8-2.8A41.5 41.5 0 0 0 23.4 12 41.5 41.5 0 0 0 23 8.2zM10 15V9l5 3-5 3z"/></svg>
       </a>
-      <!-- LinkedIn -->
       <a class="icon" href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5A2.5 2.5 0 1 1 2.5 6a2.5 2.5 0 0 1 2.48-2.5zM3 8h4v12H3zM9 8h3.8v1.7h.1A4.1 4.1 0 0 1 17 7.9c3 0 3.6 2 3.6 4.7V20h-4v-6c0-1.5 0-3.3-2-3.3s-2.3 1.6-2.3 3.2V20H9z"/></svg>
       </a>
