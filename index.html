@@ -101,13 +101,12 @@
 
     /* Bloque tools */
     .tools {
-  margin-top: 16px;
-  padding: 18px 16px 20px;
-  background: #f1f6fd;
-  border: 1px solid #dbe7f5;
-  border-radius: 16px;
-  text-align: left;
-      
+      margin-top: 16px;
+      padding: 18px 16px 20px;
+      background: #f1f6fd;
+      border: 1px solid #dbe7f5;
+      border-radius: 16px;
+      text-align: left;
     }
     .tools h2{
       margin-left: 4px;
@@ -165,6 +164,8 @@
       border-radius: 10px;
       font-weight: 800;
       text-decoration: none;
+      border: none;
+      cursor: pointer;
       transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
     }
     .tool-btn:hover{
@@ -173,7 +174,7 @@
       box-shadow: 0 10px 18px rgba(0,86,179,.18);
     }
 
-    /* Nuevo texto (va DESPUÉS de tools) */
+    /* Texto post-herramientas */
     .pitch {
       margin: 18px auto 14px;
       font-size: 15px;
@@ -258,6 +259,70 @@
       font-size: 12px;
       color: #94a3b8;
     }
+
+    /* ===== Modal PRO (tipo app) ===== */
+    .modal-overlay{
+      position: fixed; inset: 0;
+      background: rgba(15, 23, 42, .55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 9999;
+    }
+    .modal-overlay.open{ display:flex; }
+
+    .modal-window{
+      width: min(980px, 100%);
+      height: min(78vh, 720px);
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      overflow: hidden;
+      border: 1px solid rgba(2,6,23,.08);
+    }
+
+    .modal-bar{
+      height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      background: #f8fafc;
+      border-bottom: 1px solid rgba(2,6,23,.08);
+    }
+    .modal-title{
+      font-weight: 800;
+      color: var(--text);
+      font-size: 14px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .mac-dots{ display:flex; gap:8px; align-items:center; }
+    .dot{ width: 12px; height: 12px; border-radius: 50%; }
+    .dot.red{ background:#ff5f57; }
+    .dot.yellow{ background:#ffbd2e; }
+    .dot.green{ background:#28c840; }
+
+    .modal-close{
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      color: #475569;
+      padding: 6px 10px;
+      border-radius: 10px;
+    }
+    .modal-close:hover{ background:#eef2ff; }
+
+    .modal-iframe{
+      width: 100%;
+      height: calc(100% - 46px);
+      border: 0;
+      background: #fff;
+    }
   </style>
 </head>
 
@@ -271,7 +336,7 @@
 
     <p class="tagline">“Diseña, ajusta y nutre. Inteligencia artificial para la nutrición vegetal.”</p>
 
-    <!-- 1) BLOQUE CALCULADORAS (va inmediatamente después del slogan) -->
+    <!-- 1) BLOQUE CALCULADORAS -->
     <section class="tools" aria-label="Herramientas técnicas disponibles">
       <h2>🧰 Herramientas técnicas disponibles</h2>
       <p class="tools-sub">Accesos públicos mientras terminamos la plataforma completa.</p>
@@ -280,24 +345,24 @@
         <div class="tool-card">
           <div class="tool-title">🧮 Óxido ↔ Elemental</div>
           <div class="tool-desc">Convierte CaO↔Ca, K₂O↔K, P₂O₅↔P y más.</div>
-          <a class="tool-btn" href="/tools/oxido-elemental.html">Abrir calculadora</a>
+          <button class="tool-btn" data-tool="tools/oxido.html" data-title="Óxido ↔ Elemental">Abrir calculadora</button>
         </div>
 
         <div class="tool-card">
           <div class="tool-title">🧪 ppm ↔ mmol/L ↔ meq/L</div>
           <div class="tool-desc">Conversión de unidades para balance nutrimental.</div>
-          <a class="tool-btn" href="/tools/unidades.html">Abrir calculadora</a>
+          <button class="tool-btn" data-tool="tools/unidades.html" data-title="ppm ↔ mmol/L ↔ meq/L">Abrir calculadora</button>
         </div>
 
         <div class="tool-card">
           <div class="tool-title">🌡️ VPD / DPV</div>
           <div class="tool-desc">Calcula déficit de presión de vapor y rango óptimo.</div>
-          <a class="tool-btn" href="/tools/vpd.html">Abrir calculadora</a>
+          <button class="tool-btn" data-tool="tools/vpd.html" data-title="VPD / DPV">Abrir calculadora</button>
         </div>
       </div>
     </section>
 
-    <!-- 2) TEXTO + CONTACTO (va DESPUÉS de calculadoras y ANTES de Síguenos) -->
+    <!-- 2) TEXTO + CONTACTO -->
     <p class="pitch">
       <strong>Con NutriPlant PRO diseñarás programas completos de nutrición vegetal:</strong><br>
       fertilización granular, fertirriego, soluciones nutritivas y enmiendas,<br>
@@ -347,8 +412,56 @@
     <p class="note">Esta es una portada provisional; la plataforma completa se está desarrollando.</p>
   </main>
 
+  <!-- Modal PRO -->
+  <div id="npModal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-window" role="dialog" aria-modal="true" aria-labelledby="npModalTitle">
+      <div class="modal-bar">
+        <div class="modal-title" id="npModalTitle">
+          <span class="mac-dots" aria-hidden="true">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </span>
+          <span id="npModalText">Herramienta</span>
+        </div>
+        <button class="modal-close" id="npClose" aria-label="Cerrar">×</button>
+      </div>
+      <iframe class="modal-iframe" id="npFrame" src="" loading="lazy"></iframe>
+    </div>
+  </div>
+
   <script>
+    // Año
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Modal
+    const modal = document.getElementById('npModal');
+    const frame = document.getElementById('npFrame');
+    const closeBtn = document.getElementById('npClose');
+    const titleText = document.getElementById('npModalText');
+
+    function openModal(url, title){
+      titleText.textContent = title || 'Herramienta';
+      frame.src = url;
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden','false');
+    }
+    function closeModal(){
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden','true');
+      frame.src = '';
+    }
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
+
+    // Conectar botones
+    document.querySelectorAll('[data-tool]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        openModal(btn.getAttribute('data-tool'), btn.getAttribute('data-title'));
+      });
+    });
   </script>
 </body>
 </html>
