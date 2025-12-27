@@ -1,1 +1,284 @@
-unidades
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NutriPlant PRO — Unidades (ppm ↔ mmol/L ↔ meq/L)</title>
+  <style>
+    :root{
+      --brand:#0056b3;
+      --text:#0f172a;
+      --muted:#64748b;
+      --bg:#ffffff;
+      --card:#ffffff;
+      --border:#e5e7eb;
+      --soft:#f8fafc;
+      --info-bg:#e9f2ff;
+      --info-border:#2f6fed;
+      --shadow: 0 10px 30px rgba(0,0,0,.08);
+      --radius:16px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background:var(--bg);
+      padding:24px 18px 28px;
+    }
+    .wrap{max-width:1100px;margin:0 auto}
+    h1{
+      font-size: clamp(26px, 3.2vw, 44px);
+      font-weight: 900;
+      letter-spacing: -.3px;
+      margin-bottom: 14px;
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      line-height:1.05;
+    }
+    h1 .emoji{font-size: 26px; margin-top: 6px}
+    .info{
+      background: var(--info-bg);
+      border-left: 6px solid var(--info-border);
+      border-radius: 14px;
+      padding: 18px 18px;
+      color:#0b2a66;
+      margin: 14px 0 18px;
+    }
+    .info b{font-weight:900}
+    .info p{margin:0; font-size: 18px; line-height:1.35}
+    .info .sub{margin-top:10px; font-style: italic; color:#1e3a8a; font-size: 18px; line-height:1.35}
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+    @media (max-width: 860px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .card{
+      background: var(--card);
+      border:1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 14px 12px;
+      box-shadow: 0 1px 0 rgba(15,23,42,.03);
+    }
+    .card-head{
+      display:flex;
+      align-items:baseline;
+      gap:10px;
+      flex-wrap:wrap;
+      padding: 2px 2px 10px;
+      border-bottom: 3px solid #eef2f7;
+      margin-bottom: 10px;
+    }
+    .card-title{
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -.2px;
+    }
+    .meta{
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    .labels{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 4px 2px 8px;
+      color:#6b7280;
+      font-weight:800;
+      font-size: 20px;
+    }
+    .inputs{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    input{
+      width:100%;
+      height: 44px;
+      border-radius: 10px;
+      border: 2px solid #d1d5db;
+      background: #fff;
+      padding: 10px 12px;
+      font-size: 18px;
+      outline: none;
+      transition: border .15s ease, box-shadow .15s ease;
+    }
+    input:focus{
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59,130,246,.15);
+    }
+
+    .footer-box{
+      margin-top: 20px;
+      background: var(--info-bg);
+      border-left: 6px solid var(--info-border);
+      border-radius: 14px;
+      padding: 18px 18px;
+      color:#0b2a66;
+    }
+    .footer-box h2{
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .footer-box ul{
+      margin-left: 22px;
+      font-size: 20px;
+      line-height: 1.45;
+    }
+    .footer-box li{margin: 8px 0}
+    .footer-box b{font-weight:900}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1><span class="emoji">🧪</span> Calculadora de Unidades de Nutrientes (ppm ↔ mmol/L ↔ meq/L)</h1>
+
+    <div class="info">
+      <p><b>Instrucciones:</b> Ingresa el valor en cualquier campo y las conversiones se calcularán automáticamente.</p>
+      <p class="sub">Esta herramienta convierte entre ppm (mg/L), mmol/L (milimoles por litro) y meq/L (miliequivalentes por litro).</p>
+    </div>
+
+    <div class="grid" id="cards"></div>
+
+    <div class="footer-box">
+      <h2>📘 Fórmulas de Conversión:</h2>
+      <ul>
+        <li><b>ppm a mmol/L:</b> mmol/L = ppm ÷ Peso Molecular o Atómico</li>
+        <li><b>mmol/L a meq/L:</b> meq/L = mmol/L × Valencia</li>
+        <li><b>ppm a meq/L:</b> meq/L = (ppm ÷ Peso Molecular o Atómico) × Valencia</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // ========= Config (como tu ejemplo) =========
+    // ppm = mg/L
+    // mmol/L = ppm / PM
+    // meq/L = mmol/L * valencia
+    // Redondeo visual a 3 decimales (sin forzar trailing zeros cuando el campo está vacío)
+    const ROUND = 3;
+
+    const items = [
+      { key:"N",  title:"N: NO₃⁻ o NH₄⁺", pm:14.01, val:1 },
+      { key:"P",  title:"P: H₂PO₄⁻",      pm:30.97, val:1 },
+      { key:"K",  title:"K: K⁺",          pm:39.10, val:1 },
+      { key:"Ca", title:"Ca: Ca²⁺",       pm:40.08, val:2 },
+      { key:"Mg", title:"Mg: Mg²⁺",       pm:24.31, val:2 },
+      { key:"S",  title:"S: SO₄²⁻",       pm:32.07, val:2 },
+
+      { key:"Fe", title:"Fe: Fe²⁺",       pm:55.85, val:2 },
+      { key:"Mn", title:"Mn: Mn²⁺",       pm:54.94, val:2 },
+      { key:"Zn", title:"Zn: Zn²⁺",       pm:65.38, val:2 },
+      { key:"B",  title:"B: H₃BO₃",       pm:10.81, val:1 },
+      { key:"Cu", title:"Cu: Cu²⁺",       pm:63.55, val:2 },
+      { key:"Mo", title:"Mo: Mo²⁺",       pm:95.95, val:2 },
+
+      { key:"HCO3", title:"Bicarbonato (HCO₃⁻)", pm:61.02, val:1 },
+      { key:"CO3",  title:"Carbonato (CO₃²⁻)",   pm:60.01, val:2 },
+    ];
+
+    const cards = document.getElementById("cards");
+
+    const fmt = (n) => {
+      if (n === "" || n === null || n === undefined) return "";
+      if (!Number.isFinite(n)) return "";
+      const p = Math.pow(10, ROUND);
+      return String(Math.round(n * p) / p);
+    };
+
+    function buildCard(item){
+      const el = document.createElement("div");
+      el.className = "card";
+      el.innerHTML = `
+        <div class="card-head">
+          <div class="card-title">${item.title}</div>
+          <div class="meta">PM: ${item.pm.toFixed(2)} | Valencia: ${item.val}</div>
+        </div>
+
+        <div class="labels">
+          <div>ppm (mg/L)</div>
+          <div>mmol/L</div>
+          <div>meq/L</div>
+        </div>
+
+        <div class="inputs">
+          <input inputmode="decimal" type="text" data-kind="ppm"  placeholder="0" />
+          <input inputmode="decimal" type="text" data-kind="mmol" placeholder="0" />
+          <input inputmode="decimal" type="text" data-kind="meq"  placeholder="0" />
+        </div>
+      `;
+      cards.appendChild(el);
+
+      const ppm = el.querySelector('[data-kind="ppm"]');
+      const mmol = el.querySelector('[data-kind="mmol"]');
+      const meq = el.querySelector('[data-kind="meq"]');
+
+      let lock = false;
+
+      const parse = (v) => {
+        if (v === "") return null;
+        // permite "40", "40.2", "40,2"
+        const n = Number(String(v).replace(",", "."));
+        return Number.isFinite(n) ? n : null;
+      };
+
+      function setAll(from){
+        if (lock) return;
+        lock = true;
+
+        const PM = item.pm;
+        const V  = item.val;
+
+        let vppm  = parse(ppm.value);
+        let vmmol = parse(mmol.value);
+        let vmeq  = parse(meq.value);
+
+        if (from === "ppm" && vppm !== null){
+          vmmol = vppm / PM;
+          vmeq  = vmmol * V;
+          mmol.value = fmt(vmmol);
+          meq.value  = fmt(vmeq);
+        }
+        if (from === "mmol" && vmmol !== null){
+          vppm = vmmol * PM;
+          vmeq = vmmol * V;
+          ppm.value = fmt(vppm);
+          meq.value = fmt(vmeq);
+        }
+        if (from === "meq" && vmeq !== null){
+          vmmol = vmeq / V;
+          vppm  = vmmol * PM;
+          mmol.value = fmt(vmmol);
+          ppm.value  = fmt(vppm);
+        }
+
+        // si borran un campo, no forzamos números
+        if (from === "ppm" && ppm.value === "") { mmol.value=""; meq.value=""; }
+        if (from === "mmol" && mmol.value === "") { ppm.value=""; meq.value=""; }
+        if (from === "meq" && meq.value === "") { ppm.value=""; mmol.value=""; }
+
+        lock = false;
+      }
+
+      ppm.addEventListener("input", ()=>setAll("ppm"));
+      mmol.addEventListener("input", ()=>setAll("mmol"));
+      meq.addEventListener("input", ()=>setAll("meq"));
+    }
+
+    items.forEach(buildCard);
+  </script>
+</body>
+</html>
