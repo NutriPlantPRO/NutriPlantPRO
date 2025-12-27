@@ -16,23 +16,26 @@
       --accent:#2563eb;
       --ok:#22c55e;
     }
+
     /* Recuadro azul de instrucciones (igual al de Unidades) */
-.info-box{
-  background:#e9f2ff;
-  border-left:6px solid #2f6fed;
-  border-radius:14px;
-  padding:14px 16px;
-  color:#0b2a66;
-  margin:14px 0 18px;
-}
-.info-box b{
-  font-weight:900;
-}
-.info-box p{
-  margin:0;
-  font-size:16px;
-  line-height:1.35;
-}
+    .info-box{
+      background:#e9f2ff;
+      border-left:6px solid #2f6fed;
+      border-radius:14px;
+      padding:14px 16px;
+      color:#0b2a66;
+      margin:14px 0 18px;
+    }
+    .info-box b{ font-weight:900; }
+    .info-box p{
+      margin:0;
+      font-size:16px;
+      line-height:1.35;
+    }
+
+    /* Anti-traducción SOLO para moléculas */
+    .chem{ unicode-bidi:isolate; }
+
     *{box-sizing:border-box}
     body{
       margin:0;
@@ -210,8 +213,8 @@
   <div class="wrap">
     <div class="title">🧮 Calculadora de Conversión Óxido ↔ Elemental</div>
     <div class="info-box">
-  <p><b>Instrucciones:</b> Escribe un valor en la primera casilla y se calcula automáticamente la segunda.</p>
-</div>
+      <p><b>Instrucciones:</b> Escribe un valor en la primera casilla y se calcula automáticamente la segunda.</p>
+    </div>
 
     <div class="panel">
       <div class="section-h">📊 Conversiones Comunes</div>
@@ -242,13 +245,21 @@
       return (Math.round(n * 1000) / 1000).toFixed(3);
     };
 
+    // Envuelve moléculas para NO traducirlas
+    const chem = (s) => `<span class="chem" translate="no">${s}</span>`;
+
     // ORDEN: P, K, Ca, Mg, S, Fe, Mn, Zn, B, Cu, Mo, Si
     const items = [
       { left:"P₂O₅", right:"P",     factor_lr:0.436, factor_rl:2.291 },
       { left:"K₂O",  right:"K",     factor_lr:0.830, factor_rl:1.205 },
       { left:"CaO",  right:"Ca",    factor_lr:0.715, factor_rl:1.399 },
       { left:"MgO",  right:"Mg",    factor_lr:0.603, factor_rl:1.658 },
+
       { left:"S",    right:"SO₄",   factor_lr:3.000, factor_rl:0.333 },
+
+      /* ✅ NUEVO: S ↔ SO3 */
+      { left:"S",    right:"SO₃",   factor_lr:2.500, factor_rl:0.400 },
+
       { left:"Fe",   right:"Fe₂O₃", factor_lr:1.430, factor_rl:0.699 },
       { left:"Mn",   right:"MnO",   factor_lr:1.291, factor_rl:0.775 },
       { left:"Zn",   right:"ZnO",   factor_lr:1.245, factor_rl:0.803 },
@@ -261,11 +272,11 @@
     const grid = document.getElementById('grid');
     const factorTable = document.getElementById('factorTable');
 
-    function makeCard({title, factor, leftPh, rightPh}) {
+    function makeCard({titleHTML, factor, leftPh, rightPh}) {
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
-        <h3>${title}</h3>
+        <h3>${titleHTML}</h3>
         <div class="row">
           <input class="input" inputmode="decimal" placeholder="${leftPh}" aria-label="${leftPh}">
           <div class="mid"><span class="mul">×</span> <code>${fmt(factor)}</code> <span>=</span></div>
@@ -275,6 +286,10 @@
 
       const inp = card.querySelector('.input');
       const out = card.querySelector('.output');
+
+      // ✅ Bloqueo de traducción SOLO en los campos donde aparecen moléculas
+      inp.setAttribute('translate','no');
+      out.setAttribute('translate','no');
 
       inp.addEventListener('focus', ()=> card.classList.add('active'));
       inp.addEventListener('blur', ()=> card.classList.remove('active'));
@@ -292,7 +307,7 @@
     items.forEach(it => {
       // left -> right
       grid.appendChild(makeCard({
-        title: `${it.left} → ${it.right}`,
+        titleHTML: `${chem(it.left)} → ${chem(it.right)}`,
         factor: it.factor_lr,
         leftPh: it.left,
         rightPh: it.right
@@ -300,19 +315,19 @@
 
       // right -> left
       grid.appendChild(makeCard({
-        title: `${it.right} → ${it.left}`,
+        titleHTML: `${chem(it.right)} → ${chem(it.left)}`,
         factor: it.factor_rl,
         leftPh: it.right,
         rightPh: it.left
       }));
 
-      // Tabla factores
+      // Tabla factores (también protegida)
       const tr1 = document.createElement('tr');
-      tr1.innerHTML = `<td><b>${it.left} → ${it.right}</b></td><td><code>${fmt(it.factor_lr)}</code></td><td>Multiplica ${it.left} para obtener ${it.right}</td>`;
+      tr1.innerHTML = `<td><b>${chem(it.left)} → ${chem(it.right)}</b></td><td><code>${fmt(it.factor_lr)}</code></td><td>Multiplica ${chem(it.left)} para obtener ${chem(it.right)}</td>`;
       factorTable.appendChild(tr1);
 
       const tr2 = document.createElement('tr');
-      tr2.innerHTML = `<td><b>${it.right} → ${it.left}</b></td><td><code>${fmt(it.factor_rl)}</code></td><td>Multiplica ${it.right} para obtener ${it.left}</td>`;
+      tr2.innerHTML = `<td><b>${chem(it.right)} → ${chem(it.left)}</b></td><td><code>${fmt(it.factor_rl)}</code></td><td>Multiplica ${chem(it.right)} para obtener ${chem(it.left)}</td>`;
       factorTable.appendChild(tr2);
     });
   </script>
