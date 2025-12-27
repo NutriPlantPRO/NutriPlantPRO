@@ -77,7 +77,6 @@
       padding: 14px;
       box-shadow: 0 2px 0 rgba(2,6,23,.02);
     }
-
     .card.active{
       border-color: rgba(34,197,94,.75);
       box-shadow: 0 0 0 2px rgba(34,197,94,.10);
@@ -88,21 +87,24 @@
       font-size: 16px;
       font-weight: 900;
       letter-spacing:.2px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
     }
-    .badge{
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 700;
-      background:#f1f5f9;
-      border:1px solid var(--line);
-      padding:4px 8px;
-      border-radius:999px;
-      white-space:nowrap;
+
+    /* Etiquetas arriba de cada casilla */
+    .labels{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items:end;
+      margin: 0 0 6px;
     }
+    .lab{
+      font-size: 12px;
+      font-weight: 900;
+      color: #334155;
+      letter-spacing:.2px;
+    }
+    .lab.right{ text-align:left; }
+    .lab.center{ opacity:0; } /* solo para mantener grid */
 
     .row{
       display:grid;
@@ -206,7 +208,6 @@
     <div class="title"><span class="emoji">🧮</span> Calculadora de Conversión Óxido ↔ Elemental</div>
     <p class="sub">
       Escribe un valor en la primera casilla y se calcula automáticamente la segunda.
-      Factores redondeados a <b>3 decimales</b> (como en tu ejemplo).
     </p>
 
     <div class="panel">
@@ -218,8 +219,7 @@
           <summary>ℹ️ Información</summary>
           <p>
             <b>Regla:</b> <code>Óxido = Elemento × Factor</code> &nbsp;|&nbsp; <code>Elemento = Óxido × Factor</code><br>
-            Los factores vienen de las masas molares (estequiometría).<br>
-            Nota: Para azufre, se incluye <b>S↔SO₄</b> (radical sulfato) y <b>S↔SO₃</b> (óxido), tal cual tu tabla.
+            Los factores vienen de las masas molares (estequiometría).
           </p>
 
           <table class="tbl" aria-label="Factores de conversión">
@@ -241,66 +241,44 @@
     };
 
     // ====== Definición (en el ORDEN que pediste) ======
-    // Cada item crea 2 tarjetas (óxido->elemento y elemento->óxido) cuando aplica.
-    // Para S se agregan dos pares: SO4 y SO3.
     const items = [
-      // P
-      { key:"P2O5_P", left:"P₂O₅", right:"P", factor_lr:0.436, factor_rl:2.291, type:"oxide-element" },
-
-      // K
-      { key:"K2O_K", left:"K₂O", right:"K", factor_lr:0.830, factor_rl:1.205, type:"oxide-element" },
-
-      // Ca
-      { key:"CaO_Ca", left:"CaO", right:"Ca", factor_lr:0.715, factor_rl:1.399, type:"oxide-element" },
-
-      // Mg
-      { key:"MgO_Mg", left:"MgO", right:"Mg", factor_lr:0.603, factor_rl:1.658, type:"oxide-element" },
-
-      // S (radical y óxido)
-      { key:"S_SO4", left:"S", right:"SO₄", factor_lr:3.000, factor_rl:0.333, type:"element-oxide" },
-      { key:"S_SO3", left:"S", right:"SO₃", factor_lr:2.497, factor_rl:0.400, type:"element-oxide" },
-
-      // Fe
-      { key:"Fe_Fe2O3", left:"Fe", right:"Fe₂O₃", factor_lr:1.430, factor_rl:0.699, type:"element-oxide" },
-
-      // Mn
-      { key:"Mn_MnO", left:"Mn", right:"MnO", factor_lr:1.291, factor_rl:0.775, type:"element-oxide" },
-
-      // Zn
-      { key:"Zn_ZnO", left:"Zn", right:"ZnO", factor_lr:1.245, factor_rl:0.803, type:"element-oxide" },
-
-      // B
-      { key:"B_B2O3", left:"B", right:"B₂O₃", factor_lr:3.220, factor_rl:0.311, type:"element-oxide" },
-
-      // Cu
-      { key:"Cu_CuO", left:"Cu", right:"CuO", factor_lr:1.252, factor_rl:0.799, type:"element-oxide" },
-
-      // Mo
-      { key:"Mo_MoO3", left:"Mo", right:"MoO₃", factor_lr:1.500, factor_rl:0.667, type:"element-oxide" },
-
-      // Si
-      { key:"Si_SiO2", left:"Si", right:"SiO₂", factor_lr:2.139, factor_rl:0.467, type:"element-oxide" },
+      { key:"P2O5_P", left:"P₂O₅", right:"P",     factor_lr:0.436, factor_rl:2.291 },
+      { key:"K2O_K",  left:"K₂O",  right:"K",     factor_lr:0.830, factor_rl:1.205 },
+      { key:"CaO_Ca", left:"CaO",  right:"Ca",    factor_lr:0.715, factor_rl:1.399 },
+      { key:"MgO_Mg", left:"MgO",  right:"Mg",    factor_lr:0.603, factor_rl:1.658 },
+      { key:"S_SO4",  left:"S",    right:"SO₄",   factor_lr:3.000, factor_rl:0.333 },
+      { key:"S_SO3",  left:"S",    right:"SO₃",   factor_lr:2.497, factor_rl:0.400 },
+      { key:"Fe_Fe2O3", left:"Fe", right:"Fe₂O₃", factor_lr:1.430, factor_rl:0.699 },
+      { key:"Mn_MnO", left:"Mn",   right:"MnO",   factor_lr:1.291, factor_rl:0.775 },
+      { key:"Zn_ZnO", left:"Zn",   right:"ZnO",   factor_lr:1.245, factor_rl:0.803 },
+      { key:"B_B2O3", left:"B",    right:"B₂O₃",  factor_lr:3.220, factor_rl:0.311 },
+      { key:"Cu_CuO", left:"Cu",   right:"CuO",   factor_lr:1.252, factor_rl:0.799 },
+      { key:"Mo_MoO3", left:"Mo",  right:"MoO₃",  factor_lr:1.500, factor_rl:0.667 },
+      { key:"Si_SiO2", left:"Si",  right:"SiO₂",  factor_lr:2.139, factor_rl:0.467 },
     ];
 
     const grid = document.getElementById('grid');
     const factorTable = document.getElementById('factorTable');
 
-    function makeCard({title, badge, factor, leftLabel, rightLabel, mode}) {
-      // mode: "LtoR" => input izquierda calcula derecha
-      // mode: "RtoL" => input derecha calcula izquierda
+    function makeCard({title, factor, leftLabel, rightLabel}) {
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
-        <h3>
-          <span>${title}</span>
-          <span class="badge">${badge}</span>
-        </h3>
+        <h3>${title}</h3>
+
+        <div class="labels" aria-hidden="true">
+          <div class="lab">${leftLabel}</div>
+          <div class="lab center">.</div>
+          <div class="lab right">${rightLabel}</div>
+        </div>
+
         <div class="row">
-          <input class="input" inputmode="decimal" placeholder="${leftLabel}" aria-label="${leftLabel}">
+          <input class="input" inputmode="decimal" placeholder="" aria-label="${leftLabel}">
           <div class="mid"><span class="mul">×</span> <code>${factor}</code> <span>=</span></div>
-          <input class="output" placeholder="${rightLabel}" aria-label="${rightLabel}" readonly>
+          <input class="output" placeholder="" aria-label="${rightLabel}" readonly>
         </div>
       `;
+
       const inp = card.querySelector('.input');
       const out = card.querySelector('.output');
 
@@ -317,35 +295,24 @@
       return card;
     }
 
-    // Construir cards
     items.forEach(it => {
-      // Card 1 (izq → der)
-      // Si it.type es oxide-element: título "Óxido → Elemento" en primera, y reversa segunda.
-      // Si it.type es element-oxide: primera es "Elemento → Óxido".
-      const leftToRightTitle = `${it.left} → ${it.right}`;
-      const rightToLeftTitle = `${it.right} → ${it.left}`;
-
-      // L->R usa factor_lr
+      // Card 1: left -> right
       grid.appendChild(makeCard({
-        title: leftToRightTitle,
-        badge: `${it.left}→${it.right}`,
+        title: `${it.left} → ${it.right}`,
         factor: fmt(it.factor_lr),
         leftLabel: it.left,
-        rightLabel: it.right,
-        mode: "LtoR"
+        rightLabel: it.right
       }));
 
-      // R->L usa factor_rl
+      // Card 2: right -> left
       grid.appendChild(makeCard({
-        title: rightToLeftTitle,
-        badge: `${it.right}→${it.left}`,
+        title: `${it.right} → ${it.left}`,
         factor: fmt(it.factor_rl),
         leftLabel: it.right,
-        rightLabel: it.left,
-        mode: "LtoR"
+        rightLabel: it.left
       }));
 
-      // Tabla de factores (2 filas por par)
+      // Tabla factores
       const tr1 = document.createElement('tr');
       tr1.innerHTML = `<td><b>${it.left} → ${it.right}</b></td><td><code>${fmt(it.factor_lr)}</code></td><td>Multiplica ${it.left} para obtener ${it.right}</td>`;
       factorTable.appendChild(tr1);
