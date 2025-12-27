@@ -43,11 +43,7 @@
       align-items:center;
       gap:10px;
     }
-    .sub{
-      color:var(--muted);
-      margin:0 0 16px;
-      line-height:1.45;
-    }
+    .sub{ display:none; } /* (quedó desactivada como pediste) */
 
     .section{
       border:1px solid var(--border);
@@ -158,15 +154,16 @@
       margin:0 0 10px;
       font-size:18px;
     }
+
+    /* === Ajuste: solo mostramos VPD, HD se oculta === */
     .res-grid{
       display:grid;
-      grid-template-columns: 1.25fr .75fr;
+      grid-template-columns: 1fr;
       gap:12px;
       align-items:stretch;
     }
-    @media (max-width: 780px){
-      .res-grid{ grid-template-columns: 1fr; }
-    }
+    .hd-card{ display:none !important; }
+
     .res-card{
       border:1px solid rgba(2,6,23,.08);
       border-radius:14px;
@@ -199,9 +196,8 @@
       margin-top:10px;
       font-weight:900;
     }
-    .range-row span{
-      color:#0f172a;
-    }
+    .range-row span{ color:#0f172a; }
+
     .status{
       font-weight:1000;
       font-size:18px;
@@ -211,30 +207,35 @@
     .status.high{ color: var(--amber); }
     .status.vhigh{ color: var(--red); }
 
+    /* === Ajuste: barra con amarillo/naranja desde 1.5 kPa ===
+       escala 0..5 kPa => 0.5=10%, 1.5=30%, 2.5=50%, 5=100%
+    */
     .bar-wrap{
-  margin-top:10px;
-  border-radius:14px;
-  border:1px solid rgba(2,6,23,.12);
-  overflow:hidden;
-  position:relative;
-  height:46px;
-  background: linear-gradient(90deg,
-    /* 0 – 0.5 kPa (Azul) */
-    rgba(59,130,246,.95) 0%,
-    rgba(59,130,246,.85) 10%,
+      margin-top:10px;
+      border-radius:14px;
+      border:1px solid rgba(2,6,23,.12);
+      overflow:hidden;
+      position:relative;
+      height:46px;
+      background: linear-gradient(90deg,
+        /* 0 – 0.5 kPa (Azul) */
+        rgba(59,130,246,.95) 0%,
+        rgba(59,130,246,.85) 10%,
 
-    /* 0.5 – 2.0 kPa (Verde óptimo) */
-    rgba(34,197,94,.90) 20%,
-    rgba(34,197,94,.95) 40%,
+        /* 0.5 – 1.5 kPa (Verde óptimo) */
+        rgba(34,197,94,.90) 10%,
+        rgba(34,197,94,.95) 30%,
 
-    /* 2.0 – 3.0 kPa (Amarillo) */
-    rgba(245,158,11,.90) 55%,
+        /* 1.5 – 2.5 kPa (Amarillo/Naranja) */
+        rgba(245,158,11,.90) 30%,
+        rgba(245,158,11,.92) 50%,
 
-    /* > 3.0 kPa (Naranja → Rojo) */
-    rgba(239,68,68,.90) 80%,
-    rgba(220,38,38,.95) 100%
-  );
-}
+        /* > 2.5 kPa (Rojo) */
+        rgba(239,68,68,.90) 70%,
+        rgba(220,38,38,.95) 100%
+      );
+    }
+
     .bar-ticks{
       position:absolute;
       inset:0;
@@ -264,13 +265,16 @@
       box-shadow:0 10px 18px rgba(0,0,0,.16);
       margin:0 auto;
     }
+
+    /* === Ajuste: “línea” negra para que no se pierda en el verde === */
     .stem{
       width:3px;
       height:20px;
-      background: rgba(34,197,94,1);
+      background: #111827;
       margin:0 auto;
       border-radius:999px;
     }
+
     .bubble{
       position:absolute;
       top:-44px;
@@ -329,9 +333,7 @@
       height:18px;
       accent-color: var(--brand);
     }
-    .mode-main{
-      flex:1;
-    }
+    .mode-main{ flex:1; }
     .mode-main b{
       display:flex;
       align-items:center;
@@ -345,9 +347,7 @@
       font-weight:700;
       font-size:13px;
     }
-    .mode-input{
-      margin-top:10px;
-    }
+    .mode-input{ margin-top:10px; }
     .muted-note{
       margin-top:8px;
       color:#64748b;
@@ -355,7 +355,6 @@
       font-size:13px;
     }
 
-    /* Accesibilidad */
     .sr-only{
       position:absolute;
       left:-9999px;
@@ -368,17 +367,16 @@
 <body>
   <div class="wrap">
     <h1>🌡️ Déficit de Presión de Vapor (VPD / DPV)</h1>
-    <p class="sub">
-      Calculadora DPV. Incluye modo <b>simple</b> y modo <b>avanzado</b> (temperatura de hoja o radiación solar).
-    </p>
+
+    <!-- ✅ Instrucciones generales (fuera del bloque Simple) -->
+    <div class="hint">
+      <b>Instrucciones:</b> ingresa <b>Temperatura del Aire</b> y <b>Humedad Relativa</b>. Calculadora DPV. Incluye modo simple y modo avanzado (temperatura de hoja o radiación solar).
+    </div>
 
     <!-- SIMPLE -->
     <section class="section" aria-label="Calculadora ambiental simple">
       <div class="section-hd">📊 Calculadora Ambiental Simple</div>
       <div class="section-bd">
-        <div class="hint">
-          <b>Instrucciones:</b> ingresa <b>Temperatura del Aire</b> y <b>Humedad Relativa</b>. Calculamos VPD y el estado (bajo/óptimo/alto).
-        </div>
 
         <div class="grid2">
           <div class="field">
@@ -403,7 +401,9 @@
               <p class="res-val" id="vpdValSimple">—</p>
               <div class="res-unit">kPa</div>
             </div>
-            <div class="res-card">
+
+            <!-- (HD se oculta visualmente, pero se calcula en JS) -->
+            <div class="res-card hd-card">
               <div class="res-title">Déficit de Humedad</div>
               <p class="res-val" id="hdValSimple" style="font-size:40px;">—</p>
               <div class="res-unit">g/m³</div>
@@ -411,7 +411,7 @@
           </div>
 
           <div class="range-row">
-            <span>Rango Óptimo: 0.5 – 2.0 kPa</span>
+            <span>Rango Óptimo: 0.5 – 1.5 kPa</span>
             <span class="status" id="statusSimple">—</span>
           </div>
 
@@ -458,7 +458,7 @@
                 <p>Usa una temperatura de hoja estimada o medida (a menudo difiere del aire).</p>
                 <div class="mode-input">
                   <input id="tLeaf" type="number" step="0.1" placeholder="Ej: 30" inputmode="decimal" />
-                  <div class="muted-note">Tip: si no la tienes, prueba +1 a +4 °C sobre el aire (según radiación y viento).</div>
+                  <div class="muted-note">Tip: +1 a +4 °C sobre el aire (según radiación y viento).</div>
                 </div>
               </div>
             </div>
@@ -467,10 +467,10 @@
               <input type="radio" name="mode" id="modeRad" value="rad" />
               <div class="mode-main">
                 <b>☀️ Radiación Solar</b>
-                <p>Ingresa radiación en W/m² y estimamos temperatura de hoja para calcular VPD.</p>
+                <p>Ingresa radiación en W/m² para calcular VPD.</p>
                 <div class="mode-input">
                   <input id="rad" type="number" step="1" placeholder="Ej: 600 W/m²" inputmode="numeric" disabled />
-                  <div class="muted-note">Nota: estimación simplificada (en PRO se afina con más variables).</div>
+                  <div class="muted-note">Nota: método indirecto para estimar temperatura foliar.</div>
                 </div>
               </div>
             </div>
@@ -488,7 +488,9 @@
                 <p class="res-val" id="vpdValAdv">—</p>
                 <div class="res-unit">kPa</div>
               </div>
-              <div class="res-card">
+
+              <!-- (HD se oculta visualmente, pero se calcula en JS) -->
+              <div class="res-card hd-card">
                 <div class="res-title">Déficit de Humedad</div>
                 <p class="res-val" id="hdValAdv" style="font-size:40px;">—</p>
                 <div class="res-unit">g/m³</div>
@@ -496,7 +498,7 @@
             </div>
 
             <div class="range-row">
-              <span>Rango Óptimo: 0.5 – 2.0 kPa</span>
+              <span>Rango Óptimo: 0.5 – 1.5 kPa</span>
               <span class="status" id="statusAdv">—</span>
             </div>
 
@@ -515,7 +517,7 @@
             </div>
 
             <div class="hint" style="margin-top:12px;">
-              <b>Detalle:</b> en modo ☀️ radiación, se estima T° de hoja con una relación simple (para acceso público).
+              <b>Detalle:</b> en modo ☀️ radiación, se estima T° de hoja.
               En PRO se incorporan variables (viento, LAI, albedo, etc.) para mejorar precisión.
             </div>
           </div>
@@ -526,14 +528,12 @@
 
   <script>
     // === Físico: presión de vapor de saturación (kPa) ===
-    // Fórmula tipo FAO: es(T) = 0.6108 * exp(17.27*T/(T+237.3))
     function es_kPa(Tc){
       const T = Number(Tc);
       return 0.6108 * Math.exp((17.27 * T) / (T + 237.3));
     }
 
     // Humedad absoluta (g/m³) desde presión de vapor (kPa) y temperatura (°C)
-    // AH = 216.7 * e(hPa) / (T+273.15) ; e(hPa)=kPa*10
     function absHum_gm3(e_kPa, Tc){
       const e_hPa = Number(e_kPa) * 10.0;
       const Tk = Number(Tc) + 273.15;
@@ -544,10 +544,10 @@
     function fmt(x, d=2){ return (Math.round(x * Math.pow(10,d)) / Math.pow(10,d)).toFixed(d); }
 
     function statusForVPD(v){
-      // rangos simples, ajustables después
+      // ✅ Ajuste de rangos: óptimo 0.5–1.5
       if (v < 0.5) return {t:'Bajo', cls:'low', color:'#3b82f6'};
-      if (v <= 2.0) return {t:'Óptimo', cls:'ok', color:'#22c55e'};
-      if (v <= 3.0) return {t:'Alto', cls:'high', color:'#f59e0b'};
+      if (v <= 1.5) return {t:'Óptimo', cls:'ok', color:'#22c55e'};
+      if (v <= 2.5) return {t:'Alto', cls:'high', color:'#f59e0b'};
       return {t:'Muy alto', cls:'vhigh', color:'#ef4444'};
     }
 
@@ -560,21 +560,22 @@
       const st = statusForVPD(vpd);
       bubbleEl.style.background = st.color;
       pinEl.style.borderColor = st.color;
-      stemEl.style.background = st.color;
+
+      // ✅ stem negro fijo (ya está por CSS, pero lo dejamos blindado)
+      stemEl.style.background = '#111827';
+
       bubbleEl.style.boxShadow = `0 10px 18px rgba(0,0,0,.14)`;
     }
 
     function computeVPD_fromAir(Tair, RH, TtargetForEs){
-      // ea se calcula a partir del aire (Tair y RH), es para target (aire o hoja) depende del modo
       const es_air = es_kPa(Tair);
       const ea = es_air * (RH/100);
       const es_target = es_kPa(TtargetForEs);
-      const vpd = es_target - ea; // kPa
+      const vpd = es_target - ea;
       return { vpd, ea };
     }
 
     function computeHD_gm3(Tair, ea){
-      // Déficit de humedad en g/m³: (humedad absoluta saturación a Tair) - (humedad absoluta real)
       const es_air = es_kPa(Tair);
       const AH_sat = absHum_gm3(es_air, Tair);
       const AH_act = absHum_gm3(ea, Tair);
@@ -603,10 +604,12 @@
 
       const { vpd, ea } = computeVPD_fromAir(T, RHc, T);
       const v = Math.max(0, vpd);
+
+      // HD se calcula (por si lo ocupas después) pero queda oculto
       const hd = Math.max(0, computeHD_gm3(T, ea));
+      if (hdValSimple) hdValSimple.textContent = fmt(hd, 2);
 
       vpdValSimple.textContent = fmt(v, 2);
-      hdValSimple.textContent  = fmt(hd, 2);
 
       const st = statusForVPD(v);
       statusSimple.textContent = 'Estado: ' + st.t;
@@ -649,8 +652,6 @@
     modeRad.addEventListener('change', syncMode);
     syncMode();
 
-    // Estimación simple de T° de hoja desde radiación (W/m²)
-    // deltaT ≈ 0.006 * Rad  (ej. 600 W/m² -> +3.6°C), limitado 0..12°C
     function estimateLeafTemp(Tair, radWm2){
       const delta = clamp(0.006 * radWm2, 0, 12);
       return Tair + delta;
@@ -678,11 +679,10 @@
       const { vpd, ea } = computeVPD_fromAir(Tair, RHc, Ttarget);
       const v = Math.max(0, vpd);
 
-      // HD mostrado en g/m³ basado en aire (consistente y estable)
       const hd = Math.max(0, computeHD_gm3(Tair, ea));
+      if (hdValAdv) hdValAdv.textContent = fmt(hd, 2);
 
       vpdValAdv.textContent = fmt(v, 2);
-      hdValAdv.textContent  = fmt(hd, 2);
 
       const st = statusForVPD(v);
       statusAdv.textContent = 'Estado: ' + st.t;
