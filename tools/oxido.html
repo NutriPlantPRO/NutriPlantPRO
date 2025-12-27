@@ -37,7 +37,6 @@
       font-size: 22px;
       letter-spacing:.2px;
     }
-    .title .emoji{font-size:20px}
     .sub{
       color: var(--muted);
       margin: 0 0 16px;
@@ -89,23 +88,6 @@
       letter-spacing:.2px;
     }
 
-    /* Etiquetas arriba de cada casilla */
-    .labels{
-      display:grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 10px;
-      align-items:end;
-      margin: 0 0 6px;
-    }
-    .lab{
-      font-size: 12px;
-      font-weight: 900;
-      color: #334155;
-      letter-spacing:.2px;
-    }
-    .lab.right{ text-align:left; }
-    .lab.center{ opacity:0; } /* solo para mantener grid */
-
     .row{
       display:grid;
       grid-template-columns: 1fr auto 1fr;
@@ -122,6 +104,10 @@
       padding: 10px 12px;
       font-size: 15px;
       outline: none;
+    }
+    .input::placeholder, .output::placeholder{
+      color:#94a3b8;
+      font-weight:700;
     }
     .input:focus{
       border-color: rgba(37,99,235,.8);
@@ -205,10 +191,8 @@
 
 <body>
   <div class="wrap">
-    <div class="title"><span class="emoji">🧮</span> Calculadora de Conversión Óxido ↔ Elemental</div>
-    <p class="sub">
-      Escribe un valor en la primera casilla y se calcula automáticamente la segunda.
-    </p>
+    <div class="title">🧮 Calculadora de Conversión Óxido ↔ Elemental</div>
+    <p class="sub">Escribe un valor en la primera casilla y se calcula automáticamente la segunda.</p>
 
     <div class="panel">
       <div class="section-h">📊 Conversiones Comunes</div>
@@ -234,48 +218,39 @@
   </div>
 
   <script>
-    // Formateo
     const fmt = (n) => {
       if (Number.isNaN(n) || n === null || n === undefined) return '';
       return (Math.round(n * 1000) / 1000).toFixed(3);
     };
 
-    // ====== Definición (en el ORDEN que pediste) ======
+    // ORDEN: P, K, Ca, Mg, S, Fe, Mn, Zn, B, Cu, Mo, Si
     const items = [
-      { key:"P2O5_P", left:"P₂O₅", right:"P",     factor_lr:0.436, factor_rl:2.291 },
-      { key:"K2O_K",  left:"K₂O",  right:"K",     factor_lr:0.830, factor_rl:1.205 },
-      { key:"CaO_Ca", left:"CaO",  right:"Ca",    factor_lr:0.715, factor_rl:1.399 },
-      { key:"MgO_Mg", left:"MgO",  right:"Mg",    factor_lr:0.603, factor_rl:1.658 },
-      { key:"S_SO4",  left:"S",    right:"SO₄",   factor_lr:3.000, factor_rl:0.333 },
-      { key:"S_SO3",  left:"S",    right:"SO₃",   factor_lr:2.497, factor_rl:0.400 },
-      { key:"Fe_Fe2O3", left:"Fe", right:"Fe₂O₃", factor_lr:1.430, factor_rl:0.699 },
-      { key:"Mn_MnO", left:"Mn",   right:"MnO",   factor_lr:1.291, factor_rl:0.775 },
-      { key:"Zn_ZnO", left:"Zn",   right:"ZnO",   factor_lr:1.245, factor_rl:0.803 },
-      { key:"B_B2O3", left:"B",    right:"B₂O₃",  factor_lr:3.220, factor_rl:0.311 },
-      { key:"Cu_CuO", left:"Cu",   right:"CuO",   factor_lr:1.252, factor_rl:0.799 },
-      { key:"Mo_MoO3", left:"Mo",  right:"MoO₃",  factor_lr:1.500, factor_rl:0.667 },
-      { key:"Si_SiO2", left:"Si",  right:"SiO₂",  factor_lr:2.139, factor_rl:0.467 },
+      { left:"P₂O₅", right:"P",     factor_lr:0.436, factor_rl:2.291 },
+      { left:"K₂O",  right:"K",     factor_lr:0.830, factor_rl:1.205 },
+      { left:"CaO",  right:"Ca",    factor_lr:0.715, factor_rl:1.399 },
+      { left:"MgO",  right:"Mg",    factor_lr:0.603, factor_rl:1.658 },
+      { left:"S",    right:"SO₄",   factor_lr:3.000, factor_rl:0.333 },
+      { left:"Fe",   right:"Fe₂O₃", factor_lr:1.430, factor_rl:0.699 },
+      { left:"Mn",   right:"MnO",   factor_lr:1.291, factor_rl:0.775 },
+      { left:"Zn",   right:"ZnO",   factor_lr:1.245, factor_rl:0.803 },
+      { left:"B",    right:"B₂O₃",  factor_lr:3.220, factor_rl:0.311 },
+      { left:"Cu",   right:"CuO",   factor_lr:1.252, factor_rl:0.799 },
+      { left:"Mo",   right:"MoO₃",  factor_lr:1.500, factor_rl:0.667 },
+      { left:"Si",   right:"SiO₂",  factor_lr:2.139, factor_rl:0.467 },
     ];
 
     const grid = document.getElementById('grid');
     const factorTable = document.getElementById('factorTable');
 
-    function makeCard({title, factor, leftLabel, rightLabel}) {
+    function makeCard({title, factor, leftPh, rightPh}) {
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
         <h3>${title}</h3>
-
-        <div class="labels" aria-hidden="true">
-          <div class="lab">${leftLabel}</div>
-          <div class="lab center">.</div>
-          <div class="lab right">${rightLabel}</div>
-        </div>
-
         <div class="row">
-          <input class="input" inputmode="decimal" placeholder="" aria-label="${leftLabel}">
-          <div class="mid"><span class="mul">×</span> <code>${factor}</code> <span>=</span></div>
-          <input class="output" placeholder="" aria-label="${rightLabel}" readonly>
+          <input class="input" inputmode="decimal" placeholder="${leftPh}" aria-label="${leftPh}">
+          <div class="mid"><span class="mul">×</span> <code>${fmt(factor)}</code> <span>=</span></div>
+          <input class="output" placeholder="${rightPh}" aria-label="${rightPh}" readonly>
         </div>
       `;
 
@@ -289,27 +264,27 @@
         const v = Number(String(inp.value).replace(',', '.'));
         if (inp.value.trim() === '') { out.value = ''; return; }
         if (Number.isNaN(v)) { out.value = ''; return; }
-        out.value = fmt(v * Number(factor));
+        out.value = fmt(v * factor);
       });
 
       return card;
     }
 
     items.forEach(it => {
-      // Card 1: left -> right
+      // left -> right
       grid.appendChild(makeCard({
         title: `${it.left} → ${it.right}`,
-        factor: fmt(it.factor_lr),
-        leftLabel: it.left,
-        rightLabel: it.right
+        factor: it.factor_lr,
+        leftPh: it.left,
+        rightPh: it.right
       }));
 
-      // Card 2: right -> left
+      // right -> left
       grid.appendChild(makeCard({
         title: `${it.right} → ${it.left}`,
-        factor: fmt(it.factor_rl),
-        leftLabel: it.right,
-        rightLabel: it.left
+        factor: it.factor_rl,
+        leftPh: it.right,
+        rightPh: it.left
       }));
 
       // Tabla factores
