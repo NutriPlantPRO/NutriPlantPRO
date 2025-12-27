@@ -16,6 +16,23 @@
       --accent:#2563eb;
       --ok:#22c55e;
     }
+    /* Recuadro azul de instrucciones (igual al de Unidades) */
+.info-box{
+  background:#e9f2ff;
+  border-left:6px solid #2f6fed;
+  border-radius:14px;
+  padding:14px 16px;
+  color:#0b2a66;
+  margin:14px 0 18px;
+}
+.info-box b{
+  font-weight:900;
+}
+.info-box p{
+  margin:0;
+  font-size:16px;
+  line-height:1.35;
+}
     *{box-sizing:border-box}
     body{
       margin:0;
@@ -192,7 +209,9 @@
 <body>
   <div class="wrap">
     <div class="title">🧮 Calculadora de Conversión Óxido ↔ Elemental</div>
-    <p class="sub">Escribe un valor en la primera casilla y se calcula automáticamente la segunda.</p>
+    <div class="info-box">
+  <p><b>Instrucciones:</b> Escribe un valor en la primera casilla y se calcula automáticamente la segunda.</p>
+</div>
 
     <div class="panel">
       <div class="section-h">📊 Conversiones Comunes</div>
