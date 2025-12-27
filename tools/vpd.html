@@ -212,22 +212,29 @@
     .status.vhigh{ color: var(--red); }
 
     .bar-wrap{
-      margin-top:10px;
-      border-radius:14px;
-      border:1px solid rgba(2,6,23,.12);
-      overflow:hidden;
-      position:relative;
-      height:46px;
-      background:
-        linear-gradient(90deg,
-          rgba(59,130,246,.95) 0%,
-          rgba(59,130,246,.75) 10%,
-          rgba(34,197,94,.85) 25%,
-          rgba(34,197,94,.95) 55%,
-          rgba(245,158,11,.9) 75%,
-          rgba(239,68,68,.92) 100%
-        );
-    }
+  margin-top:10px;
+  border-radius:14px;
+  border:1px solid rgba(2,6,23,.12);
+  overflow:hidden;
+  position:relative;
+  height:46px;
+  background: linear-gradient(90deg,
+    /* 0 – 0.5 kPa (Azul) */
+    rgba(59,130,246,.95) 0%,
+    rgba(59,130,246,.85) 10%,
+
+    /* 0.5 – 2.0 kPa (Verde óptimo) */
+    rgba(34,197,94,.90) 20%,
+    rgba(34,197,94,.95) 40%,
+
+    /* 2.0 – 3.0 kPa (Amarillo) */
+    rgba(245,158,11,.90) 55%,
+
+    /* > 3.0 kPa (Naranja → Rojo) */
+    rgba(239,68,68,.90) 80%,
+    rgba(220,38,38,.95) 100%
+  );
+}
     .bar-ticks{
       position:absolute;
       inset:0;
