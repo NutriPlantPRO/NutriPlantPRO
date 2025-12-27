@@ -1,1 +1,529 @@
-vpd
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VPD / DPV — NutriPlant PRO</title>
+  <style>
+    :root{
+      --brand:#0056b3;
+      --text:#0f172a;
+      --muted:#64748b;
+      --bg:#f4f7fb;
+      --card:#ffffff;
+      --border:#e2e8f0;
+
+      --blue:#3b82f6;
+      --green:#22c55e;
+      --amber:#f59e0b;
+      --red:#ef4444;
+
+      --soft-blue:#e8f1ff;
+      --soft-green:#ecfdf5;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:#fff;
+      color:var(--text);
+      padding:24px;
+    }
+
+    h1{
+      font-size: clamp(22px, 3.2vw, 34px);
+      font-weight: 900;
+      letter-spacing:.2px;
+      margin: 4px 0 16px;
+    }
+
+    .wrap{max-width: 980px; margin: 0 auto;}
+    .section{
+      border:1px solid var(--border);
+      border-radius:16px;
+      background:var(--card);
+      overflow:hidden;
+      margin: 16px 0;
+      box-shadow: 0 10px 24px rgba(0,0,0,.06);
+    }
+    .section-head{
+      padding:16px 18px;
+      background: #f8fafc;
+      border-bottom:1px solid rgba(2,6,23,.06);
+      display:flex; align-items:center; gap:10px;
+      font-weight: 900;
+      font-size: 18px;
+    }
+    .section-body{ padding: 18px; }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+    }
+    @media(max-width: 780px){
+      .grid2{grid-template-columns:1fr;}
+    }
+
+    .field{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      background:#fff;
+    }
+    .field label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight: 900;
+      margin-bottom:10px;
+      font-size: 16px;
+    }
+    .field input{
+      width:100%;
+      height:44px;
+      border:1px solid #cbd5e1;
+      border-radius:10px;
+      padding: 0 12px;
+      font-size:16px;
+      outline:none;
+    }
+    .field input:focus{
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(59,130,246,.18);
+    }
+
+    .btn{
+      height:46px;
+      border:none;
+      border-radius:12px;
+      font-weight: 900;
+      font-size: 16px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding: 0 14px;
+      width:100%;
+      transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 10px 18px rgba(0,0,0,.10);
+      filter: brightness(0.98);
+    }
+    .btn-blue{ background: #4aa3df; color:#fff; }
+    .btn-green{ background: #5bbf6a; color:#fff; }
+
+    .results{
+      margin-top: 14px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding: 14px;
+      background:#fff;
+    }
+    .results h3{
+      font-size: 16px;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+    .res-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      align-items:start;
+    }
+    @media(max-width:780px){ .res-grid{grid-template-columns:1fr;} }
+
+    .metric{
+      padding: 10px 12px;
+      border-radius:12px;
+      background:#f8fafc;
+      border: 1px solid rgba(2,6,23,.06);
+    }
+    .metric .label{ color: var(--muted); font-size: 14px; }
+    .metric .value{
+      font-size: 34px;
+      font-weight: 950;
+      margin-top: 4px;
+      line-height: 1.05;
+      color: var(--blue);
+    }
+    .metric .unit{ font-weight: 800; font-size: 14px; color: var(--muted); }
+
+    .status{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-top: 10px;
+      gap:10px;
+      font-weight: 900;
+    }
+    .status .range{ color: var(--text); }
+    .status .state{ color: var(--green); font-size: 18px; }
+
+    /* Barra VPD */
+    .bar-wrap{
+      margin-top: 10px;
+      border-radius: 12px;
+      overflow:hidden;
+      border: 1px solid rgba(2,6,23,.10);
+      background:#fff;
+      padding: 10px 10px 18px;
+      position:relative;
+    }
+    .bar{
+      height: 56px;
+      border-radius: 10px;
+      position:relative;
+      overflow:hidden;
+      background:
+        linear-gradient(90deg,
+          #3b82f6 0%,
+          #5fb3ff 10%,
+          #22c55e 30%,
+          #22c55e 60%,
+          #f59e0b 75%,
+          #ef4444 100%);
+    }
+    .bar-legend{
+      display:flex;
+      justify-content:space-between;
+      margin-top: 8px;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .marker{
+      position:absolute;
+      top: 2px;
+      height: 80px;
+      width: 0;
+      left: 0;
+      pointer-events:none;
+    }
+    .marker .pin{
+      position:absolute;
+      top: 0px;
+      transform: translateX(-50%);
+      background: var(--green);
+      color:#fff;
+      font-weight: 900;
+      font-size: 14px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      box-shadow: 0 10px 18px rgba(0,0,0,.12);
+      white-space:nowrap;
+    }
+    .marker .dot{
+      position:absolute;
+      top: 34px;
+      transform: translateX(-50%);
+      width: 18px; height: 18px;
+      border-radius: 999px;
+      background: #fff;
+      border: 4px solid var(--green);
+      box-shadow: 0 8px 14px rgba(0,0,0,.10);
+    }
+    .marker .line{
+      position:absolute;
+      top: 52px;
+      transform: translateX(-50%);
+      width: 4px; height: 26px;
+      border-radius: 999px;
+      background: var(--green);
+      opacity: .9;
+    }
+
+    /* Avanzada: modo */
+    .mode{
+      margin-top: 12px;
+      border: 1px solid rgba(2,6,23,.06);
+      border-radius: 14px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+    .mode h4{
+      font-size: 16px;
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+    .radio{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 10px;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid rgba(2,6,23,.08);
+      margin-bottom: 10px;
+    }
+    .radio input{ transform: scale(1.1); }
+    .radio strong{ font-weight: 900; }
+    .inline{
+      margin-top: 10px;
+      padding-left: 32px;
+    }
+    .inline input{ height:42px; }
+    .hint{ color: var(--muted); font-size: 13px; margin-top: 8px; line-height: 1.35; }
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🌡️ Déficit de Presión de Vapor (VPD / DPV)</h1>
+
+    <!-- SIMPLE -->
+    <section class="section">
+      <div class="section-head">📊 Calculadora Ambiental Simple</div>
+      <div class="section-body" style="background: var(--soft-blue);">
+        <div class="grid2">
+          <div class="field">
+            <label>🌡️ Temperatura del Aire (°C)</label>
+            <input id="tAirSimple" type="number" step="0.1" value="32" />
+          </div>
+          <div class="field">
+            <label>💧 Humedad Relativa (%)</label>
+            <input id="rhSimple" type="number" step="0.1" value="80" />
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <button class="btn btn-green" id="btnSimple">📊 Calcular VPD</button>
+        </div>
+
+        <div class="results" id="resSimple" style="display:none;">
+          <h3>Resultados:</h3>
+          <div class="res-grid">
+            <div class="metric">
+              <div class="label">Déficit de Presión de Vapor</div>
+              <div class="value" id="vpdSimple">0.00</div>
+              <div class="unit">kPa</div>
+            </div>
+            <div class="metric">
+              <div class="label">Déficit de Humedad</div>
+              <div class="value" id="hdSimple">0.00</div>
+              <div class="unit">g/m³</div>
+            </div>
+          </div>
+
+          <div class="status">
+            <div class="range">Rango Óptimo: <b>0.5 – 2.0 kPa</b></div>
+            <div class="state" id="stateSimple">Óptimo</div>
+          </div>
+
+          <div class="bar-wrap">
+            <div class="bar" id="barSimple"></div>
+            <div class="marker" id="markerSimple">
+              <div class="pin" id="pinSimple">0.00 kPa</div>
+              <div class="dot" id="dotSimple"></div>
+              <div class="line" id="lineSimple"></div>
+            </div>
+            <div class="bar-legend">
+              <span>0 kPa</span>
+              <span>5 kPa</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AVANZADA -->
+    <section class="section">
+      <div class="section-head">🔬 Calculadora Avanzada</div>
+      <div class="section-body" style="background: var(--soft-green);">
+        <div class="grid2">
+          <div class="field">
+            <label>🌡️ Temperatura del Aire (°C)</label>
+            <input id="tAirAdv" type="number" step="0.1" value="29" />
+          </div>
+          <div class="field">
+            <label>💧 Humedad Relativa (%)</label>
+            <input id="rhAdv" type="number" step="0.1" value="70" />
+          </div>
+        </div>
+
+        <div class="mode">
+          <h4>Modo de Cálculo:</h4>
+
+          <div class="radio">
+            <input type="radio" name="mode" id="modeLeaf" checked />
+            <div>
+              <strong>🌿 Temperatura de Hoja</strong>
+              <div class="hint">Usa una temperatura de hoja estimada o medida (a menudo difiere del aire).</div>
+            </div>
+          </div>
+
+          <div class="inline">
+            <input id="tLeafAdv" type="number" step="0.1" value="30" />
+          </div>
+
+          <div class="radio" style="opacity:.55;">
+            <input type="radio" name="mode" id="modeRad" disabled />
+            <div>
+              <strong>☀️ Radiación Solar</strong>
+              <div class="hint">Esta opción quedará para versión PRO (requiere más variables/modelo).</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <button class="btn btn-green" id="btnAdv">📊 Calcular Déficit de Presión de Vapor</button>
+        </div>
+
+        <div class="results" id="resAdv" style="display:none;">
+          <h3>Resultados:</h3>
+          <div class="res-grid">
+            <div class="metric">
+              <div class="label">Déficit de Presión de Vapor</div>
+              <div class="value" id="vpdAdv">0.00</div>
+              <div class="unit">kPa</div>
+            </div>
+            <div class="metric">
+              <div class="label">Déficit de Humedad</div>
+              <div class="value" id="hdAdv">0.00</div>
+              <div class="unit">g/m³</div>
+            </div>
+          </div>
+
+          <div class="status">
+            <div class="range">Rango Óptimo: <b>0.5 – 2.0 kPa</b></div>
+            <div class="state" id="stateAdv">Óptimo</div>
+          </div>
+
+          <div class="bar-wrap">
+            <div class="bar" id="barAdv"></div>
+            <div class="marker" id="markerAdv">
+              <div class="pin" id="pinAdv">0.00 kPa</div>
+              <div class="dot" id="dotAdv"></div>
+              <div class="line" id="lineAdv"></div>
+            </div>
+            <div class="bar-legend">
+              <span>0 kPa</span>
+              <span>5 kPa</span>
+            </div>
+          </div>
+
+          <div class="hint" style="margin-top:10px;">
+            Nota: En “Avanzada” calculamos VPD en la hoja como: <b>VPD = e<sub>s</sub>(T<sub>hoja</sub>) − e<sub>a</sub>(aire)</b>.
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Saturation vapor pressure (kPa) — Tetens
+    function esat_kPa(Tc){
+      // 0.6108 * exp(17.27*T/(T+237.3))
+      return 0.6108 * Math.exp((17.27 * Tc) / (Tc + 237.3));
+    }
+
+    // Humidity deficit (g/m3) approx from vapor pressure deficit (kPa) and temp (°C)
+    // Using: rho_v (g/m3) = 216.7 * e(hPa) / (T(K)); with e in hPa. 1 kPa = 10 hPa.
+    // Deficit = rho_vs - rho_va = 216.7*( (es-ea)*10 ) / (T(K))
+    function humidityDeficit_gm3(vpd_kPa, Tc_for_density){
+      const Tk = Tc_for_density + 273.15;
+      return (216.7 * (vpd_kPa * 10)) / Tk;
+    }
+
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+    function fmt2(x){ return (Math.round(x*100)/100).toFixed(2); }
+
+    function stateForVPD(vpd){
+      if (vpd < 0.5) return {text:'Bajo', color:'#3b82f6'};
+      if (vpd <= 2.0) return {text:'Óptimo', color:'#22c55e'};
+      if (vpd <= 3.0) return {text:'Alto', color:'#f59e0b'};
+      return {text:'Muy alto', color:'#ef4444'};
+    }
+
+    function setMarker(vpd, markerEl, pinEl, dotEl, lineEl, stateEl){
+      const max = 5.0;
+      const x = (clamp(vpd, 0, max) / max) * 100;
+
+      markerEl.style.left = x + '%';
+      pinEl.textContent = fmt2(vpd) + ' kPa';
+
+      const st = stateForVPD(vpd);
+      stateEl.textContent = 'Estado: ' + st.text;
+      stateEl.style.color = st.color;
+
+      pinEl.style.background = st.color;
+      dotEl.style.borderColor = st.color;
+      lineEl.style.background = st.color;
+    }
+
+    // SIMPLE calc
+    document.getElementById('btnSimple').addEventListener('click', ()=>{
+      const T = parseFloat(document.getElementById('tAirSimple').value);
+      const RH = parseFloat(document.getElementById('rhSimple').value);
+
+      if (!isFinite(T) || !isFinite(RH)) return;
+
+      const es = esat_kPa(T);
+      const ea = es * (clamp(RH, 0, 100) / 100);
+      const vpd = Math.max(0, es - ea);
+      const hd = humidityDeficit_gm3(vpd, T);
+
+      document.getElementById('vpdSimple').textContent = fmt2(vpd);
+      document.getElementById('hdSimple').textContent = fmt2(hd);
+
+      const res = document.getElementById('resSimple');
+      res.style.display = 'block';
+
+      setMarker(
+        vpd,
+        document.getElementById('markerSimple'),
+        document.getElementById('pinSimple'),
+        document.getElementById('dotSimple'),
+        document.getElementById('lineSimple'),
+        document.getElementById('stateSimple')
+      );
+    });
+
+    // ADV calc (leaf temp mode)
+    document.getElementById('btnAdv').addEventListener('click', ()=>{
+      const Tair = parseFloat(document.getElementById('tAirAdv').value);
+      const RH = parseFloat(document.getElementById('rhAdv').value);
+      const Tleaf = parseFloat(document.getElementById('tLeafAdv').value);
+
+      if (!isFinite(Tair) || !isFinite(RH) || !isFinite(Tleaf)) return;
+
+      // ea uses air saturation and RH
+      const es_air = esat_kPa(Tair);
+      const ea = es_air * (clamp(RH, 0, 100) / 100);
+
+      // VPD at leaf uses leaf saturation
+      const es_leaf = esat_kPa(Tleaf);
+      const vpd = Math.max(0, es_leaf - ea);
+
+      const hd = humidityDeficit_gm3(vpd, Tair); // density based on air temp
+
+      document.getElementById('vpdAdv').textContent = fmt2(vpd);
+      document.getElementById('hdAdv').textContent = fmt2(hd);
+
+      const res = document.getElementById('resAdv');
+      res.style.display = 'block';
+
+      setMarker(
+        vpd,
+        document.getElementById('markerAdv'),
+        document.getElementById('pinAdv'),
+        document.getElementById('dotAdv'),
+        document.getElementById('lineAdv'),
+        document.getElementById('stateAdv')
+      );
+    });
+
+    // Auto-calc when pressing Enter
+    ['tAirSimple','rhSimple'].forEach(id=>{
+      document.getElementById(id).addEventListener('keydown', (e)=>{ if(e.key==='Enter') document.getElementById('btnSimple').click(); });
+    });
+    ['tAirAdv','rhAdv','tLeafAdv'].forEach(id=>{
+      document.getElementById(id).addEventListener('keydown', (e)=>{ if(e.key==='Enter') document.getElementById('btnAdv').click(); });
+    });
+  </script>
+</body>
+</html>
