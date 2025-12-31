@@ -26,15 +26,14 @@
   <meta name="twitter:image" content="https://nutriplantpro.com/NutriPlant_PRO_blue.png">
 
   <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-1R237KJ2PF"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1R237KJ2PF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1R237KJ2PF');
+  </script>
 
-  gtag('config', 'G-1R237KJ2PF');
-</script>
-  
   <style>
     :root {
       --brand: #0056b3;
@@ -63,6 +62,7 @@
       color: var(--text);
       padding: 24px;
     }
+
     .card {
       width: min(760px, 100%);
       background: #fff;
@@ -70,7 +70,42 @@
       padding: 32px 28px;
       box-shadow: 0 10px 30px rgba(0,0,0,.08);
       text-align: center;
+      position: relative; /* ✅ para el botón Nosotros */
     }
+
+    /* ===== Botón Nosotros (arriba derecha) ===== */
+    .top-actions{
+      position:absolute;
+      top: 14px;
+      right: 14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      z-index: 2;
+    }
+    .top-btn{
+      appearance:none;
+      border: 1px solid rgba(2,6,23,.12);
+      background: rgba(248,250,252,.9);
+      color: #0f172a;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
+      backdrop-filter: blur(6px);
+    }
+    .top-btn:hover{
+      background: #eef6ff;
+      border-color: rgba(0,86,179,.25);
+      box-shadow: 0 10px 18px rgba(0,86,179,.12);
+      transform: translateY(-1px);
+    }
+
     .logo {
       max-width: 260px;
       width: 60%;
@@ -141,6 +176,8 @@
     @media (max-width: 640px){
       .tools-grid{ grid-template-columns: 1fr; }
       .tools{ text-align: center; }
+      .top-actions{ top: 10px; right: 10px; }
+      .top-btn{ font-size: 12px; padding: 8px 10px; }
     }
     .tool-card{
       background: var(--card-soft);
@@ -184,19 +221,26 @@
       box-shadow: 0 10px 18px rgba(0,86,179,.18);
     }
 
-    /* Texto post-herramientas */
+    /* ✅ Tarjeta azul para el pitch */
+    .pitch-card{
+      margin-top: 14px;
+      padding: 16px 14px;
+      background: #f1f6fd;
+      border: 1px solid #dbe7f5;
+      border-radius: 16px;
+      text-align: center;
+    }
     .pitch {
-      margin: 18px auto 14px;
+      margin: 0 auto;
       font-size: 15px;
       color: #475569;
       max-width: 66ch;
       line-height: 1.5;
-      text-align: center;
     }
     .pitch strong { color: var(--text); }
 
     .contact {
-      margin: 10px 0 10px;
+      margin: 12px 0 10px;
       font-size: 16px;
       text-align: center;
     }
@@ -333,6 +377,16 @@
 
 <body>
   <main class="card" role="main" aria-label="Portada provisional de NutriPlant PRO">
+
+    <!-- ✅ Botón Nosotros -->
+    <div class="top-actions" aria-label="Acciones superiores">
+      <button class="top-btn"
+        data-tool="tools/nosotros.html"
+        data-title="Nosotros">
+        👥 Nosotros
+      </button>
+    </div>
+
     <img class="logo" src="NutriPlant_PRO_blue.png" alt="Logo de NutriPlant PRO" />
     <div class="divider" aria-hidden="true"></div>
 
@@ -367,13 +421,16 @@
       </div>
     </section>
 
-    <!-- 2) TEXTO + CONTACTO -->
-    <p class="pitch">
-      <strong>Con NutriPlant PRO diseñarás programas completos de nutrición vegetal:</strong><br>
-      fertilización granular, fertirriego, soluciones nutritivas y enmiendas,<br>
-      integrando la interpretación de análisis de suelo, agua, foliar, solución nutritiva y VPD.
-    </p>
+    <!-- 2) PITCH en tarjeta -->
+    <section class="pitch-card" aria-label="Descripción de la plataforma">
+      <p class="pitch">
+        <strong>Con NutriPlant PRO diseñarás programas completos de nutrición vegetal:</strong><br>
+        fertilización granular, fertirriego, soluciones nutritivas y enmiendas,<br>
+        integrando la interpretación de análisis de suelo, agua, foliar, solución nutritiva y VPD.
+      </p>
+    </section>
 
+    <!-- 3) CONTACTO -->
     <p class="contact">
       Contacto: <a href="mailto:admin@nutriplantpro.com">admin@nutriplantpro.com</a>
       <br>
@@ -391,7 +448,7 @@
       </a>
     </p>
 
-    <!-- 3) SIGUENOS -->
+    <!-- 4) SIGUENOS -->
     <div class="follow"><b>Síguenos:</b></div>
     <nav class="social" aria-label="Redes sociales NutriPlant PRO">
       <a class="icon" href="https://www.facebook.com/share/1B1891TV6d/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
@@ -456,7 +513,7 @@
     modal.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
     document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
 
-    // Conectar botones
+    // Conectar botones (calculadoras + Nosotros)
     document.querySelectorAll('[data-tool]').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         openModal(btn.getAttribute('data-tool'), btn.getAttribute('data-title'));
