@@ -207,8 +207,12 @@
     .status.high{ color: var(--amber); }
     .status.vhigh{ color: var(--red); }
 
-    /* === Ajuste: barra con amarillo/naranja desde 1.5 kPa ===
-       escala 0..5 kPa => 0.5=10%, 1.5=30%, 2.5=50%, 5=100%
+    /* === AJUSTE 1: barra con degradado SUAVE y escala VISUAL 0..3 kPa ===
+       Mapeo (0..3):
+       0.5 kPa = 16.67%
+       1.5 kPa = 50%
+       2.5 kPa = 83.33%
+       3.0 kPa = 100%
     */
     .bar-wrap{
       margin-top:10px;
@@ -217,21 +221,32 @@
       overflow:hidden;
       position:relative;
       height:46px;
+
       background: linear-gradient(90deg,
-        /* 0 – 0.5 kPa (Azul) */
+        /* Azul (0–0.5) + transición suave */
         rgba(59,130,246,.95) 0%,
-        rgba(59,130,246,.85) 10%,
+        rgba(59,130,246,.88) 12%,
+        rgba(59,130,246,.78) 16%,
 
-        /* 0.5 – 1.5 kPa (Verde óptimo) */
-        rgba(34,197,94,.90) 10%,
-        rgba(34,197,94,.95) 30%,
+        /* Transición Azul→Verde alrededor de 0.5 */
+        rgba(34,197,94,.72) 20%,
+        rgba(34,197,94,.90) 28%,
 
-        /* 1.5 – 2.5 kPa (Amarillo/Naranja) */
-        rgba(245,158,11,.90) 30%,
-        rgba(245,158,11,.92) 50%,
+        /* Verde (0.5–1.5) */
+        rgba(34,197,94,.95) 50%,
 
-        /* > 2.5 kPa (Rojo) */
-        rgba(239,68,68,.90) 70%,
+        /* Transición Verde→Amarillo alrededor de 1.5 */
+        rgba(245,158,11,.72) 56%,
+        rgba(245,158,11,.90) 66%,
+
+        /* Amarillo/Naranja (1.5–2.5) */
+        rgba(245,158,11,.95) 83%,
+
+        /* Transición Amarillo→Rojo alrededor de 2.5 */
+        rgba(239,68,68,.78) 88%,
+        rgba(239,68,68,.92) 94%,
+
+        /* Rojo (2.5–3.0) */
         rgba(220,38,38,.95) 100%
       );
     }
@@ -266,7 +281,7 @@
       margin:0 auto;
     }
 
-    /* === Ajuste: “línea” negra para que no se pierda en el verde === */
+    /* === “línea” negra para que no se pierda en el verde === */
     .stem{
       width:3px;
       height:20px;
@@ -426,7 +441,7 @@
             </div>
           </div>
           <div class="scale" aria-hidden="true">
-            <span>0 kPa</span><span>5 kPa</span>
+            <span>0 kPa</span><span>3 kPa</span>
           </div>
         </div>
       </div>
@@ -513,7 +528,7 @@
               </div>
             </div>
             <div class="scale" aria-hidden="true">
-              <span>0 kPa</span><span>5 kPa</span>
+              <span>0 kPa</span><span>3 kPa</span>
             </div>
 
             <div class="hint" style="margin-top:12px;">
@@ -551,9 +566,12 @@
     }
 
     function setMarker(markerEl, bubbleEl, pinEl, stemEl, vpd){
-      const v = clamp(vpd, 0, 5);
-      const leftPct = (v / 5) * 100;
+      // ✅ AJUSTE 2: escala VISUAL 0..3 (si vpd>3, el marcador se pega al final)
+      const vPos = clamp(vpd, 0, 3);
+      const leftPct = (vPos / 3) * 100;
       markerEl.style.left = leftPct + '%';
+
+      // burbuja muestra el valor REAL
       bubbleEl.textContent = fmt(vpd, 2) + ' kPa';
 
       const st = statusForVPD(vpd);
