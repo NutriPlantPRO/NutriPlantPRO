@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nosotros — NutriPlant PRO</title>
+  <style>
+    :root{
+      --brand:#0056b3;
+      --text:#0f172a;
+      --muted:#64748b;
+      --bg:#ffffff;
+      --card:#f8fafc;
+      --border:#e2e8f0;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:var(--bg);
+      padding:18px;
+    }
+    .wrap{
+      max-width: 920px;
+      margin: 0 auto;
+    }
+    h1{
+      margin: 0 0 10px;
+      font-size: 22px;
+      color: var(--brand);
+      letter-spacing:.2px;
+    }
+    .lead{
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0 0 14px;
+      font-weight: 650;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    @media (max-width: 780px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+    .box{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .box h2{
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+    .box p, .box ul{
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-weight: 650;
+      font-size: 13.5px;
+    }
+    ul{ padding-left: 18px; }
+    .note{
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(0,86,179,.18);
+      background: rgba(241,246,253,.9);
+      color: #0f172a;
+      line-height: 1.55;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>👥 Nosotros</h1>
+    <p class="lead">
+      NutriPlant PRO es una plataforma técnica en desarrollo para ayudar a agrónomos y técnicos a
+      diseñar, analizar y ajustar programas de nutrición vegetal (suelo, fertirriego e hidroponía),
+      con enfoque científico, práctico y orientado a resultados.
+    </p>
+
+    <div class="grid">
+      <section class="box">
+        <h2>🎯 Visión</h2>
+        <p>
+          Ser una referencia técnica en nutrición vegetal y herramientas digitales, facilitando la toma de decisiones
+          con datos, criterio y eficiencia.
+        </p>
+      </section>
+
+      <section class="box">
+        <h2>🧩 Misión</h2>
+        <p>
+          Desarrollar herramientas claras y confiables que conviertan análisis y cálculos complejos en decisiones
+          aplicables en campo, integrando automatización e IA.
+        </p>
+      </section>
+
+      <section class="box">
+        <h2>✅ Valores</h2>
+        <ul>
+          <li>Rigor técnico</li>
+          <li>Transparencia</li>
+          <li>Simplicidad útil</li>
+          <li>Mejora continua</li>
+        </ul>
+      </section>
+    </div>
+
+    <div class="note">
+      Nota: NutriPlant PRO está en construcción. Durante esta etapa, algunas herramientas están disponibles de forma pública
+      mientras se integra la plataforma completa.
+    </div>
+  </div>
+</body>
+</html>
