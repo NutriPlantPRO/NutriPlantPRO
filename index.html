@@ -264,13 +264,21 @@
       text-decoration: none;
       transition: all 0.2s ease;
       margin-top: 10px;
+      line-height: 1;
     }
     .btn-whatsapp:hover{
       background-color: var(--btn-green-hover);
       transform: translateY(-1px);
       color: #fff !important;
     }
-    .btn-whatsapp svg { width: 18px; height: 18px; fill: currentColor; }
+    .btn-whatsapp svg{
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  display: block;
+  flex: 0 0 auto;
+  transform: translateY(1px);
+}
 
     .follow {
       margin-top: 16px;
