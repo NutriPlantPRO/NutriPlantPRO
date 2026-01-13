@@ -144,6 +144,43 @@
       line-height: 1.45;
     }
 
+    /* ✅ CTA Acceso anticipado (nuevo) */
+    .lead-cta{
+      margin: 10px auto 14px;
+      padding: 14px 14px;
+      background: #f1f6fd;
+      border: 1px solid #dbe7f5;
+      border-radius: 16px;
+      text-align: center;
+    }
+    .lead-cta p{
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 10px;
+      line-height: 1.4;
+    }
+    .lead-btn{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: var(--btn-blue);
+      color: #fff;
+      border-radius: 10px;
+      font-weight: 900;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+      min-width: 220px;
+    }
+    .lead-btn:hover{
+      background: var(--btn-blue-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 18px rgba(0,86,179,.18);
+    }
+
     /* Bloque tools */
     .tools {
       margin-top: 16px;
@@ -178,6 +215,7 @@
       .tools{ text-align: center; }
       .top-actions{ top: 10px; right: 10px; }
       .top-btn{ font-size: 12px; padding: 8px 10px; }
+      .lead-btn{ width: 100%; min-width: 0; }
     }
     .tool-card{
       background: var(--card-soft);
@@ -272,13 +310,13 @@
       color: #fff !important;
     }
     .btn-whatsapp svg{
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
-  display: block;
-  flex: 0 0 auto;
-  transform: translateY(-2px);
-}
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      display: block;
+      flex: 0 0 auto;
+      transform: translateY(-2px);
+    }
 
     .follow {
       margin-top: 16px;
@@ -403,6 +441,17 @@
 
     <p class="tagline">“Diseña, ajusta y nutre. Inteligencia artificial para la nutrición vegetal.”</p>
 
+    <!-- ✅ NUEVO: ACCESO ANTICIPADO (botón azul + abre el Google Form en el modal existente) -->
+    <section class="lead-cta" aria-label="Acceso anticipado">
+      <p><b>Estamos liberando NutriPlant PRO por etapas.</b><br>Déjanos tu contacto y te avisaremos cuando se activen nuevas herramientas.</p>
+      <button
+        class="lead-btn"
+        data-tool="https://docs.google.com/forms/d/e/1FAIpQLScL50Ipv4wXbNQjsiPmKTK5bfr-eteXhzhSCFv1bjcaDLApYg/viewform?embedded=true"
+        data-title="Acceso anticipado NutriPlant PRO">
+        🔔 Acceso anticipado
+      </button>
+    </section>
+
     <!-- 1) BLOQUE CALCULADORAS -->
     <section class="tools" aria-label="Herramientas técnicas disponibles">
       <h2>🧰 Herramientas técnicas disponibles</h2>
@@ -521,7 +570,7 @@
     modal.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
     document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
 
-    // Conectar botones (calculadoras + Nosotros)
+    // Conectar botones (calculadoras + Nosotros + Acceso anticipado)
     document.querySelectorAll('[data-tool]').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         openModal(btn.getAttribute('data-tool'), btn.getAttribute('data-title'));
