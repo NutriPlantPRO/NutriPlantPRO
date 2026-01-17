@@ -492,7 +492,7 @@
         </div>
         <div class="adj-card">
           <div class="lab green">Ca<sup>2+</sup> (meq a ajustar):</div>
-          <input class="green" id="adjCa" readonly>
+          <input class="green" id="adjCa" type="number" step="0.01">
         </div>
         <div class="adj-card">
           <div class="lab green">Mg<sup>2+</sup> (meq a ajustar):</div>
@@ -868,6 +868,18 @@
     const { cic, adj } = updateTop();
     setPHBadge();
 
+    // ✅ Si el usuario escribió ajustes manuales, úsalos (solo cuando oprime Calcular)
+ionIds.forEach(id => {
+  const el = $("adj" + id);
+  if (!el) return;
+
+  const raw = (el.value || "").trim();
+  if (raw === "") return; // si está vacío, deja el automático
+
+  const v = parseFloat(raw);
+  if (Number.isFinite(v)) adj[id] = v; // reemplaza el adj automático por el manual
+}); 
+     
     const { bd, depth } = getSoilProps();
     const reach = getSoilReachPercent();
 
