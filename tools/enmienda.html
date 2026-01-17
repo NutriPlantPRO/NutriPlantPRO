@@ -3,369 +3,2166 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Calculadora de Enmiendas - NutriPlant PRO</title>
+  <title>Calculadora de Enmiendas</title>
   <style>
-    /* Estilos básicos */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f8fafc;
-      color: #1e293b;
-      line-height: 1.6;
-    }
-    .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-      padding: 20px;
-      background: linear-gradient(135deg,#2563eb,#1d4ed8);
-      color: #fff;
-      border-radius: 12px;
-    }
-    .header h1 { font-size: 2rem; margin-bottom: 8px; }
-    .section {
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .section h3 {
-      font-size: 1.3rem;
-      margin-bottom: 16px;
-      color: #1e293b;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
-      gap: 16px;
-    }
-    label {
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: #374151;
-      margin-bottom: 4px;
-    }
-    input {
-      padding: 10px 14px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 1rem;
-      background: #fff;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    input:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
-    }
-    .buttons {
-      text-align: center;
-      margin-top: 20px;
-    }
-    .btn {
-      padding: 12px 24px;
-      margin: 0 8px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .btn-primary {
-      background: #3b82f6;
-      color: white;
-    }
-    .btn-primary:hover {
-      background: #2563eb;
-      box-shadow: 0 4px 10px rgba(59,130,246,0.3);
-      transform: translateY(-1px);
-    }
-    .btn-secondary {
-      background: #6b7280;
-      color: white;
-    }
-    .btn-secondary:hover {
-      background: #4b5563;
-      box-shadow: 0 4px 10px rgba(107,114,128,0.3);
-      transform: translateY(-1px);
-    }
-    /* Resultados */
-    .results {
-      display: none;
-      margin-top: 24px;
-      padding: 20px;
-      background: #f0f9ff;
-      border: 2px solid #0ea5e9;
-      border-radius: 10px;
-    }
-    .results h4 { color: #0c4a6e; margin-bottom: 12px; }
-    .result-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 0;
-      border-bottom: 1px solid #bae6fd;
-    }
-    .result-item:last-child { border-bottom: none; }
-    .result-label { font-weight: 600; color: #374151; }
-    .result-value { font-weight: 700; color: #0c4a6e; }
-    .note {
-      margin-top: 12px;
-      font-size: 0.8rem;
-      color: #475569;
-      font-style: italic;
-    }
+/* ===== ENMIENDA SECTION STYLING ===== */
+.enmienda-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.enmienda-header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.enmienda-header h2 {
+  color: #1f2937;
+  margin-bottom: 1rem;
+  font-size: 1.75rem;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.enmienda-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Reducido de 25px a 15px */
+}
+
+
+
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>🚜 Calculadora de Enmiendas</h1>
-      <p>Ajuste de CIC del suelo con enmiendas</p>
-    </div>
 
-    <!-- Análisis de suelo -->
-    <div class="section">
-      <h3>📊 Análisis de suelo</h3>
-      <div class="grid">
-        <div>
-          <label>K (meq/100g)</label>
-          <input type="number" id="k-initial" step="0.01" value="1.0">
+      <div class="enmienda-container">
+        <div class="enmienda-header">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 class="text-2xl font-bold text-gray-800 mb-0">🚜 Calculadora de Enmiendas (ajuste de CIC del suelo)</h2>
+          </div>
+          <div class="ideal-ranges">
+            <h3>📊 Rangos Ideales de Cationes:</h3>
+            <div class="ranges-grid">
+              <div class="range-item good">K⁺: 3-7%</div>
+              <div class="range-item good">Ca²⁺: 65-75%</div>
+              <div class="range-item good">Mg²⁺: 10-15%</div>
+              <div class="range-item warning">H⁺: 0-10%</div>
+              <div class="range-item warning">Na⁺: 0-1%</div>
+              <div class="range-item warning">Al³⁺: 0-1%</div>
+            </div>
+          </div>
         </div>
-        <div>
-          <label>Ca (meq/100g)</label>
-          <input type="number" id="ca-initial" step="0.01" value="12.0">
-        </div>
-        <div>
-          <label>Mg (meq/100g)</label>
-          <input type="number" id="mg-initial" step="0.01" value="3.0">
-        </div>
-        <div>
-          <label>H (meq/100g)</label>
-          <input type="number" id="h-initial" step="0.01" value="0.0">
-        </div>
-        <div>
-          <label>Na (meq/100g)</label>
-          <input type="number" id="na-initial" step="0.01" value="2.0">
-        </div>
-        <div>
-          <label>Al (meq/100g)</label>
-          <input type="number" id="al-initial" step="0.01" value="0.0">
-        </div>
-      </div>
-    </div>
 
-    <!-- Objetivos -->
-    <div class="section">
-      <h3>🎯 Objetivos de saturación (%)</h3>
-      <div class="grid">
-        <div>
-          <label>% K objetivo</label>
-          <input type="number" id="k-target" step="0.1" value="6">
-        </div>
-        <div>
-          <label>% Ca objetivo</label>
-          <input type="number" id="ca-target" step="0.1" value="75">
-        </div>
-        <div>
-          <label>% Mg objetivo</label>
-          <input type="number" id="mg-target" step="0.1" value="15">
-        </div>
-        <div>
-          <label>% H objetivo</label>
-          <input type="number" id="h-target" step="0.1" value="0">
-        </div>
-        <div>
-          <label>% Na objetivo</label>
-          <input type="number" id="na-target" step="0.1" value="0">
-        </div>
-        <div>
-          <label>% Al objetivo</label>
-          <input type="number" id="al-target" step="0.1" value="0">
-        </div>
-      </div>
-    </div>
+        <div class="enmienda-content">
+          <!-- Análisis de Suelo Inicial -->
+          <div class="ideal-ranges">
+            <h3>📊 Análisis de Suelo Inicial (meq/100g de suelo)</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <div></div>
+              <div class="total-display">
+                <label>CIC Total:</label>
+                <input type="number" id="cic-total" step="0.01" value="0.00" class="total-input" readonly>
+              </div>
+            </div>
+            <div class="analysis-grid">
+              <div class="analysis-item cation-good">
+                <label>K⁺:</label>
+                <input type="number" id="k-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="percent-display" id="k-percent">0.0%</div>
+                <div class="status-icon" id="k-status">-</div>
+              </div>
+              <div class="analysis-item cation-good">
+                <label>Ca²⁺:</label>
+                <input type="number" id="ca-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="percent-display" id="ca-percent">0.0%</div>
+                <div class="status-icon" id="ca-status">-</div>
+              </div>
+              <div class="analysis-item cation-good">
+                <label>Mg²⁺:</label>
+                <input type="number" id="mg-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="percent-display" id="mg-percent">0.0%</div>
+                <div class="status-icon" id="mg-status">-</div>
+              </div>
+              <div class="analysis-item cation-acid">
+                <label>H⁺:</label>
+                <input type="number" id="h-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="percent-display" id="h-percent">0.0%</div>
+                <div class="status-icon" id="h-status">-</div>
+              </div>
+              <div class="analysis-item cation-salt">
+                <label>Na⁺:</label>
+                <input type="number" id="na-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="percent-display" id="na-percent">0.0%</div>
+                <div class="status-icon" id="na-status">-</div>
+              </div>
+              <div class="analysis-item cation-toxic">
+                <label>Al³⁺:</label>
+                <input type="number" id="al-initial" step="0.01" value="0.00" class="analysis-input">
+                <div class="percent-display" id="al-percent">0.0%</div>
+                <div class="status-icon" id="al-status">-</div>
+              </div>
+            </div>
+          </div>
 
-    <!-- Propiedades del suelo y alcance -->
-    <div class="section">
-      <h3>🌱 Propiedades del suelo</h3>
-      <div class="grid">
-        <div>
-          <label>Densidad aparente (g/cm³)</label>
-          <input type="number" id="soil-density" step="0.01" value="1.1">
-        </div>
-        <div>
-          <label>Profundidad considerada (cm)</label>
-          <input type="number" id="soil-depth" step="1" value="30">
-        </div>
-        <div>
-          <label>% del volumen de suelo explorado</label>
-          <input type="number" id="soil-reach" min="10" max="100" step="1" value="100">
-        </div>
-      </div>
-    </div>
+          <!-- Propiedades del Suelo -->
+          <div class="ideal-ranges">
+            <h3>🌱 Propiedades del Suelo</h3>
+            <div class="properties-grid">
+              <div class="property-item">
+                <label>Densidad aparente (g/cm³):</label>
+                <input type="number" id="soil-density" step="0.01" value="1.1" class="property-input">
+              </div>
+              <div class="property-item">
+                <label>Profundidad (cm):</label>
+                <input type="number" id="soil-depth" step="1" value="30" class="property-input">
+              </div>
+              <div class="property-item">
+                <label>pH del suelo:</label>
+                <div class="ph-input-container">
+                  <input type="number" id="soil-ph" step="0.1" placeholder="Ingrese pH" min="4.0" max="9.0" class="property-input" title="pH del suelo (4.0 - 9.0)" onchange="updatePHIndicator()">
+                  <div id="ph-indicator" class="ph-indicator">⚪ Ingrese pH</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-    <div class="buttons">
-      <button class="btn btn-primary" onclick="calculateAmendment()">Calcular enmienda</button>
-      <button class="btn btn-secondary" onclick="resetForm()">Reiniciar</button>
-    </div>
+          <!-- Objetivos de Ajuste -->
+          <div class="ideal-ranges target-section">
+            <h3>🎯 Meq/100g a ajustar en CIC</h3>
+            <div class="target-grid">
+              <div class="target-item cation-good">
+                <label>K⁺ (meq a ajustar):</label>
+                <input type="number" id="k-target" step="0.01" value="0.00" class="target-input">
+              </div>
+              <div class="target-item cation-good">
+                <label>Ca²⁺ (meq a ajustar):</label>
+                <input type="number" id="ca-target" step="0.01" value="0.00" class="target-input">
+              </div>
+              <div class="target-item cation-good">
+                <label>Mg²⁺ (meq a ajustar):</label>
+                <input type="number" id="mg-target" step="0.01" value="0.00" class="target-input">
+              </div>
+              <div class="target-item cation-acid">
+                <label>H⁺ (meq a ajustar):</label>
+                <input type="number" id="h-target" step="0.01" value="0.00" class="target-input">
+              </div>
+              <div class="target-item cation-salt">
+                <label>Na⁺ (meq a ajustar):</label>
+                <input type="number" id="na-target" step="0.01" value="0.00" class="target-input">
+              </div>
+              <div class="target-item cation-toxic">
+                <label>Al³⁺ (meq a ajustar):</label>
+                <input type="number" id="al-target" step="0.01" value="0.00" class="target-input">
+              </div>
+            </div>
+          </div>
 
-    <!-- Resultados -->
-    <div id="results" class="results">
-      <h4>📋 Resultados</h4>
-      <div class="result-item">
-        <span class="result-label">Enmienda recomendada:</span>
-        <span id="amendment-type" class="result-value">-</span>
-      </div>
-      <div class="result-item">
-        <span class="result-label">Dosis (kg/ha):</span>
-        <span id="amendment-amount" class="result-value">-</span>
-      </div>
-      <div class="result-item">
-        <span class="result-label">Ca aportado (kg/ha):</span>
-        <span id="ca-contribution" class="result-value">-</span>
-      </div>
-      <div class="result-item">
-        <span class="result-label">Na a remover (kg/ha):</span>
-        <span id="na-removal" class="result-value">-</span>
-      </div>
-      <p class="note" id="reach-note"></p>
-    </div>
-  </div>
+          <!-- Enmiendas Disponibles -->
+          <div class="amendments-section">
+            <h3 class="section-title">🧪 Enmiendas Disponibles</h3>
+            <div class="amendments-table-container">
+              <table class="amendments-table">
+    <thead>
+      <tr>
+        <th>Enmienda</th>
+        <th>Fórmula</th>
+        <th>Peso Molecular</th>
+        <th>%K</th>
+        <th>%Ca</th>
+        <th>%Mg</th>
+        <th>%SO₄</th>
+        <th>%CO₃</th>
+        <th>%H₂O</th>
+        <th>%Si</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+                <tbody id="amendments-table-body">
+                  <!-- Enmiendas se cargarán dinámicamente -->
+                </tbody>
+              </table>
+            </div>
+            
+          </div>
 
-  <script>
-    // Recalcula el CIC total al cambiar valores
-    function calculateCIC() {
-      const k  = parseFloat(document.getElementById('k-initial').value)  || 0;
-      const ca = parseFloat(document.getElementById('ca-initial').value) || 0;
-      const mg = parseFloat(document.getElementById('mg-initial').value) || 0;
-      const h  = parseFloat(document.getElementById('h-initial').value)  || 0;
-      const na = parseFloat(document.getElementById('na-initial').value) || 0;
-      const al = parseFloat(document.getElementById('al-initial').value) || 0;
-      return k + ca + mg + h + na + al;
+          <!-- Botón de Cálculo -->
+          <div class="calculation-actions">
+            <div class="soil-reach-card">
+              <label for="soil-reach-percent">% de alcance de suelo</label>
+              <div class="soil-reach-input">
+                <input type="number" id="soil-reach-percent" min="10" max="100" step="1" value="100">
+                <span>%</span>
+              </div>
+            </div>
+            <button id="calculate-amendment" class="btn-calculate" onclick="calculateAmendment()">🧮 Calcular Enmienda</button>
+            <button id="reset-amendment" class="btn-reset" onclick="resetAmendmentForm()">🔄 Reiniciar</button>
+          </div>
+
+          <!-- Resultados -->
+          <div id="amendment-results" class="results-section" style="display: none;">
+            <h3 class="section-title">📋 Resultados del Cálculo</h3>
+            <div class="results-grid">
+              <div class="result-item">
+                <label>Enmienda recomendada:</label>
+                <span id="amendment-type" class="result-value">-</span>
+              </div>
+              <div class="result-item">
+                <label>Cantidad (Kg/Ha):</label>
+                <span id="amendment-amount" class="result-value">-</span>
+              </div>
+              <div class="result-item">
+                <label>Ca a aportar (Kg/Ha):</label>
+                <span id="ca-contribution" class="result-value">-</span>
+              </div>
+              <div class="result-item">
+                <label>Na a remover (Kg/Ha):</label>
+                <span id="na-removal" class="result-value">-</span>
+              </div>
+            </div>
+            
+            <!-- Botones de Acción -->
+            <div class="report-actions" style="margin-top: 20px; text-align: center;">
+              <button id="saveAmendmentDataBtn" class="btn btn-secondary" onclick="saveProject()" style="margin-right: 10px;">
+                💾 Guardar Datos
+              </button>
+              <button id="showProjectCardBtn" class="btn btn-secondary" onclick="showProjectCard()" style="margin-right: 10px;">
+                🃏 Ver Tarjeta
+              </button>
+              <button id="generateReportBtn" class="btn btn-primary btn-lg" onclick="openReportModal()">
+                📄 Generar Reporte PDF
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    
+
+<script>
+function formatNumber(number, decimals = 2) {
+  if (isNaN(number) || number === null || number === undefined) {
+    return '0.00';
+  }
+  
+  const num = parseFloat(number);
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+}
+
+function updatePHIndicator() {
+  const phInput = document.getElementById('soil-ph');
+  const phIndicator = document.getElementById('ph-indicator');
+  
+  if (!phInput || !phIndicator) return;
+  
+  const ph = parseFloat(phInput.value);
+  
+  if (isNaN(ph) || phInput.value === '') {
+    phIndicator.innerHTML = '⚪ Ingrese pH';
+    phIndicator.className = 'ph-indicator ph-empty';
+  } else if (ph < 5.5) {
+    phIndicator.innerHTML = '🔴 Ácido';
+    phIndicator.className = 'ph-indicator ph-acid';
+  } else if (ph < 6.0) {
+    phIndicator.innerHTML = '🟡 Ligeramente ácido';
+    phIndicator.className = 'ph-indicator ph-slightly-acid';
+  } else if (ph >= 6.0 && ph <= 7.5) {
+    phIndicator.innerHTML = '🟢 Neutro';
+    phIndicator.className = 'ph-indicator ph-neutral';
+  } else if (ph > 7.5) {
+    phIndicator.innerHTML = '🔵 Alcalino';
+    phIndicator.className = 'ph-indicator ph-alkaline';
+  }
+}
+
+function normalizeSoilReachPercent(inputEl, { mutate = true }
+
+function getSoilReachPercent({ mutate = true }
+
+function updateSoilReachAdjustment({ mutate = true }
+
+function initializeEnmiendaCalculator() {
+  console.log('🔧 Inicializando calculadora de enmiendas...');
+  console.log('🔍 Buscando botones en el DOM...');
+  const calculateBtn = document.getElementById('calculate-amendment');
+  const resetBtn = document.getElementById('reset-amendment');
+  const resultsSectionInit = document.getElementById('amendment-results');
+  const soilReachInput = document.getElementById('soil-reach-percent');
+  // Ocultar resultados al iniciar, a menos que haya resultados guardados visibles
+  try {
+    const hasSavedVisible = !!(currentProject && currentProject.amendments && currentProject.amendments.results && (currentProject.amendments.results.isVisible || currentProject.amendments.results.detailedHTML));
+    if (resultsSectionInit && !hasSavedVisible) {
+      resultsSectionInit.style.display = 'none';
     }
-
-    function calculateAmendment() {
-      // Valores iniciales
-      const k0  = parseFloat(document.getElementById('k-initial').value)  || 0;
-      const ca0 = parseFloat(document.getElementById('ca-initial').value) || 0;
-      const mg0 = parseFloat(document.getElementById('mg-initial').value) || 0;
-      const h0  = parseFloat(document.getElementById('h-initial').value)  || 0;
-      const na0 = parseFloat(document.getElementById('na-initial').value) || 0;
-      const al0 = parseFloat(document.getElementById('al-initial').value) || 0;
-
-      const cicTotal = calculateCIC();
-
-      // Objetivos de saturación (%)
-      const kTarget  = parseFloat(document.getElementById('k-target').value)  || 0;
-      const caTarget = parseFloat(document.getElementById('ca-target').value) || 0;
-      const mgTarget = parseFloat(document.getElementById('mg-target').value) || 0;
-      const hTarget  = parseFloat(document.getElementById('h-target').value)  || 0;
-      const naTarget = parseFloat(document.getElementById('na-target').value) || 0;
-      const alTarget = parseFloat(document.getElementById('al-target').value) || 0;
-
-      const totalTarget = kTarget + caTarget + mgTarget + hTarget + naTarget + alTarget;
-      if (Math.abs(totalTarget - 100) > 0.5) {
-        alert('Los porcentajes objetivo deben sumar 100 %');
-        return;
-      }
-
-      // Convertir objetivos a meq/100g
-      const kReq  = (kTarget  / 100) * cicTotal - k0;
-      const caReq = (caTarget / 100) * cicTotal - ca0;
-      const mgReq = (mgTarget / 100) * cicTotal - mg0;
-      const hReq  = (hTarget  / 100) * cicTotal - h0;
-      const naReq = (naTarget / 100) * cicTotal - na0;
-      const alReq = (alTarget / 100) * cicTotal - al0;
-
-      // Pasar de meq/100g a mg/kg (ppm) usando pesos equivalentes
-      // 1 meq/100g = 10 cmolc/kg
-      const kPpm  = kReq  * 10 * 39.1;
-      const caPpm = caReq * 10 * 20.04;
-      const mgPpm = mgReq * 10 * 12.15;
-      const naPpm = naReq * 10 * 23;
-
-      // Propiedades del suelo
-      const bulk = parseFloat(document.getElementById('soil-density').value) || 1.3; // g/cm³
-      const depth = parseFloat(document.getElementById('soil-depth').value) || 30; // cm
-      const reach = Math.max(10, Math.min(100, parseFloat(document.getElementById('soil-reach').value) || 100)); // %
-
-      // Volumen y peso de suelo por ha
-      const volumeHa = (depth / 100) * 10000;          // m³/ha
-      const weightHa = volumeHa * bulk * 1000;         // kg/ha (bulk g/cm³ => kg/L; 1 m³ = 1000 L)
-
-      // kg/ha requeridos de cada elemento
-      const kKgHa  = (kPpm  * weightHa) / 1e6;
-      const caKgHa = (caPpm * weightHa) / 1e6;
-      const mgKgHa = (mgPpm * weightHa) / 1e6;
-      const naKgHa = (naPpm * weightHa) / 1e6;
-
-      // Selección básica de enmienda (ejemplo)
-      let amendment = 'Ninguna';
-      let dose = 0;
-
-      // Ejemplo simple: priorizar Ca y Na como limitantes
-      if (caReq > 0 && naReq < 0) {
-        amendment = 'Yeso agrícola';
-        dose = Math.abs(caKgHa) / 0.233; // asumiendo 23.3 % Ca en yeso
-      } else if (caReq > 0 && mgReq > 0) {
-        amendment = 'Cal dolomítica';
-        // 21.7 % Ca y 13.2 % Mg; tomamos el mayor
-        dose = Math.max(Math.abs(caKgHa) / 0.217, Math.abs(mgKgHa) / 0.132);
-      } else if (caReq > 0) {
-        amendment = 'Cal agrícola';
-        dose = Math.abs(caKgHa) / 0.40; // 40 % Ca
-      }
-
-      // Ajustar dosis y aportes por porcentaje de suelo explorado
-      const factor = reach / 100;
-      const doseAdj = dose * factor;
-      const caAdj   = caKgHa * factor;
-      const naAdj   = naKgHa * factor;
-
-      showResults(amendment, doseAdj, caAdj, naAdj, reach);
-    }
-
-    function showResults(type, amount, ca, na, reach) {
-      const res = document.getElementById('results');
-      document.getElementById('amendment-type').textContent = type;
-      document.getElementById('amendment-amount').textContent = amount.toFixed(0) + ' kg/ha';
-      document.getElementById('ca-contribution').textContent = ca.toFixed(1) + ' kg/ha';
-      document.getElementById('na-removal').textContent = Math.abs(na).toFixed(1) + ' kg/ha';
-      document.getElementById('reach-note').textContent = 'Dosis ajustadas al ' + reach.toFixed(0) + '% del volumen de suelo tratado.';
-      res.style.display = 'block';
-    }
-
-    function resetForm() {
-      // restablecer valores a los defaults
-      document.getElementById('k-initial').value = 1.0;
-      document.getElementById('ca-initial').value = 12.0;
-      document.getElementById('mg-initial').value = 3.0;
-      document.getElementById('h-initial').value = 0.0;
-      document.getElementById('na-initial').value = 2.0;
-      document.getElementById('al-initial').value = 0.0;
-      document.getElementById('k-target').value = 6;
-      document.getElementById('ca-target').value = 75;
-      document.getElementById('mg-target').value = 15;
-      document.getElementById('h-target').value = 0;
-      document.getElementById('na-target').value = 0;
-      document.getElementById('al-target').value = 0;
-      document.getElementById('soil-density').value = 1.1;
-      document.getElementById('soil-depth').value = 30;
-      document.getElementById('soil-reach').value = 100;
-      document.getElementById('results').style.display = 'none';
-    }
-
-    // actualizar CIC al modificar entradas
-    ['k-initial','ca-initial','mg-initial','h-initial','na-initial','al-initial'].forEach(id => {
-      document.getElementById(id).addEventListener('input', calculateCIC);
+  } catch {}
+  
+  console.log('Botón calcular encontrado:', calculateBtn);
+  console.log('Botón reset encontrado:', resetBtn);
+  
+  
+  if (calculateBtn) {
+    calculateBtn.addEventListener('click', function() {
+      console.log('🎯 Botón calcular presionado!');
+      calculateAmendment();
     });
-  </script>
+    console.log('✅ Event listener agregado al botón calcular');
+    
+  } else {
+    console.log('❌ Botón calcular NO encontrado');
+  }
+  
+  if (resetBtn) {
+    resetBtn.addEventListener('click', resetAmendmentForm);
+  }
+
+  if (soilReachInput) {
+    soilReachInput.addEventListener('input', () => {
+      updateSoilReachAdjustment({ mutate: false });
+    });
+    soilReachInput.addEventListener('change', () => {
+      normalizeSoilReachPercent(soilReachInput, { mutate: true });
+      updateSoilReachAdjustment({ mutate: true });
+    });
+    soilReachInput.addEventListener('blur', () => {
+      normalizeSoilReachPercent(soilReachInput, { mutate: true });
+      updateSoilReachAdjustment({ mutate: true });
+    });
+  }
+  
+  // Auto-calcular CIC cuando cambien los valores
+  const inputs = ['k-initial', 'ca-initial', 'mg-initial', 'h-initial', 'na-initial', 'al-initial'];
+  inputs.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+      input.addEventListener('input', calculateCIC);
+      input.addEventListener('input', calculateAutomaticAdjustments);
+    }
+  });
+  
+  // Auto-calcular ajustes cuando cambie el CIC total
+  const cicTotalInput = document.getElementById('cic-total');
+  if (cicTotalInput) {
+    cicTotalInput.addEventListener('input', calculateAutomaticAdjustments);
+  }
+
+  // Auto-calcular Total % cuando cambien los objetivos
+  const targetInputs = ['k-target', 'ca-target', 'mg-target', 'h-target', 'na-target', 'al-target'];
+  targetInputs.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+      input.addEventListener('input', calculateTotalPercent);
+    }
+  });
+}
+
+function calculateCIC() {
+  const k = parseFloat(document.getElementById('k-initial')?.value || 0);
+  const ca = parseFloat(document.getElementById('ca-initial')?.value || 0);
+  const mg = parseFloat(document.getElementById('mg-initial')?.value || 0);
+  const h = parseFloat(document.getElementById('h-initial')?.value || 0);
+  const na = parseFloat(document.getElementById('na-initial')?.value || 0);
+  const al = parseFloat(document.getElementById('al-initial')?.value || 0);
+  
+  const cic = k + ca + mg + h + na + al;
+  const cicInput = document.getElementById('cic-total');
+  if (cicInput) {
+    cicInput.value = cic.toFixed(2);
+  }
+  
+  // Calcular porcentajes de cada catión
+  calculateCationPercentages(cic);
+  
+  // Actualizar iconos de estado
+  updateCationStatusIcons();
+  
+  // Recalcular porcentajes objetivo si hay meq definidos
+  const kMeq = parseFloat(document.getElementById('k-target')?.value || 0);
+  const caMeq = parseFloat(document.getElementById('ca-target')?.value || 0);
+  const mgMeq = parseFloat(document.getElementById('mg-target')?.value || 0);
+  const hMeq = parseFloat(document.getElementById('h-target')?.value || 0);
+  const naMeq = parseFloat(document.getElementById('na-target')?.value || 0);
+  const alMeq = parseFloat(document.getElementById('al-target')?.value || 0);
+  
+  if (kMeq > 0 || caMeq > 0 || mgMeq > 0 || hMeq > 0 || naMeq > 0 || alMeq > 0) {
+    calculateTargetPercentages(kMeq, caMeq, mgMeq, hMeq, naMeq, alMeq, cic);
+  }
+}
+
+function calculateCationPercentages(cic) {
+  if (cic === 0) return;
+  
+  const cations = [
+    { id: 'k-percent', value: parseFloat(document.getElementById('k-initial')?.value || 0) },
+    { id: 'ca-percent', value: parseFloat(document.getElementById('ca-initial')?.value || 0) },
+    { id: 'mg-percent', value: parseFloat(document.getElementById('mg-initial')?.value || 0) },
+    { id: 'h-percent', value: parseFloat(document.getElementById('h-initial')?.value || 0) },
+    { id: 'na-percent', value: parseFloat(document.getElementById('na-initial')?.value || 0) },
+    { id: 'al-percent', value: parseFloat(document.getElementById('al-initial')?.value || 0) }
+  ];
+  
+  cations.forEach(cation => {
+    const percent = (cation.value / cic) * 100;
+    const element = document.getElementById(cation.id);
+    if (element) {
+      element.textContent = percent.toFixed(1) + '%';
+    }
+  });
+}
+
+function updateCationStatusIcons() {
+  const k = parseFloat(document.getElementById('k-initial')?.value || 0);
+  const ca = parseFloat(document.getElementById('ca-initial')?.value || 0);
+  const mg = parseFloat(document.getElementById('mg-initial')?.value || 0);
+  const h = parseFloat(document.getElementById('h-initial')?.value || 0);
+  const na = parseFloat(document.getElementById('na-initial')?.value || 0);
+  const al = parseFloat(document.getElementById('al-initial')?.value || 0);
+  const cic = k + ca + mg + h + na + al;
+  
+  if (cic === 0) return;
+  
+  // Calcular porcentajes
+  const kPercent = (k / cic) * 100;
+  const caPercent = (ca / cic) * 100;
+  const mgPercent = (mg / cic) * 100;
+  const hPercent = (h / cic) * 100;
+  const naPercent = (na / cic) * 100;
+  const alPercent = (al / cic) * 100;
+  
+  // Actualizar iconos de estado
+  updateStatusIcon('k-status', kPercent, 3, 7);
+  updateStatusIcon('ca-status', caPercent, 65, 75);
+  updateStatusIcon('mg-status', mgPercent, 10, 15);
+  updateStatusIcon('h-status', hPercent, 0, 10);
+  updateStatusIcon('na-status', naPercent, 0, 1);
+  updateStatusIcon('al-status', alPercent, 0, 1);
+}
+
+function updateStatusIcon(elementId, percent, minRange, maxRange) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  
+  // Si no hay datos (CIC = 0), mostrar guión
+  if (isNaN(percent) || percent === 0) {
+    element.textContent = '-';
+    return;
+  }
+  
+  if (percent >= minRange && percent <= maxRange) {
+    element.textContent = '✅';
+  } else if (percent > maxRange) {
+    element.textContent = '⚠️';
+  } else {
+    element.textContent = '❌';
+  }
+}
+
+function calculateTotalPercent() {
+  const k = parseFloat(document.getElementById('k-target')?.value || 0);
+  const ca = parseFloat(document.getElementById('ca-target')?.value || 0);
+  const mg = parseFloat(document.getElementById('mg-target')?.value || 0);
+  const h = parseFloat(document.getElementById('h-target')?.value || 0);
+  const na = parseFloat(document.getElementById('na-target')?.value || 0);
+  const al = parseFloat(document.getElementById('al-target')?.value || 0);
+  
+  const totalMeq = k + ca + mg + h + na + al;
+  const cic = parseFloat(document.getElementById('cic-total')?.value || 0);
+  
+  // Calcular porcentajes basados en los meq objetivo
+  calculateTargetPercentages(k, ca, mg, h, na, al, cic);
+  
+  // Mostrar total de meq en lugar de porcentaje
+  const totalInput = document.getElementById('total-percent');
+  if (totalInput) {
+    totalInput.value = totalMeq.toFixed(2);
+    
+    // Cambiar color según si la suma de meq es igual al CIC
+    if (Math.abs(totalMeq - cic) < 0.1) {
+      totalInput.style.borderColor = '#10b981';
+      totalInput.style.background = '#f0fdf4';
+      totalInput.style.color = '#059669';
+    } else {
+      totalInput.style.borderColor = '#ef4444';
+      totalInput.style.background = '#fef2f2';
+      totalInput.style.color = '#dc2626';
+    }
+  }
+}
+
+function calculateTargetPercentages(kMeq, caMeq, mgMeq, hMeq, naMeq, alMeq, cic) {
+  if (cic === 0) return;
+  
+  const targetPercentages = [
+    { id: 'k-target-percent', meq: kMeq, percent: (kMeq / cic) * 100 },
+    { id: 'ca-target-percent', meq: caMeq, percent: (caMeq / cic) * 100 },
+    { id: 'mg-target-percent', meq: mgMeq, percent: (mgMeq / cic) * 100 },
+    { id: 'h-target-percent', meq: hMeq, percent: (hMeq / cic) * 100 },
+    { id: 'na-target-percent', meq: naMeq, percent: (naMeq / cic) * 100 },
+    { id: 'al-target-percent', meq: alMeq, percent: (alMeq / cic) * 100 }
+  ];
+  
+  targetPercentages.forEach(item => {
+    const element = document.getElementById(item.id);
+    if (element) {
+      element.textContent = item.percent.toFixed(1) + '%';
+    }
+  });
+}
+
+function calculateAutomaticAdjustments() {
+  if (skipAutomaticAdjustments) {
+    console.log('⏭️ Saltando recálculo automático (modificando concentración)');
+    return;
+  }
+  
+  console.log('🎯 Recalculando ajustes automáticos...');
+  
+  // Verificar si los elementos existen antes de leerlos
+  const cicTotalElement = document.getElementById('cic-total');
+  const kInitialElement = document.getElementById('k-initial');
+  const caInitialElement = document.getElementById('ca-initial');
+  const mgInitialElement = document.getElementById('mg-initial');
+  const hInitialElement = document.getElementById('h-initial');
+  const naInitialElement = document.getElementById('na-initial');
+  const alInitialElement = document.getElementById('al-initial');
+  
+  // Si no existen los elementos, salir silenciosamente (no estamos en análisis de suelo)
+  if (!cicTotalElement || !kInitialElement || !caInitialElement || !mgInitialElement || !hInitialElement || !naInitialElement || !alInitialElement) {
+    console.log('⏭️ No estamos en la sección de análisis de suelo, saltando recálculo');
+    return;
+  }
+  
+  // Obtener valores del análisis inicial (solo si los elementos existen)
+  const cicTotal = parseFloat(cicTotalElement.value) || 0;
+  const kInitial = parseFloat(kInitialElement.value) || 0;
+  const caInitial = parseFloat(caInitialElement.value) || 0;
+  const mgInitial = parseFloat(mgInitialElement.value) || 0;
+  const hInitial = parseFloat(hInitialElement.value) || 0;
+  const naInitial = parseFloat(naInitialElement.value) || 0;
+  const alInitial = parseFloat(alInitialElement.value) || 0;
+  
+  console.log('📊 Valores iniciales:', { cicTotal, kInitial, caInitial, mgInitial, hInitial, naInitial, alInitial });
+  
+  if (cicTotal === 0) {
+    // Si no hay CIC, limpiar los campos de ajuste
+    clearAdjustmentFields();
+    return;
+  }
+  
+  // Calcular valores ideales directamente (sin balance iónico complejo)
+  const idealValues = calculateIdealValues(cicTotal);
+  
+  console.log('🎯 Valores ideales calculados:', idealValues);
+  
+  // Calcular ajustes necesarios (diferencia entre ideal y actual)
+  const adjustments = {
+    k: idealValues.k - kInitial,
+    ca: idealValues.ca - caInitial,
+    mg: idealValues.mg - mgInitial,
+    h: idealValues.h - hInitial, // Ideal = 0
+    na: idealValues.na - naInitial, // Ideal = 0
+    al: idealValues.al - alInitial // Ideal = 0
+  };
+  
+  console.log('📊 Ajustes calculados:', adjustments);
+  
+  // Aplicar los ajustes a los campos de objetivo
+  applyAdjustmentsToFields(adjustments);
+  
+  console.log('✅ Ajustes aplicados a los campos');
+}
+
+function calculateIdealValues(cic) {
+  return {
+    k: Math.round((cic * 0.05) * 100) / 100,   // 5% del CIC
+    ca: Math.round((cic * 0.75) * 100) / 100,  // 75% del CIC (ideal)
+    mg: Math.round((cic * 0.15) * 100) / 100,  // 15% del CIC (ideal)
+    h: 0,   // Ideal = 0
+    na: 0,  // Ideal = 0
+    al: 0   // Ideal = 0
+  };
+}
+
+function calculateBalancedAdjustments(cic, kInitial, caInitial, mgInitial, hInitial, naInitial, alInitial) {
+  // Calcular valores ideales para los cationes buenos
+  const idealValues = calculateIdealValues(cic);
+  
+  // Calcular total de cationes malos que necesitan ser desplazados
+  const badCations = hInitial + naInitial + alInitial;
+  
+  // Evaluar déficits y excesos de cationes buenos
+  const kDeficit = Math.max(0, idealValues.k - kInitial); // Solo si falta K
+  const caDeficit = Math.max(0, idealValues.ca - caInitial); // Solo si falta Ca
+  const mgDeficit = Math.max(0, idealValues.mg - mgInitial); // Solo si falta Mg
+  
+  // Evaluar si los cationes están en niveles adecuados (no tocar si están altos o cerca del ideal)
+  const kIsHigh = kInitial >= idealValues.k; // K está alto o en ideal
+  const caIsHigh = caInitial >= idealValues.ca; // Ca está alto o en ideal
+  const mgIsHigh = mgInitial >= idealValues.mg; // Mg está alto o en ideal
+  
+  // Calcular total de meq necesarios para ajustes
+  const totalNeeded = badCations + kDeficit + caDeficit + mgDeficit;
+  
+  if (totalNeeded === 0) {
+    // Si no hay cationes malos ni déficits, usar valores ideales normales
+    return idealValues;
+  }
+  
+  // Distribuir el total necesario entre los cationes que necesitan ajuste
+  let kFinal = kInitial;
+  let caFinal = caInitial;
+  let mgFinal = mgInitial;
+  
+  // Si hay cationes malos, distribuirlos entre los cationes que necesitan ajuste
+  if (badCations > 0) {
+    const cationsToAdjust = [];
+    
+    // Solo incluir cationes que necesitan ajuste Y no están altos
+    if (kDeficit > 0 && !kIsHigh) cationsToAdjust.push('k');
+    if (caDeficit > 0 && !caIsHigh) cationsToAdjust.push('ca');
+    if (mgDeficit > 0 && !mgIsHigh) cationsToAdjust.push('mg');
+    
+    if (cationsToAdjust.length > 0) {
+      // Distribuir cationes malos entre los que necesitan ajuste
+      const badCationsPerCation = badCations / cationsToAdjust.length;
+      
+      if (cationsToAdjust.includes('k')) {
+        kFinal = Math.round((kInitial + kDeficit + badCationsPerCation) * 100) / 100;
+      }
+      if (cationsToAdjust.includes('ca')) {
+        caFinal = Math.round((caInitial + caDeficit + badCationsPerCation) * 100) / 100;
+      }
+      if (cationsToAdjust.includes('mg')) {
+        mgFinal = Math.round((mgInitial + mgDeficit + badCationsPerCation) * 100) / 100;
+      }
+    } else {
+      // Si no hay cationes que necesiten ajuste, todo va al Ca
+      caFinal = Math.round((caInitial + badCations) * 100) / 100;
+    }
+  } else {
+    // Solo ajustar déficits sin cationes malos
+    if (!kIsHigh) kFinal = Math.round((kInitial + kDeficit) * 100) / 100;
+    if (!caIsHigh) caFinal = Math.round((caInitial + caDeficit) * 100) / 100;
+    if (!mgIsHigh) mgFinal = Math.round((mgInitial + mgDeficit) * 100) / 100;
+  }
+  
+  // Verificar que no excedamos el CIC total disponible
+  const totalCations = kFinal + caFinal + mgFinal;
+  if (totalCations > cic) {
+    // Si excedemos el CIC, ajustar proporcionalmente
+    const scaleFactor = cic / totalCations;
+    kFinal = Math.round((kFinal * scaleFactor) * 100) / 100;
+    caFinal = Math.round((caFinal * scaleFactor) * 100) / 100;
+    mgFinal = Math.round((mgFinal * scaleFactor) * 100) / 100;
+  }
+  
+  return {
+    k: kFinal,
+    ca: caFinal,
+    mg: mgFinal,
+    h: 0,   // Ideal = 0
+    na: 0,  // Ideal = 0
+    al: 0   // Ideal = 0
+  };
+}
+
+function applyAdjustmentsToFields(adjustments) {
+  document.getElementById('k-target').value = adjustments.k.toFixed(2);
+  document.getElementById('ca-target').value = adjustments.ca.toFixed(2);
+  document.getElementById('mg-target').value = adjustments.mg.toFixed(2);
+  document.getElementById('h-target').value = adjustments.h.toFixed(2);
+  document.getElementById('na-target').value = adjustments.na.toFixed(2);
+  document.getElementById('al-target').value = adjustments.al.toFixed(2);
+  
+  // Aplicar colores de atención
+  applyAttentionColors(adjustments);
+}
+
+function applyAttentionColors(adjustments) {
+  // Obtener valores del análisis inicial para calcular porcentajes
+  const cicTotal = parseFloat(document.getElementById('cic-total').value) || 0;
+  const kInitial = parseFloat(document.getElementById('k-initial').value) || 0;
+  const caInitial = parseFloat(document.getElementById('ca-initial').value) || 0;
+  const mgInitial = parseFloat(document.getElementById('mg-initial').value) || 0;
+  const hInitial = parseFloat(document.getElementById('h-initial').value) || 0;
+  const naInitial = parseFloat(document.getElementById('na-initial').value) || 0;
+  const alInitial = parseFloat(document.getElementById('al-initial').value) || 0;
+  
+  // Calcular porcentajes actuales
+  const kPercent = cicTotal > 0 ? (kInitial / cicTotal) * 100 : 0;
+  const caPercent = cicTotal > 0 ? (caInitial / cicTotal) * 100 : 0;
+  const mgPercent = cicTotal > 0 ? (mgInitial / cicTotal) * 100 : 0;
+  const hPercent = cicTotal > 0 ? (hInitial / cicTotal) * 100 : 0;
+  const naPercent = cicTotal > 0 ? (naInitial / cicTotal) * 100 : 0;
+  const alPercent = cicTotal > 0 ? (alInitial / cicTotal) * 100 : 0;
+  
+  // Obtener todos los valores absolutos
+  const values = [
+    { id: 'k-target', value: Math.abs(adjustments.k), cation: 'K', percent: kPercent },
+    { id: 'ca-target', value: Math.abs(adjustments.ca), cation: 'Ca', percent: caPercent },
+    { id: 'mg-target', value: Math.abs(adjustments.mg), cation: 'Mg', percent: mgPercent },
+    { id: 'h-target', value: Math.abs(adjustments.h), cation: 'H', percent: hPercent },
+    { id: 'na-target', value: Math.abs(adjustments.na), cation: 'Na', percent: naPercent },
+    { id: 'al-target', value: Math.abs(adjustments.al), cation: 'Al', percent: alPercent }
+  ];
+  
+  // Encontrar el valor máximo
+  const maxValue = Math.max(...values.map(v => v.value));
+  
+  // Determinar qué cationes necesitan atención
+  const attentionCations = values.filter(v => {
+    // Criterio general
+    const generalCriteria = v.value >= 1.0 || (v.value >= 0.5 && v.value === maxValue);
+    
+    // Criterio especial para K: si está muy por debajo o muy por encima del ideal
+    const kSpecialCriteria = v.cation === 'K' && (v.percent < 3.0 || v.percent > 8.0);
+    
+    // Criterio especial para Ca: si está muy por debajo o muy por encima del ideal
+    const caSpecialCriteria = v.cation === 'Ca' && (v.percent < 65.0 || v.percent > 78.0);
+    
+    // Criterio especial para Mg: si está muy por debajo o muy por encima del ideal
+    const mgSpecialCriteria = v.cation === 'Mg' && (v.percent < 10.0 || v.percent > 17.0);
+    
+    // Criterio especial para H: si está por encima del 10%
+    const hSpecialCriteria = v.cation === 'H' && v.percent > 10.0;
+    
+    // Criterio especial para Na: si está por encima del 1%
+    const naSpecialCriteria = v.cation === 'Na' && v.percent > 1.0;
+    
+    // Criterio especial para Al: si está por encima del 1%
+    const alSpecialCriteria = v.cation === 'Al' && v.percent > 1.0;
+    
+    return generalCriteria || kSpecialCriteria || caSpecialCriteria || mgSpecialCriteria || hSpecialCriteria || naSpecialCriteria || alSpecialCriteria;
+  });
+  
+  // Aplicar colores
+  values.forEach(v => {
+    const element = document.getElementById(v.id);
+    if (element) {
+      if (attentionCations.some(ac => ac.id === v.id)) {
+        // Rojo para atención
+        element.style.color = '#dc2626';
+        element.style.fontWeight = '700';
+      } else {
+        // Color normal
+        element.style.color = '#374151';
+        element.style.fontWeight = '400';
+      }
+    }
+  });
+}
+
+function clearAdjustmentFields() {
+  document.getElementById('k-target').value = '0.00';
+  document.getElementById('ca-target').value = '0.00';
+  document.getElementById('mg-target').value = '0.00';
+  document.getElementById('h-target').value = '0.00';
+  document.getElementById('na-target').value = '0.00';
+  document.getElementById('al-target').value = '0.00';
+  
+  // Resetear colores
+  const targetInputs = ['k-target', 'ca-target', 'mg-target', 'h-target', 'na-target', 'al-target'];
+  targetInputs.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.style.color = '#374151';
+      element.style.fontWeight = '400';
+    }
+  });
+}
+
+function clearAttentionColors() {
+  const cations = ['k', 'ca', 'mg', 'h', 'na', 'al'];
+  
+  cations.forEach(cation => {
+    // Limpiar colores de inputs iniciales
+    const initialInput = document.getElementById(`${cation}-initial`);
+    if (initialInput) {
+      initialInput.style.color = '';
+      initialInput.style.backgroundColor = '';
+    }
+    
+    // Limpiar colores de inputs objetivo
+    const targetInput = document.getElementById(`${cation}-target`);
+    if (targetInput) {
+      targetInput.style.color = '';
+      targetInput.style.backgroundColor = '';
+    }
+    
+    // Limpiar colores de labels
+    const initialLabel = document.querySelector(`label[for="${cation}-initial"]`);
+    if (initialLabel) {
+      initialLabel.style.color = '';
+    }
+    
+    const targetLabel = document.querySelector(`label[for="${cation}-target"]`);
+    if (targetLabel) {
+      targetLabel.style.color = '';
+    }
+  });
+}
+
+function convertKgHaToMeq(kgHa, pesoMolecular) {
+  // Obtener valores del formulario
+  const densidadAparente = parseFloat(document.getElementById('soil-density')?.value || 1.1);
+  const profundidad = parseFloat(document.getElementById('soil-depth')?.value || 30) / 100; // convertir cm a m
+  
+  // Conversión inversa: kg/ha → meq/100g
+  // Factor: kgHa / (pesoMolecular × 10 × (100 × 100 × profundidadEnMetros × densidadAparente) / 1,000)
+  return kgHa / (pesoMolecular * 10 * (100 * 100 * profundidad * densidadAparente) / 1000);
+}
+
+function convertMeqToKgHa(meq, pesoEquivalente) {
+  // Obtener valores del formulario
+  const densidadAparente = parseFloat(document.getElementById('soil-density')?.value || 1.1);
+  const profundidad = parseFloat(document.getElementById('soil-depth')?.value || 30) / 100; // convertir cm a m
+  
+  // Fórmula correcta: meq × pesoEquivalente × 10 × (100 × 100 × profundidadEnMetros × densidadAparente) / 1,000
+  return meq * pesoEquivalente * 10 * (100 * 100 * profundidad * densidadAparente) / 1000;
+}
+
+function calcularEstrategiaEnmiendas(enmiendasSeleccionadas, necesidades) {
+  const estrategia = [];
+  let caRestante = necesidades.ca;
+  let mgRestante = necesidades.mg;
+  let kRestante = necesidades.k;
+  let so4Necesario = necesidades.so4;
+  
+  console.log('🧪 Análisis inicial:', {
+    pH: necesidades.pH,
+    ca: caRestante,
+    mg: mgRestante,
+    k: kRestante,
+    so4: so4Necesario
+  });
+  
+  console.log('🔍 VALORES DE NECESIDADES RECIBIDOS:');
+  console.log(`  - necesidades.ca: ${necesidades.ca}`);
+  console.log(`  - necesidades.mg: ${necesidades.mg}`);
+  console.log(`  - necesidades.k: ${necesidades.k}`);
+  
+  console.log('🔍 COMPARACIÓN DIRECTA:');
+  console.log(`  - caRestante > mgRestante: ${caRestante > mgRestante}`);
+  console.log(`  - mgRestante > caRestante: ${mgRestante > caRestante}`);
+  console.log(`  - Diferencia: Ca=${caRestante}, Mg=${mgRestante}, Diferencia=${Math.abs(caRestante - mgRestante)}`);
+  
+  
+  
+  // 0️⃣ PRIORIDAD MÁXIMA: Enmiendas personalizadas con MÚLTIPLES elementos (K, Ca, Mg)
+  const enmiendasMultiElemento = enmiendasSeleccionadas.filter(a => {
+    const tieneK = (a.composition?.k || a.k || 0) > 0;
+    const tieneCa = (a.composition?.ca || a.ca || 0) > 0;
+    const tieneMg = (a.composition?.mg || a.mg || 0) > 0;
+    const elementosCount = (tieneK ? 1 : 0) + (tieneCa ? 1 : 0) + (tieneMg ? 1 : 0);
+    return elementosCount >= 2; // Tiene al menos 2 de los 3 elementos
+  });
+  
+  if (enmiendasMultiElemento.length > 0 && (kRestante > 0 || caRestante > 0 || mgRestante > 0)) {
+    // Usar la primera enmienda multi-elemento encontrada
+    const multiAmendment = enmiendasMultiElemento[0];
+    
+    // Identificar qué elementos faltan y cuál es el MÁS limitante
+    const elementosDisponibles = [];
+    if (kRestante > 0) elementosDisponibles.push({ elemento: 'K', meq: kRestante });
+    if (caRestante > 0) elementosDisponibles.push({ elemento: 'Ca', meq: caRestante });
+    if (mgRestante > 0) elementosDisponibles.push({ elemento: 'Mg', meq: mgRestante });
+    
+    // Encontrar el elemento con MAYOR deficiencia (el más limitante)
+    const elementoLimitante = elementosDisponibles.reduce((max, actual) => 
+      actual.meq > max.meq ? actual : max
+    );
+    
+    console.log('🔍 ENMIENDA MULTI-ELEMENTO DETECTADA:', multiAmendment.name);
+    console.log('🔍 ELEMENTO MÁS LIMITANTE:');
+    console.log(`  - Elementos disponibles: ${elementosDisponibles.map(e => `${e.elemento}: ${e.meq} meq`).join(', ')}`);
+    console.log(`  - Elemento MÁS limitante: ${elementoLimitante.elemento} (${elementoLimitante.meq} meq)`);
+    
+    // Obtener concentraciones de la enmienda multi-elemento
+    const kPercent = multiAmendment.composition?.k || multiAmendment.k || 0;
+    const caPercent = multiAmendment.composition?.ca || multiAmendment.ca || 0;
+    const mgPercent = multiAmendment.composition?.mg || multiAmendment.mg || 0;
+    
+    // Calcular dosis necesaria para cada elemento
+    let kAmount = 0, caAmount = 0, mgAmount = 0;
+    
+    if (kRestante > 0 && kPercent > 0) {
+      const kKgHaNeeded = convertMeqToKgHa(kRestante, 39.1);
+      kAmount = kKgHaNeeded / (kPercent / 100);
+    }
+    if (caRestante > 0 && caPercent > 0) {
+      const caKgHaNeeded = convertMeqToKgHa(caRestante, 20.04);
+      caAmount = caKgHaNeeded / (caPercent / 100);
+    }
+    if (mgRestante > 0 && mgPercent > 0) {
+      const mgKgHaNeeded = convertMeqToKgHa(mgRestante, 12.15);
+      mgAmount = mgKgHaNeeded / (mgPercent / 100);
+    }
+    
+    // USAR LA DOSIS DEL ELEMENTO MÁS LIMITANTE
+    let dosisMulti = 0;
+    if (elementoLimitante.elemento === 'K') {
+      dosisMulti = kAmount;
+    } else if (elementoLimitante.elemento === 'Ca') {
+      dosisMulti = caAmount;
+    } else if (elementoLimitante.elemento === 'Mg') {
+      dosisMulti = mgAmount;
+    }
+    
+    console.log('🔍 CÁLCULO DE DOSIS BASADO EN ELEMENTO MÁS LIMITANTE:');
+    console.log(`  - kAmount: ${kAmount.toFixed(2)} kg/ha (para ${kRestante} meq K)`);
+    console.log(`  - caAmount: ${caAmount.toFixed(2)} kg/ha (para ${caRestante} meq Ca)`);
+    console.log(`  - mgAmount: ${mgAmount.toFixed(2)} kg/ha (para ${mgRestante} meq Mg)`);
+    console.log(`  - dosisMulti: ${dosisMulti.toFixed(2)} kg/ha`);
+    console.log(`  - Usando: ${elementoLimitante.elemento}Amount (elemento MÁS limitante)`);
+    
+    estrategia.push({
+      tipo: multiAmendment.id,
+      dosis: dosisMulti,
+      razon: `Enmienda multi-elemento - Elemento limitante: ${elementoLimitante.elemento} (${kPercent}% K, ${caPercent}% Ca, ${mgPercent}% Mg)`,
+      elementoLimitante: elementoLimitante
+    });
+    
+    // Recalcular necesidades restantes
+    const kAportado = dosisMulti * (kPercent / 100);
+    const caAportado = dosisMulti * (caPercent / 100);
+    const mgAportado = dosisMulti * (mgPercent / 100);
+    
+    if (kPercent > 0) kRestante = Math.max(0, kRestante - convertKgHaToMeq(kAportado, 39.1));
+    if (caPercent > 0) caRestante = Math.max(0, caRestante - convertKgHaToMeq(caAportado, 20.04));
+    if (mgPercent > 0) mgRestante = Math.max(0, mgRestante - convertKgHaToMeq(mgAportado, 12.15));
+    
+    console.log(`🎯 Enmienda multi-elemento aplicada - Elemento limitante: ${elementoLimitante.elemento}`);
+  }
+  
+  // 1️⃣ PRIORIDAD: Cal Dolomítica si necesitas Ca + Mg simultáneamente
+  const tieneDolomita = enmiendasSeleccionadas.find(a => a.id === 'dolomite');
+  if (tieneDolomita && caRestante > 0 && mgRestante > 0) {
+    const caKgHaNeeded = convertMeqToKgHa(caRestante, 20.04);
+    const mgKgHaNeeded = convertMeqToKgHa(mgRestante, 12.15);
+    
+    // El elemento limitante es el que MÁS FALTA (mayor deficiencia en meq)
+    // Comparar K, Ca Y Mg para encontrar el más limitante
+    const elementosDisponibles = [];
+    if (kRestante > 0) elementosDisponibles.push({ elemento: 'K', meq: kRestante });
+    if (caRestante > 0) elementosDisponibles.push({ elemento: 'Ca', meq: caRestante });
+    if (mgRestante > 0) elementosDisponibles.push({ elemento: 'Mg', meq: mgRestante });
+    
+    // Encontrar el elemento con MAYOR deficiencia (el más limitante)
+    const elementoLimitante = elementosDisponibles.reduce((max, actual) => 
+      actual.meq > max.meq ? actual : max
+    );
+    
+    console.log('🔍 ELEMENTO MÁS LIMITANTE:');
+    console.log(`  - Elementos disponibles: ${elementosDisponibles.map(e => `${e.elemento}: ${e.meq} meq`).join(', ')}`);
+    console.log(`  - Elemento MÁS limitante: ${elementoLimitante.elemento} (${elementoLimitante.meq} meq)`);
+    
+    // Calcular cuánta enmienda necesitaríamos para cada elemento
+    // Usar porcentajes actuales de la enmienda (no fijos)
+    const dolomiteAmendment = enmiendasSeleccionadas.find(a => a.id === 'dolomite');
+    const caPercent = dolomiteAmendment?.composition?.ca || dolomiteAmendment?.ca || 21.7;
+    const mgPercent = dolomiteAmendment?.composition?.mg || dolomiteAmendment?.mg || 13.2;
+    
+    const caAmount = caKgHaNeeded / (caPercent / 100);
+    const mgAmount = mgKgHaNeeded / (mgPercent / 100);
+    
+    // Calcular cantidad para K si está disponible
+    let kAmount = 0;
+    if (kRestante > 0) {
+      const kPercent = dolomiteAmendment?.composition?.k || dolomiteAmendment?.k || 0;
+      if (kPercent > 0) {
+        const kKgHaNeeded = convertMeqToKgHa(kRestante, 39.1);
+        kAmount = kKgHaNeeded / (kPercent / 100);
+      }
+    }
+    
+    // Usar la cantidad del elemento MÁS LIMITANTE (el que más falta)
+    let dosisDolomita = 0;
+    if (elementoLimitante.elemento === 'Ca') {
+      dosisDolomita = caAmount;
+    } else if (elementoLimitante.elemento === 'Mg') {
+      dosisDolomita = mgAmount;
+    } else if (elementoLimitante.elemento === 'K') {
+      dosisDolomita = kAmount;
+    }
+    
+    console.log('🔍 CÁLCULO DE DOSIS BASADO EN ELEMENTO MÁS LIMITANTE:');
+    console.log(`  - caAmount: ${caAmount.toFixed(2)} kg/ha (para ${caRestante} meq Ca)`);
+    console.log(`  - mgAmount: ${mgAmount.toFixed(2)} kg/ha (para ${mgRestante} meq Mg)`);
+    console.log(`  - kAmount: ${kAmount.toFixed(2)} kg/ha (para ${kRestante} meq K)`);
+    console.log(`  - dosisDolomita: ${dosisDolomita.toFixed(2)} kg/ha`);
+    console.log(`  - Usando: ${elementoLimitante.elemento}Amount (elemento MÁS limitante)`);
+    
+    // Verificar si pH es alto para mostrar advertencia
+    const advertenciaPH = necesidades.pH >= 7;
+    const razon = advertenciaPH 
+      ? `⚠️ ADVERTENCIA: pH ${necesidades.pH} - Cal Dolomítica NO recomendada (alcalinizaría más) - Elemento limitante: ${elementoLimitante.elemento}`
+      : `Elemento limitante: ${elementoLimitante.elemento} - Cal Dolomítica optimizada`;
+    
+    estrategia.push({
+      tipo: 'dolomite',
+      dosis: dosisDolomita,
+      razon: razon,
+      elementoLimitante: elementoLimitante,
+      advertencia: advertenciaPH
+    });
+    
+    // Recalcular necesidades restantes usando porcentajes DINÁMICOS
+    const caAportado = dosisDolomita * (caPercent / 100);
+    const mgAportado = dosisDolomita * (mgPercent / 100);
+    caRestante = Math.max(0, caRestante - convertKgHaToMeq(caAportado, 20.04));
+    mgRestante = Math.max(0, mgRestante - convertKgHaToMeq(mgAportado, 12.15));
+    
+    console.log(`🎯 Cal Dolomítica aplicada - Elemento limitante: ${elementoLimitante}${advertenciaPH ? ' (CON ADVERTENCIA pH)' : ''}`);
+  }
+  
+  // 2️⃣ CALCIO RESTANTE: Decisión basada en pH
+  const tieneYeso = enmiendasSeleccionadas.find(a => a.id === 'gypsum');
+  const tieneCalAgricola = enmiendasSeleccionadas.find(a => a.id === 'lime');
+  
+  if (caRestante > 0) {
+    // YESO: Permite en cualquier pH (no acidifica ni alcaliniza)
+    if (tieneYeso) {
+      const caKgHaNeeded = convertMeqToKgHa(caRestante, 20.04);
+      // 🔧 USAR CONCENTRACIÓN DINÁMICA (editada o por defecto)
+      const yesoAmendment = enmiendasSeleccionadas.find(a => a.id === 'gypsum');
+      const caPercent = yesoAmendment?.composition?.ca || yesoAmendment?.ca || 23.3;
+      const dosisYeso = caKgHaNeeded / (caPercent / 100);
+      
+      console.log(`🔍 YESO - Ca requerido: ${caKgHaNeeded.toFixed(2)} kg/ha, Concentración Ca: ${caPercent}%, Dosis: ${dosisYeso.toFixed(2)} kg/ha`);
+      
+      estrategia.push({
+        tipo: 'gypsum',
+        dosis: dosisYeso,
+        razon: `Yeso para Ca (${caPercent}% Ca) - No afecta pH`
+      });
+      
+      caRestante = 0;
+    } 
+    // CAL AGRÍCOLA: Solo si pH < 7 (no alcalinizar más)
+    else if (tieneCalAgricola && necesidades.pH < 7) {
+      const caKgHaNeeded = convertMeqToKgHa(caRestante, 20.04);
+      // 🔧 USAR CONCENTRACIÓN DINÁMICA (editada o por defecto)
+      const limeAmendment = enmiendasSeleccionadas.find(a => a.id === 'lime');
+      const caPercent = limeAmendment?.composition?.ca || limeAmendment?.ca || 40.0;
+      const dosisCalAgricola = caKgHaNeeded / (caPercent / 100);
+      
+      console.log(`🔍 CAL AGRÍCOLA - Ca requerido: ${caKgHaNeeded.toFixed(2)} kg/ha, Concentración Ca: ${caPercent}%, Dosis: ${dosisCalAgricola.toFixed(2)} kg/ha`);
+      
+      estrategia.push({
+        tipo: 'lime',
+        dosis: dosisCalAgricola,
+        razon: `Cal Agrícola para Ca (${caPercent}% Ca) y elevar pH`
+      });
+      
+      caRestante = 0;
+    }
+    // ADVERTENCIA: Cal Agrícola con pH ≥ 7
+    else if (tieneCalAgricola && necesidades.pH >= 7) {
+      const caKgHaNeeded = convertMeqToKgHa(caRestante, 20.04);
+      // 🔧 USAR CONCENTRACIÓN DINÁMICA (editada o por defecto)
+      const limeAmendment = enmiendasSeleccionadas.find(a => a.id === 'lime');
+      const caPercent = limeAmendment?.composition?.ca || limeAmendment?.ca || 40.0;
+      const dosisCalAgricola = caKgHaNeeded / (caPercent / 100);
+      
+      estrategia.push({
+        tipo: 'lime',
+        dosis: dosisCalAgricola,
+        razon: `⚠️ ADVERTENCIA: pH ${necesidades.pH} - Cal Agrícola NO recomendada (alcalinizaría más)`,
+        advertencia: true
+      });
+      
+      console.log(`⚠️ Cal Agrícola calculada pero NO recomendada (pH ${necesidades.pH})`);
+    }
+    
+    // 2️⃣.1 CALCIO RESTANTE - ENMIENDAS PERSONALIZADAS (solo si no se usó antes)
+    if (caRestante > 0) {
+      const enmiendasConCa = enmiendasSeleccionadas.filter(a => 
+        a.id !== 'gypsum' && a.id !== 'lime' && a.id !== 'dolomite' && 
+        (a.composition?.ca > 0 || a.ca > 0) &&
+        !estrategia.some(e => e.tipo === a.id) // Evitar duplicados
+      );
+      
+      enmiendasConCa.forEach(enmienda => {
+        const caPercent = enmienda.composition?.ca || enmienda.ca || 0;
+        if (caPercent > 0) {
+          const caKgHaNeeded = convertMeqToKgHa(caRestante, 20.04);
+          const dosisEnmienda = caKgHaNeeded / (caPercent / 100);
+          
+          estrategia.push({
+            tipo: enmienda.id,
+            dosis: dosisEnmienda,
+            razon: `Calcio adicional requerido (${caPercent}% Ca)`
+          });
+          
+          caRestante = 0;
+          console.log(`✅ ${enmienda.name} seleccionado para Ca (${caPercent}%)`);
+        }
+      });
+    }
+  }
+  
+  // 3️⃣ MAGNESIO RESTANTE
+  const tieneMgSO4 = enmiendasSeleccionadas.find(a => a.id === 'mgso4-mono');
+  if (mgRestante > 0 && tieneMgSO4) {
+    const mgKgHaNeeded = convertMeqToKgHa(mgRestante, 12.15);
+    // 🔧 USAR CONCENTRACIÓN DINÁMICA (editada o por defecto)
+    const mgso4Amendment = enmiendasSeleccionadas.find(a => a.id === 'mgso4-mono');
+    const mgPercent = mgso4Amendment?.composition?.mg || mgso4Amendment?.mg || 17.0;
+    const dosisMgSO4 = mgKgHaNeeded / (mgPercent / 100);
+    
+    console.log(`🔍 MgSO₄ - Mg requerido: ${mgKgHaNeeded.toFixed(2)} kg/ha, Concentración Mg: ${mgPercent}%, Dosis: ${dosisMgSO4.toFixed(2)} kg/ha`);
+    
+    estrategia.push({
+      tipo: 'mgso4-mono',
+      dosis: dosisMgSO4,
+      razon: `Magnesio adicional requerido (${mgPercent}% Mg)`
+    });
+    
+    mgRestante = 0;
+    console.log('✅ MgSO₄ seleccionado para Mg');
+  }
+  
+  // 3️⃣.1 MAGNESIO RESTANTE - ENMIENDAS PERSONALIZADAS (solo si no se usó antes)
+  if (mgRestante > 0) {
+    const enmiendasConMg = enmiendasSeleccionadas.filter(a => 
+      a.id !== 'mgso4-mono' && a.id !== 'dolomite' && 
+      (a.composition?.mg > 0 || a.mg > 0) &&
+      !estrategia.some(e => e.tipo === a.id) // Evitar duplicados
+    );
+    
+    enmiendasConMg.forEach(enmienda => {
+      const mgPercent = enmienda.composition?.mg || enmienda.mg || 0;
+      if (mgPercent > 0) {
+        const mgKgHaNeeded = convertMeqToKgHa(mgRestante, 12.15);
+        const dosisEnmienda = mgKgHaNeeded / (mgPercent / 100);
+        
+        estrategia.push({
+          tipo: enmienda.id,
+          dosis: dosisEnmienda,
+          razon: `Magnesio adicional requerido (${mgPercent}% Mg)`
+        });
+        
+        mgRestante = 0;
+        console.log(`✅ ${enmienda.name} seleccionado para Mg (${mgPercent}%)`);
+      }
+    });
+  }
+  
+  // 4️⃣ POTASIO
+  const tieneSOP = enmiendasSeleccionadas.find(a => a.id === 'sop-granular');
+  if (kRestante > 0 && tieneSOP) {
+    const kKgHaNeeded = convertMeqToKgHa(kRestante, 39.1);
+    // 🔧 USAR CONCENTRACIÓN DINÁMICA (editada o por defecto)
+    const sopAmendment = enmiendasSeleccionadas.find(a => a.id === 'sop-granular');
+    const kPercent = sopAmendment?.composition?.k || sopAmendment?.k || 41.5;
+    const dosisSOP = kKgHaNeeded / (kPercent / 100);
+    
+    console.log(`🔍 SOP - K requerido: ${kKgHaNeeded.toFixed(2)} kg/ha, Concentración K: ${kPercent}%, Dosis: ${dosisSOP.toFixed(2)} kg/ha`);
+    
+    estrategia.push({
+      tipo: 'sop-granular',
+      dosis: dosisSOP,
+      razon: `Potasio requerido (${kPercent}% K)`
+    });
+    
+    kRestante = 0;
+    console.log('✅ SOP seleccionado para K');
+  }
+  
+  // 4️⃣.1 POTASIO - ENMIENDAS PERSONALIZADAS (solo si no se usó antes)
+  if (kRestante > 0) {
+    const enmiendasConK = enmiendasSeleccionadas.filter(a => 
+      a.id !== 'sop-granular' && 
+      (a.composition?.k > 0 || a.k > 0) &&
+      !estrategia.some(e => e.tipo === a.id) // Evitar duplicados
+    );
+    
+    enmiendasConK.forEach(enmienda => {
+      const kPercent = enmienda.composition?.k || enmienda.k || 0;
+      if (kPercent > 0) {
+        const kKgHaNeeded = convertMeqToKgHa(kRestante, 39.1);
+        const dosisEnmienda = kKgHaNeeded / (kPercent / 100);
+        
+        estrategia.push({
+          tipo: enmienda.id,
+          dosis: dosisEnmienda,
+          razon: `Potasio adicional requerido (${kPercent}% K)`
+        });
+        
+        kRestante = 0;
+        console.log(`✅ ${enmienda.name} seleccionado para K (${kPercent}%)`);
+      }
+    });
+  }
+  
+  // 5️⃣ SO₄ PARA DESPLAZAR Na⁺ (si no se cubrió con otras enmiendas)
+  const so4YaAportado = estrategia.reduce((total, e) => {
+    // 🔧 USAR CONCENTRACIONES DINÁMICAS para calcular aportes
+    const enmienda = enmiendasSeleccionadas.find(a => a.id === e.tipo);
+    if (enmienda) {
+      const so4Percent = enmienda.composition?.so4 || enmienda.so4 || 
+                         (e.tipo === 'gypsum' ? 55.8 : 
+                          e.tipo === 'sop-granular' ? 54.1 : 
+                          e.tipo === 'mgso4-mono' ? 69 : 0);
+      return total + (e.dosis * (so4Percent / 100));
+    }
+    
+    return total;
+  }, 0);
+  
+  const so4Restante = Math.max(0, so4Necesario - so4YaAportado);
+  if (so4Restante > 0 && tieneYeso) {
+    // 🔧 USAR CONCENTRACIÓN DINÁMICA
+    const yesoAmendment = enmiendasSeleccionadas.find(a => a.id === 'gypsum');
+    const so4Percent = yesoAmendment?.composition?.so4 || yesoAmendment?.so4 || 55.8;
+    const dosisYesoAdicional = so4Restante / (so4Percent / 100);
+    
+    estrategia.push({
+      tipo: 'gypsum',
+      dosis: dosisYesoAdicional,
+      razon: 'SO₄ adicional para desplazar Na⁺'
+    });
+    
+    console.log('✅ Yeso adicional para SO₄');
+  }
+  
+  console.log('🎯 Estrategia final:', estrategia);
+  return estrategia;
+}
+
+function calculateAmendment() {
+  console.log('🧮 Función calculateAmendment ejecutándose...');
+  console.log('🔍 DEBUGGING: Verificando enmiendas seleccionadas...');
+  
+  // Obtener valores del análisis inicial
+  const kInitial = parseFloat(document.getElementById('k-initial')?.value || 0);
+  const caInitial = parseFloat(document.getElementById('ca-initial')?.value || 0);
+  const mgInitial = parseFloat(document.getElementById('mg-initial')?.value || 0);
+  const hInitial = parseFloat(document.getElementById('h-initial')?.value || 0);
+  const naInitial = parseFloat(document.getElementById('na-initial')?.value || 0);
+  const alInitial = parseFloat(document.getElementById('al-initial')?.value || 0);
+  const cicTotal = parseFloat(document.getElementById('cic-total')?.value || 0);
+  
+  // Obtener objetivos
+  const kTarget = parseFloat(document.getElementById('k-target')?.value || 0);
+  const caTarget = parseFloat(document.getElementById('ca-target')?.value || 0);
+  const mgTarget = parseFloat(document.getElementById('mg-target')?.value || 0);
+  const hTarget = parseFloat(document.getElementById('h-target')?.value || 0);
+  const naTarget = parseFloat(document.getElementById('na-target')?.value || 0);
+  const alTarget = parseFloat(document.getElementById('al-target')?.value || 0);
+  
+  // Obtener propiedades del suelo
+  const soilDensity = parseFloat(document.getElementById('soil-density')?.value || 1.4);
+  const soilDepth = parseFloat(document.getElementById('soil-depth')?.value || 30);
+  
+  // Obtener enmiendas seleccionadas
+  const selectedAmendments = getSelectedAmendments();
+  console.log('🔍 DEBUGGING: Enmiendas seleccionadas:', selectedAmendments);
+  
+  // Verificar que hay enmiendas seleccionadas
+  if (selectedAmendments.length === 0) {
+    console.log('No hay enmiendas seleccionadas');
+    alert('Por favor selecciona al menos una enmienda antes de calcular');
+    return;
+  }
+  
+  // Validación removida - el usuario puede ajustar libremente los valores objetivo
+  
+  
+  // Los valores objetivo son los meq de ajuste necesarios (ya calculados)
+  const kDiff = kTarget;  // Meq de ajuste para K
+  const caDiff = caTarget; // Meq de ajuste para Ca
+  const mgDiff = mgTarget; // Meq de ajuste para Mg
+  const hDiff = hTarget;   // Meq de ajuste para H
+  const naDiff = naTarget; // Meq de ajuste para Na
+  const alDiff = alTarget; // Meq de ajuste para Al
+  
+  console.log('🔍 VALORES DE LOS CAMPOS (meq a ajustar):');
+  console.log(`  - kTarget: ${kTarget}`);
+  console.log(`  - caTarget: ${caTarget}`);
+  console.log(`  - mgTarget: ${mgTarget}`);
+  console.log(`  - hTarget: ${hTarget}`);
+  console.log(`  - naTarget: ${naTarget}`);
+  console.log(`  - alTarget: ${alTarget}`);
+  
+  
+  // Convertir a meq/kg
+  const kMeqKg = kDiff * 10;
+  const caMeqKg = caDiff * 10;
+  const mgMeqKg = mgDiff * 10;
+  const hMeqKg = hDiff * 10;
+  const naMeqKg = naDiff * 10;
+  const alMeqKg = alDiff * 10;
+  
+  // Convertir a ppm (mg/kg)
+  const kPpm = kMeqKg * 39.1; // Peso atómico del K
+  const caPpm = caMeqKg * 20.04; // Peso atómico del Ca
+  const mgPpm = mgMeqKg * 12.15; // Peso atómico del Mg
+  const hPpm = hMeqKg * 1.008; // Peso atómico del H
+  const naPpm = naMeqKg * 23; // Peso atómico del Na
+  const alPpm = alMeqKg * 8.99; // Peso atómico del Al
+  
+  // Calcular volumen de suelo por hectárea (m³)
+  const soilVolume = soilDepth / 100; // m³ por m²
+  const soilVolumeHa = soilVolume * 10000; // m³ por hectárea
+  
+  // Calcular peso del suelo por hectárea (kg)
+  const soilWeightHa = soilVolumeHa * soilDensity * 1000; // kg/ha
+  
+  // Calcular kg/ha de cada elemento
+  const kKgHa = (kPpm * soilWeightHa) / 1000000;
+  const caKgHa = (caPpm * soilWeightHa) / 1000000;
+  const mgKgHa = (mgPpm * soilWeightHa) / 1000000;
+  const hKgHa = (hPpm * soilWeightHa) / 1000000;
+  const naKgHa = (naPpm * soilWeightHa) / 1000000;
+  const alKgHa = (alPpm * soilWeightHa) / 1000000;
+  
+  // Calcular necesidades totales (en meq, no en kg/ha)
+  const totalCaNeeded = caDiff > 0 ? Math.abs(caDiff) : 0;
+  const totalMgNeeded = mgDiff > 0 ? Math.abs(mgDiff) : 0;
+  const totalKNeeded = kDiff > 0 ? Math.abs(kDiff) : 0;
+  const totalNaToRemove = naDiff < 0 ? Math.abs(naDiff) : 0;
+  
+  console.log('🔍 CÁLCULO DE NECESIDADES TOTALES:');
+  console.log(`  - totalCaNeeded: ${totalCaNeeded} (de caDiff: ${caDiff})`);
+  console.log(`  - totalMgNeeded: ${totalMgNeeded} (de mgDiff: ${mgDiff})`);
+  console.log(`  - totalKNeeded: ${totalKNeeded} (de kDiff: ${kDiff})`);
+  
+  // Calcular aportes de todas las enmiendas seleccionadas
+  let totalCaContribution = 0;
+  let totalMgContribution = 0;
+  let totalKContribution = 0;
+  let totalSiContribution = 0;
+  let totalNaRemoval = 0;
+  let amendmentDetails = [];
+  
+  // NUEVA LÓGICA INTELIGENTE: Priorización basada en pH y sinergia
+  const soilPH = parseFloat(document.getElementById('soil-ph')?.value || 7);
+  console.log('🧪 pH del suelo:', soilPH);
+  
+  // Calcular necesidades restantes después de cada enmienda
+  let caRemaining = totalCaNeeded;
+  let mgRemaining = totalMgNeeded;
+  let kRemaining = totalKNeeded;
+  let so4Needed = totalNaToRemove; // SO₄ para desplazar Na⁺
+  
+  // ALGORITMO INTELIGENTE DE PRIORIZACIÓN
+  const amendmentStrategy = calcularEstrategiaEnmiendas(selectedAmendments, {
+    ca: caRemaining,
+    mg: mgRemaining,
+    k: kRemaining,
+    so4: so4Needed,
+    pH: soilPH
+  });
+  
+  console.log('🎯 Estrategia calculada:', amendmentStrategy);
+  
+  
+  // FILTRAR ENMIENDAS CON UMBRAL MÍNIMO OPERATIVO (100 kg/ha)
+  const umbralMinimoOperativo = 100; // kg/ha
+  const estrategiaFiltrada = amendmentStrategy.filter(strategy => {
+    if (strategy.dosis >= umbralMinimoOperativo) {
+      return true;
+    } else {
+      console.log(`⚠️ ${strategy.tipo}: ${strategy.dosis.toFixed(2)} kg/ha - Cantidad menor al umbral mínimo (${umbralMinimoOperativo} kg/ha)`);
+      return false;
+    }
+  });
+  
+  console.log('🎯 Estrategia filtrada (umbral mínimo 100 kg/ha):', estrategiaFiltrada);
+  
+  estrategiaFiltrada.forEach(strategy => {
+    const amendment = selectedAmendments.find(a => a.id === strategy.tipo);
+    if (!amendment) return;
+    
+    // USAR la cantidad calculada por la estrategia inteligente (elemento limitante)
+    let amendmentAmount = strategy.dosis;
+    
+    console.log(`✅ Usando cantidad de estrategia inteligente: ${amendmentAmount.toFixed(2)} kg/ha`);
+    console.log(`✅ Elemento limitante: ${strategy.elementoLimitante?.elemento || 'No definido'}`);
+    let caContribution = 0;
+    let mgContribution = 0;
+    let kContribution = 0;
+    let so4Contribution = 0;
+    let siContribution = 0;
+    let naRemoval = 0;
+    
+    // DIAGNÓSTICO COMPLETO
+    console.log(`🔍 DIAGNÓSTICO COMPLETO para ${amendment.name}:`);
+    console.log(`🔍 amendment.id:`, amendment.id);
+    console.log(`🔍 amendment.ca:`, amendment.ca, typeof amendment.ca);
+    console.log(`🔍 amendment.mg:`, amendment.mg, typeof amendment.mg);
+    console.log(`🔍 amendment.k:`, amendment.k, typeof amendment.k);
+    console.log(`🔍 amendment.so4:`, amendment.so4, typeof amendment.so4);
+    console.log(`🔍 amendment.si:`, amendment.si, typeof amendment.si);
+    console.log(`🔍 amendment completo:`, amendment);
+    
+    // Usar valores reales (leer de composition O directamente)
+    const caPercent = amendment.composition?.ca || amendment.ca || 0;
+    const mgPercent = amendment.composition?.mg || amendment.mg || (amendment.id === 'dolomite' ? 13.2 : amendment.id === 'mgso4-mono' ? 17 : 0);
+    const kPercent = amendment.composition?.k || amendment.k || (amendment.id === 'sop-granular' ? 41.5 : 0);
+    const so4Percent = amendment.composition?.so4 || amendment.so4 || (amendment.id === 'gypsum' ? 55.8 : amendment.id === 'sop-granular' ? 54.1 : amendment.id === 'mgso4-mono' ? 69 : 0);
+    const siPercent = amendment.composition?.si || amendment.si || 0;
+    
+    caContribution = amendmentAmount * (caPercent / 100);
+    mgContribution = amendmentAmount * (mgPercent / 100);
+    kContribution = amendmentAmount * (kPercent / 100);
+    so4Contribution = amendmentAmount * (so4Percent / 100);
+    siContribution = amendmentAmount * (siPercent / 100);
+    
+    console.log(`🧮 Aportes calculados:`, {
+      ca: `${caPercent}% → ${caContribution.toFixed(2)} kg/ha`,
+      mg: `${mgPercent}% → ${mgContribution.toFixed(2)} kg/ha`,
+      k: `${kPercent}% → ${kContribution.toFixed(2)} kg/ha`,
+      so4: `${so4Percent}% → ${so4Contribution.toFixed(2)} kg/ha`,
+      si: `${siPercent}% → ${siContribution.toFixed(2)} kg/ha`
+    });
+    // El switch ya no es necesario - todos usan la misma lógica
+    
+    // Acumular contribuciones
+    totalCaContribution += caContribution;
+    totalMgContribution += mgContribution;
+    totalKContribution += kContribution;
+    totalSiContribution += siContribution;
+    totalNaRemoval += naRemoval;
+    
+    // Guardar detalles de esta enmienda
+    if (amendmentAmount > 0) {
+      amendmentDetails.push({
+        name: amendment.name,
+        amount: amendmentAmount,
+        ca: caContribution,
+        mg: mgContribution,
+        k: kContribution,
+        so4: so4Contribution,
+        si: siContribution,
+        naRemoval: naRemoval,
+        razon: strategy.razon,
+        elementoLimitante: strategy.elementoLimitante,
+        advertencia: strategy.advertencia || false
+      });
+    }
+  });
+  
+  // Mostrar resultados combinados
+  showCombinedAmendmentResults(amendmentDetails, totalCaContribution, totalMgContribution, totalKContribution, totalSiContribution, totalNaRemoval);
+}
+
+function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK, totalSi, totalNaRemoval) {
+  const resultsSection = document.getElementById('amendment-results');
+  if (!resultsSection) {
+    console.error('No se encontró la sección amendment-results');
+    return;
+  }
+
+  // Cache de resultados base (sin ajuste) para recalcular sin ejecutar todo el cálculo
+  window.lastAmendmentCalc = {
+    details: Array.isArray(amendmentDetails) ? amendmentDetails : [],
+    totals: { totalCa, totalMg, totalK, totalSi, totalNaRemoval }
+  };
+  try {
+    if (currentProject && currentProject.amendments && currentProject.amendments.results) {
+      currentProject.amendments.results.rawDetails = window.lastAmendmentCalc.details;
+      currentProject.amendments.results.rawTotals = window.lastAmendmentCalc.totals;
+    }
+  } catch {}
+
+  const reachPercent = getSoilReachPercent();
+  const reachFactor = reachPercent / 100;
+  const adjustedDetails = (window.lastAmendmentCalc.details || []).map(item => ({
+    ...item,
+    amount: (item.amount || 0) * reachFactor,
+    ca: (item.ca || 0) * reachFactor,
+    mg: (item.mg || 0) * reachFactor,
+    k: (item.k || 0) * reachFactor,
+    so4: (item.so4 || 0) * reachFactor,
+    si: (item.si || 0) * reachFactor,
+    naRemoval: (item.naRemoval || 0) * reachFactor
+  }));
+  
+  let html = `
+    <div style="position: relative;">
+      <h3>📊 Resultados del Cálculo de Enmiendas</h3>
+      <div style="position: absolute; top: -30px; right: 15px; opacity: 0.25; z-index: 1; pointer-events: none;">
+        <img src="assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO" style="width: 160px; height: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
+      </div>
+    </div>
+  `;
+  
+  if (adjustedDetails.length === 0) {
+    html += '<p>No se requieren enmiendas con las seleccionadas actuales.</p>';
+  } else {
+    // Calcular totales reales de todos los nutrientes
+    let totalKReal = 0, totalCaReal = 0, totalMgReal = 0, totalSo4Real = 0, totalSiReal = 0;
+    
+    adjustedDetails.forEach(amendment => {
+      totalKReal += amendment.k || 0;
+      totalCaReal += amendment.ca || 0;
+      totalMgReal += amendment.mg || 0;
+      totalSo4Real += amendment.so4 || 0;
+      totalSiReal += amendment.si || 0;
+    });
+    
+    html += '<div class="amendment-summary">';
+    html += '<h4>🎯 Aportes Totales:</h4>';
+    html += '<ul>';
+    if (totalKReal > 0) html += `<li><strong>Potasio (K⁺):</strong> ${formatNumber(totalKReal)} kg/ha</li>`;
+    if (totalCaReal > 0) html += `<li><strong>Calcio (Ca²⁺):</strong> ${formatNumber(totalCaReal)} kg/ha</li>`;
+    if (totalMgReal > 0) html += `<li><strong>Magnesio (Mg²⁺):</strong> ${formatNumber(totalMgReal)} kg/ha</li>`;
+    if (totalSo4Real > 0) html += `<li><strong>Sulfato (SO₄²⁻):</strong> ${formatNumber(totalSo4Real)} kg/ha</li>`;
+    if (totalSiReal > 0) html += `<li><strong>Silicio (Si):</strong> ${formatNumber(totalSiReal)} kg/ha</li>`;
+    html += '</ul>';
+    html += `<div style="font-size: 12px; color: #64748b; margin-top: 6px;">% del volumen de suelo explorado por raíces (${formatNumber(reachPercent, 0)}%).</div>`;
+    html += '</div>';
+    
+    html += '<div class="amendment-details">';
+    html += '<h4>📋 Detalles por Enmienda:</h4>';
+    html += '<table class="results-table">';
+    html += '<thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th>K⁺ (kg/ha)</th><th>Ca²⁺ (kg/ha)</th><th>Mg²⁺ (kg/ha)</th><th>SO₄²⁻ (kg/ha)</th><th>Si (kg/ha)</th></tr></thead>';
+    html += '<tbody>';
+    
+    adjustedDetails.forEach(amendment => {
+      html += '<tr>';
+      if (amendment.advertencia) {
+        html += `<td style="color: #dc2626; font-weight: bold;">⚠️ ${amendment.name}</td>`;
+      } else {
+      html += `<td>${amendment.name}</td>`;
+      }
+      html += `<td>${formatNumber(amendment.amount)}</td>`;
+      html += `<td>${amendment.k > 0 ? formatNumber(amendment.k) : '-'}</td>`;
+      html += `<td>${amendment.ca > 0 ? formatNumber(amendment.ca) : '-'}</td>`;
+      html += `<td>${amendment.mg > 0 ? formatNumber(amendment.mg) : '-'}</td>`;
+      html += `<td>${amendment.so4 > 0 ? formatNumber(amendment.so4) : '-'}</td>`;
+      html += `<td>${amendment.si > 0 ? formatNumber(amendment.si) : '-'}</td>`;
+      html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    html += '</div>';
+    
+  }
+  
+  resultsSection.innerHTML = html;
+  resultsSection.style.display = 'block';
+  
+  // REMOVIDO: Guardado automático eliminado
+}
+
+function updateAmendmentCalculation() {
+  // Si ya hay resultados mostrados, recalcular automáticamente
+  const resultsSection = document.getElementById('amendment-results');
+  if (resultsSection && resultsSection.style.display !== 'none') {
+    calculateAmendment();
+  }
+  
+  // NO recalcular ajustes automáticos cuando cambian las enmiendas
+  // Los valores de ajuste deben mantenerse fijos hasta que el usuario los modifique
+}
+
+function toggleAmendmentSelection(amendmentId) {
+  console.log('🔄 Alternando selección de enmienda:', amendmentId);
+  
+  const button = document.getElementById(`btn-select-${amendmentId}`);
+  if (!button) return;
+  
+  // Alternar estado
+  const isSelected = button.classList.contains('selected');
+  
+  if (isSelected) {
+    // Deseleccionar
+    button.classList.remove('selected');
+    button.textContent = 'Seleccionar';
+    button.style.backgroundColor = '';
+    button.style.color = '';
+  } else {
+    // Seleccionar
+    button.classList.add('selected');
+    button.textContent = 'Seleccionado';
+    button.style.backgroundColor = '#10b981'; // Verde
+    button.style.color = 'white';
+  }
+  
+  // REMOVIDO: Guardado automático eliminado
+  
+  // REMOVIDO: Cálculo automático eliminado - solo calcular cuando se presione el botón
+}
+
+const amendmentsDatabase = [
+  {
+    id: 'gypsum',
+    name: 'Yeso Agrícola',
+    formula: 'CaSO₄·2H₂O',
+    molecularWeight: 172.2,
+    ca: 23.3,
+    mg: 0,
+    k: 0,
+    so4: 55.8,
+    co3: 0,
+    h2o: 20.9,
+    type: 'sulfate'
+  }
+
+function saveCustomAmendmentsToStorage() {
+  try {
+    // Obtener userId del usuario actual
+    const userId = localStorage.getItem('nutriplant_user_id');
+    if (!userId) {
+      console.warn('⚠️ No hay usuario logueado - enmiendas no se guardarán');
+      return;
+    }
+    
+    // Filtrar solo enmiendas personalizadas
+    const customAmendments = amendmentsDatabase.filter(a => a.type === 'custom');
+    
+    // 1️⃣ GUARDAR POR USUARIO (SIEMPRE, aislado por usuario)
+    const userKey = `nutriplant_custom_amendments_${userId}`;
+    localStorage.setItem(userKey, JSON.stringify(customAmendments));
+    console.log(`✅ ${customAmendments.length} enmienda(s) personalizada(s) guardadas para usuario: ${userId}`);
+    
+    // 2️⃣ TAMBIÉN guardar por proyecto si hay uno activo (opcional, para compatibilidad)
+    const projectId = localStorage.getItem('currentProjectId');
+    if (projectId) {
+      const projectKey = `nutriplant_custom_amendments_${projectId}`;
+      localStorage.setItem(projectKey, JSON.stringify(customAmendments));
+      console.log(`✅ También guardadas para proyecto: ${projectId}`);
+    }
+  } catch (error) {
+    console.error('❌ Error guardando enmiendas personalizadas:', error);
+  }
+}
+
+function loadCustomAmendmentsFromStorage() {
+  try {
+    // Obtener userId del usuario actual
+    const userId = localStorage.getItem('nutriplant_user_id');
+    if (!userId) {
+      console.log('ℹ️ No hay usuario logueado - no se cargan enmiendas personalizadas');
+      return;
+    }
+    
+    let savedAmendments = null;
+    let source = '';
+    
+    // PRIORIDAD 1: Cargar específicas del proyecto si hay uno activo
+    const projectId = localStorage.getItem('currentProjectId');
+    if (projectId) {
+      const projectKey = `nutriplant_custom_amendments_${projectId}`;
+      savedAmendments = localStorage.getItem(projectKey);
+      if (savedAmendments) {
+        source = `proyecto ${projectId}`;
+      }
+    }
+    
+    // PRIORIDAD 2: Cargar del usuario si no hay proyecto o no tiene enmiendas
+    if (!savedAmendments) {
+      const userKey = `nutriplant_custom_amendments_${userId}`;
+      savedAmendments = localStorage.getItem(userKey);
+      if (savedAmendments) {
+        source = `usuario ${userId}`;
+      }
+    }
+    
+    if (savedAmendments) {
+      const customAmendments = JSON.parse(savedAmendments);
+      
+      // Eliminar enmiendas personalizadas anteriores del database
+      const predefinedOnly = amendmentsDatabase.filter(a => a.type !== 'custom');
+      amendmentsDatabase.length = 0;
+      amendmentsDatabase.push(...predefinedOnly);
+      
+      // Agregar las guardadas
+      amendmentsDatabase.push(...customAmendments);
+      
+      console.log(`✅ ${customAmendments.length} enmienda(s) personalizada(s) cargadas desde ${source}`);
+    } else {
+      console.log('ℹ️ No hay enmiendas personalizadas guardadas para este usuario');
+    }
+  } catch (error) {
+    console.error('❌ Error cargando enmiendas personalizadas:', error);
+  }
+}
+
+function saveAmendmentEditsToStorage(amendmentId, composition) {
+  try {
+    // Obtener userId del usuario actual
+    const userId = localStorage.getItem('nutriplant_user_id');
+    if (!userId) {
+      console.warn('⚠️ No hay usuario logueado - ediciones no se guardarán');
+      return;
+    }
+    
+    // 1️⃣ GUARDAR POR USUARIO (SIEMPRE, aislado por usuario)
+    const userKey = `nutriplant_amendment_edits_${userId}`;
+    let userEdits = {};
+    const savedUserEdits = localStorage.getItem(userKey);
+    if (savedUserEdits) {
+      userEdits = JSON.parse(savedUserEdits);
+    }
+    userEdits[amendmentId] = composition;
+    localStorage.setItem(userKey, JSON.stringify(userEdits));
+    console.log(`✅ Edición de enmienda ${amendmentId} guardada para usuario: ${userId}`);
+    
+    // 2️⃣ TAMBIÉN guardar por proyecto si hay uno activo (opcional, para compatibilidad)
+    const projectId = localStorage.getItem('currentProjectId');
+    if (projectId) {
+      const projectKey = `nutriplant_amendment_edits_${projectId}`;
+      let projectEdits = {};
+      const savedProjectEdits = localStorage.getItem(projectKey);
+      if (savedProjectEdits) {
+        projectEdits = JSON.parse(savedProjectEdits);
+      }
+      projectEdits[amendmentId] = composition;
+      localStorage.setItem(projectKey, JSON.stringify(projectEdits));
+      console.log(`✅ Edición también guardada para proyecto: ${projectId}`);
+    }
+  } catch (error) {
+    console.error('❌ Error guardando ediciones de enmiendas:', error);
+  }
+}
+
+function loadAmendmentEditsFromStorage() {
+  try {
+    // Obtener userId del usuario actual
+    const userId = localStorage.getItem('nutriplant_user_id');
+    if (!userId) {
+      console.log('ℹ️ No hay usuario logueado - no se cargan ediciones de enmiendas');
+      return;
+    }
+    
+    let savedEdits = null;
+    
+    // PRIORIDAD 1: Cargar específicas del proyecto si hay uno activo
+    const projectId = localStorage.getItem('currentProjectId');
+    if (projectId) {
+      const projectKey = `nutriplant_amendment_edits_${projectId}`;
+      savedEdits = localStorage.getItem(projectKey);
+      if (savedEdits) {
+        console.log(`📂 Cargando ediciones del proyecto: ${projectId}`);
+      }
+    }
+    
+    // PRIORIDAD 2: Cargar del usuario si no hay proyecto o no tiene ediciones
+    if (!savedEdits) {
+      const userKey = `nutriplant_amendment_edits_${userId}`;
+      savedEdits = localStorage.getItem(userKey);
+      if (savedEdits) {
+        console.log(`📂 Cargando ediciones del usuario: ${userId}`);
+      }
+    }
+    
+    if (savedEdits) {
+      const edits = JSON.parse(savedEdits);
+      
+      // Aplicar ediciones a las enmiendas predefinidas
+      Object.keys(edits).forEach(amendmentId => {
+        const amendment = amendmentsDatabase.find(a => a.id === amendmentId);
+        if (amendment) {
+          amendment.composition = edits[amendmentId];
+          // También actualizar valores directos
+          if (edits[amendmentId].k !== undefined) amendment.k = edits[amendmentId].k;
+          if (edits[amendmentId].ca !== undefined) amendment.ca = edits[amendmentId].ca;
+          if (edits[amendmentId].mg !== undefined) amendment.mg = edits[amendmentId].mg;
+          if (edits[amendmentId].so4 !== undefined) amendment.so4 = edits[amendmentId].so4;
+          if (edits[amendmentId].co3 !== undefined) amendment.co3 = edits[amendmentId].co3;
+          if (edits[amendmentId].h2o !== undefined) amendment.h2o = edits[amendmentId].h2o;
+          if (edits[amendmentId].si !== undefined) amendment.si = edits[amendmentId].si;
+        }
+      });
+      
+      console.log(`✅ Ediciones de enmiendas aplicadas`);
+    }
+  } catch (error) {
+    console.error('❌ Error cargando ediciones de enmiendas:', error);
+  }
+}
+
+function loadAmendmentsTable() {
+  console.log('=== INICIANDO CARGA DE TABLA ===');
+  
+  // 📂 CARGAR ENMIENDAS PERSONALIZADAS Y EDICIONES DESDE LOCALSTORAGE
+  loadCustomAmendmentsFromStorage();
+  loadAmendmentEditsFromStorage();
+  
+  const tbody = document.getElementById('amendments-table-body');
+  console.log('Elemento tbody:', tbody);
+  
+  if (!tbody) {
+    console.log('❌ Tabla de enmiendas no encontrada');
+    console.log('Elementos disponibles:', document.querySelectorAll('tbody'));
+    return;
+  }
+  
+  console.log('✅ Tabla encontrada, cargando enmiendas...');
+  tbody.innerHTML = '';
+  
+  // Mostrar todas las enmiendas disponibles (incluyendo personalizadas)
+  const availableAmendments = amendmentsDatabase;
+  console.log('Enmiendas en base de datos:', availableAmendments.length);
+  console.log('Base de datos:', amendmentsDatabase);
+  
+  // 1️⃣ Mostrar las enmiendas predefinidas primero
+  const predefinedAmendments = amendmentsDatabase.filter(amendment => 
+    ['gypsum', 'lime', 'dolomite', 'sop-granular', 'mgso4-mono'].includes(amendment.id)
+  );
+  
+  console.log('Enmiendas predefinidas encontradas:', predefinedAmendments.length);
+  console.log('Enmiendas predefinidas:', predefinedAmendments);
+  
+  predefinedAmendments.forEach((amendment, index) => {
+    console.log(`Procesando enmienda ${index + 1}:`, amendment.name);
+    const row = document.createElement('tr');
+    row.className = 'amendment-row';
+    row.innerHTML = `
+      <td>${amendment.name}</td>
+      <td>${amendment.formula}</td>
+      <td>${amendment.molecularWeight}</td>
+      <td>${amendment.k > 0 ? amendment.k + '%' : '-'}</td>
+      <td>${amendment.ca > 0 ? amendment.ca + '%' : '-'}</td>
+      <td>${amendment.mg > 0 ? amendment.mg + '%' : '-'}</td>
+      <td>${amendment.so4 > 0 ? amendment.so4 + '%' : '-'}</td>
+      <td>${amendment.co3 > 0 ? amendment.co3 + '%' : '-'}</td>
+      <td>${amendment.h2o > 0 ? amendment.h2o + '%' : '-'}</td>
+      <td>${amendment.si > 0 ? amendment.si + '%' : '-'}</td>
+      <td>
+        <button class="btn-select-amendment" id="btn-select-${amendment.id}" onclick="toggleAmendmentSelection('${amendment.id}')">
+          Seleccionar
+        </button>
+        <button class="btn-edit-amendment" onclick="editAmendment('${amendment.id}')" title="Editar composición">
+          ✏️
+        </button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+  
+  // Mostrar enmiendas personalizadas
+  const customAmendments = amendmentsDatabase.filter(amendment => amendment.type === 'custom');
+  console.log(`📋 Enmiendas personalizadas a mostrar: ${customAmendments.length}`);
+  console.log('📋 Enmiendas personalizadas:', customAmendments);
+  
+  customAmendments.forEach((amendment, index) => {
+    console.log(`Procesando enmienda personalizada ${index + 1}:`, amendment.name);
+    const row = document.createElement('tr');
+    row.className = 'amendment-row';
+    row.innerHTML = `
+      <td>${amendment.name}</td>
+      <td>${amendment.formula}</td>
+      <td>${amendment.molecularWeight}</td>
+      <td>${amendment.k > 0 ? amendment.k + '%' : '-'}</td>
+      <td>${amendment.ca > 0 ? amendment.ca + '%' : '-'}</td>
+      <td>${amendment.mg > 0 ? amendment.mg + '%' : '-'}</td>
+      <td>${amendment.so4 > 0 ? amendment.so4 + '%' : '-'}</td>
+      <td>${amendment.co3 > 0 ? amendment.co3 + '%' : '-'}</td>
+      <td>${amendment.h2o > 0 ? amendment.h2o + '%' : '-'}</td>
+      <td>${amendment.si > 0 ? amendment.si + '%' : '-'}</td>
+      <td>
+        <button id="btn-select-${amendment.id}" class="btn-select-amendment" onclick="toggleAmendmentSelection('${amendment.id}')">
+          Seleccionar
+        </button>
+        <button class="btn-edit-amendment" onclick="editAmendment('${amendment.id}')" title="Editar composición">
+          ✏️
+        </button>
+        <button class="btn-delete-amendment-small" onclick="deleteAmendment('${amendment.id}')" title="Eliminar enmienda personalizada">
+          🗑️
+        </button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+  
+  // Agregar fila en blanco para nueva enmienda
+  const newRow = document.createElement('tr');
+  newRow.id = 'new-amendment-row';
+  newRow.innerHTML = `
+    <td><input type="text" id="new-amendment-name" placeholder="Nombre de la enmienda" class="amendment-input"></td>
+    <td><input type="text" id="new-amendment-formula" placeholder="Fórmula química" class="amendment-input"></td>
+    <td><input type="number" id="new-amendment-molecular" placeholder="Peso molecular" class="amendment-input" step="0.01"></td>
+    <td><input type="number" id="new-amendment-k" placeholder="%K" class="amendment-input" step="0.01" min="0" max="100"></td>
+    <td><input type="number" id="new-amendment-ca" placeholder="%Ca" class="amendment-input" step="0.01" min="0" max="100"></td>
+    <td><input type="number" id="new-amendment-mg" placeholder="%Mg" class="amendment-input" step="0.01" min="0" max="100"></td>
+    <td><input type="number" id="new-amendment-so4" placeholder="%SO₄" class="amendment-input" step="0.01" min="0" max="100"></td>
+    <td><input type="number" id="new-amendment-co3" placeholder="%CO₃" class="amendment-input" step="0.01" min="0" max="100"></td>
+    <td><input type="number" id="new-amendment-h2o" placeholder="%H₂O" class="amendment-input" step="0.01" min="0" max="100"></td>
+    <td><input type="number" id="new-amendment-si" placeholder="%Si" class="amendment-input" step="0.01" min="0" max="100"></td>
+    <td>
+      <button class="btn-save-amendment-small" onclick="saveNewAmendment()">💾</button>
+      <button class="btn-cancel-amendment-small" onclick="clearNewAmendmentRow()">❌</button>
+    </td>
+  `;
+  tbody.appendChild(newRow);
+  
+  console.log('=== TABLA CARGADA COMPLETAMENTE ===');
+  console.log('Total de filas en tbody:', tbody.children.length);
+}
+
+function updateSelectionIndicator() {
+  const count = selectedAmendments.length;
+  console.log(`Enmiendas seleccionadas: ${count}`);
+  
+  // Actualizar el título de la sección
+  const sectionTitle = document.querySelector('.amendments-section h3');
+  if (sectionTitle) {
+    if (count > 0) {
+      sectionTitle.innerHTML = `🧪 Enmiendas Disponibles <span class="selection-count">(${count} seleccionada${count > 1 ? 's' : ''})</span>`;
+    } else {
+      sectionTitle.innerHTML = '🧪 Enmiendas Disponibles';
+    }
+  }
+}
+
+function saveNewAmendment() {
+  const name = document.getElementById('new-amendment-name').value.trim();
+  const formula = document.getElementById('new-amendment-formula').value.trim();
+  const molecularWeight = parseFloat(document.getElementById('new-amendment-molecular').value);
+  
+  if (!name || !formula || isNaN(molecularWeight)) {
+    showMessage('❌ Por favor completa al menos: Nombre, Fórmula y Peso Molecular', 'error');
+    return;
+  }
+  
+  const ca = parseFloat(document.getElementById('new-amendment-ca').value) || 0;
+  const mg = parseFloat(document.getElementById('new-amendment-mg').value) || 0;
+  const k = parseFloat(document.getElementById('new-amendment-k').value) || 0;
+  const so4 = parseFloat(document.getElementById('new-amendment-so4').value) || 0;
+  const co3 = parseFloat(document.getElementById('new-amendment-co3').value) || 0;
+  const h2o = parseFloat(document.getElementById('new-amendment-h2o').value) || 0;
+  const si = parseFloat(document.getElementById('new-amendment-si').value) || 0;
+  
+  const newAmendment = {
+    id: 'custom-' + Date.now(),
+    name: name,
+    formula: formula,
+    molecularWeight: molecularWeight,
+    ca: ca,
+    mg: mg,
+    k: k,
+    so4: so4,
+    co3: co3,
+    h2o: h2o,
+    si: si,
+    type: 'custom'
+  };
+  
+  amendmentsDatabase.push(newAmendment);
+  
+  // 💾 GUARDAR EN LOCALSTORAGE (por proyecto)
+  saveCustomAmendmentsToStorage();
+  
+  // Agregar la nueva enmienda al selector
+  const select = document.getElementById('amendment-type-select');
+  if (select) {
+    const option = document.createElement('option');
+    option.value = newAmendment.id;
+    option.textContent = `${newAmendment.name} (${newAmendment.formula})`;
+    select.appendChild(option);
+  }
+  
+  // Limpiar los campos de la fila en blanco
+  clearNewAmendmentRow();
+  
+  // Recargar la tabla
+  loadAmendmentsTable();
+  showMessage(`✅ Enmienda "${name}" guardada exitosamente`, 'success');
+  console.log('✅ Enmienda personalizada guardada en localStorage');
+}
+
+function clearNewAmendmentRow() {
+  document.getElementById('new-amendment-name').value = '';
+  document.getElementById('new-amendment-formula').value = '';
+  document.getElementById('new-amendment-molecular').value = '';
+  document.getElementById('new-amendment-ca').value = '';
+  document.getElementById('new-amendment-mg').value = '';
+  document.getElementById('new-amendment-k').value = '';
+  document.getElementById('new-amendment-so4').value = '';
+  document.getElementById('new-amendment-co3').value = '';
+  document.getElementById('new-amendment-h2o').value = '';
+  document.getElementById('new-amendment-si').value = '';
+}
+
+function deleteAmendment(amendmentId) {
+  const amendment = amendmentsDatabase.find(a => a.id === amendmentId);
+  if (!amendment || amendment.type !== 'custom') {
+    showMessage('❌ Solo se pueden eliminar enmiendas personalizadas', 'error');
+    return;
+  }
+  
+  if (confirm(`¿Estás seguro de que quieres eliminar "${amendment.name}"?`)) {
+    // Eliminar de la base de datos
+    const index = amendmentsDatabase.findIndex(a => a.id === amendmentId);
+    amendmentsDatabase.splice(index, 1);
+    
+    // 💾 GUARDAR EN LOCALSTORAGE
+    saveCustomAmendmentsToStorage();
+    
+    // Eliminar del selector
+    const select = document.getElementById('amendment-type-select');
+    if (select) {
+      const option = select.querySelector(`option[value="${amendmentId}"]`);
+      if (option) {
+        option.remove();
+      }
+    }
+    
+    // Recargar la tabla
+    loadAmendmentsTable();
+    showMessage(`✅ Enmienda "${amendment.name}" eliminada`, 'success');
+    console.log('✅ Enmienda personalizada eliminada de localStorage');
+  }
+}
+
+function saveAmendmentEditsToStorage(amendmentId, composition) {
+  try {
+    // Obtener userId del usuario actual
+    const userId = localStorage.getItem('nutriplant_user_id');
+    if (!userId) {
+      console.warn('⚠️ No hay usuario logueado - ediciones no se guardarán');
+      return;
+    }
+    
+    // 1️⃣ GUARDAR POR USUARIO (SIEMPRE, aislado por usuario)
+    const userKey = `nutriplant_amendment_edits_${userId}`;
+    let userEdits = {};
+    const savedUserEdits = localStorage.getItem(userKey);
+    if (savedUserEdits) {
+      userEdits = JSON.parse(savedUserEdits);
+    }
+    userEdits[amendmentId] = composition;
+    localStorage.setItem(userKey, JSON.stringify(userEdits));
+    console.log(`✅ Edición de enmienda ${amendmentId} guardada para usuario: ${userId}`);
+    
+    // 2️⃣ TAMBIÉN guardar por proyecto si hay uno activo (opcional, para compatibilidad)
+    const projectId = localStorage.getItem('currentProjectId');
+    if (projectId) {
+      const projectKey = `nutriplant_amendment_edits_${projectId}`;
+      let projectEdits = {};
+      const savedProjectEdits = localStorage.getItem(projectKey);
+      if (savedProjectEdits) {
+        projectEdits = JSON.parse(savedProjectEdits);
+      }
+      projectEdits[amendmentId] = composition;
+      localStorage.setItem(projectKey, JSON.stringify(projectEdits));
+      console.log(`✅ Edición también guardada para proyecto: ${projectId}`);
+    }
+  } catch (error) {
+    console.error('❌ Error guardando ediciones de enmiendas:', error);
+  }
+}
+
+function getSelectedAmendments() {
+  console.log('🔍 getSelectedAmendments - INICIANDO');
+  const selected = [];
+  const selectedButtons = document.querySelectorAll('.btn-select-amendment.selected');
+  
+  console.log(`🔍 Botones seleccionados encontrados: ${selectedButtons.length}`);
+  
+  selectedButtons.forEach(button => {
+    const amendmentId = button.id.replace('btn-select-', '');
+    console.log(`🔍 Procesando enmienda ID: ${amendmentId}`);
+    
+    // LEER VALORES REALES DE LA TABLA DOM (como las enmiendas nuevas)
+    const row = button.closest('tr');
+    if (row) {
+      const cells = row.querySelectorAll('td');
+      if (cells.length >= 8) {
+        const name = cells[0].textContent.trim();
+        const formula = cells[1].textContent.trim();
+        const molecularWeight = parseFloat(cells[2].textContent.trim()) || 0;
+        const k = cells[3].textContent.trim() === '-' ? 0 : parseFloat(cells[3].textContent.trim()) || 0;
+        const ca = cells[4].textContent.trim() === '-' ? 0 : parseFloat(cells[4].textContent.trim()) || 0;
+        const mg = cells[5].textContent.trim() === '-' ? 0 : parseFloat(cells[5].textContent.trim()) || 0;
+        const so4 = cells[6].textContent.trim() === '-' ? 0 : parseFloat(cells[6].textContent.trim()) || 0;
+        const co3 = cells[7].textContent.trim() === '-' ? 0 : parseFloat(cells[7].textContent.trim()) || 0;
+        const h2o = cells[8]?.textContent.trim() === '-' ? 0 : parseFloat(cells[8]?.textContent.trim()) || 0;
+        const si = cells[9]?.textContent.trim() === '-' ? 0 : parseFloat(cells[9]?.textContent.trim()) || 0;
+        
+        console.log(`🔍 Enmienda encontrada: ${name}`);
+        console.log(`🔍 Valores REALES de la tabla:`, {
+          ca: ca,
+          mg: mg,
+          k: k,
+          so4: so4,
+          co3: co3,
+          h2o: h2o,
+          si: si
+        });
+        console.log(`🔍 Texto completo de la celda Ca: "${cells[4].textContent}"`);
+        console.log(`🔍 Texto después de trim: "${cells[4].textContent.trim()}"`);
+        console.log(`🔍 Valor parseFloat: ${parseFloat(cells[4].textContent.trim())}`);
+        
+      selected.push({
+        id: amendmentId,
+          name: name,
+          formula: formula,
+          molecularWeight: molecularWeight,
+        composition: {
+            k: k,
+            ca: ca,
+            mg: mg,
+            so4: so4,
+            co3: co3,
+            h2o: h2o,
+            si: si
+          }
+        });
+      }
+    } else {
+      console.warn(`❌ No se pudo encontrar la fila para ${amendmentId}`);
+    }
+  });
+  
+  console.log(`🔍 Enmiendas seleccionadas finales:`, selected);
+  return selected;
+}
+
+window.showMessage = function(message, type = 'success') {
+  // Crear elemento de mensaje
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `save-message save-message-${type}`;
+  messageDiv.textContent = message;
+  
+  // Estilos según el tipo
+  const bgColor = type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : type === 'error' ? '#ef4444' : '#3b82f6';
+  
+  messageDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${bgColor};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    font-weight: 500;
+    animation: slideIn 0.3s ease;
+    max-width: 400px;
+  `;
+  
+  // Agregar al DOM
+  document.body.appendChild(messageDiv);
+  
+  // Remover después de 3 segundos
+  setTimeout(() => {
+    messageDiv.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => {
+      if (messageDiv.parentNode) {
+        messageDiv.parentNode.removeChild(messageDiv);
+      }
+    }, 300);
+  }, 3000);
+}
+
+// Inicialización standalone
+document.addEventListener('DOMContentLoaded', () => {
+  try { loadAmendmentsTable(); } catch (e) { console.warn('loadAmendmentsTable', e); }
+  try { initializeEnmiendaCalculator(); } catch (e) { console.warn('initializeEnmiendaCalculator', e); }
+  try { calculateCIC(); } catch (e) { console.warn('calculateCIC', e); }
+  try { updatePHIndicator(); } catch (e) { console.warn('updatePHIndicator', e); }
+});
+</script>
 </body>
 </html>
 
