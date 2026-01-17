@@ -964,14 +964,29 @@
       el.addEventListener("input", ()=>{ if(id==="ph") setPHBadge(); saveState(); });
     });
 
-    const reach=$("soil-reach-percent");
-    if(reach){
-      reach.addEventListener("input", ()=>{
-        getSoilReachPercent();
-        saveState();
-        if(lastCalc) calculateAmendment(true);
-      });
+    const reach = $("soil-reach-percent");
+if (reach) {
+  // Mientras escribes: NO clamps, NO reescribe el valor
+  reach.addEventListener("input", () => {
+    saveState();
+  });
+
+  // Cuando sales del campo (o presionas Enter): ahora sí normaliza y recalcula
+  const normalize = () => {
+    getSoilReachPercent(); // aquí sí hace clamp 10–100 y redondea
+    saveState();
+    if (lastCalc) calculateAmendment(true);
+  };
+
+  reach.addEventListener("blur", normalize);
+  reach.addEventListener("change", normalize);
+  reach.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      reach.blur(); // dispara blur → normalize()
     }
+  });
+}
 
     const b1=$("btnCalc"); if(b1) b1.addEventListener("click", ()=>calculateAmendment(false));
     const b2=$("btnReset"); if(b2) b2.addEventListener("click", resetForm);
@@ -1019,4 +1034,3 @@
 </script>
 </body>
 </html>
-
