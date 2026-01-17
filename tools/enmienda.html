@@ -1,443 +1,179 @@
-<script>
-/* =========================================================
-   NutriPlant PRO — Enmienda Tool (Single File) — DOM SAFE
-   Parte 1/4
-   ✅ No toca el DOM hasta init()
-========================================================= */
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Enmienda | NutriPlant PRO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+  font-family:system-ui;
+  background:#f4f6fb;
+  margin:0;
+  padding:20px
+}
+.card{
+  background:#fff;
+  border-radius:14px;
+  padding:18px;
+  max-width:1200px;
+  margin:auto
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:10px
+}
+input{
+  padding:8px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  width:100%
+}
+button{
+  padding:10px;
+  border-radius:10px;
+  border:0;
+  cursor:pointer
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px
+}
+th,td{
+  border-bottom:1px solid #eee;
+  padding:6px;
+  text-align:center;
+  font-size:13px
+}
+.hidden{display:none}
+#toast{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#111;
+  color:#fff;
+  padding:8px 12px;
+  border-radius:8px;
+  opacity:0
+}
+#toast.show{opacity:1}
+</style>
+</head>
+
+<body>
+<div class="card">
+<h2>Calculadora de Enmiendas</h2>
+
+   <div class="grid">
+  <input id="K" placeholder="K (meq/100g)">
+  <input id="Ca" placeholder="Ca (meq/100g)">
+  <input id="Mg" placeholder="Mg (meq/100g)">
+  <input id="H" placeholder="H">
+  <input id="Na" placeholder="Na">
+  <input id="Al" placeholder="Al">
+</div>
+
+<p>CIC total: <strong id="cicTotal">0.00</strong></p>
+
+<button id="btnCalc">Calcular</button>
+<button id="btnReset">Reset</button>
+
+<div id="resultsBox" class="hidden">
+  <h3>Resultado</h3>
+  <ul id="totalsList"></ul>
+</div>
+
+<h3>Enmiendas</h3>
+<table>
+<thead>
+<tr>
+  <th>Nombre</th>
+  <th>Fórmula</th>
+  <th>Acciones</th>
+</tr>
+</thead>
+<tbody id="amendBody"></tbody>
+</table>
+
+<p id="saveState"></p>
+<div id="toast"></div>
+</div>
+
+   <script>
 (() => {
-  /* ---------- Configuración base ---------- */
-  const ionIds = ["K","Ca","Mg","H","Na","Al"];
 
-  const TARGETS = { K:0.05, Ca:0.75, Mg:0.15, H:0.00, Na:0.00, Al:0.00 };
+const ionIds = ["K","Ca","Mg","H","Na","Al"];
 
-  const AW  = { K:39.0983, Ca:40.078, Mg:24.305, Na:22.98977, Al:26.9815 };
-  const VAL = { K:1, Ca:2, Mg:2, Na:1, Al:3 };
+const TARGETS = { K:0.05, Ca:0.75, Mg:0.15 };
 
-  const DEFAULT_AMENDMENTS = [
-    { id:"gypsum",  name:"Yeso Agrícola", formula:"CaSO₄·2H₂O", molecularWeight:172.2, pctK:0, pctCa:23.3, pctMg:0,  pctSO4:55.8, pctCO3:0,  pctH2O:20.9, pctSi:0 },
-    { id:"lime",    name:"Cal Agrícola",  formula:"CaCO₃",      molecularWeight:100,  pctK:0, pctCa:40,   pctMg:0,  pctSO4:0,    pctCO3:60, pctH2O:0,   pctSi:0 },
-    { id:"dolomite",name:"Cal Dolomítica",formula:"CaCO₃+MgCO₃",molecularWeight:184,  pctK:0, pctCa:21.7, pctMg:13.2,pctSO4:0,    pctCO3:65.2,pctH2O:0,   pctSi:0 },
-    { id:"mgso4",   name:"Sulfato de Magnesio Monohidrato", formula:"MgSO₄·H₂O", molecularWeight:138, pctK:0, pctCa:0, pctMg:17, pctSO4:69, pctCO3:0, pctH2O:14, pctSi:0 },
-    { id:"k2so4",   name:"Sulfato de Potasio Granular",      formula:"K₂SO₄",     molecularWeight:174, pctK:41.5, pctCa:0, pctMg:0, pctSO4:54.1, pctCO3:0, pctH2O:0, pctSi:0 }
-  ];
+const AW  = { K:39.1, Ca:40.1, Mg:24.3 };
+const VAL = { K:1, Ca:2, Mg:2 };
 
-  /* ---------- Helpers (sin DOM) ---------- */
-  const n = (v)=>{ const x=parseFloat(v); return Number.isFinite(x)?x:0; };
-  const fmt = (x,d=2)=> (Number.isFinite(x)?x:0).toFixed(d);
-  const clamp = (x,a,b)=>Math.max(a, Math.min(b,x));
+const DEFAULT_AMENDMENTS = [
+  { id:"gypsum", name:"Yeso Agrícola", formula:"CaSO₄·2H₂O", pctCa:23.3 },
+  { id:"lime", name:"Cal Agrícola", formula:"CaCO₃", pctCa:40 },
+  { id:"dolomite", name:"Cal Dolomítica", formula:"CaCO₃ + MgCO₃", pctCa:21.7, pctMg:13.2 }
+];
 
-  /* ---------- UserId + Storage (sin DOM) ---------- */
-  function getOrCreateUserId(){
-    const key="nutriplant_user_id";
-    let id=localStorage.getItem(key);
-    if(!id){
-      id="np_"+Math.random().toString(16).slice(2)+Date.now().toString(16);
-      localStorage.setItem(key,id);
-    }
-    return id;
-  }
-  const userId = getOrCreateUserId();
+const $ = (id)=>document.getElementById(id);
+const n = v => Number.isFinite(parseFloat(v)) ? parseFloat(v) : 0;
+const fmt = (x,d=2)=>Number(x||0).toFixed(d);
 
-  const STORAGE = {
-    key:(k)=>`nutriplant_enmienda_${userId}_${k}`,
-    get(k,fb=null){
-      try{ const raw=localStorage.getItem(this.key(k)); return raw?JSON.parse(raw):fb; }
-      catch(e){ return fb; }
-    },
-    set(k,v){ localStorage.setItem(this.key(k), JSON.stringify(v)); },
-    clear(){
-      ["state","amendments","selected","lastCalc"].forEach(k=>localStorage.removeItem(this.key(k)));
-    }
-  };
+let amendments = structuredClone(DEFAULT_AMENDMENTS);
+let selectedAmendId = amendments[0].id;
 
-  /* ---------- Estado (sin DOM) ---------- */
-  let amendments = STORAGE.get("amendments", null);
-  if(!Array.isArray(amendments) || amendments.length===0){
-    amendments = structuredClone(DEFAULT_AMENDMENTS);
-    STORAGE.set("amendments", amendments);
-  }
-  let selectedAmendId = STORAGE.get("selected", amendments[0]?.id || "gypsum");
-  let lastCalc = STORAGE.get("lastCalc", null);
+function calcCIC(v){
+  return ionIds.reduce((s,i)=>s+n(v[i]),0);
+}
 
-  /* ---------- DOM helpers (solo se usan DESPUÉS en init) ---------- */
-  let $ = null; // se define en init
+function getIonValues(){
+  const v={};
+  ionIds.forEach(i=>v[i]=n($(i).value));
+  return v;
+}
 
-  function setSaveState(t){
-    const el = $("saveState");
-    if(el) el.textContent = t;
-  }
-  function toast(msg){
-    const el = $("toast");
-    if(!el) return;
-    el.textContent = msg;
-    el.classList.add("show");
-    setTimeout(()=>el.classList.remove("show"), 1300);
-  }
-
-   /* ---------- Lógica CIC / ajustes ---------- */
-  function getSoilReachPercent(){
-    const el = $("soil-reach-percent");
-    if(!el) return 60;
-    let v = n(el.value || el.placeholder || 60);
-    v = clamp(Math.round(v), 10, 100);
-    el.value = v;
-    return v;
-  }
-
-  function calcCIC(vals){
-    return ionIds.reduce((s,i)=>s + (vals[i]||0), 0);
-  }
-  function getIonValues(){
-    const v = {};
-    ionIds.forEach(i=> v[i]= n($(i)?.value) );
-    return v;
-  }
-
-  function rangeStatus(pct, ion){
-    const ranges = { K:[3,7], Ca:[65,75], Mg:[10,15], H:[0,10], Na:[0,1], Al:[0,1] };
-    const [lo,hi]=ranges[ion];
-    if(pct < lo) return "❌";
-    if(pct > hi) return "⚠️";
-    return "✅";
-  }
-
-  function updateTop(){
-    const v = getIonValues();
-    const cic = calcCIC(v);
-    const cicEl = $("cicTotal");
-    if(cicEl) cicEl.textContent = fmt(cic,2);
-
-    ionIds.forEach(id=>{
-      const pct = cic>0 ? (v[id]/cic*100) : 0;
-      const pctEl = $(id+"_pct");
-      if(pctEl) pctEl.textContent = fmt(pct,1)+"%";
-
-      const st = $(id+"_status");
-      if(st) st.textContent = cic>0 ? rangeStatus(pct,id) : "—";
-    });
-
-    const adj = {};
-    ionIds.forEach(id=>{
-      adj[id] = cic*(TARGETS[id]||0) - v[id];
-      const el = $("adj"+id);
-      if(el){
-        el.value = fmt(adj[id],2);
-        el.classList.toggle("neg", adj[id]<0);
-      }
-    });
-
-    return {v,cic,adj};
-  }
-
-  function setPHBadge(){
-    const phEl = $("ph");
-    const badge = $("phBadge");
-    if(!badge || !phEl) return;
-    const ph = n(phEl.value || phEl.placeholder || 7);
-
-    if(ph < 6.5){
-      badge.textContent="🟡 Ácido";
-      badge.style.background="#fff7ed"; badge.style.borderColor="#fed7aa"; badge.style.color="#b45309";
-    } else if(ph > 7.5){
-      badge.textContent="🟠 Alcalino";
-      badge.style.background="#fff7ed"; badge.style.borderColor="#fed7aa"; badge.style.color="#b45309";
-    } else {
-      badge.textContent="🟢 Neutro";
-      badge.style.background="#eafdf4"; badge.style.borderColor="#bbf7d0"; badge.style.color="#15803d";
-    }
-  }
-
-  function getSoilProps(){
-    const bdEl = $("bd"), depthEl=$("depth");
-    const bd = n(bdEl?.value || bdEl?.placeholder || 1.10);
-    const depth = n(depthEl?.value || depthEl?.placeholder || 30);
-    return { bd, depth };
-  }
-
-  function elementKgPerHaFromMeq(meqPer100g, element, depthCm, bd_gcm3, reachPct){
-    const cmolcPerKg = meqPer100g;
-    const molPerKg = (cmolcPerKg/100) / (VAL[element] || 1);
-    const gPerKg = molPerKg * (AW[element] || 0);
-
-    const depthM = depthCm/100;
-    const bd_t_m3 = bd_gcm3;
-    const soilKg = 10000 * depthM * bd_t_m3 * 1000;
-
-    const reach = clamp(reachPct,10,100)/100;
-    return (gPerKg/1000) * soilKg * reach;
-  }
-
-   /* ---------- Enmiendas (tabla + editar) ---------- */
-  function pctCell(x){ return (x && x!==0) ? (Number(x).toFixed(1)+"%") : "–"; }
-
-  function renderAmendments(){
-    const tbody = $("amendBody");
-    if(!tbody) return;
-    tbody.innerHTML = "";
-
-    if(!amendments.some(a=>a.id===selectedAmendId)){
-      selectedAmendId = amendments[0]?.id || "gypsum";
-      STORAGE.set("selected", selectedAmendId);
-    }
-
-    amendments.forEach(a=>{
-      const tr=document.createElement("tr");
-      const selected = a.id===selectedAmendId;
-      const btnSelect = selected
-        ? `<button class="btn btn-green btn-sm" data-act="select" data-id="${a.id}">Seleccionado</button>`
-        : `<button class="btn btn-gray btn-sm" data-act="select" data-id="${a.id}">Seleccionar</button>`;
-
-      tr.innerHTML = `
-        <td style="font-weight:1000;">${a.name}</td>
-        <td>${a.formula}</td>
-        <td>${Number(a.molecularWeight||0).toFixed(1)}</td>
-        <td>${pctCell(a.pctK)}</td>
-        <td>${pctCell(a.pctCa)}</td>
-        <td>${pctCell(a.pctMg)}</td>
-        <td>${pctCell(a.pctSO4)}</td>
-        <td>${pctCell(a.pctCO3)}</td>
-        <td>${pctCell(a.pctH2O)}</td>
-        <td>${pctCell(a.pctSi)}</td>
-        <td class="actions">
-          ${btnSelect}
-          <button class="btn btn-blue btn-sm" data-act="edit" data-id="${a.id}" title="Editar composición">✏️</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    tbody.querySelectorAll("button[data-act='select']").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        selectedAmendId = btn.getAttribute("data-id");
-        STORAGE.set("selected", selectedAmendId);
-        renderAmendments();
-        toast("Enmienda seleccionada");
-      });
-    });
-
-    tbody.querySelectorAll("button[data-act='edit']").forEach(btn=>{
-      btn.addEventListener("click", ()=> editAmendment(btn.getAttribute("data-id")) );
-    });
-  }
-
-  function editAmendment(id){
-    const a = amendments.find(x=>x.id===id);
-    if(!a) return;
-
-    const fields = [
-      ["Nombre","name"],["Fórmula","formula"],["Peso Molecular","molecularWeight"],
-      ["%K","pctK"],["%Ca","pctCa"],["%Mg","pctMg"],["%SO₄","pctSO4"],
-      ["%CO₃","pctCO3"],["%H₂O","pctH2O"],["%Si","pctSi"]
-    ];
-
-    for(const [label,key] of fields){
-      const cur = a[key] ?? "";
-      const next = prompt(`${label}:`, String(cur));
-      if(next===null) return;
-      if(key==="name" || key==="formula") a[key]=next.trim();
-      else a[key]= Number.isFinite(parseFloat(next)) ? parseFloat(next) : 0;
-    }
-
-    STORAGE.set("amendments", amendments);
-    renderAmendments();
-    toast("Enmienda editada");
-  }
-
-  /* ---------- Cálculo + resultados ---------- */
-  function renderResults(calc){
-    const resultsBox = $("resultsBox");
-    const totalsList = $("totalsList");
-    const detailBody = $("detailBody");
-    const reachNote = $("reachNote");
-    if(!resultsBox || !totalsList || !detailBody) return;
-
-    resultsBox.classList.remove("hidden");
-
-    totalsList.innerHTML = "";
-    const addLi = (label, value)=>{
-      const li=document.createElement("li");
-      li.textContent = `${label}: ${fmt(value,2)} kg/ha`;
-      totalsList.appendChild(li);
-    };
-
-    addLi("Dosis de enmienda", calc.qty);
-    addLi("Potasio (K⁺)", calc.aportes.K);
-    addLi("Calcio (Ca²⁺)", calc.aportes.Ca);
-    addLi("Magnesio (Mg²⁺)", calc.aportes.Mg);
-    addLi("Sulfato (SO₄²⁻)", calc.aportes.SO4);
-    addLi("Silicio (Si)", calc.aportes.Si);
-
-    if(reachNote) reachNote.textContent =
-      `% del volumen de suelo explorado por raíces: ${calc.reach}% | Base: ${calc.basis}`;
-
-    detailBody.innerHTML = "";
+ function renderAmendments(){
+  const tbody=$("amendBody");
+  tbody.innerHTML="";
+  amendments.forEach(a=>{
     const tr=document.createElement("tr");
-    tr.innerHTML = `
-      <td style="font-weight:1000;">${calc.amendName}</td>
-      <td>${fmt(calc.qty,2)}</td>
-      <td>${fmt(calc.aportes.K,2)}</td>
-      <td>${fmt(calc.aportes.Ca,2)}</td>
-      <td>${fmt(calc.aportes.Mg,2)}</td>
-      <td>${fmt(calc.aportes.SO4,2)}</td>
-      <td>${fmt(calc.aportes.Si,2)}</td>
-    `;
-    detailBody.appendChild(tr);
-  }
+    tr.innerHTML=`
+      <td>${a.name}</td>
+      <td>${a.formula}</td>
+      <td>
+        <button onclick="selectAmend('${a.id}')">Usar</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
 
-  function calculateAmendment(silent=false){
-    setSaveState("Calculando…");
+window.selectAmend = id => {
+  selectedAmendId=id;
+};
 
-    const { cic, adj } = updateTop();
-    setPHBadge();
+function calculate(){
+  const v=getIonValues();
+  const cic=calcCIC(v);
+  $("cicTotal").textContent=fmt(cic);
 
-    const { bd, depth } = getSoilProps();
-    const reach = getSoilReachPercent();
+  const a=amendments.find(x=>x.id===selectedAmendId);
+  if(!a) return;
 
-    if(cic<=0){
-      if(!silent) toast("Ingresa cationes para calcular CIC");
-      setSaveState("Listo"); return;
-    }
+  $("totalsList").innerHTML=`
+    <li>Enmienda seleccionada: ${a.name}</li>
+  `;
+  $("resultsBox").classList.remove("hidden");
+}
 
-    const a = amendments.find(x=>x.id===selectedAmendId);
-    if(!a){
-      if(!silent) toast("Selecciona una enmienda");
-      setSaveState("Listo"); return;
-    }
+$("btnCalc").onclick=calculate;
+$("btnReset").onclick=()=>location.reload();
 
-    const needKg = {
-      K: Math.max(0, elementKgPerHaFromMeq(adj.K,"K",depth,bd,reach)),
-      Ca: Math.max(0, elementKgPerHaFromMeq(adj.Ca,"Ca",depth,bd,reach)),
-      Mg: Math.max(0, elementKgPerHaFromMeq(adj.Mg,"Mg",depth,bd,reach))
-    };
+renderAmendments();
 
-    const frac = {
-      K:(a.pctK||0)/100, Ca:(a.pctCa||0)/100, Mg:(a.pctMg||0)/100,
-      SO4:(a.pctSO4||0)/100, Si:(a.pctSi||0)/100
-    };
-
-    let qty=0, basis="";
-    if(needKg.Ca>0 && frac.Ca>0){ qty=needKg.Ca/frac.Ca; basis="Ca"; }
-    else if(needKg.Mg>0 && frac.Mg>0){ qty=needKg.Mg/frac.Mg; basis="Mg"; }
-    else if(needKg.K>0 && frac.K>0){ qty=needKg.K/frac.K; basis="K"; }
-    else { if(!silent) toast("Esta enmienda no cubre requerimientos positivos (K/Ca/Mg)"); setSaveState("Listo"); return; }
-
-    const aportes = { K:qty*frac.K, Ca:qty*frac.Ca, Mg:qty*frac.Mg, SO4:qty*frac.SO4, Si:qty*frac.Si };
-
-    lastCalc = { timestamp:Date.now(), selectedAmendId, amendName:a.name, reach, depth, bd, qty, basis, aportes };
-    STORAGE.set("lastCalc", lastCalc);
-
-    renderResults(lastCalc);
-    if(!silent) toast("Cálculo listo");
-    setSaveState("Listo");
-  }
-
-   function resetForm(){
-    ionIds.forEach(id=>{
-      const inp=$(id); if(inp) inp.value="";
-      const pct=$(id+"_pct"); if(pct) pct.textContent="0.0%";
-      const st=$(id+"_status"); if(st) st.textContent="—";
-      const adjEl=$("adj"+id); if(adjEl) adjEl.value="";
-    });
-
-    const cicEl=$("cicTotal"); if(cicEl) cicEl.textContent="0.00";
-    ["bd","depth","ph","soil-reach-percent"].forEach(id=>{ const el=$(id); if(el) el.value=""; });
-
-    const rb=$("resultsBox"); if(rb) rb.classList.add("hidden");
-    const tl=$("totalsList"); if(tl) tl.innerHTML="";
-    const db=$("detailBody"); if(db) db.innerHTML="";
-    const rn=$("reachNote"); if(rn) rn.textContent="";
-
-    lastCalc=null;
-    STORAGE.set("lastCalc", null);
-
-    setPHBadge();
-    toast("Reiniciado");
-  }
-
-  function saveState(){
-    const state={ ions:{}, bd:$( "bd")?.value||"", depth:$( "depth")?.value||"", ph:$( "ph")?.value||"", reach:$( "soil-reach-percent")?.value||"" };
-    ionIds.forEach(id=> state.ions[id] = $(id)?.value || "" );
-    STORAGE.set("state", state);
-  }
-
-  function loadState(){
-    const state = STORAGE.get("state", null);
-    if(!state) return;
-
-    if(state.ions){
-      ionIds.forEach(id=>{ if(state.ions[id]!==undefined && $(id)) $(id).value = state.ions[id]; });
-    }
-    if($( "bd")) $( "bd").value = state.bd ?? "";
-    if($( "depth")) $( "depth").value = state.depth ?? "";
-    if($( "ph")) $( "ph").value = state.ph ?? "";
-    if($( "soil-reach-percent")) $( "soil-reach-percent").value = state.reach ?? "";
-  }
-
-  function bindListeners(){
-    ionIds.forEach(id=>{
-      const el=$(id); if(!el) return;
-      el.addEventListener("input", ()=>{ updateTop(); saveState(); });
-    });
-
-    ["bd","depth","ph"].forEach(id=>{
-      const el=$(id); if(!el) return;
-      el.addEventListener("input", ()=>{ if(id==="ph") setPHBadge(); saveState(); });
-    });
-
-    const reach=$( "soil-reach-percent");
-    if(reach){
-      reach.addEventListener("input", ()=>{
-        getSoilReachPercent();
-        saveState();
-        if(lastCalc) calculateAmendment(true);
-      });
-    }
-
-    const b1=$( "btnCalc"); if(b1) b1.addEventListener("click", ()=>calculateAmendment(false));
-    const b2=$( "btnReset"); if(b2) b2.addEventListener("click", resetForm);
-
-    const b3=$( "btnClearStorage");
-    if(b3){
-      b3.addEventListener("click", ()=>{
-        if(confirm("¿Seguro que quieres borrar el guardado local de esta herramienta?")){
-          STORAGE.clear();
-          amendments = structuredClone(DEFAULT_AMENDMENTS);
-          STORAGE.set("amendments", amendments);
-          selectedAmendId = amendments[0]?.id || "gypsum";
-          STORAGE.set("selected", selectedAmendId);
-          lastCalc=null;
-          resetForm();
-          renderAmendments();
-          toast("Guardado borrado");
-        }
-      });
-    }
-  }
-
-  function init(){
-    // Ahora sí: DOM listo
-    $ = (id)=>document.getElementById(id);
-
-    // Pintar userId sin reventar
-    const u=$("userIdLabel"); if(u) u.textContent = userId;
-
-    loadState();
-    renderAmendments();
-    updateTop();
-    setPHBadge();
-
-    const savedCalc = STORAGE.get("lastCalc", null);
-    if(savedCalc && savedCalc.qty){
-      lastCalc = savedCalc;
-      renderResults(lastCalc);
-    }
-
-    bindListeners();
-    setSaveState("Listo");
-  }
-
-  // SIEMPRE esperar DOM
-  document.addEventListener("DOMContentLoaded", init);
 })();
 </script>
 
+</body>
+</html>
