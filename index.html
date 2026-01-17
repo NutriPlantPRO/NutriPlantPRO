@@ -205,18 +205,19 @@
       margin: 0 0 14px;
       line-height: 1.4;
     }
-    .tools-grid{
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-    }
-    @media (max-width: 640px){
-      .tools-grid{ grid-template-columns: 1fr; }
-      .tools{ text-align: center; }
-      .top-actions{ top: 10px; right: 10px; }
-      .top-btn{ font-size: 12px; padding: 8px 10px; }
-      .lead-btn{ width: 100%; min-width: 0; }
-    }
+    .tools-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* ahora dos columnas en pantallas anchas */
+  gap: 12px;
+}
+@media (max-width: 640px){
+  .tools-grid { grid-template-columns: 1fr; }
+  .tools { text-align: center; }
+  .top-actions { top: 10px; right: 10px; }
+  .top-btn { font-size: 12px; padding: 8px 10px; }
+  .lead-btn { width: 100%; min-width: 0; }
+}
+
     .tool-card{
       background: var(--card-soft);
       border: 1px solid var(--border);
