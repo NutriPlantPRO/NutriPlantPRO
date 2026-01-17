@@ -390,7 +390,7 @@
   </style>
 </head>
 
-<body>
+  <body>
   <div class="wrap">
 
     <div class="topbar">
@@ -465,7 +465,7 @@
       </div>
     </div>
 
-        <div class="card">
+    <div class="card">
       <h3>🌱 Propiedades del Suelo</h3>
       <div class="grid3">
         <div class="prop">
@@ -655,7 +655,7 @@
     setTimeout(()=>el.classList.remove("show"), 1300);
   }
 
-   function calcCIC(vals){
+  function calcCIC(vals){
     return ionIds.reduce((s,i)=>s + (vals[i]||0), 0);
   }
 
@@ -824,7 +824,7 @@
     toast("Enmienda editada");
   }
 
-   function renderResults(calc){
+  function renderResults(calc){
     const resultsBox = $("resultsBox");
     const totalsList = $("totalsList");
     const detailBody = $("detailBody");
@@ -864,7 +864,7 @@
     detailBody.appendChild(tr);
   }
 
-  function calculateAmendment(silent=false){
+   function calculateAmendment(silent=false){
     setSaveState("Calculando…");
 
     const { cic, adj } = updateTop();
@@ -912,7 +912,7 @@
   }
 
   function saveState(){
-    const state={ ions:{}, bd:$( "bd")?.value||"", depth:$( "depth")?.value||"", ph:$( "ph")?.value||"", reach:$( "soil-reach-percent")?.value||"" };
+    const state={ ions:{}, bd:$("bd")?.value||"", depth:$("depth")?.value||"", ph:$("ph")?.value||"", reach:$("soil-reach-percent")?.value||"" };
     ionIds.forEach(id=> state.ions[id] = $(id)?.value || "" );
     STORAGE.set("state", state);
   }
@@ -924,10 +924,10 @@
     if(state.ions){
       ionIds.forEach(id=>{ if(state.ions[id]!==undefined && $(id)) $(id).value = state.ions[id]; });
     }
-    if($( "bd")) $( "bd").value = state.bd ?? "";
-    if($( "depth")) $( "depth").value = state.depth ?? "";
-    if($( "ph")) $( "ph").value = state.ph ?? "";
-    if($( "soil-reach-percent")) $( "soil-reach-percent").value = state.reach ?? "";
+    if($("bd")) $("bd").value = state.bd ?? "";
+    if($("depth")) $("depth").value = state.depth ?? "";
+    if($("ph")) $("ph").value = state.ph ?? "";
+    if($("soil-reach-percent")) $("soil-reach-percent").value = state.reach ?? "";
   }
 
   function resetForm(){
@@ -964,7 +964,7 @@
       el.addEventListener("input", ()=>{ if(id==="ph") setPHBadge(); saveState(); });
     });
 
-    const reach=$( "soil-reach-percent");
+    const reach=$("soil-reach-percent");
     if(reach){
       reach.addEventListener("input", ()=>{
         getSoilReachPercent();
@@ -973,10 +973,10 @@
       });
     }
 
-    const b1=$( "btnCalc"); if(b1) b1.addEventListener("click", ()=>calculateAmendment(false));
-    const b2=$( "btnReset"); if(b2) b2.addEventListener("click", resetForm);
+    const b1=$("btnCalc"); if(b1) b1.addEventListener("click", ()=>calculateAmendment(false));
+    const b2=$("btnReset"); if(b2) b2.addEventListener("click", resetForm);
 
-    const b3=$( "btnClearStorage");
+    const b3=$("btnClearStorage");
     if(b3){
       b3.addEventListener("click", ()=>{
         if(confirm("¿Seguro que quieres borrar el guardado local de esta herramienta?")){
@@ -1012,7 +1012,6 @@
 
     bindListeners();
     setSaveState("Listo");
-    toast("Listo");
   }
 
   document.addEventListener("DOMContentLoaded", init);
@@ -1020,3 +1019,4 @@
 </script>
 </body>
 </html>
+
