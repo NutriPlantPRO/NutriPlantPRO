@@ -868,17 +868,19 @@
     const { cic, adj } = updateTop();
     setPHBadge();
 
-    // ✅ Si el usuario escribió ajustes manuales, úsalos (solo cuando oprime Calcular)
+     // ✅ Aplicar ajustes manuales SOLO si el usuario escribió algo
 ionIds.forEach(id => {
   const el = $("adj" + id);
   if (!el) return;
 
   const raw = (el.value || "").trim();
-  if (raw === "") return; // si está vacío, deja el automático
+  if (raw === "") return;
 
   const v = parseFloat(raw);
-  if (Number.isFinite(v)) adj[id] = v; // reemplaza el adj automático por el manual
-}); 
+  if (Number.isFinite(v)) {
+    adj[id] = v; // 🔥 AQUÍ se impone el valor manual
+  }
+});
      
     const { bd, depth } = getSoilProps();
     const reach = getSoilReachPercent();
