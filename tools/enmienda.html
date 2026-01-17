@@ -974,6 +974,17 @@ ionIds.forEach(id => {
       el.addEventListener("input", ()=>{ if(id==="ph") setPHBadge(); saveState(); });
     });
 
+    // ✅ PASO 1: detectar cuando el usuario escribe ajustes manuales (adj*)
+ionIds.forEach(id => {
+  const el = $("adj" + id);
+  if (!el) return;
+
+  el.addEventListener("input", () => {
+    el.dataset.manual = "1"; // marca como ajuste manual
+    saveState();
+  });
+});
+
     const reach = $("soil-reach-percent");
 if (reach) {
   // Mientras escribes: NO clamps, NO reescribe el valor
