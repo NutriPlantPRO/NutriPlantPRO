@@ -241,6 +241,7 @@
       font-size:18px;
       text-align:center;
       background:#f8fafc;
+      outline:none;
     }
     .adj-card input.green{border-color:#22c55e}
     .adj-card input.amber{border-color:#f59e0b}
@@ -317,16 +318,6 @@
       position:relative;
       overflow:hidden;
     }
-    .watermark{
-      position:absolute;
-      right:20px;
-      top:20px;
-      opacity:.12;
-      font-weight:1000;
-      font-size:56px;
-      line-height:1;
-      pointer-events:none;
-    }
     .section-title{
       margin:0 0 10px;
       font-size:22px;
@@ -390,7 +381,7 @@
   </style>
 </head>
 
-  <body>
+<body>
   <div class="wrap">
 
     <div class="topbar">
@@ -553,7 +544,6 @@
     </div>
 
     <div class="mint hidden" id="resultsBox">
-
       <h3 class="section-title">📊 Resultados del Cálculo de Enmiendas</h3>
 
       <div class="box">
@@ -587,19 +577,17 @@
 
   <div id="toast"></div>
 
-<script>
+  <script>
 (() => {
   const ionIds = ["K","Ca","Mg","H","Na","Al"];
-
   const TARGETS = { K: 0.05, Ca: 0.75, Mg: 0.15, H: 0.00, Na: 0.00, Al: 0.00 };
-
   const AW  = { K:39.0983, Ca:40.078, Mg:24.305, Na:22.98977, Al:26.9815 };
   const VAL = { K:1, Ca:2, Mg:2, Na:1, Al:3 };
 
   const DEFAULT_AMENDMENTS = [
-    { id:"gypsum",  name:"Yeso Agrícola", formula:"CaSO₄·2H₂O", molecularWeight:172.2, pctK:0, pctCa:23.3, pctMg:0,  pctSO4:55.8, pctCO3:0,  pctH2O:20.9, pctSi:0 },
-    { id:"lime",    name:"Cal Agrícola",  formula:"CaCO₃",      molecularWeight:100.0, pctK:0, pctCa:40.0, pctMg:0,  pctSO4:0,    pctCO3:60.0, pctH2O:0,   pctSi:0 },
-    { id:"dolomite",name:"Cal Dolomítica",formula:"CaCO₃+MgCO₃",molecularWeight:184.0, pctK:0, pctCa:21.7, pctMg:13.2,pctSO4:0,    pctCO3:65.2,pctH2O:0,   pctSi:0 },
+    { id:"gypsum",  name:"Yeso Agrícola", formula:"CaSO₄·2H₂O", molecularWeight:172.2, pctK:0, pctCa:23.3, pctMg:0,   pctSO4:55.8, pctCO3:0,   pctH2O:20.9, pctSi:0 },
+    { id:"lime",    name:"Cal Agrícola",  formula:"CaCO₃",      molecularWeight:100.0, pctK:0, pctCa:40.0, pctMg:0,   pctSO4:0,    pctCO3:60.0, pctH2O:0,    pctSi:0 },
+    { id:"dolomite",name:"Cal Dolomítica",formula:"CaCO₃+MgCO₃",molecularWeight:184.0, pctK:0, pctCa:21.7, pctMg:13.2,pctSO4:0,    pctCO3:65.2,pctH2O:0,    pctSi:0 },
     { id:"mgso4",   name:"Sulfato de Magnesio Monohidrato", formula:"MgSO₄·H₂O", molecularWeight:138.0, pctK:0, pctCa:0, pctMg:17.0, pctSO4:69.0, pctCO3:0, pctH2O:14.0, pctSi:0 },
     { id:"k2so4",   name:"Sulfato de Potasio Granular",      formula:"K₂SO₄",     molecularWeight:174.0, pctK:41.5, pctCa:0, pctMg:0, pctSO4:54.1, pctCO3:0, pctH2O:0, pctSi:0 }
   ];
@@ -607,6 +595,8 @@
   const n = (v)=>{ const x=parseFloat(v); return Number.isFinite(x)?x:0; };
   const fmt = (x,d=2)=> (Number.isFinite(x)?x:0).toFixed(d);
   const clamp = (x,a,b)=>Math.max(a, Math.min(b,x));
+
+  let $ = null;
 
   function getOrCreateUserId(){
     const key="nutriplant_user_id";
@@ -638,8 +628,6 @@
   }
   let selectedAmendId = STORAGE.get("selected", amendments[0]?.id || "gypsum");
   let lastCalc = STORAGE.get("lastCalc", null);
-
-  let $ = null;
 
   function setSaveState(t){
     const el = $("saveState");
@@ -688,18 +676,26 @@
 
     const adj = {};
     ionIds.forEach(id=>{
-      adj[id] = cic*(TARGETS[id]||0) - v[id];
+      const autoVal = cic*(TARGETS[id]||0) - v[id];
       const el = $("adj"+id);
+
+      if(el && el.dataset.manual === "1" && !el.hasAttribute("readonly")){
+        adj[id] = n(el.value);
+        el.classList.toggle("neg", adj[id] < 0);
+        return;
+      }
+
+      adj[id] = autoVal;
       if(el){
-        el.value = fmt(adj[id],2);
-        el.classList.toggle("neg", adj[id]<0);
+        el.value = fmt(autoVal,2);
+        el.classList.toggle("neg", autoVal < 0);
       }
     });
 
     return {v,cic,adj};
   }
 
-  function setPHBadge(){
+ function setPHBadge(){
     const phEl = $("ph");
     const badge = $("phBadge");
     if(!badge || !phEl) return;
@@ -717,7 +713,7 @@
     }
   }
 
-  function getSoilReachPercent(){
+  function normalizeSoilReachValue(){
     const el = $("soil-reach-percent");
     if(!el) return 60;
     let v = n(el.value || el.placeholder || 60);
@@ -727,7 +723,7 @@
   }
 
   function getSoilProps(){
-    const bdEl = $("bd"), depthEl=$("depth");
+    const bdEl = $("bd"), depthEl = $("depth");
     const bd = n(bdEl?.value || bdEl?.placeholder || 1.10);
     const depth = n(depthEl?.value || depthEl?.placeholder || 30);
     return { bd, depth };
@@ -862,28 +858,14 @@
     detailBody.appendChild(tr);
   }
 
-   function calculateAmendment(silent=false){
+  function calculateAmendment(silent=false){
     setSaveState("Calculando…");
 
     const { cic, adj } = updateTop();
     setPHBadge();
 
-     // ✅ Aplicar ajustes manuales SOLO si el usuario escribió algo
-ionIds.forEach(id => {
-  const el = $("adj" + id);
-  if (!el) return;
-
-  const raw = (el.value || "").trim();
-  if (raw === "") return;
-
-  const v = parseFloat(raw);
-  if (Number.isFinite(v)) {
-    adj[id] = v; // 🔥 AQUÍ se impone el valor manual
-  }
-});
-     
     const { bd, depth } = getSoilProps();
-    const reach = getSoilReachPercent();
+    const reach = normalizeSoilReachValue();
 
     if(cic<=0){
       if(!silent) toast("Ingresa cationes para calcular CIC");
@@ -903,8 +885,11 @@ ionIds.forEach(id => {
     };
 
     const frac = {
-      K:(a.pctK||0)/100, Ca:(a.pctCa||0)/100, Mg:(a.pctMg||0)/100,
-      SO4:(a.pctSO4||0)/100, Si:(a.pctSi||0)/100
+      K:(a.pctK||0)/100,
+      Ca:(a.pctCa||0)/100,
+      Mg:(a.pctMg||0)/100,
+      SO4:(a.pctSO4||0)/100,
+      Si:(a.pctSi||0)/100
     };
 
     let qty=0, basis="";
@@ -913,7 +898,13 @@ ionIds.forEach(id => {
     else if(needKg.K>0 && frac.K>0){ qty=needKg.K/frac.K; basis="K"; }
     else { if(!silent) toast("Esta enmienda no cubre requerimientos positivos (K/Ca/Mg)"); setSaveState("Listo"); return; }
 
-    const aportes = { K:qty*frac.K, Ca:qty*frac.Ca, Mg:qty*frac.Mg, SO4:qty*frac.SO4, Si:qty*frac.Si };
+    const aportes = {
+      K:qty*frac.K,
+      Ca:qty*frac.Ca,
+      Mg:qty*frac.Mg,
+      SO4:qty*frac.SO4,
+      Si:qty*frac.Si
+    };
 
     lastCalc = { timestamp:Date.now(), selectedAmendId, amendName:a.name, reach, depth, bd, qty, basis, aportes };
     STORAGE.set("lastCalc", lastCalc);
@@ -924,8 +915,25 @@ ionIds.forEach(id => {
   }
 
   function saveState(){
-    const state={ ions:{}, bd:$("bd")?.value||"", depth:$("depth")?.value||"", ph:$("ph")?.value||"", reach:$("soil-reach-percent")?.value||"" };
+    const state={
+      ions:{},
+      adj:{},
+      adjManual:{},
+      bd:$("bd")?.value||"",
+      depth:$("depth")?.value||"",
+      ph:$("ph")?.value||"",
+      reach:$("soil-reach-percent")?.value||""
+    };
+
     ionIds.forEach(id=> state.ions[id] = $(id)?.value || "" );
+
+    ionIds.forEach(id=>{
+      const el = $("adj"+id);
+      if(!el) return;
+      state.adj[id] = el.value || "";
+      state.adjManual[id] = (el.dataset.manual === "1") ? "1" : "";
+    });
+
     STORAGE.set("state", state);
   }
 
@@ -934,20 +942,39 @@ ionIds.forEach(id => {
     if(!state) return;
 
     if(state.ions){
-      ionIds.forEach(id=>{ if(state.ions[id]!==undefined && $(id)) $(id).value = state.ions[id]; });
+      ionIds.forEach(id=>{
+        if(state.ions[id]!==undefined && $(id)) $(id).value = state.ions[id];
+      });
     }
+
+    if(state.adj){
+      ionIds.forEach(id=>{
+        const el = $("adj"+id);
+        if(!el) return;
+
+        if(state.adj[id]!==undefined) el.value = state.adj[id];
+
+        if(state.adjManual && state.adjManual[id]==="1") el.dataset.manual="1";
+        else delete el.dataset.manual;
+      });
+    }
+
     if($("bd")) $("bd").value = state.bd ?? "";
     if($("depth")) $("depth").value = state.depth ?? "";
     if($("ph")) $("ph").value = state.ph ?? "";
     if($("soil-reach-percent")) $("soil-reach-percent").value = state.reach ?? "";
   }
 
-  function resetForm(){
+ function resetForm(){
     ionIds.forEach(id=>{
       const inp=$(id); if(inp) inp.value="";
       const pct=$(id+"_pct"); if(pct) pct.textContent="0.0%";
       const st=$(id+"_status"); if(st) st.textContent="—";
-      const adjEl=$("adj"+id); if(adjEl) adjEl.value="";
+      const adjEl=$("adj"+id);
+      if(adjEl){
+        adjEl.value="";
+        delete adjEl.dataset.manual;
+      }
     });
 
     const cicEl=$("cicTotal"); if(cicEl) cicEl.textContent="0.00";
@@ -976,40 +1003,52 @@ ionIds.forEach(id => {
       el.addEventListener("input", ()=>{ if(id==="ph") setPHBadge(); saveState(); });
     });
 
-    // ✅ PASO 1: detectar cuando el usuario escribe ajustes manuales (adj*)
-ionIds.forEach(id => {
-  const el = $("adj" + id);
-  if (!el) return;
+    // Ajustes manuales en adjK/adjCa/adjMg:
+    ionIds.forEach(id => {
+      const el = $("adj" + id);
+      if (!el) return;
+      if(el.hasAttribute("readonly")) return;
 
-  el.addEventListener("input", () => {
-    el.dataset.manual = "1"; // marca como ajuste manual
-    saveState();
-  });
-});
+      el.addEventListener("input", () => {
+        const raw = (el.value || "").trim();
 
+        // si lo deja vacío, vuelve a automático
+        if(raw === ""){
+          delete el.dataset.manual;
+          updateTop();
+          saveState();
+          return;
+        }
+
+        // si escribe algo, se vuelve manual
+        el.dataset.manual = "1";
+        el.classList.toggle("neg", n(el.value) < 0);
+        saveState();
+      });
+    });
+
+    // Reach: no tocar mientras escribe. Normalizar al salir/enter.
     const reach = $("soil-reach-percent");
-if (reach) {
-  // Mientras escribes: NO clamps, NO reescribe el valor
-  reach.addEventListener("input", () => {
-    saveState();
-  });
+    if (reach) {
+      reach.addEventListener("input", () => {
+        saveState();
+      });
 
-  // Cuando sales del campo (o presionas Enter): ahora sí normaliza y recalcula
-  const normalize = () => {
-    getSoilReachPercent(); // aquí sí hace clamp 10–100 y redondea
-    saveState();
-    if (lastCalc) calculateAmendment(true);
-  };
+      const normalize = () => {
+        normalizeSoilReachValue();
+        saveState();
+        if (lastCalc) calculateAmendment(true);
+      };
 
-  reach.addEventListener("blur", normalize);
-  reach.addEventListener("change", normalize);
-  reach.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      reach.blur(); // dispara blur → normalize()
+      reach.addEventListener("blur", normalize);
+      reach.addEventListener("change", normalize);
+      reach.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          reach.blur();
+        }
+      });
     }
-  });
-}
 
     const b1=$("btnCalc"); if(b1) b1.addEventListener("click", ()=>calculateAmendment(false));
     const b2=$("btnReset"); if(b2) b2.addEventListener("click", resetForm);
@@ -1035,8 +1074,6 @@ if (reach) {
   function init(){
     $ = (id)=>document.getElementById(id);
 
-    const u=$("userIdLabel"); if(u) u.textContent = userId;
-
     loadState();
     renderAmendments();
     updateTop();
@@ -1054,6 +1091,6 @@ if (reach) {
 
   document.addEventListener("DOMContentLoaded", init);
 })();
-</script>
+  </script>
 </body>
 </html>
