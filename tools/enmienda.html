@@ -277,7 +277,6 @@
     .btn-blue:hover{background:var(--blue2);}
     .btn-gray{background:#6b7280; color:white;}
     .btn-green{background:#16a34a; color:white; box-shadow:0 8px 18px rgba(22,163,74,.18);}
-    .btn-red{background:#ef4444; color:white;}
     .btn-sm{padding:8px 12px; border-radius:10px; font-size:13px;}
     .actions{display:flex; gap:8px; justify-content:center; align-items:center;}
 
@@ -356,10 +355,8 @@
       z-index:9999;
       pointer-events:none;
     }
-    #toast.show{
-      opacity:1;
-      transform:translateY(0);
-    }
+    #toast.show{ opacity:1; transform:translateY(0); }
+
     .topbar{
       display:flex;
       gap:10px;
@@ -383,7 +380,6 @@
 
 <body>
   <div class="wrap">
-
     <div class="topbar">
       <h1 class="title">🚜 Calculadora de Enmiendas (ajuste de CIC del suelo)</h1>
     </div>
@@ -413,42 +409,42 @@
       <div class="grid6">
         <div class="ion-card">
           <div class="ion-label green">K<sup>+</sup>:</div>
-          <input class="ion-input green" id="K" type="number" step="0.01" value="">
+          <input class="ion-input green" id="K" type="number" step="0.01" inputmode="decimal" value="">
           <div class="pct-pill green" id="K_pct">0.0%</div>
           <div class="status" id="K_status">—</div>
         </div>
 
         <div class="ion-card">
           <div class="ion-label green">Ca<sup>2+</sup>:</div>
-          <input class="ion-input green" id="Ca" type="number" step="0.01" value="">
+          <input class="ion-input green" id="Ca" type="number" step="0.01" inputmode="decimal" value="">
           <div class="pct-pill green" id="Ca_pct">0.0%</div>
           <div class="status" id="Ca_status">—</div>
         </div>
 
         <div class="ion-card">
           <div class="ion-label green">Mg<sup>2+</sup>:</div>
-          <input class="ion-input green" id="Mg" type="number" step="0.01" value="">
+          <input class="ion-input green" id="Mg" type="number" step="0.01" inputmode="decimal" value="">
           <div class="pct-pill green" id="Mg_pct">0.0%</div>
           <div class="status" id="Mg_status">—</div>
         </div>
 
         <div class="ion-card">
           <div class="ion-label amber">H<sup>+</sup>:</div>
-          <input class="ion-input amber" id="H" type="number" step="0.01" value="">
+          <input class="ion-input amber" id="H" type="number" step="0.01" inputmode="decimal" value="">
           <div class="pct-pill amber" id="H_pct">0.0%</div>
           <div class="status" id="H_status">—</div>
         </div>
 
         <div class="ion-card">
           <div class="ion-label amber">Na<sup>+</sup>:</div>
-          <input class="ion-input amber" id="Na" type="number" step="0.01" value="">
+          <input class="ion-input amber" id="Na" type="number" step="0.01" inputmode="decimal" value="">
           <div class="pct-pill amber" id="Na_pct">0.0%</div>
           <div class="status" id="Na_status">—</div>
         </div>
 
         <div class="ion-card">
           <div class="ion-label amber">Al<sup>3+</sup>:</div>
-          <input class="ion-input amber" id="Al" type="number" step="0.01" value="">
+          <input class="ion-input amber" id="Al" type="number" step="0.01" inputmode="decimal" value="">
           <div class="pct-pill amber" id="Al_pct">0.0%</div>
           <div class="status" id="Al_status">—</div>
         </div>
@@ -460,15 +456,15 @@
       <div class="grid3">
         <div class="prop">
           <label>Densidad aparente (g/cm³):</label>
-          <input id="bd" type="number" step="0.01" value="">
+          <input id="bd" type="number" step="0.01" inputmode="decimal" value="">
         </div>
         <div class="prop">
           <label>Profundidad (cm):</label>
-          <input id="depth" type="number" step="1" value="">
+          <input id="depth" type="number" step="1" inputmode="numeric" value="">
         </div>
         <div class="prop">
           <label>pH del suelo:</label>
-          <input id="ph" type="number" step="0.1" value="">
+          <input id="ph" type="number" step="0.1" inputmode="decimal" value="">
           <div class="ph-pill" id="phBadge">🟢 Neutro</div>
         </div>
       </div>
@@ -479,15 +475,15 @@
       <div class="adj-grid">
         <div class="adj-card">
           <div class="lab green">K<sup>+</sup> (meq a ajustar):</div>
-          <input class="green" id="adjK" type="number" step="0.01">
+          <input class="green" id="adjK" type="number" step="0.01" inputmode="decimal">
         </div>
         <div class="adj-card">
           <div class="lab green">Ca<sup>2+</sup> (meq a ajustar):</div>
-          <input class="green" id="adjCa" type="number" step="0.01">
+          <input class="green" id="adjCa" type="number" step="0.01" inputmode="decimal">
         </div>
         <div class="adj-card">
           <div class="lab green">Mg<sup>2+</sup> (meq a ajustar):</div>
-          <input class="green" id="adjMg" type="number" step="0.01">
+          <input class="green" id="adjMg" type="number" step="0.01" inputmode="decimal">
         </div>
         <div class="adj-card">
           <div class="lab amber">H<sup>+</sup> (meq a ajustar):</div>
@@ -533,12 +529,11 @@
       <div class="controls">
         <div class="rangebox">
           <span>% de alcance de suelo</span>
-          <input id="soil-reach-percent" type="number" step="1" min="10" max="100" value="">
+          <input id="soil-reach-percent" type="number" step="1" min="10" max="100" inputmode="numeric" value="">
           <span>%</span>
         </div>
         <button class="btn btn-blue" id="btnCalc">🧮 Calcular Enmienda</button>
         <button class="btn btn-gray" id="btnReset">🔄 Reiniciar</button>
-        <button class="btn btn-red" id="btnClearStorage">🧹 Borrar guardado</button>
         <div class="pill">Estado: <span id="saveState">Listo</span></div>
       </div>
     </div>
@@ -580,6 +575,8 @@
   <script>
 (() => {
   const ionIds = ["K","Ca","Mg","H","Na","Al"];
+  const editableAdj = new Set(["K","Ca","Mg"]);
+
   const TARGETS = { K: 0.05, Ca: 0.75, Mg: 0.15, H: 0.00, Na: 0.00, Al: 0.00 };
   const AW  = { K:39.0983, Ca:40.078, Mg:24.305, Na:22.98977, Al:26.9815 };
   const VAL = { K:1, Ca:2, Mg:2, Na:1, Al:3 };
@@ -598,36 +595,10 @@
 
   let $ = null;
 
-  function getOrCreateUserId(){
-    const key="nutriplant_user_id";
-    let id=localStorage.getItem(key);
-    if(!id){
-      id="np_"+Math.random().toString(16).slice(2)+Date.now().toString(16);
-      localStorage.setItem(key,id);
-    }
-    return id;
-  }
-  const userId = getOrCreateUserId();
-
-  const STORAGE = {
-    key:(k)=>`nutriplant_enmienda_${userId}_${k}`,
-    get(k,fb=null){
-      try{ const raw=localStorage.getItem(this.key(k)); return raw?JSON.parse(raw):fb; }
-      catch(e){ return fb; }
-    },
-    set(k,v){ localStorage.setItem(this.key(k), JSON.stringify(v)); },
-    clear(){
-      ["state","amendments","selected","lastCalc"].forEach(k=>localStorage.removeItem(this.key(k)));
-    }
-  };
-
-  let amendments = STORAGE.get("amendments", null);
-  if(!Array.isArray(amendments) || amendments.length===0){
-    amendments = structuredClone(DEFAULT_AMENDMENTS);
-    STORAGE.set("amendments", amendments);
-  }
-  let selectedAmendId = STORAGE.get("selected", amendments[0]?.id || "gypsum");
-  let lastCalc = STORAGE.get("lastCalc", null);
+  // Estado SOLO en memoria (al recargar: vuelve en blanco)
+  let amendments = structuredClone(DEFAULT_AMENDMENTS);
+  let selectedAmendId = amendments[0]?.id || "gypsum";
+  let lastCalc = null;
 
   function setSaveState(t){
     const el = $("saveState");
@@ -659,6 +630,68 @@
     return "✅";
   }
 
+  function getAdjEl(id){ return $("adj"+id); }
+
+  // Devuelve el valor adj que se usará en cálculo (manual si aplica, si no el automático)
+  function getAdjValueForCalc(id, autoVal){
+    const el = getAdjEl(id);
+    if(!el) return autoVal;
+
+    // Readonly siempre automático
+    if(el.hasAttribute("readonly")) return autoVal;
+
+    const raw = (el.value || "").trim();
+    const manual = el.dataset.manual === "1";
+
+    if(manual && raw !== ""){
+      const v = parseFloat(raw);
+      if(Number.isFinite(v)) return v;
+    }
+    return autoVal;
+  }
+
+  function setAdjDisplay(id, autoVal){
+    const el = getAdjEl(id);
+    if(!el) return;
+
+    // Readonly: siempre se escribe automático
+    if(el.hasAttribute("readonly")){
+      el.value = fmt(autoVal,2);
+      el.classList.toggle("neg", autoVal < 0);
+      return;
+    }
+
+    // Editable (K/Ca/Mg):
+    // - si está editando (focus): NO sobrescribir
+    if(el.dataset.editing === "1"){
+      const raw = (el.value || "").trim();
+      if(raw !== ""){
+        el.classList.toggle("neg", n(raw) < 0);
+      } else {
+        el.classList.remove("neg");
+      }
+      return;
+    }
+
+    // - si está en manual: NO sobrescribir
+    if(el.dataset.manual === "1"){
+      const raw = (el.value || "").trim();
+      if(raw !== ""){
+        el.classList.toggle("neg", n(raw) < 0);
+      } else {
+        // manual vacío no tiene sentido fuera de edición -> lo regresamos a auto
+        delete el.dataset.manual;
+        el.value = fmt(autoVal,2);
+        el.classList.toggle("neg", autoVal < 0);
+      }
+      return;
+    }
+
+    // - auto: escribir valor
+    el.value = fmt(autoVal,2);
+    el.classList.toggle("neg", autoVal < 0);
+  }
+
   function updateTop(){
     const v = getIonValues();
     const cic = calcCIC(v);
@@ -674,28 +707,16 @@
       if(st) st.textContent = cic>0 ? rangeStatus(pct,id) : "—";
     });
 
-    const adj = {};
+    const autoAdj = {};
     ionIds.forEach(id=>{
-      const autoVal = cic*(TARGETS[id]||0) - v[id];
-      const el = $("adj"+id);
-
-      if(el && el.dataset.manual === "1" && !el.hasAttribute("readonly")){
-        adj[id] = n(el.value);
-        el.classList.toggle("neg", adj[id] < 0);
-        return;
-      }
-
-      adj[id] = autoVal;
-      if(el){
-        el.value = fmt(autoVal,2);
-        el.classList.toggle("neg", autoVal < 0);
-      }
+      autoAdj[id] = cic*(TARGETS[id]||0) - v[id];
+      setAdjDisplay(id, autoAdj[id]);
     });
 
-    return {v,cic,adj};
+    return {v,cic,autoAdj};
   }
 
- function setPHBadge(){
+  function setPHBadge(){
     const phEl = $("ph");
     const badge = $("phBadge");
     if(!badge || !phEl) return;
@@ -713,13 +734,13 @@
     }
   }
 
-  function normalizeSoilReachValue(){
+  function normalizeReachValue(){
     const el = $("soil-reach-percent");
     if(!el) return 60;
     let v = n(el.value || el.placeholder || 60);
     v = clamp(Math.round(v), 10, 100);
-    el.value = v;
-    return v;
+    el.value = v ? v : "";
+    return v || 60;
   }
 
   function getSoilProps(){
@@ -751,7 +772,6 @@
 
     if(!amendments.some(a=>a.id===selectedAmendId)){
       selectedAmendId = amendments[0]?.id || "gypsum";
-      STORAGE.set("selected", selectedAmendId);
     }
 
     amendments.forEach(a=>{
@@ -784,7 +804,6 @@
     tbody.querySelectorAll("button[data-act='select']").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         selectedAmendId = btn.getAttribute("data-id");
-        STORAGE.set("selected", selectedAmendId);
         renderAmendments();
         toast("Enmienda seleccionada");
       });
@@ -794,8 +813,7 @@
       btn.addEventListener("click", ()=> editAmendment(btn.getAttribute("data-id")) );
     });
   }
-
-  function editAmendment(id){
+function editAmendment(id){
     const a = amendments.find(x=>x.id===id);
     if(!a) return;
 
@@ -813,7 +831,6 @@
       else a[key]= Number.isFinite(parseFloat(next)) ? parseFloat(next) : 0;
     }
 
-    STORAGE.set("amendments", amendments);
     renderAmendments();
     toast("Enmienda editada");
   }
@@ -861,22 +878,30 @@
   function calculateAmendment(silent=false){
     setSaveState("Calculando…");
 
-    const { cic, adj } = updateTop();
+    const { cic, autoAdj } = updateTop();
     setPHBadge();
 
     const { bd, depth } = getSoilProps();
-    const reach = normalizeSoilReachValue();
+    const reach = normalizeReachValue();
 
     if(cic<=0){
       if(!silent) toast("Ingresa cationes para calcular CIC");
-      setSaveState("Listo"); return;
+      setSaveState("Listo");
+      return;
     }
 
     const a = amendments.find(x=>x.id===selectedAmendId);
     if(!a){
       if(!silent) toast("Selecciona una enmienda");
-      setSaveState("Listo"); return;
+      setSaveState("Listo");
+      return;
     }
+
+    // Adj final (manual si aplica, si no automático)
+    const adj = {};
+    ionIds.forEach(id=>{
+      adj[id] = getAdjValueForCalc(id, autoAdj[id]);
+    });
 
     const needKg = {
       K: Math.max(0, elementKgPerHaFromMeq(adj.K,"K",depth,bd,reach)),
@@ -896,7 +921,11 @@
     if(needKg.Ca>0 && frac.Ca>0){ qty=needKg.Ca/frac.Ca; basis="Ca"; }
     else if(needKg.Mg>0 && frac.Mg>0){ qty=needKg.Mg/frac.Mg; basis="Mg"; }
     else if(needKg.K>0 && frac.K>0){ qty=needKg.K/frac.K; basis="K"; }
-    else { if(!silent) toast("Esta enmienda no cubre requerimientos positivos (K/Ca/Mg)"); setSaveState("Listo"); return; }
+    else {
+      if(!silent) toast("Esta enmienda no cubre requerimientos positivos (K/Ca/Mg)");
+      setSaveState("Listo");
+      return;
+    }
 
     const aportes = {
       K:qty*frac.K,
@@ -907,73 +936,23 @@
     };
 
     lastCalc = { timestamp:Date.now(), selectedAmendId, amendName:a.name, reach, depth, bd, qty, basis, aportes };
-    STORAGE.set("lastCalc", lastCalc);
-
     renderResults(lastCalc);
+
     if(!silent) toast("Cálculo listo");
     setSaveState("Listo");
   }
 
-  function saveState(){
-    const state={
-      ions:{},
-      adj:{},
-      adjManual:{},
-      bd:$("bd")?.value||"",
-      depth:$("depth")?.value||"",
-      ph:$("ph")?.value||"",
-      reach:$("soil-reach-percent")?.value||""
-    };
-
-    ionIds.forEach(id=> state.ions[id] = $(id)?.value || "" );
-
-    ionIds.forEach(id=>{
-      const el = $("adj"+id);
-      if(!el) return;
-      state.adj[id] = el.value || "";
-      state.adjManual[id] = (el.dataset.manual === "1") ? "1" : "";
-    });
-
-    STORAGE.set("state", state);
-  }
-
-  function loadState(){
-    const state = STORAGE.get("state", null);
-    if(!state) return;
-
-    if(state.ions){
-      ionIds.forEach(id=>{
-        if(state.ions[id]!==undefined && $(id)) $(id).value = state.ions[id];
-      });
-    }
-
-    if(state.adj){
-      ionIds.forEach(id=>{
-        const el = $("adj"+id);
-        if(!el) return;
-
-        if(state.adj[id]!==undefined) el.value = state.adj[id];
-
-        if(state.adjManual && state.adjManual[id]==="1") el.dataset.manual="1";
-        else delete el.dataset.manual;
-      });
-    }
-
-    if($("bd")) $("bd").value = state.bd ?? "";
-    if($("depth")) $("depth").value = state.depth ?? "";
-    if($("ph")) $("ph").value = state.ph ?? "";
-    if($("soil-reach-percent")) $("soil-reach-percent").value = state.reach ?? "";
-  }
-
- function resetForm(){
+  function resetForm(){
     ionIds.forEach(id=>{
       const inp=$(id); if(inp) inp.value="";
       const pct=$(id+"_pct"); if(pct) pct.textContent="0.0%";
       const st=$(id+"_status"); if(st) st.textContent="—";
-      const adjEl=$("adj"+id);
+
+      const adjEl = $("adj"+id);
       if(adjEl){
         adjEl.value="";
         delete adjEl.dataset.manual;
+        delete adjEl.dataset.editing;
       }
     });
 
@@ -986,106 +965,94 @@
     const rn=$("reachNote"); if(rn) rn.textContent="";
 
     lastCalc=null;
-    STORAGE.set("lastCalc", null);
 
     setPHBadge();
     toast("Reiniciado");
+    setSaveState("Listo");
   }
 
   function bindListeners(){
+    // Cationes: recalcula arriba
     ionIds.forEach(id=>{
       const el=$(id); if(!el) return;
-      el.addEventListener("input", ()=>{ updateTop(); saveState(); });
+      el.addEventListener("input", ()=>{ updateTop(); });
     });
 
+    // pH badge
     ["bd","depth","ph"].forEach(id=>{
       const el=$(id); if(!el) return;
-      el.addEventListener("input", ()=>{ if(id==="ph") setPHBadge(); saveState(); });
+      el.addEventListener("input", ()=>{ if(id==="ph") setPHBadge(); });
     });
 
-    // Ajustes manuales en adjK/adjCa/adjMg:
-    ionIds.forEach(id => {
-      const el = $("adj" + id);
-      if (!el) return;
+    // adjK/adjCa/adjMg: editable real (sin que el auto rellene mientras editas)
+    ionIds.forEach(id=>{
+      const el = $("adj"+id);
+      if(!el) return;
       if(el.hasAttribute("readonly")) return;
 
-      el.addEventListener("input", () => {
+      el.addEventListener("focus", ()=>{
+        el.dataset.editing = "1";
+      });
+
+      el.addEventListener("input", ()=>{
         const raw = (el.value || "").trim();
 
-        // si lo deja vacío, vuelve a automático
+        // Si está vacío mientras edita: NO poner manual y NO autollenar
         if(raw === ""){
           delete el.dataset.manual;
-          updateTop();
-          saveState();
+          el.classList.remove("neg");
           return;
         }
 
-        // si escribe algo, se vuelve manual
+        // Si hay número: manual
         el.dataset.manual = "1";
-        el.classList.toggle("neg", n(el.value) < 0);
-        saveState();
+        el.classList.toggle("neg", n(raw) < 0);
+      });
+
+      el.addEventListener("blur", ()=>{
+        const raw = (el.value || "").trim();
+        delete el.dataset.editing;
+
+        // Si salió vacío: vuelve a auto (se rellena)
+        if(raw === ""){
+          delete el.dataset.manual;
+          updateTop();
+          return;
+        }
+
+        // Si dejó algo: manual fijo
+        el.dataset.manual = "1";
+        updateTop();
       });
     });
 
-    // Reach: no tocar mientras escribe. Normalizar al salir/enter.
+    // Reach: permite borrar/escribir; normaliza solo al salir / Enter
     const reach = $("soil-reach-percent");
-    if (reach) {
-      reach.addEventListener("input", () => {
-        saveState();
-      });
-
-      const normalize = () => {
-        normalizeSoilReachValue();
-        saveState();
-        if (lastCalc) calculateAmendment(true);
+    if(reach){
+      reach.addEventListener("input", ()=>{ /* no clamp aquí */ });
+      const normalize = ()=>{
+        normalizeReachValue();
+        if(lastCalc) calculateAmendment(true);
       };
-
       reach.addEventListener("blur", normalize);
       reach.addEventListener("change", normalize);
-      reach.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          reach.blur();
-        }
+      reach.addEventListener("keydown", (e)=>{
+        if(e.key==="Enter"){ e.preventDefault(); reach.blur(); }
       });
     }
 
     const b1=$("btnCalc"); if(b1) b1.addEventListener("click", ()=>calculateAmendment(false));
     const b2=$("btnReset"); if(b2) b2.addEventListener("click", resetForm);
-
-    const b3=$("btnClearStorage");
-    if(b3){
-      b3.addEventListener("click", ()=>{
-        if(confirm("¿Seguro que quieres borrar el guardado local de esta herramienta?")){
-          STORAGE.clear();
-          amendments = structuredClone(DEFAULT_AMENDMENTS);
-          STORAGE.set("amendments", amendments);
-          selectedAmendId = amendments[0]?.id || "gypsum";
-          STORAGE.set("selected", selectedAmendId);
-          lastCalc=null;
-          resetForm();
-          renderAmendments();
-          toast("Guardado borrado");
-        }
-      });
-    }
   }
 
   function init(){
     $ = (id)=>document.getElementById(id);
 
-    loadState();
     renderAmendments();
     updateTop();
     setPHBadge();
-
-    const savedCalc = STORAGE.get("lastCalc", null);
-    if(savedCalc && savedCalc.qty){
-      lastCalc = savedCalc;
-      renderResults(lastCalc);
-    }
-
     bindListeners();
+
     setSaveState("Listo");
   }
 
@@ -1094,3 +1061,4 @@
   </script>
 </body>
 </html>
+ 
