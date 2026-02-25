@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Sistema de IA Inteligente NutriPlant Pro</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px;
+        }
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 30px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            background: #f9fafb;
+        }
+        .demo-section h2 {
+            color: #2563eb;
+            margin-top: 0;
+            font-size: 1.8em;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .feature-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 4px solid #2563eb;
+        }
+        .feature-card h3 {
+            color: #1f2937;
+            margin-top: 0;
+            font-size: 1.3em;
+        }
+        .feature-card p {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .stat-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .demo-button {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 10px;
+        }
+        .demo-button:hover {
+            transform: translateY(-2px);
+        }
+        .code-block {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Sistema de IA Inteligente</h1>
+            <p>NutriPlant Pro - Base de Conocimiento Agrícola Avanzada</p>
+        </div>
+        
+        <div class="content">
+            <!-- Características Principales -->
+            <div class="demo-section">
+                <h2>🚀 Características Principales</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>📚 Diccionario Agrícola Completo</h3>
+                        <p>Base de conocimiento con <span class="highlight">70-80% del lenguaje agrícola</span> especializado, incluyendo nutrientes, fertilizantes, cultivos y conceptos técnicos avanzados.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🧠 Memoria por Usuario</h3>
+                        <p>Sistema de <span class="highlight">memoria individual</span> que recuerda preferencias, historial de conversaciones y contexto personalizado para cada usuario.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📈 Aprendizaje Progresivo</h3>
+                        <p>Cada nueva pestaña <span class="highlight">expande automáticamente</span> el conocimiento de la IA con conceptos específicos y terminología especializada.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🎯 Análisis Inteligente</h3>
+                        <p>Respuestas <span class="highlight">contextuales y personalizadas</span> basadas en el nivel de expertise del usuario y el contexto de la conversación.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas del Sistema -->
+            <div class="demo-section">
+                <h2>📊 Capacidades del Sistema</h2>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number">12+</div>
+                        <div class="stat-label">Nutrientes Especializados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">50+</div>
+                        <div class="stat-label">Términos Técnicos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">6</div>
+                        <div class="stat-label">Módulos de Conocimiento</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">∞</div>
+                        <div class="stat-label">Expansión Automática</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulos de Conocimiento -->
+            <div class="demo-section">
+                <h2>🔬 Módulos de Conocimiento</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>🌱 Análisis de Suelo</h3>
+                        <p>Textura, estructura, pH, CEC, materia orgánica, densidad aparente y porosidad del suelo.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🌿 Nutrición Vegetal</h3>
+                        <p>Ciclos nutricionales, sinergismo, antagonismo, movilidad de nutrientes y balance nutricional.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>💧 Fertirriego</h3>
+                        <p>Inyección de fertilizantes, compatibilidad, concentraciones y sistemas de aplicación.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🌾 Manejo de Cultivos</h3>
+                        <p>Requerimientos específicos, etapas de crecimiento y manejo agronómico.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔍 Diagnóstico Foliar</h3>
+                        <p>Síntomas visuales, análisis de tejidos y diagnóstico de deficiencias.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🦠 Plagas y Enfermedades</h3>
+                        <p>Identificación, prevención y manejo integrado de problemas fitosanitarios.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ejemplo de Uso -->
+            <div class="demo-section">
+                <h2>💡 Ejemplo de Uso</h2>
+                <p>El sistema puede responder preguntas como:</p>
+                <ul>
+                    <li><strong>"¿Qué es la CEC y por qué es importante?"</strong></li>
+                    <li><strong>"¿Cómo afecta el pH a la disponibilidad de nutrientes?"</strong></li>
+                    <li><strong>"¿Cuáles son los síntomas de deficiencia de zinc en aguacate?"</strong></li>
+                    <li><strong>"¿Qué fertilizantes son compatibles para fertirriego?"</strong></li>
+                </ul>
+                
+                <div class="code-block">
+// Ejemplo de expansión automática de conocimiento
+function addNewTabWithKnowledge(tabName, tabData) {
+    // El sistema automáticamente:
+    // 1. Extrae conceptos de los datos
+    // 2. Identifica terminología específica
+    // 3. Detecta interacciones entre conceptos
+    // 4. Genera respuestas contextuales
+    knowledgeExpansion.expandKnowledgeForTab(tabName, tabData);
+}
+                </div>
+            </div>
+
+            <!-- Botones de Demostración -->
+            <div class="demo-section" style="text-align: center;">
+                <h2>🎮 Prueba el Sistema</h2>
+                <p>El sistema de IA inteligente está integrado en tu dashboard principal.</p>
+                <button class="demo-button" onclick="window.open('dashboard.html', '_blank')">
+                    🚀 Abrir Dashboard con IA
+                </button>
+                <button class="demo-button" onclick="showStats()">
+                    📊 Ver Estadísticas
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showStats() {
+            // Simular estadísticas del sistema
+            const stats = {
+                totalUsers: 1,
+                totalConversations: 85,
+                averageConversationsPerUser: 85,
+                totalModules: 6,
+                totalConcepts: 50,
+                totalTerminology: 100
+            };
+            
+            alert(`📊 Estadísticas del Sistema de IA:\n\n` +
+                  `👥 Usuarios: ${stats.totalUsers}\n` +
+                  `💬 Conversaciones: ${stats.totalConversations}\n` +
+                  `📚 Módulos: ${stats.totalModules}\n` +
+                  `🧠 Conceptos: ${stats.totalConcepts}\n` +
+                  `📖 Términos: ${stats.totalTerminology}\n\n` +
+                  `¡El sistema está listo para crecer con cada nueva pestaña!`);
+        }
+    </script>
+</body>
+</html>
+
+
+

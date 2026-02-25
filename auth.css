@@ -1,0 +1,584 @@
+/* ===== AUTHENTICATION PAGE STYLES ===== */
+/* Mantiene consistencia visual con dashboard.css */
+
+.auth-page {
+  background: linear-gradient(135deg, var(--brand-light) 0%, #ffffff 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header de autenticación */
+.auth-header {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 2px 12px rgba(22, 163, 74, 0.15);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  border-bottom: none !important; /* Quitar la línea verde */
+}
+
+.auth-header .brandline {
+  height: 48px; /* Menos altura para que quepa todo */
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Logo a la izquierda, redes a la derecha */
+  gap: 12px;
+  padding: 0 16px;
+  position: relative;
+  flex-wrap: nowrap;
+  min-height: 48px;
+}
+
+/* Reservar espacio para el logo para que no se contraiga ni se solape */
+.auth-header .brand-section {
+  flex-shrink: 0;
+  min-width: 100px; /* Espacio fijo para el logo */
+  height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.auth-logo {
+  height: 40px; /* Igual que dashboard */
+  max-height: 40px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.2));
+  position: relative; /* Dentro del brand-section, ya no absolute para no colapsar */
+  left: auto;
+  top: auto;
+  transform: none;
+}
+
+/* Evitar brinco al pasar el cursor: no aplicar hover del dashboard en login/políticas */
+.auth-header .brand-logo:hover {
+  transform: none;
+}
+
+/* ===== SOCIAL MEDIA ICONS (copiado del dashboard) ===== */
+.auth-header .social-links {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-shrink: 1;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #64748b;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+/* Botón "Nosotros" con texto: no comprimir a 32px, separación clara de los iconos */
+.social-links button.social-btn {
+  width: auto;
+  min-width: auto;
+  height: 32px;
+  margin-right: 12px;
+  padding: 6px 12px;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1f2937;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  text-decoration: none;
+}
+.social-links button.social-btn:hover {
+  color: #1f2937;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  transform: translateY(-1px);
+}
+
+.social-btn:hover {
+  color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.social-btn[data-social="facebook"]:hover { color: #1877f2; }
+.social-btn[data-social="instagram"]:hover { color: #e4405f; }
+.social-btn[data-social="tiktok"]:hover { color: #000000; }
+.social-btn[data-social="youtube"]:hover { color: #ff0000; }
+.social-btn[data-social="linkedin"]:hover { color: #0077b5; }
+
+.social-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Contenido principal de autenticación */
+.auth-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  margin-top: 88px; /* Espacio para el header (48px + 40px extra) */
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* En ventana extendida: más ancho para que el texto de las calculadoras quepa en un renglón */
+@media (min-width: 720px) {
+  .auth-container {
+    max-width: 560px;
+  }
+}
+@media (min-width: 900px) {
+  .auth-container {
+    max-width: 620px;
+  }
+}
+@media (min-width: 1100px) {
+  .auth-container {
+    max-width: 680px;
+  }
+}
+
+/* Tarjeta de autenticación */
+.auth-card {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  padding: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+}
+
+/* Encabezado de la tarjeta */
+.auth-header-content {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.auth-logo-container {
+  margin-bottom: 24px;
+}
+
+.auth-card-logo {
+  height: 80px;
+  width: auto;
+  filter: drop-shadow(0 4px 16px rgba(37, 99, 235, 0.3));
+}
+
+.auth-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--brand-dark);
+  margin: 0 0 12px 0;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth-subtitle {
+  font-size: 16px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Formulario */
+.auth-form {
+  margin-bottom: 32px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.form-group.focused .form-label {
+  color: var(--brand-primary);
+  transform: translateY(-2px);
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand-dark);
+  margin-bottom: 8px;
+  text-align: left;
+  transition: all 0.3s ease;
+}
+
+.form-input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: var(--brand-dark);
+  position: relative;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-input:hover {
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+  transition: color 0.3s ease;
+}
+
+.form-input:focus::placeholder {
+  color: #cbd5e1;
+}
+
+/* Estados de error y éxito */
+.form-input.error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+  animation: shake 0.5s ease-in-out;
+}
+
+.form-input.success {
+  border-color: var(--brand-accent);
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.1);
+}
+
+/* Mensajes de error y éxito */
+.auth-error, .auth-success {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+  animation: slideInDown 0.3s ease-out;
+}
+
+.auth-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+.auth-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+}
+
+/* Botón de autenticación */
+.auth-button {
+  width: 100%;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.auth-button:hover::before {
+  left: 100%;
+}
+
+.auth-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+}
+
+.auth-button:active {
+  transform: translateY(0);
+}
+
+.auth-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.button-text {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.button-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Loading state para el botón */
+.auth-button.loading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.auth-button.loading .button-text {
+  opacity: 0.7;
+}
+
+.auth-button.loading .button-icon {
+  animation: spin 1s linear infinite;
+}
+
+/* Pie de la tarjeta */
+.auth-footer {
+  text-align: center;
+  padding-top: 24px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.demo-note {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 16px 0;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid var(--brand-accent);
+}
+
+.auth-help {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.help-link {
+  color: var(--brand-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.help-link:hover {
+  color: var(--brand-secondary);
+  text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .auth-header .brandline {
+    height: auto;
+    min-height: 56px;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  
+  .auth-header .brand-section {
+    min-width: 80px;
+    height: 40px;
+  }
+  
+  .auth-logo {
+    height: 36px;
+    max-height: 36px;
+  }
+  
+  /* En móvil: redes pueden pasar a segunda línea si no caben */
+  .auth-header .social-links {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  
+  .auth-header .social-links button.social-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .auth-header .social-links .social-icon {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .auth-main {
+    padding: 20px 16px;
+    margin-top: 96px; /* Espacio para el header (puede crecer si las redes pasan a 2 líneas) */
+  }
+  
+  .auth-card {
+    padding: 32px 24px;
+    border-radius: 16px;
+  }
+  
+  .auth-title {
+    font-size: 28px;
+  }
+  
+  .auth-subtitle {
+    font-size: 15px;
+  }
+  
+  .form-input {
+    padding: 14px 16px;
+    font-size: 16px;
+  }
+  
+  .auth-button {
+    padding: 14px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 24px 20px;
+  }
+  
+  .auth-title {
+    font-size: 24px;
+  }
+  
+  .auth-card-logo {
+    height: 64px;
+  }
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.auth-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Efectos de focus mejorados */
+.form-group.focused .form-label {
+  color: var(--brand-primary);
+}
+
+/* Indicadores de validación */
+.form-group::after {
+  content: '';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.form-group.success::after {
+  content: '✓';
+  color: var(--brand-accent);
+  opacity: 1;
+  font-weight: bold;
+}
+
+.form-group.error::after {
+  content: '✗';
+  color: #ef4444;
+  opacity: 1;
+  font-weight: bold;
+}
+
+/* Mejoras de accesibilidad */
+.form-input:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+.auth-button:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+/* Transiciones suaves para todos los elementos */
+* {
+  transition: all 0.3s ease;
+}
+
+/* Efecto de profundidad en hover */
+.auth-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
+}

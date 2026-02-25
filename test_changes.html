@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cambios - NutriPlant Pro</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .btn { padding: 10px 20px; margin: 10px; cursor: pointer; }
+        .btn-primary { background-color: #007bff; color: white; border: none; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Cambios - NutriPlant Pro</h1>
+    
+    <h2>Verificación de Cambios:</h2>
+    <ul>
+        <li>✅ Sulfato de Potasio Granular: K: 43.2%, SO₄: 53.2%</li>
+        <li>✅ Sulfato de Magnesio Monohidrato: Mg: 17%, SO₄: 69%</li>
+    </ul>
+    
+    <button class="btn btn-primary" onclick="testChanges()">🧪 Probar Cambios</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        function testChanges() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Resultados del Test:</h3>';
+            
+            // Simular los datos de las enmiendas
+            const enmiendas = [
+                { name: 'Yeso Agrícola', formula: 'CaSO₄·2H₂O', molecular: 170, ca: 23.53, mg: 0, k: 0, so4: 56.5, co3: 0, h2o: 21.2, si: 0 },
+                { name: 'Cal Agrícola', formula: 'CaCO₃', molecular: 100, ca: 40.0, mg: 0, k: 0, so4: 0, co3: 60.0, h2o: 0, si: 0 },
+                { name: 'Cal Dolomítica', formula: 'CaCO₃ + MgCO₃', molecular: 184, ca: 21.7, mg: 13.2, k: 0, so4: 0, co3: 65.2, h2o: 0, si: 0 },
+                { name: 'Sulfato de Potasio Granular', formula: 'K₂SO₄', molecular: 174, ca: 0, mg: 0, k: 43.2, so4: 53.2, co3: 0, h2o: 0, si: 0 },
+                { name: 'Sulfato de Magnesio Monohidrato', formula: 'MgSO₄·H₂O', molecular: 138, ca: 0, mg: 17.0, k: 0, so4: 69.0, co3: 0, h2o: 14.0, si: 0 }
+            ];
+            
+            let html = '<table><tr><th>Enmienda</th><th>Fórmula</th><th>Peso Molecular</th><th>%Ca</th><th>%Mg</th><th>%K</th><th>%SO₄</th><th>%CO₃</th><th>%H₂O</th><th>%Si</th></tr>';
+            
+            enmiendas.forEach(enmienda => {
+                html += `<tr>
+                    <td>${enmienda.name}</td>
+                    <td>${enmienda.formula}</td>
+                    <td>${enmienda.molecular}</td>
+                    <td>${enmienda.ca > 0 ? enmienda.ca + '%' : '-'}</td>
+                    <td>${enmienda.mg > 0 ? enmienda.mg + '%' : '-'}</td>
+                    <td>${enmienda.k > 0 ? enmienda.k + '%' : '-'}</td>
+                    <td>${enmienda.so4 > 0 ? enmienda.so4 + '%' : '-'}</td>
+                    <td>${enmienda.co3 > 0 ? enmienda.co3 + '%' : '-'}</td>
+                    <td>${enmienda.h2o > 0 ? enmienda.h2o + '%' : '-'}</td>
+                    <td>${enmienda.si > 0 ? enmienda.si + '%' : '-'}</td>
+                </tr>`;
+            });
+            
+            html += '</table>';
+            results.innerHTML += html;
+            
+            // Verificar cambios específicos
+            const sop = enmiendas.find(e => e.name === 'Sulfato de Potasio Granular');
+            const mgMono = enmiendas.find(e => e.name === 'Sulfato de Magnesio Monohidrato');
+            
+            results.innerHTML += '<h3>Verificación de Cambios:</h3>';
+            results.innerHTML += `<p>✅ SOP Granular: K: ${sop.k}%, SO₄: ${sop.so4}%</p>`;
+            results.innerHTML += `<p>✅ Mg Monohidrato: Mg: ${mgMono.mg}%, SO₄: ${mgMono.so4}%</p>`;
+        }
+    </script>
+</body>
+</html>

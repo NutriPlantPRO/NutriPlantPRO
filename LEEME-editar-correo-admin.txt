@@ -1,0 +1,11 @@
+Para que al editar el correo de un usuario en el panel admin se actualice también en Supabase (y pueda entrar con el correo nuevo):
+
+1. Abre el archivo:  supabase-server-config.json   (está en la misma carpeta que server.py)
+
+2. En Supabase: entra a tu proyecto → Settings (engranaje) → API. Copia la clave "service_role" (la que dice secret).
+
+3. En supabase-server-config.json, donde dice "PEGA_AQUI_LA_CLAVE_SERVICE_ROLE", pega esa clave. Guarda el archivo.
+
+4. Reinicia el servidor (cierra y vuelve a ejecutar python server.py).
+
+Listo. Desde entonces, cuando edites un usuario en el admin y cambies su correo, podrá entrar con el correo nuevo sin tocar Supabase.

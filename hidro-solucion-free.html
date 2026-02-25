@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solución Nutritiva por Etapa - Gratis</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #f8fafc;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .guest-note {
+      margin: 0 0 12px;
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+    }
+    .hydroponia-container {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <p class="guest-note">Modo gratuito: no guarda datos. Al cerrar, la calculadora se reinicia.</p>
+
+  <div class="hydroponia-container">
+    <div class="hydroponia-content">
+      <div class="tab-content active" id="hidro-solucion">
+        <div class="hydro-card">
+          <div class="hydro-card-header">
+            <h3>🧪 Solución nutritiva por etapa</h3>
+            <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;"></p>
+          </div>
+          <div id="hydroMeqTableWrap" class="hydro-table-wrap"></div>
+          <div id="hydroMeqPercentWrap" class="hydro-table-wrap" style="margin-top:12px;"></div>
+          <div id="hydroPpmTableWrap" class="hydro-table-wrap" style="margin-top:12px;"></div>
+        </div>
+
+        <div class="hydro-card hydro-card-ternary-wrap">
+          <div class="hidroponia-ternary-watermark" aria-hidden="true">
+            <img src="assets/NutriPlant_PRO_blue.png" alt="">
+          </div>
+          <div class="hydro-card-header">
+            <h3>📐 Diagrama ternario (aniones + cationes)</h3>
+            <div class="hydro-muted">
+              <strong>Rangos por elemento (%).</strong> Aniones: N-NO₃⁻ 20–80, P-H₂PO₄⁻ 1.25–10, S-SO₄²⁻ 10–70.
+              Cationes: K⁺ 10–65, Ca²⁺ 22.5–62.5, Mg²⁺ 0.5–40.
+              El % de NH₄⁺ se calcula sobre el total de cationes (K+Ca+Mg+NH₄⁺) y no entra en el triángulo.
+            </div>
+          </div>
+          <div id="hydroTriangleInfoCombined" class="hydro-muted" style="margin-bottom:8px;"></div>
+          <div id="hydroTriangleCombined" class="hydro-triangle"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const HYDRO_MEQ_NUTRIENTS = ['N_NH4','N_NO3','P','S','K','Ca','Mg'];
+    const HYDRO_ANIONS = ['N_NO3','P','S'];
+    const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
+    const HYDRO_MICROS = ['Fe','Mn','B','Zn','Cu','Mo'];
+    const HYDRO_STAGE_OPTIONS = ['Establecimiento','Vegetativo','Prefloración','Floración','Amarre','Llenado','Cosecha'];
+    const HYDRO_EQ_WEIGHTS = { N_NO3:14.0, N_NH4:14.0, P:31.0, K:39.1, Ca:20.04, Mg:12.15, S:16.03 };
+
+    const hydroState = {
+      stages: [{
+        id: 'stage_1',
+        name: 'Amarre',
+        ce: '0.00',
+        meq: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0 },
+        ppm: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0 }
+      }],
+      activeStageId: 'stage_1'
+    };
+
+    function hydroLabel(n) {
+      switch (n) {
+        case 'N_NH4': return 'N-NH₄⁺';
+        case 'N_NO3': return 'N-NO₃⁻';
+        case 'P': return 'P-H₂PO₄⁻';
+        case 'S': return 'S-SO₄²⁻';
+        case 'K': return 'K⁺';
+        case 'Ca': return 'Ca²⁺';
+        case 'Mg': return 'Mg²⁺';
+        default: return n;
+      }
+    }
+
+    function hydroComputeCE(stage) {
+      const meq = stage.meq || {};
+      const sumMeq =
+        (parseFloat(meq.N_NO3) || 0) + (parseFloat(meq.N_NH4) || 0) + (parseFloat(meq.P) || 0) +
+        (parseFloat(meq.K) || 0) + (parseFloat(meq.Ca) || 0) + (parseFloat(meq.Mg) || 0) + (parseFloat(meq.S) || 0);
+      return isNaN(sumMeq / 20) ? 0 : (sumMeq / 20);
+    }
+
+    function hydroGetActiveStage() {
+      return hydroState.stages.find(s => s.id === hydroState.activeStageId) || hydroState.stages[0];
+    }
+
+    function hydroComputeMacroPpm(stage) {
+      const ppm = {};
+      ppm.N_NO3 = (parseFloat(stage.meq?.N_NO3 || 0)) * HYDRO_EQ_WEIGHTS.N_NO3;
+      ppm.N_NH4 = (parseFloat(stage.meq?.N_NH4 || 0)) * HYDRO_EQ_WEIGHTS.N_NH4;
+      ['P','K','Ca','Mg','S'].forEach(n => {
+        ppm[n] = (parseFloat(stage.meq?.[n] || 0)) * (HYDRO_EQ_WEIGHTS[n] || 0);
+      });
+      return ppm;
+    }
+
+    function renderHydroMeqTable() {
+      const wrap = document.getElementById('hydroMeqTableWrap');
+      if (!wrap) return;
+      const rows = hydroState.stages.map(stage => {
+        const computedCe = hydroComputeCE(stage);
+        stage.ce = computedCe.toFixed(2);
+        return `
+          <tr data-stage-id="${stage.id}">
+            <td>
+              <select class="hydro-input hydro-stage-select" data-stage-id="${stage.id}" data-field="name">
+                ${HYDRO_STAGE_OPTIONS.map(opt => `<option ${opt === stage.name ? 'selected' : ''}>${opt}</option>`).join('')}
+              </select>
+            </td>
+            <td><input class="hydro-input" data-stage-id="${stage.id}" data-field="ce" type="number" step="0.01" value="${stage.ce ?? ''}" readonly></td>
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.1" value="${stage.meq?.[n] ?? 0}"></td>`).join('')}
+          </tr>
+        `;
+      }).join('');
+
+      wrap.innerHTML = `
+        <div class="hydro-table-scroll hydro-table-colored">
+          <table class="hydro-table hydro-table-colored">
+            <thead>
+              <tr>
+                <th>Etapa</th>
+                <th>CE (dS/m)</th>
+                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabel(n)} (meq/L)</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderHydroDerivedTables() {
+      const ppmWrap = document.getElementById('hydroPpmTableWrap');
+      const pctWrap = document.getElementById('hydroMeqPercentWrap');
+      if (!ppmWrap || !pctWrap) return;
+
+      const ppmRows = hydroState.stages.map(stage => {
+        const macroPpm = hydroComputeMacroPpm(stage);
+        stage.ppm = { ...stage.ppm, ...macroPpm };
+        return `
+          <tr>
+            <td>${stage.name || ''}</td>
+            <td>${stage.ce ?? ''}</td>
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${(macroPpm[n] || stage.ppm?.[n] || 0).toFixed(1)}</td>`).join('')}
+            ${HYDRO_MICROS.map((n, idx) => `<td class="${idx === 0 ? 'hydro-micro-start' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.01" value="${stage.ppm?.[n] ?? 0}"></td>`).join('')}
+          </tr>
+        `;
+      }).join('');
+
+      ppmWrap.innerHTML = `
+        <div class="hydro-table-scroll hydro-table-colored">
+          <table class="hydro-table hydro-table-colored">
+            <thead>
+              <tr>
+                <th>Etapa</th>
+                <th>CE (dS/m)</th>
+                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabel(n)} ppm</th>`).join('')}
+                ${HYDRO_MICROS.map((n, idx) => `<th class="${idx === 0 ? 'hydro-micro-start' : ''}">${hydroLabel(n)} ppm</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>${ppmRows}</tbody>
+          </table>
+        </div>
+      `;
+
+      const pctRows = hydroState.stages.map(stage => {
+        const sumAnions = HYDRO_ANIONS.reduce((acc, n) => acc + (parseFloat(stage.meq?.[n] || 0)), 0);
+        const sumKCaMg = HYDRO_CATIONS_TRIANGLE.reduce((acc, n) => acc + (parseFloat(stage.meq?.[n] || 0)), 0);
+        const totalCations = sumKCaMg + (parseFloat(stage.meq?.N_NH4 || 0));
+        const pct = {};
+        HYDRO_MEQ_NUTRIENTS.forEach(n => {
+          const val = parseFloat(stage.meq?.[n] || 0);
+          if (HYDRO_ANIONS.includes(n)) pct[n] = sumAnions > 0 ? (val / sumAnions) * 100 : 0;
+          else if (HYDRO_CATIONS_TRIANGLE.includes(n)) pct[n] = sumKCaMg > 0 ? (val / sumKCaMg) * 100 : 0;
+          else pct[n] = totalCations > 0 ? (val / totalCations) * 100 : 0;
+        });
+        return `
+          <tr>
+            <td>${stage.name || ''}</td>
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${pct[n].toFixed(1)}</td>`).join('')}
+          </tr>
+        `;
+      }).join('');
+
+      pctWrap.innerHTML = `
+        <div class="hydro-table-scroll hydro-table-colored">
+          <table class="hydro-table hydro-table-colored">
+            <thead>
+              <tr>
+                <th>Etapa</th>
+                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabel(n)} % meq</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>${pctRows}</tbody>
+          </table>
+        </div>
+      `;
+
+      const summaryEl = document.getElementById('hydroNitrogenSummaryText');
+      if (summaryEl) {
+        const stage = hydroGetActiveStage();
+        const nNo3 = parseFloat(stage.meq?.N_NO3 || 0);
+        const nNh4 = parseFloat(stage.meq?.N_NH4 || 0);
+        const nTotal = nNo3 + nNh4;
+        const pctNo3 = nTotal > 0 ? (nNo3 / nTotal) * 100 : 0;
+        const pctNh4 = nTotal > 0 ? (nNh4 / nTotal) * 100 : 0;
+        summaryEl.textContent = `${stage.name || 'Etapa'} · Suma de N (meq/L): ${nTotal.toFixed(2)} · % Nitrato: ${pctNo3.toFixed(1)}% · % Amonio: ${pctNh4.toFixed(1)}%`;
+      }
+    }
+
+    const HYDRO_ANION_LIMITS = { NO3: [20, 80], H2PO4: [1.25, 10], SO4: [10, 70] };
+    const HYDRO_CATION_LIMITS = { K: [10, 65], Ca: [22.5, 62.5], Mg: [0.5, 40] };
+
+    function hydroEquilibriumPolygonAnions() {
+      return [[20, 10, 70], [28.75, 1.25, 70], [80, 1.25, 18.75], [80, 10, 10]];
+    }
+    function hydroEquilibriumPolygonCations() {
+      return [[10, 62.5, 27.5], [32.5, 62.5, 5], [65, 30, 5], [65, 22.5, 12.5], [37.5, 22.5, 40], [10, 50, 40]];
+    }
+    function hydroPointInPolygon(px, py, vertsXY) {
+      let inside = false;
+      const n = vertsXY.length;
+      for (let i = 0, j = n - 1; i < n; j = i++) {
+        const xi = vertsXY[i].x, yi = vertsXY[i].y, xj = vertsXY[j].x, yj = vertsXY[j].y;
+        if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) inside = !inside;
+      }
+      return inside;
+    }
+    function hydroClipPolygonByLine(pts, ax, ay, bx, by, keepSide) {
+      const cross = (px, py) => (bx - ax) * (py - ay) - (by - ay) * (px - ax);
+      const keep = keepSide || ((c) => c <= 0);
+      const out = [];
+      const n = pts.length;
+      for (let i = 0; i < n; i++) {
+        const cur = pts[i], next = pts[(i + 1) % n];
+        const cCur = cross(cur.x, cur.y), cNext = cross(next.x, next.y);
+        if (keep(cCur)) {
+          if (keep(cNext)) out.push(next);
+          else {
+            const denom = cCur - cNext;
+            if (Math.abs(denom) > 1e-12) {
+              const t = cCur / denom;
+              out.push({ x: cur.x + t * (next.x - cur.x), y: cur.y + t * (next.y - cur.y) });
+            }
+          }
+        } else if (keep(cNext)) {
+          const denom = cCur - cNext;
+          if (Math.abs(denom) > 1e-12) {
+            const t = cCur / denom;
+            out.push({ x: cur.x + t * (next.x - cur.x), y: cur.y + t * (next.y - cur.y) });
+          }
+          out.push(next);
+        }
+      }
+      return out;
+    }
+    function hydroBaryToXY(vA, vB, vC, pA, pB, pC) {
+      return { x: (vA.x * pA + vB.x * pB + vC.x * pC) / 100, y: (vA.y * pA + vB.y * pB + vC.y * pC) / 100 };
+    }
+
+    function hydroDrawCombinedTernary(container, data) {
+      if (!container) return;
+      const width = 460, height = 400, pad = 44;
+      const base = width - 2 * pad;
+      const triHeight = base * Math.sqrt(3) / 2;
+      const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+      const vTop = { x: width / 2, y: pad };
+      const vLeft = { x: pad, y: pad + triHeight };
+      const vRight = { x: width - pad, y: pad + triHeight };
+      const toXYC = (k, ca, mg) => hydroBaryToXY(vTop, vLeft, vRight, k, ca, mg);
+      const toXYA = (no3, h2po4, so4) => hydroBaryToXY(vTop, vLeft, vRight, no3, h2po4, so4);
+
+      let grid = '';
+      for (let i = 1; i <= 9; i++) {
+        const t = i / 10;
+        grid += `<line x1="${vTop.x + (vLeft.x - vTop.x) * t}" y1="${vTop.y + (vLeft.y - vTop.y) * t}" x2="${vTop.x + (vRight.x - vTop.x) * t}" y2="${vTop.y + (vRight.y - vTop.y) * t}" stroke="#93c5fd" stroke-width="0.6" />`;
+        grid += `<line x1="${vLeft.x + (vRight.x - vLeft.x) * t}" y1="${vLeft.y + (vRight.y - vLeft.y) * t}" x2="${vLeft.x + (vTop.x - vLeft.x) * t}" y2="${vLeft.y + (vTop.y - vLeft.y) * t}" stroke="#93c5fd" stroke-width="0.6" />`;
+        grid += `<line x1="${vRight.x + (vTop.x - vRight.x) * t}" y1="${vRight.y + (vTop.y - vRight.y) * t}" x2="${vRight.x + (vLeft.x - vRight.x) * t}" y2="${vRight.y + (vLeft.y - vRight.y) * t}" stroke="#93c5fd" stroke-width="0.6" />`;
+      }
+
+      const normalize = (a, b, c) => {
+        let pa = Math.max(0, Math.min(100, a)), pb = Math.max(0, Math.min(100, b)), pc = Math.max(0, Math.min(100, c));
+        const sum = pa + pb + pc;
+        if (sum > 0 && Math.abs(sum - 100) > 0.01) { pa = (pa / sum) * 100; pb = (pb / sum) * 100; pc = (pc / sum) * 100; }
+        return [pa, pb, pc];
+      };
+
+      const catZonePtsFull = (data.cationZone || []).map(([k, ca, mg]) => toXYC(k, ca, mg));
+      const cutLineStart = toXYC(10, 50, 40);
+      const norm = (a, b, c) => { const s = a + b + c; return s > 0 ? [a/s*100, b/s*100, c/s*100] : [a, b, c]; };
+      const [k65, ca25, mg15] = norm(65, 25, 15);
+      const cutLineEnd = toXYC(k65, ca25, mg15);
+      const cut55K = `<line x1="${cutLineStart.x}" y1="${cutLineStart.y}" x2="${cutLineEnd.x}" y2="${cutLineEnd.y}" stroke="#b91c1c" stroke-width="1.5" stroke-dasharray="6,4" />`;
+
+      let catZonePts = catZonePtsFull;
+      if (catZonePtsFull.length >= 3) {
+        const cross = (px, py) => (cutLineEnd.x - cutLineStart.x) * (py - cutLineStart.y) - (cutLineEnd.y - cutLineStart.y) * (px - cutLineStart.x);
+        const keepSign = Math.sign(cross(vLeft.x, vLeft.y)) || 1;
+        const keepSide = (c) => c * keepSign >= 0;
+        catZonePts = hydroClipPolygonByLine(catZonePtsFull, cutLineStart.x, cutLineStart.y, cutLineEnd.x, cutLineEnd.y, keepSide);
+      }
+
+      const polygonMixed = (pts, fillColor, strokeColor, strokeWidth = 2, dashedFn) => {
+        if (!pts || pts.length < 3) return '';
+        const ptsStr = pts.map(p => `${p.x},${p.y}`).join(' ');
+        let path = `<polygon points="${ptsStr}" fill="${fillColor}" stroke="none" />`;
+        const n = pts.length;
+        for (let i = 0; i < n; i++) {
+          const a = pts[i], b = pts[(i + 1) % n];
+          const dashed = dashedFn ? dashedFn(a, b, i) : i % 2 === 1;
+          path += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" ${dashed ? 'stroke-dasharray="5,4"' : ''} />`;
+        }
+        return path;
+      };
+
+      const catMaxY = catZonePts.length ? Math.max(...catZonePts.map(p => p.y)) : 0;
+      const catDashedFn = (a, b, i) => {
+        const isBottom = catMaxY > 0 && Math.abs(a.y - catMaxY) < 2 && Math.abs(b.y - catMaxY) < 2;
+        if (isBottom) return false;
+        return i % 2 === 1;
+      };
+      const catPoly = catZonePts.length >= 3 ? polygonMixed(catZonePts, 'rgba(185,28,28,0.28)', '#b91c1c', 2, catDashedFn) : '';
+      const [pK, pCa, pMg] = normalize(data.pK, data.pCa, data.pMg);
+      const catPoint = toXYC(pK, pCa, pMg);
+      const catInside = catZonePts.length >= 3 && hydroPointInPolygon(catPoint.x, catPoint.y, catZonePts);
+      const catCircle = `<circle cx="${catPoint.x}" cy="${catPoint.y}" r="6" fill="${catInside ? '#ef4444' : '#b91c1c'}" stroke="#7f1d1d" stroke-width="1.2" />`;
+
+      const anZonePts = (data.anionZone || []).map(([no3, h2po4, so4]) => toXYA(no3, h2po4, so4));
+      const anPoly = anZonePts.length >= 3 ? polygonMixed(anZonePts, 'rgba(234,179,8,0.35)', '#ca8a04') : '';
+      const [pNO3, pH2PO4, pSO4] = normalize(data.pNO3, data.pH2PO4, data.pSO4);
+      const anPoint = toXYA(pNO3, pH2PO4, pSO4);
+      const anInside = anZonePts.length >= 3 && hydroPointInPolygon(anPoint.x, anPoint.y, anZonePts);
+      const anCircle = `<circle cx="${anPoint.x}" cy="${anPoint.y}" r="6" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />`;
+
+      let tickLabels = '';
+      for (let i = 1; i <= 9; i++) {
+        const v = i * 10;
+        const tBase = 1 - i / 10;
+        const tLeft = 1 - i / 10;
+        const tRight = i / 10;
+        const basePos = lerp(vLeft, vRight, tBase);
+        const leftPos = lerp(vTop, vLeft, tLeft);
+        const rightPos = lerp(vTop, vRight, tRight);
+        tickLabels += `<text x="${basePos.x}" y="${basePos.y + 14}" text-anchor="middle" font-size="10" fill="#64748b">${v}</text>`;
+        tickLabels += `<text x="${leftPos.x - 8}" y="${leftPos.y + 2}" text-anchor="end" font-size="10" fill="#64748b">${v}</text>`;
+        tickLabels += `<text x="${rightPos.x + 8}" y="${rightPos.y + 2}" text-anchor="start" font-size="10" fill="#64748b">${v}</text>`;
+      }
+      tickLabels += `<text x="${vTop.x}" y="${vTop.y - 10}" text-anchor="middle" font-size="11" fill="#64748b">100</text>`;
+      tickLabels += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
+      tickLabels += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
+
+      container.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" style="background:#fff;border-radius:8px;">
+          ${grid}
+          ${anPoly}
+          ${catPoly}
+          ${cut55K}
+          <polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#2563eb" stroke-width="2" />
+          ${catCircle}
+          ${anCircle}
+          ${tickLabels}
+          <text x="${lerp(vTop, vLeft, 0.5).x - 26}" y="${lerp(vTop, vLeft, 0.5).y}" text-anchor="end" font-size="11" font-weight="bold" fill="#334155">Mg²⁺ / SO₄²⁻</text>
+          <text x="${lerp(vTop, vRight, 0.5).x + 26}" y="${lerp(vTop, vRight, 0.5).y}" text-anchor="start" font-size="11" font-weight="bold" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>
+          <text x="${lerp(vLeft, vRight, 0.5).x}" y="${lerp(vLeft, vRight, 0.5).y + 30}" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">K⁺ / NO₃⁻</text>
+        </svg>
+      `;
+    }
+
+    function renderHydroTriangle() {
+      const container = document.getElementById('hydroTriangleCombined');
+      const info = document.getElementById('hydroTriangleInfoCombined');
+      const stage = hydroGetActiveStage();
+      if (!container || !stage) return;
+
+      const meq = stage.meq || {};
+      const sumAnions = HYDRO_ANIONS.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+      const sumKCaMg = HYDRO_CATIONS_TRIANGLE.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+
+      const pNO3 = sumAnions > 0 ? (parseFloat(meq.N_NO3) || 0) / sumAnions * 100 : 33.3;
+      const pH2PO4 = sumAnions > 0 ? (parseFloat(meq.P) || 0) / sumAnions * 100 : 33.3;
+      const pSO4 = sumAnions > 0 ? (parseFloat(meq.S) || 0) / sumAnions * 100 : 33.3;
+      const pK = sumKCaMg > 0 ? (parseFloat(meq.K) || 0) / sumKCaMg * 100 : 33.3;
+      const pCa = sumKCaMg > 0 ? (parseFloat(meq.Ca) || 0) / sumKCaMg * 100 : 33.3;
+      const pMg = sumKCaMg > 0 ? (parseFloat(meq.Mg) || 0) / sumKCaMg * 100 : 33.3;
+
+      hydroDrawCombinedTernary(container, {
+        pNO3, pH2PO4, pSO4,
+        pK, pCa, pMg,
+        anionZone: hydroEquilibriumPolygonAnions(),
+        cationZone: hydroEquilibriumPolygonCations()
+      });
+
+      if (info) {
+        info.textContent = `Aniones: N-NO₃⁻ ${pNO3.toFixed(1)}% · P-H₂PO₄⁻ ${pH2PO4.toFixed(1)}% · S-SO₄²⁻ ${pSO4.toFixed(1)}% | Cationes: K⁺ ${pK.toFixed(1)}% · Ca²⁺ ${pCa.toFixed(1)}% · Mg²⁺ ${pMg.toFixed(1)}% (N-NH₄⁺ fuera del triángulo).`;
+      }
+    }
+
+    function bindEvents() {
+      const container = document.querySelector('.hydroponia-container');
+      if (!container) return;
+
+      container.addEventListener('input', (e) => {
+        const input = e.target;
+        const stageId = input.getAttribute('data-stage-id');
+        if (!stageId) return;
+        const stage = hydroState.stages.find(s => s.id === stageId);
+        if (!stage) return;
+
+        const type = input.getAttribute('data-type');
+        const nutrient = input.getAttribute('data-nutrient');
+        if (type === 'meq' && nutrient) {
+          stage.meq[nutrient] = parseFloat(input.value) || 0;
+          stage.ce = hydroComputeCE(stage).toFixed(2);
+          const ceInput = container.querySelector(`input[data-stage-id="${stageId}"][data-field="ce"]`);
+          if (ceInput) ceInput.value = stage.ce;
+          renderHydroDerivedTables();
+          renderHydroTriangle();
+        }
+        if (type === 'ppm' && nutrient) {
+          stage.ppm[nutrient] = parseFloat(input.value) || 0;
+        }
+      });
+
+      container.addEventListener('change', (e) => {
+        const select = e.target.closest('.hydro-stage-select');
+        if (!select) return;
+        const stageId = select.getAttribute('data-stage-id');
+        const stage = hydroState.stages.find(s => s.id === stageId);
+        if (!stage) return;
+        stage.name = select.value;
+        renderHydroDerivedTables();
+      });
+    }
+
+    function boot() {
+      renderHydroMeqTable();
+      renderHydroDerivedTables();
+      renderHydroTriangle();
+      bindEvents();
+    }
+
+    document.addEventListener('DOMContentLoaded', boot);
+  </script>
+</body>
+</html>

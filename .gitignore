@@ -1,0 +1,53 @@
+# Archivos sensibles de PayPal
+paypal_config.json
+paypal_subscriptions.json
+user_subscription_updates.json
+user_payment_updates.json
+
+# Archivos del sistema
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+
+# Archivos de configuración local
+.env
+.env.local
+supabase-server-config.json
+
+# Logs
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

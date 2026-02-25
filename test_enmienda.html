@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Enmienda - NutriPlant PRO</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #374151;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .item {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #374151;
+        }
+        input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .cic-total-item {
+            grid-column: 1 / -1;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 2px solid #e5e7eb;
+        }
+        .cic-total-input {
+            background: #f0f9ff !important;
+            border: 2px solid #0ea5e9 !important;
+            font-weight: 600 !important;
+            color: #0c4a6e !important;
+            font-size: 1.1rem !important;
+        }
+        .cic-total-input:focus {
+            border-color: #0284c7 !important;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2) !important;
+        }
+        .buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 24px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚜 Test Calculadora de Enmiendas</h1>
+        <p style="text-align: center; color: #6b7280;">Verificación de campos H y Al + CIC Total diferenciado</p>
+        
+        <!-- Análisis de Suelo Inicial -->
+        <div class="section">
+            <h3>📊 Análisis de Suelo Inicial</h3>
+            <div class="grid">
+                <div class="item">
+                    <label>Potasio (K) meq/100g:</label>
+                    <input type="number" id="k-initial" step="0.01" value="1.00">
+                </div>
+                <div class="item">
+                    <label>Calcio (Ca) meq/100g:</label>
+                    <input type="number" id="ca-initial" step="0.01" value="12.00">
+                </div>
+                <div class="item">
+                    <label>Magnesio (Mg) meq/100g:</label>
+                    <input type="number" id="mg-initial" step="0.01" value="3.00">
+                </div>
+                <div class="item">
+                    <label>Hidrógeno (H) meq/100g:</label>
+                    <input type="number" id="h-initial" step="0.01" value="0.00">
+                </div>
+                <div class="item">
+                    <label>Sodio (Na) meq/100g:</label>
+                    <input type="number" id="na-initial" step="0.01" value="2.00">
+                </div>
+                <div class="item">
+                    <label>Aluminio (Al) meq/100g:</label>
+                    <input type="number" id="al-initial" step="0.01" value="0.00">
+                </div>
+                <div class="item cic-total-item">
+                    <label>CIC Total meq/100g:</label>
+                    <input type="number" id="cic-total" step="0.01" value="18.00" class="cic-total-input" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Objetivos de Ajuste -->
+        <div class="section">
+            <h3>🎯 Objetivos de Ajuste</h3>
+            <div class="grid">
+                <div class="item">
+                    <label>% K objetivo:</label>
+                    <input type="number" id="k-target" step="0.01" value="6">
+                </div>
+                <div class="item">
+                    <label>% Ca objetivo:</label>
+                    <input type="number" id="ca-target" step="0.01" value="77">
+                </div>
+                <div class="item">
+                    <label>% Mg objetivo:</label>
+                    <input type="number" id="mg-target" step="0.01" value="17">
+                </div>
+                <div class="item">
+                    <label>% H objetivo:</label>
+                    <input type="number" id="h-target" step="0.01" value="0">
+                </div>
+                <div class="item">
+                    <label>% Na objetivo:</label>
+                    <input type="number" id="na-target" step="0.01" value="0">
+                </div>
+                <div class="item">
+                    <label>% Al objetivo:</label>
+                    <input type="number" id="al-target" step="0.01" value="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- Propiedades del Suelo -->
+        <div class="section">
+            <h3>🌱 Propiedades del Suelo</h3>
+            <div class="grid">
+                <div class="item">
+                    <label>Densidad aparente (g/cm³):</label>
+                    <input type="number" id="soil-density" step="0.01" value="1.1">
+                </div>
+                <div class="item">
+                    <label>Profundidad (cm):</label>
+                    <input type="number" id="soil-depth" step="1" value="30">
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-primary" onclick="calculateCIC()">Calcular CIC</button>
+            <button class="btn btn-secondary" onclick="resetForm()">Reiniciar</button>
+        </div>
+    </div>
+
+    <script>
+        function calculateCIC() {
+            const k = parseFloat(document.getElementById('k-initial').value || 0);
+            const ca = parseFloat(document.getElementById('ca-initial').value || 0);
+            const mg = parseFloat(document.getElementById('mg-initial').value || 0);
+            const h = parseFloat(document.getElementById('h-initial').value || 0);
+            const na = parseFloat(document.getElementById('na-initial').value || 0);
+            const al = parseFloat(document.getElementById('al-initial').value || 0);
+            
+            const cic = k + ca + mg + h + na + al;
+            document.getElementById('cic-total').value = cic.toFixed(2);
+        }
+
+        function resetForm() {
+            document.getElementById('k-initial').value = '1.00';
+            document.getElementById('ca-initial').value = '12.00';
+            document.getElementById('mg-initial').value = '3.00';
+            document.getElementById('h-initial').value = '0.00';
+            document.getElementById('na-initial').value = '2.00';
+            document.getElementById('al-initial').value = '0.00';
+            document.getElementById('cic-total').value = '18.00';
+            
+            document.getElementById('k-target').value = '6';
+            document.getElementById('ca-target').value = '77';
+            document.getElementById('mg-target').value = '17';
+            document.getElementById('h-target').value = '0';
+            document.getElementById('na-target').value = '0';
+            document.getElementById('al-target').value = '0';
+        }
+
+        // Auto-calcular CIC cuando cambien los valores
+        const inputs = ['k-initial', 'ca-initial', 'mg-initial', 'h-initial', 'na-initial', 'al-initial'];
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateCIC);
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+

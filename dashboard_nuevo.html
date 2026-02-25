@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel - NutriPlant Pro (Actualizado)</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h1>N</h1>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" onclick="showSection('dashboard')">
+                    <span class="nav-icon">📊</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('nutrition')">
+                    <span class="nav-icon">📁</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('info')">
+                    <span class="nav-icon">ℹ️</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('tractor')">
+                    <span class="nav-icon">🚜</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('water')">
+                    <span class="nav-icon">💧</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('microscope')">
+                    <span class="nav-icon">🔬</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('edit')">
+                    <span class="nav-icon">✏️</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('power')">
+                    <span class="nav-icon">⚡</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div id="dashboard-section" class="section active">
+                <h1 class="page-title">🌱 Panel de Control - NutriPlant Pro</h1>
+                
+                <!-- Sección de Ajuste de CIC -->
+                <div class="target-section">
+                    <h2 class="section-title">🎯 Meq/100g a ajustar en CIC</h2>
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="k-target">K+ (meq a ajustar):</label>
+                            <input type="number" id="k-target" step="0.01" value="0.00" class="cation-good">
+                        </div>
+                        <div class="input-group">
+                            <label for="ca-target">Ca2+ (meq a ajustar):</label>
+                            <input type="number" id="ca-target" step="0.01" value="0.00" class="cation-good">
+                        </div>
+                        <div class="input-group">
+                            <label for="mg-target">Mg2+ (meq a ajustar):</label>
+                            <input type="number" id="mg-target" step="0.01" value="0.00" class="cation-good">
+                        </div>
+                        <div class="input-group">
+                            <label for="h-target">H+ (meq a ajustar):</label>
+                            <input type="number" id="h-target" step="0.01" value="0.00" class="cation-acid">
+                        </div>
+                        <div class="input-group">
+                            <label for="na-target">Na+ (meq a ajustar):</label>
+                            <input type="number" id="na-target" step="0.01" value="0.00" class="cation-salt">
+                        </div>
+                        <div class="input-group">
+                            <label for="al-target">Al3+ (meq a ajustar):</label>
+                            <input type="number" id="al-target" step="0.01" value="0.00" class="cation-toxic">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Enmiendas -->
+                <div class="amendments-section">
+                    <h2 class="section-title">✔ Enmiendas Disponibles</h2>
+                    <div class="table-container">
+                        <table class="amendments-table">
+                            <thead>
+                                <tr>
+                                    <th>Enmienda</th>
+                                    <th>Fórmula</th>
+                                    <th>Peso Molecular</th>
+                                    <th>%Ca</th>
+                                    <th>%Mg</th>
+                                    <th>%K</th>
+                                    <th>%SO₄</th>
+                                    <th>%CO₃</th>
+                                    <th>%H₂O</th>
+                                    <th>%Si</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="amendments-table-body">
+                                <!-- Las enmiendas se cargarán aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="calculation-actions">
+                    <button id="calculate-amendment" class="btn-calculate">🧮 Calcular Enmienda</button>
+                    <button id="reset-amendment" class="btn-reset">🔄 Reiniciar</button>
+                    <button onclick="forceLoadTable()" class="btn-debug">🔄 Cargar Tabla</button>
+                </div>
+
+                <!-- Resultados -->
+                <div id="amendment-results" class="results-section" style="display: none;">
+                    <h3 class="section-title">📋 Resultados del Cálculo</h3>
+                    <div class="results-grid">
+                        <div class="result-item">
+                            <label>Enmienda recomendada:</label>
+                            <span id="amendment-type" class="result-value">-</span>
+                        </div>
+                        <div class="result-item">
+                            <label>Cantidad (Kg/Ha):</label>
+                            <span id="amendment-amount" class="result-value">-</span>
+                        </div>
+                        <div class="result-item">
+                            <label>Ca a aportar (Kg/Ha):</label>
+                            <span id="ca-contribution" class="result-value">-</span>
+                        </div>
+                        <div class="result-item">
+                            <label>Na a remover (Kg/Ha):</label>
+                            <span id="na-removal" class="result-value">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="dashboard.js"></script>
+    <script>
+        // Función para cargar la tabla inmediatamente
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Cargando dashboard actualizado...');
+            setTimeout(() => {
+                forceLoadTable();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Enmiendas - Gratis</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #f8fafc;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .guest-note {
+      margin: 0 0 12px 0;
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+    }
+    .enmienda-container {
+      max-width: 100%;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    /* Header y título que se adapten en ventana estrecha */
+    .enmienda-header h2 {
+      word-wrap: break-word;
+      hyphens: auto;
+      max-width: 100%;
+      line-height: 1.3;
+    }
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      .enmienda-header h2 { font-size: 1.1rem; }
+      .ideal-ranges { padding: 10px; }
+      .ideal-ranges h3 { font-size: 0.9rem; }
+      .total-display { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <p class="guest-note">Modo gratuito: esta calculadora no guarda datos. Al cerrar, se reinicia.</p>
+
+  <div class="enmienda-container enmienda-watermark-wrap">
+    <div class="enmienda-watermark" aria-hidden="true">
+      <img src="assets/NutriPlant_PRO_blue.png" alt="">
+    </div>
+    <div class="enmienda-header">
+      <div class="enmienda-header-row" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 12px;">
+        <h2 class="text-2xl font-bold text-gray-800 mb-0" style="flex: 1; min-width: 0;">🚜 Calculadora de Enmiendas (ajuste de CIC del suelo)</h2>
+      </div>
+      <div class="ideal-ranges">
+        <h3>📊 Rangos Ideales de Cationes:</h3>
+        <div class="ranges-grid">
+          <div class="range-item good">K⁺: 3-7%</div>
+          <div class="range-item good">Ca²⁺: 65-75%</div>
+          <div class="range-item good">Mg²⁺: 10-15%</div>
+          <div class="range-item warning">H⁺: 0-10%</div>
+          <div class="range-item warning">Na⁺: 0-1%</div>
+          <div class="range-item warning">Al³⁺: 0-1%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="enmienda-content">
+      <div class="ideal-ranges">
+        <h3>📊 Análisis de Suelo Inicial (meq/100g de suelo)</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <div></div>
+          <div class="total-display">
+            <label>CIC Total:</label>
+            <input type="number" id="cic-total" step="0.01" value="0.00" class="total-input" readonly>
+          </div>
+        </div>
+        <div class="analysis-grid">
+          <div class="analysis-item cation-good">
+            <label>K⁺:</label>
+            <input type="number" id="k-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="percent-display" id="k-percent">0.0%</div>
+            <div class="status-icon" id="k-status">-</div>
+          </div>
+          <div class="analysis-item cation-good">
+            <label>Ca²⁺:</label>
+            <input type="number" id="ca-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="percent-display" id="ca-percent">0.0%</div>
+            <div class="status-icon" id="ca-status">-</div>
+          </div>
+          <div class="analysis-item cation-good">
+            <label>Mg²⁺:</label>
+            <input type="number" id="mg-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="percent-display" id="mg-percent">0.0%</div>
+            <div class="status-icon" id="mg-status">-</div>
+          </div>
+          <div class="analysis-item cation-acid">
+            <label>H⁺:</label>
+            <input type="number" id="h-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="percent-display" id="h-percent">0.0%</div>
+            <div class="status-icon" id="h-status">-</div>
+          </div>
+          <div class="analysis-item cation-salt">
+            <label>Na⁺:</label>
+            <input type="number" id="na-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="percent-display" id="na-percent">0.0%</div>
+            <div class="status-icon" id="na-status">-</div>
+          </div>
+          <div class="analysis-item cation-toxic">
+            <label>Al³⁺:</label>
+            <input type="number" id="al-initial" step="0.01" value="0.00" class="analysis-input">
+            <div class="percent-display" id="al-percent">0.0%</div>
+            <div class="status-icon" id="al-status">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ideal-ranges">
+        <h3>🌱 Propiedades del Suelo</h3>
+        <div class="properties-grid">
+          <div class="property-item">
+            <label>Densidad aparente (g/cm3):</label>
+            <input type="number" id="soil-density" step="0.01" value="1.1" class="property-input">
+          </div>
+          <div class="property-item">
+            <label>Profundidad (cm):</label>
+            <input type="number" id="soil-depth" step="1" value="30" class="property-input">
+          </div>
+          <div class="property-item">
+            <label>pH del suelo:</label>
+            <div class="ph-input-container">
+              <input type="number" id="soil-ph" step="0.1" placeholder="Ingrese pH" min="4.0" max="9.0" class="property-input">
+              <div id="ph-indicator" class="ph-indicator">⚪ Ingrese pH</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ideal-ranges target-section">
+        <h3>🎯 Meq/100g a ajustar en CIC</h3>
+        <div class="target-grid">
+          <div class="target-item cation-good"><label>K⁺ (meq a ajustar):</label><input type="number" id="k-target" step="0.01" value="0.00" class="target-input"></div>
+          <div class="target-item cation-good"><label>Ca²⁺ (meq a ajustar):</label><input type="number" id="ca-target" step="0.01" value="0.00" class="target-input"></div>
+          <div class="target-item cation-good"><label>Mg²⁺ (meq a ajustar):</label><input type="number" id="mg-target" step="0.01" value="0.00" class="target-input"></div>
+          <div class="target-item cation-acid"><label>H⁺ (meq a ajustar):</label><input type="number" id="h-target" step="0.01" value="0.00" class="target-input"></div>
+          <div class="target-item cation-salt"><label>Na⁺ (meq a ajustar):</label><input type="number" id="na-target" step="0.01" value="0.00" class="target-input"></div>
+          <div class="target-item cation-toxic"><label>Al³⁺ (meq a ajustar):</label><input type="number" id="al-target" step="0.01" value="0.00" class="target-input"></div>
+        </div>
+      </div>
+
+      <div class="amendments-section">
+        <h3 class="section-title">🧪 Enmiendas Disponibles</h3>
+        <div class="amendments-table-container">
+          <table class="amendments-table">
+            <thead>
+              <tr>
+                <th>Enmienda</th><th>Fórmula</th><th>Peso Molecular</th><th>%K</th><th>%Ca</th><th>%Mg</th><th>%SO₄</th><th>%CO₃</th><th>%H₂O</th><th>%Si</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="amendments-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="calculation-actions">
+        <div class="soil-reach-card">
+          <label for="soil-reach-percent">Suelo explorado por raíces (%)</label>
+          <div class="soil-reach-input">
+            <input type="number" id="soil-reach-percent" min="10" max="100" step="1" value="100">
+            <span>%</span>
+          </div>
+        </div>
+        <button id="calculate-amendment" type="button" class="btn-calculate">🧮 Calcular Enmienda</button>
+        <button id="reset-amendment" type="button" class="btn-reset">🔄 Reiniciar</button>
+      </div>
+
+      <div id="amendment-results" class="results-section" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    const BASE_AMENDMENTS = [
+      { id: 'gypsum', name: 'Yeso Agrícola', formula: 'CaSO4·2H2O', molecularWeight: 172.2, ca: 23.3, mg: 0,   k: 0,   so4: 55.8, co3: 0,   h2o: 20.9, si: 0, type: 'sulfate' },
+      { id: 'lime',   name: 'Cal Agrícola', formula: 'CaCO3',      molecularWeight: 100,   ca: 40.0, mg: 0,   k: 0,   so4: 0,    co3: 60,  h2o: 0,    si: 0, type: 'carbonate' },
+      { id: 'dolomite', name: 'Cal Dolomítica', formula: 'CaCO3 + MgCO3', molecularWeight: 184, ca: 21.7, mg: 13.2, k: 0, so4: 0, co3: 65.2, h2o: 0, si: 0, type: 'carbonate' },
+      { id: 'mgso4-mono', name: 'Sulfato de Magnesio Monohidrato', formula: 'MgSO4·H2O', molecularWeight: 138, ca: 0, mg: 17, k: 0, so4: 69, co3: 0, h2o: 14, si: 0, type: 'sulfate' },
+      { id: 'sop-granular', name: 'Sulfato de Potasio Granular', formula: 'K2SO4', molecularWeight: 174, ca: 0, mg: 0, k: 41.5, so4: 54.1, co3: 0, h2o: 0, si: 0, type: 'sulfate' }
+    ];
+    let amendmentsDatabase = JSON.parse(JSON.stringify(BASE_AMENDMENTS));
+    let selectedAmendments = [];
+
+    function formatNumber(value, decimals = 2) {
+      const n = Number(value || 0);
+      return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+
+    function calculateCIC() {
+      const ids = ['k-initial','ca-initial','mg-initial','h-initial','na-initial','al-initial'];
+      const vals = ids.map(id => parseFloat(document.getElementById(id).value || 0));
+      const cic = vals.reduce((a,b) => a + b, 0);
+      document.getElementById('cic-total').value = cic.toFixed(2);
+      calculateCationPercentages(cic);
+      updateCationStatusIcons();
+      calculateAutomaticAdjustments();
+    }
+
+    function calculateCationPercentages(cic) {
+      const map = [['k-initial','k-percent'],['ca-initial','ca-percent'],['mg-initial','mg-percent'],['h-initial','h-percent'],['na-initial','na-percent'],['al-initial','al-percent']];
+      map.forEach(([id,pid]) => {
+        const v = parseFloat(document.getElementById(id).value || 0);
+        document.getElementById(pid).textContent = cic > 0 ? ((v / cic) * 100).toFixed(1) + '%' : '0.0%';
+      });
+    }
+
+    function updateStatusIcon(elementId, percent, minRange, maxRange) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      if (isNaN(percent) || percent === 0) { el.textContent = '-'; return; }
+      el.textContent = (percent >= minRange && percent <= maxRange) ? '✅' : (percent > maxRange ? '⚠️' : '❌');
+    }
+
+    function updateCationStatusIcons() {
+      const k = parseFloat(document.getElementById('k-initial').value || 0);
+      const ca = parseFloat(document.getElementById('ca-initial').value || 0);
+      const mg = parseFloat(document.getElementById('mg-initial').value || 0);
+      const h = parseFloat(document.getElementById('h-initial').value || 0);
+      const na = parseFloat(document.getElementById('na-initial').value || 0);
+      const al = parseFloat(document.getElementById('al-initial').value || 0);
+      const cic = k + ca + mg + h + na + al;
+      if (cic === 0) return;
+      updateStatusIcon('k-status', (k / cic) * 100, 3, 7);
+      updateStatusIcon('ca-status', (ca / cic) * 100, 65, 75);
+      updateStatusIcon('mg-status', (mg / cic) * 100, 10, 15);
+      updateStatusIcon('h-status', (h / cic) * 100, 0, 10);
+      updateStatusIcon('na-status', (na / cic) * 100, 0, 1);
+      updateStatusIcon('al-status', (al / cic) * 100, 0, 1);
+    }
+
+    function calculateIdealValues(cic) {
+      return { k: +(cic * 0.05).toFixed(2), ca: +(cic * 0.75).toFixed(2), mg: +(cic * 0.15).toFixed(2), h: 0, na: 0, al: 0 };
+    }
+
+    function applyAdjustmentsToFields(adjustments) {
+      document.getElementById('k-target').value = adjustments.k.toFixed(2);
+      document.getElementById('ca-target').value = adjustments.ca.toFixed(2);
+      document.getElementById('mg-target').value = adjustments.mg.toFixed(2);
+      document.getElementById('h-target').value = adjustments.h.toFixed(2);
+      document.getElementById('na-target').value = adjustments.na.toFixed(2);
+      document.getElementById('al-target').value = adjustments.al.toFixed(2);
+    }
+
+    function calculateAutomaticAdjustments() {
+      const cic = parseFloat(document.getElementById('cic-total').value || 0);
+      if (!cic) return;
+      const ideal = calculateIdealValues(cic);
+      const current = {
+        k: parseFloat(document.getElementById('k-initial').value || 0),
+        ca: parseFloat(document.getElementById('ca-initial').value || 0),
+        mg: parseFloat(document.getElementById('mg-initial').value || 0),
+        h: parseFloat(document.getElementById('h-initial').value || 0),
+        na: parseFloat(document.getElementById('na-initial').value || 0),
+        al: parseFloat(document.getElementById('al-initial').value || 0)
+      };
+      applyAdjustmentsToFields({
+        k: ideal.k - current.k,
+        ca: ideal.ca - current.ca,
+        mg: ideal.mg - current.mg,
+        h: ideal.h - current.h,
+        na: ideal.na - current.na,
+        al: ideal.al - current.al
+      });
+    }
+
+    function updatePHIndicator() {
+      const phInput = document.getElementById('soil-ph');
+      const phIndicator = document.getElementById('ph-indicator');
+      const ph = parseFloat(phInput.value || 0);
+      if (!ph) {
+        phIndicator.textContent = '⚪ Ingrese pH';
+        phIndicator.className = 'ph-indicator';
+        return;
+      }
+      if (ph < 6.5) { phIndicator.textContent = '🔴 Ácido'; phIndicator.className = 'ph-indicator ph-acid'; }
+      else if (ph <= 7.2) { phIndicator.textContent = '🟢 Neutro'; phIndicator.className = 'ph-indicator ph-neutral'; }
+      else { phIndicator.textContent = '🟡 Alcalino'; phIndicator.className = 'ph-indicator ph-alkaline'; }
+    }
+
+    function loadAmendmentsTable() {
+      const tbody = document.getElementById('amendments-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      amendmentsDatabase.forEach((a) => {
+        const row = document.createElement('tr');
+        row.className = 'amendment-row';
+        row.innerHTML = `
+          <td>${a.name}</td>
+          <td>${a.formula}</td>
+          <td>${a.molecularWeight}</td>
+          <td>${a.k > 0 ? a.k + '%' : '-'}</td>
+          <td>${a.ca > 0 ? a.ca + '%' : '-'}</td>
+          <td>${a.mg > 0 ? a.mg + '%' : '-'}</td>
+          <td>${a.so4 > 0 ? a.so4 + '%' : '-'}</td>
+          <td>${a.co3 > 0 ? a.co3 + '%' : '-'}</td>
+          <td>${a.h2o > 0 ? a.h2o + '%' : '-'}</td>
+          <td>${a.si > 0 ? a.si + '%' : '-'}</td>
+          <td>
+            <button class="btn-select-amendment ${selectedAmendments.includes(a.id) ? 'selected' : ''}" id="btn-select-${a.id}" onclick="toggleAmendmentSelection('${a.id}')">${selectedAmendments.includes(a.id) ? 'Seleccionado' : 'Seleccionar'}</button>
+            <button class="btn-edit-amendment" onclick="editAmendment('${a.id}')" title="Editar composición">✏️</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function toggleAmendmentSelection(amendmentId) {
+      if (selectedAmendments.includes(amendmentId)) selectedAmendments = selectedAmendments.filter(id => id !== amendmentId);
+      else selectedAmendments.push(amendmentId);
+      loadAmendmentsTable();
+    }
+
+    function getSelectedAmendments() {
+      return amendmentsDatabase.filter(a => selectedAmendments.includes(a.id));
+    }
+
+    function saveNewAmendment() {
+      const name = document.getElementById('new-amendment-name').value.trim();
+      const formula = document.getElementById('new-amendment-formula').value.trim();
+      const molecularWeight = parseFloat(document.getElementById('new-amendment-molecular').value);
+      if (!name || !formula || isNaN(molecularWeight)) {
+        alert('Completa al menos Nombre, Fórmula y Peso Molecular.');
+        return;
+      }
+      amendmentsDatabase.push({
+        id: 'custom-' + Date.now(),
+        name,
+        formula,
+        molecularWeight,
+        k: parseFloat(document.getElementById('new-amendment-k').value) || 0,
+        ca: parseFloat(document.getElementById('new-amendment-ca').value) || 0,
+        mg: parseFloat(document.getElementById('new-amendment-mg').value) || 0,
+        so4: parseFloat(document.getElementById('new-amendment-so4').value) || 0,
+        co3: parseFloat(document.getElementById('new-amendment-co3').value) || 0,
+        h2o: parseFloat(document.getElementById('new-amendment-h2o').value) || 0,
+        si: parseFloat(document.getElementById('new-amendment-si').value) || 0,
+        type: 'custom'
+      });
+      loadAmendmentsTable();
+    }
+
+    function clearNewAmendmentRow() {
+      ['new-amendment-name','new-amendment-formula','new-amendment-molecular','new-amendment-k','new-amendment-ca','new-amendment-mg','new-amendment-so4','new-amendment-co3','new-amendment-h2o','new-amendment-si']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    }
+
+    function deleteAmendment(amendmentId) {
+      amendmentsDatabase = amendmentsDatabase.filter(a => a.id !== amendmentId);
+      selectedAmendments = selectedAmendments.filter(id => id !== amendmentId);
+      loadAmendmentsTable();
+    }
+
+    function editAmendment(amendmentId) {
+      const a = amendmentsDatabase.find(x => x.id === amendmentId);
+      if (!a) return;
+      const modal = document.createElement('div');
+      modal.className = 'edit-modal';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <h3>✏️ Editar Composición: ${a.name}</h3>
+          <form id="edit-amendment-form">
+            <div class="form-group"><label>Peso Molecular:</label><input type="number" id="edit-molecular" value="${a.molecularWeight}" step="0.1"></div>
+            <div class="form-group"><label>%K:</label><input type="number" id="edit-k" value="${a.k}" step="0.1"></div>
+            <div class="form-group"><label>%Ca:</label><input type="number" id="edit-ca" value="${a.ca}" step="0.1"></div>
+            <div class="form-group"><label>%Mg:</label><input type="number" id="edit-mg" value="${a.mg}" step="0.1"></div>
+            <div class="form-group"><label>%SO4:</label><input type="number" id="edit-so4" value="${a.so4}" step="0.1"></div>
+            <div class="form-group"><label>%CO3:</label><input type="number" id="edit-co3" value="${a.co3}" step="0.1"></div>
+            <div class="form-group"><label>%H2O:</label><input type="number" id="edit-h2o" value="${a.h2o}" step="0.1"></div>
+            <div class="form-group"><label>%Si:</label><input type="number" id="edit-si" value="${a.si}" step="0.1"></div>
+            <div class="modal-buttons">
+              <button type="button" onclick="saveAmendmentEdit('${a.id}')" class="btn-save">💾 Guardar</button>
+              <button type="button" onclick="closeEditModal()" class="btn-cancel">❌ Cancelar</button>
+            </div>
+          </form>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+
+    function saveAmendmentEdit(amendmentId) {
+      const idx = amendmentsDatabase.findIndex(a => a.id === amendmentId);
+      if (idx < 0) return;
+      amendmentsDatabase[idx].molecularWeight = parseFloat(document.getElementById('edit-molecular').value) || 0;
+      amendmentsDatabase[idx].k = parseFloat(document.getElementById('edit-k').value) || 0;
+      amendmentsDatabase[idx].ca = parseFloat(document.getElementById('edit-ca').value) || 0;
+      amendmentsDatabase[idx].mg = parseFloat(document.getElementById('edit-mg').value) || 0;
+      amendmentsDatabase[idx].so4 = parseFloat(document.getElementById('edit-so4').value) || 0;
+      amendmentsDatabase[idx].co3 = parseFloat(document.getElementById('edit-co3').value) || 0;
+      amendmentsDatabase[idx].h2o = parseFloat(document.getElementById('edit-h2o').value) || 0;
+      amendmentsDatabase[idx].si = parseFloat(document.getElementById('edit-si').value) || 0;
+      closeEditModal();
+      loadAmendmentsTable();
+    }
+
+    function closeEditModal() {
+      const modal = document.querySelector('.edit-modal');
+      if (modal) modal.remove();
+    }
+
+    function convertMeqToKgHa(meq, pesoEquivalente) {
+      const densidadAparente = parseFloat(document.getElementById('soil-density').value || 1.1);
+      const profundidad = parseFloat(document.getElementById('soil-depth').value || 30) / 100;
+      return meq * pesoEquivalente * 10 * (100 * 100 * profundidad * densidadAparente) / 1000;
+    }
+
+    function convertKgHaToMeq(kgHa, pesoMolecular) {
+      const densidadAparente = parseFloat(document.getElementById('soil-density').value || 1.1);
+      const profundidad = parseFloat(document.getElementById('soil-depth').value || 30) / 100;
+      return kgHa / (pesoMolecular * 10 * (100 * 100 * profundidad * densidadAparente) / 1000);
+    }
+
+    function getSoilReachPercent() {
+      const el = document.getElementById('soil-reach-percent');
+      let v = parseFloat(el.value);
+      if (Number.isNaN(v)) v = 100;
+      v = Math.max(10, Math.min(100, v));
+      el.value = String(v);
+      return v;
+    }
+
+    function calcularEstrategiaEnmiendas(enmiendasSeleccionadas, necesidades) {
+      const estrategia = [];
+      let caRestante = necesidades.ca;
+      let mgRestante = necesidades.mg;
+      let kRestante = necesidades.k;
+      let so4Necesario = necesidades.so4;
+
+      const tieneDolomita = enmiendasSeleccionadas.find(a => a.id === 'dolomite');
+      const tieneYeso = enmiendasSeleccionadas.find(a => a.id === 'gypsum');
+      const tieneCalAgricola = enmiendasSeleccionadas.find(a => a.id === 'lime');
+      const tieneMgSO4 = enmiendasSeleccionadas.find(a => a.id === 'mgso4-mono');
+      const tieneSOP = enmiendasSeleccionadas.find(a => a.id === 'sop-granular');
+
+      if (tieneDolomita && caRestante > 0 && mgRestante > 0) {
+        const caKgHaNeeded = convertMeqToKgHa(caRestante, 20.04);
+        const mgKgHaNeeded = convertMeqToKgHa(mgRestante, 12.15);
+        const caAmount = caKgHaNeeded / ((tieneDolomita.ca || 21.7) / 100);
+        const mgAmount = mgKgHaNeeded / ((tieneDolomita.mg || 13.2) / 100);
+        const dosisDolomita = Math.max(caAmount, mgAmount);
+        estrategia.push({ tipo: 'dolomite', dosis: dosisDolomita });
+        caRestante = Math.max(0, caRestante - convertKgHaToMeq(dosisDolomita * ((tieneDolomita.ca || 21.7) / 100), 20.04));
+        mgRestante = Math.max(0, mgRestante - convertKgHaToMeq(dosisDolomita * ((tieneDolomita.mg || 13.2) / 100), 12.15));
+      }
+
+      if (caRestante > 0) {
+        if (tieneYeso) {
+          const caKgHaNeeded = convertMeqToKgHa(caRestante, 20.04);
+          estrategia.push({ tipo: 'gypsum', dosis: caKgHaNeeded / ((tieneYeso.ca || 23.3) / 100) });
+          caRestante = 0;
+        } else if (tieneCalAgricola) {
+          const caKgHaNeeded = convertMeqToKgHa(caRestante, 20.04);
+          estrategia.push({ tipo: 'lime', dosis: caKgHaNeeded / ((tieneCalAgricola.ca || 40) / 100) });
+          caRestante = 0;
+        }
+      }
+
+      if (mgRestante > 0 && tieneMgSO4) {
+        const mgKgHaNeeded = convertMeqToKgHa(mgRestante, 12.15);
+        estrategia.push({ tipo: 'mgso4-mono', dosis: mgKgHaNeeded / ((tieneMgSO4.mg || 17) / 100) });
+        mgRestante = 0;
+      }
+
+      if (kRestante > 0 && tieneSOP) {
+        const kKgHaNeeded = convertMeqToKgHa(kRestante, 39.1);
+        estrategia.push({ tipo: 'sop-granular', dosis: kKgHaNeeded / ((tieneSOP.k || 41.5) / 100) });
+        kRestante = 0;
+      }
+
+      const so4YaAportado = estrategia.reduce((t, e) => {
+        const am = enmiendasSeleccionadas.find(a => a.id === e.tipo);
+        return t + (e.dosis * ((am?.so4 || 0) / 100));
+      }, 0);
+      const so4Restante = Math.max(0, so4Necesario - so4YaAportado);
+      if (so4Restante > 0 && tieneYeso) estrategia.push({ tipo: 'gypsum', dosis: so4Restante / ((tieneYeso.so4 || 55.8) / 100) });
+
+      return estrategia.filter(e => e.dosis >= 100);
+    }
+
+    function showCombinedAmendmentResults(details, reachPercent) {
+      const resultsSection = document.getElementById('amendment-results');
+      const factor = reachPercent / 100;
+      const adjusted = details.map(x => ({
+        ...x,
+        amount: x.amount * factor,
+        k: x.k * factor,
+        ca: x.ca * factor,
+        mg: x.mg * factor,
+        so4: x.so4 * factor,
+        si: x.si * factor
+      }));
+
+      if (!adjusted.length) {
+        resultsSection.innerHTML = '<h3>📊 Resultados del Cálculo de Enmiendas</h3><p>No se requieren enmiendas con las seleccionadas actuales.</p>';
+        resultsSection.style.display = 'block';
+        return;
+      }
+
+      const totals = adjusted.reduce((acc, a) => {
+        acc.k += a.k || 0; acc.ca += a.ca || 0; acc.mg += a.mg || 0; acc.so4 += a.so4 || 0; acc.si += a.si || 0;
+        return acc;
+      }, { k:0, ca:0, mg:0, so4:0, si:0 });
+
+      let html = '<h3>📊 Resultados del Cálculo de Enmiendas</h3>';
+      html += '<div class="amendment-summary"><h4>🎯 Aportes Totales:</h4><ul>';
+      if (totals.k > 0) html += `<li><strong>Potasio (K⁺):</strong> ${formatNumber(totals.k)} kg/ha</li>`;
+      if (totals.ca > 0) html += `<li><strong>Calcio (Ca²⁺):</strong> ${formatNumber(totals.ca)} kg/ha</li>`;
+      if (totals.mg > 0) html += `<li><strong>Magnesio (Mg²⁺):</strong> ${formatNumber(totals.mg)} kg/ha</li>`;
+      if (totals.so4 > 0) html += `<li><strong>Sulfato (SO₄²⁻):</strong> ${formatNumber(totals.so4)} kg/ha</li>`;
+      if (totals.si > 0) html += `<li><strong>Silicio (Si):</strong> ${formatNumber(totals.si)} kg/ha</li>`;
+      html += '</ul>';
+      html += `<div style="font-size:12px;color:#64748b;margin-top:6px;">% del volumen de suelo explorado por raíces (${formatNumber(reachPercent,0)}%).</div>`;
+      html += '</div>';
+      html += '<div class="amendment-details"><h4>📋 Detalles por Enmienda:</h4><table class="results-table"><thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th>K⁺</th><th>Ca²⁺</th><th>Mg²⁺</th><th>SO₄²⁻</th><th>Si</th></tr></thead><tbody>';
+      adjusted.forEach(a => {
+        html += `<tr><td>${a.name}</td><td>${formatNumber(a.amount)}</td><td>${a.k > 0 ? formatNumber(a.k) : '-'}</td><td>${a.ca > 0 ? formatNumber(a.ca) : '-'}</td><td>${a.mg > 0 ? formatNumber(a.mg) : '-'}</td><td>${a.so4 > 0 ? formatNumber(a.so4) : '-'}</td><td>${a.si > 0 ? formatNumber(a.si) : '-'}</td></tr>`;
+      });
+      html += '</tbody></table></div>';
+      resultsSection.innerHTML = html;
+      resultsSection.style.display = 'block';
+    }
+
+    function calculateAmendment() {
+      const selected = getSelectedAmendments();
+      if (!selected.length) {
+        alert('Por favor selecciona al menos una enmienda antes de calcular');
+        return;
+      }
+      const kTarget = parseFloat(document.getElementById('k-target').value || 0);
+      const caTarget = parseFloat(document.getElementById('ca-target').value || 0);
+      const mgTarget = parseFloat(document.getElementById('mg-target').value || 0);
+      const naTarget = parseFloat(document.getElementById('na-target').value || 0);
+      const soilPH = parseFloat(document.getElementById('soil-ph').value || 7);
+      const reachPercent = getSoilReachPercent();
+
+      const strategy = calcularEstrategiaEnmiendas(selected, {
+        ca: Math.max(0, caTarget),
+        mg: Math.max(0, mgTarget),
+        k: Math.max(0, kTarget),
+        so4: naTarget < 0 ? Math.abs(naTarget) : 0,
+        pH: soilPH
+      });
+
+      const details = strategy.map(s => {
+        const a = selected.find(x => x.id === s.tipo);
+        const amount = s.dosis;
+        const ca = amount * ((a?.ca || 0) / 100);
+        const mg = amount * ((a?.mg || 0) / 100);
+        const k = amount * ((a?.k || 0) / 100);
+        const so4 = amount * ((a?.so4 || 0) / 100);
+        const si = amount * ((a?.si || 0) / 100);
+        return { name: a?.name || s.tipo, amount, ca, mg, k, so4, si };
+      });
+
+      showCombinedAmendmentResults(details, reachPercent);
+    }
+
+    function resetAmendmentForm() {
+      ['k-initial','ca-initial','mg-initial','h-initial','na-initial','al-initial'].forEach(id => document.getElementById(id).value = '0.00');
+      ['k-target','ca-target','mg-target','h-target','na-target','al-target'].forEach(id => document.getElementById(id).value = '0.00');
+      document.getElementById('cic-total').value = '0.00';
+      document.getElementById('soil-density').value = '1.1';
+      document.getElementById('soil-depth').value = '30';
+      document.getElementById('soil-ph').value = '';
+      document.getElementById('soil-reach-percent').value = '100';
+      document.getElementById('amendment-results').style.display = 'none';
+      calculateCationPercentages(0);
+      updatePHIndicator();
+    }
+
+    function boot() {
+      loadAmendmentsTable();
+      updatePHIndicator();
+      ['k-initial','ca-initial','mg-initial','h-initial','na-initial','al-initial'].forEach(id => {
+        document.getElementById(id).addEventListener('input', calculateCIC);
+      });
+      document.getElementById('soil-ph').addEventListener('input', updatePHIndicator);
+      document.getElementById('calculate-amendment').addEventListener('click', calculateAmendment);
+      document.getElementById('reset-amendment').addEventListener('click', resetAmendmentForm);
+    }
+
+    document.addEventListener('DOMContentLoaded', boot);
+  </script>
+</body>
+</html>

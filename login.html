@@ -1,0 +1,2986 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Iniciar sesión — NutriPlant Pro</title>
+  
+  <!-- Favicon (hoja azul: pestaña y búsqueda) -->
+  <link rel="icon" type="image/png" href="assets/N_Hoja_Azul.png">
+  
+  <!-- Meta tags para mejor SEO y experiencia -->
+  <meta name="description" content="Inicia sesión en NutriPlant Pro - Tu dashboard de nutrición personalizada">
+  <meta name="theme-color" content="#16a34a">
+  
+  <!-- Estilos -->
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="auth.css" />
+  <script src="subscription-config.js"></script>
+</head>
+<body class="auth-page">
+  <!-- Header consistente con el dashboard -->
+  <header class="site-header auth-header">
+    <div class="brandline">
+      <div class="brand-section">
+        <img src="assets/NutriPlant_PRO_blue.png" alt="NutriPlant Pro" class="brand-logo auth-logo" />
+      </div>
+      <div class="social-links">
+        <button class="social-btn" onclick="window.showAboutUsModal()" title="Sobre Nosotros" type="button" style="
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          border-radius: 999px;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          color: #1f2937;
+          font-weight: 600;
+          font-size: 13px;
+          box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+          transition: all 0.2s ease;
+        " onmouseover="this.style.background='#eef2ff'; this.style.borderColor='#c7d2fe'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#f8fafc'; this.style.borderColor='#e2e8f0'; this.style.transform='none'">
+          <span style="width: 24px; height: 24px; border-radius: 8px; background: #e0f2fe; display:inline-flex; align-items:center; justify-content:center; font-size: 14px;">👥</span>
+          Nosotros
+        </button>
+        <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" class="social-btn" data-social="facebook" title="Facebook">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+          </svg>
+        </a>
+        <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" class="social-btn" data-social="instagram" title="Instagram">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+          </svg>
+        </a>
+        <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&_r=1" target="_blank" class="social-btn" data-social="tiktok" title="TikTok">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
+          </svg>
+        </a>
+        <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" class="social-btn" data-social="youtube" title="YouTube">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/>
+            <polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/>
+          </svg>
+        </a>
+        <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" class="social-btn" data-social="linkedin" title="LinkedIn">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+            <rect x="2" y="9" width="4" height="12"/>
+            <circle cx="4" cy="4" r="2"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido principal de autenticación -->
+  <main class="auth-main">
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-header-content">
+          <div class="auth-logo-container">
+            <img src="assets/NutriPlant_PRO_blue.png" alt="NutriPlant Pro" class="auth-card-logo" />
+          </div>
+          <h1 class="auth-title">Bienvenido a NutriPlant Pro</h1>
+        </div>
+
+        <!-- Contáctanos: debajo del título de bienvenida -->
+        <div style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          font-size: 13px;
+          margin-top: 16px;
+          margin-bottom: 8px;
+        ">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
+            <span style="color: #64748b; font-weight: 500;">Contáctanos:</span>
+            <a href="mailto:admin@nutriplantpro.com" style="
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              color: #2563eb;
+              text-decoration: none;
+              font-weight: 500;
+              padding: 6px 12px;
+              border-radius: 8px;
+              transition: all 0.2s ease;
+              background: rgba(37, 99, 235, 0.05);
+              border: 1px solid rgba(37, 99, 235, 0.1);
+            " onmouseover="this.style.background='rgba(37, 99, 235, 0.1)'; this.style.borderColor='rgba(37, 99, 235, 0.2)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 8px rgba(37, 99, 235, 0.15)'" onmouseout="this.style.background='rgba(37, 99, 235, 0.05)'; this.style.borderColor='rgba(37, 99, 235, 0.1)'; this.style.transform='none'; this.style.boxShadow='none'">
+              <svg style="width: 16px; height: 16px; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              admin@nutriplantpro.com
+            </a>
+          </div>
+          <a href="https://wa.me/13868044542?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20NutriPlant%20PRO" target="_blank" style="
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: #25d366;
+            border: 1px solid #25d366;
+          " onmouseover="this.style.background='#20ba5a'; this.style.borderColor='#20ba5a'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 8px rgba(37, 211, 102, 0.3)'" onmouseout="this.style.background='#25d366'; this.style.borderColor='#25d366'; this.style.transform='none'; this.style.boxShadow='none'">
+            <svg style="width: 16px; height: 16px; flex-shrink: 0;" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+            </svg>
+            WhatsApp
+          </a>
+        </div>
+
+        <div style="margin: 20px 0; height: 1px; background: #e5e7eb;"></div>
+
+        <!-- Inicio de sesión: correo, contraseña y registro -->
+        <form id="loginForm" class="auth-form">
+          <div class="form-group">
+            <label for="email" class="form-label">Correo electrónico</label>
+            <input 
+              type="email" 
+              id="email"
+              name="email" 
+              placeholder="tu@correo.com" 
+              required 
+              class="form-input"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="password" class="form-label">Contraseña</label>
+            <input 
+              type="password" 
+              id="password"
+              name="password" 
+              placeholder="••••••••" 
+              required 
+              class="form-input"
+            />
+          </div>
+          
+          <button type="submit" class="auth-button">
+            <span class="button-text">Iniciar Sesión</span>
+            <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </button>
+        </form>
+
+        <!-- Panel para definir nueva contraseña (tras clic en enlace de recuperación) -->
+        <div id="recoveryPasswordPanel" style="display: none;">
+          <p style="color: #0f172a; font-size: 15px; font-weight: 600; margin-bottom: 12px;">Define tu nueva contraseña</p>
+          <form id="recoveryPasswordForm" onsubmit="return submitRecoveryPassword(event);">
+            <div class="form-group">
+              <label for="newPassword" class="form-label">Nueva contraseña</label>
+              <input type="password" id="newPassword" name="newPassword" placeholder="••••••••" minlength="6" required class="form-input" />
+            </div>
+            <div class="form-group">
+              <label for="newPasswordConfirm" class="form-label">Confirmar contraseña</label>
+              <input type="password" id="newPasswordConfirm" name="newPasswordConfirm" placeholder="••••••••" minlength="6" required class="form-input" />
+            </div>
+            <div id="recoveryPasswordMessage" style="display: none; margin-bottom: 12px; padding: 10px; border-radius: 8px; font-size: 14px;"></div>
+            <button type="submit" class="auth-button" style="width: 100%;">
+              <span class="button-text">Guardar y entrar</span>
+            </button>
+          </form>
+        </div>
+        
+        <div id="loginFormFooter" style="text-align: center; margin-top: 16px;">
+          <p style="color: #64748b; font-size: 14px; margin: 0;" id="loginFooterText">
+            ¿No tienes una cuenta? <a href="#" onclick="showRegistrationModal(); return false;" style="color: #2563eb; text-decoration: none; font-weight: 600; cursor: pointer;">Crear Nueva Cuenta</a>
+          </p>
+        </div>
+
+        <div id="loginExtra" class="auth-divider" style="margin-top: 24px; margin-bottom: 16px;">
+          <span>O</span>
+        </div>
+
+        <!-- Invitación a calculadoras sin registro (usuarios curiosos) -->
+        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #86efac; border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: center;">
+          <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: 600; color: #166534;">¿Solo quieres probar?</p>
+          <p style="margin: 0; font-size: 13px; color: #15803d;">Usa las calculadoras gratis aquí abajo — <strong>no necesitas registrarte</strong>. Sin cuenta, sin compromiso.</p>
+        </div>
+
+        <!-- Calculadoras gratuitas - sin registro -->
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showConversionCalculator()">
+          <span class="calculator-icon">🧮</span>
+          <span class="button-text">Calculadora Óxido ↔ Elemental</span>
+        </button>
+        
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientUnitsCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🧪</span>
+          <span class="button-text">Calculadora de Unidades (ppm/mmol/meq)</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showHydroSolutionCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">💧</span>
+          <span class="button-text">Calculadora de Solución Nutritiva por Etapa</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showVPDCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🌡️</span>
+          <span class="button-text">Calculadora de Déficit de Presión de Vapor</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAmendmentCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🚜</span>
+          <span class="button-text">Calculadora de Enmiendas (CIC)</span>
+        </button>
+        
+        <!-- Footer: copyright y acceso privado al final -->
+        <div style="
+          margin-top: 40px;
+          padding-top: 24px;
+          border-top: 1px solid #e5e7eb;
+          text-align: center;
+        ">
+          <div style="
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.6;
+          ">
+            <strong>© 2026 NutriPlant PRO®</strong>. Marca registrada. Todos los derechos reservados.
+          </div>
+          <a href="admin/index.html?k=np_admin_key_8f4a2b9c1e7d" style="
+            display: inline-block;
+            margin-top: 14px;
+            font-size: 11px;
+            color: #9ca3af;
+            text-decoration: none;
+          " onmouseover="this.style.color='#6b7280'" onmouseout="this.style.color='#9ca3af'">Acceso privado</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Supabase (nube) - debe cargar antes de auth -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-supabase.js"></script>
+  <script src="auth.js"></script>
+  
+  <!-- Modal de Calculadora de Conversión -->
+  <div id="conversionCalculatorModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          🧮 Calculadora de Conversión Óxido ↔ Elemental
+        </h2>
+        <button class="modal-close" onclick="closeConversionCalculator()">
+          ×
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="conversion-calculator">
+          <div class="conversion-section">
+            <h3>📊 Conversiones Comunes</h3>
+            <div class="conversion-grid">
+              <!-- P -->
+              <div class="conversion-item">
+                <label>P₂O₅ → P</label>
+                <div class="conversion-formula">
+                  <input type="number" id="p2o5-input" placeholder="P₂O₅" step="0.01">
+                  <span>× 0.436 =</span>
+                  <input type="number" id="p-output" placeholder="P" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>P → P₂O₅</label>
+                <div class="conversion-formula">
+                  <input type="number" id="p-input" placeholder="P" step="0.01">
+                  <span>× 2.291 =</span>
+                  <input type="number" id="p2o5-output" placeholder="P₂O₅" readonly>
+                </div>
+              </div>
+              <!-- K -->
+              <div class="conversion-item">
+                <label>K₂O → K</label>
+                <div class="conversion-formula">
+                  <input type="number" id="k2o-input" placeholder="K₂O" step="0.01">
+                  <span>× 0.830 =</span>
+                  <input type="number" id="k-output" placeholder="K" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>K → K₂O</label>
+                <div class="conversion-formula">
+                  <input type="number" id="k-input" placeholder="K" step="0.01">
+                  <span>× 1.205 =</span>
+                  <input type="number" id="k2o-output" placeholder="K₂O" readonly>
+                </div>
+              </div>
+              <!-- Ca -->
+              <div class="conversion-item">
+                <label>CaO → Ca</label>
+                <div class="conversion-formula">
+                  <input type="number" id="cao-input" placeholder="CaO" step="0.01">
+                  <span>× 0.715 =</span>
+                  <input type="number" id="ca-output" placeholder="Ca" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>Ca → CaO</label>
+                <div class="conversion-formula">
+                  <input type="number" id="ca-input" placeholder="Ca" step="0.01">
+                  <span>× 1.399 =</span>
+                  <input type="number" id="cao-output" placeholder="CaO" readonly>
+                </div>
+              </div>
+              <!-- Mg -->
+              <div class="conversion-item">
+                <label>MgO → Mg</label>
+                <div class="conversion-formula">
+                  <input type="number" id="mgo-input" placeholder="MgO" step="0.01">
+                  <span>× 0.603 =</span>
+                  <input type="number" id="mg-output" placeholder="Mg" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>Mg → MgO</label>
+                <div class="conversion-formula">
+                  <input type="number" id="mg-input" placeholder="Mg" step="0.01">
+                  <span>× 1.658 =</span>
+                  <input type="number" id="mgo-output" placeholder="MgO" readonly>
+                </div>
+              </div>
+              <!-- SO₄ -->
+              <div class="conversion-item">
+                <label>S → SO₄</label>
+                <div class="conversion-formula">
+                  <input type="number" id="s-input" placeholder="S" step="0.01">
+                  <span>× 3.000 =</span>
+                  <input type="number" id="so4-output" placeholder="SO₄" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>SO₄ → S</label>
+                <div class="conversion-formula">
+                  <input type="number" id="so4-input" placeholder="SO₄" step="0.01">
+                  <span>× 0.333 =</span>
+                  <input type="number" id="s-output" placeholder="S" readonly>
+                </div>
+              </div>
+              <!-- SO₃ -->
+              <div class="conversion-item">
+                <label>S → SO₃</label>
+                <div class="conversion-formula">
+                  <input type="number" id="s-so3-input" placeholder="S" step="0.01">
+                  <span>× 2.497 =</span>
+                  <input type="number" id="so3-output" placeholder="SO₃" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>SO₃ → S</label>
+                <div class="conversion-formula">
+                  <input type="number" id="so3-input" placeholder="SO₃" step="0.01">
+                  <span>× 0.400 =</span>
+                  <input type="number" id="s-so3-output" placeholder="S" readonly>
+                </div>
+              </div>
+              <!-- Fe -->
+              <div class="conversion-item">
+                <label>Fe → Fe₂O₃</label>
+                <div class="conversion-formula">
+                  <input type="number" id="fe-input" placeholder="Fe" step="0.01">
+                  <span>× 1.430 =</span>
+                  <input type="number" id="fe2o3-output" placeholder="Fe₂O₃" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>Fe₂O₃ → Fe</label>
+                <div class="conversion-formula">
+                  <input type="number" id="fe2o3-input" placeholder="Fe₂O₃" step="0.01">
+                  <span>× 0.699 =</span>
+                  <input type="number" id="fe-output" placeholder="Fe" readonly>
+                </div>
+              </div>
+              <!-- Mn -->
+              <div class="conversion-item">
+                <label>Mn → MnO</label>
+                <div class="conversion-formula">
+                  <input type="number" id="mn-input" placeholder="Mn" step="0.01">
+                  <span>× 1.291 =</span>
+                  <input type="number" id="mno-output" placeholder="MnO" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>MnO → Mn</label>
+                <div class="conversion-formula">
+                  <input type="number" id="mno-input" placeholder="MnO" step="0.01">
+                  <span>× 0.775 =</span>
+                  <input type="number" id="mn-output" placeholder="Mn" readonly>
+                </div>
+              </div>
+              <!-- B -->
+              <div class="conversion-item">
+                <label>B → B₂O₃</label>
+                <div class="conversion-formula">
+                  <input type="number" id="b-input" placeholder="B" step="0.01">
+                  <span>× 3.220 =</span>
+                  <input type="number" id="b2o3-output" placeholder="B₂O₃" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>B₂O₃ → B</label>
+                <div class="conversion-formula">
+                  <input type="number" id="b2o3-input" placeholder="B₂O₃" step="0.01">
+                  <span>× 0.311 =</span>
+                  <input type="number" id="b-output" placeholder="B" readonly>
+                </div>
+              </div>
+              <!-- Zn -->
+              <div class="conversion-item">
+                <label>Zn → ZnO</label>
+                <div class="conversion-formula">
+                  <input type="number" id="zn-input" placeholder="Zn" step="0.01">
+                  <span>× 1.245 =</span>
+                  <input type="number" id="zno-output" placeholder="ZnO" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>ZnO → Zn</label>
+                <div class="conversion-formula">
+                  <input type="number" id="zno-input" placeholder="ZnO" step="0.01">
+                  <span>× 0.803 =</span>
+                  <input type="number" id="zn-output" placeholder="Zn" readonly>
+                </div>
+              </div>
+              <!-- Cu -->
+              <div class="conversion-item">
+                <label>Cu → CuO</label>
+                <div class="conversion-formula">
+                  <input type="number" id="cu-input" placeholder="Cu" step="0.01">
+                  <span>× 1.252 =</span>
+                  <input type="number" id="cuo-output" placeholder="CuO" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>CuO → Cu</label>
+                <div class="conversion-formula">
+                  <input type="number" id="cuo-input" placeholder="CuO" step="0.01">
+                  <span>× 0.799 =</span>
+                  <input type="number" id="cu-output" placeholder="Cu" readonly>
+                </div>
+              </div>
+              <!-- Mo -->
+              <div class="conversion-item">
+                <label>Mo → MoO₃</label>
+                <div class="conversion-formula">
+                  <input type="number" id="mo-input" placeholder="Mo" step="0.01">
+                  <span>× 1.500 =</span>
+                  <input type="number" id="moo3-output" placeholder="MoO₃" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>MoO₃ → Mo</label>
+                <div class="conversion-formula">
+                  <input type="number" id="moo3-input" placeholder="MoO₃" step="0.01">
+                  <span>× 0.667 =</span>
+                  <input type="number" id="mo-output" placeholder="Mo" readonly>
+                </div>
+              </div>
+              <!-- Si -->
+              <div class="conversion-item">
+                <label>Si → SiO₂</label>
+                <div class="conversion-formula">
+                  <input type="number" id="si-input" placeholder="Si" step="0.01">
+                  <span>× 2.139 =</span>
+                  <input type="number" id="sio2-output" placeholder="SiO₂" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>SiO₂ → Si</label>
+                <div class="conversion-formula">
+                  <input type="number" id="sio2-input" placeholder="SiO₂" step="0.01">
+                  <span>× 0.467 =</span>
+                  <input type="number" id="si-output" placeholder="Si" readonly>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="conversion-section">
+            <h3>ℹ️ Información</h3>
+            <div class="info-box">
+              <p><strong>Factores de Conversión:</strong></p>
+              <ul>
+                <li>P₂O₅ → P: 0.436 | P → P₂O₅: 2.291</li>
+                <li>K₂O → K: 0.830 | K → K₂O: 1.205</li>
+                <li>CaO → Ca: 0.715 | Ca → CaO: 1.399</li>
+                <li>MgO → Mg: 0.603 | Mg → MgO: 1.658</li>
+                <li>S → SO₄: 3.000 | SO₄ → S: 0.333</li>
+                <li>S → SO₃: 2.497 | SO₃ → S: 0.400</li>
+                <li>Fe → Fe₂O₃: 1.430 | Fe₂O₃ → Fe: 0.699</li>
+                <li>Mn → MnO: 1.291 | MnO → Mn: 0.775</li>
+                <li>B → B₂O₃: 3.220 | B₂O₃ → B: 0.311</li>
+                <li>Zn → ZnO: 1.245 | ZnO → Zn: 0.803</li>
+                <li>Cu → CuO: 1.252 | CuO → Cu: 0.799</li>
+                <li>Mo → MoO₃: 1.500 | MoO₃ → Mo: 0.667</li>
+                <li>Si → SiO₂: 2.139 | SiO₂ → Si: 0.467</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeConversionCalculator()">
+          Cerrar
+        </button>
+        <button class="btn btn-primary" onclick="clearConversionCalculator()">
+          Limpiar Todo
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <style>
+    /* Estilos para la calculadora de conversión en login */
+    .auth-divider {
+      text-align: center;
+      margin: 24px 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .auth-divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, #d1d5db, #d1d5db, transparent);
+      z-index: 0;
+    }
+    
+    .auth-divider span {
+      background: white;
+      padding: 0 20px;
+      color: #6b7280;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      position: relative;
+      z-index: 1;
+      text-transform: uppercase;
+    }
+    
+    .auth-button-secondary {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      border: none;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      width: 100%;
+    }
+    
+    .auth-button-secondary:hover {
+      background: linear-gradient(135deg, #218838, #1ea085);
+      transform: translateY(-1px);
+    }
+    
+    .calculator-btn {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      padding: 12px 20px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    
+    .calculator-btn .calculator-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      min-width: 24px;
+      max-width: 24px;
+      height: 24px;
+      text-align: center;
+      font-size: 18px;
+      line-height: 1;
+      flex-shrink: 0;
+      flex-grow: 0;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .calculator-btn .button-text {
+      flex: 1;
+      text-align: center;
+      line-height: 1.3;
+      min-width: 0;
+    }
+    /* En ventana extendida: texto en un solo renglón */
+    @media (min-width: 520px) {
+      .calculator-btn .button-text {
+        white-space: nowrap;
+      }
+    }
+    
+    .auth-button-secondary .button-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      font-size: 18px;
+    }
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      max-width: 800px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-wide {
+      max-width: 1200px;
+      width: 95%;
+    }
+
+    .modal-enmienda {
+      max-width: 1280px;
+      width: 96%;
+      max-height: 92vh;
+      overflow: hidden;
+    }
+
+    .modal-enmienda .modal-body {
+      padding: 0;
+      height: calc(92vh - 80px);
+    }
+
+    .modal-enmienda iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #f8fafc;
+    }
+
+    @media (max-width: 600px) {
+      .modal-enmienda {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+      }
+      .modal-enmienda .modal-header {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+      }
+      .modal-enmienda .modal-title {
+        font-size: 1rem;
+        line-height: 1.3;
+        word-break: break-word;
+      }
+      .modal-enmienda .modal-body {
+        height: calc(100vh - 56px);
+      }
+    }
+
+    .modal-vpd {
+      max-width: 1280px;
+      width: 96%;
+      max-height: 92vh;
+      overflow: hidden;
+    }
+
+    .modal-vpd .modal-body {
+      padding: 0;
+      height: calc(92vh - 80px);
+    }
+
+    .modal-vpd iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #f8fafc;
+    }
+
+    .modal-hydro-solution {
+      max-width: 1280px;
+      width: 96%;
+      max-height: 92vh;
+      overflow: hidden;
+    }
+
+    .modal-hydro-solution .modal-body {
+      padding: 0;
+      height: calc(92vh - 80px);
+    }
+
+    .modal-hydro-solution iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #f8fafc;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    .modal-title {
+      margin: 0;
+      color: #0f172a;
+      font-size: 1.5rem;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #475569;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      color: #0f172a;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-footer {
+      padding: 20px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .conversion-calculator {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .conversion-section h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+      font-size: 1.2rem;
+    }
+
+    .conversion-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 15px;
+    }
+
+    .conversion-item {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .conversion-item label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .conversion-formula {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .conversion-formula input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .conversion-formula input:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+
+    .conversion-formula span {
+      font-weight: 600;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    .info-box {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #2196f3;
+    }
+
+    .info-box ul {
+      margin: 10px 0 0 0;
+      padding-left: 20px;
+    }
+
+    .info-box li {
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+  </style>
+  
+  <script>
+    // Funciones para la calculadora de conversión
+    function showConversionCalculator() {
+      const modal = document.getElementById('conversionCalculatorModal');
+      modal.style.display = 'flex';
+      setupConversionCalculator();
+    }
+
+    function closeConversionCalculator() {
+      const modal = document.getElementById('conversionCalculatorModal');
+      modal.style.display = 'none';
+    }
+
+    function clearConversionCalculator() {
+      const inputs = document.querySelectorAll('#conversionCalculatorModal input');
+      inputs.forEach(input => input.value = '');
+    }
+
+    function setupConversionCalculator() {
+      // CaO → Ca
+      document.getElementById('cao-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('ca-output').value = (value * 0.715).toFixed(3);
+      });
+
+      // Ca → CaO
+      document.getElementById('ca-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('cao-output').value = (value * 1.399).toFixed(3);
+      });
+
+      // K₂O → K
+      document.getElementById('k2o-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('k-output').value = (value * 0.830).toFixed(3);
+      });
+
+      // K → K₂O
+      document.getElementById('k-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('k2o-output').value = (value * 1.205).toFixed(3);
+      });
+
+      // P₂O₅ → P
+      document.getElementById('p2o5-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('p-output').value = (value * 0.436).toFixed(3);
+      });
+
+      // P → P₂O₅
+      document.getElementById('p-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('p2o5-output').value = (value * 2.291).toFixed(3);
+      });
+
+      // MgO → Mg
+      document.getElementById('mgo-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('mg-output').value = (value * 0.603).toFixed(3);
+      });
+
+      // Mg → MgO
+      document.getElementById('mg-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('mgo-output').value = (value * 1.658).toFixed(3);
+      });
+
+      // S → SO₄
+      document.getElementById('s-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('so4-output').value = (value * 3.000).toFixed(3);
+      });
+
+      // SO₄ → S
+      document.getElementById('so4-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('s-output').value = (value * 0.333).toFixed(3);
+      });
+
+      // S → SO₃
+      document.getElementById('s-so3-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('so3-output').value = (value * 2.497).toFixed(3);
+      });
+
+      // SO₃ → S
+      document.getElementById('so3-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('s-so3-output').value = (value * 0.400).toFixed(3);
+      });
+
+      // Zn → ZnO
+      document.getElementById('zn-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('zno-output').value = (value * 1.245).toFixed(3);
+      });
+
+      // ZnO → Zn
+      document.getElementById('zno-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('zn-output').value = (value * 0.803).toFixed(3);
+      });
+
+      // Fe → Fe₂O₃
+      document.getElementById('fe-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('fe2o3-output').value = (value * 1.430).toFixed(3);
+      });
+
+      // Fe₂O₃ → Fe
+      document.getElementById('fe2o3-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('fe-output').value = (value * 0.699).toFixed(3);
+      });
+
+      // Mn → MnO
+      document.getElementById('mn-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('mno-output').value = (value * 1.291).toFixed(3);
+      });
+
+      // MnO → Mn
+      document.getElementById('mno-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('mn-output').value = (value * 0.775).toFixed(3);
+      });
+
+      // B → B₂O₃
+      document.getElementById('b-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('b2o3-output').value = (value * 3.220).toFixed(3);
+      });
+
+      // B₂O₃ → B
+      document.getElementById('b2o3-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('b-output').value = (value * 0.311).toFixed(3);
+      });
+
+      // Cu → CuO
+      document.getElementById('cu-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('cuo-output').value = (value * 1.252).toFixed(3);
+      });
+
+      // CuO → Cu
+      document.getElementById('cuo-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('cu-output').value = (value * 0.799).toFixed(3);
+      });
+
+      // Si → SiO₂
+      document.getElementById('si-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('sio2-output').value = (value * 2.139).toFixed(3);
+      });
+
+      // SiO₂ → Si
+      document.getElementById('sio2-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('si-output').value = (value * 0.467).toFixed(3);
+      });
+
+      // Mo → MoO₃
+      document.getElementById('mo-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('moo3-output').value = (value * 1.500).toFixed(3);
+      });
+
+      // MoO₃ → Mo
+      document.getElementById('moo3-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('mo-output').value = (value * 0.667).toFixed(3);
+      });
+    }
+
+    // Cerrar modal al hacer clic fuera de él
+    document.addEventListener('click', function(e) {
+      const modal = document.getElementById('conversionCalculatorModal');
+      if (e.target === modal) {
+        closeConversionCalculator();
+      }
+    });
+
+    // Funciones para la calculadora de unidades de nutrientes
+    function showNutrientUnitsCalculator() {
+      const modal = document.getElementById('nutrientUnitsCalculatorModal');
+      modal.style.display = 'flex';
+    }
+
+    function closeNutrientUnitsCalculator() {
+      const modal = document.getElementById('nutrientUnitsCalculatorModal');
+      modal.style.display = 'none';
+    }
+
+    // Calculadora de Solución Nutritiva (gratis en login, sin persistencia)
+    function showHydroSolutionCalculator() {
+      const modal = document.getElementById('hydroSolutionCalculatorModal');
+      modal.style.display = 'flex';
+    }
+
+    function closeHydroSolutionCalculator() {
+      const modal = document.getElementById('hydroSolutionCalculatorModal');
+      const frame = document.getElementById('hydroSolutionCalculatorFrame');
+      modal.style.display = 'none';
+      // Reinicia completamente la calculadora al cerrar
+      if (frame) frame.src = frame.src;
+    }
+
+    function clearNutrientUnitsCalculator() {
+      const inputs = document.querySelectorAll('#nutrientUnitsCalculatorModal input');
+      inputs.forEach(input => input.value = '');
+    }
+
+    // Calculadora VPD (gratis en login, sin persistencia)
+    function showVPDCalculator() {
+      const modal = document.getElementById('vpdCalculatorModal');
+      modal.style.display = 'flex';
+    }
+
+    function closeVPDCalculator() {
+      const modal = document.getElementById('vpdCalculatorModal');
+      const frame = document.getElementById('vpdCalculatorFrame');
+      modal.style.display = 'none';
+      // Reinicia completamente la calculadora al cerrar
+      if (frame) frame.src = frame.src;
+    }
+
+    // Calculadora de Enmiendas (gratis en login, sin persistencia)
+    function showAmendmentCalculator() {
+      const modal = document.getElementById('amendmentCalculatorModal');
+      modal.style.display = 'flex';
+    }
+
+    function closeAmendmentCalculator() {
+      const modal = document.getElementById('amendmentCalculatorModal');
+      const frame = document.getElementById('amendmentCalculatorFrame');
+      modal.style.display = 'none';
+      // Reinicia completamente la calculadora al cerrar
+      if (frame) frame.src = frame.src;
+    }
+
+    // Datos de nutrientes: peso molecular y valencia
+    const nutrientDataLogin = {
+      'n': { mw: 14.01, valence: 1 },
+      'p': { mw: 30.97, valence: 1 },
+      'k': { mw: 39.10, valence: 1 },
+      'ca': { mw: 40.08, valence: 2 },
+      'mg': { mw: 24.31, valence: 2 },
+      's': { mw: 32.07, valence: 2 },
+      'fe': { mw: 55.85, valence: 2 },
+      'mn': { mw: 54.94, valence: 2 },
+      'zn': { mw: 65.38, valence: 2 },
+      'b': { mw: 10.81, valence: 1 },
+      'cu': { mw: 63.55, valence: 2 },
+      'mo': { mw: 95.95, valence: 2 },
+      'hco3': { mw: 61.02, valence: 1 },
+      'co3': { mw: 60.01, valence: 2 }
+    };
+
+    function convertNutrient(nutrient, sourceUnit) {
+      const data = nutrientDataLogin[nutrient];
+      if (!data) return;
+
+      const ppmInput = document.getElementById(`${nutrient}-ppm`);
+      const mmolInput = document.getElementById(`${nutrient}-mmol`);
+      const meqInput = document.getElementById(`${nutrient}-meq`);
+
+      let ppm, mmol, meq;
+
+      if (sourceUnit === 'ppm') {
+        ppm = parseFloat(ppmInput.value) || 0;
+        mmol = ppm / data.mw;
+        meq = mmol * data.valence;
+      } else if (sourceUnit === 'mmol') {
+        mmol = parseFloat(mmolInput.value) || 0;
+        ppm = mmol * data.mw;
+        meq = mmol * data.valence;
+      } else if (sourceUnit === 'meq') {
+        meq = parseFloat(meqInput.value) || 0;
+        mmol = meq / data.valence;
+        ppm = mmol * data.mw;
+      }
+
+      // Actualizar los campos (sin disparar eventos)
+      if (sourceUnit !== 'ppm') ppmInput.value = ppm.toFixed(3);
+      if (sourceUnit !== 'mmol') mmolInput.value = mmol.toFixed(3);
+      if (sourceUnit !== 'meq') meqInput.value = meq.toFixed(3);
+    }
+
+    // Cerrar modal de unidades al hacer clic fuera de él
+    document.addEventListener('click', function(e) {
+      const nutrientModal = document.getElementById('nutrientUnitsCalculatorModal');
+      if (e.target === nutrientModal) {
+        closeNutrientUnitsCalculator();
+      }
+      const hydroSolutionModal = document.getElementById('hydroSolutionCalculatorModal');
+      if (e.target === hydroSolutionModal) {
+        closeHydroSolutionCalculator();
+      }
+      const amendmentModal = document.getElementById('amendmentCalculatorModal');
+      if (e.target === amendmentModal) {
+        closeAmendmentCalculator();
+      }
+      const vpdModal = document.getElementById('vpdCalculatorModal');
+      if (e.target === vpdModal) {
+        closeVPDCalculator();
+      }
+    });
+  </script>
+
+  <!-- Modal de Calculadora de Unidades de Nutrientes -->
+  <div id="nutrientUnitsCalculatorModal" class="modal-overlay">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          🧪 Calculadora de Unidades de Nutrientes (ppm ↔ mmol/L ↔ meq/L)
+        </h2>
+        <button class="modal-close" onclick="closeNutrientUnitsCalculator()">
+          ×
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="calculator-container">
+          <div class="calculator-instructions">
+            <p><strong>Instrucciones:</strong> Ingresa el valor en cualquier campo y las conversiones se calcularán automáticamente.</p>
+            <p><em>Esta herramienta convierte entre ppm (mg/L), mmol/L (milimoles por litro) y meq/L (miliequivalentes por litro).</em></p>
+          </div>
+
+          <div class="nutrient-conversions-grid">
+            <!-- Nitrógeno (N) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>N: NO₃⁻ o NH₄⁺</strong>
+                <span class="nutrient-info">PM: 14.01 | Valencia: 1</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="n-ppm" placeholder="0" step="0.01" oninput="convertNutrient('n', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="n-mmol" placeholder="0" step="0.01" oninput="convertNutrient('n', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="n-meq" placeholder="0" step="0.01" oninput="convertNutrient('n', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Fósforo (P) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>P: H₂PO₄⁻</strong>
+                <span class="nutrient-info">PM: 30.97 | Valencia: 1</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="p-ppm" placeholder="0" step="0.01" oninput="convertNutrient('p', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="p-mmol" placeholder="0" step="0.01" oninput="convertNutrient('p', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="p-meq" placeholder="0" step="0.01" oninput="convertNutrient('p', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Potasio (K) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>K: K⁺</strong>
+                <span class="nutrient-info">PM: 39.10 | Valencia: 1</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="k-ppm" placeholder="0" step="0.01" oninput="convertNutrient('k', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="k-mmol" placeholder="0" step="0.01" oninput="convertNutrient('k', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="k-meq" placeholder="0" step="0.01" oninput="convertNutrient('k', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Calcio (Ca) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>Ca: Ca²⁺</strong>
+                <span class="nutrient-info">PM: 40.08 | Valencia: 2</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="ca-ppm" placeholder="0" step="0.01" oninput="convertNutrient('ca', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="ca-mmol" placeholder="0" step="0.01" oninput="convertNutrient('ca', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="ca-meq" placeholder="0" step="0.01" oninput="convertNutrient('ca', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Magnesio (Mg) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>Mg: Mg²⁺</strong>
+                <span class="nutrient-info">PM: 24.31 | Valencia: 2</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="mg-ppm" placeholder="0" step="0.01" oninput="convertNutrient('mg', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="mg-mmol" placeholder="0" step="0.01" oninput="convertNutrient('mg', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="mg-meq" placeholder="0" step="0.01" oninput="convertNutrient('mg', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Azufre (S) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>S: SO₄²⁻</strong>
+                <span class="nutrient-info">PM: 32.07 | Valencia: 2</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="s-ppm" placeholder="0" step="0.01" oninput="convertNutrient('s', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="s-mmol" placeholder="0" step="0.01" oninput="convertNutrient('s', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="s-meq" placeholder="0" step="0.01" oninput="convertNutrient('s', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Hierro (Fe) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>Fe: Fe²⁺</strong>
+                <span class="nutrient-info">PM: 55.85 | Valencia: 2</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="fe-ppm" placeholder="0" step="0.01" oninput="convertNutrient('fe', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="fe-mmol" placeholder="0" step="0.01" oninput="convertNutrient('fe', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="fe-meq" placeholder="0" step="0.01" oninput="convertNutrient('fe', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Manganeso (Mn) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>Mn: Mn²⁺</strong>
+                <span class="nutrient-info">PM: 54.94 | Valencia: 2</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="mn-ppm" placeholder="0" step="0.01" oninput="convertNutrient('mn', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="mn-mmol" placeholder="0" step="0.01" oninput="convertNutrient('mn', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="mn-meq" placeholder="0" step="0.01" oninput="convertNutrient('mn', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Boro (B) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>B: H₃BO₃</strong>
+                <span class="nutrient-info">PM: 10.81</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="b-ppm" placeholder="0" step="0.01" oninput="convertNutrient('b', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="b-mmol" placeholder="0" step="0.01" oninput="convertNutrient('b', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="b-meq" placeholder="0" step="0.01" oninput="convertNutrient('b', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Zinc (Zn) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>Zn: Zn²⁺</strong>
+                <span class="nutrient-info">PM: 65.38 | Valencia: 2</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="zn-ppm" placeholder="0" step="0.01" oninput="convertNutrient('zn', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="zn-mmol" placeholder="0" step="0.01" oninput="convertNutrient('zn', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="zn-meq" placeholder="0" step="0.01" oninput="convertNutrient('zn', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Cobre (Cu) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>Cu: Cu²⁺</strong>
+                <span class="nutrient-info">PM: 63.55 | Valencia: 2</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="cu-ppm" placeholder="0" step="0.01" oninput="convertNutrient('cu', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="cu-mmol" placeholder="0" step="0.01" oninput="convertNutrient('cu', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="cu-meq" placeholder="0" step="0.01" oninput="convertNutrient('cu', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Molibdeno (Mo) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>Mo: Mo²⁺</strong>
+                <span class="nutrient-info">PM: 95.95 | Valencia: 2</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="mo-ppm" placeholder="0" step="0.01" oninput="convertNutrient('mo', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="mo-mmol" placeholder="0" step="0.01" oninput="convertNutrient('mo', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="mo-meq" placeholder="0" step="0.01" oninput="convertNutrient('mo', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Bicarbonato (HCO₃⁻) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>Bicarbonato (HCO₃⁻)</strong>
+                <span class="nutrient-info">PM: 61.02 | Valencia: 1</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="hco3-ppm" placeholder="0" step="0.01" oninput="convertNutrient('hco3', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="hco3-mmol" placeholder="0" step="0.01" oninput="convertNutrient('hco3', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="hco3-meq" placeholder="0" step="0.01" oninput="convertNutrient('hco3', 'meq')">
+                </div>
+              </div>
+            </div>
+
+            <!-- Carbonato (CO₃²⁻) -->
+            <div class="nutrient-conversion-group">
+              <div class="nutrient-label">
+                <strong>Carbonato (CO₃²⁻)</strong>
+                <span class="nutrient-info">PM: 60.01 | Valencia: 2</span>
+              </div>
+              <div class="conversion-inputs">
+                <div class="input-group">
+                  <label>ppm (mg/L)</label>
+                  <input type="number" id="co3-ppm" placeholder="0" step="0.01" oninput="convertNutrient('co3', 'ppm')">
+                </div>
+                <div class="input-group">
+                  <label>mmol/L</label>
+                  <input type="number" id="co3-mmol" placeholder="0" step="0.01" oninput="convertNutrient('co3', 'mmol')">
+                </div>
+                <div class="input-group">
+                  <label>meq/L</label>
+                  <input type="number" id="co3-meq" placeholder="0" step="0.01" oninput="convertNutrient('co3', 'meq')">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-box" style="margin-top: 20px;">
+            <p><strong>Fórmulas de Conversión:</strong></p>
+            <ul>
+              <li><strong>ppm a mmol/L:</strong> mmol/L = ppm ÷ Peso Molecular</li>
+              <li><strong>mmol/L a meq/L:</strong> meq/L = mmol/L × Valencia</li>
+              <li><strong>ppm a meq/L:</strong> meq/L = (ppm ÷ Peso Molecular) × Valencia</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeNutrientUnitsCalculator()">
+          Cerrar
+        </button>
+        <button class="btn btn-primary" onclick="clearNutrientUnitsCalculator()">
+          Limpiar Todo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Calculadora de Solución Nutritiva por Etapa -->
+  <div id="hydroSolutionCalculatorModal" class="modal-overlay">
+    <div class="modal modal-hydro-solution">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          💧 Calculadora de Solución Nutritiva por Etapa (Gratis)
+        </h2>
+        <button class="modal-close" onclick="closeHydroSolutionCalculator()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html" title="Calculadora de Solución Nutritiva"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Calculadora de Déficit de Presión de Vapor -->
+  <div id="vpdCalculatorModal" class="modal-overlay">
+    <div class="modal modal-vpd">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          🌡️ Calculadora de Déficit de Presión de Vapor (Gratis)
+        </h2>
+        <button class="modal-close" onclick="closeVPDCalculator()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="vpdCalculatorFrame" src="vpd-free.html" title="Calculadora VPD"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Calculadora de Enmiendas -->
+  <div id="amendmentCalculatorModal" class="modal-overlay">
+    <div class="modal modal-enmienda">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          🚜 Calculadora de Enmiendas (Gratis)
+        </h2>
+        <button class="modal-close" onclick="closeAmendmentCalculator()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="amendmentCalculatorFrame" src="enmienda-free.html" title="Calculadora de Enmiendas"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Registro de Usuario (Multi-Paso) -->
+  <!-- Modal recuperar contraseña (Supabase envía enlace por correo) -->
+  <div id="forgotPasswordModal" class="modal-overlay" style="display: none;">
+    <div class="modal" style="max-width: 420px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Recuperar contraseña</h2>
+        <button class="modal-close" onclick="closeForgotPasswordModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
+        <form id="forgotPasswordForm" onsubmit="return submitForgotPassword(event);">
+          <div class="form-group">
+            <label for="forgotEmail" class="form-label">Correo electrónico</label>
+            <input type="email" id="forgotEmail" name="email" placeholder="tu@correo.com" required class="form-input" />
+          </div>
+          <div id="forgotPasswordMessage" style="display: none; margin-bottom: 12px; padding: 10px; border-radius: 8px; font-size: 14px;"></div>
+          <button type="submit" class="auth-button" style="width: 100%; margin-top: 8px;">
+            <span class="button-text">Enviar enlace</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal reenviar correo de confirmación (si no llegó al registrarse) -->
+  <div id="resendConfirmModal" class="modal-overlay" style="display: none;">
+    <div class="modal" style="max-width: 420px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Reenviar correo de confirmación</h2>
+        <button class="modal-close" onclick="closeResendConfirmModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">Si te registraste y no te llegó el correo para confirmar tu cuenta, ingresa tu correo y te lo reenviamos. Revisa también spam o correo no deseado.</p>
+        <form id="resendConfirmForm" onsubmit="return submitResendConfirm(event);">
+          <div class="form-group">
+            <label for="resendConfirmEmail" class="form-label">Correo electrónico</label>
+            <input type="email" id="resendConfirmEmail" name="email" placeholder="tu@correo.com" required class="form-input" />
+          </div>
+          <div id="resendConfirmMessage" style="display: none; margin-bottom: 12px; padding: 10px; border-radius: 8px; font-size: 14px;"></div>
+          <button type="submit" class="auth-button" style="width: 100%; margin-top: 8px;">
+            <span class="button-text">Reenviar correo</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="registrationModal" class="modal-overlay" style="display: none;">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Crear Nueva Cuenta</h2>
+        <button class="modal-close" onclick="closeRegistrationModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- Mensaje cuando el registro está cerrado (solo calculadoras gratis) -->
+        <div id="registrationClosedMessage" style="display: none; text-align: center; padding: 24px 16px;">
+          <p style="font-size: 16px; color: #1e293b; margin: 0 0 12px 0; font-weight: 600;">Registro temporalmente cerrado</p>
+          <p style="font-size: 14px; color: #64748b; margin: 0 0 20px 0;">Estamos preparando todo. Mientras tanto, puedes usar <strong>todas las calculadoras gratis</strong> en esta misma página — no necesitas cuenta.</p>
+          <button type="button" class="auth-button" onclick="closeRegistrationModal()" style="padding: 10px 24px;">Cerrar</button>
+        </div>
+        <div id="registrationFormWrap">
+        <!-- Indicador de Pasos -->
+        <div class="registration-steps" style="display: flex; justify-content: space-between; margin-bottom: 24px; padding: 0 20px;">
+          <div class="step-indicator" data-step="1" style="flex: 1; text-align: center; position: relative;">
+            <div class="step-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 600;">1</div>
+            <div class="step-label" style="font-size: 12px; color: #2563eb; font-weight: 600;">Información</div>
+            <div class="step-line" style="position: absolute; top: 20px; left: 50%; width: 100%; height: 2px; background: #e5e7eb; z-index: -1;"></div>
+          </div>
+          <div class="step-indicator" data-step="2" style="flex: 1; text-align: center; position: relative;">
+            <div class="step-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 600;">2</div>
+            <div class="step-label" style="font-size: 12px; color: #64748b;">Profesión</div>
+            <div class="step-line" style="position: absolute; top: 20px; right: 50%; width: 100%; height: 2px; background: #e5e7eb; z-index: -1;"></div>
+          </div>
+          <div class="step-indicator" data-step="3" style="flex: 1; text-align: center; position: relative;">
+            <div class="step-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 600;">3</div>
+            <div class="step-label" style="font-size: 12px; color: #64748b;">Contraseña</div>
+            <div class="step-line" style="position: absolute; top: 20px; right: 50%; width: 100%; height: 2px; background: #e5e7eb; z-index: -1;"></div>
+          </div>
+          <div class="step-indicator" data-step="4" style="flex: 1; text-align: center;">
+            <div class="step-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 600;">4</div>
+            <div class="step-label" style="font-size: 12px; color: #64748b;">Suscripción</div>
+          </div>
+        </div>
+
+        <form id="registrationForm">
+          <!-- PASO 1: Información Personal -->
+          <div class="registration-step" id="step-1" style="display: block;">
+            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;">📋 Paso 1: Información Personal</h3>
+            
+            <!-- Nombre y Apellido -->
+            <div class="form-group">
+              <label class="form-label">Nombre *</label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <input type="text" id="reg-firstname" name="firstname" class="form-input" placeholder="Nombre" required>
+                <input type="text" id="reg-lastname" name="lastname" class="form-input" placeholder="Apellido" required>
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label for="reg-email" class="form-label">Correo Electrónico *</label>
+              <input type="email" id="reg-email" name="email" class="form-input" required>
+            </div>
+
+            <!-- Teléfono con código de país -->
+            <div class="form-group">
+              <label for="reg-phone-code" class="form-label">Teléfono *</label>
+              <div style="display: flex; gap: 8px;">
+                <select id="reg-phone-code" name="phone_code" style="flex: 0 0 120px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                  <option value="+1">+1 (USA/Can)</option>
+                  <option value="+52">+52 (México)</option>
+                  <option value="+34">+34 (España)</option>
+                  <option value="+54">+54 (Argentina)</option>
+                  <option value="+55">+55 (Brasil)</option>
+                  <option value="+57">+57 (Colombia)</option>
+                  <option value="+51">+51 (Perú)</option>
+                  <option value="+56">+56 (Chile)</option>
+                  <option value="other">Otro</option>
+                </select>
+                <input type="tel" id="reg-phone-custom-code" name="phone_custom_code" placeholder="Código" style="flex: 0 0 100px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; display: none; font-size: 14px;">
+                <input type="tel" id="reg-phone" name="phone" class="form-input" placeholder="Número de teléfono" style="flex: 1;" required>
+              </div>
+            </div>
+
+            <!-- Ubicación -->
+            <div class="form-group">
+              <label class="form-label">Ubicación *</label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <input type="text" id="reg-country" name="country" class="form-input" placeholder="País" required>
+                <input type="text" id="reg-state" name="state" class="form-input" placeholder="Estado/Provincia" required>
+              </div>
+              <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                <input type="text" id="reg-city" name="city" class="form-input" placeholder="Ciudad" required>
+                <input type="text" id="reg-postal" name="postal" class="form-input" placeholder="Código Postal (ZIP)">
+              </div>
+            </div>
+
+            <div class="modal-footer" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <button type="button" class="btn btn-secondary" onclick="closeRegistrationModal()">Cancelar</button>
+              <button type="button" class="btn btn-primary" onclick="nextRegistrationStep()">Siguiente →</button>
+            </div>
+          </div>
+
+          <!-- PASO 2: Profesión y Cultivos -->
+          <div class="registration-step" id="step-2" style="display: none;">
+            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;">💼 Paso 2: Profesión y Cultivos</h3>
+            
+            <!-- Profesión -->
+            <div class="form-group">
+              <label for="reg-profession" class="form-label">Profesión *</label>
+              <select id="reg-profession" name="profession" class="form-input" required>
+                <option value="">Selecciona una profesión</option>
+                <option value="Agrónomo">Agrónomo</option>
+                <option value="Ingeniero Agrónomo">Ingeniero Agrónomo</option>
+                <option value="Técnico Agrícola">Técnico Agrícola</option>
+                <option value="Productor">Productor</option>
+                <option value="Asesor">Asesor</option>
+                <option value="Investigador">Investigador</option>
+                <option value="Estudiante">Estudiante</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+
+            <!-- Cultivos -->
+            <div class="form-group">
+              <label class="form-label">Cultivos de Interés *</label>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" name="crops" value="Aguacate" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span>🥑 Aguacate</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" name="crops" value="Tomate" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span>🍅 Tomate</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" name="crops" value="Pimiento" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span>🌶️ Pimiento</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" name="crops" value="Pepino" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span>🥒 Pepino</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" name="crops" value="Fresa" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span>🍓 Fresa</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" name="crops" value="Lechuga" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span>🥬 Lechuga</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" name="crops" value="Cítricos" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span>🍊 Cítricos</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" name="crops" value="Uva" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span>🍇 Uva</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" name="crops" value="Maíz" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span>🌽 Maíz</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" name="crops" value="Otro" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span>🌾 Otro</span>
+                </label>
+              </div>
+              <small style="color: #64748b; display: block; margin-top: 8px;">Selecciona al menos un cultivo</small>
+            </div>
+
+            <div class="modal-footer" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <button type="button" class="btn btn-secondary" onclick="prevRegistrationStep()">← Anterior</button>
+              <button type="button" class="btn btn-primary" onclick="nextRegistrationStep()">Siguiente →</button>
+            </div>
+          </div>
+
+          <!-- PASO 3: Contraseña -->
+          <div class="registration-step" id="step-3" style="display: none;">
+            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;">🔐 Paso 3: Contraseña</h3>
+            
+            <!-- Contraseña -->
+            <div class="form-group">
+              <label for="reg-password" class="form-label">Contraseña *</label>
+              <input type="password" id="reg-password" name="password" class="form-input" required minlength="6">
+              <small style="color: #64748b; display: block; margin-top: 4px;">Mínimo 6 caracteres</small>
+            </div>
+
+            <!-- Confirmar Contraseña -->
+            <div class="form-group">
+              <label for="reg-password-confirm" class="form-label">Confirmar Contraseña *</label>
+              <input type="password" id="reg-password-confirm" name="password_confirm" class="form-input" required>
+              <div id="password-match-error" style="color: #dc2626; font-size: 12px; margin-top: 4px; display: none;">Las contraseñas no coinciden</div>
+            </div>
+
+            <div class="modal-footer" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <button type="button" class="btn btn-secondary" onclick="prevRegistrationStep()">← Anterior</button>
+              <button type="button" class="btn btn-primary" onclick="nextRegistrationStep()">Siguiente →</button>
+            </div>
+          </div>
+
+          <!-- PASO 4: Suscripción PayPal -->
+          <div class="registration-step" id="step-4" style="display: none;">
+            <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 18px; font-weight: 600;">💳 Paso 4: Suscripción</h3>
+            
+            <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">✨ Acceso Completo a NutriPlant PRO</h4>
+              <p style="margin: 0 0 16px 0; color: #475569; line-height: 1.6;">
+                Activa tu suscripción para acceder a todas las funcionalidades de NutriPlant PRO:
+              </p>
+              <ul style="margin: 0 0 16px 0; padding-left: 20px; color: #475569; line-height: 1.8;">
+                <li>📊 Análisis completo de suelos y enmiendas</li>
+                <li>🌱 Programas de nutrición granular y fertirriego</li>
+                <li>💧 Análisis de agua y extractos</li>
+                <li>🤖 Asistente de IA especializado en agronomía</li>
+                <li>📋 Gestión ilimitada de proyectos</li>
+                <li>💬 Chat con experto agronómico</li>
+              </ul>
+            </div>
+
+            <div style="background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                  <div style="font-size: 24px; font-weight: bold; color: #1e293b;">
+                    $<span id="subscription-amount-display">49.00</span> USD
+                  </div>
+                  <div style="font-size: 14px; color: #64748b; margin-top: 4px;">
+                    cada 5 meses
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 12px; color: #64748b;">Pago seguro con</div>
+                  <div style="font-size: 18px; font-weight: 600; color: #003087;">PayPal</div>
+                </div>
+              </div>
+              <p style="margin: 0; font-size: 13px; color: #92400e;">
+                💡 Puedes activar tu suscripción ahora o más tarde desde tu dashboard.
+              </p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 16px; background: #f8fafc; border: 2px solid #e5e7eb; border-radius: 8px; transition: all 0.2s;" 
+                     onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" 
+                     onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='#f8fafc'">
+                <input type="checkbox" id="reg-activate-subscription" name="activate_subscription" value="yes" 
+                       style="width: 20px; height: 20px; cursor: pointer;">
+                <div>
+                  <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">Activar suscripción ahora con PayPal</div>
+                  <div style="font-size: 13px; color: #64748b;">Serás redirigido a PayPal para completar el pago seguro</div>
+                </div>
+              </label>
+            </div>
+
+            <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+              <div style="display: flex; align-items: start; gap: 12px;">
+                <div style="font-size: 20px;">ℹ️</div>
+                <div style="flex: 1;">
+                  <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">¿Prefieres activar más tarde?</div>
+                  <div style="font-size: 13px; color: #64748b; line-height: 1.6;">
+                    No hay problema. Puedes crear tu cuenta ahora y activar tu suscripción desde el dashboard cuando estés listo. 
+                    Tu cuenta quedará con estado "Pendiente" hasta que actives la suscripción.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <button type="button" class="btn btn-secondary" onclick="prevRegistrationStep()">← Anterior</button>
+              <button type="submit" class="btn btn-primary">Crear Cuenta</button>
+            </div>
+          </div>
+        </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Registro de cuentas nuevas: false = solo login y calculadoras gratis; true = permitir "Crear Nueva Cuenta"
+    window.NUTRIPLANT_REGISTRATION_OPEN = false;
+    // Para que tú puedas crear un usuario prueba: abre login con ?np_reg=1 (ej. login.html?np_reg=1)
+    (function() {
+      var p = typeof URLSearchParams !== 'undefined' && new URLSearchParams(window.location.search).get('np_reg');
+      if (p === '1' || p === 'si') {
+        window.NUTRIPLANT_REGISTRATION_OPEN = true;
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({}, '', window.location.pathname || 'login.html');
+        }
+      }
+    })();
+
+    // Variable global para el paso actual del registro
+    let currentRegistrationStep = 1;
+    const totalRegistrationSteps = 4;
+
+    // Funciones para el modal de registro
+    function showRegistrationModal() {
+      if (!window.NUTRIPLANT_REGISTRATION_OPEN) {
+        const modal = document.getElementById('registrationModal');
+        if (modal) {
+          modal.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+          var formWrap = document.getElementById('registrationFormWrap');
+          var closedMsg = document.getElementById('registrationClosedMessage');
+          if (formWrap) formWrap.style.display = 'none';
+          if (closedMsg) closedMsg.style.display = 'block';
+        }
+        return;
+      }
+      const modal = document.getElementById('registrationModal');
+      if (modal) {
+        var formWrap = document.getElementById('registrationFormWrap');
+        var closedMsg = document.getElementById('registrationClosedMessage');
+        if (formWrap) formWrap.style.display = 'block';
+        if (closedMsg) closedMsg.style.display = 'none';
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        currentRegistrationStep = 1;
+        updateRegistrationStepDisplay();
+      }
+    }
+    window.showRegistrationModal = showRegistrationModal;
+
+    function applyRegistrationClosedUI() {
+      var open = window.NUTRIPLANT_REGISTRATION_OPEN;
+      var footer = document.getElementById('loginFooterText');
+      if (footer && !open) {
+        footer.innerHTML = 'Registro próximamente. Mientras tanto, <strong>usa las calculadoras gratis</strong> aquí abajo — no necesitas cuenta.';
+      } else if (footer && open) {
+        footer.innerHTML = '¿No tienes una cuenta? <a href="#" onclick="showRegistrationModal(); return false;" style="color: #2563eb; text-decoration: none; font-weight: 600; cursor: pointer;">Crear Nueva Cuenta</a>';
+      }
+    }
+
+    function closeRegistrationModal() {
+      const modal = document.getElementById('registrationModal');
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+        var formWrap = document.getElementById('registrationFormWrap');
+        var closedMsg = document.getElementById('registrationClosedMessage');
+        if (formWrap) formWrap.style.display = 'block';
+        if (closedMsg) closedMsg.style.display = 'none';
+        var f = document.getElementById('registrationForm');
+        if (f) f.reset();
+        var err = document.getElementById('password-match-error');
+        if (err) err.style.display = 'none';
+        var code = document.getElementById('reg-phone-custom-code');
+        if (code) code.style.display = 'none';
+        currentRegistrationStep = 1;
+        updateRegistrationStepDisplay();
+      }
+    }
+    window.closeRegistrationModal = closeRegistrationModal;
+    applyRegistrationClosedUI();
+
+    function showForgotPasswordModal() {
+      const modal = document.getElementById('forgotPasswordModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        document.getElementById('forgotPasswordMessage').style.display = 'none';
+        document.getElementById('forgotEmail').value = '';
+      }
+    }
+    window.showForgotPasswordModal = showForgotPasswordModal;
+
+    function closeForgotPasswordModal() {
+      const modal = document.getElementById('forgotPasswordModal');
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+    window.closeForgotPasswordModal = closeForgotPasswordModal;
+
+    function showResendConfirmModal() {
+      const modal = document.getElementById('resendConfirmModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        document.getElementById('resendConfirmMessage').style.display = 'none';
+        var emailFromForm = document.getElementById('email');
+        if (emailFromForm && emailFromForm.value) document.getElementById('resendConfirmEmail').value = emailFromForm.value;
+      }
+    }
+    window.showResendConfirmModal = showResendConfirmModal;
+
+    function closeResendConfirmModal() {
+      const modal = document.getElementById('resendConfirmModal');
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+    window.closeResendConfirmModal = closeResendConfirmModal;
+
+    async function submitResendConfirm(e) {
+      e.preventDefault();
+      const emailInput = document.getElementById('resendConfirmEmail');
+      const msgEl = document.getElementById('resendConfirmMessage');
+      const email = (emailInput && emailInput.value || '').trim();
+      if (!email) return false;
+      const supabaseAuth = window.nutriplantSupabaseAuth;
+      if (!supabaseAuth || !supabaseAuth.isAvailable || !supabaseAuth.isAvailable()) {
+        msgEl.textContent = 'Reenvío de correo no disponible. Contáctanos: admin@nutriplantpro.com';
+        msgEl.style.display = 'block';
+        msgEl.style.background = '#fef2f2';
+        msgEl.style.color = '#dc2626';
+        msgEl.style.border = '1px solid #fecaca';
+        return false;
+      }
+      const result = await supabaseAuth.resendConfirmationEmail(email);
+      msgEl.style.display = 'block';
+      if (result.ok) {
+        msgEl.textContent = 'Listo. Revisa tu correo (y la carpeta de spam) y haz clic en el enlace para confirmar tu cuenta.';
+        msgEl.style.background = '#f0fdf4';
+        msgEl.style.color = '#16a34a';
+        msgEl.style.border = '1px solid #bbf7d0';
+        setTimeout(closeResendConfirmModal, 4000);
+      } else {
+        var errMsg = result.error || '';
+        if (errMsg.toLowerCase().indexOf('rate limit') !== -1) {
+          msgEl.textContent = 'Se enviaron demasiados correos en poco tiempo. Espera unos 15-30 minutos y vuelve a intentar, o revisa tu bandeja (y spam) por si ya llegó un correo anterior.';
+        } else {
+          msgEl.textContent = errMsg || 'No se pudo reenviar el correo. Si ya confirmaste tu cuenta, inicia sesión con tu contraseña.';
+        }
+        msgEl.style.background = '#fef2f2';
+        msgEl.style.color = '#dc2626';
+        msgEl.style.border = '1px solid #fecaca';
+      }
+      return false;
+    }
+
+    async function submitForgotPassword(e) {
+      e.preventDefault();
+      const emailInput = document.getElementById('forgotEmail');
+      const msgEl = document.getElementById('forgotPasswordMessage');
+      const email = (emailInput && emailInput.value || '').trim();
+      if (!email) return false;
+      const supabaseAuth = window.nutriplantSupabaseAuth;
+      if (!supabaseAuth || !supabaseAuth.isAvailable || !supabaseAuth.isAvailable()) {
+        msgEl.textContent = 'Recuperación por correo no disponible. Contáctanos: admin@nutriplantpro.com';
+        msgEl.style.display = 'block';
+        msgEl.style.background = '#fef2f2';
+        msgEl.style.color = '#dc2626';
+        msgEl.style.border = '1px solid #fecaca';
+        return false;
+      }
+      const result = await supabaseAuth.resetPasswordForEmail(email);
+      msgEl.style.display = 'block';
+      if (result.ok) {
+        msgEl.textContent = 'Listo. Revisa tu correo y usa el enlace para crear una nueva contraseña. Si no lo ves, revisa la carpeta de correo no deseado o spam.';
+        msgEl.style.background = '#f0fdf4';
+        msgEl.style.color = '#16a34a';
+        msgEl.style.border = '1px solid #bbf7d0';
+        setTimeout(closeForgotPasswordModal, 3000);
+      } else {
+        msgEl.textContent = result.error || 'Error al enviar el enlace.';
+        msgEl.style.background = '#fef2f2';
+        msgEl.style.color = '#dc2626';
+        msgEl.style.border = '1px solid #fecaca';
+      }
+      return false;
+    }
+
+    async function submitRecoveryPassword(e) {
+      e.preventDefault();
+      const newP = document.getElementById('newPassword') && document.getElementById('newPassword').value;
+      const confirmP = document.getElementById('newPasswordConfirm') && document.getElementById('newPasswordConfirm').value;
+      const msgEl = document.getElementById('recoveryPasswordMessage');
+      if (newP !== confirmP) {
+        msgEl.textContent = 'Las contraseñas no coinciden.';
+        msgEl.style.display = 'block';
+        msgEl.style.background = '#fef2f2';
+        msgEl.style.color = '#dc2626';
+        return false;
+      }
+      if (!newP || newP.length < 6) {
+        msgEl.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+        msgEl.style.display = 'block';
+        msgEl.style.background = '#fef2f2';
+        msgEl.style.color = '#dc2626';
+        return false;
+      }
+      const supabaseAuth = window.nutriplantSupabaseAuth;
+      if (!supabaseAuth || !supabaseAuth.updatePassword) {
+        msgEl.textContent = 'Error de configuración. Contáctanos: admin@nutriplantpro.com';
+        msgEl.style.display = 'block';
+        msgEl.style.background = '#fef2f2';
+        msgEl.style.color = '#dc2626';
+        return false;
+      }
+      const result = await supabaseAuth.updatePassword(newP);
+      if (result.ok) {
+        msgEl.textContent = 'Contraseña actualizada. Redirigiendo...';
+        msgEl.style.display = 'block';
+        msgEl.style.background = '#f0fdf4';
+        msgEl.style.color = '#16a34a';
+        window.location.hash = '';
+        setTimeout(function() { window.location.href = 'dashboard.html'; }, 1000);
+      } else {
+        msgEl.textContent = result.error || 'No se pudo actualizar la contraseña.';
+        msgEl.style.display = 'block';
+        msgEl.style.background = '#fef2f2';
+        msgEl.style.color = '#dc2626';
+      }
+      return false;
+    }
+
+    // Al cargar: si llegamos desde el enlace de recuperación (type=recovery), mostrar formulario nueva contraseña
+    (function checkRecoveryHash() {
+      var hash = window.location.hash || '';
+      if (hash.indexOf('type=recovery') !== -1) {
+        var loginForm = document.getElementById('loginForm');
+        var footer = document.getElementById('loginFormFooter');
+        var loginExtra = document.getElementById('loginExtra');
+        var recoveryPanel = document.getElementById('recoveryPasswordPanel');
+        if (loginForm) loginForm.style.display = 'none';
+        if (footer) footer.style.display = 'none';
+        if (loginExtra) loginExtra.style.display = 'none';
+        var calcBtns = document.querySelectorAll('.calculator-btn');
+        calcBtns.forEach(function(b) { b.style.display = 'none'; });
+        if (recoveryPanel) recoveryPanel.style.display = 'block';
+      }
+    })();
+
+    // Si llegamos desde el enlace de confirmación de correo (Supabase), sincronizar sesión y redirigir al login para activar PayPal (no al dashboard, porque está pendiente)
+    (function checkEmailConfirmationHash() {
+      var hash = window.location.hash || '';
+      if (hash.indexOf('access_token') === -1 && hash.indexOf('type=signup') === -1) return;
+      var auth = window.nutriplantSupabaseAuth;
+      if (!auth || typeof auth.syncSessionToLocalStorage !== 'function') return;
+      (async function() {
+        try {
+          var r = await auth.syncSessionToLocalStorage();
+          if (r && r.ok) {
+            try { window.history.replaceState({}, '', window.location.pathname); } catch (e) {}
+            window.location.replace('login.html?showActivate=1');
+          }
+        } catch (e) { console.warn('Email confirmation redirect:', e); }
+      })();
+    })();
+
+    // Mostrar enlace "No me llegó el correo de confirmación" solo si Supabase está activo (confirmación de correo)
+    (function showResendConfirmLinkIfAvailable() {
+      if (window.nutriplantSupabaseAuth && typeof window.nutriplantSupabaseAuth.isAvailable === 'function' && window.nutriplantSupabaseAuth.isAvailable()) {
+        var w = document.getElementById('resendConfirmWrap');
+        if (w) w.style.display = 'inline';
+      }
+    })();
+
+    // Actualizar visualización de pasos
+    function updateRegistrationStepDisplay() {
+      // Ocultar todos los pasos
+      for (let i = 1; i <= totalRegistrationSteps; i++) {
+        const stepDiv = document.getElementById(`step-${i}`);
+        if (stepDiv) {
+          stepDiv.style.display = 'none';
+        }
+      }
+
+      // Mostrar paso actual
+      const currentStepDiv = document.getElementById(`step-${currentRegistrationStep}`);
+      if (currentStepDiv) {
+        currentStepDiv.style.display = 'block';
+      }
+      
+      // Si estamos en el paso 4, actualizar el monto de suscripción
+      if (currentRegistrationStep === 4) {
+        const amountDisplay = document.getElementById('subscription-amount-display');
+        if (amountDisplay) {
+          const defaultAmount = window.NUTRIPLANT_CONFIG ? window.NUTRIPLANT_CONFIG.getDefaultSubscriptionAmount() : 49.00;
+          amountDisplay.textContent = defaultAmount.toFixed(2);
+        }
+      }
+
+      // Actualizar indicadores de pasos
+      for (let i = 1; i <= totalRegistrationSteps; i++) {
+        const indicator = document.querySelector(`.step-indicator[data-step="${i}"]`);
+        if (indicator) {
+          const circle = indicator.querySelector('.step-circle');
+          const label = indicator.querySelector('.step-label');
+          const line = indicator.querySelector('.step-line');
+          
+          if (i < currentRegistrationStep) {
+            // Paso completado
+            circle.style.background = '#16a34a';
+            circle.style.color = 'white';
+            label.style.color = '#16a34a';
+            if (line) line.style.background = '#16a34a';
+          } else if (i === currentRegistrationStep) {
+            // Paso actual
+            circle.style.background = '#2563eb';
+            circle.style.color = 'white';
+            label.style.color = '#2563eb';
+            if (line && i < totalRegistrationSteps) line.style.background = '#e5e7eb';
+          } else {
+            // Paso pendiente
+            circle.style.background = '#e5e7eb';
+            circle.style.color = '#64748b';
+            label.style.color = '#64748b';
+            if (line) line.style.background = '#e5e7eb';
+          }
+        }
+      }
+    }
+
+    // Navegar al siguiente paso
+    function nextRegistrationStep() {
+      // Validar paso actual antes de avanzar
+      if (currentRegistrationStep === 1) {
+        // Validar Paso 1
+        const firstname = document.getElementById('reg-firstname').value.trim();
+        const lastname = document.getElementById('reg-lastname').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const phone = document.getElementById('reg-phone').value.trim();
+        const country = document.getElementById('reg-country').value.trim();
+        const state = document.getElementById('reg-state').value.trim();
+        const city = document.getElementById('reg-city').value.trim();
+
+        if (!firstname || !lastname || !email || !phone || !country || !state || !city) {
+          alert('Por favor, completa todos los campos obligatorios del Paso 1.');
+          return;
+        }
+
+        // Validar email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          alert('Por favor, ingresa un correo electrónico válido.');
+          return;
+        }
+      } else if (currentRegistrationStep === 2) {
+        // Validar Paso 2
+        const profession = document.getElementById('reg-profession').value;
+        const selectedCrops = Array.from(document.querySelectorAll('input[name="crops"]:checked'));
+
+        if (!profession) {
+          alert('Por favor, selecciona una profesión.');
+          return;
+        }
+
+        if (selectedCrops.length === 0) {
+          alert('Por favor, selecciona al menos un cultivo de interés.');
+          return;
+        }
+      } else if (currentRegistrationStep === 3) {
+        // Validar Paso 3 (Contraseña)
+        const password = document.getElementById('reg-password').value;
+        const confirm = document.getElementById('reg-password-confirm').value;
+
+        if (!password || password.length < 6) {
+          alert('La contraseña debe tener al menos 6 caracteres.');
+          return;
+        }
+
+        if (password !== confirm) {
+          alert('Las contraseñas no coinciden.');
+          document.getElementById('password-match-error').style.display = 'block';
+          return;
+        }
+      }
+
+      // Avanzar al siguiente paso
+      if (currentRegistrationStep < totalRegistrationSteps) {
+        currentRegistrationStep++;
+        updateRegistrationStepDisplay();
+      }
+    }
+    window.nextRegistrationStep = nextRegistrationStep;
+
+    // Navegar al paso anterior
+    function prevRegistrationStep() {
+      if (currentRegistrationStep > 1) {
+        currentRegistrationStep--;
+        updateRegistrationStepDisplay();
+      }
+    }
+    window.prevRegistrationStep = prevRegistrationStep;
+
+    // Manejar código de país "Otro"
+    document.getElementById('reg-phone-code').addEventListener('change', function() {
+      const customCodeInput = document.getElementById('reg-phone-custom-code');
+      if (this.value === 'other') {
+        customCodeInput.style.display = 'block';
+        customCodeInput.required = true;
+      } else {
+        customCodeInput.style.display = 'none';
+        customCodeInput.required = false;
+        customCodeInput.value = '';
+      }
+    });
+
+    // Validar coincidencia de contraseñas
+    document.getElementById('reg-password-confirm').addEventListener('input', function() {
+      const password = document.getElementById('reg-password').value;
+      const confirm = this.value;
+      const errorDiv = document.getElementById('password-match-error');
+      
+      if (confirm && password !== confirm) {
+        errorDiv.style.display = 'block';
+        this.setCustomValidity('Las contraseñas no coinciden');
+      } else {
+        errorDiv.style.display = 'none';
+        this.setCustomValidity('');
+      }
+    });
+
+    // Manejar envío del formulario de registro
+    document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!window.NUTRIPLANT_REGISTRATION_OPEN) return;
+
+      const password = document.getElementById('reg-password').value;
+      const confirm = document.getElementById('reg-password-confirm').value;
+      
+      if (password !== confirm) {
+        document.getElementById('password-match-error').style.display = 'block';
+        return;
+      }
+
+      const formData = new FormData(this);
+      const phoneCode = document.getElementById('reg-phone-code').value;
+      const customCode = document.getElementById('reg-phone-custom-code').value;
+      const phoneNumber = formData.get('phone');
+      
+      const phone = phoneCode === 'other' ? `+${customCode}${phoneNumber}` : `${phoneCode}${phoneNumber}`;
+      
+      const selectedCrops = Array.from(document.querySelectorAll('input[name="crops"]:checked')).map(cb => cb.value);
+      
+      if (selectedCrops.length === 0) {
+        alert('Por favor, selecciona al menos un cultivo de interés.');
+        return;
+      }
+
+      // Combinar nombre y apellido
+      const firstname = formData.get('firstname') || '';
+      const lastname = formData.get('lastname') || '';
+      const fullName = `${firstname} ${lastname}`.trim();
+      const email = formData.get('email');
+
+      // Ubicación como texto para guardar en perfil
+      const locationStr = [formData.get('city'), formData.get('state'), formData.get('country')].filter(Boolean).join(', ');
+      // 🌐 REGISTRO CON SUPABASE (nube) si está configurado
+      const supabaseAuth = window.nutriplantSupabaseAuth;
+      if (supabaseAuth && supabaseAuth.isAvailable && supabaseAuth.isAvailable()) {
+        try {
+          const result = await supabaseAuth.signUp(email, password, {
+            name: fullName,
+            phone,
+            profession: formData.get('profession'),
+            location: locationStr,
+            crops: selectedCrops,
+            subscription_status: 'pending',
+            subscription_amount: 49.00
+          });
+          if (result.ok) {
+            const activateSubscriptionNow = document.getElementById('reg-activate-subscription')?.checked || false;
+            if (result.needsConfirmation) {
+              alert((result.message || '¡Revisa tu correo para confirmar tu cuenta!') + ' Si no lo ves, revisa correo no deseado o spam.');
+              closeRegistrationModal();
+              return;
+            }
+
+            if (activateSubscriptionNow) {
+              alert('¡Cuenta creada exitosamente! Redirigiendo a PayPal para activar tu suscripción...');
+              closeRegistrationModal();
+              setTimeout(async () => {
+                try {
+                  const supabaseUserId = (result.user && result.user.id) ? result.user.id : (localStorage.getItem('nutriplant_user_id') || '');
+                  await activatePayPalSubscription(email, supabaseUserId);
+                } catch (error) {
+                  console.error('Error activando suscripción (Supabase):', error);
+                  alert('⚠️ Tu cuenta se creó, pero PayPal no se abrió/completó. Vuelve a intentar la activación desde el login. Si no puedes entrar, contacta al administrador para que te asigne una contraseña.');
+                }
+              }, 500);
+            } else {
+              alert('✅ Cuenta creada en estado pendiente. No tendrás acceso hasta activar PayPal o ser activado por admin.');
+              closeRegistrationModal();
+            }
+            return;
+          }
+          if (result.error) {
+            var err = String(result.error || '').toLowerCase();
+            if (err.indexOf('already') !== -1 || err.indexOf('registered') !== -1 || err.indexOf('exist') !== -1) {
+              alert('Este correo ya está registrado. Inicia sesión con tu contraseña y, si quieres volver a suscribirte, pulsa "Activar con PayPal".');
+            } else {
+              alert('Error: ' + result.error);
+            }
+            return;
+          }
+        } catch (err) {
+          console.error('Supabase signUp error:', err);
+          alert('Error al registrar. Intenta de nuevo.');
+          return;
+        }
+      }
+
+      const userData = {
+        name: fullName,
+        firstname: firstname,
+        lastname: lastname,
+        email: formData.get('email'),
+        phone: phone,
+        location: {
+          country: formData.get('country'),
+          state: formData.get('state'),
+          city: formData.get('city'),
+          postal: formData.get('postal') || ''
+        },
+        profession: formData.get('profession'),
+        crops: selectedCrops,
+        password: password,
+        created_at: new Date().toISOString(),
+        subscription_status: 'pending',
+        subscription_amount: 49.00
+      };
+
+      // Guardar usuario
+      const userId = 'user_' + btoa(userData.email).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+      const userKey = `nutriplant_user_${userId}`;
+      const emailKey = `nutriplant_user_email_${userData.email}`;
+      
+      localStorage.setItem(userKey, JSON.stringify(userData));
+      localStorage.setItem(emailKey, userId);
+      localStorage.setItem('nutriplant_user_id', userId);
+
+      // Crear sesión
+      localStorage.setItem('np_user', JSON.stringify({
+        email: userData.email,
+        userId: userId,
+        ts: Date.now(),
+        name: userData.name,
+        firstname: userData.firstname,
+        lastname: userData.lastname
+      }));
+
+      // Usar precio por defecto de configuración
+      const defaultAmount = window.NUTRIPLANT_CONFIG ? window.NUTRIPLANT_CONFIG.getDefaultSubscriptionAmount() : 49.00;
+      userData.subscription_amount = defaultAmount;
+      
+      // Verificar si el usuario quiere activar la suscripción ahora
+      const activateSubscription = document.getElementById('reg-activate-subscription')?.checked || false;
+      
+      localStorage.setItem(userKey, JSON.stringify(userData));
+      
+      if (activateSubscription) {
+        // Si el usuario quiere activar la suscripción, guardar el userId temporalmente
+        // y redirigir a PayPal después de crear la cuenta
+        sessionStorage.setItem('pending_user_id', userId);
+        sessionStorage.setItem('pending_user_email', userData.email);
+        
+        alert('¡Cuenta creada exitosamente! Redirigiendo a PayPal para activar tu suscripción...');
+        closeRegistrationModal();
+        
+        // Activar suscripción de PayPal
+        setTimeout(async () => {
+          try {
+            await activatePayPalSubscription(userData.email, userId);
+          } catch (error) {
+            console.error('Error activando suscripción:', error);
+            alert('⚠️ Tu cuenta se creó, pero PayPal no se abrió/completó. Vuelve a intentar la activación desde el login.');
+          }
+        }, 500);
+      } else {
+        // Si no quiere activar ahora, solo crear la cuenta
+        alert('✅ Cuenta creada en estado pendiente. No tendrás acceso hasta activar PayPal o ser activado por admin.');
+        closeRegistrationModal();
+      }
+    });
+
+    // Cerrar modal solo con X o ESC (no con clic fuera)
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('registrationModal');
+        if (modal && modal.style.display === 'flex') {
+          closeRegistrationModal();
+        }
+      }
+    });
+  </script>
+
+  <!-- PayPal Integration Script -->
+  <script>
+    // Configuración PayPal (botón de suscripción)
+    const NUTRIPLANT_PAYPAL_CLIENT_ID = 'AUYkwOOt_8oUyA6nlNdyT8MHh7TlX28UnV5FeGtsbafzj0565UtYGlT167F1QcWENoiUuicYvxzT3Ldd';
+    const NUTRIPLANT_PAYPAL_PLAN_ID = 'P-13C21937R34068144NGKJVHI';
+    function getPayPalErrorMessage(err) {
+      try {
+        const asText = (err && (err.message || err.toString())) ? String(err.message || err.toString()) : '';
+        const lower = asText.toLowerCase();
+        if (lower.includes('invalid_resource_id') || lower.includes('resource not found') || lower.includes('plan')) {
+          return 'PayPal rechazó el plan de suscripción. Revisa que CLIENT_ID y PLAN_ID sean del mismo modo (sandbox o live).';
+        }
+        if (lower.includes('popup') || lower.includes('blocked')) {
+          return 'El navegador bloqueó la ventana de PayPal. Permite pop-ups para localhost:8000 e intenta de nuevo.';
+        }
+        if (lower.includes('cancel')) {
+          return 'Pago cancelado por el usuario.';
+        }
+        if (asText) return asText;
+      } catch (e) {}
+      return 'No se completó PayPal en este momento.';
+    }
+
+    function loadPayPalSdk() {
+      return new Promise((resolve, reject) => {
+        if (window.paypal && window.paypal.Buttons) {
+          resolve();
+          return;
+        }
+        const existing = document.querySelector('script[data-nutriplant-paypal-sdk="1"]');
+        if (existing) {
+          existing.addEventListener('load', () => resolve());
+          existing.addEventListener('error', () => reject(new Error('No se pudo cargar PayPal SDK')));
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(NUTRIPLANT_PAYPAL_CLIENT_ID)}&vault=true&intent=subscription`;
+        s.setAttribute('data-sdk-integration-source', 'button-factory');
+        s.setAttribute('data-nutriplant-paypal-sdk', '1');
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('No se pudo cargar PayPal SDK'));
+        document.head.appendChild(s);
+      });
+    }
+
+    function showPayPalSubscribeModal() {
+      let overlay = document.getElementById('paypalSubscribeModal');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'paypalSubscribeModal';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:20000;padding:16px;';
+        overlay.innerHTML = `
+          <div style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:20px;box-shadow:0 20px 40px rgba(0,0,0,.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <h3 style="margin:0;font-size:20px;color:#0f172a;">💳 Activar suscripción</h3>
+              <button id="closePayPalSubscribeModalBtn" style="border:none;background:#f1f5f9;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;">×</button>
+            </div>
+            <p style="margin:0 0 12px 0;color:#475569;font-size:14px;line-height:1.5;">
+              Prueba gratis 10 días. Luego $49 USD cada 5 meses. Puedes cancelar en cualquier momento desde PayPal.
+            </p>
+            <div id="paypal-subscription-button-container"></div>
+            <div id="paypal-subscription-msg" style="margin-top:10px;color:#64748b;font-size:13px;"></div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+      } else {
+        overlay.style.display = 'flex';
+      }
+      const closeBtn = document.getElementById('closePayPalSubscribeModalBtn');
+      if (closeBtn) closeBtn.onclick = () => { overlay.style.display = 'none'; };
+      return overlay;
+    }
+
+    function hidePayPalSubscribeModal() {
+      const overlay = document.getElementById('paypalSubscribeModal');
+      if (overlay) overlay.style.display = 'none';
+    }
+
+    async function markSubscriptionActive(userId, subscriptionId) {
+      // Actualizar localStorage
+      const userKey = `nutriplant_user_${userId}`;
+      const userDataStr = localStorage.getItem(userKey);
+      if (userDataStr) {
+        try {
+          const userData = JSON.parse(userDataStr);
+          userData.subscription_status = 'active';
+          userData.subscription_activated_at = new Date().toISOString();
+          userData.paypal_subscription_id = subscriptionId;
+          localStorage.setItem(userKey, JSON.stringify(userData));
+        } catch (e) {
+          console.warn('No se pudo actualizar usuario local tras PayPal:', e);
+        }
+      }
+
+      // Actualizar Supabase (si usuario es UUID)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId || ''));
+      if (isUuid && window.getSupabaseClient) {
+        const client = window.getSupabaseClient();
+        if (client) {
+          try {
+            const payload = {
+              subscription_status: 'active',
+              subscription_activated_at: new Date().toISOString(),
+              paypal_subscription_id: subscriptionId,
+              subscription_amount: (window.NUTRIPLANT_CONFIG ? window.NUTRIPLANT_CONFIG.getDefaultSubscriptionAmount() : 49.00),
+              updated_at: new Date().toISOString()
+            };
+            const { error } = await client.from('profiles').update(payload).eq('id', userId);
+            if (error) console.warn('⚠️ PayPal: error actualizando Supabase profiles:', error.message);
+          } catch (e) {
+            console.warn('⚠️ PayPal: excepción actualizando Supabase profiles:', e);
+          }
+        }
+      }
+    }
+
+    // Función para activar suscripción de PayPal (botón nativo)
+    async function activatePayPalSubscription(email, userId) {
+      try {
+        await loadPayPalSdk();
+        const overlay = showPayPalSubscribeModal();
+        const container = document.getElementById('paypal-subscription-button-container');
+        const msg = document.getElementById('paypal-subscription-msg');
+        if (!container) throw new Error('No se encontró contenedor de botón PayPal');
+        container.innerHTML = '';
+        if (msg) msg.textContent = '';
+
+        return await new Promise((resolve, reject) => {
+          var returnBase = window.location.origin + window.location.pathname;
+          var returnUrl = returnBase + (returnBase.indexOf('?') >= 0 ? '&' : '?') + 'paypal=success';
+          var cancelUrl = returnBase + (returnBase.indexOf('?') >= 0 ? '&' : '?') + 'paypal=cancel';
+          window.paypal.Buttons({
+            style: { shape: 'pill', color: 'blue', layout: 'vertical', label: 'subscribe' },
+            createSubscription: function(data, actions) {
+              return actions.subscription.create({
+                plan_id: NUTRIPLANT_PAYPAL_PLAN_ID,
+                custom_id: String(userId || ''),
+                application_context: {
+                  brand_name: 'NutriPlant PRO',
+                  locale: 'es-ES',
+                  landing_page: 'BILLING_AGREEMENT',
+                  user_action: 'SUBSCRIBE_NOW',
+                  return_url: returnUrl,
+                  cancel_url: cancelUrl
+                }
+              }).catch(function(e) {
+                console.error('PayPal createSubscription error:', e, {
+                  plan_id: NUTRIPLANT_PAYPAL_PLAN_ID,
+                  client_id_prefix: (NUTRIPLANT_PAYPAL_CLIENT_ID || '').slice(0, 10)
+                });
+                throw e;
+              });
+            },
+            onApprove: async function(data) {
+              try {
+                const subscriptionId = data && data.subscriptionID ? data.subscriptionID : null;
+                if (!subscriptionId) throw new Error('PayPal no devolvió subscriptionID');
+                await markSubscriptionActive(userId, subscriptionId);
+                hidePayPalSubscribeModal();
+                alert('✅ ¡Suscripción activada exitosamente! ID: ' + subscriptionId);
+                resolve(subscriptionId);
+              } catch (e) {
+                reject(e);
+              }
+            },
+            onCancel: function() {
+              hidePayPalSubscribeModal();
+              reject(new Error('Pago cancelado por el usuario'));
+            },
+            onError: function(err) {
+              hidePayPalSubscribeModal();
+              console.error('PayPal onError:', err, {
+                plan_id: NUTRIPLANT_PAYPAL_PLAN_ID,
+                client_id_prefix: (NUTRIPLANT_PAYPAL_CLIENT_ID || '').slice(0, 10)
+              });
+              reject(err || new Error('Error en PayPal'));
+            }
+          }).render('#paypal-subscription-button-container');
+
+          // Si cierra modal manualmente
+          if (overlay) {
+            const closeBtn = document.getElementById('closePayPalSubscribeModalBtn');
+            if (closeBtn) {
+              closeBtn.onclick = function() {
+                hidePayPalSubscribeModal();
+                reject(new Error('Modal de PayPal cerrado'));
+              };
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error activando suscripción PayPal:', error);
+        alert('⚠️ ' + getPayPalErrorMessage(error) + '\n\nTu cuenta fue creada y puedes activar la suscripción después.');
+        throw error;
+      }
+    }
+    window.activatePayPalSubscription = activatePayPalSubscription;
+
+    // Mostrar aviso de suscripción inactiva + botón "Activar con PayPal" (desde auth.js al hacer login)
+    function showSubscriptionInactiveWithPayPalOption(message) {
+      var errorDiv = document.querySelector('.auth-error');
+      if (errorDiv) errorDiv.style.display = 'none';
+      var form = document.getElementById('loginForm');
+      if (!form) return;
+      var block = document.getElementById('subscription-inactive-block');
+      if (!block) {
+        block = document.createElement('div');
+        block.id = 'subscription-inactive-block';
+        block.style.cssText = 'background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:14px 16px;border-radius:8px;margin-bottom:20px;font-size:14px;text-align:center;';
+        var text = document.createElement('p');
+        text.style.margin = '0 0 12px 0';
+        text.id = 'subscription-inactive-msg';
+        block.appendChild(text);
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'auth-button';
+        btn.style.marginTop = '8px';
+        btn.innerHTML = '<span class="button-text">Activar con PayPal</span>';
+        btn.onclick = function() {
+          var emailEl = document.getElementById('email');
+          var email = emailEl ? (emailEl.value || '').trim() : '';
+          var userId = localStorage.getItem('nutriplant_user_id');
+          if (!userId) {
+            alert('Sesión no encontrada. Vuelve a iniciar sesión y pulsa de nuevo "Activar con PayPal".');
+            return;
+          }
+          if (!email) {
+            alert('Indica tu correo en el formulario.');
+            return;
+          }
+          btn.disabled = true;
+          btn.innerHTML = '<span class="button-text">Abriendo PayPal...</span>';
+          activatePayPalSubscription(email, userId).then(function() {
+            alert('¡Suscripción activada! Redirigiendo...');
+            window.location.href = 'dashboard.html';
+          }).catch(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="button-text">Activar con PayPal</span>';
+          });
+        };
+        block.appendChild(btn);
+        form.insertBefore(block, form.firstChild);
+      }
+      var msgEl = document.getElementById('subscription-inactive-msg');
+      if (msgEl) msgEl.textContent = message;
+      block.style.display = 'block';
+    }
+    window.showSubscriptionInactiveWithPayPalOption = showSubscriptionInactiveWithPayPalOption;
+
+    // Modal Nosotros (mismo comportamiento que en dashboard)
+    function showAboutUsModal() {
+      const modal = document.getElementById('aboutUsModal');
+      if (modal) modal.classList.add('show');
+    }
+    window.showAboutUsModal = showAboutUsModal;
+
+    function closeAboutUsModal() {
+      const modal = document.getElementById('aboutUsModal');
+      if (modal) modal.classList.remove('show');
+    }
+    window.closeAboutUsModal = closeAboutUsModal;
+
+    // Si volvemos de PayPal tras aprobar suscripción, marcar activa y redirigir al dashboard (se ejecuta después de definir markSubscriptionActive)
+    (function checkPayPalReturn() {
+      var params = new URLSearchParams(window.location.search);
+      var paypalStatus = params.get('paypal');
+      var userId = params.get('userId');
+      var subscriptionId = params.get('subscription_id') || params.get('subscriptionId');
+      if (paypalStatus === 'success' && userId && subscriptionId && typeof markSubscriptionActive === 'function') {
+        markSubscriptionActive(userId, subscriptionId);
+        try { window.history.replaceState({}, '', window.location.pathname + (window.location.hash || '')); } catch (e) {}
+        setTimeout(function() {
+          alert('Suscripción activada. Redirigiendo al panel...');
+          window.location.href = 'dashboard.html';
+        }, 800);
+        return;
+      }
+      if (paypalStatus === 'cancel' && userId) {
+        try { window.history.replaceState({}, '', window.location.pathname + (window.location.hash || '')); } catch (e) {}
+      }
+    })();
+
+    // Tras confirmar correo: mostrar en login la opción "Activar con PayPal" en lugar de ir al dashboard y salir con "contacta al administrador"
+    (function checkShowActivateAfterConfirm() {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('showActivate') !== '1') return;
+      var userId = localStorage.getItem('nutriplant_user_id');
+      var userKey = userId ? 'nutriplant_user_' + userId : null;
+      var userRaw = userKey ? localStorage.getItem(userKey) : null;
+      if (!userRaw) return;
+      try {
+        var user = JSON.parse(userRaw);
+        var isAdmin = user && (user.isAdmin === true || (user.email || '').toLowerCase() === 'admin@nutriplantpro.com');
+        var status = (user && user.subscription_status) || 'pending';
+        if (isAdmin || status === 'active') return;
+        if (typeof showSubscriptionInactiveWithPayPalOption === 'function') {
+          showSubscriptionInactiveWithPayPalOption('✅ Correo confirmado. Activa tu suscripción con PayPal para entrar al panel.');
+          var emailInput = document.getElementById('email');
+          if (emailInput && user.email) emailInput.value = user.email;
+        }
+      } catch (e) { console.warn('checkShowActivateAfterConfirm:', e); }
+    })();
+  </script>
+
+  <!-- Modal Sobre Nosotros (mismo contenido que dashboard) -->
+  <style>
+    .modal-overlay.show { display: flex !important; justify-content: center !important; align-items: center !important; }
+  </style>
+  <div id="aboutUsModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); z-index: 10000; backdrop-filter: blur(6px);">
+    <div class="modal" style="background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25); max-width: 520px; width: calc(100% - 32px); max-height: 90vh; overflow-y: auto; position: relative; z-index: 10001; border: 1px solid rgba(148, 163, 184, 0.25);">
+      <div class="modal-content" style="padding: 24px; box-sizing: border-box; width: 100%;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #e5e7eb;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #e0f2fe, #dbeafe); display:flex; align-items:center; justify-content:center; font-size:18px;">👥</div>
+            <div>
+              <h2 style="margin: 0; color: #0f172a; font-size: 20px; font-weight: 700;">Nosotros</h2>
+              <div style="color:#64748b; font-size:12px;">NutriPlant PRO</div>
+            </div>
+          </div>
+          <button onclick="window.closeAboutUsModal()" style="
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            font-size: 18px;
+            color: #334155;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+          " onmouseover="this.style.background='#e2e8f0'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#f1f5f9'; this.style.transform='none'">
+            ×
+          </button>
+        </div>
+        <div style="display: grid; gap: 16px; width: 100%; max-width: 100%; min-width: 0;">
+          <div style="background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; color: #1f2937; line-height: 1.6;">
+            <strong>NutriPlant PRO</strong> es una plataforma técnica enfocada en mejorar la toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, análisis y tecnología. Promovemos el criterio técnico, el aprendizaje continuo y una comunidad profesional que valore el rigor, la honestidad y la evolución constante.
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+            <div style="background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px;">
+              <h3 style="margin: 0 0 10px 0; color: #0f172a; font-size: 16px;">🎯 Visión</h3>
+              <p style="margin: 0; color: #334155; line-height: 1.6;">
+                Ser la plataforma de referencia para el diseño, análisis y toma de decisiones en nutrición vegetal, integrando conocimiento agronómico, tecnología e inteligencia artificial, y formando una comunidad técnica global que valore el rigor, la precisión y la mejora continua.
+              </p>
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px;">
+              <h3 style="margin: 0 0 10px 0; color: #0f172a; font-size: 16px;">🧩 Misión</h3>
+              <p style="margin: 0; color: #334155; line-height: 1.6;">
+                Elevar el criterio técnico en la nutrición vegetal, proporcionando herramientas, conocimiento y análisis basados en fundamentos científicos, que permitan a agrónomos y técnicos tomar mejores decisiones en la formulación de programas nutricionales.
+              </p>
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px;">
+              <h3 style="margin: 0 0 10px 0; color: #0f172a; font-size: 16px;">✅ Valores</h3>
+              <ul style="margin: 0; padding-left: 18px; color: #334155; line-height: 1.6;">
+                <li><strong>Criterio:</strong> Pensar antes de aplicar. Decidir con fundamento.</li>
+                <li><strong>Respeto:</strong> Al proceso, a las personas y al conocimiento en construcción.</li>
+                <li><strong>Honestidad:</strong> Hablar claro, sin promesas vacías ni verdades a medias.</li>
+                <li><strong>Evolución:</strong> Aprender, ajustar y mejorar de forma continua.</li>
+              </ul>
+            </div>
+          </div>
+          <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #e5e7eb; text-align: center;">
+            <a href="politicas-privacidad.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Políticas de privacidad</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aviso de cookies (solo se muestra si no ha aceptado aún) -->
+  <div id="cookie-consent-banner" class="cookie-consent-banner" role="dialog" aria-label="Aviso de cookies" style="display: none;">
+    <div class="cookie-consent-inner">
+      <p class="cookie-consent-text">
+        Utilizamos cookies y almacenamiento local para que la sesión y tus datos funcionen correctamente. Al continuar, aceptas su uso.
+        <a href="politicas-privacidad.html" target="_blank" rel="noopener" class="cookie-consent-link">Política de privacidad</a>
+      </p>
+      <button type="button" id="cookie-consent-accept" class="cookie-consent-btn">Aceptar</button>
+    </div>
+  </div>
+  <style>
+    .cookie-consent-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
+      border-top: 1px solid #86efac;
+      box-shadow: 0 -4px 20px rgba(22, 163, 74, 0.15);
+      z-index: 99999;
+      padding: 14px 20px;
+    }
+    .cookie-consent-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .cookie-consent-text {
+      margin: 0;
+      font-size: 14px;
+      color: #166534;
+      line-height: 1.5;
+      flex: 1;
+      min-width: 200px;
+    }
+    .cookie-consent-link {
+      color: #15803d;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+    .cookie-consent-link:hover { color: #166534; }
+    .cookie-consent-btn {
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .cookie-consent-btn:hover {
+      background: #15803d;
+      transform: translateY(-1px);
+    }
+  </style>
+  <script>
+    (function() {
+      var key = 'nutriplant_cookie_consent';
+      var banner = document.getElementById('cookie-consent-banner');
+      var btn = document.getElementById('cookie-consent-accept');
+      if (!banner || !btn) return;
+      try {
+        if (localStorage.getItem(key) === 'accepted') {
+          banner.style.display = 'none';
+          return;
+        }
+        banner.style.display = 'block';
+      } catch (e) {}
+      btn.addEventListener('click', function() {
+        try { localStorage.setItem(key, 'accepted'); } catch (e) {}
+        banner.style.display = 'none';
+      });
+    })();
+  </script>
+</body>
+</html>

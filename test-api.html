@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API Key</title>
+</head>
+<body>
+    <h1>Test API Key</h1>
+    <button onclick="testAPI()">Probar API Key</button>
+    <div id="result"></div>
+
+    <script>
+        const apiKey = ''; // Usar variable de entorno o config en servidor; no poner clave aquí
+        
+        async function testAPI() {
+            console.log('🧪 Probando API Key...');
+            console.log('🔑 API Key:', apiKey ? 'CONFIGURADA' : 'NO CONFIGURADA');
+            
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-3.5-turbo',
+                        messages: [
+                            {
+                                role: 'user',
+                                content: 'Hola, ¿puedes responder sobre calcio en suelos?'
+                            }
+                        ],
+                        max_tokens: 100
+                    })
+                });
+                
+                console.log('📡 Respuesta HTTP:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Respuesta de ChatGPT:', data);
+                    document.getElementById('result').innerHTML = '<p style="color: green;">✅ API Key funciona correctamente</p>';
+                } else {
+                    console.log('❌ Error HTTP:', response.status);
+                    document.getElementById('result').innerHTML = '<p style="color: red;">❌ Error: ' + response.status + '</p>';
+                }
+            } catch (error) {
+                console.log('❌ Error:', error);
+                document.getElementById('result').innerHTML = '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
+
+

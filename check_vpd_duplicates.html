@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Diagnóstico VPD - Duplicados</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .project { border: 2px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .project.has-vpd { border-color: #f59e0b; background: #fef3c7; }
+        .warning { background: #fee2e2; border: 1px solid #ef4444; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        pre { background: #f3f4f6; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnóstico: Datos VPD en Proyectos</h1>
+    <button onclick="checkVPDData()" style="padding: 10px 20px; font-size: 16px; background: #3b82f6; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        Verificar Datos VPD
+    </button>
+    <div id="results"></div>
+
+    <script>
+        function checkVPDData() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>🔍 Verificando...</p>';
+
+            const projectsWithVPD = [];
+            
+            // Buscar todos los proyectos
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('nutriplant_project_')) {
+                    try {
+                        const projectId = key.replace('nutriplant_project_', '');
+                        const data = JSON.parse(localStorage.getItem(key));
+                        
+                        // Verificar si tiene datos VPD
+                        const vpdData = data.vpdAnalysis || data.sections?.vpd || null;
+                        
+                        if (vpdData && typeof vpdData === 'object') {
+                            const hasVPDData = (
+                                (vpdData.environmental && vpdData.environmental.vpd !== null && vpdData.environmental.vpd !== undefined) ||
+                                (vpdData.advanced && vpdData.advanced.vpd !== null && vpdData.advanced.vpd !== undefined) ||
+                                (vpdData.history && Array.isArray(vpdData.history) && vpdData.history.length > 0)
+                            );
+                            
+                            if (hasVPDData) {
+                                projectsWithVPD.push({
+                                    projectId: projectId,
+                                    projectName: data.name || 'Sin nombre',
+                                    key: key,
+                                    vpdData: vpdData,
+                                    historyCount: vpdData.history ? vpdData.history.length : 0,
+                                    environmentalVPD: vpdData.environmental?.vpd,
+                                    advancedVPD: vpdData.advanced?.vpd
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error procesando:', key, e);
+                    }
+                }
+            }
+
+            // Mostrar resultados
+            let html = `<h2>📊 Resultados: ${projectsWithVPD.length} proyecto(s) con datos VPD</h2>`;
+            
+            if (projectsWithVPD.length === 0) {
+                html += '<p>✅ No se encontraron proyectos con datos VPD.</p>';
+            } else if (projectsWithVPD.length === 1) {
+                html += '<p>✅ Solo hay un proyecto con datos VPD (correcto).</p>';
+                const p = projectsWithVPD[0];
+                html += `
+                    <div class="project has-vpd">
+                        <h3>Proyecto: ${p.projectName}</h3>
+                        <p><strong>ID:</strong> ${p.projectId}</p>
+                        <p><strong>Clave localStorage:</strong> ${p.key}</p>
+                        <p><strong>Historial:</strong> ${p.historyCount} cálculos</p>
+                        <p><strong>Environmental VPD:</strong> ${p.environmentalVPD !== null && p.environmentalVPD !== undefined ? p.environmentalVPD.toFixed(2) + ' kPa' : 'N/A'}</p>
+                        <p><strong>Advanced VPD:</strong> ${p.advancedVPD !== null && p.advancedVPD !== undefined ? p.advancedVPD.toFixed(2) + ' kPa' : 'N/A'}</p>
+                        <details>
+                            <summary>Ver datos completos VPD</summary>
+                            <pre>${JSON.stringify(p.vpdData, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="warning">
+                        <strong>⚠️ ATENCIÓN:</strong> Se encontraron ${projectsWithVPD.length} proyectos con datos VPD. 
+                        Esto podría indicar que los datos se duplicaron entre proyectos.
+                    </div>
+                `;
+                
+                projectsWithVPD.forEach((p, idx) => {
+                    html += `
+                        <div class="project has-vpd">
+                            <h3>Proyecto ${idx + 1}: ${p.projectName}</h3>
+                            <p><strong>ID:</strong> ${p.projectId}</p>
+                            <p><strong>Clave localStorage:</strong> ${p.key}</p>
+                            <p><strong>Historial:</strong> ${p.historyCount} cálculos</p>
+                            <p><strong>Environmental VPD:</strong> ${p.environmentalVPD !== null && p.environmentalVPD !== undefined ? p.environmentalVPD.toFixed(2) + ' kPa' : 'N/A'}</p>
+                            <p><strong>Advanced VPD:</strong> ${p.advancedVPD !== null && p.advancedVPD !== undefined ? p.advancedVPD.toFixed(2) + ' kPa' : 'N/A'}</p>
+                            <details>
+                                <summary>Ver datos completos VPD</summary>
+                                <pre>${JSON.stringify(p.vpdData, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                });
+                
+                // Verificar si los datos son idénticos (lo cual confirmaría duplicación)
+                if (projectsWithVPD.length === 2) {
+                    const [p1, p2] = projectsWithVPD;
+                    const data1Str = JSON.stringify(p1.vpdData);
+                    const data2Str = JSON.stringify(p2.vpdData);
+                    
+                    if (data1Str === data2Str) {
+                        html += `
+                            <div class="warning">
+                                <strong>🚨 DUPLICACIÓN CONFIRMADA:</strong> Los datos VPD en ambos proyectos son <strong>idénticos</strong>. 
+                                Esto confirma que hubo una duplicación. Los datos deberían ser independientes.
+                                <br><br>
+                                <strong>Recomendación:</strong> Eliminar los datos VPD del proyecto que NO debería tenerlos, 
+                                o verificar si realmente ambos proyectos deberían tener los mismos datos.
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div style="background: #d1fae5; border: 1px solid #10b981; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                                <strong>✅ Datos diferentes:</strong> Los proyectos tienen datos VPD diferentes, lo cual es correcto 
+                                si son cálculos independientes para cada proyecto.
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            results.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

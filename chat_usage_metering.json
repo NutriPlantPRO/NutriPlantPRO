@@ -1,0 +1,52 @@
+{
+  "users": {
+    "ce23a68c-88f4-40be-b05a-26f268f33cc2": {
+      "months": {
+        "2026-02": {
+          "requests": 19,
+          "cached_hits": 0,
+          "prompt_tokens": 60318,
+          "completion_tokens": 8945,
+          "total_tokens": 69263,
+          "cost_usd": 0.0144147
+        }
+      }
+    },
+    "2ba4e8b4-03ea-4ddd-bb11-9bee79987447": {
+      "months": {
+        "2026-02": {
+          "requests": 90,
+          "cached_hits": 0,
+          "prompt_tokens": 322274,
+          "completion_tokens": 30122,
+          "total_tokens": 352396,
+          "cost_usd": 0.0664143
+        }
+      }
+    },
+    "cb894189-a041-4402-958b-228763b5f6ca": {
+      "months": {
+        "2026-02": {
+          "requests": 3,
+          "cached_hits": 0,
+          "prompt_tokens": 7364,
+          "completion_tokens": 899,
+          "total_tokens": 8263,
+          "cost_usd": 0.001644
+        }
+      }
+    },
+    "644be101-ffe3-49f8-9227-37877892d8e0": {
+      "months": {
+        "2026-02": {
+          "requests": 2,
+          "cached_hits": 0,
+          "prompt_tokens": 5909,
+          "completion_tokens": 417,
+          "total_tokens": 6326,
+          "cost_usd": 0.00113655
+        }
+      }
+    }
+  }
+}

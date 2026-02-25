@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panel — NutriPlant Pro</title>
+  
+  <!-- ===== NUTRIPLANT PRO BRANDING ===== -->
+  <meta name="description" content="Panel de control para nutrición vegetal y fertirriego - NutriPlant Pro" />
+  <meta name="author" content="NutriPlant Pro" />
+  <meta name="theme-color" content="#2563eb" />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/N_Hoja_Azul.png">
+  <link rel="apple-touch-icon" href="assets/N_Hoja_Azul.png">
+  
+  <link rel="stylesheet" href="dashboard.css?v=1758317422" />
+  <link rel="stylesheet" href="chat.css" />
+</head>
+<body>
+  <!-- Header fijo superior (marca) -->
+  <header class="site-header">
+    <div class="brandline">
+      <img src="assets/NutriPlant_PRO_blue.png" alt="NutriPlant Pro" class="brand-logo">
+      <div class="social-links">
+        <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" class="social-btn" data-social="facebook" title="Facebook">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+          </svg>
+        </a>
+        <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" class="social-btn" data-social="instagram" title="Instagram">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+          </svg>
+        </a>
+        <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&_r=1" target="_blank" class="social-btn" data-social="tiktok" title="TikTok">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
+          </svg>
+        </a>
+        <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" class="social-btn" data-social="youtube" title="YouTube">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/>
+            <polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/>
+          </svg>
+        </a>
+        <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" class="social-btn" data-social="linkedin" title="LinkedIn">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+            <rect x="2" y="9" width="4" height="12"/>
+            <circle cx="4" cy="4" r="2"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Logo de NutriPlant Pro en sidebar -->
+      <div class="sidebar-brand">
+        <img src="assets/N_Hoja_Blanca.png" alt="NutriPlant Pro" class="sidebar-logo">
+      </div>
+
+      <!-- Menú superior -->
+      <nav id="menu"></nav>
+
+      <!-- Contenedor apilado para las TARJETAS (proyecto + análisis) -->
+      <div id="sbStack" class="sb-stack"><!-- se llena por JS --></div>
+
+      <!-- Cerrar sesión pegado abajo -->
+      <button id="logoutBtn" class="logout" title="Cerrar sesión">
+        <span class="logout-icon">⏻</span>
+        <span class="logout-text">Cerrar sesión</span>
+      </button>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="content">
+      <header class="top">
+        <h1 id="sectionTitle">Inicio</h1>
+        <button id="btn-new-nutriplant" class="btn btn-pill btn-primary">+ Nuevo NutriPlant</button>
+      </header>
+
+      <section id="view" class="view">
+        <!-- Inicio por defecto (JS lo rellena) -->
+        <p>Bienvenido. Selecciona una sección del menú izquierdo.</p>
+      </section>
+
+      <footer class="site-footer">
+        <div class="footer-content">
+          <div class="footer-info">
+            <strong>2026 NutriPlant Pro</strong>. Todos los derechos reservados
+          </div>
+          <div class="footer-contact">
+            <span class="contact-label">Contáctanos:</span>
+            <a href="mailto:admin@nutriplantpro.com" class="contact-email">
+              <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              admin@nutriplantpro.com
+            </a>
+          </div>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="project-manager.js"></script>
+    <script src="dashboard.js?v=1758317422"></script>
+  <script src="chat.js"></script>
+  <script src="map.js"></script>
+  
+  <!-- Configuración del Chat -->
+  <script>
+    // La API Key se resuelve en backend/proxy.
+    document.addEventListener('DOMContentLoaded', () => {
+      const apiKey = '';
+      
+      console.log('Configurando API Key:', apiKey ? 'Configurada' : 'No configurada');
+      
+      if (window.nutriPlantChat) {
+        window.nutriPlantChat.setApiKey(apiKey);
+        console.log('API Key configurada correctamente');
+      } else {
+        console.error('nutriPlantChat no está disponible');
+      }
+    });
+  </script>
+</body>
+</html>

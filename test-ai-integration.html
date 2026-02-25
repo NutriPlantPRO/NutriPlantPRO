@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Integración IA NutriPlant Pro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .test-result {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4CAF50;
+            white-space: pre-wrap;
+        }
+        .error {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        .success {
+            border-left-color: #4CAF50;
+            background: #e8f5e8;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test - Integración IA NutriPlant Pro</h1>
+    
+    <div class="test-section">
+        <h2>📊 Datos de Prueba</h2>
+        <input type="number" id="cicTotal" class="test-input" placeholder="CIC Total" value="13.00">
+        <input type="number" id="kInitial" class="test-input" placeholder="K Inicial" value="1.00">
+        <input type="number" id="caInitial" class="test-input" placeholder="Ca Inicial" value="8.00">
+        <input type="number" id="mgInitial" class="test-input" placeholder="Mg Inicial" value="1.00">
+        <input type="number" id="hInitial" class="test-input" placeholder="H Inicial" value="0.00">
+        <input type="number" id="naInitial" class="test-input" placeholder="Na Inicial" value="3.00">
+        <input type="number" id="alInitial" class="test-input" placeholder="Al Inicial" value="0.00">
+    </div>
+    
+    <div class="test-section">
+        <h2>🤖 Pruebas de IA</h2>
+        <input type="text" id="testMessage" class="test-input" placeholder="Mensaje para la IA" value="analiza mi suelo y recomienda enmiendas">
+        <button class="test-button" onclick="testIntelligentResponse()">Probar Respuesta Inteligente</button>
+        <button class="test-button" onclick="testSoilAnalysis()">Probar Análisis de Suelo</button>
+        <button class="test-button" onclick="testRecommendation()">Probar Recomendación</button>
+        <button class="test-button" onclick="testAll()">Probar Todo</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>📋 Resultados</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <!-- Scripts de IA -->
+    <script src="ai-knowledge-base/core/language-base.js"></script>
+    <script src="ai-knowledge-base/modules/amendments.js"></script>
+    <script src="ai-knowledge-base/ai-knowledge-base-complete.js"></script>
+    <script src="ai-knowledge-base.js"></script>
+
+    <script>
+        // Inicializar IA
+        const nutriPlantAI = new NutriPlantAI();
+        
+        function getTestSoilData() {
+            return {
+                cicTotal: parseFloat(document.getElementById('cicTotal').value),
+                initial: {
+                    k: parseFloat(document.getElementById('kInitial').value),
+                    ca: parseFloat(document.getElementById('caInitial').value),
+                    mg: parseFloat(document.getElementById('mgInitial').value),
+                    h: parseFloat(document.getElementById('hInitial').value),
+                    na: parseFloat(document.getElementById('naInitial').value),
+                    al: parseFloat(document.getElementById('alInitial').value)
+                },
+                needs: calculateTestNeeds()
+            };
+        }
+        
+        function calculateTestNeeds() {
+            const cic = parseFloat(document.getElementById('cicTotal').value);
+            const k = parseFloat(document.getElementById('kInitial').value);
+            const ca = parseFloat(document.getElementById('caInitial').value);
+            const mg = parseFloat(document.getElementById('mgInitial').value);
+            const h = parseFloat(document.getElementById('hInitial').value);
+            const na = parseFloat(document.getElementById('naInitial').value);
+            const al = parseFloat(document.getElementById('alInitial').value);
+            
+            const idealK = cic * 0.05;
+            const idealCa = cic * 0.75;
+            const idealMg = cic * 0.15;
+            
+            return {
+                k: idealK - k,
+                ca: idealCa - ca,
+                mg: idealMg - mg,
+                h: -h,
+                na: -na,
+                al: -al
+            };
+        }
+        
+        function addResult(title, content, isError = false) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${isError ? 'error' : 'success'}`;
+            resultDiv.innerHTML = `<strong>${title}</strong>\n${content}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function testIntelligentResponse() {
+            const message = document.getElementById('testMessage').value;
+            const soilData = getTestSoilData();
+            
+            try {
+                const response = nutriPlantAI.generateIntelligentResponse(message, soilData);
+                addResult('🤖 Respuesta Inteligente', JSON.stringify(response, null, 2));
+            } catch (error) {
+                addResult('❌ Error en Respuesta Inteligente', error.message, true);
+            }
+        }
+        
+        function testSoilAnalysis() {
+            const soilData = getTestSoilData();
+            
+            try {
+                const response = nutriPlantAI.analyzeSoilWithNewAI(soilData);
+                addResult('📊 Análisis de Suelo', JSON.stringify(response, null, 2));
+            } catch (error) {
+                addResult('❌ Error en Análisis de Suelo', error.message, true);
+            }
+        }
+        
+        function testRecommendation() {
+            const soilData = getTestSoilData();
+            const recommendation = {
+                name: 'Cal Dolomítica',
+                quantity: '4.65 kg/ha',
+                cost: 'Medio',
+                efficiency: 90
+            };
+            
+            try {
+                const response = nutriPlantAI.applyRecommendation(recommendation, soilData);
+                addResult('✅ Aplicación de Recomendación', JSON.stringify(response, null, 2));
+            } catch (error) {
+                addResult('❌ Error en Aplicación de Recomendación', error.message, true);
+            }
+        }
+        
+        function testAll() {
+            document.getElementById('testResults').innerHTML = '';
+            testIntelligentResponse();
+            testSoilAnalysis();
+            testRecommendation();
+        }
+        
+        // Test automático al cargar
+        window.addEventListener('load', function() {
+            addResult('🚀 Sistema Iniciado', 'IA NutriPlant Pro cargada y lista para pruebas');
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

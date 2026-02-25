@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NutriPlant Pro — Calculadora</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>NutriPlant Pro</h1>
+    <nav>
+      <a href="#calc">Calculadora</a>
+      <a href="#about">Acerca</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="calc" class="card">
+      <h2>Calculadora meq ↔ mmol ↔ ppm (mg/L)</h2>
+
+      <div class="row">
+        <label for="ion">Elemento/Ión</label>
+        <select id="ion"></select>
+      </div>
+
+      <div class="grid-3">
+        <div class="card lite">
+          <label for="aw">Peso atómico/molecular (g/mol)</label>
+          <input id="aw" type="number" step="0.0001" />
+        </div>
+        <div class="card lite">
+          <label for="val">Valencia (valor absoluto)</label>
+          <input id="val" type="number" step="1" min="1" />
+        </div>
+        <div class="card lite">
+          <label>Equivalente (mg/meq)</label>
+          <input id="eqw" type="number" step="0.0001" disabled />
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card tone">
+          <label for="meq">meq/L</label>
+          <input id="meq" type="number" step="0.0001" placeholder="Escribe aquí para convertir" />
+        </div>
+        <div class="card tone">
+          <label for="mmol">mmol/L</label>
+          <input id="mmol" type="number" step="0.0001" placeholder="O aquí" />
+        </div>
+        <div class="card tone">
+          <label for="ppm">ppm (mg/L)</label>
+          <input id="ppm" type="number" step="0.0001" placeholder="O aquí" />
+        </div>
+      </div>
+
+      <div class="row">
+        <button id="btnClear">Limpiar</button>
+      </div>
+
+      <details class="help">
+        <summary>Ver fórmulas</summary>
+        <ul>
+          <li>mg/L (ppm) = meq/L × (AW / |z|)</li>
+          <li>mmol/L = meq/L ÷ |z|</li>
+          <li>meq/L = mmol/L × |z|</li>
+          <li>ppm = mmol/L × AW</li>
+          <li>meq/L = ppm × |z| ÷ AW</li>
+          <li>mmol/L = ppm ÷ AW</li>
+        </ul>
+        <p>Ejemplos guardados:
+          P (como H₂PO₄⁻) usa AW=31 y |z|=1;  
+          S (como SO₄²⁻) usa AW≈32 y |z|=2;  
+          Zn²⁺ usa AW≈65.38 y |z|=2 (EW≈32.69 mg/meq).</p>
+      </details>
+    </section>
+
+    <section id="about" class="card">
+      <h2>Acerca</h2>
+      <p>Prototipo inicial de NutriPlant Pro para conversión de unidades en nutrición vegetal. 
+         Ajusta AW y Valencia si deseas un cálculo “por elemento” o “por especie química”.</p>
+    </section>
+  </main>
+
+  <footer class="footer">© 2026 NutriPlant Pro</footer>
+  <script src="app.js"></script>
+</body>
+</html>

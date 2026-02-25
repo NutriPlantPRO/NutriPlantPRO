@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Chat</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        #result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Test OpenAI Chat</h1>
+    <button onclick="test()">Test Chat</button>
+    <div id="result"></div>
+
+    <script>
+    async function test() {
+        const apiKey = ''; // Usar variable de entorno o config en servidor; no poner clave aquí
+        document.getElementById('result').innerHTML = 'Testing...';
+        
+        try {
+            // Try proxy first
+            let response;
+            try {
+                response = await fetch('/api/openai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        apiKey: apiKey,
+                        model: 'gpt-3.5-turbo',
+                        messages: [{ role: 'user', content: 'Say "API works!"' }],
+                        max_tokens: 50
+                    })
+                });
+            } catch (err) {
+                document.getElementById('result').innerHTML = `Proxy Error: ${err.message}`;
+                return;
+            }
+            
+            if (!response.ok) {
+                const text = await response.text();
+                document.getElementById('result').innerHTML = `HTTP ${response.status}: ${text}`;
+                return;
+            }
+            
+            const data = await response.json();
+            document.getElementById('result').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } catch (error) {
+            document.getElementById('result').innerHTML = `Error: ${error.message}`;
+        }
+    }
+    </script>
+</body>
+</html>

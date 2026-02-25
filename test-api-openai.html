@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test OpenAI API</title>
+</head>
+<body>
+    <h1>Test OpenAI API Connection</h1>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result"></div>
+
+    <script>
+    async function testAPI() {
+        const apiKey = ''; // Usar variable de entorno o config en servidor; no poner clave aquí
+        
+        document.getElementById('result').innerHTML = 'Testing...';
+        
+        try {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-3.5-turbo',
+                    messages: [
+                        { role: 'user', content: 'Say "API is working!" if you receive this message.' }
+                    ],
+                    max_tokens: 100
+                })
+            });
+            
+            const data = await response.json();
+            document.getElementById('result').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } catch (error) {
+            document.getElementById('result').innerHTML = `Error: ${error.message}`;
+        }
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "client_id": "TU_CLIENT_ID_AQUI",
+  "client_secret": "TU_CLIENT_SECRET_AQUI",
+  "mode": "sandbox",
+  "subscription_price": "49.00",
+  "product_id": "TU_PRODUCT_ID_AQUI",
+  "subscription_plan_id": "TU_PLAN_ID_AQUI",
+  "app_base_url": "https://anutriplant.com"
+}
