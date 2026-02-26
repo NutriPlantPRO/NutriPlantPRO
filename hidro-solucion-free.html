@@ -21,39 +21,26 @@
     .hydroponia-container {
       margin: 0;
     }
-    .hydro-ternary-header {
-      align-items: flex-start;
-    }
-    .hydro-ternary-header h3 {
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-    .hydro-ternary-header .hidroponia-ternary-watermark {
-      position: static;
+    .hydro-card-ternary-wrap .hidroponia-ternary-watermark {
+      position: absolute;
+      top: 12px;
+      right: 12px;
       z-index: 0;
       pointer-events: none;
-      flex: 0 0 auto;
-      margin-left: 12px;
     }
-    .hydro-ternary-header .hidroponia-ternary-watermark img {
+    .hydro-card-ternary-wrap .hidroponia-ternary-watermark img {
       max-height: 56px;
       width: auto;
       opacity: 0.25;
     }
+    .hydro-ternary-header h3 {
+      margin: 0;
+      min-width: 0;
+      padding-right: 140px;
+    }
     .hydro-ternary-description {
       margin: 0 0 8px 0;
       line-height: 1.35;
-    }
-    @media (max-width: 900px) {
-      .hydro-ternary-header {
-        flex-wrap: wrap;
-      }
-      .hydro-ternary-header .hidroponia-ternary-watermark {
-        width: 100%;
-        margin: 0;
-        display: flex;
-        justify-content: flex-end;
-      }
     }
     @media (max-width: 600px) {
       .hydro-ternary-description {
@@ -61,8 +48,11 @@
         line-height: 1.4;
         margin-bottom: 8px;
       }
-      .hydro-ternary-header .hidroponia-ternary-watermark img {
-        max-height: 50px;
+      .hydro-card-ternary-wrap .hidroponia-ternary-watermark img {
+        max-height: 48px;
+      }
+      .hydro-ternary-header h3 {
+        padding-right: 100px;
       }
       #hydroTriangleInfoCombined.hydro-muted {
         font-size: 0.72rem;
@@ -91,11 +81,11 @@
         </div>
 
         <div class="hydro-card hydro-card-ternary-wrap">
+          <div class="hidroponia-ternary-watermark" aria-hidden="true">
+            <img src="assets/NutriPlant_PRO_blue.png" alt="">
+          </div>
           <div class="hydro-card-header hydro-ternary-header">
             <h3>📐 Diagrama ternario (aniones + cationes)</h3>
-            <div class="hidroponia-ternary-watermark" aria-hidden="true">
-              <img src="assets/NutriPlant_PRO_blue.png" alt="">
-            </div>
           </div>
           <div class="hydro-muted hydro-ternary-description">
             <strong>Rangos por elemento (%).</strong> Aniones: N-NO₃⁻ 20–80, P-H₂PO₄⁻ 1.25–10, S-SO₄²⁻ 10–70.
