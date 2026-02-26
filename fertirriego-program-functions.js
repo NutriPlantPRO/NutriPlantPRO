@@ -1167,6 +1167,85 @@ function updateFertiCharts(){
   });
 }
 
+/**
+ * Genera imágenes de las gráficas Macro/Micro desde datos del programa (para PDF sin depender del DOM).
+ * program = { weeks: [{ totals: { N_NO3, N_NH4, ... } }], timeUnit: 'mes'|'semana' }
+ * callback(result) con result = { macro: dataUrl, micro: dataUrl } o {} si falla.
+ */
+function getFertiChartsDataUrlsForReport(program, callback) {
+  if (!program || !Array.isArray(program.weeks) || program.weeks.length === 0) {
+    if (typeof callback === 'function') callback({});
+    return;
+  }
+  loadChartJs(function() {
+    const weeks = program.weeks;
+    const timeUnit = program.timeUnit || 'semana';
+    const labels = weeks.map(function(w, i) { return (timeUnit === 'mes' ? 'Mes' : 'Semana') + ' ' + (i + 1); });
+    function mk(n) { return weeks.map(function(w) { return parseFloat(w.totals && w.totals[n]) || 0; }); }
+    var macros = { N_NO3: mk('N_NO3'), N_NH4: mk('N_NH4'), P2O5: mk('P2O5'), K2O: mk('K2O'), CaO: mk('CaO'), MgO: mk('MgO'), SO4: mk('SO4') };
+    var micros = { Fe: mk('Fe'), Mn: mk('Mn'), B: mk('B'), Zn: mk('Zn'), Cu: mk('Cu'), Mo: mk('Mo') };
+    var macroColors = { N_NO3: '#1f77b4', N_NH4: '#2ca02c', P2O5: '#ff7f0e', K2O: '#98df8a', CaO: '#9467bd', MgO: '#17becf', SO4: '#8c564b' };
+    var microColors = { Fe: '#1f77b4', Mn: '#2ca02c', B: '#ff7f0e', Zn: '#9467bd', Cu: '#8c564b', Mo: '#e377c2' };
+    var macroLabels = { P2O5: 'P2O5', K2O: 'K2O', CaO: 'CaO', MgO: 'MgO' };
+    var W = 480, H = 280;
+    var macroCanvas = document.createElement('canvas');
+    macroCanvas.width = W;
+    macroCanvas.height = H;
+    var microCanvas = document.createElement('canvas');
+    microCanvas.width = W;
+    microCanvas.height = H;
+    macroCanvas.style.cssText = 'position:fixed;left:-9999px;top:0;';
+    microCanvas.style.cssText = 'position:fixed;left:-9999px;top:0;';
+    document.body.appendChild(macroCanvas);
+    document.body.appendChild(microCanvas);
+    var chartMacro = null, chartMicro = null;
+    var result = {};
+    try {
+      chartMacro = new Chart(macroCanvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'N(NO3)', data: macros.N_NO3, borderColor: macroColors.N_NO3, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'N(NH4)', data: macros.N_NH4, borderColor: macroColors.N_NH4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: macroLabels.P2O5, data: macros.P2O5, borderColor: macroColors.P2O5, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: macroLabels.K2O, data: macros.K2O, borderColor: macroColors.K2O, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: macroLabels.CaO, data: macros.CaO, borderColor: macroColors.CaO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: macroLabels.MgO, data: macros.MgO, borderColor: macroColors.MgO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'SO4', data: macros.SO4, borderColor: macroColors.SO4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
+          ]
+        },
+        options: { responsive: false, maintainAspectRatio: false, animation: false, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true }, x: {} } }
+      });
+      chartMicro = new Chart(microCanvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Fe', data: micros.Fe, borderColor: microColors.Fe, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'Mn', data: micros.Mn, borderColor: microColors.Mn, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'B', data: micros.B, borderColor: microColors.B, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'Zn', data: micros.Zn, borderColor: microColors.Zn, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'Cu', data: micros.Cu, borderColor: microColors.Cu, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
+            { label: 'Mo', data: micros.Mo, borderColor: microColors.Mo, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
+          ]
+        },
+        options: { responsive: false, maintainAspectRatio: false, animation: false, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true }, x: {} } }
+      });
+      result.macro = (chartMacro && chartMacro.toBase64Image) ? chartMacro.toBase64Image() : macroCanvas.toDataURL('image/png');
+      result.micro = (chartMicro && chartMicro.toBase64Image) ? chartMicro.toBase64Image() : microCanvas.toDataURL('image/png');
+    } catch (e) {
+      console.warn('getFertiChartsDataUrlsForReport:', e);
+    }
+    if (chartMacro) try { chartMacro.destroy(); } catch (e2) {}
+    if (chartMicro) try { chartMicro.destroy(); } catch (e2) {}
+    macroCanvas.remove();
+    microCanvas.remove();
+    if (typeof callback === 'function') callback(result);
+  });
+}
+window.getFertiChartsDataUrlsForReport = getFertiChartsDataUrlsForReport;
+
 function toggleFertiChartsOxideElemental(){
   fertiChartsElementalMode = !fertiChartsElementalMode;
   const btn = document.getElementById('toggleFertiChartsModeBtn');

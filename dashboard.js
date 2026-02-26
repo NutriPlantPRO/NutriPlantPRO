@@ -7409,37 +7409,33 @@ window.downloadReport = function(reportId) {
       showMessage('⚠️ Este reporte no contiene secciones válidas para PDF.', 'warning');
       return;
     }
-    // Capturar gráficas de fertirriego (Macro/Micro) si la sección va en el PDF y los canvas existen
-    var chartImages = {};
-    if (printableSections.indexOf('fertigation') >= 0) {
-      try {
-        var macroCanvas = document.getElementById('fertiMacroChart');
-        var microCanvas = document.getElementById('fertiMicroChart');
-        if (macroCanvas && macroCanvas.width > 0 && macroCanvas.height > 0) {
-          chartImages.macro = macroCanvas.toDataURL('image/png');
-        }
-        if (microCanvas && microCanvas.width > 0 && microCanvas.height > 0) {
-          chartImages.micro = microCanvas.toDataURL('image/png');
-        }
-      } catch (e) {
-        console.warn('No se pudieron capturar gráficas de fertirriego para el PDF:', e);
+    // Gráficas de fertirriego: generarlas desde datos del proyecto (no dependen del DOM ni de haber abierto la pestaña Gráficas)
+    function openReportWithCharts(chartImages) {
+      chartImages = chartImages || {};
+      var reportHTML = createReportHTML(printableSections, chartImages);
+      var printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        showMessage('❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.', 'error');
+        return;
       }
+      printWindow.document.open();
+      printWindow.document.write(reportHTML);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.onload = function() {
+        setTimeout(function() {
+          printWindow.print();
+        }, 500);
+      };
     }
-    const reportHTML = createReportHTML(printableSections, chartImages);
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      showMessage('❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.', 'error');
-      return;
+    if (printableSections.indexOf('fertigation') >= 0 && typeof window.getFertiChartsDataUrlsForReport === 'function') {
+      var prog = (currentProject && currentProject.fertirriego && currentProject.fertirriego.program) || null;
+      window.getFertiChartsDataUrlsForReport(prog, function(chartImages) {
+        openReportWithCharts(chartImages);
+      });
+    } else {
+      openReportWithCharts({});
     }
-    printWindow.document.open();
-    printWindow.document.write(reportHTML);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.onload = function() {
-      setTimeout(function() {
-        printWindow.print();
-      }, 300);
-    };
     return;
   }
 
