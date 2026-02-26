@@ -226,6 +226,14 @@ body {
 
   .content {
     min-height: calc(100svh - 48px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Reserva el espacio vertical para que el footer quede abajo sin position: fixed */
+  #view {
+    flex: 1 0 auto;
+    min-height: 0;
   }
 
   .sidebar {
@@ -253,7 +261,7 @@ body {
   }
 
   .site-footer {
-    margin-top: auto;
+    margin-top: 12px;
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
