@@ -223,7 +223,10 @@ body {
   .layout {
     /* Reservar el ancho minimizado para que no tape el contenido */
     padding-left: var(--sidebar-w);
+    min-height: calc(100vh - 48px);
     min-height: calc(100dvh - 48px);
+    height: calc(100vh - 48px);
+    height: calc(100dvh - 48px);
   }
   .sidebar {
     top: 48px;
@@ -245,7 +248,10 @@ body {
 
   /* Footer abajo en móvil cuando hay poco contenido */
   .content {
+    min-height: calc(100vh - 48px);
     min-height: calc(100dvh - 48px);
+    height: calc(100vh - 48px);
+    height: calc(100dvh - 48px);
   }
 
   .site-footer {
