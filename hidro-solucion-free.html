@@ -21,12 +21,48 @@
     .hydroponia-container {
       margin: 0;
     }
+    .hydro-ternary-header {
+      align-items: flex-start;
+    }
+    .hydro-ternary-header h3 {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .hydro-ternary-header .hidroponia-ternary-watermark {
+      position: static;
+      z-index: 0;
+      pointer-events: none;
+      flex: 0 0 auto;
+      margin-left: 12px;
+    }
+    .hydro-ternary-header .hidroponia-ternary-watermark img {
+      max-height: 56px;
+      width: auto;
+      opacity: 0.25;
+    }
+    .hydro-ternary-description {
+      margin: 0 0 8px 0;
+      line-height: 1.35;
+    }
+    @media (max-width: 900px) {
+      .hydro-ternary-header {
+        flex-wrap: wrap;
+      }
+      .hydro-ternary-header .hidroponia-ternary-watermark {
+        width: 100%;
+        margin: 0;
+        display: flex;
+        justify-content: flex-end;
+      }
+    }
     @media (max-width: 600px) {
-      .hydro-card-ternary-wrap .hydro-card-header .hydro-muted {
+      .hydro-ternary-description {
         font-size: 0.75rem;
         line-height: 1.4;
-        column-count: 1;
         margin-bottom: 8px;
+      }
+      .hydro-ternary-header .hidroponia-ternary-watermark img {
+        max-height: 50px;
       }
       #hydroTriangleInfoCombined.hydro-muted {
         font-size: 0.72rem;
@@ -55,16 +91,16 @@
         </div>
 
         <div class="hydro-card hydro-card-ternary-wrap">
-          <div class="hidroponia-ternary-watermark" aria-hidden="true">
-            <img src="assets/NutriPlant_PRO_blue.png" alt="">
-          </div>
-          <div class="hydro-card-header">
+          <div class="hydro-card-header hydro-ternary-header">
             <h3>📐 Diagrama ternario (aniones + cationes)</h3>
-            <div class="hydro-muted">
-              <strong>Rangos por elemento (%).</strong> Aniones: N-NO₃⁻ 20–80, P-H₂PO₄⁻ 1.25–10, S-SO₄²⁻ 10–70.
-              Cationes: K⁺ 10–65, Ca²⁺ 22.5–62.5, Mg²⁺ 0.5–40.
-              El % de NH₄⁺ se calcula sobre el total de cationes (K+Ca+Mg+NH₄⁺) y no entra en el triángulo.
+            <div class="hidroponia-ternary-watermark" aria-hidden="true">
+              <img src="assets/NutriPlant_PRO_blue.png" alt="">
             </div>
+          </div>
+          <div class="hydro-muted hydro-ternary-description">
+            <strong>Rangos por elemento (%).</strong> Aniones: N-NO₃⁻ 20–80, P-H₂PO₄⁻ 1.25–10, S-SO₄²⁻ 10–70.
+            Cationes: K⁺ 10–65, Ca²⁺ 22.5–62.5, Mg²⁺ 0.5–40.
+            El % de NH₄⁺ se calcula sobre el total de cationes (K+Ca+Mg+NH₄⁺) y no entra en el triángulo.
           </div>
           <div id="hydroTriangleInfoCombined" class="hydro-muted" style="margin-bottom:8px;"></div>
           <div id="hydroTriangleCombined" class="hydro-triangle"></div>
