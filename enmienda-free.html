@@ -37,6 +37,32 @@
       .ideal-ranges h3 { font-size: 0.9rem; }
       .total-display { flex-wrap: wrap; }
 
+      /* En móvil: mostrar estas secciones en 3 columnas */
+      .ranges-grid,
+      .analysis-grid,
+      .target-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      }
+      .analysis-item,
+      .target-item,
+      .range-item {
+        min-width: 0;
+      }
+      .analysis-item label,
+      .target-item label,
+      .range-item {
+        font-size: 12px;
+        line-height: 1.2;
+      }
+      .analysis-input,
+      .target-input {
+        font-size: 12px;
+        padding: 8px 6px;
+      }
+      .percent-display {
+        font-size: 11px;
+      }
+
       /* Evita que se corte la fila final (suelo explorado + botones) */
       .calculation-actions {
         flex-wrap: wrap;
