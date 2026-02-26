@@ -220,6 +220,15 @@ body {
 
 /* Solo celular: sidebar overlay, cerrado por defecto, expandido/minimizado */
 @media (max-width: 768px) {
+  .layout {
+    min-height: calc(100svh - 48px);
+  }
+
+  .content {
+    min-height: calc(100svh - 48px);
+    padding-bottom: 104px;
+  }
+
   .sidebar {
     top: 48px;
     bottom: 0;
@@ -242,6 +251,30 @@ body {
   .sidebar-toggle,
   .sidebar-close {
     display: none !important;
+  }
+
+  .site-footer {
+    position: fixed;
+    left: var(--sidebar-w);
+    right: 0;
+    bottom: 0;
+    width: calc(100vw - var(--sidebar-w));
+    margin-top: 0;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(248, 250, 252, 0.98);
+    border-top: 1px solid #e5e7eb;
+    z-index: 45;
+  }
+
+  .footer-content {
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .footer-info,
+  .footer-contact {
+    font-size: 12px;
   }
 
   /* En móvil, estado minimizado controlado por clase (no por :hover) */
