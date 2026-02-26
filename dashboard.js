@@ -139,16 +139,27 @@ function initializeSidebar() {
     sidebarOverlay.addEventListener('click', closeSidebar);
   }
 
-  // En móvil/tablet: tocar el logo de la hoja abre o cierra la barra (toggle)
+  // En móvil/tablet: tocar el logo abre / minimiza / expande (no cierra del todo)
   const sidebarLogo = sidebar && sidebar.querySelector('.sidebar-logo');
   if (sidebarLogo) {
     sidebarLogo.addEventListener('click', function(e) {
       if (window.innerWidth <= 1024) {
         e.preventDefault();
         e.stopPropagation();
-        toggleSidebar();
+        if (!isSidebarOpen()) {
+          openSidebar();
+        } else if (isSidebarMinimized()) {
+          expandSidebar();
+        } else {
+          minimizeSidebar();
+        }
       }
     });
+  }
+
+  // En móvil, empezar con la barra cerrada
+  if (window.innerWidth <= 1024) {
+    closeSidebar();
   }
 
   // Cerrar sidebar al cambiar de sección en móvil
@@ -176,46 +187,59 @@ function toggleSidebar() {
   }
 }
 
-// Función para abrir sidebar
+// Función para abrir sidebar (expandido: ancho completo + overlay)
 function openSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  
   if (sidebar) {
     sidebar.style.transform = 'translateX(0)';
     sidebar.classList.add('open');
+    sidebar.classList.remove('sidebar-minimized');
   }
-  
-  if (overlay) {
-    overlay.classList.add('show');
-  }
-  
-  // Prevenir scroll del body
+  if (overlay) overlay.classList.add('show');
   document.body.style.overflow = 'hidden';
 }
 
-// Función para cerrar sidebar
-function closeSidebar() {
+// Función para expandir sidebar (cuando estaba minimizado)
+function expandSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  
-  if (sidebar) {
-    sidebar.style.transform = 'translateX(-100%)';
-    sidebar.classList.remove('open');
-  }
-  
-  if (overlay) {
-    overlay.classList.remove('show');
-  }
-  
-  // Restaurar scroll del body
+  if (sidebar) sidebar.classList.remove('sidebar-minimized');
+  if (overlay) overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+// Función para minimizar sidebar en móvil (barra estrecha, sin overlay)
+function minimizeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sidebar) sidebar.classList.add('sidebar-minimized');
+  if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
 }
 
-// Función para verificar si el sidebar está abierto
+// Función para cerrar sidebar por completo
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sidebar) {
+    sidebar.style.transform = 'translateX(-100%)';
+    sidebar.classList.remove('open', 'sidebar-minimized');
+  }
+  if (overlay) overlay.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// Función para verificar si el sidebar está abierto (expandido o minimizado)
 function isSidebarOpen() {
   const sidebar = document.getElementById('sidebar');
   return sidebar && sidebar.classList.contains('open');
+}
+
+// Función para verificar si el sidebar está minimizado
+function isSidebarMinimized() {
+  const sidebar = document.getElementById('sidebar');
+  return sidebar && sidebar.classList.contains('sidebar-minimized');
 }
 
 // ============================

@@ -189,6 +189,12 @@ body {
   transition: opacity 0.3s ease;
 }
 
+.sidebar-overlay.show {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* Botón de cerrar en sidebar */
 .sidebar-close {
   display: none;
@@ -210,6 +216,28 @@ body {
 .sidebar-close:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: scale(1.1);
+}
+
+/* Móvil/tablet: sidebar overlay, cerrado por defecto, expandido/minimizado */
+@media (max-width: 1024px) {
+  .layout {
+    padding-left: 0;
+  }
+  .sidebar:not(.open) {
+    transform: translateX(-100%);
+  }
+  .sidebar.open {
+    width: var(--sidebar-w-expanded);
+  }
+  .sidebar.open.sidebar-minimized {
+    width: var(--sidebar-w);
+  }
+  .sidebar-toggle,
+  .sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 /* ===== SCROLLBAR DEL SIDEBAR ===== */
