@@ -414,16 +414,16 @@
 /* Responsive: misma estructura que laptop, solo ajustes de espacio */
 @media (max-width: 768px) {
   .auth-header .brandline {
-    height: auto;
-    min-height: 56px;
-    padding: 10px 12px;
-    flex-wrap: wrap;
+    height: 48px;
+    min-height: 48px;
+    padding: 0 10px;
+    flex-wrap: nowrap;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
   }
   
   .auth-header .brand-section {
-    min-width: 80px;
+    min-width: 70px;
     height: 40px;
   }
   
@@ -433,24 +433,21 @@
   }
   
   .auth-header .social-links {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-end;
-    gap: 8px;
-    max-width: calc(100% - 96px);
-  }
-
-  /* En móvil: primer renglón = iconos, segundo renglón = solo "Nosotros" */
-  .auth-header .social-links a.social-btn {
-    order: 1;
+    gap: 6px;
+    max-width: none;
   }
   
   .auth-header .social-links button.social-btn {
-    order: 2;
-    flex-basis: 100%;
+    flex-basis: auto;
     justify-content: center;
-    padding: 6px 10px;
-    font-size: 12px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 0;
     margin-right: 0;
+    border-radius: 8px;
   }
   
   .auth-header .social-links .social-icon {
@@ -460,7 +457,7 @@
   
   .auth-main {
     padding: 20px 16px;
-    margin-top: 112px;
+    margin-top: 96px;
   }
   
   .auth-card {
