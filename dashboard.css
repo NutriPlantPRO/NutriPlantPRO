@@ -221,7 +221,8 @@ body {
 /* Solo celular: sidebar overlay, cerrado por defecto, expandido/minimizado */
 @media (max-width: 768px) {
   .layout {
-    padding-left: 0;
+    /* Reservar el ancho minimizado para que no tape el contenido */
+    padding-left: var(--sidebar-w);
   }
   .sidebar {
     transform: translateX(0) !important;
