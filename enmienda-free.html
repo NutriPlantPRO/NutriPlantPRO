@@ -36,6 +36,38 @@
       .ideal-ranges { padding: 10px; }
       .ideal-ranges h3 { font-size: 0.9rem; }
       .total-display { flex-wrap: wrap; }
+
+      /* Evita que se corte la fila final (suelo explorado + botones) */
+      .calculation-actions {
+        flex-wrap: wrap;
+        justify-content: stretch;
+        gap: 10px;
+      }
+      .soil-reach-card {
+        flex: 1 1 100%;
+        min-width: 0;
+        justify-content: space-between;
+        padding: 10px 12px;
+      }
+      .soil-reach-card label {
+        font-size: 13px;
+        line-height: 1.25;
+        margin-right: 8px;
+      }
+      .soil-reach-input {
+        flex-shrink: 0;
+      }
+      .soil-reach-input input {
+        width: 72px;
+      }
+      .btn-calculate,
+      .btn-reset {
+        flex: 1 1 calc(50% - 5px);
+        min-width: 0;
+        padding: 11px 10px;
+        font-size: 14px;
+        text-align: center;
+      }
     }
   </style>
 </head>
