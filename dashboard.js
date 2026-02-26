@@ -143,7 +143,7 @@ function initializeSidebar() {
   const sidebarLogo = sidebar && sidebar.querySelector('.sidebar-logo');
   if (sidebarLogo) {
     sidebarLogo.addEventListener('click', function(e) {
-      if (window.innerWidth <= 1024) {
+      if (window.innerWidth <= 768) {
         e.preventDefault();
         e.stopPropagation();
         if (!isSidebarOpen()) {
@@ -155,11 +155,6 @@ function initializeSidebar() {
         }
       }
     });
-  }
-
-  // En móvil, empezar con la barra cerrada
-  if (window.innerWidth <= 1024) {
-    closeSidebar();
   }
 
   // Cerrar sidebar al cambiar de sección en móvil

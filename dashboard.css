@@ -218,8 +218,8 @@ body {
   transform: scale(1.1);
 }
 
-/* Móvil/tablet: sidebar overlay, cerrado por defecto, expandido/minimizado */
-@media (max-width: 1024px) {
+/* Solo celular: sidebar overlay, cerrado por defecto, expandido/minimizado */
+@media (max-width: 768px) {
   .layout {
     padding-left: 0;
   }
