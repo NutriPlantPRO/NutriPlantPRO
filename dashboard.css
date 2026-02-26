@@ -223,8 +223,8 @@ body {
   .layout {
     padding-left: 0;
   }
-  .sidebar:not(.open) {
-    transform: translateX(-100%);
+  .sidebar {
+    transform: translateX(0) !important;
   }
   .sidebar.open {
     width: var(--sidebar-w-expanded);
@@ -234,9 +234,7 @@ body {
   }
   .sidebar-toggle,
   .sidebar-close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: none !important;
   }
 
   /* En touch no hay :hover; si está abierto (y no minimizado), forzar vista expandida */

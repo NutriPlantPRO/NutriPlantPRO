@@ -157,6 +157,14 @@ function initializeSidebar() {
     });
   }
 
+  // En celular: comportamiento como laptop (sidebar siempre visible, inicia minimizado)
+  if (window.innerWidth <= 768 && sidebar) {
+    sidebar.style.transform = 'translateX(0)';
+    sidebar.classList.add('open', 'sidebar-minimized');
+    if (sidebarOverlay) sidebarOverlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
   // Cerrar sidebar al cambiar de sección en móvil
   document.addEventListener('click', function(e) {
     if (window.innerWidth <= 768) {
@@ -164,7 +172,7 @@ function initializeSidebar() {
       const isToggleClick = sidebarToggle && sidebarToggle.contains(e.target);
       
       if (!isSidebarClick && !isToggleClick && isSidebarOpen()) {
-        closeSidebar();
+        minimizeSidebar();
       }
     }
   });
@@ -191,8 +199,13 @@ function openSidebar() {
     sidebar.classList.add('open');
     sidebar.classList.remove('sidebar-minimized');
   }
-  if (overlay) overlay.classList.add('show');
-  document.body.style.overflow = 'hidden';
+  if (window.innerWidth <= 768) {
+    if (overlay) overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  } else {
+    if (overlay) overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
 }
 
 // Función para expandir sidebar (cuando estaba minimizado)
@@ -200,8 +213,13 @@ function expandSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
   if (sidebar) sidebar.classList.remove('sidebar-minimized');
-  if (overlay) overlay.classList.add('show');
-  document.body.style.overflow = 'hidden';
+  if (window.innerWidth <= 768) {
+    if (overlay) overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  } else {
+    if (overlay) overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
 }
 
 // Función para minimizar sidebar en móvil (barra estrecha, sin overlay)
@@ -215,6 +233,10 @@ function minimizeSidebar() {
 
 // Función para cerrar sidebar por completo
 function closeSidebar() {
+  if (window.innerWidth <= 768) {
+    minimizeSidebar();
+    return;
+  }
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
   if (sidebar) {
