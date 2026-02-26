@@ -146,15 +146,17 @@ function initializeSidebar() {
     if (window.innerWidth <= 768) {
       e.preventDefault();
       e.stopPropagation();
-      if (isSidebarMinimized()) {
-        expandSidebar();
-      } else {
-        minimizeSidebar();
-      }
+      if (!sidebar) return;
+      sidebar.style.transform = 'translateX(0)';
+      sidebar.classList.add('open');
+      sidebar.classList.toggle('sidebar-minimized');
+      if (sidebarOverlay) sidebarOverlay.classList.remove('show');
+      document.body.style.overflow = '';
     }
   };
-  if (sidebarLogo) sidebarLogo.addEventListener('click', handleLogoToggle);
-  if (sidebarBrand) sidebarBrand.addEventListener('click', handleLogoToggle);
+  const logoEventName = (typeof window !== 'undefined' && window.PointerEvent) ? 'pointerup' : 'click';
+  if (sidebarLogo) sidebarLogo.addEventListener(logoEventName, handleLogoToggle);
+  if (sidebarBrand) sidebarBrand.addEventListener(logoEventName, handleLogoToggle);
 
   // En celular: comportamiento como laptop (sidebar siempre visible, inicia minimizado)
   if (window.innerWidth <= 768 && sidebar) {
