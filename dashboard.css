@@ -220,13 +220,6 @@ body {
 
 /* Solo celular: sidebar overlay, cerrado por defecto, expandido/minimizado */
 @media (max-width: 768px) {
-  .layout {
-    /* Reservar el ancho minimizado para que no tape el contenido */
-    padding-left: var(--sidebar-w);
-    min-height: calc(100svh - 48px);
-    height: auto;
-    overflow-x: hidden;
-  }
   .sidebar {
     top: 48px;
     bottom: 0;
@@ -243,24 +236,6 @@ body {
   .sidebar-toggle,
   .sidebar-close {
     display: none !important;
-  }
-
-  /* Footer abajo en móvil cuando hay poco contenido */
-  .content {
-    min-height: calc(100svh - 48px);
-    height: auto;
-    width: calc(100vw - var(--sidebar-w));
-    max-width: calc(100vw - var(--sidebar-w));
-    overflow-x: hidden;
-  }
-
-  .view {
-    overflow-x: hidden;
-  }
-
-  .site-footer {
-    margin-top: auto;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
   /* En touch no hay :hover; si está abierto (y no minimizado), forzar vista expandida */
