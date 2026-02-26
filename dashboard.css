@@ -238,6 +238,98 @@ body {
     align-items: center;
     justify-content: center;
   }
+
+  /* En touch no hay :hover; si está abierto (y no minimizado), forzar vista expandida */
+  .sidebar.open:not(.sidebar-minimized) .sidebar a .label,
+  .sidebar.open:not(.sidebar-minimized) .sidebar a.active .label {
+    display: inline !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: static !important;
+    left: auto !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+  }
+
+  .sidebar.open:not(.sidebar-minimized) nav a {
+    justify-content: flex-start !important;
+  }
+
+  .sidebar.open:not(.sidebar-minimized) .sb-title-card .text {
+    color: #e2e8f0 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .sidebar.open:not(.sidebar-minimized) .sb-card .title .text {
+    color: inherit !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .sidebar.open:not(.sidebar-minimized) .sb-card .title .t {
+    justify-content: flex-start !important;
+  }
+
+  .sidebar.open:not(.sidebar-minimized) .sb-card .info-icon,
+  .sidebar.open:not(.sidebar-minimized) .sb-card .analysis-icon {
+    position: static;
+    left: auto;
+    top: auto;
+    transform: none;
+  }
+
+  .sidebar.open:not(.sidebar-minimized) .sb-chiprow {
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    text-align: left !important;
+    gap: 20px !important;
+  }
+
+  .sidebar.open:not(.sidebar-minimized) .sb-chip {
+    width: auto !important;
+    height: 32px !important;
+    border-radius: 16px !important;
+    padding: 6px 12px !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    background: transparent !important;
+    border: none !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+  }
+
+  .sidebar.open:not(.sidebar-minimized) .sb-chip span.text {
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: auto !important;
+    overflow: visible !important;
+  }
+
+  .sidebar.open:not(.sidebar-minimized) .logout {
+    width: calc(100% - 16px) !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+    margin: 24px 8px 8px 8px !important;
+    border-radius: 20px !important;
+    padding: 10px 16px !important;
+    gap: 6px !important;
+  }
+
+  .sidebar.open:not(.sidebar-minimized) .logout .logout-text {
+    display: inline !important;
+  }
+
+  .sidebar.open:not(.sidebar-minimized) .logout .logout-icon svg {
+    width: auto !important;
+    height: auto !important;
+  }
 }
 
 /* ===== SCROLLBAR DEL SIDEBAR ===== */
