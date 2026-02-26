@@ -1785,6 +1785,15 @@ body {
   margin: 0 !important;
 }
 
+.logout .logout-icon svg {
+  display: block;
+  flex-shrink: 0;
+}
+.sidebar:not(:hover) .logout .logout-icon svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
 /* ===== SECCIÓN UBICACIÓN ===== */
 .location-container {
   display: flex;
