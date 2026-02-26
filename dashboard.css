@@ -4337,7 +4337,8 @@ body {
   }
 
   .nutrient-conversions-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .conversion-inputs {
@@ -4345,7 +4346,28 @@ body {
   }
 
   .conversion-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .nutrient-conversion-group,
+  .conversion-item {
+    min-width: 0;
+    padding: 10px;
+  }
+
+  .nutrient-label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .nutrient-label strong {
+    font-size: 0.95rem;
+  }
+
+  .nutrient-info {
+    font-size: 0.75rem;
   }
 
   .conversion-formula {
