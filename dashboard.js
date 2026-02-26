@@ -138,7 +138,19 @@ function initializeSidebar() {
   if (sidebarOverlay) {
     sidebarOverlay.addEventListener('click', closeSidebar);
   }
-  
+
+  // En móvil/tablet: tocar el logo de la hoja abre o cierra la barra (toggle)
+  const sidebarLogo = sidebar && sidebar.querySelector('.sidebar-logo');
+  if (sidebarLogo) {
+    sidebarLogo.addEventListener('click', function(e) {
+      if (window.innerWidth <= 1024) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleSidebar();
+      }
+    });
+  }
+
   // Cerrar sidebar al cambiar de sección en móvil
   document.addEventListener('click', function(e) {
     if (window.innerWidth <= 768) {
