@@ -10,7 +10,9 @@
 
   window.NUTRIPLANT_APP = {
     // Producción: '' (mismo origen). Desarrollo con file://: 'http://localhost:8000'
-    apiBaseUrl: ''
+    apiBaseUrl: '',
+    // Google Analytics 4: pega aquí tu Measurement ID (ej. G-XXXXXXXXXX). Vacío = no se envía analytics.
+    googleAnalyticsMeasurementId: 'G-1R237KJ2PF'
   };
 
   /** Devuelve la base URL del backend (sin / al final). Usado por chat, dashboard y admin. */

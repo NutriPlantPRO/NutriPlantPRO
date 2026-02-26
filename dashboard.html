@@ -16,7 +16,24 @@
   
     <link rel="stylesheet" href="dashboard.css?v=1758328000" />
   <link rel="stylesheet" href="chat.css" />
+  <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
+  <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
+  <script>
+    (function(){
+      var id = (window.NUTRIPLANT_APP && window.NUTRIPLANT_APP.googleAnalyticsMeasurementId) || '';
+      if (!id) return;
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push(arguments); }
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', id, { page_title: 'Dashboard', page_location: window.location.href });
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+      document.head.appendChild(s);
+    })();
+  </script>
 </head>
 <body>
   <script>

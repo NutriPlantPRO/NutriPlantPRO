@@ -15,7 +15,24 @@
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=3" />
   <link rel="stylesheet" href="auth.css?v=3" />
+  <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
+  <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
+  <script>
+    (function(){
+      var id = (window.NUTRIPLANT_APP && window.NUTRIPLANT_APP.googleAnalyticsMeasurementId) || '';
+      if (!id) return;
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push(arguments); }
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', id, { page_title: 'Login', page_location: window.location.href });
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+      document.head.appendChild(s);
+    })();
+  </script>
 </head>
 <body class="auth-page">
   <!-- Header consistente con el dashboard -->
