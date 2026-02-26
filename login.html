@@ -899,6 +899,101 @@
     .btn-primary:hover {
       background-color: #0056b3;
     }
+
+    /* === Móvil: calculadoras y modales sin cortar (laptop igual) === */
+    @media (max-width: 768px) {
+      .modal {
+        width: 95%;
+        max-width: none;
+        max-height: 88vh;
+        border-radius: 12px;
+        margin: 12px;
+      }
+      .modal-header {
+        padding: 14px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .modal-title {
+        font-size: 1.1rem;
+        line-height: 1.35;
+        word-break: break-word;
+        flex: 1;
+        min-width: 0;
+      }
+      .modal-close {
+        flex-shrink: 0;
+      }
+      .modal-body {
+        padding: 16px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .modal-footer {
+        padding: 14px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .conversion-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .conversion-item {
+        padding: 12px;
+        min-width: 0;
+      }
+      .conversion-formula {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .conversion-formula input {
+        min-width: 0;
+        flex: 1 1 70px;
+        max-width: 100%;
+      }
+      .conversion-formula span {
+        width: 100%;
+        text-align: center;
+        order: 2;
+      }
+      .conversion-section h3 {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .modal {
+        width: 100%;
+        max-height: 92vh;
+        margin: 0;
+        border-radius: 12px 12px 0 0;
+      }
+      .modal-header {
+        padding: 12px 14px;
+      }
+      .modal-title {
+        font-size: 1rem;
+      }
+      .modal-body {
+        padding: 12px;
+      }
+      .conversion-item {
+        padding: 10px;
+      }
+      .conversion-formula {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .conversion-formula input {
+        flex: none;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .conversion-formula span {
+        order: 0;
+        text-align: left;
+      }
+    }
   </style>
   
   <script>

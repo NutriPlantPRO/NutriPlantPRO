@@ -110,6 +110,43 @@ Cuando tengas al menos la URL de Netlify (aunque sea la .netlify.app), **avísam
 
 ---
 
+## PASO 4b — Pasar al dominio propio
+
+Para que la web se vea en **tu dominio** (ej. nutriplantpro.com) en lugar de rad-blancmange-dbff44.netlify.app:
+
+### En Netlify
+1. Entra a tu sitio en Netlify (rad-blancmange-dbff44 o el nombre que tenga).
+2. En el menú izquierdo: **Domain management** (o **Domain settings**).
+3. Clic en **Add custom domain** o **Add domain**.
+4. Escribe tu dominio (ej. `nutriplantpro.com`) y **Verify** / **Add**.
+5. Netlify te dirá qué registro DNS crear. Suele ser:
+   - **Para usar solo tu dominio (www y sin www):**  
+     Crear un registro **CNAME** o **A** según lo que pida Netlify (te mostrará un valor tipo `rad-blancmange-dbff44.netlify.app` o una IP).
+
+### En donde compraste el dominio (GoDaddy, Namecheap, Google Domains, etc.)
+6. Entra al panel de **DNS** o **Gestión de DNS** del dominio.
+7. Añade el registro que Netlify te indicó:
+   - Si Netlify pide **CNAME** para `www`: nombre `www`, valor el que te dé Netlify (ej. `rad-blancmange-dbff44.netlify.app`).
+   - Si pide **A** para la raíz (@): nombre `@` o el dominio, valor la IP que te dé Netlify (ej. `75.2.60.5`).
+8. Guarda y espera 5–60 minutos (a veces tarda un poco). En Netlify, **Verify** de nuevo hasta que ponga **Verified** o **Netlify DNS**.
+
+### Después de que el dominio apunte a Netlify
+9. **Supabase:** En tu proyecto → **Authentication** → **URL Configuration** → **Redirect URLs** y **Site URL**: añade `https://tudominio.com` y `https://www.tudominio.com` (y `https://tudominio.com/login.html` si hace falta).
+10. **PayPal** (si usas suscripciones): en la app de PayPal añade la URL de producción en las URLs de retorno/cancelación si las tienes configuradas.
+
+### Namecheap (paso a paso)
+1. Entra a **namecheap.com** e inicia sesión.
+2. **Domain List** → **Manage** en **nutriplantpro.com**.
+3. Pestaña **Advanced DNS**.
+4. **Raíz:** Add New Record → **A Record** → Host **@** → Value **75.2.60.5** → Guardar.
+5. **www:** Add New Record → **CNAME Record** → Host **www** → Value **rad-blancmange-dbff44.netlify.app** → Guardar.
+6. Si ya existe A o CNAME para @ o www, edítalo o bórralo.
+7. Espera 5–30 min; en Netlify → **Verify DNS configuration**.
+
+Si me dices **en qué compañía tienes el dominio** (GoDaddy, Namecheap, etc.), te digo exactamente en qué menú está “DNS” y qué campos rellenar.
+
+---
+
 ## PASO 5 — Después de esto: cómo seguir trabajando (y con mi apoyo)
 
 - **Seguir editando:** igual que hasta ahora. Abres **Cursor**, abres la carpeta **“MI PROYECTO”** y editamos archivos. Nada cambia en tu forma de trabajar.

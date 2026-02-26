@@ -413,18 +413,22 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
+  /* En móvil: logo arriba, redes abajo en su propia fila para que no se corten */
   .auth-header .brandline {
     height: auto;
-    min-height: 56px;
-    padding: 10px 12px;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 8px;
+    min-height: auto;
+    padding: 10px 12px 12px;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
   }
   
   .auth-header .brand-section {
-    min-width: 80px;
+    min-width: 0;
     height: 40px;
+    flex-shrink: 0;
   }
   
   .auth-logo {
@@ -432,16 +436,19 @@
     max-height: 36px;
   }
   
-  /* En móvil: redes pueden pasar a segunda línea si no caben */
+  /* Redes en segunda fila, siempre visibles */
   .auth-header .social-links {
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 8px;
+    width: 100%;
+    order: 2;
   }
   
   .auth-header .social-links button.social-btn {
     padding: 6px 10px;
     font-size: 12px;
+    margin-right: 0;
   }
   
   .auth-header .social-links .social-icon {
@@ -450,13 +457,34 @@
   }
   
   .auth-main {
-    padding: 20px 16px;
-    margin-top: 96px; /* Espacio para el header (puede crecer si las redes pasan a 2 líneas) */
+    padding: 16px 12px;
+    margin-top: 120px; /* Espacio para header de 2 filas (logo + redes) */
+    align-items: flex-start;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+  
+  .auth-container {
+    max-width: 100%;
   }
   
   .auth-card {
-    padding: 32px 24px;
+    padding: 28px 20px;
     border-radius: 16px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Calculadoras gratis: botones más cómodos en móvil */
+  .auth-card .calculator-btn {
+    padding: 14px 16px;
+    font-size: 15px;
+    text-align: left;
+  }
+  
+  .auth-card .calculator-btn .button-text {
+    font-size: 14px;
+    line-height: 1.35;
   }
   
   .auth-title {
@@ -478,8 +506,20 @@
 }
 
 @media (max-width: 480px) {
+  .auth-main {
+    padding: 12px 10px;
+  }
+  
   .auth-card {
-    padding: 24px 20px;
+    padding: 22px 16px;
+  }
+  
+  .auth-card .calculator-btn {
+    padding: 12px 14px;
+  }
+  
+  .auth-card .calculator-btn .button-text {
+    font-size: 13px;
   }
   
   .auth-title {
