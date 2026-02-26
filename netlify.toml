@@ -1,0 +1,14 @@
+# NutriPlant PRO - Netlify
+# Publicar: carpeta raíz (.)
+# La API de OpenAI se sirve como función serverless (la clave va en variables de entorno).
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Para que el frontend pueda llamar a /api/openai-assistant (igual que en local)
+[[redirects]]
+  from = "/api/openai-assistant"
+  to = "/.netlify/functions/openai-assistant"
+  status = 200
+  force = true

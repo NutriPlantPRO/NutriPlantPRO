@@ -163,6 +163,23 @@ Si me dices **en qué compañía tienes el dominio** (GoDaddy, Namecheap, etc.),
 
 ---
 
+## PASO 5b — API de OpenAI (chat IA) en el dominio
+
+Para que el **chat con IA** funcione en nutriplantpro.com (y no solo en local con `python3 server.py`), la clave de OpenAI va en **Netlify**, no en el código.
+
+1. Entra a **Netlify** → tu sitio NutriPlant PRO.
+2. Menú izquierdo: **Site configuration** → **Environment variables** (o **Build & deploy** → **Environment**).
+3. Clic en **Add a variable** o **Add variable** / **New variable**.
+4. **Key:** `OPENAI_API_KEY`  
+   **Value:** tu clave de OpenAI (empieza por `sk-proj-...` o `sk-...`). La ves en [platform.openai.com](https://platform.openai.com) → API keys.
+5. Guarda. Si Netlify te pregunta “Redeploy?”, haz **Deploy** para que la función use la nueva variable.
+
+El proyecto ya incluye una **función serverless** (`netlify/functions/openai-assistant.js`) que hace de proxy: el navegador llama a `tu-dominio.com/api/openai-assistant` y Netlify ejecuta esa función usando `OPENAI_API_KEY` por detrás. La clave nunca se envía al navegador.
+
+Si el chat en el dominio sigue sin responder, revisa en Netlify que la variable se llame exactamente `OPENAI_API_KEY` y que hayas hecho un deploy después de añadirla.
+
+---
+
 ## Resumen rápido
 
 | Qué quieres hacer | Dónde / cómo |
