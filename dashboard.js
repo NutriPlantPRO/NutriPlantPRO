@@ -7409,7 +7409,23 @@ window.downloadReport = function(reportId) {
       showMessage('⚠️ Este reporte no contiene secciones válidas para PDF.', 'warning');
       return;
     }
-    const reportHTML = createReportHTML(printableSections);
+    // Capturar gráficas de fertirriego (Macro/Micro) si la sección va en el PDF y los canvas existen
+    var chartImages = {};
+    if (printableSections.indexOf('fertigation') >= 0) {
+      try {
+        var macroCanvas = document.getElementById('fertiMacroChart');
+        var microCanvas = document.getElementById('fertiMicroChart');
+        if (macroCanvas && macroCanvas.width > 0 && macroCanvas.height > 0) {
+          chartImages.macro = macroCanvas.toDataURL('image/png');
+        }
+        if (microCanvas && microCanvas.width > 0 && microCanvas.height > 0) {
+          chartImages.micro = microCanvas.toDataURL('image/png');
+        }
+      } catch (e) {
+        console.warn('No se pudieron capturar gráficas de fertirriego para el PDF:', e);
+      }
+    }
+    const reportHTML = createReportHTML(printableSections, chartImages);
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       showMessage('❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.', 'error');
@@ -10441,8 +10457,8 @@ function generatePDFContent(selectedSections) {
   }
 }
 
-// Función para crear el HTML del reporte
-function createReportHTML(selectedSections) {
+// Función para crear el HTML del reporte (chartImages opcional: { macro, micro } data URLs para gráficas de fertirriego)
+function createReportHTML(selectedSections, chartImages) {
   const currentDate = new Date().toLocaleDateString('es-ES');
   const projectName = currentProject.name || 'Proyecto NutriPlant';
   const projectCampoSector = currentProject.campoOsector || currentProject.campo_sector || 'No especificado';
@@ -10462,7 +10478,15 @@ function createReportHTML(selectedSections) {
     }
   }
   const safeReportAuthorName = (typeof escapeHtml === 'function') ? escapeHtml(String(reportAuthorName)) : String(reportAuthorName);
-  
+  // URL absoluta para assets (evita que en celular/print no carguen imagen ni marcas de agua)
+  let reportAssetBase = '';
+  try {
+    var a = document.createElement('a');
+    a.href = 'assets/NutriPlant_PRO_blue.png';
+    reportAssetBase = a.href.replace(/[^/]+$/, '');
+  } catch (e) {}
+  if (!reportAssetBase) reportAssetBase = window.location.origin + '/assets/';
+
   let html = `
     <!DOCTYPE html>
     <html lang="es" class="notranslate" translate="no">
@@ -10876,12 +10900,12 @@ function createReportHTML(selectedSections) {
       </style>
     </head>
     <body class="notranslate" translate="no">
-      <img src="assets/NutriPlant_PRO_blue.png" alt="" class="report-watermark-corner" aria-hidden="true">
+      <img src="${reportAssetBase}NutriPlant_PRO_blue.png" alt="" class="report-watermark-corner" aria-hidden="true">
       <div class="report-main">
         <div class="header">
           <div class="logo">
             <span class="logo-text">NutriPlant PRO</span>
-            <img src="assets/N_Hoja_Azul.png" alt="NutriPlant PRO" class="logo-icon">
+            <img src="${reportAssetBase}N_Hoja_Azul.png" alt="NutriPlant PRO" class="logo-icon">
           </div>
           <h1>Reporte de Análisis Agrícola</h1>
         </div>
@@ -10913,9 +10937,10 @@ function createReportHTML(selectedSections) {
         </div>
   `;
   
-  // Agregar secciones seleccionadas
+  // Agregar secciones seleccionadas (chartImages para gráficas de fertirriego en PDF)
+  const chartImgs = chartImages || {};
   selectedSections.forEach((sectionId, idx) => {
-    let sectionHTML = createSectionHTML(sectionId);
+    let sectionHTML = createSectionHTML(sectionId, chartImgs);
     if (typeof sectionHTML === 'string' && sectionHTML.includes('class="section"')) {
       sectionHTML = sectionHTML.replace(
         'class="section"',
@@ -10935,7 +10960,7 @@ function createReportHTML(selectedSections) {
             </div>
             <div class="report-generated-by">Generado por: <strong>${safeReportAuthorName}</strong></div>
           </div>
-          <img src="assets/N_Hoja_Azul.png" alt="" class="footer-leaf-watermark" aria-hidden="true">
+          <img src="${reportAssetBase}N_Hoja_Azul.png" alt="" class="footer-leaf-watermark" aria-hidden="true">
         </div>
       </div>
     </div>
@@ -10946,8 +10971,8 @@ function createReportHTML(selectedSections) {
   return html;
 }
 
-// Función para crear HTML de cada sección
-function createSectionHTML(sectionId) {
+// Función para crear HTML de cada sección (chartImages opcional para fertirriego)
+function createSectionHTML(sectionId, chartImages) {
   let html = '';
   
   switch (sectionId) {
@@ -10958,7 +10983,7 @@ function createSectionHTML(sectionId) {
       html += createAmendmentsSectionHTML();
       break;
     case 'fertigation':
-      html += createFertigationSectionHTML();
+      html += createFertigationSectionHTML(chartImages);
       break;
     case 'analysis':
       html += createAnalysisSectionHTML();
@@ -11590,11 +11615,12 @@ function reportEscapeHtml(s) {
   return div.innerHTML;
 }
 
-function createFertigationSectionHTML() {
+function createFertigationSectionHTML(chartImages) {
   const f = currentProject.fertirriego || {};
   const req = f.requirements || {};
   const prog = f.program || {};
   const crop = req.cropType || 'N/D';
+  const hasCharts = chartImages && (chartImages.macro || chartImages.micro);
   const targetYield = Number(req.targetYield) || 0;
   const reqModeIsElemental = !!req.isElementalMode;
   const programModeIsElemental = !!prog.mode;
@@ -11747,9 +11773,20 @@ function createFertigationSectionHTML() {
     </tr>
   `).join('');
 
+  const chartsBlock = hasCharts ? `
+      <div class="report-block" style="border-color:#93c5fd;background:#eff6ff;">
+        <div class="report-block-title">📈 Gráficas de Fertirriego</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+          ${chartImages.macro ? `<div><div class="report-subtitle" style="margin-bottom:6px;">Macronutrientes</div><img src="${chartImages.macro}" alt="Macronutrientes" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>` : ''}
+          ${chartImages.micro ? `<div><div class="report-subtitle" style="margin-bottom:6px;">Micronutrientes</div><img src="${chartImages.micro}" alt="Micronutrientes" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>` : ''}
+        </div>
+      </div>
+  ` : '';
+
   return `
     <div class="section">
       <h2 class="section-title">💧 Fertirriego</h2>
+      ${chartsBlock}
       <div class="report-block" style="border-color:#99f6e4;background:#ecfeff;">
         <div class="report-block-title">📋 Requerimiento Nutricional <span class="report-mode-badge">${reqModeIsElemental ? 'Modo Elemental' : 'Modo Óxido'}</span></div>
         <div class="report-kv">
