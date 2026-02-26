@@ -40,6 +40,26 @@
       color: #0f172a;
       font-weight: 800;
     }
+    /* Móvil: alinear inputs Temp y Humedad (misma altura) */
+    @media (max-width: 600px) {
+      .vpd-grid-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .vpd-grid-cell label {
+        min-height: 2.8em;
+        display: flex;
+        align-items: flex-end;
+        margin-bottom: 8px;
+      }
+      .vpd-grid-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        align-items: end;
+      }
+    }
   </style>
 </head>
 <body>
@@ -51,12 +71,12 @@
     <div style="background:#f0f9ff;border:2px solid #0ea5e9;border-radius:12px;padding:24px;margin-bottom:24px;">
       <h3 style="margin:0 0 20px;color:#0369a1;font-size:18px;font-weight:600;">📊 Calculadora Ambiental Simple</h3>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-        <div style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
+      <div class="vpd-grid-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div class="vpd-grid-cell" style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
           <label style="display:block;margin-bottom:8px;font-weight:500;color:#374151;">🌡️ Temperatura del Aire (°C)</label>
           <input id="vpd-env-temp" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="Ej: 20.5" />
         </div>
-        <div style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
+        <div class="vpd-grid-cell" style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
           <label style="display:block;margin-bottom:8px;font-weight:500;color:#374151;">💧 Humedad Relativa (%)</label>
           <input id="vpd-env-humidity" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="Ej: 85" />
         </div>
@@ -69,12 +89,12 @@
     <div style="background:#f0fdf4;border:2px solid #22c55e;border-radius:12px;padding:24px;">
       <h3 style="margin:0 0 20px;color:#15803d;font-size:18px;font-weight:600;">🔬 Calculadora Avanzada</h3>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-        <div style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
+      <div class="vpd-grid-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div class="vpd-grid-cell" style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
           <label style="display:block;margin-bottom:8px;font-weight:500;color:#374151;">🌡️ Temperatura del Aire (°C)</label>
           <input id="vpd-adv-air-temp" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="Ej: 25" />
         </div>
-        <div style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
+        <div class="vpd-grid-cell" style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
           <label style="display:block;margin-bottom:8px;font-weight:500;color:#374151;">💧 Humedad Relativa (%)</label>
           <input id="vpd-adv-humidity" type="number" step="0.1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;" placeholder="Ej: 80" />
         </div>
