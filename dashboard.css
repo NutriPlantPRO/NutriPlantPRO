@@ -226,7 +226,6 @@ body {
 
   .content {
     min-height: calc(100svh - 48px);
-    padding-bottom: 104px;
   }
 
   .sidebar {
@@ -254,27 +253,8 @@ body {
   }
 
   .site-footer {
-    position: fixed;
-    left: var(--sidebar-w);
-    right: 0;
-    bottom: 0;
-    width: calc(100vw - var(--sidebar-w));
-    margin-top: 0;
-    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-    background: rgba(248, 250, 252, 0.98);
-    border-top: 1px solid #e5e7eb;
-    z-index: 45;
-  }
-
-  .footer-content {
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .footer-info,
-  .footer-contact {
-    font-size: 12px;
+    margin-top: auto;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
   /* En móvil, estado minimizado controlado por clase (no por :hover) */
