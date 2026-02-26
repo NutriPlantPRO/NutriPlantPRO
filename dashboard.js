@@ -11616,7 +11616,7 @@ function createFertigationSectionHTML(chartImages) {
   const req = f.requirements || {};
   const prog = f.program || {};
   const crop = req.cropType || 'N/D';
-  const hasCharts = chartImages && (chartImages.macro || chartImages.micro);
+  const hasCharts = !!(chartImages && (chartImages.macro || chartImages.micro));
   const targetYield = Number(req.targetYield) || 0;
   const reqModeIsElemental = !!req.isElementalMode;
   const programModeIsElemental = !!prog.mode;
@@ -11730,6 +11730,70 @@ function createFertigationSectionHTML(chartImages) {
     const idx = columns.indexOf(c);
     return idx >= 0 ? columnNames[idx] : fertiColumnName(c, 0);
   });
+  // Fallback: si las semanas no traen totals (o vienen en cero), reconstruir con kgByCol + catálogo.
+  const fertiKeys = ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+  function computeWeekTotalsFromProgram(week) {
+    const totals = { N_NO3:0, N_NH4:0, P2O5:0, K2O:0, CaO:0, MgO:0, S:0, SO4:0, Fe:0, Mn:0, B:0, Zn:0, Cu:0, Mo:0, SiO2:0 };
+    const kgByCol = week && week.kgByCol ? week.kgByCol : {};
+    columns.forEach(c => {
+      const kg = toNum(kgByCol[c?.id]);
+      if (kg <= 0) return;
+      const mat = fertiById.get(c?.materialId) || fertiCustomById.get(c?.materialId) || {};
+      const density = toNum(mat.density);
+      const isLiquid = String(mat.unit || '').toUpperCase() === 'L' && density > 0;
+      const productKg = isLiquid ? (kg * density) : kg;
+      fertiKeys.forEach(n => {
+        totals[n] += productKg * (toNum(mat[n]) / 100);
+      });
+    });
+    return totals;
+  }
+  weeks.forEach(w => {
+    const hasTotals = !!(w && w.totals && typeof w.totals === 'object');
+    const totalSum = hasTotals ? fertiKeys.reduce((acc, n) => acc + toNum(w.totals[n]), 0) : 0;
+    if (!hasTotals || totalSum === 0) {
+      w.totals = computeWeekTotalsFromProgram(w);
+    }
+  });
+
+  function buildReportInlineSvgChart(labels, datasets) {
+    if (!Array.isArray(labels) || !labels.length) {
+      return '<div class="report-note">No hay semanas configuradas para graficar.</div>';
+    }
+    const width = 640, height = 260, padL = 42, padR = 16, padT = 12, padB = 28;
+    const plotW = Math.max(1, width - padL - padR);
+    const plotH = Math.max(1, height - padT - padB);
+    let maxY = 0;
+    datasets.forEach(ds => ds.data.forEach(v => { maxY = Math.max(maxY, toNum(v)); }));
+    if (maxY <= 0) maxY = 1;
+    const xAt = (i) => labels.length <= 1 ? (padL + plotW / 2) : (padL + (i * plotW) / (labels.length - 1));
+    const yAt = (v) => padT + (1 - (toNum(v) / maxY)) * plotH;
+    let svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" style="display:block;background:#fff;border:1px solid #e2e8f0;border-radius:8px;">`;
+    for (let i = 0; i <= 4; i++) {
+      const gy = padT + (i * plotH / 4);
+      const gv = ((4 - i) * maxY / 4).toFixed(2);
+      svg += `<line x1="${padL}" y1="${gy}" x2="${padL + plotW}" y2="${gy}" stroke="#e5e7eb" stroke-width="1" />`;
+      svg += `<text x="${padL - 6}" y="${gy + 3}" text-anchor="end" font-size="10" fill="#6b7280">${gv}</text>`;
+    }
+    svg += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#94a3b8" />`;
+    svg += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="#94a3b8" />`;
+    labels.forEach((lbl, i) => {
+      const x = xAt(i);
+      svg += `<text x="${x}" y="${height - 10}" text-anchor="middle" font-size="10" fill="#6b7280">${reportEscapeHtml(lbl)}</text>`;
+    });
+    datasets.forEach(ds => {
+      const points = ds.data.map((v, i) => `${xAt(i)},${yAt(v)}`).join(' ');
+      svg += `<polyline fill="none" stroke="${ds.color}" stroke-width="2" points="${points}" />`;
+      ds.data.forEach((v, i) => {
+        svg += `<circle cx="${xAt(i)}" cy="${yAt(v)}" r="2.4" fill="${ds.color}" />`;
+      });
+    });
+    svg += '</svg>';
+    const legend = `<div style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 6px 0;font-size:12px;color:#334155;">${
+      datasets.map(d => `<span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:${d.color};display:inline-block;"></span>${reportEscapeHtml(d.label)}</span>`).join('')
+    }</div>`;
+    return legend + svg;
+  }
   const waterContribution = prog.waterContribution || {};
   const totalProgram = {};
   nutrients.forEach(n => { totalProgram[n] = 0; });
@@ -11769,12 +11833,65 @@ function createFertigationSectionHTML(chartImages) {
     </tr>
   `).join('');
 
-  const chartsBlock = hasCharts ? `
+  const chartLabels = weeks.map((w, i) => `${prog.timeUnit === 'mes' ? 'Mes' : 'Semana'} ${i + 1}`);
+  const macroColors = { N_NO3: '#1f77b4', N_NH4: '#2ca02c', P2O5: '#ff7f0e', K2O: '#98df8a', CaO: '#9467bd', MgO: '#17becf', SO4: '#8c564b' };
+  const microColors = { Fe: '#1f77b4', Mn: '#2ca02c', B: '#ff7f0e', Zn: '#9467bd', Cu: '#8c564b', Mo: '#e377c2' };
+  let macroSeries = {
+    N_NO3: weeks.map(w => toNum(w?.totals?.N_NO3)),
+    N_NH4: weeks.map(w => toNum(w?.totals?.N_NH4)),
+    P2O5: weeks.map(w => toNum(w?.totals?.P2O5)),
+    K2O: weeks.map(w => toNum(w?.totals?.K2O)),
+    CaO: weeks.map(w => toNum(w?.totals?.CaO)),
+    MgO: weeks.map(w => toNum(w?.totals?.MgO)),
+    SO4: weeks.map(w => toNum(w?.totals?.SO4))
+  };
+  let macroSeriesLabels = { P2O5: 'P2O5', K2O: 'K2O', CaO: 'CaO', MgO: 'MgO' };
+  if (programModeIsElemental) {
+    macroSeries = {
+      N_NO3: macroSeries.N_NO3,
+      N_NH4: macroSeries.N_NH4,
+      P2O5: macroSeries.P2O5.map(v => display('P2O5', v, true)),
+      K2O: macroSeries.K2O.map(v => display('K2O', v, true)),
+      CaO: macroSeries.CaO.map(v => display('CaO', v, true)),
+      MgO: macroSeries.MgO.map(v => display('MgO', v, true)),
+      SO4: macroSeries.SO4
+    };
+    macroSeriesLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg' };
+  }
+  const macroDatasets = [
+    { label: 'N(NO3)', data: macroSeries.N_NO3, color: macroColors.N_NO3 },
+    { label: 'N(NH4)', data: macroSeries.N_NH4, color: macroColors.N_NH4 },
+    { label: macroSeriesLabels.P2O5, data: macroSeries.P2O5, color: macroColors.P2O5 },
+    { label: macroSeriesLabels.K2O, data: macroSeries.K2O, color: macroColors.K2O },
+    { label: macroSeriesLabels.CaO, data: macroSeries.CaO, color: macroColors.CaO },
+    { label: macroSeriesLabels.MgO, data: macroSeries.MgO, color: macroColors.MgO },
+    { label: 'SO4', data: macroSeries.SO4, color: macroColors.SO4 }
+  ];
+  const microDatasets = [
+    { label: 'Fe', data: weeks.map(w => toNum(w?.totals?.Fe)), color: microColors.Fe },
+    { label: 'Mn', data: weeks.map(w => toNum(w?.totals?.Mn)), color: microColors.Mn },
+    { label: 'B', data: weeks.map(w => toNum(w?.totals?.B)), color: microColors.B },
+    { label: 'Zn', data: weeks.map(w => toNum(w?.totals?.Zn)), color: microColors.Zn },
+    { label: 'Cu', data: weeks.map(w => toNum(w?.totals?.Cu)), color: microColors.Cu },
+    { label: 'Mo', data: weeks.map(w => toNum(w?.totals?.Mo)), color: microColors.Mo }
+  ];
+
+  const chartsBlock = (hasCharts || weeks.length > 0) ? `
       <div class="report-block" style="border-color:#93c5fd;background:#eff6ff;">
         <div class="report-block-title">📈 Gráficas de Fertirriego</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
-          ${chartImages.macro ? `<div><div class="report-subtitle" style="margin-bottom:6px;">Macronutrientes</div><img src="${chartImages.macro}" alt="Macronutrientes" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>` : ''}
-          ${chartImages.micro ? `<div><div class="report-subtitle" style="margin-bottom:6px;">Micronutrientes</div><img src="${chartImages.micro}" alt="Micronutrientes" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>` : ''}
+          <div>
+            <div class="report-subtitle" style="margin-bottom:6px;">Macronutrientes</div>
+            ${hasCharts && chartImages.macro
+              ? `<img src="${chartImages.macro}" alt="Macronutrientes" style="max-width:100%;height:auto;display:block;border-radius:8px;" />`
+              : buildReportInlineSvgChart(chartLabels, macroDatasets)}
+          </div>
+          <div>
+            <div class="report-subtitle" style="margin-bottom:6px;">Micronutrientes</div>
+            ${hasCharts && chartImages.micro
+              ? `<img src="${chartImages.micro}" alt="Micronutrientes" style="max-width:100%;height:auto;display:block;border-radius:8px;" />`
+              : buildReportInlineSvgChart(chartLabels, microDatasets)}
+          </div>
         </div>
       </div>
   ` : '';
