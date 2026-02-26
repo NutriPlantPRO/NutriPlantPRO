@@ -4370,14 +4370,22 @@ body {
     font-size: 0.75rem;
   }
 
+  /* Óxido ↔ Elemental: mantener fórmula en una línea como en desktop */
   .conversion-formula {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 6px;
   }
 
   .conversion-formula input {
-    width: 100%;
+    width: 58px;
+    min-width: 58px;
+    flex-shrink: 0;
+  }
+
+  .conversion-formula span {
+    white-space: nowrap;
   }
 }
 
