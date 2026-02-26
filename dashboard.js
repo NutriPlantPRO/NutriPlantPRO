@@ -11777,8 +11777,9 @@ function createFertigationSectionHTML(chartImages) {
       });
     });
     svg += '</svg>';
+    // Leyenda con bolitas (círculos) como en el panel del usuario, no rectángulos
     const legend = `<div style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 6px 0;font-size:12px;color:#334155;">${
-      datasets.map(d => `<span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:${d.color};display:inline-block;"></span>${reportEscapeHtml(d.label)}</span>`).join('')
+      datasets.map(d => `<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="12" height="12" viewBox="0 0 12 12" style="flex-shrink:0;"><circle cx="6" cy="6" r="5" fill="${d.color}"/></svg>${reportEscapeHtml(d.label)}</span>`).join('')
     }</div>`;
     return legend + svg;
   }
