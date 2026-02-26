@@ -225,6 +225,10 @@ body {
     padding-left: var(--sidebar-w);
   }
   .sidebar {
+    top: 48px;
+    bottom: 0;
+    height: auto;
+    min-height: 0;
     transform: translateX(0) !important;
   }
   .sidebar.open {
