@@ -11899,7 +11899,6 @@ function createFertigationSectionHTML(chartImages) {
   return `
     <div class="section">
       <h2 class="section-title">💧 Fertirriego</h2>
-      ${chartsBlock}
       <div class="report-block" style="border-color:#99f6e4;background:#ecfeff;">
         <div class="report-block-title">📋 Requerimiento Nutricional <span class="report-mode-badge">${reqModeIsElemental ? 'Modo Elemental' : 'Modo Óxido'}</span></div>
         <div class="report-kv">
@@ -11979,6 +11978,7 @@ function createFertigationSectionHTML(chartImages) {
           </tbody>
         </table>
       </div>
+      ${chartsBlock}
     </div>
   `;
 }
