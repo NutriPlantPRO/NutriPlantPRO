@@ -7473,21 +7473,9 @@ function loadSavedReports() {
 
   if (useCloud) {
     window.nutriplantFetchReportsFromCloud(scope.userId, scope.projectId).then(function(cloudReports) {
-      if (cloudReports && cloudReports.length > 0) {
-        applyReports(cloudReports);
-        return;
-      }
-      var savedReports = localStorage.getItem(getReportsStorageKey(scope));
-      if (savedReports) {
-        try {
-          applyReports(JSON.parse(savedReports));
-        } catch (e) {
-          console.error('Error al cargar reportes guardados:', e);
-          applyReports([]);
-        }
-      } else {
-        applyReports([]);
-      }
+      // Si la nube responde, usar siempre esa lista (aunque esté vacía). Así si borraste en otro dispositivo, aquí se actualiza.
+      var list = Array.isArray(cloudReports) ? cloudReports : [];
+      applyReports(list);
     }).catch(function() {
       var savedReports = localStorage.getItem(getReportsStorageKey(scope));
       if (savedReports) {
