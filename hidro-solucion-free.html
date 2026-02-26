@@ -25,16 +25,15 @@
       .hydro-card-ternary-wrap .hydro-card-header .hydro-muted {
         font-size: 0.75rem;
         line-height: 1.4;
-        column-count: 2;
-        column-gap: 12px;
+        column-count: 1;
         margin-bottom: 8px;
       }
       #hydroTriangleInfoCombined.hydro-muted {
-        font-size: 0.7rem;
-        line-height: 1.35;
-        white-space: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        font-size: 0.72rem;
+        line-height: 1.4;
+        white-space: normal;
+        overflow-x: visible;
+        overflow-wrap: anywhere;
       }
     }
   </style>
@@ -425,7 +424,7 @@
       });
 
       if (info) {
-        info.textContent = `Aniones: N-NO₃⁻ ${pNO3.toFixed(1)}% · P-H₂PO₄⁻ ${pH2PO4.toFixed(1)}% · S-SO₄²⁻ ${pSO4.toFixed(1)}% | Cationes: K⁺ ${pK.toFixed(1)}% · Ca²⁺ ${pCa.toFixed(1)}% · Mg²⁺ ${pMg.toFixed(1)}% (N-NH₄⁺ fuera del triángulo).`;
+        info.textContent = `Aniones: N-NO₃⁻ ${pNO3.toFixed(1)}% · P-H₂PO₄⁻ ${pH2PO4.toFixed(1)}% · S-SO₄²⁻ ${pSO4.toFixed(1)}%. Cationes: K⁺ ${pK.toFixed(1)}% · Ca²⁺ ${pCa.toFixed(1)}% · Mg²⁺ ${pMg.toFixed(1)}% (N-NH₄⁺ fuera del triángulo).`;
       }
     }
 
