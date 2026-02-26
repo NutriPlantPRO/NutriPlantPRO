@@ -146,9 +146,7 @@ function initializeSidebar() {
       if (window.innerWidth <= 768) {
         e.preventDefault();
         e.stopPropagation();
-        if (!isSidebarOpen()) {
-          openSidebar();
-        } else if (isSidebarMinimized()) {
+        if (isSidebarMinimized()) {
           expandSidebar();
         } else {
           minimizeSidebar();
