@@ -223,6 +223,7 @@ body {
   .layout {
     /* Reservar el ancho minimizado para que no tape el contenido */
     padding-left: var(--sidebar-w);
+    min-height: calc(100dvh - 48px);
   }
   .sidebar {
     top: 48px;
@@ -240,6 +241,16 @@ body {
   .sidebar-toggle,
   .sidebar-close {
     display: none !important;
+  }
+
+  /* Footer abajo en móvil cuando hay poco contenido */
+  .content {
+    min-height: calc(100dvh - 48px);
+  }
+
+  .site-footer {
+    margin-top: auto;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
   /* En touch no hay :hover; si está abierto (y no minimizado), forzar vista expandida */
