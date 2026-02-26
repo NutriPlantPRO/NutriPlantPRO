@@ -139,21 +139,22 @@ function initializeSidebar() {
     sidebarOverlay.addEventListener('click', closeSidebar);
   }
 
-  // En móvil/tablet: tocar el logo abre / minimiza / expande (no cierra del todo)
+  // En celular: tocar la zona del logo alterna minimizar/expandir
   const sidebarLogo = sidebar && sidebar.querySelector('.sidebar-logo');
-  if (sidebarLogo) {
-    sidebarLogo.addEventListener('click', function(e) {
-      if (window.innerWidth <= 768) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (isSidebarMinimized()) {
-          expandSidebar();
-        } else {
-          minimizeSidebar();
-        }
+  const sidebarBrand = sidebar && sidebar.querySelector('.sidebar-brand');
+  const handleLogoToggle = function(e) {
+    if (window.innerWidth <= 768) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isSidebarMinimized()) {
+        expandSidebar();
+      } else {
+        minimizeSidebar();
       }
-    });
-  }
+    }
+  };
+  if (sidebarLogo) sidebarLogo.addEventListener('click', handleLogoToggle);
+  if (sidebarBrand) sidebarBrand.addEventListener('click', handleLogoToggle);
 
   // En celular: comportamiento como laptop (sidebar siempre visible, inicia minimizado)
   if (window.innerWidth <= 768 && sidebar) {
