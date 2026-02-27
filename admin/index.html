@@ -4803,6 +4803,10 @@
                             crops: Array.isArray(updatedUser.crops) ? updatedUser.crops : null,
                             subscription_status: updatedUser.subscription_status || null,
                             subscription_amount: updatedUser.subscription_amount != null ? Number(updatedUser.subscription_amount) : null,
+                            chat_blocked: updatedUser.chat_blocked === true,
+                            chat_limit_monthly: (updatedUser.chat_limit_monthly == null || updatedUser.chat_limit_monthly === '' || updatedUser.chat_limit_monthly === -1) ? null : Number(updatedUser.chat_limit_monthly),
+                            chat_usage_current_month: updatedUser.chat_usage_current_month != null ? Number(updatedUser.chat_usage_current_month) : null,
+                            chat_usage_month: updatedUser.chat_usage_month || null,
                             updated_at: new Date().toISOString()
                         };
                         if (newPassword) payload.password_plain = newPassword;

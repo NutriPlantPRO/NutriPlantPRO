@@ -180,6 +180,35 @@ Si el chat en el dominio sigue sin responder, revisa en Netlify que la variable 
 
 ---
 
+## PASO 5c — Límite mensual de chat por usuario (1 USD) en el dominio
+
+En el dominio, el **límite de 1 USD/mes por usuario** que configuras en el panel de admin se aplica igual que en local: la función de Netlify lee y actualiza el uso en **Supabase**.
+
+### Variables de entorno en Netlify (obligatorias para la cuota)
+
+En **Netlify** → tu sitio → **Site configuration** → **Environment variables**, añade:
+
+| Key | Value |
+|-----|--------|
+| `SUPABASE_URL` | La URL de tu proyecto (ej. `https://xxxxx.supabase.co`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | La **service_role** key (Supabase → Settings → API → "service_role" secret). No uses la anon key. |
+
+Después de añadirlas, haz **Deploy** para que la función las use.
+
+### Columnas en la tabla `profiles` (Supabase)
+
+La función usa estas columnas en la tabla **profiles** (el panel de admin ya las usa):
+
+- **chat_limit_monthly** — Límite en USD por mes. `-1` o vacío = sin límite. Ej: `1` = 1 USD/mes.
+- **chat_usage_current_month** — Uso en USD del mes actual (lo actualiza la función tras cada respuesta del chat).
+- **chat_usage_month** — Mes al que corresponde el uso (ej. `2025-02`). Si el mes cambia, la función resetea el uso.
+
+Si en tu proyecto Supabase la tabla `profiles` no tiene esas columnas, créalas en **Table Editor** → **profiles** → **Add column**: tipo numérico para `chat_limit_monthly` y `chat_usage_current_month`, y texto para `chat_usage_month`.
+
+Con esto, el límite que pongas en el admin por usuario se respeta también en nutriplantpro.com.
+
+---
+
 ## Resumen rápido
 
 | Qué quieres hacer | Dónde / cómo |
