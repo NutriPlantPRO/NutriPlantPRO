@@ -392,13 +392,15 @@
   }
 }
 
-/* ===== RESPONSIVE ===== */
+/* ===== RESPONSIVE: mismo aspecto que en laptop, panel a la derecha sobre el botón ===== */
 @media (max-width: 768px) {
   .chat-panel {
-    width: calc(100vw - 40px);
+    width: min(340px, calc(100vw - 40px));
     right: 20px;
-    left: 20px;
+    left: auto;
+    bottom: 90px;
     height: 400px;
+    max-height: 70vh;
   }
   
   .chat-bubble {
