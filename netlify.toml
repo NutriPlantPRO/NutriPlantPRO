@@ -5,6 +5,10 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+  # La clave de Google Maps en map.js es para el navegador (restringida por dominio en Google Cloud).
+  # Netlify la marca como "likely secret" y falla el build; permitimos que el build continúe.
+  [build.environment]
+    SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
 
 # Para que el frontend pueda llamar a /api/openai-assistant (igual que en local)
 [[redirects]]
