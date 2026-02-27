@@ -710,6 +710,10 @@ ESTILO DE RESPUESTA:
         const quotaMessage = data?.message || 'Límite mensual de chat alcanzado.';
         return `⚠️ ${quotaMessage}`;
       }
+      if (response.status === 403) {
+        const blockedMessage = data?.message || 'El chat con la IA está deshabilitado para tu cuenta. Contacta al administrador.';
+        return `⚠️ ${blockedMessage}`;
+      }
       if (response.status === 501 || response.status === 404) {
         return '⚠️ El backend de IA no está activo en este puerto. Inicia `python3 server.py` en el proyecto para habilitar el chat inteligente.';
       }

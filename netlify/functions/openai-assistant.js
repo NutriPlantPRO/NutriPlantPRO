@@ -53,7 +53,7 @@ async function getQuotaFromSupabase(supabase, userId) {
   if (!supabase || !userId || userId === 'anonymous') return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('chat_limit_monthly, chat_usage_current_month, chat_usage_month')
+    .select('chat_blocked, chat_limit_monthly, chat_usage_current_month, chat_usage_month')
     .eq('id', userId)
     .maybeSingle();
   if (error) {
@@ -147,6 +147,12 @@ exports.handler = async (event, context) => {
   if (supabase && userId && userId !== 'anonymous') {
     const quota = await getQuotaFromSupabase(supabase, userId);
     if (quota) {
+      if (quota.chat_blocked === true) {
+        return jsonResponse(403, {
+          error: 'chat_blocked',
+          message: 'El chat con la IA está deshabilitado para tu cuenta. Contacta al administrador si necesitas activarlo.'
+        });
+      }
       let limitUsd = quota.chat_limit_monthly;
       if (limitUsd === -1 || limitUsd == null || limitUsd === '' || limitUsd === undefined) {
         limitUsd = -1;
