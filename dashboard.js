@@ -12107,57 +12107,140 @@ function createAnalysisSectionHTML() {
 
 // Genera SVG del diagrama ternario para el reporte (aniones + cationes %)
 function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
+  const width = 460, height = 400, pad = 44;
+  const base = width - 2 * pad;
+  const triHeight = base * Math.sqrt(3) / 2;
+  const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+  const vTop = { x: width / 2, y: pad };
+  const vLeft = { x: pad, y: pad + triHeight };
+  const vRight = { x: width - pad, y: pad + triHeight };
+  const anionZone = [[20, 10, 70], [28.75, 1.25, 70], [80, 1.25, 18.75], [80, 10, 10]];
+  const cationZone = [[10, 62.5, 27.5], [32.5, 62.5, 5], [65, 30, 5], [65, 22.5, 12.5], [37.5, 22.5, 40], [10, 50, 40]];
+
+  const baryToXY = (vA, vB, vC, pA, pB, pC) => ({
+    x: (vA.x * pA + vB.x * pB + vC.x * pC) / 100,
+    y: (vA.y * pA + vB.y * pB + vC.y * pC) / 100
+  });
+  const toXYCation = (k, ca, mg) => baryToXY(vTop, vLeft, vRight, k, ca, mg);
+  const toXYAnion = (no3, h2po4, so4) => baryToXY(vTop, vLeft, vRight, no3, h2po4, so4);
   const normalize = (a, b, c) => {
-    let pa = Math.max(0, Math.min(100, a)), pb = Math.max(0, Math.min(100, b)), pc = Math.max(0, Math.min(100, c));
+    let pa = Math.max(0, Math.min(100, a));
+    let pb = Math.max(0, Math.min(100, b));
+    let pc = Math.max(0, Math.min(100, c));
     const sum = pa + pb + pc;
     if (sum > 0 && Math.abs(sum - 100) > 0.01) { pa = (pa / sum) * 100; pb = (pb / sum) * 100; pc = (pc / sum) * 100; }
     return [pa, pb, pc];
   };
-  const width = 380; const height = 340; const pad = 40;
-  const base = width - 2 * pad;
-  const triHeight = base * Math.sqrt(3) / 2;
-  const vTop = { x: width / 2, y: pad };
-  const vLeft = { x: pad, y: pad + triHeight };
-  const vRight = { x: width - pad, y: pad + triHeight };
-  const bary = (vA, vB, vC, pA, pB, pC) => ({
-    x: (vA.x * pA + vB.x * pB + vC.x * pC) / 100,
-    y: (vA.y * pA + vB.y * pB + vC.y * pC) / 100
-  });
-  const toXY_cat = (k, ca, mg) => bary(vTop, vLeft, vRight, k, ca, mg);
-  const toXY_an = (no3, h2po4, so4) => bary(vTop, vLeft, vRight, no3, h2po4, so4);
-  const anZone = [[20, 10, 70], [28.75, 1.25, 70], [80, 1.25, 18.75], [80, 10, 10]];
-  const catZone = [[10, 62.5, 27.5], [32.5, 62.5, 5], [65, 30, 5], [65, 22.5, 12.5], [37.5, 22.5, 40], [10, 50, 40]];
-  const anPts = anZone.map(([a, b, c]) => toXY_an(a, b, c));
-  const catPts = catZone.map(([k, ca, mg]) => toXY_cat(k, ca, mg));
-  const [pN, pH, pS] = normalize(pNO3, pH2PO4, pSO4);
-  const [pKk, pCa, pMg] = normalize(pK, pCa, pMg);
-  const ptAn = toXY_an(pN, pH, pS);
-  const ptCat = toXY_cat(pKk, pCa, pMg);
-  const poly = (pts, fill, stroke) => {
-    if (!pts || pts.length < 3) return '';
-    const s = pts.map(p => `${p.x},${p.y}`).join(' ');
-    return `<polygon points="${s}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
+  const pointInPolygon = (px, py, verts) => {
+    let inside = false;
+    for (let i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+      const xi = verts[i].x, yi = verts[i].y, xj = verts[j].x, yj = verts[j].y;
+      if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
   };
+  const clipPolygonByLine = (pts, ax, ay, bx, by, keepSide) => {
+    const cross = (px, py) => (bx - ax) * (py - ay) - (by - ay) * (px - ax);
+    const keep = keepSide || ((c) => c <= 0);
+    const out = [];
+    for (let i = 0; i < pts.length; i++) {
+      const cur = pts[i], next = pts[(i + 1) % pts.length];
+      const cCur = cross(cur.x, cur.y), cNext = cross(next.x, next.y);
+      if (keep(cCur)) {
+        if (keep(cNext)) out.push(next);
+        else {
+          const denom = cCur - cNext;
+          if (Math.abs(denom) > 1e-12) {
+            const t = cCur / denom;
+            out.push({ x: cur.x + t * (next.x - cur.x), y: cur.y + t * (next.y - cur.y) });
+          }
+        }
+      } else if (keep(cNext)) {
+        const denom = cCur - cNext;
+        if (Math.abs(denom) > 1e-12) {
+          const t = cCur / denom;
+          out.push({ x: cur.x + t * (next.x - cur.x), y: cur.y + t * (next.y - cur.y) });
+        }
+        out.push(next);
+      }
+    }
+    return out;
+  };
+  const polygonWithMixedStroke = (pts, fillColor, strokeColor, strokeWidth, dashedFn) => {
+    if (!pts || pts.length < 3) return '';
+    const points = pts.map(p => `${p.x},${p.y}`).join(' ');
+    let out = `<polygon points="${points}" fill="${fillColor}" stroke="none" />`;
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length];
+      const dashed = dashedFn ? dashedFn(a, b, i, pts) : i % 2 === 1;
+      out += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${strokeColor}" stroke-width="${strokeWidth || 2}" ${dashed ? 'stroke-dasharray="5,4"' : ''} />`;
+    }
+    return out;
+  };
+
   let grid = '';
   for (let i = 1; i <= 9; i++) {
     const t = i / 10;
-    grid += `<line x1="${vTop.x + (vLeft.x - vTop.x) * t}" y1="${vTop.y + (vLeft.y - vTop.y) * t}" x2="${vTop.x + (vRight.x - vTop.x) * t}" y2="${vTop.y + (vRight.y - vTop.y) * t}" stroke="#93c5fd" stroke-width="0.5"/>`;
-    grid += `<line x1="${vLeft.x + (vRight.x - vLeft.x) * t}" y1="${vLeft.y + (vRight.y - vLeft.y) * t}" x2="${vLeft.x + (vTop.x - vLeft.x) * t}" y2="${vLeft.y + (vTop.y - vLeft.y) * t}" stroke="#93c5fd" stroke-width="0.5"/>`;
-    grid += `<line x1="${vRight.x + (vTop.x - vRight.x) * t}" y1="${vRight.y + (vTop.y - vRight.y) * t}" x2="${vRight.x + (vLeft.x - vRight.x) * t}" y2="${vRight.y + (vLeft.y - vRight.y) * t}" stroke="#93c5fd" stroke-width="0.5"/>`;
+    grid += `<line x1="${vTop.x + (vLeft.x - vTop.x) * t}" y1="${vTop.y + (vLeft.y - vTop.y) * t}" x2="${vTop.x + (vRight.x - vTop.x) * t}" y2="${vTop.y + (vRight.y - vTop.y) * t}" stroke="#93c5fd" stroke-width="0.6" />`;
+    grid += `<line x1="${vLeft.x + (vRight.x - vLeft.x) * t}" y1="${vLeft.y + (vRight.y - vLeft.y) * t}" x2="${vLeft.x + (vTop.x - vLeft.x) * t}" y2="${vLeft.y + (vTop.y - vLeft.y) * t}" stroke="#93c5fd" stroke-width="0.6" />`;
+    grid += `<line x1="${vRight.x + (vTop.x - vRight.x) * t}" y1="${vRight.y + (vTop.y - vRight.y) * t}" x2="${vRight.x + (vLeft.x - vRight.x) * t}" y2="${vRight.y + (vLeft.y - vRight.y) * t}" stroke="#93c5fd" stroke-width="0.6" />`;
   }
-  const triBorder = `<polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#2563eb" stroke-width="2"/>`;
-  const svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" style="max-width:380px;height:auto;display:block;margin:8px auto;background:#fff;border-radius:8px;">
-    ${grid}
-    ${poly(anPts, 'rgba(234,179,8,0.35)', '#ca8a04')}
-    ${poly(catPts, 'rgba(185,28,28,0.28)', '#b91c1c')}
-    ${triBorder}
-    <circle cx="${ptAn.x}" cy="${ptAn.y}" r="5" fill="#eab308" stroke="#92400e" stroke-width="1"/>
-    <circle cx="${ptCat.x}" cy="${ptCat.y}" r="5" fill="#b91c1c" stroke="#7f1d1d" stroke-width="1"/>
-    <text x="${vTop.x}" y="${vTop.y - 6}" text-anchor="middle" font-size="10" fill="#334155">K⁺/NO₃⁻</text>
-    <text x="${vLeft.x - 8}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#334155">Ca²⁺/H₂PO₄⁻</text>
-    <text x="${vRight.x + 8}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#334155">Mg²⁺/SO₄²⁻</text>
-  </svg>`;
-  return svg;
+
+  const catZonePtsFull = cationZone.map(([k, ca, mg]) => toXYCation(k, ca, mg));
+  const cutStart = toXYCation(10, 50, 40);
+  const norm = (a, b, c) => { const s = a + b + c; return s > 0 ? [a / s * 100, b / s * 100, c / s * 100] : [a, b, c]; };
+  const [k65, ca25, mg15] = norm(65, 25, 15);
+  const cutEnd = toXYCation(k65, ca25, mg15);
+  const cutLine = `<line x1="${cutStart.x}" y1="${cutStart.y}" x2="${cutEnd.x}" y2="${cutEnd.y}" stroke="#b91c1c" stroke-width="1.5" stroke-dasharray="6,4" />`;
+  let catZonePts = catZonePtsFull;
+  if (catZonePtsFull.length >= 3) {
+    const cross = (px, py) => (cutEnd.x - cutStart.x) * (py - cutStart.y) - (cutEnd.y - cutStart.y) * (px - cutStart.x);
+    const keepSign = Math.sign(cross(vLeft.x, vLeft.y)) || 1;
+    catZonePts = clipPolygonByLine(catZonePtsFull, cutStart.x, cutStart.y, cutEnd.x, cutEnd.y, (c) => c * keepSign >= 0);
+  }
+  const catMaxY = catZonePts.length ? Math.max(...catZonePts.map(p => p.y)) : 0;
+  const catPoly = polygonWithMixedStroke(catZonePts, 'rgba(185,28,28,0.28)', '#b91c1c', 2, (a, b, i) => {
+    const isBottom = catMaxY > 0 && Math.abs(a.y - catMaxY) < 2 && Math.abs(b.y - catMaxY) < 2;
+    if (isBottom) return false;
+    return i % 2 === 1;
+  });
+  const anZonePts = anionZone.map(([no3, h2po4, so4]) => toXYAnion(no3, h2po4, so4));
+  const anPoly = polygonWithMixedStroke(anZonePts, 'rgba(234,179,8,0.35)', '#ca8a04', 2);
+
+  const [nNO3, nH2PO4, nSO4] = normalize(pNO3, pH2PO4, pSO4);
+  const [nK, nCa, nMg] = normalize(pK, pCa, pMg);
+  const anPoint = toXYAnion(nNO3, nH2PO4, nSO4);
+  const catPoint = toXYCation(nK, nCa, nMg);
+  const anInside = anZonePts.length >= 3 && pointInPolygon(anPoint.x, anPoint.y, anZonePts);
+  const catInside = catZonePts.length >= 3 && pointInPolygon(catPoint.x, catPoint.y, catZonePts);
+
+  let ticks = '';
+  for (let i = 1; i <= 9; i++) {
+    const v = i * 10;
+    const basePos = lerp(vLeft, vRight, 1 - i / 10);
+    const leftPos = lerp(vTop, vLeft, 1 - i / 10);
+    const rightPos = lerp(vTop, vRight, i / 10);
+    ticks += `<text x="${basePos.x}" y="${basePos.y + 14}" text-anchor="middle" font-size="10" fill="#64748b">${v}</text>`;
+    ticks += `<text x="${leftPos.x - 8}" y="${leftPos.y + 2}" text-anchor="end" font-size="10" fill="#64748b">${v}</text>`;
+    ticks += `<text x="${rightPos.x + 8}" y="${rightPos.y + 2}" text-anchor="start" font-size="10" fill="#64748b">${v}</text>`;
+  }
+  ticks += `<text x="${vTop.x}" y="${vTop.y - 10}" text-anchor="middle" font-size="11" fill="#64748b">100</text>`;
+  ticks += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
+  ticks += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
+
+  return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" style="background:#fff;border-radius:8px;">
+      ${grid}
+      ${anPoly}
+      ${catPoly}
+      ${cutLine}
+      <polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#2563eb" stroke-width="2" />
+      <circle cx="${catPoint.x}" cy="${catPoint.y}" r="6" fill="${catInside ? '#ef4444' : '#b91c1c'}" stroke="#7f1d1d" stroke-width="1.2" />
+      <circle cx="${anPoint.x}" cy="${anPoint.y}" r="6" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />
+      ${ticks}
+      <text x="${lerp(vTop, vLeft, 0.5).x - 26}" y="${lerp(vTop, vLeft, 0.5).y}" text-anchor="end" font-size="11" font-weight="bold" fill="#334155">Mg²⁺ / SO₄²⁻</text>
+      <text x="${lerp(vTop, vRight, 0.5).x + 26}" y="${lerp(vTop, vRight, 0.5).y}" text-anchor="start" font-size="11" font-weight="bold" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>
+      <text x="${lerp(vLeft, vRight, 0.5).x}" y="${lerp(vLeft, vRight, 0.5).y + 30}" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">K⁺ / NO₃⁻</text>
+    </svg>`;
 }
 
 function createHidroponiaSectionHTML() {
