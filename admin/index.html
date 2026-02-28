@@ -4665,7 +4665,7 @@
             const Mg = (parseFloat(mat.MgO)||0)/c.MgO_TO_Mg || parseFloat(mat.Mg)||0;
             const S = parseFloat(mat.S)||0; const SO4 = parseFloat(mat.SO4)||0;
             const S_ele = S > 0 ? S : (SO4 > 0 ? SO4/3 : 0);
-            return { N_NH4: parseFloat(mat.N_NH4)||0, N_NO3: parseFloat(mat.N_NO3)||0, P, S: S_ele, K, Ca, Mg, Fe: parseFloat(mat.Fe)||0, Mn: parseFloat(mat.Mn)||0, B: parseFloat(mat.B)||0, Zn: parseFloat(mat.Zn)||0, Cu: parseFloat(mat.Cu)||0, Mo: parseFloat(mat.Mo)||0 };
+            return { N_NH4: parseFloat(mat.N_NH4)||0, N_NO3: parseFloat(mat.N_NO3)||0, P, S: S_ele, K, Ca, Mg, Fe: parseFloat(mat.Fe)||0, Mn: parseFloat(mat.Mn)||0, B: parseFloat(mat.B)||0, Zn: parseFloat(mat.Zn)||0, Cu: parseFloat(mat.Cu)||0, Mo: parseFloat(mat.Mo)||0, unit: mat.unit || '', density: parseFloat(mat.density)||0 };
         }
         function adminGetHydroMaterialsElemental(project) {
             const list = [];
@@ -4674,21 +4674,34 @@
                 list.push({ id: m.id, name: m.name || m.id, ...el });
             });
             const custom = project?.hidroponia?.customMaterials?.items || project?.sections?.hidroponia?.customMaterials?.items || [];
-            if (Array.isArray(custom)) custom.forEach(m => { if (m && (m.id || m.name)) list.push({ id: m.id || m.name, name: m.name || m.id, N_NH4: parseFloat(m.N_NH4)||0, N_NO3: parseFloat(m.N_NO3)||0, P: parseFloat(m.P)||0, S: parseFloat(m.S)||0, K: parseFloat(m.K)||0, Ca: parseFloat(m.Ca)||0, Mg: parseFloat(m.Mg)||0, Fe: parseFloat(m.Fe)||0, Mn: parseFloat(m.Mn)||0, B: parseFloat(m.B)||0, Zn: parseFloat(m.Zn)||0, Cu: parseFloat(m.Cu)||0, Mo: parseFloat(m.Mo)||0 }); });
+            if (Array.isArray(custom)) custom.forEach(m => { if (m && (m.id || m.name)) list.push({ id: m.id || m.name, name: m.name || m.id, N_NH4: parseFloat(m.N_NH4)||0, N_NO3: parseFloat(m.N_NO3)||0, P: parseFloat(m.P)||0, S: parseFloat(m.S)||0, K: parseFloat(m.K)||0, Ca: parseFloat(m.Ca)||0, Mg: parseFloat(m.Mg)||0, Fe: parseFloat(m.Fe)||0, Mn: parseFloat(m.Mn)||0, B: parseFloat(m.B)||0, Zn: parseFloat(m.Zn)||0, Cu: parseFloat(m.Cu)||0, Mo: parseFloat(m.Mo)||0, unit: m.unit || '', density: parseFloat(m.density)||0 }); });
             return list;
         }
         function adminHydroComputeDoseAndKg(f, hydroVolM3, materialsElemental) {
+            const mat = materialsElemental.find(m => m.id === f.materialId) || {};
+            const unit = String(mat.unit || '').toUpperCase();
+            const density = parseFloat(mat.density) || 0;
+            const isLiquid = unit === 'L' && density > 0;
+            const vol = hydroVolM3 > 0 ? hydroVolM3 : 100;
             let dose = f.dose != null ? parseFloat(f.dose) : NaN;
-            if (isNaN(dose) && f.materialId && f.element && (f.targetPpm != null || f.targetPpm === 0)) {
-                const mat = materialsElemental.find(m => m.id === f.materialId);
-                if (mat) {
-                    const elemPct = parseFloat(mat[f.element]) || 0;
-                    const targetPpm = parseFloat(f.targetPpm) || 0;
-                    dose = elemPct > 0 ? (targetPpm * 100 / elemPct) : NaN;
-                }
+            if ((!isFinite(dose) || dose <= 0) && isLiquid && f && f.calcMode === 'product') {
+                const productL = parseFloat(f.productTotalL) || 0;
+                const kgEq = productL * density;
+                if (vol > 0 && kgEq > 0) dose = (kgEq * 1000) / vol;
             }
-            const kg = (!isNaN(dose) && hydroVolM3 > 0) ? (dose * hydroVolM3 / 1000) : NaN;
-            return { dose, kg };
+            if (!isFinite(dose) && f.materialId && f.element && (f.targetPpm != null || f.targetPpm === 0)) {
+                const elemPct = parseFloat(mat[f.element]) || 0;
+                const targetPpm = parseFloat(f.targetPpm) || 0;
+                dose = elemPct > 0 ? (targetPpm * 100 / elemPct) : NaN;
+            }
+            const kg = (isFinite(dose) && dose > 0 && vol > 0) ? (dose * vol / 1000) : NaN;
+            if (isLiquid) {
+                const totalL = (f && f.calcMode === 'product' && (parseFloat(f.productTotalL) || 0) > 0)
+                    ? (parseFloat(f.productTotalL) || 0)
+                    : (isFinite(kg) && kg > 0 ? (kg / density) : NaN);
+                return { dose, kg, totalValue: totalL, totalUnit: 'L', isLiquid };
+            }
+            return { dose, kg, totalValue: kg, totalUnit: 'kg', isLiquid };
         }
         function adminHydroContributions(f, materialsElemental) {
             if (f.contributions && typeof f.contributions === 'object') {
@@ -7643,24 +7656,24 @@
                     const fertRows = hydroFerts.map(f => {
                         const name = adminHydroFertName(f);
                         const tank = f.tank || 'A';
-                        const { dose: doseNum, kg: kgNum } = typeof adminHydroComputeDoseAndKg === 'function' ? adminHydroComputeDoseAndKg(f, hydroVolM3, adminHydroMats) : { dose: f.dose != null ? parseFloat(f.dose) : NaN, kg: NaN };
-                        const dose = !isNaN(doseNum) ? doseNum.toFixed(1) : '—';
-                        const kg = !isNaN(kgNum) ? kgNum.toFixed(2) : '—';
+                        const totals = typeof adminHydroComputeDoseAndKg === 'function' ? adminHydroComputeDoseAndKg(f, hydroVolM3, adminHydroMats) : { dose: f.dose != null ? parseFloat(f.dose) : NaN, totalValue: NaN, totalUnit: 'kg' };
+                        const dose = isFinite(totals.dose) ? totals.dose.toFixed(1) : '—';
+                        const totalProduct = (isFinite(totals.totalValue) && totals.totalValue > 0) ? `${totals.totalValue.toFixed(2)} ${totals.totalUnit}` : '—';
                         const contrib = typeof adminHydroContributions === 'function' ? adminHydroContributions(f, adminHydroMats) : null;
                         const contribCells = HYDRO_PPM_NUTRIENTS.map(n => {
                             const v = contrib && (contrib[n] != null) ? parseFloat(contrib[n]) : 0;
                             const txt = v > 0 ? v.toFixed(2) : '';
                             return `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${txt}</td>`;
                         }).join('');
-                        return `<tr><td style="padding:6px 8px;border:1px solid #e2e8f0;">${escapeHtml(name)}</td><td style="padding:6px 8px;border:1px solid #e2e8f0;">Tanque ${escapeHtml(tank)}</td><td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${dose}</td>${contribCells}<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${kg}</td></tr>`;
+                        return `<tr><td style="padding:6px 8px;border:1px solid #e2e8f0;">${escapeHtml(name)}</td><td style="padding:6px 8px;border:1px solid #e2e8f0;">Tanque ${escapeHtml(tank)}</td><td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${dose}</td>${contribCells}<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${totalProduct}</td></tr>`;
                     }).join('');
                     html += `
                         <div style="margin-bottom: 16px;">
                             <strong style="color: #1e293b; font-size: 14px;">🧮 Fertilizantes</strong>
-                            <p style="margin:4px 0 8px 0;color:#64748b;font-size:12px;">Aporte en ppm de cada elemento que aporta el fertilizante en la solución final.</p>
+                            <p style="margin:4px 0 8px 0;color:#64748b;font-size:12px;">Aporte en ppm de cada elemento en la solución final. En "Total producto", sólidos en kg y líquidos (ácidos) en L.</p>
                             <div style="overflow-x: auto; margin-top: 8px;">
                                 <table style="width:100%; border-collapse: collapse; font-size: 13px;">
-                                    <thead><tr style="background:#e0f2fe;"><th style="padding:6px 8px;border:1px solid #cbd5e1;">Fertilizante</th><th style="padding:6px 8px;border:1px solid #cbd5e1;">Tanque</th><th style="padding:6px 8px;border:1px solid #cbd5e1;">Dosis (ppm)</th>${contribHeaderCells}<th style="padding:6px 8px;border:1px solid #cbd5e1;">Kg total</th></tr></thead>
+                                    <thead><tr style="background:#e0f2fe;"><th style="padding:6px 8px;border:1px solid #cbd5e1;">Fertilizante</th><th style="padding:6px 8px;border:1px solid #cbd5e1;">Tanque</th><th style="padding:6px 8px;border:1px solid #cbd5e1;">Dosis (ppm)</th>${contribHeaderCells}<th style="padding:6px 8px;border:1px solid #cbd5e1;">Total producto</th></tr></thead>
                                     <tbody>${fertRows}</tbody>
                                 </table>
                             </div>
@@ -7669,31 +7682,38 @@
                     // Por tanque (A, B, C...): total kg y por recarga si aplica
                     const HYDRO_TANQUES_ADMIN = ['A','B','C','D','E'];
                     const byTank = {};
-                    HYDRO_TANQUES_ADMIN.forEach(tq => { byTank[tq] = { total: 0, items: [] }; });
+                    HYDRO_TANQUES_ADMIN.forEach(tq => { byTank[tq] = { totalKg: 0, totalL: 0, items: [] }; });
                     hydroFerts.forEach(f => {
-                        const { kg: kgNum } = typeof adminHydroComputeDoseAndKg === 'function' ? adminHydroComputeDoseAndKg(f, hydroVolM3, adminHydroMats) : { kg: NaN };
-                        if (isNaN(kgNum) || kgNum <= 0) return;
+                        const totals = typeof adminHydroComputeDoseAndKg === 'function' ? adminHydroComputeDoseAndKg(f, hydroVolM3, adminHydroMats) : { totalValue: NaN, totalUnit: 'kg', kg: NaN };
+                        if (!isFinite(totals.totalValue) || totals.totalValue <= 0) return;
                         const tank = f.tank || 'A';
                         if (!HYDRO_TANQUES_ADMIN.includes(tank)) return;
                         const name = adminHydroFertName(f);
-                        byTank[tank].total += kgNum;
-                        byTank[tank].items.push({ name, kg: kgNum });
+                        if (totals.totalUnit === 'L') byTank[tank].totalL += totals.totalValue;
+                        else byTank[tank].totalKg += totals.totalValue;
+                        byTank[tank].items.push({ name, value: totals.totalValue, unit: totals.totalUnit, kg: totals.kg });
                     });
                     const tankBlocksHtml = HYDRO_TANQUES_ADMIN.map(tq => {
                         const data = byTank[tq];
-                        if (data.total <= 0) return '';
-                        const kgPerRecarga = recargas > 0 ? (data.total / recargas).toFixed(2) : data.total.toFixed(2);
+                        if ((data.totalKg <= 0) && (data.totalL <= 0)) return '';
+                        const totalParts = [];
+                        if (data.totalKg > 0) totalParts.push(`${data.totalKg.toFixed(2)} kg`);
+                        if (data.totalL > 0) totalParts.push(`${data.totalL.toFixed(2)} L`);
+                        const perRecParts = [];
+                        if (data.totalKg > 0) perRecParts.push(`${(recargas > 0 ? data.totalKg / recargas : data.totalKg).toFixed(2)} kg`);
+                        if (data.totalL > 0) perRecParts.push(`${(recargas > 0 ? data.totalL / recargas : data.totalL).toFixed(2)} L`);
                         const totalLine = recargas > 1
-                            ? `${data.total.toFixed(2)} kg total <span style="color:#64748b;font-size:12px;">(${kgPerRecarga} kg por recarga si son ${recargas} recargas)</span>`
-                            : `${data.total.toFixed(2)} kg total <span style="color:#64748b;font-size:12px;">(${kgPerRecarga} kg por recarga)</span>`;
+                            ? `${totalParts.join(' + ')} total <span style="color:#64748b;font-size:12px;">(${perRecParts.join(' + ')} por recarga si son ${recargas} recargas)</span>`
+                            : `${totalParts.join(' + ')} total <span style="color:#64748b;font-size:12px;">(${perRecParts.join(' + ')} por recarga)</span>`;
                         const itemsHtml = data.items.map(i => {
-                            const pr = recargas > 0 ? (i.kg / (recargas || 1)).toFixed(2) : i.kg.toFixed(2);
-                            return `<span style="display:block;font-size:12px;">${escapeHtml(i.name)}: ${i.kg.toFixed(2)} kg <span style="color:#64748b;">(${pr} por recarga)</span></span>`;
+                            const pr = recargas > 0 ? (i.value / (recargas || 1)) : i.value;
+                            const eq = i.unit === 'L' && isFinite(i.kg) && i.kg > 0 ? ` <span style="color:#64748b;">(≈ ${i.kg.toFixed(2)} kg eq)</span>` : '';
+                            return `<span style="display:block;font-size:12px;">${escapeHtml(i.name)}: ${i.value.toFixed(2)} ${i.unit}${eq} <span style="color:#64748b;">(${pr.toFixed(2)} ${i.unit} por recarga)</span></span>`;
                         }).join('');
                         return `<div style="background:#fff;padding:10px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:8px;"><strong>Tanque ${tq}:</strong> ${totalLine}<div style="margin-top:6px;">${itemsHtml}</div></div>`;
                     }).filter(Boolean).join('');
                     if (tankBlocksHtml) {
-                        html += `<div style="margin-bottom: 16px;"><strong style="color: #1e293b; font-size: 14px;">📋 Por tanque (A, B, C…)</strong><p style="margin:6px 0 8px 0;color:#64748b;font-size:12px;">Los kg son el total para todo el volumen de agua indicado. Si hay varias recargas, en cada llenada se usa la cantidad «por recarga».</p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">${tankBlocksHtml}</div></div>`;
+                        html += `<div style="margin-bottom: 16px;"><strong style="color: #1e293b; font-size: 14px;">📋 Por tanque (A, B, C…)</strong><p style="margin:6px 0 8px 0;color:#64748b;font-size:12px;">Las cantidades son el total para todo el volumen de agua indicado (sólidos en kg y líquidos en L). Si hay varias recargas, en cada llenada se usa la cantidad «por recarga».</p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">${tankBlocksHtml}</div></div>`;
                     }
                 }
                 let hydroTotalsPpm = hasHidroponiaData && hidroponia.fertilizerTotalsPpm && typeof hidroponia.fertilizerTotalsPpm === 'object' ? hidroponia.fertilizerTotalsPpm : null;
