@@ -5772,18 +5772,29 @@
                 }
             }
             
-            if (projectValue && projectKey) {
-                try {
-                    const project = JSON.parse(projectValue);
-                    return { project, projectKey };
-                } catch (e) {
-                    return null;
-                }
-            }
-            
             // Proyecto creado en otro equipo: solo está en la nube (Supabase)
             const cloudList = (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) ? window._adminCloudCache.projects : [];
             const cloudProj = cloudList.find(function(p) { return p && (String(p.id) === String(projectId)); });
+
+            if (projectValue && projectKey) {
+                try {
+                    const project = JSON.parse(projectValue);
+                    // Si local viene "vacío" (sin secciones reales), preferir versión de nube.
+                    // Esto pasa cuando hay una copia local incompleta del mismo id.
+                    const localHasData =
+                        !!(project && typeof project === 'object' && (
+                            (project.data && typeof project.data === 'object' && Object.keys(project.data).length > 0) ||
+                            (project.sections && typeof project.sections === 'object' && Object.keys(project.sections).length > 0) ||
+                            project.location || project.amendments || project.granular || project.fertirriego || project.hidroponia || project.vpdAnalysis
+                        ));
+                    if (!localHasData && cloudProj) return { project: cloudProj, projectKey: null };
+                    return { project, projectKey };
+                } catch (e) {
+                    if (cloudProj) return { project: cloudProj, projectKey: null };
+                    return null;
+                }
+            }
+
             if (cloudProj) {
                 return { project: cloudProj, projectKey: null };
             }
@@ -6113,8 +6124,13 @@
             }
             // Proyectos desde la nube tienen { id, name, data, ... }; los datos reales están en data. Unificar para que la vista vea sections, hidroponia, etc.
             let project = projectRecord.project;
-            if (projectRecord.projectKey === null && project && project.data && typeof project.data === 'object') {
-                const d = project.data;
+            let cloudData = null;
+            if (project && project.data && typeof project.data === 'object') cloudData = project.data;
+            else if (project && typeof project.data === 'string') {
+                try { cloudData = JSON.parse(project.data); } catch (e) { cloudData = null; }
+            }
+            if (projectRecord.projectKey === null && project && cloudData && typeof cloudData === 'object') {
+                const d = cloudData;
                 project = {
                     ...d,
                     id: project.id,
