@@ -6111,8 +6111,21 @@
                 alert('❌ Proyecto no encontrado');
                 return;
             }
-            
-            const { project } = projectRecord;
+            // Proyectos desde la nube tienen { id, name, data, ... }; los datos reales están en data. Unificar para que la vista vea sections, hidroponia, etc.
+            let project = projectRecord.project;
+            if (projectRecord.projectKey === null && project && project.data && typeof project.data === 'object') {
+                const d = project.data;
+                project = {
+                    ...d,
+                    id: project.id,
+                    name: project.name || d.name || d.title,
+                    title: project.title || d.title,
+                    created_at: project.created_at || d.created_at,
+                    updated_at: project.updated_at || d.updated_at,
+                    user_id: project.user_id || d.user_id,
+                    userId: project.user_id || d.user_id || d.userId
+                };
+            }
             function resolveProjectOwnerUserId(projectRef) {
                 if (projectRef && (projectRef.user_id || projectRef.userId)) {
                     return String(projectRef.user_id || projectRef.userId);
