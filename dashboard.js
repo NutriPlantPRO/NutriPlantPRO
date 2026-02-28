@@ -15259,6 +15259,28 @@ function saveVPDCalculation(type, data) {
   return true;
 }
 
+// Eliminar una lectura del historial de VPD (índice en la lista mostrada: 0 = más reciente)
+window.deleteVPDHistoryEntry = function deleteVPDHistoryEntry(displayIndex) {
+  const history = currentProject.vpdAnalysis && currentProject.vpdAnalysis.history ? currentProject.vpdAnalysis.history : [];
+  if (!history.length) return;
+  const realIndex = history.length - 1 - displayIndex;
+  if (realIndex < 0 || realIndex >= history.length) return;
+  if (!confirm('¿Eliminar esta lectura del historial de VPD?')) return;
+  history.splice(realIndex, 1);
+  const currentProjectId = typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : (currentProject && currentProject.id);
+  if (currentProjectId && typeof window.projectStorage !== 'undefined' && window.projectStorage.saveSection) {
+    window.projectStorage.saveSection('vpdAnalysis', currentProject.vpdAnalysis, currentProjectId);
+  } else if (typeof saveProjectData === 'function') {
+    saveProjectData();
+  }
+  const view = document.getElementById('view');
+  const title = document.getElementById('section-title');
+  if (view) view.innerHTML = sectionTemplate('Análisis: Déficit de Presión de Vapor');
+  if (title) title.textContent = 'Análisis: Déficit de Presión de Vapor';
+  if (typeof addProjectIndicator === 'function') addProjectIndicator(view);
+  setTimeout(function() { if (typeof loadVPDSavedResults === 'function') loadVPDSavedResults(); }, 150);
+};
+
 // Función para crear gráfica de rangos ideales de VPD
 function createVPDRangeChart(vpdValue) {
   const minVPD = 0;
@@ -15534,25 +15556,26 @@ function createVPDSectionHTML() {
           </h3>
           <div style="max-height: 300px; overflow-y: auto;">
             ${history.slice().reverse().slice(0, 10).map((calc, idx) => `
-              <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e5e7eb;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <div style="font-weight: 600; color: #1e293b;">
-                      ${calc.type === 'environmental' ? '🌐 Ambiental' : '🔬 Avanzado'}
-                    </div>
-                    <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
-                      ${new Date(calc.timestamp).toLocaleString('es-MX')}
-                    </div>
+              <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-weight: 600; color: #1e293b;">
+                    ${calc.type === 'environmental' ? '🌐 Ambiental' : '🔬 Avanzado'}
                   </div>
-                  <div style="text-align: right;">
-                    <div style="font-size: 18px; font-weight: 700; color: #0ea5e9;">
-                      ${calc.vpd} kPa
-                    </div>
-                    <div style="font-size: 13px; color: #64748b;">
-                      HD: ${calc.hd} g/m³
-                    </div>
+                  <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
+                    ${new Date(calc.timestamp).toLocaleString('es-MX')}
                   </div>
                 </div>
+                <div style="text-align: right; flex-shrink: 0;">
+                  <div style="font-size: 18px; font-weight: 700; color: #0ea5e9;">
+                    ${calc.vpd} kPa
+                  </div>
+                  <div style="font-size: 13px; color: #64748b;">
+                    HD: ${calc.hd} g/m³
+                  </div>
+                </div>
+                <button type="button" onclick="window.deleteVPDHistoryEntry && window.deleteVPDHistoryEntry(${idx})" title="Eliminar esta lectura" style="flex-shrink: 0; width: 36px; height: 36px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px;" onmouseover="this.style.background='#fef2f2'; this.style.color='#dc2626';" onmouseout="this.style.background='#fff'; this.style.color='#64748b';">
+                  🗑️
+                </button>
               </div>
             `).join('')}
           </div>
