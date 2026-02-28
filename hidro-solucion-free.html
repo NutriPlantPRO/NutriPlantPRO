@@ -162,6 +162,7 @@
     function renderHydroMeqTable() {
       const wrap = document.getElementById('hydroMeqTableWrap');
       if (!wrap) return;
+      var savedScroll = (wrap.firstElementChild && typeof wrap.firstElementChild.scrollLeft === 'number') ? wrap.firstElementChild.scrollLeft : 0;
       const rows = hydroState.stages.map(stage => {
         const computedCe = hydroComputeCE(stage);
         stage.ce = computedCe.toFixed(2);
@@ -192,12 +193,16 @@
           </table>
         </div>
       `;
+      if (wrap.firstElementChild) wrap.firstElementChild.scrollLeft = savedScroll;
     }
 
     function renderHydroDerivedTables() {
       const ppmWrap = document.getElementById('hydroPpmTableWrap');
       const pctWrap = document.getElementById('hydroMeqPercentWrap');
       if (!ppmWrap || !pctWrap) return;
+
+      var savedPpmScroll = (ppmWrap.firstElementChild && typeof ppmWrap.firstElementChild.scrollLeft === 'number') ? ppmWrap.firstElementChild.scrollLeft : 0;
+      var savedPctScroll = (pctWrap.firstElementChild && typeof pctWrap.firstElementChild.scrollLeft === 'number') ? pctWrap.firstElementChild.scrollLeft : 0;
 
       const ppmRows = hydroState.stages.map(stage => {
         const macroPpm = hydroComputeMacroPpm(stage);
@@ -260,6 +265,9 @@
           </table>
         </div>
       `;
+
+      if (ppmWrap.firstElementChild) ppmWrap.firstElementChild.scrollLeft = savedPpmScroll;
+      if (pctWrap.firstElementChild) pctWrap.firstElementChild.scrollLeft = savedPctScroll;
 
       const summaryEl = document.getElementById('hydroNitrogenSummaryText');
       if (summaryEl) {

@@ -365,6 +365,10 @@ function renderHydroStageTable() {
   const pctWrap = document.getElementById('hydroMeqPercentWrap');
   if (!meqWrap || !ppmWrap || !pctWrap) return;
 
+  var savedMeqScroll = (meqWrap.firstElementChild && typeof meqWrap.firstElementChild.scrollLeft === 'number') ? meqWrap.firstElementChild.scrollLeft : 0;
+  var savedPpmScroll = (ppmWrap.firstElementChild && typeof ppmWrap.firstElementChild.scrollLeft === 'number') ? ppmWrap.firstElementChild.scrollLeft : 0;
+  var savedPctScroll = (pctWrap.firstElementChild && typeof pctWrap.firstElementChild.scrollLeft === 'number') ? pctWrap.firstElementChild.scrollLeft : 0;
+
   const meqRows = hydroState.stages.map(stage => {
     const computedCe = hydroComputeCE(stage);
     stage.ce = computedCe.toFixed(2);
@@ -464,6 +468,10 @@ function renderHydroStageTable() {
       </table>
     </div>
   `;
+
+  if (meqWrap.firstElementChild) meqWrap.firstElementChild.scrollLeft = savedMeqScroll;
+  if (ppmWrap.firstElementChild) ppmWrap.firstElementChild.scrollLeft = savedPpmScroll;
+  if (pctWrap.firstElementChild) pctWrap.firstElementChild.scrollLeft = savedPctScroll;
 }
 
 // Límites de equilibrio (min–max %) para generar la zona matemáticamente
@@ -868,6 +876,8 @@ function hydroFertRowProductTotal(f, materials) {
 function renderHydroFertTable() {
   const wrap = document.getElementById('hydroFertTableWrap');
   if (!wrap) return;
+  var scrollEl = wrap.querySelector && wrap.querySelector('.hydro-table-scroll');
+  var savedFertScroll = (scrollEl && typeof scrollEl.scrollLeft === 'number') ? scrollEl.scrollLeft : 0;
   const materials = getAllHydroMaterials();
   const optNew = '<option value="__hydro_new__">➕ Agregar nuevo…</option>';
   const options = (selectedId) =>
@@ -952,6 +962,8 @@ function renderHydroFertTable() {
       </table>
     </div>
   `;
+  var newScrollEl = wrap.querySelector && wrap.querySelector('.hydro-table-scroll');
+  if (newScrollEl) newScrollEl.scrollLeft = savedFertScroll;
 }
 
 function renderHydroFertTotals() {

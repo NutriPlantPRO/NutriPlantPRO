@@ -1560,6 +1560,8 @@
                 title: '📋 Todos los Proyectos',
                 data: visibleProjects,
                 isProject: true,
+                previousViewForProject: 'showAllProjects',
+                previousViewParamsForProject: [],
                 columns: [
                     { key: 'user_name', label: 'Usuario', format: 'text', filterable: true },
                     { key: 'orphan_status', label: 'Estado', format: 'text', filterable: true },
@@ -3228,6 +3230,8 @@
             showDataViewerWithFilters({
                 title: '👥 Suscriptores con Proyectos',
                 data: usersWithProjects,
+                previousView: showUsersWithProjects,
+                previousViewParams: [],
                 columns: [
                     { key: 'name', label: 'Nombre', format: 'text', filterable: true },
                     { key: 'email', label: 'Email', format: 'text', filterable: true },
@@ -3604,6 +3608,8 @@
             showDataViewerWithFilters({
                 title: '🆕 Suscriptores nuevos este mes (' + monthName + ')',
                 data: newThisMonth,
+                previousView: showNewSubscribersThisMonth,
+                previousViewParams: [],
                 columns: [
                     { key: 'name', label: 'Nombre', format: 'text', filterable: true },
                     { key: 'email', label: 'Email', format: 'text', filterable: true },
@@ -3628,6 +3634,8 @@
             showDataViewerWithFilters({
                 title: '✅ Suscriptores Activos',
                 data: activeUsers,
+                previousView: showActiveSubscribers,
+                previousViewParams: [],
                 columns: [
                     { key: 'name', label: 'Nombre', format: 'text', filterable: true },
                     { key: 'email', label: 'Email', format: 'text', filterable: true },
@@ -3654,6 +3662,8 @@
             showDataViewerWithFilters({
                 title: '⏳ Suscripciones Pendientes',
                 data: pendingUsers,
+                previousView: showPendingSubscribers,
+                previousViewParams: [],
                 columns: [
                     { key: 'name', label: 'Nombre', format: 'text', filterable: true },
                     { key: 'email', label: 'Email', format: 'text', filterable: true },
@@ -3942,7 +3952,9 @@
                 html += '<td style="padding: 12px; text-align: center;"><div style="display: flex; gap: 8px; justify-content: center;">';
                 if (config.actions.edit) {
                     if (isProject) {
-                        html += '<button onclick="viewProjectDetails(\'' + itemId + '\')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">👁️ Ver</button><button onclick="editProject(\'' + itemId + '\')" style="background: #60a5fa; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Editar</button>';
+                        var safeId = (itemId + '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                        var viewProjCall = config.previousViewForProject ? ('viewProjectDetailsWithReturn(\'' + safeId + '\', \'' + (config.previousViewForProject + '').replace(/'/g, "\\'") + '\')') : ('viewProjectDetails(\'' + safeId + '\')');
+                        html += '<button onclick="' + viewProjCall + '" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">👁️ Ver</button><button onclick="editProject(\'' + safeId + '\')" style="background: #60a5fa; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Editar</button>';
                     } else {
                         var prevCall = config.previousView ? ('viewUserDetails(\'' + itemId + '\', ' + (config.previousView.name || 'null') + ', ' + JSON.stringify(config.previousViewParams || []) + ')') : ('viewUserDetails(\'' + itemId + '\')');
                         html += '<button onclick="' + prevCall + '" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">👁️ Ver</button><button onclick="editUser(\'' + itemId + '\')" style="background: #60a5fa; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Editar</button>';
@@ -5760,16 +5772,22 @@
                 }
             }
             
-            if (!projectValue || !projectKey) {
-                return null;
+            if (projectValue && projectKey) {
+                try {
+                    const project = JSON.parse(projectValue);
+                    return { project, projectKey };
+                } catch (e) {
+                    return null;
+                }
             }
             
-            try {
-                const project = JSON.parse(projectValue);
-                return { project, projectKey };
-            } catch (e) {
-                return null;
+            // Proyecto creado en otro equipo: solo está en la nube (Supabase)
+            const cloudList = (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) ? window._adminCloudCache.projects : [];
+            const cloudProj = cloudList.find(function(p) { return p && (String(p.id) === String(projectId)); });
+            if (cloudProj) {
+                return { project: cloudProj, projectKey: null };
             }
+            return null;
         }
         
         function findUserByEmail(email) {
@@ -6074,10 +6092,19 @@
         window.deleteUser = deleteUser;
         
         // 👁️ FUNCIÓN PARA VER DETALLES COMPLETOS DEL PROYECTO
+        /** Abre detalle del proyecto y deja registrada la vista a la que volver con el botón ← (ej. Todos los Proyectos). */
+        function viewProjectDetailsWithReturn(projectId, returnViewName) {
+            var fn = typeof returnViewName === 'function' ? returnViewName : (window[returnViewName]);
+            var params = (window._dataViewerState && window._dataViewerState.config && window._dataViewerState.config.previousViewParamsForProject) ? window._dataViewerState.config.previousViewParamsForProject : [];
+            if (typeof fn === 'function') setPreviousView(fn, params || []);
+            viewProjectDetails(projectId);
+        }
+        window.viewProjectDetailsWithReturn = viewProjectDetailsWithReturn;
+
         function viewProjectDetails(projectId, fromView = null, fromViewParams = null) {
             // Guardar vista anterior si se proporciona
             if (fromView) {
-                setPreviousView(fromView, fromViewParams);
+                setPreviousView(typeof fromView === 'function' ? fromView : window[fromView], fromViewParams || []);
             }
             const projectRecord = findProjectById(projectId);
             if (!projectRecord) {
@@ -7347,6 +7374,7 @@
                     return `<tr><td style="padding:6px 8px;border:1px solid #e2e8f0;">${escapeHtml(stage.name || '')}</td><td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${ce}</td>${cells}</tr>`;
                 }).join('');
                 const meqHeader = HYDRO_MEQ_NUTRIENTS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;text-align:center;">${adminHydroLabel(n)} (meq/L)</th>`).join('');
+                const pctHeader = HYDRO_MEQ_NUTRIENTS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;text-align:center;">${adminHydroLabel(n)} % meq</th>`).join('');
                 html += `
                     <div style="margin-bottom: 16px;">
                         <strong style="color: #1e293b; font-size: 14px;">🧪 Solución nutritiva por etapa (meq/L)</strong>
@@ -7375,15 +7403,46 @@
                 }).join('');
                 html += `
                     <div style="margin-bottom: 16px;">
-                        <strong style="color: #1e293b; font-size: 14px;">📊 Solución nutritiva por etapa (%)</strong>
+                        <strong style="color: #1e293b; font-size: 14px;">📊 Peso en % de meq (aniones y cationes K+Ca+Mg)</strong>
+                        <p style="margin:4px 0 8px 0;color:#64748b;font-size:12px;">Aniones: % sobre total N-NO₃⁻+P-H₂PO₄⁻+S-SO₄²⁻. Cationes K⁺, Ca²⁺, Mg²⁺: % sobre K+Ca+Mg (sin amonio). N-NH₄⁺: % sobre total cationes.</p>
                         <div style="overflow-x: auto; margin-top: 8px;">
                             <table style="width:100%; border-collapse: collapse; font-size: 13px;">
-                                <thead><tr style="background:#e0f2fe;"><th style="padding:6px 8px;border:1px solid #cbd5e1;">Etapa</th>${meqHeader}</tr></thead>
+                                <thead><tr style="background:#e0f2fe;"><th style="padding:6px 8px;border:1px solid #cbd5e1;">Etapa</th>${pctHeader}</tr></thead>
                                 <tbody>${pctRows}</tbody>
                             </table>
                         </div>
                     </div>
                 `;
+                if (hydroActiveStage) {
+                    const meq = hydroActiveStage.meq || {};
+                    const sumAn = HYDRO_ANIONS.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+                    const sumKCM = HYDRO_CATIONS_TRIANGLE.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+                    const pNO3 = sumAn > 0 ? ((parseFloat(meq.N_NO3) || 0) / sumAn) * 100 : 33.3;
+                    const pH2PO4 = sumAn > 0 ? ((parseFloat(meq.P) || 0) / sumAn) * 100 : 33.3;
+                    const pSO4 = sumAn > 0 ? ((parseFloat(meq.S) || 0) / sumAn) * 100 : 33.3;
+                    const pK = sumKCM > 0 ? ((parseFloat(meq.K) || 0) / sumKCM) * 100 : 33.3;
+                    const pCa = sumKCM > 0 ? ((parseFloat(meq.Ca) || 0) / sumKCM) * 100 : 33.3;
+                    const pMg = sumKCM > 0 ? ((parseFloat(meq.Mg) || 0) / sumKCM) * 100 : 33.3;
+                    const norm = (a,b,c) => { let pa=Math.max(0,Math.min(100,a)), pb=Math.max(0,Math.min(100,b)), pc=Math.max(0,Math.min(100,c)); const s=pa+pb+pc; if(s>0 && Math.abs(s-100)>0.01){ pa=(pa/s)*100; pb=(pb/s)*100; pc=(pc/s)*100; } return [pa,pb,pc]; };
+                    const w=380,h=340,pad=40,base=w-2*pad,triH=base*Math.sqrt(3)/2;
+                    const vT={x:w/2,y:pad}, vL={x:pad,y:pad+triH}, vR={x:w-pad,y:pad+triH};
+                    const bary=(vA,vB,vC,pA,pB,pC)=>({x:(vA.x*pA+vB.x*pB+vC.x*pC)/100,y:(vA.y*pA+vB.y*pB+vC.y*pC)/100});
+                    const toXY_cat=(k,ca,mg)=>bary(vT,vL,vR,k,ca,mg);
+                    const toXY_an=(no3,h2po4,so4)=>bary(vT,vL,vR,no3,h2po4,so4);
+                    const anZone=[[20,10,70],[28.75,1.25,70],[80,1.25,18.75],[80,10,10]];
+                    const catZone=[[10,62.5,27.5],[32.5,62.5,5],[65,30,5],[65,22.5,12.5],[37.5,22.5,40],[10,50,40]];
+                    const anPts=anZone.map(([a,b,c])=>toXY_an(a,b,c));
+                    const catPts=catZone.map(([k,ca,mg])=>toXY_cat(k,ca,mg));
+                    const [pN,pH,pS]=norm(pNO3,pH2PO4,pSO4);
+                    const [pKk,pCaN,pMgN]=norm(pK,pCa,pMg);
+                    const ptAn=toXY_an(pN,pH,pS);
+                    const ptCat=toXY_cat(pKk,pCaN,pMgN);
+                    const poly=(pts,fill,stroke)=>{ if(!pts||pts.length<3) return ''; const s=pts.map(p=>p.x+','+p.y).join(' '); return '<polygon points="'+s+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.5"/>'; };
+                    let grid=''; for(let i=1;i<=9;i++){ const t=i/10; grid+='<line x1="'+(vT.x+(vL.x-vT.x)*t)+'" y1="'+(vT.y+(vL.y-vT.y)*t)+'" x2="'+(vT.x+(vR.x-vT.x)*t)+'" y2="'+(vT.y+(vR.y-vT.y)*t)+'" stroke="#93c5fd" stroke-width="0.5"/>'; grid+='<line x1="'+(vL.x+(vR.x-vL.x)*t)+'" y1="'+(vL.y+(vR.y-vL.y)*t)+'" x2="'+(vL.x+(vT.x-vL.x)*t)+'" y2="'+(vL.y+(vT.y-vL.y)*t)+'" stroke="#93c5fd" stroke-width="0.5"/>'; grid+='<line x1="'+(vR.x+(vT.x-vR.x)*t)+'" y1="'+(vR.y+(vT.y-vR.y)*t)+'" x2="'+(vR.x+(vL.x-vR.x)*t)+'" y2="'+(vR.y+(vL.y-vR.y)*t)+'" stroke="#93c5fd" stroke-width="0.5"/>'; }
+                    const triBorder='<polygon points="'+vT.x+','+vT.y+' '+vR.x+','+vR.y+' '+vL.x+','+vL.y+'" fill="none" stroke="#2563eb" stroke-width="2"/>';
+                    const triSvg='<svg viewBox="0 0 '+w+' '+h+'" width="100%" style="max-width:380px;height:auto;display:block;margin:8px auto;background:#fff;border-radius:8px;">'+grid+poly(anPts,'rgba(234,179,8,0.35)','#ca8a04')+poly(catPts,'rgba(185,28,28,0.28)','#b91c1c')+triBorder+'<circle cx="'+ptAn.x+'" cy="'+ptAn.y+'" r="5" fill="#eab308" stroke="#92400e" stroke-width="1"/><circle cx="'+ptCat.x+'" cy="'+ptCat.y+'" r="5" fill="#b91c1c" stroke="#7f1d1d" stroke-width="1"/><text x="'+vT.x+'" y="'+(vT.y-6)+'" text-anchor="middle" font-size="10" fill="#334155">K⁺/NO₃⁻</text><text x="'+(vL.x-8)+'" y="'+(vL.y+4)+'" text-anchor="end" font-size="10" fill="#334155">Ca²⁺/H₂PO₄⁻</text><text x="'+(vR.x+8)+'" y="'+(vR.y+4)+'" text-anchor="start" font-size="10" fill="#334155">Mg²⁺/SO₄²⁻</text></svg>';
+                    html += '<div style="margin-bottom: 16px;"><strong style="color: #1e293b; font-size: 14px;">📐 Diagrama ternario (% aniones y cationes)</strong><p style="margin:4px 0 8px 0;color:#64748b;font-size:12px;">Punto amarillo: aniones. Punto rojo: cationes K⁺, Ca²⁺, Mg²⁺. Zonas: rangos de equilibrio.</p>'+triSvg+'</div>';
+                }
                 const ppmRows = hydroStages.map(stage => {
                     const meq = stage.meq || {};
                     const macroPpm = adminHydroMacroPpm(meq);
@@ -7905,9 +7964,10 @@
 
         // 👤 FUNCIÓN PARA VER DETALLES COMPLETOS DEL USUARIO Y SUS PROYECTOS
         function viewUserDetails(userId, fromView = null, fromViewParams = null) {
-            // Guardar vista anterior si se proporciona
+            // Guardar vista anterior si se proporciona (nombre de función o función)
             if (fromView) {
-                setPreviousView(fromView, fromViewParams);
+                var fn = typeof fromView === 'function' ? fromView : window[fromView];
+                if (typeof fn === 'function') setPreviousView(fn, fromViewParams || []);
             }
             
             // Guardar el contexto actual en variable temporal para usarlo en el HTML

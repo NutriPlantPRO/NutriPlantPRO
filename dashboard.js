@@ -11331,6 +11331,15 @@ function reportNum(value, decimals) {
   return n.toFixed(d);
 }
 
+// Etiquetas con subíndice/superíndice para reportes (óxidos y iones)
+function reportFormatOxideLabel(key) {
+  const oxideMap = { P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', SO4: 'SO₄', SO3: 'SO₃', SiO2: 'SiO₂' };
+  if (oxideMap[key]) return oxideMap[key];
+  if (key === 'N_NO3') return 'N-NO₃⁻';
+  if (key === 'N_NH4') return 'N-NH₄⁺';
+  return key;
+}
+
 function createSimpleNutrientList(items, emptyText) {
   const rows = Object.entries(items || {})
     .filter(([, v]) => v !== null && v !== undefined && v !== '' && !isNaN(parseFloat(v)) && parseFloat(v) !== 0)
@@ -11536,8 +11545,8 @@ function createGranularSectionHTML() {
   }
 
   function nutrientLabel(nutrient, isElementalMode) {
-    if (!isElementalMode) return nutrient;
-    return ELEMENTAL_LABELS[nutrient] || nutrient;
+    if (isElementalMode) return ELEMENTAL_LABELS[nutrient] || nutrient;
+    return reportFormatOxideLabel(nutrient);
   }
 
   function renderNutrientPills(source, isElementalMode, useNegativeClass) {
@@ -11708,10 +11717,10 @@ function createFertigationSectionHTML(chartImages) {
     return Number.isFinite(n) ? n : 0;
   }
   function label(n, elemental) {
-    if (n === 'N_NO3') return 'N(NO3)';
-    if (n === 'N_NH4') return 'N(NH4)';
-    if (!elemental) return n;
-    return elemLabels[n] || n;
+    if (n === 'N_NO3') return 'N-NO₃⁻';
+    if (n === 'N_NH4') return 'N-NH₄⁺';
+    if (elemental) return elemLabels[n] || n;
+    return reportFormatOxideLabel(n);
   }
   function display(n, value, elemental) {
     const raw = toNum(value);
@@ -11923,7 +11932,7 @@ function createFertigationSectionHTML(chartImages) {
     MgO: weeks.map(w => toNum(w?.totals?.MgO)),
     SO4: weeks.map(w => toNum(w?.totals?.SO4))
   };
-  let macroSeriesLabels = { P2O5: 'P2O5', K2O: 'K2O', CaO: 'CaO', MgO: 'MgO' };
+  let macroSeriesLabels = { P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', SO4: 'SO₄' };
   if (programModeIsElemental) {
     macroSeries = {
       N_NO3: macroSeries.N_NO3,
@@ -11934,16 +11943,16 @@ function createFertigationSectionHTML(chartImages) {
       MgO: macroSeries.MgO.map(v => display('MgO', v, true)),
       SO4: macroSeries.SO4
     };
-    macroSeriesLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg' };
+    macroSeriesLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SO4: 'SO₄' };
   }
   const macroDatasets = [
-    { label: 'N(NO3)', data: macroSeries.N_NO3, color: macroColors.N_NO3 },
-    { label: 'N(NH4)', data: macroSeries.N_NH4, color: macroColors.N_NH4 },
+    { label: 'N-NO₃⁻', data: macroSeries.N_NO3, color: macroColors.N_NO3 },
+    { label: 'N-NH₄⁺', data: macroSeries.N_NH4, color: macroColors.N_NH4 },
     { label: macroSeriesLabels.P2O5, data: macroSeries.P2O5, color: macroColors.P2O5 },
     { label: macroSeriesLabels.K2O, data: macroSeries.K2O, color: macroColors.K2O },
     { label: macroSeriesLabels.CaO, data: macroSeries.CaO, color: macroColors.CaO },
     { label: macroSeriesLabels.MgO, data: macroSeries.MgO, color: macroColors.MgO },
-    { label: 'SO4', data: macroSeries.SO4, color: macroColors.SO4 }
+    { label: macroSeriesLabels.SO4, data: macroSeries.SO4, color: macroColors.SO4 }
   ];
   const microDatasets = [
     { label: 'Fe', data: weeks.map(w => toNum(w?.totals?.Fe)), color: microColors.Fe },
@@ -12096,6 +12105,61 @@ function createAnalysisSectionHTML() {
   `;
 }
 
+// Genera SVG del diagrama ternario para el reporte (aniones + cationes %)
+function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
+  const normalize = (a, b, c) => {
+    let pa = Math.max(0, Math.min(100, a)), pb = Math.max(0, Math.min(100, b)), pc = Math.max(0, Math.min(100, c));
+    const sum = pa + pb + pc;
+    if (sum > 0 && Math.abs(sum - 100) > 0.01) { pa = (pa / sum) * 100; pb = (pb / sum) * 100; pc = (pc / sum) * 100; }
+    return [pa, pb, pc];
+  };
+  const width = 380; const height = 340; const pad = 40;
+  const base = width - 2 * pad;
+  const triHeight = base * Math.sqrt(3) / 2;
+  const vTop = { x: width / 2, y: pad };
+  const vLeft = { x: pad, y: pad + triHeight };
+  const vRight = { x: width - pad, y: pad + triHeight };
+  const bary = (vA, vB, vC, pA, pB, pC) => ({
+    x: (vA.x * pA + vB.x * pB + vC.x * pC) / 100,
+    y: (vA.y * pA + vB.y * pB + vC.y * pC) / 100
+  });
+  const toXY_cat = (k, ca, mg) => bary(vTop, vLeft, vRight, k, ca, mg);
+  const toXY_an = (no3, h2po4, so4) => bary(vTop, vLeft, vRight, no3, h2po4, so4);
+  const anZone = [[20, 10, 70], [28.75, 1.25, 70], [80, 1.25, 18.75], [80, 10, 10]];
+  const catZone = [[10, 62.5, 27.5], [32.5, 62.5, 5], [65, 30, 5], [65, 22.5, 12.5], [37.5, 22.5, 40], [10, 50, 40]];
+  const anPts = anZone.map(([a, b, c]) => toXY_an(a, b, c));
+  const catPts = catZone.map(([k, ca, mg]) => toXY_cat(k, ca, mg));
+  const [pN, pH, pS] = normalize(pNO3, pH2PO4, pSO4);
+  const [pKk, pCa, pMg] = normalize(pK, pCa, pMg);
+  const ptAn = toXY_an(pN, pH, pS);
+  const ptCat = toXY_cat(pKk, pCa, pMg);
+  const poly = (pts, fill, stroke) => {
+    if (!pts || pts.length < 3) return '';
+    const s = pts.map(p => `${p.x},${p.y}`).join(' ');
+    return `<polygon points="${s}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
+  };
+  let grid = '';
+  for (let i = 1; i <= 9; i++) {
+    const t = i / 10;
+    grid += `<line x1="${vTop.x + (vLeft.x - vTop.x) * t}" y1="${vTop.y + (vLeft.y - vTop.y) * t}" x2="${vTop.x + (vRight.x - vTop.x) * t}" y2="${vTop.y + (vRight.y - vTop.y) * t}" stroke="#93c5fd" stroke-width="0.5"/>`;
+    grid += `<line x1="${vLeft.x + (vRight.x - vLeft.x) * t}" y1="${vLeft.y + (vRight.y - vLeft.y) * t}" x2="${vLeft.x + (vTop.x - vLeft.x) * t}" y2="${vLeft.y + (vTop.y - vLeft.y) * t}" stroke="#93c5fd" stroke-width="0.5"/>`;
+    grid += `<line x1="${vRight.x + (vTop.x - vRight.x) * t}" y1="${vRight.y + (vTop.y - vRight.y) * t}" x2="${vRight.x + (vLeft.x - vRight.x) * t}" y2="${vRight.y + (vLeft.y - vRight.y) * t}" stroke="#93c5fd" stroke-width="0.5"/>`;
+  }
+  const triBorder = `<polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#2563eb" stroke-width="2"/>`;
+  const svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" style="max-width:380px;height:auto;display:block;margin:8px auto;background:#fff;border-radius:8px;">
+    ${grid}
+    ${poly(anPts, 'rgba(234,179,8,0.35)', '#ca8a04')}
+    ${poly(catPts, 'rgba(185,28,28,0.28)', '#b91c1c')}
+    ${triBorder}
+    <circle cx="${ptAn.x}" cy="${ptAn.y}" r="5" fill="#eab308" stroke="#92400e" stroke-width="1"/>
+    <circle cx="${ptCat.x}" cy="${ptCat.y}" r="5" fill="#b91c1c" stroke="#7f1d1d" stroke-width="1"/>
+    <text x="${vTop.x}" y="${vTop.y - 6}" text-anchor="middle" font-size="10" fill="#334155">K⁺/NO₃⁻</text>
+    <text x="${vLeft.x - 8}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#334155">Ca²⁺/H₂PO₄⁻</text>
+    <text x="${vRight.x + 8}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#334155">Mg²⁺/SO₄²⁻</text>
+  </svg>`;
+  return svg;
+}
+
 function createHidroponiaSectionHTML() {
   const h = currentProject.hidroponia || {};
   const projectCrop = currentProject.cultivo || currentProject.crop_type || currentProject.cropType || currentProject.cultivoTipo || '';
@@ -12113,7 +12177,7 @@ function createHidroponiaSectionHTML() {
   const hydroNutrients = [...meqNutrients, ...microNutrients];
   const eqW = { N_NO3: 14, N_NH4: 14, P: 31, S: 16.03, K: 39.1, Ca: 20.04, Mg: 12.15 };
   function label(n) {
-    const map = { N_NH4: 'N-NH4+', N_NO3: 'N-NO3-', P: 'P-H2PO4-', S: 'S-SO4-2', K: 'K+', Ca: 'Ca2+', Mg: 'Mg2+' };
+    const map = { N_NH4: 'N-NH₄⁺', N_NO3: 'N-NO₃⁻', P: 'P-H₂PO₄⁻', S: 'S-SO₄²⁻', K: 'K⁺', Ca: 'Ca²⁺', Mg: 'Mg²⁺' };
     return map[n] || n;
   }
   function toNum(v) {
@@ -12183,6 +12247,25 @@ function createHidroponiaSectionHTML() {
       <td>${reportEscapeHtml(stage.name || '')}</td>
       <td>${ce.toFixed(2)}</td>
       ${meqNutrients.map(n => `<td>${toNum(meq[n]).toFixed(1)}</td>`).join('')}
+    </tr>`;
+  }).join('');
+  const hydroAnions = ['N_NO3', 'P', 'S'];
+  const hydroCationsTriangle = ['K', 'Ca', 'Mg'];
+  const stageRowsPct = stages.map(stage => {
+    const meq = stage.meq || {};
+    const sumAnions = hydroAnions.reduce((acc, n) => acc + toNum(meq[n]), 0);
+    const sumKCaMg = hydroCationsTriangle.reduce((acc, n) => acc + toNum(meq[n]), 0);
+    const totalCations = sumKCaMg + toNum(meq.N_NH4);
+    const pct = {};
+    meqNutrients.forEach(n => {
+      const val = toNum(meq[n]);
+      if (hydroAnions.includes(n)) pct[n] = sumAnions > 0 ? (val / sumAnions) * 100 : 0;
+      else if (hydroCationsTriangle.includes(n)) pct[n] = sumKCaMg > 0 ? (val / sumKCaMg) * 100 : 0;
+      else pct[n] = totalCations > 0 ? (val / totalCations) * 100 : 0;
+    });
+    return `<tr>
+      <td>${reportEscapeHtml(stage.name || '')}</td>
+      ${meqNutrients.map(n => `<td>${pct[n].toFixed(1)}</td>`).join('')}
     </tr>`;
   }).join('');
   const stageRowsPpm = stages.map(stage => {
@@ -12270,6 +12353,30 @@ function createHidroponiaSectionHTML() {
           <tbody>${stageRowsMeq || `<tr><td colspan="${meqNutrients.length + 2}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
         </table>
       </div>
+      <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
+        <div class="report-block-title">📊 Peso en % de meq (aniones y cationes K+Ca+Mg)</div>
+        <div class="report-note" style="margin-bottom:8px;">Aniones: % sobre el total N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻. Cationes K⁺, Ca²⁺, Mg²⁺: % sobre el total K+Ca+Mg (sin amonio). N-NH₄⁺: % sobre el total de cationes (K+Ca+Mg+NH₄⁺).</div>
+        <table class="report-app-table">
+          <thead><tr><th>Etapa</th>${meqNutrients.map(n => `<th>${label(n)} % meq</th>`).join('')}</tr></thead>
+          <tbody>${stageRowsPct || `<tr><td colspan="${meqNutrients.length + 1}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
+        </table>
+      </div>
+      ${activeStage ? (function() {
+        const meq = activeStage.meq || {};
+        const sumAn = hydroAnions.reduce((acc, n) => acc + toNum(meq[n]), 0);
+        const sumKCM = hydroCationsTriangle.reduce((acc, n) => acc + toNum(meq[n]), 0);
+        const pNO3 = sumAn > 0 ? (toNum(meq.N_NO3) / sumAn) * 100 : 33.3;
+        const pH2PO4 = sumAn > 0 ? (toNum(meq.P) / sumAn) * 100 : 33.3;
+        const pSO4 = sumAn > 0 ? (toNum(meq.S) / sumAn) * 100 : 33.3;
+        const pK = sumKCM > 0 ? (toNum(meq.K) / sumKCM) * 100 : 33.3;
+        const pCa = sumKCM > 0 ? (toNum(meq.Ca) / sumKCM) * 100 : 33.3;
+        const pMg = sumKCM > 0 ? (toNum(meq.Mg) / sumKCM) * 100 : 33.3;
+        return `<div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
+        <div class="report-block-title">📐 Diagrama ternario (% aniones y cationes)</div>
+        <div class="report-note" style="margin-bottom:8px;">Punto amarillo: aniones (N-NO₃⁻, P-H₂PO₄⁻, S-SO₄²⁻). Punto rojo: cationes (K⁺, Ca²⁺, Mg²⁺). Zona amarilla/roja: rangos de equilibrio.</div>
+        ${buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg)}
+      </div>`;
+      })() : ''}
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
         <div class="report-block-title">📐 Solución nutritiva por etapa (ppm)</div>
         <table class="report-app-table">
