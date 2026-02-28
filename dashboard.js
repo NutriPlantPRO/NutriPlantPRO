@@ -139,24 +139,8 @@ function initializeSidebar() {
     sidebarOverlay.addEventListener('click', closeSidebar);
   }
 
-  // En celular: tocar la zona del logo alterna minimizar/expandir
-  const sidebarLogo = sidebar && sidebar.querySelector('.sidebar-logo');
-  const sidebarBrand = sidebar && sidebar.querySelector('.sidebar-brand');
-  const handleLogoToggle = function(e) {
-    if (window.innerWidth <= 768) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!sidebar) return;
-      sidebar.style.transform = 'translateX(0)';
-      sidebar.classList.add('open');
-      sidebar.classList.toggle('sidebar-minimized');
-      if (sidebarOverlay) sidebarOverlay.classList.remove('show');
-      document.body.style.overflow = '';
-    }
-  };
-  const logoEventName = (typeof window !== 'undefined' && window.PointerEvent) ? 'pointerup' : 'click';
-  if (sidebarLogo) sidebarLogo.addEventListener(logoEventName, handleLogoToggle);
-  if (sidebarBrand) sidebarBrand.addEventListener(logoEventName, handleLogoToggle);
+  // En celular: desactivar toggle por toque en logo/brand para evitar toques accidentales.
+  // El control del sidebar queda solo en botones/acciones explícitas.
 
   // En celular: comportamiento como laptop (sidebar siempre visible, inicia minimizado)
   if (window.innerWidth <= 768 && sidebar) {
@@ -4919,34 +4903,20 @@ function np_renderProjects(){
         if (sp && sp.fetchProject) {
           try {
             const key = 'nutriplant_project_' + id;
-            const localRaw = localStorage.getItem(key);
+            // Para escenarios multi-equipo (ej. editar polígono en otro dispositivo),
+            // siempre traer el snapshot cloud más reciente al abrir.
             const cloudUpdatedAt = p.updatedAt || p.updated_at || null;
-            const cloudTs = cloudUpdatedAt ? new Date(cloudUpdatedAt).getTime() : 0;
-
-            let shouldRefreshFromCloud = !localRaw;
-            if (localRaw && cloudTs > 0) {
-              try {
-                const localData = JSON.parse(localRaw);
-                const localUpdatedAt = localData?.updated_at || localData?.updatedAt || localData?.created_at || localData?.createdAt || null;
-                const localTs = localUpdatedAt ? new Date(localUpdatedAt).getTime() : 0;
-                shouldRefreshFromCloud = localTs <= 0 || localTs < cloudTs;
-              } catch (parseErr) {
-                // Si el JSON local está corrupto, forzar refresco desde nube.
-                shouldRefreshFromCloud = true;
+            const fullData = await sp.fetchProject(id);
+            if (fullData) {
+              const toStore = (typeof fullData === 'object' && fullData.id)
+                ? fullData
+                : { id, name: p.title, ...fullData };
+              if (!toStore.updated_at && !toStore.updatedAt && cloudUpdatedAt) {
+                toStore.updatedAt = cloudUpdatedAt;
               }
-            }
-
-            if (shouldRefreshFromCloud) {
-              const fullData = await sp.fetchProject(id);
-              if (fullData) {
-                const toStore = typeof fullData === 'object' && fullData.id ? fullData : { id, name: p.title, ...fullData };
-                if (!toStore.updated_at && !toStore.updatedAt && cloudUpdatedAt) {
-                  toStore.updatedAt = cloudUpdatedAt;
-                }
-                localStorage.setItem(key, JSON.stringify(toStore));
-                console.log('☁️ Proyecto actualizado desde nube al abrir:', id);
-                freshnessSource = 'cloud-refresh';
-              }
+              localStorage.setItem(key, JSON.stringify(toStore));
+              console.log('☁️ Proyecto actualizado desde nube al abrir:', id);
+              freshnessSource = 'cloud-refresh';
             }
           } catch (err) { console.warn('fetchProject:', err); }
         }

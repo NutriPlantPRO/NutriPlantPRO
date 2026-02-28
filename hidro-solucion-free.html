@@ -109,7 +109,8 @@
     const HYDRO_MEQ_NUTRIENTS = ['N_NH4','N_NO3','P','S','K','Ca','Mg'];
     const HYDRO_ANIONS = ['N_NO3','P','S'];
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
-    const HYDRO_MICROS = ['Fe','Mn','B','Zn','Cu','Mo'];
+    // En la calculadora gratuita no se muestran micros en ppm.
+    const HYDRO_MICROS = [];
     const HYDRO_STAGE_OPTIONS = ['Establecimiento','Vegetativo','Prefloración','Floración','Amarre','Llenado','Cosecha'];
     const HYDRO_EQ_WEIGHTS = { N_NO3:14.0, N_NH4:14.0, P:31.0, K:39.1, Ca:20.04, Mg:12.15, S:16.03 };
 
@@ -119,7 +120,7 @@
         name: 'Amarre',
         ce: '0.00',
         meq: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0 },
-        ppm: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0 }
+        ppm: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0 }
       }],
       activeStageId: 'stage_1'
     };

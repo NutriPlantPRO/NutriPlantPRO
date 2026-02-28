@@ -1914,7 +1914,8 @@
   </div>
 
   <script>
-    // Registro de cuentas nuevas: false = solo login y calculadoras gratis; true = permitir "Crear Nueva Cuenta"
+    // Registro de cuentas nuevas: false = no mostrar opción de registro (solo login y calculadoras); true = mostrar "Crear Nueva Cuenta"
+    // Cuando des luz verde a los registros, cambia a true.
     window.NUTRIPLANT_REGISTRATION_OPEN = false;
     // Para que tú puedas crear un usuario prueba: abre login con ?np_reg=1 (ej. login.html?np_reg=1)
     (function() {
@@ -1961,11 +1962,15 @@
 
     function applyRegistrationClosedUI() {
       var open = window.NUTRIPLANT_REGISTRATION_OPEN;
+      var footerBlock = document.getElementById('loginFormFooter');
       var footer = document.getElementById('loginFooterText');
-      if (footer && !open) {
-        footer.innerHTML = 'Registro próximamente. Mientras tanto, <strong>usa las calculadoras gratis</strong> aquí abajo — no necesitas cuenta.';
-      } else if (footer && open) {
-        footer.innerHTML = '¿No tienes una cuenta? <a href="#" onclick="showRegistrationModal(); return false;" style="color: #2563eb; text-decoration: none; font-weight: 600; cursor: pointer;">Crear Nueva Cuenta</a>';
+      if (footerBlock) {
+        if (!open) {
+          footerBlock.style.display = 'none';
+        } else {
+          footerBlock.style.display = 'block';
+          if (footer) footer.innerHTML = '¿No tienes una cuenta? <a href="#" onclick="showRegistrationModal(); return false;" style="color: #2563eb; text-decoration: none; font-weight: 600; cursor: pointer;">Crear Nueva Cuenta</a>';
+        }
       }
     }
 
@@ -2519,9 +2524,24 @@
 
   <!-- PayPal Integration Script -->
   <script>
-    // Configuración PayPal (botón de suscripción)
-    const NUTRIPLANT_PAYPAL_CLIENT_ID = 'AUYkwOOt_8oUyA6nlNdyT8MHh7TlX28UnV5FeGtsbafzj0565UtYGlT167F1QcWENoiUuicYvxzT3Ldd';
-    const NUTRIPLANT_PAYPAL_PLAN_ID = 'P-13C21937R34068144NGKJVHI';
+    // Fallback para local / pruebas (sandbox). En producción Netlify usa /api/paypal-config (env PAYPAL_CLIENT_ID, PAYPAL_PLAN_ID).
+    const NUTRIPLANT_PAYPAL_CLIENT_ID_SANDBOX = 'AUYkwOOt_8oUyA6nlNdyT8MHh7TlX28UnV5FeGtsbafzj0565UtYGlT167F1QcWENoiUuicYvxzT3Ldd';
+    const NUTRIPLANT_PAYPAL_PLAN_ID_SANDBOX = 'P-13C21937R34068144NGKJVHI';
+
+    async function getPayPalConfig() {
+      try {
+        const base = (typeof getNutriPlantApiBase !== 'undefined' ? getNutriPlantApiBase() : (window.getNutriPlantApiBase ? window.getNutriPlantApiBase() : ''));
+        if (base && base.indexOf('localhost') === -1) {
+          const r = await fetch(base + '/api/paypal-config', { method: 'GET' });
+          if (r.ok) {
+            const data = await r.json();
+            if (data && data.clientId && data.planId) return { clientId: data.clientId, planId: data.planId };
+          }
+        }
+      } catch (e) { console.warn('PayPal config desde API no disponible, usando sandbox:', e); }
+      return { clientId: NUTRIPLANT_PAYPAL_CLIENT_ID_SANDBOX, planId: NUTRIPLANT_PAYPAL_PLAN_ID_SANDBOX };
+    }
+
     function getPayPalErrorMessage(err) {
       try {
         const asText = (err && (err.message || err.toString())) ? String(err.message || err.toString()) : '';
@@ -2540,7 +2560,8 @@
       return 'No se completó PayPal en este momento.';
     }
 
-    function loadPayPalSdk() {
+    function loadPayPalSdk(clientId) {
+      const cid = clientId || NUTRIPLANT_PAYPAL_CLIENT_ID_SANDBOX;
       return new Promise((resolve, reject) => {
         if (window.paypal && window.paypal.Buttons) {
           resolve();
@@ -2553,7 +2574,7 @@
           return;
         }
         const s = document.createElement('script');
-        s.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(NUTRIPLANT_PAYPAL_CLIENT_ID)}&vault=true&intent=subscription`;
+        s.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(cid)}&vault=true&intent=subscription`;
         s.setAttribute('data-sdk-integration-source', 'button-factory');
         s.setAttribute('data-nutriplant-paypal-sdk', '1');
         s.onload = () => resolve();
@@ -2636,7 +2657,10 @@
     // Función para activar suscripción de PayPal (botón nativo)
     async function activatePayPalSubscription(email, userId) {
       try {
-        await loadPayPalSdk();
+        const paypalConfig = await getPayPalConfig();
+        const clientId = paypalConfig.clientId;
+        const planId = paypalConfig.planId;
+        await loadPayPalSdk(clientId);
         const overlay = showPayPalSubscribeModal();
         const container = document.getElementById('paypal-subscription-button-container');
         const msg = document.getElementById('paypal-subscription-msg');
@@ -2652,7 +2676,7 @@
             style: { shape: 'pill', color: 'blue', layout: 'vertical', label: 'subscribe' },
             createSubscription: function(data, actions) {
               return actions.subscription.create({
-                plan_id: NUTRIPLANT_PAYPAL_PLAN_ID,
+                plan_id: planId,
                 custom_id: String(userId || ''),
                 application_context: {
                   brand_name: 'NutriPlant PRO',
@@ -2664,8 +2688,8 @@
                 }
               }).catch(function(e) {
                 console.error('PayPal createSubscription error:', e, {
-                  plan_id: NUTRIPLANT_PAYPAL_PLAN_ID,
-                  client_id_prefix: (NUTRIPLANT_PAYPAL_CLIENT_ID || '').slice(0, 10)
+                  plan_id: planId,
+                  client_id_prefix: (clientId || '').slice(0, 10)
                 });
                 throw e;
               });
@@ -2689,8 +2713,8 @@
             onError: function(err) {
               hidePayPalSubscribeModal();
               console.error('PayPal onError:', err, {
-                plan_id: NUTRIPLANT_PAYPAL_PLAN_ID,
-                client_id_prefix: (NUTRIPLANT_PAYPAL_CLIENT_ID || '').slice(0, 10)
+                plan_id: planId,
+                client_id_prefix: (clientId || '').slice(0, 10)
               });
               reject(err || new Error('Error en PayPal'));
             }

@@ -8358,26 +8358,27 @@
         window.viewUserDetails = viewUserDetails;
         // Función auxiliar para obtener datos del proyecto y mostrar el mapa
         function showMapModalForProject(projectId) {
-            // Buscar el proyecto en localStorage
+            // Buscar primero con la misma lógica robusta usada en detalles (nube + local)
             let projectData = null;
-            const projectKey = `nutriplant_project_${projectId}`;
             try {
-                const projectValue = localStorage.getItem(projectKey);
-                if (projectValue) {
-                    projectData = JSON.parse(projectValue);
+                const projectRecord = findProjectById(projectId);
+                if (projectRecord && projectRecord.project) {
+                    projectData = projectRecord.project;
                 }
             } catch (e) {
-                console.error('Error al cargar proyecto:', e);
-                alert('Error al cargar los datos del proyecto');
-                return;
+                console.error('Error al resolver proyecto:', e);
             }
-            
+
             if (!projectData) {
                 alert('No se encontraron datos del proyecto');
                 return;
             }
-            
-            const locationData = projectData.location || projectData.sections?.ubicacion || null;
+
+            // Soportar estructura local (top-level) y nube (project.data)
+            const sourceProject = (projectData.data && typeof projectData.data === 'object')
+                ? { ...projectData.data, id: projectData.id || projectData.data.id, title: projectData.title || projectData.data.title, name: projectData.name || projectData.data.name }
+                : projectData;
+            const locationData = sourceProject.location || sourceProject.sections?.ubicacion || sourceProject.sections?.location || null;
             if (!locationData) {
                 alert('El proyecto no tiene datos de ubicación');
                 return;
@@ -8655,7 +8656,12 @@
         let globalMapSatelliteView = false;
         
         function showGlobalMap() {
-            const projects = getAllProjects();
+            // En admin preferimos fuente nube para consistencia entre dispositivos.
+            // Si no hay cache nube disponible, usamos fallback local.
+            const cloudProjects = (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects))
+                ? window._adminCloudCache.projects
+                : [];
+            const projects = cloudProjects.length ? cloudProjects.slice() : getAllProjects();
             const normalizeObject = (value) => {
                 if (!value) return null;
                 if (typeof value === 'string') {
@@ -8684,7 +8690,15 @@
                 }).filter(Boolean);
             };
             const resolveLocation = (projectSummary) => {
-                let loc = normalizeObject(projectSummary.location || projectSummary.sections?.ubicacion || projectSummary.sections?.location || null);
+                let loc = normalizeObject(
+                    projectSummary.location ||
+                    projectSummary.data?.location ||
+                    projectSummary.sections?.ubicacion ||
+                    projectSummary.sections?.location ||
+                    projectSummary.data?.sections?.ubicacion ||
+                    projectSummary.data?.sections?.location ||
+                    null
+                );
                 // getAllProjects() devuelve resumen; para mapa global necesitamos leer el proyecto completo
                 if ((!loc || !loc.polygon) && projectSummary.id) {
                     try {
@@ -9073,15 +9087,21 @@
                     var g = rounded[key];
                     var lat = g.lat, lng = g.lng;
                     var list = g.visits.slice(0, 15);
-                    var emails = [];
+                    var userLabels = [];
                     var seen = {};
                     list.forEach(function(v) {
                         var uid = v.user_id;
-                        var email = (byId[uid] && byId[uid].email) ? byId[uid].email : uid;
-                        if (!seen[email]) { seen[email] = true; emails.push(email); }
+                        if (seen[uid]) return;
+                        seen[uid] = true;
+                        var u = byId[uid];
+                        var name = (u && (u.name || u.full_name || u.fullName)) ? String(u.name || u.full_name || u.fullName).trim() : '';
+                        var email = (u && u.email) ? u.email : (uid || '—');
+                        var label = name ? (name + ' · ' + email) : email;
+                        userLabels.push(label);
                     });
                     var lastDate = list.length && list[0].visited_at ? new Date(list[0].visited_at).toLocaleString('es-MX') : '—';
-                    var popupHtml = '<div style="min-width:200px;padding:6px;"><strong>Conexiones desde aquí:</strong> ' + g.visits.length + '<br><strong>Usuarios:</strong> ' + (emails.slice(0, 5).join(', ') || '—') + (emails.length > 5 ? ' y más' : '') + '<br><strong>Última:</strong> ' + lastDate + '</div>';
+                    var usersLine = (userLabels.slice(0, 5).join(', ') || '—') + (userLabels.length > 5 ? ' y más' : '');
+                    var popupHtml = '<div style="min-width:200px;padding:6px;"><strong>Conexiones desde aquí:</strong> ' + g.visits.length + '<br><strong>Usuarios:</strong> ' + usersLine + '<br><strong>Última:</strong> ' + lastDate + '</div>';
                     var marker = L.marker([lat, lng], { icon: defaultIcon }).bindPopup(popupHtml);
                     allBounds.push([lat, lng]);
                     if (clusterGroup) clusterGroup.addLayer(marker); else marker.addTo(connMapInstance);

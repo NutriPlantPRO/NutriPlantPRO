@@ -16,3 +16,10 @@
   to = "/.netlify/functions/openai-assistant"
   status = 200
   force = true
+
+# PayPal: Client ID y Plan ID desde variables de entorno (Live en producción)
+[[redirects]]
+  from = "/api/paypal-config"
+  to = "/.netlify/functions/paypal-config"
+  status = 200
+  force = true

@@ -145,8 +145,10 @@ Deno.serve(async (req) => {
     return jsonResponse({ ok: true, ignored: true, reason: "Missing event_type or subscription id" });
   }
 
-  // Mapear eventos PayPal -> estado interno
+  // Mapear eventos PayPal -> estado interno (cubre todos los que PayPal envía para suscripciones)
   const statusMap: Record<string, string> = {
+    "BILLING.SUBSCRIPTION.CREATED": "pending",
+    "BILLING.SUBSCRIPTION.APPROVED": "pending",
     "BILLING.SUBSCRIPTION.ACTIVATED": "active",
     "BILLING.SUBSCRIPTION.CANCELLED": "cancelled",
     "BILLING.SUBSCRIPTION.SUSPENDED": "suspended",

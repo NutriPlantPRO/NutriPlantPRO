@@ -52,39 +52,50 @@ Opcional: en **paypal_config.json** puedes poner también:
 
 ---
 
-## Paso 4: Poner Client ID y Plan ID Live en login.html
+## Paso 4: Producción en Netlify (dominio) — variables de entorno
 
-1. Abre **login.html** en el editor.
-2. Busca las líneas (cerca de la línea ~2378):
-   - `NUTRIPLANT_PAYPAL_CLIENT_ID = '...'`
-   - `NUTRIPLANT_PAYPAL_PLAN_ID = '...'`
-3. Sustituye:
-   - **NUTRIPLANT_PAYPAL_CLIENT_ID** por tu **Client ID Live** (el mismo que en paypal_config.json).
-   - **NUTRIPLANT_PAYPAL_PLAN_ID** por el **Plan ID Live** (el P-xxxxx que dio create_live_plan.py).
-4. Guarda el archivo.
+En el sitio desplegado (tu dominio), el login **no** usa valores hardcodeados: pide Client ID y Plan ID a la API. Configura en **Netlify**:
 
-**Validación:** Al cargar login y pulsar "Activar con PayPal", la ventana de PayPal debe abrir **paypal.com** (no sandbox.paypal.com).
+1. Netlify → tu sitio → **Site configuration** → **Environment variables**.
+2. Añade:
+   - **PAYPAL_CLIENT_ID** = tu Client ID **Live** (el de developer.paypal.com → Live).
+   - **PAYPAL_PLAN_ID** = tu Plan ID Live (el `P-xxxxx` que dio create_live_plan.py).
+3. Guarda y haz un **redeploy** del sitio para que las variables se apliquen.
+
+**Local / pruebas:** En localhost el login usa el fallback **sandbox** (valores en login.html). No hace falta poner estas variables en Netlify para probar en tu PC.
+
+**Validación:** En tu dominio, al pulsar "Activar con PayPal" debe abrir **paypal.com** (no sandbox.paypal.com) y el cobro debe ser real.
 
 ---
 
-## Paso 5: Producción (cuando subas a tu dominio)
+## Paso 5: Webhook y Secret en Supabase
 
-Cuando tu app esté en el dominio real:
+El **Secret** de PayPal y el **Webhook ID** no van en Netlify. Van en **Supabase** (Edge Function que recibe el webhook):
 
-1. En **paypal_config.json** pon **app_base_url** con tu URL real, por ejemplo:
-   - `"app_base_url": "https://nutriplantpro.com"`
-2. Si usas webhooks o return URLs en el backend, asegúrate de que apunten a ese dominio.
-3. No subas **paypal_config.json** con el **client_secret** a un repositorio público. Usa variables de entorno o un servidor seguro para el secret.
+1. Supabase → tu proyecto → **Project Settings** → **Edge Functions** → **Secrets** (o env).
+2. Define:
+   - **PAYPAL_CLIENT_ID** = mismo Client ID Live.
+   - **PAYPAL_CLIENT_SECRET** = Secret Live (nunca en el frontend).
+   - **PAYPAL_WEBHOOK_ID** = ID del webhook que creaste en developer.paypal.com para la URL de tu función (ej. `https://xxx.supabase.co/functions/v1/paypal-webhook`).
+
+Así el webhook verifica la firma y actualiza `profiles` (subscription_status, etc.) cuando el usuario activa, cancela o expira en PayPal.
+
+---
+
+## Paso 6: Dominio y return URLs
+
+1. En **paypal_config.json** (si lo usas para scripts) pon **app_base_url** con tu URL real, ej. `https://nutriplantpro.com`.
+2. En PayPal Developer → tu app Live → **Webhooks**, la URL del webhook debe ser la de Supabase (no Netlify).
 
 ---
 
 ## Resumen rápido
 
-| Dónde              | Qué usar en Live                          |
-|--------------------|-------------------------------------------|
-| developer.paypal.com | Pestaña **Live** → Client ID y Secret   |
-| paypal_config.json | mode: "live", client_id y client_secret Live, app_base_url real |
-| create_live_plan.py| Crea producto y plan en Live → Plan ID P-xxxxx |
-| login.html         | NUTRIPLANT_PAYPAL_CLIENT_ID y NUTRIPLANT_PAYPAL_PLAN_ID con valores **Live** |
+| Dónde                | Qué usar en Live |
+|----------------------|------------------|
+| developer.paypal.com | Pestaña **Live** → Client ID, Secret; crear producto/plan → Plan ID P-xxxxx |
+| **Netlify** (env vars) | **PAYPAL_CLIENT_ID**, **PAYPAL_PLAN_ID** (para el login en tu dominio) |
+| **Supabase** (Edge Function secrets) | **PAYPAL_CLIENT_ID**, **PAYPAL_CLIENT_SECRET**, **PAYPAL_WEBHOOK_ID** (para el webhook) |
+| login.html (local)   | Fallback sandbox si /api/paypal-config no está o falla (localhost) |
 
-Cuando todo esté en Live, los usuarios verán la pantalla real de PayPal y podrán iniciar sesión con su cuenta PayPal real.
+Cuando todo esté en Live, en tu dominio los usuarios verán la pantalla real de PayPal y podrán pagar con su cuenta real.
