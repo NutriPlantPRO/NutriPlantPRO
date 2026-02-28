@@ -827,6 +827,21 @@
         const profile = this.getUserProfile();
         const updatedProfile = { ...profile, ...updates, last_login: new Date().toISOString() };
         localStorage.setItem(`nutriplant_user_${this.userId}`, JSON.stringify(updatedProfile));
+        // Sincronizar a la nube para que el admin vea siempre datos completos desde Supabase
+        const client = typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null;
+        if (client && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(this.userId || ''))) {
+          const loc = updatedProfile.location && typeof updatedProfile.location === 'object'
+            ? [updatedProfile.location.city, updatedProfile.location.state, updatedProfile.location.country].filter(Boolean).join(', ')
+            : (updatedProfile.location || '');
+          client.from('profiles').update({
+            name: updatedProfile.name || null,
+            phone: updatedProfile.phone || null,
+            profession: updatedProfile.profession || null,
+            location: loc || null,
+            crops: Array.isArray(updatedProfile.crops) ? updatedProfile.crops : null,
+            updated_at: new Date().toISOString()
+          }).eq('id', this.userId).then(function(r) { if (r && r.error) console.warn('Sync perfil a nube:', r.error.message); });
+        }
         return updatedProfile;
       }
       

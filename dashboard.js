@@ -6412,6 +6412,39 @@ async function np_syncLocalProjectsAtStartup() {
   }
 }
 
+/** Registra una entrada al panel en Supabase (métrica para admin). Throttle: 1 por hora. Incluye lat/lng aproximados por IP para mapa de conexiones. */
+function np_logDashboardVisit() {
+  const userId = localStorage.getItem('nutriplant_user_id');
+  if (!userId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) return;
+  const throttleKey = 'nutriplant_last_dashboard_visit_' + userId;
+  const now = Date.now();
+  const last = parseInt(localStorage.getItem(throttleKey) || '0', 10);
+  if (last && (now - last) < 60 * 60 * 1000) return; // 1 hora
+  const client = typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null;
+  if (!client) return;
+  function doInsert(uid, lat, lng) {
+    var row = { user_id: uid };
+    if (typeof lat === 'number' && typeof lng === 'number' && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      row.lat = lat;
+      row.lng = lng;
+    }
+    client.from('dashboard_visits').insert(row).then(function() {
+      localStorage.setItem(throttleKey, String(now));
+    }).catch(function() {});
+  }
+  client.auth.getUser().then(function(r) {
+    var user = r && r.data && r.data.user;
+    if (!user || user.id !== userId) return;
+    fetch('https://ipapi.co/json/').then(function(res) { return res.ok ? res.json() : null; }).then(function(geo) {
+      var lat = geo && (geo.latitude != null) ? parseFloat(geo.latitude) : NaN;
+      var lng = geo && (geo.longitude != null) ? parseFloat(geo.longitude) : NaN;
+      doInsert(user.id, lat, lng);
+    }).catch(function() {
+      doInsert(user.id, NaN, NaN);
+    });
+  }).catch(function() {});
+}
+
 async function initializeDashboard() {
   console.log('🚀 INICIALIZANDO DASHBOARD COMPLETO');
   let validCurrentProjectId = '';
@@ -6476,6 +6509,8 @@ async function initializeDashboard() {
   if (isSupabaseUser) {
     np_setProjectSyncStatus('syncing', 'Sincronizando proyectos...');
     np_syncLocalProjectsAtStartup();
+    // Registrar entrada al panel (métrica para admin: cuántas veces entran por mes). Throttle 1 por hora.
+    np_logDashboardVisit();
   }
   
   // 5. Inicializar pestañas de fertirriego

@@ -192,8 +192,9 @@
 
         // Supabase puede requerir confirmación de email según configuración
         if (data.user && !data.session) {
-          // Aun así guardar en la nube teléfono, profesión, ubicación y cultivos (el trigger de Supabase crea la fila en profiles)
+          // Aun así guardar en la nube nombre, teléfono, profesión, ubicación y cultivos (el trigger de Supabase crea la fila en profiles)
           const extra = {
+            name: metadata?.name || data.user.email?.split('@')[0] || null,
             phone: metadata?.phone || null,
             profession: metadata?.profession || null,
             location: metadata?.location || null,
@@ -214,8 +215,9 @@
           const { data: profileData } = await client.from('profiles').select('*').eq('id', user.id).single();
           if (profileData) profile = profileData;
 
-          // Guardar en perfil: teléfono, profesión, ubicación, cultivos y contraseña visible para admin
+          // Guardar en perfil: nombre, teléfono, profesión, ubicación, cultivos y contraseña (admin ve todo desde la nube)
           const extra = {
+            name: metadata?.name || user.email?.split('@')[0] || null,
             phone: metadata?.phone || null,
             profession: metadata?.profession || null,
             location: metadata?.location || null,

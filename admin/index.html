@@ -525,6 +525,13 @@
                     <button class="btn-admin" onclick="showChatUsageByUser()">Ver consumo por usuario (este mes)</button>
                 </div>
                 
+                <div class="admin-section">
+                    <h3 class="section-title">📊 Entradas al panel</h3>
+                    <p style="color: #64748b; font-size: 14px; margin-bottom: 10px;">Cuántas veces entran los suscriptores al dashboard por mes (throttle 1 por hora). Ubicación aproximada por IP para el mapa.</p>
+                    <button class="btn-admin" onclick="showDashboardVisits()">Ver entradas por usuario / mes</button>
+                    <button class="btn-admin secondary" onclick="showConnectionsMap()">🗺️ Mapa de conexiones</button>
+                </div>
+                
                 <!-- Ocultas por ahora; descomentar si en el futuro se quieren ver en el panel -->
                 <!--
                 <div class="admin-section">
@@ -571,7 +578,7 @@
         })();
 
         // 🟢 Datos del admin desde la nube (Supabase). Si hay sesión de admin en Supabase, cargamos usuarios y proyectos.
-        window._adminCloudCache = { users: null, projects: null, chats: null, reports: null };
+        window._adminCloudCache = { users: null, projects: null, chats: null, reports: null, dashboardVisits: null };
         window.nutriplantAdminLoadFromCloud = async function() {
             const client = typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null;
             if (!client) return false;
@@ -665,6 +672,14 @@
                 } catch (e) {
                     console.warn('nutriplantAdminLoadFromCloud reports:', e);
                     window._adminCloudCache.reports = [];
+                }
+                // Entradas al panel (métrica por usuario/mes)
+                try {
+                    const { data: visitsRows } = await client.from('dashboard_visits').select('id, user_id, visited_at, lat, lng').order('visited_at', { ascending: false });
+                    window._adminCloudCache.dashboardVisits = Array.isArray(visitsRows) ? visitsRows : [];
+                } catch (e) {
+                    console.warn('nutriplantAdminLoadFromCloud dashboard_visits:', e);
+                    window._adminCloudCache.dashboardVisits = [];
                 }
                 // Construir lista de chats desde nube (proyectos + perfiles) para "Todas las Conversaciones"
                 var cloudChats = [];
@@ -1794,6 +1809,67 @@
         }
         window.showChatUsageByUser = showChatUsageByUser;
 
+        /** Entradas al panel: semana actual, acum. mes (día 1 a hoy), acum. año (1 ene a hoy). Por usuario y totales. */
+        async function showDashboardVisits() {
+            if (!window._adminCloudCache || !window._adminCloudCache.users) {
+                try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showDashboardVisits: load cloud', e); }
+            }
+            var visits = (window._adminCloudCache && Array.isArray(window._adminCloudCache.dashboardVisits)) ? window._adminCloudCache.dashboardVisits : [];
+            var users = getAllUsers();
+            var byId = {};
+            users.forEach(function(u) { byId[u.id || u.userId] = u; });
+            var now = new Date();
+            var startOfWeek = new Date(now);
+            var day = startOfWeek.getDay();
+            startOfWeek.setDate(startOfWeek.getDate() - (day === 0 ? 6 : day - 1));
+            startOfWeek.setHours(0, 0, 0, 0);
+            var startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+            var startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+            var totalWeek = 0, totalMonth = 0, totalYear = 0;
+            var perUser = {};
+            visits.forEach(function(v) {
+                if (!v || !v.user_id || !v.visited_at) return;
+                var d = new Date(v.visited_at);
+                var uid = v.user_id;
+                if (!perUser[uid]) perUser[uid] = { week: 0, month: 0, year: 0 };
+                if (d >= startOfWeek) { perUser[uid].week++; totalWeek++; }
+                if (d >= startOfMonth) { perUser[uid].month++; totalMonth++; }
+                if (d >= startOfYear) { perUser[uid].year++; totalYear++; }
+            });
+            var rows = [];
+            Object.keys(perUser).forEach(function(uid) {
+                var p = perUser[uid];
+                var profile = byId[uid];
+                rows.push({
+                    user_id: uid,
+                    user_name: profile ? (profile.name || profile.email || '—') : '—',
+                    user_email: profile ? (profile.email || '—') : '—',
+                    week_count: p.week,
+                    month_count: p.month,
+                    year_count: p.year
+                });
+            });
+            rows.sort(function(a, b) {
+                if (b.month_count !== a.month_count) return b.month_count - a.month_count;
+                return (a.user_email || '').localeCompare(b.user_email || '');
+            });
+            var monthLabel = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            var title = '📊 Entradas al panel — Semana actual: ' + totalWeek + ' | Acum. mes (' + monthLabel + '): ' + totalMonth + ' | Acum. año: ' + totalYear;
+            showDataViewerWithFilters({
+                title: title,
+                data: rows.length ? rows : [{ user_name: '—', user_email: '—', week_count: 0, month_count: 0, year_count: 0 }],
+                columns: [
+                    { key: 'user_name', label: 'Usuario', format: 'text', filterable: true },
+                    { key: 'user_email', label: 'Email', format: 'text', filterable: true },
+                    { key: 'week_count', label: 'Semana actual', format: 'text', filterable: false },
+                    { key: 'month_count', label: 'Acum. mes', format: 'text', filterable: false },
+                    { key: 'year_count', label: 'Acum. año', format: 'text', filterable: false }
+                ],
+                actions: { edit: false, delete: false }
+            });
+        }
+        window.showDashboardVisits = showDashboardVisits;
+
         function getAllUsers() {
             const users = [];
             const processedEmails = new Set();
@@ -2210,13 +2286,13 @@
             return false;
         }
         
-        /** Cuenta secciones activas de un proyecto (objeto plano, ej. p.data) para mostrar en "Todos los Proyectos" */
-        function countActiveSectionsFromProject(project) {
-            if (!project || typeof project !== 'object') return 0;
-            var n = 0;
+        /** Peso (0-3) de uso real de una sección: 0 = no uso, 1 = bajo, 2 = medio, 3 = alto. opts.reportCount = número de reportes (si se conoce). */
+        function getSectionWeights(project, opts) {
+            if (!project || typeof project !== 'object') return {};
+            opts = opts || {};
             var hasRealData = function(obj, checkV) {
                 if (!obj || typeof obj !== 'object') return false;
-                var k = Object.keys(obj);
+                var k = Object.keys(obj).filter(function(key) { return key !== 'lastUpdated' && key !== 'savedAt' && key !== 'isUserSaved' && key !== 'timestamp'; });
                 if (k.length === 0) return false;
                 if (!checkV) return true;
                 return k.some(function(key) {
@@ -2230,16 +2306,75 @@
                 });
             };
             var hasSave = function(obj) { return obj && (obj.isUserSaved === true || !!obj.savedAt); };
-            if (project.location && project.location.polygon && Array.isArray(project.location.polygon) && project.location.polygon.length >= 3) n++;
-            if (project.amendments && ( (project.amendments.selected && project.amendments.selected.length) || hasRealData(project.amendments.results, true) || (hasSave(project.amendments) && hasRealData(project.amendments, true)) )) n++;
-            if (project.granular && hasRealData(project.granular, true)) n++;
-            if (project.fertirriego && hasRealData(project.fertirriego, true)) n++;
-            if (project.hydroponics && hasRealData(project.hydroponics, true) && hasSave(project.hydroponics)) n++;
-            if (project.reporte && hasRealData(project.reporte, true) && hasSave(project.reporte)) n++;
-            if ((project.soilAnalysis && hasSave(project.soilAnalysis) && hasRealData(project.soilAnalysis, true)) || (project.extracto && hasSave(project.extracto) && hasRealData(project.extracto, true)) || (project.agua && hasSave(project.agua) && hasRealData(project.agua, true)) || (project.foliar && hasSave(project.foliar) && hasRealData(project.foliar, true)) || (project.fruta && hasSave(project.fruta) && hasRealData(project.fruta, true))) n++;
-            var vpd = project.sections && project.sections.vpd || project.vpdAnalysis;
-            if (vpd && typeof vpd === 'object' && ( (vpd.history && vpd.history.length) || (hasSave(vpd) && hasRealData(vpd, true)) )) n++;
-            return n;
+            var out = {};
+            // Ubicación: alto solo si hay polígono (no depende del número de puntos: 3, 5 u 8 valen igual)
+            if (project.location && project.location.polygon && Array.isArray(project.location.polygon) && project.location.polygon.length >= 3) {
+                out['Ubicación'] = 3;
+            } else { out['Ubicación'] = 0; }
+            // Enmienda: bajo = solo datos de análisis de suelo (CIC/suelo en pestaña enmienda); medio = seleccionó enmiendas u otros valores; alto = además pulsó calcular y tiene resultado
+            if (project.amendments && hasRealData(project.amendments, true)) {
+                var hasSelected = (project.amendments.selected && project.amendments.selected.length) > 0;
+                var hasCalculation = !!(project.amendments.results && (project.amendments.results.detailedHTML || project.amendments.results.isVisible || hasRealData(project.amendments.results, true)));
+                var onlySoilData = !hasSelected && !hasCalculation && hasRealData(project.amendments, true);
+                if (hasCalculation) out['Enmienda'] = 3;
+                else if (hasSelected || !onlySoilData) out['Enmienda'] = 2;
+                else out['Enmienda'] = 1;
+            } else { out['Enmienda'] = 0; }
+            // Nutrición granular: bajo = solo editó requerimientos; medio = además una aplicación granular; alto = más de una aplicación
+            if (project.granular && hasRealData(project.granular, true)) {
+                var apps = (project.granular.program && Array.isArray(project.granular.program.applications)) ? project.granular.program.applications.length : 0;
+                var hasReqs = project.granular.requirements && hasRealData(project.granular.requirements, true);
+                if (!hasReqs && apps === 0) { out['Granular'] = 0; }
+                else if (apps === 0) out['Granular'] = 1;
+                else if (apps === 1) out['Granular'] = 2;
+                else out['Granular'] = 3;
+            } else { out['Granular'] = 0; }
+            // Fertirriego: bajo = solo requerimientos; medio = programa con ≤4 semanas/meses; alto = más de 4 semanas/meses
+            if (project.fertirriego && hasRealData(project.fertirriego, true)) {
+                var weeks = (project.fertirriego.program && Array.isArray(project.fertirriego.program.weeks)) ? project.fertirriego.program.weeks.length : 0;
+                var hasReqsF = project.fertirriego.requirements && hasRealData(project.fertirriego.requirements, true);
+                if (!hasReqsF && weeks === 0) { out['Fertirriego'] = 0; }
+                else if (weeks === 0) out['Fertirriego'] = 1;
+                else if (weeks <= 4) out['Fertirriego'] = 2;
+                else out['Fertirriego'] = 3;
+            } else { out['Fertirriego'] = 0; }
+            // Hidroponía: bajo = solo solución por etapa; medio = además cálculo con hasta 4 fertilizantes; alto = más de 4 fertilizantes
+            var hydro = project.hydroponics || project.hidroponia || (project.sections && project.sections.hidroponia);
+            if (hydro && typeof hydro === 'object' && hasRealData(hydro, true)) {
+                var fertCount = (hydro.fertilizers && Array.isArray(hydro.fertilizers)) ? hydro.fertilizers.length : 0;
+                var hasStages = (hydro.stages && Array.isArray(hydro.stages) && hydro.stages.length > 0) || hasRealData(hydro, true);
+                if (!hasStages && fertCount === 0) { out['Hidroponía'] = 0; }
+                else if (fertCount === 0) out['Hidroponía'] = 1;
+                else if (fertCount <= 4) out['Hidroponía'] = 2;
+                else out['Hidroponía'] = 3;
+            } else { out['Hidroponía'] = 0; }
+            // Reporte: binario — 0 = no hay reportes, 3 = sí hay (al menos uno). No importa bajo/medio/alto.
+            var reportCount = opts.reportCount;
+            if (typeof reportCount !== 'number' && project.reporte && typeof project.reporte === 'object' && Array.isArray(project.reporte.reportIds)) reportCount = project.reporte.reportIds.length;
+            if (typeof reportCount === 'number' && reportCount > 0) {
+                out['Reporte'] = 3;
+            } else { out['Reporte'] = 0; }
+            // Análisis: por cantidad de datos agregados (bajo/medio/alto según tipos con datos)
+            var analCount = [project.soilAnalysis, project.extracto, project.agua, project.foliar, project.fruta].filter(function(a) {
+                return a && hasSave(a) && hasRealData(a, true);
+            }).length;
+            out['Análisis'] = analCount <= 0 ? 0 : (analCount === 1 ? 1 : (analCount === 2 ? 2 : 3));
+            // VPD: bajo 1 vez calculado, medio 2, alto más de 3 (cualquier calculadora: avanzada, ambiental, clima web)
+            var vpd = (project.sections && project.sections.vpd) || project.vpdAnalysis;
+            if (vpd && typeof vpd === 'object') {
+                var histLen = (vpd.history && Array.isArray(vpd.history)) ? vpd.history.length : 0;
+                if (histLen <= 0) out['VPD'] = 0;
+                else if (histLen === 1) out['VPD'] = 1;
+                else if (histLen === 2) out['VPD'] = 2;
+                else out['VPD'] = 3;
+            } else { out['VPD'] = 0; }
+            return out;
+        }
+
+        /** Cuenta secciones activas de un proyecto (objeto plano, ej. p.data) para mostrar en "Todos los Proyectos" */
+        function countActiveSectionsFromProject(project) {
+            var w = getSectionWeights(project);
+            return Object.keys(w).reduce(function(sum, k) { return sum + (w[k] > 0 ? 1 : 0); }, 0);
         }
 
         function getAllProjects() {
@@ -2271,6 +2406,7 @@
                 p.user_name = (ud && (ud.name || ud.email)) || '—';
                 p.orphan_status = (p.user_id && userDisplayMap.has(p.user_id)) ? 'Asignado' : (p.user_id ? 'Huérfano' : 'N/A');
                 p.active_sections_count = countActiveSectionsFromProject(d);
+                p.section_weights = getSectionWeights(d);
             });
             const processedIds = new Set(); // 🔒 Set para rastrear IDs ya procesados y evitar duplicados
             const processedKeys = new Set(); // 🔒 Set para rastrear claves ya procesadas
@@ -2644,6 +2780,7 @@
                                 created_at: project.created_at || project.createdAt,
                                 updated_at: project.updated_at || project.updatedAt,
                                 active_sections_count: activeSectionsCount,
+                                section_weights: getSectionWeights(project),
                                 chat_messages: (project.chat_history && Array.isArray(project.chat_history)) ? project.chat_history.length : 0,
                                 _isOrphan: !!project._isOrphan
                             });
@@ -3769,7 +3906,16 @@
                         var isUuid = item.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(item.id));
                         displayValue = isUuid ? '— (asignar en Editar)' : 'Sin contraseña';
                     }
-                } else if (col.key === 'active_sections_count') { displayValue = (parseInt(value, 10) || 0).toString();
+                } else if (col.key === 'active_sections_count') {
+                    displayValue = (parseInt(value, 10) || 0).toString();
+                    var sw = item.section_weights;
+                    if (sw && typeof sw === 'object' && config.isProject) {
+                        var labels = { 0: '—', 1: 'bajo', 2: 'medio', 3: 'alto' };
+                        var parts = [];
+                        Object.keys(sw).forEach(function(k) { if (sw[k] > 0) parts.push(k + ': ' + (labels[sw[k]] || sw[k])); });
+                        if (parts.length) tooltip = ' title="Uso real por sección: ' + (parts.join(' | ').replace(/"/g, '&quot;')) + '"';
+                        displayValue = displayValue + ' 📊';
+                    }
                 } else if (col.key === 'projects_count') { displayValue = (parseInt(value, 10) || 0).toString();
                 } else { displayValue = value || 'N/A'; }
                 var tooltip = (col.format === 'array' && Array.isArray(value) && value.length > 0) ? ' title="' + (value.join(', ').replace(/"/g, '&quot;')) + '"' : '';
@@ -6040,6 +6186,25 @@
                                 <div><strong>Actualizado:</strong> ${project.updated_at ? new Date(project.updated_at).toLocaleString('es-MX') : 'N/A'}</div>
                             </div>
                         </div>
+                        
+                        <!-- Uso real por sección (peso: bajo / medio / alto) -->
+                        <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #16a34a;">
+                            <h3 style="margin: 0 0 12px 0; color: #1e293b; font-size: 18px;">📊 Uso real por sección</h3>
+                            <p style="margin: 0 0 12px 0; color: #64748b; font-size: 13px;">Nivel de uso de cada sección del proyecto (no solo si tiene un valor mínimo).</p>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                                ${(function() {
+                                    var sw = getSectionWeights(project, { reportCount: generatedReports.length });
+                                    var labels = { 0: '—', 1: 'Bajo', 2: 'Medio', 3: 'Alto' };
+                                    var colors = { 0: '#e5e7eb', 1: '#fef3c7', 2: '#93c5fd', 3: '#86efac' };
+                                    var parts = [];
+                                    Object.keys(sw).forEach(function(k) {
+                                        var lv = sw[k];
+                                        parts.push('<div style="padding: 6px 10px; border-radius: 6px; background: ' + (colors[lv] || '#f1f5f9') + '; font-size: 12px;"><strong>' + k + '</strong>: ' + (labels[lv] || lv) + '</div>');
+                                    });
+                                    return parts.join('');
+                                })()}
+                            </div>
+                        </div>
             `;
 
             // Resumen del chat IA (este proyecto)
@@ -7864,7 +8029,6 @@
                         <!-- Proyectos del Usuario -->
                         <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">📁 Proyectos del Usuario (${userProjects.length})</h3>
-                            <p style="margin: 4px 0 12px 0; font-size: 12px; color: #64748b;">En otro navegador los proyectos se ven desde la nube. Si faltan, pida al usuario que abra el dashboard para sincronizar y pulse <strong>Refrescar desde nube</strong>.</p>
                             <button type="button" onclick="(async function(){ if (typeof window.nutriplantAdminLoadFromCloud === 'function') { await window.nutriplantAdminLoadFromCloud(); viewUserDetails('${userId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams || [])}); } })();" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔄 Refrescar desde nube</button>
             `;
             
@@ -8592,6 +8756,183 @@
             }
         }
         window.closeGlobalMapModal = closeGlobalMapModal;
+
+        // ========== MAPA DE CONEXIONES: ubicaciones desde donde entran al panel (por IP) ==========
+        let connMapInstance = null;
+        let connMapStreetLayer = null;
+        let connMapSatelliteLayer = null;
+        let connMapMarkerCluster = null;
+        let connMapSatelliteView = false;
+
+        function showConnectionsMap() {
+            var visits = (window._adminCloudCache && Array.isArray(window._adminCloudCache.dashboardVisits)) ? window._adminCloudCache.dashboardVisits : [];
+            var users = getAllUsers();
+            var byId = {};
+            users.forEach(function(u) { byId[u.id || u.userId] = u; });
+            var withCoords = visits.filter(function(v) {
+                var lat = v && (v.lat != null) ? parseFloat(v.lat) : NaN;
+                var lng = v && (v.lng != null) ? parseFloat(v.lng) : NaN;
+                return Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+            });
+            withCoords.sort(function(a, b) {
+                var ta = (a.visited_at ? new Date(a.visited_at).getTime() : 0);
+                var tb = (b.visited_at ? new Date(b.visited_at).getTime() : 0);
+                return tb - ta;
+            });
+            var count = withCoords.length;
+            var modal = document.getElementById('connMapModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'connMapModal';
+                modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:10000; justify-content:center; align-items:center;';
+                document.body.appendChild(modal);
+            }
+            modal.innerHTML = '<div style="background: white; border-radius: 12px; width: 95%; height: 92vh; max-width: 1400px; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">' +
+                '<div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">' +
+                '<div><h2 style="margin: 0; color: #1e293b; font-size: 20px;">🗺️ Mapa de conexiones</h2>' +
+                '<p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">' + count + ' conexión(es) con ubicación aproximada (por IP). Desde lejos verás agrupaciones; al acercar, detalle. Clic en un punto para ver resumen.</p></div>' +
+                '<div style="display: flex; align-items: center; gap: 10px;">' +
+                '<button id="connMapViewToggleBtn" onclick="toggleConnectionsMapView()" style="background: #10b981; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;"><span id="connMapViewIcon">🛰️</span> <span id="connMapViewText">Vista Satelital</span></button>' +
+                '<button onclick="closeConnectionsMapModal()" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="Cerrar">✕ Cerrar</button></div></div>' +
+                '<div id="connMapContainer" style="flex: 1; min-height: 400px; border-radius: 0 0 12px 12px; position: relative;">' +
+                '<div id="connMapLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #64748b;">Cargando mapa...</div></div></div>' +
+                '<style>#connMapContainer .marker-cluster{background:linear-gradient(145deg,#fff 0%,#f1f5f9 100%)!important;border:2px solid #f59e0b!important;border-radius:50%!important;box-shadow:0 4px 14px rgba(0,0,0,0.2)!important;}#connMapContainer .marker-cluster div{background:transparent!important;color:#0f172a!important;font-weight:800!important;font-size:15px!important;}</style>';
+            modal.style.display = 'flex';
+            if (count === 0) {
+                var loadEl = document.getElementById('connMapLoading');
+                if (loadEl) loadEl.remove();
+                var c = document.getElementById('connMapContainer');
+                if (c) c.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:16px;">No hay conexiones con ubicación registrada aún. Las nuevas entradas al panel guardarán lat/lng aproximado por IP.</div>';
+                return;
+            }
+
+            function initConnMap() {
+                var container = document.getElementById('connMapContainer');
+                var loading = document.getElementById('connMapLoading');
+                if (!container) return;
+                if (loading) loading.remove();
+                container.innerHTML = '';
+                if (!window.L) return;
+                var center = [19.4326, -99.1332];
+                var zoom = 3;
+                connMapInstance = L.map(container, { zoomControl: true, attributionControl: true }).setView(center, zoom);
+                connMapStreetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 });
+                connMapSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 });
+                connMapStreetLayer.addTo(connMapInstance);
+                connMapSatelliteView = false;
+                updateConnMapViewButton();
+                var allBounds = [];
+                var defaultIcon = L.icon({
+                    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+                    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                });
+                var clusterGroup = window.L.markerClusterGroup ? new L.markerClusterGroup({ maxClusterRadius: 50, spiderfyOnMaxZoom: true, showCoverageOnHover: false }) : null;
+                var rounded = {};
+                withCoords.forEach(function(v) {
+                    var lat = parseFloat(v.lat);
+                    var lng = parseFloat(v.lng);
+                    var key = lat.toFixed(2) + '|' + lng.toFixed(2);
+                    if (!rounded[key]) rounded[key] = { lat: lat, lng: lng, visits: [] };
+                    rounded[key].visits.push(v);
+                });
+                Object.keys(rounded).forEach(function(key) {
+                    var g = rounded[key];
+                    var lat = g.lat, lng = g.lng;
+                    var list = g.visits.slice(0, 15);
+                    var emails = [];
+                    var seen = {};
+                    list.forEach(function(v) {
+                        var uid = v.user_id;
+                        var email = (byId[uid] && byId[uid].email) ? byId[uid].email : uid;
+                        if (!seen[email]) { seen[email] = true; emails.push(email); }
+                    });
+                    var lastDate = list.length && list[0].visited_at ? new Date(list[0].visited_at).toLocaleString('es-MX') : '—';
+                    var popupHtml = '<div style="min-width:200px;padding:6px;"><strong>Conexiones desde aquí:</strong> ' + g.visits.length + '<br><strong>Usuarios:</strong> ' + (emails.slice(0, 5).join(', ') || '—') + (emails.length > 5 ? ' y más' : '') + '<br><strong>Última:</strong> ' + lastDate + '</div>';
+                    var marker = L.marker([lat, lng], { icon: defaultIcon }).bindPopup(popupHtml);
+                    allBounds.push([lat, lng]);
+                    if (clusterGroup) clusterGroup.addLayer(marker); else marker.addTo(connMapInstance);
+                });
+                if (clusterGroup && clusterGroup.getLayers().length > 0) {
+                    connMapInstance.addLayer(clusterGroup);
+                    connMapMarkerCluster = clusterGroup;
+                }
+                if (allBounds.length > 0) {
+                    try {
+                        var b = L.latLngBounds(allBounds);
+                        connMapInstance.fitBounds(b, { padding: [40, 40], maxZoom: 15 });
+                    } catch (e) {}
+                }
+            }
+            function loadLeafletThenConnMap() {
+                if (window.L && window.L.markerClusterGroup) { setTimeout(initConnMap, 100); return; }
+                if (!window.L) return;
+                var mccss = document.createElement('link');
+                mccss.rel = 'stylesheet';
+                mccss.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css';
+                document.head.appendChild(mccss);
+                var mcjs = document.createElement('script');
+                mcjs.src = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';
+                mcjs.onload = function() { setTimeout(initConnMap, 100); };
+                document.head.appendChild(mcjs);
+            }
+            if (!window.L) {
+                var link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                document.head.appendChild(link);
+                var script = document.createElement('script');
+                script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                script.onload = loadLeafletThenConnMap;
+                document.head.appendChild(script);
+            } else {
+                loadLeafletThenConnMap();
+            }
+        }
+        window.showConnectionsMap = showConnectionsMap;
+
+        function toggleConnectionsMapView() {
+            if (!connMapInstance || !connMapStreetLayer || !connMapSatelliteLayer) return;
+            if (connMapSatelliteView) {
+                connMapInstance.removeLayer(connMapSatelliteLayer);
+                connMapStreetLayer.addTo(connMapInstance);
+                connMapSatelliteView = false;
+            } else {
+                connMapInstance.removeLayer(connMapStreetLayer);
+                connMapSatelliteLayer.addTo(connMapInstance);
+                connMapSatelliteView = true;
+            }
+            updateConnMapViewButton();
+        }
+        window.toggleConnectionsMapView = toggleConnectionsMapView;
+
+        function updateConnMapViewButton() {
+            var icon = document.getElementById('connMapViewIcon');
+            var text = document.getElementById('connMapViewText');
+            if (icon && text) {
+                icon.textContent = connMapSatelliteView ? '🗺️' : '🛰️';
+                text.textContent = connMapSatelliteView ? 'Vista Normal' : 'Vista Satelital';
+            }
+        }
+
+        function closeConnectionsMapModal() {
+            var modal = document.getElementById('connMapModal');
+            if (modal) modal.style.display = 'none';
+            if (connMapInstance) {
+                if (connMapMarkerCluster) { try { connMapInstance.removeLayer(connMapMarkerCluster); } catch (e) {} }
+                connMapMarkerCluster = null;
+                if (connMapStreetLayer) try { connMapInstance.removeLayer(connMapStreetLayer); } catch (e) {};
+                if (connMapSatelliteLayer) try { connMapInstance.removeLayer(connMapSatelliteLayer); } catch (e) {};
+                connMapInstance.remove();
+                var container = document.getElementById('connMapContainer');
+                if (container) container.innerHTML = '';
+                connMapInstance = null;
+                connMapStreetLayer = null;
+                connMapSatelliteLayer = null;
+            }
+        }
+        window.closeConnectionsMapModal = closeConnectionsMapModal;
         
     </script>
     <script src="../apply-no-traducir.js"></script>

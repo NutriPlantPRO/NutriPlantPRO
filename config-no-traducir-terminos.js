@@ -33,14 +33,25 @@
     'CIC', 'pH', 'VPD', 'kPa', '°C', '%'
   ];
 
+  // —— Fertilizantes y quelatos (siglas en inglés de uso internacional; no traducir)
+  // Nombres como "Nitrato de Calcio" o "Sulfato de Magnesio" sí se traducen.
+  var FERTILIZANTES_ACRONIMOS = [
+    'MAP', 'MKP', 'SOP', 'DAP', 'TSP', 'MOP', 'UAN',
+    'NKS', 'NK+Mg', 'NPK', 'N-P-K', 'TE',
+    'EDTA', 'EDDHA', 'DTPA', 'HEDTA', 'HEEDTA',
+    'WSF', 'Me', 'Urea'
+  ];
+
   // Unificar y exportar (sin duplicados)
   var TODOS = [];
   FORMULAS_IONES.forEach(function (t) { if (TODOS.indexOf(t) === -1) TODOS.push(t); });
   UNIDADES_ABREVIATURAS.forEach(function (t) { if (TODOS.indexOf(t) === -1) TODOS.push(t); });
+  FERTILIZANTES_ACRONIMOS.forEach(function (t) { if (TODOS.indexOf(t) === -1) TODOS.push(t); });
 
   window.NUTRIPLANT_NO_TRADUCIR = {
     formulasIones: FORMULAS_IONES,
     unidadesAbreviaturas: UNIDADES_ABREVIATURAS,
+    fertilizantesAcronimos: FERTILIZANTES_ACRONIMOS,
     todos: TODOS
   };
 })(window);
