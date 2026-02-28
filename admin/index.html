@@ -4447,7 +4447,16 @@
         
         // Función para obtener la etiqueta del nutriente según el modo
         function getAdminNutrientLabel(nutrient, isElementalMode) {
-            if (!isElementalMode) return nutrient;
+            const oxidePretty = {
+                'P2O5': 'P₂O₅',
+                'K2O': 'K₂O',
+                'SO4': 'SO₄',
+                'SO3': 'SO₃',
+                'SiO2': 'SiO₂',
+                'N_NO3': 'N-NO₃⁻',
+                'N_NH4': 'N-NH₄⁺'
+            };
+            if (!isElementalMode) return oxidePretty[nutrient] || nutrient;
             const labels = {
                 'P2O5': 'P',
                 'K2O': 'K',
@@ -4455,7 +4464,7 @@
                 'MgO': 'Mg',
                 'SiO2': 'Si'
             };
-            return labels[nutrient] || nutrient;
+            return labels[nutrient] || (oxidePretty[nutrient] || nutrient);
         }
         
         // Función para convertir un valor de Óxido a Elemental
@@ -4897,7 +4906,7 @@
             const microColors = { Fe: '#1f77b4', Mn: '#2ca02c', B: '#ff7f0e', Zn: '#9467bd', Cu: '#8c564b', Mo: '#e377c2' };
 
             const programIsElemental = program.mode === true;
-            let macroLabels = { P2O5: 'P2O5', K2O: 'K2O', CaO: 'CaO', MgO: 'MgO' };
+            let macroLabels = { P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', SO4: 'SO₄' };
             if (programIsElemental) {
                 macros = {
                     N_NO3: macros.N_NO3,
@@ -4908,17 +4917,17 @@
                     MgO: macros.MgO.map(v => convertAdminOxideToElemental('MgO', v)),
                     SO4: macros.SO4
                 };
-                macroLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg' };
+                macroLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SO4: 'SO₄' };
             }
 
             const macroDatasets = [
-                { label: 'N(NO3)', data: macros.N_NO3, color: macroColors.N_NO3 },
-                { label: 'N(NH4)', data: macros.N_NH4, color: macroColors.N_NH4 },
+                { label: 'N-NO₃⁻', data: macros.N_NO3, color: macroColors.N_NO3 },
+                { label: 'N-NH₄⁺', data: macros.N_NH4, color: macroColors.N_NH4 },
                 { label: macroLabels.P2O5, data: macros.P2O5, color: macroColors.P2O5 },
                 { label: macroLabels.K2O, data: macros.K2O, color: macroColors.K2O },
                 { label: macroLabels.CaO, data: macros.CaO, color: macroColors.CaO },
                 { label: macroLabels.MgO, data: macros.MgO, color: macroColors.MgO },
-                { label: 'SO4', data: macros.SO4, color: macroColors.SO4 }
+                { label: macroLabels.SO4, data: macros.SO4, color: macroColors.SO4 }
             ];
             const microDatasets = [
                 { label: 'Fe', data: micros.Fe, color: microColors.Fe },
@@ -6921,7 +6930,7 @@
                                                 <th style="padding: 8px; text-align: center; border: 1px solid #cbd5e1;">${getAdminNutrientLabel('CaO', programIsElemental)}</th>
                                                 <th style="padding: 8px; text-align: center; border: 1px solid #cbd5e1;">${getAdminNutrientLabel('MgO', programIsElemental)}</th>
                                                 <th style="padding: 8px; text-align: center; border: 1px solid #cbd5e1;">S</th>
-                                                <th style="padding: 8px; text-align: center; border: 1px solid #cbd5e1;">SO4</th>
+                                                <th style="padding: 8px; text-align: center; border: 1px solid #cbd5e1;">${getAdminNutrientLabel('SO4', programIsElemental)}</th>
                                                 <th style="padding: 8px; text-align: center; border: 1px solid #cbd5e1;">Fe</th>
                                                 <th style="padding: 8px; text-align: center; border: 1px solid #cbd5e1;">Mn</th>
                                                 <th style="padding: 8px; text-align: center; border: 1px solid #cbd5e1;">B</th>
@@ -7329,8 +7338,8 @@
                 const microCols = ['Fe','Mn','B','Zn','Cu','Mo','SiO2'];
                 const dividerBorder = 'border-left:3px solid #64748b;';
                 const macroLabel = (n) => {
-                    if (n === 'N_NO3') return 'N(NO3)';
-                    if (n === 'N_NH4') return 'N(NH4)';
+                    if (n === 'N_NO3') return 'N-NO₃⁻';
+                    if (n === 'N_NH4') return 'N-NH₄⁺';
                     return getAdminNutrientLabel(n, programIsElemental);
                 };
                 const microLabel = (n) => getAdminNutrientLabel(n, programIsElemental);
