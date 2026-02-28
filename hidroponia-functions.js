@@ -1670,6 +1670,16 @@ function initHydroponiaTabs() {
 function initHydroponiaUI() {
   const container = document.querySelector('.hydroponia-container');
   if (!container) return;
+  // Reiniciar estado base en cada apertura/cambio de proyecto para evitar arrastre entre proyectos.
+  hydroState = {
+    stages: [],
+    activeStageId: null,
+    water: {},
+    fertilizers: [],
+    volumeWaterM3: 100,
+    tankVolumeL: 1000,
+    injectionRateLperM3: 10
+  };
   const saved = hydroLoadData();
   if (saved) {
     hydroState = {

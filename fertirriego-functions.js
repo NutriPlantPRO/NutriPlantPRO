@@ -2258,6 +2258,19 @@ loadFertirriegoRequirements = function(retryCount = 0) {
   
   try {
     console.log('🔄 loadFertirriegoRequirements() llamado - iniciando carga...');
+    // Reset de estado temporal para evitar arrastre entre proyectos.
+    isFertirriegoLoading = false;
+    userIsChangingValue = false;
+    savedFertiAdjustments = null;
+    savedFertiEfficiencies = null;
+    savedFertiAdjustmentsAuto = true;
+    lastFertiCrop = null;
+    lastFertiTargetYield = null;
+    if (typeof window !== 'undefined') {
+      if (!window.savedFertiExtractionOverrides || typeof window.savedFertiExtractionOverrides !== 'object') {
+        window.savedFertiExtractionOverrides = {};
+      }
+    }
     // Respetar la sub-pestaña actual; solo activar "extraccion" si ninguna está activa
     const activeTab = document.querySelector('.fertirriego-container .tab-button.active');
     if (!activeTab) {
@@ -2415,6 +2428,21 @@ loadFertirriegoRequirements = function(retryCount = 0) {
       console.log('ℹ️ No hay datos guardados de Fertirriego para este proyecto - usando valores precargados');
       // NO retornar - dejar que se calcule con valores precargados
       // Pero marcar que no hay datos guardados para que se guarden cuando el usuario modifique
+      // Además, limpiar posibles restos visuales/temporales del proyecto anterior.
+      const selectNoData = document.getElementById('fertirriegoCropType');
+      if (selectNoData && selectNoData.options && selectNoData.options.length > 0) {
+        selectNoData.selectedIndex = 0;
+      }
+      const targetYieldNoData = document.getElementById('fertirriegoTargetYield');
+      if (targetYieldNoData) {
+        targetYieldNoData.value = targetYieldNoData.defaultValue || '25';
+      }
+      isFertirriegoElementalMode = false;
+      window.isFertirriegoElementalMode = false;
+      window.fertirriegoElementalModeLoaded = true;
+      const btnNoData = document.getElementById('toggleFertirriegoOxideElementalBtn');
+      if (btnNoData) btnNoData.textContent = '🔄 Ver en Elemental';
+      window.savedFertiExtractionOverrides = {};
       data = null;
     }
 

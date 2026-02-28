@@ -1431,6 +1431,18 @@ function loadFertirriegoProgram() {
 }
 
 function initFertirriegoProgramUI() {
+  // Reinicio base para evitar arrastre visual/lógico entre proyectos.
+  fertiProgramInitialized = false;
+  fertiWeeks = [];
+  fertiWeekCounter = 1;
+  fertiColumns = [];
+  fertiTimeUnit = 'semana';
+  fertiWaterContributionOxide = {
+    N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, S: 0, SO4: 0,
+    Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0
+  };
+  fertiProgDirty = false;
+
   // Vincular eventos globales
   window.addFertiWeek = addFertiWeek;
   window.removeFertiWeek = removeFertiWeek;
