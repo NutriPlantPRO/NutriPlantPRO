@@ -1878,7 +1878,8 @@
                      onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" 
                      onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='#f8fafc'">
                 <input type="checkbox" id="reg-activate-subscription" name="activate_subscription" value="yes" checked
-                       style="width: 20px; height: 20px; cursor: pointer;">
+                       onchange="if(!this.checked){this.checked=true;}"
+                       style="width: 20px; height: 20px; cursor: default;" title="La suscripción con PayPal es obligatoria para crear cuenta.">
                 <div>
                   <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">Activar suscripción ahora con PayPal</div>
                   <div style="font-size: 13px; color: #64748b;">Serás redirigido a PayPal para completar el pago seguro</div>
