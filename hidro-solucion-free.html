@@ -48,6 +48,16 @@
       margin: 0 0 8px 0;
       line-height: 1.35;
     }
+    /* Contorno azul marino en la sección meq para indicar que son los campos editables */
+    #hydroMeqTableWrap input.hydro-input[data-type="meq"] {
+      border: 2px solid #1e40af;
+      outline: none;
+      box-shadow: 0 0 0 1px rgba(30, 64, 175, 0.15);
+    }
+    #hydroMeqTableWrap input.hydro-input[data-type="meq"]:focus {
+      border-color: #1e3a8a;
+      box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.25);
+    }
     @media (max-width: 600px) {
       .hydro-ternary-description {
         font-size: 0.75rem;
