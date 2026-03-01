@@ -8138,7 +8138,7 @@
         }
 
         // 👤 FUNCIÓN PARA VER DETALLES COMPLETOS DEL USUARIO Y SUS PROYECTOS
-        function viewUserDetails(userId, fromView = null, fromViewParams = null) {
+        async function viewUserDetails(userId, fromView = null, fromViewParams = null) {
             // Guardar vista anterior si se proporciona (nombre de función o función)
             if (fromView) {
                 var fn = typeof fromView === 'function' ? fromView : window[fromView];
@@ -8171,6 +8171,35 @@
                 return;
             }
             user = { ...user, chat_history_sin_proyecto: user.chat_history_sin_proyecto || [] };
+            
+            // Refrescar fechas de suscripción directamente desde Supabase para evitar N/A por caché local.
+            try {
+                const userIdText = String(user.id || user.userId || userId || '');
+                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userIdText);
+                if (isUuid && window.getSupabaseClient) {
+                    const client = window.getSupabaseClient();
+                    if (client) {
+                        const { data: freshProfile, error: freshErr } = await client
+                            .from('profiles')
+                            .select('subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, subscription_amount, subscription_status')
+                            .eq('id', userIdText)
+                            .maybeSingle();
+                        if (!freshErr && freshProfile) {
+                            user = {
+                                ...user,
+                                subscription_activated_at: freshProfile.subscription_activated_at || user.subscription_activated_at || null,
+                                last_payment_date: freshProfile.last_payment_date || user.last_payment_date || null,
+                                next_payment_date: freshProfile.next_payment_date || user.next_payment_date || null,
+                                paypal_subscription_id: freshProfile.paypal_subscription_id || user.paypal_subscription_id || null,
+                                subscription_status: freshProfile.subscription_status || user.subscription_status,
+                                subscription_amount: freshProfile.subscription_amount ?? user.subscription_amount
+                            };
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ No se pudo refrescar perfil desde Supabase en detalle de usuario:', e);
+            }
             
             // Obtener proyectos del usuario (email por si userId no coincide con la clave en localStorage)
             const userProjects = getUserProjects(userId, user.email);
