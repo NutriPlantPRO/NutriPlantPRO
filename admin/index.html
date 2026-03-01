@@ -8183,6 +8183,14 @@
             sinProyecto.forEach(function (m) { if (m && (m.sender === 'user' || m.type === 'user')) userChatInteractions++; });
             const userChatCost = (userChatInteractions * 0.001).toFixed(4);
             
+            // Fechas de pago para mostrar (o fallback desde activación)
+            const lastPaymentDisplay = user.last_payment_date ? new Date(user.last_payment_date).toLocaleDateString('es-MX') : (user.subscription_activated_at ? new Date(user.subscription_activated_at).toLocaleDateString('es-MX') + ' (activación)' : 'N/A');
+            let nextPaymentDisplay = user.next_payment_date ? new Date(user.next_payment_date).toLocaleDateString('es-MX') : 'N/A';
+            if (nextPaymentDisplay === 'N/A' && user.subscription_activated_at) {
+              const d = new Date(user.subscription_activated_at);
+              d.setMonth(d.getMonth() + 5);
+              nextPaymentDisplay = d.toLocaleDateString('es-MX') + ' (aprox. 5 meses)';
+            }
             // Construir HTML con toda la información
             let html = `
                 <div style="padding: 24px; max-height: 90vh; overflow-y: auto;">
@@ -8232,8 +8240,8 @@
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
                                 <div><strong>Estado:</strong> ${user.subscription_status === 'active' ? '✅ Activa' : user.subscription_status === 'expired' ? '⏰ Expirada' : user.subscription_status === 'cancelled' ? '❌ Cancelada' : user.subscription_status === 'pending' ? '⏳ Pendiente' : user.subscription_status === 'inactive' ? '❌ Inactiva' : '❓ Desconocido'}</div>
                                 <div><strong>Monto:</strong> ${user.subscription_amount != null && user.subscription_amount !== '' && parseFloat(user.subscription_amount) > 0 ? `$${parseFloat(user.subscription_amount).toFixed(2)} USD` : 'Sin suscripción'}</div>
-                                <div><strong>Último Pago:</strong> ${user.last_payment_date ? new Date(user.last_payment_date).toLocaleDateString('es-MX') : 'N/A'}</div>
-                                <div><strong>Próximo Pago:</strong> ${user.next_payment_date ? new Date(user.next_payment_date).toLocaleDateString('es-MX') : 'N/A'}</div>
+                                <div><strong>Último Pago:</strong> ${user.last_payment_date ? new Date(user.last_payment_date).toLocaleDateString('es-MX') : (user.subscription_activated_at ? new Date(user.subscription_activated_at).toLocaleDateString('es-MX') + ' (activación)' : 'N/A')}</div>
+                                <div><strong>Próximo Pago:</strong> ${user.next_payment_date ? new Date(user.next_payment_date).toLocaleDateString('es-MX') : (user.subscription_activated_at ? (function(){ var d = new Date(user.subscription_activated_at); d.setMonth(d.getMonth() + 5); return d.toLocaleDateString('es-MX'); })() + ' (aprox. 5 meses)' : 'N/A')}</div>
                             </div>
                         </div>
                         

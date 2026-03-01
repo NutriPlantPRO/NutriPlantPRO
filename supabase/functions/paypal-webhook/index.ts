@@ -72,6 +72,14 @@ async function verifyWebhookSignature(eventBody: Json, headers: Headers): Promis
   return data.verification_status === "SUCCESS";
 }
 
+const SUBSCRIPTION_MONTHS = 5; // ciclo cada 5 meses
+
+function addMonths(date: Date, months: number): string {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString();
+}
+
 async function applySubscriptionStatus(params: {
   subscriptionId: string;
   status: string;
@@ -79,15 +87,26 @@ async function applySubscriptionStatus(params: {
   customUserId?: string | null;
 }) {
   const { subscriptionId, status, activatedAt, customUserId } = params;
+  const now = new Date().toISOString();
+  const payFields =
+    status === "active" && activatedAt
+      ? {
+          last_payment_date: activatedAt,
+          next_payment_date: addMonths(new Date(activatedAt), SUBSCRIPTION_MONTHS),
+        }
+      : {};
+
+  const baseUpdate = {
+    subscription_status: status,
+    updated_at: now,
+    ...(activatedAt ? { subscription_activated_at: activatedAt } : {}),
+    ...payFields,
+  };
 
   // Ruta 1: usuario ya tiene paypal_subscription_id guardado
   let query = supabase
     .from("profiles")
-    .update({
-      subscription_status: status,
-      updated_at: new Date().toISOString(),
-      ...(activatedAt ? { subscription_activated_at: activatedAt } : {}),
-    })
+    .update(baseUpdate)
     .eq("paypal_subscription_id", subscriptionId)
     .select("id");
 
@@ -102,9 +121,7 @@ async function applySubscriptionStatus(params: {
       .from("profiles")
       .update({
         paypal_subscription_id: subscriptionId,
-        subscription_status: status,
-        updated_at: new Date().toISOString(),
-        ...(activatedAt ? { subscription_activated_at: activatedAt } : {}),
+        ...baseUpdate,
       })
       .eq("id", customUserId)
       .select("id");
