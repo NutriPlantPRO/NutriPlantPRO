@@ -1539,7 +1539,8 @@
                     { key: 'created_at', label: 'Fecha de Registro', format: 'date', filterable: true },
                     { key: 'last_login', label: 'Último Acceso', format: 'date', filterable: true },
                     { key: 'last_payment_date', label: 'Último Pago', format: 'date', filterable: true },
-                    { key: 'next_payment_date', label: 'Próximo Pago', format: 'date', filterable: true }
+                    { key: 'next_payment_date', label: 'Próximo Pago', format: 'date', filterable: true },
+                    { key: 'paypal_subscription_id', label: 'Subscription ID (PayPal)', format: 'text', filterable: true }
                 ],
                 actions: {
                     edit: true,
@@ -3650,6 +3651,7 @@
                     { key: 'subscription_amount', label: 'Monto', format: 'currency', filterable: false },
                     { key: 'last_payment_date', label: 'Último Pago', format: 'date', filterable: true },
                     { key: 'next_payment_date', label: 'Próximo Pago', format: 'date', filterable: true },
+                    { key: 'paypal_subscription_id', label: 'Subscription ID (PayPal)', format: 'text', filterable: true },
                     { key: 'created_at', label: 'Fecha de Registro', format: 'date', filterable: true }
                 ],
                 actions: {
@@ -8277,6 +8279,7 @@
                                 <div><strong>Monto:</strong> ${user.subscription_amount != null && user.subscription_amount !== '' && parseFloat(user.subscription_amount) > 0 ? `$${parseFloat(user.subscription_amount).toFixed(2)} USD` : 'Sin suscripción'}</div>
                                 <div><strong>Último Pago:</strong> ${lastPaymentDisplay}</div>
                                 <div><strong>Próximo Pago:</strong> ${nextPaymentDisplay}</div>
+                                <div style="grid-column: 1 / -1;"><strong>Subscription ID (PayPal):</strong> ${user.paypal_subscription_id ? `<code style="background:#e2e8f0;padding:2px 6px;border-radius:4px;font-size:13px;">${escapeHtml(user.paypal_subscription_id)}</code> — <small style="color:#64748b;">úsalo para buscar en paypal.com/billing/subscriptions</small>` : '—'}</div>
                             </div>
                         </div>
                         
