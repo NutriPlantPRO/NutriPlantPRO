@@ -2040,6 +2040,9 @@
                                     userData.subscription_status = cloudUser.subscription_status || userData.subscription_status;
                                     userData.subscription_amount = cloudUser.subscription_amount ?? userData.subscription_amount;
                                 }
+                                userData.subscription_activated_at = cloudUser.subscription_activated_at || userData.subscription_activated_at;
+                                userData.last_payment_date = cloudUser.last_payment_date || userData.last_payment_date;
+                                userData.next_payment_date = cloudUser.next_payment_date || userData.next_payment_date;
                                 // Completar campos de perfil desde nube cuando en panel local estén vacíos.
                                 const hasLocalLocation = (
                                     (typeof userData.location === 'string' && userData.location.trim()) ||
@@ -8240,8 +8243,8 @@
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
                                 <div><strong>Estado:</strong> ${user.subscription_status === 'active' ? '✅ Activa' : user.subscription_status === 'expired' ? '⏰ Expirada' : user.subscription_status === 'cancelled' ? '❌ Cancelada' : user.subscription_status === 'pending' ? '⏳ Pendiente' : user.subscription_status === 'inactive' ? '❌ Inactiva' : '❓ Desconocido'}</div>
                                 <div><strong>Monto:</strong> ${user.subscription_amount != null && user.subscription_amount !== '' && parseFloat(user.subscription_amount) > 0 ? `$${parseFloat(user.subscription_amount).toFixed(2)} USD` : 'Sin suscripción'}</div>
-                                <div><strong>Último Pago:</strong> ${user.last_payment_date ? new Date(user.last_payment_date).toLocaleDateString('es-MX') : (user.subscription_activated_at ? new Date(user.subscription_activated_at).toLocaleDateString('es-MX') + ' (activación)' : 'N/A')}</div>
-                                <div><strong>Próximo Pago:</strong> ${user.next_payment_date ? new Date(user.next_payment_date).toLocaleDateString('es-MX') : (user.subscription_activated_at ? (function(){ var d = new Date(user.subscription_activated_at); d.setMonth(d.getMonth() + 5); return d.toLocaleDateString('es-MX'); })() + ' (aprox. 5 meses)' : 'N/A')}</div>
+                                <div><strong>Último Pago:</strong> ${lastPaymentDisplay}</div>
+                                <div><strong>Próximo Pago:</strong> ${nextPaymentDisplay}</div>
                             </div>
                         </div>
                         
