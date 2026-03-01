@@ -3196,6 +3196,19 @@ body {
   font-size: 12px;
 }
 
+/* Contorno azul marino en meq y micros ppm (campos editables por el usuario) */
+#hydroMeqTableWrap input.hydro-input[data-type="meq"],
+#hydroPpmTableWrap input.hydro-input[data-type="ppm"] {
+  border: 2px solid #1e40af;
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(30, 64, 175, 0.15);
+}
+#hydroMeqTableWrap input.hydro-input[data-type="meq"]:focus,
+#hydroPpmTableWrap input.hydro-input[data-type="ppm"]:focus {
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.25);
+}
+
 /* Misma distribución que Solución por etapa: 13 columnas iguales (NH4→Mo) */
 .hydro-grid {
   display: grid;
