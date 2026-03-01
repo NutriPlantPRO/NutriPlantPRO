@@ -2626,17 +2626,12 @@
         const client = window.getSupabaseClient();
         if (client) {
           try {
-            const now = new Date().toISOString();
-            const nextPayment = new Date();
-            nextPayment.setMonth(nextPayment.getMonth() + 5);
             const payload = {
               subscription_status: 'active',
-              subscription_activated_at: now,
+              subscription_activated_at: new Date().toISOString(),
               paypal_subscription_id: subscriptionId,
               subscription_amount: (window.NUTRIPLANT_CONFIG ? window.NUTRIPLANT_CONFIG.getDefaultSubscriptionAmount() : 49.00),
-              last_payment_date: now,
-              next_payment_date: nextPayment.toISOString(),
-              updated_at: now
+              updated_at: new Date().toISOString()
             };
             const { error } = await client.from('profiles').update(payload).eq('id', userId);
             if (error) console.warn('⚠️ PayPal: error actualizando Supabase profiles:', error.message);

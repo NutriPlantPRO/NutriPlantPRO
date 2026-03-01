@@ -80,21 +80,66 @@ function addMonths(date: Date, months: number): string {
   return d.toISOString();
 }
 
+function asString(v: unknown): string | null {
+  return typeof v === "string" && v.trim() ? v : null;
+}
+
+async function getPayPalSubscriptionSnapshot(subscriptionId: string): Promise<{
+  customUserId: string | null;
+  startTime: string | null;
+  nextBillingTime: string | null;
+  lastPaymentTime: string | null;
+}> {
+  const accessToken = await getPayPalAccessToken();
+  const res = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "content-type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`PayPal subscription fetch error ${res.status}: ${txt}`);
+  }
+
+  const data = (await res.json()) as Json;
+  const billingInfo = (data.billing_info ?? {}) as Json;
+  const lastPayment = (billingInfo.last_payment ?? {}) as Json;
+
+  return {
+    customUserId: asString(data.custom_id),
+    startTime: asString(data.start_time),
+    nextBillingTime: asString(billingInfo.next_billing_time),
+    lastPaymentTime: asString(lastPayment.time),
+  };
+}
+
 async function applySubscriptionStatus(params: {
   subscriptionId: string;
   status: string;
   activatedAt?: string | null;
+  lastPaymentDate?: string | null;
+  nextPaymentDate?: string | null;
   customUserId?: string | null;
 }) {
-  const { subscriptionId, status, activatedAt, customUserId } = params;
+  const {
+    subscriptionId,
+    status,
+    activatedAt,
+    lastPaymentDate,
+    nextPaymentDate,
+    customUserId,
+  } = params;
   const now = new Date().toISOString();
-  const payFields =
-    status === "active" && activatedAt
-      ? {
-          last_payment_date: activatedAt,
-          next_payment_date: addMonths(new Date(activatedAt), SUBSCRIPTION_MONTHS),
-        }
-      : {};
+  const payFields: Record<string, string> = {};
+  if (lastPaymentDate) payFields.last_payment_date = lastPaymentDate;
+  if (nextPaymentDate) payFields.next_payment_date = nextPaymentDate;
+  // Fallback de compatibilidad si PayPal no devuelve next_billing_time.
+  if (!payFields.next_payment_date && status === "active" && activatedAt) {
+    payFields.next_payment_date = addMonths(new Date(activatedAt), SUBSCRIPTION_MONTHS);
+  }
 
   const baseUpdate = {
     subscription_status: status,
@@ -176,12 +221,25 @@ Deno.serve(async (req) => {
     return jsonResponse({ ok: true, ignored: true, event_type: eventType });
   }
 
-  const activatedAt = nextStatus === "active" ? new Date().toISOString() : null;
+  let snapshot: Awaited<ReturnType<typeof getPayPalSubscriptionSnapshot>> | null = null;
+  try {
+    snapshot = await getPayPalSubscriptionSnapshot(subscriptionId);
+  } catch (e) {
+    // Si falla consulta a PayPal, seguimos con webhook para no perder transición de estado.
+    console.warn("PayPal subscription snapshot not available:", (e as Error).message);
+  }
+
+  const activatedAt =
+    nextStatus === "active"
+      ? snapshot?.startTime || asString(resource.start_time) || new Date().toISOString()
+      : null;
   const result = await applySubscriptionStatus({
     subscriptionId,
     status: nextStatus,
     activatedAt,
-    customUserId,
+    lastPaymentDate: snapshot?.lastPaymentTime ?? null,
+    nextPaymentDate: snapshot?.nextBillingTime ?? null,
+    customUserId: snapshot?.customUserId ?? customUserId,
   });
 
   return jsonResponse({

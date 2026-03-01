@@ -8216,9 +8216,12 @@
             const userChatCost = (userChatInteractions * 0.001).toFixed(4);
             
             // Fechas de pago para mostrar (o fallback desde activación)
-            const lastPaymentDisplay = user.last_payment_date ? new Date(user.last_payment_date).toLocaleDateString('es-MX') : (user.subscription_activated_at ? new Date(user.subscription_activated_at).toLocaleDateString('es-MX') + ' (activación)' : 'N/A');
+            const hasPayPalSubscription = !!user.paypal_subscription_id;
+            const lastPaymentDisplay = user.last_payment_date
+                ? new Date(user.last_payment_date).toLocaleDateString('es-MX')
+                : (hasPayPalSubscription ? 'Pendiente de cobro (trial)' : (user.subscription_activated_at ? new Date(user.subscription_activated_at).toLocaleDateString('es-MX') + ' (activación)' : 'N/A'));
             let nextPaymentDisplay = user.next_payment_date ? new Date(user.next_payment_date).toLocaleDateString('es-MX') : 'N/A';
-            if (nextPaymentDisplay === 'N/A' && user.subscription_activated_at) {
+            if (nextPaymentDisplay === 'N/A' && user.subscription_activated_at && !hasPayPalSubscription) {
               const d = new Date(user.subscription_activated_at);
               d.setMonth(d.getMonth() + 5);
               nextPaymentDisplay = d.toLocaleDateString('es-MX') + ' (aprox. 5 meses)';
