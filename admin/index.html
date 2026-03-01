@@ -610,6 +610,10 @@
                         crops: Array.isArray(p.crops) ? p.crops : (p.crops ? [p.crops] : []),
                         subscription_status: isAdmin ? 'active' : (p.subscription_status || 'inactive'),
                         subscription_amount: isAdmin ? 0 : (parseFloat(p.subscription_amount) || 0),
+                        subscription_activated_at: p.subscription_activated_at || null,
+                        last_payment_date: p.last_payment_date || null,
+                        next_payment_date: p.next_payment_date || null,
+                        paypal_subscription_id: p.paypal_subscription_id || null,
                         created_at: p.created_at,
                         last_login: p.last_login || null,
                         projects_count: projectsByUser[p.id] || 0,
@@ -1517,8 +1521,8 @@
         
         // 📋 FUNCIONES DE GESTIÓN
         async function showAllUsers() {
-            // Cargar desde nube primero para tener ubicación y datos actualizados de Supabase (y poder hacer merge)
-            if (typeof window.nutriplantAdminLoadFromCloud === 'function' && (!window._adminCloudCache || !window._adminCloudCache.users)) {
+            // Siempre refrescar desde Supabase: suscripción, Subscription ID, fechas de pago y datos de perfil vienen de la nube (no solo local).
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
                 try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showAllUsers: load from cloud', e); }
             }
             const users = getAllUsers();
@@ -2037,6 +2041,7 @@
                             const cloudUser = cloudByEmail[user.email?.toLowerCase()];
                             const isSupabaseUserId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
                             if (cloudUser) {
+                                // Fuente de verdad para suscripción: Supabase (PayPal webhook escribe ahí).
                                 if (!isAdminUser) {
                                     userData.subscription_status = cloudUser.subscription_status || userData.subscription_status;
                                     userData.subscription_amount = cloudUser.subscription_amount ?? userData.subscription_amount;
@@ -2044,6 +2049,7 @@
                                 userData.subscription_activated_at = cloudUser.subscription_activated_at || userData.subscription_activated_at;
                                 userData.last_payment_date = cloudUser.last_payment_date || userData.last_payment_date;
                                 userData.next_payment_date = cloudUser.next_payment_date || userData.next_payment_date;
+                                userData.paypal_subscription_id = cloudUser.paypal_subscription_id || userData.paypal_subscription_id;
                                 // Completar campos de perfil desde nube cuando en panel local estén vacíos.
                                 const hasLocalLocation = (
                                     (typeof userData.location === 'string' && userData.location.trim()) ||
@@ -2130,6 +2136,10 @@
                             crops: cu.crops || [],
                             subscription_status: isAdmin ? 'active' : (cu.subscription_status || 'inactive'),
                             subscription_amount: isAdmin ? 0 : (cu.subscription_amount ?? 49),
+                            subscription_activated_at: cu.subscription_activated_at || null,
+                            last_payment_date: cu.last_payment_date || null,
+                            next_payment_date: cu.next_payment_date || null,
+                            paypal_subscription_id: cu.paypal_subscription_id || null,
                             created_at: cu.created_at,
                             last_login: cu.last_login || null,
                             projects_count: Math.max(cu.projects_count ?? 0, getLocalProjectCountForUser(cu.id, cu.email)),
