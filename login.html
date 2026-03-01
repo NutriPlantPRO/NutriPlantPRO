@@ -1917,7 +1917,7 @@
     // Registro de cuentas nuevas: false = no mostrar opción de registro (solo login y calculadoras); true = mostrar "Crear Nueva Cuenta"
     // Cuando des luz verde a los registros, cambia a true.
     window.NUTRIPLANT_REGISTRATION_OPEN = false;
-    // Para que tú puedas crear un usuario prueba: abre login con ?np_reg=1 (ej. login.html?np_reg=1)
+    // Enlace "secreto" para que tú (o quien tengas el link) pueda registrarse sin dejar el botón a la vista: login.html?np_reg=1 o ?np_reg=si
     (function() {
       var p = typeof URLSearchParams !== 'undefined' && new URLSearchParams(window.location.search).get('np_reg');
       if (p === '1' || p === 'si') {

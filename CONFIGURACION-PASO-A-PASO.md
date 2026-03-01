@@ -8,7 +8,8 @@ Guía para dejar el proyecto listo en producción (dominio, PayPal Live, Supabas
 ## Estado del registro
 
 - **Ahora:** La opción "Crear Nueva Cuenta" está **oculta** en el login (solo se ve Iniciar sesión + calculadoras gratis).
-- **Cuando quieras abrir registros:** En `login.html` busca `window.NUTRIPLANT_REGISTRATION_OPEN = false` y cámbialo a `true`. Vuelve a desplegar.
+- **Para que tú (o quien tenga el link) pueda registrarse sin mostrarlo a todos:** Entra a `https://nutriplantpro.com/login.html?np_reg=1` (o `?np_reg=si`). Ahí aparece "Crear Nueva Cuenta". Guarda el enlace en favoritos.
+- **Cuando quieras abrir registros a todo el mundo:** En `login.html` busca `window.NUTRIPLANT_REGISTRATION_OPEN = false` y cámbialo a `true`. Vuelve a desplegar.
 
 ---
 
