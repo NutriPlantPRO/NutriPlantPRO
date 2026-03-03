@@ -9232,18 +9232,22 @@ function applyProjectDataToUI() {
     // Esto evita conflictos y duplicados cuando se carga desde selectSection
   }
 
-  // ===== ANÁLISIS: Refrescar listas y limpiar formularios al cambiar de proyecto =====
-  // Evita que se muestren análisis del proyecto anterior al cambiar de proyecto
-  if (window.renderSolucionNutritivaList) window.renderSolucionNutritivaList();
-  if (window.renderExtractoPastaList) window.renderExtractoPastaList();
-  if (window.renderAguaList) window.renderAguaList();
-  if (window.renderFoliarList) window.renderFoliarList();
-  if (window.renderFrutaList) window.renderFrutaList();
-  if (window.selectSolucionNutritivaAnalysis) window.selectSolucionNutritivaAnalysis(null);
-  if (window.selectExtractoPastaAnalysis) window.selectExtractoPastaAnalysis(null);
-  if (window.selectAguaAnalysis) window.selectAguaAnalysis(null);
-  if (window.selectFoliarAnalysis) window.selectFoliarAnalysis(null);
-  if (window.selectFrutaAnalysis) window.selectFrutaAnalysis(null);
+  // ===== ANÁLISIS: limpiar formularios SOLO cuando cambia de proyecto =====
+  // Antes se limpiaba siempre y eso borraba el análisis seleccionado al navegar entre secciones.
+  var currentAnalysisProjectId = (currentProject && currentProject.id) ? String(currentProject.id) : '';
+  if (!window._npLastAnalysisUiProjectId || window._npLastAnalysisUiProjectId !== currentAnalysisProjectId) {
+    if (window.renderSolucionNutritivaList) window.renderSolucionNutritivaList();
+    if (window.renderExtractoPastaList) window.renderExtractoPastaList();
+    if (window.renderAguaList) window.renderAguaList();
+    if (window.renderFoliarList) window.renderFoliarList();
+    if (window.renderFrutaList) window.renderFrutaList();
+    if (window.selectSolucionNutritivaAnalysis) window.selectSolucionNutritivaAnalysis(null);
+    if (window.selectExtractoPastaAnalysis) window.selectExtractoPastaAnalysis(null);
+    if (window.selectAguaAnalysis) window.selectAguaAnalysis(null);
+    if (window.selectFoliarAnalysis) window.selectFoliarAnalysis(null);
+    if (window.selectFrutaAnalysis) window.selectFrutaAnalysis(null);
+    window._npLastAnalysisUiProjectId = currentAnalysisProjectId;
+  }
 }
 
 // Mostrar indicador de guardado
