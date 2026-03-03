@@ -69,6 +69,18 @@ function restoreScrollForKey(scrollKey) {
     content.classList.remove('restoring-scroll');
   }
 }
+function restoreScrollForKeyStabilized(scrollKey, attempts, intervalMs) {
+  var tries = (typeof attempts === 'number' && attempts > 0) ? attempts : 4;
+  var interval = (typeof intervalMs === 'number' && intervalMs > 0) ? intervalMs : 90;
+  function runAttempt() {
+    restoreScrollForKey(scrollKey);
+    tries--;
+    if (tries > 0) {
+      setTimeout(runAttempt, interval);
+    }
+  }
+  runAttempt();
+}
 function getCurrentSubTabForSection(sectionName) {
   if (sectionName === 'Nutricion Granular') {
     var btn = document.querySelector('.nutricion-granular-container .tab-button.active');
@@ -1561,7 +1573,7 @@ function selectSection(name, el) {
     setTimeout(() => {
       if (typeof window.initSoilAnalysesTab === 'function') window.initSoilAnalysesTab();
       if (typeof window.restoreSoilAnalysisUIState === 'function') window.restoreSoilAnalysisUIState();
-      setTimeout(function() { restoreScrollForKey('Análisis: Suelo'); }, 80);
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Suelo', 4, 85); }, 80);
     }, 50);
   }
   
@@ -1571,7 +1583,7 @@ function selectSection(name, el) {
     setTimeout(() => {
       if (typeof window.initSolucionNutritivaTab === 'function') window.initSolucionNutritivaTab();
       if (typeof window.restoreSolucionNutritivaUIState === 'function') window.restoreSolucionNutritivaUIState();
-      setTimeout(function() { restoreScrollForKey('Análisis: Solución Nutritiva'); }, 120);
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Solución Nutritiva', 5, 90); }, 120);
     }, 50);
   }
 
@@ -1581,7 +1593,7 @@ function selectSection(name, el) {
     setTimeout(() => {
       if (typeof window.initExtractoPastaTab === 'function') window.initExtractoPastaTab();
       if (typeof window.restoreExtractoPastaUIState === 'function') window.restoreExtractoPastaUIState();
-      setTimeout(function() { restoreScrollForKey('Análisis: Extracto de Pasta'); }, 120);
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Extracto de Pasta', 5, 90); }, 120);
     }, 50);
   }
 
@@ -1591,7 +1603,7 @@ function selectSection(name, el) {
     setTimeout(() => {
       if (typeof window.initAguaTab === 'function') window.initAguaTab();
       if (typeof window.restoreAguaUIState === 'function') window.restoreAguaUIState();
-      setTimeout(function() { restoreScrollForKey('Análisis: Agua'); }, 120);
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Agua', 5, 90); }, 120);
     }, 50);
   }
 
@@ -1601,7 +1613,7 @@ function selectSection(name, el) {
     setTimeout(() => {
       if (typeof window.initFoliarTab === 'function') window.initFoliarTab();
       if (typeof window.restoreFoliarUIState === 'function') window.restoreFoliarUIState();
-      setTimeout(function() { restoreScrollForKey('Análisis: Foliar'); }, 120);
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Foliar', 5, 90); }, 120);
     }, 50);
   }
 
@@ -1611,7 +1623,7 @@ function selectSection(name, el) {
     setTimeout(() => {
       if (typeof window.initFrutaTab === 'function') window.initFrutaTab();
       if (typeof window.restoreFrutaUIState === 'function') window.restoreFrutaUIState();
-      setTimeout(function() { restoreScrollForKey('Análisis: Fruta'); }, 120);
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Fruta', 5, 90); }, 120);
     }, 50);
   }
   
