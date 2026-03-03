@@ -919,10 +919,10 @@ body {
   flex-direction: column;
 }
 
-/* Ocultar contenido brevemente al restaurar scroll para evitar parpadeo */
+/* Restauración de scroll sin fade para evitar parpadeo visible al volver de sección */
 .content.restoring-scroll {
-  opacity: 0;
-  transition: opacity 0.06s ease-out;
+  opacity: 1;
+  transition: none;
 }
 
 /* ===== ESTILO ESPECIAL PARA PÁGINA DE INICIO ===== */

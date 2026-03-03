@@ -2370,10 +2370,27 @@
             if (typeof reportCount === 'number' && reportCount > 0) {
                 out['Reporte'] = 3;
             } else { out['Reporte'] = 0; }
-            // Análisis: por cantidad de datos agregados (bajo/medio/alto según tipos con datos)
-            var analCount = [project.soilAnalysis, project.extracto, project.agua, project.foliar, project.fruta].filter(function(a) {
-                return a && hasSave(a) && hasRealData(a, true);
-            }).length;
+            // Análisis: contar tipos con datos reales (estructura nueva por arreglos y legado por objeto)
+            var analCount = 0;
+            // Legado (objeto por tipo)
+            [project.soilAnalysis, project.extracto, project.agua, project.foliar, project.fruta].forEach(function(a) {
+                if (a && hasRealData(a, true)) analCount++;
+            });
+            // Nuevo (arreglos por tipo)
+            [
+                project.soilAnalyses,
+                project.solucionNutritivaAnalyses,
+                project.extractoPastaAnalyses,
+                project.aguaAnalyses,
+                project.foliarAnalyses,
+                project.frutaAnalyses
+            ].forEach(function(list) {
+                if (!Array.isArray(list) || list.length === 0) return;
+                var hasAny = list.some(function(item) {
+                    return item && typeof item === 'object' && hasRealData(item, true);
+                });
+                if (hasAny) analCount++;
+            });
             out['Análisis'] = analCount <= 0 ? 0 : (analCount === 1 ? 1 : (analCount === 2 ? 2 : 3));
             // VPD: bajo 1 vez calculado, medio 2, alto más de 3 (cualquier calculadora: avanzada, ambiental, clima web)
             var vpd = (project.sections && project.sections.vpd) || project.vpdAnalysis;

@@ -6279,7 +6279,7 @@ CONTRATO:
     }
     window.closeAboutUsModal = closeAboutUsModal;
 
-    function loadUserInfo() {
+    async function loadUserInfo() {
       const contentDiv = document.getElementById('userInfoContent');
       if (!contentDiv) return;
 
@@ -6340,6 +6340,35 @@ CONTRATO:
           } catch (e) {
             console.error('Error parsing user data:', e);
           }
+        }
+
+        // Refrescar campos de suscripción desde Supabase para que este panel no dependa solo del equipo local.
+        try {
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId || ''));
+          if (isUuid && window.getSupabaseClient) {
+            const client = window.getSupabaseClient();
+            if (client) {
+              const { data: cloudProfile, error: cloudErr } = await client
+                .from('profiles')
+                .select('subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id')
+                .eq('id', userId)
+                .maybeSingle();
+              if (!cloudErr && cloudProfile) {
+                userData = {
+                  ...userData,
+                  subscription_status: cloudProfile.subscription_status || userData.subscription_status || 'pending',
+                  subscription_amount: cloudProfile.subscription_amount ?? userData.subscription_amount,
+                  subscription_activated_at: cloudProfile.subscription_activated_at || userData.subscription_activated_at || null,
+                  last_payment_date: cloudProfile.last_payment_date || userData.last_payment_date || null,
+                  next_payment_date: cloudProfile.next_payment_date || userData.next_payment_date || null,
+                  paypal_subscription_id: cloudProfile.paypal_subscription_id || userData.paypal_subscription_id || null
+                };
+                try { localStorage.setItem(userKey, JSON.stringify(userData)); } catch (_) {}
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('No se pudo refrescar suscripción desde Supabase:', e);
         }
 
         // Funciones auxiliares

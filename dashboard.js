@@ -59,11 +59,11 @@ function restoreScrollForKey(scrollKey) {
   var pos = sectionScrollPositions[scrollKey];
   var content = document.querySelector('.content');
   if (typeof pos === 'number' && pos > 0) {
+    // Restauración inmediata + verificación en el siguiente frame para evitar "salto" visible.
+    setScrollPosition(pos);
     requestAnimationFrame(function() {
       setScrollPosition(pos);
-      requestAnimationFrame(function() {
-        if (content) content.classList.remove('restoring-scroll');
-      });
+      if (content) content.classList.remove('restoring-scroll');
     });
   } else if (content) {
     content.classList.remove('restoring-scroll');
@@ -83,6 +83,13 @@ function getCurrentSubTabForSection(sectionName) {
     if (activeBtn) {
       var tab = activeBtn.getAttribute('data-tab');
       if (tab) return tab;
+    }
+  }
+  if (sectionName === 'Hidroponia') {
+    var hydroActiveBtn = document.querySelector('.hydroponia-container .tab-button.active');
+    if (hydroActiveBtn) {
+      var hydroTab = hydroActiveBtn.getAttribute('data-tab');
+      if (hydroTab) return hydroTab;
     }
   }
   return '';
@@ -1531,7 +1538,7 @@ function selectSection(name, el) {
   
   // Restaurar posición de scroll para secciones sin subpestañas (Enmienda, Ubicación, Reporte, etc.)
   // Análisis: Suelo, Solución Nutritiva y Extracto de Pasta se restaura después de init (en su propio bloque)
-  if (name !== 'Nutricion Granular' && name !== 'Fertirriego' && name !== 'Análisis: Suelo' && name !== 'Análisis: Solución Nutritiva' && name !== 'Análisis: Extracto de Pasta' && name !== 'Análisis: Agua' && name !== 'Análisis: Foliar' && name !== 'Análisis: Fruta') {
+  if (name !== 'Nutricion Granular' && name !== 'Fertirriego' && name !== 'Hidroponia' && name !== 'Análisis: Suelo' && name !== 'Análisis: Solución Nutritiva' && name !== 'Análisis: Extracto de Pasta' && name !== 'Análisis: Agua' && name !== 'Análisis: Foliar' && name !== 'Análisis: Fruta') {
     if (content && sectionScrollPositions[name]) content.classList.add('restoring-scroll');
     requestAnimationFrame(function() { restoreScrollForKey(name); });
   }
@@ -1639,7 +1646,6 @@ function selectSection(name, el) {
         }
       }
     } catch {}
-    if (sectionScrollPositions['Nutricion Granular|' + lastGranular] && content) content.classList.add('restoring-scroll');
     // Esperar a que el DOM esté listo antes de inicializar subpestañas
     requestAnimationFrame(() => {
       if (typeof window.selectGranularSubTab === 'function') {
@@ -1669,7 +1675,6 @@ function selectSection(name, el) {
         }
       }
     } catch (e) {}
-    if (sectionScrollPositions['Fertirriego|' + fertiLastTab] && content) content.classList.add('restoring-scroll');
     requestAnimationFrame(() => {
       console.log('💧 Inicializando sección Fertirriego...');
       // Restaurar última subpestaña activa
@@ -1740,11 +1745,29 @@ function selectSection(name, el) {
 
   // Inicializar Hidroponia cuando se seleccione la sección
   if (name === 'Hidroponia') {
+    var hydroLastTab = 'hidro-solucion';
+    try {
+      var hp = window.projectManager ? window.projectManager.getCurrentProject() : null;
+      if (hp && hp.hidroponiaLastTab) hydroLastTab = hp.hidroponiaLastTab;
+      else {
+        var hpid = localStorage.getItem('nutriplant-current-project');
+        if (hpid) {
+          var hdata = JSON.parse(localStorage.getItem('nutriplant_project_' + hpid) || '{}');
+          if (hdata.hidroponiaLastTab) hydroLastTab = hdata.hidroponiaLastTab;
+        }
+      }
+    } catch (e) {}
     loadProjectData();
     requestAnimationFrame(() => {
       if (typeof window.initHydroponiaUI === 'function') {
         window.initHydroponiaUI();
       }
+      // Restaurar scroll después de renderizar tabs/tabla de Hidroponía.
+      setTimeout(function() {
+        var hydroBtn = document.querySelector('.hydroponia-container .tab-button.active');
+        var hydroTab = hydroBtn ? (hydroBtn.getAttribute('data-tab') || hydroLastTab) : hydroLastTab;
+        restoreScrollForKey('Hidroponia|' + hydroTab);
+      }, 140);
     });
   }
 
@@ -12299,7 +12322,7 @@ function createHidroponiaSectionHTML() {
     }
     return { dose, kg, totalValue: kg, totalUnit: 'kg', isLiquid };
   }
-  const ppmTotals = h.fertilizerTotalsPpm || {};
+  const persistedPpmTotals = h.fertilizerTotalsPpm || {};
   const activeMeq = activeStage ? (activeStage.meq || {}) : {};
   const activeNNo3 = toNum(activeMeq.N_NO3);
   const activeNNh4 = toNum(activeMeq.N_NH4);
@@ -12347,9 +12370,24 @@ function createHidroponiaSectionHTML() {
       ${microNutrients.map(n => `<td>${toNum(ppm[n]).toFixed(2)}</td>`).join('')}
     </tr>`;
   }).join('');
+  function getHydroFertilizerContributionsForReport(fert, dose) {
+    const existing = (fert && typeof fert === 'object') ? (fert.contributions || {}) : {};
+    const hasExisting = hydroNutrients.some(n => toNum(existing[n]) > 0);
+    if (hasExisting) return existing;
+    const mat = hydroById.get(fert?.materialId) || hydroCustomById.get(fert?.materialId) || {};
+    const computed = {};
+    hydroNutrients.forEach(n => {
+      const pct = toNum(mat[n]);
+      computed[n] = Number.isFinite(dose) && dose > 0 ? (dose * pct / 100) : 0;
+    });
+    return computed;
+  }
+  const reportPpmTotals = {};
+  hydroNutrients.forEach(n => { reportPpmTotals[n] = 0; });
   const fertRows = fertilizers.map(f => {
-    const c = f.contributions || {};
     const { dose, totalValue, totalUnit } = hydroDoseAndTotals(f);
+    const c = getHydroFertilizerContributionsForReport(f, dose);
+    hydroNutrients.forEach(n => { reportPpmTotals[n] += toNum(c[n]); });
     return `<tr>
       <td>${reportEscapeHtml(hydroFertName(f))}</td>
       <td>Tanque ${reportEscapeHtml(f.tank || 'A')}</td>
@@ -12358,6 +12396,7 @@ function createHidroponiaSectionHTML() {
       <td>${Number.isFinite(totalValue) && totalValue > 0 ? `${totalValue.toFixed(2)} ${totalUnit}` : '—'}</td>
     </tr>`;
   }).join('');
+  const ppmTotals = hydroNutrients.some(n => toNum(reportPpmTotals[n]) > 0) ? reportPpmTotals : persistedPpmTotals;
   const hydroTankOrder = ['A', 'B', 'C', 'D', 'E'];
   const byTank = {};
   hydroTankOrder.forEach(tq => { byTank[tq] = { totalKg: 0, totalL: 0, items: [] }; });
@@ -12636,7 +12675,7 @@ function createSolucionNutritivaTabHTML() {
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
       </div>
       <h2 class="text-xl" style="margin-bottom: 16px;">🔬 Solución Nutritiva</h2>
-      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de solución nutritiva o extracto de pasta saturada. Macros en meq/L y ppm (conversión automática). Rangos de referencia y diferencia vs ideal.</p>
+      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de solución nutritiva o extracto de pasta saturada. Macros en meq/L y ppm (conversión automática). Rangos de referencia y diferencia vs ideal: <strong>(-)</strong> falta, <strong>(+)</strong> exceso.</p>
       <div class="soil-analysis-layout">
         <div class="soil-analysis-list-panel">
           <div class="soil-analysis-list-header">
@@ -12809,7 +12848,7 @@ window.snUpdateMicroRef = function snUpdateMicroRef() {
     var diffEl = document.getElementById('sn-diff-' + key);
     var idealVal = a.ideal && a.ideal[key] !== undefined && a.ideal[key] !== '' ? parseFloat(a.ideal[key]) : NaN;
     if (refEl) { if (isNaN(val)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="Sin dato"></span>'; refEl.className = 'sn-ref-badge'; } else { var r = ranges[key]; if (r) { if (val >= r[0] && val <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="Dentro"></span>'; refEl.className = 'sn-ref-badge'; } else if (val < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="Bajo"></span>'; refEl.className = 'sn-ref-badge'; } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="Alto"></span>'; refEl.className = 'sn-ref-badge'; } } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; } } }
-    if (diffEl && !isNaN(idealVal) && !isNaN(val)) { var d = idealVal - val; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
+    if (diffEl && !isNaN(idealVal) && !isNaN(val)) { var d = val - idealVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
   });
 };
 
@@ -12834,7 +12873,7 @@ window.snUpdateMacroRef = function snUpdateMacroRef(group, key) {
       else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="Alto"></span>'; refEl.className = 'sn-ref-badge'; }
     } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; }
   }
-  if (diffEl && !isNaN(idealVal) && !isNaN(ppmVal)) { var d = idealVal - ppmVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
+  if (diffEl && !isNaN(idealVal) && !isNaN(ppmVal)) { var d = ppmVal - idealVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
 };
 
 window.selectSolucionNutritivaAnalysis = function selectSolucionNutritivaAnalysis(id) {
@@ -12843,7 +12882,7 @@ window.selectSolucionNutritivaAnalysis = function selectSolucionNutritivaAnalysi
   var emptyEl = document.getElementById('solucion-nutritiva-form-empty');
   var wrapEl = document.getElementById('solucion-nutritiva-form-wrap');
   if (!wrapEl) return;
-  if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#solucion-nutritiva-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); return; }
+  if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#solucion-nutritiva-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); if (typeof window.saveSolucionNutritivaUIState === 'function') window.saveSolucionNutritivaUIState(); return; }
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
@@ -12862,6 +12901,7 @@ window.selectSolucionNutritivaAnalysis = function selectSolucionNutritivaAnalysi
   window.snUpdateMicroRef && window.snUpdateMicroRef();
   ['ca','mg','na','k'].forEach(function(k) { window.snUpdateMacroRef && window.snUpdateMacroRef('cations', k); });
   ['so4','hco3','cl','co3','po4','no3'].forEach(function(k) { window.snUpdateMacroRef && window.snUpdateMacroRef('anions', k); });
+  if (typeof window.saveSolucionNutritivaUIState === 'function') window.saveSolucionNutritivaUIState();
 };
 
 window.renderSolucionNutritivaList = function renderSolucionNutritivaList() {
@@ -12973,7 +13013,7 @@ function createExtractoPastaTabHTML() {
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
       </div>
       <h2 class="text-xl" style="margin-bottom: 16px;">🔬 Extracto de Pasta</h2>
-      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de extracto de pasta saturada. Datos generales, aniones, cationes, micronutrimentos y relación nutrimental. Referencias en ppm.</p>
+      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de extracto de pasta saturada. Datos generales, aniones, cationes, micronutrimentos y relación nutrimental. Referencias en ppm. Diferencia vs ideal: <strong>(-)</strong> falta, <strong>(+)</strong> exceso.</p>
       <div class="soil-analysis-layout">
         <div class="soil-analysis-list-panel">
           <div class="soil-analysis-list-header">
@@ -13209,7 +13249,7 @@ window.epUpdateMacroRef = function epUpdateMacroRef(group, key) {
   }
   if (diffEl && !isNaN(idealVal)) {
     var cmpPpm = data && data[key + '_ppm'] ? parseFloat(data[key + '_ppm']) : NaN;
-    if (!isNaN(cmpPpm)) { var d = idealVal - cmpPpm; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else diffEl.textContent = '—';
+    if (!isNaN(cmpPpm)) { var d = cmpPpm - idealVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else diffEl.textContent = '—';
   } else if (diffEl) diffEl.textContent = '—';
 };
 
@@ -13231,7 +13271,7 @@ window.epUpdateMicroRef = function epUpdateMicroRef() {
     var diffEl = document.getElementById('ep-diff-' + key);
     var idealVal = a.ideal && a.ideal[key] !== undefined && a.ideal[key] !== '' ? parseFloat(a.ideal[key]) : NaN;
     if (refEl) { if (isNaN(val)) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="Sin dato"></span>'; refEl.className = 'sn-ref-badge'; } else { var r = ranges[key]; if (r) { if (val >= r[0] && val <= r[1]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-ok" title="Dentro"></span>'; refEl.className = 'sn-ref-badge'; } else if (val < r[0]) { refEl.innerHTML = '<span class="sn-status-dot sn-ref-low" title="Bajo"></span>'; refEl.className = 'sn-ref-badge'; } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-high" title="Alto"></span>'; refEl.className = 'sn-ref-badge'; } } else { refEl.innerHTML = '<span class="sn-status-dot sn-ref-none" title="—"></span>'; refEl.className = 'sn-ref-badge'; } } }
-    if (diffEl && !isNaN(idealVal) && !isNaN(val)) { var d = idealVal - val; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
+    if (diffEl && !isNaN(idealVal) && !isNaN(val)) { var d = val - idealVal; diffEl.textContent = (d >= 0 ? '+' : '') + d.toFixed(2); } else if (diffEl) diffEl.textContent = '—';
   });
 };
 
@@ -13268,7 +13308,7 @@ window.selectExtractoPastaAnalysis = function selectExtractoPastaAnalysis(id) {
   var emptyEl = document.getElementById('extracto-pasta-form-empty');
   var wrapEl = document.getElementById('extracto-pasta-form-wrap');
   if (!wrapEl) return;
-  if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#extracto-pasta-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); return; }
+  if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#extracto-pasta-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); if (typeof window.saveExtractoPastaUIState === 'function') window.saveExtractoPastaUIState(); return; }
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
@@ -13286,6 +13326,7 @@ window.selectExtractoPastaAnalysis = function selectExtractoPastaAnalysis(id) {
   ['ca','mg','na','k'].forEach(function(k) { window.epUpdateMacroRef && window.epUpdateMacroRef('cations', k); });
   ['so4','hco3','cl','co3','po4','no3'].forEach(function(k) { window.epUpdateMacroRef && window.epUpdateMacroRef('anions', k); });
   window.epUpdateRatiosRef && window.epUpdateRatiosRef();
+  if (typeof window.saveExtractoPastaUIState === 'function') window.saveExtractoPastaUIState();
 };
 
 window.renderExtractoPastaList = function renderExtractoPastaList() {
@@ -13670,7 +13711,7 @@ window.selectAguaAnalysis = function selectAguaAnalysis(id) {
   var emptyEl = document.getElementById('agua-form-empty');
   var wrapEl = document.getElementById('agua-form-wrap');
   if (!wrapEl) return;
-  if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#agua-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); return; }
+  if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#agua-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); if (typeof window.saveAguaUIState === 'function') window.saveAguaUIState(); return; }
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
@@ -13693,6 +13734,7 @@ window.selectAguaAnalysis = function selectAguaAnalysis(id) {
   window.awUpdateSums && window.awUpdateSums();
   window.awUpdateKgOxide && window.awUpdateKgOxide();
   window.awUpdateAcid && window.awUpdateAcid();
+  if (typeof window.saveAguaUIState === 'function') window.saveAguaUIState();
 };
 
 window.renderAguaList = function renderAguaList() {
@@ -13953,7 +13995,7 @@ window.selectFoliarAnalysis = function selectFoliarAnalysis(id) {
   var emptyEl = document.getElementById('foliar-form-empty');
   var wrapEl = document.getElementById('foliar-form-wrap');
   if (!wrapEl) return;
-  if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#foliar-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); return; }
+  if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#foliar-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); if (typeof window.saveFoliarUIState === 'function') window.saveFoliarUIState(); return; }
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
@@ -13972,6 +14014,7 @@ window.selectFoliarAnalysis = function selectFoliarAnalysis(id) {
   });
   document.querySelectorAll('#foliar-list .soil-analysis-card').forEach(function(c) { c.classList.toggle('active', c.getAttribute('data-id') === id); });
   window.foliarUpdateDOP && window.foliarUpdateDOP();
+  if (typeof window.saveFoliarUIState === 'function') window.saveFoliarUIState();
 };
 
 window.renderFoliarList = function renderFoliarList() {
@@ -14292,7 +14335,7 @@ window.selectFrutaAnalysis = function selectFrutaAnalysis(id) {
   var emptyEl = document.getElementById('fruta-form-empty');
   var wrapEl = document.getElementById('fruta-form-wrap');
   if (!wrapEl) return;
-  if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#fruta-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); return; }
+  if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#fruta-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); if (typeof window.saveFrutaUIState === 'function') window.saveFrutaUIState(); return; }
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
@@ -14319,6 +14362,7 @@ window.selectFrutaAnalysis = function selectFrutaAnalysis(id) {
   });
   document.querySelectorAll('#fruta-list .soil-analysis-card').forEach(function(c) { c.classList.toggle('active', c.getAttribute('data-id') === id); });
   window.frutaUpdateICC && window.frutaUpdateICC();
+  if (typeof window.saveFrutaUIState === 'function') window.saveFrutaUIState();
 };
 
 window.renderFrutaList = function renderFrutaList() {
