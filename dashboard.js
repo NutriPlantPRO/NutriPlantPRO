@@ -47,7 +47,11 @@ var sectionScrollPositions = {};
 var sectionDomCache = {};
 function isPhaseOneCachedSection(sectionName) {
   if (!sectionName) return false;
-  return sectionName === 'Nutricion Granular' || sectionName.indexOf('Análisis:') === 0;
+  return sectionName === 'Nutricion Granular' ||
+    sectionName === 'Fertirriego' ||
+    sectionName === 'Hidroponia' ||
+    sectionName === 'Enmienda' ||
+    sectionName.indexOf('Análisis:') === 0;
 }
 function getScrollPosition() {
   try {
@@ -1579,7 +1583,10 @@ function selectSection(name, el) {
   // Análisis: Suelo, Solución Nutritiva y Extracto de Pasta se restaura después de init (en su propio bloque)
   if (name !== 'Nutricion Granular' && name !== 'Fertirriego' && name !== 'Hidroponia' && name !== 'Análisis: Suelo' && name !== 'Análisis: Solución Nutritiva' && name !== 'Análisis: Extracto de Pasta' && name !== 'Análisis: Agua' && name !== 'Análisis: Foliar' && name !== 'Análisis: Fruta') {
     if (content && sectionScrollPositions[name]) content.classList.add('restoring-scroll');
-    requestAnimationFrame(function() { restoreScrollForKey(name); });
+    requestAnimationFrame(function() {
+      if (reusedCachedDom) restoreScrollForKeyStabilized(name, 3, 80);
+      else restoreScrollForKey(name);
+    });
   }
   
   // Cargar resultados guardados de VPD después de renderizar (solo si no hay resultados nuevos)
@@ -1726,86 +1733,92 @@ function selectSection(name, el) {
 
   // Inicializar Fertirriego cuando se seleccione la sección
   if (name === 'Fertirriego') {
-    // CARGAR DATOS DEL PROYECTO PRIMERO (igual que Enmienda)
-    loadProjectData();
-    var fertiLastTab = 'extraccion';
-    try {
-      var fp = window.projectManager ? window.projectManager.getCurrentProject() : null;
-      if (fp && fp.fertirriegoLastTab) fertiLastTab = fp.fertirriegoLastTab;
-      else {
-        var fpid = localStorage.getItem('nutriplant-current-project');
-        if (fpid) {
-          var fdata = JSON.parse(localStorage.getItem('nutriplant_project_' + fpid) || '{}');
-          if (fdata.fertirriegoLastTab) fertiLastTab = fdata.fertirriegoLastTab;
-        }
-      }
-    } catch (e) {}
-    requestAnimationFrame(() => {
-      console.log('💧 Inicializando sección Fertirriego...');
-      // Restaurar última subpestaña activa
+    if (reusedCachedDom) {
+      var cachedFertiActive = document.querySelector('.fertirriego-container .tab-button.active');
+      var cachedFertiTab = cachedFertiActive ? (cachedFertiActive.getAttribute('data-tab') || 'extraccion') : 'extraccion';
+      setTimeout(function() { restoreScrollForKeyStabilized('Fertirriego|' + cachedFertiTab, 3, 90); }, 60);
+    } else {
+      // CARGAR DATOS DEL PROYECTO PRIMERO (igual que Enmienda)
+      loadProjectData();
+      var fertiLastTab = 'extraccion';
       try {
-        let last = 'extraccion';
-        const project = window.projectManager ? window.projectManager.getCurrentProject() : null;
-        if (project && project.fertirriegoLastTab) {
-          last = project.fertirriegoLastTab;
-        } else {
-          const pid = localStorage.getItem('nutriplant-current-project');
-          if (pid) {
-            // 🔒 USAR FORMATO NUEVO: nutriplant_project_ (no legacy)
-            const key = `nutriplant_project_${pid}`;
-            const data = JSON.parse(localStorage.getItem(key) || '{}');
-            if (data.fertirriegoLastTab) last = data.fertirriegoLastTab;
+        var fp = window.projectManager ? window.projectManager.getCurrentProject() : null;
+        if (fp && fp.fertirriegoLastTab) fertiLastTab = fp.fertirriegoLastTab;
+        else {
+          var fpid = localStorage.getItem('nutriplant-current-project');
+          if (fpid) {
+            var fdata = JSON.parse(localStorage.getItem('nutriplant_project_' + fpid) || '{}');
+            if (fdata.fertirriegoLastTab) fertiLastTab = fdata.fertirriegoLastTab;
           }
         }
-        // Activar pestaña correspondiente
-        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        const btn = document.querySelector(`.tab-button[data-tab="${last}"]`);
-        const content = document.getElementById(last);
-        if (btn) btn.classList.add('active');
-        if (content) content.classList.add('active');
-      } catch {}
-
-      // ORDEN CRÍTICO: 1) Cargar requirements PRIMERO (valores guardados), 2) NO aplicar UI state (puede sobrescribir), 3) Solo entonces calcular si no hay tabla
-      // Paso 1: Cargar cultivos personalizados guardados PRIMERO
-      if (typeof window.loadCustomFertirriegoCrops === 'function') {
-        window.loadCustomFertirriegoCrops();
-      }
-      
-      // CRÍTICO: Cargar requerimientos guardados PRIMERO - así la tabla (ferti-req-*) queda llena
-      // antes de initFertirriegoProgramUI/updateFertiSummary, y "Requerimiento Real" se ve bien al cargar/recargar.
+      } catch (e) {}
       requestAnimationFrame(() => {
-        if (typeof window.loadFertirriegoRequirements === 'function') {
-          console.log('🔄 selectSection: Llamando loadFertirriegoRequirements() (maneja renderización completa)...');
-          window.loadFertirriegoRequirements();
-        } else {
-          console.error('❌ loadFertirriegoRequirements no disponible - la tabla no se renderizará');
-        }
-        // Inicializar programa / gráficas DESPUÉS de cargar requerimientos para que Requerimiento Real sea correcto
-        requestAnimationFrame(() => {
-          try {
-            const activeBtn = document.querySelector('.fertirriego-container .tab-button.active');
-            const activeTab = activeBtn && activeBtn.getAttribute('data-tab');
-            if (activeTab === 'programa') {
-              if (typeof window.initFertirriegoProgramUI === 'function') window.initFertirriegoProgramUI();
-            } else if (activeTab === 'graficas') {
-              if (typeof window.loadFertiCustomMaterials === 'function') window.loadFertiCustomMaterials();
-              if (typeof window.loadFertirriegoProgram === 'function') window.loadFertirriegoProgram();
-              if (typeof window.updateFertiSummary === 'function') {
-                window.updateFertiSummary();
-              } else if (typeof window.updateFertiCharts === 'function') {
-                window.updateFertiCharts();
-              }
+        console.log('💧 Inicializando sección Fertirriego...');
+        // Restaurar última subpestaña activa
+        try {
+          let last = 'extraccion';
+          const project = window.projectManager ? window.projectManager.getCurrentProject() : null;
+          if (project && project.fertirriegoLastTab) {
+            last = project.fertirriegoLastTab;
+          } else {
+            const pid = localStorage.getItem('nutriplant-current-project');
+            if (pid) {
+              // 🔒 USAR FORMATO NUEVO: nutriplant_project_ (no legacy)
+              const key = `nutriplant_project_${pid}`;
+              const data = JSON.parse(localStorage.getItem(key) || '{}');
+              if (data.fertirriegoLastTab) last = data.fertirriegoLastTab;
             }
-          } catch (e) { console.warn('Fertirriego init programa/graficas:', e); }
+          }
+          // Activar pestaña correspondiente
+          document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+          const btn = document.querySelector(`.tab-button[data-tab="${last}"]`);
+          const content = document.getElementById(last);
+          if (btn) btn.classList.add('active');
+          if (content) content.classList.add('active');
+        } catch {}
+
+        // ORDEN CRÍTICO: 1) Cargar requirements PRIMERO (valores guardados), 2) NO aplicar UI state (puede sobrescribir), 3) Solo entonces calcular si no hay tabla
+        // Paso 1: Cargar cultivos personalizados guardados PRIMERO
+        if (typeof window.loadCustomFertirriegoCrops === 'function') {
+          window.loadCustomFertirriegoCrops();
+        }
+        
+        // CRÍTICO: Cargar requerimientos guardados PRIMERO - así la tabla (ferti-req-*) queda llena
+        // antes de initFertirriegoProgramUI/updateFertiSummary, y "Requerimiento Real" se ve bien al cargar/recargar.
+        requestAnimationFrame(() => {
+          if (typeof window.loadFertirriegoRequirements === 'function') {
+            console.log('🔄 selectSection: Llamando loadFertirriegoRequirements() (maneja renderización completa)...');
+            window.loadFertirriegoRequirements();
+          } else {
+            console.error('❌ loadFertirriegoRequirements no disponible - la tabla no se renderizará');
+          }
+          // Inicializar programa / gráficas DESPUÉS de cargar requerimientos para que Requerimiento Real sea correcto
+          requestAnimationFrame(() => {
+            try {
+              const activeBtn = document.querySelector('.fertirriego-container .tab-button.active');
+              const activeTab = activeBtn && activeBtn.getAttribute('data-tab');
+              if (activeTab === 'programa') {
+                if (typeof window.initFertirriegoProgramUI === 'function') window.initFertirriegoProgramUI();
+              } else if (activeTab === 'graficas') {
+                if (typeof window.loadFertiCustomMaterials === 'function') window.loadFertiCustomMaterials();
+                if (typeof window.loadFertirriegoProgram === 'function') window.loadFertirriegoProgram();
+                if (typeof window.updateFertiSummary === 'function') {
+                  window.updateFertiSummary();
+                } else if (typeof window.updateFertiCharts === 'function') {
+                  window.updateFertiCharts();
+                }
+              }
+            } catch (e) { console.warn('Fertirriego init programa/graficas:', e); }
+          });
         });
+        
+        // Restaurar scroll al volver a Fertirriego (ej. en programa o gráficas)
+        var fertiActive = document.querySelector('.fertirriego-container .tab-button.active');
+        var fertiTab = fertiActive ? (fertiActive.getAttribute('data-tab') || 'extraccion') : 'extraccion';
+        setTimeout(function() { restoreScrollForKey('Fertirriego|' + fertiTab); }, 120);
       });
-      
-      // Restaurar scroll al volver a Fertirriego (ej. en programa o gráficas)
-      var fertiActive = document.querySelector('.fertirriego-container .tab-button.active');
-      var fertiTab = fertiActive ? (fertiActive.getAttribute('data-tab') || 'extraccion') : 'extraccion';
-      setTimeout(function() { restoreScrollForKey('Fertirriego|' + fertiTab); }, 120);
-    });
+    }
   }
 
   // Inicializar Hidroponia cuando se seleccione la sección
@@ -1822,18 +1835,26 @@ function selectSection(name, el) {
         }
       }
     } catch (e) {}
-    loadProjectData();
-    requestAnimationFrame(() => {
-      if (typeof window.initHydroponiaUI === 'function') {
-        window.initHydroponiaUI();
-      }
-      // Restaurar scroll después de renderizar tabs/tabla de Hidroponía.
+    if (reusedCachedDom) {
       setTimeout(function() {
-        var hydroBtn = document.querySelector('.hydroponia-container .tab-button.active');
-        var hydroTab = hydroBtn ? (hydroBtn.getAttribute('data-tab') || hydroLastTab) : hydroLastTab;
-        restoreScrollForKey('Hidroponia|' + hydroTab);
-      }, 140);
-    });
+        var cachedHydroBtn = document.querySelector('.hydroponia-container .tab-button.active');
+        var cachedHydroTab = cachedHydroBtn ? (cachedHydroBtn.getAttribute('data-tab') || hydroLastTab) : hydroLastTab;
+        restoreScrollForKeyStabilized('Hidroponia|' + cachedHydroTab, 3, 90);
+      }, 60);
+    } else {
+      loadProjectData();
+      requestAnimationFrame(() => {
+        if (typeof window.initHydroponiaUI === 'function') {
+          window.initHydroponiaUI();
+        }
+        // Restaurar scroll después de renderizar tabs/tabla de Hidroponía.
+        setTimeout(function() {
+          var hydroBtn = document.querySelector('.hydroponia-container .tab-button.active');
+          var hydroTab = hydroBtn ? (hydroBtn.getAttribute('data-tab') || hydroLastTab) : hydroLastTab;
+          restoreScrollForKey('Hidroponia|' + hydroTab);
+        }, 140);
+      });
+    }
   }
 
   // Verificar si hay proyecto seleccionado para secciones que lo requieren
