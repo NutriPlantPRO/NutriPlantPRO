@@ -45,6 +45,15 @@ const sbStack = document.getElementById("sbStack");
 // Preservar posición de scroll por sección/subpestaña (ej. "Nutricion Granular|programa")
 var sectionScrollPositions = {};
 var sectionDomCache = {};
+function getSectionCacheKey(sectionName, projectId) {
+  var pid = '';
+  try {
+    pid = projectId ? String(projectId) : '';
+    if (!pid && currentProject && currentProject.id) pid = String(currentProject.id);
+    if (!pid && typeof np_getCurrentProjectId === 'function') pid = String(np_getCurrentProjectId() || '');
+  } catch (e) {}
+  return (pid || '__no_project__') + '::' + String(sectionName || '');
+}
 function isPhaseOneCachedSection(sectionName) {
   if (!sectionName) return false;
   return sectionName === 'Nutricion Granular' ||
@@ -1555,10 +1564,12 @@ function selectSection(name, el) {
   // Fase 1 UX: conservar DOM en memoria para evitar "recarga/parpadeo" en Análisis y Nutrición Granular.
   if (view && previousSection && previousSection !== name && isPhaseOneCachedSection(previousSection)) {
     try {
-      var prevHolder = sectionDomCache[previousSection] || document.createElement('div');
+      var renderedProjectId = view.getAttribute('data-render-project-id') || '';
+      var previousCacheKey = getSectionCacheKey(previousSection, renderedProjectId);
+      var prevHolder = sectionDomCache[previousCacheKey] || document.createElement('div');
       prevHolder.innerHTML = '';
       while (view.firstChild) prevHolder.appendChild(view.firstChild);
-      sectionDomCache[previousSection] = prevHolder;
+      sectionDomCache[previousCacheKey] = prevHolder;
     } catch (e) {
       console.warn('sectionDomCache stash:', e);
     }
@@ -1567,13 +1578,15 @@ function selectSection(name, el) {
   if (title) title.textContent = name;
   var reusedCachedDom = false;
   if (view) {
-    if (isPhaseOneCachedSection(name) && sectionDomCache[name] && sectionDomCache[name].childNodes.length > 0) {
+    var currentCacheKey = getSectionCacheKey(name);
+    if (isPhaseOneCachedSection(name) && sectionDomCache[currentCacheKey] && sectionDomCache[currentCacheKey].childNodes.length > 0) {
       view.innerHTML = '';
-      while (sectionDomCache[name].firstChild) view.appendChild(sectionDomCache[name].firstChild);
+      while (sectionDomCache[currentCacheKey].firstChild) view.appendChild(sectionDomCache[currentCacheKey].firstChild);
       reusedCachedDom = true;
     } else {
       view.innerHTML = sectionTemplate(name);
     }
+    view.setAttribute('data-render-project-id', (currentProject && currentProject.id) ? String(currentProject.id) : '');
   }
 
   // Agregar indicador de proyecto en todas las secciones
