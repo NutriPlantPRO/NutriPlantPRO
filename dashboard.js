@@ -44,6 +44,11 @@ const sbStack = document.getElementById("sbStack");
 
 // Preservar posición de scroll por sección/subpestaña (ej. "Nutricion Granular|programa")
 var sectionScrollPositions = {};
+var sectionDomCache = {};
+function isPhaseOneCachedSection(sectionName) {
+  if (!sectionName) return false;
+  return sectionName === 'Nutricion Granular' || sectionName.indexOf('Análisis:') === 0;
+}
 function getScrollPosition() {
   try {
     return window.scrollY !== undefined ? window.scrollY : (document.documentElement && document.documentElement.scrollTop) || 0;
@@ -1542,11 +1547,33 @@ function selectSection(name, el) {
   if (previousSection === 'Análisis: Suelo' && currentProject.id && typeof window.saveSoilAnalysisUIState === 'function') {
     try { window.saveSoilAnalysisUIState(); } catch (e) { console.warn('saveSoilAnalysisUIState', e); }
   }
+
+  // Fase 1 UX: conservar DOM en memoria para evitar "recarga/parpadeo" en Análisis y Nutrición Granular.
+  if (view && previousSection && previousSection !== name && isPhaseOneCachedSection(previousSection)) {
+    try {
+      var prevHolder = sectionDomCache[previousSection] || document.createElement('div');
+      prevHolder.innerHTML = '';
+      while (view.firstChild) prevHolder.appendChild(view.firstChild);
+      sectionDomCache[previousSection] = prevHolder;
+    } catch (e) {
+      console.warn('sectionDomCache stash:', e);
+    }
+  }
+
   if (title) title.textContent = name;
-  if (view)  view.innerHTML = sectionTemplate(name);
+  var reusedCachedDom = false;
+  if (view) {
+    if (isPhaseOneCachedSection(name) && sectionDomCache[name] && sectionDomCache[name].childNodes.length > 0) {
+      view.innerHTML = '';
+      while (sectionDomCache[name].firstChild) view.appendChild(sectionDomCache[name].firstChild);
+      reusedCachedDom = true;
+    } else {
+      view.innerHTML = sectionTemplate(name);
+    }
+  }
 
   // Agregar indicador de proyecto en todas las secciones
-  addProjectIndicator(view);
+  if (!reusedCachedDom) addProjectIndicator(view);
   
   // Restaurar posición de scroll para secciones sin subpestañas (Enmienda, Ubicación, Reporte, etc.)
   // Análisis: Suelo, Solución Nutritiva y Extracto de Pasta se restaura después de init (en su propio bloque)
@@ -1570,61 +1597,85 @@ function selectSection(name, el) {
   // Inicializar pestaña Análisis de Suelo (listado y formulario) y restaurar estado (secciones abiertas, análisis seleccionado)
   if (name === "Análisis: Suelo") {
     if (content && sectionScrollPositions['Análisis: Suelo']) content.classList.add('restoring-scroll');
-    setTimeout(() => {
-      if (typeof window.initSoilAnalysesTab === 'function') window.initSoilAnalysesTab();
-      if (typeof window.restoreSoilAnalysisUIState === 'function') window.restoreSoilAnalysisUIState();
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Suelo', 4, 85); }, 80);
-    }, 50);
+    if (reusedCachedDom) {
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Suelo', 3, 80); }, 40);
+    } else {
+      setTimeout(() => {
+        if (typeof window.initSoilAnalysesTab === 'function') window.initSoilAnalysesTab();
+        if (typeof window.restoreSoilAnalysisUIState === 'function') window.restoreSoilAnalysisUIState();
+        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Suelo', 4, 85); }, 80);
+      }, 50);
+    }
   }
   
   // Inicializar pestaña Análisis: Solución Nutritiva (misma estructura que Análisis de Suelo)
   if (name === "Análisis: Solución Nutritiva") {
     if (content && sectionScrollPositions['Análisis: Solución Nutritiva']) content.classList.add('restoring-scroll');
-    setTimeout(() => {
-      if (typeof window.initSolucionNutritivaTab === 'function') window.initSolucionNutritivaTab();
-      if (typeof window.restoreSolucionNutritivaUIState === 'function') window.restoreSolucionNutritivaUIState();
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Solución Nutritiva', 5, 90); }, 120);
-    }, 50);
+    if (reusedCachedDom) {
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Solución Nutritiva', 3, 85); }, 40);
+    } else {
+      setTimeout(() => {
+        if (typeof window.initSolucionNutritivaTab === 'function') window.initSolucionNutritivaTab();
+        if (typeof window.restoreSolucionNutritivaUIState === 'function') window.restoreSolucionNutritivaUIState();
+        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Solución Nutritiva', 5, 90); }, 120);
+      }, 50);
+    }
   }
 
   // Inicializar pestaña Análisis: Extracto de Pasta
   if (name === "Análisis: Extracto de Pasta") {
     if (content && sectionScrollPositions['Análisis: Extracto de Pasta']) content.classList.add('restoring-scroll');
-    setTimeout(() => {
-      if (typeof window.initExtractoPastaTab === 'function') window.initExtractoPastaTab();
-      if (typeof window.restoreExtractoPastaUIState === 'function') window.restoreExtractoPastaUIState();
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Extracto de Pasta', 5, 90); }, 120);
-    }, 50);
+    if (reusedCachedDom) {
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Extracto de Pasta', 3, 85); }, 40);
+    } else {
+      setTimeout(() => {
+        if (typeof window.initExtractoPastaTab === 'function') window.initExtractoPastaTab();
+        if (typeof window.restoreExtractoPastaUIState === 'function') window.restoreExtractoPastaUIState();
+        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Extracto de Pasta', 5, 90); }, 120);
+      }, 50);
+    }
   }
 
   // Inicializar pestaña Análisis: Agua
   if (name === "Análisis: Agua") {
     if (content && sectionScrollPositions['Análisis: Agua']) content.classList.add('restoring-scroll');
-    setTimeout(() => {
-      if (typeof window.initAguaTab === 'function') window.initAguaTab();
-      if (typeof window.restoreAguaUIState === 'function') window.restoreAguaUIState();
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Agua', 5, 90); }, 120);
-    }, 50);
+    if (reusedCachedDom) {
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Agua', 3, 85); }, 40);
+    } else {
+      setTimeout(() => {
+        if (typeof window.initAguaTab === 'function') window.initAguaTab();
+        if (typeof window.restoreAguaUIState === 'function') window.restoreAguaUIState();
+        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Agua', 5, 90); }, 120);
+      }, 50);
+    }
   }
 
   // Inicializar pestaña Análisis: Foliar (DOP)
   if (name === "Análisis: Foliar") {
     if (content && sectionScrollPositions['Análisis: Foliar']) content.classList.add('restoring-scroll');
-    setTimeout(() => {
-      if (typeof window.initFoliarTab === 'function') window.initFoliarTab();
-      if (typeof window.restoreFoliarUIState === 'function') window.restoreFoliarUIState();
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Foliar', 5, 90); }, 120);
-    }, 50);
+    if (reusedCachedDom) {
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Foliar', 3, 85); }, 40);
+    } else {
+      setTimeout(() => {
+        if (typeof window.initFoliarTab === 'function') window.initFoliarTab();
+        if (typeof window.restoreFoliarUIState === 'function') window.restoreFoliarUIState();
+        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Foliar', 5, 90); }, 120);
+      }, 50);
+    }
   }
 
   // Inicializar pestaña Análisis: Fruta (ICC)
   if (name === "Análisis: Fruta") {
     if (content && sectionScrollPositions['Análisis: Fruta']) content.classList.add('restoring-scroll');
-    setTimeout(() => {
-      if (typeof window.initFrutaTab === 'function') window.initFrutaTab();
-      if (typeof window.restoreFrutaUIState === 'function') window.restoreFrutaUIState();
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Fruta', 5, 90); }, 120);
-    }, 50);
+    if (reusedCachedDom) {
+      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Fruta', 3, 85); }, 40);
+    } else {
+      setTimeout(() => {
+        if (typeof window.initFrutaTab === 'function') window.initFrutaTab();
+        if (typeof window.restoreFrutaUIState === 'function') window.restoreFrutaUIState();
+        setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Fruta', 5, 90); }, 120);
+      }, 50);
+    }
   }
   
   // CARGAR DATOS DEL PROYECTO cuando entramos a una sección que lo requiere
@@ -1638,10 +1689,6 @@ function selectSection(name, el) {
   
   // Refrescar sección específica si es Nutrición Granular
   if (name === 'Nutricion Granular') {
-    
-    // Inicializar inmediatamente sin delay
-    console.log('🔄 Refrescando sección de Nutrición Granular...');
-    
     // Inicializar la última subpestaña usada (por defecto 'requerimiento')
     let lastGranular = 'requerimiento';
     try {
@@ -1658,17 +1705,23 @@ function selectSection(name, el) {
         }
       }
     } catch {}
-    // Esperar a que el DOM esté listo antes de inicializar subpestañas
-    requestAnimationFrame(() => {
-      if (typeof window.selectGranularSubTab === 'function') {
-        window.selectGranularSubTab(lastGranular);
-      }
-      // Restaurar scroll después de que el programa/requerimiento esté renderizado (ej. aplicación 4)
-      setTimeout(function() { restoreScrollForKey('Nutricion Granular|' + lastGranular); }, 180);
-    });
-    
-    // NOTA: La carga de datos se maneja en selectGranularSubTab() para evitar duplicados
-    // NO llamar loadProjectData() aquí porque selectGranularSubTab() ya lo hace
+    if (reusedCachedDom) {
+      // En retorno desde caché, evitar re-render pesado y restaurar solo scroll/posición.
+      setTimeout(function() { restoreScrollForKeyStabilized('Nutricion Granular|' + lastGranular, 3, 90); }, 60);
+    } else {
+      // Inicializar inmediatamente sin delay
+      console.log('🔄 Refrescando sección de Nutrición Granular...');
+      // Esperar a que el DOM esté listo antes de inicializar subpestañas
+      requestAnimationFrame(() => {
+        if (typeof window.selectGranularSubTab === 'function') {
+          window.selectGranularSubTab(lastGranular);
+        }
+        // Restaurar scroll después de que el programa/requerimiento esté renderizado (ej. aplicación 4)
+        setTimeout(function() { restoreScrollForKey('Nutricion Granular|' + lastGranular); }, 180);
+      });
+      // NOTA: La carga de datos se maneja en selectGranularSubTab() para evitar duplicados
+      // NO llamar loadProjectData() aquí porque selectGranularSubTab() ya lo hace
+    }
   }
 
   // Inicializar Fertirriego cuando se seleccione la sección
