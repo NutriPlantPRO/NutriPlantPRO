@@ -3706,6 +3706,10 @@ async function np_refreshFromCloud() {
     if (typeof np_renderProjects === 'function') np_renderProjects();
     if (typeof np_refreshCurrentProjectFromCloud === 'function') await np_refreshCurrentProjectFromCloud();
     var currentId = typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : null;
+    if (currentId) {
+      window._np_last_cloud_refresh_project_id = currentId;
+      window._np_last_cloud_refresh_at = Date.now();
+    }
     if (currentId && typeof loadProjectData === 'function') loadProjectData();
     np_setProjectSyncStatus('ok', 'Sincronizado');
   } catch (e) {
@@ -3724,6 +3728,12 @@ async function np_hasNewerCloudVersion(projectId) {
   var userId = localStorage.getItem('nutriplant_user_id');
   var isSupabase = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
   if (!isSupabase) return { hasNewer: false };
+  // Si acaba de hacer "Actualizar con la nube" en este proyecto, no bloquear el siguiente Guardar (90 s)
+  var lastRefreshId = window._np_last_cloud_refresh_project_id;
+  var lastRefreshAt = window._np_last_cloud_refresh_at;
+  if (lastRefreshId === projectId && typeof lastRefreshAt === 'number' && (Date.now() - lastRefreshAt) < 90000) {
+    return { hasNewer: false };
+  }
   var sp = window.nutriplantSupabaseProjects;
   if (!sp || typeof sp.fetchProjects !== 'function') return { hasNewer: false };
   function ts(v) {
@@ -3732,13 +3742,11 @@ async function np_hasNewerCloudVersion(projectId) {
     return Number.isFinite(d) ? d : 0;
   }
   try {
-    // Leer fecha cloud más reciente del proyecto actual
     var list = await sp.fetchProjects();
     var cloud = Array.isArray(list) ? list.find(function(p) { return p && p.id === projectId; }) : null;
     if (!cloud) return { hasNewer: false };
     var cloudTs = ts(cloud.updated_at || cloud.updatedAt);
 
-    // Fecha local/base del proyecto en este dispositivo
     var localTs = 0;
     try {
       var localRaw = localStorage.getItem('nutriplant_project_' + projectId);
@@ -3755,7 +3763,10 @@ async function np_hasNewerCloudVersion(projectId) {
         ts(currentProject && currentProject.lastSaved)
       );
     }
-    return { hasNewer: cloudTs > 0 && localTs > 0 && cloudTs > localTs, cloudTs: cloudTs, localTs: localTs };
+    // Tolerancia 5 s: si la nube es solo unos segundos más nueva (reloj/red), no bloquear
+    var diffMs = cloudTs - localTs;
+    var hasNewer = cloudTs > 0 && localTs > 0 && diffMs > 5000;
+    return { hasNewer: hasNewer, cloudTs: cloudTs, localTs: localTs };
   } catch (e) {
     console.warn('np_hasNewerCloudVersion:', e);
     return { hasNewer: false };
