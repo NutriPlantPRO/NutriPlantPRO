@@ -2414,18 +2414,16 @@
         }
 
         function getAllProjects() {
-            // Combinar proyectos de la nube con los de localStorage (así se ven todos aunque no se hayan subido aún)
+            // Si hay datos de la nube (Supabase), usar SOLO esos: así el admin ve lo mismo que en Supabase (lo que el usuario borró no reaparece por localStorage)
             var cloudList = (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) ? window._adminCloudCache.projects : [];
             var cloudIds = new Set((cloudList || []).map(function(p) { return p.id; }));
             var projects = cloudList ? cloudList.slice() : [];
-            // Misma fuente de nombres que "Proyectos por Usuario" y panel de suscriptores
             var userDisplayMap = new Map();
             try {
                 getAllUsers().forEach(function(u) {
                     if (u.id) userDisplayMap.set(u.id, { name: u.name || u.email || '—', email: u.email || '' });
                 });
             } catch (e) { console.warn('getAllProjects: error building userDisplayMap', e); }
-            // Normalizar proyectos de la nube: user_email, chat_messages y columnas de la tabla (Cultivo, Variedad, Ubicación, Estado, Secciones) desde p.data
             projects.forEach(function(p) {
                 p.user_email = (userDisplayMap.get(p.user_id) || {}).email || '';
                 p.chat_messages = (p.data && p.data.chat_history && Array.isArray(p.data.chat_history)) ? p.data.chat_history.length : 0;
@@ -2444,11 +2442,13 @@
                 p.active_sections_count = countActiveSectionsFromProject(d);
                 p.section_weights = getSectionWeights(d);
             });
-            const processedIds = new Set(); // 🔒 Set para rastrear IDs ya procesados y evitar duplicados
-            const processedKeys = new Set(); // 🔒 Set para rastrear claves ya procesadas
-            const projectMap = new Map(); // 🔒 Map para almacenar proyectos por ID (último encontrado gana)
-            
-            // 🔍 PRIMERA PASADA: Recopilar todos los proyectos y detectar duplicados
+            // Si tenemos lista de la nube, no mezclar con localStorage: el admin ve solo lo que está en Supabase
+            if (cloudList && cloudList.length > 0) {
+                return projects;
+            }
+            const processedIds = new Set();
+            const processedKeys = new Set();
+            const projectMap = new Map();
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 // Buscar tanto formato nuevo (nutriplant_project_) como legacy (nutriplant-project-)
