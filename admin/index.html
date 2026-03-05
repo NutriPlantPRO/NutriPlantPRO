@@ -5778,24 +5778,30 @@
             }
             
             if (!projectValue || !projectKey) {
-                // Proyecto solo en la nube: intentar borrar solo en Supabase (primero reportes, luego proyecto)
+                // Proyecto solo en la nube: primero borrar en Supabase; solo si tiene éxito actualizar caché
                 if (window.getSupabaseClient) {
                     const client = window.getSupabaseClient();
                     if (client) {
                         try {
                             await client.from('reports').delete().eq('project_id', projectId);
                             const { error } = await client.from('projects').delete().eq('id', projectId);
-                            if (!error) {
-                                if (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) {
-                                    window._adminCloudCache.projects = window._adminCloudCache.projects.filter(function(p) { return p.id !== projectId; });
-                                }
-                                alert('✅ Proyecto eliminado de la nube.');
-                                closeDataViewer();
-                                loadAdminStats();
-                                setTimeout(() => { showAllProjects(); }, 300);
+                            if (error) {
+                                alert('⚠️ No se pudo eliminar en la nube. Revisa tu conexión e intenta de nuevo.');
                                 return;
                             }
-                        } catch (e) { console.warn('Supabase delete:', e); }
+                            if (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) {
+                                window._adminCloudCache.projects = window._adminCloudCache.projects.filter(function(p) { return p.id !== projectId; });
+                            }
+                            alert('✅ Proyecto eliminado de la nube.');
+                            closeDataViewer();
+                            loadAdminStats();
+                            setTimeout(() => { showAllProjects(); }, 300);
+                            return;
+                        } catch (e) {
+                            console.warn('Supabase delete:', e);
+                            alert('⚠️ No se pudo eliminar (error de conexión). Intenta de nuevo.');
+                            return;
+                        }
                     }
                 }
                 alert(`❌ Proyecto no encontrado con ID: "${projectId}"\n\nVerifica que el proyecto exista.`);
@@ -5821,16 +5827,23 @@
                 
                 console.log('🔍 ID del proyecto a eliminar:', actualProjectId, '(buscado:', projectId, ')');
                 
-                // 🟢 Eliminar también en la nube (Supabase): primero reportes del proyecto, luego el proyecto
+                // 🟢 PRIMERO NUBE, LUEGO LOCAL: borrar en Supabase; solo si tiene éxito se toca localStorage/caché
                 if (window.getSupabaseClient) {
                     const client = window.getSupabaseClient();
                     if (client) {
                         try {
                             await client.from('reports').delete().eq('project_id', actualProjectId);
                             const { error } = await client.from('projects').delete().eq('id', actualProjectId);
-                            if (error) console.warn('⚠️ Error al eliminar proyecto en Supabase:', error.message);
-                            else console.log('✅ Proyecto y reportes eliminados de la nube:', actualProjectId);
-                        } catch (e) { console.warn('⚠️ Supabase delete project:', e); }
+                            if (error) {
+                                alert('⚠️ No se pudo eliminar en la nube. Revisa tu conexión e intenta de nuevo.');
+                                return;
+                            }
+                            console.log('✅ Proyecto y reportes eliminados de la nube:', actualProjectId);
+                        } catch (e) {
+                            console.warn('⚠️ Supabase delete project:', e);
+                            alert('⚠️ No se pudo eliminar (error de conexión). Intenta de nuevo.');
+                            return;
+                        }
                     }
                 }
                 // Quitar de la caché del admin para que la lista "Todos los Proyectos" se actualice al instante

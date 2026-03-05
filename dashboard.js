@@ -4354,10 +4354,33 @@ async function np_deleteProject(id) {
     alert('Error: No hay usuario logueado.');
     return;
   }
-  
-  // 1. 💬 PRESERVAR HISTORIAL DE CHAT EN EL USUARIO (chat sin proyecto) ANTES DE BORRAR
+
   const projectKey = `nutriplant_project_${id}`;
   const projectRaw = localStorage.getItem(projectKey);
+  const isSupabaseUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+
+  // 🟢 PRIMERO NUBE, LUEGO LOCAL: si es usuario Supabase, borrar en nube antes de tocar local
+  if (isSupabaseUser) {
+    const sp = window.nutriplantSupabaseProjects;
+    if (sp && typeof sp.deleteProject === 'function') {
+      try {
+        const ok = await sp.deleteProject(id);
+        if (!ok) {
+          if (typeof window.showMessage === 'function') window.showMessage('⚠️ No se pudo eliminar en la nube. Revisa tu conexión e intenta de nuevo.', 'error');
+          else alert('⚠️ No se pudo eliminar en la nube. Revisa tu conexión e intenta de nuevo.');
+          return;
+        }
+        console.log('☁️ Proyecto eliminado de la nube:', id);
+      } catch (e) {
+        console.warn('⚠️ Supabase delete project:', e);
+        if (typeof window.showMessage === 'function') window.showMessage('⚠️ No se pudo eliminar (error de conexión). Intenta de nuevo.', 'error');
+        else alert('⚠️ No se pudo eliminar. Revisa tu conexión e intenta de nuevo.');
+        return;
+      }
+    }
+  }
+
+  // 1. 💬 PRESERVAR HISTORIAL DE CHAT EN EL USUARIO (chat sin proyecto) ANTES DE BORRAR LOCAL
   if (projectRaw && userId) {
     try {
       const project = JSON.parse(projectRaw);
@@ -4391,35 +4414,24 @@ async function np_deleteProject(id) {
   }
     
   // 3. 🔒 ELIMINAR DE LA LISTA DEL USUARIO
-      try {
-        const userKey = `nutriplant_user_${userId}`;
-        const userData = localStorage.getItem(userKey);
-        if (userData) {
-          const userProfile = JSON.parse(userData);
+  try {
+    const userKey = `nutriplant_user_${userId}`;
+    const userData = localStorage.getItem(userKey);
+    if (userData) {
+      const userProfile = JSON.parse(userData);
       if (userProfile.projects && Array.isArray(userProfile.projects)) {
         const index = userProfile.projects.indexOf(id);
         if (index > -1) {
           userProfile.projects.splice(index, 1);
-            localStorage.setItem(userKey, JSON.stringify(userProfile));
+          localStorage.setItem(userKey, JSON.stringify(userProfile));
           console.log('✅ Proyecto eliminado de la lista del usuario:', id);
         } else {
           console.warn('⚠️ Proyecto no estaba en la lista del usuario:', id);
         }
-          }
-        }
-      } catch (e) {
-    console.error('❌ Error eliminando proyecto de la lista del usuario:', e);
       }
-  
-  // 3b. 🟢 Si es usuario Supabase, eliminar proyecto también en la nube (caché ya actualizada arriba)
-  if (userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
-    const sp = window.nutriplantSupabaseProjects;
-    if (sp && typeof sp.deleteProject === 'function') {
-      try {
-        const ok = await sp.deleteProject(id);
-        if (ok) console.log('☁️ Proyecto eliminado de la nube:', id);
-      } catch (e) { console.warn('⚠️ Supabase delete project:', e); }
     }
+  } catch (e) {
+    console.error('❌ Error eliminando proyecto de la lista del usuario:', e);
   }
   
   // 4. 🔄 LIMPIAR PROYECTO ACTUAL SI ES EL QUE SE ELIMINÓ
