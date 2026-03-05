@@ -2664,12 +2664,14 @@
                                 activeSectionsCount++;
                             }
                             
-                            // 9. VPD Analysis - solo si hay datos reales (historial con entradas o guardado explícito; no solo valores precargados al entrar)
+                            // 9. VPD Analysis - incluir también tablas de rango/forecast guardadas
                             const vpdAnalysisCheck = project.sections?.vpd || project.vpdAnalysis || null;
                             if (vpdAnalysisCheck && typeof vpdAnalysisCheck === 'object') {
                                 const hasHistoryData = vpdAnalysisCheck.history && Array.isArray(vpdAnalysisCheck.history) && vpdAnalysisCheck.history.length > 0;
+                                const hasRangeCurrent = !!(vpdAnalysisCheck.currentRangeTable && Array.isArray(vpdAnalysisCheck.currentRangeTable.summaryRows) && vpdAnalysisCheck.currentRangeTable.summaryRows.length > 0);
+                                const hasRangeSaved = !!(Array.isArray(vpdAnalysisCheck.rangeTables) && vpdAnalysisCheck.rangeTables.length > 0);
                                 const hasVpdRealData = hasExplicitUserSave(vpdAnalysisCheck) && hasRealData(vpdAnalysisCheck, true);
-                                if (hasHistoryData || hasVpdRealData) {
+                                if (hasHistoryData || hasRangeCurrent || hasRangeSaved || hasVpdRealData) {
                                     activeSectionsCount++;
                                 }
                             }
@@ -7847,7 +7849,9 @@
             const hasVPDData = vpdAnalysis && typeof vpdAnalysis === 'object' && (
                 (vpdAnalysis.environmental && (vpdAnalysis.environmental.vpd !== null && vpdAnalysis.environmental.vpd !== undefined)) ||
                 (vpdAnalysis.advanced && (vpdAnalysis.advanced.vpd !== null && vpdAnalysis.advanced.vpd !== undefined)) ||
-                (vpdAnalysis.history && Array.isArray(vpdAnalysis.history) && vpdAnalysis.history.length > 0)
+                (vpdAnalysis.history && Array.isArray(vpdAnalysis.history) && vpdAnalysis.history.length > 0) ||
+                (vpdAnalysis.currentRangeTable && Array.isArray(vpdAnalysis.currentRangeTable.summaryRows) && vpdAnalysis.currentRangeTable.summaryRows.length > 0) ||
+                (vpdAnalysis.rangeTables && Array.isArray(vpdAnalysis.rangeTables) && vpdAnalysis.rangeTables.length > 0)
             );
                 html += `
                 <div style="background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
