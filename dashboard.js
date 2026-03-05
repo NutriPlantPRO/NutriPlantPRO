@@ -297,7 +297,10 @@ function sectionTemplate(name) {
         <section>
           <div class="row" style="justify-content:space-between; align-items:center; margin:6px 0 10px;">
             <h3 class="text-xl" style="margin:0;">📁 Proyectos recientes</h3>
-            <span id="np-sync-status" style="display:none; font-size:12px; padding:4px 10px; border-radius:999px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe;"></span>
+            <div id="np-sync-wrap" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span id="np-sync-status" style="display:none; font-size:12px; padding:4px 10px; border-radius:999px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe;"></span>
+              <button type="button" id="np-sync-refresh-btn" style="display:none; font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid #c7d2fe; background:#fff; color:#3730a3; cursor:pointer;">☁️ Actualizar con la nube</button>
+            </div>
           </div>
           <div id="np-projects-list" class="grid-3"></div>
           <div id="np-empty-state" class="help" style="display:none;">
@@ -766,6 +769,9 @@ function sectionTemplate(name) {
           <!-- Objetivos de Ajuste -->
           <div class="ideal-ranges target-section">
             <h3>🎯 Meq/100g a ajustar en CIC</h3>
+            <p style="margin: -4px 0 12px; font-size: 12px; color: #64748b;">
+              ℹ️ Meq/100g a ajustar: valores positivos indican déficit; valores negativos indican exceso.
+            </p>
             <div class="target-grid">
               <div class="target-item cation-good">
                 <label>K⁺ (meq a ajustar):</label>
@@ -3664,20 +3670,64 @@ function np_applySyncStatusBadge() {
   if (!state.text) {
     badge.style.display = 'none';
     badge.textContent = '';
-    return;
+  } else {
+    const palette = {
+      syncing: { bg: '#fffbeb', fg: '#92400e', border: '#fde68a' },
+      ok: { bg: '#ecfdf5', fg: '#065f46', border: '#a7f3d0' },
+      error: { bg: '#fef2f2', fg: '#991b1b', border: '#fecaca' },
+      idle: { bg: '#eef2ff', fg: '#3730a3', border: '#c7d2fe' }
+    };
+    const colors = palette[state.kind] || palette.idle;
+    badge.style.display = 'inline-flex';
+    badge.style.background = colors.bg;
+    badge.style.color = colors.fg;
+    badge.style.border = '1px solid ' + colors.border;
+    badge.textContent = state.text;
   }
-  const palette = {
-    syncing: { bg: '#fffbeb', fg: '#92400e', border: '#fde68a' },
-    ok: { bg: '#ecfdf5', fg: '#065f46', border: '#a7f3d0' },
-    error: { bg: '#fef2f2', fg: '#991b1b', border: '#fecaca' },
-    idle: { bg: '#eef2ff', fg: '#3730a3', border: '#c7d2fe' }
-  };
-  const colors = palette[state.kind] || palette.idle;
-  badge.style.display = 'inline-flex';
-  badge.style.background = colors.bg;
-  badge.style.color = colors.fg;
-  badge.style.border = '1px solid ' + colors.border;
-  badge.textContent = state.text;
+  np_showHideSyncRefreshButton();
+}
+
+function np_showHideSyncRefreshButton() {
+  var btn = document.getElementById('np-sync-refresh-btn');
+  if (!btn) return;
+  var userId = localStorage.getItem('nutriplant_user_id');
+  var isSupabase = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
+  var state = window._npProjectSyncState || { kind: 'idle', text: '' };
+  btn.style.display = isSupabase && state.kind !== 'syncing' ? 'inline-flex' : 'none';
+}
+
+async function np_refreshFromCloud() {
+  var userId = localStorage.getItem('nutriplant_user_id');
+  var isSupabase = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
+  if (!isSupabase) return;
+  np_setProjectSyncStatus('syncing', 'Sincronizando...');
+  try {
+    await np_loadProjectsFromCloud();
+    if (typeof np_renderProjects === 'function') np_renderProjects();
+    if (typeof np_refreshCurrentProjectFromCloud === 'function') await np_refreshCurrentProjectFromCloud();
+    var currentId = typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : null;
+    if (currentId && typeof loadProjectData === 'function') loadProjectData();
+    np_setProjectSyncStatus('ok', 'Sincronizado');
+  } catch (e) {
+    console.warn('np_refreshFromCloud:', e);
+    np_setProjectSyncStatus('error', 'Error de conexión');
+  }
+  setTimeout(function() {
+    var s = window._npProjectSyncState;
+    if (s && s.kind !== 'syncing') np_setProjectSyncStatus('idle', '');
+    np_showHideSyncRefreshButton();
+  }, 4000);
+}
+
+function np_initSyncRefreshButton() {
+  var btn = document.getElementById('np-sync-refresh-btn');
+  if (!btn || btn.dataset.npSyncInit) return;
+  btn.dataset.npSyncInit = '1';
+  btn.addEventListener('click', function() {
+    if (window._npProjectSyncState && window._npProjectSyncState.kind === 'syncing') return;
+    np_refreshFromCloud();
+  });
+  np_showHideSyncRefreshButton();
 }
 
 function np_setProjectSyncStatus(kind, text) {
@@ -5157,6 +5207,7 @@ function np_initInicio(){
   const form     = document.querySelector("#form-new-project");
   const btnClose = document.getElementById("btn-cancel-new");
 
+  if (typeof np_initSyncRefreshButton === 'function') np_initSyncRefreshButton();
   if (headerBtn) headerBtn.onclick = () => { form?.reset(); dlg?.showModal && dlg.showModal(); };
   if (btnClose) btnClose.onclick = () => dlg?.close && dlg.close();
 
@@ -10874,6 +10925,29 @@ function createReportHTML(selectedSections, chartImages) {
           margin-left: auto;
           flex: 0 0 auto;
         }
+        .report-header-meta {
+          margin-top: 8px;
+          border-top: 1px solid #dbeafe;
+          padding-top: 8px;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+          font-size: 0.8rem;
+          color: #475569;
+        }
+        .report-header-legal {
+          text-align: left;
+          line-height: 1.3;
+          flex: 1 1 auto;
+        }
+        .report-header-generated-by {
+          text-align: right;
+          white-space: nowrap;
+          color: #1f2937;
+          font-weight: 600;
+          flex: 0 0 auto;
+        }
         .footer-row + .footer-leaf-watermark {
           margin-top: 10px;
           margin-left: auto;
@@ -11161,6 +11235,9 @@ function createReportHTML(selectedSections, chartImages) {
             position: fixed;
             display: block;
           }
+          .report-header-meta {
+            page-break-inside: avoid;
+          }
           .section {
             break-inside: auto;
             page-break-inside: auto;
@@ -11185,6 +11262,13 @@ function createReportHTML(selectedSections, chartImages) {
             <img src="${reportAssetBase}N_Hoja_Azul.png" alt="NutriPlant PRO" class="logo-icon">
           </div>
           <h1>Reporte de Análisis Agrícola</h1>
+          <div class="report-header-meta">
+            <div class="report-header-legal">
+              <strong>© 2026 NutriPlant PRO</strong><br>
+              Todos los derechos reservados • Marca registrada
+            </div>
+            <div class="report-header-generated-by">Generado por: <strong>${safeReportAuthorName}</strong></div>
+          </div>
         </div>
         
         <div class="project-info">
