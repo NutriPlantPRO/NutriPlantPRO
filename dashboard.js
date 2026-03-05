@@ -10991,6 +10991,8 @@ function createReportHTML(selectedSections, chartImages) {
         .report-admin-table.report-vpd-wide-table td:nth-child(8) { width: 14%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(9),
         .report-admin-table.report-vpd-wide-table td:nth-child(9) { width: 14%; }
+        .report-admin-table.report-vpd-wide-table th:nth-child(4),
+        .report-admin-table.report-vpd-wide-table td:nth-child(4) { border-left: 3px solid #fdba74; }
         .report-admin-table.report-vpd-wide-table th:nth-child(6),
         .report-admin-table.report-vpd-wide-table td:nth-child(6),
         .report-admin-table.report-vpd-wide-table th:nth-child(7),

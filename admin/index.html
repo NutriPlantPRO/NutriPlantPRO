@@ -7907,7 +7907,7 @@
                                             <td style="padding: 8px;">${escapeHtml(String(r.period || '—'))}</td>
                                             <td style="padding: 8px; text-align: right; font-weight: 600;">${Number(r.maxVpd || 0).toFixed(2)}</td>
                                             <td style="padding: 8px;">${escapeHtml(String(r.maxAt || '—'))}</td>
-                                            <td style="padding: 8px; text-align: right; font-weight: 600;">${Number(r.minVpd || 0).toFixed(2)}</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: 600; border-left: 3px solid #fdba74;">${Number(r.minVpd || 0).toFixed(2)}</td>
                                             <td style="padding: 8px;">${escapeHtml(String(r.minAt || '—'))}</td>
                                             <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursHigh || 0)}</td>
                                             <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursLow || 0)}</td>
@@ -7943,7 +7943,7 @@
                                                         <th style="padding: 8px; text-align: left;">Periodo</th>
                                                         <th style="padding: 8px; text-align: right;">VPD máx</th>
                                                         <th style="padding: 8px; text-align: left;">Hora máx</th>
-                                                        <th style="padding: 8px; text-align: right;">VPD mín</th>
+                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">VPD mín</th>
                                                         <th style="padding: 8px; text-align: left;">Hora mín</th>
                                                         <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">&gt;1.5</th>
                                                         <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">&lt;0.5</th>
