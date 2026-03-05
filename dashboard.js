@@ -3719,6 +3719,49 @@ async function np_refreshFromCloud() {
   }, 4000);
 }
 
+async function np_hasNewerCloudVersion(projectId) {
+  if (!projectId) return { hasNewer: false };
+  var userId = localStorage.getItem('nutriplant_user_id');
+  var isSupabase = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
+  if (!isSupabase) return { hasNewer: false };
+  var sp = window.nutriplantSupabaseProjects;
+  if (!sp || typeof sp.fetchProjects !== 'function') return { hasNewer: false };
+  function ts(v) {
+    if (!v) return 0;
+    var d = new Date(v).getTime();
+    return Number.isFinite(d) ? d : 0;
+  }
+  try {
+    // Leer fecha cloud más reciente del proyecto actual
+    var list = await sp.fetchProjects();
+    var cloud = Array.isArray(list) ? list.find(function(p) { return p && p.id === projectId; }) : null;
+    if (!cloud) return { hasNewer: false };
+    var cloudTs = ts(cloud.updated_at || cloud.updatedAt);
+
+    // Fecha local/base del proyecto en este dispositivo
+    var localTs = 0;
+    try {
+      var localRaw = localStorage.getItem('nutriplant_project_' + projectId);
+      var localData = localRaw ? JSON.parse(localRaw) : null;
+      localTs = Math.max(
+        ts(localData && (localData.updated_at || localData.updatedAt)),
+        ts(localData && localData.lastSaved),
+        ts(currentProject && (currentProject.updated_at || currentProject.updatedAt)),
+        ts(currentProject && currentProject.lastSaved)
+      );
+    } catch (e) {
+      localTs = Math.max(
+        ts(currentProject && (currentProject.updated_at || currentProject.updatedAt)),
+        ts(currentProject && currentProject.lastSaved)
+      );
+    }
+    return { hasNewer: cloudTs > 0 && localTs > 0 && cloudTs > localTs, cloudTs: cloudTs, localTs: localTs };
+  } catch (e) {
+    console.warn('np_hasNewerCloudVersion:', e);
+    return { hasNewer: false };
+  }
+}
+
 function np_initSyncRefreshButton() {
   var btn = document.getElementById('np-sync-refresh-btn');
   if (!btn || btn.dataset.npSyncInit) return;
@@ -10103,10 +10146,28 @@ window.showMessage = function(message, type = 'success') {
 };
 
 // Función global para guardar proyecto (disponible desde cualquier pestaña)
-window.saveProject = function() {
+window.saveProject = async function() {
   console.log('💾 Guardando proyecto manualmente...');
   
   try {
+    if (!currentProject || !currentProject.id) {
+      if (typeof window.showMessage === 'function') window.showMessage('⚠️ No hay proyecto activo para guardar', 'warning');
+      return;
+    }
+
+    // Protección anti-cruce multi-equipo:
+    // si nube es más reciente que la copia local, pedir actualizar antes de guardar.
+    var newerCheck = await np_hasNewerCloudVersion(currentProject.id);
+    if (newerCheck && newerCheck.hasNewer) {
+      np_setProjectSyncStatus('error', 'Nube más reciente');
+      if (typeof window.showMessage === 'function') {
+        window.showMessage('⚠️ Hay una versión más nueva en la nube. Usa "☁️ Actualizar con la nube" antes de guardar.', 'warning');
+      } else {
+        alert('⚠️ Hay una versión más nueva en la nube. Usa "Actualizar con la nube" antes de guardar para evitar cruce de datos.');
+      }
+      return;
+    }
+
     // 🚀 CRÍTICO: Detectar sección activa por DOM (no por textContent que tiene emojis/acentos)
     const isGranularActive = !!(
       document.getElementById('granularRequerimientoTableContainer') ||
