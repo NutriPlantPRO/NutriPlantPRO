@@ -6575,6 +6575,12 @@ async function np_refreshCurrentProjectFromCloud() {
     const fullData = await sp.fetchProject(projectId);
     if (fullData && typeof fullData === 'object') {
       const toStore = fullData.id ? fullData : { id: projectId, ...fullData };
+      // Asegurar que el proyecto local tenga la misma updated_at que la nube para no bloquear Guardar tras "Actualizar con la nube"
+      const cloudUpdatedAt = fullData.updated_at || fullData.updatedAt;
+      if (cloudUpdatedAt) {
+        toStore.updated_at = cloudUpdatedAt;
+        toStore.updatedAt = cloudUpdatedAt;
+      }
       const key = 'nutriplant_project_' + projectId;
       localStorage.setItem(key, JSON.stringify(toStore));
       if (window.projectStorage && window.projectStorage.memoryCache && window.projectStorage.memoryCache.currentProjectId === projectId) {

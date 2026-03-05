@@ -192,7 +192,7 @@
       };
     },
 
-    /** Obtener un proyecto desde Supabase */
+    /** Obtener un proyecto desde Supabase. Incluye updated_at de la fila para que "Actualizar con la nube" deje local en sync y no bloquee Guardar. */
     fetchProject: async function(projectId) {
       if (!isSupabaseUser()) return null;
       const client = getClient();
@@ -201,7 +201,12 @@
       try {
         const { data, error } = await client.from('projects').select('*').eq('id', projectId).single();
         if (error || !data) return null;
-        return data.data || data;
+        const payload = data.data || data;
+        const rowUpdatedAt = data.updated_at != null ? data.updated_at : (data.updatedAt != null ? data.updatedAt : null);
+        if (payload && typeof payload === 'object' && rowUpdatedAt) {
+          return { ...payload, id: payload.id || data.id, updated_at: rowUpdatedAt, updatedAt: rowUpdatedAt };
+        }
+        return payload;
       } catch (e) {
         return null;
       }
