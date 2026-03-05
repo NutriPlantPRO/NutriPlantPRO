@@ -9931,6 +9931,34 @@ function loadOnTabChange(tabName) {
       // 3. loadGranularRequirements()
       console.log('ℹ️ Nutrición Granular: carga manejada por selectGranularSubTab()');
       break;
+    case 'Análisis: Déficit de Presión de Vapor':
+      // Evitar el "doble click" en VPD: si la vista se renderizó antes de que llegara location,
+      // volver a pintar una vez con los datos más recientes cuando sí existe polígono.
+      setTimeout(() => {
+        try {
+          const mem = (window.projectStorage && typeof window.projectStorage.getCurrentProjectFromMemory === 'function')
+            ? window.projectStorage.getCurrentProjectFromMemory()
+            : null;
+          const latest = (mem && mem.id === currentProject.id) ? mem : currentProject;
+          const hasPolygon = !!(latest && latest.location && Array.isArray(latest.location.polygon) && latest.location.polygon.length >= 3);
+          if (!hasPolygon) return;
+
+          const viewEl = document.getElementById('view');
+          const titleEl = document.getElementById('section-title') || document.getElementById('sectionTitle');
+          const inVpdSection = titleEl && String(titleEl.textContent || '').trim() === 'Análisis: Déficit de Presión de Vapor';
+          if (!viewEl || !inVpdSection) return;
+
+          // Actualizar currentProject.location con la versión más reciente antes de renderizar.
+          if (latest.location) currentProject.location = latest.location;
+          viewEl.innerHTML = sectionTemplate('Análisis: Déficit de Presión de Vapor');
+          if (typeof addProjectIndicator === 'function') addProjectIndicator(viewEl);
+          if (typeof loadVPDSavedResults === 'function') loadVPDSavedResults();
+          if (typeof loadVPDRangeSavedResults === 'function') loadVPDRangeSavedResults();
+        } catch (e) {
+          console.warn('⚠️ VPD auto-refresh:', e);
+        }
+      }, 180);
+      break;
     case 'Reporte':
       // Actualizar lista de reportes (datos ya están en memoria)
       setTimeout(() => {
