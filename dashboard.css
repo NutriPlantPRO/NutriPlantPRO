@@ -1018,7 +1018,7 @@ body {
 @media (max-width: 1280px) {
   .header-buttons {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: flex-end;
   }
   .header-buttons .btn-calculator {
     flex: 0 0 auto;

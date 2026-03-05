@@ -12660,6 +12660,10 @@ function createVPDReportSectionHTML() {
   const env = vpd.environmental || {};
   const adv = vpd.advanced || {};
   const history = Array.isArray(vpd.history) ? vpd.history : [];
+  const currentRangeTable = (vpd.currentRangeTable && Array.isArray(vpd.currentRangeTable.summaryRows) && vpd.currentRangeTable.summaryRows.length > 0)
+    ? vpd.currentRangeTable
+    : null;
+  const savedRangeTables = Array.isArray(vpd.rangeTables) ? vpd.rangeTables.slice().reverse().slice(0, 5) : [];
   const envVpd = (env.result && env.result.vpd != null) ? env.result.vpd : env.vpd;
   const advVpd = (adv.result && adv.result.vpd != null) ? adv.result.vpd : adv.vpd;
   const historyRows = history.slice().reverse().slice(0, 20).map(item => `
@@ -12670,6 +12674,53 @@ function createVPDReportSectionHTML() {
       <td>${reportEscapeHtml(item.timestamp ? new Date(item.timestamp).toLocaleString('es-MX') : (item.date || '—'))}</td>
     </tr>
   `).join('');
+  const stressSummaryRows = currentRangeTable
+    ? currentRangeTable.summaryRows.map(function(r) {
+      return `
+        <tr>
+          <td>${reportEscapeHtml(String(r.period || '—'))}</td>
+          <td>${reportNum(r.maxVpd, 2)}</td>
+          <td>${reportEscapeHtml(String(r.maxAt || '—'))}</td>
+          <td>${reportNum(r.minVpd, 2)}</td>
+          <td>${reportEscapeHtml(String(r.minAt || '—'))}</td>
+          <td>${reportNum(r.hoursHigh, 0)}</td>
+          <td>${reportNum(r.hoursLow, 0)}</td>
+          <td>${reportNum(r.hoursOptimal, 0)}</td>
+          <td>${reportNum(r.stressPct, 1)}%</td>
+        </tr>
+      `;
+    }).join('')
+    : '';
+  const stressCriticalRows = currentRangeTable
+    ? (Array.isArray(currentRangeTable.criticalRows) ? currentRangeTable.criticalRows : []).slice(0, 120).map(function(r) {
+      return `
+        <tr>
+          <td>${reportEscapeHtml(String(r.at || '—'))}</td>
+          <td>${reportNum(r.vpd, 2)}</td>
+          <td>${reportNum(r.temperature, 1)}</td>
+          <td>${reportNum(r.humidity, 1)}</td>
+          <td>${reportEscapeHtml(String(r.type === 'high' ? 'Alto' : 'Bajo'))}</td>
+        </tr>
+      `;
+    }).join('')
+    : '';
+  const savedRangesRows = savedRangeTables.map(function(tbl, idx) {
+    var meta = tbl && tbl.meta ? tbl.meta : {};
+    var rows = Array.isArray(tbl && tbl.summaryRows) ? tbl.summaryRows : [];
+    var avgStress = rows.length
+      ? rows.reduce(function(acc, r) { return acc + (Number(r.stressPct) || 0); }, 0) / rows.length
+      : 0;
+    return `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${reportEscapeHtml(meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario'))}</td>
+        <td>${reportEscapeHtml(String(meta.startDate || '—'))}</td>
+        <td>${reportEscapeHtml(String(meta.endDate || '—'))}</td>
+        <td>${rows.length}</td>
+        <td>${reportNum(avgStress, 1)}%</td>
+      </tr>
+    `;
+  }).join('');
 
   return `
     <div class="section">
@@ -12712,6 +12763,71 @@ function createVPDReportSectionHTML() {
           </tbody>
         </table>
       </div>
+      ${currentRangeTable ? `
+      <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
+        <div class="report-block-title">🗓️ Serie VPD por Rango (Estrés)</div>
+        <div class="report-note" style="margin-bottom:8px;">
+          <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa ·
+          ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.granularity) || 'diario'))}
+          (${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.startDate) || '—'))} a ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.endDate) || '—'))})
+        </div>
+        <table class="report-admin-table">
+          <thead>
+            <tr>
+              <th>Periodo</th>
+              <th>VPD máx</th>
+              <th>Hora máx</th>
+              <th>VPD mín</th>
+              <th>Hora mín</th>
+              <th>Horas &gt; 1.5</th>
+              <th>Horas &lt; 0.5</th>
+              <th>Horas óptimas</th>
+              <th>% estrés</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${stressSummaryRows || '<tr><td colspan="9" style="text-align:center;color:#64748b;">Sin datos de rango.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
+        <div class="report-block-title">⏱️ Horas críticas (${Array.isArray(currentRangeTable.criticalRows) ? currentRangeTable.criticalRows.length : 0})</div>
+        <table class="report-admin-table">
+          <thead>
+            <tr>
+              <th>Fecha/Hora</th>
+              <th>VPD</th>
+              <th>Temp (°C)</th>
+              <th>HR (%)</th>
+              <th>Tipo</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${stressCriticalRows || '<tr><td colspan="5" style="text-align:center;color:#64748b;">Sin horas fuera de rango.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      ` : ''}
+      ${savedRangeTables.length ? `
+      <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
+        <div class="report-block-title">💾 Cuadros guardados de VPD (${savedRangeTables.length})</div>
+        <table class="report-admin-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Vista</th>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Periodos</th>
+              <th>% estrés (prom.)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${savedRangesRows}
+          </tbody>
+        </table>
+      </div>
+      ` : ''}
     </div>
   `;
 }
@@ -16438,6 +16554,9 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
         <strong style="color:#9a3412;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate} a ${meta.endDate}</strong>
         <span style="font-size:12px;color:#7c2d12;">Periodos: ${summaryRows.length} · Eventos críticos: ${crit.length}</span>
       </div>
+      <div style="margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
+        <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
+      </div>
       <div style="overflow:auto;max-height:300px;">
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
           <thead>
@@ -16489,6 +16608,9 @@ function renderSavedVPDRangeTableHtml(tbl) {
       <summary style="cursor:pointer;font-weight:600;color:#9a3412;">
         ${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalRows.length}
       </summary>
+      <div style="margin-top:8px;margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
+        <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
+      </div>
       <div style="margin-top:8px;overflow:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
           <thead>

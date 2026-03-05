@@ -7885,6 +7885,130 @@
                                     </div>
                                 </div>
                             ` : ''}
+                            ${(function() {
+                                const currentRange = (vpdAnalysis.currentRangeTable && Array.isArray(vpdAnalysis.currentRangeTable.summaryRows) && vpdAnalysis.currentRangeTable.summaryRows.length > 0)
+                                    ? vpdAnalysis.currentRangeTable
+                                    : null;
+                                if (!currentRange) return '';
+                                const meta = currentRange.meta || {};
+                                const summaryRows = Array.isArray(currentRange.summaryRows) ? currentRange.summaryRows : [];
+                                const criticalRows = Array.isArray(currentRange.criticalRows) ? currentRange.criticalRows : [];
+                                const summaryHtml = summaryRows.map(function(r) {
+                                    return `
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 8px;">${escapeHtml(String(r.period || '—'))}</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: 600;">${Number(r.maxVpd || 0).toFixed(2)}</td>
+                                            <td style="padding: 8px;">${escapeHtml(String(r.maxAt || '—'))}</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: 600;">${Number(r.minVpd || 0).toFixed(2)}</td>
+                                            <td style="padding: 8px;">${escapeHtml(String(r.minAt || '—'))}</td>
+                                            <td style="padding: 8px; text-align: right;">${Number(r.hoursHigh || 0)}</td>
+                                            <td style="padding: 8px; text-align: right;">${Number(r.hoursLow || 0)}</td>
+                                            <td style="padding: 8px; text-align: right;">${Number(r.hoursOptimal || 0)}</td>
+                                            <td style="padding: 8px; text-align: right;">${Number(r.stressPct || 0).toFixed(1)}%</td>
+                                        </tr>
+                                    `;
+                                }).join('');
+                                const criticalHtml = criticalRows.slice(0, 120).map(function(r) {
+                                    const isHigh = r.type === 'high';
+                                    return `
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 8px;">${escapeHtml(String(r.at || '—'))}</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: 700; color: ${isHigh ? '#b91c1c' : '#1d4ed8'};">${Number(r.vpd || 0).toFixed(2)}</td>
+                                            <td style="padding: 8px; text-align: right;">${Number(r.temperature || 0).toFixed(1)}</td>
+                                            <td style="padding: 8px; text-align: right;">${Number(r.humidity || 0).toFixed(1)}</td>
+                                            <td style="padding: 8px; color: ${isHigh ? '#b91c1c' : '#1d4ed8'}; font-weight: 600;">${isHigh ? 'Alto' : 'Bajo'}</td>
+                                        </tr>
+                                    `;
+                                }).join('');
+                                return `
+                                    <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
+                                        <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">🗓️ Serie VPD por Rango (Estrés)</h4>
+                                        <div style="font-size: 13px; color: #92400e; background: #fffbeb; border: 1px dashed #fdba74; border-radius: 6px; padding: 8px; margin-bottom: 10px;">
+                                            <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa ·
+                                            <strong>Vista:</strong> ${escapeHtml(meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario'))} ·
+                                            <strong>Periodo:</strong> ${escapeHtml(String(meta.startDate || '—'))} a ${escapeHtml(String(meta.endDate || '—'))}
+                                        </div>
+                                        <div style="max-height: 220px; overflow-y: auto; margin-bottom: 10px;">
+                                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                                <thead>
+                                                    <tr style="background: #f3f4f6; border-bottom: 2px solid #d1d5db;">
+                                                        <th style="padding: 8px; text-align: left;">Periodo</th>
+                                                        <th style="padding: 8px; text-align: right;">VPD máx</th>
+                                                        <th style="padding: 8px; text-align: left;">Hora máx</th>
+                                                        <th style="padding: 8px; text-align: right;">VPD mín</th>
+                                                        <th style="padding: 8px; text-align: left;">Hora mín</th>
+                                                        <th style="padding: 8px; text-align: right;">&gt;1.5</th>
+                                                        <th style="padding: 8px; text-align: right;">&lt;0.5</th>
+                                                        <th style="padding: 8px; text-align: right;">Óptimas</th>
+                                                        <th style="padding: 8px; text-align: right;">% estrés</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${summaryHtml || '<tr><td colspan="9" style="padding:8px;color:#64748b;text-align:center;">Sin resumen de rango.</td></tr>'}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <h5 style="margin: 0 0 8px 0; color: #1e293b; font-size: 14px;">⏱️ Horas críticas (${criticalRows.length})</h5>
+                                        <div style="max-height: 220px; overflow-y: auto;">
+                                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                                <thead>
+                                                    <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                                                        <th style="padding: 8px; text-align: left;">Fecha/Hora</th>
+                                                        <th style="padding: 8px; text-align: right;">VPD</th>
+                                                        <th style="padding: 8px; text-align: right;">Temp</th>
+                                                        <th style="padding: 8px; text-align: right;">HR</th>
+                                                        <th style="padding: 8px; text-align: left;">Tipo</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${criticalHtml || '<tr><td colspan="5" style="padding:8px;color:#64748b;text-align:center;">Sin horas fuera de rango.</td></tr>'}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                `;
+                            })()}
+                            ${(function() {
+                                const tables = Array.isArray(vpdAnalysis.rangeTables) ? vpdAnalysis.rangeTables : [];
+                                if (!tables.length) return '';
+                                const rows = tables.slice().reverse().slice(0, 8).map(function(tbl, idx) {
+                                    const meta = tbl && tbl.meta ? tbl.meta : {};
+                                    const summary = Array.isArray(tbl && tbl.summaryRows) ? tbl.summaryRows : [];
+                                    const avgStress = summary.length
+                                      ? summary.reduce(function(acc, r) { return acc + (Number(r.stressPct) || 0); }, 0) / summary.length
+                                      : 0;
+                                    return `
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 8px;">${idx + 1}</td>
+                                            <td style="padding: 8px;">${escapeHtml(meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario'))}</td>
+                                            <td style="padding: 8px;">${escapeHtml(String(meta.startDate || '—'))}</td>
+                                            <td style="padding: 8px;">${escapeHtml(String(meta.endDate || '—'))}</td>
+                                            <td style="padding: 8px; text-align: right;">${summary.length}</td>
+                                            <td style="padding: 8px; text-align: right;">${avgStress.toFixed(1)}%</td>
+                                        </tr>
+                                    `;
+                                }).join('');
+                                return `
+                                    <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
+                                        <h4 style="margin: 0 0 10px 0; color: #1e293b; font-size: 16px;">💾 Cuadros guardados VPD (${tables.length})</h4>
+                                        <div style="max-height: 220px; overflow-y: auto;">
+                                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                                <thead>
+                                                    <tr style="background: #f3f4f6; border-bottom: 2px solid #d1d5db;">
+                                                        <th style="padding: 8px; text-align: left;">#</th>
+                                                        <th style="padding: 8px; text-align: left;">Vista</th>
+                                                        <th style="padding: 8px; text-align: left;">Inicio</th>
+                                                        <th style="padding: 8px; text-align: left;">Fin</th>
+                                                        <th style="padding: 8px; text-align: right;">Periodos</th>
+                                                        <th style="padding: 8px; text-align: right;">% estrés (prom.)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>${rows}</tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                `;
+                            })()}
                             ${vpdAnalysis.history && Array.isArray(vpdAnalysis.history) && vpdAnalysis.history.length > 0 ? `
                                 <div>
                                     <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">📜 Historial de Cálculos (${vpdAnalysis.history.length})</h4>
