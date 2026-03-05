@@ -56,6 +56,8 @@ function getSectionCacheKey(sectionName, projectId) {
 }
 function isPhaseOneCachedSection(sectionName) {
   if (!sectionName) return false;
+  // VPD no se cachea: depende de polígono y al abrir puede no estar actualizado aún
+  if (sectionName === 'Análisis: Déficit de Presión de Vapor') return false;
   return sectionName === 'Nutricion Granular' ||
     sectionName === 'Fertirriego' ||
     sectionName === 'Hidroponia' ||
@@ -10961,6 +10963,14 @@ function createReportHTML(selectedSections, chartImages) {
         .report-admin-table.report-vpd-wide-table td:nth-child(8) { width: 14%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(9),
         .report-admin-table.report-vpd-wide-table td:nth-child(9) { width: 14%; }
+        .report-admin-table.report-vpd-wide-table th:nth-child(6),
+        .report-admin-table.report-vpd-wide-table td:nth-child(6),
+        .report-admin-table.report-vpd-wide-table th:nth-child(7),
+        .report-admin-table.report-vpd-wide-table td:nth-child(7),
+        .report-admin-table.report-vpd-wide-table th:nth-child(8),
+        .report-admin-table.report-vpd-wide-table td:nth-child(8),
+        .report-admin-table.report-vpd-wide-table th:nth-child(9),
+        .report-admin-table.report-vpd-wide-table td:nth-child(9) { border-left: 3px solid #fdba74; }
         .report-admin-table.report-vpd-wide-table.report-vpd-cols-5 th:nth-child(1),
         .report-admin-table.report-vpd-wide-table.report-vpd-cols-5 td:nth-child(1) { width: 28%; }
         .report-admin-table.report-vpd-wide-table.report-vpd-cols-5 th:nth-child(n+2),
@@ -15506,17 +15516,18 @@ function getVPDStatus(vpdValue) {
 }
 
 function vpdStressSummaryRowHtml(rows) {
+  var sep = 'border-left:3px solid #fdba74;';
   return rows.map(function(r) {
     return '<tr>' +
       '<td>' + String(r.period || '—') + '</td>' +
       '<td>' + (Number.isFinite(Number(r.maxVpd)) ? Number(r.maxVpd).toFixed(2) : '—') + '</td>' +
       '<td>' + String(r.maxAt || '—') + '</td>' +
-      '<td style="border-left:3px solid #fdba74;">' + (Number.isFinite(Number(r.minVpd)) ? Number(r.minVpd).toFixed(2) : '—') + '</td>' +
+      '<td style="' + sep + '">' + (Number.isFinite(Number(r.minVpd)) ? Number(r.minVpd).toFixed(2) : '—') + '</td>' +
       '<td>' + String(r.minAt || '—') + '</td>' +
-      '<td>' + (Number.isFinite(Number(r.hoursHigh)) ? String(r.hoursHigh) : '0') + '</td>' +
-      '<td>' + (Number.isFinite(Number(r.hoursLow)) ? String(r.hoursLow) : '0') + '</td>' +
-      '<td>' + (Number.isFinite(Number(r.hoursOptimal)) ? String(r.hoursOptimal) : '0') + '</td>' +
-      '<td>' + (Number.isFinite(Number(r.stressPct)) ? Number(r.stressPct).toFixed(1) + '%' : '—') + '</td>' +
+      '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursHigh)) ? String(r.hoursHigh) : '0') + '</td>' +
+      '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursLow)) ? String(r.hoursLow) : '0') + '</td>' +
+      '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursOptimal)) ? String(r.hoursOptimal) : '0') + '</td>' +
+      '<td style="' + sep + '">' + (Number.isFinite(Number(r.stressPct)) ? Number(r.stressPct).toFixed(1) + '%' : '—') + '</td>' +
     '</tr>';
   }).join('');
 }
@@ -15740,18 +15751,28 @@ function createVPDRangeChart(vpdValue) {
 
 function createVPDSectionHTML() {
   ensureVPDAnalysisStructures();
-  // Obtener datos guardados
-  const envData = currentProject.vpdAnalysis?.environmental || {};
-  const advData = currentProject.vpdAnalysis?.advanced || {};
-  const history = currentProject.vpdAnalysis?.history || [];
-  const rangeState = currentProject.vpdAnalysis?.rangeState || { granularity: 'daily', startDate: '', endDate: '' };
-  const rangeTables = Array.isArray(currentProject.vpdAnalysis?.rangeTables) ? currentProject.vpdAnalysis.rangeTables : [];
+  // Usar el proyecto más actualizado para evitar mostrar "agrega polígono" cuando sí hay polígono (race/caché)
+  var dataProject = currentProject;
+  try {
+    var pm = window.projectManager && typeof window.projectManager.getCurrentProject === 'function' && window.projectManager.getCurrentProject();
+    var mem = window.projectStorage && typeof window.projectStorage.getCurrentProjectFromMemory === 'function' && window.projectStorage.getCurrentProjectFromMemory();
+    var pid = typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : (localStorage.getItem('nutriplant-current-project') || '');
+    if (pm && pm.id === pid) dataProject = pm;
+    else if (mem && mem.id === pid) dataProject = mem;
+  } catch (e) { /* fallback a currentProject */ }
+  // Datos guardados (vpdAnalysis puede venir de dataProject o currentProject)
+  const vpdData = dataProject.vpdAnalysis || currentProject.vpdAnalysis || {};
+  const envData = vpdData.environmental || {};
+  const advData = vpdData.advanced || {};
+  const history = vpdData.history || [];
+  const rangeState = vpdData.rangeState || { granularity: 'daily', startDate: '', endDate: '' };
+  const rangeTables = Array.isArray(vpdData.rangeTables) ? vpdData.rangeTables : [];
   const todayIso = getTodayIsoDate();
   const defaultStart = rangeState.startDate || addDaysIso(todayIso, -7);
   const defaultEnd = rangeState.endDate || todayIso;
   
-  // Ubicación para VPD: center o centroide del polígono
-  const vpdLocation = getVPDLocation(currentProject);
+  // Ubicación para VPD: usar dataProject para no depender de currentProject desactualizado
+  const vpdLocation = getVPDLocation(dataProject);
   const hasPolygon = vpdLocation && vpdLocation.lat != null && vpdLocation.lng != null;
   
   return `
@@ -16599,10 +16620,10 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
               <th style="border:1px solid #fed7aa;padding:6px;">Hora máx</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD mín</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Hora mín</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Horas &gt; 1.5</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Horas &lt; 0.5</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Horas óptimas</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">% estrés</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &gt; 1.5</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &lt; 0.5</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas óptimas</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">% estrés</th>
             </tr>
           </thead>
           <tbody>${vpdStressSummaryRowHtml(summaryRows)}</tbody>
@@ -16653,10 +16674,10 @@ function renderSavedVPDRangeTableHtml(tbl) {
               <th style="border:1px solid #fed7aa;padding:6px;">Hora máx</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD mín</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Hora mín</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Horas &gt; 1.5</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Horas &lt; 0.5</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Horas óptimas</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">% estrés</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &gt; 1.5</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &lt; 0.5</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas óptimas</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">% estrés</th>
             </tr>
           </thead>
           <tbody>${vpdStressSummaryRowHtml(summaryRows)}</tbody>

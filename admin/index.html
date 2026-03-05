@@ -7900,6 +7900,7 @@
                                 const meta = currentRange.meta || {};
                                 const summaryRows = Array.isArray(currentRange.summaryRows) ? currentRange.summaryRows : [];
                                 const criticalRows = Array.isArray(currentRange.criticalRows) ? currentRange.criticalRows : [];
+                                const vpdTdSep = 'border-left: 3px solid #fdba74;';
                                 const summaryHtml = summaryRows.map(function(r) {
                                     return `
                                         <tr style="border-bottom: 1px solid #e5e7eb;">
@@ -7908,10 +7909,10 @@
                                             <td style="padding: 8px;">${escapeHtml(String(r.maxAt || '—'))}</td>
                                             <td style="padding: 8px; text-align: right; font-weight: 600;">${Number(r.minVpd || 0).toFixed(2)}</td>
                                             <td style="padding: 8px;">${escapeHtml(String(r.minAt || '—'))}</td>
-                                            <td style="padding: 8px; text-align: right;">${Number(r.hoursHigh || 0)}</td>
-                                            <td style="padding: 8px; text-align: right;">${Number(r.hoursLow || 0)}</td>
-                                            <td style="padding: 8px; text-align: right;">${Number(r.hoursOptimal || 0)}</td>
-                                            <td style="padding: 8px; text-align: right;">${Number(r.stressPct || 0).toFixed(1)}%</td>
+                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursHigh || 0)}</td>
+                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursLow || 0)}</td>
+                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursOptimal || 0)}</td>
+                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.stressPct || 0).toFixed(1)}%</td>
                                         </tr>
                                     `;
                                 }).join('');
@@ -7944,10 +7945,10 @@
                                                         <th style="padding: 8px; text-align: left;">Hora máx</th>
                                                         <th style="padding: 8px; text-align: right;">VPD mín</th>
                                                         <th style="padding: 8px; text-align: left;">Hora mín</th>
-                                                        <th style="padding: 8px; text-align: right;">&gt;1.5</th>
-                                                        <th style="padding: 8px; text-align: right;">&lt;0.5</th>
-                                                        <th style="padding: 8px; text-align: right;">Óptimas</th>
-                                                        <th style="padding: 8px; text-align: right;">% estrés</th>
+                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">&gt;1.5</th>
+                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">&lt;0.5</th>
+                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">Óptimas</th>
+                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">% estrés</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
