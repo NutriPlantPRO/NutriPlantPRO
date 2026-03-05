@@ -15362,7 +15362,7 @@ function vpdStressSummaryRowHtml(rows) {
       '<td>' + String(r.period || '—') + '</td>' +
       '<td>' + (Number.isFinite(Number(r.maxVpd)) ? Number(r.maxVpd).toFixed(2) : '—') + '</td>' +
       '<td>' + String(r.maxAt || '—') + '</td>' +
-      '<td>' + (Number.isFinite(Number(r.minVpd)) ? Number(r.minVpd).toFixed(2) : '—') + '</td>' +
+      '<td style="border-left:3px solid #fdba74;">' + (Number.isFinite(Number(r.minVpd)) ? Number(r.minVpd).toFixed(2) : '—') + '</td>' +
       '<td>' + String(r.minAt || '—') + '</td>' +
       '<td>' + (Number.isFinite(Number(r.hoursHigh)) ? String(r.hoursHigh) : '0') + '</td>' +
       '<td>' + (Number.isFinite(Number(r.hoursLow)) ? String(r.hoursLow) : '0') + '</td>' +
@@ -16445,7 +16445,7 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
               <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Periodo</th>
               <th style="border:1px solid #fed7aa;padding:6px;">VPD máx</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Hora máx</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">VPD mín</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD mín</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Hora mín</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Horas &gt; 1.5</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Horas &lt; 0.5</th>
@@ -16496,7 +16496,7 @@ function renderSavedVPDRangeTableHtml(tbl) {
               <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Periodo</th>
               <th style="border:1px solid #fed7aa;padding:6px;">VPD máx</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Hora máx</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">VPD mín</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD mín</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Hora mín</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Horas &gt; 1.5</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Horas &lt; 0.5</th>
