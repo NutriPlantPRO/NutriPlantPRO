@@ -2392,14 +2392,17 @@
                 if (hasAny) analCount++;
             });
             out['Análisis'] = analCount <= 0 ? 0 : (analCount === 1 ? 1 : (analCount === 2 ? 2 : 3));
-            // VPD: bajo 1 vez calculado, medio 2, alto más de 3 (cualquier calculadora: avanzada, ambiental, clima web)
+            // VPD: bajo/medio/alto por uso (historial + cuadro actual + cuadros guardados por rango)
             var vpd = (project.sections && project.sections.vpd) || project.vpdAnalysis;
             if (vpd && typeof vpd === 'object') {
                 var histLen = (vpd.history && Array.isArray(vpd.history)) ? vpd.history.length : 0;
-                if (histLen <= 0) out['VPD'] = 0;
-                else if (histLen === 1) out['VPD'] = 1;
-                else if (histLen === 2) out['VPD'] = 2;
-                else out['VPD'] = 3;
+                var hasCurrentRange = !!(vpd.currentRangeTable && Array.isArray(vpd.currentRangeTable.summaryRows) && vpd.currentRangeTable.summaryRows.length > 0);
+                var savedRangeCount = (vpd.rangeTables && Array.isArray(vpd.rangeTables)) ? vpd.rangeTables.length : 0;
+                var vpdUsage = histLen + (hasCurrentRange ? 1 : 0) + savedRangeCount;
+                if (vpdUsage <= 0) out['VPD'] = 0;
+                else if (vpdUsage === 1) out['VPD'] = 1;   // bajo
+                else if (vpdUsage === 2) out['VPD'] = 2;   // medio
+                else out['VPD'] = 3;                       // alto
             } else { out['VPD'] = 0; }
             return out;
         }

@@ -10932,6 +10932,39 @@ function createReportHTML(selectedSections, chartImages) {
           color: #334155;
           font-weight: 700;
         }
+        .report-admin-table.report-vpd-wide-table {
+          table-layout: fixed;
+          width: 100%;
+        }
+        .report-admin-table.report-vpd-wide-table th,
+        .report-admin-table.report-vpd-wide-table td {
+          width: auto;
+        }
+        .report-admin-table.report-vpd-wide-table th {
+          width: auto;
+        }
+        .report-admin-table.report-vpd-wide-table th:nth-child(1),
+        .report-admin-table.report-vpd-wide-table td:nth-child(1) { width: 12%; }
+        .report-admin-table.report-vpd-wide-table th:nth-child(2),
+        .report-admin-table.report-vpd-wide-table td:nth-child(2) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table th:nth-child(3),
+        .report-admin-table.report-vpd-wide-table td:nth-child(3) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table th:nth-child(4),
+        .report-admin-table.report-vpd-wide-table td:nth-child(4) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table th:nth-child(5),
+        .report-admin-table.report-vpd-wide-table td:nth-child(5) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table th:nth-child(6),
+        .report-admin-table.report-vpd-wide-table td:nth-child(6) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table th:nth-child(7),
+        .report-admin-table.report-vpd-wide-table td:nth-child(7) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table th:nth-child(8),
+        .report-admin-table.report-vpd-wide-table td:nth-child(8) { width: 14%; }
+        .report-admin-table.report-vpd-wide-table th:nth-child(9),
+        .report-admin-table.report-vpd-wide-table td:nth-child(9) { width: 14%; }
+        .report-admin-table.report-vpd-wide-table.report-vpd-cols-5 th:nth-child(1),
+        .report-admin-table.report-vpd-wide-table.report-vpd-cols-5 td:nth-child(1) { width: 28%; }
+        .report-admin-table.report-vpd-wide-table.report-vpd-cols-5 th:nth-child(n+2),
+        .report-admin-table.report-vpd-wide-table.report-vpd-cols-5 td:nth-child(n+2) { width: 18%; }
         .report-admin-table td {
           color: #0f172a;
           word-break: break-word;
@@ -12771,7 +12804,7 @@ function createVPDReportSectionHTML() {
           ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.granularity) || 'diario'))}
           (${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.startDate) || '—'))} a ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.endDate) || '—'))})
         </div>
-        <table class="report-admin-table">
+        <table class="report-admin-table report-vpd-wide-table">
           <thead>
             <tr>
               <th>Periodo</th>
@@ -12792,7 +12825,7 @@ function createVPDReportSectionHTML() {
       </div>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
         <div class="report-block-title">⏱️ Horas críticas (${Array.isArray(currentRangeTable.criticalRows) ? currentRangeTable.criticalRows.length : 0})</div>
-        <table class="report-admin-table">
+        <table class="report-admin-table report-vpd-wide-table report-vpd-cols-5">
           <thead>
             <tr>
               <th>Fecha/Hora</th>

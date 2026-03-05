@@ -768,6 +768,9 @@ Usa formato markdown para mejor legibilidad.`;
 • Agricultura sostenible
 • Y CUALQUIER tema agronómico
 
+**VPD EN NUTRIPLANT (Déficit de Presión de Vapor):**
+En Nutriplant, el VPD se interpreta así: rango óptimo 0.5–1.5 kPa. Por debajo de 0.5 kPa hay déficit (estrés por baja presión de vapor); por encima de 1.5 kPa hay exceso (estrés). La herramienta incluye calculadoras (ambiental y avanzada) y una "Serie VPD por rango" con datos diarios/semanales/mensuales: VPD máx/mín con hora, horas en rango óptimo, horas de estrés y % de estrés. Cuando el contexto del dashboard incluya datos de VPD del proyecto, úsalos para dar recomendaciones coherentes con esta lógica.
+
 **ANÁLISIS INTELIGENTE DEL DASHBOARD:**
 Analiza automáticamente la información disponible en NutriPlant PRO:
 
@@ -1177,12 +1180,38 @@ Basándome en tus datos, te recomiendo la siguiente estrategia:`;
       context += `DATOS DEL SUELO: No disponibles\n\n`;
     }
     
+    // VPD en Nutriplant: lógica y datos del proyecto (si existen)
+    const fullProject = (window.projectManager && typeof window.projectManager.getCurrentProject === 'function')
+      ? window.projectManager.getCurrentProject() : null;
+    const vpd = (fullProject && (fullProject.sections && fullProject.sections.vpd)) ? fullProject.sections.vpd : (fullProject && fullProject.vpdAnalysis) ? fullProject.vpdAnalysis : null;
+    if (vpd && typeof vpd === 'object') {
+      context += `VPD EN NUTRIPLANT (Déficit de Presión de Vapor):\n`;
+      context += `• Rango óptimo: 0.5 - 1.5 kPa. Por debajo de 0.5 = déficit (estrés); por encima de 1.5 = exceso (estrés).\n`;
+      if (vpd.environmental && (vpd.environmental.vpd != null && vpd.environmental.vpd !== undefined)) {
+        context += `• Calculadora ambiental (actual): VPD ≈ ${Number(vpd.environmental.vpd).toFixed(2)} kPa.\n`;
+      }
+      if (vpd.advanced && (vpd.advanced.vpd != null && vpd.advanced.vpd !== undefined)) {
+        context += `• Calculadora avanzada: VPD ≈ ${Number(vpd.advanced.vpd).toFixed(2)} kPa.\n`;
+      }
+      const histLen = (vpd.history && Array.isArray(vpd.history)) ? vpd.history.length : 0;
+      if (histLen > 0) context += `• Historial de cálculos: ${histLen} registro(s).\n`;
+      const hasRange = !!(vpd.currentRangeTable && Array.isArray(vpd.currentRangeTable.summaryRows) && vpd.currentRangeTable.summaryRows.length > 0);
+      if (hasRange) {
+        const meta = vpd.currentRangeTable.meta || {};
+        context += `• Serie VPD por rango: ${meta.granularity || 'diario'} (${meta.startDate || '—'} a ${meta.endDate || '—'}). Resumen: VPD máx/mín, horas en rango óptimo (0.5-1.5), horas de estrés (>1.5 o <0.5), % estrés.\n`;
+      }
+      const savedCount = (vpd.rangeTables && Array.isArray(vpd.rangeTables)) ? vpd.rangeTables.length : 0;
+      if (savedCount > 0) context += `• Cuadros VPD guardados en proyecto: ${savedCount}.\n`;
+      context += `\n`;
+    }
+
     // Información general del dashboard
     context += `FUNCIONALIDADES DISPONIBLES EN NUTRIPLANT PRO:\n`;
     context += `• Análisis de suelos y enmiendas\n`;
     context += `• Programas de nutrición\n`;
     context += `• Soluciones nutritivas\n`;
     context += `• Aplicaciones foliares\n`;
+    context += `• Déficit de Presión de Vapor (VPD): calculadoras ambiental/avanzada y Serie VPD por rango (diario/semanal/mensual) con estrés y horas críticas\n`;
     context += `• Gestión de proyectos agrícolas\n\n`;
     
     context += `OBJETIVO PRINCIPAL: Optimizar la nutrición vegetal y la calidad del suelo para maximizar la productividad agrícola.`;
