@@ -15576,18 +15576,71 @@ function vpdCriticalEventsRowHtml(rows) {
 
 // Obtener ubicación para VPD: center guardado o centroide del polígono
 function getVPDLocation(project) {
-  var loc = project && project.location;
-  if (!loc) return null;
-  if (loc.center && typeof loc.center.lat === 'number' && typeof loc.center.lng === 'number')
-    return { lat: loc.center.lat, lng: loc.center.lng };
-  var poly = loc.polygon;
-  if (poly && Array.isArray(poly) && poly.length >= 3) {
-    var lat = 0, lng = 0;
-    poly.forEach(function(c) {
-      lat += Array.isArray(c) ? c[0] : (c.lat != null ? c.lat : c[0]);
-      lng += Array.isArray(c) ? c[1] : (c.lng != null ? c.lng : c[1]);
-    });
-    return { lat: lat / poly.length, lng: lng / poly.length };
+  function asNumber(n) {
+    var v = Number(n);
+    return Number.isFinite(v) ? v : null;
+  }
+  function fromLoc(loc) {
+    if (!loc || typeof loc !== 'object') return null;
+    var center = loc.center;
+    if (center) {
+      var cLat = asNumber(Array.isArray(center) ? center[0] : center.lat);
+      var cLng = asNumber(Array.isArray(center) ? center[1] : center.lng);
+      if (cLat != null && cLng != null) return { lat: cLat, lng: cLng };
+    }
+    // Compatibilidad: algunos formatos viejos guardaban puntos en "coordinates"
+    var poly = (Array.isArray(loc.polygon) && loc.polygon.length >= 3) ? loc.polygon :
+      ((Array.isArray(loc.coordinates) && loc.coordinates.length >= 3) ? loc.coordinates : null);
+    if (poly) {
+      var lat = 0, lng = 0;
+      var count = 0;
+      poly.forEach(function(c) {
+        var pLat = asNumber(Array.isArray(c) ? c[0] : c.lat);
+        var pLng = asNumber(Array.isArray(c) ? c[1] : c.lng);
+        if (pLat != null && pLng != null) {
+          lat += pLat;
+          lng += pLng;
+          count++;
+        }
+      });
+      if (count >= 3) return { lat: lat / count, lng: lng / count };
+    }
+    return null;
+  }
+
+  var pid = (project && project.id) ||
+    (typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : '') ||
+    localStorage.getItem('nutriplant-current-project') || '';
+
+  var candidates = [];
+  if (project && project.location) candidates.push(project.location);
+  if (typeof currentProject !== 'undefined' && currentProject && currentProject.location) candidates.push(currentProject.location);
+  try {
+    var pm = window.projectManager && typeof window.projectManager.getCurrentProject === 'function' ? window.projectManager.getCurrentProject() : null;
+    if (pm && pm.location) candidates.push(pm.location);
+  } catch (e) {}
+  try {
+    var mem = window.projectStorage && typeof window.projectStorage.getCurrentProjectFromMemory === 'function'
+      ? window.projectStorage.getCurrentProjectFromMemory()
+      : null;
+    if (mem && mem.location) candidates.push(mem.location);
+  } catch (e) {}
+  try {
+    if (pid && window.projectStorage && typeof window.projectStorage.loadSection === 'function') {
+      var freshLoc = window.projectStorage.loadSection('location', pid);
+      if (freshLoc) candidates.push(freshLoc);
+    }
+  } catch (e) {}
+  try {
+    if (pid && typeof np_getProject === 'function') {
+      var p = np_getProject(pid);
+      if (p && p.location) candidates.push(p.location);
+    }
+  } catch (e) {}
+
+  for (var i = 0; i < candidates.length; i++) {
+    var resolved = fromLoc(candidates[i]);
+    if (resolved) return resolved;
   }
   return null;
 }
