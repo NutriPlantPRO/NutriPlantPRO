@@ -1611,6 +1611,9 @@ function selectSection(name, el) {
       if (resultsDiv && resultsDiv.innerHTML.trim() === '') {
         loadVPDSavedResults();
       }
+      if (typeof loadVPDRangeSavedResults === 'function') {
+        loadVPDRangeSavedResults();
+      }
     }, 100);
   }
 
@@ -4131,6 +4134,9 @@ function np_createProject(data) {
       },
       // Historial de cálculos
       history: [],
+      rangeState: { granularity: 'daily', startDate: '', endDate: '' },
+      currentRangeTable: null,
+      rangeTables: [],
       lastUpdated: null
     },
     
@@ -4818,6 +4824,9 @@ function np_setCurrentProject(id) {
       calculatedAt: null
     },
     history: [],
+    rangeState: { granularity: 'daily', startDate: '', endDate: '' },
+    currentRangeTable: null,
+    rangeTables: [],
     lastUpdated: null
   };
   
@@ -7750,6 +7759,9 @@ let currentProject = {
     },
     // Historial de cálculos
     history: [],
+    rangeState: { granularity: 'daily', startDate: '', endDate: '' },
+    currentRangeTable: null,
+    rangeTables: [],
     lastUpdated: null
   },
   nutrition: {
@@ -8667,6 +8679,9 @@ function loadProjectData() {
             calculatedAt: null
           },
           history: Array.isArray(loadedProject.vpdAnalysis.history) ? [...loadedProject.vpdAnalysis.history] : [],
+          rangeState: loadedProject.vpdAnalysis.rangeState || { granularity: 'daily', startDate: '', endDate: '' },
+          currentRangeTable: loadedProject.vpdAnalysis.currentRangeTable || null,
+          rangeTables: Array.isArray(loadedProject.vpdAnalysis.rangeTables) ? [...loadedProject.vpdAnalysis.rangeTables] : [],
           lastUpdated: loadedProject.vpdAnalysis.lastUpdated || null
         };
         console.log('✅ Datos vpdAnalysis cargados (reemplazados completamente)');
@@ -8694,6 +8709,9 @@ function loadProjectData() {
             calculatedAt: null
           },
           history: [],
+          rangeState: { granularity: 'daily', startDate: '', endDate: '' },
+          currentRangeTable: null,
+          rangeTables: [],
           lastUpdated: null
         };
         console.log('✅ Estructura vpdAnalysis inicializada vacía (proyecto sin datos VPD)');
@@ -8871,6 +8889,9 @@ function loadProjectData() {
         calculatedAt: null
       },
       history: [],
+      rangeState: { granularity: 'daily', startDate: '', endDate: '' },
+      currentRangeTable: null,
+      rangeTables: [],
       lastUpdated: null
     };
     applyProjectDataToUI();
@@ -15258,6 +15279,96 @@ function calculateVPDAdvanced(airTemp, airHumidity, leafTemp) {
   return { vpd: parseFloat(vpd.toFixed(2)), hd: parseFloat(hd.toFixed(2)) };
 }
 
+function ensureVPDAnalysisStructures() {
+  if (!currentProject.vpdAnalysis || typeof currentProject.vpdAnalysis !== 'object') {
+    currentProject.vpdAnalysis = {
+      environmental: {},
+      advanced: {},
+      history: [],
+      rangeState: { granularity: 'daily', startDate: '', endDate: '' },
+      currentRangeTable: null,
+      rangeTables: [],
+      lastUpdated: null
+    };
+  }
+  if (!currentProject.vpdAnalysis.rangeState || typeof currentProject.vpdAnalysis.rangeState !== 'object') {
+    currentProject.vpdAnalysis.rangeState = { granularity: 'daily', startDate: '', endDate: '' };
+  }
+  if (!Array.isArray(currentProject.vpdAnalysis.rangeTables)) {
+    currentProject.vpdAnalysis.rangeTables = [];
+  }
+  if (currentProject.vpdAnalysis.currentRangeTable == null) {
+    currentProject.vpdAnalysis.currentRangeTable = null;
+  }
+  if (!Array.isArray(currentProject.vpdAnalysis.history)) {
+    currentProject.vpdAnalysis.history = [];
+  }
+}
+
+function getTodayIsoDate() {
+  var d = new Date();
+  var yyyy = d.getFullYear();
+  var mm = String(d.getMonth() + 1).padStart(2, '0');
+  var dd = String(d.getDate()).padStart(2, '0');
+  return yyyy + '-' + mm + '-' + dd;
+}
+
+function dateToIsoLike(value) {
+  if (!value) return '';
+  var d = new Date(value + 'T00:00:00');
+  if (isNaN(d.getTime())) return '';
+  var yyyy = d.getFullYear();
+  var mm = String(d.getMonth() + 1).padStart(2, '0');
+  var dd = String(d.getDate()).padStart(2, '0');
+  return yyyy + '-' + mm + '-' + dd;
+}
+
+function compareIsoDates(a, b) {
+  if (!a || !b) return 0;
+  return String(a).localeCompare(String(b));
+}
+
+function addDaysIso(isoDate, days) {
+  var d = new Date(isoDate + 'T00:00:00');
+  if (isNaN(d.getTime())) return isoDate;
+  d.setDate(d.getDate() + days);
+  return dateToIsoLike(d.toISOString().slice(0, 10));
+}
+
+function getIsoWeekKey(isoDate) {
+  var d = new Date(isoDate + 'T00:00:00');
+  if (isNaN(d.getTime())) return isoDate;
+  d.setHours(0, 0, 0, 0);
+  var dayNum = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - dayNum + 3);
+  var firstThursday = new Date(d.getFullYear(), 0, 4);
+  var firstDayNum = (firstThursday.getDay() + 6) % 7;
+  firstThursday.setDate(firstThursday.getDate() - firstDayNum + 3);
+  var week = 1 + Math.round((d - firstThursday) / 604800000);
+  return d.getFullYear() + '-W' + String(week).padStart(2, '0');
+}
+
+function getVPDStatus(vpdValue) {
+  var v = Number(vpdValue);
+  if (!Number.isFinite(v)) return 'N/D';
+  if (v < 0.5) return 'Bajo';
+  if (v <= 1.5) return 'Óptimo';
+  return 'Alto';
+}
+
+function vpdSeriesRowHtml(rows) {
+  return rows.map(function(r) {
+    return '<tr>' +
+      '<td>' + String(r.period || r.date || '—') + '</td>' +
+      '<td>' + (Number.isFinite(Number(r.temperature)) ? Number(r.temperature).toFixed(1) : '—') + '</td>' +
+      '<td>' + (Number.isFinite(Number(r.humidity)) ? Number(r.humidity).toFixed(1) : '—') + '</td>' +
+      '<td><strong>' + (Number.isFinite(Number(r.vpd)) ? Number(r.vpd).toFixed(2) : '—') + '</strong></td>' +
+      '<td>' + (Number.isFinite(Number(r.hd)) ? Number(r.hd).toFixed(2) : '—') + '</td>' +
+      '<td>' + getVPDStatus(r.vpd) + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
 // Obtener ubicación para VPD: center guardado o centroide del polígono
 function getVPDLocation(project) {
   var loc = project && project.location;
@@ -15303,14 +15414,7 @@ function saveVPDCalculation(type, data) {
     return false;
   }
   
-  if (!currentProject.vpdAnalysis) {
-    currentProject.vpdAnalysis = {
-      environmental: {},
-      advanced: {},
-      history: [],
-      lastUpdated: null
-    };
-  }
+  ensureVPDAnalysisStructures();
   
   const calculation = {
     type: type, // 'environmental' o 'advanced'
@@ -15469,10 +15573,16 @@ function createVPDRangeChart(vpdValue) {
 }
 
 function createVPDSectionHTML() {
+  ensureVPDAnalysisStructures();
   // Obtener datos guardados
   const envData = currentProject.vpdAnalysis?.environmental || {};
   const advData = currentProject.vpdAnalysis?.advanced || {};
   const history = currentProject.vpdAnalysis?.history || [];
+  const rangeState = currentProject.vpdAnalysis?.rangeState || { granularity: 'daily', startDate: '', endDate: '' };
+  const rangeTables = Array.isArray(currentProject.vpdAnalysis?.rangeTables) ? currentProject.vpdAnalysis.rangeTables : [];
+  const todayIso = getTodayIsoDate();
+  const defaultStart = rangeState.startDate || addDaysIso(todayIso, -7);
+  const defaultEnd = rangeState.endDate || todayIso;
   
   // Ubicación para VPD: center o centroide del polígono
   const vpdLocation = getVPDLocation(currentProject);
@@ -15557,6 +15667,75 @@ function createVPDSectionHTML() {
           <div id="vpd-environmental-results"></div>
         `}
       </div>
+
+      <!-- SERIES VPD POR RANGO -->
+      ${hasPolygon ? `
+      <div style="background: #fff7ed; border: 2px solid #fb923c; border-radius: 12px; padding: 24px; margin-bottom: 32px;">
+        <h3 style="margin: 0 0 12px 0; color: #9a3412; font-size: 18px; font-weight: 600;">
+          🗓️ Serie VPD por Rango (diario / semanal / mensual)
+        </h3>
+        <p style="margin: 0 0 14px 0; color: #7c2d12; font-size: 13px;">
+          Fuente geográfica: <strong>centro del polígono del proyecto</strong> (${vpdLocation.lat.toFixed(5)}, ${vpdLocation.lng.toFixed(5)}).
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;align-items:end;margin-bottom:12px;">
+          <div>
+            <label style="display:block;font-weight:600;color:#374151;margin-bottom:6px;">Vista</label>
+            <select id="vpd-range-granularity" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
+              <option value="daily" ${rangeState.granularity === 'daily' ? 'selected' : ''}>Diario</option>
+              <option value="weekly" ${rangeState.granularity === 'weekly' ? 'selected' : ''}>Semanal</option>
+              <option value="monthly" ${rangeState.granularity === 'monthly' ? 'selected' : ''}>Mensual</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-weight:600;color:#374151;margin-bottom:6px;">Fecha inicio</label>
+            <input type="date" id="vpd-range-start" value="${defaultStart}" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
+          </div>
+          <div>
+            <label style="display:block;font-weight:600;color:#374151;margin-bottom:6px;">Fecha fin</label>
+            <input type="date" id="vpd-range-end" value="${defaultEnd}" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <button onclick="window.fetchVPDRangeData && window.fetchVPDRangeData(event)" style="padding:12px;background:#ea580c;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">⬇️ Descargar serie</button>
+          <button onclick="window.saveCurrentVPDRangeTable && window.saveCurrentVPDRangeTable()" style="padding:12px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">💾 Guardar cuadro en proyecto</button>
+        </div>
+        <div id="vpd-range-results"></div>
+
+        ${rangeTables.length > 0 ? `
+          <div style="margin-top:16px;border-top:1px dashed #fdba74;padding-top:12px;">
+            <h4 style="margin:0 0 8px 0;color:#7c2d12;font-size:15px;">📚 Cuadros guardados (${rangeTables.length})</h4>
+            <div style="max-height:240px;overflow:auto;">
+              ${rangeTables.slice().reverse().map(function(tbl) {
+                var meta = (tbl && tbl.meta) ? tbl.meta : {};
+                var rows = Array.isArray(tbl.rows) ? tbl.rows : [];
+                return `
+                  <details style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;margin-bottom:8px;">
+                    <summary style="cursor:pointer;font-weight:600;color:#9a3412;">
+                      ${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · ${rows.length} filas
+                    </summary>
+                    <div style="margin-top:8px;overflow:auto;">
+                      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                        <thead>
+                          <tr style="background:#fff7ed;">
+                            <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Periodo</th>
+                            <th style="border:1px solid #fed7aa;padding:6px;">Temp (°C)</th>
+                            <th style="border:1px solid #fed7aa;padding:6px;">HR (%)</th>
+                            <th style="border:1px solid #fed7aa;padding:6px;">VPD (kPa)</th>
+                            <th style="border:1px solid #fed7aa;padding:6px;">HD</th>
+                            <th style="border:1px solid #fed7aa;padding:6px;">Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>${vpdSeriesRowHtml(rows)}</tbody>
+                      </table>
+                    </div>
+                  </details>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+      ` : ''}
       
       <!-- CALCULADORA AVANZADA -->
       <div style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 12px; padding: 24px;">
@@ -15739,6 +15918,13 @@ function loadVPDSavedResults() {
   }, 200);
 }
 
+function loadVPDRangeSavedResults() {
+  ensureVPDAnalysisStructures();
+  var table = currentProject.vpdAnalysis.currentRangeTable;
+  if (!table || !table.meta || !Array.isArray(table.rows) || table.rows.length === 0) return;
+  renderVPDRangeResults(table.meta, table.rows);
+}
+
 // ===================================
 // FUNCIONES DE INTERACCIÓN VPD
 // ===================================
@@ -15778,14 +15964,7 @@ async function getEnvironmentalWeatherData() {
     const results = calculateVPDSimple(weatherData.temperature, weatherData.humidity);
     
     // Guardar temporalmente en el objeto (sin guardar todavía)
-    if (!currentProject.vpdAnalysis) {
-      currentProject.vpdAnalysis = {
-        environmental: {},
-        advanced: {},
-        history: [],
-        lastUpdated: null
-      };
-    }
+    ensureVPDAnalysisStructures();
     
     currentProject.vpdAnalysis.environmental = {
       temperature: weatherData.temperature,
@@ -15879,14 +16058,7 @@ function calculateEnvironmentalVPD() {
   const results = calculateVPDSimple(temperature, humidity);
   
   // Guardar en objeto (sin guardar todavía)
-  if (!currentProject.vpdAnalysis) {
-    currentProject.vpdAnalysis = {
-      environmental: {},
-      advanced: {},
-      history: [],
-      lastUpdated: null
-    };
-  }
+  ensureVPDAnalysisStructures();
   
   const location = currentProject.location?.center || {};
   
@@ -16048,14 +16220,7 @@ function calculateAdvancedVPD() {
   console.log('✅ Resultados calculados:', results);
   
   // Guardar en objeto (sin guardar todavía)
-  if (!currentProject.vpdAnalysis) {
-    currentProject.vpdAnalysis = {
-      environmental: {},
-      advanced: {},
-      history: [],
-      lastUpdated: null
-    };
-  }
+  ensureVPDAnalysisStructures();
   
   currentProject.vpdAnalysis.advanced = {
     airTemperature: airTemp,
@@ -16149,6 +16314,188 @@ function saveAdvancedVPD() {
   }
 }
 
+async function fetchOpenMeteoDaily(lat, lng, startDate, endDate, sourceType) {
+  var base = sourceType === 'archive'
+    ? 'https://archive-api.open-meteo.com/v1/archive'
+    : 'https://api.open-meteo.com/v1/forecast';
+  var url = base +
+    '?latitude=' + encodeURIComponent(lat) +
+    '&longitude=' + encodeURIComponent(lng) +
+    '&start_date=' + encodeURIComponent(startDate) +
+    '&end_date=' + encodeURIComponent(endDate) +
+    '&daily=temperature_2m_mean,relative_humidity_2m_mean' +
+    '&timezone=auto';
+  var res = await fetch(url);
+  if (!res.ok) throw new Error('Clima ' + sourceType + ' HTTP ' + res.status);
+  var data = await res.json();
+  var daily = data && data.daily ? data.daily : null;
+  if (!daily || !Array.isArray(daily.time)) return [];
+  var out = [];
+  for (var i = 0; i < daily.time.length; i++) {
+    var t = Number(daily.temperature_2m_mean && daily.temperature_2m_mean[i]);
+    var h = Number(daily.relative_humidity_2m_mean && daily.relative_humidity_2m_mean[i]);
+    if (!Number.isFinite(t) || !Number.isFinite(h)) continue;
+    var calc = calculateVPDSimple(t, h);
+    out.push({
+      date: daily.time[i],
+      temperature: Number(t.toFixed(2)),
+      humidity: Number(h.toFixed(2)),
+      vpd: calc.vpd,
+      hd: calc.hd
+    });
+  }
+  return out;
+}
+
+function aggregateVPDRows(rows, granularity) {
+  if (!Array.isArray(rows)) return [];
+  if (granularity === 'daily') {
+    return rows.map(function(r) { return { ...r, period: r.date }; });
+  }
+  var groups = new Map();
+  rows.forEach(function(r) {
+    var key = granularity === 'monthly' ? String(r.date || '').slice(0, 7) : getIsoWeekKey(r.date);
+    if (!groups.has(key)) groups.set(key, { key: key, start: r.date, end: r.date, count: 0, t: 0, h: 0, vpd: 0, hd: 0 });
+    var g = groups.get(key);
+    g.count++;
+    g.t += Number(r.temperature) || 0;
+    g.h += Number(r.humidity) || 0;
+    g.vpd += Number(r.vpd) || 0;
+    g.hd += Number(r.hd) || 0;
+    if (compareIsoDates(r.date, g.start) < 0) g.start = r.date;
+    if (compareIsoDates(r.date, g.end) > 0) g.end = r.date;
+  });
+  return Array.from(groups.values())
+    .sort(function(a, b) { return compareIsoDates(a.start, b.start); })
+    .map(function(g) {
+      var c = g.count || 1;
+      return {
+        period: granularity === 'monthly' ? g.key : (g.key + ' (' + g.start + ' a ' + g.end + ')'),
+        date: g.start,
+        temperature: Number((g.t / c).toFixed(2)),
+        humidity: Number((g.h / c).toFixed(2)),
+        vpd: Number((g.vpd / c).toFixed(2)),
+        hd: Number((g.hd / c).toFixed(2))
+      };
+    });
+}
+
+function renderVPDRangeResults(meta, rows) {
+  var wrap = document.getElementById('vpd-range-results');
+  if (!wrap) return;
+  if (!Array.isArray(rows) || rows.length === 0) {
+    wrap.innerHTML = '<div style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:12px;color:#9a3412;">Sin datos para el rango seleccionado.</div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <div style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+        <strong style="color:#9a3412;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate} a ${meta.endDate}</strong>
+        <span style="font-size:12px;color:#7c2d12;">Filas: ${rows.length}</span>
+      </div>
+      <div style="overflow:auto;max-height:300px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="background:#fff7ed;">
+              <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Periodo</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Temp (°C)</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">HR (%)</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">VPD (kPa)</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">HD</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Estado</th>
+            </tr>
+          </thead>
+          <tbody>${vpdSeriesRowHtml(rows)}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function fetchVPDRangeData(evt) {
+  const currentProjectId = np_getCurrentProjectId();
+  if (!currentProjectId) { alert('❌ No hay proyecto activo'); return; }
+  const location = getVPDLocation(currentProject);
+  if (!location || location.lat == null || location.lng == null) {
+    alert('⚠️ Primero agrega un polígono en Ubicación.');
+    return;
+  }
+  ensureVPDAnalysisStructures();
+  var granularityEl = document.getElementById('vpd-range-granularity');
+  var startEl = document.getElementById('vpd-range-start');
+  var endEl = document.getElementById('vpd-range-end');
+  var granularity = granularityEl ? granularityEl.value : 'daily';
+  var startDate = dateToIsoLike(startEl ? startEl.value : '');
+  var endDate = dateToIsoLike(endEl ? endEl.value : '');
+  if (!startDate || !endDate) { alert('⚠️ Selecciona fecha inicio y fin.'); return; }
+  if (compareIsoDates(startDate, endDate) > 0) { alert('⚠️ La fecha inicio debe ser menor o igual a la fecha fin.'); return; }
+  var btn = evt && evt.target ? evt.target : null;
+  var original = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Descargando...'; }
+  try {
+    var today = getTodayIsoDate();
+    var rows = [];
+    if (compareIsoDates(startDate, today) <= 0) {
+      var pastEnd = compareIsoDates(endDate, today) <= 0 ? endDate : today;
+      rows = rows.concat(await fetchOpenMeteoDaily(location.lat, location.lng, startDate, pastEnd, 'archive'));
+    }
+    if (compareIsoDates(endDate, today) > 0) {
+      var futureStart = compareIsoDates(startDate, today) > 0 ? startDate : addDaysIso(today, 1);
+      if (compareIsoDates(futureStart, endDate) <= 0) {
+        rows = rows.concat(await fetchOpenMeteoDaily(location.lat, location.lng, futureStart, endDate, 'forecast'));
+      }
+    }
+    rows.sort(function(a, b) { return compareIsoDates(a.date, b.date); });
+    var grouped = aggregateVPDRows(rows, granularity);
+    currentProject.vpdAnalysis.rangeState = { granularity: granularity, startDate: startDate, endDate: endDate };
+    currentProject.vpdAnalysis.currentRangeTable = {
+      meta: {
+        granularity: granularity,
+        startDate: startDate,
+        endDate: endDate,
+        generatedAt: new Date().toISOString(),
+        location: { lat: location.lat, lng: location.lng }
+      },
+      rows: grouped
+    };
+    renderVPDRangeResults(currentProject.vpdAnalysis.currentRangeTable.meta, grouped);
+  } catch (e) {
+    console.error('fetchVPDRangeData:', e);
+    alert('❌ No se pudo descargar la serie VPD para ese rango.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = original || '⬇️ Descargar serie'; }
+  }
+}
+
+function saveCurrentVPDRangeTable() {
+  const currentProjectId = np_getCurrentProjectId();
+  if (!currentProjectId) { alert('❌ No hay proyecto activo'); return; }
+  ensureVPDAnalysisStructures();
+  var table = currentProject.vpdAnalysis.currentRangeTable;
+  if (!table || !table.meta || !Array.isArray(table.rows) || table.rows.length === 0) {
+    alert('⚠️ Primero descarga una serie de VPD para guardarla.');
+    return;
+  }
+  var clone = JSON.parse(JSON.stringify(table));
+  clone.id = 'vpd_tbl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+  currentProject.vpdAnalysis.rangeTables.push(clone);
+  if (currentProject.vpdAnalysis.rangeTables.length > 20) {
+    currentProject.vpdAnalysis.rangeTables = currentProject.vpdAnalysis.rangeTables.slice(-20);
+  }
+  currentProject.vpdAnalysis.lastUpdated = new Date().toISOString();
+  try {
+    if (window.projectStorage && typeof window.projectStorage.saveSection === 'function') {
+      window.projectStorage.saveSection('vpdAnalysis', currentProject.vpdAnalysis, currentProjectId);
+    }
+  } catch (e) {
+    console.warn('saveCurrentVPDRangeTable:', e);
+  }
+  alert('✅ Cuadro VPD guardado en este proyecto (nube/local).');
+  if (typeof selectSection === 'function') {
+    selectSection("Análisis: Déficit de Presión de Vapor");
+  }
+}
+
 // Función para cambiar entre modo hoja/radiación
 function toggleVPDMode() {
   const modeRadio = document.querySelector('input[name="vpd-mode"]:checked');
@@ -16175,6 +16522,8 @@ window.saveEnvironmentalVPD = saveEnvironmentalVPD;
 window.calculateAdvancedVPD = calculateAdvancedVPD;
 window.saveAdvancedVPD = saveAdvancedVPD;
 window.toggleVPDMode = toggleVPDMode;
+window.fetchVPDRangeData = fetchVPDRangeData;
+window.saveCurrentVPDRangeTable = saveCurrentVPDRangeTable;
 
 console.log('✅ Funciones VPD expuestas globalmente:', {
   getEnvironmentalWeatherData: typeof window.getEnvironmentalWeatherData,
@@ -16182,7 +16531,9 @@ console.log('✅ Funciones VPD expuestas globalmente:', {
   saveEnvironmentalVPD: typeof window.saveEnvironmentalVPD,
   calculateAdvancedVPD: typeof window.calculateAdvancedVPD,
   saveAdvancedVPD: typeof window.saveAdvancedVPD,
-  toggleVPDMode: typeof window.toggleVPDMode
+  toggleVPDMode: typeof window.toggleVPDMode,
+  fetchVPDRangeData: typeof window.fetchVPDRangeData,
+  saveCurrentVPDRangeTable: typeof window.saveCurrentVPDRangeTable
 });
 
 // Función global para debugging desde la consola
