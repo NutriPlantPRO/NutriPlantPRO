@@ -3334,10 +3334,9 @@
         
         function getUserProjects(userId, userEmail) {
             const projects = [];
-            const processedIds = new Set(); // 🔒 IDs ya agregados (nube/local) para evitar duplicados
+            const processedIds = new Set();
             const isSupabaseUserId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
-            // 🟢 Usuarios con UUID: precargar proyectos de Supabase, pero NO retornar aún.
-            // Luego se fusionan con localStorage para tener siempre la misma vista.
+            // 🟢 Si hay datos de la nube para este usuario, usar SOLO esos (igual que "Todos los Proyectos")
             if (isSupabaseUserId && window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) {
                 const cloudProjects = window._adminCloudCache.projects.filter(p => (p.user_id || p.userId) === userId);
                 if (cloudProjects.length > 0) {
@@ -3360,10 +3359,11 @@
                             projects.push(normalized);
                         }
                     });
+                    return projects;
                 }
             }
             
-            // Resolver identidad de usuario de forma estable (mismo email puede existir con varias claves: admin/uuid)
+            // Sin nube o usuario no Supabase: resolver desde localStorage
             var userKey = 'nutriplant_user_' + userId;
             var userValue = localStorage.getItem(userKey);
             var userProfile = null;
