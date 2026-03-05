@@ -15356,15 +15356,32 @@ function getVPDStatus(vpdValue) {
   return 'Alto';
 }
 
-function vpdSeriesRowHtml(rows) {
+function vpdStressSummaryRowHtml(rows) {
   return rows.map(function(r) {
     return '<tr>' +
-      '<td>' + String(r.period || r.date || '—') + '</td>' +
+      '<td>' + String(r.period || '—') + '</td>' +
+      '<td>' + (Number.isFinite(Number(r.maxVpd)) ? Number(r.maxVpd).toFixed(2) : '—') + '</td>' +
+      '<td>' + String(r.maxAt || '—') + '</td>' +
+      '<td>' + (Number.isFinite(Number(r.minVpd)) ? Number(r.minVpd).toFixed(2) : '—') + '</td>' +
+      '<td>' + String(r.minAt || '—') + '</td>' +
+      '<td>' + (Number.isFinite(Number(r.hoursHigh)) ? String(r.hoursHigh) : '0') + '</td>' +
+      '<td>' + (Number.isFinite(Number(r.hoursLow)) ? String(r.hoursLow) : '0') + '</td>' +
+      '<td>' + (Number.isFinite(Number(r.hoursOptimal)) ? String(r.hoursOptimal) : '0') + '</td>' +
+      '<td>' + (Number.isFinite(Number(r.stressPct)) ? Number(r.stressPct).toFixed(1) + '%' : '—') + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function vpdCriticalEventsRowHtml(rows) {
+  return rows.map(function(r) {
+    var cls = r.type === 'high' ? '#b91c1c' : '#1d4ed8';
+    var tag = r.type === 'high' ? 'Alto' : 'Bajo';
+    return '<tr>' +
+      '<td>' + String(r.at || '—') + '</td>' +
+      '<td><strong style="color:' + cls + ';">' + (Number.isFinite(Number(r.vpd)) ? Number(r.vpd).toFixed(2) : '—') + '</strong></td>' +
       '<td>' + (Number.isFinite(Number(r.temperature)) ? Number(r.temperature).toFixed(1) : '—') + '</td>' +
       '<td>' + (Number.isFinite(Number(r.humidity)) ? Number(r.humidity).toFixed(1) : '—') + '</td>' +
-      '<td><strong>' + (Number.isFinite(Number(r.vpd)) ? Number(r.vpd).toFixed(2) : '—') + '</strong></td>' +
-      '<td>' + (Number.isFinite(Number(r.hd)) ? Number(r.hd).toFixed(2) : '—') + '</td>' +
-      '<td>' + getVPDStatus(r.vpd) + '</td>' +
+      '<td><span style="color:' + cls + ';font-weight:600;">' + tag + '</span></td>' +
     '</tr>';
   }).join('');
 }
@@ -15706,30 +15723,7 @@ function createVPDSectionHTML() {
             <h4 style="margin:0 0 8px 0;color:#7c2d12;font-size:15px;">📚 Cuadros guardados (${rangeTables.length})</h4>
             <div style="max-height:240px;overflow:auto;">
               ${rangeTables.slice().reverse().map(function(tbl) {
-                var meta = (tbl && tbl.meta) ? tbl.meta : {};
-                var rows = Array.isArray(tbl.rows) ? tbl.rows : [];
-                return `
-                  <details style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;margin-bottom:8px;">
-                    <summary style="cursor:pointer;font-weight:600;color:#9a3412;">
-                      ${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · ${rows.length} filas
-                    </summary>
-                    <div style="margin-top:8px;overflow:auto;">
-                      <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                        <thead>
-                          <tr style="background:#fff7ed;">
-                            <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Periodo</th>
-                            <th style="border:1px solid #fed7aa;padding:6px;">Temp (°C)</th>
-                            <th style="border:1px solid #fed7aa;padding:6px;">HR (%)</th>
-                            <th style="border:1px solid #fed7aa;padding:6px;">VPD (kPa)</th>
-                            <th style="border:1px solid #fed7aa;padding:6px;">HD</th>
-                            <th style="border:1px solid #fed7aa;padding:6px;">Estado</th>
-                          </tr>
-                        </thead>
-                        <tbody>${vpdSeriesRowHtml(rows)}</tbody>
-                      </table>
-                    </div>
-                  </details>
-                `;
+                return renderSavedVPDRangeTableHtml(tbl);
               }).join('')}
             </div>
           </div>
@@ -15921,8 +15915,8 @@ function loadVPDSavedResults() {
 function loadVPDRangeSavedResults() {
   ensureVPDAnalysisStructures();
   var table = currentProject.vpdAnalysis.currentRangeTable;
-  if (!table || !table.meta || !Array.isArray(table.rows) || table.rows.length === 0) return;
-  renderVPDRangeResults(table.meta, table.rows);
+  if (!table || !table.meta || !Array.isArray(table.summaryRows) || table.summaryRows.length === 0) return;
+  renderVPDRangeResults(table.meta, table.summaryRows, table.criticalRows || []);
 }
 
 // ===================================
@@ -16314,7 +16308,16 @@ function saveAdvancedVPD() {
   }
 }
 
-async function fetchOpenMeteoDaily(lat, lng, startDate, endDate, sourceType) {
+function formatEventTimestampLabel(ts) {
+  if (!ts) return '—';
+  try {
+    return String(ts).replace('T', ' ').slice(0, 16);
+  } catch (e) {
+    return String(ts);
+  }
+}
+
+async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType) {
   var base = sourceType === 'archive'
     ? 'https://archive-api.open-meteo.com/v1/archive'
     : 'https://api.open-meteo.com/v1/forecast';
@@ -16323,21 +16326,23 @@ async function fetchOpenMeteoDaily(lat, lng, startDate, endDate, sourceType) {
     '&longitude=' + encodeURIComponent(lng) +
     '&start_date=' + encodeURIComponent(startDate) +
     '&end_date=' + encodeURIComponent(endDate) +
-    '&daily=temperature_2m_mean,relative_humidity_2m_mean' +
+    '&hourly=temperature_2m,relative_humidity_2m' +
     '&timezone=auto';
   var res = await fetch(url);
   if (!res.ok) throw new Error('Clima ' + sourceType + ' HTTP ' + res.status);
   var data = await res.json();
-  var daily = data && data.daily ? data.daily : null;
-  if (!daily || !Array.isArray(daily.time)) return [];
+  var hourly = data && data.hourly ? data.hourly : null;
+  if (!hourly || !Array.isArray(hourly.time)) return [];
   var out = [];
-  for (var i = 0; i < daily.time.length; i++) {
-    var t = Number(daily.temperature_2m_mean && daily.temperature_2m_mean[i]);
-    var h = Number(daily.relative_humidity_2m_mean && daily.relative_humidity_2m_mean[i]);
+  for (var i = 0; i < hourly.time.length; i++) {
+    var t = Number(hourly.temperature_2m && hourly.temperature_2m[i]);
+    var h = Number(hourly.relative_humidity_2m && hourly.relative_humidity_2m[i]);
     if (!Number.isFinite(t) || !Number.isFinite(h)) continue;
     var calc = calculateVPDSimple(t, h);
+    var at = String(hourly.time[i] || '');
     out.push({
-      date: daily.time[i],
+      at: at,
+      date: at.slice(0, 10),
       temperature: Number(t.toFixed(2)),
       humidity: Number(h.toFixed(2)),
       vpd: calc.vpd,
@@ -16347,68 +16352,162 @@ async function fetchOpenMeteoDaily(lat, lng, startDate, endDate, sourceType) {
   return out;
 }
 
-function aggregateVPDRows(rows, granularity) {
-  if (!Array.isArray(rows)) return [];
-  if (granularity === 'daily') {
-    return rows.map(function(r) { return { ...r, period: r.date }; });
-  }
+function aggregateVPDStressRows(hourlyRows, granularity) {
+  if (!Array.isArray(hourlyRows) || hourlyRows.length === 0) return [];
   var groups = new Map();
-  rows.forEach(function(r) {
-    var key = granularity === 'monthly' ? String(r.date || '').slice(0, 7) : getIsoWeekKey(r.date);
-    if (!groups.has(key)) groups.set(key, { key: key, start: r.date, end: r.date, count: 0, t: 0, h: 0, vpd: 0, hd: 0 });
+  hourlyRows.forEach(function(r) {
+    var key = '';
+    if (granularity === 'monthly') key = String(r.date || '').slice(0, 7);
+    else if (granularity === 'weekly') key = getIsoWeekKey(r.date);
+    else key = r.date;
+    if (!groups.has(key)) groups.set(key, {
+      key: key,
+      start: r.date,
+      end: r.date,
+      maxVpd: -Infinity,
+      maxAt: '',
+      minVpd: Infinity,
+      minAt: '',
+      hoursHigh: 0,
+      hoursLow: 0,
+      hoursOptimal: 0,
+      total: 0
+    });
     var g = groups.get(key);
-    g.count++;
-    g.t += Number(r.temperature) || 0;
-    g.h += Number(r.humidity) || 0;
-    g.vpd += Number(r.vpd) || 0;
-    g.hd += Number(r.hd) || 0;
+    var v = Number(r.vpd) || 0;
+    g.total++;
+    if (v > g.maxVpd) { g.maxVpd = v; g.maxAt = r.at; }
+    if (v < g.minVpd) { g.minVpd = v; g.minAt = r.at; }
+    if (v > 1.5) g.hoursHigh++;
+    else if (v < 0.5) g.hoursLow++;
+    else g.hoursOptimal++;
     if (compareIsoDates(r.date, g.start) < 0) g.start = r.date;
     if (compareIsoDates(r.date, g.end) > 0) g.end = r.date;
   });
   return Array.from(groups.values())
     .sort(function(a, b) { return compareIsoDates(a.start, b.start); })
     .map(function(g) {
-      var c = g.count || 1;
+      var periodLabel = g.start;
+      if (granularity === 'weekly') periodLabel = g.key + ' (' + g.start + ' a ' + g.end + ')';
+      if (granularity === 'monthly') periodLabel = g.key;
+      var stressHours = g.hoursHigh + g.hoursLow;
+      var stressPct = g.total > 0 ? (stressHours * 100 / g.total) : 0;
       return {
-        period: granularity === 'monthly' ? g.key : (g.key + ' (' + g.start + ' a ' + g.end + ')'),
+        period: periodLabel,
         date: g.start,
-        temperature: Number((g.t / c).toFixed(2)),
-        humidity: Number((g.h / c).toFixed(2)),
-        vpd: Number((g.vpd / c).toFixed(2)),
-        hd: Number((g.hd / c).toFixed(2))
+        maxVpd: Number(g.maxVpd.toFixed(2)),
+        maxAt: formatEventTimestampLabel(g.maxAt),
+        minVpd: Number(g.minVpd.toFixed(2)),
+        minAt: formatEventTimestampLabel(g.minAt),
+        hoursHigh: g.hoursHigh,
+        hoursLow: g.hoursLow,
+        hoursOptimal: g.hoursOptimal,
+        stressPct: Number(stressPct.toFixed(1))
       };
     });
 }
 
-function renderVPDRangeResults(meta, rows) {
+function extractVPDCriticalEvents(hourlyRows) {
+  if (!Array.isArray(hourlyRows)) return [];
+  return hourlyRows
+    .filter(function(r) { return Number(r.vpd) > 1.5 || Number(r.vpd) < 0.5; })
+    .map(function(r) {
+      return {
+        at: formatEventTimestampLabel(r.at),
+        date: r.date,
+        temperature: r.temperature,
+        humidity: r.humidity,
+        vpd: r.vpd,
+        type: Number(r.vpd) > 1.5 ? 'high' : 'low'
+      };
+    });
+}
+
+function renderVPDRangeResults(meta, summaryRows, criticalRows) {
   var wrap = document.getElementById('vpd-range-results');
   if (!wrap) return;
-  if (!Array.isArray(rows) || rows.length === 0) {
+  if (!Array.isArray(summaryRows) || summaryRows.length === 0) {
     wrap.innerHTML = '<div style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:12px;color:#9a3412;">Sin datos para el rango seleccionado.</div>';
     return;
   }
+  var crit = Array.isArray(criticalRows) ? criticalRows : [];
+  var critPreview = crit.slice(0, 300);
   wrap.innerHTML = `
     <div style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:12px;">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
         <strong style="color:#9a3412;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate} a ${meta.endDate}</strong>
-        <span style="font-size:12px;color:#7c2d12;">Filas: ${rows.length}</span>
+        <span style="font-size:12px;color:#7c2d12;">Periodos: ${summaryRows.length} · Eventos críticos: ${crit.length}</span>
       </div>
       <div style="overflow:auto;max-height:300px;">
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
           <thead>
             <tr style="background:#fff7ed;">
               <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Periodo</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Temp (°C)</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">HR (%)</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">VPD (kPa)</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">HD</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Estado</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">VPD máx</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Hora máx</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">VPD mín</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Hora mín</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Horas &gt; 1.5</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Horas &lt; 0.5</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Horas óptimas</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">% estrés</th>
             </tr>
           </thead>
-          <tbody>${vpdSeriesRowHtml(rows)}</tbody>
+          <tbody>${vpdStressSummaryRowHtml(summaryRows)}</tbody>
         </table>
       </div>
+      <div style="margin-top:10px; border-top:1px dashed #fed7aa; padding-top:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+          <strong style="color:#9a3412;font-size:13px;">Horas críticas (${crit.length})</strong>
+          ${crit.length > critPreview.length ? `<span style="font-size:11px;color:#7c2d12;">Mostrando primeras ${critPreview.length}</span>` : ''}
+        </div>
+        <div style="overflow:auto;max-height:260px;margin-top:6px;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="background:#fff7ed;">
+                <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Fecha/Hora</th>
+                <th style="border:1px solid #fed7aa;padding:6px;">VPD</th>
+                <th style="border:1px solid #fed7aa;padding:6px;">Temp (°C)</th>
+                <th style="border:1px solid #fed7aa;padding:6px;">HR (%)</th>
+                <th style="border:1px solid #fed7aa;padding:6px;">Tipo</th>
+              </tr>
+            </thead>
+            <tbody>${critPreview.length ? vpdCriticalEventsRowHtml(critPreview) : '<tr><td colspan="5" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">Sin horas fuera de rango.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>
     </div>
+  `;
+}
+
+function renderSavedVPDRangeTableHtml(tbl) {
+  var meta = (tbl && tbl.meta) ? tbl.meta : {};
+  var summaryRows = Array.isArray(tbl && tbl.summaryRows) ? tbl.summaryRows : [];
+  var criticalRows = Array.isArray(tbl && tbl.criticalRows) ? tbl.criticalRows : [];
+  return `
+    <details style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;margin-bottom:8px;">
+      <summary style="cursor:pointer;font-weight:600;color:#9a3412;">
+        ${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalRows.length}
+      </summary>
+      <div style="margin-top:8px;overflow:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="background:#fff7ed;">
+              <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Periodo</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">VPD máx</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Hora máx</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">VPD mín</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Hora mín</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Horas &gt; 1.5</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Horas &lt; 0.5</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Horas óptimas</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">% estrés</th>
+            </tr>
+          </thead>
+          <tbody>${vpdStressSummaryRowHtml(summaryRows)}</tbody>
+        </table>
+      </div>
+    </details>
   `;
 }
 
@@ -16434,19 +16533,22 @@ async function fetchVPDRangeData(evt) {
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Descargando...'; }
   try {
     var today = getTodayIsoDate();
-    var rows = [];
+    var hourlyRows = [];
     if (compareIsoDates(startDate, today) <= 0) {
       var pastEnd = compareIsoDates(endDate, today) <= 0 ? endDate : today;
-      rows = rows.concat(await fetchOpenMeteoDaily(location.lat, location.lng, startDate, pastEnd, 'archive'));
+      hourlyRows = hourlyRows.concat(await fetchOpenMeteoHourly(location.lat, location.lng, startDate, pastEnd, 'archive'));
     }
     if (compareIsoDates(endDate, today) > 0) {
       var futureStart = compareIsoDates(startDate, today) > 0 ? startDate : addDaysIso(today, 1);
       if (compareIsoDates(futureStart, endDate) <= 0) {
-        rows = rows.concat(await fetchOpenMeteoDaily(location.lat, location.lng, futureStart, endDate, 'forecast'));
+        hourlyRows = hourlyRows.concat(await fetchOpenMeteoHourly(location.lat, location.lng, futureStart, endDate, 'forecast'));
       }
     }
-    rows.sort(function(a, b) { return compareIsoDates(a.date, b.date); });
-    var grouped = aggregateVPDRows(rows, granularity);
+    hourlyRows.sort(function(a, b) {
+      return String(a.at || '').localeCompare(String(b.at || ''));
+    });
+    var summaryRows = aggregateVPDStressRows(hourlyRows, granularity);
+    var criticalRows = extractVPDCriticalEvents(hourlyRows);
     currentProject.vpdAnalysis.rangeState = { granularity: granularity, startDate: startDate, endDate: endDate };
     currentProject.vpdAnalysis.currentRangeTable = {
       meta: {
@@ -16456,9 +16558,11 @@ async function fetchVPDRangeData(evt) {
         generatedAt: new Date().toISOString(),
         location: { lat: location.lat, lng: location.lng }
       },
-      rows: grouped
+      summaryRows: summaryRows,
+      criticalRows: criticalRows,
+      sampleHours: hourlyRows.length
     };
-    renderVPDRangeResults(currentProject.vpdAnalysis.currentRangeTable.meta, grouped);
+    renderVPDRangeResults(currentProject.vpdAnalysis.currentRangeTable.meta, summaryRows, criticalRows);
   } catch (e) {
     console.error('fetchVPDRangeData:', e);
     alert('❌ No se pudo descargar la serie VPD para ese rango.');
@@ -16472,7 +16576,7 @@ function saveCurrentVPDRangeTable() {
   if (!currentProjectId) { alert('❌ No hay proyecto activo'); return; }
   ensureVPDAnalysisStructures();
   var table = currentProject.vpdAnalysis.currentRangeTable;
-  if (!table || !table.meta || !Array.isArray(table.rows) || table.rows.length === 0) {
+  if (!table || !table.meta || !Array.isArray(table.summaryRows) || table.summaryRows.length === 0) {
     alert('⚠️ Primero descarga una serie de VPD para guardarla.');
     return;
   }
