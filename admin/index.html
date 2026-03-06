@@ -5144,16 +5144,27 @@
             const req = {};
             if (!granularRequirements) return req;
             const isElemental = granularRequirements.isElementalMode === true;
-            const adjustment = granularRequirements.adjustment || {};
-            const efficiency = granularRequirements.efficiency || {};
+            const GRAN_DEFAULT_EFF = { N: 65, P2O5: 40, K2O: 85, CaO: 85, MgO: 85, S: 85, SO4: 85, Fe: 80, Mn: 80, B: 80, Zn: 80, Cu: 80, Mo: 80, SiO2: 85 };
+            const cropType = granularRequirements.cropType || '';
+            const targetYield = parseFloat(granularRequirements.targetYield) || 0;
+            const extOverrides = granularRequirements.extractionOverrides || {};
+            const baseExt = (extOverrides[cropType] && typeof extOverrides[cropType] === 'object') ? extOverrides[cropType] : {};
+            const totalExtractionOxide = {};
             nutrients.forEach(n => {
-                let adjOxide = adjustment[n] || 0;
-                if (isElemental) {
+                totalExtractionOxide[n] = (baseExt[n] !== undefined ? parseFloat(baseExt[n]) : 0) * targetYield;
+            });
+            const rawAdj = granularRequirements.adjustment || {};
+            const rawEff = granularRequirements.efficiency || {};
+            nutrients.forEach(n => {
+                const hasSavedAdj = rawAdj[n] !== undefined && rawAdj[n] !== null && rawAdj[n] !== '';
+                const hasSavedEff = rawEff[n] !== undefined && rawEff[n] !== null && rawEff[n] !== '';
+                let adjOxide = hasSavedAdj ? parseFloat(rawAdj[n]) : (totalExtractionOxide[n] || 0);
+                if (isElemental && hasSavedAdj) {
                     adjOxide = convertAdminElementalToOxide(n, adjOxide);
                 }
-                const eff = parseFloat(efficiency[n]);
-                const hasEff = !isNaN(eff) && eff > 0;
-                req[n] = hasEff ? (adjOxide / (eff / 100)) : null;
+                const effPct = hasSavedEff ? parseFloat(rawEff[n]) : (GRAN_DEFAULT_EFF[n] != null ? GRAN_DEFAULT_EFF[n] : null);
+                const hasEff = effPct != null && !isNaN(effPct) && effPct > 0;
+                req[n] = hasEff ? (adjOxide / (effPct / 100)) : null;
             });
             return req;
         }
@@ -6999,6 +7010,12 @@
                     extractionPerTon[n] = baseExtraction[n] !== undefined ? baseExtraction[n] : 0;
                 });
                 
+                // Extracción total en óxido (para defaults de ajuste = lo que ve el usuario si no guardó)
+                const totalExtractionOxide = {};
+                nutrients.forEach(n => {
+                    totalExtractionOxide[n] = (extractionPerTon[n] || 0) * targetYield;
+                });
+                
                 // 🚀 CRÍTICO: Convertir valores a Elemental si es necesario
                 if (isElementalMode) {
                     nutrients.forEach(n => {
@@ -7013,18 +7030,28 @@
                     totalExtraction[n] = typeof value === 'number' ? value.toFixed(2) : value;
                 });
                 
+                // Mismos defaults que la UI Granular: si el usuario no guardó, mostrar lo precargado (ajuste = extracción total, eficiencia = defaults NutriPlant)
+                const GRAN_DEFAULT_EFF = { N: 65, P2O5: 40, K2O: 85, CaO: 85, MgO: 85, S: 85, SO4: 85, Fe: 80, Mn: 80, B: 80, Zn: 80, Cu: 80, Mo: 80, SiO2: 85 };
+                const rawAdj = granularRequirements.adjustment || {};
+                const rawEff = granularRequirements.efficiency || {};
+                const adjustment = {};
+                const efficiency = {};
+                nutrients.forEach(n => {
+                    const hasSavedAdj = rawAdj[n] !== undefined && rawAdj[n] !== null && rawAdj[n] !== '';
+                    const hasSavedEff = rawEff[n] !== undefined && rawEff[n] !== null && rawEff[n] !== '';
+                    adjustment[n] = hasSavedAdj ? parseFloat(rawAdj[n]) : (totalExtractionOxide[n] || 0);
+                    efficiency[n] = hasSavedEff ? parseFloat(rawEff[n]) : (GRAN_DEFAULT_EFF[n] != null ? GRAN_DEFAULT_EFF[n] : null);
+                });
+                
                 // Requerimiento real (ajuste / (eficiencia/100))
                 const realRequirement = {};
                 const realRequirementOxide = {};
-                const adjustment = granularRequirements.adjustment || {};
-                const efficiency = granularRequirements.efficiency || {};
                 nutrients.forEach(n => {
                     let adjOxide = adjustment[n] || 0;
-                    // Si los ajustes se guardaron en Elemental, convertir a Óxido para base
                     if (isElementalMode) {
                         adjOxide = convertAdminElementalToOxide(n, adjOxide);
                     }
-                    const eff = parseFloat(efficiency[n]);
+                    const eff = efficiency[n] != null ? parseFloat(efficiency[n]) : NaN;
                     const hasEff = !isNaN(eff) && eff > 0;
                     const rrOx = hasEff ? (adjOxide / (eff / 100)) : null;
                     realRequirementOxide[n] = rrOx;
@@ -7078,18 +7105,13 @@
                     </div>
                 `;
                 
-                // Mostrar Ajustes si existen (mismo orden que Extracción / Requerimiento Real: N, P₂O₅, K₂O, CaO, MgO, S, SO₄, Fe, Mn, B, Zn, Cu, Mo, SiO₂)
-                if (granularRequirements.adjustment && Object.keys(granularRequirements.adjustment).length > 0) {
-                    html += `
+                // Mostrar Ajustes (con defaults = lo que ve el usuario; mismo orden canónico)
+                html += `
                         <div style="margin-top: 8px;">
                             <strong style="color: #1e293b; font-size: 14px;">Ajuste por Niveles en Suelo (kg/ha):</strong>
                             <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
-                                ${nutrients.filter(n => {
-                                    const v = granularRequirements.adjustment[n];
-                                    return v !== 0 && v !== null && v !== undefined;
-                                }).map(n => {
-                                    const value = granularRequirements.adjustment[n];
-                                    let adjValue = typeof value === 'number' ? value : parseFloat(value) || 0;
+                                ${nutrients.map(n => {
+                                    let adjValue = typeof adjustment[n] === 'number' ? adjustment[n] : parseFloat(adjustment[n]) || 0;
                                     if (isElementalMode) {
                                         adjValue = convertAdminOxideToElemental(n, adjValue);
                                     }
@@ -7099,19 +7121,14 @@
                             </div>
                     </div>
                 `;
-            }
             
-                // Mostrar Eficiencias si existen (mismo orden canónico que las demás secciones)
-                if (granularRequirements.efficiency && Object.keys(granularRequirements.efficiency).length > 0) {
+                // Mostrar Eficiencias (con defaults = lo que ve el usuario)
                 html += `
                         <div style="margin-top: 8px;">
                             <strong style="color: #1e293b; font-size: 14px;">Eficiencia (%):</strong>
                             <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
-                                ${nutrients.filter(n => {
-                                    const v = granularRequirements.efficiency[n];
-                                    return v !== undefined && v !== null;
-                                }).map(n => {
-                                    const value = granularRequirements.efficiency[n];
+                                ${nutrients.map(n => {
+                                    const value = efficiency[n] != null ? efficiency[n] : '—';
                                     const label = getAdminNutrientLabel(n, isElementalMode);
                                     const numeric = parseFloat(value);
                                     return `<div><strong>${label}:</strong> ${!isNaN(numeric) ? numeric.toFixed(1) + '%' : '—'}</div>`;
@@ -7119,16 +7136,15 @@
                             </div>
                     </div>
                 `;
-            }
             
-                // Mostrar Requerimiento Real
+                // Mostrar Requerimiento Real (todos los nutrientes, con defaults)
                 html += `
                     <div style="margin-top: 8px;">
                         <strong style="color: #1e293b; font-size: 14px;">Requerimiento Real (kg/ha):</strong>
                         <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
-                            ${nutrients.filter(n => realRequirement[n] && parseFloat(realRequirement[n]) !== 0).map(n => {
+                            ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, isElementalMode);
-                                return `<div><strong>${label}:</strong> ${realRequirement[n]}</div>`;
+                                return `<div><strong>${label}:</strong> ${realRequirement[n] != null ? realRequirement[n] : '—'}</div>`;
                             }).join('')}
                         </div>
                     </div>

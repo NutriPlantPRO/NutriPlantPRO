@@ -8557,8 +8557,10 @@ function collectCurrentData() {
     if (gYield) currentProject.granular.requirements.targetYield = parseFloat(gYield.value) || 10;
     
     const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
-    currentProject.granular.requirements.adjustment = {};
-    currentProject.granular.requirements.efficiency = {};
+    const existingGranularAdj = currentProject.granular.requirements.adjustment || {};
+    const existingGranularEff = currentProject.granular.requirements.efficiency || {};
+    currentProject.granular.requirements.adjustment = { ...existingGranularAdj };
+    currentProject.granular.requirements.efficiency = { ...existingGranularEff };
     
     nutrients.forEach(n => {
       const adj = document.getElementById(`granular-adj-${n}`);
@@ -12074,13 +12076,20 @@ function createGranularSectionHTML() {
     totalExtraction[nutrient] = toNumber(extraction[nutrient]) * toNumber(yieldTarget);
   });
 
-  const adjustment = req.adjustment || {};
-  const efficiency = req.efficiency || {};
+  const GRANULAR_DEFAULT_EFF = { N: 65, P2O5: 40, K2O: 85, CaO: 85, MgO: 85, S: 85, SO4: 85, Fe: 80, Mn: 80, B: 80, Zn: 80, Cu: 80, Mo: 80, SiO2: 85 };
+  const rawAdj = req.adjustment || {};
+  const rawEff = req.efficiency || {};
+  const adjustment = {};
+  const efficiency = {};
   const realRequirement = {};
   NUTRIENTS.forEach(nutrient => {
-    const adj = toNumber(adjustment[nutrient]);
-    const eff = toNumber(efficiency[nutrient]);
-    realRequirement[nutrient] = eff > 0 ? (adj / (eff / 100)) : null;
+    const hasSavedAdj = rawAdj[nutrient] !== undefined && rawAdj[nutrient] !== null && rawAdj[nutrient] !== '';
+    const hasSavedEff = rawEff[nutrient] !== undefined && rawEff[nutrient] !== null && rawEff[nutrient] !== '';
+    adjustment[nutrient] = hasSavedAdj ? toNumber(rawAdj[nutrient]) : (totalExtraction[nutrient] != null ? totalExtraction[nutrient] : null);
+    efficiency[nutrient] = hasSavedEff ? toNumber(rawEff[nutrient]) : (GRANULAR_DEFAULT_EFF[nutrient] != null ? GRANULAR_DEFAULT_EFF[nutrient] : null);
+    const adj = adjustment[nutrient] !== null ? adjustment[nutrient] : 0;
+    const eff = efficiency[nutrient] != null && efficiency[nutrient] > 0 ? efficiency[nutrient] : null;
+    realRequirement[nutrient] = eff !== null ? (adj / (eff / 100)) : null;
   });
 
   const applications = Array.isArray(program.applications) ? program.applications : [];
