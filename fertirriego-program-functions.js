@@ -1114,6 +1114,9 @@ function updateFertiCharts(){
     const chartPoint = chartStroke + 0.25; // Punto apenas más grueso que la línea.
     const chartPointHover = chartPoint + 1.1;
     const chartPointBorder = Math.max(1.2, chartStroke - 0.2);
+    const xTickRotation = totalStages >= 16 ? 90 : (totalStages >= 10 ? 50 : 0);
+    const xTickAutoSkip = totalStages >= 16;
+    const xTickMaxLimit = totalStages >= 24 ? 12 : (totalStages >= 16 ? 14 : undefined);
     const makeDataset = (label, data, color) => ({
       label,
       data,
@@ -1161,7 +1164,7 @@ function updateFertiCharts(){
             makeDataset('SO4', macros.SO4, macroColors.SO4)
           ]
         },
-        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 10, boxHeight: 10, generateLabels: chart => chart.data.datasets.map((ds, i) => ({ text: ds.label || '', fillStyle: ds.borderColor, strokeStyle: ds.borderColor, lineWidth: ds.borderWidth || 2, hidden: !chart.isDatasetVisible(i), datasetIndex: i, fontColor: ds.borderColor, pointStyle: 'circle' })) } } }, scales: { y: { title: { display: true, text: 'Kg de nutriente' } }, x: { title: { display: true, text: fertiTimeUnit === 'mes' ? 'Etapa' : 'Etapa' } } } }
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 10, boxHeight: 10, generateLabels: chart => chart.data.datasets.map((ds, i) => ({ text: ds.label || '', fillStyle: ds.borderColor, strokeStyle: ds.borderColor, lineWidth: ds.borderWidth || 2, hidden: !chart.isDatasetVisible(i), datasetIndex: i, fontColor: ds.borderColor, pointStyle: 'circle' })) } } }, scales: { y: { title: { display: true, text: 'Kg de nutriente' } }, x: { title: { display: true, text: fertiTimeUnit === 'mes' ? 'Etapa' : 'Etapa' }, ticks: { minRotation: xTickRotation, maxRotation: xTickRotation, autoSkip: xTickAutoSkip, maxTicksLimit: xTickMaxLimit } } } }
       });
     }
 
@@ -1181,7 +1184,7 @@ function updateFertiCharts(){
             makeDataset('Mo', micros.Mo, microColors.Mo)
           ]
         },
-        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 10, boxHeight: 10, generateLabels: chart => chart.data.datasets.map((ds, i) => ({ text: ds.label || '', fillStyle: ds.borderColor, strokeStyle: ds.borderColor, lineWidth: ds.borderWidth || 2, hidden: !chart.isDatasetVisible(i), datasetIndex: i, fontColor: ds.borderColor, pointStyle: 'circle' })) } } }, scales: { y: { title: { display: true, text: 'Kg de nutriente' } }, x: { title: { display: true, text: fertiTimeUnit === 'mes' ? 'Etapa' : 'Etapa' } } } }
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 10, boxHeight: 10, generateLabels: chart => chart.data.datasets.map((ds, i) => ({ text: ds.label || '', fillStyle: ds.borderColor, strokeStyle: ds.borderColor, lineWidth: ds.borderWidth || 2, hidden: !chart.isDatasetVisible(i), datasetIndex: i, fontColor: ds.borderColor, pointStyle: 'circle' })) } } }, scales: { y: { title: { display: true, text: 'Kg de nutriente' } }, x: { title: { display: true, text: fertiTimeUnit === 'mes' ? 'Etapa' : 'Etapa' }, ticks: { minRotation: xTickRotation, maxRotation: xTickRotation, autoSkip: xTickAutoSkip, maxTicksLimit: xTickMaxLimit } } } }
       });
     }
   });
@@ -1201,6 +1204,10 @@ function getFertiChartsDataUrlsForReport(program, callback) {
     const weeks = program.weeks;
     const timeUnit = program.timeUnit || 'semana';
     const labels = weeks.map(function(w, i) { return (timeUnit === 'mes' ? 'Mes' : 'Semana') + ' ' + (i + 1); });
+    const totalStages = labels.length;
+    const reportTickRotation = totalStages >= 16 ? 90 : (totalStages >= 10 ? 50 : 0);
+    const reportTickAutoSkip = totalStages >= 16;
+    const reportTickMaxLimit = totalStages >= 24 ? 12 : (totalStages >= 16 ? 14 : undefined);
     function mk(n) { return weeks.map(function(w) { return parseFloat(w.totals && w.totals[n]) || 0; }); }
     var macros = { N_NO3: mk('N_NO3'), N_NH4: mk('N_NH4'), P2O5: mk('P2O5'), K2O: mk('K2O'), CaO: mk('CaO'), MgO: mk('MgO'), SO4: mk('SO4') };
     var micros = { Fe: mk('Fe'), Mn: mk('Mn'), B: mk('B'), Zn: mk('Zn'), Cu: mk('Cu'), Mo: mk('Mo') };
@@ -1235,7 +1242,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
             { label: 'SO4', data: macros.SO4, borderColor: macroColors.SO4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
           ]
         },
-        options: { responsive: false, maintainAspectRatio: false, animation: false, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true }, x: {} } }
+        options: { responsive: false, maintainAspectRatio: false, animation: false, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true }, x: { ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, maxTicksLimit: reportTickMaxLimit } } } }
       });
       chartMicro = new Chart(microCanvas.getContext('2d'), {
         type: 'line',
@@ -1250,7 +1257,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
             { label: 'Mo', data: micros.Mo, borderColor: microColors.Mo, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
           ]
         },
-        options: { responsive: false, maintainAspectRatio: false, animation: false, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true }, x: {} } }
+        options: { responsive: false, maintainAspectRatio: false, animation: false, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true }, x: { ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, maxTicksLimit: reportTickMaxLimit } } } }
       });
       result.macro = (chartMacro && chartMacro.toBase64Image) ? chartMacro.toBase64Image() : macroCanvas.toDataURL('image/png');
       result.micro = (chartMicro && chartMicro.toBase64Image) ? chartMicro.toBase64Image() : microCanvas.toDataURL('image/png');

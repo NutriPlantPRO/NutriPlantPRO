@@ -202,6 +202,40 @@ function initializeSidebar() {
   });
 }
 
+// Sincroniza el alto visible real del viewport móvil para evitar "huecos"
+// cuando el navegador muestra/oculta sus barras al hacer scroll.
+function initMobileViewportHeightSync() {
+  if (window._npViewportSyncInitialized) return;
+  window._npViewportSyncInitialized = true;
+
+  const applyViewportHeight = () => {
+    if (window.innerWidth > 768) return;
+    const vv = window.visualViewport;
+    const height = vv && vv.height ? vv.height : window.innerHeight;
+    if (!height || !Number.isFinite(height)) return;
+    document.documentElement.style.setProperty('--app-vh', height + 'px');
+  };
+
+  let rafId = null;
+  const scheduleApply = () => {
+    if (rafId != null) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      applyViewportHeight();
+      rafId = null;
+    });
+  };
+
+  applyViewportHeight();
+  window.addEventListener('resize', scheduleApply, { passive: true });
+  window.addEventListener('orientationchange', scheduleApply, { passive: true });
+  window.addEventListener('scroll', scheduleApply, { passive: true });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', scheduleApply, { passive: true });
+    window.visualViewport.addEventListener('scroll', scheduleApply, { passive: true });
+  }
+}
+
 // Función para abrir/cerrar sidebar en móvil
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
@@ -6697,6 +6731,7 @@ function np_logDashboardVisit() {
 
 async function initializeDashboard() {
   console.log('🚀 INICIALIZANDO DASHBOARD COMPLETO');
+  initMobileViewportHeightSync();
   let validCurrentProjectId = '';
   
   const userId = localStorage.getItem('nutriplant_user_id');
