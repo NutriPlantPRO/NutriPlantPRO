@@ -435,6 +435,24 @@ body {
   }
 }
 
+/* Tablet en horizontal (landscape): sidebar desplazable y con scroll táctil */
+@media (orientation: landscape) {
+  .sidebar {
+    max-height: calc(100vh - 48px);
+    max-height: calc(var(--app-vh, 100dvh) - 48px);
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior-y: contain;
+  }
+  .sidebar .sb-stack {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    min-height: 0;
+  }
+}
+
 /* ===== SCROLLBAR DEL SIDEBAR ===== */
 .sidebar::-webkit-scrollbar {
   width: 4px;

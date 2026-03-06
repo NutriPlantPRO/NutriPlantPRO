@@ -8614,8 +8614,11 @@ function collectCurrentData() {
     if (fYield) currentProject.fertirriego.requirements.targetYield = parseFloat(fYield.value) || 10;
     
     const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
-    currentProject.fertirriego.requirements.adjustment = {};
-    currentProject.fertirriego.requirements.efficiency = {};
+    // Preservar valores existentes: solo sobrescribir desde el DOM cuando el input exista (evita perder datos al generar reporte desde otra pestaña)
+    const existingAdj = currentProject.fertirriego.requirements.adjustment || {};
+    const existingEff = currentProject.fertirriego.requirements.efficiency || {};
+    currentProject.fertirriego.requirements.adjustment = { ...existingAdj };
+    currentProject.fertirriego.requirements.efficiency = { ...existingEff };
     
     nutrients.forEach(n => {
       const adj = document.getElementById(`ferti-adj-${n}`);
@@ -12230,10 +12233,10 @@ function createFertigationSectionHTML(chartImages) {
   function nutrientGrid(values, elemental, cls) {
     const pills = nutrients.map(n => {
       const v = display(n, values ? values[n] : null, elemental);
-      if (v === null) return '';
-      const extra = cls && v < 0 ? ' negative' : '';
-      return `<span class="report-nutrient-pill${extra}"><strong>${label(n, elemental)}:</strong> ${v.toFixed(d(n))}</span>`;
-    }).filter(Boolean).join('');
+      const extra = (v !== null && cls && v < 0) ? ' negative' : '';
+      const text = v === null ? '—' : v.toFixed(d(n));
+      return `<span class="report-nutrient-pill${extra}"><strong>${label(n, elemental)}:</strong> ${text}</span>`;
+    }).join('');
     return pills || '<span class="report-note-inline">Sin datos disponibles.</span>';
   }
 
