@@ -3476,36 +3476,40 @@
             const projects = [];
             const processedIds = new Set();
             const emailLc = (userEmail || '').toLowerCase();
-            // 🟢 Si hay datos de la nube para este usuario (por id o email), usar SOLO esos (igual que "Todos los Proyectos")
+            // 🟢 Si ya se intentó nube, usar SOLO nube (aunque venga vacío), para no "revivir" locales.
+            const cloudLoaded = !!(window._adminCloudCache && window._adminCloudCache._cloudLoaded === true);
             if (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) {
                 var cloudUsers = (window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) ? window._adminCloudCache.users : [];
                 var cloudUser = cloudUsers.find(function(u) {
                     return !!u && ((u.id === userId) || ((u.email || '').toLowerCase() === emailLc));
                 });
                 var cloudUserId = cloudUser ? (cloudUser.id || cloudUser.userId) : userId;
-                const cloudProjects = window._adminCloudCache.projects.filter(p => (p.user_id || p.userId) === cloudUserId);
-                if (cloudProjects.length > 0) {
-                    cloudProjects.forEach(p => {
-                        const d = p.data || {};
-                        const normalized = {
-                            id: p.id,
-                            name: p.name || p.title || d.name || d.title || 'Sin nombre',
-                            crop_type: d.crop_type || d.cultivo || 'N/A',
-                            variedad: d.variedad || d.variety || '',
-                            location: d.location,
-                            chat_history: d.chat_history || [],
-                            chat_messages: (d.chat_history && Array.isArray(d.chat_history)) ? d.chat_history.length : 0,
-                            created_at: p.created_at || d.created_at,
-                            updated_at: p.updated_at || d.updated_at,
-                            sections: d.sections ? Object.keys(d.sections).filter(s => d.sections[s] && Object.keys(d.sections[s]).length > 0) : []
-                        };
-                        if (!processedIds.has(normalized.id)) {
-                            processedIds.add(normalized.id);
-                            projects.push(normalized);
-                        }
+                const cloudProjects = window._adminCloudCache.projects
+                    .filter(function(p) { return (p.user_id || p.userId) === cloudUserId; })
+                    .filter(function(p) {
+                        var d = (p && p.data) ? p.data : {};
+                        return !(p && (p.is_deleted || d._is_deleted || d.is_deleted || d.deleted_at));
                     });
-                    return projects;
-                }
+                cloudProjects.forEach(p => {
+                    const d = p.data || {};
+                    const normalized = {
+                        id: p.id,
+                        name: p.name || p.title || d.name || d.title || 'Sin nombre',
+                        crop_type: d.crop_type || d.cultivo || 'N/A',
+                        variedad: d.variedad || d.variety || '',
+                        location: d.location,
+                        chat_history: d.chat_history || [],
+                        chat_messages: (d.chat_history && Array.isArray(d.chat_history)) ? d.chat_history.length : 0,
+                        created_at: p.created_at || d.created_at,
+                        updated_at: p.updated_at || d.updated_at,
+                        sections: d.sections ? Object.keys(d.sections).filter(s => d.sections[s] && Object.keys(d.sections[s]).length > 0) : []
+                    };
+                    if (!processedIds.has(normalized.id)) {
+                        processedIds.add(normalized.id);
+                        projects.push(normalized);
+                    }
+                });
+                if (cloudLoaded) return projects;
             }
             
             // Sin nube o usuario no Supabase: resolver desde localStorage
@@ -8576,6 +8580,9 @@
 
         // 👤 FUNCIÓN PARA VER DETALLES COMPLETOS DEL USUARIO Y SUS PROYECTOS
         async function viewUserDetails(userId, fromView = null, fromViewParams = null) {
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
+                try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('viewUserDetails: load from cloud', e); }
+            }
             // Guardar vista anterior si se proporciona (nombre de función o función)
             if (fromView) {
                 var fn = typeof fromView === 'function' ? fromView : window[fromView];
