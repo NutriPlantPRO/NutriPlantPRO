@@ -2249,6 +2249,34 @@
                 } catch (e) {}
                 u.projects_count = hasCloudUser ? cloudCount : Math.max(localCount, cloudCount);
             });
+            // Orden estable para admin:
+            // 1) Más proyectos primero
+            // 2) Último acceso más reciente
+            // 3) Registro más reciente
+            // 4) Nombre alfabético
+            result.sort(function(a, b) {
+                var aProjects = parseInt((a && a.projects_count) || 0, 10) || 0;
+                var bProjects = parseInt((b && b.projects_count) || 0, 10) || 0;
+                if (bProjects !== aProjects) return bProjects - aProjects;
+
+                var aLast = new Date((a && a.last_login) || 0).getTime();
+                var bLast = new Date((b && b.last_login) || 0).getTime();
+                aLast = Number.isFinite(aLast) ? aLast : 0;
+                bLast = Number.isFinite(bLast) ? bLast : 0;
+                if (bLast !== aLast) return bLast - aLast;
+
+                var aCreated = new Date((a && a.created_at) || 0).getTime();
+                var bCreated = new Date((b && b.created_at) || 0).getTime();
+                aCreated = Number.isFinite(aCreated) ? aCreated : 0;
+                bCreated = Number.isFinite(bCreated) ? bCreated : 0;
+                if (bCreated !== aCreated) return bCreated - aCreated;
+
+                var aName = ((a && a.name) || '').toString().toLowerCase();
+                var bName = ((b && b.name) || '').toString().toLowerCase();
+                if (aName < bName) return -1;
+                if (aName > bName) return 1;
+                return 0;
+            });
             return result;
         }
         
@@ -2879,7 +2907,19 @@
             if (uniqueProjects.length !== projects.length) {
                 console.warn(`⚠️ Se eliminaron ${projects.length - uniqueProjects.length} proyectos duplicados del array final`);
             }
-            
+            // Orden estable para admin: proyectos más recientes primero.
+            uniqueProjects.sort(function(a, b) {
+                var aTs = new Date((a && (a.updated_at || a.updatedAt || a.created_at || a.createdAt)) || 0).getTime();
+                var bTs = new Date((b && (b.updated_at || b.updatedAt || b.created_at || b.createdAt)) || 0).getTime();
+                aTs = Number.isFinite(aTs) ? aTs : 0;
+                bTs = Number.isFinite(bTs) ? bTs : 0;
+                if (bTs !== aTs) return bTs - aTs;
+                var aName = ((a && (a.name || a.title)) || '').toString().toLowerCase();
+                var bName = ((b && (b.name || b.title)) || '').toString().toLowerCase();
+                if (aName < bName) return -1;
+                if (aName > bName) return 1;
+                return 0;
+            });
             return uniqueProjects;
         }
         
