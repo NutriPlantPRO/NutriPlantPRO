@@ -243,9 +243,8 @@ body {
 
   .sidebar {
     top: 48px;
-    bottom: auto;
-    height: calc(100svh - 48px);
-    height: calc(var(--app-vh, 100dvh) - 48px);
+    bottom: 0;
+    height: auto !important; /* En móvil, anclar arriba/abajo evita que se corte */
     min-height: 0;
     transform: translateX(0) !important;
   }
