@@ -12326,7 +12326,7 @@ function createFertigationSectionHTML(chartImages) {
     if (!Array.isArray(labels) || !labels.length) {
       return '<div class="report-note">No hay semanas configuradas para graficar.</div>';
     }
-    const width = 640, height = 260, padL = 42, padR = 16, padT = 12, padB = 28;
+    const width = 640, height = 320, padL = 42, padR = 16, padT = 12, padB = 90;
     const plotW = Math.max(1, width - padL - padR);
     const plotH = Math.max(1, height - padT - padB);
     let maxY = 0;
@@ -12345,7 +12345,9 @@ function createFertigationSectionHTML(chartImages) {
     svg += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="#94a3b8" />`;
     labels.forEach((lbl, i) => {
       const x = xAt(i);
-      svg += `<text x="${x}" y="${height - 10}" text-anchor="middle" font-size="10" fill="#6b7280">${reportEscapeHtml(lbl)}</text>`;
+      const safeLbl = String(lbl || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      // Etiquetas verticales para mejorar lectura cuando hay muchas semanas/meses.
+      svg += `<text x="${x}" y="${height - padB + 8}" text-anchor="end" font-size="10" fill="#6b7280" transform="rotate(-90 ${x} ${height - padB + 8})">${safeLbl}</text>`;
     });
     datasets.forEach(ds => {
       const points = ds.data.map((v, i) => `${xAt(i)},${yAt(v)}`).join(' ');
@@ -13065,7 +13067,7 @@ function createVPDReportSectionHTML() {
     }).join('')
     : '';
   const stressCriticalRows = currentRangeTable
-    ? (Array.isArray(currentRangeTable.criticalRows) ? currentRangeTable.criticalRows : []).slice(0, 120).map(function(r) {
+    ? (Array.isArray(currentRangeTable.criticalRows) ? currentRangeTable.criticalRows : []).map(function(r) {
       return `
         <tr>
           <td>${reportEscapeHtml(String(r.at || '—'))}</td>

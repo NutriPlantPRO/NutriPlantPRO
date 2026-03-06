@@ -5023,8 +5023,8 @@
         function buildAdminSvgChart(containerEl, labels, datasets) {
             if (!containerEl) return;
             const width = 600;
-            const height = 180;
-            const padL = 40, padR = 10, padT = 10, padB = 30;
+            const height = 230;
+            const padL = 40, padR = 10, padT = 10, padB = 80;
             const innerW = width - padL - padR;
             const innerH = height - padT - padB;
             const allValues = datasets.flatMap(d => d.data.map(v => parseFloat(v) || 0));
@@ -5044,7 +5044,9 @@
             svg += `<line x1="${padL}" y1="${height - padB}" x2="${width - padR}" y2="${height - padB}" stroke="#cbd5e1" stroke-width="1" />`;
             labels.forEach((lbl, i) => {
                 const x = xAt(i);
-                svg += `<text x="${x}" y="${height - 10}" text-anchor="middle" font-size="10" fill="#6b7280">${lbl}</text>`;
+                const safeLbl = String(lbl || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                // Etiquetas verticales para mejorar legibilidad cuando hay muchas semanas/meses
+                svg += `<text x="${x}" y="${height - padB + 8}" text-anchor="end" font-size="10" fill="#6b7280" transform="rotate(-90 ${x} ${height - padB + 8})">${safeLbl}</text>`;
             });
             datasets.forEach(ds => {
                 const points = ds.data.map((v, i) => `${xAt(i)},${yAt(parseFloat(v) || 0)}`).join(' ');
@@ -8211,7 +8213,7 @@
                                         </tr>
                                     `;
                                 }).join('');
-                                const criticalHtml = criticalRows.slice(0, 120).map(function(r) {
+                                const criticalHtml = criticalRows.map(function(r) {
                                     const isHigh = r.type === 'high';
                                     return `
                                         <tr style="border-bottom: 1px solid #e5e7eb;">
