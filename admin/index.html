@@ -7404,6 +7404,12 @@
                     extractionPerTon[n] = baseExtraction[n] !== undefined ? baseExtraction[n] : 0;
                 });
                 
+                // Extracción total en óxido (para defaults de ajuste = lo que ve el usuario si no guardó)
+                const totalExtractionOxide = {};
+                nutrients.forEach(n => {
+                    totalExtractionOxide[n] = (extractionPerTon[n] || 0) * targetYield;
+                });
+                
                 // 🚀 CRÍTICO: Convertir valores a Elemental si es necesario
                 if (isElementalMode) {
                     nutrients.forEach(n => {
@@ -7418,17 +7424,28 @@
                     totalExtraction[n] = typeof value === 'number' ? value.toFixed(2) : value;
                 });
                 
+                // Mismos defaults que la UI de Fertirriego: si el usuario no guardó, mostrar lo precargado (ajuste = extracción total, eficiencia = defaults NutriPlant)
+                const FERTI_DEFAULT_EFFICIENCY = { N: 75, P2O5: 50, K2O: 90, CaO: 90, MgO: 90, S: 90, SO4: 90, Fe: 85, Mn: 85, B: 85, Zn: 85, Cu: 85, Mo: 85, SiO2: 90 };
+                const rawAdj = fertirriegoRequirements.adjustment || {};
+                const rawEff = fertirriegoRequirements.efficiency || {};
+                const adjustment = {};
+                const efficiency = {};
+                nutrients.forEach(n => {
+                    const hasSavedAdj = rawAdj[n] !== undefined && rawAdj[n] !== null && rawAdj[n] !== '';
+                    const hasSavedEff = rawEff[n] !== undefined && rawEff[n] !== null && rawEff[n] !== '';
+                    adjustment[n] = hasSavedAdj ? parseFloat(rawAdj[n]) : (totalExtractionOxide[n] || 0);
+                    efficiency[n] = hasSavedEff ? parseFloat(rawEff[n]) : (FERTI_DEFAULT_EFFICIENCY[n] != null ? FERTI_DEFAULT_EFFICIENCY[n] : null);
+                });
+                
                 // Requerimiento real (ajuste / (eficiencia/100))
                 const realRequirement = {};
-                const adjustment = fertirriegoRequirements.adjustment || {};
-                const efficiency = fertirriegoRequirements.efficiency || {};
                 nutrients.forEach(n => {
                     let adj = adjustment[n] || 0;
                     // 🚀 CRÍTICO: Convertir ajuste a Elemental si es necesario
                     if (isElementalMode) {
                         adj = convertAdminOxideToElemental(n, adj);
                     }
-                    const eff = parseFloat(efficiency[n]);
+                    const eff = efficiency[n] != null ? parseFloat(efficiency[n]) : NaN;
                     const hasEff = !isNaN(eff) && eff > 0;
                     realRequirement[n] = hasEff ? (adj / (eff / 100)).toFixed(2) : null;
                 });

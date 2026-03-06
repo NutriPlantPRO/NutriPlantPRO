@@ -12250,13 +12250,21 @@ function createFertigationSectionHTML(chartImages) {
     totalExtraction[n] = extraction[n] !== undefined ? extraction[n] * targetYield : null;
   });
 
-  const adjustment = req.adjustment || {};
-  const efficiency = req.efficiency || {};
+  // Mismos defaults que la UI de Fertirriego (fertirriego-functions.js) para que admin/reporte = lo que ve el usuario aunque no haya guardado
+  const FERTI_DEFAULT_EFFICIENCY = { N: 75, P2O5: 50, K2O: 90, CaO: 90, MgO: 90, S: 90, SO4: 90, Fe: 85, Mn: 85, B: 85, Zn: 85, Cu: 85, Mo: 85, SiO2: 90 };
+  const rawAdj = req.adjustment || {};
+  const rawEff = req.efficiency || {};
+  const adjustment = {};
+  const efficiency = {};
   const required = {};
   nutrients.forEach(n => {
-    const adj = toNum(adjustment[n]);
-    const eff = toNum(efficiency[n]);
-    required[n] = eff > 0 ? adj / (eff / 100) : null;
+    const adjVal = rawAdj[n] !== undefined && rawAdj[n] !== null && rawAdj[n] !== '' ? toNum(rawAdj[n]) : null;
+    const effVal = rawEff[n] !== undefined && rawEff[n] !== null && rawEff[n] !== '' ? toNum(rawEff[n]) : null;
+    adjustment[n] = adjVal !== null ? adjVal : (totalExtraction[n] !== null ? totalExtraction[n] : null);
+    efficiency[n] = effVal !== null ? effVal : (FERTI_DEFAULT_EFFICIENCY[n] != null ? FERTI_DEFAULT_EFFICIENCY[n] : null);
+    const adj = adjustment[n] !== null ? adjustment[n] : 0;
+    const eff = efficiency[n] !== null && efficiency[n] > 0 ? efficiency[n] : null;
+    required[n] = eff !== null ? adj / (eff / 100) : null;
   });
 
   const weeks = Array.isArray(prog.weeks) ? prog.weeks : [];
