@@ -2060,12 +2060,9 @@
                                 if (!userData.phone && cloudUser.phone) userData.phone = cloudUser.phone;
                                 if (!userData.profession && cloudUser.profession) userData.profession = cloudUser.profession;
                                 if ((!userData.crops || !userData.crops.length) && Array.isArray(cloudUser.crops) && cloudUser.crops.length) userData.crops = cloudUser.crops;
-                                // Para Supabase: usar el mayor entre nube y localStorage (así no se ocultan proyectos que aún no se han subido)
-                                if (isSupabaseUserId) {
-                                    var cloudCount = cloudUser.projects_count ?? 0;
-                                    var localCount = userData.projects_count ?? 0;
-                                    userData.projects_count = Math.max(cloudCount, localCount);
-                                }
+                                // Si existe usuario en nube (match por email/id), usar SOLO conteo cloud.
+                                var cloudCount = cloudUser.projects_count ?? 0;
+                                userData.projects_count = parseInt(cloudCount, 10) || 0;
                                 userData.created_at = cloudUser.created_at || userData.created_at;
                                 if (cloudUser.last_login) userData.last_login = cloudUser.last_login;
                                 // Mostrar contraseña desde nube si en panel no había
@@ -2142,7 +2139,7 @@
                             paypal_subscription_id: cu.paypal_subscription_id || null,
                             created_at: cu.created_at,
                             last_login: cu.last_login || null,
-                            projects_count: Math.max(cu.projects_count ?? 0, getLocalProjectCountForUser(cu.id, cu.email)),
+                            projects_count: parseInt(cu.projects_count ?? 0, 10) || 0,
                             isAdmin: isAdmin,
                             custom_ferti_materials: cu.custom_ferti_materials,
                             custom_hydro_materials: cu.custom_hydro_materials,
@@ -2236,18 +2233,21 @@
                     } catch (e) { continue; }
                 }
             });
-            // Recalcular proyectos por dueño real para que coincida con "Todos los Proyectos"
+            // Recalcular proyectos por dueño real.
+            // Regla: si existe usuario cloud (por id o email), usar SOLO cloud; si no existe, usar max(local, cloud).
             result.forEach(function(u) {
                 var uid = u.id || u.userId || '';
                 var email = u.email || '';
                 var localCount = getLocalProjectCountForUser(uid, email);
                 var cloudCount = 0;
+                var hasCloudUser = false;
                 try {
                     var cloudUsers = (window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) ? window._adminCloudCache.users : [];
                     var cu = cloudUsers.find(function(x) { return (x && (x.id === uid || (x.email || '').toLowerCase() === (email || '').toLowerCase())); });
+                    hasCloudUser = !!cu;
                     if (cu && cu.projects_count != null) cloudCount = parseInt(cu.projects_count || 0, 10) || 0;
                 } catch (e) {}
-                u.projects_count = Math.max(localCount, cloudCount);
+                u.projects_count = hasCloudUser ? cloudCount : Math.max(localCount, cloudCount);
             });
             return result;
         }
@@ -3335,10 +3335,15 @@
         function getUserProjects(userId, userEmail) {
             const projects = [];
             const processedIds = new Set();
-            const isSupabaseUserId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
-            // 🟢 Si hay datos de la nube para este usuario, usar SOLO esos (igual que "Todos los Proyectos")
-            if (isSupabaseUserId && window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) {
-                const cloudProjects = window._adminCloudCache.projects.filter(p => (p.user_id || p.userId) === userId);
+            const emailLc = (userEmail || '').toLowerCase();
+            // 🟢 Si hay datos de la nube para este usuario (por id o email), usar SOLO esos (igual que "Todos los Proyectos")
+            if (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) {
+                var cloudUsers = (window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) ? window._adminCloudCache.users : [];
+                var cloudUser = cloudUsers.find(function(u) {
+                    return !!u && ((u.id === userId) || ((u.email || '').toLowerCase() === emailLc));
+                });
+                var cloudUserId = cloudUser ? (cloudUser.id || cloudUser.userId) : userId;
+                const cloudProjects = window._adminCloudCache.projects.filter(p => (p.user_id || p.userId) === cloudUserId);
                 if (cloudProjects.length > 0) {
                     cloudProjects.forEach(p => {
                         const d = p.data || {};
