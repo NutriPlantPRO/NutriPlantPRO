@@ -15,8 +15,14 @@ CREATE POLICY "Admins can update all profiles"
   ON public.profiles FOR UPDATE
   USING (public.is_admin_user());
 
--- Admins pueden actualizar cualquier proyecto (para editar proyectos desde el panel)
+-- Admins pueden actualizar cualquier proyecto (para editar y restaurar desde el panel)
 DROP POLICY IF EXISTS "Admins can update all projects" ON public.projects;
 CREATE POLICY "Admins can update all projects"
   ON public.projects FOR UPDATE
   USING (public.is_admin_user());
+
+-- Admins pueden insertar proyectos (necesario para upsert al restaurar: INSERT ... ON CONFLICT DO UPDATE)
+DROP POLICY IF EXISTS "Admins can insert projects" ON public.projects;
+CREATE POLICY "Admins can insert projects"
+  ON public.projects FOR INSERT
+  WITH CHECK (public.is_admin_user());
