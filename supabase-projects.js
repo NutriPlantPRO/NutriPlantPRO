@@ -126,6 +126,7 @@
         if (!raw || (!raw.startsWith('{') && !raw.startsWith('['))) continue;
         const data = JSON.parse(raw);
         if (!data || typeof data !== 'object') continue;
+        if (isSoftDeletedData(data)) continue; // Papelera local no debe resubirse.
 
         const projectId = data.id || key.replace(/^nutriplant[-_]project[-_]/, '');
         if (!projectId) continue;
@@ -345,17 +346,24 @@
       const opts = options || {};
       const silent = !!opts.silent;
       const localProjects = collectLocalProjectsForIdentity();
-      const cloudList = await this.fetchProjects();
+      const cloudList = await this.fetchProjects({ includeDeleted: true });
       const cloudUpdatedMap = new Map((cloudList || []).map(p => [p.id, normalizeDate(p.updated_at)]));
+      const cloudDeletedIds = new Set((cloudList || []).filter(p => p && p.is_deleted).map(p => p.id));
       var scanned = localProjects.length;
       var synced = 0;
       var skippedOlder = 0;
+      var skippedDeletedCloud = 0;
 
       for (var i = 0; i < localProjects.length; i++) {
         var item = localProjects[i];
         var id = item.projectId;
         var data = item.data;
         var localUpdatedTs = item.localUpdatedTs || 0;
+        if (cloudDeletedIds.has(id)) {
+          // Blindaje multi-equipo: si en nube está eliminado, no revivir por sync automático.
+          skippedDeletedCloud++;
+          continue;
+        }
         var cloudUpdatedTs = cloudUpdatedMap.get(id) || 0;
         if (cloudUpdatedTs > 0 && localUpdatedTs > 0 && localUpdatedTs <= cloudUpdatedTs) {
           skippedOlder++;
@@ -375,7 +383,7 @@
           window.showMessage('Conexión restaurada. Tus cambios se han sincronizado con la nube.', 'success');
         }
       }
-      return { scanned: scanned, synced: synced, skippedOlder: skippedOlder };
+      return { scanned: scanned, synced: synced, skippedOlder: skippedOlder, skippedDeletedCloud: skippedDeletedCloud };
     },
 
     /** Obtener chat sin proyecto del perfil desde Supabase (para cargar en otro dispositivo) */
