@@ -3830,22 +3830,23 @@ function np_loadProjects() {
     return [];
   }
   
-  // Usuarios Supabase (UUID): combinar nube + localStorage para no perder proyectos históricos/locales.
+  // Usuarios Supabase (UUID): usar nube como fuente principal de verdad.
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
     const cloudCache = Array.isArray(window._np_cloud_projects_cache) ? window._np_cloud_projects_cache : [];
-    const mergedById = new Map();
-    const cloudOwnerById = new Map();
+    const cloudProjects = cloudCache
+      .filter(p => p && p.id && p.user_id === userId && !(p._is_deleted === true || p.is_deleted === true || p.deleted_at));
 
-    // Solo proyectos del usuario actual (evita ver en dashboard proyectos de otros; admin y usuario ven solo los suyos)
-    cloudCache.forEach(p => {
-      if (p && p.id) {
-        if (p.user_id) cloudOwnerById.set(p.id, p.user_id);
-        if (p.user_id === userId) mergedById.set(p.id, p);
-      }
-    });
+    // Si hay datos cloud, NO mezclar con local para evitar mostrar "fantasmas".
+    if (cloudProjects.length > 0) {
+      return cloudProjects.sort((a, b) => {
+        const ad = a.updatedAt || a.updated_at || a.createdAt || a.created_at || 0;
+        const bd = b.updatedAt || b.updated_at || b.createdAt || b.created_at || 0;
+        return new Date(bd) - new Date(ad);
+      });
+    }
 
-    // Incluir proyectos recién creados en localStorage que aún no están en la nube,
-    // para que aparezcan al instante sin tener que recargar.
+    // Fallback (solo si no hay cache cloud): usar local para no dejar en blanco ante falla temporal de red.
+    const localOnly = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       const isProjectKey = key && (key.startsWith('nutriplant_project_') || key.startsWith('nutriplant-project-'));
@@ -3859,9 +3860,7 @@ function np_loadProjects() {
         if (!pid) continue;
         if ((p.user_id || p.userId) !== userId) continue;
         if (p._is_deleted === true || p.is_deleted === true || p.deleted_at) continue;
-        if (cloudOwnerById.get(pid) && cloudOwnerById.get(pid) !== userId) continue;
-        if (mergedById.has(pid)) continue;
-        mergedById.set(pid, {
+        localOnly.push({
           id: pid,
           title: p.name || p.title || 'Sin nombre',
           cultivo: p.crop_type || p.cultivo || '',
@@ -3873,7 +3872,7 @@ function np_loadProjects() {
       } catch (e) { continue; }
     }
 
-    return Array.from(mergedById.values()).sort((a, b) => {
+    return localOnly.sort((a, b) => {
       const ad = a.updatedAt || a.updated_at || a.createdAt || a.created_at || 0;
       const bd = b.updatedAt || b.updated_at || b.createdAt || b.created_at || 0;
       return new Date(bd) - new Date(ad);

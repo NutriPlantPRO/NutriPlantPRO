@@ -304,6 +304,22 @@ body {
     overflow: hidden !important;
   }
 
+  /* En algunos móviles el pseudo-hover queda "pegado" al tocar.
+     Forzamos ocultar texto en minimizado aunque el navegador active :hover. */
+  .sidebar.open.sidebar-minimized:hover .sidebar a .label,
+  .sidebar.open.sidebar-minimized:hover .sidebar a.active .label,
+  .sidebar.open.sidebar-minimized:hover .sb-title-card .text,
+  .sidebar.open.sidebar-minimized:hover .sb-card .title .text,
+  .sidebar.open.sidebar-minimized:hover .sb-chip span.text,
+  .sidebar.open.sidebar-minimized:hover .logout .logout-text,
+  .sidebar.open.sidebar-minimized:hover .no-project-message p {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
   .sidebar.open.sidebar-minimized .sb-card .title .t {
     justify-content: center !important;
   }
