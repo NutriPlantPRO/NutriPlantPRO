@@ -115,6 +115,7 @@ body {
 .layout { 
   display: flex; 
   min-height: calc(100vh - 48px); 
+  min-height: calc(100dvh - 48px); /* Evita huecos al cambiar barras del navegador móvil */
   padding-left: var(--sidebar-w);   /* <-- RESERVA FIJA PARA EL SIDEBAR (ajuste #1) */
 }
 
@@ -124,6 +125,7 @@ body {
   left: 0;
   top: 48px; /* Debajo del header fijo */
   height: calc(100vh - 48px); /* Altura total menos el header */
+  height: calc(100dvh - 48px);
   width: var(--sidebar-w);
   background: var(--bg);
   color: #cbd5e1;
@@ -222,10 +224,12 @@ body {
 @media (max-width: 768px) {
   .layout {
     min-height: calc(100svh - 48px);
+    min-height: calc(100dvh - 48px);
   }
 
   .content {
     min-height: calc(100svh - 48px);
+    min-height: calc(100dvh - 48px);
     display: flex;
     flex-direction: column;
   }
@@ -238,8 +242,9 @@ body {
 
   .sidebar {
     top: 48px;
-    bottom: 0;
-    height: auto;
+    bottom: auto;
+    height: calc(100svh - 48px);
+    height: calc(100dvh - 48px);
     min-height: 0;
     transform: translateX(0) !important;
   }

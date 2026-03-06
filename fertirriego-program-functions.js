@@ -1108,6 +1108,26 @@ function updateFertiCharts(){
       N_NO3: '#1f77b4', N_NH4: '#2ca02c', P2O5: '#ff7f0e', K2O: '#98df8a', CaO: '#9467bd', MgO: '#17becf', SO4: '#8c564b'
     };
     const microColors = { Fe: '#1f77b4', Mn: '#2ca02c', B: '#ff7f0e', Zn: '#9467bd', Cu: '#8c564b', Mo: '#e377c2' };
+    const totalStages = labels.length;
+    // Mantener puntos limpios cuando hay muchas semanas y visibles respecto a la línea.
+    const chartStroke = totalStages >= 24 ? 1.6 : (totalStages >= 16 ? 1.8 : 2.0);
+    const chartPoint = chartStroke + 0.25; // Punto apenas más grueso que la línea.
+    const chartPointHover = chartPoint + 1.1;
+    const chartPointBorder = Math.max(1.2, chartStroke - 0.2);
+    const makeDataset = (label, data, color) => ({
+      label,
+      data,
+      borderColor: color,
+      backgroundColor: 'transparent',
+      tension: 0.3,
+      borderWidth: chartStroke,
+      pointRadius: chartPoint,
+      pointHoverRadius: chartPointHover,
+      pointHitRadius: Math.max(5, chartPointHover + 1),
+      pointBorderWidth: chartPointBorder,
+      pointBackgroundColor: color,
+      pointBorderColor: '#ffffff'
+    });
 
     // Conversión a elemental si aplica (P2O5->P, K2O->K, CaO->Ca, MgO->Mg)
     let macroLabels = { P2O5: 'P2O5', K2O: 'K2O', CaO: 'CaO', MgO: 'MgO' };
@@ -1132,13 +1152,13 @@ function updateFertiCharts(){
         data: {
           labels,
           datasets: [
-            { label: 'N(NO3)', data: macros.N_NO3, borderColor: macroColors.N_NO3, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'N(NH4)', data: macros.N_NH4, borderColor: macroColors.N_NH4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.P2O5, data: macros.P2O5, borderColor: macroColors.P2O5, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.K2O, data: macros.K2O, borderColor: macroColors.K2O, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.CaO, data: macros.CaO, borderColor: macroColors.CaO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: macroLabels.MgO, data: macros.MgO, borderColor: macroColors.MgO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'SO4', data: macros.SO4, borderColor: macroColors.SO4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
+            makeDataset('N(NO3)', macros.N_NO3, macroColors.N_NO3),
+            makeDataset('N(NH4)', macros.N_NH4, macroColors.N_NH4),
+            makeDataset(macroLabels.P2O5, macros.P2O5, macroColors.P2O5),
+            makeDataset(macroLabels.K2O, macros.K2O, macroColors.K2O),
+            makeDataset(macroLabels.CaO, macros.CaO, macroColors.CaO),
+            makeDataset(macroLabels.MgO, macros.MgO, macroColors.MgO),
+            makeDataset('SO4', macros.SO4, macroColors.SO4)
           ]
         },
         options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 10, boxHeight: 10, generateLabels: chart => chart.data.datasets.map((ds, i) => ({ text: ds.label || '', fillStyle: ds.borderColor, strokeStyle: ds.borderColor, lineWidth: ds.borderWidth || 2, hidden: !chart.isDatasetVisible(i), datasetIndex: i, fontColor: ds.borderColor, pointStyle: 'circle' })) } } }, scales: { y: { title: { display: true, text: 'Kg de nutriente' } }, x: { title: { display: true, text: fertiTimeUnit === 'mes' ? 'Etapa' : 'Etapa' } } } }
@@ -1153,12 +1173,12 @@ function updateFertiCharts(){
         data: {
           labels,
           datasets: [
-            { label: 'Fe', data: micros.Fe, borderColor: microColors.Fe, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Mn', data: micros.Mn, borderColor: microColors.Mn, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'B', data: micros.B, borderColor: microColors.B, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Zn', data: micros.Zn, borderColor: microColors.Zn, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Cu', data: micros.Cu, borderColor: microColors.Cu, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'Mo', data: micros.Mo, borderColor: microColors.Mo, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
+            makeDataset('Fe', micros.Fe, microColors.Fe),
+            makeDataset('Mn', micros.Mn, microColors.Mn),
+            makeDataset('B', micros.B, microColors.B),
+            makeDataset('Zn', micros.Zn, microColors.Zn),
+            makeDataset('Cu', micros.Cu, microColors.Cu),
+            makeDataset('Mo', micros.Mo, microColors.Mo)
           ]
         },
         options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 10, boxHeight: 10, generateLabels: chart => chart.data.datasets.map((ds, i) => ({ text: ds.label || '', fillStyle: ds.borderColor, strokeStyle: ds.borderColor, lineWidth: ds.borderWidth || 2, hidden: !chart.isDatasetVisible(i), datasetIndex: i, fontColor: ds.borderColor, pointStyle: 'circle' })) } } }, scales: { y: { title: { display: true, text: 'Kg de nutriente' } }, x: { title: { display: true, text: fertiTimeUnit === 'mes' ? 'Etapa' : 'Etapa' } } } }

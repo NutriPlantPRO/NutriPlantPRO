@@ -506,6 +506,7 @@
                     <button class="btn-admin secondary" onclick="showGlobalMap()">🗺️ Mapa global</button>
                     <button class="btn-admin secondary" onclick="showProjectsByUser()">Proyectos por Usuario</button>
                     <button class="btn-admin secondary" onclick="showProjectsByCrop()">Proyectos por Cultivo</button>
+                    <button class="btn-admin secondary" onclick="showDeletedProjects()">♻️ Proyectos eliminados</button>
                     <button class="btn-admin secondary" onclick="searchProjects()">Buscar Proyectos</button>
                     <button class="btn-admin secondary" onclick="exportProjects()">Exportar Proyectos</button>
                     <button class="btn-admin secondary" onclick="sanitizeLocalCacheConsistency(true)">🧹 Limpiar caché inconsistente</button>
@@ -666,6 +667,10 @@
                     name: p.name || p.title || 'Sin nombre',
                     title: p.title || '',
                     data: p.data || {},
+                    is_deleted: !!((p.data || {})._is_deleted || (p.data || {}).is_deleted || (p.data || {}).deleted_at),
+                    deleted_at: (p.data || {}).deleted_at || null,
+                    deleted_by: (p.data || {}).deleted_by || null,
+                    restore_until: (p.data || {}).restore_until || null,
                     created_at: p.created_at,
                     updated_at: p.updated_at
                 }));
@@ -1585,6 +1590,58 @@
                 }
             });
         }
+
+        async function showDeletedProjects() {
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
+                try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showDeletedProjects: load cloud', e); }
+            }
+            const cloudProjects = (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) ? window._adminCloudCache.projects : [];
+            const usersById = {};
+            getAllUsers().forEach(function(u) { usersById[u.id || u.userId] = u; });
+            const deleted = cloudProjects
+                .filter(function(p) { return !!(p && (p.is_deleted || (p.data && (p.data._is_deleted || p.data.is_deleted || p.data.deleted_at)))); })
+                .map(function(p) {
+                    const d = p.data || {};
+                    const u = usersById[p.user_id] || {};
+                    return {
+                        id: p.id,
+                        user_id: p.user_id,
+                        user_name: p.user_name || u.name || u.email || '—',
+                        name: p.name || p.title || d.name || d.title || 'Sin nombre',
+                        crop_type: d.cultivo || d.crop_type || 'N/A',
+                        deleted_at: p.deleted_at || d.deleted_at || null,
+                        deleted_by: p.deleted_by || d.deleted_by || '—',
+                        restore_until: p.restore_until || d.restore_until || null,
+                        updated_at: p.updated_at || d.updated_at || null
+                    };
+                })
+                .sort(function(a, b) {
+                    var ta = a.deleted_at ? new Date(a.deleted_at).getTime() : 0;
+                    var tb = b.deleted_at ? new Date(b.deleted_at).getTime() : 0;
+                    return tb - ta;
+                });
+
+            showDataViewerWithFilters({
+                title: '♻️ Proyectos eliminados (recuperables)',
+                data: deleted,
+                isProject: true,
+                deletedProjectsMode: true,
+                columns: [
+                    { key: 'user_name', label: 'Usuario', format: 'text', filterable: true },
+                    { key: 'id', label: 'ID', format: 'text', filterable: true },
+                    { key: 'name', label: 'Nombre', format: 'text', filterable: true },
+                    { key: 'crop_type', label: 'Cultivo', format: 'text', filterable: true },
+                    { key: 'deleted_at', label: 'Eliminado', format: 'date', filterable: true },
+                    { key: 'restore_until', label: 'Recuperable hasta', format: 'date', filterable: true },
+                    { key: 'deleted_by', label: 'Eliminado por', format: 'text', filterable: true }
+                ],
+                actions: {
+                    edit: false,
+                    delete: true
+                }
+            });
+        }
+        window.showDeletedProjects = showDeletedProjects;
         
         async function showAllChats() {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function' && (!window._adminCloudCache || !window._adminCloudCache.users)) {
@@ -2472,7 +2529,7 @@
             });
             // Si tenemos lista de la nube, no mezclar con localStorage: el admin ve solo lo que está en Supabase
             if (cloudList && cloudList.length > 0) {
-                return projects;
+                return projects.filter(function(p) { return !(p && (p.is_deleted || (p.data && (p.data._is_deleted || p.data.is_deleted || p.data.deleted_at)))); });
             }
             const processedIds = new Set();
             const processedKeys = new Set();
@@ -2579,6 +2636,7 @@
             
             // 🔍 SEGUNDA PASADA: Procesar proyectos únicos y construir array final (solo añadir los que no vienen ya de la nube)
             for (const [projectId, project] of projectMap.entries()) {
+                if (project && (project._is_deleted === true || project.is_deleted === true || project.deleted_at)) continue;
                 if (cloudIds && cloudIds.has(projectId)) continue; // ya está en la lista desde Supabase
                 const key = project._sourceKey;
                 delete project._sourceKey; // Limpiar metadato temporal
@@ -4044,8 +4102,12 @@
                 }
                 if (config.actions.delete) {
                     if (isProject) {
-                        if (item._isOrphan) html += '<button onclick="assignProjectToUser(\'' + itemId + '\')" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔗 Asignar</button>';
-                        html += '<button onclick="deleteProject(\'' + itemId + '\')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Eliminar</button>';
+                        if (config.deletedProjectsMode) {
+                            html += '<button onclick="restoreProject(\'' + itemId + '\')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">♻️ Restaurar</button>';
+                        } else {
+                            if (item._isOrphan) html += '<button onclick="assignProjectToUser(\'' + itemId + '\')" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔗 Asignar</button>';
+                            html += '<button onclick="deleteProject(\'' + itemId + '\')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Eliminar</button>';
+                        }
                     } else {
                         html += '<button onclick="deleteUser(\'' + itemId + '\')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Eliminar</button>';
                     }
@@ -4117,7 +4179,7 @@
                 html += `<th style="padding: 12px; text-align: left; font-weight: 600; color: #1e293b; font-size: 14px;">${col.label}</th>`;
             });
             
-            if (config.actions && config.actions.edit) {
+            if (config.actions && (config.actions.edit || config.actions.delete)) {
                 html += `<th style="padding: 12px; text-align: center; font-weight: 600; color: #1e293b; font-size: 14px;">Acciones</th>`;
             }
             
@@ -5992,6 +6054,120 @@
             }
         }
         window.deleteProject = deleteProject;
+
+        async function restoreProject(projectId) {
+            if (!projectId) return;
+            if (!confirm('¿Restaurar este proyecto a la lista activa del usuario?')) return;
+            try {
+                let cloudRow = null;
+                if (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) {
+                    cloudRow = window._adminCloudCache.projects.find(function(p) { return p && p.id === projectId; }) || null;
+                }
+
+                if ((!cloudRow || !cloudRow.data) && window.getSupabaseClient) {
+                    const clientRead = window.getSupabaseClient();
+                    if (clientRead) {
+                        try {
+                            const { data } = await clientRead.from('projects').select('id, user_id, name, title, data, created_at, updated_at').eq('id', projectId).single();
+                            if (data) {
+                                cloudRow = {
+                                    id: data.id,
+                                    user_id: data.user_id,
+                                    name: data.name || data.title || 'Sin nombre',
+                                    title: data.title || '',
+                                    data: data.data || {},
+                                    created_at: data.created_at,
+                                    updated_at: data.updated_at
+                                };
+                            }
+                        } catch (e) { console.warn('restoreProject fetch row:', e); }
+                    }
+                }
+
+                if (!cloudRow) {
+                    alert('❌ No se encontró el proyecto para restaurar.');
+                    return;
+                }
+
+                const restoredData = { ...(cloudRow.data || {}) };
+                delete restoredData._is_deleted;
+                delete restoredData.is_deleted;
+                delete restoredData.deleted_at;
+                delete restoredData.deleted_by;
+                delete restoredData.restore_until;
+                const nowIso = new Date().toISOString();
+                restoredData.updated_at = nowIso;
+                restoredData.updatedAt = nowIso;
+                if (!restoredData.id) restoredData.id = projectId;
+
+                const userId = cloudRow.user_id || restoredData.user_id || restoredData.userId;
+                if (!userId) {
+                    alert('❌ No se pudo determinar el usuario dueño del proyecto.');
+                    return;
+                }
+
+                // Restaurar en localStorage (si existe este navegador) para soporte y trazabilidad.
+                const localProjectKey = `nutriplant_project_${projectId}`;
+                localStorage.setItem(localProjectKey, JSON.stringify({ ...restoredData, user_id: userId, userId: userId }));
+
+                // Asegurar que aparezca de nuevo en la lista del usuario local.
+                const userKey = `nutriplant_user_${userId}`;
+                const userRaw = localStorage.getItem(userKey);
+                if (userRaw && userRaw.startsWith('{')) {
+                    try {
+                        const userObj = JSON.parse(userRaw);
+                        if (!Array.isArray(userObj.projects)) userObj.projects = [];
+                        if (!userObj.projects.includes(projectId)) userObj.projects.push(projectId);
+                        localStorage.setItem(userKey, JSON.stringify(userObj));
+                    } catch (e) { console.warn('restoreProject user list:', e); }
+                }
+
+                // Restaurar en la nube.
+                if (window.getSupabaseClient) {
+                    const client = window.getSupabaseClient();
+                    if (client) {
+                        const row = {
+                            id: projectId,
+                            user_id: userId,
+                            name: restoredData.name || restoredData.title || cloudRow.name || 'Sin nombre',
+                            title: restoredData.title || restoredData.name || cloudRow.title || '',
+                            data: restoredData,
+                            updated_at: nowIso
+                        };
+                        const { error } = await client.from('projects').upsert(row, { onConflict: 'id' });
+                        if (error) {
+                            alert('⚠️ Se restauró localmente, pero falló la nube: ' + (error.message || ''));
+                            return;
+                        }
+                    }
+                }
+
+                // Refrescar caché cloud local del admin.
+                if (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) {
+                    window._adminCloudCache.projects = window._adminCloudCache.projects.map(function(p) {
+                        if (!p || p.id !== projectId) return p;
+                        return {
+                            ...p,
+                            data: restoredData,
+                            is_deleted: false,
+                            deleted_at: null,
+                            deleted_by: null,
+                            restore_until: null,
+                            updated_at: nowIso
+                        };
+                    });
+                }
+
+                alert('✅ Proyecto restaurado correctamente.');
+                closeDataViewer();
+                loadAdminStats();
+                setTimeout(function() { showDeletedProjects(); }, 300);
+            } catch (e) {
+                console.error('restoreProject:', e);
+                alert('❌ Error al restaurar proyecto: ' + (e.message || ''));
+            }
+        }
+        window.restoreProject = restoreProject;
         
         function findProjectById(projectId) {
             const keyNew = `nutriplant_project_${projectId}`;
@@ -9272,6 +9448,86 @@
         let connMapSatelliteLayer = null;
         let connMapMarkerCluster = null;
         let connMapSatelliteView = false;
+        let connMapRawWithCoords = [];
+        let connMapUsersById = {};
+        let connMapRenderMarkers = null;
+
+        function getConnectionsPeriodStart(periodKey) {
+            var now = new Date();
+            if (periodKey === 'week') {
+                // Semana actual (lunes 00:00).
+                var weekStart = new Date(now);
+                var day = weekStart.getDay(); // 0 domingo ... 6 sabado
+                var diffToMonday = day === 0 ? 6 : (day - 1);
+                weekStart.setDate(weekStart.getDate() - diffToMonday);
+                weekStart.setHours(0, 0, 0, 0);
+                return weekStart.getTime();
+            }
+            if (periodKey === 'month') {
+                var monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+                return monthStart.getTime();
+            }
+            if (periodKey === 'year') {
+                var yearStart = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+                return yearStart.getTime();
+            }
+            return 0;
+        }
+
+        function getConnectionsUserLabel(uid) {
+            var u = connMapUsersById[uid] || null;
+            var name = (u && (u.name || u.full_name || u.fullName)) ? String(u.name || u.full_name || u.fullName).trim() : '';
+            var email = (u && u.email) ? String(u.email).trim() : (uid || '—');
+            return name ? (name + ' · ' + email) : email;
+        }
+
+        function getFilteredConnectionsVisits() {
+            var modeEl = document.getElementById('connMapModeFilter');
+            var periodEl = document.getElementById('connMapPeriodFilter');
+            var mode = modeEl ? modeEl.value : 'all_history';
+            var period = periodEl ? periodEl.value : 'all';
+            var out = Array.isArray(connMapRawWithCoords) ? connMapRawWithCoords.slice() : [];
+
+            if (period !== 'all') {
+                var startTs = getConnectionsPeriodStart(period);
+                out = out.filter(function(v) {
+                    var t = v && v.visited_at ? new Date(v.visited_at).getTime() : 0;
+                    return t >= startTs;
+                });
+            }
+
+            if (mode === 'latest_per_user') {
+                var latestByUser = {};
+                out.forEach(function(v) {
+                    if (!v || !v.user_id) return;
+                    var t = v.visited_at ? new Date(v.visited_at).getTime() : 0;
+                    var prev = latestByUser[v.user_id];
+                    var prevT = prev && prev.visited_at ? new Date(prev.visited_at).getTime() : 0;
+                    if (!prev || t > prevT) latestByUser[v.user_id] = v;
+                });
+                out = Object.keys(latestByUser).map(function(uid) { return latestByUser[uid]; });
+            }
+
+            out.sort(function(a, b) {
+                var ta = (a && a.visited_at) ? new Date(a.visited_at).getTime() : 0;
+                var tb = (b && b.visited_at) ? new Date(b.visited_at).getTime() : 0;
+                return tb - ta;
+            });
+            return out;
+        }
+
+        function updateConnectionsSummary(visitsList) {
+            var badge = document.getElementById('connMapSummaryBadge');
+            if (!badge) return;
+            var modeEl = document.getElementById('connMapModeFilter');
+            var periodEl = document.getElementById('connMapPeriodFilter');
+            var mode = modeEl ? modeEl.value : 'all_history';
+            var period = periodEl ? periodEl.value : 'all';
+            var users = new Set((visitsList || []).map(function(v) { return v && v.user_id ? v.user_id : null; }).filter(Boolean));
+            var modeLabel = mode === 'latest_per_user' ? 'Ultima ubicacion por usuario' : 'Visitas historicas';
+            var periodLabel = period === 'week' ? 'Semana actual' : (period === 'month' ? 'Mes actual' : (period === 'year' ? 'Ano actual' : 'Todo'));
+            badge.textContent = modeLabel + ' | ' + periodLabel + ' | Visitas: ' + (visitsList || []).length + ' | Usuarios: ' + users.size;
+        }
 
         function showConnectionsMap() {
             var visits = (window._adminCloudCache && Array.isArray(window._adminCloudCache.dashboardVisits)) ? window._adminCloudCache.dashboardVisits : [];
@@ -9288,6 +9544,8 @@
                 var tb = (b.visited_at ? new Date(b.visited_at).getTime() : 0);
                 return tb - ta;
             });
+            connMapRawWithCoords = withCoords;
+            connMapUsersById = byId;
             var count = withCoords.length;
             var modal = document.getElementById('connMapModal');
             if (!modal) {
@@ -9301,11 +9559,22 @@
                 '<div><h2 style="margin: 0; color: #1e293b; font-size: 20px;">🗺️ Mapa de conexiones</h2>' +
                 '<p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">' + count + ' conexión(es) con ubicación aproximada (por IP). Desde lejos verás agrupaciones; al acercar, detalle. Clic en un punto para ver resumen.</p></div>' +
                 '<div style="display: flex; align-items: center; gap: 10px;">' +
+                '<select id="connMapModeFilter" onchange="applyConnectionsMapFilters()" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">' +
+                '<option value="all_history">Todas las visitas</option>' +
+                '<option value="latest_per_user">Ultima ubicacion por usuario</option>' +
+                '</select>' +
+                '<select id="connMapPeriodFilter" onchange="applyConnectionsMapFilters()" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">' +
+                '<option value="all">Todo el historico</option>' +
+                '<option value="week">Semana actual</option>' +
+                '<option value="month">Mes actual</option>' +
+                '<option value="year">Ano actual</option>' +
+                '</select>' +
                 '<button id="connMapViewToggleBtn" onclick="toggleConnectionsMapView()" style="background: #10b981; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;"><span id="connMapViewIcon">🛰️</span> <span id="connMapViewText">Vista Satelital</span></button>' +
                 '<button onclick="closeConnectionsMapModal()" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="Cerrar">✕ Cerrar</button></div></div>' +
+                '<div id="connMapSummaryBadge" style="padding: 8px 20px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #334155; background: #f8fafc;"></div>' +
                 '<div id="connMapContainer" style="flex: 1; min-height: 400px; border-radius: 0 0 12px 12px; position: relative;">' +
                 '<div id="connMapLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #64748b;">Cargando mapa...</div></div></div>' +
-                '<style>#connMapContainer .marker-cluster{background:linear-gradient(145deg,#fff 0%,#f1f5f9 100%)!important;border:2px solid #f59e0b!important;border-radius:50%!important;box-shadow:0 4px 14px rgba(0,0,0,0.2)!important;}#connMapContainer .marker-cluster div{background:transparent!important;color:#0f172a!important;font-weight:800!important;font-size:15px!important;}</style>';
+                '<style>#connMapContainer .marker-cluster{background:linear-gradient(145deg,#fff 0%,#f1f5f9 100%)!important;border:2px solid #f59e0b!important;border-radius:50%!important;box-shadow:0 4px 14px rgba(0,0,0,0.2)!important;}#connMapContainer .marker-cluster div{background:transparent!important;color:#0f172a!important;font-weight:800!important;font-size:15px!important;display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;line-height:1!important;padding:0!important;margin:0!important;}#connMapContainer .marker-cluster span{display:block!important;line-height:1!important;}</style>';
             modal.style.display = 'flex';
             if (count === 0) {
                 var loadEl = document.getElementById('connMapLoading');
@@ -9337,48 +9606,69 @@
                     shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
                     iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
                 });
-                var clusterGroup = window.L.markerClusterGroup ? new L.markerClusterGroup({ maxClusterRadius: 50, spiderfyOnMaxZoom: true, showCoverageOnHover: false }) : null;
-                var rounded = {};
-                withCoords.forEach(function(v) {
-                    var lat = parseFloat(v.lat);
-                    var lng = parseFloat(v.lng);
-                    var key = lat.toFixed(2) + '|' + lng.toFixed(2);
-                    if (!rounded[key]) rounded[key] = { lat: lat, lng: lng, visits: [] };
-                    rounded[key].visits.push(v);
-                });
-                Object.keys(rounded).forEach(function(key) {
-                    var g = rounded[key];
-                    var lat = g.lat, lng = g.lng;
-                    var list = g.visits.slice(0, 15);
-                    var userLabels = [];
-                    var seen = {};
-                    list.forEach(function(v) {
-                        var uid = v.user_id;
-                        if (seen[uid]) return;
-                        seen[uid] = true;
-                        var u = byId[uid];
-                        var name = (u && (u.name || u.full_name || u.fullName)) ? String(u.name || u.full_name || u.fullName).trim() : '';
-                        var email = (u && u.email) ? u.email : (uid || '—');
-                        var label = name ? (name + ' · ' + email) : email;
-                        userLabels.push(label);
+                connMapRenderMarkers = function(visitsToRender) {
+                    if (!connMapInstance) return;
+                    if (connMapMarkerCluster) {
+                        try { connMapInstance.removeLayer(connMapMarkerCluster); } catch (e) {}
+                        connMapMarkerCluster = null;
+                    }
+                    var clusterGroup = window.L.markerClusterGroup ? new L.markerClusterGroup({ maxClusterRadius: 50, spiderfyOnMaxZoom: true, showCoverageOnHover: false }) : null;
+                    var rounded = {};
+                    var allBoundsLocal = [];
+                    (visitsToRender || []).forEach(function(v) {
+                        var lat = parseFloat(v.lat);
+                        var lng = parseFloat(v.lng);
+                        var key = lat.toFixed(2) + '|' + lng.toFixed(2);
+                        if (!rounded[key]) rounded[key] = { lat: lat, lng: lng, visits: [] };
+                        rounded[key].visits.push(v);
                     });
-                    var lastDate = list.length && list[0].visited_at ? new Date(list[0].visited_at).toLocaleString('es-MX') : '—';
-                    var usersLine = (userLabels.slice(0, 5).join(', ') || '—') + (userLabels.length > 5 ? ' y más' : '');
-                    var popupHtml = '<div style="min-width:200px;padding:6px;"><strong>Conexiones desde aquí:</strong> ' + g.visits.length + '<br><strong>Usuarios:</strong> ' + usersLine + '<br><strong>Última:</strong> ' + lastDate + '</div>';
-                    var marker = L.marker([lat, lng], { icon: defaultIcon }).bindPopup(popupHtml);
-                    allBounds.push([lat, lng]);
-                    if (clusterGroup) clusterGroup.addLayer(marker); else marker.addTo(connMapInstance);
-                });
-                if (clusterGroup && clusterGroup.getLayers().length > 0) {
-                    connMapInstance.addLayer(clusterGroup);
-                    connMapMarkerCluster = clusterGroup;
-                }
-                if (allBounds.length > 0) {
-                    try {
-                        var b = L.latLngBounds(allBounds);
-                        connMapInstance.fitBounds(b, { padding: [40, 40], maxZoom: 15 });
-                    } catch (e) {}
-                }
+                    Object.keys(rounded).forEach(function(key) {
+                        var g = rounded[key];
+                        var lat = g.lat, lng = g.lng;
+                        var byUser = {};
+                        g.visits.forEach(function(v) {
+                            var uid = v.user_id || 'desconocido';
+                            byUser[uid] = byUser[uid] || { uid: uid, count: 0, lastTs: 0 };
+                            byUser[uid].count++;
+                            var t = v && v.visited_at ? new Date(v.visited_at).getTime() : 0;
+                            if (t > byUser[uid].lastTs) byUser[uid].lastTs = t;
+                        });
+                        var userRows = Object.keys(byUser).map(function(uid) { return byUser[uid]; }).sort(function(a, b) { return b.count - a.count; });
+                        var usersTotal = userRows.length;
+                        var usersDetail = userRows.slice(0, 8).map(function(row) {
+                            var label = getConnectionsUserLabel(row.uid);
+                            return '<li style="margin:2px 0;"><strong>' + row.count + '</strong> · ' + label + '</li>';
+                        }).join('');
+                        if (usersTotal > 8) usersDetail += '<li style="margin:2px 0;color:#64748b;">... y ' + (usersTotal - 8) + ' usuario(s) mas</li>';
+                        var latestTs = g.visits.reduce(function(max, v) {
+                            var t = v && v.visited_at ? new Date(v.visited_at).getTime() : 0;
+                            return t > max ? t : max;
+                        }, 0);
+                        var lastDate = latestTs ? new Date(latestTs).toLocaleString('es-MX') : '—';
+                        var popupHtml = '<div style="min-width:260px;padding:6px;">' +
+                            '<strong>Conexiones desde aqui:</strong> ' + g.visits.length + '<br>' +
+                            '<strong>Usuarios en este punto:</strong> ' + usersTotal + '<br>' +
+                            '<strong>Ultima:</strong> ' + lastDate +
+                            '<hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0;">' +
+                            '<div style="font-weight:600;margin-bottom:4px;">Desglose por usuario:</div>' +
+                            '<ol style="margin:0;padding-left:18px;font-size:12px;max-height:150px;overflow:auto;">' + (usersDetail || '<li>Sin detalle</li>') + '</ol>' +
+                            '</div>';
+                        var marker = L.marker([lat, lng], { icon: defaultIcon }).bindPopup(popupHtml);
+                        allBoundsLocal.push([lat, lng]);
+                        if (clusterGroup) clusterGroup.addLayer(marker); else marker.addTo(connMapInstance);
+                    });
+                    if (clusterGroup && clusterGroup.getLayers().length > 0) {
+                        connMapInstance.addLayer(clusterGroup);
+                        connMapMarkerCluster = clusterGroup;
+                    }
+                    if (allBoundsLocal.length > 0) {
+                        try {
+                            var b = L.latLngBounds(allBoundsLocal);
+                            connMapInstance.fitBounds(b, { padding: [40, 40], maxZoom: 15 });
+                        } catch (e) {}
+                    }
+                };
+                applyConnectionsMapFilters();
             }
             function loadLeafletThenConnMap() {
                 if (window.L && window.L.markerClusterGroup) { setTimeout(initConnMap, 100); return; }
@@ -9406,6 +9696,15 @@
             }
         }
         window.showConnectionsMap = showConnectionsMap;
+
+        function applyConnectionsMapFilters() {
+            var filtered = getFilteredConnectionsVisits();
+            updateConnectionsSummary(filtered);
+            if (typeof connMapRenderMarkers === 'function') {
+                connMapRenderMarkers(filtered);
+            }
+        }
+        window.applyConnectionsMapFilters = applyConnectionsMapFilters;
 
         function toggleConnectionsMapView() {
             if (!connMapInstance || !connMapStreetLayer || !connMapSatelliteLayer) return;

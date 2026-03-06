@@ -3824,6 +3824,7 @@ function np_loadProjects() {
         const pid = p.id || key.replace(/^nutriplant[-_]project[-_]/, '');
         if (!pid) continue;
         if ((p.user_id || p.userId) !== userId) continue;
+        if (p._is_deleted === true || p.is_deleted === true || p.deleted_at) continue;
         if (cloudOwnerById.get(pid) && cloudOwnerById.get(pid) !== userId) continue;
         if (mergedById.has(pid)) continue;
         mergedById.set(pid, {
@@ -3871,6 +3872,10 @@ function np_loadProjects() {
             if (projectData) {
               const project = JSON.parse(projectData);
               if (project && project.id) {
+                if (project._is_deleted === true || project.is_deleted === true || project.deleted_at) {
+                  // Proyecto en papelera: no mostrar en panel del usuario.
+                  return;
+                }
                 // Convertir al formato esperado por np_renderProjects
                 userProjects.push({
                   id: project.id,
@@ -4411,10 +4416,26 @@ async function np_deleteProject(id) {
     }
   }
 
-  // 2. 🔒 ELIMINAR PROYECTO DE LOCALSTORAGE
+  // 2. 🔒 BORRADO LÓGICO EN LOCALSTORAGE (recuperable por admin)
   if (projectRaw) {
-    localStorage.removeItem(projectKey);
-    console.log('✅ Proyecto eliminado de localStorage:', projectKey);
+    try {
+      const projectObj = JSON.parse(projectRaw);
+      const nowIso = new Date().toISOString();
+      const restoreUntil = new Date();
+      restoreUntil.setDate(restoreUntil.getDate() + 60);
+      projectObj._is_deleted = true;
+      projectObj.deleted_at = nowIso;
+      projectObj.deleted_by = 'user';
+      projectObj.restore_until = restoreUntil.toISOString();
+      projectObj.updated_at = nowIso;
+      projectObj.updatedAt = nowIso;
+      localStorage.setItem(projectKey, JSON.stringify(projectObj));
+      console.log('✅ Proyecto marcado como eliminado (papelera):', projectKey);
+    } catch (e) {
+      // Fallback seguro si hay JSON corrupto.
+      localStorage.removeItem(projectKey);
+      console.warn('⚠️ No se pudo marcar borrado lógico; se eliminó localmente:', e.message);
+    }
   } else {
     console.warn('⚠️ Proyecto no encontrado en localStorage:', projectKey);
   }
@@ -4472,7 +4493,10 @@ async function np_deleteProject(id) {
     }
   }
   
-  console.log('✅ Proyecto eliminado completamente:', id);
+  if (typeof window.showMessage === 'function') {
+    window.showMessage('✅ Proyecto movido a papelera (recuperable por soporte)', 'success');
+  }
+  console.log('✅ Proyecto movido a papelera:', id);
 }
 function np_duplicateProject(id) {
   console.log('📋 Duplicando proyecto:', id);

@@ -22,6 +22,42 @@
     return Number.isFinite(ts) ? ts : 0;
   }
 
+  function isSoftDeletedData(projectData) {
+    if (!projectData || typeof projectData !== 'object') return false;
+    return projectData._is_deleted === true || projectData.is_deleted === true || !!projectData.deleted_at;
+  }
+
+  function markProjectAsDeleted(projectData, meta) {
+    const source = (projectData && typeof projectData === 'object') ? projectData : {};
+    const nowIso = new Date().toISOString();
+    const retentionDays = (meta && Number.isFinite(meta.retentionDays)) ? meta.retentionDays : 60;
+    const deleteDate = new Date(nowIso);
+    deleteDate.setDate(deleteDate.getDate() + retentionDays);
+    return {
+      ...source,
+      _is_deleted: true,
+      deleted_at: nowIso,
+      deleted_by: (meta && meta.deletedBy) ? meta.deletedBy : 'user',
+      restore_until: deleteDate.toISOString(),
+      updated_at: nowIso,
+      updatedAt: nowIso
+    };
+  }
+
+  function clearSoftDeleteFlags(projectData) {
+    if (!projectData || typeof projectData !== 'object') return projectData;
+    const restored = { ...projectData };
+    delete restored._is_deleted;
+    delete restored.is_deleted;
+    delete restored.deleted_at;
+    delete restored.deleted_by;
+    delete restored.restore_until;
+    const nowIso = new Date().toISOString();
+    restored.updated_at = nowIso;
+    restored.updatedAt = nowIso;
+    return restored;
+  }
+
   function collectUserIdentity() {
     const currentUserId = localStorage.getItem('nutriplant_user_id');
     const identityUserIds = new Set();
@@ -151,10 +187,12 @@
     },
 
     /** Obtener lista de proyectos desde Supabase */
-    fetchProjects: async function() {
+    fetchProjects: async function(options) {
       if (!isSupabaseUser()) return [];
       const client = getClient();
       if (!client) return [];
+      const opts = options || {};
+      const includeDeleted = !!opts.includeDeleted;
 
       try {
         const { data, error } = await client.from('projects').select('id, user_id, name, title, data, updated_at').order('updated_at', { ascending: false });
@@ -168,11 +206,14 @@
           name: p.name || p.title || 'Sin nombre',
           updated_at: p.updated_at,
           data: p.data,
+          is_deleted: isSoftDeletedData(p.data),
+          deleted_at: (p.data && p.data.deleted_at) || null,
+          restore_until: (p.data && p.data.restore_until) || null,
           hasLocation: !!(p.data && p.data.location && p.data.location.polygon),
           hasSoilAnalysis: !!(p.data && p.data.soilAnalysis && Object.keys(p.data.soilAnalysis).length > 0),
           hasFertirriego: !!(p.data && p.data.fertirriego && Object.keys(p.data.fertirriego).length > 0),
           hasGranular: !!(p.data && p.data.granular && Object.keys(p.data.granular).length > 0)
-        }));
+        })).filter(p => includeDeleted ? true : !p.is_deleted);
       } catch (e) {
         console.warn('⚠️ Supabase fetch projects:', e);
         return [];
@@ -193,15 +234,18 @@
     },
 
     /** Obtener un proyecto desde Supabase. Incluye updated_at de la fila para que "Actualizar con la nube" deje local en sync y no bloquee Guardar. */
-    fetchProject: async function(projectId) {
+    fetchProject: async function(projectId, options) {
       if (!isSupabaseUser()) return null;
       const client = getClient();
       if (!client) return null;
+      const opts = options || {};
+      const includeDeleted = !!opts.includeDeleted;
 
       try {
         const { data, error } = await client.from('projects').select('*').eq('id', projectId).single();
         if (error || !data) return null;
         const payload = data.data || data;
+        if (!includeDeleted && isSoftDeletedData(payload)) return null;
         const rowUpdatedAt = data.updated_at != null ? data.updated_at : (data.updatedAt != null ? data.updatedAt : null);
         if (payload && typeof payload === 'object' && rowUpdatedAt) {
           return { ...payload, id: payload.id || data.id, updated_at: rowUpdatedAt, updatedAt: rowUpdatedAt };
@@ -212,8 +256,69 @@
       }
     },
 
-    /** Eliminar un proyecto en la nube (usuario borra el suyo; RLS solo permite los propios). Primero reportes del proyecto, luego el proyecto. */
+    /** Borrado lógico de proyecto en la nube (recuperable por admin). */
     deleteProject: async function(projectId) {
+      if (!isSupabaseUser()) return false;
+      const client = getClient();
+      if (!client) return false;
+      try {
+        const existing = await this.fetchProject(projectId, { includeDeleted: true });
+        if (!existing) {
+          console.warn('⚠️ deleteProject: proyecto no encontrado en nube:', projectId);
+          return false;
+        }
+        const softDeletedData = markProjectAsDeleted(existing, { deletedBy: 'user', retentionDays: 60 });
+        const row = {
+          id: projectId,
+          user_id: localStorage.getItem('nutriplant_user_id'),
+          name: softDeletedData.name || softDeletedData.title || 'Sin nombre',
+          title: softDeletedData.title || softDeletedData.name || '',
+          data: softDeletedData,
+          updated_at: softDeletedData.updated_at || new Date().toISOString()
+        };
+        const { error } = await client.from('projects').upsert(row, { onConflict: 'id', ignoreDuplicates: false });
+        if (error) {
+          console.warn('⚠️ Supabase soft delete project:', error.message);
+          return false;
+        }
+        return true;
+      } catch (e) {
+        console.warn('⚠️ Supabase soft delete project:', e);
+        return false;
+      }
+    },
+
+    /** Restaurar proyecto borrado lógicamente en la nube. */
+    restoreProject: async function(projectId) {
+      if (!isSupabaseUser()) return false;
+      const client = getClient();
+      if (!client) return false;
+      try {
+        const existing = await this.fetchProject(projectId, { includeDeleted: true });
+        if (!existing) return false;
+        const restoredData = clearSoftDeleteFlags(existing);
+        const row = {
+          id: projectId,
+          user_id: localStorage.getItem('nutriplant_user_id'),
+          name: restoredData.name || restoredData.title || 'Sin nombre',
+          title: restoredData.title || restoredData.name || '',
+          data: restoredData,
+          updated_at: restoredData.updated_at || new Date().toISOString()
+        };
+        const { error } = await client.from('projects').upsert(row, { onConflict: 'id', ignoreDuplicates: false });
+        if (error) {
+          console.warn('⚠️ Supabase restore project:', error.message);
+          return false;
+        }
+        return true;
+      } catch (e) {
+        console.warn('⚠️ Supabase restore project:', e);
+        return false;
+      }
+    },
+
+    /** Borrado físico definitivo (uso administrativo). */
+    hardDeleteProject: async function(projectId) {
       if (!isSupabaseUser()) return false;
       const client = getClient();
       if (!client) return false;
@@ -221,12 +326,12 @@
         await client.from('reports').delete().eq('project_id', projectId);
         const { error } = await client.from('projects').delete().eq('id', projectId);
         if (error) {
-          console.warn('⚠️ Supabase delete project:', error.message);
+          console.warn('⚠️ Supabase hard delete project:', error.message);
           return false;
         }
         return true;
       } catch (e) {
-        console.warn('⚠️ Supabase delete project:', e);
+        console.warn('⚠️ Supabase hard delete project:', e);
         return false;
       }
     },
