@@ -6168,24 +6168,42 @@
                     } catch (e) { console.warn('restoreProject user list:', e); }
                 }
 
-                // Restaurar en la nube.
-                if (window.getSupabaseClient) {
-                    const client = window.getSupabaseClient();
-                    if (client) {
-                        const row = {
-                            id: projectId,
-                            user_id: userId,
-                            name: restoredData.name || restoredData.title || cloudRow.name || 'Sin nombre',
-                            title: restoredData.title || restoredData.name || cloudRow.title || '',
-                            data: restoredData,
-                            updated_at: nowIso
-                        };
-                        const { error } = await client.from('projects').upsert(row, { onConflict: 'id' });
-                        if (error) {
-                            alert('⚠️ Se restauró localmente, pero falló la nube: ' + (error.message || ''));
+                // Restaurar en la nube (vía backend con service_role para evitar RLS).
+                var base = window.location.origin;
+                if (!base || base === 'null' || base.startsWith('file://')) base = '';
+                var params = new URLSearchParams(window.location.search);
+                var adminKey = params.get('k') || (typeof ADMIN_ACCESS_KEY !== 'undefined' ? ADMIN_ACCESS_KEY : '');
+                var cloudRestored = false;
+                if (base && adminKey) {
+                    try {
+                        var res = await fetch(base + '/api/admin/restore-project', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                admin_key: adminKey,
+                                project_id: projectId,
+                                user_id: userId,
+                                name: restoredData.name || restoredData.title || cloudRow.name || 'Sin nombre',
+                                title: restoredData.title || restoredData.name || cloudRow.title || '',
+                                data: restoredData,
+                                updated_at: nowIso
+                            })
+                        });
+                        var json = await res.json().catch(function() { return {}; });
+                        if (res.ok && json.ok) {
+                            cloudRestored = true;
+                        } else {
+                            alert('⚠️ Se restauró localmente, pero falló la nube: ' + (json.error || res.status));
                             return;
                         }
+                    } catch (e) {
+                        alert('⚠️ Se restauró localmente, pero falló la nube: ' + (e.message || 'Revisa que el servidor (python server.py) esté corriendo y que la URL del admin sea la correcta.'));
+                        return;
                     }
+                }
+                if (!cloudRestored) {
+                    alert('⚠️ No se pudo restaurar en la nube. Para que Restaurar funcione desde admin, el servidor debe estar corriendo (python server.py) con supabase-server-config.json y SUPABASE_SERVICE_ROLE_KEY configurados.');
+                    return;
                 }
 
                 // Refrescar caché cloud local del admin.

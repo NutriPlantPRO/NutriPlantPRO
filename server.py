@@ -159,6 +159,8 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self._handle_admin_update_user_password()
         elif self.path == '/api/admin/delete-user':
             self._handle_admin_delete_user()
+        elif self.path == '/api/admin/restore-project':
+            self._handle_admin_restore_project()
         else:
             # Para rutas no manejadas, devolver 404 en lugar de 501
             print(f"⚠️ Ruta POST no manejada: {self.path}")
@@ -222,6 +224,68 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             except Exception:
                 msg = err_body
             self._send_json_response({'error': 'Supabase Auth: ' + str(msg)}, e.code)
+            return
+        except Exception as e:
+            self._send_json_response({'error': 'Error de conexión: ' + str(e)}, 502)
+            return
+
+    def _handle_admin_restore_project(self):
+        """Restaura un proyecto borrado (soft-delete) en Supabase usando service_role (bypass RLS)."""
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8') if content_length else '{}'
+            data = json.loads(body) if body.strip() else {}
+        except Exception as e:
+            self._send_json_response({'error': 'Cuerpo JSON inválido: ' + str(e)}, 400)
+            return
+        admin_key = (data.get('admin_key') or '').strip()
+        expected_key = os.environ.get('NUTRIPLANT_ADMIN_KEY', 'np_admin_key_8f4a2b9c1e7d')
+        if not admin_key or admin_key != expected_key:
+            self._send_json_response({'error': 'Acceso no autorizado'}, 403)
+            return
+        project_id = (data.get('project_id') or data.get('id') or '').strip()
+        user_id = (data.get('user_id') or '').strip()
+        name = data.get('name') or 'Sin nombre'
+        title = data.get('title') or ''
+        project_data = data.get('data')
+        updated_at = (data.get('updated_at') or '').strip() or datetime.utcnow().isoformat() + 'Z'
+        if not project_id:
+            self._send_json_response({'error': 'project_id es obligatorio'}, 400)
+            return
+        if not user_id:
+            self._send_json_response({'error': 'user_id es obligatorio'}, 400)
+            return
+        supabase_url, service_role = self._get_supabase_admin_config()
+        if not supabase_url or not service_role:
+            self._send_json_response({'error': 'Configura supabase-server-config.json con SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.'}, 500)
+            return
+        # PATCH a la tabla projects con service_role (bypass RLS)
+        url = f'{supabase_url}/rest/v1/projects?id=eq.{urllib.parse.quote(project_id, safe="")}'
+        payload = {
+            'user_id': user_id,
+            'name': name,
+            'title': title,
+            'data': project_data if project_data is not None else {},
+            'updated_at': updated_at
+        }
+        req_data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(url, data=req_data, method='PATCH')
+        req.add_header('Content-Type', 'application/json')
+        req.add_header('Authorization', 'Bearer ' + service_role)
+        req.add_header('apikey', service_role)
+        req.add_header('Prefer', 'return=minimal')
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                self._send_json_response({'ok': True}, 200)
+                return
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode('utf-8')
+            try:
+                err_json = json.loads(err_body)
+                msg = err_json.get('message') or err_json.get('error_description') or err_json.get('details') or err_body
+            except Exception:
+                msg = err_body
+            self._send_json_response({'error': 'Supabase: ' + str(msg)}, e.code)
             return
         except Exception as e:
             self._send_json_response({'error': 'Error de conexión: ' + str(e)}, 502)
