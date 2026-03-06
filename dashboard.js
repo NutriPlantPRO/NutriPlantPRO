@@ -9689,7 +9689,8 @@ function np_snapshotGranularRequirements() {
                               existingLocation.polygon.length >= 3;
       
       obj.granular = obj.granular || {};
-      obj.granular.requirements = requirementData;
+      // Preservar requirements existentes (extractionOverrides, etc.) y solo actualizar lo del snapshot
+      obj.granular.requirements = { ...(obj.granular.requirements || {}), ...requirementData };
       
       // 🚀 CRÍTICO: Restaurar location después de actualizar
       if (hasValidLocation) {
@@ -9749,7 +9750,8 @@ function np_snapshotFertirriegoRequirements() {
                               existingLocation.polygon.length >= 3;
       
       obj.fertirriego = obj.fertirriego || {};
-      obj.fertirriego.requirements = data;
+      // Preservar requirements existentes (extractionOverrides, etc.) y solo actualizar lo del snapshot
+      obj.fertirriego.requirements = { ...(obj.fertirriego.requirements || {}), ...data };
       
       // 🚀 CRÍTICO: Restaurar location después de actualizar fertirriego
       if (hasValidLocation) {
@@ -12096,7 +12098,16 @@ function createGranularSectionHTML() {
   const totalProgram = {};
   NUTRIENTS.forEach(nutrient => { totalProgram[nutrient] = 0; });
   applications.forEach(app => {
-    const results = app && app.results ? app.results : {};
+    let results = app && app.results ? app.results : {};
+    const hasResults = Object.keys(results).some(n => toNumber(results[n]) !== 0);
+    if (!hasResults && app && app.composition && (parseFloat(app.doseKgHa) || 0) > 0) {
+      const doseKgHa = parseFloat(app.doseKgHa) || 0;
+      const comp = app.composition || {};
+      results = {};
+      NUTRIENTS.forEach(n => {
+        results[n] = (toNumber(comp[n]) * doseKgHa) / 100;
+      });
+    }
     NUTRIENTS.forEach(nutrient => {
       totalProgram[nutrient] += toNumber(results[nutrient]);
     });
