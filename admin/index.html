@@ -579,21 +579,43 @@
         })();
 
         // 🟢 Datos del admin desde la nube (Supabase). Si hay sesión de admin en Supabase, cargamos usuarios y proyectos.
-        window._adminCloudCache = { users: null, projects: null, chats: null, reports: null, dashboardVisits: null };
+        window._adminCloudCache = { users: null, projects: null, chats: null, reports: null, dashboardVisits: null, _cloudLoaded: false, _cloudLastSuccess: false };
         window.nutriplantAdminLoadFromCloud = async function() {
             const client = typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null;
-            if (!client) return false;
+            if (!client) {
+                window._adminCloudCache._cloudLoaded = true;
+                window._adminCloudCache._cloudLastSuccess = false;
+                return false;
+            }
             const { data: { user } } = await client.auth.getUser();
-            if (!user) return false;
+            if (!user) {
+                window._adminCloudCache._cloudLoaded = true;
+                window._adminCloudCache._cloudLastSuccess = false;
+                return false;
+            }
             try {
                 const { data: profiles, error: profilesErr } = await client.from('profiles').select('*');
-                if (profilesErr) { console.warn('nutriplantAdminLoadFromCloud profiles:', profilesErr); return false; }
+                if (profilesErr) {
+                    console.warn('nutriplantAdminLoadFromCloud profiles:', profilesErr);
+                    window._adminCloudCache._cloudLoaded = true;
+                    window._adminCloudCache._cloudLastSuccess = false;
+                    return false;
+                }
                 const myProfile = (profiles || []).find(p => p.id === user.id);
-                if (!myProfile || !myProfile.is_admin) return false;
+                if (!myProfile || !myProfile.is_admin) {
+                    window._adminCloudCache._cloudLoaded = true;
+                    window._adminCloudCache._cloudLastSuccess = false;
+                    return false;
+                }
                 const { data: projectsRows } = await client.from('projects').select('id, user_id, name, title, data, created_at, updated_at');
                 const usersMap = new Map((profiles || []).map(p => [p.id, p]));
                 const projectsByUser = {};
+                const isSoftDeletedCloudProject = function(row) {
+                    var d = (row && row.data) ? row.data : {};
+                    return !!(d._is_deleted || d.is_deleted || d.deleted_at);
+                };
                 (projectsRows || []).forEach(p => {
+                    if (isSoftDeletedCloudProject(p)) return; // En suscriptores contar solo proyectos activos
                     if (!projectsByUser[p.user_id]) projectsByUser[p.user_id] = 0;
                     projectsByUser[p.user_id]++;
                 });
@@ -737,8 +759,15 @@
                     return tb - ta;
                 });
                 window._adminCloudCache.chats = cloudChats;
+                window._adminCloudCache._cloudLoaded = true;
+                window._adminCloudCache._cloudLastSuccess = true;
                 return true;
-            } catch (e) { console.warn('nutriplantAdminLoadFromCloud:', e); return false; }
+            } catch (e) {
+                console.warn('nutriplantAdminLoadFromCloud:', e);
+                window._adminCloudCache._cloudLoaded = true;
+                window._adminCloudCache._cloudLastSuccess = false;
+                return false;
+            }
         };
 
         // 🔐 SISTEMA DE AUTENTICACIÓN DE ADMINISTRADOR - MEJORADO Y SEGURO
@@ -1560,8 +1589,11 @@
             });
         }
         
-        function showAllProjects() {
+        async function showAllProjects() {
             console.log('📋 Mostrando todos los proyectos...');
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
+                try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showAllProjects: load from cloud', e); }
+            }
             const projects = getAllProjects();
             // "Todos los Proyectos" debe mostrar absolutamente todos.
             const visibleProjects = projects;
@@ -2291,20 +2323,27 @@
                 }
             });
             // Recalcular proyectos por dueño real.
-            // Regla: si existe usuario cloud (por id o email), usar SOLO cloud; si no existe, usar max(local, cloud).
+            // Regla de consistencia:
+            // - Si ya se intentó nube, usar fuente cloud (sin mezclar local en esta tabla).
+            // - Si todavía no se intentó nube, fallback local/cloud anterior.
             result.forEach(function(u) {
                 var uid = u.id || u.userId || '';
                 var email = u.email || '';
                 var localCount = getLocalProjectCountForUser(uid, email);
                 var cloudCount = 0;
                 var hasCloudUser = false;
+                var cloudLoaded = !!(window._adminCloudCache && window._adminCloudCache._cloudLoaded === true);
                 try {
                     var cloudUsers = (window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) ? window._adminCloudCache.users : [];
                     var cu = cloudUsers.find(function(x) { return (x && (x.id === uid || (x.email || '').toLowerCase() === (email || '').toLowerCase())); });
                     hasCloudUser = !!cu;
                     if (cu && cu.projects_count != null) cloudCount = parseInt(cu.projects_count || 0, 10) || 0;
                 } catch (e) {}
-                u.projects_count = hasCloudUser ? cloudCount : Math.max(localCount, cloudCount);
+                if (cloudLoaded) {
+                    u.projects_count = hasCloudUser ? cloudCount : 0;
+                } else {
+                    u.projects_count = hasCloudUser ? cloudCount : Math.max(localCount, cloudCount);
+                }
             });
             // Orden estable para admin:
             // 1) Más proyectos primero
@@ -2499,7 +2538,9 @@
         }
 
         function getAllProjects() {
-            // Si hay datos de la nube (Supabase), usar SOLO esos: así el admin ve lo mismo que en Supabase (lo que el usuario borró no reaparece por localStorage)
+            // Si ya se intentó cargar nube, usar SOLO nube (aunque venga vacía):
+            // así evitamos mezclar localStorage de un equipo con Supabase.
+            var cloudLoaded = !!(window._adminCloudCache && window._adminCloudCache._cloudLoaded === true);
             var cloudList = (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) ? window._adminCloudCache.projects : [];
             var cloudIds = new Set((cloudList || []).map(function(p) { return p.id; }));
             var projects = cloudList ? cloudList.slice() : [];
@@ -2527,10 +2568,11 @@
                 p.active_sections_count = countActiveSectionsFromProject(d);
                 p.section_weights = getSectionWeights(d);
             });
-            // Si tenemos lista de la nube, no mezclar con localStorage: el admin ve solo lo que está en Supabase
-            if (cloudList && cloudList.length > 0) {
+            // Si ya hubo intento cloud, no mezclar con localStorage: el admin ve solo lo que está en Supabase.
+            if (cloudLoaded) {
                 return projects.filter(function(p) { return !(p && (p.is_deleted || (p.data && (p.data._is_deleted || p.data.is_deleted || p.data.deleted_at)))); });
             }
+            // Fallback local solo antes del primer intento cloud (arranque temprano).
             const processedIds = new Set();
             const processedKeys = new Set();
             const projectMap = new Map();
