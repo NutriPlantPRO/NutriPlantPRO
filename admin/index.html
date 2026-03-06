@@ -7633,16 +7633,29 @@
                 const reqOxide = {};
                 const fertiReq = fertirriegoRequirements || {};
                 const fertiReqIsElemental = fertiReq.isElementalMode === true;
-                const adj = fertiReq.adjustment || {};
-                const eff = fertiReq.efficiency || {};
+                const rawAdj = fertiReq.adjustment || {};
+                const rawEff = fertiReq.efficiency || {};
+                const FERTI_DEFAULT_EFF = { N: 75, P2O5: 50, K2O: 90, CaO: 90, MgO: 90, S: 90, SO4: 90, Fe: 85, Mn: 85, B: 85, Zn: 85, Cu: 85, Mo: 85, SiO2: 90 };
+                const cropType = fertiReq.cropType || '';
+                const targetYield = parseFloat(fertiReq.targetYield) || 0;
+                const extOverrides = fertiReq.extractionOverrides || {};
+                const baseExt = (extOverrides[cropType] && typeof extOverrides[cropType] === 'object') ? extOverrides[cropType] : {};
+                const totalExtractionOxide = {};
                 summaryNutrients.forEach(n => {
-                    let adjVal = parseFloat(adj[n]) || 0;
-                    if (fertiReqIsElemental) {
+                    totalExtractionOxide[n] = (baseExt[n] !== undefined ? parseFloat(baseExt[n]) : 0) * targetYield;
+                });
+                summaryNutrients.forEach(n => {
+                    const hasSavedAdj = rawAdj[n] !== undefined && rawAdj[n] !== null && rawAdj[n] !== '';
+                    const hasSavedEff = rawEff[n] !== undefined && rawEff[n] !== null && rawEff[n] !== '';
+                    let adjVal = hasSavedAdj ? parseFloat(rawAdj[n]) : (totalExtractionOxide[n] || 0);
+                    const effPct = hasSavedEff ? parseFloat(rawEff[n]) : (FERTI_DEFAULT_EFF[n] != null ? FERTI_DEFAULT_EFF[n] : null);
+                    if (fertiReqIsElemental && hasSavedAdj) {
                         adjVal = convertAdminElementalToOxide(n, adjVal);
+                    } else if (fertiReqIsElemental && !hasSavedAdj) {
+                        adjVal = totalExtractionOxide[n] || 0;
                     }
-                    const effVal = parseFloat(eff[n]);
-                    const effPct = (!isNaN(effVal) && effVal > 0) ? effVal : null;
-                    reqOxide[n] = effPct ? (adjVal / (effPct / 100)) : null;
+                    const effOk = effPct != null && !isNaN(effPct) && effPct > 0;
+                    reqOxide[n] = effOk ? (adjVal / (effPct / 100)) : null;
                 });
                 const waterOx = fertirriegoProgram.waterContribution || {};
                 const summary = { aportado: {}, requerido: {}, aportadoAgua: {}, totalWithWater: {}, diferencia: {} };
