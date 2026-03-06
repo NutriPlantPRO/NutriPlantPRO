@@ -4692,8 +4692,9 @@
         }
 
         function formatAdminValue(nutrient, value) {
+            if (value === null || value === undefined || value === '') return '—';
             const v = typeof value === 'number' ? value : parseFloat(value);
-            if (isNaN(v)) return '0.00';
+            if (isNaN(v)) return '—';
             const micro = ['Fe','Mn','B','Zn','Cu','Mo','Si','SiO2'];
             const decimals = micro.includes(nutrient) ? 3 : 2;
             return v.toFixed(decimals);
@@ -4881,7 +4882,7 @@
             const unit = String(mat.unit || '').toUpperCase();
             const density = parseFloat(mat.density) || 0;
             const isLiquid = unit === 'L' && density > 0;
-            const vol = hydroVolM3 > 0 ? hydroVolM3 : 100;
+            const vol = hydroVolM3 > 0 ? hydroVolM3 : NaN;
             let dose = f.dose != null ? parseFloat(f.dose) : NaN;
             if ((!isFinite(dose) || dose <= 0) && isLiquid && f && f.calcMode === 'product') {
                 const productL = parseFloat(f.productTotalL) || 0;
@@ -4910,7 +4911,7 @@
             }
             const mat = materialsElemental.find(m => m.id === f.materialId);
             if (!mat) return null;
-            const dose = f.dose != null ? parseFloat(f.dose) : adminHydroComputeDoseAndKg(f, 100, materialsElemental).dose;
+            const dose = f.dose != null ? parseFloat(f.dose) : adminHydroComputeDoseAndKg(f, NaN, materialsElemental).dose;
             if (isNaN(dose) || dose <= 0) return null;
             const c = {};
             HYDRO_PPM_NUTRIENTS.forEach(n => { c[n] = dose * (parseFloat(mat[n]) || 0) / 100; });
@@ -5075,7 +5076,9 @@
             const labels = weeks.map((w, i) => `${timeUnit === 'mes' ? 'Mes' : 'Semana'} ${i + 1}`);
             const hasTotals = weeks.some(w => w && w.totals);
             if (!hasTotals) {
-                adminEnsureFertiTotals(program, project);
+                macroContainer.innerHTML = '<div style="color:#94a3b8;font-style:italic;">Sin totales guardados en el programa.</div>';
+                microContainer.innerHTML = '<div style="color:#94a3b8;font-style:italic;">Sin totales guardados en el programa.</div>';
+                return;
             }
 
             const mk = (n) => program.weeks.map(w => parseFloat(w?.totals?.[n] || 0));
@@ -5146,9 +5149,9 @@
                 if (isElemental) {
                     adjOxide = convertAdminElementalToOxide(n, adjOxide);
                 }
-                const eff = efficiency[n] || 85;
-                const divisor = eff > 0 ? eff / 100 : 1;
-                req[n] = adjOxide / divisor;
+                const eff = parseFloat(efficiency[n]);
+                const hasEff = !isNaN(eff) && eff > 0;
+                req[n] = hasEff ? (adjOxide / (eff / 100)) : null;
             });
             return req;
         }
@@ -6572,7 +6575,7 @@
         }
         window.viewProjectDetailsWithReturn = viewProjectDetailsWithReturn;
 
-        function viewProjectDetails(projectId, fromView = null, fromViewParams = null) {
+        async function viewProjectDetails(projectId, fromView = null, fromViewParams = null) {
             // Guardar vista anterior si se proporciona
             if (fromView) {
                 setPreviousView(typeof fromView === 'function' ? fromView : window[fromView], fromViewParams || []);
@@ -6582,14 +6585,38 @@
                 alert('❌ Proyecto no encontrado');
                 return;
             }
-            // Proyectos desde la nube tienen { id, name, data, ... }; los datos reales están en data. Unificar para que la vista vea sections, hidroponia, etc.
             let project = projectRecord.project;
+            // Siempre traer el proyecto recién desde Supabase al abrir detalle, para que lo que ves sea exactamente lo que tiene el usuario guardado (sin depender de caché).
+            if (window.getSupabaseClient && projectRecord.projectKey === null) {
+                try {
+                    const client = window.getSupabaseClient();
+                    if (client) {
+                        const { data: row, error } = await client.from('projects').select('id, user_id, name, title, data, created_at, updated_at').eq('id', projectId).maybeSingle();
+                        if (!error && row && row.data) {
+                            const d = typeof row.data === 'object' ? row.data : (typeof row.data === 'string' ? JSON.parse(row.data || '{}') : {});
+                            project = {
+                                ...d,
+                                id: row.id,
+                                name: row.name || d.name || d.title,
+                                title: row.title || d.title,
+                                created_at: row.created_at || d.created_at,
+                                updated_at: row.updated_at || d.updated_at,
+                                user_id: row.user_id || d.user_id,
+                                userId: row.user_id || d.user_id || d.userId
+                            };
+                        }
+                    }
+                } catch (e) {
+                    console.warn('viewProjectDetails: no se pudo refrescar desde Supabase, usando caché:', e);
+                }
+            }
+            // Si no vino de Supabase (proyecto solo local), unificar data igual
             let cloudData = null;
             if (project && project.data && typeof project.data === 'object') cloudData = project.data;
             else if (project && typeof project.data === 'string') {
                 try { cloudData = JSON.parse(project.data); } catch (e) { cloudData = null; }
             }
-            if (projectRecord.projectKey === null && project && cloudData && typeof cloudData === 'object') {
+            if (projectRecord.projectKey !== null && project && cloudData && typeof cloudData === 'object') {
                 const d = cloudData;
                 project = {
                     ...d,
@@ -6962,22 +6989,10 @@
                 const cropType = granularRequirements.cropType || '';
                 const targetYield = granularRequirements.targetYield || 0;
                 
-                // Extracción por tonelada (de extractionOverrides o defaults)
+                // Solo datos guardados: extracción por tonelada SOLO desde extractionOverrides del proyecto (no inventar con defaults del admin).
                 const extractionPerTon = {};
                 const extractionOverrides = granularRequirements.extractionOverrides || {};
-                const defaultExtraction = {
-                    'maiz': { N: 18, P2O5: 4, K2O: 16, CaO: 2, MgO: 1, S: 0, SO4: 6, Fe: 0.08, Mn: 0.07, B: 0.05, Zn: 0.175, Cu: 0.01, Mo: 0.05, SiO2: 0 },
-                    'aguacate': { N: 9, P2O5: 4, K2O: 16, CaO: 8, MgO: 4, S: 0, SO4: 10, Fe: 0.08, Mn: 0.07, B: 0.05, Zn: 0.175, Cu: 0.01, Mo: 0.05, SiO2: 0 },
-                    'cana': { N: 1.81, P2O5: 0.36, K2O: 2.11, CaO: 0.91, MgO: 0.42, S: 0, SO4: 1.50, Fe: 0.0375, Mn: 0.0155, B: 0.00074, Zn: 0.0062, Cu: 0.0022, Mo: 0.0, SiO2: 0 },
-                    'limon': { N: 10, P2O5: 3.5, K2O: 18, CaO: 12, MgO: 3, S: 0, SO4: 7.5, Fe: 0.08, Mn: 0.07, B: 0.05, Zn: 0.15, Cu: 0.015, Mo: 0.03, SiO2: 0 },
-                    'banano': { N: 4, P2O5: 1.2, K2O: 12, CaO: 0.8, MgO: 0.5, S: 0, SO4: 0.9, Fe: 0.015, Mn: 0.012, B: 0.008, Zn: 0.03, Cu: 0.002, Mo: 0.005, SiO2: 0 },
-                    'trigo': { N: 25, P2O5: 10, K2O: 18, CaO: 3, MgO: 2, S: 0, SO4: 12, Fe: 0.15, Mn: 0.12, B: 0.08, Zn: 0.25, Cu: 0.02, Mo: 0.06, SiO2: 0 },
-                    'sorgo': { N: 35, P2O5: 12, K2O: 25, CaO: 4, MgO: 3, S: 0, SO4: 15, Fe: 0.2, Mn: 0.15, B: 0.1, Zn: 0.35, Cu: 0.025, Mo: 0.08, SiO2: 0 },
-                    'arroz': { N: 15, P2O5: 6, K2O: 12, CaO: 1.5, MgO: 1, S: 0, SO4: 6, Fe: 0.1, Mn: 0.08, B: 0.06, Zn: 0.2, Cu: 0.015, Mo: 0.04, SiO2: 0 },
-                    'cebada': { N: 20, P2O5: 8, K2O: 15, CaO: 2.5, MgO: 1.5, S: 0, SO4: 10.5, Fe: 0.12, Mn: 0.1, B: 0.07, Zn: 0.22, Cu: 0.018, Mo: 0.05, SiO2: 0 }
-                };
-                // Usar extractionOverrides si existen, sino usar defaults
-                const baseExtraction = extractionOverrides[cropType] || defaultExtraction[cropType] || {};
+                const baseExtraction = (extractionOverrides[cropType] && typeof extractionOverrides[cropType] === 'object') ? extractionOverrides[cropType] : {};
                 nutrients.forEach(n => {
                     extractionPerTon[n] = baseExtraction[n] !== undefined ? baseExtraction[n] : 0;
                 });
@@ -7007,11 +7022,11 @@
                     if (isElementalMode) {
                         adjOxide = convertAdminElementalToOxide(n, adjOxide);
                     }
-                    const eff = efficiency[n] || 85;
-                    const divisor = eff > 0 ? eff / 100 : 1;
-                    const rrOx = (adjOxide / divisor);
+                    const eff = parseFloat(efficiency[n]);
+                    const hasEff = !isNaN(eff) && eff > 0;
+                    const rrOx = hasEff ? (adjOxide / (eff / 100)) : null;
                     realRequirementOxide[n] = rrOx;
-                    realRequirement[n] = rrOx.toFixed(2);
+                    realRequirement[n] = rrOx !== null ? rrOx.toFixed(2) : null;
                 });
                 
                 // 🚀 CRÍTICO: Convertir totalExtraction y realRequirement a Elemental si es necesario
@@ -7096,7 +7111,8 @@
                                 }).map(n => {
                                     const value = granularRequirements.efficiency[n];
                                     const label = getAdminNutrientLabel(n, isElementalMode);
-                                    return `<div><strong>${label}:</strong> ${typeof value === 'number' ? value.toFixed(1) : value}%</div>`;
+                                    const numeric = parseFloat(value);
+                                    return `<div><strong>${label}:</strong> ${!isNaN(numeric) ? numeric.toFixed(1) + '%' : '—'}</div>`;
                                 }).join('')}
                             </div>
                     </div>
@@ -7378,30 +7394,10 @@
                 const cropType = fertirriegoRequirements.cropType || '';
                 const targetYield = fertirriegoRequirements.targetYield || 0;
                 
-                // Extracción por tonelada (de extractionOverrides o defaults)
+                // Solo datos guardados: extracción por tonelada SOLO desde extractionOverrides del proyecto (no inventar con defaults del admin).
                 const extractionPerTon = {};
                 const extractionOverrides = fertirriegoRequirements.extractionOverrides || {};
-                const defaultExtraction = {
-                    'aguacate': { N: 9, P2O5: 4, K2O: 16, CaO: 8, MgO: 4, S: 0, SO4: 10, Fe: 0.08, Mn: 0.07, B: 0.05, Zn: 0.175, Cu: 0.01, Mo: 0.05, SiO2: 0 },
-                    'fresa': { N: 6, P2O5: 2, K2O: 10, CaO: 3, MgO: 2, S: 0, SO4: 6, Fe: 0.05, Mn: 0.04, B: 0.03, Zn: 0.08, Cu: 0.006, Mo: 0.02, SiO2: 0 },
-                    'frambuesa': { N: 7, P2O5: 2.5, K2O: 11, CaO: 4, MgO: 2.5, S: 0, SO4: 7.5, Fe: 0.06, Mn: 0.05, B: 0.035, Zn: 0.1, Cu: 0.007, Mo: 0.025, SiO2: 0 },
-                    'tomate': { N: 5, P2O5: 2, K2O: 8, CaO: 4, MgO: 2, S: 0, SO4: 4.5, Fe: 0.06, Mn: 0.05, B: 0.03, Zn: 0.12, Cu: 0.006, Mo: 0.02, SiO2: 0 },
-                    'chile': { N: 6.5, P2O5: 2.5, K2O: 9, CaO: 4.5, MgO: 2.2, S: 0, SO4: 6, Fe: 0.065, Mn: 0.055, B: 0.035, Zn: 0.14, Cu: 0.007, Mo: 0.03, SiO2: 0 },
-                    'sandia': { N: 3.5, P2O5: 1.5, K2O: 5, CaO: 2, MgO: 1, S: 0, SO4: 3, Fe: 0.04, Mn: 0.03, B: 0.02, Zn: 0.08, Cu: 0.005, Mo: 0.015, SiO2: 0 },
-                    'melon': { N: 4, P2O5: 1.8, K2O: 6, CaO: 2.5, MgO: 1.2, S: 0, SO4: 3.6, Fe: 0.045, Mn: 0.035, B: 0.025, Zn: 0.1, Cu: 0.006, Mo: 0.02, SiO2: 0 },
-                    'banano': { N: 4, P2O5: 1.2, K2O: 12, CaO: 0.8, MgO: 0.5, S: 0, SO4: 0.9, Fe: 0.015, Mn: 0.012, B: 0.008, Zn: 0.03, Cu: 0.002, Mo: 0.005, SiO2: 0 },
-                    'papaya': { N: 4.5, P2O5: 1.5, K2O: 7, CaO: 3, MgO: 1.5, S: 0, SO4: 4.5, Fe: 0.05, Mn: 0.04, B: 0.03, Zn: 0.1, Cu: 0.006, Mo: 0.02, SiO2: 0 },
-                    'pepino': { N: 4, P2O5: 1.5, K2O: 6, CaO: 3, MgO: 1.5, S: 0, SO4: 3, Fe: 0.05, Mn: 0.04, B: 0.025, Zn: 0.1, Cu: 0.005, Mo: 0.02, SiO2: 0 },
-                    'lechuga': { N: 3, P2O5: 1, K2O: 4, CaO: 2, MgO: 1, S: 0, SO4: 2.4, Fe: 0.04, Mn: 0.03, B: 0.02, Zn: 0.08, Cu: 0.005, Mo: 0.015, SiO2: 0 },
-                    'cebolla': { N: 2.5, P2O5: 1, K2O: 3.5, CaO: 1.5, MgO: 0.8, S: 0, SO4: 4.5, Fe: 0.04, Mn: 0.03, B: 0.02, Zn: 0.08, Cu: 0.005, Mo: 0.015, SiO2: 0 },
-                    'maiz': { N: 18, P2O5: 4, K2O: 16, CaO: 2, MgO: 1, S: 0, SO4: 6, Fe: 0.08, Mn: 0.07, B: 0.05, Zn: 0.175, Cu: 0.01, Mo: 0.05, SiO2: 0 },
-                    'cana': { N: 1.81, P2O5: 0.36, K2O: 2.11, CaO: 0.91, MgO: 0.42, S: 0, SO4: 1.50, Fe: 0.0375, Mn: 0.0155, B: 0.00074, Zn: 0.0062, Cu: 0.0022, Mo: 0.0, SiO2: 0 },
-                    'arandano': { N: 8, P2O5: 3, K2O: 12, CaO: 4, MgO: 2.5, S: 0, SO4: 6, Fe: 0.07, Mn: 0.06, B: 0.04, Zn: 0.12, Cu: 0.008, Mo: 0.025, SiO2: 0 },
-                    'limon': { N: 10, P2O5: 3.5, K2O: 18, CaO: 12, MgO: 3, S: 0, SO4: 7.5, Fe: 0.08, Mn: 0.07, B: 0.05, Zn: 0.15, Cu: 0.015, Mo: 0.03, SiO2: 0 },
-                    'pimiento': { N: 5.5, P2O5: 2.2, K2O: 8.5, CaO: 4.5, MgO: 2, S: 0, SO4: 6, Fe: 0.065, Mn: 0.055, B: 0.035, Zn: 0.13, Cu: 0.007, Mo: 0.025, SiO2: 0 }
-                };
-                // Usar extractionOverrides si existen, sino usar defaults
-                const baseExtraction = extractionOverrides[cropType] || defaultExtraction[cropType] || {};
+                const baseExtraction = (extractionOverrides[cropType] && typeof extractionOverrides[cropType] === 'object') ? extractionOverrides[cropType] : {};
                 nutrients.forEach(n => {
                     extractionPerTon[n] = baseExtraction[n] !== undefined ? baseExtraction[n] : 0;
                 });
@@ -7430,9 +7426,9 @@
                     if (isElementalMode) {
                         adj = convertAdminOxideToElemental(n, adj);
                     }
-                    const eff = efficiency[n] || 85;
-                    const divisor = eff > 0 ? eff / 100 : 1;
-                    realRequirement[n] = (adj / divisor).toFixed(2);
+                    const eff = parseFloat(efficiency[n]);
+                    const hasEff = !isNaN(eff) && eff > 0;
+                    realRequirement[n] = hasEff ? (adj / (eff / 100)).toFixed(2) : null;
                 });
                 
                 // 🚀 CRÍTICO: Convertir totalExtraction y realRequirement a Elemental si es necesario
@@ -7466,10 +7462,11 @@
                     adjustmentOxide[n] = adjOx;
                     adjustmentDisplay[n] = isElementalMode ? convertAdminOxideToElemental(n, adjOx) : adjOx;
                     const eff = parseFloat(efficiency[n]);
-                    efficiencyDisplay[n] = !isNaN(eff) ? eff : 85;
-                    const divisor = efficiencyDisplay[n] > 0 ? efficiencyDisplay[n] / 100 : 1;
-                    const realOx = adjOx / divisor;
-                    realRequirementDisplay[n] = isElementalMode ? convertAdminOxideToElemental(n, realOx) : realOx;
+                    efficiencyDisplay[n] = (!isNaN(eff) && eff > 0) ? eff : null;
+                    const realOx = efficiencyDisplay[n] ? (adjOx / (efficiencyDisplay[n] / 100)) : null;
+                    realRequirementDisplay[n] = (realOx !== null)
+                        ? (isElementalMode ? convertAdminOxideToElemental(n, realOx) : realOx)
+                        : null;
                     const extOx = extractionPerTon[n] || 0;
                     extractionPerTonDisplay[n] = isElementalMode ? convertAdminOxideToElemental(n, extOx) : extOx;
                     const totalOx = extOx * targetYield;
@@ -7522,7 +7519,7 @@
                         <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
                             ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, isElementalMode);
-                                return `<div><strong>${label}:</strong> ${efficiencyDisplay[n].toFixed(1)}%</div>`;
+                                return `<div><strong>${label}:</strong> ${efficiencyDisplay[n] !== null ? efficiencyDisplay[n].toFixed(1) + '%' : '—'}</div>`;
                             }).join('')}
                         </div>
                     </div>
@@ -7591,25 +7588,29 @@
                 const microProgColumns = progColumns.filter(hasMicroContribution);
                 const microColumnNames = microProgColumns.map(c => adminFertiColumnName(c));
                 const programIsElemental = fertirriegoProgram.mode === true;
-                adminEnsureFertiTotals(fertirriegoProgram, project);
+                const hasProgramTotals = weeks.some(w => w && w.totals && typeof w.totals === 'object');
                 const summaryNutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
-                const totalAporteOxide = { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, S: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0 };
-                weeks.forEach(w => {
-                    totalAporteOxide.N += (parseFloat(w?.totals?.N_NO3) || 0) + (parseFloat(w?.totals?.N_NH4) || 0);
-                    totalAporteOxide.P2O5 += parseFloat(w?.totals?.P2O5) || 0;
-                    totalAporteOxide.K2O += parseFloat(w?.totals?.K2O) || 0;
-                    totalAporteOxide.CaO += parseFloat(w?.totals?.CaO) || 0;
-                    totalAporteOxide.MgO += parseFloat(w?.totals?.MgO) || 0;
-                    totalAporteOxide.S += parseFloat(w?.totals?.S) || 0;
-                    totalAporteOxide.SO4 += parseFloat(w?.totals?.SO4) || 0;
-                    totalAporteOxide.Fe += parseFloat(w?.totals?.Fe) || 0;
-                    totalAporteOxide.Mn += parseFloat(w?.totals?.Mn) || 0;
-                    totalAporteOxide.B += parseFloat(w?.totals?.B) || 0;
-                    totalAporteOxide.Zn += parseFloat(w?.totals?.Zn) || 0;
-                    totalAporteOxide.Cu += parseFloat(w?.totals?.Cu) || 0;
-                    totalAporteOxide.Mo += parseFloat(w?.totals?.Mo) || 0;
-                    totalAporteOxide.SiO2 += parseFloat(w?.totals?.SiO2) || 0;
-                });
+                const totalAporteOxide = hasProgramTotals
+                    ? { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, S: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0 }
+                    : { N: null, P2O5: null, K2O: null, CaO: null, MgO: null, S: null, SO4: null, Fe: null, Mn: null, B: null, Zn: null, Cu: null, Mo: null, SiO2: null };
+                if (hasProgramTotals) {
+                    weeks.forEach(w => {
+                        totalAporteOxide.N += (parseFloat(w?.totals?.N_NO3) || 0) + (parseFloat(w?.totals?.N_NH4) || 0);
+                        totalAporteOxide.P2O5 += parseFloat(w?.totals?.P2O5) || 0;
+                        totalAporteOxide.K2O += parseFloat(w?.totals?.K2O) || 0;
+                        totalAporteOxide.CaO += parseFloat(w?.totals?.CaO) || 0;
+                        totalAporteOxide.MgO += parseFloat(w?.totals?.MgO) || 0;
+                        totalAporteOxide.S += parseFloat(w?.totals?.S) || 0;
+                        totalAporteOxide.SO4 += parseFloat(w?.totals?.SO4) || 0;
+                        totalAporteOxide.Fe += parseFloat(w?.totals?.Fe) || 0;
+                        totalAporteOxide.Mn += parseFloat(w?.totals?.Mn) || 0;
+                        totalAporteOxide.B += parseFloat(w?.totals?.B) || 0;
+                        totalAporteOxide.Zn += parseFloat(w?.totals?.Zn) || 0;
+                        totalAporteOxide.Cu += parseFloat(w?.totals?.Cu) || 0;
+                        totalAporteOxide.Mo += parseFloat(w?.totals?.Mo) || 0;
+                        totalAporteOxide.SiO2 += parseFloat(w?.totals?.SiO2) || 0;
+                    });
+                }
                 const reqOxide = {};
                 const fertiReq = fertirriegoRequirements || {};
                 const fertiReqIsElemental = fertiReq.isElementalMode === true;
@@ -7621,27 +7622,27 @@
                         adjVal = convertAdminElementalToOxide(n, adjVal);
                     }
                     const effVal = parseFloat(eff[n]);
-                    const effPct = !isNaN(effVal) ? effVal : 85;
-                    const divisor = effPct > 0 ? effPct / 100 : 1;
-                    reqOxide[n] = adjVal / divisor;
+                    const effPct = (!isNaN(effVal) && effVal > 0) ? effVal : null;
+                    reqOxide[n] = effPct ? (adjVal / (effPct / 100)) : null;
                 });
                 const waterOx = fertirriegoProgram.waterContribution || {};
                 const summary = { aportado: {}, requerido: {}, aportadoAgua: {}, totalWithWater: {}, diferencia: {} };
                 const display = (n, val) => {
+                    if (val === null || val === undefined) return null;
                     if (!programIsElemental) return val;
                     return convertAdminOxideToElemental(n, val);
                 };
                 summaryNutrients.forEach(n => {
                     const aportOx = totalAporteOxide[n] || 0;
-                    const reqOx = reqOxide[n] || 0;
+                    const reqOx = reqOxide[n];
                     const waterVal = parseFloat(waterOx[n]) || 0;
                     const totalOx = aportOx + waterVal;
-                    const diffOx = totalOx - reqOx;
+                    const diffOx = reqOx !== null && reqOx !== undefined ? (totalOx - reqOx) : null;
                     summary.aportado[n] = display(n, aportOx);
-                    summary.requerido[n] = display(n, reqOx);
+                    summary.requerido[n] = reqOx !== null && reqOx !== undefined ? display(n, reqOx) : null;
                     summary.aportadoAgua[n] = display(n, waterVal);
                     summary.totalWithWater[n] = display(n, totalOx);
-                    summary.diferencia[n] = display(n, diffOx);
+                    summary.diferencia[n] = diffOx !== null && diffOx !== undefined ? display(n, diffOx) : null;
                 });
                 const totalDose = weeks.reduce((acc, w) => {
                     if (w && w.kgByCol) {
@@ -7661,14 +7662,18 @@
                 };
                 const microLabel = (n) => getAdminNutrientLabel(n, programIsElemental);
                 const displayMacro = (n, v) => {
-                    let val = parseFloat(v || 0);
+                    if (v === null || v === undefined || v === '') return '—';
+                    let val = parseFloat(v);
+                    if (isNaN(val)) return '—';
                     if (programIsElemental && ['P2O5','K2O','CaO','MgO'].includes(n)) {
                         val = convertAdminOxideToElemental(n, val);
                     }
                     return formatAdminValue(n, val);
                 };
                 const displayMicro = (n, v) => {
-                    let val = parseFloat(v || 0);
+                    if (v === null || v === undefined || v === '') return '—';
+                    let val = parseFloat(v);
+                    if (isNaN(val)) return '—';
                     if (programIsElemental && n === 'SiO2') {
                         val = convertAdminOxideToElemental(n, val);
                     }
@@ -7690,8 +7695,12 @@
                         ${microCols.map((n, i) => `<td style="padding:8px;border:1px solid #e2e8f0;${i === 0 ? dividerBorder : ''}text-align:right;">${displayMicro(n, w?.totals?.[n])}</td>`).join('')}
                     </tr>
                 `).join('');
-                const macroTotals = macroCols.map(n => weeks.reduce((acc, w) => acc + (parseFloat(w?.totals?.[n]) || 0), 0));
-                const microTotals = microCols.map(n => weeks.reduce((acc, w) => acc + (parseFloat(w?.totals?.[n]) || 0), 0));
+                const macroTotals = hasProgramTotals
+                    ? macroCols.map(n => weeks.reduce((acc, w) => acc + (parseFloat(w?.totals?.[n]) || 0), 0))
+                    : macroCols.map(() => null);
+                const microTotals = hasProgramTotals
+                    ? microCols.map(n => weeks.reduce((acc, w) => acc + (parseFloat(w?.totals?.[n]) || 0), 0))
+                    : microCols.map(() => null);
                 const macroTotalsRow = `
                     <tr style="background:#f1f5f9;font-weight:600;">
                         <td style="padding:8px;border:1px solid #e2e8f0;">TOTAL</td>
@@ -7711,6 +7720,7 @@
                 html += `
                     <div style="background: white; padding: 16px; border-radius: 6px; border: 1px solid #86efac;">
                         <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px; font-weight: 600;">💧 Programa de Fertirriego</h4>
+                        ${!hasProgramTotals ? '<div style="margin-bottom:10px;padding:8px 10px;background:#fffbeb;border:1px dashed #f59e0b;border-radius:6px;color:#92400e;font-size:12px;">No hay totales guardados por semana en este programa. El admin no recalcula con catálogo interno; muestra solo lo guardado.</div>' : ''}
                         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;">
                             <div style="font-weight:600;color:#1e293b;margin-bottom:8px;">📊 Resumen Total del Ciclo</div>
                             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-bottom:10px;">
@@ -7839,9 +7849,12 @@
                 ? (hydroStages.find(s => (hidroponia.activeStageId && s?.id === hidroponia.activeStageId)) || hydroStages[0])
                 : null;
             const hydroFerts = (hasHidroponiaData && Array.isArray(hidroponia.fertilizers)) ? hidroponia.fertilizers : [];
-            const hydroVolM3 = hasHidroponiaData ? (parseFloat(hidroponia.volumeWaterM3) || 100) : 100;
-            const hydroTankL = hasHidroponiaData ? (parseFloat(hidroponia.tankVolumeL) || 1000) : 1000;
-            const hydroInjRate = hasHidroponiaData ? (parseFloat(hidroponia.injectionRateLperM3) || 10) : 10;
+            const hydroVolM3Raw = hasHidroponiaData ? parseFloat(hidroponia.volumeWaterM3) : NaN;
+            const hydroTankLRaw = hasHidroponiaData ? parseFloat(hidroponia.tankVolumeL) : NaN;
+            const hydroInjRateRaw = hasHidroponiaData ? parseFloat(hidroponia.injectionRateLperM3) : NaN;
+            const hydroVolM3 = (!isNaN(hydroVolM3Raw) && hydroVolM3Raw > 0) ? hydroVolM3Raw : null;
+            const hydroTankL = (!isNaN(hydroTankLRaw) && hydroTankLRaw > 0) ? hydroTankLRaw : null;
+            const hydroInjRate = (!isNaN(hydroInjRateRaw) && hydroInjRateRaw > 0) ? hydroInjRateRaw : null;
             html += `
                 <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #0ea5e9;">
                     <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">
@@ -7947,22 +7960,24 @@
                     </div>
                 `;
             }
-            if (hasHidroponiaData && (hydroVolM3 > 0 || hydroFerts.length > 0)) {
-                const concentradoL = hydroVolM3 * hydroInjRate;
-                const recargas = hydroTankL > 0 ? Math.ceil(concentradoL / hydroTankL) : 0;
+            if (hasHidroponiaData && (hydroVolM3 !== null || hydroFerts.length > 0)) {
+                const concentradoL = (hydroVolM3 !== null && hydroInjRate !== null) ? hydroVolM3 * hydroInjRate : null;
+                const recargas = (concentradoL !== null && hydroTankL !== null) ? Math.ceil(concentradoL / hydroTankL) : 0;
                 const recargasText = recargas <= 1 ? '1 recarga (el tanque alcanza).' : recargas + ' recargas de tanque necesarias.';
-                const hydroRatio = hydroInjRate > 0 ? Math.round(1000 / hydroInjRate) : 100;
+                const hydroRatio = hydroInjRate !== null ? Math.round(1000 / hydroInjRate) : null;
                 html += `
                     <div style="margin-bottom: 16px;">
                         <strong style="color: #1e293b; font-size: 14px;">📦 Cálculo por volumen de agua</strong>
                         <div style="background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-                            <div><strong>Volumen de agua (m³):</strong> ${hydroVolM3}</div>
-                            <div><strong>Volumen del tanque (L):</strong> ${hydroTankL}</div>
-                            <div><strong>Tasa de inyección (L/m³):</strong> ${hydroInjRate}</div>
-                            <div><strong>Relación de inyección:</strong> 1:${hydroRatio}</div>
+                            <div><strong>Volumen de agua (m³):</strong> ${hydroVolM3 !== null ? hydroVolM3 : 'Sin dato'}</div>
+                            <div><strong>Volumen del tanque (L):</strong> ${hydroTankL !== null ? hydroTankL : 'Sin dato'}</div>
+                            <div><strong>Tasa de inyección (L/m³):</strong> ${hydroInjRate !== null ? hydroInjRate : 'Sin dato'}</div>
+                            <div><strong>Relación de inyección:</strong> ${hydroRatio !== null ? `1:${hydroRatio}` : 'Sin dato'}</div>
                         </div>
                         <div style="margin-top: 10px; padding: 8px 12px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd; font-size: 13px;">
-                            <strong>Volumen de concentrado necesario:</strong> ${concentradoL.toFixed(1)} L (${hydroVolM3} m³ × ${hydroInjRate} L/m³). <span style="color:#64748b;">Con tanque de ${hydroTankL} L:</span> ${recargasText}
+                            ${concentradoL !== null
+                                ? `<strong>Volumen de concentrado necesario:</strong> ${concentradoL.toFixed(1)} L (${hydroVolM3} m³ × ${hydroInjRate} L/m³). <span style="color:#64748b;">Con tanque de ${hydroTankL} L:</span> ${recargasText}`
+                                : '<strong>Volumen de concentrado necesario:</strong> Sin dato (faltan volumen de agua y/o tasa de inyección guardados).'}
                         </div>
                     </div>
                 `;

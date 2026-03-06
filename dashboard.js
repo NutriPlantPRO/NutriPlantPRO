@@ -7784,6 +7784,11 @@ window.downloadReport = function(reportId) {
   }
 
   if (Array.isArray(report.selectedSections) && report.selectedSections.length > 0) {
+    const persistedOk = persistReportSourceData();
+    if (!persistedOk) {
+      showMessage('❌ No se pudo guardar el estado actual antes de descargar el reporte.', 'error');
+      return;
+    }
     const printableSections = normalizeReportSections(report.selectedSections);
     if (!printableSections.length) {
       showMessage('⚠️ Este reporte no contiene secciones válidas para PDF.', 'warning');
@@ -10809,6 +10814,52 @@ function getSelectedReportSections() {
   return normalizeReportSections(selected);
 }
 
+function persistReportSourceData() {
+  try {
+    if (!currentProject || !currentProject.id) return false;
+
+    // 1) Volcar cualquier cambio pendiente visible en UI antes de reportar
+    try { if (typeof saveBeforeTabChange === 'function') saveBeforeTabChange(); } catch (e) { console.warn('persistReportSourceData: saveBeforeTabChange', e); }
+    try { if (typeof window.flushFertiProgramIfDirty === 'function') window.flushFertiProgramIfDirty(); } catch (e) { console.warn('persistReportSourceData: flushFertiProgramIfDirty', e); }
+    try { if (typeof window.flushFertirriegoRequirementsIfDirty === 'function') window.flushFertirriegoRequirementsIfDirty(); } catch (e) { console.warn('persistReportSourceData: flushFertirriegoRequirementsIfDirty', e); }
+    try { if (typeof window.flushGranularRequirementsIfDirty === 'function') window.flushGranularRequirementsIfDirty(); } catch (e) { console.warn('persistReportSourceData: flushGranularRequirementsIfDirty', e); }
+
+    // 2) Guardado explícito de secciones clave (inputs + snapshots)
+    try {
+      if (typeof window.saveFertirriegoRequirementsImmediate === 'function') window.saveFertirriegoRequirementsImmediate();
+      else if (typeof window.saveFertirriegoRequirements === 'function') window.saveFertirriegoRequirements();
+    } catch (e) { console.warn('persistReportSourceData: saveFertirriegoRequirements', e); }
+    try {
+      if (typeof window.saveGranularRequirementsImmediate === 'function') window.saveGranularRequirementsImmediate();
+      else if (typeof window.saveGranularRequirements === 'function') window.saveGranularRequirements();
+    } catch (e) { console.warn('persistReportSourceData: saveGranularRequirements', e); }
+    try { if (typeof window.saveApplications === 'function') window.saveApplications(); } catch (e) { console.warn('persistReportSourceData: saveApplications', e); }
+
+    // 3) Persistencia global del proyecto
+    try { if (typeof saveProjectData === 'function') saveProjectData({ silent: true }); } catch (e) { console.warn('persistReportSourceData: saveProjectData', e); }
+
+    // 4) Rehidratar desde storage para que el reporte use exactamente lo persistido
+    if (window.projectStorage && typeof window.projectStorage.loadProject === 'function') {
+      const persisted = window.projectStorage.loadProject(currentProject.id);
+      if (persisted && typeof persisted === 'object') {
+        currentProject = { ...currentProject, ...persisted };
+      }
+    } else {
+      const key = `nutriplant_project_${currentProject.id}`;
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') currentProject = { ...currentProject, ...parsed };
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error('❌ Error persistiendo fuente de reporte:', error);
+    return false;
+  }
+}
+
 // Función para generar el reporte PDF
 window.generatePDFReport = function() {
   console.log('📄 Generando reporte PDF...');
@@ -10816,6 +10867,12 @@ window.generatePDFReport = function() {
   const selectedSections = normalizeReportSections(getSelectedReportSections());
   if (!selectedSections.length) {
     showMessage('⚠️ Selecciona al menos una sección para el reporte.', 'warning');
+    return;
+  }
+
+  const persistedOk = persistReportSourceData();
+  if (!persistedOk) {
+    showMessage('❌ No se pudo guardar el estado actual antes de generar el reporte.', 'error');
     return;
   }
 
@@ -12004,11 +12061,9 @@ function createGranularSectionHTML() {
   }
 
   const extractionOverrides = (req.extractionOverrides && crop && req.extractionOverrides[crop]) || {};
-  const baseExtraction = (window.GRANULAR_CROP_EXTRACTION_DB && crop && window.GRANULAR_CROP_EXTRACTION_DB[crop]) || {};
   const extraction = {};
   NUTRIENTS.forEach(nutrient => {
     if (extractionOverrides[nutrient] !== undefined) extraction[nutrient] = toNumber(extractionOverrides[nutrient]);
-    else if (baseExtraction[nutrient] !== undefined) extraction[nutrient] = toNumber(baseExtraction[nutrient]);
   });
 
   const totalExtraction = {};
@@ -12022,7 +12077,7 @@ function createGranularSectionHTML() {
   NUTRIENTS.forEach(nutrient => {
     const adj = toNumber(adjustment[nutrient]);
     const eff = toNumber(efficiency[nutrient]);
-    realRequirement[nutrient] = eff > 0 ? (adj / (eff / 100)) : adj;
+    realRequirement[nutrient] = eff > 0 ? (adj / (eff / 100)) : null;
   });
 
   const applications = Array.isArray(program.applications) ? program.applications : [];
@@ -12037,7 +12092,7 @@ function createGranularSectionHTML() {
 
   const diffProgram = {};
   NUTRIENTS.forEach(nutrient => {
-    diffProgram[nutrient] = totalProgram[nutrient] - realRequirement[nutrient];
+    diffProgram[nutrient] = realRequirement[nutrient] === null ? null : (totalProgram[nutrient] - realRequirement[nutrient]);
   });
 
   function renderMaterialsTable(app) {
@@ -12166,33 +12221,39 @@ function createFertigationSectionHTML(chartImages) {
     return reportFormatOxideLabel(n);
   }
   function display(n, value, elemental) {
+    if (value === null || value === undefined || value === '') return null;
     const raw = toNum(value);
     if (!elemental || !conv[n]) return raw;
     return raw / conv[n];
   }
   function d(n) { return ['Fe','Mn','B','Zn','Cu','Mo','SiO2'].includes(n) ? 3 : 2; }
   function nutrientGrid(values, elemental, cls) {
-    return nutrients.map(n => {
-      const v = display(n, values ? values[n] : 0, elemental);
+    const pills = nutrients.map(n => {
+      const v = display(n, values ? values[n] : null, elemental);
+      if (v === null) return '';
       const extra = cls && v < 0 ? ' negative' : '';
       return `<span class="report-nutrient-pill${extra}"><strong>${label(n, elemental)}:</strong> ${v.toFixed(d(n))}</span>`;
-    }).join('');
+    }).filter(Boolean).join('');
+    return pills || '<span class="report-note-inline">Sin datos disponibles.</span>';
   }
 
   const extractionOverrides = (req.extractionOverrides && crop && req.extractionOverrides[crop]) || {};
-  const baseExtraction = (typeof CROP_EXTRACTION_DB !== 'undefined' && CROP_EXTRACTION_DB && crop && CROP_EXTRACTION_DB[crop]) ? CROP_EXTRACTION_DB[crop] : {};
   const extraction = {};
-  nutrients.forEach(n => { extraction[n] = extractionOverrides[n] !== undefined ? toNum(extractionOverrides[n]) : toNum(baseExtraction[n]); });
+  nutrients.forEach(n => {
+    if (extractionOverrides[n] !== undefined) extraction[n] = toNum(extractionOverrides[n]);
+  });
   const totalExtraction = {};
-  nutrients.forEach(n => { totalExtraction[n] = extraction[n] * targetYield; });
+  nutrients.forEach(n => {
+    totalExtraction[n] = extraction[n] !== undefined ? extraction[n] * targetYield : null;
+  });
 
   const adjustment = req.adjustment || {};
   const efficiency = req.efficiency || {};
   const required = {};
   nutrients.forEach(n => {
     const adj = toNum(adjustment[n]);
-    const eff = toNum(efficiency[n]) || 85;
-    required[n] = eff > 0 ? adj / (eff / 100) : adj;
+    const eff = toNum(efficiency[n]);
+    required[n] = eff > 0 ? adj / (eff / 100) : null;
   });
 
   const weeks = Array.isArray(prog.weeks) ? prog.weeks : [];
@@ -12259,31 +12320,7 @@ function createFertigationSectionHTML(chartImages) {
     const idx = columns.indexOf(c);
     return idx >= 0 ? columnNames[idx] : fertiColumnName(c, 0);
   });
-  // Fallback: si las semanas no traen totals (o vienen en cero), reconstruir con kgByCol + catálogo.
-  const fertiKeys = ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
-  function computeWeekTotalsFromProgram(week) {
-    const totals = { N_NO3:0, N_NH4:0, P2O5:0, K2O:0, CaO:0, MgO:0, S:0, SO4:0, Fe:0, Mn:0, B:0, Zn:0, Cu:0, Mo:0, SiO2:0 };
-    const kgByCol = week && week.kgByCol ? week.kgByCol : {};
-    columns.forEach(c => {
-      const kg = toNum(kgByCol[c?.id]);
-      if (kg <= 0) return;
-      const mat = fertiById.get(c?.materialId) || fertiCustomById.get(c?.materialId) || {};
-      const density = toNum(mat.density);
-      const isLiquid = String(mat.unit || '').toUpperCase() === 'L' && density > 0;
-      const productKg = isLiquid ? (kg * density) : kg;
-      fertiKeys.forEach(n => {
-        totals[n] += productKg * (toNum(mat[n]) / 100);
-      });
-    });
-    return totals;
-  }
-  weeks.forEach(w => {
-    const hasTotals = !!(w && w.totals && typeof w.totals === 'object');
-    const totalSum = hasTotals ? fertiKeys.reduce((acc, n) => acc + toNum(w.totals[n]), 0) : 0;
-    if (!hasTotals || totalSum === 0) {
-      w.totals = computeWeekTotalsFromProgram(w);
-    }
-  });
+  const hasWeekTotals = weeks.some(w => w && w.totals && typeof w.totals === 'object');
 
   function buildReportInlineSvgChart(labels, datasets) {
     if (!Array.isArray(labels) || !labels.length) {
@@ -12326,16 +12363,22 @@ function createFertigationSectionHTML(chartImages) {
   }
   const waterContribution = prog.waterContribution || {};
   const totalProgram = {};
-  nutrients.forEach(n => { totalProgram[n] = 0; });
-  weeks.forEach(w => {
-    const t = w && w.totals ? w.totals : {};
-    nutrients.forEach(n => { totalProgram[n] += toNum(t[n]); });
-  });
+  nutrients.forEach(n => { totalProgram[n] = hasWeekTotals ? 0 : null; });
+  if (hasWeekTotals) {
+    weeks.forEach(w => {
+      const t = w && w.totals ? w.totals : {};
+      nutrients.forEach(n => { totalProgram[n] += toNum(t[n]); });
+    });
+  }
   const totalWithWater = {};
   const diff = {};
   nutrients.forEach(n => {
-    totalWithWater[n] = totalProgram[n] + toNum(waterContribution[n]);
-    diff[n] = totalWithWater[n] - required[n];
+    const water = (waterContribution[n] !== undefined && waterContribution[n] !== null && waterContribution[n] !== '')
+      ? toNum(waterContribution[n])
+      : null;
+    if (totalProgram[n] === null && water === null) totalWithWater[n] = null;
+    else totalWithWater[n] = (totalProgram[n] === null ? 0 : totalProgram[n]) + (water === null ? 0 : water);
+    diff[n] = (totalWithWater[n] === null || required[n] === null) ? null : (totalWithWater[n] - required[n]);
   });
   const totalDose = weeks.reduce((acc, w) => {
     const kgByCol = w && w.kgByCol ? w.kgByCol : {};
@@ -12343,15 +12386,18 @@ function createFertigationSectionHTML(chartImages) {
   }, 0);
   const macroDoseColumnTotals = macroDoseColumns.map(c => weeks.reduce((acc, w) => acc + toNum(w?.kgByCol?.[c.id]), 0));
   const microDoseColumnTotals = microDoseColumns.map(c => weeks.reduce((acc, w) => acc + toNum(w?.kgByCol?.[c.id]), 0));
-  const totalMacroCols = macroCols.map(n => weeks.reduce((acc, w) => acc + toNum(w?.totals?.[n]), 0));
-  const totalMicroCols = microCols.map(n => weeks.reduce((acc, w) => acc + toNum(w?.totals?.[n]), 0));
+  const totalMacroCols = hasWeekTotals ? macroCols.map(n => weeks.reduce((acc, w) => acc + toNum(w?.totals?.[n]), 0)) : macroCols.map(() => null);
+  const totalMicroCols = hasWeekTotals ? microCols.map(n => weeks.reduce((acc, w) => acc + toNum(w?.totals?.[n]), 0)) : microCols.map(() => null);
 
   const macroRows = weeks.map((w, idx) => `
     <tr>
       <td>${reportEscapeHtml(w?.stage || '')}</td>
       <td>${idx + 1}</td>
       ${macroDoseColumns.map(c => `<td>${toNum(w?.kgByCol?.[c.id]).toFixed(2)}</td>`).join('')}
-      ${macroCols.map((n, i) => `<td class="${i === 0 ? 'report-divider-left' : ''}">${display(n, w?.totals?.[n], programModeIsElemental).toFixed(d(n))}</td>`).join('')}
+      ${macroCols.map((n, i) => {
+        const v = display(n, w?.totals?.[n], programModeIsElemental);
+        return `<td class="${i === 0 ? 'report-divider-left' : ''}">${v === null ? '—' : v.toFixed(d(n))}</td>`;
+      }).join('')}
     </tr>
   `).join('');
   const microRows = weeks.map((w, idx) => `
@@ -12359,7 +12405,10 @@ function createFertigationSectionHTML(chartImages) {
       <td>${reportEscapeHtml(w?.stage || '')}</td>
       <td>${idx + 1}</td>
       ${microDoseColumns.map(c => `<td>${toNum(w?.kgByCol?.[c.id]).toFixed(2)}</td>`).join('')}
-      ${microCols.map((n, i) => `<td class="${i === 0 ? 'report-divider-left' : ''}">${display(n, w?.totals?.[n], programModeIsElemental).toFixed(d(n))}</td>`).join('')}
+      ${microCols.map((n, i) => {
+        const v = display(n, w?.totals?.[n], programModeIsElemental);
+        return `<td class="${i === 0 ? 'report-divider-left' : ''}">${v === null ? '—' : v.toFixed(d(n))}</td>`;
+      }).join('')}
     </tr>
   `).join('');
 
@@ -12406,7 +12455,7 @@ function createFertigationSectionHTML(chartImages) {
     { label: 'Mo', data: weeks.map(w => toNum(w?.totals?.Mo)), color: microColors.Mo }
   ];
 
-  const chartsBlock = (hasCharts || weeks.length > 0) ? `
+  const chartsBlock = (hasCharts || (weeks.length > 0 && hasWeekTotals)) ? `
       <div class="report-block" style="border-color:#93c5fd;background:#eff6ff;">
         <div class="report-block-title">📈 Gráficas de Fertirriego</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
@@ -12448,6 +12497,7 @@ function createFertigationSectionHTML(chartImages) {
       </div>
       <div class="report-block" style="border-color:#99f6e4;background:#f0fdfa;">
         <div class="report-block-title">💧 Programa de Fertirriego <span class="report-mode-badge">${programModeIsElemental ? 'Modo Elemental' : 'Modo Óxido'}</span></div>
+        ${!hasWeekTotals ? '<div class="report-note" style="margin-bottom:8px;">Sin totales guardados por semana. El reporte no recalcula con catálogo interno.</div>' : ''}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:8px;">
           <div><strong>Semanas:</strong> ${weeks.length}</div>
           <div><strong>Dosis total Kg/Ha:</strong> ${totalDose.toFixed(2)}</div>
@@ -12481,7 +12531,10 @@ function createFertigationSectionHTML(chartImages) {
               <td>TOTAL</td>
               <td></td>
               ${macroDoseColumnTotals.map(v => `<td>${v.toFixed(2)}</td>`).join('')}
-              ${macroCols.map((n, i) => `<td class="${i === 0 ? 'report-divider-left' : ''}">${display(n, totalMacroCols[i], programModeIsElemental).toFixed(d(n))}</td>`).join('')}
+              ${macroCols.map((n, i) => {
+                const v = display(n, totalMacroCols[i], programModeIsElemental);
+                return `<td class="${i === 0 ? 'report-divider-left' : ''}">${v === null ? '—' : v.toFixed(d(n))}</td>`;
+              }).join('')}
             </tr>
           </tbody>
         </table>
@@ -12503,7 +12556,10 @@ function createFertigationSectionHTML(chartImages) {
               <td>TOTAL</td>
               <td></td>
               ${microDoseColumnTotals.map(v => `<td>${v.toFixed(2)}</td>`).join('')}
-              ${microCols.map((n, i) => `<td class="${i === 0 ? 'report-divider-left' : ''}">${display(n, totalMicroCols[i], programModeIsElemental).toFixed(d(n))}</td>`).join('')}
+              ${microCols.map((n, i) => {
+                const v = display(n, totalMicroCols[i], programModeIsElemental);
+                return `<td class="${i === 0 ? 'report-divider-left' : ''}">${v === null ? '—' : v.toFixed(d(n))}</td>`;
+              }).join('')}
             </tr>
           </tbody>
         </table>
@@ -12693,11 +12749,16 @@ function createHidroponiaSectionHTML() {
   const stages = Array.isArray(h.stages) ? h.stages : [];
   const activeStage = stages.find(s => s && h.activeStageId && s.id === h.activeStageId) || stages[0] || null;
   const fertilizers = Array.isArray(h.fertilizers) ? h.fertilizers : [];
-  const volumeWaterM3 = Number(h.volumeWaterM3) || 0;
-  const tankVolumeL = Number(h.tankVolumeL) || 0;
-  const injectionRateLperM3 = Number(h.injectionRateLperM3) || 0;
-  const injectionRatio = injectionRateLperM3 > 0 ? Math.round(1000 / injectionRateLperM3) : 0;
-  const recargas = tankVolumeL > 0 ? Math.ceil((volumeWaterM3 * injectionRateLperM3) / tankVolumeL) : 0;
+  const volumeWaterM3Raw = Number(h.volumeWaterM3);
+  const tankVolumeLRaw = Number(h.tankVolumeL);
+  const injectionRateRaw = Number(h.injectionRateLperM3);
+  const volumeWaterM3 = Number.isFinite(volumeWaterM3Raw) && volumeWaterM3Raw > 0 ? volumeWaterM3Raw : null;
+  const tankVolumeL = Number.isFinite(tankVolumeLRaw) && tankVolumeLRaw > 0 ? tankVolumeLRaw : null;
+  const injectionRateLperM3 = Number.isFinite(injectionRateRaw) && injectionRateRaw > 0 ? injectionRateRaw : null;
+  const injectionRatio = injectionRateLperM3 ? Math.round(1000 / injectionRateLperM3) : null;
+  const recargas = (tankVolumeL && volumeWaterM3 && injectionRateLperM3)
+    ? Math.ceil((volumeWaterM3 * injectionRateLperM3) / tankVolumeL)
+    : null;
   const meqNutrients = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
   const microNutrients = ['Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo'];
   const hydroNutrients = [...meqNutrients, ...microNutrients];
@@ -12732,7 +12793,7 @@ function createHidroponiaSectionHTML() {
     const unit = String(mat?.unit || '').toUpperCase();
     const density = toNum(mat?.density);
     const isLiquid = unit === 'L' && density > 0;
-    const vol = volumeWaterM3 > 0 ? volumeWaterM3 : 100;
+    const vol = volumeWaterM3 && volumeWaterM3 > 0 ? volumeWaterM3 : NaN;
 
     let dose = fert && fert.dose != null ? Number(fert.dose) : NaN;
     if ((!Number.isFinite(dose) || dose <= 0) && isLiquid && fert && fert.calcMode === 'product') {
@@ -12929,11 +12990,11 @@ function createHidroponiaSectionHTML() {
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
         <div class="report-block-title">📦 Cálculo por volumen de agua</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
-          <div><strong>Volumen de agua:</strong> ${reportNum(volumeWaterM3, 2)} m³</div>
-          <div><strong>Volumen tanque:</strong> ${reportNum(tankVolumeL, 0)} L</div>
-          <div><strong>Tasa inyección:</strong> ${reportNum(injectionRateLperM3, 2)} L/m³</div>
-          <div><strong>Relación de inyección:</strong> ${injectionRatio > 0 ? `1:${injectionRatio}` : 'N/D'}</div>
-          <div><strong>Recargas estimadas:</strong> ${recargas || 0}</div>
+          <div><strong>Volumen de agua:</strong> ${volumeWaterM3 !== null ? reportNum(volumeWaterM3, 2) + ' m³' : 'Sin dato'}</div>
+          <div><strong>Volumen tanque:</strong> ${tankVolumeL !== null ? reportNum(tankVolumeL, 0) + ' L' : 'Sin dato'}</div>
+          <div><strong>Tasa inyección:</strong> ${injectionRateLperM3 !== null ? reportNum(injectionRateLperM3, 2) + ' L/m³' : 'Sin dato'}</div>
+          <div><strong>Relación de inyección:</strong> ${injectionRatio ? `1:${injectionRatio}` : 'Sin dato'}</div>
+          <div><strong>Recargas estimadas:</strong> ${recargas !== null ? recargas : 'Sin dato'}</div>
         </div>
       </div>
       <div class="report-block">
