@@ -6246,27 +6246,17 @@
             const cloudList = (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) ? window._adminCloudCache.projects : [];
             const cloudProj = cloudList.find(function(p) { return p && (String(p.id) === String(projectId)); });
 
+            // Prioridad nube: si hay proyecto en la nube, usar siempre esa versión para que los requerimientos coincidan con lo que ve el usuario en el proyecto.
+            if (cloudProj) {
+                return { project: cloudProj, projectKey: null };
+            }
             if (projectValue && projectKey) {
                 try {
                     const project = JSON.parse(projectValue);
-                    // Si local viene "vacío" (sin secciones reales), preferir versión de nube.
-                    // Esto pasa cuando hay una copia local incompleta del mismo id.
-                    const localHasData =
-                        !!(project && typeof project === 'object' && (
-                            (project.data && typeof project.data === 'object' && Object.keys(project.data).length > 0) ||
-                            (project.sections && typeof project.sections === 'object' && Object.keys(project.sections).length > 0) ||
-                            project.location || project.amendments || project.granular || project.fertirriego || project.hidroponia || project.vpdAnalysis
-                        ));
-                    if (!localHasData && cloudProj) return { project: cloudProj, projectKey: null };
                     return { project, projectKey };
                 } catch (e) {
-                    if (cloudProj) return { project: cloudProj, projectKey: null };
                     return null;
                 }
-            }
-
-            if (cloudProj) {
-                return { project: cloudProj, projectKey: null };
             }
             return null;
         }
@@ -7071,19 +7061,22 @@
                     </div>
                 `;
                 
-                // Mostrar Ajustes si existen
+                // Mostrar Ajustes si existen (mismo orden que Extracción / Requerimiento Real: N, P₂O₅, K₂O, CaO, MgO, S, SO₄, Fe, Mn, B, Zn, Cu, Mo, SiO₂)
                 if (granularRequirements.adjustment && Object.keys(granularRequirements.adjustment).length > 0) {
                     html += `
                         <div style="margin-top: 8px;">
                             <strong style="color: #1e293b; font-size: 14px;">Ajuste por Niveles en Suelo (kg/ha):</strong>
                             <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
-                                ${Object.entries(granularRequirements.adjustment).filter(([k, v]) => v !== 0 && v !== null && v !== undefined).map(([key, value]) => {
+                                ${nutrients.filter(n => {
+                                    const v = granularRequirements.adjustment[n];
+                                    return v !== 0 && v !== null && v !== undefined;
+                                }).map(n => {
+                                    const value = granularRequirements.adjustment[n];
                                     let adjValue = typeof value === 'number' ? value : parseFloat(value) || 0;
-                                    // 🚀 CRÍTICO: Convertir ajuste a Elemental si es necesario
                                     if (isElementalMode) {
-                                        adjValue = convertAdminOxideToElemental(key, adjValue);
+                                        adjValue = convertAdminOxideToElemental(n, adjValue);
                                     }
-                                    const label = getAdminNutrientLabel(key, isElementalMode);
+                                    const label = getAdminNutrientLabel(n, isElementalMode);
                                     return `<div><strong>${label}:</strong> ${adjValue.toFixed(2)}</div>`;
                                 }).join('')}
                             </div>
@@ -7091,13 +7084,20 @@
                 `;
             }
             
-                // Mostrar Eficiencias si existen
+                // Mostrar Eficiencias si existen (mismo orden canónico que las demás secciones)
                 if (granularRequirements.efficiency && Object.keys(granularRequirements.efficiency).length > 0) {
                 html += `
                         <div style="margin-top: 8px;">
                             <strong style="color: #1e293b; font-size: 14px;">Eficiencia (%):</strong>
                             <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
-                                ${Object.entries(granularRequirements.efficiency).filter(([k, v]) => v !== 0 && v !== null && v !== undefined).map(([key, value]) => `<div><strong>${key}:</strong> ${typeof value === 'number' ? value.toFixed(1) : value}%</div>`).join('')}
+                                ${nutrients.filter(n => {
+                                    const v = granularRequirements.efficiency[n];
+                                    return v !== undefined && v !== null;
+                                }).map(n => {
+                                    const value = granularRequirements.efficiency[n];
+                                    const label = getAdminNutrientLabel(n, isElementalMode);
+                                    return `<div><strong>${label}:</strong> ${typeof value === 'number' ? value.toFixed(1) : value}%</div>`;
+                                }).join('')}
                             </div>
                     </div>
                 `;
