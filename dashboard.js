@@ -3833,11 +3833,12 @@ function np_loadProjects() {
   // Usuarios Supabase (UUID): usar nube como fuente principal de verdad.
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
     const cloudCache = Array.isArray(window._np_cloud_projects_cache) ? window._np_cloud_projects_cache : [];
+    const cloudLoaded = window._np_cloud_projects_cache_loaded === true;
     const cloudProjects = cloudCache
       .filter(p => p && p.id && p.user_id === userId && !(p._is_deleted === true || p.is_deleted === true || p.deleted_at));
 
-    // Si hay datos cloud, NO mezclar con local para evitar mostrar "fantasmas".
-    if (cloudProjects.length > 0) {
+    // Si la nube ya cargó (aunque esté vacía), NO mezclar con local para evitar "fantasmas".
+    if (cloudLoaded) {
       return cloudProjects.sort((a, b) => {
         const ad = a.updatedAt || a.updated_at || a.createdAt || a.created_at || 0;
         const bd = b.updatedAt || b.updated_at || b.createdAt || b.created_at || 0;
@@ -6620,10 +6621,14 @@ async function np_loadProjectsFromCloud() {
       createdAt: (p.data && (p.data.created_at || p.data.createdAt)) || new Date().toISOString(),
       updatedAt: p.updated_at || (p.data && (p.data.updated_at || p.data.updatedAt)) || new Date().toISOString()
     }));
+    window._np_cloud_projects_cache_loaded = true;
+    window._np_cloud_projects_cache_error = null;
     if (typeof np_renderProjects === 'function') np_renderProjects();
   } catch (e) {
     console.warn('⚠️ np_loadProjectsFromCloud:', e);
     window._np_cloud_projects_cache = [];
+    window._np_cloud_projects_cache_loaded = true; // cargó intento de nube; evita mezclar con local
+    window._np_cloud_projects_cache_error = e && (e.message || String(e));
   }
 }
 
@@ -6737,6 +6742,8 @@ async function initializeDashboard() {
   const isSupabaseUser = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
   if (isSupabaseUser) {
     window._np_cloud_projects_cache = [];
+    window._np_cloud_projects_cache_loaded = false;
+    window._np_cloud_projects_cache_error = null;
     await np_loadProjectsFromCloud();
   }
   
