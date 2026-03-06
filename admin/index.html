@@ -9481,6 +9481,13 @@
             return name ? (name + ' · ' + email) : email;
         }
 
+        function getConnectionsGroupingPrecision(mode) {
+            // En "última ubicación por usuario" usamos mayor precisión para no fusionar puntos cercanos.
+            if (mode === 'latest_per_user') return 4;
+            // Histórico: un poco de agrupación para mantener lectura del mapa.
+            return 3;
+        }
+
         function getFilteredConnectionsVisits() {
             var modeEl = document.getElementById('connMapModeFilter');
             var periodEl = document.getElementById('connMapPeriodFilter');
@@ -9615,16 +9622,26 @@
                     var clusterGroup = window.L.markerClusterGroup ? new L.markerClusterGroup({ maxClusterRadius: 50, spiderfyOnMaxZoom: true, showCoverageOnHover: false }) : null;
                     var rounded = {};
                     var allBoundsLocal = [];
+                    var modeEl = document.getElementById('connMapModeFilter');
+                    var mode = modeEl ? modeEl.value : 'all_history';
+                    var precision = getConnectionsGroupingPrecision(mode);
                     (visitsToRender || []).forEach(function(v) {
                         var lat = parseFloat(v.lat);
                         var lng = parseFloat(v.lng);
-                        var key = lat.toFixed(2) + '|' + lng.toFixed(2);
-                        if (!rounded[key]) rounded[key] = { lat: lat, lng: lng, visits: [] };
+                        var key = lat.toFixed(precision) + '|' + lng.toFixed(precision);
+                        if (!rounded[key]) rounded[key] = { lat: lat, lng: lng, latestLat: lat, latestLng: lng, latestTs: 0, visits: [] };
                         rounded[key].visits.push(v);
+                        var tVisit = v && v.visited_at ? new Date(v.visited_at).getTime() : 0;
+                        if (tVisit >= rounded[key].latestTs) {
+                            rounded[key].latestTs = tVisit;
+                            rounded[key].latestLat = lat;
+                            rounded[key].latestLng = lng;
+                        }
                     });
                     Object.keys(rounded).forEach(function(key) {
                         var g = rounded[key];
-                        var lat = g.lat, lng = g.lng;
+                        var lat = Number.isFinite(g.latestLat) ? g.latestLat : g.lat;
+                        var lng = Number.isFinite(g.latestLng) ? g.latestLng : g.lng;
                         var byUser = {};
                         g.visits.forEach(function(v) {
                             var uid = v.user_id || 'desconocido';
