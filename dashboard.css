@@ -453,6 +453,43 @@ body {
   }
 }
 
+/* Vista tablet (Fold desplegado, etc.): sidebar fijo a la izquierda, contenido al lado (sin superponer) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .layout {
+    padding-left: var(--sidebar-w-expanded);
+  }
+  .sidebar {
+    width: var(--sidebar-w-expanded) !important;
+    transform: none !important;
+    box-shadow: none;
+  }
+  .sidebar.open {
+    width: var(--sidebar-w-expanded) !important;
+  }
+  .sidebar.open.sidebar-minimized {
+    width: var(--sidebar-w-expanded) !important;
+  }
+  .sidebar-toggle,
+  .sidebar-overlay {
+    display: none !important;
+  }
+  .sidebar .sidebar a .label,
+  .sidebar .sidebar a.active .label,
+  .sidebar .sb-title-card .text,
+  .sidebar .sb-card .title .text,
+  .sidebar .sb-chip span.text,
+  .sidebar .logout .logout-text {
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: auto !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+  .sidebar nav a {
+    justify-content: flex-start !important;
+  }
+}
+
 /* ===== SCROLLBAR DEL SIDEBAR ===== */
 .sidebar::-webkit-scrollbar {
   width: 4px;
