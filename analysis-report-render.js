@@ -43,6 +43,8 @@
         }
 
         var paramLabels = { ca: 'Ca', mg: 'Mg', k: 'K', na: 'Na', al: 'Al', h: 'H', cic: 'CIC', pctca: '% Ca', pctmg: '% Mg', pctk: '% K', pctna: '% Na', pctal: '% Al', pcth: '% H', no3: 'NO₃', so4: 'SO₄', hco3: 'HCO₃', cl: 'Cl', po4: 'PO₄', co3: 'CO₃', fe: 'Fe', mn: 'Mn', zn: 'Zn', cu: 'Cu', b: 'B', mo: 'Mo', n_nh4: 'N-NH₄' };
+        /** Etiquetas como en el panel del usuario (Solución Nutritiva, Extracto de Pasta, Análisis de Agua) */
+        var FLUID_PARAM_LABELS = { ca: 'Ca²⁺', mg: 'Mg²⁺', na: 'Na⁺', k: 'K⁺', no3: 'N-NO₃⁻', no2: 'N-NO₂⁻', so4: 'S-SO₄²⁻', hco3: 'HCO₃⁻', cl: 'Cl⁻', po4: 'P-H₂PO₄⁻', co3: 'CO₃²⁻', fe: 'Fe', mn: 'Mn', zn: 'Zn', cu: 'Cu', b: 'B', mo: 'Mo', n_nh4: 'N-NH₄⁺' };
         var DEFAULT_REF = { ca: '140–220', mg: '40–70', k: '180–300', na: '—', so4: '60–110', hco3: '—', cl: '—', co3: '—', po4: '30–60', no3: '140–200', fe: '1.5–3.0', mn: '0.3–1.0', zn: '0.05–0.3', cu: '0.03–0.1', b: '0.2–0.5', mo: '0.01–0.05', n_nh4: '—' };
         function getRefDisplay(idealVal, param) {
             if (idealVal != null && idealVal !== '' && String(idealVal).trim() !== '') return String(idealVal).trim();
@@ -50,6 +52,9 @@
         }
         function paramLabel(p) {
             return paramLabels[p] || (p.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); }));
+        }
+        function fluidParamLabel(p) {
+            return FLUID_PARAM_LABELS[p] || paramLabel(p);
         }
         function statusFromValRef(val, ref) {
             if (val === '—' || ref === '—' || val === '' || ref === '') return { text: '—', cls: '' };
@@ -444,7 +449,7 @@
                             var d = nIdeal - nCurrent;
                             diff = (d >= 0 ? '+' : '') + formatNum(d);
                         }
-                        sTbl += '<tr><td class="col-concept">' + escapeHtml(paramLabel(p)) + '</td>';
+                        sTbl += '<tr><td class="col-concept">' + escapeHtml(fluidParamLabel(p)) + '</td>';
                         if (hasMeqPpm) {
                             sTbl += '<td>' + escapeHtml(formatNum(row.meq)) + '</td>';
                             sTbl += '<td>' + escapeHtml(formatNum(row.ppm)) + '</td>';
@@ -468,7 +473,7 @@
                 vTbl += '</tr></thead><tbody>';
                 params.forEach(function (p) {
                     var row = paramKeys[p] || {};
-                    vTbl += '<tr><td class="col-concept">' + escapeHtml(paramLabel(p)) + '</td>';
+                    vTbl += '<tr><td class="col-concept">' + escapeHtml(fluidParamLabel(p)) + '</td>';
                     if (hasMeqPpm) {
                         vTbl += '<td>' + escapeHtml(formatNum(row.meq)) + '</td>';
                         vTbl += '<td>' + escapeHtml(formatNum(row.ppm)) + '</td>';
