@@ -505,6 +505,70 @@ body {
   }
 }
 
+/* Fold en horizontal (landscape + tablet): permitir minimizar la pestaña de verdad (barra estrecha), no solo ocultar letras */
+@media (orientation: landscape) and (min-width: 769px) and (max-width: 1024px) {
+  .sidebar.open.sidebar-minimized {
+    width: var(--sidebar-w) !important;
+  }
+  .layout:has(.sidebar.open.sidebar-minimized) {
+    padding-left: var(--sidebar-w);
+  }
+  .sidebar.open.sidebar-minimized .sidebar a .label,
+  .sidebar.open.sidebar-minimized .sidebar a.active .label {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .sidebar.open.sidebar-minimized nav a {
+    justify-content: center !important;
+  }
+  .sidebar.open.sidebar-minimized .sb-title-card .text,
+  .sidebar.open.sidebar-minimized .sb-card .title .text,
+  .sidebar.open.sidebar-minimized .sb-chip span.text,
+  .sidebar.open.sidebar-minimized .logout .logout-text,
+  .sidebar.open.sidebar-minimized .no-project-message p {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    overflow: hidden !important;
+  }
+  .sidebar.open.sidebar-minimized .sb-card .title .t {
+    justify-content: center !important;
+  }
+  .sidebar.open.sidebar-minimized .sb-card .info-icon,
+  .sidebar.open.sidebar-minimized .sb-card .analysis-icon {
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  .sidebar.open.sidebar-minimized .sb-chip {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    padding: 4px !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+  }
+  .sidebar.open.sidebar-minimized .sb-chip span.text {
+    display: none !important;
+  }
+  .sidebar.open.sidebar-minimized .logout .logout-text {
+    display: none !important;
+  }
+}
+
 /* ===== SCROLLBAR DEL SIDEBAR ===== */
 .sidebar::-webkit-scrollbar {
   width: 4px;
