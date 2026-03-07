@@ -8742,6 +8742,8 @@
             var modal = document.getElementById('adminUserNotesModal');
             if (modal) modal.style.display = 'none';
         }
+        window.openAdminUserNotesModal = openAdminUserNotesModal;
+        window.closeAdminUserNotesModal = closeAdminUserNotesModal;
 
         // 👤 FUNCIÓN PARA VER DETALLES COMPLETOS DEL USUARIO Y SUS PROYECTOS
         async function viewUserDetails(userId, fromView = null, fromViewParams = null) {
