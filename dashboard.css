@@ -435,11 +435,13 @@ body {
   }
 }
 
-/* Tablet en horizontal (landscape): sidebar desplazable y con scroll táctil */
+/* Tablet en horizontal (landscape): sidebar desplazable y con scroll táctil; llega hasta el borde de abajo */
 @media (orientation: landscape) {
   .sidebar {
-    max-height: calc(100vh - 48px);
-    max-height: calc(var(--app-vh, 100dvh) - 48px);
+    top: 48px;
+    bottom: 0;
+    height: auto;
+    max-height: none;
     overflow-y: auto !important;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
