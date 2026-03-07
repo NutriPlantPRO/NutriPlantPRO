@@ -171,22 +171,21 @@ function initializeSidebar() {
 
   // Estado inicial: lo fija syncSidebarToViewport + applySidebarModeState (una sola fuente de verdad, ver ESPECIFICACION-SIDEBAR-RESPONSIVE.md)
 
-  // Control unificado del sidebar según spec. Usar closest() y sidebar actual para no depender de closure (evita fallos por cache/DOM).
+  // Control unificado: fuera = minimizar; dentro con barra minimizada = expandir.
+  // No bloquear expandir cuando tocan la barra (aunque sea un enlace): solo no minimizar si tocaron enlace del sidebar.
   document.addEventListener('click', function(e) {
     var target = e.target;
     var sidebarEl = document.getElementById('sidebar');
     var isSidebarClick = target && sidebarEl && (sidebarEl.contains(target) || target.closest('#sidebar'));
     var isToggleClick = sidebarToggle && sidebarToggle.contains(target);
-    var isSidebarLinkOrButton = target && (target.closest('#sidebar a') || target.closest('#sidebar button') || target.closest('#sidebar [data-section]'));
+    var isLinkOrButtonInSidebar = target && (target.closest('#sidebar a') || target.closest('#sidebar button') || target.closest('#sidebar [data-section]'));
     var mode = getSidebarMode();
     if (mode === 'compact-mouse' || mode === 'wide') return;
 
-    // Si tocaron un enlace/botón del sidebar: no minimizar ni expandir aquí (evita parpadeo al cambiar sección).
-    if (isSidebarLinkOrButton) return;
-
-    // Compacto touch (cel): fuera minimiza, toque en barra minimizada expande.
+    // Compacto touch (cel): fuera minimiza; toque en barra minimizada expande (aunque toquen el enlace).
     if (mode === 'compact-touch') {
       if (!isSidebarClick && !isToggleClick && isSidebarOpen()) {
+        if (isLinkOrButtonInSidebar) return;
         minimizeSidebar();
       } else if (isSidebarClick && isSidebarMinimized()) {
         expandSidebar();
@@ -194,9 +193,10 @@ function initializeSidebar() {
       return;
     }
 
-    // Fold horizontal: fuera minimiza, toque en barra minimizada expande.
+    // Fold horizontal: fuera minimiza; toque en barra minimizada expande.
     if (mode === 'fold-horizontal') {
       if (!isSidebarClick && !isToggleClick && !isSidebarMinimized()) {
+        if (isLinkOrButtonInSidebar) return;
         minimizeSidebar();
       } else if (isSidebarClick && isSidebarMinimized()) {
         expandSidebar();
@@ -230,14 +230,15 @@ function initializeSidebar() {
   applySidebarModeState();
 }
 
-// Sin adivinar dispositivo: solo viewport + tipo de entrada (spec).
-// "fold-horizontal" = touch + landscape + ancho 769–1400 (mismo comportamiento Fold o tablet horizontal).
+// Sin adivinar: viewport + entrada. "fold-horizontal" = touch + landscape + ancho 769–1400.
 function isFoldLandscape() {
   try {
     var w = window.innerWidth;
     var h = window.innerHeight;
     if (!(w > h && w >= 769 && w <= 1400)) return false;
-    return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    var q = window.matchMedia;
+    if (!q) return false;
+    return q('(pointer: coarse)').matches || q('(hover: none)').matches;
   } catch (e) {
     return false;
   }

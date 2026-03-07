@@ -106,3 +106,15 @@ Comportamiento:
 ## Estado actual esperado (objetivo)
 Queremos comportamiento consistente en todos los escenarios anteriores.
 Si algo no cumple, se considera bug de regresion del sidebar.
+
+---
+
+## Notas de esta racha de ajustes (no son ley)
+
+**Referencia por si se repiten fallos; no aplicar a ciegas.** Si algo ya funciona bien, no tocarlo solo por cumplir esto.
+
+- Bloquear "expandir" cuando el toque es en enlace del sidebar hizo que "a veces abre a veces no": al tocar la barra casi siempre se toca el enlace Inicio, y si hacemos return ahı no se llama expandir.
+- Deteccion por UA o ratio nos hizo subir/bajar numeros y seguir fallando; la regla vista+entrada (touch + landscape + ancho) es mas estable.
+- En laptop (compact-mouse) no usar "tocar fuera" para minimizar; solo hover.
+- Touch: usar `(pointer: coarse) || (hover: none)` por si el navegador no reporta solo uno.
+- Cualquier cambio: comprobar que no se rompa otro modo (cel, fold, tablet, laptop).
