@@ -4877,62 +4877,92 @@ CONTRATO:
       if (!modal) return;
       modal.classList.add('show');
       var display = document.getElementById('simpleCalcDisplay');
+      var equationEl = document.getElementById('simpleCalcEquation');
       if (display) {
         try {
           var last = localStorage.getItem(NP_SIMPLE_CALC_STORAGE);
-          display.value = (last && String(last).trim() !== '') ? last : '0';
-        } catch (e) { display.value = '0'; }
+          if (last) {
+            if (last.charAt(0) === '{') {
+              var o = JSON.parse(last);
+              display.value = (o.val !== undefined && String(o.val).trim() !== '') ? o.val : '0';
+              if (equationEl && o.eq !== undefined) equationEl.textContent = o.eq || '\u00A0';
+            } else {
+              display.value = (last && String(last).trim() !== '') ? last : '0';
+              if (equationEl) equationEl.textContent = '\u00A0';
+            }
+          } else {
+            display.value = '0';
+            if (equationEl) equationEl.textContent = '\u00A0';
+          }
+        } catch (e) { display.value = '0'; if (equationEl) equationEl.textContent = '\u00A0'; }
       }
       var keys = document.getElementById('simpleCalcKeys');
       if (keys && !keys.dataset.bound) {
         keys.dataset.bound = '1';
-        var expr = '';
         keys.addEventListener('click', function(e) {
           var btn = e.target.closest('.simple-calc-btn');
           if (!btn) return;
           var val = btn.getAttribute('data-value');
           var action = btn.getAttribute('data-action');
           var afterEq = keys.dataset.afterEq === '1';
+          var expr = '';
           if (val !== null) {
-            if (afterEq) { keys.dataset.afterEq = '0'; expr = (val === '.') ? '0.' : val; }
+            if (afterEq) { keys.dataset.afterEq = '0'; expr = (val === '.') ? '0.' : val; if (equationEl) equationEl.textContent = '\u00A0'; }
             else expr = (display.value === '0' && val !== '.') ? val : display.value + val;
           } else if (action === 'clear') {
             keys.dataset.afterEq = '0';
             expr = '0';
+            if (equationEl) equationEl.textContent = '\u00A0';
           } else if (action === 'backspace') {
             keys.dataset.afterEq = '0';
             var cur = display.value || '0';
             if (cur.length <= 1) expr = '0';
             else expr = cur.slice(0, -1);
+            if (equationEl && !afterEq) equationEl.textContent = expr || '\u00A0';
           } else if (action === 'neg') {
             if (display.value !== '0') expr = String(-parseFloat(display.value));
             else expr = '0';
             keys.dataset.afterEq = '0';
+            if (equationEl) equationEl.textContent = expr || '\u00A0';
           } else if (action === 'percent') {
             var n = parseFloat(display.value);
             if (!isNaN(n)) expr = String(n / 100);
             keys.dataset.afterEq = '0';
+            if (equationEl) equationEl.textContent = expr || '\u00A0';
           } else if (action === '=') {
+            var exprBefore = display.value || '0';
             try {
-              var s = (display.value || '0').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+              var s = exprBefore.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
               if (/^[\d\s+\-*/().]+$/.test(s)) expr = String(Function('"use strict"; return (' + s + ')')());
-              else expr = display.value;
+              else expr = exprBefore;
             } catch (err) { expr = '0'; }
             keys.dataset.afterEq = '1';
+            if (equationEl) equationEl.textContent = exprBefore;
           } else if (action) {
             keys.dataset.afterEq = '0';
             expr = (display.value === '0' && action !== '(' && action !== ')') ? action : display.value + action;
+            if (equationEl) equationEl.textContent = expr || '\u00A0';
           }
           display.value = expr;
-          try { localStorage.setItem(NP_SIMPLE_CALC_STORAGE, expr); } catch (e) {}
+          if (keys.dataset.afterEq !== '1' && equationEl) equationEl.textContent = (expr === '0' ? '\u00A0' : expr);
+          try {
+            var eqText = equationEl ? equationEl.textContent : '';
+            if (eqText === '\u00A0' || eqText === '') eqText = '';
+            localStorage.setItem(NP_SIMPLE_CALC_STORAGE, JSON.stringify({ eq: eqText, val: expr }));
+          } catch (e) {}
         });
       }
     }
     window.showSimpleCalculator = showSimpleCalculator;
     function closeSimpleCalculator() {
       var display = document.getElementById('simpleCalcDisplay');
+      var equationEl = document.getElementById('simpleCalcEquation');
       if (display && display.value !== undefined) {
-        try { localStorage.setItem(NP_SIMPLE_CALC_STORAGE, display.value); } catch (e) {}
+        try {
+          var eq = (equationEl && equationEl.textContent) ? equationEl.textContent : '';
+          if (eq === '\u00A0') eq = '';
+          localStorage.setItem(NP_SIMPLE_CALC_STORAGE, JSON.stringify({ eq: eq, val: display.value }));
+        } catch (e) {}
       }
       var modal = document.getElementById('simpleCalculatorModal');
       if (modal) modal.classList.remove('show');
@@ -6015,7 +6045,10 @@ CONTRATO:
         <button class="modal-close" onclick="closeSimpleCalculator()" style="color: #fff;">×</button>
       </div>
       <div class="modal-body" style="padding: 16px; background: #2d2d2d;">
-        <input type="text" id="simpleCalcDisplay" readonly value="0" style="width:100%; padding:20px 12px; font-size:28px; text-align:right; border:none; background:#1a1a1a; color:#fff; border-radius:10px; margin-bottom:12px; font-family:system-ui,sans-serif; box-sizing:border-box;">
+        <div id="simpleCalcScreen" style="background:#1a1a1a; border-radius:10px; margin-bottom:12px; padding:12px 14px; min-height:72px; display:flex; flex-direction:column; justify-content:flex-end;">
+          <div id="simpleCalcEquation" style="text-align:right; color:rgba(255,255,255,0.7); font-size:16px; min-height:22px; margin-bottom:4px; font-family:system-ui,sans-serif;">&nbsp;</div>
+          <input type="text" id="simpleCalcDisplay" readonly value="0" style="width:100%; padding:0; font-size:28px; text-align:right; border:none; background:transparent; color:#fff; font-family:system-ui,sans-serif; box-sizing:border-box;">
+        </div>
         <div id="simpleCalcKeys" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px;">
           <!-- ⌫ borrar uno | C limpiar todo | ± % -->
           <button type="button" class="simple-calc-btn simple-calc-op" data-action="backspace" title="Borrar último">⌫</button>
