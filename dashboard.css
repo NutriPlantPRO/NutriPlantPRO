@@ -4708,26 +4708,25 @@ body {
   margin-right: 8px !important;
 }
 
-/* ===== BOTÓN DE USUARIO ===== */
+/* ===== BOTÓN DE USUARIO (3 rayitas - mismo verde que Guardar Datos) ===== */
 .btn-user {
-  background: #ffffff !important;
-  color: #374151 !important;
-  border: 2px solid #e5e7eb !important;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
   font-weight: 600 !important;
 }
 
 .btn-user:hover {
-  background: #2563eb !important;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
   color: #ffffff !important;
-  border-color: #2563eb !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4) !important;
 }
 
 .btn-user:active {
-  background: #1d4ed8 !important;
-  border-color: #1d4ed8 !important;
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important;
   transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
 }
 
 /* ===== NUTRICIÓN GRANULAR ===== */
