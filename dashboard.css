@@ -271,16 +271,9 @@ body {
   .sidebar.open:not(.sidebar-minimized):hover {
     width: var(--sidebar-w-expanded) !important;
   }
-  /* En móvil: mostrar botón hamburguesa para abrir menú y X dentro del sidebar para cerrar */
-  .sidebar-toggle {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-  }
+  .sidebar-toggle,
   .sidebar-close {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
+    display: none !important;
   }
 
   .site-footer {
