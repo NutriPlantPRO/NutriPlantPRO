@@ -6611,7 +6611,8 @@ async function np_loadProjectsFromCloud() {
   if (!sp || !sp.fetchProjects) return;
   try {
     const list = await sp.fetchProjects();
-    const cloudIds = new Set((list || []).map(p => p && p.id).filter(Boolean));
+    // Solo proyectos que en la nube pertenecen a este usuario (por si RLS devuelve más)
+    const cloudIds = new Set((list || []).filter(p => p && p.user_id === userId).map(p => p.id).filter(Boolean));
     window._np_cloud_projects_cache = (list || []).map(p => ({
       id: p.id,
       user_id: p.user_id,
