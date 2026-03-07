@@ -231,6 +231,12 @@ body {
     min-height: calc(var(--app-vh, 100dvh) - 48px);
   }
 
+  /* Cuando el menú está abierto (expandido), empujar el contenido a la derecha en lugar de taparlo */
+  .layout.sidebar-expanded,
+  .layout:has(.sidebar.open:not(.sidebar-minimized)) {
+    padding-left: var(--sidebar-w-expanded);
+  }
+
   .content {
     min-height: calc(100svh - 48px);
     min-height: calc(var(--app-vh, 100dvh) - 48px);
@@ -265,9 +271,16 @@ body {
   .sidebar.open:not(.sidebar-minimized):hover {
     width: var(--sidebar-w-expanded) !important;
   }
-  .sidebar-toggle,
+  /* En móvil: mostrar botón hamburguesa para abrir menú y X dentro del sidebar para cerrar */
+  .sidebar-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
   .sidebar-close {
-    display: none !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
   }
 
   .site-footer {

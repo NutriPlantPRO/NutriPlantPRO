@@ -252,11 +252,13 @@ function toggleSidebar() {
 function openSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
+  const layout = document.querySelector('.layout');
   if (sidebar) {
     sidebar.style.transform = 'translateX(0)';
     sidebar.classList.add('open');
     sidebar.classList.remove('sidebar-minimized');
   }
+  if (layout && window.innerWidth <= 768) layout.classList.add('sidebar-expanded');
   if (window.innerWidth <= 768) {
     if (overlay) overlay.classList.remove('show');
     document.body.style.overflow = '';
@@ -270,7 +272,9 @@ function openSidebar() {
 function expandSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
+  const layout = document.querySelector('.layout');
   if (sidebar) sidebar.classList.remove('sidebar-minimized');
+  if (layout && window.innerWidth <= 768) layout.classList.add('sidebar-expanded');
   if (window.innerWidth <= 768) {
     if (overlay) overlay.classList.remove('show');
     document.body.style.overflow = '';
@@ -284,7 +288,9 @@ function expandSidebar() {
 function minimizeSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
+  const layout = document.querySelector('.layout');
   if (sidebar) sidebar.classList.add('sidebar-minimized');
+  if (layout) layout.classList.remove('sidebar-expanded');
   if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
 }
@@ -297,10 +303,12 @@ function closeSidebar() {
   }
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
+  const layout = document.querySelector('.layout');
   if (sidebar) {
     sidebar.style.transform = 'translateX(-100%)';
     sidebar.classList.remove('open', 'sidebar-minimized');
   }
+  if (layout) layout.classList.remove('sidebar-expanded');
   if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
 }
