@@ -125,11 +125,7 @@ body {
   position: fixed;                  /* <-- OVERLAY (ajuste #2) */
   left: 0;
   top: 48px; /* Debajo del header fijo */
-  bottom: 0; /* Hasta la base para que no quede hueco al hacer zoom */
-  height: calc(100vh - 48px); /* Altura total menos el header */
-  height: calc(var(--app-vh, 100dvh) - 48px);
-  min-height: calc(100vh - 48px);
-  min-height: calc(var(--app-vh, 100dvh) - 48px);
+  bottom: 0; /* Anclado al borde de abajo: se estira hasta ahí sin hueco */
   width: var(--sidebar-w);
   background: var(--bg);
   color: #cbd5e1;
@@ -253,10 +249,9 @@ body {
   .sidebar {
     top: 48px;
     bottom: 0;
-    height: calc(100vh - 48px) !important;
-    height: calc(var(--app-vh, 100dvh) - 48px) !important;
-    min-height: calc(100vh - 48px);
-    min-height: calc(var(--app-vh, 100dvh) - 48px);
+    /* Sin height fija: que se estire solo con top+bottom hasta el borde real de la pantalla */
+    height: auto !important;
+    min-height: 0 !important;
     transform: translateX(0) !important;
   }
   .sidebar.open {
