@@ -130,23 +130,14 @@ function getCurrentSubTabForSection(sectionName) {
 // Función para manejar la visibilidad del texto en el sidebar
 function handleSidebarTextVisibility() {
   const sidebar = document.querySelector('.sidebar');
-  const labels = sidebar.querySelectorAll('.sidebar a .label');
-  
-  if (sidebar.matches(':hover')) {
-    // Sidebar expandido - mostrar texto
-    labels.forEach(label => {
-      label.style.display = 'inline';
-      label.style.opacity = '1';
-      label.style.visibility = 'visible';
-    });
-  } else {
-    // Sidebar colapsado - ocultar texto
-    labels.forEach(label => {
-      label.style.display = 'none';
-      label.style.opacity = '0';
-      label.style.visibility = 'hidden';
-    });
-  }
+  if (!sidebar) return;
+  const labels = sidebar.querySelectorAll('a .label');
+  // Evitar estados intermitentes por estilos inline; el estado visual lo controla CSS.
+  labels.forEach(label => {
+    label.style.display = '';
+    label.style.opacity = '';
+    label.style.visibility = '';
+  });
 }
 
 // Función para inicializar el sidebar
@@ -176,14 +167,6 @@ function initializeSidebar() {
   
   if (sidebarOverlay) {
     sidebarOverlay.addEventListener('click', closeSidebar);
-  }
-
-  var sidebarFoldToggle = document.getElementById('sidebar-fold-toggle');
-  if (sidebarFoldToggle) {
-    sidebarFoldToggle.addEventListener('click', function(e) {
-      e.stopPropagation();
-      toggleSidebarFold();
-    });
   }
 
   // En celular: desactivar toggle por toque en logo/brand para evitar toques accidentales.
@@ -240,6 +223,26 @@ function isLikelySamsungFoldDevice() {
     var ua = String(navigator.userAgent || '');
     // Modelos Fold suelen venir como SM-F9xxx / SM-F7xxx.
     return /SM-F\d{3,4}/i.test(ua) || /Galaxy\s*Fold/i.test(ua);
+  } catch (e) {
+    return false;
+  }
+}
+
+// Fallback para Fold con UA recortado:
+// dispositivo táctil en landscape con ratio/ancho típicos de Fold desplegado.
+function isLikelyFoldByEnvironment() {
+  try {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    if (!(w > h && w >= 769 && w <= 1400)) return false;
+
+    var isCoarsePointer = false;
+    try { isCoarsePointer = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); } catch (_) {}
+    if (!isCoarsePointer) return false;
+
+    // Diferenciar de tablet horizontal típica: Fold suele ser más "ancho" en ratio.
+    var ratio = w / Math.max(1, h);
+    return ratio >= 1.65;
   } catch (e) {
     return false;
   }
@@ -383,12 +386,13 @@ function isSidebarMinimized() {
   return sidebar && sidebar.classList.contains('sidebar-minimized');
 }
 
-// True solo en Fold real en horizontal (landscape por tamaño + UA Fold).
+// True en Fold horizontal (modelo conocido o fallback por entorno).
 function isFoldLandscape() {
-  if (!isLikelySamsungFoldDevice()) return false;
   const w = window.innerWidth;
   const h = window.innerHeight;
-  return w > h && w >= 769 && w <= 1400;
+  const inLandscapeBand = (w > h && w >= 769 && w <= 1400);
+  if (!inLandscapeBand) return false;
+  return isLikelySamsungFoldDevice() || isLikelyFoldByEnvironment();
 }
 
 // Al voltear el Fold o cambiar ancho: dejar la pestaña en el estado correcto (oculta/minimizada en cel, visible en tablet)
