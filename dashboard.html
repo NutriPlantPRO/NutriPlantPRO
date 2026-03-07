@@ -4871,12 +4871,18 @@ CONTRATO:
     }
     window.closeMeasureUnitsCalculator = closeMeasureUnitsCalculator;
 
+    var NP_SIMPLE_CALC_STORAGE = 'np_simple_calc_last';
     function showSimpleCalculator() {
       var modal = document.getElementById('simpleCalculatorModal');
       if (!modal) return;
       modal.classList.add('show');
       var display = document.getElementById('simpleCalcDisplay');
-      if (display) display.value = '0';
+      if (display) {
+        try {
+          var last = localStorage.getItem(NP_SIMPLE_CALC_STORAGE);
+          display.value = (last && String(last).trim() !== '') ? last : '0';
+        } catch (e) { display.value = '0'; }
+      }
       var keys = document.getElementById('simpleCalcKeys');
       if (keys && !keys.dataset.bound) {
         keys.dataset.bound = '1';
@@ -4893,6 +4899,11 @@ CONTRATO:
           } else if (action === 'clear') {
             keys.dataset.afterEq = '0';
             expr = '0';
+          } else if (action === 'backspace') {
+            keys.dataset.afterEq = '0';
+            var cur = display.value || '0';
+            if (cur.length <= 1) expr = '0';
+            else expr = cur.slice(0, -1);
           } else if (action === 'neg') {
             if (display.value !== '0') expr = String(-parseFloat(display.value));
             else expr = '0';
@@ -4913,11 +4924,16 @@ CONTRATO:
             expr = (display.value === '0' && action !== '(' && action !== ')') ? action : display.value + action;
           }
           display.value = expr;
+          try { localStorage.setItem(NP_SIMPLE_CALC_STORAGE, expr); } catch (e) {}
         });
       }
     }
     window.showSimpleCalculator = showSimpleCalculator;
     function closeSimpleCalculator() {
+      var display = document.getElementById('simpleCalcDisplay');
+      if (display && display.value !== undefined) {
+        try { localStorage.setItem(NP_SIMPLE_CALC_STORAGE, display.value); } catch (e) {}
+      }
       var modal = document.getElementById('simpleCalculatorModal');
       if (modal) modal.classList.remove('show');
     }
@@ -6001,12 +6017,13 @@ CONTRATO:
       <div class="modal-body" style="padding: 16px; background: #2d2d2d;">
         <input type="text" id="simpleCalcDisplay" readonly value="0" style="width:100%; padding:20px 12px; font-size:28px; text-align:right; border:none; background:#1a1a1a; color:#fff; border-radius:10px; margin-bottom:12px; font-family:system-ui,sans-serif; box-sizing:border-box;">
         <div id="simpleCalcKeys" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px;">
-          <!-- C ± % ÷ -->
+          <!-- ⌫ borrar uno | C limpiar todo | ± % -->
+          <button type="button" class="simple-calc-btn simple-calc-op" data-action="backspace" title="Borrar último">⌫</button>
           <button type="button" class="simple-calc-btn simple-calc-op" data-action="clear">C</button>
           <button type="button" class="simple-calc-btn simple-calc-op" data-action="neg">±</button>
           <button type="button" class="simple-calc-btn simple-calc-op" data-action="percent">%</button>
+          <!-- ÷ 7 8 9 × -->
           <button type="button" class="simple-calc-btn simple-calc-op" data-action="/">÷</button>
-          <!-- 7 8 9 × -->
           <button type="button" class="simple-calc-btn" data-value="7">7</button>
           <button type="button" class="simple-calc-btn" data-value="8">8</button>
           <button type="button" class="simple-calc-btn" data-value="9">9</button>
