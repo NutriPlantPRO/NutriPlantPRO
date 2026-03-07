@@ -95,8 +95,8 @@ Comportamiento:
 ## Breakpoints y detalle tecnico (referencia)
 - Compacto: ancho <= 768 px.
 - Tablet ancha: 769–1024 px (sidebar fijo, contenido al lado).
-- Fold horizontal: touch + landscape + ancho 769–1400 px (detectado por UA Fold o por ratio/pointer coarse).
-- Overlay: no obligatorio; si se usa, solo en compacto touch cuando el sidebar esta expandido (tocar overlay = minimizar). En fold horizontal no usar overlay bloqueante.
+- Fold horizontal (sin adivinar dispositivo): **touch** (`pointer: coarse`) + **landscape** (ancho > alto) + **ancho 769–1400 px**. Una sola regla; no se usa UA ni ratio.
+- Overlay: no obligatorio; si se usa, solo en compacto touch cuando el sidebar esta expandido. En fold horizontal no usar overlay bloqueante.
 
 ## Politica de cambios a partir de ahora
 - No se aceptan cambios "rapidos" sin pasar la matriz de validacion.

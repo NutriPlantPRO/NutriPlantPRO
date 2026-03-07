@@ -171,12 +171,18 @@ function initializeSidebar() {
 
   // Estado inicial: lo fija syncSidebarToViewport + applySidebarModeState (una sola fuente de verdad, ver ESPECIFICACION-SIDEBAR-RESPONSIVE.md)
 
-  // Control unificado del sidebar según spec (compact-touch y fold-horizontal: toque; compact-mouse: solo hover, no click-fuera).
+  // Control unificado del sidebar según spec. Usar closest() y sidebar actual para no depender de closure (evita fallos por cache/DOM).
   document.addEventListener('click', function(e) {
-    var isSidebarClick = sidebar && sidebar.contains(e.target);
-    var isToggleClick = sidebarToggle && sidebarToggle.contains(e.target);
+    var target = e.target;
+    var sidebarEl = document.getElementById('sidebar');
+    var isSidebarClick = target && sidebarEl && (sidebarEl.contains(target) || target.closest('#sidebar'));
+    var isToggleClick = sidebarToggle && sidebarToggle.contains(target);
+    var isSidebarLinkOrButton = target && (target.closest('#sidebar a') || target.closest('#sidebar button') || target.closest('#sidebar [data-section]'));
     var mode = getSidebarMode();
     if (mode === 'compact-mouse' || mode === 'wide') return;
+
+    // Si tocaron un enlace/botón del sidebar: no minimizar ni expandir aquí (evita parpadeo al cambiar sección).
+    if (isSidebarLinkOrButton) return;
 
     // Compacto touch (cel): fuera minimiza, toque en barra minimizada expande.
     if (mode === 'compact-touch') {
@@ -198,15 +204,20 @@ function initializeSidebar() {
     }
   });
 
-  // Al voltear el Fold o redimensionar: que la pestaña se oculte en cel y se vea bien en tablet
+  // Al voltear el Fold o redimensionar: throttle para no ejecutar sync en rafida (evita parpadeos en tablet).
   var syncSidebarRaf = null;
+  var syncSidebarLast = 0;
+  var SYNC_THROTTLE_MS = 120;
   var onResizeOrOrientation = function() {
-    if (syncSidebarRaf != null) cancelAnimationFrame(syncSidebarRaf);
+    if (syncSidebarRaf != null) return;
     syncSidebarRaf = requestAnimationFrame(function() {
+      syncSidebarRaf = null;
+      var now = Date.now();
+      if (now - syncSidebarLast < SYNC_THROTTLE_MS) return;
+      syncSidebarLast = now;
       syncSidebarToViewport();
       updateFoldLandscapeClass();
       applySidebarModeState();
-      syncSidebarRaf = null;
     });
   };
   window.addEventListener('resize', onResizeOrOrientation, { passive: true });
@@ -219,42 +230,21 @@ function initializeSidebar() {
   applySidebarModeState();
 }
 
-// Detecta Fold Samsung por User-Agent para no activar lógica especial en tablets normales.
-function isLikelySamsungFoldDevice() {
-  try {
-    var ua = String(navigator.userAgent || '');
-    // Modelos Fold suelen venir como SM-F9xxx / SM-F7xxx.
-    return /SM-F\d{3,4}/i.test(ua) || /Galaxy\s*Fold/i.test(ua);
-  } catch (e) {
-    return false;
-  }
-}
-
-// Fallback para Fold con UA recortado:
-// dispositivo táctil en landscape con ratio/ancho típicos de Fold desplegado.
-function isLikelyFoldByEnvironment() {
+// Sin adivinar dispositivo: solo viewport + tipo de entrada (spec).
+// "fold-horizontal" = touch + landscape + ancho 769–1400 (mismo comportamiento Fold o tablet horizontal).
+function isFoldLandscape() {
   try {
     var w = window.innerWidth;
     var h = window.innerHeight;
     if (!(w > h && w >= 769 && w <= 1400)) return false;
-
-    var isCoarsePointer = false;
-    try { isCoarsePointer = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); } catch (_) {}
-    if (!isCoarsePointer) return false;
-
-    // Diferenciar de tablet horizontal típica: Fold suele ser más "ancho" en ratio.
-    var ratio = w / Math.max(1, h);
-    return ratio >= 1.65;
+    return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
   } catch (e) {
     return false;
   }
 }
 
-// Fold en horizontal: algunos navegadores no reportan orientation: landscape.
-// Marcar body solo cuando realmente parece un Fold, para no afectar tablets normales.
 function updateFoldLandscapeClass() {
-  var isFoldH = isFoldLandscape();
-  document.body.classList.toggle('np-fold-landscape', !!isFoldH);
+  document.body.classList.toggle('np-fold-landscape', isFoldLandscape());
 }
 var _npFoldLandscapeRaf = null;
 function scheduleFoldLandscapeUpdate() {
