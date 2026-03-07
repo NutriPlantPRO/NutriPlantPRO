@@ -444,8 +444,7 @@ body {
 /* Tablet en horizontal (landscape): sidebar desplazable y con scroll táctil */
 @media (orientation: landscape) {
   .sidebar {
-    max-height: calc(100vh - 48px);
-    max-height: calc(var(--app-vh, 100dvh) - 48px);
+    /* No fijar max-height con vh/dvh (en Fold puede fallar): el sidebar ya va de top a bottom */
     overflow-y: auto !important;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
@@ -470,9 +469,10 @@ body {
     width: var(--sidebar-w-expanded) !important;
     transform: none !important;
     box-shadow: none;
+    top: 48px;
     bottom: 0;
-    min-height: calc(100vh - 48px);
-    min-height: calc(var(--app-vh, 100dvh) - 48px);
+    /* Sin altura calculada: que estire hasta abajo también en Fold desplegado */
+    min-height: 0;
   }
   .sidebar.open {
     width: var(--sidebar-w-expanded) !important;
