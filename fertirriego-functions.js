@@ -2422,6 +2422,22 @@ loadFertirriegoRequirements = function(retryCount = 0) {
       if (projectData.fertirriegoRequirements) {
         data = projectData.fertirriegoRequirements;
       }
+      if (!data && projectData.fertirriego && projectData.fertirriego.requirements) {
+        data = projectData.fertirriego.requirements;
+      }
+    }
+    
+    // PRIORIDAD 6: Proyecto ya en memoria (p. ej. tras recargar y abrir desde Inicio)
+    if (!data && typeof window.currentProject !== 'undefined' && window.currentProject && window.currentProject.fertirriego && window.currentProject.fertirriego.requirements) {
+      data = window.currentProject.fertirriego.requirements;
+      console.log('✅ Datos Fertirriego desde currentProject en memoria (recarga/Inicio)');
+    }
+    if (!data && typeof window.projectManager !== 'undefined') {
+      const p = window.projectManager.getCurrentProject();
+      if (p && p.fertirriego && p.fertirriego.requirements) {
+        data = p.fertirriego.requirements;
+        console.log('✅ Datos Fertirriego desde projectManager (recarga/Inicio)');
+      }
     }
     
     if (!data) {

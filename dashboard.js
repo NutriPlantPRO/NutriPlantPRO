@@ -1793,39 +1793,53 @@ function selectSection(name, el) {
   if (name === 'Fertirriego') {
     // CRÍTICO: Asegurar siempre datos del proyecto actual (abrir/cambiar proyecto puede ser async)
     loadProjectData();
+
+    function refreshFertirriegoWhenReady(attempt) {
+      var tries = Number.isFinite(attempt) ? attempt : 0;
+      var loaderReady = (typeof window.loadFertirriegoRequirements === 'function') &&
+        (window.loadFertirriegoRequirements._isRealFunction === true);
+      var domReady = !!document.getElementById('fertirriegoCropType') &&
+        !!document.getElementById('fertirriegoTargetYield') &&
+        !!document.getElementById('fertirriegoTableContainer');
+
+      if (!loaderReady || !domReady) {
+        if (tries < 12) {
+          setTimeout(function() { refreshFertirriegoWhenReady(tries + 1); }, 80);
+        } else {
+          console.warn('⚠️ Fertirriego: loader/DOM no listos tras reintentos.', { loaderReady: loaderReady, domReady: domReady });
+        }
+        return;
+      }
+
+      try {
+        window.loadFertirriegoRequirements();
+      } catch (e) {
+        console.warn('⚠️ Fertirriego: error en loadFertirriegoRequirements', e);
+      }
+
+      // Si la subpestaña activa no es "Requerimiento", refrescar su UI con el proyecto actual
+      try {
+        var activeBtn = document.querySelector('.fertirriego-container .tab-button.active');
+        var activeTab = activeBtn ? (activeBtn.getAttribute('data-tab') || 'extraccion') : 'extraccion';
+        if (activeTab === 'programa') {
+          if (typeof window.initFertirriegoProgramUI === 'function') window.initFertirriegoProgramUI();
+        } else if (activeTab === 'graficas') {
+          if (typeof window.loadFertiCustomMaterials === 'function') window.loadFertiCustomMaterials();
+          if (typeof window.loadFertirriegoProgram === 'function') window.loadFertirriegoProgram();
+          if (typeof window.updateFertiSummary === 'function') window.updateFertiSummary();
+          else if (typeof window.updateFertiCharts === 'function') window.updateFertiCharts();
+        }
+      } catch (e) {
+        console.warn('Fertirriego refresh subtab:', e);
+      }
+    }
+
     if (reusedCachedDom) {
       var cachedFertiActive = document.querySelector('.fertirriego-container .tab-button.active');
       var cachedFertiTab = cachedFertiActive ? (cachedFertiActive.getAttribute('data-tab') || 'extraccion') : 'extraccion';
       setTimeout(function() { restoreScrollForKeyStabilized('Fertirriego|' + cachedFertiTab, 3, 90); }, 60);
-      // Actualizar vista con datos del proyecto actual; delay para que loadProjectData termine y el DOM esté listo
-      if (typeof window.loadFertirriegoRequirements === 'function') {
-        setTimeout(function() {
-          window.loadFertirriegoRequirements();
-        }, 50);
-      }
-      var cachedTab = cachedFertiTab;
-      setTimeout(function() {
-        if (cachedTab === 'programa' && typeof window.initFertirriegoProgramUI === 'function') window.initFertirriegoProgramUI();
-        else if (cachedTab === 'graficas') {
-          if (typeof window.loadFertiCustomMaterials === 'function') window.loadFertiCustomMaterials();
-          if (typeof window.loadFertirriegoProgram === 'function') window.loadFertirriegoProgram();
-          if (typeof window.updateFertiSummary === 'function') window.updateFertiSummary();
-        }
-      }, 80);
+      setTimeout(function() { refreshFertirriegoWhenReady(0); }, 40);
     } else {
-      // CARGAR DATOS ya llamado arriba
-      var fertiLastTab = 'extraccion';
-      try {
-        var fp = window.projectManager ? window.projectManager.getCurrentProject() : null;
-        if (fp && fp.fertirriegoLastTab) fertiLastTab = fp.fertirriegoLastTab;
-        else {
-          var fpid = localStorage.getItem('nutriplant-current-project');
-          if (fpid) {
-            var fdata = JSON.parse(localStorage.getItem('nutriplant_project_' + fpid) || '{}');
-            if (fdata.fertirriegoLastTab) fertiLastTab = fdata.fertirriegoLastTab;
-          }
-        }
-      } catch (e) {}
       requestAnimationFrame(() => {
         console.log('💧 Inicializando sección Fertirriego...');
         // Restaurar última subpestaña activa
@@ -1837,13 +1851,11 @@ function selectSection(name, el) {
           } else {
             const pid = localStorage.getItem('nutriplant-current-project');
             if (pid) {
-              // 🔒 USAR FORMATO NUEVO: nutriplant_project_ (no legacy)
               const key = `nutriplant_project_${pid}`;
               const data = JSON.parse(localStorage.getItem(key) || '{}');
               if (data.fertirriegoLastTab) last = data.fertirriegoLastTab;
             }
           }
-          // Activar pestaña correspondiente
           document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
           document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
           const btn = document.querySelector(`.tab-button[data-tab="${last}"]`);
@@ -1852,41 +1864,9 @@ function selectSection(name, el) {
           if (content) content.classList.add('active');
         } catch {}
 
-        // ORDEN CRÍTICO: 1) Cargar requirements PRIMERO (valores guardados), 2) NO aplicar UI state (puede sobrescribir), 3) Solo entonces calcular si no hay tabla
-        // Paso 1: Cargar cultivos personalizados guardados PRIMERO
-        if (typeof window.loadCustomFertirriegoCrops === 'function') {
-          window.loadCustomFertirriegoCrops();
-        }
-        
-        // CRÍTICO: Cargar requerimientos guardados PRIMERO - así la tabla (ferti-req-*) queda llena
-        // antes de initFertirriegoProgramUI/updateFertiSummary, y "Requerimiento Real" se ve bien al cargar/recargar.
-        requestAnimationFrame(() => {
-          if (typeof window.loadFertirriegoRequirements === 'function') {
-            console.log('🔄 selectSection: Llamando loadFertirriegoRequirements() (maneja renderización completa)...');
-            window.loadFertirriegoRequirements();
-          } else {
-            console.error('❌ loadFertirriegoRequirements no disponible - la tabla no se renderizará');
-          }
-          // Inicializar programa / gráficas DESPUÉS de cargar requerimientos para que Requerimiento Real sea correcto
-          requestAnimationFrame(() => {
-            try {
-              const activeBtn = document.querySelector('.fertirriego-container .tab-button.active');
-              const activeTab = activeBtn && activeBtn.getAttribute('data-tab');
-              if (activeTab === 'programa') {
-                if (typeof window.initFertirriegoProgramUI === 'function') window.initFertirriegoProgramUI();
-              } else if (activeTab === 'graficas') {
-                if (typeof window.loadFertiCustomMaterials === 'function') window.loadFertiCustomMaterials();
-                if (typeof window.loadFertirriegoProgram === 'function') window.loadFertirriegoProgram();
-                if (typeof window.updateFertiSummary === 'function') {
-                  window.updateFertiSummary();
-                } else if (typeof window.updateFertiCharts === 'function') {
-                  window.updateFertiCharts();
-                }
-              }
-            } catch (e) { console.warn('Fertirriego init programa/graficas:', e); }
-          });
-        });
-        
+        // Cargar requerimientos con reintentos hasta que loader/DOM estén listos
+        refreshFertirriegoWhenReady(0);
+
         // Restaurar scroll al volver a Fertirriego (ej. en programa o gráficas)
         var fertiActive = document.querySelector('.fertirriego-container .tab-button.active');
         var fertiTab = fertiActive ? (fertiActive.getAttribute('data-tab') || 'extraccion') : 'extraccion';
@@ -8930,6 +8910,14 @@ function loadProjectData() {
       if (loadedProject.fertirriego) {
         currentProject.fertirriego = safeMerge(currentProject.fertirriego || {}, loadedProject.fertirriego);
         console.log('✅ Datos Fertirriego cargados desde unificado');
+      }
+      // Compatibilidad con proyectos antiguos: fertirriegoRequirements en la raíz
+      if (loadedProject.fertirriegoRequirements && typeof loadedProject.fertirriegoRequirements === 'object') {
+        if (!currentProject.fertirriego) currentProject.fertirriego = {};
+        if (!currentProject.fertirriego.requirements || Object.keys(currentProject.fertirriego.requirements).length === 0) {
+          currentProject.fertirriego.requirements = safeMerge(currentProject.fertirriego.requirements || {}, loadedProject.fertirriegoRequirements);
+          console.log('✅ Datos Fertirriego cargados desde formato legacy (fertirriegoRequirements)');
+        }
       }
       if (loadedProject.granular) {
         currentProject.granular = safeMerge(currentProject.granular || {}, loadedProject.granular);
