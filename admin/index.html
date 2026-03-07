@@ -8790,7 +8790,7 @@
                     if (client) {
                         const { data: freshProfile, error: freshErr } = await client
                             .from('profiles')
-                            .select('subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, subscription_amount, subscription_status')
+                            .select('subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, subscription_amount, subscription_status, user_notes')
                             .eq('id', userIdText)
                             .maybeSingle();
                         if (!freshErr && freshProfile) {
@@ -8801,7 +8801,8 @@
                                 next_payment_date: freshProfile.next_payment_date || user.next_payment_date || null,
                                 paypal_subscription_id: freshProfile.paypal_subscription_id || user.paypal_subscription_id || null,
                                 subscription_status: freshProfile.subscription_status || user.subscription_status,
-                                subscription_amount: freshProfile.subscription_amount ?? user.subscription_amount
+                                subscription_amount: freshProfile.subscription_amount ?? user.subscription_amount,
+                                user_notes: freshProfile.user_notes != null ? freshProfile.user_notes : user.user_notes
                             };
                         }
                     }
