@@ -6611,6 +6611,7 @@ async function np_loadProjectsFromCloud() {
   if (!sp || !sp.fetchProjects) return;
   try {
     const list = await sp.fetchProjects();
+    const cloudIds = new Set((list || []).map(p => p && p.id).filter(Boolean));
     window._np_cloud_projects_cache = (list || []).map(p => ({
       id: p.id,
       user_id: p.user_id,
@@ -6623,6 +6624,32 @@ async function np_loadProjectsFromCloud() {
     }));
     window._np_cloud_projects_cache_loaded = true;
     window._np_cloud_projects_cache_error = null;
+    // Si el admin borró un proyecto en la nube: quitar del localStorage del usuario para que no vuelva a aparecer ni se re-suba.
+    if (userId && cloudIds.size >= 0) {
+      const userKey = 'nutriplant_user_' + userId;
+      try {
+        const raw = localStorage.getItem(userKey);
+        if (raw && raw.startsWith('{')) {
+          const userProfile = JSON.parse(raw);
+          if (userProfile && Array.isArray(userProfile.projects)) {
+            const toRemove = userProfile.projects.filter(pid => !cloudIds.has(pid));
+            if (toRemove.length > 0) {
+              userProfile.projects = userProfile.projects.filter(pid => cloudIds.has(pid));
+              localStorage.setItem(userKey, JSON.stringify(userProfile));
+              toRemove.forEach(pid => {
+                localStorage.removeItem('nutriplant_project_' + pid);
+                localStorage.removeItem('nutriplant-project-' + pid);
+              });
+              var currentId = localStorage.getItem('nutriplant_current_project');
+              if (currentId && toRemove.indexOf(currentId) !== -1 && typeof np_setCurrentProject === 'function') {
+                np_setCurrentProject('');
+              }
+              console.log('🧹 Proyectos eliminados en la nube (ej. por admin) quitados localmente:', toRemove.length);
+            }
+          }
+        }
+      } catch (e) { console.warn('⚠️ Purga local tras carga nube:', e); }
+    }
     if (typeof np_renderProjects === 'function') np_renderProjects();
   } catch (e) {
     console.warn('⚠️ np_loadProjectsFromCloud:', e);
