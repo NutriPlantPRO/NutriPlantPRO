@@ -8720,7 +8720,8 @@
                 var previewText = plain.length > 400 ? plain.slice(0, 400) + '…' : plain;
                 preview = '<div style="max-height: 180px; overflow-y: auto; padding: 12px; background: #fff; border-radius: 6px; border: 1px solid #e5e7eb; font-size: 13px; color: #475569; white-space: pre-wrap; word-break: break-word;">' + escapeHtml(previewText) + '</div>';
             }
-            var btn = '<button type="button" onclick="openAdminUserNotesModal(' + JSON.stringify(userId) + ')" style="margin-top: 12px; background: #eab308; color: #1e293b; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📝 Abrir bloc de notas</button>';
+            var safeId = String(userId).replace(/"/g, '&quot;');
+            var btn = '<button type="button" class="btn-open-admin-notes" data-admin-notes-user-id="' + safeId + '" style="margin-top: 12px; background: #eab308; color: #1e293b; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📝 Abrir bloc de notas</button>';
             return preview + btn;
         }
 
@@ -8744,6 +8745,14 @@
         }
         window.openAdminUserNotesModal = openAdminUserNotesModal;
         window.closeAdminUserNotesModal = closeAdminUserNotesModal;
+        document.addEventListener('click', function(e) {
+            var btn = e.target && e.target.closest && e.target.closest('.btn-open-admin-notes');
+            if (btn) {
+                e.preventDefault();
+                var uid = btn.getAttribute('data-admin-notes-user-id');
+                if (uid && typeof window.openAdminUserNotesModal === 'function') window.openAdminUserNotesModal(uid);
+            }
+        });
 
         // 👤 FUNCIÓN PARA VER DETALLES COMPLETOS DEL USUARIO Y SUS PROYECTOS
         async function viewUserDetails(userId, fromView = null, fromViewParams = null) {
