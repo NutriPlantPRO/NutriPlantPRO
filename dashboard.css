@@ -601,6 +601,41 @@ body {
 }
 
 /* Mismo comportamiento por clase en body (JS detecta landscape por ancho>alto en 769-1400) por si orientation: landscape no aplica en el Fold */
+body.np-fold-landscape .layout {
+  padding-left: var(--sidebar-w-expanded) !important;
+}
+body.np-fold-landscape .sidebar {
+  width: var(--sidebar-w-expanded) !important;
+  transform: none !important;
+  top: 48px;
+  bottom: 0;
+}
+body.np-fold-landscape .sidebar:not(.sidebar-minimized) nav a {
+  justify-content: flex-start !important;
+}
+body.np-fold-landscape .sidebar:not(.sidebar-minimized) nav a .label {
+  display: inline !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: static !important;
+  left: auto !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+body.np-fold-landscape .sidebar:not(.sidebar-minimized) .sb-title-card .text,
+body.np-fold-landscape .sidebar:not(.sidebar-minimized) .sb-card .title .text,
+body.np-fold-landscape .sidebar:not(.sidebar-minimized) .sb-chip span.text,
+body.np-fold-landscape .sidebar:not(.sidebar-minimized) .logout .logout-text,
+body.np-fold-landscape .sidebar:not(.sidebar-minimized) .no-project-message p {
+  opacity: 1 !important;
+  visibility: visible !important;
+  width: auto !important;
+  overflow: visible !important;
+}
+
 body.np-fold-landscape .sidebar.sidebar-minimized,
 body.np-fold-landscape .sidebar.open.sidebar-minimized {
   width: var(--sidebar-w) !important;

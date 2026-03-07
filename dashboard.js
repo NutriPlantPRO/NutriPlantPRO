@@ -197,7 +197,7 @@ function initializeSidebar() {
     document.body.style.overflow = '';
   }
 
-  // Al tocar fuera de la pestaña: minimizar (en cel y en Fold horizontal). Tocando la pestaña minimizada: expandir.
+  // Al tocar fuera de la pestaña: minimizar. Tocando la pestaña minimizada: expandir.
   document.addEventListener('click', function(e) {
     const isSidebarClick = sidebar && sidebar.contains(e.target);
     const isToggleClick = sidebarToggle && sidebarToggle.contains(e.target);
@@ -206,9 +206,12 @@ function initializeSidebar() {
     } else if (isFoldLandscape()) {
       if (!isSidebarClick && !isToggleClick && !isSidebarMinimized()) {
         minimizeSidebar();
-      } else if (isSidebarClick && isSidebarMinimized()) {
-        expandSidebar();
       }
+    }
+
+    // En ventana chica (<=768) o Fold horizontal, tocar la barra minimizada debe expandir.
+    if ((window.innerWidth <= 768 || isFoldLandscape()) && isSidebarClick && isSidebarMinimized()) {
+      expandSidebar();
     }
   });
 
@@ -236,15 +239,7 @@ function isLikelySamsungFoldDevice() {
   try {
     var ua = String(navigator.userAgent || '');
     // Modelos Fold suelen venir como SM-F9xxx / SM-F7xxx.
-    if (/SM-F\d{3,4}/i.test(ua) || /Galaxy\s*Fold/i.test(ua)) return true;
-
-    // Fallback: Android móvil (no tablet) con pantalla grande tipo foldable.
-    var uaDataMobile = (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean')
-      ? navigator.userAgentData.mobile
-      : null;
-    var isAndroid = /Android/i.test(ua);
-    if (isAndroid && uaDataMobile === true) return true;
-    return false;
+    return /SM-F\d{3,4}/i.test(ua) || /Galaxy\s*Fold/i.test(ua);
   } catch (e) {
     return false;
   }
