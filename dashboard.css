@@ -473,17 +473,21 @@ body {
   .sidebar-overlay {
     display: none !important;
   }
-  .sidebar .sidebar a .label,
-  .sidebar .sidebar a.active .label,
+  .sidebar a .label,
+  .sidebar a.active .label,
   .sidebar .sb-title-card .text,
   .sidebar .sb-card .title .text,
   .sidebar .sb-chip span.text,
-  .sidebar .logout .logout-text {
+  .sidebar .logout .logout-text,
+  .sidebar .no-project-message p {
     opacity: 1 !important;
     visibility: visible !important;
     width: auto !important;
+    max-width: none !important;
     overflow: visible !important;
     position: static !important;
+    left: auto !important;
+    display: inline !important;
   }
   .sidebar nav a {
     justify-content: flex-start !important;
