@@ -197,14 +197,17 @@ function initializeSidebar() {
     document.body.style.overflow = '';
   }
 
-  // Cerrar sidebar al cambiar de sección en móvil
+  // Al tocar fuera de la pestaña: minimizar (en cel y en Fold horizontal). Tocando la pestaña minimizada: expandir.
   document.addEventListener('click', function(e) {
-    if (window.innerWidth <= 768) {
-      const isSidebarClick = sidebar && sidebar.contains(e.target);
-      const isToggleClick = sidebarToggle && sidebarToggle.contains(e.target);
-      
-      if (!isSidebarClick && !isToggleClick && isSidebarOpen()) {
+    const isSidebarClick = sidebar && sidebar.contains(e.target);
+    const isToggleClick = sidebarToggle && sidebarToggle.contains(e.target);
+    if (window.innerWidth <= 768 && !isSidebarClick && !isToggleClick && isSidebarOpen()) {
+      minimizeSidebar();
+    } else if (isFoldLandscape()) {
+      if (!isSidebarClick && !isToggleClick && !isSidebarMinimized()) {
         minimizeSidebar();
+      } else if (isSidebarClick && isSidebarMinimized()) {
+        expandSidebar();
       }
     }
   });
@@ -402,21 +405,6 @@ function syncSidebarToViewport() {
   }
 }
 
-// En Fold horizontal: alternar entre pestaña minimizada (barra) y expandida
-function toggleSidebarFold() {
-  if (!isFoldLandscape()) return;
-  const sidebar = document.getElementById('sidebar');
-  if (!sidebar) return;
-  if (isSidebarMinimized()) {
-    expandSidebar();
-    var btn = document.getElementById('sidebar-fold-toggle');
-    if (btn) { btn.setAttribute('aria-label', 'Minimizar menú'); btn.setAttribute('title', 'Minimizar menú'); }
-  } else {
-    minimizeSidebar();
-    var btn = document.getElementById('sidebar-fold-toggle');
-    if (btn) { btn.setAttribute('aria-label', 'Expandir menú'); btn.setAttribute('title', 'Expandir menú'); }
-  }
-}
 
 // ============================
 // 2) Plantilla por cada sección
