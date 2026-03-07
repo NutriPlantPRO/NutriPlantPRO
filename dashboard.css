@@ -693,6 +693,49 @@ body.np-fold-landscape .sidebar.open.sidebar-minimized .logout .logout-text {
   background: rgba(255, 255, 255, 0.5);
 }
 
+/* Botón minimizar/expandir pestaña: oculto por defecto, visible solo en Fold horizontal */
+.sidebar-fold-toggle {
+  display: none;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  color: #e2e8f0;
+  cursor: pointer;
+  z-index: 5;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-fold-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.sidebar-fold-toggle .icon-expand {
+  display: none;
+}
+.sidebar-fold-toggle .icon-minimize {
+  display: block;
+}
+.sidebar.sidebar-minimized .sidebar-fold-toggle .icon-expand,
+.sidebar.open.sidebar-minimized .sidebar-fold-toggle .icon-expand {
+  display: block;
+}
+.sidebar.sidebar-minimized .sidebar-fold-toggle .icon-minimize,
+.sidebar.open.sidebar-minimized .sidebar-fold-toggle .icon-minimize {
+  display: none;
+}
+@media (orientation: landscape) and (min-width: 769px) and (max-width: 1400px) {
+  .sidebar-fold-toggle {
+    display: flex;
+  }
+}
+body.np-fold-landscape .sidebar-fold-toggle {
+  display: flex;
+}
+
 /* ===== SIDEBAR BRANDING ===== */
 .sidebar-brand {
   padding: 16px 8px;

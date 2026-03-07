@@ -178,6 +178,14 @@ function initializeSidebar() {
     sidebarOverlay.addEventListener('click', closeSidebar);
   }
 
+  var sidebarFoldToggle = document.getElementById('sidebar-fold-toggle');
+  if (sidebarFoldToggle) {
+    sidebarFoldToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleSidebarFold();
+    });
+  }
+
   // En celular: desactivar toggle por toque en logo/brand para evitar toques accidentales.
   // El control del sidebar queda solo en botones/acciones explícitas.
 
@@ -359,6 +367,13 @@ function isSidebarMinimized() {
   return sidebar && sidebar.classList.contains('sidebar-minimized');
 }
 
+// True cuando estamos en Fold horizontal (landscape por tamaño, ancho 769–1400)
+function isFoldLandscape() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  return w > h && w >= 769 && w <= 1400;
+}
+
 // Al voltear el Fold o cambiar ancho: dejar la pestaña en el estado correcto (oculta/minimizada en cel, visible en tablet)
 function syncSidebarToViewport() {
   const sidebar = document.getElementById('sidebar');
@@ -374,12 +389,32 @@ function syncSidebarToViewport() {
     if (overlay) overlay.classList.remove('show');
     document.body.style.overflow = '';
   } else {
-    // Pantalla ancha (tablet / Fold desplegado): quitar estado móvil para que se vea normal
+    // Pantalla ancha (tablet / Fold desplegado)
     sidebar.style.transform = '';
-    sidebar.classList.remove('open', 'sidebar-minimized');
+    sidebar.classList.remove('open');
     if (layout) layout.classList.remove('sidebar-expanded');
     if (overlay) overlay.classList.remove('show');
     document.body.style.overflow = '';
+    // En Fold horizontal no quitar .sidebar-minimized para respetar la elección del usuario
+    if (!isFoldLandscape()) {
+      sidebar.classList.remove('sidebar-minimized');
+    }
+  }
+}
+
+// En Fold horizontal: alternar entre pestaña minimizada (barra) y expandida
+function toggleSidebarFold() {
+  if (!isFoldLandscape()) return;
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+  if (isSidebarMinimized()) {
+    expandSidebar();
+    var btn = document.getElementById('sidebar-fold-toggle');
+    if (btn) { btn.setAttribute('aria-label', 'Minimizar menú'); btn.setAttribute('title', 'Minimizar menú'); }
+  } else {
+    minimizeSidebar();
+    var btn = document.getElementById('sidebar-fold-toggle');
+    if (btn) { btn.setAttribute('aria-label', 'Expandir menú'); btn.setAttribute('title', 'Expandir menú'); }
   }
 }
 
