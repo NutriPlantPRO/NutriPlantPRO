@@ -581,6 +581,42 @@
       } catch (e) { console.warn('⚠️ syncUserCustomHydroMaterials:', e); }
     },
 
+    /** Obtener bloque de notas del usuario desde Supabase (profiles.user_notes). Requiere columna user_notes (text) en profiles. */
+    fetchUserNotes: async function(userId) {
+      if (!userId || !UUID_REGEX.test(String(userId))) return null;
+      const client = getClient();
+      if (!client) return null;
+      try {
+        const { data, error } = await client.from('profiles').select('user_notes').eq('id', userId).single();
+        if (error) {
+          if (error.code !== 'PGRST116') console.warn('⚠️ Supabase fetch user_notes:', error.message);
+          return null;
+        }
+        return (data && data.user_notes != null) ? String(data.user_notes) : null;
+      } catch (e) {
+        return null;
+      }
+    },
+
+    /** Sincronizar bloque de notas del usuario a Supabase (profiles.user_notes). Requiere columna user_notes (text) en profiles. */
+    syncUserNotes: async function(userId, htmlContent) {
+      if (!userId || !UUID_REGEX.test(String(userId))) return;
+      const client = getClient();
+      if (!client) return;
+      try {
+        const { error } = await client.from('profiles').update({
+          user_notes: typeof htmlContent === 'string' ? htmlContent : ''
+        }).eq('id', userId);
+        if (error) {
+          console.warn('⚠️ Supabase sync user_notes:', error.message);
+          return;
+        }
+        console.log('☁️ Bloque de notas sincronizado a la nube');
+      } catch (e) {
+        console.warn('⚠️ syncUserNotes:', e);
+      }
+    },
+
     /** Obtener reportes del usuario para un proyecto desde Supabase (tabla reports) */
     fetchUserReports: async function(userId, projectId) {
       if (!userId || !UUID_REGEX.test(String(userId)) || !projectId) return [];
@@ -749,6 +785,22 @@
   window.nutriplantFetchCustomHydroMaterialsFromCloud = function(userId) {
     if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.fetchUserCustomHydroMaterials) {
       return window.nutriplantSupabaseProjects.fetchUserCustomHydroMaterials(userId);
+    }
+    return Promise.resolve(null);
+  };
+
+  /** Sincronizar bloque de notas del usuario a la nube (profiles.user_notes). Requiere columna user_notes en profiles. */
+  window.nutriplantSyncUserNotesToCloud = function(userId, htmlContent) {
+    if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.syncUserNotes) {
+      return window.nutriplantSupabaseProjects.syncUserNotes(userId, htmlContent);
+    }
+    return Promise.resolve();
+  };
+
+  /** Obtener bloque de notas del usuario desde la nube (profiles.user_notes). Requiere columna user_notes en profiles. */
+  window.nutriplantLoadUserNotesFromCloud = function(userId) {
+    if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.fetchUserNotes) {
+      return window.nutriplantSupabaseProjects.fetchUserNotes(userId);
     }
     return Promise.resolve(null);
   };

@@ -187,6 +187,9 @@
           <button id="btn-simple-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only" onclick="window.showSimpleCalculator()" title="Calculadora simple">
             <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg></span>
           </button>
+          <button id="btn-notes-block" class="btn btn-pill btn-calculator btn-calc-icon-only" onclick="window.showNotesBlockModal()" title="Bloque de notas">
+            <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+          </button>
           <button id="btn-user-info" class="btn btn-pill btn-user" onclick="window.showUserInfoModal()" title="Información de Usuario">
             <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -4873,6 +4876,33 @@ CONTRATO:
     window.closeMeasureUnitsCalculator = closeMeasureUnitsCalculator;
 
     var NP_SIMPLE_CALC_STORAGE = 'np_simple_calc_last';
+    function simpleCalcKeydown(e) {
+      var modal = document.getElementById('simpleCalculatorModal');
+      if (!modal || !modal.classList.contains('show')) return;
+      var keys = document.getElementById('simpleCalcKeys');
+      if (!keys) return;
+      var key = e.key;
+      var btn = null;
+      if (/^[0-9]$/.test(key)) {
+        btn = keys.querySelector('.simple-calc-btn[data-value="' + key + '"]');
+      } else if (key === '.' || key === ',') {
+        btn = keys.querySelector('.simple-calc-btn[data-value="."]');
+      } else if (key === '+') { btn = keys.querySelector('.simple-calc-btn[data-action="+"]');
+      } else if (key === '-') { btn = keys.querySelector('.simple-calc-btn[data-action="-"]');
+      } else if (key === '*') { btn = keys.querySelector('.simple-calc-btn[data-action="*"]');
+      } else if (key === '/') { e.preventDefault(); btn = keys.querySelector('.simple-calc-btn[data-action="/"]');
+      } else if (key === '(') { btn = keys.querySelector('.simple-calc-btn[data-action="("]');
+      } else if (key === ')') { btn = keys.querySelector('.simple-calc-btn[data-action=")"]');
+      } else if (key === 'Enter') { e.preventDefault(); btn = keys.querySelector('.simple-calc-btn[data-action="="]');
+      } else if (key === 'Backspace') { e.preventDefault(); btn = keys.querySelector('.simple-calc-btn[data-action="backspace"]');
+      } else if (key === 'Escape') { e.preventDefault(); btn = keys.querySelector('.simple-calc-btn[data-action="clear"]');
+      }
+      if (btn) {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.click();
+      }
+    }
     function showSimpleCalculator() {
       var modal = document.getElementById('simpleCalculatorModal');
       if (!modal) return;
@@ -4954,9 +4984,12 @@ CONTRATO:
           } catch (e) {}
         });
       }
+      document.removeEventListener('keydown', simpleCalcKeydown);
+      document.addEventListener('keydown', simpleCalcKeydown);
     }
     window.showSimpleCalculator = showSimpleCalculator;
     function closeSimpleCalculator() {
+      document.removeEventListener('keydown', simpleCalcKeydown);
       var display = document.getElementById('simpleCalcDisplay');
       var equationEl = document.getElementById('simpleCalcEquation');
       if (display && display.value !== undefined) {
@@ -4970,6 +5003,115 @@ CONTRATO:
       if (modal) modal.classList.remove('show');
     }
     window.closeSimpleCalculator = closeSimpleCalculator;
+
+    // ——— Bloque de notas (máx. 2 hojas, guardado en segundo plano + nube) ———
+    var NOTES_MAX_CHARS = 6000;
+    var notesBlockSaveTimer = null;
+    function showNotesBlockModal() {
+      var modal = document.getElementById('notesBlockModal');
+      var editor = document.getElementById('notesBlockEditor');
+      if (!modal || !editor) return;
+      loadNotesBlockContent();
+      updateNotesBlockCharCount();
+      modal.classList.add('show');
+      editor.focus();
+      document.querySelectorAll('.notes-tool-btn').forEach(function(btn) {
+        btn.onclick = function() {
+          var cmd = this.getAttribute('data-cmd');
+          editor.focus();
+          if (cmd === 'bold' || cmd === 'italic' || cmd === 'underline' || cmd === 'insertUnorderedList' || cmd === 'insertOrderedList') {
+            document.execCommand(cmd, false, null);
+          }
+        };
+      });
+      var fontSizeSelect = document.getElementById('notesBlockFontSize');
+      if (fontSizeSelect) {
+        fontSizeSelect.onchange = function() {
+          editor.focus();
+          var size = this.value;
+          document.execCommand('fontSize', false, size <= '3' ? (size === '1' ? '1' : size === '2' ? '2' : '3') : (size === '4' ? '4' : '5'));
+        };
+      }
+      document.getElementById('notesBlockSaveBtn').onclick = function() { saveNotesBlockContent(); };
+      editor.oninput = function() {
+        updateNotesBlockCharCount();
+        scheduleNotesBlockSave();
+      };
+      editor.onpaste = function(e) {
+        e.preventDefault();
+        var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
+      };
+      modal.onclick = function(e) { if (e.target === modal) closeNotesBlockModal(); };
+    }
+    function closeNotesBlockModal() {
+      saveNotesBlockContent();
+      var modal = document.getElementById('notesBlockModal');
+      if (modal) modal.classList.remove('show');
+    }
+    function getNotesBlockPlainLength() {
+      var editor = document.getElementById('notesBlockEditor');
+      if (!editor) return 0;
+      var text = editor.innerText || editor.textContent || '';
+      return text.length;
+    }
+    function updateNotesBlockCharCount() {
+      var el = document.getElementById('notesBlockCharCount');
+      if (!el) return;
+      var n = getNotesBlockPlainLength();
+      el.textContent = n + ' / ' + NOTES_MAX_CHARS;
+      el.style.color = n > NOTES_MAX_CHARS ? '#dc2626' : '#64748b';
+    }
+    function scheduleNotesBlockSave() {
+      if (notesBlockSaveTimer) clearTimeout(notesBlockSaveTimer);
+      notesBlockSaveTimer = setTimeout(saveNotesBlockContent, 1200);
+    }
+    function saveNotesBlockContent() {
+      var editor = document.getElementById('notesBlockEditor');
+      if (!editor) return;
+      var html = editor.innerHTML;
+      var text = editor.innerText || editor.textContent || '';
+      if (text.length > NOTES_MAX_CHARS) {
+        var truncated = text.slice(0, NOTES_MAX_CHARS);
+        editor.innerText = truncated;
+        html = editor.innerHTML;
+      }
+      var userId = localStorage.getItem('nutriplant_user_id') || (typeof currentProject !== 'undefined' && currentProject && currentProject.userId ? currentProject.userId : '');
+      var key = 'nutriplant_user_notes' + (userId ? '_' + userId : '');
+      try {
+        localStorage.setItem(key, html);
+      } catch (e) {}
+      if (typeof window.nutriplantSyncUserNotesToCloud === 'function' && userId) {
+        var statusEl = document.getElementById('notesBlockCloudStatus');
+        var p = null;
+        try { p = window.nutriplantSyncUserNotesToCloud(userId, html); } catch (err) { console.warn('Notes sync cloud:', err); }
+        if (p && typeof p.then === 'function') {
+          p.then(function() {
+            if (statusEl) { statusEl.textContent = 'Guardado en la nube'; statusEl.style.color = '#16a34a'; window.setTimeout(function() { statusEl.textContent = ''; }, 2500); }
+          }).catch(function() {});
+        }
+      }
+    }
+    function loadNotesBlockContent() {
+      var editor = document.getElementById('notesBlockEditor');
+      if (!editor) return;
+      var userId = localStorage.getItem('nutriplant_user_id') || (typeof currentProject !== 'undefined' && currentProject && currentProject.userId ? currentProject.userId : '');
+      var key = 'nutriplant_user_notes' + (userId ? '_' + userId : '');
+      var local = localStorage.getItem(key);
+      editor.innerHTML = (local != null && local !== '') ? local : '';
+      if (typeof window.nutriplantLoadUserNotesFromCloud === 'function' && userId) {
+        try {
+          window.nutriplantLoadUserNotesFromCloud(userId).then(function(h) {
+            if (h && typeof h === 'string' && h.trim() !== '') {
+              editor.innerHTML = h;
+              updateNotesBlockCharCount();
+            }
+          }).catch(function() {});
+        } catch (e) {}
+      }
+    }
+    window.showNotesBlockModal = showNotesBlockModal;
+    window.closeNotesBlockModal = closeNotesBlockModal;
 
     function updateMeasureUnitOptions() {
       var cat = document.getElementById('measure-category');
@@ -6084,6 +6226,37 @@ CONTRATO:
       </div>
     </div>
   </div>
+
+  <!-- Modal Bloque de notas (fondo blanco, toolbar, límite ~2 hojas, guardado en segundo plano + nube) -->
+  <div id="notesBlockModal" class="modal-overlay">
+    <div class="modal notes-block-modal" style="max-width: 640px; width: calc(100% - 24px); max-height: 85vh; display: flex; flex-direction: column; background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden;">
+      <div class="notes-block-header" style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: #f8fafc;">
+        <h2 class="modal-title" style="margin: 0; font-size: 16px; color: #1e293b;">📝 Bloque de notas</h2>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="notesBlockCharCount" style="font-size: 12px; color: #64748b;">0 / 6000</span>
+          <span id="notesBlockCloudStatus" style="font-size: 11px; color: #64748b;"></span>
+          <button type="button" id="notesBlockSaveBtn" class="btn btn-sm btn-primary" style="padding: 6px 12px;" title="Guardar (también se guarda en segundo plano)">Guardar</button>
+          <button class="modal-close" onclick="window.closeNotesBlockModal()" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: #64748b; line-height: 1;">×</button>
+        </div>
+      </div>
+      <div class="notes-block-toolbar" style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; background: #f1f5f9;">
+        <button type="button" class="notes-tool-btn" data-cmd="bold" title="Negrita"><b>N</b></button>
+        <button type="button" class="notes-tool-btn" data-cmd="italic" title="Cursiva"><i>I</i></button>
+        <button type="button" class="notes-tool-btn" data-cmd="underline" title="Subrayado"><u>S</u></button>
+        <select id="notesBlockFontSize" class="notes-tool-select" title="Tamaño de letra" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+          <option value="1">Muy pequeño</option>
+          <option value="2">Pequeño</option>
+          <option value="3" selected>Normal</option>
+          <option value="4">Grande</option>
+          <option value="5">Muy grande</option>
+        </select>
+        <span style="width: 1px; height: 20px; background: #cbd5e1; margin: 0 2px;"></span>
+        <button type="button" class="notes-tool-btn" data-cmd="insertUnorderedList" title="Viñeta / lista con guión">• Lista</button>
+        <button type="button" class="notes-tool-btn" data-cmd="insertOrderedList" title="Lista numerada">1. Lista</button>
+      </div>
+      <div id="notesBlockEditor" contenteditable="true" class="notes-block-editor" style="flex: 1; min-height: 280px; padding: 16px; overflow-y: auto; background: #fff; font-size: 15px; line-height: 1.5; color: #1e293b; outline: none;" data-placeholder="Escribe aquí... (máx. 2 hojas, se guarda en la nube para verlo en cualquier equipo)."></div>
+    </div>
+  </div>
   <style>
     .simple-calc-btn { width:100%; padding:16px; font-size:20px; font-weight:600; border:none; border-radius:12px; cursor:pointer; background:#505050; color:#fff; transition:background .15s; }
     .simple-calc-btn:hover { background:#606060; }
@@ -6091,6 +6264,10 @@ CONTRATO:
     .simple-calc-op:hover { background:#707070; }
     .simple-calc-eq { background:#ff9500; color:#fff; }
     .simple-calc-eq:hover { background:#ffad33; }
+    .notes-tool-btn { padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 13px; color: #334155; }
+    .notes-tool-btn:hover { background: #e2e8f0; }
+    .notes-block-editor:empty::before { content: attr(data-placeholder); color: #94a3b8; }
+    #notesBlockModal .modal-overlay { align-items: center; justify-content: center; }
   </style>
 
 <!-- Modal para agregar cultivo personalizado -->
