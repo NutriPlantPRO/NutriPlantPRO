@@ -1795,6 +1795,21 @@ function selectSection(name, el) {
       var cachedFertiActive = document.querySelector('.fertirriego-container .tab-button.active');
       var cachedFertiTab = cachedFertiActive ? (cachedFertiActive.getAttribute('data-tab') || 'extraccion') : 'extraccion';
       setTimeout(function() { restoreScrollForKeyStabilized('Fertirriego|' + cachedFertiTab, 3, 90); }, 60);
+      // Actualizar siempre la vista con los datos del proyecto actual (al abrir proyecto o volver a la pestaña)
+      if (typeof window.loadFertirriegoRequirements === 'function') {
+        requestAnimationFrame(function() {
+          window.loadFertirriegoRequirements();
+        });
+      }
+      var cachedTab = cachedFertiTab;
+      requestAnimationFrame(function() {
+        if (cachedTab === 'programa' && typeof window.initFertirriegoProgramUI === 'function') window.initFertirriegoProgramUI();
+        else if (cachedTab === 'graficas') {
+          if (typeof window.loadFertiCustomMaterials === 'function') window.loadFertiCustomMaterials();
+          if (typeof window.loadFertirriegoProgram === 'function') window.loadFertirriegoProgram();
+          if (typeof window.updateFertiSummary === 'function') window.updateFertiSummary();
+        }
+      });
     } else {
       // CARGAR DATOS DEL PROYECTO PRIMERO (igual que Enmienda)
       loadProjectData();
@@ -12498,7 +12513,13 @@ function createFertigationSectionHTML(chartImages) {
   if (hasWeekTotals) {
     weeks.forEach(w => {
       const t = w && w.totals ? w.totals : {};
-      nutrients.forEach(n => { totalProgram[n] += toNum(t[n]); });
+      nutrients.forEach(n => {
+        if (n === 'N') {
+          totalProgram[n] += toNum(t.N_NO3) + toNum(t.N_NH4);
+        } else {
+          totalProgram[n] += toNum(t[n]);
+        }
+      });
     });
   }
   const totalWithWater = {};
