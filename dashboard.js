@@ -200,6 +200,22 @@ function initializeSidebar() {
       }
     }
   });
+
+  // Al voltear el Fold o redimensionar: que la pestaña se oculte en cel y se vea bien en tablet
+  var syncSidebarRaf = null;
+  var onResizeOrOrientation = function() {
+    if (syncSidebarRaf != null) cancelAnimationFrame(syncSidebarRaf);
+    syncSidebarRaf = requestAnimationFrame(function() {
+      syncSidebarToViewport();
+      syncSidebarRaf = null;
+    });
+  };
+  window.addEventListener('resize', onResizeOrOrientation, { passive: true });
+  window.addEventListener('orientationchange', onResizeOrOrientation, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onResizeOrOrientation, { passive: true });
+  }
+  syncSidebarToViewport();
 }
 
 // Sincroniza el alto visible real del viewport móvil para evitar "huecos"
@@ -323,6 +339,30 @@ function isSidebarOpen() {
 function isSidebarMinimized() {
   const sidebar = document.getElementById('sidebar');
   return sidebar && sidebar.classList.contains('sidebar-minimized');
+}
+
+// Al voltear el Fold o cambiar ancho: dejar la pestaña en el estado correcto (oculta/minimizada en cel, visible en tablet)
+function syncSidebarToViewport() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const layout = document.querySelector('.layout');
+  if (!sidebar) return;
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    // Pantalla estrecha (cel / Fold plegado): pestaña minimizada (barra), no expandida
+    sidebar.style.transform = 'translateX(0)';
+    sidebar.classList.add('open', 'sidebar-minimized');
+    if (layout) layout.classList.remove('sidebar-expanded');
+    if (overlay) overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  } else {
+    // Pantalla ancha (tablet / Fold desplegado): quitar estado móvil para que se vea normal
+    sidebar.style.transform = '';
+    sidebar.classList.remove('open', 'sidebar-minimized');
+    if (layout) layout.classList.remove('sidebar-expanded');
+    if (overlay) overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
 }
 
 // ============================
