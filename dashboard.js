@@ -231,12 +231,30 @@ function initializeSidebar() {
   updateFoldLandscapeClass();
 }
 
-// Fold en horizontal: algunos navegadores no reportan orientation: landscape. Marcar body para que el CSS permita minimizar la pestaña.
+// Detecta Fold Samsung por User-Agent para no activar lógica especial en tablets normales.
+function isLikelySamsungFoldDevice() {
+  try {
+    var ua = String(navigator.userAgent || '');
+    // Modelos Fold suelen venir como SM-F9xxx / SM-F7xxx.
+    if (/SM-F\d{3,4}/i.test(ua) || /Galaxy\s*Fold/i.test(ua)) return true;
+
+    // Fallback: Android móvil (no tablet) con pantalla grande tipo foldable.
+    var uaDataMobile = (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean')
+      ? navigator.userAgentData.mobile
+      : null;
+    var isAndroid = /Android/i.test(ua);
+    if (isAndroid && uaDataMobile === true) return true;
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Fold en horizontal: algunos navegadores no reportan orientation: landscape.
+// Marcar body solo cuando realmente parece un Fold, para no afectar tablets normales.
 function updateFoldLandscapeClass() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const isLandscapeBySize = w > h && w >= 769 && w <= 1400;
-  document.body.classList.toggle('np-fold-landscape', !!isLandscapeBySize);
+  var isFoldH = isFoldLandscape();
+  document.body.classList.toggle('np-fold-landscape', !!isFoldH);
 }
 var _npFoldLandscapeRaf = null;
 function scheduleFoldLandscapeUpdate() {
@@ -370,8 +388,9 @@ function isSidebarMinimized() {
   return sidebar && sidebar.classList.contains('sidebar-minimized');
 }
 
-// True cuando estamos en Fold horizontal (landscape por tamaño, ancho 769–1400)
+// True solo en Fold real en horizontal (landscape por tamaño + UA Fold).
 function isFoldLandscape() {
+  if (!isLikelySamsungFoldDevice()) return false;
   const w = window.innerWidth;
   const h = window.innerHeight;
   return w > h && w >= 769 && w <= 1400;
