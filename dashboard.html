@@ -269,6 +269,7 @@
       <textarea class="chat-input" id="chatInput" placeholder="Preguntar a NutriPlant PRO Assistant" rows="1"></textarea>
       <button class="chat-send" id="chatSendBtn" title="Enviar">➤</button>
     </div>
+    <p class="chat-tip">💡 Guarda los cambios del proyecto para que el asistente tenga siempre la información más reciente.</p>
   </div>
 
   <!-- Supabase (nube) -->
@@ -4933,6 +4934,7 @@ CONTRATO:
             var exprBefore = display.value || '0';
             try {
               var s = exprBefore.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+              s = s.replace(/(\d|\))\s*(\()/g, '$1*$2').replace(/(\))\s*(\d)/g, '$1*$2');
               if (/^[\d\s+\-*/().]+$/.test(s)) expr = String(Function('"use strict"; return (' + s + ')')());
               else expr = exprBefore;
             } catch (err) { expr = '0'; }

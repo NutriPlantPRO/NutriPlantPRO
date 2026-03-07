@@ -4387,11 +4387,20 @@ function np_createProject(data) {
       } catch (e) { console.warn('sync new project:', e); }
     }
     if (Array.isArray(window._np_cloud_projects_cache)) {
-      window._np_cloud_projects_cache.unshift({ id: newId, title: proj.title, cultivo: proj.cultivo || '', variedad: proj.variedad || '', campoOsector: proj.campoOsector || null, createdAt: now, updatedAt: now });
+      window._np_cloud_projects_cache.unshift({
+        id: newId,
+        user_id: userId,
+        title: proj.title,
+        cultivo: proj.cultivo || '',
+        variedad: proj.variedad || '',
+        campoOsector: proj.campoOsector || null,
+        createdAt: now,
+        updatedAt: now
+      });
       if (typeof np_renderProjects === 'function') np_renderProjects();
     }
   }
-  
+
   return proj;
 }
 async function np_deleteProject(id) {
@@ -4477,8 +4486,9 @@ async function np_deleteProject(id) {
   // Quitar de la caché de nube al instante para que la lista se actualice sin recargar
   if (Array.isArray(window._np_cloud_projects_cache)) {
     window._np_cloud_projects_cache = window._np_cloud_projects_cache.filter(p => p.id !== id);
+    if (typeof np_renderProjects === 'function') np_renderProjects();
   }
-    
+
   // 3. 🔒 ELIMINAR DE LA LISTA DEL USUARIO
   try {
     const userKey = `nutriplant_user_${userId}`;
@@ -9612,6 +9622,19 @@ function applyProjectDataToUI() {
     if (window.selectFrutaAnalysis) window.selectFrutaAnalysis(null);
     window._npLastAnalysisUiProjectId = currentAnalysisProjectId;
   }
+
+  // ===== ACTUALIZAR VISTA DE LA SECCIÓN ACTIVA CON LOS DATOS RECIÉN CARGADOS =====
+  // Si el usuario estaba en Fertirriego o Nutrición Granular y abre otro proyecto y vuelve,
+  // refrescar la tabla para que muestre la info real guardada del proyecto actual.
+  try {
+    var activeChip = document.querySelector('#sbStack [data-section].active') || document.querySelector('.sidebar a[data-section].active');
+    var activeSection = activeChip ? String(activeChip.getAttribute('data-section') || '').toLowerCase() : '';
+    if (activeSection === 'fertirriego' && typeof window.loadFertirriegoRequirements === 'function') {
+      setTimeout(function() { window.loadFertirriegoRequirements(); }, 80);
+    } else if ((activeSection === 'nutricion-granular' || activeSection === 'granular') && typeof window.loadGranularRequirements === 'function') {
+      setTimeout(function() { window.loadGranularRequirements(); }, 80);
+    }
+  } catch (e) { console.warn('loadProjectData: refresh active section', e); }
 }
 
 // Mostrar indicador de guardado
@@ -11231,6 +11254,21 @@ function createReportHTML(selectedSections, chartImages) {
           float: none;
           position: static;
         }
+        .footer-qr-block {
+          margin-top: 14px;
+          text-align: center;
+        }
+        .footer-qr-block img {
+          width: 72px;
+          height: 72px;
+          display: block;
+          margin: 0 auto 8px;
+        }
+        .footer-qr-url {
+          font-size: 0.72rem;
+          color: #475569;
+          word-break: break-all;
+        }
         .report-block {
           border: 1px solid #cbd5e1;
           border-radius: 10px;
@@ -11597,6 +11635,10 @@ function createReportHTML(selectedSections, chartImages) {
             <div class="report-generated-by">Generado por: <strong>${safeReportAuthorName}</strong></div>
           </div>
           <img src="${reportAssetBase}N_Hoja_Azul.png" alt="" class="footer-leaf-watermark" aria-hidden="true">
+          <div class="footer-qr-block">
+            <img src="${reportAssetBase}qr-nutriplantpro.png" alt="QR NutriPlant PRO" width="72" height="72" onerror="this.onerror=null;this.src='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https%3A%2F%2Fnutriplantpro.com%2F';">
+            <span class="footer-qr-url">https://nutriplantpro.com/</span>
+          </div>
         </div>
       </div>
     </div>
@@ -13075,6 +13117,13 @@ function createHidroponiaSectionHTML() {
           <thead><tr><th>Etapa</th>${meqNutrients.map(n => `<th>${label(n)} ppm</th>`).join('')}${microNutrients.map(n => `<th>${n} ppm</th>`).join('')}</tr></thead>
           <tbody>${stageRowsPpm || `<tr><td colspan="${meqNutrients.length + microNutrients.length + 1}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
         </table>
+      </div>
+      <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
+        <div class="report-block-title">💧 Análisis de agua (ppm)</div>
+        <div class="report-note" style="margin-bottom:8px;">Aportes del agua para calcular el faltante (objetivo − agua).</div>
+        <div class="report-nutrient-wrap">
+          ${hydroNutrients.map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(h.water && h.water[n]).toFixed(2)} ppm</span>`).join('')}
+        </div>
       </div>
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
         <div class="report-block-title">📦 Cálculo por volumen de agua</div>
@@ -15312,6 +15361,8 @@ function createSoilAnalysisTabHTML() {
                       <label title="Calculado: 100 × (Mg meq / CIC)">% Mg <input type="text" id="soil-cations-pctMg" readonly class="soil-ratio-calc" placeholder="—"></label>
                       <label title="Calculado: 100 × (K meq / CIC)">% K <input type="text" id="soil-cations-pctK" readonly class="soil-ratio-calc" placeholder="—"></label>
                       <label title="Calculado: 100 × (Na meq / CIC)">% Na <input type="text" id="soil-cations-pctNa" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label title="Calculado: 100 × (Al meq / CIC)">% Al <input type="text" id="soil-cations-pctAl" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label title="Calculado: 100 × (H meq / CIC)">% H <input type="text" id="soil-cations-pctH" readonly class="soil-ratio-calc" placeholder="—"></label>
                     </div>
                   </div>
                 </div>
@@ -15637,23 +15688,29 @@ window.updateCationsCICAndPct = function updateCationsCICAndPct() {
     analysis.cations.pctMg = (mg / sum) * 100;
     analysis.cations.pctK = (k / sum) * 100;
     analysis.cations.pctNa = (na / sum) * 100;
+    analysis.cations.pctAl = (al / sum) * 100;
+    analysis.cations.pctH = (h / sum) * 100;
     var cicEl = document.getElementById('soil-cations-cic');
     if (cicEl) cicEl.value = fmtNum(cic);
     var pctCaEl = document.getElementById('soil-cations-pctCa'); if (pctCaEl) pctCaEl.value = fmtPct(analysis.cations.pctCa);
     var pctMgEl = document.getElementById('soil-cations-pctMg'); if (pctMgEl) pctMgEl.value = fmtPct(analysis.cations.pctMg);
     var pctKEl = document.getElementById('soil-cations-pctK'); if (pctKEl) pctKEl.value = fmtPct(analysis.cations.pctK);
     var pctNaEl = document.getElementById('soil-cations-pctNa'); if (pctNaEl) pctNaEl.value = fmtPct(analysis.cations.pctNa);
+    var pctAlEl = document.getElementById('soil-cations-pctAl'); if (pctAlEl) pctAlEl.value = fmtPct(analysis.cations.pctAl);
+    var pctHEl = document.getElementById('soil-cations-pctH'); if (pctHEl) pctHEl.value = fmtPct(analysis.cations.pctH);
     window.saveSoilAnalysesToProject();
     window.syncCICToParams && window.syncCICToParams();
     window.applyIdealFromCIC && window.applyIdealFromCIC();
   } else {
-    analysis.cations.pctCa = ''; analysis.cations.pctMg = ''; analysis.cations.pctK = ''; analysis.cations.pctNa = '';
+    analysis.cations.pctCa = ''; analysis.cations.pctMg = ''; analysis.cations.pctK = ''; analysis.cations.pctNa = ''; analysis.cations.pctAl = ''; analysis.cations.pctH = '';
     var cicEl = document.getElementById('soil-cations-cic');
     if (cicEl) cicEl.value = (analysis.cations.cic !== undefined && analysis.cations.cic !== null && analysis.cations.cic !== '') ? fmtNum(parseFloat(analysis.cations.cic)) : '—';
     var pctCaEl = document.getElementById('soil-cations-pctCa'); if (pctCaEl) pctCaEl.value = '—';
     var pctMgEl = document.getElementById('soil-cations-pctMg'); if (pctMgEl) pctMgEl.value = '—';
     var pctKEl = document.getElementById('soil-cations-pctK'); if (pctKEl) pctKEl.value = '—';
     var pctNaEl = document.getElementById('soil-cations-pctNa'); if (pctNaEl) pctNaEl.value = '—';
+    var pctAlEl = document.getElementById('soil-cations-pctAl'); if (pctAlEl) pctAlEl.value = '—';
+    var pctHEl = document.getElementById('soil-cations-pctH'); if (pctHEl) pctHEl.value = '—';
     window.saveSoilAnalysesToProject();
     window.syncCICToParams && window.syncCICToParams();
   }

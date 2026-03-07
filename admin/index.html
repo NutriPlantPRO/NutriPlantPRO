@@ -1702,6 +1702,30 @@
                 }
             });
         }
+
+        /** Abre el historial completo de chat de un proyecto (desde la vista de proyecto o todos los proyectos). */
+        function showFullChatForProject(projectId, projectName) {
+            if (!projectId) return;
+            var chats = getAllChats();
+            var filtered = chats.filter(function (c) { return c.project_id === projectId; });
+            var name = (projectName && String(projectName).trim()) ? String(projectName).trim() : ('Proyecto ' + projectId);
+            var title = '💬 Historial completo del proyecto — ' + name + ' (' + filtered.length + ' mensajes)';
+            showDataViewerWithFilters({
+                title: title,
+                data: filtered.length ? filtered : [{ project_id: projectId, project_name: name, user_name: '—', message_type: '—', content: 'Sin mensajes aún.', timestamp: null, active_section: '—' }],
+                columns: [
+                    { key: 'project_id', label: 'ID Proyecto', format: 'text', filterable: true },
+                    { key: 'project_name', label: 'Nombre Proyecto', format: 'text', filterable: true },
+                    { key: 'user_name', label: 'Usuario', format: 'text', filterable: true },
+                    { key: 'message_type', label: 'Tipo (user/ai)', format: 'text', filterable: true },
+                    { key: 'content', label: 'Contenido', format: 'text', filterable: true },
+                    { key: 'timestamp', label: 'Fecha/Hora', format: 'date', filterable: true },
+                    { key: 'active_section', label: 'Sección Activa', format: 'text', filterable: true }
+                ],
+                actions: { edit: false, delete: false }
+            });
+        }
+        window.showFullChatForProject = showFullChatForProject;
         
         /** Resumen de chat por proyecto: mensajes e interacciones por proyecto */
         function getChatSummaryByProject() {
@@ -5148,7 +5172,8 @@
             const cropType = granularRequirements.cropType || '';
             const targetYield = parseFloat(granularRequirements.targetYield) || 0;
             const extOverrides = granularRequirements.extractionOverrides || {};
-            const baseExt = (extOverrides[cropType] && typeof extOverrides[cropType] === 'object') ? extOverrides[cropType] : {};
+            const cropKey = extOverrides[cropType] ? cropType : (Object.keys(extOverrides).find(function(k) { return k && String(k).toLowerCase() === String(cropType).toLowerCase(); }) || cropType);
+            const baseExt = (extOverrides[cropKey] && typeof extOverrides[cropKey] === 'object') ? extOverrides[cropKey] : {};
             const totalExtractionOxide = {};
             nutrients.forEach(n => {
                 totalExtractionOxide[n] = (baseExt[n] !== undefined ? parseFloat(baseExt[n]) : 0) * targetYield;
@@ -6972,7 +6997,8 @@
                 `;
             
             // Sección: NUTRICIÓN GRANULAR (SIEMPRE mostrar)
-            const granular = project.sections?.programa_granular || project.granular || project.granularRequirements || null;
+            // Priorizar project.granular (donde el usuario guarda) para que Requerimiento Real coincida con el panel del usuario
+            const granular = project.granular || project.granularRequirements || project.sections?.programa_granular || null;
             const granularRequirements = granular?.requirements || null;
             const granularProgram = granular?.program || null;
             const hasRequirements = granularRequirements && typeof granularRequirements === 'object' && (
@@ -7002,10 +7028,11 @@
                 const cropType = granularRequirements.cropType || '';
                 const targetYield = granularRequirements.targetYield || 0;
                 
-                // Solo datos guardados: extracción por tonelada SOLO desde extractionOverrides del proyecto (no inventar con defaults del admin).
+                // Extracción por tonelada: desde granular.requirements.extractionOverrides (donde el usuario guarda) para mostrar lo mismo que el panel del usuario
+                const extractionSource = granularRequirements.extractionOverrides || {};
+                const extractionCropKey = extractionSource[cropType] ? cropType : (Object.keys(extractionSource).find(function(k) { return k && String(k).toLowerCase() === String(cropType).toLowerCase(); }) || cropType);
+                const baseExtraction = (extractionSource[extractionCropKey] && typeof extractionSource[extractionCropKey] === 'object') ? extractionSource[extractionCropKey] : {};
                 const extractionPerTon = {};
-                const extractionOverrides = granularRequirements.extractionOverrides || {};
-                const baseExtraction = (extractionOverrides[cropType] && typeof extractionOverrides[cropType] === 'object') ? extractionOverrides[cropType] : {};
                 nutrients.forEach(n => {
                     extractionPerTon[n] = baseExtraction[n] !== undefined ? baseExtraction[n] : 0;
                 });
@@ -7030,7 +7057,7 @@
                     totalExtraction[n] = typeof value === 'number' ? value.toFixed(2) : value;
                 });
                 
-                // Mismos defaults que la UI Granular: si el usuario no guardó, mostrar lo precargado (ajuste = extracción total, eficiencia = defaults NutriPlant)
+                // Ajuste y Eficiencia: desde granular.requirements (donde el usuario guarda) para que el admin mantenga y muestre los mismos valores
                 const GRAN_DEFAULT_EFF = { N: 65, P2O5: 40, K2O: 85, CaO: 85, MgO: 85, S: 85, SO4: 85, Fe: 80, Mn: 80, B: 80, Zn: 80, Cu: 80, Mo: 80, SiO2: 85 };
                 const rawAdj = granularRequirements.adjustment || {};
                 const rawEff = granularRequirements.efficiency || {};
@@ -7374,11 +7401,13 @@
             html += `</div>`;
             
             // Sección: FERTIRRIEGO (SIEMPRE mostrar)
-            const fertirriegoRoot = project.sections?.fertirriego || project.fertirriego || null;
+            // Priorizar project.fertirriego (donde el usuario guarda) para que Extracción, Ajuste por niveles y Requerimiento Real coincidan con el panel del usuario
+            const fertirriegoRoot = project.fertirriego || project.sections?.fertirriego || null;
+            // Siempre leer requirements del root elegido (nunca el objeto raíz): el usuario guarda adjustment en project.fertirriego.requirements.adjustment
             const fertirriegoRequirements = (
                 fertirriegoRoot?.requirements ||
                 project.fertirriegoRequirements ||
-                (project.fertirriego && project.fertirriego.cropType ? project.fertirriego : null)
+                {}
             );
             const fertirriegoProgram = (
                 fertirriegoRoot?.program ||
@@ -7406,16 +7435,21 @@
             if (hasFertirriegoRequirements) {
                 // 🚀 CRÍTICO: Leer el modo guardado (Óxido/Elemental)
                 const isElementalMode = fertirriegoRequirements.isElementalMode === true;
+                // Ajuste y Eficiencia: siempre desde requirements (donde el usuario guarda) para que el admin mantenga y muestre los mismos valores
+                const adjustmentSource = fertirriegoRequirements.adjustment || {};
+                const efficiencySource = fertirriegoRequirements.efficiency || {};
+                // cropType/targetYield pueden estar en requirements o en la raíz (proyectos antiguos)
+                const cropType = fertirriegoRequirements.cropType || fertirriegoRoot?.cropType || '';
+                const targetYield = fertirriegoRequirements.targetYield ?? fertirriegoRoot?.targetYield ?? 0;
                 
                 // Calcular valores para mostrar
                 const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
-                const cropType = fertirriegoRequirements.cropType || '';
-                const targetYield = fertirriegoRequirements.targetYield || 0;
                 
-                // Solo datos guardados: extracción por tonelada SOLO desde extractionOverrides del proyecto (no inventar con defaults del admin).
+                // Extracción por tonelada: desde fertirriego.requirements.extractionOverrides (donde el usuario guarda) para mostrar lo mismo que el panel del usuario
+                const extractionSource = fertirriegoRequirements.extractionOverrides || {};
+                const fertiCropKey = extractionSource[cropType] ? cropType : (Object.keys(extractionSource).find(function(k) { return k && String(k).toLowerCase() === String(cropType).toLowerCase(); }) || cropType);
+                const baseExtraction = (extractionSource[fertiCropKey] && typeof extractionSource[fertiCropKey] === 'object') ? extractionSource[fertiCropKey] : {};
                 const extractionPerTon = {};
-                const extractionOverrides = fertirriegoRequirements.extractionOverrides || {};
-                const baseExtraction = (extractionOverrides[cropType] && typeof extractionOverrides[cropType] === 'object') ? extractionOverrides[cropType] : {};
                 nutrients.forEach(n => {
                     extractionPerTon[n] = baseExtraction[n] !== undefined ? baseExtraction[n] : 0;
                 });
@@ -7442,8 +7476,8 @@
                 
                 // Mismos defaults que la UI de Fertirriego: si el usuario no guardó, mostrar lo precargado (ajuste = extracción total, eficiencia = defaults NutriPlant)
                 const FERTI_DEFAULT_EFFICIENCY = { N: 75, P2O5: 50, K2O: 90, CaO: 90, MgO: 90, S: 90, SO4: 90, Fe: 85, Mn: 85, B: 85, Zn: 85, Cu: 85, Mo: 85, SiO2: 90 };
-                const rawAdj = fertirriegoRequirements.adjustment || {};
-                const rawEff = fertirriegoRequirements.efficiency || {};
+                const rawAdj = adjustmentSource;
+                const rawEff = efficiencySource;
                 const adjustment = {};
                 const efficiency = {};
                 nutrients.forEach(n => {
@@ -7497,7 +7531,7 @@
                     adjustmentOxide[n] = adjOx;
                     adjustmentDisplay[n] = isElementalMode ? convertAdminOxideToElemental(n, adjOx) : adjOx;
                     const eff = parseFloat(efficiency[n]);
-                    efficiencyDisplay[n] = (!isNaN(eff) && eff > 0) ? eff : null;
+                    efficiencyDisplay[n] = (efficiency[n] != null && !isNaN(eff)) ? eff : null;
                     const realOx = efficiencyDisplay[n] ? (adjOx / (efficiencyDisplay[n] / 100)) : null;
                     realRequirementDisplay[n] = (realOx !== null)
                         ? (isElementalMode ? convertAdminOxideToElemental(n, realOx) : realOx)
@@ -8007,6 +8041,20 @@
                         </div>
                     </div>
                 `;
+                // 💧 Análisis de agua (ppm) — mismo dato que ve el usuario en Cálculo de fertilizantes
+                const hydroWater = (hasHidroponiaData && hidroponia.water && typeof hidroponia.water === 'object') ? hidroponia.water : {};
+                html += `
+                    <div style="margin-bottom: 16px;">
+                        <strong style="color: #1e293b; font-size: 14px;">💧 Análisis de agua (ppm)</strong>
+                        <p style="margin:4px 0 8px 0;color:#64748b;font-size:12px;">Aportes del agua para calcular el faltante (objetivo − agua).</p>
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+                            ${HYDRO_PPM_NUTRIENTS.map(n => {
+                                const v = parseFloat(hydroWater[n]) || 0;
+                                return `<div><strong>${adminHydroLabel(n)}:</strong> ${v.toFixed(2)}</div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
             }
             if (hasHidroponiaData && (hydroVolM3 !== null || hydroFerts.length > 0)) {
                 const concentradoL = (hydroVolM3 !== null && hydroInjRate !== null) ? hydroVolM3 * hydroInjRate : null;
@@ -8395,6 +8443,8 @@
             
             // Historial de Chat
             if (project.chat_history && Array.isArray(project.chat_history) && project.chat_history.length > 0) {
+                const _pid = String(projectId).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                const _pname = String(project.name || 'Sin nombre').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 html += `
                     <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; border-left: 4px solid #6b7280;">
                         <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">💬 Historial de Chat (${project.chat_history.length} mensajes)</h3>
@@ -8411,7 +8461,13 @@
                 if (project.chat_history.length > 10) {
                     html += `<div style="text-align: center; color: #64748b; font-size: 12px;">... y ${project.chat_history.length - 10} mensajes más (más recientes arriba)</div>`;
                 }
-                html += `</div></div>`;
+                html += `
+                        </div>
+                        <button type="button" onclick="closeDataViewer(); showFullChatForProject('${_pid}', '${_pname}');" style="margin-top:12px; padding:10px 16px; background:#6366f1; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px;">
+                            💬 Ver historial completo
+                        </button>
+                    </div>
+                `;
             }
             
             // Datos completos en JSON (colapsable)

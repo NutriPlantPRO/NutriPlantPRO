@@ -40,7 +40,7 @@ function getNutriPlantProManual() {
 - VPD = presión de saturación a T_hoja − presión real de vapor. Afecta transpiración, absorción de Ca y estrés. Rangos típicos: 0.4–1.2 kPa óptimo según especie; <0.3 riesgo de edema; >1.5 estrés hídrico y cierre estomático. Se usa para programar riego y clima en invernadero.
 
 7) CALCULADORAS NUTRIPLANT (ÓXIDO↔ELEMENTAL Y ppm↔mmol↔meq) — Alineado con la app
-- Calculadora Conversión Óxido ↔ Elemental (misma estructura y factores que en la app): CaO→Ca ×0.715; Ca→CaO ×1.399. K₂O→K ×0.830; K→K₂O ×1.205. P₂O₅→P ×0.436; P→P₂O₅ ×2.291. MgO→Mg ×0.603; Mg→MgO ×1.658. S→SO₄ ×3.000; SO₄→S ×0.333. S→SO₃ ×2.497; SO₃→S ×0.400. Zn→ZnO ×1.245; ZnO→Zn ×0.803. Usar exactamente estos factores al explicar conversiones de fertilizantes, enmiendas o análisis.
+- Calculadora Conversión Óxido ↔ Elemental (misma estructura y factores que en la app): CaO→Ca ×0.715; Ca→CaO ×1.399. K₂O→K ×0.830; K→K₂O ×1.204. P₂O₅→P ×0.436; P→P₂O₅ ×2.291. MgO→Mg ×0.603; Mg→MgO ×1.658. S→SO₄ ×3.000; SO₄→S ×0.333. S→SO₃ ×2.497; SO₃→S ×0.400. Zn→ZnO ×1.245; ZnO→Zn ×0.803. SiO₂→Si ×0.468; Si→SiO₂ ×2.139. Usar exactamente estos factores al explicar conversiones de fertilizantes, enmiendas o análisis.
 - Calculadora Unidades de Nutrientes (ppm ↔ mmol/L ↔ meq/L): ppm = mg/L del elemento o ion. Fórmulas: mmol/L = ppm ÷ PM (peso molecular o atómico); meq/L = mmol/L × Valencia; por tanto meq/L = (ppm ÷ PM) × Valencia. Pesos y valencias de la app: N (NO₃⁻/NH₄⁺) PM 14.01 val 1; P (H₂PO₄⁻) 30.97 val 1; K⁺ 39.10 val 1; Ca²⁺ 40.08 val 2; Mg²⁺ 24.31 val 2; S (SO₄²⁻) 32.07 val 2; Fe²⁺ 55.85 val 2; Mn²⁺ 54.94 val 2; Zn²⁺ 65.38 val 2; B (H₃BO₃) 10.81 val 1; Cu²⁺ 63.55 val 2; Mo 95.95 val 2; HCO₃⁻ 61.02 val 1; CO₃²⁻ 60.01 val 2. Al explicar o verificar conversiones en solución nutritiva, agua, fertirriego o hidroponía usar estos valores para coincidir con la calculadora de la plataforma.
 
 8) DECISIONES AGRONÓMICAS (NIVEL EXPERTO)
@@ -613,7 +613,8 @@ class NutriPlantChat {
 
   async callOpenAI(userMessage) {
     console.log('🤖 Llamando al backend de IA...');
-    if (!this.contextSnapshot) this.refreshContextSnapshot('call-openai');
+    // Siempre refrescar contexto al enviar para incluir los valores más recientes (guardados y pantalla actual)
+    this.refreshContextSnapshot('call-openai');
 
     const snapshot = this.contextSnapshot || this.getUnifiedProjectSnapshot();
     const context = this.getProjectContext();
@@ -649,6 +650,7 @@ INSTRUCCIONES:
 - Si la pregunta es agronómica general (sin depender del proyecto), puedes usar conocimiento técnico general de IA y mejores prácticas agronómicas, pero separa claramente "Contexto del proyecto" vs "Conocimiento general".
 - Mantén el contexto de TODA la conversación; relaciona respuestas con preguntas anteriores cuando sea relevante.
 - Responde con datos concretos del proyecto (números, cultivo, programa, análisis) cuando pregunten por su información.
+- VALORES QUE EL USUARIO TE INDICA: Si el usuario te escribe un valor, número o dato (p. ej. "mi CIC es 12", "el resultado me dio 5000 kg/ha", "tengo K 2.5%") que no aparece en los "DATOS DEL PROYECTO" anteriores, ÚSALO igual y trabaja con él; confirma que lo tomas en cuenta. No digas que no lo ves si el usuario te lo está dando en el mensaje. Si quieres, puedes añadir que si guarda el proyecto ese valor aparecerá la próxima vez en el contexto automáticamente.
 - Para la herramienta: explica cálculos, interpretación de valores y dónde configurar algo.
 - Para nutrición vegetal: da recomendaciones técnicas, basadas en ciencia y en el manual; usa términos agronómicos correctos y nivel experto (relaciones, antagonismos, momentos de aplicación, diagnóstico integrado).
 - Sé conciso pero completo; usa formato markdown para mejor legibilidad.
