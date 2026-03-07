@@ -505,14 +505,29 @@ body {
   }
 }
 
-/* Fold en horizontal (landscape + tablet): permitir minimizar la pestaña de verdad (barra estrecha), no solo ocultar letras */
-@media (orientation: landscape) and (min-width: 769px) and (max-width: 1024px) {
+/* Fold en horizontal (landscape): permitir minimizar la pestaña de verdad (barra estrecha), no solo ocultar letras.
+   Incluye .sidebar.sidebar-minimized (sin .open) porque en tablet syncSidebarToViewport quita .open. */
+@media (orientation: landscape) and (min-width: 769px) and (max-width: 1400px) {
+  #sidebar.sidebar.sidebar-minimized,
+  #sidebar.sidebar.open.sidebar-minimized,
+  .sidebar.sidebar-minimized,
   .sidebar.open.sidebar-minimized {
     width: var(--sidebar-w) !important;
+    min-width: var(--sidebar-w) !important;
+    max-width: var(--sidebar-w) !important;
   }
+  .layout:has(#sidebar.sidebar.sidebar-minimized),
+  .layout:has(#sidebar.sidebar.open.sidebar-minimized),
+  .layout:has(.sidebar.sidebar-minimized),
   .layout:has(.sidebar.open.sidebar-minimized) {
-    padding-left: var(--sidebar-w);
+    padding-left: var(--sidebar-w) !important;
   }
+  #sidebar.sidebar.sidebar-minimized .sidebar a .label,
+  #sidebar.sidebar.sidebar-minimized .sidebar a.active .label,
+  #sidebar.sidebar.open.sidebar-minimized .sidebar a .label,
+  #sidebar.sidebar.open.sidebar-minimized .sidebar a.active .label,
+  .sidebar.sidebar-minimized .sidebar a .label,
+  .sidebar.sidebar-minimized .sidebar a.active .label,
   .sidebar.open.sidebar-minimized .sidebar a .label,
   .sidebar.open.sidebar-minimized .sidebar a.active .label {
     display: none !important;
@@ -528,9 +543,15 @@ body {
     padding: 0 !important;
     margin: 0 !important;
   }
+  .sidebar.sidebar-minimized nav a,
   .sidebar.open.sidebar-minimized nav a {
     justify-content: center !important;
   }
+  .sidebar.sidebar-minimized .sb-title-card .text,
+  .sidebar.sidebar-minimized .sb-card .title .text,
+  .sidebar.sidebar-minimized .sb-chip span.text,
+  .sidebar.sidebar-minimized .logout .logout-text,
+  .sidebar.sidebar-minimized .no-project-message p,
   .sidebar.open.sidebar-minimized .sb-title-card .text,
   .sidebar.open.sidebar-minimized .sb-card .title .text,
   .sidebar.open.sidebar-minimized .sb-chip span.text,
@@ -541,9 +562,12 @@ body {
     width: 0 !important;
     overflow: hidden !important;
   }
+  .sidebar.sidebar-minimized .sb-card .title .t,
   .sidebar.open.sidebar-minimized .sb-card .title .t {
     justify-content: center !important;
   }
+  .sidebar.sidebar-minimized .sb-card .info-icon,
+  .sidebar.sidebar-minimized .sb-card .analysis-icon,
   .sidebar.open.sidebar-minimized .sb-card .info-icon,
   .sidebar.open.sidebar-minimized .sb-card .analysis-icon {
     position: absolute !important;
@@ -551,6 +575,7 @@ body {
     top: 50% !important;
     transform: translate(-50%, -50%) !important;
   }
+  .sidebar.sidebar-minimized .sb-chip,
   .sidebar.open.sidebar-minimized .sb-chip {
     width: 32px !important;
     height: 32px !important;
@@ -561,12 +586,92 @@ body {
     min-width: 32px !important;
     min-height: 32px !important;
   }
+  .sidebar.sidebar-minimized .sb-chip span.text,
   .sidebar.open.sidebar-minimized .sb-chip span.text {
     display: none !important;
   }
+  .sidebar.sidebar-minimized .logout .logout-text,
   .sidebar.open.sidebar-minimized .logout .logout-text {
     display: none !important;
   }
+}
+
+/* Mismo comportamiento por clase en body (JS detecta landscape por ancho>alto en 769-1400) por si orientation: landscape no aplica en el Fold */
+body.np-fold-landscape .sidebar.sidebar-minimized,
+body.np-fold-landscape .sidebar.open.sidebar-minimized {
+  width: var(--sidebar-w) !important;
+  min-width: var(--sidebar-w) !important;
+  max-width: var(--sidebar-w) !important;
+}
+body.np-fold-landscape .layout:has(.sidebar.sidebar-minimized),
+body.np-fold-landscape .layout:has(.sidebar.open.sidebar-minimized) {
+  padding-left: var(--sidebar-w) !important;
+}
+body.np-fold-landscape .sidebar.sidebar-minimized .sidebar a .label,
+body.np-fold-landscape .sidebar.sidebar-minimized .sidebar a.active .label,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .sidebar a .label,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .sidebar a.active .label {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+body.np-fold-landscape .sidebar.sidebar-minimized nav a,
+body.np-fold-landscape .sidebar.open.sidebar-minimized nav a {
+  justify-content: center !important;
+}
+body.np-fold-landscape .sidebar.sidebar-minimized .sb-title-card .text,
+body.np-fold-landscape .sidebar.sidebar-minimized .sb-card .title .text,
+body.np-fold-landscape .sidebar.sidebar-minimized .sb-chip span.text,
+body.np-fold-landscape .sidebar.sidebar-minimized .logout .logout-text,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .sb-title-card .text,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .sb-card .title .text,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .sb-chip span.text,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .logout .logout-text {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  overflow: hidden !important;
+}
+body.np-fold-landscape .sidebar.sidebar-minimized .sb-card .title .t,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .sb-card .title .t {
+  justify-content: center !important;
+}
+body.np-fold-landscape .sidebar.sidebar-minimized .sb-card .info-icon,
+body.np-fold-landscape .sidebar.sidebar-minimized .sb-card .analysis-icon,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .sb-card .info-icon,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .sb-card .analysis-icon {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+body.np-fold-landscape .sidebar.sidebar-minimized .sb-chip,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .sb-chip {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  padding: 4px !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+}
+body.np-fold-landscape .sidebar.sidebar-minimized .sb-chip span.text,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .sb-chip span.text {
+  display: none !important;
+}
+body.np-fold-landscape .sidebar.sidebar-minimized .logout .logout-text,
+body.np-fold-landscape .sidebar.open.sidebar-minimized .logout .logout-text {
+  display: none !important;
 }
 
 /* ===== SCROLLBAR DEL SIDEBAR ===== */

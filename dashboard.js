@@ -207,6 +207,7 @@ function initializeSidebar() {
     if (syncSidebarRaf != null) cancelAnimationFrame(syncSidebarRaf);
     syncSidebarRaf = requestAnimationFrame(function() {
       syncSidebarToViewport();
+      updateFoldLandscapeClass();
       syncSidebarRaf = null;
     });
   };
@@ -216,6 +217,23 @@ function initializeSidebar() {
     window.visualViewport.addEventListener('resize', onResizeOrOrientation, { passive: true });
   }
   syncSidebarToViewport();
+  updateFoldLandscapeClass();
+}
+
+// Fold en horizontal: algunos navegadores no reportan orientation: landscape. Marcar body para que el CSS permita minimizar la pestaña.
+function updateFoldLandscapeClass() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const isLandscapeBySize = w > h && w >= 769 && w <= 1400;
+  document.body.classList.toggle('np-fold-landscape', !!isLandscapeBySize);
+}
+var _npFoldLandscapeRaf = null;
+function scheduleFoldLandscapeUpdate() {
+  if (_npFoldLandscapeRaf != null) cancelAnimationFrame(_npFoldLandscapeRaf);
+  _npFoldLandscapeRaf = requestAnimationFrame(function() {
+    updateFoldLandscapeClass();
+    _npFoldLandscapeRaf = null;
+  });
 }
 
 // Sincroniza el alto visible real del viewport móvil para evitar "huecos"
