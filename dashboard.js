@@ -1791,28 +1791,29 @@ function selectSection(name, el) {
 
   // Inicializar Fertirriego cuando se seleccione la sección
   if (name === 'Fertirriego') {
+    // CRÍTICO: Asegurar siempre datos del proyecto actual (abrir/cambiar proyecto puede ser async)
+    loadProjectData();
     if (reusedCachedDom) {
       var cachedFertiActive = document.querySelector('.fertirriego-container .tab-button.active');
       var cachedFertiTab = cachedFertiActive ? (cachedFertiActive.getAttribute('data-tab') || 'extraccion') : 'extraccion';
       setTimeout(function() { restoreScrollForKeyStabilized('Fertirriego|' + cachedFertiTab, 3, 90); }, 60);
-      // Actualizar siempre la vista con los datos del proyecto actual (al abrir proyecto o volver a la pestaña)
+      // Actualizar vista con datos del proyecto actual; delay para que loadProjectData termine y el DOM esté listo
       if (typeof window.loadFertirriegoRequirements === 'function') {
-        requestAnimationFrame(function() {
+        setTimeout(function() {
           window.loadFertirriegoRequirements();
-        });
+        }, 50);
       }
       var cachedTab = cachedFertiTab;
-      requestAnimationFrame(function() {
+      setTimeout(function() {
         if (cachedTab === 'programa' && typeof window.initFertirriegoProgramUI === 'function') window.initFertirriegoProgramUI();
         else if (cachedTab === 'graficas') {
           if (typeof window.loadFertiCustomMaterials === 'function') window.loadFertiCustomMaterials();
           if (typeof window.loadFertirriegoProgram === 'function') window.loadFertirriegoProgram();
           if (typeof window.updateFertiSummary === 'function') window.updateFertiSummary();
         }
-      });
+      }, 80);
     } else {
-      // CARGAR DATOS DEL PROYECTO PRIMERO (igual que Enmienda)
-      loadProjectData();
+      // CARGAR DATOS ya llamado arriba
       var fertiLastTab = 'extraccion';
       try {
         var fp = window.projectManager ? window.projectManager.getCurrentProject() : null;
@@ -9645,7 +9646,7 @@ function applyProjectDataToUI() {
     var activeChip = document.querySelector('#sbStack [data-section].active') || document.querySelector('.sidebar a[data-section].active');
     var activeSection = activeChip ? String(activeChip.getAttribute('data-section') || '').toLowerCase() : '';
     if (activeSection === 'fertirriego' && typeof window.loadFertirriegoRequirements === 'function') {
-      setTimeout(function() { window.loadFertirriegoRequirements(); }, 80);
+      setTimeout(function() { window.loadFertirriegoRequirements(); }, 120);
     } else if ((activeSection === 'nutricion-granular' || activeSection === 'granular') && typeof window.loadGranularRequirements === 'function') {
       setTimeout(function() { window.loadGranularRequirements(); }, 80);
     }
