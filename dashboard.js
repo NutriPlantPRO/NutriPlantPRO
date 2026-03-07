@@ -130,14 +130,23 @@ function getCurrentSubTabForSection(sectionName) {
 // Función para manejar la visibilidad del texto en el sidebar
 function handleSidebarTextVisibility() {
   const sidebar = document.querySelector('.sidebar');
-  if (!sidebar) return;
-  const labels = sidebar.querySelectorAll('a .label');
-  // Evitar estados intermitentes por estilos inline; el estado visual lo controla CSS.
-  labels.forEach(label => {
-    label.style.display = '';
-    label.style.opacity = '';
-    label.style.visibility = '';
-  });
+  const labels = sidebar.querySelectorAll('.sidebar a .label');
+  
+  if (sidebar.matches(':hover')) {
+    // Sidebar expandido - mostrar texto
+    labels.forEach(label => {
+      label.style.display = 'inline';
+      label.style.opacity = '1';
+      label.style.visibility = 'visible';
+    });
+  } else {
+    // Sidebar colapsado - ocultar texto
+    labels.forEach(label => {
+      label.style.display = 'none';
+      label.style.opacity = '0';
+      label.style.visibility = 'hidden';
+    });
+  }
 }
 
 // Función para inicializar el sidebar
@@ -169,90 +178,27 @@ function initializeSidebar() {
     sidebarOverlay.addEventListener('click', closeSidebar);
   }
 
-  // Estado inicial: lo fija syncSidebarToViewport + applySidebarModeState (una sola fuente de verdad, ver ESPECIFICACION-SIDEBAR-RESPONSIVE.md)
+  // En celular: desactivar toggle por toque en logo/brand para evitar toques accidentales.
+  // El control del sidebar queda solo en botones/acciones explícitas.
 
-  // Control unificado: fuera = minimizar; dentro con barra minimizada = expandir.
-  // No bloquear expandir cuando tocan la barra (aunque sea un enlace): solo no minimizar si tocaron enlace del sidebar.
+  // En celular: comportamiento como laptop (sidebar siempre visible, inicia minimizado)
+  if (window.innerWidth <= 768 && sidebar) {
+    sidebar.style.transform = 'translateX(0)';
+    sidebar.classList.add('open', 'sidebar-minimized');
+    if (sidebarOverlay) sidebarOverlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  // Cerrar sidebar al cambiar de sección en móvil
   document.addEventListener('click', function(e) {
-    var target = e.target;
-    var sidebarEl = document.getElementById('sidebar');
-    var isSidebarClick = target && sidebarEl && (sidebarEl.contains(target) || target.closest('#sidebar'));
-    var isToggleClick = sidebarToggle && sidebarToggle.contains(target);
-    var isLinkOrButtonInSidebar = target && (target.closest('#sidebar a') || target.closest('#sidebar button') || target.closest('#sidebar [data-section]'));
-    var mode = getSidebarMode();
-    if (mode === 'compact-mouse' || mode === 'wide') return;
-
-    // Compacto touch (cel): fuera minimiza; toque en barra minimizada expande (aunque toquen el enlace).
-    if (mode === 'compact-touch') {
+    if (window.innerWidth <= 768) {
+      const isSidebarClick = sidebar && sidebar.contains(e.target);
+      const isToggleClick = sidebarToggle && sidebarToggle.contains(e.target);
+      
       if (!isSidebarClick && !isToggleClick && isSidebarOpen()) {
-        if (isLinkOrButtonInSidebar) return;
         minimizeSidebar();
-      } else if (isSidebarClick && isSidebarMinimized()) {
-        expandSidebar();
-      }
-      return;
-    }
-
-    // Fold horizontal: fuera minimiza; toque en barra minimizada expande.
-    if (mode === 'fold-horizontal') {
-      if (!isSidebarClick && !isToggleClick && !isSidebarMinimized()) {
-        if (isLinkOrButtonInSidebar) return;
-        minimizeSidebar();
-      } else if (isSidebarClick && isSidebarMinimized()) {
-        expandSidebar();
       }
     }
-  });
-
-  // Al voltear el Fold o redimensionar: throttle para no ejecutar sync en rafida (evita parpadeos en tablet).
-  var syncSidebarRaf = null;
-  var syncSidebarLast = 0;
-  var SYNC_THROTTLE_MS = 120;
-  var onResizeOrOrientation = function() {
-    if (syncSidebarRaf != null) return;
-    syncSidebarRaf = requestAnimationFrame(function() {
-      syncSidebarRaf = null;
-      var now = Date.now();
-      if (now - syncSidebarLast < SYNC_THROTTLE_MS) return;
-      syncSidebarLast = now;
-      syncSidebarToViewport();
-      updateFoldLandscapeClass();
-      applySidebarModeState();
-    });
-  };
-  window.addEventListener('resize', onResizeOrOrientation, { passive: true });
-  window.addEventListener('orientationchange', onResizeOrOrientation, { passive: true });
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', onResizeOrOrientation, { passive: true });
-  }
-  syncSidebarToViewport();
-  updateFoldLandscapeClass();
-  applySidebarModeState();
-}
-
-// Sin adivinar: viewport + entrada. "fold-horizontal" = touch + landscape + ancho 769–1400.
-function isFoldLandscape() {
-  try {
-    var w = window.innerWidth;
-    var h = window.innerHeight;
-    if (!(w > h && w >= 769 && w <= 1400)) return false;
-    var q = window.matchMedia;
-    if (!q) return false;
-    return q('(pointer: coarse)').matches || q('(hover: none)').matches;
-  } catch (e) {
-    return false;
-  }
-}
-
-function updateFoldLandscapeClass() {
-  document.body.classList.toggle('np-fold-landscape', isFoldLandscape());
-}
-var _npFoldLandscapeRaf = null;
-function scheduleFoldLandscapeUpdate() {
-  if (_npFoldLandscapeRaf != null) cancelAnimationFrame(_npFoldLandscapeRaf);
-  _npFoldLandscapeRaf = requestAnimationFrame(function() {
-    updateFoldLandscapeClass();
-    _npFoldLandscapeRaf = null;
   });
 }
 
@@ -306,63 +252,55 @@ function toggleSidebar() {
 function openSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  const layout = document.querySelector('.layout');
-  const mode = getSidebarMode();
   if (sidebar) {
     sidebar.style.transform = 'translateX(0)';
-    if (mode === 'compact-touch') {
-      sidebar.classList.add('open');
-      sidebar.classList.remove('sidebar-minimized');
-    } else if (mode === 'fold-horizontal' || mode === 'compact-mouse') {
-      sidebar.classList.add('open');
-      sidebar.classList.remove('sidebar-minimized');
-    } else {
-      sidebar.classList.remove('open', 'sidebar-minimized');
-    }
+    sidebar.classList.add('open');
+    sidebar.classList.remove('sidebar-minimized');
   }
-  if (layout) layout.classList.toggle('sidebar-expanded', mode === 'compact-touch');
-  if (overlay) overlay.classList.remove('show');
-  document.body.style.overflow = '';
+  if (window.innerWidth <= 768) {
+    if (overlay) overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  } else {
+    if (overlay) overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
 }
 
 // Función para expandir sidebar (cuando estaba minimizado)
 function expandSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  const layout = document.querySelector('.layout');
-  const mode = getSidebarMode();
   if (sidebar) sidebar.classList.remove('sidebar-minimized');
-  if (layout) layout.classList.toggle('sidebar-expanded', mode === 'compact-touch');
-  if (overlay) overlay.classList.remove('show');
-  document.body.style.overflow = '';
+  if (window.innerWidth <= 768) {
+    if (overlay) overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  } else {
+    if (overlay) overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
 }
 
 // Función para minimizar sidebar en móvil (barra estrecha, sin overlay)
 function minimizeSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  const layout = document.querySelector('.layout');
   if (sidebar) sidebar.classList.add('sidebar-minimized');
-  if (layout) layout.classList.remove('sidebar-expanded');
   if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
 }
 
 // Función para cerrar sidebar por completo
 function closeSidebar() {
-  const mode = getSidebarMode();
-  if (mode === 'compact-touch' || mode === 'compact-mouse' || mode === 'fold-horizontal') {
+  if (window.innerWidth <= 768) {
     minimizeSidebar();
     return;
   }
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  const layout = document.querySelector('.layout');
   if (sidebar) {
     sidebar.style.transform = 'translateX(-100%)';
     sidebar.classList.remove('open', 'sidebar-minimized');
   }
-  if (layout) layout.classList.remove('sidebar-expanded');
   if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
 }
@@ -378,84 +316,6 @@ function isSidebarMinimized() {
   const sidebar = document.getElementById('sidebar');
   return sidebar && sidebar.classList.contains('sidebar-minimized');
 }
-
-// True en Fold horizontal (modelo conocido o fallback por entorno).
-function isFoldLandscape() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const inLandscapeBand = (w > h && w >= 769 && w <= 1400);
-  if (!inLandscapeBand) return false;
-  return isLikelySamsungFoldDevice() || isLikelyFoldByEnvironment();
-}
-
-// Modo único de comportamiento del sidebar.
-function getSidebarMode() {
-  const w = window.innerWidth;
-  const isTouch = !!(window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches);
-  if (isFoldLandscape()) return 'fold-horizontal';
-  if (w <= 768) return isTouch ? 'compact-touch' : 'compact-mouse';
-  return 'wide';
-}
-
-// Aplica clases de modo para que CSS final no dependa de reglas cruzadas.
-function applySidebarModeState() {
-  const body = document.body;
-  const sidebar = document.getElementById('sidebar');
-  const layout = document.querySelector('.layout');
-  if (!body || !sidebar) return;
-
-  body.classList.remove('np-mode-compact-touch', 'np-mode-compact-mouse', 'np-mode-fold-horizontal', 'np-mode-wide');
-  const mode = getSidebarMode();
-  body.classList.add('np-mode-' + mode);
-
-  if (mode === 'wide') {
-    sidebar.classList.remove('open', 'sidebar-minimized');
-    if (layout) layout.classList.remove('sidebar-expanded');
-    return;
-  }
-
-  if (mode === 'compact-mouse') {
-    sidebar.classList.add('open', 'sidebar-minimized');
-    if (layout) layout.classList.remove('sidebar-expanded');
-    return;
-  }
-
-  if (mode === 'compact-touch') {
-    sidebar.classList.add('open');
-    if (!sidebar.classList.contains('sidebar-minimized')) sidebar.classList.add('sidebar-minimized');
-    if (layout) layout.classList.toggle('sidebar-expanded', !sidebar.classList.contains('sidebar-minimized'));
-    return;
-  }
-
-  // fold-horizontal: no tocar .sidebar-minimized (preservar elección del usuario, ver spec)
-  sidebar.classList.remove('open');
-  if (layout) layout.classList.remove('sidebar-expanded');
-}
-
-// Al voltear el Fold o cambiar ancho: dejar la pestaña en el estado correcto (oculta/minimizada en cel, visible en tablet)
-function syncSidebarToViewport() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  const layout = document.querySelector('.layout');
-  if (!sidebar) return;
-  const mode = getSidebarMode();
-  sidebar.style.transform = '';
-  if (mode === 'wide') {
-    sidebar.classList.remove('open', 'sidebar-minimized');
-  } else if (mode === 'compact-mouse') {
-    sidebar.classList.add('open', 'sidebar-minimized');
-  } else if (mode === 'compact-touch') {
-    sidebar.classList.add('open');
-    if (!sidebar.classList.contains('sidebar-minimized')) sidebar.classList.add('sidebar-minimized');
-  } else {
-    // fold-horizontal: conservar elección del usuario (expandida/minimizada), sin clase open móvil.
-    sidebar.classList.remove('open');
-  }
-  if (layout) layout.classList.toggle('sidebar-expanded', mode === 'compact-touch' && !sidebar.classList.contains('sidebar-minimized'));
-  if (overlay) overlay.classList.remove('show');
-  document.body.style.overflow = '';
-}
-
 
 // ============================
 // 2) Plantilla por cada sección
