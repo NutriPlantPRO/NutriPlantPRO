@@ -1055,7 +1055,27 @@ body {
 }
 .header-buttons .btn-calculator .btn-calc-icon { margin-right: 8px; }
 
-/* En ventana mediana/chica: mismo ancho para los 3 botones de calculadora */
+/* Botones con emoji+texto: compactos, texto pegado al icono */
+.header-buttons .btn-calc-compact {
+  padding: 8px 10px !important;
+  gap: 0;
+  min-width: 0;
+}
+/* Calculadora: solo icono, botón pequeño */
+.header-buttons .btn-calc-icon-only {
+  padding: 8px 10px !important;
+  min-width: 0 !important;
+  width: auto !important;
+}
+.header-buttons .btn-calc-icon-only .btn-calc-icon {
+  margin-right: 0 !important;
+}
+.header-buttons .btn-calc-icon-only .btn-calc-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* En ventana mediana/chica: botones calculadora compactos */
 @media (max-width: 1280px) {
   .header-buttons {
     width: 100%;
@@ -1063,22 +1083,28 @@ body {
   }
   .header-buttons .btn-calculator {
     flex: 0 0 auto;
-    width: 220px;
-    min-width: 200px;
+    min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
     justify-content: center;
+  }
+  .header-buttons .btn-calc-compact,
+  .header-buttons .btn-calc-icon-only {
+    width: auto !important;
   }
   .header-buttons .btn-user {
     flex: 0 0 auto;
   }
 }
 
-/* Ventana chica: botones calculadora más angostos y distribución pareja */
+/* Ventana chica: botones calculadora más angostos */
 @media (max-width: 768px) {
   .header-buttons .btn-calculator {
-    width: 160px;
-    min-width: 140px;
+    min-width: 0;
+  }
+  .header-buttons .btn-calc-compact,
+  .header-buttons .btn-calc-icon-only {
+    width: auto !important;
   }
   .header-buttons {
     gap: 8px;

@@ -181,14 +181,11 @@
         <h1 id="sectionTitle">Inicio</h1>
         <div class="header-buttons">
         <button id="btn-new-nutriplant" class="btn btn-pill btn-primary" onclick="window.showNewProjectModal()">+ Nuevo NutriPlant</button>
-          <button id="btn-conversion-calculator" class="btn btn-pill btn-calculator" onclick="window.showConversionCalculator()" title="Calculadora Óxido ↔ Elemental">
-            <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><rect x="6" y="4" width="12" height="5" rx="1"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="14" y1="16" x2="16" y2="16"/></svg></span> Óxido ↔ Elem.
-          </button>
-          <button id="btn-nutrient-units-calculator" class="btn btn-pill btn-calculator" onclick="window.showNutrientUnitsCalculator()" title="Calculadora ppm ↔ mmol/L ↔ meq/L">
-            <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><rect x="6" y="4" width="12" height="5" rx="1"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="14" y1="16" x2="16" y2="16"/></svg></span> ppm ↔ meq
-          </button>
-          <button id="btn-measure-units-calculator" class="btn btn-pill btn-calculator" onclick="window.showMeasureUnitsCalculator()" title="Unidades: longitud, área, volumen, peso, temperatura, presión">
-            <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><rect x="6" y="4" width="12" height="5" rx="1"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="14" y1="16" x2="16" y2="16"/></svg></span> Unidades
+          <button id="btn-conversion-calculator" class="btn btn-pill btn-calculator btn-calc-compact" onclick="window.showConversionCalculator()" title="Calculadora Óxido ↔ Elemental">⚗️Óxido↔Elem.</button>
+          <button id="btn-nutrient-units-calculator" class="btn btn-pill btn-calculator btn-calc-compact" onclick="window.showNutrientUnitsCalculator()" title="Calculadora ppm ↔ mmol/L ↔ meq/L">⚖️ppm↔meq</button>
+          <button id="btn-measure-units-calculator" class="btn btn-pill btn-calculator btn-calc-compact" onclick="window.showMeasureUnitsCalculator()" title="Unidades: longitud, área, volumen, peso, temperatura, presión">📐Unidades</button>
+          <button id="btn-simple-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only" onclick="window.showSimpleCalculator()" title="Calculadora simple">
+            <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg></span>
           </button>
           <button id="btn-user-info" class="btn btn-pill btn-user" onclick="window.showUserInfoModal()" title="Información de Usuario">
             <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -4873,6 +4870,59 @@ CONTRATO:
       if (modal) modal.classList.remove('show');
     }
     window.closeMeasureUnitsCalculator = closeMeasureUnitsCalculator;
+
+    function showSimpleCalculator() {
+      var modal = document.getElementById('simpleCalculatorModal');
+      if (!modal) return;
+      modal.classList.add('show');
+      var display = document.getElementById('simpleCalcDisplay');
+      if (display) display.value = '0';
+      var keys = document.getElementById('simpleCalcKeys');
+      if (keys && !keys.dataset.bound) {
+        keys.dataset.bound = '1';
+        var expr = '';
+        keys.addEventListener('click', function(e) {
+          var btn = e.target.closest('.simple-calc-btn');
+          if (!btn) return;
+          var val = btn.getAttribute('data-value');
+          var action = btn.getAttribute('data-action');
+          var afterEq = keys.dataset.afterEq === '1';
+          if (val !== null) {
+            if (afterEq) { keys.dataset.afterEq = '0'; expr = (val === '.') ? '0.' : val; }
+            else expr = (display.value === '0' && val !== '.') ? val : display.value + val;
+          } else if (action === 'clear') {
+            keys.dataset.afterEq = '0';
+            expr = '0';
+          } else if (action === 'neg') {
+            if (display.value !== '0') expr = String(-parseFloat(display.value));
+            else expr = '0';
+            keys.dataset.afterEq = '0';
+          } else if (action === 'percent') {
+            var n = parseFloat(display.value);
+            if (!isNaN(n)) expr = String(n / 100);
+            keys.dataset.afterEq = '0';
+          } else if (action === '=') {
+            try {
+              var s = (display.value || '0').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+              if (/^[\d\s+\-*/().]+$/.test(s)) expr = String(Function('"use strict"; return (' + s + ')')());
+              else expr = display.value;
+            } catch (err) { expr = '0'; }
+            keys.dataset.afterEq = '1';
+          } else if (action) {
+            keys.dataset.afterEq = '0';
+            expr = (display.value === '0' && action !== '(' && action !== ')') ? action : display.value + action;
+          }
+          display.value = expr;
+        });
+      }
+    }
+    window.showSimpleCalculator = showSimpleCalculator;
+    function closeSimpleCalculator() {
+      var modal = document.getElementById('simpleCalculatorModal');
+      if (modal) modal.classList.remove('show');
+    }
+    window.closeSimpleCalculator = closeSimpleCalculator;
+
     function updateMeasureUnitOptions() {
       var cat = document.getElementById('measure-category');
       var from = document.getElementById('measure-from');
@@ -5940,6 +5990,56 @@ CONTRATO:
       </div>
     </div>
   </div>
+
+  <!-- Modal Calculadora simple (estilo Mac, con paréntesis) -->
+  <div id="simpleCalculatorModal" class="modal-overlay">
+    <div class="modal" style="max-width: 320px; background: #2d2d2d; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+      <div class="modal-header" style="background: #2d2d2d; border-bottom: 1px solid #404040;">
+        <h2 class="modal-title" style="color: #fff; font-size: 16px;">🧮 Calculadora</h2>
+        <button class="modal-close" onclick="closeSimpleCalculator()" style="color: #fff;">×</button>
+      </div>
+      <div class="modal-body" style="padding: 16px; background: #2d2d2d;">
+        <input type="text" id="simpleCalcDisplay" readonly value="0" style="width:100%; padding:20px 12px; font-size:28px; text-align:right; border:none; background:#1a1a1a; color:#fff; border-radius:10px; margin-bottom:12px; font-family:system-ui,sans-serif; box-sizing:border-box;">
+        <div id="simpleCalcKeys" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px;">
+          <!-- C ± % ÷ -->
+          <button type="button" class="simple-calc-btn simple-calc-op" data-action="clear">C</button>
+          <button type="button" class="simple-calc-btn simple-calc-op" data-action="neg">±</button>
+          <button type="button" class="simple-calc-btn simple-calc-op" data-action="percent">%</button>
+          <button type="button" class="simple-calc-btn simple-calc-op" data-action="/">÷</button>
+          <!-- 7 8 9 × -->
+          <button type="button" class="simple-calc-btn" data-value="7">7</button>
+          <button type="button" class="simple-calc-btn" data-value="8">8</button>
+          <button type="button" class="simple-calc-btn" data-value="9">9</button>
+          <button type="button" class="simple-calc-btn simple-calc-op" data-action="*">×</button>
+          <!-- 4 5 6 − -->
+          <button type="button" class="simple-calc-btn" data-value="4">4</button>
+          <button type="button" class="simple-calc-btn" data-value="5">5</button>
+          <button type="button" class="simple-calc-btn" data-value="6">6</button>
+          <button type="button" class="simple-calc-btn simple-calc-op" data-action="-">−</button>
+          <!-- 1 2 3 + -->
+          <button type="button" class="simple-calc-btn" data-value="1">1</button>
+          <button type="button" class="simple-calc-btn" data-value="2">2</button>
+          <button type="button" class="simple-calc-btn" data-value="3">3</button>
+          <button type="button" class="simple-calc-btn simple-calc-op" data-action="+">+</button>
+          <!-- ( ) 0 . -->
+          <button type="button" class="simple-calc-btn simple-calc-op" data-action="(">(</button>
+          <button type="button" class="simple-calc-btn simple-calc-op" data-action=")">)</button>
+          <button type="button" class="simple-calc-btn" data-value="0">0</button>
+          <button type="button" class="simple-calc-btn" data-value=".">.</button>
+          <!-- = (span 2) -->
+          <button type="button" class="simple-calc-btn simple-calc-eq" data-action="=" style="grid-column: span 2;">=</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <style>
+    .simple-calc-btn { width:100%; padding:16px; font-size:20px; font-weight:600; border:none; border-radius:12px; cursor:pointer; background:#505050; color:#fff; transition:background .15s; }
+    .simple-calc-btn:hover { background:#606060; }
+    .simple-calc-op { background:#606060; color:#fff; }
+    .simple-calc-op:hover { background:#707070; }
+    .simple-calc-eq { background:#ff9500; color:#fff; }
+    .simple-calc-eq:hover { background:#ffad33; }
+  </style>
 
 <!-- Modal para agregar cultivo personalizado -->
 <div id="customCropModal" class="modal-overlay">
