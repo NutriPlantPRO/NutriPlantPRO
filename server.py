@@ -139,8 +139,8 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         print(f"📥 POST request: {self.path}")
         
-        # Manejar ruta de OpenAI
-        if self.path == '/api/openai' or self.path.startswith('/api/openai'):
+        # Manejar ruta de OpenAI (openai-assistant es el path que usa el frontend/dashboard)
+        if self.path in ('/api/openai', '/api/openai-assistant') or self.path.startswith('/api/openai'):
             self._handle_openai_proxy_with_quota()
             return
         elif self.path == '/api/paypal/create-subscription':
@@ -466,10 +466,15 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             user_id = str(data.get('userId') or data.get('user_id') or 'anonymous')
             project_id = str(data.get('projectId') or data.get('project_id') or '')
             module = str(data.get('module') or '')
+            scope_admin = data.get('scope') == 'admin' or user_id == '__admin__'
+            if scope_admin:
+                user_id = '__admin__'
 
             month_key = self._month_key()
             monthly_limit_usd = float(os.environ.get('NUTRIPLANT_CHAT_MONTHLY_LIMIT_USD', '1.0'))
             cache_ttl_seconds = int(os.environ.get('NUTRIPLANT_CHAT_CACHE_TTL_SECONDS', '3600'))
+            if scope_admin:
+                monthly_limit_usd = 999999.0
 
             usage_db = self._read_json_file(CHAT_USAGE_FILE, {'users': {}})
             users = usage_db.setdefault('users', {})

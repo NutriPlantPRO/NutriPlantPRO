@@ -123,7 +123,9 @@ exports.handler = async (event, context) => {
   const messages = body.messages || [];
   const max_tokens = Math.min(Math.max(Number(body.max_tokens) || 600, 1), 2000);
   const temperature = Math.max(0, Math.min(1, Number(body.temperature) || 0.4));
-  const userId = String(body.userId || body.user_id || 'anonymous');
+  let userId = String(body.userId || body.user_id || 'anonymous');
+  const scopeAdmin = body.scope === 'admin' || userId === '__admin__';
+  if (scopeAdmin) userId = '__admin__';
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return jsonResponse(400, { error: 'messages es obligatorio y debe ser un array' });
@@ -144,7 +146,7 @@ exports.handler = async (event, context) => {
   const currentMonth = monthKey();
   const defaultLimitUsd = 1.0;
 
-  if (supabase && userId && userId !== 'anonymous') {
+  if (supabase && userId && userId !== 'anonymous' && userId !== '__admin__') {
     const quota = await getQuotaFromSupabase(supabase, userId);
     if (quota) {
       if (quota.chat_blocked === true) {
@@ -210,7 +212,7 @@ exports.handler = async (event, context) => {
       data = { error: text || 'Respuesta no JSON' };
     }
 
-    if (res.ok && data.usage && supabase && userId && userId !== 'anonymous') {
+    if (res.ok && data.usage && supabase && userId && userId !== 'anonymous' && userId !== '__admin__') {
       const pt = Number(data.usage.prompt_tokens) || 0;
       const ct = Number(data.usage.completion_tokens) || 0;
       const costUsd = tokenCostUsd(model, pt, ct);

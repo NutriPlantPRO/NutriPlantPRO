@@ -469,6 +469,10 @@
                     <div class="stat-number" id="estimatedCostChatMonth">-</div>
                     <div class="stat-label">📅 Costo est. Chat este mes (USD)</div>
                 </div>
+                <div class="stat-card" style="grid-column: 1 / -1; max-width: 100%; background: #f0f9ff; border-left: 4px solid #0284c7;">
+                    <div class="stat-label" style="margin-bottom: 4px;">🤖 Tu uso (chat admin)</div>
+                    <div style="font-size: 14px; color: #0c4a6e;">Total: <span id="adminChatCostTotal">—</span> USD · Este mes: <span id="adminChatCostMonth">—</span> USD</div>
+                </div>
                 
                 <div class="stat-card">
                     <div class="stat-number" id="activeUsers">-</div>
@@ -563,6 +567,22 @@
             <div style="text-align: center; margin-top: 40px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
                 <button class="btn-admin" onclick="refrescarDesdeNube()" style="background: #10b981;">☁️ Refrescar desde Supabase</button>
                 <button class="btn-admin secondary" onclick="logout()">Cerrar Sesión</button>
+            </div>
+
+            <!-- 🤖 Chat IA para el admin: revisar información del panel (misma API, no mezcla con usuarios) -->
+            <div id="adminChatWrap" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999;">
+                <div id="adminChatPanel" style="display: none; width: 380px; max-width: calc(100vw - 48px); height: 420px; background: #fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); flex-direction: column; border: 1px solid #e5e7eb;">
+                    <div style="padding: 12px 16px; background: #1e3a5f; color: #fff; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600;">🤖 Asistente del panel</span>
+                        <button type="button" id="adminChatClose" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; line-height: 1;">×</button>
+                    </div>
+                    <div id="adminChatMessages" style="flex: 1; overflow-y: auto; padding: 12px; font-size: 14px; min-height: 260px;"></div>
+                    <div style="padding: 12px; border-top: 1px solid #e5e7eb;">
+                        <input type="text" id="adminChatInput" placeholder="Pregunta sobre suscriptores, proyectos, costos..." style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; box-sizing: border-box; font-size: 14px;">
+                        <button type="button" id="adminChatSend" style="margin-top: 8px; width: 100%; padding: 10px; background: #1e3a5f; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Enviar</button>
+                    </div>
+                </div>
+                <button type="button" id="adminChatBubble" style="display: none; width: 56px; height: 56px; border-radius: 50%; background: #1e3a5f; color: #fff; border: none; cursor: pointer; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);" title="Asistente IA para revisar datos del panel">🤖</button>
             </div>
         </div>
     </div>
@@ -1180,6 +1200,7 @@
             
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'block';
+            if (typeof window.initAdminChat === 'function') window.initAdminChat();
             // 🟢 Si la nube está activa, cargar datos de ahí primero; luego pintar estadísticas
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
                 window.nutriplantAdminLoadFromCloud().then(function() { loadAdminStats(); }).catch(function() { loadAdminStats(); });
@@ -1282,6 +1303,10 @@
             document.getElementById('totalInteractions').textContent = stats.totalInteractions;
             document.getElementById('estimatedCostChat').textContent = stats.estimatedCostChat.toFixed(4);
             document.getElementById('estimatedCostChatMonth').textContent = (chatMetrics.estimatedCostUSDThisMonth != null ? chatMetrics.estimatedCostUSDThisMonth.toFixed(4) : '0.0000');
+            var elAdminTotal = document.getElementById('adminChatCostTotal');
+            var elAdminMonth = document.getElementById('adminChatCostMonth');
+            if (elAdminTotal) elAdminTotal.textContent = '0.0000';
+            if (elAdminMonth) elAdminMonth.textContent = '0.0000';
             document.getElementById('activeUsers').textContent = stats.activeUsers;
             document.getElementById('pendingSubscriptions').textContent = stats.pendingSubscriptions;
             // Si el backend de chat está disponible, actualizar con datos reales (USD/tokens por backend)
@@ -1293,9 +1318,17 @@
                         if (!data || !data.users) return;
                         var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
                         var totalUsd = 0, monthUsd = 0, totalReqs = 0, monthReqs = 0;
+                        var adminTotal = 0, adminMonth = 0;
                         Object.keys(data.users).forEach(function(uid) {
                             var u = data.users[uid];
                             if (!u || !u.months) return;
+                            if (uid === '__admin__') {
+                                Object.keys(u.months).forEach(function(m) {
+                                    var bucket = u.months[m];
+                                    adminTotal += bucket.cost_usd || 0;
+                                    if (m === monthKey) adminMonth += bucket.cost_usd || 0;
+                                });
+                            }
                             Object.keys(u.months).forEach(function(m) {
                                 var bucket = u.months[m];
                                 totalUsd += bucket.cost_usd || 0;
@@ -1309,11 +1342,187 @@
                         if (elCost) elCost.textContent = totalUsd.toFixed(4);
                         if (elMonth) elMonth.textContent = monthUsd.toFixed(4);
                         if (elInt) elInt.textContent = totalReqs;
+                        var elAdminTotal = document.getElementById('adminChatCostTotal');
+                        var elAdminMonth = document.getElementById('adminChatCostMonth');
+                        if (elAdminTotal) elAdminTotal.textContent = adminTotal.toFixed(4);
+                        if (elAdminMonth) elAdminMonth.textContent = adminMonth.toFixed(4);
                     }).catch(function() {});
                 }
             } catch (e) {}
         }
         
+        // 🤖 Chat IA del panel de admin: misma API key, no consume cuota de usuarios; historial en localStorage y en Supabase (admin_chat_threads)
+        const NUTRIPLANT_ADMIN_CHAT_STORAGE_KEY = 'nutriplant_admin_chat_history';
+        window.initAdminChat = function() {
+            var bubble = document.getElementById('adminChatBubble');
+            var panel = document.getElementById('adminChatPanel');
+            var messagesEl = document.getElementById('adminChatMessages');
+            var input = document.getElementById('adminChatInput');
+            var sendBtn = document.getElementById('adminChatSend');
+            var closeBtn = document.getElementById('adminChatClose');
+            if (!bubble || !panel || !messagesEl || !input) return;
+            bubble.style.display = 'block';
+            var adminChatHistory = [];
+            var adminSupabaseId = null;
+
+            function saveAdminChatHistory() {
+                try { localStorage.setItem(NUTRIPLANT_ADMIN_CHAT_STORAGE_KEY, JSON.stringify(adminChatHistory)); } catch (e) {}
+                if (adminSupabaseId && typeof window.getSupabaseClient === 'function') {
+                    var client = window.getSupabaseClient();
+                    if (client) {
+                        client.from('admin_chat_threads').upsert({
+                            admin_id: adminSupabaseId,
+                            thread: adminChatHistory,
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'admin_id' }).then(function() {}).catch(function(err) { console.warn('Admin chat save to cloud:', err && err.message); });
+                    }
+                }
+            }
+            (async function loadAdminChatFromCloud() {
+                if (typeof window.getSupabaseClient !== 'function') return;
+                var client = window.getSupabaseClient();
+                if (!client) return;
+                try {
+                    var res = await client.auth.getUser();
+                    var user = res && res.data && res.data.user;
+                    if (!user || !user.id) return;
+                    adminSupabaseId = user.id;
+                    var row = await client.from('admin_chat_threads').select('thread').eq('admin_id', adminSupabaseId).maybeSingle();
+                    if (row && row.data && Array.isArray(row.data.thread) && row.data.thread.length > 0) {
+                        adminChatHistory = row.data.thread;
+                        try { localStorage.setItem(NUTRIPLANT_ADMIN_CHAT_STORAGE_KEY, JSON.stringify(adminChatHistory)); } catch (e) {}
+                        renderAdminChat();
+                        return;
+                    }
+                } catch (e) { console.warn('Admin chat load from cloud:', e && e.message); }
+                try {
+                    var raw = localStorage.getItem(NUTRIPLANT_ADMIN_CHAT_STORAGE_KEY);
+                    if (raw && raw.startsWith('[')) adminChatHistory = JSON.parse(raw);
+                } catch (e) {}
+                renderAdminChat();
+            })();
+            function renderAdminChat() {
+                messagesEl.innerHTML = '';
+                adminChatHistory.forEach(function(m) {
+                    var div = document.createElement('div');
+                    div.style.marginBottom = '10px';
+                    div.style.padding = '8px 10px';
+                    div.style.borderRadius = '8px';
+                    div.style.maxWidth = '95%';
+                    if (m.role === 'user') {
+                        div.style.background = '#eff6ff';
+                        div.style.marginLeft = '0';
+                    } else {
+                        div.style.background = '#f1f5f9';
+                        div.style.marginLeft = '8px';
+                    }
+                    div.textContent = (m.content || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    div.innerHTML = div.textContent.replace(/\n/g, '<br>');
+                    messagesEl.appendChild(div);
+                });
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+            function formatLocation(loc) {
+                if (!loc) return 'No especificado';
+                if (typeof loc === 'string') return loc.trim() || 'No especificado';
+                if (typeof loc === 'object') return [loc.city, loc.state, loc.country].filter(Boolean).join(', ') || 'No especificado';
+                return 'No especificado';
+            }
+            function getAdminPanelContext() {
+                var totalUsers = (document.getElementById('totalUsers') && document.getElementById('totalUsers').textContent) || '0';
+                var activeSubs = (document.getElementById('activeSubscriptions') && document.getElementById('activeSubscriptions').textContent) || '0';
+                var totalProjects = (document.getElementById('totalProjects') && document.getElementById('totalProjects').textContent) || '0';
+                var totalChats = (document.getElementById('totalChats') && document.getElementById('totalChats').textContent) || '0';
+                var interactions = (document.getElementById('totalInteractions') && document.getElementById('totalInteractions').textContent) || '0';
+                var costTotal = (document.getElementById('estimatedCostChat') && document.getElementById('estimatedCostChat').textContent) || '0';
+                var costMonth = (document.getElementById('estimatedCostChatMonth') && document.getElementById('estimatedCostChatMonth').textContent) || '0';
+                var pending = (document.getElementById('pendingSubscriptions') && document.getElementById('pendingSubscriptions').textContent) || '0';
+                var lines = [
+                    '--- RESUMEN DEL PANEL ---',
+                    'Suscriptores totales: ' + totalUsers + ' | Suscripciones activas: ' + activeSubs + ' | Proyectos totales: ' + totalProjects,
+                    'Mensajes chat: ' + totalChats + ' | Interacciones IA: ' + interactions + ' | Costo chat total (USD): ' + costTotal + ' | Este mes: ' + costMonth + ' | Pendientes: ' + pending,
+                    '',
+                    '--- LISTA DE USUARIOS (nombre, email, ubicación, suscripción) ---'
+                ];
+                try {
+                    var users = typeof getAllUsers === 'function' ? getAllUsers() : [];
+                    var adminEmailLc = 'admin@nutriplantpro.com';
+                    var list = users.filter(function(u) { return (u.email || '').toLowerCase() !== adminEmailLc; });
+                    var maxUsers = 200;
+                    var take = list.length > maxUsers ? maxUsers : list.length;
+                    for (var i = 0; i < take; i++) {
+                        var u = list[i];
+                        var locStr = formatLocation(u.location);
+                        lines.push('- ' + (u.name || 'Sin nombre') + ' | ' + (u.email || '') + ' | ubicación: ' + locStr + ' | suscripción: ' + (u.subscription_status || 'N/A'));
+                    }
+                    if (list.length > maxUsers) lines.push('(Total ' + list.length + ' usuarios; mostrando ' + maxUsers + '.)');
+                } catch (e) { lines.push('(Error al cargar usuarios.)'); }
+                lines.push('');
+                lines.push('--- LISTA DE PROYECTOS (nombre, usuario, cultivo, variedad) ---');
+                try {
+                    var projects = typeof getAllProjects === 'function' ? getAllProjects() : [];
+                    var maxProj = 150;
+                    var takeP = projects.length > maxProj ? maxProj : projects.length;
+                    for (var j = 0; j < takeP; j++) {
+                        var p = projects[j];
+                        lines.push('- ' + (p.name || p.title || 'Sin nombre') + ' | usuario: ' + (p.user_email || p.user_name || '—') + ' | cultivo: ' + (p.crop_type || 'N/A') + (p.variedad ? ' | variedad: ' + p.variedad : ''));
+                    }
+                    if (projects.length > maxProj) lines.push('(Total ' + projects.length + ' proyectos; mostrando ' + maxProj + '.)');
+                } catch (e) { lines.push('(Error al cargar proyectos.)'); }
+                return lines.join('\n');
+            }
+            function getAdminPanelSystemPrompt() {
+                var dataBlock = getAdminPanelContext();
+                return 'Eres un asistente del panel de administración de NutriPlant PRO. Tienes acceso a los mismos datos que ve el administrador en el panel: resumen de métricas, lista de usuarios (con nombre, email, ubicación y estado de suscripción) y lista de proyectos (con cultivo y variedad). ' +
+                    'Usa estos datos para responder preguntas como "¿cuántos usuarios tengo en Jalisco?", "¿quién tiene cultivo de aguacate?", "resume por ubicación", etc. Puedes platicar sobre análisis de mercado, ideas y apoyar la toma de decisiones con base en la data. ' +
+                    'No ejecutas ninguna acción (no borras, no modificas); solo conversas y asesoras. Responde siempre en español. Datos actuales del panel:\n\n' + dataBlock;
+            }
+            function sendAdminChat() {
+                var text = (input.value || '').trim();
+                if (!text) return;
+                input.value = '';
+                adminChatHistory.push({ role: 'user', content: text });
+                saveAdminChatHistory();
+                renderAdminChat();
+                sendBtn.disabled = true;
+                var systemContent = getAdminPanelSystemPrompt();
+                var historyForApi = adminChatHistory.slice(0, -1).map(function(m) { return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content }; });
+                var messagesForApi = [{ role: 'system', content: systemContent }].concat(historyForApi).concat([{ role: 'user', content: text }]);
+                var base = (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) || (window.location && window.location.origin) || 'http://localhost:8000';
+                fetch(base + '/api/openai-assistant', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'gpt-4o-mini',
+                        messages: messagesForApi,
+                        max_tokens: 1000,
+                        temperature: 0.5,
+                        userId: '__admin__',
+                        scope: 'admin'
+                    })
+                }).then(function(r) { return r.json(); }).then(function(data) {
+                    sendBtn.disabled = false;
+                    var reply = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) ? data.choices[0].message.content : (data.error || 'Error al obtener respuesta.');
+                    adminChatHistory.push({ role: 'assistant', content: reply });
+                    saveAdminChatHistory();
+                    renderAdminChat();
+                }).catch(function(err) {
+                    sendBtn.disabled = false;
+                    adminChatHistory.push({ role: 'assistant', content: 'Error de conexión. Comprueba que el servidor esté disponible (python server.py) o que la API esté configurada.' });
+                    saveAdminChatHistory();
+                    renderAdminChat();
+                });
+            }
+            renderAdminChat();
+            bubble.addEventListener('click', function() {
+                panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+                if (panel.style.display === 'flex') input.focus();
+            });
+            closeBtn.addEventListener('click', function() { panel.style.display = 'none'; });
+            sendBtn.addEventListener('click', sendAdminChat);
+            input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); sendAdminChat(); } });
+        };
+
         // 🔄 FUNCIONES LEGACY: Mantenidas para compatibilidad pero ya no se usan en loadAdminStats
         function getActiveSubscriptions(users) {
             if (!users || users.length === 0) {
