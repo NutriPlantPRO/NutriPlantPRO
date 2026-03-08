@@ -647,7 +647,9 @@
                         custom_granular_crops: p.custom_granular_crops,
                         custom_ferti_crops: p.custom_ferti_crops,
                         custom_amendments: p.custom_amendments,
-                        user_notes: p.user_notes || null
+                        user_notes: p.user_notes || null,
+                        chat_usage_current_month: p.chat_usage_current_month != null ? p.chat_usage_current_month : null,
+                        chat_usage_month: p.chat_usage_month || null
                     };
                 });
                 // ENRIQUECER usuarios de nube con datos de localStorage (password, phone, etc.) cuando nube no los tiene
@@ -1763,6 +1765,34 @@
                     });
                 } catch (e) { continue; }
             }
+            // Incluir chat sin proyecto (por usuario) para que la tabla no quede en 0 cuando todo el chat está "sin proyecto"
+            for (var ui = 0; ui < localStorage.length; ui++) {
+                var ukey = localStorage.key(ui);
+                if (!ukey || !ukey.startsWith('nutriplant_user_') || ukey.indexOf('_email_') !== -1 || ukey.indexOf('_project_') !== -1) continue;
+                var uid = ukey.replace(/^nutriplant_user_/, '');
+                if (!uid) continue;
+                try {
+                    var uraw = localStorage.getItem(ukey);
+                    if (!uraw || !uraw.startsWith('{')) continue;
+                    var udata = JSON.parse(uraw);
+                    if (!udata || !Array.isArray(udata.chat_history_sin_proyecto) || udata.chat_history_sin_proyecto.length === 0) continue;
+                    var totalMsg = udata.chat_history_sin_proyecto.length;
+                    var totalInt = 0;
+                    udata.chat_history_sin_proyecto.forEach(function (msg) {
+                        if (msg && (msg.sender === 'user' || msg.type === 'user')) totalInt++;
+                    });
+                    var uu = users.find(function (x) { return (x.id === uid) || (x.userId === uid); });
+                    summary.push({
+                        project_id: '(sin proyecto)',
+                        project_name: 'Chat sin proyecto asignado',
+                        user_name: uu ? (uu.name || '—') : '—',
+                        user_email: uu ? (uu.email || '—') : '—',
+                        total_messages: totalMsg,
+                        total_interactions: totalInt,
+                        estimated_cost_usd: (totalInt * 0.001).toFixed(4)
+                    });
+                } catch (e) { continue; }
+            }
             return summary.sort(function (a, b) { return b.total_messages - a.total_messages; });
         }
         
@@ -1872,18 +1902,69 @@
             });
         }
 
-        /** Consumo real de Chat IA desde el backend (USD y tokens por usuario, mes actual). */
+        /** Consumo real de Chat IA desde el backend (USD y tokens por usuario, mes actual). Si el API no devuelve datos, se muestra fallback desde usuarios (Supabase/local). */
         function showChatUsageByUser() {
             var base = (window.NUTRIPLANT_CHAT_USAGE_API_BASE != null) ? window.NUTRIPLANT_CHAT_USAGE_API_BASE : (window.location && window.location.origin ? window.location.origin : '');
+            var isLocal = (base && (base.indexOf('localhost') !== -1 || base.indexOf('127.0.0.1') !== -1));
+            function showFallbackFromUsers() {
+                var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                var users = getAllUsers();
+                var rows = users.filter(function(u) {
+                    var um = u.chat_usage_month || '';
+                    var use = u.chat_usage_current_month;
+                    return um === monthKey && (use != null && use !== '' && Number(use) > 0);
+                }).map(function(u) {
+                    var use = Number(u.chat_usage_current_month) || 0;
+                    return {
+                        user_id: u.id || u.userId || '—',
+                        email: u.email || '—',
+                        name: u.name || '—',
+                        requests: '—',
+                        cached_hits: '—',
+                        prompt_tokens: '—',
+                        completion_tokens: '—',
+                        total_tokens: '—',
+                        cost_usd: use.toFixed(4)
+                    };
+                });
+                if (rows.length === 0) {
+                    rows = users.map(function(u) {
+                        return {
+                            user_id: u.id || u.userId || '—',
+                            email: u.email || '—',
+                            name: u.name || '—',
+                            requests: '0',
+                            cached_hits: '0',
+                            prompt_tokens: '—',
+                            completion_tokens: '—',
+                            total_tokens: '—',
+                            cost_usd: (u.chat_usage_current_month != null && u.chat_usage_month === monthKey) ? Number(u.chat_usage_current_month).toFixed(4) : '0.0000'
+                        };
+                    }).filter(function(r) { return r.email !== '—' || r.name !== '—'; });
+                }
+                var title = '💰 Consumo Chat IA (este mes) — ' + monthKey + (rows.length ? ' (desde perfiles)' : ' (sin datos de uso este mes)');
+                showDataViewerWithFilters({
+                    title: title,
+                    data: rows.length ? rows : [{ user_id: '—', email: '—', name: 'Sin datos de uso este mes', requests: '—', cached_hits: '—', prompt_tokens: '—', completion_tokens: '—', total_tokens: '—', cost_usd: '0.0000' }],
+                    columns: [
+                        { key: 'email', label: 'Email', format: 'text', filterable: true },
+                        { key: 'name', label: 'Nombre', format: 'text', filterable: true },
+                        { key: 'user_id', label: 'ID usuario', format: 'text', filterable: true },
+                        { key: 'requests', label: 'Solicitudes', format: 'text', filterable: false },
+                        { key: 'cached_hits', label: 'Desde caché', format: 'text', filterable: false },
+                        { key: 'total_tokens', label: 'Tokens', format: 'text', filterable: false },
+                        { key: 'cost_usd', label: 'Costo (USD)', format: 'text', filterable: false }
+                    ],
+                    actions: { edit: false, delete: false }
+                });
+            }
             if (!base || typeof fetch !== 'function') {
-                alert('No se puede conectar al backend. Abre el panel desde la misma URL del servidor (ej. http://localhost:8000/admin/) para ver el consumo.');
+                showFallbackFromUsers();
                 return;
             }
-            var isLocal = (base.indexOf('localhost') !== -1 || base.indexOf('127.0.0.1') !== -1);
             fetch(base + '/api/chat-usage').then(function(r) { return r.ok ? r.json() : null; }).then(function(data) {
                 if (!data || !data.users) {
-                    var msg = isLocal ? ' (En local no hay backend; en producción con servidor de chat sí aparecerá el uso.)' : '';
-                    showDataViewerWithFilters({ title: '💰 Consumo Chat IA (este mes)' + msg, data: [], columns: [], actions: {} });
+                    showFallbackFromUsers();
                     return;
                 }
                 var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
@@ -1909,10 +1990,14 @@
                     });
                 });
                 rows.sort(function(a, b) { return parseFloat(b.cost_usd) - parseFloat(a.cost_usd); });
-                var title = '💰 Consumo Chat IA por usuario — ' + monthKey + (rows.length ? ' (' + rows.length + ' usuarios)' : '');
+                if (rows.length === 0) {
+                    showFallbackFromUsers();
+                    return;
+                }
+                var title = '💰 Consumo Chat IA por usuario — ' + monthKey + ' (' + rows.length + ' usuarios)';
                 showDataViewerWithFilters({
                     title: title,
-                    data: rows.length ? rows : [{ user_id: '—', email: '—', name: '—', requests: 0, cached_hits: 0, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, cost_usd: '0.0000' }],
+                    data: rows,
                     columns: [
                         { key: 'email', label: 'Email', format: 'text', filterable: true },
                         { key: 'name', label: 'Nombre', format: 'text', filterable: true },
@@ -1925,7 +2010,7 @@
                     actions: { edit: false, delete: false }
                 });
             }).catch(function() {
-                alert('No se pudo cargar el consumo. ¿Está corriendo el servidor (python3 server.py) en la misma base URL?');
+                showFallbackFromUsers();
             });
         }
         window.showChatUsageByUser = showChatUsageByUser;
