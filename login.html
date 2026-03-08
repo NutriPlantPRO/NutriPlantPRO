@@ -166,6 +166,13 @@
 
         <div style="margin: 20px 0; height: 1px; background: #e5e7eb;"></div>
 
+        <!-- Mensaje de bienvenida tras completar suscripción con PayPal (se muestra por JS) -->
+        <div id="paypalSuccessWelcome" style="display: none; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #6ee7b7; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;">
+          <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #065f46;">¡Bienvenido a NutriPlant PRO!</h2>
+          <p style="margin: 0 0 12px 0; font-size: 15px; color: #047857;">Tu cuenta y suscripción están activas. Inicia sesión con tu correo y contraseña.</p>
+          <p style="margin: 0; font-size: 13px; color: #059669;">Redirigiendo al panel en unos segundos… Si no eres redirigido, usa el formulario de abajo.</p>
+        </div>
+
         <!-- Inicio de sesión: correo, contraseña y registro -->
         <form id="loginForm" class="auth-form">
           <div class="form-group">
@@ -223,6 +230,7 @@
           <p style="color: #64748b; font-size: 14px; margin: 0;" id="loginFooterText">
             ¿No tienes una cuenta? <a href="#" onclick="showRegistrationModal(); return false;" style="color: #2563eb; text-decoration: none; font-weight: 600; cursor: pointer;">Crear Nueva Cuenta</a>
           </p>
+          <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0;">Suscripción: $49 USD cada 5 meses. Cancela cuando quieras desde PayPal.</p>
         </div>
 
         <div id="loginExtra" class="auth-divider" style="margin-top: 24px; margin-bottom: 16px;">
@@ -1872,6 +1880,9 @@
                   <div style="font-size: 18px; font-weight: 600; color: #003087;">PayPal</div>
                 </div>
               </div>
+              <p style="margin: 12px 0 0 0; padding-top: 12px; border-top: 1px solid #fde68a; font-size: 13px; color: #92400e;">
+                <strong>10 días de prueba gratis.</strong> Puedes cancelar en cualquier momento desde tu cuenta de PayPal → Suscripciones.
+              </p>
             </div>
 
             <div style="margin-bottom: 20px;">
@@ -1887,7 +1898,7 @@
                 </div>
               </label>
               <p style="margin: 8px 0 0 0; font-size: 12px; color: #0369a1; background: #e0f2fe; padding: 8px 12px; border-radius: 6px; border-left: 4px solid #0284c7;">
-                <strong>Aviso:</strong> Recomendamos activar la suscripción ahora para acceder al panel y a todas las herramientas de inmediato. Incluye 10 días de prueba gratis. Puedes cancelar cuando quieras desde tu cuenta de PayPal → Suscripciones.
+                <strong>Resumen:</strong> $49 USD cada 5 meses · 10 días de prueba gratis · Cancela cuando quieras desde PayPal → Suscripciones.
               </p>
             </div>
 
@@ -2792,7 +2803,7 @@
     }
     window.closeAboutUsModal = closeAboutUsModal;
 
-    // Si volvemos de PayPal tras aprobar suscripción, marcar activa y redirigir al dashboard (se ejecuta después de definir markSubscriptionActive)
+    // Si volvemos de PayPal tras aprobar suscripción, marcar activa, mostrar bienvenida y redirigir al dashboard (se ejecuta después de definir markSubscriptionActive)
     (function checkPayPalReturn() {
       var params = new URLSearchParams(window.location.search);
       var paypalStatus = params.get('paypal');
@@ -2801,10 +2812,11 @@
       if (paypalStatus === 'success' && userId && subscriptionId && typeof markSubscriptionActive === 'function') {
         markSubscriptionActive(userId, subscriptionId);
         try { window.history.replaceState({}, '', window.location.pathname + (window.location.hash || '')); } catch (e) {}
+        var welcomeEl = document.getElementById('paypalSuccessWelcome');
+        if (welcomeEl) welcomeEl.style.display = 'block';
         setTimeout(function() {
-          alert('Suscripción activada. Redirigiendo al panel...');
           window.location.href = 'dashboard.html';
-        }, 800);
+        }, 3500);
         return;
       }
       if (paypalStatus === 'cancel' && userId) {

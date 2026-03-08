@@ -1928,16 +1928,14 @@
                     rows = [{ user_id: '—', email: '—', name: 'Sin datos de uso este mes', requests: '—', cached_hits: '—', prompt_tokens: '—', completion_tokens: '—', total_tokens: '—', cost_usd: '0.0000' }];
                 }
                 var title = '💰 Consumo Chat IA (este mes) — ' + monthKey + (rows.length ? ' (desde perfiles Supabase)' : ' (sin datos de uso este mes)');
+                // Desde perfiles solo tenemos costo (USD); no guardamos solicitudes ni caché en Supabase, así que solo mostramos las columnas que sí tenemos
                 showDataViewerWithFilters({
                     title: title,
-                    data: rows.length ? rows : [{ user_id: '—', email: '—', name: 'Sin datos de uso este mes', requests: '—', cached_hits: '—', prompt_tokens: '—', completion_tokens: '—', total_tokens: '—', cost_usd: '0.0000' }],
+                    data: rows.length ? rows : [{ user_id: '—', email: '—', name: 'Sin datos de uso este mes', cost_usd: '0.0000' }],
                     columns: [
                         { key: 'email', label: 'Email', format: 'text', filterable: true },
                         { key: 'name', label: 'Nombre', format: 'text', filterable: true },
                         { key: 'user_id', label: 'ID usuario', format: 'text', filterable: true },
-                        { key: 'requests', label: 'Solicitudes', format: 'text', filterable: false },
-                        { key: 'cached_hits', label: 'Desde caché', format: 'text', filterable: false },
-                        { key: 'total_tokens', label: 'Tokens', format: 'text', filterable: false },
                         { key: 'cost_usd', label: 'Costo (USD)', format: 'text', filterable: false }
                     ],
                     actions: { edit: false, delete: false }
