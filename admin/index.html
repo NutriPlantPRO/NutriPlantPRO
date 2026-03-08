@@ -1523,7 +1523,7 @@
                 estimatedCostUSDThisMonth: estimatedCostUSDMonth
             };
         }
-        
+
         function getActiveUsers() {
             // Contar usuarios activos (con proyectos creados en los últimos 30 días)
             const thirtyDaysAgo = new Date();
@@ -1909,40 +1909,25 @@
             function showFallbackFromUsers() {
                 var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
                 var users = getAllUsers();
-                var rows = users.filter(function(u) {
-                    var um = u.chat_usage_month || '';
-                    var use = u.chat_usage_current_month;
-                    return um === monthKey && (use != null && use !== '' && Number(use) > 0);
-                }).map(function(u) {
-                    var use = Number(u.chat_usage_current_month) || 0;
+                var rows = users.map(function(u) {
+                    var uid = u.id || u.userId;
+                    var costUsd = (u.chat_usage_month === monthKey && u.chat_usage_current_month != null && u.chat_usage_current_month !== '') ? Number(u.chat_usage_current_month) : 0;
                     return {
-                        user_id: u.id || u.userId || '—',
+                        user_id: uid || '—',
                         email: u.email || '—',
                         name: u.name || '—',
-                        requests: '—',
+                        requests: costUsd > 0 ? '—' : '0',
                         cached_hits: '—',
                         prompt_tokens: '—',
                         completion_tokens: '—',
                         total_tokens: '—',
-                        cost_usd: use.toFixed(4)
+                        cost_usd: costUsd > 0 ? costUsd.toFixed(4) : '0.0000'
                     };
-                });
+                }).filter(function(r) { return r.email !== '—' || r.name !== '—' || r.user_id !== '—'; });
                 if (rows.length === 0) {
-                    rows = users.map(function(u) {
-                        return {
-                            user_id: u.id || u.userId || '—',
-                            email: u.email || '—',
-                            name: u.name || '—',
-                            requests: '0',
-                            cached_hits: '0',
-                            prompt_tokens: '—',
-                            completion_tokens: '—',
-                            total_tokens: '—',
-                            cost_usd: (u.chat_usage_current_month != null && u.chat_usage_month === monthKey) ? Number(u.chat_usage_current_month).toFixed(4) : '0.0000'
-                        };
-                    }).filter(function(r) { return r.email !== '—' || r.name !== '—'; });
+                    rows = [{ user_id: '—', email: '—', name: 'Sin datos de uso este mes', requests: '—', cached_hits: '—', prompt_tokens: '—', completion_tokens: '—', total_tokens: '—', cost_usd: '0.0000' }];
                 }
-                var title = '💰 Consumo Chat IA (este mes) — ' + monthKey + (rows.length ? ' (desde perfiles)' : ' (sin datos de uso este mes)');
+                var title = '💰 Consumo Chat IA (este mes) — ' + monthKey + (rows.length ? ' (desde perfiles Supabase)' : ' (sin datos de uso este mes)');
                 showDataViewerWithFilters({
                     title: title,
                     data: rows.length ? rows : [{ user_id: '—', email: '—', name: 'Sin datos de uso este mes', requests: '—', cached_hits: '—', prompt_tokens: '—', completion_tokens: '—', total_tokens: '—', cost_usd: '0.0000' }],
