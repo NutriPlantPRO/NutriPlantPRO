@@ -6679,7 +6679,7 @@ CONTRATO:
             if (client) {
               const { data: cloudProfile, error: cloudErr } = await client
                 .from('profiles')
-                .select('subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id')
+                .select('subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, name, phone, location')
                 .eq('id', userId)
                 .maybeSingle();
               if (!cloudErr && cloudProfile) {
@@ -6690,7 +6690,10 @@ CONTRATO:
                   subscription_activated_at: cloudProfile.subscription_activated_at || userData.subscription_activated_at || null,
                   last_payment_date: cloudProfile.last_payment_date || userData.last_payment_date || null,
                   next_payment_date: cloudProfile.next_payment_date || userData.next_payment_date || null,
-                  paypal_subscription_id: cloudProfile.paypal_subscription_id || userData.paypal_subscription_id || null
+                  paypal_subscription_id: cloudProfile.paypal_subscription_id || userData.paypal_subscription_id || null,
+                  name: cloudProfile.name || userData.name,
+                  phone: cloudProfile.phone || userData.phone,
+                  location: cloudProfile.location != null && cloudProfile.location !== '' ? cloudProfile.location : (userData.location || null)
                 };
                 try { localStorage.setItem(userKey, JSON.stringify(userData)); } catch (_) {}
               }
@@ -6765,7 +6768,12 @@ CONTRATO:
                 <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                   <span style="color: #64748b; font-weight: 500;">Ubicación:</span>
                   <span style="color: #1e293b; font-weight: 600; text-align: right;">
-                    ${userData.location ? [userData.location.city, userData.location.state, userData.location.country].filter(Boolean).join(', ') || 'No especificado' : 'No especificado'}
+                    ${(function() {
+                      const loc = userData.location;
+                      if (typeof loc === 'string' && loc.trim()) return loc.trim();
+                      if (loc && typeof loc === 'object') return [loc.city, loc.state, loc.country].filter(Boolean).join(', ') || 'No especificado';
+                      return 'No especificado';
+                    })()}
                   </span>
                 </div>
               </div>
@@ -6818,9 +6826,15 @@ CONTRATO:
             <!-- Sección de Cancelación -->
             <div style="background: #fef3c7; padding: 20px; border-radius: 12px; border-left: 4px solid #f59e0b; width: 100%; box-sizing: border-box;">
               <h3 style="margin: 0 0 12px 0; color: #1e293b; font-size: 18px; font-weight: 600;">🚫 Cancelación de Suscripción</h3>
-              <p style="margin: 0; color: #1e293b; line-height: 1.6; font-size: 14px;">
+              <p style="margin: 0 0 12px 0; color: #1e293b; line-height: 1.6; font-size: 14px;">
                 La cancelación de la suscripción se realiza directamente con PayPal, desde tu cuenta en la sección <strong>Pagos automáticos</strong>.
               </p>
+              <a href="https://www.paypal.com/myaccount/autopay/" target="_blank" rel="noopener noreferrer" style="
+                display: inline-flex; align-items: center; gap: 8px; background: #003087; color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; cursor: pointer;
+              " onmouseover="this.style.background='#001c5b'" onmouseout="this.style.background='#003087'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.77.77 0 0 1 .76-.657h6.986c2.157 0 3.683.563 4.612 1.688.93 1.125 1.098 2.625.504 4.5-.297.938-.72 1.688-1.266 2.25-.547.563-1.172.938-1.875 1.125l1.078 6.375a.641.641 0 0 1-.633.74H12.22a.641.641 0 0 1-.633-.563l-.656-3.938-.047-.234-.375-2.25-.047-.234a.641.641 0 0 0-.633-.563H8.907a.641.641 0 0 0-.633.563l-.75 4.5a.641.641 0 0 1-.633.74z"/></svg>
+                Abrir PayPal (Pagos automáticos)
+              </a>
             </div>
           </div>
         `;
