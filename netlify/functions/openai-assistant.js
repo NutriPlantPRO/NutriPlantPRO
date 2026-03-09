@@ -77,7 +77,7 @@ async function getQuotaFromSupabase(supabase, userId) {
   if (!supabase || !userId || userId === 'anonymous') return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('chat_blocked, chat_limit_monthly, chat_usage_current_month, chat_usage_month')
+    .select('chat_blocked, chat_limit_monthly, chat_usage_current_month, chat_usage_month, subscription_status')
     .eq('id', userId)
     .maybeSingle();
   if (error) {
@@ -208,8 +208,9 @@ exports.handler = async (event, context) => {
         });
       }
       let limitUsd = quota.chat_limit_monthly;
+      const isActiveSubscriber = quota.subscription_status === 'active';
       if (limitUsd === -1 || limitUsd == null || limitUsd === '' || limitUsd === undefined) {
-        limitUsd = -1;
+        limitUsd = isActiveSubscriber ? defaultLimitUsd : -1;
       } else {
         limitUsd = Math.max(0, Number(limitUsd));
       }

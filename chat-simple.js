@@ -537,14 +537,16 @@ class NutriPlantChat {
       const raw = localStorage.getItem(userKey);
       if (!raw) { el.style.display = 'none'; return; }
       const user = JSON.parse(raw);
-      const limitRaw = user.chat_limit_monthly;
+      let limitRaw = user.chat_limit_monthly;
+      const isActiveSubscriber = user.subscription_status === 'active';
+      if ((limitRaw == null || limitRaw === '') && isActiveSubscriber) limitRaw = 1;
       const now = new Date();
       const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
       let used = user.chat_usage_current_month;
       const usageMonth = user.chat_usage_month || '';
       if (usageMonth !== currentMonth) used = 0;
       used = Number(used) || 0;
-      if (limitRaw === -1 || limitRaw == null || limitRaw === '') {
+      if (limitRaw === -1 || (limitRaw == null || limitRaw === '')) {
         el.textContent = 'Chat: Ilimitado';
         el.style.display = 'block';
         return;
@@ -576,7 +578,8 @@ class NutriPlantChat {
       if (!raw) return { allowed: true };
       const user = JSON.parse(raw);
       if (user.chat_blocked === true) return { allowed: false, message: 'El chat con la IA está deshabilitado para tu cuenta. Contacta al administrador si necesitas activarlo.' };
-      const rawLimit = user.chat_limit_monthly;
+      let rawLimit = user.chat_limit_monthly;
+      if ((rawLimit == null || rawLimit === '') && user.subscription_status === 'active') rawLimit = 1;
       if (rawLimit === -1 || rawLimit == null || rawLimit === '') return { allowed: true };
       const limit = parseInt(rawLimit, 10);
       if (limit === 0) return { allowed: false, message: 'No tienes chats disponibles este mes. Contacta al administrador si necesitas activarlo.' };
