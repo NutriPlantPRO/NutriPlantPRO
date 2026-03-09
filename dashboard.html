@@ -6278,11 +6278,14 @@ CONTRATO:
   </div>
   <style>
     .simple-calc-btn { width:100%; padding:16px; font-size:20px; font-weight:600; border:1px solid rgba(12,74,110,0.15); border-radius:12px; cursor:pointer; background:#ffffff; color:#0c4a6e; transition:all .15s ease; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
-    .simple-calc-btn:hover { background:#eaf4ff; border-color:#93c5fd; }
     .simple-calc-op { background:#e6f2ff; color:#0c4a6e; }
-    .simple-calc-op:hover { background:#d7ecff; }
+    /* Hover solo para mouse/trackpad: evita "hover pegado" en tablet/cel */
+    @media (hover: hover) and (pointer: fine) {
+      .simple-calc-btn:hover { background:#eaf4ff; border-color:#93c5fd; }
+      .simple-calc-op:hover { background:#d7ecff; }
+    }
     .simple-calc-eq { background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); color:#fff; border:none; outline:none; box-shadow:none; }
-    .simple-calc-eq:hover, .simple-calc-eq:focus, .simple-calc-eq:active { outline:none; box-shadow:none; }
+    .simple-calc-eq:hover, .simple-calc-eq:focus, .simple-calc-eq:active { background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); color:#fff; border:none; outline:none; box-shadow:none; }
     .notes-tool-btn { padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 13px; color: #334155; }
     .notes-tool-btn:hover { background: #e2e8f0; }
     .notes-block-editor:empty::before { content: attr(data-placeholder); color: #94a3b8; }
