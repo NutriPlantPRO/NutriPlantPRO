@@ -10991,6 +10991,12 @@ function persistReportSourceData() {
       if (persisted && typeof persisted === 'object') {
         currentProject = { ...currentProject, ...persisted };
       }
+      // 🚀 Asegurar granular.program desde storage por si no se abrió la pestaña Programa (reporte debe mostrar lo guardado)
+      const granularSection = window.projectStorage.loadSection('granular', currentProject.id);
+      if (granularSection && granularSection.program && Array.isArray(granularSection.program.applications) && granularSection.program.applications.length > 0) {
+        if (!currentProject.granular) currentProject.granular = {};
+        currentProject.granular.program = granularSection.program;
+      }
     } else {
       const key = `nutriplant_project_${currentProject.id}`;
       const raw = localStorage.getItem(key);

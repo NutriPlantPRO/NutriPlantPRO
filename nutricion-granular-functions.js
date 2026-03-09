@@ -1522,8 +1522,20 @@ function saveApplications() {
       return;
     }
     
-    // Sincronizar valores desde el DOM para no perder el último input
+    // Sincronizar valores desde el DOM para no perder el último input (solo si la pestaña Programa está en pantalla)
+    const container = document.getElementById('granularApplications');
     syncGranularProgramFromDOM();
+    
+    // 🚀 CRÍTICO: No sobrescribir el programa guardado con vacío si la pestaña Programa no se abrió (o tras recargar)
+    // Si no hay DOM de aplicaciones y en memoria está vacío, preservar lo que ya está en storage
+    if (!container && applications.length === 0) {
+      const existing = typeof window.projectStorage !== 'undefined' ? window.projectStorage.loadSection('granular', projectId) : null;
+      const existingProgram = existing && existing.program && Array.isArray(existing.program.applications) && existing.program.applications.length > 0;
+      if (existingProgram) {
+        console.log('💾 Programa Granular: sin pestaña abierta y memoria vacía; se preserva el programa ya guardado (no sobrescribir).');
+        return;
+      }
+    }
     
     let cropSnapshot = null;
     try {
