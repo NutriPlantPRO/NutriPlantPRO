@@ -4998,6 +4998,7 @@ CONTRATO:
             } catch (e) {}
             window._npSimpleCalcSaveTimer = null;
           }, 280);
+          if (btn && btn.blur) btn.blur();
         });
       }
       document.removeEventListener('keydown', simpleCalcKeydown);
@@ -6276,7 +6277,7 @@ CONTRATO:
     </div>
   </div>
   <style>
-    .simple-calc-btn { width:100%; padding:16px; font-size:20px; font-weight:600; border:1px solid rgba(12,74,110,0.15); border-radius:12px; cursor:pointer; background:#ffffff; color:#0c4a6e; transition:all .15s ease; }
+    .simple-calc-btn { width:100%; padding:16px; font-size:20px; font-weight:600; border:1px solid rgba(12,74,110,0.15); border-radius:12px; cursor:pointer; background:#ffffff; color:#0c4a6e; transition:all .15s ease; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
     .simple-calc-btn:hover { background:#eaf4ff; border-color:#93c5fd; }
     .simple-calc-op { background:#e6f2ff; color:#0c4a6e; }
     .simple-calc-op:hover { background:#d7ecff; }
