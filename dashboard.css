@@ -1862,6 +1862,27 @@ body {
   flex-wrap: nowrap; /* FIJO: No wrap */
 }
 
+/* ===== INICIO RESPONSIVE (tablet/cel): evitar tarjetas comprimidas ===== */
+@media (max-width: 1200px) {
+  .grid-3,
+  #np-projects-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .grid-3,
+  #np-projects-list {
+    grid-template-columns: 1fr;
+  }
+
+  .view .card .actions,
+  #np-projects-list .card .actions {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+}
+
 /* Media query para acciones - ELIMINADO */
 
 /* ===== SIDEBAR: SUBTABS SIEMPRE EN LISTA ===== */
