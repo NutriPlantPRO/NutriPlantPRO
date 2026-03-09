@@ -4989,11 +4989,15 @@ CONTRATO:
           }
           display.textContent = expr;
           if (keys.dataset.afterEq !== '1' && equationEl) equationEl.textContent = (expr === '0' ? '\u00A0' : expr);
-          try {
-            var eqText = equationEl ? equationEl.textContent : '';
-            if (eqText === '\u00A0' || eqText === '') eqText = '';
-            localStorage.setItem(NP_SIMPLE_CALC_STORAGE, JSON.stringify({ eq: eqText, val: expr }));
-          } catch (e) {}
+          if (window._npSimpleCalcSaveTimer) clearTimeout(window._npSimpleCalcSaveTimer);
+          window._npSimpleCalcSaveTimer = setTimeout(function() {
+            try {
+              var eqText = equationEl ? equationEl.textContent : '';
+              if (eqText === '\u00A0' || eqText === '') eqText = '';
+              localStorage.setItem(NP_SIMPLE_CALC_STORAGE, JSON.stringify({ eq: eqText, val: expr }));
+            } catch (e) {}
+            window._npSimpleCalcSaveTimer = null;
+          }, 280);
         });
       }
       document.removeEventListener('keydown', simpleCalcKeydown);
@@ -5002,6 +5006,7 @@ CONTRATO:
     window.showSimpleCalculator = showSimpleCalculator;
     function closeSimpleCalculator() {
       document.removeEventListener('keydown', simpleCalcKeydown);
+      if (window._npSimpleCalcSaveTimer) { clearTimeout(window._npSimpleCalcSaveTimer); window._npSimpleCalcSaveTimer = null; }
       var display = document.getElementById('simpleCalcDisplay');
       var equationEl = document.getElementById('simpleCalcEquation');
       if (display) {
@@ -6195,7 +6200,7 @@ CONTRATO:
   </div>
 
   <!-- Modal Calculadora simple (paleta NutriPlant: blanco + azul + verde) -->
-  <div id="simpleCalculatorModal" class="modal-overlay">
+  <div id="simpleCalculatorModal" class="modal-overlay" role="dialog" aria-label="Calculadora" onclick="if(event.target===this) closeSimpleCalculator();">
     <div class="modal" style="max-width: 320px; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(12,74,110,0.22); border: 1px solid rgba(12,74,110,0.18);">
       <div class="modal-header" style="background: #f8fbff; border-bottom: 1px solid rgba(12,74,110,0.15);">
         <h2 class="modal-title" style="color: #0c4a6e; font-size: 16px;">🧮 Calculadora</h2>
@@ -6276,8 +6281,8 @@ CONTRATO:
     .simple-calc-op { background:#e6f2ff; color:#0c4a6e; }
     .simple-calc-op:hover { background:#d7ecff; }
     .simple-calc-eq { background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); color:#fff; border:none; }
-    .simple-calc-eq:hover { filter: brightness(1.08); background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); color:#fff; }
-    .simple-calc-eq:focus { outline: 2px solid #0c4a6e; outline-offset: 2px; background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); color:#fff; }
+    .simple-calc-eq:hover { color:#fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.4); }
+    .simple-calc-eq:focus { color:#fff; outline: 2px solid #0c4a6e; outline-offset: 2px; }
     .notes-tool-btn { padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 13px; color: #334155; }
     .notes-tool-btn:hover { background: #e2e8f0; }
     .notes-block-editor:empty::before { content: attr(data-placeholder); color: #94a3b8; }
