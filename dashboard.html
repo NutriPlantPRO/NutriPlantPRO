@@ -259,9 +259,13 @@
   <!-- Panel de chat -->
   <div class="chat-panel" id="chatPanel">
     <div class="chat-header">
-      <div class="chat-title">
-        <div class="ai-icon">IA</div>
-        <span>NutriPlant PRO Assistant</span>
+      <div class="chat-title-block">
+        <div class="chat-title-row">
+          <div class="ai-icon"><img src="assets/N_Hoja_Blanca.png" alt="" class="chat-header-hoja"></div>
+          <span class="chat-title-text">NutriPlant PRO Assistant</span>
+        </div>
+        <p class="chat-header-tip">💡 Guarda los cambios del proyecto para que el asistente tenga la info más reciente.</p>
+        <div class="chat-quota-display" id="chatQuotaDisplay" style="display: none;"></div>
       </div>
       <div class="chat-controls">
         <button class="chat-btn minimize-btn" onclick="minimizeChat()" title="Minimizar">−</button>
@@ -269,10 +273,9 @@
     </div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-area">
-      <textarea class="chat-input" id="chatInput" placeholder="Preguntar a NutriPlant PRO Assistant" rows="1"></textarea>
+      <textarea class="chat-input" id="chatInput" placeholder="Preguntar a NutriPlant PRO" rows="1"></textarea>
       <button class="chat-send" id="chatSendBtn" title="Enviar">➤</button>
     </div>
-    <p class="chat-tip">💡 Guarda los cambios del proyecto para que el asistente tenga siempre la información más reciente.</p>
   </div>
 
   <!-- Supabase (nube) -->
@@ -6832,8 +6835,7 @@ CONTRATO:
               <a href="https://www.paypal.com/myaccount/autopay/" target="_blank" rel="noopener noreferrer" style="
                 display: inline-flex; align-items: center; gap: 8px; background: #003087; color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; cursor: pointer;
               " onmouseover="this.style.background='#001c5b'" onmouseout="this.style.background='#003087'">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.77.77 0 0 1 .76-.657h6.986c2.157 0 3.683.563 4.612 1.688.93 1.125 1.098 2.625.504 4.5-.297.938-.72 1.688-1.266 2.25-.547.563-1.172.938-1.875 1.125l1.078 6.375a.641.641 0 0 1-.633.74H12.22a.641.641 0 0 1-.633-.563l-.656-3.938-.047-.234-.375-2.25-.047-.234a.641.641 0 0 0-.633-.563H8.907a.641.641 0 0 0-.633.563l-.75 4.5a.641.641 0 0 1-.633.74z"/></svg>
-                Abrir PayPal (Pagos automáticos)
+                PayPal — Abrir Pagos automáticos
               </a>
             </div>
           </div>

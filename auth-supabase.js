@@ -93,7 +93,11 @@
           location: profile.location != null ? profile.location : (existing.location || {}),
           crops: Array.isArray(profile.crops) && profile.crops.length ? profile.crops : (existing.crops || []),
           projects: Array.isArray(profile.projects) && profile.projects.length ? profile.projects : (existing.projects || []),
-          created_at: profile.created_at || existing.created_at
+          created_at: profile.created_at || existing.created_at,
+          chat_blocked: profile.chat_blocked === true,
+          chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : (existing.chat_limit_monthly != null ? existing.chat_limit_monthly : -1),
+          chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : (existing.chat_usage_current_month != null ? existing.chat_usage_current_month : 0),
+          chat_usage_month: profile.chat_usage_month || existing.chat_usage_month || null
         };
         // Catálogos desde Supabase (snake_case) → perfil local (camelCase) para que el usuario los vea en otro dispositivo
         if (profile.custom_ferti_materials != null && typeof profile.custom_ferti_materials === 'object') localProfile.customFertiMaterials = profile.custom_ferti_materials;
@@ -160,7 +164,11 @@
           location: profile.location != null ? profile.location : (existing.location || {}),
           crops: Array.isArray(profile.crops) && profile.crops.length ? profile.crops : (existing.crops || []),
           projects: Array.isArray(profile.projects) && profile.projects.length ? profile.projects : (existing.projects || []),
-          created_at: profile.created_at || existing.created_at
+          created_at: profile.created_at || existing.created_at,
+          chat_blocked: profile.chat_blocked === true,
+          chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : (existing.chat_limit_monthly != null ? existing.chat_limit_monthly : -1),
+          chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : (existing.chat_usage_current_month != null ? existing.chat_usage_current_month : 0),
+          chat_usage_month: profile.chat_usage_month || existing.chat_usage_month || null
         };
         if (profile.custom_ferti_materials != null && typeof profile.custom_ferti_materials === 'object') localProfile.customFertiMaterials = profile.custom_ferti_materials;
         if (profile.custom_ferti_crops != null && typeof profile.custom_ferti_crops === 'object') localProfile.customFertiCrops = profile.custom_ferti_crops;
@@ -266,7 +274,11 @@
             profession: profile.profession,
             location: profile.location,
             crops: profile.crops || [],
-            created_at: profile.created_at
+            created_at: profile.created_at,
+            chat_blocked: profile.chat_blocked === true,
+            chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : -1,
+            chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : 0,
+            chat_usage_month: profile.chat_usage_month || null
           }));
 
           return { ok: true, user: { id: user.id, email: user.email, name: profile.name } };

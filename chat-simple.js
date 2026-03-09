@@ -77,6 +77,7 @@ class NutriPlantChat {
     this.loadChatHistory();
     this.bindContextEvents();
     this.refreshContextSnapshot('init');
+    this.updateChatQuotaDisplay();
     // Sin mensaje de bienvenida: el chat permanece en silencio hasta que el usuario escriba (como en Cursor).
   }
 
@@ -93,7 +94,7 @@ class NutriPlantChat {
       return;
     }
     if (this.input) {
-      this.input.placeholder = 'Preguntar a NutriPlant PRO Assistant';
+      this.input.placeholder = 'Preguntar a NutriPlant PRO';
     }
     
     console.log('✅ Elementos del chat encontrados');
@@ -206,6 +207,7 @@ class NutriPlantChat {
     if (this.bubble) {
       this.bubble.classList.remove('minimized');
     }
+    this.updateChatQuotaDisplay();
     if (this.input) {
       this.input.focus();
     }
@@ -447,6 +449,46 @@ class NutriPlantChat {
     }, 500);
   }
 
+  /** Actualiza en el header el texto de cuota: por chats (ej. 491/500) o por USD según el perfil. */
+  updateChatQuotaDisplay() {
+    const el = document.getElementById('chatQuotaDisplay');
+    if (!el) return;
+    try {
+      const userId = localStorage.getItem('nutriplant_user_id');
+      if (!userId) { el.style.display = 'none'; return; }
+      const userKey = `nutriplant_user_${userId}`;
+      const raw = localStorage.getItem(userKey);
+      if (!raw) { el.style.display = 'none'; return; }
+      const user = JSON.parse(raw);
+      const limitRaw = user.chat_limit_monthly;
+      const now = new Date();
+      const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      let used = user.chat_usage_current_month;
+      const usageMonth = user.chat_usage_month || '';
+      if (usageMonth !== currentMonth) used = 0;
+      used = Number(used) || 0;
+      if (limitRaw === -1 || limitRaw == null || limitRaw === '') {
+        el.textContent = 'Chat: Ilimitado';
+        el.style.display = 'block';
+        return;
+      }
+      const limit = Math.max(0, Number(limitRaw));
+      if (limit === 0) { el.style.display = 'none'; return; }
+      if (limit >= 100) {
+        const remaining = Math.max(0, Math.floor(limit - used));
+        el.textContent = `Quedan ${remaining} de ${limit} chats este mes`;
+      } else {
+        const usedFixed = used.toFixed(4);
+        const limitFixed = limit.toFixed(2);
+        const remaining = Math.max(0, limit - used);
+        el.textContent = `${usedFixed} / ${limitFixed} USD este mes (quedan ~${remaining.toFixed(2)} USD)`;
+      }
+      el.style.display = 'block';
+    } catch (e) {
+      el.style.display = 'none';
+    }
+  }
+
   /** Comprueba si el usuario puede usar el chat (no bloqueado, bajo límite mensual). */
   checkUserChatAllowed() {
     try {
@@ -529,6 +571,7 @@ class NutriPlantChat {
       if (indicator) indicator.remove();
       
       this.incrementUserChatUsage();
+      this.updateChatQuotaDisplay();
       this.addMessage(response, 'ai');
     } catch (error) {
       console.error('❌ Error al obtener respuesta de IA:', error);
