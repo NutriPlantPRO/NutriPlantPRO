@@ -8607,15 +8607,26 @@
                     });
                     hydroTotalsPpm = computed;
                 }
-                if (hydroTotalsPpm) {
+                const hydroWaterPpm = (hasHidroponiaData && hidroponia.water && typeof hidroponia.water === 'object') ? hidroponia.water : {};
+                const hydroTotalsWithWater = {};
+                let hasHydroTotalsWithWater = false;
+                HYDRO_PPM_NUTRIENTS.forEach(n => {
+                    const base = hydroTotalsPpm ? (parseFloat(hydroTotalsPpm[n]) || 0) : 0;
+                    const water = parseFloat(hydroWaterPpm[n]) || 0;
+                    const total = base + water;
+                    hydroTotalsWithWater[n] = total;
+                    if (total > 0) hasHydroTotalsWithWater = true;
+                });
+                if (hydroTotalsPpm || hasHydroTotalsWithWater) {
                     const totalCells = HYDRO_PPM_NUTRIENTS.map(n => {
-                        const v = parseFloat(hydroTotalsPpm[n]) || 0;
+                        const v = parseFloat(hydroTotalsWithWater[n]) || 0;
                         return `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;background:#f0f9ff;"><span style="color:#0369a1;font-weight:600;">${adminHydroLabel(n)}</span><br><span style="font-weight:600;">${v.toFixed(2)}</span> ppm</td>`;
                     }).join('');
                     const totalHeaderCells = HYDRO_PPM_NUTRIENTS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;text-align:center;">${adminHydroLabel(n)} ppm</th>`).join('');
                     html += `
                         <div style="margin-bottom: 0;">
-                            <strong style="color: #1e293b; font-size: 14px;">📊 PPM aportadas totales</strong>
+                            <strong style="color: #1e293b; font-size: 14px;">📊 PPM aportadas totales (solución nutritiva + agua)</strong>
+                            <p style="margin:6px 0 8px 0;color:#64748b;font-size:12px;">Total por nutriente = aporte de fertilizantes en solución nutritiva + aporte del agua de riego.</p>
                             <div style="overflow-x: auto; margin-top: 8px;">
                                 <table style="width:100%; border-collapse: collapse; font-size: 13px;">
                                     <thead><tr style="background:#e0f2fe;">${totalHeaderCells}</tr></thead>

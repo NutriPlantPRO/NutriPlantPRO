@@ -13092,6 +13092,11 @@ function createHidroponiaSectionHTML() {
     </tr>`;
   }).join('');
   const ppmTotals = hydroNutrients.some(n => toNum(reportPpmTotals[n]) > 0) ? reportPpmTotals : persistedPpmTotals;
+  const waterPpm = (h && h.water && typeof h.water === 'object') ? h.water : {};
+  const ppmTotalsWithWater = {};
+  hydroNutrients.forEach(n => {
+    ppmTotalsWithWater[n] = toNum(ppmTotals[n]) + toNum(waterPpm[n]);
+  });
   const hydroTankOrder = ['A', 'B', 'C', 'D', 'E'];
   const byTank = {};
   hydroTankOrder.forEach(tq => { byTank[tq] = { totalKg: 0, totalL: 0, items: [] }; });
@@ -13224,9 +13229,10 @@ function createHidroponiaSectionHTML() {
         </div>
       </div>` : ''}
       <div class="report-block">
-        <div class="report-block-title">📊 PPM aportadas totales</div>
+        <div class="report-block-title">📊 PPM aportadas totales (solución nutritiva + agua)</div>
+        <div class="report-note" style="margin-bottom:8px;">Total por nutriente = aporte de fertilizantes en solución nutritiva + aporte del agua de riego.</div>
         <div class="report-nutrient-wrap">
-          ${[...meqNutrients, ...microNutrients].map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(ppmTotals[n]).toFixed(2)} ppm</span>`).join('')}
+          ${[...meqNutrients, ...microNutrients].map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(ppmTotalsWithWater[n]).toFixed(2)} ppm</span>`).join('')}
         </div>
       </div>
     </div>
