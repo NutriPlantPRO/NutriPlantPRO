@@ -569,6 +569,13 @@
                 <button class="btn-admin secondary" onclick="logout()">Cerrar Sesión</button>
             </div>
 
+            <style>
+            .admin-chat-typing-indicator { padding: 12px 20px; display: flex; gap: 6px; align-items: center; margin-bottom: 10px; margin-left: 8px; max-width: 80%; }
+            .admin-chat-typing-indicator span { width: 8px; height: 8px; background: #059669; border-radius: 50%; animation: admin-typing-bounce 1.4s infinite; opacity: 0.6; }
+            .admin-chat-typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+            .admin-chat-typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+            @keyframes admin-typing-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.6; } 30% { transform: translateY(-10px); opacity: 1; } }
+            </style>
             <!-- Chat Admin Assistant: mismo tamaño que dashboard (350x550), colores NutriPlant azul marino + verde. -->
             <div id="adminChatWrap" style="position: fixed; bottom: 0; right: 0; width: 0; height: 0; z-index: 9999; pointer-events: none;">
                 <div id="adminChatPanel" style="pointer-events: auto; display: none; position: fixed; right: 20px; bottom: 90px; width: 350px; flex-direction: column; max-width: calc(100vw - 40px); height: 550px; background: #fff; border-radius: 16px; box-shadow: 0 12px 32px rgba(12,74,110,0.2), 0 4px 12px rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.35); overflow: hidden;">
@@ -1610,6 +1617,12 @@
                 saveAdminChatHistory();
                 renderAdminChat();
                 sendBtn.disabled = true;
+                var typingEl = document.createElement('div');
+                typingEl.className = 'admin-chat-typing-indicator';
+                typingEl.id = 'adminChatTypingIndicator';
+                typingEl.innerHTML = '<span></span><span></span><span></span>';
+                messagesEl.appendChild(typingEl);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
                 var imageToSend = adminPendingImage;
                 clearAdminPendingImage();
                 var systemContent = getAdminPanelSystemPrompt();
@@ -1634,12 +1647,16 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 }).then(function(r) { return r.json(); }).then(function(data) {
+                    var ind = document.getElementById('adminChatTypingIndicator');
+                    if (ind) ind.remove();
                     sendBtn.disabled = false;
                     var reply = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) ? data.choices[0].message.content : (data.error || 'Error al obtener respuesta.');
                     adminChatHistory.push({ role: 'assistant', content: reply });
                     saveAdminChatHistory();
                     renderAdminChat();
                 }).catch(function(err) {
+                    var ind = document.getElementById('adminChatTypingIndicator');
+                    if (ind) ind.remove();
                     sendBtn.disabled = false;
                     adminChatHistory.push({ role: 'assistant', content: 'Error de conexión. Comprueba que el servidor esté disponible (python server.py) o que la API esté configurada.' });
                     saveAdminChatHistory();
