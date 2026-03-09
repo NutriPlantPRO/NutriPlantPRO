@@ -28,7 +28,21 @@ function tokenCostUsd(model, promptTokens, completionTokens) {
   return inCost + outCost;
 }
 
-function roughInputTokens(messages, hasImage = false) {
+function countInlineImages(messages) {
+  if (!Array.isArray(messages)) return 0;
+  let count = 0;
+  for (const m of messages) {
+    if (!m || typeof m !== 'object' || !Array.isArray(m.content)) continue;
+    for (const part of m.content) {
+      if (part && typeof part === 'object' && part.type === 'image_url' && part.image_url && part.image_url.url) {
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
+function roughInputTokens(messages, imageCount = 0) {
   if (!Array.isArray(messages)) return 0;
   let total = 0;
   for (const m of messages) {
@@ -43,7 +57,7 @@ function roughInputTokens(messages, hasImage = false) {
     }
   }
   let tokens = total > 0 ? Math.max(Math.floor(total / 4), 1) : 0;
-  if (hasImage) tokens += 1200; // estimado tokens por imagen para cuota preventiva
+  if (imageCount > 0) tokens += (1200 * imageCount); // estimado tokens por imagen para cuota preventiva
   return tokens;
 }
 
@@ -144,7 +158,7 @@ exports.handler = async (event, context) => {
     return jsonResponse(400, { error: 'messages es obligatorio y debe ser un array' });
   }
 
-  // Si hay imagen, convertir el último mensaje de usuario en multimodal (vision)
+  // Si hay imagen explícita en body, convertir el último mensaje user en multimodal (vision)
   if (imageBase64 && messages.length > 0) {
     let lastIdx = -1;
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -166,6 +180,8 @@ exports.handler = async (event, context) => {
       };
     }
   }
+  const inlineImageCount = countInlineImages(messages);
+  const totalImageCount = Math.max(inlineImageCount, imageBase64 ? 1 : 0);
 
   let supabase = null;
   const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
@@ -210,7 +226,7 @@ exports.handler = async (event, context) => {
           });
         }
 
-        const roughPrompt = roughInputTokens(messages, !!imageBase64);
+        const roughPrompt = roughInputTokens(messages, totalImageCount);
         const projectedCost = tokenCostUsd(model, roughPrompt, max_tokens);
         if (usedUsd + projectedCost > limitUsd) {
           return jsonResponse(429, {
@@ -257,6 +273,9 @@ exports.handler = async (event, context) => {
       data._nutriplant.estimated_cost_usd = Math.round(costUsd * 1e8) / 1e8;
       data._nutriplant.month = currentMonth;
     }
+    if (!data._nutriplant) data._nutriplant = {};
+    data._nutriplant.image_received = totalImageCount > 0;
+    data._nutriplant.image_count = totalImageCount;
 
     return {
       statusCode: res.ok ? 200 : res.status,

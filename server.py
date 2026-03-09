@@ -428,7 +428,24 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         out_cost = (max(completion_tokens, 0) / 1_000_000.0) * pricing['output']
         return in_cost + out_cost
 
-    def _rough_input_tokens(self, messages, has_image=False):
+    def _count_inline_images(self, messages):
+        if not isinstance(messages, list):
+            return 0
+        count = 0
+        for m in messages:
+            if not isinstance(m, dict):
+                continue
+            content = m.get('content')
+            if not isinstance(content, list):
+                continue
+            for part in content:
+                if isinstance(part, dict) and part.get('type') == 'image_url':
+                    image_url = part.get('image_url', {})
+                    if isinstance(image_url, dict) and image_url.get('url'):
+                        count += 1
+        return count
+
+    def _rough_input_tokens(self, messages, image_count=0):
         # Aproximación simple para control preventivo de cuota.
         if not isinstance(messages, list):
             return 0
@@ -443,8 +460,8 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 else:
                     total_chars += len(str(content))
         tokens = max(int(total_chars / 4), 1) if total_chars > 0 else 0
-        if has_image:
-            tokens += 1200
+        if image_count > 0:
+            tokens += (1200 * image_count)
         return tokens
 
     def _openai_api_key(self):
@@ -498,6 +515,8 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                             {'type': 'image_url', 'image_url': {'url': url}}
                         ]
                     }
+            inline_image_count = self._count_inline_images(messages)
+            total_image_count = max(inline_image_count, 1 if image_base64 else 0)
 
             month_key = self._month_key()
             monthly_limit_usd = float(os.environ.get('NUTRIPLANT_CHAT_MONTHLY_LIMIT_USD', '1.0'))
@@ -559,13 +578,15 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                         'cached': True,
                         'month': month_key,
                         'used_usd': round(month_bucket['cost_usd'], 6),
-                        'limit_usd': monthly_limit_usd
+                        'limit_usd': monthly_limit_usd,
+                        'image_received': total_image_count > 0,
+                        'image_count': total_image_count
                     }
                     self._send_json_response(response_payload, 200)
                     return
 
             # Control preventivo: evita gastar si el peor caso ya excede el tope mensual.
-            rough_prompt_tokens = self._rough_input_tokens(messages, bool(image_base64))
+            rough_prompt_tokens = self._rough_input_tokens(messages, total_image_count)
             projected_cost = self._token_cost_usd(model, rough_prompt_tokens, max_tokens)
             if (month_bucket['cost_usd'] + projected_cost) > monthly_limit_usd:
                 self._send_json_response({
@@ -627,6 +648,8 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 'month': month_key,
                 'used_usd': round(month_bucket['cost_usd'], 6),
                 'limit_usd': monthly_limit_usd,
+                'image_received': total_image_count > 0,
+                'image_count': total_image_count,
                 'request_tokens': {
                     'prompt_tokens': prompt_tokens,
                     'completion_tokens': completion_tokens,

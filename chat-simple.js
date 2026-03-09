@@ -779,6 +779,7 @@ INSTRUCCIONES:
 - Para nutrición vegetal: da recomendaciones técnicas, basadas en ciencia y en el manual; usa términos agronómicos correctos y nivel experto (relaciones, antagonismos, momentos de aplicación, diagnóstico integrado).
 - Sé conciso pero completo; usa formato markdown para mejor legibilidad.
 - Si el usuario adjunta una imagen, interpreta su contenido (análisis, gráfica, planta, suelo, resultado de laboratorio, etc.) en contexto agronómico y responde en consecuencia usando también los datos del proyecto cuando aplique.
+- IMPORTANTE: cuando venga una imagen adjunta en el mensaje del usuario, asume que SÍ tienes visión habilitada y NUNCA respondas que "no puedes ver imágenes" o "no puedes interpretar adjuntos". En su lugar, describe lo que observas y pide zoom o re-subida solo si la imagen viene borrosa o incompleta.
 - FÓRMULAS Y CÁLCULOS: No uses nunca LaTeX ni código (evita \\frac, \\times, \\text, \\[, \\]). Escribe las fórmulas en texto legible para que el usuario las entienda en el chat: usa el símbolo × para multiplicar, / para dividir, = para igual, y saltos de línea. Ejemplo: "Peso del suelo = 3.000 m³ × 1.100 kg/m³ = 3.300.000 kg". Así se lee directo sin confusión.
 
 MODO DE INTERACCIÓN ACTIVO:
@@ -794,7 +795,19 @@ ESTILO DE RESPUESTA:
     ];
     
     const historyLimit = isCalculationQuestion ? 6 : 12;
-    const recentMessages = this.messages.slice(-historyLimit);
+    let recentMessages = this.messages.slice(-historyLimit);
+    if (imageData && imageData.base64) {
+      // Evita arrastrar respuestas antiguas que digan "no puedo ver imágenes",
+      // porque contaminan el contexto cuando sí se adjunta una imagen.
+      recentMessages = recentMessages.filter((msg) => {
+        if (!msg || msg.sender !== 'ai') return true;
+        const text = String(msg.content || '').toLowerCase();
+        const deniesVision =
+          (text.includes('no puedo ver') || text.includes('no tengo la capacidad de ver')) &&
+          (text.includes('imagen') || text.includes('imágenes') || text.includes('adjunto'));
+        return !deniesVision;
+      });
+    }
     recentMessages.forEach(msg => {
       messages.push({
         role: msg.sender === 'user' ? 'user' : 'assistant',
@@ -802,10 +815,19 @@ ESTILO DE RESPUESTA:
       });
     });
     
-    // Agregar el mensaje actual del usuario (texto; si hay imagen, el backend lo convierte a multimodal)
+    // Agregar mensaje actual; si hay imagen, enviarlo ya en formato multimodal
+    // (más robusto en producción, incluso si un proxy omite campos extra del body).
+    let currentUserContent = userMessage || '(interpreta la imagen en contexto agronómico)';
+    if (imageData && imageData.base64) {
+      const imageUrl = 'data:' + (imageData.contentType || 'image/jpeg') + ';base64,' + imageData.base64;
+      currentUserContent = [
+        { type: 'text', text: userMessage || '¿Qué puedes ver en esta imagen en contexto de mi proyecto?' },
+        { type: 'image_url', image_url: { url: imageUrl } }
+      ];
+    }
     messages.push({
       role: 'user',
-      content: userMessage || '(interpreta la imagen en contexto agronómico)'
+      content: currentUserContent
     });
     
     const maxTokens = this.responseStyle === 'detallada'
