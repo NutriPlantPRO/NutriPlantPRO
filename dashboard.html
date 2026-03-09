@@ -6193,17 +6193,17 @@ CONTRATO:
     </div>
   </div>
 
-  <!-- Modal Calculadora simple (paleta NutriPlant: azul marino + azul claro) -->
+  <!-- Modal Calculadora simple (paleta NutriPlant: blanco + azul + verde) -->
   <div id="simpleCalculatorModal" class="modal-overlay">
-    <div class="modal" style="max-width: 320px; background: #0c4a6e; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(12,74,110,0.5);">
-      <div class="modal-header" style="background: #0c4a6e; border-bottom: 1px solid #1e3a5f;">
-        <h2 class="modal-title" style="color: #fff; font-size: 16px;">🧮 Calculadora</h2>
-        <button class="modal-close" onclick="closeSimpleCalculator()" style="color: #fff;">×</button>
+    <div class="modal" style="max-width: 320px; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(12,74,110,0.22); border: 1px solid rgba(12,74,110,0.18);">
+      <div class="modal-header" style="background: #f8fbff; border-bottom: 1px solid rgba(12,74,110,0.15);">
+        <h2 class="modal-title" style="color: #0c4a6e; font-size: 16px;">🧮 Calculadora</h2>
+        <button class="modal-close" onclick="closeSimpleCalculator()" style="color: #0c4a6e;">×</button>
       </div>
-      <div class="modal-body" style="padding: 16px; background: #0c4a6e;">
-        <div id="simpleCalcScreen" style="background:#0a3d5c; border-radius:10px; margin-bottom:12px; padding:12px 14px; min-height:72px; display:flex; flex-direction:column; justify-content:flex-end;">
-          <div id="simpleCalcEquation" style="text-align:right; color:rgba(255,255,255,0.7); font-size:16px; min-height:22px; margin-bottom:4px; font-family:system-ui,sans-serif;">&nbsp;</div>
-          <input type="text" id="simpleCalcDisplay" readonly value="0" style="width:100%; padding:0; font-size:28px; text-align:right; border:none; background:transparent; color:#fff; font-family:system-ui,sans-serif; box-sizing:border-box;">
+      <div class="modal-body" style="padding: 16px; background: #ffffff;">
+        <div id="simpleCalcScreen" style="background:#eef6ff; border:1px solid rgba(12,74,110,0.18); border-radius:10px; margin-bottom:12px; padding:12px 14px; min-height:72px; display:flex; flex-direction:column; justify-content:flex-end;">
+          <div id="simpleCalcEquation" style="text-align:right; color:#2563ab; font-size:16px; min-height:22px; margin-bottom:4px; font-family:system-ui,sans-serif;">&nbsp;</div>
+          <input type="text" id="simpleCalcDisplay" readonly value="0" style="width:100%; padding:0; font-size:28px; text-align:right; border:none; background:transparent; color:#0c4a6e; font-family:system-ui,sans-serif; box-sizing:border-box;">
         </div>
         <div id="simpleCalcKeys" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px;">
           <!-- ⌫ borrar uno | C limpiar todo | ± % -->
@@ -6270,12 +6270,12 @@ CONTRATO:
     </div>
   </div>
   <style>
-    .simple-calc-btn { width:100%; padding:16px; font-size:20px; font-weight:600; border:none; border-radius:12px; cursor:pointer; background:#1e4976; color:#fff; transition:background .15s; }
-    .simple-calc-btn:hover { background:#2563ab; }
-    .simple-calc-op { background:#1e3a5f; color:#fff; }
-    .simple-calc-op:hover { background:#2563ab; }
-    .simple-calc-eq { background:#0ea5e9; color:#fff; }
-    .simple-calc-eq:hover { background:#38bdf8; }
+    .simple-calc-btn { width:100%; padding:16px; font-size:20px; font-weight:600; border:1px solid rgba(12,74,110,0.15); border-radius:12px; cursor:pointer; background:#ffffff; color:#0c4a6e; transition:all .15s ease; }
+    .simple-calc-btn:hover { background:#eaf4ff; border-color:#93c5fd; }
+    .simple-calc-op { background:#e6f2ff; color:#0c4a6e; }
+    .simple-calc-op:hover { background:#d7ecff; }
+    .simple-calc-eq { background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); color:#fff; border:none; }
+    .simple-calc-eq:hover { filter: brightness(1.06); }
     .notes-tool-btn { padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 13px; color: #334155; }
     .notes-tool-btn:hover { background: #e2e8f0; }
     .notes-block-editor:empty::before { content: attr(data-placeholder); color: #94a3b8; }
