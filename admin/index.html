@@ -2268,98 +2268,96 @@
             });
         }
 
-        /** Consumo real de Chat IA desde el backend (USD y tokens por usuario, mes actual). Si el API no devuelve datos, se muestra fallback desde usuarios (Supabase/local). */
-        function showChatUsageByUser() {
-            var base = (window.NUTRIPLANT_CHAT_USAGE_API_BASE != null) ? window.NUTRIPLANT_CHAT_USAGE_API_BASE : (window.location && window.location.origin ? window.location.origin : '');
-            var isLocal = (base && (base.indexOf('localhost') !== -1 || base.indexOf('127.0.0.1') !== -1));
-            function showFallbackFromUsers() {
-                var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+        /** Consumo mensual de Chat IA por usuario (créditos) tomando profiles en Supabase. */
+        async function showChatUsageByUser() {
+            var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+            var USD_PER_CREDIT_EST = 1 / 500; // referencia operativa: 500 créditos ~ 1 USD
+            function fmtUsdEst(creditsValue) {
+                if (creditsValue == null || creditsValue === 'Ilimitado' || isNaN(Number(creditsValue))) return 'Ilimitado';
+                return (Number(creditsValue) * USD_PER_CREDIT_EST).toFixed(4);
+            }
+            var rows = [];
+            try {
+                const client = (typeof window.getSupabaseClient === 'function') ? window.getSupabaseClient() : null;
+                if (client) {
+                    const { data: profiles, error } = await client
+                        .from('profiles')
+                        .select('id, email, name, subscription_status, chat_limit_monthly, chat_usage_current_month, chat_usage_month');
+                    if (!error && Array.isArray(profiles)) {
+                        rows = profiles.map(function(p) {
+                            var limitRaw = p.chat_limit_monthly;
+                            var isActive = (p.subscription_status === 'active');
+                            var limitCredits = (limitRaw == null || limitRaw === '' || limitRaw === -1)
+                                ? (isActive ? 500 : -1)
+                                : Math.max(0, Number(limitRaw) || 0);
+                            var used = (p.chat_usage_month === monthKey && p.chat_usage_current_month != null && p.chat_usage_current_month !== '')
+                                ? Number(p.chat_usage_current_month) : 0;
+                            used = isNaN(used) ? 0 : used;
+                            var remaining = (limitCredits >= 0) ? Math.max(0, Math.floor(limitCredits - used)) : null;
+                            return {
+                                user_id: p.id || '—',
+                                email: p.email || '—',
+                                name: p.name || '—',
+                                subscription: p.subscription_status || '—',
+                                limit_credits: limitCredits >= 0 ? Math.floor(limitCredits) : 'Ilimitado',
+                                used_credits: Math.floor(used),
+                                remaining_credits: remaining != null ? remaining : 'Ilimitado',
+                                limit_usd_est: limitCredits >= 0 ? fmtUsdEst(limitCredits) : 'Ilimitado',
+                                used_usd_est: fmtUsdEst(used),
+                                remaining_usd_est: remaining != null ? fmtUsdEst(remaining) : 'Ilimitado',
+                                usage_month: p.chat_usage_month || '—'
+                            };
+                        }).filter(function(r) { return r.email !== '—' || r.name !== '—'; });
+                    }
+                }
+            } catch (e) {
+                console.warn('showChatUsageByUser (profiles):', e);
+            }
+            if (rows.length === 0) {
                 var users = getAllUsers();
-                var rows = users.map(function(u) {
+                rows = users.map(function(u) {
                     var uid = u.id || u.userId;
-                    var costUsd = (u.chat_usage_month === monthKey && u.chat_usage_current_month != null && u.chat_usage_current_month !== '') ? Number(u.chat_usage_current_month) : 0;
+                    var isActive = u.subscription_status === 'active';
+                    var limitRaw = u.chat_limit_monthly;
+                    var limitCredits = (limitRaw == null || limitRaw === '' || limitRaw === -1)
+                        ? (isActive ? 500 : -1)
+                        : Math.max(0, Number(limitRaw) || 0);
+                    var used = (u.chat_usage_month === monthKey && u.chat_usage_current_month != null && u.chat_usage_current_month !== '')
+                        ? Number(u.chat_usage_current_month) : 0;
+                    used = isNaN(used) ? 0 : used;
                     return {
                         user_id: uid || '—',
                         email: u.email || '—',
                         name: u.name || '—',
-                        requests: costUsd > 0 ? '—' : '0',
-                        cached_hits: '—',
-                        prompt_tokens: '—',
-                        completion_tokens: '—',
-                        total_tokens: '—',
-                        cost_usd: costUsd > 0 ? costUsd.toFixed(4) : '0.0000'
+                        subscription: u.subscription_status || '—',
+                        limit_credits: limitCredits >= 0 ? Math.floor(limitCredits) : 'Ilimitado',
+                        used_credits: Math.floor(used),
+                        remaining_credits: limitCredits >= 0 ? Math.max(0, Math.floor(limitCredits - used)) : 'Ilimitado',
+                        limit_usd_est: limitCredits >= 0 ? fmtUsdEst(limitCredits) : 'Ilimitado',
+                        used_usd_est: fmtUsdEst(used),
+                        remaining_usd_est: limitCredits >= 0 ? fmtUsdEst(Math.max(0, Math.floor(limitCredits - used))) : 'Ilimitado',
+                        usage_month: u.chat_usage_month || '—'
                     };
                 }).filter(function(r) { return r.email !== '—' || r.name !== '—' || r.user_id !== '—'; });
-                if (rows.length === 0) {
-                    rows = [{ user_id: '—', email: '—', name: 'Sin datos de uso este mes', requests: '—', cached_hits: '—', prompt_tokens: '—', completion_tokens: '—', total_tokens: '—', cost_usd: '0.0000' }];
-                }
-                var title = '💰 Consumo Chat IA (este mes) — ' + monthKey + (rows.length ? ' (desde perfiles Supabase)' : ' (sin datos de uso este mes)');
-                // Desde perfiles solo tenemos costo (USD); no guardamos solicitudes ni caché en Supabase, así que solo mostramos las columnas que sí tenemos
-                showDataViewerWithFilters({
-                    title: title,
-                    data: rows.length ? rows : [{ user_id: '—', email: '—', name: 'Sin datos de uso este mes', cost_usd: '0.0000' }],
-                    columns: [
-                        { key: 'email', label: 'Email', format: 'text', filterable: true },
-                        { key: 'name', label: 'Nombre', format: 'text', filterable: true },
-                        { key: 'user_id', label: 'ID usuario', format: 'text', filterable: true },
-                        { key: 'cost_usd', label: 'Costo (USD)', format: 'text', filterable: false }
-                    ],
-                    actions: { edit: false, delete: false }
-                });
             }
-            if (!base || typeof fetch !== 'function') {
-                showFallbackFromUsers();
-                return;
-            }
-            fetch(base + '/api/chat-usage').then(function(r) { return r.ok ? r.json() : null; }).then(function(data) {
-                if (!data || !data.users) {
-                    showFallbackFromUsers();
-                    return;
-                }
-                var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
-                var users = getAllUsers();
-                var byId = {};
-                users.forEach(function(u) { byId[u.id || u.userId] = u; });
-                var rows = [];
-                Object.keys(data.users).forEach(function(uid) {
-                    var u = data.users[uid];
-                    if (!u || !u.months || !u.months[monthKey]) return;
-                    var bucket = u.months[monthKey];
-                    var profile = byId[uid];
-                    rows.push({
-                        user_id: uid,
-                        email: profile ? (profile.email || '—') : '—',
-                        name: profile ? (profile.name || '—') : '—',
-                        requests: bucket.requests || 0,
-                        cached_hits: bucket.cached_hits || 0,
-                        prompt_tokens: bucket.prompt_tokens || 0,
-                        completion_tokens: bucket.completion_tokens || 0,
-                        total_tokens: bucket.total_tokens || 0,
-                        cost_usd: (bucket.cost_usd != null ? bucket.cost_usd : 0).toFixed(4)
-                    });
-                });
-                rows.sort(function(a, b) { return parseFloat(b.cost_usd) - parseFloat(a.cost_usd); });
-                if (rows.length === 0) {
-                    showFallbackFromUsers();
-                    return;
-                }
-                var title = '💰 Consumo Chat IA por usuario — ' + monthKey + ' (' + rows.length + ' usuarios)';
-                showDataViewerWithFilters({
-                    title: title,
-                    data: rows,
-                    columns: [
-                        { key: 'email', label: 'Email', format: 'text', filterable: true },
-                        { key: 'name', label: 'Nombre', format: 'text', filterable: true },
-                        { key: 'user_id', label: 'ID usuario', format: 'text', filterable: true },
-                        { key: 'requests', label: 'Solicitudes', format: 'text', filterable: false },
-                        { key: 'cached_hits', label: 'Desde caché', format: 'text', filterable: false },
-                        { key: 'total_tokens', label: 'Tokens', format: 'text', filterable: false },
-                        { key: 'cost_usd', label: 'Costo (USD)', format: 'text', filterable: false }
-                    ],
-                    actions: { edit: false, delete: false }
-                });
-            }).catch(function() {
-                showFallbackFromUsers();
+            rows.sort(function(a, b) { return Number(b.used_credits || 0) - Number(a.used_credits || 0); });
+            showDataViewerWithFilters({
+                title: '💳 Consumo Chat IA (créditos + USD est.) — ' + monthKey + ' (desde perfiles Supabase)',
+                data: rows.length ? rows : [{ email: '—', name: 'Sin datos de uso este mes', user_id: '—', subscription: '—', limit_credits: '—', used_credits: 0, remaining_credits: '—', limit_usd_est: '—', used_usd_est: '0.0000', remaining_usd_est: '—', usage_month: '—' }],
+                columns: [
+                    { key: 'email', label: 'Email', format: 'text', filterable: true },
+                    { key: 'name', label: 'Nombre', format: 'text', filterable: true },
+                    { key: 'user_id', label: 'ID usuario', format: 'text', filterable: true },
+                    { key: 'subscription', label: 'Suscripción', format: 'text', filterable: true },
+                    { key: 'limit_credits', label: 'Límite', format: 'text', filterable: false },
+                    { key: 'used_credits', label: 'Usados (mes)', format: 'text', filterable: false },
+                    { key: 'remaining_credits', label: 'Restantes', format: 'text', filterable: false },
+                    { key: 'limit_usd_est', label: 'Límite USD est.', format: 'text', filterable: false },
+                    { key: 'used_usd_est', label: 'Usado USD est.', format: 'text', filterable: false },
+                    { key: 'remaining_usd_est', label: 'Restante USD est.', format: 'text', filterable: false },
+                    { key: 'usage_month', label: 'Mes uso', format: 'text', filterable: false }
+                ],
+                actions: { edit: false, delete: false }
             });
         }
         window.showChatUsageByUser = showChatUsageByUser;
