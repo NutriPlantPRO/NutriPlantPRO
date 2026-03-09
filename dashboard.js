@@ -6807,6 +6807,13 @@ async function initializeDashboard() {
     window._np_cloud_projects_cache_loaded = false;
     window._np_cloud_projects_cache_error = null;
     await np_loadProjectsFromCloud();
+    // En otro dispositivo la sesión a veces no está lista al primer intento: reintentar una vez si la lista vino vacía
+    var list = np_loadProjects();
+    if (list.length === 0 && userId) {
+      await new Promise(function(r) { setTimeout(r, 800); });
+      await np_loadProjectsFromCloud();
+      if (typeof np_renderProjects === 'function') np_renderProjects();
+    }
   }
   
   // 🔒 VALIDAR Y LIMPIAR PROYECTOS DEL USUARIO ACTUAL
