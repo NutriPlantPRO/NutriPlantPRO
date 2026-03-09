@@ -4977,8 +4977,17 @@ CONTRATO:
             try {
               var s = exprBefore.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
               s = s.replace(/(\d|\))\s*(\()/g, '$1*$2').replace(/(\))\s*(\d)/g, '$1*$2');
-              if (/^[\d\s+\-*/().]+$/.test(s)) expr = String(Function('"use strict"; return (' + s + ')')());
-              else expr = exprBefore;
+              if (/^[\d\s+\-*/().]+$/.test(s)) {
+                var raw = Function('"use strict"; return (' + s + ')')();
+                var num = Number(raw);
+                if (typeof num === 'number' && isFinite(num)) {
+                  var fixed = num.toFixed(4);
+                  var trimmed = fixed.replace(/\.?0+$/, '');
+                  expr = trimmed.length > 14 ? num.toExponential(4) : trimmed;
+                } else {
+                  expr = String(raw);
+                }
+              } else expr = exprBefore;
             } catch (err) { expr = '0'; }
             keys.dataset.afterEq = '1';
             if (equationEl) equationEl.textContent = exprBefore;

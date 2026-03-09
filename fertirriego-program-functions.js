@@ -1494,9 +1494,9 @@ function initFertirriegoProgramUI() {
   window.loadFertirriegoProgram = loadFertirriegoProgram;
   window.renderFertiWeeks = renderFertiWeeks;
   window.flushFertiProgramIfDirty = flushFertiProgramIfDirty;
-  // Cargar primero materiales personalizados y LUEGO el programa, para que las columnas encuentren el fertilizante agregado
-  var loadPromise = loadFertiCustomMaterials();
-  function afterMaterialsLoaded() {
+  // Cargar primero desde localStorage (sin esperar nube) para que el aporte del programa aparezca al instante
+  function paintProgramNow() {
+    doLoadFertiCustomMaterials();
     renderFertiCustomMaterialsList();
     loadFertirriegoProgram();
     initFertiWaterInputs();
@@ -1505,23 +1505,21 @@ function initFertirriegoProgramUI() {
     window.addEventListener('beforeunload', function() { try { if (fertiProgDirty) saveFertirriegoProgram(); } catch {} });
     setFertiNutrientView(fertiNutrientView);
     try {
-      requestAnimationFrame(function() {
-        if (!fertiWeeks || fertiWeeks.length === 0) addFertiWeek(); else renderFertiWeeks();
-        updateFertiSummary();
-      });
-      setTimeout(function() {
-        var container = document.getElementById('fertiWeeksContainer');
-        if (container && !container.querySelector('table')) {
-          if (!fertiWeeks || fertiWeeks.length === 0) addFertiWeek(); else renderFertiWeeks();
-          updateFertiSummary();
-        }
-      }, 400);
+      if (!fertiWeeks || fertiWeeks.length === 0) addFertiWeek(); else renderFertiWeeks();
+      updateFertiSummary();
     } catch (e) {}
   }
+  paintProgramNow();
+  // Traer materiales desde la nube en segundo plano; al terminar refrescar por si hay nuevos
+  var loadPromise = ensureFertiCustomMaterialsLoadedFromCloud();
   if (loadPromise && typeof loadPromise.then === 'function') {
-    loadPromise.then(afterMaterialsLoaded).catch(function() { afterMaterialsLoaded(); });
-  } else {
-    afterMaterialsLoaded();
+    loadPromise.then(function() {
+      doLoadFertiCustomMaterials();
+      renderFertiCustomMaterialsList();
+      loadFertirriegoProgram();
+      if (!fertiWeeks || fertiWeeks.length === 0) addFertiWeek(); else renderFertiWeeks();
+      updateFertiSummary();
+    }).catch(function() {});
   }
 }
 

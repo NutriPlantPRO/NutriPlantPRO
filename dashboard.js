@@ -1590,6 +1590,26 @@ function selectSection(name, el) {
     }
   }
 
+  // 🚀 Sincronizar currentProject con caché ANTES de renderizar (VPD, Hidroponía, etc. ven datos actualizados al instante)
+  if (window.projectStorage && currentProject.id) {
+    const cachedData = window.projectStorage.getCurrentProjectFromMemory();
+    if (cachedData) {
+      if (cachedData.location) currentProject.location = cachedData.location;
+      if (cachedData.soilAnalysis) currentProject.soilAnalysis = cachedData.soilAnalysis;
+      if (cachedData.amendments) currentProject.amendments = cachedData.amendments;
+      if (cachedData.fertirriego) currentProject.fertirriego = cachedData.fertirriego;
+      if (cachedData.granular) currentProject.granular = cachedData.granular;
+      if (cachedData.hidroponia !== undefined) currentProject.hidroponia = cachedData.hidroponia;
+      if (cachedData.vpdAnalysis !== undefined) currentProject.vpdAnalysis = cachedData.vpdAnalysis;
+      if (cachedData.soilAnalyses !== undefined) currentProject.soilAnalyses = Array.isArray(cachedData.soilAnalyses) ? cachedData.soilAnalyses : [];
+      if (cachedData.solucionNutritivaAnalyses !== undefined) currentProject.solucionNutritivaAnalyses = Array.isArray(cachedData.solucionNutritivaAnalyses) ? cachedData.solucionNutritivaAnalyses : [];
+      if (cachedData.extractoPastaAnalyses !== undefined) currentProject.extractoPastaAnalyses = Array.isArray(cachedData.extractoPastaAnalyses) ? cachedData.extractoPastaAnalyses : [];
+      if (cachedData.aguaAnalyses !== undefined) currentProject.aguaAnalyses = Array.isArray(cachedData.aguaAnalyses) ? cachedData.aguaAnalyses : [];
+      if (cachedData.foliarAnalyses !== undefined) currentProject.foliarAnalyses = Array.isArray(cachedData.foliarAnalyses) ? cachedData.foliarAnalyses : [];
+      if (cachedData.frutaAnalyses !== undefined) currentProject.frutaAnalyses = Array.isArray(cachedData.frutaAnalyses) ? cachedData.frutaAnalyses : [];
+    }
+  }
+
   if (menu) {
     menu.querySelectorAll("a").forEach(a => a.classList.remove("active"));
     if (el) el.classList.add("active");
@@ -1663,13 +1683,15 @@ function selectSection(name, el) {
   if (name === "Análisis: Suelo") {
     if (content && sectionScrollPositions['Análisis: Suelo']) content.classList.add('restoring-scroll');
     if (reusedCachedDom) {
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Suelo', 3, 80); }, 40);
+      requestAnimationFrame(() => {
+        restoreScrollForKeyStabilized('Análisis: Suelo', 3, 80);
+      });
     } else {
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         if (typeof window.initSoilAnalysesTab === 'function') window.initSoilAnalysesTab();
         if (typeof window.restoreSoilAnalysisUIState === 'function') window.restoreSoilAnalysisUIState();
         setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Suelo', 4, 85); }, 80);
-      }, 50);
+      });
     }
   }
   
@@ -1677,13 +1699,13 @@ function selectSection(name, el) {
   if (name === "Análisis: Solución Nutritiva") {
     if (content && sectionScrollPositions['Análisis: Solución Nutritiva']) content.classList.add('restoring-scroll');
     if (reusedCachedDom) {
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Solución Nutritiva', 3, 85); }, 40);
+      requestAnimationFrame(() => { restoreScrollForKeyStabilized('Análisis: Solución Nutritiva', 3, 85); });
     } else {
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         if (typeof window.initSolucionNutritivaTab === 'function') window.initSolucionNutritivaTab();
         if (typeof window.restoreSolucionNutritivaUIState === 'function') window.restoreSolucionNutritivaUIState();
         setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Solución Nutritiva', 5, 90); }, 120);
-      }, 50);
+      });
     }
   }
 
@@ -1691,13 +1713,13 @@ function selectSection(name, el) {
   if (name === "Análisis: Extracto de Pasta") {
     if (content && sectionScrollPositions['Análisis: Extracto de Pasta']) content.classList.add('restoring-scroll');
     if (reusedCachedDom) {
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Extracto de Pasta', 3, 85); }, 40);
+      requestAnimationFrame(() => { restoreScrollForKeyStabilized('Análisis: Extracto de Pasta', 3, 85); });
     } else {
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         if (typeof window.initExtractoPastaTab === 'function') window.initExtractoPastaTab();
         if (typeof window.restoreExtractoPastaUIState === 'function') window.restoreExtractoPastaUIState();
         setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Extracto de Pasta', 5, 90); }, 120);
-      }, 50);
+      });
     }
   }
 
@@ -1705,13 +1727,13 @@ function selectSection(name, el) {
   if (name === "Análisis: Agua") {
     if (content && sectionScrollPositions['Análisis: Agua']) content.classList.add('restoring-scroll');
     if (reusedCachedDom) {
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Agua', 3, 85); }, 40);
+      requestAnimationFrame(() => { restoreScrollForKeyStabilized('Análisis: Agua', 3, 85); });
     } else {
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         if (typeof window.initAguaTab === 'function') window.initAguaTab();
         if (typeof window.restoreAguaUIState === 'function') window.restoreAguaUIState();
         setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Agua', 5, 90); }, 120);
-      }, 50);
+      });
     }
   }
 
@@ -1719,13 +1741,13 @@ function selectSection(name, el) {
   if (name === "Análisis: Foliar") {
     if (content && sectionScrollPositions['Análisis: Foliar']) content.classList.add('restoring-scroll');
     if (reusedCachedDom) {
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Foliar', 3, 85); }, 40);
+      requestAnimationFrame(() => { restoreScrollForKeyStabilized('Análisis: Foliar', 3, 85); });
     } else {
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         if (typeof window.initFoliarTab === 'function') window.initFoliarTab();
         if (typeof window.restoreFoliarUIState === 'function') window.restoreFoliarUIState();
         setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Foliar', 5, 90); }, 120);
-      }, 50);
+      });
     }
   }
 
@@ -1733,13 +1755,13 @@ function selectSection(name, el) {
   if (name === "Análisis: Fruta") {
     if (content && sectionScrollPositions['Análisis: Fruta']) content.classList.add('restoring-scroll');
     if (reusedCachedDom) {
-      setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Fruta', 3, 85); }, 40);
+      requestAnimationFrame(() => { restoreScrollForKeyStabilized('Análisis: Fruta', 3, 85); });
     } else {
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         if (typeof window.initFrutaTab === 'function') window.initFrutaTab();
         if (typeof window.restoreFrutaUIState === 'function') window.restoreFrutaUIState();
         setTimeout(function() { restoreScrollForKeyStabilized('Análisis: Fruta', 5, 90); }, 120);
-      }, 50);
+      });
     }
   }
   
@@ -5662,24 +5684,18 @@ function initializeFertirriegoTabs() {
         targetContent.classList.add('active');
       }
     
-    // Si se activó el tab de gráficas, asegurar render con datos (incl. materiales personalizados)
+    // Si se activó el tab de gráficas: cargar programa (local, sin esperar nube) y pintar gráficas al instante
     if (tabId === 'graficas') {
       try {
-        if (typeof window.loadFertiCustomMaterials === 'function') {
-          window.loadFertiCustomMaterials();
-        }
         if (typeof window.loadFertirriegoProgram === 'function') {
           window.loadFertirriegoProgram();
         }
-        // Esperar layout visible para que Chart.js mida bien el canvas
         requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (typeof window.updateFertiSummary === 'function') {
-              window.updateFertiSummary();
-            } else if (typeof window.updateFertiCharts === 'function') {
-              window.updateFertiCharts();
-            }
-          });
+          if (typeof window.updateFertiSummary === 'function') {
+            window.updateFertiSummary();
+          } else if (typeof window.updateFertiCharts === 'function') {
+            window.updateFertiCharts();
+          }
         });
       } catch (e) {
         console.warn('⚠️ No se pudieron refrescar las gráficas de Fertirriego:', e);
@@ -9229,8 +9245,8 @@ function applyProjectDataToUI() {
         projectId: currentProjectId // CRÍTICO: Incluir projectId para validación
       };
       
-      // Esperar a que el mapa esté listo
-      setTimeout(() => {
+      // Pintar al instante si el mapa ya está listo (al volver a Ubicación); si no, esperar
+      const paintPolygon = () => {
         if (nutriPlantMap && nutriPlantMap.map && polygonData.coordinates && polygonData.coordinates.length >= 3) {
           try {
             nutriPlantMap.loadSavedPolygon(polygonData);
@@ -9239,7 +9255,12 @@ function applyProjectDataToUI() {
             console.error('❌ Error al cargar polígono en el mapa:', e);
           }
         }
-      }, 500);
+      };
+      if (nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
+        requestAnimationFrame(paintPolygon);
+      } else {
+        setTimeout(paintPolygon, 400);
+      }
     }
   } else {
     // CRÍTICO: Si no hay datos válidos, limpiar los elementos del DOM
@@ -9321,12 +9342,26 @@ function applyProjectDataToUI() {
     }
   }
   
-  // Recalcular porcentajes después de cargar los datos
-  setTimeout(() => {
+  // Pintar CIC y derivados al instante (sin setTimeout) para que al volver a Enmienda no se note recálculo
+  const cicEl = document.getElementById('cic-total');
+  if (cicEl && currentProject.soilAnalysis && currentProject.soilAnalysis.initial) {
     calculateCIC();
-    calculateAutomaticAdjustments();
-    console.log('✅ Porcentajes recalculados al cargar datos');
-  }, 100);
+    // Si hay ajustes guardados, solo actualizar colores; no sobrescribir con calculateAutomaticAdjustments
+    const adj = currentProject.soilAnalysis.adjustments;
+    const hasSavedAdj = adj && (adj.k !== 0 || adj.ca !== 0 || adj.mg !== 0 || adj.h !== 0 || adj.na !== 0 || adj.al !== 0);
+    if (hasSavedAdj && typeof applyAttentionColors === 'function') {
+      applyAttentionColors({
+        k: parseFloat(adj.k) || 0,
+        ca: parseFloat(adj.ca) || 0,
+        mg: parseFloat(adj.mg) || 0,
+        h: parseFloat(adj.h) || 0,
+        na: parseFloat(adj.na) || 0,
+        al: parseFloat(adj.al) || 0
+      });
+    } else if (!hasSavedAdj && typeof calculateAutomaticAdjustments === 'function') {
+      calculateAutomaticAdjustments();
+    }
+  }
   
   // Aplicar propiedades del suelo - SOLO si hay datos guardados REALES
   if (currentProject.soilAnalysis && currentProject.soilAnalysis.properties) {
@@ -10117,7 +10152,14 @@ function loadOnTabChange(tabName) {
       if (cachedData.amendments) currentProject.amendments = cachedData.amendments;
       if (cachedData.fertirriego) currentProject.fertirriego = cachedData.fertirriego;
       if (cachedData.granular) currentProject.granular = cachedData.granular;
+      if (cachedData.hidroponia !== undefined) currentProject.hidroponia = cachedData.hidroponia;
+      if (cachedData.vpdAnalysis !== undefined) currentProject.vpdAnalysis = cachedData.vpdAnalysis;
       if (cachedData.soilAnalyses !== undefined) currentProject.soilAnalyses = Array.isArray(cachedData.soilAnalyses) ? cachedData.soilAnalyses : [];
+      if (cachedData.solucionNutritivaAnalyses !== undefined) currentProject.solucionNutritivaAnalyses = Array.isArray(cachedData.solucionNutritivaAnalyses) ? cachedData.solucionNutritivaAnalyses : [];
+      if (cachedData.extractoPastaAnalyses !== undefined) currentProject.extractoPastaAnalyses = Array.isArray(cachedData.extractoPastaAnalyses) ? cachedData.extractoPastaAnalyses : [];
+      if (cachedData.aguaAnalyses !== undefined) currentProject.aguaAnalyses = Array.isArray(cachedData.aguaAnalyses) ? cachedData.aguaAnalyses : [];
+      if (cachedData.foliarAnalyses !== undefined) currentProject.foliarAnalyses = Array.isArray(cachedData.foliarAnalyses) ? cachedData.foliarAnalyses : [];
+      if (cachedData.frutaAnalyses !== undefined) currentProject.frutaAnalyses = Array.isArray(cachedData.frutaAnalyses) ? cachedData.frutaAnalyses : [];
       
       // Aplicar a UI inmediatamente
       applyProjectDataToUI();
@@ -10131,83 +10173,58 @@ function loadOnTabChange(tabName) {
   // Cargar datos específicos de la pestaña (solo actualizar DOM, datos ya están en memoria)
   switch(tabName) {
     case 'Enmienda':
-      // Aplicar datos de análisis de suelo y enmiendas (desde memoria)
-      setTimeout(() => {
-        // Recalcular porcentajes después de aplicar datos
-        setTimeout(() => {
-          if (typeof calculateCIC === 'function') calculateCIC();
-          if (typeof calculateAutomaticAdjustments === 'function') calculateAutomaticAdjustments();
-          if (typeof updatePHIndicator === 'function') updatePHIndicator();
-          // Actualizar indicador de tiempo de guardado
-          updateSaveTimeIndicator();
-          console.log('✅ Datos de enmiendas aplicados desde memoria (instantáneo)');
-        }, 50); // Delay mínimo solo para DOM
-      }, 50);
+      // Datos ya aplicados en applyProjectDataToUI(); solo actualizar indicadores sin recálculo visible
+      if (typeof updatePHIndicator === 'function') updatePHIndicator();
+      updateSaveTimeIndicator();
       break;
-    case 'Ubicación':
-      // 🚀 CRÍTICO: Validar proyecto ANTES de cargar datos
-      console.log('⚡ Abriendo pestaña Ubicación - validando proyecto...');
-      
-      // 🚀 CRÍTICO: Esperar a que el mapa esté inicializado antes de intentar cargar
-      // initLocationMap() se ejecuta en selectSection() y puede tardar en inicializar
-      setTimeout(() => {
-        if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap) {
-          const currentProject = nutriPlantMap.getCurrentProject();
-          if (currentProject && currentProject.id) {
-            console.log('✅ Proyecto válido detectado:', currentProject.id, '- Cargando ubicación...');
-            
-            // 🚀 CRÍTICO: Verificar que el mapa está completamente inicializado
-            if (!nutriPlantMap.map || !nutriPlantMap.map.getDiv()) {
-              console.log('⏳ Mapa aún no está inicializado, esperando...');
-              // Esperar un poco más y reintentar
-              setTimeout(() => {
-                if (nutriPlantMap && nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
-                  nutriPlantMap.loadProjectLocation();
-                }
-              }, 500);
-              return;
-            }
-            
-            // 🚀 CRÍTICO: Forzar recarga completa desde localStorage (NO desde caché)
-            // Esto asegura que se cargue el location más reciente, incluso si acabamos de guardar en otra pestaña
-            if (window.projectStorage) {
-              // Limpiar caché de location en memoria para forzar recarga desde localStorage
-              if (window.projectStorage.memoryCache && 
-                  window.projectStorage.memoryCache.currentProjectId === currentProject.id &&
-                  window.projectStorage.memoryCache.projectData) {
-                // NO eliminar location del caché, pero forzar recarga desde localStorage
-                const freshLocation = window.projectStorage.loadSection('location', currentProject.id);
-                if (freshLocation && freshLocation.polygon && Array.isArray(freshLocation.polygon) && freshLocation.polygon.length >= 3) {
-                  // Actualizar caché en memoria con datos frescos
-                  window.projectStorage.memoryCache.projectData.location = freshLocation;
-                  console.log('✅ Location actualizado en caché desde localStorage:', freshLocation.polygon.length, 'puntos');
-                } else {
-                  console.log('ℹ️ No hay location válido en localStorage para este proyecto');
-                }
+    case 'Ubicación': {
+      // Pintar polígono al instante desde memoria (applyProjectDataToUI ya lo pinta si mapa listo)
+      const runLocationTab = () => {
+        if (typeof nutriPlantMap === 'undefined' || !nutriPlantMap) return;
+        const proj = nutriPlantMap.getCurrentProject();
+        if (proj && proj.id) {
+          const mapReady = nutriPlantMap.map && nutriPlantMap.map.getDiv();
+          if (mapReady) {
+            // Mapa listo: pintar ya desde memoria; refrescar desde localStorage en segundo plano
+            if (window.projectStorage && window.projectStorage.memoryCache &&
+                window.projectStorage.memoryCache.currentProjectId === proj.id &&
+                window.projectStorage.memoryCache.projectData) {
+              const fresh = window.projectStorage.loadSection('location', proj.id);
+              if (fresh && fresh.polygon && Array.isArray(fresh.polygon) && fresh.polygon.length >= 3) {
+                window.projectStorage.memoryCache.projectData.location = fresh;
               }
             }
-            
-            // Cargar ubicación con validación estricta (cargará desde localStorage directamente)
-            // loadProjectLocation() ya carga desde localStorage, no desde caché
             nutriPlantMap.loadProjectLocation();
           } else {
-            console.log('ℹ️ No hay proyecto seleccionado - mapa limpio');
-            // 🚀 CRÍTICO: Asegurar que el mapa está completamente limpio
-            if (nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
-              nutriPlantMap.forceRemoveAllPolygons();
-            }
-            if (typeof forceClearLocationDisplay === 'function') {
-              forceClearLocationDisplay();
-            }
-            if (nutriPlantMap.updateDisplay) {
-              nutriPlantMap.updateDisplay();
-            }
-            if (typeof nutriPlantMap.updateInstructions === 'function') {
-              nutriPlantMap.updateInstructions('📍 Selecciona un proyecto y haz clic en el mapa para trazar tu parcela');
-            }
+            setTimeout(() => {
+              if (nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
+                nutriPlantMap.loadProjectLocation();
+              }
+            }, 450);
+          }
+        } else {
+          if (nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
+            nutriPlantMap.forceRemoveAllPolygons();
+          }
+          if (typeof forceClearLocationDisplay === 'function') forceClearLocationDisplay();
+          if (nutriPlantMap.updateDisplay) nutriPlantMap.updateDisplay();
+          if (typeof nutriPlantMap.updateInstructions === 'function') {
+            nutriPlantMap.updateInstructions('📍 Selecciona un proyecto y haz clic en el mapa para trazar tu parcela');
           }
         }
-      }, 600); // Esperar a que initLocationMap() termine de inicializar (400ms + margen)
+      };
+      if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap && nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
+        runLocationTab();
+      } else {
+        setTimeout(runLocationTab, 350);
+      }
+      break;
+    }
+    case 'Hidroponia':
+      // Pintar al instante desde memoria (loadSection usa caché); refrescar UI para que tablas/inputs muestren datos actualizados
+      if (typeof window.initHydroponiaUI === 'function') {
+        requestAnimationFrame(() => { window.initHydroponiaUI(); });
+      }
       break;
     case 'Fertirriego':
       // 🚀 SIMPLIFICADO: selectSection() ya maneja la carga de Fertirriego
@@ -10222,32 +10239,63 @@ function loadOnTabChange(tabName) {
       console.log('ℹ️ Nutrición Granular: carga manejada por selectGranularSubTab()');
       break;
     case 'Análisis: Déficit de Presión de Vapor':
-      // Evitar el "doble click" en VPD: si la vista se renderizó antes de que llegara location,
-      // volver a pintar una vez con los datos más recientes cuando sí existe polígono.
-      setTimeout(() => {
+      // Datos ya en currentProject (merge en selectSection + loadOnTabChange); pintar resultados al instante sin re-render
+      requestAnimationFrame(() => {
         try {
-          const mem = (window.projectStorage && typeof window.projectStorage.getCurrentProjectFromMemory === 'function')
-            ? window.projectStorage.getCurrentProjectFromMemory()
-            : null;
-          const latest = (mem && mem.id === currentProject.id) ? mem : currentProject;
-          const hasPolygon = !!(latest && latest.location && Array.isArray(latest.location.polygon) && latest.location.polygon.length >= 3);
-          if (!hasPolygon) return;
-
-          const viewEl = document.getElementById('view');
-          const titleEl = document.getElementById('section-title') || document.getElementById('sectionTitle');
-          const inVpdSection = titleEl && String(titleEl.textContent || '').trim() === 'Análisis: Déficit de Presión de Vapor';
-          if (!viewEl || !inVpdSection) return;
-
-          // Actualizar currentProject.location con la versión más reciente antes de renderizar.
-          if (latest.location) currentProject.location = latest.location;
-          viewEl.innerHTML = sectionTemplate('Análisis: Déficit de Presión de Vapor');
-          if (typeof addProjectIndicator === 'function') addProjectIndicator(viewEl);
           if (typeof loadVPDSavedResults === 'function') loadVPDSavedResults();
           if (typeof loadVPDRangeSavedResults === 'function') loadVPDRangeSavedResults();
         } catch (e) {
-          console.warn('⚠️ VPD auto-refresh:', e);
+          console.warn('⚠️ VPD load results:', e);
         }
-      }, 180);
+      });
+      break;
+    case 'Análisis: Suelo':
+      requestAnimationFrame(() => {
+        try {
+          if (typeof window.initSoilAnalysesTab === 'function') window.initSoilAnalysesTab();
+          if (typeof window.restoreSoilAnalysisUIState === 'function') window.restoreSoilAnalysisUIState();
+        } catch (e) { console.warn('⚠️ Análisis Suelo refresh:', e); }
+      });
+      break;
+    case 'Análisis: Solución Nutritiva':
+      requestAnimationFrame(() => {
+        try {
+          if (typeof window.initSolucionNutritivaTab === 'function') window.initSolucionNutritivaTab();
+          if (typeof window.restoreSolucionNutritivaUIState === 'function') window.restoreSolucionNutritivaUIState();
+        } catch (e) { console.warn('⚠️ Solución Nutritiva refresh:', e); }
+      });
+      break;
+    case 'Análisis: Extracto de Pasta':
+      requestAnimationFrame(() => {
+        try {
+          if (typeof window.initExtractoPastaTab === 'function') window.initExtractoPastaTab();
+          if (typeof window.restoreExtractoPastaUIState === 'function') window.restoreExtractoPastaUIState();
+        } catch (e) { console.warn('⚠️ Extracto Pasta refresh:', e); }
+      });
+      break;
+    case 'Análisis: Agua':
+      requestAnimationFrame(() => {
+        try {
+          if (typeof window.initAguaTab === 'function') window.initAguaTab();
+          if (typeof window.restoreAguaUIState === 'function') window.restoreAguaUIState();
+        } catch (e) { console.warn('⚠️ Análisis Agua refresh:', e); }
+      });
+      break;
+    case 'Análisis: Foliar':
+      requestAnimationFrame(() => {
+        try {
+          if (typeof window.initFoliarTab === 'function') window.initFoliarTab();
+          if (typeof window.restoreFoliarUIState === 'function') window.restoreFoliarUIState();
+        } catch (e) { console.warn('⚠️ Análisis Foliar refresh:', e); }
+      });
+      break;
+    case 'Análisis: Fruta':
+      requestAnimationFrame(() => {
+        try {
+          if (typeof window.initFrutaTab === 'function') window.initFrutaTab();
+          if (typeof window.restoreFrutaUIState === 'function') window.restoreFrutaUIState();
+        } catch (e) { console.warn('⚠️ Análisis Fruta refresh:', e); }
+      });
       break;
     case 'Reporte':
       // Actualizar lista de reportes (datos ya están en memoria)
@@ -10352,16 +10400,18 @@ window.saveProject = async function() {
     }
 
     // Protección anti-cruce multi-equipo:
-    // si nube es más reciente que la copia local, pedir actualizar antes de guardar.
+    // si nube es más reciente que la copia local, ofrecer actualizar O guardar tu versión de todos modos.
     var newerCheck = await np_hasNewerCloudVersion(currentProject.id);
     if (newerCheck && newerCheck.hasNewer) {
       np_setProjectSyncStatus('error', 'Nube más reciente');
-      if (typeof window.showMessage === 'function') {
-        window.showMessage('⚠️ Hay una versión más nueva en la nube. Usa "☁️ Actualizar con la nube" antes de guardar.', 'warning');
-      } else {
-        alert('⚠️ Hay una versión más nueva en la nube. Usa "Actualizar con la nube" antes de guardar para evitar cruce de datos.');
-      }
-      return;
+      var guardarDeTodosModos = confirm(
+        '⚠️ Hay una versión más nueva en la nube.\n\n' +
+        '• Si quieres usar esa versión: pulsa "Cancelar" y luego el botón "☁️ Actualizar con la nube".\n\n' +
+        '• Si quieres guardar lo que tienes ahora en la lap (tu versión sobrescribirá la nube): pulsa "Aceptar".\n\n' +
+        '¿Guardar tu versión actual de todos modos?'
+      );
+      if (!guardarDeTodosModos) return;
+      // El usuario eligió guardar su versión; seguimos con el guardado (sobrescribirá nube).
     }
 
     // 🚀 CRÍTICO: Detectar sección activa por DOM (no por textContent que tiene emojis/acentos)
