@@ -582,9 +582,17 @@
                         <button type="button" id="adminChatClose" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; line-height: 1;">×</button>
                     </div>
                     <div id="adminChatMessages" style="flex: 1; overflow-y: auto; padding: 12px; font-size: 14px; min-height: 0; background: #f8fafc;"></div>
-                    <div style="padding: 12px; border-top: 1px solid rgba(16,185,129,0.25); background: #fff; display: flex; gap: 8px; align-items: center;">
-                        <input type="text" id="adminChatInput" placeholder="Pregunta sobre suscriptores, proyectos, costos..." style="flex: 1; padding: 10px 12px; border: 1px solid rgba(12,74,110,0.25); border-radius: 8px; box-sizing: border-box; font-size: 14px; min-width: 0;">
-                        <button type="button" id="adminChatSend" title="Enviar" style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; cursor: pointer; font-size: 18px; line-height: 1; flex-shrink: 0; box-shadow: 0 2px 8px rgba(16,185,129,0.35);">➤</button>
+                    <div id="adminChatInputArea" style="padding: 12px; border-top: 1px solid rgba(16,185,129,0.25); background: #fff; display: flex; flex-direction: column; gap: 8px;">
+                        <div id="adminChatImagePreviewWrap" style="display: none; align-items: flex-start; gap: 8px;">
+                            <div id="adminChatImagePreview" style="width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(16,185,129,0.35); background: #f1f5f9;"></div>
+                            <button type="button" id="adminChatImageRemove" style="width: 24px; height: 24px; border: none; background: #e2e8f0; color: #64748b; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; padding: 0;">×</button>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="file" id="adminChatImageInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
+                            <input type="text" id="adminChatInput" placeholder="Pregunta sobre suscriptores, proyectos, costos..." style="flex: 1; padding: 10px 12px; border: 1px solid rgba(12,74,110,0.25); border-radius: 8px; box-sizing: border-box; font-size: 14px; min-width: 0;">
+                            <button type="button" id="adminChatAttachBtn" title="Adjuntar imagen (máx. 5 MB)" style="width: 40px; height: 40px; border: 1px solid rgba(16,185,129,0.4); background: #fff; color: #059669; border-radius: 50%; cursor: pointer; font-size: 18px; flex-shrink: 0;">📷</button>
+                            <button type="button" id="adminChatSend" title="Enviar" style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; cursor: pointer; font-size: 18px; line-height: 1; flex-shrink: 0; box-shadow: 0 2px 8px rgba(16,185,129,0.35);">➤</button>
+                        </div>
                     </div>
                 </div>
                 <button type="button" id="adminChatBubble" style="pointer-events: auto; display: none; position: fixed; right: 20px; bottom: 24px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #0c4a6e 0%, #1e3a5f 50%, #059669 100%); color: #fff; border: 3px solid #ffffff; cursor: pointer; box-shadow: 0 4px 20px rgba(12,74,110,0.35), 0 2px 10px rgba(16,185,129,0.25); padding: 0; flex-direction: column; align-items: center; justify-content: center;" title="Admin Assistant – revisar datos del panel">
@@ -1368,8 +1376,76 @@
             var input = document.getElementById('adminChatInput');
             var sendBtn = document.getElementById('adminChatSend');
             var closeBtn = document.getElementById('adminChatClose');
+            var adminImageInput = document.getElementById('adminChatImageInput');
+            var adminImagePreviewWrap = document.getElementById('adminChatImagePreviewWrap');
+            var adminImagePreview = document.getElementById('adminChatImagePreview');
+            var adminImageRemove = document.getElementById('adminChatImageRemove');
+            var adminAttachBtn = document.getElementById('adminChatAttachBtn');
+            var adminInputArea = document.getElementById('adminChatInputArea');
             if (!bubble || !panel || !messagesEl || !input) return;
             bubble.style.display = 'flex';
+            var adminPendingImage = null;
+            var MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+            var ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+            function clearAdminPendingImage() {
+                adminPendingImage = null;
+                if (adminImagePreview) adminImagePreview.innerHTML = '';
+                if (adminImagePreviewWrap) adminImagePreviewWrap.style.display = 'none';
+                if (adminImageInput) adminImageInput.value = '';
+            }
+            function handleAdminImageFile(file) {
+                if (!file || !file.type) return;
+                if (ALLOWED_IMAGE_TYPES.indexOf(file.type) === -1) {
+                    alert('Solo se permiten imágenes JPEG, PNG o WebP. Máx. 5 MB.');
+                    return;
+                }
+                if (file.size > MAX_IMAGE_BYTES) {
+                    alert('La imagen no debe superar 5 MB.');
+                    return;
+                }
+                var reader = new FileReader();
+                reader.onload = function() {
+                    var dataUrl = reader.result;
+                    var base64 = dataUrl.indexOf('base64,') >= 0 ? dataUrl.split('base64,')[1] : dataUrl;
+                    adminPendingImage = { base64: base64, contentType: file.type || 'image/jpeg' };
+                    if (adminImagePreview) {
+                        adminImagePreview.innerHTML = '';
+                        var img = document.createElement('img');
+                        img.src = dataUrl;
+                        img.alt = 'Vista previa';
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        adminImagePreview.appendChild(img);
+                    }
+                    if (adminImagePreviewWrap) adminImagePreviewWrap.style.display = 'flex';
+                };
+                reader.readAsDataURL(file);
+            }
+            if (adminAttachBtn && adminImageInput) {
+                adminAttachBtn.addEventListener('click', function() { adminImageInput.click(); });
+            }
+            if (adminImageInput) {
+                adminImageInput.addEventListener('change', function(e) {
+                    var files = e.target.files;
+                    if (files && files.length) { handleAdminImageFile(files[0]); }
+                    e.target.value = '';
+                });
+            }
+            if (adminImageRemove) {
+                adminImageRemove.addEventListener('click', clearAdminPendingImage);
+            }
+            if (adminInputArea) {
+                adminInputArea.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); adminInputArea.style.background = '#ecfdf5'; });
+                adminInputArea.addEventListener('dragleave', function(e) { e.preventDefault(); e.stopPropagation(); adminInputArea.style.background = '#fff'; });
+                adminInputArea.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    adminInputArea.style.background = '#fff';
+                    var files = e.dataTransfer && e.dataTransfer.files;
+                    if (files && files.length) handleAdminImageFile(files[0]);
+                });
+            }
             var adminChatHistory = [];
             var adminSupabaseId = null;
 
@@ -1454,7 +1530,7 @@
                     'Suscriptores totales: ' + totalUsers + ' | Suscripciones activas: ' + activeSubs + ' | Proyectos totales: ' + totalProjects,
                     'Mensajes chat: ' + totalChats + ' | Interacciones IA: ' + interactions + ' | Costo chat total (USD): ' + costTotal + ' | Este mes: ' + costMonth + ' | Pendientes: ' + pending,
                     '',
-                    '--- LISTA DE USUARIOS (nombre, email, ubicación, suscripción) ---'
+                    '--- LISTA DE USUARIOS (nombre, email, teléfono, ubicación, suscripción) ---'
                 ];
                 try {
                     var users = typeof getAllUsers === 'function' ? getAllUsers() : [];
@@ -1465,7 +1541,8 @@
                     for (var i = 0; i < take; i++) {
                         var u = list[i];
                         var locStr = formatLocation(u.location);
-                        lines.push('- ' + (u.name || 'Sin nombre') + ' | ' + (u.email || '') + ' | ubicación: ' + locStr + ' | suscripción: ' + (u.subscription_status || 'N/A'));
+                        var phoneStr = (u.phone && String(u.phone).trim()) ? String(u.phone).trim() : 'No indicado';
+                        lines.push('- ' + (u.name || 'Sin nombre') + ' | ' + (u.email || '') + ' | teléfono: ' + phoneStr + ' | ubicación: ' + locStr + ' | suscripción: ' + (u.subscription_status || 'N/A'));
                     }
                     if (list.length > maxUsers) lines.push('(Total ' + list.length + ' usuarios; mostrando ' + maxUsers + '.)');
                 } catch (e) { lines.push('(Error al cargar usuarios.)'); }
@@ -1481,37 +1558,81 @@
                     }
                     if (projects.length > maxProj) lines.push('(Total ' + projects.length + ' proyectos; mostrando ' + maxProj + '.)');
                 } catch (e) { lines.push('(Error al cargar proyectos.)'); }
+                lines.push('');
+                lines.push('--- ÚLTIMA ENTRADA AL PANEL Y UBICACIÓN APROX. POR USUARIO (desde entradas al dashboard) ---');
+                try {
+                    var visits = (window._adminCloudCache && Array.isArray(window._adminCloudCache.dashboardVisits)) ? window._adminCloudCache.dashboardVisits : [];
+                    var latestByUser = {};
+                    visits.forEach(function(v) {
+                        if (!v || !v.user_id) return;
+                        var t = v.visited_at ? new Date(v.visited_at).getTime() : 0;
+                        var prev = latestByUser[v.user_id];
+                        var prevT = prev && prev.visited_at ? new Date(prev.visited_at).getTime() : 0;
+                        if (!prev || t > prevT) latestByUser[v.user_id] = v;
+                    });
+                    var usersForLoc = typeof getAllUsers === 'function' ? getAllUsers() : [];
+                    var byId = {};
+                    usersForLoc.forEach(function(u) { byId[u.id || u.userId] = u; });
+                    var uids = Object.keys(latestByUser);
+                    if (uids.length === 0) {
+                        lines.push('(Aún no hay entradas registradas al panel con ubicación.)');
+                    } else {
+                        uids.forEach(function(uid) {
+                            var v = latestByUser[uid];
+                            var profile = byId[uid];
+                            var name = profile ? (profile.name || profile.email || '—') : '—';
+                            var email = profile ? (profile.email || '—') : '—';
+                            var dateStr = v.visited_at ? new Date(v.visited_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+                            var lat = v.lat != null ? parseFloat(v.lat) : NaN;
+                            var lng = v.lng != null ? parseFloat(v.lng) : NaN;
+                            var coordsOk = Number.isFinite(lat) && Number.isFinite(lng);
+                            var locStr = coordsOk ? (lat.toFixed(5) + ', ' + lng.toFixed(5)) : 'sin coordenadas';
+                            lines.push('- ' + name + ' (' + email + '): última entrada ' + dateStr + '; ubicación aprox. ' + locStr);
+                        });
+                    }
+                } catch (e) { lines.push('(Error al cargar últimas ubicaciones.)'); }
                 return lines.join('\n');
             }
             function getAdminPanelSystemPrompt() {
                 var dataBlock = getAdminPanelContext();
-                return 'Eres un asistente del panel de administración de NutriPlant PRO. Tienes acceso a los mismos datos que ve el administrador en el panel: resumen de métricas, lista de usuarios (con nombre, email, ubicación y estado de suscripción) y lista de proyectos (con cultivo y variedad). ' +
-                    'Usa estos datos para responder preguntas como "¿cuántos usuarios tengo en Jalisco?", "¿quién tiene cultivo de aguacate?", "resume por ubicación", etc. Puedes platicar sobre análisis de mercado, ideas y apoyar la toma de decisiones con base en la data. ' +
+                return 'Eres un asistente del panel de administración de NutriPlant PRO. Tienes acceso a los mismos datos que ve el administrador en el panel: resumen de métricas, lista de usuarios (con nombre, email, teléfono, ubicación registrada y estado de suscripción), lista de proyectos (con cultivo y variedad) y última entrada al panel por usuario con ubicación aproximada (fecha/hora y coordenadas lat/lng de la última vez que entraron al dashboard). ' +
+                    'Puedes dar teléfono, ubicación registrada o última ubicación (última entrada al panel con coordenadas) cuando te lo pidan, si está en los datos. Si el administrador adjunta una imagen (gráfica, captura, tabla), interpreta su contenido en contexto del panel y responde en consecuencia. ' +
+                    'Usa estos datos para responder preguntas como "¿cuántos usuarios tengo en Jalisco?", "¿teléfono de [nombre]?", "¿última ubicación de [usuario]?", "¿quién tiene cultivo de aguacate?", "resume por ubicación", etc. Puedes platicar sobre análisis de mercado, ideas y apoyar la toma de decisiones con base en la data. ' +
                     'No ejecutas ninguna acción (no borras, no modificas); solo conversas y asesoras. Responde siempre en español. Datos actuales del panel:\n\n' + dataBlock;
             }
             function sendAdminChat() {
                 var text = (input.value || '').trim();
-                if (!text) return;
+                var hasImage = adminPendingImage != null;
+                if (!text && !hasImage) return;
                 input.value = '';
-                adminChatHistory.push({ role: 'user', content: text });
+                var displayContent = text || '[Imagen]';
+                adminChatHistory.push({ role: 'user', content: displayContent });
                 saveAdminChatHistory();
                 renderAdminChat();
                 sendBtn.disabled = true;
+                var imageToSend = adminPendingImage;
+                clearAdminPendingImage();
                 var systemContent = getAdminPanelSystemPrompt();
                 var historyForApi = adminChatHistory.slice(0, -1).map(function(m) { return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content }; });
-                var messagesForApi = [{ role: 'system', content: systemContent }].concat(historyForApi).concat([{ role: 'user', content: text }]);
+                var lastUserContent = text || '¿Qué puedes ver en esta imagen?';
+                var messagesForApi = [{ role: 'system', content: systemContent }].concat(historyForApi).concat([{ role: 'user', content: lastUserContent }]);
                 var base = (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) || (window.location && window.location.origin) || 'http://localhost:8000';
+                var body = {
+                    model: 'gpt-4o-mini',
+                    messages: messagesForApi,
+                    max_tokens: 1000,
+                    temperature: 0.5,
+                    userId: '__admin__',
+                    scope: 'admin'
+                };
+                if (imageToSend && imageToSend.base64) {
+                    body.imageBase64 = imageToSend.base64;
+                    body.imageContentType = imageToSend.contentType || 'image/jpeg';
+                }
                 fetch(base + '/api/openai-assistant', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        model: 'gpt-4o-mini',
-                        messages: messagesForApi,
-                        max_tokens: 1000,
-                        temperature: 0.5,
-                        userId: '__admin__',
-                        scope: 'admin'
-                    })
+                    body: JSON.stringify(body)
                 }).then(function(r) { return r.json(); }).then(function(data) {
                     sendBtn.disabled = false;
                     var reply = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) ? data.choices[0].message.content : (data.error || 'Error al obtener respuesta.');

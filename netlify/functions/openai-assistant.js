@@ -28,13 +28,23 @@ function tokenCostUsd(model, promptTokens, completionTokens) {
   return inCost + outCost;
 }
 
-function roughInputTokens(messages) {
+function roughInputTokens(messages, hasImage = false) {
   if (!Array.isArray(messages)) return 0;
   let total = 0;
   for (const m of messages) {
-    if (m && typeof m === 'object' && m.content != null) total += String(m.content).length;
+    if (m && typeof m === 'object' && m.content != null) {
+      if (Array.isArray(m.content)) {
+        m.content.forEach(part => {
+          if (part && typeof part === 'object' && part.type === 'text' && part.text) total += String(part.text).length;
+        });
+      } else {
+        total += String(m.content).length;
+      }
+    }
   }
-  return total > 0 ? Math.max(Math.floor(total / 4), 1) : 0;
+  let tokens = total > 0 ? Math.max(Math.floor(total / 4), 1) : 0;
+  if (hasImage) tokens += 1200; // estimado tokens por imagen para cuota preventiva
+  return tokens;
 }
 
 function corsHeaders() {
@@ -120,15 +130,41 @@ exports.handler = async (event, context) => {
   }
 
   const model = body.model || 'gpt-4o-mini';
-  const messages = body.messages || [];
+  let messages = Array.isArray(body.messages) ? [...body.messages] : [];
   const max_tokens = Math.min(Math.max(Number(body.max_tokens) || 600, 1), 2000);
   const temperature = Math.max(0, Math.min(1, Number(body.temperature) || 0.4));
   let userId = String(body.userId || body.user_id || 'anonymous');
   const scopeAdmin = body.scope === 'admin' || userId === '__admin__';
   if (scopeAdmin) userId = '__admin__';
 
-  if (!Array.isArray(messages) || messages.length === 0) {
+  const imageBase64 = (body.imageBase64 && String(body.imageBase64).trim()) ? String(body.imageBase64).trim() : null;
+  const imageContentType = (body.imageContentType && String(body.imageContentType).trim()) ? String(body.imageContentType).trim() : 'image/jpeg';
+
+  if (messages.length === 0) {
     return jsonResponse(400, { error: 'messages es obligatorio y debe ser un array' });
+  }
+
+  // Si hay imagen, convertir el último mensaje de usuario en multimodal (vision)
+  if (imageBase64 && messages.length > 0) {
+    let lastIdx = -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i] && messages[i].role === 'user') {
+        lastIdx = i;
+        break;
+      }
+    }
+    if (lastIdx >= 0) {
+      const last = messages[lastIdx];
+      const text = (last.content && typeof last.content === 'string') ? last.content : '';
+      const url = 'data:' + (imageContentType || 'image/jpeg') + ';base64,' + imageBase64;
+      messages[lastIdx] = {
+        ...last,
+        content: [
+          { type: 'text', text: text || '¿Qué puedes ver en esta imagen en contexto de mi proyecto?' },
+          { type: 'image_url', image_url: { url } }
+        ]
+      };
+    }
   }
 
   let supabase = null;
@@ -174,7 +210,7 @@ exports.handler = async (event, context) => {
           });
         }
 
-        const roughPrompt = roughInputTokens(messages);
+        const roughPrompt = roughInputTokens(messages, !!imageBase64);
         const projectedCost = tokenCostUsd(model, roughPrompt, max_tokens);
         if (usedUsd + projectedCost > limitUsd) {
           return jsonResponse(429, {

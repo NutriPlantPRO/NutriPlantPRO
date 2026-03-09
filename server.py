@@ -428,15 +428,24 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         out_cost = (max(completion_tokens, 0) / 1_000_000.0) * pricing['output']
         return in_cost + out_cost
 
-    def _rough_input_tokens(self, messages):
+    def _rough_input_tokens(self, messages, has_image=False):
         # Aproximación simple para control preventivo de cuota.
         if not isinstance(messages, list):
             return 0
         total_chars = 0
         for m in messages:
             if isinstance(m, dict):
-                total_chars += len(str(m.get('content', '')))
-        return max(int(total_chars / 4), 1) if total_chars > 0 else 0
+                content = m.get('content', '')
+                if isinstance(content, list):
+                    for part in content:
+                        if isinstance(part, dict) and part.get('type') == 'text':
+                            total_chars += len(str(part.get('text', '')))
+                else:
+                    total_chars += len(str(content))
+        tokens = max(int(total_chars / 4), 1) if total_chars > 0 else 0
+        if has_image:
+            tokens += 1200
+        return tokens
 
     def _openai_api_key(self):
         # Prioridad: variable de entorno. No poner clave en código (seguridad).
@@ -460,7 +469,7 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             data = json.loads(post_data.decode('utf-8'))
 
             model = data.get('model', 'gpt-4o-mini')
-            messages = data.get('messages', [])
+            messages = list(data.get('messages', []))
             max_tokens = int(data.get('max_tokens', 600))
             temperature = float(data.get('temperature', 0.4))
             user_id = str(data.get('userId') or data.get('user_id') or 'anonymous')
@@ -469,6 +478,26 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             scope_admin = data.get('scope') == 'admin' or user_id == '__admin__'
             if scope_admin:
                 user_id = '__admin__'
+
+            image_base64 = (data.get('imageBase64') or '').strip() or None
+            image_content_type = (data.get('imageContentType') or '').strip() or 'image/jpeg'
+            if image_base64 and messages:
+                last_idx = -1
+                for i in range(len(messages) - 1, -1, -1):
+                    if isinstance(messages[i], dict) and messages[i].get('role') == 'user':
+                        last_idx = i
+                        break
+                if last_idx >= 0:
+                    last = messages[last_idx]
+                    text = last.get('content', '') if isinstance(last.get('content'), str) else ''
+                    url = 'data:' + image_content_type + ';base64,' + image_base64
+                    messages[last_idx] = {
+                        **last,
+                        'content': [
+                            {'type': 'text', 'text': text or '¿Qué puedes ver en esta imagen en contexto de mi proyecto?'},
+                            {'type': 'image_url', 'image_url': {'url': url}}
+                        ]
+                    }
 
             month_key = self._month_key()
             monthly_limit_usd = float(os.environ.get('NUTRIPLANT_CHAT_MONTHLY_LIMIT_USD', '1.0'))
@@ -536,7 +565,7 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     return
 
             # Control preventivo: evita gastar si el peor caso ya excede el tope mensual.
-            rough_prompt_tokens = self._rough_input_tokens(messages)
+            rough_prompt_tokens = self._rough_input_tokens(messages, bool(image_base64))
             projected_cost = self._token_cost_usd(model, rough_prompt_tokens, max_tokens)
             if (month_bucket['cost_usd'] + projected_cost) > monthly_limit_usd:
                 self._send_json_response({

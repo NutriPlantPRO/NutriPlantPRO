@@ -88,7 +88,13 @@ class NutriPlantChat {
     this.messagesContainer = document.getElementById('chatMessages');
     this.input = document.getElementById('chatInput');
     this.sendBtn = document.getElementById('chatSendBtn');
-    
+    this.chatImageInput = document.getElementById('chatImageInput');
+    this.chatImagePreviewWrap = document.getElementById('chatImagePreviewWrap');
+    this.chatImagePreview = document.getElementById('chatImagePreview');
+    this.chatImageRemove = document.getElementById('chatImageRemove');
+    this.chatAttachBtn = document.getElementById('chatAttachBtn');
+    this.chatInputArea = document.getElementById('chatInputArea');
+    this.pendingImage = null; // { base64, contentType } — 1 imagen por mensaje, máx 5 MB; no se guarda
     if (!this.bubble || !this.panel) {
       console.error('❌ Elementos del chat no encontrados en el HTML');
       return;
@@ -96,7 +102,6 @@ class NutriPlantChat {
     if (this.input) {
       this.input.placeholder = 'Preguntar a NutriPlant PRO';
     }
-    
     console.log('✅ Elementos del chat encontrados');
   }
 
@@ -140,7 +145,79 @@ class NutriPlantChat {
       this.sendBtn.addEventListener('click', () => this.sendMessage());
     }
 
+    // Imagen: adjuntar (1 por mensaje, máx 5 MB), arrastrar y soltar
+    const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+    if (this.chatAttachBtn && this.chatImageInput) {
+      this.chatAttachBtn.addEventListener('click', () => this.chatImageInput.click());
+    }
+    if (this.chatImageInput) {
+      this.chatImageInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        this._handleImageFile(files[0], MAX_IMAGE_BYTES, ALLOWED_TYPES);
+        e.target.value = '';
+      });
+    }
+    if (this.chatImageRemove) {
+      this.chatImageRemove.addEventListener('click', () => this._clearPendingImage());
+    }
+    if (this.chatInputArea) {
+      this.chatInputArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.chatInputArea.classList.add('drag-over');
+      });
+      this.chatInputArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.chatInputArea.classList.remove('drag-over');
+      });
+      this.chatInputArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.chatInputArea.classList.remove('drag-over');
+        const files = e.dataTransfer && e.dataTransfer.files;
+        if (!files || files.length === 0) return;
+        this._handleImageFile(files[0], MAX_IMAGE_BYTES, ALLOWED_TYPES);
+      });
+    }
+
     console.log('✅ Eventos configurados correctamente');
+  }
+
+  _handleImageFile(file, maxBytes, allowedTypes) {
+    if (!file || !file.type) return;
+    if (!allowedTypes.includes(file.type)) {
+      this.addMessage('Solo se permiten imágenes JPEG, PNG o WebP. Máx. 5 MB.', 'ai');
+      return;
+    }
+    if (file.size > maxBytes) {
+      this.addMessage('La imagen no debe superar 5 MB.', 'ai');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const base64 = dataUrl.indexOf('base64,') >= 0 ? dataUrl.split('base64,')[1] : dataUrl;
+      this.pendingImage = { base64, contentType: file.type || 'image/jpeg' };
+      if (this.chatImagePreview) {
+        this.chatImagePreview.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.alt = 'Vista previa';
+        this.chatImagePreview.appendChild(img);
+      }
+      if (this.chatImagePreviewWrap) this.chatImagePreviewWrap.style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  _clearPendingImage() {
+    this.pendingImage = null;
+    if (this.chatImagePreview) this.chatImagePreview.innerHTML = '';
+    if (this.chatImagePreviewWrap) this.chatImagePreviewWrap.style.display = 'none';
+    if (this.chatImageInput) this.chatImageInput.value = '';
   }
 
   bindContextEvents() {
@@ -539,8 +616,9 @@ class NutriPlantChat {
   }
 
   async sendMessage() {
-    const message = this.input.value.trim();
-    if (!message) return;
+    const message = (this.input && this.input.value) ? this.input.value.trim() : '';
+    const hasImage = this.pendingImage != null;
+    if (!message && !hasImage) return;
 
     const check = this.checkUserChatAllowed();
     if (!check.allowed) {
@@ -548,12 +626,15 @@ class NutriPlantChat {
       return;
     }
 
-    console.log('📤 Enviando mensaje:', message);
+    const displayText = message || (hasImage ? '[Imagen]' : '');
+    console.log('📤 Enviando mensaje:', displayText, hasImage ? '+ 1 imagen' : '');
     
-    // Agregar mensaje del usuario
-    this.addMessage(message, 'user');
+    // Agregar mensaje del usuario (texto y/o imagen)
+    this.addMessage(displayText, 'user');
     this.input.value = '';
-    this.input.style.height = 'auto';
+    if (this.input) this.input.style.height = 'auto';
+    const imageToSend = this.pendingImage;
+    this._clearPendingImage();
 
     // Mostrar indicador de "escribiendo..."
     const typingDiv = document.createElement('div');
@@ -565,7 +646,7 @@ class NutriPlantChat {
 
     try {
       this.refreshContextSnapshot('before-send');
-      const response = await this.callOpenAI(message);
+      const response = await this.callOpenAI(message || '', imageToSend);
       
       const indicator = document.getElementById('typing-indicator');
       if (indicator) indicator.remove();
@@ -654,8 +735,8 @@ class NutriPlantChat {
     return safeContent;
   }
 
-  async callOpenAI(userMessage) {
-    console.log('🤖 Llamando al backend de IA...');
+  async callOpenAI(userMessage, imageData) {
+    console.log('🤖 Llamando al backend de IA...', imageData ? '(con imagen)' : '');
     // Siempre refrescar contexto al enviar para incluir los valores más recientes (guardados y pantalla actual)
     this.refreshContextSnapshot('call-openai');
 
@@ -697,6 +778,7 @@ INSTRUCCIONES:
 - Para la herramienta: explica cálculos, interpretación de valores y dónde configurar algo.
 - Para nutrición vegetal: da recomendaciones técnicas, basadas en ciencia y en el manual; usa términos agronómicos correctos y nivel experto (relaciones, antagonismos, momentos de aplicación, diagnóstico integrado).
 - Sé conciso pero completo; usa formato markdown para mejor legibilidad.
+- Si el usuario adjunta una imagen, interpreta su contenido (análisis, gráfica, planta, suelo, resultado de laboratorio, etc.) en contexto agronómico y responde en consecuencia usando también los datos del proyecto cuando aplique.
 - FÓRMULAS Y CÁLCULOS: No uses nunca LaTeX ni código (evita \\frac, \\times, \\text, \\[, \\]). Escribe las fórmulas en texto legible para que el usuario las entienda en el chat: usa el símbolo × para multiplicar, / para dividir, = para igual, y saltos de línea. Ejemplo: "Peso del suelo = 3.000 m³ × 1.100 kg/m³ = 3.300.000 kg". Así se lee directo sin confusión.
 
 MODO DE INTERACCIÓN ACTIVO:
@@ -720,10 +802,10 @@ ESTILO DE RESPUESTA:
       });
     });
     
-    // Agregar el mensaje actual del usuario
+    // Agregar el mensaje actual del usuario (texto; si hay imagen, el backend lo convierte a multimodal)
     messages.push({
       role: 'user',
-      content: userMessage
+      content: userMessage || '(interpreta la imagen en contexto agronómico)'
     });
     
     const maxTokens = this.responseStyle === 'detallada'
@@ -732,21 +814,26 @@ ESTILO DE RESPUESTA:
     const userId = localStorage.getItem('nutriplant_user_id') || 'anonymous';
     const projectId = snapshot.projectId || '';
 
-    console.log(`📜 Enviando ${messages.length} mensajes al backend IA`);
+    const body = {
+      userId,
+      projectId,
+      module: snapshot.module || 'general',
+      model: this.model,
+      messages: messages,
+      temperature: isCalculationQuestion ? 0.25 : 0.4,
+      max_tokens: maxTokens
+    };
+    if (imageData && imageData.base64) {
+      body.imageBase64 = imageData.base64;
+      body.imageContentType = imageData.contentType || 'image/jpeg';
+    }
+    console.log(`📜 Enviando ${messages.length} mensajes al backend IA`, body.imageBase64 ? '+ 1 imagen' : '');
     const response = await fetch(this.apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        userId,
-        projectId,
-        module: snapshot.module || 'general',
-        model: this.model,
-        messages: messages,
-        temperature: isCalculationQuestion ? 0.25 : 0.4,
-        max_tokens: maxTokens
-      })
+      body: JSON.stringify(body)
     });
 
     const data = await response.json().catch(() => ({}));
