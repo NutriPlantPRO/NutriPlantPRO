@@ -78,6 +78,7 @@ class NutriPlantChat {
     this.bindContextEvents();
     this.refreshContextSnapshot('init');
     this.updateChatQuotaDisplay();
+    this.refreshQuotaFromSupabase();
     // Sin mensaje de bienvenida: el chat permanece en silencio hasta que el usuario escriba (como en Cursor).
   }
 
@@ -284,6 +285,7 @@ class NutriPlantChat {
     if (this.bubble) {
       this.bubble.classList.remove('minimized');
     }
+    this.refreshQuotaFromSupabase();
     this.updateChatQuotaDisplay();
     if (this.input) {
       this.input.focus();
@@ -526,7 +528,7 @@ class NutriPlantChat {
     }, 500);
   }
 
-  /** Actualiza en el header el texto de cuota: por chats (ej. 491/500) o por USD según el perfil. */
+  /** Actualiza en el header el texto de cuota por créditos (ej. 490/500). */
   updateChatQuotaDisplay() {
     const el = document.getElementById('chatQuotaDisplay');
     if (!el) return;
@@ -539,7 +541,7 @@ class NutriPlantChat {
       const user = JSON.parse(raw);
       let limitRaw = user.chat_limit_monthly;
       const isActiveSubscriber = user.subscription_status === 'active';
-      if ((limitRaw == null || limitRaw === '') && isActiveSubscriber) limitRaw = 1;
+      if ((limitRaw == null || limitRaw === '') && isActiveSubscriber) limitRaw = 500;
       const now = new Date();
       const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
       let used = user.chat_usage_current_month;
@@ -553,23 +555,45 @@ class NutriPlantChat {
       }
       const limit = Math.max(0, Number(limitRaw));
       if (limit === 0) { el.style.display = 'none'; return; }
-      if (limit >= 100) {
-        const remaining = Math.max(0, Math.floor(limit - used));
-        el.textContent = `Quedan ${remaining} de ${limit} chats este mes`;
-      } else {
-        const usedFixed = used.toFixed(4);
-        const limitFixed = limit.toFixed(2);
-        const remaining = Math.max(0, limit - used);
-        el.textContent = `${usedFixed} / ${limitFixed} USD este mes (quedan ~${remaining.toFixed(2)} USD)`;
-      }
+      const remaining = Math.max(0, Math.floor(limit - used));
+      el.textContent = `Chat: ${remaining}/${Math.floor(limit)} créditos`;
       el.style.display = 'block';
     } catch (e) {
       el.style.display = 'none';
     }
   }
 
+  /** Refresca límite y uso de créditos desde Supabase (para ver cambios hechos en admin sin cerrar sesión). */
+  async refreshQuotaFromSupabase() {
+    try {
+      const userId = localStorage.getItem('nutriplant_user_id');
+      if (!userId) return;
+      const client = typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null;
+      if (!client) return;
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
+      if (!isUuid) return;
+      const userKey = `nutriplant_user_${userId}`;
+      const raw = localStorage.getItem(userKey);
+      if (!raw || !raw.startsWith('{')) return;
+      const user = JSON.parse(raw);
+      const { data, error } = await client
+        .from('profiles')
+        .select('chat_limit_monthly, chat_usage_current_month, chat_usage_month')
+        .eq('id', userId)
+        .maybeSingle();
+      if (error || !data) return;
+      if (data.chat_limit_monthly != null) user.chat_limit_monthly = data.chat_limit_monthly;
+      if (data.chat_usage_current_month != null) user.chat_usage_current_month = data.chat_usage_current_month;
+      if (data.chat_usage_month != null) user.chat_usage_month = data.chat_usage_month;
+      localStorage.setItem(userKey, JSON.stringify(user));
+      this.updateChatQuotaDisplay();
+    } catch (e) {
+      console.warn('⚠️ No se pudo refrescar créditos desde Supabase:', e);
+    }
+  }
+
   /** Comprueba si el usuario puede usar el chat (no bloqueado, bajo límite mensual). */
-  checkUserChatAllowed() {
+  checkUserChatAllowed(hasImage = false) {
     try {
       const userId = localStorage.getItem('nutriplant_user_id');
       if (!userId) return { allowed: true };
@@ -579,7 +603,7 @@ class NutriPlantChat {
       const user = JSON.parse(raw);
       if (user.chat_blocked === true) return { allowed: false, message: 'El chat con la IA está deshabilitado para tu cuenta. Contacta al administrador si necesitas activarlo.' };
       let rawLimit = user.chat_limit_monthly;
-      if ((rawLimit == null || rawLimit === '') && user.subscription_status === 'active') rawLimit = 1;
+      if ((rawLimit == null || rawLimit === '') && user.subscription_status === 'active') rawLimit = 500;
       if (rawLimit === -1 || rawLimit == null || rawLimit === '') return { allowed: true };
       const limit = parseInt(rawLimit, 10);
       if (limit === 0) return { allowed: false, message: 'No tienes chats disponibles este mes. Contacta al administrador si necesitas activarlo.' };
@@ -589,15 +613,16 @@ class NutriPlantChat {
       let usage = user.chat_usage_current_month || 0;
       const usageMonth = user.chat_usage_month || '';
       if (usageMonth !== currentMonth) { usage = 0; }
-      if (usage >= limit) return { allowed: false, message: '⚠️ Has alcanzado el límite mensual de chats' };
+      const requiredCredits = hasImage ? 3 : 1;
+      if ((usage + requiredCredits) > limit) return { allowed: false, message: '⚠️ Has alcanzado el límite mensual de créditos. Se renuevan al inicio del próximo mes.' };
       return { allowed: true };
     } catch (e) {
       return { allowed: true };
     }
   }
 
-  /** Incrementa el contador de uso mensual del chat para el usuario actual (llamar tras respuesta exitosa). */
-  incrementUserChatUsage() {
+  /** Incrementa uso mensual en créditos (texto=1, imagen=3). */
+  incrementUserChatUsage(hasImage = false) {
     try {
       const userId = localStorage.getItem('nutriplant_user_id');
       if (!userId) return;
@@ -611,7 +636,8 @@ class NutriPlantChat {
         user.chat_usage_current_month = 0;
         user.chat_usage_month = currentMonth;
       }
-      user.chat_usage_current_month = (user.chat_usage_current_month || 0) + 1;
+      const creditsToAdd = hasImage ? 3 : 1;
+      user.chat_usage_current_month = (user.chat_usage_current_month || 0) + creditsToAdd;
       localStorage.setItem(userKey, JSON.stringify(user));
     } catch (e) {
       console.warn('⚠️ Error incrementando uso de chat:', e);
@@ -623,7 +649,7 @@ class NutriPlantChat {
     const hasImage = this.pendingImage != null;
     if (!message && !hasImage) return;
 
-    const check = this.checkUserChatAllowed();
+    const check = this.checkUserChatAllowed(hasImage);
     if (!check.allowed) {
       this.addMessage(check.message || 'No puedes usar el chat en este momento.', 'ai');
       return;
@@ -654,7 +680,7 @@ class NutriPlantChat {
       const indicator = document.getElementById('typing-indicator');
       if (indicator) indicator.remove();
       
-      this.incrementUserChatUsage();
+      this.incrementUserChatUsage(hasImage);
       this.updateChatQuotaDisplay();
       this.addMessage(response, 'ai');
     } catch (error) {
@@ -864,7 +890,7 @@ ESTILO DE RESPUESTA:
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       if (response.status === 429) {
-        const quotaMessage = data?.message || 'Límite mensual de chat alcanzado.';
+        const quotaMessage = data?.message || 'Has alcanzado el límite mensual de créditos. Se renuevan al inicio del próximo mes.';
         return `⚠️ ${quotaMessage}`;
       }
       if (response.status === 403) {

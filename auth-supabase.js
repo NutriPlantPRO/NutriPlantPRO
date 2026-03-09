@@ -95,7 +95,7 @@
           projects: Array.isArray(profile.projects) && profile.projects.length ? profile.projects : (existing.projects || []),
           created_at: profile.created_at || existing.created_at,
           chat_blocked: profile.chat_blocked === true,
-          chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : (existing.chat_limit_monthly != null ? existing.chat_limit_monthly : -1),
+          chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : (existing.chat_limit_monthly != null ? existing.chat_limit_monthly : null),
           chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : (existing.chat_usage_current_month != null ? existing.chat_usage_current_month : 0),
           chat_usage_month: profile.chat_usage_month || existing.chat_usage_month || null
         };
@@ -166,7 +166,7 @@
           projects: Array.isArray(profile.projects) && profile.projects.length ? profile.projects : (existing.projects || []),
           created_at: profile.created_at || existing.created_at,
           chat_blocked: profile.chat_blocked === true,
-          chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : (existing.chat_limit_monthly != null ? existing.chat_limit_monthly : -1),
+          chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : (existing.chat_limit_monthly != null ? existing.chat_limit_monthly : null),
           chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : (existing.chat_usage_current_month != null ? existing.chat_usage_current_month : 0),
           chat_usage_month: profile.chat_usage_month || existing.chat_usage_month || null
         };
@@ -276,7 +276,7 @@
             crops: profile.crops || [],
             created_at: profile.created_at,
             chat_blocked: profile.chat_blocked === true,
-            chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : -1,
+            chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : null,
             chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : 0,
             chat_usage_month: profile.chat_usage_month || null
           }));

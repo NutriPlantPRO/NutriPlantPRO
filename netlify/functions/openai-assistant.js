@@ -1,13 +1,13 @@
 /**
  * Netlify Function: proxy a OpenAI para el chat de NutriPlant PRO.
- * Aplica límite mensual por usuario (USD) leyendo/actualizando Supabase profiles.
+ * Aplica límite mensual por usuario (créditos) leyendo/actualizando Supabase profiles.
  *
  * Variables de entorno en Netlify:
  *   OPENAI_API_KEY      - Clave de OpenAI (obligatoria)
  *   SUPABASE_URL        - URL del proyecto Supabase (para cuota por usuario)
  *   SUPABASE_SERVICE_ROLE_KEY - Service role key (para leer/actualizar profiles)
  *
- * En profiles: chat_limit_monthly (USD, -1 = sin límite), chat_usage_current_month (USD),
+ * En profiles: chat_limit_monthly (créditos, -1 = sin límite), chat_usage_current_month (créditos),
  *   chat_usage_month (ej. "2025-02"). Si faltan columnas, crear en Supabase.
  */
 
@@ -15,6 +15,9 @@ const MODEL_PRICING_USD_PER_1M = {
   'gpt-4o-mini': { input: 0.15, output: 0.60 },
   'gpt-4o': { input: 5.0, output: 15.0 }
 };
+const DEFAULT_MONTHLY_CREDITS = 500;
+const CREDITS_TEXT_MESSAGE = 1;
+const CREDITS_IMAGE_MESSAGE = 3; // 1 imagen por mensaje
 
 function monthKey() {
   const now = new Date();
@@ -87,8 +90,8 @@ async function getQuotaFromSupabase(supabase, userId) {
   return data;
 }
 
-/** Actualiza uso mensual en Supabase. Si el mes cambió, resetea uso; luego suma costUsd. */
-async function addUsageInSupabase(supabase, userId, costUsd) {
+/** Actualiza uso mensual en Supabase. Si el mes cambió, resetea uso; luego suma créditos. */
+async function addUsageInSupabase(supabase, userId, creditsToAdd) {
   if (!supabase || !userId || userId === 'anonymous') return;
   const currentMonth = monthKey();
   const { data: row, error: selectErr } = await supabase
@@ -103,7 +106,7 @@ async function addUsageInSupabase(supabase, userId, costUsd) {
   let usage = Number(row?.chat_usage_current_month) || 0;
   const usageMonth = row?.chat_usage_month || '';
   if (usageMonth !== currentMonth) usage = 0;
-  usage = Math.round((usage + costUsd) * 1e8) / 1e8;
+  usage = Math.max(0, Math.round((usage + (Number(creditsToAdd) || 0)) * 1000) / 1000);
   const { error: updateErr } = await supabase
     .from('profiles')
     .update({ chat_usage_current_month: usage, chat_usage_month: currentMonth })
@@ -196,7 +199,6 @@ exports.handler = async (event, context) => {
   }
 
   const currentMonth = monthKey();
-  const defaultLimitUsd = 1.0;
 
   if (supabase && userId && userId !== 'anonymous' && userId !== '__admin__') {
     const quota = await getQuotaFromSupabase(supabase, userId);
@@ -207,37 +209,35 @@ exports.handler = async (event, context) => {
           message: 'El chat con la IA está deshabilitado para tu cuenta. Contacta al administrador si necesitas activarlo.'
         });
       }
-      let limitUsd = quota.chat_limit_monthly;
+      let limitCredits = quota.chat_limit_monthly;
       const isActiveSubscriber = quota.subscription_status === 'active';
-      if (limitUsd === -1 || limitUsd == null || limitUsd === '' || limitUsd === undefined) {
-        limitUsd = isActiveSubscriber ? defaultLimitUsd : -1;
+      if (limitCredits === -1 || limitCredits == null || limitCredits === '' || limitCredits === undefined) {
+        limitCredits = isActiveSubscriber ? DEFAULT_MONTHLY_CREDITS : -1;
       } else {
-        limitUsd = Math.max(0, Number(limitUsd));
+        limitCredits = Math.max(0, Number(limitCredits));
       }
-      if (limitUsd >= 0) {
-        let usedUsd = Number(quota.chat_usage_current_month) || 0;
+      if (limitCredits >= 0) {
+        let usedCredits = Number(quota.chat_usage_current_month) || 0;
         const usageMonth = quota.chat_usage_month || '';
-        if (usageMonth !== currentMonth) usedUsd = 0;
+        if (usageMonth !== currentMonth) usedCredits = 0;
+        const requiredCredits = totalImageCount > 0 ? CREDITS_IMAGE_MESSAGE : CREDITS_TEXT_MESSAGE;
 
-        if (usedUsd >= limitUsd) {
+        if (usedCredits >= limitCredits) {
           return jsonResponse(429, {
             error: 'quota_exceeded',
             message: 'Has alcanzado el límite mensual de chat.',
-            quota: { month: currentMonth, limit_usd: limitUsd, used_usd: Math.round(usedUsd * 1e6) / 1e6 }
+            quota: { month: currentMonth, limit_credits: limitCredits, used_credits: Math.floor(usedCredits) }
           });
         }
-
-        const roughPrompt = roughInputTokens(messages, totalImageCount);
-        const projectedCost = tokenCostUsd(model, roughPrompt, max_tokens);
-        if (usedUsd + projectedCost > limitUsd) {
+        if (usedCredits + requiredCredits > limitCredits) {
           return jsonResponse(429, {
             error: 'quota_preventive_block',
             message: 'Has alcanzado el límite mensual de chat.',
             quota: {
               month: currentMonth,
-              limit_usd: limitUsd,
-              used_usd: Math.round(usedUsd * 1e6) / 1e6,
-              projected_extra_usd: Math.round(projectedCost * 1e6) / 1e6
+              limit_credits: limitCredits,
+              used_credits: Math.floor(usedCredits),
+              required_credits: requiredCredits
             }
           });
         }
@@ -265,14 +265,18 @@ exports.handler = async (event, context) => {
       data = { error: text || 'Respuesta no JSON' };
     }
 
-    if (res.ok && data.usage && supabase && userId && userId !== 'anonymous' && userId !== '__admin__') {
-      const pt = Number(data.usage.prompt_tokens) || 0;
-      const ct = Number(data.usage.completion_tokens) || 0;
-      const costUsd = tokenCostUsd(model, pt, ct);
-      await addUsageInSupabase(supabase, userId, costUsd);
+    if (res.ok && supabase && userId && userId !== 'anonymous' && userId !== '__admin__') {
+      const creditsUsed = totalImageCount > 0 ? CREDITS_IMAGE_MESSAGE : CREDITS_TEXT_MESSAGE;
+      await addUsageInSupabase(supabase, userId, creditsUsed);
       if (!data._nutriplant) data._nutriplant = {};
-      data._nutriplant.estimated_cost_usd = Math.round(costUsd * 1e8) / 1e8;
       data._nutriplant.month = currentMonth;
+      data._nutriplant.credits_used_this_request = creditsUsed;
+      if (data.usage) {
+        const pt = Number(data.usage.prompt_tokens) || 0;
+        const ct = Number(data.usage.completion_tokens) || 0;
+        const costUsd = tokenCostUsd(model, pt, ct);
+        data._nutriplant.estimated_cost_usd = Math.round(costUsd * 1e8) / 1e8;
+      }
     }
     if (!data._nutriplant) data._nutriplant = {};
     data._nutriplant.image_received = totalImageCount > 0;

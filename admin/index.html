@@ -10,7 +10,7 @@
     <script src="../analysis-report-render.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
-    <script src="../auth-supabase.js"></script>
+    <script src="../auth-supabase.js?v=1762793900"></script>
     <style>
         .admin-container {
             max-width: 1200px;
@@ -5049,13 +5049,13 @@
                             </label>
                             <div>
                                 <label style="display: block; margin-bottom: 4px; font-weight: 500; color: #374151;">Límite mensual de interacciones</label>
-                                <input type="number" id="edit-user-chat-limit-monthly" min="-1" step="1" placeholder="Vacío = sin límite" value="${(user.chat_limit_monthly == null || user.chat_limit_monthly === '' || user.chat_limit_monthly === -1) ? '' : Number(user.chat_limit_monthly)}" 
+                                <input type="number" id="edit-user-chat-limit-monthly" min="-1" step="1" placeholder="Vacío = 500 (activo)" value="${(user.chat_limit_monthly == null || user.chat_limit_monthly === '' || user.chat_limit_monthly === -1) ? '' : Number(user.chat_limit_monthly)}" 
                                        style="width: 140px; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
                                 <small style="display: block; color: #64748b; font-size: 12px; margin-top: 6px; line-height: 1.4;">
-                                    <strong>Resumen:</strong> <strong>Vacío</strong> = sin límite (tope ~1 USD/mes). <strong>0</strong> = sin chats este mes (casi como bloquear). <strong>Número</strong> (ej. 1) = tope en USD/mes. Bloquear = no puede usar el chat.
+                                    <strong>Resumen:</strong> <strong>Vacío</strong> = 500 créditos/mes (suscriptor activo). <strong>0</strong> = sin chats este mes (casi como bloquear). <strong>Número</strong> (ej. 800) = tope mensual de créditos. <strong>-1</strong> = ilimitado. Imagen descuenta 3 créditos.
                                 </small>
                                 <div style="margin-top: 10px; padding: 8px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #475569;">
-                                    <strong>Uso este mes:</strong> ${(user.chat_usage_current_month != null && user.chat_usage_current_month !== '') ? Number(user.chat_usage_current_month).toFixed(4) + ' USD' : '0 USD'}
+                                    <strong>Uso este mes:</strong> ${(user.chat_usage_current_month != null && user.chat_usage_current_month !== '') ? Math.floor(Number(user.chat_usage_current_month)) + ' créditos' : '0 créditos'}
                                     ${(user.chat_usage_month) ? ' · Mes: ' + user.chat_usage_month : ''}
                                 </div>
                             </div>
