@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" href="assets/N_Hoja_Azul.png">
   
     <link rel="stylesheet" href="dashboard.css?v=1758328000" />
-  <link rel="stylesheet" href="chat.css" />
+  <link rel="stylesheet" href="chat.css?v=1762797600" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -6193,15 +6193,15 @@ CONTRATO:
     </div>
   </div>
 
-  <!-- Modal Calculadora simple (estilo Mac, con paréntesis) -->
+  <!-- Modal Calculadora simple (paleta NutriPlant: azul marino + azul claro) -->
   <div id="simpleCalculatorModal" class="modal-overlay">
-    <div class="modal" style="max-width: 320px; background: #2d2d2d; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
-      <div class="modal-header" style="background: #2d2d2d; border-bottom: 1px solid #404040;">
+    <div class="modal" style="max-width: 320px; background: #0c4a6e; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(12,74,110,0.5);">
+      <div class="modal-header" style="background: #0c4a6e; border-bottom: 1px solid #1e3a5f;">
         <h2 class="modal-title" style="color: #fff; font-size: 16px;">🧮 Calculadora</h2>
         <button class="modal-close" onclick="closeSimpleCalculator()" style="color: #fff;">×</button>
       </div>
-      <div class="modal-body" style="padding: 16px; background: #2d2d2d;">
-        <div id="simpleCalcScreen" style="background:#1a1a1a; border-radius:10px; margin-bottom:12px; padding:12px 14px; min-height:72px; display:flex; flex-direction:column; justify-content:flex-end;">
+      <div class="modal-body" style="padding: 16px; background: #0c4a6e;">
+        <div id="simpleCalcScreen" style="background:#0a3d5c; border-radius:10px; margin-bottom:12px; padding:12px 14px; min-height:72px; display:flex; flex-direction:column; justify-content:flex-end;">
           <div id="simpleCalcEquation" style="text-align:right; color:rgba(255,255,255,0.7); font-size:16px; min-height:22px; margin-bottom:4px; font-family:system-ui,sans-serif;">&nbsp;</div>
           <input type="text" id="simpleCalcDisplay" readonly value="0" style="width:100%; padding:0; font-size:28px; text-align:right; border:none; background:transparent; color:#fff; font-family:system-ui,sans-serif; box-sizing:border-box;">
         </div>
@@ -6270,12 +6270,12 @@ CONTRATO:
     </div>
   </div>
   <style>
-    .simple-calc-btn { width:100%; padding:16px; font-size:20px; font-weight:600; border:none; border-radius:12px; cursor:pointer; background:#505050; color:#fff; transition:background .15s; }
-    .simple-calc-btn:hover { background:#606060; }
-    .simple-calc-op { background:#606060; color:#fff; }
-    .simple-calc-op:hover { background:#707070; }
-    .simple-calc-eq { background:#ff9500; color:#fff; }
-    .simple-calc-eq:hover { background:#ffad33; }
+    .simple-calc-btn { width:100%; padding:16px; font-size:20px; font-weight:600; border:none; border-radius:12px; cursor:pointer; background:#1e4976; color:#fff; transition:background .15s; }
+    .simple-calc-btn:hover { background:#2563ab; }
+    .simple-calc-op { background:#1e3a5f; color:#fff; }
+    .simple-calc-op:hover { background:#2563ab; }
+    .simple-calc-eq { background:#0ea5e9; color:#fff; }
+    .simple-calc-eq:hover { background:#38bdf8; }
     .notes-tool-btn { padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 13px; color: #334155; }
     .notes-tool-btn:hover { background: #e2e8f0; }
     .notes-block-editor:empty::before { content: attr(data-placeholder); color: #94a3b8; }
