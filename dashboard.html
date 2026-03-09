@@ -803,6 +803,7 @@
           // Limpiar userId inválido
           localStorage.removeItem('nutriplant_user_id');
           localStorage.removeItem('np_user');
+          localStorage.removeItem('nutriplant-current-project');
           // Redirigir a login
           alert('❌ Tu sesión ha expirado o el usuario no existe. Por favor, inicia sesión nuevamente.');
           window.location.href = 'login.html';
@@ -6666,6 +6667,7 @@ CONTRATO:
           // Limpiar sesión inválida
           localStorage.removeItem('nutriplant_user_id');
           localStorage.removeItem('np_user');
+          localStorage.removeItem('nutriplant-current-project');
           return;
         }
 

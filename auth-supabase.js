@@ -346,6 +346,7 @@
       }
       localStorage.removeItem(AUTH_KEY);
       localStorage.removeItem('nutriplant_user_id');
+      localStorage.removeItem('nutriplant-current-project');
     }
   };
 })();

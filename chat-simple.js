@@ -359,7 +359,12 @@ class NutriPlantChat {
       if (!userId) return;
       
       if (projectId) {
-        // 🔑 Con proyecto: guardar en el objeto del proyecto (para métricas por proyecto y admin)
+        // 🔑 Con proyecto: guardar por usuario+proyecto para que cada usuario vea solo su historial
+        const chatKey = `nutriplant_chat_${userId}_${projectId}`;
+        try {
+          localStorage.setItem(chatKey, JSON.stringify({ chat_history: this.messages, updated_at: new Date().toISOString() }));
+          console.log(`✅ Historial guardado (usuario+proyecto) - ${this.messages.length} mensajes`);
+        } catch (e) { console.warn('⚠️ Error guardando chat:', e); }
         const projectKey = `nutriplant_project_${projectId}`;
         const projectData = localStorage.getItem(projectKey);
         if (projectData) {
@@ -369,15 +374,12 @@ class NutriPlantChat {
             project.updated_at = new Date().toISOString();
             project.updatedAt = new Date().toISOString();
             localStorage.setItem(projectKey, JSON.stringify(project));
-            console.log(`✅ Historial guardado en proyecto (${this.messages.length} mensajes) - ID: ${projectId}`);
             if (typeof window.nutriplantSyncProjectToCloud === 'function') {
-              try { window.nutriplantSyncProjectToCloud(projectId, project); } catch (e) { console.warn('Sync chat a nube:', e); }
+              try { window.nutriplantSyncProjectToCloud(projectId, project); } catch (err) { console.warn('Sync chat a nube:', err); }
             }
           } catch (parseError) {
             console.error('❌ Error parseando proyecto para guardar chat:', parseError);
           }
-        } else {
-          console.warn('⚠️ Proyecto no encontrado en localStorage:', projectId);
         }
       } else {
         // 🔑 Sin proyecto: guardar en el usuario (chat_history_sin_proyecto) para métricas por usuario
@@ -407,8 +409,21 @@ class NutriPlantChat {
       const projectId = this.getCurrentProjectId();
       const userId = localStorage.getItem('nutriplant_user_id');
       
-      if (projectId) {
-        // 🔑 Con proyecto: cargar del proyecto
+      if (projectId && userId) {
+        // 🔑 Con proyecto: cargar por usuario+proyecto para que cada usuario vea solo su historial
+        const chatKey = `nutriplant_chat_${userId}_${projectId}`;
+        const chatData = localStorage.getItem(chatKey);
+        if (chatData) {
+          try {
+            const parsed = JSON.parse(chatData);
+            if (parsed.chat_history && Array.isArray(parsed.chat_history)) {
+              this.messages = parsed.chat_history;
+              console.log(`✅ Historial cargado (usuario+proyecto) - ${this.messages.length} mensajes`);
+              this._renderLoadedMessages();
+              return;
+            }
+          } catch (e) { console.warn('⚠️ Error leyendo chat por usuario:', e); }
+        }
         const projectKey = `nutriplant_project_${projectId}`;
         const projectData = localStorage.getItem(projectKey);
         if (projectData) {
@@ -416,13 +431,12 @@ class NutriPlantChat {
             const project = JSON.parse(projectData);
             if (project.chat_history && Array.isArray(project.chat_history)) {
               this.messages = project.chat_history;
-              console.log(`✅ Historial cargado del proyecto (${this.messages.length} mensajes) - ID: ${projectId}`);
+              localStorage.setItem(chatKey, JSON.stringify({ chat_history: this.messages, updated_at: new Date().toISOString() }));
+              console.log(`✅ Historial migrado a clave por usuario (${this.messages.length} mensajes)`);
               this._renderLoadedMessages();
               return;
             }
-          } catch (parseError) {
-            console.error('❌ Error parseando proyecto para cargar chat:', parseError);
-          }
+          } catch (parseError) { console.error('❌ Error parseando proyecto para cargar chat:', parseError); }
         }
         this.messages = [];
         return;

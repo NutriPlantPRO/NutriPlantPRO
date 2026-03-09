@@ -90,6 +90,7 @@
   right: 20px;
   width: 350px;
   height: 550px;
+  max-height: min(550px, calc(100vh - 120px));
   z-index: 1000;
   background: var(--chat-bg);
   border-radius: 16px;
@@ -513,7 +514,20 @@
     left: auto;
     bottom: 90px;
     height: 484px;
-    max-height: 85vh;
+    max-height: min(484px, calc(100vh - 120px));
+  }
+
+  .chat-bubble {
+    bottom: 20px;
+    right: 20px;
+  }
+}
+
+/* Tablet horizontal: que el chat quepa siempre en pantalla */
+@media (max-height: 600px) {
+  .chat-panel {
+    height: calc(100vh - 120px);
+    max-height: calc(100vh - 120px);
   }
   
   .chat-bubble {
