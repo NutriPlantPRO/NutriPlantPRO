@@ -791,6 +791,13 @@ class NutriPlantChat {
 
     const systemPrompt = `Eres el ASISTENTE EXPERTO de NutriPlant PRO. Tu objetivo es ayudar a tomar mejores decisiones agronómicas con base en datos reales del proyecto activo.
 
+CONTEXTO DE CONOCIMIENTO (qué tienes tú vs qué te pasamos):
+- TU CONOCIMIENTO (no hace falta que te lo den): Agronomía, nutrición vegetal, CIC, meq/L, ppm, rangos ideales, antagonismos, fórmulas (óxido/elemental, conversiones), diagnósticos integrados, mejores prácticas. Eso ya lo dominas por tu entrenamiento.
+- LO QUE TE PASAMOS: Solo los DATOS DEL PROYECTO del usuario (suelo, enmiendas, fertirriego, hidroponía, solución nutritiva, VPD, análisis, etc.) en el bloque "DATOS DEL PROYECTO". Con eso + tu conocimiento debes dominar el contexto y sacar de apuros sin que tengan que "darte contexto" de cada pantalla.
+- Conclusión: No pidas datos que ya están en el bloque de abajo. Interpreta todo lo que haya (resúmenes, tablas, volcado completo) con tu expertise y responde con acciones concretas.
+
+REGLA DE ORO: El bloque de abajo es como si el usuario te hubiera pegado su pantalla. Tu primer paso mental es LEERLO TODO. Luego responde con datos CONCRETOS, números y pasos que saquen de apuros; evita respuestas genéricas.
+
 IDENTIDAD Y CAPACIDADES:
 - Dominas lógica de NutriPlant: Enmienda, Suelo, Granular, Fertirriego, Hidroponía, Análisis y VPD.
 - Diferencias claramente cálculo de plataforma vs criterio técnico general.
@@ -808,7 +815,7 @@ INSTRUCCIONES:
 - No mezcles ni cites valores de otros proyectos del usuario. Si menciona "mi otro proyecto", indica que solo tienes contexto del proyecto actual.
 - Si existe una línea "Resultado en pantalla (prioridad alta...)" en ENMIENDAS, úsala como fuente principal para cantidades y aportes; cita esos números exactos en tu respuesta.
 - Si existen los bloques "🧪 Enmiendas Disponibles", "% Suelo explorado por raíces" y "📊 Resultados del Cálculo de Enmiendas", trátalos como lectura directa de pantalla y priorízalos para responder preguntas de Enmienda.
-- Tu valor diferenciador es usar SIEMPRE los datos que ves del proyecto (análisis, programa, cultivo, CIC, etc.) para dar recomendaciones específicas a este agronomista, no genéricas. Interpreta sus números con la lógica NutriPlant PRO y sugiere acciones concretas.
+- Tu valor diferenciador es usar SIEMPRE los datos que ves del proyecto (análisis, programa, cultivo, CIC, solución nutritiva, etc.) para dar recomendaciones específicas a este agronomista, no genéricas. Interpreta sus números con la lógica NutriPlant PRO, sugiere acciones concretas y saca de apuros con pasos claros (qué cambiar, en qué rango, por qué).
 - Usa el bloque INTERCONEXIONES ENTRE PESTAÑAS cuando convenga: si preguntan por qué algo no funciona (ej. VPD sin clima), de dónde sale un dato (ej. enmienda que usa CIC de suelo) o qué pestaña completar primero; indica la pestaña origen o la que debe configurarse.
 - Si preguntan por conversión óxido↔elemental (P₂O₅/P, K₂O/K, CaO/Ca, MgO/Mg, S/SO₄, Zn/ZnO) o por ppm↔mmol/L↔meq/L, usa exactamente los factores y fórmulas del manual sección 7 (Calculadoras NutriPlant) para que tu respuesta coincida con las calculadoras de la plataforma.
 - Regla crítica de coherencia: en cationes/CIC, si un elemento está por ENCIMA del rango ideal o el "meq a ajustar" es NEGATIVO, NO recomiendes aumentarlo; en ese caso la dirección correcta es disminuir/contener/aplazar ese elemento.
@@ -1100,6 +1107,62 @@ ESTILO DE RESPUESTA:
     return signals;
   }
 
+  /** Una o dos líneas con el dato clave del módulo actual (para el resumen ejecutivo del contexto). */
+  buildExecutiveSummary(snapshot) {
+    if (!snapshot || !snapshot.module) return '';
+    const mod = snapshot.module;
+    if (mod === 'hidroponia') {
+      const live = this.getLiveHidroponiaBlocks();
+      if (live.subsection === 'Solución por etapa' && (live.nitrogenSummary || live.triangleInfo)) {
+        const parts = [];
+        if (live.nitrogenSummary) parts.push(live.nitrogenSummary);
+        if (live.triangleInfo) parts.push(live.triangleInfo.replace(/\s+/g, ' ').slice(0, 120) + (live.triangleInfo.length > 120 ? '…' : ''));
+        return parts.length ? parts.join(' | ') : '';
+      }
+      if (live.objectiveSummary) return 'Objetivo solución (ppm): ' + live.objectiveSummary;
+    }
+    if (mod === 'fertirriego') {
+      const live = this.getLiveFertirriegoBlocks();
+      if (live.tableSummary) return live.tableSummary.split('\n')[0] || live.tableSummary.slice(0, 100);
+    }
+    if (mod === 'enmienda') {
+      const live = this.getLiveAmendmentScreenBlocks();
+      if (live.calcResultsText) return live.calcResultsText.replace(/\s+/g, ' ').slice(0, 100) + (live.calcResultsText.length > 100 ? '…' : '');
+    }
+    if (mod === 'granular') {
+      const live = this.getLiveGranularRequirementBlocks();
+      if (live.tableSummary) return live.tableSummary.split('\n')[0] || live.tableSummary.slice(0, 100);
+    }
+    return '';
+  }
+
+  /** Volcado compacto de todo el proyecto para que la IA tenga "toda la información" en un solo bloque y use su conocimiento agronómico para interpretarla. Máx ~3500 caracteres. */
+  getFullProjectDump(project) {
+    if (!project || typeof project !== 'object') return '';
+    const maxLen = 3400;
+    const lines = [];
+    const push = (label, obj) => {
+      if (obj == null || (typeof obj === 'object' && Object.keys(obj).length === 0)) return;
+      try {
+        const s = typeof obj === 'string' ? obj : JSON.stringify(obj);
+        if (s.length > 400) lines.push(`${label}: ${s.slice(0, 400)}…`);
+        else lines.push(`${label}: ${s}`);
+      } catch (e) { lines.push(`${label}: [no serializable]`); }
+    };
+    if (project.soilAnalysis) push('suelo', project.soilAnalysis);
+    if (project.amendments) push('enmiendas', project.amendments);
+    if (project.fertirriego) push('fertirriego', project.fertirriego);
+    if (project.granular) push('granular', project.granular);
+    if (project.hidroponia || project.sections?.hidroponia) push('hidroponia', project.hidroponia || project.sections?.hidroponia);
+    if (project.location && (project.location.polygon || project.location.areaHectares != null)) push('ubicacion', { areaHectares: project.location.areaHectares, area: project.location.area, hasPolygon: !!(project.location.polygon && project.location.polygon.length >= 3) });
+    if (project.vpdAnalysis) push('vpd', project.vpdAnalysis);
+    if (Array.isArray(project.soilAnalyses) && project.soilAnalyses.length) push('analisisSuelo_count', project.soilAnalyses.length);
+    if (Array.isArray(project.foliarAnalyses) && project.foliarAnalyses.length) push('analisisFoliar_count', project.foliarAnalyses.length);
+    if (Array.isArray(project.frutaAnalyses) && project.frutaAnalyses.length) push('analisisFruta_count', project.frutaAnalyses.length);
+    const out = lines.join('\n');
+    return out.length > maxLen ? out.slice(0, maxLen) + '…' : out;
+  }
+
   getUnifiedProjectSnapshot() {
     const projectId = this.getCurrentProjectId();
     const module = this.detectCurrentModule();
@@ -1338,11 +1401,22 @@ ESTILO DE RESPUESTA:
   }
 
   getLiveHidroponiaBlocks() {
-    const out = { subsection: '', volume: '', objectiveSummary: '', waterSummary: '', missingSummary: '' };
+    const out = { subsection: '', volume: '', objectiveSummary: '', waterSummary: '', missingSummary: '', solutionMeqTable: '', solutionPercentTable: '', solutionPpmTable: '', nitrogenSummary: '', triangleInfo: '' };
     const activeBtn = document.querySelector('.hydroponia-tabs .tab-button.active');
     const tab = activeBtn && activeBtn.getAttribute('data-tab');
-    if (tab === 'hidro-solucion') out.subsection = 'Solución por etapa';
-    else if (tab === 'hidro-calculo') out.subsection = 'Cálculo de fertilizantes';
+    if (tab === 'hidro-solucion') {
+      out.subsection = 'Solución por etapa';
+      const meqWrap = document.getElementById('hydroMeqTableWrap');
+      const pctWrap = document.getElementById('hydroMeqPercentWrap');
+      const ppmWrap = document.getElementById('hydroPpmTableWrap');
+      const nSum = document.getElementById('hydroNitrogenSummaryText');
+      const tri = document.getElementById('hydroTriangleInfoCombined');
+      if (meqWrap && meqWrap.textContent) out.solutionMeqTable = meqWrap.innerText.replace(/\s+/g, ' ').trim().slice(0, 800);
+      if (pctWrap && pctWrap.textContent) out.solutionPercentTable = pctWrap.innerText.replace(/\s+/g, ' ').trim().slice(0, 600);
+      if (ppmWrap && ppmWrap.textContent) out.solutionPpmTable = ppmWrap.innerText.replace(/\s+/g, ' ').trim().slice(0, 800);
+      if (nSum && nSum.textContent) out.nitrogenSummary = nSum.textContent.replace(/\s+/g, ' ').trim();
+      if (tri && tri.textContent) out.triangleInfo = tri.textContent.replace(/\s+/g, ' ').trim().slice(0, 500);
+    } else if (tab === 'hidro-calculo') out.subsection = 'Cálculo de fertilizantes';
     const vEl = document.getElementById('hydroVolumeWaterM3');
     const tEl = document.getElementById('hydroTankVolumeL');
     const rEl = document.getElementById('hydroInjectionRate');
@@ -1671,7 +1745,8 @@ ESTILO DE RESPUESTA:
 
   getProjectContext() {
     let context = '=== DATOS DEL PROYECTO ACTUAL (lo que el usuario tiene en NutriPlant PRO) ===\n';
-    context += 'ÚNICO PROYECTO DEL QUE TIENES DATOS EN ESTE CONTEXTO. No uses ni mezcles información de otros proyectos.\n\n';
+    context += 'ÚNICO PROYECTO DEL QUE TIENES DATOS EN ESTE CONTEXTO. No uses ni mezcles información de otros proyectos.\n';
+    context += 'IMPORTANTE: Usa este bloque como si el usuario te hubiera pegado su pantalla. Tu valor es dar respuestas CONCRETAS, con números y pasos claros que saquen de apuros; evita respuestas genéricas.\n\n';
     try {
       const snapshot = this.contextSnapshot || this.getUnifiedProjectSnapshot();
       const projectId = snapshot.projectId;
@@ -1687,6 +1762,14 @@ ESTILO DE RESPUESTA:
         context += 'Proyecto no encontrado en la plataforma.\n';
         return context;
       }
+      // Resumen ejecutivo (como el “contexto” que se pega en ChatGPT: situación en 2–3 líneas)
+      const projName = project.name || project.title || 'Sin nombre';
+      const cultivo = project.crop_type || project.cultivo || '—';
+      const execSummary = this.buildExecutiveSummary(snapshot);
+      context += '--- RESUMEN EJECUTIVO (situación actual en una lectura) ---\n';
+      context += `Proyecto: ${projName}. Cultivo: ${cultivo}. Módulo visible: ${snapshot.module}.\n`;
+      if (execSummary) context += execSummary + '\n';
+      context += '\n';
       context += `Módulo activo: ${snapshot.module}\n`;
       context += `Estado de frescura de datos: ${snapshot.freshness.status}\n`;
       if (snapshot.openFreshness) {
@@ -1901,16 +1984,24 @@ ESTILO DE RESPUESTA:
         }
         context += '\n';
       }
-      // BLOQUES EN VIVO HIDROPONÍA (pantalla actual: subsección, volumen/tanque/inyección, objetivo/agua/requerimiento)
+      // BLOQUES EN VIVO HIDROPONÍA (pantalla actual: subsección, volumen/tanque/inyección, objetivo/agua/requerimiento, solución por etapa)
       if (snapshot.module === 'hidroponia') {
         const liveHydro = this.getLiveHidroponiaBlocks();
-        if (liveHydro.subsection || liveHydro.volume || liveHydro.objectiveSummary || liveHydro.waterSummary || liveHydro.missingSummary) {
+        if (liveHydro.subsection || liveHydro.volume || liveHydro.objectiveSummary || liveHydro.waterSummary || liveHydro.missingSummary || liveHydro.nitrogenSummary || liveHydro.triangleInfo) {
           context += '--- BLOQUES HIDROPONÍA (PANTALLA ACTUAL) ---\n';
           if (liveHydro.subsection) context += `Subsección visible: ${liveHydro.subsection}\n`;
           if (liveHydro.volume) context += `Volumen/tanque/inyección: ${liveHydro.volume}\n`;
           if (liveHydro.objectiveSummary) context += `Objetivo de solución (ppm): ${liveHydro.objectiveSummary}\n`;
           if (liveHydro.waterSummary) context += `Análisis de agua (ppm): ${liveHydro.waterSummary}\n`;
           if (liveHydro.missingSummary) context += `Requerimiento total (ppm): ${liveHydro.missingSummary}\n`;
+          if (liveHydro.subsection === 'Solución por etapa') {
+            context += 'Solución nutritiva por etapa (valores en pantalla; úsalos como referencia principal):\n';
+            if (liveHydro.nitrogenSummary) context += `  Nitrógeno: ${liveHydro.nitrogenSummary}\n`;
+            if (liveHydro.solutionMeqTable) context += `  Tabla meq/L: ${liveHydro.solutionMeqTable}\n`;
+            if (liveHydro.solutionPercentTable) context += `  Tabla % meq: ${liveHydro.solutionPercentTable}\n`;
+            if (liveHydro.solutionPpmTable) context += `  Tabla ppm: ${liveHydro.solutionPpmTable}\n`;
+            if (liveHydro.triangleInfo) context += `  Diagrama ternario (aniones/cationes): ${liveHydro.triangleInfo}\n`;
+          }
           context += '\n';
         }
       }
@@ -2218,6 +2309,13 @@ ESTILO DE RESPUESTA:
           context += `• ${signal}\n`;
         });
         context += '\n';
+      }
+
+      // Volcado completo: toda la información del proyecto en un bloque para que la IA la interprete con su conocimiento agronómico (no hace falta dar contexto pantalla por pantalla).
+      const fullDump = this.getFullProjectDump(project);
+      if (fullDump) {
+        context += '--- VOLCADO COMPLETO DEL PROYECTO (toda la información disponible; usa tu conocimiento agronómico para interpretarla y responder) ---\n';
+        context += fullDump + '\n\n';
       }
 
       context += '=== FIN DATOS DEL PROYECTO ===\n';
