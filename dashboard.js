@@ -12703,7 +12703,7 @@ function createFertigationSectionHTML(chartImages) {
         <div class="report-block-title">💧 Programa de Fertirriego <span class="report-mode-badge">${programModeIsElemental ? 'Modo Elemental' : 'Modo Óxido'}</span></div>
         ${!hasWeekTotals ? '<div class="report-note" style="margin-bottom:8px;">Sin totales guardados por semana. El reporte no recalcula con catálogo interno.</div>' : ''}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:8px;">
-          <div><strong>Semanas:</strong> ${weeks.length}</div>
+          <div><strong>${prog.timeUnit === 'mes' ? 'Meses' : 'Semanas'}:</strong> ${weeks.length}</div>
           <div><strong>Dosis total Kg/Ha:</strong> ${totalDose.toFixed(2)}</div>
           <div><strong>Unidad:</strong> ${prog.timeUnit === 'mes' ? 'Mes' : 'Semana'}</div>
         </div>
