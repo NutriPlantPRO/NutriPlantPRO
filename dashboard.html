@@ -668,10 +668,9 @@
       gap: 10px;
     }
 
-    /* Tablet en vertical: menos trabajo en el primer frame para que las calculadoras abran más rápido */
-    @media (orientation: portrait) and (max-height: 900px) {
-      .modal-overlay { backdrop-filter: none; }
-      .modal { max-height: 82vh; }
+    /* Solo tablet en vertical: restaurar altura normal del modal */
+    @media (orientation: portrait) and (min-width: 768px) {
+      .modal { max-height: 90vh; }
     }
 
     .conversion-calculator {
