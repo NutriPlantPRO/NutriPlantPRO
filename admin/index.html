@@ -1823,9 +1823,34 @@
         
         /** Métricas de chat para seguimiento y gastos: mensajes, interacciones IA (llamadas API), costo estimado USD */
         function getChatMetrics() {
+            const COST_PER_INTERACTION_USD = 0.001;
+            // Usar datos de la nube cuando estén cargados (incluye todos los suscriptores)
+            if (window._adminCloudCache && Array.isArray(window._adminCloudCache.chats)) {
+                const chats = window._adminCloudCache.chats;
+                let totalInteractions = 0, totalMessagesMonth = 0, totalInteractionsMonth = 0;
+                const now = new Date();
+                const currentYear = now.getFullYear(), currentMonth = now.getMonth();
+                chats.forEach(function (c) {
+                    if (c.message_type === 'user') totalInteractions++;
+                    if (c.timestamp) {
+                        var d = new Date(c.timestamp);
+                        if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
+                            totalMessagesMonth++;
+                            if (c.message_type === 'user') totalInteractionsMonth++;
+                        }
+                    }
+                });
+                return {
+                    totalMessages: chats.length,
+                    totalInteractions: totalInteractions,
+                    estimatedCostUSD: totalInteractions * COST_PER_INTERACTION_USD,
+                    totalMessagesThisMonth: totalMessagesMonth,
+                    totalInteractionsThisMonth: totalInteractionsMonth,
+                    estimatedCostUSDThisMonth: totalInteractionsMonth * COST_PER_INTERACTION_USD
+                };
+            }
             let totalMessages = 0;
             let totalInteractions = 0; // cada mensaje "user" = 1 llamada a la API
-            const COST_PER_INTERACTION_USD = 0.001;
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && key.startsWith('nutriplant_project_')) {
@@ -2124,6 +2149,33 @@
         /** Resumen de chat por proyecto: mensajes e interacciones por proyecto */
         function getChatSummaryByProject() {
             const users = getAllUsers();
+            const userEmailMap = {};
+            users.forEach(function (u) { var id = u.id || u.userId; if (id) userEmailMap[id] = u.email || '—'; });
+            // Usar datos de la nube cuando estén cargados (incluye todos los suscriptores)
+            if (window._adminCloudCache && Array.isArray(window._adminCloudCache.chats)) {
+                const chats = window._adminCloudCache.chats;
+                const byProject = {};
+                chats.forEach(function (c) {
+                    const pid = c.project_id || '—';
+                    const pname = (pid === '—') ? 'Chat sin proyecto asignado' : (c.project_name || 'Sin nombre');
+                    if (!byProject[pid]) byProject[pid] = { project_id: pid, project_name: pname, user_id: c.user_id, user_name: c.user_name || '—', total_messages: 0, total_interactions: 0 };
+                    byProject[pid].total_messages++;
+                    if (c.message_type === 'user') byProject[pid].total_interactions++;
+                });
+                const summary = Object.keys(byProject).map(function (pid) {
+                    const r = byProject[pid];
+                    return {
+                        project_id: r.project_id,
+                        project_name: r.project_name,
+                        user_name: r.user_name,
+                        user_email: userEmailMap[r.user_id] || '—',
+                        total_messages: r.total_messages,
+                        total_interactions: r.total_interactions,
+                        estimated_cost_usd: (r.total_interactions * 0.001).toFixed(4)
+                    };
+                });
+                return summary.sort(function (a, b) { return b.total_messages - a.total_messages; });
+            }
             const summary = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
@@ -2191,6 +2243,37 @@
         function getChatSummaryByUser() {
             const users = getAllUsers();
             const COST = 0.001;
+            const userInfo = {};
+            users.forEach(function (u) {
+                var id = u.id || u.userId;
+                if (id) userInfo[id] = { user_name: u.name || 'Sin nombre', user_email: u.email || '—' };
+            });
+            // Usar datos de la nube cuando estén cargados (incluye todos los suscriptores)
+            if (window._adminCloudCache && Array.isArray(window._adminCloudCache.chats)) {
+                const chats = window._adminCloudCache.chats;
+                const byUser = {};
+                chats.forEach(function (c) {
+                    const uid = c.user_id || '—';
+                    if (!uid || uid === '—') return;
+                    if (!byUser[uid]) byUser[uid] = { user_id: uid, user_name: c.user_name || (userInfo[uid] && userInfo[uid].user_name) || '—', user_email: (userInfo[uid] && userInfo[uid].user_email) || '—', total_messages: 0, total_interactions: 0, project_ids: {} };
+                    byUser[uid].total_messages++;
+                    if (c.message_type === 'user') byUser[uid].total_interactions++;
+                    if (c.project_id && c.project_id !== '—') byUser[uid].project_ids[c.project_id] = true;
+                });
+                const list = Object.keys(byUser).map(function (id) {
+                    const r = byUser[id];
+                    return {
+                        user_id: r.user_id,
+                        user_name: r.user_name,
+                        user_email: r.user_email,
+                        total_messages: r.total_messages,
+                        total_interactions: r.total_interactions,
+                        projects_count: Object.keys(r.project_ids).length,
+                        estimated_cost_usd: (r.total_interactions * COST).toFixed(4)
+                    };
+                });
+                return list.filter(function (r) { return r.total_messages > 0; }).sort(function (a, b) { return b.total_messages - a.total_messages; });
+            }
             const byUser = {};
             users.forEach(function (u) {
                 byUser[u.id || u.userId] = {
@@ -2254,7 +2337,10 @@
             return list.filter(function (r) { return r.total_messages > 0; }).sort(function (a, b) { return b.total_messages - a.total_messages; });
         }
         
-        function showChatSummaryByProject() {
+        async function showChatSummaryByProject() {
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function' && (!window._adminCloudCache || !window._adminCloudCache.users)) {
+                try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showChatSummaryByProject: load from cloud', e); }
+            }
             const data = getChatSummaryByProject();
             const m = getChatMetrics();
             const subtitle = m.totalMessages + ' mensajes totales · ' + m.totalInteractions + ' interacciones · ~$' + m.estimatedCostUSD.toFixed(4) + ' USD';
@@ -2274,7 +2360,10 @@
             });
         }
         
-        function showChatSummaryByUser() {
+        async function showChatSummaryByUser() {
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function' && (!window._adminCloudCache || !window._adminCloudCache.users)) {
+                try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showChatSummaryByUser: load from cloud', e); }
+            }
             const data = getChatSummaryByUser();
             const m = getChatMetrics();
             const subtitle = m.totalMessages + ' mensajes totales · ' + m.totalInteractions + ' interacciones · ~$' + m.estimatedCostUSD.toFixed(4) + ' USD';
