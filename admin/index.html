@@ -577,10 +577,10 @@
             @keyframes admin-typing-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.6; } 30% { transform: translateY(-10px); opacity: 1; } }
             #adminChatMessages .admin-chat-highlight { color: #0f766e; font-weight: 600; background: #ecfdf5; padding: 1px 6px; border-radius: 4px; }
             #adminChatMessages .admin-chat-highlight-num { color: #b45309; font-weight: 600; background: #fef9c3; padding: 1px 4px; border-radius: 4px; }
-            /* Tablet horizontal: centrar chat para que no se corte por la derecha */
+            /* Tablet horizontal: más margen derecho para que la ventana se vea completa (sigue a la derecha) */
             @media (orientation: landscape) and (max-height: 800px) {
-              #adminChatPanel { right: auto !important; left: 50% !important; transform: translateX(-50%); }
-              #adminChatBubble { right: auto !important; left: 50% !important; transform: translateX(-50%); margin-left: -30px; }
+              #adminChatPanel { right: calc(24px + env(safe-area-inset-right, 12px)) !important; }
+              #adminChatBubble { right: calc(24px + env(safe-area-inset-right, 12px)) !important; }
             }
             </style>
             <!-- Chat Admin Assistant: mismo azul que chat usuario (NutriPlant PRO); datos relevantes resaltados en verde/amarillo. -->
