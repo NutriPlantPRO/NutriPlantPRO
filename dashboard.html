@@ -575,11 +575,12 @@
       display: none !important;
     }
     
-    /* Cuando tiene clase show, visible */
+    /* Cuando tiene clase show, visible (translateZ(0) ayuda a pintar más rápido en tablet) */
     .modal-overlay.show {
       display: flex !important;
       justify-content: center !important;
       align-items: center !important;
+      transform: translateZ(0);
     }
     
     /* Estilo específico para el modal de información de usuario */
@@ -4754,29 +4755,16 @@ CONTRATO:
       console.log('🔄 Estadísticas de costos reseteadas');
     }
 
-    // Funciones para la calculadora de conversión
+    // Funciones para la calculadora de conversión (abrir rápido: mostrar modal primero, setup en siguiente frame)
     function showConversionCalculator() {
-      console.log('🔧 showConversionCalculator() ejecutándose...');
       const modal = document.getElementById('conversionCalculatorModal');
-      console.log('🔍 Modal encontrado:', modal);
-      if (modal) {
-        console.log('📊 Modal ANTES de agregar show:', modal.className);
-        modal.classList.add('show');
-        console.log('📊 Modal DESPUÉS de agregar show:', modal.className);
-        console.log('✅ Modal abierto con clase show');
-        console.log('🔍 Display computado:', getComputedStyle(modal).display);
-        console.log('🔍 Visibility computado:', getComputedStyle(modal).visibility);
-        console.log('🔍 Opacity computado:', getComputedStyle(modal).opacity);
-        console.log('🔍 Z-index computado:', getComputedStyle(modal).zIndex);
-        if (typeof setupConversionCalculator === 'function') {
-          console.log('🔧 Llamando setupConversionCalculator()');
-          setupConversionCalculator();
-        } else {
-          console.error('❌ setupConversionCalculator no está definida');
-        }
-      } else {
-        console.error('❌ NO SE ENCONTRÓ conversionCalculatorModal');
-      }
+      if (!modal) return;
+      modal.classList.add('show');
+      requestAnimationFrame(function() {
+        if (window._npConversionCalcSetupDone) return;
+        window._npConversionCalcSetupDone = true;
+        if (typeof setupConversionCalculator === 'function') setupConversionCalculator();
+      });
     }
     
     // Hacer la función global
@@ -4797,15 +4785,8 @@ CONTRATO:
 
     // Funciones para la calculadora de unidades de nutrientes
     function showNutrientUnitsCalculator() {
-      console.log('🔧 showNutrientUnitsCalculator() ejecutándose...');
       const modal = document.getElementById('nutrientUnitsCalculatorModal');
-      console.log('🔍 Modal encontrado:', modal);
-      if (modal) {
-        modal.classList.add('show');
-        console.log('✅ Modal abierto con clase show');
-      } else {
-        console.error('❌ NO SE ENCONTRÓ nutrientUnitsCalculatorModal');
-      }
+      if (modal) modal.classList.add('show');
     }
     
     // Hacer la función global
@@ -4874,11 +4855,12 @@ CONTRATO:
     };
     function showMeasureUnitsCalculator() {
       var modal = document.getElementById('measureUnitsCalculatorModal');
-      if (modal) {
-        modal.classList.add('show');
+      if (!modal) return;
+      modal.classList.add('show');
+      requestAnimationFrame(function() {
         updateMeasureUnitOptions();
         convertMeasureUnits();
-      }
+      });
     }
     window.showMeasureUnitsCalculator = showMeasureUnitsCalculator;
     function closeMeasureUnitsCalculator() {
@@ -4919,27 +4901,28 @@ CONTRATO:
       var modal = document.getElementById('simpleCalculatorModal');
       if (!modal) return;
       modal.classList.add('show');
-      var display = document.getElementById('simpleCalcDisplay');
-      var equationEl = document.getElementById('simpleCalcEquation');
-      if (display) {
-        try {
-          var last = localStorage.getItem(NP_SIMPLE_CALC_STORAGE);
-          if (last) {
-            if (last.charAt(0) === '{') {
-              var o = JSON.parse(last);
-              display.textContent = (o.val !== undefined && String(o.val).trim() !== '') ? o.val : '0';
-              if (equationEl && o.eq !== undefined) equationEl.textContent = o.eq || '\u00A0';
+      requestAnimationFrame(function() {
+        var display = document.getElementById('simpleCalcDisplay');
+        var equationEl = document.getElementById('simpleCalcEquation');
+        if (display) {
+          try {
+            var last = localStorage.getItem(NP_SIMPLE_CALC_STORAGE);
+            if (last) {
+              if (last.charAt(0) === '{') {
+                var o = JSON.parse(last);
+                display.textContent = (o.val !== undefined && String(o.val).trim() !== '') ? o.val : '0';
+                if (equationEl && o.eq !== undefined) equationEl.textContent = o.eq || '\u00A0';
+              } else {
+                display.textContent = (last && String(last).trim() !== '') ? last : '0';
+                if (equationEl) equationEl.textContent = '\u00A0';
+              }
             } else {
-              display.textContent = (last && String(last).trim() !== '') ? last : '0';
+              display.textContent = '0';
               if (equationEl) equationEl.textContent = '\u00A0';
             }
-          } else {
-            display.textContent = '0';
-            if (equationEl) equationEl.textContent = '\u00A0';
-          }
-        } catch (e) { display.textContent = '0'; if (equationEl) equationEl.textContent = '\u00A0'; }
-      }
-      var keys = document.getElementById('simpleCalcKeys');
+          } catch (e) { display.textContent = '0'; if (equationEl) equationEl.textContent = '\u00A0'; }
+        }
+        var keys = document.getElementById('simpleCalcKeys');
       if (keys && !keys.dataset.bound) {
         keys.dataset.bound = '1';
         keys.addEventListener('click', function(e) {
@@ -5012,6 +4995,7 @@ CONTRATO:
       }
       document.removeEventListener('keydown', simpleCalcKeydown);
       document.addEventListener('keydown', simpleCalcKeydown);
+      });
     }
     window.showSimpleCalculator = showSimpleCalculator;
     function closeSimpleCalculator() {
