@@ -170,6 +170,7 @@
         <div id="paypalSuccessWelcome" style="display: none; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #6ee7b7; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;">
           <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #065f46;">¡Bienvenido a NutriPlant PRO!</h2>
           <p style="margin: 0 0 12px 0; font-size: 15px; color: #047857;">Tu cuenta y suscripción están activas. Inicia sesión con tu correo y contraseña.</p>
+          <p style="margin: 0 0 12px 0; font-size: 14px; color: #047857;">Tu suscripción es de <strong>$49 USD</strong> <span style="background: #065f46; color: #fff; font-weight: 700; padding: 2px 8px; border-radius: 6px;">cada 5 meses</span>. Puedes cancelarla cuando quieras desde PayPal.</p>
           <p style="margin: 0; font-size: 13px; color: #059669;">Redirigiendo al panel en unos segundos… Si no eres redirigido, usa el formulario de abajo.</p>
         </div>
 
@@ -1916,7 +1917,7 @@
   <script>
     // Registro de cuentas nuevas: false = no mostrar opción de registro (solo login y calculadoras); true = mostrar "Crear Nueva Cuenta"
     // Cuando des luz verde a los registros, cambia a true.
-    window.NUTRIPLANT_REGISTRATION_OPEN = false;
+    window.NUTRIPLANT_REGISTRATION_OPEN = true;
     // Enlace "secreto" para que tú (o quien tengas el link) pueda registrarse sin dejar el botón a la vista: login.html?np_reg=1 o ?np_reg=si
     (function() {
       var p = typeof URLSearchParams !== 'undefined' && new URLSearchParams(window.location.search).get('np_reg');
