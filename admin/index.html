@@ -577,13 +577,13 @@
             @keyframes admin-typing-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.6; } 30% { transform: translateY(-10px); opacity: 1; } }
             #adminChatMessages .admin-chat-highlight { color: #0f766e; font-weight: 600; background: #ecfdf5; padding: 1px 6px; border-radius: 4px; }
             #adminChatMessages .admin-chat-highlight-num { color: #b45309; font-weight: 600; background: #fef9c3; padding: 1px 4px; border-radius: 4px; }
-            /* Tablet horizontal: mantener a la derecha y forzar que no se recorte */
+            /* Tablet horizontal: tamaño compacto (no pantalla completa) y visible completa */
             @media (orientation: landscape) and (max-height: 800px) {
               #adminChatPanel {
-                left: 12px !important;
+                left: auto !important;
                 right: calc(12px + env(safe-area-inset-right, 0px)) !important;
-                width: auto !important;
-                max-width: none !important;
+                width: 350px !important;
+                max-width: calc(100dvw - 24px - env(safe-area-inset-right, 0px)) !important;
               }
               #adminChatBubble { right: calc(12px + env(safe-area-inset-right, 0px)) !important; }
             }
