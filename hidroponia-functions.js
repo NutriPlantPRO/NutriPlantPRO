@@ -1588,12 +1588,13 @@ function bindHydroEvents(container) {
 
   const addFertBtn = document.getElementById('hydroAddFertBtn');
   if (addFertBtn) {
-    addFertBtn.addEventListener('click', () => {
+    // Asignar onclick para que un solo clic = una sola fila (evitar listeners acumulados si initHydroponiaUI se llama varias veces)
+    addFertBtn.onclick = function () {
       hydroAddFert();
       renderHydroFertTable();
       renderHydroFertTotals();
       hydroScheduleSave();
-    });
+    };
   }
   const manageCatalogBtn = document.getElementById('hydroManageCatalogBtn');
   if (manageCatalogBtn) {
