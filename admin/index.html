@@ -2408,17 +2408,20 @@
                                 ? Number(p.chat_usage_current_month) : 0;
                             used = isNaN(used) ? 0 : used;
                             var remaining = (limitCredits >= 0) ? Math.max(0, Math.floor(limitCredits - used)) : null;
+                            // Pendientes y expirados no tienen acceso al chat hasta activar; no mostrar "Ilimitado".
+                            var sinAcceso = (p.subscription_status === 'pending' || p.subscription_status === 'expired');
+                            var labelLimit = limitCredits >= 0 ? Math.floor(limitCredits) : (sinAcceso ? 'Sin acceso' : 'Ilimitado');
                             return {
                                 user_id: p.id || '—',
                                 email: p.email || '—',
                                 name: p.name || '—',
                                 subscription: p.subscription_status || '—',
-                                limit_credits: limitCredits >= 0 ? Math.floor(limitCredits) : 'Ilimitado',
+                                limit_credits: labelLimit,
                                 used_credits: Math.floor(used),
-                                remaining_credits: remaining != null ? remaining : 'Ilimitado',
-                                limit_usd_est: limitCredits >= 0 ? fmtUsdEst(limitCredits) : 'Ilimitado',
+                                remaining_credits: (limitCredits >= 0) ? remaining : (sinAcceso ? 'Sin acceso' : (remaining != null ? remaining : 'Ilimitado')),
+                                limit_usd_est: (limitCredits >= 0) ? fmtUsdEst(limitCredits) : (sinAcceso ? 'Sin acceso' : 'Ilimitado'),
                                 used_usd_est: fmtUsdEst(used),
-                                remaining_usd_est: remaining != null ? fmtUsdEst(remaining) : 'Ilimitado',
+                                remaining_usd_est: (remaining != null) ? fmtUsdEst(remaining) : (sinAcceso ? 'Sin acceso' : 'Ilimitado'),
                                 usage_month: p.chat_usage_month || '—'
                             };
                         }).filter(function(r) { return r.email !== '—' || r.name !== '—'; });
@@ -2439,17 +2442,19 @@
                     var used = (u.chat_usage_month === monthKey && u.chat_usage_current_month != null && u.chat_usage_current_month !== '')
                         ? Number(u.chat_usage_current_month) : 0;
                     used = isNaN(used) ? 0 : used;
+                    var sinAccesoLocal = (u.subscription_status === 'pending' || u.subscription_status === 'expired');
+                    var labelLimitLocal = limitCredits >= 0 ? Math.floor(limitCredits) : (sinAccesoLocal ? 'Sin acceso' : 'Ilimitado');
                     return {
                         user_id: uid || '—',
                         email: u.email || '—',
                         name: u.name || '—',
                         subscription: u.subscription_status || '—',
-                        limit_credits: limitCredits >= 0 ? Math.floor(limitCredits) : 'Ilimitado',
+                        limit_credits: labelLimitLocal,
                         used_credits: Math.floor(used),
-                        remaining_credits: limitCredits >= 0 ? Math.max(0, Math.floor(limitCredits - used)) : 'Ilimitado',
-                        limit_usd_est: limitCredits >= 0 ? fmtUsdEst(limitCredits) : 'Ilimitado',
+                        remaining_credits: limitCredits >= 0 ? Math.max(0, Math.floor(limitCredits - used)) : (sinAccesoLocal ? 'Sin acceso' : 'Ilimitado'),
+                        limit_usd_est: limitCredits >= 0 ? fmtUsdEst(limitCredits) : (sinAccesoLocal ? 'Sin acceso' : 'Ilimitado'),
                         used_usd_est: fmtUsdEst(used),
-                        remaining_usd_est: limitCredits >= 0 ? fmtUsdEst(Math.max(0, Math.floor(limitCredits - used))) : 'Ilimitado',
+                        remaining_usd_est: limitCredits >= 0 ? fmtUsdEst(Math.max(0, Math.floor(limitCredits - used))) : (sinAccesoLocal ? 'Sin acceso' : 'Ilimitado'),
                         usage_month: u.chat_usage_month || '—'
                     };
                 }).filter(function(r) { return r.email !== '—' || r.name !== '—' || r.user_id !== '—'; });
@@ -4966,10 +4971,10 @@
         }
         window.filterTable = filterTable;
         
-        // Función para editar usuario
-        function editUser(userId) {
+        // Función para editar usuario (refresca uso de chat desde Supabase para mostrar "Uso este mes" correcto)
+        async function editUser(userId) {
             const users = getAllUsers();
-            const user = users.find(u => (u.id === userId) || (u.userId === userId));
+            let user = users.find(u => (u.id === userId) || (u.userId === userId));
             
             if (!user) {
                 alert('Usuario no encontrado');
@@ -4982,6 +4987,18 @@
             if (!modal || !content) {
                 alert('Modal de edición no encontrado');
                 return;
+            }
+            
+            // Refrescar uso de chat desde Supabase para que "Uso este mes" coincida con el backend
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
+            if (isUuid && window.getSupabaseClient) {
+                try {
+                    const client = window.getSupabaseClient();
+                    const { data: fresh, error } = await client.from('profiles').select('chat_usage_current_month, chat_usage_month').eq('id', userId).maybeSingle();
+                    if (!error && fresh) {
+                        user = { ...user, chat_usage_current_month: fresh.chat_usage_current_month != null ? fresh.chat_usage_current_month : user.chat_usage_current_month, chat_usage_month: fresh.chat_usage_month || user.chat_usage_month };
+                    }
+                } catch (e) { console.warn('editUser: no se pudo refrescar uso chat', e); }
             }
             
             // 🔐 Verificar si es usuario administrador
