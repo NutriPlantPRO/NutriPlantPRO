@@ -73,10 +73,17 @@ async function verifyWebhookSignature(eventBody: Json, headers: Headers): Promis
 }
 
 const SUBSCRIPTION_MONTHS = 5; // ciclo cada 5 meses
+const TRIAL_DAYS = 10; // prueba gratis 10 días
 
 function addMonths(date: Date, months: number): string {
   const d = new Date(date);
   d.setMonth(d.getMonth() + months);
+  return d.toISOString();
+}
+
+function addDays(date: Date | string, days: number): string {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
   return d.toISOString();
 }
 
@@ -136,9 +143,13 @@ async function applySubscriptionStatus(params: {
   const payFields: Record<string, string> = {};
   if (lastPaymentDate) payFields.last_payment_date = lastPaymentDate;
   if (nextPaymentDate) payFields.next_payment_date = nextPaymentDate;
-  // Fallback de compatibilidad si PayPal no devuelve next_billing_time.
+  // Si PayPal no devolvió next_billing_time: en trial (sin último pago) = próximo pago en 10 días; si ya pagó = 5 meses.
   if (!payFields.next_payment_date && status === "active" && activatedAt) {
-    payFields.next_payment_date = addMonths(new Date(activatedAt), SUBSCRIPTION_MONTHS);
+    if (!lastPaymentDate) {
+      payFields.next_payment_date = addDays(activatedAt, TRIAL_DAYS); // fin de trial = primer cobro
+    } else {
+      payFields.next_payment_date = addMonths(new Date(activatedAt), SUBSCRIPTION_MONTHS);
+    }
   }
 
   // Cancelación por PayPal: no es por admin → acceso hasta next_payment_date (se valida en auth).
