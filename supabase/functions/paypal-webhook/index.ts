@@ -141,12 +141,15 @@ async function applySubscriptionStatus(params: {
     payFields.next_payment_date = addMonths(new Date(activatedAt), SUBSCRIPTION_MONTHS);
   }
 
-  const baseUpdate = {
+  // Cancelación por PayPal: no es por admin → acceso hasta next_payment_date (se valida en auth).
+  const baseUpdate: Record<string, unknown> = {
     subscription_status: status,
     updated_at: now,
     ...(activatedAt ? { subscription_activated_at: activatedAt } : {}),
     ...payFields,
   };
+  if (status === "cancelled") baseUpdate.cancelled_by_admin = false;
+  if (status === "active") baseUpdate.cancelled_by_admin = false;
 
   // Ruta 1: usuario ya tiene paypal_subscription_id guardado
   let query = supabase

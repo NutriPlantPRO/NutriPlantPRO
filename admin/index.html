@@ -5858,6 +5858,7 @@
                 // 🔒 FORZAR PRESERVACIÓN: Asegurar que los datos críticos no se pierdan
                 ...preservedData
             };
+            updatedUser.cancelled_by_admin = (updatedUser.subscription_status || '') === 'cancelled';
             
             // 🔄 Guardar usuario actualizado (userKey ya está definido arriba)
             const newEmailKey = `nutriplant_user_email_${updatedUser.email.toLowerCase()}`;
@@ -5907,6 +5908,8 @@
                         const loc = updatedUser.location && typeof updatedUser.location === 'object'
                             ? [updatedUser.location.city, updatedUser.location.state, updatedUser.location.country].filter(Boolean).join(', ')
                             : (updatedUser.location || '');
+                        // Cancelación por admin = cortar acceso ya. PayPal cancel = acceso hasta next_payment_date (auth.js).
+                        const cancelledByAdmin = (updatedUser.subscription_status || '') === 'cancelled';
                         const payload = {
                             name: updatedUser.name || null,
                             email: updatedUser.email || null,
@@ -5916,6 +5919,7 @@
                             crops: Array.isArray(updatedUser.crops) ? updatedUser.crops : null,
                             subscription_status: updatedUser.subscription_status || null,
                             subscription_amount: updatedUser.subscription_amount != null ? Number(updatedUser.subscription_amount) : null,
+                            cancelled_by_admin: cancelledByAdmin,
                             chat_blocked: updatedUser.chat_blocked === true,
                             chat_limit_monthly: (updatedUser.chat_limit_monthly == null || updatedUser.chat_limit_monthly === '' || updatedUser.chat_limit_monthly === -1) ? null : Number(updatedUser.chat_limit_monthly),
                             chat_usage_current_month: updatedUser.chat_usage_current_month != null ? Number(updatedUser.chat_usage_current_month) : null,
@@ -5948,6 +5952,13 @@
                                 error = retry2.error || null;
                                 matched = Array.isArray(retry2.data) ? retry2.data.length : 0;
                             }
+                            if (error && /cancelled_by_admin/i.test(error.message || '') && /column/i.test(error.message || '')) {
+                                const fallbackPayload = { ...payload };
+                                delete fallbackPayload.cancelled_by_admin;
+                                const retry3 = await client.from('profiles').update(fallbackPayload).eq('id', userId).select('id');
+                                error = retry3.error || null;
+                                matched = Array.isArray(retry3.data) ? retry3.data.length : 0;
+                            }
                         }
 
                         // 2) Fallback por email (cuando ID no es UUID o no encontró fila por ID)
@@ -5977,6 +5988,13 @@
                                 const retryByEmail2 = await client.from('profiles').update(fallbackPayload).ilike('email', String(updatedUser.email)).select('id');
                                 error = retryByEmail2.error || null;
                                 matched = Array.isArray(retryByEmail2.data) ? retryByEmail2.data.length : 0;
+                            }
+                            if (error && /cancelled_by_admin/i.test(error.message || '') && /column/i.test(error.message || '')) {
+                                const fallbackPayload = { ...payload };
+                                delete fallbackPayload.cancelled_by_admin;
+                                const retryByEmail3 = await client.from('profiles').update(fallbackPayload).ilike('email', String(updatedUser.email)).select('id');
+                                error = retryByEmail3.error || null;
+                                matched = Array.isArray(retryByEmail3.data) ? retryByEmail3.data.length : 0;
                             }
                         }
 

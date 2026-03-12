@@ -1,6 +1,21 @@
 // Guard de sesión (simple para demo)
 const AUTH_KEY = "np_user";
 
+/** true = puede entrar al panel. Admin siempre; active siempre; cancelled por PayPal = hasta next_payment_date; cancelled por admin = no. */
+function hasSubscriptionAccess(profile) {
+  if (!profile) return false;
+  if (profile.isAdmin === true || (profile.email || '').toLowerCase() === 'admin@nutriplantpro.com') return true;
+  const status = (profile.subscription_status || 'pending');
+  if (status === 'active') return true;
+  if (status !== 'cancelled') return false;
+  if (profile.cancelled_by_admin === true) return false;
+  const next = profile.next_payment_date;
+  if (!next) return false;
+  const endOfPeriod = new Date(next);
+  endOfPeriod.setHours(23, 59, 59, 999);
+  return new Date() <= endOfPeriod;
+}
+
 // Si estamos en dashboard y no hay sesión, redirige a login:
 if (location.pathname.endsWith("dashboard.html") && !localStorage.getItem(AUTH_KEY)) {
   location.href = "login.html";
@@ -24,11 +39,9 @@ if (location.pathname.endsWith("dashboard.html")) {
         alert('❌ Tu sesión ha expirado o el usuario no existe. Por favor, inicia sesión nuevamente.');
         location.href = "login.html";
       } else {
-        // 🔒 VALIDAR SUSCRIPCIÓN: Solo usuarios activos o admin pueden acceder al dashboard
+        // 🔒 VALIDAR SUSCRIPCIÓN: activos, admin, o cancelados por PayPal hasta fin de ciclo
         const userProfile = JSON.parse(userExists);
-        const isAdmin = !!(userProfile && (userProfile.isAdmin === true || (userProfile.email || '').toLowerCase() === 'admin@nutriplantpro.com'));
-        const status = (userProfile && userProfile.subscription_status) || 'pending';
-        if (!isAdmin && status !== 'active') {
+        if (!hasSubscriptionAccess(userProfile)) {
           alert('❌ Tu suscripción no está activa. Activa con PayPal para entrar al panel.');
           location.href = "login.html?showActivate=1";
         }
@@ -53,9 +66,8 @@ if (location.pathname.endsWith("login.html") && localStorage.getItem(AUTH_KEY)) 
     const userRaw = userKey ? localStorage.getItem(userKey) : null;
     const userProfile = userRaw ? JSON.parse(userRaw) : null;
     const isAdmin = !!(session && session.isAdmin) || !!(userProfile && (userProfile.isAdmin === true || (userProfile.email || '').toLowerCase() === 'admin@nutriplantpro.com'));
-    const status = (userProfile && userProfile.subscription_status) || 'pending';
     const showActivate = typeof URLSearchParams !== 'undefined' && new URLSearchParams(location.search).get('showActivate') === '1';
-    if (!isAdmin && status !== 'active') {
+    if (!hasSubscriptionAccess(userProfile || {})) {
       if (!showActivate) {
         localStorage.removeItem(AUTH_KEY);
         localStorage.removeItem('nutriplant_user_id');
@@ -155,8 +167,7 @@ if (form) {
           let profile = null;
           try { if (userRaw) profile = JSON.parse(userRaw); } catch (e) {}
           const isAdmin = !!(profile && (profile.isAdmin === true || (profile.email || '').toLowerCase() === 'admin@nutriplantpro.com'));
-          const status = (profile && profile.subscription_status) || 'pending';
-          if (!isAdmin && status !== 'active') {
+          if (!hasSubscriptionAccess(profile || {})) {
             // No cerrar sesión: dejar userId para que pueda usar "Activar con PayPal"
             if (typeof window.showSubscriptionInactiveWithPayPalOption === 'function') {
               window.showSubscriptionInactiveWithPayPalOption('Tu suscripción está inactiva. Para volver a usar NutriPlant PRO, activa aquí con PayPal:');
@@ -246,10 +257,8 @@ if (form) {
       userId = userFound.id || userFound.userId || 'user_' + Date.now();
     }
     
-    // 🔒 VALIDAR SUSCRIPCIÓN: Solo usuarios activos o admin pueden acceder
-    const isAdminUser = !!(userFound.isAdmin === true || (userFound.email || '').toLowerCase() === 'admin@nutriplantpro.com');
-    const subStatus = userFound.subscription_status || 'pending';
-    if (!isAdminUser && subStatus !== 'active') {
+    // 🔒 VALIDAR SUSCRIPCIÓN: activos, admin, o cancelados por PayPal hasta fin de ciclo
+    if (!hasSubscriptionAccess(userFound)) {
       // Dejar sesión guardada para que "Activar con PayPal" tenga userId
       const userKey = `nutriplant_user_${userId}`;
       localStorage.setItem(userKey, JSON.stringify(userFound));

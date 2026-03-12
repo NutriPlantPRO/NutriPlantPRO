@@ -80,7 +80,7 @@ async function getQuotaFromSupabase(supabase, userId) {
   if (!supabase || !userId || userId === 'anonymous') return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('chat_blocked, chat_limit_monthly, chat_usage_current_month, chat_usage_month, subscription_status')
+    .select('chat_blocked, chat_limit_monthly, chat_usage_current_month, chat_usage_month, subscription_status, cancelled_by_admin, next_payment_date')
     .eq('id', userId)
     .maybeSingle();
   if (error) {
@@ -210,7 +210,8 @@ exports.handler = async (event, context) => {
         });
       }
       let limitCredits = quota.chat_limit_monthly;
-      const isActiveSubscriber = quota.subscription_status === 'active';
+      const hasAccess = quota.subscription_status === 'active' || (quota.subscription_status === 'cancelled' && quota.cancelled_by_admin !== true && quota.next_payment_date && new Date() <= new Date(quota.next_payment_date + 'T23:59:59'));
+      const isActiveSubscriber = !!hasAccess;
       if (limitCredits === -1 || limitCredits == null || limitCredits === '' || limitCredits === undefined) {
         limitCredits = isActiveSubscriber ? DEFAULT_MONTHLY_CREDITS : -1;
       } else {
