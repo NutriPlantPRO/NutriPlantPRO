@@ -5765,21 +5765,30 @@
         async function saveUserChanges(e, userId) {
             e.preventDefault();
             
-            // 🔒 CRÍTICO: Obtener usuario directamente del localStorage para tener la versión más actual
             const userKey = `nutriplant_user_${userId}`;
-            const userValue = localStorage.getItem(userKey);
+            let existingUser = null;
             
-            if (!userValue) {
-                alert('❌ Usuario no encontrado');
-                return;
+            // 1) Intentar localStorage (versión más actual si el usuario ya estuvo en este navegador)
+            const userValue = localStorage.getItem(userKey);
+            if (userValue && (userValue.startsWith('{') || userValue.startsWith('['))) {
+                try {
+                    existingUser = JSON.parse(userValue);
+                } catch (err) {
+                    console.warn('Error parseando usuario desde localStorage:', err);
+                }
             }
             
-            let existingUser;
-            try {
-                existingUser = JSON.parse(userValue);
-            } catch (e) {
-                alert('❌ Error al cargar el usuario');
-                console.error('Error parseando usuario:', e);
+            // 2) Si no está en localStorage (usuario solo en nube): obtener de lista fusionada o caché
+            if (!existingUser) {
+                const allUsers = getAllUsers();
+                existingUser = allUsers.find(u => (u.id === userId) || (u.userId === userId));
+            }
+            if (!existingUser && window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) {
+                existingUser = window._adminCloudCache.users.find(u => (u.id === userId) || (u.userId === userId));
+            }
+            
+            if (!existingUser) {
+                alert('❌ Usuario no encontrado. Recarga la lista de usuarios e intenta de nuevo.');
                 return;
             }
             
