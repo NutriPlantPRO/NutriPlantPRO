@@ -1350,10 +1350,26 @@
             document.getElementById('estimatedCostChatMonth').textContent = (chatMetrics.estimatedCostUSDThisMonth != null ? chatMetrics.estimatedCostUSDThisMonth.toFixed(4) : '0.0000');
             var elAdminTotal = document.getElementById('adminChatCostTotal');
             var elAdminMonth = document.getElementById('adminChatCostMonth');
-            if (elAdminTotal) elAdminTotal.textContent = '0.0000';
-            if (elAdminMonth) elAdminMonth.textContent = '0.0000';
+            var localAdmin = (typeof getAdminChatUsageLocal === 'function') ? getAdminChatUsageLocal() : null;
+            if (elAdminTotal) elAdminTotal.textContent = (localAdmin ? localAdmin.total_usd_est : 0).toFixed(4);
+            if (elAdminMonth) elAdminMonth.textContent = (localAdmin ? localAdmin.month_usd_est : 0).toFixed(4);
             document.getElementById('activeUsers').textContent = stats.activeUsers;
             document.getElementById('pendingSubscriptions').textContent = stats.pendingSubscriptions;
+            // TU USO (CHAT ADMIN): Supabase cuenta en todos los equipos (mismo criterio que usuarios: estimado por petición)
+            if (typeof window.getSupabaseClient === 'function') {
+                var supabaseClient = window.getSupabaseClient();
+                if (supabaseClient) {
+                    supabaseClient.from('admin_chat_usage').select('total_usd_est, month_key, month_usd_est').eq('id', 'default').maybeSingle().then(function(r) {
+                        if (r.data && r.data.total_usd_est != null) {
+                            var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                            var et = document.getElementById('adminChatCostTotal');
+                            var em = document.getElementById('adminChatCostMonth');
+                            if (et) et.textContent = Number(r.data.total_usd_est).toFixed(4);
+                            if (em) em.textContent = (r.data.month_key === monthKey && r.data.month_usd_est != null) ? Number(r.data.month_usd_est).toFixed(4) : '0.0000';
+                        }
+                    }).catch(function() {});
+                }
+            }
             // Si el backend de chat está disponible, actualizar con datos reales (USD/tokens por backend)
             try {
                 var base = (window.NUTRIPLANT_CHAT_USAGE_API_BASE != null) ? window.NUTRIPLANT_CHAT_USAGE_API_BASE : (window.location && window.location.origin ? window.location.origin : '');
@@ -1398,6 +1414,32 @@
         
         // 🤖 Chat IA del panel de admin: misma API key, no consume cuota de usuarios; historial en localStorage y en Supabase (admin_chat_threads)
         const NUTRIPLANT_ADMIN_CHAT_STORAGE_KEY = 'nutriplant_admin_chat_history';
+        const NUTRIPLANT_ADMIN_CHAT_USAGE_KEY = 'nutriplant_admin_chat_usage';
+        var ADMIN_CHAT_USD_PER_REQUEST = 0.001;
+        function getAdminChatUsageLocal() {
+            try {
+                var raw = localStorage.getItem(NUTRIPLANT_ADMIN_CHAT_USAGE_KEY);
+                if (!raw) return null;
+                var o = JSON.parse(raw);
+                var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                if (o.month_key !== monthKey) return { total_usd_est: o.total_usd_est || 0, month_usd_est: 0 };
+                return { total_usd_est: o.total_usd_est || 0, month_usd_est: o.month_usd_est || 0 };
+            } catch (e) { return null; }
+        }
+        function recordAdminChatUsageLocal(hasImage) {
+            try {
+                var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                var raw = localStorage.getItem(NUTRIPLANT_ADMIN_CHAT_USAGE_KEY);
+                var o = raw ? JSON.parse(raw) : { month_key: '', requests_this_month: 0, total_requests: 0, total_usd_est: 0, month_usd_est: 0 };
+                if (o.month_key !== monthKey) { o.month_key = monthKey; o.requests_this_month = 0; o.month_usd_est = 0; }
+                o.requests_this_month = (o.requests_this_month || 0) + 1;
+                o.total_requests = (o.total_requests || 0) + 1;
+                var cost = hasImage ? 0.003 : ADMIN_CHAT_USD_PER_REQUEST;
+                o.month_usd_est = (o.month_usd_est || 0) + cost;
+                o.total_usd_est = (o.total_usd_est || 0) + cost;
+                localStorage.setItem(NUTRIPLANT_ADMIN_CHAT_USAGE_KEY, JSON.stringify(o));
+            } catch (e) {}
+        }
         window.initAdminChat = function() {
             var bubble = document.getElementById('adminChatBubble');
             var panel = document.getElementById('adminChatPanel');
@@ -1651,7 +1693,10 @@
                 var imageToSend = adminPendingImage;
                 clearAdminPendingImage();
                 var systemContent = getAdminPanelSystemPrompt();
-                var historyForApi = adminChatHistory.slice(0, -1).map(function(m) { return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content }; });
+                // Contexto: últimos N mensajes (admin tiene más memoria que usuario: usuario 6/12, admin 24)
+                var ADMIN_CHAT_CONTEXT_LIMIT = 24;
+                var allButLast = adminChatHistory.slice(0, -1);
+                var historyForApi = (allButLast.length <= ADMIN_CHAT_CONTEXT_LIMIT ? allButLast : allButLast.slice(-ADMIN_CHAT_CONTEXT_LIMIT)).map(function(m) { return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content }; });
                 var lastUserContent = text || '¿Qué puedes ver en esta imagen?';
                 var messagesForApi = [{ role: 'system', content: systemContent }].concat(historyForApi).concat([{ role: 'user', content: lastUserContent }]);
                 var base = (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) || (window.location && window.location.origin) || 'http://localhost:8000';
@@ -1677,6 +1722,31 @@
                     sendBtn.disabled = false;
                     var reply = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) ? data.choices[0].message.content : (data.error || 'Error al obtener respuesta.');
                     adminChatHistory.push({ role: 'assistant', content: reply });
+                    recordAdminChatUsageLocal(!!(imageToSend && imageToSend.base64));
+                    // Actualizar TU USO: preferir Supabase (cuenta en todos los equipos)
+                    function applyLocalAdminUsage() {
+                        var loc = getAdminChatUsageLocal();
+                        if (loc) {
+                            var t = document.getElementById('adminChatCostTotal');
+                            var m = document.getElementById('adminChatCostMonth');
+                            if (t) t.textContent = loc.total_usd_est.toFixed(4);
+                            if (m) m.textContent = loc.month_usd_est.toFixed(4);
+                        }
+                    }
+                    if (typeof window.getSupabaseClient === 'function') {
+                        var c = window.getSupabaseClient();
+                        if (c) {
+                            c.from('admin_chat_usage').select('total_usd_est, month_key, month_usd_est').eq('id', 'default').maybeSingle().then(function(r) {
+                                var t = document.getElementById('adminChatCostTotal');
+                                var m = document.getElementById('adminChatCostMonth');
+                                if (r.data && r.data.total_usd_est != null) {
+                                    var monthKey = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                                    if (t) t.textContent = Number(r.data.total_usd_est).toFixed(4);
+                                    if (m) m.textContent = (r.data.month_key === monthKey && r.data.month_usd_est != null) ? Number(r.data.month_usd_est).toFixed(4) : '0.0000';
+                                } else { applyLocalAdminUsage(); }
+                            }).catch(function() { applyLocalAdminUsage(); });
+                        } else { applyLocalAdminUsage(); }
+                    } else { applyLocalAdminUsage(); }
                     saveAdminChatHistory();
                     renderAdminChat();
                 }).catch(function(err) {

@@ -114,6 +114,50 @@ async function addUsageInSupabase(supabase, userId, creditsToAdd) {
   if (updateErr) console.warn('Supabase update usage error:', updateErr.message);
 }
 
+/** Mismo criterio que usuarios: estimado USD por petición. Cuenta en todos los equipos (Supabase). */
+const ADMIN_CHAT_USD_PER_REQUEST = 0.001;
+const ADMIN_CHAT_USD_PER_IMAGE = 0.003;
+
+async function addAdminUsageInSupabase(supabase, hasImage) {
+  if (!supabase) return;
+  const currentMonth = monthKey();
+  const cost = hasImage ? ADMIN_CHAT_USD_PER_IMAGE : ADMIN_CHAT_USD_PER_REQUEST;
+  const { data: row, error: selectErr } = await supabase
+    .from('admin_chat_usage')
+    .select('total_requests, total_usd_est, month_key, month_requests, month_usd_est')
+    .eq('id', 'default')
+    .maybeSingle();
+  if (selectErr) {
+    console.warn('Supabase admin_chat_usage select error:', selectErr.message);
+    return;
+  }
+  let totalRequests = Number(row?.total_requests) || 0;
+  let totalUsd = Number(row?.total_usd_est) || 0;
+  let monthRequests = Number(row?.month_requests) || 0;
+  let monthUsd = Number(row?.month_usd_est) || 0;
+  const rowMonth = row?.month_key || '';
+  if (rowMonth !== currentMonth) {
+    monthRequests = 0;
+    monthUsd = 0;
+  }
+  totalRequests += 1;
+  totalUsd = Math.round((totalUsd + cost) * 1e8) / 1e8;
+  monthRequests += 1;
+  monthUsd = Math.round((monthUsd + cost) * 1e8) / 1e8;
+  const { error: upsertErr } = await supabase
+    .from('admin_chat_usage')
+    .upsert({
+      id: 'default',
+      total_requests: totalRequests,
+      total_usd_est: totalUsd,
+      month_key: currentMonth,
+      month_requests: monthRequests,
+      month_usd_est: monthUsd,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
+  if (upsertErr) console.warn('Supabase admin_chat_usage upsert error:', upsertErr.message);
+}
+
 exports.handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -278,6 +322,9 @@ exports.handler = async (event, context) => {
         const costUsd = tokenCostUsd(model, pt, ct);
         data._nutriplant.estimated_cost_usd = Math.round(costUsd * 1e8) / 1e8;
       }
+    }
+    if (res.ok && supabase && scopeAdmin) {
+      await addAdminUsageInSupabase(supabase, totalImageCount > 0);
     }
     if (!data._nutriplant) data._nutriplant = {};
     data._nutriplant.image_received = totalImageCount > 0;
