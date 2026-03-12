@@ -203,6 +203,37 @@ Deno.serve(async (req) => {
 
   const eventType = String(payload.event_type ?? "");
   const resource = (payload.resource ?? {}) as Json;
+
+  // PAYMENT.SALE.COMPLETED: cobro realizado (p. ej. tras fin del trial). resource.id = sale id, subscription = billing_agreement_id
+  if (eventType === "PAYMENT.SALE.COMPLETED") {
+    const subscriptionId = asString(resource.billing_agreement_id);
+    if (!subscriptionId) {
+      return jsonResponse({ ok: true, ignored: true, event_type: eventType, reason: "No billing_agreement_id" });
+    }
+    const saleTime = asString(resource.create_time);
+    let snapshot: Awaited<ReturnType<typeof getPayPalSubscriptionSnapshot>> | null = null;
+    try {
+      snapshot = await getPayPalSubscriptionSnapshot(subscriptionId);
+    } catch (e) {
+      console.warn("PayPal subscription snapshot not available:", (e as Error).message);
+    }
+    const result = await applySubscriptionStatus({
+      subscriptionId,
+      status: "active",
+      lastPaymentDate: snapshot?.lastPaymentTime ?? saleTime ?? null,
+      nextPaymentDate: snapshot?.nextBillingTime ?? null,
+      customUserId: snapshot?.customUserId ?? null,
+    });
+    return jsonResponse({
+      ok: true,
+      event_type: eventType,
+      subscription_id: subscriptionId,
+      profile_updates: result.updated,
+      update_mode: result.mode,
+    });
+  }
+
+  // BILLING.SUBSCRIPTION.*: el resource.id es el subscription id
   const subscriptionId = String(resource.id ?? "");
   const customUserId = resource.custom_id ? String(resource.custom_id) : null;
 
@@ -210,7 +241,6 @@ Deno.serve(async (req) => {
     return jsonResponse({ ok: true, ignored: true, reason: "Missing event_type or subscription id" });
   }
 
-  // Mapear eventos PayPal -> estado interno (cubre todos los que PayPal envía para suscripciones)
   const statusMap: Record<string, string> = {
     "BILLING.SUBSCRIPTION.CREATED": "pending",
     "BILLING.SUBSCRIPTION.APPROVED": "pending",
@@ -228,7 +258,6 @@ Deno.serve(async (req) => {
   try {
     snapshot = await getPayPalSubscriptionSnapshot(subscriptionId);
   } catch (e) {
-    // Si falla consulta a PayPal, seguimos con webhook para no perder transición de estado.
     console.warn("PayPal subscription snapshot not available:", (e as Error).message);
   }
 
