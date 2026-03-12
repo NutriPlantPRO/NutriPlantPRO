@@ -10417,7 +10417,23 @@
                         try { connMapInstance.removeLayer(connMapMarkerCluster); } catch (e) {}
                         connMapMarkerCluster = null;
                     }
-                    var clusterGroup = window.L.markerClusterGroup ? new L.markerClusterGroup({ maxClusterRadius: 50, spiderfyOnMaxZoom: true, showCoverageOnHover: false }) : null;
+                    var clusterGroup = window.L.markerClusterGroup ? new L.markerClusterGroup({
+                        maxClusterRadius: 50,
+                        spiderfyOnMaxZoom: true,
+                        showCoverageOnHover: false,
+                        iconCreateFunction: function (cluster) {
+                            var total = 0;
+                            cluster.getAllChildMarkers().forEach(function (m) {
+                                total += (m.options && m.options.visitCount != null) ? m.options.visitCount : 1;
+                            });
+                            var num = total > 99 ? '99+' : total;
+                            return L.divIcon({
+                                className: 'marker-cluster',
+                                html: '<div><span>' + num + '</span></div>',
+                                iconSize: L.point(40, 40)
+                            });
+                        }
+                    }) : null;
                     var rounded = {};
                     var allBoundsLocal = [];
                     var modeEl = document.getElementById('connMapModeFilter');
@@ -10470,6 +10486,7 @@
                             '</div>';
                         var numToShow = usersTotal;
                         var marker = L.marker([lat, lng], { icon: makeNumberIcon(numToShow) }).bindPopup(popupHtml);
+                        marker.options.visitCount = numToShow;
                         allBoundsLocal.push([lat, lng]);
                         if (clusterGroup) clusterGroup.addLayer(marker); else marker.addTo(connMapInstance);
                     });

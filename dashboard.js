@@ -332,6 +332,12 @@ function sectionTemplate(name) {
           <div class="row" style="justify-content:space-between; align-items:center; margin:6px 0 10px;">
             <h3 class="text-xl" style="margin:0;">📁 Proyectos recientes</h3>
             <div id="np-sync-wrap" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <select id="np-project-sort" style="font-size:12px; padding:6px 10px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; cursor:pointer;" title="Ordenar proyectos en esta vista">
+                <option value="updated_desc">🕒 Orden: Más recientes primero</option>
+                <option value="updated_asc">🕒 Orden: Más antiguos primero</option>
+                <option value="title_asc">🔤 Orden: A → Z</option>
+                <option value="title_desc">🔤 Orden: Z → A</option>
+              </select>
               <span id="np-sync-status" style="display:none; font-size:12px; padding:4px 10px; border-radius:999px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe;"></span>
               <button type="button" id="np-sync-refresh-btn" style="display:none; font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid #c7d2fe; background:#fff; color:#3730a3; cursor:pointer;">☁️ Actualizar con la nube</button>
             </div>
@@ -3713,7 +3719,41 @@ function clearAttentionColors() {
 const NP_KEYS = {
   PROJECTS: "nutriplant_projects",
   CURRENT: "nutriplant_current_project",
+  PROJECT_SORT: "nutriplant_project_sort_mode"
 };
+
+function np_getProjectSortMode() {
+  const allowed = ['updated_desc', 'updated_asc', 'title_asc', 'title_desc'];
+  const saved = localStorage.getItem(NP_KEYS.PROJECT_SORT) || 'updated_desc';
+  return allowed.includes(saved) ? saved : 'updated_desc';
+}
+
+function np_sortProjectsForView(projects, mode) {
+  const sorted = Array.isArray(projects) ? projects.slice() : [];
+  const ts = function (p, fallback) {
+    const raw = p && (p.updatedAt || p.updated_at || p.createdAt || p.created_at || fallback || 0);
+    const parsed = new Date(raw).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const title = function (p) {
+    return String((p && p.title) || '').trim();
+  };
+
+  if (mode === 'updated_asc') {
+    sorted.sort((a, b) => ts(a, 0) - ts(b, 0));
+    return sorted;
+  }
+  if (mode === 'title_asc') {
+    sorted.sort((a, b) => title(a).localeCompare(title(b), 'es', { sensitivity: 'base', numeric: true }));
+    return sorted;
+  }
+  if (mode === 'title_desc') {
+    sorted.sort((a, b) => title(b).localeCompare(title(a), 'es', { sensitivity: 'base', numeric: true }));
+    return sorted;
+  }
+  sorted.sort((a, b) => ts(b, 0) - ts(a, 0));
+  return sorted;
+}
 
 function np_applySyncStatusBadge() {
   const badge = document.getElementById('np-sync-status');
@@ -5147,10 +5187,20 @@ function escapeHtml(s){
 function np_renderProjects(){
   const listEl  = document.querySelector("#np-projects-list");
   const emptyEl = document.querySelector("#np-empty-state");
+  const sortEl = document.querySelector("#np-project-sort");
   if (!listEl || !emptyEl) return;
   np_applySyncStatusBadge();
 
-  const projects = np_allProjects();
+  const sortMode = np_getProjectSortMode();
+  if (sortEl) {
+    if (sortEl.value !== sortMode) sortEl.value = sortMode;
+    sortEl.onchange = function () {
+      localStorage.setItem(NP_KEYS.PROJECT_SORT, sortEl.value || 'updated_desc');
+      np_renderProjects();
+    };
+  }
+
+  const projects = np_sortProjectsForView(np_allProjects(), sortMode);
   listEl.innerHTML = "";
   if (!projects.length) { 
     emptyEl.style.display = "block";
