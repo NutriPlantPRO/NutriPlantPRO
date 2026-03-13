@@ -1323,22 +1323,21 @@
         }
         
         // 📊 CARGAR ESTADÍSTICAS DEL ADMINISTRADOR
-        // 🚀 OPTIMIZADO: Una sola llamada a getAllUsers() para todas las estadísticas
+        // 🚀 Preferir nube (Supabase) para totales y así mismo valor en todos los equipos
         function loadAdminStats() {
-            // 🔍 Obtener usuarios UNA SOLA VEZ
             const users = getAllUsers();
-            
-            // 📊 Calcular todas las estadísticas usando los mismos datos
+            const cloudUsers = (window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) ? window._adminCloudCache.users : [];
+            const useCloudCounts = cloudUsers.length > 0;
             const chatMetrics = getChatMetrics();
             const stats = {
-                totalUsers: users.length,
-                activeSubscriptions: users.filter(u => u.subscription_status === 'active').length,
+                totalUsers: useCloudCounts ? cloudUsers.length : users.length,
+                activeSubscriptions: useCloudCounts ? cloudUsers.filter(u => u.subscription_status === 'active').length : users.filter(u => u.subscription_status === 'active').length,
                 totalProjects: getTotalProjects(),
                 totalChats: chatMetrics.totalMessages,
                 totalInteractions: chatMetrics.totalInteractions,
                 estimatedCostChat: chatMetrics.estimatedCostUSD,
                 activeUsers: getActiveUsers(),
-                pendingSubscriptions: users.filter(u => u.subscription_status === 'pending').length
+                pendingSubscriptions: useCloudCounts ? cloudUsers.filter(u => u.subscription_status === 'pending').length : users.filter(u => u.subscription_status === 'pending').length
             };
             
             // Actualizar UI
@@ -1849,44 +1848,34 @@
         }
         
         function getTotalProjects() {
-            // Contar proyectos únicos en localStorage (usando la misma lógica de deduplicación que getAllProjects)
-            const processedIds = new Set(); // 🔒 Set para rastrear IDs ya procesados y evitar duplicados
-            
+            // Preferir nube para que el mismo valor se vea en todos los equipos (ya no solo localStorage)
+            const cloudList = (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) ? window._adminCloudCache.projects : [];
+            if (cloudList.length > 0) {
+                const ids = new Set(cloudList.map(function(p) { return p.id; }));
+                return ids.size;
+            }
+            // Fallback: contar proyectos únicos en localStorage
+            const processedIds = new Set();
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                // Buscar tanto formato nuevo (nutriplant_project_) como legacy (nutriplant-project-)
                 const isProjectKey = key && (
-                    key.startsWith('nutriplant_project_') || 
+                    key.startsWith('nutriplant_project_') ||
                     key.startsWith('nutriplant-project-')
                 );
-                
                 if (isProjectKey) {
                     try {
                         const value = localStorage.getItem(key);
-                        // Verificar que el valor sea JSON válido
-                        if (!value || (!value.startsWith('{') && !value.startsWith('['))) {
-                            continue; // No es JSON válido, saltar
-                        }
+                        if (!value || (!value.startsWith('{') && !value.startsWith('['))) continue;
                         const project = JSON.parse(value);
                         if (project && typeof project === 'object') {
-                            // Extraer el ID de la clave (soporta ambos formatos)
                             const projectIdFromKey = key.replace(/^nutriplant[-_]project[-_]/, '');
-                            // Usar el ID del objeto si existe, sino usar el de la clave
                             let projectId = project.id || projectIdFromKey;
-                            
-                            // 🔒 DEDUPLICACIÓN: Verificar si ya procesamos este ID
-                            if (!processedIds.has(projectId)) {
-                                processedIds.add(projectId);
-                            }
+                            if (!processedIds.has(projectId)) processedIds.add(projectId);
                         }
-                    } catch (e) {
-                        // Ignorar errores de parseo
-                        continue;
-                    }
+                    } catch (e) { continue; }
                 }
             }
-            
-            return processedIds.size; // Retornar el número de IDs únicos
+            return processedIds.size;
         }
         
         function getTotalChats() {
@@ -2014,32 +2003,41 @@
         }
 
         function getActiveUsers() {
-            // Contar usuarios activos (con proyectos creados en los últimos 30 días)
+            // Usuarios activos = último login o última entrada al panel en los últimos 30 días. Preferir nube para mismo valor en todos los equipos.
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            
+            const thirtyDaysAgoMs = thirtyDaysAgo.getTime();
+            // Nube: last_login en profiles o entradas en dashboard_visits
+            const cloudUsers = (window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) ? window._adminCloudCache.users : [];
+            const visits = (window._adminCloudCache && Array.isArray(window._adminCloudCache.dashboardVisits)) ? window._adminCloudCache.dashboardVisits : [];
+            if (cloudUsers.length > 0 || visits.length > 0) {
+                const activeIds = new Set();
+                cloudUsers.forEach(function(u) {
+                    if (!u || u.isAdmin) return;
+                    const t = u.last_login ? new Date(u.last_login).getTime() : 0;
+                    if (t >= thirtyDaysAgoMs) activeIds.add(u.id || u.userId);
+                });
+                visits.forEach(function(v) {
+                    if (!v || !v.user_id) return;
+                    const t = v.visited_at ? new Date(v.visited_at).getTime() : 0;
+                    if (t >= thirtyDaysAgoMs) activeIds.add(v.user_id);
+                });
+                if (activeIds.size > 0 || cloudUsers.length > 0) return activeIds.size;
+            }
+            // Fallback: localStorage por last_login
             let activeCount = 0;
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && key.startsWith('nutriplant_user_') && !key.includes('_email_') && !key.includes('_project_')) {
                     try {
                         const value = localStorage.getItem(key);
-                        // Verificar que el valor sea JSON válido
-                        if (!value || (!value.startsWith('{') && !value.startsWith('['))) {
-                            continue; // No es JSON válido, saltar
-                        }
+                        if (!value || (!value.startsWith('{') && !value.startsWith('['))) continue;
                         const user = JSON.parse(value);
                         if (user && typeof user === 'object' && user.last_login) {
-                        const lastLogin = new Date(user.last_login);
-                        if (lastLogin > thirtyDaysAgo) {
-                            activeCount++;
+                            const lastLogin = new Date(user.last_login);
+                            if (lastLogin > thirtyDaysAgo) activeCount++;
                         }
-                        }
-                    } catch (e) {
-                        // Ignorar errores de parseo para valores no JSON
-                        console.warn('⚠️ Error parseando usuario:', key, e.message);
-                        continue;
-                    }
+                    } catch (e) { continue; }
                 }
             }
             return activeCount;
@@ -2168,9 +2166,7 @@
         window.showDeletedProjects = showDeletedProjects;
         
         async function showAllChats() {
-            if (typeof window.nutriplantAdminLoadFromCloud === 'function' && (!window._adminCloudCache || !window._adminCloudCache.users)) {
-                try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showAllChats: load from cloud', e); }
-            }
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showAllChats: load from cloud', e); } }
             console.log('💬 Mostrando todas las conversaciones...');
             const chats = getAllChats();
             const m = getChatMetrics();
@@ -2411,9 +2407,7 @@
         }
         
         async function showChatSummaryByProject() {
-            if (typeof window.nutriplantAdminLoadFromCloud === 'function' && (!window._adminCloudCache || !window._adminCloudCache.users)) {
-                try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showChatSummaryByProject: load from cloud', e); }
-            }
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showChatSummaryByProject: load from cloud', e); } }
             const data = getChatSummaryByProject();
             const m = getChatMetrics();
             const subtitle = m.totalMessages + ' mensajes totales · ' + m.totalInteractions + ' interacciones · ~$' + m.estimatedCostUSD.toFixed(4) + ' USD';
@@ -2434,9 +2428,7 @@
         }
         
         async function showChatSummaryByUser() {
-            if (typeof window.nutriplantAdminLoadFromCloud === 'function' && (!window._adminCloudCache || !window._adminCloudCache.users)) {
-                try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showChatSummaryByUser: load from cloud', e); }
-            }
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showChatSummaryByUser: load from cloud', e); } }
             const data = getChatSummaryByUser();
             const m = getChatMetrics();
             const subtitle = m.totalMessages + ' mensajes totales · ' + m.totalInteractions + ' interacciones · ~$' + m.estimatedCostUSD.toFixed(4) + ' USD';
@@ -3898,7 +3890,8 @@
             downloadCSV(csv, 'proyectos_nutriplant.csv');
         }
         
-        function exportChats() {
+        async function exportChats() {
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('exportChats: load from cloud', e); } }
             const chats = getAllChats();
             const csv = convertToCSV(chats);
             downloadCSV(csv, 'conversaciones_nutriplant.csv');
@@ -4015,7 +4008,8 @@
             });
         }
         
-        function searchChats() {
+        async function searchChats() {
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('searchChats: load from cloud', e); } }
             const searchTerm = prompt('Buscar en conversaciones:');
             if (searchTerm) {
                 const chats = getAllChats();
@@ -4517,7 +4511,8 @@
             });
         }
         
-        function showSubscriptionsOverview() {
+        async function showSubscriptionsOverview() {
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showSubscriptionsOverview: load from cloud', e); } }
             const users = getAllUsers();
             const overview = {
                 total: users.length,
@@ -4585,7 +4580,8 @@
             }
         }
         
-        function showExpiredSubscriptions() {
+        async function showExpiredSubscriptions() {
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showExpiredSubscriptions: load from cloud', e); } }
             const users = getAllUsers();
             const expiredUsers = users.filter(u => u.subscription_status === 'expired');
             showDataViewerWithFilters({
@@ -4606,7 +4602,8 @@
             });
         }
         
-        function showCancelledSubscriptions() {
+        async function showCancelledSubscriptions() {
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showCancelledSubscriptions: load from cloud', e); } }
             const users = getAllUsers();
             const cancelledUsers = users.filter(u => u.subscription_status === 'cancelled');
             showDataViewerWithFilters({
@@ -4627,7 +4624,8 @@
             });
         }
         
-        function showSubscriptionRevenue() {
+        async function showSubscriptionRevenue() {
+            if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showSubscriptionRevenue: load from cloud', e); } }
             const users = getAllUsers();
             const activeUsers = users.filter(u => u.subscription_status === 'active');
             // Suscripción cada 5 meses: el monto guardado es por ciclo (5 meses). Equivalente anual = monto * (12/5).
