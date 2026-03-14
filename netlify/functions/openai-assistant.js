@@ -9,6 +9,10 @@
  *
  * En profiles: chat_limit_monthly (créditos, -1 = sin límite), chat_usage_current_month (créditos),
  *   chat_usage_month (ej. "2025-02"). Si faltan columnas, crear en Supabase.
+ *
+ * Búsqueda web (opcional): si el body envía allowWebSearch: true y está definida SERPER_API_KEY
+ * en Netlify, el modelo puede usar la herramienta search_web; cuando la use, se cobran 2 créditos.
+ * Sin SERPER_API_KEY la herramienta no se ofrece. Obtener API key en https://serper.dev
  */
 
 const MODEL_PRICING_USD_PER_1M = {
@@ -18,6 +22,7 @@ const MODEL_PRICING_USD_PER_1M = {
 const DEFAULT_MONTHLY_CREDITS = 500;
 const CREDITS_TEXT_MESSAGE = 1;
 const CREDITS_IMAGE_MESSAGE = 3; // 1 imagen por mensaje
+const CREDITS_WEB_SEARCH = 2; // cuando el asistente consulta la web en esta petición
 
 function monthKey() {
   const now = new Date();
@@ -74,6 +79,40 @@ function corsHeaders() {
 function jsonResponse(statusCode, body) {
   return { statusCode, headers: corsHeaders(), body: JSON.stringify(body) };
 }
+
+/** Herramienta: búsqueda web (Serper). Si SERPER_API_KEY no está definida, devuelve mensaje indicando que no está configurada. */
+async function runWebSearch(query) {
+  const key = (process.env.SERPER_API_KEY || '').trim();
+  if (!key) return 'Búsqueda web no configurada en el servidor (falta SERPER_API_KEY). Responde con tu conocimiento.';
+  const q = (query && String(query).trim()) ? String(query).trim().slice(0, 200) : '';
+  if (!q) return 'Query vacío.';
+  try {
+    const res = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-KEY': key },
+      body: JSON.stringify({ q, num: 5 })
+    });
+    const data = await res.json().catch(() => ({}));
+    const organic = (data.organic || []).slice(0, 5);
+    if (organic.length === 0) return 'Sin resultados para esa búsqueda.';
+    return organic.map((o, i) => `[${i + 1}] ${o.title || ''}\n${o.snippet || ''}\n${o.link || ''}`).join('\n\n');
+  } catch (e) {
+    return `Error al buscar: ${e.message}. Responde con tu conocimiento.`;
+  }
+}
+
+const WEB_SEARCH_TOOL = {
+  type: 'function',
+  function: {
+    name: 'search_web',
+    description: 'Buscar en la web información actual cuando el usuario pide datos que no están en el contexto (referencias, fórmulas de autores, datos recientes, composición de soluciones nutritivas, etc.). Usar SOLO cuando sea necesario para responder con precisión; no usar para preguntas que ya puedes responder con el manual o los datos del proyecto.',
+    parameters: {
+      type: 'object',
+      properties: { query: { type: 'string', description: 'Consulta de búsqueda en español o inglés' } },
+      required: ['query']
+    }
+  }
+};
 
 /** Obtiene límite y uso del usuario desde Supabase (solo si hay client configurado). */
 async function getQuotaFromSupabase(supabase, userId) {
@@ -200,6 +239,7 @@ exports.handler = async (event, context) => {
 
   const imageBase64 = (body.imageBase64 && String(body.imageBase64).trim()) ? String(body.imageBase64).trim() : null;
   const imageContentType = (body.imageContentType && String(body.imageContentType).trim()) ? String(body.imageContentType).trim() : 'image/jpeg';
+  const allowWebSearch = body.allowWebSearch === true || body.allow_web_search === true;
 
   if (messages.length === 0) {
     return jsonResponse(400, { error: 'messages es obligatorio y debe ser un array' });
@@ -265,7 +305,9 @@ exports.handler = async (event, context) => {
         let usedCredits = Number(quota.chat_usage_current_month) || 0;
         const usageMonth = quota.chat_usage_month || '';
         if (usageMonth !== currentMonth) usedCredits = 0;
-        const requiredCredits = totalImageCount > 0 ? CREDITS_IMAGE_MESSAGE : CREDITS_TEXT_MESSAGE;
+        const requiredCredits = totalImageCount > 0
+          ? CREDITS_IMAGE_MESSAGE
+          : (allowWebSearch ? CREDITS_WEB_SEARCH : CREDITS_TEXT_MESSAGE);
 
         if (usedCredits >= limitCredits) {
           return jsonResponse(429, {
@@ -290,7 +332,16 @@ exports.handler = async (event, context) => {
     }
   }
 
-  const payload = { model, messages, max_tokens, temperature };
+  const serperKey = (process.env.SERPER_API_KEY || '').trim();
+  const webSearchEnabled = allowWebSearch && !!serperKey;
+
+  let usedWebSearch = false;
+  let currentMessages = [...messages];
+  let payload = { model, messages: currentMessages, max_tokens, temperature };
+  if (webSearchEnabled) {
+    payload.tools = [WEB_SEARCH_TOOL];
+    payload.tool_choice = 'auto';
+  }
 
   try {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -302,7 +353,7 @@ exports.handler = async (event, context) => {
       body: JSON.stringify(payload)
     });
 
-    const text = await res.text();
+    let text = await res.text();
     let data = {};
     try {
       data = JSON.parse(text);
@@ -310,12 +361,49 @@ exports.handler = async (event, context) => {
       data = { error: text || 'Respuesta no JSON' };
     }
 
+    const choice = data.choices && data.choices[0];
+    const msg = choice && choice.message;
+
+    if (res.ok && webSearchEnabled && msg && msg.tool_calls && msg.tool_calls.length > 0) {
+      const searchCall = msg.tool_calls.find(tc => tc.function && tc.function.name === 'search_web');
+      if (searchCall && searchCall.function && searchCall.function.arguments) {
+        let args = {};
+        try {
+          args = JSON.parse(searchCall.function.arguments);
+        } catch (_) {}
+        const query = args.query || '';
+        const searchResult = await runWebSearch(query);
+        usedWebSearch = true;
+        currentMessages.push(msg);
+        currentMessages.push({
+          role: 'tool',
+          tool_call_id: searchCall.id,
+          content: searchResult.slice(0, 4000)
+        });
+        const secondPayload = { model, messages: currentMessages, max_tokens, temperature };
+        const res2 = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+          body: JSON.stringify(secondPayload)
+        });
+        const text2 = await res2.text();
+        if (res2.ok) {
+          try {
+            data = JSON.parse(text2);
+          } catch (_) {}
+        }
+      }
+    }
+
     if (res.ok && supabase && userId && userId !== 'anonymous' && userId !== '__admin__') {
-      const creditsUsed = totalImageCount > 0 ? CREDITS_IMAGE_MESSAGE : CREDITS_TEXT_MESSAGE;
+      const creditsUsed = totalImageCount > 0
+        ? CREDITS_IMAGE_MESSAGE
+        : (usedWebSearch ? CREDITS_WEB_SEARCH : CREDITS_TEXT_MESSAGE);
       await addUsageInSupabase(supabase, userId, creditsUsed);
       if (!data._nutriplant) data._nutriplant = {};
       data._nutriplant.month = currentMonth;
       data._nutriplant.credits_used_this_request = creditsUsed;
+      data._nutriplant.used_web_search = usedWebSearch;
       if (data.usage) {
         const pt = Number(data.usage.prompt_tokens) || 0;
         const ct = Number(data.usage.completion_tokens) || 0;
@@ -329,9 +417,11 @@ exports.handler = async (event, context) => {
     if (!data._nutriplant) data._nutriplant = {};
     data._nutriplant.image_received = totalImageCount > 0;
     data._nutriplant.image_count = totalImageCount;
+    data._nutriplant.used_web_search = usedWebSearch;
 
+    const hasContent = data.choices && data.choices[0] && data.choices[0].message;
     return {
-      statusCode: res.ok ? 200 : res.status,
+      statusCode: hasContent ? 200 : (res.status || 500),
       headers: corsHeaders(),
       body: JSON.stringify(data)
     };

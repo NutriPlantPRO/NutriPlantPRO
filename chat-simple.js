@@ -34,14 +34,16 @@ function getNutriPlantProManual() {
 
 5) EXTRACTO DE PASTA Y SOLUCIÓN NUTRITIVA
 - Extracto de pasta saturada: CE (dS/m), RAS, pH; cationes y aniones en meq/L o ppm (NO₃, K, Ca, Mg, Na, SO₄, Cl, HCO₃, etc.). Interpretación de salinidad (CE), sodio (RAS) y balance iónico.
-- Solución nutritiva: macronutrientes en meq/L o ppm; rangos de referencia (ej. N 140–200, K 180–300 ppm) para comparar. Diagrama ternario: proporciones aniones (NO₃, H₂PO₄, SO₄) y cationes (K, Ca, Mg, NH₄) para evitar antagonismos y precipitados.
+- Solución nutritiva: macronutrientes en meq/L o ppm; rangos de referencia (ej. N 140–200, K 180–300 ppm) para comparar. Diagrama ternario: proporciones aniones (NO₃, H₂PO₄, SO₄) y cationes (K, Ca, Mg, NH₄) para evitar antagonismos y precipitados. NutriPlant usa rangos de referencia tipo Steiner para la zona de equilibrio: aniones NO3 20–80%, H2PO4 1.25–10%, SO4 10–70%; cationes K 10–65%, Ca 22.5–62.5%, Mg 0.5–40%.
+
+Soluciones nutritivas de referencia (para consulta cuando el usuario pida referencias o compare con Hoagland/Steiner/otros): Hoagland (Hoagland & Arnon): cationes meq/L K ~6, Ca ~8, Mg ~2, NH₄ ~1; aniones meq/L NO₃ ~14–16, H₂PO₄ ~2, SO₄ ~2; micros ppm Fe 2–3, Mn 0.1–0.5, B 0.2–0.5, Zn 0.05–0.1, Cu 0.02–0.05, Mo 0.01–0.05. Steiner (Steiner 1961): cationes meq/L K ~6–7, Ca ~9, Mg ~4; aniones meq/L NO₃ ~12, H₂PO₄ ~1, SO₄ ~6–7; micros ppm Fe ~1–2, Mn ~0.5, B ~0.4, Zn/Cu en traza. Rangos típicos micros (varios autores) ppm: Fe 1–5, Mn 0.2–1, B 0.2–0.5, Zn 0.05–0.2, Cu 0.02–0.1, Mo 0.01–0.05. Son referencias “fuerza completa”; en práctica se usan diluciones según etapa y cultivo. Comparar con los datos del proyecto en NutriPlant cuando el usuario pregunte.
 
 6) VPD (DÉFICIT DE PRESIÓN DE VAPOR)
 - VPD = presión de saturación a T_hoja − presión real de vapor. Afecta transpiración, absorción de Ca y estrés. Rangos típicos: 0.4–1.2 kPa óptimo según especie; <0.3 riesgo de edema; >1.5 estrés hídrico y cierre estomático. Se usa para programar riego y clima en invernadero.
 
 7) CALCULADORAS NUTRIPLANT (ÓXIDO↔ELEMENTAL Y ppm↔mmol↔meq) — Alineado con la app
 - Calculadora Conversión Óxido ↔ Elemental (misma estructura y factores que en la app): CaO→Ca ×0.715; Ca→CaO ×1.399. K₂O→K ×0.830; K→K₂O ×1.204. P₂O₅→P ×0.436; P→P₂O₅ ×2.291. MgO→Mg ×0.603; Mg→MgO ×1.658. S→SO₄ ×3.000; SO₄→S ×0.333. S→SO₃ ×2.497; SO₃→S ×0.400. Zn→ZnO ×1.245; ZnO→Zn ×0.803. SiO₂→Si ×0.468; Si→SiO₂ ×2.139. Usar exactamente estos factores al explicar conversiones de fertilizantes, enmiendas o análisis.
-- Calculadora Unidades de Nutrientes (ppm ↔ mmol/L ↔ meq/L): ppm = mg/L del elemento o ion. Fórmulas: mmol/L = ppm ÷ PM (peso molecular o atómico); meq/L = mmol/L × Valencia; por tanto meq/L = (ppm ÷ PM) × Valencia. Pesos y valencias de la app: N (NO₃⁻/NH₄⁺) PM 14.01 val 1; P (H₂PO₄⁻) 30.97 val 1; K⁺ 39.10 val 1; Ca²⁺ 40.08 val 2; Mg²⁺ 24.31 val 2; S (SO₄²⁻) 32.07 val 2; Fe²⁺ 55.85 val 2; Mn²⁺ 54.94 val 2; Zn²⁺ 65.38 val 2; B (H₃BO₃) 10.81 val 1; Cu²⁺ 63.55 val 2; Mo 95.95 val 2; HCO₃⁻ 61.02 val 1; CO₃²⁻ 60.01 val 2. Al explicar o verificar conversiones en solución nutritiva, agua, fertirriego o hidroponía usar estos valores para coincidir con la calculadora de la plataforma.
+- Calculadora Unidades (meq/L ↔ ppm ↔ mmol/L) y Solución nutritiva NutriPlant: En NutriPlant la conversión meq/L ↔ ppm está hecha para que el resultado sea siempre **ppm del ELEMENTO** (ppm P, ppm S, ppm K, etc.), no del ion. Se usa el **peso equivalente del elemento** en esa forma: P-H₂PO₄⁻ → 31 (un equivalente lleva 1 P, peso atómico 31); S-SO₄²⁻ → 16 (un equivalente de SO₄ lleva medio S, 32.07/2 ≈ 16); N-NO₃⁻/NH₄⁺ → 14; K⁺ 39.1; Ca²⁺ 20.04; Mg²⁺ 12.15. Fórmula: ppm elemento = meq/L × peso equivalente. **Por qué así:** en agronomía y en etiquetas de fertilizantes se trabaja con concentración elemental (ppm P, ppm K); así el usuario ve directamente ppm del elemento y puede comparar con referencias y análisis sin convertir. La misma lógica aplica en la calculadora de conversión de la plataforma y en la pestaña Solución por etapa de Hidroponía. Para ppm ↔ mmol ↔ meq: mmol/L = ppm ÷ PM; meq/L = mmol/L × Valencia; al invertir, ppm = meq/L × (PM/Valencia) = meq/L × peso equivalente por elemento. Usar estos pesos equivalentes (N 14, P 31, S 16, K 39.1, Ca 20.04, Mg 12.15, etc.) para que coincida con la app.
 
 8) DECISIONES AGRONÓMICAS (NIVEL EXPERTO)
 - Priorizar diagnóstico: suelo → foliar → programa. Un solo análisis sin contexto puede llevar a sobrefertilizar o subfertilizar.
@@ -571,7 +573,7 @@ class NutriPlantChat {
       const limit = Math.max(0, Number(limitRaw));
       if (limit === 0) { el.style.display = 'none'; return; }
       const remaining = Math.max(0, Math.floor(limit - used));
-      el.textContent = `Chat: ${remaining}/${Math.floor(limit)} créditos`;
+      el.textContent = `Chat: ${remaining}/${Math.floor(limit)} créditos mensuales`;
       el.style.display = 'block';
     } catch (e) {
       el.style.display = 'none';
@@ -637,8 +639,8 @@ class NutriPlantChat {
     }
   }
 
-  /** Incrementa uso mensual en créditos (texto=1, imagen=3). */
-  incrementUserChatUsage(hasImage = false) {
+  /** Incrementa uso mensual en créditos (texto=1, web=2, imagen=3). Si creditsUsed viene en la respuesta del backend, se usa ese valor. */
+  incrementUserChatUsage(hasImage = false, creditsUsedFromBackend = null) {
     try {
       const userId = localStorage.getItem('nutriplant_user_id');
       if (!userId) return;
@@ -652,7 +654,9 @@ class NutriPlantChat {
         user.chat_usage_current_month = 0;
         user.chat_usage_month = currentMonth;
       }
-      const creditsToAdd = hasImage ? 3 : 1;
+      const creditsToAdd = creditsUsedFromBackend != null && creditsUsedFromBackend >= 0
+        ? creditsUsedFromBackend
+        : (hasImage ? 3 : 1);
       user.chat_usage_current_month = (user.chat_usage_current_month || 0) + creditsToAdd;
       localStorage.setItem(userKey, JSON.stringify(user));
     } catch (e) {
@@ -696,7 +700,9 @@ class NutriPlantChat {
       const indicator = document.getElementById('typing-indicator');
       if (indicator) indicator.remove();
       
-      this.incrementUserChatUsage(hasImage);
+      const creditsUsed = this._lastCreditsUsed != null ? this._lastCreditsUsed : (hasImage ? 3 : 1);
+      this.incrementUserChatUsage(hasImage, creditsUsed);
+      this._lastCreditsUsed = null;
       this.updateChatQuotaDisplay();
       this.addMessage(response, 'ai');
     } catch (error) {
@@ -714,44 +720,83 @@ class NutriPlantChat {
   getModuleFocusedManual(module) {
     const base = {
       inicio: `
-- Inicio: pantalla de proyectos recientes y proyecto activo.
-- Crear proyecto: botón "+ Nuevo NutriPlant" → se crea uno nuevo; el usuario puede poner nombre, cultivo, variedad, campo/sector y guardar; ese pasa a ser el proyecto activo.
-- Abrir: en cada tarjeta, "Abrir" carga ese proyecto como activo y permite trabajar en Ubicación, Enmienda, Granular, etc.
-- Editar: "Editar" en la tarjeta permite cambiar nombre, cultivo, variedad, campo/sector del proyecto.
-- Duplicar: "Duplicar" crea una copia del proyecto (útil para variantes o nueva temporada).
-- Eliminar: "Eliminar" borra el proyecto (y sus reportes en la nube si está conectado). El proyecto activo es el que se usa en el resto de pestañas.
-- Si no hay proyectos: guiar a usar "+ Nuevo NutriPlant" para crear el primero.`,
+- Inicio es la pantalla central de NutriPlant PRO: muestra los proyectos del usuario (tarjetas) y desde aquí se crea, abre, edita, duplica o elimina un proyecto. El proyecto activo (el que se abre) es el que se usa en todas las pestañas del dashboard.
+- Cómo crear un proyecto (pasos para explicar al usuario): (1) En la barra superior, pulsar el botón "+ Nuevo NutriPlant". (2) Se crea una nueva tarjeta o se abre el formulario de nuevo proyecto; el usuario debe completar al menos el nombre y, si desea, cultivo, variedad y campo/sector. (3) Guardar el proyecto; a partir de ahí ese proyecto queda en la lista y puede abrirlo para trabajar. Si el usuario no tiene proyectos aún, guíalo a usar "+ Nuevo NutriPlant" para crear el primero y opcionalmente indicar que después de crearlo puede "Abrir" para empezar a llenar Ubicación, Enmienda, etc.
+- Acciones en cada tarjeta de proyecto: Abrir (carga ese proyecto como activo y permite usar las pestañas Ubicación, Enmienda, Nutrición Granular, Fertirriego, Hidroponía, Análisis, VPD, Reportes); Editar (cambiar nombre, cultivo, variedad, campo/sector); Duplicar (copia del proyecto, útil para variantes o nueva temporada); Eliminar (borra el proyecto y sus reportes en la nube si está conectado).
+- Arquitectura NutriPlant PRO (para explicar cómo interactuar): Inicio = centro de proyectos. Una vez que el usuario abre un proyecto, la barra de pestañas permite ir a: Ubicación (polígono del predio), Enmienda (CIC y enmiendas cálcicas), Nutrición Granular (requerimiento + programa aplicaciones), Fertirriego (requerimiento + programa por semanas/meses + gráficas), Hidroponía (solución por etapa + cálculo de fertilizantes), Análisis (suelo, foliar, agua, solución nutritiva, extracto de pasta, fruta), VPD (calculadoras déficit de presión de vapor), Reportes (generar PDF). Cada pestaña trabaja con los datos del proyecto activo; no hay que crear proyecto por cada pestaña. Si preguntan "por dónde empiezo", sugiere: crear/abrir proyecto en Inicio → luego Ubicación si tendrá mapa, Enmienda si tiene análisis de suelo, o la pestaña que corresponda a su objetivo (granular, fertirriego, hidroponía, etc.).`,
       enmienda: `
-- Enmienda/CIC: evaluar rangos K 3-7%, Ca 65-75%, Mg 10-15%, Na <1%.
-- Regla de signo: meq a ajustar >0 subir; <0 bajar.
-- Priorizar correcciones que reducen riesgos de Na alto y desbalance catiónico.`,
+- Enmienda usa los datos del "Análisis de Suelo Inicial" (cationes en meq/100g, CIC, pH, densidad aparente, profundidad). NO confundir con la pestaña Análisis de Suelo (reportes): son orígenes distintos; el usuario puede tener valores diferentes entre este bloque y los reportes de esa pestaña.
+- Lógica de % de cada catión: % catión = (meq del catión / CIC total) × 100. Rangos de referencia NutriPlant: K 3–7%, Ca 65–75%, Mg 10–15%, Na <1%. Con eso se evalúa si el suelo está bajo, alto o en rango.
+- Ajuste en meq: la calculadora obtiene "meq a ajustar" = valor ideal − valor actual (por catión). NutriPlant SUGIERE esos valores (ideales según CIC); el usuario PUEDE MODIFICAR los campos "meq a ajustar" (K, Ca, Mg, H, Na, Al) antes de calcular. El asistente recibe en contexto los valores actuales de meq a ajustar (sugeridos o editados por el usuario) y los usa para interpretar.
+- Enmiendas disponibles: el asistente ve la tabla de enmiendas (nombre, %K, %Ca, %Mg, %SO4 y cuál está seleccionada). Si el usuario edita una enmienda o agrega una nueva personalizada a su catálogo, eso se refleja en "Enmiendas Disponibles" y en "Enmiendas personalizadas"; el chat debe notarlo y usar esos datos.
+- % suelo explorado por raíces: fracción del volumen de suelo (en %) que las raíces exploran; la dosis de enmienda (kg/ha) se reparte en ese volumen. Concepto: depende de profundidad, densidad aparente y tipo de cultivo; con pH, densidad y profundidad del proyecto el asistente puede dar retroalimentación o sugerencias si el usuario pregunta.
+- Resultado del cálculo: el asistente ve la enmienda seleccionada, los valores usados para el cálculo (meq a ajustar, % suelo explorado) y los resultados obtenidos: tipo de enmienda, cantidad (kg/ha), aportes (p. ej. Ca²⁺, SO₄²⁻). Priorizar la línea "Resultado en pantalla (prioridad alta)" cuando exista.
+- Regla de signo: meq a ajustar >0 subir ese catión; <0 bajar. Priorizar correcciones que reducen riesgos de Na alto y desbalance catiónico.`,
       fertirriego: `
-- Fertirriego tiene tres subsecciones: (1) Requerimiento Nutricional: tabla con Extracción por tonelada (kg/ton), Extracción total (kg/ha), Ajuste por niveles en suelo, Eficiencia (%), Requerimiento real (kg/ha). Cultivo y rendimiento objetivo definen la extracción; misma lógica que granular. (2) Programa de Nutrición: programa por semanas con fertilizantes/materias y dosis; aporte del programa y aporte del agua; total (programa + agua). (3) Gráficas: visualización de aportes vs requerimiento por nutriente.
-- Contrastar requerimiento por extracción vs aporte real del suelo y agua. Validar semanas, materiales y concentración para evitar sobredosis.`,
+- Fertirriego tiene tres subsecciones y la información está relacionada entre sí: (1) Requerimiento Nutricional: tabla con Extracción por tonelada (kg/ton), Extracción total (kg/ha), Ajuste por niveles en suelo, Eficiencia (%), Requerimiento real (kg/ha). Cultivo y rendimiento objetivo definen la extracción; misma lógica que granular. (2) Programa de Nutrición: programa por semanas o por meses (el usuario elige la unidad de tiempo); fertilizantes/materias y dosis; aporte del programa y aporte del agua; total (programa + agua). (3) Gráficas: visualización de aportes vs requerimiento por nutriente. Relación: el Requerimiento define la meta (kg/ha por nutriente); el Programa genera los aportes por etapa; las Gráficas comparan aporte vs requerimiento para ver si el programa cumple la meta. La eficiencia (%) y el ajuste por niveles en suelo son valores que el usuario configura; el chat los ve en contexto y aporta en base a la lógica de NutriPlant usando esos valores — no son reglas fijas, sino lo que el usuario tiene en su proyecto.
+- En Fertirriego y en Granular la plataforma permite cambiar entre modo óxido (P₂O₅, K₂O, CaO, MgO, SO₄...) y modo elemental (P, K, Ca, Mg, S...); los valores y etiquetas que ves en contexto corresponden al modo en que el usuario tiene guardado el proyecto. En Fertirriego el programa puede ser por semana o por mes; el asistente recibe en contexto la unidad de tiempo (semana/mes) y el modo (óxido/elemental), además de semanas/meses, fertilizantes y aporte total del programa.
+- En Fertirriego el usuario puede agregar cultivos personalizados y fertilizantes/materias personalizados; esos corresponden a la pestaña Fertirriego (cada módulo tiene su propia pestaña). El asistente recibe en contexto las semanas o meses, fertilizantes y aporte total del programa (kg/ha por nutriente), así que ve los resultados del programa de fertirriego.
+- Contrastar requerimiento por extracción vs aporte real del suelo y agua. Validar semanas/meses, materiales y concentración para evitar sobredosis.`,
       granular: `
-- Granular tiene dos subsecciones: (1) Requerimiento Nutricional: tabla con Extracción por tonelada (kg/ton), Extracción total (kg/ha), Ajuste por niveles en suelo, Eficiencia (%), Requerimiento real (kg/ha). Cultivo y rendimiento objetivo definen la extracción; la lógica es extracción total = extracción/ton × rendimiento; requerimiento real considera ajuste y eficiencia. (2) Programa: aplicaciones con dosis (kg/ha) y materiales (fertilizantes). Cultivos y fertilizantes pueden ser predefinidos o personalizados.
+- Granular tiene dos subsecciones y la información está relacionada entre sí: (1) Requerimiento Nutricional: tabla con Extracción por tonelada (kg/ton), Extracción total (kg/ha), Ajuste por niveles en suelo, Eficiencia (%), Requerimiento real (kg/ha). Cultivo y rendimiento objetivo definen la extracción; la lógica es extracción total = extracción/ton × rendimiento; requerimiento real considera ajuste y eficiencia. (2) Programa: aplicaciones con dosis (kg/ha) y materiales (fertilizantes). La plataforma permite ver y trabajar en modo óxido (P₂O₅, K₂O, CaO, MgO...) o modo elemental (P, K, Ca, Mg...); los valores en contexto reflejan el modo del usuario. Cultivos y fertilizantes pueden ser predefinidos o personalizados; los que el usuario agrega corresponden a la pestaña Nutrición Granular (cada módulo tiene su propia pestaña). Relación: el Requerimiento define la meta (kg/ha por nutriente); el Programa son las aplicaciones (dosis y materiales) que deben cubrir esa meta. La eficiencia (%) y el ajuste por niveles en suelo son valores que el usuario configura en NutriPlant; el chat los ve en contexto (bloque del proyecto) y aporta en base a la lógica de NutriPlant usando esos valores — no son reglas fijas, sino lo que el usuario tiene definido en su proyecto. El asistente recibe en contexto la lista de aplicaciones granulares (título, dosis kg/ha, materiales), así que ve los resultados del programa de nutrición granular.
 - Contrastar plan de K/Ca/Mg contra diagnóstico de suelo para evitar excesos.`,
       hidroponia: `
-- Hidroponía tiene dos subsecciones: (1) Solución por etapa: definición de etapas y objetivo en meq/L y ppm por etapa; triángulo de equivalentes; suma N = NO3 + NH4. (2) Cálculo de fertilizantes: objetivo de solución (ppm), análisis de agua (ppm), requerimiento total (ppm) = objetivo − agua; volumen de agua (m³), tanque (L), relación inyección (L/m³); fertilizantes y dosis para cubrir el requerimiento.
+- Hidroponía tiene dos subsecciones y la información está relacionada entre sí: (1) Solución por etapa: definición de etapas y objetivo en meq/L y ppm por etapa; triángulo de equivalentes; suma N = NO3 + NH4. (2) Cálculo de fertilizantes: objetivo de solución (ppm), análisis de agua (ppm), requerimiento total (ppm) = objetivo − agua; volumen de agua (m³), tanque (L), relación inyección (L/m³); fertilizantes y dosis para cubrir el requerimiento. En Cálculo de fertilizantes el usuario dispone de un catálogo de fertilizantes disponibles (precargados en la plataforma + personalizados con concentración elemental %); puede agregar los que quiera al cálculo. El asistente recibe en contexto ese catálogo (nombre y % N_NH4, N_NO3, P, K, Ca, Mg, S) y la lista de fertilizantes ya añadidos al cálculo con sus dosis y aportes en ppm; debe usar ese contexto para recomendar, interpretar o explicar. Relación: Solución por etapa define la meta (objetivo ppm/meq por etapa); Cálculo de fertilizantes toma ese objetivo, resta el aporte del agua, obtiene el requerimiento total a cubrir con fertilizantes, y calcula dosis según volumen e inyección.
+- Cálculo de fertilizantes (lógica que el chat debe dominar): (1) Objetivo (ppm por nutriente) viene de Solución por etapa; aporte del agua (ppm) del análisis de agua; requerimiento total = objetivo − aporte del agua (lo que hay que cubrir con fertilizantes). (2) Volumen: volumen de agua (m³) a fertirrigar, volumen del tanque (L) de solución concentrada, tasa de inyección (L de concentrado por m³ de agua). Volumen de concentrado necesario = volumen_agua_m³ × tasa_L/m³; número de recargas de tanque = techo(volumen_concentrado_L ÷ volumen_tanque_L); relación de inyección mostrada = 1:(1000 ÷ tasa). (3) Resultado por tanque: las cantidades que muestra la app (por Tanque A, B, C) son el total de cada fertilizante para todo el volumen de agua (sólidos en kg, líquidos en L); si hay varias recargas, también se muestra la cantidad por recarga. Fórmulas: aporte total en ppm (solución final) = suma por nutriente de (dosis en ppm producto × concentración elemental % ÷ 100). Para obtener kg de fertilizante sólido: kg = dosis (ppm producto) × volumen de agua (m³) ÷ 1000. Para líquidos (ej. ácidos): L = kg equivalente ÷ densidad (kg/L); si el usuario trabaja en modo "producto total" (L totales de ácido), la app convierte a ppm producto y aporte. (4) Dosis desde ppm objetivo: si el usuario fija "cuántos ppm de un elemento" quiere aportar con un fertilizante, dosis (ppm producto) = ppm_elemento_deseado × 100 ÷ %_elemental_del_fertilizante. (5) En hidroponía en NutriPlant todas las concentraciones de fertilizantes son en forma ELEMENTAL (%, ppm). Si el usuario tiene una etiqueta en óxidos (P₂O₅, K₂O, CaO, MgO) o duda de cómo obtener el % elemental, debe usar la calculadora de conversión óxido → elemental de la plataforma (o la fórmula: P = P₂O₅×0.436, K = K₂O×0.83, Ca = CaO×0.715, Mg = MgO×0.603). El asistente debe saber esta lógica, sugerir el uso de las calculadoras de conversión disponibles en la plataforma cuando el usuario pregunte por una fuente en óxido o por cómo pasar a elemental, y puede ayudar con el cálculo o explicar cómo se obtiene.
+- Solución por etapa (Solución nutritiva): el asistente recibe en contexto toda la información que el usuario agrega: tablas meq/L, % meq y ppm por etapa (cuando está en esa subsección), resumen de nitrógeno (NO3+NH4) y texto del diagrama ternario. Lógica NutriPlant para %: Aniones (N-NO3, P-H2PO4, S-SO4): % = (meq del ion / suma meq de NO3+P+S) × 100. Cationes del triángulo (K, Ca, Mg): % = (meq / suma K+Ca+Mg) × 100. N-NH4: % = (meq NH4 / total cationes K+Ca+Mg+NH4) × 100; NH4 no entra al triángulo. Conversión meq → ppm en NutriPlant: se usa el peso equivalente del ELEMENTO para que el resultado sea ppm del elemento (ppm P, ppm S, etc.): P-H2PO4 → 31 (ppm P); S-SO4 → 16 (ppm S); N 14; K 39.1; Ca 20.04; Mg 12.15. Por qué: en agronomía y etiquetas se trabaja con concentración elemental; así el usuario ve ppm P, ppm S directamente y puede comparar con referencias. La calculadora de conversión meq/ppm de la plataforma usa la misma lógica. Diagrama ternario NutriPlant: dos triángulos (aniones y cationes). NutriPlant usa como referencia los rangos mín–máx (tipo Steiner) definidos en la plataforma. Aniones: NO3 (nitrato) 20–80%, H2PO4 (P) 1.25–10%, SO4 (S) 10–70%. Cationes: K 10–65%, Ca 22.5–62.5%, Mg 0.5–40%. Es decir, nitrato entre 20% y 80%; fosfato entre 1.25% y 10%; sulfato entre 10% y 70%; y en cationes K, Ca, Mg dentro de esos rangos. La zona de equilibrio (polígono amarillo en la app) es la intersección de esos límites; un punto DENTRO = equilibrio iónico adecuado (referencia Steiner), menor riesgo de antagonismos y precipitados; FUERA = desbalance, mayor riesgo de antagonismos o precipitados. Si el usuario pregunta por los máximos y mínimos o por Steiner, responde con estos valores exactos de NutriPlant. Si pregunta o cuestiona por qué está así (meq/ppm o triángulo), explica con esta lógica y el porqué (elemental para comparar con análisis/etiquetas; triángulo con rangos Steiner para visualizar equilibrio).
 - Validar equilibrio catión/anión para evitar antagonismos y precipitados.`,
       analisis: `
-- Análisis agrupa varias subpestañas: Análisis de Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar (DOP), Fruta (ICC). Análisis de Suelo: panel "Reportes en este proyecto" con "+ Agregar análisis"; cada reporte tiene título, fecha, Eliminar, y tres secciones: (1) Propiedades físicas (clase textural, punto saturación, capacidad de campo, punto marchitamiento, cond. hidráulica, densidad aparente); (2) pH y salinidad (pH 1:2 agua, pH Buffer, carbonatos totales %, salinidad CE dS/m); (3) Fertilidad del suelo (profundidad cm, % suelo explorado por raíces, CIC; tabla Nivel laboratorio e Ideal referencia: MO, N-NO3, P por método Bray/Olsen/Merich, K, Ca, Mg, Na, S, micronutrientes; conversión a kg/ha). Los datos de suelo se usan en Enmienda (CIC/cationes).
-- Solución Nutritiva: misma estructura de lista "Reportes en este proyecto" y "+ Agregar análisis"; cada reporte tiene título, fecha, Eliminar; secciones: (1) Características generales: CE dS/m, pH, RAS; (2) Cationes (Ca, Mg, Na, K en meq/L y ppm, con ref. min–max y estado, ideal opcional y diferencia); (3) Aniones (SO4, HCO3, Cl, CO3, PO4, NO3 en meq/L y ppm, ref e ideal); (4) Micronutrimentos (Fe, Mn, Zn, Cu, B, Mo ppm, ref e ideal). Conversión automática meq/L ↔ ppm; interpretar estado vs referencia y diferencia vs ideal.
-- Extracto de Pasta: lista "Reportes en este proyecto" y "+ Agregar análisis"; cada reporte tiene título, fecha, Eliminar. Secciones: (1) CE, RAS y pH (CE dS/m, RAS, pH del extracto); (2) Cationes (Ca, Mg, Na, K en meq/L y ppm; ref. en ppm: Ca 150–220, Mg 40–70, K 200–300, Na ideal &lt;50; estado e ideal opcional); (3) Aniones (NO3, PO4, SO4, Cl, HCO3, CO3 en meq/L y ppm; ref. NO3 150–200, PO4 30–60, SO4 60–110, Cl ideal &lt;70, HCO3 ideal &lt;120, CO3 ideal 0); (4) Micronutrimentos (Fe, Mn, Zn, Cu, B, Mo ppm con ref.); (5) Relación nutrimental: ratios calculados NO3/K (ideal 2.0–2.5), K/Ca (0.2–0.4), K/Mg (0.2–0.5), Ca/Mg (1.2–2.0), Ca/Na (1.5–3.0). Conversión meq/L ↔ ppm; interpretar estado vs ref. y ratios.
-- Análisis de Agua: lista "Reportes en este proyecto" y "+ Agregar análisis"; por reporte: m³ agua de riego (volumen de referencia), título, fecha, Eliminar. Secciones: (1) CE, RAS y pH; (2) Cationes (Ca, Mg, Na, K en meq/L y ppm; suma cationes; kg elemento y kg óxido CaO, MgO, K₂O según m³); (3) Aniones (SO4, HCO3, Cl, CO3, PO4, NO3 en meq/L y ppm; suma aniones; kg elemento S, N, P según m³); (4) Micronutrimentos (B, Fe, Mn, Cu, Zn ppm; kg elemento según m³); (5) Ácido para neutralizar HCO₃⁻ y CO₃²⁻: tipo de ácido (nítrico, sulfúrico, fosfórico), residual objetivo (meq/L), resultado mL ácido/m³ y L total. Conversión meq/L ↔ ppm; uso del agua en fertirriego/hidroponía para restar aporte del agua del requerimiento.
-- Análisis Foliar (DOP): lista "Reportes en este proyecto" y "+ Agregar análisis"; por reporte: título, fecha, Eliminar. DOP = Diagnosis and Recommendation Integrated System: DOP = ((Valor − Óptimo) / Óptimo) × 100. Secciones: (1) Macronutrientes (% MS): N, P, K, Ca, Mg, S — columna Resultado (análisis), Óptimo (%) editable (por defecto N 3, P 0.275, K 2.5, Ca 1.25, Mg 0.4, S 0.325), DOP calculado y Estado (Óptimo | Bajo | Alto | Muy bajo | Muy alto); (2) Micronutrientes (mg/kg): Fe, Mn, Zn, Cu, B, Mo — Resultado, Óptimo editable (por defecto Fe 150, Mn 160, Zn 60, Cu 15, B 62.5, Mo 2.55), DOP y Estado. Regla visual: 🟢 |DOP| ≤ 10% | 🔶 10–25% | 🟠 25–50% | 🔴 &gt;50%. Los óptimos se guardan por análisis.
-- Análisis de Fruta (ICC): lista "Reportes en este proyecto" y "+ Agregar análisis"; por reporte: título, fecha, Eliminar. ICC = Índice Comparativo de Calidad: ICC = ((Valor − Óptimo) / Óptimo) × 100. Secciones: (1) Macronutrientes en fruta (%): N, P, K, Ca, Mg, S — Resultado, Óptimo editable (por defecto N 1.8, P 0.25, K 1.5, Ca 0.25, Mg 0.2, S 0.18), ICC y Estado; (2) Micronutrientes (mg/kg): Fe, Mn, Zn, Cu, B, Mo — Resultado, Óptimo editable, ICC y Estado; (3) Calidad de fruta: Materia Seca (%), °Brix, Firmeza (kg/cm²), Acidez titulable (%) — Resultado, Óptimo editable, ICC y Estado; (4) Calcio en fruta (mg/100 g MF): Ca total, % Ca soluble, % Ca ligado, % Ca insoluble — Resultado, Óptimo editable, Estado (semáforo). Regla visual: 🟢 |ICC| ≤ 10% | 🟡 10–25% | 🟠 25–50% | 🔴 &gt;50%. Los óptimos se guardan por análisis. Integrar todos los análisis en diagnóstico.`,
+- Análisis agrupa varias subpestañas: Análisis de Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar (DOP), Fruta (ICC). Análisis de Suelo: panel "Reportes en este proyecto" con "+ Agregar análisis"; cada reporte tiene título, fecha, Eliminar, y secciones: Propiedades físicas (densidad aparente, etc.), pH y salinidad, Fertilidad del suelo, Cationes intercambiables y CIC. Los datos de suelo se usan en Enmienda (CIC/cationes).
+- Fertilidad del suelo (lógica que el chat debe entender): El usuario ingresa valores de laboratorio (Nivel) y la plataforma muestra Ideal (referencia) y kg/ha (diferencia). En kg/ha solo se considera el suelo que las raíces aprovechan en la profundidad indicada. Valores ideales: (1) K, Ca y Mg se obtienen de la CIC mediante tabla de saturación equilibrada (rangos tipo K 3–7%, Ca 65–75%, Mg 10–15% del CIC); la plataforma traduce CIC → ppm ideal K, Ca, Mg. (2) P según método: Bray 40 ppm, Olsen 25 ppm, Merich (Mehlich 3) 40 ppm. (3) Resto (MO, N-NO3, Na, S, micronutrientes): referencias agronómicas generales (MO 3%, N-NO3 20 ppm, Na 0, S 15, Fe 20, Mn 20, Zn 3, Cu 1.5, B 1, Mo 0.1, Al 0). Cálculo kg/ha: factor = 0,1 × profundidad (cm) × densidad aparente (g/cm³) × (% suelo explorado por raíces / 100); kg/ha = (nivel laboratorio − ideal) × factor; negativo = déficit (falta aportar), positivo = exceso. Sirve al agronomista para equilibrar el programa de nutrición; el chat puede apoyar a llegar a la mejor conclusión interpretando déficits y excesos.
+- Cationes intercambiables y CIC: meq/100g (Ca, Mg, K, Na, Al, H); CIC = suma. Saturación (%) = (meq catión / CIC) × 100. Ideales de saturación: K 3–7%, Ca 65–75%, Mg 10–15%, Na 0–1%, Al 0–1%, H 0–10%. El ideal en ppm para K, Ca, Mg en la tabla de fertilidad proviene de la CIC (tabla de saturación equilibrada). Botón "Recargar valores ideales de referencia" aplica ideales generales y llena K, Ca, Mg desde CIC si existe.
+- Solución Nutritiva (lógica que el chat debe entender): Cada reporte tiene valores de análisis (nivel/resultado en meq/L y ppm), rangos de referencia (ej. Ca 140–220, Mg 40–70, K 180–300, SO4 60–110, PO4 30–60, NO3 140–200 ppm; micronutrientes Fe 1.5–3, Mn 0.3–1, etc.) y una columna Ideal editable por el usuario. El usuario puede dejar el ideal vacío o definir su propio valor ideal por parámetro (distinto al rango de referencia). Diferencia = valor actual (nivel) − ideal; se muestra en la tabla: (−) falta (por debajo del ideal), (+) exceso (por encima del ideal). El chat debe ver tanto los valores que tiene el usuario como los ideales (los que haya guardado el usuario o referencia) e interpretar la diferencia para apoyar el diagnóstico y ajustes del programa de nutrición.
+- Extracto de Pasta (lógica que el chat debe entender): Igual que Solución Nutritiva: cada reporte tiene nivel (meq/L y ppm), rangos de referencia (Ca 150–220, Mg 40–70, K 200–300, Na &lt;50, NO3 150–200, PO4 30–60, SO4 60–110, Cl &lt;70, HCO3 &lt;120, CO3 0 ppm; micronutrientes con ref.) e Ideal editable por el usuario. Diferencia = nivel − ideal; (−) falta, (+) exceso. El usuario puede agregar o cambiar ideales por parámetro; el chat debe usar los valores e ideales que tenga el reporte (por defecto o añadidos por el usuario) y entender la lógica de la diferencia para interpretar déficits y excesos. Además hay ratios (NO3/K, K/Ca, K/Mg, Ca/Mg, Ca/Na) con rangos ideales de referencia.
+- Análisis de Agua: lista "Reportes en este proyecto" y "+ Agregar análisis"; por reporte: m³ agua de riego (volumen de referencia), título, fecha, Eliminar. Secciones: CE/RAS/pH, Cationes, Aniones, Micronutrimentos, Ácido para neutralizar. Conversión meq/L ↔ ppm automática; uso del agua en Fertirriego e Hidroponía para restar aporte del agua del requerimiento.
+- Análisis de Agua — Aporte del agua (lógica que el chat debe entender): Los valores del agua se ingresan en meq/L y ppm (conversión automática). Para un volumen de referencia (m³ agua de riego), la plataforma calcula el aporte en kg de elemento (y kg de óxido cuando aplica) para los nutrientes que tiene definidos: cationes Ca, Mg, Na, K → kg elemento y kg CaO, MgO, K₂O, Na₂O según factores de conversión (ej. Ca→CaO ×1.399, Mg→MgO ×1.658, K→K₂O ×1.205); aniones SO4→kg S, PO4→kg P, NO3→kg N (en forma elemental); micronutrientes B, Fe, Mn, Cu, Zn (ppm) → kg elemento = ppm × m³ / 1000. Así el usuario ve cuánto aporta el agua en macro y micro en modo elemental u óxido como en el resto de la plataforma.
+- Análisis de Agua — Ácido para neutralizar (lógica que el chat debe entender): (1) Residual objetivo (meq/L): es el "colchón" de alcalinidad que se desea dejar en el agua; no se neutraliza todo el HCO₃⁻ y CO₃²⁻, sino que se deja ese residual como buffer. El usuario ajusta este valor (por defecto 1 meq/L). (2) Meq/L de ácido necesarios = (HCO₃⁻ meq/L + CO₃²⁻ meq/L) − residual objetivo; si el resultado es ≤ 0, no se requiere ácido. (3) Ácidos disponibles en la plataforma: Ácido Nítrico 55% (11.6 meq/mL), Sulfúrico 98% (36.7 meq/mL), Fosfórico 75% (12.0 meq/mL), Fosfórico 85% (14.6 meq/mL); cada uno tiene ese valor meq/mL con el que se calcula el volumen. (4) Cálculo: meq totales por m³ = meq/L × 1000; mL ácido por m³ = meq_totales_por_m³ / meqPerMl del ácido seleccionado; L ácido (volumen total) = (mL/m³ × m³ agua) / 1000. La plataforma muestra mL ácido/m³ y L total. (5) Si el usuario pregunta cuántos kg de ácido: kg = volumen ácido (L) × densidad del ácido (kg/L). La densidad es propia de cada producto (ej. nítrico 55% ~1.35 kg/L, sulfúrico 98% ~1.84 kg/L); el chat puede explicar la fórmula y usar densidades típicas o indicar que consulte la etiqueta del ácido si necesita el valor exacto.
+- Análisis Foliar (DOP): lista "Reportes en este proyecto" y "+ Agregar análisis"; por reporte: título, fecha, Eliminar. El chat ve los valores que el usuario ingresa: resultado del laboratorio (macros en % MS: N, P, K, Ca, Mg, S; micros en mg/kg: Fe, Mn, Zn, Cu, B, Mo), los óptimos (por defecto o editados por el usuario, guardados por análisis) y el DOP % resultante.
+- DOP (Diagnosis and Recommendation Integrated System): DOP = ((Valor − Óptimo) / Óptimo) × 100. Indica en porcentaje cuánto se desvía el resultado del óptimo: negativo = por debajo del óptimo (déficit), positivo = por encima (exceso). Sirve para evaluar niveles nutrimentales en el cultivo y apoyar la toma de decisiones (correcciones, ajustes al programa de fertilización, priorización de nutrientes a reforzar o reducir). Regla de interpretación en NutriPlant: 🟢 |DOP| ≤ 10% óptimo; 🔶 10–25% atención; 🟠 25–50% deficiencia o exceso marcado; 🔴 &gt;50% muy bajo o muy alto. Si el usuario ha editado los óptimos en un análisis, el chat puede notarlo (en contexto aparecen "opt" y el DOP calculado con ese óptimo) y aportar criterio técnico cuando consulte (por ejemplo explicar el significado del DOP, sugerir ajustes o cruzar con suelo/programa).
+- Análisis de Fruta (ICC): lista "Reportes en este proyecto" y "+ Agregar análisis"; por reporte el chat ve los valores que el usuario ingresa (resultado de laboratorio), los óptimos (por defecto o editados por el usuario, guardados por análisis) y el ICC % resultante. Secciones: (1) Macronutrientes en fruta (%): N, P, K, Ca, Mg, S — Resultado, Óptimo editable, ICC y Estado; (2) Micronutrientes (mg/kg): Fe, Mn, Zn, Cu, B, Mo — Resultado, Óptimo editable, ICC y Estado; (3) Calidad de fruta: Materia Seca (%), °Brix, Firmeza (kg/cm²), Acidez titulable (%) — Resultado, Óptimo editable, ICC y Estado; (4) Calcio en fruta (mg/100 g MF): Ca total, % Ca soluble, % Ca ligado, % Ca insoluble — Resultado, Óptimo editable, Estado (semáforo). Regla visual: 🟢 |ICC| ≤ 10% | 🟡 10–25% | 🟠 25–50% | 🔴 &gt;50%. Si el usuario modifica un valor óptimo, el chat puede notarlo (en contexto aparecen "opt" e ICC con ese óptimo) y dar criterio técnico.
+- ICC (Índice Comparativo de Calidad): mismo método que DOP pero aplicado a fruta para interpretar niveles o resultados de análisis de fruta. ICC = ((Valor − Óptimo) / Óptimo) × 100. Indica en % la desviación respecto al óptimo (negativo = por debajo, positivo = por encima). Sirve para evaluar calidad nutrimental y organoléptica de la fruta y apoyar decisiones (manejo poscosecha, ajustes de fertilización o calcio, priorización de correcciones).
+- Parámetros de calidad de fruta: Materia Seca (%), °Brix (sólidos solubles), Firmeza (kg/cm²), Acidez titulable (%). Reflejan madurez, sabor y conservación; el chat debe interpretarlos junto con los nutrientes y el calcio.
+- Calcio en fruta — valor agronómico para calidad poscosecha: el chat debe dominar este tema técnico. (1) Ca total (mg/100 g MF): contenido total de calcio en fruta. (2) % Ca soluble: fracción en forma iónica o fácilmente disponible; asociada a estabilidad de membranas y pared celular; bajo Ca soluble puede relacionarse con mayor susceptibilidad a desórdenes y ablandamiento. (3) % Ca ligado: calcio unido a pectinas y otros componentes de pared (forma menos disponible que el soluble pero estructuralmente importante). (4) % Ca insoluble: incluye calcio precipitado como oxalato de calcio, carbonatos o unido a fitato; esta fracción no está disponible para funciones celulares; alto % de Ca insoluble (ej. oxalato) puede indicar que buena parte del Ca total no contribuye a la firmeza ni a la reducción de desórdenes (bitter pit, podredumbres). En conjunto, una buena calidad poscosecha suele asociarse a Ca total adecuado y una proporción favorable de Ca soluble/ligado respecto a insoluble; el chat debe interpretar los valores del análisis (resultado vs óptimo) y el estado semáforo para aportar criterio sobre manejo de calcio y calidad de fruta. Integrar análisis foliar, suelo y fruta en diagnóstico.`,
       vpd: `
-- Déficit de Presión de Vapor (VPD): pestaña con dos calculadoras. (1) Calculadora Ambiental Simple: requiere ubicación del proyecto (polígono en pestaña Ubicación); muestra lat/lng; inputs Temperatura del Aire (°C) y Humedad Relativa (%); botones "Obtener del Clima" (usa ubicación) y "Calcular VPD"; resultados VPD (kPa) y HD (g/m³). (2) Calculadora Avanzada: Temperatura del Aire (°C), Humedad Relativa (%); Modo "Temperatura de Hoja" (input T hoja °C) o "Radiación Solar" (input W/m², T hoja calculada); botón "Calcular Déficit de Presión de Vapor"; resultados. Historial de cálculos (ambiental/avanzado, fecha, VPD kPa, HD). VPD = presión sat. a T_hoja − presión real vapor; afecta transpiración, absorción de Ca y estrés. Rangos típicos: 0.4–1.2 kPa óptimo según especie; &lt;0.3 riesgo edema; &gt;1.5 estrés hídrico. Cruza VPD con nutrición/riego para timing y riesgo de fitotoxicidad.`,
+- Relación Ubicación ↔ VPD: los datos de clima en la pestaña VPD se obtienen para la ubicación del predio (centro del polígono definido en la pestaña Ubicación). "Obtener del Clima" y la "Serie VPD por Rango" usan esas coordenadas; si el usuario no tiene polígono en Ubicación, esas funciones no están disponibles hasta que lo defina. El chat debe entender esta dependencia y explicarla al usuario.
+- Déficit de Presión de Vapor (VPD): VPD = presión de saturación a T_hoja − presión real de vapor. Afecta transpiración, absorción de Ca y estrés. Rangos típicos: 0.4–1.2 kPa óptimo según especie; &lt;0.3 riesgo edema; &gt;1.5 estrés hídrico. Cruza VPD con nutrición/riego para timing y riesgo de fitotoxicidad.
+- Calculadora Ambiental Simple: Temperatura del Aire (°C) y Humedad Relativa (%). El usuario puede (1) pulsar "Obtener del Clima" (trae temp y humedad desde la ubicación del predio) o (2) ingresar los valores manualmente. Luego "Calcular VPD"; resultados VPD (kPa) y HD (g/m³). Los valores guardados (temp, humedad, VPD) son los que el usuario usó o obtuvo; el chat debe interpretar esos datos cuando estén en contexto.
+- Serie VPD por Rango: el usuario elige vista por día, semana o mes (granularidad), fecha inicio y fin, y descarga una tabla de valores VPD para ese rango en la ubicación del predio. Esas tablas se pueden guardar (series guardadas); el chat debe entender si el contexto indica "por día", "por semana" o "por mes" y los valores VPD y fechas de cada serie guardada.
+- Calculadora Avanzada: además de Temperatura del Aire (°C) y Humedad Relativa (%), usa uno de dos modos: (1) Temperatura de Hoja: el usuario ingresa la temperatura de la hoja (°C) directamente; o (2) Radiación Solar: el usuario ingresa la radiación solar (W/m²) y la plataforma calcula la temperatura de la hoja a partir de ella. Con temp aire, humedad y temp hoja se calcula el VPD. El chat debe entender esta lógica para explicar al usuario o responder consultas sobre la calculadora avanzada.
+- Historial: se guardan cálculos ambientales y avanzados (fecha, VPD kPa, HD, etc.). Interpreta los datos guardados y las series de rangos cuando el usuario consulte.`,
       ubicacion: `
-- Ubicación: polígono en mapa, área, perímetro. Necesario para algunas calculadoras y reportes.`,
+- Ubicación: el usuario define el predio dibujando puntos en el mapa (polígono). El asistente recibe en contexto: número de vértices del polígono, superficie/área (ha o m²), perímetro (m) y coordenadas (centro del polígono o referencia). Si no hay polígono aún, se indica "sin polígono definido" y se puede guiar al usuario a ir a la pestaña Ubicación y dibujar los puntos en el mapa. Necesario para la calculadora ambiental de VPD ("Obtener del Clima" usa el centro del polígono) y para reportes PDF.`,
       reportes: `
-- Reportes: esta pestaña sirve para generar y gestionar reportes PDF del proyecto. Botón "Generar Nuevo Reporte PDF" crea un reporte que puede incluir: Ubicación (coordenadas, área, polígono), Enmiendas, Nutrición granular, Fertirriego, Hidroponía, Déficit de presión de vapor (VPD). También se puede generar el primer reporte desde la sección de enmiendas. La lista muestra los reportes generados; cada uno tiene Descargar (PDF) y Eliminar. Los reportes se guardan en el proyecto y se sincronizan a la nube si el usuario está conectado.`,
+- Reportes: esta pestaña sirve para generar y gestionar reportes PDF del proyecto actual. Cómo generar un reporte: (1) El usuario pulsa el botón "Generar Nuevo Reporte PDF" (en la pestaña Reportes o desde la sección de enmiendas). (2) Se abre un modal donde debe seleccionar las secciones o pestañas que quiere incluir en el reporte: Ubicación, Enmiendas, Nutrición granular, Fertirriego, Hidroponía, Déficit de presión de vapor (VPD). (3) El usuario marca (selecciona) las que desee y confirma; se genera el PDF con solo esas secciones. (4) El reporte aparece en la lista; cada uno tiene Descargar (PDF) y Eliminar. Los reportes se guardan en el proyecto y se sincronizan a la nube si está conectado. El chat debe entender esta lógica para explicar al usuario cómo hacerlo: ir a Reportes → "Generar Nuevo Reporte PDF" → en el modal elegir qué secciones incluir → generar.`,
       general: `
 - NutriPlant PRO: responder con base en datos del proyecto activo y criterio agronómico técnico.
 - Diferenciar siempre hechos del proyecto vs conocimiento general.`
     };
     return base[module] || base.general;
+  }
+
+  /**
+   * Obtiene solo los datos del usuario actual necesarios para personalizar el chat (nombre y profesión).
+   * No expone email ni teléfono. Se usa únicamente el perfil del usuario logueado en esta sesión.
+   */
+  getCurrentUserProfileForChat() {
+    const userId = localStorage.getItem('nutriplant_user_id');
+    if (!userId) return null;
+    try {
+      const userKey = `nutriplant_user_${userId}`;
+      const raw = localStorage.getItem(userKey);
+      if (!raw) return null;
+      const profile = JSON.parse(raw);
+      const fullName = (profile.name || profile.fullName || '').trim();
+      const displayName = fullName ? fullName.split(/\s+/)[0] : 'Usuario';
+      const profession = (profile.profession || '').trim();
+      return { displayName, profession: profession || null };
+    } catch (e) {
+      return null;
+    }
   }
 
   applyHardGuardrailsToResponse(content, snapshot, isCalculationQuestion) {
@@ -800,10 +845,28 @@ CONTEXTO DE CONOCIMIENTO (qué tienes tú vs qué te pasamos):
 
 REGLA DE ORO: El bloque de abajo es como si el usuario te hubiera pegado su pantalla. Tu primer paso mental es LEERLO TODO. Luego responde con datos CONCRETOS, números y pasos que saquen de apuros; evita respuestas genéricas.
 
+${(() => {
+  const profile = this.getCurrentUserProfileForChat();
+  if (!profile) return '';
+  const nameLine = profile.displayName ? `Nombre (para personalizar): ${profile.displayName}.` : '';
+  const profLine = profile.profession ? ` Profesión: ${profile.profession}.` : '';
+  return `USUARIO ACTUAL (solo para personalizar el tono y las respuestas; NO compartir con otros):\n- ${nameLine}${profLine}\n- Regla crítica: Solo tienes contexto del usuario que te escribe en esta sesión. NUNCA uses, menciones ni cruces información de otros usuarios; cada sesión corresponde a un solo usuario y sus datos.\n\n`;
+})()}
+
 IDENTIDAD Y CAPACIDADES:
 - Dominas lógica de NutriPlant: Enmienda, Suelo, Granular, Fertirriego, Hidroponía, Análisis y VPD.
 - Diferencias claramente cálculo de plataforma vs criterio técnico general.
 - Tu respuesta debe ser accionable, coherente y trazable.
+
+ARQUITECTURA NUTRIPLANT Y CONTEXTO GLOBAL DEL PROYECTO:
+- Conoces la arquitectura de NutriPlant: módulos (Inicio, Ubicación, Enmienda, Nutrición Granular, Fertirriego, Hidroponía, Análisis, VPD, Reportes), subpestañas de Análisis (Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar/DOP, Fruta/ICC) y cómo se relacionan (p. ej. Suelo→Enmienda, Agua→Fertirriego/Hidroponía, Foliar/Suelo/Fruta→diagnóstico integrado).
+- Los datos que te pasamos son del MISMO proyecto en su totalidad: incluyen TODAS las secciones que el usuario tenga guardadas (Enmienda, Fertirriego, Granular, Hidroponía, Análisis de Suelo, Foliar, Fruta, Agua, Solución Nutritiva, Extracto de Pasta, etc.), aunque el usuario esté en otra pestaña. Por ejemplo: si está en Fertirriego y te pregunta por su análisis foliar o por su suelo, tienes esos datos en el bloque "DATOS DEL PROYECTO" y debes usarlos para responder e interactuar con él.
+- Puedes usar la lógica y explicar el funcionamiento de cualquier módulo cuando el usuario pregunte; responde con los datos del bloque del módulo del que hablen.
+
+UNIDADES POR MÓDULO (NO CONFUNDIR):
+- **Hidroponía**: concentraciones y aportes de fertilizantes son SIEMPRE en forma ELEMENTAL (%, ppm por elemento). No hay modo óxido en hidroponía.
+- **Granular y Fertirriego**: la plataforma trabaja en modo ÓXIDO (P₂O₅, K₂O, CaO, MgO...) o ELEMENTAL (P, K, Ca, Mg...) según lo que tenga guardado el usuario; los valores en contexto vienen en ese modo. Ambos módulos permiten cambiar a elemental (calculadora óxido↔elemental en la plataforma).
+- No apliques reglas de hidroponía (solo elemental) a Granular/Fertirriego ni al revés: en hidroponía todo es elemental; en Granular y Fertirriego depende del modo guardado.
 
 MANUAL DEL MÓDULO ACTIVO:
 ${moduleManual}
@@ -815,11 +878,20 @@ INSTRUCCIONES:
 - CUANDO pregunten por números, cálculos o "por qué la app sugiere X": usa ÚNICAMENTE los datos del proyecto que aparecen arriba (pestaña actual). No inventes ni mezcles con otros proyectos.
 - CUANDO pregunten teoría agronómica, relaciones entre nutrientes o criterios generales (sin pedirte que interpretes sus datos): puedes responder con lógica y conocimiento técnico general; si aplica, relaciona con lo que tienen en la pestaña y separa "Contexto del proyecto" vs "Conocimiento general".
 - No mezcles ni cites valores de otros proyectos del usuario. Si menciona "mi otro proyecto", indica que solo tienes contexto del proyecto actual.
+- Privacidad entre usuarios: los datos y el contexto que recibes corresponden ÚNICAMENTE al usuario que te escribe en esta sesión. Nunca cruces, menciones ni uses información de otros usuarios; cada conversación es de un solo usuario con sus proyectos y su perfil.
+- Granular vs Fertirriego: son dos módulos separados. Cada uno tiene su propio Requerimiento Nutricional y su propio Programa; los valores no son intercambiables. Si el usuario está en Nutrición Granular (o pregunta por granular), usa solo los datos del bloque "NUTRICIÓN GRANULAR". Si está en Fertirriego (o pregunta por fertirriego/gráficas de fertirriego), usa solo los datos del bloque "FERTIRRIEGO". No confundas requerimientos ni programas entre ambos.
+- Solución Nutritiva vs Extracto de Pasta: son dos subpestañas distintas dentro de Análisis. Cada una tiene su propia lista de reportes, valores e ideales. No cruces ni mezcles datos entre ellas: si preguntan por solución nutritiva, usa solo el bloque "ANÁLISIS SOLUCIÓN NUTRITIVA"; si preguntan por extracto de pasta, usa solo el bloque "ANÁLISIS EXTRACTO DE PASTA".
+- Cultivos y fertilizantes personalizados: el usuario puede agregar cultivos personalizados y fertilizantes/materias personalizados tanto en Nutrición Granular como en Fertirriego. Cada módulo tiene su propia pestaña y ahí se gestionan los de ese módulo (los de Granular en la pestaña Nutrición Granular; los de Fertirriego en la pestaña Fertirriego). Si preguntan por "mis fertilizantes", "mis cultivos" o dónde agregar uno, usa el módulo en el que estén o del que hablen y di la pestaña correspondiente.
+- Resultados de los programas que el chat SÍ ve: En Nutrición Granular recibes la lista de aplicaciones guardadas (cada una con título, dosis kg/ha y materiales); puedes referirte a ellas como "las aplicaciones que tienes", "tu programa granular", etc. En Fertirriego recibes el número de semanas o meses, la unidad de tiempo (semana/mes), el modo (óxido o elemental), la lista de fertilizantes/materias y el aporte total del programa por nutriente (kg/ha); puedes referirte a "tu programa de fertirriego", "los aportes de tu programa", etc. Si el usuario agrega o cambia aplicaciones (granular) o semanas/dosis (fertirriego), tras guardar el proyecto esos datos pasan al contexto en la siguiente consulta.
+- Lógica de la plataforma en Fertirriego, Granular e Hidroponía (resumen): (1) Granular y Fertirriego permiten modo óxido o elemental; los valores en contexto están en el modo guardado. (2) Granular: Requerimiento define la meta; Programa son aplicaciones (dosis kg/ha y materiales) que cubren la meta. (3) Fertirriego: Requerimiento define la meta; Programa por semanas o meses genera aportes; Gráficas comparan aporte vs requerimiento. (4) Hidroponía: las dos subsecciones están relacionadas: Solución por etapa define el objetivo (ppm/meq por etapa); Cálculo de fertilizantes usa ese objetivo, resta el aporte del agua (análisis de agua), obtiene el requerimiento total y calcula fertilizantes y dosis para cubrirlo. Interpreta números y etiquetas según el bloque de datos.
 - Si existe una línea "Resultado en pantalla (prioridad alta...)" en ENMIENDAS, úsala como fuente principal para cantidades y aportes; cita esos números exactos en tu respuesta.
-- Si existen los bloques "🧪 Enmiendas Disponibles", "% Suelo explorado por raíces" y "📊 Resultados del Cálculo de Enmiendas", trátalos como lectura directa de pantalla y priorízalos para responder preguntas de Enmienda.
+- Si existen los bloques "🧪 Enmiendas Disponibles", "Meq a ajustar", "% Suelo explorado por raíces" y "📊 Resultados del Cálculo de Enmiendas", trátalos como lectura directa de pantalla y priorízalos para responder preguntas de Enmienda.
+- Cómo saber si el usuario habla de datos de Enmienda o de la pestaña Análisis de Suelo: (1) "ANÁLISIS DE SUELO INICIAL" = único conjunto de valores (meq/100g, CIC, etc.) usados en la pestaña Enmienda para el cálculo de enmiendas. (2) "ANÁLISIS DE SUELO (reportes)" = lista de reportes en la pestaña Análisis > Análisis de Suelo (cada uno con título, fecha, fertilidad, cationes, kg/ha). Si el usuario está en Enmienda o dice "los datos de enmienda", "lo que tengo en enmienda", "el análisis inicial" → usar el bloque INICIAL. Si está en la pestaña Análisis (subpestaña Análisis de Suelo) o dice "los reportes de análisis", "el análisis de suelo que cargué" (en contexto de reportes) → usar el bloque (reportes). Si no queda claro, responde usando el bloque que coincida con la pestaña donde está (snapshot "ANÁLISIS (pestaña actual)" indica si está en Análisis de Suelo = reportes) o aclara: "¿te refieres a los valores que usas en Enmienda (Análisis Inicial) o a uno de los reportes de la pestaña Análisis de Suelo?".
 - Tu valor diferenciador es usar SIEMPRE los datos que ves del proyecto (análisis, programa, cultivo, CIC, solución nutritiva, etc.) para dar recomendaciones específicas a este agronomista, no genéricas. Interpreta sus números con la lógica NutriPlant PRO, sugiere acciones concretas y saca de apuros con pasos claros (qué cambiar, en qué rango, por qué).
 - Usa el bloque INTERCONEXIONES ENTRE PESTAÑAS cuando convenga: si preguntan por qué algo no funciona (ej. VPD sin clima), de dónde sale un dato (ej. enmienda que usa CIC de suelo) o qué pestaña completar primero; indica la pestaña origen o la que debe configurarse.
 - Si preguntan por conversión óxido↔elemental (P₂O₅/P, K₂O/K, CaO/Ca, MgO/Mg, S/SO₄, Zn/ZnO) o por ppm↔mmol/L↔meq/L, usa exactamente los factores y fórmulas del manual sección 7 (Calculadoras NutriPlant) para que tu respuesta coincida con las calculadoras de la plataforma.
+- Solución nutritiva e hidroponía: conversión meq/L ↔ ppm en NutriPlant usa el peso equivalente del ELEMENTO para que el resultado sea ppm del elemento (ej. P-H2PO4 → 31 da ppm P; S-SO4 → 16 da ppm S). El porqué: en agronomía y etiquetas se trabaja con concentración elemental; así el usuario ve ppm P, ppm S, ppm K directamente y puede comparar con análisis y referencias. Si el usuario duda o cuestiona por qué está así, explica esta lógica y el beneficio. Diagrama ternario: NutriPlant tiene definidos los máximos y mínimos de referencia (tipo Steiner) en la plataforma: nitrato (NO3) 20–80%, H2PO4 1.25–10%, SO4 10–70%; cationes K 10–65%, Ca 22.5–62.5%, Mg 0.5–40%. Dentro de esa zona = equilibrio; fuera = riesgo de antagonismos o precipitados. Si preguntan por Steiner o por los máximos y mínimos del triángulo, usa estos valores exactos. Si habla de pasar a ppm, meq o mmol de cada elemento, usa los pesos equivalentes del manual (N 14, P 31, S 16, K 39.1, Ca 20.04, Mg 12.15) y la misma lógica que la calculadora de la plataforma. Si piden soluciones de referencia (Hoagland, Steiner u otros autores) para meq/L de aniones/cationes o ppm de microelementos, usa la sección "Soluciones nutritivas de referencia" del manual (Hoagland, Steiner, rangos típicos de micros) y compáralas con los datos del proyecto del usuario cuando aplique.
+- En Cálculo de fertilizantes (Hidroponía): el chat entiende objetivo, aporte del agua, requerimiento, volumen de agua/tanque/inyección, resultado por tanque (kg o L por fertilizante y por recarga) y la lógica ppm↔kg (dosis×vol_m³/1000), aporte total ppm y dosis de ácidos (L y kg eq). En hidroponía todo es en forma ELEMENTAL; si el usuario tiene una fuente en óxido (P₂O₅, K₂O, etc.) o pregunta cómo obtener el % elemental, sugiere usar la calculadora de conversión óxido→elemental de la plataforma o ayuda con el cálculo/fórmula.
 - Regla crítica de coherencia: en cationes/CIC, si un elemento está por ENCIMA del rango ideal o el "meq a ajustar" es NEGATIVO, NO recomiendes aumentarlo; en ese caso la dirección correcta es disminuir/contener/aplazar ese elemento.
 - Si detectas inconsistencia entre tu recomendación y los números del contexto, corrige la recomendación y explica brevemente por qué.
 - Si la pregunta es sobre "de dónde salió un valor", "cómo se calculó", "por qué sugiere eso", prioriza explicación de lógica NutriPlant con trazabilidad (dato -> fórmula/regla -> resultado -> decisión).
@@ -830,6 +902,7 @@ INSTRUCCIONES:
 - Para la herramienta: explica cálculos, interpretación de valores y dónde configurar algo.
 - Para nutrición vegetal: da recomendaciones técnicas, basadas en ciencia y en el manual; usa términos agronómicos correctos y nivel experto (relaciones, antagonismos, momentos de aplicación, diagnóstico integrado).
 - Sé conciso pero completo; usa formato markdown para mejor legibilidad.
+- GRÁFICAS DE FERTIRRIEGO: Si preguntan si "puedes ver las gráficas" o "las gráficas de fertirriego que tengo abiertas": NO digas que no puedes ver nada. Tienes los DATOS del proyecto (requerimiento nutricional, programa por semanas, cultivo, rendimiento, aportes del programa y del agua). Responde que tienes esos datos y puedes interpretarlos y dar recomendaciones; lo que no recibes es la imagen visual de la gráfica. Invita a que te describan qué ven (p. ej. qué nutriente está por encima o por debajo del requerimiento en qué etapas) o pregunten por un nutriente/mes concreto, y entonces das recomendaciones precisas con los números del contexto.
 - Si el usuario adjunta una imagen, interpreta su contenido (análisis, gráfica, planta, suelo, resultado de laboratorio, etc.) en contexto agronómico y responde en consecuencia usando también los datos del proyecto cuando aplique.
 - IMPORTANTE: cuando venga una imagen adjunta en el mensaje del usuario, asume que SÍ tienes visión habilitada y NUNCA respondas que "no puedes ver imágenes" o "no puedes interpretar adjuntos". En su lugar, describe lo que observas y pide zoom o re-subida solo si la imagen viene borrosa o incompleta.
 - FÓRMULAS Y CÁLCULOS: No uses nunca LaTeX ni código (evita \\frac, \\times, \\text, \\[, \\]). Escribe las fórmulas en texto legible para que el usuario las entienda en el chat: usa el símbolo × para multiplicar, / para dividir, = para igual, y saltos de línea. Ejemplo: "Peso del suelo = 3.000 m³ × 1.100 kg/m³ = 3.300.000 kg". Así se lee directo sin confusión.
@@ -895,7 +968,8 @@ ESTILO DE RESPUESTA:
       model: this.model,
       messages: messages,
       temperature: isCalculationQuestion ? 0.25 : 0.4,
-      max_tokens: maxTokens
+      max_tokens: maxTokens,
+      allowWebSearch: false
     };
     if (imageData && imageData.base64) {
       body.imageBase64 = imageData.base64;
@@ -926,6 +1000,9 @@ ESTILO DE RESPUESTA:
       console.error('❌ Error de API backend:', data);
       throw new Error(`Error ${response.status}: ${data?.error || data?.message || 'Error desconocido'}`);
     }
+
+    const np = data._nutriplant || {};
+    this._lastCreditsUsed = np.credits_used_this_request != null ? np.credits_used_this_request : (imageData ? 3 : 1);
 
     const rawContent = data?.choices?.[0]?.message?.content || '';
     const safeContent = this.applyHardGuardrailsToResponse(rawContent, snapshot, isCalculationQuestion);
@@ -1288,8 +1365,21 @@ ESTILO DE RESPUESTA:
     const out = {
       availableTable: '',
       soilReachPercent: '',
-      calcResultsText: ''
+      calcResultsText: '',
+      targetMeq: ''
     };
+
+    // Meq a ajustar (K, Ca, Mg, H, Na, Al) — valores usados en el cálculo; NutriPlant sugiere pero el usuario puede modificarlos
+    const kT = document.getElementById('k-target'), caT = document.getElementById('ca-target'), mgT = document.getElementById('mg-target');
+    const hT = document.getElementById('h-target'), naT = document.getElementById('na-target'), alT = document.getElementById('al-target');
+    const meqVals = [];
+    if (kT && kT.value !== '') meqVals.push(`K:${kT.value}`);
+    if (caT && caT.value !== '') meqVals.push(`Ca:${caT.value}`);
+    if (mgT && mgT.value !== '') meqVals.push(`Mg:${mgT.value}`);
+    if (hT && hT.value !== '') meqVals.push(`H:${hT.value}`);
+    if (naT && naT.value !== '') meqVals.push(`Na:${naT.value}`);
+    if (alT && alT.value !== '') meqVals.push(`Al:${alT.value}`);
+    if (meqVals.length) out.targetMeq = meqVals.join(', ');
 
     // 1) 🧪 Enmiendas Disponibles (tabla de composiciones)
     const tbody = document.getElementById('amendments-table-body');
@@ -1418,7 +1508,23 @@ ESTILO DE RESPUESTA:
       if (ppmWrap && ppmWrap.textContent) out.solutionPpmTable = ppmWrap.innerText.replace(/\s+/g, ' ').trim().slice(0, 800);
       if (nSum && nSum.textContent) out.nitrogenSummary = nSum.textContent.replace(/\s+/g, ' ').trim();
       if (tri && tri.textContent) out.triangleInfo = tri.textContent.replace(/\s+/g, ' ').trim().slice(0, 500);
-    } else if (tab === 'hidro-calculo') out.subsection = 'Cálculo de fertilizantes';
+    } else if (tab === 'hidro-calculo') {
+      out.subsection = 'Cálculo de fertilizantes';
+      try {
+        const raw = localStorage.getItem('hydroCustomMaterials_global_user');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const items = Array.isArray(parsed?.items) ? parsed.items : [];
+          if (items.length) {
+            out.catalogSummary = items.map(m => {
+              const name = m.name || m.id || '?';
+              const pcts = ['N_NH4', 'N_NO3', 'P', 'K', 'Ca', 'Mg', 'S'].filter(n => m[n] != null && Number(m[n]) !== 0).map(n => `${n}:${m[n]}%`).slice(0, 7).join(', ');
+              return pcts ? `${name} (${pcts})` : name;
+            }).join('; ');
+          }
+        }
+      } catch (_) {}
+    }
     const vEl = document.getElementById('hydroVolumeWaterM3');
     const tEl = document.getElementById('hydroTankVolumeL');
     const rEl = document.getElementById('hydroInjectionRate');
@@ -1755,7 +1861,23 @@ ESTILO DE RESPUESTA:
       if (!projectId) {
         context += 'No hay proyecto activo seleccionado.\n';
         if (snapshot.module === 'inicio') {
-          context += '--- INICIO ---\nEl usuario está en Inicio. Para crear el primer proyecto: botón "+ Nuevo NutriPlant" en la barra superior; luego puede poner nombre, cultivo, variedad y campo/sector.\n\n';
+          context += '--- INICIO (vista de proyectos) ---\n';
+          context += 'El usuario está en la sección Inicio (pantalla de proyectos recientes).\n';
+          const loadProjects = typeof window.np_loadProjects === 'function' ? window.np_loadProjects() : [];
+          const projectList = Array.isArray(loadProjects) ? loadProjects : [];
+          if (projectList.length === 0) {
+            context += 'El usuario no tiene proyectos aún. Para crear uno: botón "+ Nuevo NutriPlant" en la barra superior; luego completar nombre y opcionalmente cultivo, variedad, campo/sector y guardar.\n';
+          } else {
+            context += `Proyectos del usuario (${projectList.length}):\n`;
+            projectList.slice(0, 15).forEach((p, i) => {
+              const name = p.title || p.name || 'Sin nombre';
+              const cultivo = p.cultivo || p.crop_type || '—';
+              context += `  ${i + 1}. ${name} — Cultivo: ${cultivo}\n`;
+            });
+            if (projectList.length > 15) context += `  ... y ${projectList.length - 15} más.\n`;
+            context += 'Para trabajar en un proyecto: pulsar "Abrir" en su tarjeta. Para crear uno nuevo: "+ Nuevo NutriPlant".\n';
+          }
+          context += '\n';
         }
         return context;
       }
@@ -1815,28 +1937,48 @@ ESTILO DE RESPUESTA:
 
       // --- Interconexiones entre pestañas (usa esto para cruzar datos y guiar al usuario) ---
       context += '--- INTERCONEXIONES ENTRE PESTAÑAS ---\n';
-      context += 'Ubicación → VPD (calculadora ambiental necesita polígono para "Obtener del Clima"); Reportes (incluyen mapa). Análisis de Suelo (CIC, cationes) → Enmienda (recomendaciones y dosis). Análisis de Agua → Fertirriego y Hidroponía (aporte del agua se resta del requerimiento). Suelo, Foliar, Fruta, Solución/Extracto/Agua → diagnóstico integrado (priorizar suelo → foliar → programa). VPD → cruzar con nutrición/riego para timing y estrés. Todas las pestañas de datos → Reportes (PDF).\n\n';
+      context += 'Ubicación → VPD (el polígono del predio define la ubicación; "Obtener del Clima" y la Serie VPD por rango usan el centro del polígono para obtener datos de clima; sin polígono esas funciones no están disponibles); Reportes (incluyen mapa). Análisis de Suelo (CIC, cationes) → Enmienda (recomendaciones y dosis). Análisis de Agua → Fertirriego y Hidroponía (aporte del agua se resta del requerimiento). Suelo, Foliar, Fruta, Solución/Extracto/Agua → diagnóstico integrado (priorizar suelo → foliar → programa). VPD → cruzar con nutrición/riego para timing y estrés. Todas las pestañas de datos → Reportes (PDF).\n\n';
 
-      // --- Ubicación ---
-      if (project.location && project.location.polygon && project.location.polygon.length >= 3) {
-        context += '--- UBICACIÓN ---\n';
-        context += `Área: ${project.location.areaHectares != null ? project.location.areaHectares + ' ha' : (project.location.area != null ? project.location.area + ' m²' : '—')}\n`;
-        if (project.location.perimeter != null) context += `Perímetro: ${project.location.perimeter} m\n`;
+      // --- Ubicación (polígono del predio: puntos en el mapa, superficie, perímetro, coordenadas) ---
+      if (project.location) {
+        context += '--- UBICACIÓN (polígono del predio en el mapa) ---\n';
+        const loc = project.location;
+        const hasPolygon = loc.polygon && Array.isArray(loc.polygon) && loc.polygon.length >= 3;
+        if (hasPolygon) {
+          const n = loc.polygon.length;
+          context += `Polígono: ${n} vértices (puntos que el usuario colocó en el mapa).\n`;
+          context += `Superficie/Área: ${loc.areaHectares != null ? loc.areaHectares + ' ha' : (loc.area != null ? loc.area + ' m²' : '—')}\n`;
+          if (loc.perimeter != null) context += `Perímetro: ${loc.perimeter} m\n`;
+          if (loc.center && typeof loc.center === 'object' && loc.center.lat != null && loc.center.lng != null) {
+            context += `Coordenadas del centro (lat, lng): ${Number(loc.center.lat).toFixed(6)}, ${Number(loc.center.lng).toFixed(6)}\n`;
+          } else if (loc.coordinates && typeof loc.coordinates === 'string' && loc.coordinates.trim()) {
+            context += `Coordenadas: ${loc.coordinates.trim()}\n`;
+          } else if (loc.polygon.length > 0 && Array.isArray(loc.polygon[0])) {
+            const p = loc.polygon[0];
+            context += `Primer vértice (lat, lng): ${Number(p[0]).toFixed(6)}, ${Number(p[1]).toFixed(6)}\n`;
+          } else if (loc.polygon.length > 0 && typeof loc.polygon[0] === 'object' && loc.polygon[0].lat != null) {
+            const p = loc.polygon[0];
+            context += `Primer vértice (lat, lng): ${Number(p.lat).toFixed(6)}, ${Number(p.lng).toFixed(6)}\n`;
+          }
+        } else {
+          context += 'Sin polígono definido aún (el usuario puede dibujar puntos en el mapa en la pestaña Ubicación para definir el predio).\n';
+        }
         context += '\n';
       }
 
-      // --- Análisis de suelo ---
+      // --- Análisis de suelo INICIAL (datos usados en Enmienda; no confundir con pestaña Análisis de Suelo) ---
       if (project.soilAnalysis) {
-        context += '--- ANÁLISIS DE SUELO ---\n';
+        context += '--- ANÁLISIS DE SUELO INICIAL (solo Enmienda: meq/100g, CIC — NO es la pestaña Análisis de Suelo) ---\n';
+        context += 'Estos son los valores que el usuario usa en la pestaña Enmienda para el cálculo de enmiendas. Si pregunta por "datos de enmienda" o "lo que tengo en enmienda", usa ESTE bloque. Los reportes de la pestaña Análisis de Suelo son otro bloque ("ANÁLISIS DE SUELO (reportes)").\n';
         const ini = project.soilAnalysis.initial || {};
         const props = project.soilAnalysis.properties || {};
         const adj = project.soilAnalysis.adjustments || {};
         context += `Cationes (meq/100g): K ${ini.k ?? '—'}, Ca ${ini.ca ?? '—'}, Mg ${ini.mg ?? '—'}, Na ${ini.na ?? '—'}, H ${ini.h ?? '—'}, Al ${ini.al ?? '—'}; CIC total: ${ini.cic ?? '—'}\n`;
         if (props.ph > 0) context += `pH: ${props.ph}; `;
-        if (props.density > 0) context += `Densidad: ${props.density} g/cm³; `;
+        if (props.density > 0) context += `Densidad aparente: ${props.density} g/cm³; `;
         if (props.depth > 0) context += `Profundidad: ${props.depth} cm\n`;
         if (adj.k != null || adj.ca != null || adj.mg != null) {
-          context += `Ajustes objetivo: K ${adj.k ?? '—'}, Ca ${adj.ca ?? '—'}, Mg ${adj.mg ?? '—'}\n`;
+          context += `Ajustes objetivo (meq a ajustar; NutriPlant sugiere valores pero el usuario puede modificarlos): K ${adj.k ?? '—'}, Ca ${adj.ca ?? '—'}, Mg ${adj.mg ?? '—'}\n`;
         }
         context += '\n';
         context += this.buildSoilConsistencyContext(ini, adj);
@@ -1863,6 +2005,7 @@ ESTILO DE RESPUESTA:
       if (snapshot.module === 'enmienda' || document.getElementById('soil-reach-percent') || document.getElementById('amendment-results')) {
         const liveBlocks = this.getLiveAmendmentScreenBlocks();
         context += '--- BLOQUES ENMIENDA (PANTALLA ACTUAL) ---\n';
+        if (liveBlocks.targetMeq) context += `Meq a ajustar (valores usados en el cálculo; NutriPlant sugiere pero el usuario puede modificarlos): ${liveBlocks.targetMeq}\n`;
         context += '🧪 Enmiendas Disponibles:\n';
         context += liveBlocks.availableTable ? `${liveBlocks.availableTable}\n` : 'No disponible en pantalla.\n';
         context += '% Suelo explorado por raíces:\n';
@@ -1879,6 +2022,7 @@ ESTILO DE RESPUESTA:
       if (project.granular) {
         const g = project.granular;
         context += '--- NUTRICIÓN GRANULAR (Requerimiento + Programa) ---\n';
+        context += 'Las dos subsecciones están relacionadas: Requerimiento define la meta (kg/ha); Programa son las aplicaciones que la cubren. NO confundir con Fertirriego: son módulos distintos, cada uno con su propio requerimiento y programa. Los cultivos y fertilizantes personalizados que el usuario agrega aquí corresponden a la pestaña Nutrición Granular.\n';
         context += 'Subsección Requerimiento Nutricional (tabla: extracción/ton, extracción total, ajuste, eficiencia, requerimiento real):\n';
         context += `Cultivo (guardado): ${g.cropType || '—'}; Rendimiento objetivo: ${g.targetYield != null ? g.targetYield + ' ton/ha' : '—'}\n`;
         if (g.requirements && typeof g.requirements === 'object') {
@@ -1922,6 +2066,7 @@ ESTILO DE RESPUESTA:
       if (project.fertirriego) {
         const f = project.fertirriego;
         context += '--- FERTIRRIEGO (Requerimiento + Programa + Gráficas) ---\n';
+        context += 'Las tres subsecciones están relacionadas: Requerimiento define la meta (kg/ha); Programa genera los aportes por etapa; Gráficas comparan aporte vs requerimiento. NO confundir con Nutrición Granular: son módulos distintos, cada uno con su propio requerimiento y programa. Los cultivos y fertilizantes/materias personalizados que el usuario agrega aquí corresponden a la pestaña Fertirriego.\n';
         context += 'Subsección Requerimiento Nutricional (tabla: extracción/ton, extracción total, ajuste, eficiencia, requerimiento real):\n';
         context += `Cultivo (guardado): ${f.cropType || '—'}; Rendimiento objetivo: ${f.targetYield != null ? f.targetYield + ' ton/ha' : '—'}\n`;
         if (f.requirements && typeof f.requirements === 'object') {
@@ -1937,13 +2082,23 @@ ESTILO DE RESPUESTA:
             if (eff) context += `Eficiencia: ${eff}\n`;
           }
         }
-        context += 'Subsección Programa de Nutrición (semanas, fertilizantes, aporte programa + agua):\n';
+        context += 'Subsección Programa de Nutrición (semanas o meses, fertilizantes, aporte programa + agua):\n';
         const prog = f.program;
         if (prog && Array.isArray(prog.weeks) && prog.weeks.length) {
-          context += `  Semanas: ${prog.weeks.length}. `;
+          const timeUnit = prog.timeUnit === 'mes' ? 'mes' : 'semana';
+          const isElemental = prog.mode === true || prog.mode === 'elemental';
+          context += `  Unidad de tiempo: ${timeUnit} (programa por ${timeUnit}s). Modo unidades: ${isElemental ? 'elemental (P, K, Ca, Mg, S...)' : 'óxido (P₂O₅, K₂O, CaO, MgO, SO₄...)'}\n`;
+          context += `  ${timeUnit === 'mes' ? 'Meses' : 'Semanas'}: ${prog.weeks.length}. `;
           if (prog.columns && prog.columns.length) context += `Fertilizantes/materias: ${prog.columns.map(c => c.name || c.materialId || '?').join(', ')}\n`;
           else context += '\n';
-        } else context += '  Sin programa de semanas guardado.\n';
+          const nutTotals = { N_NO3: 0, N_NH4: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, S: 0, SO4: 0, Fe: 0, Mn: 0, B: 0 };
+          prog.weeks.forEach(w => {
+            const t = w.totals || {};
+            Object.keys(nutTotals).forEach(n => { nutTotals[n] += parseFloat(t[n]) || 0; });
+          });
+          const aporteStr = Object.keys(nutTotals).filter(n => nutTotals[n] > 0).map(n => `${n}: ${Math.round(nutTotals[n] * 100) / 100}`).join(', ');
+          if (aporteStr) context += `  Aporte total del programa (kg/ha): ${aporteStr}\n`;
+        } else context += '  Sin programa guardado.\n';
         context += 'Subsección Gráficas: visualización de aportes vs requerimiento por nutriente.\n';
         context += '\n';
       }
@@ -1964,7 +2119,9 @@ ESTILO DE RESPUESTA:
       const hydro = project.hidroponia || (project.sections && project.sections.hidroponia);
       if (hydro) {
         context += '--- HIDROPONÍA (Solución por etapa + Cálculo de fertilizantes) ---\n';
-        context += 'Subsección Solución por etapa: etapas con objetivo meq/L y ppm; triángulo de equivalentes.\n';
+        context += 'Las dos subsecciones están relacionadas: Solución por etapa define el objetivo (ppm/meq por etapa); Cálculo de fertilizantes usa ese objetivo, resta el aporte del agua, y calcula fertilizantes y dosis para cubrir el requerimiento.\n';
+        context += 'Subsección Solución por etapa: el usuario define meq/L; la plataforma calcula % meq (aniones NO3+P+S=100%; cationes K+Ca+Mg=100% en triángulo; NH4 % total catiónico) y ppm = meq×peso equivalente del ELEMENTO (P-H2PO4→31 ppm P, S-SO4→16 ppm S, N 14, K 39.1, Ca 20.04, Mg 12.15) para que el usuario vea ppm elemental y pueda comparar con análisis/etiquetas. Diagrama ternario: referencia tipo Steiner en NutriPlant — aniones NO3 20–80%, H2PO4 1.25–10%, SO4 10–70%; cationes K 10–65%, Ca 22.5–62.5%, Mg 0.5–40%. Dentro = equilibrio; fuera = riesgo antagonismos/precipitados. Misma lógica en la calculadora meq/ppm de la plataforma.\n';
+        context += 'Subsección Solución por etapa (datos): etapas con objetivo meq/L y ppm; triángulo de equivalentes.\n';
         if (Array.isArray(hydro.stages) && hydro.stages.length) {
           context += `Etapas (guardado): ${hydro.stages.map(s => s.name || s.id || '—').join(', ')}\n`;
           const active = hydro.stages.find(s => s.id === (hydro.activeStageId || hydro.stages[0]?.id));
@@ -1973,15 +2130,30 @@ ESTILO DE RESPUESTA:
             if (ppm) context += `Objetivo ppm (etapa activa): ${ppm}\n`;
           }
         }
-        context += 'Subsección Cálculo de fertilizantes: objetivo (ppm), análisis de agua (ppm), requerimiento total (ppm), volumen, tanque, inyección, fertilizantes.\n';
+        context += 'Subsección Cálculo de fertilizantes: objetivo (ppm), análisis de agua (ppm), requerimiento total (ppm), volumen, tanque, inyección; el usuario puede agregar fertilizantes desde un catálogo de fertilizantes disponibles (precargados + personalizados, concentración elemental %).\n';
+        const catalog = (hydro.customMaterials && Array.isArray(hydro.customMaterials.items)) ? hydro.customMaterials.items : [];
+        if (catalog.length) {
+          context += `Catálogo de fertilizantes disponibles (personalizados, % elemental): ${catalog.map(m => {
+            const name = m.name || m.id || '?';
+            const pcts = ['N_NH4', 'N_NO3', 'P', 'K', 'Ca', 'Mg', 'S'].filter(n => m[n] != null && Number(m[n]) !== 0).map(n => `${n}:${m[n]}%`).slice(0, 7).join(', ');
+            return pcts ? `${name} (${pcts})` : name;
+          }).join('; ')}\n`;
+        }
         if (hydro.volumeWaterM3 != null) context += `Volumen agua: ${hydro.volumeWaterM3} m³; `;
         if (hydro.tankVolumeL != null) context += `Tanque: ${hydro.tankVolumeL} L; `;
-        if (hydro.injectionRateLperM3 != null) context += `Relación inyección: ${hydro.injectionRateLperM3} L/m³\n`;
+        if (hydro.injectionRateLperM3 != null) context += `Relación inyección: ${hydro.injectionRateLperM3} L/m³`;
+        const vNum = Number(hydro.volumeWaterM3), tNum = Number(hydro.tankVolumeL), rNum = Number(hydro.injectionRateLperM3);
+        if (vNum > 0 && rNum > 0) {
+          const concL = vNum * rNum;
+          context += `. Volumen concentrado necesario: ${concL.toFixed(1)} L`;
+          if (tNum > 0) context += `; recargas de tanque: ${Math.ceil(concL / tNum)}`;
+          context += '\n';
+        } else if (hydro.injectionRateLperM3 != null) context += '\n';
         if (Array.isArray(hydro.fertilizers) && hydro.fertilizers.length) {
-          context += `Fertilizantes (${hydro.fertilizers.length}): ${hydro.fertilizers.map(f => (f.name || f.materialId || '?') + (f.dose != null ? ` ${f.dose}` : '')).join('; ')}\n`;
+          context += `Fertilizantes añadidos al cálculo (${hydro.fertilizers.length}): ${hydro.fertilizers.map(f => (f.name || f.materialId || '?') + (f.dose != null ? ` dosis ${f.dose}` : '')).join('; ')}\n`;
           if (hydro.fertilizerTotalsPpm && typeof hydro.fertilizerTotalsPpm === 'object') {
             const ppm = Object.entries(hydro.fertilizerTotalsPpm).filter(([, v]) => v && Number(v) !== 0).map(([k, v]) => `${k}: ${v}`).join(', ');
-            if (ppm) context += `Totales aporte (ppm): ${ppm}\n`;
+            if (ppm) context += `Totales aporte del cálculo (ppm): ${ppm}\n`;
           }
         }
         context += '\n';
@@ -2004,6 +2176,9 @@ ESTILO DE RESPUESTA:
             if (liveHydro.solutionPpmTable) context += `  Tabla ppm: ${liveHydro.solutionPpmTable}\n`;
             if (liveHydro.triangleInfo) context += `  Diagrama ternario (aniones/cationes): ${liveHydro.triangleInfo}\n`;
           }
+          if (liveHydro.subsection === 'Cálculo de fertilizantes' && liveHydro.catalogSummary) {
+            context += `Catálogo de fertilizantes disponibles (personalizados, % elemental): ${liveHydro.catalogSummary}\n`;
+          }
           context += '\n';
         }
       }
@@ -2011,10 +2186,10 @@ ESTILO DE RESPUESTA:
       // --- Reportes (generar y gestionar reportes PDF) ---
       if (snapshot.module === 'reportes') {
         context += '--- REPORTES (generar y gestionar reportes PDF) ---\n';
-        context += 'Esta pestaña sirve para generar y gestionar reportes PDF del proyecto actual. Acciones: "Generar Nuevo Reporte PDF" (o desde la sección de enmiendas). Cada reporte puede incluir: Ubicación, Enmiendas, Nutrición granular, Fertirriego, Hidroponía, VPD. Los reportes se guardan y se sincronizan a la nube.\n';
+        context += 'Pestaña para generar y gestionar reportes PDF. Cómo hacerlo: botón "Generar Nuevo Reporte PDF" → se abre un modal donde el usuario selecciona qué secciones incluir (Ubicación, Enmiendas, Nutrición granular, Fertirriego, Hidroponía, VPD); marca las que quiera y genera; el PDF se crea solo con esas secciones. También se puede abrir el mismo flujo desde la sección de enmiendas. Lista de reportes generados: cada uno con Descargar (PDF) y Eliminar; se guardan en el proyecto y se sincronizan a la nube.\n';
         const liveReportes = this.getLiveReportesBlocks();
         if (liveReportes.hasNoReportsMessage) {
-          context += 'En pantalla: No hay reportes generados aún. El usuario puede generar el primer reporte desde aquí o desde la sección de enmiendas.\n';
+          context += 'En pantalla: No hay reportes generados aún. El usuario puede pulsar "Generar Nuevo Reporte PDF" y en el modal elegir las secciones a incluir para crear el primero.\n';
         } else if (liveReportes.reportCount > 0) {
           context += `Reportes generados en pantalla: ${liveReportes.reportCount}. `;
           if (liveReportes.reportTitles.length) context += `Títulos: ${liveReportes.reportTitles.slice(0, 10).join('; ')}${liveReportes.reportTitles.length > 10 ? '...' : ''}. `;
@@ -2026,7 +2201,7 @@ ESTILO DE RESPUESTA:
       // --- Análisis (Análisis de Suelo y otras subpestañas: Solución Nutritiva, Extracto de Pasta, Agua, Foliar, Fruta) ---
       if (snapshot.module === 'analisis') {
         context += '--- ANÁLISIS (pestaña actual) ---\n';
-        context += 'El usuario está en la sección Análisis. Subpestañas: Análisis de Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar (DOP), Fruta (ICC). Los datos de suelo (CIC, cationes, fertilidad) se usan en Enmienda y en el diagnóstico general.\n';
+        context += 'El usuario está en la sección Análisis. Subpestañas: Análisis de Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar (DOP), Fruta (ICC). Cuando está aquí y habla de "análisis de suelo", se refiere a los REPORTES de esta pestaña (bloque "ANÁLISIS DE SUELO (reportes)" más abajo), no al Análisis Inicial de Enmienda.\n';
         const liveSuelo = this.getLiveAnalisisSueloBlocks();
         if (liveSuelo.visible) {
           if (liveSuelo.reportTitles.length === 0) {
@@ -2182,18 +2357,18 @@ ESTILO DE RESPUESTA:
       // --- VPD (pestaña actual: Déficit de Presión de Vapor) ---
       if (snapshot.module === 'vpd') {
         context += '--- VPD (pestaña actual) ---\n';
-        context += 'El usuario está en la pestaña Déficit de Presión de Vapor. Hay dos calculadoras: Ambiental Simple (temp. aire, humedad, "Obtener del Clima", "Calcular VPD") y Avanzada (temp. aire, humedad, modo Temperatura de Hoja o Radiación Solar, "Calcular VPD"); más historial de cálculos.\n';
+        context += 'El usuario está en la pestaña Déficit de Presión de Vapor. Los datos de clima ("Obtener del Clima" y Serie VPD por rango) provienen de la ubicación del predio (centro del polígono en Ubicación). Dos calculadoras: Ambiental Simple (temp. aire, humedad; manual o "Obtener del Clima"; "Calcular VPD") y Avanzada (temp. aire, humedad + Temperatura de Hoja °C o Radiación Solar W/m²; "Calcular VPD"). Serie por rango: vista diaria/semanal/mensual y fechas; tablas guardadas por el usuario.\n';
         const liveVPD = this.getLiveVPDBlocks();
         if (liveVPD.visible) {
           if (!liveVPD.hasLocation) {
-            context += 'En pantalla: no hay polígono en Ubicación; se muestra aviso para agregar polígono antes de usar la calculadora ambiental.\n';
+            context += 'En pantalla: no hay polígono en Ubicación; se muestra aviso para agregar polígono antes de usar la calculadora ambiental y la serie por rango.\n';
           } else {
             if (liveVPD.envTemp || liveVPD.envHumidity) {
-              context += `Calculadora Ambiental: Temp. aire ${liveVPD.envTemp || '—'} °C, Humedad ${liveVPD.envHumidity || '—'}%. `;
+              context += `Calculadora Ambiental: Temp. aire ${liveVPD.envTemp || '—'} °C, Humedad ${liveVPD.envHumidity || '—'}% (pueden ser manuales o de "Obtener del Clima"). `;
             }
             if (liveVPD.advAirTemp || liveVPD.advHumidity || liveVPD.leafTemp || liveVPD.solarRadiation) {
               context += `Calculadora Avanzada: Temp. aire ${liveVPD.advAirTemp || '—'} °C, Humedad ${liveVPD.advHumidity || '—'}%; modo ${liveVPD.mode === 'radiation' ? 'Radiación Solar' : 'Temperatura de Hoja'}`;
-              if (liveVPD.mode === 'radiation' && liveVPD.solarRadiation) context += `, Radiación ${liveVPD.solarRadiation} W/m²`;
+              if (liveVPD.mode === 'radiation' && liveVPD.solarRadiation) context += `, Radiación ${liveVPD.solarRadiation} W/m² (T hoja se calcula a partir de esto)`;
               else if (liveVPD.mode === 'leaf' && liveVPD.leafTemp) context += `, T hoja ${liveVPD.leafTemp} °C`;
               context += '.\n';
             } else {
@@ -2204,7 +2379,7 @@ ESTILO DE RESPUESTA:
         context += '\n';
       }
 
-      // --- VPD (datos guardados del proyecto) ---
+      // --- VPD (datos guardados: relación con Ubicación, calculadoras, series por rango) ---
       if (project.vpdAnalysis && typeof project.vpdAnalysis === 'object') {
         const vpd = project.vpdAnalysis;
         const calc = vpd.calculations || {};
@@ -2212,30 +2387,63 @@ ESTILO DE RESPUESTA:
         const adv = vpd.advanced || {};
         const temp = vpd.temperature || {};
         const hum = vpd.humidity || {};
+        const hasLoc = project.location && project.location.polygon && Array.isArray(project.location.polygon) && project.location.polygon.length >= 3;
+        context += '--- DÉFICIT DE PRESIÓN DE VAPOR (VPD) ---\n';
+        context += `Ubicación del predio para clima: ${hasLoc ? 'tiene polígono (Obtener del Clima y Serie por Rango usan el centro del polígono)' : 'sin polígono (definir en pestaña Ubicación para usar clima)'}\n`;
+        const rangeState = vpd.rangeState || {};
+        const rangeTables = Array.isArray(vpd.rangeTables) ? vpd.rangeTables : [];
+        if (rangeState.granularity || rangeState.startDate || rangeState.endDate) {
+          const gran = rangeState.granularity === 'weekly' ? 'semanal' : (rangeState.granularity === 'monthly' ? 'mensual' : 'diario');
+          context += `Serie por rango (última configuración): vista ${gran}`;
+          if (rangeState.startDate || rangeState.endDate) context += `, fechas ${rangeState.startDate || '—'} a ${rangeState.endDate || '—'}`;
+          context += '\n';
+        }
+        if (rangeTables.length > 0) {
+          const last = rangeTables[rangeTables.length - 1];
+          const meta = last && last.meta ? last.meta : {};
+          const gran = meta.granularity === 'weekly' ? 'semanal' : (meta.granularity === 'monthly' ? 'mensual' : 'diario');
+          context += `Series de rangos guardadas: ${rangeTables.length}. Última: ${gran}`;
+          if (meta.startDate || meta.endDate) context += `, ${meta.startDate || ''} a ${meta.endDate || ''}`;
+          if (last.summaryRows && last.summaryRows.length) context += `, ${last.summaryRows.length} filas`;
+          context += '\n';
+        }
         if (calc.vpd != null || env.vpd != null || adv.vpd != null) {
-          context += '--- DÉFICIT DE PRESIÓN DE VAPOR (datos guardados) ---\n';
           if (calc.vpd != null) context += `VPD calculado: ${calc.vpd} kPa\n`;
-          if (env.vpd != null) context += `VPD ambiental: ${env.vpd}\n`;
-          if (adv.vpd != null) context += `VPD (avanzado): ${adv.vpd}\n`;
+          if (env.vpd != null) context += `VPD ambiental (calculadora simple): ${env.vpd} kPa\n`;
+          if (adv.vpd != null) context += `VPD avanzado: ${adv.vpd} kPa\n`;
           if (temp.air != null || temp.leaf != null) context += `Temperatura: aire ${temp.air ?? '—'}, hoja ${temp.leaf ?? '—'} °C\n`;
           if (hum.air != null) context += `Humedad aire: ${hum.air}%\n`;
           if (calc.recommendation) context += `Recomendación: ${calc.recommendation}\n`;
-          context += '\n';
         }
+        context += '\n';
       }
 
       // --- Análisis guardados (reportes suelo, solución nutritiva, extracto pasta, agua, foliar, fruta) ---
       const summariseFoliar = (a) => {
         const mac = (a.macros && typeof a.macros === 'object') ? a.macros : {};
         const mic = (a.micros && typeof a.micros === 'object') ? a.micros : {};
-        const m = ['N','P','K','Ca','Mg','S'].map(n => (mac[n] != null && mac[n] !== '') ? `${n}:${mac[n]}` : null).filter(Boolean).join(', ');
-        const i = ['Fe','Mn','Zn','Cu','B','Mo'].map(n => (mic[n] != null && mic[n] !== '') ? `${n}:${mic[n]}` : null).filter(Boolean).join(', ');
-        return (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '') + (m || i ? ` — Macros(%): ${m || '—'} | Micros(mg/kg): ${i || '—'}` : '');
+        const optMacro = (a.optimalMacro && typeof a.optimalMacro === 'object') ? a.optimalMacro : {};
+        const optMicro = (a.optimalMicro && typeof a.optimalMicro === 'object') ? a.optimalMicro : {};
+        const defMacro = { N: 3, P: 0.275, K: 2.5, Ca: 1.25, Mg: 0.4, S: 0.325 };
+        const defMicro = { Fe: 150, Mn: 160, Zn: 60, Cu: 15, B: 62.5, Mo: 2.55 };
+        const dop = (val, opt) => { const v = parseFloat(val); const o = opt != null && opt !== '' ? parseFloat(opt) : NaN; if (isNaN(v) || isNaN(o) || o === 0) return null; return ((v - o) / o) * 100; };
+        const parts = [];
+        ['N','P','K','Ca','Mg','S'].forEach(n => {
+          const v = mac[n]; const o = optMacro[n] != null && optMacro[n] !== '' ? optMacro[n] : defMacro[n];
+          if (v != null && v !== '') { const d = dop(v, o); parts.push(`${n}:${v}%${o != null ? ` opt:${o}%` : ''}${d != null ? ` DOP:${d >= 0 ? '+' : ''}${d.toFixed(1)}%` : ''}`); }
+        });
+        ['Fe','Mn','Zn','Cu','B','Mo'].forEach(n => {
+          const v = mic[n]; const o = optMicro[n] != null && optMicro[n] !== '' ? optMicro[n] : defMicro[n];
+          if (v != null && v !== '') { const d = dop(v, o); parts.push(`${n}:${v}${o != null ? ` opt:${o}` : ''}${d != null ? ` DOP:${d >= 0 ? '+' : ''}${d.toFixed(1)}%` : ''}`); }
+        });
+        const t = (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '');
+        return t + (parts.length ? ' — ' + parts.join('; ') : '');
       };
       const summariseExtractoPasta = (a) => {
         const g = (a.general && typeof a.general === 'object') ? a.general : {};
         const cat = (a.cations && typeof a.cations === 'object') ? a.cations : {};
         const an = (a.anions && typeof a.anions === 'object') ? a.anions : {};
+        const ideal = (a.ideal && typeof a.ideal === 'object') ? a.ideal : {};
         const parts = [];
         if (g.cee != null && g.cee !== '') parts.push(`CE:${g.cee}`);
         if (g.phe != null && g.phe !== '') parts.push(`pH:${g.phe}`);
@@ -2244,7 +2452,18 @@ ESTILO DE RESPUESTA:
         if (cat.ca_ppm != null && cat.ca_ppm !== '') parts.push(`Ca:${cat.ca_ppm}`);
         if (cat.mg_ppm != null && cat.mg_ppm !== '') parts.push(`Mg:${cat.mg_ppm}`);
         if (an.no3_ppm != null && an.no3_ppm !== '') parts.push(`NO3:${an.no3_ppm}`);
-        return (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '') + (parts.length ? ' — ' + parts.join(', ') : '');
+        const idealParts = [];
+        ['k','ca','mg','no3'].forEach(k => { const v = ideal[k] != null && ideal[k] !== '' ? ideal[k] : null; if (v !== null) idealParts.push(`${k.toUpperCase()} ideal:${v}`); });
+        const diffParts = [];
+        ['k','ca','no3'].forEach(k => {
+          const p = k === 'no3' ? (an.no3_ppm != null && an.no3_ppm !== '' ? parseFloat(an.no3_ppm) : NaN) : (cat[k + '_ppm'] != null && cat[k + '_ppm'] !== '' ? parseFloat(cat[k + '_ppm']) : NaN);
+          const i = ideal[k] != null && ideal[k] !== '' ? parseFloat(ideal[k]) : NaN;
+          if (!isNaN(p) && !isNaN(i)) { const d = p - i; diffParts.push(`${k.toUpperCase()} ${d >= 0 ? '+' : ''}${d.toFixed(0)}`); }
+        });
+        let line = (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '') + (parts.length ? ' — ' + parts.join(', ') : '');
+        if (idealParts.length) line += ' | ' + idealParts.join(', ');
+        if (diffParts.length) line += ' | diff: ' + diffParts.join(', ');
+        return line;
       };
       const summariseSoilReport = (a) => {
         const ph = (a.phSection && a.phSection.ph != null && a.phSection.ph !== '') ? a.phSection.ph : null;
@@ -2261,47 +2480,122 @@ ESTILO DE RESPUESTA:
       };
       const summariseSolucionNutritiva = (a) => {
         const t = (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '');
-        const meq = (a.meqL && typeof a.meqL === 'object') ? a.meqL : {};
-        const ppm = (a.ppm && typeof a.ppm === 'object') ? a.ppm : {};
-        const keys = ['NO3','K','Ca','Mg','S','P'];
-        const parts = keys.map(k => { const v = meq[k] || ppm[k] || meq[k.toLowerCase()] || ppm[k.toLowerCase()]; return (v != null && v !== '') ? `${k}:${v}` : null; }).filter(Boolean);
-        return t + (parts.length ? ' — ' + parts.join(', ') : '');
+        const cat = (a.cations && typeof a.cations === 'object') ? a.cations : {};
+        const an = (a.anions && typeof a.anions === 'object') ? a.anions : {};
+        const ideal = (a.ideal && typeof a.ideal === 'object') ? a.ideal : {};
+        const ppmVal = (key, isCat) => { const o = isCat ? cat : an; const v = o[key + '_ppm']; return (v != null && v !== '') ? parseFloat(v) : NaN; };
+        const idealVal = (key) => { const v = ideal[key]; return (v != null && v !== '') ? parseFloat(v) : NaN; };
+        const parts = [];
+        ['k','ca','mg','na'].forEach(k => { const v = ppmVal(k, true); if (!isNaN(v)) parts.push(`${k.toUpperCase()}:${v}`); });
+        ['no3','so4','po4'].forEach(k => { const v = ppmVal(k, false); if (!isNaN(v)) parts.push(`${k === 'no3' ? 'NO3' : k.toUpperCase()}:${v}`); });
+        const idealParts = [];
+        ['k','ca','mg','no3'].forEach(k => { const v = idealVal(k); if (!isNaN(v)) idealParts.push(`${k.toUpperCase()} ideal:${v}`); });
+        const diffParts = [];
+        ['k','ca','no3'].forEach(k => {
+          const isCat = k !== 'no3';
+          const p = ppmVal(k, isCat);
+          const i = idealVal(k);
+          if (!isNaN(p) && !isNaN(i)) { const d = p - i; diffParts.push(`${k.toUpperCase()} ${d >= 0 ? '+' : ''}${d.toFixed(0)}`); }
+        });
+        let line = t;
+        if (parts.length) line += ' — ' + parts.join(', ');
+        if (idealParts.length) line += ' | ' + idealParts.join(', ');
+        if (diffParts.length) line += ' | diff: ' + diffParts.join(', ');
+        return line;
       };
 
       if (Array.isArray(project.soilAnalyses) && project.soilAnalyses.length) {
-        context += '--- ANÁLISIS DE SUELO (reportes) ---\n';
+        context += '--- ANÁLISIS DE SUELO (reportes en pestaña Análisis — NO es el Análisis Inicial de Enmienda) ---\n';
         project.soilAnalyses.forEach(a => { context += `• ${summariseSoilReport(a)}\n`; });
         context += '\n';
       }
       if (Array.isArray(project.solucionNutritivaAnalyses) && project.solucionNutritivaAnalyses.length) {
         context += '--- ANÁLISIS SOLUCIÓN NUTRITIVA ---\n';
+        context += 'En cada reporte: valores (ppm), ideales (editables por el usuario) y diff = nivel − ideal; (−) falta, (+) exceso.\n';
         project.solucionNutritivaAnalyses.forEach(a => { context += `• ${summariseSolucionNutritiva(a)}\n`; });
         context += '\n';
       }
       if (Array.isArray(project.extractoPastaAnalyses) && project.extractoPastaAnalyses.length) {
         context += '--- ANÁLISIS EXTRACTO DE PASTA ---\n';
+        context += 'En cada reporte: valores (ppm), ideales (editables por el usuario) y diff = nivel − ideal; (−) falta, (+) exceso.\n';
         project.extractoPastaAnalyses.forEach(a => { context += `• ${summariseExtractoPasta(a)}\n`; });
         context += '\n';
       }
+      const summariseAgua = (a) => {
+        const cat = (a.cations && typeof a.cations === 'object') ? a.cations : {};
+        const an = (a.anions && typeof a.anions === 'object') ? a.anions : {};
+        const g = (a.general && typeof a.general === 'object') ? a.general : {};
+        const micros = (a.micros && typeof a.micros === 'object') ? a.micros : {};
+        const parts = [];
+        if (a.m3Riego != null && a.m3Riego !== '') parts.push(`m³:${a.m3Riego}`);
+        if (g.ce != null && g.ce !== '') parts.push(`CE:${g.ce}`);
+        if (g.ph != null && g.ph !== '') parts.push(`pH:${g.ph}`);
+        if (g.ras != null && g.ras !== '') parts.push(`RAS:${g.ras}`);
+        if (cat.ca_ppm != null && cat.ca_ppm !== '') parts.push(`Ca:${cat.ca_ppm}`);
+        if (cat.mg_ppm != null && cat.mg_ppm !== '') parts.push(`Mg:${cat.mg_ppm}`);
+        if (cat.k_ppm != null && cat.k_ppm !== '') parts.push(`K:${cat.k_ppm}`);
+        if (cat.na_ppm != null && cat.na_ppm !== '') parts.push(`Na:${cat.na_ppm}`);
+        if (an.no3_ppm != null && an.no3_ppm !== '') parts.push(`NO3:${an.no3_ppm}`);
+        if (an.so4_ppm != null && an.so4_ppm !== '') parts.push(`SO4:${an.so4_ppm}`);
+        if (an.hco3_meq != null && an.hco3_meq !== '') parts.push(`HCO3:${an.hco3_meq}meq`);
+        if (an.co3_meq != null && an.co3_meq !== '') parts.push(`CO3:${an.co3_meq}meq`);
+        if (a.acidResidualMeq != null && a.acidResidualMeq !== '') parts.push(`residual:${a.acidResidualMeq}meq/L`);
+        if (a.acidId != null && a.acidId !== '') parts.push(`ácido:${a.acidId}`);
+        ['b','fe','mn','cu','zn'].forEach(k => { if (micros[k] != null && micros[k] !== '') parts.push(`${k}:${micros[k]}ppm`); });
+        const t = (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '');
+        return t + (parts.length ? ' — ' + parts.join(', ') : '');
+      };
       if (Array.isArray(project.aguaAnalyses) && project.aguaAnalyses.length) {
         context += '--- ANÁLISIS DE AGUA ---\n';
-        project.aguaAnalyses.forEach(a => {
-          const t = (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '');
-          context += `• ${t}\n`;
-        });
+        context += 'Valores que el usuario ha ingresado en cada reporte (m³, CE/pH/RAS, cationes y aniones en ppm o meq, residual objetivo, ácido seleccionado, micronutrientes).\n';
+        project.aguaAnalyses.forEach(a => { context += `• ${summariseAgua(a)}\n`; });
         context += '\n';
       }
       if (Array.isArray(project.foliarAnalyses) && project.foliarAnalyses.length) {
         context += '--- ANÁLISIS FOLIAR (DOP) ---\n';
+        context += 'En cada reporte: resultado (laboratorio), óptimo (% o mg/kg, editable por el usuario) y DOP % = ((Valor−Óptimo)/Óptimo)×100. Si el usuario editó óptimos, aparecen en "opt"; el DOP se calcula con ese óptimo.\n';
         project.foliarAnalyses.forEach(a => { context += `• ${summariseFoliar(a)}\n`; });
         context += '\n';
       }
-      if (Array.isArray(project.frutaAnalyses) && project.frutaAnalyses.length) {
-        context += '--- ANÁLISIS DE FRUTA ---\n';
-        project.frutaAnalyses.forEach(a => {
-          const t = (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '');
-          context += `• ${t}\n`;
+      const summariseFruta = (a) => {
+        const mac = (a.macros && typeof a.macros === 'object') ? a.macros : {};
+        const mic = (a.micros && typeof a.micros === 'object') ? a.micros : {};
+        const calidad = (a.calidad && typeof a.calidad === 'object') ? a.calidad : {};
+        const calcio = (a.calcio && typeof a.calcio === 'object') ? a.calcio : {};
+        const optMacro = (a.optimalMacro && typeof a.optimalMacro === 'object') ? a.optimalMacro : {};
+        const optMicro = (a.optimalMicro && typeof a.optimalMicro === 'object') ? a.optimalMicro : {};
+        const optCalidad = (a.optimalCalidad && typeof a.optimalCalidad === 'object') ? a.optimalCalidad : {};
+        const optCalcio = (a.optimalCalcio && typeof a.optimalCalcio === 'object') ? a.optimalCalcio : {};
+        const defMacro = { N: 1.8, P: 0.25, K: 1.5, Ca: 0.25, Mg: 0.2, S: 0.18 };
+        const defMicro = { Fe: 80, Mn: 40, Zn: 35, Cu: 10, B: 50, Mo: 0.5 };
+        const defCalidad = { materiaSeca: 15, brix: 12, firmeza: 5, acidezTitulable: 0.5 };
+        const defCalcio = { caTotal: 20, caSolublePct: 18, caLigadoPct: 25, caInsolublePct: 55 };
+        const icc = (val, opt) => { const v = parseFloat(val); const o = opt != null && opt !== '' ? parseFloat(opt) : NaN; if (isNaN(v) || isNaN(o) || o === 0) return null; return ((v - o) / o) * 100; };
+        const getOpt = (obj, def, k) => (obj[k] != null && obj[k] !== '') ? obj[k] : def[k];
+        const parts = [];
+        ['N','P','K','Ca','Mg','S'].forEach(n => {
+          const v = mac[n]; const o = getOpt(optMacro, defMacro, n);
+          if (v != null && v !== '') { const i = icc(v, o); parts.push(`Macro ${n}:${v}%${o != null ? ` opt:${o}%` : ''}${i != null ? ` ICC:${i >= 0 ? '+' : ''}${i.toFixed(1)}%` : ''}`); }
         });
+        ['Fe','Mn','Zn','Cu','B','Mo'].forEach(n => {
+          const v = mic[n]; const o = getOpt(optMicro, defMicro, n);
+          if (v != null && v !== '') { const i = icc(v, o); parts.push(`Micro ${n}:${v} opt:${o != null ? o : '—'}${i != null ? ` ICC:${i >= 0 ? '+' : ''}${i.toFixed(1)}%` : ''}`); }
+        });
+        ['materiaSeca','brix','firmeza','acidezTitulable'].forEach(k => {
+          const v = calidad[k]; const o = getOpt(optCalidad, defCalidad, k);
+          if (v != null && v !== '') { const i = icc(v, o); parts.push(`Calidad ${k}:${v} opt:${o != null ? o : '—'}${i != null ? ` ICC:${i >= 0 ? '+' : ''}${i.toFixed(1)}%` : ''}`); }
+        });
+        ['caTotal','caSolublePct','caLigadoPct','caInsolublePct'].forEach(k => {
+          const v = calcio[k]; const o = getOpt(optCalcio, defCalcio, k);
+          if (v != null && v !== '') parts.push(`Ca ${k}:${v} opt:${o != null ? o : '—'}`);
+        });
+        const t = (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '');
+        return t + (parts.length ? ' — ' + parts.join('; ') : '');
+      };
+      if (Array.isArray(project.frutaAnalyses) && project.frutaAnalyses.length) {
+        context += '--- ANÁLISIS DE FRUTA (ICC) ---\n';
+        context += 'En cada reporte: resultado (laboratorio), óptimo (editable) e ICC % = ((Valor−Óptimo)/Óptimo)×100. Incluye macros/micros en fruta, parámetros de calidad (materia seca, °Brix, firmeza, acidez) y calcio en fruta (Ca total, % soluble, % ligado, % insoluble). Si el usuario editó óptimos, aparecen en "opt".\n';
+        project.frutaAnalyses.forEach(a => { context += `• ${summariseFruta(a)}\n`; });
         context += '\n';
       }
 
