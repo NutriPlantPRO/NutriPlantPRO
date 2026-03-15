@@ -431,9 +431,9 @@
                 if (!paramKeys[p]) paramKeys[p] = { meq: '—', ppm: '—', valor: undefined, refDisplay: getRefDisplay(idealKey(p), p), refNumeric: (idealKey(p) != null && idealKey(p) !== '' ? String(idealKey(p)).trim() : null) };
             });
             // Vista espejo para panel admin: en análisis no-suelo usar filas por elemento,
-            // similar al formulario que ve el usuario.
+            // similar al formulario que ve el usuario. Solución Nutritiva y Extracto de Pasta: columnas Ideal (opc.) y Diferencia.
             if (!isSoilType) {
-                if (isSolucionType) {
+                if (isSolucionType || isExtractoType) {
                     var sTbl = '<table class="admin-analysis-rel-table admin-soil-table-horizontal"><thead><tr><th class="col-concept">Elemento</th>';
                     if (hasMeqPpm) sTbl += '<th>meq/L</th><th>ppm</th><th>Ideal (opc.)</th><th>Diferencia</th>';
                     else sTbl += '<th>Análisis (ppm)</th><th>Ideal (opc.)</th><th>Diferencia</th>';
@@ -533,7 +533,7 @@
             if (isAguaType && (grp === 'm3Riego' || grp === 'acidId')) return;
             var title = groupTitles[grp] || grp;
             if (grp === 'cations' && !isSoilType) title = 'Cationes';
-            if (isSolucionType) {
+            if (isSolucionType || isExtractoType) {
                 if (grp === 'general') title = 'Características generales (salinidad / sodicidad)';
                 if (grp === 'cations') title = 'Cationes (meq/L y ppm)';
                 if (grp === 'anions') title = 'Aniones (meq/L y ppm)';
