@@ -7286,6 +7286,18 @@
         }
         window.viewProjectDetailsWithReturn = viewProjectDetailsWithReturn;
 
+        /** En admin la sección Enmiendas debe mostrarse solo como reporte (vista normal). Quita del HTML guardado los botones Guardar Datos, Ver Tarjeta y Generar Reporte PDF. */
+        function stripEnmiendaReportActions(html) {
+            if (!html || typeof html !== 'string' || !html.trim()) return html;
+            try {
+                var wrap = document.createElement('div');
+                wrap.innerHTML = html.trim();
+                var actions = wrap.querySelector('.report-actions');
+                if (actions && actions.parentNode) actions.parentNode.removeChild(actions);
+                return wrap.innerHTML;
+            } catch (e) { return html; }
+        }
+
         async function viewProjectDetails(projectId, fromView = null, fromViewParams = null) {
             // Guardar vista anterior si se proporciona
             if (fromView) {
@@ -7656,11 +7668,11 @@
                 html += `</div>`;
             }
             
-            // Mostrar resultados del cálculo de enmiendas
+            // Mostrar resultados del cálculo de enmiendas (vista normal: solo datos y tabla, sin botones Guardar/Ver tarjeta/Generar PDF)
                 html += `
                     ${hasEnmiendasData 
                         ? (detailedHTML && detailedHTML.trim() 
-                            ? `<div style="background: white; padding: 16px; border-radius: 6px; max-height: 500px; overflow-y: auto; font-size: 14px;">${detailedHTML}</div>`
+                            ? `<div style="background: white; padding: 16px; border-radius: 6px; max-height: 500px; overflow-y: auto; font-size: 14px;">${stripEnmiendaReportActions(detailedHTML)}</div>`
                             : `<pre style="background: white; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; max-height: 300px; overflow-y: auto;">${JSON.stringify(enmiendas, null, 2)}</pre>`)
                         : (!hasSoilData 
                             ? '<p style="color: #94a3b8; font-style: italic; margin: 0;">Esta sección aún no ha sido configurada en el proyecto.</p>' 
