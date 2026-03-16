@@ -25,12 +25,6 @@ const FERT_SOLUBLES_DB = [
   { id: 'nitrato_magnesio', name: 'Nitrato de Magnesio', N_NO3: 10.8, N_NH4: 0, MgO: 15 },
   { id: 'sulfato_magnesio', name: 'Sulfato de Magnesio', N_NO3: 0, N_NH4: 0, MgO: 16, SO4: 13, S: 0 },
 
-  // Ácidos (valores en % masa; si se dosifica en L requiere convertir por densidad)
-  { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', SO4: 96, S: 0, unit: 'L', density: 1.84 },
-  { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', P2O5: 54, unit: 'L', density: 1.57 },
-  { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', P2O5: 61, unit: 'L', density: 1.685 },
-  { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', N_NO3: 12.2, unit: 'L', density: 1.33 },
-
   // Complejos NPK con micros
   { id: 'triple_19_me', name: 'Triple 19 +Me', N_NO3: 9.4, N_NH4: 9.7, P2O5: 19, K2O: 19, SO4: 3.9, Fe: 0.10, Mn: 0.05, B: 0.02, Zn: 0.015, Cu: 0.011, Mo: 0.007 },
   { id: 'npk_12_43_12_me', name: '12-43-12 +Me', N_NO3: 3.5, N_NH4: 8.5, P2O5: 43, K2O: 12, SO4: 0, MgO: 0, Fe: 0.05, Mn: 0.02, B: 0.01, Zn: 0.01, Cu: 0.005, Mo: 0.003 },
@@ -45,7 +39,13 @@ const FERT_SOLUBLES_DB = [
   { id: 'quelato_zn', name: 'Zn EDTA', Zn: 13 },
   { id: 'quelato_cu', name: 'Cu EDTA', Cu: 14 },
   { id: 'acido_borico', name: 'Ácido Bórico', B: 17, N_NO3: 0, N_NH4: 0 },
-  { id: 'molibdato_sodio', name: 'Molibdato de Sodio', Mo: 39 }
+  { id: 'molibdato_sodio', name: 'Molibdato de Sodio', Mo: 39 },
+
+  // Ácidos al final de predefinidos (valores en % masa; si se dosifica en L requiere convertir por densidad)
+  { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', SO4: 96, S: 0, unit: 'L', density: 1.84 },
+  { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', P2O5: 54, unit: 'L', density: 1.57 },
+  { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', P2O5: 61, unit: 'L', density: 1.685 },
+  { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', N_NO3: 12.2, unit: 'L', density: 1.33 }
 ];
 
 // Estado del programa
