@@ -267,6 +267,11 @@ Deno.serve(async (req) => {
     if (!result.ok) {
       console.error("paypal-webhook 401:", result.reason);
       const reason = String(result.reason).slice(0, 500);
+      try {
+        await supabase.from("paypal_webhook_errors").insert({ reason: reason.slice(0, 2000) });
+      } catch (e) {
+        console.error("paypal_webhook_errors insert failed:", (e as Error).message);
+      }
       return jsonResponse(
         { error: "Invalid PayPal signature", reason: result.reason },
         401,
@@ -277,6 +282,11 @@ Deno.serve(async (req) => {
     const msg = (e as Error).message;
     console.error("paypal-webhook 401:", msg);
     const reason = msg.slice(0, 500);
+    try {
+      await supabase.from("paypal_webhook_errors").insert({ reason: msg.slice(0, 2000) });
+    } catch (e) {
+      console.error("paypal_webhook_errors insert failed:", (e as Error).message);
+    }
     return jsonResponse(
       { error: "Signature verification failed", reason: msg },
       401,
