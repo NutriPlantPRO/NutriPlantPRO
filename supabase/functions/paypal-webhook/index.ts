@@ -2,12 +2,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 type Json = Record<string, unknown>;
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID") ?? "";
-const PAYPAL_CLIENT_SECRET = Deno.env.get("PAYPAL_CLIENT_SECRET") ?? "";
-const PAYPAL_WEBHOOK_ID = Deno.env.get("PAYPAL_WEBHOOK_ID") ?? "";
-const PAYPAL_API_BASE = Deno.env.get("PAYPAL_API_BASE") || "https://api-m.paypal.com";
+function env(key: string, def = ""): string {
+  return (Deno.env.get(key) ?? def).trim();
+}
+const SUPABASE_URL = env("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = env("SUPABASE_SERVICE_ROLE_KEY");
+const PAYPAL_CLIENT_ID = env("PAYPAL_CLIENT_ID");
+const PAYPAL_CLIENT_SECRET = env("PAYPAL_CLIENT_SECRET");
+const PAYPAL_WEBHOOK_ID = env("PAYPAL_WEBHOOK_ID");
+const PAYPAL_API_BASE = env("PAYPAL_API_BASE") || "https://api-m.paypal.com";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -38,7 +41,7 @@ async function getPayPalAccessToken(): Promise<string> {
 
 type VerifyResult = { ok: true } | { ok: false; reason: string };
 
-async function verifyWebhookSignature(eventBody: Json, headers: Headers): Promise<VerifyResult> {
+async function verifyWebhookSignature(rawBody: string, headers: Headers): Promise<VerifyResult> {
   const transmissionId = headers.get("paypal-transmission-id");
   const transmissionTime = headers.get("paypal-transmission-time");
   const certUrl = headers.get("paypal-cert-url");
@@ -48,20 +51,24 @@ async function verifyWebhookSignature(eventBody: Json, headers: Headers): Promis
   if (!transmissionId || !transmissionTime || !certUrl || !authAlgo || !transmissionSig) {
     return { ok: false, reason: "Missing PayPal transmission headers" };
   }
-  if (!PAYPAL_WEBHOOK_ID || PAYPAL_WEBHOOK_ID.trim() === "") {
+  if (!PAYPAL_WEBHOOK_ID) {
     return { ok: false, reason: "PAYPAL_WEBHOOK_ID not set or empty (check Supabase secrets)" };
   }
 
   const accessToken = await getPayPalAccessToken();
-  const payload = {
-    transmission_id: transmissionId,
-    transmission_time: transmissionTime,
-    cert_url: certUrl,
-    auth_algo: authAlgo,
-    transmission_sig: transmissionSig,
-    webhook_id: PAYPAL_WEBHOOK_ID.trim(),
-    webhook_event: eventBody,
-  };
+  // PayPal verifies against the exact raw body bytes. Inject rawBody as-is so key order/whitespace match.
+  const prefix =
+    JSON.stringify({
+      transmission_id: transmissionId,
+      transmission_time: transmissionTime,
+      cert_url: certUrl,
+      auth_algo: authAlgo,
+      transmission_sig: transmissionSig,
+      webhook_id: PAYPAL_WEBHOOK_ID,
+      webhook_event: null,
+    }).slice(0, -6) + // remove 'null}' 
+    rawBody +
+    "}";
 
   const res = await fetch(`${PAYPAL_API_BASE}/v1/notifications/verify-webhook-signature`, {
     method: "POST",
@@ -69,17 +76,15 @@ async function verifyWebhookSignature(eventBody: Json, headers: Headers): Promis
       Authorization: `Bearer ${accessToken}`,
       "content-type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: prefix,
   });
 
   const data = (await res.json()) as { verification_status?: string; message?: string };
   if (res.ok && data.verification_status === "SUCCESS") return { ok: true };
-  return {
-    ok: false,
-    reason: res.ok
-      ? `PayPal verification_status=${data.verification_status ?? "unknown"}`
-      : `PayPal API ${res.status}: ${data.message ?? res.statusText ?? "verify failed"}`,
-  };
+  const reason = res.ok
+    ? `PayPal verification_status=${data.verification_status ?? "unknown"}`
+    : `PayPal API ${res.status}: ${data.message ?? res.statusText ?? "verify failed"}`;
+  return { ok: false, reason };
 }
 
 const SUBSCRIPTION_MONTHS = 5; // ciclo cada 5 meses
@@ -208,20 +213,29 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Missing required env vars" }, 500);
   }
 
+  let rawBody: string;
+  try {
+    rawBody = await req.text();
+  } catch {
+    return jsonResponse({ error: "Failed to read body" }, 400);
+  }
   let payload: Json;
   try {
-    payload = (await req.json()) as Json;
+    payload = JSON.parse(rawBody) as Json;
   } catch {
     return jsonResponse({ error: "Invalid JSON" }, 400);
   }
 
   try {
-    const result = await verifyWebhookSignature(payload, req.headers);
+    const result = await verifyWebhookSignature(rawBody, req.headers);
     if (!result.ok) {
+      console.error("paypal-webhook 401:", result.reason);
       return jsonResponse({ error: "Invalid PayPal signature", reason: result.reason }, 401);
     }
   } catch (e) {
-    return jsonResponse({ error: "Signature verification failed", reason: (e as Error).message }, 401);
+    const msg = (e as Error).message;
+    console.error("paypal-webhook 401:", msg);
+    return jsonResponse({ error: "Signature verification failed", reason: msg }, 401);
   }
 
   const eventType = String(payload.event_type ?? "");
