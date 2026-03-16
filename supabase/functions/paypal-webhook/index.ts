@@ -206,6 +206,25 @@ async function applySubscriptionStatus(params: {
 }
 
 Deno.serve(async (req) => {
+  // GET = diagnóstico de secrets (sin mostrar valores). Útil para comprobar sin esperar a PayPal.
+  if (req.method === "GET") {
+    const url = new URL(req.url);
+    if (url.searchParams.get("diagnose") === "1") {
+      return jsonResponse({
+        ok: true,
+        check: "diagnose",
+        env: {
+          SUPABASE_URL: SUPABASE_URL ? `set (${SUPABASE_URL.length} chars)` : "missing",
+          SUPABASE_SERVICE_ROLE_KEY: SUPABASE_SERVICE_ROLE_KEY ? "set" : "missing",
+          PAYPAL_CLIENT_ID: PAYPAL_CLIENT_ID ? `set (${PAYPAL_CLIENT_ID.length} chars)` : "missing",
+          PAYPAL_CLIENT_SECRET: PAYPAL_CLIENT_SECRET ? "set" : "missing",
+          PAYPAL_WEBHOOK_ID: PAYPAL_WEBHOOK_ID ? `set (${PAYPAL_WEBHOOK_ID.length} chars): ${PAYPAL_WEBHOOK_ID}` : "missing",
+          PAYPAL_API_BASE: PAYPAL_API_BASE || "default (api-m.paypal.com)",
+        },
+      });
+    }
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET || !PAYPAL_WEBHOOK_ID) {
     return jsonResponse({ error: "Missing required env vars" }, 500);
@@ -222,6 +241,22 @@ Deno.serve(async (req) => {
     payload = JSON.parse(rawBody) as Json;
   } catch {
     return jsonResponse({ error: "Invalid JSON" }, 400);
+  }
+
+  // POST con {"diagnose": true} = comprobar secrets sin verificación PayPal (para Test en Supabase).
+  if (payload.diagnose === true) {
+    return jsonResponse({
+      ok: true,
+      check: "diagnose",
+      env: {
+        SUPABASE_URL: SUPABASE_URL ? `set (${SUPABASE_URL.length} chars)` : "missing",
+        SUPABASE_SERVICE_ROLE_KEY: SUPABASE_SERVICE_ROLE_KEY ? "set" : "missing",
+        PAYPAL_CLIENT_ID: PAYPAL_CLIENT_ID ? `set (${PAYPAL_CLIENT_ID.length} chars)` : "missing",
+        PAYPAL_CLIENT_SECRET: PAYPAL_CLIENT_SECRET ? "set" : "missing",
+        PAYPAL_WEBHOOK_ID: PAYPAL_WEBHOOK_ID ? `set (${PAYPAL_WEBHOOK_ID.length} chars): ${PAYPAL_WEBHOOK_ID}` : "missing",
+        PAYPAL_API_BASE: PAYPAL_API_BASE || "default (api-m.paypal.com)",
+      },
+    });
   }
 
   try {
