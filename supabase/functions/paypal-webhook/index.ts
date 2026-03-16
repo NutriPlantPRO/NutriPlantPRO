@@ -14,11 +14,9 @@ const PAYPAL_API_BASE = env("PAYPAL_API_BASE") || "https://api-m.paypal.com";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-function jsonResponse(body: Json, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8" },
-  });
+function jsonResponse(body: Json, status = 200, extraHeaders?: Record<string, string>) {
+  const headers: Record<string, string> = { "content-type": "application/json; charset=utf-8", ...extraHeaders };
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 async function getPayPalAccessToken(): Promise<string> {
@@ -230,12 +228,22 @@ Deno.serve(async (req) => {
     const result = await verifyWebhookSignature(rawBody, req.headers);
     if (!result.ok) {
       console.error("paypal-webhook 401:", result.reason);
-      return jsonResponse({ error: "Invalid PayPal signature", reason: result.reason }, 401);
+      const reason = String(result.reason).slice(0, 500);
+      return jsonResponse(
+        { error: "Invalid PayPal signature", reason: result.reason },
+        401,
+        { "X-PayPal-Webhook-Reason": reason },
+      );
     }
   } catch (e) {
     const msg = (e as Error).message;
     console.error("paypal-webhook 401:", msg);
-    return jsonResponse({ error: "Signature verification failed", reason: msg }, 401);
+    const reason = msg.slice(0, 500);
+    return jsonResponse(
+      { error: "Signature verification failed", reason: msg },
+      401,
+      { "X-PayPal-Webhook-Reason": reason },
+    );
   }
 
   const eventType = String(payload.event_type ?? "");
