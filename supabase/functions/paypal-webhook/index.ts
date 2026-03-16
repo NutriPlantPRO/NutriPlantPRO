@@ -54,19 +54,22 @@ async function verifyWebhookSignature(rawBody: string, headers: Headers): Promis
   }
 
   const accessToken = await getPayPalAccessToken();
-  // PayPal verifies against the exact raw body bytes. Inject rawBody as-is so key order/whitespace match.
-  const prefix =
-    JSON.stringify({
-      transmission_id: transmissionId,
-      transmission_time: transmissionTime,
-      cert_url: certUrl,
-      auth_algo: authAlgo,
-      transmission_sig: transmissionSig,
-      webhook_id: PAYPAL_WEBHOOK_ID,
-      webhook_event: null,
-    }).slice(0, -6) + // remove 'null}' 
-    rawBody +
-    "}";
+  let webhookEvent: Json;
+  try {
+    webhookEvent = JSON.parse(rawBody) as Json;
+  } catch {
+    return { ok: false, reason: "Invalid webhook body JSON" };
+  }
+  // Use parsed object for verify (gateway may alter raw body; object works with Live in practice).
+  const verifyPayload = {
+    transmission_id: transmissionId,
+    transmission_time: transmissionTime,
+    cert_url: certUrl,
+    auth_algo: authAlgo,
+    transmission_sig: transmissionSig,
+    webhook_id: PAYPAL_WEBHOOK_ID,
+    webhook_event: webhookEvent,
+  };
 
   const res = await fetch(`${PAYPAL_API_BASE}/v1/notifications/verify-webhook-signature`, {
     method: "POST",
@@ -74,7 +77,7 @@ async function verifyWebhookSignature(rawBody: string, headers: Headers): Promis
       Authorization: `Bearer ${accessToken}`,
       "content-type": "application/json",
     },
-    body: prefix,
+    body: JSON.stringify(verifyPayload),
   });
 
   const data = (await res.json()) as { verification_status?: string; message?: string };
