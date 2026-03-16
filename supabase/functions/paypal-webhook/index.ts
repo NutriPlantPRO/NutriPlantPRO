@@ -36,15 +36,20 @@ async function getPayPalAccessToken(): Promise<string> {
   return data.access_token as string;
 }
 
-async function verifyWebhookSignature(eventBody: Json, headers: Headers): Promise<boolean> {
+type VerifyResult = { ok: true } | { ok: false; reason: string };
+
+async function verifyWebhookSignature(eventBody: Json, headers: Headers): Promise<VerifyResult> {
   const transmissionId = headers.get("paypal-transmission-id");
   const transmissionTime = headers.get("paypal-transmission-time");
   const certUrl = headers.get("paypal-cert-url");
   const authAlgo = headers.get("paypal-auth-algo");
   const transmissionSig = headers.get("paypal-transmission-sig");
 
-  if (!transmissionId || !transmissionTime || !certUrl || !authAlgo || !transmissionSig || !PAYPAL_WEBHOOK_ID) {
-    return false;
+  if (!transmissionId || !transmissionTime || !certUrl || !authAlgo || !transmissionSig) {
+    return { ok: false, reason: "Missing PayPal transmission headers" };
+  }
+  if (!PAYPAL_WEBHOOK_ID || PAYPAL_WEBHOOK_ID.trim() === "") {
+    return { ok: false, reason: "PAYPAL_WEBHOOK_ID not set or empty (check Supabase secrets)" };
   }
 
   const accessToken = await getPayPalAccessToken();
@@ -54,7 +59,7 @@ async function verifyWebhookSignature(eventBody: Json, headers: Headers): Promis
     cert_url: certUrl,
     auth_algo: authAlgo,
     transmission_sig: transmissionSig,
-    webhook_id: PAYPAL_WEBHOOK_ID,
+    webhook_id: PAYPAL_WEBHOOK_ID.trim(),
     webhook_event: eventBody,
   };
 
@@ -67,9 +72,14 @@ async function verifyWebhookSignature(eventBody: Json, headers: Headers): Promis
     body: JSON.stringify(payload),
   });
 
-  if (!res.ok) return false;
-  const data = await res.json();
-  return data.verification_status === "SUCCESS";
+  const data = (await res.json()) as { verification_status?: string; message?: string };
+  if (res.ok && data.verification_status === "SUCCESS") return { ok: true };
+  return {
+    ok: false,
+    reason: res.ok
+      ? `PayPal verification_status=${data.verification_status ?? "unknown"}`
+      : `PayPal API ${res.status}: ${data.message ?? res.statusText ?? "verify failed"}`,
+  };
 }
 
 const SUBSCRIPTION_MONTHS = 5; // ciclo cada 5 meses
@@ -206,10 +216,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const valid = await verifyWebhookSignature(payload, req.headers);
-    if (!valid) return jsonResponse({ error: "Invalid PayPal signature" }, 401);
+    const result = await verifyWebhookSignature(payload, req.headers);
+    if (!result.ok) {
+      return jsonResponse({ error: "Invalid PayPal signature", reason: result.reason }, 401);
+    }
   } catch (e) {
-    return jsonResponse({ error: `Signature verification failed: ${(e as Error).message}` }, 401);
+    return jsonResponse({ error: "Signature verification failed", reason: (e as Error).message }, 401);
   }
 
   const eventType = String(payload.event_type ?? "");
