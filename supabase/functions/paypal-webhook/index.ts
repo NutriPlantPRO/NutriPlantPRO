@@ -88,6 +88,40 @@ async function verifyWebhookSignature(rawBody: string, headers: Headers): Promis
   return { ok: false, reason };
 }
 
+async function verifyWebhookByEventLookup(eventBody: Json): Promise<VerifyResult> {
+  const eventId = asString(eventBody.id);
+  if (!eventId) return { ok: false, reason: "Missing event id for PayPal lookup verification" };
+
+  const accessToken = await getPayPalAccessToken();
+  const res = await fetch(`${PAYPAL_API_BASE}/v1/notifications/webhooks-events/${encodeURIComponent(eventId)}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "content-type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    return { ok: false, reason: `PayPal webhook event lookup ${res.status}: ${txt}` };
+  }
+
+  const remote = (await res.json()) as Json;
+  const localType = asString(eventBody.event_type);
+  const remoteType = asString(remote.event_type);
+  const localResource = (eventBody.resource ?? {}) as Json;
+  const remoteResource = (remote.resource ?? {}) as Json;
+  const localSubId = asString(localResource.id) ?? asString(localResource.billing_agreement_id);
+  const remoteSubId = asString(remoteResource.id) ?? asString(remoteResource.billing_agreement_id);
+
+  if (localType && remoteType && localType !== remoteType) {
+    return { ok: false, reason: `PayPal lookup mismatch event_type local=${localType} remote=${remoteType}` };
+  }
+  if (localSubId && remoteSubId && localSubId !== remoteSubId) {
+    return { ok: false, reason: `PayPal lookup mismatch subscription local=${localSubId} remote=${remoteSubId}` };
+  }
+  return { ok: true };
+}
+
 const SUBSCRIPTION_MONTHS = 5; // ciclo cada 5 meses
 const TRIAL_DAYS = 10; // prueba gratis 10 días
 
@@ -265,18 +299,22 @@ Deno.serve(async (req) => {
   try {
     const result = await verifyWebhookSignature(rawBody, req.headers);
     if (!result.ok) {
-      console.error("paypal-webhook 401:", result.reason);
-      const reason = String(result.reason).slice(0, 500);
-      try {
-        await supabase.from("paypal_webhook_errors").insert({ reason: reason.slice(0, 2000) });
-      } catch (e) {
-        console.error("paypal_webhook_errors insert failed:", (e as Error).message);
+      const fallback = await verifyWebhookByEventLookup(payload);
+      if (!fallback.ok) {
+        console.error("paypal-webhook 401:", `${result.reason} | fallback=${fallback.reason}`);
+        const reason = String(`${result.reason} | fallback=${fallback.reason}`).slice(0, 500);
+        try {
+          await supabase.from("paypal_webhook_errors").insert({ reason: reason.slice(0, 2000) });
+        } catch (e) {
+          console.error("paypal_webhook_errors insert failed:", (e as Error).message);
+        }
+        return jsonResponse(
+          { error: "Invalid PayPal signature", reason },
+          401,
+          { "X-PayPal-Webhook-Reason": reason },
+        );
       }
-      return jsonResponse(
-        { error: "Invalid PayPal signature", reason: result.reason },
-        401,
-        { "X-PayPal-Webhook-Reason": reason },
-      );
+      console.warn("paypal-webhook: signature verify failed but event lookup succeeded");
     }
   } catch (e) {
     const msg = (e as Error).message;
