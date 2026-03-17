@@ -2777,9 +2777,10 @@
                                     userData.subscription_amount = cloudUser.subscription_amount ?? userData.subscription_amount;
                                 }
                                 userData.subscription_activated_at = cloudUser.subscription_activated_at || userData.subscription_activated_at;
-                                userData.last_payment_date = cloudUser.last_payment_date || userData.last_payment_date;
-                                userData.next_payment_date = cloudUser.next_payment_date || userData.next_payment_date;
-                                userData.paypal_subscription_id = cloudUser.paypal_subscription_id || userData.paypal_subscription_id;
+                                // Pagos PayPal: en Supabase está la verdad; no rellenar desde local si en nube viene vacío.
+                                userData.last_payment_date = cloudUser.last_payment_date != null && cloudUser.last_payment_date !== '' ? cloudUser.last_payment_date : null;
+                                userData.next_payment_date = cloudUser.next_payment_date != null && cloudUser.next_payment_date !== '' ? cloudUser.next_payment_date : null;
+                                userData.paypal_subscription_id = cloudUser.paypal_subscription_id != null && cloudUser.paypal_subscription_id !== '' ? cloudUser.paypal_subscription_id : (userData.paypal_subscription_id || null);
                                 // Completar campos de perfil desde nube cuando en panel local estén vacíos.
                                 const hasLocalLocation = (
                                     (typeof userData.location === 'string' && userData.location.trim()) ||
@@ -3014,6 +3015,26 @@
                 if (aName > bName) return 1;
                 return 0;
             });
+            // Tras cargar Supabase: último/próximo pago e ID PayPal = siempre lo guardado en profiles (no datos viejos del navegador).
+            if (window._adminCloudCache && window._adminCloudCache._cloudLastSuccess && Array.isArray(window._adminCloudCache.users)) {
+                var _cuList = window._adminCloudCache.users;
+                var _byUid = new Map();
+                var _byEm = new Map();
+                _cuList.forEach(function(c) {
+                    if (!c) return;
+                    if (c.id) _byUid.set(c.id, c);
+                    var em = (c.email || '').toLowerCase();
+                    if (em) _byEm.set(em, c);
+                });
+                result.forEach(function(u) {
+                    if (!u || u.isAdmin) return;
+                    var cu = _byUid.get(u.id) || _byUid.get(u.userId) || _byEm.get((u.email || '').toLowerCase());
+                    if (!cu) return;
+                    u.last_payment_date = (cu.last_payment_date != null && cu.last_payment_date !== '') ? cu.last_payment_date : null;
+                    u.next_payment_date = (cu.next_payment_date != null && cu.next_payment_date !== '') ? cu.next_payment_date : null;
+                    u.paypal_subscription_id = (cu.paypal_subscription_id != null && cu.paypal_subscription_id !== '') ? cu.paypal_subscription_id : null;
+                });
+            }
             return result;
         }
         
@@ -4648,7 +4669,7 @@
             });
             
             showDataViewerWithFilters({
-                title: '💰 Ingresos por Suscripción (cada 5 meses)',
+                title: '💰 Ingresos por Suscripción (cada 5 meses) — Último/Próximo pago = Supabase (PayPal webhook). N/A = aún no hay fecha guardada en perfil.',
                 data: revenueData,
                 columns: [
                     { key: 'name', label: 'Nombre', format: 'text', filterable: true },

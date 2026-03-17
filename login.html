@@ -269,6 +269,11 @@
           <span class="calculator-icon">🚜</span>
           <span class="button-text">Calculadora de Enmiendas (CIC)</span>
         </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showGranularMixCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">📦</span>
+          <span class="button-text">Calculadora de Mezclas Granulares</span>
+        </button>
         
         <!-- Footer: copyright y acceso privado al final -->
         <div style="
@@ -761,6 +766,24 @@
       background: #f8fafc;
     }
 
+    .modal-granular-mix {
+      max-width: 1280px;
+      width: 96%;
+      max-height: 92vh;
+      overflow: hidden;
+    }
+    .modal-granular-mix .modal-body {
+      padding: 0;
+      height: calc(92vh - 80px);
+    }
+    .modal-granular-mix iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #f8fafc;
+    }
+
     .modal-header {
       padding: 20px;
       border-bottom: 1px solid #e5e7eb;
@@ -1151,6 +1174,16 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showGranularMixCalculator() {
+      document.getElementById('granularMixCalculatorModal').style.display = 'flex';
+    }
+    function closeGranularMixCalculator() {
+      const modal = document.getElementById('granularMixCalculatorModal');
+      const frame = document.getElementById('granularMixCalculatorFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     // Datos de nutrientes: peso molecular y valencia
     const nutrientDataLogin = {
       'n': { mw: 14.01, valence: 1 },
@@ -1216,6 +1249,10 @@
       const vpdModal = document.getElementById('vpdCalculatorModal');
       if (e.target === vpdModal) {
         closeVPDCalculator();
+      }
+      const granularMixModal = document.getElementById('granularMixCalculatorModal');
+      if (e.target === granularMixModal) {
+        closeGranularMixCalculator();
       }
     });
   </script>
@@ -1603,6 +1640,19 @@
       </div>
       <div class="modal-body">
         <iframe id="amendmentCalculatorFrame" src="enmienda-free.html" title="Calculadora de Enmiendas"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Calculadora de Mezclas Granulares -->
+  <div id="granularMixCalculatorModal" class="modal-overlay">
+    <div class="modal modal-granular-mix">
+      <div class="modal-header">
+        <h2 class="modal-title">📦 Calculadora de Mezclas Granulares</h2>
+        <button class="modal-close" onclick="closeGranularMixCalculator()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html" title="Calculadora de Mezclas Granulares"></iframe>
       </div>
     </div>
   </div>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Mezclas Granulares</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    body { margin: 0; padding: 12px 14px 24px; background: #f8fafc; font-family: Inter, system-ui, sans-serif; font-size: 13px; }
+    .guest-note { margin: 0 0 10px; font-size: 12px; color: #64748b; text-align: center; }
+    .guest-note strong { color: #475569; }
+    .gm-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .gm-title { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0; }
+    .npk-badge { background: linear-gradient(135deg, #fef08a, #fde047); color: #713f12; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 14px; border: 1px solid #eab308; }
+    .gm-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 12px; }
+    .gm-table { border-collapse: collapse; width: max-content; min-width: 100%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.08); border-radius: 8px; overflow: hidden; }
+    .gm-table th, .gm-table td { border: 1px solid #e2e8f0; padding: 6px 8px; text-align: center; white-space: nowrap; }
+    .gm-table th { background: #f1f5f9; font-weight: 600; color: #334155; font-size: 11px; }
+    .gm-table td.mat-cell { text-align: left; min-width: 160px; }
+    .gm-table input.pct { width: 56px; text-align: center; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; }
+    .gm-table tr.total-row td { background: #ecfdf5; font-weight: 700; color: #14532d; }
+    .gm-table tr.kgha-row td { background: #eff6ff; font-weight: 600; color: #1e40af; font-size: 12px; }
+    .gm-table tr.kgha-row td:first-child { text-align: right; padding-right: 12px; color: #1e3a8a; }
+    .btn-del { background: #dc2626; color: #fff; border: 0; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .btn-del:hover { background: #b91c1c; }
+    .btn-add { background: #16a34a; color: #fff; border: 0; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 8px; margin-top: 8px; }
+    .btn-add:hover { background: #15803d; }
+    .btn-cat { background: #2563eb; color: #fff; border: 0; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    .btn-cat:hover { background: #1d4ed8; }
+    .btn-clear { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .dose-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .dose-row label { font-weight: 600; color: #334155; }
+    .dose-row input { width: 90px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; }
+    .modal-overlay-gm { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 9999; align-items: center; justify-content: center; padding: 16px; }
+    .modal-overlay-gm.open { display: flex; }
+    .modal-gm { background: #fff; border-radius: 12px; max-width: 520px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,.2); }
+    .modal-gm h3 { margin: 0 0 12px; font-size: 1.1rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .form-grid label { display: flex; flex-direction: column; font-size: 12px; color: #475569; gap: 4px; }
+    .form-grid input { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
+    .custom-list { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 12px; max-height: 160px; overflow-y: auto; }
+    .custom-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .modal-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    select.gm-select { max-width: 220px; width: 100%; padding: 4px 6px; border-radius: 4px; border: 1px solid #cbd5e1; }
+  </style>
+</head>
+<body>
+  <p class="guest-note">
+    <strong>Modo gratuito:</strong> la mezcla no se guarda al cerrar. Los fertilizantes <strong>personalizados</strong> (máx. 3) se guardan solo en este navegador para esta calculadora.
+  </p>
+
+  <div class="gm-header">
+    <h1 class="gm-title">📦 Calcular mezcla física granular</h1>
+    <div class="npk-badge" id="npkDisplay">Relación N–P₂O₅–K₂O: —</div>
+  </div>
+
+  <div class="gm-wrap">
+    <table class="gm-table" id="mixTable">
+      <thead>
+        <tr>
+          <th>Material</th>
+          <th>% por TM</th>
+          <th>N</th>
+          <th>P₂O₅</th>
+          <th>K₂O</th>
+          <th>CaO</th>
+          <th>MgO</th>
+          <th>S</th>
+          <th>SO₄</th>
+          <th>Fe</th>
+          <th>Mn</th>
+          <th>B</th>
+          <th>Zn</th>
+          <th>Cu</th>
+          <th>Mo</th>
+          <th>SiO₂</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="mixRows"></tbody>
+    </table>
+  </div>
+
+  <button type="button" class="btn-add" onclick="addRow()">+ Agregar fertilizante</button>
+  <button type="button" class="btn-cat" onclick="openCatalog()">Gestionar catálogo</button>
+  <button type="button" class="btn-clear" onclick="clearMix()" style="margin-left:8px;">Eliminar mezcla</button>
+
+  <div class="dose-row">
+    <label>Dosis kg/ha (mezcla): <input type="number" id="doseKgHa" min="0" step="1" value="500" oninput="recalc()" /></label>
+  </div>
+  <p style="margin:8px 0 0;font-size:12px;color:#64748b;">Aporte por hectárea según la dosis (kg de nutriente óxido / ha):</p>
+  <div class="gm-wrap" style="margin-top:6px;">
+    <table class="gm-table" id="kghaTable">
+      <thead>
+        <tr>
+          <th></th>
+          <th>N</th>
+          <th>P₂O₅</th>
+          <th>K₂O</th>
+          <th>CaO</th>
+          <th>MgO</th>
+          <th>S</th>
+          <th>SO₄</th>
+          <th>Fe</th>
+          <th>Mn</th>
+          <th>B</th>
+          <th>Zn</th>
+          <th>Cu</th>
+          <th>Mo</th>
+          <th>SiO₂</th>
+        </tr>
+      </thead>
+      <tbody><tr class="kgha-row" id="kghaRow"></tr></tbody>
+    </table>
+  </div>
+
+  <!-- Modal catálogo -->
+  <div class="modal-overlay-gm" id="catalogModal" onclick="if(event.target===this)closeCatalog()">
+    <div class="modal-gm" onclick="event.stopPropagation()">
+      <h3>Gestionar catálogo (gratuito)</h3>
+      <p style="font-size:13px;color:#64748b;margin:0 0 12px;">Puedes añadir hasta <strong>3</strong> fertilizantes personalizados. Se guardan solo en este equipo para esta calculadora.</p>
+      <div class="custom-list" id="customListEl"></div>
+      <h4 style="margin:12px 0 8px;font-size:14px;">Nuevo personalizado</h4>
+      <div class="form-grid">
+        <label>Nombre <input type="text" id="newName" placeholder="Ej. Mi mezcla 20-10-10" /></label>
+        <label>N % <input type="number" id="newN" step="0.01" min="0" value="0" /></label>
+        <label>P₂O₅ % <input type="number" id="newP" step="0.01" min="0" value="0" /></label>
+        <label>K₂O % <input type="number" id="newK" step="0.01" min="0" value="0" /></label>
+        <label>CaO % <input type="number" id="newCaO" step="0.01" min="0" value="0" /></label>
+        <label>MgO % <input type="number" id="newMgO" step="0.01" min="0" value="0" /></label>
+        <label>S % <input type="number" id="newS" step="0.01" min="0" value="0" /></label>
+        <label>SO₄ % <input type="number" id="newSO4" step="0.01" min="0" value="0" /></label>
+        <label>Fe % <input type="number" id="newFe" step="0.01" min="0" value="0" /></label>
+        <label>Mn % <input type="number" id="newMn" step="0.01" min="0" value="0" /></label>
+        <label>B % <input type="number" id="newB" step="0.01" min="0" value="0" /></label>
+        <label>Zn % <input type="number" id="newZn" step="0.01" min="0" value="0" /></label>
+        <label>Cu % <input type="number" id="newCu" step="0.01" min="0" value="0" /></label>
+        <label>Mo % <input type="number" id="newMo" step="0.01" min="0" value="0" /></label>
+        <label>SiO₂ % <input type="number" id="newSiO2" step="0.01" min="0" value="0" /></label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-add" onclick="saveCustomMaterial()">Guardar personalizado</button>
+        <button type="button" class="btn-clear" onclick="closeCatalog()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const LS_CUSTOM = 'np_login_granular_mix_customs_v1';
+    const KEYS = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+
+    const BASE_MATERIALS = {
+      'Urea': { N: 46, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Sulfato de Amonio Granular': { N: 21, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 72, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Fosfonitrato 33-03-00': { N: 33, P2O5: 3, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'DAP': { N: 18, P2O5: 46, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'MAP': { N: 11, P2O5: 52, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Superfosfato Simple': { N: 0, P2O5: 18, K2O: 0, CaO: 12, S: 0, SO4: 12, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Superfosfato Triple': { N: 0, P2O5: 45, K2O: 0, CaO: 13, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Nitrato de Potasio': { N: 13, P2O5: 0, K2O: 46, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Sulfato de Potasio': { N: 0, P2O5: 0, K2O: 50, CaO: 0, S: 0, SO4: 52, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Cloruro de Potasio': { N: 0, P2O5: 0, K2O: 60, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Silicato de Potasio': { N: 0, P2O5: 0, K2O: 23, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 26, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Nitrato de Calcio': { N: 15.5, P2O5: 0, K2O: 0, CaO: 26, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Sulfato de Magnesio': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 40, MgO: 16, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Sulfato de Zinc': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 52, MgO: 0, SiO2: 0, Zn: 36, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Sulfato de Hierro': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 55, MgO: 0, SiO2: 0, Zn: 0, Fe: 20, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Sulfato de Manganeso': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 55, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 32, Cu: 0, Mo: 0 },
+      'Sulfato de Cobre': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 37, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 25, Mo: 0 },
+      'Boro Granular': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 15, Mn: 0, Cu: 0, Mo: 0 },
+      'Molibdato de Sodio': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 39 },
+      'Micro Mix': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 6.25, MgO: 4, SiO2: 0, Zn: 4, Fe: 8, B: 1, Mn: 1, Cu: 0, Mo: 0.06 },
+      'Azufre Granular': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 90, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Sulfato de K y Mg': { N: 0, P2O5: 0, K2O: 22, CaO: 0, S: 0, SO4: 68.91, MgO: 18, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+      'Complejo 12-11-18': { N: 12, P2O5: 11, K2O: 18, CaO: 0, S: 0, SO4: 24, MgO: 2.7, SiO2: 0, Zn: 0.02, Fe: 0.2, B: 0.015, Mn: 0.02, Cu: 0, Mo: 0 },
+      'Complejo 12-12-17': { N: 12, P2O5: 12, K2O: 17, CaO: 0, S: 0, SO4: 24, MgO: 2, SiO2: 0, Zn: 0.01, Fe: 0, B: 0.02, Mn: 0, Cu: 0, Mo: 0 },
+      'Complejo Triple 16': { N: 16, P2O5: 16, K2O: 16, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 }
+    };
+
+    function loadCustoms() {
+      try {
+        const raw = localStorage.getItem(LS_CUSTOM);
+        if (!raw) return [];
+        const a = JSON.parse(raw);
+        return Array.isArray(a) ? a.slice(0, 3) : [];
+      } catch (e) { return []; }
+    }
+    function saveCustoms(arr) {
+      localStorage.setItem(LS_CUSTOM, JSON.stringify(arr.slice(0, 3)));
+    }
+
+    function allMaterialsMap() {
+      const m = {};
+      Object.keys(BASE_MATERIALS).forEach(k => { m[k] = { ...BASE_MATERIALS[k] }; });
+      loadCustoms().forEach(c => {
+        if (c && c.name) m[c.name] = { ...emptyComp(), ...c.comp };
+      });
+      return m;
+    }
+    function emptyComp() {
+      const o = {};
+      KEYS.forEach(k => { o[k] = 0; });
+      return o;
+    }
+    function materialNamesSorted() {
+      const base = Object.keys(BASE_MATERIALS).sort((a,b) => a.localeCompare(b, 'es'));
+      const custom = loadCustoms().map(c => c.name).filter(Boolean);
+      return [...base, ...custom];
+    }
+
+    let rowId = 0;
+    const rows = [];
+
+    function addRow(name, pct) {
+      const id = ++rowId;
+      rows.push({ id, name: name || '', pct: pct != null ? pct : '' });
+      renderRows();
+    }
+    function removeRow(id) {
+      const i = rows.findIndex(r => r.id === id);
+      if (i >= 0) { rows.splice(i, 1); renderRows(); }
+    }
+    function clearMix() {
+      if (!rows.length) return;
+      if (confirm('¿Vaciar toda la mezcla?')) { rows.length = 0; renderRows(); }
+    }
+
+    function renderRows() {
+      const tb = document.getElementById('mixRows');
+      const map = allMaterialsMap();
+      const names = materialNamesSorted();
+      if (!rows.length) {
+        tb.innerHTML = '<tr><td colspan="17" style="padding:20px;color:#64748b;">Agrega fertilizantes con el botón verde.</td></tr>' +
+          '<tr class="total-row"><td><strong>TOTAL</strong></td><td id="totalPctCell">0.00</td>' +
+          KEYS.map(k => `<td id="tot_${k}">0.00</td>`).join('') + '<td></td></tr>';
+        document.getElementById('npkDisplay').textContent = 'Relación N–P₂O₅–K₂O: —';
+        const dose = parseFloat(document.getElementById('doseKgHa').value) || 0;
+        const kr = document.getElementById('kghaRow');
+        kr.innerHTML = '<td><strong>Kg/ha</strong></td>' + KEYS.map(() => '<td>0</td>').join('');
+        return;
+      }
+      tb.innerHTML = rows.map(r => {
+        const opts = names.map(n => `<option value="${escapeAttr(n)}" ${r.name === n ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('');
+        return `<tr data-rid="${r.id}">
+          <td class="mat-cell"><select class="gm-select" onchange="onMatChange(${r.id},this.value)">${opts}</select></td>
+          <td><input class="pct" type="number" min="0" max="100" step="0.01" value="${r.pct}" oninput="onPct(${r.id},this.value)" /></td>
+          ${KEYS.map(() => '<td class="c-nut">—</td>').join('')}
+          <td><button type="button" class="btn-del" onclick="removeRow(${r.id})" title="Quitar">🗑</button></td>
+        </tr>`;
+      }).join('');
+      const totalPct = rows.reduce((s, r) => s + (parseFloat(r.pct) || 0), 0);
+      tb.innerHTML += `<tr class="total-row">
+        <td><strong>TOTAL</strong></td>
+        <td id="totalPctCell">${totalPct.toFixed(2)}</td>
+        ${KEYS.map(k => `<td id="tot_${k}">0.00</td>`).join('')}
+        <td></td>
+      </tr>`;
+      recalc();
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+    function escapeAttr(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    }
+
+    function onMatChange(id, name) {
+      const r = rows.find(x => x.id === id);
+      if (r) { r.name = name; recalc(); }
+    }
+    function onPct(id, v) {
+      const r = rows.find(x => x.id === id);
+      if (r) { r.pct = v; recalc(); }
+    }
+
+    function recalc() {
+      const map = allMaterialsMap();
+      const totals = {};
+      KEYS.forEach(k => { totals[k] = 0; });
+      let sumPct = 0;
+
+      rows.forEach(r => {
+        const p = parseFloat(r.pct) || 0;
+        sumPct += p;
+        const comp = map[r.name] || emptyComp();
+        const tr = document.querySelector(`tr[data-rid="${r.id}"]`);
+        if (!tr) return;
+        const cells = tr.querySelectorAll('.c-nut');
+        KEYS.forEach((k, i) => {
+          const v = (p / 100) * (Number(comp[k]) || 0);
+          cells[i].textContent = v.toFixed(2);
+          totals[k] += v;
+        });
+      });
+
+      const tp = document.getElementById('totalPctCell');
+      if (tp) tp.textContent = sumPct.toFixed(2);
+      KEYS.forEach(k => {
+        const el = document.getElementById('tot_' + k);
+        if (el) el.textContent = totals[k].toFixed(2);
+      });
+
+      const N = totals.N, P = totals.P2O5, K = totals.K2O;
+      const elNpk = document.getElementById('npkDisplay');
+      if (N > 0 && P > 0 && K > 0) {
+        const m = Math.min(N, P, K);
+        const a = (N / m).toFixed(1).replace(/\.0$/, '');
+        const b = (P / m).toFixed(1).replace(/\.0$/, '');
+        const c = (K / m).toFixed(1).replace(/\.0$/, '');
+        elNpk.textContent = 'Relación N–P₂O₅–K₂O: ' + a + ' - ' + b + ' - ' + c;
+      } else {
+        elNpk.textContent = (N > 0 || P > 0 || K > 0)
+          ? 'Relación N–P₂O₅–K₂O: indica los tres (>0) en la mezcla'
+          : 'Relación N–P₂O₅–K₂O: —';
+      }
+
+      const dose = parseFloat(document.getElementById('doseKgHa').value) || 0;
+      const kr = document.getElementById('kghaRow');
+      const fmtKg = v => {
+        const x = dose * (Number(v) || 0) / 100;
+        if (x <= 0 && (Number(v) || 0) <= 0) return '0';
+        return x < 0.01 ? x.toFixed(4) : x < 1 ? x.toFixed(3) : x.toFixed(2);
+      };
+      kr.innerHTML = '<td><strong>Kg/ha</strong></td>' + KEYS.map(k =>
+        '<td>' + fmtKg(totals[k]) + '</td>'
+      ).join('');
+    }
+
+    function openCatalog() {
+      document.getElementById('catalogModal').classList.add('open');
+      renderCustomList();
+    }
+    function closeCatalog() {
+      document.getElementById('catalogModal').classList.remove('open');
+    }
+    function renderCustomList() {
+      const list = loadCustoms();
+      const el = document.getElementById('customListEl');
+      if (!list.length) {
+        el.innerHTML = '<div style="color:#64748b;font-size:13px;">Sin personalizados. Máximo 3.</div>';
+        return;
+      }
+      el.innerHTML = list.map((c, i) => `
+        <div class="custom-item">
+          <span><strong>${escapeHtml(c.name)}</strong> <span style="color:#64748b;font-size:12px;">(N ${c.comp.N||0} · P₂O₅ ${c.comp.P2O5||0} · K₂O ${c.comp.K2O||0})</span></span>
+          <button type="button" class="btn-del" onclick="removeCustom(${i})">Eliminar</button>
+        </div>
+      `).join('');
+    }
+    function removeCustom(i) {
+      const list = loadCustoms();
+      list.splice(i, 1);
+      saveCustoms(list);
+      rows.forEach(r => {
+        if (r.name && !allMaterialsMap()[r.name]) r.name = '';
+      });
+      renderCustomList();
+      renderRows();
+    }
+    function saveCustomMaterial() {
+      const list = loadCustoms();
+      if (list.length >= 3) {
+        alert('Solo puedes tener 3 fertilizantes personalizados en la versión gratuita.');
+        return;
+      }
+      const name = (document.getElementById('newName').value || '').trim();
+      if (!name) {
+        alert('Escribe un nombre.');
+        return;
+      }
+      if (BASE_MATERIALS[name]) {
+        alert('Ese nombre ya existe en el catálogo base. Usa otro nombre.');
+        return;
+      }
+      if (list.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+        alert('Ya tienes un personalizado con ese nombre.');
+        return;
+      }
+      const comp = {
+        N: parseFloat(document.getElementById('newN').value) || 0,
+        P2O5: parseFloat(document.getElementById('newP').value) || 0,
+        K2O: parseFloat(document.getElementById('newK').value) || 0,
+        CaO: parseFloat(document.getElementById('newCaO').value) || 0,
+        MgO: parseFloat(document.getElementById('newMgO').value) || 0,
+        S: parseFloat(document.getElementById('newS').value) || 0,
+        SO4: parseFloat(document.getElementById('newSO4').value) || 0,
+        Fe: parseFloat(document.getElementById('newFe').value) || 0,
+        Mn: parseFloat(document.getElementById('newMn').value) || 0,
+        B: parseFloat(document.getElementById('newB').value) || 0,
+        Zn: parseFloat(document.getElementById('newZn').value) || 0,
+        Cu: parseFloat(document.getElementById('newCu').value) || 0,
+        Mo: parseFloat(document.getElementById('newMo').value) || 0,
+        SiO2: parseFloat(document.getElementById('newSiO2').value) || 0
+      };
+      list.push({ name, comp });
+      saveCustoms(list);
+      document.getElementById('newName').value = '';
+      ['newN','newP','newK','newCaO','newMgO','newS','newSO4','newFe','newMn','newB','newZn','newCu','newMo','newSiO2'].forEach(id => {
+        const n = document.getElementById(id);
+        if (n) n.value = id === 'newName' ? '' : '0';
+      });
+      renderCustomList();
+      renderRows();
+      alert('Personalizado guardado en este navegador.');
+    }
+
+    renderRows();
+  </script>
+</body>
+</html>
