@@ -213,7 +213,9 @@
 
     function addRow(name, pct) {
       const id = ++rowId;
-      rows.push({ id, name: name || '', pct: pct != null ? pct : '' });
+      const names = materialNamesSorted();
+      const defaultMat = names[0] || 'Urea';
+      rows.push({ id, name: (name && String(name).trim()) ? name : defaultMat, pct: pct != null ? pct : '' });
       renderRows();
     }
     function removeRow(id) {
@@ -229,6 +231,10 @@
       const tb = document.getElementById('mixRows');
       const map = allMaterialsMap();
       const names = materialNamesSorted();
+      const firstMat = names[0] || 'Urea';
+      rows.forEach(function(r) {
+        if (!r || !String(r.name || '').trim()) r.name = firstMat;
+      });
       if (!rows.length) {
         tb.innerHTML = '<tr><td colspan="17" style="padding:20px;color:#64748b;">Agrega fertilizantes con el botón verde.</td></tr>' +
           '<tr class="total-row"><td><strong>TOTAL</strong></td><td id="totalPctCell">0.00</td>' +
@@ -273,7 +279,14 @@
     }
     function onPct(id, v) {
       const r = rows.find(x => x.id === id);
-      if (r) { r.pct = v; recalc(); }
+      if (r) {
+        r.pct = v;
+        if (!String(r.name || '').trim()) {
+          const n = materialNamesSorted();
+          r.name = n[0] || 'Urea';
+        }
+        recalc();
+      }
     }
 
     function recalc() {
