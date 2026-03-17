@@ -2,45 +2,38 @@
 // NUTRICIÓN GRANULAR - FUNCIONES SIMPLIFICADAS
 // =====================================================
 
-// Base de datos de materias primas
+// Base de datos de materias primas (orden: N → P → K → Ca → Mg+K/Mg → S → micros → complejos; personalizados al final al cargar)
 const MATERIALS_DB = {
-  // NITROGENADOS
+  // Nitrogenados
   'Urea': { N: 46, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
-  'Sulfato de Amonio Granular': { N: 21, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 72, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   'Fosfonitrato 33-03-00': { N: 33, P2O5: 3, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
-  
-  // FÓSFORO
+  'Sulfato de Amonio Granular': { N: 21, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 72, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+  // Fosforados
   'DAP': { N: 18, P2O5: 46, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   'MAP': { N: 11, P2O5: 52, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   'Superfosfato Simple': { N: 0, P2O5: 18, K2O: 0, CaO: 12, S: 0, SO4: 12, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   'Superfosfato Triple': { N: 0, P2O5: 45, K2O: 0, CaO: 13, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
-  
-  // POTASIO
-  'Nitrato de Potasio': { N: 13, P2O5: 0, K2O: 46, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+  // Potasio (SOP, Cloruro, Nitrato, Silicato)
   'Sulfato de Potasio': { N: 0, P2O5: 0, K2O: 50, CaO: 0, S: 0, SO4: 52, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   'Cloruro de Potasio': { N: 0, P2O5: 0, K2O: 60, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+  'Nitrato de Potasio': { N: 13, P2O5: 0, K2O: 46, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   'Silicato de Potasio': { N: 0, P2O5: 0, K2O: 23, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 26, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
-  
-  // CALCIO
+  // Calcio
   'Nitrato de Calcio': { N: 15.5, P2O5: 0, K2O: 0, CaO: 26, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
-  
-  // MAGNESIO
+  // Magnesio (K+Mg, sulfato Mg)
+  'Sulfato de K y Mg': { N: 0, P2O5: 0, K2O: 22, CaO: 0, S: 0, SO4: 68.91, MgO: 18, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   'Sulfato de Magnesio': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 40, MgO: 16, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
-  
-  // MICROELEMENTOS
-  'Sulfato de Zinc': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 52, MgO: 0, SiO2: 0, Zn: 36, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+  // Azufre
+  'Azufre Granular': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 90, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
+  // Micros: Fe, Mn, Zn, B, Cu, Mo
   'Sulfato de Hierro': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 55, MgO: 0, SiO2: 0, Zn: 0, Fe: 20, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   'Sulfato de Manganeso': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 55, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 32, Cu: 0, Mo: 0 },
-  'Sulfato de Cobre': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 37, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 25, Mo: 0 },
+  'Sulfato de Zinc': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 52, MgO: 0, SiO2: 0, Zn: 36, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   'Boro Granular': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 15, Mn: 0, Cu: 0, Mo: 0 },
+  'Sulfato de Cobre': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 37, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 25, Mo: 0 },
   'Molibdato de Sodio': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 39 },
   'Micro Mix': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 6.25, MgO: 4, SiO2: 0, Zn: 4, Fe: 8, B: 1, Mn: 1, Cu: 0, Mo: 0.06 },
-  
-  // AZUFRE
-  'Azufre Granular': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 90, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
-  'Sulfato de K y Mg': { N: 0, P2O5: 0, K2O: 22, CaO: 0, S: 0, SO4: 68.91, MgO: 18, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
-  
-  // COMPLEJOS
+  // Complejos NPK
   'Complejo 12-11-18': { N: 12, P2O5: 11, K2O: 18, CaO: 0, S: 0, SO4: 24, MgO: 2.7, SiO2: 0, Zn: 0.02, Fe: 0.2, B: 0.015, Mn: 0.02, Cu: 0, Mo: 0 },
   'Complejo 12-12-17': { N: 12, P2O5: 12, K2O: 17, CaO: 0, S: 0, SO4: 24, MgO: 2, SiO2: 0, Zn: 0.01, Fe: 0, B: 0.02, Mn: 0, Cu: 0, Mo: 0 },
   'Complejo Triple 16': { N: 16, P2O5: 16, K2O: 16, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 }
