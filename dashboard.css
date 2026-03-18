@@ -2234,7 +2234,9 @@ body {
   position: absolute;
   top: 16px;
   right: 80px;
-  z-index: 1000;
+  /* Que no tape los controles nativos de Google Maps (+/- zoom).
+     En algunos navegadores/escala de Windows los controles quedan donde se cruza el tooltip. */
+  z-index: 900;
   pointer-events: none;
 }
 
