@@ -181,6 +181,11 @@ class NutriPlantMap {
       streetViewControl: false,
       fullscreenControl: true,
       zoomControl: true,
+      // Abajo-derecha en Windows + overflow:hidden del contenedor recortaba el botón "−";
+      // centro-izquierda evita el corte y el solape con el botón flotante de chat.
+      zoomControlOptions: {
+        position: google.maps.ControlPosition.LEFT_CENTER
+      },
       styles: [
         {
           featureType: 'all',

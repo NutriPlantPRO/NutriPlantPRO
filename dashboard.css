@@ -2192,9 +2192,15 @@ body {
   max-height: 600px; /* Altura máxima para pantallas grandes */
   min-height: 400px; /* Altura mínima reducida */
   border-radius: 12px;
-  overflow: hidden;
+  /* visible: en algunos Chrome/Windows el zoom +/− de Google quedaba recortado abajo-derecha */
+  overflow: visible;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--card-bd);
+}
+
+.map-container .map {
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .map {
