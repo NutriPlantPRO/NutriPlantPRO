@@ -1467,6 +1467,16 @@ function bindHydroEvents(container) {
         fert.calcMode = 'product';
         fert.productTotalL = parseFloat(input.value) || 0;
       }
+      // En celdas de aporte (ppm de elemento) el usuario teclea aquí;
+      // actualizar el modo/objetivo al instante (antes solo se hacía en "change").
+      if (input.classList && input.classList.contains('hydro-contrib-input')) {
+        const elem = input.getAttribute('data-fert-element');
+        if (elem) {
+          fert.calcMode = 'ppm';
+          fert.element = elem;
+          fert.targetPpm = parseFloat(input.value) || 0;
+        }
+      }
       if (ntr) {
         fert.comp = fert.comp || {};
         fert.comp[ntr] = parseFloat(input.value) || 0;
