@@ -1471,6 +1471,10 @@ function bindHydroEvents(container) {
         fert.comp = fert.comp || {};
         fert.comp[ntr] = parseFloat(input.value) || 0;
       }
+      // Actualizar al instante salidas dependientes del cálculo de fertilizantes
+      // sin re-renderizar la tabla completa (evita perder foco al escribir).
+      renderHydroFertTotals();
+      renderHydroVolumeCard();
       hydroScheduleRender();
       hydroScheduleSave();
     }

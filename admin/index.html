@@ -9539,6 +9539,20 @@
             var sinProyecto = Array.isArray(user.chat_history_sin_proyecto) ? user.chat_history_sin_proyecto : [];
             userChatMessages += sinProyecto.length;
             sinProyecto.forEach(function (m) { if (m && (m.sender === 'user' || m.type === 'user')) userChatInteractions++; });
+
+            // Si la nube está cargada, usar conteo cloud por user_id (evita ceros falsos en panel móvil/local).
+            try {
+                const cloudOk = !!(window._adminCloudCache && window._adminCloudCache._cloudLastSuccess);
+                const cloudChats = (window._adminCloudCache && Array.isArray(window._adminCloudCache.chats)) ? window._adminCloudCache.chats : [];
+                if (cloudOk && cloudChats.length > 0) {
+                    const ids = new Set([String(user.id || ''), String(user.userId || ''), String(userId || '')].filter(Boolean));
+                    const mine = cloudChats.filter(function (c) { return c && ids.has(String(c.user_id || '')); });
+                    if (mine.length > 0) {
+                        userChatMessages = mine.length;
+                        userChatInteractions = mine.filter(function (m) { return m && (m.message_type === 'user' || m.type === 'user'); }).length;
+                    }
+                }
+            } catch (e) {}
             const userChatCost = (userChatInteractions * 0.001).toFixed(4);
             
             // Fechas de pago para mostrar (o fallback desde activación)
