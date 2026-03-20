@@ -693,22 +693,16 @@ function hydroDrawCombinedTernary(container, data) {
   tickLabels += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
   tickLabels += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
 
-  /* Etiquetas de arista: fuera del triángulo, en la dirección opuesta al vértice opuesto (no desde el centroide; evita solaparse con la rejilla). */
-  const outwardFromEdge = (va, vb, vOpp, dist) => {
-    const mx = (va.x + vb.x) / 2;
-    const my = (va.y + vb.y) / 2;
-    const ix = vOpp.x - mx;
-    const iy = vOpp.y - my;
-    const len = Math.sqrt(ix * ix + iy * iy) || 1;
-    return { x: mx - (ix / len) * dist, y: my - (iy / len) * dist };
-  };
-  const labelDist = 52;
-  const lC = outwardFromEdge(vTop, vLeft, vRight, labelDist);
-  const rC = outwardFromEdge(vTop, vRight, vLeft, labelDist);
-  const bC = outwardFromEdge(vLeft, vRight, vTop, labelDist + 10);
+  // Etiquetas simples y estables: mitad de cada lado + separacion fija.
+  const leftMid = lerp(vTop, vLeft, 0.5);
+  const rightMid = lerp(vTop, vRight, 0.5);
+  const bottomMid = lerp(vLeft, vRight, 0.5);
+  const lC = { x: leftMid.x - 28, y: leftMid.y };
+  const rC = { x: rightMid.x + 28, y: rightMid.y };
+  const bC = { x: bottomMid.x, y: bottomMid.y + 26 };
   const edgeLabels =
-    `<text class="notranslate" translate="no" x="${lC.x - 10}" y="${lC.y}" text-anchor="end" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Mg²⁺ / SO₄²⁻</text>` +
-    `<text class="notranslate" translate="no" x="${rC.x + 10}" y="${rC.y}" text-anchor="start" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>` +
+    `<text class="notranslate" translate="no" x="${lC.x}" y="${lC.y}" text-anchor="end" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Mg²⁺ / SO₄²⁻</text>` +
+    `<text class="notranslate" translate="no" x="${rC.x}" y="${rC.y}" text-anchor="start" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>` +
     `<text class="notranslate" translate="no" x="${bC.x}" y="${bC.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">K⁺ / NO₃⁻</text>`;
 
   /* SVG + texto: envolver en notranslate (Chrome Translate suele borrar o romper <text> en SVG) */
