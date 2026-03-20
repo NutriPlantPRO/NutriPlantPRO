@@ -13086,19 +13086,34 @@ function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
   ticks += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
   ticks += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
 
-  const edgeLabelPoint = (va, vb, vOpp, dist) => {
-    const mx = (va.x + vb.x) / 2;
-    const my = (va.y + vb.y) / 2;
-    const ix = vOpp.x - mx;
-    const iy = vOpp.y - my;
-    const len = Math.sqrt(ix * ix + iy * iy) || 1;
-    return { x: mx - (ix / len) * dist, y: my - (iy / len) * dist };
+  const triCentroid = { x: (vTop.x + vLeft.x + vRight.x) / 3, y: (vTop.y + vLeft.y + vRight.y) / 3 };
+  const edgeLabelCenter = (a, b, dist) => {
+    const mx = (a.x + b.x) / 2;
+    const my = (a.y + b.y) / 2;
+    // Unit normal to edge, flipped so it always points away from triangle centroid
+    let nx = -(b.y - a.y);
+    let ny = b.x - a.x;
+    const towardCenterX = triCentroid.x - mx;
+    const towardCenterY = triCentroid.y - my;
+    if ((nx * towardCenterX + ny * towardCenterY) > 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+    const nLen = Math.sqrt(nx * nx + ny * ny) || 1;
+    return { x: mx + (nx / nLen) * dist, y: my + (ny / nLen) * dist };
   };
-  const sideEdgeLabelDist = 62;
-  const bottomEdgeLabelDist = 72;
-  const leftEdgeLabel = edgeLabelPoint(vTop, vLeft, vRight, sideEdgeLabelDist);
-  const rightEdgeLabel = edgeLabelPoint(vTop, vRight, vLeft, sideEdgeLabelDist);
-  const bottomEdgeLabel = edgeLabelPoint(vLeft, vRight, vTop, bottomEdgeLabelDist);
+  const leftEdgeLabel = edgeLabelCenter(vTop, vLeft, 56);
+  const rightEdgeLabel = edgeLabelCenter(vTop, vRight, 56);
+  const bottomEdgeLabel = edgeLabelCenter(vLeft, vRight, 66);
+  const labelWidth = 170;
+  const labelHeight = 28;
+  const foNs = 'http://www.w3.org/1999/xhtml';
+  const edgeLabelHtml = (c, text) =>
+    `<foreignObject x="${c.x - labelWidth / 2}" y="${c.y - labelHeight / 2}" width="${labelWidth}" height="${labelHeight}">` +
+    `<div xmlns="${foNs}" class="notranslate" translate="no" style="height:${labelHeight}px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#334155;line-height:1;text-align:center;pointer-events:none;">${text}</div></foreignObject>`;
+  const edgeLabels = edgeLabelHtml(leftEdgeLabel, 'Mg²⁺ / SO₄²⁻') +
+    edgeLabelHtml(rightEdgeLabel, 'Ca²⁺ / H₂PO₄⁻') +
+    edgeLabelHtml(bottomEdgeLabel, 'K⁺ / NO₃⁻');
 
   return `<div class="notranslate" translate="no"><svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" class="notranslate" translate="no" style="background:#fff;border-radius:8px;">
       ${grid}
@@ -13109,9 +13124,7 @@ function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
       <circle cx="${catPoint.x}" cy="${catPoint.y}" r="6" fill="${catInside ? '#ef4444' : '#b91c1c'}" stroke="#7f1d1d" stroke-width="1.2" />
       <circle cx="${anPoint.x}" cy="${anPoint.y}" r="6" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />
       ${ticks}
-      <text x="${leftEdgeLabel.x}" y="${leftEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="bold" fill="#334155">Mg²⁺ / SO₄²⁻</text>
-      <text x="${rightEdgeLabel.x}" y="${rightEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="bold" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>
-      <text x="${bottomEdgeLabel.x}" y="${bottomEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="bold" fill="#334155">K⁺ / NO₃⁻</text>
+      ${edgeLabels}
     </svg></div>`;
 }
 
