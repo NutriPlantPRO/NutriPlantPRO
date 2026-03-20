@@ -50,6 +50,18 @@
     return false;
   }
 
+  // Evita manipular nodos dentro de SVG: insertar <span> en <text> rompe etiquetas como K⁺ / NO₃⁻.
+  function ancestorIsSvg(el) {
+    var p = el;
+    while (p) {
+      if (p.nodeType === 1) {
+        if (p.namespaceURI === 'http://www.w3.org/2000/svg') return true;
+      }
+      p = p.parentNode;
+    }
+    return false;
+  }
+
   /** Pasada A: términos largos (substring) */
   function wrapLongTermsInTextNode(textNode) {
     var text = textNode.textContent;
@@ -58,7 +70,7 @@
     if (!parent) return false;
     var tag = parent.nodeName && parent.nodeName.toUpperCase();
     if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA') return false;
-    if (ancestorHasNoTranslate(parent)) return false;
+    if (ancestorHasNoTranslate(parent) || ancestorIsSvg(parent)) return false;
 
     var html = text;
     var changed = false;
@@ -87,7 +99,7 @@
     if (!parent) return false;
     var tag = parent.nodeName && parent.nodeName.toUpperCase();
     if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA') return false;
-    if (ancestorHasNoTranslate(parent)) return false;
+    if (ancestorHasNoTranslate(parent) || ancestorIsSvg(parent)) return false;
 
     var html = text.replace(regexSimbolos, function (m) {
       return '<span class="notranslate" translate="no">' + escapeHtml(m) + '</span>';
