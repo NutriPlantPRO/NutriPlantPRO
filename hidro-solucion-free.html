@@ -437,21 +437,18 @@
       tickLabels += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
       tickLabels += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
 
-      var cTri = { x: (vTop.x + vLeft.x + vRight.x) / 3, y: (vTop.y + vLeft.y + vRight.y) / 3 };
-      function outwardFromCentroid(mid, extra) {
-        var vx = mid.x - cTri.x, vy = mid.y - cTri.y;
-        var len = Math.sqrt(vx * vx + vy * vy) || 1;
-        return { x: mid.x + (vx / len) * extra, y: mid.y + (vy / len) * extra };
+      function outwardFromEdge(va, vb, vOpp, dist) {
+        var mx = (va.x + vb.x) / 2, my = (va.y + vb.y) / 2;
+        var ix = vOpp.x - mx, iy = vOpp.y - my;
+        var len = Math.sqrt(ix * ix + iy * iy) || 1;
+        return { x: mx - (ix / len) * dist, y: my - (iy / len) * dist };
       }
       var foNs = 'http://www.w3.org/1999/xhtml';
       var foStyle = 'font-size:12px;font-weight:bold;color:#334155;line-height:1.25;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;';
-      var lw = 200, lh = 44, dOut = 28;
-      var lMid = lerp(vTop, vLeft, 0.5);
-      var rMid = lerp(vTop, vRight, 0.5);
-      var bMid = lerp(vLeft, vRight, 0.5);
-      var lC = outwardFromCentroid(lMid, dOut);
-      var rC = outwardFromCentroid(rMid, dOut);
-      var bC = outwardFromCentroid(bMid, dOut);
+      var lw = 200, lh = 48, labelDist = 52;
+      var lC = outwardFromEdge(vTop, vLeft, vRight, labelDist);
+      var rC = outwardFromEdge(vTop, vRight, vLeft, labelDist);
+      var bC = outwardFromEdge(vLeft, vRight, vTop, labelDist + 10);
       var divCell = foStyle + 'text-align:center;display:flex;align-items:center;justify-content:center;height:100%;width:100%;pointer-events:none;box-sizing:border-box;';
       function foEdge(cx, cy, inner) {
         return '<foreignObject x="' + (cx - lw / 2) + '" y="' + (cy - lh / 2) + '" width="' + lw + '" height="' + lh + '">' +

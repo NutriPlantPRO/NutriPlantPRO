@@ -693,24 +693,23 @@ function hydroDrawCombinedTernary(container, data) {
   tickLabels += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
   tickLabels += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
 
-  /* Solo títulos (HTML): el triángulo, rejilla, zonas y puntos siguen igual que arriba. Texto horizontal + desplazado fuera del centroide (simétrico). */
-  const cTri = { x: (vTop.x + vLeft.x + vRight.x) / 3, y: (vTop.y + vLeft.y + vRight.y) / 3 };
-  const outwardFromCentroid = (mid, extra) => {
-    const vx = mid.x - cTri.x, vy = mid.y - cTri.y;
-    const len = Math.sqrt(vx * vx + vy * vy) || 1;
-    return { x: mid.x + (vx / len) * extra, y: mid.y + (vy / len) * extra };
+  /* Etiquetas de arista: fuera del triángulo, en la dirección opuesta al vértice opuesto (no desde el centroide; evita solaparse con la rejilla). */
+  const outwardFromEdge = (va, vb, vOpp, dist) => {
+    const mx = (va.x + vb.x) / 2;
+    const my = (va.y + vb.y) / 2;
+    const ix = vOpp.x - mx;
+    const iy = vOpp.y - my;
+    const len = Math.sqrt(ix * ix + iy * iy) || 1;
+    return { x: mx - (ix / len) * dist, y: my - (iy / len) * dist };
   };
   const foNs = 'http://www.w3.org/1999/xhtml';
   const foStyle = 'font-size:12px;font-weight:bold;color:#334155;line-height:1.25;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;';
   const lw = 200;
-  const lh = 44;
-  const dOut = 28;
-  const lMid = lerp(vTop, vLeft, 0.5);
-  const rMid = lerp(vTop, vRight, 0.5);
-  const bMid = lerp(vLeft, vRight, 0.5);
-  const lC = outwardFromCentroid(lMid, dOut);
-  const rC = outwardFromCentroid(rMid, dOut);
-  const bC = outwardFromCentroid(bMid, dOut);
+  const lh = 48;
+  const labelDist = 52;
+  const lC = outwardFromEdge(vTop, vLeft, vRight, labelDist);
+  const rC = outwardFromEdge(vTop, vRight, vLeft, labelDist);
+  const bC = outwardFromEdge(vLeft, vRight, vTop, labelDist + 10);
   const divCell = `${foStyle}text-align:center;display:flex;align-items:center;justify-content:center;height:100%;width:100%;pointer-events:none;box-sizing:border-box;`;
   const fo = (cx, cy, html) =>
     `<foreignObject x="${cx - lw / 2}" y="${cy - lh / 2}" width="${lw}" height="${lh}">` +
