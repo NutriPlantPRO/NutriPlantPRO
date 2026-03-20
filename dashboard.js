@@ -13086,18 +13086,36 @@ function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
   ticks += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
   ticks += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
 
-  // Etiquetas centradas en la mitad de cada lado, con separacion corta y simetrica.
-  const leftMid = lerp(vTop, vLeft, 0.5);
-  const rightMid = lerp(vTop, vRight, 0.5);
-  const bottomMid = lerp(vLeft, vRight, 0.5);
-  // Base geométrica: punto medio de cada lado. Ajuste fino óptico por ancho de texto.
-  const leftEdgeLabel = { x: leftMid.x - 6, y: leftMid.y - 1 };
-  const rightEdgeLabel = { x: rightMid.x + 30, y: rightMid.y - 1 };
-  const bottomEdgeLabel = { x: bottomMid.x + 2, y: bottomMid.y + 24 };
-  const edgeLabels =
-    `<text class="notranslate" translate="no" x="${leftEdgeLabel.x}" y="${leftEdgeLabel.y}" text-anchor="end" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Mg²⁺ / SO₄²⁻</text>` +
-    `<text class="notranslate" translate="no" x="${rightEdgeLabel.x}" y="${rightEdgeLabel.y}" text-anchor="start" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>` +
-    `<text class="notranslate" translate="no" x="${bottomEdgeLabel.x}" y="${bottomEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">K⁺ / NO₃⁻</text>`;
+  // Etiquetas: mitad de cada lado + desplazamiento perpendicular uniforme hacia afuera.
+  // Se renderizan en cajas de ancho fijo para evitar desbalance visual por longitudes distintas.
+  const triangleCentroid = { x: (vTop.x + vLeft.x + vRight.x) / 3, y: (vTop.y + vLeft.y + vRight.y) / 3 };
+  const edgeLabelCenter = (a, b, distance) => {
+    const mx = (a.x + b.x) / 2;
+    const my = (a.y + b.y) / 2;
+    let nx = -(b.y - a.y);
+    let ny = b.x - a.x;
+    const cx = triangleCentroid.x - mx;
+    const cy = triangleCentroid.y - my;
+    if ((nx * cx + ny * cy) > 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+    const nLen = Math.sqrt(nx * nx + ny * ny) || 1;
+    return { x: mx + (nx / nLen) * distance, y: my + (ny / nLen) * distance };
+  };
+  const labelOffset = 24;
+  const leftEdgeLabel = edgeLabelCenter(vTop, vLeft, labelOffset);
+  const rightEdgeLabel = edgeLabelCenter(vTop, vRight, labelOffset);
+  const bottomEdgeLabel = edgeLabelCenter(vLeft, vRight, labelOffset + 2);
+  const labelWidth = 140;
+  const labelHeight = 22;
+  const foNs = 'http://www.w3.org/1999/xhtml';
+  const edgeLabelBox = (c, text) =>
+    `<foreignObject x="${c.x - labelWidth / 2}" y="${c.y - labelHeight / 2}" width="${labelWidth}" height="${labelHeight}">` +
+    `<div xmlns="${foNs}" class="notranslate" translate="no" style="width:${labelWidth}px;height:${labelHeight}px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#334155;line-height:1;text-align:center;pointer-events:none;">${text}</div></foreignObject>`;
+  const edgeLabels = edgeLabelBox(leftEdgeLabel, 'Mg²⁺ / SO₄²⁻') +
+    edgeLabelBox(rightEdgeLabel, 'Ca²⁺ / H₂PO₄⁻') +
+    edgeLabelBox(bottomEdgeLabel, 'K⁺ / NO₃⁻');
 
   return `<div class="notranslate" translate="no"><svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" class="notranslate" translate="no" style="background:#fff;border-radius:8px;">
       ${grid}
