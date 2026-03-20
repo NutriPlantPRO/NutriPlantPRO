@@ -653,8 +653,12 @@
         })();
 
         // 🟢 Datos del admin desde la nube (Supabase). Si hay sesión de admin en Supabase, cargamos usuarios y proyectos.
-        window._adminCloudCache = { users: null, projects: null, chats: null, reports: null, dashboardVisits: null, _cloudLoaded: false, _cloudLastSuccess: false };
+        function resetAdminCloudCache() {
+            window._adminCloudCache = { users: null, projects: null, chats: null, reports: null, dashboardVisits: null, _cloudLoaded: false, _cloudLastSuccess: false };
+        }
+        resetAdminCloudCache();
         window.nutriplantAdminLoadFromCloud = async function() {
+            if (!window._adminCloudCache) resetAdminCloudCache();
             const client = typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null;
             if (!client) {
                 window._adminCloudCache._cloudLoaded = true;
@@ -6312,8 +6316,8 @@
                 console.log(`📧 Email actualizado: ${existingUser.email} → ${updatedUser.email}`);
             }
             
-            // Invalidar caché del admin para que la UI no muestre datos antiguos (especialmente admin)
-            try { if (window._adminCloudCache) window._adminCloudCache = null; } catch (e) {}
+            // Invalidar caché del admin (objeto vacío, nunca null: nutriplantAdminLoadFromCloud asigna propiedades al objeto)
+            try { resetAdminCloudCache(); } catch (e) {}
 
             if (window._adminPasswordUpdateFailed) {
                 alert('⚠️ Contraseña en el panel y en profiles se guardó, pero NO se pudo actualizar en Supabase Auth.\n\nEl usuario NO podrá entrar con la nueva contraseña hasta que lo arregles.\n\nRevisa:\n1) Que el servidor esté corriendo: python server.py\n2) Que exista supabase-server-config.json con SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY\n3) La consola del navegador (F12) para más detalle.');
