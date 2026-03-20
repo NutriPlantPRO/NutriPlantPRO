@@ -13090,13 +13090,12 @@ function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
   const leftMid = lerp(vTop, vLeft, 0.5);
   const rightMid = lerp(vTop, vRight, 0.5);
   const bottomMid = lerp(vLeft, vRight, 0.5);
-  const labelNudgeX = 10;
-  const leftEdgeLabel = { x: leftMid.x - 24 + labelNudgeX, y: leftMid.y };
-  const rightEdgeLabel = { x: rightMid.x + 24 + labelNudgeX, y: rightMid.y };
-  const bottomEdgeLabel = { x: bottomMid.x + labelNudgeX, y: bottomMid.y + 24 };
+  const leftEdgeLabel = { x: leftMid.x - 22, y: leftMid.y };
+  const rightEdgeLabel = { x: rightMid.x + 22, y: rightMid.y };
+  const bottomEdgeLabel = { x: bottomMid.x, y: bottomMid.y + 24 };
   const edgeLabels =
-    `<text class="notranslate" translate="no" x="${leftEdgeLabel.x}" y="${leftEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Mg²⁺ / SO₄²⁻</text>` +
-    `<text class="notranslate" translate="no" x="${rightEdgeLabel.x}" y="${rightEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>` +
+    `<text class="notranslate" translate="no" x="${leftEdgeLabel.x}" y="${leftEdgeLabel.y}" text-anchor="end" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Mg²⁺ / SO₄²⁻</text>` +
+    `<text class="notranslate" translate="no" x="${rightEdgeLabel.x}" y="${rightEdgeLabel.y}" text-anchor="start" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>` +
     `<text class="notranslate" translate="no" x="${bottomEdgeLabel.x}" y="${bottomEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">K⁺ / NO₃⁻</text>`;
 
   return `<div class="notranslate" translate="no"><svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" class="notranslate" translate="no" style="background:#fff;border-radius:8px;">

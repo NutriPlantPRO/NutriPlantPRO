@@ -702,23 +702,14 @@ function hydroDrawCombinedTernary(container, data) {
     const len = Math.sqrt(ix * ix + iy * iy) || 1;
     return { x: mx - (ix / len) * dist, y: my - (iy / len) * dist };
   };
-  const foNs = 'http://www.w3.org/1999/xhtml';
-  const foStyle = 'font-size:12px;font-weight:bold;color:#334155;line-height:1.25;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;';
-  const lw = 200;
-  const lh = 48;
   const labelDist = 52;
-  const labelNudgeX = 10;
-  const lCraw = outwardFromEdge(vTop, vLeft, vRight, labelDist);
-  const rCraw = outwardFromEdge(vTop, vRight, vLeft, labelDist);
-  const bCraw = outwardFromEdge(vLeft, vRight, vTop, labelDist + 10);
-  const lC = { x: lCraw.x + labelNudgeX, y: lCraw.y };
-  const rC = { x: rCraw.x + labelNudgeX, y: rCraw.y };
-  const bC = { x: bCraw.x + labelNudgeX, y: bCraw.y };
-  const divCell = `${foStyle}text-align:center;display:flex;align-items:center;justify-content:center;height:100%;width:100%;pointer-events:none;box-sizing:border-box;`;
-  const fo = (cx, cy, html) =>
-    `<foreignObject x="${cx - lw / 2}" y="${cy - lh / 2}" width="${lw}" height="${lh}">` +
-    `<div xmlns="${foNs}" class="notranslate" translate="no" style="${divCell}">${html}</div></foreignObject>`;
-  const edgeLabels = fo(lC.x, lC.y, 'Mg²⁺ / SO₄²⁻') + fo(rC.x, rC.y, 'Ca²⁺ / H₂PO₄⁻') + fo(bC.x, bC.y, 'K⁺ / NO₃⁻');
+  const lC = outwardFromEdge(vTop, vLeft, vRight, labelDist);
+  const rC = outwardFromEdge(vTop, vRight, vLeft, labelDist);
+  const bC = outwardFromEdge(vLeft, vRight, vTop, labelDist + 10);
+  const edgeLabels =
+    `<text class="notranslate" translate="no" x="${lC.x - 10}" y="${lC.y}" text-anchor="end" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Mg²⁺ / SO₄²⁻</text>` +
+    `<text class="notranslate" translate="no" x="${rC.x + 10}" y="${rC.y}" text-anchor="start" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>` +
+    `<text class="notranslate" translate="no" x="${bC.x}" y="${bC.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">K⁺ / NO₃⁻</text>`;
 
   /* SVG + texto: envolver en notranslate (Chrome Translate suele borrar o romper <text> en SVG) */
   container.innerHTML = `
