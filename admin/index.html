@@ -403,6 +403,41 @@
             max-width: 100%;
             box-sizing: border-box;
         }
+
+        /* Visor de datos / detalle proyecto: capa completa sobre el panel y un solo scroll (evita ver el panel detrás en móvil). */
+        #dataViewerModal {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            min-height: 100vh;
+            min-height: 100dvh;
+            height: auto;
+            max-height: none;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 50000;
+            overflow: hidden;
+            box-sizing: border-box;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        #dataViewerModal .data-viewer-modal-panel {
+            width: 91%;
+            max-width: 1200px;
+            margin: 16px auto;
+            margin-bottom: max(16px, calc(16px + env(safe-area-inset-bottom, 0px)));
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-sizing: border-box;
+            max-height: calc(100vh - 32px);
+            max-height: calc(100dvh - 32px);
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+            isolation: isolate;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../config-no-traducir-terminos.js"></script>
@@ -4562,6 +4597,15 @@
             });
         }
         
+        function lockBodyScrollForDataViewer() {
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        }
+        function unlockBodyScrollForDataViewer() {
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        }
+
         async function showSubscriptionsOverview() {
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') { try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showSubscriptionsOverview: load from cloud', e); } }
             const users = getAllUsers();
@@ -4620,17 +4664,7 @@
             if (modal && content) {
                 content.innerHTML = html;
                 modal.style.display = 'flex';
-                if (fertiChartIds && typeof renderAdminFertirriegoCharts === 'function') {
-                    const tryRender = () => {
-                        const macroEl = document.getElementById(fertiChartIds.macroWrapId) || document.getElementById(fertiChartIds.macroId) || content.querySelector('[id^="adminFertiMacroChartWrap_"]');
-                        const microEl = document.getElementById(fertiChartIds.microWrapId) || document.getElementById(fertiChartIds.microId) || content.querySelector('[id^="adminFertiMicroChartWrap_"]');
-                        renderAdminFertirriegoCharts(fertirriegoProgram, fertiChartIds, project, { macroEl, microEl });
-                    };
-                    tryRender();
-                    requestAnimationFrame(tryRender);
-                    setTimeout(tryRender, 50);
-                    setTimeout(tryRender, 200);
-                }
+                lockBodyScrollForDataViewer();
             }
         }
         
@@ -4721,8 +4755,8 @@
     </script>
     
     <!-- Modal para visualizar/editar datos -->
-    <div id="dataViewerModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; overflow-y: auto;">
-        <div class="modal-content" style="background: white; margin: 20px auto; max-width: 95%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+    <div id="dataViewerModal" class="modal-overlay" style="display: none;">
+        <div class="data-viewer-modal-panel">
             <div id="dataViewerContent"></div>
         </div>
     </div>
@@ -4977,6 +5011,7 @@
             
             content.innerHTML = html;
             modal.style.display = 'flex';
+            lockBodyScrollForDataViewer();
         }
         window.showDataViewerWithFilters = showDataViewerWithFilters;
         
@@ -5019,6 +5054,7 @@
             if (modal) {
                 modal.style.display = 'none';
             }
+            unlockBodyScrollForDataViewer();
             // Limpiar historial al cerrar completamente
             navigationHistory.previousView = null;
             navigationHistory.previousViewParams = null;
@@ -5060,7 +5096,7 @@
             
             // Envolver el contenido con un botón de cerrar
             const wrappedHtml = `
-                <div style="padding: 24px; max-height: 85vh; overflow-y: auto;">
+                <div style="padding: 24px; padding-bottom: max(24px, calc(24px + env(safe-area-inset-bottom, 0px)));">
                     ${htmlContent}
                     <div style="display: flex; justify-content: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
                         <button onclick="closeDataViewer()" style="padding: 12px 32px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">
@@ -5072,6 +5108,7 @@
             
             content.innerHTML = wrappedHtml;
             modal.style.display = 'flex';
+            lockBodyScrollForDataViewer();
             
             console.log('✅ Datos mostrados en el visor');
         }
@@ -7526,7 +7563,7 @@
             
             // Construir HTML con todas las secciones
             let html = `
-                <div style="padding: 24px; max-height: 90vh; overflow-y: auto;">
+                <div style="padding: 24px; padding-bottom: max(24px, calc(24px + env(safe-area-inset-bottom, 0px)));">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             ${navigationHistory.previousView ? `
@@ -9307,6 +9344,7 @@
             if (modal && content) {
                 content.innerHTML = html;
                 modal.style.display = 'flex';
+                lockBodyScrollForDataViewer();
                 if (fertiChartIds && typeof renderAdminFertirriegoCharts === 'function') {
                     const tryRender = () => {
                         const macroEl = document.getElementById(fertiChartIds.macroWrapId) || document.getElementById(fertiChartIds.macroId) || content.querySelector('[id^="adminFertiMacroChartWrap_"]');
@@ -9662,7 +9700,7 @@
             }
             // Construir HTML con toda la información
             let html = `
-                <div style="padding: 24px; max-height: 90vh; overflow-y: auto;">
+                <div style="padding: 24px; padding-bottom: max(24px, calc(24px + env(safe-area-inset-bottom, 0px)));">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             ${navigationHistory.previousView ? `
@@ -9844,6 +9882,7 @@
                 window._adminUserNotesCache[userId] = user.user_notes || '';
                 content.innerHTML = html;
                 modal.style.display = 'flex';
+                lockBodyScrollForDataViewer();
             }
         }
         window.viewUserDetails = viewUserDetails;
