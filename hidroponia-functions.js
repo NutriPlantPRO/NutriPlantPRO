@@ -693,22 +693,29 @@ function hydroDrawCombinedTernary(container, data) {
   tickLabels += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
   tickLabels += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
 
-  /* Etiquetas de bordes: foreignObject + HTML (los <text> SVG con superíndices Unicode suelen verse rotos en Chrome/Mac sin esto) */
+  /* Solo títulos (HTML): el triángulo, rejilla, zonas y puntos siguen igual que arriba. Texto horizontal + desplazado fuera del centroide (simétrico). */
+  const cTri = { x: (vTop.x + vLeft.x + vRight.x) / 3, y: (vTop.y + vLeft.y + vRight.y) / 3 };
+  const outwardFromCentroid = (mid, extra) => {
+    const vx = mid.x - cTri.x, vy = mid.y - cTri.y;
+    const len = Math.sqrt(vx * vx + vy * vy) || 1;
+    return { x: mid.x + (vx / len) * extra, y: mid.y + (vy / len) * extra };
+  };
+  const foNs = 'http://www.w3.org/1999/xhtml';
+  const foStyle = 'font-size:12px;font-weight:bold;color:#334155;line-height:1.25;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;';
+  const lw = 200;
+  const lh = 44;
+  const dOut = 28;
   const lMid = lerp(vTop, vLeft, 0.5);
   const rMid = lerp(vTop, vRight, 0.5);
   const bMid = lerp(vLeft, vRight, 0.5);
-  const foNs = 'http://www.w3.org/1999/xhtml';
-  const foStyle = 'font-size:12px;font-weight:bold;color:#334155;line-height:1.25;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;';
-  const lw = 190;
-  const lh = 44;
-  const bottomY = Math.min(height - lh - 6, bMid.y + 22);
-  const edgeLabels =
-    `<foreignObject x="${lMid.x - lw - 10}" y="${lMid.y - lh / 2}" width="${lw}" height="${lh}">` +
-    `<div xmlns="${foNs}" class="notranslate" translate="no" style="${foStyle}text-align:right;display:flex;align-items:center;justify-content:flex-end;height:100%;pointer-events:none;">Mg²⁺ / SO₄²⁻</div></foreignObject>` +
-    `<foreignObject x="${rMid.x + 10}" y="${rMid.y - lh / 2}" width="${lw}" height="${lh}">` +
-    `<div xmlns="${foNs}" class="notranslate" translate="no" style="${foStyle}text-align:left;display:flex;align-items:center;height:100%;pointer-events:none;">Ca²⁺ / H₂PO₄⁻</div></foreignObject>` +
-    `<foreignObject x="${bMid.x - 110}" y="${bottomY}" width="220" height="${lh}">` +
-    `<div xmlns="${foNs}" class="notranslate" translate="no" style="${foStyle}text-align:center;display:flex;align-items:center;justify-content:center;height:100%;pointer-events:none;">K⁺ / NO₃⁻</div></foreignObject>`;
+  const lC = outwardFromCentroid(lMid, dOut);
+  const rC = outwardFromCentroid(rMid, dOut);
+  const bC = outwardFromCentroid(bMid, dOut);
+  const divCell = `${foStyle}text-align:center;display:flex;align-items:center;justify-content:center;height:100%;width:100%;pointer-events:none;box-sizing:border-box;`;
+  const fo = (cx, cy, html) =>
+    `<foreignObject x="${cx - lw / 2}" y="${cy - lh / 2}" width="${lw}" height="${lh}">` +
+    `<div xmlns="${foNs}" class="notranslate" translate="no" style="${divCell}">${html}</div></foreignObject>`;
+  const edgeLabels = fo(lC.x, lC.y, 'Mg²⁺ / SO₄²⁻') + fo(rC.x, rC.y, 'Ca²⁺ / H₂PO₄⁻') + fo(bC.x, bC.y, 'K⁺ / NO₃⁻');
 
   /* SVG + texto: envolver en notranslate (Chrome Translate suele borrar o romper <text> en SVG) */
   container.innerHTML = `

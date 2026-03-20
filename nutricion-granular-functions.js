@@ -428,20 +428,20 @@ function renderApplications() {
             <tr>
               <th>Material</th>
               <th>% por TM</th>
-              <th>N</th>
-              <th>${getProgramNutrientLabel('P2O5')}</th>
-              <th>${getProgramNutrientLabel('K2O')}</th>
-              <th>${getProgramNutrientLabel('CaO')}</th>
-              <th>${getProgramNutrientLabel('MgO')}</th>
-              <th>S</th>
-              <th>${getProgramNutrientLabel('SO4')}</th>
-              <th>Fe</th>
-              <th>Mn</th>
-              <th>B</th>
-              <th>Zn</th>
-              <th>Cu</th>
-              <th>Mo</th>
-              <th>${getProgramNutrientLabel('SiO2')}</th>
+              <th class="notranslate" translate="no">N</th>
+              <th class="notranslate" translate="no">${getProgramNutrientLabel('P2O5')}</th>
+              <th class="notranslate" translate="no">${getProgramNutrientLabel('K2O')}</th>
+              <th class="notranslate" translate="no">${getProgramNutrientLabel('CaO')}</th>
+              <th class="notranslate" translate="no">${getProgramNutrientLabel('MgO')}</th>
+              <th class="notranslate" translate="no">S</th>
+              <th class="notranslate" translate="no">${getProgramNutrientLabel('SO4')}</th>
+              <th class="notranslate" translate="no">Fe</th>
+              <th class="notranslate" translate="no">Mn</th>
+              <th class="notranslate" translate="no">B</th>
+              <th class="notranslate" translate="no">Zn</th>
+              <th class="notranslate" translate="no">Cu</th>
+              <th class="notranslate" translate="no">Mo</th>
+              <th class="notranslate" translate="no">${getProgramNutrientLabel('SiO2')}</th>
               <th>Acción</th>
             </tr>
           </thead>
@@ -1352,12 +1352,12 @@ function updateSummary(options = {}) {
         if (reqEl) reqEl.textContent = formatNumberWithCommas(reqDisplay);
         if (diffEl) diffEl.textContent = formatNumberWithCommas((parseFloat(displayValue) || 0) - (parseFloat(reqDisplay) || 0));
         
-        // Actualizar la etiqueta si existe
+        // Actualizar la etiqueta si existe (innerHTML + notranslate: evita Fe→Faith, Ca→AC, Si→Yes con Google Translate)
         if (labelElement && labelText) {
-          labelElement.textContent = labelText;
+          labelElement.innerHTML = '<span class="notranslate" translate="no">' + labelText + '</span>';
         }
-        if (reqLabelEl && labelText) reqLabelEl.textContent = labelText;
-        if (diffLabelEl && labelText) diffLabelEl.textContent = labelText;
+        if (reqLabelEl && labelText) reqLabelEl.innerHTML = '<span class="notranslate" translate="no">' + labelText + '</span>';
+        if (diffLabelEl && labelText) diffLabelEl.innerHTML = '<span class="notranslate" translate="no">' + labelText + '</span>';
         
         console.log(`✅ Actualizado ${nutrient}: ${formatNumberWithCommas(displayValue)} (modo: ${isElementalMode ? 'elemental' : 'óxido'})`);
       } else {

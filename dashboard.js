@@ -571,101 +571,101 @@ function sectionTemplate(name) {
                 <div class="summary-nutrients">
                   <h4>💡 Aporte del programa de nutrición (Kg/Ha):</h4>
                   <div class="nutrients-grid">
-                    <div class="nutrient-item"><span class="nutrient-label">N(NO₃):</span><span class="nutrient-value" id="fertiProgTotalN_NO3">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">N(NH₄):</span><span class="nutrient-value" id="fertiProgTotalN_NH4">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiProgLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiProgTotalP2O5">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiProgLabelK2O">K₂O:</span><span class="nutrient-value" id="fertiProgTotalK2O">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiProgLabelCaO">CaO:</span><span class="nutrient-value" id="fertiProgTotalCaO">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiProgLabelMgO">MgO:</span><span class="nutrient-value" id="fertiProgTotalMgO">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">S:</span><span class="nutrient-value" id="fertiProgTotalS">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">SO₄:</span><span class="nutrient-value" id="fertiProgTotalSO4">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Fe:</span><span class="nutrient-value" id="fertiProgTotalFe">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Mn:</span><span class="nutrient-value" id="fertiProgTotalMn">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">B:</span><span class="nutrient-value" id="fertiProgTotalB">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Zn:</span><span class="nutrient-value" id="fertiProgTotalZn">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Cu:</span><span class="nutrient-value" id="fertiProgTotalCu">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Mo:</span><span class="nutrient-value" id="fertiProgTotalMo">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiProgLabelSiO2">SiO₂:</span><span class="nutrient-value" id="fertiProgTotalSiO2">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N(NO₃):</span><span class="nutrient-value" id="fertiProgTotalN_NO3">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N(NH₄):</span><span class="nutrient-value" id="fertiProgTotalN_NH4">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiProgLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiProgTotalP2O5">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiProgLabelK2O">K₂O:</span><span class="nutrient-value" id="fertiProgTotalK2O">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiProgLabelCaO">CaO:</span><span class="nutrient-value" id="fertiProgTotalCaO">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiProgLabelMgO">MgO:</span><span class="nutrient-value" id="fertiProgTotalMgO">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="fertiProgTotalS">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="fertiProgTotalSO4">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="fertiProgTotalFe">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="fertiProgTotalMn">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="fertiProgTotalB">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Zn:</span><span class="nutrient-value" id="fertiProgTotalZn">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><span class="nutrient-value" id="fertiProgTotalCu">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><span class="nutrient-value" id="fertiProgTotalMo">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiProgLabelSiO2">SiO₂:</span><span class="nutrient-value" id="fertiProgTotalSiO2">0.0</span></div>
                   </div>
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
                   <h4>💧 Aporte por agua (Kg/Ha):</h4>
                   <div class="nutrients-grid">
-                    <div class="nutrient-item"><span class="nutrient-label">N:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterN" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiWaterLabelP2O5">P₂O₅:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterP2O5" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiWaterLabelK2O">K₂O:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterK2O" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiWaterLabelCaO">CaO:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterCaO" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiWaterLabelMgO">MgO:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterMgO" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label">S:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterS" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label">SO₄:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterSO4" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Fe:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterFe" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Mn:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterMn" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label">B:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterB" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Zn:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterZn" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Cu:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterCu" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Mo:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterMo" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiWaterLabelSiO2">SiO₂:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterSiO2" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterN" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelP2O5">P₂O₅:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterP2O5" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelK2O">K₂O:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterK2O" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelCaO">CaO:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterCaO" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelMgO">MgO:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterMgO" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterS" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterSO4" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterFe" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterMn" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterB" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Zn:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterZn" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterCu" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterMo" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelSiO2">SiO₂:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterSiO2" step="0.01" value="0.0"></div>
                   </div>
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
                   <h4>📦 Aporte total (programa + agua) (Kg/Ha):</h4>
                   <div class="nutrients-grid">
-                    <div class="nutrient-item"><span class="nutrient-label">N:</span><span class="nutrient-value" id="fertiTotalWithWaterN">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiTotalWithWaterLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiTotalWithWaterP2O5">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiTotalWithWaterLabelK2O">K₂O:</span><span class="nutrient-value" id="fertiTotalWithWaterK2O">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiTotalWithWaterLabelCaO">CaO:</span><span class="nutrient-value" id="fertiTotalWithWaterCaO">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiTotalWithWaterLabelMgO">MgO:</span><span class="nutrient-value" id="fertiTotalWithWaterMgO">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">S:</span><span class="nutrient-value" id="fertiTotalWithWaterS">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">SO₄:</span><span class="nutrient-value" id="fertiTotalWithWaterSO4">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Fe:</span><span class="nutrient-value" id="fertiTotalWithWaterFe">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Mn:</span><span class="nutrient-value" id="fertiTotalWithWaterMn">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">B:</span><span class="nutrient-value" id="fertiTotalWithWaterB">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Zn:</span><span class="nutrient-value" id="fertiTotalWithWaterZn">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Cu:</span><span class="nutrient-value" id="fertiTotalWithWaterCu">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Mo:</span><span class="nutrient-value" id="fertiTotalWithWaterMo">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiTotalWithWaterLabelSiO2">SiO₂:</span><span class="nutrient-value" id="fertiTotalWithWaterSiO2">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="fertiTotalWithWaterN">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiTotalWithWaterLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiTotalWithWaterP2O5">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiTotalWithWaterLabelK2O">K₂O:</span><span class="nutrient-value" id="fertiTotalWithWaterK2O">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiTotalWithWaterLabelCaO">CaO:</span><span class="nutrient-value" id="fertiTotalWithWaterCaO">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiTotalWithWaterLabelMgO">MgO:</span><span class="nutrient-value" id="fertiTotalWithWaterMgO">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="fertiTotalWithWaterS">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="fertiTotalWithWaterSO4">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="fertiTotalWithWaterFe">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="fertiTotalWithWaterMn">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="fertiTotalWithWaterB">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Zn:</span><span class="nutrient-value" id="fertiTotalWithWaterZn">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><span class="nutrient-value" id="fertiTotalWithWaterCu">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><span class="nutrient-value" id="fertiTotalWithWaterMo">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiTotalWithWaterLabelSiO2">SiO₂:</span><span class="nutrient-value" id="fertiTotalWithWaterSiO2">0.0</span></div>
                   </div>
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
                   <h4>🎯 Requerimiento Real (Kg/Ha):</h4>
                   <div class="nutrients-grid">
-                    <div class="nutrient-item"><span class="nutrient-label">N:</span><span class="nutrient-value" id="fertiReqN">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiReqLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiReqP2O5">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiReqLabelK2O">K₂O:</span><span class="nutrient-value" id="fertiReqK2O">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiReqLabelCaO">CaO:</span><span class="nutrient-value" id="fertiReqCaO">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiReqLabelMgO">MgO:</span><span class="nutrient-value" id="fertiReqMgO">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">S:</span><span class="nutrient-value" id="fertiReqS">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">SO₄:</span><span class="nutrient-value" id="fertiReqSO4">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Fe:</span><span class="nutrient-value" id="fertiReqFe">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Mn:</span><span class="nutrient-value" id="fertiReqMn">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">B:</span><span class="nutrient-value" id="fertiReqB">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Zn:</span><span class="nutrient-value" id="fertiReqZn">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Cu:</span><span class="nutrient-value" id="fertiReqCu">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Mo:</span><span class="nutrient-value" id="fertiReqMo">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiReqLabelSiO2">SiO₂:</span><span class="nutrient-value" id="fertiReqSiO2">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="fertiReqN">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiReqLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiReqP2O5">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiReqLabelK2O">K₂O:</span><span class="nutrient-value" id="fertiReqK2O">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiReqLabelCaO">CaO:</span><span class="nutrient-value" id="fertiReqCaO">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiReqLabelMgO">MgO:</span><span class="nutrient-value" id="fertiReqMgO">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="fertiReqS">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="fertiReqSO4">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="fertiReqFe">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="fertiReqMn">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="fertiReqB">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Zn:</span><span class="nutrient-value" id="fertiReqZn">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><span class="nutrient-value" id="fertiReqCu">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><span class="nutrient-value" id="fertiReqMo">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiReqLabelSiO2">SiO₂:</span><span class="nutrient-value" id="fertiReqSiO2">0.0</span></div>
                   </div>
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
                   <h4>➖ Diferencia (Aporte total - Requerimiento) (Kg/Ha):</h4>
                   <div class="nutrients-grid">
-                    <div class="nutrient-item"><span class="nutrient-label">N:</span><span class="nutrient-value" id="fertiDiffN">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiDiffLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiDiffP2O5">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiDiffLabelK2O">K₂O:</span><span class="nutrient-value" id="fertiDiffK2O">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiDiffLabelCaO">CaO:</span><span class="nutrient-value" id="fertiDiffCaO">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiDiffLabelMgO">MgO:</span><span class="nutrient-value" id="fertiDiffMgO">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">S:</span><span class="nutrient-value" id="fertiDiffS">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">SO₄:</span><span class="nutrient-value" id="fertiDiffSO4">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Fe:</span><span class="nutrient-value" id="fertiDiffFe">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Mn:</span><span class="nutrient-value" id="fertiDiffMn">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">B:</span><span class="nutrient-value" id="fertiDiffB">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Zn:</span><span class="nutrient-value" id="fertiDiffZn">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Cu:</span><span class="nutrient-value" id="fertiDiffCu">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label">Mo:</span><span class="nutrient-value" id="fertiDiffMo">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label" id="fertiDiffLabelSiO2">SiO₂:</span><span class="nutrient-value" id="fertiDiffSiO2">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="fertiDiffN">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiDiffP2O5">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelK2O">K₂O:</span><span class="nutrient-value" id="fertiDiffK2O">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelCaO">CaO:</span><span class="nutrient-value" id="fertiDiffCaO">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelMgO">MgO:</span><span class="nutrient-value" id="fertiDiffMgO">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="fertiDiffS">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="fertiDiffSO4">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="fertiDiffFe">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="fertiDiffMn">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="fertiDiffB">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Zn:</span><span class="nutrient-value" id="fertiDiffZn">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><span class="nutrient-value" id="fertiDiffCu">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><span class="nutrient-value" id="fertiDiffMo">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelSiO2">SiO₂:</span><span class="nutrient-value" id="fertiDiffSiO2">0.0</span></div>
                   </div>
                 </div>
               </div>
@@ -850,12 +850,12 @@ function sectionTemplate(name) {
         <th>Enmienda</th>
         <th>Fórmula</th>
         <th>Peso Molecular</th>
-        <th>%K</th>
-        <th>%Ca</th>
-        <th>%Mg</th>
-        <th>%SO₄</th>
-        <th>%CO₃</th>
-        <th>%H₂O</th>
+        <th>%<span class="notranslate" translate="no">K</span></th>
+        <th>%<span class="notranslate" translate="no">Ca</span></th>
+        <th>%<span class="notranslate" translate="no">Mg</span></th>
+        <th>%<span class="notranslate" translate="no">SO₄</span></th>
+        <th>%<span class="notranslate" translate="no">CO₃</span></th>
+        <th>%<span class="notranslate" translate="no">H₂O</span></th>
         <th>%<span class="notranslate" translate="no">Si</span></th>
         <th>Acciones</th>
       </tr>
@@ -1150,59 +1150,59 @@ function sectionTemplate(name) {
                 <h4>💡 Aporte Total de Nutrientes (Kg/Ha):</h4>
                      <div class="nutrients-grid">
                        <div class="nutrient-item">
-                         <span class="nutrient-label">N:</span>
+                         <span class="nutrient-label notranslate" translate="no">N:</span>
                          <span class="nutrient-value" id="totalN">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label" id="labelP2O5">P₂O₅:</span>
+                         <span class="nutrient-label notranslate" translate="no" id="labelP2O5">P₂O₅:</span>
                          <span class="nutrient-value" id="totalP2O5">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label" id="labelK2O">K₂O:</span>
+                         <span class="nutrient-label notranslate" translate="no" id="labelK2O">K₂O:</span>
                          <span class="nutrient-value" id="totalK2O">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label" id="labelCaO">CaO:</span>
+                         <span class="nutrient-label notranslate" translate="no" id="labelCaO">CaO:</span>
                          <span class="nutrient-value" id="totalCaO">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label" id="labelMgO">MgO:</span>
+                         <span class="nutrient-label notranslate" translate="no" id="labelMgO">MgO:</span>
                          <span class="nutrient-value" id="totalMgO">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label">S:</span>
+                         <span class="nutrient-label notranslate" translate="no">S:</span>
                          <span class="nutrient-value" id="totalS">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label">SO₄:</span>
+                         <span class="nutrient-label notranslate" translate="no">SO₄:</span>
                          <span class="nutrient-value" id="totalSO4">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label">Fe:</span>
+                         <span class="nutrient-label notranslate" translate="no">Fe:</span>
                          <span class="nutrient-value" id="totalFe">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label">Mn:</span>
+                         <span class="nutrient-label notranslate" translate="no">Mn:</span>
                          <span class="nutrient-value" id="totalMn">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label">B:</span>
+                         <span class="nutrient-label notranslate" translate="no">B:</span>
                          <span class="nutrient-value" id="totalB">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label">Zn:</span>
+                         <span class="nutrient-label notranslate" translate="no">Zn:</span>
                          <span class="nutrient-value" id="totalZn">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label">Cu:</span>
+                         <span class="nutrient-label notranslate" translate="no">Cu:</span>
                          <span class="nutrient-value" id="totalCu">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label">Mo:</span>
+                         <span class="nutrient-label notranslate" translate="no">Mo:</span>
                          <span class="nutrient-value" id="totalMo">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label" id="labelSiO2">SiO₂:</span>
+                         <span class="nutrient-label notranslate" translate="no" id="labelSiO2">SiO₂:</span>
                          <span class="nutrient-value" id="totalSiO2">0.0</span>
                        </div>
                      </div>
@@ -1210,40 +1210,40 @@ function sectionTemplate(name) {
               <div class="summary-nutrients" style="margin-top: 16px;">
                 <h4>🎯 Requerimiento Real (Kg/Ha):</h4>
                 <div class="nutrients-grid">
-                  <div class="nutrient-item"><span class="nutrient-label">N:</span><span class="nutrient-value" id="reqN">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label" id="reqLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="reqP2O5">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label" id="reqLabelK2O">K₂O:</span><span class="nutrient-value" id="reqK2O">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label" id="reqLabelCaO">CaO:</span><span class="nutrient-value" id="reqCaO">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label" id="reqLabelMgO">MgO:</span><span class="nutrient-value" id="reqMgO">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">S:</span><span class="nutrient-value" id="reqS">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">SO₄:</span><span class="nutrient-value" id="reqSO4">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">Fe:</span><span class="nutrient-value" id="reqFe">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">Mn:</span><span class="nutrient-value" id="reqMn">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">B:</span><span class="nutrient-value" id="reqB">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">Zn:</span><span class="nutrient-value" id="reqZn">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">Cu:</span><span class="nutrient-value" id="reqCu">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">Mo:</span><span class="nutrient-value" id="reqMo">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label" id="reqLabelSiO2">SiO₂:</span><span class="nutrient-value" id="reqSiO2">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="reqN">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="reqLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="reqP2O5">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="reqLabelK2O">K₂O:</span><span class="nutrient-value" id="reqK2O">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="reqLabelCaO">CaO:</span><span class="nutrient-value" id="reqCaO">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="reqLabelMgO">MgO:</span><span class="nutrient-value" id="reqMgO">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="reqS">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="reqSO4">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="reqFe">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="reqMn">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="reqB">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Zn:</span><span class="nutrient-value" id="reqZn">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><span class="nutrient-value" id="reqCu">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><span class="nutrient-value" id="reqMo">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="reqLabelSiO2">SiO₂:</span><span class="nutrient-value" id="reqSiO2">0.0</span></div>
                 </div>
               </div>
 
               <div class="summary-nutrients" style="margin-top: 16px;">
                 <h4>➖ Diferencia (Aporte - Requerimiento) (Kg/Ha):</h4>
                 <div class="nutrients-grid">
-                  <div class="nutrient-item"><span class="nutrient-label">N:</span><span class="nutrient-value" id="diffN">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label" id="diffLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="diffP2O5">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label" id="diffLabelK2O">K₂O:</span><span class="nutrient-value" id="diffK2O">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label" id="diffLabelCaO">CaO:</span><span class="nutrient-value" id="diffCaO">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label" id="diffLabelMgO">MgO:</span><span class="nutrient-value" id="diffMgO">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">S:</span><span class="nutrient-value" id="diffS">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">SO₄:</span><span class="nutrient-value" id="diffSO4">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">Fe:</span><span class="nutrient-value" id="diffFe">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">Mn:</span><span class="nutrient-value" id="diffMn">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">B:</span><span class="nutrient-value" id="diffB">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">Zn:</span><span class="nutrient-value" id="diffZn">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">Cu:</span><span class="nutrient-value" id="diffCu">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label">Mo:</span><span class="nutrient-value" id="diffMo">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label" id="diffLabelSiO2">SiO₂:</span><span class="nutrient-value" id="diffSiO2">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="diffN">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="diffP2O5">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelK2O">K₂O:</span><span class="nutrient-value" id="diffK2O">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelCaO">CaO:</span><span class="nutrient-value" id="diffCaO">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelMgO">MgO:</span><span class="nutrient-value" id="diffMgO">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="diffS">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="diffSO4">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="diffFe">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="diffMn">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="diffB">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Zn:</span><span class="nutrient-value" id="diffZn">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><span class="nutrient-value" id="diffCu">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><span class="nutrient-value" id="diffMo">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelSiO2">SiO₂:</span><span class="nutrient-value" id="diffSiO2">0.0</span></div>
                 </div>
               </div>
               </div>
@@ -3165,11 +3165,11 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     html += '<div class="amendment-summary">';
     html += '<h4>🎯 Aportes Totales:</h4>';
     html += '<ul>';
-    if (totalKReal > 0) html += `<li><strong>Potasio (K⁺):</strong> ${formatNumber(totalKReal)} kg/ha</li>`;
-    if (totalCaReal > 0) html += `<li><strong>Calcio (Ca²⁺):</strong> ${formatNumber(totalCaReal)} kg/ha</li>`;
-    if (totalMgReal > 0) html += `<li><strong>Magnesio (Mg²⁺):</strong> ${formatNumber(totalMgReal)} kg/ha</li>`;
-    if (totalSo4Real > 0) html += `<li><strong>Sulfato (SO₄²⁻):</strong> ${formatNumber(totalSo4Real)} kg/ha</li>`;
-    if (totalSiReal > 0) html += `<li><strong>Silicio (<span class="notranslate" translate="no">Si</span>):</strong> ${formatNumber(totalSiReal)} kg/ha</li>`;
+    if (totalKReal > 0) html += `<li class="notranslate" translate="no"><strong>Potasio (K⁺):</strong> ${formatNumber(totalKReal)} kg/ha</li>`;
+    if (totalCaReal > 0) html += `<li class="notranslate" translate="no"><strong>Calcio (Ca²⁺):</strong> ${formatNumber(totalCaReal)} kg/ha</li>`;
+    if (totalMgReal > 0) html += `<li class="notranslate" translate="no"><strong>Magnesio (Mg²⁺):</strong> ${formatNumber(totalMgReal)} kg/ha</li>`;
+    if (totalSo4Real > 0) html += `<li class="notranslate" translate="no"><strong>Sulfato (SO₄²⁻):</strong> ${formatNumber(totalSo4Real)} kg/ha</li>`;
+    if (totalSiReal > 0) html += `<li class="notranslate" translate="no"><strong>Silicio (Si):</strong> ${formatNumber(totalSiReal)} kg/ha</li>`;
     html += '</ul>';
     html += `<div style="font-size: 12px; color: #64748b; margin-top: 6px;">% del volumen de suelo explorado por raíces (${formatNumber(reachPercent, 0)}%).</div>`;
     html += '</div>';
@@ -3177,7 +3177,7 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     html += '<div class="amendment-details">';
     html += '<h4>📋 Detalles por Enmienda:</h4>';
     html += '<table class="results-table">';
-    html += '<thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th>K⁺ (kg/ha)</th><th>Ca²⁺ (kg/ha)</th><th>Mg²⁺ (kg/ha)</th><th>SO₄²⁻ (kg/ha)</th><th><span class="notranslate" translate="no">Si (kg/ha)</span></th></tr></thead>';
+    html += '<thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th class="notranslate" translate="no">K⁺ (kg/ha)</th><th class="notranslate" translate="no">Ca²⁺ (kg/ha)</th><th class="notranslate" translate="no">Mg²⁺ (kg/ha)</th><th class="notranslate" translate="no">SO₄²⁻ (kg/ha)</th><th class="notranslate" translate="no">Si (kg/ha)</th></tr></thead>';
     html += '<tbody>';
     
     adjustedDetails.forEach(amendment => {
@@ -7733,11 +7733,11 @@ function createLegacyReportHTML(data) {
             <thead>
               <tr>
                 <th>Enmienda</th>
-                <th>% K</th>
-                <th>% Ca</th>
-                <th>% Mg</th>
-                <th>% SO₄</th>
-                <th>% H₂O</th>
+                <th>% <span class="notranslate" translate="no">K</span></th>
+                <th>% <span class="notranslate" translate="no">Ca</span></th>
+                <th>% <span class="notranslate" translate="no">Mg</span></th>
+                <th>% <span class="notranslate" translate="no">SO₄</span></th>
+                <th>% <span class="notranslate" translate="no">H₂O</span></th>
                 <th>% <span class="notranslate" translate="no">Si</span></th>
               </tr>
             </thead>
@@ -12123,10 +12123,10 @@ function createAmendmentsSectionHTML() {
                 <tr>
                   <th>Enmienda</th>
                   <th>Cantidad (kg/ha)</th>
-                  <th>Ca (%)</th>
-                  <th>Mg (%)</th>
-                  <th>K (%)</th>
-                  <th><span class="notranslate" translate="no">Si (%)</span></th>
+                  <th class="notranslate" translate="no">Ca (%)</th>
+                  <th class="notranslate" translate="no">Mg (%)</th>
+                  <th class="notranslate" translate="no">K (%)</th>
+                  <th class="notranslate" translate="no">Si (%)</th>
                 </tr>
               </thead>
               <tbody>
@@ -13701,7 +13701,7 @@ function createSolucionNutritivaTabHTML() {
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>Ref. min–max (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
-                    <tbody>
+                    <tbody class="notranslate" translate="no">
                       <tr><td>Ca²⁺</td><td><input type="number" step="0.01" id="sn-ca-meq" class="fertirriego-input" data-sn-macro="Ca" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Ca','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td><input type="number" step="0.1" id="sn-ca-ppm" class="fertirriego-input" data-sn-macro="Ca" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Ca','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td>140 – 220</td><td id="sn-ref-ca" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-ca" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','ca',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','ca');"></td><td id="sn-diff-ca">—</td></tr>
                       <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="sn-mg-meq" class="fertirriego-input" data-sn-macro="Mg" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Mg','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td><input type="number" step="0.1" id="sn-mg-ppm" class="fertirriego-input" data-sn-macro="Mg" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Mg','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td>40 – 70</td><td id="sn-ref-mg" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-mg" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','mg',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','mg');"></td><td id="sn-diff-mg">—</td></tr>
                       <tr><td>Na⁺</td><td><input type="number" step="0.01" id="sn-na-meq" class="fertirriego-input" data-sn-macro="Na" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Na','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td><input type="number" step="0.1" id="sn-na-ppm" class="fertirriego-input" data-sn-macro="Na" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Na','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td>—</td><td id="sn-ref-na" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-na" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','na',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('cations','na');"></td><td id="sn-diff-na">—</td></tr>
@@ -13715,7 +13715,7 @@ function createSolucionNutritivaTabHTML() {
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>Ref. min–max (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
-                    <tbody>
+                    <tbody class="notranslate" translate="no">
                       <tr><td>S-SO₄²⁻</td><td><input type="number" step="0.01" id="sn-so4-meq" class="fertirriego-input" data-sn-macro="SO4" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('SO4','meq',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','so4');"></td><td><input type="number" step="0.1" id="sn-so4-ppm" class="fertirriego-input" data-sn-macro="SO4" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('SO4','ppm',this); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','so4');"></td><td>60 – 110</td><td id="sn-ref-so4" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-so4" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','so4',this.value); window.snUpdateMacroRef && window.snUpdateMacroRef('anions','so4');"></td><td id="sn-diff-so4">—</td></tr>
                       <tr><td>HCO₃⁻</td><td><input type="number" step="0.01" id="sn-hco3-meq" class="fertirriego-input" data-sn-macro="HCO3" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('HCO3','meq',this);"></td><td><input type="number" step="0.1" id="sn-hco3-ppm" class="fertirriego-input" data-sn-macro="HCO3" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('HCO3','ppm',this);"></td><td>—</td><td id="sn-ref-hco3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-hco3" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','hco3',this.value);"></td><td id="sn-diff-hco3">—</td></tr>
                       <tr><td>Cl⁻</td><td><input type="number" step="0.01" id="sn-cl-meq" class="fertirriego-input" data-sn-macro="Cl" data-sn-unit="meq" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Cl','meq',this);"></td><td><input type="number" step="0.1" id="sn-cl-ppm" class="fertirriego-input" data-sn-macro="Cl" data-sn-unit="ppm" oninput="window.snSyncMeqPpm && window.snSyncMeqPpm('Cl','ppm',this);"></td><td>—</td><td id="sn-ref-cl" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="sn-ideal-cl" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','cl',this.value);"></td><td id="sn-diff-cl">—</td></tr>
@@ -13731,7 +13731,7 @@ function createSolucionNutritivaTabHTML() {
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>Análisis (ppm)</th><th>Ref. min–max</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
-                    <tbody>
+                    <tbody class="notranslate" translate="no">
                       <tr><td>Fe</td><td><input type="number" step="0.01" id="sn-micro-fe" class="fertirriego-input" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('micros','fe',this.value); window.snUpdateMicroRef && window.snUpdateMicroRef();"></td><td>1.5 – 3.0</td><td id="sn-ref-fe" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="sn-ideal-fe" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','fe',this.value); window.snUpdateMicroRef && window.snUpdateMicroRef();"></td><td id="sn-diff-fe">—</td></tr>
                       <tr><td>Mn</td><td><input type="number" step="0.01" id="sn-micro-mn" class="fertirriego-input" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('micros','mn',this.value); window.snUpdateMicroRef && window.snUpdateMicroRef();"></td><td>0.3 – 1.0</td><td id="sn-ref-mn" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="sn-ideal-mn" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','mn',this.value); window.snUpdateMicroRef && window.snUpdateMicroRef();"></td><td id="sn-diff-mn">—</td></tr>
                       <tr><td>Zn</td><td><input type="number" step="0.01" id="sn-micro-zn" class="fertirriego-input" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('micros','zn',this.value); window.snUpdateMicroRef && window.snUpdateMicroRef();"></td><td>0.05 – 0.3</td><td id="sn-ref-zn" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="sn-ideal-zn" class="fertirriego-input" style="width:70px;" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('ideal','zn',this.value); window.snUpdateMicroRef && window.snUpdateMicroRef();"></td><td id="sn-diff-zn">—</td></tr>
@@ -14039,7 +14039,7 @@ function createExtractoPastaTabHTML() {
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>Ref. (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
-                    <tbody>
+                    <tbody class="notranslate" translate="no">
                       <tr><td>Ca²⁺</td><td><input type="number" step="0.01" id="ep-ca-meq" class="fertirriego-input" data-ep-macro="Ca" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Ca','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td><input type="number" step="0.1" id="ep-ca-ppm" class="fertirriego-input" data-ep-macro="Ca" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Ca','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td>150 – 220</td><td id="ep-ref-ca" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-ca" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','ca',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','ca');"></td><td id="ep-diff-ca">—</td></tr>
                       <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="ep-mg-meq" class="fertirriego-input" data-ep-macro="Mg" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Mg','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td><input type="number" step="0.1" id="ep-mg-ppm" class="fertirriego-input" data-ep-macro="Mg" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Mg','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td>40 – 70</td><td id="ep-ref-mg" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-mg" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','mg',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','mg');"></td><td id="ep-diff-mg">—</td></tr>
                       <tr><td>Na⁺</td><td><input type="number" step="0.01" id="ep-na-meq" class="fertirriego-input" data-ep-macro="Na" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Na','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td><input type="number" step="0.1" id="ep-na-ppm" class="fertirriego-input" data-ep-macro="Na" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('Na','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td>ideal &lt;50</td><td id="ep-ref-na" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-na" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','na',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('cations','na');"></td><td id="ep-diff-na">—</td></tr>
@@ -14053,7 +14053,7 @@ function createExtractoPastaTabHTML() {
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>Ref. (ppm)</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
-                    <tbody>
+                    <tbody class="notranslate" translate="no">
                       <tr><td>N-NO₃⁻</td><td><input type="number" step="0.01" id="ep-no3-meq" class="fertirriego-input" data-ep-macro="NO3" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('NO3','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','no3'); window.epUpdateRatiosRef && window.epUpdateRatiosRef();"></td><td><input type="number" step="0.1" id="ep-no3-ppm" class="fertirriego-input" data-ep-macro="NO3" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('NO3','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','no3'); window.epUpdateRatiosRef && window.epUpdateRatiosRef();"></td><td>150 – 200</td><td id="ep-ref-no3" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-no3" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','no3',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','no3'); window.epUpdateRatiosRef && window.epUpdateRatiosRef();"></td><td id="ep-diff-no3">—</td></tr>
                       <tr><td>P-PO₄</td><td><input type="number" step="0.01" id="ep-po4-meq" class="fertirriego-input" data-ep-macro="PO4" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('PO4','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','po4');"></td><td><input type="number" step="0.01" id="ep-po4-ppm" class="fertirriego-input" data-ep-macro="PO4" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('PO4','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','po4');"></td><td>30 – 60</td><td id="ep-ref-po4" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="ep-ideal-po4" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','po4',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','po4');"></td><td id="ep-diff-po4">—</td></tr>
                       <tr><td>S-SO₄²⁻</td><td><input type="number" step="0.01" id="ep-so4-meq" class="fertirriego-input" data-ep-macro="SO4" data-ep-unit="meq" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('SO4','meq',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','so4');"></td><td><input type="number" step="0.1" id="ep-so4-ppm" class="fertirriego-input" data-ep-macro="SO4" data-ep-unit="ppm" oninput="window.epSyncMeqPpm && window.epSyncMeqPpm('SO4','ppm',this); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','so4');"></td><td>60 – 110</td><td id="ep-ref-so4" class="sn-ref-badge">—</td><td><input type="number" step="0.1" id="ep-ideal-so4" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','so4',this.value); window.epUpdateMacroRef && window.epUpdateMacroRef('anions','so4');"></td><td id="ep-diff-so4">—</td></tr>
@@ -14069,7 +14069,7 @@ function createExtractoPastaTabHTML() {
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>Análisis (ppm)</th><th>Ref. min–max</th><th>Estado</th><th>Ideal (opc.)</th><th>Diferencia</th></tr></thead>
-                    <tbody>
+                    <tbody class="notranslate" translate="no">
                       <tr><td>Fe</td><td><input type="number" step="0.01" id="ep-micro-fe" class="fertirriego-input" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('micros','fe',this.value); window.epUpdateMicroRef && window.epUpdateMicroRef();"></td><td>1.5 – 3.0</td><td id="ep-ref-fe" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="ep-ideal-fe" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','fe',this.value); window.epUpdateMicroRef && window.epUpdateMicroRef();"></td><td id="ep-diff-fe">—</td></tr>
                       <tr><td>Mn</td><td><input type="number" step="0.01" id="ep-micro-mn" class="fertirriego-input" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('micros','mn',this.value); window.epUpdateMicroRef && window.epUpdateMicroRef();"></td><td>0.3 – 1.0</td><td id="ep-ref-mn" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="ep-ideal-mn" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','mn',this.value); window.epUpdateMicroRef && window.epUpdateMicroRef();"></td><td id="ep-diff-mn">—</td></tr>
                       <tr><td>Zn</td><td><input type="number" step="0.01" id="ep-micro-zn" class="fertirriego-input" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('micros','zn',this.value); window.epUpdateMicroRef && window.epUpdateMicroRef();"></td><td>0.05 – 0.3</td><td id="ep-ref-zn" class="sn-ref-badge">—</td><td><input type="number" step="0.01" id="ep-ideal-zn" class="fertirriego-input" style="width:70px;" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('ideal','zn',this.value); window.epUpdateMicroRef && window.epUpdateMicroRef();"></td><td id="ep-diff-zn">—</td></tr>
@@ -14086,7 +14086,7 @@ function createExtractoPastaTabHTML() {
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Relación</th><th>Resultado (meq/L)</th><th>Nivel ideal</th><th>Estado</th></tr></thead>
-                    <tbody>
+                    <tbody class="notranslate" translate="no">
                       <tr><td>N-NO₃ / K</td><td id="ep-ratio-no3-k">—</td><td>2.00 – 2.50</td><td id="ep-ref-ratio-no3-k" class="sn-ref-badge">—</td></tr>
                       <tr><td>K / Ca</td><td id="ep-ratio-k-ca">—</td><td>0.20 – 0.40</td><td id="ep-ref-ratio-k-ca" class="sn-ref-badge">—</td></tr>
                       <tr><td>K / Mg</td><td id="ep-ratio-k-mg">—</td><td>0.20 – 0.50</td><td id="ep-ref-ratio-k-mg" class="sn-ref-badge">—</td></tr>
@@ -14473,7 +14473,7 @@ function createAguaTabHTML() {
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>kg elemento</th><th>kg óxido (CaO, MgO, K₂O)</th></tr></thead>
-                    <tbody>
+                    <tbody class="notranslate" translate="no">
                       <tr><td>Ca²⁺</td><td><input type="number" step="0.01" id="aw-ca-meq" class="fertirriego-input" data-aw-macro="Ca" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Ca','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-ca-ppm" class="fertirriego-input" data-aw-macro="Ca" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Ca','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-ca">—</td><td id="aw-kg-cao">—</td></tr>
                       <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="aw-mg-meq" class="fertirriego-input" data-aw-macro="Mg" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Mg','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-mg-ppm" class="fertirriego-input" data-aw-macro="Mg" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Mg','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-mg">—</td><td id="aw-kg-mgo">—</td></tr>
                       <tr><td>Na⁺</td><td><input type="number" step="0.01" id="aw-na-meq" class="fertirriego-input" data-aw-macro="Na" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Na','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-na-ppm" class="fertirriego-input" data-aw-macro="Na" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Na','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-na">—</td><td id="aw-kg-na2o">—</td></tr>
@@ -14489,7 +14489,7 @@ function createAguaTabHTML() {
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>kg elemento</th></tr></thead>
-                    <tbody>
+                    <tbody class="notranslate" translate="no">
                       <tr><td>S-SO₄²⁻</td><td><input type="number" step="0.01" id="aw-so4-meq" class="fertirriego-input" data-aw-macro="SO4" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('SO4','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-so4-ppm" class="fertirriego-input" data-aw-macro="SO4" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('SO4','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-s">—</td></tr>
                       <tr><td>HCO₃⁻</td><td><input type="number" step="0.01" id="aw-hco3-meq" class="fertirriego-input" data-aw-macro="HCO3" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('HCO3','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td><input type="number" step="0.01" id="aw-hco3-ppm" class="fertirriego-input" data-aw-macro="HCO3" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('HCO3','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td>—</td></tr>
                       <tr><td>Cl⁻</td><td><input type="number" step="0.01" id="aw-cl-meq" class="fertirriego-input" data-aw-macro="Cl" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Cl','meq',this); window.awUpdateSums && window.awUpdateSums();"></td><td><input type="number" step="0.01" id="aw-cl-ppm" class="fertirriego-input" data-aw-macro="Cl" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Cl','ppm',this); window.awUpdateSums && window.awUpdateSums();"></td><td>—</td></tr>
@@ -14506,7 +14506,7 @@ function createAguaTabHTML() {
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>ppm</th><th>kg elemento</th></tr></thead>
-                    <tbody>
+                    <tbody class="notranslate" translate="no">
                       <tr><td>B</td><td><input type="number" step="0.01" id="aw-micro-b" class="fertirriego-input" onchange="window.saveAguaField && window.saveAguaField('micros','b',this.value); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-b">—</td></tr>
                       <tr><td>Fe</td><td><input type="number" step="0.01" id="aw-micro-fe" class="fertirriego-input" onchange="window.saveAguaField && window.saveAguaField('micros','fe',this.value); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-fe">—</td></tr>
                       <tr><td>Mn</td><td><input type="number" step="0.01" id="aw-micro-mn" class="fertirriego-input" onchange="window.saveAguaField && window.saveAguaField('micros','mn',this.value); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-mn">—</td></tr>
@@ -14838,10 +14838,10 @@ function foliarDOPIconStatus(dop) {
 
 function createFoliarTabHTML() {
   var macroRows = ['N','P','K','Ca','Mg','S'].map(function(n) {
-    return '<tr><td>' + n + '</td><td><input type="number" step="0.001" id="f-macro-' + n + '" class="fertirriego-input" data-f-nutrient="macro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'macros\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td><input type="number" step="0.001" id="f-opt-macro-' + n + '" class="fertirriego-input" style="width:70px;" data-f-opt="macro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'optimalMacro\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td id="f-dop-macro-' + n + '">—</td><td id="f-status-macro-' + n + '">—</td></tr>';
+    return '<tr><td class="notranslate" translate="no">' + n + '</td><td><input type="number" step="0.001" id="f-macro-' + n + '" class="fertirriego-input" data-f-nutrient="macro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'macros\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td><input type="number" step="0.001" id="f-opt-macro-' + n + '" class="fertirriego-input" style="width:70px;" data-f-opt="macro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'optimalMacro\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td id="f-dop-macro-' + n + '">—</td><td id="f-status-macro-' + n + '">—</td></tr>';
   }).join('');
   var microRows = ['Fe','Mn','Zn','Cu','B','Mo'].map(function(n) {
-    return '<tr><td>' + n + '</td><td><input type="number" step="0.01" id="f-micro-' + n + '" class="fertirriego-input" data-f-nutrient="micro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'micros\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td><input type="number" step="0.01" id="f-opt-micro-' + n + '" class="fertirriego-input" style="width:70px;" data-f-opt="micro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'optimalMicro\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td id="f-dop-micro-' + n + '">—</td><td id="f-status-micro-' + n + '">—</td></tr>';
+    return '<tr><td class="notranslate" translate="no">' + n + '</td><td><input type="number" step="0.01" id="f-micro-' + n + '" class="fertirriego-input" data-f-nutrient="micro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'micros\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td><input type="number" step="0.01" id="f-opt-micro-' + n + '" class="fertirriego-input" style="width:70px;" data-f-opt="micro-' + n + '" oninput="window.saveFoliarField && window.saveFoliarField(\'optimalMicro\',\'' + n + '\',this.value); window.foliarUpdateDOP && window.foliarUpdateDOP();"></td><td id="f-dop-micro-' + n + '">—</td><td id="f-status-micro-' + n + '">—</td></tr>';
   }).join('');
   return `
     <div class="card soil-analysis-tab-container soil-analysis-watermark-wrap" id="foliar-tab-container">
@@ -15128,10 +15128,10 @@ function frutaIconFromICC(icc) {
 
 function createFrutaTabHTML() {
   var macroRows = ['N','P','K','Ca','Mg','S'].map(function(n) {
-    return '<tr><td>' + n + '</td><td><input type="number" step="0.001" id="fru-macro-' + n + '" class="fertirriego-input" oninput="window.saveFrutaField && window.saveFrutaField(\'macros\',\'' + n + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td><input type="number" step="0.001" id="fru-opt-macro-' + n + '" class="fertirriego-input" style="width:70px;" oninput="window.saveFrutaField && window.saveFrutaField(\'optimalMacro\',\'' + n + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td id="fru-icc-macro-' + n + '">—</td><td id="fru-status-macro-' + n + '">—</td></tr>';
+    return '<tr><td class="notranslate" translate="no">' + n + '</td><td><input type="number" step="0.001" id="fru-macro-' + n + '" class="fertirriego-input" oninput="window.saveFrutaField && window.saveFrutaField(\'macros\',\'' + n + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td><input type="number" step="0.001" id="fru-opt-macro-' + n + '" class="fertirriego-input" style="width:70px;" oninput="window.saveFrutaField && window.saveFrutaField(\'optimalMacro\',\'' + n + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td id="fru-icc-macro-' + n + '">—</td><td id="fru-status-macro-' + n + '">—</td></tr>';
   }).join('');
   var microRows = ['Fe','Mn','Zn','Cu','B','Mo'].map(function(n) {
-    return '<tr><td>' + n + '</td><td><input type="number" step="0.01" id="fru-micro-' + n + '" class="fertirriego-input" oninput="window.saveFrutaField && window.saveFrutaField(\'micros\',\'' + n + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td><input type="number" step="0.01" id="fru-opt-micro-' + n + '" class="fertirriego-input" style="width:70px;" oninput="window.saveFrutaField && window.saveFrutaField(\'optimalMicro\',\'' + n + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td id="fru-icc-micro-' + n + '">—</td><td id="fru-status-micro-' + n + '">—</td></tr>';
+    return '<tr><td class="notranslate" translate="no">' + n + '</td><td><input type="number" step="0.01" id="fru-micro-' + n + '" class="fertirriego-input" oninput="window.saveFrutaField && window.saveFrutaField(\'micros\',\'' + n + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td><input type="number" step="0.01" id="fru-opt-micro-' + n + '" class="fertirriego-input" style="width:70px;" oninput="window.saveFrutaField && window.saveFrutaField(\'optimalMicro\',\'' + n + '\',this.value); window.frutaUpdateICC && window.frutaUpdateICC();"></td><td id="fru-icc-micro-' + n + '">—</td><td id="fru-status-micro-' + n + '">—</td></tr>';
   }).join('');
   var calidadKeys = ['materiaSeca','brix','firmeza','acidezTitulable'];
   var calidadRows = calidadKeys.map(function(k) {
@@ -15496,7 +15496,7 @@ function createSoilAnalysisTabHTML() {
                 </div>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
-                    <thead>
+                    <thead class="notranslate" translate="no">
                       <tr>
                         <th>Concepto</th>
                         <th>MO %</th>
@@ -15585,24 +15585,24 @@ function createSoilAnalysisTabHTML() {
                   <div class="soil-cations-meq-block">
                     <p class="soil-block-title">Concentraciones (meq/100g)</p>
                     <div class="soil-fields soil-fields-inline">
-                      <label>Ca <input type="number" step="0.01" id="soil-cations-ca" data-group="cations" data-field="ca" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','ca',this.value)"></label>
-                      <label>Mg <input type="number" step="0.01" id="soil-cations-mg" data-group="cations" data-field="mg" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','mg',this.value)"></label>
-                      <label>K <input type="number" step="0.01" id="soil-cations-k" data-group="cations" data-field="k" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','k',this.value)"></label>
-                      <label>Na <input type="number" step="0.01" id="soil-cations-na" data-group="cations" data-field="na" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','na',this.value)"></label>
-                      <label>Al <input type="number" step="0.01" id="soil-cations-al" data-group="cations" data-field="al" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','al',this.value)"></label>
-                      <label>H <input type="number" step="0.01" id="soil-cations-h" data-group="cations" data-field="h" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','h',this.value)"></label>
+                      <label class="notranslate" translate="no">Ca <input type="number" step="0.01" id="soil-cations-ca" data-group="cations" data-field="ca" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','ca',this.value)"></label>
+                      <label class="notranslate" translate="no">Mg <input type="number" step="0.01" id="soil-cations-mg" data-group="cations" data-field="mg" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','mg',this.value)"></label>
+                      <label class="notranslate" translate="no">K <input type="number" step="0.01" id="soil-cations-k" data-group="cations" data-field="k" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','k',this.value)"></label>
+                      <label class="notranslate" translate="no">Na <input type="number" step="0.01" id="soil-cations-na" data-group="cations" data-field="na" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','na',this.value)"></label>
+                      <label class="notranslate" translate="no">Al <input type="number" step="0.01" id="soil-cations-al" data-group="cations" data-field="al" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','al',this.value)"></label>
+                      <label class="notranslate" translate="no">H <input type="number" step="0.01" id="soil-cations-h" data-group="cations" data-field="h" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','h',this.value)"></label>
                     </div>
                   </div>
                   <div class="soil-cations-pct-box">
                     <p class="soil-block-title soil-block-title-blue">CIC y saturación (%)</p>
                     <div class="soil-cations-pct-inner">
-                      <label class="soil-cic-label-blue" title="Calculado: suma de Ca+Mg+K+Na+Al+H (meq/100g)"><strong>CIC (meq/100g)</strong> <input type="text" id="soil-cations-cic" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label title="Calculado: 100 × (Ca meq / CIC)">% Ca <input type="text" id="soil-cations-pctCa" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label title="Calculado: 100 × (Mg meq / CIC)">% Mg <input type="text" id="soil-cations-pctMg" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label title="Calculado: 100 × (K meq / CIC)">% K <input type="text" id="soil-cations-pctK" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label title="Calculado: 100 × (Na meq / CIC)">% Na <input type="text" id="soil-cations-pctNa" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label title="Calculado: 100 × (Al meq / CIC)">% Al <input type="text" id="soil-cations-pctAl" readonly class="soil-ratio-calc" placeholder="—"></label>
-                      <label title="Calculado: 100 × (H meq / CIC)">% H <input type="text" id="soil-cations-pctH" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="soil-cic-label-blue notranslate" translate="no" title="Calculado: suma de Ca+Mg+K+Na+Al+H (meq/100g)"><strong>CIC (meq/100g)</strong> <input type="text" id="soil-cations-cic" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="Calculado: 100 × (Ca meq / CIC)">% Ca <input type="text" id="soil-cations-pctCa" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="Calculado: 100 × (Mg meq / CIC)">% Mg <input type="text" id="soil-cations-pctMg" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="Calculado: 100 × (K meq / CIC)">% K <input type="text" id="soil-cations-pctK" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="Calculado: 100 × (Na meq / CIC)">% Na <input type="text" id="soil-cations-pctNa" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="Calculado: 100 × (Al meq / CIC)">% Al <input type="text" id="soil-cations-pctAl" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="notranslate" translate="no" title="Calculado: 100 × (H meq / CIC)">% H <input type="text" id="soil-cations-pctH" readonly class="soil-ratio-calc" placeholder="—"></label>
                     </div>
                   </div>
                 </div>
@@ -15610,12 +15610,12 @@ function createSoilAnalysisTabHTML() {
               <details class="soil-section" data-soil-section="ratios">
                 <summary>📊 Relaciones entre cationes (calculadas desde meq/100g)</summary>
                 <div class="soil-ratios-structure">
-                  <p class="soil-ratios-ref-title">Valores de referencia: Ca/Mg = 6 · Mg/K = 3.5 · (Ca+Mg)/K = 18 · Ca/K = 14</p>
+                  <p class="soil-ratios-ref-title notranslate" translate="no">Valores de referencia: Ca/Mg = 6 · Mg/K = 3.5 · (Ca+Mg)/K = 18 · Ca/K = 14</p>
                   <div class="soil-fields soil-ratios-grid">
-                    <label>Ca/Mg <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caMg" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caMg" aria-hidden="true"></span></span></label>
-                    <label>Mg/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-mgK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-mgK" aria-hidden="true"></span></span></label>
-                    <label>(Ca+Mg)/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caMgK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caMgK" aria-hidden="true"></span></span></label>
-                    <label>Ca/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caK" aria-hidden="true"></span></span></label>
+                    <label class="notranslate" translate="no">Ca/Mg <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caMg" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caMg" aria-hidden="true"></span></span></label>
+                    <label class="notranslate" translate="no">Mg/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-mgK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-mgK" aria-hidden="true"></span></span></label>
+                    <label class="notranslate" translate="no">(Ca+Mg)/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caMgK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caMgK" aria-hidden="true"></span></span></label>
+                    <label class="notranslate" translate="no">Ca/K <span class="soil-ratio-value-wrap"><input type="text" id="soil-ratios-caK" readonly class="soil-ratio-calc" placeholder="—"><span class="soil-ratio-icon" id="soil-ratios-icon-caK" aria-hidden="true"></span></span></label>
                   </div>
                 </div>
               </details>
