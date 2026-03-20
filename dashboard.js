@@ -13086,6 +13086,19 @@ function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
   ticks += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
   ticks += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
 
+  const edgeLabelPoint = (va, vb, vOpp, dist) => {
+    const mx = (va.x + vb.x) / 2;
+    const my = (va.y + vb.y) / 2;
+    const ix = vOpp.x - mx;
+    const iy = vOpp.y - my;
+    const len = Math.sqrt(ix * ix + iy * iy) || 1;
+    return { x: mx - (ix / len) * dist, y: my - (iy / len) * dist };
+  };
+  const edgeLabelDist = 52;
+  const leftEdgeLabel = edgeLabelPoint(vTop, vLeft, vRight, edgeLabelDist);
+  const rightEdgeLabel = edgeLabelPoint(vTop, vRight, vLeft, edgeLabelDist);
+  const bottomEdgeLabel = edgeLabelPoint(vLeft, vRight, vTop, edgeLabelDist + 10);
+
   return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" style="background:#fff;border-radius:8px;">
       ${grid}
       ${anPoly}
@@ -13095,9 +13108,9 @@ function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
       <circle cx="${catPoint.x}" cy="${catPoint.y}" r="6" fill="${catInside ? '#ef4444' : '#b91c1c'}" stroke="#7f1d1d" stroke-width="1.2" />
       <circle cx="${anPoint.x}" cy="${anPoint.y}" r="6" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />
       ${ticks}
-      <text x="${lerp(vTop, vLeft, 0.5).x - 26}" y="${lerp(vTop, vLeft, 0.5).y}" text-anchor="end" font-size="11" font-weight="bold" fill="#334155">Mg²⁺ / SO₄²⁻</text>
-      <text x="${lerp(vTop, vRight, 0.5).x + 26}" y="${lerp(vTop, vRight, 0.5).y}" text-anchor="start" font-size="11" font-weight="bold" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>
-      <text x="${lerp(vLeft, vRight, 0.5).x}" y="${lerp(vLeft, vRight, 0.5).y + 30}" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">K⁺ / NO₃⁻</text>
+      <text x="${leftEdgeLabel.x}" y="${leftEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="bold" fill="#334155">Mg²⁺ / SO₄²⁻</text>
+      <text x="${rightEdgeLabel.x}" y="${rightEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="bold" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>
+      <text x="${bottomEdgeLabel.x}" y="${bottomEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="bold" fill="#334155">K⁺ / NO₃⁻</text>
     </svg>`;
 }
 
