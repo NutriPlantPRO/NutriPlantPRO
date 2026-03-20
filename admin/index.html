@@ -6162,11 +6162,39 @@
                             }
                         }
 
+                        // 3) Sin política RLS "Admins can update all profiles", el cliente solo puede actualizar el propio perfil → 0 filas sin error.
+                        //    El servidor (service_role en server.py) aplica el mismo payload y bypass RLS.
+                        if (isSupabaseUserId && matched === 0) {
+                            try {
+                                const paramsSrv = new URLSearchParams(window.location.search);
+                                const adminKeySrv = paramsSrv.get('k') || '';
+                                const resSrv = await fetch(window.location.origin + '/api/admin/patch-profile', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        admin_key: adminKeySrv,
+                                        user_id: userId,
+                                        profile: payload
+                                    })
+                                });
+                                const jsonSrv = await resSrv.json().catch(function() { return {}; });
+                                if (resSrv.ok && jsonSrv.ok && Array.isArray(jsonSrv.data) && jsonSrv.data.length > 0) {
+                                    matched = jsonSrv.data.length;
+                                    error = null;
+                                    console.log('☁️ Perfil actualizado en la nube (API servidor / service_role)');
+                                } else {
+                                    console.warn('patch-profile servidor:', jsonSrv.error || resSrv.status);
+                                }
+                            } catch (eSrv) {
+                                console.warn('patch-profile servidor:', eSrv);
+                            }
+                        }
+
                         if (error) {
                             console.warn('⚠️ Error actualizando perfil en Supabase:', error.message);
                             cloudSyncMessage = '\n\n⚠️ Se guardó localmente, pero falló guardar en la nube: ' + (error.message || 'error desconocido');
                         } else if (!matched) {
-                            cloudSyncMessage = '\n\n⚠️ Se guardó localmente, pero no se encontró el perfil en la nube para actualizar.';
+                            cloudSyncMessage = '\n\n⚠️ No se pudo actualizar el perfil en Supabase (0 filas). Opciones:\n• Ejecuta en SQL Editor: supabase-fix-rls-recursion.sql y supabase-admin-update-user-project.sql\n• O deja corriendo server.py con supabase-server-config.json (API /api/admin/patch-profile).';
                         } else {
                             console.log('☁️ Perfil actualizado en la nube');
                         }

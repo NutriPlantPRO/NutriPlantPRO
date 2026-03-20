@@ -161,6 +161,8 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self._handle_admin_delete_user()
         elif self.path == '/api/admin/restore-project':
             self._handle_admin_restore_project()
+        elif self.path == '/api/admin/patch-profile':
+            self._handle_admin_patch_profile()
         else:
             # Para rutas no manejadas, devolver 404 en lugar de 501
             print(f"⚠️ Ruta POST no manejada: {self.path}")
@@ -354,6 +356,80 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
         except Exception as e:
             self._send_json_response({'error': 'Error de conexión: ' + str(e)}, 502)
+            return
+
+    def _handle_admin_patch_profile(self):
+        """
+        PATCH a public.profiles por id usando service_role (bypass RLS).
+        Útil cuando el panel admin no tiene política 'Admins can update all profiles'
+        y el cliente anon solo puede actualizar el propio perfil.
+        """
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8') if content_length else '{}'
+            data = json.loads(body) if body.strip() else {}
+        except Exception as e:
+            self._send_json_response({'error': 'Cuerpo JSON inválido: ' + str(e)}, 400)
+            return
+        admin_key = (data.get('admin_key') or '').strip()
+        user_id = (data.get('user_id') or '').strip()
+        profile = data.get('profile')
+        expected_key = os.environ.get('NUTRIPLANT_ADMIN_KEY', 'np_admin_key_8f4a2b9c1e7d')
+        if not admin_key or admin_key != expected_key:
+            self._send_json_response({'error': 'Acceso no autorizado'}, 403)
+            return
+        if not user_id or not isinstance(profile, dict):
+            self._send_json_response({'error': 'user_id y profile (objeto) son obligatorios'}, 400)
+            return
+        if len(user_id) != 36 or not all(c in '0123456789abcdef-' for c in user_id.lower()):
+            self._send_json_response({'error': 'user_id debe ser un UUID válido'}, 400)
+            return
+        allowed_keys = {
+            'name', 'email', 'phone', 'profession', 'location', 'crops',
+            'subscription_status', 'subscription_amount', 'cancelled_by_admin',
+            'chat_blocked', 'chat_limit_monthly', 'chat_usage_current_month', 'chat_usage_month',
+            'exclude_from_revenue', 'password_plain', 'updated_at',
+        }
+        clean = {k: v for k, v in profile.items() if k in allowed_keys}
+        if not clean:
+            self._send_json_response({'error': 'profile vacío o sin campos permitidos'}, 400)
+            return
+        supabase_url, service_role = self._get_supabase_admin_config()
+        if not supabase_url or not service_role:
+            self._send_json_response({'error': 'Configura supabase-server-config.json con SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.'}, 500)
+            return
+        url = f'{supabase_url}/rest/v1/profiles?id=eq.{user_id}'
+        req_data = json.dumps(clean, ensure_ascii=False).encode('utf-8')
+        req = urllib.request.Request(url, data=req_data, method='PATCH')
+        req.add_header('Content-Type', 'application/json')
+        req.add_header('Authorization', 'Bearer ' + service_role)
+        req.add_header('apikey', service_role)
+        req.add_header('Prefer', 'return=representation')
+        try:
+            with urllib.request.urlopen(req, timeout=25) as resp:
+                body_out = resp.read().decode('utf-8')
+                try:
+                    result = json.loads(body_out) if body_out.strip() else []
+                except Exception:
+                    result = []
+                if not isinstance(result, list):
+                    result = []
+                if len(result) == 0:
+                    self._send_json_response({'ok': False, 'error': 'No se actualizó ninguna fila (¿id inexistente en profiles?)', 'data': []}, 404)
+                    return
+                self._send_json_response({'ok': True, 'data': result}, 200)
+                return
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode('utf-8')
+            try:
+                err_json = json.loads(err_body)
+                msg = err_json.get('message') or err_json.get('error_description') or err_json.get('details') or err_body
+            except Exception:
+                msg = err_body
+            self._send_json_response({'ok': False, 'error': 'Supabase REST: ' + str(msg), 'data': []}, e.code if e.code in (400, 401, 403, 404, 409, 422) else 502)
+            return
+        except Exception as e:
+            self._send_json_response({'ok': False, 'error': 'Error de conexión: ' + str(e), 'data': []}, 502)
             return
 
     def _handle_admin_delete_user(self):
