@@ -32,7 +32,8 @@ function hydroComputeCE(stage) {
   return isNaN(ce) ? 0 : ce;
 }
 
-function hydroLabel(n) {
+/** Texto plano (p. ej. title=""); no incluye HTML */
+function hydroLabelPlain(n) {
   switch (n) {
     case 'N_NH4': return 'N-NH₄⁺';
     case 'N_NO3': return 'N-NO₃⁻';
@@ -43,6 +44,13 @@ function hydroLabel(n) {
     case 'Mg': return 'Mg²⁺';
     default: return n;
   }
+}
+/** Etiqueta visible: envuelta para que Google Translate no altere símbolos (Fe, Ca, meq/L, ppm) */
+function hydroLabelHtml(n) {
+  return '<span class="notranslate" translate="no">' + hydroLabelPlain(n) + '</span>';
+}
+function hydroLabel(n) {
+  return hydroLabelPlain(n);
 }
 
 const HYDRO_TANQUES = ['A', 'B', 'C', 'D', 'E'];
@@ -397,7 +405,7 @@ function renderHydroStageTable() {
           <tr>
             <th>Etapa</th>
             <th>CE (dS/m)</th>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabel(n)} (meq/L)</th>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">(meq/L)</span></th>`).join('')}
           </tr>
         </thead>
         <tbody>${meqRows}</tbody>
@@ -427,8 +435,8 @@ function renderHydroStageTable() {
           <tr>
             <th>Etapa</th>
             <th>CE (dS/m)</th>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabel(n)} ppm</th>`).join('')}
-            ${HYDRO_MICROS.map((n, idx) => `<th class="${idx === 0 ? 'hydro-micro-start' : ''}">${hydroLabel(n)} ppm</th>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
+            ${HYDRO_MICROS.map((n, idx) => `<th class="${idx === 0 ? 'hydro-micro-start' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
           </tr>
         </thead>
         <tbody>${ppmRows}</tbody>
@@ -466,7 +474,7 @@ function renderHydroStageTable() {
         <thead>
           <tr>
             <th>Etapa</th>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabel(n)} % meq</th>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">% meq</span></th>`).join('')}
           </tr>
         </thead>
         <tbody>${pctRows}</tbody>
@@ -578,7 +586,7 @@ function hydroBaryToXY(vA, vB, vC, pA, pB, pC) {
 
 function hydroDrawCombinedTernary(container, data) {
   if (!container) return;
-  const width = 460, height = 400, pad = 44;
+  const width = 460, height = 430, pad = 44;
   const base = width - 2 * pad;
   const triHeight = base * Math.sqrt(3) / 2;
   const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
@@ -685,8 +693,27 @@ function hydroDrawCombinedTernary(container, data) {
   tickLabels += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
   tickLabels += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
 
+  /* Etiquetas de bordes: foreignObject + HTML (los <text> SVG con superíndices Unicode suelen verse rotos en Chrome/Mac sin esto) */
+  const lMid = lerp(vTop, vLeft, 0.5);
+  const rMid = lerp(vTop, vRight, 0.5);
+  const bMid = lerp(vLeft, vRight, 0.5);
+  const foNs = 'http://www.w3.org/1999/xhtml';
+  const foStyle = 'font-size:12px;font-weight:bold;color:#334155;line-height:1.25;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;';
+  const lw = 190;
+  const lh = 44;
+  const bottomY = Math.min(height - lh - 6, bMid.y + 22);
+  const edgeLabels =
+    `<foreignObject x="${lMid.x - lw - 10}" y="${lMid.y - lh / 2}" width="${lw}" height="${lh}">` +
+    `<div xmlns="${foNs}" class="notranslate" translate="no" style="${foStyle}text-align:right;display:flex;align-items:center;justify-content:flex-end;height:100%;pointer-events:none;">Mg²⁺ / SO₄²⁻</div></foreignObject>` +
+    `<foreignObject x="${rMid.x + 10}" y="${rMid.y - lh / 2}" width="${lw}" height="${lh}">` +
+    `<div xmlns="${foNs}" class="notranslate" translate="no" style="${foStyle}text-align:left;display:flex;align-items:center;height:100%;pointer-events:none;">Ca²⁺ / H₂PO₄⁻</div></foreignObject>` +
+    `<foreignObject x="${bMid.x - 110}" y="${bottomY}" width="220" height="${lh}">` +
+    `<div xmlns="${foNs}" class="notranslate" translate="no" style="${foStyle}text-align:center;display:flex;align-items:center;justify-content:center;height:100%;pointer-events:none;">K⁺ / NO₃⁻</div></foreignObject>`;
+
+  /* SVG + texto: envolver en notranslate (Chrome Translate suele borrar o romper <text> en SVG) */
   container.innerHTML = `
-    <svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" style="background:#fff;border-radius:8px;">
+    <div class="hydro-ternary-svg-wrap notranslate" translate="no">
+    <svg xmlns="http://www.w3.org/2000/svg" class="notranslate hydro-ternary-chart-svg" translate="no" viewBox="0 0 ${width} ${height}" width="100%" height="${height}" preserveAspectRatio="xMidYMid meet" style="background:#fff;border-radius:8px;overflow:visible;display:block;max-width:100%;">
       ${grid}
       ${anPoly}
       ${catPoly}
@@ -695,11 +722,9 @@ function hydroDrawCombinedTernary(container, data) {
       ${catCircle}
       ${anCircle}
       ${tickLabels}
-      <!-- Etiquetas de cada línea (separadas de los números, en negrita) -->
-      <text x="${lerp(vTop, vLeft, 0.5).x - 26}" y="${lerp(vTop, vLeft, 0.5).y}" text-anchor="end" font-size="11" font-weight="bold" fill="#334155">Mg²⁺ / SO₄²⁻</text>
-      <text x="${lerp(vTop, vRight, 0.5).x + 26}" y="${lerp(vTop, vRight, 0.5).y}" text-anchor="start" font-size="11" font-weight="bold" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>
-      <text x="${lerp(vLeft, vRight, 0.5).x}" y="${lerp(vLeft, vRight, 0.5).y + 30}" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">K⁺ / NO₃⁻</text>
+      ${edgeLabels}
     </svg>
+    </div>
   `;
 }
 
@@ -751,7 +776,7 @@ function renderHydroObjective() {
     const extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : '');
     return `
     <div class="hydro-grid-item${extraClass}">
-      <span class="hydro-grid-label">${hydroLabel(n)}</span>
+      <span class="hydro-grid-label">${hydroLabelHtml(n)}</span>
       <span class="hydro-grid-value">${parseFloat(stage.ppm?.[n] || 0).toFixed(2)}</span>
     </div>
   `;
@@ -765,7 +790,7 @@ function renderHydroWater() {
     const extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : '');
     return `
     <div class="hydro-grid-item${extraClass}">
-      <span class="hydro-grid-label">${hydroLabel(n)}</span>
+      <span class="hydro-grid-label">${hydroLabelHtml(n)}</span>
       <input class="hydro-input" data-water-nutrient="${n}" type="number" step="0.1" value="${hydroState.water?.[n] ?? 0}">
     </div>
   `;
@@ -787,7 +812,7 @@ function renderHydroMissing() {
     const extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : '');
     return `
       <div class="hydro-grid-item${extraClass}">
-        <span class="hydro-grid-label">${hydroLabel(n)}</span>
+        <span class="hydro-grid-label">${hydroLabelHtml(n)}</span>
         <span class="hydro-grid-value">${missing.toFixed(2)}</span>
       </div>
     `;
@@ -917,7 +942,7 @@ function renderHydroFertTable() {
     const contribCells = HYDRO_PPM_NUTRIENTS.map(n => {
       const v = contributions[n] || 0;
       const val = v > 0 ? v.toFixed(2) : '';
-      return `<td class="${thClass(n)}"><input class="hydro-input hydro-contrib-input" data-fert-id="${f.id}" data-fert-element="${n}" type="number" step="0.01" min="0" placeholder="—" value="${val}" title="ppm de ${hydroLabel(n)} que aporta este fertilizante"></td>`;
+      return `<td class="${thClass(n)}"><input class="hydro-input hydro-contrib-input" data-fert-id="${f.id}" data-fert-element="${n}" type="number" step="0.01" min="0" placeholder="—" value="${val}" title="ppm de ${hydroLabelPlain(n)} que aporta este fertilizante"></td>`;
     }).join('');
     const mat = materials.find(m => m && m.id === f.materialId);
     const matUnit = String(mat?.unit || '').toUpperCase();
@@ -948,7 +973,7 @@ function renderHydroFertTable() {
     </tr>`;
   }).join('');
 
-  const headerCells = HYDRO_PPM_NUTRIENTS.map(n => `<th class="hydro-contrib-th ${thClass(n)}">${hydroLabel(n)}</th>`).join('');
+  const headerCells = HYDRO_PPM_NUTRIENTS.map(n => `<th class="hydro-contrib-th ${thClass(n)}">${hydroLabelHtml(n)}</th>`).join('');
   wrap.innerHTML = `
     <p class="hydro-legend-elemental" style="margin:0 0 8px 0;font-size:0.9rem;color:#64748b;">Concentración elemental (%). Puedes trabajar por ppm de un elemento (flujo tradicional) o, en líquidos, escribir el total de producto (L) para calcular ppm aportadas.</p>
     <div class="hydro-table-scroll hydro-table-colored">
@@ -1006,7 +1031,7 @@ function renderHydroFertTotals() {
     }
     return `
     <div class="hydro-grid-item${extraClass}">
-      <span class="hydro-grid-label">${hydroLabel(n)}</span>
+      <span class="hydro-grid-label">${hydroLabelHtml(n)}</span>
       <span class="hydro-grid-value">${totals[n].toFixed(2)}</span>
     </div>
   `;
@@ -1029,7 +1054,7 @@ function renderHydroFertTotals() {
       const valueClass = pendiente > 0.01 ? ' hydro-remaining-positive' : (pendiente < -0.01 ? ' hydro-remaining-negative' : '');
       return `
     <div class="hydro-grid-item${extraClass}">
-      <span class="hydro-grid-label">${hydroLabel(n)}</span>
+      <span class="hydro-grid-label">${hydroLabelHtml(n)}</span>
       <span class="hydro-grid-value${valueClass}">${pendiente.toFixed(2)}</span>
     </div>
   `;
@@ -1271,7 +1296,7 @@ function openHydroPreloadedCatalogModal() {
             <thead>
               <tr style="background:#f1f5f9;">
                 <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e2e8f0;">Nombre</th>
-                ${HYDRO_PPM_NUTRIENTS.map(n => `<th style="padding:8px 10px;text-align:right;border-bottom:2px solid #e2e8f0;">${hydroLabel(n)} %</th>`).join('')}
+                ${HYDRO_PPM_NUTRIENTS.map(n => `<th style="padding:8px 10px;text-align:right;border-bottom:2px solid #e2e8f0;">${hydroLabelHtml(n)} <span class="notranslate" translate="no">%</span></th>`).join('')}
               </tr>
             </thead>
             <tbody>${rows || '<tr><td colspan="' + (1 + HYDRO_PPM_NUTRIENTS.length) + '" style="padding:12px;color:#64748b;">Sin fertilizantes precargados.</td></tr>'}</tbody>
@@ -1312,7 +1337,7 @@ function openHydroNewMaterialModal() {
   const overlay = document.createElement('div');
   overlay.className = 'hydro-material-modal-overlay material-modal-overlay';
   const nutrientInputs = HYDRO_PPM_NUTRIENTS.map(n =>
-    `<div class="nutrient-input"><label>${hydroLabel(n)} %:</label><input type="number" id="hydroCustom_${n}" step="0.01" placeholder="0.00"></div>`
+    `<div class="nutrient-input"><label class="notranslate" translate="no">${hydroLabelPlain(n)} %:</label><input type="number" id="hydroCustom_${n}" step="0.01" placeholder="0.00"></div>`
   ).join('');
 
   overlay.innerHTML = `

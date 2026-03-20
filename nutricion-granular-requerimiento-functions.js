@@ -438,7 +438,7 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
       <thead>
         <tr>
           <th rowspan="2">Concepto</th>
-          ${nutrients.map(n => `<th id="granular-header-${n}">${getGranularLabel(n)}</th>`).join('')}
+          ${nutrients.map(n => `<th id="granular-header-${n}"><span class="notranslate" translate="no">${getGranularLabel(n)}</span></th>`).join('')}
         </tr>
       </thead>
       <tbody>

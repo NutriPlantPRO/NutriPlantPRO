@@ -1083,7 +1083,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
       <thead>
         <tr>
           <th rowspan="2">Concepto</th>
-          ${nutrients.map(n => `<th id="fertirriego-header-${n}">${getLabel(n)}</th>`).join('')}
+          ${nutrients.map(n => `<th id="fertirriego-header-${n}"><span class="notranslate" translate="no">${getLabel(n)}</span></th>`).join('')}
         </tr>
       </thead>
       <tbody>

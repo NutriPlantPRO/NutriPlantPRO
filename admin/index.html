@@ -10613,7 +10613,7 @@
                 modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:10000; justify-content:center; align-items:center;';
                 document.body.appendChild(modal);
             }
-            modal.innerHTML = '<div style="background: white; border-radius: 12px; width: 95%; height: 92vh; max-width: 1400px; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3); box-sizing: border-box;">' +
+            modal.innerHTML = '<div style="background: white; border-radius: 12px; width: 95%; height: 92vh; max-width: 1400px; max-height: 92vh; display: flex; flex-direction: column; min-height: 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); box-sizing: border-box;">' +
                 '<div class="conn-map-modal-header">' +
                 '<div class="conn-map-modal-title"><h2 style="margin: 0; color: #1e293b; font-size: 20px;">🗺️ Mapa de conexiones</h2>' +
                 '<p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">' + count + ' conexión(es) con ubicación aproximada (por IP). Desde lejos verás agrupaciones; al acercar, detalle. Clic en un punto para ver resumen.</p></div>' +
@@ -10632,14 +10632,16 @@
                 '<button type="button" id="connMapViewToggleBtn" onclick="toggleConnectionsMapView()" class="conn-map-btn-sat"><span id="connMapViewIcon">🛰️</span> <span id="connMapViewText">Vista Satelital</span></button>' +
                 '<button type="button" onclick="closeConnectionsMapModal()" class="conn-map-btn-close" title="Cerrar">✕ Cerrar</button></div></div></div>' +
                 '<div id="connMapSummaryBadge" style="padding: 8px 20px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #334155; background: #f8fafc;"></div>' +
-                '<div id="connMapContainer" style="flex: 1; min-height: 400px; border-radius: 0 0 12px 12px; position: relative;">' +
+                '<div id="connMapContainer" style="flex: 1 1 auto; border-radius: 0 0 12px 12px; position: relative;">' +
                 '<div id="connMapLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #64748b;">Cargando mapa...</div></div></div>' +
                 '<style>' +
                 '#connMapModal .conn-map-modal-header{padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;flex-direction:column;gap:12px;align-items:stretch;box-sizing:border-box;max-width:100%;}' +
                 '@media (min-width:900px){#connMapModal .conn-map-modal-header{flex-direction:row;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:16px;padding:16px 20px;}}' +
                 '#connMapModal .conn-map-modal-title{flex:1 1 260px;min-width:0;max-width:100%;}' +
                 '#connMapModal .conn-map-modal-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;width:100%;max-width:100%;box-sizing:border-box;flex:1 1 280px;min-width:0;}' +
+                '@media (max-width:899px){#connMapModal .conn-map-modal-toolbar{flex:0 1 auto;width:100%;}}' +
                 '@media (min-width:900px){#connMapModal .conn-map-modal-toolbar{width:auto;max-width:100%;justify-content:flex-end;}}' +
+                '#connMapModal #connMapContainer{flex:1 1 auto;min-height:max(200px,36vh);}' +
                 '#connMapModal .conn-map-modal-select{padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;font-size:13px;flex:1 1 140px;min-width:0;max-width:100%;box-sizing:border-box;}' +
                 '#connMapModal .conn-map-modal-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%;justify-content:stretch;box-sizing:border-box;}' +
                 '@media (min-width:480px){#connMapModal .conn-map-modal-actions{width:auto;flex:1 1 auto;justify-content:flex-end;}}' +

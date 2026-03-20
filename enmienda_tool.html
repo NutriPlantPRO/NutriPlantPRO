@@ -175,7 +175,7 @@
         <th>%SO₄</th>
         <th>%CO₃</th>
         <th>%H₂O</th>
-        <th>%Si</th>
+        <th>%<span class="notranslate" translate="no">Si</span></th>
         <th>Acciones</th>
       </tr>
     </thead>
@@ -1513,7 +1513,7 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     if (totalCaReal > 0) html += `<li><strong>Calcio (Ca²⁺):</strong> ${formatNumber(totalCaReal)} kg/ha</li>`;
     if (totalMgReal > 0) html += `<li><strong>Magnesio (Mg²⁺):</strong> ${formatNumber(totalMgReal)} kg/ha</li>`;
     if (totalSo4Real > 0) html += `<li><strong>Sulfato (SO₄²⁻):</strong> ${formatNumber(totalSo4Real)} kg/ha</li>`;
-    if (totalSiReal > 0) html += `<li><strong>Silicio (Si):</strong> ${formatNumber(totalSiReal)} kg/ha</li>`;
+    if (totalSiReal > 0) html += `<li><strong>Silicio (<span class="notranslate" translate="no">Si</span>):</strong> ${formatNumber(totalSiReal)} kg/ha</li>`;
     html += '</ul>';
     html += `<div style="font-size: 12px; color: #64748b; margin-top: 6px;">% del volumen de suelo explorado por raíces (${formatNumber(reachPercent, 0)}%).</div>`;
     html += '</div>';
@@ -1521,7 +1521,7 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     html += '<div class="amendment-details">';
     html += '<h4>📋 Detalles por Enmienda:</h4>';
     html += '<table class="results-table">';
-    html += '<thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th>K⁺ (kg/ha)</th><th>Ca²⁺ (kg/ha)</th><th>Mg²⁺ (kg/ha)</th><th>SO₄²⁻ (kg/ha)</th><th>Si (kg/ha)</th></tr></thead>';
+    html += '<thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th>K⁺ (kg/ha)</th><th>Ca²⁺ (kg/ha)</th><th>Mg²⁺ (kg/ha)</th><th>SO₄²⁻ (kg/ha)</th><th><span class="notranslate" translate="no">Si (kg/ha)</span></th></tr></thead>';
     html += '<tbody>';
     
     adjustedDetails.forEach(amendment => {
@@ -1886,7 +1886,7 @@ function loadAmendmentsTable() {
     <td><input type="number" id="new-amendment-so4" placeholder="%SO₄" class="amendment-input" step="0.01" min="0" max="100"></td>
     <td><input type="number" id="new-amendment-co3" placeholder="%CO₃" class="amendment-input" step="0.01" min="0" max="100"></td>
     <td><input type="number" id="new-amendment-h2o" placeholder="%H₂O" class="amendment-input" step="0.01" min="0" max="100"></td>
-    <td><input type="number" id="new-amendment-si" placeholder="%Si" class="amendment-input" step="0.01" min="0" max="100"></td>
+    <td><input type="number" id="new-amendment-si" placeholder="%Si" class="amendment-input notranslate" translate="no" step="0.01" min="0" max="100"></td>
     <td>
       <button class="btn-save-amendment-small" onclick="saveNewAmendment()">💾</button>
       <button class="btn-cancel-amendment-small" onclick="clearNewAmendmentRow()">❌</button>

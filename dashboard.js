@@ -723,12 +723,12 @@ function sectionTemplate(name) {
           <div class="ideal-ranges">
             <h3>📊 Rangos Ideales de Cationes:</h3>
             <div class="ranges-grid">
-              <div class="range-item good">K⁺: 3-7%</div>
-              <div class="range-item good">Ca²⁺: 65-75%</div>
-              <div class="range-item good">Mg²⁺: 10-15%</div>
-              <div class="range-item warning">H⁺: 0-10%</div>
-              <div class="range-item warning">Na⁺: 0-1%</div>
-              <div class="range-item warning">Al³⁺: 0-1%</div>
+              <div class="range-item good notranslate" translate="no">K⁺: 3-7%</div>
+              <div class="range-item good notranslate" translate="no">Ca²⁺: 65-75%</div>
+              <div class="range-item good notranslate" translate="no">Mg²⁺: 10-15%</div>
+              <div class="range-item warning notranslate" translate="no">H⁺: 0-10%</div>
+              <div class="range-item warning notranslate" translate="no">Na⁺: 0-1%</div>
+              <div class="range-item warning notranslate" translate="no">Al³⁺: 0-1%</div>
             </div>
           </div>
         </div>
@@ -736,47 +736,47 @@ function sectionTemplate(name) {
         <div class="enmienda-content">
           <!-- Análisis de Suelo Inicial -->
           <div class="ideal-ranges">
-            <h3>📊 Análisis de Suelo Inicial (meq/100g de suelo)</h3>
+            <h3>📊 Análisis de Suelo Inicial (<span class="notranslate" translate="no">meq/100g</span> de suelo)</h3>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <div></div>
               <div class="total-display">
-                <label>CIC Total:</label>
+                <label><span class="notranslate" translate="no">CIC</span> Total:</label>
                 <input type="number" id="cic-total" step="0.01" value="0.00" class="total-input" readonly>
               </div>
             </div>
             <div class="analysis-grid">
               <div class="analysis-item cation-good">
-                <label>K⁺:</label>
+                <label class="notranslate" translate="no">K⁺:</label>
                 <input type="number" id="k-initial" step="0.01" value="0.00" class="analysis-input">
                 <div class="percent-display" id="k-percent">0.0%</div>
                 <div class="status-icon" id="k-status">-</div>
               </div>
               <div class="analysis-item cation-good">
-                <label>Ca²⁺:</label>
+                <label class="notranslate" translate="no">Ca²⁺:</label>
                 <input type="number" id="ca-initial" step="0.01" value="0.00" class="analysis-input">
                 <div class="percent-display" id="ca-percent">0.0%</div>
                 <div class="status-icon" id="ca-status">-</div>
               </div>
               <div class="analysis-item cation-good">
-                <label>Mg²⁺:</label>
+                <label class="notranslate" translate="no">Mg²⁺:</label>
                 <input type="number" id="mg-initial" step="0.01" value="0.00" class="analysis-input">
                 <div class="percent-display" id="mg-percent">0.0%</div>
                 <div class="status-icon" id="mg-status">-</div>
               </div>
               <div class="analysis-item cation-acid">
-                <label>H⁺:</label>
+                <label class="notranslate" translate="no">H⁺:</label>
                 <input type="number" id="h-initial" step="0.01" value="0.00" class="analysis-input">
                 <div class="percent-display" id="h-percent">0.0%</div>
                 <div class="status-icon" id="h-status">-</div>
               </div>
               <div class="analysis-item cation-salt">
-                <label>Na⁺:</label>
+                <label class="notranslate" translate="no">Na⁺:</label>
                 <input type="number" id="na-initial" step="0.01" value="0.00" class="analysis-input">
                 <div class="percent-display" id="na-percent">0.0%</div>
                 <div class="status-icon" id="na-status">-</div>
               </div>
               <div class="analysis-item cation-toxic">
-                <label>Al³⁺:</label>
+                <label class="notranslate" translate="no">Al³⁺:</label>
                 <input type="number" id="al-initial" step="0.01" value="0.00" class="analysis-input">
                 <div class="percent-display" id="al-percent">0.0%</div>
                 <div class="status-icon" id="al-status">-</div>
@@ -808,33 +808,33 @@ function sectionTemplate(name) {
 
           <!-- Objetivos de Ajuste -->
           <div class="ideal-ranges target-section">
-            <h3>🎯 Meq/100g a ajustar en CIC</h3>
+            <h3>🎯 <span class="notranslate" translate="no">Meq/100g</span> a ajustar en <span class="notranslate" translate="no">CIC</span></h3>
             <p style="margin: -4px 0 12px; font-size: 12px; color: #64748b;">
-              ℹ️ Meq/100g a ajustar: valores positivos indican déficit; valores negativos indican exceso.
+              ℹ️ <span class="notranslate" translate="no">Meq/100g</span> a ajustar: valores positivos indican déficit; valores negativos indican exceso.
             </p>
             <div class="target-grid">
               <div class="target-item cation-good">
-                <label>K⁺ (meq a ajustar):</label>
+                <label class="notranslate" translate="no">K⁺ (meq a ajustar):</label>
                 <input type="number" id="k-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-good">
-                <label>Ca²⁺ (meq a ajustar):</label>
+                <label class="notranslate" translate="no">Ca²⁺ (meq a ajustar):</label>
                 <input type="number" id="ca-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-good">
-                <label>Mg²⁺ (meq a ajustar):</label>
+                <label class="notranslate" translate="no">Mg²⁺ (meq a ajustar):</label>
                 <input type="number" id="mg-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-acid">
-                <label>H⁺ (meq a ajustar):</label>
+                <label class="notranslate" translate="no">H⁺ (meq a ajustar):</label>
                 <input type="number" id="h-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-salt">
-                <label>Na⁺ (meq a ajustar):</label>
+                <label class="notranslate" translate="no">Na⁺ (meq a ajustar):</label>
                 <input type="number" id="na-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-toxic">
-                <label>Al³⁺ (meq a ajustar):</label>
+                <label class="notranslate" translate="no">Al³⁺ (meq a ajustar):</label>
                 <input type="number" id="al-target" step="0.01" value="0.00" class="target-input">
               </div>
             </div>
@@ -856,7 +856,7 @@ function sectionTemplate(name) {
         <th>%SO₄</th>
         <th>%CO₃</th>
         <th>%H₂O</th>
-        <th>%Si</th>
+        <th>%<span class="notranslate" translate="no">Si</span></th>
         <th>Acciones</th>
       </tr>
     </thead>
@@ -999,7 +999,7 @@ function sectionTemplate(name) {
         };
         window.renderGranularNutrientTable = function(extraction,totalExtraction,adjustment,efficiency,realRequirement,targetYield){
           const container=document.getElementById('granularRequerimientoTableContainer'); if(!container) return; const nutrients=['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
-          const html = '\n    <table class="fertirriego-requirement-table">\n      <thead>\n        <tr>\n          <th rowspan="2">Concepto</th>' + nutrients.map(n=>`<th id=\"granular-header-${n}\">${getGranularLabel(n)}</th>`).join('') + '\n        </tr>\n      </thead>\n      <tbody>\n        <tr>\n          <td><strong>Extracción por tonelada<br>(kg/ton)</strong></td>' + nutrients.map(n=>`<td><input type=\"number\" class=\"fertirriego-input\" id=\"granular-extract-${n}\" value=\"${getGranularConvertedValue(n, extraction[n])}\" step=\"0.01\" onchange=\"updateGranularExtractionPerTon('${n}', this.value)\"></td>`).join('') + '\n        </tr>\n        <tr>\n          <td><strong>Extracción total<br>(kg/ha)</strong></td>' + nutrients.map(n=>`<td id=\"granular-extraccion-total-${n}\">${getGranularConvertedValue(n, totalExtraction[n])}</td>`).join('') + '\n        </tr>\n        <tr>\n          <td><strong>Ajuste por niveles<br>en suelo</strong></td>' + nutrients.map(n=>`<td><input type=\"number\" class=\"fertirriego-input\" id=\"granular-adj-${n}\" value=\"${getGranularConvertedValue(n, adjustment[n])}\" step=\"0.01\" onchange=\"updateGranularAdjustment('${n}', this.value)\"></td>`).join('') + '\n        </tr>\n        <tr>\n          <td><strong>Eficiencia<br>(%)</strong></td>' + nutrients.map(n=>`<td><input type=\"number\" class=\"fertirriego-input\" id=\"granular-eff-${n}\" value=\"${efficiency[n]}\" step=\"0.1\" min=\"1\" max=\"100\" onchange=\"updateGranularEfficiency('${n}', this.value)\"></td>`).join('') + '\n        </tr>\n        <tr class=\"requirement-real-row\">\n          <td><strong>Requerimiento Real<br>(kg/ha)</strong></td>' + nutrients.map(n=>`<td id=\"granular-req-${n}\">${getGranularConvertedValue(n, realRequirement[n])}</td>`).join('') + '\n        </tr>\n      </tbody>\n    </table>';
+          const html = '\n    <table class="fertirriego-requirement-table">\n      <thead>\n        <tr>\n          <th rowspan="2">Concepto</th>' + nutrients.map(n=>`<th id=\"granular-header-${n}\"><span class=\"notranslate\" translate=\"no\">${getGranularLabel(n)}</span></th>`).join('') + '\n        </tr>\n      </thead>\n      <tbody>\n        <tr>\n          <td><strong>Extracción por tonelada<br>(kg/ton)</strong></td>' + nutrients.map(n=>`<td><input type=\"number\" class=\"fertirriego-input\" id=\"granular-extract-${n}\" value=\"${getGranularConvertedValue(n, extraction[n])}\" step=\"0.01\" onchange=\"updateGranularExtractionPerTon('${n}', this.value)\"></td>`).join('') + '\n        </tr>\n        <tr>\n          <td><strong>Extracción total<br>(kg/ha)</strong></td>' + nutrients.map(n=>`<td id=\"granular-extraccion-total-${n}\">${getGranularConvertedValue(n, totalExtraction[n])}</td>`).join('') + '\n        </tr>\n        <tr>\n          <td><strong>Ajuste por niveles<br>en suelo</strong></td>' + nutrients.map(n=>`<td><input type=\"number\" class=\"fertirriego-input\" id=\"granular-adj-${n}\" value=\"${getGranularConvertedValue(n, adjustment[n])}\" step=\"0.01\" onchange=\"updateGranularAdjustment('${n}', this.value)\"></td>`).join('') + '\n        </tr>\n        <tr>\n          <td><strong>Eficiencia<br>(%)</strong></td>' + nutrients.map(n=>`<td><input type=\"number\" class=\"fertirriego-input\" id=\"granular-eff-${n}\" value=\"${efficiency[n]}\" step=\"0.1\" min=\"1\" max=\"100\" onchange=\"updateGranularEfficiency('${n}', this.value)\"></td>`).join('') + '\n        </tr>\n        <tr class=\"requirement-real-row\">\n          <td><strong>Requerimiento Real<br>(kg/ha)</strong></td>' + nutrients.map(n=>`<td id=\"granular-req-${n}\">${getGranularConvertedValue(n, realRequirement[n])}</td>`).join('') + '\n        </tr>\n      </tbody>\n    </table>';
           container.innerHTML = html;
         };
         window.updateGranularExtractionPerTon = function(nutrient,value){
@@ -3169,7 +3169,7 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     if (totalCaReal > 0) html += `<li><strong>Calcio (Ca²⁺):</strong> ${formatNumber(totalCaReal)} kg/ha</li>`;
     if (totalMgReal > 0) html += `<li><strong>Magnesio (Mg²⁺):</strong> ${formatNumber(totalMgReal)} kg/ha</li>`;
     if (totalSo4Real > 0) html += `<li><strong>Sulfato (SO₄²⁻):</strong> ${formatNumber(totalSo4Real)} kg/ha</li>`;
-    if (totalSiReal > 0) html += `<li><strong>Silicio (Si):</strong> ${formatNumber(totalSiReal)} kg/ha</li>`;
+    if (totalSiReal > 0) html += `<li><strong>Silicio (<span class="notranslate" translate="no">Si</span>):</strong> ${formatNumber(totalSiReal)} kg/ha</li>`;
     html += '</ul>';
     html += `<div style="font-size: 12px; color: #64748b; margin-top: 6px;">% del volumen de suelo explorado por raíces (${formatNumber(reachPercent, 0)}%).</div>`;
     html += '</div>';
@@ -3177,7 +3177,7 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     html += '<div class="amendment-details">';
     html += '<h4>📋 Detalles por Enmienda:</h4>';
     html += '<table class="results-table">';
-    html += '<thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th>K⁺ (kg/ha)</th><th>Ca²⁺ (kg/ha)</th><th>Mg²⁺ (kg/ha)</th><th>SO₄²⁻ (kg/ha)</th><th>Si (kg/ha)</th></tr></thead>';
+    html += '<thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th>K⁺ (kg/ha)</th><th>Ca²⁺ (kg/ha)</th><th>Mg²⁺ (kg/ha)</th><th>SO₄²⁻ (kg/ha)</th><th><span class="notranslate" translate="no">Si (kg/ha)</span></th></tr></thead>';
     html += '<tbody>';
     
     adjustedDetails.forEach(amendment => {
@@ -6408,7 +6408,7 @@ function renderAmendmentsTableBody() {
     <td><input type="number" id="new-amendment-so4" placeholder="%SO₄" class="amendment-input" step="0.01" min="0" max="100"></td>
     <td><input type="number" id="new-amendment-co3" placeholder="%CO₃" class="amendment-input" step="0.01" min="0" max="100"></td>
     <td><input type="number" id="new-amendment-h2o" placeholder="%H₂O" class="amendment-input" step="0.01" min="0" max="100"></td>
-    <td><input type="number" id="new-amendment-si" placeholder="%Si" class="amendment-input" step="0.01" min="0" max="100"></td>
+    <td><input type="number" id="new-amendment-si" placeholder="%Si" class="amendment-input notranslate" translate="no" step="0.01" min="0" max="100"></td>
     <td>
       <button class="btn-save-amendment-small" onclick="saveNewAmendment()">💾</button>
       <button class="btn-cancel-amendment-small" onclick="clearNewAmendmentRow()">❌</button>
@@ -6618,7 +6618,7 @@ window.forceLoadTable = function() {
     <td><input type="number" id="new-amendment-so4" placeholder="%SO₄" step="0.1" class="amendment-input"></td>
     <td><input type="number" id="new-amendment-co3" placeholder="%CO₃" step="0.1" class="amendment-input"></td>
     <td><input type="number" id="new-amendment-h2o" placeholder="%H₂O" step="0.1" class="amendment-input"></td>
-    <td><input type="number" id="new-amendment-si" placeholder="%Si" step="0.1" class="amendment-input"></td>
+    <td><input type="number" id="new-amendment-si" placeholder="%Si" step="0.1" class="amendment-input notranslate" translate="no"></td>
     <td>
       <button class="btn-save-amendment-small" onclick="saveNewAmendment()">💾</button>
       <button class="btn-cancel-amendment-small" onclick="clearNewAmendmentRow()">❌</button>
@@ -7080,8 +7080,8 @@ window.editAmendment = function(amendmentId) {
           <input type="number" id="edit-h2o" value="${amendment.h2o}" step="0.1">
         </div>
         <div class="form-group">
-          <label>%Si:</label>
-          <input type="number" id="edit-si" value="${amendment.si}" step="0.1">
+          <label class="notranslate" translate="no">%Si:</label>
+          <input type="number" id="edit-si" value="${amendment.si}" step="0.1" class="notranslate" translate="no">
         </div>
         <div class="modal-buttons">
           <button type="button" onclick="saveAmendmentEdit('${amendment.id}')" class="btn-save">💾 Guardar</button>
@@ -7738,7 +7738,7 @@ function createLegacyReportHTML(data) {
                 <th>% Mg</th>
                 <th>% SO₄</th>
                 <th>% H₂O</th>
-                <th>% Si</th>
+                <th>% <span class="notranslate" translate="no">Si</span></th>
               </tr>
             </thead>
             <tbody>
@@ -12115,7 +12115,7 @@ function createAmendmentsSectionHTML() {
               <li><strong>Calcio (Ca²⁺):</strong> ${reportNum(rawTotals.totalCa, 2)} kg/ha</li>
               <li><strong>Magnesio (Mg²⁺):</strong> ${reportNum(rawTotals.totalMg, 2)} kg/ha</li>
               <li><strong>Potasio (K⁺):</strong> ${reportNum(rawTotals.totalK, 2)} kg/ha</li>
-              <li><strong>Silicio (Si):</strong> ${reportNum(rawTotals.totalSi, 2)} kg/ha</li>
+              <li><strong>Silicio (<span class="notranslate" translate="no">Si</span>):</strong> ${reportNum(rawTotals.totalSi, 2)} kg/ha</li>
             </ul>
             <div style="font-weight:700;margin-bottom:6px;">🧾 Detalles por Enmienda</div>
             <table class="report-admin-table">
@@ -12126,7 +12126,7 @@ function createAmendmentsSectionHTML() {
                   <th>Ca (%)</th>
                   <th>Mg (%)</th>
                   <th>K (%)</th>
-                  <th>Si (%)</th>
+                  <th><span class="notranslate" translate="no">Si (%)</span></th>
                 </tr>
               </thead>
               <tbody>

@@ -228,7 +228,7 @@
           <table class="amendments-table">
             <thead>
               <tr>
-                <th>Enmienda</th><th>Fórmula</th><th>Peso Molecular</th><th>%K</th><th>%Ca</th><th>%Mg</th><th>%SO₄</th><th>%CO₃</th><th>%H₂O</th><th>%Si</th><th>Acciones</th>
+                <th>Enmienda</th><th>Fórmula</th><th>Peso Molecular</th><th>%K</th><th>%Ca</th><th>%Mg</th><th>%SO₄</th><th>%CO₃</th><th>%H₂O</th><th>%<span class="notranslate" translate="no">Si</span></th><th>Acciones</th>
               </tr>
             </thead>
             <tbody id="amendments-table-body"></tbody>
@@ -448,7 +448,7 @@
             <div class="form-group"><label>%SO4:</label><input type="number" id="edit-so4" value="${a.so4}" step="0.1"></div>
             <div class="form-group"><label>%CO3:</label><input type="number" id="edit-co3" value="${a.co3}" step="0.1"></div>
             <div class="form-group"><label>%H2O:</label><input type="number" id="edit-h2o" value="${a.h2o}" step="0.1"></div>
-            <div class="form-group"><label>%Si:</label><input type="number" id="edit-si" value="${a.si}" step="0.1"></div>
+            <div class="form-group"><label class="notranslate" translate="no">%Si:</label><input type="number" id="edit-si" value="${a.si}" step="0.1" class="notranslate" translate="no"></div>
             <div class="modal-buttons">
               <button type="button" onclick="saveAmendmentEdit('${a.id}')" class="btn-save">💾 Guardar</button>
               <button type="button" onclick="closeEditModal()" class="btn-cancel">❌ Cancelar</button>
@@ -587,7 +587,7 @@
       if (totals.ca > 0) html += `<li><strong>Calcio (Ca²⁺):</strong> ${formatNumber(totals.ca)} kg/ha</li>`;
       if (totals.mg > 0) html += `<li><strong>Magnesio (Mg²⁺):</strong> ${formatNumber(totals.mg)} kg/ha</li>`;
       if (totals.so4 > 0) html += `<li><strong>Sulfato (SO₄²⁻):</strong> ${formatNumber(totals.so4)} kg/ha</li>`;
-      if (totals.si > 0) html += `<li><strong>Silicio (Si):</strong> ${formatNumber(totals.si)} kg/ha</li>`;
+      if (totals.si > 0) html += `<li><strong>Silicio (<span class="notranslate" translate="no">Si</span>):</strong> ${formatNumber(totals.si)} kg/ha</li>`;
       html += '</ul>';
       html += `<div style="font-size:12px;color:#64748b;margin-top:6px;">% del volumen de suelo explorado por raíces (${formatNumber(reachPercent,0)}%).</div>`;
       html += '</div>';

@@ -30,7 +30,9 @@
     'H₃PO₄', 'H3PO4', 'H₂SO₄', 'H2SO4',
     'MnO', 'MnO₂', 'MnO2', 'CuO', 'ZnO',
     'Al₂O₃', 'Al2O3', 'Fe₂O₃', 'Fe2O3', 'FeO',
-    'B₄O₇', 'B2O3', 'MoO₃', 'MoO3'
+    'B₄O₇', 'B2O3',     'MoO₃', 'MoO3',
+    /* Silicio: %Si y cabeceras (el traductor confunde “Si” con “sí/if”) */
+    '%Si', 'Si (kg/ha)', 'Si (%)'
   ];
 
   /**
@@ -41,7 +43,9 @@
    */
   var SIMBOLOS_ELEMENTO_BORDE_PALABRA = [
     'Si', 'Ca', 'Na', 'Fe', 'Cu', 'Mo', 'Cl', 'Zn', 'Mn', 'Mg', 'Al', 'B',
-    'Ni', 'Cr', 'Pb', 'Ag', 'As', 'Cd', 'Hg', 'Sb', 'Ba', 'Sr'
+    'Ni', 'Cr', 'Pb', 'Ag', 'As', 'Cd', 'Hg', 'Sb', 'Ba', 'Sr',
+    /* P suelta (cabeceras N-P-K, “P” fósforo). \b no parte “P2O5”. Ojo: puede marcar la P de “P. ej.” si aparece en la UI. */
+    'P'
   ];
 
   // —— Unidades y abreviaturas técnicas (no traducir)

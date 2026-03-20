@@ -3593,6 +3593,11 @@ body {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 12px;
+  overflow: visible;
+}
+.hydro-triangle .hydro-ternary-svg-wrap,
+.hydro-triangle .hydro-ternary-chart-svg {
+  overflow: visible;
 }
 
 .hydro-triangle-box {
