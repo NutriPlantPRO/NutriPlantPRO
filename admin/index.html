@@ -2787,7 +2787,8 @@
                                 paypal_subscription_id: user.paypal_subscription_id || null,
                                 created_at: user.created_at || null,
                                 projects_count: projectsCount, // 📊 Número de proyectos del usuario
-                                isAdmin: isAdminUser
+                                isAdmin: isAdminUser,
+                                exclude_from_revenue: user.exclude_from_revenue === true
                             };
                             // 🟢 Sobrescribir con datos de Supabase si existen (admin siempre se mantiene Activa)
                             const cloudUser = cloudByEmail[user.email?.toLowerCase()];
@@ -2827,6 +2828,8 @@
                                 if (cloudUser.custom_granular_crops != null) userData.custom_granular_crops = cloudUser.custom_granular_crops;
                                 if (cloudUser.custom_ferti_crops != null) userData.custom_ferti_crops = cloudUser.custom_ferti_crops;
                                 if (cloudUser.custom_amendments != null) userData.custom_amendments = cloudUser.custom_amendments;
+                                // Contabilidad ingresos USD: la verdad está en Supabase
+                                if (!isAdminUser) userData.exclude_from_revenue = cloudUser.exclude_from_revenue === true;
                             }
                             users.push(userData);
                             processedEmails.add(user.email?.toLowerCase());
@@ -2899,7 +2902,8 @@
                             custom_granular_materials: cu.custom_granular_materials,
                             custom_granular_crops: cu.custom_granular_crops,
                             custom_ferti_crops: cu.custom_ferti_crops,
-                            custom_amendments: cu.custom_amendments
+                            custom_amendments: cu.custom_amendments,
+                            exclude_from_revenue: !isAdmin && cu.exclude_from_revenue === true
                         });
                         processedEmails.add(cu.email?.toLowerCase());
                     }
@@ -2950,6 +2954,8 @@
                     if (oth && !ov) out[k] = other[k];
                     else if (ov) out[k] = chosen[k];
                 });
+                if (chosen.exclude_from_revenue === true || other.exclude_from_revenue === true) out.exclude_from_revenue = true;
+                else if (chosen.exclude_from_revenue === false || other.exclude_from_revenue === false) out.exclude_from_revenue = false;
                 return out;
             };
             const byEmail = new Map();
