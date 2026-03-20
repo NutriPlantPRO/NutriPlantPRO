@@ -707,9 +707,13 @@ function hydroDrawCombinedTernary(container, data) {
   const lw = 200;
   const lh = 48;
   const labelDist = 52;
-  const lC = outwardFromEdge(vTop, vLeft, vRight, labelDist);
-  const rC = outwardFromEdge(vTop, vRight, vLeft, labelDist);
-  const bC = outwardFromEdge(vLeft, vRight, vTop, labelDist + 10);
+  const labelNudgeX = 10;
+  const lCraw = outwardFromEdge(vTop, vLeft, vRight, labelDist);
+  const rCraw = outwardFromEdge(vTop, vRight, vLeft, labelDist);
+  const bCraw = outwardFromEdge(vLeft, vRight, vTop, labelDist + 10);
+  const lC = { x: lCraw.x + labelNudgeX, y: lCraw.y };
+  const rC = { x: rCraw.x + labelNudgeX, y: rCraw.y };
+  const bC = { x: bCraw.x + labelNudgeX, y: bCraw.y };
   const divCell = `${foStyle}text-align:center;display:flex;align-items:center;justify-content:center;height:100%;width:100%;pointer-events:none;box-sizing:border-box;`;
   const fo = (cx, cy, html) =>
     `<foreignObject x="${cx - lw / 2}" y="${cy - lh / 2}" width="${lw}" height="${lh}">` +
