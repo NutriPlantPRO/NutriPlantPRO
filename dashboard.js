@@ -13316,7 +13316,6 @@ function createHidroponiaSectionHTML() {
         <div class="report-block-title">✅ Solución nutritiva por etapa (meq/L)</div>
         <div class="report-kv">
           <div class="report-kv-item"><div class="data-label">Cultivo</div><div class="data-value">${reportEscapeHtml(crop)}</div></div>
-          <div class="report-kv-item"><div class="data-label">Etapas configuradas</div><div class="data-value">${stages.length}</div></div>
         </div>
         ${activeStage ? `
         <div class="report-note" style="margin:8px 0 10px 0;">

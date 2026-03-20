@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración - NutriPlant PRO</title>
     <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png">
-    <link rel="stylesheet" href="../dashboard.css">
+    <link rel="stylesheet" href="../dashboard.css?v=20260320">
     <script src="../subscription-config.js"></script>
     <script src="../analysis-report-render.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -394,6 +394,14 @@
             border-radius: 8px;
             margin-bottom: 20px;
             text-align: center;
+        }
+
+        /* Hidroponía (detalle proyecto admin): mismas tarjetas de tanque que el dashboard + texto secundario */
+        .hydro-muted { color: #64748b; font-size: 0.92em; }
+        .admin-container .hydro-tank-blocks {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -8904,7 +8912,7 @@
       </div>`;
                     }).filter(Boolean).join('');
                     if (tankBlocksHtml) {
-                        html += `<div style="margin-bottom: 16px;"><strong style="color: #1e293b; font-size: 14px;">📋 Por tanque (A, B, C…)</strong><p style="margin:6px 0 8px 0;color:#64748b;font-size:12px;">Las cantidades son el total para todo el volumen de agua indicado (sólidos en kg y líquidos en L). Si hay varias recargas, en cada llenada se usa la cantidad «por recarga».</p><div class="hydro-tank-blocks">${tankBlocksHtml}</div></div>`;
+                        html += `<div class="admin-hydro-tank-wrap" style="margin-bottom: 16px; width: 100%; max-width: 100%; box-sizing: border-box;"><strong style="color: #1e293b; font-size: 14px;">📋 Por tanque (A, B, C…)</strong><p style="margin:6px 0 8px 0;color:#64748b;font-size:12px;">Las cantidades son el total para todo el volumen de agua indicado (sólidos en kg y líquidos en L). Si hay varias recargas, en cada llenada se usa la cantidad «por recarga».</p><div class="hydro-tank-blocks">${tankBlocksHtml}</div></div>`;
                     }
                 }
                 let hydroTotalsPpm = hasHidroponiaData && hidroponia.fertilizerTotalsPpm && typeof hidroponia.fertilizerTotalsPpm === 'object' ? hidroponia.fertilizerTotalsPpm : null;
