@@ -46,7 +46,7 @@
         
         .admin-stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -85,7 +85,7 @@
         
         .admin-sections {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
             gap: 20px;
         }
         
@@ -177,7 +177,7 @@
         }
         .admin-report-inner .admin-analysis-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
             gap: 10px 14px;
             margin: 0;
         }
@@ -404,8 +404,8 @@
             box-sizing: border-box;
         }
 
-        /* Visor de datos / detalle proyecto: capa completa sobre el panel y un solo scroll (evita ver el panel detrás en móvil). */
-        #dataViewerModal {
+        /* Visor de datos / detalle proyecto: capa completa; el panel no debe recortar contenido en móvil (min-width:0 + rejillas fluidas). */
+        #dataViewerModal.modal-overlay {
             position: fixed;
             inset: 0;
             width: 100%;
@@ -417,26 +417,82 @@
             z-index: 50000;
             overflow: hidden;
             box-sizing: border-box;
-            align-items: flex-start;
-            justify-content: center;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            padding-left: max(8px, env(safe-area-inset-left, 0px));
+            padding-right: max(8px, env(safe-area-inset-right, 0px));
+            padding-top: max(0px, env(safe-area-inset-top, 0px));
         }
         #dataViewerModal .data-viewer-modal-panel {
-            width: 91%;
-            max-width: 1200px;
-            margin: 16px auto;
-            margin-bottom: max(16px, calc(16px + env(safe-area-inset-bottom, 0px)));
+            width: 100%;
+            max-width: min(1200px, calc(100vw - 16px));
+            min-width: 0;
+            margin: 12px auto;
+            margin-bottom: max(12px, calc(12px + env(safe-area-inset-bottom, 0px)));
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             box-sizing: border-box;
-            max-height: calc(100vh - 32px);
-            max-height: calc(100dvh - 32px);
-            overflow-x: hidden;
+            max-height: calc(100vh - 24px);
+            max-height: calc(100dvh - 24px);
+            flex: 0 1 auto;
+            align-self: center;
+            overflow-x: auto;
             overflow-y: auto;
             overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
             position: relative;
             isolation: isolate;
+        }
+        #dataViewerContent {
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        .data-viewer-modal-titlebar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+        .data-viewer-modal-titlebar .data-viewer-modal-title-cluster {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            min-width: 0;
+            flex: 1 1 12rem;
+            box-sizing: border-box;
+        }
+        .data-viewer-modal-titlebar h2 {
+            margin: 0;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.25;
+            font-size: clamp(1rem, 4.2vw, 1.5rem);
+            color: #1e293b;
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+        .data-viewer-modal-titlebar > button:last-child {
+            flex-shrink: 0;
+        }
+        @media (max-width: 640px) {
+            #dataViewerModal.modal-overlay {
+                padding-left: 0;
+                padding-right: 0;
+            }
+            #dataViewerModal .data-viewer-modal-panel {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                border-radius: 0;
+                max-height: 100vh;
+                max-height: 100dvh;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -4627,7 +4683,7 @@
             const html = `
                 <div style="padding: 24px;">
                     <h2 style="margin: 0 0 24px 0; color: #1e293b; font-size: 24px;">💳 Resumen de Suscripciones (cada 5 meses)</h2>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 16px; margin-bottom: 24px;">
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #60a5fa;">
                             <div style="font-size: 32px; font-weight: bold; color: #1e293b;">${overview.total}</div>
                             <div style="color: #64748b; margin-top: 8px;">Total Suscriptores</div>
@@ -4933,13 +4989,15 @@
             // Construir HTML de la tabla con filtros
             let html = `
                 <div style="padding: 24px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 style="margin: 0; color: #1e293b; font-size: 24px;">${config.title}</h2>
+                    <div class="data-viewer-modal-titlebar" style="margin-bottom: 20px;">
+                        <div class="data-viewer-modal-title-cluster">
+                            <h2>${config.title}</h2>
+                        </div>
                         <button onclick="closeDataViewer()" style="background: none; border: none; font-size: 24px; color: #64748b; cursor: pointer; padding: 4px 12px;">×</button>
                     </div>
                     
                     <div style="margin-bottom: 20px; padding: 16px; background: #f8fafc; border-radius: 8px;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px;">
             `;
             
             // Agregar filtros por columna
@@ -5258,7 +5316,7 @@
                         <!-- Cultivos -->
                         <div>
                             <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #374151;">Cultivos de Interés</label>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; padding: 12px; background: #f8fafc; border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 12px; padding: 12px; background: #f8fafc; border-radius: 8px;">
             `;
             
             allCrops.forEach(crop => {
@@ -5601,7 +5659,16 @@
             ticks += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
             ticks += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
 
-            return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" style="background:#fff;border-radius:8px;">
+            // Misma geometría que hidroponia-functions.js. El wrapper notranslate evita que apply-no-traducir.js
+            // meta <span> dentro de <text> del SVG (rompe etiquetas y deja trozos tipo "50 /").
+            const leftMid = lerp(vTop, vLeft, 0.5);
+            const rightMid = lerp(vTop, vRight, 0.5);
+            const bottomMid = lerp(vLeft, vRight, 0.5);
+            const lLab = { x: leftMid.x - 28, y: leftMid.y };
+            const rLab = { x: rightMid.x + 28, y: rightMid.y };
+            const bLab = { x: bottomMid.x, y: bottomMid.y + 26 };
+
+            return `<div class="hydro-ternary-svg-wrap notranslate" translate="no"><svg xmlns="http://www.w3.org/2000/svg" class="notranslate hydro-ternary-chart-svg" translate="no" viewBox="0 0 ${width} ${height}" width="100%" height="${height}" preserveAspectRatio="xMidYMid meet" style="background:#fff;border-radius:8px;overflow:visible;display:block;max-width:100%;">
                 ${grid}
                 ${anPoly}
                 ${catPoly}
@@ -5610,10 +5677,10 @@
                 <circle cx="${catPoint.x}" cy="${catPoint.y}" r="6" fill="${catInside ? '#ef4444' : '#b91c1c'}" stroke="#7f1d1d" stroke-width="1.2" />
                 <circle cx="${anPoint.x}" cy="${anPoint.y}" r="6" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />
                 ${ticks}
-                <text x="${lerp(vTop, vLeft, 0.5).x - 26}" y="${lerp(vTop, vLeft, 0.5).y}" text-anchor="end" font-size="11" font-weight="bold" fill="#334155">Mg²⁺ / SO₄²⁻</text>
-                <text x="${lerp(vTop, vRight, 0.5).x + 26}" y="${lerp(vTop, vRight, 0.5).y}" text-anchor="start" font-size="11" font-weight="bold" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>
-                <text x="${lerp(vLeft, vRight, 0.5).x}" y="${lerp(vLeft, vRight, 0.5).y + 30}" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">K⁺ / NO₃⁻</text>
-            </svg>`;
+                <text class="notranslate" translate="no" x="${lLab.x}" y="${lLab.y}" text-anchor="end" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Mg²⁺ / SO₄²⁻</text>
+                <text class="notranslate" translate="no" x="${rLab.x}" y="${rLab.y}" text-anchor="start" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>
+                <text class="notranslate" translate="no" x="${bLab.x}" y="${bLab.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">K⁺ / NO₃⁻</text>
+            </svg></div>`;
         }
         function adminHydroComputeCE(meq) {
             if (!meq) return 0;
@@ -7564,18 +7631,18 @@
             // Construir HTML con todas las secciones
             let html = `
                 <div style="padding: 24px; padding-bottom: max(24px, calc(24px + env(safe-area-inset-bottom, 0px)));">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="data-viewer-modal-titlebar" style="margin-bottom: 24px;">
+                        <div class="data-viewer-modal-title-cluster">
                             ${navigationHistory.previousView ? `
                                 <button onclick="goBack()" 
-                                        style="background: #f3f4f6; border: none; font-size: 20px; color: #374151; cursor: pointer; padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" 
+                                        style="background: #f3f4f6; border: none; font-size: 20px; color: #374151; cursor: pointer; padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;" 
                                         onmouseover="this.style.background='#e5e7eb'; this.style.color='#1f2937';" 
                                         onmouseout="this.style.background='#f3f4f6'; this.style.color='#374151';"
                                         title="Volver atrás">
                                     ←
                                 </button>
                             ` : ''}
-                        <h2 style="margin: 0; color: #1e293b; font-size: 24px;">📋 Detalles del Proyecto: ${escapeHtml(project.name || 'Sin nombre')}</h2>
+                        <h2>📋 Detalles del Proyecto: ${escapeHtml(project.name || 'Sin nombre')}</h2>
                         </div>
                         <button onclick="closeDataViewer()" 
                                 style="background: none; border: none; font-size: 24px; color: #64748b; cursor: pointer; padding: 4px 12px; transition: all 0.2s;" 
@@ -7590,7 +7657,7 @@
                         <!-- Información Básica -->
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #60a5fa;">
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">📌 Información Básica</h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px;">
                                 <div><strong>ID:</strong> ${escapeHtml(project.id || 'N/A')}</div>
                                 <div><strong>Nombre:</strong> ${escapeHtml(project.name || 'Sin nombre')}</div>
                                 <div><strong>Cultivo:</strong> ${escapeHtml(project.crop_type || 'N/A')}</div>
@@ -7604,7 +7671,7 @@
                         <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #16a34a;">
                             <h3 style="margin: 0 0 12px 0; color: #1e293b; font-size: 18px;">📊 Uso real por sección</h3>
                             <p style="margin: 0 0 12px 0; color: #64748b; font-size: 13px;">Nivel de uso de cada sección del proyecto (no solo si tiene un valor mínimo).</p>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); gap: 8px;">
                                 ${(function() {
                                     var sw = getSectionWeights(project, { reportCount: generatedReports.length });
                                     var labels = { 0: '—', 1: 'Bajo', 2: 'Medio', 3: 'Alto' };
@@ -7627,7 +7694,7 @@
             html += `
                 <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #0ea5e9;">
                     <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">💬 Resumen del chat IA</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 12px;">
                         <div><strong style="color: #0c4a6e;">Mensajes totales:</strong><br><span style="color: #0369a1; font-size: 16px; font-weight: 600;">${chatHist.length}</span></div>
                         <div><strong style="color: #0c4a6e;">Interacciones IA:</strong><br><span style="color: #0369a1; font-size: 16px; font-weight: 600;">${chatInteractions}</span></div>
                         <div><strong style="color: #0c4a6e;">Costo est. (USD):</strong><br><span style="color: #0369a1; font-size: 16px; font-weight: 600;">$${chatCostEst}</span></div>
@@ -7698,7 +7765,7 @@
                         ? (hasPolygon 
                             ? `
                                 <div style="background: white; padding: 16px; border-radius: 6px;">
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 16px; margin-bottom: 16px;">
                                         ${location.areaHectares !== undefined && location.areaHectares !== null 
                                             ? `<div><strong style="color: #1e293b;">Área:</strong><br><span style="color: #10b981; font-size: 16px; font-weight: 600;">${typeof location.areaHectares === 'number' ? location.areaHectares.toFixed(2) : location.areaHectares} ha</span></div>` 
                                             : ''}
@@ -7768,7 +7835,7 @@
                     html += `
                         <div style="margin-bottom: 12px;">
                             <strong style="color: #1e293b; font-size: 14px;">Elementos Iniciales (meq/100g):</strong>
-                            <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                            <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                                 ${soilAnalysis.initial.k !== undefined && soilAnalysis.initial.k !== null ? `<div><strong>K:</strong> ${soilAnalysis.initial.k}</div>` : ''}
                                 ${soilAnalysis.initial.ca !== undefined && soilAnalysis.initial.ca !== null ? `<div><strong>Ca:</strong> ${soilAnalysis.initial.ca}</div>` : ''}
                                 ${soilAnalysis.initial.mg !== undefined && soilAnalysis.initial.mg !== null ? `<div><strong>Mg:</strong> ${soilAnalysis.initial.mg}</div>` : ''}
@@ -7786,7 +7853,7 @@
                 html += `
                         <div style="margin-bottom: 12px;">
                             <strong style="color: #1e293b; font-size: 14px;">Propiedades del Suelo:</strong>
-                            <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px;">
+                            <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 8px;">
                                 ${soilAnalysis.properties.ph !== undefined && soilAnalysis.properties.ph !== null && soilAnalysis.properties.ph !== 0 ? `<div><strong>pH:</strong> ${soilAnalysis.properties.ph}</div>` : ''}
                                 ${soilAnalysis.properties.density !== undefined && soilAnalysis.properties.density !== null && soilAnalysis.properties.density !== 0 ? `<div><strong>Densidad:</strong> ${soilAnalysis.properties.density} g/cm³</div>` : ''}
                                 ${soilAnalysis.properties.depth !== undefined && soilAnalysis.properties.depth !== null && soilAnalysis.properties.depth !== 0 ? `<div><strong>Profundidad:</strong> ${soilAnalysis.properties.depth} cm</div>` : ''}
@@ -7800,7 +7867,7 @@
                 html += `
                         <div style="margin-bottom: 12px;">
                             <strong style="color: #1e293b; font-size: 14px;">Ajustes Requeridos (meq/100g):</strong>
-                            <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                            <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                                 ${soilAnalysis.adjustments.k !== undefined && soilAnalysis.adjustments.k !== null && soilAnalysis.adjustments.k !== 0 ? `<div><strong>K:</strong> ${soilAnalysis.adjustments.k > 0 ? '+' : ''}${soilAnalysis.adjustments.k}</div>` : ''}
                                 ${soilAnalysis.adjustments.ca !== undefined && soilAnalysis.adjustments.ca !== null && soilAnalysis.adjustments.ca !== 0 ? `<div><strong>Ca:</strong> ${soilAnalysis.adjustments.ca > 0 ? '+' : ''}${soilAnalysis.adjustments.ca}</div>` : ''}
                                 ${soilAnalysis.adjustments.mg !== undefined && soilAnalysis.adjustments.mg !== null && soilAnalysis.adjustments.mg !== 0 ? `<div><strong>Mg:</strong> ${soilAnalysis.adjustments.mg > 0 ? '+' : ''}${soilAnalysis.adjustments.mg}</div>` : ''}
@@ -7941,7 +8008,7 @@
                 html += `
                     <div style="margin-top: 8px;">
                         <strong style="color: #1e293b; font-size: 14px;">Extracción por Tonelada (kg/ton):</strong>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.filter(n => extractionPerTon[n] !== undefined && extractionPerTon[n] !== null).map(n => {
                                 const label = getAdminNutrientLabel(n, isElementalMode);
                                 const value = typeof extractionPerTon[n] === 'number' ? extractionPerTon[n].toFixed(2) : extractionPerTon[n];
@@ -7955,7 +8022,7 @@
                 html += `
                     <div style="margin-top: 8px;">
                         <strong style="color: #1e293b; font-size: 14px;">Extracción Total (kg/ha):</strong>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.filter(n => totalExtraction[n] && parseFloat(totalExtraction[n]) !== 0).map(n => {
                                 const label = getAdminNutrientLabel(n, isElementalMode);
                                 return `<div><strong>${label}:</strong> ${totalExtraction[n]}</div>`;
@@ -7968,7 +8035,7 @@
                 html += `
                         <div style="margin-top: 8px;">
                             <strong style="color: #1e293b; font-size: 14px;">Ajuste por Niveles en Suelo (kg/ha):</strong>
-                            <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                            <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                                 ${nutrients.map(n => {
                                     let adjValue = typeof adjustment[n] === 'number' ? adjustment[n] : parseFloat(adjustment[n]) || 0;
                                     if (isElementalMode) {
@@ -7985,7 +8052,7 @@
                 html += `
                         <div style="margin-top: 8px;">
                             <strong style="color: #1e293b; font-size: 14px;">Eficiencia (%):</strong>
-                            <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                            <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                                 ${nutrients.map(n => {
                                     const value = efficiency[n] != null ? efficiency[n] : '—';
                                     const label = getAdminNutrientLabel(n, isElementalMode);
@@ -8000,7 +8067,7 @@
                 html += `
                     <div style="margin-top: 8px;">
                         <strong style="color: #1e293b; font-size: 14px;">Requerimiento Real (kg/ha):</strong>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, isElementalMode);
                                 return `<div><strong>${label}:</strong> ${realRequirement[n] != null ? realRequirement[n] : '—'}</div>`;
@@ -8062,7 +8129,7 @@
                 html += `
                     <div style="margin-bottom: 14px;">
                         <strong style="color: #1e293b; font-size: 14px;">Aporte Total (kg/ha):</strong>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, programIsElemental);
                                 return `<div><strong>${label}:</strong> ${formatAdminValue(n, programSummary.aportado[n])}</div>`;
@@ -8071,7 +8138,7 @@
                     </div>
                     <div style="margin-bottom: 14px;">
                         <strong style="color: #1e293b; font-size: 14px;">Requerimiento Real (kg/ha):</strong>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, programIsElemental);
                                 return `<div><strong>${label}:</strong> ${formatAdminValue(n, programSummary.requerido[n])}</div>`;
@@ -8080,7 +8147,7 @@
                     </div>
                     <div style="margin-bottom: 8px;">
                         <strong style="color: #1e293b; font-size: 14px;">Diferencia (Aporte - Requerimiento) (kg/ha):</strong>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, programIsElemental);
                                 return `<div><strong>${label}:</strong> ${formatAdminValue(n, programSummary.diferencia[n])}</div>`;
@@ -8378,7 +8445,7 @@
                 html += `
                     <div style="margin-top: 8px;">
                         <strong style="color: #1e293b; font-size: 14px;">Extracción por Tonelada (kg/ton):</strong>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, isElementalMode);
                                 return `<div><strong>${label}:</strong> ${formatAdminValue(n, extractionPerTonDisplay[n])}</div>`;
@@ -8391,7 +8458,7 @@
                 html += `
                     <div style="margin-top: 8px;">
                         <strong style="color: #1e293b; font-size: 14px;">Extracción Total (kg/ha):</strong>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, isElementalMode);
                                 return `<div><strong>${label}:</strong> ${formatAdminValue(n, totalExtractionDisplay[n])}</div>`;
@@ -8404,7 +8471,7 @@
                 html += `
                     <div style="margin-top: 8px;">
                         <strong style="color: #1e293b; font-size: 14px;">Ajuste por Niveles en Suelo (kg/ha):</strong>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, isElementalMode);
                                 return `<div><strong>${label}:</strong> ${formatAdminValue(n, adjustmentDisplay[n])}</div>`;
@@ -8417,7 +8484,7 @@
                 html += `
                     <div style="margin-top: 8px;">
                         <strong style="color: #1e293b; font-size: 14px;">Eficiencia (%):</strong>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, isElementalMode);
                                 return `<div><strong>${label}:</strong> ${efficiencyDisplay[n] !== null ? efficiencyDisplay[n].toFixed(1) + '%' : '—'}</div>`;
@@ -8430,7 +8497,7 @@
                 html += `
                     <div style="margin-top: 8px;">
                         <strong style="color: #1e293b; font-size: 14px;">Requerimiento Real (kg/ha):</strong>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                             ${nutrients.map(n => {
                                 const label = getAdminNutrientLabel(n, isElementalMode);
                                 return `<div><strong>${label}:</strong> ${formatAdminValue(n, realRequirementDisplay[n])}</div>`;
@@ -8637,13 +8704,13 @@
                         ${!hasProgramTotals ? '<div style="margin-bottom:10px;padding:8px 10px;background:#fffbeb;border:1px dashed #f59e0b;border-radius:6px;color:#92400e;font-size:12px;">No hay totales guardados por semana en este programa. El admin no recalcula con catálogo interno; muestra solo lo guardado.</div>' : ''}
                         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;">
                             <div style="font-weight:600;color:#1e293b;margin-bottom:8px;">📊 Resumen Total del Ciclo</div>
-                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-bottom:10px;">
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px;margin-bottom:10px;">
                                 <div><strong>${fertirriegoProgram.timeUnit === 'mes' ? 'Meses' : 'Semanas'}:</strong> ${weeks.length}</div>
                                 <div><strong>Dosis Total Kg/Ha:</strong> ${formatAdminValue('N', totalDose)}</div>
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong style="color:#1e293b;font-size:13px;">💡 Aporte del programa de nutrición (Kg/Ha):</strong>
-                                <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;">
+                                <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));gap:6px;">
                                     ${summaryNutrients.map(n => {
                                         const label = getAdminNutrientLabel(n, programIsElemental);
                                         return `<div><strong>${label}:</strong> ${formatAdminValue(n, summary.aportado[n])}</div>`;
@@ -8652,7 +8719,7 @@
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong style="color:#0369a1;font-size:13px;">💧 Aporte por agua (Kg/Ha):</strong>
-                                <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;">
+                                <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));gap:6px;">
                                     ${summaryNutrients.map(n => {
                                         const label = getAdminNutrientLabel(n, programIsElemental);
                                         return `<div><strong>${label}:</strong> <span style="color:#0369a1;font-weight:600;">${formatAdminValue(n, summary.aportadoAgua[n])}</span></div>`;
@@ -8661,7 +8728,7 @@
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong style="color:#0369a1;font-size:13px;">📦 Aporte total (programa + agua) (Kg/Ha):</strong>
-                                <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;">
+                                <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));gap:6px;">
                                     ${summaryNutrients.map(n => {
                                         const label = getAdminNutrientLabel(n, programIsElemental);
                                         return `<div><strong>${label}:</strong> ${formatAdminValue(n, summary.totalWithWater[n])}</div>`;
@@ -8670,7 +8737,7 @@
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong style="color:#1e293b;font-size:13px;">🎯 Requerimiento Real (Kg/Ha):</strong>
-                                <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;">
+                                <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));gap:6px;">
                                     ${summaryNutrients.map(n => {
                                         const label = getAdminNutrientLabel(n, programIsElemental);
                                         return `<div><strong>${label}:</strong> ${formatAdminValue(n, summary.requerido[n])}</div>`;
@@ -8679,7 +8746,7 @@
                             </div>
                             <div>
                                 <strong style="color:#1e293b;font-size:13px;">➖ Diferencia (Aporte total - Requerimiento) (Kg/Ha):</strong>
-                                <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;">
+                                <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));gap:6px;">
                                     ${summaryNutrients.map(n => {
                                         const label = getAdminNutrientLabel(n, programIsElemental);
                                         return `<div><strong>${label}:</strong> ${formatAdminValue(n, summary.diferencia[n])}</div>`;
@@ -8879,7 +8946,7 @@
                     <div style="margin-bottom: 16px;">
                         <strong style="color: #1e293b; font-size: 14px;">💧 Análisis de agua (ppm)</strong>
                         <p style="margin:4px 0 8px 0;color:#64748b;font-size:12px;">Aportes del agua para calcular el faltante (objetivo − agua).</p>
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 100px), 1fr)); gap: 10px;">
                             ${HYDRO_PPM_NUTRIENTS.map(n => {
                                 const v = parseFloat(hydroWater[n]) || 0;
                                 return `<div><strong>${adminHydroLabel(n)}:</strong> ${v.toFixed(2)}</div>`;
@@ -8896,7 +8963,7 @@
                 html += `
                     <div style="margin-bottom: 16px;">
                         <strong style="color: #1e293b; font-size: 14px;">📦 Cálculo por volumen de agua</strong>
-                        <div style="background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+                        <div style="background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 10px;">
                             <div><strong>Volumen de agua (m³):</strong> ${hydroVolM3 !== null ? hydroVolM3 : 'Sin dato'}</div>
                             <div><strong>Volumen del tanque (L):</strong> ${hydroTankL !== null ? hydroTankL : 'Sin dato'}</div>
                             <div><strong>Tasa de inyección (L/m³):</strong> ${hydroInjRate !== null ? hydroInjRate : 'Sin dato'}</div>
@@ -9106,7 +9173,7 @@
                             ${vpdAnalysis.environmental && vpdAnalysis.environmental.vpd !== null && vpdAnalysis.environmental.vpd !== undefined ? `
                                 <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
                                     <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">📊 Calculadora Ambiental</h4>
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; font-size: 14px;">
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 12px; font-size: 14px;">
                                         <div><strong>Temperatura:</strong> ${vpdAnalysis.environmental.temperature !== null ? vpdAnalysis.environmental.temperature + ' °C' : 'N/A'}</div>
                                         <div><strong>Humedad Relativa:</strong> ${vpdAnalysis.environmental.humidity !== null ? vpdAnalysis.environmental.humidity + ' %' : 'N/A'}</div>
                                         <div><strong>VPD:</strong> <span style="color: #059669; font-weight: 600;">${vpdAnalysis.environmental.vpd !== null ? vpdAnalysis.environmental.vpd.toFixed(2) + ' kPa' : 'N/A'}</span></div>
@@ -9119,7 +9186,7 @@
                             ${vpdAnalysis.advanced && vpdAnalysis.advanced.vpd !== null && vpdAnalysis.advanced.vpd !== undefined ? `
                                 <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
                                     <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">🔬 Calculadora Avanzada</h4>
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; font-size: 14px;">
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 12px; font-size: 14px;">
                                         <div><strong>Temperatura Aire:</strong> ${vpdAnalysis.advanced.airTemperature !== null ? vpdAnalysis.advanced.airTemperature + ' °C' : 'N/A'}</div>
                                         <div><strong>Humedad Relativa:</strong> ${vpdAnalysis.advanced.airHumidity !== null ? vpdAnalysis.advanced.airHumidity + ' %' : 'N/A'}</div>
                                         ${vpdAnalysis.advanced.mode === 'leaf' ? `<div><strong>Temperatura Hoja:</strong> ${vpdAnalysis.advanced.leafTemperature !== null ? vpdAnalysis.advanced.leafTemperature + ' °C' : 'N/A'}</div>` : ''}
@@ -9701,18 +9768,18 @@
             // Construir HTML con toda la información
             let html = `
                 <div style="padding: 24px; padding-bottom: max(24px, calc(24px + env(safe-area-inset-bottom, 0px)));">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="data-viewer-modal-titlebar" style="margin-bottom: 24px;">
+                        <div class="data-viewer-modal-title-cluster">
                             ${navigationHistory.previousView ? `
                                 <button onclick="goBack()" 
-                                        style="background: #f3f4f6; border: none; font-size: 20px; color: #374151; cursor: pointer; padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" 
+                                        style="background: #f3f4f6; border: none; font-size: 20px; color: #374151; cursor: pointer; padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;" 
                                         onmouseover="this.style.background='#e5e7eb'; this.style.color='#1f2937';" 
                                         onmouseout="this.style.background='#f3f4f6'; this.style.color='#374151';"
                                         title="Volver atrás">
                                     ←
                                 </button>
                             ` : ''}
-                        <h2 style="margin: 0; color: #1e293b; font-size: 24px;">👤 Detalles del Usuario: ${escapeHtml(user.name || user.email || 'Sin nombre')}</h2>
+                        <h2>👤 Detalles del Usuario: ${escapeHtml(user.name || user.email || 'Sin nombre')}</h2>
                         </div>
                         <button onclick="closeDataViewer()" 
                                 style="background: none; border: none; font-size: 24px; color: #64748b; cursor: pointer; padding: 4px 12px; transition: all 0.2s;" 
@@ -9727,7 +9794,7 @@
                         <!-- Información Personal -->
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #60a5fa;">
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">📋 Información Personal</h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 16px;">
                                 <div><strong>ID:</strong> ${escapeHtml(user.id || userId)}</div>
                                 <div><strong>Nombre:</strong> ${escapeHtml(user.name || 'N/A')}</div>
                                 <div><strong>Email:</strong> ${escapeHtml(user.email || 'N/A')}</div>
@@ -9744,7 +9811,7 @@
                         <!-- Información de Suscripción -->
                         <div style="background: ${user.subscription_status === 'active' ? '#f0fdf4' : user.subscription_status === 'expired' ? '#fef2f2' : '#fef3c7'}; padding: 20px; border-radius: 8px; border-left: 4px solid ${user.subscription_status === 'active' ? '#10b981' : user.subscription_status === 'expired' ? '#ef4444' : '#f59e0b'};">
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">💳 Información de Suscripción</h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px;">
                                 <div><strong>Estado:</strong> ${user.subscription_status === 'active' ? '✅ Activa' : user.subscription_status === 'expired' ? '⏰ Expirada' : user.subscription_status === 'cancelled' ? '❌ Cancelada' : user.subscription_status === 'pending' ? '⏳ Pendiente' : user.subscription_status === 'inactive' ? '❌ Inactiva' : '❓ Desconocido'}</div>
                                 <div><strong>Monto:</strong> ${user.subscription_amount != null && user.subscription_amount !== '' && parseFloat(user.subscription_amount) > 0 ? `$${parseFloat(user.subscription_amount).toFixed(2)} USD` : 'Sin suscripción'}</div>
                                 <div><strong>Último Pago:</strong> ${lastPaymentDisplay}</div>
@@ -9757,7 +9824,7 @@
                         <!-- Resumen del chat IA (por usuario, acumulado total de todos sus proyectos) -->
                         <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #0ea5e9;">
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">💬 Resumen del chat IA</h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 12px;">
                                 <div><strong style="color: #0c4a6e;">Mensajes totales:</strong><br><span style="color: #0369a1; font-size: 16px; font-weight: 600;">${userChatMessages}</span></div>
                                 <div><strong style="color: #0c4a6e;">Interacciones IA:</strong><br><span style="color: #0369a1; font-size: 16px; font-weight: 600;">${userChatInteractions}</span></div>
                                 <div><strong style="color: #0c4a6e;">Costo est. total (USD):</strong><br><span style="color: #0369a1; font-size: 16px; font-weight: 600;">$${userChatCost}</span></div>
@@ -9821,7 +9888,7 @@
                             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
                                 <div style="flex: 1;">
                                     <h4 style="margin: 0 0 8px 0; color: #1e293b; font-size: 16px;">${escapeHtml(project.name || 'Sin nombre')}</h4>
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; font-size: 13px; color: #64748b;">
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 8px; font-size: 13px; color: #64748b;">
                                         <div><strong>Cultivo:</strong> ${escapeHtml(project.crop_type || 'N/A')}</div>
                                         <div><strong>Ubicación:</strong> <span style="font-family: monospace; font-size: 12px;">${escapeHtml(locationText)}</span></div>
                                         <div><strong>Mensajes Chat:</strong> ${project.chat_messages || 0}</div>
