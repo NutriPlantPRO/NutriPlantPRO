@@ -22,7 +22,26 @@
     'CaCO₃', 'CaCO3', 'MgCO₃', 'MgCO3',
     'CaSO₄', 'CaSO4', 'K₂SO₄', 'K2SO4', 'MgSO₄', 'MgSO4',
     'H₂O', 'H2O', 'CO₃', 'CO3', 'CO₃²⁻', 'CO32-',
-    'SiO₂', 'SiO2', 'Si'
+    'SiO₂', 'SiO2',
+    'HCO₃⁻', 'HCO3-', 'HCO₃', 'HCO3',
+    'Fe/dtp', 'Fe/DTPA', 'Fe/EDDHA', 'Fe-EDDHA',
+    'SO₃', 'SO3', 'SO₂', 'SO2',
+    'NH₂', 'NH2', 'NO₂', 'NO2',
+    'H₃PO₄', 'H3PO4', 'H₂SO₄', 'H2SO4',
+    'MnO', 'MnO₂', 'MnO2', 'CuO', 'ZnO',
+    'Al₂O₃', 'Al2O3', 'Fe₂O₃', 'Fe2O3', 'FeO',
+    'B₄O₇', 'B2O3', 'MoO₃', 'MoO3'
+  ];
+
+  /**
+   * Símbolos cortos (elementos) que el traductor confunde con palabras (Fe→Faith, Si→Yeah, Na→That).
+   * NO usar lista simple de texto: "Ca" dentro de "Cada" rompería la palabra.
+   * Estos se aplican con límite de palabra \\b en apply-no-traducir.js
+   * Omitimos "Se" (selenio) para no tocar "Se" al inicio de frases en español.
+   */
+  var SIMBOLOS_ELEMENTO_BORDE_PALABRA = [
+    'Si', 'Ca', 'Na', 'Fe', 'Cu', 'Mo', 'Cl', 'Zn', 'Mn', 'Mg', 'Al', 'B',
+    'Ni', 'Cr', 'Pb', 'Ag', 'As', 'Cd', 'Hg', 'Sb', 'Ba', 'Sr'
   ];
 
   // —— Unidades y abreviaturas técnicas (no traducir)
@@ -52,6 +71,7 @@
     formulasIones: FORMULAS_IONES,
     unidadesAbreviaturas: UNIDADES_ABREVIATURAS,
     fertilizantesAcronimos: FERTILIZANTES_ACRONIMOS,
+    simbolosElementoBordePalabra: SIMBOLOS_ELEMENTO_BORDE_PALABRA,
     todos: TODOS
   };
 })(window);
