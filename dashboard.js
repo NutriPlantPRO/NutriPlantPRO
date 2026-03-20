@@ -13086,28 +13086,13 @@ function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
   ticks += `<text x="${vLeft.x - 10}" y="${vLeft.y + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>`;
   ticks += `<text x="${vRight.x + 10}" y="${vRight.y + 4}" text-anchor="start" font-size="10" fill="#64748b">100</text>`;
 
-  const triCentroid = { x: (vTop.x + vLeft.x + vRight.x) / 3, y: (vTop.y + vLeft.y + vRight.y) / 3 };
-  const edgeLabelCenter = (a, b, dist) => {
-    const mx = (a.x + b.x) / 2;
-    const my = (a.y + b.y) / 2;
-    // Unit normal to edge, flipped so it always points away from triangle centroid
-    let nx = -(b.y - a.y);
-    let ny = b.x - a.x;
-    const towardCenterX = triCentroid.x - mx;
-    const towardCenterY = triCentroid.y - my;
-    if ((nx * towardCenterX + ny * towardCenterY) > 0) {
-      nx = -nx;
-      ny = -ny;
-    }
-    const nLen = Math.sqrt(nx * nx + ny * ny) || 1;
-    return { x: mx + (nx / nLen) * dist, y: my + (ny / nLen) * dist };
-  };
-  // Etiquetas en el punto medio de cada lado con anclaje direccional:
-  // izquierda=end, derecha=start, base=middle. Asi quedan centradas visualmente.
-  const edgeLabelOffset = 18;
-  const leftEdgeLabel = edgeLabelCenter(vTop, vLeft, edgeLabelOffset);
-  const rightEdgeLabel = edgeLabelCenter(vTop, vRight, edgeLabelOffset);
-  const bottomEdgeLabel = edgeLabelCenter(vLeft, vRight, edgeLabelOffset + 6);
+  // Etiquetas centradas en la mitad de cada lado, con separacion corta y simetrica.
+  const leftMid = lerp(vTop, vLeft, 0.5);
+  const rightMid = lerp(vTop, vRight, 0.5);
+  const bottomMid = lerp(vLeft, vRight, 0.5);
+  const leftEdgeLabel = { x: leftMid.x - 18, y: leftMid.y };
+  const rightEdgeLabel = { x: rightMid.x + 18, y: rightMid.y };
+  const bottomEdgeLabel = { x: bottomMid.x, y: bottomMid.y + 22 };
   const edgeLabels =
     `<text class="notranslate" translate="no" x="${leftEdgeLabel.x}" y="${leftEdgeLabel.y}" text-anchor="end" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Mg²⁺ / SO₄²⁻</text>` +
     `<text class="notranslate" translate="no" x="${rightEdgeLabel.x}" y="${rightEdgeLabel.y}" text-anchor="start" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>` +
