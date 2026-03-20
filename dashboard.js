@@ -11551,6 +11551,96 @@ function createReportHTML(selectedSections, chartImages) {
           background: #fff7f7;
           color: #991b1b;
         }
+        /* Tanques hidroponía (mismo criterio que dashboard; PDF: activar «Gráficos de fondo» para sombras/gradientes) */
+        .hydro-muted { color: #64748b; font-size: 0.92em; }
+        .hydro-tank-blocks {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-top: 8px;
+        }
+        .hydro-tank-block {
+          --hydro-tank-accent: #0284c7;
+          --hydro-tank-glow: rgba(2, 132, 199, 0.12);
+          position: relative;
+          background: linear-gradient(165deg, #ffffff 0%, #f8fafc 48%, #f1f5f9 100%);
+          border: 1px solid rgba(186, 230, 253, 0.95);
+          border-radius: 10px;
+          padding: 10px 12px 10px 14px;
+          min-width: 200px;
+          max-width: 340px;
+          box-shadow:
+            0 1px 0 rgba(255, 255, 255, 0.9) inset,
+            0 8px 18px -6px rgba(15, 23, 42, 0.14),
+            0 3px 8px -4px rgba(15, 23, 42, 0.08);
+          overflow: hidden;
+          page-break-inside: avoid;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .hydro-tank-block::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 5px;
+          background: linear-gradient(180deg, var(--hydro-tank-accent), #0f172a);
+          border-radius: 10px 0 0 10px;
+          box-shadow: 2px 0 8px var(--hydro-tank-glow);
+        }
+        .hydro-tank-block::after {
+          content: "";
+          position: absolute;
+          left: 8%;
+          right: 8%;
+          top: 0;
+          height: 10px;
+          border-radius: 50%;
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.4));
+          box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06);
+          pointer-events: none;
+        }
+        .hydro-tank-block[data-tank="A"] { --hydro-tank-accent: #059669; --hydro-tank-glow: rgba(5, 150, 105, 0.18); }
+        .hydro-tank-block[data-tank="B"] { --hydro-tank-accent: #0284c7; --hydro-tank-glow: rgba(2, 132, 199, 0.18); }
+        .hydro-tank-block[data-tank="C"] { --hydro-tank-accent: #d97706; --hydro-tank-glow: rgba(217, 119, 6, 0.2); }
+        .hydro-tank-block[data-tank="D"],
+        .hydro-tank-block[data-tank="E"] { --hydro-tank-accent: #7c3aed; --hydro-tank-glow: rgba(124, 58, 237, 0.15); }
+        .hydro-tank-block-title {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          font-size: 13px;
+          color: #0369a1;
+          margin-bottom: 6px;
+          padding-bottom: 4px;
+          padding-top: 4px;
+          border-bottom: 1px solid #e0f2fe;
+          position: relative;
+          z-index: 1;
+        }
+        .hydro-tank-icon { flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+        .hydro-tank-icon svg { width: 26px; height: 34px; display: block; }
+        .hydro-tank-block-title-text { flex: 1; min-width: 0; line-height: 1.4; }
+        .hydro-tank-block[data-tank="A"] .hydro-tank-block-title { color: #047857; }
+        .hydro-tank-block[data-tank="B"] .hydro-tank-block-title { color: #0369a1; }
+        .hydro-tank-block[data-tank="C"] .hydro-tank-block-title { color: #b45309; }
+        .hydro-tank-block[data-tank="D"] .hydro-tank-block-title,
+        .hydro-tank-block[data-tank="E"] .hydro-tank-block-title { color: #6d28d9; }
+        .hydro-tank-block-items {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px 12px;
+          position: relative;
+          z-index: 1;
+        }
+        .hydro-tank-item {
+          font-size: 11.5px;
+          color: #475569;
+          background: #f0f9ff;
+          padding: 2px 8px;
+          border-radius: 6px;
+        }
         .report-note-inline {
           color: #64748b;
           font-size: 11px;
@@ -11650,6 +11740,20 @@ function createReportHTML(selectedSections, chartImages) {
         .badge-ok { color: #059669; font-weight: 700; }
         .badge-low { color: #d97706; font-weight: 700; }
         .badge-high { color: #dc2626; font-weight: 700; }
+        .report-print-tip {
+          margin-top: 10px;
+          padding: 8px 12px;
+          font-size: 0.76rem;
+          line-height: 1.4;
+          color: #475569;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          background: #f8fafc;
+          text-align: left;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .report-print-tip strong { color: #334155; }
         @page {
           size: A4;
           margin: 12mm;
@@ -11751,6 +11855,7 @@ function createReportHTML(selectedSections, chartImages) {
             </div>
             <div class="report-generated-by">Generado por: <strong>${safeReportAuthorName}</strong></div>
           </div>
+          <p class="report-print-tip"><strong>Impresión o PDF:</strong> Para que colores y fondos (tablas, tarjetas, tanques de hidroponía, etc.) se vean igual que en pantalla, en el cuadro de impresión activa la opción de <strong>incluir gráficos o fondos</strong>. El nombre exacto depende del navegador: p. ej. «Gráficos de fondo» en Chrome/Edge, «Imprimir fondos» en Firefox, «Fondos gráficos» en Safari. En móvil o tablet el menú puede variar ligeramente.</p>
           <img src="${reportAssetBase}N_Hoja_Azul.png" alt="" class="footer-leaf-watermark" aria-hidden="true">
           <div class="footer-qr-block">
             <img src="${reportAssetBase}qr-nutriplantpro.png" alt="QR NutriPlant PRO" width="72" height="72" onerror="this.onerror=null;this.src='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https%3A%2F%2Fnutriplantpro.com%2F';">
@@ -13177,25 +13282,32 @@ function createHidroponiaSectionHTML() {
       if (ib === -1) return -1;
       return ia - ib;
     });
+  const reportHydroTankIconHtml = '<span class="hydro-tank-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" fill="none"><path d="M6 18.5c0-1.1 2.4-1.8 6-1.8s6 0.7 6 1.8v8.2c0 0-2.4 1.6-6 1.6s-6-1.6-6-1.6V18.5z" fill="currentColor" fill-opacity="0.14"/><ellipse cx="12" cy="8" rx="8" ry="3" stroke="currentColor" stroke-width="1.5"/><path d="M4 11v9M20 11v9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><ellipse cx="12" cy="23" rx="8" ry="3" stroke="currentColor" stroke-width="1.5"/><path d="M6 19h12" stroke="currentColor" stroke-opacity="0.22" stroke-width="1"/></svg></span>';
   const tankBlocksHtml = tankKeys.map(tq => {
     const data = byTank[tq];
     const totalParts = [];
     if (data.totalKg > 0) totalParts.push(`${data.totalKg.toFixed(2)} kg`);
     if (data.totalL > 0) totalParts.push(`${data.totalL.toFixed(2)} L`);
     const perRecParts = [];
-    if (data.totalKg > 0) perRecParts.push(`${(recargas > 0 ? data.totalKg / recargas : data.totalKg).toFixed(2)} kg`);
-    if (data.totalL > 0) perRecParts.push(`${(recargas > 0 ? data.totalL / recargas : data.totalL).toFixed(2)} L`);
-    const totalLine = recargas > 1
-      ? `${totalParts.join(' + ')} total <span style="color:#64748b;font-size:12px;">(${perRecParts.join(' + ')} por recarga si son ${recargas} recargas)</span>`
-      : `${totalParts.join(' + ')} total <span style="color:#64748b;font-size:12px;">(${perRecParts.join(' + ')} por recarga)</span>`;
+    if (data.totalKg > 0) perRecParts.push(`${(recargas != null && recargas > 0 ? data.totalKg / recargas : data.totalKg).toFixed(2)} kg`);
+    if (data.totalL > 0) perRecParts.push(`${(recargas != null && recargas > 0 ? data.totalL / recargas : data.totalL).toFixed(2)} L`);
+    const totalLineSuffix = (recargas != null && recargas > 1)
+      ? ` <span class="hydro-muted">(${perRecParts.join(' + ')} por recarga si son ${recargas} recargas)</span>`
+      : '';
     const itemsHtml = data.items.map(i => {
-      const perRec = recargas > 0 ? (i.value / recargas) : i.value;
+      const perRec = recargas != null && recargas > 0 ? (i.value / recargas) : i.value;
       const eq = i.unit === 'L' && Number.isFinite(i.kg) && i.kg > 0
-        ? ` <span style="color:#64748b;">(≈ ${i.kg.toFixed(2)} kg eq)</span>`
+        ? ` <span class="hydro-muted">(≈ ${i.kg.toFixed(2)} kg eq)</span>`
         : '';
-      return `<span style="display:block;font-size:12px;">${reportEscapeHtml(i.name)}: ${i.value.toFixed(2)} ${i.unit}${eq} <span style="color:#64748b;">(${perRec.toFixed(2)} ${i.unit} por recarga)</span></span>`;
+      const perRecHtml = (recargas != null && recargas > 1)
+        ? ` <span class="hydro-muted">(${perRec.toFixed(2)} ${i.unit} por recarga)</span>`
+        : '';
+      return `<span class="hydro-tank-item">${reportEscapeHtml(i.name)}: ${i.value.toFixed(2)} ${i.unit}${eq}${perRecHtml}</span>`;
     }).join('');
-    return `<div style="background:#fff;padding:10px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:8px;"><strong>Tanque ${reportEscapeHtml(tq)}:</strong> ${totalLine}<div style="margin-top:6px;">${itemsHtml}</div></div>`;
+    return `<div class="hydro-tank-block" data-tank="${reportEscapeHtml(tq)}">
+        <strong class="hydro-tank-block-title">${reportHydroTankIconHtml}<span class="hydro-tank-block-title-text">Tanque ${reportEscapeHtml(tq)}: ${totalParts.join(' + ')} total${totalLineSuffix}</span></strong>
+        <div class="hydro-tank-block-items">${itemsHtml}</div>
+      </div>`;
   }).join('');
   return `
     <div class="section">
@@ -13280,7 +13392,7 @@ function createHidroponiaSectionHTML() {
         <div class="report-note" style="margin-bottom:8px;">
           Las cantidades son el total para todo el volumen de agua indicado (sólidos en kg y líquidos en L). Si necesitas varias recargas, en cada llenada usa la cantidad "por recarga".
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
+        <div class="hydro-tank-blocks">
           ${tankBlocksHtml}
         </div>
       </div>` : ''}

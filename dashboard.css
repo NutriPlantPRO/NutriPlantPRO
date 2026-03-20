@@ -1030,6 +1030,7 @@ body {
   font-size: 13px;
   min-height: 38px;
   flex-shrink: 0;
+  touch-action: manipulation;
 }
 .header-buttons .btn-primary {
   padding: 8px 16px;
@@ -3515,7 +3516,9 @@ body {
   --hydro-tank-glow: rgba(124, 58, 237, 0.15);
 }
 .hydro-tank-block-title {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   font-size: 0.95rem;
   color: #0369a1;
   margin-bottom: 6px;
@@ -3524,6 +3527,23 @@ body {
   border-bottom: 1px solid #e0f2fe;
   position: relative;
   z-index: 1;
+}
+.hydro-tank-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.hydro-tank-icon svg {
+  width: 26px;
+  height: 34px;
+  display: block;
+}
+.hydro-tank-block-title-text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.4;
 }
 .hydro-tank-block[data-tank="A"] .hydro-tank-block-title {
   color: #047857;

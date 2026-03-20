@@ -204,4 +204,7 @@ CREATE TRIGGER on_auth_user_created
 --   "solucionNutritivaAnalyses": [...],
 --   ...
 -- }
+--
+-- Migraciones posteriores (ejecutar en SQL Editor si aplica):
+-- - supabase-profiles-exclude-from-revenue.sql → exclude_from_revenue (contabilidad ingresos admin)
 -- ============================================================

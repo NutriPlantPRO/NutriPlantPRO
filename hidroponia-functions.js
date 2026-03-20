@@ -47,6 +47,11 @@ function hydroLabel(n) {
 
 const HYDRO_TANQUES = ['A', 'B', 'C', 'D', 'E'];
 
+/** Icono inline de depósito cilíndrico; `currentColor` hereda el color del título por tanque */
+function hydroTankBlockIconHtml() {
+  return '<span class="hydro-tank-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" fill="none"><path d="M6 18.5c0-1.1 2.4-1.8 6-1.8s6 0.7 6 1.8v8.2c0 0-2.4 1.6-6 1.6s-6-1.6-6-1.6V18.5z" fill="currentColor" fill-opacity="0.14"/><ellipse cx="12" cy="8" rx="8" ry="3" stroke="currentColor" stroke-width="1.5"/><path d="M4 11v9M20 11v9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><ellipse cx="12" cy="23" rx="8" ry="3" stroke="currentColor" stroke-width="1.5"/><path d="M6 19h12" stroke="currentColor" stroke-opacity="0.22" stroke-width="1"/></svg></span>';
+}
+
 let hydroState = {
   stages: [],
   activeStageId: null,
@@ -1099,7 +1104,7 @@ function renderHydroVolumeCard() {
     }).join('');
     return `
       <div class="hydro-tank-block" data-tank="${tq}">
-        <strong class="hydro-tank-block-title">Tanque ${tq}: ${totalParts.join(' + ')} total${perRecargaLine}</strong>
+        <strong class="hydro-tank-block-title">${hydroTankBlockIconHtml()}<span class="hydro-tank-block-title-text">Tanque ${tq}: ${totalParts.join(' + ')} total${perRecargaLine}</span></strong>
         <div class="hydro-tank-block-items">${itemsHtml}</div>
       </div>
     `;

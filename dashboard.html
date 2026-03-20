@@ -432,69 +432,7 @@
         showConversionCalculator: typeof window.showConversionCalculator,
         showNutrientUnitsCalculator: typeof window.showNutrientUnitsCalculator
       });
-      
-      // Agregar event listeners a los botones
-      const btnConversion = document.getElementById('btn-conversion-calculator');
-      if (btnConversion) {
-        btnConversion.addEventListener('click', function(e) {
-          e.stopPropagation(); // Detener propagación del evento
-          console.log('🔘 Click en Calculadora de Conversión');
-          
-          // Intentar múltiples formas de llamar la función
-          if (typeof showConversionCalculator === 'function') {
-            console.log('✅ Llamando showConversionCalculator()');
-            showConversionCalculator();
-          } else if (typeof window.showConversionCalculator === 'function') {
-            console.log('✅ Llamando window.showConversionCalculator()');
-            window.showConversionCalculator();
-          } else {
-            console.error('❌ showConversionCalculator no está definida');
-            
-            // Intentar encontrar el modal directamente
-            const modal = document.getElementById('conversionCalculatorModal');
-            if (modal) {
-              console.log('✅ Modal encontrado, abriendo directamente');
-              modal.classList.add('show');
-        modal.style.display = 'flex';
-              if (typeof setupConversionCalculator === 'function') {
-                setupConversionCalculator();
-              }
-            } else {
-              console.error('❌ Modal conversionCalculatorModal no encontrado');
-            }
-          }
-        });
-      }
-      
-      const btnNutrient = document.getElementById('btn-nutrient-units-calculator');
-      if (btnNutrient) {
-        btnNutrient.addEventListener('click', function(e) {
-          e.stopPropagation(); // Detener propagación del evento
-          console.log('🔘 Click en Calculadora de Unidades');
-          
-          if (typeof showNutrientUnitsCalculator === 'function') {
-            console.log('✅ Llamando showNutrientUnitsCalculator()');
-            showNutrientUnitsCalculator();
-          } else if (typeof window.showNutrientUnitsCalculator === 'function') {
-            console.log('✅ Llamando window.showNutrientUnitsCalculator()');
-            window.showNutrientUnitsCalculator();
-          } else {
-            console.error('❌ showNutrientUnitsCalculator no está definida');
-            
-            // Intentar encontrar el modal directamente
-            const modal = document.getElementById('nutrientUnitsCalculatorModal');
-            if (modal) {
-              console.log('✅ Modal encontrado, abriendo directamente');
-              modal.classList.add('show');
-        modal.style.display = 'flex';
-            } else {
-              console.error('❌ Modal nutrientUnitsCalculatorModal no encontrado');
-            }
-          }
-        });
-      }
-      
-      console.log('✅ Event listeners configurados para las calculadoras');
+      /* Los botones usan onclick en el HTML; no duplicar listeners (evita doble llamada y micro-retrasos en tablet) */
     });
   </script>
   
@@ -567,7 +505,16 @@
       height: 100%;
       background: rgba(0, 0, 0, 0.4);
       backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
       z-index: 99999;
+    }
+    /* Blur del fondo es caro en tablet; sin blur el modal abre mucho más rápido */
+    @media (hover: none) and (pointer: coarse) {
+      .modal-overlay {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(15, 23, 42, 0.52);
+      }
     }
     
     /* Por defecto oculto */
@@ -4766,11 +4713,6 @@ CONTRATO:
       const modal = document.getElementById('conversionCalculatorModal');
       if (!modal) return;
       modal.classList.add('show');
-      requestAnimationFrame(function() {
-        if (window._npConversionCalcSetupDone) return;
-        window._npConversionCalcSetupDone = true;
-        if (typeof setupConversionCalculator === 'function') setupConversionCalculator();
-      });
     }
     
     // Hacer la función global
@@ -5384,6 +5326,20 @@ CONTRATO:
         document.getElementById('mo-output').value = (value * 0.667).toFixed(3);
       });
     }
+
+    // Enlazar listeners de la calculadora óxido/elemental al tener el DOM (evita trabajo pesado en el primer toque)
+    (function npScheduleConversionCalcSetup() {
+      function run() {
+        if (window._npConversionCalcSetupDone) return;
+        window._npConversionCalcSetupDone = true;
+        if (typeof setupConversionCalculator === 'function') setupConversionCalculator();
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', run);
+      } else {
+        run();
+      }
+    })();
 
     // Cerrar modal al hacer clic fuera de él
     document.addEventListener('click', function(e) {
