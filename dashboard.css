@@ -3456,12 +3456,63 @@ body {
   gap: 12px;
   margin-top: 8px;
 }
+/* Tarjetas de tanque: relieve + acento por letra (A/B/C…) para que “lean” a depósito físico */
 .hydro-tank-block {
-  background: #fff;
-  border: 1px solid #bae6fd;
-  border-radius: 8px;
-  padding: 8px 12px;
-  min-width: 180px;
+  --hydro-tank-accent: #0284c7;
+  --hydro-tank-glow: rgba(2, 132, 199, 0.12);
+  position: relative;
+  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 48%, #f1f5f9 100%);
+  border: 1px solid rgba(186, 230, 253, 0.95);
+  border-radius: 10px;
+  padding: 10px 12px 10px 14px;
+  min-width: 200px;
+  max-width: 340px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 8px 18px -6px rgba(15, 23, 42, 0.14),
+    0 3px 8px -4px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+.hydro-tank-block::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, var(--hydro-tank-accent), #0f172a);
+  border-radius: 10px 0 0 10px;
+  box-shadow: 2px 0 8px var(--hydro-tank-glow);
+}
+/* “Tapa” ovalada tipo silo/cubo — refuerza lectura 3D sin SVG */
+.hydro-tank-block::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 0;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.4));
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06);
+  pointer-events: none;
+}
+.hydro-tank-block[data-tank="A"] {
+  --hydro-tank-accent: #059669;
+  --hydro-tank-glow: rgba(5, 150, 105, 0.18);
+}
+.hydro-tank-block[data-tank="B"] {
+  --hydro-tank-accent: #0284c7;
+  --hydro-tank-glow: rgba(2, 132, 199, 0.18);
+}
+.hydro-tank-block[data-tank="C"] {
+  --hydro-tank-accent: #d97706;
+  --hydro-tank-glow: rgba(217, 119, 6, 0.2);
+}
+.hydro-tank-block[data-tank="D"],
+.hydro-tank-block[data-tank="E"] {
+  --hydro-tank-accent: #7c3aed;
+  --hydro-tank-glow: rgba(124, 58, 237, 0.15);
 }
 .hydro-tank-block-title {
   display: block;
@@ -3469,12 +3520,30 @@ body {
   color: #0369a1;
   margin-bottom: 6px;
   padding-bottom: 4px;
+  padding-top: 4px;
   border-bottom: 1px solid #e0f2fe;
+  position: relative;
+  z-index: 1;
+}
+.hydro-tank-block[data-tank="A"] .hydro-tank-block-title {
+  color: #047857;
+}
+.hydro-tank-block[data-tank="B"] .hydro-tank-block-title {
+  color: #0369a1;
+}
+.hydro-tank-block[data-tank="C"] .hydro-tank-block-title {
+  color: #b45309;
+}
+.hydro-tank-block[data-tank="D"] .hydro-tank-block-title,
+.hydro-tank-block[data-tank="E"] .hydro-tank-block-title {
+  color: #6d28d9;
 }
 .hydro-tank-block-items {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 12px;
+  position: relative;
+  z-index: 1;
 }
 .hydro-tank-item {
   font-size: 0.85rem;

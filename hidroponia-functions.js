@@ -1098,7 +1098,7 @@ function renderHydroVolumeCard() {
       return `<span class="hydro-tank-item">${(i.name || '').replace(/</g, '&lt;')}: ${i.value.toFixed(2)} ${i.unit}${eqText}${itemPerRec != null ? ` <span class="hydro-muted">(${itemPerRec} por recarga)</span>` : ''}</span>`;
     }).join('');
     return `
-      <div class="hydro-tank-block">
+      <div class="hydro-tank-block" data-tank="${tq}">
         <strong class="hydro-tank-block-title">Tanque ${tq}: ${totalParts.join(' + ')} total${perRecargaLine}</strong>
         <div class="hydro-tank-block-items">${itemsHtml}</div>
       </div>
