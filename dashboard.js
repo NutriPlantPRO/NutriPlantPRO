@@ -13102,18 +13102,15 @@ function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
     const nLen = Math.sqrt(nx * nx + ny * ny) || 1;
     return { x: mx + (nx / nLen) * dist, y: my + (ny / nLen) * dist };
   };
-  const leftEdgeLabel = edgeLabelCenter(vTop, vLeft, 56);
-  const rightEdgeLabel = edgeLabelCenter(vTop, vRight, 56);
-  const bottomEdgeLabel = edgeLabelCenter(vLeft, vRight, 66);
-  const labelWidth = 170;
-  const labelHeight = 28;
-  const foNs = 'http://www.w3.org/1999/xhtml';
-  const edgeLabelHtml = (c, text) =>
-    `<foreignObject x="${c.x - labelWidth / 2}" y="${c.y - labelHeight / 2}" width="${labelWidth}" height="${labelHeight}">` +
-    `<div xmlns="${foNs}" class="notranslate" translate="no" style="height:${labelHeight}px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#334155;line-height:1;text-align:center;pointer-events:none;">${text}</div></foreignObject>`;
-  const edgeLabels = edgeLabelHtml(leftEdgeLabel, 'Mg²⁺ / SO₄²⁻') +
-    edgeLabelHtml(rightEdgeLabel, 'Ca²⁺ / H₂PO₄⁻') +
-    edgeLabelHtml(bottomEdgeLabel, 'K⁺ / NO₃⁻');
+  // Etiquetas centradas en el punto medio de cada lado, con una separación corta y uniforme hacia afuera.
+  const edgeLabelOffset = 24;
+  const leftEdgeLabel = edgeLabelCenter(vTop, vLeft, edgeLabelOffset);
+  const rightEdgeLabel = edgeLabelCenter(vTop, vRight, edgeLabelOffset);
+  const bottomEdgeLabel = edgeLabelCenter(vLeft, vRight, edgeLabelOffset);
+  const edgeLabels =
+    `<text class="notranslate" translate="no" x="${leftEdgeLabel.x}" y="${leftEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Mg²⁺ / SO₄²⁻</text>` +
+    `<text class="notranslate" translate="no" x="${rightEdgeLabel.x}" y="${rightEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>` +
+    `<text class="notranslate" translate="no" x="${bottomEdgeLabel.x}" y="${bottomEdgeLabel.y}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">K⁺ / NO₃⁻</text>`;
 
   return `<div class="notranslate" translate="no"><svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" class="notranslate" translate="no" style="background:#fff;border-radius:8px;">
       ${grid}
