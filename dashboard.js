@@ -13090,9 +13090,10 @@ function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
   const leftMid = lerp(vTop, vLeft, 0.5);
   const rightMid = lerp(vTop, vRight, 0.5);
   const bottomMid = lerp(vLeft, vRight, 0.5);
-  const leftEdgeLabel = { x: leftMid.x - 18, y: leftMid.y };
-  const rightEdgeLabel = { x: rightMid.x + 18, y: rightMid.y };
-  const bottomEdgeLabel = { x: bottomMid.x, y: bottomMid.y + 22 };
+  // Base geométrica: punto medio de cada lado. Ajuste fino óptico por ancho de texto.
+  const leftEdgeLabel = { x: leftMid.x - 6, y: leftMid.y - 1 };
+  const rightEdgeLabel = { x: rightMid.x + 30, y: rightMid.y - 1 };
+  const bottomEdgeLabel = { x: bottomMid.x + 2, y: bottomMid.y + 24 };
   const edgeLabels =
     `<text class="notranslate" translate="no" x="${leftEdgeLabel.x}" y="${leftEdgeLabel.y}" text-anchor="end" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Mg²⁺ / SO₄²⁻</text>` +
     `<text class="notranslate" translate="no" x="${rightEdgeLabel.x}" y="${rightEdgeLabel.y}" text-anchor="start" dominant-baseline="middle" font-size="12" font-weight="700" fill="#334155">Ca²⁺ / H₂PO₄⁻</text>` +
