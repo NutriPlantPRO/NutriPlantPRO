@@ -2885,6 +2885,16 @@
                             const cloudUser = cloudByEmail[user.email?.toLowerCase()];
                             const isSupabaseUserId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
                             if (cloudUser) {
+                                // Perfil visible en admin: si la nube cargó bien, nombre (y tel/profesión) vienen de Supabase
+                                // (evita ver nombre viejo en localStorage tras editar en Table Editor o en la app).
+                                if (window._adminCloudCache && window._adminCloudCache._cloudLastSuccess) {
+                                    const cn = cloudUser.name != null ? String(cloudUser.name).trim() : '';
+                                    if (cn) userData.name = cn;
+                                    const cph = cloudUser.phone != null ? String(cloudUser.phone).trim() : '';
+                                    if (cph) userData.phone = cph;
+                                    const cpr = cloudUser.profession != null ? String(cloudUser.profession).trim() : '';
+                                    if (cpr) userData.profession = cpr;
+                                }
                                 // Fuente de verdad para suscripción: Supabase (PayPal webhook escribe ahí).
                                 if (!isAdminUser) {
                                     userData.subscription_status = cloudUser.subscription_status || userData.subscription_status;
@@ -9705,12 +9715,17 @@
                     if (client) {
                         const { data: freshProfile, error: freshErr } = await client
                             .from('profiles')
-                            .select('subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, subscription_amount, subscription_status, user_notes')
+                            .select('name, phone, profession, location, crops, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, subscription_amount, subscription_status, user_notes')
                             .eq('id', userIdText)
                             .maybeSingle();
                         if (!freshErr && freshProfile) {
                             user = {
                                 ...user,
+                                name: freshProfile.name != null && String(freshProfile.name).trim() ? String(freshProfile.name).trim() : user.name,
+                                phone: freshProfile.phone != null && String(freshProfile.phone).trim() ? String(freshProfile.phone).trim() : user.phone,
+                                profession: freshProfile.profession != null && String(freshProfile.profession).trim() ? String(freshProfile.profession).trim() : user.profession,
+                                location: freshProfile.location != null ? freshProfile.location : user.location,
+                                crops: Array.isArray(freshProfile.crops) ? freshProfile.crops : user.crops,
                                 subscription_activated_at: freshProfile.subscription_activated_at || user.subscription_activated_at || null,
                                 last_payment_date: freshProfile.last_payment_date || user.last_payment_date || null,
                                 next_payment_date: freshProfile.next_payment_date || user.next_payment_date || null,
