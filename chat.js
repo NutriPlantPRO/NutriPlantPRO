@@ -100,7 +100,7 @@ Te recomiendo:`;
       targetValues: {
         k: (soil.cic * 0.05),
         ca: (soil.cic * 0.70),
-        mg: (soil.cic * 0.125)
+        mg: (soil.cic * 0.13)
       }
     };
     
@@ -955,7 +955,7 @@ Basándome en tus datos, te recomiendo la siguiente estrategia:`;
       targetValues: {
         k: (cic * 0.05),
         ca: (cic * 0.70),
-        mg: (cic * 0.125)
+        mg: (cic * 0.13)
       }
     };
     
@@ -1868,7 +1868,7 @@ ${Object.keys(extractions).map(c => `• **${c}** - ${extractions[c].description
       targetValues: {
         k: (cic * 0.05),
         ca: (cic * 0.70),
-        mg: (cic * 0.125)
+        mg: (cic * 0.13)
       }
     };
     
@@ -2046,7 +2046,7 @@ ${Object.keys(extractions).map(c => `• **${c}** - ${extractions[c].description
     // Calcular deficiencias
     const targetK = (cic * 0.05) - k;
     const targetCa = (cic * 0.70) - ca;
-    const targetMg = (cic * 0.125) - mg;
+    const targetMg = (cic * 0.13) - mg;
     
     let response = `🧮 **CÁLCULOS DETALLADOS DE DEFICIENCIAS**\n\n`;
     response += `**CIC Total:** ${cic} meq/100g\n\n`;

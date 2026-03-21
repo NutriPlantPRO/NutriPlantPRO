@@ -53,7 +53,27 @@ Soluciones nutritivas de referencia (para consulta cuando el usuario pida refere
 
 9) SUSCRIPCIÓN Y CANCELACIÓN (NUTRIPLANT PRO)
 - La suscripción a NutriPlant PRO se gestiona con PayPal. Para cancelar, el usuario debe entrar a su cuenta de PayPal, ir a la sección Pagos automáticos (o Automatic Payments) y cancelar la suscripción a NutriPlant desde ahí. No se cancela desde la app ni desde el panel de NutriPlant; es siempre desde PayPal. Si el usuario pide que le cancelemos por él o necesita ayuda para cancelar, indicar que puede contactar al equipo (soporte/WhatsApp según lo que tenga la plataforma) para asistencia.
+
+10) ANÁLISIS DE SUELO — PESTAÑA FERTILIDAD (ORIGEN EXACTO DE "IDEAL (REFERENCIA)" EN NUTRIPLANT)
+- CIC del reporte = suma en meq/100g de Ca+Mg+K+Na+Al+H ingresada en "Cationes intercambiables y CIC" del mismo análisis.
+- K, Ca y Mg en ppm en la fila Ideal (valor por defecto de la app): meq ideal = CIC × (K 5 %, Mg 13 %, Ca 70 % de saturación sobre la CIC); ppm ideal = meq ideal × factor (K×391, Mg×121,5, Ca×200,4; factores de peso equivalente ×10, base 100 g suelo). Coincide con el cálculo interno de la plataforma.
+- P (ppm) ideal: según método elegido en la tabla (Bray 40, Olsen 25, Merich/Mehlich 3 → 40 ppm por defecto).
+- MO, N-NO3, Na, S, Fe, Mn, B, Zn, Cu, Mo, Al: ideales de referencias agronómicas generales fijas de NutriPlant (botón "Recargar valores ideales de referencia").
+- La fila Ideal es editable: si el usuario la modificó, los números en pantalla pueden no coincidir con la fórmula; en ese caso explicar la fórmula por defecto pero interpretar con los valores guardados que aparecen en contexto.
+- kg/ha (diferencia) = (nivel laboratorio − ideal) × 0,1 × profundidad (cm) × densidad aparente (g/cm³) × (% suelo explorado por raíces / 100); negativo = falta, positivo = exceso.
 `;
+}
+
+/** Igual que dashboard.js (getSoilIdealByCIC): ppm ideales K, Ca, Mg desde CIC en meq/100g. */
+function computeNutriPlantSoilKCaMgIdealPpmFromCic(cic) {
+  const c = parseFloat(cic);
+  if (isNaN(c) || c <= 0) return null;
+  const r = (v) => Math.round(v * 10) / 10;
+  return {
+    k: r(c * 0.05 * 391),
+    ca: r(c * 0.70 * 200.4),
+    mg: r(c * 0.13 * 121.5)
+  };
 }
 
 class NutriPlantChat {
@@ -747,7 +767,7 @@ class NutriPlantChat {
 - Validar equilibrio catión/anión para evitar antagonismos y precipitados.`,
       analisis: `
 - Análisis agrupa varias subpestañas: Análisis de Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar (DOP), Fruta (ICC). Análisis de Suelo: panel "Reportes en este proyecto" con "+ Agregar análisis"; cada reporte tiene título, fecha, Eliminar, y secciones: Propiedades físicas (densidad aparente, etc.), pH y salinidad, Fertilidad del suelo, Cationes intercambiables y CIC. Los datos de suelo se usan en Enmienda (CIC/cationes).
-- Fertilidad del suelo (lógica que el chat debe entender): El usuario ingresa valores de laboratorio (Nivel) y la plataforma muestra Ideal (referencia) y kg/ha (diferencia). En kg/ha solo se considera el suelo que las raíces aprovechan en la profundidad indicada. Valores ideales: (1) K, Ca y Mg: desde la CIC del mismo análisis (sección Cationes), meq ideal = CIC × fracción (K 5 %, Mg 13 %, Ca 70 % de saturación) y ppm ideal = meq × factor (K ×391, Mg ×121,5, Ca ×200,4; factores de peso equivalente ×10 para base 100 g suelo). (2) P según método: Bray 40 ppm, Olsen 25 ppm, Merich (Mehlich 3) 40 ppm. (3) Resto (MO, N-NO3, Na, S, micronutrientes): referencias agronómicas generales (MO 3%, N-NO3 20 ppm, Na 0, S 15, Fe 20, Mn 20, Zn 3, Cu 1.5, B 1, Mo 0.1, Al 0). Cálculo kg/ha: factor = 0,1 × profundidad (cm) × densidad aparente (g/cm³) × (% suelo explorado por raíces / 100); kg/ha = (nivel laboratorio − ideal) × factor; negativo = déficit (falta aportar), positivo = exceso. Sirve al agronomista para equilibrar el programa de nutrición; el chat puede apoyar a llegar a la mejor conclusión interpretando déficits y excesos.
+- Fertilidad del suelo (lógica que el chat debe entender): El usuario ingresa valores de laboratorio (Nivel) y la plataforma muestra Ideal (referencia) y kg/ha (diferencia). En kg/ha solo se considera el suelo que las raíces aprovechan en la profundidad indicada. Valores ideales: (1) K, Ca y Mg: desde la CIC del mismo análisis (sección Cationes), meq ideal = CIC × fracción (K 5 %, Mg 13 %, Ca 70 % de saturación) y ppm ideal = meq × factor (K ×391, Mg ×121,5, Ca ×200,4; factores de peso equivalente ×10 para base 100 g suelo). (2) P según método: Bray 40 ppm, Olsen 25 ppm, Merich (Mehlich 3) 40 ppm. (3) Resto (MO, N-NO3, Na, S, micronutrientes): referencias agronómicas generales (MO 3%, N-NO3 20 ppm, Na 0, S 15, Fe 20, Mn 20, Zn 3, Cu 1.5, B 1, Mo 0.1, Al 0). Cálculo kg/ha: factor = 0,1 × profundidad (cm) × densidad aparente (g/cm³) × (% suelo explorado por raíces / 100); kg/ha = (nivel laboratorio − ideal) × factor; negativo = déficit (falta aportar), positivo = exceso. Si el usuario pregunta de dónde salen los ideales: explicar esta fórmula (mismo texto que el párrafo "ORIGEN Ideal (referencia)" en DATOS DEL PROYECTO cuando está en Análisis > Suelo); en cada reporte suelen aparecer las claves fórmula_defecto_K/Ca/Mg_ppm (cálculo NutriPlant desde la CIC) e Ideal_ref_ppm (guardado); si difieren, el usuario editó la fila Ideal. Sirve al agronomista para equilibrar el programa de nutrición; el chat puede apoyar a llegar a la mejor conclusión interpretando déficits y excesos.
 - Cationes intercambiables y CIC: meq/100g (Ca, Mg, K, Na, Al, H); CIC = suma. Saturación (%) = (meq catión / CIC) × 100. Como referencia de interpretación, rangos típicos en literatura: K 3–7%, Ca 65–75%, Mg 10–15%, Na 0–1%, Al 0–1%, H 0–10%. En NutriPlant, el ideal en ppm de K, Ca y Mg en la tabla de fertilidad se calcula con la CIC y objetivos fijos K 5 %, Mg 13 %, Ca 70 % más factores meq→ppm indicados en Fertilidad del suelo. Botón "Recargar valores ideales de referencia" aplica ideales generales y recalcula K, Ca, Mg desde CIC si existe.
 - Solución Nutritiva (lógica que el chat debe entender): Cada reporte tiene valores de análisis (nivel/resultado en meq/L y ppm), rangos de referencia (ej. Ca 140–220, Mg 40–70, K 180–300, SO4 60–110, PO4 30–60, NO3 140–200 ppm; micronutrientes Fe 1.5–3, Mn 0.3–1, etc.) y una columna Ideal editable por el usuario. El usuario puede dejar el ideal vacío o definir su propio valor ideal por parámetro (distinto al rango de referencia). Diferencia = valor actual (nivel) − ideal; se muestra en la tabla: (−) falta (por debajo del ideal), (+) exceso (por encima del ideal). El chat debe ver tanto los valores que tiene el usuario como los ideales (los que haya guardado el usuario o referencia) e interpretar la diferencia para apoyar el diagnóstico y ajustes del programa de nutrición.
 - Extracto de Pasta (lógica que el chat debe entender): Igual que Solución Nutritiva: cada reporte tiene nivel (meq/L y ppm), rangos de referencia (Ca 150–220, Mg 40–70, K 200–300, Na &lt;50, NO3 150–200, PO4 30–60, SO4 60–110, Cl &lt;70, HCO3 &lt;120, CO3 0 ppm; micronutrientes con ref.) e Ideal editable por el usuario. Diferencia = nivel − ideal; (−) falta, (+) exceso. El usuario puede agregar o cambiar ideales por parámetro; el chat debe usar los valores e ideales que tenga el reporte (por defecto o añadidos por el usuario) y entender la lógica de la diferencia para interpretar déficits y excesos. Además hay ratios (NO3/K, K/Ca, K/Mg, Ca/Mg, Ca/Na) con rangos ideales de referencia.
@@ -1591,7 +1611,7 @@ ESTILO DE RESPUESTA:
   }
 
   getLiveAnalisisSueloBlocks() {
-    const out = { visible: false, reportTitles: [], currentId: '', currentTitle: '', currentDate: '', physical: null, ph: null, fertilitySummary: null };
+    const out = { visible: false, reportTitles: [], currentId: '', currentTitle: '', currentDate: '', physical: null, ph: null, fertilitySummary: null, soilFertilityLogic: null };
     const container = document.getElementById('soil-analysis-tab-container');
     if (!container) return out;
     out.visible = true;
@@ -1622,6 +1642,45 @@ ESTILO DE RESPUESTA:
         if (p && p.value !== '') out.fertilitySummary.p = p.value;
         if (k && k.value !== '') out.fertilitySummary.k = k.value;
       }
+      const gv = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return '';
+        const v = (el.value != null ? el.value : el.textContent) || '';
+        return String(v).trim();
+      };
+      const cicInput = gv('soil-cations-cic');
+      const cicSpan = gv('soil-cic-params');
+      const cicStr = (cicInput && cicInput !== '—') ? cicInput : (cicSpan && cicSpan !== '—' ? cicSpan : '');
+      const cicNum = parseFloat(String(cicStr).replace(',', '.'));
+      const computedIdeal = (!isNaN(cicNum) && cicNum > 0) ? computeNutriPlantSoilKCaMgIdealPpmFromCic(cicNum) : null;
+      const pMethEl = document.getElementById('soil-fertility-pMethod');
+      const tdText = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return '';
+        const t = (el.textContent || '').trim();
+        return t && t !== '—' ? t : '';
+      };
+      out.soilFertilityLogic = {
+        cic: cicStr || null,
+        formulaKCaMgPpm: computedIdeal,
+        labK: gv('soil-fertility-k') || null,
+        labCa: gv('soil-fertility-ca') || null,
+        labMg: gv('soil-fertility-mg') || null,
+        idealK: gv('soil-fertility-ideal-k') || null,
+        idealCa: gv('soil-fertility-ideal-ca') || null,
+        idealMg: gv('soil-fertility-ideal-mg') || null,
+        idealP: gv('soil-fertility-ideal-p') || null,
+        pMethod: (pMethEl && pMethEl.value) ? pMethEl.value : null,
+        meqCa: gv('soil-cations-ca') || null,
+        meqMg: gv('soil-cations-mg') || null,
+        meqK: gv('soil-cations-k') || null,
+        depthCm: gv('soil-fertility-depthCm') || null,
+        reachPct: gv('soil-fertility-reachPct') || null,
+        bulkDensityGcm3: gv('soil-physical-bulkDensity') || null,
+        kgHaK: tdText('soil-kgha-k') || null,
+        kgHaCa: tdText('soil-kgha-ca') || null,
+        kgHaMg: tdText('soil-kgha-mg') || null
+      };
     }
     return out;
   }
@@ -2206,6 +2265,7 @@ ESTILO DE RESPUESTA:
         context += 'El usuario está en la sección Análisis. Subpestañas: Análisis de Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar (DOP), Fruta (ICC). Cuando está aquí y habla de "análisis de suelo", se refiere a los REPORTES de esta pestaña (bloque "ANÁLISIS DE SUELO (reportes)" más abajo), no al Análisis Inicial de Enmienda.\n';
         const liveSuelo = this.getLiveAnalisisSueloBlocks();
         if (liveSuelo.visible) {
+          context += 'ORIGEN "Ideal (referencia)" en Fertilidad (NutriPlant): K/Ca/Mg ppm por defecto = CIC (suma meq/100g Ca+Mg+K+Na+Al+H del mismo reporte) × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) → meq ideal; luego ppm = meq×(K 391, Mg 121,5, Ca 200,4). P ideal según método (Bray 40, Olsen 25, Merich 40 ppm). MO, N-NO3, Na, S, micros: referencias fijas (botón recargar). Fila Ideal editable: si difiere de la fórmula, usar valores en pantalla. kg/ha diff = (lab−ideal)×0,1×prof(cm)×densidad aparente(g/cm³)×(%raíz/100).\n';
           if (liveSuelo.reportTitles.length === 0) {
             context += 'Análisis de Suelo en pantalla: lista "Reportes en este proyecto" vacía; el usuario puede usar "+ Agregar análisis" para crear el primer reporte.\n';
           } else {
@@ -2218,8 +2278,22 @@ ESTILO DE RESPUESTA:
                 const f = liveSuelo.fertilitySummary;
                 context += `Fertilidad (laboratorio): ${f.mo != null ? 'MO% ' + f.mo : ''}${f.p != null ? ', P ' + f.p + ' ppm' : ''}${f.k != null ? ', K ' + f.k + ' ppm' : ''}. `;
               }
+              if (liveSuelo.soilFertilityLogic) {
+                const L = liveSuelo.soilFertilityLogic;
+                const bits = [];
+                if (L.cic) bits.push(`CIC ${L.cic} meq/100g`);
+                if (L.formulaKCaMgPpm) bits.push(`fórmula NutriPlant K/Ca/Mg ideal ppm = ${L.formulaKCaMgPpm.k} / ${L.formulaKCaMgPpm.ca} / ${L.formulaKCaMgPpm.mg}`);
+                if (L.meqCa || L.meqMg || L.meqK) bits.push(`cationes meq/100g Ca ${L.meqCa || '—'} Mg ${L.meqMg || '—'} K ${L.meqK || '—'}`);
+                if (L.labK || L.labCa || L.labMg) bits.push(`lab ppm K ${L.labK || '—'} Ca ${L.labCa || '—'} Mg ${L.labMg || '—'}`);
+                if (L.idealK || L.idealCa || L.idealMg) bits.push(`Ideal fila K/Ca/Mg ppm ${L.idealK || '—'} / ${L.idealCa || '—'} / ${L.idealMg || '—'}`);
+                if (L.idealP) bits.push(`P ideal ${L.idealP} ppm`);
+                if (L.pMethod) bits.push(`método P ${L.pMethod}`);
+                if (L.depthCm || L.reachPct || L.bulkDensityGcm3) bits.push(`kg/ha factor: prof ${L.depthCm || '—'} cm, raíz ${L.reachPct || '—'} %, dens.ap. ${L.bulkDensityGcm3 || '—'} g/cm³`);
+                if (L.kgHaK || L.kgHaCa || L.kgHaMg) bits.push(`kg/ha diff K/Ca/Mg ${L.kgHaK || '—'} / ${L.kgHaCa || '—'} / ${L.kgHaMg || '—'}`);
+                if (bits.length) context += 'En pantalla (reporte abierto): ' + bits.join('; ') + '. ';
+              }
             }
-            context += 'Cada reporte tiene Propiedades físicas, pH y salinidad, Fertilidad del suelo (nivel e ideal).\n';
+            context += 'Cada reporte tiene Propiedades físicas, pH y salinidad, Fertilidad del suelo (nivel e ideal), Cationes y CIC.\n';
           }
         }
         const liveSolucionNutritiva = this.getLiveSolucionNutritivaBlocks();
@@ -2470,15 +2544,32 @@ ESTILO DE RESPUESTA:
       const summariseSoilReport = (a) => {
         const ph = (a.phSection && a.phSection.ph != null && a.phSection.ph !== '') ? a.phSection.ph : null;
         const fert = (a.fertility && typeof a.fertility === 'object') ? a.fertility : {};
+        const ideal = (fert.ideal && typeof fert.ideal === 'object') ? fert.ideal : {};
         const cat = (a.cations && typeof a.cations === 'object') ? a.cations : {};
         const parts = [];
         if (ph != null) parts.push(`pH:${ph}`);
-        if (fert.p != null && fert.p !== '') parts.push(`P:${fert.p}`);
-        if (fert.k != null && fert.k !== '') parts.push(`K:${fert.k}`);
-        if (fert.ca != null && fert.ca !== '') parts.push(`Ca:${fert.ca}`);
-        if (fert.mg != null && fert.mg !== '') parts.push(`Mg:${fert.mg}`);
+        if (fert.pMethod) parts.push(`P_método:${fert.pMethod}`);
+        if (fert.p != null && fert.p !== '') parts.push(`P_lab:${fert.p}`);
+        if (fert.k != null && fert.k !== '') parts.push(`K_lab:${fert.k}`);
+        if (fert.ca != null && fert.ca !== '') parts.push(`Ca_lab:${fert.ca}`);
+        if (fert.mg != null && fert.mg !== '') parts.push(`Mg_lab:${fert.mg}`);
         if (cat.cic != null && cat.cic !== '') parts.push(`CIC:${cat.cic}`);
-        return (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '') + (parts.length ? ' — ' + parts.join(', ') : '');
+        const meqBits = [];
+        if (cat.ca != null && cat.ca !== '') meqBits.push(`Ca${cat.ca}`);
+        if (cat.mg != null && cat.mg !== '') meqBits.push(`Mg${cat.mg}`);
+        if (cat.k != null && cat.k !== '') meqBits.push(`K${cat.k}`);
+        if (meqBits.length) parts.push(`meq/100g:${meqBits.join(',')}`);
+        const idealBits = [];
+        if (ideal.k != null && ideal.k !== '') idealBits.push(`K${ideal.k}`);
+        if (ideal.ca != null && ideal.ca !== '') idealBits.push(`Ca${ideal.ca}`);
+        if (ideal.mg != null && ideal.mg !== '') idealBits.push(`Mg${ideal.mg}`);
+        if (ideal.p != null && ideal.p !== '') idealBits.push(`P${ideal.p}`);
+        if (idealBits.length) parts.push(`Ideal_ref_ppm:${idealBits.join(',')}`);
+        const cicN = parseFloat(String(cat.cic).replace(',', '.'));
+        const form = (!isNaN(cicN) && cicN > 0) ? computeNutriPlantSoilKCaMgIdealPpmFromCic(cicN) : null;
+        if (form) parts.push(`fórmula_defecto_K/Ca/Mg_ppm:${form.k}/${form.ca}/${form.mg}`);
+        let line = (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '') + (parts.length ? ' — ' + parts.join(', ') : '');
+        return line;
       };
       const summariseSolucionNutritiva = (a) => {
         const t = (a.title || 'Sin título') + (a.date ? ` (${a.date})` : '');

@@ -1122,10 +1122,10 @@ class NutriPlantAI {
     response += `\n**🎯 VALORES IDEALES PARA TU CIC (${cic} meq):**\n`;
     const idealK = Math.round((cic * 0.05) * 100) / 100;
     const idealCa = Math.round((cic * 0.70) * 100) / 100;
-    const idealMg = Math.round((cic * 0.125) * 100) / 100;
+    const idealMg = Math.round((cic * 0.13) * 100) / 100;
     response += `• **K⁺:** ${idealK} meq (5.0%)\n`;
     response += `• **Ca²⁺:** ${idealCa} meq (70.0%)\n`;
-    response += `• **Mg²⁺:** ${idealMg} meq (12.5%)\n`;
+    response += `• **Mg²⁺:** ${idealMg} meq (13.0%)\n`;
     response += `• **H⁺:** 0.00 meq (0.0%)\n`;
     response += `• **Na⁺:** 0.00 meq (0.0%)\n`;
     response += `• **Al³⁺:** 0.00 meq (0.0%)\n\n`;
