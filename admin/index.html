@@ -460,6 +460,12 @@
         #adminUserNotesModal.modal-overlay {
             z-index: 55200 !important;
         }
+        /* Mapas (proyecto / global / conexiones): por encima del visor de datos y de modales de edición. */
+        #mapModal,
+        #globalMapModal,
+        #connMapModal {
+            z-index: 56000 !important;
+        }
         .data-viewer-modal-titlebar {
             display: flex;
             flex-wrap: wrap;
@@ -5162,7 +5168,7 @@
             fullText = fullText.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
             var overlay = document.createElement('div');
             overlay.id = 'fullContentModalOverlay';
-            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:11000;display:flex;align-items:center;justify-content:center;padding:20px;';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:55500;display:flex;align-items:center;justify-content:center;padding:20px;';
             overlay.innerHTML = '<div style="background:#fff;border-radius:12px;max-width:560px;width:100%;max-height:80vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.2);display:flex;flex-direction:column;">' +
                 '<div style="padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">' +
                 '<h3 style="margin:0;font-size:18px;color:#1e293b;">Contenido del mensaje</h3>' +
@@ -10079,12 +10085,13 @@
                     width: 100%;
                     height: 100%;
                     background: rgba(0, 0, 0, 0.7);
-                    z-index: 10000;
+                    z-index: 56000;
                     justify-content: center;
                     align-items: center;
                 `;
                 document.body.appendChild(mapModal);
             }
+            mapModal.style.zIndex = '56000';
             
             const polygon = locationData.polygon;
             const center = locationData.center || (polygon && polygon.length > 0 ? { lat: polygon[0][0], lng: polygon[0][1] } : { lat: 19.4326, lng: -99.1332 });
@@ -10401,7 +10408,7 @@
             if (!globalMapModal) {
                 globalMapModal = document.createElement('div');
                 globalMapModal.id = 'globalMapModal';
-                globalMapModal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:10000; justify-content:center; align-items:center;';
+                globalMapModal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:56000; justify-content:center; align-items:center;';
                 globalMapModal.addEventListener('click', function(e) {
                     const btn = e.target.closest('.global-map-open-project');
                     if (btn) {
@@ -10414,6 +10421,7 @@
                 });
                 document.body.appendChild(globalMapModal);
             }
+            globalMapModal.style.zIndex = '56000';
             
             const count = withPolygon.length;
             globalMapModal.innerHTML = `
@@ -10795,9 +10803,10 @@
             if (!modal) {
                 modal = document.createElement('div');
                 modal.id = 'connMapModal';
-                modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:10000; justify-content:center; align-items:center;';
+                modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:56000; justify-content:center; align-items:center;';
                 document.body.appendChild(modal);
             }
+            modal.style.zIndex = '56000';
             modal.innerHTML = '<div style="background: white; border-radius: 12px; width: 95%; height: 92vh; max-width: 1400px; max-height: 92vh; display: flex; flex-direction: column; min-height: 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); box-sizing: border-box;">' +
                 '<div class="conn-map-modal-header">' +
                 '<div class="conn-map-modal-title"><h2 style="margin: 0; color: #1e293b; font-size: 20px;">🗺️ Mapa de conexiones</h2>' +
