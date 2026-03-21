@@ -4792,6 +4792,8 @@
                 const lastD = u.last_payment_date;
                 const nextD = u.next_payment_date;
                 return {
+                    id: u.id,
+                    userId: u.userId,
                     name: u.name,
                     email: u.email,
                     cycle_amount: amount,
@@ -4804,6 +4806,8 @@
             showDataViewerWithFilters({
                 title: '💰 Ingresos por Suscripción (cada 5 meses) — Solo usuarios que cuentan para contabilidad (excluye «No suma en ingresos USD»). Último/Próximo pago = Supabase.',
                 data: revenueData,
+                previousView: showSubscriptionRevenue,
+                previousViewParams: [],
                 columns: [
                     { key: 'name', label: 'Nombre', format: 'text', filterable: true },
                     { key: 'email', label: 'Email', format: 'text', filterable: true },
@@ -4813,8 +4817,8 @@
                     { key: 'next_payment', label: 'Próximo Pago', format: 'date', filterable: true }
                 ],
                 actions: {
-                    edit: false,
-                    delete: false
+                    edit: true,
+                    delete: true
                 }
             });
         }
@@ -4948,28 +4952,38 @@
             });
             if (config.actions && (config.actions.edit || config.actions.delete)) {
                 var isProject = config.isProject === true;
-                var itemId = isProject ? (item.id || index) : (item.id || item.userId || index);
+                var itemId = isProject ? (item.id || index) : (item.id || item.userId);
+                if (!isProject && (itemId == null || String(itemId).trim() === '') && item.email && String(item.email).trim() !== '') {
+                    itemId = String(item.email).trim();
+                }
+                if (!isProject && (itemId == null || String(itemId).trim() === '')) {
+                    itemId = index;
+                }
+                if (isProject && (itemId == null || String(itemId).trim() === '')) {
+                    itemId = index;
+                }
+                var safeUserRef = (itemId + '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 html += '<td style="padding: 12px; text-align: center;"><div style="display: flex; gap: 8px; justify-content: center;">';
                 if (config.actions.edit) {
                     if (isProject) {
-                        var safeId = (itemId + '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                        var safeId = safeUserRef;
                         var viewProjCall = config.previousViewForProject ? ('viewProjectDetailsWithReturn(\'' + safeId + '\', \'' + (config.previousViewForProject + '').replace(/'/g, "\\'") + '\')') : ('viewProjectDetails(\'' + safeId + '\')');
                         html += '<button onclick="' + viewProjCall + '" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">👁️ Ver</button><button onclick="editProject(\'' + safeId + '\')" style="background: #60a5fa; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Editar</button>';
                     } else {
-                        var prevCall = config.previousView ? ('viewUserDetails(\'' + itemId + '\', ' + (config.previousView.name || 'null') + ', ' + JSON.stringify(config.previousViewParams || []) + ')') : ('viewUserDetails(\'' + itemId + '\')');
-                        html += '<button onclick="' + prevCall + '" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">👁️ Ver</button><button onclick="editUser(\'' + itemId + '\')" style="background: #60a5fa; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Editar</button>';
+                        var prevCall = config.previousView ? ('viewUserDetails(\'' + safeUserRef + '\', ' + (config.previousView.name || 'null') + ', ' + JSON.stringify(config.previousViewParams || []) + ')') : ('viewUserDetails(\'' + safeUserRef + '\')');
+                        html += '<button onclick="' + prevCall + '" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">👁️ Ver</button><button onclick="editUser(\'' + safeUserRef + '\')" style="background: #60a5fa; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">✏️ Editar</button>';
                     }
                 }
                 if (config.actions.delete) {
                     if (isProject) {
                         if (config.deletedProjectsMode) {
-                            html += '<button onclick="restoreProject(\'' + itemId + '\')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">♻️ Restaurar</button>';
+                            html += '<button onclick="restoreProject(\'' + safeUserRef + '\')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">♻️ Restaurar</button>';
                         } else {
-                            if (item._isOrphan) html += '<button onclick="assignProjectToUser(\'' + itemId + '\')" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔗 Asignar</button>';
-                            html += '<button onclick="deleteProject(\'' + itemId + '\')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Eliminar</button>';
+                            if (item._isOrphan) html += '<button onclick="assignProjectToUser(\'' + safeUserRef + '\')" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔗 Asignar</button>';
+                            html += '<button onclick="deleteProject(\'' + safeUserRef + '\')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Eliminar</button>';
                         }
                     } else {
-                        html += '<button onclick="deleteUser(\'' + itemId + '\')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Eliminar</button>';
+                        html += '<button onclick="deleteUser(\'' + safeUserRef + '\')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Eliminar</button>';
                     }
                 }
                 html += '</div></td>';
@@ -5202,14 +5216,49 @@
             });
         }
         window.filterTable = filterTable;
+
+        /** Resolver fila de tabla admin → usuario (id, userId o email). Evita "Usuario no encontrado" por === estricto o filas sin id. */
+        function findUserForAdmin(userRef) {
+            if (userRef == null || userRef === '') return null;
+            var ref = String(userRef).trim();
+            if (!ref) return null;
+            var refLc = ref.toLowerCase();
+            var users = getAllUsers();
+            var u = users.find(function(x) {
+                return String(x.id || '') === ref || String(x.userId || '') === ref;
+            });
+            if (u) return u;
+            if (ref.indexOf('@') !== -1) {
+                u = users.find(function(x) { return (x.email || '').toLowerCase() === refLc; });
+                if (u) return u;
+            }
+            if (window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) {
+                var cl = window._adminCloudCache.users;
+                u = cl.find(function(x) {
+                    return String(x.id || '') === ref || String(x.userId || '') === ref;
+                });
+                if (u) return u;
+                if (ref.indexOf('@') !== -1) {
+                    u = cl.find(function(x) { return (x.email || '').toLowerCase() === refLc; });
+                    if (u) return u;
+                }
+            }
+            return null;
+        }
+
+        function getCanonicalUserIdForAdmin(user) {
+            if (!user) return '';
+            var id = user.id != null && String(user.id).trim() !== '' ? String(user.id).trim() : '';
+            var uid = user.userId != null && String(user.userId).trim() !== '' ? String(user.userId).trim() : '';
+            return id || uid;
+        }
         
         // Función para editar usuario (refresca uso de chat desde Supabase para mostrar "Uso este mes" correcto)
         async function editUser(userId) {
-            const users = getAllUsers();
-            let user = users.find(u => (u.id === userId) || (u.userId === userId));
-            
-            if (!user) {
-                alert('Usuario no encontrado');
+            let user = findUserForAdmin(userId);
+            const canonicalId = user ? getCanonicalUserIdForAdmin(user) : '';
+            if (!user || !canonicalId) {
+                alert('Usuario no encontrado o sin ID (revisa Supabase / recarga la lista desde la nube).');
                 return;
             }
             
@@ -5222,11 +5271,11 @@
             }
             
             // Refrescar uso de chat desde Supabase para que "Uso este mes" coincida con el backend
-            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(canonicalId);
             if (isUuid && window.getSupabaseClient) {
                 try {
                     const client = window.getSupabaseClient();
-                    const { data: fresh, error } = await client.from('profiles').select('chat_usage_current_month, chat_usage_month').eq('id', userId).maybeSingle();
+                    const { data: fresh, error } = await client.from('profiles').select('chat_usage_current_month, chat_usage_month').eq('id', canonicalId).maybeSingle();
                     if (!error && fresh) {
                         user = { ...user, chat_usage_current_month: fresh.chat_usage_current_month != null ? fresh.chat_usage_current_month : user.chat_usage_current_month, chat_usage_month: fresh.chat_usage_month || user.chat_usage_month };
                     }
@@ -5260,6 +5309,7 @@
             // Construir formulario de edición
             const crops = Array.isArray(user.crops) ? user.crops : [];
             const allCrops = ['Aguacate', 'Tomate', 'Pimiento', 'Pepino', 'Fresa', 'Lechuga', 'Cítricos', 'Uva', 'Maíz', 'Otro'];
+            var escCanon = canonicalId.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             
             let html = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
@@ -5267,7 +5317,7 @@
                     <button onclick="closeEditUserModal()" style="background: none; border: none; font-size: 24px; color: #64748b; cursor: pointer; padding: 4px 12px;">×</button>
                 </div>
                 
-                <form id="editUserForm" onsubmit="saveUserChanges(event, '${userId}')">
+                <form id="editUserForm" onsubmit="saveUserChanges(event, '${escCanon}')">
                     <div style="display: grid; gap: 16px;">
                         <!-- Nombre -->
                         <div>
@@ -5364,7 +5414,7 @@
                             <div style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: #f9fafb; color: #374151;">
                                 ${(user.password && String(user.password).trim()) ? escapeHtml(String(user.password)) : '— No guardada en panel'}
                             </div>
-                            ${/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId) ? `
+                            ${/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(canonicalId) ? `
                             <label style="display: block; margin-top: 12px; margin-bottom: 6px; font-weight: 500; color: #374151;">Nueva contraseña (opcional)</label>
                             <input type="password" id="edit-user-new-password" placeholder="Dejar vacío para no cambiar" autocomplete="new-password" style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
                             <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Si escribes una contraseña aquí y guardas, se actualizará en la nube y el usuario podrá entrar con ella (útil si olvidó su contraseña).</small>
@@ -6032,6 +6082,13 @@
         
         async function saveUserChanges(e, userId) {
             e.preventDefault();
+            var resolved = findUserForAdmin(userId);
+            var canonicalUserId = resolved ? (getCanonicalUserIdForAdmin(resolved) || String(userId)) : String(userId);
+            if (!canonicalUserId || canonicalUserId === 'undefined') {
+                alert('❌ No se pudo resolver el ID del usuario. Recarga la lista e intenta de nuevo.');
+                return;
+            }
+            userId = canonicalUserId;
             
             const userKey = `nutriplant_user_${userId}`;
             let existingUser = null;
@@ -6048,11 +6105,11 @@
             
             // 2) Si no está en localStorage (usuario solo en nube): obtener de lista fusionada o caché
             if (!existingUser) {
-                const allUsers = getAllUsers();
-                existingUser = allUsers.find(u => (u.id === userId) || (u.userId === userId));
+                existingUser = findUserForAdmin(userId);
             }
             if (!existingUser && window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) {
-                existingUser = window._adminCloudCache.users.find(u => (u.id === userId) || (u.userId === userId));
+                const uidStr = String(userId);
+                existingUser = window._adminCloudCache.users.find(u => String(u.id || '') === uidStr || String(u.userId || '') === uidStr);
             }
             
             if (!existingUser) {
@@ -7368,21 +7425,18 @@
         window.assignProjectToUser = assignProjectToUser;
         
         async function deleteUser(userId) {
-            const userKey = `nutriplant_user_${userId}`;
+            let user = findUserForAdmin(userId);
+            const effectiveId = user ? (getCanonicalUserIdForAdmin(user) || String(userId)) : String(userId);
+            const userKey = `nutriplant_user_${effectiveId}`;
             let userValue = localStorage.getItem(userKey);
-            let user = null;
             
-            if (userValue) {
+            if (!user && userValue) {
                 try {
                     user = JSON.parse(userValue);
                 } catch (e) {
                     alert('Error al cargar el usuario');
                     return;
                 }
-            } else {
-                // Usuario solo en la nube (nunca entró en este navegador): obtener de la lista
-                const allUsers = getAllUsers();
-                user = allUsers.find(u => (u.id || u.userId) === userId);
             }
             
             if (!user) {
@@ -7397,7 +7451,7 @@
                 return;
             }
             
-            const isSupabaseUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
+            const isSupabaseUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(effectiveId));
             const msgCloud = isSupabaseUser ? '\n\nTambién se eliminará de la nube (Supabase): perfil y sus proyectos.' : '';
             if (!confirm(`¿Estás seguro de que deseas eliminar el usuario "${user.name || user.email}"?\n\nSus proyectos en este navegador quedarán como huérfanos (podrás recuperarlos si hace falta).${msgCloud}\n\nEsta acción no se puede deshacer.`)) {
                 return;
@@ -7417,7 +7471,7 @@
                         const res = await fetch(base + '/api/admin/delete-user', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ admin_key: adminKey, user_id: userId })
+                            body: JSON.stringify({ admin_key: adminKey, user_id: effectiveId })
                         });
                         const json = await res.json().catch(function() { return {}; });
                         if (res.ok && json.ok) {
@@ -7439,7 +7493,7 @@
                 const client = window.getSupabaseClient();
                 if (client) {
                     try {
-                        const { error: delError } = await client.from('profiles').delete().eq('id', userId);
+                        const { error: delError } = await client.from('profiles').delete().eq('id', effectiveId);
                         if (delError) {
                             console.warn('Error al eliminar usuario en Supabase:', delError);
                             if (!authDeleted) alert('✅ Usuario eliminado en este dispositivo.\n\n⚠️ No se pudo eliminar en la nube: ' + (delError.message || 'revisa políticas RLS. Ejecuta supabase-admin-delete-user.sql en Supabase.'));
@@ -7479,6 +7533,9 @@
             
             // Eliminar usuario de localStorage
             localStorage.removeItem(userKey);
+            if (String(userId) !== String(effectiveId)) {
+                localStorage.removeItem(`nutriplant_user_${userId}`);
+            }
             
             if (isSupabaseUser) {
                 if (authDeleted) {
@@ -9687,9 +9744,7 @@
             };
             
             // Obtener información del usuario (prioridad: getAllUsers que fusiona localStorage + Supabase)
-            let user = null;
-            const allUsers = getAllUsers();
-            user = allUsers.find(u => (u.id || u.userId) === userId);
+            let user = findUserForAdmin(userId);
             if (!user) {
                 const userKey = `nutriplant_user_${userId}`;
                 const userValue = localStorage.getItem(userKey);
@@ -9697,18 +9752,17 @@
                     try { user = JSON.parse(userValue); } catch (e) {}
                 }
             }
-            if (!user && window._adminCloudCache && Array.isArray(window._adminCloudCache.users)) {
-                user = window._adminCloudCache.users.find(u => (u.id || u.userId) === userId);
-            }
             if (!user) {
                 alert('❌ Usuario no encontrado');
                 return;
             }
+            const viewCanonicalId = getCanonicalUserIdForAdmin(user) || String(userId);
+            var escViewId = String(viewCanonicalId).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             user = { ...user, chat_history_sin_proyecto: user.chat_history_sin_proyecto || [] };
             
             // Refrescar fechas de suscripción directamente desde Supabase para evitar N/A por caché local.
             try {
-                const userIdText = String(user.id || user.userId || userId || '');
+                const userIdText = String(viewCanonicalId || user.id || user.userId || userId || '');
                 const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userIdText);
                 if (isUuid && window.getSupabaseClient) {
                     const client = window.getSupabaseClient();
@@ -9742,7 +9796,7 @@
             }
             
             // Obtener proyectos del usuario (email por si userId no coincide con la clave en localStorage)
-            const userProjects = getUserProjects(userId, user.email);
+            const userProjects = getUserProjects(viewCanonicalId, user.email);
             // Resumen chat IA por usuario (suma de todos sus proyectos)
             let userChatMessages = 0, userChatInteractions = 0;
             userProjects.forEach(function (p) {
@@ -9759,7 +9813,7 @@
                 const cloudOk = !!(window._adminCloudCache && window._adminCloudCache._cloudLastSuccess);
                 const cloudChats = (window._adminCloudCache && Array.isArray(window._adminCloudCache.chats)) ? window._adminCloudCache.chats : [];
                 if (cloudOk && cloudChats.length > 0) {
-                    const ids = new Set([String(user.id || ''), String(user.userId || ''), String(userId || '')].filter(Boolean));
+                    const ids = new Set([String(user.id || ''), String(user.userId || ''), String(viewCanonicalId || ''), String(userId || '')].filter(Boolean));
                     const mine = cloudChats.filter(function (c) { return c && ids.has(String(c.user_id || '')); });
                     if (mine.length > 0) {
                         userChatMessages = mine.length;
@@ -9810,10 +9864,10 @@
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #60a5fa;">
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">📋 Información Personal</h3>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 16px;">
-                                <div><strong>ID:</strong> ${escapeHtml(user.id || userId)}</div>
+                                <div><strong>ID:</strong> ${escapeHtml(user.id || viewCanonicalId)}</div>
                                 <div><strong>Nombre:</strong> ${escapeHtml(user.name || 'N/A')}</div>
                                 <div><strong>Email:</strong> ${escapeHtml(user.email || 'N/A')}</div>
-                                <div><strong>Contraseña:</strong> ${escapeHtml(user.password || (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId) ? '🔒 No guardada (registro anterior)' : 'Sin contraseña'))}</div>
+                                <div><strong>Contraseña:</strong> ${escapeHtml(user.password || (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(viewCanonicalId) ? '🔒 No guardada (registro anterior)' : 'Sin contraseña'))}</div>
                                 <div><strong>Teléfono:</strong> ${escapeHtml(user.phone || 'N/A')}</div>
                                 <div><strong>Ubicación:</strong> ${user.location ? (typeof user.location === 'object' ? [user.location.city, user.location.state, user.location.country].filter(Boolean).join(', ') : user.location) : 'N/A'}</div>
                                 <div><strong>Profesión:</strong> ${escapeHtml(user.profession || 'N/A')}</div>
@@ -9852,7 +9906,7 @@
                             <details style="margin: 0;">
                                 <summary style="cursor: pointer; font-weight: 600; color: #1e293b; font-size: 18px;">📚 Catálogos guardados en la nube</summary>
                                 <div style="margin-top: 16px; display: grid; gap: 12px;">
-                                    ${buildUserCatalogsSection(userId, user)}
+                                    ${buildUserCatalogsSection(viewCanonicalId, user)}
                                 </div>
                             </details>
                         </div>
@@ -9862,7 +9916,7 @@
                             <details style="margin: 0;">
                                 <summary style="cursor: pointer; font-weight: 600; color: #1e293b; font-size: 18px;">📝 Bloque de notas (nube)</summary>
                                 <div style="margin-top: 16px;">
-                                    ${buildUserNotesSection(userId, user)}
+                                    ${buildUserNotesSection(viewCanonicalId, user)}
                                 </div>
                             </details>
                         </div>
@@ -9870,11 +9924,11 @@
                         <!-- Proyectos del Usuario -->
                         <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">📁 Proyectos del Usuario (${userProjects.length})</h3>
-                            <button type="button" onclick="(async function(){ if (typeof window.nutriplantAdminLoadFromCloud === 'function') { await window.nutriplantAdminLoadFromCloud(); viewUserDetails('${userId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams || [])}); } })();" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔄 Refrescar desde nube</button>
+                            <button type="button" onclick="(async function(){ if (typeof window.nutriplantAdminLoadFromCloud === 'function') { await window.nutriplantAdminLoadFromCloud(); viewUserDetails('${escViewId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams || [])}); } })();" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔄 Refrescar desde nube</button>
             `;
             
             if (userProjects.length === 0) {
-                var isUuidUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+                var isUuidUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(viewCanonicalId);
                 html += `
                     <div style="background: white; padding: 16px; border-radius: 6px; text-align: center; color: #64748b;">
                         <p style="margin: 0;">${isUuidUser ? 'No hay proyectos cargados para este usuario. Pulse <strong>Refrescar desde nube</strong> arriba (después de que el usuario haya abierto el dashboard para sincronizar).' : 'Este usuario aún no tiene proyectos registrados.'}</p>
@@ -9917,7 +9971,7 @@
                                     ` : ''}
                                 </div>
                                 <div style="display: flex; gap: 8px; margin-left: 16px;">
-                                    <button onclick="viewProjectDetails('${project.id}', function() { viewUserDetails('${userId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams)}); }, []);" 
+                                    <button onclick="viewProjectDetails('${project.id}', function() { viewUserDetails('${escViewId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams)}); }, []);" 
                                             style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; white-space: nowrap;">
                                         👁️ Ver Detalles
                                     </button>
@@ -9949,7 +10003,7 @@
                                 style="flex: 1; padding: 12px; background: #e5e7eb; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                             Cerrar
                         </button>
-                        <button onclick="editUser('${userId}'); closeDataViewer();" 
+                        <button onclick="editUser('${escViewId}'); closeDataViewer();" 
                                 style="flex: 1; padding: 12px; background: #60a5fa; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                             ✏️ Editar Usuario
                         </button>
@@ -9961,7 +10015,7 @@
             const content = document.getElementById('dataViewerContent');
             if (modal && content) {
                 window._adminUserNotesCache = window._adminUserNotesCache || {};
-                window._adminUserNotesCache[userId] = user.user_notes || '';
+                window._adminUserNotesCache[viewCanonicalId] = user.user_notes || '';
                 content.innerHTML = html;
                 modal.style.display = 'flex';
                 lockBodyScrollForDataViewer();
