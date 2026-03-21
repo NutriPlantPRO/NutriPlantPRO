@@ -3398,12 +3398,12 @@ function calculateAutomaticAdjustments() {
   console.log('✅ Ajustes aplicados a los campos');
 }
 
-// Función para calcular valores ideales basados en CIC
+// Función para calcular valores ideales basados en CIC (meq/100g; mismos % que Fertilidad: K 5 %, Mg 13 %, Ca 70 %)
 function calculateIdealValues(cic) {
   return {
-    k: Math.round((cic * 0.05) * 100) / 100,   // 5% del CIC
-    ca: Math.round((cic * 0.75) * 100) / 100,  // 75% del CIC (ideal)
-    mg: Math.round((cic * 0.15) * 100) / 100,  // 15% del CIC (ideal)
+    k: Math.round((cic * 0.05) * 100) / 100,
+    ca: Math.round((cic * 0.70) * 100) / 100,
+    mg: Math.round((cic * 0.13) * 100) / 100,
     h: 0,   // Ideal = 0
     na: 0,  // Ideal = 0
     al: 0   // Ideal = 0
@@ -15500,8 +15500,8 @@ function createSoilAnalysisTabHTML() {
                     <label title="CIC proviene de la sección Cationes intercambiables y CIC (suma Ca+Mg+K+Na+Al+H). Solo visual.">CIC (meq/100g) <span id="soil-cic-params" class="soil-cic-display">—</span></label>
                   </div>
                   <div class="soil-fertility-params-hint">
-                    En kg/ha se considera solo el suelo que las raíces aprovechan en la profundidad indicada. CIC define los ideales de K, Ca y Mg (tabla saturación equilibrada).
-                    <button type="button" class="btn btn-sm soil-btn-ideal-ref" style="margin-left:8px; font-size:10px; padding:2px 8px; color:#0369a1; border:1px solid #0369a1; background:transparent; border-radius:4px; cursor:pointer;" onclick="window.applyGeneralIdealReferences && window.applyGeneralIdealReferences();" title="Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micronutrientes). K, Ca y Mg se llenan con CIC.">Recargar valores ideales de referencia</button>
+                    En kg/ha se considera solo el suelo que las raíces aprovechan en la profundidad indicada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4).
+                    <button type="button" class="btn btn-sm soil-btn-ideal-ref" style="margin-left:8px; font-size:10px; padding:2px 8px; color:#0369a1; border:1px solid #0369a1; background:transparent; border-radius:4px; cursor:pointer;" onclick="window.applyGeneralIdealReferences && window.applyGeneralIdealReferences();" title="Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micronutrientes). K, Ca y Mg se calculan desde la CIC (meq ideales y conversión a ppm).">Recargar valores ideales de referencia</button>
                   </div>
                 </div>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
@@ -15752,36 +15752,21 @@ window.updateSoilFertilityKgHa = function updateSoilFertilityKgHa() {
   });
 };
 
-// Tabla 8 - Saturación equilibrada (AyL). K = Normal (2-5%); Mg (10-15%); Ca (65-75%). Valores extraídos de la tabla; solo búsqueda por CIC.
-var SOIL_CIC_TABLE = [
-  { cic: 4, k: 85, ca: 520, mg: 75 }, { cic: 5, k: 108, ca: 650, mg: 90 }, { cic: 6, k: 117, ca: 708, mg: 106 },
-  { cic: 7, k: 123, ca: 910, mg: 121 }, { cic: 8, k: 129, ca: 1040, mg: 135 }, { cic: 9, k: 135, ca: 1170, mg: 148 },
-  { cic: 10, k: 141, ca: 1300, mg: 160 }, { cic: 11, k: 147, ca: 1430, mg: 172 }, { cic: 12, k: 152, ca: 1560, mg: 183 },
-  { cic: 13, k: 158, ca: 1690, mg: 193 }, { cic: 14, k: 164, ca: 1820, mg: 202 }, { cic: 15, k: 170, ca: 1950, mg: 210 },
-  { cic: 16, k: 176, ca: 2080, mg: 218 }, { cic: 17, k: 182, ca: 2210, mg: 225 }, { cic: 18, k: 187, ca: 2340, mg: 230 },
-  { cic: 19, k: 192, ca: 2470, mg: 236 }, { cic: 20, k: 195, ca: 2600, mg: 240 }, { cic: 21, k: 205, ca: 2730, mg: 252 },
-  { cic: 22, k: 215, ca: 2860, mg: 263 }, { cic: 23, k: 224, ca: 2990, mg: 275 }, { cic: 24, k: 234, ca: 3120, mg: 288 },
-  { cic: 25, k: 244, ca: 3250, mg: 300 }, { cic: 26, k: 254, ca: 3380, mg: 312 }, { cic: 27, k: 264, ca: 3510, mg: 324 },
-  { cic: 28, k: 274, ca: 3640, mg: 336 }, { cic: 29, k: 284, ca: 3770, mg: 348 }, { cic: 30, k: 292, ca: 3900, mg: 360 },
-  { cic: 31, k: 298, ca: 4030, mg: 372 }, { cic: 32, k: 304, ca: 4160, mg: 384 }, { cic: 33, k: 309, ca: 4290, mg: 396 },
-  { cic: 34, k: 314, ca: 4420, mg: 408 }, { cic: 35, k: 319, ca: 4550, mg: 420 }, { cic: 36, k: 323, ca: 4680, mg: 432 },
-  { cic: 37, k: 327, ca: 4810, mg: 444 }, { cic: 38, k: 331, ca: 4940, mg: 456 }, { cic: 39, k: 335, ca: 5070, mg: 468 },
-  { cic: 40, k: 338, ca: 5200, mg: 480 }, { cic: 41, k: 341, ca: 5330, mg: 492 }, { cic: 42, k: 344, ca: 5460, mg: 504 },
-  { cic: 43, k: 347, ca: 5590, mg: 516 }, { cic: 44, k: 349, ca: 5720, mg: 528 }, { cic: 45, k: 351, ca: 5850, mg: 540 },
-  { cic: 46, k: 359, ca: 5980, mg: 552 }, { cic: 47, k: 367, ca: 6110, mg: 564 }, { cic: 48, k: 375, ca: 6240, mg: 576 },
-  { cic: 49, k: 382, ca: 6370, mg: 588 }, { cic: 50, k: 390, ca: 6500, mg: 600 }
-];
+// Ideales K, Ca, Mg (ppm) desde CIC (meq/100g del análisis): meq ideal = CIC × fracción de saturación; ppm = meq × factor (peso equivalente × 10, base 100 g suelo).
+var SOIL_IDEAL_SAT_FRAC = { k: 0.05, ca: 0.70, mg: 0.13 };
+var SOIL_IDEAL_MEQ_TO_PPM = { k: 391, ca: 200.4, mg: 121.5 };
+
 function getSoilIdealByCIC(cic) {
   var c = parseFloat(cic);
-  if (isNaN(c) || c < 4) c = 4;
-  if (c > 50) c = 50;
-  var row = Math.round(c);
-  if (row < 4) row = 4;
-  if (row > 50) row = 50;
-  var r = SOIL_CIC_TABLE.find(function (x) { return x.cic === row; });
-  if (r) return { k: r.k, ca: r.ca, mg: r.mg };
-  var last = SOIL_CIC_TABLE[SOIL_CIC_TABLE.length - 1];
-  return { k: last.k, ca: last.ca, mg: last.mg };
+  if (isNaN(c) || c <= 0) return null;
+  function idealPpm(frac, meqToPpm) {
+    return Math.round(c * frac * meqToPpm * 10) / 10;
+  }
+  return {
+    k: idealPpm(SOIL_IDEAL_SAT_FRAC.k, SOIL_IDEAL_MEQ_TO_PPM.k),
+    ca: idealPpm(SOIL_IDEAL_SAT_FRAC.ca, SOIL_IDEAL_MEQ_TO_PPM.ca),
+    mg: idealPpm(SOIL_IDEAL_SAT_FRAC.mg, SOIL_IDEAL_MEQ_TO_PPM.mg)
+  };
 }
 
 // Manual CIC desde Fertilidad (ya no usado: CIC en Fertilidad es solo visual; se edita en Cationes).
@@ -15813,6 +15798,7 @@ window.applyIdealFromCIC = function applyIdealFromCIC() {
   var cic = analysis.cations.cic;
   if (cic === '' || cic === undefined || cic === null) return;
   var ideal = getSoilIdealByCIC(cic);
+  if (!ideal) return;
   if (!analysis.fertility.ideal) analysis.fertility.ideal = {};
   analysis.fertility.ideal.k = ideal.k;
   analysis.fertility.ideal.ca = ideal.ca;

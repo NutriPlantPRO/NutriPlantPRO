@@ -904,14 +904,14 @@ class NutriPlantAI {
       // Calcular valores ideales
       const idealK = Math.round((cic * 0.05) * 100) / 100; // 5% del CIC
       const idealCa = Math.round((cic * 0.70) * 100) / 100; // 70% del CIC
-      const idealMg = Math.round((cic * 0.125) * 100) / 100; // 12.5% del CIC
+      const idealMg = Math.round((cic * 0.13) * 100) / 100; // 13% del CIC
       const idealH = 0; // Ideal: 0
       const idealNa = 0; // Ideal: 0
       const idealAl = 0; // Ideal: 0
       
       response += `• **K⁺:** ${idealK} meq (5.0%) - Actual: ${soil.k} meq (${kPercent}%)\n`;
       response += `• **Ca²⁺:** ${idealCa} meq (70.0%) - Actual: ${soil.ca} meq (${caPercent}%)\n`;
-      response += `• **Mg²⁺:** ${idealMg} meq (12.5%) - Actual: ${soil.mg} meq (${mgPercent}%)\n`;
+      response += `• **Mg²⁺:** ${idealMg} meq (13.0%) - Actual: ${soil.mg} meq (${mgPercent}%)\n`;
       response += `• **H⁺:** ${idealH} meq (0.0%) - Actual: ${soil.h} meq (${hPercent}%)\n`;
       response += `• **Na⁺:** ${idealNa} meq (0.0%) - Actual: ${soil.na} meq (${naPercent}%)\n`;
       response += `• **Al³⁺:** ${idealAl} meq (0.0%) - Actual: ${soil.al} meq (${alPercent}%)\n\n`;
@@ -988,7 +988,7 @@ class NutriPlantAI {
     // Calcular valores ideales
     const idealK = Math.round((cic * 0.05) * 100) / 100; // 5% del CIC
     const idealCa = Math.round((cic * 0.70) * 100) / 100; // 70% del CIC
-    const idealMg = Math.round((cic * 0.125) * 100) / 100; // 12.5% del CIC
+    const idealMg = Math.round((cic * 0.13) * 100) / 100; // 13% del CIC
     const idealH = 0; // Ideal: 0
     const idealNa = 0; // Ideal: 0
     const idealAl = 0; // Ideal: 0
