@@ -6369,8 +6369,7 @@ body {
 .soil-fields {
   padding: 14px;
   display: grid;
-  /* Mínimo ~260px: evita que etiquetas como «CE (dS/m)» o «Residual objetivo (meq/L)» se partan en 3 renglones al forzar columnas estrechas. */
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 10px 20px;
 }
 .soil-fields-inline {
@@ -6386,13 +6385,33 @@ body {
   font-size: 13px;
   color: #475569;
   min-width: 0;
-  /* Una sola línea para texto + unidades entre paréntesis (salvo pantallas muy estrechas). */
-  white-space: nowrap;
 }
-@media (max-width: 380px) {
-  .soil-fields label {
+/* 💧 Análisis de agua: el texto va en <span class="agua-field-lbl"> para que no se parta al recalcular el grid (pestaña, scrollbar). */
+#agua-form-wrap .agua-fields-ce {
+  /* min distinto de 0: si no, el grid puede encoger columnas y el texto salta de línea al recalcular (pestaña / scrollbar). */
+  grid-template-columns: repeat(3, minmax(10rem, 1fr));
+}
+@media (max-width: 520px) {
+  #agua-form-wrap .agua-fields-ce {
+    grid-template-columns: 1fr;
+  }
+}
+#agua-form-wrap .agua-fields-acid {
+  grid-template-columns: minmax(12rem, 1fr) minmax(18rem, 1.25fr);
+}
+@media (max-width: 640px) {
+  #agua-form-wrap .agua-fields-acid {
+    grid-template-columns: 1fr;
+  }
+}
+#agua-form-wrap .agua-field-lbl {
+  display: block;
+  white-space: nowrap;
+  line-height: 1.35;
+}
+@media (max-width: 360px) {
+  #agua-form-wrap .agua-field-lbl {
     white-space: normal;
-    overflow-wrap: break-word;
   }
 }
 .soil-fields label input,

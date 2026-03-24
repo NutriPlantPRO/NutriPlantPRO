@@ -14472,10 +14472,10 @@ function createAguaTabHTML() {
             <div class="soil-analysis-sections">
               <details class="soil-section" data-aw-section="general" open>
                 <summary>📐 CE, RAS y pH</summary>
-                <div class="soil-fields">
-                  <label>CE (dS/m) <input type="number" step="0.01" id="aw-general-ce" onchange="window.saveAguaField && window.saveAguaField('general','ce',this.value)"></label>
-                  <label>RAS <input type="number" step="0.01" id="aw-general-ras" onchange="window.saveAguaField && window.saveAguaField('general','ras',this.value)"></label>
-                  <label>pH <input type="number" step="0.01" id="aw-general-ph" onchange="window.saveAguaField && window.saveAguaField('general','ph',this.value)"></label>
+                <div class="soil-fields agua-fields-ce">
+                  <label><span class="agua-field-lbl">CE (dS/m)</span><input type="number" step="0.01" id="aw-general-ce" onchange="window.saveAguaField && window.saveAguaField('general','ce',this.value)"></label>
+                  <label><span class="agua-field-lbl">RAS</span><input type="number" step="0.01" id="aw-general-ras" onchange="window.saveAguaField && window.saveAguaField('general','ras',this.value)"></label>
+                  <label><span class="agua-field-lbl">pH</span><input type="number" step="0.01" id="aw-general-ph" onchange="window.saveAguaField && window.saveAguaField('general','ph',this.value)"></label>
                 </div>
               </details>
               <details class="soil-section" data-aw-section="cations" open>
@@ -14529,9 +14529,9 @@ function createAguaTabHTML() {
               <details class="soil-section" data-aw-section="acid" open style="border:2px solid #16a34a;background:#f0fdf4;border-radius:8px;padding:12px;margin-top:8px;">
                 <summary>🧪 Ácido para neutralizar HCO₃⁻ y CO₃²⁻</summary>
                 <p style="font-size:0.85rem;color:#166534;margin-bottom:8px;">Meq ácido = (HCO₃⁻ + CO₃²⁻) − meq/L residual objetivo. Resultado en mL/m³ y litros totales según el volumen indicado.</p>
-                <div class="soil-fields" style="margin-bottom:12px;">
-                  <label>Ácido: <select id="aw-acid-select" onchange="window.saveAguaField && window.saveAguaField('acidId',this.value); window.awUpdateAcid && window.awUpdateAcid();">` + acidOptions + `</select></label>
-                  <label>Residual objetivo (meq/L): <input type="number" step="0.01" min="0" id="aw-acid-residual" style="width:90px;" oninput="window.saveAguaField && window.saveAguaField('acidResidualMeq',this.value); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('acidResidualMeq',this.value); window.awUpdateAcid && window.awUpdateAcid();"></label>
+                <div class="soil-fields agua-fields-acid" style="margin-bottom:12px;">
+                  <label><span class="agua-field-lbl">Ácido:</span><select id="aw-acid-select" onchange="window.saveAguaField && window.saveAguaField('acidId',this.value); window.awUpdateAcid && window.awUpdateAcid();">` + acidOptions + `</select></label>
+                  <label><span class="agua-field-lbl">Residual objetivo (meq/L):</span><input type="number" step="0.01" min="0" id="aw-acid-residual" style="width:90px;max-width:100%;" oninput="window.saveAguaField && window.saveAguaField('acidResidualMeq',this.value); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('acidResidualMeq',this.value); window.awUpdateAcid && window.awUpdateAcid();"></label>
                 </div>
                 <div class="aw-acid-results" style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:0.9rem;">
                   <span>En base a (m³ agua):</span><span id="aw-acid-m3-ref">—</span>
