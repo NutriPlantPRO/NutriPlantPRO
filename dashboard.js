@@ -14416,6 +14416,7 @@ window.restoreExtractoPastaUIState = function restoreExtractoPastaUIState() {
 };
 
 // ========== ANÁLISIS DE AGUA (sumas meq, m³ riego, kg elemento/óxido, ácido neutralización) ==========
+/* Neutralización HCO₃⁻/CO₃²⁻: volumen = (meq/L × 1000) / meqPerMl por m³. meqPerMl integra pureza y “fuerza” del ácido comercial (no hay campo densidad aparte). Ej. H₂SO₄ 98%: ~36.7 meq/mL equivale a ρ≈1,84 g/mL y 2 H⁺ útiles por mol. */
 var AGUA_ACIDS = [
   { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', meqPerMl: 11.6 },
   { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', meqPerMl: 36.7 },
@@ -14699,10 +14700,15 @@ window.awUpdateAcid = function awUpdateAcid() {
   document.getElementById('aw-acid-co3').textContent = !isNaN(parseFloat(a.anions && a.anions.co3_meq)) ? parseFloat(a.anions.co3_meq).toFixed(2) : '—';
   document.getElementById('aw-acid-residual-ref').textContent = residualMeq.toFixed(2);
   document.getElementById('aw-acid-meq-needed').textContent = meqPerL > 0 ? meqPerL.toFixed(2) : '0';
-  if (meqPerL <= 0 || !acid.meqPerMl) { document.getElementById('aw-acid-per-m3').textContent = meqPerL <= 0 ? '0 mL' : '—'; document.getElementById('aw-acid-total').textContent = (meqPerL <= 0 && m3) ? '0 L' : '—'; return; }
+  if (meqPerL <= 0 || !acid.meqPerMl) {
+    document.getElementById('aw-acid-per-m3').textContent = meqPerL <= 0 ? '0.00 mL' : '—';
+    document.getElementById('aw-acid-total').textContent = (meqPerL <= 0 && m3) ? '0.00 L' : '—';
+    return;
+  }
   var meqPerM3 = meqPerL * 1000;
   var mlPerM3 = meqPerM3 / acid.meqPerMl;
-  document.getElementById('aw-acid-per-m3').textContent = mlPerM3.toFixed(1) + ' mL';
+  /* Siempre 2 decimales en pantalla; el cálculo usa el número completo en JS antes de formatear. */
+  document.getElementById('aw-acid-per-m3').textContent = mlPerM3.toFixed(2) + ' mL';
   document.getElementById('aw-acid-total').textContent = m3 ? ((mlPerM3 * m3) / 1000).toFixed(2) + ' L' : '—';
 };
 
