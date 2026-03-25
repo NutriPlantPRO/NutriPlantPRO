@@ -14431,10 +14431,10 @@ window.restoreExtractoPastaUIState = function restoreExtractoPastaUIState() {
 // ========== ANÁLISIS DE AGUA (sumas meq, m³ riego, kg elemento/óxido, ácido neutralización) ==========
 /* Neutralización HCO₃⁻/CO₃²⁻: volumen = (meq/L × 1000) / meqPerMl por m³. meqPerMl integra pureza y “fuerza” del ácido comercial (no hay campo densidad aparte). Ej. H₂SO₄ 98%: ~36.7 meq/mL equivale a ρ≈1,84 g/mL y 2 H⁺ útiles por mol. */
 var AGUA_ACIDS = [
-  { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', meqPerMl: 11.6 },
-  { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', meqPerMl: 36.7 },
-  { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', meqPerMl: 12.0 },
-  { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', meqPerMl: 14.6 }
+  { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', meqPerMl: 11.6, densityKgL: 1.37 },
+  { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', meqPerMl: 36.7, densityKgL: 1.84 },
+  { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', meqPerMl: 12.0, densityKgL: 1.57 },
+  { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', meqPerMl: 14.6, densityKgL: 1.69 }
 ];
 
 function createEmptyAguaAnalysis() {
@@ -14732,16 +14732,24 @@ window.awUpdateAcid = function awUpdateAcid() {
   document.getElementById('aw-acid-co3').textContent = !isNaN(parseFloat(a.anions && a.anions.co3_meq)) ? parseFloat(a.anions.co3_meq).toFixed(2) : '—';
   document.getElementById('aw-acid-residual-ref').textContent = residualMeq.toFixed(2);
   document.getElementById('aw-acid-meq-needed').textContent = meqPerL > 0 ? meqPerL.toFixed(2) : '0';
+  /* Todos los ácidos de AGUA_ACIDS traen densityKgL; el respaldo solo evita NaN si faltara el campo. */
+  var rho = typeof acid.densityKgL === 'number' && acid.densityKgL > 0 ? acid.densityKgL : 1.5;
+  function awAcidKgSpan(kg) {
+    return ' <span style="font-size:0.8rem;color:#64748b;">(' + kg.toFixed(2) + ' kg)</span>';
+  }
   if (meqPerL <= 0 || !acid.meqPerMl) {
-    document.getElementById('aw-acid-per-m3').textContent = meqPerL <= 0 ? '0.00 mL' : '—';
-    document.getElementById('aw-acid-total').textContent = (meqPerL <= 0 && m3) ? '0.00 L' : '—';
+    document.getElementById('aw-acid-per-m3').innerHTML = meqPerL <= 0 ? '0.00 mL' + awAcidKgSpan(0) : '—';
+    document.getElementById('aw-acid-total').innerHTML = (meqPerL <= 0 && m3) ? '0.00 L' + awAcidKgSpan(0) : '—';
     return;
   }
   var meqPerM3 = meqPerL * 1000;
   var mlPerM3 = meqPerM3 / acid.meqPerMl;
-  /* Siempre 2 decimales en pantalla; el cálculo usa el número completo en JS antes de formatear. */
-  document.getElementById('aw-acid-per-m3').textContent = mlPerM3.toFixed(2) + ' mL';
-  document.getElementById('aw-acid-total').textContent = m3 ? ((mlPerM3 * m3) / 1000).toFixed(2) + ' L' : '—';
+  var litersTotal = m3 ? (mlPerM3 * m3) / 1000 : 0;
+  var kgPerM3Water = (mlPerM3 / 1000) * rho;
+  var kgTotal = litersTotal * rho;
+  /* Volumen 2 decimales; kg derivado de volumen × densidad típica del ácido comercial (aprox.). */
+  document.getElementById('aw-acid-per-m3').innerHTML = mlPerM3.toFixed(2) + ' mL' + awAcidKgSpan(kgPerM3Water);
+  document.getElementById('aw-acid-total').innerHTML = m3 ? (litersTotal.toFixed(2) + ' L' + awAcidKgSpan(kgTotal)) : '—';
 };
 
 window.selectAguaAnalysis = function selectAguaAnalysis(id) {
