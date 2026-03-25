@@ -14510,7 +14510,6 @@ function createAguaTabHTML() {
               </details>
               <details class="soil-section" data-aw-section="anions" open>
                 <summary>⚗️ Aniones (meq/L, ppm, kg elemento, kg óxido (P₂O₅, SO₃))</summary>
-                <p style="font-size:0.85rem;color:#64748b;margin-bottom:8px;">Para fertilizante: conversión elemento → óxido (P → P₂O₅, S → SO₃). El nitrógeno se expresa como N (sin óxido en esta columna). Usa la Calculadora de Conversión Óxido ↔ Elemental</p>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
                     <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>kg elemento</th><th>kg óxido (P₂O₅, SO₃)</th></tr></thead>
@@ -14659,9 +14658,9 @@ window.awUpdateSums = function awUpdateSums() {
 };
 
 var AW_OXIDE_FACTORS = { ca: 1.399, mg: 1.658, na: 1.348, k: 1.205 };
-/* Aniones: mismo criterio que GRANULAR (P→P₂O₅ ×2.291); S→SO₃ = 80/32 */
+/* Aniones: P→P₂O₅ ×2.291 (GRANULAR); S→SO₃ mismo factor que Calculadora Óxido ↔ Elemental (dashboard) */
 var AW_P_TO_P2O5 = 2.291;
-var AW_S_TO_SO3 = 2.5;
+var AW_S_TO_SO3 = 2.497;
 window.awUpdateKgOxide = function awUpdateKgOxide() {
   var wrap = document.getElementById('agua-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
@@ -16605,7 +16604,7 @@ function createVPDSectionHTML() {
               ${vpdLocation.lat.toFixed(6)}, ${vpdLocation.lng.toFixed(6)}
             </p>
             <p style="margin: 0; color: #64748b; font-size: 13px;">
-              Fechas y horas del clima en hora local del predio (misma zona que las coordenadas anteriores).
+              Fechas y horas del clima: zona horaria local del punto indicado arriba (latitud y longitud del centro del polígono); no la hora de tu equipo ni de un servidor fijo.
             </p>
           </div>
           
@@ -16672,7 +16671,7 @@ function createVPDSectionHTML() {
           Fuente geográfica: <strong>centro del polígono del proyecto</strong> (${vpdLocation.lat.toFixed(5)}, ${vpdLocation.lng.toFixed(5)}).
         </p>
         <p style="margin: 0 0 14px 0; color: #7c2d12; font-size: 13px;">
-          Fechas y horas en hora local del predio (misma zona que las coordenadas anteriores).
+          Fechas y horas de la serie: misma zona horaria local que el centro del polígono (coordenadas en el párrafo de arriba); no la hora de tu ciudad ni del servidor.
         </p>
         <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;align-items:end;margin-bottom:12px;">
           <div>
