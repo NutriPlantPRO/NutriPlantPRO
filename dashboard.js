@@ -14707,7 +14707,7 @@ window.awUpdateKgOxide = function awUpdateKgOxide() {
   // N-NO3: la ppm es de N (elemento); kg N = ppm N × m³/1000 (el fertilizante se expresa como N)
   var no3Ppm = an && an.no3_ppm ? parseFloat(an.no3_ppm) : NaN;
   if (!isNaN(no3Ppm) && m3) { var kgN = (no3Ppm * m3) / 1000; var elN = document.getElementById('aw-kg-n'); if (elN) elN.textContent = kgN.toFixed(2); } else { var elN = document.getElementById('aw-kg-n'); if (elN) elN.textContent = '—'; }
-  var micros = a.micros; if (micros) { ['b','fe','mn','cu','zn'].forEach(function(k){ var p = parseFloat(micros[k]); var el = document.getElementById('aw-kg-' + k); if (el) el.textContent = (m3 && !isNaN(p)) ? ((p * m3) / 1000).toFixed(2) : '—'; }); }
+  var micros = a.micros; if (micros) { ['b','fe','mn','cu','zn'].forEach(function(k){ var p = parseFloat(micros[k]); var el = document.getElementById('aw-kg-' + k); if (el) el.textContent = (m3 && !isNaN(p)) ? ((p * m3) / 1000).toFixed(3) : '—'; }); }
 };
 
 window.awUpdateAcid = function awUpdateAcid() {
