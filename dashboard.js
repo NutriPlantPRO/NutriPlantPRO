@@ -14461,6 +14461,7 @@ function createAguaTabHTML() {
       </div>
       <h2 class="text-xl" style="margin-bottom: 16px;">🔬 Análisis de Agua</h2>
       <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de agua de riego. meq/L y ppm con conversión automática, sumas de cationes y aniones, aporte por volumen (m³) en kg elemento y óxido, y cálculo de ácido para neutralizar bicarbonatos/carbonatos.</p>
+      <p style="margin-bottom:14px;font-size:0.85rem;color:#475569;padding:10px 12px;background:#f8fafc;border-radius:8px;border-left:3px solid #0ea5e9;"><strong>Leyenda (kg):</strong> Los kilogramos en las tablas (elemento y óxido) son el aporte total para el <strong>volumen de agua de riego</strong> que indiques en cada reporte (campo m³ arriba), no por m³ ni por hectárea.</p>
       <div class="soil-analysis-layout">
         <div class="soil-analysis-list-panel">
           <div class="soil-analysis-list-header">
@@ -14508,19 +14509,19 @@ function createAguaTabHTML() {
                 </div>
               </details>
               <details class="soil-section" data-aw-section="anions" open>
-                <summary>⚗️ Aniones (meq/L, ppm, kg elemento)</summary>
-                <p style="font-size:0.85rem;color:#64748b;margin-bottom:8px;">Para fertilizante: conversión elemento → óxido (P → P₂O₅, S → SO₃). Usa la Calculadora de Conversión Óxido ↔ Elemental</p>
+                <summary>⚗️ Aniones (meq/L, ppm, kg elemento, kg óxido (P₂O₅, SO₃))</summary>
+                <p style="font-size:0.85rem;color:#64748b;margin-bottom:8px;">Para fertilizante: conversión elemento → óxido (P → P₂O₅, S → SO₃). El nitrógeno se expresa como N (sin óxido en esta columna). Usa la Calculadora de Conversión Óxido ↔ Elemental</p>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
-                    <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>kg elemento</th></tr></thead>
+                    <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>kg elemento</th><th>kg óxido (P₂O₅, SO₃)</th></tr></thead>
                     <tbody class="notranslate" translate="no">
-                      <tr><td>S-SO₄²⁻</td><td><input type="number" step="0.01" id="aw-so4-meq" class="fertirriego-input" data-aw-macro="SO4" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('SO4','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-so4-ppm" class="fertirriego-input" data-aw-macro="SO4" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('SO4','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-s">—</td></tr>
-                      <tr><td>HCO₃⁻</td><td><input type="number" step="0.01" id="aw-hco3-meq" class="fertirriego-input" data-aw-macro="HCO3" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('HCO3','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td><input type="number" step="0.01" id="aw-hco3-ppm" class="fertirriego-input" data-aw-macro="HCO3" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('HCO3','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td>—</td></tr>
-                      <tr><td>Cl⁻</td><td><input type="number" step="0.01" id="aw-cl-meq" class="fertirriego-input" data-aw-macro="Cl" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Cl','meq',this); window.awUpdateSums && window.awUpdateSums();"></td><td><input type="number" step="0.01" id="aw-cl-ppm" class="fertirriego-input" data-aw-macro="Cl" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Cl','ppm',this); window.awUpdateSums && window.awUpdateSums();"></td><td>—</td></tr>
-                      <tr><td>CO₃²⁻</td><td><input type="number" step="0.01" id="aw-co3-meq" class="fertirriego-input" data-aw-macro="CO3" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('CO3','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td><input type="number" step="0.01" id="aw-co3-ppm" class="fertirriego-input" data-aw-macro="CO3" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('CO3','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td>—</td></tr>
-                      <tr><td>P-H₂PO₄⁻</td><td><input type="number" step="0.01" id="aw-po4-meq" class="fertirriego-input" data-aw-macro="PO4" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('PO4','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-po4-ppm" class="fertirriego-input" data-aw-macro="PO4" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('PO4','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-p">—</td></tr>
-                      <tr><td>N-NO₃⁻</td><td><input type="number" step="0.01" id="aw-no3-meq" class="fertirriego-input" data-aw-macro="NO3" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('NO3','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-no3-ppm" class="fertirriego-input" data-aw-macro="NO3" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('NO3','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-n">—</td></tr>
-                      <tr><td colspan="2"><strong>Suma aniones (meq/L)</strong></td><td id="aw-sum-anions-meq" colspan="2">—</td></tr>
+                      <tr><td>S-SO₄²⁻</td><td><input type="number" step="0.01" id="aw-so4-meq" class="fertirriego-input" data-aw-macro="SO4" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('SO4','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-so4-ppm" class="fertirriego-input" data-aw-macro="SO4" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('SO4','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-s">—</td><td id="aw-kg-so3">—</td></tr>
+                      <tr><td>HCO₃⁻</td><td><input type="number" step="0.01" id="aw-hco3-meq" class="fertirriego-input" data-aw-macro="HCO3" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('HCO3','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td><input type="number" step="0.01" id="aw-hco3-ppm" class="fertirriego-input" data-aw-macro="HCO3" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('HCO3','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td>—</td><td>—</td></tr>
+                      <tr><td>Cl⁻</td><td><input type="number" step="0.01" id="aw-cl-meq" class="fertirriego-input" data-aw-macro="Cl" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Cl','meq',this); window.awUpdateSums && window.awUpdateSums();"></td><td><input type="number" step="0.01" id="aw-cl-ppm" class="fertirriego-input" data-aw-macro="Cl" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Cl','ppm',this); window.awUpdateSums && window.awUpdateSums();"></td><td>—</td><td>—</td></tr>
+                      <tr><td>CO₃²⁻</td><td><input type="number" step="0.01" id="aw-co3-meq" class="fertirriego-input" data-aw-macro="CO3" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('CO3','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td><input type="number" step="0.01" id="aw-co3-ppm" class="fertirriego-input" data-aw-macro="CO3" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('CO3','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td>—</td><td>—</td></tr>
+                      <tr><td>P-H₂PO₄⁻</td><td><input type="number" step="0.01" id="aw-po4-meq" class="fertirriego-input" data-aw-macro="PO4" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('PO4','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-po4-ppm" class="fertirriego-input" data-aw-macro="PO4" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('PO4','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-p">—</td><td id="aw-kg-p2o5">—</td></tr>
+                      <tr><td>N-NO₃⁻</td><td><input type="number" step="0.01" id="aw-no3-meq" class="fertirriego-input" data-aw-macro="NO3" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('NO3','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-no3-ppm" class="fertirriego-input" data-aw-macro="NO3" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('NO3','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-n">—</td><td>—</td></tr>
+                      <tr><td colspan="2"><strong>Suma aniones (meq/L)</strong></td><td id="aw-sum-anions-meq" colspan="3">—</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -14657,7 +14658,10 @@ window.awUpdateSums = function awUpdateSums() {
   var elA = document.getElementById('aw-sum-anions-meq'); if (elA) elA.textContent = sumA > 0 ? sumA.toFixed(2) + ' meq/L' : '—';
 };
 
-var AW_OXIDE_FACTORS = { ca: 1.399, mg: 1.658, na: 1.348, k: 1.205, s: 3 }; // S → SO4 (96/32 = 3)
+var AW_OXIDE_FACTORS = { ca: 1.399, mg: 1.658, na: 1.348, k: 1.205 };
+/* Aniones: mismo criterio que GRANULAR (P→P₂O₅ ×2.291); S→SO₃ = 80/32 */
+var AW_P_TO_P2O5 = 2.291;
+var AW_S_TO_SO3 = 2.5;
 window.awUpdateKgOxide = function awUpdateKgOxide() {
   var wrap = document.getElementById('agua-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
@@ -14677,14 +14681,30 @@ window.awUpdateKgOxide = function awUpdateKgOxide() {
   setKg(c && c.mg_ppm, document.getElementById('aw-kg-mg'), document.getElementById('aw-kg-mgo'), AW_OXIDE_FACTORS.mg);
   setKg(c && c.na_ppm, document.getElementById('aw-kg-na'), document.getElementById('aw-kg-na2o'), null); // Na solo elemento, sin óxido
   setKg(c && c.k_ppm, document.getElementById('aw-kg-k'), document.getElementById('aw-kg-k2o'), AW_OXIDE_FACTORS.k);
-  // S-SO4: solo kg S (elemental)
+  // S-SO4: kg S (elemental) y kg SO₃ (desde S)
   var so4Ppm = an && an.so4_ppm ? parseFloat(an.so4_ppm) : NaN;
   var elS = document.getElementById('aw-kg-s');
-  if (!isNaN(so4Ppm) && m3) { if (elS) elS.textContent = ((so4Ppm * m3) / 1000).toFixed(2); } else { if (elS) elS.textContent = '—'; }
-  // P-PO4: la ppm es de P (elemento, peso 30.97); kg P = ppm P × m³/1000 (solo elemental)
+  var elSO3 = document.getElementById('aw-kg-so3');
+  if (!isNaN(so4Ppm) && m3) {
+    var kgS = (so4Ppm * m3) / 1000;
+    if (elS) elS.textContent = kgS.toFixed(2);
+    if (elSO3) elSO3.textContent = (kgS * AW_S_TO_SO3).toFixed(2);
+  } else {
+    if (elS) elS.textContent = '—';
+    if (elSO3) elSO3.textContent = '—';
+  }
+  // P-PO4: ppm = P elemental; kg P y kg P₂O₅
   var po4Ppm = an && an.po4_ppm ? parseFloat(an.po4_ppm) : NaN;
   var elP = document.getElementById('aw-kg-p');
-  if (!isNaN(po4Ppm) && m3) { if (elP) elP.textContent = ((po4Ppm * m3) / 1000).toFixed(2); } else { if (elP) elP.textContent = '—'; }
+  var elP2O5 = document.getElementById('aw-kg-p2o5');
+  if (!isNaN(po4Ppm) && m3) {
+    var kgP = (po4Ppm * m3) / 1000;
+    if (elP) elP.textContent = kgP.toFixed(2);
+    if (elP2O5) elP2O5.textContent = (kgP * AW_P_TO_P2O5).toFixed(2);
+  } else {
+    if (elP) elP.textContent = '—';
+    if (elP2O5) elP2O5.textContent = '—';
+  }
   // N-NO3: la ppm es de N (elemento); kg N = ppm N × m³/1000 (el fertilizante se expresa como N)
   var no3Ppm = an && an.no3_ppm ? parseFloat(an.no3_ppm) : NaN;
   if (!isNaN(no3Ppm) && m3) { var kgN = (no3Ppm * m3) / 1000; var elN = document.getElementById('aw-kg-n'); if (elN) elN.textContent = kgN.toFixed(2); } else { var elN = document.getElementById('aw-kg-n'); if (elN) elN.textContent = '—'; }
@@ -16584,6 +16604,9 @@ function createVPDSectionHTML() {
               📍 <strong>Ubicación del Proyecto:</strong> 
               ${vpdLocation.lat.toFixed(6)}, ${vpdLocation.lng.toFixed(6)}
             </p>
+            <p style="margin: 0; color: #64748b; font-size: 13px;">
+              Fechas y horas del clima en hora local del predio (misma zona que las coordenadas anteriores).
+            </p>
           </div>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
@@ -16645,8 +16668,11 @@ function createVPDSectionHTML() {
         <h3 style="margin: 0 0 12px 0; color: #9a3412; font-size: 18px; font-weight: 600;">
           🗓️ Serie VPD por Rango (diario / semanal / mensual)
         </h3>
-        <p style="margin: 0 0 14px 0; color: #7c2d12; font-size: 13px;">
+        <p style="margin: 0 0 8px 0; color: #7c2d12; font-size: 13px;">
           Fuente geográfica: <strong>centro del polígono del proyecto</strong> (${vpdLocation.lat.toFixed(5)}, ${vpdLocation.lng.toFixed(5)}).
+        </p>
+        <p style="margin: 0 0 14px 0; color: #7c2d12; font-size: 13px;">
+          Fechas y horas en hora local del predio (misma zona que las coordenadas anteriores).
         </p>
         <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;align-items:end;margin-bottom:12px;">
           <div>

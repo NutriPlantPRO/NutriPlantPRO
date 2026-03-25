@@ -2377,7 +2377,7 @@ ESTILO DE RESPUESTA:
                 context += `NO3: ${liveAgua.anionsSummary.no3} ppm. `;
               }
             }
-            context += 'Cada reporte tiene m³ riego, CE/RAS/pH, Cationes (kg elemento y óxido), Aniones (kg elemento), Micronutrimentos y Ácido para neutralizar HCO3/CO3.\n';
+            context += 'Cada reporte tiene m³ riego, CE/RAS/pH, Cationes (kg elemento y óxido), Aniones (kg elemento; P₂O₅ y SO₃ donde aplica), Micronutrimentos y Ácido para neutralizar HCO3/CO3.\n';
           }
         }
         const liveFoliar = this.getLiveFoliarBlocks();
