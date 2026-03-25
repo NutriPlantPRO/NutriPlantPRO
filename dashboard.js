@@ -2200,10 +2200,7 @@ function initializeEnmiendaCalculator() {
   }
 
   if (soilReachInput) {
-    /* No recalcular resultados en cada tecla: mientras se escribe "50" el valor intermedio sería inválido para min=10 y distorsionaba el ajuste. Solo change/blur + guardado ligero. */
-    soilReachInput.addEventListener('input', () => {
-      scheduleEnmiendaAutoSave();
-    });
+    /* No autoguardar en cada tecla: saveProjectData llamaba normalize(..., mutate true) y rellenaba 100 o recortaba el valor antes de time blur. Guardar solo al terminar edición. */
     soilReachInput.addEventListener('change', () => {
       normalizeSoilReachPercent(soilReachInput, { mutate: true });
       updateSoilReachAdjustment({ mutate: true });
@@ -2831,30 +2828,36 @@ function convertMeqToKgHa(meq, pesoEquivalente) {
 }
 
 // ===== Ajuste por % de alcance de suelo =====
-/* min en HTML es 0 (no 10): si min=10 el navegador impide escribir cifras intermedias al teclear, p. ej. "5" al formar "50". El rango 10–100 se aplica aquí al salir del campo. */
+/* min en HTML es 0 (no 10): si min=10 el navegador impide escribir cifras intermedias al teclear, p. ej. "5" al formar "50". El rango 10–100 se aplica al salir del campo (mutate: true).
+   Con mutate: false (guardado automático / lectura): no tocar el DOM; si vacío o valor fuera de 10–100 → null (no persistir; el usuario sigue editando). */
 function normalizeSoilReachPercent(inputEl, { mutate = true } = {}) {
-  if (!inputEl) return 100;
+  if (!inputEl) return mutate ? 100 : null;
   const raw = String(inputEl.value).trim();
   if (raw === '') {
     if (mutate) inputEl.value = '100';
-    return 100;
+    return mutate ? 100 : null;
   }
   let value = parseFloat(raw);
   if (Number.isNaN(value)) {
     if (mutate) inputEl.value = '100';
-    return 100;
+    return mutate ? 100 : null;
+  }
+  if (!mutate) {
+    if (value < 10 || value > 100) return null;
+    return value;
   }
   if (value < 10) value = 10;
   if (value > 100) value = 100;
-  if (mutate) inputEl.value = String(value);
+  inputEl.value = String(value);
   return value;
 }
 
 function getSoilReachPercent({ mutate = true } = {}) {
   const inputEl = document.getElementById('soil-reach-percent');
-  if (!inputEl) return 100;
+  if (!inputEl) return mutate ? 100 : null;
   const value = normalizeSoilReachPercent(inputEl, { mutate });
-  return value == null ? 100 : value;
+  if (value == null) return mutate ? 100 : null;
+  return value;
 }
 
 function updateSoilReachAdjustment({ mutate = true } = {}) {
@@ -8196,7 +8199,8 @@ function saveProjectData(options = {}) {
       });
       const soilReachEl = document.getElementById('soil-reach-percent');
       if (soilReachEl) {
-        sectionData.amendments.soilReachPercent = normalizeSoilReachPercent(soilReachEl);
+        const r = normalizeSoilReachPercent(soilReachEl, { mutate: false });
+        if (r != null) sectionData.amendments.soilReachPercent = r;
       }
       
       // Recopilar resultados
@@ -8595,7 +8599,8 @@ function collectCurrentData() {
 
     const soilReachEl = document.getElementById('soil-reach-percent');
     if (soilReachEl) {
-      currentProject.amendments.soilReachPercent = normalizeSoilReachPercent(soilReachEl);
+      const r = normalizeSoilReachPercent(soilReachEl, { mutate: false });
+      if (r != null) currentProject.amendments.soilReachPercent = r;
     }
     
     // Resultados de cálculo básicos
@@ -9508,7 +9513,7 @@ function applyProjectDataToUI() {
   if (soilReachEl) {
     const savedReach = currentProject.amendments.soilReachPercent ?? 100;
     soilReachEl.value = savedReach;
-    normalizeSoilReachPercent(soilReachEl);
+    normalizeSoilReachPercent(soilReachEl, { mutate: true });
   }
   
   // Aplicar resultados de cálculo básicos

@@ -280,28 +280,33 @@ function updatePHIndicator() {
 }
 
 function normalizeSoilReachPercent(inputEl, { mutate = true } = {}) {
-  if (!inputEl) return 100;
+  if (!inputEl) return mutate ? 100 : null;
   const raw = String(inputEl.value).trim();
   if (raw === '') {
     if (mutate) inputEl.value = '100';
-    return 100;
+    return mutate ? 100 : null;
   }
   let value = parseFloat(raw);
   if (Number.isNaN(value)) {
     if (mutate) inputEl.value = '100';
-    return 100;
+    return mutate ? 100 : null;
+  }
+  if (!mutate) {
+    if (value < 10 || value > 100) return null;
+    return value;
   }
   if (value < 10) value = 10;
   if (value > 100) value = 100;
-  if (mutate) inputEl.value = String(value);
+  inputEl.value = String(value);
   return value;
 }
 
 function getSoilReachPercent({ mutate = true } = {}) {
   const inputEl = document.getElementById('soil-reach-percent');
-  if (!inputEl) return 100;
+  if (!inputEl) return mutate ? 100 : null;
   const value = normalizeSoilReachPercent(inputEl, { mutate });
-  return value == null ? 100 : value;
+  if (value == null) return mutate ? 100 : null;
+  return value;
 }
 
 function updateSoilReachAdjustment({ mutate = true } = {}) {
