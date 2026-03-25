@@ -16604,7 +16604,7 @@ function createVPDSectionHTML() {
               ${vpdLocation.lat.toFixed(6)}, ${vpdLocation.lng.toFixed(6)}
             </p>
             <p style="margin: 0; color: #64748b; font-size: 13px;">
-              Fechas y horas del clima: zona horaria local del punto indicado arriba (latitud y longitud del centro del polígono); no la hora de tu equipo ni de un servidor fijo.
+              Fechas y horas del clima: zona horaria local del punto indicado arriba (latitud y longitud del centro del polígono).
             </p>
           </div>
           
@@ -16671,7 +16671,7 @@ function createVPDSectionHTML() {
           Fuente geográfica: <strong>centro del polígono del proyecto</strong> (${vpdLocation.lat.toFixed(5)}, ${vpdLocation.lng.toFixed(5)}).
         </p>
         <p style="margin: 0 0 14px 0; color: #7c2d12; font-size: 13px;">
-          Fechas y horas de la serie: misma zona horaria local que el centro del polígono (coordenadas en el párrafo de arriba); no la hora de tu ciudad ni del servidor.
+          Fechas y horas del clima: zona horaria local del punto indicado arriba (latitud y longitud del centro del polígono).
         </p>
         <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;align-items:end;margin-bottom:12px;">
           <div>
