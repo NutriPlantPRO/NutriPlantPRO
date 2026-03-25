@@ -339,7 +339,7 @@ function sectionTemplate(name) {
                 <option value="title_desc">🔤 Orden: Z → A</option>
               </select>
               <span id="np-sync-status" style="display:none; font-size:12px; padding:4px 10px; border-radius:999px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe;"></span>
-              <button type="button" id="np-sync-refresh-btn" style="display:none; font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid #c7d2fe; background:#fff; color:#3730a3; cursor:pointer;">☁️ Actualizar con la nube</button>
+              <button type="button" id="np-sync-refresh-btn" class="np-btn-cloud-refresh" style="display:none;">☁️ Actualizar con la nube</button>
             </div>
           </div>
           <div id="np-projects-list" class="grid-3"></div>
