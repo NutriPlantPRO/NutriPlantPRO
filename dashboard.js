@@ -873,7 +873,7 @@ function sectionTemplate(name) {
             <div class="soil-reach-card">
               <label for="soil-reach-percent">Suelo explorado por raíces (%)</label>
               <div class="soil-reach-input">
-                <input type="number" id="soil-reach-percent" min="10" max="100" step="1" value="100">
+                <input type="number" id="soil-reach-percent" min="0" max="100" step="1" value="100" title="Puedes escribir cualquier valor y al salir del campo se ajusta entre 10 y 100 %.">
                 <span>%</span>
               </div>
             </div>
@@ -2200,8 +2200,8 @@ function initializeEnmiendaCalculator() {
   }
 
   if (soilReachInput) {
+    /* No recalcular resultados en cada tecla: mientras se escribe "50" el valor intermedio sería inválido para min=10 y distorsionaba el ajuste. Solo change/blur + guardado ligero. */
     soilReachInput.addEventListener('input', () => {
-      updateSoilReachAdjustment({ mutate: false });
       scheduleEnmiendaAutoSave();
     });
     soilReachInput.addEventListener('change', () => {
@@ -2831,14 +2831,22 @@ function convertMeqToKgHa(meq, pesoEquivalente) {
 }
 
 // ===== Ajuste por % de alcance de suelo =====
+/* min en HTML es 0 (no 10): si min=10 el navegador impide escribir cifras intermedias al teclear, p. ej. "5" al formar "50". El rango 10–100 se aplica aquí al salir del campo. */
 function normalizeSoilReachPercent(inputEl, { mutate = true } = {}) {
   if (!inputEl) return 100;
-  const raw = inputEl.value;
+  const raw = String(inputEl.value).trim();
+  if (raw === '') {
+    if (mutate) inputEl.value = '100';
+    return 100;
+  }
   let value = parseFloat(raw);
-  if (Number.isNaN(value)) return null;
+  if (Number.isNaN(value)) {
+    if (mutate) inputEl.value = '100';
+    return 100;
+  }
   if (value < 10) value = 10;
   if (value > 100) value = 100;
-  if (mutate) inputEl.value = value;
+  if (mutate) inputEl.value = String(value);
   return value;
 }
 

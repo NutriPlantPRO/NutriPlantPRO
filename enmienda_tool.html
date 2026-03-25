@@ -192,7 +192,7 @@
             <div class="soil-reach-card">
               <label for="soil-reach-percent">Suelo explorado por raíces (%)</label>
               <div class="soil-reach-input">
-                <input type="number" id="soil-reach-percent" min="10" max="100" step="1" value="100">
+                <input type="number" id="soil-reach-percent" min="0" max="100" step="1" value="100" title="Al escribir, el valor se ajusta entre 10 y 100 % al salir del campo.">
                 <span>%</span>
               </div>
             </div>
@@ -279,11 +279,47 @@ function updatePHIndicator() {
   }
 }
 
-function normalizeSoilReachPercent(inputEl, { mutate = true }
+function normalizeSoilReachPercent(inputEl, { mutate = true } = {}) {
+  if (!inputEl) return 100;
+  const raw = String(inputEl.value).trim();
+  if (raw === '') {
+    if (mutate) inputEl.value = '100';
+    return 100;
+  }
+  let value = parseFloat(raw);
+  if (Number.isNaN(value)) {
+    if (mutate) inputEl.value = '100';
+    return 100;
+  }
+  if (value < 10) value = 10;
+  if (value > 100) value = 100;
+  if (mutate) inputEl.value = String(value);
+  return value;
+}
 
-function getSoilReachPercent({ mutate = true }
+function getSoilReachPercent({ mutate = true } = {}) {
+  const inputEl = document.getElementById('soil-reach-percent');
+  if (!inputEl) return 100;
+  const value = normalizeSoilReachPercent(inputEl, { mutate });
+  return value == null ? 100 : value;
+}
 
-function updateSoilReachAdjustment({ mutate = true }
+function updateSoilReachAdjustment({ mutate = true } = {}) {
+  const resultsSection = document.getElementById('amendment-results');
+  if (!resultsSection || resultsSection.style.display === 'none') return;
+  if (!window.lastAmendmentCalc || !window.lastAmendmentCalc.details) return;
+  const value = getSoilReachPercent({ mutate });
+  if (value == null) return;
+  const totals = window.lastAmendmentCalc.totals || {};
+  showCombinedAmendmentResults(
+    window.lastAmendmentCalc.details,
+    totals.totalCa || 0,
+    totals.totalMg || 0,
+    totals.totalK || 0,
+    totals.totalSi || 0,
+    totals.totalNaRemoval || 0
+  );
+}
 
 function initializeEnmiendaCalculator() {
   console.log('🔧 Inicializando calculadora de enmiendas...');
@@ -320,9 +356,6 @@ function initializeEnmiendaCalculator() {
   }
 
   if (soilReachInput) {
-    soilReachInput.addEventListener('input', () => {
-      updateSoilReachAdjustment({ mutate: false });
-    });
     soilReachInput.addEventListener('change', () => {
       normalizeSoilReachPercent(soilReachInput, { mutate: true });
       updateSoilReachAdjustment({ mutate: true });

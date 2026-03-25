@@ -240,7 +240,7 @@
         <div class="soil-reach-card">
           <label for="soil-reach-percent">Suelo explorado por raíces (%)</label>
           <div class="soil-reach-input">
-            <input type="number" id="soil-reach-percent" min="10" max="100" step="1" value="100">
+            <input type="number" id="soil-reach-percent" min="0" max="100" step="1" value="100">
             <span>%</span>
           </div>
         </div>
@@ -492,8 +492,17 @@
 
     function getSoilReachPercent() {
       const el = document.getElementById('soil-reach-percent');
-      let v = parseFloat(el.value);
-      if (Number.isNaN(v)) v = 100;
+      if (!el) return 100;
+      const raw = String(el.value).trim();
+      if (raw === '') {
+        el.value = '100';
+        return 100;
+      }
+      let v = parseFloat(raw);
+      if (Number.isNaN(v)) {
+        el.value = '100';
+        return 100;
+      }
       v = Math.max(10, Math.min(100, v));
       el.value = String(v);
       return v;
