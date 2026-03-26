@@ -1037,6 +1037,36 @@ body {
   font-size: 14px;
 }
 
+/* Header: "+ Nuevo NutriPlant" — relieve 3D (solo este botón) */
+.header-buttons #btn-new-nutriplant.btn-primary {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid #60a5fa;
+  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 40%, #2563eb 100%);
+  color: #fff;
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 2px 0 #1e3a8a,
+    0 5px 12px rgba(37, 99, 235, 0.4);
+  transition: transform 0.08s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+.header-buttons #btn-new-nutriplant.btn-primary:hover {
+  filter: brightness(1.06);
+  transform: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 2px 0 #172554,
+    0 6px 14px rgba(37, 99, 235, 0.45);
+}
+.header-buttons #btn-new-nutriplant.btn-primary:active {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 2px 4px rgba(15, 23, 42, 0.2),
+    0 1px 0 #1e3a8a,
+    0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
 /* Icono calculadora en botones (SVG inline) */
 .header-buttons .btn-calc-icon {
   display: inline-flex;
@@ -2326,34 +2356,44 @@ body {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Botón Guardar Datos en el banner del proyecto */
+/* Botón Guardar Datos en el banner del proyecto (todas las pestañas con proyecto activo) */
 .btn-save-data-global {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  border: none;
+  color: #fff;
+  border: 1px solid #34d399;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
   white-space: nowrap;
   margin-left: auto;
+  background: linear-gradient(180deg, #34d399 0%, #10b981 45%, #059669 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 2px 0 #047857,
+    0 5px 10px rgba(5, 150, 105, 0.35);
+  transition: transform 0.08s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
 
 .btn-save-data-global:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+  filter: brightness(1.05);
+  transform: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 2px 0 #065f46,
+    0 6px 14px rgba(5, 150, 105, 0.42);
 }
 
 .btn-save-data-global:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 2px 4px rgba(15, 23, 42, 0.15),
+    0 1px 0 #047857,
+    0 2px 6px rgba(5, 150, 105, 0.3);
 }
 
 /* ===== TARJETA DE PROYECTO SELECCIONADA ===== */
@@ -3098,37 +3138,70 @@ body {
   margin-bottom: 20px;
 }
 
-.fertirriego-tabs {
+/* Barra tipo carpeta: Fertirriego, Hidroponía, Nutrición granular */
+.fertirriego-tabs,
+.hydroponia-tabs,
+.nutricion-granular-container .tab-navigation {
   display: flex;
-  gap: 10px;
-  margin-bottom: 30px;
-  border-bottom: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 10px 12px 0;
+  margin-bottom: 24px;
+  background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+  border: 1px solid #cbd5e1;
+  border-bottom: 2px solid #64748b;
+  border-radius: 10px 10px 0 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
-.tab-button {
+.fertirriego-container .tab-button,
+.hydroponia-container .tab-button,
+.nutricion-granular-container .tab-button {
+  position: relative;
+  z-index: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
-  border: none;
-  background: transparent;
-  color: #6b7280;
+  padding: 10px 18px 11px;
+  margin-bottom: -2px;
+  border: 1px solid #94a3b8;
+  border-bottom: 2px solid #cbd5e1;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #334155;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  border-radius: 8px 8px 0 0;
-  transition: all 0.3s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 -1px 3px rgba(15, 23, 42, 0.06);
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, transform 0.12s ease;
 }
 
-.tab-button:hover {
-  background: #f3f4f6;
-  color: #374151;
+.fertirriego-container .tab-button:hover,
+.hydroponia-container .tab-button:hover,
+.nutricion-granular-container .tab-button:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #e8eef5 100%);
+  color: #0f172a;
+  border-color: #64748b;
+  z-index: 1;
 }
 
-.tab-button.active {
-  background: #2563eb;
-  color: white;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+.fertirriego-container .tab-button.active,
+.hydroponia-container .tab-button.active,
+.nutricion-granular-container .tab-button.active {
+  z-index: 2;
+  color: #fff;
+  border-color: #1d4ed8;
+  border-bottom: 2px solid #ffffff;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 -3px 10px rgba(37, 99, 235, 0.35),
+    0 2px 0 #ffffff;
+  padding-bottom: 12px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
 }
 
 .tab-icon {
@@ -3148,13 +3221,6 @@ body {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
-}
-
-.hydroponia-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 30px;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 .hydroponia-content {
@@ -4626,6 +4692,10 @@ body {
   font-size: 1.1rem;
 }
 
+.nutrient-conversion-group .nutrient-label strong .nutrient-element-tag {
+  color: #047857;
+}
+
 .nutrient-info {
   color: #6b7280;
   font-size: 0.85rem;
@@ -4711,9 +4781,14 @@ body {
 .conversion-item label {
   display: block;
   font-weight: 600;
-  color: #1f2937;
+  color: #047857;
   margin-bottom: 8px;
   font-size: 0.9rem;
+}
+
+.info-box .oxide-conv-label {
+  color: #047857;
+  font-weight: 600;
 }
 
 .conversion-formula {
@@ -6201,41 +6276,6 @@ body {
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-}
-
-.tab-navigation {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 30px; /* igual que fertirriego */
-  border-bottom: 1px solid #e5e7eb; /* igual que fertirriego */
-  padding-bottom: 0;
-}
-
-/* Igualar estilo de pestañas a Fertirriego dentro de Nutrición Granular */
-.nutricion-granular-container .tab-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border: none;
-  background: transparent;
-  color: #6b7280;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  border-radius: 8px 8px 0 0;
-  transition: all 0.3s ease;
-}
-
-.nutricion-granular-container .tab-button:hover {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.nutricion-granular-container .tab-button.active {
-  background: #2563eb;
-  color: white;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
 
 .tab-content {

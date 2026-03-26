@@ -45,6 +45,8 @@ const sbStack = document.getElementById("sbStack");
 // Preservar posición de scroll por sección/subpestaña (ej. "Nutricion Granular|programa")
 var sectionScrollPositions = {};
 var sectionDomCache = {};
+/** Huella del centro VPD al guardar DOM en caché; si el polígono cambia, se invalida la caché. */
+var sectionDomCacheVpdFp = {};
 function getSectionCacheKey(sectionName, projectId) {
   var pid = '';
   try {
@@ -56,8 +58,6 @@ function getSectionCacheKey(sectionName, projectId) {
 }
 function isPhaseOneCachedSection(sectionName) {
   if (!sectionName) return false;
-  // VPD no se cachea: depende de polígono y al abrir puede no estar actualizado aún
-  if (sectionName === 'Análisis: Déficit de Presión de Vapor') return false;
   return sectionName === 'Nutricion Granular' ||
     sectionName === 'Fertirriego' ||
     sectionName === 'Hidroponia' ||
@@ -1638,6 +1638,11 @@ function selectSection(name, el) {
       prevHolder.innerHTML = '';
       while (view.firstChild) prevHolder.appendChild(view.firstChild);
       sectionDomCache[previousCacheKey] = prevHolder;
+      if (previousSection === 'Análisis: Déficit de Presión de Vapor') {
+        try {
+          sectionDomCacheVpdFp[previousCacheKey] = getVpdLocationFingerprintForCache();
+        } catch (e) {}
+      }
     } catch (e) {
       console.warn('sectionDomCache stash:', e);
     }
@@ -1647,6 +1652,15 @@ function selectSection(name, el) {
   var reusedCachedDom = false;
   if (view) {
     var currentCacheKey = getSectionCacheKey(name);
+    if (name === 'Análisis: Déficit de Presión de Vapor' && sectionDomCache[currentCacheKey] &&
+        sectionDomCache[currentCacheKey].childNodes && sectionDomCache[currentCacheKey].childNodes.length > 0) {
+      var fpNow = getVpdLocationFingerprintForCache();
+      var fpThen = sectionDomCacheVpdFp[currentCacheKey];
+      if (fpThen !== undefined && fpThen !== fpNow) {
+        delete sectionDomCache[currentCacheKey];
+        delete sectionDomCacheVpdFp[currentCacheKey];
+      }
+    }
     if (isPhaseOneCachedSection(name) && sectionDomCache[currentCacheKey] && sectionDomCache[currentCacheKey].childNodes.length > 0) {
       view.innerHTML = '';
       while (sectionDomCache[currentCacheKey].firstChild) view.appendChild(sectionDomCache[currentCacheKey].firstChild);
@@ -16375,6 +16389,16 @@ function getVPDLocation(project) {
   return null;
 }
 
+function getVpdLocationFingerprintForCache() {
+  try {
+    var v = getVPDLocation(currentProject);
+    if (!v || v.lat == null || v.lng == null) return 'none';
+    return Number(v.lat).toFixed(4) + ':' + Number(v.lng).toFixed(4);
+  } catch (e) {
+    return 'none';
+  }
+}
+
 // Clima desde Open-Meteo (gratuito, sin API key). Temperatura °C y humedad %.
 async function getWeatherData(lat, lng) {
   var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(lat) +
@@ -16899,10 +16923,22 @@ function loadVPDSavedResults() {
   }, 200);
 }
 
-function loadVPDRangeSavedResults() {
+function vpdRangeTableDomKey(table) {
+  if (!table || !table.meta) return '';
+  var m = table.meta;
+  return String(m.granularity || '') + '|' + String(m.startDate || '') + '|' + String(m.endDate || '') + '|' + String((table.summaryRows && table.summaryRows.length) || 0);
+}
+
+function loadVPDRangeSavedResults(opts) {
+  var force = opts && opts.force === true;
   ensureVPDAnalysisStructures();
   var table = currentProject.vpdAnalysis.currentRangeTable;
   if (!table || !table.meta || !Array.isArray(table.summaryRows) || table.summaryRows.length === 0) return;
+  var wrap = document.getElementById('vpd-range-results');
+  if (!force && wrap) {
+    var domKey = wrap.getAttribute('data-np-vpd-range-key') || '';
+    if (domKey && domKey === vpdRangeTableDomKey(table)) return;
+  }
   renderVPDRangeResults(table.meta, table.summaryRows, table.criticalRows || []);
 }
 
@@ -17414,9 +17450,12 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
   var wrap = document.getElementById('vpd-range-results');
   if (!wrap) return;
   if (!Array.isArray(summaryRows) || summaryRows.length === 0) {
+    wrap.removeAttribute('data-np-vpd-range-key');
     wrap.innerHTML = '<div style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:12px;color:#9a3412;">Sin datos para el rango seleccionado.</div>';
     return;
   }
+  wrap.setAttribute('data-np-vpd-range-key',
+    String(meta.granularity || '') + '|' + String(meta.startDate || '') + '|' + String(meta.endDate || '') + '|' + String(summaryRows.length));
   var crit = Array.isArray(criticalRows) ? criticalRows : [];
   var critPreview = crit.slice(0, 300);
   wrap.innerHTML = `

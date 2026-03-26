@@ -397,15 +397,7 @@
                   <input type="number" id="mgo-output" placeholder="MgO" readonly>
                 </div>
               </div>
-              <!-- SO₄ -->
-              <div class="conversion-item">
-                <label>S → SO₄</label>
-                <div class="conversion-formula">
-                  <input type="number" id="s-input" placeholder="S" step="0.01">
-                  <span>× 3.000 =</span>
-                  <input type="number" id="so4-output" placeholder="SO₄" readonly>
-                </div>
-              </div>
+              <!-- SO₄ (misma lógica que macros: izq. compuesto→elemental, der. elemental→compuesto) -->
               <div class="conversion-item">
                 <label>SO₄ → S</label>
                 <div class="conversion-formula">
@@ -414,15 +406,15 @@
                   <input type="number" id="s-output" placeholder="S" readonly>
                 </div>
               </div>
-              <!-- SO₃ -->
               <div class="conversion-item">
-                <label>S → SO₃</label>
+                <label>S → SO₄</label>
                 <div class="conversion-formula">
-                  <input type="number" id="s-so3-input" placeholder="S" step="0.01">
-                  <span>× 2.497 =</span>
-                  <input type="number" id="so3-output" placeholder="SO₃" readonly>
+                  <input type="number" id="s-input" placeholder="S" step="0.01">
+                  <span>× 3.000 =</span>
+                  <input type="number" id="so4-output" placeholder="SO₄" readonly>
                 </div>
               </div>
+              <!-- SO₃ -->
               <div class="conversion-item">
                 <label>SO₃ → S</label>
                 <div class="conversion-formula">
@@ -431,15 +423,15 @@
                   <input type="number" id="s-so3-output" placeholder="S" readonly>
                 </div>
               </div>
-              <!-- Fe -->
               <div class="conversion-item">
-                <label>Fe → Fe₂O₃</label>
+                <label>S → SO₃</label>
                 <div class="conversion-formula">
-                  <input type="number" id="fe-input" placeholder="Fe" step="0.01">
-                  <span>× 1.430 =</span>
-                  <input type="number" id="fe2o3-output" placeholder="Fe₂O₃" readonly>
+                  <input type="number" id="s-so3-input" placeholder="S" step="0.01">
+                  <span>× 2.497 =</span>
+                  <input type="number" id="so3-output" placeholder="SO₃" readonly>
                 </div>
               </div>
+              <!-- Fe -->
               <div class="conversion-item">
                 <label>Fe₂O₃ → Fe</label>
                 <div class="conversion-formula">
@@ -448,15 +440,15 @@
                   <input type="number" id="fe-output" placeholder="Fe" readonly>
                 </div>
               </div>
-              <!-- Mn -->
               <div class="conversion-item">
-                <label>Mn → MnO</label>
+                <label>Fe → Fe₂O₃</label>
                 <div class="conversion-formula">
-                  <input type="number" id="mn-input" placeholder="Mn" step="0.01">
-                  <span>× 1.291 =</span>
-                  <input type="number" id="mno-output" placeholder="MnO" readonly>
+                  <input type="number" id="fe-input" placeholder="Fe" step="0.01">
+                  <span>× 1.430 =</span>
+                  <input type="number" id="fe2o3-output" placeholder="Fe₂O₃" readonly>
                 </div>
               </div>
+              <!-- Mn -->
               <div class="conversion-item">
                 <label>MnO → Mn</label>
                 <div class="conversion-formula">
@@ -465,15 +457,15 @@
                   <input type="number" id="mn-output" placeholder="Mn" readonly>
                 </div>
               </div>
-              <!-- B -->
               <div class="conversion-item">
-                <label>B → B₂O₃</label>
+                <label>Mn → MnO</label>
                 <div class="conversion-formula">
-                  <input type="number" id="b-input" placeholder="B" step="0.01">
-                  <span>× 3.220 =</span>
-                  <input type="number" id="b2o3-output" placeholder="B₂O₃" readonly>
+                  <input type="number" id="mn-input" placeholder="Mn" step="0.01">
+                  <span>× 1.291 =</span>
+                  <input type="number" id="mno-output" placeholder="MnO" readonly>
                 </div>
               </div>
+              <!-- B -->
               <div class="conversion-item">
                 <label>B₂O₃ → B</label>
                 <div class="conversion-formula">
@@ -482,15 +474,15 @@
                   <input type="number" id="b-output" placeholder="B" readonly>
                 </div>
               </div>
-              <!-- Zn -->
               <div class="conversion-item">
-                <label>Zn → ZnO</label>
+                <label>B → B₂O₃</label>
                 <div class="conversion-formula">
-                  <input type="number" id="zn-input" placeholder="Zn" step="0.01">
-                  <span>× 1.245 =</span>
-                  <input type="number" id="zno-output" placeholder="ZnO" readonly>
+                  <input type="number" id="b-input" placeholder="B" step="0.01">
+                  <span>× 3.220 =</span>
+                  <input type="number" id="b2o3-output" placeholder="B₂O₃" readonly>
                 </div>
               </div>
+              <!-- Zn -->
               <div class="conversion-item">
                 <label>ZnO → Zn</label>
                 <div class="conversion-formula">
@@ -499,15 +491,15 @@
                   <input type="number" id="zn-output" placeholder="Zn" readonly>
                 </div>
               </div>
-              <!-- Cu -->
               <div class="conversion-item">
-                <label>Cu → CuO</label>
+                <label>Zn → ZnO</label>
                 <div class="conversion-formula">
-                  <input type="number" id="cu-input" placeholder="Cu" step="0.01">
-                  <span>× 1.252 =</span>
-                  <input type="number" id="cuo-output" placeholder="CuO" readonly>
+                  <input type="number" id="zn-input" placeholder="Zn" step="0.01">
+                  <span>× 1.245 =</span>
+                  <input type="number" id="zno-output" placeholder="ZnO" readonly>
                 </div>
               </div>
+              <!-- Cu -->
               <div class="conversion-item">
                 <label>CuO → Cu</label>
                 <div class="conversion-formula">
@@ -516,15 +508,15 @@
                   <input type="number" id="cu-output" placeholder="Cu" readonly>
                 </div>
               </div>
-              <!-- Mo -->
               <div class="conversion-item">
-                <label>Mo → MoO₃</label>
+                <label>Cu → CuO</label>
                 <div class="conversion-formula">
-                  <input type="number" id="mo-input" placeholder="Mo" step="0.01">
-                  <span>× 1.500 =</span>
-                  <input type="number" id="moo3-output" placeholder="MoO₃" readonly>
+                  <input type="number" id="cu-input" placeholder="Cu" step="0.01">
+                  <span>× 1.252 =</span>
+                  <input type="number" id="cuo-output" placeholder="CuO" readonly>
                 </div>
               </div>
+              <!-- Mo -->
               <div class="conversion-item">
                 <label>MoO₃ → Mo</label>
                 <div class="conversion-formula">
@@ -533,21 +525,29 @@
                   <input type="number" id="mo-output" placeholder="Mo" readonly>
                 </div>
               </div>
-              <!-- Si -->
               <div class="conversion-item">
-                <label>Si → SiO₂</label>
+                <label>Mo → MoO₃</label>
                 <div class="conversion-formula">
-                  <input type="number" id="si-input" placeholder="Si" step="0.01">
-                  <span>× 2.139 =</span>
-                  <input type="number" id="sio2-output" placeholder="SiO₂" readonly>
+                  <input type="number" id="mo-input" placeholder="Mo" step="0.01">
+                  <span>× 1.500 =</span>
+                  <input type="number" id="moo3-output" placeholder="MoO₃" readonly>
                 </div>
               </div>
+              <!-- Si -->
               <div class="conversion-item">
                 <label>SiO₂ → Si</label>
                 <div class="conversion-formula">
                   <input type="number" id="sio2-input" placeholder="SiO₂" step="0.01">
                   <span>× 0.467 =</span>
                   <input type="number" id="si-output" placeholder="Si" readonly>
+                </div>
+              </div>
+              <div class="conversion-item">
+                <label>Si → SiO₂</label>
+                <div class="conversion-formula">
+                  <input type="number" id="si-input" placeholder="Si" step="0.01">
+                  <span>× 2.139 =</span>
+                  <input type="number" id="sio2-output" placeholder="SiO₂" readonly>
                 </div>
               </div>
             </div>
@@ -558,19 +558,19 @@
             <div class="info-box">
               <p><strong>Factores de Conversión:</strong></p>
               <ul>
-                <li>P₂O₅ → P: 0.436 | P → P₂O₅: 2.291</li>
-                <li>K₂O → K: 0.830 | K → K₂O: 1.205</li>
-                <li>CaO → Ca: 0.715 | Ca → CaO: 1.399</li>
-                <li>MgO → Mg: 0.603 | Mg → MgO: 1.658</li>
-                <li>S → SO₄: 3.000 | SO₄ → S: 0.333</li>
-                <li>S → SO₃: 2.497 | SO₃ → S: 0.400</li>
-                <li>Fe → Fe₂O₃: 1.430 | Fe₂O₃ → Fe: 0.699</li>
-                <li>Mn → MnO: 1.291 | MnO → Mn: 0.775</li>
-                <li>B → B₂O₃: 3.220 | B₂O₃ → B: 0.311</li>
-                <li>Zn → ZnO: 1.245 | ZnO → Zn: 0.803</li>
-                <li>Cu → CuO: 1.252 | CuO → Cu: 0.799</li>
-                <li>Mo → MoO₃: 1.500 | MoO₃ → Mo: 0.667</li>
-                <li>Si → SiO₂: 2.139 | SiO₂ → Si: 0.467</li>
+                <li><strong class="oxide-conv-label">P₂O₅ → P</strong>: 0.436 | <strong class="oxide-conv-label">P → P₂O₅</strong>: 2.291</li>
+                <li><strong class="oxide-conv-label">K₂O → K</strong>: 0.830 | <strong class="oxide-conv-label">K → K₂O</strong>: 1.205</li>
+                <li><strong class="oxide-conv-label">CaO → Ca</strong>: 0.715 | <strong class="oxide-conv-label">Ca → CaO</strong>: 1.399</li>
+                <li><strong class="oxide-conv-label">MgO → Mg</strong>: 0.603 | <strong class="oxide-conv-label">Mg → MgO</strong>: 1.658</li>
+                <li><strong class="oxide-conv-label">SO₄ → S</strong>: 0.333 | <strong class="oxide-conv-label">S → SO₄</strong>: 3.000</li>
+                <li><strong class="oxide-conv-label">SO₃ → S</strong>: 0.400 | <strong class="oxide-conv-label">S → SO₃</strong>: 2.497</li>
+                <li><strong class="oxide-conv-label">Fe₂O₃ → Fe</strong>: 0.699 | <strong class="oxide-conv-label">Fe → Fe₂O₃</strong>: 1.430</li>
+                <li><strong class="oxide-conv-label">MnO → Mn</strong>: 0.775 | <strong class="oxide-conv-label">Mn → MnO</strong>: 1.291</li>
+                <li><strong class="oxide-conv-label">B₂O₃ → B</strong>: 0.311 | <strong class="oxide-conv-label">B → B₂O₃</strong>: 3.220</li>
+                <li><strong class="oxide-conv-label">ZnO → Zn</strong>: 0.803 | <strong class="oxide-conv-label">Zn → ZnO</strong>: 1.245</li>
+                <li><strong class="oxide-conv-label">CuO → Cu</strong>: 0.799 | <strong class="oxide-conv-label">Cu → CuO</strong>: 1.252</li>
+                <li><strong class="oxide-conv-label">MoO₃ → Mo</strong>: 0.667 | <strong class="oxide-conv-label">Mo → MoO₃</strong>: 1.500</li>
+                <li><strong class="oxide-conv-label">SiO₂ → Si</strong>: 0.467 | <strong class="oxide-conv-label">Si → SiO₂</strong>: 2.139</li>
               </ul>
             </div>
           </div>
@@ -859,7 +859,12 @@
       display: block;
       font-weight: 600;
       margin-bottom: 10px;
-      color: #333;
+      color: #047857;
+    }
+
+    .info-box .oxide-conv-label {
+      color: #047857;
+      font-weight: 600;
     }
 
     .conversion-formula {
@@ -1280,7 +1285,7 @@
             <!-- Nitrógeno (N) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>N: NO₃⁻ o NH₄⁺</strong>
+                <strong><span class="nutrient-element-tag">N:</span> NO₃⁻ o NH₄⁺</strong>
                 <span class="nutrient-info">PM: 14.01 | Valencia: 1</span>
               </div>
               <div class="conversion-inputs">
@@ -1302,7 +1307,7 @@
             <!-- Fósforo (P) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>P: H₂PO₄⁻</strong>
+                <strong><span class="nutrient-element-tag">P:</span> H₂PO₄⁻</strong>
                 <span class="nutrient-info">PM: 30.97 | Valencia: 1</span>
               </div>
               <div class="conversion-inputs">
@@ -1324,7 +1329,7 @@
             <!-- Potasio (K) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>K: K⁺</strong>
+                <strong><span class="nutrient-element-tag">K:</span> K⁺</strong>
                 <span class="nutrient-info">PM: 39.10 | Valencia: 1</span>
               </div>
               <div class="conversion-inputs">
@@ -1346,7 +1351,7 @@
             <!-- Calcio (Ca) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>Ca: Ca²⁺</strong>
+                <strong><span class="nutrient-element-tag">Ca:</span> Ca²⁺</strong>
                 <span class="nutrient-info">PM: 40.08 | Valencia: 2</span>
               </div>
               <div class="conversion-inputs">
@@ -1368,7 +1373,7 @@
             <!-- Magnesio (Mg) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>Mg: Mg²⁺</strong>
+                <strong><span class="nutrient-element-tag">Mg:</span> Mg²⁺</strong>
                 <span class="nutrient-info">PM: 24.31 | Valencia: 2</span>
               </div>
               <div class="conversion-inputs">
@@ -1390,7 +1395,7 @@
             <!-- Azufre (S) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>S: SO₄²⁻</strong>
+                <strong><span class="nutrient-element-tag">S:</span> SO₄²⁻</strong>
                 <span class="nutrient-info">PM: 32.07 | Valencia: 2</span>
               </div>
               <div class="conversion-inputs">
@@ -1412,7 +1417,7 @@
             <!-- Hierro (Fe) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>Fe: Fe²⁺</strong>
+                <strong><span class="nutrient-element-tag">Fe:</span> Fe²⁺</strong>
                 <span class="nutrient-info">PM: 55.85 | Valencia: 2</span>
               </div>
               <div class="conversion-inputs">
@@ -1434,7 +1439,7 @@
             <!-- Manganeso (Mn) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>Mn: Mn²⁺</strong>
+                <strong><span class="nutrient-element-tag">Mn:</span> Mn²⁺</strong>
                 <span class="nutrient-info">PM: 54.94 | Valencia: 2</span>
               </div>
               <div class="conversion-inputs">
@@ -1456,7 +1461,7 @@
             <!-- Boro (B) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>B: H₃BO₃</strong>
+                <strong><span class="nutrient-element-tag">B:</span> H₃BO₃</strong>
                 <span class="nutrient-info">PM: 10.81</span>
               </div>
               <div class="conversion-inputs">
@@ -1478,7 +1483,7 @@
             <!-- Zinc (Zn) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>Zn: Zn²⁺</strong>
+                <strong><span class="nutrient-element-tag">Zn:</span> Zn²⁺</strong>
                 <span class="nutrient-info">PM: 65.38 | Valencia: 2</span>
               </div>
               <div class="conversion-inputs">
@@ -1500,7 +1505,7 @@
             <!-- Cobre (Cu) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>Cu: Cu²⁺</strong>
+                <strong><span class="nutrient-element-tag">Cu:</span> Cu²⁺</strong>
                 <span class="nutrient-info">PM: 63.55 | Valencia: 2</span>
               </div>
               <div class="conversion-inputs">
@@ -1522,7 +1527,7 @@
             <!-- Molibdeno (Mo) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong>Mo: Mo²⁺</strong>
+                <strong><span class="nutrient-element-tag">Mo:</span> Mo²⁺</strong>
                 <span class="nutrient-info">PM: 95.95 | Valencia: 2</span>
               </div>
               <div class="conversion-inputs">
