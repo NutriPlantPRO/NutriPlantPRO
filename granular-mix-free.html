@@ -148,6 +148,36 @@
   <script>
     const LS_CUSTOM = 'np_login_granular_mix_customs_v1';
     const KEYS = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    const MATERIAL_NAME_EN = {
+      'Fosfonitrato 33-03-00': 'Nitrophosphate 33-03-00',
+      'Sulfato de Amonio Granular': 'Granular Ammonium Sulfate',
+      'Superfosfato Simple': 'Single Superphosphate',
+      'Superfosfato Triple': 'Triple Superphosphate',
+      'Sulfato de Potasio': 'Potassium Sulfate',
+      'Cloruro de Potasio': 'Potassium Chloride',
+      'Nitrato de Potasio': 'Potassium Nitrate',
+      'Silicato de Potasio': 'Potassium Silicate',
+      'Nitrato de Calcio': 'Calcium Nitrate',
+      'Sulfato de K y Mg': 'Potassium Magnesium Sulfate',
+      'Sulfato de Magnesio': 'Magnesium Sulfate',
+      'Azufre Granular': 'Granular Sulfur',
+      'Sulfato de Hierro': 'Iron Sulfate',
+      'Sulfato de Manganeso': 'Manganese Sulfate',
+      'Sulfato de Zinc': 'Zinc Sulfate',
+      'Boro Granular': 'Granular Boron',
+      'Sulfato de Cobre': 'Copper Sulfate',
+      'Molibdato de Sodio': 'Sodium Molybdate'
+    };
+
+    function isEnglishUI() {
+      const title = (document.querySelector('.gm-title') || document.querySelector('h1') || {}).textContent || '';
+      return /\b(Granular|Mixture|Calculator)\b/i.test(title);
+    }
+
+    function displayMaterialName(name) {
+      if (!isEnglishUI()) return name;
+      return MATERIAL_NAME_EN[name] || name;
+    }
 
     const BASE_MATERIALS = {
       'Urea': { N: 46, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
@@ -236,17 +266,17 @@
         if (!r || !String(r.name || '').trim()) r.name = firstMat;
       });
       if (!rows.length) {
-        tb.innerHTML = '<tr><td colspan="17" style="padding:20px;color:#64748b;">Agrega fertilizantes con el botón verde.</td></tr>' +
+        tb.innerHTML = '<tr><td colspan="17" style="padding:20px;color:#64748b;">' + (isEnglishUI() ? 'Add fertilizers with the green button.' : 'Agrega fertilizantes con el botón verde.') + '</td></tr>' +
           '<tr class="total-row"><td><strong>TOTAL</strong></td><td id="totalPctCell">0.00</td>' +
           KEYS.map(k => `<td id="tot_${k}">0.00</td>`).join('') + '<td></td></tr>';
-        document.getElementById('npkDisplay').textContent = 'Relación N–P₂O₅–K₂O: —';
+        document.getElementById('npkDisplay').textContent = isEnglishUI() ? 'N–P₂O₅–K₂O ratio: —' : 'Relación N–P₂O₅–K₂O: —';
         const dose = parseFloat(document.getElementById('doseKgHa').value) || 0;
         const kr = document.getElementById('kghaRow');
         kr.innerHTML = '<td><strong>Kg/ha</strong></td>' + KEYS.map(() => '<td>0</td>').join('');
         return;
       }
       tb.innerHTML = rows.map(r => {
-        const opts = names.map(n => `<option value="${escapeAttr(n)}" ${r.name === n ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('');
+        const opts = names.map(n => `<option value="${escapeAttr(n)}" ${r.name === n ? 'selected' : ''}>${escapeHtml(displayMaterialName(n))}</option>`).join('');
         return `<tr data-rid="${r.id}">
           <td class="mat-cell"><select class="gm-select" onchange="onMatChange(${r.id},this.value)">${opts}</select></td>
           <td><input class="pct" type="number" min="0" max="100" step="0.01" value="${r.pct}" oninput="onPct(${r.id},this.value)" /></td>
@@ -323,11 +353,11 @@
         const a = (N / m).toFixed(1).replace(/\.0$/, '');
         const b = (P / m).toFixed(1).replace(/\.0$/, '');
         const c = (K / m).toFixed(1).replace(/\.0$/, '');
-        elNpk.textContent = 'Relación N–P₂O₅–K₂O: ' + a + ' - ' + b + ' - ' + c;
+        elNpk.textContent = (isEnglishUI() ? 'N–P₂O₅–K₂O ratio: ' : 'Relación N–P₂O₅–K₂O: ') + a + ' - ' + b + ' - ' + c;
       } else {
         elNpk.textContent = (N > 0 || P > 0 || K > 0)
-          ? 'Relación N–P₂O₅–K₂O: indica los tres (>0) en la mezcla'
-          : 'Relación N–P₂O₅–K₂O: —';
+          ? (isEnglishUI() ? 'N–P₂O₅–K₂O ratio: include all three (>0) in the mix' : 'Relación N–P₂O₅–K₂O: indica los tres (>0) en la mezcla')
+          : (isEnglishUI() ? 'N–P₂O₅–K₂O ratio: —' : 'Relación N–P₂O₅–K₂O: —');
       }
 
       const dose = parseFloat(document.getElementById('doseKgHa').value) || 0;

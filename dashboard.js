@@ -808,33 +808,33 @@ function sectionTemplate(name) {
 
           <!-- Objetivos de Ajuste -->
           <div class="ideal-ranges target-section">
-            <h3>🎯 <span class="notranslate" translate="no">Meq/100g</span> a ajustar en <span class="notranslate" translate="no">CIC</span></h3>
+            <h3>🎯 Meq/100g a ajustar en CIC</h3>
             <p style="margin: -4px 0 12px; font-size: 12px; color: #64748b;">
-              ℹ️ <span class="notranslate" translate="no">Meq/100g</span> a ajustar: valores positivos indican déficit; valores negativos indican exceso.
+              ℹ️ Meq/100g a ajustar: valores positivos indican déficit; valores negativos indican exceso.
             </p>
             <div class="target-grid">
               <div class="target-item cation-good">
-                <label class="notranslate" translate="no">K⁺ (meq a ajustar):</label>
+                <label><span class="notranslate" translate="no">K⁺</span> (meq a ajustar):</label>
                 <input type="number" id="k-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-good">
-                <label class="notranslate" translate="no">Ca²⁺ (meq a ajustar):</label>
+                <label><span class="notranslate" translate="no">Ca²⁺</span> (meq a ajustar):</label>
                 <input type="number" id="ca-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-good">
-                <label class="notranslate" translate="no">Mg²⁺ (meq a ajustar):</label>
+                <label><span class="notranslate" translate="no">Mg²⁺</span> (meq a ajustar):</label>
                 <input type="number" id="mg-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-acid">
-                <label class="notranslate" translate="no">H⁺ (meq a ajustar):</label>
+                <label><span class="notranslate" translate="no">H⁺</span> (meq a ajustar):</label>
                 <input type="number" id="h-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-salt">
-                <label class="notranslate" translate="no">Na⁺ (meq a ajustar):</label>
+                <label><span class="notranslate" translate="no">Na⁺</span> (meq a ajustar):</label>
                 <input type="number" id="na-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-toxic">
-                <label class="notranslate" translate="no">Al³⁺ (meq a ajustar):</label>
+                <label><span class="notranslate" translate="no">Al³⁺</span> (meq a ajustar):</label>
                 <input type="number" id="al-target" step="0.01" value="0.00" class="target-input">
               </div>
             </div>
@@ -3190,11 +3190,11 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     html += '<div class="amendment-summary">';
     html += '<h4>🎯 Aportes Totales:</h4>';
     html += '<ul>';
-    if (totalKReal > 0) html += `<li class="notranslate" translate="no"><strong>Potasio (K⁺):</strong> ${formatNumber(totalKReal)} kg/ha</li>`;
-    if (totalCaReal > 0) html += `<li class="notranslate" translate="no"><strong>Calcio (Ca²⁺):</strong> ${formatNumber(totalCaReal)} kg/ha</li>`;
-    if (totalMgReal > 0) html += `<li class="notranslate" translate="no"><strong>Magnesio (Mg²⁺):</strong> ${formatNumber(totalMgReal)} kg/ha</li>`;
-    if (totalSo4Real > 0) html += `<li class="notranslate" translate="no"><strong>Sulfato (SO₄²⁻):</strong> ${formatNumber(totalSo4Real)} kg/ha</li>`;
-    if (totalSiReal > 0) html += `<li class="notranslate" translate="no"><strong>Silicio (Si):</strong> ${formatNumber(totalSiReal)} kg/ha</li>`;
+    if (totalKReal > 0) html += `<li><strong>Potasio (<span class="notranslate" translate="no">K⁺</span>):</strong> ${formatNumber(totalKReal)} kg/ha</li>`;
+    if (totalCaReal > 0) html += `<li><strong>Calcio (<span class="notranslate" translate="no">Ca²⁺</span>):</strong> ${formatNumber(totalCaReal)} kg/ha</li>`;
+    if (totalMgReal > 0) html += `<li><strong>Magnesio (<span class="notranslate" translate="no">Mg²⁺</span>):</strong> ${formatNumber(totalMgReal)} kg/ha</li>`;
+    if (totalSo4Real > 0) html += `<li><strong>Sulfato (<span class="notranslate" translate="no">SO₄²⁻</span>):</strong> ${formatNumber(totalSo4Real)} kg/ha</li>`;
+    if (totalSiReal > 0) html += `<li><strong>Silicio (<span class="notranslate" translate="no">Si</span>):</strong> ${formatNumber(totalSiReal)} kg/ha</li>`;
     html += '</ul>';
     html += `<div style="font-size: 12px; color: #64748b; margin-top: 6px;">% del volumen de suelo explorado por raíces (${formatNumber(reachPercent, 0)}%).</div>`;
     html += '</div>';
@@ -3202,7 +3202,7 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     html += '<div class="amendment-details">';
     html += '<h4>📋 Detalles por Enmienda:</h4>';
     html += '<table class="results-table">';
-    html += '<thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th class="notranslate" translate="no">K⁺ (kg/ha)</th><th class="notranslate" translate="no">Ca²⁺ (kg/ha)</th><th class="notranslate" translate="no">Mg²⁺ (kg/ha)</th><th class="notranslate" translate="no">SO₄²⁻ (kg/ha)</th><th class="notranslate" translate="no">Si (kg/ha)</th></tr></thead>';
+    html += '<thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th><span class="notranslate" translate="no">K⁺</span> (kg/ha)</th><th><span class="notranslate" translate="no">Ca²⁺</span> (kg/ha)</th><th><span class="notranslate" translate="no">Mg²⁺</span> (kg/ha)</th><th><span class="notranslate" translate="no">SO₄²⁻</span> (kg/ha)</th><th><span class="notranslate" translate="no">Si</span> (kg/ha)</th></tr></thead>';
     html += '<tbody>';
     
     adjustedDetails.forEach(amendment => {
@@ -7957,7 +7957,7 @@ window.downloadReport = function(reportId) {
     // Gráficas de fertirriego: generarlas desde datos del proyecto (no dependen del DOM ni de haber abierto la pestaña Gráficas)
     function openReportWithCharts(chartImages) {
       chartImages = chartImages || {};
-      var reportHTML = createReportHTML(printableSections, chartImages);
+      var reportHTML = createReportHTML(printableSections, chartImages, report.reportLanguage || 'es');
       var printWindow = window.open('', '_blank');
       if (!printWindow) {
         showMessage('❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.', 'error');
@@ -10900,6 +10900,12 @@ function openReportModal() {
   
   const modal = document.getElementById('reportModal');
   if (modal) {
+    const languageSelect = document.getElementById('reportLanguageSelect');
+    if (languageSelect) {
+      let lang = 'es';
+      try { lang = localStorage.getItem('nutriplant-report-language') || 'es'; } catch (e) {}
+      languageSelect.value = (lang === 'en') ? 'en' : 'es';
+    }
     // Mostrar modal
     modal.classList.add('active');
     
@@ -11038,6 +11044,13 @@ function getSelectedReportSections() {
   return normalizeReportSections(selected);
 }
 
+function getSelectedReportLanguage() {
+  const select = document.getElementById('reportLanguageSelect');
+  const lang = (select && select.value === 'en') ? 'en' : 'es';
+  try { localStorage.setItem('nutriplant-report-language', lang); } catch (e) {}
+  return lang;
+}
+
 function persistReportSourceData() {
   try {
     if (!currentProject || !currentProject.id) return false;
@@ -11095,6 +11108,7 @@ window.generatePDFReport = function() {
   console.log('📄 Generando reporte PDF...');
   
   const selectedSections = normalizeReportSections(getSelectedReportSections());
+  const reportLanguage = getSelectedReportLanguage();
   if (!selectedSections.length) {
     showMessage('⚠️ Selecciona al menos una sección para el reporte.', 'warning');
     return;
@@ -11110,7 +11124,7 @@ window.generatePDFReport = function() {
   closeReportModal();
 
   try {
-    const reportHTML = createReportHTML(selectedSections);
+    const reportHTML = createReportHTML(selectedSections, null, reportLanguage);
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       showMessage('❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.', 'error');
@@ -11122,6 +11136,7 @@ window.generatePDFReport = function() {
       timestamp: new Date().toISOString(),
       projectName: currentProject?.name || 'Proyecto NutriPlant',
       selectedSections: selectedSections.slice(0),
+      reportLanguage: reportLanguage,
       reportHTML
     });
 
@@ -11150,7 +11165,7 @@ function generatePDFContent(selectedSections) {
   
   try {
     // Crear contenido HTML para el reporte
-    let reportHTML = createReportHTML(selectedSections);
+    let reportHTML = createReportHTML(selectedSections, null, getSelectedReportLanguage());
     
     // Obtener el área de contenido principal
     const contentArea = document.querySelector('.content');
@@ -11185,12 +11200,15 @@ function generatePDFContent(selectedSections) {
 }
 
 // Función para crear el HTML del reporte (chartImages opcional: { macro, micro } data URLs para gráficas de fertirriego)
-function createReportHTML(selectedSections, chartImages) {
-  const currentDate = new Date().toLocaleDateString('es-ES');
+function createReportHTML(selectedSections, chartImages, reportLanguage) {
+  const lang = (reportLanguage === 'en') ? 'en' : 'es';
+  const isEn = lang === 'en';
+  const rt = function(es, en) { return isEn ? en : es; };
+  const currentDate = new Date().toLocaleDateString(isEn ? 'en-US' : 'es-ES');
   const projectName = currentProject.name || 'Proyecto NutriPlant';
-  const projectCampoSector = currentProject.campoOsector || currentProject.campo_sector || 'No especificado';
-  const projectCultivo = currentProject.cultivo || currentProject.crop_type || 'No especificado';
-  const projectVariedad = currentProject.variedad || 'No especificado';
+  const projectCampoSector = currentProject.campoOsector || currentProject.campo_sector || rt('No especificado', 'Not specified');
+  const projectCultivo = currentProject.cultivo || currentProject.crop_type || rt('No especificado', 'Not specified');
+  const projectVariedad = currentProject.variedad || rt('No especificado', 'Not specified');
   const currentUserId = localStorage.getItem('nutriplant_user_id');
   let reportAuthorName = 'Usuario NutriPlant';
   if (currentUserId) {
@@ -11216,7 +11234,7 @@ function createReportHTML(selectedSections, chartImages) {
 
   let html = `
     <!DOCTYPE html>
-    <html lang="es" class="notranslate" translate="no">
+    <html lang="${lang}" class="notranslate" translate="no">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11522,6 +11540,8 @@ function createReportHTML(selectedSections, chartImages) {
         .report-admin-table.report-vpd-wide-table td:nth-child(8) { width: 14%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(9),
         .report-admin-table.report-vpd-wide-table td:nth-child(9) { width: 14%; }
+        .report-admin-table.report-vpd-wide-table:not(.report-vpd-cols-6) th:nth-child(2),
+        .report-admin-table.report-vpd-wide-table:not(.report-vpd-cols-6) td:nth-child(2) { border-left: 3px solid #fdba74; }
         .report-admin-table.report-vpd-wide-table th:nth-child(4),
         .report-admin-table.report-vpd-wide-table td:nth-child(4) { border-left: 3px solid #fdba74; }
         .report-admin-table.report-vpd-wide-table th:nth-child(6),
@@ -11532,10 +11552,10 @@ function createReportHTML(selectedSections, chartImages) {
         .report-admin-table.report-vpd-wide-table td:nth-child(8),
         .report-admin-table.report-vpd-wide-table th:nth-child(9),
         .report-admin-table.report-vpd-wide-table td:nth-child(9) { border-left: 3px solid #fdba74; }
-        .report-admin-table.report-vpd-wide-table.report-vpd-cols-5 th:nth-child(1),
-        .report-admin-table.report-vpd-wide-table.report-vpd-cols-5 td:nth-child(1) { width: 28%; }
-        .report-admin-table.report-vpd-wide-table.report-vpd-cols-5 th:nth-child(n+2),
-        .report-admin-table.report-vpd-wide-table.report-vpd-cols-5 td:nth-child(n+2) { width: 18%; }
+        .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 th:nth-child(1),
+        .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 td:nth-child(1) { width: 25%; }
+        .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 th:nth-child(n+2),
+        .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 td:nth-child(n+2) { width: 15%; }
         .report-admin-table td {
           color: #0f172a;
           word-break: break-word;
@@ -11822,37 +11842,37 @@ function createReportHTML(selectedSections, chartImages) {
             <span class="logo-text">NutriPlant PRO</span>
             <img src="${reportAssetBase}N_Hoja_Azul.png" alt="NutriPlant PRO" class="logo-icon">
           </div>
-          <h1>Reporte de Análisis Agrícola</h1>
+          <h1>${rt('Reporte de Análisis Agrícola', 'Agricultural Analysis Report')}</h1>
           <div class="report-header-meta">
             <div class="report-header-legal">
               <strong>© 2026 NutriPlant PRO</strong><br>
-              Todos los derechos reservados • Marca registrada
+              ${rt('Todos los derechos reservados • Marca registrada', 'All rights reserved • Registered trademark')}
             </div>
-            <div class="report-header-generated-by">Generado por: <strong>${safeReportAuthorName}</strong></div>
+            <div class="report-header-generated-by">${rt('Generado por:', 'Generated by:')} <strong>${safeReportAuthorName}</strong></div>
           </div>
         </div>
         
         <div class="project-info">
-          <h2>Información del Proyecto</h2>
+          <h2>${rt('Información del Proyecto', 'Project Information')}</h2>
           <div class="data-grid">
             <div class="data-item">
-              <div class="data-label">Nombre del Proyecto</div>
+              <div class="data-label">${rt('Nombre del Proyecto', 'Project Name')}</div>
               <div class="data-value">${projectName}</div>
             </div>
             <div class="data-item">
-              <div class="data-label">Fecha de Generación</div>
+              <div class="data-label">${rt('Fecha de Generación', 'Generation Date')}</div>
               <div class="data-value">${currentDate}</div>
             </div>
             <div class="data-item">
-              <div class="data-label">Campo o Sector</div>
+              <div class="data-label">${rt('Campo o Sector', 'Field or Sector')}</div>
               <div class="data-value">${projectCampoSector}</div>
             </div>
             <div class="data-item">
-              <div class="data-label">Cultivo</div>
+              <div class="data-label">${rt('Cultivo', 'Crop')}</div>
               <div class="data-value">${projectCultivo}</div>
             </div>
             <div class="data-item">
-              <div class="data-label">Variedad</div>
+              <div class="data-label">${rt('Variedad', 'Variety')}</div>
               <div class="data-value">${projectVariedad}</div>
             </div>
           </div>
@@ -11878,11 +11898,10 @@ function createReportHTML(selectedSections, chartImages) {
           <div class="footer-row">
             <div class="footer-legal">
               <strong>© 2026 NutriPlant PRO</strong><br>
-              Todos los derechos reservados • Marca registrada
+              ${rt('Todos los derechos reservados • Marca registrada', 'All rights reserved • Registered trademark')}
             </div>
-            <div class="report-generated-by">Generado por: <strong>${safeReportAuthorName}</strong></div>
+            <div class="report-generated-by">${rt('Generado por:', 'Generated by:')} <strong>${safeReportAuthorName}</strong></div>
           </div>
-          <p class="report-print-tip"><strong>Impresión o PDF:</strong> Para que colores y fondos (tablas, tarjetas, tanques de hidroponía, etc.) se vean igual que en pantalla, en el cuadro de impresión activa la opción de <strong>incluir gráficos o fondos</strong>. El nombre exacto depende del navegador: p. ej. «Gráficos de fondo» en Chrome/Edge, «Imprimir fondos» en Firefox, «Fondos gráficos» en Safari. En móvil o tablet el menú puede variar ligeramente.</p>
           <img src="${reportAssetBase}N_Hoja_Azul.png" alt="" class="footer-leaf-watermark" aria-hidden="true">
           <div class="footer-qr-block">
             <img src="${reportAssetBase}qr-nutriplantpro.png" alt="QR NutriPlant PRO" width="72" height="72" onerror="this.onerror=null;this.src='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https%3A%2F%2Fnutriplantpro.com%2F';">
@@ -11894,7 +11913,7 @@ function createReportHTML(selectedSections, chartImages) {
     </body>
     </html>
   `;
-  
+  html = translateReportHTMLStrings(html, lang);
   return html;
 }
 
@@ -11945,6 +11964,87 @@ function createSectionHTML(sectionId, chartImages) {
   }
   
   return html;
+}
+
+function protectTechnicalTermsForPDF(html) {
+  const protectedTerms = [
+    'NO₃⁻', 'NH₄⁺', 'H₂PO₄⁻', 'SO₄²⁻',
+    'K⁺', 'Ca²⁺', 'Mg²⁺', 'Na⁺', 'Al³⁺', 'H⁺',
+    'P₂O₅', 'K₂O', 'CaO', 'MgO', 'SiO₂',
+    'N-NO3', 'N-NH4', 'NO3/NH4',
+    'pH', 'CE', 'EC', 'CIC',
+    'ppm', 'meq/L', 'mmol/L', 'g/m³', 'kg/ha', 'W/m²', 'kPa'
+  ];
+  const placeholders = [];
+  let safeHtml = String(html || '');
+  protectedTerms.forEach(function(term, idx) {
+    const token = `@@NPTERM${idx}@@`;
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    safeHtml = safeHtml.replace(new RegExp(escaped, 'g'), token);
+    placeholders.push([token, term]);
+  });
+  return { safeHtml: safeHtml, placeholders: placeholders };
+}
+
+function restoreTechnicalTermsForPDF(html, placeholders) {
+  let restored = String(html || '');
+  (Array.isArray(placeholders) ? placeholders : []).forEach(function(pair) {
+    restored = restored.split(pair[0]).join(pair[1]);
+  });
+  return restored;
+}
+
+function translateReportHTMLStrings(html, reportLanguage) {
+  if (reportLanguage !== 'en' || typeof html !== 'string') return html;
+  const protectedPayload = protectTechnicalTermsForPDF(html);
+
+  const replacements = [
+    ['Reporte de Análisis Agrícola', 'Agricultural Analysis Report'],
+    ['Información del Proyecto', 'Project Information'],
+    ['Nombre del Proyecto', 'Project Name'],
+    ['Fecha de Generación', 'Generation Date'],
+    ['Campo o Sector', 'Field or Sector'],
+    ['Todos los derechos reservados • Marca registrada', 'All rights reserved • Registered trademark'],
+    ['Generado por:', 'Generated by:'],
+    ['No especificado', 'Not specified'],
+    ['📍 Ubicación y Mapa', '📍 Location and Map'],
+    ['🚜 Análisis de Enmiendas', '🚜 Amendment Analysis'],
+    ['🌾 Nutrición Granular', '🌾 Granular Nutrition'],
+    ['📈 Fertirriego', '📈 Fertigation'],
+    ['💧 Hidroponía', '💧 Hydroponics'],
+    ['🌡️ Déficit de Presión de Vapor', '🌡️ Vapor Pressure Deficit'],
+    ['Coordenadas', 'Coordinates'],
+    ['Perímetro', 'Perimeter'],
+    ['Superficie', 'Surface Area'],
+    ['Polígono', 'Polygon'],
+    ['Análisis inicial', 'Initial analysis'],
+    ['Análisis Inicial', 'Initial Analysis'],
+    ['Objetivos de ajuste', 'Adjustment targets'],
+    ['Objetivos de Ajuste', 'Adjustment Targets'],
+    ['Contribución total', 'Total contribution'],
+    ['Contribución Total', 'Total Contribution'],
+    ['Resultados del Cálculo de Enmiendas', 'Amendment Calculation Results'],
+    ['Recomendaciones nutricionales', 'Nutritional recommendations'],
+    ['Rango óptimo', 'Optimal range'],
+    ['Rango Óptimo', 'Optimal Range'],
+    ['Horas críticas', 'Critical hours'],
+    ['Periodo', 'Period'],
+    ['VPD máx', 'Max VPD'],
+    ['VPD min', 'Min VPD'],
+    ['VPD prom', 'Avg VPD'],
+    ['Radiación (W/m²)', 'Radiation (W/m²)'],
+    ['Sin datos', 'No data'],
+    ['No disponible', 'Not available'],
+    ['Cultivo</div>', 'Crop</div>'],
+    ['Variedad</div>', 'Variety</div>']
+  ];
+
+  const ordered = replacements.sort(function(a, b) { return b[0].length - a[0].length; });
+  let translated = protectedPayload.safeHtml;
+  ordered.forEach(function(pair) {
+    translated = translated.split(pair[0]).join(pair[1]);
+  });
+  return restoreTechnicalTermsForPDF(translated, protectedPayload.placeholders);
 }
 
 // Función para crear sección de ubicación
@@ -13454,6 +13554,9 @@ function createVPDReportSectionHTML() {
   const savedRangeTables = Array.isArray(vpd.rangeTables) ? vpd.rangeTables.slice().reverse().slice(0, 5) : [];
   const envVpd = (env.result && env.result.vpd != null) ? env.result.vpd : env.vpd;
   const advVpd = (adv.result && adv.result.vpd != null) ? adv.result.vpd : adv.vpd;
+  const envUsesSolar = env.environmentalVpdUsesSolar === true;
+  const envSolar = Number.isFinite(Number(env.shortwaveRadiationWm2)) ? Number(env.shortwaveRadiationWm2) : null;
+  const envLeaf = Number.isFinite(Number(env.leafTemperature)) ? Number(env.leafTemperature) : null;
   const historyRows = history.slice().reverse().slice(0, 20).map(item => `
     <tr>
       <td>${item.type === 'advanced' ? 'Avanzada' : 'Ambiental'}</td>
@@ -13481,12 +13584,14 @@ function createVPDReportSectionHTML() {
     : '';
   const stressCriticalRows = currentRangeTable
     ? (Array.isArray(currentRangeTable.criticalRows) ? currentRangeTable.criticalRows : []).map(function(r) {
+      const rad = Number.isFinite(Number(r.shortwaveRadiationWm2)) ? Number(r.shortwaveRadiationWm2).toFixed(0) + ' W/m²' : '—';
       return `
         <tr>
           <td>${reportEscapeHtml(String(r.at || '—'))}</td>
           <td>${reportNum(r.vpd, 2)}</td>
           <td>${reportNum(r.temperature, 1)}</td>
           <td>${reportNum(r.humidity, 1)}</td>
+          <td>${reportEscapeHtml(rad)}</td>
           <td>${reportEscapeHtml(String(r.type === 'high' ? 'Alto' : 'Bajo'))}</td>
         </tr>
       `;
@@ -13498,6 +13603,12 @@ function createVPDReportSectionHTML() {
     var avgStress = rows.length
       ? rows.reduce(function(acc, r) { return acc + (Number(r.stressPct) || 0); }, 0) / rows.length
       : 0;
+    var mode = meta.vpdMode === 'mixed_solar'
+      ? 'Solar+Simple'
+      : 'Simple';
+    var coverage = meta.vpdMode === 'mixed_solar'
+      ? (String(meta.solarCoveragePct != null ? meta.solarCoveragePct : 0) + '%')
+      : '0%';
     return `
       <tr>
         <td>${idx + 1}</td>
@@ -13505,6 +13616,8 @@ function createVPDReportSectionHTML() {
         <td>${reportEscapeHtml(String(meta.startDate || '—'))}</td>
         <td>${reportEscapeHtml(String(meta.endDate || '—'))}</td>
         <td>${rows.length}</td>
+        <td>${reportEscapeHtml(mode)}</td>
+        <td>${reportEscapeHtml(coverage)}</td>
         <td>${reportNum(avgStress, 1)}%</td>
       </tr>
     `;
@@ -13515,9 +13628,15 @@ function createVPDReportSectionHTML() {
       <h2 class="section-title">🌡️ Déficit de Presión de Vapor (VPD)</h2>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
         <div class="report-block-title">📊 Calculadora Ambiental</div>
+        ${envUsesSolar ? `
+        <div class="report-note" style="margin-bottom:8px;color:#065f46;background:#ecfdf5;border:1px dashed #6ee7b7;border-radius:8px;padding:8px 10px;">
+          VPD ambiental calculado con radiación solar de Open-Meteo (W/m²) + temperatura de hoja estimada.
+        </div>` : ''}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
           <div><strong>Temperatura:</strong> ${reportNum(env.temperature, 2)} °C</div>
           <div><strong>Humedad Relativa:</strong> ${reportNum(env.humidity, 2)} %</div>
+          ${envUsesSolar ? `<div><strong>Radiación:</strong> ${envSolar != null ? reportNum(envSolar, 0) + ' W/m²' : '—'}</div>` : ''}
+          ${envUsesSolar ? `<div><strong>T. Hoja est.:</strong> ${envLeaf != null ? reportNum(envLeaf, 1) + ' °C' : '—'}</div>` : ''}
           <div><strong>VPD:</strong> <span class="badge-ok">${reportNum(envVpd, 2)} kPa</span></div>
           <div><strong>HD:</strong> ${reportNum(env.hd, 2)} g/m³</div>
           ${env.calculatedAt ? `<div><strong>Calculado:</strong> ${reportEscapeHtml(new Date(env.calculatedAt).toLocaleString('es-MX'))}</div>` : ''}
@@ -13559,6 +13678,11 @@ function createVPDReportSectionHTML() {
           ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.granularity) || 'diario'))}
           (${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.startDate) || '—'))} a ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.endDate) || '—'))})
         </div>
+        <div class="report-note" style="margin-bottom:8px;${(currentRangeTable.meta && currentRangeTable.meta.vpdMode) === 'mixed_solar' ? 'color:#065f46;background:#ecfdf5;border:1px dashed #6ee7b7;padding:8px 10px;border-radius:8px;' : 'color:#1e3a8a;background:#eff6ff;border:1px dashed #93c5fd;padding:8px 10px;border-radius:8px;'}">
+          ${(currentRangeTable.meta && currentRangeTable.meta.vpdMode) === 'mixed_solar'
+            ? `Modo VPD: <strong>Radiación + fallback simple</strong> · Cobertura solar: <strong>${reportEscapeHtml(String(currentRangeTable.meta && currentRangeTable.meta.solarCoveragePct != null ? currentRangeTable.meta.solarCoveragePct : 0))}%</strong> · Horas con radiación: ${reportEscapeHtml(String(currentRangeTable.meta && currentRangeTable.meta.solarHours != null ? currentRangeTable.meta.solarHours : 0))}`
+            : `Modo VPD: <strong>Simple</strong> (temperatura + humedad)`}
+        </div>
         <table class="report-admin-table report-vpd-wide-table">
           <thead>
             <tr>
@@ -13580,18 +13704,19 @@ function createVPDReportSectionHTML() {
       </div>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
         <div class="report-block-title">⏱️ Horas críticas (${Array.isArray(currentRangeTable.criticalRows) ? currentRangeTable.criticalRows.length : 0})</div>
-        <table class="report-admin-table report-vpd-wide-table report-vpd-cols-5">
+        <table class="report-admin-table report-vpd-wide-table report-vpd-cols-6">
           <thead>
             <tr>
               <th>Fecha/Hora</th>
               <th>VPD</th>
               <th>Temp (°C)</th>
               <th>HR (%)</th>
+              <th>Radiación (W/m²)</th>
               <th>Tipo</th>
             </tr>
           </thead>
           <tbody>
-            ${stressCriticalRows || '<tr><td colspan="5" style="text-align:center;color:#64748b;">Sin horas fuera de rango.</td></tr>'}
+            ${stressCriticalRows || '<tr><td colspan="6" style="text-align:center;color:#64748b;">Sin horas fuera de rango.</td></tr>'}
           </tbody>
         </table>
       </div>
@@ -13607,6 +13732,8 @@ function createVPDReportSectionHTML() {
               <th>Inicio</th>
               <th>Fin</th>
               <th>Periodos</th>
+              <th>Modo VPD</th>
+              <th>Cobertura solar</th>
               <th>% estrés (prom.)</th>
             </tr>
           </thead>
@@ -16288,11 +16415,12 @@ function getVPDStatus(vpdValue) {
 }
 
 function vpdStressSummaryRowHtml(rows) {
+  var sepLead = 'border-left:3px solid #fdba74;';
   var sep = 'border-left:3px solid #fdba74;';
   return rows.map(function(r) {
     return '<tr>' +
       '<td>' + String(r.period || '—') + '</td>' +
-      '<td>' + (Number.isFinite(Number(r.maxVpd)) ? Number(r.maxVpd).toFixed(2) : '—') + '</td>' +
+      '<td style="' + sepLead + '">' + (Number.isFinite(Number(r.maxVpd)) ? Number(r.maxVpd).toFixed(2) : '—') + '</td>' +
       '<td>' + String(r.maxAt || '—') + '</td>' +
       '<td style="' + sep + '">' + (Number.isFinite(Number(r.minVpd)) ? Number(r.minVpd).toFixed(2) : '—') + '</td>' +
       '<td>' + String(r.minAt || '—') + '</td>' +
@@ -16308,11 +16436,13 @@ function vpdCriticalEventsRowHtml(rows) {
   return rows.map(function(r) {
     var cls = r.type === 'high' ? '#b91c1c' : '#1d4ed8';
     var tag = r.type === 'high' ? 'Alto' : 'Bajo';
+    var rad = Number.isFinite(Number(r.shortwaveRadiationWm2)) ? Number(r.shortwaveRadiationWm2).toFixed(0) + ' W/m²' : '—';
     return '<tr>' +
       '<td>' + String(r.at || '—') + '</td>' +
       '<td><strong style="color:' + cls + ';">' + (Number.isFinite(Number(r.vpd)) ? Number(r.vpd).toFixed(2) : '—') + '</strong></td>' +
       '<td>' + (Number.isFinite(Number(r.temperature)) ? Number(r.temperature).toFixed(1) : '—') + '</td>' +
       '<td>' + (Number.isFinite(Number(r.humidity)) ? Number(r.humidity).toFixed(1) : '—') + '</td>' +
+      '<td>' + rad + '</td>' +
       '<td><span style="color:' + cls + ';font-weight:600;">' + tag + '</span></td>' +
     '</tr>';
   }).join('');
@@ -16399,11 +16529,11 @@ function getVpdLocationFingerprintForCache() {
   }
 }
 
-// Clima desde Open-Meteo (gratuito, sin API key). Temperatura °C y humedad %.
+// Clima desde Open-Meteo (gratuito, sin API key). T °C, HR %, radiación global onda corta W/m² (tiempo real).
 async function getWeatherData(lat, lng) {
   var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(lat) +
     '&longitude=' + encodeURIComponent(lng) +
-    '&current=temperature_2m,relative_humidity_2m';
+    '&current=temperature_2m,relative_humidity_2m,shortwave_radiation';
   var response = await fetch(url);
   if (!response.ok) {
     throw new Error('Error ' + response.status);
@@ -16412,10 +16542,71 @@ async function getWeatherData(lat, lng) {
   if (!data || !data.current) {
     throw new Error('Datos de clima no válidos');
   }
+  var cur = data.current;
+  var rad = cur.shortwave_radiation;
+  var radNum = (rad != null && Number.isFinite(Number(rad))) ? Number(rad) : null;
   return {
-    temperature: data.current.temperature_2m,
-    humidity: data.current.relative_humidity_2m
+    temperature: cur.temperature_2m,
+    humidity: cur.relative_humidity_2m,
+    shortwaveRadiation: radNum
   };
+}
+
+/** Bloque HTML de resultados calculadora ambiental simple (2 o 3 columnas si hay radiación). */
+function buildVpdEnvironmentalResultsHtml(results, opts) {
+  opts = opts || {};
+  var useSolar = opts.useSolar === true;
+  var rad = opts.shortwaveRadiationWm2;
+  var leafT = opts.leafTemperature;
+  var vpd = typeof results.vpd === 'number' ? results.vpd : parseFloat(results.vpd);
+  var hd = typeof results.hd === 'number' ? results.hd : parseFloat(results.hd);
+  if (!Number.isFinite(vpd)) vpd = 0;
+  if (!Number.isFinite(hd)) hd = 0;
+  var legendHtml = '';
+  if (useSolar) {
+    legendHtml =
+      '<div style="margin:0 0 14px 0;padding:10px 12px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;font-size:13px;color:#065f46;line-height:1.45;">' +
+      '<strong>VPD con radiación solar:</strong> Open-Meteo entrega radiación solar global de onda corta (W/m²) en tiempo casi real. NutriPlant estima la temperatura de hoja a partir de esa radiación y calcula el VPD con el modelo avanzado (presión de saturación a T<sub>hoja</sub> frente al vapor del aire).' +
+      (leafT != null && Number.isFinite(leafT)
+        ? ' <span style="color:#047857;">T<sub>hoja</sub> estimada: ' + leafT.toFixed(1) + ' °C.</span>'
+        : '') +
+      '</div>';
+  }
+  var gridCols = useSolar ? 'repeat(3, minmax(0, 1fr))' : '1fr 1fr';
+  var radCol = '';
+  if (useSolar && rad != null && Number.isFinite(rad)) {
+    radCol =
+      '<div>' +
+      '<div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Radiación solar (global)</div>' +
+      '<div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">' + rad.toFixed(0) + ' W/m²</div>' +
+      '</div>';
+  }
+  return (
+    '<div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 16px;">' +
+      '<h4 style="margin: 0 0 16px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Resultados:</h4>' +
+      legendHtml +
+      '<div style="display: grid; grid-template-columns: ' + gridCols + '; gap: 16px; margin-bottom: 16px;">' +
+      '<div>' +
+      '<div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Presión de Vapor</div>' +
+      '<div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">' + vpd.toFixed(2) + ' kPa</div>' +
+      '</div>' +
+      '<div>' +
+      '<div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Humedad</div>' +
+      '<div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">' + hd.toFixed(2) + ' g/m³</div>' +
+      '</div>' +
+      radCol +
+      '</div>' +
+      createVPDRangeChart(vpd) +
+      '<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">' +
+      '<button ' +
+      'onclick="saveEnvironmentalVPD()" ' +
+      'style="width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;" ' +
+      'onmouseover="this.style.background=\'#059669\'" ' +
+      'onmouseout="this.style.background=\'#10b981\'"' +
+      '>💾 Guardar Cálculo</button>' +
+      '</div>' +
+      '</div>'
+  );
 }
 
 // Función para guardar cálculo VPD en historial
@@ -16445,7 +16636,10 @@ function saveVPDCalculation(type, data) {
       hd: data.hd,
       calculatedAt: calculation.timestamp,
       location: data.location || {},
-      source: data.source || 'api'
+      source: data.source || 'api',
+      shortwaveRadiationWm2: data.shortwaveRadiationWm2,
+      leafTemperature: data.leafTemperature,
+      environmentalVpdUsesSolar: data.environmentalVpdUsesSolar === true
     };
   } else if (type === 'advanced') {
     currentProject.vpdAnalysis.advanced = {
@@ -16893,32 +17087,15 @@ function loadVPDSavedResults() {
     const resultsDiv = document.getElementById('vpd-environmental-results');
     // Solo cargar si el div está vacío (no hay resultados nuevos calculados)
     if (resultsDiv && envData.vpd !== null && envData.vpd !== undefined && resultsDiv.innerHTML.trim() === '') {
-      resultsDiv.innerHTML = `
-        <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 16px;">
-          <h4 style="margin: 0 0 16px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Resultados:</h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-            <div>
-              <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Presión de Vapor</div>
-              <div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">${envData.vpd.toFixed(2)} kPa</div>
-            </div>
-            <div>
-              <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Humedad</div>
-              <div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">${envData.hd.toFixed(2)} g/m³</div>
-            </div>
-          </div>
-          ${createVPDRangeChart(envData.vpd)}
-          <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-            <button 
-              onclick="saveEnvironmentalVPD()"
-              style="width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;"
-              onmouseover="this.style.background='#059669'"
-              onmouseout="this.style.background='#10b981'"
-            >
-              💾 Guardar Cálculo
-            </button>
-          </div>
-        </div>
-      `;
+      var useSolarLoad = envData.environmentalVpdUsesSolar === true;
+      resultsDiv.innerHTML = buildVpdEnvironmentalResultsHtml(
+        { vpd: Number(envData.vpd), hd: Number(envData.hd) },
+        {
+          useSolar: useSolarLoad,
+          shortwaveRadiationWm2: envData.shortwaveRadiationWm2,
+          leafTemperature: envData.leafTemperature
+        }
+      );
     }
   }, 200);
 }
@@ -16926,7 +17103,7 @@ function loadVPDSavedResults() {
 function vpdRangeTableDomKey(table) {
   if (!table || !table.meta) return '';
   var m = table.meta;
-  return String(m.granularity || '') + '|' + String(m.startDate || '') + '|' + String(m.endDate || '') + '|' + String((table.summaryRows && table.summaryRows.length) || 0);
+  return String(m.granularity || '') + '|' + String(m.startDate || '') + '|' + String(m.endDate || '') + '|' + String((table.summaryRows && table.summaryRows.length) || 0) + '|' + String(m.vpdMode || '');
 }
 
 function loadVPDRangeSavedResults(opts) {
@@ -16977,8 +17154,16 @@ async function getEnvironmentalWeatherData() {
     if (tempInput) tempInput.value = weatherData.temperature.toFixed(1);
     if (humidityInput) humidityInput.value = weatherData.humidity;
     
-    // Calcular VPD
-    const results = calculateVPDSimple(weatherData.temperature, weatherData.humidity);
+    var rad = weatherData.shortwaveRadiation;
+    var useSolar = rad != null && Number.isFinite(rad) && rad >= 0;
+    var leafTemp = null;
+    var results;
+    if (useSolar) {
+      leafTemp = calculateLeafTempFromRadiation(weatherData.temperature, rad);
+      results = calculateVPDAdvanced(weatherData.temperature, weatherData.humidity, leafTemp);
+    } else {
+      results = calculateVPDSimple(weatherData.temperature, weatherData.humidity);
+    }
     
     // Guardar temporalmente en el objeto (sin guardar todavía)
     ensureVPDAnalysisStructures();
@@ -16990,39 +17175,21 @@ async function getEnvironmentalWeatherData() {
       hd: results.hd,
       calculatedAt: new Date().toISOString(),
       location: { lat: location.lat, lng: location.lng },
-      source: 'api'
+      source: 'api',
+      shortwaveRadiationWm2: useSolar ? rad : undefined,
+      leafTemperature: useSolar ? leafTemp : undefined,
+      environmentalVpdUsesSolar: useSolar
     };
     
     // Mostrar resultados directamente sin recargar la sección (LIMPIAR primero para evitar duplicación)
     const resultsDiv = document.getElementById('vpd-environmental-results');
     if (resultsDiv) {
-      resultsDiv.innerHTML = ''; // Limpiar primero
-      resultsDiv.innerHTML = `
-        <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 16px;">
-          <h4 style="margin: 0 0 16px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Resultados:</h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-            <div>
-              <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Presión de Vapor</div>
-              <div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">${results.vpd.toFixed(2)} kPa</div>
-            </div>
-            <div>
-              <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Humedad</div>
-              <div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">${results.hd.toFixed(2)} g/m³</div>
-            </div>
-          </div>
-          ${createVPDRangeChart(results.vpd)}
-          <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-            <button 
-              onclick="saveEnvironmentalVPD()"
-              style="width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;"
-              onmouseover="this.style.background='#059669'"
-              onmouseout="this.style.background='#10b981'"
-            >
-              💾 Guardar Cálculo
-            </button>
-          </div>
-        </div>
-      `;
+      resultsDiv.innerHTML = '';
+      resultsDiv.innerHTML = buildVpdEnvironmentalResultsHtml(results, {
+        useSolar: useSolar,
+        shortwaveRadiationWm2: useSolar ? rad : null,
+        leafTemperature: leafTemp
+      });
     }
     
     button.disabled = false;
@@ -17086,39 +17253,15 @@ function calculateEnvironmentalVPD() {
     hd: results.hd,
     calculatedAt: new Date().toISOString(),
     location: { lat: location.lat || null, lng: location.lng || null },
-    source: 'manual'
+    source: 'manual',
+    environmentalVpdUsesSolar: false
   };
   
   // Mostrar resultados en el div correspondiente (LIMPIAR primero para evitar duplicación)
   const resultsDiv = document.getElementById('vpd-environmental-results');
   if (resultsDiv) {
-    resultsDiv.innerHTML = ''; // Limpiar primero
-    resultsDiv.innerHTML = `
-      <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 16px;">
-        <h4 style="margin: 0 0 16px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Resultados:</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-          <div>
-            <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Presión de Vapor</div>
-            <div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">${results.vpd} kPa</div>
-          </div>
-          <div>
-            <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Humedad</div>
-            <div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">${results.hd} g/m³</div>
-          </div>
-        </div>
-        ${createVPDRangeChart(results.vpd)}
-        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-          <button 
-            onclick="saveEnvironmentalVPD()"
-            style="width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;"
-            onmouseover="this.style.background='#059669'"
-            onmouseout="this.style.background='#10b981'"
-          >
-            💾 Guardar Cálculo
-          </button>
-        </div>
-      </div>
-    `;
+    resultsDiv.innerHTML = '';
+    resultsDiv.innerHTML = buildVpdEnvironmentalResultsHtml(results, { useSolar: false });
   }
   
   console.log('✅ VPD ambiental calculado manualmente:', results);
@@ -17349,7 +17492,7 @@ async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType) {
     '&longitude=' + encodeURIComponent(lng) +
     '&start_date=' + encodeURIComponent(startDate) +
     '&end_date=' + encodeURIComponent(endDate) +
-    '&hourly=temperature_2m,relative_humidity_2m' +
+    '&hourly=temperature_2m,relative_humidity_2m,shortwave_radiation' +
     '&timezone=auto';
   var res = await fetch(url);
   if (!res.ok) throw new Error('Clima ' + sourceType + ' HTTP ' + res.status);
@@ -17361,13 +17504,25 @@ async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType) {
     var t = Number(hourly.temperature_2m && hourly.temperature_2m[i]);
     var h = Number(hourly.relative_humidity_2m && hourly.relative_humidity_2m[i]);
     if (!Number.isFinite(t) || !Number.isFinite(h)) continue;
-    var calc = calculateVPDSimple(t, h);
+    var radRaw = Number(hourly.shortwave_radiation && hourly.shortwave_radiation[i]);
+    var hasSolar = Number.isFinite(radRaw) && radRaw >= 0;
+    var leafTemp = null;
+    var calc;
+    if (hasSolar) {
+      leafTemp = calculateLeafTempFromRadiation(t, radRaw);
+      calc = calculateVPDAdvanced(t, h, leafTemp);
+    } else {
+      calc = calculateVPDSimple(t, h);
+    }
     var at = String(hourly.time[i] || '');
     out.push({
       at: at,
       date: at.slice(0, 10),
       temperature: Number(t.toFixed(2)),
       humidity: Number(h.toFixed(2)),
+      shortwaveRadiationWm2: hasSolar ? Number(radRaw.toFixed(1)) : null,
+      leafTemperature: hasSolar ? Number(leafTemp.toFixed(1)) : null,
+      vpdMethod: hasSolar ? 'solar' : 'simple',
       vpd: calc.vpd,
       hd: calc.hd
     });
@@ -17440,10 +17595,43 @@ function extractVPDCriticalEvents(hourlyRows) {
         date: r.date,
         temperature: r.temperature,
         humidity: r.humidity,
+        shortwaveRadiationWm2: Number.isFinite(Number(r.shortwaveRadiationWm2)) ? Number(r.shortwaveRadiationWm2) : null,
         vpd: r.vpd,
         type: Number(r.vpd) > 1.5 ? 'high' : 'low'
       };
     });
+}
+
+function analyzeVpdRangeSolarUsage(hourlyRows) {
+  if (!Array.isArray(hourlyRows) || hourlyRows.length === 0) {
+    return { total: 0, solarHours: 0, simpleHours: 0, avgSolar: null, vpdMode: 'simple', solarCoveragePct: 0 };
+  }
+  var total = 0;
+  var solarHours = 0;
+  var simpleHours = 0;
+  var sumSolar = 0;
+  var cntSolar = 0;
+  hourlyRows.forEach(function(r) {
+    total++;
+    if (r && r.vpdMethod === 'solar') {
+      solarHours++;
+      if (Number.isFinite(Number(r.shortwaveRadiationWm2))) {
+        sumSolar += Number(r.shortwaveRadiationWm2);
+        cntSolar++;
+      }
+    } else {
+      simpleHours++;
+    }
+  });
+  var solarCoveragePct = total > 0 ? Number(((solarHours * 100) / total).toFixed(1)) : 0;
+  return {
+    total: total,
+    solarHours: solarHours,
+    simpleHours: simpleHours,
+    avgSolar: cntSolar > 0 ? Number((sumSolar / cntSolar).toFixed(1)) : null,
+    vpdMode: solarHours > 0 ? 'mixed_solar' : 'simple',
+    solarCoveragePct: solarCoveragePct
+  };
 }
 
 function renderVPDRangeResults(meta, summaryRows, criticalRows) {
@@ -17464,6 +17652,17 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
         <strong style="color:#9a3412;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate} a ${meta.endDate}</strong>
         <span style="font-size:12px;color:#7c2d12;">Periodos: ${summaryRows.length} · Eventos críticos: ${crit.length}</span>
       </div>
+      ${meta.vpdMode === 'mixed_solar' ? `
+        <div style="margin-bottom:8px;font-size:12px;color:#065f46;background:#ecfdf5;border:1px dashed #6ee7b7;border-radius:6px;padding:6px 8px;">
+          <strong>VPD con radiación solar:</strong> ${meta.solarHours || 0}/${meta.sampleHours || 0} horas (${meta.solarCoveragePct || 0}%) usaron radiación global (W/m²) de Open-Meteo.
+          ${meta.avgSolarWm2 != null ? ` Promedio radiación: <strong>${meta.avgSolarWm2} W/m²</strong>.` : ''}
+          ${meta.simpleHours > 0 ? ` Fallback automático en ${meta.simpleHours} horas (solo temperatura + humedad).` : ''}
+        </div>
+      ` : `
+        <div style="margin-bottom:8px;font-size:12px;color:#1e3a8a;background:#eff6ff;border:1px dashed #93c5fd;border-radius:6px;padding:6px 8px;">
+          <strong>VPD simple:</strong> cálculo con temperatura del aire + humedad relativa (sin radiación disponible).
+        </div>
+      `}
       <div style="margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
         <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
       </div>
@@ -17472,7 +17671,7 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
           <thead>
             <tr style="background:#fff7ed;">
               <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Periodo</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">VPD máx</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD máx</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Hora máx</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD mín</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Hora mín</th>
@@ -17498,10 +17697,11 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
                 <th style="border:1px solid #fed7aa;padding:6px;">VPD</th>
                 <th style="border:1px solid #fed7aa;padding:6px;">Temp (°C)</th>
                 <th style="border:1px solid #fed7aa;padding:6px;">HR (%)</th>
+                <th style="border:1px solid #fed7aa;padding:6px;">Radiación (W/m²)</th>
                 <th style="border:1px solid #fed7aa;padding:6px;">Tipo</th>
               </tr>
             </thead>
-            <tbody>${critPreview.length ? vpdCriticalEventsRowHtml(critPreview) : '<tr><td colspan="5" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">Sin horas fuera de rango.</td></tr>'}</tbody>
+            <tbody>${critPreview.length ? vpdCriticalEventsRowHtml(critPreview) : '<tr><td colspan="6" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">Sin horas fuera de rango.</td></tr>'}</tbody>
           </table>
         </div>
       </div>
@@ -17518,6 +17718,16 @@ function renderSavedVPDRangeTableHtml(tbl) {
       <summary style="cursor:pointer;font-weight:600;color:#9a3412;">
         ${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalRows.length}
       </summary>
+      ${meta.vpdMode === 'mixed_solar' ? `
+        <div style="margin-top:8px;font-size:12px;color:#065f46;background:#ecfdf5;border:1px dashed #6ee7b7;border-radius:6px;padding:6px 8px;">
+          Serie con radiación: ${meta.solarHours || 0}/${meta.sampleHours || 0} horas (${meta.solarCoveragePct || 0}%).
+          ${meta.avgSolarWm2 != null ? ` Promedio: <strong>${meta.avgSolarWm2} W/m²</strong>.` : ''}
+        </div>
+      ` : `
+        <div style="margin-top:8px;font-size:12px;color:#1e3a8a;background:#eff6ff;border:1px dashed #93c5fd;border-radius:6px;padding:6px 8px;">
+          Serie en modo simple (temperatura + humedad).
+        </div>
+      `}
       <div style="margin-top:8px;margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
         <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
       </div>
@@ -17526,7 +17736,7 @@ function renderSavedVPDRangeTableHtml(tbl) {
           <thead>
             <tr style="background:#fff7ed;">
               <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Periodo</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">VPD máx</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD máx</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Hora máx</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD mín</th>
               <th style="border:1px solid #fed7aa;padding:6px;">Hora mín</th>
@@ -17581,6 +17791,7 @@ async function fetchVPDRangeData(evt) {
     });
     var summaryRows = aggregateVPDStressRows(hourlyRows, granularity);
     var criticalRows = extractVPDCriticalEvents(hourlyRows);
+    var solarMeta = analyzeVpdRangeSolarUsage(hourlyRows);
     currentProject.vpdAnalysis.rangeState = { granularity: granularity, startDate: startDate, endDate: endDate };
     currentProject.vpdAnalysis.currentRangeTable = {
       meta: {
@@ -17588,7 +17799,13 @@ async function fetchVPDRangeData(evt) {
         startDate: startDate,
         endDate: endDate,
         generatedAt: new Date().toISOString(),
-        location: { lat: location.lat, lng: location.lng }
+        location: { lat: location.lat, lng: location.lng },
+        sampleHours: solarMeta.total,
+        vpdMode: solarMeta.vpdMode,
+        solarHours: solarMeta.solarHours,
+        simpleHours: solarMeta.simpleHours,
+        solarCoveragePct: solarMeta.solarCoveragePct,
+        avgSolarWm2: solarMeta.avgSolar
       },
       summaryRows: summaryRows,
       criticalRows: criticalRows,

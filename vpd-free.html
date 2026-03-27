@@ -129,6 +129,15 @@
   </div>
 
   <script>
+    function isEnglishUI() {
+      const title = (document.querySelector('.title') || document.querySelector('h2') || {}).textContent || '';
+      return /\b(Vapor Pressure|Deficit|Calculator|Results|Humidity)\b/i.test(title);
+    }
+
+    function t(es, en) {
+      return isEnglishUI() ? en : es;
+    }
+
     function calculateVPDSimple(airTemp, humidity) {
       const es = 0.6108 * Math.exp((17.27 * airTemp) / (airTemp + 237.3));
       const ea = es * (humidity / 100);
@@ -159,9 +168,9 @@
       const optimalMax = 1.5;
       const range = maxVPD - minVPD;
       let barColor = '#10b981';
-      let status = 'Óptimo';
-      if (vpdValue < optimalMin) { barColor = '#3b82f6'; status = 'Bajo'; }
-      else if (vpdValue > optimalMax) { barColor = '#ef4444'; status = 'Alto'; }
+      let status = t('Óptimo', 'Optimal');
+      if (vpdValue < optimalMin) { barColor = '#3b82f6'; status = t('Bajo', 'Low'); }
+      else if (vpdValue > optimalMax) { barColor = '#ef4444'; status = t('Alto', 'High'); }
       const position = Math.max(0, Math.min(100, ((vpdValue - minVPD) / range) * 100));
       const blueEndPos = (0.5 / range) * 100;
       const greenEndPos = (1.5 / range) * 100;
@@ -173,8 +182,8 @@
       return `
         <div style="margin:20px 0;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:50px;">
-            <span style="font-weight:600;color:#1e293b;">Rango Óptimo: ${optimalMin} - ${optimalMax} kPa</span>
-            <span style="font-weight:600;color:${barColor};">Estado: ${status}</span>
+            <span style="font-weight:600;color:#1e293b;">${t('Rango Óptimo', 'Optimal Range')}: ${optimalMin} - ${optimalMax} kPa</span>
+            <span style="font-weight:600;color:${barColor};">${t('Estado', 'Status')}: ${status}</span>
           </div>
           <div style="position:relative;height:50px;background:linear-gradient(to right,#3b82f6 0%,#3b82f6 ${blueEndPos * 0.85}%,#60a5fa ${blueEndPos * 0.92}%,#34d399 ${blueEndPos * 0.98}%,#22d3ee ${blueEndPos}%,#10b981 ${blueEndPos + (greenEndPos - blueEndPos) * 0.3}%,#10b981 ${greenEndPos * 0.85}%,#10b981 ${greenEndPos}%,#fbbf24 ${greenEndPos + (100 - greenEndPos) * 0.15}%,#fbbf24 ${greenEndPos + (100 - greenEndPos) * 0.35}%,#f59e0b ${greenEndPos + (100 - greenEndPos) * 0.5}%,#fb923c ${greenEndPos + (100 - greenEndPos) * 0.65}%,#f97316 ${greenEndPos + (100 - greenEndPos) * 0.78}%,#f87171 ${greenEndPos + (100 - greenEndPos) * 0.88}%,#ef4444 95%,#dc2626 100%);border-radius:8px;overflow:visible;border:2px solid #e5e7eb;box-shadow:inset 0 2px 4px rgba(0,0,0,0.1);">
             <div style="position:absolute;left:${blueEndPos}%;width:2px;height:100%;background:rgba(255,255,255,0.9);box-shadow:0 0 3px rgba(0,0,0,0.4);z-index:2;"></div>
@@ -190,23 +199,23 @@
     }
 
     function calculateEnvironmentalVPDFree() {
-      const t = parseFloat(document.getElementById('vpd-env-temp').value);
+      const airTemp = parseFloat(document.getElementById('vpd-env-temp').value);
       const h = parseFloat(document.getElementById('vpd-env-humidity').value);
-      if (isNaN(t) || isNaN(h)) {
-        alert('⚠️ Por favor ingresa temperatura del aire y humedad relativa');
+      if (isNaN(airTemp) || isNaN(h)) {
+        alert(t('⚠️ Por favor ingresa temperatura del aire y humedad relativa', '⚠️ Please enter air temperature and relative humidity'));
         return;
       }
       if (h < 0 || h > 100) {
-        alert('⚠️ La humedad relativa debe estar entre 0 y 100%');
+        alert(t('⚠️ La humedad relativa debe estar entre 0 y 100%', '⚠️ Relative humidity must be between 0 and 100%'));
         return;
       }
-      const r = calculateVPDSimple(t, h);
+      const r = calculateVPDSimple(airTemp, h);
       document.getElementById('vpd-environmental-results').innerHTML = `
         <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e5e7eb;">
-          <h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">Resultados:</h4>
+          <h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">${t('Resultados:', 'Results:')}</h4>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">Déficit de Presión de Vapor</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">${r.vpd} kPa</div></div>
-            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">Déficit de Humedad</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">${r.hd} g/m³</div></div>
+            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Presión de Vapor', 'Vapor Pressure Deficit')}</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">${r.vpd} kPa</div></div>
+            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Humedad', 'Humidity Deficit')}</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">${r.hd} g/m³</div></div>
           </div>
           ${createVPDRangeChart(r.vpd)}
         </div>
@@ -226,33 +235,33 @@
       const airHumidity = parseFloat(document.getElementById('vpd-adv-humidity').value);
       const mode = document.querySelector('input[name="vpd-mode-free"]:checked')?.value;
       if (isNaN(airTemp) || isNaN(airHumidity)) {
-        alert('⚠️ Por favor ingresa temperatura del aire y humedad relativa');
+        alert(t('⚠️ Por favor ingresa temperatura del aire y humedad relativa', '⚠️ Please enter air temperature and relative humidity'));
         return;
       }
       if (airHumidity < 0 || airHumidity > 100) {
-        alert('⚠️ La humedad relativa debe estar entre 0 y 100%');
+        alert(t('⚠️ La humedad relativa debe estar entre 0 y 100%', '⚠️ Relative humidity must be between 0 and 100%'));
         return;
       }
       let leafTemp = null;
       let calculatedLeafTemp = null;
       if (mode === 'leaf') {
         leafTemp = parseFloat(document.getElementById('vpd-leaf-temp').value);
-        if (isNaN(leafTemp)) { alert('⚠️ Por favor ingresa la temperatura de hoja'); return; }
+        if (isNaN(leafTemp)) { alert(t('⚠️ Por favor ingresa la temperatura de hoja', '⚠️ Please enter leaf temperature')); return; }
       } else {
         const solarRadiation = parseFloat(document.getElementById('vpd-solar-radiation').value);
-        if (isNaN(solarRadiation)) { alert('⚠️ Por favor ingresa la radiación solar'); return; }
+        if (isNaN(solarRadiation)) { alert(t('⚠️ Por favor ingresa la radiación solar', '⚠️ Please enter solar radiation')); return; }
         calculatedLeafTemp = calculateLeafTempFromRadiation(airTemp, solarRadiation);
         leafTemp = calculatedLeafTemp;
       }
       const r = calculateVPDAdvanced(airTemp, airHumidity, leafTemp);
       document.getElementById('vpd-advanced-results').innerHTML = `
         <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e5e7eb;">
-          <h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">Resultados:</h4>
+          <h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">${t('Resultados:', 'Results:')}</h4>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">Déficit de Presión de Vapor</div><div style="font-size:24px;font-weight:700;color:#22c55e;">${r.vpd} kPa</div></div>
-            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">Déficit de Humedad</div><div style="font-size:24px;font-weight:700;color:#22c55e;">${r.hd} g/m³</div></div>
+            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Presión de Vapor', 'Vapor Pressure Deficit')}</div><div style="font-size:24px;font-weight:700;color:#22c55e;">${r.vpd} kPa</div></div>
+            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Humedad', 'Humidity Deficit')}</div><div style="font-size:24px;font-weight:700;color:#22c55e;">${r.hd} g/m³</div></div>
           </div>
-          ${calculatedLeafTemp ? `<div style="margin-bottom:16px;padding:12px;background:#f0fdf4;border-radius:6px;border:1px solid #86efac;"><div style="color:#15803d;font-size:14px;margin-bottom:4px;">🌿 Temperatura de Hoja Calculada:</div><div style="font-size:20px;font-weight:700;color:#15803d;">${calculatedLeafTemp} °C</div></div>` : ''}
+          ${calculatedLeafTemp ? `<div style="margin-bottom:16px;padding:12px;background:#f0fdf4;border-radius:6px;border:1px solid #86efac;"><div style="color:#15803d;font-size:14px;margin-bottom:4px;">🌿 ${t('Temperatura de Hoja Calculada', 'Calculated Leaf Temperature')}:</div><div style="font-size:20px;font-weight:700;color:#15803d;">${calculatedLeafTemp} °C</div></div>` : ''}
           ${createVPDRangeChart(r.vpd)}
         </div>
       `;

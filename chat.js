@@ -528,6 +528,35 @@ class NutriPlantChat {
     this.input.value = '';
     this.autoResizeInput();
 
+    // Respuesta local prioritaria para consultas de extracciones por cultivo.
+    // Evita respuestas ambiguas y garantiza el orden de nutrientes del dashboard.
+    if (this.shouldHandleExtractionQuery(message)) {
+      const localExtractionResponse = this.getNutrientExtractionAnalysis(message);
+      this.addMessage(localExtractionResponse, 'ai');
+      return;
+    }
+
+    // Respuesta local prioritaria para consultas de soluciones nutritivas de referencia.
+    if (this.shouldHandleNutrientSolutionQuery(message)) {
+      const localSolutionResponse = this.getNutrientSolutionReferenceAnalysis(message);
+      this.addMessage(localSolutionResponse, 'ai');
+      return;
+    }
+
+    // Consulta local de ácidos precargados (composición, unidad y densidad).
+    if (this.shouldHandleAcidCatalogQuery(message)) {
+      const localAcidResponse = this.getAcidCatalogAnalysis(message);
+      this.addMessage(localAcidResponse, 'ai');
+      return;
+    }
+
+    // Diagnóstico local de etapa fenológica desde solución hidropónica del usuario.
+    if (this.shouldHandleHydroPhenologyQuery(message)) {
+      const localHydroStageResponse = this.getHydroPhenologyAssessment(message);
+      this.addMessage(localHydroStageResponse, 'ai');
+      return;
+    }
+
     // Mostrar estado de carga
     this.showTyping();
 
@@ -642,7 +671,9 @@ ${context}
 PREGUNTA DEL USUARIO: "${message}"
 
 - Responde con conocimiento científico profundo y específico
-- Si preguntan sobre extracciones de nutrientes, proporciona datos exactos por cultivo
+- Si preguntan sobre extracciones de nutrientes, usa el orden NutriPlant: N, P2O5, K2O, CaO, MgO, S, SO4, Fe, Mn, B, Zn, Cu, Mo, SiO2
+- Si el tema es extracciones, aclara que los valores son referenciales y cambian por variedad, manejo, clima y rendimiento
+- Explica la lógica NutriPlant para requerimiento real: extracción por tonelada × rendimiento -> ajuste por nivel en suelo (+/-) -> ajuste por eficiencia (%)
 - Si preguntan sobre análisis de suelos, da interpretaciones técnicas precisas
 - Si preguntan sobre fertilización, calcula dosis y programas
 - Usa terminología agronómica profesional
@@ -740,6 +771,11 @@ Usa formato markdown para mejor legibilidad.`;
       
       // USAR CHATGPT DIRECTAMENTE - SIN MÓDULOS NI VERIFICACIONES
       const context = this.buildFullDashboardContext();
+      const extractionKnowledge = this.buildCropExtractionKnowledgePromptBlock();
+      const nutrientSolutionsKnowledge = this.buildNutrientSolutionsKnowledgePromptBlock();
+      const hydroPhenologyKnowledge = this.buildHydroPhenologyKnowledgePromptBlock();
+      const vpdRadiationKnowledge = this.buildVpdRadiationKnowledgePromptBlock();
+      const fertigationGraphKnowledge = this.buildFertigationGraphKnowledgePromptBlock();
       
       const prompt = `Eres un EXPERTO MUNDIAL EN AGRONOMÍA con acceso a TODO el conocimiento científico y técnico de la agricultura moderna. Eres como ChatGPT pero especializado al 100% en agronomía.
 
@@ -777,10 +813,22 @@ Analiza automáticamente la información disponible en NutriPlant PRO:
 DATOS DEL SUELO (si están disponibles):
 ${soilData}
 
+${extractionKnowledge}
+
+${nutrientSolutionsKnowledge}
+
+${hydroPhenologyKnowledge}
+
+${vpdRadiationKnowledge}
+
+${fertigationGraphKnowledge}
+
 **INSTRUCCIONES DE RESPUESTA:**
 - Responde usando TU CONOCIMIENTO AMPLIO y experiencia científica
 - Proporciona información completa, detallada y práctica
 - Si el usuario pregunta sobre extracciones de nutrientes, cultivos, técnicas agrícolas, etc., da información específica con datos, tablas y valores reales
+- Si preguntan por VPD ambiental, explica cuándo se usó radiación (Open-Meteo) para estimar temperatura de hoja y cuándo hubo fallback a cálculo simple
+- Si preguntan por gráficas de fertirriego, interpreta tendencias por semana/mes y su coherencia con etapa fenológica (ej. N dominante en vegetativo, K más alto en generativa)
 - Analiza los datos específicos del dashboard cuando sea relevante
 - Contextualiza tus respuestas con la información del proyecto activo
 - Si en el contexto aparece "Estado: Proyecto seleccionado", NO digas que falta seleccionar proyecto
@@ -1189,6 +1237,15 @@ Basándome en tus datos, te recomiendo la siguiente estrategia:`;
       context += `• Rango óptimo: 0.5 - 1.5 kPa. Por debajo de 0.5 = déficit (estrés); por encima de 1.5 = exceso (estrés).\n`;
       if (vpd.environmental && (vpd.environmental.vpd != null && vpd.environmental.vpd !== undefined)) {
         context += `• Calculadora ambiental (actual): VPD ≈ ${Number(vpd.environmental.vpd).toFixed(2)} kPa.\n`;
+        const env = vpd.environmental || {};
+        const usesSolar = env.environmentalVpdUsesSolar === true;
+        const rad = Number(env.shortwaveRadiationWm2);
+        const leaf = Number(env.leafTemperature);
+        if (usesSolar) {
+          context += `• Cálculo ambiental con radiación solar web (Open-Meteo): ${Number.isFinite(rad) ? rad.toFixed(0) + ' W/m²' : 'sin dato'}; T hoja estimada ${Number.isFinite(leaf) ? leaf.toFixed(1) + ' °C' : 'sin dato'}.\n`;
+        } else {
+          context += `• Cálculo ambiental en modo simple (T + HR), sin radiación disponible/activa.\n`;
+        }
       }
       if (vpd.advanced && (vpd.advanced.vpd != null && vpd.advanced.vpd !== undefined)) {
         context += `• Calculadora avanzada: VPD ≈ ${Number(vpd.advanced.vpd).toFixed(2)} kPa.\n`;
@@ -1199,10 +1256,52 @@ Basándome en tus datos, te recomiendo la siguiente estrategia:`;
       if (hasRange) {
         const meta = vpd.currentRangeTable.meta || {};
         context += `• Serie VPD por rango: ${meta.granularity || 'diario'} (${meta.startDate || '—'} a ${meta.endDate || '—'}). Resumen: VPD máx/mín, horas en rango óptimo (0.5-1.5), horas de estrés (>1.5 o <0.5), % estrés.\n`;
+        if (meta.vpdMode === 'mixed_solar') {
+          context += `• Serie VPD con radiación + fallback simple. Cobertura solar: ${meta.solarCoveragePct != null ? String(meta.solarCoveragePct) + '%' : '—'}; horas con radiación: ${meta.solarHours != null ? meta.solarHours : '—'}; radiación promedio: ${meta.avgSolarWm2 != null ? Number(meta.avgSolarWm2).toFixed(0) + ' W/m²' : '—'}.\n`;
+        } else if (meta.vpdMode === 'simple_only') {
+          context += `• Serie VPD en modo simple (sin radiación usable en el periodo).\n`;
+        }
       }
       const savedCount = (vpd.rangeTables && Array.isArray(vpd.rangeTables)) ? vpd.rangeTables.length : 0;
       if (savedCount > 0) context += `• Cuadros VPD guardados en proyecto: ${savedCount}.\n`;
       context += `\n`;
+    }
+
+    // Hidroponía en Nutriplant: etapa activa y perfil iónico para diagnóstico fenológico.
+    const hydro = (fullProject && fullProject.sections && fullProject.sections.hidroponia)
+      ? fullProject.sections.hidroponia
+      : (fullProject && fullProject.hidroponia) ? fullProject.hidroponia : null;
+    if (hydro && Array.isArray(hydro.stages) && hydro.stages.length > 0) {
+      const activeStage = hydro.stages.find((s) => s.id === hydro.activeStageId) || hydro.stages[0];
+      if (activeStage) {
+        const meq = activeStage.meq || {};
+        const nNo3 = Number(meq.N_NO3) || 0;
+        const nNh4 = Number(meq.N_NH4) || 0;
+        const nTotal = nNo3 + nNh4;
+        const k = Number(meq.K) || 0;
+        const ca = Number(meq.Ca) || 0;
+        const mg = Number(meq.Mg) || 0;
+        const p = Number(meq.P) || 0;
+        const s = Number(meq.S) || 0;
+        const ce = Number(activeStage.ce) || ((nNo3 + nNh4 + p + s + k + ca + mg) / 20);
+        const no3Pct = nTotal > 0 ? (nNo3 * 100 / nTotal) : 0;
+        const nh4Pct = nTotal > 0 ? (nNh4 * 100 / nTotal) : 0;
+        const kToN = nTotal > 0 ? (k / nTotal) : 0;
+        context += `HIDROPONÍA (etapa activa):\n`;
+        context += `• Etapa seleccionada: ${String(activeStage.name || '—')}.\n`;
+        context += `• CE: ${ce.toFixed(2)} dS/m.\n`;
+        context += `• Macros meq/L: N-NO3 ${nNo3.toFixed(2)}, N-NH4 ${nNh4.toFixed(2)}, P ${p.toFixed(2)}, S ${s.toFixed(2)}, K ${k.toFixed(2)}, Ca ${ca.toFixed(2)}, Mg ${mg.toFixed(2)}.\n`;
+        context += `• Indicadores: K/N ${kToN.toFixed(2)}, NO3 ${no3Pct.toFixed(1)}%, NH4 ${nh4Pct.toFixed(1)}% del N total.\n\n`;
+      }
+    }
+
+    // Fertirriego: interpretación de curvas por semana/mes y etapa fenológica.
+    const ferti = (fullProject && fullProject.sections && fullProject.sections.fertirriego)
+      ? fullProject.sections.fertirriego
+      : (fullProject && fullProject.fertirriego) ? fullProject.fertirriego : null;
+    if (ferti && ferti.program) {
+      const fertiSummary = this.summarizeFertigationProgramForContext(ferti.program);
+      if (fertiSummary) context += fertiSummary;
     }
 
     // Información general del dashboard
@@ -1555,67 +1654,623 @@ Basándome en tus datos, te recomiendo la siguiente estrategia:`;
     return sections.length > 0 ? sections : ['Enmiendas'];
   }
   
-  // Análisis de extracciones de nutrientes por cultivo
+  normalizeCropQuery(text) {
+    return String(text || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  getExtractionNutrientOrder() {
+    return ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+  }
+
+  buildAdditionalChatCropExtractionDB() {
+    return {
+      zarzamora: { displayName: 'Zarzamora', aliases: ['zarzamora', 'blackberry'], extraction: { N: 4.2, P2O5: 1.4, K2O: 5.3, CaO: 2.4, MgO: 0.9, S: 0, SO4: 1.3, Fe: 0.07, Mn: 0.06, B: 0.04, Zn: 0.12, Cu: 0.01, Mo: 0.02, SiO2: 0 } },
+      uva: { displayName: 'Uva (vid)', aliases: ['uva', 'vid', 'grape'], extraction: { N: 3.1, P2O5: 1.1, K2O: 4.8, CaO: 1.9, MgO: 0.7, S: 0, SO4: 1.0, Fe: 0.06, Mn: 0.05, B: 0.04, Zn: 0.10, Cu: 0.01, Mo: 0.02, SiO2: 0 } },
+      alfalfa: { displayName: 'Alfalfa', aliases: ['alfalfa'], extraction: { N: 30.0, P2O5: 7.0, K2O: 25.0, CaO: 16.0, MgO: 4.5, S: 0, SO4: 6.5, Fe: 0.16, Mn: 0.10, B: 0.08, Zn: 0.18, Cu: 0.02, Mo: 0.04, SiO2: 0 } },
+      soya: { displayName: 'Soya', aliases: ['soya', 'soja', 'soybean'], extraction: { N: 65.0, P2O5: 14.0, K2O: 22.0, CaO: 8.0, MgO: 4.0, S: 0, SO4: 8.5, Fe: 0.20, Mn: 0.13, B: 0.08, Zn: 0.24, Cu: 0.03, Mo: 0.05, SiO2: 0 } },
+      frijol: { displayName: 'Frijol', aliases: ['frijol', 'bean'], extraction: { N: 35.0, P2O5: 10.0, K2O: 24.0, CaO: 6.0, MgO: 3.0, S: 0, SO4: 7.0, Fe: 0.13, Mn: 0.10, B: 0.06, Zn: 0.18, Cu: 0.02, Mo: 0.04, SiO2: 0 } },
+      mango: { displayName: 'Mango', aliases: ['mango'], extraction: { N: 8.0, P2O5: 2.0, K2O: 10.0, CaO: 3.0, MgO: 1.1, S: 0, SO4: 2.0, Fe: 0.05, Mn: 0.04, B: 0.03, Zn: 0.09, Cu: 0.01, Mo: 0.02, SiO2: 0 } },
+      naranja: { displayName: 'Naranja', aliases: ['naranja', 'orange'], extraction: { N: 2.6, P2O5: 0.9, K2O: 3.6, CaO: 1.2, MgO: 0.5, S: 0, SO4: 0.9, Fe: 0.03, Mn: 0.03, B: 0.02, Zn: 0.06, Cu: 0.007, Mo: 0.015, SiO2: 0 } },
+      pina: { displayName: 'Piña', aliases: ['pina', 'piña', 'pineapple'], extraction: { N: 2.2, P2O5: 0.9, K2O: 4.5, CaO: 0.9, MgO: 0.4, S: 0, SO4: 0.8, Fe: 0.03, Mn: 0.03, B: 0.02, Zn: 0.05, Cu: 0.006, Mo: 0.012, SiO2: 0 } },
+      calabacita: { displayName: 'Calabacita', aliases: ['calabacita', 'zucchini'], extraction: { N: 3.5, P2O5: 1.3, K2O: 4.2, CaO: 1.4, MgO: 0.6, S: 0, SO4: 1.1, Fe: 0.05, Mn: 0.04, B: 0.03, Zn: 0.08, Cu: 0.009, Mo: 0.018, SiO2: 0 } },
+      berenjena: { displayName: 'Berenjena', aliases: ['berenjena', 'eggplant'], extraction: { N: 3.8, P2O5: 1.4, K2O: 4.8, CaO: 1.5, MgO: 0.7, S: 0, SO4: 1.2, Fe: 0.05, Mn: 0.04, B: 0.03, Zn: 0.08, Cu: 0.009, Mo: 0.018, SiO2: 0 } },
+      brocoli: { displayName: 'Brócoli', aliases: ['brocoli', 'brócoli', 'broccoli'], extraction: { N: 5.5, P2O5: 1.8, K2O: 6.0, CaO: 2.4, MgO: 0.9, S: 0, SO4: 1.6, Fe: 0.07, Mn: 0.06, B: 0.04, Zn: 0.10, Cu: 0.012, Mo: 0.02, SiO2: 0 } },
+      coliflor: { displayName: 'Coliflor', aliases: ['coliflor', 'cauliflower'], extraction: { N: 5.0, P2O5: 1.6, K2O: 5.6, CaO: 2.2, MgO: 0.8, S: 0, SO4: 1.5, Fe: 0.07, Mn: 0.05, B: 0.04, Zn: 0.10, Cu: 0.011, Mo: 0.02, SiO2: 0 } },
+      ajo: { displayName: 'Ajo', aliases: ['ajo', 'garlic'], extraction: { N: 7.0, P2O5: 2.2, K2O: 6.2, CaO: 2.0, MgO: 0.8, S: 0, SO4: 2.2, Fe: 0.08, Mn: 0.06, B: 0.04, Zn: 0.11, Cu: 0.013, Mo: 0.022, SiO2: 0 } },
+      zanahoria: { displayName: 'Zanahoria', aliases: ['zanahoria', 'carrot'], extraction: { N: 2.5, P2O5: 1.0, K2O: 4.0, CaO: 1.0, MgO: 0.4, S: 0, SO4: 0.8, Fe: 0.04, Mn: 0.03, B: 0.02, Zn: 0.06, Cu: 0.008, Mo: 0.015, SiO2: 0 } },
+      papa: { displayName: 'Papa', aliases: ['papa', 'patata', 'potato'], extraction: { N: 4.5, P2O5: 1.8, K2O: 7.0, CaO: 1.2, MgO: 0.5, S: 0, SO4: 1.3, Fe: 0.05, Mn: 0.04, B: 0.03, Zn: 0.08, Cu: 0.01, Mo: 0.018, SiO2: 0 } },
+      guayaba: { displayName: 'Guayaba', aliases: ['guayaba'], extraction: { N: 4.0, P2O5: 1.2, K2O: 4.8, CaO: 1.8, MgO: 0.7, S: 0, SO4: 1.2, Fe: 0.05, Mn: 0.04, B: 0.03, Zn: 0.08, Cu: 0.009, Mo: 0.018, SiO2: 0 } },
+      manzana: { displayName: 'Manzana', aliases: ['manzana', 'apple'], extraction: { N: 2.2, P2O5: 0.9, K2O: 3.2, CaO: 1.4, MgO: 0.5, S: 0, SO4: 0.8, Fe: 0.03, Mn: 0.03, B: 0.02, Zn: 0.06, Cu: 0.007, Mo: 0.014, SiO2: 0 } },
+      pera: { displayName: 'Pera', aliases: ['pera', 'pear'], extraction: { N: 2.1, P2O5: 0.8, K2O: 3.0, CaO: 1.3, MgO: 0.5, S: 0, SO4: 0.8, Fe: 0.03, Mn: 0.03, B: 0.02, Zn: 0.06, Cu: 0.007, Mo: 0.014, SiO2: 0 } },
+      agave: { displayName: 'Agave', aliases: ['agave'], extraction: { N: 3.0, P2O5: 0.8, K2O: 5.5, CaO: 1.7, MgO: 0.7, S: 0, SO4: 1.1, Fe: 0.04, Mn: 0.03, B: 0.02, Zn: 0.07, Cu: 0.008, Mo: 0.015, SiO2: 0 } },
+      cafe: { displayName: 'Café', aliases: ['cafe', 'café', 'coffee'], extraction: { N: 35.0, P2O5: 7.0, K2O: 45.0, CaO: 6.0, MgO: 3.0, S: 0, SO4: 8.0, Fe: 0.18, Mn: 0.12, B: 0.08, Zn: 0.20, Cu: 0.03, Mo: 0.04, SiO2: 0 } },
+      cacao: { displayName: 'Cacao', aliases: ['cacao', 'cocoa'], extraction: { N: 20.0, P2O5: 4.0, K2O: 25.0, CaO: 5.0, MgO: 2.0, S: 0, SO4: 5.5, Fe: 0.12, Mn: 0.09, B: 0.06, Zn: 0.15, Cu: 0.02, Mo: 0.03, SiO2: 0 } },
+      tabaco: { displayName: 'Tabaco', aliases: ['tabaco', 'tobacco'], extraction: { N: 45.0, P2O5: 12.0, K2O: 70.0, CaO: 18.0, MgO: 5.0, S: 0, SO4: 10.0, Fe: 0.20, Mn: 0.15, B: 0.10, Zn: 0.25, Cu: 0.03, Mo: 0.05, SiO2: 0 } }
+    };
+  }
+
+  getUnifiedCropExtractionCatalog() {
+    const order = this.getExtractionNutrientOrder();
+    const catalog = {};
+    const pushCrop = (id, entry) => {
+      if (!id || !entry) return;
+      const cropId = this.normalizeCropQuery(id).replace(/\s+/g, '_');
+      const extraction = {};
+      order.forEach((nutrient) => {
+        extraction[nutrient] = Number(entry.extraction && entry.extraction[nutrient]) || 0;
+      });
+      catalog[cropId] = {
+        displayName: entry.displayName || id,
+        aliases: (entry.aliases || [id]).map((a) => this.normalizeCropQuery(a)),
+        extraction
+      };
+    };
+
+    // Base del dashboard (si está disponible).
+    if (window && window.GRANULAR_CROP_EXTRACTION_DB) {
+      Object.keys(window.GRANULAR_CROP_EXTRACTION_DB).forEach((cropId) => {
+        const base = window.GRANULAR_CROP_EXTRACTION_DB[cropId] || {};
+        pushCrop(cropId, {
+          displayName: cropId.replace(/_/g, ' '),
+          aliases: [cropId, cropId.replace(/_/g, ' ')],
+          extraction: base
+        });
+      });
+    }
+
+    // Catálogo adicional solicitado por usuario.
+    const additional = this.buildAdditionalChatCropExtractionDB();
+    Object.keys(additional).forEach((cropId) => pushCrop(cropId, additional[cropId]));
+
+    return catalog;
+  }
+
+  findCropInExtractionQuery(query) {
+    const normalized = this.normalizeCropQuery(query);
+    const catalog = this.getUnifiedCropExtractionCatalog();
+    const cropIds = Object.keys(catalog);
+    for (let i = 0; i < cropIds.length; i++) {
+      const cropId = cropIds[i];
+      const aliases = catalog[cropId].aliases || [];
+      for (let j = 0; j < aliases.length; j++) {
+        const alias = aliases[j];
+        if (alias && normalized.includes(alias)) return cropId;
+      }
+    }
+    return null;
+  }
+
+  shouldHandleExtractionQuery(message) {
+    const normalized = this.normalizeCropQuery(message);
+    const hasExtractionIntent = /(extracc|kg ton|kg\/ton|por tonelada|requerimiento nutricional|requerimiento nutrimental|uptake|npk|p2o5|k2o)/.test(normalized);
+    const hasKnownCrop = !!this.findCropInExtractionQuery(normalized);
+    const hasNutritionIntent = /(nutri|ferti|requerim|absorc|element|nutrient|nutriente)/.test(normalized);
+    return hasExtractionIntent || (hasKnownCrop && hasNutritionIntent);
+  }
+
+  buildCropExtractionKnowledgePromptBlock() {
+    return `BASE INTERNA DE EXTRACCIONES (NutriPlant) PARA CHAT:
+- Cuando el usuario pregunte por extracciones, usa el orden: N, P2O5, K2O, CaO, MgO, S, SO4, Fe, Mn, B, Zn, Cu, Mo, SiO2.
+- Trata los valores como REFERENCIA técnica inicial; pueden variar por variedad, clima, manejo, densidad de siembra y nivel de rendimiento.
+- Sugiere validar/ajustar con curvas locales de extracción y autores/investigaciones regionales cuando el usuario requiera máxima precisión.
+- Lógica NutriPlant de cálculo real: extracción por tonelada × rendimiento -> ajuste por nivel en suelo (+/-) -> ajuste por eficiencia de absorción del nutriente (y fuente fertilizante/condiciones del cultivo).
+- El resultado de ese flujo es el requerimiento real en Fertirriego y Nutrición Granular.`;
+  }
+
+  buildNutrientSolutionsKnowledgePromptBlock() {
+    return `BASE INTERNA DE SOLUCIONES NUTRITIVAS (NutriPlant) PARA CHAT:
+- Referencias de consulta: Steiner, Hoagland, Knop, Yamazaki, Cooper, Sonneveld & Straver, Resh, Savvas, Jones, Douglas.
+- Al responder una solución, mostrar:
+  1) tabla de macros en meq/L y ppm (N-NO3, N-NH4, P, S, K, Ca, Mg),
+  2) % de aniones (NO3, H2PO4, SO4) respecto a suma de aniones,
+  3) % ternario de cationes (K, Ca, Mg) respecto a K+Ca+Mg (sin NH4),
+  4) % de N nítrico y N amoniacal (NO3 vs NH4) respecto al N total.
+- Lógica NutriPlant de conversión meq->ppm: se expresa ppm de ELEMENTO (N, P, S, K, Ca, Mg), no ppm del ion completo. Usar pesos equivalentes elementales (N 14, P 31, S 16, K 39.1, Ca 20.04, Mg 12.15).
+- Si preguntan "¿por qué no ppm del ion?": explicar que NutriPlant trabaja en base elemental para comparación agronómica directa con etiquetas, análisis y objetivos nutricionales.
+- Si preguntan por óxido/elemental: explicar conversión P2O5<->P, K2O<->K, CaO<->Ca, MgO<->Mg, SiO2<->Si y su uso en etiquetas de fertilizantes.
+- Aclarar siempre que son referencias técnicas y se ajustan por cultivo, etapa, variedad, clima y calidad de agua.`;
+  }
+
+  buildHydroPhenologyKnowledgePromptBlock() {
+    return `DIAGNÓSTICO FENOLÓGICO DESDE PERFIL DE SOLUCIÓN (HIDROPONÍA):
+- Puedes inferir tendencia de etapa (establecimiento, vegetativo, transición/prefloración, floración/amarre, llenado) con relación N:K, fracción NO3/NH4, CE y balance catiónico.
+- Regla general: mayor protagonismo de N suele impulsar vegetativo; mayor protagonismo de K suele empujar fase generativa (floración/amarre/llenado).
+- NO3/NH4: normalmente se prefiere predominio nítrico; NH4 elevado aumenta riesgo de desbalance.
+- Usa lenguaje de ajuste suave ("podría alinearse mejor con..."), evitando afirmar error tajante.
+- Si hay datos de la etapa seleccionada del usuario, compárala con la etapa inferida y sugiere microajustes.`;
+  }
+
+  buildVpdRadiationKnowledgePromptBlock() {
+    return `VPD + RADIACIÓN EN NUTRIPLANT:
+- En cálculo ambiental, NutriPlant puede traer temperatura, humedad y radiación solar (shortwave_radiation, W/m²) desde Open-Meteo.
+- Si hay radiación disponible, se estima temperatura de hoja y se usa modelo VPD avanzado; si no, se usa fallback simple (T + HR).
+- En Serie VPD por rango, revisa cobertura solar, horas con método solar/simple y promedio de radiación para interpretar la calidad del diagnóstico.
+- Cuando respondas al usuario, menciona explícitamente si el VPD mostrado consideró radiación o no.`;
+  }
+
+  buildFertigationGraphKnowledgePromptBlock() {
+    return `GRÁFICAS DE FERTIRRIEGO (SEMANA/MES) EN NUTRIPLANT:
+- Las curvas representan aportes por periodo del programa (semanal o mensual) según configuración del usuario.
+- Interpreta tendencias de N, K, Ca, Mg y relación K/N en secuencia temporal junto con la etapa fenológica asignada a cada periodo.
+- Lectura agronómica general: mayor peso de N suele asociar fase vegetativa; incremento relativo de K suele asociar transición generativa (floración, amarre, llenado).
+- Usa tono de recomendación suave: "podría alinearse mejor con..." y sugiere ajustes graduales.
+- Si el usuario pregunta por coherencia de su gráfica con etapa, compara la etapa seleccionada vs patrón observado en la curva.`;
+  }
+
+  summarizeFertigationProgramForContext(program) {
+    if (!program || !Array.isArray(program.weeks) || program.weeks.length === 0) return '';
+    const weeks = program.weeks;
+    const toNum = (v) => Number(v) || 0;
+    const stageSeq = weeks.map((w) => String(w.stage || w.label || '—')).join(' -> ');
+    const timeUnit = String(program.timeUnit || 'weeks');
+
+    const series = weeks.map((w) => {
+      const t = w && w.totals ? w.totals : {};
+      const nTotal = toNum(t.N) > 0 ? toNum(t.N) : (toNum(t.N_NO3) + toNum(t.N_NH4));
+      const kVal = toNum(t.K) > 0 ? toNum(t.K) : (toNum(t.K2O) * 0.83);
+      const caVal = toNum(t.Ca) > 0 ? toNum(t.Ca) : (toNum(t.CaO) * 0.715);
+      const mgVal = toNum(t.Mg) > 0 ? toNum(t.Mg) : (toNum(t.MgO) * 0.603);
+      const so4Val = toNum(t.SO4);
+      const kToN = nTotal > 0 ? (kVal / nTotal) : 0;
+      return { nTotal, kVal, caVal, mgVal, so4Val, kToN };
+    });
+
+    const trend = (arr, key, eps) => {
+      if (!arr.length) return '—';
+      const first = toNum(arr[0][key]);
+      const last = toNum(arr[arr.length - 1][key]);
+      if (Math.abs(last - first) <= eps) return 'estable';
+      return last > first ? 'sube' : 'baja';
+    };
+
+    const first = series[0];
+    const last = series[series.length - 1];
+    return [
+      `FERTIRRIEGO (programa ${timeUnit}):`,
+      `• Periodos: ${weeks.length}.`,
+      `• Secuencia fenológica configurada: ${stageSeq}.`,
+      `• Tendencias: N ${trend(series, 'nTotal', 1)}, K ${trend(series, 'kVal', 1)}, Ca ${trend(series, 'caVal', 1)}, Mg ${trend(series, 'mgVal', 0.5)}, SO4 ${trend(series, 'so4Val', 0.5)}.`,
+      `• Relación K/N: inicio ${first.kToN.toFixed(2)} -> final ${last.kToN.toFixed(2)} (${trend(series, 'kToN', 0.05)}).`,
+      ''
+    ].join('\n');
+  }
+
+  // Análisis de extracciones de nutrientes por cultivo (chat local)
   getNutrientExtractionAnalysis(query) {
-    // Base de datos de extracciones por tonelada de fruto
-    const extractions = {
-      'aguacate': {
-        N: 2.5, P: 0.4, K: 3.2, Ca: 0.8, Mg: 0.3,
-        description: 'Aguacate (Persea americana)'
+    const order = this.getExtractionNutrientOrder();
+    const catalog = this.getUnifiedCropExtractionCatalog();
+    const cropId = this.findCropInExtractionQuery(query);
+
+    if (!cropId) {
+      const available = Object.keys(catalog)
+        .map((id) => catalog[id].displayName)
+        .sort((a, b) => a.localeCompare(b, 'es'))
+        .slice(0, 30);
+      return `**🌱 Extracciones por Cultivo (kg/ton)**
+
+Manejo en NutriPlant:
+1) Extracción por tonelada × rendimiento objetivo  
+2) Ajuste por niveles en suelo (subir/bajar requerimiento)  
+3) Ajuste por eficiencia de absorción (%) para estimar requerimiento real
+
+**Cultivos disponibles en base interna (muestra):**
+${available.map((name) => `• ${name}`).join('\n')}
+
+También manejo los cultivos que me pediste (zarzamora, uva, alfalfa, soya, frijol, mango, naranja, piña, calabacita, berenjena, brócoli, coliflor, ajo, zanahoria, papa, guayaba, manzana, pera, agave, café, cacao, tabaco).
+
+Escribe por ejemplo: **"extracción por tonelada de uva"**.`;
+    }
+
+    const crop = catalog[cropId];
+    const values = crop.extraction || {};
+    const row = order.map((k) => `${(Number(values[k]) || 0).toFixed(2)}`).join(' | ');
+    const header = order.join(' | ');
+    const divider = order.map(() => '---').join(' | ');
+
+    return `**🌱 Extracción por tonelada: ${crop.displayName}**  
+_Valores de referencia técnica en kg/ton (orden igual al dashboard)_
+
+| ${header} |
+| ${divider} |
+| ${row} |
+
+**Criterio técnico recomendado:**
+- La extracción cambia por variedad, ambiente, manejo y rendimiento final.
+- Si necesitas precisión alta, valida con curvas de extracción publicadas por autores o centros de investigación de tu zona.
+- En NutriPlant, el requerimiento real se obtiene con: extracción × rendimiento -> ajuste por niveles en suelo -> ajuste por eficiencia (%).`;
+  }
+
+  getNutrientEqWeightsForSolutions() {
+    return { N_NO3: 14.0, N_NH4: 14.0, P: 31.0, S: 16.0, K: 39.1, Ca: 20.04, Mg: 12.15 };
+  }
+
+  buildNutrientSolutionReferenceCatalog() {
+    return {
+      steiner: {
+        displayName: 'Steiner',
+        aliases: ['steiner'],
+        meq: { N_NO3: 12.0, N_NH4: 1.0, P: 1.0, S: 7.0, K: 7.0, Ca: 9.0, Mg: 4.0 },
+        microsPpm: { Fe: 2.0, Mn: 0.55, B: 0.33, Zn: 0.33, Cu: 0.05, Mo: 0.05 }
       },
-      'tomate': {
-        N: 3.0, P: 0.5, K: 4.5, Ca: 0.6, Mg: 0.4,
-        description: 'Tomate (Solanum lycopersicum)'
+      hoagland: {
+        displayName: 'Hoagland',
+        aliases: ['hoagland', 'hoagland arnon'],
+        meq: { N_NO3: 14.0, N_NH4: 1.0, P: 2.0, S: 2.0, K: 6.0, Ca: 8.0, Mg: 2.0 },
+        microsPpm: { Fe: 2.5, Mn: 0.5, B: 0.5, Zn: 0.05, Cu: 0.02, Mo: 0.05 }
       },
-      'citricos': {
-        N: 2.0, P: 0.3, K: 2.8, Ca: 1.2, Mg: 0.3,
-        description: 'Cítricos (Citrus spp.)'
+      knop: {
+        displayName: 'Knop',
+        aliases: ['knop'],
+        meq: { N_NO3: 10.0, N_NH4: 0.0, P: 1.0, S: 3.0, K: 5.0, Ca: 6.0, Mg: 2.0 },
+        microsPpm: { Fe: 2.0, Mn: 0.5, B: 0.3, Zn: 0.05, Cu: 0.02, Mo: 0.05 }
       },
-      'maiz': {
-        N: 2.5, P: 0.8, K: 2.2, Ca: 0.3, Mg: 0.4,
-        description: 'Maíz (Zea mays)'
+      yamazaki: {
+        displayName: 'Yamazaki',
+        aliases: ['yamazaki'],
+        meq: { N_NO3: 13.0, N_NH4: 1.0, P: 1.5, S: 4.5, K: 7.0, Ca: 7.0, Mg: 3.0 },
+        microsPpm: { Fe: 2.2, Mn: 0.6, B: 0.4, Zn: 0.1, Cu: 0.05, Mo: 0.05 }
       },
-      'fresa': {
-        N: 4.0, P: 0.6, K: 5.0, Ca: 1.0, Mg: 0.5,
-        description: 'Fresa (Fragaria × ananassa)'
+      cooper: {
+        displayName: 'Cooper',
+        aliases: ['cooper'],
+        meq: { N_NO3: 12.0, N_NH4: 0.8, P: 1.3, S: 5.0, K: 6.5, Ca: 8.0, Mg: 3.0 },
+        microsPpm: { Fe: 2.0, Mn: 0.6, B: 0.35, Zn: 0.08, Cu: 0.05, Mo: 0.05 }
+      },
+      sonneveld_straver: {
+        displayName: 'Sonneveld & Straver',
+        aliases: ['sonneveld', 'straver', 'sonneveld straver'],
+        meq: { N_NO3: 13.0, N_NH4: 1.0, P: 1.5, S: 5.5, K: 7.0, Ca: 8.0, Mg: 3.0 },
+        microsPpm: { Fe: 2.5, Mn: 0.7, B: 0.5, Zn: 0.1, Cu: 0.05, Mo: 0.05 }
+      },
+      resh: {
+        displayName: 'Resh',
+        aliases: ['resh'],
+        meq: { N_NO3: 12.0, N_NH4: 0.7, P: 1.2, S: 4.8, K: 6.8, Ca: 7.5, Mg: 2.8 },
+        microsPpm: { Fe: 2.0, Mn: 0.5, B: 0.3, Zn: 0.08, Cu: 0.05, Mo: 0.05 }
+      },
+      savvas: {
+        displayName: 'Savvas',
+        aliases: ['savvas'],
+        meq: { N_NO3: 13.5, N_NH4: 0.8, P: 1.5, S: 5.2, K: 7.2, Ca: 8.3, Mg: 3.0 },
+        microsPpm: { Fe: 2.5, Mn: 0.6, B: 0.4, Zn: 0.1, Cu: 0.05, Mo: 0.05 }
+      },
+      jones: {
+        displayName: 'Jones',
+        aliases: ['jones'],
+        meq: { N_NO3: 12.5, N_NH4: 0.7, P: 1.4, S: 5.0, K: 6.9, Ca: 7.8, Mg: 2.9 },
+        microsPpm: { Fe: 2.5, Mn: 0.5, B: 0.35, Zn: 0.08, Cu: 0.05, Mo: 0.05 }
+      },
+      douglas: {
+        displayName: 'Douglas',
+        aliases: ['douglas'],
+        meq: { N_NO3: 12.0, N_NH4: 0.6, P: 1.2, S: 4.2, K: 6.2, Ca: 7.0, Mg: 2.6 },
+        microsPpm: { Fe: 2.0, Mn: 0.5, B: 0.3, Zn: 0.08, Cu: 0.03, Mo: 0.05 }
       }
     };
-    
-    // Detectar cultivo en la consulta
-    let crop = null;
-    for (let cropName in extractions) {
-      if (query.includes(cropName)) {
-        crop = cropName;
-        break;
+  }
+
+  findNutrientSolutionInQuery(query) {
+    const normalized = this.normalizeCropQuery(query);
+    const catalog = this.buildNutrientSolutionReferenceCatalog();
+    const ids = Object.keys(catalog);
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      const aliases = catalog[id].aliases || [];
+      for (let j = 0; j < aliases.length; j++) {
+        const alias = this.normalizeCropQuery(aliases[j]);
+        if (alias && normalized.includes(alias)) return id;
       }
     }
-    
-    if (!crop) {
-      return `**🌱 Extracciones de Nutrientes por Cultivo**
+    return null;
+  }
 
-**Cultivos disponibles:**
-${Object.keys(extractions).map(c => `• **${c}** - ${extractions[c].description}`).join('\n')}
+  shouldHandleNutrientSolutionQuery(message) {
+    const normalized = this.normalizeCropQuery(message);
+    const hasSolutionIntent = /(solucion nutritiva|solucion|hidropon|steiner|hoagland|knop|yamazaki|cooper|sonneveld|straver|resh|savvas|jones|douglas|meq|ppm|nh4|no3|nitrato|amonio|ternario|oxido|elemental)/.test(normalized);
+    const hasKnownSolution = !!this.findNutrientSolutionInQuery(normalized);
+    const askingCatalog = /(que|cuales|catalogo|lista|referencia)/.test(normalized);
+    return hasSolutionIntent && (hasKnownSolution || askingCatalog);
+  }
 
-**¿Qué cultivo te interesa?** Por ejemplo: "extracción NPK aguacate"`;
+  getCurrentHydroponicsContext() {
+    try {
+      const project = (window.projectManager && typeof window.projectManager.getCurrentProject === 'function')
+        ? window.projectManager.getCurrentProject()
+        : (window.currentProject || null);
+      if (!project) return null;
+      const hydro = (project.sections && project.sections.hidroponia)
+        ? project.sections.hidroponia
+        : (project.hidroponia || null);
+      if (!hydro || !Array.isArray(hydro.stages) || hydro.stages.length === 0) return null;
+      const active = hydro.stages.find((s) => s.id === hydro.activeStageId) || hydro.stages[0];
+      if (!active) return null;
+      return { hydro, activeStage: active };
+    } catch (e) {
+      return null;
     }
-    
-    const data = extractions[crop];
-    
-    return `**🌱 Extracción de Nutrientes: ${data.description}**
+  }
 
-**Por tonelada de fruto producido:**
-• **N:** ${data.N} kg/ton
-• **P:** ${data.P} kg/ton  
-• **K:** ${data.K} kg/ton
-• **Ca:** ${data.Ca} kg/ton
-• **Mg:** ${data.Mg} kg/ton
+  shouldHandleHydroPhenologyQuery(message) {
+    const normalized = this.normalizeCropQuery(message);
+    const hasIntent = /(vegetativ|generativ|floracion|preflor|amarre|llenado|fenolog|etapa|acorde|coincide|ce|conductividad|n k|no3|nh4|nitrato|amonio|solucion del usuario|mi solucion)/.test(normalized);
+    return hasIntent && !!this.getCurrentHydroponicsContext();
+  }
 
-**Aplicación práctica:**
-• Para calcular fertilización: extracción × rendimiento esperado
-• Considerar eficiencia de absorción (60-80%)
-• Ajustar según análisis de suelo
+  getPreloadedAcidMaterials() {
+    try {
+      if (typeof window.getAllFertiMaterials !== 'function') return [];
+      const all = window.getAllFertiMaterials() || [];
+      const isAcid = (m) => {
+        const id = this.normalizeCropQuery(m && m.id);
+        const name = this.normalizeCropQuery(m && m.name);
+        return id.startsWith('acido') || name.includes('acido') || name.includes('ácido');
+      };
+      return all.filter(isAcid).map((m) => ({
+        id: m.id || '',
+        name: m.name || '',
+        unit: m.unit || 'kg',
+        density: Number(m.density) || null,
+        N_NO3: Number(m.N_NO3) || 0,
+        P2O5: Number(m.P2O5) || 0,
+        SO4: Number(m.SO4) || 0,
+        S: Number(m.S) || 0,
+        B: Number(m.B) || 0
+      }));
+    } catch (e) {
+      return [];
+    }
+  }
 
-¿Necesitas el cálculo para un rendimiento específico?`;
+  shouldHandleAcidCatalogQuery(message) {
+    const normalized = this.normalizeCropQuery(message);
+    const hasAcidIntent = /(acido|ácido|nitrico|fosforico|sulfurico|borico|hno3|h3po4|h2so4|densidad|litro|kg eq|precargad)/.test(normalized);
+    const mentionsContext = /(agua|hidro|hidropon|ferti|fertirriego)/.test(normalized);
+    return hasAcidIntent && (mentionsContext || normalized.includes('acido') || normalized.includes('ácido'));
+  }
+
+  getAcidCatalogAnalysis() {
+    const acids = this.getPreloadedAcidMaterials();
+    if (!acids.length) {
+      return `No pude leer los ácidos precargados desde el catálogo en este momento. Si quieres, te los puedo listar manualmente según configuración esperada de NutriPlant.`;
+    }
+
+    const rows = acids.map((a) => {
+      const contrib = [];
+      if (a.N_NO3 > 0) contrib.push(`N-NO3 ${a.N_NO3.toFixed(2)}%`);
+      if (a.P2O5 > 0) contrib.push(`P2O5 ${a.P2O5.toFixed(2)}%`);
+      if (a.SO4 > 0) contrib.push(`SO4 ${a.SO4.toFixed(2)}%`);
+      if (a.S > 0) contrib.push(`S ${a.S.toFixed(2)}%`);
+      if (a.B > 0) contrib.push(`B ${a.B.toFixed(2)}%`);
+      return `| ${a.name} | ${String(a.unit).toUpperCase()} | ${a.density != null ? a.density.toFixed(3) : '—'} | ${contrib.length ? contrib.join(' · ') : '—'} |`;
+    }).join('\n');
+
+    return `**🧪 Ácidos precargados detectados (catálogo NutriPlant)**
+
+| Producto | Unidad de dosificación | Densidad (kg/L) | Composición útil (%) |
+| --- | --- | ---: | --- |
+${rows}
+
+**Cómo lo interpreta NutriPlant (agua/hidroponía/fertirriego):**
+- Si el producto está en **L**, primero convierte a kg equivalentes con densidad (`kg = L × densidad`).
+- Luego calcula aporte por elemento con la composición (%).
+- Esto permite comparar y cerrar balance contra requerimiento objetivo por etapa.
+
+Si quieres, te hago una tabla adicional con **aporte estimado por cada 1 L de producto** para cada ácido.`;
+  }
+
+  inferHydroPhenologyFromStage(stage) {
+    const meq = (stage && stage.meq) ? stage.meq : {};
+    const read = (k) => Number(meq[k]) || 0;
+    const nNo3 = read('N_NO3');
+    const nNh4 = read('N_NH4');
+    const nTotal = nNo3 + nNh4;
+    const p = read('P');
+    const s = read('S');
+    const k = read('K');
+    const ca = read('Ca');
+    const mg = read('Mg');
+    const ce = Number(stage && stage.ce) || ((nNo3 + nNh4 + p + s + k + ca + mg) / 20);
+
+    const no3Pct = nTotal > 0 ? (nNo3 * 100 / nTotal) : 0;
+    const nh4Pct = nTotal > 0 ? (nNh4 * 100 / nTotal) : 0;
+    const kToN = nTotal > 0 ? (k / nTotal) : 0;
+    const sumKCaMg = k + ca + mg;
+    const kPctCat = sumKCaMg > 0 ? (k * 100 / sumKCaMg) : 0;
+    const caPctCat = sumKCaMg > 0 ? (ca * 100 / sumKCaMg) : 0;
+    const mgPctCat = sumKCaMg > 0 ? (mg * 100 / sumKCaMg) : 0;
+
+    let inferred = 'transicion';
+    let rationale = 'perfil intermedio entre crecimiento vegetativo y fase reproductiva';
+    if (ce < 1.4 && kToN <= 0.8) {
+      inferred = 'establecimiento';
+      rationale = 'CE baja y relación K/N conservadora';
+    } else if (kToN < 0.9 && no3Pct >= 85 && ce <= 2.3) {
+      inferred = 'vegetativo';
+      rationale = 'predominio de N (especialmente nítrico) con K moderado';
+    } else if (kToN >= 0.9 && kToN <= 1.2 && ce >= 1.8 && ce <= 2.8) {
+      inferred = 'prefloracion';
+      rationale = 'relación N-K balanceada típica de transición';
+    } else if (kToN > 1.2 && kToN <= 1.5 && kPctCat >= 35) {
+      inferred = 'floracion_amarre';
+      rationale = 'K más dominante para sostener floración/amarre';
+    } else if (kToN > 1.5 && ce >= 2.2) {
+      inferred = 'llenado';
+      rationale = 'alto protagonismo de K y CE más exigente';
+    }
+
+    return {
+      inferred,
+      rationale,
+      metrics: { ce, nNo3, nNh4, nTotal, k, ca, mg, p, s, no3Pct, nh4Pct, kToN, kPctCat, caPctCat, mgPctCat }
+    };
+  }
+
+  mapSelectedStageToGroup(stageName) {
+    const name = this.normalizeCropQuery(stageName || '');
+    if (name.includes('establec')) return 'establecimiento';
+    if (name.includes('veget')) return 'vegetativo';
+    if (name.includes('preflor')) return 'prefloracion';
+    if (name.includes('flor') || name.includes('amarre')) return 'floracion_amarre';
+    if (name.includes('llenad')) return 'llenado';
+    if (name.includes('cosech')) return 'llenado';
+    return 'transicion';
+  }
+
+  getHydroPhenologyAssessment() {
+    const ctx = this.getCurrentHydroponicsContext();
+    if (!ctx || !ctx.activeStage) {
+      return 'No encuentro una solución hidropónica activa para evaluar etapa fenológica. Abre Hidroponía y selecciona una etapa para poder analizarla.';
+    }
+
+    const stage = ctx.activeStage;
+    const selectedName = stage.name || 'Etapa sin nombre';
+    const inferred = this.inferHydroPhenologyFromStage(stage);
+    const selectedGroup = this.mapSelectedStageToGroup(selectedName);
+    const inferredGroup = inferred.inferred;
+    const aligned = selectedGroup === inferredGroup;
+    const m = inferred.metrics;
+
+    const inferredLabelMap = {
+      establecimiento: 'Establecimiento',
+      vegetativo: 'Vegetativo',
+      prefloracion: 'Prefloración/Transición',
+      floracion_amarre: 'Floración/Amarre',
+      llenado: 'Llenado',
+      transicion: 'Transición'
+    };
+    const inferredLabel = inferredLabelMap[inferredGroup] || inferredGroup;
+    const alignmentMsg = aligned
+      ? 'El perfil se ve bien alineado con la etapa seleccionada.'
+      : `El perfil podría estar más cerca de **${inferredLabel}**; valdría la pena revisar finamente la estrategia para esta etapa.`;
+
+    let tweaks = [];
+    if (inferredGroup === 'vegetativo' && m.kToN > 1.0) tweaks.push('Si buscas más empuje vegetativo, podrías bajar un poco K relativo a N.');
+    if ((inferredGroup === 'floracion_amarre' || inferredGroup === 'llenado') && m.kToN < 1.2) tweaks.push('Para reforzar fase generativa, podrías subir gradualmente K relativo a N.');
+    if (m.nh4Pct > 20) tweaks.push('El % de N amoniacal está relativamente alto; considera privilegiar más fracción nítrica.');
+    if (m.ce < 1.4 && inferredGroup !== 'establecimiento') tweaks.push('La CE parece baja para etapas demandantes; podrías evaluar subir concentración con cuidado.');
+    if (m.ce > 3.5) tweaks.push('La CE está alta; vigila estrés osmótico y respuesta del cultivo.');
+    if (!tweaks.length) tweaks.push('Los indicadores base se ven consistentes; solo mantén monitoreo semanal y ajuste fino por respuesta real.');
+
+    return `**🔎 Diagnóstico fenológico de tu solución hidropónica**
+
+**Etapa seleccionada:** ${selectedName}  
+**Etapa inferida por perfil iónico/CE:** ${inferredLabel}
+
+**Indicadores clave del perfil actual:**
+- CE estimada: ${m.ce.toFixed(2)} dS/m
+- Relación K/N total (meq): ${m.kToN.toFixed(2)}
+- Fracción de N: NO3 ${m.no3Pct.toFixed(1)}% · NH4 ${m.nh4Pct.toFixed(1)}%
+- Balance catiónico ternario (K/Ca/Mg): ${m.kPctCat.toFixed(1)}% / ${m.caPctCat.toFixed(1)}% / ${m.mgPctCat.toFixed(1)}%
+- Lectura técnica: ${inferred.rationale}
+
+**Interpretación:**
+${alignmentMsg}
+
+**Ajuste sugerido (enfoque suave):**
+${tweaks.map((t) => `- ${t}`).join('\n')}
+
+Si quieres, te puedo proponer un ajuste paso a paso para moverla a **Vegetativo**, **Floración/Amarre** o **Llenado** sin cambios bruscos.`;
+  }
+
+  getNutrientSolutionReferenceAnalysis(query) {
+    const catalog = this.buildNutrientSolutionReferenceCatalog();
+    const solutionId = this.findNutrientSolutionInQuery(query);
+    if (!solutionId) {
+      const names = Object.keys(catalog).map((k) => catalog[k].displayName);
+      return `**💧 Soluciones nutritivas de referencia (chat NutriPlant)**
+
+Manejo estas referencias: ${names.join(', ')}.
+
+Pídeme una en específico y te doy:
+- tabla de macros en **meq/L** y **ppm (elemental)**,
+- **% aniones** (NO3, H2PO4, SO4),
+- **% cationes ternario** (K, Ca, Mg; sin NH4),
+- **% N nítrico vs N amoniacal**.
+
+Ejemplo: **"muéstrame Steiner en meq y ppm con porcentajes"**.`;
+    }
+
+    const ref = catalog[solutionId];
+    const meq = ref.meq || {};
+    const eqw = this.getNutrientEqWeightsForSolutions();
+    const ppm = {
+      N_NO3: (Number(meq.N_NO3) || 0) * eqw.N_NO3,
+      N_NH4: (Number(meq.N_NH4) || 0) * eqw.N_NH4,
+      P: (Number(meq.P) || 0) * eqw.P,
+      S: (Number(meq.S) || 0) * eqw.S,
+      K: (Number(meq.K) || 0) * eqw.K,
+      Ca: (Number(meq.Ca) || 0) * eqw.Ca,
+      Mg: (Number(meq.Mg) || 0) * eqw.Mg
+    };
+
+    const sumAnions = (Number(meq.N_NO3) || 0) + (Number(meq.P) || 0) + (Number(meq.S) || 0);
+    const sumKCaMg = (Number(meq.K) || 0) + (Number(meq.Ca) || 0) + (Number(meq.Mg) || 0);
+    const sumN = (Number(meq.N_NO3) || 0) + (Number(meq.N_NH4) || 0);
+    const p = (v, s) => (s > 0 ? (v * 100 / s) : 0);
+
+    const anionPct = {
+      N_NO3: p(Number(meq.N_NO3) || 0, sumAnions),
+      P: p(Number(meq.P) || 0, sumAnions),
+      S: p(Number(meq.S) || 0, sumAnions)
+    };
+    const cationPct = {
+      K: p(Number(meq.K) || 0, sumKCaMg),
+      Ca: p(Number(meq.Ca) || 0, sumKCaMg),
+      Mg: p(Number(meq.Mg) || 0, sumKCaMg)
+    };
+    const nSplit = {
+      NO3: p(Number(meq.N_NO3) || 0, sumN),
+      NH4: p(Number(meq.N_NH4) || 0, sumN)
+    };
+
+    const macroTable = `| Nutriente | meq/L | ppm (elemental) |
+| --- | ---: | ---: |
+| N-NO3 | ${(Number(meq.N_NO3) || 0).toFixed(2)} | ${ppm.N_NO3.toFixed(1)} |
+| N-NH4 | ${(Number(meq.N_NH4) || 0).toFixed(2)} | ${ppm.N_NH4.toFixed(1)} |
+| P | ${(Number(meq.P) || 0).toFixed(2)} | ${ppm.P.toFixed(1)} |
+| S | ${(Number(meq.S) || 0).toFixed(2)} | ${ppm.S.toFixed(1)} |
+| K | ${(Number(meq.K) || 0).toFixed(2)} | ${ppm.K.toFixed(1)} |
+| Ca | ${(Number(meq.Ca) || 0).toFixed(2)} | ${ppm.Ca.toFixed(1)} |
+| Mg | ${(Number(meq.Mg) || 0).toFixed(2)} | ${ppm.Mg.toFixed(1)} |`;
+
+    const micro = ref.microsPpm || {};
+    const microTable = `| Micro | ppm |
+| --- | ---: |
+| Fe | ${(Number(micro.Fe) || 0).toFixed(2)} |
+| Mn | ${(Number(micro.Mn) || 0).toFixed(2)} |
+| B | ${(Number(micro.B) || 0).toFixed(2)} |
+| Zn | ${(Number(micro.Zn) || 0).toFixed(2)} |
+| Cu | ${(Number(micro.Cu) || 0).toFixed(2)} |
+| Mo | ${(Number(micro.Mo) || 0).toFixed(2)} |`;
+
+    return `**💧 Solución de referencia: ${ref.displayName}**
+
+${macroTable}
+
+**% en suma de aniones (NO3 + H2PO4 + SO4):**
+- Nitrato (N-NO3): ${anionPct.N_NO3.toFixed(1)}%
+- Fosfato (P): ${anionPct.P.toFixed(1)}%
+- Sulfato (S): ${anionPct.S.toFixed(1)}%
+
+**% en suma ternaria de cationes (K + Ca + Mg, sin NH4):**
+- K: ${cationPct.K.toFixed(1)}%
+- Ca: ${cationPct.Ca.toFixed(1)}%
+- Mg: ${cationPct.Mg.toFixed(1)}%
+
+**Fracción de N (NO3 + NH4):**
+- N nítrico (NO3): ${nSplit.NO3.toFixed(1)}%
+- N amoniacal (NH4): ${nSplit.NH4.toFixed(1)}%
+
+**Micros (ppm):**
+${microTable}
+
+**Nota NutriPlant:** aquí ppm se expresa como **ppm del elemento** (N, P, S, etc.), por eso usamos pesos equivalentes elementales (N=14, P=31, S=16...). Es intencional para trabajar igual que en etiquetas, análisis y objetivos agronómicos.`;
   }
   
   // ===== FUNCIONES AVANZADAS PARA SUPER HERRAMIENTA =====

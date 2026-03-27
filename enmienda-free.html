@@ -268,6 +268,15 @@
       return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     }
 
+    function isEnglishUI() {
+      const title = (document.querySelector('h2.section-title') || document.querySelector('.section-title') || document.querySelector('h2') || {}).textContent || '';
+      return /\b(Amendment|Calculator|Adjust|Results|Soil)\b/i.test(title);
+    }
+
+    function t(es, en) {
+      return isEnglishUI() ? en : es;
+    }
+
     function calculateCIC() {
       const ids = ['k-initial','ca-initial','mg-initial','h-initial','na-initial','al-initial'];
       const vals = ids.map(id => parseFloat(document.getElementById(id).value || 0));
@@ -580,7 +589,7 @@
       }));
 
       if (!adjusted.length) {
-        resultsSection.innerHTML = '<h3>📊 Resultados del Cálculo de Enmiendas</h3><p>No se requieren enmiendas con las seleccionadas actuales.</p>';
+        resultsSection.innerHTML = `<h3>📊 ${t('Resultados del Cálculo de Enmiendas', 'Amendment Calculation Results')}</h3><p>${t('No se requieren enmiendas con las seleccionadas actuales.', 'No amendments are required with the currently selected materials.')}</p>`;
         resultsSection.style.display = 'block';
         return;
       }
@@ -590,17 +599,17 @@
         return acc;
       }, { k:0, ca:0, mg:0, so4:0, si:0 });
 
-      let html = '<h3>📊 Resultados del Cálculo de Enmiendas</h3>';
-      html += '<div class="amendment-summary"><h4>🎯 Aportes Totales:</h4><ul>';
-      if (totals.k > 0) html += `<li><strong>Potasio (K⁺):</strong> ${formatNumber(totals.k)} kg/ha</li>`;
-      if (totals.ca > 0) html += `<li><strong>Calcio (Ca²⁺):</strong> ${formatNumber(totals.ca)} kg/ha</li>`;
-      if (totals.mg > 0) html += `<li><strong>Magnesio (Mg²⁺):</strong> ${formatNumber(totals.mg)} kg/ha</li>`;
-      if (totals.so4 > 0) html += `<li><strong>Sulfato (SO₄²⁻):</strong> ${formatNumber(totals.so4)} kg/ha</li>`;
-      if (totals.si > 0) html += `<li><strong>Silicio (<span class="notranslate" translate="no">Si</span>):</strong> ${formatNumber(totals.si)} kg/ha</li>`;
+      let html = `<h3>📊 ${t('Resultados del Cálculo de Enmiendas', 'Amendment Calculation Results')}</h3>`;
+      html += `<div class="amendment-summary"><h4>🎯 ${t('Aportes Totales:', 'Total Contributions:')}</h4><ul>`;
+      if (totals.k > 0) html += `<li><strong>${t('Potasio', 'Potassium')} (K⁺):</strong> ${formatNumber(totals.k)} kg/ha</li>`;
+      if (totals.ca > 0) html += `<li><strong>${t('Calcio', 'Calcium')} (Ca²⁺):</strong> ${formatNumber(totals.ca)} kg/ha</li>`;
+      if (totals.mg > 0) html += `<li><strong>${t('Magnesio', 'Magnesium')} (Mg²⁺):</strong> ${formatNumber(totals.mg)} kg/ha</li>`;
+      if (totals.so4 > 0) html += `<li><strong>${t('Sulfato', 'Sulfate')} (SO₄²⁻):</strong> ${formatNumber(totals.so4)} kg/ha</li>`;
+      if (totals.si > 0) html += `<li><strong>${t('Silicio', 'Silicon')} (<span class="notranslate" translate="no">Si</span>):</strong> ${formatNumber(totals.si)} kg/ha</li>`;
       html += '</ul>';
-      html += `<div style="font-size:12px;color:#64748b;margin-top:6px;">% del volumen de suelo explorado por raíces (${formatNumber(reachPercent,0)}%).</div>`;
+      html += `<div style="font-size:12px;color:#64748b;margin-top:6px;">${t('% del volumen de suelo explorado por raíces', '% of soil volume explored by roots')} (${formatNumber(reachPercent,0)}%).</div>`;
       html += '</div>';
-      html += '<div class="amendment-details"><h4>📋 Detalles por Enmienda:</h4><table class="results-table"><thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th>K⁺</th><th>Ca²⁺</th><th>Mg²⁺</th><th>SO₄²⁻</th><th>Si</th></tr></thead><tbody>';
+      html += `<div class="amendment-details"><h4>📋 ${t('Detalles por Enmienda:', 'Amendment Details:')}</h4><table class="results-table"><thead><tr><th>${t('Enmienda', 'Amendment')}</th><th>${t('Cantidad', 'Quantity')} (kg/ha)</th><th>K⁺</th><th>Ca²⁺</th><th>Mg²⁺</th><th>SO₄²⁻</th><th><span class="notranslate" translate="no">Si</span></th></tr></thead><tbody>`;
       adjusted.forEach(a => {
         html += `<tr><td>${a.name}</td><td>${formatNumber(a.amount)}</td><td>${a.k > 0 ? formatNumber(a.k) : '-'}</td><td>${a.ca > 0 ? formatNumber(a.ca) : '-'}</td><td>${a.mg > 0 ? formatNumber(a.mg) : '-'}</td><td>${a.so4 > 0 ? formatNumber(a.so4) : '-'}</td><td>${a.si > 0 ? formatNumber(a.si) : '-'}</td></tr>`;
       });
@@ -612,7 +621,7 @@
     function calculateAmendment() {
       const selected = getSelectedAmendments();
       if (!selected.length) {
-        alert('Por favor selecciona al menos una enmienda antes de calcular');
+        alert(t('Por favor selecciona al menos una enmienda antes de calcular', 'Please select at least one amendment before calculating'));
         return;
       }
       const kTarget = parseFloat(document.getElementById('k-target').value || 0);
