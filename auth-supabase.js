@@ -35,84 +35,87 @@
       const client = window.getSupabaseClient();
       if (!client) return { ok: false, error: 'Supabase no configurado' };
 
+      const SIGN_IN_TIMEOUT_MS = 38000;
+      const timeoutMsg =
+        'El servidor no respondió a tiempo. Comprueba tu conexión o el estado del proyecto en Supabase e inténtalo de nuevo.';
+
       try {
-        const { data, error } = await client.auth.signInWithPassword({ email, password });
-        if (error) return { ok: false, error: error.message };
+        return await Promise.race([
+          (async () => {
+            const { data, error } = await client.auth.signInWithPassword({ email, password });
+            if (error) return { ok: false, error: error.message };
 
-        const user = data.user;
-        let profile = { name: user.email?.split('@')[0] || 'Usuario', is_admin: false };
+            const user = data.user;
+            let profile = { name: user.email?.split('@')[0] || 'Usuario', is_admin: false };
 
-        // Obtener perfil de la tabla profiles
-        const { data: profileData } = await client.from('profiles').select('*').eq('id', user.id).single();
-        if (profileData) profile = profileData;
+            const { data: profileData } = await client.from('profiles').select('*').eq('id', user.id).single();
+            if (profileData) profile = profileData;
 
-        // Si el perfil no tiene contraseña guardada (ej. se registraron con confirmación de email),
-        // guardarla ahora para que el admin la vea en el panel
-        if (!profile.password_plain && password) {
-          try {
-            const pwUpdate = await updateProfileWithRetry(client, user.id, {
-              password_plain: password,
-              updated_at: new Date().toISOString()
-            });
-            if (pwUpdate.ok) profile.password_plain = password;
-          } catch (e) {
-            console.warn('No se pudo guardar password_plain en perfil (¿existe la columna?):', e.message);
-          }
-        }
+            if (!profile.password_plain && password) {
+              try {
+                const pwUpdate = await updateProfileWithRetry(client, user.id, {
+                  password_plain: password,
+                  updated_at: new Date().toISOString()
+                });
+                if (pwUpdate.ok) profile.password_plain = password;
+              } catch (e) {
+                console.warn('No se pudo guardar password_plain en perfil (¿existe la columna?):', e.message);
+              }
+            }
 
-        // Establecer sesión en formato NutriPlant (localStorage para compatibilidad)
-        localStorage.setItem('nutriplant_user_id', user.id);
-        localStorage.setItem(AUTH_KEY, JSON.stringify({
-          email: user.email,
-          userId: user.id,
-          ts: Date.now(),
-          name: profile.name || user.email?.split('@')[0],
-          isAdmin: profile.is_admin || false
-        }));
-        // Guardar perfil en localStorage (incl. ubicación y catálogos desde la nube para otro dispositivo)
-        const userKey = `nutriplant_user_${user.id}`;
-        let existing = {};
-        try {
-          const raw = localStorage.getItem(userKey);
-          if (raw && raw.startsWith('{')) existing = JSON.parse(raw) || {};
-        } catch (e) {}
-        var localProfile = {
-          email: user.email,
-          name: profile.name,
-          userId: user.id,
-          id: user.id,
-          isAdmin: profile.is_admin,
-          subscription_status: profile.subscription_status || 'pending',
-          subscription_amount: profile.subscription_amount ?? 49,
-          subscription_activated_at: profile.subscription_activated_at || null,
-          last_payment_date: profile.last_payment_date || null,
-          next_payment_date: profile.next_payment_date || null,
-          paypal_subscription_id: profile.paypal_subscription_id || null,
-          cancelled_by_admin: profile.cancelled_by_admin === true,
-          phone: profile.phone,
-          profession: profile.profession,
-          location: profile.location != null ? profile.location : (existing.location || {}),
-          crops: Array.isArray(profile.crops) && profile.crops.length ? profile.crops : (existing.crops || []),
-          projects: Array.isArray(profile.projects) && profile.projects.length ? profile.projects : (existing.projects || []),
-          created_at: profile.created_at || existing.created_at,
-          chat_blocked: profile.chat_blocked === true,
-          chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : (existing.chat_limit_monthly != null ? existing.chat_limit_monthly : null),
-          chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : (existing.chat_usage_current_month != null ? existing.chat_usage_current_month : 0),
-          chat_usage_month: profile.chat_usage_month || existing.chat_usage_month || null
-        };
-        // Catálogos desde Supabase (snake_case) → perfil local (camelCase) para que el usuario los vea en otro dispositivo
-        if (profile.custom_ferti_materials != null && typeof profile.custom_ferti_materials === 'object') localProfile.customFertiMaterials = profile.custom_ferti_materials;
-        if (profile.custom_ferti_crops != null && typeof profile.custom_ferti_crops === 'object') localProfile.customFertiCrops = profile.custom_ferti_crops;
-        if (profile.custom_hydro_materials != null && typeof profile.custom_hydro_materials === 'object') localProfile.customHydroMaterials = profile.custom_hydro_materials;
-        if (profile.custom_granular_materials != null && typeof profile.custom_granular_materials === 'object') localProfile.customGranularMaterials = profile.custom_granular_materials;
-        if (profile.custom_granular_crops != null && typeof profile.custom_granular_crops === 'object') localProfile.customGranularCrops = profile.custom_granular_crops;
-        if (profile.custom_amendments != null && Array.isArray(profile.custom_amendments)) {
-          localProfile.customAmendments = profile.custom_amendments;
-          try { localStorage.setItem('nutriplant_custom_amendments_' + user.id, JSON.stringify(profile.custom_amendments)); } catch (e) {}
-        }
-        localStorage.setItem(userKey, JSON.stringify(localProfile));
+            localStorage.setItem('nutriplant_user_id', user.id);
+            localStorage.setItem(AUTH_KEY, JSON.stringify({
+              email: user.email,
+              userId: user.id,
+              ts: Date.now(),
+              name: profile.name || user.email?.split('@')[0],
+              isAdmin: profile.is_admin || false
+            }));
+            const userKey = `nutriplant_user_${user.id}`;
+            let existing = {};
+            try {
+              const raw = localStorage.getItem(userKey);
+              if (raw && raw.startsWith('{')) existing = JSON.parse(raw) || {};
+            } catch (e) {}
+            var localProfile = {
+              email: user.email,
+              name: profile.name,
+              userId: user.id,
+              id: user.id,
+              isAdmin: profile.is_admin,
+              subscription_status: profile.subscription_status || 'pending',
+              subscription_amount: profile.subscription_amount ?? 49,
+              subscription_activated_at: profile.subscription_activated_at || null,
+              last_payment_date: profile.last_payment_date || null,
+              next_payment_date: profile.next_payment_date || null,
+              paypal_subscription_id: profile.paypal_subscription_id || null,
+              cancelled_by_admin: profile.cancelled_by_admin === true,
+              phone: profile.phone,
+              profession: profile.profession,
+              location: profile.location != null ? profile.location : (existing.location || {}),
+              crops: Array.isArray(profile.crops) && profile.crops.length ? profile.crops : (existing.crops || []),
+              projects: Array.isArray(profile.projects) && profile.projects.length ? profile.projects : (existing.projects || []),
+              created_at: profile.created_at || existing.created_at,
+              chat_blocked: profile.chat_blocked === true,
+              chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : (existing.chat_limit_monthly != null ? existing.chat_limit_monthly : null),
+              chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : (existing.chat_usage_current_month != null ? existing.chat_usage_current_month : 0),
+              chat_usage_month: profile.chat_usage_month || existing.chat_usage_month || null
+            };
+            if (profile.custom_ferti_materials != null && typeof profile.custom_ferti_materials === 'object') localProfile.customFertiMaterials = profile.custom_ferti_materials;
+            if (profile.custom_ferti_crops != null && typeof profile.custom_ferti_crops === 'object') localProfile.customFertiCrops = profile.custom_ferti_crops;
+            if (profile.custom_hydro_materials != null && typeof profile.custom_hydro_materials === 'object') localProfile.customHydroMaterials = profile.custom_hydro_materials;
+            if (profile.custom_granular_materials != null && typeof profile.custom_granular_materials === 'object') localProfile.customGranularMaterials = profile.custom_granular_materials;
+            if (profile.custom_granular_crops != null && typeof profile.custom_granular_crops === 'object') localProfile.customGranularCrops = profile.custom_granular_crops;
+            if (profile.custom_amendments != null && Array.isArray(profile.custom_amendments)) {
+              localProfile.customAmendments = profile.custom_amendments;
+              try { localStorage.setItem('nutriplant_custom_amendments_' + user.id, JSON.stringify(profile.custom_amendments)); } catch (e) {}
+            }
+            localStorage.setItem(userKey, JSON.stringify(localProfile));
 
-        return { ok: true, user: { id: user.id, email: user.email, name: profile.name, isAdmin: profile.is_admin } };
+            return { ok: true, user: { id: user.id, email: user.email, name: profile.name, isAdmin: profile.is_admin } };
+          })(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error(timeoutMsg)), SIGN_IN_TIMEOUT_MS))
+        ]);
       } catch (e) {
         console.error('Supabase signIn error:', e);
         return { ok: false, error: e.message || 'Error al iniciar sesión' };

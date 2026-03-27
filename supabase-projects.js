@@ -150,42 +150,83 @@
     return Array.from(byId.values());
   }
 
+  /** Coalesce rapid saves into one upsert (reduces Disk IO on Supabase). */
+  var CLOUD_SYNC_DEBOUNCE_MS = 4500;
+  var cloudSyncTimers = Object.create(null);
+  var cloudSyncPending = Object.create(null);
+
+  async function syncProjectNow(projectId, projectData) {
+    if (!isSupabaseUser()) return;
+    const client = getClient();
+    if (!client) return;
+
+    const userId = localStorage.getItem('nutriplant_user_id');
+    if (!userId) return;
+
+    try {
+      const row = {
+        id: projectId,
+        user_id: userId,
+        name: projectData.name || projectData.title || 'Sin nombre',
+        title: projectData.title || projectData.name || '',
+        data: projectData,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await client.from('projects').upsert(row, {
+        onConflict: 'id',
+        ignoreDuplicates: false
+      });
+
+      if (error) {
+        console.warn('⚠️ Supabase sync error:', error.message);
+      } else {
+        console.log('☁️ Proyecto sincronizado a la nube:', projectId);
+      }
+    } catch (e) {
+      console.warn('⚠️ Supabase sync:', e);
+    }
+  }
+
+  function scheduleProjectCloudSync(projectId, projectData) {
+    if (!isSupabaseUser()) return;
+    cloudSyncPending[projectId] = projectData;
+    if (cloudSyncTimers[projectId]) clearTimeout(cloudSyncTimers[projectId]);
+    cloudSyncTimers[projectId] = setTimeout(function() {
+      delete cloudSyncTimers[projectId];
+      var latest = cloudSyncPending[projectId];
+      delete cloudSyncPending[projectId];
+      if (latest) syncProjectNow(projectId, latest);
+    }, CLOUD_SYNC_DEBOUNCE_MS);
+  }
+
+  function flushPendingProjectCloudSync() {
+    var ids = Object.keys(cloudSyncPending);
+    for (var i = 0; i < ids.length; i++) {
+      var pid = ids[i];
+      if (cloudSyncTimers[pid]) {
+        clearTimeout(cloudSyncTimers[pid]);
+        delete cloudSyncTimers[pid];
+      }
+      var data = cloudSyncPending[pid];
+      delete cloudSyncPending[pid];
+      if (data) syncProjectNow(pid, data);
+    }
+  }
+
   window.nutriplantSupabaseProjects = {
     isSupabaseUser: isSupabaseUser,
 
-    /** Sincronizar proyecto a Supabase (upsert) */
-    syncProject: async function(projectId, projectData) {
-      if (!isSupabaseUser()) return;
-      const client = getClient();
-      if (!client) return;
+    /** Upsert inmediato (reconexión, migraciones). No usar desde guardado frecuente. */
+    syncProjectNow: syncProjectNow,
 
-      const userId = localStorage.getItem('nutriplant_user_id');
-      if (!userId) return;
-
-      try {
-        const row = {
-          id: projectId,
-          user_id: userId,
-          name: projectData.name || projectData.title || 'Sin nombre',
-          title: projectData.title || projectData.name || '',
-          data: projectData,
-          updated_at: new Date().toISOString()
-        };
-
-        const { error } = await client.from('projects').upsert(row, {
-          onConflict: 'id',
-          ignoreDuplicates: false
-        });
-
-        if (error) {
-          console.warn('⚠️ Supabase sync error:', error.message);
-        } else {
-          console.log('☁️ Proyecto sincronizado a la nube:', projectId);
-        }
-      } catch (e) {
-        console.warn('⚠️ Supabase sync:', e);
-      }
+    /** Sincronizar proyecto a Supabase (upsert con debounce; agrupa muchos guardados seguidos). */
+    syncProject: function(projectId, projectData) {
+      scheduleProjectCloudSync(projectId, projectData);
     },
+
+    /** Fuerza envío de cambios pendientes (p. ej. al ocultar la pestaña). */
+    flushPendingProjectCloudSync: flushPendingProjectCloudSync,
 
     /** Obtener lista de proyectos desde Supabase */
     fetchProjects: async function(options) {
@@ -370,7 +411,7 @@
           continue;
         }
         try {
-          await this.syncProject(id, data);
+          await syncProjectNow(id, data);
           synced++;
         } catch (err) {
           console.warn('⚠️ Sync proyecto ' + id + ':', err);
@@ -844,6 +885,17 @@
           window.nutriplantSupabaseProjects.syncAllLocalProjectsToCloud();
         }
       }, 1500);
+    });
+    // Antes de cambiar de pestaña o minimizar: enviar debounce pendiente para no perder la última versión en nube
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden && window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.flushPendingProjectCloudSync) {
+        window.nutriplantSupabaseProjects.flushPendingProjectCloudSync();
+      }
+    });
+    window.addEventListener('pagehide', function() {
+      if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.flushPendingProjectCloudSync) {
+        window.nutriplantSupabaseProjects.flushPendingProjectCloudSync();
+      }
     });
   }
 })();
