@@ -760,12 +760,31 @@
         })();
 
         // 🟢 Datos del admin desde la nube (Supabase). Si hay sesión de admin en Supabase, cargamos usuarios y proyectos.
+        const ADMIN_CLOUD_CACHE_TTL_MS = 60 * 1000; // 1 min para evitar recargar tablas completas en cada clic
+        let _adminCloudLoadPromise = null;
+        let _adminCloudLastLoadAt = 0;
         function resetAdminCloudCache() {
             window._adminCloudCache = { users: null, projects: null, chats: null, reports: null, dashboardVisits: null, _cloudLoaded: false, _cloudLastSuccess: false };
+            _adminCloudLastLoadAt = 0;
         }
         resetAdminCloudCache();
-        window.nutriplantAdminLoadFromCloud = async function() {
+        window.nutriplantAdminLoadFromCloud = async function(options) {
+            const opts = options || {};
+            const force = !!opts.force;
             if (!window._adminCloudCache) resetAdminCloudCache();
+            // Dedupe de cargas simultáneas para no duplicar consultas cuando varias vistas llaman a la vez.
+            if (_adminCloudLoadPromise && !force) return _adminCloudLoadPromise;
+            const now = Date.now();
+            if (
+                !force &&
+                window._adminCloudCache &&
+                window._adminCloudCache._cloudLoaded === true &&
+                window._adminCloudCache._cloudLastSuccess === true &&
+                (now - _adminCloudLastLoadAt) < ADMIN_CLOUD_CACHE_TTL_MS
+            ) {
+                return true;
+            }
+            _adminCloudLoadPromise = (async function() {
             const client = typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null;
             if (!client) {
                 window._adminCloudCache._cloudLoaded = true;
@@ -950,12 +969,19 @@
                 window._adminCloudCache.chats = cloudChats;
                 window._adminCloudCache._cloudLoaded = true;
                 window._adminCloudCache._cloudLastSuccess = true;
+                _adminCloudLastLoadAt = Date.now();
                 return true;
             } catch (e) {
                 console.warn('nutriplantAdminLoadFromCloud:', e);
                 window._adminCloudCache._cloudLoaded = true;
                 window._adminCloudCache._cloudLastSuccess = false;
                 return false;
+            }
+            })();
+            try {
+                return await _adminCloudLoadPromise;
+            } finally {
+                _adminCloudLoadPromise = null;
             }
         };
 
@@ -1381,7 +1407,7 @@
                 return;
             }
             try {
-                var loaded = await window.nutriplantAdminLoadFromCloud();
+                var loaded = await window.nutriplantAdminLoadFromCloud({ force: true });
                 loadAdminStats();
                 if (closeDataViewer) closeDataViewer();
                 if (loaded) {
@@ -9940,7 +9966,7 @@
                         <!-- Proyectos del Usuario -->
                         <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">📁 Proyectos del Usuario (${userProjects.length})</h3>
-                            <button type="button" onclick="(async function(){ if (typeof window.nutriplantAdminLoadFromCloud === 'function') { await window.nutriplantAdminLoadFromCloud(); viewUserDetails('${escViewId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams || [])}); } })();" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔄 Refrescar desde nube</button>
+                            <button type="button" onclick="(async function(){ if (typeof window.nutriplantAdminLoadFromCloud === 'function') { await window.nutriplantAdminLoadFromCloud({ force: true }); viewUserDetails('${escViewId}', ${tempNavigationContext.previousViewName ? tempNavigationContext.previousViewName : 'null'}, ${JSON.stringify(tempNavigationContext.previousViewParams || [])}); } })();" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔄 Refrescar desde nube</button>
             `;
             
             if (userProjects.length === 0) {
