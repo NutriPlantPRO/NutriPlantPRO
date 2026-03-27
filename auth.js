@@ -1,5 +1,66 @@
 // Guard de sesión (simple para demo)
 const AUTH_KEY = "np_user";
+const LOGIN_GUARD_KEY = 'np_login_guard_v1';
+const LOGIN_THROTTLE_MS = 3000;
+const LOGIN_WINDOW_MS = 10 * 60 * 1000;
+const LOGIN_MAX_FAILS = 6;
+const LOGIN_LOCK_MS = 10 * 60 * 1000;
+
+function readLoginGuardState() {
+  try {
+    const raw = localStorage.getItem(LOGIN_GUARD_KEY);
+    if (!raw) return { fails: [], lockedUntil: 0, lastAttemptAt: 0 };
+    const parsed = JSON.parse(raw);
+    return {
+      fails: Array.isArray(parsed.fails) ? parsed.fails.filter(Number.isFinite) : [],
+      lockedUntil: Number.isFinite(parsed.lockedUntil) ? parsed.lockedUntil : 0,
+      lastAttemptAt: Number.isFinite(parsed.lastAttemptAt) ? parsed.lastAttemptAt : 0
+    };
+  } catch (e) {
+    return { fails: [], lockedUntil: 0, lastAttemptAt: 0 };
+  }
+}
+
+function writeLoginGuardState(state) {
+  try { localStorage.setItem(LOGIN_GUARD_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+function registerLoginFailure() {
+  const now = Date.now();
+  const state = readLoginGuardState();
+  const fails = (state.fails || []).filter((ts) => (now - ts) <= LOGIN_WINDOW_MS);
+  fails.push(now);
+  const next = {
+    fails,
+    lastAttemptAt: state.lastAttemptAt || 0,
+    lockedUntil: fails.length >= LOGIN_MAX_FAILS ? (now + LOGIN_LOCK_MS) : (state.lockedUntil || 0)
+  };
+  writeLoginGuardState(next);
+  return next;
+}
+
+function clearLoginFailures() {
+  writeLoginGuardState({ fails: [], lockedUntil: 0, lastAttemptAt: Date.now() });
+}
+
+function checkLoginGuardBeforeAttempt() {
+  const now = Date.now();
+  const state = readLoginGuardState();
+  const remLock = Math.max(0, (state.lockedUntil || 0) - now);
+  if (remLock > 0) {
+    return { blocked: true, reason: `Demasiados intentos fallidos. Espera ${Math.ceil(remLock / 1000)}s e intenta de nuevo.` };
+  }
+  const remThrottle = Math.max(0, LOGIN_THROTTLE_MS - (now - (state.lastAttemptAt || 0)));
+  if (remThrottle > 0) {
+    return { blocked: true, reason: `Espera ${Math.ceil(remThrottle / 1000)}s antes de intentar nuevamente.` };
+  }
+  writeLoginGuardState({
+    fails: (state.fails || []).filter((ts) => (now - ts) <= LOGIN_WINDOW_MS),
+    lockedUntil: state.lockedUntil || 0,
+    lastAttemptAt: now
+  });
+  return { blocked: false };
+}
 
 /** true = puede entrar al panel. Admin siempre; active siempre; cancelled por PayPal = hasta next_payment_date; cancelled por admin = no. */
 function hasSubscriptionAccess(profile) {
@@ -86,9 +147,16 @@ if (form) {
     e.preventDefault();
     
     const submitBtn = form.querySelector('.auth-button');
+    if (submitBtn && submitBtn.disabled) return;
     const originalText = submitBtn.innerHTML;
+    const loginGuard = checkLoginGuardBeforeAttempt();
+    if (loginGuard.blocked) {
+      showError('⏳ ' + loginGuard.reason);
+      return;
+    }
     
     // Mostrar estado de loading
+    submitBtn.disabled = true;
     submitBtn.classList.add('loading');
     submitBtn.innerHTML = `
       <span class="button-text">Iniciando sesión...</span>
@@ -180,11 +248,13 @@ if (form) {
           localStorage.removeItem('nutriplant-current-project');
           localStorage.removeItem('currentProjectId');
           const name = result.user?.name || email.split('@')[0];
+          clearLoginFailures();
           showSuccess("¡Bienvenido, " + name + "! Ingresando...");
           setTimeout(() => { location.href = "dashboard.html"; }, 1000);
           return;
         }
         if (result.error && result.error !== 'Supabase no configurado') {
+          registerLoginFailure();
           showError(result.error);
           resetButton(submitBtn, originalText);
           return;
@@ -240,6 +310,7 @@ if (form) {
     
     // 🔒 VALIDAR QUE EL USUARIO EXISTE
     if (!userFound) {
+      registerLoginFailure();
       showError("❌ El correo electrónico no está registrado. Por favor, crea una cuenta nueva.");
       resetButton(submitBtn, originalText);
       return;
@@ -247,6 +318,7 @@ if (form) {
     
     // 🔒 VALIDAR QUE LA CONTRASEÑA ES CORRECTA
     if (!userFound.password || userFound.password !== pass) {
+      registerLoginFailure();
       showError("❌ Contraseña incorrecta. Por favor, verifica tu contraseña.");
       resetButton(submitBtn, originalText);
       return;
@@ -306,6 +378,7 @@ if (form) {
     
     // Mostrar mensaje de éxito antes de redirigir
     const userName = userFound.name || email.split('@')[0];
+    clearLoginFailures();
     showSuccess("¡Bienvenido, " + userName + "! Ingresando...");
     
     // Redirigir después de un breve delay
@@ -419,6 +492,7 @@ function showSuccess(message) {
 
 // Función para resetear el botón
 function resetButton(button, originalHTML) {
+  if (button) button.disabled = false;
   button.classList.remove('loading');
   button.innerHTML = originalHTML;
 }

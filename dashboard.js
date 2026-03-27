@@ -3809,14 +3809,53 @@ function np_showHideSyncRefreshButton() {
   if (!btn) return;
   var userId = localStorage.getItem('nutriplant_user_id');
   var isSupabase = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
+  btn.style.display = isSupabase ? 'inline-flex' : 'none';
+  np_updateCloudRefreshButtonState();
+}
+
+const NP_CLOUD_REFRESH_COOLDOWN_MS = 10000;
+function np_getCloudRefreshCooldownRemainingMs() {
+  var lastAt = typeof window._npCloudRefreshLastAt === 'number' ? window._npCloudRefreshLastAt : 0;
+  var elapsed = Date.now() - lastAt;
+  return Math.max(0, NP_CLOUD_REFRESH_COOLDOWN_MS - elapsed);
+}
+function np_updateCloudRefreshButtonState() {
+  var btn = document.getElementById('np-sync-refresh-btn');
+  if (!btn) return;
   var state = window._npProjectSyncState || { kind: 'idle', text: '' };
-  btn.style.display = isSupabase && state.kind !== 'syncing' ? 'inline-flex' : 'none';
+  var inProgress = window._npCloudRefreshInProgress === true || state.kind === 'syncing';
+  var cooldownRemaining = np_getCloudRefreshCooldownRemainingMs();
+  var blocked = inProgress || cooldownRemaining > 0;
+  btn.disabled = blocked;
+  btn.style.opacity = blocked ? '0.65' : '1';
+  btn.style.cursor = blocked ? 'not-allowed' : 'pointer';
+  if (window._npCloudRefreshBtnTimer) {
+    clearTimeout(window._npCloudRefreshBtnTimer);
+    window._npCloudRefreshBtnTimer = null;
+  }
+  if (!inProgress && cooldownRemaining > 0) {
+    window._npCloudRefreshBtnTimer = setTimeout(function() {
+      window._npCloudRefreshBtnTimer = null;
+      np_updateCloudRefreshButtonState();
+    }, Math.min(1000, cooldownRemaining));
+  }
 }
 
 async function np_refreshFromCloud() {
   var userId = localStorage.getItem('nutriplant_user_id');
   var isSupabase = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
   if (!isSupabase) return;
+  if (window._npCloudRefreshInProgress === true) return;
+  var cooldownRemaining = np_getCloudRefreshCooldownRemainingMs();
+  if (cooldownRemaining > 0) {
+    if (typeof window.showMessage === 'function') {
+      window.showMessage('⏳ Espera ' + Math.ceil(cooldownRemaining / 1000) + 's antes de volver a actualizar desde la nube.', 'warning');
+    }
+    np_updateCloudRefreshButtonState();
+    return;
+  }
+  window._npCloudRefreshInProgress = true;
+  np_updateCloudRefreshButtonState();
   np_setProjectSyncStatus('syncing', 'Sincronizando...');
   try {
     await np_loadProjectsFromCloud();
@@ -3832,6 +3871,10 @@ async function np_refreshFromCloud() {
   } catch (e) {
     console.warn('np_refreshFromCloud:', e);
     np_setProjectSyncStatus('error', 'Error de conexión');
+  } finally {
+    window._npCloudRefreshInProgress = false;
+    window._npCloudRefreshLastAt = Date.now();
+    np_updateCloudRefreshButtonState();
   }
   setTimeout(function() {
     var s = window._npProjectSyncState;
@@ -3896,6 +3939,15 @@ function np_initSyncRefreshButton() {
   btn.dataset.npSyncInit = '1';
   btn.addEventListener('click', function() {
     if (window._npProjectSyncState && window._npProjectSyncState.kind === 'syncing') return;
+    if (window._npCloudRefreshInProgress === true) return;
+    var cooldownRemaining = np_getCloudRefreshCooldownRemainingMs();
+    if (cooldownRemaining > 0) {
+      if (typeof window.showMessage === 'function') {
+        window.showMessage('⏳ Espera ' + Math.ceil(cooldownRemaining / 1000) + 's antes de volver a actualizar.', 'warning');
+      }
+      np_updateCloudRefreshButtonState();
+      return;
+    }
     np_refreshFromCloud();
   });
   np_showHideSyncRefreshButton();
@@ -10468,6 +10520,20 @@ window.showMessage = function(message, type = 'success') {
 
 // Función global para guardar proyecto (disponible desde cualquier pestaña)
 window.saveProject = async function() {
+  const NP_MANUAL_SAVE_COOLDOWN_MS = 2500;
+  if (window._npManualSaveInProgress === true) {
+    if (typeof window.showMessage === 'function') window.showMessage('⏳ Ya hay un guardado en curso...', 'warning');
+    return;
+  }
+  var lastManualSaveAt = typeof window._npManualSaveLastAt === 'number' ? window._npManualSaveLastAt : 0;
+  var saveCooldownRemaining = Math.max(0, NP_MANUAL_SAVE_COOLDOWN_MS - (Date.now() - lastManualSaveAt));
+  if (saveCooldownRemaining > 0) {
+    if (typeof window.showMessage === 'function') {
+      window.showMessage('⏳ Espera ' + Math.ceil(saveCooldownRemaining / 1000) + 's antes de volver a guardar.', 'warning');
+    }
+    return;
+  }
+  window._npManualSaveInProgress = true;
   console.log('💾 Guardando proyecto manualmente...');
   
   try {
@@ -10579,6 +10645,9 @@ window.saveProject = async function() {
     } else {
       alert('❌ Error al guardar el proyecto. Por favor, intenta de nuevo.');
     }
+  } finally {
+    window._npManualSaveInProgress = false;
+    window._npManualSaveLastAt = Date.now();
   }
 };
 

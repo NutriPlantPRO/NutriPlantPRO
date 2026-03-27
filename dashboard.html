@@ -4972,6 +4972,12 @@ CONTRATO:
     // ——— Bloque de notas (máx. 2 hojas, guardado en segundo plano + nube) ———
     var NOTES_MAX_CHARS = 6000;
     var notesBlockSaveTimer = null;
+    var NOTES_CLOUD_SYNC_DEBOUNCE_MS = 5000;
+    var notesBlockCloudSyncTimer = null;
+    var notesBlockCloudSyncInFlight = false;
+    var notesBlockCloudPending = null; // { userId, html }
+    var notesBlockLastCloudSyncedByUser = Object.create(null);
+    var notesBlockCloudFlushHooksInitialized = false;
     function showNotesBlockModal() {
       var modal = document.getElementById('notesBlockModal');
       var editor = document.getElementById('notesBlockEditor');
@@ -4997,7 +5003,7 @@ CONTRATO:
           document.execCommand('fontSize', false, size <= '3' ? (size === '1' ? '1' : size === '2' ? '2' : '3') : (size === '4' ? '4' : '5'));
         };
       }
-      document.getElementById('notesBlockSaveBtn').onclick = function() { saveNotesBlockContent(); };
+      document.getElementById('notesBlockSaveBtn').onclick = function() { saveNotesBlockContent({ forceCloud: true }); };
       editor.oninput = function() {
         updateNotesBlockCharCount();
         scheduleNotesBlockSave();
@@ -5010,7 +5016,7 @@ CONTRATO:
       modal.onclick = function(e) { if (e.target === modal) closeNotesBlockModal(); };
     }
     function closeNotesBlockModal() {
-      saveNotesBlockContent();
+      saveNotesBlockContent({ forceCloud: true });
       var modal = document.getElementById('notesBlockModal');
       if (modal) modal.classList.remove('show');
     }
@@ -5031,7 +5037,61 @@ CONTRATO:
       if (notesBlockSaveTimer) clearTimeout(notesBlockSaveTimer);
       notesBlockSaveTimer = setTimeout(saveNotesBlockContent, 1200);
     }
-    function saveNotesBlockContent() {
+    function scheduleNotesBlockCloudSync(userId, html) {
+      if (!userId || typeof window.nutriplantSyncUserNotesToCloud !== 'function') return;
+      notesBlockCloudPending = { userId: userId, html: html };
+      if (notesBlockCloudSyncTimer) clearTimeout(notesBlockCloudSyncTimer);
+      notesBlockCloudSyncTimer = setTimeout(function() {
+        flushNotesBlockCloudSync();
+      }, NOTES_CLOUD_SYNC_DEBOUNCE_MS);
+    }
+    function flushNotesBlockCloudSync() {
+      if (notesBlockCloudSyncInFlight) return;
+      if (notesBlockCloudSyncTimer) {
+        clearTimeout(notesBlockCloudSyncTimer);
+        notesBlockCloudSyncTimer = null;
+      }
+      if (!notesBlockCloudPending) return;
+      var pending = notesBlockCloudPending;
+      if (!pending.userId) return;
+      var key = String(pending.userId);
+      if (notesBlockLastCloudSyncedByUser[key] === pending.html) {
+        notesBlockCloudPending = null;
+        return;
+      }
+      notesBlockCloudSyncInFlight = true;
+      var statusEl = document.getElementById('notesBlockCloudStatus');
+      if (statusEl) { statusEl.textContent = 'Sincronizando...'; statusEl.style.color = '#92400e'; }
+      var p = null;
+      try { p = window.nutriplantSyncUserNotesToCloud(pending.userId, pending.html); } catch (err) { console.warn('Notes sync cloud:', err); }
+      if (p && typeof p.then === 'function') {
+        p.then(function() {
+          notesBlockLastCloudSyncedByUser[key] = pending.html;
+          if (statusEl) { statusEl.textContent = 'Guardado en la nube'; statusEl.style.color = '#16a34a'; window.setTimeout(function() { statusEl.textContent = ''; }, 2500); }
+        }).catch(function() {
+          if (statusEl) { statusEl.textContent = 'Pendiente de nube'; statusEl.style.color = '#b45309'; }
+        }).finally(function() {
+          notesBlockCloudSyncInFlight = false;
+          if (notesBlockCloudPending && notesBlockCloudPending !== pending) {
+            flushNotesBlockCloudSync();
+          }
+        });
+      } else {
+        notesBlockCloudSyncInFlight = false;
+      }
+      notesBlockCloudPending = null;
+    }
+    function ensureNotesBlockCloudFlushHooks() {
+      if (notesBlockCloudFlushHooksInitialized) return;
+      notesBlockCloudFlushHooksInitialized = true;
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden) flushNotesBlockCloudSync();
+      });
+      window.addEventListener('pagehide', function() { flushNotesBlockCloudSync(); });
+      window.addEventListener('online', function() { flushNotesBlockCloudSync(); });
+    }
+    function saveNotesBlockContent(options) {
+      var opts = options || {};
       var editor = document.getElementById('notesBlockEditor');
       if (!editor) return;
       var html = editor.innerHTML;
@@ -5047,13 +5107,12 @@ CONTRATO:
         localStorage.setItem(key, html);
       } catch (e) {}
       if (typeof window.nutriplantSyncUserNotesToCloud === 'function' && userId) {
-        var statusEl = document.getElementById('notesBlockCloudStatus');
-        var p = null;
-        try { p = window.nutriplantSyncUserNotesToCloud(userId, html); } catch (err) { console.warn('Notes sync cloud:', err); }
-        if (p && typeof p.then === 'function') {
-          p.then(function() {
-            if (statusEl) { statusEl.textContent = 'Guardado en la nube'; statusEl.style.color = '#16a34a'; window.setTimeout(function() { statusEl.textContent = ''; }, 2500); }
-          }).catch(function() {});
+        ensureNotesBlockCloudFlushHooks();
+        if (opts.forceCloud === true) {
+          notesBlockCloudPending = { userId: userId, html: html };
+          flushNotesBlockCloudSync();
+        } else {
+          scheduleNotesBlockCloudSync(userId, html);
         }
       }
     }

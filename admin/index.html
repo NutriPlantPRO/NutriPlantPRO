@@ -680,7 +680,7 @@
                 <div id="dashboardSuccessMessage" class="success-message" style="display: none;"></div>
             </div>
             <div style="text-align: center; margin-top: 40px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
-                <button class="btn-admin" onclick="refrescarDesdeNube()" style="background: #10b981;">☁️ Refrescar desde Supabase</button>
+                <button id="admin-refresh-cloud-btn" class="btn-admin" onclick="refrescarDesdeNube()" style="background: #10b981;">☁️ Refrescar desde Supabase</button>
                 <button class="btn-admin secondary" onclick="logout()">Cerrar Sesión</button>
             </div>
 
@@ -761,11 +761,53 @@
 
         // 🟢 Datos del admin desde la nube (Supabase). Si hay sesión de admin en Supabase, cargamos usuarios y proyectos.
         const ADMIN_CLOUD_CACHE_TTL_MS = 60 * 1000; // 1 min para evitar recargar tablas completas en cada clic
+        const ADMIN_REFRESH_COOLDOWN_MS = 12000;
         let _adminCloudLoadPromise = null;
         let _adminCloudLastLoadAt = 0;
+        let _adminCloudReportsLoadPromise = null;
+        let _adminCloudDashboardVisitsLoadPromise = null;
+        let _adminCloudReportsLastLoadAt = 0;
+        let _adminCloudDashboardVisitsLastLoadAt = 0;
+        let _adminRefreshInProgress = false;
+        let _adminRefreshLastAt = 0;
+        let _adminRefreshBtnTimer = null;
+        function getAdminRefreshCooldownRemainingMs() {
+            return Math.max(0, ADMIN_REFRESH_COOLDOWN_MS - (Date.now() - _adminRefreshLastAt));
+        }
+        function updateAdminRefreshButtonState() {
+            var btn = document.getElementById('admin-refresh-cloud-btn');
+            if (!btn) return;
+            var rem = getAdminRefreshCooldownRemainingMs();
+            var blocked = _adminRefreshInProgress || rem > 0;
+            btn.disabled = blocked;
+            btn.style.opacity = blocked ? '0.7' : '1';
+            btn.style.cursor = blocked ? 'not-allowed' : 'pointer';
+            if (_adminRefreshBtnTimer) {
+                clearTimeout(_adminRefreshBtnTimer);
+                _adminRefreshBtnTimer = null;
+            }
+            if (!_adminRefreshInProgress && rem > 0) {
+                _adminRefreshBtnTimer = setTimeout(function() {
+                    _adminRefreshBtnTimer = null;
+                    updateAdminRefreshButtonState();
+                }, Math.min(1000, rem));
+            }
+        }
         function resetAdminCloudCache() {
-            window._adminCloudCache = { users: null, projects: null, chats: null, reports: null, dashboardVisits: null, _cloudLoaded: false, _cloudLastSuccess: false };
+            window._adminCloudCache = {
+                users: null,
+                projects: null,
+                chats: null,
+                reports: null,
+                dashboardVisits: null,
+                _cloudLoaded: false,
+                _cloudLastSuccess: false,
+                _reportsLoaded: false,
+                _dashboardVisitsLoaded: false
+            };
             _adminCloudLastLoadAt = 0;
+            _adminCloudReportsLastLoadAt = 0;
+            _adminCloudDashboardVisitsLastLoadAt = 0;
         }
         resetAdminCloudCache();
         window.nutriplantAdminLoadFromCloud = async function(options) {
@@ -773,7 +815,7 @@
             const force = !!opts.force;
             if (!window._adminCloudCache) resetAdminCloudCache();
             // Dedupe de cargas simultáneas para no duplicar consultas cuando varias vistas llaman a la vez.
-            if (_adminCloudLoadPromise && !force) return _adminCloudLoadPromise;
+            if (_adminCloudLoadPromise) return _adminCloudLoadPromise;
             const now = Date.now();
             if (
                 !force &&
@@ -798,7 +840,9 @@
                 return false;
             }
             try {
-                const { data: profiles, error: profilesErr } = await client.from('profiles').select('*');
+                const { data: profiles, error: profilesErr } = await client
+                    .from('profiles')
+                    .select('id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project');
                 if (profilesErr) {
                     console.warn('nutriplantAdminLoadFromCloud profiles:', profilesErr);
                     window._adminCloudCache._cloudLoaded = true;
@@ -904,21 +948,10 @@
                     created_at: p.created_at,
                     updated_at: p.updated_at
                 }));
-                // Reportes PDF desde la nube (tabla reports) para que el admin los vea
-                try {
-                    const { data: reportsRows } = await client.from('reports').select('id, user_id, project_id, data, created_at').order('created_at', { ascending: false });
-                    window._adminCloudCache.reports = Array.isArray(reportsRows) ? reportsRows : [];
-                } catch (e) {
-                    console.warn('nutriplantAdminLoadFromCloud reports:', e);
-                    window._adminCloudCache.reports = [];
-                }
-                // Entradas al panel (métrica por usuario/mes)
-                try {
-                    const { data: visitsRows } = await client.from('dashboard_visits').select('id, user_id, visited_at, lat, lng').order('visited_at', { ascending: false });
-                    window._adminCloudCache.dashboardVisits = Array.isArray(visitsRows) ? visitsRows : [];
-                } catch (e) {
-                    console.warn('nutriplantAdminLoadFromCloud dashboard_visits:', e);
-                    window._adminCloudCache.dashboardVisits = [];
+                // Reports y dashboard_visits se cargan bajo demanda (lazy) para evitar consultas pesadas en cada vista.
+                if (force) {
+                    window._adminCloudCache._reportsLoaded = false;
+                    window._adminCloudCache._dashboardVisitsLoaded = false;
                 }
                 // Construir lista de chats desde nube (proyectos + perfiles) para "Todas las Conversaciones"
                 var cloudChats = [];
@@ -984,6 +1017,90 @@
                 _adminCloudLoadPromise = null;
             }
         };
+
+        async function ensureAdminReportsLoaded(options) {
+            const opts = options || {};
+            const force = !!opts.force;
+            if (!window._adminCloudCache) resetAdminCloudCache();
+            if (_adminCloudReportsLoadPromise) return _adminCloudReportsLoadPromise;
+            if (
+                !force &&
+                window._adminCloudCache._reportsLoaded === true &&
+                (Date.now() - _adminCloudReportsLastLoadAt) < ADMIN_CLOUD_CACHE_TTL_MS
+            ) {
+                return true;
+            }
+            _adminCloudReportsLoadPromise = (async function() {
+                var loaded = await window.nutriplantAdminLoadFromCloud({ force: false });
+                if (!loaded) return false;
+                const client = typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null;
+                if (!client) return false;
+                try {
+                    const { data: reportsRows, error } = await client
+                        .from('reports')
+                        .select('id, user_id, project_id, data, created_at')
+                        .order('created_at', { ascending: false });
+                    if (error) throw error;
+                    window._adminCloudCache.reports = Array.isArray(reportsRows) ? reportsRows : [];
+                    window._adminCloudCache._reportsLoaded = true;
+                    _adminCloudReportsLastLoadAt = Date.now();
+                    return true;
+                } catch (e) {
+                    console.warn('ensureAdminReportsLoaded:', e);
+                    window._adminCloudCache.reports = [];
+                    window._adminCloudCache._reportsLoaded = true;
+                    _adminCloudReportsLastLoadAt = Date.now();
+                    return false;
+                }
+            })();
+            try {
+                return await _adminCloudReportsLoadPromise;
+            } finally {
+                _adminCloudReportsLoadPromise = null;
+            }
+        }
+
+        async function ensureAdminDashboardVisitsLoaded(options) {
+            const opts = options || {};
+            const force = !!opts.force;
+            if (!window._adminCloudCache) resetAdminCloudCache();
+            if (_adminCloudDashboardVisitsLoadPromise) return _adminCloudDashboardVisitsLoadPromise;
+            if (
+                !force &&
+                window._adminCloudCache._dashboardVisitsLoaded === true &&
+                (Date.now() - _adminCloudDashboardVisitsLastLoadAt) < ADMIN_CLOUD_CACHE_TTL_MS
+            ) {
+                return true;
+            }
+            _adminCloudDashboardVisitsLoadPromise = (async function() {
+                var loaded = await window.nutriplantAdminLoadFromCloud({ force: false });
+                if (!loaded) return false;
+                const client = typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null;
+                if (!client) return false;
+                try {
+                    const { data: visitsRows, error } = await client
+                        .from('dashboard_visits')
+                        .select('id, user_id, visited_at, lat, lng')
+                        .order('visited_at', { ascending: false });
+                    if (error) throw error;
+                    window._adminCloudCache.dashboardVisits = Array.isArray(visitsRows) ? visitsRows : [];
+                    window._adminCloudCache._dashboardVisitsLoaded = true;
+                    _adminCloudDashboardVisitsLastLoadAt = Date.now();
+                    return true;
+                } catch (e) {
+                    console.warn('ensureAdminDashboardVisitsLoaded:', e);
+                    window._adminCloudCache.dashboardVisits = [];
+                    window._adminCloudCache._dashboardVisitsLoaded = true;
+                    _adminCloudDashboardVisitsLastLoadAt = Date.now();
+                    return false;
+                }
+            })();
+            try {
+                return await _adminCloudDashboardVisitsLoadPromise;
+            } finally {
+                _adminCloudDashboardVisitsLoadPromise = null;
+            }
+        }
 
         // 🔐 SISTEMA DE AUTENTICACIÓN DE ADMINISTRADOR - MEJORADO Y SEGURO
         const ADMIN_EMAIL = 'admin@nutriplantpro.com';
@@ -1392,10 +1509,19 @@
             
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'block';
+            updateAdminRefreshButtonState();
             if (typeof window.initAdminChat === 'function') window.initAdminChat();
             // 🟢 Si la nube está activa, cargar datos de ahí primero; luego pintar estadísticas
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
-                window.nutriplantAdminLoadFromCloud().then(function() { loadAdminStats(); }).catch(function() { loadAdminStats(); });
+                window.nutriplantAdminLoadFromCloud()
+                    .then(async function() {
+                        loadAdminStats();
+                        try {
+                            await ensureAdminDashboardVisitsLoaded({ force: false });
+                            loadAdminStats(); // refrescar activos cuando entren visitas de dashboard
+                        } catch (e) {}
+                    })
+                    .catch(function() { loadAdminStats(); });
             } else {
                 loadAdminStats();
             }
@@ -1406,8 +1532,24 @@
                 alert('Supabase no está configurado.');
                 return;
             }
+            if (_adminRefreshInProgress) return;
+            var cooldownRemaining = getAdminRefreshCooldownRemainingMs();
+            if (cooldownRemaining > 0) {
+                showErrorMessage('⏳ Espera ' + Math.ceil(cooldownRemaining / 1000) + 's antes de volver a refrescar desde la nube.');
+                updateAdminRefreshButtonState();
+                return;
+            }
+            _adminRefreshInProgress = true;
+            updateAdminRefreshButtonState();
             try {
                 var loaded = await window.nutriplantAdminLoadFromCloud({ force: true });
+                if (loaded) {
+                    // Refresco explícito del admin: traer también datasets lazies para vista actualizada completa.
+                    await Promise.all([
+                        ensureAdminReportsLoaded({ force: true }),
+                        ensureAdminDashboardVisitsLoaded({ force: true })
+                    ]);
+                }
                 loadAdminStats();
                 if (closeDataViewer) closeDataViewer();
                 if (loaded) {
@@ -1418,6 +1560,10 @@
             } catch (e) {
                 console.warn('Refrescar nube:', e);
                 showErrorMessage('No se pudo conectar a Supabase. Asegúrate de haber iniciado sesión con admin@nutriplantpro.com.');
+            } finally {
+                _adminRefreshInProgress = false;
+                _adminRefreshLastAt = Date.now();
+                updateAdminRefreshButtonState();
             }
         }
         
@@ -1665,19 +1811,62 @@
             }
             var adminChatHistory = [];
             var adminSupabaseId = null;
+            var ADMIN_CHAT_MAX_MESSAGES = 300;
+            var ADMIN_CHAT_CLOUD_SAVE_DEBOUNCE_MS = 5000;
+            var ADMIN_CHAT_SEND_COOLDOWN_MS = 1500;
+            var adminChatCloudSaveTimer = null;
+            var adminChatCloudPendingThread = null;
+            var adminChatRequestInFlight = false;
+            var adminChatLastSendAt = 0;
 
-            function saveAdminChatHistory() {
-                try { localStorage.setItem(NUTRIPLANT_ADMIN_CHAT_STORAGE_KEY, JSON.stringify(adminChatHistory)); } catch (e) {}
-                if (adminSupabaseId && typeof window.getSupabaseClient === 'function') {
-                    var client = window.getSupabaseClient();
-                    if (client) {
-                        client.from('admin_chat_threads').upsert({
-                            admin_id: adminSupabaseId,
-                            thread: adminChatHistory,
-                            updated_at: new Date().toISOString()
-                        }, { onConflict: 'admin_id' }).then(function() {}).catch(function(err) { console.warn('Admin chat save to cloud:', err && err.message); });
-                    }
+            function trimAdminChatHistory() {
+                if (!Array.isArray(adminChatHistory)) {
+                    adminChatHistory = [];
+                    return;
                 }
+                if (adminChatHistory.length > ADMIN_CHAT_MAX_MESSAGES) {
+                    adminChatHistory = adminChatHistory.slice(-ADMIN_CHAT_MAX_MESSAGES);
+                }
+            }
+
+            function scheduleAdminChatCloudSave() {
+                if (!adminSupabaseId || typeof window.getSupabaseClient !== 'function') return;
+                trimAdminChatHistory();
+                adminChatCloudPendingThread = Array.isArray(adminChatHistory) ? adminChatHistory.slice() : [];
+                if (adminChatCloudSaveTimer) clearTimeout(adminChatCloudSaveTimer);
+                adminChatCloudSaveTimer = setTimeout(function() {
+                    adminChatCloudSaveTimer = null;
+                    flushAdminChatCloudSave();
+                }, ADMIN_CHAT_CLOUD_SAVE_DEBOUNCE_MS);
+            }
+
+            function flushAdminChatCloudSave() {
+                if (adminChatCloudSaveTimer) {
+                    clearTimeout(adminChatCloudSaveTimer);
+                    adminChatCloudSaveTimer = null;
+                }
+                if (!adminSupabaseId || typeof window.getSupabaseClient !== 'function') return;
+                var client = window.getSupabaseClient();
+                if (!client) return;
+                trimAdminChatHistory();
+                var threadToSave = adminChatCloudPendingThread || (Array.isArray(adminChatHistory) ? adminChatHistory.slice() : []);
+                if (Array.isArray(threadToSave) && threadToSave.length > ADMIN_CHAT_MAX_MESSAGES) {
+                    threadToSave = threadToSave.slice(-ADMIN_CHAT_MAX_MESSAGES);
+                }
+                adminChatCloudPendingThread = null;
+                client.from('admin_chat_threads').upsert({
+                    admin_id: adminSupabaseId,
+                    thread: threadToSave,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'admin_id' }).then(function() {}).catch(function(err) { console.warn('Admin chat save to cloud:', err && err.message); });
+            }
+
+            function saveAdminChatHistory(options) {
+                trimAdminChatHistory();
+                try { localStorage.setItem(NUTRIPLANT_ADMIN_CHAT_STORAGE_KEY, JSON.stringify(adminChatHistory)); } catch (e) {}
+                var force = !!(options && options.force);
+                if (force) flushAdminChatCloudSave();
+                else scheduleAdminChatCloudSave();
             }
             (async function loadAdminChatFromCloud() {
                 if (typeof window.getSupabaseClient !== 'function') return;
@@ -1691,6 +1880,7 @@
                     var row = await client.from('admin_chat_threads').select('thread').eq('admin_id', adminSupabaseId).maybeSingle();
                     if (row && row.data && Array.isArray(row.data.thread) && row.data.thread.length > 0) {
                         adminChatHistory = row.data.thread;
+                        trimAdminChatHistory();
                         try { localStorage.setItem(NUTRIPLANT_ADMIN_CHAT_STORAGE_KEY, JSON.stringify(adminChatHistory)); } catch (e) {}
                         renderAdminChat();
                         return;
@@ -1700,8 +1890,23 @@
                     var raw = localStorage.getItem(NUTRIPLANT_ADMIN_CHAT_STORAGE_KEY);
                     if (raw && raw.startsWith('[')) adminChatHistory = JSON.parse(raw);
                 } catch (e) {}
+                trimAdminChatHistory();
                 renderAdminChat();
             })();
+            window._flushAdminChatCloudSave = flushAdminChatCloudSave;
+            if (!window._adminChatFlushHooksInitialized) {
+                window._adminChatFlushHooksInitialized = true;
+                document.addEventListener('visibilitychange', function() {
+                    if (document.hidden && typeof window._flushAdminChatCloudSave === 'function') {
+                        window._flushAdminChatCloudSave();
+                    }
+                });
+                window.addEventListener('pagehide', function() {
+                    if (typeof window._flushAdminChatCloudSave === 'function') {
+                        window._flushAdminChatCloudSave();
+                    }
+                });
+            }
             function renderAdminChat() {
                 messagesEl.innerHTML = '';
                 adminChatHistory.forEach(function(m) {
@@ -1823,12 +2028,21 @@
                     'No ejecutas ninguna acción (no borras, no modificas); solo conversas y asesoras. Responde siempre en español. Datos actuales del panel:\n\n' + dataBlock;
             }
             function sendAdminChat() {
+                if (adminChatRequestInFlight) return;
                 var text = (input.value || '').trim();
                 var hasImage = adminPendingImage != null;
                 if (!text && !hasImage) return;
+                var cooldownRemaining = Math.max(0, ADMIN_CHAT_SEND_COOLDOWN_MS - (Date.now() - adminChatLastSendAt));
+                if (cooldownRemaining > 0) {
+                    showErrorMessage('⏳ Espera ' + Math.ceil(cooldownRemaining / 1000) + 's antes de enviar otro mensaje al chat admin.');
+                    return;
+                }
+                adminChatRequestInFlight = true;
+                adminChatLastSendAt = Date.now();
                 input.value = '';
                 var displayContent = text || '[Imagen]';
                 adminChatHistory.push({ role: 'user', content: displayContent });
+                trimAdminChatHistory();
                 saveAdminChatHistory();
                 renderAdminChat();
                 sendBtn.disabled = true;
@@ -1868,8 +2082,10 @@
                     var ind = document.getElementById('adminChatTypingIndicator');
                     if (ind) ind.remove();
                     sendBtn.disabled = false;
+                    adminChatRequestInFlight = false;
                     var reply = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) ? data.choices[0].message.content : (data.error || 'Error al obtener respuesta.');
                     adminChatHistory.push({ role: 'assistant', content: reply });
+                    trimAdminChatHistory();
                     recordAdminChatUsageLocal(!!(imageToSend && imageToSend.base64));
                     // Actualizar TU USO: preferir Supabase (cuenta en todos los equipos)
                     function applyLocalAdminUsage() {
@@ -1901,7 +2117,9 @@
                     var ind = document.getElementById('adminChatTypingIndicator');
                     if (ind) ind.remove();
                     sendBtn.disabled = false;
+                    adminChatRequestInFlight = false;
                     adminChatHistory.push({ role: 'assistant', content: 'Error de conexión. Comprueba que el servidor esté disponible (python server.py) o que la API esté configurada.' });
+                    trimAdminChatHistory();
                     saveAdminChatHistory();
                     renderAdminChat();
                 });
@@ -2706,6 +2924,7 @@
             if (!window._adminCloudCache || !window._adminCloudCache.users) {
                 try { await window.nutriplantAdminLoadFromCloud(); } catch (e) { console.warn('showDashboardVisits: load cloud', e); }
             }
+            try { await ensureAdminDashboardVisitsLoaded({ force: false }); } catch (e) { console.warn('showDashboardVisits: load visits', e); }
             var visits = (window._adminCloudCache && Array.isArray(window._adminCloudCache.dashboardVisits)) ? window._adminCloudCache.dashboardVisits : [];
             var users = getAllUsers();
             var byId = {};
@@ -7622,6 +7841,7 @@
         }
 
         async function viewProjectDetails(projectId, fromView = null, fromViewParams = null) {
+            try { await ensureAdminReportsLoaded({ force: false }); } catch (e) { console.warn('viewProjectDetails: load reports', e); }
             // Guardar vista anterior si se proporciona
             if (fromView) {
                 setPreviousView(typeof fromView === 'function' ? fromView : window[fromView], fromViewParams || []);
@@ -9536,7 +9756,8 @@
         }
         window.viewProjectDetails = viewProjectDetails;
 
-        window.openProjectSavedReport = function(encodedUserId, encodedProjectId, encodedReportId) {
+        window.openProjectSavedReport = async function(encodedUserId, encodedProjectId, encodedReportId) {
+            try { await ensureAdminReportsLoaded({ force: false }); } catch (e) { console.warn('openProjectSavedReport: load reports', e); }
             const userId = decodeURIComponent(String(encodedUserId || ''));
             const projectId = decodeURIComponent(String(encodedProjectId || ''));
             const reportId = decodeURIComponent(String(encodedReportId || ''));
@@ -10807,7 +11028,8 @@
             badge.textContent = modeLabel + ' | ' + periodLabel + ' | Visitas: ' + (visitsList || []).length + ' | Usuarios: ' + users.size;
         }
 
-        function showConnectionsMap() {
+        async function showConnectionsMap() {
+            try { await ensureAdminDashboardVisitsLoaded({ force: false }); } catch (e) { console.warn('showConnectionsMap: load visits', e); }
             var visits = (window._adminCloudCache && Array.isArray(window._adminCloudCache.dashboardVisits)) ? window._adminCloudCache.dashboardVisits : [];
             var users = getAllUsers();
             var byId = {};

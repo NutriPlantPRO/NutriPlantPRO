@@ -154,6 +154,9 @@
   var CLOUD_SYNC_DEBOUNCE_MS = 4500;
   var cloudSyncTimers = Object.create(null);
   var cloudSyncPending = Object.create(null);
+  var USER_CHAT_SYNC_DEBOUNCE_MS = 6000;
+  var userChatSyncTimers = Object.create(null);
+  var userChatSyncPending = Object.create(null);
 
   async function syncProjectNow(projectId, projectData) {
     if (!isSupabaseUser()) return;
@@ -214,6 +217,46 @@
     }
   }
 
+  async function syncUserChatNoProjectNow(userId, messages) {
+    if (!userId || !UUID_REGEX.test(String(userId))) return;
+    const client = getClient();
+    if (!client) return;
+    try {
+      const { error } = await client.from('profiles').update({
+        chat_history_no_project: Array.isArray(messages) ? messages : [],
+        updated_at: new Date().toISOString()
+      }).eq('id', userId);
+      if (error) console.warn('⚠️ Supabase sync chat sin proyecto:', error.message);
+      else console.log('☁️ Chat sin proyecto sincronizado a la nube');
+    } catch (e) { console.warn('⚠️ syncUserChatNoProject:', e); }
+  }
+
+  function scheduleUserChatNoProjectSync(userId, messages) {
+    if (!userId || !UUID_REGEX.test(String(userId))) return;
+    userChatSyncPending[userId] = Array.isArray(messages) ? messages : [];
+    if (userChatSyncTimers[userId]) clearTimeout(userChatSyncTimers[userId]);
+    userChatSyncTimers[userId] = setTimeout(function() {
+      delete userChatSyncTimers[userId];
+      var latest = userChatSyncPending[userId];
+      delete userChatSyncPending[userId];
+      syncUserChatNoProjectNow(userId, latest);
+    }, USER_CHAT_SYNC_DEBOUNCE_MS);
+  }
+
+  function flushPendingUserChatNoProjectSync() {
+    var ids = Object.keys(userChatSyncPending);
+    for (var i = 0; i < ids.length; i++) {
+      var uid = ids[i];
+      if (userChatSyncTimers[uid]) {
+        clearTimeout(userChatSyncTimers[uid]);
+        delete userChatSyncTimers[uid];
+      }
+      var latest = userChatSyncPending[uid];
+      delete userChatSyncPending[uid];
+      syncUserChatNoProjectNow(uid, latest);
+    }
+  }
+
   window.nutriplantSupabaseProjects = {
     isSupabaseUser: isSupabaseUser,
 
@@ -227,6 +270,7 @@
 
     /** Fuerza envío de cambios pendientes (p. ej. al ocultar la pestaña). */
     flushPendingProjectCloudSync: flushPendingProjectCloudSync,
+    flushPendingUserChatNoProjectSync: flushPendingUserChatNoProjectSync,
 
     /** Obtener lista de proyectos desde Supabase */
     fetchProjects: async function(options) {
@@ -440,18 +484,9 @@
     },
 
     /** Sincronizar chat sin proyecto del usuario a Supabase (profiles.chat_history_no_project) */
-    syncUserChatNoProject: async function(userId, messages) {
-      if (!userId || !UUID_REGEX.test(String(userId))) return;
-      const client = getClient();
-      if (!client) return;
-      try {
-        const { error } = await client.from('profiles').update({
-          chat_history_no_project: Array.isArray(messages) ? messages : [],
-          updated_at: new Date().toISOString()
-        }).eq('id', userId);
-        if (error) console.warn('⚠️ Supabase sync chat sin proyecto:', error.message);
-        else console.log('☁️ Chat sin proyecto sincronizado a la nube');
-      } catch (e) { console.warn('⚠️ syncUserChatNoProject:', e); }
+    syncUserChatNoProjectNow: syncUserChatNoProjectNow,
+    syncUserChatNoProject: function(userId, messages) {
+      scheduleUserChatNoProjectSync(userId, messages);
     },
 
     /** Obtener enmiendas personalizadas del usuario desde Supabase (profiles.custom_amendments) */
@@ -884,17 +919,30 @@
         if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.syncAllLocalProjectsToCloud) {
           window.nutriplantSupabaseProjects.syncAllLocalProjectsToCloud();
         }
+        if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.flushPendingUserChatNoProjectSync) {
+          window.nutriplantSupabaseProjects.flushPendingUserChatNoProjectSync();
+        }
       }, 1500);
     });
     // Antes de cambiar de pestaña o minimizar: enviar debounce pendiente para no perder la última versión en nube
     document.addEventListener('visibilitychange', function() {
-      if (document.hidden && window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.flushPendingProjectCloudSync) {
-        window.nutriplantSupabaseProjects.flushPendingProjectCloudSync();
+      if (document.hidden && window.nutriplantSupabaseProjects) {
+        if (window.nutriplantSupabaseProjects.flushPendingProjectCloudSync) {
+          window.nutriplantSupabaseProjects.flushPendingProjectCloudSync();
+        }
+        if (window.nutriplantSupabaseProjects.flushPendingUserChatNoProjectSync) {
+          window.nutriplantSupabaseProjects.flushPendingUserChatNoProjectSync();
+        }
       }
     });
     window.addEventListener('pagehide', function() {
-      if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.flushPendingProjectCloudSync) {
-        window.nutriplantSupabaseProjects.flushPendingProjectCloudSync();
+      if (window.nutriplantSupabaseProjects) {
+        if (window.nutriplantSupabaseProjects.flushPendingProjectCloudSync) {
+          window.nutriplantSupabaseProjects.flushPendingProjectCloudSync();
+        }
+        if (window.nutriplantSupabaseProjects.flushPendingUserChatNoProjectSync) {
+          window.nutriplantSupabaseProjects.flushPendingUserChatNoProjectSync();
+        }
       }
     });
   }
