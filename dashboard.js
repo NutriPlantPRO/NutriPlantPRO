@@ -13628,15 +13628,10 @@ function createVPDReportSectionHTML() {
       <h2 class="section-title">🌡️ Déficit de Presión de Vapor (VPD)</h2>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
         <div class="report-block-title">📊 Calculadora Ambiental</div>
-        ${envUsesSolar ? `
-        <div class="report-note" style="margin-bottom:8px;color:#065f46;background:#ecfdf5;border:1px dashed #6ee7b7;border-radius:8px;padding:8px 10px;">
-          VPD ambiental calculado con radiación solar de Open-Meteo (W/m²) + temperatura de hoja estimada.
-        </div>` : ''}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
           <div><strong>Temperatura:</strong> ${reportNum(env.temperature, 2)} °C</div>
           <div><strong>Humedad Relativa:</strong> ${reportNum(env.humidity, 2)} %</div>
           ${envUsesSolar ? `<div><strong>Radiación:</strong> ${envSolar != null ? reportNum(envSolar, 0) + ' W/m²' : '—'}</div>` : ''}
-          ${envUsesSolar ? `<div><strong>T. Hoja est.:</strong> ${envLeaf != null ? reportNum(envLeaf, 1) + ' °C' : '—'}</div>` : ''}
           <div><strong>VPD:</strong> <span class="badge-ok">${reportNum(envVpd, 2)} kPa</span></div>
           <div><strong>HD:</strong> ${reportNum(env.hd, 2)} g/m³</div>
           ${env.calculatedAt ? `<div><strong>Calculado:</strong> ${reportEscapeHtml(new Date(env.calculatedAt).toLocaleString('es-MX'))}</div>` : ''}
@@ -13677,11 +13672,6 @@ function createVPDReportSectionHTML() {
           <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa ·
           ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.granularity) || 'diario'))}
           (${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.startDate) || '—'))} a ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.endDate) || '—'))})
-        </div>
-        <div class="report-note" style="margin-bottom:8px;${(currentRangeTable.meta && currentRangeTable.meta.vpdMode) === 'mixed_solar' ? 'color:#065f46;background:#ecfdf5;border:1px dashed #6ee7b7;padding:8px 10px;border-radius:8px;' : 'color:#1e3a8a;background:#eff6ff;border:1px dashed #93c5fd;padding:8px 10px;border-radius:8px;'}">
-          ${(currentRangeTable.meta && currentRangeTable.meta.vpdMode) === 'mixed_solar'
-            ? `Modo VPD: <strong>Radiación + fallback simple</strong> · Cobertura solar: <strong>${reportEscapeHtml(String(currentRangeTable.meta && currentRangeTable.meta.solarCoveragePct != null ? currentRangeTable.meta.solarCoveragePct : 0))}%</strong> · Horas con radiación: ${reportEscapeHtml(String(currentRangeTable.meta && currentRangeTable.meta.solarHours != null ? currentRangeTable.meta.solarHours : 0))}`
-            : `Modo VPD: <strong>Simple</strong> (temperatura + humedad)`}
         </div>
         <table class="report-admin-table report-vpd-wide-table">
           <thead>
@@ -16557,7 +16547,6 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
   opts = opts || {};
   var useSolar = opts.useSolar === true;
   var rad = opts.shortwaveRadiationWm2;
-  var leafT = opts.leafTemperature;
   var vpd = typeof results.vpd === 'number' ? results.vpd : parseFloat(results.vpd);
   var hd = typeof results.hd === 'number' ? results.hd : parseFloat(results.hd);
   if (!Number.isFinite(vpd)) vpd = 0;
@@ -16567,9 +16556,6 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
     legendHtml =
       '<div style="margin:0 0 14px 0;padding:10px 12px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;font-size:13px;color:#065f46;line-height:1.45;">' +
       '<strong>VPD con radiación solar:</strong> Open-Meteo entrega radiación solar global de onda corta (W/m²) en tiempo casi real. NutriPlant estima la temperatura de hoja a partir de esa radiación y calcula el VPD con el modelo avanzado (presión de saturación a T<sub>hoja</sub> frente al vapor del aire).' +
-      (leafT != null && Number.isFinite(leafT)
-        ? ' <span style="color:#047857;">T<sub>hoja</sub> estimada: ' + leafT.toFixed(1) + ' °C.</span>'
-        : '') +
       '</div>';
   }
   var gridCols = useSolar ? 'repeat(3, minmax(0, 1fr))' : '1fr 1fr';
@@ -17652,17 +17638,6 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
         <strong style="color:#9a3412;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate} a ${meta.endDate}</strong>
         <span style="font-size:12px;color:#7c2d12;">Periodos: ${summaryRows.length} · Eventos críticos: ${crit.length}</span>
       </div>
-      ${meta.vpdMode === 'mixed_solar' ? `
-        <div style="margin-bottom:8px;font-size:12px;color:#065f46;background:#ecfdf5;border:1px dashed #6ee7b7;border-radius:6px;padding:6px 8px;">
-          <strong>VPD con radiación solar:</strong> ${meta.solarHours || 0}/${meta.sampleHours || 0} horas (${meta.solarCoveragePct || 0}%) usaron radiación global (W/m²) de Open-Meteo.
-          ${meta.avgSolarWm2 != null ? ` Promedio radiación: <strong>${meta.avgSolarWm2} W/m²</strong>.` : ''}
-          ${meta.simpleHours > 0 ? ` Fallback automático en ${meta.simpleHours} horas (solo temperatura + humedad).` : ''}
-        </div>
-      ` : `
-        <div style="margin-bottom:8px;font-size:12px;color:#1e3a8a;background:#eff6ff;border:1px dashed #93c5fd;border-radius:6px;padding:6px 8px;">
-          <strong>VPD simple:</strong> cálculo con temperatura del aire + humedad relativa (sin radiación disponible).
-        </div>
-      `}
       <div style="margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
         <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
       </div>
@@ -17718,16 +17693,6 @@ function renderSavedVPDRangeTableHtml(tbl) {
       <summary style="cursor:pointer;font-weight:600;color:#9a3412;">
         ${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalRows.length}
       </summary>
-      ${meta.vpdMode === 'mixed_solar' ? `
-        <div style="margin-top:8px;font-size:12px;color:#065f46;background:#ecfdf5;border:1px dashed #6ee7b7;border-radius:6px;padding:6px 8px;">
-          Serie con radiación: ${meta.solarHours || 0}/${meta.sampleHours || 0} horas (${meta.solarCoveragePct || 0}%).
-          ${meta.avgSolarWm2 != null ? ` Promedio: <strong>${meta.avgSolarWm2} W/m²</strong>.` : ''}
-        </div>
-      ` : `
-        <div style="margin-top:8px;font-size:12px;color:#1e3a8a;background:#eff6ff;border:1px dashed #93c5fd;border-radius:6px;padding:6px 8px;">
-          Serie en modo simple (temperatura + humedad).
-        </div>
-      `}
       <div style="margin-top:8px;margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
         <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
       </div>
