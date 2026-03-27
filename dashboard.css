@@ -6426,6 +6426,17 @@ body {
   color: #475569;
   min-width: 0;
 }
+/* Etiquetas largas (ej. CE (dS/m)) en Solución Nutritiva / Extracto de pasta: una sola línea como pH y RAS. */
+.soil-fields .soil-field-lbl {
+  display: block;
+  white-space: nowrap;
+  line-height: 1.35;
+}
+@media (max-width: 360px) {
+  .soil-fields .soil-field-lbl {
+    white-space: normal;
+  }
+}
 /* 💧 Análisis de agua: el texto va en <span class="agua-field-lbl"> para que no se parta al recalcular el grid (pestaña, scrollbar). */
 #agua-form-wrap .agua-fields-ce {
   /* min distinto de 0: si no, el grid puede encoger columnas y el texto salta de línea al recalcular (pestaña / scrollbar). */

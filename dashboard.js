@@ -12013,6 +12013,55 @@ function translateReportHTMLStrings(html, reportLanguage) {
     ['📈 Fertirriego', '📈 Fertigation'],
     ['💧 Hidroponía', '💧 Hydroponics'],
     ['🌡️ Déficit de Presión de Vapor', '🌡️ Vapor Pressure Deficit'],
+    ['🌡️ Déficit de Presión de Vapor (VPD)', '🌡️ Vapor Pressure Deficit (VPD)'],
+    ['🗺️ Ubicación del Proyecto', '🗺️ Project Location'],
+    ['Polígono del predio', 'Field polygon'],
+    ['Croquis proporcional en coordenadas geográficas (escala relativa).', 'Proportional sketch in geographic coordinates (relative scale).'],
+    ['Área:', 'Area:'],
+    ['Perímetro:', 'Perimeter:'],
+    ['Centro:', 'Center:'],
+    ['Estado:', 'Status:'],
+    ['Polígono registrado (', 'Registered polygon ('],
+    ['vértices)', 'vertices)'],
+    ['Sin polígono', 'No polygon'],
+    ['No disponibles', 'Not available'],
+    ['📊 Calculadora Ambiental', '📊 Environmental Calculator'],
+    ['🔬 Calculadora Avanzada', '🔬 Advanced Calculator'],
+    ['📜 Historial de Cálculos', '📜 Calculation History'],
+    ['🗓️ Serie VPD por Rango (Estrés)', '🗓️ VPD Range Series (Stress)'],
+    ['💾 Cuadros guardados de VPD', '💾 Saved VPD tables'],
+    ['Temperatura Aire:', 'Air Temperature:'],
+    ['Temp. Hoja:', 'Leaf Temp.:'],
+    ['Temperatura:', 'Temperature:'],
+    ['Humedad Relativa:', 'Relative Humidity:'],
+    ['Radiación:', 'Radiation:'],
+    ['Calculado:', 'Calculated:'],
+    ['Fuente:', 'Source:'],
+    ['API Meteorológica', 'Weather API'],
+    ['Manual', 'Manual'],
+    ['Fecha/Hora', 'Date/Time'],
+    ['Hora máx', 'Max hour'],
+    ['Hora mín', 'Min hour'],
+    ['Horas óptimas', 'Optimal hours'],
+    ['% estrés', '% stress'],
+    ['Sin historial de cálculos.', 'No calculation history.'],
+    ['Sin datos de rango.', 'No range data.'],
+    ['Sin horas fuera de rango.', 'No out-of-range hours.'],
+    ['Modo VPD', 'VPD mode'],
+    ['Cobertura solar', 'Solar coverage'],
+    ['Vista', 'View'],
+    ['Inicio', 'Start'],
+    ['Fin', 'End'],
+    ['Periodos', 'Periods'],
+    ['Tipo', 'Type'],
+    ['Alto', 'High'],
+    ['Bajo', 'Low'],
+    ['Diario', 'Daily'],
+    ['Semanal', 'Weekly'],
+    ['Mensual', 'Monthly'],
+    ['diario', 'daily'],
+    ['semanal', 'weekly'],
+    ['mensual', 'monthly'],
     ['Coordenadas', 'Coordinates'],
     ['Perímetro', 'Perimeter'],
     ['Superficie', 'Surface Area'],
@@ -13845,7 +13894,7 @@ function createSolucionNutritivaTabHTML() {
               <details class="soil-section" data-sn-section="general" open>
                 <summary>📐 Características generales (salinidad / sodicidad)</summary>
                 <div class="soil-fields">
-                  <label>CE (dS/m) <input type="number" step="0.01" id="sn-general-ce" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('general','ce',this.value)"></label>
+                  <label><span class="soil-field-lbl">CE (dS/m)</span><input type="number" step="0.01" id="sn-general-ce" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('general','ce',this.value)"></label>
                   <label>pH <input type="number" step="0.01" id="sn-general-ph" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('general','ph',this.value)"></label>
                   <label>RAS <input type="number" step="0.01" id="sn-general-ras" onchange="window.saveSolucionNutritivaField && window.saveSolucionNutritivaField('general','ras',this.value)"></label>
                 </div>
@@ -14183,7 +14232,7 @@ function createExtractoPastaTabHTML() {
               <details class="soil-section" data-ep-section="general" open>
                 <summary>📐 CE, RAS y pH</summary>
                 <div class="soil-fields">
-                  <label>CE (dS/m) <input type="number" step="0.01" id="ep-general-cee" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('general','cee',this.value)"></label>
+                  <label><span class="soil-field-lbl">CE (dS/m)</span><input type="number" step="0.01" id="ep-general-cee" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('general','cee',this.value)"></label>
                   <label>RAS <input type="number" step="0.01" id="ep-general-ras" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('general','ras',this.value)"></label>
                   <label>pH <input type="number" step="0.01" id="ep-general-phe" onchange="window.saveExtractoPastaField && window.saveExtractoPastaField('general','phe',this.value)"></label>
                 </div>
@@ -14592,7 +14641,7 @@ function createAguaTabHTML() {
       </div>
       <h2 class="text-xl" style="margin-bottom: 16px;">🔬 Análisis de Agua</h2>
       <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de agua de riego. meq/L y ppm con conversión automática, sumas de cationes y aniones, aporte por volumen (m³) en kg elemento y óxido, y cálculo de ácido para neutralizar bicarbonatos/carbonatos.</p>
-      <p style="margin-bottom:14px;font-size:0.85rem;color:#475569;padding:10px 12px;background:#f8fafc;border-radius:8px;border-left:3px solid #0ea5e9;"><strong>Leyenda (kg):</strong> Los kilogramos en las tablas (elemento y óxido) son el aporte total para el <strong>volumen de agua de riego</strong> que indiques en cada reporte (campo m³ arriba), no por m³ ni por hectárea.</p>
+      <p style="margin-bottom:14px;font-size:0.85rem;color:#475569;padding:10px 12px;background:#f8fafc;border-radius:8px;border-left:3px solid #0ea5e9;">Los kilogramos en las tablas (elemento y óxido) son el aporte total para el volumen de agua de riego que indiques en cada reporte (campo m³ agua de riego).</p>
       <div class="soil-analysis-layout">
         <div class="soil-analysis-list-panel">
           <div class="soil-analysis-list-header">
