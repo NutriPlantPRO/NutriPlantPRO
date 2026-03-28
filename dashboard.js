@@ -10255,6 +10255,20 @@ function applyProjectDataToUI() {
       setTimeout(function() { window.loadFertirriegoRequirements(); }, 120);
     } else if ((activeSection === 'nutricion-granular' || activeSection === 'granular') && typeof window.loadGranularRequirements === 'function') {
       setTimeout(function() { window.loadGranularRequirements(); }, 80);
+      // Rehidratar también Programa Granular para evitar estado visual vacío
+      // cuando los datos sí existen en local/nube pero la subpestaña no se repinta.
+      setTimeout(function() {
+        try {
+          if (typeof window.forceLoadApplications === 'function') {
+            window.forceLoadApplications();
+          }
+          if (typeof window.updateSummary === 'function') {
+            window.updateSummary();
+          }
+        } catch (e) {
+          console.warn('loadProjectData: refresh granular program', e);
+        }
+      }, 130);
     }
   } catch (e) { console.warn('loadProjectData: refresh active section', e); }
 }

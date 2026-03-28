@@ -444,7 +444,7 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
       <tbody>
         <tr>
           <td><strong>Extracción por tonelada<br>(kg/ton)</strong></td>
-          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="granular-extract-${n}" value="${getGranularConvertedValue(n, (extraction[n] ?? 0))}" step="0.01" oninput="updateGranularExtractionPerTonLive('${n}', this.value)" onchange="updateGranularExtractionPerTon('${n}', this.value)"></td>`).join('')}
+          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="granular-extract-${n}" value="${getGranularConvertedValue(n, (extraction[n] ?? 0))}" step="0.01" onchange="updateGranularExtractionPerTon('${n}', this.value)"></td>`).join('')}
         </tr>
         <tr>
           <td><strong>Extracción total<br>(kg/ha)</strong></td>
@@ -458,7 +458,7 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
             const adjValue = adjustment[n] ?? 0;
             const displayValue = getGranularConvertedValue(n, adjValue);
             console.log(`🎨 Renderizando ajuste ${n}: valor guardado=${adjValue}, valor mostrado=${displayValue}, modo elemental=${isGranularRequerimientoElementalMode}`);
-            return `<td><input type="number" class="fertirriego-input" id="granular-adj-${n}" value="${displayValue}" step="0.01" oninput="updateGranularAdjustmentLive('${n}', this.value)" onchange="updateGranularAdjustment('${n}', this.value)"></td>`;
+            return `<td><input type="number" class="fertirriego-input" id="granular-adj-${n}" value="${displayValue}" step="0.01" onchange="updateGranularAdjustment('${n}', this.value)"></td>`;
           }).join('')}
         </tr>
         <tr>
@@ -470,7 +470,7 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
             // Asegurar que el valor se muestre correctamente (incluso si es 0, 2, 5, etc.)
             const displayValue = typeof effValue === 'number' && !isNaN(effValue) ? effValue : (GRANULAR_DEFAULT_EFFICIENCY[n] || 85);
             console.log(`🎨 Renderizando eficiencia ${n}: valor guardado=${efficiency[n]}, valor mostrado=${displayValue}`);
-            return `<td><input type="number" class="fertirriego-input" id="granular-eff-${n}" value="${displayValue}" step="0.1" min="1" max="100" oninput="updateGranularEfficiencyLive('${n}', this.value)" onchange="updateGranularEfficiency('${n}', this.value)"></td>`;
+            return `<td><input type="number" class="fertirriego-input" id="granular-eff-${n}" value="${displayValue}" step="0.1" min="1" max="100" onchange="updateGranularEfficiency('${n}', this.value)"></td>`;
           }).join('')}
         </tr>
         <tr class="requirement-real-row">
@@ -555,9 +555,6 @@ function updateGranularExtractionPerTon(nutrient, value, options = {}) {
 }
 // Exponer
 window.updateGranularExtractionPerTon = updateGranularExtractionPerTon;
-window.updateGranularExtractionPerTonLive = function(nutrient, value) {
-  updateGranularExtractionPerTon(nutrient, value, { immediate: false });
-};
 
 // Función para actualizar ajuste
 function updateGranularAdjustment(nutrient, value, options = {}) {
@@ -586,9 +583,6 @@ function updateGranularAdjustment(nutrient, value, options = {}) {
 }
 // Exponer
 window.updateGranularAdjustment = updateGranularAdjustment;
-window.updateGranularAdjustmentLive = function(nutrient, value) {
-  updateGranularAdjustment(nutrient, value, { immediate: false });
-};
 
 // Función para actualizar eficiencia
 function updateGranularEfficiency(nutrient, value, options = {}) {
@@ -622,9 +616,6 @@ function updateGranularEfficiency(nutrient, value, options = {}) {
 }
 // Exponer
 window.updateGranularEfficiency = updateGranularEfficiency;
-window.updateGranularEfficiencyLive = function(nutrient, value) {
-  updateGranularEfficiency(nutrient, value, { immediate: false });
-};
 
 let granularCustomCropEditId = null;
 
