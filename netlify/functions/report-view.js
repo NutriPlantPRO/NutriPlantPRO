@@ -73,11 +73,14 @@ function withSharedViewChrome(reportHtml, expiresAt) {
     .np-shared-topbar .links a[data-social="linkedin"]:hover{color:#0077b5}
     .np-shared-topbar .links svg{width:18px;height:18px}
     .np-shared-note{max-width:1200px;margin:10px auto 0;padding:10px 12px;border:1px solid #bae6fd;background:#eff6ff;color:#0c4a6e;border-radius:8px;font:600 13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    /* Solo en vista compartida: evita que la marca de agua quede detrás de la banda */
+    .report-watermark-corner{top:60px!important}
     @media (max-width:680px){
       .np-shared-topbar .inner{padding:0 10px}
       .np-shared-topbar .brand img{height:34px}
       .np-shared-topbar .links{gap:6px}
       .np-shared-topbar .links a{width:28px;height:28px}
+      .report-watermark-corner{top:54px!important}
     }
   </style>`;
   const chromeHeader = `<header class="np-shared-topbar">
