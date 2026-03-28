@@ -3305,7 +3305,20 @@ body {
 
 .hydro-table th.hydro-micro-start,
 .hydro-table td.hydro-micro-start {
-  border-left: 3px solid #93c5fd;
+  position: relative;
+  border-left: none;
+  padding-left: 12px; /* espacio tras la franja (antes el borde comía ancho útil del input) */
+}
+.hydro-table th.hydro-micro-start::before,
+.hydro-table td.hydro-micro-start::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background: #93c5fd;
+  border-radius: 2px 0 0 2px;
 }
 
 .hydro-row-active {
@@ -3418,11 +3431,25 @@ body {
   font-weight: 600;
 }
 
-/* Separador visual entre macros y micros (línea azul clara) */
+/* Separador visual entre macros y micros: franja con ::before para no restar ancho al input (box-sizing) */
 .hydro-grid-item-micro-start {
-  border-left: 3px solid #7dd3fc;
-  margin-left: 4px;
-  padding-left: 12px;
+  position: relative;
+  margin-left: 0;
+  padding-left: 14px;
+}
+.hydro-grid-item-micro-start::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background: #7dd3fc;
+  border-radius: 3px 0 0 3px;
+}
+/* Un poco más de aire a la izquierda del número en Fe (misma fila que la franja) */
+.hydro-grid-item-micro-start .hydro-input {
+  padding-left: 10px;
 }
 
 /* Columna Amonio: solo texto en tinto (no entra al triángulo K-Ca-Mg) */
