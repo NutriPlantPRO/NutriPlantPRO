@@ -7996,19 +7996,44 @@ function createLegacyReportHTML(data) {
 function saveReportToList(reportData) {
   if (!reportData || typeof reportData !== 'object') return;
   const scope = getCurrentReportScope();
-  reportData.userId = scope.userId;
-  reportData.projectId = scope.projectId;
-  if (!reportData.id) reportData.id = 'report_' + Date.now();
-  generatedReports.unshift(reportData);
+  const cleanReport = { ...reportData };
+  cleanReport.userId = scope.userId;
+  cleanReport.projectId = scope.projectId;
+  if (!cleanReport.id) cleanReport.id = 'report_' + Date.now();
+
+  // Evitar reventar cuota: cuando hay selectedSections, el PDF se regenera en descarga,
+  // así que no necesitamos persistir HTML gigante en localStorage.
+  if (Array.isArray(cleanReport.selectedSections) && cleanReport.selectedSections.length > 0) {
+    delete cleanReport.reportHTML;
+  }
+
+  generatedReports.unshift(cleanReport);
   updateReportsList();
 
-  // Guardar en localStorage para persistencia
-  localStorage.setItem(getReportsStorageKey(scope), JSON.stringify(generatedReports));
+  // Guardar en localStorage para persistencia, con manejo de cuota.
+  try {
+    localStorage.setItem(getReportsStorageKey(scope), JSON.stringify(generatedReports));
+  } catch (storageErr) {
+    console.warn('⚠️ Reportes: cuota localStorage llena, recortando historial...', storageErr && storageErr.message ? storageErr.message : storageErr);
+    try {
+      // Mantener los reportes más recientes y reintentar.
+      while (generatedReports.length > 5) {
+        generatedReports.pop();
+      }
+      localStorage.setItem(getReportsStorageKey(scope), JSON.stringify(generatedReports));
+    } catch (storageErr2) {
+      console.warn('⚠️ No se pudo persistir historial de reportes en localStorage:', storageErr2 && storageErr2.message ? storageErr2.message : storageErr2);
+    }
+  }
 
   // Sincronizar a la nube (Supabase) si está disponible
   if (typeof window.nutriplantSyncReportToCloud === 'function') {
-    console.log('☁️ Intentando sincronizar reporte a la nube...');
-    window.nutriplantSyncReportToCloud(scope.userId, scope.projectId, reportData);
+    try {
+      console.log('☁️ Intentando sincronizar reporte a la nube...');
+      window.nutriplantSyncReportToCloud(scope.userId, scope.projectId, cleanReport);
+    } catch (cloudErr) {
+      console.warn('⚠️ Error sincronizando reporte a la nube:', cloudErr && cloudErr.message ? cloudErr.message : cloudErr);
+    }
   } else {
     console.warn('⚠️ nutriplantSyncReportToCloud no está disponible (¿supabase-projects.js cargado?)');
   }
