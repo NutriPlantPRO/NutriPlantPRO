@@ -1511,6 +1511,93 @@ window.projectStorage = new ProjectStorage();
   window.projectStorage = null;
 }
 
+/**
+ * Orquestador único para guardado de Nutrición Granular.
+ * Fusiona por bloque (requirements/program) y evita reemplazos parciales.
+ */
+window.npGranularSavePartial = function(projectId, partial, meta) {
+  try {
+    const pid = projectId || (typeof window.np_getCurrentProjectId === 'function' ? window.np_getCurrentProjectId() : '') || localStorage.getItem('nutriplant-current-project');
+    if (!pid) return false;
+    if (!partial || typeof partial !== 'object') return false;
+
+    const nowIso = new Date().toISOString();
+    let existingSection = null;
+    try {
+      if (window.projectStorage && typeof window.projectStorage.loadSection === 'function') {
+        existingSection = window.projectStorage.loadSection('granular', pid);
+      }
+    } catch (e) {}
+    if (!existingSection) {
+      try {
+        const raw = localStorage.getItem('nutriplant_project_' + pid);
+        const obj = raw ? JSON.parse(raw) : {};
+        existingSection = (obj && obj.granular && typeof obj.granular === 'object') ? obj.granular : {};
+      } catch (e) {
+        existingSection = {};
+      }
+    }
+    if (!existingSection || typeof existingSection !== 'object') existingSection = {};
+
+    const merged = {
+      ...existingSection,
+      ...partial
+    };
+
+    // Preservar bloques existentes cuando el parcial no los incluye.
+    if (!partial.requirements && existingSection.requirements) {
+      merged.requirements = existingSection.requirements;
+    }
+    if (!partial.program && existingSection.program) {
+      merged.program = existingSection.program;
+    }
+
+    // Timestamps por bloque para depuración/frescura.
+    if (merged.requirements && typeof merged.requirements === 'object' && partial.requirements) {
+      merged.requirements.updated_at = nowIso;
+      merged.requirements.updatedAt = nowIso;
+    }
+    if (merged.program && typeof merged.program === 'object' && partial.program) {
+      merged.program.updated_at = nowIso;
+      merged.program.updatedAt = nowIso;
+    }
+    merged.lastUpdated = nowIso;
+    merged.updated_at = nowIso;
+    merged.updatedAt = nowIso;
+    if (meta && typeof meta === 'object' && meta.source) merged.lastSource = String(meta.source);
+
+    let ok = false;
+    if (window.projectStorage && typeof window.projectStorage.saveSection === 'function') {
+      ok = window.projectStorage.saveSection('granular', merged, pid);
+    }
+    if (!ok) {
+      const key = 'nutriplant_project_' + pid;
+      let obj = {};
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) obj = JSON.parse(raw);
+      } catch (e) {}
+      obj.id = obj.id || pid;
+      obj.granular = merged;
+      obj.updated_at = nowIso;
+      obj.updatedAt = nowIso;
+      localStorage.setItem(key, JSON.stringify(obj));
+      ok = true;
+      if (typeof window.nutriplantSyncProjectToCloud === 'function') {
+        try { window.nutriplantSyncProjectToCloud(pid, obj); } catch (e) {}
+      }
+    }
+
+    if (ok && typeof currentProject !== 'undefined' && currentProject && currentProject.id === pid) {
+      currentProject.granular = merged;
+    }
+    return ok;
+  } catch (e) {
+    console.warn('npGranularSavePartial:', e);
+    return false;
+  }
+};
+
 // Exportar para uso en otros módulos
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = ProjectStorage;

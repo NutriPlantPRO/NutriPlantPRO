@@ -1348,6 +1348,23 @@ function saveGranularRequirements() {
       hasEfficiency: !!requirementData.efficiency
     });
 
+    // Ruta principal: orquestador único de guardado granular (merge por bloque).
+    if (typeof window.npGranularSavePartial === 'function') {
+      const unifiedOk = window.npGranularSavePartial(
+        projectId,
+        {
+          requirements: requirementData,
+          lastUI: { cropType, targetYield }
+        },
+        { source: 'granular-requirements' }
+      );
+      if (unifiedOk) {
+        // Mantener estado rápido del selector/rendimiento.
+        rememberGranularUIState();
+        return;
+      }
+    }
+
     // GUARDAR usando sistema centralizado si está disponible, sino usar método directo
     const useCentralized = typeof window.projectStorage !== 'undefined';
     

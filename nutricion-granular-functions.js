@@ -1672,6 +1672,24 @@ function saveApplications(options) {
       timestamp: new Date().toISOString()
     };
 
+    // Ruta principal: orquestador único de guardado granular (merge por bloque).
+    if (typeof window.npGranularSavePartial === 'function') {
+      const savedUnified = window.npGranularSavePartial(projectId, { program: programData }, { source: 'granular-program' });
+      if (savedUnified) {
+        // Compatibilidad con herramientas antiguas.
+        try {
+          if (typeof window.projectManager !== 'undefined' && window.projectManager.saveProjectData) {
+            window.projectManager.saveProjectData('nutricionGranular', programData);
+          }
+        } catch (e) {}
+        try {
+          const storageKey = `nutricionGranularData_${projectId}`;
+          localStorage.setItem(storageKey, JSON.stringify(programData));
+        } catch (e) {}
+        return;
+      }
+    }
+
     // 🚀 CRÍTICO: Preservar requirements al guardar programa.
     // saveSection('granular', ...) reemplaza la sección completa y, si no fusionamos,
     // puede borrar granular.requirements en recargas/salidas.
