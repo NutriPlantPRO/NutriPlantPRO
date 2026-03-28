@@ -7426,6 +7426,129 @@ function getReportsStorageKey(scope) {
   return `nutriplant_reports_${resolved.userId}_${resolved.projectId}`;
 }
 
+function generateReportShareToken() {
+  try {
+    const bytes = new Uint8Array(24);
+    if (window.crypto && window.crypto.getRandomValues) {
+      window.crypto.getRandomValues(bytes);
+    } else {
+      for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+    }
+    return Array.from(bytes).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+  } catch (e) {
+    return (Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/\./g, '');
+  }
+}
+
+function buildReportViewShareUrl(reportId, token) {
+  const rid = encodeURIComponent(String(reportId || ''));
+  const t = encodeURIComponent(String(token || ''));
+  return `${window.location.origin}/api/report-view?rid=${rid}&t=${t}`;
+}
+
+async function buildReportHtmlSnapshotForShare(report) {
+  const selectedSections = normalizeReportSections(Array.isArray(report?.selectedSections) ? report.selectedSections : []);
+  if (!selectedSections.length) {
+    const rawHtml = (report && typeof report.reportHTML === 'string') ? report.reportHTML.trim() : '';
+    return rawHtml || '';
+  }
+  const lang = (report && report.reportLanguage === 'en') ? 'en' : 'es';
+  const chartImages = (selectedSections.indexOf('fertigation') >= 0 && typeof window.getFertiChartsDataUrlsForReport === 'function')
+    ? await new Promise(function(resolve) {
+        try {
+          const prog = getFertirriegoProgramForReport();
+          window.getFertiChartsDataUrlsForReport(prog, function(imgs) { resolve(imgs || {}); });
+        } catch (e) {
+          console.warn('buildReportHtmlSnapshotForShare charts:', e);
+          resolve({});
+        }
+      })
+    : {};
+  return createReportHTML(selectedSections, chartImages, lang);
+}
+
+window.shareReportView = async function(reportId) {
+  const reportIndex = generatedReports.findIndex(function(r) { return r && String(r.id) === String(reportId); });
+  const report = reportIndex >= 0 ? generatedReports[reportIndex] : null;
+  if (!report) {
+    showMessage('⚠️ Reporte no encontrado para compartir.', 'warning');
+    return;
+  }
+  const scope = getCurrentReportScope();
+  const userId = scope.userId || '';
+  const projectId = scope.projectId || '';
+  const isUuidUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(userId));
+  if (!isUuidUser || !projectId) {
+    showMessage('⚠️ Para compartir por link necesitas sesión activa en la nube y proyecto seleccionado.', 'warning');
+    return;
+  }
+
+  try {
+    const persistedOk = persistReportSourceData();
+    if (!persistedOk) {
+      showMessage('❌ No se pudo preparar la fuente antes de compartir.', 'error');
+      return;
+    }
+
+    // Al compartir nuevamente: regenerar token y vigencia (el link anterior deja de servir).
+    const token = generateReportShareToken();
+    const nowIso = new Date().toISOString();
+    const expiresIso = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString();
+    const htmlSnapshot = await buildReportHtmlSnapshotForShare(report);
+    if (!htmlSnapshot) {
+      showMessage('⚠️ No se pudo preparar la vista del reporte para compartir.', 'warning');
+      return;
+    }
+
+    const cloudPayload = {
+      ...report,
+      userId: userId,
+      projectId: projectId,
+      reportHTML: htmlSnapshot,
+      shareToken: token,
+      shareEnabled: true,
+      shareCreatedAt: report.shareCreatedAt || nowIso,
+      shareExpiresAt: expiresIso
+    };
+
+    // Sincronizar snapshot + token a nube antes de entregar URL.
+    if (typeof window.nutriplantSyncReportToCloud === 'function') {
+      await window.nutriplantSyncReportToCloud(userId, projectId, cloudPayload);
+    } else {
+      showMessage('⚠️ No está disponible la sincronización a nube para compartir link.', 'warning');
+      return;
+    }
+
+    // Mantener local ligero (sin HTML gigante), pero con metadatos de share.
+    const localUpdated = {
+      ...report,
+      shareToken: token,
+      shareEnabled: true,
+      shareCreatedAt: cloudPayload.shareCreatedAt,
+      shareExpiresAt: expiresIso
+    };
+    delete localUpdated.reportHTML;
+    generatedReports[reportIndex] = localUpdated;
+    try { localStorage.setItem(getReportsStorageKey(scope), JSON.stringify(generatedReports)); } catch (e) {}
+    updateReportsList();
+
+    const url = buildReportViewShareUrl(report.id, token);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        showMessage('✅ Link de vista copiado. Vigencia: 7 días (si compartes otra vez, se renueva y cambia el link).', 'success');
+      } catch (e) {
+        window.prompt('Copia este link de vista del reporte:', url);
+      }
+    } else {
+      window.prompt('Copia este link de vista del reporte:', url);
+    }
+  } catch (e) {
+    console.error('shareReportView:', e);
+    showMessage('❌ No se pudo generar el link de vista: ' + (e && e.message ? e.message : e), 'error');
+  }
+};
+
 /** Programa fertirriego para reporte/PDF (mismo criterio que admin y descarga). */
 function getFertirriegoProgramForReport() {
   const fRoot = currentProject && currentProject.fertirriego;
@@ -7996,10 +8119,11 @@ function createLegacyReportHTML(data) {
 function saveReportToList(reportData) {
   if (!reportData || typeof reportData !== 'object') return;
   const scope = getCurrentReportScope();
-  const cleanReport = { ...reportData };
-  cleanReport.userId = scope.userId;
-  cleanReport.projectId = scope.projectId;
-  if (!cleanReport.id) cleanReport.id = 'report_' + Date.now();
+  const cloudReport = { ...reportData };
+  cloudReport.userId = scope.userId;
+  cloudReport.projectId = scope.projectId;
+  if (!cloudReport.id) cloudReport.id = 'report_' + Date.now();
+  const cleanReport = { ...cloudReport };
 
   // Evitar reventar cuota: cuando hay selectedSections, el PDF se regenera en descarga,
   // así que no necesitamos persistir HTML gigante en localStorage.
@@ -8030,7 +8154,7 @@ function saveReportToList(reportData) {
   if (typeof window.nutriplantSyncReportToCloud === 'function') {
     try {
       console.log('☁️ Intentando sincronizar reporte a la nube...');
-      window.nutriplantSyncReportToCloud(scope.userId, scope.projectId, cleanReport);
+      window.nutriplantSyncReportToCloud(scope.userId, scope.projectId, cloudReport);
     } catch (cloudErr) {
       console.warn('⚠️ Error sincronizando reporte a la nube:', cloudErr && cloudErr.message ? cloudErr.message : cloudErr);
     }
@@ -8093,6 +8217,9 @@ function updateReportsList() {
         <div>
           <button onclick="downloadReport('${report.id}')" class="btn btn-secondary" style="margin-right: 10px;">
             📥 Descargar
+          </button>
+          <button onclick="shareReportView('${report.id}')" class="btn btn-info" style="margin-right: 10px;">
+            🔗 Compartir vista
           </button>
           <button onclick="deleteReport('${report.id}')" class="btn btn-danger">
             🗑️ Eliminar

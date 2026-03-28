@@ -23,3 +23,10 @@
   to = "/.netlify/functions/paypal-config"
   status = 200
   force = true
+
+# Vista compartida de reportes por token (solo lectura)
+[[redirects]]
+  from = "/api/report-view"
+  to = "/.netlify/functions/report-view"
+  status = 200
+  force = true

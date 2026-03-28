@@ -915,8 +915,9 @@
   /** Sincronizar un reporte a la nube */
   window.nutriplantSyncReportToCloud = function(userId, projectId, reportData) {
     if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.syncReport) {
-      window.nutriplantSupabaseProjects.syncReport(userId, projectId, reportData);
+      return window.nutriplantSupabaseProjects.syncReport(userId, projectId, reportData);
     }
+    return Promise.resolve();
   };
 
   /** Eliminar un reporte en la nube por id */
