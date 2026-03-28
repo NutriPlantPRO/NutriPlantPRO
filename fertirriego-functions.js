@@ -2980,7 +2980,7 @@ document.addEventListener('DOMContentLoaded', function() {
   window.addEventListener('pagehide', () => { try { flushFertirriegoRequirementsIfDirty(); } catch {} });
   // Guardar/cargar al cambiar de proyecto
   document.addEventListener('projectChanged', () => {
-    try { flushFertirriegoRequirementsIfDirty(); } catch {}
+    // Evitar guardar con el ID del nuevo proyecto para no arrastrar datos previos.
   });
   
   // CRÍTICO: Si estamos en la pestaña de Fertirriego cuando se carga el script, cargar automáticamente

@@ -1463,6 +1463,8 @@ function loadSavedApplications() {
     
     if (!projectId) {
       console.log('📝 No hay proyecto seleccionado - inicializando vacío');
+      renderApplications();
+      updateSummary();
       return;
     }
     
@@ -1543,6 +1545,7 @@ function loadSavedApplications() {
         console.log('✅ Aplicaciones restauradas exitosamente');
       } else {
         console.log('📝 No hay aplicaciones para renderizar');
+        renderApplications();
         updateSummary();
       }
     } else {
@@ -1550,6 +1553,7 @@ function loadSavedApplications() {
       applications = [];
       appCounter = 1;
       granularProgramModeInitialized = false;
+      renderApplications();
       updateSummary();
     }
   } catch (error) {
@@ -1557,12 +1561,27 @@ function loadSavedApplications() {
     applications = [];
     appCounter = 1;
     granularProgramModeInitialized = false;
+    try {
+      renderApplications();
+      updateSummary();
+    } catch (e) {}
   }
 }
 
+let granularLastSaveAt = 0;
+
 // Función para guardar aplicaciones
-function saveApplications() {
+function saveApplications(options) {
   try {
+    const opts = options || {};
+    const forceSave = opts.force === true;
+    const nowTs = Date.now();
+    // Evitar ráfagas de guardado al escribir (reduce carga local y eventos de sync nube).
+    if (!forceSave && (nowTs - granularLastSaveAt) < 1500) {
+      return;
+    }
+    granularLastSaveAt = nowTs;
+
     const projectId = getCurrentProjectId();
     
     if (!projectId) {
@@ -1700,6 +1719,52 @@ function saveApplications() {
       localStorage.setItem(unifiedKey, JSON.stringify(unified));
       console.log('💾 Programa Granular guardado en esquema unificado (fallback):', { projectId, applicationsCount: applications.length });
     }
+
+    // 🚀 GUARDADO DURO SIEMPRE: consolidar en esquema unificado para sobrevivir recargas/dispositivos
+    // (independiente de que saveSection haya funcionado o no).
+    try {
+      const keyHard = `nutriplant_project_${projectId}`;
+      const nowIso = new Date().toISOString();
+      const rawHard = localStorage.getItem(keyHard);
+      const objHard = rawHard ? JSON.parse(rawHard) : {};
+      objHard.id = objHard.id || projectId;
+      objHard.granular = {
+        ...(objHard.granular || {}),
+        program: programData
+      };
+      objHard.updated_at = nowIso;
+      objHard.updatedAt = nowIso;
+      localStorage.setItem(keyHard, JSON.stringify(objHard));
+    } catch (e) {
+      console.error('❌ Programa Granular: falló guardado duro unificado', e);
+    }
+
+    // Verificación rápida de persistencia en el esquema unificado
+    let verifiedPersist = false;
+    try {
+      const unifiedKeyVerify = `nutriplant_project_${projectId}`;
+      const rawVerify = localStorage.getItem(unifiedKeyVerify);
+      if (rawVerify) {
+        const parsedVerify = JSON.parse(rawVerify);
+        const prog = parsedVerify && parsedVerify.granular && parsedVerify.granular.program;
+        verifiedPersist = !!(prog && Array.isArray(prog.applications));
+      }
+    } catch (e) {}
+    if (!verifiedPersist) {
+      try {
+        const unifiedKeyHard = `nutriplant_project_${projectId}`;
+        const rawHard = localStorage.getItem(unifiedKeyHard);
+        const unifiedHard = rawHard ? JSON.parse(rawHard) : {};
+        unifiedHard.granular = {
+          ...(unifiedHard.granular || {}),
+          program: programData
+        };
+        localStorage.setItem(unifiedKeyHard, JSON.stringify(unifiedHard));
+        console.warn('⚠️ Programa Granular: aplicado guardado directo de respaldo en esquema unificado');
+      } catch (e) {
+        console.error('❌ Programa Granular: falló guardado directo de respaldo', e);
+      }
+    }
     
     // Guardar en projectManager para compatibilidad
     if (typeof window.projectManager !== 'undefined' && window.projectManager.saveProjectData) {
@@ -1744,6 +1809,10 @@ function forceLoadApplications() {
     var projectId = getCurrentProjectId();
     if (!projectId) {
       console.log('📝 No hay proyecto seleccionado');
+      applications = [];
+      appCounter = 1;
+      renderApplications();
+      updateSummary();
       return;
     }
     
@@ -1812,16 +1881,24 @@ function forceLoadApplications() {
         console.log('✅ Aplicaciones restauradas exitosamente');
       } else {
         console.log('📝 No hay aplicaciones para renderizar');
+        renderApplications();
+        updateSummary();
       }
     } else {
       console.log('📝 No hay datos guardados para este proyecto');
       applications = [];
       appCounter = 1;
+      renderApplications();
+      updateSummary();
     }
   } catch (error) {
     console.error('❌ Error en forceLoadApplications:', error);
     applications = [];
     appCounter = 1;
+    try {
+      renderApplications();
+      updateSummary();
+    } catch (e) {}
   }
   };
   ensureCustomGranularMaterialsLoaded().then(runAfterMaterials);
@@ -1877,7 +1954,7 @@ removeApp = function(appId) {
 
 // Guardado diferido para cambios "live" (mientras el usuario escribe)
 let granularLiveSaveTimer = null;
-function scheduleLiveAutoSave(delayMs = 700) {
+function scheduleLiveAutoSave(delayMs = 2200) {
   try {
     if (granularLiveSaveTimer) clearTimeout(granularLiveSaveTimer);
     granularLiveSaveTimer = setTimeout(() => {
@@ -1930,9 +2007,40 @@ updateAppTitleLive = function(appId, title) {
 // Última red de seguridad: guardar antes de recargar/cerrar pestaña
 window.addEventListener('beforeunload', function() {
   try {
-    saveApplications();
+    saveApplications({ force: true });
   } catch (e) {
     console.warn('⚠️ beforeunload saveApplications error:', e);
+  }
+});
+
+// Refuerzo de persistencia en recargas/cambio de pestaña (incluye móvil/iOS).
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    try { saveApplications({ force: true }); } catch (e) {}
+  }
+});
+window.addEventListener('pagehide', function() {
+  try { saveApplications({ force: true }); } catch (e) {}
+});
+
+function resetGranularProgramRuntimeState() {
+  applications = [];
+  appCounter = 1;
+  granularProgramModeInitialized = false;
+}
+
+document.addEventListener('projectChanged', function() {
+  resetGranularProgramRuntimeState();
+  try {
+    if (document.getElementById('granularApplications')) {
+      renderApplications();
+      updateSummary();
+      setTimeout(function() {
+        forceLoadApplications();
+      }, 80);
+    }
+  } catch (e) {
+    console.warn('⚠️ projectChanged granular program reset:', e);
   }
 });
 

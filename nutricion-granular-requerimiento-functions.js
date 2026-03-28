@@ -1768,7 +1768,6 @@ document.addEventListener('DOMContentLoaded', function() {
     try { flushGranularRequirementsIfDirty(); } catch {}
   });
   document.addEventListener('projectChanged', () => {
-    try { flushGranularRequirementsIfDirty(); } catch {}
     try { resetGranularRuntimeState(); } catch {}
     try { setTimeout(() => loadGranularRequirements(), 50); } catch {}
   });

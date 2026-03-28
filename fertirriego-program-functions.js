@@ -1445,14 +1445,7 @@ function loadFertirriegoProgram() {
       if (data) console.log('✅ Datos cargados desde formato nuevo');
     }
     
-    // PRIORIDAD 4: Fallback global
-    if (!data) { 
-      const g = localStorage.getItem('fertirriegoProgram_global'); 
-      if (g) {
-        data = JSON.parse(g);
-        console.log('✅ Datos cargados desde global');
-      }
-    }
+    // No usar fallback global aquí para evitar mezclar programas entre proyectos.
     if (data && data.weeks) { fertiWeeks = data.weeks; fertiWeekCounter = fertiWeeks.length+1; } else { fertiWeeks = []; fertiWeekCounter = 1; }
     if (data && typeof data.mode === 'boolean') {
       fertProgElementalMode = data.mode;
@@ -1561,6 +1554,26 @@ document.addEventListener('DOMContentLoaded', () => {
       window.initFertirriegoProgramUI();
     }
   } catch {}
+});
+
+document.addEventListener('projectChanged', () => {
+  // Limpiar estado runtime para impedir arrastre visual/lógico entre proyectos
+  fertiProgramInitialized = false;
+  fertiWeeks = [];
+  fertiWeekCounter = 1;
+  fertiColumns = [];
+  fertiTimeUnit = 'semana';
+  fertiProgDirty = false;
+  if (typeof window !== 'undefined') window.fertiProgramInitialized = false;
+  try {
+    if (document.getElementById('fertiWeeksContainer')) {
+      setTimeout(() => {
+        loadFertirriegoProgram();
+      }, 80);
+    }
+  } catch (e) {
+    console.warn('projectChanged fertirriego-program:', e);
+  }
 });
 
 

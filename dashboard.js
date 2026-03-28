@@ -1660,8 +1660,9 @@ function selectSection(name, el) {
       if (cachedData.location) currentProject.location = cachedData.location;
       if (cachedData.soilAnalysis) currentProject.soilAnalysis = cachedData.soilAnalysis;
       if (cachedData.amendments) currentProject.amendments = cachedData.amendments;
-      if (cachedData.fertirriego) currentProject.fertirriego = cachedData.fertirriego;
-      if (cachedData.granular) currentProject.granular = cachedData.granular;
+      // IMPORTANTE: también aplicar null para limpiar estado al cambiar de proyecto
+      if (cachedData.fertirriego !== undefined) currentProject.fertirriego = cachedData.fertirriego;
+      if (cachedData.granular !== undefined) currentProject.granular = cachedData.granular;
       if (cachedData.hidroponia !== undefined) currentProject.hidroponia = cachedData.hidroponia;
       if (cachedData.vpdAnalysis !== undefined) currentProject.vpdAnalysis = cachedData.vpdAnalysis;
       if (cachedData.soilAnalyses !== undefined) currentProject.soilAnalyses = Array.isArray(cachedData.soilAnalyses) ? cachedData.soilAnalyses : [];
@@ -5175,6 +5176,10 @@ function np_setCurrentProject(id) {
   // 🚀 CRÍTICO: PRIMERO limpiar location Y mapa ANTES de actualizar el proyecto
   currentProject.location = { coordinates: '', surface: '', perimeter: '', polygon: null };
   
+  // 🚀 CRÍTICO: Limpiar módulos al cambiar de proyecto para evitar mezclar datos
+  currentProject.granular = null;
+  currentProject.fertirriego = null;
+
   // 🚀 CRÍTICO: Limpiar vpdAnalysis al cambiar de proyecto para evitar mezclar datos
   currentProject.vpdAnalysis = {
     environmental: {
@@ -17090,6 +17095,11 @@ function ensureVPDAnalysisStructures() {
   if (!Array.isArray(currentProject.vpdAnalysis.rangeTables)) {
     currentProject.vpdAnalysis.rangeTables = [];
   }
+  currentProject.vpdAnalysis.rangeTables.forEach(function(tbl, i) {
+    if (tbl && typeof tbl === 'object' && (!tbl.id || typeof tbl.id !== 'string')) {
+      tbl.id = 'vpd_tbl_' + Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2, 8);
+    }
+  });
   if (currentProject.vpdAnalysis.currentRangeTable == null) {
     currentProject.vpdAnalysis.currentRangeTable = null;
   }
@@ -17162,6 +17172,33 @@ function persistVPDAnalysisAfterMutation() {
   } catch (err) {
     console.warn('persistVPDAnalysisAfterMutation', err);
   }
+}
+
+function invalidateVpdSectionDomCache() {
+  try {
+    var key = getSectionCacheKey('Análisis: Déficit de Presión de Vapor');
+    delete sectionDomCache[key];
+    delete sectionDomCacheVpdFp[key];
+  } catch (e) {
+    console.warn('invalidateVpdSectionDomCache', e);
+  }
+}
+
+function refreshVpdAnalysisSectionIfVisible() {
+  invalidateVpdSectionDomCache();
+  if (!title || !view) return;
+  if (String(title.textContent || '').trim() !== 'Análisis: Déficit de Presión de Vapor') return;
+  view.innerHTML = '';
+  view.innerHTML = sectionTemplate('Análisis: Déficit de Presión de Vapor');
+  view.setAttribute('data-render-project-id', (currentProject && currentProject.id) ? String(currentProject.id) : '');
+  if (typeof addProjectIndicator === 'function') addProjectIndicator(view);
+  setTimeout(function() {
+    var resultsDiv = document.getElementById('vpd-environmental-results');
+    if (resultsDiv && resultsDiv.innerHTML.trim() === '' && typeof loadVPDSavedResults === 'function') {
+      loadVPDSavedResults();
+    }
+    if (typeof loadVPDRangeSavedResults === 'function') loadVPDRangeSavedResults();
+  }, 100);
 }
 
 /** Blur + borrador desde DOM + persistir (al salir de la pestaña VPD). No añade entradas al historial. */
@@ -17605,6 +17642,13 @@ function createVPDSectionHTML() {
   const advData = vpdData.advanced || {};
   const history = vpdData.history || [];
   const rangeState = vpdData.rangeState || { granularity: 'daily', startDate: '', endDate: '' };
+  if (Array.isArray(vpdData.rangeTables)) {
+    vpdData.rangeTables.forEach(function(tbl, i) {
+      if (tbl && typeof tbl === 'object' && (!tbl.id || typeof tbl.id !== 'string')) {
+        tbl.id = 'vpd_tbl_' + Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2, 8);
+      }
+    });
+  }
   const rangeTables = Array.isArray(vpdData.rangeTables) ? vpdData.rangeTables : [];
   const todayIso = getTodayIsoDate();
   const defaultStart = rangeState.startDate || addDaysIso(todayIso, -7);
@@ -18518,10 +18562,15 @@ function renderSavedVPDRangeTableHtml(tbl) {
   var meta = (tbl && tbl.meta) ? tbl.meta : {};
   var summaryRows = Array.isArray(tbl && tbl.summaryRows) ? tbl.summaryRows : [];
   var criticalRows = Array.isArray(tbl && tbl.criticalRows) ? tbl.criticalRows : [];
+  var delId = (tbl && tbl.id) ? String(tbl.id) : '';
+  var delAttr = delId ? JSON.stringify(delId) : '""';
   return `
     <details style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;margin-bottom:8px;">
-      <summary style="cursor:pointer;font-weight:600;color:#9a3412;">
-        ${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalRows.length}
+      <summary style="cursor:pointer;font-weight:600;color:#9a3412;display:flex;align-items:center;justify-content:space-between;gap:10px;list-style-position:outside;">
+        <span style="flex:1;min-width:0;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalRows.length}</span>
+        <button type="button" title="Eliminar cuadro guardado" aria-label="Eliminar cuadro guardado"
+          style="flex-shrink:0;padding:4px 10px;font-size:12px;line-height:1.2;border-radius:6px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;font-weight:600;cursor:pointer;"
+          onclick="event.preventDefault();event.stopPropagation();if(window.deleteSavedVPDRangeTable)window.deleteSavedVPDRangeTable(${delAttr});">🗑️ Borrar</button>
       </summary>
       <div style="margin-top:8px;margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
         <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
@@ -18641,9 +18690,34 @@ function saveCurrentVPDRangeTable() {
     console.warn('saveCurrentVPDRangeTable:', e);
   }
   alert('✅ Cuadro VPD guardado en este proyecto (nube/local).');
+  if (typeof invalidateVpdSectionDomCache === 'function') invalidateVpdSectionDomCache();
   if (typeof selectSection === 'function') {
     selectSection("Análisis: Déficit de Presión de Vapor");
   }
+}
+
+function deleteSavedVPDRangeTable(tableId) {
+  if (tableId == null || tableId === '') {
+    alert('⚠️ No se pudo identificar el cuadro a eliminar.');
+    return;
+  }
+  if (!confirm('¿Eliminar este cuadro guardado de VPD? Se quitará del proyecto (nube/local).')) return;
+  const currentProjectId = np_getCurrentProjectId();
+  if (!currentProjectId) { alert('❌ No hay proyecto activo'); return; }
+  ensureVPDAnalysisStructures();
+  var idStr = String(tableId);
+  var before = currentProject.vpdAnalysis.rangeTables.length;
+  currentProject.vpdAnalysis.rangeTables = currentProject.vpdAnalysis.rangeTables.filter(function(t) {
+    return !t || String(t.id) !== idStr;
+  });
+  if (currentProject.vpdAnalysis.rangeTables.length === before) {
+    alert('⚠️ No se encontró ese cuadro.');
+    refreshVpdAnalysisSectionIfVisible();
+    return;
+  }
+  currentProject.vpdAnalysis.lastUpdated = new Date().toISOString();
+  persistVPDAnalysisAfterMutation();
+  refreshVpdAnalysisSectionIfVisible();
 }
 
 // Función para cambiar entre modo hoja/radiación
@@ -18674,6 +18748,7 @@ window.saveAdvancedVPD = saveAdvancedVPD;
 window.toggleVPDMode = toggleVPDMode;
 window.fetchVPDRangeData = fetchVPDRangeData;
 window.saveCurrentVPDRangeTable = saveCurrentVPDRangeTable;
+window.deleteSavedVPDRangeTable = deleteSavedVPDRangeTable;
 
 console.log('✅ Funciones VPD expuestas globalmente:', {
   getEnvironmentalWeatherData: typeof window.getEnvironmentalWeatherData,
@@ -18683,7 +18758,8 @@ console.log('✅ Funciones VPD expuestas globalmente:', {
   saveAdvancedVPD: typeof window.saveAdvancedVPD,
   toggleVPDMode: typeof window.toggleVPDMode,
   fetchVPDRangeData: typeof window.fetchVPDRangeData,
-  saveCurrentVPDRangeTable: typeof window.saveCurrentVPDRangeTable
+  saveCurrentVPDRangeTable: typeof window.saveCurrentVPDRangeTable,
+  deleteSavedVPDRangeTable: typeof window.deleteSavedVPDRangeTable
 });
 
 // Función global para debugging desde la consola
