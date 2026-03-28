@@ -59,23 +59,48 @@ function withSharedViewChrome(reportHtml, expiresAt) {
     : '7 días';
 
   const chromeCss = `<style id="np-shared-view-style">
-    .np-shared-topbar{position:sticky;top:0;z-index:9999;background:#ffffff;border-bottom:1px solid #e2e8f0}
-    .np-shared-topbar .inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:10px 14px}
-    .np-shared-topbar img{height:34px;width:auto;display:block}
-    .np-shared-topbar .links{display:flex;align-items:center;gap:12px;color:#64748b;font-size:14px}
-    .np-shared-topbar .links a{text-decoration:none;color:#64748b}
+    .np-shared-topbar{position:sticky;top:0;z-index:9999;background:linear-gradient(135deg,#ffffff 0%,#f8fafc 100%);border-bottom:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+    .np-shared-topbar .inner{height:48px;max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 16px;position:relative}
+    .np-shared-topbar .brand{position:absolute;left:16px;top:50%;transform:translateY(-50%);line-height:0}
+    .np-shared-topbar .brand img{height:40px;width:auto;display:block}
+    .np-shared-topbar .links{display:flex;align-items:center;gap:10px}
+    .np-shared-topbar .links a{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;color:#64748b;text-decoration:none;transition:all .2s ease}
+    .np-shared-topbar .links a:hover{transform:translateY(-1px);background:#f8fafc}
+    .np-shared-topbar .links a[data-social="facebook"]:hover{color:#1877f2}
+    .np-shared-topbar .links a[data-social="instagram"]:hover{color:#e4405f}
+    .np-shared-topbar .links a[data-social="tiktok"]:hover{color:#111827}
+    .np-shared-topbar .links a[data-social="youtube"]:hover{color:#ff0000}
+    .np-shared-topbar .links a[data-social="linkedin"]:hover{color:#0077b5}
+    .np-shared-topbar .links svg{width:18px;height:18px}
     .np-shared-note{max-width:1200px;margin:10px auto 0;padding:10px 12px;border:1px solid #bae6fd;background:#eff6ff;color:#0c4a6e;border-radius:8px;font:600 13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    @media (max-width:680px){
+      .np-shared-topbar .inner{padding:0 10px}
+      .np-shared-topbar .brand img{height:34px}
+      .np-shared-topbar .links{gap:6px}
+      .np-shared-topbar .links a{width:28px;height:28px}
+    }
   </style>`;
   const chromeHeader = `<header class="np-shared-topbar">
     <div class="inner">
-      <a href="https://nutriplantpro.com/dashboard.html" target="_blank" rel="noopener noreferrer">
+      <a class="brand" href="https://nutriplantpro.com/dashboard.html" target="_blank" rel="noopener noreferrer">
         <img src="https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO">
       </a>
-      <nav class="links">
-        <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer">Facebook</a>
-        <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">Instagram</a>
-        <a href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer">TikTok</a>
-        <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube</a>
+      <nav class="links" aria-label="Redes sociales NutriPlant PRO">
+        <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" data-social="facebook" title="Facebook" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" data-social="instagram" title="Instagram" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+        <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&_r=1" target="_blank" rel="noopener noreferrer" data-social="tiktok" title="TikTok" aria-label="TikTok">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+        </a>
+        <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" data-social="youtube" title="YouTube" aria-label="YouTube">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/><polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/></svg>
+        </a>
+        <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" data-social="linkedin" title="LinkedIn" aria-label="LinkedIn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+        </a>
       </nav>
     </div>
   </header>

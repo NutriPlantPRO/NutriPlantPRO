@@ -7469,6 +7469,124 @@ async function buildReportHtmlSnapshotForShare(report) {
 
 var shareReportViewInFlight = Object.create(null);
 
+function closeReportViewShareModal() {
+  var el = document.getElementById('reportViewShareModal');
+  if (el && el._npShareEsc) {
+    document.removeEventListener('keydown', el._npShareEsc);
+    el._npShareEsc = null;
+  }
+  if (el) el.remove();
+}
+
+/** Siempre muestra el URL en un modal (además del portapapeles si aplica). */
+function showReportViewShareModal(url, autoCopied) {
+  closeReportViewShareModal();
+  var overlay = document.createElement('div');
+  overlay.id = 'reportViewShareModal';
+  overlay.className = 'modal-overlay show';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) closeReportViewShareModal();
+  });
+  function onKey(e) {
+    if (e.key === 'Escape') closeReportViewShareModal();
+  }
+  overlay._npShareEsc = onKey;
+  document.addEventListener('keydown', onKey);
+
+  var modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.maxWidth = '640px';
+  modal.addEventListener('click', function(e) { e.stopPropagation(); });
+
+  var header = document.createElement('div');
+  header.className = 'modal-header';
+  var title = document.createElement('h2');
+  title.className = 'modal-title';
+  title.textContent = '🔗 Link de vista del reporte';
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'modal-close';
+  closeBtn.setAttribute('aria-label', 'Cerrar');
+  closeBtn.textContent = '×';
+  closeBtn.addEventListener('click', closeReportViewShareModal);
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+
+  var body = document.createElement('div');
+  body.className = 'modal-body';
+  var p = document.createElement('p');
+  p.style.margin = '0 0 12px 0';
+  p.style.color = '#475569';
+  p.style.fontSize = '14px';
+  p.style.lineHeight = '1.5';
+  p.textContent = autoCopied
+    ? 'El enlace ya se copió al portapapeles: pégalo donde quieras (Cmd+V o Ctrl+V). Vigencia: 7 días. Si vuelves a pulsar «Compartir vista», se genera otro link y el anterior deja de servir.'
+    : 'Tu navegador no permitió copiar solo; selecciona el texto y cópialo (Cmd+C / Ctrl+C). Vigencia: 7 días. Si vuelves a compartir, el link cambia.';
+  body.appendChild(p);
+
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.readOnly = true;
+  inp.value = url;
+  inp.style.width = '100%';
+  inp.style.boxSizing = 'border-box';
+  inp.style.padding = '10px';
+  inp.style.fontSize = '13px';
+  inp.style.border = '1px solid #e2e8f0';
+  inp.style.borderRadius = '6px';
+  body.appendChild(inp);
+
+  var footer = document.createElement('div');
+  footer.className = 'modal-footer';
+  var btnCopy = document.createElement('button');
+  btnCopy.type = 'button';
+  btnCopy.className = 'btn btn-info';
+  btnCopy.textContent = 'Copiar de nuevo';
+  btnCopy.addEventListener('click', function() {
+    inp.focus();
+    inp.select();
+    inp.setSelectionRange(0, 99999);
+    var done = function() {
+      if (typeof showMessage === 'function') showMessage('✅ Copiado al portapapeles.', 'success');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(function() {
+        try {
+          document.execCommand('copy');
+          done();
+        } catch (e) {}
+      });
+    } else {
+      try {
+        document.execCommand('copy');
+        done();
+      } catch (e) {}
+    }
+  });
+  var btnClose = document.createElement('button');
+  btnClose.type = 'button';
+  btnClose.className = 'btn btn-secondary';
+  btnClose.textContent = 'Cerrar';
+  btnClose.addEventListener('click', closeReportViewShareModal);
+  footer.appendChild(btnCopy);
+  footer.appendChild(btnClose);
+
+  modal.appendChild(header);
+  modal.appendChild(body);
+  modal.appendChild(footer);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  requestAnimationFrame(function() {
+    inp.focus();
+    inp.select();
+  });
+}
+
+window.closeReportViewShareModal = closeReportViewShareModal;
+
 function setShareViewButtonBusy(reportId, busy) {
   var id = String(reportId);
   document.querySelectorAll('.np-share-view-btn').forEach(function(btn) {
@@ -7563,16 +7681,16 @@ window.shareReportView = async function(reportId) {
     try { localStorage.setItem(getReportsStorageKey(scope), JSON.stringify(generatedReports)); } catch (e) {}
 
     var url = buildReportViewShareUrl(report.id, token);
+    var autoCopied = false;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       try {
         await navigator.clipboard.writeText(url);
-        showMessage('✅ Link de vista copiado. Vigencia: 7 días (si compartes otra vez, se renueva y cambia el link).', 'success');
+        autoCopied = true;
       } catch (e) {
-        window.prompt('Copia este link de vista del reporte:', url);
+        /* modal muestra el link; sin prompt nativo */
       }
-    } else {
-      window.prompt('Copia este link de vista del reporte:', url);
     }
+    showReportViewShareModal(url, autoCopied);
     updateReportsList();
   } catch (e) {
     console.error('shareReportView:', e);
