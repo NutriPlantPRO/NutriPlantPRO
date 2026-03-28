@@ -444,7 +444,7 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
       <tbody>
         <tr>
           <td><strong>Extracción por tonelada<br>(kg/ton)</strong></td>
-          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="granular-extract-${n}" value="${getGranularConvertedValue(n, (extraction[n] ?? 0))}" step="0.01" onchange="updateGranularExtractionPerTon('${n}', this.value)"></td>`).join('')}
+          ${nutrients.map(n => `<td><input type="number" class="fertirriego-input" id="granular-extract-${n}" value="${getGranularConvertedValue(n, (extraction[n] ?? 0))}" step="0.01" oninput="updateGranularExtractionPerTonLive('${n}', this.value)" onchange="updateGranularExtractionPerTon('${n}', this.value)"></td>`).join('')}
         </tr>
         <tr>
           <td><strong>Extracción total<br>(kg/ha)</strong></td>
@@ -458,7 +458,7 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
             const adjValue = adjustment[n] ?? 0;
             const displayValue = getGranularConvertedValue(n, adjValue);
             console.log(`🎨 Renderizando ajuste ${n}: valor guardado=${adjValue}, valor mostrado=${displayValue}, modo elemental=${isGranularRequerimientoElementalMode}`);
-            return `<td><input type="number" class="fertirriego-input" id="granular-adj-${n}" value="${displayValue}" step="0.01" onchange="updateGranularAdjustment('${n}', this.value)"></td>`;
+            return `<td><input type="number" class="fertirriego-input" id="granular-adj-${n}" value="${displayValue}" step="0.01" oninput="updateGranularAdjustmentLive('${n}', this.value)" onchange="updateGranularAdjustment('${n}', this.value)"></td>`;
           }).join('')}
         </tr>
         <tr>
@@ -470,7 +470,7 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
             // Asegurar que el valor se muestre correctamente (incluso si es 0, 2, 5, etc.)
             const displayValue = typeof effValue === 'number' && !isNaN(effValue) ? effValue : (GRANULAR_DEFAULT_EFFICIENCY[n] || 85);
             console.log(`🎨 Renderizando eficiencia ${n}: valor guardado=${efficiency[n]}, valor mostrado=${displayValue}`);
-            return `<td><input type="number" class="fertirriego-input" id="granular-eff-${n}" value="${displayValue}" step="0.1" min="1" max="100" onchange="updateGranularEfficiency('${n}', this.value)"></td>`;
+            return `<td><input type="number" class="fertirriego-input" id="granular-eff-${n}" value="${displayValue}" step="0.1" min="1" max="100" oninput="updateGranularEfficiencyLive('${n}', this.value)" onchange="updateGranularEfficiency('${n}', this.value)"></td>`;
           }).join('')}
         </tr>
         <tr class="requirement-real-row">
@@ -489,37 +489,52 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
 // Exponer
 window.renderGranularNutrientTable = renderGranularNutrientTable;
 
+function granularOxideFactorForNutrient(nutrient) {
+  return {
+    P2O5: GRANULAR_CONVERSION_FACTORS.P_TO_P2O5,
+    K2O: GRANULAR_CONVERSION_FACTORS.K_TO_K2O,
+    CaO: GRANULAR_CONVERSION_FACTORS.Ca_TO_CaO,
+    MgO: GRANULAR_CONVERSION_FACTORS.Mg_TO_MgO,
+    SiO2: GRANULAR_CONVERSION_FACTORS.Si_TO_SiO2
+  }[nutrient];
+}
+
+function granularNormalizeToOxide(nutrient, rawValue) {
+  let value = parseFloat(rawValue);
+  if (isNaN(value)) value = 0;
+  if (isGranularRequerimientoElementalMode) {
+    const factor = granularOxideFactorForNutrient(nutrient);
+    if (factor) value = value * factor;
+  }
+  return value;
+}
+
+function persistGranularRequirementChange(immediate) {
+  if (immediate) {
+    if (typeof window.saveGranularRequirementsImmediate === 'function') {
+      window.saveGranularRequirementsImmediate();
+    } else if (typeof window.saveGranularRequirements === 'function') {
+      window.saveGranularRequirements();
+    } else {
+      scheduleSaveGranularRequirements();
+    }
+  } else {
+    scheduleSaveGranularRequirements();
+  }
+}
+
 // Función para actualizar extracción por tonelada
-function updateGranularExtractionPerTon(nutrient, value) {
+function updateGranularExtractionPerTon(nutrient, value, options = {}) {
   try {
     if (isGranularLoading) {
       console.debug('ℹ️ Ignorando updateGranularExtractionPerTon durante carga');
       return;
     }
+    const immediate = options.immediate !== false;
     
     const cropType = document.getElementById('granularRequerimientoCropType').value;
-    let numValue = parseFloat(value);
-    
-    // 🚀 CRÍTICO: SIEMPRE guardar en formato ÓXIDO (base) - IGUAL QUE ADJUSTMENT
-    // Si estamos en modo elemental, el valor viene convertido y necesitamos convertirlo de vuelta a óxido
-    let nutrientKey = nutrient;
-    if (isGranularRequerimientoElementalMode) {
-      // En modo elemental, el nutriente puede venir como 'P', 'K', etc.
-      // Necesitamos identificar el nutriente base y convertir el valor
-      const elementalToOxide = {
-        'P': { key: 'P2O5', factor: GRANULAR_CONVERSION_FACTORS.P_TO_P2O5 },
-        'K': { key: 'K2O', factor: GRANULAR_CONVERSION_FACTORS.K_TO_K2O },
-        'Ca': { key: 'CaO', factor: GRANULAR_CONVERSION_FACTORS.Ca_TO_CaO },
-        'Mg': { key: 'MgO', factor: GRANULAR_CONVERSION_FACTORS.Mg_TO_MgO },
-        'Si': { key: 'SiO2', factor: GRANULAR_CONVERSION_FACTORS.Si_TO_SiO2 }
-      };
-      const conversion = elementalToOxide[nutrient];
-      if (conversion) {
-        numValue = numValue * conversion.factor;
-        nutrientKey = conversion.key;
-        console.log(`🔄 Convertido ${nutrient} (elemental ${value}) → ${nutrientKey} (óxido ${numValue.toFixed(2)})`);
-      }
-    }
+    const nutrientKey = nutrient;
+    const numValue = granularNormalizeToOxide(nutrientKey, value);
     
     console.log('🔄 updateGranularExtractionPerTon llamado:', { cropType, nutrient: nutrientKey, value: numValue, modoElemental: isGranularRequerimientoElementalMode });
     
@@ -533,49 +548,30 @@ function updateGranularExtractionPerTon(nutrient, value) {
     // Recalcular (esto fusionará base + overrides correctamente)
     calculateGranularNutrientRequirements();
     
-    // CRÍTICO: Guardar INMEDIATAMENTE para que los overrides se persistan
-    console.log('💾 Guardando inmediatamente después de modificar extracción por tonelada');
-    if (typeof window.saveGranularRequirementsImmediate === 'function') {
-      window.saveGranularRequirementsImmediate();
-    } else if (typeof window.saveGranularRequirements === 'function') {
-      window.saveGranularRequirements();
-    } else {
-      scheduleSaveGranularRequirements();
-    }
+    persistGranularRequirementChange(immediate);
   } catch (error) {
     console.error('❌ Error actualizando extracción por tonelada:', error);
   }
 }
 // Exponer
 window.updateGranularExtractionPerTon = updateGranularExtractionPerTon;
+window.updateGranularExtractionPerTonLive = function(nutrient, value) {
+  updateGranularExtractionPerTon(nutrient, value, { immediate: false });
+};
 
 // Función para actualizar ajuste
-function updateGranularAdjustment(nutrient, value) {
+function updateGranularAdjustment(nutrient, value, options = {}) {
   try {
     if (isGranularLoading) {
       console.debug('ℹ️ Ignorando updateGranularAdjustment durante carga');
       return;
     }
+    const immediate = options.immediate !== false;
     console.log('🔄 updateGranularAdjustment llamado:', { nutrient, value });
     savedGranularAdjustmentsAuto = false;
     
-    // Convertir de elemental a óxido si es necesario
-    let convertedValue = parseFloat(value);
-    let nutrientKey = nutrient;
-    if (isGranularRequerimientoElementalMode) {
-      const factor = {
-        'P': GRANULAR_CONVERSION_FACTORS.P_TO_P2O5,
-        'K': GRANULAR_CONVERSION_FACTORS.K_TO_K2O,
-        'Ca': GRANULAR_CONVERSION_FACTORS.Ca_TO_CaO,
-        'Mg': GRANULAR_CONVERSION_FACTORS.Mg_TO_MgO,
-        'Si': GRANULAR_CONVERSION_FACTORS.Si_TO_SiO2
-      }[nutrientKey];
-      if (factor) {
-        const nutrientNames = { 'P': 'P2O5', 'K': 'K2O', 'Ca': 'CaO', 'Mg': 'MgO', 'Si': 'SiO2' };
-        convertedValue = convertedValue * factor;
-        nutrientKey = nutrientNames[nutrientKey] || nutrientKey;
-      }
-    }
+    const nutrientKey = nutrient;
+    const convertedValue = granularNormalizeToOxide(nutrientKey, value);
     const efficiencyValue = parseFloat(document.getElementById(`granular-eff-${nutrientKey}`).value) || 1;
     const realRequirement = (convertedValue / (efficiencyValue / 100)).toFixed(2);
     document.getElementById(`granular-req-${nutrientKey}`).textContent = getGranularConvertedValue(nutrientKey, realRequirement);
@@ -583,33 +579,29 @@ function updateGranularAdjustment(nutrient, value) {
     if (!savedGranularAdjustments) savedGranularAdjustments = {};
     savedGranularAdjustments[nutrientKey] = convertedValue;
     
-    // CRÍTICO: Guardar INMEDIATAMENTE cuando el usuario modifica un valor
-    console.log('💾 Guardando inmediatamente después de modificar ajuste');
-    if (typeof window.saveGranularRequirementsImmediate === 'function') {
-      window.saveGranularRequirementsImmediate();
-    } else if (typeof window.saveGranularRequirements === 'function') {
-      window.saveGranularRequirements();
-    } else {
-      scheduleSaveGranularRequirements();
-    }
+    persistGranularRequirementChange(immediate);
   } catch (error) {
     console.error('❌ Error actualizando ajuste:', error);
   }
 }
 // Exponer
 window.updateGranularAdjustment = updateGranularAdjustment;
+window.updateGranularAdjustmentLive = function(nutrient, value) {
+  updateGranularAdjustment(nutrient, value, { immediate: false });
+};
 
 // Función para actualizar eficiencia
-function updateGranularEfficiency(nutrient, value) {
+function updateGranularEfficiency(nutrient, value, options = {}) {
   try {
     if (isGranularLoading) {
       console.debug('ℹ️ Ignorando updateGranularEfficiency durante carga');
       return;
     }
+    const immediate = options.immediate !== false;
     console.log('🔄 updateGranularEfficiency llamado:', { nutrient, value });
     
     const adjustmentInput = document.getElementById(`granular-adj-${nutrient}`);
-    const adjustmentValue = adjustmentInput ? (parseFloat(adjustmentInput.value) || 0) : 0;
+    const adjustmentValue = adjustmentInput ? granularNormalizeToOxide(nutrient, adjustmentInput.value) : 0;
     const efficiencyValue = parseFloat(value) || 1;
     const realRequirement = (adjustmentValue / (efficiencyValue / 100)).toFixed(2);
     const reqCell = document.getElementById(`granular-req-${nutrient}`);
@@ -623,21 +615,16 @@ function updateGranularEfficiency(nutrient, value) {
     if (!savedGranularEfficiencies) savedGranularEfficiencies = {};
     savedGranularEfficiencies[nutrient] = efficiencyValue;
     
-    // CRÍTICO: Guardar INMEDIATAMENTE cuando el usuario modifica un valor
-    console.log('💾 Guardando inmediatamente después de modificar eficiencia');
-    if (typeof window.saveGranularRequirementsImmediate === 'function') {
-      window.saveGranularRequirementsImmediate();
-    } else if (typeof window.saveGranularRequirements === 'function') {
-      window.saveGranularRequirements();
-    } else {
-      scheduleSaveGranularRequirements();
-    }
+    persistGranularRequirementChange(immediate);
   } catch (error) {
     console.error('❌ Error actualizando eficiencia:', error);
   }
 }
 // Exponer
 window.updateGranularEfficiency = updateGranularEfficiency;
+window.updateGranularEfficiencyLive = function(nutrient, value) {
+  updateGranularEfficiency(nutrient, value, { immediate: false });
+};
 
 let granularCustomCropEditId = null;
 
