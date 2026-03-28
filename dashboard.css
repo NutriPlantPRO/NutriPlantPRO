@@ -2568,12 +2568,13 @@ body {
   font-weight: 600;
   font-size: 0.9rem;
   line-height: 1.2; /* Altura de línea consistente */
-  height: 40px; /* Altura fija más grande para acomodar 2 líneas */
+  min-height: 40px; /* Mantener uniformidad sin recortar líneas */
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   white-space: normal; /* Permitir envoltura de texto */
+  word-break: keep-all; /* Evitar cortes raros como "a" solo */
 }
 
 .target-grid .target-item .target-input {
