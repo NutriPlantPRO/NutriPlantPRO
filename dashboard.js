@@ -6918,11 +6918,27 @@ async function np_refreshCurrentProjectFromCloud() {
       const toStore = fullData.id ? fullData : { id: projectId, ...fullData };
       // Asegurar que el proyecto local tenga la misma updated_at que la nube para no bloquear Guardar tras "Actualizar con la nube"
       const cloudUpdatedAt = fullData.updated_at || fullData.updatedAt;
+      const key = 'nutriplant_project_' + projectId;
+      // Evitar sobrescribir cambios locales más recientes con una copia de nube atrasada (sync en curso).
+      try {
+        const localRaw = localStorage.getItem(key);
+        if (localRaw && localRaw.startsWith('{')) {
+          const localObj = JSON.parse(localRaw);
+          const localUpdatedAt = localObj && (localObj.updated_at || localObj.updatedAt);
+          const localTs = localUpdatedAt ? new Date(localUpdatedAt).getTime() : 0;
+          const cloudTs = cloudUpdatedAt ? new Date(cloudUpdatedAt).getTime() : 0;
+          if (localTs && cloudTs && localTs > cloudTs + 1000) {
+            console.log('⏭️ Nube omitida: versión local es más reciente para este proyecto');
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ Comparación local vs nube falló, aplicando nube por seguridad:', e);
+      }
       if (cloudUpdatedAt) {
         toStore.updated_at = cloudUpdatedAt;
         toStore.updatedAt = cloudUpdatedAt;
       }
-      const key = 'nutriplant_project_' + projectId;
       localStorage.setItem(key, JSON.stringify(toStore));
       if (window.projectStorage) {
         if (window.projectStorage.memoryCache && window.projectStorage.memoryCache.currentProjectId === projectId) {
@@ -11042,6 +11058,28 @@ window.saveProject = async function() {
     
     // Guardar los datos
     saveProjectData();
+
+    // Forzar sync inmediato del proyecto actual para evitar que una recarga inmediata
+    // vuelva a bajar una versión de nube atrasada (especialmente en Programa Granular).
+    try {
+      const sp = window.nutriplantSupabaseProjects;
+      if (sp && typeof sp.syncProjectNow === 'function' && currentProject && currentProject.id) {
+        let latestForCloud = null;
+        if (window.projectStorage && typeof window.projectStorage.loadProject === 'function') {
+          latestForCloud = window.projectStorage.loadProject(currentProject.id);
+        }
+        if (!latestForCloud) {
+          const rawLatest = localStorage.getItem('nutriplant_project_' + currentProject.id);
+          latestForCloud = rawLatest && rawLatest.startsWith('{') ? JSON.parse(rawLatest) : null;
+        }
+        if (latestForCloud && typeof latestForCloud === 'object') {
+          await sp.syncProjectNow(currentProject.id, latestForCloud);
+          console.log('☁️ Sync inmediato tras guardado manual completado');
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Sync inmediato tras guardado manual:', e);
+    }
     
     // Mostrar mensaje de confirmación al usuario
     if (typeof window.showMessage === 'function') {
