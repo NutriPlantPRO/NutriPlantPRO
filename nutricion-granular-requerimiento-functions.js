@@ -1884,6 +1884,32 @@ function loadGranularRequirements(retryCount = 0) {
         console.warn('⚠️ Error cargando desde unificado:', e);
       }
     }
+
+    // PRIORIDAD 2.5: Memoria viva del proyecto actual (fallback de resiliencia)
+    // Caso real: el reporte puede salir con datos de currentProject aunque una lectura de storage falle.
+    // Aquí recuperamos ese estado para evitar que la UI de Granular "aparezca vacía".
+    if (!requirementData) {
+      try {
+        const cp = (typeof currentProject !== 'undefined' && currentProject && currentProject.id === projectId)
+          ? currentProject
+          : null;
+        const memReq = cp && cp.granular && cp.granular.requirements && typeof cp.granular.requirements === 'object'
+          ? cp.granular.requirements
+          : null;
+        if (memReq && (memReq.cropType || memReq.targetYield != null || memReq.adjustment || memReq.efficiency)) {
+          requirementData = { ...memReq };
+          console.log('✅ Datos Granular cargados desde memoria del proyecto actual (fallback):', {
+            cropType: requirementData.cropType,
+            targetYield: requirementData.targetYield,
+            hasAdjustment: !!requirementData.adjustment,
+            hasEfficiency: !!requirementData.efficiency,
+            hasExtractionOverrides: !!requirementData.extractionOverrides
+          });
+        }
+      } catch (e) {
+        console.warn('⚠️ Error cargando datos Granular desde memoria actual:', e);
+      }
+    }
     
     // PRIORIDAD 3: projectManager - fallback
     if (!requirementData && typeof window.projectManager !== 'undefined') {

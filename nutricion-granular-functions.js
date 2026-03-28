@@ -49,6 +49,28 @@ Object.keys(MATERIALS_DB).forEach(name => {
 let applications = [];
 let appCounter = 1;
 
+function isAutoGranularAppTitle(title) {
+  return typeof title === 'string' && /^\d+\s*ª\s*Aplicación\s+Granular$/i.test(title.trim());
+}
+
+function normalizeGranularApplicationTitles() {
+  if (!Array.isArray(applications)) {
+    applications = [];
+    appCounter = 1;
+    return;
+  }
+  applications.forEach((app, idx) => {
+    if (!app || typeof app !== 'object') return;
+    const nextNumber = idx + 1;
+    const nextTitle = `${nextNumber}ª Aplicación Granular`;
+    if (!app.title || isAutoGranularAppTitle(app.title)) {
+      app.title = nextTitle;
+    }
+    app.number = nextNumber;
+  });
+  appCounter = applications.length + 1;
+}
+
 function getCurrentUserId() {
   try {
     return localStorage.getItem('nutriplant_user_id');
@@ -379,10 +401,11 @@ function addGranularApplication() {
     console.log('🌱 Agregando nueva aplicación granular...');
     
     const appId = 'app_' + Date.now();
+    const nextNumber = applications.length + 1;
     const newApp = {
       id: appId,
-      number: appCounter++,
-      title: appCounter - 1 + 'ª Aplicación Granular',
+      number: nextNumber,
+      title: `${nextNumber}ª Aplicación Granular`,
       materials: [],
       doseKgHa: 0,
       composition: { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
@@ -390,6 +413,7 @@ function addGranularApplication() {
     };
     
     applications.push(newApp);
+    normalizeGranularApplicationTitles();
     renderApplications();
     updateSummary();
     
@@ -402,6 +426,7 @@ function addGranularApplication() {
 // Función para renderizar aplicaciones
 function renderApplications() {
   try {
+    normalizeGranularApplicationTitles();
     const container = document.getElementById('granularApplications');
     if (!container) {
       console.log('⚠️ Container granularApplications no encontrado');

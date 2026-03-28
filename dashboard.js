@@ -13143,6 +13143,15 @@ function createGranularSectionHTML() {
     `;
   }
 
+  function reportGranularAppTitle(app, idx) {
+    const fallback = `${idx + 1}ª Aplicación Granular`;
+    const raw = app && typeof app.title === 'string' ? app.title.trim() : '';
+    if (!raw) return fallback;
+    // Si es el formato automático, renumerar corrido para evitar saltos (1,2,3,5 -> 1,2,3,4).
+    if (/^\d+\s*ª\s*Aplicación\s+Granular$/i.test(raw)) return fallback;
+    return raw;
+  }
+
   return `
     <div class="section">
       <h2 class="section-title">🌾 Nutrición Granular</h2>
@@ -13178,7 +13187,7 @@ function createGranularSectionHTML() {
           return `
             <div class="report-card" style="margin-top:10px;">
               <div class="report-card-head">
-                <span>${reportEscapeHtml(app.title || `${idx + 1}ª Aplicación Granular`)}</span>
+                <span>${reportEscapeHtml(reportGranularAppTitle(app, idx))}</span>
                 <span class="report-card-meta">Dosis: ${toNumber(app.doseKgHa).toFixed(2)} kg/ha</span>
               </div>
               ${renderMaterialsTable(app)}
