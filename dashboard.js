@@ -1623,6 +1623,17 @@ function selectSection(name, el) {
           console.warn('⚠️ Error guardando Fertirriego:', e);
         }
       }
+
+      // CRÍTICO: Persistir también el Programa de Nutrición Granular al cambiar de sección.
+      // Antes solo se guardaban requerimientos y el programa podía perderse al recargar.
+      if (typeof window.saveApplications === 'function') {
+        try {
+          window.saveApplications();
+          console.log('⚡ Programa Granular guardado INMEDIATAMENTE');
+        } catch (e) {
+          console.warn('⚠️ Error guardando Programa Granular:', e);
+        }
+      }
       
       // SEGUNDO: Llamar a saveProjectData que recopila de los elementos actuales
       saveProjectData();
@@ -10993,9 +11004,9 @@ window.saveProject = async function() {
       // saveGranularRequirementsImmediate() ya guardó correctamente con extractionOverrides
       // Hacer guardado duplicado aquí causa race conditions y puede sobrescribir datos
       
-      // Guardar Programa Granular si estamos en esa pestaña
-      const granularProgramTab = document.querySelector('#granularPrograma.tab-content.active');
-      if (granularProgramTab && typeof window.saveApplications === 'function') {
+      // Guardar Programa Granular también cuando no estamos en esa subpestaña:
+      // puede haber cambios en memoria (oninput) que aún no se persistieron.
+      if (typeof window.saveApplications === 'function') {
         console.log('💾 Guardando programa de Granular antes de recopilar...');
         window.saveApplications();
       }
