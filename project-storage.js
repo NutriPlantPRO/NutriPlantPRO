@@ -627,6 +627,7 @@ class ProjectStorage {
       let existingLocation = null; // Definir fuera del while
       let hasValidLocation = false; // Definir fuera del while
       const isLocationSection = section === 'location'; // Definir fuera del while
+      let skippedNoopSave = false;
       
       while (retries > 0 && !success) {
         try {
@@ -673,11 +674,6 @@ class ProjectStorage {
             });
           }
           
-          // 🚀 CRÍTICO: Actualizar SOLO esta sección (reemplazo completo de la sección)
-          // NO hacer merge dentro de la sección - reemplazo completo
-          // Si es array (soilAnalyses), guardar el array tal cual para que persista correctamente
-          projectData[section] = isArraySection ? sectionData : sectionData;
-          
           if (isLocationSection && sectionData) {
             if (!sectionData.projectId) {
               sectionData.projectId = projectData.id || projectId;
@@ -689,6 +685,20 @@ class ProjectStorage {
               sectionData.projectId = projectData.id;
             }
           }
+
+          // 🚀 OPTIMIZACIÓN: evitar escritura/sync si la sección no cambió realmente.
+          const existingSectionData = projectData[section];
+          if (!this.hasSectionChanged(existingSectionData, sectionData)) {
+            skippedNoopSave = true;
+            success = true;
+            console.log(`⏭️ Sección '${section}' sin cambios reales - se omite write/sync`);
+            continue;
+          }
+          
+          // 🚀 CRÍTICO: Actualizar SOLO esta sección (reemplazo completo de la sección)
+          // NO hacer merge dentro de la sección - reemplazo completo
+          // Si es array (soilAnalyses), guardar el array tal cual para que persista correctamente
+          projectData[section] = isArraySection ? sectionData : sectionData;
           
           // 🚀 CRÍTICO: SIEMPRE restaurar location después de actualizar la sección
           // Esto asegura que location NUNCA se pierda, incluso si hay un error
@@ -761,7 +771,7 @@ class ProjectStorage {
       if (projectId === this.memoryCache.currentProjectId) {
         if (!this.memoryCache.projectData) {
           this.memoryCache.projectData = projectData;
-        } else {
+        } else if (!skippedNoopSave) {
           // Actualizar solo esta sección en memoria (array se guarda como array)
           this.memoryCache.projectData[section] = isArraySection ? sectionData : sectionData;
           this.memoryCache.projectData.updated_at = projectData.updated_at;
@@ -784,19 +794,27 @@ class ProjectStorage {
           }
         }
         this.memoryCache.isDirty = false; // Ya guardado
-        console.log(`✅ Sección '${section}' guardada directamente en localStorage y memoria`);
+        if (skippedNoopSave) {
+          console.log(`✅ Sección '${section}' sin cambios reales (memoria/local intactos)`);
+        } else {
+          console.log(`✅ Sección '${section}' guardada directamente en localStorage y memoria`);
+        }
       } else {
         // Actualizar caché de otros proyectos si existe
-        if (this.projectsCache.has(projectId)) {
+        if (!skippedNoopSave && this.projectsCache.has(projectId)) {
           const cached = this.projectsCache.get(projectId);
           cached[section] = sectionData;
           cached.updated_at = projectData.updated_at;
           this.projectsCache.set(projectId, cached);
         }
-        console.log(`✅ Sección '${section}' guardada directamente en localStorage`);
+        if (skippedNoopSave) {
+          console.log(`✅ Sección '${section}' sin cambios reales (se omite escritura local)`);
+        } else {
+          console.log(`✅ Sección '${section}' guardada directamente en localStorage`);
+        }
       }
       // 🟢 Sincronizar con la nube en segundo plano (enmiendas, fertirriego, hidroponía, análisis, etc.)
-      if (typeof window.nutriplantSyncProjectToCloud === 'function') {
+      if (!skippedNoopSave && typeof window.nutriplantSyncProjectToCloud === 'function') {
         try { window.nutriplantSyncProjectToCloud(projectId, projectData); } catch (err) { console.warn('nutriplantSyncProjectToCloud:', err); }
       }
       return true;
@@ -1222,7 +1240,32 @@ class ProjectStorage {
            typeof value === 'object' && 
            !Array.isArray(value) && 
            value.constructor === Object;
-}
+  }
+
+  /**
+   * Normaliza una sección para comparar cambios reales sin ruido de timestamps.
+   */
+  normalizeSectionForCompare(value) {
+    if (Array.isArray(value)) return value;
+    if (!this.isPlainObject(value)) return value;
+    const normalized = { ...value };
+    delete normalized.lastUpdated;
+    return normalized;
+  }
+
+  /**
+   * Retorna true si la sección cambió realmente (ignorando lastUpdated).
+   */
+  hasSectionChanged(existingSection, nextSection) {
+    try {
+      const prev = this.normalizeSectionForCompare(existingSection);
+      const next = this.normalizeSectionForCompare(nextSection);
+      return JSON.stringify(prev) !== JSON.stringify(next);
+    } catch (e) {
+      // En caso de duda, asumir que sí cambió para no perder datos.
+      return true;
+    }
+  }
 
   /**
    * Guarda con debounce (para inputs que cambian frecuentemente)

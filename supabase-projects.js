@@ -157,6 +157,29 @@
   var USER_CHAT_SYNC_DEBOUNCE_MS = 6000;
   var userChatSyncTimers = Object.create(null);
   var userChatSyncPending = Object.create(null);
+  var HIDDEN_FLUSH_DELAY_MS = 3000;
+  var hiddenFlushTimer = null;
+
+  function clearHiddenFlushTimer() {
+    if (hiddenFlushTimer) {
+      clearTimeout(hiddenFlushTimer);
+      hiddenFlushTimer = null;
+    }
+  }
+
+  function scheduleHiddenFlush() {
+    clearHiddenFlushTimer();
+    hiddenFlushTimer = setTimeout(function() {
+      hiddenFlushTimer = null;
+      if (!document.hidden || !window.nutriplantSupabaseProjects) return;
+      if (window.nutriplantSupabaseProjects.flushPendingProjectCloudSync) {
+        window.nutriplantSupabaseProjects.flushPendingProjectCloudSync();
+      }
+      if (window.nutriplantSupabaseProjects.flushPendingUserChatNoProjectSync) {
+        window.nutriplantSupabaseProjects.flushPendingUserChatNoProjectSync();
+      }
+    }, HIDDEN_FLUSH_DELAY_MS);
+  }
 
   async function syncProjectNow(projectId, projectData) {
     if (!isSupabaseUser()) return;
@@ -926,17 +949,18 @@
     });
     // Antes de cambiar de pestaña o minimizar: enviar debounce pendiente para no perder la última versión en nube
     document.addEventListener('visibilitychange', function() {
-      if (document.hidden && window.nutriplantSupabaseProjects) {
-        if (window.nutriplantSupabaseProjects.flushPendingProjectCloudSync) {
-          window.nutriplantSupabaseProjects.flushPendingProjectCloudSync();
-        }
-        if (window.nutriplantSupabaseProjects.flushPendingUserChatNoProjectSync) {
-          window.nutriplantSupabaseProjects.flushPendingUserChatNoProjectSync();
-        }
+      if (!window.nutriplantSupabaseProjects) return;
+      if (document.hidden) {
+        // Alt-tab corto no debe forzar flush inmediato.
+        scheduleHiddenFlush();
+      } else {
+        // Si vuelve rápido al dashboard, cancelar el flush diferido.
+        clearHiddenFlushTimer();
       }
     });
     window.addEventListener('pagehide', function() {
       if (window.nutriplantSupabaseProjects) {
+        clearHiddenFlushTimer();
         if (window.nutriplantSupabaseProjects.flushPendingProjectCloudSync) {
           window.nutriplantSupabaseProjects.flushPendingProjectCloudSync();
         }
