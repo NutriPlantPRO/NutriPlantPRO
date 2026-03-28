@@ -691,6 +691,38 @@ class ProjectStorage {
 
           // 🚀 OPTIMIZACIÓN: evitar escritura/sync si la sección no cambió realmente.
           const existingSectionData = projectData[section];
+
+          // Blindaje específico Granular:
+          // Si llega un guardado parcial de 'granular' (p.ej. solo program) y ya había
+          // requirements válidos, preservarlos para que no se pierdan al recargar.
+          if (section === 'granular' && !isArraySection && sectionData && typeof sectionData === 'object') {
+            const existingReq = existingSectionData && typeof existingSectionData === 'object'
+              ? existingSectionData.requirements
+              : null;
+            const incomingReq = sectionData.requirements;
+            const incomingHasReq = !!(incomingReq &&
+              typeof incomingReq === 'object' &&
+              (
+                incomingReq.cropType ||
+                incomingReq.targetYield != null ||
+                (incomingReq.adjustment && Object.keys(incomingReq.adjustment).length > 0) ||
+                (incomingReq.efficiency && Object.keys(incomingReq.efficiency).length > 0) ||
+                (incomingReq.extractionOverrides && Object.keys(incomingReq.extractionOverrides).length > 0)
+              ));
+            const existingHasReq = !!(existingReq &&
+              typeof existingReq === 'object' &&
+              (
+                existingReq.cropType ||
+                existingReq.targetYield != null ||
+                (existingReq.adjustment && Object.keys(existingReq.adjustment).length > 0) ||
+                (existingReq.efficiency && Object.keys(existingReq.efficiency).length > 0) ||
+                (existingReq.extractionOverrides && Object.keys(existingReq.extractionOverrides).length > 0)
+              ));
+            if (!incomingHasReq && existingHasReq) {
+              sectionData.requirements = existingReq;
+              console.warn('🛡️ Granular guard: preservando requirements existentes en saveSection()');
+            }
+          }
           if (!this.hasSectionChanged(existingSectionData, sectionData)) {
             skippedNoopSave = true;
             success = true;
