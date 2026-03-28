@@ -1353,20 +1353,29 @@ function saveGranularRequirements() {
     if (useCentralized) {
       // Usar sistema centralizado con merge inteligente
       const existingSection = window.projectStorage.loadSection('granular', projectId) || {};
-      // Preservar program.mode si no viene en loadSection
-      if (!existingSection.program || typeof existingSection.program.mode !== 'boolean') {
+      // Preservar Programa Granular completo si loadSection no lo trae (evitar perder aplicaciones).
+      // Nota: saveSection('granular', ...) reemplaza la sección completa; por eso debemos
+      // traer y fusionar program desde storage unificado cuando falte o esté incompleto.
+      if (
+        !existingSection.program ||
+        !Array.isArray(existingSection.program.applications) ||
+        existingSection.program.applications.length === 0
+      ) {
         try {
           const unifiedKey = `nutriplant_project_${projectId}`;
           const raw = localStorage.getItem(unifiedKey);
           if (raw) {
             const stored = JSON.parse(raw);
             const storedProgram = stored?.granular?.program;
-            if (storedProgram && typeof storedProgram.mode === 'boolean') {
-              existingSection.program = { ...storedProgram };
+            if (storedProgram && typeof storedProgram === 'object') {
+              existingSection.program = {
+                ...(existingSection.program || {}),
+                ...storedProgram
+              };
             }
           }
         } catch (e) {
-          console.warn('⚠️ No se pudo preservar program.mode desde unificado:', e);
+          console.warn('⚠️ No se pudo preservar programa granular desde unificado:', e);
         }
       }
       const granularData = {
