@@ -1849,3 +1849,64 @@ removeApp = function(appId) {
   autoSave();
 };
 
+// Guardado diferido para cambios "live" (mientras el usuario escribe)
+let granularLiveSaveTimer = null;
+function scheduleLiveAutoSave(delayMs = 700) {
+  try {
+    if (granularLiveSaveTimer) clearTimeout(granularLiveSaveTimer);
+    granularLiveSaveTimer = setTimeout(() => {
+      saveApplications();
+    }, delayMs);
+  } catch (e) {
+    console.warn('⚠️ scheduleLiveAutoSave error:', e);
+  }
+}
+
+// Asegurar persistencia al agregar/eliminar materiales del programa
+const originalAddMaterial = addMaterial;
+addMaterial = function(appId) {
+  originalAddMaterial(appId);
+  autoSave();
+};
+
+const originalRemoveMaterial = removeMaterial;
+removeMaterial = function(appId, materialIndex) {
+  originalRemoveMaterial(appId, materialIndex);
+  autoSave();
+};
+
+// Guardar al confirmar el título de la aplicación
+const originalUpdateAppTitle = updateAppTitle;
+updateAppTitle = function(appId, title) {
+  originalUpdateAppTitle(appId, title);
+  autoSave();
+};
+
+// Guardar en segundo plano mientras el usuario escribe
+const originalUpdateMaterialPercentageLive = updateMaterialPercentageLive;
+updateMaterialPercentageLive = function(appId, materialIndex, percentage) {
+  originalUpdateMaterialPercentageLive(appId, materialIndex, percentage);
+  scheduleLiveAutoSave();
+};
+
+const originalUpdateDoseLive = updateDoseLive;
+updateDoseLive = function(appId, dose) {
+  originalUpdateDoseLive(appId, dose);
+  scheduleLiveAutoSave();
+};
+
+const originalUpdateAppTitleLive = updateAppTitleLive;
+updateAppTitleLive = function(appId, title) {
+  originalUpdateAppTitleLive(appId, title);
+  scheduleLiveAutoSave();
+};
+
+// Última red de seguridad: guardar antes de recargar/cerrar pestaña
+window.addEventListener('beforeunload', function() {
+  try {
+    saveApplications();
+  } catch (e) {
+    console.warn('⚠️ beforeunload saveApplications error:', e);
+  }
+});
+
