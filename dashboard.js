@@ -649,9 +649,9 @@ function sectionTemplate(name) {
                   </div>
                 </div>
 
-                <div class="summary-nutrients" style="margin-top: 16px;">
+                <div class="summary-nutrients summary-nutrients--granular-diff" style="margin-top: 16px;">
                   <h4>➖ Diferencia (Aporte total - Requerimiento) (Kg/Ha):</h4>
-                  <div class="nutrients-grid">
+                  <div class="nutrients-grid nutrients-grid--diff">
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="fertiDiffN">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="fertiDiffP2O5">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelK2O">K₂O:</span><span class="nutrient-value" id="fertiDiffK2O">0.0</span></div>
@@ -10542,20 +10542,10 @@ window.saveProject = async function() {
       return;
     }
 
-    // Protección anti-cruce multi-equipo:
-    // si nube es más reciente que la copia local, ofrecer actualizar O guardar tu versión de todos modos.
-    var newerCheck = await np_hasNewerCloudVersion(currentProject.id);
-    if (newerCheck && newerCheck.hasNewer) {
-      np_setProjectSyncStatus('error', 'Nube más reciente');
-      var guardarDeTodosModos = confirm(
-        '⚠️ Hay una versión más nueva en la nube.\n\n' +
-        '• Si quieres usar esa versión: pulsa "Cancelar" y luego el botón "☁️ Actualizar con la nube".\n\n' +
-        '• Si quieres guardar lo que tienes ahora en la lap (tu versión sobrescribirá la nube): pulsa "Aceptar".\n\n' +
-        '¿Guardar tu versión actual de todos modos?'
-      );
-      if (!guardarDeTodosModos) return;
-      // El usuario eligió guardar su versión; seguimos con el guardado (sobrescribirá nube).
-    }
+    // Guardado manual = intención explícita: lo que hay en pantalla pasa a ser la fuente de verdad.
+    // No mostrar confirm por "nube más reciente": el sync en segundo plano u otra pestaña puede adelantar
+    // updated_at en Supabase y generar falsos positivos. Quien necesite traer la nube usa "Actualizar con la nube".
+    // (np_hasNewerCloudVersion sigue disponible por si en el futuro se usa p. ej. indicador no bloqueante.)
 
     // 🚀 CRÍTICO: Detectar sección activa por DOM (no por textContent que tiene emojis/acentos)
     const isGranularActive = !!(

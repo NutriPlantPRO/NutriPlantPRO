@@ -959,6 +959,29 @@ function updateFertiSummary() {
 
   // Mostrar en el resumen del DOM (ids prefijados con ferti...)
   function set(id, value){ const el = document.getElementById(id); if (el) el.textContent = fertiProgFormat(value); }
+  function setFertiDiff(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const n = parseFloat(value);
+    const num = isNaN(n) ? 0 : n;
+    el.textContent = fertiProgFormat(value);
+    el.classList.remove('nutrient-diff--deficit', 'nutrient-diff--surplus', 'nutrient-diff--balanced');
+    const item = el.closest('.nutrient-item');
+    if (item) {
+      item.classList.remove('nutrient-item--diff-deficit', 'nutrient-item--diff-surplus', 'nutrient-item--diff-balanced');
+    }
+    var diffEps = 1e-3;
+    if (Math.abs(num) < diffEps) {
+      el.classList.add('nutrient-diff--balanced');
+      if (item) item.classList.add('nutrient-item--diff-balanced');
+    } else if (num < 0) {
+      el.classList.add('nutrient-diff--deficit');
+      if (item) item.classList.add('nutrient-item--diff-deficit');
+    } else {
+      el.classList.add('nutrient-diff--surplus');
+      if (item) item.classList.add('nutrient-item--diff-surplus');
+    }
+  }
   function setInput(id, value){
     const el = document.getElementById(id);
     if (!el) return;
@@ -1042,9 +1065,9 @@ function updateFertiSummary() {
     Mo: (totals.Mo) - (reqOxide.Mo||0) + (fertiWaterContributionOxide.Mo||0),
     SiO2: (totals.SiO2) - (reqOxide.SiO2||0) + (fertiWaterContributionOxide.SiO2||0)
   };
-  set('fertiDiffN', diff.N);
-  set('fertiDiffP2O5', toElemental('P2O5', diff.P2O5)); set('fertiDiffK2O', toElemental('K2O', diff.K2O)); set('fertiDiffCaO', toElemental('CaO', diff.CaO)); set('fertiDiffMgO', toElemental('MgO', diff.MgO));
-  set('fertiDiffS', diff.S); set('fertiDiffSO4', diff.SO4); set('fertiDiffFe', diff.Fe); set('fertiDiffMn', diff.Mn); set('fertiDiffB', diff.B); set('fertiDiffZn', diff.Zn); set('fertiDiffCu', diff.Cu); set('fertiDiffMo', diff.Mo); set('fertiDiffSiO2', toElemental('SiO2', diff.SiO2));
+  setFertiDiff('fertiDiffN', diff.N);
+  setFertiDiff('fertiDiffP2O5', toElemental('P2O5', diff.P2O5)); setFertiDiff('fertiDiffK2O', toElemental('K2O', diff.K2O)); setFertiDiff('fertiDiffCaO', toElemental('CaO', diff.CaO)); setFertiDiff('fertiDiffMgO', toElemental('MgO', diff.MgO));
+  setFertiDiff('fertiDiffS', diff.S); setFertiDiff('fertiDiffSO4', diff.SO4); setFertiDiff('fertiDiffFe', diff.Fe); setFertiDiff('fertiDiffMn', diff.Mn); setFertiDiff('fertiDiffB', diff.B); setFertiDiff('fertiDiffZn', diff.Zn); setFertiDiff('fertiDiffCu', diff.Cu); setFertiDiff('fertiDiffMo', diff.Mo); setFertiDiff('fertiDiffSiO2', toElemental('SiO2', diff.SiO2));
 
   try { updateFertiCharts(); } catch {}
 }

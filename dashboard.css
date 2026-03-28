@@ -5020,7 +5020,7 @@ body {
   text-align: center;
 }
 
-/* Fila de diferencias (programa granular): resalta suave déficit / exceso / equilibrio */
+/* Fila de diferencias (granular + fertirriego): resalta suave déficit / exceso / equilibrio */
 .summary-nutrients--granular-diff {
   position: relative;
   z-index: 1;
