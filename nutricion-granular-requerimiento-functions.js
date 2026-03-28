@@ -1694,10 +1694,13 @@ document.addEventListener('DOMContentLoaded', function() {
   document.addEventListener('change', (e) => {
     if (isGranularLoading) { return; }
     const id = e.target && e.target.id;
-    
-    // NOTA: granularRequerimientoCropType y granularRequerimientoTargetYield ya tienen onchange inline
-    // que llama a calculateGranularNutrientRequirements(), NO duplicar aquí
-    
+
+    // Cultivo/rendimiento disparan recálculo inline; aquí solo garantizamos persistencia.
+    if (id === 'granularRequerimientoCropType' || id === 'granularRequerimientoTargetYield') {
+      scheduleSaveGranularRequirements();
+      return;
+    }
+
     // Solo manejar inputs dinámicos que no tienen onchange inline
     if (id && (id.startsWith('granular-extract-') || id.startsWith('granular-adj-') || id.startsWith('granular-eff-'))) {
       scheduleSaveGranularRequirements();

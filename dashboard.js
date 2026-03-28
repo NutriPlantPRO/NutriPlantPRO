@@ -6927,8 +6927,11 @@ async function np_refreshCurrentProjectFromCloud() {
           const localUpdatedAt = localObj && (localObj.updated_at || localObj.updatedAt);
           const localTs = localUpdatedAt ? new Date(localUpdatedAt).getTime() : 0;
           const cloudTs = cloudUpdatedAt ? new Date(cloudUpdatedAt).getTime() : 0;
-          if (localTs && cloudTs && localTs > cloudTs + 1000) {
-            console.log('⏭️ Nube omitida: versión local es más reciente para este proyecto');
+          // Regla local-first:
+          // - Si la nube no trae timestamp confiable, NO pisar local.
+          // - Si la nube es igual o más vieja (margen 1s), NO pisar local.
+          if (localTs && (!cloudTs || cloudTs <= localTs + 1000)) {
+            console.log('⏭️ Nube omitida: local es más reciente/igual o nube sin timestamp confiable');
             return;
           }
         }
