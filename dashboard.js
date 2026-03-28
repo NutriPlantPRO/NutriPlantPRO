@@ -7426,6 +7426,46 @@ function getReportsStorageKey(scope) {
   return `nutriplant_reports_${resolved.userId}_${resolved.projectId}`;
 }
 
+/** Programa fertirriego para reporte/PDF (mismo criterio que admin y descarga). */
+function getFertirriegoProgramForReport() {
+  const fRoot = currentProject && currentProject.fertirriego;
+  const progNested = fRoot && fRoot.program;
+  if (progNested && typeof progNested === 'object' && Object.keys(progNested).length > 0) return progNested;
+  return (currentProject && currentProject.fertirriegoProgram) || null;
+}
+
+/**
+ * Tras document.write en una ventana nueva, onload a veces no dispara; imprimimos con retardo
+ * y respaldo por load para evitar pestaña en blanco aparente o diálogo de impresión que no abre.
+ */
+function scheduleReportPrintWhenReady(printWindow) {
+  if (!printWindow) return;
+  var fired = false;
+  function doPrint() {
+    if (fired) return;
+    fired = true;
+    try {
+      printWindow.focus();
+      printWindow.print();
+    } catch (e) {
+      console.warn('scheduleReportPrintWhenReady print:', e);
+    }
+  }
+  try {
+    if (printWindow.document && printWindow.document.readyState === 'complete') {
+      setTimeout(doPrint, 400);
+      return;
+    }
+    printWindow.addEventListener('load', function onReportLoad() {
+      printWindow.removeEventListener('load', onReportLoad);
+      setTimeout(doPrint, 400);
+    });
+    setTimeout(doPrint, 1200);
+  } catch (e) {
+    setTimeout(doPrint, 500);
+  }
+}
+
 // Función antigua eliminada - ahora usa la nueva función del modal
 
 // Función eliminada - ya no se valida si hay datos suficientes
@@ -8061,7 +8101,7 @@ window.downloadReport = function(reportId) {
     function openReportWithCharts(chartImages) {
       chartImages = chartImages || {};
       var reportHTML = createReportHTML(printableSections, chartImages, report.reportLanguage || 'es');
-      var printWindow = window.open('', '_blank');
+      var printWindow = window.open('about:blank', '_blank');
       if (!printWindow) {
         showMessage('❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.', 'error');
         return;
@@ -8070,18 +8110,10 @@ window.downloadReport = function(reportId) {
       printWindow.document.write(reportHTML);
       printWindow.document.close();
       printWindow.focus();
-      printWindow.onload = function() {
-        setTimeout(function() {
-          printWindow.print();
-        }, 500);
-      };
+      scheduleReportPrintWhenReady(printWindow);
     }
     if (printableSections.indexOf('fertigation') >= 0 && typeof window.getFertiChartsDataUrlsForReport === 'function') {
-      var fRoot = currentProject && currentProject.fertirriego;
-      var progNested = fRoot && fRoot.program;
-      var prog = (progNested && typeof progNested === 'object' && Object.keys(progNested).length > 0)
-        ? progNested
-        : (currentProject && currentProject.fertirriegoProgram) || null;
+      var prog = getFertirriegoProgramForReport();
       window.getFertiChartsDataUrlsForReport(prog, function(chartImages) {
         openReportWithCharts(chartImages);
       });
@@ -11228,48 +11260,58 @@ window.generatePDFReport = function() {
     return;
   }
 
+  // Abrir pestaña ya en el gesto del usuario (antes de persist/HTML pesado) para evitar pop-up bloqueado o pestaña vacía.
+  const printWindow = window.open('about:blank', '_blank');
+  if (!printWindow) {
+    showMessage('❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.', 'error');
+    return;
+  }
+  try {
+    printWindow.document.open();
+    printWindow.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>NutriPlant PRO</title></head><body style="margin:0;font-family:system-ui,sans-serif;background:#f8fafc;color:#475569;"><p style="padding:24px;margin:0;font-size:15px;">Generando reporte…</p></body></html>');
+    printWindow.document.close();
+  } catch (e0) { /* ignore */ }
+
   const persistedOk = persistReportSourceData();
   if (!persistedOk) {
+    try { printWindow.close(); } catch (eClose) {}
     showMessage('❌ No se pudo guardar el estado actual antes de generar el reporte.', 'error');
     return;
   }
 
-  // Cerrar modal al confirmar generación
   closeReportModal();
 
-  try {
-    const reportHTML = createReportHTML(selectedSections, null, reportLanguage);
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      showMessage('❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.', 'error');
-      return;
+  function finishPdf(chartImages) {
+    try {
+      const reportHTML = createReportHTML(selectedSections, chartImages || {}, reportLanguage);
+      saveReportToList({
+        id: `report_panel_${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        projectName: currentProject?.name || 'Proyecto NutriPlant',
+        selectedSections: selectedSections.slice(0),
+        reportLanguage: reportLanguage,
+        reportHTML
+      });
+      printWindow.document.open();
+      printWindow.document.write(reportHTML);
+      printWindow.document.close();
+      printWindow.focus();
+      scheduleReportPrintWhenReady(printWindow);
+      showMessage('✅ Se abrió la vista para descargar PDF (' + selectedSections.length + ' secciones).', 'success');
+    } catch (error) {
+      console.error('❌ Error generando PDF:', error);
+      try { printWindow.close(); } catch (eClose2) {}
+      showMessage('❌ Error generando PDF: ' + error.message, 'error');
     }
+  }
 
-    saveReportToList({
-      id: `report_panel_${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      projectName: currentProject?.name || 'Proyecto NutriPlant',
-      selectedSections: selectedSections.slice(0),
-      reportLanguage: reportLanguage,
-      reportHTML
+  if (selectedSections.indexOf('fertigation') >= 0 && typeof window.getFertiChartsDataUrlsForReport === 'function') {
+    const prog = getFertirriegoProgramForReport();
+    window.getFertiChartsDataUrlsForReport(prog, function(chartImages) {
+      finishPdf(chartImages);
     });
-
-    printWindow.document.open();
-    printWindow.document.write(reportHTML);
-    printWindow.document.close();
-    printWindow.focus();
-
-    // Dar tiempo a que carguen estilos y layout antes de imprimir
-    printWindow.onload = function() {
-      setTimeout(function() {
-        printWindow.print();
-      }, 300);
-    };
-
-    showMessage('✅ Se abrió la vista para descargar PDF (' + selectedSections.length + ' secciones).', 'success');
-  } catch (error) {
-    console.error('❌ Error generando PDF:', error);
-    showMessage('❌ Error generando PDF: ' + error.message, 'error');
+  } else {
+    finishPdf({});
   }
 };
 
@@ -13153,7 +13195,6 @@ function createFertigationSectionHTML(chartImages) {
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:8px;">
           <div><strong>${reportFertiIsMes ? 'Meses' : 'Semanas'}:</strong> ${weeks.length}</div>
           <div><strong>Dosis total Kg/Ha:</strong> ${totalDose.toFixed(2)}</div>
-          <div><strong>Unidad:</strong> ${reportFertiIsMes ? 'Mes' : 'Semana'}</div>
         </div>
         <div class="report-subtitle">Aporte del programa de nutrición (kg/ha):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(totalProgram, programModeIsElemental, false)}</div>
