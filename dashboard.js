@@ -1521,20 +1521,66 @@ function selectSection(name, el) {
     var subTab = getCurrentSubTabForSection(previousSection);
     var scrollKey = subTab ? previousSection + '|' + subTab : previousSection;
     sectionScrollPositions[scrollKey] = getScrollPosition();
-    if (previousSection === 'Análisis: Solución Nutritiva' && currentProject.id && typeof window.saveSolucionNutritivaUIState === 'function') {
-      try { window.saveSolucionNutritivaUIState(); } catch (e) { console.warn('saveSolucionNutritivaUIState', e); }
+    // Análisis (listado de reportes): blur + persistir arrays sin debounce + estado UI al salir de la sección
+    if (previousSection === 'Análisis: Suelo' && currentProject.id) {
+      try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+      if (typeof window.saveSoilAnalysesToProjectImmediate === 'function') {
+        try { window.saveSoilAnalysesToProjectImmediate(); } catch (e) { console.warn('saveSoilAnalysesToProjectImmediate', e); }
+      }
+      if (typeof window.saveSoilAnalysisUIState === 'function') {
+        try { window.saveSoilAnalysisUIState(); } catch (e) { console.warn('saveSoilAnalysisUIState', e); }
+      }
     }
-    if (previousSection === 'Análisis: Extracto de Pasta' && currentProject.id && typeof window.saveExtractoPastaUIState === 'function') {
-      try { window.saveExtractoPastaUIState(); } catch (e) { console.warn('saveExtractoPastaUIState', e); }
+    if (previousSection === 'Análisis: Solución Nutritiva' && currentProject.id) {
+      try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+      if (typeof window.saveSolucionNutritivaAnalysesToProjectImmediate === 'function') {
+        try { window.saveSolucionNutritivaAnalysesToProjectImmediate(); } catch (e) { console.warn('saveSolucionNutritivaAnalysesToProjectImmediate', e); }
+      }
+      if (typeof window.saveSolucionNutritivaUIState === 'function') {
+        try { window.saveSolucionNutritivaUIState(); } catch (e) { console.warn('saveSolucionNutritivaUIState', e); }
+      }
     }
-    if (previousSection === 'Análisis: Agua' && currentProject.id && typeof window.saveAguaUIState === 'function') {
-      try { window.saveAguaUIState(); } catch (e) { console.warn('saveAguaUIState', e); }
+    if (previousSection === 'Análisis: Extracto de Pasta' && currentProject.id) {
+      try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+      if (typeof window.saveExtractoPastaAnalysesToProjectImmediate === 'function') {
+        try { window.saveExtractoPastaAnalysesToProjectImmediate(); } catch (e) { console.warn('saveExtractoPastaAnalysesToProjectImmediate', e); }
+      }
+      if (typeof window.saveExtractoPastaUIState === 'function') {
+        try { window.saveExtractoPastaUIState(); } catch (e) { console.warn('saveExtractoPastaUIState', e); }
+      }
     }
-    if (previousSection === 'Análisis: Foliar' && currentProject.id && typeof window.saveFoliarUIState === 'function') {
-      try { window.saveFoliarUIState(); } catch (e) { console.warn('saveFoliarUIState', e); }
+    if (previousSection === 'Análisis: Agua' && currentProject.id) {
+      try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+      if (typeof window.saveAguaAnalysesToProjectImmediate === 'function') {
+        try { window.saveAguaAnalysesToProjectImmediate(); } catch (e) { console.warn('saveAguaAnalysesToProjectImmediate', e); }
+      }
+      if (typeof window.saveAguaUIState === 'function') {
+        try { window.saveAguaUIState(); } catch (e) { console.warn('saveAguaUIState', e); }
+      }
     }
-    if (previousSection === 'Análisis: Fruta' && currentProject.id && typeof window.saveFrutaUIState === 'function') {
-      try { window.saveFrutaUIState(); } catch (e) { console.warn('saveFrutaUIState', e); }
+    if (previousSection === 'Análisis: Foliar' && currentProject.id) {
+      try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+      if (typeof window.saveFoliarAnalysesToProjectImmediate === 'function') {
+        try { window.saveFoliarAnalysesToProjectImmediate(); } catch (e) { console.warn('saveFoliarAnalysesToProjectImmediate', e); }
+      }
+      if (typeof window.saveFoliarUIState === 'function') {
+        try { window.saveFoliarUIState(); } catch (e) { console.warn('saveFoliarUIState', e); }
+      }
+    }
+    if (previousSection === 'Análisis: Fruta' && currentProject.id) {
+      try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+      if (typeof window.saveFrutaAnalysesToProjectImmediate === 'function') {
+        try { window.saveFrutaAnalysesToProjectImmediate(); } catch (e) { console.warn('saveFrutaAnalysesToProjectImmediate', e); }
+      }
+      if (typeof window.saveFrutaUIState === 'function') {
+        try { window.saveFrutaUIState(); } catch (e) { console.warn('saveFrutaUIState', e); }
+      }
+    }
+    if (previousSection === 'Análisis: Déficit de Presión de Vapor' && currentProject.id) {
+      try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+      if (typeof window.saveVPDAnalysisFromUIToStorage === 'function') {
+        try { window.saveVPDAnalysisFromUIToStorage(); } catch (e) { console.warn('saveVPDAnalysisFromUIToStorage', e); }
+      }
     }
   }
   
@@ -1623,10 +1669,6 @@ function selectSection(name, el) {
       const anchor = menu.querySelector(`a[data-section="${(name || "").toLowerCase()}"]`);
       if (anchor) anchor.classList.add("active");
     }
-  }
-
-  if (previousSection === 'Análisis: Suelo' && currentProject.id && typeof window.saveSoilAnalysisUIState === 'function') {
-    try { window.saveSoilAnalysisUIState(); } catch (e) { console.warn('saveSoilAnalysisUIState', e); }
   }
 
   // Fase 1 UX: conservar DOM en memoria para evitar "recarga/parpadeo" en Análisis y Nutrición Granular.
@@ -5872,15 +5914,32 @@ function selectGranularSubTab(tabName) {
       return;
     }
     
-    // NOTA: NO guardar antes de cambiar de pestaña interna
-    // El guardado automático ya funciona cuando el usuario modifica valores
-    // Solo se guarda cuando se cambia de SECCIÓN PRINCIPAL (en selectSection)
-    
     // Encontrar el contenedor de nutrición granular
     const granularContainer = document.querySelector('.nutricion-granular-container');
     if (!granularContainer) {
       console.warn('⚠️ No se encontró el contenedor de nutrición granular');
       return;
+    }
+
+    let targetContentId = tabName === 'requerimiento' ? 'granularRequerimiento' : 'granularPrograma';
+    const activeGranularContent = granularContainer.querySelector('.tab-content.active');
+    if (activeGranularContent && activeGranularContent.id === targetContentId) {
+      return;
+    }
+
+    // Mismo criterio que Fertirriego / Hidroponía: guardar antes de cambiar subpestaña
+    // (requerimiento: cancela debounce y persiste; programa: sync DOM + applications).
+    try {
+      if (typeof window.saveGranularRequirementsImmediate === 'function') {
+        window.saveGranularRequirementsImmediate();
+      } else if (typeof window.saveGranularRequirements === 'function') {
+        window.saveGranularRequirements();
+      }
+      if (typeof window.saveApplications === 'function') {
+        window.saveApplications();
+      }
+    } catch (e) {
+      console.warn('⚠️ Error guardando Granular antes de cambiar subpestaña:', e);
     }
     
     // Remover clase active de todos los botones y contenidos dentro del contenedor granular
@@ -5895,14 +5954,6 @@ function selectGranularSubTab(tabName) {
         btn.classList.add('active');
       }
     });
-    
-    // Activar el contenido correspondiente
-    let targetContentId = '';
-    if (tabName === 'requerimiento') {
-      targetContentId = 'granularRequerimiento';
-    } else if (tabName === 'programa') {
-      targetContentId = 'granularPrograma';
-    }
     
     const targetContent = document.getElementById(targetContentId);
     if (targetContent) {
@@ -14048,6 +14099,20 @@ window.saveSolucionNutritivaAnalysesToProject = function saveSolucionNutritivaAn
   }, 350);
 };
 
+window.saveSolucionNutritivaAnalysesToProjectImmediate = function saveSolucionNutritivaAnalysesToProjectImmediate() {
+  if (!currentProject.id || !window.projectStorage) return;
+  if (_solucionNutritivaSaveTimer) {
+    clearTimeout(_solucionNutritivaSaveTimer);
+    _solucionNutritivaSaveTimer = null;
+  }
+  var dataCopy = JSON.parse(JSON.stringify(window.getSolucionNutritivaAnalyses() || []));
+  try {
+    window.projectStorage.saveSection('solucionNutritivaAnalyses', dataCopy, currentProject.id);
+  } catch (e) {
+    console.warn('saveSolucionNutritivaAnalysesToProjectImmediate', e);
+  }
+};
+
 window.saveSolucionNutritivaField = function saveSolucionNutritivaField(group, field, value) {
   var wrap = document.getElementById('solucion-nutritiva-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
@@ -14135,6 +14200,12 @@ window.selectSolucionNutritivaAnalysis = function selectSolucionNutritivaAnalysi
   var emptyEl = document.getElementById('solucion-nutritiva-form-empty');
   var wrapEl = document.getElementById('solucion-nutritiva-form-wrap');
   if (!wrapEl) return;
+  var prevIdSn = wrapEl.getAttribute('data-current-id') || '';
+  var nextIdSn = a ? a.id : '';
+  if (prevIdSn && prevIdSn !== nextIdSn) {
+    try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+    if (typeof window.saveSolucionNutritivaAnalysesToProjectImmediate === 'function') window.saveSolucionNutritivaAnalysesToProjectImmediate();
+  }
   if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#solucion-nutritiva-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); if (typeof window.saveSolucionNutritivaUIState === 'function') window.saveSolucionNutritivaUIState(); return; }
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
@@ -14402,6 +14473,20 @@ window.saveExtractoPastaAnalysesToProject = function saveExtractoPastaAnalysesTo
   }, 350);
 };
 
+window.saveExtractoPastaAnalysesToProjectImmediate = function saveExtractoPastaAnalysesToProjectImmediate() {
+  if (!currentProject.id || !window.projectStorage) return;
+  if (_extractoPastaSaveTimer) {
+    clearTimeout(_extractoPastaSaveTimer);
+    _extractoPastaSaveTimer = null;
+  }
+  var dataCopy = JSON.parse(JSON.stringify(window.getExtractoPastaAnalyses() || []));
+  try {
+    window.projectStorage.saveSection('extractoPastaAnalyses', dataCopy, currentProject.id);
+  } catch (e) {
+    console.warn('saveExtractoPastaAnalysesToProjectImmediate', e);
+  }
+};
+
 window.saveExtractoPastaField = function saveExtractoPastaField(group, field, value) {
   var wrap = document.getElementById('extracto-pasta-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
@@ -14561,6 +14646,12 @@ window.selectExtractoPastaAnalysis = function selectExtractoPastaAnalysis(id) {
   var emptyEl = document.getElementById('extracto-pasta-form-empty');
   var wrapEl = document.getElementById('extracto-pasta-form-wrap');
   if (!wrapEl) return;
+  var prevIdEp = wrapEl.getAttribute('data-current-id') || '';
+  var nextIdEp = a ? a.id : '';
+  if (prevIdEp && prevIdEp !== nextIdEp) {
+    try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+    if (typeof window.saveExtractoPastaAnalysesToProjectImmediate === 'function') window.saveExtractoPastaAnalysesToProjectImmediate();
+  }
   if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#extracto-pasta-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); if (typeof window.saveExtractoPastaUIState === 'function') window.saveExtractoPastaUIState(); return; }
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
@@ -14842,6 +14933,20 @@ window.saveAguaAnalysesToProject = function saveAguaAnalysesToProject() {
   }, 350);
 };
 
+window.saveAguaAnalysesToProjectImmediate = function saveAguaAnalysesToProjectImmediate() {
+  if (!currentProject.id || !window.projectStorage) return;
+  if (_aguaSaveTimer) {
+    clearTimeout(_aguaSaveTimer);
+    _aguaSaveTimer = null;
+  }
+  var dataCopy = JSON.parse(JSON.stringify(window.getAguaAnalyses() || []));
+  try {
+    window.projectStorage.saveSection('aguaAnalyses', dataCopy, currentProject.id);
+  } catch (e) {
+    console.warn('saveAguaAnalysesToProjectImmediate', e);
+  }
+};
+
 window.saveAguaField = function saveAguaField(group, valueOrField, value) {
   var wrap = document.getElementById('agua-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
@@ -14997,6 +15102,12 @@ window.selectAguaAnalysis = function selectAguaAnalysis(id) {
   var emptyEl = document.getElementById('agua-form-empty');
   var wrapEl = document.getElementById('agua-form-wrap');
   if (!wrapEl) return;
+  var prevIdAw = wrapEl.getAttribute('data-current-id') || '';
+  var nextIdAw = a ? a.id : '';
+  if (prevIdAw && prevIdAw !== nextIdAw) {
+    try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+    if (typeof window.saveAguaAnalysesToProjectImmediate === 'function') window.saveAguaAnalysesToProjectImmediate();
+  }
   if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#agua-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); if (typeof window.saveAguaUIState === 'function') window.saveAguaUIState(); return; }
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
@@ -15233,6 +15344,20 @@ window.saveFoliarAnalysesToProject = function saveFoliarAnalysesToProject() {
   }, 350);
 };
 
+window.saveFoliarAnalysesToProjectImmediate = function saveFoliarAnalysesToProjectImmediate() {
+  if (!currentProject.id || !window.projectStorage) return;
+  if (_foliarSaveTimer) {
+    clearTimeout(_foliarSaveTimer);
+    _foliarSaveTimer = null;
+  }
+  var dataCopy = JSON.parse(JSON.stringify(window.getFoliarAnalyses() || []));
+  try {
+    window.projectStorage.saveSection('foliarAnalyses', dataCopy, currentProject.id);
+  } catch (e) {
+    console.warn('saveFoliarAnalysesToProjectImmediate', e);
+  }
+};
+
 window.saveFoliarField = function saveFoliarField(group, valueOrField, value) {
   var wrap = document.getElementById('foliar-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
@@ -15281,6 +15406,12 @@ window.selectFoliarAnalysis = function selectFoliarAnalysis(id) {
   var emptyEl = document.getElementById('foliar-form-empty');
   var wrapEl = document.getElementById('foliar-form-wrap');
   if (!wrapEl) return;
+  var prevIdFo = wrapEl.getAttribute('data-current-id') || '';
+  var nextIdFo = a ? a.id : '';
+  if (prevIdFo && prevIdFo !== nextIdFo) {
+    try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+    if (typeof window.saveFoliarAnalysesToProjectImmediate === 'function') window.saveFoliarAnalysesToProjectImmediate();
+  }
   if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#foliar-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); if (typeof window.saveFoliarUIState === 'function') window.saveFoliarUIState(); return; }
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
@@ -15552,6 +15683,20 @@ window.saveFrutaAnalysesToProject = function saveFrutaAnalysesToProject() {
   }, 350);
 };
 
+window.saveFrutaAnalysesToProjectImmediate = function saveFrutaAnalysesToProjectImmediate() {
+  if (!currentProject.id || !window.projectStorage) return;
+  if (_frutaSaveTimer) {
+    clearTimeout(_frutaSaveTimer);
+    _frutaSaveTimer = null;
+  }
+  var dataCopy = JSON.parse(JSON.stringify(window.getFrutaAnalyses() || []));
+  try {
+    window.projectStorage.saveSection('frutaAnalyses', dataCopy, currentProject.id);
+  } catch (e) {
+    console.warn('saveFrutaAnalysesToProjectImmediate', e);
+  }
+};
+
 window.saveFrutaField = function saveFrutaField(group, valueOrField, value) {
   var wrap = document.getElementById('fruta-form-wrap');
   var id = wrap && wrap.getAttribute('data-current-id');
@@ -15621,6 +15766,12 @@ window.selectFrutaAnalysis = function selectFrutaAnalysis(id) {
   var emptyEl = document.getElementById('fruta-form-empty');
   var wrapEl = document.getElementById('fruta-form-wrap');
   if (!wrapEl) return;
+  var prevIdFr = wrapEl.getAttribute('data-current-id') || '';
+  var nextIdFr = a ? a.id : '';
+  if (prevIdFr && prevIdFr !== nextIdFr) {
+    try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+    if (typeof window.saveFrutaAnalysesToProjectImmediate === 'function') window.saveFrutaAnalysesToProjectImmediate();
+  }
   if (!a) { wrapEl.style.display = 'none'; wrapEl.setAttribute('data-current-id', ''); if (emptyEl) emptyEl.style.display = 'block'; document.querySelectorAll('#fruta-list .soil-analysis-card').forEach(function(c) { c.classList.remove('active'); }); if (typeof window.saveFrutaUIState === 'function') window.saveFrutaUIState(); return; }
   wrapEl.setAttribute('data-current-id', id);
   wrapEl.style.display = 'block';
@@ -15971,6 +16122,21 @@ window.saveSoilAnalysesToProject = function saveSoilAnalysesToProject() {
   }, 350);
 };
 
+window.saveSoilAnalysesToProjectImmediate = function saveSoilAnalysesToProjectImmediate() {
+  if (!currentProject.id || !window.projectStorage) return;
+  if (_soilAnalysesSaveTimer) {
+    clearTimeout(_soilAnalysesSaveTimer);
+    _soilAnalysesSaveTimer = null;
+  }
+  var arr = Array.isArray(currentProject.soilAnalyses) ? currentProject.soilAnalyses : [];
+  var dataCopy = JSON.parse(JSON.stringify(arr));
+  try {
+    window.projectStorage.saveSection('soilAnalyses', dataCopy, currentProject.id);
+  } catch (e) {
+    console.warn('saveSoilAnalysesToProjectImmediate', e);
+  }
+};
+
 window.saveSoilAnalysisField = function saveSoilAnalysisField(group, field, value) {
   const wrap = document.getElementById('soil-analysis-form-wrap');
   const id = wrap && wrap.getAttribute('data-current-id');
@@ -16150,6 +16316,12 @@ window.selectSoilAnalysis = function selectSoilAnalysis(id) {
   const emptyEl = document.getElementById('soil-analysis-form-empty');
   const wrapEl = document.getElementById('soil-analysis-form-wrap');
   if (!wrapEl) return;
+  var prevIdSoil = wrapEl.getAttribute('data-current-id') || '';
+  var nextIdSoil = analysis ? analysis.id : '';
+  if (prevIdSoil && prevIdSoil !== nextIdSoil) {
+    try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+    if (typeof window.saveSoilAnalysesToProjectImmediate === 'function') window.saveSoilAnalysesToProjectImmediate();
+  }
   if (!analysis) {
     wrapEl.style.display = 'none';
     wrapEl.setAttribute('data-current-id', '');
@@ -16460,6 +16632,85 @@ function ensureVPDAnalysisStructures() {
     currentProject.vpdAnalysis.history = [];
   }
 }
+
+/** Lee inputs visibles de VPD (rango, ambiental, avanzado) y los fusiona en currentProject (sin tocar historial). */
+function syncVPDFormDraftFromDOM() {
+  ensureVPDAnalysisStructures();
+  var g = document.getElementById('vpd-range-granularity');
+  var s = document.getElementById('vpd-range-start');
+  var e = document.getElementById('vpd-range-end');
+  if (g || s || e) {
+    var rs = currentProject.vpdAnalysis.rangeState || {};
+    currentProject.vpdAnalysis.rangeState = {
+      granularity: (g && g.value) ? g.value : (rs.granularity || 'daily'),
+      startDate: (s && s.value) ? dateToIsoLike(s.value) : (rs.startDate || ''),
+      endDate: (e && e.value) ? dateToIsoLike(e.value) : (rs.endDate || '')
+    };
+  }
+  var t = document.getElementById('vpd-env-temp');
+  var h = document.getElementById('vpd-env-humidity');
+  if (t || h) {
+    var env = Object.assign({}, currentProject.vpdAnalysis.environmental || {});
+    if (t && t.value !== '') {
+      var pt = parseFloat(t.value);
+      if (!isNaN(pt)) env.temperature = pt;
+    }
+    if (h && h.value !== '') {
+      var ph = parseFloat(h.value);
+      if (!isNaN(ph)) env.humidity = ph;
+    }
+    currentProject.vpdAnalysis.environmental = env;
+  }
+  var at = document.getElementById('vpd-adv-air-temp');
+  var ahu = document.getElementById('vpd-adv-humidity');
+  var modeRadio = document.querySelector('input[name="vpd-mode"]:checked');
+  if (at || ahu || modeRadio) {
+    var adv = Object.assign({}, currentProject.vpdAnalysis.advanced || {});
+    if (at && at.value !== '') {
+      var p = parseFloat(at.value);
+      if (!isNaN(p)) adv.airTemperature = p;
+    }
+    if (ahu && ahu.value !== '') {
+      var q = parseFloat(ahu.value);
+      if (!isNaN(q)) adv.airHumidity = q;
+    }
+    if (modeRadio) adv.mode = modeRadio.value;
+    var lt = document.getElementById('vpd-leaf-temp');
+    if (lt && lt.value !== '') {
+      var plt = parseFloat(lt.value);
+      if (!isNaN(plt)) adv.leafTemperature = plt;
+    }
+    var sr = document.getElementById('vpd-solar-radiation');
+    if (sr && sr.value !== '') {
+      var psr = parseFloat(sr.value);
+      if (!isNaN(psr)) adv.solarRadiation = psr;
+    }
+    currentProject.vpdAnalysis.advanced = adv;
+  }
+}
+
+function persistVPDAnalysisAfterMutation() {
+  var pid = typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : (currentProject && currentProject.id);
+  if (!pid || !window.projectStorage || typeof window.projectStorage.saveSection !== 'function') return;
+  try {
+    window.projectStorage.saveSection('vpdAnalysis', currentProject.vpdAnalysis, pid);
+  } catch (err) {
+    console.warn('persistVPDAnalysisAfterMutation', err);
+  }
+}
+
+/** Blur + borrador desde DOM + persistir (al salir de la pestaña VPD). No añade entradas al historial. */
+function saveVPDAnalysisFromUIToStorage() {
+  var pid = typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : (currentProject && currentProject.id);
+  if (!pid || !window.projectStorage || typeof window.projectStorage.saveSection !== 'function') return;
+  try {
+    syncVPDFormDraftFromDOM();
+    window.projectStorage.saveSection('vpdAnalysis', currentProject.vpdAnalysis, pid);
+  } catch (err) {
+    console.warn('saveVPDAnalysisFromUIToStorage', err);
+  }
+}
+window.saveVPDAnalysisFromUIToStorage = saveVPDAnalysisFromUIToStorage;
 
 function getTodayIsoDate() {
   var d = new Date();
@@ -17291,6 +17542,8 @@ async function getEnvironmentalWeatherData() {
     
     console.log('✅ Datos del clima obtenidos:', weatherData);
     console.log('✅ VPD calculado:', results);
+    currentProject.vpdAnalysis.lastUpdated = new Date().toISOString();
+    persistVPDAnalysisAfterMutation();
     
   } catch (error) {
     console.error('❌ Error obteniendo datos del clima:', error);
@@ -17358,6 +17611,8 @@ function calculateEnvironmentalVPD() {
     resultsDiv.innerHTML = buildVpdEnvironmentalResultsHtml(results, { useSolar: false });
   }
   
+  currentProject.vpdAnalysis.lastUpdated = new Date().toISOString();
+  persistVPDAnalysisAfterMutation();
   console.log('✅ VPD ambiental calculado manualmente:', results);
 }
 
@@ -17487,6 +17742,8 @@ function calculateAdvancedVPD() {
     hd: results.hd,
     calculatedAt: new Date().toISOString()
   };
+  currentProject.vpdAnalysis.lastUpdated = new Date().toISOString();
+  persistVPDAnalysisAfterMutation();
   
   // Mostrar resultados en el div correspondiente
   const resultsDiv = document.getElementById('vpd-advanced-results');
@@ -17885,6 +18142,8 @@ async function fetchVPDRangeData(evt) {
       sampleHours: hourlyRows.length
     };
     renderVPDRangeResults(currentProject.vpdAnalysis.currentRangeTable.meta, summaryRows, criticalRows);
+    currentProject.vpdAnalysis.lastUpdated = new Date().toISOString();
+    persistVPDAnalysisAfterMutation();
   } catch (e) {
     console.error('fetchVPDRangeData:', e);
     alert('❌ No se pudo descargar la serie VPD para ese rango.');

@@ -311,6 +311,19 @@ function hydroScheduleSave() {
   }, 300);
 }
 
+/** Cancela el debounce y guarda ya (p. ej. al cambiar de subpestaña; mismo criterio que Fertirriego). */
+function hydroFlushSaveNow() {
+  try {
+    if (hydroSaveTimer) {
+      clearTimeout(hydroSaveTimer);
+      hydroSaveTimer = null;
+    }
+    hydroSaveData();
+  } catch (e) {
+    console.warn('⚠️ hydroFlushSaveNow:', e);
+  }
+}
+
 function hydroScheduleRender() {
   try { if (hydroRenderTimer) clearTimeout(hydroRenderTimer); } catch {}
   hydroRenderTimer = setTimeout(() => {
@@ -1698,6 +1711,12 @@ function initHydroponiaTabs() {
     if (!btn.closest('.hydroponia-container')) return;
     const tabId = btn.getAttribute('data-tab');
     if (!tabId) return;
+    if (btn.classList.contains('active')) return;
+    try {
+      hydroFlushSaveNow();
+    } catch (e) {
+      console.warn('⚠️ Error guardando Hidroponía antes de cambiar subpestaña:', e);
+    }
     container.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
     container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
