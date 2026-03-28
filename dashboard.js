@@ -10389,16 +10389,30 @@ function np_snapshotGranularRequirements() {
     const keyProject = `nutriplant_project_${projectId}`;
     const pd = JSON.parse(localStorage.getItem(keyProject) || '{}');
     const existing = pd.granularRequirements || {};
+    const hasAdjFromDom = Object.keys(adjustment).length > 0;
+    const hasEffFromDom = Object.keys(efficiency).length > 0;
+    const existingHasAdj = !!(existing && existing.adjustment && Object.keys(existing.adjustment).length > 0);
+    const existingHasEff = !!(existing && existing.efficiency && Object.keys(existing.efficiency).length > 0);
+
+    // Blindaje: nunca sobrescribir requirements completos con snapshot parcial.
+    // Si el DOM aún no tiene la tabla (sin adj/eff), preservar lo que ya estaba.
     const requirementData = {
       ...existing,
       cropType,
       targetYield,
-      adjustment,
-      efficiency,
+      adjustment: hasAdjFromDom ? adjustment : (existing.adjustment || {}),
+      efficiency: hasEffFromDom ? efficiency : (existing.efficiency || {}),
       isElementalMode,
       timestamp: new Date().toISOString()
     };
-    pd.granularRequirements = requirementData;
+
+    const finalHasAdj = !!(requirementData.adjustment && Object.keys(requirementData.adjustment).length > 0);
+    const finalHasEff = !!(requirementData.efficiency && Object.keys(requirementData.efficiency).length > 0);
+    const hasMeaningfulReq = finalHasAdj || finalHasEff || existingHasAdj || existingHasEff;
+
+    if (hasMeaningfulReq) {
+      pd.granularRequirements = requirementData;
+    }
     // También guardar lastUI
     pd.granularLastUI = { cropType, targetYield };
     localStorage.setItem(keyProject, JSON.stringify(pd));
@@ -10415,8 +10429,14 @@ function np_snapshotGranularRequirements() {
                               existingLocation.polygon.length >= 3;
       
       obj.granular = obj.granular || {};
-      // Preservar requirements existentes (extractionOverrides, etc.) y solo actualizar lo del snapshot
-      obj.granular.requirements = { ...(obj.granular.requirements || {}), ...requirementData };
+      // Preservar requirements existentes (extractionOverrides, etc.) y solo actualizar lo del snapshot.
+      // Si el snapshot no trae adj/eff reales, NO sobreescribir requirements existentes.
+      const currentReq = obj.granular.requirements || {};
+      const currentHasAdj = !!(currentReq.adjustment && Object.keys(currentReq.adjustment).length > 0);
+      const currentHasEff = !!(currentReq.efficiency && Object.keys(currentReq.efficiency).length > 0);
+      if (hasMeaningfulReq || !currentHasAdj || !currentHasEff) {
+        obj.granular.requirements = { ...currentReq, ...requirementData };
+      }
       
       // 🚀 CRÍTICO: Restaurar location después de actualizar
       if (hasValidLocation) {
@@ -10556,7 +10576,7 @@ function saveBeforeTabChange() {
             extractionOverrides[cropType] = extraction;
           }
         }
-        unified.granular.requirements = {
+        const nextReq = {
           ...(req || {}),
           cropType,
           targetYield,
@@ -10566,6 +10586,14 @@ function saveBeforeTabChange() {
           isElementalMode: typeof isElem === 'boolean' ? isElem : (req.isElementalMode || false),
           timestamp: new Date().toISOString()
         };
+        const nextHasAdj = !!(nextReq.adjustment && Object.keys(nextReq.adjustment).length > 0);
+        const nextHasEff = !!(nextReq.efficiency && Object.keys(nextReq.efficiency).length > 0);
+        const prevHasAdj = !!(req && req.adjustment && Object.keys(req.adjustment).length > 0);
+        const prevHasEff = !!(req && req.efficiency && Object.keys(req.efficiency).length > 0);
+        const allowSnapshotReqWrite = (nextHasAdj || nextHasEff || !prevHasAdj || !prevHasEff);
+        if (allowSnapshotReqWrite) {
+          unified.granular.requirements = nextReq;
+        }
         if (keyUnified) {
           try { 
             localStorage.setItem(keyUnified, JSON.stringify(unified)); 

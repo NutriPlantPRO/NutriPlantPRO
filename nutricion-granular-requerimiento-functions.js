@@ -1983,6 +1983,40 @@ function loadGranularRequirements(retryCount = 0) {
       requirementData = null;
     }
 
+    // Blindaje: si llegó un objeto incompleto (ej. solo crop/target por snapshot parcial),
+    // intentar enriquecer con la versión más completa disponible antes de renderizar.
+    function np_hasRichGranularReq(req) {
+      if (!req || typeof req !== 'object') return false;
+      const hasAdj = !!(req.adjustment && Object.keys(req.adjustment).length > 0);
+      const hasEff = !!(req.efficiency && Object.keys(req.efficiency).length > 0);
+      const hasExt = !!(req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0);
+      return hasAdj || hasEff || hasExt;
+    }
+    if (requirementData && !np_hasRichGranularReq(requirementData)) {
+      try {
+        const unifiedKey = `nutriplant_project_${projectId}`;
+        const raw = localStorage.getItem(unifiedKey);
+        if (raw) {
+          const o = JSON.parse(raw);
+          const legacyReq = o && o.granularRequirements ? o.granularRequirements : null;
+          if (np_hasRichGranularReq(legacyReq)) {
+            requirementData = { ...legacyReq, ...requirementData };
+            console.warn('🛡️ Granular load: usando fallback rico desde granularRequirements legacy');
+          }
+        }
+      } catch (e) {}
+      if (!np_hasRichGranularReq(requirementData)) {
+        try {
+          const cp = (typeof currentProject !== 'undefined' && currentProject && currentProject.id === projectId) ? currentProject : null;
+          const memLegacyReq = cp && cp.granularRequirements ? cp.granularRequirements : null;
+          if (np_hasRichGranularReq(memLegacyReq)) {
+            requirementData = { ...memLegacyReq, ...requirementData };
+            console.warn('🛡️ Granular load: usando fallback rico desde memoria legacy');
+          }
+        } catch (e) {}
+      }
+    }
+
     // REGLA: Si hay datos guardados, aplicarlos. Si no, usar valores precargados
     if (requirementData) {
       const select = document.getElementById('granularRequerimientoCropType');
