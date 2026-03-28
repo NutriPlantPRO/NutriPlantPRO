@@ -1671,6 +1671,34 @@ function saveApplications(options) {
       cropSnapshot,
       timestamp: new Date().toISOString()
     };
+
+    // 🚀 CRÍTICO: Preservar requirements al guardar programa.
+    // saveSection('granular', ...) reemplaza la sección completa y, si no fusionamos,
+    // puede borrar granular.requirements en recargas/salidas.
+    let preservedRequirements = null;
+    try {
+      if (typeof window.projectStorage !== 'undefined') {
+        const secReq = window.projectStorage.loadSection('granular', projectId);
+        if (secReq && secReq.requirements && typeof secReq.requirements === 'object') {
+          preservedRequirements = secReq.requirements;
+        }
+      }
+      if (!preservedRequirements) {
+        const unifiedReqRaw = localStorage.getItem(`nutriplant_project_${projectId}`);
+        if (unifiedReqRaw) {
+          const unifiedReqObj = JSON.parse(unifiedReqRaw);
+          const req = unifiedReqObj && unifiedReqObj.granular && unifiedReqObj.granular.requirements;
+          if (req && typeof req === 'object') preservedRequirements = req;
+        }
+      }
+      if (!preservedRequirements && typeof currentProject !== 'undefined' && currentProject &&
+          currentProject.id === projectId && currentProject.granular &&
+          currentProject.granular.requirements && typeof currentProject.granular.requirements === 'object') {
+        preservedRequirements = currentProject.granular.requirements;
+      }
+    } catch (e) {
+      console.warn('⚠️ Programa Granular: no se pudieron leer requirements a preservar:', e);
+    }
     
     const useCentralized = typeof window.projectStorage !== 'undefined';
     let savedWithCentralized = false;
@@ -1679,6 +1707,7 @@ function saveApplications(options) {
       const existingSection = window.projectStorage.loadSection('granular', projectId) || {};
       const mergedSection = {
         ...existingSection,
+        ...(existingSection.requirements ? {} : (preservedRequirements ? { requirements: preservedRequirements } : {})),
         program: programData
       };
       
@@ -1708,6 +1737,9 @@ function saveApplications(options) {
       
       unified.granular = {
         ...(unified.granular || {}),
+        ...(unified.granular && unified.granular.requirements
+          ? {}
+          : (preservedRequirements ? { requirements: preservedRequirements } : {})),
         program: programData
       };
       
@@ -1730,6 +1762,9 @@ function saveApplications(options) {
       objHard.id = objHard.id || projectId;
       objHard.granular = {
         ...(objHard.granular || {}),
+        ...(objHard.granular && objHard.granular.requirements
+          ? {}
+          : (preservedRequirements ? { requirements: preservedRequirements } : {})),
         program: programData
       };
       objHard.updated_at = nowIso;
