@@ -3360,6 +3360,24 @@ body {
   font-size: 12px;
 }
 
+/* Hidroponía · Cálculo de fertilizantes: columna «Fertilizante» un poco más ancha (solo esa; misma altura de fila) */
+.hydro-table.hydro-fert-contrib-table {
+  min-width: 968px;
+}
+.hydro-fert-contrib-table th:first-child,
+.hydro-fert-contrib-table td:first-child {
+  min-width: 154px;
+  max-width: 210px;
+  text-align: left;
+  vertical-align: middle;
+}
+.hydro-fert-contrib-table td:first-child .hydro-input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Contorno azul marino en meq y micros ppm (campos editables por el usuario) */
 #hydroMeqTableWrap input.hydro-input[data-type="meq"],
 #hydroPpmTableWrap input.hydro-input[data-type="ppm"] {
