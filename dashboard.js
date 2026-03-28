@@ -6826,7 +6826,8 @@ async function np_loadProjectsFromCloud() {
     window._np_cloud_projects_cache_loaded = true;
     window._np_cloud_projects_cache_error = null;
     // Si el admin borró un proyecto en la nube: quitar del localStorage del usuario para que no vuelva a aparecer ni se re-suba.
-    if (userId && cloudIds.size >= 0) {
+    // Importante: solo purgar cuando cloudIds tiene al menos un id válido.
+    if (userId && cloudIds.size > 0) {
       const userKey = 'nutriplant_user_' + userId;
       var toRemove = [];
       try {
