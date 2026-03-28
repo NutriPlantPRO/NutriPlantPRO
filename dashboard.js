@@ -8100,7 +8100,22 @@ window.downloadReport = function(reportId) {
     // Gráficas de fertirriego: generarlas desde datos del proyecto (no dependen del DOM ni de haber abierto la pestaña Gráficas)
     function openReportWithCharts(chartImages) {
       chartImages = chartImages || {};
-      var reportHTML = createReportHTML(printableSections, chartImages, report.reportLanguage || 'es');
+      var requestedLang = (report.reportLanguage === 'en') ? 'en' : 'es';
+      var effectiveLang = requestedLang;
+      var reportHTML = '';
+      try {
+        reportHTML = createReportHTML(printableSections, chartImages, requestedLang);
+      } catch (e) {
+        if (requestedLang === 'en') {
+          console.warn('⚠️ Falló reporte en inglés. Fallback a español:', e && e.message ? e.message : e);
+          effectiveLang = 'es';
+          reportHTML = createReportHTML(printableSections, chartImages, 'es');
+          showMessage('⚠️ No se pudo generar en inglés. Se abrió en español.', 'warning');
+        } else {
+          throw e;
+        }
+      }
+      if (effectiveLang !== requestedLang) report.reportLanguage = effectiveLang;
       var printWindow = window.open('about:blank', '_blank');
       if (!printWindow) {
         showMessage('❌ Tu navegador bloqueó la ventana de impresión. Habilita pop-ups para descargar PDF.', 'error');
@@ -11048,9 +11063,8 @@ function openReportModal() {
   if (modal) {
     const languageSelect = document.getElementById('reportLanguageSelect');
     if (languageSelect) {
-      let lang = 'es';
-      try { lang = localStorage.getItem('nutriplant-report-language') || 'es'; } catch (e) {}
-      languageSelect.value = (lang === 'en') ? 'en' : 'es';
+      // Abrir SIEMPRE en Español por defecto (el usuario puede cambiarlo manualmente).
+      languageSelect.value = 'es';
     }
     // Mostrar modal
     modal.classList.add('active');
@@ -11283,13 +11297,26 @@ window.generatePDFReport = function() {
 
   function finishPdf(chartImages) {
     try {
-      const reportHTML = createReportHTML(selectedSections, chartImages || {}, reportLanguage);
+      var effectiveLanguage = reportLanguage;
+      var reportHTML = '';
+      try {
+        reportHTML = createReportHTML(selectedSections, chartImages || {}, reportLanguage);
+      } catch (renderErr) {
+        if (reportLanguage === 'en') {
+          console.warn('⚠️ Falló generación en inglés. Fallback a español:', renderErr && renderErr.message ? renderErr.message : renderErr);
+          effectiveLanguage = 'es';
+          reportHTML = createReportHTML(selectedSections, chartImages || {}, 'es');
+          showMessage('⚠️ No se pudo generar en inglés. Se generó en español.', 'warning');
+        } else {
+          throw renderErr;
+        }
+      }
       saveReportToList({
         id: `report_panel_${Date.now()}`,
         timestamp: new Date().toISOString(),
         projectName: currentProject?.name || 'Proyecto NutriPlant',
         selectedSections: selectedSections.slice(0),
-        reportLanguage: reportLanguage,
+        reportLanguage: effectiveLanguage,
         reportHTML
       });
       printWindow.document.open();
