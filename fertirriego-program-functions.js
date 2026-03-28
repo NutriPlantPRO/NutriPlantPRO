@@ -178,8 +178,13 @@ function setFertiNutrientView(view) {
 // Unidad de tiempo (semana/mes) para cabecera y etiquetas
 function updateFertiProgramTimeTitle() {
   const titleEl = document.getElementById('fertiProgramTitle');
-  if (!titleEl) return;
-  titleEl.textContent = `📅 Programa ${fertiTimeUnit === 'mes' ? 'Mensual' : 'Semanal'}`;
+  if (titleEl) {
+    titleEl.textContent = `📅 Programa ${fertiTimeUnit === 'mes' ? 'Mensual' : 'Semanal'}`;
+  }
+  const countLabelEl = document.getElementById('fertiTotalApplicationsLabel');
+  if (countLabelEl) {
+    countLabelEl.textContent = fertiTimeUnit === 'mes' ? 'Número de Meses:' : 'Número de Semanas:';
+  }
 }
 
 function setFertiTimeUnit(unit) {
@@ -826,6 +831,7 @@ function onChangeFertiStage(weekId, stage) {
 
 // Resumen
 function updateFertiSummary() {
+  updateFertiProgramTimeTitle();
   const labelMap = fertProgElementalMode
     ? { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SiO2: 'Si' }
     : { P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', SiO2: 'SiO₂' };

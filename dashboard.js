@@ -559,7 +559,7 @@ function sectionTemplate(name) {
                 </div>
                 <div class="summary-grid">
                   <div class="summary-item">
-                    <span class="summary-label">Número de Semanas:</span>
+                    <span class="summary-label" id="fertiTotalApplicationsLabel">Número de Semanas:</span>
                     <span class="summary-value" id="fertiTotalApplications">0</span>
                   </div>
                   <div class="summary-item">
@@ -8077,7 +8077,11 @@ window.downloadReport = function(reportId) {
       };
     }
     if (printableSections.indexOf('fertigation') >= 0 && typeof window.getFertiChartsDataUrlsForReport === 'function') {
-      var prog = (currentProject && currentProject.fertirriego && currentProject.fertirriego.program) || null;
+      var fRoot = currentProject && currentProject.fertirriego;
+      var progNested = fRoot && fRoot.program;
+      var prog = (progNested && typeof progNested === 'object' && Object.keys(progNested).length > 0)
+        ? progNested
+        : (currentProject && currentProject.fertirriegoProgram) || null;
       window.getFertiChartsDataUrlsForReport(prog, function(chartImages) {
         openReportWithCharts(chartImages);
       });
@@ -12827,7 +12831,9 @@ function reportEscapeHtml(s) {
 function createFertigationSectionHTML(chartImages) {
   const f = currentProject.fertirriego || {};
   const req = f.requirements || {};
-  const prog = f.program || {};
+  const prog = (f.program && typeof f.program === 'object' && Object.keys(f.program).length > 0)
+    ? f.program
+    : (currentProject.fertirriegoProgram && typeof currentProject.fertirriegoProgram === 'object' ? currentProject.fertirriegoProgram : {});
   const crop = req.cropType || 'N/D';
   const hasCharts = !!(chartImages && (chartImages.macro || chartImages.micro));
   const targetYield = Number(req.targetYield) || 0;
@@ -12958,10 +12964,11 @@ function createFertigationSectionHTML(chartImages) {
     return idx >= 0 ? columnNames[idx] : fertiColumnName(c, 0);
   });
   const hasWeekTotals = weeks.some(w => w && w.totals && typeof w.totals === 'object');
+  const reportFertiIsMes = prog.timeUnit === 'mes';
 
   function buildReportInlineSvgChart(labels, datasets) {
     if (!Array.isArray(labels) || !labels.length) {
-      return '<div class="report-note">No hay semanas configuradas para graficar.</div>';
+      return `<div class="report-note">No hay ${reportFertiIsMes ? 'meses' : 'semanas'} configurados para graficar.</div>`;
     }
     const width = 640, height = 320, padL = 42, padR = 16, padT = 12, padB = 90;
     const plotW = Math.max(1, width - padL - padR);
@@ -13057,7 +13064,7 @@ function createFertigationSectionHTML(chartImages) {
     </tr>
   `).join('');
 
-  const chartLabels = weeks.map((w, i) => `${prog.timeUnit === 'mes' ? 'Mes' : 'Semana'} ${i + 1}`);
+  const chartLabels = weeks.map((w, i) => `${reportFertiIsMes ? 'Mes' : 'Semana'} ${i + 1}`);
   const macroColors = { N_NO3: '#1f77b4', N_NH4: '#2ca02c', P2O5: '#ff7f0e', K2O: '#98df8a', CaO: '#9467bd', MgO: '#17becf', SO4: '#8c564b' };
   const microColors = { Fe: '#1f77b4', Mn: '#2ca02c', B: '#ff7f0e', Zn: '#9467bd', Cu: '#8c564b', Mo: '#e377c2' };
   let macroSeries = {
@@ -13142,11 +13149,11 @@ function createFertigationSectionHTML(chartImages) {
       </div>
       <div class="report-block" style="border-color:#99f6e4;background:#f0fdfa;">
         <div class="report-block-title">💧 Programa de Fertirriego <span class="report-mode-badge">${programModeIsElemental ? 'Modo Elemental' : 'Modo Óxido'}</span></div>
-        ${!hasWeekTotals ? '<div class="report-note" style="margin-bottom:8px;">Sin totales guardados por semana. El reporte no recalcula con catálogo interno.</div>' : ''}
+        ${!hasWeekTotals ? `<div class="report-note" style="margin-bottom:8px;">Sin totales guardados por ${reportFertiIsMes ? 'mes' : 'semana'}. El reporte no recalcula con catálogo interno.</div>` : ''}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:8px;">
-          <div><strong>${prog.timeUnit === 'mes' ? 'Meses' : 'Semanas'}:</strong> ${weeks.length}</div>
+          <div><strong>${reportFertiIsMes ? 'Meses' : 'Semanas'}:</strong> ${weeks.length}</div>
           <div><strong>Dosis total Kg/Ha:</strong> ${totalDose.toFixed(2)}</div>
-          <div><strong>Unidad:</strong> ${prog.timeUnit === 'mes' ? 'Mes' : 'Semana'}</div>
+          <div><strong>Unidad:</strong> ${reportFertiIsMes ? 'Mes' : 'Semana'}</div>
         </div>
         <div class="report-subtitle">Aporte del programa de nutrición (kg/ha):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(totalProgram, programModeIsElemental, false)}</div>
@@ -13160,7 +13167,7 @@ function createFertigationSectionHTML(chartImages) {
         <div class="report-nutrient-wrap">${nutrientGrid(diff, programModeIsElemental, true)}</div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">Programa ${prog.timeUnit === 'mes' ? 'Mensual' : 'Semanal'} - Macros</div>
+        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} - Macros</div>
         <table class="report-app-table">
           <thead>
             <tr>
@@ -13171,7 +13178,7 @@ function createFertigationSectionHTML(chartImages) {
             </tr>
           </thead>
           <tbody>
-            ${macroRows || `<tr><td colspan="${2 + macroDoseColumns.length + macroCols.length}" style="text-align:center;color:#64748b;">Sin semanas configuradas.</td></tr>`}
+            ${macroRows || `<tr><td colspan="${2 + macroDoseColumns.length + macroCols.length}" style="text-align:center;color:#64748b;">Sin ${reportFertiIsMes ? 'meses' : 'semanas'} configurados.</td></tr>`}
             <tr class="total-row">
               <td>TOTAL</td>
               <td></td>
@@ -13185,7 +13192,7 @@ function createFertigationSectionHTML(chartImages) {
         </table>
       </div>
       <div class="report-block">
-        <div class="report-block-title">Programa ${prog.timeUnit === 'mes' ? 'Mensual' : 'Semanal'} - Micros</div>
+        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} - Micros</div>
         <table class="report-app-table">
           <thead>
             <tr>
@@ -13196,7 +13203,7 @@ function createFertigationSectionHTML(chartImages) {
             </tr>
           </thead>
           <tbody>
-            ${microRows || `<tr><td colspan="${2 + microDoseColumns.length + microCols.length}" style="text-align:center;color:#64748b;">Sin semanas configuradas.</td></tr>`}
+            ${microRows || `<tr><td colspan="${2 + microDoseColumns.length + microCols.length}" style="text-align:center;color:#64748b;">Sin ${reportFertiIsMes ? 'meses' : 'semanas'} configurados.</td></tr>`}
             <tr class="total-row">
               <td>TOTAL</td>
               <td></td>
