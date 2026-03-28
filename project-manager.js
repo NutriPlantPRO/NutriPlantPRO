@@ -6,6 +6,24 @@ class ProjectManager {
     this.init();
   }
 
+  // Parse seguro para datos de proyecto en localStorage
+  parseProjectObject(raw, context = '') {
+    if (!raw || typeof raw !== 'string') return null;
+    const trimmed = raw.trim();
+    if (!trimmed || trimmed === 'undefined' || trimmed === 'null') return null;
+    // Solo aceptar objetos JSON
+    if (!trimmed.startsWith('{')) return null;
+    try {
+      const parsed = JSON.parse(trimmed);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+    } catch (error) {
+      if (context) {
+        console.warn(`⚠️ JSON inválido en ${context}:`, error.message);
+      }
+      return null;
+    }
+  }
+
   init() {
     // Cargar proyecto actual al inicializar
     this.loadCurrentProject();
@@ -103,7 +121,7 @@ class ProjectManager {
       // 🔒 USAR FORMATO NUEVO: nutriplant_project_ (no legacy)
       const projectKey = `nutriplant_project_${project.id}`;
       const existingData = localStorage.getItem(projectKey);
-      let projectData = existingData ? JSON.parse(existingData) : {};
+      let projectData = this.parseProjectObject(existingData, projectKey) || {};
 
       // Actualizar la sección específica
       projectData[section] = {
@@ -133,11 +151,10 @@ class ProjectManager {
     try {
       // 🔒 USAR FORMATO NUEVO: nutriplant_project_ (no legacy)
       const projectKey = `nutriplant_project_${project.id}`;
-      const projectData = localStorage.getItem(projectKey);
-      
+      const projectDataRaw = localStorage.getItem(projectKey);
+      const projectData = this.parseProjectObject(projectDataRaw, projectKey);
       if (projectData) {
-        const data = JSON.parse(projectData);
-        return data[section] || null;
+        return projectData[section] || null;
       }
       return null;
     } catch (error) {
@@ -156,8 +173,8 @@ class ProjectManager {
     try {
       // 🔒 USAR FORMATO NUEVO: nutriplant_project_ (no legacy)
       const projectKey = `nutriplant_project_${project.id}`;
-      const projectData = localStorage.getItem(projectKey);
-      return projectData ? JSON.parse(projectData) : {};
+      const projectDataRaw = localStorage.getItem(projectKey);
+      return this.parseProjectObject(projectDataRaw, projectKey) || {};
     } catch (error) {
       console.error('Error al cargar todos los datos del proyecto:', error);
       return {};
@@ -233,7 +250,7 @@ class ProjectManager {
       // 🔒 USAR FORMATO NUEVO: nutriplant_project_ (no legacy)
       const projectKey = `nutriplant_project_${project.id}`;
       const existingData = localStorage.getItem(projectKey);
-      let projectData = existingData ? JSON.parse(existingData) : {};
+      let projectData = this.parseProjectObject(existingData, projectKey) || {};
 
       // Eliminar la sección
       delete projectData[section];
@@ -258,9 +275,16 @@ class ProjectManager {
       // 🔒 BUSCAR AMBOS FORMATOS: nuevo y legacy (para compatibilidad con proyectos antiguos)
       if (key.startsWith('nutriplant_project_') || key.startsWith('nutriplant-project-')) {
         try {
+          // Excluir claves auxiliares que no son objetos de proyecto
+          if (key === 'nutriplant_project_sort_mode') {
+            return;
+          }
           // Normalizar: extraer ID de cualquier formato
           const projectId = key.replace(/^nutriplant[-_]project[-_]/, '');
-          const projectData = JSON.parse(localStorage.getItem(key));
+          const projectData = this.parseProjectObject(localStorage.getItem(key), key);
+          if (!projectData) {
+            return;
+          }
           
           // Buscar el nombre del proyecto en los datos
           const projectName = projectData.projectName || projectId.replace(/-/g, ' ');
