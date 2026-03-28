@@ -3373,10 +3373,10 @@ body {
   box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.25);
 }
 
-/* Misma distribución que Solución por etapa: 13 columnas iguales (NH4→Mo). 72px mín. para que Fe y decimales no queden apretados con la pestaña azul */
+/* Cálculo hidro: 7 macros + 6 micros; micros un poco más anchas para Fe (pestaña azul) y decimales tipo 0.05 sin cortar */
 .hydro-grid {
   display: grid;
-  grid-template-columns: repeat(13, minmax(72px, 1fr));
+  grid-template-columns: repeat(7, minmax(68px, 1fr)) repeat(6, minmax(84px, 1fr));
   gap: 8px;
   max-width: 100%;
 }
@@ -3397,6 +3397,16 @@ body {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+}
+/* Sin flechas del number: liberan espacio a la derecha para ver bien los 2 decimales (p. ej. 0.05) */
+.hydro-grid-item .hydro-input[type="number"]::-webkit-outer-spin-button,
+.hydro-grid-item .hydro-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.hydro-grid-item .hydro-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .hydro-grid-label {
