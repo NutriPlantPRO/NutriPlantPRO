@@ -6912,9 +6912,14 @@ async function np_refreshCurrentProjectFromCloud() {
       }
       const key = 'nutriplant_project_' + projectId;
       localStorage.setItem(key, JSON.stringify(toStore));
-      if (window.projectStorage && window.projectStorage.memoryCache && window.projectStorage.memoryCache.currentProjectId === projectId) {
-        window.projectStorage.memoryCache.currentProjectId = null;
-        window.projectStorage.memoryCache.projectData = null;
+      if (window.projectStorage) {
+        if (window.projectStorage.memoryCache && window.projectStorage.memoryCache.currentProjectId === projectId) {
+          window.projectStorage.memoryCache.currentProjectId = null;
+          window.projectStorage.memoryCache.projectData = null;
+        }
+        if (window.projectStorage.projectsCache && typeof window.projectStorage.projectsCache.delete === 'function') {
+          window.projectStorage.projectsCache.delete(projectId);
+        }
       }
       console.log('☁️ Proyecto actual actualizado desde la nube (multi-equipo)');
     }
@@ -6932,9 +6937,14 @@ async function np_syncLocalProjectsAtStartup() {
   if (!sp || !sp.syncAllLocalProjectsToCloud) return;
 
   window._npStartupSyncRunning = true;
-  np_setProjectSyncStatus('syncing', 'Sincronizando proyectos...');
+  np_setProjectSyncStatus('syncing', 'Cargando nube...');
   try {
-    const syncSummary = await sp.syncAllLocalProjectsToCloud({ silent: true });
+    // Estrategia multi-equipo: al iniciar sesión, primero bajar nube (fuente de verdad).
+    await np_loadProjectsFromCloud();
+    if (typeof np_renderProjects === 'function') np_renderProjects();
+
+    // Luego subir SOLO proyectos locales que no existen aún en nube (evita pisar cambios de otro equipo).
+    const syncSummary = await sp.syncAllLocalProjectsToCloud({ silent: true, onlyMissingInCloud: true });
     await np_loadProjectsFromCloud();
     if (typeof np_renderProjects === 'function') np_renderProjects();
 

@@ -453,6 +453,7 @@
       if (!isSupabaseUser()) return;
       const opts = options || {};
       const silent = !!opts.silent;
+      const onlyMissingInCloud = !!opts.onlyMissingInCloud;
       const localProjects = collectLocalProjectsForIdentity();
       const cloudList = await this.fetchProjects({ includeDeleted: true });
       const cloudUpdatedMap = new Map((cloudList || []).map(p => [p.id, normalizeDate(p.updated_at)]));
@@ -461,6 +462,7 @@
       var synced = 0;
       var skippedOlder = 0;
       var skippedDeletedCloud = 0;
+      var skippedExistingCloud = 0;
 
       for (var i = 0; i < localProjects.length; i++) {
         var item = localProjects[i];
@@ -473,6 +475,11 @@
           continue;
         }
         var cloudUpdatedTs = cloudUpdatedMap.get(id) || 0;
+        if (onlyMissingInCloud && cloudUpdatedTs > 0) {
+          // Inicio de sesión multi-equipo: si ya existe en nube, no subir local automáticamente.
+          skippedExistingCloud++;
+          continue;
+        }
         if (cloudUpdatedTs > 0 && localUpdatedTs > 0 && localUpdatedTs <= cloudUpdatedTs) {
           skippedOlder++;
           continue;
@@ -491,7 +498,13 @@
           window.showMessage('Conexión restaurada. Tus cambios se han sincronizado con la nube.', 'success');
         }
       }
-      return { scanned: scanned, synced: synced, skippedOlder: skippedOlder, skippedDeletedCloud: skippedDeletedCloud };
+      return {
+        scanned: scanned,
+        synced: synced,
+        skippedOlder: skippedOlder,
+        skippedDeletedCloud: skippedDeletedCloud,
+        skippedExistingCloud: skippedExistingCloud
+      };
     },
 
     /** Obtener chat sin proyecto del perfil desde Supabase (para cargar en otro dispositivo) */

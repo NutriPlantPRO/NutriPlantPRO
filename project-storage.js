@@ -165,7 +165,10 @@ class ProjectStorage {
     }
 
     // 🚀 PRIORIDAD 2: Si está en caché de proyectos adicionales
-    if (this.projectsCache.has(projectId)) {
+    // IMPORTANTE: Para el proyecto ACTUAL, evitar caché secundaria para no servir datos viejos
+    // después de un "Actualizar con la nube".
+    const currentProjectId = this.getCurrentProject()?.id;
+    if (projectId !== currentProjectId && this.projectsCache.has(projectId)) {
       console.log('⚡ Datos cargados desde caché de proyectos');
       return this.projectsCache.get(projectId);
     }
