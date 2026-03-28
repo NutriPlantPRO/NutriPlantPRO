@@ -7098,6 +7098,12 @@ async function initializeDashboard() {
       if (isSupabaseUser && typeof np_refreshCurrentProjectFromCloud === 'function') {
         await np_refreshCurrentProjectFromCloud();
       }
+      // Alinear comportamiento con el botón "Actualizar con la nube":
+      // tras refrescar desde nube, recargar el proyecto en memoria/UI para evitar
+      // que alguna sección (ej. Granular Requerimiento) use estado previo.
+      if (typeof loadProjectData === 'function') {
+        loadProjectData();
+      }
     } catch (e) {
       console.warn('⚠️ No se pudo restaurar el proyecto activo al iniciar:', e);
     }
