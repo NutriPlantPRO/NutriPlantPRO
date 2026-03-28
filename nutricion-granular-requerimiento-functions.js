@@ -161,6 +161,16 @@ let savedGranularExtractionOverrides = {}; // 🚀 CRÍTICO: Variable global par
 let savedGranularAdjustmentsAuto = true;
 let lastGranularCalculatedCrop = null;
 let lastGranularCalculatedYield = null;
+let lastGranularProjectIdLoaded = null;
+
+function resetGranularRuntimeState() {
+  savedGranularAdjustments = null;
+  savedGranularEfficiencies = null;
+  savedGranularExtractionOverrides = {};
+  savedGranularAdjustmentsAuto = true;
+  lastGranularCalculatedCrop = null;
+  lastGranularCalculatedYield = null;
+}
 
 function calculateGranularNutrientRequirements(options = {}) {
   try {
@@ -1759,6 +1769,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   document.addEventListener('projectChanged', () => {
     try { flushGranularRequirementsIfDirty(); } catch {}
+    try { resetGranularRuntimeState(); } catch {}
     try { setTimeout(() => loadGranularRequirements(), 50); } catch {}
   });
 
@@ -1807,14 +1818,19 @@ function loadGranularRequirements(retryCount = 0) {
     const projectId = getCurrentProjectId();
     if (!projectId) {
       console.warn('⚠️ No hay proyecto seleccionado para cargar Granular. Mostrando valores por defecto.');
-      // CRÍTICO: Limpiar savedGranularAdjustments cuando no hay proyecto
-      savedGranularAdjustments = null;
-      savedGranularEfficiencies = null;
+      // Limpiar estado runtime para evitar arrastre entre proyectos
+      resetGranularRuntimeState();
+      lastGranularProjectIdLoaded = null;
       if (typeof calculateGranularNutrientRequirements === 'function') {
         calculateGranularNutrientRequirements({ _skipLoadFromStorage: true });
       }
       return;
     }
+    if (lastGranularProjectIdLoaded && lastGranularProjectIdLoaded !== projectId) {
+      console.log('🔄 Cambio de proyecto detectado en Granular. Limpiando estado runtime...');
+      resetGranularRuntimeState();
+    }
+    lastGranularProjectIdLoaded = projectId;
     let requirementData = null;
     
     // PRIORIDAD 1: Sistema centralizado si está disponible
@@ -2059,10 +2075,9 @@ function loadGranularRequirements(retryCount = 0) {
       });
     } else {
       console.log('ℹ️ No hay valores guardados - usando PRECARGADOS (fórmulas predefinidas)');
-      // CRÍTICO: Limpiar savedGranularAdjustments cuando NO hay datos guardados
-      // para asegurar que los ajustes se inicialicen con la extracción total
-      savedGranularAdjustments = null;
-      savedGranularEfficiencies = null;
+      // Limpiar estado runtime cuando NO hay datos guardados para este proyecto
+      // (evita arrastrar valores del proyecto anterior)
+      resetGranularRuntimeState();
       if (typeof calculateGranularNutrientRequirements === 'function') {
         // CRÍTICO: Pasar _skipLoadFromStorage para evitar que intente cargar desde localStorage
         // ya que loadGranularRequirements ya determinó que no hay datos guardados
