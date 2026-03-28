@@ -3498,19 +3498,41 @@
                 });
             };
             var hasSave = function(obj) { return obj && (obj.isUserSaved === true || !!obj.savedAt); };
+            /** Resultado de cálculo de enmienda con contenido real (evita Alto por HTML vacío o flags sueltos). */
+            var amendmentResultsSubstantial = function(results) {
+                if (!results || typeof results !== 'object') return false;
+                var htmlRaw = (results.detailedHTML && String(results.detailedHTML)) || '';
+                var html = htmlRaw.trim();
+                var textOnly = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                if (textOnly.length >= 40) return true;
+                if (html.length >= 140) return true;
+                if (results.rawDetails && typeof results.rawDetails === 'object' && Object.keys(results.rawDetails).length > 0) return true;
+                if (results.rawTotals && typeof results.rawTotals === 'object' && Object.keys(results.rawTotals).length > 0) return true;
+                var t = (results.type && String(results.type).trim()) || '';
+                var a = (results.amount && String(results.amount).trim()) || '';
+                if (results.isVisible === true && t.length > 0 && a.length > 0) return true;
+                if (results.isVisible === true && textOnly.length >= 18) return true;
+                return false;
+            };
             var out = {};
             // Ubicación: alto solo si hay polígono (no depende del número de puntos: 3, 5 u 8 valen igual)
             if (project.location && project.location.polygon && Array.isArray(project.location.polygon) && project.location.polygon.length >= 3) {
                 out['Ubicación'] = 3;
             } else { out['Ubicación'] = 0; }
-            // Enmienda: bajo = solo datos de análisis de suelo (CIC/suelo en pestaña enmienda); medio = seleccionó enmiendas u otros valores; alto = además pulsó calcular y tiene resultado
-            if (project.amendments && hasRealData(project.amendments, true)) {
+            // Enmienda: Alto = cálculo con salida sustancial; Medio = eligió enmiendas (sin cálculo claro); Bajo = solo alcance u otros sin selección ni cálculo; 0 = sin datos
+            if (project.amendments && typeof project.amendments === 'object') {
                 var hasSelected = (project.amendments.selected && project.amendments.selected.length) > 0;
-                var hasCalculation = !!(project.amendments.results && (project.amendments.results.detailedHTML || project.amendments.results.isVisible || hasRealData(project.amendments.results, true)));
-                var onlySoilData = !hasSelected && !hasCalculation && hasRealData(project.amendments, true);
-                if (hasCalculation) out['Enmienda'] = 3;
-                else if (hasSelected || !onlySoilData) out['Enmienda'] = 2;
-                else out['Enmienda'] = 1;
+                var substantialCalc = !!(project.amendments.results && amendmentResultsSubstantial(project.amendments.results));
+                var anyAmendmentSignal = hasRealData(project.amendments, true);
+                if (!anyAmendmentSignal && !hasSelected && !substantialCalc) {
+                    out['Enmienda'] = 0;
+                } else if (substantialCalc) {
+                    out['Enmienda'] = 3;
+                } else if (hasSelected) {
+                    out['Enmienda'] = 2;
+                } else {
+                    out['Enmienda'] = 1;
+                }
             } else { out['Enmienda'] = 0; }
             // Nutrición granular: bajo = solo editó requerimientos; medio = además una aplicación granular; alto = más de una aplicación
             if (project.granular && hasRealData(project.granular, true)) {
@@ -7986,13 +8008,18 @@
                         <!-- Información Básica -->
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #60a5fa;">
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">📌 Información Básica</h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px;">
-                                <div><strong>ID:</strong> ${escapeHtml(project.id || 'N/A')}</div>
-                                <div><strong>Nombre:</strong> ${escapeHtml(project.name || 'Sin nombre')}</div>
-                                <div><strong>Cultivo:</strong> ${escapeHtml(project.crop_type || 'N/A')}</div>
-                                <div><strong>Variedad:</strong> ${escapeHtml(project.variedad || 'N/A')}</div>
-                                <div><strong>Creado:</strong> ${project.created_at ? new Date(project.created_at).toLocaleString('es-MX') : 'N/A'}</div>
-                                <div><strong>Actualizado:</strong> ${project.updated_at ? new Date(project.updated_at).toLocaleString('es-MX') : 'N/A'}</div>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div style="min-width: 0;">
+                                    <strong>ID:</strong>
+                                    <div style="margin-top: 4px; padding: 8px 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: ui-monospace, monospace; font-size: 12px; word-break: break-word; overflow-wrap: anywhere; line-height: 1.45; color: #334155;">${escapeHtml(project.id || 'N/A')}</div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px;">
+                                    <div style="min-width: 0;"><strong>Nombre:</strong><br><span style="word-break: break-word;">${escapeHtml(project.name || 'Sin nombre')}</span></div>
+                                    <div><strong>Cultivo:</strong> ${escapeHtml(project.crop_type || 'N/A')}</div>
+                                    <div><strong>Variedad:</strong> ${escapeHtml(project.variedad || 'N/A')}</div>
+                                    <div><strong>Creado:</strong> ${project.created_at ? new Date(project.created_at).toLocaleString('es-MX') : 'N/A'}</div>
+                                    <div><strong>Actualizado:</strong> ${project.updated_at ? new Date(project.updated_at).toLocaleString('es-MX') : 'N/A'}</div>
+                                </div>
                             </div>
                         </div>
                         
@@ -10126,10 +10153,14 @@
                         <!-- Información Personal -->
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #60a5fa;">
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">📋 Información Personal</h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 16px;">
-                                <div><strong>ID:</strong> ${escapeHtml(user.id || viewCanonicalId)}</div>
-                                <div><strong>Nombre:</strong> ${escapeHtml(user.name || 'N/A')}</div>
-                                <div><strong>Email:</strong> ${escapeHtml(user.email || 'N/A')}</div>
+                            <div style="display: flex; flex-direction: column; gap: 16px;">
+                                <div style="min-width: 0;">
+                                    <strong>ID:</strong>
+                                    <div style="margin-top: 4px; padding: 8px 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: ui-monospace, monospace; font-size: 12px; word-break: break-word; overflow-wrap: anywhere; line-height: 1.45; color: #334155;">${escapeHtml(user.id || viewCanonicalId)}</div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 16px;">
+                                <div style="min-width: 0;"><strong>Nombre:</strong><br><span style="word-break: break-word;">${escapeHtml(user.name || 'N/A')}</span></div>
+                                <div style="min-width: 0;"><strong>Email:</strong><br><span style="word-break: break-word;">${escapeHtml(user.email || 'N/A')}</span></div>
                                 <div><strong>Contraseña:</strong> ${escapeHtml(user.password || (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(viewCanonicalId) ? '🔒 No guardada (registro anterior)' : 'Sin contraseña'))}</div>
                                 <div><strong>Teléfono:</strong> ${escapeHtml(user.phone || 'N/A')}</div>
                                 <div><strong>Ubicación:</strong> ${user.location ? (typeof user.location === 'object' ? [user.location.city, user.location.state, user.location.country].filter(Boolean).join(', ') : user.location) : 'N/A'}</div>
@@ -10137,6 +10168,7 @@
                                 <div><strong>Cultivos:</strong> ${user.crops && Array.isArray(user.crops) ? user.crops.join(', ') : (user.crops || 'N/A')}</div>
                                 <div><strong>Fecha de Registro:</strong> ${user.created_at ? new Date(user.created_at).toLocaleString('es-MX') : 'N/A'}</div>
                                 <div><strong>Último Acceso:</strong> ${user.last_login ? new Date(user.last_login).toLocaleString('es-MX') : 'N/A'}</div>
+                                </div>
                             </div>
                         </div>
                         

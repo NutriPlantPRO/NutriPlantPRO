@@ -1350,7 +1350,26 @@ function updateSummary(options = {}) {
         
         element.textContent = formatNumberWithCommas(displayValue);
         if (reqEl) reqEl.textContent = formatNumberWithCommas(reqDisplay);
-        if (diffEl) diffEl.textContent = formatNumberWithCommas((parseFloat(displayValue) || 0) - (parseFloat(reqDisplay) || 0));
+        if (diffEl) {
+          var diffNum = (parseFloat(displayValue) || 0) - (parseFloat(reqDisplay) || 0);
+          diffEl.textContent = formatNumberWithCommas(diffNum);
+          diffEl.classList.remove('nutrient-diff--deficit', 'nutrient-diff--surplus', 'nutrient-diff--balanced');
+          var diffItem = diffEl.closest('.nutrient-item');
+          if (diffItem) {
+            diffItem.classList.remove('nutrient-item--diff-deficit', 'nutrient-item--diff-surplus', 'nutrient-item--diff-balanced');
+          }
+          var diffEps = 1e-3;
+          if (Math.abs(diffNum) < diffEps) {
+            diffEl.classList.add('nutrient-diff--balanced');
+            if (diffItem) diffItem.classList.add('nutrient-item--diff-balanced');
+          } else if (diffNum < 0) {
+            diffEl.classList.add('nutrient-diff--deficit');
+            if (diffItem) diffItem.classList.add('nutrient-item--diff-deficit');
+          } else {
+            diffEl.classList.add('nutrient-diff--surplus');
+            if (diffItem) diffItem.classList.add('nutrient-item--diff-surplus');
+          }
+        }
         
         // Actualizar la etiqueta si existe (innerHTML + notranslate: evita Fe→Faith, Ca→AC, Si→Yes con Google Translate)
         if (labelElement && labelText) {

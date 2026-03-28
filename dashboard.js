@@ -1227,9 +1227,9 @@ function sectionTemplate(name) {
                 </div>
               </div>
 
-              <div class="summary-nutrients" style="margin-top: 16px;">
+              <div class="summary-nutrients summary-nutrients--granular-diff" style="margin-top: 16px;">
                 <h4>➖ Diferencia (Aporte - Requerimiento) (Kg/Ha):</h4>
-                <div class="nutrients-grid">
+                <div class="nutrients-grid nutrients-grid--diff">
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><span class="nutrient-value" id="diffN">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelP2O5">P₂O₅:</span><span class="nutrient-value" id="diffP2O5">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelK2O">K₂O:</span><span class="nutrient-value" id="diffK2O">0.0</span></div>
