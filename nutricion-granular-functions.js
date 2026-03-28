@@ -1577,10 +1577,36 @@ function saveApplications() {
     // 🚀 CRÍTICO: No sobrescribir el programa guardado con vacío si la pestaña Programa no se abrió (o tras recargar)
     // Si no hay DOM de aplicaciones y en memoria está vacío, preservar lo que ya está en storage
     if (!container && applications.length === 0) {
-      const existing = typeof window.projectStorage !== 'undefined' ? window.projectStorage.loadSection('granular', projectId) : null;
-      const existingProgram = existing && existing.program && Array.isArray(existing.program.applications) && existing.program.applications.length > 0;
+      let existingProgram = false;
+      // Prioridad 1: projectStorage
+      try {
+        const existing = typeof window.projectStorage !== 'undefined' ? window.projectStorage.loadSection('granular', projectId) : null;
+        existingProgram = !!(existing && existing.program && Array.isArray(existing.program.applications) && existing.program.applications.length > 0);
+      } catch (e) {}
+      // Prioridad 2: esquema unificado directo
+      if (!existingProgram) {
+        try {
+          const unifiedKey = `nutriplant_project_${projectId}`;
+          const raw = localStorage.getItem(unifiedKey);
+          if (raw) {
+            const unified = JSON.parse(raw);
+            const p = unified && unified.granular && unified.granular.program;
+            existingProgram = !!(p && Array.isArray(p.applications) && p.applications.length > 0);
+          }
+        } catch (e) {}
+      }
+      // Prioridad 3: legado por compatibilidad
+      if (!existingProgram) {
+        try {
+          const legacyRaw = localStorage.getItem(`nutricionGranularData_${projectId}`);
+          if (legacyRaw) {
+            const legacy = JSON.parse(legacyRaw);
+            existingProgram = !!(legacy && Array.isArray(legacy.applications) && legacy.applications.length > 0);
+          }
+        } catch (e) {}
+      }
       if (existingProgram) {
-        console.log('💾 Programa Granular: sin pestaña abierta y memoria vacía; se preserva el programa ya guardado (no sobrescribir).');
+        console.log('💾 Programa Granular: sin pestaña abierta y memoria vacía; se preserva programa existente en storage (no sobrescribir).');
         return;
       }
     }

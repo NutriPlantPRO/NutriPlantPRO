@@ -1350,6 +1350,40 @@ function saveGranularRequirements() {
     // GUARDAR usando sistema centralizado si está disponible, sino usar método directo
     const useCentralized = typeof window.projectStorage !== 'undefined';
     
+    // Fallback robusto: guardar directo en esquema unificado, incluso si projectStorage falla.
+    function saveGranularDirectFallback(requirementsPayload, existingSectionForProgram) {
+      const unifiedKey = `nutriplant_project_${projectId}`;
+      let unified = {};
+      try {
+        const raw = localStorage.getItem(unifiedKey);
+        if (raw) unified = JSON.parse(raw);
+      } catch {}
+
+      const existingLocation = unified.location;
+      const hasValidLocation = existingLocation &&
+                              existingLocation.polygon &&
+                              Array.isArray(existingLocation.polygon) &&
+                              existingLocation.polygon.length >= 3;
+
+      const existingProgram = (unified.granular && unified.granular.program) ||
+        (existingSectionForProgram && existingSectionForProgram.program) ||
+        null;
+
+      unified.granular = {
+        ...(unified.granular || {}),
+        requirements: requirementsPayload,
+        lastUI: { cropType, targetYield },
+        ...(existingProgram ? { program: existingProgram } : {})
+      };
+
+      if (hasValidLocation) {
+        unified.location = existingLocation;
+      }
+
+      localStorage.setItem(unifiedKey, JSON.stringify(unified));
+      console.log('💾 Guardado Granular por fallback directo (resiliente)');
+    }
+
     if (useCentralized) {
       // Usar sistema centralizado con merge inteligente
       const existingSection = window.projectStorage.loadSection('granular', projectId) || {};
@@ -1443,40 +1477,20 @@ function saveGranularRequirements() {
           });
         } else {
           console.error('❌ ERROR: No se pudo verificar el guardado - verified:', verified);
+          // Si no se puede verificar, escribir directo para no perder datos del usuario.
+          saveGranularDirectFallback(requirementData, existingSection);
         }
       } else {
         console.error('❌ ERROR: No se pudo guardar usando sistema centralizado');
+        // projectStorage existe pero falló (ownership/cache/race): forzar fallback local directo.
+        saveGranularDirectFallback(requirementData, existingSection);
       }
     } else {
       // Fallback: guardar directamente
-      const unifiedKey = `nutriplant_project_${projectId}`;
-      let unified = {};
-      try {
-        const raw = localStorage.getItem(unifiedKey);
-        if (raw) unified = JSON.parse(raw);
-      } catch {}
-      
-      // 🚀 CRÍTICO: Preservar location antes de actualizar
-      const existingLocation = unified.location;
-      const hasValidLocation = existingLocation && 
-                              existingLocation.polygon && 
-                              Array.isArray(existingLocation.polygon) && 
-                              existingLocation.polygon.length >= 3;
-      
-      unified.granular = {
-        ...(unified.granular || {}),
-        requirements: requirementData,
-        lastUI: { cropType, targetYield } // Sincronizado con requirements
-      };
-      
-      // 🚀 CRÍTICO: Restaurar location después de actualizar
-      if (hasValidLocation) {
-        unified.location = existingLocation;
-      }
-      
-      localStorage.setItem(unifiedKey, JSON.stringify(unified));
+      saveGranularDirectFallback(requirementData, null);
       
       // Verificar que realmente se guardó
+      const unifiedKey = `nutriplant_project_${projectId}`;
       const verify = localStorage.getItem(unifiedKey);
       if (verify) {
         const verified = JSON.parse(verify);
