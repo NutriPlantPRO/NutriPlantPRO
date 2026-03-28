@@ -190,12 +190,55 @@
     if (!userId) return;
 
     try {
+      function hasRichGranularReq(req) {
+        if (!req || typeof req !== 'object') return false;
+        const hasAdj = !!(req.adjustment && Object.keys(req.adjustment).length > 0);
+        const hasEff = !!(req.efficiency && Object.keys(req.efficiency).length > 0);
+        const hasExt = !!(req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0);
+        return hasAdj || hasEff || hasExt;
+      }
+
+      // Blindaje antes de subir: no mandar una version granular "pobre"
+      // si local ya tiene requirements/program completos.
+      let payloadData = projectData && typeof projectData === 'object' ? { ...projectData } : {};
+      try {
+        const localKey = 'nutriplant_project_' + projectId;
+        const localRaw = localStorage.getItem(localKey);
+        const localObj = localRaw ? JSON.parse(localRaw) : null;
+        const localGranular = localObj && localObj.granular && typeof localObj.granular === 'object' ? localObj.granular : null;
+        const incomingGranular = payloadData.granular && typeof payloadData.granular === 'object' ? payloadData.granular : null;
+
+        if (localGranular) {
+          if (!payloadData.granular || typeof payloadData.granular !== 'object') {
+            payloadData.granular = { ...localGranular };
+          } else {
+            const localReq = localGranular.requirements;
+            const incomingReq = incomingGranular ? incomingGranular.requirements : null;
+            if (hasRichGranularReq(localReq) && !hasRichGranularReq(incomingReq)) {
+              payloadData.granular.requirements = localReq;
+            }
+
+            const localProgram = localGranular.program;
+            const incomingProgram = incomingGranular ? incomingGranular.program : null;
+            const localHasProgram = !!(localProgram && Array.isArray(localProgram.applications) && localProgram.applications.length > 0);
+            const incomingHasProgram = !!(incomingProgram && Array.isArray(incomingProgram.applications) && incomingProgram.applications.length > 0);
+            if (localHasProgram && !incomingHasProgram) {
+              payloadData.granular.program = localProgram;
+            }
+
+            if (!payloadData.granular.lastUI && localGranular.lastUI) {
+              payloadData.granular.lastUI = localGranular.lastUI;
+            }
+          }
+        }
+      } catch (e) {}
+
       const row = {
         id: projectId,
         user_id: userId,
-        name: projectData.name || projectData.title || 'Sin nombre',
-        title: projectData.title || projectData.name || '',
-        data: projectData,
+        name: payloadData.name || payloadData.title || 'Sin nombre',
+        title: payloadData.title || payloadData.name || '',
+        data: payloadData,
         updated_at: new Date().toISOString()
       };
 

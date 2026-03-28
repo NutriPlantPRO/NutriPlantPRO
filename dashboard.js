@@ -6921,6 +6921,13 @@ async function np_refreshCurrentProjectFromCloud() {
     const fullData = await sp.fetchProject(projectId);
     if (fullData && typeof fullData === 'object') {
       const toStore = fullData.id ? fullData : { id: projectId, ...fullData };
+      function hasRichGranularReq(req) {
+        if (!req || typeof req !== 'object') return false;
+        const hasAdj = !!(req.adjustment && Object.keys(req.adjustment).length > 0);
+        const hasEff = !!(req.efficiency && Object.keys(req.efficiency).length > 0);
+        const hasExt = !!(req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0);
+        return hasAdj || hasEff || hasExt;
+      }
       // Asegurar que el proyecto local tenga la misma updated_at que la nube para no bloquear Guardar tras "Actualizar con la nube"
       const cloudUpdatedAt = fullData.updated_at || fullData.updatedAt;
       const key = 'nutriplant_project_' + projectId;
@@ -6938,6 +6945,35 @@ async function np_refreshCurrentProjectFromCloud() {
           if (localTs && (!cloudTs || cloudTs <= localTs + 1000)) {
             console.log('⏭️ Nube omitida: local es más reciente/igual o nube sin timestamp confiable');
             return;
+          }
+
+          // Blindaje: si la nube viene "pobre" en granular, preservar lo local "rico".
+          const localGranular = localObj && localObj.granular && typeof localObj.granular === 'object' ? localObj.granular : null;
+          const cloudGranular = toStore && toStore.granular && typeof toStore.granular === 'object' ? toStore.granular : null;
+          if (localGranular) {
+            if (!toStore.granular || typeof toStore.granular !== 'object') {
+              toStore.granular = { ...localGranular };
+            } else {
+              const localReq = localGranular.requirements;
+              const cloudReq = cloudGranular ? cloudGranular.requirements : null;
+              if (hasRichGranularReq(localReq) && !hasRichGranularReq(cloudReq)) {
+                toStore.granular.requirements = localReq;
+                console.warn('🛡️ Cloud refresh: preservando granular.requirements local (cloud incompleto)');
+              }
+
+              const localProgram = localGranular.program;
+              const cloudProgram = cloudGranular ? cloudGranular.program : null;
+              const localHasProgram = !!(localProgram && Array.isArray(localProgram.applications) && localProgram.applications.length > 0);
+              const cloudHasProgram = !!(cloudProgram && Array.isArray(cloudProgram.applications) && cloudProgram.applications.length > 0);
+              if (localHasProgram && !cloudHasProgram) {
+                toStore.granular.program = localProgram;
+                console.warn('🛡️ Cloud refresh: preservando granular.program local (cloud incompleto)');
+              }
+
+              if (!toStore.granular.lastUI && localGranular.lastUI) {
+                toStore.granular.lastUI = localGranular.lastUI;
+              }
+            }
           }
         }
       } catch (e) {
