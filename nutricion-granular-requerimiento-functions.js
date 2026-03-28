@@ -1002,12 +1002,18 @@ window.renderGranularCustomCropsList = renderGranularCustomCropsList;
 // Función para obtener el ID del proyecto actual (mismo que en nutricion-granular-functions.js)
 function getCurrentProjectId() {
   try {
+    if (typeof window !== 'undefined' && typeof window.np_getCurrentProjectId === 'function') {
+      const pidFromHelper = window.np_getCurrentProjectId();
+      if (pidFromHelper) { return pidFromHelper; }
+    }
     if (typeof window !== 'undefined' && window.projectManager) {
       const currentProject = window.projectManager.getCurrentProject();
       if (currentProject && currentProject.id) { return currentProject.id; }
     }
     const currentProjectId = localStorage.getItem('nutriplant-current-project');
     if (currentProjectId) { return currentProjectId; }
+    const currentProjectIdUnderscore = localStorage.getItem('nutriplant_current_project');
+    if (currentProjectIdUnderscore) { return currentProjectIdUnderscore; }
     return null;
   } catch (error) {
     console.error('❌ Error obteniendo ID de proyecto:', error);

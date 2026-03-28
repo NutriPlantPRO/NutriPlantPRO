@@ -2577,6 +2577,10 @@ body {
   word-break: keep-all; /* Evitar cortes raros como "a" solo */
 }
 
+.target-grid .target-item label .target-adjust-label {
+  white-space: nowrap; /* Mantener "meq a ajustar" unido y legible */
+}
+
 .target-grid .target-item .target-input {
   font-size: 1.1rem;
   font-weight: 700;

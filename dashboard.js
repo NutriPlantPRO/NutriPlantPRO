@@ -814,27 +814,27 @@ function sectionTemplate(name) {
             </p>
             <div class="target-grid">
               <div class="target-item cation-good">
-                <label><span class="notranslate" translate="no">K⁺</span> (meq a&nbsp;ajustar):</label>
+                <label><span class="notranslate" translate="no">K⁺</span> <span class="target-adjust-label">(meq a ajustar):</span></label>
                 <input type="number" id="k-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-good">
-                <label><span class="notranslate" translate="no">Ca²⁺</span> (meq a&nbsp;ajustar):</label>
+                <label><span class="notranslate" translate="no">Ca²⁺</span> <span class="target-adjust-label">(meq a ajustar):</span></label>
                 <input type="number" id="ca-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-good">
-                <label><span class="notranslate" translate="no">Mg²⁺</span> (meq a&nbsp;ajustar):</label>
+                <label><span class="notranslate" translate="no">Mg²⁺</span> <span class="target-adjust-label">(meq a ajustar):</span></label>
                 <input type="number" id="mg-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-acid">
-                <label><span class="notranslate" translate="no">H⁺</span> (meq a&nbsp;ajustar):</label>
+                <label><span class="notranslate" translate="no">H⁺</span> <span class="target-adjust-label">(meq a ajustar):</span></label>
                 <input type="number" id="h-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-salt">
-                <label><span class="notranslate" translate="no">Na⁺</span> (meq a&nbsp;ajustar):</label>
+                <label><span class="notranslate" translate="no">Na⁺</span> <span class="target-adjust-label">(meq a ajustar):</span></label>
                 <input type="number" id="na-target" step="0.01" value="0.00" class="target-input">
               </div>
               <div class="target-item cation-toxic">
-                <label><span class="notranslate" translate="no">Al³⁺</span> (meq a&nbsp;ajustar):</label>
+                <label><span class="notranslate" translate="no">Al³⁺</span> <span class="target-adjust-label">(meq a ajustar):</span></label>
                 <input type="number" id="al-target" step="0.01" value="0.00" class="target-input">
               </div>
             </div>

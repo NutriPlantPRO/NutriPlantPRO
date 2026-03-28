@@ -1416,6 +1416,12 @@ function updateSummary(options = {}) {
 // Función para obtener el ID del proyecto actual
 function getCurrentProjectId() {
   try {
+    if (typeof window !== 'undefined' && typeof window.np_getCurrentProjectId === 'function') {
+      const pidFromHelper = window.np_getCurrentProjectId();
+      if (pidFromHelper) {
+        return pidFromHelper;
+      }
+    }
     // CRÍTICO: Usar el mismo método que el ProjectManager
     if (typeof window !== 'undefined' && window.projectManager) {
       const currentProject = window.projectManager.getCurrentProject();
@@ -1430,6 +1436,11 @@ function getCurrentProjectId() {
     if (currentProjectId) {
       console.log('✅ ID del proyecto desde localStorage:', currentProjectId);
       return currentProjectId;
+    }
+    const currentProjectIdUnderscore = localStorage.getItem('nutriplant_current_project');
+    if (currentProjectIdUnderscore) {
+      console.log('✅ ID del proyecto desde localStorage (underscore):', currentProjectIdUnderscore);
+      return currentProjectIdUnderscore;
     }
     
     console.warn('⚠️ No se encontró ID de proyecto');
