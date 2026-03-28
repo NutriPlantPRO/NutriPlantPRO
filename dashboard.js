@@ -7467,40 +7467,66 @@ async function buildReportHtmlSnapshotForShare(report) {
   return createReportHTML(selectedSections, chartImages, lang);
 }
 
+var shareReportViewInFlight = Object.create(null);
+
+function setShareViewButtonBusy(reportId, busy) {
+  var id = String(reportId);
+  document.querySelectorAll('.np-share-view-btn').forEach(function(btn) {
+    if (String(btn.getAttribute('data-rid')) !== id) return;
+    btn.disabled = !!busy;
+    if (busy) {
+      if (!btn.dataset.shareOriginalHtml) btn.dataset.shareOriginalHtml = btn.innerHTML;
+      btn.innerHTML = '⏳ Generando link…';
+    } else {
+      btn.innerHTML = btn.dataset.shareOriginalHtml || '🔗 Compartir vista';
+      delete btn.dataset.shareOriginalHtml;
+    }
+  });
+}
+
 window.shareReportView = async function(reportId) {
-  const reportIndex = generatedReports.findIndex(function(r) { return r && String(r.id) === String(reportId); });
-  const report = reportIndex >= 0 ? generatedReports[reportIndex] : null;
+  var rid = String(reportId);
+  var reportIndex = generatedReports.findIndex(function(r) { return r && String(r.id) === rid; });
+  var report = reportIndex >= 0 ? generatedReports[reportIndex] : null;
   if (!report) {
     showMessage('⚠️ Reporte no encontrado para compartir.', 'warning');
     return;
   }
-  const scope = getCurrentReportScope();
-  const userId = scope.userId || '';
-  const projectId = scope.projectId || '';
-  const isUuidUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(userId));
+  var scope = getCurrentReportScope();
+  var userId = scope.userId || '';
+  var projectId = scope.projectId || '';
+  var isUuidUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(userId));
   if (!isUuidUser || !projectId) {
     showMessage('⚠️ Para compartir por link necesitas sesión activa en la nube y proyecto seleccionado.', 'warning');
     return;
   }
 
+  if (shareReportViewInFlight[rid]) {
+    showMessage('⏳ Ya se está generando el link de este reporte. Espera un momento.', 'info');
+    return;
+  }
+  shareReportViewInFlight[rid] = true;
+  setShareViewButtonBusy(rid, true);
+  showMessage('⏳ Generando enlace de vista (puede tardar unos segundos: HTML, gráficas y subida a la nube)…', 'info');
+
   try {
-    const persistedOk = persistReportSourceData();
+    var persistedOk = persistReportSourceData();
     if (!persistedOk) {
       showMessage('❌ No se pudo preparar la fuente antes de compartir.', 'error');
       return;
     }
 
     // Al compartir nuevamente: regenerar token y vigencia (el link anterior deja de servir).
-    const token = generateReportShareToken();
-    const nowIso = new Date().toISOString();
-    const expiresIso = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString();
-    const htmlSnapshot = await buildReportHtmlSnapshotForShare(report);
+    var token = generateReportShareToken();
+    var nowIso = new Date().toISOString();
+    var expiresIso = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString();
+    var htmlSnapshot = await buildReportHtmlSnapshotForShare(report);
     if (!htmlSnapshot) {
       showMessage('⚠️ No se pudo preparar la vista del reporte para compartir.', 'warning');
       return;
     }
 
-    const cloudPayload = {
+    var cloudPayload = {
       ...report,
       userId: userId,
       projectId: projectId,
@@ -7511,16 +7537,21 @@ window.shareReportView = async function(reportId) {
       shareExpiresAt: expiresIso
     };
 
-    // Sincronizar snapshot + token a nube antes de entregar URL.
+    // Sincronizar snapshot + token a nube antes de entregar URL (si falla, no copiar link: el servidor no tendría el token).
+    var synced = false;
     if (typeof window.nutriplantSyncReportToCloud === 'function') {
-      await window.nutriplantSyncReportToCloud(userId, projectId, cloudPayload);
+      synced = await window.nutriplantSyncReportToCloud(userId, projectId, cloudPayload);
     } else {
       showMessage('⚠️ No está disponible la sincronización a nube para compartir link.', 'warning');
       return;
     }
+    if (!synced) {
+      showMessage('❌ No se pudo guardar el reporte en la nube (sesión, red o tamaño). Cierra sesión y vuelve a entrar, o revisa la consola. Sin eso el link no abrirá.', 'error');
+      return;
+    }
 
     // Mantener local ligero (sin HTML gigante), pero con metadatos de share.
-    const localUpdated = {
+    var localUpdated = {
       ...report,
       shareToken: token,
       shareEnabled: true,
@@ -7530,9 +7561,8 @@ window.shareReportView = async function(reportId) {
     delete localUpdated.reportHTML;
     generatedReports[reportIndex] = localUpdated;
     try { localStorage.setItem(getReportsStorageKey(scope), JSON.stringify(generatedReports)); } catch (e) {}
-    updateReportsList();
 
-    const url = buildReportViewShareUrl(report.id, token);
+    var url = buildReportViewShareUrl(report.id, token);
     if (navigator.clipboard && navigator.clipboard.writeText) {
       try {
         await navigator.clipboard.writeText(url);
@@ -7543,9 +7573,13 @@ window.shareReportView = async function(reportId) {
     } else {
       window.prompt('Copia este link de vista del reporte:', url);
     }
+    updateReportsList();
   } catch (e) {
     console.error('shareReportView:', e);
     showMessage('❌ No se pudo generar el link de vista: ' + (e && e.message ? e.message : e), 'error');
+  } finally {
+    delete shareReportViewInFlight[rid];
+    setShareViewButtonBusy(rid, false);
   }
 };
 
@@ -8218,7 +8252,7 @@ function updateReportsList() {
           <button onclick="downloadReport('${report.id}')" class="btn btn-secondary" style="margin-right: 10px;">
             📥 Descargar
           </button>
-          <button onclick="shareReportView('${report.id}')" class="btn btn-info" style="margin-right: 10px;">
+          <button type="button" class="btn btn-info np-share-view-btn" data-rid="${String(report.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" onclick="if(this.disabled)return;shareReportView(this.getAttribute('data-rid'))" style="margin-right: 10px;">
             🔗 Compartir vista
           </button>
           <button onclick="deleteReport('${report.id}')" class="btn btn-danger">

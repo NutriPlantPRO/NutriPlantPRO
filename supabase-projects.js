@@ -739,20 +739,20 @@
       }
     },
 
-    /** Sincronizar un reporte a Supabase (insert/upsert por id) */
+    /** Sincronizar un reporte a Supabase (insert/upsert por id). Devuelve true solo si el upsert terminó bien. */
     syncReport: async function(userId, projectId, reportData) {
-      if (!userId || !UUID_REGEX.test(String(userId)) || !projectId || !reportData || typeof reportData !== 'object') return;
+      if (!userId || !UUID_REGEX.test(String(userId)) || !projectId || !reportData || typeof reportData !== 'object') return false;
       const reportId = reportData.id || 'report_' + Date.now();
       const client = getClient();
       if (!client) {
         console.warn('⚠️ Sync reporte: no hay cliente Supabase (revisa supabase-config.js)');
-        return;
+        return false;
       }
       try {
         const { data: sessionData } = await client.auth.getSession();
         if (!sessionData || !sessionData.session) {
           console.warn('⚠️ Sync reporte: no hay sesión de Supabase. Cierra sesión y vuelve a iniciar sesión desde la pantalla de Login para que los reportes se guarden en la nube.');
-          return;
+          return false;
         }
         const row = {
           id: reportId,
@@ -764,11 +764,13 @@
         const { error } = await client.from('reports').upsert(row, { onConflict: 'id', ignoreDuplicates: false });
         if (error) {
           console.error('⚠️ Supabase sync report falló:', error.code || error.message, error.message);
-        } else {
-          console.log('☁️ Reporte sincronizado a la nube:', reportId);
+          return false;
         }
+        console.log('☁️ Reporte sincronizado a la nube:', reportId);
+        return true;
       } catch (e) {
         console.warn('⚠️ syncReport:', e);
+        return false;
       }
     },
 
@@ -917,7 +919,7 @@
     if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.syncReport) {
       return window.nutriplantSupabaseProjects.syncReport(userId, projectId, reportData);
     }
-    return Promise.resolve();
+    return Promise.resolve(false);
   };
 
   /** Eliminar un reporte en la nube por id */

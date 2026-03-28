@@ -131,7 +131,7 @@ exports.handler = async function(event) {
     const expiresAt = data.shareExpiresAt || data.share_expires_at || null;
 
     if (!shareEnabled || !storedToken || storedToken !== token) {
-      return htmlResponse(403, errorPage('Acceso denegado', 'Este link no es válido para ver el reporte solicitado.'));
+      return htmlResponse(403, errorPage('Acceso denegado', 'Este link no coincide con el reporte en el servidor. Suele pasar si la subida a la nube falló al compartir, o si abriste un link viejo tras volver a compartir (cada vez se genera un token nuevo). Vuelve al panel, pulsa Compartir vista una sola vez y espera el mensaje de éxito.'));
     }
     if (expiresAt) {
       const expMs = new Date(expiresAt).getTime();
