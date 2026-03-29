@@ -408,16 +408,28 @@
       const includeDeleted = !!opts.includeDeleted;
 
       try {
-        const sessionRes = await client.auth.getSession();
-        const hasSession = !!(sessionRes && sessionRes.data && sessionRes.data.session);
-        if (!hasSession) {
-          lastFetchProjectsError = 'NO_SESSION';
-          console.warn('⚠️ Supabase fetch projects: sesión no lista');
-          return [];
+        // Nota: no bloquear la consulta solo porque getSession aún no esté listo.
+        // En algunos navegadores la sesión se hidrata con delay tras recargar.
+        let hasSession = true;
+        try {
+          const sessionRes = await client.auth.getSession();
+          hasSession = !!(sessionRes && sessionRes.data && sessionRes.data.session);
+          if (!hasSession) {
+            console.warn('⚠️ Supabase fetch projects: sesión no lista, intentando consulta de todas formas...');
+          }
+        } catch (sessionErr) {
+          hasSession = false;
+          console.warn('⚠️ Supabase getSession falló, intentando consulta:', sessionErr);
         }
+
         const { data, error } = await client.from('projects').select('id, user_id, name, title, data, updated_at').order('updated_at', { ascending: false });
         if (error) {
-          lastFetchProjectsError = error.message || 'QUERY_ERROR';
+          const msg = (error && error.message) ? String(error.message) : '';
+          if (!hasSession && /jwt|token|auth|session|expired|401|403/i.test(msg)) {
+            lastFetchProjectsError = 'NO_SESSION';
+          } else {
+            lastFetchProjectsError = msg || 'QUERY_ERROR';
+          }
           console.warn('⚠️ Supabase fetch projects:', error.message);
           return [];
         }

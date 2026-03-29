@@ -3935,6 +3935,10 @@ async function np_refreshFromCloud() {
   try {
     await np_loadProjectsFromCloud();
     var cloudErr = window._np_cloud_projects_cache_error;
+    if (cloudErr === 'NO_SESSION') {
+      np_setProjectSyncStatus('idle', '');
+      return;
+    }
     if (cloudErr) {
       throw new Error(typeof cloudErr === 'string' ? cloudErr : 'No se pudo conectar con la nube');
     }
@@ -6916,6 +6920,10 @@ async function np_loadProjectsFromCloud() {
       await new Promise(function(r) { setTimeout(r, 700); });
       list = await sp.fetchProjects();
       fetchError = (typeof sp.getLastFetchProjectsError === 'function') ? sp.getLastFetchProjectsError() : null;
+    }
+    if (fetchError === 'NO_SESSION') {
+      window._np_cloud_projects_cache_error = 'NO_SESSION';
+      return;
     }
     if (fetchError) {
       throw new Error(fetchError);
