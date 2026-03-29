@@ -1988,7 +1988,27 @@ function selectSection(name, el) {
         }
       }
     } catch (e) {}
+    function initHydroponiaWithRetry(attempt) {
+      var tries = typeof attempt === 'number' ? attempt : 0;
+      var container = document.querySelector('.hydroponia-container');
+      if (!container) {
+        if (tries < 8) setTimeout(function() { initHydroponiaWithRetry(tries + 1); }, 80);
+        return;
+      }
+      if (typeof window.initHydroponiaUI === 'function') {
+        try {
+          window.initHydroponiaUI();
+        } catch (e) {
+          console.warn('⚠️ initHydroponiaUI falló, reintentando...', e);
+          if (tries < 8) setTimeout(function() { initHydroponiaWithRetry(tries + 1); }, 100);
+        }
+      } else if (tries < 8) {
+        setTimeout(function() { initHydroponiaWithRetry(tries + 1); }, 80);
+      }
+    }
+
     if (reusedCachedDom) {
+      requestAnimationFrame(function() { initHydroponiaWithRetry(0); });
       setTimeout(function() {
         var cachedHydroBtn = document.querySelector('.hydroponia-container .tab-button.active');
         var cachedHydroTab = cachedHydroBtn ? (cachedHydroBtn.getAttribute('data-tab') || hydroLastTab) : hydroLastTab;
@@ -1997,9 +2017,7 @@ function selectSection(name, el) {
     } else {
       loadProjectData();
       requestAnimationFrame(() => {
-        if (typeof window.initHydroponiaUI === 'function') {
-          window.initHydroponiaUI();
-        }
+        initHydroponiaWithRetry(0);
         // Restaurar scroll después de renderizar tabs/tabla de Hidroponía.
         setTimeout(function() {
           var hydroBtn = document.querySelector('.hydroponia-container .tab-button.active');
@@ -3916,14 +3934,30 @@ async function np_refreshFromCloud() {
   np_setProjectSyncStatus('syncing', 'Sincronizando...');
   try {
     await np_loadProjectsFromCloud();
+    var cloudErr = window._np_cloud_projects_cache_error;
+    if (cloudErr) {
+      throw new Error(typeof cloudErr === 'string' ? cloudErr : 'No se pudo conectar con la nube');
+    }
     if (typeof np_renderProjects === 'function') np_renderProjects();
-    if (typeof np_refreshCurrentProjectFromCloud === 'function') await np_refreshCurrentProjectFromCloud();
+    if (typeof np_refreshCurrentProjectFromCloud === 'function') {
+      try {
+        await np_refreshCurrentProjectFromCloud();
+      } catch (refreshErr) {
+        console.warn('np_refreshCurrentProjectFromCloud:', refreshErr);
+      }
+    }
     var currentId = typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : null;
     if (currentId) {
       window._np_last_cloud_refresh_project_id = currentId;
       window._np_last_cloud_refresh_at = Date.now();
     }
-    if (currentId && typeof loadProjectData === 'function') loadProjectData();
+    if (currentId && typeof loadProjectData === 'function') {
+      try {
+        loadProjectData();
+      } catch (loadErr) {
+        console.warn('loadProjectData tras refresh cloud:', loadErr);
+      }
+    }
     np_setProjectSyncStatus('ok', 'Sincronizado');
   } catch (e) {
     console.warn('np_refreshFromCloud:', e);
@@ -9516,10 +9550,6 @@ function loadProjectData() {
       }
     }
   }
-  if (selectHintEl) {
-    selectHintEl.style.display = currentId ? "none" : "block";
-  }
-  
   if (loadedProject) {
     try {
       // CRÍTICO: Verificar que los datos cargados pertenecen al proyecto actual
