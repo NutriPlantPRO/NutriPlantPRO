@@ -5197,9 +5197,39 @@ function np_updateProject(projectId, updates) {
 }
 
 function np_getProject(id) {
+  if (!id) return null;
   // 🔒 FILTRAR: Solo buscar en proyectos del usuario actual
   const userProjects = np_loadProjects();
-  return userProjects.find(p => p.id === id) || null;
+  const fromList = userProjects.find(p => p.id === id);
+  if (fromList) return fromList;
+
+  // Fallback robusto: si la caché cloud/lista aún no está lista, intentar abrir
+  // desde el snapshot local del proyecto para no bloquear el botón "Abrir".
+  try {
+    const userId = localStorage.getItem('nutriplant_user_id');
+    const raw = localStorage.getItem(`nutriplant_project_${id}`) || localStorage.getItem(`nutriplant-project-${id}`);
+    if (raw && raw.startsWith('{')) {
+      const data = JSON.parse(raw);
+      if (data && (!data.id || data.id === id)) {
+        const projectUserId = data.user_id || data.userId || null;
+        // Si el snapshot trae user_id, validar propiedad.
+        if (!projectUserId || !userId || projectUserId === userId) {
+          return {
+            id: id,
+            title: data.name || data.title || id,
+            name: data.name || data.title || id,
+            cultivo: data.cultivo || data.crop_type || '',
+            variedad: data.variedad || '',
+            campoOsector: data.campoOsector || null,
+            createdAt: data.created_at || data.createdAt || new Date().toISOString(),
+            updatedAt: data.updated_at || data.updatedAt || data.created_at || new Date().toISOString()
+          };
+        }
+      }
+    }
+  } catch (e) {}
+
+  return null;
 }
 function np_allProjects() { return np_loadProjects(); }
 function np_setCurrentProject(id) { 
@@ -5457,31 +5487,8 @@ function np_renderProjects(){
       let p = np_getProject(id);
       const userId = localStorage.getItem('nutriplant_user_id');
       const isSupabase = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
-      let freshnessSource = 'local-cache';
-      if (p && isSupabase) {
-        const sp = window.nutriplantSupabaseProjects;
-        if (sp && sp.fetchProject) {
-          try {
-            const key = 'nutriplant_project_' + id;
-            // Para escenarios multi-equipo (ej. editar polígono en otro dispositivo),
-            // siempre traer el snapshot cloud más reciente al abrir.
-            const cloudUpdatedAt = p.updatedAt || p.updated_at || null;
-            const fullData = await sp.fetchProject(id);
-            if (fullData) {
-              const toStore = (typeof fullData === 'object' && fullData.id)
-                ? fullData
-                : { id, name: p.title, ...fullData };
-              if (!toStore.updated_at && !toStore.updatedAt && cloudUpdatedAt) {
-                toStore.updatedAt = cloudUpdatedAt;
-              }
-              localStorage.setItem(key, JSON.stringify(toStore));
-              console.log('☁️ Proyecto actualizado desde nube al abrir:', id);
-              freshnessSource = 'cloud-refresh';
-            }
-          } catch (err) { console.warn('fetchProject:', err); }
-        }
-      }
-      p = np_getProject(id) || p;
+      const cardProject = projects.find(function(pr) { return pr && pr.id === id; }) || null;
+      if (!p && cardProject) p = cardProject;
       if (p) {
         np_setCurrentProject(id);
         // Actualizar el projectManager
@@ -5493,12 +5500,41 @@ function np_renderProjects(){
         }
         window._np_project_freshness_meta = {
           projectId: id,
-          source: freshnessSource,
+          source: 'local-cache',
           refreshedAt: new Date().toISOString()
         };
-        emitProjectContextUpdate({ reason: 'project-open', freshnessSource, projectId: id });
+        emitProjectContextUpdate({ reason: 'project-open', freshnessSource: 'local-cache', projectId: id });
         renderMenu();
         selectSection("Inicio", menu.querySelector("a[data-section='inicio']") || null);
+
+        // Refresco cloud en segundo plano: no bloquear la apertura del proyecto.
+        if (isSupabase) {
+          const sp = window.nutriplantSupabaseProjects;
+          if (sp && sp.fetchProject) {
+            (async function() {
+              try {
+                const key = 'nutriplant_project_' + id;
+                const cloudUpdatedAt = p.updatedAt || p.updated_at || null;
+                const fullData = await sp.fetchProject(id);
+                if (!fullData) return;
+                const toStore = (typeof fullData === 'object' && fullData.id)
+                  ? fullData
+                  : { id, name: p.title, ...fullData };
+                if (!toStore.updated_at && !toStore.updatedAt && cloudUpdatedAt) {
+                  toStore.updatedAt = cloudUpdatedAt;
+                }
+                localStorage.setItem(key, JSON.stringify(toStore));
+                if (typeof np_getCurrentProjectId === 'function' && np_getCurrentProjectId() === id && typeof loadProjectData === 'function') {
+                  try { loadProjectData(); } catch (e) {}
+                }
+                emitProjectContextUpdate({ reason: 'project-open-cloud-refresh', freshnessSource: 'cloud-refresh', projectId: id });
+                console.log('☁️ Proyecto actualizado desde nube al abrir:', id);
+              } catch (err) { console.warn('fetchProject:', err); }
+            })();
+          }
+        }
+      } else {
+        showMessage('⚠️ No se pudo abrir el proyecto en este intento. Actualiza con la nube e intenta de nuevo.', 'warning');
       }
     }
     if (act === "dup") {
