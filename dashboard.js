@@ -5450,6 +5450,7 @@ function np_renderProjects(){
     const card = document.createElement("div");
     card.className = `card ${p.id === currentId ? 'selected' : ''}`;
     card.setAttribute('data-id', p.id);
+    const encodedId = encodeURIComponent(String(p.id || ''));
     
     // Construir información del proyecto de forma más clara
     let projectDetails = '';
@@ -5479,10 +5480,10 @@ function np_renderProjects(){
         <div class="text-xs" style="opacity:.6; margin-top:8px;">Actualizado: ${new Date(p.updatedAt).toLocaleString()}</div>
       </div>
       <div class="actions" style="margin-top:8px; display:flex; gap:8px;">
-        <button class="btn" data-act="open" data-id="${p.id}">Abrir</button>
-        <button class="btn" data-act="edit" data-id="${p.id}">Editar</button>
-        <button class="btn" data-act="dup" data-id="${p.id}">Duplicar</button>
-        <button class="btn" data-act="del" data-id="${p.id}">Eliminar</button>
+        <button class="btn" data-act="open" data-id="${encodedId}">Abrir</button>
+        <button class="btn" data-act="edit" data-id="${encodedId}">Editar</button>
+        <button class="btn" data-act="dup" data-id="${encodedId}">Duplicar</button>
+        <button class="btn" data-act="del" data-id="${encodedId}">Eliminar</button>
       </div>
     `;
     listEl.appendChild(card);
@@ -5491,7 +5492,9 @@ function np_renderProjects(){
   listEl.onclick = async (e) => {
     const btn = e.target.closest("button[data-act]");
     if (!btn) return;
-    const id = btn.getAttribute("data-id");
+    const encodedId = btn.getAttribute("data-id") || '';
+    let id = encodedId;
+    try { id = decodeURIComponent(encodedId); } catch (e) {}
     const act = btn.getAttribute("data-act");
 
     if (act === "open") {
