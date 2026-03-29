@@ -11884,6 +11884,12 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
     reportAssetBase = a.href.replace(/[^/]+$/, '');
   } catch (e) {}
   if (!reportAssetBase) reportAssetBase = window.location.origin + '/assets/';
+  let reportCssHref = '';
+  try {
+    reportCssHref = new URL('dashboard.css?v=1760001000', (window.location.origin || '') + '/').href;
+  } catch (e) {
+    reportCssHref = (window.location.origin || '') + '/dashboard.css?v=1760001000';
+  }
 
   let html = `
     <!DOCTYPE html>
@@ -11893,7 +11899,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="google" content="notranslate">
       <title>NutriPlant PRO</title>
-      <link rel="stylesheet" href="dashboard.css?v=1760001000">
+      <link rel="stylesheet" href="${reportCssHref}">
       <style>
         body {
           font-family: 'Inter', 'Arial', sans-serif;

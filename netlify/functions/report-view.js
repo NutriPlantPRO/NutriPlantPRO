@@ -53,10 +53,17 @@ function errorPage(title, message) {
 </html>`;
 }
 
-function withSharedViewChrome(reportHtml, expiresAt) {
+function withSharedViewChrome(reportHtml, expiresAt, options) {
+  const opts = options || {};
+  const proto = String(opts.proto || 'https').split(',')[0].trim();
+  const host = String(opts.host || 'nutriplantpro.com').split(',')[0].trim();
+  const baseHref = String(opts.baseUrl || `${proto}://${host}/`).replace(/\/?$/, '/');
+
   const expText = expiresAt
     ? new Date(expiresAt).toLocaleString('es-MX', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
     : '7 días';
+
+  const baseTag = `<base href="${escapeHtml(baseHref)}">`;
 
   const chromeCss = `<style id="np-shared-view-style">
     .np-shared-topbar{position:sticky;top:0;z-index:9999;background:linear-gradient(135deg,#ffffff 0%,#f8fafc 100%);border-bottom:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -73,6 +80,21 @@ function withSharedViewChrome(reportHtml, expiresAt) {
     .np-shared-topbar .links a[data-social="linkedin"]:hover{color:#0077b5}
     .np-shared-topbar .links svg{width:18px;height:18px}
     .np-shared-note{max-width:1200px;margin:10px auto 0;padding:10px 12px;border:1px solid #bae6fd;background:#eff6ff;color:#0c4a6e;border-radius:8px;font:600 13px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    /* Vista compartida móvil: ancho completo y rejillas en una columna (el reporte usa rutas relativas a dashboard.css) */
+    html{-webkit-text-size-adjust:100%}
+    html,body{max-width:100%!important;overflow-x:hidden;box-sizing:border-box}
+    *,*::before,*::after{box-sizing:border-box}
+    .report-main,.header,.project-info,.section,.footer,.footer-content{width:100%!important;max-width:100%!important;box-sizing:border-box}
+    .data-grid,.report-kv{max-width:100%}
+    @media screen and (max-width:720px){
+      body{padding:12px 14px!important}
+      .np-shared-note{max-width:none!important;margin-left:0;margin-right:0;width:100%}
+      .data-grid{grid-template-columns:1fr!important;gap:10px}
+      .report-kv{grid-template-columns:1fr!important}
+      .report-header-meta,.footer-row{flex-direction:column!important;align-items:stretch!important;gap:10px}
+      .report-header-generated-by,.report-generated-by{white-space:normal!important;text-align:left!important;margin-left:0!important}
+      .report-admin-table.report-vpd-wide-table{display:block;width:100%!important;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    }
     /* Solo en vista compartida: evita que la marca de agua quede detrás de la banda */
     .report-watermark-corner{top:60px!important}
     @media (max-width:680px){
@@ -110,8 +132,14 @@ function withSharedViewChrome(reportHtml, expiresAt) {
   <div class="np-shared-note">Vista compartida de reporte. Este link es temporal y tiene vigencia de 7 días (vence: ${escapeHtml(expText)}).</div>`;
 
   let out = String(reportHtml || '');
-  if (/<head[^>]*>/i.test(out)) out = out.replace(/<head[^>]*>/i, function(m) { return m + chromeCss; });
-  else out = '<head>' + chromeCss + '</head>' + out;
+  const docHasBase = /<base\s/i.test(out);
+  if (/<head[^>]*>/i.test(out)) {
+    out = out.replace(/<head[^>]*>/i, function(m) {
+      return m + (docHasBase ? '' : baseTag) + chromeCss;
+    });
+  } else {
+    out = '<head>' + (docHasBase ? '' : baseTag) + chromeCss + '</head>' + out;
+  }
   if (/<body[^>]*>/i.test(out)) out = out.replace(/<body[^>]*>/i, function(m) { return m + chromeHeader; });
   else out = '<body>' + chromeHeader + out + '</body>';
   return out;
@@ -173,7 +201,16 @@ exports.handler = async function(event) {
       return htmlResponse(410, errorPage('Vista no disponible', 'Este reporte no tiene una vista lista para compartir. Genera un nuevo link.'));
     }
 
-    return htmlResponse(200, withSharedViewChrome(html, expiresAt));
+    const h = event.headers || {};
+    const xfProto = (h['x-forwarded-proto'] || h['X-Forwarded-Proto'] || 'https').toString().split(',')[0].trim();
+    const xfHost = (h['x-forwarded-host'] || h['X-Forwarded-Host'] || h.host || h.Host || 'nutriplantpro.com').toString().split(',')[0].trim();
+    const baseUrl = `${xfProto}://${xfHost}/`;
+
+    return htmlResponse(200, withSharedViewChrome(html, expiresAt, {
+      proto: xfProto,
+      host: xfHost,
+      baseUrl: baseUrl
+    }));
   } catch (e) {
     return htmlResponse(500, errorPage('Error inesperado', e && e.message ? e.message : 'No se pudo abrir esta vista.'));
   }
