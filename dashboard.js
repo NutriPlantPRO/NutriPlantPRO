@@ -1369,9 +1369,8 @@ function sectionTemplate(name) {
         
         <!-- Lista de reportes generados -->
         <div id="reportsList" class="reports-list">
-          <div class="no-reports" style="text-align: center; padding: 40px; color: #666;">
-            <p>📋 No hay reportes generados aún</p>
-            <p style="font-size: 14px; margin-top: 10px;">Genera tu primer reporte desde la sección de enmiendas</p>
+          <div class="loading-reports" style="text-align: center; padding: 40px; color: #666;">
+            <p>⏳ Cargando reportes del proyecto...</p>
           </div>
         </div>
         
@@ -11168,13 +11167,12 @@ function loadOnTabChange(tabName) {
       });
       break;
     case 'Reporte':
-      // Actualizar lista de reportes (datos ya están en memoria)
+      // Cargar reportes para scope actual (usuario/proyecto).
+      // Nota: loadSavedReports ya llama internamente a updateReportsList(),
+      // por eso evitamos un segundo render que causaba "parpadeo".
       setTimeout(() => {
         if (typeof loadSavedReports === 'function') {
           loadSavedReports();
-        }
-        if (typeof updateReportsList === 'function') {
-          updateReportsList();
         }
         console.log('✅ Lista de reportes actualizada para el proyecto/usuario actual');
       }, 50);
