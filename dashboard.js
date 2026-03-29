@@ -6903,6 +6903,10 @@ async function np_loadProjectsFromCloud() {
   if (!sp || !sp.fetchProjects) return;
   try {
     const list = await sp.fetchProjects();
+    const fetchError = (typeof sp.getLastFetchProjectsError === 'function') ? sp.getLastFetchProjectsError() : null;
+    if (fetchError) {
+      throw new Error(fetchError);
+    }
     // Solo proyectos que en la nube pertenecen a este usuario (por si RLS devuelve más)
     const cloudIds = new Set((list || []).filter(p => p && p.user_id === userId).map(p => p.id).filter(Boolean));
     window._np_cloud_projects_cache = (list || []).map(p => ({
@@ -6976,7 +6980,8 @@ async function np_loadProjectsFromCloud() {
   } catch (e) {
     console.warn('⚠️ np_loadProjectsFromCloud:', e);
     window._np_cloud_projects_cache = [];
-    window._np_cloud_projects_cache_loaded = true; // cargó intento de nube; evita mezclar con local
+    // Si hay error real de sesión/red, permitir fallback local temporal.
+    window._np_cloud_projects_cache_loaded = false;
     window._np_cloud_projects_cache_error = e && (e.message || String(e));
   }
 }

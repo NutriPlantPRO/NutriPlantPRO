@@ -154,6 +154,7 @@
   var CLOUD_SYNC_DEBOUNCE_MS = 4500;
   var cloudSyncTimers = Object.create(null);
   var cloudSyncPending = Object.create(null);
+  var lastFetchProjectsError = null;
   var USER_CHAT_SYNC_DEBOUNCE_MS = 6000;
   var userChatSyncTimers = Object.create(null);
   var userChatSyncPending = Object.create(null);
@@ -190,17 +191,17 @@
   }
 
   async function syncProjectNow(projectId, projectData) {
-    if (!isSupabaseUser()) return;
+    if (!isSupabaseUser()) return false;
     if (isCloudBootstrapBlocked()) {
       // Pull-first: en arranque multi-equipo no subir hasta terminar hidratación desde nube.
       scheduleProjectCloudSync(projectId, projectData);
-      return;
+      return false;
     }
     const client = getClient();
-    if (!client) return;
+    if (!client) return false;
 
     const userId = localStorage.getItem('nutriplant_user_id');
-    if (!userId) return;
+    if (!userId) return false;
 
     try {
       function hasRichGranularReq(req) {
@@ -256,7 +257,7 @@
         const localTs = localStamp ? new Date(localStamp).getTime() : 0;
         if (cloudTs && (!localTs || cloudTs > localTs + 1500)) {
           console.warn('⏭️ Sync a nube omitido: nube tiene versión más reciente para', projectId);
-          return;
+          return false;
         }
       } catch (e) {}
 
@@ -276,12 +277,16 @@
 
       if (error) {
         console.warn('⚠️ Supabase sync error:', error.message);
+        return false;
       } else {
         console.log('☁️ Proyecto sincronizado a la nube:', projectId);
+        return true;
       }
     } catch (e) {
       console.warn('⚠️ Supabase sync:', e);
+      return false;
     }
+    return false;
   }
 
   /** Evita que un upsert debounced (payload viejo) se ejecute después y pise datos recién guardados (p. ej. vpdAnalysis.rangeTables). */
@@ -390,18 +395,33 @@
 
     /** Obtener lista de proyectos desde Supabase */
     fetchProjects: async function(options) {
-      if (!isSupabaseUser()) return [];
+      if (!isSupabaseUser()) {
+        lastFetchProjectsError = 'NO_SUPABASE_USER';
+        return [];
+      }
       const client = getClient();
-      if (!client) return [];
+      if (!client) {
+        lastFetchProjectsError = 'NO_CLIENT';
+        return [];
+      }
       const opts = options || {};
       const includeDeleted = !!opts.includeDeleted;
 
       try {
+        const sessionRes = await client.auth.getSession();
+        const hasSession = !!(sessionRes && sessionRes.data && sessionRes.data.session);
+        if (!hasSession) {
+          lastFetchProjectsError = 'NO_SESSION';
+          console.warn('⚠️ Supabase fetch projects: sesión no lista');
+          return [];
+        }
         const { data, error } = await client.from('projects').select('id, user_id, name, title, data, updated_at').order('updated_at', { ascending: false });
         if (error) {
+          lastFetchProjectsError = error.message || 'QUERY_ERROR';
           console.warn('⚠️ Supabase fetch projects:', error.message);
           return [];
         }
+        lastFetchProjectsError = null;
         return (data || []).map(p => ({
           id: p.id,
           user_id: p.user_id,
@@ -417,9 +437,13 @@
           hasGranular: !!(p.data && p.data.granular && Object.keys(p.data.granular).length > 0)
         })).filter(p => includeDeleted ? true : !p.is_deleted);
       } catch (e) {
+        lastFetchProjectsError = (e && e.message) ? e.message : 'FETCH_ERROR';
         console.warn('⚠️ Supabase fetch projects:', e);
         return [];
       }
+    },
+    getLastFetchProjectsError: function() {
+      return lastFetchProjectsError;
     },
 
     /** Metadatos de frescura desde caché cloud para un proyecto */
@@ -549,6 +573,17 @@
       const onlyMissingInCloud = !!opts.onlyMissingInCloud;
       const localProjects = collectLocalProjectsForIdentity();
       const cloudList = await this.fetchProjects({ includeDeleted: true });
+      const cloudFetchError = (typeof this.getLastFetchProjectsError === 'function') ? this.getLastFetchProjectsError() : null;
+      if (cloudFetchError) {
+        return {
+          scanned: localProjects.length,
+          synced: 0,
+          skippedOlder: 0,
+          skippedDeletedCloud: 0,
+          skippedExistingCloud: 0,
+          error: cloudFetchError
+        };
+      }
       const cloudUpdatedMap = new Map((cloudList || []).map(p => [p.id, normalizeDate(p.updated_at)]));
       const cloudDeletedIds = new Set((cloudList || []).filter(p => p && p.is_deleted).map(p => p.id));
       var scanned = localProjects.length;
@@ -578,8 +613,8 @@
           continue;
         }
         try {
-          await syncProjectNow(id, data);
-          synced++;
+          var ok = await syncProjectNow(id, data);
+          if (ok) synced++;
         } catch (err) {
           console.warn('⚠️ Sync proyecto ' + id + ':', err);
         }
