@@ -3961,7 +3961,14 @@ async function np_refreshFromCloud() {
     np_setProjectSyncStatus('ok', 'Sincronizado');
   } catch (e) {
     console.warn('np_refreshFromCloud:', e);
-    np_setProjectSyncStatus('error', 'Error de conexión');
+    var msg = (e && e.message) ? String(e.message) : '';
+    if (msg === 'NO_SESSION') {
+      np_setProjectSyncStatus('error', 'Sesión nube no lista');
+    } else if (msg === 'NO_CLIENT') {
+      np_setProjectSyncStatus('error', 'Cliente nube no disponible');
+    } else {
+      np_setProjectSyncStatus('error', 'Error de conexión');
+    }
   } finally {
     window._npCloudRefreshInProgress = false;
     window._npCloudRefreshLastAt = Date.now();
@@ -6902,8 +6909,14 @@ async function np_loadProjectsFromCloud() {
   const sp = window.nutriplantSupabaseProjects;
   if (!sp || !sp.fetchProjects) return;
   try {
-    const list = await sp.fetchProjects();
-    const fetchError = (typeof sp.getLastFetchProjectsError === 'function') ? sp.getLastFetchProjectsError() : null;
+    let list = await sp.fetchProjects();
+    let fetchError = (typeof sp.getLastFetchProjectsError === 'function') ? sp.getLastFetchProjectsError() : null;
+    // En algunos reloads la sesión tarda en estar lista; reintentar una vez.
+    if (fetchError === 'NO_SESSION') {
+      await new Promise(function(r) { setTimeout(r, 700); });
+      list = await sp.fetchProjects();
+      fetchError = (typeof sp.getLastFetchProjectsError === 'function') ? sp.getLastFetchProjectsError() : null;
+    }
     if (fetchError) {
       throw new Error(fetchError);
     }
