@@ -408,28 +408,31 @@
       const includeDeleted = !!opts.includeDeleted;
 
       try {
-        // Nota: no bloquear la consulta solo porque getSession aún no esté listo.
-        // En algunos navegadores la sesión se hidrata con delay tras recargar.
-        let hasSession = true;
-        try {
-          const sessionRes = await client.auth.getSession();
-          hasSession = !!(sessionRes && sessionRes.data && sessionRes.data.session);
-          if (!hasSession) {
-            console.warn('⚠️ Supabase fetch projects: sesión no lista, intentando consulta de todas formas...');
+        // Esperar brevemente a que la sesión se hidrate tras recargar.
+        // Si no hay sesión válida, NO consultar para evitar falsos "sin proyectos" por RLS.
+        let hasSession = false;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          try {
+            const sessionRes = await client.auth.getSession();
+            hasSession = !!(sessionRes && sessionRes.data && sessionRes.data.session);
+          } catch (sessionErr) {
+            hasSession = false;
           }
-        } catch (sessionErr) {
-          hasSession = false;
-          console.warn('⚠️ Supabase getSession falló, intentando consulta:', sessionErr);
+          if (hasSession) break;
+          if (attempt < 3) {
+            await new Promise(function(r) { setTimeout(r, 350); });
+          }
+        }
+        if (!hasSession) {
+          lastFetchProjectsError = 'NO_SESSION';
+          console.warn('⚠️ Supabase fetch projects: sesión no lista');
+          return [];
         }
 
         const { data, error } = await client.from('projects').select('id, user_id, name, title, data, updated_at').order('updated_at', { ascending: false });
         if (error) {
           const msg = (error && error.message) ? String(error.message) : '';
-          if (!hasSession && /jwt|token|auth|session|expired|401|403/i.test(msg)) {
-            lastFetchProjectsError = 'NO_SESSION';
-          } else {
-            lastFetchProjectsError = msg || 'QUERY_ERROR';
-          }
+          lastFetchProjectsError = msg || 'QUERY_ERROR';
           console.warn('⚠️ Supabase fetch projects:', error.message);
           return [];
         }
