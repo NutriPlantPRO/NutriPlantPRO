@@ -3821,6 +3821,89 @@ const NP_KEYS = {
   CURRENT: "nutriplant_current_project",
   PROJECT_SORT: "nutriplant_project_sort_mode"
 };
+const NP_KEYS_FALLBACK = {
+  CURRENT: "nutriplant_current_project_fallback"
+};
+
+function np_tryRelieveLocalStoragePressure() {
+  // Limpieza conservadora: compacta payloads pesados sin borrar proyectos.
+  try {
+    const toCompact = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (key.indexOf('nutriplant_reports_') === 0) toCompact.push(key);
+    }
+    toCompact.forEach(function(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw || raw.charAt(0) !== '[') return;
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return;
+        let changed = false;
+        const compact = arr.map(function(r) {
+          if (!r || typeof r !== 'object') return r;
+          if (r.reportHTML) {
+            changed = true;
+            const copy = { ...r };
+            delete copy.reportHTML;
+            return copy;
+          }
+          return r;
+        });
+        if (changed) localStorage.setItem(key, JSON.stringify(compact));
+      } catch (e) {}
+    });
+
+    // Limpiar backups corruptos antiguos que solo ocupan espacio.
+    const toDelete = [];
+    for (let j = 0; j < localStorage.length; j++) {
+      const k = localStorage.key(j);
+      if (!k) continue;
+      if (k.indexOf('_backup_') !== -1 && (k.indexOf('nutriplant_project_') === 0 || k.indexOf('nutriplant-project-') === 0)) {
+        toDelete.push(k);
+      }
+    }
+    toDelete.forEach(function(k) {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+  } catch (e) {}
+}
+
+function np_setCurrentProjectIdSafe(id) {
+  const value = id || "";
+  let ok = true;
+  try {
+    localStorage.setItem(NP_KEYS.CURRENT, value);
+  } catch (e) {
+    // Si está lleno, intentar compactar y reintentar 1 vez.
+    try {
+      np_tryRelieveLocalStoragePressure();
+      localStorage.setItem(NP_KEYS.CURRENT, value);
+      ok = true;
+    } catch (retryErr) {
+      ok = false;
+      console.warn('⚠️ No se pudo persistir proyecto actual en localStorage:', retryErr && retryErr.message ? retryErr.message : retryErr);
+    }
+  }
+  try { sessionStorage.setItem(NP_KEYS_FALLBACK.CURRENT, value); } catch (e) {}
+  try { window._np_current_project_id_runtime = value; } catch (e) {}
+  return ok;
+}
+
+function np_getCurrentProjectIdSafe() {
+  try {
+    const v = localStorage.getItem(NP_KEYS.CURRENT);
+    if (typeof v === 'string') return v;
+  } catch (e) {}
+  try {
+    const v2 = sessionStorage.getItem(NP_KEYS_FALLBACK.CURRENT);
+    if (typeof v2 === 'string') return v2;
+  } catch (e) {}
+  return (typeof window !== 'undefined' && typeof window._np_current_project_id_runtime === 'string')
+    ? window._np_current_project_id_runtime
+    : "";
+}
 
 function np_getProjectSortMode() {
   const allowed = ['updated_desc', 'updated_asc', 'title_asc', 'title_desc'];
@@ -5244,7 +5327,7 @@ function np_getProject(id) {
 }
 function np_allProjects() { return np_loadProjects(); }
 function np_setCurrentProject(id, projectMeta) { 
-  localStorage.setItem(NP_KEYS.CURRENT, id || ""); 
+  np_setCurrentProjectIdSafe(id || ""); 
   
   // 🚀 GUARDAR cambios pendientes del proyecto anterior antes de cambiar
   if (window.projectStorage && currentProject.id) {
@@ -5389,7 +5472,7 @@ function np_setCurrentProject(id, projectMeta) {
   }
   emitProjectContextUpdate({ reason: 'set-current-project' });
 }
-function np_getCurrentProjectId() { return localStorage.getItem(NP_KEYS.CURRENT) || ""; }
+function np_getCurrentProjectId() { return np_getCurrentProjectIdSafe(); }
 
 function escapeHtml(s){
   return (s || "").replace(/[&<>"']/g, c => ({

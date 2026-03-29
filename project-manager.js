@@ -87,12 +87,28 @@ class ProjectManager {
 
   // Obtener ID del proyecto actual guardado
   getCurrentProjectId() {
-    return localStorage.getItem('nutriplant-current-project') || '';
+    try {
+      return localStorage.getItem('nutriplant-current-project') || '';
+    } catch (e) {
+      if (this.currentProject && this.currentProject.id) return this.currentProject.id;
+      try { return sessionStorage.getItem('nutriplant-current-project-fallback') || ''; } catch (err) { return ''; }
+    }
   }
 
   // Establecer proyecto actual
   setCurrentProject(projectId, projectName) {
-    localStorage.setItem('nutriplant-current-project', projectId);
+    try {
+      localStorage.setItem('nutriplant-current-project', projectId);
+    } catch (e) {
+      console.warn('No se pudo persistir nutriplant-current-project:', e && e.message ? e.message : e);
+      try {
+        if (typeof window !== 'undefined' && typeof window.np_tryRelieveLocalStoragePressure === 'function') {
+          window.np_tryRelieveLocalStoragePressure();
+          localStorage.setItem('nutriplant-current-project', projectId);
+        }
+      } catch (retryErr) {}
+      try { sessionStorage.setItem('nutriplant-current-project-fallback', projectId || ''); } catch (err) {}
+    }
     this.currentProject = {
       id: projectId,
       name: projectName
