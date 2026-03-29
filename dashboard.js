@@ -5243,7 +5243,7 @@ function np_getProject(id) {
   return null;
 }
 function np_allProjects() { return np_loadProjects(); }
-function np_setCurrentProject(id) { 
+function np_setCurrentProject(id, projectMeta) { 
   localStorage.setItem(NP_KEYS.CURRENT, id || ""); 
   
   // 🚀 GUARDAR cambios pendientes del proyecto anterior antes de cambiar
@@ -5316,9 +5316,9 @@ function np_setCurrentProject(id) {
   // Actualizar el currentProject global con el nuevo ID
   if (id) {
     currentProject.id = id;
-    const project = np_getProject(id);
+    const project = projectMeta || np_getProject(id);
     if (project) {
-      currentProject.name = project.title;
+      currentProject.name = project.title || project.name || id;
     }
   } else {
     currentProject.id = null;
@@ -5334,9 +5334,9 @@ function np_setCurrentProject(id) {
   
   // También establecer en el sistema de gestión de proyectos
   if (window.projectManager && id) {
-    const project = np_getProject(id);
+    const project = projectMeta || np_getProject(id);
     if (project) {
-      window.projectManager.setCurrentProject(id, project.title);
+      window.projectManager.setCurrentProject(id, project.title || project.name || id);
       
       // CRÍTICO: PRIMERO limpiar elementos de ubicación antes de cargar datos
       if (typeof forceClearLocationDisplay === 'function') {
@@ -5504,10 +5504,10 @@ function np_renderProjects(){
       const cardProject = projects.find(function(pr) { return pr && pr.id === id; }) || null;
       if (!p && cardProject) p = cardProject;
       if (p) {
-        np_setCurrentProject(id);
+        np_setCurrentProject(id, p);
         // Actualizar el projectManager
         if (window.projectManager) {
-          window.projectManager.setCurrentProject(id, p.title);
+          window.projectManager.setCurrentProject(id, p.title || p.name || id);
         }
         if (window.nutriPlantChat && typeof window.nutriPlantChat.refreshForCurrentProject === 'function') {
           window.nutriPlantChat.refreshForCurrentProject();
