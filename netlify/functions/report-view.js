@@ -93,7 +93,10 @@ function withSharedViewChrome(reportHtml, expiresAt, options) {
       .report-kv{grid-template-columns:1fr!important}
       .report-header-meta,.footer-row{flex-direction:column!important;align-items:stretch!important;gap:10px}
       .report-header-generated-by,.report-generated-by{white-space:normal!important;text-align:left!important;margin-left:0!important}
-      .report-admin-table.report-vpd-wide-table{display:block;width:100%!important;overflow-x:auto;-webkit-overflow-scrolling:touch}
+      .report-block{overflow-x:auto}
+      .report-app-table{min-width:980px}
+      .report-admin-table.report-vpd-wide-table{min-width:860px}
+      .report-admin-table.report-vpd-saved-table{min-width:780px}
     }
     /* Solo en vista compartida: evita que la marca de agua quede detrás de la banda */
     .report-watermark-corner{top:60px!important}

@@ -431,6 +431,7 @@ class NutriPlantChat {
     try {
       const projectId = this.getCurrentProjectId();
       const userId = localStorage.getItem('nutriplant_user_id');
+      const isUuidUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId || ''));
       
       if (projectId && userId) {
         // 🔑 Con proyecto: cargar por usuario+proyecto para que cada usuario vea solo su historial
@@ -461,7 +462,37 @@ class NutriPlantChat {
             }
           } catch (parseError) { console.error('❌ Error parseando proyecto para cargar chat:', parseError); }
         }
+        // 🔑 Cloud fallback (multi-equipo): si local no tiene chat, intentar traer proyecto desde Supabase.
+        if (isUuidUser && typeof window.nutriplantSupabaseProjects !== 'undefined' && typeof window.nutriplantSupabaseProjects.fetchProject === 'function') {
+          try {
+            const cloudProject = await window.nutriplantSupabaseProjects.fetchProject(projectId);
+            const cloudChat = cloudProject && Array.isArray(cloudProject.chat_history) ? cloudProject.chat_history : null;
+            if (cloudChat && cloudChat.length > 0) {
+              this.messages = cloudChat;
+              try {
+                localStorage.setItem(chatKey, JSON.stringify({ chat_history: cloudChat, updated_at: new Date().toISOString() }));
+              } catch (e) {}
+              try {
+                const projectKey = `nutriplant_project_${projectId}`;
+                const rawProject = localStorage.getItem(projectKey);
+                const localProject = rawProject ? JSON.parse(rawProject) : { id: projectId };
+                localProject.chat_history = cloudChat;
+                if (cloudProject.updated_at || cloudProject.updatedAt) {
+                  localProject.updated_at = cloudProject.updated_at || cloudProject.updatedAt;
+                  localProject.updatedAt = cloudProject.updated_at || cloudProject.updatedAt;
+                }
+                localStorage.setItem(projectKey, JSON.stringify(localProject));
+              } catch (e) {}
+              console.log(`☁️ Historial chat cargado desde nube (${cloudChat.length} mensajes)`);
+              this._renderLoadedMessages();
+              return;
+            }
+          } catch (cloudErr) {
+            console.warn('⚠️ Error cargando chat del proyecto desde nube:', cloudErr);
+          }
+        }
         this.messages = [];
+        this._renderLoadedMessages();
         return;
       }
       
@@ -495,9 +526,11 @@ class NutriPlantChat {
       }
       
       this.messages = [];
+      this._renderLoadedMessages();
     } catch (error) {
       console.warn('⚠️ Error cargando historial de chat:', error);
       this.messages = [];
+      this._renderLoadedMessages();
     }
   }
 

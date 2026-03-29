@@ -5643,6 +5643,9 @@ function np_renderProjects(){
                 if (typeof np_getCurrentProjectId === 'function' && np_getCurrentProjectId() === id && typeof loadProjectData === 'function') {
                   try { loadProjectData(); } catch (e) {}
                 }
+                if (window.nutriPlantChat && typeof window.nutriPlantChat.refreshForCurrentProject === 'function') {
+                  try { window.nutriPlantChat.refreshForCurrentProject(); } catch (e) {}
+                }
                 emitProjectContextUpdate({ reason: 'project-open-cloud-refresh', freshnessSource: 'cloud-refresh', projectId: id });
                 console.log('☁️ Proyecto actualizado desde nube al abrir:', id);
               } catch (err) { 
@@ -12417,6 +12420,34 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 td:nth-child(1) { width: 25%; }
         .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 th:nth-child(n+2),
         .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 td:nth-child(n+2) { width: 15%; }
+        .report-admin-table.report-vpd-saved-table {
+          table-layout: fixed;
+          width: 100%;
+        }
+        .report-admin-table.report-vpd-saved-table th,
+        .report-admin-table.report-vpd-saved-table td { width: auto; }
+        .report-admin-table.report-vpd-saved-table th:nth-child(1),
+        .report-admin-table.report-vpd-saved-table td:nth-child(1) { width: 6%; }
+        .report-admin-table.report-vpd-saved-table th:nth-child(2),
+        .report-admin-table.report-vpd-saved-table td:nth-child(2) { width: 10%; }
+        .report-admin-table.report-vpd-saved-table th:nth-child(3),
+        .report-admin-table.report-vpd-saved-table td:nth-child(3) { width: 14%; }
+        .report-admin-table.report-vpd-saved-table th:nth-child(4),
+        .report-admin-table.report-vpd-saved-table td:nth-child(4) { width: 14%; }
+        .report-admin-table.report-vpd-saved-table th:nth-child(5),
+        .report-admin-table.report-vpd-saved-table td:nth-child(5) { width: 10%; text-align: right; }
+        .report-admin-table.report-vpd-saved-table th:nth-child(6),
+        .report-admin-table.report-vpd-saved-table td:nth-child(6) { width: 16%; }
+        .report-admin-table.report-vpd-saved-table th:nth-child(7),
+        .report-admin-table.report-vpd-saved-table td:nth-child(7) { width: 14%; }
+        .report-admin-table.report-vpd-saved-table th:nth-child(8),
+        .report-admin-table.report-vpd-saved-table td:nth-child(8) { width: 16%; text-align: right; }
+        @media (max-width: 720px) {
+          .report-block { overflow-x: auto; }
+          .report-app-table { min-width: 980px; }
+          .report-admin-table.report-vpd-wide-table { min-width: 860px; }
+          .report-admin-table.report-vpd-saved-table { min-width: 780px; }
+        }
         .report-admin-table td {
           color: #0f172a;
           word-break: break-word;
@@ -14635,7 +14666,7 @@ function createVPDReportSectionHTML() {
       ${savedRangeTables.length ? `
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
         <div class="report-block-title">💾 Cuadros guardados de VPD (${savedRangeTables.length})</div>
-        <table class="report-admin-table">
+        <table class="report-admin-table report-vpd-saved-table">
           <thead>
             <tr>
               <th>#</th>

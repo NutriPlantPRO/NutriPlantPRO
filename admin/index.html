@@ -9649,28 +9649,28 @@
                                       : 0;
                                     return `
                                         <tr style="border-bottom: 1px solid #e5e7eb;">
-                                            <td style="padding: 8px;">${idx + 1}</td>
-                                            <td style="padding: 8px;">${escapeHtml(meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario'))}</td>
-                                            <td style="padding: 8px;">${escapeHtml(String(meta.startDate || '—'))}</td>
-                                            <td style="padding: 8px;">${escapeHtml(String(meta.endDate || '—'))}</td>
-                                            <td style="padding: 8px; text-align: right;">${summary.length}</td>
-                                            <td style="padding: 8px; text-align: right;">${avgStress.toFixed(1)}%</td>
+                                            <td style="padding: 8px; width: 7%; white-space: nowrap;">${idx + 1}</td>
+                                            <td style="padding: 8px; width: 15%; white-space: nowrap;">${escapeHtml(meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario'))}</td>
+                                            <td style="padding: 8px; width: 20%; white-space: nowrap;">${escapeHtml(String(meta.startDate || '—'))}</td>
+                                            <td style="padding: 8px; width: 20%; white-space: nowrap;">${escapeHtml(String(meta.endDate || '—'))}</td>
+                                            <td style="padding: 8px; width: 14%; text-align: right; white-space: nowrap;">${summary.length}</td>
+                                            <td style="padding: 8px; width: 24%; text-align: right; white-space: nowrap;">${avgStress.toFixed(1)}%</td>
                                         </tr>
                                     `;
                                 }).join('');
                                 return `
                                     <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
                                         <h4 style="margin: 0 0 10px 0; color: #1e293b; font-size: 16px;">💾 Cuadros guardados VPD (${tables.length})</h4>
-                                        <div style="max-height: 220px; overflow-y: auto;">
-                                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                        <div style="max-height: 220px; overflow-y: auto; overflow-x: auto;">
+                                            <table style="width: 100%; min-width: 660px; table-layout: fixed; border-collapse: collapse; font-size: 12px;">
                                                 <thead>
                                                     <tr style="background: #f3f4f6; border-bottom: 2px solid #d1d5db;">
-                                                        <th style="padding: 8px; text-align: left;">#</th>
-                                                        <th style="padding: 8px; text-align: left;">Vista</th>
-                                                        <th style="padding: 8px; text-align: left;">Inicio</th>
-                                                        <th style="padding: 8px; text-align: left;">Fin</th>
-                                                        <th style="padding: 8px; text-align: right;">Periodos</th>
-                                                        <th style="padding: 8px; text-align: right;">% estrés (prom.)</th>
+                                                        <th style="padding: 8px; width: 7%; text-align: left; white-space: nowrap;">#</th>
+                                                        <th style="padding: 8px; width: 15%; text-align: left; white-space: nowrap;">Vista</th>
+                                                        <th style="padding: 8px; width: 20%; text-align: left; white-space: nowrap;">Inicio</th>
+                                                        <th style="padding: 8px; width: 20%; text-align: left; white-space: nowrap;">Fin</th>
+                                                        <th style="padding: 8px; width: 14%; text-align: right; white-space: nowrap;">Periodos</th>
+                                                        <th style="padding: 8px; width: 24%; text-align: right; white-space: nowrap;">% estrés (prom.)</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>${rows}</tbody>
