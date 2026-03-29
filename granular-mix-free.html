@@ -170,8 +170,11 @@
     };
 
     function isEnglishUI() {
-      const title = (document.querySelector('.gm-title') || document.querySelector('h1') || {}).textContent || '';
-      return /\b(Granular|Mixture|Calculator)\b/i.test(title);
+      // Solo activar textos/nombres en ingles cuando la pagina realmente
+      // este marcada en ingles. Evita forzar traducciones por detectar
+      // palabras como "Granular" que tambien existen en espanol.
+      const lang = String(document.documentElement.getAttribute('lang') || '').toLowerCase();
+      return lang === 'en' || lang.startsWith('en-');
     }
 
     function displayMaterialName(name) {
