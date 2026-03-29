@@ -61,7 +61,7 @@ function withSharedViewChrome(reportHtml, expiresAt, options) {
 
   const expText = expiresAt
     ? new Date(expiresAt).toLocaleString('es-MX', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-    : '7 días';
+    : '30 días';
 
   const baseTag = `<base href="${escapeHtml(baseHref)}">`;
 
@@ -129,7 +129,7 @@ function withSharedViewChrome(reportHtml, expiresAt, options) {
       </nav>
     </div>
   </header>
-  <div class="np-shared-note">Vista compartida de reporte. Este link es temporal y tiene vigencia de 7 días (vence: ${escapeHtml(expText)}).</div>`;
+  <div class="np-shared-note">Vista compartida de reporte. Este link es temporal y tiene vigencia de 30 días (vence: ${escapeHtml(expText)}).</div>`;
 
   let out = String(reportHtml || '');
   const docHasBase = /<base\s/i.test(out);

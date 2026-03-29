@@ -284,6 +284,16 @@
     }
   }
 
+  /** Evita que un upsert debounced (payload viejo) se ejecute después y pise datos recién guardados (p. ej. vpdAnalysis.rangeTables). */
+  function cancelScheduledProjectCloudSync(projectId) {
+    if (!projectId) return;
+    if (cloudSyncTimers[projectId]) {
+      clearTimeout(cloudSyncTimers[projectId]);
+      delete cloudSyncTimers[projectId];
+    }
+    delete cloudSyncPending[projectId];
+  }
+
   function scheduleProjectCloudSync(projectId, projectData) {
     if (!isSupabaseUser()) return;
     cloudSyncPending[projectId] = projectData;
@@ -371,6 +381,8 @@
     syncProject: function(projectId, projectData) {
       scheduleProjectCloudSync(projectId, projectData);
     },
+
+    cancelScheduledProjectCloudSync: cancelScheduledProjectCloudSync,
 
     /** Fuerza envío de cambios pendientes (p. ej. al ocultar la pestaña). */
     flushPendingProjectCloudSync: flushPendingProjectCloudSync,

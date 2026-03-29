@@ -343,6 +343,9 @@ function sectionTemplate(name) {
             </div>
           </div>
           <div id="np-projects-list" class="grid-3"></div>
+          <div id="np-select-project-hint" class="help" style="display:none;">
+            Hay proyectos disponibles. Selecciona uno con <b>Abrir</b> para comenzar.
+          </div>
           <div id="np-empty-state" class="help" style="display:none;">
             Aún no hay proyectos. Crea tu primer <b>NUTRIPLANT</b>.
           </div>
@@ -5322,6 +5325,7 @@ function escapeHtml(s){
 function np_renderProjects(){
   const listEl  = document.querySelector("#np-projects-list");
   const emptyEl = document.querySelector("#np-empty-state");
+  const selectHintEl = document.querySelector("#np-select-project-hint");
   const sortEl = document.querySelector("#np-project-sort");
   if (!listEl || !emptyEl) return;
   np_applySyncStatusBadge();
@@ -5339,6 +5343,7 @@ function np_renderProjects(){
   listEl.innerHTML = "";
   if (!projects.length) { 
     emptyEl.style.display = "block";
+    if (selectHintEl) selectHintEl.style.display = "none";
     // 🚀 CRÍTICO: Si no hay proyectos, limpiar cualquier ID guardado
     const currentId = np_getCurrentProjectId();
     if (currentId) {
@@ -5349,7 +5354,7 @@ function np_renderProjects(){
   }
   emptyEl.style.display = "none";
 
-  const currentId = np_getCurrentProjectId();
+  let currentId = np_getCurrentProjectId();
   
   // 🚀 CRÍTICO: Validar que el proyecto actual existe en la lista
   if (currentId) {
@@ -5357,6 +5362,7 @@ function np_renderProjects(){
     if (!projectExists) {
       console.warn('⚠️ Proyecto actual no existe en lista - limpiando ID:', currentId);
       np_setCurrentProject('');
+      currentId = '';
       // Actualizar el indicador si existe
       const projectIndicator = document.querySelector('.project-indicator-global');
       if (projectIndicator) {
@@ -7074,7 +7080,6 @@ function np_logDashboardVisit() {
 async function initializeDashboard() {
   console.log('🚀 INICIALIZANDO DASHBOARD COMPLETO');
   initMobileViewportHeightSync();
-  let validCurrentProjectId = '';
   
   const userId = localStorage.getItem('nutriplant_user_id');
   const isSupabaseUser = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
@@ -7116,8 +7121,7 @@ async function initializeDashboard() {
         console.log('🧹 Proyecto actual no pertenece al usuario - limpiando:', currentProjectId);
         np_setCurrentProject("");
       } else {
-        console.log('✅ Proyecto actual válido para el usuario');
-        validCurrentProjectId = currentProjectId;
+        console.log('ℹ️ Proyecto actual válido detectado, pero se iniciará sin selección automática:', currentProjectId);
       }
     }
     
@@ -7128,7 +7132,7 @@ async function initializeDashboard() {
   }
   
   // 1. Limpiar proyecto seleccionado al iniciar (siempre empezar limpio)
-  // np_setCurrentProject(""); // Ya se limpia arriba si es necesario
+  np_setCurrentProject("");
   console.log('🧹 Validación de proyectos completada');
   
   // 2. Inicializar sidebar
@@ -7136,26 +7140,6 @@ async function initializeDashboard() {
   
   // 3. Renderizar menú
   renderMenu();
-  // 3.1 Restaurar proyecto activo en memoria tras recarga (evita secciones vacías hasta pulsar "Abrir")
-  if (validCurrentProjectId) {
-    try {
-      np_setCurrentProject(validCurrentProjectId);
-      console.log('🔄 Proyecto activo restaurado al iniciar:', validCurrentProjectId);
-      // 3.2 Usuario Supabase: traer siempre la última versión desde la nube (lap → cel → tablet = mismo dato)
-      if (isSupabaseUser && typeof np_refreshCurrentProjectFromCloud === 'function') {
-        await np_refreshCurrentProjectFromCloud();
-      }
-      // Alinear comportamiento con el botón "Actualizar con la nube":
-      // tras refrescar desde nube, recargar el proyecto en memoria/UI para evitar
-      // que alguna sección (ej. Granular Requerimiento) use estado previo.
-      if (typeof loadProjectData === 'function') {
-        loadProjectData();
-      }
-    } catch (e) {
-      console.warn('⚠️ No se pudo restaurar el proyecto activo al iniciar:', e);
-    }
-  }
-  
   // 4. Seleccionar primera sección (Inicio)
   const first = menu?.querySelector("a");
   if (first) selectSection("Inicio", first);
@@ -7178,10 +7162,8 @@ async function initializeDashboard() {
   if (targetYield) targetYield.addEventListener('input', calculateNutrientExtraction);
   if (surfaceArea) targetYield.addEventListener('input', calculateNutrientExtraction);
   
-  // 7. El proyecto activo queda restaurado automáticamente si era válido
-  if (!validCurrentProjectId) {
-    console.log('ℹ️ Iniciando sin proyecto seleccionado - usuario debe elegir uno');
-  }
+  // 7. Arranque limpio: el usuario debe elegir proyecto manualmente
+  console.log('ℹ️ Iniciando sin proyecto seleccionado - usuario debe elegir uno');
   
   if (isSupabaseUser) {
     window._np_cloud_bootstrap_in_progress = false;
@@ -7624,8 +7606,8 @@ function showReportViewShareModal(url, autoCopied) {
   p.style.fontSize = '14px';
   p.style.lineHeight = '1.5';
   p.textContent = autoCopied
-    ? 'El enlace ya se copió al portapapeles: pégalo donde quieras (Cmd+V o Ctrl+V). Vigencia: 7 días. Si vuelves a pulsar «Compartir vista», se genera otro link y el anterior deja de servir.'
-    : 'Tu navegador no permitió copiar solo; selecciona el texto y cópialo (Cmd+C / Ctrl+C). Vigencia: 7 días. Si vuelves a compartir, el link cambia.';
+    ? 'El enlace ya se copió al portapapeles: pégalo donde quieras (Cmd+V o Ctrl+V). Vigencia: 30 días. Si vuelves a pulsar «Compartir vista», se genera otro link y el anterior deja de servir.'
+    : 'Tu navegador no permitió copiar solo; selecciona el texto y cópialo (Cmd+C / Ctrl+C). Vigencia: 30 días. Si vuelves a compartir, el link cambia.';
   body.appendChild(p);
 
   var inp = document.createElement('input');
@@ -7739,7 +7721,7 @@ window.shareReportView = async function(reportId) {
     // Al compartir nuevamente: regenerar token y vigencia (el link anterior deja de servir).
     var token = generateReportShareToken();
     var nowIso = new Date().toISOString();
-    var expiresIso = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString();
+    var expiresIso = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString();
     var htmlSnapshot = await buildReportHtmlSnapshotForShare(report);
     if (!htmlSnapshot) {
       showMessage('⚠️ No se pudo preparar la vista del reporte para compartir.', 'warning');
@@ -9533,6 +9515,9 @@ function loadProjectData() {
         loadedProject = null;
       }
     }
+  }
+  if (selectHintEl) {
+    selectHintEl.style.display = currentId ? "none" : "block";
   }
   
   if (loadedProject) {
@@ -18778,6 +18763,14 @@ function saveCurrentVPDRangeTable() {
     currentProject.vpdAnalysis.rangeTables = currentProject.vpdAnalysis.rangeTables.slice(-20);
   }
   currentProject.vpdAnalysis.lastUpdated = new Date().toISOString();
+  try {
+    if (window.projectManager && typeof window.projectManager.getCurrentProject === 'function') {
+      var pmProj = window.projectManager.getCurrentProject();
+      if (pmProj && String(pmProj.id) === String(currentProjectId)) {
+        pmProj.vpdAnalysis = currentProject.vpdAnalysis;
+      }
+    }
+  } catch (e) {}
   try {
     if (window.projectStorage && typeof window.projectStorage.saveSection === 'function') {
       window.projectStorage.saveSection('vpdAnalysis', currentProject.vpdAnalysis, currentProjectId);
