@@ -5587,6 +5587,10 @@ function np_renderProjects(){
       const cardProject = projects.find(function(pr) { return pr && pr.id === id; }) || null;
       if (!p && cardProject) p = cardProject;
       if (p) {
+        if (isSupabase) {
+          if (!window._np_project_open_cloud_refresh_in_progress) window._np_project_open_cloud_refresh_in_progress = {};
+          window._np_project_open_cloud_refresh_in_progress[id] = true;
+        }
         np_setCurrentProject(id, p);
         // Actualizar el projectManager
         if (window.projectManager) {
@@ -5621,12 +5625,36 @@ function np_renderProjects(){
                   toStore.updatedAt = cloudUpdatedAt;
                 }
                 localStorage.setItem(key, JSON.stringify(toStore));
+                // Evitar usar snapshot local viejo en memoria tras refrescar nube.
+                if (window.projectStorage) {
+                  try {
+                    if (window.projectStorage.memoryCache && window.projectStorage.memoryCache.currentProjectId === id) {
+                      window.projectStorage.memoryCache.currentProjectId = null;
+                      window.projectStorage.memoryCache.projectData = null;
+                    }
+                    if (window.projectStorage.projectsCache && typeof window.projectStorage.projectsCache.delete === 'function') {
+                      window.projectStorage.projectsCache.delete(id);
+                    }
+                  } catch (cacheErr) {}
+                }
+                // Cancelar payloads pendientes que pudieron capturar estado parcial antes del refresh cloud.
+                if (sp && typeof sp.cancelScheduledProjectCloudSync === 'function') {
+                  try { sp.cancelScheduledProjectCloudSync(id); } catch (cancelErr) {}
+                }
                 if (typeof np_getCurrentProjectId === 'function' && np_getCurrentProjectId() === id && typeof loadProjectData === 'function') {
                   try { loadProjectData(); } catch (e) {}
                 }
                 emitProjectContextUpdate({ reason: 'project-open-cloud-refresh', freshnessSource: 'cloud-refresh', projectId: id });
                 console.log('☁️ Proyecto actualizado desde nube al abrir:', id);
-              } catch (err) { console.warn('fetchProject:', err); }
+              } catch (err) { 
+                console.warn('fetchProject:', err); 
+              } finally {
+                try {
+                  if (window._np_project_open_cloud_refresh_in_progress) {
+                    delete window._np_project_open_cloud_refresh_in_progress[id];
+                  }
+                } catch (e) {}
+              }
             })();
           }
         }

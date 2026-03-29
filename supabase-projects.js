@@ -197,6 +197,14 @@
       scheduleProjectCloudSync(projectId, projectData);
       return false;
     }
+    try {
+      var projectHydrationInProgress = !!(window._np_project_open_cloud_refresh_in_progress && window._np_project_open_cloud_refresh_in_progress[projectId]);
+      if (projectHydrationInProgress) {
+        // Evitar sobrescribir nube con estado parcial/local mientras fetchProject termina.
+        scheduleProjectCloudSync(projectId, projectData);
+        return false;
+      }
+    } catch (e) {}
     const client = getClient();
     if (!client) return false;
 
