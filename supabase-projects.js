@@ -167,6 +167,14 @@
     }
   }
 
+  function isCloudBootstrapBlocked() {
+    try {
+      return !!window._np_cloud_bootstrap_in_progress;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function scheduleHiddenFlush() {
     clearHiddenFlushTimer();
     hiddenFlushTimer = setTimeout(function() {
@@ -183,6 +191,11 @@
 
   async function syncProjectNow(projectId, projectData) {
     if (!isSupabaseUser()) return;
+    if (isCloudBootstrapBlocked()) {
+      // Pull-first: en arranque multi-equipo no subir hasta terminar hidratación desde nube.
+      scheduleProjectCloudSync(projectId, projectData);
+      return;
+    }
     const client = getClient();
     if (!client) return;
 
@@ -233,6 +246,20 @@
         }
       } catch (e) {}
 
+      // Blindaje anti-stale: si la nube reporta algo más nuevo que el payload local, no sobrescribir.
+      try {
+        const meta = window.nutriplantSupabaseProjects && typeof window.nutriplantSupabaseProjects.getCloudProjectMeta === 'function'
+          ? window.nutriplantSupabaseProjects.getCloudProjectMeta(projectId)
+          : null;
+        const cloudTs = meta && meta.updatedAt ? new Date(meta.updatedAt).getTime() : 0;
+        const localStamp = payloadData.updated_at || payloadData.updatedAt || payloadData.lastSaved || payloadData.created_at || payloadData.createdAt || null;
+        const localTs = localStamp ? new Date(localStamp).getTime() : 0;
+        if (cloudTs && (!localTs || cloudTs > localTs + 1500)) {
+          console.warn('⏭️ Sync a nube omitido: nube tiene versión más reciente para', projectId);
+          return;
+        }
+      } catch (e) {}
+
       const row = {
         id: projectId,
         user_id: userId,
@@ -262,6 +289,16 @@
     cloudSyncPending[projectId] = projectData;
     if (cloudSyncTimers[projectId]) clearTimeout(cloudSyncTimers[projectId]);
     cloudSyncTimers[projectId] = setTimeout(function() {
+      if (isCloudBootstrapBlocked()) {
+        // Reintentar después del bootstrap sin perder el último payload.
+        cloudSyncTimers[projectId] = setTimeout(function() {
+          delete cloudSyncTimers[projectId];
+          var latestAfterBootstrap = cloudSyncPending[projectId];
+          delete cloudSyncPending[projectId];
+          if (latestAfterBootstrap) syncProjectNow(projectId, latestAfterBootstrap);
+        }, 2000);
+        return;
+      }
       delete cloudSyncTimers[projectId];
       var latest = cloudSyncPending[projectId];
       delete cloudSyncPending[projectId];
@@ -270,6 +307,7 @@
   }
 
   function flushPendingProjectCloudSync() {
+    if (isCloudBootstrapBlocked()) return;
     var ids = Object.keys(cloudSyncPending);
     for (var i = 0; i < ids.length; i++) {
       var pid = ids[i];

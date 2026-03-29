@@ -7079,6 +7079,17 @@ async function initializeDashboard() {
   const userId = localStorage.getItem('nutriplant_user_id');
   const isSupabaseUser = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
   if (isSupabaseUser) {
+    // Pull-first: bloquear pushes a nube durante bootstrap inicial multi-equipo.
+    window._np_cloud_bootstrap_in_progress = true;
+    // Failsafe: evitar bloqueo permanente si ocurre un error inesperado en init.
+    setTimeout(function() {
+      if (window._np_cloud_bootstrap_in_progress) {
+        window._np_cloud_bootstrap_in_progress = false;
+        console.warn('⚠️ Failsafe bootstrap cloud desbloqueado por timeout');
+      }
+    }, 15000);
+  }
+  if (isSupabaseUser) {
     window._np_cloud_projects_cache = [];
     window._np_cloud_projects_cache_loaded = false;
     window._np_cloud_projects_cache_error = null;
@@ -7172,6 +7183,9 @@ async function initializeDashboard() {
     console.log('ℹ️ Iniciando sin proyecto seleccionado - usuario debe elegir uno');
   }
   
+  if (isSupabaseUser) {
+    window._np_cloud_bootstrap_in_progress = false;
+  }
   console.log('✅ DASHBOARD INICIALIZADO COMPLETAMENTE');
 }
 

@@ -66,7 +66,7 @@ let isGranularLoading = false;
 function flushGranularRequirementsIfDirty(){
   try {
     if (granularReqDirty) {
-      saveGranularRequirements();
+      saveGranularRequirements({ force: true });
       granularReqDirty = false;
     }
   } catch (e) { console.warn('flushGranularRequirementsIfDirty', e); }
@@ -115,7 +115,7 @@ function toggleGranularRequerimientoOxideElemental() {
   }
   calculateGranularNutrientRequirements();
   if (typeof window.saveGranularRequirementsImmediate === 'function') {
-    window.saveGranularRequirementsImmediate();
+    window.saveGranularRequirementsImmediate({ force: true });
   } else {
     scheduleSaveGranularRequirements();
   }
@@ -522,9 +522,9 @@ function granularNormalizeToOxide(nutrient, rawValue) {
 function persistGranularRequirementChange(immediate) {
   if (immediate) {
     if (typeof window.saveGranularRequirementsImmediate === 'function') {
-      window.saveGranularRequirementsImmediate();
+      window.saveGranularRequirementsImmediate({ force: true });
     } else if (typeof window.saveGranularRequirements === 'function') {
-      window.saveGranularRequirements();
+      window.saveGranularRequirements({ force: true });
     } else {
       scheduleSaveGranularRequirements();
     }
@@ -1059,8 +1059,16 @@ function applyGranularUIState() {
 }
 
 // Función SIMPLE y DIRECTA para guardar datos de requerimiento nutricional granular
-function saveGranularRequirements() {
+function saveGranularRequirements(options = {}) {
   try {
+    const forceSave = !!(options && options.force === true);
+    // Blindaje anti-sobrescritura: si no hubo edición del usuario, no guardar.
+    // Evita subir "precargados" al recargar/cambiar pestaña.
+    if (!forceSave && !granularReqDirty) {
+      console.debug('⏭️ saveGranularRequirements omitido (sin cambios del usuario)');
+      return;
+    }
+
     const projectId = getCurrentProjectId();
     if (!projectId) {
       console.warn('⚠️ No hay proyecto seleccionado');
@@ -1548,7 +1556,7 @@ function scheduleSaveGranularRequirements(){
   }
   try { if (saveGranReqTimer) clearTimeout(saveGranReqTimer); } catch {}
   saveGranReqTimer = setTimeout(() => {
-    try { saveGranularRequirements(); granularReqDirty = false; } catch (e) { console.warn('autosave granularRequirements', e); }
+    try { saveGranularRequirements({ force: true }); granularReqDirty = false; } catch (e) { console.warn('autosave granularRequirements', e); }
   }, 500);
   granularReqDirty = true;
   if (!granularReqAutosaveInterval) {
@@ -1559,15 +1567,16 @@ function scheduleSaveGranularRequirements(){
 }
 
 // ===== Guardado INMEDIATO (sin debounce) para cambios de pestaña/sección =====
-function saveGranularRequirementsImmediate() {
+function saveGranularRequirementsImmediate(options = {}) {
   try {
+    const forceSave = !!(options && options.force === true);
     // Cancelar cualquier guardado pendiente con debounce
     if (saveGranReqTimer) {
       clearTimeout(saveGranReqTimer);
       saveGranReqTimer = null;
     }
     // Guardar INMEDIATAMENTE
-    saveGranularRequirements();
+    saveGranularRequirements({ force: forceSave });
     granularReqDirty = false;
     console.log('⚡ Guardado INMEDIATO de Granular ejecutado');
   } catch (e) {
@@ -2317,10 +2326,10 @@ window.testGranularSaveLoad = function() {
   
   // 2. Guardar valores
   if (typeof window.saveGranularRequirementsImmediate === 'function') {
-    window.saveGranularRequirementsImmediate();
+    window.saveGranularRequirementsImmediate({ force: true });
     console.log('💾 Valores guardados');
   } else if (typeof window.saveGranularRequirements === 'function') {
-    window.saveGranularRequirements();
+    window.saveGranularRequirements({ force: true });
     console.log('💾 Valores guardados (método normal)');
   } else {
     alert('❌ Error: No se puede guardar - función no disponible');
