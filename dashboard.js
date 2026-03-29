@@ -17276,8 +17276,10 @@ function invalidateVpdSectionDomCache() {
 
 function refreshVpdAnalysisSectionIfVisible() {
   invalidateVpdSectionDomCache();
-  if (!title || !view) return;
-  if (String(title.textContent || '').trim() !== 'Análisis: Déficit de Presión de Vapor') return;
+  if (!view) return;
+  var titleOk = title && String(title.textContent || '').trim() === 'Análisis: Déficit de Presión de Vapor';
+  var domVpd = !!(document.getElementById('vpd-range-granularity') || document.getElementById('vpd-range-results'));
+  if (!titleOk && !domVpd) return;
   view.innerHTML = '';
   view.innerHTML = sectionTemplate('Análisis: Déficit de Presión de Vapor');
   view.setAttribute('data-render-project-id', (currentProject && currentProject.id) ? String(currentProject.id) : '');
@@ -17719,15 +17721,18 @@ function createVPDSectionHTML() {
   ensureVPDAnalysisStructures();
   // Usar el proyecto más actualizado para evitar mostrar "agrega polígono" cuando sí hay polígono (race/caché)
   var dataProject = currentProject;
+  var pid = '';
   try {
     var pm = window.projectManager && typeof window.projectManager.getCurrentProject === 'function' && window.projectManager.getCurrentProject();
     var mem = window.projectStorage && typeof window.projectStorage.getCurrentProjectFromMemory === 'function' && window.projectStorage.getCurrentProjectFromMemory();
-    var pid = typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : (localStorage.getItem('nutriplant-current-project') || '');
+    pid = typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : (localStorage.getItem('nutriplant-current-project') || '');
     if (pm && pm.id === pid) dataProject = pm;
     else if (mem && mem.id === pid) dataProject = mem;
   } catch (e) { /* fallback a currentProject */ }
-  // Datos guardados (vpdAnalysis puede venir de dataProject o currentProject)
-  const vpdData = dataProject.vpdAnalysis || currentProject.vpdAnalysis || {};
+  // vpdAnalysis: si el proyecto activo es currentProject, preferir SIEMPRE su vpdAnalysis (borrar/guardar cuadros rango actualizan ahí; pm/mem pueden ir atrasados)
+  const vpdData = (currentProject && pid && String(currentProject.id) === String(pid) && currentProject.vpdAnalysis)
+    ? currentProject.vpdAnalysis
+    : (dataProject.vpdAnalysis || currentProject.vpdAnalysis || {});
   const envData = vpdData.environmental || {};
   const advData = vpdData.advanced || {};
   const history = vpdData.history || [];
@@ -18653,14 +18658,12 @@ function renderSavedVPDRangeTableHtml(tbl) {
   var summaryRows = Array.isArray(tbl && tbl.summaryRows) ? tbl.summaryRows : [];
   var criticalRows = Array.isArray(tbl && tbl.criticalRows) ? tbl.criticalRows : [];
   var delId = (tbl && tbl.id) ? String(tbl.id) : '';
-  var delAttr = delId ? JSON.stringify(delId) : '""';
+  var delAttrEnc = delId ? encodeURIComponent(delId) : '';
   return `
-    <details style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;margin-bottom:8px;">
-      <summary style="cursor:pointer;font-weight:600;color:#9a3412;display:flex;align-items:center;justify-content:space-between;gap:10px;list-style-position:outside;">
-        <span style="flex:1;min-width:0;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalRows.length}</span>
-        <button type="button" title="Eliminar cuadro guardado" aria-label="Eliminar cuadro guardado"
-          style="flex-shrink:0;padding:4px 10px;font-size:12px;line-height:1.2;border-radius:6px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;font-weight:600;cursor:pointer;"
-          onclick="event.preventDefault();event.stopPropagation();if(window.deleteSavedVPDRangeTable)window.deleteSavedVPDRangeTable(${delAttr});">🗑️ Borrar</button>
+    <div class="np-vpd-saved-row" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;margin-bottom:8px;">
+    <details style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;margin:0;min-width:0;">
+      <summary style="cursor:pointer;font-weight:600;color:#9a3412;display:block;list-style-position:outside;">
+        <span style="display:block;min-width:0;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate || '—'} a ${meta.endDate || '—'} · periodos ${summaryRows.length} · críticos ${criticalRows.length}</span>
       </summary>
       <div style="margin-top:8px;margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
         <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
@@ -18684,6 +18687,9 @@ function renderSavedVPDRangeTableHtml(tbl) {
         </table>
       </div>
     </details>
+    <button type="button" title="Eliminar cuadro guardado" aria-label="Eliminar cuadro guardado" data-np-delete-vpd-range="${delAttrEnc}"
+      style="flex-shrink:0;padding:6px 10px;font-size:12px;line-height:1.2;border-radius:6px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;font-weight:600;cursor:pointer;white-space:nowrap;align-self:start;margin-top:2px;">🗑️ Borrar</button>
+    </div>
   `;
 }
 
@@ -18806,6 +18812,14 @@ function deleteSavedVPDRangeTable(tableId) {
     return;
   }
   currentProject.vpdAnalysis.lastUpdated = new Date().toISOString();
+  try {
+    if (window.projectManager && typeof window.projectManager.getCurrentProject === 'function') {
+      var pmProj = window.projectManager.getCurrentProject();
+      if (pmProj && String(pmProj.id) === String(currentProjectId)) {
+        pmProj.vpdAnalysis = currentProject.vpdAnalysis;
+      }
+    }
+  } catch (e) {}
   persistVPDAnalysisAfterMutation();
   refreshVpdAnalysisSectionIfVisible();
 }
@@ -18839,6 +18853,21 @@ window.toggleVPDMode = toggleVPDMode;
 window.fetchVPDRangeData = fetchVPDRangeData;
 window.saveCurrentVPDRangeTable = saveCurrentVPDRangeTable;
 window.deleteSavedVPDRangeTable = deleteSavedVPDRangeTable;
+
+// Clic en "Borrar" cuadro VPD rango: fuera de <summary> + delegación (evita que el navegador no dispare el onclick dentro de <details>)
+(function npSetupVpdRangeDeleteDelegation() {
+  if (window._npVpdRangeDeleteDelegation) return;
+  window._npVpdRangeDeleteDelegation = true;
+  document.addEventListener('click', function(ev) {
+    var btn = ev.target && ev.target.closest && ev.target.closest('[data-np-delete-vpd-range]');
+    if (!btn) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    var enc = btn.getAttribute('data-np-delete-vpd-range');
+    var id = (enc != null && enc !== '') ? decodeURIComponent(enc) : '';
+    if (typeof window.deleteSavedVPDRangeTable === 'function') window.deleteSavedVPDRangeTable(id);
+  }, true);
+})();
 
 console.log('✅ Funciones VPD expuestas globalmente:', {
   getEnvironmentalWeatherData: typeof window.getEnvironmentalWeatherData,
