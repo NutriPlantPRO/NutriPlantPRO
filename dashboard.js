@@ -8755,6 +8755,7 @@ window.deleteReport = function(reportId) {
 function loadSavedReports() {
   const scope = getCurrentReportScope();
   const useCloud = typeof window.nutriplantFetchReportsFromCloud === 'function';
+  const scopeKey = getReportsStorageKey(scope);
 
   function applyReports(list) {
     generatedReports = Array.isArray(list) ? list : [];
@@ -8763,41 +8764,53 @@ function loadSavedReports() {
         report.timestamp = new Date(report.timestamp);
       }
     });
-    localStorage.setItem(getReportsStorageKey(scope), JSON.stringify(generatedReports));
+    localStorage.setItem(scopeKey, JSON.stringify(generatedReports));
     updateReportsList();
+  }
+
+  function readLocalReports() {
+    var savedReports = localStorage.getItem(scopeKey);
+    if (!savedReports) return [];
+    try {
+      var parsed = JSON.parse(savedReports);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
   }
 
   if (useCloud) {
     window.nutriplantFetchReportsFromCloud(scope.userId, scope.projectId).then(function(cloudReports) {
+      var fetchErr = (typeof window.nutriplantGetLastFetchReportsError === 'function')
+        ? window.nutriplantGetLastFetchReportsError()
+        : null;
+      // Si la sesión aún no hidrata, no tomar lista vacía como "verdad".
+      // Primero mostrar cache local y reintentar una vez.
+      if (fetchErr === 'NO_SESSION') {
+        applyReports(readLocalReports());
+        setTimeout(function() {
+          var currentScope = getCurrentReportScope();
+          if (currentScope.userId !== scope.userId || currentScope.projectId !== scope.projectId) return;
+          window.nutriplantFetchReportsFromCloud(scope.userId, scope.projectId).then(function(retryCloudReports) {
+            var retryErr = (typeof window.nutriplantGetLastFetchReportsError === 'function')
+              ? window.nutriplantGetLastFetchReportsError()
+              : null;
+            if (retryErr === 'NO_SESSION') return;
+            applyReports(Array.isArray(retryCloudReports) ? retryCloudReports : []);
+          }).catch(function() {});
+        }, 900);
+        return;
+      }
       // Si la nube responde, usar siempre esa lista (aunque esté vacía). Así si borraste en otro dispositivo, aquí se actualiza.
       var list = Array.isArray(cloudReports) ? cloudReports : [];
       applyReports(list);
     }).catch(function() {
-      var savedReports = localStorage.getItem(getReportsStorageKey(scope));
-      if (savedReports) {
-        try {
-          applyReports(JSON.parse(savedReports));
-        } catch (e) {
-          applyReports([]);
-        }
-      } else {
-        applyReports([]);
-      }
+      applyReports(readLocalReports());
     });
     return;
   }
 
-  var savedReports = localStorage.getItem(getReportsStorageKey(scope));
-  if (savedReports) {
-    try {
-      applyReports(JSON.parse(savedReports));
-    } catch (error) {
-      console.error('Error al cargar reportes guardados:', error);
-      applyReports([]);
-    }
-  } else {
-    applyReports([]);
-  }
+  applyReports(readLocalReports());
 }
 
 // Inicializar sistema de reportes

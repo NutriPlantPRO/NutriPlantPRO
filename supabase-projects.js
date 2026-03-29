@@ -155,6 +155,7 @@
   var cloudSyncTimers = Object.create(null);
   var cloudSyncPending = Object.create(null);
   var lastFetchProjectsError = null;
+  var lastFetchReportsError = null;
   var USER_CHAT_SYNC_DEBOUNCE_MS = 6000;
   var userChatSyncTimers = Object.create(null);
   var userChatSyncPending = Object.create(null);
@@ -882,15 +883,45 @@
 
     /** Obtener reportes del usuario para un proyecto desde Supabase (tabla reports) */
     fetchUserReports: async function(userId, projectId) {
-      if (!userId || !UUID_REGEX.test(String(userId)) || !projectId) return [];
+      if (!userId || !UUID_REGEX.test(String(userId)) || !projectId) {
+        lastFetchReportsError = 'INVALID_SCOPE';
+        return [];
+      }
       const client = getClient();
-      if (!client) return [];
+      if (!client) {
+        lastFetchReportsError = 'NO_CLIENT';
+        return [];
+      }
       try {
+        // Igual que en proyectos: esperar brevemente a que la sesión se hidrate
+        // para evitar "vacío falso" por RLS al entrar desde otro equipo.
+        let hasSession = false;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          try {
+            const sessionRes = await client.auth.getSession();
+            hasSession = !!(sessionRes && sessionRes.data && sessionRes.data.session);
+          } catch (sessionErr) {
+            hasSession = false;
+          }
+          if (hasSession) break;
+          if (attempt < 3) {
+            await new Promise(function(r) { setTimeout(r, 350); });
+          }
+        }
+        if (!hasSession) {
+          lastFetchReportsError = 'NO_SESSION';
+          console.warn('⚠️ Supabase fetch reports: sesión no lista');
+          return [];
+        }
+
         const { data, error } = await client.from('reports').select('id, data, created_at').eq('user_id', userId).eq('project_id', projectId).order('created_at', { ascending: false });
         if (error) {
+          const msg = (error && error.message) ? String(error.message) : '';
+          lastFetchReportsError = msg || 'QUERY_ERROR';
           console.warn('⚠️ Supabase fetch reports:', error.message);
           return [];
         }
+        lastFetchReportsError = null;
         return (data || []).map(function(r) {
           const report = r.data && typeof r.data === 'object' ? r.data : {};
           if (r.id && !report.id) report.id = r.id;
@@ -898,9 +929,13 @@
           return report;
         });
       } catch (e) {
+        lastFetchReportsError = (e && e.message) ? e.message : 'FETCH_ERROR';
         console.warn('⚠️ Supabase fetch reports:', e);
         return [];
       }
+    },
+    getLastFetchReportsError: function() {
+      return lastFetchReportsError;
     },
 
     /** Sincronizar un reporte a Supabase (insert/upsert por id). Devuelve true solo si el upsert terminó bien. */
@@ -1076,6 +1111,13 @@
       return window.nutriplantSupabaseProjects.fetchUserReports(userId, projectId);
     }
     return Promise.resolve([]);
+  };
+
+  window.nutriplantGetLastFetchReportsError = function() {
+    if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.getLastFetchReportsError) {
+      return window.nutriplantSupabaseProjects.getLastFetchReportsError();
+    }
+    return null;
   };
 
   /** Sincronizar un reporte a la nube */
