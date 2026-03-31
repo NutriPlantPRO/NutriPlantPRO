@@ -613,6 +613,26 @@
       const includeDeleted = !!opts.includeDeleted;
 
       try {
+        // Igual que fetchProjects: esperar un poco a que la sesión esté lista
+        // para evitar "vacío falso" al abrir proyecto en otro equipo.
+        let hasSession = false;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          try {
+            const sessionRes = await client.auth.getSession();
+            hasSession = !!(sessionRes && sessionRes.data && sessionRes.data.session);
+          } catch (sessionErr) {
+            hasSession = false;
+          }
+          if (hasSession) break;
+          if (attempt < 3) {
+            await new Promise(function(r) { setTimeout(r, 350); });
+          }
+        }
+        if (!hasSession) {
+          console.warn('⚠️ Supabase fetch project: sesión no lista');
+          return null;
+        }
+
         const { data, error } = await client.from('projects').select('*').eq('id', projectId).single();
         if (error || !data) return null;
         const payload = data.data || data;

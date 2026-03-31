@@ -5661,45 +5661,28 @@ function np_renderProjects(){
       const cardProject = projects.find(function(pr) { return pr && pr.id === id; }) || null;
       if (!p && cardProject) p = cardProject;
       if (p) {
+        var hydratedFromCloudOnOpen = false;
+        var cloudHydrationFailedOnOpen = false;
         if (isSupabase) {
           if (!window._np_project_open_cloud_refresh_in_progress) window._np_project_open_cloud_refresh_in_progress = {};
           window._np_project_open_cloud_refresh_in_progress[id] = true;
         }
-        np_setCurrentProject(id, p);
-        // Actualizar el projectManager
-        if (window.projectManager) {
-          window.projectManager.setCurrentProject(id, p.title || p.name || id);
-        }
-        if (window.nutriPlantChat && typeof window.nutriPlantChat.refreshForCurrentProject === 'function') {
-          window.nutriPlantChat.refreshForCurrentProject();
-        }
-        window._np_project_freshness_meta = {
-          projectId: id,
-          source: 'local-cache',
-          refreshedAt: new Date().toISOString()
-        };
-        emitProjectContextUpdate({ reason: 'project-open', freshnessSource: 'local-cache', projectId: id });
-        renderMenu();
-        selectSection("Inicio", menu.querySelector("a[data-section='inicio']") || null);
-
-        // Refresco cloud en segundo plano: no bloquear la apertura del proyecto.
+        // Pull-first al abrir: intentar hidratar desde nube ANTES de cargar UI
+        // para evitar que un snapshot local vacío/parcial gane en equipos nuevos.
         if (isSupabase) {
           const sp = window.nutriplantSupabaseProjects;
           if (sp && sp.fetchProject) {
-            (async function() {
-              try {
-                const key = 'nutriplant_project_' + id;
-                const cloudUpdatedAt = p.updatedAt || p.updated_at || null;
-                const fullData = await sp.fetchProject(id);
-                if (!fullData) return;
+            try {
+              const cloudUpdatedAt = p.updatedAt || p.updated_at || null;
+              const fullData = await sp.fetchProject(id);
+              if (fullData && typeof fullData === 'object') {
                 const toStore = (typeof fullData === 'object' && fullData.id)
                   ? fullData
-                  : { id, name: p.title, ...fullData };
+                  : { id, name: p.title || p.name || id, ...fullData };
                 if (!toStore.updated_at && !toStore.updatedAt && cloudUpdatedAt) {
                   toStore.updatedAt = cloudUpdatedAt;
                 }
-                localStorage.setItem(key, JSON.stringify(toStore));
-                // Evitar usar snapshot local viejo en memoria tras refrescar nube.
+                localStorage.setItem('nutriplant_project_' + id, JSON.stringify(toStore));
                 if (window.projectStorage) {
                   try {
                     if (window.projectStorage.memoryCache && window.projectStorage.memoryCache.currentProjectId === id) {
@@ -5711,29 +5694,70 @@ function np_renderProjects(){
                     }
                   } catch (cacheErr) {}
                 }
-                // Cancelar payloads pendientes que pudieron capturar estado parcial antes del refresh cloud.
-                if (sp && typeof sp.cancelScheduledProjectCloudSync === 'function') {
+                // Evitar que un payload debounced viejo se ejecute después de hidratar.
+                if (typeof sp.cancelScheduledProjectCloudSync === 'function') {
                   try { sp.cancelScheduledProjectCloudSync(id); } catch (cancelErr) {}
                 }
-                if (typeof np_getCurrentProjectId === 'function' && np_getCurrentProjectId() === id && typeof loadProjectData === 'function') {
-                  try { loadProjectData(); } catch (e) {}
-                }
-                if (window.nutriPlantChat && typeof window.nutriPlantChat.refreshForCurrentProject === 'function') {
-                  try { window.nutriPlantChat.refreshForCurrentProject(); } catch (e) {}
-                }
-                emitProjectContextUpdate({ reason: 'project-open-cloud-refresh', freshnessSource: 'cloud-refresh', projectId: id });
-                console.log('☁️ Proyecto actualizado desde nube al abrir:', id);
-              } catch (err) { 
-                console.warn('fetchProject:', err); 
-              } finally {
-                try {
-                  if (window._np_project_open_cloud_refresh_in_progress) {
-                    delete window._np_project_open_cloud_refresh_in_progress[id];
-                  }
-                } catch (e) {}
+                // Refrescar título/meta de tarjeta con datos más frescos.
+                p = {
+                  ...p,
+                  title: toStore.name || toStore.title || p.title || p.name || 'Sin nombre',
+                  name: toStore.name || toStore.title || p.name || p.title || 'Sin nombre',
+                  updatedAt: toStore.updated_at || toStore.updatedAt || p.updatedAt || p.updated_at || new Date().toISOString()
+                };
+                hydratedFromCloudOnOpen = true;
+                console.log('☁️ Proyecto hidratado desde nube antes de abrir:', id);
+              } else if (typeof sp.cancelScheduledProjectCloudSync === 'function') {
+                // Si la hidratación falló/no devolvió datos, cancelar también payloads pendientes
+                // para no subir estado parcial justo después de abrir.
+                try { sp.cancelScheduledProjectCloudSync(id); } catch (cancelErr) {}
+                cloudHydrationFailedOnOpen = true;
               }
-            })();
+            } catch (err) {
+              console.warn('fetchProject antes de abrir:', err);
+              if (sp && typeof sp.cancelScheduledProjectCloudSync === 'function') {
+                try { sp.cancelScheduledProjectCloudSync(id); } catch (cancelErr) {}
+              }
+              cloudHydrationFailedOnOpen = true;
+            }
           }
+        }
+        if (isSupabase && cloudHydrationFailedOnOpen) {
+          try {
+            if (window._np_project_open_cloud_refresh_in_progress) {
+              delete window._np_project_open_cloud_refresh_in_progress[id];
+            }
+          } catch (e) {}
+          showMessage('⚠️ No se pudo descargar la versión de nube del proyecto. Revisa la conexión y vuelve a intentar.', 'warning');
+          return;
+        }
+        try {
+          np_setCurrentProject(id, p);
+          // Actualizar el projectManager
+          if (window.projectManager) {
+            window.projectManager.setCurrentProject(id, p.title || p.name || id);
+          }
+          if (window.nutriPlantChat && typeof window.nutriPlantChat.refreshForCurrentProject === 'function') {
+            window.nutriPlantChat.refreshForCurrentProject();
+          }
+          window._np_project_freshness_meta = {
+            projectId: id,
+            source: hydratedFromCloudOnOpen ? 'cloud-refresh' : 'local-cache',
+            refreshedAt: new Date().toISOString()
+          };
+          emitProjectContextUpdate({
+            reason: hydratedFromCloudOnOpen ? 'project-open-cloud-refresh' : 'project-open',
+            freshnessSource: hydratedFromCloudOnOpen ? 'cloud-refresh' : 'local-cache',
+            projectId: id
+          });
+          renderMenu();
+          selectSection("Inicio", menu.querySelector("a[data-section='inicio']") || null);
+        } finally {
+          try {
+            if (window._np_project_open_cloud_refresh_in_progress) {
+              delete window._np_project_open_cloud_refresh_in_progress[id];
+            }
+          } catch (e) {}
         }
       } else {
         showMessage('⚠️ No se pudo abrir el proyecto en este intento. Actualiza con la nube e intenta de nuevo.', 'warning');
@@ -11472,6 +11496,17 @@ window.saveProject = async function() {
       if (typeof window.showMessage === 'function') window.showMessage('⚠️ No hay proyecto activo para guardar', 'warning');
       return;
     }
+    // Si el proyecto aún se está hidratando desde nube al abrir, bloquear guardado manual
+    // para evitar que un estado local parcial compita con la versión remota.
+    try {
+      var hydrationMap = window._np_project_open_cloud_refresh_in_progress || null;
+      if (hydrationMap && hydrationMap[currentProject.id] === true) {
+        if (typeof window.showMessage === 'function') {
+          window.showMessage('⏳ Espera un momento: estamos terminando de cargar la versión de nube del proyecto.', 'info');
+        }
+        return;
+      }
+    } catch (e) {}
 
     // Guardado manual = intención explícita: lo que hay en pantalla pasa a ser la fuente de verdad.
     // No mostrar confirm por "nube más reciente": el sync en segundo plano u otra pestaña puede adelantar
