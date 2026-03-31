@@ -5142,6 +5142,177 @@
     <script>
         // Paginación: máximo filas por página para no sobrecargar con cientos de usuarios/mensajes
         const DATA_VIEWER_PAGE_SIZE = 200;
+        function isDeletedProjectsBulkMode(config) {
+            return !!(config && config.isProject === true && config.deletedProjectsMode === true);
+        }
+        function getDeletedProjectRowId(item, index) {
+            if (!item) return String(index);
+            var raw = item.id != null && String(item.id).trim() !== '' ? item.id : index;
+            return String(raw);
+        }
+        function escapeHtmlAttr(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+        function isDeletedProjectExpired(item) {
+            if (!item || !item.restore_until) return false;
+            var ts = new Date(item.restore_until).getTime();
+            if (!Number.isFinite(ts)) return false;
+            return ts < Date.now();
+        }
+        function updateDeletedProjectsBulkUi() {
+            var state = window._dataViewerState;
+            if (!state || !state.selectedDeletedProjectIds || !(state.selectedDeletedProjectIds instanceof Set)) return;
+            var count = state.selectedDeletedProjectIds.size;
+            var countEl = document.getElementById('bulk-delete-selected-count');
+            if (countEl) countEl.textContent = String(count);
+            var actionBtn = document.getElementById('bulk-delete-selected-btn');
+            if (actionBtn) actionBtn.disabled = count === 0;
+            var visibleChecks = Array.from(document.querySelectorAll('.deleted-project-checkbox'));
+            var visibleEnabledChecks = visibleChecks.filter(function(cb) { return !cb.disabled && cb.closest('tr') && cb.closest('tr').style.display !== 'none'; });
+            var visibleCheckedCount = visibleEnabledChecks.filter(function(cb) { return cb.checked; }).length;
+            var selectAll = document.getElementById('select-all-visible-deleted-projects');
+            if (selectAll) {
+                selectAll.checked = visibleEnabledChecks.length > 0 && visibleCheckedCount === visibleEnabledChecks.length;
+                selectAll.indeterminate = visibleCheckedCount > 0 && visibleCheckedCount < visibleEnabledChecks.length;
+            }
+        }
+        function toggleDeletedProjectSelection(projectId, isChecked) {
+            var state = window._dataViewerState;
+            if (!state || !state.selectedDeletedProjectIds || !(state.selectedDeletedProjectIds instanceof Set)) return;
+            if (isChecked) state.selectedDeletedProjectIds.add(String(projectId));
+            else state.selectedDeletedProjectIds.delete(String(projectId));
+            updateDeletedProjectsBulkUi();
+        }
+        function toggleSelectAllVisibleDeletedProjects(inputEl) {
+            var shouldCheck = !!(inputEl && inputEl.checked);
+            var state = window._dataViewerState;
+            if (!state || !state.selectedDeletedProjectIds || !(state.selectedDeletedProjectIds instanceof Set)) return;
+            var visibleChecks = Array.from(document.querySelectorAll('.deleted-project-checkbox'));
+            visibleChecks.forEach(function(cb) {
+                if (!cb || cb.disabled) return;
+                var row = cb.closest('tr');
+                if (!row || row.style.display === 'none') return;
+                cb.checked = shouldCheck;
+                var pid = cb.getAttribute('data-project-id');
+                if (!pid) return;
+                if (shouldCheck) state.selectedDeletedProjectIds.add(String(pid));
+                else state.selectedDeletedProjectIds.delete(String(pid));
+            });
+            updateDeletedProjectsBulkUi();
+        }
+        function renderDataViewerRowsFromState() {
+            var state = window._dataViewerState;
+            if (!state || !state.config || !Array.isArray(state.data)) return;
+            var pageSize = state.pageSize || DATA_VIEWER_PAGE_SIZE;
+            var page = state.page || 1;
+            var start = (page - 1) * pageSize;
+            var slice = state.data.slice(start, start + pageSize);
+            var tbody = document.getElementById('dataTableBody');
+            if (!tbody) return;
+            var rowsHtml = slice.map(function(item, i) { return buildDataViewerRow(item, start + i, state.config); }).join('');
+            tbody.innerHTML = rowsHtml;
+            updateDeletedProjectsBulkUi();
+        }
+        async function hardDeleteProjectsByIds(projectIds) {
+            if (!Array.isArray(projectIds) || projectIds.length === 0) return { deleted: 0, failed: 0 };
+            var client = (window.getSupabaseClient && window.getSupabaseClient()) || null;
+            if (!client) throw new Error('No se pudo conectar con Supabase.');
+            var deleted = 0;
+            var failed = 0;
+            for (var i = 0; i < projectIds.length; i++) {
+                var projectId = projectIds[i];
+                if (!projectId) continue;
+                try {
+                    await client.from('reports').delete().eq('project_id', projectId);
+                    var delRes = await client.from('projects').delete().eq('id', projectId);
+                    if (delRes && delRes.error) {
+                        failed++;
+                        console.warn('⚠️ hardDeleteProjectsByIds(projects):', projectId, delRes.error);
+                        continue;
+                    }
+                    deleted++;
+                } catch (e) {
+                    failed++;
+                    console.warn('⚠️ hardDeleteProjectsByIds:', projectId, e);
+                }
+            }
+            return { deleted: deleted, failed: failed };
+        }
+        async function hardDeleteDeletedProject(projectId) {
+            var pid = projectId != null ? String(projectId) : '';
+            if (!pid) return;
+            if (!confirm('¿Eliminar definitivamente este proyecto? Esta acción no se puede deshacer.')) return;
+            try {
+                var result = await hardDeleteProjectsByIds([pid]);
+                if (result.deleted === 0) {
+                    alert('⚠️ No se pudo eliminar definitivamente el proyecto.');
+                    return;
+                }
+                var state = window._dataViewerState;
+                if (state && Array.isArray(state.data)) {
+                    state.data = state.data.filter(function(p) { return String(p && p.id) !== pid; });
+                    if (state.selectedDeletedProjectIds && state.selectedDeletedProjectIds instanceof Set) {
+                        state.selectedDeletedProjectIds.delete(pid);
+                    }
+                }
+                if (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) {
+                    window._adminCloudCache.projects = window._adminCloudCache.projects.filter(function(p) { return String(p && p.id) !== pid; });
+                }
+                renderDataViewerRowsFromState();
+                goToDataViewerPage((window._dataViewerState && window._dataViewerState.page) || 1);
+                if (typeof loadAdminStats === 'function') loadAdminStats();
+                if (result.failed > 0) {
+                    alert('⚠️ Se eliminó 1 proyecto, pero hubo errores adicionales.');
+                } else {
+                    alert('✅ Proyecto eliminado definitivamente.');
+                }
+            } catch (e) {
+                console.error('hardDeleteDeletedProject:', e);
+                alert('❌ Error al eliminar definitivamente: ' + (e.message || ''));
+            }
+        }
+        async function bulkHardDeleteDeletedProjects() {
+            var state = window._dataViewerState;
+            if (!state || !state.selectedDeletedProjectIds || !(state.selectedDeletedProjectIds instanceof Set)) return;
+            var ids = Array.from(state.selectedDeletedProjectIds);
+            if (ids.length === 0) {
+                alert('Selecciona al menos 1 proyecto.');
+                return;
+            }
+            if (!confirm('¿Eliminar definitivamente ' + ids.length + ' proyecto(s)? Esta acción no se puede deshacer.')) return;
+            try {
+                var result = await hardDeleteProjectsByIds(ids);
+                if (result.deleted > 0 && Array.isArray(state.data)) {
+                    var deletedSet = new Set(ids);
+                    state.data = state.data.filter(function(p) { return !deletedSet.has(String(p && p.id)); });
+                    deletedSet.forEach(function(id) { state.selectedDeletedProjectIds.delete(id); });
+                    if (window._adminCloudCache && Array.isArray(window._adminCloudCache.projects)) {
+                        window._adminCloudCache.projects = window._adminCloudCache.projects.filter(function(p) { return !deletedSet.has(String(p && p.id)); });
+                    }
+                    renderDataViewerRowsFromState();
+                    goToDataViewerPage((window._dataViewerState && window._dataViewerState.page) || 1);
+                    if (typeof loadAdminStats === 'function') loadAdminStats();
+                }
+                if (result.deleted === 0) {
+                    alert('⚠️ No se pudo eliminar ningún proyecto.');
+                } else if (result.failed > 0) {
+                    alert('⚠️ Eliminados: ' + result.deleted + '. Fallidos: ' + result.failed + '.');
+                } else {
+                    alert('✅ Eliminados definitivamente: ' + result.deleted + '.');
+                }
+            } catch (e) {
+                console.error('bulkHardDeleteDeletedProjects:', e);
+                alert('❌ Error al eliminar seleccionados: ' + (e.message || ''));
+            }
+        }
+        window.toggleDeletedProjectSelection = toggleDeletedProjectSelection;
+        window.toggleSelectAllVisibleDeletedProjects = toggleSelectAllVisibleDeletedProjects;
+        window.hardDeleteDeletedProject = hardDeleteDeletedProject;
+        window.bulkHardDeleteDeletedProjects = bulkHardDeleteDeletedProjects;
         function goToDataViewerPage(pageNum) {
             var state = window._dataViewerState;
             if (!state || !state.data || !state.config) return;
@@ -5165,9 +5336,21 @@
                 ' <span style="margin:0 8px;">Página ' + page + ' de ' + totalPages + '</span>' +
                 ' <button type="button" onclick="goToDataViewerPage(' + (page + 1) + ')"' + (page === totalPages ? ' disabled' : '') + ' style="margin:0 4px;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;">Siguiente</button>' +
                 ' <button type="button" onclick="goToDataViewerPage(' + totalPages + ')"' + (page === totalPages ? ' disabled' : '') + ' style="margin:0 4px;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;">Última</button>';
+            updateDeletedProjectsBulkUi();
         }
         function buildDataViewerRow(item, index, config) {
-            var html = '<tr data-index="' + index + '" style="border-bottom: 1px solid #e5e7eb;">';
+            var expiredDeletedRow = isDeletedProjectsBulkMode(config) && isDeletedProjectExpired(item);
+            var rowStyle = expiredDeletedRow
+                ? 'border-bottom: 1px solid #fecdd3; background: #fff1f2;'
+                : 'border-bottom: 1px solid #e5e7eb;';
+            var html = '<tr data-index="' + index + '" style="' + rowStyle + '">';
+            if (isDeletedProjectsBulkMode(config)) {
+                var state = window._dataViewerState;
+                var rowPid = getDeletedProjectRowId(item, index);
+                var checked = !!(state && state.selectedDeletedProjectIds && state.selectedDeletedProjectIds instanceof Set && state.selectedDeletedProjectIds.has(rowPid));
+                var pidAttr = escapeHtmlAttr(rowPid);
+                html += '<td style="padding: 12px; text-align: center;"><input type="checkbox" class="deleted-project-checkbox" data-project-id="' + pidAttr + '" onchange="toggleDeletedProjectSelection(\'' + rowPid.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\', this.checked)"' + (checked ? ' checked' : '') + '></td>';
+            }
             config.columns.forEach(function(col) {
                 var value = item[col.key];
                 var displayValue = '';
@@ -5221,6 +5404,9 @@
                 }
                 var cellContent = (displayValue + '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 var cellStyle = 'padding: 12px; color: #374151; font-size: 14px; max-width: 280px;';
+                if (expiredDeletedRow && col.key === 'restore_until') {
+                    cellStyle = 'padding: 12px; color: #b91c1c; font-size: 14px; font-weight: 700; max-width: 280px;';
+                }
                 if (col.key === 'content') {
                     var hasFull = item.content_full != null && item.content_full !== '';
                     cellContent = '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px;">' + cellContent + '</div>';
@@ -5261,6 +5447,7 @@
                     if (isProject) {
                         if (config.deletedProjectsMode) {
                             html += '<button onclick="restoreProject(\'' + safeUserRef + '\')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">♻️ Restaurar</button>';
+                            html += '<button onclick="hardDeleteDeletedProject(\'' + safeUserRef + '\')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Eliminar definitivo</button>';
                         } else {
                             if (item._isOrphan) html += '<button onclick="assignProjectToUser(\'' + safeUserRef + '\')" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔗 Asignar</button>';
                             html += '<button onclick="deleteProject(\'' + safeUserRef + '\')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">🗑️ Eliminar</button>';
@@ -5290,7 +5477,13 @@
             }
 
             var usePagination = config.data.length > DATA_VIEWER_PAGE_SIZE;
-            window._dataViewerState = { data: config.data, config: config, page: 1, pageSize: DATA_VIEWER_PAGE_SIZE };
+            window._dataViewerState = {
+                data: config.data,
+                config: config,
+                page: 1,
+                pageSize: DATA_VIEWER_PAGE_SIZE,
+                selectedDeletedProjectIds: isDeletedProjectsBulkMode(config) ? new Set() : null
+            };
             var dataToShow = usePagination ? config.data.slice(0, DATA_VIEWER_PAGE_SIZE) : config.data;
             
             // Construir HTML de la tabla con filtros
@@ -5326,6 +5519,24 @@
             html += `
                         </div>
                     </div>
+            `;
+            if (isDeletedProjectsBulkMode(config)) {
+                html += `
+                    <div style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <div style="font-size: 13px; color: #475569;">
+                            Seleccionados: <strong id="bulk-delete-selected-count">0</strong>
+                        </div>
+                        <button id="bulk-delete-selected-btn"
+                                type="button"
+                                onclick="bulkHardDeleteDeletedProjects()"
+                                disabled
+                                style="background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                            🗑️ Eliminar seleccionados (definitivo)
+                        </button>
+                    </div>
+                `;
+            }
+            html += `
                     
                     <div style="overflow-x: auto;">
                         <table id="dataTable" style="width: 100%; border-collapse: collapse; background: white;">
@@ -5334,6 +5545,9 @@
             `;
             
             // Encabezados de columnas
+            if (isDeletedProjectsBulkMode(config)) {
+                html += `<th style="padding: 12px; text-align: center; font-weight: 600; color: #1e293b; font-size: 14px; width: 56px;"><input type="checkbox" id="select-all-visible-deleted-projects" onchange="toggleSelectAllVisibleDeletedProjects(this)" title="Seleccionar visibles"></th>`;
+            }
             config.columns.forEach(col => {
                 html += `<th style="padding: 12px; text-align: left; font-weight: 600; color: #1e293b; font-size: 14px;">${col.label}</th>`;
             });
@@ -5377,6 +5591,7 @@
             content.innerHTML = html;
             modal.style.display = 'flex';
             lockBodyScrollForDataViewer();
+            updateDeletedProjectsBulkUi();
         }
         window.showDataViewerWithFilters = showDataViewerWithFilters;
         
@@ -5420,6 +5635,7 @@
                 modal.style.display = 'none';
             }
             unlockBodyScrollForDataViewer();
+            window._dataViewerState = null;
             // Limpiar historial al cerrar completamente
             navigationHistory.previousView = null;
             navigationHistory.previousViewParams = null;
@@ -5497,6 +5713,7 @@
                     }
                 }
             });
+            updateDeletedProjectsBulkUi();
         }
         window.filterTable = filterTable;
 
