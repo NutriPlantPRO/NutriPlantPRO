@@ -7232,9 +7232,9 @@ async function np_loadProjectsFromCloud() {
     }));
     window._np_cloud_projects_cache_loaded = true;
     window._np_cloud_projects_cache_error = null;
-    // Si el admin borró un proyecto en la nube: quitar del localStorage del usuario para que no vuelva a aparecer ni se re-suba.
-    // Importante: solo purgar cuando cloudIds tiene al menos un id válido.
-    if (userId && cloudIds.size > 0) {
+    // Si en nube ya no existe un proyecto del usuario, quitarlo del local para evitar cache eterna.
+    // Se ejecuta siempre que la carga cloud fue exitosa (aunque cloudIds esté vacío).
+    if (userId) {
       const userKey = 'nutriplant_user_' + userId;
       var toRemove = [];
       try {
@@ -7250,7 +7250,8 @@ async function np_loadProjectsFromCloud() {
             }
           }
         }
-        // 2) Pasar por todas las claves nutriplant_project_* y quitar las que son de este usuario pero no están en la nube (por si la lista del perfil estaba desactualizada)
+        // 2) Pasar por todas las claves nutriplant_project_* y quitar las que son de este usuario
+        // pero no están en la nube (por si la lista del perfil estaba desactualizada).
         for (var i = localStorage.length - 1; i >= 0; i--) {
           var key = localStorage.key(i);
           if (!key || (!key.startsWith('nutriplant_project_') && !key.startsWith('nutriplant-project-'))) continue;
@@ -7279,7 +7280,7 @@ async function np_loadProjectsFromCloud() {
               localStorage.setItem(userKey, JSON.stringify(up));
             }
           }
-          var currentId = localStorage.getItem('nutriplant_current_project');
+          var currentId = localStorage.getItem('nutriplant-current-project') || localStorage.getItem('nutriplant_current_project');
           if (currentId && toRemove.indexOf(currentId) !== -1 && typeof np_setCurrentProject === 'function') {
             np_setCurrentProject('');
           }

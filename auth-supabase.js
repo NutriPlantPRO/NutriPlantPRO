@@ -33,6 +33,30 @@
     } catch (e) {}
   }
 
+  function aggressiveRelieveLocalStoragePressure() {
+    try {
+      const toDelete = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        if (
+          key.startsWith('nutriplant_project_') ||
+          key.startsWith('nutriplant-project-') ||
+          key.indexOf('_backup_') !== -1 ||
+          key.indexOf('nutriplant_diagnostic_') === 0 ||
+          key.indexOf('np_tmp_') === 0 ||
+          key.indexOf('chat_response_cache') === 0 ||
+          key.indexOf('chat_usage_metering') === 0
+        ) {
+          toDelete.push(key);
+        }
+      }
+      toDelete.forEach((k) => {
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+    } catch (e) {}
+  }
+
   function safeSetItem(key, value) {
     try {
       localStorage.setItem(key, value);
@@ -44,7 +68,14 @@
           localStorage.setItem(key, value);
           return true;
         } catch (retryErr) {
-          console.warn('localStorage lleno al guardar', key, retryErr && retryErr.message ? retryErr.message : retryErr);
+          // Último recurso (usuarios nube): purgar caché de proyectos locales y reintentar.
+          aggressiveRelieveLocalStoragePressure();
+          try {
+            localStorage.setItem(key, value);
+            return true;
+          } catch (finalErr) {
+            console.warn('localStorage lleno al guardar', key, finalErr && finalErr.message ? finalErr.message : finalErr);
+          }
         }
       } else {
         console.warn('No se pudo guardar', key, e && e.message ? e.message : e);
