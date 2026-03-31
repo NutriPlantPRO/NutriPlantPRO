@@ -5674,7 +5674,32 @@ function np_renderProjects(){
           if (sp && sp.fetchProject) {
             try {
               const cloudUpdatedAt = p.updatedAt || p.updated_at || null;
-              const fullData = await sp.fetchProject(id);
+              let fullData = await sp.fetchProject(id);
+              // Reintento 1: refrescar lista cloud y volver a pedir el proyecto.
+              // Ayuda cuando la sesión/replicación está en transición justo al abrir.
+              if (!fullData) {
+                try {
+                  if (typeof np_loadProjectsFromCloud === 'function') {
+                    await np_loadProjectsFromCloud();
+                  }
+                  await new Promise(function(r) { setTimeout(r, 350); });
+                  fullData = await sp.fetchProject(id);
+                } catch (retryErr) {}
+              }
+              // Reintento 2 (proyecto recién creado): subir local inmediato y volver a leer nube.
+              if (!fullData && typeof sp.syncProjectNow === 'function') {
+                try {
+                  const localRaw = localStorage.getItem('nutriplant_project_' + id);
+                  if (localRaw && localRaw.startsWith('{')) {
+                    const localObj = JSON.parse(localRaw);
+                    if (localObj && typeof localObj === 'object') {
+                      await sp.syncProjectNow(id, localObj);
+                      await new Promise(function(r) { setTimeout(r, 250); });
+                      fullData = await sp.fetchProject(id);
+                    }
+                  }
+                } catch (syncRetryErr) {}
+              }
               if (fullData && typeof fullData === 'object') {
                 const toStore = (typeof fullData === 'object' && fullData.id)
                   ? fullData
