@@ -3979,13 +3979,22 @@ function np_isProjectOpenBlockedByCloudSync() {
 
 function np_applyProjectOpenButtonsState() {
   var blocked = np_isProjectOpenBlockedByCloudSync();
-  document.querySelectorAll('#np-projects-list button[data-act="open"]').forEach(function(btn) {
+  document.querySelectorAll('#np-projects-list button[data-act]').forEach(function(btn) {
     if (!btn) return;
+    var act = btn.getAttribute('data-act');
     btn.disabled = blocked;
     btn.style.opacity = blocked ? '0.65' : '1';
     btn.style.cursor = blocked ? 'not-allowed' : 'pointer';
-    btn.textContent = blocked ? '⏳ Cargando nube...' : 'Abrir';
-    btn.title = blocked ? 'Espera a que termine la actualización de la nube para abrir el proyecto.' : 'Abrir proyecto';
+    if (act === 'open') {
+      btn.textContent = blocked ? '⏳ Cargando nube...' : 'Abrir';
+      btn.title = blocked ? 'Espera a que termine la actualización de la nube para abrir el proyecto.' : 'Abrir proyecto';
+    } else if (act === 'edit') {
+      btn.title = blocked ? 'Espera a que termine la actualización de la nube para editar.' : 'Editar';
+    } else if (act === 'dup') {
+      btn.title = blocked ? 'Espera a que termine la actualización de la nube para duplicar.' : 'Duplicar';
+    } else if (act === 'del') {
+      btn.title = blocked ? 'Espera a que termine la actualización de la nube para eliminar.' : 'Eliminar';
+    }
   });
 }
 
@@ -4078,13 +4087,15 @@ function np_updateCloudRefreshButtonState() {
   np_applyCloudLegend();
 }
 
-async function np_refreshFromCloud() {
+async function np_refreshFromCloud(options) {
+  var opts = options || {};
+  var forceRequested = opts.force === true;
   var userId = localStorage.getItem('nutriplant_user_id');
   var isSupabase = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
   if (!isSupabase) return;
   if (window._npCloudRefreshInProgress === true) return;
   var cooldownRemaining = np_getCloudRefreshCooldownRemainingMs();
-  if (cooldownRemaining > 0) {
+  if (!forceRequested && cooldownRemaining > 0) {
     if (typeof window.showMessage === 'function') {
       window.showMessage('⏳ Espera ' + Math.ceil(cooldownRemaining / 1000) + 's antes de volver a actualizar desde la nube.', 'warning');
     }
@@ -4107,7 +4118,7 @@ async function np_refreshFromCloud() {
     if (typeof np_renderProjects === 'function') np_renderProjects();
     if (typeof np_refreshCurrentProjectFromCloud === 'function') {
       try {
-        await np_refreshCurrentProjectFromCloud();
+        await np_refreshCurrentProjectFromCloud({ force: forceRequested });
       } catch (refreshErr) {
         console.warn('np_refreshCurrentProjectFromCloud:', refreshErr);
       }
@@ -4204,15 +4215,7 @@ function np_initSyncRefreshButton() {
   btn.addEventListener('click', function() {
     if (window._npProjectSyncState && window._npProjectSyncState.kind === 'syncing') return;
     if (window._npCloudRefreshInProgress === true) return;
-    var cooldownRemaining = np_getCloudRefreshCooldownRemainingMs();
-    if (cooldownRemaining > 0) {
-      if (typeof window.showMessage === 'function') {
-        window.showMessage('⏳ Espera ' + Math.ceil(cooldownRemaining / 1000) + 's antes de volver a actualizar.', 'warning');
-      }
-      np_updateCloudRefreshButtonState();
-      return;
-    }
-    np_refreshFromCloud();
+    np_refreshFromCloud({ force: true });
   });
   np_showHideSyncRefreshButton();
 }
@@ -5672,6 +5675,9 @@ function np_renderProjects(){
     let id = encodedId;
     try { id = decodeURIComponent(encodedId); } catch (e) {}
     const act = btn.getAttribute("data-act");
+    if (np_isProjectOpenBlockedByCloudSync() && (act === 'open' || act === 'edit' || act === 'dup' || act === 'del')) {
+      return;
+    }
 
     if (act === "open") {
       if (np_isProjectOpenBlockedByCloudSync()) {
@@ -7319,7 +7325,9 @@ async function np_loadProjectsFromCloud() {
  * Para usuarios Supabase: descarga el proyecto actual desde la nube y lo guarda en localStorage.
  * Así, al abrir la app en otro equipo (lap, cel, tablet) siempre se carga la última versión.
  */
-async function np_refreshCurrentProjectFromCloud() {
+async function np_refreshCurrentProjectFromCloud(options) {
+  const opts = options || {};
+  const forceCloud = opts.force === true;
   const projectId = np_getCurrentProjectId && np_getCurrentProjectId();
   if (!projectId) return;
   const userId = localStorage.getItem('nutriplant_user_id');
@@ -7352,36 +7360,38 @@ async function np_refreshCurrentProjectFromCloud() {
           // Regla local-first:
           // - Si la nube no trae timestamp confiable, NO pisar local.
           // - Si la nube es igual o más vieja (margen 1s), NO pisar local.
-          if (localTs && (!cloudTs || cloudTs <= localTs + 1000)) {
+          if (!forceCloud && localTs && (!cloudTs || cloudTs <= localTs + 1000)) {
             console.log('⏭️ Nube omitida: local es más reciente/igual o nube sin timestamp confiable');
             return;
           }
 
           // Blindaje: si la nube viene "pobre" en granular, preservar lo local "rico".
-          const localGranular = localObj && localObj.granular && typeof localObj.granular === 'object' ? localObj.granular : null;
-          const cloudGranular = toStore && toStore.granular && typeof toStore.granular === 'object' ? toStore.granular : null;
-          if (localGranular) {
-            if (!toStore.granular || typeof toStore.granular !== 'object') {
-              toStore.granular = { ...localGranular };
-            } else {
-              const localReq = localGranular.requirements;
-              const cloudReq = cloudGranular ? cloudGranular.requirements : null;
-              if (hasRichGranularReq(localReq) && !hasRichGranularReq(cloudReq)) {
-                toStore.granular.requirements = localReq;
-                console.warn('🛡️ Cloud refresh: preservando granular.requirements local (cloud incompleto)');
-              }
+          if (!forceCloud) {
+            const localGranular = localObj && localObj.granular && typeof localObj.granular === 'object' ? localObj.granular : null;
+            const cloudGranular = toStore && toStore.granular && typeof toStore.granular === 'object' ? toStore.granular : null;
+            if (localGranular) {
+              if (!toStore.granular || typeof toStore.granular !== 'object') {
+                toStore.granular = { ...localGranular };
+              } else {
+                const localReq = localGranular.requirements;
+                const cloudReq = cloudGranular ? cloudGranular.requirements : null;
+                if (hasRichGranularReq(localReq) && !hasRichGranularReq(cloudReq)) {
+                  toStore.granular.requirements = localReq;
+                  console.warn('🛡️ Cloud refresh: preservando granular.requirements local (cloud incompleto)');
+                }
 
-              const localProgram = localGranular.program;
-              const cloudProgram = cloudGranular ? cloudGranular.program : null;
-              const localHasProgram = !!(localProgram && Array.isArray(localProgram.applications) && localProgram.applications.length > 0);
-              const cloudHasProgram = !!(cloudProgram && Array.isArray(cloudProgram.applications) && cloudProgram.applications.length > 0);
-              if (localHasProgram && !cloudHasProgram) {
-                toStore.granular.program = localProgram;
-                console.warn('🛡️ Cloud refresh: preservando granular.program local (cloud incompleto)');
-              }
+                const localProgram = localGranular.program;
+                const cloudProgram = cloudGranular ? cloudGranular.program : null;
+                const localHasProgram = !!(localProgram && Array.isArray(localProgram.applications) && localProgram.applications.length > 0);
+                const cloudHasProgram = !!(cloudProgram && Array.isArray(cloudProgram.applications) && cloudProgram.applications.length > 0);
+                if (localHasProgram && !cloudHasProgram) {
+                  toStore.granular.program = localProgram;
+                  console.warn('🛡️ Cloud refresh: preservando granular.program local (cloud incompleto)');
+                }
 
-              if (!toStore.granular.lastUI && localGranular.lastUI) {
-                toStore.granular.lastUI = localGranular.lastUI;
+                if (!toStore.granular.lastUI && localGranular.lastUI) {
+                  toStore.granular.lastUI = localGranular.lastUI;
+                }
               }
             }
           }
