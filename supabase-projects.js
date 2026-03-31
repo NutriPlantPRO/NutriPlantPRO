@@ -171,7 +171,9 @@
 
   function isCloudBootstrapBlocked() {
     try {
-      return !!window._np_cloud_bootstrap_in_progress;
+      return !!window._np_cloud_bootstrap_in_progress ||
+        !!window._npCloudRefreshInProgress ||
+        !!window._npStartupSyncRunning;
     } catch (e) {
       return false;
     }
@@ -345,7 +347,13 @@
             var isDegradedDuringHydration = hydrationRiskMode &&
               cloudScore >= 3 &&
               (payloadScore + 1.5) < (cloudScore * 0.7);
-            if ((cloudHasData && !payloadHasData) || isDegradedDuringHydration) {
+            // Candado global anti-degradación:
+            // incluso fuera de hidratación, si la nube tiene una sección claramente más rica,
+            // preservarla para evitar pérdida por payload parcial desde otro equipo.
+            var isStrongCloudDegradation = cloudScore >= 4 &&
+              payloadScore >= 0 &&
+              (payloadScore + 2) < (cloudScore * 0.65);
+            if ((cloudHasData && !payloadHasData) || isDegradedDuringHydration || isStrongCloudDegradation) {
               payloadData[sectionKey] = cloudSection;
               preserved++;
             }
