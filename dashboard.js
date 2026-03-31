@@ -340,6 +340,7 @@ function sectionTemplate(name) {
               </select>
               <span id="np-sync-status" style="display:none; font-size:12px; padding:4px 10px; border-radius:999px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe;"></span>
               <button type="button" id="np-sync-refresh-btn" class="np-btn-cloud-refresh" style="display:none;">☁️ Actualizar con la nube</button>
+              <span id="np-cloud-legend" style="display:none; font-size:12px; color:#475569;"></span>
             </div>
           </div>
           <div id="np-projects-list" class="grid-3"></div>
@@ -3939,7 +3940,10 @@ function np_sortProjectsForView(projects, mode) {
 
 function np_applySyncStatusBadge() {
   const badge = document.getElementById('np-sync-status');
-  if (!badge) return;
+  if (!badge) {
+    np_applyCloudLegend();
+    return;
+  }
   const state = window._npProjectSyncState || { kind: 'idle', text: '' };
   if (!state.text) {
     badge.style.display = 'none';
@@ -3958,7 +3962,72 @@ function np_applySyncStatusBadge() {
     badge.style.border = '1px solid ' + colors.border;
     badge.textContent = state.text;
   }
+  np_applyCloudLegend();
   np_showHideSyncRefreshButton();
+}
+
+function np_isProjectOpenBlockedByCloudSync() {
+  var userId = localStorage.getItem('nutriplant_user_id');
+  var isSupabase = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
+  if (!isSupabase) return false;
+  var state = window._npProjectSyncState || { kind: 'idle', text: '' };
+  return window._npCloudRefreshInProgress === true ||
+    window._npStartupSyncRunning === true ||
+    window._np_cloud_bootstrap_in_progress === true ||
+    state.kind === 'syncing';
+}
+
+function np_applyProjectOpenButtonsState() {
+  var blocked = np_isProjectOpenBlockedByCloudSync();
+  document.querySelectorAll('#np-projects-list button[data-act="open"]').forEach(function(btn) {
+    if (!btn) return;
+    btn.disabled = blocked;
+    btn.style.opacity = blocked ? '0.65' : '1';
+    btn.style.cursor = blocked ? 'not-allowed' : 'pointer';
+    btn.textContent = blocked ? '⏳ Cargando nube...' : 'Abrir';
+    btn.title = blocked ? 'Espera a que termine la actualización de la nube para abrir el proyecto.' : 'Abrir proyecto';
+  });
+}
+
+function np_applyCloudLegend() {
+  var legend = document.getElementById('np-cloud-legend');
+  if (!legend) return;
+  var userId = localStorage.getItem('nutriplant_user_id');
+  var isSupabase = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
+  if (!isSupabase) {
+    legend.style.display = 'none';
+    legend.textContent = '';
+    return;
+  }
+  var state = window._npProjectSyncState || { kind: 'idle', text: '' };
+  var syncing = window._npCloudRefreshInProgress === true ||
+    window._npStartupSyncRunning === true ||
+    window._np_cloud_bootstrap_in_progress === true ||
+    state.kind === 'syncing';
+  if (syncing) {
+    legend.style.display = 'inline-flex';
+    legend.style.color = '#92400e';
+    legend.textContent = 'Actualizando desde la nube...';
+    np_applyProjectOpenButtonsState();
+    return;
+  }
+  if (state.kind === 'error') {
+    legend.style.display = 'inline-flex';
+    legend.style.color = '#991b1b';
+    legend.textContent = 'No se pudo actualizar la nube';
+    np_applyProjectOpenButtonsState();
+    return;
+  }
+  if (state.kind === 'ok') {
+    legend.style.display = 'inline-flex';
+    legend.style.color = '#065f46';
+    legend.textContent = 'Nube actualizada';
+    np_applyProjectOpenButtonsState();
+    return;
+  }
+  legend.style.display = 'none';
+  legend.textContent = '';
+  np_applyProjectOpenButtonsState();
 }
 
 function np_showHideSyncRefreshButton() {
@@ -3967,6 +4036,7 @@ function np_showHideSyncRefreshButton() {
   var userId = localStorage.getItem('nutriplant_user_id');
   var isSupabase = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
   btn.style.display = isSupabase ? 'inline-flex' : 'none';
+  np_applyCloudLegend();
   np_updateCloudRefreshButtonState();
 }
 
@@ -3996,6 +4066,7 @@ function np_updateCloudRefreshButtonState() {
       np_updateCloudRefreshButtonState();
     }, Math.min(1000, cooldownRemaining));
   }
+  np_applyCloudLegend();
 }
 
 async function np_refreshFromCloud() {
@@ -5562,7 +5633,7 @@ function np_renderProjects(){
         <div class="text-xs" style="opacity:.6; margin-top:8px;">Actualizado: ${new Date(p.updatedAt).toLocaleString()}</div>
       </div>
       <div class="actions" style="margin-top:8px; display:flex; gap:8px;">
-        <button class="btn" data-act="open" data-id="${encodedId}">Abrir</button>
+        <button class="btn" data-act="open" data-id="${encodedId}" title="Abrir proyecto">Abrir</button>
         <button class="btn" data-act="edit" data-id="${encodedId}">Editar</button>
         <button class="btn" data-act="dup" data-id="${encodedId}">Duplicar</button>
         <button class="btn" data-act="del" data-id="${encodedId}">Eliminar</button>
@@ -5580,6 +5651,10 @@ function np_renderProjects(){
     const act = btn.getAttribute("data-act");
 
     if (act === "open") {
+      if (np_isProjectOpenBlockedByCloudSync()) {
+        showMessage('⏳ Estamos actualizando proyectos desde la nube. En cuanto termine, podrás abrir este proyecto.', 'info');
+        return;
+      }
       let p = np_getProject(id);
       const userId = localStorage.getItem('nutriplant_user_id');
       const isSupabase = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
@@ -5689,6 +5764,7 @@ function np_renderProjects(){
       }
     }
   };
+  np_applyProjectOpenButtonsState();
 }
 
 // Funciones globales para el modal de cultivo personalizado (compartido entre Fertirriego y Granular)
@@ -7722,6 +7798,90 @@ function getReportsStorageKey(scope) {
   return `nutriplant_reports_${resolved.userId}_${resolved.projectId}`;
 }
 
+function getPendingReportsSyncKey(scope) {
+  const resolved = scope || getCurrentReportScope();
+  return `nutriplant_pending_reports_sync_${resolved.userId}_${resolved.projectId}`;
+}
+
+function isCloudReportScope(scope) {
+  const resolved = scope || getCurrentReportScope();
+  const uid = String(resolved.userId || '');
+  const pid = String(resolved.projectId || '');
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uid) && !!pid && pid !== 'no_project';
+}
+
+function readPendingReportSyncList(scope) {
+  if (!isCloudReportScope(scope)) return [];
+  try {
+    const raw = localStorage.getItem(getPendingReportsSyncKey(scope));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function writePendingReportSyncList(scope, list) {
+  if (!isCloudReportScope(scope)) return;
+  try {
+    localStorage.setItem(getPendingReportsSyncKey(scope), JSON.stringify(Array.isArray(list) ? list : []));
+  } catch (e) {}
+}
+
+function queuePendingReportSync(scope, reportData) {
+  if (!isCloudReportScope(scope) || !reportData || !reportData.id) return;
+  const list = readPendingReportSyncList(scope);
+  const rid = String(reportData.id);
+  const next = list.filter(function(r) { return !(r && String(r.id) === rid); });
+  next.push({ ...reportData, userId: scope.userId, projectId: scope.projectId });
+  writePendingReportSyncList(scope, next);
+}
+
+function removePendingReportSync(scope, reportId) {
+  if (!isCloudReportScope(scope) || !reportId) return;
+  const rid = String(reportId);
+  const list = readPendingReportSyncList(scope).filter(function(r) { return !(r && String(r.id) === rid); });
+  writePendingReportSyncList(scope, list);
+}
+
+async function flushPendingReportSync(scope, opts) {
+  const options = opts || {};
+  if (!isCloudReportScope(scope)) return;
+  if (typeof window.nutriplantSyncReportToCloud !== 'function') return;
+  const pending = readPendingReportSyncList(scope);
+  if (!pending.length) return;
+  const failed = [];
+  for (let i = 0; i < pending.length; i++) {
+    const report = pending[i];
+    try {
+      const ok = await window.nutriplantSyncReportToCloud(scope.userId, scope.projectId, report);
+      if (!ok) failed.push(report);
+    } catch (e) {
+      failed.push(report);
+    }
+  }
+  writePendingReportSyncList(scope, failed);
+  if (!options.silent && failed.length) {
+    showMessage('⚠️ Algunos reportes aún pendientes de nube. Se reintentará automáticamente.', 'warning');
+  }
+}
+
+let _npPendingReportSyncHooksBound = false;
+function ensurePendingReportSyncHooks() {
+  if (_npPendingReportSyncHooksBound) return;
+  _npPendingReportSyncHooksBound = true;
+  window.addEventListener('online', function() {
+    const scope = getCurrentReportScope();
+    flushPendingReportSync(scope, { silent: true });
+  });
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState !== 'visible') return;
+    const scope = getCurrentReportScope();
+    flushPendingReportSync(scope, { silent: true });
+  });
+}
+
 function generateReportShareToken() {
   try {
     const bytes = new Uint8Array(24);
@@ -8566,6 +8726,7 @@ function createLegacyReportHTML(data) {
 // Guardar reporte en la lista
 function saveReportToList(reportData) {
   if (!reportData || typeof reportData !== 'object') return;
+  ensurePendingReportSyncHooks();
   const scope = getCurrentReportScope();
   const cloudReport = { ...reportData };
   cloudReport.userId = scope.userId;
@@ -8602,12 +8763,25 @@ function saveReportToList(reportData) {
   if (typeof window.nutriplantSyncReportToCloud === 'function') {
     try {
       console.log('☁️ Intentando sincronizar reporte a la nube...');
-      window.nutriplantSyncReportToCloud(scope.userId, scope.projectId, cloudReport);
+      Promise.resolve(window.nutriplantSyncReportToCloud(scope.userId, scope.projectId, cloudReport))
+        .then(function(ok) {
+          if (ok) {
+            removePendingReportSync(scope, cloudReport.id);
+          } else {
+            queuePendingReportSync(scope, cloudReport);
+            console.warn('⚠️ Reporte en cola para reintento de sincronización:', cloudReport.id);
+          }
+        })
+        .catch(function() {
+          queuePendingReportSync(scope, cloudReport);
+        });
     } catch (cloudErr) {
       console.warn('⚠️ Error sincronizando reporte a la nube:', cloudErr && cloudErr.message ? cloudErr.message : cloudErr);
+      queuePendingReportSync(scope, cloudReport);
     }
   } else {
     console.warn('⚠️ nutriplantSyncReportToCloud no está disponible (¿supabase-projects.js cargado?)');
+    queuePendingReportSync(scope, cloudReport);
   }
 }
 
@@ -8756,6 +8930,7 @@ window.deleteReport = function(reportId) {
 
 // Cargar reportes guardados (primero desde la nube si hay usuario Supabase, luego fallback a localStorage)
 function loadSavedReports() {
+  ensurePendingReportSyncHooks();
   const scope = getCurrentReportScope();
   const useCloud = typeof window.nutriplantFetchReportsFromCloud === 'function';
   const scopeKey = getReportsStorageKey(scope);
@@ -8783,6 +8958,7 @@ function loadSavedReports() {
   }
 
   if (useCloud) {
+    flushPendingReportSync(scope, { silent: true });
     window.nutriplantFetchReportsFromCloud(scope.userId, scope.projectId).then(function(cloudReports) {
       var fetchErr = (typeof window.nutriplantGetLastFetchReportsError === 'function')
         ? window.nutriplantGetLastFetchReportsError()
@@ -16048,7 +16224,7 @@ function createFoliarTabHTML() {
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
       </div>
       <h2 class="text-xl" style="margin-bottom: 16px;">🔬 Análisis Foliar (DOP)</h2>
-      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">DOP (Diagnosis and Recommendation Integrated System): DOP = ((Valor − Óptimo) / Óptimo) × 100. Los óptimos son editables y se guardan solo en este análisis. Regla visual igual que foliar: 🟢 |DOP| ≤ 10% | 🔶 10–25% | 🟠 25–50% | 🔴 &gt;50%.</p>
+      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">DOP (Desviación del Óptimo Porcentual): DOP = ((Valor − Óptimo) / Óptimo) × 100. Los óptimos son editables y se guardan solo en este análisis. Regla visual igual que foliar: 🟢 |DOP| ≤ 10% | 🔶 10–25% | 🟠 25–50% | 🔴 &gt;50%.</p>
       <div class="soil-analysis-layout">
         <div class="soil-analysis-list-panel">
           <div class="soil-analysis-list-header">

@@ -718,6 +718,115 @@ class NutriPlantChat {
     }
   }
 
+  normalizeRefQuery(text) {
+    return String(text || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  getNutrientSolutionReferenceCatalog() {
+    return {
+      steiner: { displayName: 'Steiner', aliases: ['steiner'], meq: { N_NO3: 12.0, N_NH4: 1.0, P: 1.0, S: 7.0, K: 7.0, Ca: 9.0, Mg: 4.0 }, microsPpm: { Fe: 2.0, Mn: 0.55, B: 0.33, Zn: 0.33, Cu: 0.05, Mo: 0.05 } },
+      hoagland: { displayName: 'Hoagland', aliases: ['hoagland', 'hoagland arnon'], meq: { N_NO3: 14.0, N_NH4: 1.0, P: 2.0, S: 2.0, K: 6.0, Ca: 8.0, Mg: 2.0 }, microsPpm: { Fe: 2.5, Mn: 0.5, B: 0.5, Zn: 0.05, Cu: 0.02, Mo: 0.05 } },
+      knop: { displayName: 'Knop', aliases: ['knop'], meq: { N_NO3: 10.0, N_NH4: 0.0, P: 1.0, S: 3.0, K: 5.0, Ca: 6.0, Mg: 2.0 }, microsPpm: { Fe: 2.0, Mn: 0.5, B: 0.3, Zn: 0.05, Cu: 0.02, Mo: 0.05 } },
+      yamazaki: { displayName: 'Yamazaki', aliases: ['yamazaki'], meq: { N_NO3: 13.0, N_NH4: 1.0, P: 1.5, S: 4.5, K: 7.0, Ca: 7.0, Mg: 3.0 }, microsPpm: { Fe: 2.2, Mn: 0.6, B: 0.4, Zn: 0.1, Cu: 0.05, Mo: 0.05 } },
+      cooper: { displayName: 'Cooper', aliases: ['cooper'], meq: { N_NO3: 12.0, N_NH4: 0.8, P: 1.3, S: 5.0, K: 6.5, Ca: 8.0, Mg: 3.0 }, microsPpm: { Fe: 2.0, Mn: 0.6, B: 0.35, Zn: 0.08, Cu: 0.05, Mo: 0.05 } },
+      sonneveld_straver: { displayName: 'Sonneveld & Straver', aliases: ['sonneveld', 'straver', 'sonneveld straver'], meq: { N_NO3: 13.0, N_NH4: 1.0, P: 1.5, S: 5.5, K: 7.0, Ca: 8.0, Mg: 3.0 }, microsPpm: { Fe: 2.5, Mn: 0.7, B: 0.5, Zn: 0.1, Cu: 0.05, Mo: 0.05 } },
+      resh: { displayName: 'Resh', aliases: ['resh'], meq: { N_NO3: 12.0, N_NH4: 0.7, P: 1.2, S: 4.8, K: 6.8, Ca: 7.5, Mg: 2.8 }, microsPpm: { Fe: 2.0, Mn: 0.5, B: 0.3, Zn: 0.08, Cu: 0.05, Mo: 0.05 } },
+      savvas: { displayName: 'Savvas', aliases: ['savvas'], meq: { N_NO3: 13.5, N_NH4: 0.8, P: 1.5, S: 5.2, K: 7.2, Ca: 8.3, Mg: 3.0 }, microsPpm: { Fe: 2.5, Mn: 0.6, B: 0.4, Zn: 0.1, Cu: 0.05, Mo: 0.05 } },
+      jones: { displayName: 'Jones', aliases: ['jones'], meq: { N_NO3: 12.5, N_NH4: 0.7, P: 1.4, S: 5.0, K: 6.9, Ca: 7.8, Mg: 2.9 }, microsPpm: { Fe: 2.5, Mn: 0.5, B: 0.35, Zn: 0.08, Cu: 0.05, Mo: 0.05 } },
+      douglas: { displayName: 'Douglas', aliases: ['douglas'], meq: { N_NO3: 12.0, N_NH4: 0.6, P: 1.2, S: 4.2, K: 6.2, Ca: 7.0, Mg: 2.6 }, microsPpm: { Fe: 2.0, Mn: 0.5, B: 0.3, Zn: 0.08, Cu: 0.03, Mo: 0.05 } }
+    };
+  }
+
+  getNutrientEqWeights() {
+    return { N_NO3: 14.0, N_NH4: 14.0, P: 31.0, S: 16.0, K: 39.1, Ca: 20.04, Mg: 12.15 };
+  }
+
+  findNutrientSolutionIdInQuery(message) {
+    const q = this.normalizeRefQuery(message);
+    const catalog = this.getNutrientSolutionReferenceCatalog();
+    const ids = Object.keys(catalog);
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      const aliases = catalog[id].aliases || [];
+      for (let j = 0; j < aliases.length; j++) {
+        if (q.includes(this.normalizeRefQuery(aliases[j]))) return id;
+      }
+    }
+    return null;
+  }
+
+  shouldHandleNutrientSolutionReferenceQuery(message) {
+    const q = this.normalizeRefQuery(message);
+    if (!q) return false;
+    const asksSolution = /(solucion nutritiva|solucion|nutritiva|meq|ppm|concentracion|concentraciones|valores|composicion|catalogo|lista|referencia)/.test(q);
+    const hasKnown = !!this.findNutrientSolutionIdInQuery(q);
+    const asksCatalog = /(que soluciones|cuales soluciones|cual es la solucion|catalogo|lista|referencia)/.test(q);
+    return asksSolution && (hasKnown || asksCatalog);
+  }
+
+  formatNutrientSolutionReference(id) {
+    const catalog = this.getNutrientSolutionReferenceCatalog();
+    const item = catalog[id];
+    if (!item) return '';
+    const meq = item.meq || {};
+    const eq = this.getNutrientEqWeights();
+    const ppm = {
+      N_NO3: (meq.N_NO3 || 0) * eq.N_NO3,
+      N_NH4: (meq.N_NH4 || 0) * eq.N_NH4,
+      N_total: ((meq.N_NO3 || 0) * eq.N_NO3) + ((meq.N_NH4 || 0) * eq.N_NH4),
+      P: (meq.P || 0) * eq.P,
+      S: (meq.S || 0) * eq.S,
+      K: (meq.K || 0) * eq.K,
+      Ca: (meq.Ca || 0) * eq.Ca,
+      Mg: (meq.Mg || 0) * eq.Mg
+    };
+    const m = item.microsPpm || {};
+    return `**✅ Solución nutritiva ${item.displayName} (referencia precargada en NutriPlant)**
+
+**Macros en meq/L**
+- N-NO3: ${(meq.N_NO3 || 0).toFixed(1)}
+- N-NH4: ${(meq.N_NH4 || 0).toFixed(1)}
+- P (H2PO4): ${(meq.P || 0).toFixed(1)}
+- S (SO4): ${(meq.S || 0).toFixed(1)}
+- K: ${(meq.K || 0).toFixed(1)}
+- Ca: ${(meq.Ca || 0).toFixed(1)}
+- Mg: ${(meq.Mg || 0).toFixed(1)}
+
+**Macros en ppm (elementales)**
+- N-NO3: ${ppm.N_NO3.toFixed(1)}
+- N-NH4: ${ppm.N_NH4.toFixed(1)}
+- N total: ${ppm.N_total.toFixed(1)}
+- P: ${ppm.P.toFixed(1)}
+- S: ${ppm.S.toFixed(1)}
+- K: ${ppm.K.toFixed(1)}
+- Ca: ${ppm.Ca.toFixed(1)}
+- Mg: ${ppm.Mg.toFixed(1)}
+
+**Micros en ppm**
+- Fe: ${(m.Fe || 0).toFixed(2)}
+- Mn: ${(m.Mn || 0).toFixed(2)}
+- B: ${(m.B || 0).toFixed(2)}
+- Zn: ${(m.Zn || 0).toFixed(2)}
+- Cu: ${(m.Cu || 0).toFixed(2)}
+- Mo: ${(m.Mo || 0).toFixed(2)}`;
+  }
+
+  getNutrientSolutionCatalogResponse() {
+    const catalog = this.getNutrientSolutionReferenceCatalog();
+    const names = Object.keys(catalog).map((id) => `- ${catalog[id].displayName}`).join('\n');
+    return `**📚 Soluciones nutritivas de referencia precargadas**
+
+${names}
+
+Pídeme cualquiera por nombre y te doy concentraciones exactas en meq/L y ppm.
+Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
+  }
+
   async sendMessage() {
     const message = (this.input && this.input.value) ? this.input.value.trim() : '';
     const hasImage = this.pendingImage != null;
@@ -738,6 +847,13 @@ class NutriPlantChat {
     if (this.input) this.input.style.height = 'auto';
     const imageToSend = this.pendingImage;
     this._clearPendingImage();
+
+    // Respuesta local prioritaria para referencias de soluciones nutritivas (evita variaciones del modelo).
+    if (!imageToSend && this.shouldHandleNutrientSolutionReferenceQuery(message)) {
+      const specificId = this.findNutrientSolutionIdInQuery(message);
+      this.addMessage(specificId ? this.formatNutrientSolutionReference(specificId) : this.getNutrientSolutionCatalogResponse(), 'ai');
+      return;
+    }
 
     // Mostrar indicador de "escribiendo..."
     const typingDiv = document.createElement('div');

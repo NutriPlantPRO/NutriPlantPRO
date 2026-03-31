@@ -220,6 +220,59 @@
         const hasExt = !!(req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0);
         return hasAdj || hasEff || hasExt;
       }
+      function isMeaningfulValue(value, depth) {
+        var d = (typeof depth === 'number') ? depth : 0;
+        if (value == null) return false;
+        if (typeof value === 'string') return value.trim().length > 0;
+        if (typeof value === 'number') return Number.isFinite(value) && value !== 0;
+        if (typeof value === 'boolean') return value === true;
+        if (Array.isArray(value)) {
+          if (!value.length) return false;
+          for (var i = 0; i < value.length; i++) {
+            if (isMeaningfulValue(value[i], d + 1)) return true;
+          }
+          return false;
+        }
+        if (typeof value === 'object') {
+          if (d > 5) return Object.keys(value).length > 0;
+          var keys = Object.keys(value);
+          for (var j = 0; j < keys.length; j++) {
+            var k = keys[j];
+            if (/^(id|name|title|created_at|createdAt|updated_at|updatedAt|user_id|userId|isDirty|lastSaved)$/i.test(k)) continue;
+            if (isMeaningfulValue(value[k], d + 1)) return true;
+          }
+          return false;
+        }
+        return false;
+      }
+      function computeSectionSignalScore(value, depth) {
+        var d = (typeof depth === 'number') ? depth : 0;
+        if (value == null) return 0;
+        if (typeof value === 'string') return value.trim().length > 0 ? 1 : 0;
+        if (typeof value === 'number') return (Number.isFinite(value) && value !== 0) ? 1 : 0;
+        if (typeof value === 'boolean') return value ? 0.4 : 0;
+        if (Array.isArray(value)) {
+          if (!value.length) return 0;
+          var arrScore = Math.min(2, value.length * 0.2);
+          for (var ai = 0; ai < value.length; ai++) {
+            arrScore += computeSectionSignalScore(value[ai], d + 1);
+          }
+          return arrScore;
+        }
+        if (typeof value === 'object') {
+          if (d > 6) return Object.keys(value).length > 0 ? 0.5 : 0;
+          var score = 0;
+          var keys = Object.keys(value);
+          for (var oi = 0; oi < keys.length; oi++) {
+            var key = keys[oi];
+            if (/^(id|name|title|created_at|createdAt|updated_at|updatedAt|user_id|userId|isDirty|lastSaved|lastUpdated)$/i.test(key)) continue;
+            var child = computeSectionSignalScore(value[key], d + 1);
+            if (child > 0) score += 0.25 + child;
+          }
+          return score;
+        }
+        return 0;
+      }
 
       // Blindaje antes de subir: no mandar una version granular "pobre"
       // si local ya tiene requirements/program completos.
@@ -252,6 +305,47 @@
             if (!payloadData.granular.lastUI && localGranular.lastUI) {
               payloadData.granular.lastUI = localGranular.lastUI;
             }
+          }
+        }
+      } catch (e) {}
+
+      // Blindaje anti-"sobrescritura en blanco":
+      // si el payload local viene parcial/vacío y la nube tiene bloques con data,
+      // preservamos esos bloques de nube para no perder información al sincronizar.
+      try {
+        const existingRes = await client
+          .from('projects')
+          .select('data')
+          .eq('id', projectId)
+          .eq('user_id', userId)
+          .maybeSingle();
+        const cloudData = existingRes && existingRes.data && existingRes.data.data && typeof existingRes.data.data === 'object'
+          ? existingRes.data.data
+          : null;
+        if (cloudData) {
+          var hydrationRiskMode = !!(window._np_project_open_cloud_refresh_in_progress && window._np_project_open_cloud_refresh_in_progress[projectId]) ||
+            !!window._np_cloud_bootstrap_in_progress;
+          var cloudKeys = Object.keys(cloudData);
+          var preserved = 0;
+          for (var ck = 0; ck < cloudKeys.length; ck++) {
+            var sectionKey = cloudKeys[ck];
+            if (/^(id|name|title|created_at|createdAt|updated_at|updatedAt|user_id|userId|isDirty|lastSaved)$/i.test(sectionKey)) continue;
+            var cloudSection = cloudData[sectionKey];
+            var payloadSection = payloadData[sectionKey];
+            var cloudHasData = isMeaningfulValue(cloudSection, 0);
+            var payloadHasData = isMeaningfulValue(payloadSection, 0);
+            var cloudScore = computeSectionSignalScore(cloudSection, 0);
+            var payloadScore = computeSectionSignalScore(payloadSection, 0);
+            var isDegradedDuringHydration = hydrationRiskMode &&
+              cloudScore >= 3 &&
+              (payloadScore + 1.5) < (cloudScore * 0.7);
+            if ((cloudHasData && !payloadHasData) || isDegradedDuringHydration) {
+              payloadData[sectionKey] = cloudSection;
+              preserved++;
+            }
+          }
+          if (preserved > 0) {
+            console.warn('🛡️ Sync protegido: se preservaron bloques de nube para evitar sobrescritura vacía en', projectId, 'bloques:', preserved);
           }
         }
       } catch (e) {}
