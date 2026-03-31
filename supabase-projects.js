@@ -222,6 +222,14 @@
         const hasExt = !!(req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0);
         return hasAdj || hasEff || hasExt;
       }
+      function hasRichFertirriegoReq(req) {
+        if (!req || typeof req !== 'object') return false;
+        const hasAdj = !!(req.adjustment && Object.keys(req.adjustment).length > 0);
+        const hasEff = !!(req.efficiency && Object.keys(req.efficiency).length > 0);
+        const hasExt = !!(req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0);
+        const hasCore = !!(req.cropType || req.targetYield != null);
+        return hasAdj || hasEff || hasExt || hasCore;
+      }
       function isMeaningfulValue(value, depth) {
         var d = (typeof depth === 'number') ? depth : 0;
         if (value == null) return false;
@@ -285,6 +293,8 @@
         const localObj = localRaw ? JSON.parse(localRaw) : null;
         const localGranular = localObj && localObj.granular && typeof localObj.granular === 'object' ? localObj.granular : null;
         const incomingGranular = payloadData.granular && typeof payloadData.granular === 'object' ? payloadData.granular : null;
+        const localFerti = localObj && localObj.fertirriego && typeof localObj.fertirriego === 'object' ? localObj.fertirriego : null;
+        const incomingFerti = payloadData.fertirriego && typeof payloadData.fertirriego === 'object' ? payloadData.fertirriego : null;
 
         if (localGranular) {
           if (!payloadData.granular || typeof payloadData.granular !== 'object') {
@@ -306,6 +316,23 @@
 
             if (!payloadData.granular.lastUI && localGranular.lastUI) {
               payloadData.granular.lastUI = localGranular.lastUI;
+            }
+          }
+        }
+
+        // Blindaje equivalente para Fertirriego:
+        // si llega payload parcial desde UI/caché, no borrar requirements válidos.
+        if (localFerti) {
+          if (!payloadData.fertirriego || typeof payloadData.fertirriego !== 'object') {
+            payloadData.fertirriego = { ...localFerti };
+          } else {
+            const localReq = localFerti.requirements;
+            const incomingReq = incomingFerti ? incomingFerti.requirements : null;
+            if (hasRichFertirriegoReq(localReq) && !hasRichFertirriegoReq(incomingReq)) {
+              payloadData.fertirriego.requirements = localReq;
+            }
+            if (!payloadData.fertirriego.lastUI && localFerti.lastUI) {
+              payloadData.fertirriego.lastUI = localFerti.lastUI;
             }
           }
         }

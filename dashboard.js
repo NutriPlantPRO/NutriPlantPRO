@@ -7350,6 +7350,14 @@ async function np_refreshCurrentProjectFromCloud(options) {
         const hasExt = !!(req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0);
         return hasAdj || hasEff || hasExt;
       }
+      function hasRichFertirriegoReq(req) {
+        if (!req || typeof req !== 'object') return false;
+        const hasAdj = !!(req.adjustment && Object.keys(req.adjustment).length > 0);
+        const hasEff = !!(req.efficiency && Object.keys(req.efficiency).length > 0);
+        const hasExt = !!(req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0);
+        const hasCore = !!(req.cropType || req.targetYield != null);
+        return hasAdj || hasEff || hasExt || hasCore;
+      }
       // Asegurar que el proyecto local tenga la misma updated_at que la nube para no bloquear Guardar tras "Actualizar con la nube"
       const cloudUpdatedAt = fullData.updated_at || fullData.updatedAt;
       const key = 'nutriplant_project_' + projectId;
@@ -7395,6 +7403,28 @@ async function np_refreshCurrentProjectFromCloud(options) {
 
                 if (!toStore.granular.lastUI && localGranular.lastUI) {
                   toStore.granular.lastUI = localGranular.lastUI;
+                }
+              }
+            }
+
+            // Blindaje equivalente para Fertirriego:
+            // evita que una hidratación de nube incompleta (sin requirements) pise
+            // la versión local completa y termine mostrando solo precargados.
+            const localFerti = localObj && localObj.fertirriego && typeof localObj.fertirriego === 'object' ? localObj.fertirriego : null;
+            const cloudFerti = toStore && toStore.fertirriego && typeof toStore.fertirriego === 'object' ? toStore.fertirriego : null;
+            if (localFerti) {
+              if (!toStore.fertirriego || typeof toStore.fertirriego !== 'object') {
+                toStore.fertirriego = { ...localFerti };
+                console.warn('🛡️ Cloud refresh: preservando fertirriego local (cloud incompleto)');
+              } else {
+                const localReq = localFerti.requirements;
+                const cloudReq = cloudFerti ? cloudFerti.requirements : null;
+                if (hasRichFertirriegoReq(localReq) && !hasRichFertirriegoReq(cloudReq)) {
+                  toStore.fertirriego.requirements = localReq;
+                  console.warn('🛡️ Cloud refresh: preservando fertirriego.requirements local (cloud incompleto)');
+                }
+                if (!toStore.fertirriego.lastUI && localFerti.lastUI) {
+                  toStore.fertirriego.lastUI = localFerti.lastUI;
                 }
               }
             }
