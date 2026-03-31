@@ -315,13 +315,19 @@
       try {
         const existingRes = await client
           .from('projects')
-          .select('data')
+          .select('name,title,data')
           .eq('id', projectId)
           .eq('user_id', userId)
           .maybeSingle();
         const cloudData = existingRes && existingRes.data && existingRes.data.data && typeof existingRes.data.data === 'object'
           ? existingRes.data.data
           : null;
+        const cloudRowName = existingRes && existingRes.data && typeof existingRes.data.name === 'string'
+          ? String(existingRes.data.name).trim()
+          : '';
+        const cloudRowTitle = existingRes && existingRes.data && typeof existingRes.data.title === 'string'
+          ? String(existingRes.data.title).trim()
+          : '';
         if (cloudData) {
           var hydrationRiskMode = !!(window._np_project_open_cloud_refresh_in_progress && window._np_project_open_cloud_refresh_in_progress[projectId]) ||
             !!window._np_cloud_bootstrap_in_progress;
@@ -343,6 +349,19 @@
               payloadData[sectionKey] = cloudSection;
               preserved++;
             }
+          }
+          // Blindaje de metadatos: evitar degradar nombre/título a "Sin nombre"
+          // cuando llega un payload parcial durante hidratación.
+          var incomingName = String(payloadData.name || '').trim();
+          var incomingTitle = String(payloadData.title || '').trim();
+          var incomingLabel = incomingName || incomingTitle;
+          var incomingIsWeakLabel = !incomingLabel || /^sin nombre$/i.test(incomingLabel);
+          var cloudDataName = String((cloudData && (cloudData.name || cloudData.title)) || '').trim();
+          var cloudStrongLabel = cloudRowName || cloudRowTitle || cloudDataName;
+          if (incomingIsWeakLabel && cloudStrongLabel) {
+            payloadData.name = cloudStrongLabel;
+            payloadData.title = cloudStrongLabel;
+            preserved++;
           }
           if (preserved > 0) {
             console.warn('🛡️ Sync protegido: se preservaron bloques de nube para evitar sobrescritura vacía en', projectId, 'bloques:', preserved);
