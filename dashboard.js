@@ -7211,6 +7211,23 @@ async function np_loadProjectsFromCloud() {
       list = await sp.fetchProjects();
       fetchError = (typeof sp.getLastFetchProjectsError === 'function') ? sp.getLastFetchProjectsError() : null;
     }
+    // En móvil puede ocurrir "lista vacía falsa" justo tras login aunque sí existan proyectos en nube.
+    // Reintentar un par de veces antes de aceptar vacío como definitivo.
+    if (!fetchError && Array.isArray(list) && list.length === 0) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await new Promise(function(r) { setTimeout(r, 900); });
+        const retryList = await sp.fetchProjects();
+        const retryErr = (typeof sp.getLastFetchProjectsError === 'function') ? sp.getLastFetchProjectsError() : null;
+        if (!retryErr && Array.isArray(retryList) && retryList.length > 0) {
+          list = retryList;
+          break;
+        }
+        if (retryErr) {
+          fetchError = retryErr;
+          break;
+        }
+      }
+    }
     if (fetchError === 'NO_SESSION') {
       window._np_cloud_projects_cache_error = 'NO_SESSION';
       return;
