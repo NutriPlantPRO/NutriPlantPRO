@@ -368,8 +368,15 @@ class NutriPlantChat {
   }
 
   getCurrentProjectId() {
-    // Prioridad: clave actual + compatibilidad legacy.
-    return localStorage.getItem('nutriplant-current-project') ||
+    // Prioridad: helper centralizado + claves nuevas + compatibilidad legacy.
+    try {
+      if (typeof window.np_getCurrentProjectId === 'function') {
+        const pid = String(window.np_getCurrentProjectId() || '').trim();
+        if (pid) return pid;
+      }
+    } catch (e) {}
+    return localStorage.getItem('nutriplant_current_project') ||
+           localStorage.getItem('nutriplant-current-project') ||
            localStorage.getItem('currentProjectId') ||
            '';
   }
@@ -389,10 +396,26 @@ class NutriPlantChat {
           console.log(`✅ Historial guardado (usuario+proyecto) - ${this.messages.length} mensajes`);
         } catch (e) { console.warn('⚠️ Error guardando chat:', e); }
         const projectKey = `nutriplant_project_${projectId}`;
-        const projectData = localStorage.getItem(projectKey);
-        if (projectData) {
+        let project = null;
+        try {
+          const projectData = localStorage.getItem(projectKey);
+          if (projectData) project = JSON.parse(projectData);
+        } catch (parseError) {
+          console.error('❌ Error parseando proyecto local para guardar chat:', parseError);
+        }
+        // Fallbacks para no dejar el chat solo local en otro equipo.
+        if (!project || typeof project !== 'object') {
           try {
-            const project = JSON.parse(projectData);
+            if (typeof window.projectStorage !== 'undefined' && window.projectStorage && typeof window.projectStorage.loadProject === 'function') {
+              project = window.projectStorage.loadProject(projectId) || null;
+            }
+          } catch (e) {}
+        }
+        if ((!project || typeof project !== 'object') && typeof window.currentProject !== 'undefined' && window.currentProject && String(window.currentProject.id || '') === String(projectId)) {
+          project = { ...window.currentProject };
+        }
+        if (project && typeof project === 'object') {
+          try {
             project.chat_history = this.messages;
             project.updated_at = new Date().toISOString();
             project.updatedAt = new Date().toISOString();
@@ -400,9 +423,11 @@ class NutriPlantChat {
             if (typeof window.nutriplantSyncProjectToCloud === 'function') {
               try { window.nutriplantSyncProjectToCloud(projectId, project); } catch (err) { console.warn('Sync chat a nube:', err); }
             }
-          } catch (parseError) {
-            console.error('❌ Error parseando proyecto para guardar chat:', parseError);
+          } catch (saveErr) {
+            console.warn('⚠️ No se pudo guardar/sincronizar chat del proyecto:', saveErr);
           }
+        } else {
+          console.warn('⚠️ Chat de proyecto no sincronizado a nube: no se encontró snapshot de proyecto para', projectId);
         }
       } else {
         // 🔑 Sin proyecto: guardar en el usuario (chat_history_sin_proyecto) para métricas por usuario
@@ -440,7 +465,7 @@ class NutriPlantChat {
         if (chatData) {
           try {
             const parsed = JSON.parse(chatData);
-            if (parsed.chat_history && Array.isArray(parsed.chat_history)) {
+            if (parsed.chat_history && Array.isArray(parsed.chat_history) && parsed.chat_history.length > 0) {
               this.messages = parsed.chat_history;
               console.log(`✅ Historial cargado (usuario+proyecto) - ${this.messages.length} mensajes`);
               this._renderLoadedMessages();
@@ -453,7 +478,7 @@ class NutriPlantChat {
         if (projectData) {
           try {
             const project = JSON.parse(projectData);
-            if (project.chat_history && Array.isArray(project.chat_history)) {
+            if (project.chat_history && Array.isArray(project.chat_history) && project.chat_history.length > 0) {
               this.messages = project.chat_history;
               localStorage.setItem(chatKey, JSON.stringify({ chat_history: this.messages, updated_at: new Date().toISOString() }));
               console.log(`✅ Historial migrado a clave por usuario (${this.messages.length} mensajes)`);

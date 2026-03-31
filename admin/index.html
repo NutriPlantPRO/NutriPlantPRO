@@ -8067,6 +8067,14 @@
                             const reportName = r?.project?.name || r?.projectName || project.name || `Reporte ${idx + 1}`;
                             const rawDate = r?.timestamp || r?.createdAt || r?.date || '';
                             const dateText = rawDate ? new Date(rawDate).toLocaleString('es-MX') : 'Fecha no disponible';
+                            const shareToken = String(r?.shareToken || r?.share_token || '').trim();
+                            const shareExpiresAt = r?.shareExpiresAt || r?.share_expires_at || null;
+                            const shareCreatedAt = r?.shareCreatedAt || r?.share_created_at || null;
+                            const shareExpMs = shareExpiresAt ? new Date(shareExpiresAt).getTime() : NaN;
+                            const shareIsExpired = Number.isFinite(shareExpMs) ? (shareExpMs < Date.now()) : false;
+                            const shareEnabled = !!shareToken && (r?.shareEnabled !== false && r?.share_enabled !== false);
+                            const shareExpText = shareExpiresAt ? new Date(shareExpiresAt).toLocaleString('es-MX') : '';
+                            const shareCreatedText = shareCreatedAt ? new Date(shareCreatedAt).toLocaleString('es-MX') : '';
                             const sections = Array.isArray(r?.selectedSections) ? r.selectedSections : [];
                             const sectionLabelMap = {
                                 location: 'Ubicación',
@@ -8086,6 +8094,9 @@
                                             <div style="font-weight:700;color:#3730a3;">${escapeHtml(reportName)}</div>
                                             <div style="font-size:12px;color:#64748b;margin-top:4px;">${escapeHtml(dateText)}</div>
                                             <div style="font-size:12px;color:#334155;margin-top:6px;"><strong>Secciones:</strong> ${escapeHtml(sectionsText)}</div>
+                                            ${shareEnabled
+                                                ? `<div style="font-size:11px;margin-top:4px;color:${shareIsExpired ? '#b45309' : '#065f46'};">🔗 Link compartido: ${shareIsExpired ? 'Vencido' : 'Vigente'}${shareExpText ? ` (vence: ${escapeHtml(shareExpText)})` : ''}${shareCreatedText ? ` · generado: ${escapeHtml(shareCreatedText)}` : ''}</div>`
+                                                : '<div style="font-size:11px;color:#64748b;margin-top:4px;">🔗 Link compartido: no generado</div>'}
                                             ${r?.reportHTML
                                                 ? '<div style="font-size:11px;color:#059669;margin-top:4px;">HTML de reporte disponible para abrir/imprimir</div>'
                                                 : '<div style="font-size:11px;color:#b45309;margin-top:4px;">Reporte antiguo (sin HTML guardado)</div>'}
@@ -8096,6 +8107,13 @@
                                                     title="Abrir e imprimir reporte">
                                                 🖨️ Abrir/Imprimir
                                             </button>
+                                            ${shareEnabled
+                                                ? `<button onclick="openProjectSharedReportLink('${encodeURIComponent(String(r?.id || ''))}', '${encodeURIComponent(shareToken)}')"
+                                                        style="background:${shareIsExpired ? '#9ca3af' : '#0ea5e9'};color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;"
+                                                        title="${shareIsExpired ? 'Este link está vencido; al abrir mostrará expirado.' : 'Abrir link compartido (vista pública)'}">
+                                                    🔗 Abrir link
+                                                </button>`
+                                                : ''}
                                             <span style="font-size:11px;color:#6366f1;background:#eef2ff;border:1px solid #c7d2fe;padding:2px 8px;border-radius:999px;">Guardado en usuario/proyecto</span>
                                         </div>
                                     </div>
@@ -8251,11 +8269,67 @@
                     </div>
                 `;
             
+            // Helpers: elegir la fuente más completa para evitar mostrar valores parciales/recalculados.
+            function adminIsNonEmptyObject(v) {
+                return !!(v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 0);
+            }
+            function adminScoreNutritionRequirements(reqObj) {
+                if (!reqObj || typeof reqObj !== 'object') return 0;
+                let score = 0;
+                if (String(reqObj.cropType || '').trim()) score += 2;
+                if (Number(reqObj.targetYield) > 0) score += 2;
+                if (adminIsNonEmptyObject(reqObj.adjustment)) score += 8;
+                if (adminIsNonEmptyObject(reqObj.efficiency)) score += 6;
+                if (adminIsNonEmptyObject(reqObj.extractionOverrides)) score += 5;
+                return score;
+            }
+            function adminScoreGranularProgram(programObj) {
+                if (!programObj || typeof programObj !== 'object') return 0;
+                let score = 0;
+                if (Array.isArray(programObj.applications) && programObj.applications.length > 0) score += 8;
+                if (typeof programObj.mode === 'boolean') score += 1;
+                if (adminIsNonEmptyObject(programObj.cropSnapshot)) score += 2;
+                return score;
+            }
+            function adminScoreFertirriegoProgram(programObj) {
+                if (!programObj || typeof programObj !== 'object') return 0;
+                let score = 0;
+                if (Array.isArray(programObj.weeks) && programObj.weeks.length > 0) score += 8;
+                if (Array.isArray(programObj.columns) && programObj.columns.length > 0) score += 4;
+                if (typeof programObj.mode === 'boolean') score += 1;
+                if (String(programObj.timeUnit || '').trim()) score += 1;
+                return score;
+            }
+            function adminPickBestFromList(list, scorer) {
+                const arr = Array.isArray(list) ? list : [];
+                let best = null;
+                let bestScore = -1;
+                arr.forEach(item => {
+                    if (!item || typeof item !== 'object') return;
+                    const score = Number(scorer(item)) || 0;
+                    if (score > bestScore) {
+                        best = item;
+                        bestScore = score;
+                    }
+                });
+                return best;
+            }
+
             // Sección: NUTRICIÓN GRANULAR (SIEMPRE mostrar)
-            // Priorizar project.granular (donde el usuario guarda) para que Requerimiento Real coincida con el panel del usuario
-            const granular = project.granular || project.granularRequirements || project.sections?.programa_granular || null;
-            const granularRequirements = granular?.requirements || null;
-            const granularProgram = granular?.program || null;
+            // Elegir la fuente más rica para que admin refleje lo mismo que el panel del usuario.
+            const granularRequirements = adminPickBestFromList([
+                project?.granular?.requirements,
+                project?.sections?.programa_granular?.requirements,
+                project?.granularRequirements,
+                project?.granular
+            ], adminScoreNutritionRequirements) || null;
+            const granularProgram = adminPickBestFromList([
+                project?.granular?.program,
+                project?.sections?.programa_granular?.program,
+                project?.sections?.programa_granular,
+                project?.granular?.programa
+            ], adminScoreGranularProgram) || null;
+            const granular = { requirements: granularRequirements, program: granularProgram };
             const hasRequirements = granularRequirements && typeof granularRequirements === 'object' && (
                 granularRequirements.cropType || 
                 (granularRequirements.targetYield && granularRequirements.targetYield > 0) ||
@@ -8656,19 +8730,27 @@
             html += `</div>`;
             
             // Sección: FERTIRRIEGO (SIEMPRE mostrar)
-            // Priorizar project.fertirriego (donde el usuario guarda) para que Extracción, Ajuste por niveles y Requerimiento Real coincidan con el panel del usuario
-            const fertirriegoRoot = project.fertirriego || project.sections?.fertirriego || null;
-            // Siempre leer requirements del root elegido (nunca el objeto raíz): el usuario guarda adjustment en project.fertirriego.requirements.adjustment
-            const fertirriegoRequirements = (
-                fertirriegoRoot?.requirements ||
-                project.fertirriegoRequirements ||
-                {}
-            );
-            const fertirriegoProgram = (
-                fertirriegoRoot?.program ||
-                project.fertirriegoProgram ||
-                (project.fertirriego && Array.isArray(project.fertirriego.weeks) ? project.fertirriego : null)
-            );
+            // Igual criterio: escoger el bloque con más señal de datos guardados.
+            const fertirriegoRoot = adminPickBestFromList([
+                project?.fertirriego,
+                project?.sections?.fertirriego
+            ], function(rootObj) {
+                if (!rootObj || typeof rootObj !== 'object') return 0;
+                return adminScoreNutritionRequirements(rootObj.requirements || rootObj) +
+                    adminScoreFertirriegoProgram(rootObj.program || (Array.isArray(rootObj.weeks) ? rootObj : null));
+            }) || null;
+            const fertirriegoRequirements = adminPickBestFromList([
+                fertirriegoRoot?.requirements,
+                project?.fertirriegoRequirements,
+                project?.fertirriego,
+                project?.sections?.fertirriego
+            ], adminScoreNutritionRequirements) || {};
+            const fertirriegoProgram = adminPickBestFromList([
+                fertirriegoRoot?.program,
+                project?.fertirriegoProgram,
+                (project?.fertirriego && Array.isArray(project.fertirriego.weeks) ? project.fertirriego : null),
+                (project?.sections?.fertirriego && Array.isArray(project.sections.fertirriego.weeks) ? project.sections.fertirriego : null)
+            ], adminScoreFertirriegoProgram);
             const hasFertirriegoRequirements = fertirriegoRequirements && typeof fertirriegoRequirements === 'object' && (
                 fertirriegoRequirements.cropType || 
                 (fertirriegoRequirements.targetYield && fertirriegoRequirements.targetYield > 0) ||
@@ -9839,6 +9921,20 @@
                     printWindow.print();
                 }, 300);
             };
+        };
+
+        window.openProjectSharedReportLink = function(encodedReportId, encodedToken) {
+            const reportId = decodeURIComponent(String(encodedReportId || ''));
+            const token = decodeURIComponent(String(encodedToken || ''));
+            if (!reportId || !token) {
+                alert('⚠️ Este reporte no tiene link compartido activo.');
+                return;
+            }
+            const url = `${window.location.origin}/api/report-view?rid=${encodeURIComponent(reportId)}&t=${encodeURIComponent(token)}`;
+            const w = window.open(url, '_blank');
+            if (!w) {
+                alert('❌ Tu navegador bloqueó la ventana emergente. Habilita pop-ups para abrir el link compartido.');
+            }
         };
         
         // Orden de aportes como en el panel del usuario (Fertirriego, Granular, Cultivos, Enmiendas)

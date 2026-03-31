@@ -13586,9 +13586,54 @@ function createAdminMirrorBlock(title, source, maxItems) {
 }
 
 function createGranularSectionHTML() {
-  const g = currentProject.granular || {};
-  const req = g.requirements || {};
-  const program = g.program || {};
+  function isNonEmptyObject(v) {
+    return !!(v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 0);
+  }
+  function scoreGranularRequirements(r) {
+    if (!r || typeof r !== 'object') return 0;
+    let score = 0;
+    if (String(r.cropType || '').trim()) score += 2;
+    if (Number(r.targetYield) > 0) score += 2;
+    if (isNonEmptyObject(r.adjustment)) score += 8;
+    if (isNonEmptyObject(r.efficiency)) score += 6;
+    if (isNonEmptyObject(r.extractionOverrides)) score += 5;
+    return score;
+  }
+  function scoreGranularProgram(p) {
+    if (!p || typeof p !== 'object') return 0;
+    let score = 0;
+    if (Array.isArray(p.applications) && p.applications.length) score += 8;
+    if (typeof p.mode === 'boolean') score += 1;
+    if (p.cropSnapshot && typeof p.cropSnapshot === 'object') score += 2;
+    return score;
+  }
+  function pickBestByScore(a, b, scorer) {
+    const sa = scorer(a);
+    const sb = scorer(b);
+    if (sb > sa) return b || {};
+    return a || {};
+  }
+
+  const rootG = currentProject?.granular || {};
+  const sectionG = currentProject?.sections?.granular || {};
+  let storageG = {};
+  try {
+    if (window.projectStorage && currentProject && currentProject.id) {
+      const loaded = window.projectStorage.loadSection('granular', currentProject.id);
+      if (loaded && typeof loaded === 'object') storageG = loaded;
+    }
+  } catch (e) {}
+
+  const req = pickBestByScore(
+    pickBestByScore(rootG.requirements, sectionG.requirements, scoreGranularRequirements),
+    storageG.requirements,
+    scoreGranularRequirements
+  );
+  const program = pickBestByScore(
+    pickBestByScore(rootG.program, sectionG.program, scoreGranularProgram),
+    storageG.program,
+    scoreGranularProgram
+  );
   const reqModeIsElemental = !!req.isElementalMode;
   const programModeIsElemental = !!program.mode;
   const crop = req.cropType || program?.cropSnapshot?.cropLabel || 'N/D';
@@ -13792,11 +13837,47 @@ function reportEscapeHtml(s) {
 }
 
 function createFertigationSectionHTML(chartImages) {
-  const f = currentProject.fertirriego || {};
-  const req = f.requirements || {};
-  const prog = (f.program && typeof f.program === 'object' && Object.keys(f.program).length > 0)
-    ? f.program
-    : (currentProject.fertirriegoProgram && typeof currentProject.fertirriegoProgram === 'object' ? currentProject.fertirriegoProgram : {});
+  function isNonEmptyObject(v) {
+    return !!(v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 0);
+  }
+  function scoreRequirements(r) {
+    if (!r || typeof r !== 'object') return 0;
+    let score = 0;
+    if (String(r.cropType || '').trim()) score += 2;
+    if (Number(r.targetYield) > 0) score += 2;
+    if (isNonEmptyObject(r.adjustment)) score += 8;
+    if (isNonEmptyObject(r.efficiency)) score += 6;
+    if (isNonEmptyObject(r.extractionOverrides)) score += 5;
+    return score;
+  }
+  function pickBestRequirements(a, b) {
+    const sa = scoreRequirements(a);
+    const sb = scoreRequirements(b);
+    if (sb > sa) return b || {};
+    return a || {};
+  }
+
+  const rootF = currentProject?.fertirriego || {};
+  const sectionF = currentProject?.sections?.fertirriego || {};
+  let storageF = {};
+  try {
+    if (window.projectStorage && currentProject && currentProject.id) {
+      const loaded = window.projectStorage.loadSection('fertirriego', currentProject.id);
+      if (loaded && typeof loaded === 'object') storageF = loaded;
+    }
+  } catch (e) {}
+
+  const req = pickBestRequirements(
+    pickBestRequirements(rootF.requirements, sectionF.requirements),
+    storageF.requirements
+  );
+  const prog = (rootF.program && typeof rootF.program === 'object' && Object.keys(rootF.program).length > 0)
+    ? rootF.program
+    : (sectionF.program && typeof sectionF.program === 'object' && Object.keys(sectionF.program).length > 0)
+      ? sectionF.program
+      : (storageF.program && typeof storageF.program === 'object' && Object.keys(storageF.program).length > 0)
+        ? storageF.program
+        : (currentProject.fertirriegoProgram && typeof currentProject.fertirriegoProgram === 'object' ? currentProject.fertirriegoProgram : {});
   const crop = req.cropType || 'N/D';
   const hasCharts = !!(chartImages && (chartImages.macro || chartImages.micro));
   const targetYield = Number(req.targetYield) || 0;

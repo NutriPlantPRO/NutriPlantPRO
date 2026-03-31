@@ -1271,7 +1271,26 @@ function getFertiChartsDataUrlsForReport(program, callback) {
             { label: 'SO4', data: macros.SO4, borderColor: macroColors.SO4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
           ]
         },
-        options: { responsive: false, maintainAspectRatio: false, animation: false, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true }, x: { ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, maxTicksLimit: reportTickMaxLimit } } } }
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                usePointStyle: true,
+                pointStyle: 'circle',
+                boxWidth: 10,
+                boxHeight: 10
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true },
+            x: { ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, maxTicksLimit: reportTickMaxLimit } }
+          }
+        }
       });
       chartMicro = new Chart(microCanvas.getContext('2d'), {
         type: 'line',
@@ -1286,7 +1305,26 @@ function getFertiChartsDataUrlsForReport(program, callback) {
             { label: 'Mo', data: micros.Mo, borderColor: microColors.Mo, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
           ]
         },
-        options: { responsive: false, maintainAspectRatio: false, animation: false, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true }, x: { ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, maxTicksLimit: reportTickMaxLimit } } } }
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                usePointStyle: true,
+                pointStyle: 'circle',
+                boxWidth: 10,
+                boxHeight: 10
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true },
+            x: { ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, maxTicksLimit: reportTickMaxLimit } }
+          }
+        }
       });
       result.macro = (chartMacro && chartMacro.toBase64Image) ? chartMacro.toBase64Image() : macroCanvas.toDataURL('image/png');
       result.micro = (chartMicro && chartMicro.toBase64Image) ? chartMicro.toBase64Image() : microCanvas.toDataURL('image/png');
