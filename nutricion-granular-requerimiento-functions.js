@@ -1608,7 +1608,9 @@ function ensureCustomGranularCropsLoadedFromCloud() {
 
 // Función para cargar cultivos personalizados guardados (nube primero, luego local)
 function loadCustomGranularCrops() {
-  ensureCustomGranularCropsLoadedFromCloud().then(doLoadCustomGranularCrops);
+  return ensureCustomGranularCropsLoadedFromCloud().then(function() {
+    doLoadCustomGranularCrops();
+  });
 }
 
 function doLoadCustomGranularCrops() {
@@ -1711,6 +1713,19 @@ function doLoadCustomGranularCrops() {
           option.textContent = cropName;
           select.appendChild(option);
         }
+      });
+    }
+    // Si la tabla estaba vacía por carrera (custom crop no cargado aún),
+    // forzar recálculo al terminar de hidratar catálogo personalizado.
+    const selectedCrop = select ? select.value : '';
+    const hasSelectedCropData = !!(selectedCrop && GRANULAR_CROP_EXTRACTION_DB[selectedCrop]);
+    if (hasSelectedCropData && typeof window.calculateGranularNutrientRequirements === 'function') {
+      const targetYieldEl = document.getElementById('granularRequerimientoTargetYield');
+      const currentYield = targetYieldEl ? parseFloat(targetYieldEl.value) : NaN;
+      window.calculateGranularNutrientRequirements({
+        _isLoading: true,
+        cropType: selectedCrop,
+        targetYield: Number.isFinite(currentYield) ? currentYield : undefined
       });
     }
     renderGranularCustomCropsList();
