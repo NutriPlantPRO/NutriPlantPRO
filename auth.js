@@ -6,6 +6,44 @@ const LOGIN_WINDOW_MS = 10 * 60 * 1000;
 const LOGIN_MAX_FAILS = 6;
 const LOGIN_LOCK_MS = 10 * 60 * 1000;
 
+function npRelieveLoginStoragePressure() {
+  try {
+    const toDelete = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (
+        key.indexOf('_backup_') !== -1 ||
+        key.indexOf('nutriplant_diagnostic_') === 0 ||
+        key.indexOf('np_tmp_') === 0
+      ) {
+        toDelete.push(key);
+      }
+    }
+    toDelete.forEach((k) => {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+  } catch (e) {}
+}
+
+function npSafeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    if (e && e.name === 'QuotaExceededError') {
+      npRelieveLoginStoragePressure();
+      try {
+        localStorage.setItem(key, value);
+        return true;
+      } catch (retryErr) {
+        return false;
+      }
+    }
+    return false;
+  }
+}
+
 function readLoginGuardState() {
   try {
     const raw = localStorage.getItem(LOGIN_GUARD_KEY);
@@ -208,15 +246,26 @@ if (form) {
       } catch (e) { console.error('Error reading admin user data:', e); }
       if (!adminUserData) {
         adminUserData = { email, name: 'Administrador NutriPlant', userId: adminUserId, password: 'npja1502', isAdmin: true, subscription_status: 'active', subscription_amount: 0, created_at: new Date().toISOString() };
-        localStorage.setItem(adminUserKey, JSON.stringify(adminUserData));
-        localStorage.setItem(`nutriplant_user_email_${email}`, adminUserId);
+        if (!npSafeSetItem(adminUserKey, JSON.stringify(adminUserData)) || !npSafeSetItem(`nutriplant_user_email_${email}`, adminUserId)) {
+          showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+          resetButton(submitBtn, originalText);
+          return;
+        }
       } else {
         adminUserData.isAdmin = true;
         adminUserData.subscription_status = 'active';
-        localStorage.setItem(adminUserKey, JSON.stringify(adminUserData));
+        if (!npSafeSetItem(adminUserKey, JSON.stringify(adminUserData))) {
+          showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+          resetButton(submitBtn, originalText);
+          return;
+        }
       }
-      localStorage.setItem('nutriplant_user_id', adminUserId);
-      localStorage.setItem(AUTH_KEY, JSON.stringify({ email, userId: adminUserId, ts: Date.now(), name: 'Administrador', isAdmin: true }));
+      if (!npSafeSetItem('nutriplant_user_id', adminUserId) ||
+          !npSafeSetItem(AUTH_KEY, JSON.stringify({ email, userId: adminUserId, ts: Date.now(), name: 'Administrador', isAdmin: true }))) {
+        showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+        resetButton(submitBtn, originalText);
+        return;
+      }
       localStorage.removeItem('currentProjectId');
       showSuccess("¡Bienvenido Administrador! Ingresando...");
       setTimeout(() => { location.href = "dashboard.html"; }, 1000);
@@ -333,11 +382,16 @@ if (form) {
     if (!hasSubscriptionAccess(userFound)) {
       // Dejar sesión guardada para que "Activar con PayPal" tenga userId
       const userKey = `nutriplant_user_${userId}`;
-      localStorage.setItem(userKey, JSON.stringify(userFound));
-      localStorage.setItem('nutriplant_user_id', userId);
-      localStorage.setItem(AUTH_KEY, JSON.stringify({
+      const okProfile = npSafeSetItem(userKey, JSON.stringify(userFound));
+      const okUserId = npSafeSetItem('nutriplant_user_id', userId);
+      const okAuth = npSafeSetItem(AUTH_KEY, JSON.stringify({
         email, userId, ts: Date.now(), name: userFound.name || email.split('@')[0], isAdmin: false
       }));
+      if (!okProfile || !okUserId || !okAuth) {
+        showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+        resetButton(submitBtn, originalText);
+        return;
+      }
       if (typeof window.showSubscriptionInactiveWithPayPalOption === 'function') {
         window.showSubscriptionInactiveWithPayPalOption('Tu suscripción está inactiva. Para volver a usar NutriPlant PRO, activa aquí con PayPal:');
       } else {
@@ -351,7 +405,11 @@ if (form) {
     const lastLoginIso = new Date().toISOString();
     userFound.last_login = lastLoginIso;
     const userKey = `nutriplant_user_${userId}`;
-    localStorage.setItem(userKey, JSON.stringify(userFound));
+    if (!npSafeSetItem(userKey, JSON.stringify(userFound))) {
+      showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+      resetButton(submitBtn, originalText);
+      return;
+    }
     if (typeof window.getSupabaseClient === 'function') {
       const client = window.getSupabaseClient();
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
@@ -361,16 +419,24 @@ if (form) {
     }
     
     // Establecer userId en localStorage
-    localStorage.setItem('nutriplant_user_id', userId);
+    if (!npSafeSetItem('nutriplant_user_id', userId)) {
+      showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+      resetButton(submitBtn, originalText);
+      return;
+    }
     
     // Guardar sesión
-    localStorage.setItem(AUTH_KEY, JSON.stringify({ 
+    if (!npSafeSetItem(AUTH_KEY, JSON.stringify({ 
       email, 
       userId: userId,
       ts: Date.now(),
       name: userFound.name || email.split('@')[0],
       isAdmin: userFound.isAdmin || false
-    }));
+    }))) {
+      showError("❌ El almacenamiento del navegador está lleno. Libera espacio del sitio e intenta de nuevo.");
+      resetButton(submitBtn, originalText);
+      return;
+    }
     
     // Limpiar proyecto actual al hacer login
     localStorage.removeItem('nutriplant-current-project');

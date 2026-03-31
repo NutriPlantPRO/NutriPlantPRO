@@ -8,6 +8,51 @@
   const AUTH_KEY = 'np_user';
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+  function relieveLocalStoragePressure() {
+    try {
+      // 1) Intentar alivio global si existe utilitario del dashboard.
+      if (typeof window.np_tryRelieveLocalStoragePressure === 'function') {
+        try { window.np_tryRelieveLocalStoragePressure(); } catch (e) {}
+      }
+      // 2) Limpiar backups/diagnósticos temporales no críticos.
+      const toDelete = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        if (
+          key.indexOf('_backup_') !== -1 ||
+          key.indexOf('nutriplant_diagnostic_') === 0 ||
+          key.indexOf('np_tmp_') === 0
+        ) {
+          toDelete.push(key);
+        }
+      }
+      toDelete.forEach((k) => {
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+    } catch (e) {}
+  }
+
+  function safeSetItem(key, value) {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (e) {
+      if (e && e.name === 'QuotaExceededError') {
+        relieveLocalStoragePressure();
+        try {
+          localStorage.setItem(key, value);
+          return true;
+        } catch (retryErr) {
+          console.warn('localStorage lleno al guardar', key, retryErr && retryErr.message ? retryErr.message : retryErr);
+        }
+      } else {
+        console.warn('No se pudo guardar', key, e && e.message ? e.message : e);
+      }
+      return false;
+    }
+  }
+
   async function updateProfileWithRetry(client, userId, payload, attempts = 5, delayMs = 250) {
     let lastError = null;
     for (let i = 0; i < attempts; i++) {
@@ -63,14 +108,18 @@
               }
             }
 
-            localStorage.setItem('nutriplant_user_id', user.id);
-            localStorage.setItem(AUTH_KEY, JSON.stringify({
+            const sessionPayload = JSON.stringify({
               email: user.email,
               userId: user.id,
               ts: Date.now(),
               name: profile.name || user.email?.split('@')[0],
               isAdmin: profile.is_admin || false
-            }));
+            });
+            const savedUserId = safeSetItem('nutriplant_user_id', user.id);
+            const savedAuth = safeSetItem(AUTH_KEY, sessionPayload);
+            if (!savedUserId || !savedAuth) {
+              return { ok: false, error: 'El almacenamiento del navegador está lleno. Libera espacio del sitio e inténtalo de nuevo.' };
+            }
             const userKey = `nutriplant_user_${user.id}`;
             let existing = {};
             try {
@@ -108,9 +157,11 @@
             if (profile.custom_granular_crops != null && typeof profile.custom_granular_crops === 'object') localProfile.customGranularCrops = profile.custom_granular_crops;
             if (profile.custom_amendments != null && Array.isArray(profile.custom_amendments)) {
               localProfile.customAmendments = profile.custom_amendments;
-              try { localStorage.setItem('nutriplant_custom_amendments_' + user.id, JSON.stringify(profile.custom_amendments)); } catch (e) {}
+              try { safeSetItem('nutriplant_custom_amendments_' + user.id, JSON.stringify(profile.custom_amendments)); } catch (e) {}
             }
-            localStorage.setItem(userKey, JSON.stringify(localProfile));
+            if (!safeSetItem(userKey, JSON.stringify(localProfile))) {
+              return { ok: false, error: 'No se pudo guardar tu perfil local. Libera espacio del sitio e inténtalo de nuevo.' };
+            }
 
             return { ok: true, user: { id: user.id, email: user.email, name: profile.name, isAdmin: profile.is_admin } };
           })(),
@@ -137,14 +188,16 @@
         let profile = { name: user.email?.split('@')[0] || 'Usuario', is_admin: false };
         const { data: profileData } = await client.from('profiles').select('*').eq('id', user.id).single();
         if (profileData) profile = profileData;
-        localStorage.setItem('nutriplant_user_id', user.id);
-        localStorage.setItem(AUTH_KEY, JSON.stringify({
+        const sessionPayload = JSON.stringify({
           email: user.email,
           userId: user.id,
           ts: Date.now(),
           name: profile.name || user.email?.split('@')[0],
           isAdmin: profile.is_admin || false
-        }));
+        });
+        const savedUserId = safeSetItem('nutriplant_user_id', user.id);
+        const savedAuth = safeSetItem(AUTH_KEY, sessionPayload);
+        if (!savedUserId || !savedAuth) return { ok: false };
         const userKey = 'nutriplant_user_' + user.id;
         let existing = {};
         try {
@@ -182,9 +235,9 @@
         if (profile.custom_granular_crops != null && typeof profile.custom_granular_crops === 'object') localProfile.customGranularCrops = profile.custom_granular_crops;
         if (profile.custom_amendments != null && Array.isArray(profile.custom_amendments)) {
           localProfile.customAmendments = profile.custom_amendments;
-          try { localStorage.setItem('nutriplant_custom_amendments_' + user.id, JSON.stringify(profile.custom_amendments)); } catch (e) {}
+          try { safeSetItem('nutriplant_custom_amendments_' + user.id, JSON.stringify(profile.custom_amendments)); } catch (e) {}
         }
-        localStorage.setItem(userKey, JSON.stringify(localProfile));
+        if (!safeSetItem(userKey, JSON.stringify(localProfile))) return { ok: false };
         return { ok: true };
       } catch (e) {
         console.error('Supabase syncSessionToLocalStorage error:', e);
@@ -254,16 +307,20 @@
           const { data: profileAfter } = await client.from('profiles').select('*').eq('id', user.id).single();
           if (profileAfter) profile = profileAfter;
 
-          localStorage.setItem('nutriplant_user_id', user.id);
-          localStorage.setItem(AUTH_KEY, JSON.stringify({
+          const sessionPayload = JSON.stringify({
             email: user.email,
             userId: user.id,
             ts: Date.now(),
             name: profile.name,
             isAdmin: false
-          }));
+          });
+          const savedUserId = safeSetItem('nutriplant_user_id', user.id);
+          const savedAuth = safeSetItem(AUTH_KEY, sessionPayload);
+          if (!savedUserId || !savedAuth) {
+            return { ok: false, error: 'El almacenamiento del navegador está lleno. Libera espacio del sitio e inténtalo de nuevo.' };
+          }
           const userKey = `nutriplant_user_${user.id}`;
-          localStorage.setItem(userKey, JSON.stringify({
+          if (!safeSetItem(userKey, JSON.stringify({
             email: user.email,
             name: profile.name,
             userId: user.id,
@@ -285,7 +342,9 @@
             chat_limit_monthly: profile.chat_limit_monthly != null ? profile.chat_limit_monthly : null,
             chat_usage_current_month: profile.chat_usage_current_month != null ? profile.chat_usage_current_month : 0,
             chat_usage_month: profile.chat_usage_month || null
-          }));
+          }))) {
+            return { ok: false, error: 'No se pudo guardar tu perfil local. Libera espacio del sitio e inténtalo de nuevo.' };
+          }
 
           return { ok: true, user: { id: user.id, email: user.email, name: profile.name } };
         }
