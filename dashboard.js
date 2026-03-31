@@ -4105,6 +4105,8 @@ async function np_refreshFromCloud(options) {
   window._npCloudRefreshInProgress = true;
   np_updateCloudRefreshButtonState();
   np_setProjectSyncStatus('syncing', 'Sincronizando...');
+  // Bloquear acciones de tarjetas inmediatamente durante refresh manual cloud.
+  np_applyProjectOpenButtonsState();
   try {
     await np_loadProjectsFromCloud();
     var cloudErr = window._np_cloud_projects_cache_error;
@@ -4150,6 +4152,8 @@ async function np_refreshFromCloud(options) {
     window._npCloudRefreshInProgress = false;
     window._npCloudRefreshLastAt = Date.now();
     np_updateCloudRefreshButtonState();
+    // Liberar bloqueo de acciones al finalizar refresh.
+    np_applyProjectOpenButtonsState();
   }
   setTimeout(function() {
     var s = window._npProjectSyncState;
