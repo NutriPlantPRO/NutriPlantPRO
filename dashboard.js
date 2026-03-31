@@ -3992,6 +3992,15 @@ function np_applyProjectOpenButtonsState() {
 function np_applyCloudLegend() {
   var legend = document.getElementById('np-cloud-legend');
   if (!legend) return;
+  // Evitar duplicar mensajes: si el badge global ya está visible con texto,
+  // ocultar la leyenda secundaria.
+  var badge = document.getElementById('np-sync-status');
+  if (badge && badge.style.display !== 'none' && String(badge.textContent || '').trim()) {
+    legend.style.display = 'none';
+    legend.textContent = '';
+    np_applyProjectOpenButtonsState();
+    return;
+  }
   var userId = localStorage.getItem('nutriplant_user_id');
   var isSupabase = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
   if (!isSupabase) {
@@ -4770,6 +4779,20 @@ function np_createProject(data) {
   if (userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
     const key = 'nutriplant_project_' + newId;
     const stored = localStorage.getItem(key);
+    if (!window._np_recently_created_projects) window._np_recently_created_projects = {};
+    window._np_recently_created_projects[newId] = Date.now();
+    const sp = window.nutriplantSupabaseProjects;
+    if (stored && sp && typeof sp.syncProjectNow === 'function') {
+      // Proyecto recién creado: intentar alta inmediata en nube para que se pueda abrir al instante.
+      (async function() {
+        try {
+          const projectData = JSON.parse(stored);
+          await sp.syncProjectNow(newId, projectData);
+        } catch (e) {
+          console.warn('sync new project immediate:', e);
+        }
+      })();
+    }
     if (stored && typeof window.nutriplantSyncProjectToCloud === 'function') {
       try {
         const projectData = JSON.parse(stored);
@@ -5652,7 +5675,7 @@ function np_renderProjects(){
 
     if (act === "open") {
       if (np_isProjectOpenBlockedByCloudSync()) {
-        showMessage('⏳ Estamos actualizando proyectos desde la nube. En cuanto termine, podrás abrir este proyecto.', 'info');
+        // Ya existe indicador global de sincronización; evitar mensaje duplicado.
         return;
       }
       let p = np_getProject(id);
@@ -5745,6 +5768,32 @@ function np_renderProjects(){
               }
               cloudHydrationFailedOnOpen = true;
             }
+          }
+        }
+        if (isSupabase && cloudHydrationFailedOnOpen) {
+          // Excepción segura: permitir abrir LOCAL solo si este proyecto se creó recién
+          // en este navegador (ventana corta), para no bloquear el flujo de alta.
+          var allowRecentLocalOpen = false;
+          try {
+            var recentMap = window._np_recently_created_projects || {};
+            var createdAtMs = Number(recentMap[id] || 0);
+            var isRecent = createdAtMs > 0 && (Date.now() - createdAtMs) < 5 * 60 * 1000;
+            var recentRaw = localStorage.getItem('nutriplant_project_' + id);
+            if (isRecent && recentRaw && recentRaw.startsWith('{')) {
+              allowRecentLocalOpen = true;
+              // Reintentar sync inmediato en background para normalizar cuanto antes.
+              try {
+                const spRecent = window.nutriplantSupabaseProjects;
+                if (spRecent && typeof spRecent.syncProjectNow === 'function') {
+                  const recentObj = JSON.parse(recentRaw);
+                  spRecent.syncProjectNow(id, recentObj);
+                }
+              } catch (syncRecentErr) {}
+              showMessage('ℹ️ Proyecto recién creado: abriendo copia local mientras termina de sincronizar a la nube.', 'info');
+            }
+          } catch (recentErr) {}
+          if (allowRecentLocalOpen) {
+            cloudHydrationFailedOnOpen = false;
           }
         }
         if (isSupabase && cloudHydrationFailedOnOpen) {
