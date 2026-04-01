@@ -1599,7 +1599,7 @@ function selectSection(name, el) {
       // Esto asegura que se guarden incluso si los elementos están ocultos
       if (typeof window.saveGranularRequirementsImmediate === 'function') {
         try {
-          window.saveGranularRequirementsImmediate();
+          window.saveGranularRequirementsImmediate({ force: true });
           console.log('⚡ Requerimientos Granular guardados INMEDIATAMENTE');
         } catch (e) {
           console.warn('⚠️ Error guardando Granular:', e);
@@ -1616,7 +1616,7 @@ function selectSection(name, el) {
       
       if (typeof window.saveFertirriegoRequirementsImmediate === 'function') {
         try {
-          window.saveFertirriegoRequirementsImmediate();
+          window.saveFertirriegoRequirementsImmediate({ force: true });
           console.log('⚡ Requerimientos Fertirriego guardados INMEDIATAMENTE');
         } catch (e) {
           console.warn('⚠️ Error guardando Fertirriego:', e);
@@ -6248,10 +6248,10 @@ function initializeFertirriegoTabs() {
       try {
         // PRIMERO: Guardar Requerimientos de Fertirriego INMEDIATAMENTE
         if (typeof window.saveFertirriegoRequirementsImmediate === 'function') {
-          window.saveFertirriegoRequirementsImmediate();
+          window.saveFertirriegoRequirementsImmediate({ force: true });
           console.log('⚡ Requerimientos Fertirriego guardados INMEDIATAMENTE antes de cambiar pestaña');
         } else if (typeof window.saveFertirriegoRequirements === 'function') {
-          window.saveFertirriegoRequirements();
+          window.saveFertirriegoRequirements({ force: true });
           console.log('✅ Requerimientos Fertirriego guardados antes de cambiar pestaña');
         }
         // SEGUNDO: Guardar Programa de Fertirriego solo si ya fue inicializado
@@ -6401,9 +6401,9 @@ function selectGranularSubTab(tabName) {
     // (requerimiento: cancela debounce y persiste; programa: sync DOM + applications).
     try {
       if (typeof window.saveGranularRequirementsImmediate === 'function') {
-        window.saveGranularRequirementsImmediate();
+        window.saveGranularRequirementsImmediate({ force: true });
       } else if (typeof window.saveGranularRequirements === 'function') {
-        window.saveGranularRequirements();
+        window.saveGranularRequirements({ force: true });
       }
       if (typeof window.saveApplications === 'function') {
         window.saveApplications();
