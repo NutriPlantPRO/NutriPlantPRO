@@ -1923,22 +1923,10 @@ function saveFertirriegoRequirements(options = {}) {
       }
     }
 
-    // Remover valores por defecto SOLO si el ajuste está en modo automático.
-    // Si el usuario ya tocó un ajuste, guardamos TODO para evitar pérdidas al recargar.
-    if (savedFertiAdjustmentsAuto === true) {
-      const extractionDefinition = CROP_EXTRACTION_DB[effectiveCropType] || {};
-      const baseYield = effectiveTargetYield;
-      FERTIRRIEGO_NUTRIENTS.forEach(n => {
-        const baseAdj = typeof extractionDefinition[n] === 'number' ? extractionDefinition[n] * baseYield : 0;
-        if (typeof adjustment[n] === 'number' && Math.abs(adjustment[n] - baseAdj) < 0.0001) {
-          delete adjustment[n];
-        }
-        const baseEff = DEFAULT_EFFICIENCY[n] !== undefined ? DEFAULT_EFFICIENCY[n] : 85;
-        if (typeof efficiency[n] === 'number' && Math.abs(efficiency[n] - baseEff) < 0.0001) {
-          delete efficiency[n];
-        }
-      });
-    }
+    // Multi-equipo: guardar snapshot completo de ajuste/eficiencia.
+    // Antes se podaban valores "default/auto" y en otra sesión podían
+    // reconstruirse distinto por timing/hidratación de cultivo personalizado.
+    // Mantener todos los nutrientes evita deriva entre dispositivos.
 
     // 🚀 DEBUG: Verificar valor de isElementalMode antes de guardar
     console.log('🔍 DEBUG - isElementalMode ANTES DE GUARDAR:', {
