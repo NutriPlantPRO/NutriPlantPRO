@@ -1201,8 +1201,9 @@
   /** Sincronizar catálogo de cultivos granulares personalizados a la nube (por usuario) */
   window.nutriplantSyncCustomGranularCropsToCloud = function(userId, customGranularCrops) {
     if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.syncUserCustomGranularCrops) {
-      window.nutriplantSupabaseProjects.syncUserCustomGranularCrops(userId, customGranularCrops);
+      return window.nutriplantSupabaseProjects.syncUserCustomGranularCrops(userId, customGranularCrops);
     }
+    return Promise.resolve();
   };
 
   /** Obtener cultivos granulares personalizados desde la nube (por usuario) */

@@ -931,6 +931,43 @@ function removeUserCustomGranularCrop(cropId) {
   if (!custom[cropId]) return;
   if (!confirm(`¿Eliminar "${custom[cropId].name}" del catálogo personal?`)) return;
   np_removeUserCustomGranularCrop(cropId);
+  // Evitar "resurrección" en siguiente login:
+  // purgar también del legado por proyecto (requirements.customCrops)
+  try {
+    const pid = getCurrentProjectId();
+    if (pid) {
+      if (typeof window.projectStorage !== 'undefined') {
+        const granularSection = window.projectStorage.loadSection('granular', pid) || {};
+        if (granularSection.requirements && granularSection.requirements.customCrops && granularSection.requirements.customCrops[cropId]) {
+          delete granularSection.requirements.customCrops[cropId];
+          try { window.projectStorage.saveSection('granular', granularSection, pid); } catch (e) {}
+        }
+      }
+      const key = `nutriplant_project_${pid}`;
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const pd = JSON.parse(raw);
+        if (pd && pd.granular && pd.granular.requirements && pd.granular.requirements.customCrops && pd.granular.requirements.customCrops[cropId]) {
+          delete pd.granular.requirements.customCrops[cropId];
+        }
+        if (pd && pd.granularRequirements && pd.granularRequirements.customCrops && pd.granularRequirements.customCrops[cropId]) {
+          delete pd.granularRequirements.customCrops[cropId];
+        }
+        localStorage.setItem(key, JSON.stringify(pd));
+      }
+      const legacyKey = `nutriplant-project-${pid}`;
+      const legacyRaw = localStorage.getItem(legacyKey);
+      if (legacyRaw) {
+        const legacyPd = JSON.parse(legacyRaw);
+        if (legacyPd && legacyPd.granularRequirements && legacyPd.granularRequirements.customCrops && legacyPd.granularRequirements.customCrops[cropId]) {
+          delete legacyPd.granularRequirements.customCrops[cropId];
+          localStorage.setItem(legacyKey, JSON.stringify(legacyPd));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ No se pudo purgar custom crop granular del legado de proyecto:', e);
+  }
   if (GRANULAR_CROP_EXTRACTION_DB[cropId]) delete GRANULAR_CROP_EXTRACTION_DB[cropId];
   const select = document.getElementById('granularRequerimientoCropType');
   removeCustomCropOption(select, cropId);
@@ -1703,16 +1740,23 @@ function doLoadCustomGranularCrops() {
     }
     if (legacyCustom && typeof legacyCustom === 'object') {
       const legacyNormalized = normalizeCustomCropMap(legacyCustom);
-      const merged = { ...legacyNormalized, ...customCrops };
-      customCrops = merged;
-      // Migrar cultivos legacy al catálogo del usuario
+      // Solo migrar ids que NO existan en catálogo usuario.
+      // Si el usuario los eliminó, no reinyectarlos desde legado.
+      const toMigrate = {};
       Object.keys(legacyNormalized).forEach(cropId => {
-        const entry = legacyNormalized[cropId];
+        if (!customCrops[cropId]) toMigrate[cropId] = legacyNormalized[cropId];
+      });
+      customCrops = { ...toMigrate, ...customCrops };
+      // Migrar cultivos legacy pendientes al catálogo del usuario
+      Object.keys(toMigrate).forEach(cropId => {
+        const entry = toMigrate[cropId];
         if (entry && entry.extraction) {
           np_saveUserCustomGranularCrop(cropId, entry.name, entry.extraction);
         }
       });
-      console.log('✅ Cultivos personalizados legacy migrados a catálogo usuario');
+      if (Object.keys(toMigrate).length > 0) {
+        console.log('✅ Cultivos personalizados legacy migrados a catálogo usuario:', Object.keys(toMigrate).length);
+      }
     }
     
     // Aplicar cultivos personalizados a la base de datos
