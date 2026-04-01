@@ -6337,6 +6337,43 @@ function selectGranularSubTab(tabName) {
     let targetContentId = tabName === 'requerimiento' ? 'granularRequerimiento' : 'granularPrograma';
     const activeGranularContent = granularContainer.querySelector('.tab-content.active');
     if (activeGranularContent && activeGranularContent.id === targetContentId) {
+      // Si ya está activa, no salir sin rehidratar.
+      // En móviles/retorno desde caché el selector puede perder opciones personalizadas.
+      if (tabName === 'requerimiento') {
+        loadProjectData();
+        requestAnimationFrame(function() {
+          try {
+            if (typeof window.loadCustomGranularCrops === 'function') {
+              Promise.resolve(window.loadCustomGranularCrops()).finally(function() {
+                if (typeof window.loadGranularRequirements === 'function') {
+                  window.loadGranularRequirements();
+                }
+              });
+              return;
+            }
+          } catch (e) {}
+          if (typeof window.loadGranularRequirements === 'function') {
+            window.loadGranularRequirements();
+          }
+        });
+      } else if (tabName === 'programa') {
+        loadProjectData();
+        requestAnimationFrame(function() {
+          try {
+            if (typeof window.loadCustomGranularCrops === 'function') {
+              Promise.resolve(window.loadCustomGranularCrops()).finally(function() {
+                if (typeof window.forceLoadApplications === 'function') window.forceLoadApplications();
+                if (typeof renderApplications === 'function') renderApplications();
+                if (typeof updateSummary === 'function') updateSummary();
+              });
+              return;
+            }
+          } catch (e) {}
+          if (typeof window.forceLoadApplications === 'function') window.forceLoadApplications();
+          if (typeof renderApplications === 'function') renderApplications();
+          if (typeof updateSummary === 'function') updateSummary();
+        });
+      }
       return;
     }
 
@@ -6378,19 +6415,19 @@ function selectGranularSubTab(tabName) {
     
     // Si se activó el tab de requerimiento, cargar datos guardados
     if (tabName === 'requerimiento') {
-      // PRIMERO: Cargar catálogo custom (nube/local) y luego renderizar requerimientos.
-      // Evita carrera donde crop custom está seleccionado pero aún no existe en la DB en memoria.
-      var customCropsPromiseReq = null;
-      if (typeof window.loadCustomGranularCrops === 'function') {
-        try {
-          customCropsPromiseReq = window.loadCustomGranularCrops();
-        } catch (e) {
-          customCropsPromiseReq = null;
+      // Orden robusto: 1) hidratar proyecto, 2) inyectar cultivos personalizados, 3) render requerimientos.
+      // Evita que loadProjectData reemplace el <select> y desaparezcan options custom.
+      loadProjectData();
+      requestAnimationFrame(function() {
+        var customCropsPromiseReq = null;
+        if (typeof window.loadCustomGranularCrops === 'function') {
+          try {
+            customCropsPromiseReq = window.loadCustomGranularCrops();
+          } catch (e) {
+            customCropsPromiseReq = null;
+          }
         }
-      }
-      Promise.resolve(customCropsPromiseReq).finally(function() {
-        loadProjectData();
-        requestAnimationFrame(function() {
+        Promise.resolve(customCropsPromiseReq).finally(function() {
           if (typeof window.loadGranularRequirements === 'function') {
             window.loadGranularRequirements();
             console.log('✅ Requerimientos Granular cargados al activar pestaña');
@@ -6401,20 +6438,19 @@ function selectGranularSubTab(tabName) {
     
     // Si se activó el tab de programa, inicializar UI del programa
     if (tabName === 'programa') {
-      // PRIMERO: Cargar catálogo custom para que Requerimiento/Resumen no queden incompletos.
-      var customCropsPromiseProg = null;
-      if (typeof window.loadCustomGranularCrops === 'function') {
-        try {
-          customCropsPromiseProg = window.loadCustomGranularCrops();
-        } catch (e) {
-          customCropsPromiseProg = null;
+      // Orden robusto igual que requerimiento para no perder catálogo custom.
+      loadProjectData();
+      requestAnimationFrame(function() {
+        var customCropsPromiseProg = null;
+        if (typeof window.loadCustomGranularCrops === 'function') {
+          try {
+            customCropsPromiseProg = window.loadCustomGranularCrops();
+          } catch (e) {
+            customCropsPromiseProg = null;
+          }
         }
-      }
-      Promise.resolve(customCropsPromiseProg).finally(function() {
-        loadProjectData();
-        // SEGUNDO: Poblar la tabla de Requerimiento (aunque esté en la otra pestaña) para que
-        // updateSummary() lea los valores correctos de "Requerimiento Real" al cargar/recargar.
-        requestAnimationFrame(function() {
+        Promise.resolve(customCropsPromiseProg).finally(function() {
+          // Poblar Requerimiento (aunque no esté visible) para que updateSummary use valores correctos.
           if (typeof window.loadGranularRequirements === 'function') {
             window.loadGranularRequirements();
           }
