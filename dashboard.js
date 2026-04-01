@@ -1894,7 +1894,18 @@ function selectSection(name, el) {
 
   // Inicializar Fertirriego cuando se seleccione la sección
   if (name === 'Fertirriego') {
-    // CRÍTICO: Asegurar siempre datos del proyecto actual (abrir/cambiar proyecto puede ser async)
+    // CRÍTICO (modo robusto multi-equipo):
+    // Antes de pintar Fertirriego, forzar actualización cloud del proyecto actual
+    // para evitar renderizar snapshots locales parciales.
+    const userIdForFerti = localStorage.getItem('nutriplant_user_id');
+    const isSupabaseForFerti = !!(userIdForFerti && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userIdForFerti));
+    const forceCloudRefreshPromise = (isSupabaseForFerti && typeof np_refreshCurrentProjectFromCloud === 'function')
+      ? Promise.resolve(np_refreshCurrentProjectFromCloud({ force: true })).catch(function(err) {
+          console.warn('⚠️ Fertirriego: force cloud refresh falló, usando local disponible:', err);
+        })
+      : Promise.resolve();
+
+    // Cargar local de inmediato (para no dejar UI vacía) y rehidratar tras cloud refresh.
     loadProjectData();
 
     function refreshFertirriegoWhenReady(attempt) {
@@ -1941,7 +1952,12 @@ function selectSection(name, el) {
       var cachedFertiActive = document.querySelector('.fertirriego-container .tab-button.active');
       var cachedFertiTab = cachedFertiActive ? (cachedFertiActive.getAttribute('data-tab') || 'extraccion') : 'extraccion';
       setTimeout(function() { restoreScrollForKeyStabilized('Fertirriego|' + cachedFertiTab, 3, 90); }, 60);
-      setTimeout(function() { refreshFertirriegoWhenReady(0); }, 40);
+      setTimeout(function() {
+        forceCloudRefreshPromise.finally(function() {
+          try { loadProjectData(); } catch (e) {}
+          refreshFertirriegoWhenReady(0);
+        });
+      }, 40);
     } else {
       requestAnimationFrame(() => {
         console.log('💧 Inicializando sección Fertirriego...');
@@ -1967,8 +1983,12 @@ function selectSection(name, el) {
           if (content) content.classList.add('active');
         } catch {}
 
-        // Cargar requerimientos con reintentos hasta que loader/DOM estén listos
-        refreshFertirriegoWhenReady(0);
+        // Cargar requerimientos con reintentos hasta que loader/DOM estén listos.
+        // Primero esperar refresh cloud forzado para priorizar consistencia.
+        forceCloudRefreshPromise.finally(function() {
+          try { loadProjectData(); } catch (e) {}
+          refreshFertirriegoWhenReady(0);
+        });
 
         // Restaurar scroll al volver a Fertirriego (ej. en programa o gráficas)
         var fertiActive = document.querySelector('.fertirriego-container .tab-button.active');
