@@ -1231,8 +1231,9 @@
   /** Sincronizar catálogo de cultivos fertirriego personalizados a la nube (por usuario) */
   window.nutriplantSyncCustomFertiCropsToCloud = function(userId, customFertiCrops) {
     if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.syncUserCustomFertiCrops) {
-      window.nutriplantSupabaseProjects.syncUserCustomFertiCrops(userId, customFertiCrops);
+      return window.nutriplantSupabaseProjects.syncUserCustomFertiCrops(userId, customFertiCrops);
     }
+    return Promise.resolve();
   };
 
   /** Obtener cultivos fertirriego personalizados desde la nube (por usuario) */

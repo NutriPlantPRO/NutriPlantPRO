@@ -499,6 +499,34 @@ function removeUserCustomFertirriegoCrop(cropId) {
   if (!custom[cropId]) return;
   if (!confirm(`¿Eliminar "${custom[cropId].name}" del catálogo personal?`)) return;
   fertRemoveUserCustomCrop(cropId);
+  // Evitar "resurrección" en siguiente login:
+  // purgar también del legado por proyecto (requirements.customCrops)
+  try {
+    const pid = fertGetCurrentProjectId();
+    if (pid) {
+      if (window.projectStorage) {
+        const fertSection = window.projectStorage.loadSection('fertirriego', pid) || {};
+        if (fertSection.requirements && fertSection.requirements.customCrops && fertSection.requirements.customCrops[cropId]) {
+          delete fertSection.requirements.customCrops[cropId];
+          try { window.projectStorage.saveSection('fertirriego', fertSection, pid); } catch (e) {}
+        }
+      }
+      const key = `nutriplant_project_${pid}`;
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const pd = JSON.parse(raw);
+        if (pd && pd.fertirriegoRequirements && pd.fertirriegoRequirements.customCrops && pd.fertirriegoRequirements.customCrops[cropId]) {
+          delete pd.fertirriegoRequirements.customCrops[cropId];
+        }
+        if (pd && pd.fertirriego && pd.fertirriego.requirements && pd.fertirriego.requirements.customCrops && pd.fertirriego.requirements.customCrops[cropId]) {
+          delete pd.fertirriego.requirements.customCrops[cropId];
+        }
+        localStorage.setItem(key, JSON.stringify(pd));
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ No se pudo purgar custom crop del legado de proyecto:', e);
+  }
   if (CROP_EXTRACTION_DB[cropId]) delete CROP_EXTRACTION_DB[cropId];
   const select = document.getElementById('fertirriegoCropType');
   fertRemoveCustomCropOption(select, cropId);
@@ -2299,14 +2327,22 @@ function doLoadCustomFertirriegoCrops() {
     }
     if (legacy && typeof legacy === 'object') {
       const legacyNormalized = fertNormalizeCustomCropMap(legacy);
-      custom = { ...legacyNormalized, ...custom };
+      // Solo migrar ids que NO existan en catálogo usuario.
+      // Si el usuario los eliminó, no reinyectarlos desde legado.
+      const toMigrate = {};
       Object.keys(legacyNormalized).forEach(id => {
+        if (!custom[id]) toMigrate[id] = legacyNormalized[id];
+      });
+      custom = { ...toMigrate, ...custom };
+      Object.keys(toMigrate).forEach(id => {
         const entry = legacyNormalized[id];
         if (entry && entry.extraction) {
           fertSaveUserCustomCrop(id, entry.name, entry.extraction);
         }
       });
-      console.log('✅ Cultivos personalizados legacy migrados a catálogo usuario (fertirriego)');
+      if (Object.keys(toMigrate).length > 0) {
+        console.log('✅ Cultivos personalizados legacy migrados a catálogo usuario (fertirriego):', Object.keys(toMigrate).length);
+      }
     }
 
     if (custom && typeof custom === 'object') {
