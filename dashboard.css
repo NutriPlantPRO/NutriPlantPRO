@@ -5565,10 +5565,9 @@ body {
 }
 
 .materials-table .application-contribution-row .application-dose-cell {
-  border: 2px solid #10b981;
-  border-radius: 6px;
-  background: #ffffff;
+  background: #ecfdf5;
   color: #065f46;
+  border-right: 2px solid #34d399;
 }
 
 /* Etiqueta pequeña bajo el total para identificar la columna al estar abajo */
