@@ -2163,7 +2163,16 @@ function ensureCustomFertirriegoCropsLoadedFromCloud() {
 
 // Cargar cultivos personalizados anteriores y reconstruir selector (nube primero, luego local)
 function loadCustomFertirriegoCrops() {
-  ensureCustomFertirriegoCropsLoadedFromCloud().then(doLoadCustomFertirriegoCrops);
+  return ensureCustomFertirriegoCropsLoadedFromCloud()
+    .then(function() {
+      doLoadCustomFertirriegoCrops();
+      return true;
+    })
+    .catch(function(e) {
+      console.warn('⚠️ Fertirriego: no se pudieron cargar cultivos personalizados desde nube:', e);
+      try { doLoadCustomFertirriegoCrops(); } catch (_) {}
+      return false;
+    });
 }
 
 function doLoadCustomFertirriegoCrops() {
@@ -2317,6 +2326,15 @@ loadFertirriegoRequirements = function(retryCount = 0) {
     }
     let data = null;
     
+    // Cargar cultivos personalizados en paralelo para evitar carreras de render/cálculo.
+    // Luego se hace un recálculo corto cuando termine, con los mismos datos guardados.
+    let customCropsReadyPromise = Promise.resolve(false);
+    try {
+      customCropsReadyPromise = Promise.resolve(loadCustomFertirriegoCrops());
+    } catch (e) {
+      console.warn('⚠️ Fertirriego: no se pudo iniciar carga de cultivos personalizados:', e);
+    }
+
     // PRIORIDAD 1: Sistema centralizado si está disponible
     const useCentralized = typeof window.projectStorage !== 'undefined';
     if (useCentralized) {
@@ -2478,9 +2496,6 @@ loadFertirriegoRequirements = function(retryCount = 0) {
         window.isFertirriegoElementalMode = isFertirriegoElementalMode || false;
         window.fertirriegoElementalModeLoaded = true;
       }
-      
-      // Asegurar cultivos PRIMERO (para que los cultivos personalizados estén disponibles)
-      loadCustomFertirriegoCrops();
       
       // 🚀 CRÍTICO: Establecer cropType PRIMERO (ANTES de aplicar overrides)
       // Esto es esencial porque los overrides dependen de cropType para saber qué aplicar
@@ -2777,6 +2792,52 @@ loadFertirriegoRequirements = function(retryCount = 0) {
           }, 100);
         }
       }, 50);
+    }
+
+    // Recálculo de estabilización: evita que "Extracción por tonelada" quede desfasada
+    // cuando el catálogo personalizado termina de cargar después del primer render.
+    try {
+      const projectIdAtLoad = projectId;
+      customCropsReadyPromise.then(function() {
+        try {
+          const stillVisible = document.querySelector('.fertirriego-container');
+          if (!stillVisible) return;
+          const currentProjectId = fertGetCurrentProjectId();
+          if (!currentProjectId || String(currentProjectId) !== String(projectIdAtLoad)) return;
+          if (typeof calculateNutrientRequirements !== 'function') return;
+
+          const cropTypeEl = document.getElementById('fertirriegoCropType');
+          const targetYieldEl = document.getElementById('fertirriegoTargetYield');
+          if (!cropTypeEl || !targetYieldEl) return;
+
+          const settleCropType = (data && data.cropType) ? data.cropType : (cropTypeEl.value || null);
+          const settleTargetYield = (data && data.targetYield != null)
+            ? parseFloat(data.targetYield)
+            : (parseFloat(targetYieldEl.value) || 25);
+
+          const settleOptions = {
+            _isLoading: true,
+            cropType: settleCropType,
+            targetYield: settleTargetYield
+          };
+          if (data && data.adjustment && data.efficiency) {
+            settleOptions.adjustment = data.adjustment;
+            settleOptions.efficiency = data.efficiency;
+          }
+          if (data && data.extractionOverrides) {
+            settleOptions.extractionOverrides = data.extractionOverrides;
+          } else if (window.savedFertiExtractionOverrides && typeof window.savedFertiExtractionOverrides === 'object') {
+            settleOptions.extractionOverrides = window.savedFertiExtractionOverrides;
+          }
+
+          calculateNutrientRequirements(settleOptions);
+          console.log('✅ Fertirriego: recálculo post-carga de cultivos aplicado (sin reingresar a pestaña).');
+        } catch (e) {
+          console.warn('⚠️ Fertirriego: recálculo post-carga no aplicado:', e);
+        }
+      });
+    } catch (e) {
+      console.warn('⚠️ Fertirriego: no se pudo programar recálculo post-carga:', e);
     }
     
     if (data) {

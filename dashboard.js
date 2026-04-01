@@ -1416,6 +1416,10 @@ function sectionTemplate(name) {
                 <span class="stat-label">Coordenadas:</span>
                 <span class="stat-value" id="coordinatesDisplay">No seleccionadas</span>
               </div>
+              <div class="stat-item">
+                <span class="stat-label">Altitud:</span>
+                <span class="stat-value" id="altitudeDisplay">N/D</span>
+              </div>
             </div>
           </div>
           <div class="location-controls">
@@ -5532,6 +5536,8 @@ function np_setCurrentProject(id, projectMeta) {
         if (coordinatesEl) coordinatesEl.textContent = 'No seleccionadas';
         if (areaEl) areaEl.textContent = '0.00 ha (0.00 acres)';
         if (perimeterEl) perimeterEl.textContent = '0.00 m';
+        const altitudeEl = document.getElementById('altitudeDisplay');
+        if (altitudeEl) altitudeEl.textContent = 'N/D';
       }
       
       // 🚀 CARGAR PROYECTO EN MEMORIA (optimizado: usar caché si está disponible)
@@ -5568,6 +5574,8 @@ function np_setCurrentProject(id, projectMeta) {
       if (coordinatesEl) coordinatesEl.textContent = 'No seleccionadas';
       if (areaEl) areaEl.textContent = '0.00 ha (0.00 acres)';
       if (perimeterEl) perimeterEl.textContent = '0.00 m';
+      const altitudeEl = document.getElementById('altitudeDisplay');
+      if (altitudeEl) altitudeEl.textContent = 'N/D';
     }
   }
   emitProjectContextUpdate({ reason: 'set-current-project' });
@@ -5974,6 +5982,8 @@ function np_initInicio(){
         if (coordinatesEl) coordinatesEl.textContent = 'No seleccionadas';
         if (areaEl) areaEl.textContent = '0.00 ha (0.00 acres)';
         if (perimeterEl) perimeterEl.textContent = '0.00 m';
+        const altitudeEl = document.getElementById('altitudeDisplay');
+        if (altitudeEl) altitudeEl.textContent = 'N/D';
       }
       
       // 🚀 CRÍTICO: Limpiar el mapa COMPLETAMENTE cuando se crea un proyecto nuevo
@@ -10412,6 +10422,11 @@ function applyProjectDataToUI() {
     if (perimeterElement && currentProject.location.perimeter) {
       perimeterElement.textContent = currentProject.location.perimeter;
     }
+    const altitudeElement = document.getElementById('altitudeDisplay');
+    if (altitudeElement) {
+      const elev = Number(currentProject.location.elevationM);
+      altitudeElement.textContent = Number.isFinite(elev) ? `${Math.round(elev)} msnm` : 'N/D';
+    }
     
     // CARGAR POLÍGONO EN EL MAPA si existe
     if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap) {
@@ -10467,6 +10482,10 @@ function applyProjectDataToUI() {
     const perimeterElement = document.getElementById('perimeterDisplay');
     if (perimeterElement) {
       perimeterElement.textContent = '0.00 m';
+    }
+    const altitudeElement = document.getElementById('altitudeDisplay');
+    if (altitudeElement) {
+      altitudeElement.textContent = 'N/D';
     }
     
     // CRÍTICO: Limpiar el mapa si no hay datos válidos
@@ -13909,6 +13928,28 @@ function createGranularSectionHTML() {
     diffProgram[nutrient] = realRequirement[nutrient] === null ? null : (totalProgram[nutrient] - realRequirement[nutrient]);
   });
 
+  function getAppContribution(app) {
+    const output = {};
+    NUTRIENTS.forEach(nutrient => { output[nutrient] = 0; });
+    if (!app || typeof app !== 'object') return output;
+
+    const fromResults = app.results && typeof app.results === 'object' ? app.results : {};
+    const hasResults = NUTRIENTS.some(nutrient => toNumber(fromResults[nutrient]) !== 0);
+    if (hasResults) {
+      NUTRIENTS.forEach(nutrient => {
+        output[nutrient] = toNumber(fromResults[nutrient]);
+      });
+      return output;
+    }
+
+    const doseKgHa = toNumber(app.doseKgHa);
+    const composition = app.composition && typeof app.composition === 'object' ? app.composition : {};
+    NUTRIENTS.forEach(nutrient => {
+      output[nutrient] = (toNumber(composition[nutrient]) * doseKgHa) / 100;
+    });
+    return output;
+  }
+
   function renderMaterialsTable(app) {
     const materials = Array.isArray(app.materials) ? app.materials : [];
     const rows = materials.map(material => `
@@ -13992,12 +14033,15 @@ function createGranularSectionHTML() {
       <div class="report-block">
         <div class="report-block-title">Aplicaciones configuradas (${applications.length})</div>
         ${applications.length ? applications.map(function(app, idx) {
+          const appContribution = getAppContribution(app);
           return `
             <div class="report-card" style="margin-top:10px;">
               <div class="report-card-head">
                 <span>${reportEscapeHtml(reportGranularAppTitle(app, idx))}</span>
                 <span class="report-card-meta">Dosis: ${toNumber(app.doseKgHa).toFixed(2)} kg/ha</span>
               </div>
+              <div class="report-subtitle">Aporte de esta aplicación (kg/ha):</div>
+              <div class="report-nutrient-wrap">${renderNutrientPills(appContribution, programModeIsElemental, false)}</div>
               ${renderMaterialsTable(app)}
             </div>
           `;

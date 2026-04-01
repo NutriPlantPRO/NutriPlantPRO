@@ -627,6 +627,26 @@ class NutriPlantMap {
     }
   }
 
+  async fetchElevationFromOpenMeteo(center) {
+    if (!center || !Number.isFinite(Number(center.lat)) || !Number.isFinite(Number(center.lng))) {
+      return null;
+    }
+    try {
+      const url = 'https://api.open-meteo.com/v1/forecast?latitude=' +
+        encodeURIComponent(center.lat) +
+        '&longitude=' + encodeURIComponent(center.lng) +
+        '&current=temperature_2m';
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const data = await response.json();
+      const elevation = data ? Number(data.elevation) : NaN;
+      return Number.isFinite(elevation) ? elevation : null;
+    } catch (e) {
+      console.warn('⚠️ No se pudo obtener altitud desde Open-Meteo:', e);
+      return null;
+    }
+  }
+
   // Función para formatear números con separadores de miles
   formatNumber(number, decimals = 2) {
     if (isNaN(number) || number === null || number === undefined) {
@@ -759,7 +779,7 @@ class NutriPlantMap {
     console.log('✅ Limpieza completa de ubicación finalizada');
   }
 
-  saveLocation() {
+  async saveLocation() {
     if (!this.polygon || this.coordinates.length < 3) {
       alert('Por favor, traza un polígono válido antes de guardar');
       return;
@@ -775,13 +795,16 @@ class NutriPlantMap {
     // Recalcular datos antes de guardar (por si hubo ediciones)
     this.calculateAreaAndPerimeter();
 
+    const centerPoint = this.getPolygonCenter();
+    const elevationM = await this.fetchElevationFromOpenMeteo(centerPoint);
     const locationData = {
       coordinates: this.coordinates,
       area: this.area,
       areaHectares: this.area / 10000,
       areaAcres: this.area * 0.000247105,
       perimeter: this.perimeter,
-      center: this.getPolygonCenter(),
+      center: centerPoint,
+      elevationM: elevationM,
       projectId: currentProject.id,
       projectName: currentProject.name,
       lastUpdated: new Date().toISOString()
@@ -814,11 +837,13 @@ class NutriPlantMap {
         
         // CENTRO (para centrar mapa)
         center: locationData.center || null,
+        elevationM: Number.isFinite(locationData.elevationM) ? locationData.elevationM : null,
         
         // DISPLAY (opcional, para mostrar en UI)
         coordinates: locationData.center ? `${locationData.center.lat.toFixed(6)}, ${locationData.center.lng.toFixed(6)}` : '',
         surface: `${this.formatNumber(locationData.areaHectares)} ha`,
-        perimeterDisplay: `${this.formatNumber(locationData.perimeter)} m`
+        perimeterDisplay: `${this.formatNumber(locationData.perimeter)} m`,
+        elevationDisplay: Number.isFinite(locationData.elevationM) ? `${Math.round(locationData.elevationM)} msnm` : 'N/D'
       };
       
       // 🚀 CRÍTICO: NO limpiar el polígono actual - solo asegurar que es el único
@@ -947,6 +972,9 @@ class NutriPlantMap {
       
       // Actualizar display con los datos guardados
       this.updateDisplay();
+      if (typeof setLocationAltitudeDisplay === 'function') {
+        setLocationAltitudeDisplay(locationDataToSave.elevationM);
+      }
       
       // Mostrar confirmación
       const message = `✅ Predio guardado para "${currentProject.name}"!\n\n` +
@@ -1761,6 +1789,7 @@ class NutriPlantMap {
     if (!locationData) {
       console.warn('⚠️ loadSavedPolygon: No hay datos, no cargando');
       this.updateDisplay();
+      if (typeof setLocationAltitudeDisplay === 'function') setLocationAltitudeDisplay(null);
       return;
     }
     
@@ -1769,6 +1798,7 @@ class NutriPlantMap {
     if (!currentProject || !currentProject.id) {
       console.warn('⚠️ loadSavedPolygon: No hay proyecto actual. NO cargando.');
       this.updateDisplay();
+      if (typeof setLocationAltitudeDisplay === 'function') setLocationAltitudeDisplay(null);
       return;
     }
     
@@ -1780,6 +1810,7 @@ class NutriPlantMap {
         found: locationData.projectId
       });
       this.updateDisplay();
+      if (typeof setLocationAltitudeDisplay === 'function') setLocationAltitudeDisplay(null);
       return;
     }
     
@@ -1796,6 +1827,7 @@ class NutriPlantMap {
     if (!polygonCoords || !Array.isArray(polygonCoords) || polygonCoords.length < 3) {
       console.warn('⚠️ loadSavedPolygon: No hay polígono válido (mínimo 3 puntos). NO cargando.');
       this.updateDisplay();
+      if (typeof setLocationAltitudeDisplay === 'function') setLocationAltitudeDisplay(null);
       return;
     }
     
@@ -1806,6 +1838,7 @@ class NutriPlantMap {
       if (!polygonCoords || polygonCoords.length < 3) {
         console.warn('⚠️ loadSavedPolygon: Primer polígono inválido. NO cargando.');
         this.updateDisplay();
+        if (typeof setLocationAltitudeDisplay === 'function') setLocationAltitudeDisplay(null);
         return;
       }
     }
@@ -1882,6 +1915,9 @@ class NutriPlantMap {
 
     // Actualizar la interfaz
     this.updateDisplay();
+    if (typeof setLocationAltitudeDisplay === 'function') {
+      setLocationAltitudeDisplay(locationData.elevationM);
+    }
     
     // 🚀 CRÍTICO: Solo mostrar mensaje "Predio cargado" si realmente se cargó un polígono válido y visible
     // Validar una vez más que el polígono está en el mapa
@@ -1903,6 +1939,13 @@ class NutriPlantMap {
 let nutriPlantMap = null;
 
 // FUNCIÓN CRÍTICA: Limpiar elementos del DOM inmediatamente
+function setLocationAltitudeDisplay(elevationM) {
+  const altitudeEl = document.getElementById('altitudeDisplay');
+  if (!altitudeEl) return;
+  const meters = Number(elevationM);
+  altitudeEl.textContent = Number.isFinite(meters) ? `${Math.round(meters)} msnm` : 'N/D';
+}
+
 function forceClearLocationDisplay() {
   console.log('🧹 FORZANDO limpieza de elementos de ubicación...');
   const coordinatesEl = document.getElementById('coordinatesDisplay');
@@ -1918,6 +1961,7 @@ function forceClearLocationDisplay() {
   if (perimeterEl) {
     perimeterEl.textContent = '0.00 m';
   }
+  setLocationAltitudeDisplay(null);
   console.log('✅ Elementos de ubicación limpiados');
 }
 

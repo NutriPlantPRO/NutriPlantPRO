@@ -8802,14 +8802,43 @@
                         </div>
                     </div>
                 `;
+
+                function getAdminGranularAppContribution(app) {
+                    const out = { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, S: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0 };
+                    if (!app || typeof app !== 'object') return out;
+                    const results = app.results && typeof app.results === 'object' ? app.results : {};
+                    const hasResults = nutrients.some(n => (parseFloat(results[n]) || 0) !== 0);
+                    if (hasResults) {
+                        nutrients.forEach(n => { out[n] = parseFloat(results[n]) || 0; });
+                        return out;
+                    }
+                    const dose = parseFloat(app.doseKgHa) || 0;
+                    const comp = app.composition && typeof app.composition === 'object' ? app.composition : {};
+                    nutrients.forEach(n => {
+                        out[n] = ((parseFloat(comp[n]) || 0) * dose) / 100;
+                    });
+                    return out;
+                }
                 
                 // Formatear aplicaciones en tablas
                 if (granularProgram.applications && Array.isArray(granularProgram.applications) && granularProgram.applications.length > 0) {
                     granularProgram.applications.forEach((app, idx) => {
+                        const appContribution = getAdminGranularAppContribution(app);
                         html += `
                             <div style="margin-bottom: ${idx < granularProgram.applications.length - 1 ? '20px' : '0'}; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; background: #f8fafc;">
                                 <div style="font-weight: 600; color: #1e293b; margin-bottom: 8px; font-size: 14px;">${escapeHtml(app.title || `Aplicación ${app.number || idx + 1}`)}</div>
                                 ${app.doseKgHa ? `<div style="color: #64748b; font-size: 13px; margin-bottom: 10px;"><strong>Dosis:</strong> ${parseFloat(app.doseKgHa).toFixed(2)} kg/ha</div>` : ''}
+                                <div style="margin-bottom: 10px;">
+                                    <strong style="color: #1e293b; font-size: 13px;">Aporte de esta aplicación (kg/ha):</strong>
+                                    <div style="background: #eef6ff; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
+                                        ${nutrients.map(n => {
+                                            const label = getAdminNutrientLabel(n, programIsElemental);
+                                            let value = appContribution[n] || 0;
+                                            if (programIsElemental) value = convertAdminOxideToElemental(n, value);
+                                            return `<div><strong>${label}:</strong> ${formatAdminValue(n, value)}</div>`;
+                                        }).join('')}
+                                    </div>
+                                </div>
                         `;
                         
                         if (app.materials && Array.isArray(app.materials) && app.materials.length > 0) {

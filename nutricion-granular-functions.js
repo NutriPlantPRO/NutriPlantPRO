@@ -395,6 +395,50 @@ function formatProgramValue(nutrient, value, decimals) {
   return v.toFixed(decimals);
 }
 
+const GRANULAR_PROGRAM_NUTRIENTS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+
+function getGranularAppContribution(app) {
+  const contribution = {};
+  if (!app || typeof app !== 'object') {
+    GRANULAR_PROGRAM_NUTRIENTS.forEach(n => { contribution[n] = 0; });
+    return contribution;
+  }
+
+  const current = app.results && typeof app.results === 'object' ? app.results : {};
+  const hasCurrent = GRANULAR_PROGRAM_NUTRIENTS.some(n => (parseFloat(current[n]) || 0) !== 0);
+  if (hasCurrent) {
+    GRANULAR_PROGRAM_NUTRIENTS.forEach(n => { contribution[n] = parseFloat(current[n]) || 0; });
+    return contribution;
+  }
+
+  const dose = parseFloat(app.doseKgHa) || 0;
+  const comp = app.composition && typeof app.composition === 'object' ? app.composition : {};
+  GRANULAR_PROGRAM_NUTRIENTS.forEach(n => {
+    contribution[n] = ((parseFloat(comp[n]) || 0) * dose) / 100;
+  });
+  return contribution;
+}
+
+function renderGranularAppContribution(app) {
+  const contribution = getGranularAppContribution(app);
+  return `
+    <div class="application-results">
+      <h4>Aporte por aplicación (kg/ha)</h4>
+      <div class="results-grid">
+        ${GRANULAR_PROGRAM_NUTRIENTS.map(nutrient => {
+          const decimals = ['Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo'].includes(nutrient) ? 3 : 2;
+          return `
+            <div class="result-item">
+              <span class="result-label notranslate" translate="no">${getProgramNutrientLabel(nutrient)}</span>
+              <span class="result-value">${formatProgramValue(nutrient, contribution[nutrient], decimals)}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
 // Función principal para agregar aplicación
 function addGranularApplication() {
   try {
@@ -490,6 +534,7 @@ function renderApplications() {
             <input type="number" class="dose-input" value="${app.doseKgHa}" data-app-id="${app.id}"
                    oninput="updateDoseLive('${app.id}', this.value)" onchange="updateDose('${app.id}', this.value)">
           </div>
+          ${renderGranularAppContribution(app)}
         </div>
       </div>
     `).join('');
