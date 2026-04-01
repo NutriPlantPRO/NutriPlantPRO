@@ -1653,6 +1653,19 @@ function saveFertirriegoRequirements(options = {}) {
       console.warn('⚠️ No hay proyecto seleccionado');
       return;
     }
+    // Blindaje multi-equipo/móvil:
+    // mientras el proyecto se hidrata desde nube al abrir, no permitir writes locales
+    // de Fertirriego porque pueden pisar snapshot cloud reciente con estado parcial.
+    try {
+      const hydrationMap = window._np_project_open_cloud_refresh_in_progress || null;
+      const projectHydrating = !!(hydrationMap && hydrationMap[projectId]);
+      const bootstrapHydrating = !!window._np_cloud_bootstrap_in_progress;
+      if (projectHydrating || bootstrapHydrating) {
+        fertiReqDirty = true;
+        console.warn('🛡️ Fertirriego: guardado omitido durante hidratación cloud del proyecto.');
+        return false;
+      }
+    } catch (e) {}
     if (isFertirriegoWriteLocked(projectId)) {
       fertiReqDirty = true;
       console.warn('🔒 Fertirriego: guardado bloqueado temporalmente hasta terminar hidratación inicial.');
