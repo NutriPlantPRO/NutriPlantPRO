@@ -663,11 +663,10 @@ calculateNutrientRequirements = function(opts) {
       }
     }
     
-    // 🚀 CRÍTICO: SOLO usar defaultCrop como último recurso
-    if (!cropType || !CROP_EXTRACTION_DB[cropType]) {
-      cropType = defaultCrop;
-    }
-    if (!cropType || !CROP_EXTRACTION_DB[cropType]) {
+    // 🚀 CRÍTICO: SOLO usar defaultCrop si NO hay cropType.
+    // No forzar default cuando el cultivo es personalizado y aún no está
+    // hidratado en CROP_EXTRACTION_DB (escenario frecuente multi-equipo).
+    if (!cropType) {
       cropType = defaultCrop;
     }
     
@@ -699,12 +698,11 @@ calculateNutrientRequirements = function(opts) {
     // Granular no restaura valores, solo usa options o DOM directamente (líneas 168, 182-185)
     
     // 🚀 CRÍTICO: NO mutar CROP_EXTRACTION_DB
-    // Crear finalExtraction fusionando base + overrides en cada cálculo/render
-    const baseExtraction = {...CROP_EXTRACTION_DB[cropType]};
-    if (!baseExtraction || Object.keys(baseExtraction).length === 0) {
-      console.error('❌ Cultivo no encontrado en base de datos:', cropType);
-      return;
-    }
+    // Para cultivos personalizados en carga inicial multi-equipo puede no
+    // existir base temporalmente; en ese caso continuar con overrides/ceros.
+    const baseExtraction = CROP_EXTRACTION_DB[cropType]
+      ? { ...CROP_EXTRACTION_DB[cropType] }
+      : {};
     
     let extractionOverrides = {};
     
@@ -771,6 +769,14 @@ calculateNutrientRequirements = function(opts) {
     // PRIORIDAD 3: Valores base (precargados)
     else {
       console.log('ℹ️ No hay extractionOverrides para', cropType, '- usando valores base (precargados)');
+    }
+
+    // Si no hay base ni overrides, inicializar con ceros para no cambiar
+    // silenciosamente a otro cultivo precargado.
+    if (Object.keys(finalExtraction).length === 0) {
+      ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2']
+        .forEach(n => { finalExtraction[n] = 0; });
+      console.warn('⚠️ Fertirriego: cultivo sin base ni overrides aún. Se mantiene cultivo y se inicializa extracción en cero temporalmente:', cropType);
     }
     
     // Usar finalExtraction como extraction
