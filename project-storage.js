@@ -723,6 +723,54 @@ class ProjectStorage {
               console.warn('🛡️ Granular guard: preservando requirements existentes en saveSection()');
             }
           }
+          // Blindaje específico Fertirriego:
+          // La sección se actualiza completa; si llega payload parcial desde subpestañas
+          // (solo "program" o solo "requirements"), preservar la contraparte existente.
+          if (section === 'fertirriego' && !isArraySection && sectionData && typeof sectionData === 'object') {
+            const existingFerti = existingSectionData && typeof existingSectionData === 'object'
+              ? existingSectionData
+              : null;
+            const existingReq = existingFerti ? existingFerti.requirements : null;
+            const incomingReq = sectionData.requirements;
+            const existingProgram = existingFerti ? existingFerti.program : null;
+            const incomingProgram = sectionData.program;
+            const incomingLastUI = sectionData.lastUI;
+
+            const hasRichFertiReq = function(req) {
+              if (!req || typeof req !== 'object') return false;
+              return !!(
+                req.cropType ||
+                req.targetYield != null ||
+                (req.adjustment && Object.keys(req.adjustment).length > 0) ||
+                (req.efficiency && Object.keys(req.efficiency).length > 0) ||
+                (req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0)
+              );
+            };
+            const hasFertiProgram = function(program) {
+              if (!program || typeof program !== 'object') return false;
+              const hasWeeks = Array.isArray(program.weeks) && program.weeks.length > 0;
+              const hasColumns = Array.isArray(program.columns) && program.columns.length > 0;
+              return hasWeeks || hasColumns;
+            };
+
+            const incomingHasReq = hasRichFertiReq(incomingReq);
+            const existingHasReq = hasRichFertiReq(existingReq);
+            if (!incomingHasReq && existingHasReq) {
+              sectionData.requirements = existingReq;
+              console.warn('🛡️ Fertirriego guard: preservando requirements existentes en saveSection()');
+            }
+
+            const incomingHasProgram = hasFertiProgram(incomingProgram);
+            const existingHasProgram = hasFertiProgram(existingProgram);
+            if (!incomingHasProgram && existingHasProgram) {
+              sectionData.program = existingProgram;
+              console.warn('🛡️ Fertirriego guard: preservando program existente en saveSection()');
+            }
+
+            if (!incomingLastUI && existingFerti && existingFerti.lastUI) {
+              sectionData.lastUI = existingFerti.lastUI;
+            }
+          }
           if (!this.hasSectionChanged(existingSectionData, sectionData)) {
             skippedNoopSave = true;
             success = true;
