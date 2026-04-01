@@ -7435,24 +7435,27 @@ async function np_refreshCurrentProjectFromCloud(options) {
             var localFertiReq = localObj && localObj.fertirriego && localObj.fertirriego.requirements;
             var cloudFertiReq = toStore && toStore.fertirriego && toStore.fertirriego.requirements;
             var localFertiRich = !!(localFertiReq && (
-              localFertiReq.cropType ||
-              localFertiReq.targetYield != null ||
               (localFertiReq.adjustment && Object.keys(localFertiReq.adjustment).length > 0) ||
               (localFertiReq.efficiency && Object.keys(localFertiReq.efficiency).length > 0) ||
               (localFertiReq.extractionOverrides && Object.keys(localFertiReq.extractionOverrides).length > 0)
             ));
             var cloudFertiRich = !!(cloudFertiReq && (
-              cloudFertiReq.cropType ||
-              cloudFertiReq.targetYield != null ||
               (cloudFertiReq.adjustment && Object.keys(cloudFertiReq.adjustment).length > 0) ||
               (cloudFertiReq.efficiency && Object.keys(cloudFertiReq.efficiency).length > 0) ||
               (cloudFertiReq.extractionOverrides && Object.keys(cloudFertiReq.extractionOverrides).length > 0)
             ));
-            if (!(cloudFertiRich && !localFertiRich)) {
+            var localReqTs = localFertiReq && (localFertiReq.timestamp || localFertiReq.savedAt || localFertiReq.lastUpdated)
+              ? new Date(localFertiReq.timestamp || localFertiReq.savedAt || localFertiReq.lastUpdated).getTime()
+              : 0;
+            var cloudReqTs = cloudFertiReq && (cloudFertiReq.timestamp || cloudFertiReq.savedAt || cloudFertiReq.lastUpdated)
+              ? new Date(cloudFertiReq.timestamp || cloudFertiReq.savedAt || cloudFertiReq.lastUpdated).getTime()
+              : 0;
+            var cloudReqIsNewer = !!(cloudReqTs && (!localReqTs || cloudReqTs > localReqTs + 1000));
+            if (!(cloudReqIsNewer || (cloudFertiRich && !localFertiRich))) {
               console.log('⏭️ Nube omitida: local es más reciente/igual o nube sin timestamp confiable');
               return;
             }
-            console.warn('🛡️ Local-first omitido: nube trae Fertirriego más completo, aplicando hidratación cloud.');
+            console.warn('🛡️ Local-first omitido: Fertirriego cloud más completo/reciente, aplicando hidratación cloud.');
           }
 
           // Blindaje: si la nube viene "pobre" en granular, preservar lo local "rico".
