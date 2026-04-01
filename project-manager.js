@@ -31,6 +31,12 @@ class ProjectManager {
 
   // Obtener proyecto actual
   getCurrentProject() {
+    // PRIORIDAD 0: estado interno ya establecido por setCurrentProject/switchProject
+    // (evita recalcular IDs y caer en inferencias por título visibles en UI)
+    if (this.currentProject && this.currentProject.id) {
+      return this.currentProject;
+    }
+
     // Buscar el proyecto seleccionado en la lista de proyectos
     const selectedProject = this.getSelectedProjectFromList();
     if (selectedProject) {
@@ -38,7 +44,16 @@ class ProjectManager {
       return selectedProject;
     }
 
-    // Fallback: buscar en la interfaz de ubicación
+    // Fallback: buscar en la interfaz de ubicación.
+    // IMPORTANTE: para usuarios Supabase (UUID), NO inferir ID por título porque
+    // puede crear IDs slug distintos entre dispositivos y romper la consistencia.
+    const userId = localStorage.getItem('nutriplant_user_id') || '';
+    const isSupabaseUser = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    if (isSupabaseUser) {
+      return null;
+    }
+
+    // Solo para modo local/legacy sin Supabase
     const titleCard = document.querySelector('.sb-title-card .text');
     if (titleCard) {
       const projectName = titleCard.textContent.trim();
