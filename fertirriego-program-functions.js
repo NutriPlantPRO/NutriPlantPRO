@@ -953,7 +953,9 @@ function updateFertiSummary() {
       if (pd.fertirriegoRequirements) data = pd.fertirriegoRequirements;
     }
     const list = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
-    if (!Object.keys(reqOxide).length && data && data.adjustment && data.efficiency) {
+    const hasSavedAdj = !!(data && data.adjustment && typeof data.adjustment === 'object' && Object.keys(data.adjustment).length > 0);
+    const hasSavedEff = !!(data && data.efficiency && typeof data.efficiency === 'object' && Object.keys(data.efficiency).length > 0);
+    if (!Object.keys(reqOxide).length && data && (hasSavedAdj || hasSavedEff)) {
       list.forEach(n => {
         const adj = parseFloat(data.adjustment[n]) || 0;
         const eff = parseFloat(data.efficiency[n])||100;

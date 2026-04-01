@@ -234,7 +234,7 @@ function toggleFertirriegoOxideElemental() {
   // 🚀 CRÍTICO: Guardar INMEDIATAMENTE cuando el usuario cambia el modo (IGUAL QUE GRANULAR)
   // Usar saveFertirriegoRequirementsImmediate para evitar perder el modo si el usuario recarga pronto
   if (typeof window.saveFertirriegoRequirementsImmediate === 'function') {
-    window.saveFertirriegoRequirementsImmediate();
+    window.saveFertirriegoRequirementsImmediate({ force: true });
     console.log('⚡ Modo Elemental/Óxido guardado INMEDIATAMENTE en Fertirriego');
   } else {
     scheduleSaveFertirriegoRequirements();
@@ -1409,7 +1409,7 @@ updateExtractionPerTon = function(nutrient, value) {
     // 🚀 CRÍTICO: Guardar INMEDIATAMENTE cuando el usuario modifica extracción por tonelada (IGUAL QUE GRANULAR)
     console.log('💾 Guardando inmediatamente después de modificar extracción por tonelada');
     if (typeof window.saveFertirriegoRequirementsImmediate === 'function') {
-      window.saveFertirriegoRequirementsImmediate();
+      window.saveFertirriegoRequirementsImmediate({ force: true });
     } else if (typeof window.saveFertirriegoRequirements === 'function') {
       window.saveFertirriegoRequirements();
     } else {
@@ -1456,7 +1456,7 @@ updateAdjustment = function(nutrient, value) {
     // CRÍTICO: Guardar INMEDIATAMENTE cuando el usuario modifica un valor
     console.log('💾 Guardando inmediatamente después de modificar ajuste (Fertirriego)');
     if (typeof window.saveFertirriegoRequirementsImmediate === 'function') {
-      window.saveFertirriegoRequirementsImmediate();
+      window.saveFertirriegoRequirementsImmediate({ force: true });
     } else if (typeof window.saveFertirriegoRequirements === 'function') {
       window.saveFertirriegoRequirements();
     } else {
@@ -1506,7 +1506,7 @@ updateEfficiency = function(nutrient, value) {
     // CRÍTICO: Guardar INMEDIATAMENTE cuando el usuario modifica un valor
     console.log('💾 Guardando inmediatamente después de modificar eficiencia (Fertirriego)');
     if (typeof window.saveFertirriegoRequirementsImmediate === 'function') {
-      window.saveFertirriegoRequirementsImmediate();
+      window.saveFertirriegoRequirementsImmediate({ force: true });
     } else if (typeof window.saveFertirriegoRequirements === 'function') {
       window.saveFertirriegoRequirements();
     } else {
@@ -1628,12 +1628,20 @@ function applyFertirriegoUIState() {
 }
 
 // Guardar requerimientos y cultivos personalizados de fertirriego
-function saveFertirriegoRequirements() {
+function saveFertirriegoRequirements(options = {}) {
   // 🚀 CRÍTICO: Exponer inmediatamente cuando se define
   if (typeof window !== 'undefined') {
     window.saveFertirriegoRequirements = saveFertirriegoRequirements;
   }
   try {
+    const forceSave = !!(options && options.force === true);
+    // Blindaje anti-sobrescritura: si no hubo edición del usuario, no guardar.
+    // Evita subir "precargados" al cambiar de sección/pestaña.
+    if (!forceSave && !fertiReqDirty) {
+      console.debug('⏭️ saveFertirriegoRequirements omitido (sin cambios del usuario)');
+      return;
+    }
+
     const projectId = fertGetCurrentProjectId();
     if (!projectId) {
       console.warn('⚠️ No hay proyecto seleccionado');
@@ -2162,19 +2170,20 @@ function scheduleSaveFertirriegoRequirements(){
 }
 
 // ===== Guardado INMEDIATO (sin debounce) para cambios de pestaña/sección =====
-function saveFertirriegoRequirementsImmediate() {
+function saveFertirriegoRequirementsImmediate(options = {}) {
   // 🚀 CRÍTICO: Exponer inmediatamente cuando se define
   if (typeof window !== 'undefined') {
     window.saveFertirriegoRequirementsImmediate = saveFertirriegoRequirementsImmediate;
   }
   try {
+    const forceSave = !!(options && options.force === true);
     // Cancelar cualquier guardado pendiente con debounce
     if (saveFertiReqTimer) {
       clearTimeout(saveFertiReqTimer);
       saveFertiReqTimer = null;
     }
     // Guardar INMEDIATAMENTE
-    const saved = saveFertirriegoRequirements();
+    const saved = saveFertirriegoRequirements({ force: forceSave });
     if (saved !== false) fertiReqDirty = false;
     console.log('⚡ Guardado INMEDIATO de Fertirriego ejecutado');
   } catch (e) {
@@ -2747,20 +2756,42 @@ loadFertirriegoRequirements = function(retryCount = 0) {
       }
     }
 
-    if (data && data.adjustment && data.efficiency) {
-      console.log('✅ Aplicando valores guardados de Fertirriego:', {
+    const hasSavedAdjustment = !!(
+      data &&
+      data.adjustment &&
+      typeof data.adjustment === 'object' &&
+      Object.keys(data.adjustment).length > 0
+    );
+    const hasSavedEfficiency = !!(
+      data &&
+      data.efficiency &&
+      typeof data.efficiency === 'object' &&
+      Object.keys(data.efficiency).length > 0
+    );
+    const hasSavedExtractionOverrides = !!(
+      data &&
+      data.extractionOverrides &&
+      typeof data.extractionOverrides === 'object' &&
+      Object.keys(data.extractionOverrides).length > 0
+    );
+    const hasAnySavedValues = hasSavedAdjustment || hasSavedEfficiency || hasSavedExtractionOverrides;
+
+    if (data && hasAnySavedValues) {
+      console.log('✅ Aplicando valores guardados de Fertirriego (incluye guardado parcial):', {
         cropType: data.cropType,
         targetYield: data.targetYield,
-        hasAdjustment: Object.keys(data.adjustment).length > 0,
-        hasEfficiency: Object.keys(data.efficiency).length > 0,
-        adjustmentSample: data.adjustment.K2O || data.adjustment.N || 'ninguno',
-        efficiencySample: data.efficiency.K2O || data.efficiency.N || 'ninguno'
+        hasAdjustment: hasSavedAdjustment,
+        hasEfficiency: hasSavedEfficiency,
+        hasExtractionOverrides: hasSavedExtractionOverrides
       });
-      console.log('📋 Ajustes guardados completos:', data.adjustment);
-      console.log('📋 Eficiencias guardadas completas:', data.efficiency);
+      if (hasSavedAdjustment) {
+        console.log('📋 Ajustes guardados completos:', data.adjustment);
+      }
+      if (hasSavedEfficiency) {
+        console.log('📋 Eficiencias guardadas completas:', data.efficiency);
+      }
       
-      // Pasar TODOS los valores guardados, incluyendo cropType y targetYield
-      // Marcar como _isLoading para evitar autosave durante la carga
+      // Pasar valores guardados parciales sin forzar defaults.
       console.log('🚀 Llamando calculateNutrientRequirements con datos guardados...', {
         cropType: cropTypeToUse,
         targetYield: targetYieldToUse,
@@ -2768,18 +2799,18 @@ loadFertirriegoRequirements = function(retryCount = 0) {
         targetYieldFromDOM: targetYieldInput ? targetYieldInput.value : 'N/A',
         cropTypeFromData: data.cropType,
         targetYieldFromData: data.targetYield,
-        hasAdjustment: Object.keys(data.adjustment).length > 0,
-        hasEfficiency: Object.keys(data.efficiency).length > 0,
-        hasExtractionOverrides: !!data.extractionOverrides
+        hasAdjustment: hasSavedAdjustment,
+        hasEfficiency: hasSavedEfficiency,
+        hasExtractionOverrides: hasSavedExtractionOverrides
       });
       
       // 🚀 CRÍTICO: Asignar a variables globales ANTES de calcular (IGUAL QUE GRANULAR)
       // Esto asegura que los ajustes se mantengan incluso si hay recálculos
-      if (data.adjustment && typeof data.adjustment === 'object') {
+      if (hasSavedAdjustment) {
         savedFertiAdjustments = { ...data.adjustment };
         console.log('✅ savedFertiAdjustments asignado desde datos guardados:', Object.keys(savedFertiAdjustments).length, 'nutrientes');
       }
-      if (data.efficiency && typeof data.efficiency === 'object') {
+      if (hasSavedEfficiency) {
         savedFertiEfficiencies = { ...data.efficiency };
         console.log('✅ savedFertiEfficiencies asignado desde datos guardados:', Object.keys(savedFertiEfficiencies).length, 'nutrientes');
       }
@@ -2788,19 +2819,9 @@ loadFertirriegoRequirements = function(retryCount = 0) {
         _isLoading: true, // Marcar que estamos cargando, no guardar automáticamente
         cropType: cropTypeToUse, // 🚀 CRÍTICO: Usar cropType establecido en DOM o de data
         targetYield: targetYieldToUse, // 🚀 CRÍTICO: Usar targetYield establecido en DOM o de data
-        adjustment: data.adjustment, 
-        efficiency: data.efficiency,
-        extractionOverrides: data.extractionOverrides || window.savedFertiExtractionOverrides // 🚀 CRÍTICO: Pasar extractionOverrides explícitamente (usar variable global como fallback)
-      });
-    } else if (data) {
-      // 🚀 CRÍTICO: Si hay data pero NO hay adjustment/efficiency, llamar igual (IGUAL QUE GRANULAR)
-      // Esto asegura que cropType, targetYield y extractionOverrides se usen
-      console.log('ℹ️ Hay datos guardados pero sin adjustment/efficiency - usando cropType, targetYield y extractionOverrides');
-      calculateNutrientRequirements({ 
-        _isLoading: true,
-        cropType: cropTypeToUse,
-        targetYield: targetYieldToUse,
-        extractionOverrides: data.extractionOverrides || window.savedFertiExtractionOverrides
+        adjustment: hasSavedAdjustment ? data.adjustment : undefined,
+        efficiency: hasSavedEfficiency ? data.efficiency : undefined,
+        extractionOverrides: hasSavedExtractionOverrides ? data.extractionOverrides : window.savedFertiExtractionOverrides // 🚀 CRÍTICO: Pasar extractionOverrides explícitamente (usar variable global como fallback)
       });
     } else {
       // Sin datos guardados: asegurar modo auto para inicializar con extracción total
@@ -2863,8 +2884,22 @@ loadFertirriegoRequirements = function(retryCount = 0) {
             cropType: settleCropType,
             targetYield: settleTargetYield
           };
-          if (data && data.adjustment && data.efficiency) {
+          const settleHasAdjustment = !!(
+            data &&
+            data.adjustment &&
+            typeof data.adjustment === 'object' &&
+            Object.keys(data.adjustment).length > 0
+          );
+          const settleHasEfficiency = !!(
+            data &&
+            data.efficiency &&
+            typeof data.efficiency === 'object' &&
+            Object.keys(data.efficiency).length > 0
+          );
+          if (settleHasAdjustment) {
             settleOptions.adjustment = data.adjustment;
+          }
+          if (settleHasEfficiency) {
             settleOptions.efficiency = data.efficiency;
           }
           if (data && data.extractionOverrides) {
@@ -3004,7 +3039,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // 🚀 CRÍTICO: Guardar INMEDIATAMENTE cuando el usuario modifica targetYield (valor crítico)
       // Usar saveFertirriegoRequirementsImmediate para evitar perder valores si el usuario recarga pronto
       if (typeof window.saveFertirriegoRequirementsImmediate === 'function') {
-        window.saveFertirriegoRequirementsImmediate();
+        window.saveFertirriegoRequirementsImmediate({ force: true });
         console.log('⚡ targetYield guardado INMEDIATAMENTE');
       } else {
         scheduleSaveFertirriegoRequirements();

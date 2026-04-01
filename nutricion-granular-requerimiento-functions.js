@@ -2122,30 +2122,52 @@ function loadGranularRequirements(retryCount = 0) {
       }
     }
 
-    if (requirementData && requirementData.adjustment && requirementData.efficiency) {
-      console.log('✅ Aplicando valores guardados de Granular:', {
+    const hasSavedAdjustment = !!(
+      requirementData &&
+      requirementData.adjustment &&
+      typeof requirementData.adjustment === 'object' &&
+      Object.keys(requirementData.adjustment).length > 0
+    );
+    const hasSavedEfficiency = !!(
+      requirementData &&
+      requirementData.efficiency &&
+      typeof requirementData.efficiency === 'object' &&
+      Object.keys(requirementData.efficiency).length > 0
+    );
+    const hasSavedExtractionOverrides = !!(
+      requirementData &&
+      requirementData.extractionOverrides &&
+      typeof requirementData.extractionOverrides === 'object' &&
+      Object.keys(requirementData.extractionOverrides).length > 0
+    );
+    const hasAnySavedValues = hasSavedAdjustment || hasSavedEfficiency || hasSavedExtractionOverrides;
+
+    if (requirementData && hasAnySavedValues) {
+      console.log('✅ Aplicando valores guardados de Granular (incluye guardado parcial):', {
         cropTypeGuardado: requirementData.cropType,
         cropTypeActual: currentCropType,
         targetYieldGuardado: requirementData.targetYield,
         targetYieldActual: currentTargetYield,
-        hasAdjustment: Object.keys(requirementData.adjustment).length > 0,
-        hasEfficiency: Object.keys(requirementData.efficiency).length > 0,
-        adjustmentSample: requirementData.adjustment.K2O || requirementData.adjustment.N || 'ninguno',
-        efficiencySample: requirementData.efficiency.K2O || requirementData.efficiency.N || 'ninguno'
+        hasAdjustment: hasSavedAdjustment,
+        hasEfficiency: hasSavedEfficiency,
+        hasExtractionOverrides: hasSavedExtractionOverrides
       });
-      console.log('📋 Ajustes guardados completos (INDEPENDIENTES del cultivo):', requirementData.adjustment);
-      console.log('📋 Eficiencias guardadas completas (INDEPENDIENTES del cultivo):', requirementData.efficiency);
+      if (hasSavedAdjustment) {
+        console.log('📋 Ajustes guardados completos (INDEPENDIENTES del cultivo):', requirementData.adjustment);
+      }
+      if (hasSavedEfficiency) {
+        console.log('📋 Eficiencias guardadas completas (INDEPENDIENTES del cultivo):', requirementData.efficiency);
+      }
       
-      // CRÍTICO: Usar el cultivo ACTUAL del DOM, pero mantener los ajustes/eficiencias guardados
-      // Los ajustes y eficiencias son valores del usuario, no dependen del cultivo
-      // 🚀 CRÍTICO: Pasar extractionOverrides explícitamente para asegurar que se usen
+      // CRÍTICO: Si existe cualquier valor guardado, NO caer a precargados.
+      // Permite restaurar guardados parciales sin perder overrides por defaults.
       calculateGranularNutrientRequirements({ 
         _isLoading: true, // Marcar que estamos cargando, no guardar automáticamente
         cropType: currentCropType || requirementData.cropType, // Usar cultivo actual si existe
         targetYield: (currentTargetYield != null && !isNaN(currentTargetYield)) ? currentTargetYield : requirementData.targetYield, // Usar rendimiento actual si existe
-        adjustment: requirementData.adjustment, // SIEMPRE usar ajustes guardados (independientes del cultivo)
-        efficiency: requirementData.efficiency, // SIEMPRE usar eficiencias guardadas (independientes del cultivo)
-        extractionOverrides: requirementData.extractionOverrides || savedGranularExtractionOverrides // 🚀 CRÍTICO: Pasar extractionOverrides explícitamente
+        adjustment: hasSavedAdjustment ? requirementData.adjustment : undefined,
+        efficiency: hasSavedEfficiency ? requirementData.efficiency : undefined,
+        extractionOverrides: hasSavedExtractionOverrides ? requirementData.extractionOverrides : savedGranularExtractionOverrides // 🚀 CRÍTICO: Pasar extractionOverrides explícitamente
       });
     } else {
       console.log('ℹ️ No hay valores guardados - usando PRECARGADOS (fórmulas predefinidas)');

@@ -1327,7 +1327,9 @@ function updateSummary(options = {}) {
         }
       }
     });
-    if (!hasLiveReq && reqData && reqData.adjustment && reqData.efficiency) {
+    const hasSavedAdj = !!(reqData && reqData.adjustment && typeof reqData.adjustment === 'object' && Object.keys(reqData.adjustment).length > 0);
+    const hasSavedEff = !!(reqData && reqData.efficiency && typeof reqData.efficiency === 'object' && Object.keys(reqData.efficiency).length > 0);
+    if (!hasLiveReq && reqData && (hasSavedAdj || hasSavedEff)) {
       nutrientsList.forEach(n => {
         let adj = parseFloat(reqData.adjustment[n]) || 0;
         const eff = parseFloat(reqData.efficiency[n]) || 100;
