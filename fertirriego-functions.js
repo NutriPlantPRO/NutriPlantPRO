@@ -101,6 +101,33 @@ let savedFertiEfficiencies = null;
 let savedFertiAdjustmentsAuto = true;
 let lastFertiCrop = null;
 let lastFertiTargetYield = null;
+let fertirriegoHydrationState = {
+  projectId: null,
+  inProgress: false,
+  writeUnlocked: true
+};
+
+function lockFertirriegoWrites(projectId) {
+  if (!projectId) return;
+  fertirriegoHydrationState.projectId = projectId;
+  fertirriegoHydrationState.inProgress = true;
+  fertirriegoHydrationState.writeUnlocked = false;
+}
+
+function unlockFertirriegoWrites(projectId) {
+  if (!projectId) return;
+  if (fertirriegoHydrationState.projectId && String(fertirriegoHydrationState.projectId) !== String(projectId)) return;
+  fertirriegoHydrationState.projectId = projectId;
+  fertirriegoHydrationState.inProgress = false;
+  fertirriegoHydrationState.writeUnlocked = true;
+}
+
+function isFertirriegoWriteLocked(projectId) {
+  if (!projectId) return false;
+  if (!fertirriegoHydrationState.inProgress) return false;
+  if (String(fertirriegoHydrationState.projectId || '') !== String(projectId)) return false;
+  return fertirriegoHydrationState.writeUnlocked !== true;
+}
 
 // ====== Autosave y estado sucio (dirty) para Requerimiento (Fertirriego) ======
 let fertiReqDirty = false;
@@ -108,8 +135,8 @@ let fertiReqAutosaveInterval = null;
 function flushFertirriegoRequirementsIfDirty(){
   try {
     if (fertiReqDirty) {
-      saveFertirriegoRequirements();
-      fertiReqDirty = false;
+      const saved = saveFertirriegoRequirements();
+      if (saved !== false) fertiReqDirty = false;
     }
   } catch (e) { console.warn('flushFertirriegoRequirementsIfDirty', e); }
 }
@@ -1612,6 +1639,11 @@ function saveFertirriegoRequirements() {
       console.warn('⚠️ No hay proyecto seleccionado');
       return;
     }
+    if (isFertirriegoWriteLocked(projectId)) {
+      fertiReqDirty = true;
+      console.warn('🔒 Fertirriego: guardado bloqueado temporalmente hasta terminar hidratación inicial.');
+      return false;
+    }
 
     const cropTypeEl = document.getElementById('fertirriegoCropType');
     const targetYieldEl = document.getElementById('fertirriegoTargetYield');
@@ -2107,11 +2139,17 @@ let saveFertiReqTimer = null;
 function scheduleSaveFertirriegoRequirements(){
   if (isFertirriegoLoading) {
     console.debug('ℹ️ Fertirriego: autosave omitido (estamos cargando)');
+    fertiReqDirty = true;
     return;
   }
   try { if (saveFertiReqTimer) clearTimeout(saveFertiReqTimer); } catch {}
   saveFertiReqTimer = setTimeout(() => {
-    try { saveFertirriegoRequirements(); fertiReqDirty = false; } catch (e) { console.warn('autosave fertirriegoRequirements', e); }
+    try {
+      const saved = saveFertirriegoRequirements();
+      if (saved !== false) fertiReqDirty = false;
+    } catch (e) {
+      console.warn('autosave fertirriegoRequirements', e);
+    }
   }, 500);
   fertiReqDirty = true;
   if (!fertiReqAutosaveInterval) {
@@ -2136,8 +2174,8 @@ function saveFertirriegoRequirementsImmediate() {
       saveFertiReqTimer = null;
     }
     // Guardar INMEDIATAMENTE
-    saveFertirriegoRequirements();
-    fertiReqDirty = false;
+    const saved = saveFertirriegoRequirements();
+    if (saved !== false) fertiReqDirty = false;
     console.log('⚡ Guardado INMEDIATO de Fertirriego ejecutado');
   } catch (e) {
     console.error('❌ Error en guardado inmediato de Fertirriego:', e);
@@ -2265,6 +2303,7 @@ loadFertirriegoRequirements = function(retryCount = 0) {
     window.loadFertirriegoRequirements._isRealFunction = true;
   }
   
+  let hydrationProjectId = null;
   try {
     console.log('🔄 loadFertirriegoRequirements() llamado - iniciando carga...');
     // Reset de estado temporal para evitar arrastre entre proyectos.
@@ -2320,10 +2359,12 @@ loadFertirriegoRequirements = function(retryCount = 0) {
     if (!projectId) {
       console.warn('⚠️ No hay proyecto seleccionado para cargar Fertirriego. Mostrando valores por defecto.');
       if (typeof calculateNutrientRequirements === 'function') {
-        calculateNutrientRequirements();
+        calculateNutrientRequirements({ _isLoading: true, _skipLoadFromStorage: true });
       }
       return;
     }
+    hydrationProjectId = projectId;
+    lockFertirriegoWrites(projectId);
     let data = null;
     
     // Cargar cultivos personalizados en paralelo para evitar carreras de render/cálculo.
@@ -2777,15 +2818,17 @@ loadFertirriegoRequirements = function(retryCount = 0) {
       setTimeout(() => {
         if (typeof calculateNutrientRequirements === 'function') {
           console.log('🚀 Llamando calculateNutrientRequirements() sin datos guardados (valores precargados)');
-          calculateNutrientRequirements();
+          // 🔒 BLINDAJE: render inicial solo visual (sin autosave) para evitar
+          // que una carga tardía termine pisando valores guardados del usuario.
+          calculateNutrientRequirements({ _isLoading: true, _skipLoadFromStorage: true });
         } else if (typeof window.calculateNutrientRequirements === 'function') {
           console.log('🚀 Llamando window.calculateNutrientRequirements() sin datos guardados (valores precargados)');
-          window.calculateNutrientRequirements();
+          window.calculateNutrientRequirements({ _isLoading: true, _skipLoadFromStorage: true });
         } else {
           console.error('❌ calculateNutrientRequirements NO está disponible - reintentando en 100ms...');
           setTimeout(() => {
             if (typeof window.calculateNutrientRequirements === 'function') {
-              window.calculateNutrientRequirements();
+              window.calculateNutrientRequirements({ _isLoading: true, _skipLoadFromStorage: true });
             } else {
               console.error('❌ calculateNutrientRequirements NO está disponible después de reintento');
             }
@@ -2855,6 +2898,10 @@ loadFertirriegoRequirements = function(retryCount = 0) {
     // CRÍTICO: Asegurar que la función esté disponible incluso si hay error
     if (!window.loadFertirriegoRequirements) {
       window.loadFertirriegoRequirements = loadFertirriegoRequirements;
+    }
+  } finally {
+    if (hydrationProjectId) {
+      unlockFertirriegoWrites(hydrationProjectId);
     }
   }
 };

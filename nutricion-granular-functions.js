@@ -419,26 +419,6 @@ function getGranularAppContribution(app) {
   return contribution;
 }
 
-function renderGranularAppContribution(app) {
-  const contribution = getGranularAppContribution(app);
-  return `
-    <div class="application-results">
-      <h4>Aporte por aplicación (kg/ha)</h4>
-      <div class="results-grid">
-        ${GRANULAR_PROGRAM_NUTRIENTS.map(nutrient => {
-          const decimals = ['Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo'].includes(nutrient) ? 3 : 2;
-          return `
-            <div class="result-item">
-              <span class="result-label notranslate" translate="no">${getProgramNutrientLabel(nutrient)}</span>
-              <span class="result-value">${formatProgramValue(nutrient, contribution[nutrient], decimals)}</span>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    </div>
-  `;
-}
-
 // Función principal para agregar aplicación
 function addGranularApplication() {
   try {
@@ -534,7 +514,6 @@ function renderApplications() {
             <input type="number" class="dose-input" value="${app.doseKgHa}" data-app-id="${app.id}"
                    oninput="updateDoseLive('${app.id}', this.value)" onchange="updateDose('${app.id}', this.value)">
           </div>
-          ${renderGranularAppContribution(app)}
         </div>
       </div>
     `).join('');
@@ -612,8 +591,31 @@ function renderMaterials(app) {
       <td></td>
     </tr>
   `;
-  
-  return rows + totalRow;
+
+  const contribution = getGranularAppContribution(app);
+  const contributionRow = `
+    <tr class="application-contribution-row">
+      <td class="material-name">Dosis Kg/Ha:</td>
+      <td class="application-dose-cell">${(parseFloat(app.doseKgHa) || 0).toFixed(2)}</td>
+      <td>${formatProgramValue('N', contribution.N, 2)}</td>
+      <td>${formatProgramValue('P2O5', contribution.P2O5, 2)}</td>
+      <td>${formatProgramValue('K2O', contribution.K2O, 2)}</td>
+      <td>${formatProgramValue('CaO', contribution.CaO, 2)}</td>
+      <td>${formatProgramValue('MgO', contribution.MgO, 2)}</td>
+      <td>${formatProgramValue('S', contribution.S, 2)}</td>
+      <td>${formatProgramValue('SO4', contribution.SO4, 2)}</td>
+      <td>${formatProgramValue('Fe', contribution.Fe, 3)}</td>
+      <td>${formatProgramValue('Mn', contribution.Mn, 3)}</td>
+      <td>${formatProgramValue('B', contribution.B, 3)}</td>
+      <td>${formatProgramValue('Zn', contribution.Zn, 3)}</td>
+      <td>${formatProgramValue('Cu', contribution.Cu, 3)}</td>
+      <td>${formatProgramValue('Mo', contribution.Mo, 3)}</td>
+      <td>${formatProgramValue('SiO2', contribution.SiO2, 2)}</td>
+      <td></td>
+    </tr>
+  `;
+
+  return rows + totalRow + contributionRow;
 }
 
 // Función para agregar material
