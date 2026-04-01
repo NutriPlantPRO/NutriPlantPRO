@@ -227,8 +227,9 @@
         const hasAdj = !!(req.adjustment && Object.keys(req.adjustment).length > 0);
         const hasEff = !!(req.efficiency && Object.keys(req.efficiency).length > 0);
         const hasExt = !!(req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0);
-        const hasCore = !!(req.cropType || req.targetYield != null);
-        return hasAdj || hasEff || hasExt || hasCore;
+        // "Core" (cultivo/rendimiento) por sí solo NO implica snapshot rico.
+        // Si se usa como rico, puede bloquear ajuste/eficiencia más recientes de nube.
+        return hasAdj || hasEff || hasExt;
       }
       function isMeaningfulValue(value, depth) {
         var d = (typeof depth === 'number') ? depth : 0;

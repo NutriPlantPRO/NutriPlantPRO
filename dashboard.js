@@ -7412,8 +7412,9 @@ async function np_refreshCurrentProjectFromCloud(options) {
         const hasAdj = !!(req.adjustment && Object.keys(req.adjustment).length > 0);
         const hasEff = !!(req.efficiency && Object.keys(req.efficiency).length > 0);
         const hasExt = !!(req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0);
-        const hasCore = !!(req.cropType || req.targetYield != null);
-        return hasAdj || hasEff || hasExt || hasCore;
+        // "Core" (cultivo/rendimiento) por sí solo NO implica snapshot rico.
+        // Evita que una copia parcial local bloquee hidratación cloud más completa.
+        return hasAdj || hasEff || hasExt;
       }
       // Asegurar que el proyecto local tenga la misma updated_at que la nube para no bloquear Guardar tras "Actualizar con la nube"
       const cloudUpdatedAt = fullData.updated_at || fullData.updatedAt;
