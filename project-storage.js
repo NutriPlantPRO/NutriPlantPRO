@@ -896,18 +896,20 @@ class ProjectStorage {
           console.log(`✅ Sección '${section}' guardada directamente en localStorage`);
         }
       }
-      // 🟢 Sincronizar con la nube (debounce 4.5s). vpdAnalysis: sync inmediato + cancelar debounce del mismo id
-      // para que otro upsert programado antes no llegue después y borre rangeTables/cuadros en Supabase.
+      // 🟢 Sincronizar con la nube.
+      // - vpdAnalysis/fertirriego: sync inmediato + cancelar debounce del mismo id
+      //   para evitar que un payload viejo llegue después y pise datos recientes.
+      // - resto de secciones: debounce estándar.
       if (!skippedNoopSave) {
         const sp = typeof window !== 'undefined' ? window.nutriplantSupabaseProjects : null;
-        if (section === 'vpdAnalysis' && sp && typeof sp.syncProjectNow === 'function') {
+        if ((section === 'vpdAnalysis' || section === 'fertirriego') && sp && typeof sp.syncProjectNow === 'function') {
           try {
             if (typeof sp.cancelScheduledProjectCloudSync === 'function') {
               sp.cancelScheduledProjectCloudSync(projectId);
             }
             sp.syncProjectNow(projectId, projectData);
           } catch (err) {
-            console.warn('syncProjectNow (vpdAnalysis):', err);
+            console.warn(`syncProjectNow (${section}):`, err);
           }
         } else if (typeof window.nutriplantSyncProjectToCloud === 'function') {
           try { window.nutriplantSyncProjectToCloud(projectId, projectData); } catch (err) { console.warn('nutriplantSyncProjectToCloud:', err); }
