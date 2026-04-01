@@ -13462,6 +13462,7 @@ function createLocationSectionHTML() {
   const hasPolygon = polygon.length >= 3;
   const areaValue = location.areaHectares != null ? `${reportNum(location.areaHectares, 2)} ha` : (location.surface || 'No disponible');
   const perimeterValue = location.perimeterDisplay || (location.perimeter != null ? `${reportNum(location.perimeter, 2)} m` : 'No disponible');
+  const altitudeValue = Number.isFinite(Number(location.elevationM)) ? `${Math.round(Number(location.elevationM))} msnm` : 'No disponible';
   const center = location.center && Number.isFinite(location.center.lat) && Number.isFinite(location.center.lng)
     ? `${reportNum(location.center.lat, 6)}, ${reportNum(location.center.lng, 6)}`
     : 'No disponible';
@@ -13482,6 +13483,7 @@ function createLocationSectionHTML() {
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
           <div><strong>Área:</strong><br><span style="color:#059669;font-weight:700;">${reportEscapeHtml(areaValue)}</span></div>
           <div><strong>Perímetro:</strong><br><span>${reportEscapeHtml(perimeterValue)}</span></div>
+          <div><strong>Altitud:</strong><br><span>${reportEscapeHtml(altitudeValue)}</span></div>
           <div><strong>Centro:</strong><br><span style="font-family:monospace;">${reportEscapeHtml(center)}</span></div>
           <div><strong>Estado:</strong><br><span>${hasPolygon ? `Polígono registrado (${polygon.length} vértices)` : 'Sin polígono'}</span></div>
         </div>

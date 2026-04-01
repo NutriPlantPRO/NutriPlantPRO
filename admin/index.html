@@ -8363,6 +8363,9 @@
                                         ${location.perimeter !== undefined && location.perimeter !== null 
                                             ? `<div><strong style="color: #1e293b;">Perímetro:</strong><br><span style="color: #64748b; font-size: 14px;">${typeof location.perimeter === 'number' ? (location.perimeter / 1000).toFixed(2) + ' km' : location.perimeterDisplay || location.perimeter}</span></div>` 
                                             : ''}
+                                        ${location.elevationM !== undefined && location.elevationM !== null && Number.isFinite(Number(location.elevationM))
+                                            ? `<div><strong style="color: #1e293b;">Altitud:</strong><br><span style="color: #64748b; font-size: 14px;">${Math.round(Number(location.elevationM))} msnm</span></div>`
+                                            : ''}
                                         ${location.polygon && location.polygon.length 
                                             ? `<div><strong style="color: #1e293b;">Vértices:</strong><br><span style="color: #64748b; font-size: 14px;">${location.polygon.length} puntos</span></div>` 
                                             : ''}
