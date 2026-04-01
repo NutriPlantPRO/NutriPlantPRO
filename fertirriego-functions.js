@@ -2131,6 +2131,32 @@ function saveFertirriegoRequirements(options = {}) {
 
     // Sincronizar estado rápido de UI para que el cultivo/rendimiento se mantengan
     rememberFertirriegoUIState();
+    // Mantener memoria en línea con el guardado real para evitar que
+    // un saveProjectData posterior pise con snapshot viejo.
+    try {
+      if (typeof currentProject !== 'undefined' && currentProject && String(currentProject.id || '') === String(projectId)) {
+        currentProject.fertirriego = {
+          ...(currentProject.fertirriego || {}),
+          requirements: data,
+          lastUI: { cropType, targetYield }
+        };
+        // Compatibilidad legacy
+        currentProject.fertirriegoRequirements = data;
+      }
+      if (window.projectStorage && window.projectStorage.memoryCache &&
+          String(window.projectStorage.memoryCache.currentProjectId || '') === String(projectId) &&
+          window.projectStorage.memoryCache.projectData) {
+        const memProject = window.projectStorage.memoryCache.projectData;
+        memProject.fertirriego = {
+          ...(memProject.fertirriego || {}),
+          requirements: data,
+          lastUI: { cropType, targetYield }
+        };
+        memProject.fertirriegoRequirements = data;
+      }
+    } catch (e) {
+      console.warn('⚠️ Fertirriego: no se pudo sincronizar snapshot en memoria:', e);
+    }
     console.log('✅ Requerimientos de fertirriego guardados');
   } catch (e) {
     console.error('❌ Error guardando requerimientos de fertirriego:', e);

@@ -1542,6 +1542,32 @@ function saveGranularRequirements(options = {}) {
     
     // Sincronizar el estado rápido del selector (cultivo y rendimiento)
     rememberGranularUIState();
+    // Mantener memoria en línea con el guardado real para evitar que
+    // un saveProjectData posterior pise con snapshot viejo.
+    try {
+      if (typeof currentProject !== 'undefined' && currentProject && String(currentProject.id || '') === String(projectId)) {
+        currentProject.granular = {
+          ...(currentProject.granular || {}),
+          requirements: requirementData,
+          lastUI: { cropType, targetYield }
+        };
+        // Compatibilidad legacy
+        currentProject.granularRequirements = requirementData;
+      }
+      if (window.projectStorage && window.projectStorage.memoryCache &&
+          String(window.projectStorage.memoryCache.currentProjectId || '') === String(projectId) &&
+          window.projectStorage.memoryCache.projectData) {
+        const memProject = window.projectStorage.memoryCache.projectData;
+        memProject.granular = {
+          ...(memProject.granular || {}),
+          requirements: requirementData,
+          lastUI: { cropType, targetYield }
+        };
+        memProject.granularRequirements = requirementData;
+      }
+    } catch (e) {
+      console.warn('⚠️ Granular: no se pudo sincronizar snapshot en memoria:', e);
+    }
     
   } catch (error) {
     console.error('❌ Error guardando requerimientos granular:', error);
