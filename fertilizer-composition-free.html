@@ -120,7 +120,7 @@
 
   <div class="panel blend-panel">
     <h2>Moléculas en el producto</h2>
-    <p class="hint">El desplegable muestra solo <strong>fórmulas</strong>. Una fila = un ingrediente; usa <strong>+ Agregar molécula</strong> para mezclas (ej. NKS). <strong>Otros</strong> = inerte / aditivos / humedad.</p>
+    <p class="hint">El desplegable muestra solo <strong>fórmulas</strong>. <strong>También puedes escribir la fórmula manualmente</strong> (aunque no esté en la lista). Una fila = un ingrediente; usa <strong>+ Agregar molécula</strong> para mezclas (ej. NKS). <strong>Otros</strong> = inerte / aditivos / humedad.</p>
     <div id="blendLines"></div>
     <button type="button" class="btn-sm btn-add" onclick="addBlendRow()">+ Agregar molécula</button>
     <button type="button" class="btn-sm btn-clear" onclick="clearBlend()">Vaciar</button>
@@ -154,16 +154,27 @@
     };
 
     const BASE_MATERIALS = [
+      // Nitrogenados
       { formula: 'CH4N2O', aliases: ['urea', 'Urea'] },
+      { formula: 'NH4NO3', aliases: ['nitrato de amonio', 'Nitrato de amonio', 'NO3NH4'] },
+      { formula: 'Ca(NO3)2·4H2O', aliases: ['nitrato de calcio tetrahidratado', 'Nitrato de calcio tetrahidratado'] },
+      { formula: 'Ca(NO3)2' },
+      { formula: '(NH4)2SO4' },
+
+      // Fosforados
       { formula: 'NH4H2PO4', aliases: ['map', 'MAP'] },
       { formula: '(NH4)2HPO4', aliases: ['dap', 'DAP'] },
-      { formula: 'KNO3' },
       { formula: 'KH2PO4', aliases: ['mkp', 'MKP'] },
-      { formula: 'Ca(NO3)2' },
-      { formula: 'MgSO4·7H2O' },
-      { formula: '(NH4)2SO4' },
+
+      // Potásicos
+      { formula: 'KNO3' },
       { formula: 'K2SO4', aliases: ['sop', 'SOP'] },
+
+      // Magnésicos y secundarios
+      { formula: 'MgSO4·7H2O' },
       { formula: 'MgSO4·H2O' },
+
+      // Microelementos frecuentes
       { formula: 'ZnSO4' },
       { formula: 'FeSO4·7H2O' },
       { formula: 'MnSO4·H2O' },
@@ -225,6 +236,7 @@
         .replace(/\}/g, ')')
         .replace(/\[/g, '(')
         .replace(/\]/g, ')')
+        .replace(/:/g, '·')
         .replace(/\)\(/g, ')*(')
         .replace(/\.+/g, '.');
     }
@@ -409,7 +421,7 @@
         seen[n] = true;
         out.push(entry.formula);
       });
-      return out.sort(function(a, b) { return a.localeCompare(b); });
+      return out;
     }
 
     function refreshSuggestions() {

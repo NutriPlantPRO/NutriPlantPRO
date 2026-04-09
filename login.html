@@ -279,6 +279,11 @@
           <span class="calculator-icon">⚛</span>
           <span class="button-text">Calculadora de Composición de Fertilizantes (%)</span>
         </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showPeriodicTableNutrientsCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🧫</span>
+          <span class="button-text">Tabla Periódica de Nutrientes</span>
+        </button>
         
         <!-- Footer: copyright y acceso privado al final -->
         <div style="
@@ -1235,6 +1240,16 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showPeriodicTableNutrientsCalculator() {
+      document.getElementById('periodicTableNutrientsModal').style.display = 'flex';
+    }
+    function closePeriodicTableNutrientsCalculator() {
+      const modal = document.getElementById('periodicTableNutrientsModal');
+      const frame = document.getElementById('periodicTableNutrientsFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     // Datos de nutrientes: peso molecular y valencia
     const nutrientDataLogin = {
       'n': { mw: 14.01, valence: 1 },
@@ -1304,6 +1319,10 @@
       const granularMixModal = document.getElementById('granularMixCalculatorModal');
       if (e.target === granularMixModal) {
         closeGranularMixCalculator();
+      }
+      const periodicTableModal = document.getElementById('periodicTableNutrientsModal');
+      if (e.target === periodicTableModal) {
+        closePeriodicTableNutrientsCalculator();
       }
     });
   </script>
@@ -1720,6 +1739,19 @@
       </div>
       <div class="modal-body">
         <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html" title="Calculadora de Composición de Fertilizantes"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tabla Periódica de Nutrientes -->
+  <div id="periodicTableNutrientsModal" class="modal-overlay">
+    <div class="modal modal-fertilizer-composition">
+      <div class="modal-header">
+        <h2 class="modal-title">🧫 Tabla Periódica de Nutrientes</h2>
+        <button class="modal-close" onclick="closePeriodicTableNutrientsCalculator()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html" title="Tabla Periódica de Nutrientes"></iframe>
       </div>
     </div>
   </div>

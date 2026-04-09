@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tabla Periódica de Nutrientes</title>
+  <style>
+    body { margin: 0; padding: 14px 14px 22px; background: #f8fafc; font-family: Inter, system-ui, sans-serif; color: #0f172a; }
+    h1 { margin: 0 0 8px; font-size: 1.2rem; color: #0f172a; }
+    .lead { margin: 0 0 12px; color: #475569; font-size: 13px; line-height: 1.45; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .chip { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 4px 10px; border: 1px solid transparent; }
+    .chip.essential { background: #ecfdf5; border-color: #86efac; color: #14532d; }
+    .chip.beneficial { background: #eff6ff; border-color: #93c5fd; color: #1e3a8a; }
+    .chip.cho { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
+    .chip.other { background: #f1f5f9; border-color: #cbd5e1; color: #64748b; }
+
+    .board-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; padding: 12px; }
+    .board { min-width: 1080px; display: grid; grid-template-columns: repeat(18, 56px); grid-template-rows: repeat(10, 56px); gap: 4px; }
+    .el {
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      padding: 4px;
+      background: #f8fafc;
+      color: #0f172a;
+      cursor: pointer;
+      text-align: left;
+      opacity: 0.42;
+      transition: transform .08s ease, box-shadow .15s ease, opacity .12s ease;
+    }
+    .el:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(15,23,42,.10); }
+    .el .z { display: block; font-size: 10px; color: #64748b; line-height: 1; }
+    .el .s { display: block; font-size: 18px; font-weight: 800; line-height: 1.1; margin-top: 3px; }
+    .el .n { display: block; font-size: 9px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .el.essential { background: #ecfdf5; border-color: #86efac; opacity: 1; }
+    .el.beneficial { background: #eff6ff; border-color: #93c5fd; opacity: 1; }
+    .el.cho { background: #fff7ed; border-color: #fdba74; opacity: 1; }
+    .el.selected { outline: 2px solid #2563eb; }
+
+    .ln-label, .ac-label {
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; border: 1px dashed #94a3b8; font-size: 10px; color: #475569;
+      background: #f8fafc;
+    }
+    .ln-label { grid-column: 3; grid-row: 8; }
+    .ac-label { grid-column: 3; grid-row: 9; }
+
+    .panel {
+      margin-top: 12px;
+      background: #fff;
+      border: 1px solid #dbeafe;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+    }
+    .panel h2 { margin: 0; font-size: 1rem; color: #1e3a8a; }
+    .meta { margin-top: 4px; font-size: 12px; color: #64748b; }
+    .grid { margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+    .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; background: #f8fafc; }
+    .card .k { font-size: 11px; font-weight: 700; color: #334155; }
+    .card .v { margin-top: 3px; font-size: 14px; font-weight: 700; color: #0f172a; }
+    .role { margin-top: 10px; font-size: 13px; color: #334155; line-height: 1.45; }
+    .foot { margin-top: 10px; font-size: 11px; color: #64748b; }
+  </style>
+</head>
+<body>
+  <h1>🧫 Tabla Periódica de Nutrientes</h1>
+  <p class="lead">Elementos de interés para nutrición vegetal resaltados. Toca cualquier cuadro para ver ficha rápida (número atómico, peso atómico, valencias, radio atómico y electronegatividad).</p>
+
+  <div class="legend">
+    <span class="chip essential">Nutriente esencial</span>
+    <span class="chip beneficial">Elemento benéfico</span>
+    <span class="chip cho">Estructural (C-H-O)</span>
+    <span class="chip other">Resto de la tabla (opaco)</span>
+  </div>
+
+  <div class="board-wrap">
+    <div id="board" class="board">
+      <div class="ln-label">Lantánidos</div>
+      <div class="ac-label">Actínidos</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2 id="selTitle">Selecciona un elemento</h2>
+    <div id="selMeta" class="meta">Pulsa un cuadro de la tabla para ver detalles.</div>
+    <div id="selGrid" class="grid"></div>
+    <div id="selRole" class="role"></div>
+    <div class="foot">Nota: algunos datos pueden mostrarse como “—” cuando no se usan comúnmente en agronomía práctica de campo.</div>
+  </div>
+
+  <script>
+    const ESSENTIAL = new Set(['N','P','K','Ca','Mg','S','Fe','Mn','Zn','Cu','B','Mo','Cl','Ni']);
+    const BENEFICIAL = new Set(['Si','Na','Ti','Al','Co','Se','V']);
+    const CHO = new Set(['C','H','O']);
+
+    const DETAILS = {
+      H:  { aw: '1.008',   val: '+1',               rad: '53 pm',  en: '2.20', role: 'Elemento estructural (CHO). Presente en agua y compuestos orgánicos.' },
+      C:  { aw: '12.011',  val: '-4, +2, +4',       rad: '67 pm',  en: '2.55', role: 'Elemento estructural principal de biomasa vegetal.' },
+      O:  { aw: '15.999',  val: '-2',               rad: '48 pm',  en: '3.44', role: 'Elemento estructural (agua, compuestos orgánicos y respiración).' },
+      N:  { aw: '14.007',  val: '-3, +3, +5',       rad: '56 pm',  en: '3.04', role: 'Macronutriente esencial: proteínas, clorofila y crecimiento vegetativo.' },
+      P:  { aw: '30.974',  val: '+5, +3',           rad: '98 pm',  en: '2.19', role: 'Macronutriente esencial: energía (ATP), raíces y floración.' },
+      K:  { aw: '39.098',  val: '+1',               rad: '227 pm', en: '0.82', role: 'Macronutriente esencial: regulación osmótica, calidad y transporte.' },
+      Ca: { aw: '40.078',  val: '+2',               rad: '197 pm', en: '1.00', role: 'Macronutriente esencial: pared celular, firmeza y crecimiento apical.' },
+      Mg: { aw: '24.305',  val: '+2',               rad: '145 pm', en: '1.31', role: 'Macronutriente esencial: átomo central de clorofila.' },
+      S:  { aw: '32.06',   val: '-2, +4, +6',       rad: '88 pm',  en: '2.58', role: 'Macronutriente esencial: aminoácidos azufrados y metabolismo.' },
+      Fe: { aw: '55.845',  val: '+2, +3',           rad: '126 pm', en: '1.83', role: 'Micronutriente esencial: síntesis de clorofila y enzimas redox.' },
+      Mn: { aw: '54.938',  val: '+2, +4, +7',       rad: '127 pm', en: '1.55', role: 'Micronutriente esencial: fotosíntesis y activación enzimática.' },
+      Zn: { aw: '65.38',   val: '+2',               rad: '134 pm', en: '1.65', role: 'Micronutriente esencial: regulación hormonal y enzimas.' },
+      Cu: { aw: '63.546',  val: '+1, +2',           rad: '128 pm', en: '1.90', role: 'Micronutriente esencial: enzimas y metabolismo oxidativo.' },
+      B:  { aw: '10.81',   val: '+3',               rad: '85 pm',  en: '2.04', role: 'Micronutriente esencial: pared celular, floración y cuajado.' },
+      Mo: { aw: '95.95',   val: '+6, +4',           rad: '139 pm', en: '2.16', role: 'Micronutriente esencial: metabolismo del nitrógeno.' },
+      Cl: { aw: '35.45',   val: '-1, +1, +5, +7',   rad: '79 pm',  en: '3.16', role: 'Micronutriente esencial en trazas: balance iónico y estomas.' },
+      Ni: { aw: '58.693',  val: '+2',               rad: '124 pm', en: '1.91', role: 'Micronutriente esencial en bajas dosis: ureasa y metabolismo de N.' },
+      Si: { aw: '28.085',  val: '+4',               rad: '111 pm', en: '1.90', role: 'Elemento benéfico: refuerza tejidos y tolerancia a estrés.' },
+      Na: { aw: '22.990',  val: '+1',               rad: '186 pm', en: '0.93', role: 'Benéfico en algunas especies; puede apoyar balance osmótico.' },
+      Ti: { aw: '47.867',  val: '+4, +3',           rad: '147 pm', en: '1.54', role: 'Elemento benéfico reportado en trazas (según especie y manejo).' },
+      Al: { aw: '26.982',  val: '+3',               rad: '143 pm', en: '1.61', role: 'No esencial; en suelos ácidos suele ser tóxico, aunque puede tener efectos benéficos puntuales en algunas especies.' },
+      Co: { aw: '58.933',  val: '+2, +3',           rad: '125 pm', en: '1.88', role: 'Benéfico para fijación biológica de nitrógeno (leguminosas).' },
+      Se: { aw: '78.971',  val: '-2, +4, +6',       rad: '103 pm', en: '2.55', role: 'Elemento benéfico en trazas; exceso puede causar toxicidad.' },
+      V:  { aw: '50.942',  val: '+5, +4, +3',       rad: '134 pm', en: '1.63', role: 'Elemento benéfico reportado en condiciones específicas.' }
+    };
+
+    const ELEMENTS = [
+      { z:1,s:'H', n:'Hidrógeno', p:1, g:1 }, { z:2,s:'He', n:'Helio', p:1, g:18 },
+      { z:3,s:'Li', n:'Litio', p:2, g:1 }, { z:4,s:'Be', n:'Berilio', p:2, g:2 }, { z:5,s:'B', n:'Boro', p:2, g:13 }, { z:6,s:'C', n:'Carbono', p:2, g:14 }, { z:7,s:'N', n:'Nitrógeno', p:2, g:15 }, { z:8,s:'O', n:'Oxígeno', p:2, g:16 }, { z:9,s:'F', n:'Flúor', p:2, g:17 }, { z:10,s:'Ne', n:'Neón', p:2, g:18 },
+      { z:11,s:'Na', n:'Sodio', p:3, g:1 }, { z:12,s:'Mg', n:'Magnesio', p:3, g:2 }, { z:13,s:'Al', n:'Aluminio', p:3, g:13 }, { z:14,s:'Si', n:'Silicio', p:3, g:14 }, { z:15,s:'P', n:'Fósforo', p:3, g:15 }, { z:16,s:'S', n:'Azufre', p:3, g:16 }, { z:17,s:'Cl', n:'Cloro', p:3, g:17 }, { z:18,s:'Ar', n:'Argón', p:3, g:18 },
+      { z:19,s:'K', n:'Potasio', p:4, g:1 }, { z:20,s:'Ca', n:'Calcio', p:4, g:2 }, { z:21,s:'Sc', n:'Escandio', p:4, g:3 }, { z:22,s:'Ti', n:'Titanio', p:4, g:4 }, { z:23,s:'V', n:'Vanadio', p:4, g:5 }, { z:24,s:'Cr', n:'Cromo', p:4, g:6 }, { z:25,s:'Mn', n:'Manganeso', p:4, g:7 }, { z:26,s:'Fe', n:'Hierro', p:4, g:8 }, { z:27,s:'Co', n:'Cobalto', p:4, g:9 }, { z:28,s:'Ni', n:'Níquel', p:4, g:10 }, { z:29,s:'Cu', n:'Cobre', p:4, g:11 }, { z:30,s:'Zn', n:'Zinc', p:4, g:12 }, { z:31,s:'Ga', n:'Galio', p:4, g:13 }, { z:32,s:'Ge', n:'Germanio', p:4, g:14 }, { z:33,s:'As', n:'Arsénico', p:4, g:15 }, { z:34,s:'Se', n:'Selenio', p:4, g:16 }, { z:35,s:'Br', n:'Bromo', p:4, g:17 }, { z:36,s:'Kr', n:'Kriptón', p:4, g:18 },
+      { z:37,s:'Rb', n:'Rubidio', p:5, g:1 }, { z:38,s:'Sr', n:'Estroncio', p:5, g:2 }, { z:39,s:'Y', n:'Itrio', p:5, g:3 }, { z:40,s:'Zr', n:'Zirconio', p:5, g:4 }, { z:41,s:'Nb', n:'Niobio', p:5, g:5 }, { z:42,s:'Mo', n:'Molibdeno', p:5, g:6 }, { z:43,s:'Tc', n:'Tecnecio', p:5, g:7 }, { z:44,s:'Ru', n:'Rutenio', p:5, g:8 }, { z:45,s:'Rh', n:'Rodio', p:5, g:9 }, { z:46,s:'Pd', n:'Paladio', p:5, g:10 }, { z:47,s:'Ag', n:'Plata', p:5, g:11 }, { z:48,s:'Cd', n:'Cadmio', p:5, g:12 }, { z:49,s:'In', n:'Indio', p:5, g:13 }, { z:50,s:'Sn', n:'Estaño', p:5, g:14 }, { z:51,s:'Sb', n:'Antimonio', p:5, g:15 }, { z:52,s:'Te', n:'Telurio', p:5, g:16 }, { z:53,s:'I', n:'Yodo', p:5, g:17 }, { z:54,s:'Xe', n:'Xenón', p:5, g:18 },
+      { z:55,s:'Cs', n:'Cesio', p:6, g:1 }, { z:56,s:'Ba', n:'Bario', p:6, g:2 }, { z:57,s:'La', n:'Lantano', p:6, g:3 }, { z:72,s:'Hf', n:'Hafnio', p:6, g:4 }, { z:73,s:'Ta', n:'Tantalio', p:6, g:5 }, { z:74,s:'W', n:'Wolframio', p:6, g:6 }, { z:75,s:'Re', n:'Renio', p:6, g:7 }, { z:76,s:'Os', n:'Osmio', p:6, g:8 }, { z:77,s:'Ir', n:'Iridio', p:6, g:9 }, { z:78,s:'Pt', n:'Platino', p:6, g:10 }, { z:79,s:'Au', n:'Oro', p:6, g:11 }, { z:80,s:'Hg', n:'Mercurio', p:6, g:12 }, { z:81,s:'Tl', n:'Talio', p:6, g:13 }, { z:82,s:'Pb', n:'Plomo', p:6, g:14 }, { z:83,s:'Bi', n:'Bismuto', p:6, g:15 }, { z:84,s:'Po', n:'Polonio', p:6, g:16 }, { z:85,s:'At', n:'Astato', p:6, g:17 }, { z:86,s:'Rn', n:'Radón', p:6, g:18 },
+      { z:87,s:'Fr', n:'Francio', p:7, g:1 }, { z:88,s:'Ra', n:'Radio', p:7, g:2 }, { z:89,s:'Ac', n:'Actinio', p:7, g:3 }, { z:104,s:'Rf', n:'Rutherfordio', p:7, g:4 }, { z:105,s:'Db', n:'Dubnio', p:7, g:5 }, { z:106,s:'Sg', n:'Seaborgio', p:7, g:6 }, { z:107,s:'Bh', n:'Bohrio', p:7, g:7 }, { z:108,s:'Hs', n:'Hassio', p:7, g:8 }, { z:109,s:'Mt', n:'Meitnerio', p:7, g:9 }, { z:110,s:'Ds', n:'Darmstadtio', p:7, g:10 }, { z:111,s:'Rg', n:'Roentgenio', p:7, g:11 }, { z:112,s:'Cn', n:'Copernicio', p:7, g:12 }, { z:113,s:'Nh', n:'Nihonio', p:7, g:13 }, { z:114,s:'Fl', n:'Flerovio', p:7, g:14 }, { z:115,s:'Mc', n:'Moscovio', p:7, g:15 }, { z:116,s:'Lv', n:'Livermorio', p:7, g:16 }, { z:117,s:'Ts', n:'Tenesino', p:7, g:17 }, { z:118,s:'Og', n:'Oganesón', p:7, g:18 },
+      { z:58,s:'Ce', n:'Cerio', p:8, g:4 }, { z:59,s:'Pr', n:'Praseodimio', p:8, g:5 }, { z:60,s:'Nd', n:'Neodimio', p:8, g:6 }, { z:61,s:'Pm', n:'Prometio', p:8, g:7 }, { z:62,s:'Sm', n:'Samario', p:8, g:8 }, { z:63,s:'Eu', n:'Europio', p:8, g:9 }, { z:64,s:'Gd', n:'Gadolinio', p:8, g:10 }, { z:65,s:'Tb', n:'Terbio', p:8, g:11 }, { z:66,s:'Dy', n:'Disprosio', p:8, g:12 }, { z:67,s:'Ho', n:'Holmio', p:8, g:13 }, { z:68,s:'Er', n:'Erbio', p:8, g:14 }, { z:69,s:'Tm', n:'Tulio', p:8, g:15 }, { z:70,s:'Yb', n:'Iterbio', p:8, g:16 }, { z:71,s:'Lu', n:'Lutecio', p:8, g:17 },
+      { z:90,s:'Th', n:'Torio', p:9, g:4 }, { z:91,s:'Pa', n:'Protactinio', p:9, g:5 }, { z:92,s:'U', n:'Uranio', p:9, g:6 }, { z:93,s:'Np', n:'Neptunio', p:9, g:7 }, { z:94,s:'Pu', n:'Plutonio', p:9, g:8 }, { z:95,s:'Am', n:'Americio', p:9, g:9 }, { z:96,s:'Cm', n:'Curio', p:9, g:10 }, { z:97,s:'Bk', n:'Berkelio', p:9, g:11 }, { z:98,s:'Cf', n:'Californio', p:9, g:12 }, { z:99,s:'Es', n:'Einsteinio', p:9, g:13 }, { z:100,s:'Fm', n:'Fermio', p:9, g:14 }, { z:101,s:'Md', n:'Mendelevio', p:9, g:15 }, { z:102,s:'No', n:'Nobelio', p:9, g:16 }, { z:103,s:'Lr', n:'Lawrencio', p:9, g:17 }
+    ];
+
+    function category(sym) {
+      if (CHO.has(sym)) return 'cho';
+      if (ESSENTIAL.has(sym)) return 'essential';
+      if (BENEFICIAL.has(sym)) return 'beneficial';
+      return 'other';
+    }
+
+    function display(symbol, fallback) {
+      return symbol == null || symbol === '' ? fallback : symbol;
+    }
+
+    const board = document.getElementById('board');
+    const selTitle = document.getElementById('selTitle');
+    const selMeta = document.getElementById('selMeta');
+    const selGrid = document.getElementById('selGrid');
+    const selRole = document.getElementById('selRole');
+    let selectedBtn = null;
+
+    ELEMENTS.forEach(function(el) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'el ' + category(el.s);
+      btn.style.gridColumn = String(el.g);
+      btn.style.gridRow = String(el.p);
+      btn.innerHTML = '<span class="z">' + el.z + '</span><span class="s">' + el.s + '</span><span class="n">' + el.n + '</span>';
+      btn.addEventListener('click', function() {
+        if (selectedBtn) selectedBtn.classList.remove('selected');
+        selectedBtn = btn;
+        btn.classList.add('selected');
+        const d = DETAILS[el.s] || {};
+        selTitle.textContent = el.s + ' — ' + el.n;
+        selMeta.textContent = 'Número atómico: ' + el.z + ' • Grupo: ' + el.g + ' • Período: ' + (el.p <= 7 ? el.p : (el.p === 8 ? 'Lantánidos' : 'Actínidos'));
+        selGrid.innerHTML = [
+          ['Peso atómico', display(d.aw, '—')],
+          ['Valencia(s)', display(d.val, '—')],
+          ['Radio atómico', display(d.rad, '—')],
+          ['Electronegatividad', display(d.en, '—')],
+          ['Categoría', category(el.s) === 'cho' ? 'Estructural (C-H-O)' : (category(el.s) === 'essential' ? 'Nutriente esencial' : (category(el.s) === 'beneficial' ? 'Elemento benéfico' : 'Resto de elementos'))]
+        ].map(function(row) {
+          return '<div class="card"><div class="k">' + row[0] + '</div><div class="v">' + row[1] + '</div></div>';
+        }).join('');
+        selRole.textContent = display(d.role, 'Sin ficha agronómica resumida para este elemento en esta vista.');
+      });
+      board.appendChild(btn);
+    });
+
+    // Selección inicial útil para contexto agronómico
+    const first = Array.from(document.querySelectorAll('.el')).find(function(x) {
+      return x.querySelector('.s').textContent === 'N';
+    });
+    if (first) first.click();
+  </script>
+</body>
+</html>
