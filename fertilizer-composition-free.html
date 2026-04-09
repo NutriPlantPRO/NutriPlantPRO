@@ -53,8 +53,6 @@
     .blend-total-label:first-of-type { margin-top: 0; }
     .blend-total-label.oxide { color: #6d28d9; }
     .blend-total-line { margin: 0 0 4px; line-height: 1.55; }
-    .blend-npk { margin-top: 10px; font-weight: 700; color: #14532d; line-height: 1.45; }
-    .blend-npk .blend-label-me { display: block; margin-top: 8px; font-size: 12.5px; font-weight: 600; color: #334155; }
     .others-row-inline { display: flex; align-items: center; gap: 10px; margin: 12px 0; max-width: 440px; flex-wrap: wrap; }
     .others-row-inline label { font-size: 13px; font-weight: 600; color: #334155; }
     .others-row-inline input { width: 80px; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; }
@@ -97,12 +95,11 @@
     <p id="blendValidation" style="margin:8px 0 0;font-size:13px;font-weight:600;"></p>
     <div class="blend-total-box" id="blendTotalBox">
       <h3>Nutriente total en el producto (ponderado)</h3>
-      <p style="margin:0 0 8px;font-size:12px;color:#64748b;">Arriba el <strong>% ponderado en forma elemental</strong>; debajo el <strong>equivalente en óxido</strong> (P₂O₅, K₂O, CaO, MgO) como en etiquetas comerciales.</p>
+      <p style="margin:0 0 8px;font-size:12px;color:#64748b;">Primer renglón: <strong>todos los nutrientes en % elemental</strong> (N, P, K, Ca, Mg, S, micronutrientes…). Segundo renglón: solo <strong>equivalente en óxido</strong> (P₂O₅, K₂O, CaO, MgO). S, Fe, Zn y el resto <strong>no</strong> se duplican abajo.</p>
       <div id="blendTotalNutrients"></div>
-      <div class="blend-npk" id="blendNpkLine"></div>
     </div>
     <p class="legend" style="margin-top:16px;">
-      <strong>Nota:</strong> Las tarjetas bajo cada fila son la molécula <strong>pura</strong>. El recuadro azul final es el nutriente <strong>en tu producto</strong> según los % y Otros. P₂O₅, K₂O, CaO y MgO son equivalentes agronómicos.
+      <strong>Nota:</strong> Las tarjetas bajo cada fila son la molécula <strong>pura</strong>. El recuadro azul resume el producto: primero todo en <strong>elemental</strong>, después solo <strong>óxidos</strong> donde aplica (P, K, Ca, Mg).
     </p>
   </div>
 
@@ -613,47 +610,6 @@
       refreshAllRowDetails();
     }
 
-    /** Resumen tipo etiqueta: N–P₂O₅–K₂O; añade CaO/MgO si aportan; micronutrientes en % elemental. */
-    function buildBlendLabelLine(totals) {
-      function fmt1(x) {
-        return num(x).toFixed(1).replace('.', ',');
-      }
-      var names = [];
-      var vals = [];
-      names.push('N');
-      vals.push(fmt1(totals.N));
-      names.push('P₂O₅');
-      vals.push(fmt1(totals.P2O5));
-      names.push('K₂O');
-      vals.push(fmt1(totals.K2O));
-      if (num(totals.CaO) > 1e-4) {
-        names.push('CaO');
-        vals.push(fmt1(totals.CaO));
-      }
-      if (num(totals.MgO) > 1e-4) {
-        names.push('MgO');
-        vals.push(fmt1(totals.MgO));
-      }
-      var main =
-        '<strong>Etiqueta (ponderado):</strong> ' +
-        names.join(' – ') +
-        ': ' +
-        vals.join(' – ');
-      var meOrder = ['Zn', 'Fe', 'Mn', 'B', 'Cu', 'Mo'];
-      var meLbl = { Zn: 'Zn', Fe: 'Fe', Mn: 'Mn', B: 'B', Cu: 'Cu', Mo: 'Mo' };
-      var meParts = [];
-      meOrder.forEach(function(k) {
-        if (num(totals[k]) > 1e-4) meParts.push(meLbl[k] + ' ' + fmt1(totals[k]));
-      });
-      if (meParts.length) {
-        main +=
-          ' <span class="blend-label-me">· Micronutrientes (% elemental): ' +
-          meParts.join(' · ') +
-          '</span>';
-      }
-      return main;
-    }
-
     function recalcBlend() {
       othersPct = num(document.getElementById('othersPctInput').value);
       const totals = zeroComp();
@@ -672,7 +628,6 @@
       const box = document.getElementById('blendValidation');
       const totalBox = document.getElementById('blendTotalBox');
       const nutDiv = document.getElementById('blendTotalNutrients');
-      const npkDiv = document.getElementById('blendNpkLine');
       if (Math.abs(totalPct - 100) <= 0.02 && blendRows.some(function(r) { return String(r.material).trim(); })) {
         box.textContent = 'Suma: ' + totalPct.toFixed(2) + '% — OK.';
         box.style.color = '#166534';
@@ -690,11 +645,10 @@
           if (totals[k] > 1e-4) lineOx.push('<strong>' + labels[k] + '</strong>: ' + totals[k].toFixed(2) + ' %');
         });
         nutDiv.innerHTML =
-          '<p class="blend-total-label">Forma elemental (ponderado)</p>' +
+          '<p class="blend-total-label">% ponderado — forma elemental</p>' +
           '<p class="blend-total-line">' + (lineElem.length ? lineElem.join(' · ') : '—') + '</p>' +
-          '<p class="blend-total-label oxide">Equivalente en óxido (P, K, Ca, Mg como P₂O₅, K₂O, CaO, MgO)</p>' +
+          '<p class="blend-total-label oxide">Equivalente en óxido (P₂O₅, K₂O, CaO, MgO)</p>' +
           '<p class="blend-total-line">' + (lineOx.length ? lineOx.join(' · ') : '—') + '</p>';
-        npkDiv.innerHTML = buildBlendLabelLine(totals);
       } else {
         box.textContent = blendRows.length
           ? ('Suma: ' + totalPct.toFixed(2) + '% — Ajusta a 100% (ingredientes + Otros).')
