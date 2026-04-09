@@ -51,8 +51,41 @@
     .blend-total-box h3 { margin: 0 0 8px; font-size: 14px; color: #1e40af; }
     .blend-total-label { margin: 12px 0 6px; font-size: 11px; font-weight: 700; color: #1d4ed8; letter-spacing: 0.02em; text-transform: uppercase; }
     .blend-total-label:first-of-type { margin-top: 0; }
-    .blend-total-label.oxide { color: #6d28d9; }
     .blend-total-line { margin: 0 0 4px; line-height: 1.55; }
+    .blend-detail-card {
+      margin-top: 10px;
+      padding: 12px 14px;
+      background: #fff;
+      border: 2px solid #60a5fa;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(30, 64, 175, 0.14);
+    }
+    .blend-detail-card-title {
+      margin: 0 0 10px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #1e3a8a;
+      letter-spacing: 0.03em;
+    }
+    .blend-detail-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      align-items: baseline;
+      margin-bottom: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .blend-detail-row:last-child { margin-bottom: 0; }
+    .blend-detail-tag {
+      flex: 0 0 auto;
+      font-weight: 700;
+      font-size: 11px;
+      color: #1d4ed8;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .blend-detail-row .blend-detail-body { flex: 1 1 200px; min-width: 0; }
     .others-row-inline { display: flex; align-items: center; gap: 10px; margin: 12px 0; max-width: 440px; flex-wrap: wrap; }
     .others-row-inline label { font-size: 13px; font-weight: 600; color: #334155; }
     .others-row-inline input { width: 80px; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; }
@@ -95,11 +128,11 @@
     <p id="blendValidation" style="margin:8px 0 0;font-size:13px;font-weight:600;"></p>
     <div class="blend-total-box" id="blendTotalBox">
       <h3>Nutriente total en el producto (ponderado)</h3>
-      <p style="margin:0 0 8px;font-size:12px;color:#64748b;">Primer renglón: <strong>todos los nutrientes en % elemental</strong> (N, P, K, Ca, Mg, S, micronutrientes…). Segundo renglón: solo <strong>equivalente en óxido</strong> (P₂O₅, K₂O, CaO, MgO). S, Fe, Zn y el resto <strong>no</strong> se duplican abajo.</p>
+      <p style="margin:0 0 8px;font-size:12px;color:#64748b;">Arriba solo <strong>macronutrientes en % elemental</strong> (N total, P, K, Ca, Mg, S). En la <strong>celda con borde</strong>: fracciones de N (nitrato / amonio), <strong>óxidos</strong> (P₂O₅, K₂O, CaO, MgO) y <strong>micronutrientes</strong> en elemental.</p>
       <div id="blendTotalNutrients"></div>
     </div>
     <p class="legend" style="margin-top:16px;">
-      <strong>Nota:</strong> Las tarjetas bajo cada fila son la molécula <strong>pura</strong>. El recuadro azul resume el producto: primero todo en <strong>elemental</strong>, después solo <strong>óxidos</strong> donde aplica (P, K, Ca, Mg).
+      <strong>Nota:</strong> Las tarjetas bajo cada fila son la molécula <strong>pura</strong>. El recuadro azul: renglón simple en <strong>elemental (macros)</strong> y la celda inferior con <strong>desglose tipo etiqueta</strong> (N, óxidos, micros).
     </p>
   </div>
 
@@ -634,21 +667,49 @@
         totalBox.style.display = 'block';
         var labels = { N: 'N', P: 'P', K: 'K', Ca: 'Ca', Mg: 'Mg', S: 'S', Zn: 'Zn', Fe: 'Fe', Mn: 'Mn', B: 'B', Cu: 'Cu', Mo: 'Mo',
           N_NO3: 'N-NO₃', N_NH4: 'N-NH₄', P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO' };
-        var elemOrder = ['N', 'N_NO3', 'N_NH4', 'P', 'K', 'Ca', 'Mg', 'S', 'Zn', 'Fe', 'Mn', 'B', 'Cu', 'Mo'];
+        var macroElemOrder = ['N', 'P', 'K', 'Ca', 'Mg', 'S'];
         var oxOrder = ['P2O5', 'K2O', 'CaO', 'MgO'];
-        var lineElem = [];
-        var lineOx = [];
-        elemOrder.forEach(function(k) {
-          if (totals[k] > 1e-4) lineElem.push('<strong>' + labels[k] + '</strong>: ' + totals[k].toFixed(2) + ' %');
+        var meOrder = ['Zn', 'Fe', 'Mn', 'B', 'Cu', 'Mo'];
+        var lineMacro = [];
+        macroElemOrder.forEach(function(k) {
+          if (totals[k] > 1e-4) lineMacro.push('<strong>' + labels[k] + '</strong>: ' + totals[k].toFixed(2) + ' %');
         });
+        var lineNfrac = [];
+        if (totals.N_NO3 > 1e-4) lineNfrac.push('<strong>' + labels.N_NO3 + '</strong>: ' + totals.N_NO3.toFixed(2) + ' %');
+        if (totals.N_NH4 > 1e-4) lineNfrac.push('<strong>' + labels.N_NH4 + '</strong>: ' + totals.N_NH4.toFixed(2) + ' %');
+        var lineOx = [];
         oxOrder.forEach(function(k) {
           if (totals[k] > 1e-4) lineOx.push('<strong>' + labels[k] + '</strong>: ' + totals[k].toFixed(2) + ' %');
         });
+        var lineMe = [];
+        meOrder.forEach(function(k) {
+          if (totals[k] > 1e-4) lineMe.push('<strong>' + labels[k] + '</strong>: ' + totals[k].toFixed(2) + ' %');
+        });
+        var nFracBody = lineNfrac.length
+          ? lineNfrac.join(' · ')
+          : (totals.N > 1e-4
+            ? '<span style="color:#64748b;font-size:12.5px;">Sin fracción NO₃/NH₄ estimada — el <strong>N total</strong> está en el renglón superior.</span>'
+            : '—');
+        var oxBody = lineOx.length ? lineOx.join(' · ') : '—';
+        var meBody = lineMe.length ? lineMe.join(' · ') : '—';
         nutDiv.innerHTML =
-          '<p class="blend-total-label">% ponderado — forma elemental</p>' +
-          '<p class="blend-total-line">' + (lineElem.length ? lineElem.join(' · ') : '—') + '</p>' +
-          '<p class="blend-total-label oxide">Equivalente en óxido (P₂O₅, K₂O, CaO, MgO)</p>' +
-          '<p class="blend-total-line">' + (lineOx.length ? lineOx.join(' · ') : '—') + '</p>';
+          '<p class="blend-total-label">% ponderado — solo elemental (macros)</p>' +
+          '<p class="blend-total-line">' + (lineMacro.length ? lineMacro.join(' · ') : '—') + '</p>' +
+          '<div class="blend-detail-card">' +
+          '<div class="blend-detail-card-title">Desglose tipo etiqueta (más resaltado)</div>' +
+          '<div class="blend-detail-row">' +
+          '<span class="blend-detail-tag">Nitrógeno</span>' +
+          '<span class="blend-detail-body">' + nFracBody + '</span>' +
+          '</div>' +
+          '<div class="blend-detail-row">' +
+          '<span class="blend-detail-tag">Óxidos</span>' +
+          '<span class="blend-detail-body">' + oxBody + '</span>' +
+          '</div>' +
+          '<div class="blend-detail-row">' +
+          '<span class="blend-detail-tag">Micronutrientes</span>' +
+          '<span class="blend-detail-body">' + meBody + '</span>' +
+          '</div>' +
+          '</div>';
       } else {
         box.textContent = blendRows.length
           ? ('Suma: ' + totalPct.toFixed(2) + '% — Ajusta a 100% (ingredientes + Otros).')
