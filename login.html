@@ -274,6 +274,11 @@
           <span class="calculator-icon">📦</span>
           <span class="button-text">Calculadora de Mezclas Granulares</span>
         </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompositionCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🧪</span>
+          <span class="button-text">Calculadora de Composición de Fertilizantes (%)</span>
+        </button>
         
         <!-- Footer: copyright y acceso privado al final -->
         <div style="
@@ -784,6 +789,24 @@
       background: #f8fafc;
     }
 
+    .modal-fertilizer-composition {
+      max-width: 1280px;
+      width: 96%;
+      max-height: 92vh;
+      overflow: hidden;
+    }
+    .modal-fertilizer-composition .modal-body {
+      padding: 0;
+      height: calc(92vh - 80px);
+    }
+    .modal-fertilizer-composition iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #f8fafc;
+    }
+
     .modal-header {
       padding: 20px;
       border-bottom: 1px solid #e5e7eb;
@@ -1198,6 +1221,16 @@
     function closeGranularMixCalculator() {
       const modal = document.getElementById('granularMixCalculatorModal');
       const frame = document.getElementById('granularMixCalculatorFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
+    function showFertilizerCompositionCalculator() {
+      document.getElementById('fertilizerCompositionCalculatorModal').style.display = 'flex';
+    }
+    function closeFertilizerCompositionCalculator() {
+      const modal = document.getElementById('fertilizerCompositionCalculatorModal');
+      const frame = document.getElementById('fertilizerCompositionCalculatorFrame');
       modal.style.display = 'none';
       if (frame) frame.src = frame.src;
     }
@@ -1674,6 +1707,19 @@
       </div>
       <div class="modal-body">
         <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html" title="Calculadora de Mezclas Granulares"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Calculadora de Composición de Fertilizantes -->
+  <div id="fertilizerCompositionCalculatorModal" class="modal-overlay">
+    <div class="modal modal-fertilizer-composition">
+      <div class="modal-header">
+        <h2 class="modal-title">🧪 Calculadora de Composición de Fertilizantes (%)</h2>
+        <button class="modal-close" onclick="closeFertilizerCompositionCalculator()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html" title="Calculadora de Composición de Fertilizantes"></iframe>
       </div>
     </div>
   </div>

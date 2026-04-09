@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Composición de Fertilizantes (%)</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    body { margin: 0; padding: 12px 14px 24px; background: #f8fafc; font-family: Inter, system-ui, sans-serif; font-size: 13px; }
+    .guest-note { margin: 0 0 10px; font-size: 12px; color: #64748b; text-align: center; }
+    .guest-note strong { color: #475569; }
+    .fc-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .fc-title { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0; }
+    .fc-badge { background: linear-gradient(135deg, #fef08a, #fde047); color: #713f12; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 14px; border: 1px solid #eab308; }
+    .fc-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 12px; }
+    .fc-table { border-collapse: collapse; width: max-content; min-width: 100%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.08); border-radius: 8px; overflow: hidden; }
+    .fc-table th, .fc-table td { border: 1px solid #e2e8f0; padding: 6px 8px; text-align: center; white-space: nowrap; vertical-align: middle; }
+    .fc-table th { background: #f1f5f9; font-weight: 600; color: #334155; font-size: 11px; }
+    .fc-table td.mat-cell { text-align: left; min-width: 260px; }
+    .fc-table td.small-note { color: #64748b; font-size: 11px; }
+    .mat-input { width: 100%; min-width: 240px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; }
+    .pct-input { width: 72px; text-align: center; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; }
+    .btn-del { background: #dc2626; color: #fff; border: 0; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .btn-del:hover { background: #b91c1c; }
+    .btn-add { background: #16a34a; color: #fff; border: 0; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 8px; margin-top: 8px; }
+    .btn-add:hover { background: #15803d; }
+    .btn-cat { background: #2563eb; color: #fff; border: 0; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    .btn-cat:hover { background: #1d4ed8; }
+    .btn-clear { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .fc-table tr.total-row td { background: #ecfdf5; font-weight: 700; color: #14532d; }
+    .fc-table tr.others-row td { background: #fff7ed; }
+    .fc-table tr.error-total td { background: #fef2f2 !important; color: #991b1b; }
+    .error-hint { color: #b91c1c; font-size: 11px; line-height: 1.35; margin-top: 4px; display: block; }
+    .ok-hint { color: #64748b; font-size: 11px; line-height: 1.35; margin-top: 4px; display: block; }
+    .summary-box { margin-top: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 12px; color: #1e3a8a; font-size: 12px; }
+    .legend-box { margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; color: #334155; font-size: 12px; }
+    .modal-overlay-fc { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 9999; align-items: center; justify-content: center; padding: 16px; }
+    .modal-overlay-fc.open { display: flex; }
+    .modal-fc { background: #fff; border-radius: 12px; max-width: 780px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,.2); }
+    .modal-fc h3 { margin: 0 0 12px; font-size: 1.1rem; }
+    .fc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .fc-grid label { display: flex; flex-direction: column; font-size: 12px; color: #475569; gap: 4px; }
+    .fc-grid input { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
+    .custom-list { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 12px; max-height: 180px; overflow-y: auto; }
+    .custom-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .manual-box { border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
+    .manual-box h4 { margin: 0 0 8px; font-size: 13px; color: #334155; }
+    .manual-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .manual-grid label { display: flex; flex-direction: column; font-size: 11px; color: #64748b; gap: 4px; }
+    .manual-grid input { padding: 5px 6px; border: 1px solid #cbd5e1; border-radius: 4px; }
+    @media (max-width: 960px) {
+      .manual-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      .fc-grid { grid-template-columns: 1fr; }
+      .manual-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .mat-input { min-width: 210px; }
+    }
+  </style>
+</head>
+<body>
+  <p class="guest-note">
+    <strong>Modo gratuito:</strong> la mezcla no se guarda al cerrar. Tu catálogo personalizado se guarda solo en este navegador para esta calculadora.
+  </p>
+
+  <div class="fc-header">
+    <h1 class="fc-title">🧪 Calculadora de Composición de Fertilizantes (%)</h1>
+    <div class="fc-badge" id="activeFractionBadge">Fracción activa: 100.00%</div>
+  </div>
+
+  <div class="fc-wrap">
+    <table class="fc-table" id="compositionTable">
+      <thead>
+        <tr>
+          <th>Material</th>
+          <th>% en mezcla</th>
+          <th>N</th>
+          <th>P</th>
+          <th>K</th>
+          <th>Ca</th>
+          <th>Mg</th>
+          <th>S</th>
+          <th>N-NO₃</th>
+          <th>N-NH₄</th>
+          <th>P₂O₅</th>
+          <th>K₂O</th>
+          <th>CaO</th>
+          <th>MgO</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="compositionRows"></tbody>
+    </table>
+  </div>
+
+  <button type="button" class="btn-add" onclick="addRow()">+ Agregar material</button>
+  <button type="button" class="btn-cat" onclick="openCatalog()">Gestionar catálogo</button>
+  <button type="button" class="btn-clear" onclick="clearMix()" style="margin-left:8px;">Eliminar mezcla</button>
+
+  <div class="summary-box" id="mixValidation">
+    Total mezcla: 0.00% (debe ser 100%).
+  </div>
+
+  <div class="legend-box">
+    <strong>Leyenda:</strong> Composición teórica. En productos comerciales, los valores pueden variar según pureza, hidratación, impurezas y formulación real del fertilizante.
+  </div>
+
+  <datalist id="materialSuggestions"></datalist>
+
+  <div class="modal-overlay-fc" id="catalogModal" onclick="if(event.target===this)closeCatalog()">
+    <div class="modal-fc" onclick="event.stopPropagation()">
+      <h3>Gestionar catálogo personalizado</h3>
+      <p style="font-size:13px;color:#64748b;margin:0 0 12px;">Puedes guardar materiales por fórmula química o por análisis comercial (ej. NKS). Esto permite comparar teórico vs comercial.</p>
+      <div class="custom-list" id="customListEl"></div>
+
+      <div class="fc-grid">
+        <label>Nombre del material
+          <input type="text" id="customName" placeholder="Ej. MKP comercial" />
+        </label>
+        <label>Fórmula química (opcional)
+          <input type="text" id="customFormula" placeholder="Ej. KH2PO4 o MgSO4·7H2O" />
+        </label>
+      </div>
+
+      <div class="manual-box">
+        <h4>Análisis comercial manual (%) (opcional)</h4>
+        <p style="margin:0 0 8px;color:#64748b;font-size:12px;">Usa este bloque para productos reales (impurezas/aditivos) cuando no quieras cálculo teórico por fórmula.</p>
+        <div class="manual-grid">
+          <label>N<input type="number" id="manualN" min="0" step="0.01" value="0" /></label>
+          <label>P<input type="number" id="manualP" min="0" step="0.01" value="0" /></label>
+          <label>K<input type="number" id="manualK" min="0" step="0.01" value="0" /></label>
+          <label>Ca<input type="number" id="manualCa" min="0" step="0.01" value="0" /></label>
+          <label>Mg<input type="number" id="manualMg" min="0" step="0.01" value="0" /></label>
+          <label>S<input type="number" id="manualS" min="0" step="0.01" value="0" /></label>
+          <label>N-NO3<input type="number" id="manualNNO3" min="0" step="0.01" value="0" /></label>
+          <label>N-NH4<input type="number" id="manualNNH4" min="0" step="0.01" value="0" /></label>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+        <button type="button" class="btn-add" onclick="saveCustomMaterial()">Guardar material</button>
+        <button type="button" class="btn-clear" onclick="closeCatalog()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const LS_CUSTOM = 'np_login_fertilizer_composition_customs_v1';
+    const COLS = ['N', 'P', 'K', 'Ca', 'Mg', 'S', 'N_NO3', 'N_NH4', 'P2O5', 'K2O', 'CaO', 'MgO'];
+    const ELEM = { H: 1.008, C: 12.011, N: 14.01, O: 16.0, P: 30.97, K: 39.10, Ca: 40.08, Mg: 24.31, S: 32.07 };
+    const OX = { P2O5: 2.29, K2O: 1.20, CaO: 1.40, MgO: 1.66 };
+
+    const SUBSCRIPT_MAP = {
+      '₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9',
+      '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9',
+      '⁺':'+','⁻':'-'
+    };
+
+    const BASE_MATERIALS = [
+      { name: 'Urea', formula: 'CH4N2O' },
+      { name: 'MAP', formula: 'NH4H2PO4' },
+      { name: 'DAP', formula: '(NH4)2HPO4' },
+      { name: 'Nitrato de potasio', formula: 'KNO3' },
+      { name: 'MKP (fosfato monopotásico)', formula: 'KH2PO4' },
+      { name: 'Nitrato de calcio', formula: 'Ca(NO3)2' },
+      { name: 'Sulfato de magnesio heptahidratado', formula: 'MgSO4·7H2O' },
+      { name: 'Sulfato de amonio', formula: '(NH4)2SO4' },
+      { name: 'Sulfato de potasio', formula: 'K2SO4' },
+      { name: 'Kieserita', formula: 'MgSO4·H2O' },
+      {
+        name: 'NKS comercial (manual)',
+        analysis: { N: 12, P: 0, K: 15, Ca: 0, Mg: 0, S: 8, N_NO3: 7, N_NH4: 5 }
+      }
+    ];
+
+    let rowId = 0;
+    const rows = [];
+    let othersPct = 0;
+
+    function zeroComp() {
+      const out = {};
+      COLS.forEach(k => { out[k] = 0; });
+      return out;
+    }
+
+    function fromElementalsToComp(base) {
+      const out = zeroComp();
+      out.N = num(base.N);
+      out.P = num(base.P);
+      out.K = num(base.K);
+      out.Ca = num(base.Ca);
+      out.Mg = num(base.Mg);
+      out.S = num(base.S);
+      out.N_NO3 = Math.min(out.N, Math.max(0, num(base.N_NO3)));
+      out.N_NH4 = Math.min(out.N - out.N_NO3, Math.max(0, num(base.N_NH4)));
+      out.P2O5 = out.P * OX.P2O5;
+      out.K2O = out.K * OX.K2O;
+      out.CaO = out.Ca * OX.CaO;
+      out.MgO = out.Mg * OX.MgO;
+      return out;
+    }
+
+    function num(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function normalizeFormula(raw) {
+      const text = String(raw || '').trim();
+      if (!text) return '';
+      return text
+        .split('')
+        .map(ch => SUBSCRIPT_MAP[ch] || ch)
+        .join('')
+        .replace(/[−]/g, '-')
+        .replace(/\s+/g, '')
+        .replace(/\{/g, '(')
+        .replace(/\}/g, ')')
+        .replace(/\[/g, '(')
+        .replace(/\]/g, ')')
+        .replace(/\)\(/g, ')*(')
+        .replace(/\.+/g, '.');
+    }
+
+    function parseNumber(str, index) {
+      let i = index;
+      let seenDot = false;
+      let token = '';
+      while (i < str.length) {
+        const ch = str[i];
+        if (ch >= '0' && ch <= '9') {
+          token += ch;
+          i += 1;
+          continue;
+        }
+        if (ch === '.' && !seenDot) {
+          seenDot = true;
+          token += ch;
+          i += 1;
+          continue;
+        }
+        break;
+      }
+      if (!token) return { value: 1, index };
+      const val = Number(token);
+      if (!Number.isFinite(val) || val <= 0) throw new Error('Número inválido en fórmula.');
+      return { value: val, index: i };
+    }
+
+    function parseTerms(str, index, stopChar) {
+      const terms = [];
+      let i = index;
+      while (i < str.length) {
+        const ch = str[i];
+        if (stopChar && ch === stopChar) {
+          return { terms, index: i + 1 };
+        }
+        if (ch === '+' || ch === '-' || ch === '^') {
+          i += 1;
+          continue;
+        }
+        if (ch === '(') {
+          const nested = parseTerms(str, i + 1, ')');
+          const cnt = parseNumber(str, nested.index);
+          terms.push({ type: 'group', terms: nested.terms, count: cnt.value });
+          i = cnt.index;
+          continue;
+        }
+        if (ch >= 'A' && ch <= 'Z') {
+          let symbol = ch;
+          i += 1;
+          if (i < str.length && str[i] >= 'a' && str[i] <= 'z') {
+            symbol += str[i];
+            i += 1;
+          }
+          if (!Object.prototype.hasOwnProperty.call(ELEM, symbol)) {
+            throw new Error('Elemento no soportado: ' + symbol);
+          }
+          const cnt = parseNumber(str, i);
+          terms.push({ type: 'element', symbol, count: cnt.value });
+          i = cnt.index;
+          continue;
+        }
+        throw new Error('Carácter inválido en fórmula: ' + ch);
+      }
+      if (stopChar) throw new Error('Paréntesis sin cerrar en fórmula.');
+      return { terms, index: i };
+    }
+
+    function collectElements(terms, mult, out) {
+      terms.forEach(t => {
+        if (t.type === 'element') {
+          out[t.symbol] = (out[t.symbol] || 0) + (t.count * mult);
+          return;
+        }
+        collectElements(t.terms, mult * t.count, out);
+      });
+    }
+
+    function countMotifInTerms(terms, mult, motif) {
+      let total = 0;
+
+      for (let i = 0; i <= terms.length - motif.length; i += 1) {
+        let ok = true;
+        for (let j = 0; j < motif.length; j += 1) {
+          const term = terms[i + j];
+          const m = motif[j];
+          if (!term || term.type !== 'element' || term.symbol !== m.symbol || Math.abs(term.count - m.count) > 1e-9) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) total += mult;
+      }
+
+      terms.forEach(t => {
+        if (t.type === 'group') {
+          total += countMotifInTerms(t.terms, mult * t.count, motif);
+        }
+      });
+
+      return total;
+    }
+
+    function parseCompound(rawFormula) {
+      const normalized = normalizeFormula(rawFormula);
+      if (!normalized) throw new Error('Escribe una fórmula o selecciona un material.');
+      const parts = normalized.split(/[·•.]/).filter(Boolean);
+      if (!parts.length) throw new Error('Fórmula no válida.');
+
+      const segments = [];
+      parts.forEach(part => {
+        const m = part.match(/^(\d+(?:\.\d+)?)(.*)$/);
+        let coef = 1;
+        let body = part;
+        if (m && m[2]) {
+          coef = Number(m[1]);
+          body = m[2];
+        }
+        const parsed = parseTerms(body, 0, null);
+        if (parsed.index !== body.length) throw new Error('Error al parsear la fórmula.');
+        segments.push({ coef, terms: parsed.terms });
+      });
+
+      const atomCounts = {};
+      segments.forEach(seg => collectElements(seg.terms, seg.coef, atomCounts));
+
+      let mw = 0;
+      Object.keys(atomCounts).forEach(sym => {
+        mw += atomCounts[sym] * ELEM[sym];
+      });
+      if (!(mw > 0)) throw new Error('No se pudo calcular el peso molecular.');
+
+      const no3Count = segments.reduce((s, seg) =>
+        s + countMotifInTerms(seg.terms, seg.coef, [{ symbol: 'N', count: 1 }, { symbol: 'O', count: 3 }]), 0
+      );
+      const nh4Count = segments.reduce((s, seg) =>
+        s + countMotifInTerms(seg.terms, seg.coef, [{ symbol: 'N', count: 1 }, { symbol: 'H', count: 4 }]), 0
+      );
+
+      return { normalized, atomCounts, mw, no3Count, nh4Count };
+    }
+
+    function compFromFormula(formula) {
+      const parsed = parseCompound(formula);
+      const c = parsed.atomCounts;
+      const mw = parsed.mw;
+      const out = zeroComp();
+
+      out.N = ((c.N || 0) * ELEM.N / mw) * 100;
+      out.P = ((c.P || 0) * ELEM.P / mw) * 100;
+      out.K = ((c.K || 0) * ELEM.K / mw) * 100;
+      out.Ca = ((c.Ca || 0) * ELEM.Ca / mw) * 100;
+      out.Mg = ((c.Mg || 0) * ELEM.Mg / mw) * 100;
+      out.S = ((c.S || 0) * ELEM.S / mw) * 100;
+
+      const nAtoms = c.N || 0;
+      if (nAtoms > 0) {
+        let no3Atoms = Math.max(0, parsed.no3Count);
+        let nh4Atoms = Math.max(0, parsed.nh4Count);
+        const forms = no3Atoms + nh4Atoms;
+        if (forms > nAtoms && forms > 0) {
+          const k = nAtoms / forms;
+          no3Atoms *= k;
+          nh4Atoms *= k;
+        }
+        out.N_NO3 = forms > 0 ? out.N * (no3Atoms / nAtoms) : 0;
+        out.N_NH4 = forms > 0 ? out.N * (nh4Atoms / nAtoms) : 0;
+      }
+
+      out.P2O5 = out.P * OX.P2O5;
+      out.K2O = out.K * OX.K2O;
+      out.CaO = out.Ca * OX.CaO;
+      out.MgO = out.Mg * OX.MgO;
+
+      return { comp: out, mw };
+    }
+
+    function loadCustoms() {
+      try {
+        const raw = localStorage.getItem(LS_CUSTOM);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function saveCustoms(items) {
+      localStorage.setItem(LS_CUSTOM, JSON.stringify(items));
+    }
+
+    function getCatalog() {
+      return [...BASE_MATERIALS, ...loadCustoms()];
+    }
+
+    function refreshSuggestions() {
+      const dl = document.getElementById('materialSuggestions');
+      const opts = [];
+      getCatalog().forEach(entry => {
+        opts.push(`<option value="${escapeAttr(entry.name)}"></option>`);
+        if (entry.formula) opts.push(`<option value="${escapeAttr(entry.formula)}"></option>`);
+      });
+      dl.innerHTML = opts.join('');
+    }
+
+    function resolveMaterial(text) {
+      const raw = String(text || '').trim();
+      if (!raw) return { ok: false, error: 'Escribe una fórmula o selecciona un material.' };
+
+      const catalog = getCatalog();
+      const byName = catalog.find(e => e.name.toLowerCase() === raw.toLowerCase());
+      if (byName) {
+        if (byName.analysis) return { ok: true, comp: fromElementalsToComp(byName.analysis), source: byName.name, mw: null };
+        try {
+          const out = compFromFormula(byName.formula);
+          return { ok: true, comp: out.comp, source: `${byName.name} (${byName.formula})`, mw: out.mw };
+        } catch (err) {
+          return { ok: false, error: 'No se pudo calcular el material de catálogo.' };
+        }
+      }
+
+      const byFormula = catalog.find(e => e.formula && normalizeFormula(e.formula) === normalizeFormula(raw));
+      if (byFormula) {
+        if (byFormula.analysis) return { ok: true, comp: fromElementalsToComp(byFormula.analysis), source: byFormula.name, mw: null };
+        try {
+          const out = compFromFormula(byFormula.formula);
+          return { ok: true, comp: out.comp, source: `${byFormula.name} (${byFormula.formula})`, mw: out.mw };
+        } catch (err) {
+          return { ok: false, error: 'No se pudo calcular el material de catálogo.' };
+        }
+      }
+
+      try {
+        const out = compFromFormula(raw);
+        return { ok: true, comp: out.comp, source: normalizeFormula(raw), mw: out.mw };
+      } catch (err) {
+        return { ok: false, error: err && err.message ? err.message : 'Material no válido.' };
+      }
+    }
+
+    function addRow(material, pct) {
+      rows.push({
+        id: ++rowId,
+        material: material || '',
+        pct: pct != null ? String(pct) : ''
+      });
+      renderRows();
+    }
+
+    function removeRow(id) {
+      const i = rows.findIndex(r => r.id === id);
+      if (i >= 0) {
+        rows.splice(i, 1);
+        renderRows();
+      }
+    }
+
+    function clearMix() {
+      if (!rows.length && !othersPct) return;
+      if (!confirm('¿Vaciar toda la mezcla?')) return;
+      rows.length = 0;
+      othersPct = 0;
+      renderRows();
+    }
+
+    function onMaterialInput(id, val) {
+      const row = rows.find(r => r.id === id);
+      if (!row) return;
+      row.material = val;
+      recalc();
+    }
+
+    function onPctInput(id, val) {
+      const row = rows.find(r => r.id === id);
+      if (!row) return;
+      row.pct = val;
+      recalc();
+    }
+
+    function onOthersInput(val) {
+      othersPct = Math.max(0, num(val));
+      recalc();
+    }
+
+    function renderRows() {
+      const tb = document.getElementById('compositionRows');
+      if (!rows.length) {
+        tb.innerHTML = `
+          <tr>
+            <td colspan="15" style="padding:20px;color:#64748b;">Agrega materiales con el botón verde. Puedes escribir fórmula (ej. KH2PO4) o elegir catálogo.</td>
+          </tr>
+          <tr class="others-row">
+            <td class="mat-cell"><strong>Otros (%)</strong><br><span class="small-note">(impurezas, antiapelmazantes, aditivos, etc.)</span></td>
+            <td><input class="pct-input" type="number" min="0" max="100" step="0.01" value="${othersPct.toFixed(2)}" oninput="onOthersInput(this.value)" /></td>
+            ${COLS.map(() => '<td>0.00</td>').join('')}
+            <td>—</td>
+          </tr>
+          <tr class="total-row" id="totalRow">
+            <td><strong>TOTAL</strong></td>
+            <td id="totalPctCell">0.00</td>
+            ${COLS.map(k => `<td id="tot_${k}">0.00</td>`).join('')}
+            <td></td>
+          </tr>
+        `;
+        recalc();
+        return;
+      }
+
+      tb.innerHTML = rows.map(r => `
+        <tr data-rid="${r.id}">
+          <td class="mat-cell">
+            <input class="mat-input" list="materialSuggestions" value="${escapeAttr(r.material)}" placeholder="Ej. KH2PO4 o Nitrato de potasio" oninput="onMaterialInput(${r.id}, this.value)" />
+            <span class="ok-hint">Acepta fórmulas con paréntesis e hidratación (ej. Ca(NO3)2, MgSO4·7H2O).</span>
+          </td>
+          <td><input class="pct-input" type="number" min="0" max="100" step="0.01" value="${escapeAttr(r.pct)}" oninput="onPctInput(${r.id}, this.value)" /></td>
+          ${COLS.map(() => '<td class="c-nut">—</td>').join('')}
+          <td><button type="button" class="btn-del" onclick="removeRow(${r.id})" title="Quitar">🗑</button></td>
+        </tr>
+      `).join('');
+
+      tb.innerHTML += `
+        <tr class="others-row">
+          <td class="mat-cell"><strong>Otros (%)</strong><br><span class="small-note">(impurezas, antiapelmazantes, aditivos, etc.)</span></td>
+          <td><input class="pct-input" type="number" min="0" max="100" step="0.01" value="${othersPct.toFixed(2)}" oninput="onOthersInput(this.value)" /></td>
+          ${COLS.map(() => '<td>0.00</td>').join('')}
+          <td>—</td>
+        </tr>
+        <tr class="total-row" id="totalRow">
+          <td><strong>TOTAL</strong></td>
+          <td id="totalPctCell">0.00</td>
+          ${COLS.map(k => `<td id="tot_${k}">0.00</td>`).join('')}
+          <td></td>
+        </tr>
+      `;
+      recalc();
+    }
+
+    function recalc() {
+      const totals = zeroComp();
+      let materialPct = 0;
+
+      rows.forEach(r => {
+        const p = Math.max(0, num(r.pct));
+        materialPct += p;
+        const info = resolveMaterial(r.material);
+        const tr = document.querySelector(`tr[data-rid="${r.id}"]`);
+        if (!tr) return;
+
+        const hint = tr.querySelector('.ok-hint, .error-hint');
+        if (info.ok) {
+          if (hint) {
+            hint.className = 'ok-hint';
+            hint.textContent = info.mw ? `PM: ${info.mw.toFixed(2)} g/mol | Fuente: ${info.source}` : `Fuente: ${info.source}`;
+          }
+          const cells = tr.querySelectorAll('.c-nut');
+          COLS.forEach((k, i) => {
+            const v = (p / 100) * num(info.comp[k]);
+            cells[i].textContent = v.toFixed(2);
+            totals[k] += v;
+          });
+        } else {
+          if (hint) {
+            hint.className = 'error-hint';
+            hint.textContent = info.error || 'Material no válido.';
+          }
+          const cells = tr.querySelectorAll('.c-nut');
+          cells.forEach(c => { c.textContent = '0.00'; });
+        }
+      });
+
+      const totalPct = materialPct + othersPct;
+      const tp = document.getElementById('totalPctCell');
+      if (tp) tp.textContent = totalPct.toFixed(2);
+      COLS.forEach(k => {
+        const el = document.getElementById('tot_' + k);
+        if (el) el.textContent = totals[k].toFixed(2);
+      });
+
+      const badge = document.getElementById('activeFractionBadge');
+      const active = Math.max(0, 100 - othersPct);
+      badge.textContent = `Fracción activa: ${active.toFixed(2)}%`;
+
+      const box = document.getElementById('mixValidation');
+      const totalRow = document.getElementById('totalRow');
+      const delta = Math.abs(totalPct - 100);
+      if (delta <= 0.01) {
+        box.style.background = '#ecfdf5';
+        box.style.borderColor = '#86efac';
+        box.style.color = '#166534';
+        box.textContent = `Total mezcla: ${totalPct.toFixed(2)}% (correcto).`;
+        if (totalRow) totalRow.classList.remove('error-total');
+      } else {
+        box.style.background = '#fef2f2';
+        box.style.borderColor = '#fecaca';
+        box.style.color = '#991b1b';
+        box.textContent = `Total mezcla: ${totalPct.toFixed(2)}% (ajusta a 100%).`;
+        if (totalRow) totalRow.classList.add('error-total');
+      }
+    }
+
+    function openCatalog() {
+      document.getElementById('catalogModal').classList.add('open');
+      renderCustomList();
+    }
+
+    function closeCatalog() {
+      document.getElementById('catalogModal').classList.remove('open');
+    }
+
+    function renderCustomList() {
+      const list = loadCustoms();
+      const el = document.getElementById('customListEl');
+      if (!list.length) {
+        el.innerHTML = '<div style="color:#64748b;font-size:13px;">Sin materiales personalizados.</div>';
+        return;
+      }
+      el.innerHTML = list.map((m, i) => {
+        const desc = m.formula ? m.formula : `Manual: N ${num(m.analysis && m.analysis.N).toFixed(2)}%, P ${num(m.analysis && m.analysis.P).toFixed(2)}%, K ${num(m.analysis && m.analysis.K).toFixed(2)}%`;
+        return `
+          <div class="custom-item">
+            <span><strong>${escapeHtml(m.name)}</strong><br><span style="font-size:11px;color:#64748b;">${escapeHtml(desc)}</span></span>
+            <button type="button" class="btn-del" onclick="removeCustom(${i})">Eliminar</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function removeCustom(index) {
+      const list = loadCustoms();
+      list.splice(index, 1);
+      saveCustoms(list);
+      refreshSuggestions();
+      renderCustomList();
+      recalc();
+    }
+
+    function saveCustomMaterial() {
+      const list = loadCustoms();
+      const name = String(document.getElementById('customName').value || '').trim();
+      const formula = String(document.getElementById('customFormula').value || '').trim();
+      if (!name) {
+        alert('Escribe un nombre para el material.');
+        return;
+      }
+      if (BASE_MATERIALS.some(m => m.name.toLowerCase() === name.toLowerCase()) || list.some(m => m.name.toLowerCase() === name.toLowerCase())) {
+        alert('Ese nombre ya existe. Usa otro.');
+        return;
+      }
+
+      const manual = {
+        N: num(document.getElementById('manualN').value),
+        P: num(document.getElementById('manualP').value),
+        K: num(document.getElementById('manualK').value),
+        Ca: num(document.getElementById('manualCa').value),
+        Mg: num(document.getElementById('manualMg').value),
+        S: num(document.getElementById('manualS').value),
+        N_NO3: num(document.getElementById('manualNNO3').value),
+        N_NH4: num(document.getElementById('manualNNH4').value)
+      };
+      const hasManual = Object.keys(manual).some(k => manual[k] > 0);
+
+      if (!formula && !hasManual) {
+        alert('Escribe una fórmula química o captura análisis comercial manual.');
+        return;
+      }
+
+      if (formula) {
+        try {
+          parseCompound(formula);
+        } catch (err) {
+          alert('Fórmula inválida: ' + (err && err.message ? err.message : 'revisa la sintaxis.'));
+          return;
+        }
+      }
+
+      const item = formula ? { name, formula } : { name, analysis: manual };
+      list.push(item);
+      saveCustoms(list);
+      refreshSuggestions();
+      renderCustomList();
+      renderRows();
+
+      document.getElementById('customName').value = '';
+      document.getElementById('customFormula').value = '';
+      ['manualN','manualP','manualK','manualCa','manualMg','manualS','manualNNO3','manualNNH4'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '0';
+      });
+      alert('Material guardado en este navegador.');
+    }
+
+    function escapeHtml(text) {
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    function escapeAttr(text) {
+      return String(text || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    }
+
+    refreshSuggestions();
+    addRow('KH2PO4', 95);
+    othersPct = 5;
+    renderRows();
+  </script>
+</body>
+</html>
