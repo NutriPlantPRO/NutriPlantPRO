@@ -32,7 +32,10 @@
     .nut-card .elem { font-size: 18px; font-weight: 800; color: #0f172a; }
     .nut-card .sub { font-size: 12px; color: #64748b; margin-top: 4px; }
     .legend { margin-top: 14px; font-size: 12px; color: #64748b; line-height: 1.45; border-top: 1px solid #e2e8f0; padding-top: 12px; }
-    .blend-panel .blend-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; max-width: 440px; }
+    .mol-block { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; background: #fafafa; }
+    .mol-block .mol-theory-title { font-size: 12px; color: #64748b; margin: 0 0 10px; }
+    .mol-block .nut-grid { margin-top: 10px; }
+    .blend-panel .blend-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 4px; max-width: 440px; }
     .blend-panel .formula-input-narrow { flex: 1; min-width: 160px; max-width: 280px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box; }
     .blend-panel .pct-compact { width: 72px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center; font-size: 13px; }
     .blend-panel .pct-lbl { font-size: 12px; color: #64748b; white-space: nowrap; }
@@ -69,34 +72,12 @@
 
   <h1>🧪 Calculadora de Composición de Fertilizantes (%)</h1>
   <p class="lead">
-    Escribe o elige una <strong>fórmula química</strong> del listado: se calcula el <strong>PM</strong> y el <strong>% en masa</strong> de cada nutriente en esa molécula, con <strong>equivalentes en óxido</strong> donde aplica. Más abajo puedes combinar <strong>varias sales + % + Otros</strong> (ej. NKS).
+    Agrega una o más <strong>filas</strong>: en cada una eliges la <strong>fórmula</strong> y el <strong>% en el producto</strong>. Debajo de cada fila verás la <strong>composición teórica de esa molécula pura</strong> (PM, tarjetas, óxidos). Al final, <strong>Otros %</strong> y el <strong>total ponderado</strong> del producto cuando la suma sea 100%.
   </p>
 
-  <div class="panel">
-    <h2>1) Una molécula (composición teórica)</h2>
-    <p class="hint">El desplegable muestra solo <strong>fórmulas</strong>; al elegir, el recuadro se llena con la molécula. También puedes escribir a mano (ej. <code>Ca(NO3)2</code>).</p>
-    <div class="row-input">
-      <label class="formula-field-wrap">
-        Fórmula
-        <input type="text" id="singleFormula" list="materialSuggestions" placeholder="Ej. KH2PO4" autocomplete="off" />
-      </label>
-      <button type="button" class="btn btn-primary" onclick="calcSingle()">Calcular</button>
-    </div>
-    <p id="singleError" class="err" style="display:none;"></p>
-    <div id="singleResult" style="display:none;">
-      <div class="pm-line">Fórmula: <strong id="singleNorm"></strong></div>
-      <div class="pm-line"><strong id="singlePm"></strong></div>
-      <div id="singleNpk" style="display:none;" class="ok-tag"></div>
-      <div class="nut-grid" id="singleNutrients"></div>
-      <p class="legend">
-        <strong>Nota:</strong> En P, K, Ca y Mg se muestra el <strong>% elemental</strong> y, debajo, el <strong>equivalente en óxido</strong> (P₂O₅, K₂O, CaO, MgO) como en etiquetas. Composición <strong>teórica</strong> de la sustancia pura.
-      </p>
-    </div>
-  </div>
-
   <div class="panel blend-panel">
-    <h2>2) Varios ingredientes en el mismo producto (opcional)</h2>
-    <p class="hint">Una fila por sal: <strong>fórmula</strong> + <strong>%</strong> que aporta al producto. <strong>Otros</strong> = inerte / aditivos / humedad. Suma = 100%. Ej.: KNO3 + K2SO4 + Otros.</p>
+    <h2>Moléculas en el producto</h2>
+    <p class="hint">El desplegable muestra solo <strong>fórmulas</strong>. Una fila = un ingrediente; usa <strong>+ Agregar molécula</strong> para mezclas (ej. NKS). <strong>Otros</strong> = inerte / aditivos / humedad.</p>
     <div id="blendLines"></div>
     <button type="button" class="btn-sm btn-add" onclick="addBlendRow()">+ Agregar molécula</button>
     <button type="button" class="btn-sm btn-cat" onclick="openCatalog()">Gestionar catálogo</button>
@@ -112,6 +93,9 @@
       <div id="blendTotalNutrients"></div>
       <div class="blend-npk" id="blendNpkLine"></div>
     </div>
+    <p class="legend" style="margin-top:16px;">
+      <strong>Nota:</strong> Las tarjetas bajo cada fila son la molécula <strong>pura</strong>. El recuadro azul final es el nutriente <strong>en tu producto</strong> según los % y Otros. P₂O₅, K₂O, CaO y MgO son equivalentes agronómicos.
+    </p>
   </div>
 
   <datalist id="materialSuggestions"></datalist>
@@ -484,9 +468,8 @@
       );
     }
 
-    function renderSingleNutrients(comp) {
-      const el = document.getElementById('singleNutrients');
-      const parts = [];
+    function buildNutrientsHtml(comp) {
+      var parts = [];
       parts.push(nutCard('N (total)', comp.N, null, false));
       if (num(comp.N) > 1e-6 && (num(comp.N_NO3) > 1e-4 || num(comp.N_NH4) > 1e-4)) {
         parts.push(nutCard('N como NO₃⁻ (aprox.)', comp.N_NO3, null, false));
@@ -511,43 +494,47 @@
       if (num(comp.B) > 1e-8) parts.push(nutCard('B', comp.B, null, false));
       if (num(comp.Cu) > 1e-8) parts.push(nutCard('Cu', comp.Cu, null, false));
       if (num(comp.Mo) > 1e-8) parts.push(nutCard('Mo', comp.Mo, null, false));
-      el.innerHTML = parts.join('');
-
-      const npkEl = document.getElementById('singleNpk');
-      if (num(comp.P2O5) > 1e-6 || num(comp.K2O) > 1e-6 || num(comp.N) > 1e-6) {
-        const n = num(comp.N).toFixed(1).replace('.', ',');
-        const p = num(comp.P2O5).toFixed(1).replace('.', ',');
-        const k = num(comp.K2O).toFixed(1).replace('.', ',');
-        npkEl.style.display = 'inline-block';
-        npkEl.textContent = 'Etiqueta tipo N – P₂O₅ – K₂O (teórico, %): ' + n + ' – ' + p + ' – ' + k;
-      } else {
-        npkEl.style.display = 'none';
-      }
+      return parts.join('');
     }
 
-    function calcSingle() {
-      const err = document.getElementById('singleError');
-      const res = document.getElementById('singleResult');
-      err.style.display = 'none';
-      res.style.display = 'none';
-      const info = resolveMaterial(document.getElementById('singleFormula').value);
-      if (!info.ok) {
-        err.textContent = info.error;
-        err.style.display = 'block';
+    function npkTheoreticalHtml(comp) {
+      if (num(comp.P2O5) > 1e-6 || num(comp.K2O) > 1e-6 || num(comp.N) > 1e-6) {
+        var n = num(comp.N).toFixed(1).replace('.', ',');
+        var p = num(comp.P2O5).toFixed(1).replace('.', ',');
+        var k = num(comp.K2O).toFixed(1).replace('.', ',');
+        return '<div class="ok-tag" style="margin-top:8px;display:inline-block;">Etiqueta tipo N – P₂O₅ – K₂O (teórico, %): ' + n + ' – ' + p + ' – ' + k + '</div>';
+      }
+      return '';
+    }
+
+    function updateRowDetail(id) {
+      var wrap = document.getElementById('mol_wrap_' + id);
+      if (!wrap) return;
+      var r = blendRows.find(function(x) { return x.id === id; });
+      if (!r || !String(r.material).trim()) {
+        wrap.innerHTML = '<p style="margin:0;font-size:12px;color:#94a3b8;">Escribe o elige una fórmula para ver el detalle teórico de esta molécula.</p>';
         return;
       }
-      const c = info.comp;
-      document.getElementById('singleNorm').textContent = info.displayFormula || '';
-      document.getElementById('singlePm').innerHTML = info.mw
-        ? 'Peso molecular (PM): <strong>' + info.mw.toFixed(2) + ' g/mol</strong>'
-        : 'PM: no aplica (análisis manual).';
-      renderSingleNutrients(c);
-      res.style.display = 'block';
+      var info = resolveMaterial(r.material);
+      if (!info.ok) {
+        wrap.innerHTML = '<p class="err" style="margin:0;">' + escapeHtml(info.error) + '</p>';
+        return;
+      }
+      var c = info.comp;
+      var pmLine = info.mw
+        ? '<div class="pm-line">PM: <strong>' + info.mw.toFixed(2) + ' g/mol</strong></div>'
+        : '<div class="pm-line">PM: no aplica (análisis manual).</div>';
+      wrap.innerHTML =
+        '<p class="mol-theory-title"><strong>Composición teórica</strong> de esta molécula al 100% (sustancia pura)</p>' +
+        '<div class="pm-line">Fórmula: <strong>' + escapeHtml(info.displayFormula || '') + '</strong></div>' +
+        pmLine +
+        npkTheoreticalHtml(c) +
+        '<div class="nut-grid">' + buildNutrientsHtml(c) + '</div>';
     }
 
-    document.getElementById('singleFormula').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') { e.preventDefault(); calcSingle(); }
-    });
+    function refreshAllRowDetails() {
+      blendRows.forEach(function(r) { updateRowDetail(r.id); });
+    }
 
     function addBlendRow(formula, pct) {
       blendRows.push({ id: ++blendRowId, material: formula || '', pct: pct != null ? String(pct) : '' });
@@ -556,7 +543,13 @@
 
     function removeBlendRow(id) {
       const i = blendRows.findIndex(r => r.id === id);
-      if (i >= 0) { blendRows.splice(i, 1); renderBlend(); }
+      if (i >= 0) {
+        blendRows.splice(i, 1);
+        if (!blendRows.length) {
+          blendRows.push({ id: ++blendRowId, material: '', pct: '100' });
+        }
+        renderBlend();
+      }
     }
 
     function clearBlend() {
@@ -566,12 +559,16 @@
       othersPct = 0;
       var oi = document.getElementById('othersPctInput');
       if (oi) oi.value = '0';
-      renderBlend();
+      addBlendRow('', '100');
     }
 
     function onBlendMat(id, v) {
       const r = blendRows.find(x => x.id === id);
-      if (r) { r.material = v; recalcBlend(); }
+      if (r) {
+        r.material = v;
+        updateRowDetail(id);
+        recalcBlend();
+      }
     }
 
     function onBlendPct(id, v) {
@@ -588,16 +585,20 @@
       }
       host.innerHTML = blendRows.map(function(r) {
         return (
-          '<div class="blend-line" data-bid="' + r.id + '">' +
+          '<div class="mol-block" data-bid="' + r.id + '">' +
+          '<div class="blend-line">' +
           '<input type="text" class="formula-input-narrow" list="materialSuggestions" placeholder="Fórmula" ' +
           'value="' + escapeAttr(r.material) + '" oninput="onBlendMat(' + r.id + ',this.value)" />' +
           '<span class="pct-lbl">% en producto</span>' +
           '<input type="number" class="pct-compact" min="0" max="100" step="0.01" value="' + escapeAttr(r.pct) + '" oninput="onBlendPct(' + r.id + ',this.value)" />' +
           '<button type="button" class="btn-sm btn-del" onclick="removeBlendRow(' + r.id + ')">Quitar</button>' +
+          '</div>' +
+          '<div id="mol_wrap_' + r.id + '" class="mol-detail-inner"></div>' +
           '</div>'
         );
       }).join('');
       recalcBlend();
+      refreshAllRowDetails();
     }
 
     function recalcBlend() {
@@ -734,7 +735,7 @@
     }
 
     refreshSuggestions();
-    renderBlend();
+    addBlendRow('', '100');
   </script>
 </body>
 </html>
