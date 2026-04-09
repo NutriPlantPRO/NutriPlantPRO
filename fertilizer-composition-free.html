@@ -89,7 +89,7 @@
       <div id="singleNpk" style="display:none;" class="ok-tag"></div>
       <div class="nut-grid" id="singleNutrients"></div>
       <p class="legend">
-        <strong>Nota:</strong> P₂O₅, K₂O, CaO y MgO son <strong>equivalentes</strong> desde el % elemental. Composición <strong>teórica</strong> de la sustancia pura.
+        <strong>Nota:</strong> En P, K, Ca y Mg se muestra el <strong>% elemental</strong> y, debajo, el <strong>equivalente en óxido</strong> (P₂O₅, K₂O, CaO, MgO) como en etiquetas. Composición <strong>teórica</strong> de la sustancia pura.
       </p>
     </div>
   </div>
@@ -108,6 +108,7 @@
     <p id="blendValidation" style="margin:8px 0 0;font-size:13px;font-weight:600;"></p>
     <div class="blend-total-box" id="blendTotalBox">
       <h3>Nutriente total en el producto (ponderado)</h3>
+      <p style="margin:0 0 8px;font-size:12px;color:#64748b;">Aquí solo se listan <strong>P₂O₅, K₂O, CaO y MgO</strong> (no P, K, Ca, Mg elementales) para alinearlo con etiqueta y evitar duplicar.</p>
       <div id="blendTotalNutrients"></div>
       <div class="blend-npk" id="blendNpkLine"></div>
     </div>
@@ -472,11 +473,12 @@
       return v.toFixed(2).replace('.', ',');
     }
 
-    function nutCard(title, elemPct, subLine) {
+    function nutCard(title, elemPct, subLine, showElementalWord) {
+      var line1 = fmt(elemPct) + ' % en masa' + (showElementalWord ? ' <span style="font-weight:600;color:#64748b;">(elemental)</span>' : '');
       return (
         '<div class="nut-card">' +
         '<h3>' + title + '</h3>' +
-        '<div class="elem">' + fmt(elemPct) + ' % en masa</div>' +
+        '<div class="elem">' + line1 + '</div>' +
         (subLine ? '<div class="sub">' + subLine + '</div>' : '') +
         '</div>'
       );
@@ -485,22 +487,30 @@
     function renderSingleNutrients(comp) {
       const el = document.getElementById('singleNutrients');
       const parts = [];
-      parts.push(nutCard('N (total)', comp.N, null));
+      parts.push(nutCard('N (total)', comp.N, null, false));
       if (num(comp.N) > 1e-6 && (num(comp.N_NO3) > 1e-4 || num(comp.N_NH4) > 1e-4)) {
-        parts.push(nutCard('N como NO₃⁻ (aprox.)', comp.N_NO3, null));
-        parts.push(nutCard('N como NH₄⁺ (aprox.)', comp.N_NH4, null));
+        parts.push(nutCard('N como NO₃⁻ (aprox.)', comp.N_NO3, null, false));
+        parts.push(nutCard('N como NH₄⁺ (aprox.)', comp.N_NH4, null, false));
       }
-      if (num(comp.P) > 1e-8) parts.push(nutCard('P', comp.P, 'Equivalente P₂O₅: ' + fmtOx(comp.P2O5) + ' %'));
-      if (num(comp.K) > 1e-8) parts.push(nutCard('K', comp.K, 'Equivalente K₂O: ' + fmtOx(comp.K2O) + ' %'));
-      if (num(comp.Ca) > 1e-8) parts.push(nutCard('Ca', comp.Ca, 'Equivalente CaO: ' + fmtOx(comp.CaO) + ' %'));
-      if (num(comp.Mg) > 1e-8) parts.push(nutCard('Mg', comp.Mg, 'Equivalente MgO: ' + fmtOx(comp.MgO) + ' %'));
-      if (num(comp.S) > 1e-8) parts.push(nutCard('S', comp.S, null));
-      if (num(comp.Zn) > 1e-8) parts.push(nutCard('Zn', comp.Zn, null));
-      if (num(comp.Fe) > 1e-8) parts.push(nutCard('Fe', comp.Fe, null));
-      if (num(comp.Mn) > 1e-8) parts.push(nutCard('Mn', comp.Mn, null));
-      if (num(comp.B) > 1e-8) parts.push(nutCard('B', comp.B, null));
-      if (num(comp.Cu) > 1e-8) parts.push(nutCard('Cu', comp.Cu, null));
-      if (num(comp.Mo) > 1e-8) parts.push(nutCard('Mo', comp.Mo, null));
+      if (num(comp.P) > 1e-8) {
+        parts.push(nutCard('Fósforo (P)', comp.P, 'Equivalente <strong>P₂O₅</strong> (uso agronómico): ' + fmtOx(comp.P2O5) + ' %', true));
+      }
+      if (num(comp.K) > 1e-8) {
+        parts.push(nutCard('Potasio (K)', comp.K, 'Equivalente <strong>K₂O</strong> (uso agronómico): ' + fmtOx(comp.K2O) + ' %', true));
+      }
+      if (num(comp.Ca) > 1e-8) {
+        parts.push(nutCard('Calcio (Ca)', comp.Ca, 'Equivalente <strong>CaO</strong> (uso agronómico): ' + fmtOx(comp.CaO) + ' %', true));
+      }
+      if (num(comp.Mg) > 1e-8) {
+        parts.push(nutCard('Magnesio (Mg)', comp.Mg, 'Equivalente <strong>MgO</strong> (uso agronómico): ' + fmtOx(comp.MgO) + ' %', true));
+      }
+      if (num(comp.S) > 1e-8) parts.push(nutCard('S', comp.S, null, false));
+      if (num(comp.Zn) > 1e-8) parts.push(nutCard('Zn', comp.Zn, null, false));
+      if (num(comp.Fe) > 1e-8) parts.push(nutCard('Fe', comp.Fe, null, false));
+      if (num(comp.Mn) > 1e-8) parts.push(nutCard('Mn', comp.Mn, null, false));
+      if (num(comp.B) > 1e-8) parts.push(nutCard('B', comp.B, null, false));
+      if (num(comp.Cu) > 1e-8) parts.push(nutCard('Cu', comp.Cu, null, false));
+      if (num(comp.Mo) > 1e-8) parts.push(nutCard('Mo', comp.Mo, null, false));
       el.innerHTML = parts.join('');
 
       const npkEl = document.getElementById('singleNpk');
@@ -614,9 +624,10 @@
         box.style.color = '#166534';
         totalBox.style.display = 'block';
         var lines = [];
-        var labels = { N: 'N', P: 'P', K: 'K', Ca: 'Ca', Mg: 'Mg', S: 'S', Zn: 'Zn', Fe: 'Fe', Mn: 'Mn', B: 'B', Cu: 'Cu', Mo: 'Mo',
+        var labels = { N: 'N', S: 'S', Zn: 'Zn', Fe: 'Fe', Mn: 'Mn', B: 'B', Cu: 'Cu', Mo: 'Mo',
           N_NO3: 'N-NO₃', N_NH4: 'N-NH₄', P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO' };
-        COLS.forEach(function(k) {
+        var blendOrder = ['N', 'N_NO3', 'N_NH4', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'Zn', 'Fe', 'Mn', 'B', 'Cu', 'Mo'];
+        blendOrder.forEach(function(k) {
           if (totals[k] > 1e-4) lines.push('<strong>' + labels[k] + '</strong>: ' + totals[k].toFixed(2) + ' %');
         });
         nutDiv.innerHTML = lines.length ? lines.join(' · ') : '—';
