@@ -61,20 +61,24 @@
 </head>
 <body>
   <p class="guest-note">
-    <strong>Modo gratuito:</strong> la mezcla no se guarda al cerrar. Tu catálogo personalizado se guarda solo en este navegador para esta calculadora.
+    <strong>Modo gratuito:</strong> la formulación no se guarda al cerrar. Tu catálogo personalizado se guarda solo en este navegador para esta calculadora.
   </p>
 
   <div class="fc-header">
     <h1 class="fc-title">🧪 Calculadora de Composición de Fertilizantes (%)</h1>
-    <div class="fc-badge" id="activeFractionBadge">Fracción activa: 100.00%</div>
+    <div class="fc-badge" id="activeFractionBadge">Parte con nutrientes: 100.00%</div>
   </div>
+  <p style="margin:0 0 14px;font-size:13px;color:#475569;line-height:1.45;max-width:920px;">
+    Cada fila es una <strong>molécula o sal pura</strong> (fórmula química o nombre del catálogo). La calculadora obtiene el <strong>% de cada elemento dentro de esa molécula</strong> (peso atómico ÷ peso molecular).
+    El <strong>% en el producto</strong> es cuánto aporta esa molécula al fertilizante final (ej. NKS: nitrato de potasio + sulfato de potasio + …). <strong>Otros (%)</strong> son impurezas, antiapelmazantes, rellenos, etc., sin nutrientes: deben sumar con las moléculas <strong>100%</strong> para validar la receta.
+  </p>
 
   <div class="fc-wrap">
     <table class="fc-table" id="compositionTable">
       <thead>
         <tr>
-          <th>Material</th>
-          <th>% en mezcla</th>
+          <th>Molécula / fórmula</th>
+          <th>% en el producto</th>
           <th>N</th>
           <th>P</th>
           <th>K</th>
@@ -94,16 +98,16 @@
     </table>
   </div>
 
-  <button type="button" class="btn-add" onclick="addRow()">+ Agregar material</button>
+  <button type="button" class="btn-add" onclick="addRow()">+ Agregar molécula</button>
   <button type="button" class="btn-cat" onclick="openCatalog()">Gestionar catálogo</button>
-  <button type="button" class="btn-clear" onclick="clearMix()" style="margin-left:8px;">Eliminar mezcla</button>
+  <button type="button" class="btn-clear" onclick="clearMix()" style="margin-left:8px;">Vaciar formulación</button>
 
   <div class="summary-box" id="mixValidation">
-    Total mezcla: 0.00% (debe ser 100%).
+    Suma (moléculas + Otros): 0.00% (debe ser 100%).
   </div>
 
   <div class="summary-box" style="margin-top:8px;background:#f8fafc;border-color:#cbd5e1;color:#334155;">
-    <strong>Lectura rápida:</strong> las columnas de la tabla muestran el <strong>aporte en la mezcla</strong> según el % capturado. Debajo de cada material verás el detalle teórico al 100% (PM y % elemental).
+    <strong>Lectura rápida:</strong> las columnas numéricas son el <strong>nutriente total en el producto</strong> (cada celda = % teórico de la molécula × su % en el producto, sumado en TOTAL). Debajo de cada fila: <strong>PM</strong>, <strong>% elemental en la molécula pura</strong> y el aporte con el % que capturaste.
   </div>
 
   <div class="legend-box">
@@ -115,7 +119,7 @@
   <div class="modal-overlay-fc" id="catalogModal" onclick="if(event.target===this)closeCatalog()">
     <div class="modal-fc" onclick="event.stopPropagation()">
       <h3>Gestionar catálogo personalizado</h3>
-      <p style="font-size:13px;color:#64748b;margin:0 0 12px;">Puedes guardar materiales por fórmula química o por análisis comercial (ej. NKS). Esto permite comparar teórico vs comercial.</p>
+      <p style="font-size:13px;color:#64748b;margin:0 0 12px;">Guarda moléculas por fórmula o un análisis de etiqueta (%) para comparar con el cálculo teórico.</p>
       <div class="custom-list" id="customListEl"></div>
 
       <div class="fc-grid">
@@ -175,6 +179,10 @@
       {
         name: 'NKS comercial (manual)',
         analysis: { N: 12, P: 0, K: 15, Ca: 0, Mg: 0, S: 8, N_NO3: 7, N_NH4: 5 }
+      },
+      {
+        name: 'Fosfonitrato 33-03-00 (etiqueta típica)',
+        analysis: { N: 33, P: 3 / 2.29, K: 0, Ca: 0, Mg: 0, S: 0, N_NO3: 0, N_NH4: 0 }
       }
     ];
 
@@ -484,7 +492,7 @@
 
     function clearMix() {
       if (!rows.length && !othersPct) return;
-      if (!confirm('¿Vaciar toda la mezcla?')) return;
+      if (!confirm('¿Vaciar toda la formulación (moléculas y Otros)?')) return;
       rows.length = 0;
       othersPct = 0;
       renderRows();
@@ -514,7 +522,7 @@
       if (!rows.length) {
         tb.innerHTML = `
           <tr>
-            <td colspan="15" style="padding:20px;color:#64748b;">Agrega materiales con el botón verde. Puedes escribir fórmula (ej. KH2PO4) o elegir catálogo.</td>
+            <td colspan="15" style="padding:20px;color:#64748b;">Agrega moléculas con el botón verde. Escribe la fórmula (ej. KNO3, K2SO4, KH2PO4, Ca(NO3)2) o el nombre del catálogo (Urea, MAP, Fosfonitrato…). Indica qué % de cada una lleva el producto; al final <strong>Otros</strong> + moléculas = 100%.</td>
           </tr>
           <tr class="others-row">
             <td class="mat-cell"><strong>Otros (%)</strong><br><span class="small-note">(impurezas, antiapelmazantes, aditivos, etc.)</span></td>
@@ -536,8 +544,8 @@
       tb.innerHTML = rows.map(r => `
         <tr data-rid="${r.id}">
           <td class="mat-cell">
-            <input class="mat-input" list="materialSuggestions" value="${escapeAttr(r.material)}" placeholder="Ej. KH2PO4 o Nitrato de potasio" oninput="onMaterialInput(${r.id}, this.value)" />
-            <span class="ok-hint">Acepta fórmulas con paréntesis e hidratación (ej. Ca(NO3)2, MgSO4·7H2O).</span>
+            <input class="mat-input" list="materialSuggestions" value="${escapeAttr(r.material)}" placeholder="Fórmula (KNO3, K2SO4…) o nombre del catálogo" oninput="onMaterialInput(${r.id}, this.value)" />
+            <span class="ok-hint">Paréntesis e hidratación: Ca(NO3)2, MgSO4·7H2O. Aquí verás PM y % de cada elemento <em>dentro de la molécula</em>.</span>
           </td>
           <td><input class="pct-input" type="number" min="0" max="100" step="0.01" value="${escapeAttr(r.pct)}" oninput="onPctInput(${r.id}, this.value)" /></td>
           ${COLS.map(() => '<td class="c-nut">—</td>').join('')}
@@ -587,11 +595,13 @@
               S: (p / 100) * num(pure.S)
             };
             const sourceSafe = escapeHtml(info.source || '');
-            const pmTxt = info.mw ? `PM: ${info.mw.toFixed(2)} g/mol` : 'PM: n/a (análisis manual)';
+            const pmTxt = info.mw ? `PM: ${info.mw.toFixed(2)} g/mol` : 'PM: n/a (análisis manual / etiqueta)';
             hint.innerHTML =
               `${pmTxt} | Fuente: ${sourceSafe}` +
-              `<br>Teórico (100%): N ${num(pure.N).toFixed(2)} · P ${num(pure.P).toFixed(2)} · K ${num(pure.K).toFixed(2)} · Ca ${num(pure.Ca).toFixed(2)} · Mg ${num(pure.Mg).toFixed(2)} · S ${num(pure.S).toFixed(2)}` +
-              `<br>Aporte con ${p.toFixed(2)}%: N ${aporte.N.toFixed(2)} · P ${aporte.P.toFixed(2)} · K ${aporte.K.toFixed(2)} · Ca ${aporte.Ca.toFixed(2)} · Mg ${aporte.Mg.toFixed(2)} · S ${aporte.S.toFixed(2)}`;
+              `<br>En la molécula pura (% masa): N ${num(pure.N).toFixed(2)} · P ${num(pure.P).toFixed(2)} · K ${num(pure.K).toFixed(2)} · Ca ${num(pure.Ca).toFixed(2)} · Mg ${num(pure.Mg).toFixed(2)} · S ${num(pure.S).toFixed(2)}` +
+              ` · N-NO₃ ${num(pure.N_NO3).toFixed(2)} · N-NH₄ ${num(pure.N_NH4).toFixed(2)}` +
+              ` · P₂O₅ ${num(pure.P2O5).toFixed(2)} · K₂O ${num(pure.K2O).toFixed(2)} · CaO ${num(pure.CaO).toFixed(2)} · MgO ${num(pure.MgO).toFixed(2)}` +
+              `<br>Aporte al producto con ${p.toFixed(2)}% de esta molécula: N ${aporte.N.toFixed(2)} · P ${aporte.P.toFixed(2)} · K ${aporte.K.toFixed(2)} · Ca ${aporte.Ca.toFixed(2)} · Mg ${aporte.Mg.toFixed(2)} · S ${aporte.S.toFixed(2)}`;
           }
           const cells = tr.querySelectorAll('.c-nut');
           COLS.forEach((k, i) => {
@@ -619,7 +629,7 @@
 
       const badge = document.getElementById('activeFractionBadge');
       const active = Math.max(0, 100 - othersPct);
-      badge.textContent = `Fracción activa: ${active.toFixed(2)}%`;
+      badge.textContent = `Parte con nutrientes: ${active.toFixed(2)}%`;
 
       const box = document.getElementById('mixValidation');
       const totalRow = document.getElementById('totalRow');
@@ -628,13 +638,13 @@
         box.style.background = '#ecfdf5';
         box.style.borderColor = '#86efac';
         box.style.color = '#166534';
-        box.textContent = `Total mezcla: ${totalPct.toFixed(2)}% (correcto).`;
+        box.textContent = `Suma (moléculas + Otros): ${totalPct.toFixed(2)}% — correcto. Puedes cotejar el TOTAL de nutrientes con la etiqueta.`;
         if (totalRow) totalRow.classList.remove('error-total');
       } else {
         box.style.background = '#fef2f2';
         box.style.borderColor = '#fecaca';
         box.style.color = '#991b1b';
-        box.textContent = `Total mezcla: ${totalPct.toFixed(2)}% (ajusta a 100%).`;
+        box.textContent = `Suma (moléculas + Otros): ${totalPct.toFixed(2)}% — ajusta a 100% para validar la receta.`;
         if (totalRow) totalRow.classList.add('error-total');
       }
     }
@@ -727,7 +737,7 @@
         const el = document.getElementById(id);
         if (el) el.value = '0';
       });
-      alert('Material guardado en este navegador.');
+      alert('Guardado en este navegador.');
     }
 
     function escapeHtml(text) {
@@ -741,8 +751,7 @@
     }
 
     refreshSuggestions();
-    addRow('KH2PO4', 95);
-    othersPct = 5;
+    addRow('', '');
     renderRows();
   </script>
 </body>
