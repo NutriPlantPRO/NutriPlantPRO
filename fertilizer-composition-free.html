@@ -102,6 +102,10 @@
     Total mezcla: 0.00% (debe ser 100%).
   </div>
 
+  <div class="summary-box" style="margin-top:8px;background:#f8fafc;border-color:#cbd5e1;color:#334155;">
+    <strong>Lectura rápida:</strong> las columnas de la tabla muestran el <strong>aporte en la mezcla</strong> según el % capturado. Debajo de cada material verás el detalle teórico al 100% (PM y % elemental).
+  </div>
+
   <div class="legend-box">
     <strong>Leyenda:</strong> Composición teórica. En productos comerciales, los valores pueden variar según pureza, hidratación, impurezas y formulación real del fertilizante.
   </div>
@@ -573,7 +577,21 @@
         if (info.ok) {
           if (hint) {
             hint.className = 'ok-hint';
-            hint.textContent = info.mw ? `PM: ${info.mw.toFixed(2)} g/mol | Fuente: ${info.source}` : `Fuente: ${info.source}`;
+            const pure = info.comp;
+            const aporte = {
+              N: (p / 100) * num(pure.N),
+              P: (p / 100) * num(pure.P),
+              K: (p / 100) * num(pure.K),
+              Ca: (p / 100) * num(pure.Ca),
+              Mg: (p / 100) * num(pure.Mg),
+              S: (p / 100) * num(pure.S)
+            };
+            const sourceSafe = escapeHtml(info.source || '');
+            const pmTxt = info.mw ? `PM: ${info.mw.toFixed(2)} g/mol` : 'PM: n/a (análisis manual)';
+            hint.innerHTML =
+              `${pmTxt} | Fuente: ${sourceSafe}` +
+              `<br>Teórico (100%): N ${num(pure.N).toFixed(2)} · P ${num(pure.P).toFixed(2)} · K ${num(pure.K).toFixed(2)} · Ca ${num(pure.Ca).toFixed(2)} · Mg ${num(pure.Mg).toFixed(2)} · S ${num(pure.S).toFixed(2)}` +
+              `<br>Aporte con ${p.toFixed(2)}%: N ${aporte.N.toFixed(2)} · P ${aporte.P.toFixed(2)} · K ${aporte.K.toFixed(2)} · Ca ${aporte.Ca.toFixed(2)} · Mg ${aporte.Mg.toFixed(2)} · S ${aporte.S.toFixed(2)}`;
           }
           const cells = tr.querySelectorAll('.c-nut');
           COLS.forEach((k, i) => {
