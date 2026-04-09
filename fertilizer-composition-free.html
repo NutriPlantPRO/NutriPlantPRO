@@ -13,16 +13,15 @@
     .lead { margin: 0 0 20px; color: #475569; line-height: 1.5; max-width: 720px; }
     .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
     .panel h2 { margin: 0 0 12px; font-size: 1.05rem; color: #0f172a; }
-    .row-input { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
-    .row-input label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: #334155; flex: 1; min-width: 200px; }
-    .row-input input[type="text"] { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+    .row-input { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 8px; }
+    .row-input label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: #334155; }
+    .formula-field-wrap { max-width: 320px; flex: 0 1 320px; }
+    .formula-field-wrap input[type="text"] { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
     .btn { border: 0; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
     .btn-primary { background: #16a34a; color: #fff; }
     .btn-primary:hover { background: #15803d; }
     .btn-ghost { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
-    .btn-ghost:hover { background: #e2e8f0; }
-    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-    .examples span { font-size: 11px; color: #64748b; margin-right: 4px; }
+    .hint { font-size: 12px; color: #64748b; margin: 0 0 10px; }
     .err { color: #b91c1c; font-size: 13px; margin: 8px 0 0; }
     .ok-tag { display: inline-block; margin-top: 10px; padding: 8px 12px; background: #ecfdf5; border: 1px solid #86efac; border-radius: 8px; color: #14532d; font-weight: 700; font-size: 15px; }
     .pm-line { font-size: 15px; margin: 12px 0 8px; color: #1e293b; }
@@ -33,23 +32,21 @@
     .nut-card .elem { font-size: 18px; font-weight: 800; color: #0f172a; }
     .nut-card .sub { font-size: 12px; color: #64748b; margin-top: 4px; }
     .legend { margin-top: 14px; font-size: 12px; color: #64748b; line-height: 1.45; border-top: 1px solid #e2e8f0; padding-top: 12px; }
-    details.formulation { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0; overflow: hidden; }
-    details.formulation summary { padding: 14px 18px; cursor: pointer; font-weight: 700; color: #334155; background: #f8fafc; }
-    details.formulation .inner { padding: 16px 18px 20px; border-top: 1px solid #e2e8f0; }
-    .fc-wrap { overflow-x: auto; margin: 12px 0; }
-    .fc-table { border-collapse: collapse; width: max-content; min-width: 100%; font-size: 12px; }
-    .fc-table th, .fc-table td { border: 1px solid #e2e8f0; padding: 6px 8px; text-align: center; }
-    .fc-table th { background: #f1f5f9; font-weight: 600; color: #334155; }
-    .fc-table td.mat-cell { text-align: left; min-width: 220px; }
-    .fc-table .mat-input { width: 100%; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
-    .fc-table .pct-input { width: 68px; text-align: center; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; }
-    .fc-table tr.total-row td { background: #ecfdf5; font-weight: 700; color: #14532d; }
-    .fc-table tr.others-row td { background: #fff7ed; }
+    .blend-panel .blend-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; max-width: 440px; }
+    .blend-panel .formula-input-narrow { flex: 1; min-width: 160px; max-width: 280px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box; }
+    .blend-panel .pct-compact { width: 72px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center; font-size: 13px; }
+    .blend-panel .pct-lbl { font-size: 12px; color: #64748b; white-space: nowrap; }
     .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 6px; border: 0; cursor: pointer; }
     .btn-add { background: #16a34a; color: #fff; }
     .btn-del { background: #dc2626; color: #fff; }
     .btn-cat { background: #2563eb; color: #fff; margin-left: 8px; }
     .btn-clear { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; margin-left: 8px; }
+    .blend-total-box { margin-top: 14px; padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; font-size: 13px; display: none; }
+    .blend-total-box h3 { margin: 0 0 8px; font-size: 14px; color: #1e40af; }
+    .blend-npk { margin-top: 8px; font-weight: 700; color: #14532d; }
+    .others-row-inline { display: flex; align-items: center; gap: 10px; margin: 12px 0; max-width: 440px; flex-wrap: wrap; }
+    .others-row-inline label { font-size: 13px; font-weight: 600; color: #334155; }
+    .others-row-inline input { width: 80px; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; }
     .modal-overlay-fc { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 9999; align-items: center; justify-content: center; padding: 16px; }
     .modal-overlay-fc.open { display: flex; }
     .modal-fc { background: #fff; border-radius: 12px; max-width: 720px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,.2); }
@@ -72,73 +69,60 @@
 
   <h1>🧪 Calculadora de Composición de Fertilizantes (%)</h1>
   <p class="lead">
-    <strong>Qué hace:</strong> con la <strong>fórmula química</strong> de una sal o compuesto calcula el <strong>peso molecular (PM)</strong> y el <strong>% en masa de cada nutriente</strong> dentro de esa molécula; debajo muestra el <strong>equivalente en óxido</strong> (como en etiquetas). Opcionalmente puedes sumar <strong>varias moléculas</strong> con su % en un producto (ej. NKS) más <strong>Otros</strong>.
+    Escribe o elige una <strong>fórmula química</strong> del listado: se calcula el <strong>PM</strong> y el <strong>% en masa</strong> de cada nutriente en esa molécula, con <strong>equivalentes en óxido</strong> donde aplica. Más abajo puedes combinar <strong>varias sales + % + Otros</strong> (ej. NKS).
   </p>
 
   <div class="panel">
-    <h2>1) Composición de una molécula</h2>
-    <p style="margin:0 0 12px;font-size:13px;color:#64748b;">Escribe la fórmula con números normales (ej. <code>KH2PO4</code>, <code>KNO3</code>, <code>Ca(NO3)2</code>, <code>MgSO4·7H2O</code>) o elige un nombre del catálogo.</p>
+    <h2>1) Una molécula (composición teórica)</h2>
+    <p class="hint">El desplegable muestra solo <strong>fórmulas</strong>; al elegir, el recuadro se llena con la molécula. También puedes escribir a mano (ej. <code>Ca(NO3)2</code>).</p>
     <div class="row-input">
-      <label>
-        Fórmula o nombre
-        <input type="text" id="singleFormula" list="materialSuggestions" placeholder="Ej. KH2PO4 o Nitrato de potasio" autocomplete="off" />
+      <label class="formula-field-wrap">
+        Fórmula
+        <input type="text" id="singleFormula" list="materialSuggestions" placeholder="Ej. KH2PO4" autocomplete="off" />
       </label>
       <button type="button" class="btn btn-primary" onclick="calcSingle()">Calcular</button>
     </div>
-    <div class="examples">
-      <span>Ejemplos:</span>
-      <button type="button" class="btn btn-ghost" onclick="setSingle('KH2PO4')">MKP KH₂PO₄</button>
-      <button type="button" class="btn btn-ghost" onclick="setSingle('KNO3')">KNO₃</button>
-      <button type="button" class="btn btn-ghost" onclick="setSingle('CH4N2O')">Urea</button>
-    </div>
     <p id="singleError" class="err" style="display:none;"></p>
     <div id="singleResult" style="display:none;">
-      <div class="pm-line">Fórmula normalizada: <strong id="singleNorm"></strong></div>
+      <div class="pm-line">Fórmula: <strong id="singleNorm"></strong></div>
       <div class="pm-line"><strong id="singlePm"></strong></div>
       <div id="singleNpk" style="display:none;" class="ok-tag"></div>
       <div class="nut-grid" id="singleNutrients"></div>
       <p class="legend">
-        <strong>Nota:</strong> P₂O₅, K₂O, CaO y MgO son <strong>equivalentes</strong> calculados desde el % elemental (no implica que el sólido sea óxido libre). Composición <strong>teórica</strong> de la sustancia pura; el producto comercial puede variar por pureza, humedad e impurezas.
+        <strong>Nota:</strong> P₂O₅, K₂O, CaO y MgO son <strong>equivalentes</strong> desde el % elemental. Composición <strong>teórica</strong> de la sustancia pura.
       </p>
     </div>
   </div>
 
-  <details class="formulation" id="formulationDetails">
-    <summary>2) Formulación con varias moléculas (opcional) — ej. NKS, mezcla de sales + Otros</summary>
-    <div class="inner">
-      <p style="margin:0 0 10px;font-size:13px;color:#64748b;">Cada fila es una molécula (fórmula o catálogo) y el <strong>% que aporta al producto final</strong>. <strong>Otros</strong> = inerte, aditivos, humedad, etc. La suma moléculas + Otros debe ser <strong>100%</strong>. El TOTAL es el nutriente en el producto.</p>
-      <div class="fc-wrap">
-        <table class="fc-table" id="blendTable">
-          <thead>
-            <tr>
-              <th>Molécula / nombre</th>
-              <th>% en producto</th>
-              <th>N</th><th>P</th><th>K</th><th>Ca</th><th>Mg</th><th>S</th>
-              <th>N-NO₃</th><th>N-NH₄</th>
-              <th>P₂O₅</th><th>K₂O</th><th>CaO</th><th>MgO</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="blendRows"></tbody>
-        </table>
-      </div>
-      <button type="button" class="btn-sm btn-add" onclick="addBlendRow()">+ Agregar molécula</button>
-      <button type="button" class="btn-sm btn-cat" onclick="openCatalog()">Gestionar catálogo</button>
-      <button type="button" class="btn-sm btn-clear" onclick="clearBlend()">Vaciar</button>
-      <p id="blendValidation" style="margin-top:12px;font-size:13px;font-weight:600;"></p>
+  <div class="panel blend-panel">
+    <h2>2) Varios ingredientes en el mismo producto (opcional)</h2>
+    <p class="hint">Una fila por sal: <strong>fórmula</strong> + <strong>%</strong> que aporta al producto. <strong>Otros</strong> = inerte / aditivos / humedad. Suma = 100%. Ej.: KNO3 + K2SO4 + Otros.</p>
+    <div id="blendLines"></div>
+    <button type="button" class="btn-sm btn-add" onclick="addBlendRow()">+ Agregar molécula</button>
+    <button type="button" class="btn-sm btn-cat" onclick="openCatalog()">Gestionar catálogo</button>
+    <button type="button" class="btn-sm btn-clear" onclick="clearBlend()">Vaciar</button>
+    <div class="others-row-inline">
+      <label>Otros (%)</label>
+      <input type="number" id="othersPctInput" min="0" max="100" step="0.01" value="0" />
     </div>
-  </details>
+    <p id="blendValidation" style="margin:8px 0 0;font-size:13px;font-weight:600;"></p>
+    <div class="blend-total-box" id="blendTotalBox">
+      <h3>Nutriente total en el producto (ponderado)</h3>
+      <div id="blendTotalNutrients"></div>
+      <div class="blend-npk" id="blendNpkLine"></div>
+    </div>
+  </div>
 
   <datalist id="materialSuggestions"></datalist>
 
   <div class="modal-overlay-fc" id="catalogModal" onclick="if(event.target===this)closeCatalog()">
     <div class="modal-fc" onclick="event.stopPropagation()">
       <h3 style="margin-top:0;">Gestionar catálogo personalizado</h3>
-      <p style="font-size:13px;color:#64748b;">Nombre + fórmula, o análisis manual (% elementales) si no tienes fórmula única.</p>
+      <p style="font-size:13px;color:#64748b;">Guarda una <strong>fórmula</strong> o un análisis manual si no tienes una sola molécula.</p>
       <div id="customListEl" style="border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin:12px 0;max-height:140px;overflow-y:auto;font-size:13px;"></div>
       <div class="fc-grid">
-        <label>Nombre <input type="text" id="customName" placeholder="Ej. Mi grado NKS" /></label>
-        <label>Fórmula (opcional) <input type="text" id="customFormula" placeholder="KH2PO4" /></label>
+        <label>Nombre (solo para reconocer el guardado) <input type="text" id="customName" placeholder="Ej. Mi mezcla" /></label>
+        <label>Fórmula <input type="text" id="customFormula" placeholder="KH2PO4" /></label>
       </div>
       <div class="manual-box">
         <strong style="font-size:12px;">Análisis manual % (si no usas fórmula)</strong>
@@ -160,8 +144,11 @@
 
   <script>
     const LS_CUSTOM = 'np_login_fertilizer_composition_customs_v1';
-    const COLS = ['N', 'P', 'K', 'Ca', 'Mg', 'S', 'N_NO3', 'N_NH4', 'P2O5', 'K2O', 'CaO', 'MgO'];
-    const ELEM = { H: 1.008, C: 12.011, N: 14.01, O: 16.0, P: 30.97, K: 39.10, Ca: 40.08, Mg: 24.31, S: 32.07 };
+    const COLS = ['N', 'P', 'K', 'Ca', 'Mg', 'S', 'N_NO3', 'N_NH4', 'P2O5', 'K2O', 'CaO', 'MgO', 'Zn', 'Fe', 'Mn', 'B', 'Cu', 'Mo'];
+    const ELEM = {
+      H: 1.008, C: 12.011, N: 14.01, O: 16.0, P: 30.97, K: 39.10, Ca: 40.08, Mg: 24.31, S: 32.07,
+      Zn: 65.38, Fe: 55.845, Mn: 54.938, Cu: 63.546, B: 10.81, Mo: 95.95, Cl: 35.45, Na: 22.99
+    };
     const OX = { P2O5: 2.29, K2O: 1.20, CaO: 1.40, MgO: 1.66 };
     const SUBSCRIPT_MAP = {
       '₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9',
@@ -170,18 +157,21 @@
     };
 
     const BASE_MATERIALS = [
-      { name: 'Urea', formula: 'CH4N2O' },
-      { name: 'MAP', formula: 'NH4H2PO4' },
-      { name: 'DAP', formula: '(NH4)2HPO4' },
-      { name: 'Nitrato de potasio', formula: 'KNO3' },
-      { name: 'MKP (fosfato monopotásico)', formula: 'KH2PO4' },
-      { name: 'Nitrato de calcio', formula: 'Ca(NO3)2' },
-      { name: 'Sulfato de magnesio heptahidratado', formula: 'MgSO4·7H2O' },
-      { name: 'Sulfato de amonio', formula: '(NH4)2SO4' },
-      { name: 'Sulfato de potasio (SOP)', formula: 'K2SO4' },
-      { name: 'Kieserita', formula: 'MgSO4·H2O' },
-      { name: 'NKS comercial (manual)', analysis: { N: 12, P: 0, K: 15, Ca: 0, Mg: 0, S: 8, N_NO3: 7, N_NH4: 5 } },
-      { name: 'Fosfonitrato 33-03-00 (etiqueta típica)', analysis: { N: 33, P: 3 / 2.29, K: 0, Ca: 0, Mg: 0, S: 0, N_NO3: 0, N_NH4: 0 } }
+      { formula: 'CH4N2O', aliases: ['urea', 'Urea'] },
+      { formula: 'NH4H2PO4', aliases: ['map', 'MAP'] },
+      { formula: '(NH4)2HPO4', aliases: ['dap', 'DAP'] },
+      { formula: 'KNO3' },
+      { formula: 'KH2PO4', aliases: ['mkp', 'MKP'] },
+      { formula: 'Ca(NO3)2' },
+      { formula: 'MgSO4·7H2O' },
+      { formula: '(NH4)2SO4' },
+      { formula: 'K2SO4', aliases: ['sop', 'SOP'] },
+      { formula: 'MgSO4·H2O' },
+      { formula: 'ZnSO4' },
+      { formula: 'FeSO4·7H2O' },
+      { formula: 'MnSO4·H2O' },
+      { formula: 'CuSO4·5H2O' },
+      { formula: 'H3BO3' }
     ];
 
     let blendRowId = 0;
@@ -207,6 +197,12 @@
       out.Ca = num(base.Ca);
       out.Mg = num(base.Mg);
       out.S = num(base.S);
+      out.Zn = num(base.Zn);
+      out.Fe = num(base.Fe);
+      out.Mn = num(base.Mn);
+      out.B = num(base.B);
+      out.Cu = num(base.Cu);
+      out.Mo = num(base.Mo);
       out.N_NO3 = Math.min(out.N, Math.max(0, num(base.N_NO3)));
       out.N_NH4 = Math.min(out.N - out.N_NO3, Math.max(0, num(base.N_NH4)));
       out.P2O5 = out.P * OX.P2O5;
@@ -339,17 +335,28 @@
       return { normalized, atomCounts, mw, no3Count, nh4Count };
     }
 
+    function pctElem(atomCounts, sym, mw) {
+      return ((atomCounts[sym] || 0) * ELEM[sym] / mw) * 100;
+    }
+
     function compFromFormula(formula) {
       const parsed = parseCompound(formula);
       const c = parsed.atomCounts;
       const mw = parsed.mw;
       const out = zeroComp();
-      out.N = ((c.N || 0) * ELEM.N / mw) * 100;
-      out.P = ((c.P || 0) * ELEM.P / mw) * 100;
-      out.K = ((c.K || 0) * ELEM.K / mw) * 100;
-      out.Ca = ((c.Ca || 0) * ELEM.Ca / mw) * 100;
-      out.Mg = ((c.Mg || 0) * ELEM.Mg / mw) * 100;
-      out.S = ((c.S || 0) * ELEM.S / mw) * 100;
+      out.N = pctElem(c, 'N', mw);
+      out.P = pctElem(c, 'P', mw);
+      out.K = pctElem(c, 'K', mw);
+      out.Ca = pctElem(c, 'Ca', mw);
+      out.Mg = pctElem(c, 'Mg', mw);
+      out.S = pctElem(c, 'S', mw);
+      out.Zn = pctElem(c, 'Zn', mw);
+      out.Fe = pctElem(c, 'Fe', mw);
+      out.Mn = pctElem(c, 'Mn', mw);
+      out.B = pctElem(c, 'B', mw);
+      out.Cu = pctElem(c, 'Cu', mw);
+      out.Mo = pctElem(c, 'Mo', mw);
+
       const nAtoms = c.N || 0;
       if (nAtoms > 0) {
         let no3Atoms = Math.max(0, parsed.no3Count);
@@ -387,43 +394,67 @@
       return BASE_MATERIALS.concat(loadCustoms());
     }
 
+    function catalogFormulasSeen() {
+      const seen = {};
+      const out = [];
+      getCatalog().forEach(entry => {
+        if (!entry.formula) return;
+        const n = normalizeFormula(entry.formula);
+        if (!n || seen[n]) return;
+        seen[n] = true;
+        out.push(entry.formula);
+      });
+      return out.sort(function(a, b) { return a.localeCompare(b); });
+    }
+
     function refreshSuggestions() {
       const dl = document.getElementById('materialSuggestions');
-      const opts = [];
-      getCatalog().forEach(entry => {
-        opts.push('<option value="' + escapeAttr(entry.name) + '"></option>');
-        if (entry.formula) opts.push('<option value="' + escapeAttr(entry.formula) + '"></option>');
-      });
-      dl.innerHTML = opts.join('');
+      dl.innerHTML = catalogFormulasSeen().map(function(f) {
+        return '<option value="' + escapeAttr(f) + '"></option>';
+      }).join('');
+    }
+
+    function matchCatalogEntry(raw) {
+      const r = String(raw || '').trim();
+      if (!r) return null;
+      const rn = normalizeFormula(r);
+      for (let i = 0; i < getCatalog().length; i += 1) {
+        const e = getCatalog()[i];
+        if (e.formula && normalizeFormula(e.formula) === rn) return e;
+        if (e.name && e.name.toLowerCase() === r.toLowerCase()) return e;
+        if (e.aliases && e.aliases.some(function(a) { return a.toLowerCase() === r.toLowerCase(); })) return e;
+      }
+      return null;
     }
 
     function resolveMaterial(text) {
       const raw = String(text || '').trim();
-      if (!raw) return { ok: false, error: 'Escribe una fórmula o nombre del catálogo.' };
-      const catalog = getCatalog();
-      const byName = catalog.find(e => e.name.toLowerCase() === raw.toLowerCase());
-      if (byName) {
-        if (byName.analysis) return { ok: true, comp: fromElementalsToComp(byName.analysis), source: byName.name, mw: null };
-        try {
-          const out = compFromFormula(byName.formula);
-          return { ok: true, comp: out.comp, source: byName.name + ' (' + byName.formula + ')', mw: out.mw };
-        } catch (err) {
-          return { ok: false, error: 'No se pudo calcular desde catálogo.' };
+      if (!raw) return { ok: false, error: 'Escribe una fórmula.' };
+      const entry = matchCatalogEntry(raw);
+      if (entry) {
+        if (entry.analysis) {
+          return {
+            ok: true,
+            comp: fromElementalsToComp(entry.analysis),
+            displayFormula: entry.name + ' (análisis manual)',
+            mw: null
+          };
         }
-      }
-      const byFormula = catalog.find(e => e.formula && normalizeFormula(e.formula) === normalizeFormula(raw));
-      if (byFormula) {
-        if (byFormula.analysis) return { ok: true, comp: fromElementalsToComp(byFormula.analysis), source: byFormula.name, mw: null };
         try {
-          const out = compFromFormula(byFormula.formula);
-          return { ok: true, comp: out.comp, source: byFormula.name, mw: out.mw };
+          const out = compFromFormula(entry.formula);
+          return {
+            ok: true,
+            comp: out.comp,
+            displayFormula: normalizeFormula(entry.formula),
+            mw: out.mw
+          };
         } catch (err) {
-          return { ok: false, error: 'Error en catálogo.' };
+          return { ok: false, error: 'Error al calcular desde catálogo.' };
         }
       }
       try {
         const out = compFromFormula(raw);
-        return { ok: true, comp: out.comp, source: normalizeFormula(raw), mw: out.mw };
+        return { ok: true, comp: out.comp, displayFormula: normalizeFormula(raw), mw: out.mw };
       } catch (err) {
         return { ok: false, error: err && err.message ? err.message : 'Fórmula no válida.' };
       }
@@ -459,21 +490,17 @@
         parts.push(nutCard('N como NO₃⁻ (aprox.)', comp.N_NO3, null));
         parts.push(nutCard('N como NH₄⁺ (aprox.)', comp.N_NH4, null));
       }
-      if (num(comp.P) > 1e-8) {
-        parts.push(nutCard('P', comp.P, 'Equivalente P₂O₅: ' + fmtOx(comp.P2O5) + ' %'));
-      }
-      if (num(comp.K) > 1e-8) {
-        parts.push(nutCard('K', comp.K, 'Equivalente K₂O: ' + fmtOx(comp.K2O) + ' %'));
-      }
-      if (num(comp.Ca) > 1e-8) {
-        parts.push(nutCard('Ca', comp.Ca, 'Equivalente CaO: ' + fmtOx(comp.CaO) + ' %'));
-      }
-      if (num(comp.Mg) > 1e-8) {
-        parts.push(nutCard('Mg', comp.Mg, 'Equivalente MgO: ' + fmtOx(comp.MgO) + ' %'));
-      }
-      if (num(comp.S) > 1e-8) {
-        parts.push(nutCard('S', comp.S, null));
-      }
+      if (num(comp.P) > 1e-8) parts.push(nutCard('P', comp.P, 'Equivalente P₂O₅: ' + fmtOx(comp.P2O5) + ' %'));
+      if (num(comp.K) > 1e-8) parts.push(nutCard('K', comp.K, 'Equivalente K₂O: ' + fmtOx(comp.K2O) + ' %'));
+      if (num(comp.Ca) > 1e-8) parts.push(nutCard('Ca', comp.Ca, 'Equivalente CaO: ' + fmtOx(comp.CaO) + ' %'));
+      if (num(comp.Mg) > 1e-8) parts.push(nutCard('Mg', comp.Mg, 'Equivalente MgO: ' + fmtOx(comp.MgO) + ' %'));
+      if (num(comp.S) > 1e-8) parts.push(nutCard('S', comp.S, null));
+      if (num(comp.Zn) > 1e-8) parts.push(nutCard('Zn', comp.Zn, null));
+      if (num(comp.Fe) > 1e-8) parts.push(nutCard('Fe', comp.Fe, null));
+      if (num(comp.Mn) > 1e-8) parts.push(nutCard('Mn', comp.Mn, null));
+      if (num(comp.B) > 1e-8) parts.push(nutCard('B', comp.B, null));
+      if (num(comp.Cu) > 1e-8) parts.push(nutCard('Cu', comp.Cu, null));
+      if (num(comp.Mo) > 1e-8) parts.push(nutCard('Mo', comp.Mo, null));
       el.innerHTML = parts.join('');
 
       const npkEl = document.getElementById('singleNpk');
@@ -488,11 +515,6 @@
       }
     }
 
-    function setSingle(v) {
-      document.getElementById('singleFormula').value = v;
-      calcSingle();
-    }
-
     function calcSingle() {
       const err = document.getElementById('singleError');
       const res = document.getElementById('singleResult');
@@ -505,10 +527,10 @@
         return;
       }
       const c = info.comp;
-      document.getElementById('singleNorm').textContent = info.mw ? info.source : (info.source + ' (análisis)');
+      document.getElementById('singleNorm').textContent = info.displayFormula || '';
       document.getElementById('singlePm').innerHTML = info.mw
         ? 'Peso molecular (PM): <strong>' + info.mw.toFixed(2) + ' g/mol</strong>'
-        : 'PM: no aplica (entrada por análisis manual).';
+        : 'PM: no aplica (análisis manual).';
       renderSingleNutrients(c);
       res.style.display = 'block';
     }
@@ -529,9 +551,11 @@
 
     function clearBlend() {
       if (!blendRows.length && !othersPct) return;
-      if (!confirm('¿Vaciar toda la formulación?')) return;
+      if (!confirm('¿Vaciar filas y Otros?')) return;
       blendRows.length = 0;
       othersPct = 0;
+      var oi = document.getElementById('othersPctInput');
+      if (oi) oi.value = '0';
       renderBlend();
     }
 
@@ -545,86 +569,73 @@
       if (r) { r.pct = v; recalcBlend(); }
     }
 
-    function onOthers(v) {
-      othersPct = Math.max(0, num(v));
-      recalcBlend();
-    }
-
     function renderBlend() {
-      const tb = document.getElementById('blendRows');
+      const host = document.getElementById('blendLines');
       if (!blendRows.length) {
-        tb.innerHTML =
-          '<tr><td colspan="15" style="padding:16px;color:#64748b;">Usa «+ Agregar molécula». Ej.: KNO3 al 40%, K2SO4 al 35%, Otros 25%.</td></tr>' +
-          othersAndTotalHtml();
+        host.innerHTML = '<p style="margin:0 0 10px;font-size:13px;color:#64748b;">Pulsa <strong>+ Agregar molécula</strong> y elige fórmulas del listado (ej. KNO3, K2SO4).</p>';
         recalcBlend();
         return;
       }
-      tb.innerHTML = blendRows.map(r =>
-        '<tr data-bid="' + r.id + '">' +
-        '<td class="mat-cell"><input class="mat-input" list="materialSuggestions" value="' + escapeAttr(r.material) + '" oninput="onBlendMat(' + r.id + ',this.value)" /></td>' +
-        '<td><input class="pct-input" type="number" min="0" max="100" step="0.01" value="' + escapeAttr(r.pct) + '" oninput="onBlendPct(' + r.id + ',this.value)" /></td>' +
-        COLS.map(() => '<td class="b-nut">—</td>').join('') +
-        '<td><button type="button" class="btn-sm btn-del" onclick="removeBlendRow(' + r.id + ')">🗑</button></td>' +
-        '</tr>'
-      ).join('') + othersAndTotalHtml();
+      host.innerHTML = blendRows.map(function(r) {
+        return (
+          '<div class="blend-line" data-bid="' + r.id + '">' +
+          '<input type="text" class="formula-input-narrow" list="materialSuggestions" placeholder="Fórmula" ' +
+          'value="' + escapeAttr(r.material) + '" oninput="onBlendMat(' + r.id + ',this.value)" />' +
+          '<span class="pct-lbl">% en producto</span>' +
+          '<input type="number" class="pct-compact" min="0" max="100" step="0.01" value="' + escapeAttr(r.pct) + '" oninput="onBlendPct(' + r.id + ',this.value)" />' +
+          '<button type="button" class="btn-sm btn-del" onclick="removeBlendRow(' + r.id + ')">Quitar</button>' +
+          '</div>'
+        );
+      }).join('');
       recalcBlend();
     }
 
-    function othersAndTotalHtml() {
-      return (
-        '<tr class="others-row">' +
-        '<td class="mat-cell"><strong>Otros (%)</strong><br><span style="font-size:11px;color:#64748b;">Inerte, humedad, aditivos…</span></td>' +
-        '<td><input class="pct-input" type="number" min="0" max="100" step="0.01" value="' + othersPct.toFixed(2) + '" oninput="onOthers(this.value)" /></td>' +
-        COLS.map(() => '<td>0</td>').join('') +
-        '<td>—</td></tr>' +
-        '<tr class="total-row" id="blendTotalRow">' +
-        '<td><strong>TOTAL producto</strong></td>' +
-        '<td id="blendTotalPct">0</td>' +
-        COLS.map(k => '<td id="blend_tot_' + k + '">0</td>').join('') +
-        '<td></td></tr>'
-      );
-    }
-
     function recalcBlend() {
+      othersPct = num(document.getElementById('othersPctInput').value);
       const totals = zeroComp();
       let sumMat = 0;
-      blendRows.forEach(r => {
+      blendRows.forEach(function(r) {
         const p = Math.max(0, num(r.pct));
         sumMat += p;
         const info = resolveMaterial(r.material);
-        const tr = document.querySelector('tr[data-bid="' + r.id + '"]');
-        if (!tr) return;
-        const cells = tr.querySelectorAll('.b-nut');
         if (info.ok) {
-          COLS.forEach((k, i) => {
-            const v = (p / 100) * num(info.comp[k]);
-            cells[i].textContent = v.toFixed(2);
-            totals[k] += v;
+          COLS.forEach(function(k) {
+            totals[k] += (p / 100) * num(info.comp[k]);
           });
-        } else {
-          COLS.forEach((_, i) => { cells[i].textContent = '—'; });
         }
       });
       const totalPct = sumMat + othersPct;
-      const tp = document.getElementById('blendTotalPct');
-      if (tp) tp.textContent = totalPct.toFixed(2);
-      COLS.forEach(k => {
-        const cell = document.getElementById('blend_tot_' + k);
-        if (cell) cell.textContent = totals[k].toFixed(2);
-      });
       const box = document.getElementById('blendValidation');
-      const row = document.getElementById('blendTotalRow');
-      if (!box) return;
-      if (Math.abs(totalPct - 100) <= 0.02) {
-        box.textContent = 'Suma: ' + totalPct.toFixed(2) + '% — OK (100%).';
+      const totalBox = document.getElementById('blendTotalBox');
+      const nutDiv = document.getElementById('blendTotalNutrients');
+      const npkDiv = document.getElementById('blendNpkLine');
+      if (Math.abs(totalPct - 100) <= 0.02 && blendRows.some(function(r) { return String(r.material).trim(); })) {
+        box.textContent = 'Suma: ' + totalPct.toFixed(2) + '% — OK.';
         box.style.color = '#166534';
-        if (row) row.style.background = '#ecfdf5';
+        totalBox.style.display = 'block';
+        var lines = [];
+        var labels = { N: 'N', P: 'P', K: 'K', Ca: 'Ca', Mg: 'Mg', S: 'S', Zn: 'Zn', Fe: 'Fe', Mn: 'Mn', B: 'B', Cu: 'Cu', Mo: 'Mo',
+          N_NO3: 'N-NO₃', N_NH4: 'N-NH₄', P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO' };
+        COLS.forEach(function(k) {
+          if (totals[k] > 1e-4) lines.push('<strong>' + labels[k] + '</strong>: ' + totals[k].toFixed(2) + ' %');
+        });
+        nutDiv.innerHTML = lines.length ? lines.join(' · ') : '—';
+        npkDiv.textContent = 'Etiqueta N – P₂O₅ – K₂O (ponderado): ' +
+          num(totals.N).toFixed(1).replace('.', ',') + ' – ' +
+          num(totals.P2O5).toFixed(1).replace('.', ',') + ' – ' +
+          num(totals.K2O).toFixed(1).replace('.', ',');
       } else {
-        box.textContent = 'Suma: ' + totalPct.toFixed(2) + '% — Ajusta a 100% (moléculas + Otros).';
+        box.textContent = blendRows.length
+          ? ('Suma: ' + totalPct.toFixed(2) + '% — Ajusta a 100% (ingredientes + Otros).')
+          : '';
         box.style.color = '#b91c1c';
-        if (row) row.style.background = '#fef2f2';
+        totalBox.style.display = 'none';
       }
     }
+
+    document.getElementById('othersPctInput').addEventListener('input', function() {
+      recalcBlend();
+    });
 
     function openCatalog() {
       document.getElementById('catalogModal').classList.add('open');
@@ -632,11 +643,12 @@
       const el = document.getElementById('customListEl');
       if (!list.length) el.innerHTML = '<span style="color:#64748b;">Sin entradas personalizadas.</span>';
       else {
-        el.innerHTML = list.map((m, i) =>
-          '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;">' +
-          '<span>' + escapeHtml(m.name) + '</span>' +
-          '<button type="button" class="btn-sm btn-del" onclick="removeCustom(' + i + ')">Quitar</button></div>'
-        ).join('');
+        el.innerHTML = list.map(function(m, i) {
+          var d = m.formula ? m.formula : '(análisis)';
+          return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;">' +
+            '<span>' + escapeHtml(m.name) + ' — ' + escapeHtml(d) + '</span>' +
+            '<button type="button" class="btn-sm btn-del" onclick="removeCustom(' + i + ')">Quitar</button></div>';
+        }).join('');
       }
     }
 
@@ -653,12 +665,18 @@
       recalcBlend();
     }
 
+    function formulaExistsInCatalog(formulaNorm) {
+      return getCatalog().some(function(e) {
+        return e.formula && normalizeFormula(e.formula) === formulaNorm;
+      });
+    }
+
     function saveCustomMaterial() {
       const name = String(document.getElementById('customName').value || '').trim();
       const formula = String(document.getElementById('customFormula').value || '').trim();
       const list = loadCustoms();
       if (!name) { alert('Nombre obligatorio.'); return; }
-      if (BASE_MATERIALS.some(m => m.name.toLowerCase() === name.toLowerCase()) || list.some(m => m.name.toLowerCase() === name.toLowerCase())) {
+      if (list.some(function(m) { return m.name.toLowerCase() === name.toLowerCase(); })) {
         alert('Ese nombre ya existe.'); return;
       }
       const manual = {
@@ -671,14 +689,22 @@
         N_NO3: num(document.getElementById('manualNNO3').value),
         N_NH4: num(document.getElementById('manualNNH4').value)
       };
-      const hasManual = Object.keys(manual).some(k => manual[k] > 0);
+      const hasManual = Object.keys(manual).some(function(k) { return manual[k] > 0; });
       if (!formula && !hasManual) { alert('Fórmula o análisis manual.'); return; }
       if (formula) {
-        try { parseCompound(formula); } catch (e) {
-          alert('Fórmula inválida: ' + (e.message || '')); return;
+        try {
+          parseCompound(formula);
+          var fn = normalizeFormula(formula);
+          if (formulaExistsInCatalog(fn)) {
+            alert('Esa fórmula ya está en el catálogo base o guardada.');
+            return;
+          }
+        } catch (e) {
+          alert('Fórmula inválida: ' + (e.message || ''));
+          return;
         }
       }
-      list.push(formula ? { name, formula } : { name, analysis: manual });
+      list.push(formula ? { name: name, formula: formula } : { name: name, analysis: manual });
       saveCustoms(list);
       refreshSuggestions();
       closeCatalog();
@@ -697,7 +723,6 @@
     }
 
     refreshSuggestions();
-    addBlendRow('', '');
     renderBlend();
   </script>
 </body>
