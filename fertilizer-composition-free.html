@@ -53,7 +53,8 @@
     .blend-total-label:first-of-type { margin-top: 0; }
     .blend-total-label.oxide { color: #6d28d9; }
     .blend-total-line { margin: 0 0 4px; line-height: 1.55; }
-    .blend-npk { margin-top: 10px; font-weight: 700; color: #14532d; }
+    .blend-npk { margin-top: 10px; font-weight: 700; color: #14532d; line-height: 1.45; }
+    .blend-npk .blend-label-me { display: block; margin-top: 8px; font-size: 12.5px; font-weight: 600; color: #334155; }
     .others-row-inline { display: flex; align-items: center; gap: 10px; margin: 12px 0; max-width: 440px; flex-wrap: wrap; }
     .others-row-inline label { font-size: 13px; font-weight: 600; color: #334155; }
     .others-row-inline input { width: 80px; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; }
@@ -612,6 +613,47 @@
       refreshAllRowDetails();
     }
 
+    /** Resumen tipo etiqueta: N–P₂O₅–K₂O; añade CaO/MgO si aportan; micronutrientes en % elemental. */
+    function buildBlendLabelLine(totals) {
+      function fmt1(x) {
+        return num(x).toFixed(1).replace('.', ',');
+      }
+      var names = [];
+      var vals = [];
+      names.push('N');
+      vals.push(fmt1(totals.N));
+      names.push('P₂O₅');
+      vals.push(fmt1(totals.P2O5));
+      names.push('K₂O');
+      vals.push(fmt1(totals.K2O));
+      if (num(totals.CaO) > 1e-4) {
+        names.push('CaO');
+        vals.push(fmt1(totals.CaO));
+      }
+      if (num(totals.MgO) > 1e-4) {
+        names.push('MgO');
+        vals.push(fmt1(totals.MgO));
+      }
+      var main =
+        '<strong>Etiqueta (ponderado):</strong> ' +
+        names.join(' – ') +
+        ': ' +
+        vals.join(' – ');
+      var meOrder = ['Zn', 'Fe', 'Mn', 'B', 'Cu', 'Mo'];
+      var meLbl = { Zn: 'Zn', Fe: 'Fe', Mn: 'Mn', B: 'B', Cu: 'Cu', Mo: 'Mo' };
+      var meParts = [];
+      meOrder.forEach(function(k) {
+        if (num(totals[k]) > 1e-4) meParts.push(meLbl[k] + ' ' + fmt1(totals[k]));
+      });
+      if (meParts.length) {
+        main +=
+          ' <span class="blend-label-me">· Micronutrientes (% elemental): ' +
+          meParts.join(' · ') +
+          '</span>';
+      }
+      return main;
+    }
+
     function recalcBlend() {
       othersPct = num(document.getElementById('othersPctInput').value);
       const totals = zeroComp();
@@ -652,10 +694,7 @@
           '<p class="blend-total-line">' + (lineElem.length ? lineElem.join(' · ') : '—') + '</p>' +
           '<p class="blend-total-label oxide">Equivalente en óxido (P, K, Ca, Mg como P₂O₅, K₂O, CaO, MgO)</p>' +
           '<p class="blend-total-line">' + (lineOx.length ? lineOx.join(' · ') : '—') + '</p>';
-        npkDiv.textContent = 'Etiqueta N – P₂O₅ – K₂O (ponderado): ' +
-          num(totals.N).toFixed(1).replace('.', ',') + ' – ' +
-          num(totals.P2O5).toFixed(1).replace('.', ',') + ' – ' +
-          num(totals.K2O).toFixed(1).replace('.', ',');
+        npkDiv.innerHTML = buildBlendLabelLine(totals);
       } else {
         box.textContent = blendRows.length
           ? ('Suma: ' + totalPct.toFixed(2) + '% — Ajusta a 100% (ingredientes + Otros).')
