@@ -16,7 +16,7 @@
     .chip.other { background: #f1f5f9; border-color: #cbd5e1; color: #64748b; }
 
     .board-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; padding: 12px; }
-    .board { min-width: 1080px; display: grid; grid-template-columns: repeat(18, 56px); grid-template-rows: repeat(10, 56px); gap: 4px; }
+    .board { min-width: 1080px; width: max-content; margin: 0 auto; display: grid; grid-template-columns: repeat(18, 56px); grid-template-rows: repeat(10, 56px); gap: 4px; }
     .el {
       border-radius: 8px;
       border: 1px solid #cbd5e1;
@@ -64,7 +64,6 @@
   </style>
 </head>
 <body>
-  <h1>🧫 Tabla Periódica de Nutrientes</h1>
   <p class="lead">Elementos de interés para nutrición vegetal resaltados. Toca cualquier cuadro para ver ficha rápida (número atómico, peso atómico, valencias, radio atómico y electronegatividad).</p>
 
   <div class="legend">
