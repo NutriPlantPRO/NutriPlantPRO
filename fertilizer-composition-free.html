@@ -9,10 +9,6 @@
     body { margin: 0; padding: 14px 16px 28px; background: #f8fafc; font-family: Inter, system-ui, sans-serif; font-size: 14px; color: #0f172a; }
     .guest-note { margin: 0 0 14px; font-size: 12px; color: #64748b; text-align: center; }
     .guest-note strong { color: #475569; }
-    h1.fc-page-title { font-size: 1.35rem; font-weight: 800; margin: 0 0 8px; }
-    /* Evita título duplicado cuando esta página va dentro del modal del login */
-    html.fc-embed h1.fc-page-title { display: none; }
-    html.fc-embed .lead { margin-top: 0; }
     .lead { margin: 0 0 20px; color: #475569; line-height: 1.5; max-width: 720px; }
     .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
     .panel h2 { margin: 0 0 12px; font-size: 1.05rem; color: #0f172a; }
@@ -89,16 +85,10 @@
   </style>
 </head>
 <body>
-  <script>
-    try {
-      if (window.self !== window.top) document.documentElement.classList.add('fc-embed');
-    } catch (e) { /* cross-origin */ }
-  </script>
   <p class="guest-note">
     <strong>Modo gratuito:</strong> no se guarda al cerrar. Catálogo personalizado solo en este navegador.
   </p>
 
-  <h1 class="fc-page-title">⚛️ Calculadora de Composición de Fertilizantes (%)</h1>
   <p class="lead">
     Agrega una o más <strong>filas</strong>: en cada una eliges la <strong>fórmula</strong> y el <strong>% en el producto</strong>. Debajo de cada fila verás la <strong>composición teórica de esa molécula pura</strong> (PM, tarjetas, óxidos). Al final, <strong>Otros %</strong> y el <strong>total ponderado</strong> del producto cuando la suma sea 100%.
   </p>
