@@ -36,8 +36,10 @@
     .mol-block .mol-theory-title { font-size: 12px; color: #64748b; margin: 0 0 10px; }
     .mol-block .nut-grid { margin-top: 10px; }
     .mol-detail-inner { padding-top: 4px; }
-    .blend-panel .blend-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 4px; max-width: 440px; }
-    .blend-panel .formula-input-narrow { flex: 1; min-width: 160px; max-width: 280px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box; }
+    .blend-panel .blend-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-bottom: 4px; width: 100%; }
+    .blend-panel .blend-line-formula { flex: 1 1 160px; min-width: 140px; max-width: min(100%, 360px); }
+    .blend-panel .blend-line-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
+    .blend-panel .formula-input-narrow { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box; }
     .blend-panel .pct-compact { width: 72px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center; font-size: 13px; }
     .blend-panel .pct-lbl { font-size: 12px; color: #64748b; white-space: nowrap; }
     .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 6px; border: 0; cursor: pointer; }
@@ -47,7 +49,11 @@
     .btn-clear { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; margin-left: 8px; }
     .blend-total-box { margin-top: 14px; padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; font-size: 13px; display: none; }
     .blend-total-box h3 { margin: 0 0 8px; font-size: 14px; color: #1e40af; }
-    .blend-npk { margin-top: 8px; font-weight: 700; color: #14532d; }
+    .blend-total-label { margin: 12px 0 6px; font-size: 11px; font-weight: 700; color: #1d4ed8; letter-spacing: 0.02em; text-transform: uppercase; }
+    .blend-total-label:first-of-type { margin-top: 0; }
+    .blend-total-label.oxide { color: #6d28d9; }
+    .blend-total-line { margin: 0 0 4px; line-height: 1.55; }
+    .blend-npk { margin-top: 10px; font-weight: 700; color: #14532d; }
     .others-row-inline { display: flex; align-items: center; gap: 10px; margin: 12px 0; max-width: 440px; flex-wrap: wrap; }
     .others-row-inline label { font-size: 13px; font-weight: 600; color: #334155; }
     .others-row-inline input { width: 80px; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; }
@@ -90,7 +96,7 @@
     <p id="blendValidation" style="margin:8px 0 0;font-size:13px;font-weight:600;"></p>
     <div class="blend-total-box" id="blendTotalBox">
       <h3>Nutriente total en el producto (ponderado)</h3>
-      <p style="margin:0 0 8px;font-size:12px;color:#64748b;">Aquí solo se listan <strong>P₂O₅, K₂O, CaO y MgO</strong> (no P, K, Ca, Mg elementales) para alinearlo con etiqueta y evitar duplicar.</p>
+      <p style="margin:0 0 8px;font-size:12px;color:#64748b;">Arriba el <strong>% ponderado en forma elemental</strong>; debajo el <strong>equivalente en óxido</strong> (P₂O₅, K₂O, CaO, MgO) como en etiquetas comerciales.</p>
       <div id="blendTotalNutrients"></div>
       <div class="blend-npk" id="blendNpkLine"></div>
     </div>
@@ -588,11 +594,15 @@
         return (
           '<div class="mol-block" data-bid="' + r.id + '">' +
           '<div class="blend-line">' +
+          '<div class="blend-line-formula">' +
           '<input type="text" class="formula-input-narrow" list="materialSuggestions" placeholder="Fórmula" ' +
           'value="' + escapeAttr(r.material) + '" oninput="onBlendMat(' + r.id + ',this.value)" />' +
+          '</div>' +
+          '<div class="blend-line-actions">' +
           '<span class="pct-lbl">% en producto</span>' +
           '<input type="number" class="pct-compact" min="0" max="100" step="0.01" value="' + escapeAttr(r.pct) + '" oninput="onBlendPct(' + r.id + ',this.value)" />' +
           '<button type="button" class="btn-sm btn-del" onclick="removeBlendRow(' + r.id + ')">Quitar</button>' +
+          '</div>' +
           '</div>' +
           '<div id="mol_wrap_' + r.id + '" class="mol-detail-inner"></div>' +
           '</div>'
@@ -625,14 +635,23 @@
         box.textContent = 'Suma: ' + totalPct.toFixed(2) + '% — OK.';
         box.style.color = '#166534';
         totalBox.style.display = 'block';
-        var lines = [];
-        var labels = { N: 'N', S: 'S', Zn: 'Zn', Fe: 'Fe', Mn: 'Mn', B: 'B', Cu: 'Cu', Mo: 'Mo',
+        var labels = { N: 'N', P: 'P', K: 'K', Ca: 'Ca', Mg: 'Mg', S: 'S', Zn: 'Zn', Fe: 'Fe', Mn: 'Mn', B: 'B', Cu: 'Cu', Mo: 'Mo',
           N_NO3: 'N-NO₃', N_NH4: 'N-NH₄', P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO' };
-        var blendOrder = ['N', 'N_NO3', 'N_NH4', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'Zn', 'Fe', 'Mn', 'B', 'Cu', 'Mo'];
-        blendOrder.forEach(function(k) {
-          if (totals[k] > 1e-4) lines.push('<strong>' + labels[k] + '</strong>: ' + totals[k].toFixed(2) + ' %');
+        var elemOrder = ['N', 'N_NO3', 'N_NH4', 'P', 'K', 'Ca', 'Mg', 'S', 'Zn', 'Fe', 'Mn', 'B', 'Cu', 'Mo'];
+        var oxOrder = ['P2O5', 'K2O', 'CaO', 'MgO'];
+        var lineElem = [];
+        var lineOx = [];
+        elemOrder.forEach(function(k) {
+          if (totals[k] > 1e-4) lineElem.push('<strong>' + labels[k] + '</strong>: ' + totals[k].toFixed(2) + ' %');
         });
-        nutDiv.innerHTML = lines.length ? lines.join(' · ') : '—';
+        oxOrder.forEach(function(k) {
+          if (totals[k] > 1e-4) lineOx.push('<strong>' + labels[k] + '</strong>: ' + totals[k].toFixed(2) + ' %');
+        });
+        nutDiv.innerHTML =
+          '<p class="blend-total-label">Forma elemental (ponderado)</p>' +
+          '<p class="blend-total-line">' + (lineElem.length ? lineElem.join(' · ') : '—') + '</p>' +
+          '<p class="blend-total-label oxide">Equivalente en óxido (P, K, Ca, Mg como P₂O₅, K₂O, CaO, MgO)</p>' +
+          '<p class="blend-total-line">' + (lineOx.length ? lineOx.join(' · ') : '—') + '</p>';
         npkDiv.textContent = 'Etiqueta N – P₂O₅ – K₂O (ponderado): ' +
           num(totals.N).toFixed(1).replace('.', ',') + ' – ' +
           num(totals.P2O5).toFixed(1).replace('.', ',') + ' – ' +
