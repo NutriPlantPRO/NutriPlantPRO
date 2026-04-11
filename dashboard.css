@@ -1792,6 +1792,16 @@ body {
   font-size: 14px;
 }
 
+.footer-disclaimer {
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted);
+  opacity: 0.9;
+  max-width: 38em;
+  font-weight: 400;
+}
+
 .footer-contact {
   display: flex;
   align-items: center;
@@ -4836,6 +4846,17 @@ body {
   margin-top: 20px;
 }
 
+/* Modal óxido↔elemental: siempre máx. 2 columnas (Fold/tablet ancha evitaba 3 columnas muy angostas) */
+#conversionCalculatorModal .conversion-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 560px) {
+  #conversionCalculatorModal .conversion-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .conversion-item {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -4912,11 +4933,6 @@ body {
 
   .conversion-inputs {
     grid-template-columns: 1fr;
-  }
-
-  .conversion-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
   }
 
   .nutrient-conversion-group,
