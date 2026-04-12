@@ -251,7 +251,7 @@
         </button>
         
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientUnitsCalculator()" style="margin-top: 12px;">
-          <span class="calculator-icon">⚛</span>
+          <span class="calculator-icon">🧪</span>
           <span class="button-text">Calculadora de Unidades (ppm/mmol/meq)</span>
         </button>
 
@@ -283,6 +283,11 @@
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showPeriodicTableNutrientsCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🧫</span>
           <span class="button-text">Tabla Periódica (Nutrientes)</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompatibilityCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🔺</span>
+          <span class="button-text">Compatibilidad de fertilizantes (fertirriego)</span>
         </button>
         
         <!-- Footer: copyright y nota técnica -->
@@ -1242,6 +1247,16 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showFertilizerCompatibilityCalculator() {
+      document.getElementById('fertilizerCompatibilityModal').style.display = 'flex';
+    }
+    function closeFertilizerCompatibilityCalculator() {
+      const modal = document.getElementById('fertilizerCompatibilityModal');
+      const frame = document.getElementById('fertilizerCompatibilityFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     // Datos de nutrientes: peso molecular y valencia
     const nutrientDataLogin = {
       'n': { mw: 14.01, valence: 1 },
@@ -1315,6 +1330,10 @@
       const periodicTableModal = document.getElementById('periodicTableNutrientsModal');
       if (e.target === periodicTableModal) {
         closePeriodicTableNutrientsCalculator();
+      }
+      const fertilizerCompatModal = document.getElementById('fertilizerCompatibilityModal');
+      if (e.target === fertilizerCompatModal) {
+        closeFertilizerCompatibilityCalculator();
       }
     });
   </script>
@@ -1744,6 +1763,19 @@
       </div>
       <div class="modal-body">
         <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html" title="Tabla Periódica (Nutrientes)"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Compatibilidad de fertilizantes (matriz triangular) -->
+  <div id="fertilizerCompatibilityModal" class="modal-overlay">
+    <div class="modal modal-fertilizer-composition">
+      <div class="modal-header">
+        <h2 class="modal-title">🔺 Compatibilidad de fertilizantes (fertirriego)</h2>
+        <button class="modal-close" onclick="closeFertilizerCompatibilityCalculator()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html" title="Compatibilidad de fertilizantes"></iframe>
       </div>
     </div>
   </div>

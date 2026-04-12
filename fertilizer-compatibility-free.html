@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compatibilidad de fertilizantes — NutriPlant</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 14px 14px 22px;
+      background: #f8fafc;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      color: #0f172a;
+      font-size: 14px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.15rem;
+      color: #1e3a8a;
+    }
+    .lead {
+      margin: 0 0 10px;
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.45;
+      max-width: 900px;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    .chip {
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 4px 10px;
+      border: 1px solid transparent;
+    }
+    .chip.c { background: #dcfce7; border-color: #86efac; color: #14532d; }
+    .chip.r { background: #fef9c3; border-color: #facc15; color: #713f12; }
+    .chip.i { background: #fee2e2; border-color: #f87171; color: #7f1d1d; }
+    .hint {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 10px;
+      max-width: 900px;
+      line-height: 1.4;
+    }
+
+    .matrix-wrap {
+      overflow: auto;
+      max-height: min(52vh, 420px);
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #fff;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+    }
+    table.compat {
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: max-content;
+    }
+    .compat th, .compat td {
+      border: 1px solid #e2e8f0;
+      padding: 0;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 11px;
+      min-width: 36px;
+      height: 32px;
+    }
+    .compat thead th {
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      font-weight: 700;
+      color: #334155;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 4px 6px;
+    }
+    .compat thead th.corner {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      min-width: 140px;
+      background: #eff6ff;
+      border-right: 2px solid #93c5fd;
+    }
+    .compat td.empty-cell {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    .compat tbody th.row-h {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: #f8fafc;
+      font-weight: 600;
+      text-align: left;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #0f172a;
+      border-right: 2px solid #e2e8f0;
+      max-width: 160px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cell-btn {
+      width: 100%;
+      height: 100%;
+      min-height: 32px;
+      border: none;
+      margin: 0;
+      padding: 2px;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 12px;
+      transition: box-shadow 0.15s ease, transform 0.08s ease;
+    }
+    .cell-btn:hover { filter: brightness(0.97); }
+    .cell-btn:active { transform: scale(0.98); }
+    .cell-btn.l-c { background: #bbf7d0; color: #14532d; }
+    .cell-btn.l-r { background: #fef08a; color: #713f12; }
+    .cell-btn.l-i { background: #fecaca; color: #7f1d1d; }
+    .cell-btn.empty {
+      background: #f1f5f9;
+      cursor: default;
+      color: transparent;
+    }
+    .cell-btn.hl-row { box-shadow: inset 0 0 0 2px #2563eb; }
+    .cell-btn.hl-col { box-shadow: inset 0 0 0 2px #7c3aed; }
+    .cell-btn.hl-both { box-shadow: inset 0 0 0 3px #1d4ed8; }
+    .cell-btn.selected { box-shadow: inset 0 0 0 3px #0f172a; }
+
+    .compat tbody th.row-h.hl-fert {
+      background: #dbeafe;
+      color: #1e40af;
+      border-right-color: #2563eb;
+    }
+    .compat thead th.hl-fert {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .panel {
+      margin-top: 4px;
+      background: #fff;
+      border: 1px solid #dbeafe;
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+    }
+    .panel h2 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: #1e3a8a;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .badge.c { background: #dcfce7; color: #14532d; }
+    .badge.r { background: #fef9c3; color: #713f12; }
+    .badge.i { background: #fee2e2; color: #7f1d1d; }
+    .panel .names {
+      font-size: 13px;
+      color: #334155;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .sec {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed #cbd5e1;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .sec strong {
+      display: block;
+      color: #0f172a;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .sec ul { margin: 4px 0 0 18px; padding: 0; }
+    .foot {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <h1>Compatibilidad en fertirriego (matriz triangular)</h1>
+  <p class="lead">
+    Referencia alineada con el catálogo de fertilizantes solubles de NutriPlant PRO. Los códigos reflejan riesgo típico en <strong>solución madre concentrada</strong> o mezclas poco diluidas; en tanque de trabajo diluido muchas incompatibilidades bajan de riesgo, pero la separación A/B sigue siendo buena práctica.
+  </p>
+  <div class="legend">
+    <span class="chip c">C — Compatible</span>
+    <span class="chip r">R — Precaución (solubilidad / interacción)</span>
+    <span class="chip i">I — Incompatible (precipitado / obstrucción)</span>
+  </div>
+  <p class="hint">
+    Pulsa un <strong>encabezado de fila o columna</strong> para resaltar ese fertilizante. Pulsa una <strong>celda</strong> para ver el detalle técnico del par. Orden: N → P → K → Ca/Mg → complejos NPK → micros → ácidos.
+  </p>
+
+  <div class="matrix-wrap">
+    <table class="compat" id="compatTable" aria-label="Matriz de compatibilidad"></table>
+  </div>
+
+  <div class="panel" id="detailPanel">
+    <h2 id="detailTitle">Selecciona una celda</h2>
+    <div id="detailBody" class="names">Toca una intersección en la tabla triangular inferior para ver qué ocurre entre esos dos productos y qué hacer en campo.</div>
+    <div class="foot">
+      Nota: herramienta de apoyo; la decisión final corresponde al técnico según agua, pH, temperatura, orden de disolución y concentración real.
+    </div>
+  </div>
+
+  <script>
+(function () {
+  /** Orden y nombres alineados con fertirriego (FERT_SOLUBLES_DB) + urea, nitrato amonio, sulfatos micros y Si */
+  const FERTILIZERS = [
+    { id: 'urea', name: 'Urea' },
+    { id: 'nitrato_amonio', name: 'Nitrato de amonio' },
+    { id: 'fosfonitrato_33_03_00', name: 'Fosfonitrato' },
+    { id: 'sulfato_amonio_soluble', name: 'Sulfato de amonio' },
+    { id: 'nitrato_calcio_granular', name: 'Nitrato de calcio' },
+    { id: 'nitrato_calcio_cristal', name: 'Nitrato de calcio (cristal)' },
+    { id: 'nitrato_magnesio', name: 'Nitrato de magnesio' },
+    { id: 'map', name: 'MAP (fosfato monoamónico)' },
+    { id: 'mkp', name: 'MKP' },
+    { id: 'nks', name: 'NKS' },
+    { id: 'nk_mg', name: 'NK + Mg' },
+    { id: 'sop', name: 'SOP (sulfato de potasio)' },
+    { id: 'kcl_soluble', name: 'KCl (cloruro de potasio)' },
+    { id: 'sulfato_magnesio', name: 'Sulfato de magnesio' },
+    { id: 'triple_19_me', name: 'Triple 19 +Me' },
+    { id: 'npk_12_43_12_me', name: '12-43-12 +Me' },
+    { id: 'npk_10_10_43_me', name: '10-10-43 +Me' },
+    { id: 'mix_micros_edta', name: 'Mix micros EDTA' },
+    { id: 'quelato_fe', name: 'Fe EDTA' },
+    { id: 'fe_dtpa', name: 'Fe DTPA' },
+    { id: 'fe_eddha', name: 'Fe EDDHA' },
+    { id: 'quelato_mn', name: 'Mn EDTA' },
+    { id: 'quelato_zn', name: 'Zn EDTA' },
+    { id: 'quelato_cu', name: 'Cu EDTA' },
+    { id: 'acido_borico', name: 'Ácido bórico' },
+    { id: 'molibdato_sodio', name: 'Molibdato de sodio (Mo)' },
+    { id: 'sulfatos_micros', name: 'Sulfatos Fe, Mn, Zn, Cu' },
+    { id: 'silicio', name: 'Fuente de Si (soluble)' },
+    { id: 'acido_fosforico_75', name: 'Ácido fosfórico 75%' },
+    { id: 'acido_fosforico_85', name: 'Ácido fosfórico 85%' },
+    { id: 'acido_nitrico_55', name: 'Ácido nítrico 55%' },
+    { id: 'acido_sulfurico_98', name: 'Ácido sulfúrico 98%' }
+  ];
+
+  const byId = {};
+  FERTILIZERS.forEach((f, idx) => { f._i = idx; byId[f.id] = f; });
+
+  /** Rasgos para reglas (contexto solución concentrada) */
+  const TR = {
+    urea: { urea: true },
+    nitrato_amonio: { nh4: true, no3: true },
+    fosfonitrato_33_03_00: { n: true, p: true, po4: true },
+    sulfato_amonio_soluble: { nh4: true, so4: true },
+    nitrato_calcio_granular: { ca_no3: true, ca: true },
+    nitrato_calcio_cristal: { ca_no3: true, ca: true },
+    nitrato_magnesio: { no3: true, mg: true },
+    map: { nh4: true, po4: true, p_acid: true },
+    mkp: { k: true, po4: true, p_acid: true },
+    nks: { no3: true, k: true, so4: true },
+    nk_mg: { no3: true, k: true, mg: true },
+    sop: { k: true, so4: true },
+    kcl_soluble: { k: true, cl: true },
+    sulfato_magnesio: { mg: true, so4: true },
+    triple_19_me: { npk: true, po4: true, nh4: true, no3: true, k: true, micro: true },
+    npk_12_43_12_me: { npk: true, po4: true, nh4: true, no3: true, k: true, micro: true },
+    npk_10_10_43_me: { npk: true, po4: true, no3: true, k: true, micro: true },
+    mix_micros_edta: { chelate: true, edta: true, micro: true },
+    quelato_fe: { chelate: true, edta: true, fe: true },
+    fe_dtpa: { chelate: true, dtpa: true, fe: true },
+    fe_eddha: { chelate: true, eddha: true, fe: true },
+    quelato_mn: { chelate: true, edta: true, mn: true },
+    quelato_zn: { chelate: true, edta: true, zn: true },
+    quelato_cu: { chelate: true, edta: true, cu: true },
+    acido_borico: { b: true, weak_acid: true },
+    molibdato_sodio: { mo: true },
+    sulfatos_micros: { metal_sulfate: true, so4: true, micro: true },
+    silicio: { si: true },
+    acido_fosforico_75: { strong_acid: true, h3po4: true, po4: true },
+    acido_fosforico_85: { strong_acid: true, h3po4: true, po4: true },
+    acido_nitrico_55: { strong_acid: true, hno3: true, no3: true },
+    acido_sulfurico_98: { strong_acid: true, h2so4: true, so4: true }
+  };
+
+  function traits(id) {
+    return TR[id] || {};
+  }
+
+  function keyPair(ia, ib) {
+    return ia < ib ? ia + '|' + ib : ib + '|' + ia;
+  }
+
+  /** Excepciones explícitas (sobreescriben inferencia) */
+  const OVERRIDE = {
+    // Pares críticos documentados en tablas clásicas de fertirriego
+    'mkp|nitrato_calcio_granular': 'I',
+    'map|nitrato_calcio_granular': 'I',
+    'map|nitrato_calcio_cristal': 'I',
+    'mkp|nitrato_calcio_cristal': 'I',
+    'sulfato_amonio_soluble|nitrato_calcio_granular': 'I',
+    'sulfato_amonio_soluble|nitrato_calcio_cristal': 'I',
+    'sulfato_magnesio|nitrato_calcio_granular': 'I',
+    'sulfato_magnesio|nitrato_calcio_cristal': 'I',
+    'sop|nitrato_calcio_granular': 'I',
+    'sop|nitrato_calcio_cristal': 'I',
+    'acido_fosforico_75|nitrato_calcio_granular': 'I',
+    'acido_fosforico_75|nitrato_calcio_cristal': 'I',
+    'acido_fosforico_85|nitrato_calcio_granular': 'I',
+    'acido_fosforico_85|nitrato_calcio_cristal': 'I',
+    'acido_sulfurico_98|nitrato_calcio_granular': 'I',
+    'acido_sulfurico_98|nitrato_calcio_cristal': 'I',
+    'nks|sulfato_amonio_soluble': 'R',
+    'sop|nks': 'R',
+    'map|sulfatos_micros': 'I',
+    'mkp|sulfatos_micros': 'I',
+    'mix_micros_edta|map': 'R',
+    'mix_micros_edta|mkp': 'R',
+    'fe_eddha|map': 'R',
+    'fe_eddha|mkp': 'R',
+    'nitrato_magnesio|mix_micros_edta': 'R',
+    'nitrato_magnesio|quelato_fe': 'R'
+  };
+
+  function inferLevel(aid, bid) {
+    if (aid === bid) return 'C';
+    const k = keyPair(aid, bid);
+    if (OVERRIDE[k]) return OVERRIDE[k];
+    const A = traits(aid);
+    const B = traits(bid);
+
+    const ca = A.ca_no3 || B.ca_no3;
+
+    function has(t) { return !!(A[t] || B[t]); }
+    const isMap = aid === 'map' || bid === 'map';
+    const isMkp = aid === 'mkp' || bid === 'mkp';
+
+    // Ca²⁺ (nitrato) vs fosfatos / complejos con P / ácidos fosfóricos
+    if (ca && (has('po4') || has('p_acid') || (has('npk') && (A.po4 || B.po4)))) {
+      if ((A.po4 || B.po4 || A.npk || B.npk) && !has('hno3')) return 'I';
+    }
+    if (ca && (has('h3po4') || (A.strong_acid && A.h3po4) || (B.strong_acid && B.h3po4))) return 'I';
+    if (ca && (has('h2so4') || A.h2so4 || B.h2so4)) return 'I';
+
+    // Ca + sulfatos (yeso): (NH₄)₂SO₄, SOP, MgSO₄, NKS (lleva SO₄), etc.
+    if (ca && has('so4') && (A.so4 || B.so4)) {
+      if ((A.nh4 && A.so4) || (B.nh4 && B.so4)) return 'I';
+      if (aid === 'sop' || bid === 'sop' || aid === 'sulfato_magnesio' || bid === 'sulfato_magnesio') return 'I';
+      if (aid === 'nks' || bid === 'nks') return 'I';
+    }
+
+    // Micro sulfatos + P (MAP/MKP u ortofosfato en NPK)
+    if (has('metal_sulfate') && (has('po4') || isMap || isMkp)) return 'I';
+
+    // Quelatos + fuerte P ortofosfato
+    if ((A.chelate || B.chelate) && (isMap || isMkp || (has('po4') && (A.npk || B.npk)))) return 'R';
+
+    // KNO3-family + sulfato amonio / SOP (salting)
+    if ((aid === 'nks' || bid === 'nks' || aid === 'nk_mg' || bid === 'nk_mg') && (has('nh4') && has('so4'))) return 'R';
+    if ((aid === 'nks' || bid === 'nks') && (aid === 'sop' || bid === 'sop')) return 'R';
+
+    // Ácidos fuertes mezclados entre sí o con bases implícitas
+    if (A.strong_acid && B.strong_acid && aid !== bid) return 'R';
+
+    return 'C';
+  }
+
+  const DETAIL_KEYS = {
+    ca_phosphate_mkp: {
+      title: '🔴 No compatible',
+      que: 'Formación de fosfato de calcio (Ca₃(PO₄)₂) → precipitado poco soluble.',
+      impacto: ['↓ disponibilidad de Ca', '↓ disponibilidad de P', 'riesgo de taponamiento de goteros / líneas'],
+      factor: 'Concentración y pH local en la mezcla.',
+      cond: ['❌ No en la misma solución madre con fosfatos ortofosfato.', '⚠️ Riesgo incluso a pH cercano a neutro si la concentración es alta.'],
+      accion: ['Separar en tanque A / B', 'Inyectar por separado', 'Diluir bien antes de mezclar en línea si el diseño lo permite']
+    },
+    ca_sulfate: {
+      title: '🔴 No compatible',
+      que: 'Formación de yeso (CaSO₄·2H₂O) al mezclar Ca²⁺ con SO₄²⁻ en medio concentrado.',
+      impacto: ['Turbidez', 'precipitado', 'obstrucción'],
+      factor: 'Producto de solubilidad; empeora en solución madre.',
+      cond: ['Especialmente crítico con sulfato de amonio, SOP o sulfato de magnesio frente a nitrato de calcio.'],
+      accion: ['Tanques separados', 'Orden: disolver primero el que menos precipita según tu protocolo', 'Nunca concentrar ambos en el mismo carboy']
+    },
+    ca_acid_phosphoric: {
+      title: '🔴 No compatible',
+      que: 'Reacción ácido–base + fosfato: precipitados de Ca–P y riesgo de calor local.',
+      impacto: ['Precipitados', 'inestabilidad de la mezcla'],
+      factor: 'Concentración del ácido y del calcio.',
+      cond: ['No mezclar ácido fosfórico concentrado con nitrato de calcio en el mismo volumen pequeño.'],
+      accion: ['Ácido en un tanque, calcio en otro', 'Dilución fuerte antes de llegar a línea']
+    },
+    ca_acid_sulfuric: {
+      title: '🔴 No compatible',
+      que: 'Sulfato + calcio → yeso; además calor de dilución del ácido.',
+      impacto: ['Precipitado', 'daño a componentes plásticos si hay calor local'],
+      factor: 'Concentración.',
+      cond: ['Evitar co-disolución concentrada.'],
+      accion: ['Tanques separados', 'Seguridad: siempre ácido al agua, nunca al revés']
+    },
+    metal_sulfate_phosphate: {
+      title: '🔴 No compatible',
+      que: 'Sulfatos de microelementos con MAP/MKP pueden generar fosfatos insolubles de Fe/Zn/Mn/Cu.',
+      impacto: ['Pérdida de micro y P', 'turbidez'],
+      factor: 'pH y concentración.',
+      cond: ['Muy frecuente en solución madre.'],
+      accion: ['Micros quelatados en otro tanque', 'o MAP/MKP separado de sulfatos metálicos']
+    },
+    chelate_phosphate: {
+      title: '🟡 Precaución',
+      que: 'Los ortofosfatos compiten con quelatos (especialmente Fe); puede haber intercambio y pérdida de eficacia.',
+      impacto: ['↓ Fe quelatado disponible', 'interacciones lentas en tanque'],
+      factor: 'Tiempo de contacto y concentración.',
+      cond: ['Más delicado en solución madre concentrada.'],
+      accion: ['Fe quelato en tanque B', 'fosfatos en A', 'mezcla solo ya diluida en línea']
+    },
+    kno3_sulfate_salting: {
+      title: '🟡 Precaución',
+      que: 'Combinaciones K/NO₃ con sulfatos pueden reducir solubilidad conjunta (“salting out”).',
+      impacto: ['Cristalización en frío', 'sedimentos'],
+      factor: 'Temperatura y concentración total de sales.',
+      cond: ['Vigilar especialmente solución madre fría.'],
+      accion: ['Reducir concentración', 'separar tanques', 'agitar / mantener temperatura estable']
+    },
+    strong_acids: {
+      title: '🟡 Precaución',
+      que: 'Mezclar ácidos fuertes entre sí o con sales sin protocolo puede generar calor, salpicaduras y descomposición.',
+      impacto: ['Riesgo físico-químico', 'corrosión'],
+      factor: 'Orden y dilución.',
+      cond: ['Cada ácido suele ir en etapa separada de preparación.'],
+      accion: ['No mezclar concentrados', 'EPP', 'agua primero']
+    },
+    default_c: {
+      title: '🟢 Compatible (típico)',
+      que: 'En condiciones habituales de solución de trabajo diluida no se espera precipitado grave; revisa siempre ficha del fabricante.',
+      impacto: ['—'],
+      factor: 'Concentración final y calidad del agua.',
+      cond: ['Validar en tu instalación.'],
+      accion: ['Prueba de jarra / solución madre pequeña antes de escalar']
+    },
+    default_r: {
+      title: '🟡 Precaución',
+      que: 'Interacción o límite de solubilidad según tabla y experiencia.',
+      impacto: ['Posible turbidez o reducción de eficacia'],
+      factor: 'Concentración, pH, temperatura.',
+      cond: ['Monitorear solución madre.'],
+      accion: ['Diluir más', 'separar tanques', 'consultar técnico']
+    },
+    default_i: {
+      title: '🔴 No compatible',
+      que: 'Riesgo alto de precipitado u obstrucción en condiciones típicas de fertirriego.',
+      impacto: ['Obstrucción', 'pérdida de nutrientes'],
+      factor: 'Concentración.',
+      cond: ['Evitar co-maduración.'],
+      accion: ['Separar A/B', 'inyección separada']
+    },
+    same: {
+      title: '🟢 Mismo producto',
+      que: 'Sin interacción entre dos lotes del mismo fertilizante en esta matriz.',
+      impacto: ['—'],
+      factor: '—',
+      cond: ['—'],
+      accion: ['—']
+    }
+  };
+
+  function detailTemplate(aid, bid, level) {
+    if (aid === bid) return DETAIL_KEYS.same;
+
+    const A = traits(aid);
+    const B = traits(bid);
+    const ca = A.ca_no3 || B.ca_no3;
+    const mapMkp = aid === 'map' || bid === 'map' || aid === 'mkp' || bid === 'mkp';
+
+    if (level === 'I') {
+      if (mapMkp && ca && (A.po4 || B.po4)) return DETAIL_KEYS.ca_phosphate_mkp;
+      if (ca && (A.h3po4 || B.h3po4)) return DETAIL_KEYS.ca_acid_phosphoric;
+      if (ca && (A.h2so4 || B.h2so4)) return DETAIL_KEYS.ca_acid_sulfuric;
+      if (ca && (A.so4 || B.so4)) {
+        if ((A.nh4 && A.so4) || (B.nh4 && B.so4)) return DETAIL_KEYS.ca_sulfate;
+        if (aid === 'sop' || bid === 'sop' || aid === 'sulfato_magnesio' || bid === 'sulfato_magnesio' || aid === 'nks' || bid === 'nks') return DETAIL_KEYS.ca_sulfate;
+      }
+      if ((A.metal_sulfate || B.metal_sulfate) && (A.po4 || B.po4)) return DETAIL_KEYS.metal_sulfate_phosphate;
+      return DETAIL_KEYS.default_i;
+    }
+    if (level === 'R') {
+      if ((A.chelate || B.chelate) && (A.po4 || B.po4)) return DETAIL_KEYS.chelate_phosphate;
+      if ((aid === 'nks' || bid === 'nks' || aid === 'nk_mg' || bid === 'nk_mg') && ((A.nh4 && A.so4) || (B.nh4 && B.so4))) return DETAIL_KEYS.kno3_sulfate_salting;
+      if ((aid === 'sop' || bid === 'sop') && (aid === 'nks' || bid === 'nks')) return DETAIL_KEYS.kno3_sulfate_salting;
+      if (A.strong_acid && B.strong_acid) return DETAIL_KEYS.strong_acids;
+      if ((A.chelate || B.chelate) && (A.mg || B.mg) && (aid === 'nitrato_magnesio' || bid === 'nitrato_magnesio')) return DETAIL_KEYS.chelate_phosphate;
+      return DETAIL_KEYS.default_r;
+    }
+    return DETAIL_KEYS.default_c;
+  }
+
+  function renderDetail(a, b, level) {
+    const fa = byId[a];
+    const fb = byId[b];
+    const tmpl = detailTemplate(a, b, level);
+    const L = level === 'C' ? 'c' : level === 'R' ? 'r' : 'i';
+    const badge = level === 'C' ? '🟢 Compatible' : level === 'R' ? '🟡 Precaución' : '🔴 Incompatible';
+
+    let html = '';
+    html += '<span class="badge ' + L + '">' + badge + '</span>';
+    html += '<div class="names"><strong>' + fa.name + '</strong> + <strong>' + fb.name + '</strong></div>';
+
+    html += '<div class="sec"><strong>Qué pasa</strong>' + tmpl.que + '</div>';
+    html += '<div class="sec"><strong>Impacto</strong><ul>';
+    (tmpl.impacto || []).forEach(function (x) { html += '<li>' + x + '</li>'; });
+    html += '</ul></div>';
+    html += '<div class="sec"><strong>Factor crítico</strong>' + tmpl.factor + '</div>';
+    html += '<div class="sec"><strong>Condición</strong><ul>';
+    (tmpl.cond || []).forEach(function (x) { html += '<li>' + x + '</li>'; });
+    html += '</ul></div>';
+    html += '<div class="sec"><strong>Acción recomendada</strong><ul>';
+    (tmpl.accion || []).forEach(function (x) { html += '<li>' + x + '</li>'; });
+    html += '</ul></div>';
+
+    document.getElementById('detailTitle').textContent = tmpl.title;
+    document.getElementById('detailBody').innerHTML = html;
+  }
+
+  let selectedFert = null;
+  let selectedPair = null;
+
+  function clearHighlights() {
+    document.querySelectorAll('.hl-fert, .hl-row, .hl-col, .hl-both, .selected').forEach(function (el) {
+      el.classList.remove('hl-fert', 'hl-row', 'hl-col', 'hl-both', 'selected');
+    });
+  }
+
+  function highlightFert(k) {
+    clearHighlights();
+    selectedFert = k;
+    selectedPair = null;
+    const rowH = document.querySelector('.compat tbody th.row-h[data-i="' + k + '"]');
+    const colH = document.querySelector('.compat thead th[data-j="' + k + '"]');
+    if (rowH) rowH.classList.add('hl-fert');
+    if (colH) colH.classList.add('hl-fert');
+    for (let i = 0; i < FERTILIZERS.length; i++) {
+      for (let j = 0; j <= i; j++) {
+        const btn = document.querySelector('.cell-btn[data-i="' + i + '"][data-j="' + j + '"]');
+        if (!btn || btn.classList.contains('empty')) continue;
+        if (i === k || j === k) {
+          btn.classList.add(i === k && j === k ? 'hl-both' : i === k ? 'hl-row' : 'hl-col');
+        }
+      }
+    }
+    const f = FERTILIZERS[k];
+    document.getElementById('detailTitle').textContent = 'Fertilizante: ' + f.name;
+    document.getElementById('detailBody').innerHTML =
+      '<div class="names">Resaltada la <strong>fila</strong> y la <strong>columna</strong> de este producto en la parte triangular. ' +
+      'Pulsa una celda donde se cruce con otro para ver el detalle del par.</div>';
+  }
+
+  function buildTable() {
+    const n = FERTILIZERS.length;
+    const table = document.getElementById('compatTable');
+    let thead = '<thead><tr><th class="corner" scope="col"></th>';
+    for (let j = 0; j < n; j++) {
+      const short = FERTILIZERS[j].name.length > 14 ? FERTILIZERS[j].name.slice(0, 12) + '…' : FERTILIZERS[j].name;
+      thead += '<th scope="col" data-j="' + j + '" title="' + FERTILIZERS[j].name.replace(/"/g, '&quot;') + '">' + short + '</th>';
+    }
+    thead += '</tr></thead>';
+
+    let tbody = '<tbody>';
+    for (let i = 0; i < n; i++) {
+      tbody += '<tr>';
+      tbody += '<th scope="row" class="row-h" data-i="' + i + '" title="' + FERTILIZERS[i].name.replace(/"/g, '&quot;') + '">' + FERTILIZERS[i].name + '</th>';
+      for (let j = 0; j < n; j++) {
+        if (j > i) {
+          tbody += '<td class="empty-cell"></td>';
+          continue;
+        }
+        const ai = FERTILIZERS[i].id;
+        const aj = FERTILIZERS[j].id;
+        const lev = inferLevel(ai, aj);
+        const L = lev === 'C' ? 'c' : lev === 'R' ? 'r' : 'i';
+        const sym = lev === 'C' ? 'C' : lev === 'R' ? 'R' : 'I';
+        tbody += '<td><button type="button" class="cell-btn l-' + L + '" data-i="' + i + '" data-j="' + j + '" data-a="' + ai + '" data-b="' + aj + '" aria-label="' + FERTILIZERS[i].name + ' con ' + FERTILIZERS[j].name + ': ' + sym + '">' + sym + '</button></td>';
+      }
+      tbody += '</tr>';
+    }
+    tbody += '</tbody>';
+    table.innerHTML = thead + tbody;
+
+    table.querySelectorAll('thead th[data-j]').forEach(function (th) {
+      th.addEventListener('click', function () {
+        highlightFert(parseInt(th.getAttribute('data-j'), 10));
+      });
+    });
+    table.querySelectorAll('tbody th.row-h[data-i]').forEach(function (th) {
+      th.addEventListener('click', function () {
+        highlightFert(parseInt(th.getAttribute('data-i'), 10));
+      });
+    });
+    table.querySelectorAll('.cell-btn[data-a]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        clearHighlights();
+        const i = parseInt(btn.getAttribute('data-i'), 10);
+        const j = parseInt(btn.getAttribute('data-j'), 10);
+        const a = btn.getAttribute('data-a');
+        const b = btn.getAttribute('data-b');
+        selectedPair = [i, j];
+        selectedFert = null;
+        btn.classList.add('selected');
+        const lev = inferLevel(a, b);
+        renderDetail(a, b, lev);
+        for (let ii = 0; ii < n; ii++) {
+          for (let jj = 0; jj <= ii; jj++) {
+            const b2 = document.querySelector('.cell-btn[data-i="' + ii + '"][data-j="' + jj + '"]');
+            if (!b2) continue;
+            if (ii === i && jj === j) {
+              b2.classList.add('selected', 'hl-both');
+            } else if (ii === i) {
+              b2.classList.add('hl-row');
+            } else if (jj === j) {
+              b2.classList.add('hl-col');
+            }
+          }
+        }
+        const rh = document.querySelector('.row-h[data-i="' + i + '"]');
+        const ch = document.querySelector('thead th[data-j="' + j + '"]');
+        if (rh) rh.classList.add('hl-fert');
+        if (ch) ch.classList.add('hl-fert');
+      });
+    });
+  }
+
+  buildTable();
+})();
+  </script>
+</body>
+</html>
