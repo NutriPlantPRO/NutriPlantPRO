@@ -5768,7 +5768,34 @@ function np_renderProjects(){
                 if (!toStore.updated_at && !toStore.updatedAt && cloudUpdatedAt) {
                   toStore.updatedAt = cloudUpdatedAt;
                 }
-                localStorage.setItem('nutriplant_project_' + id, JSON.stringify(toStore));
+                const projectKey = 'nutriplant_project_' + id;
+                const payload = JSON.stringify(toStore);
+                try {
+                  localStorage.setItem(projectKey, payload);
+                } catch (persistErr) {
+                  // Cuota: la nube sí respondió; el fallo es guardar en el disco del navegador.
+                  if (persistErr && persistErr.name === 'QuotaExceededError') {
+                    try { np_tryRelieveLocalStoragePressure(); } catch (relErr) {}
+                    try {
+                      localStorage.setItem(projectKey, payload);
+                    } catch (persistErr2) {
+                      console.warn('QuotaExceededError al persistir proyecto tras hidratar desde nube:', persistErr2);
+                      try {
+                        if (window._np_project_open_cloud_refresh_in_progress) {
+                          delete window._np_project_open_cloud_refresh_in_progress[id];
+                        }
+                      } catch (e) {}
+                      showMessage(
+                        '⚠️ El almacenamiento del navegador está lleno: no cabe guardar este proyecto en la laptop (límite de localStorage). La descarga desde la nube sí llegó, pero no se pudo guardar en el equipo.\n\n' +
+                        'Prueba: borrar proyectos viejos que no uses, vaciar datos del sitio nutriplantpro.com (Chrome → Configuración → Privacidad → Borrar datos de navegación → solo este sitio), o exportar respaldos y eliminar proyectos pesados. Luego vuelve a Abrir.',
+                        'warning'
+                      );
+                      return;
+                    }
+                  } else {
+                    throw persistErr;
+                  }
+                }
                 if (window.projectStorage) {
                   try {
                     if (window.projectStorage.memoryCache && window.projectStorage.memoryCache.currentProjectId === id) {
