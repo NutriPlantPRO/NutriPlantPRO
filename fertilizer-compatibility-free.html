@@ -64,6 +64,7 @@
       border-collapse: separate;
       border-spacing: 0;
       min-width: max-content;
+      --compat-col: 56px;
     }
     .compat th, .compat td {
       border: 1px solid #e2e8f0;
@@ -74,9 +75,9 @@
     }
     /* Celdas C/R/I: tamaño fijo para que ninguna se vea “más pequeña” */
     .compat tbody td:not(.empty-cell) {
-      width: 48px;
-      min-width: 48px;
-      max-width: 48px;
+      width: var(--compat-col);
+      min-width: var(--compat-col);
+      max-width: var(--compat-col);
       height: 44px;
       min-height: 44px;
     }
@@ -86,34 +87,38 @@
       z-index: 3;
       padding: 0;
     }
-    /* Columnas: nombre en vertical (estilo matriz / cartilla de mezclas) */
+    /* Columnas: nombre compacto en ~2 renglones (menos alto que la versión vertical) */
     .compat thead th.col-vlabel {
       background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
       border-bottom: 2px solid #fcd34d;
-      width: 48px;
-      min-width: 48px;
-      max-width: 48px;
-      height: 172px;
-      min-height: 172px;
-      vertical-align: bottom;
-      padding: 6px 4px 8px;
+      width: var(--compat-col);
+      min-width: var(--compat-col);
+      max-width: var(--compat-col);
+      height: 84px;
+      min-height: 84px;
+      max-height: 84px;
+      vertical-align: middle;
+      padding: 4px 3px 5px;
       cursor: pointer;
     }
     .compat thead th.col-vlabel .vlabel-inner {
-      display: inline-block;
-      writing-mode: vertical-rl;
-      transform: rotate(180deg);
-      font-size: 8.5px;
-      font-weight: 700;
-      color: #1e293b;
-      line-height: 1.1;
-      letter-spacing: 0.01em;
-      max-height: 156px;
-      max-width: 3.2em;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
-      text-align: left;
+      word-break: break-word;
+      hyphens: auto;
+      white-space: normal;
+      font-size: 7.5px;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1.2;
+      text-align: center;
+      max-height: calc(7.5px * 1.2 * 2 + 1px);
+      margin: 0 auto;
+      width: 100%;
     }
     .compat thead th.corner {
       position: sticky;
@@ -122,36 +127,41 @@
       min-width: 200px;
       width: 200px;
       max-width: 200px;
-      height: 172px;
-      min-height: 172px;
+      height: 84px;
+      min-height: 84px;
+      max-height: 84px;
       background: linear-gradient(135deg, #fffbeb 0%, #fef9c3 100%);
       border-right: 2px solid #fcd34d;
       border-bottom: 2px solid #fcd34d;
-      vertical-align: bottom;
-      padding: 10px 8px 10px;
+      vertical-align: middle;
+      padding: 6px 8px;
       text-align: left;
     }
     .compat thead th.corner .corner-title {
       display: block;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
       color: #78350f;
-      line-height: 1.2;
-      margin-bottom: 4px;
+      line-height: 1.15;
+      margin-bottom: 2px;
     }
     .compat thead th.corner .corner-sub {
-      display: block;
-      font-size: 9px;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      overflow: hidden;
+      font-size: 7.5px;
       font-weight: 500;
       color: #92400e;
-      line-height: 1.35;
+      line-height: 1.2;
     }
     .compat td.empty-cell {
       background: #f8fafc;
       border-color: #e2e8f0;
-      width: 48px;
-      min-width: 48px;
-      max-width: 48px;
+      width: var(--compat-col);
+      min-width: var(--compat-col);
+      max-width: var(--compat-col);
       height: 44px;
       min-height: 44px;
     }
@@ -185,7 +195,7 @@
       width: 100%;
       height: 100%;
       min-height: 44px;
-      min-width: 48px;
+      min-width: var(--compat-col);
       border: none;
       margin: 0;
       padding: 2px;
@@ -286,7 +296,7 @@
     <span class="chip i">I — Incompatible (precipitado / obstrucción)</span>
   </div>
   <p class="hint">
-    Arriba, los nombres van en <strong>vertical</strong> (como en una cartilla clásica). Pulsa un <strong>encabezado de fila o columna</strong> para resaltar ese fertilizante, o una <strong>celda</strong> para el detalle del par. Si un nombre se corta, <strong>pasa el cursor o mantén pulsado</strong> para ver el texto completo.
+    Arriba, cada columna muestra el nombre en <strong>hasta dos líneas</strong> para ahorrar alto. Pulsa un <strong>encabezado de fila o columna</strong> para resaltar, o una <strong>celda</strong> para el detalle del par. Si aún se corta, <strong>pasa el cursor o mantén pulsado</strong> el encabezado para ver el nombre completo.
   </p>
 
   <div class="matrix-wrap">
@@ -651,7 +661,7 @@
     const esc = function (s) {
       return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     };
-    let thead = '<thead><tr><th class="corner" scope="col" title="Eje: filas = primera sustancia; columnas = segunda sustancia en el cruce."><span class="corner-title">Fertilizantes</span><span class="corner-sub">Nombres en vertical arriba; el mismo orden que en la columna izquierda.</span></th>';
+    let thead = '<thead><tr><th class="corner" scope="col" title="Eje: filas = primera sustancia; columnas = segunda sustancia en el cruce."><span class="corner-title">Fertilizantes</span><span class="corner-sub">Mismo orden arriba y a la izquierda. Encabezados compactos (2 líneas máx.).</span></th>';
     for (let j = 0; j < n; j++) {
       const nm = FERTILIZERS[j].name;
       thead += '<th scope="col" class="col-vlabel" data-j="' + j + '" title="' + esc(nm) + '"><span class="vlabel-inner">' + esc(nm) + '</span></th>';
