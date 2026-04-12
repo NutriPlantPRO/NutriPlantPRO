@@ -182,10 +182,11 @@
         <div class="header-buttons">
         <button id="btn-new-nutriplant" class="btn btn-pill btn-primary" onclick="window.showNewProjectModal()">+ Nuevo NutriPlant</button>
           <button id="btn-conversion-calculator" class="btn btn-pill btn-calculator btn-calc-compact" onclick="window.showConversionCalculator()" title="Calculadora Óxido ↔ Elemental">⚗️Óxido↔Elem.</button>
-          <button id="btn-nutrient-units-calculator" class="btn btn-pill btn-calculator btn-calc-compact" onclick="window.showNutrientUnitsCalculator()" title="Calculadora ppm ↔ mmol/L ↔ meq/L">⚖️ppm↔meq</button>
-          <button id="btn-measure-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only" onclick="window.showMeasureUnitsCalculator()" title="Unidades: longitud, área, volumen, peso, temperatura, presión">📏</button>
+          <button id="btn-nutrient-units-calculator" class="btn btn-pill btn-calculator btn-calc-compact" onclick="window.showNutrientUnitsCalculator()" title="Calculadora ppm ↔ mmol/L ↔ meq/L">🧪ppm↔meq</button>
           <button id="btn-periodic-table-nutrients" class="btn btn-pill btn-calculator btn-calc-icon-only" onclick="window.showPeriodicTableNutrientsCalculator()" title="Tabla Periódica (Nutrientes)">🧫</button>
+          <button id="btn-fertilizer-compatibility-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only" onclick="window.showFertilizerCompatibilityCalculator()" title="Compatibilidad de fertilizantes (fertirriego)">🔺</button>
           <button id="btn-fertilizer-composition-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only" onclick="window.showFertilizerCompositionCalculator()" title="Calculadora de Composición de Fertilizantes (%)">⚛</button>
+          <button id="btn-measure-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only" onclick="window.showMeasureUnitsCalculator()" title="Unidades: longitud, área, volumen, peso, temperatura, presión">📏</button>
           <button id="btn-simple-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only" onclick="window.showSimpleCalculator()" title="Calculadora simple">
             <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg></span>
           </button>
@@ -319,6 +320,7 @@
         'Botón Calculadora Unidades': !!document.getElementById('btn-nutrient-units-calculator'),
         'Botón Calculadora Medidas': !!document.getElementById('btn-measure-units-calculator'),
         'Botón Tabla Periódica': !!document.getElementById('btn-periodic-table-nutrients'),
+        'Botón Compatibilidad Fertilizantes': !!document.getElementById('btn-fertilizer-compatibility-calculator'),
         'Botón Composición Fertilizantes': !!document.getElementById('btn-fertilizer-composition-calculator'),
         'Sesión Usuario': !!localStorage.getItem('np_user'),
         'Proyecto Actual': !!localStorage.getItem('currentProjectId')
@@ -429,6 +431,9 @@
       if (typeof showFertilizerCompositionCalculator !== 'undefined') {
         window.showFertilizerCompositionCalculator = showFertilizerCompositionCalculator;
       }
+      if (typeof showFertilizerCompatibilityCalculator !== 'undefined') {
+        window.showFertilizerCompatibilityCalculator = showFertilizerCompatibilityCalculator;
+      }
       if (typeof closeMeasureUnitsCalculator !== 'undefined') {
         window.closeMeasureUnitsCalculator = closeMeasureUnitsCalculator;
       }
@@ -437,6 +442,9 @@
       }
       if (typeof closeFertilizerCompositionCalculator !== 'undefined') {
         window.closeFertilizerCompositionCalculator = closeFertilizerCompositionCalculator;
+      }
+      if (typeof closeFertilizerCompatibilityCalculator !== 'undefined') {
+        window.closeFertilizerCompatibilityCalculator = closeFertilizerCompatibilityCalculator;
       }
       if (typeof closeConversionCalculator !== 'undefined') {
         window.closeConversionCalculator = closeConversionCalculator;
@@ -4854,6 +4862,21 @@ CONTRATO:
     }
     window.closePeriodicTableNutrientsCalculator = closePeriodicTableNutrientsCalculator;
 
+    function showFertilizerCompatibilityCalculator() {
+      var modal = document.getElementById('fertilizerCompatibilityModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showFertilizerCompatibilityCalculator = showFertilizerCompatibilityCalculator;
+
+    function closeFertilizerCompatibilityCalculator() {
+      var modal = document.getElementById('fertilizerCompatibilityModal');
+      var frame = document.getElementById('fertilizerCompatibilityFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeFertilizerCompatibilityCalculator = closeFertilizerCompatibilityCalculator;
+
     function showFertilizerCompositionCalculator() {
       var modal = document.getElementById('fertilizerCompositionCalculatorModal');
       if (!modal) return;
@@ -6286,6 +6309,19 @@ CONTRATO:
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html" title="Tabla Periódica (Nutrientes)" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Compatibilidad de fertilizantes (fertirriego) -->
+  <div id="fertilizerCompatibilityModal" class="modal-overlay" onclick="if(event.target===this) closeFertilizerCompatibilityCalculator();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title">🔺 Compatibilidad de fertilizantes (fertirriego)</h2>
+        <button class="modal-close" onclick="closeFertilizerCompatibilityCalculator()">×</button>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html" title="Compatibilidad de fertilizantes" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
