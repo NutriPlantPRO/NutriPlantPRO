@@ -53,7 +53,7 @@
 
     .matrix-wrap {
       overflow: auto;
-      max-height: min(52vh, 420px);
+      max-height: min(58vh, 520px);
       border: 1px solid #e2e8f0;
       border-radius: 12px;
       background: #fff;
@@ -81,37 +81,70 @@
       min-height: 44px;
     }
     .compat thead th {
-      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-      font-weight: 700;
-      color: #334155;
       position: sticky;
       top: 0;
       z-index: 3;
-      padding: 6px 4px;
+      padding: 0;
     }
-    /* Columnas: número = mismo índice que fila; nombre completo en title (hover / pulsación larga en móvil) */
-    .compat thead th.col-num {
-      width: 44px;
-      min-width: 44px;
-      max-width: 44px;
-      font-size: 12px;
-      cursor: help;
-      line-height: 1.2;
+    /* Columnas: nombre en vertical (estilo matriz / cartilla de mezclas) */
+    .compat thead th.col-vlabel {
+      background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+      border-bottom: 2px solid #fcd34d;
+      width: 48px;
+      min-width: 48px;
+      max-width: 48px;
+      height: 172px;
+      min-height: 172px;
+      vertical-align: bottom;
+      padding: 6px 4px 8px;
+      cursor: pointer;
+    }
+    .compat thead th.col-vlabel .vlabel-inner {
+      display: inline-block;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1.1;
+      letter-spacing: 0.01em;
+      max-height: 156px;
+      max-width: 3.2em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: left;
     }
     .compat thead th.corner {
       position: sticky;
       left: 0;
-      z-index: 4;
+      z-index: 5;
       min-width: 200px;
       width: 200px;
       max-width: 200px;
-      background: #eff6ff;
-      border-right: 2px solid #93c5fd;
-      font-size: 10px;
-      font-weight: 600;
-      color: #475569;
-      vertical-align: middle;
-      line-height: 1.3;
+      height: 172px;
+      min-height: 172px;
+      background: linear-gradient(135deg, #fffbeb 0%, #fef9c3 100%);
+      border-right: 2px solid #fcd34d;
+      border-bottom: 2px solid #fcd34d;
+      vertical-align: bottom;
+      padding: 10px 8px 10px;
+      text-align: left;
+    }
+    .compat thead th.corner .corner-title {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      color: #78350f;
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+    .compat thead th.corner .corner-sub {
+      display: block;
+      font-size: 9px;
+      font-weight: 500;
+      color: #92400e;
+      line-height: 1.35;
     }
     .compat td.empty-cell {
       background: #f8fafc;
@@ -181,9 +214,12 @@
       color: #1e40af;
       border-right-color: #2563eb;
     }
-    .compat thead th.hl-fert {
-      background: #dbeafe;
-      color: #1e40af;
+    .compat thead th.col-vlabel.hl-fert {
+      background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
+      border-bottom-color: #2563eb;
+    }
+    .compat thead th.col-vlabel.hl-fert .vlabel-inner {
+      color: #1e3a8a;
     }
 
     .panel {
@@ -250,7 +286,7 @@
     <span class="chip i">I — Incompatible (precipitado / obstrucción)</span>
   </div>
   <p class="hint">
-    Pulsa un <strong>encabezado de fila o columna</strong> para resaltar ese fertilizante. Pulsa una <strong>celda</strong> para ver el detalle técnico del par. Los números de columna coinciden con el orden del listado. <strong>Pasa el cursor o mantén pulsado</strong> un encabezado para ver el nombre completo en el tooltip.
+    Arriba, los nombres van en <strong>vertical</strong> (como en una cartilla clásica). Pulsa un <strong>encabezado de fila o columna</strong> para resaltar ese fertilizante, o una <strong>celda</strong> para el detalle del par. Si un nombre se corta, <strong>pasa el cursor o mantén pulsado</strong> para ver el texto completo.
   </p>
 
   <div class="matrix-wrap">
@@ -615,10 +651,10 @@
     const esc = function (s) {
       return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     };
-    let thead = '<thead><tr><th class="corner" scope="col" title="El número de columna coincide con el de la fila (mismo fertilizante).">N.º<br><span style="font-weight:500;font-size:9px;color:#64748b">= col.</span></th>';
+    let thead = '<thead><tr><th class="corner" scope="col" title="Eje: filas = primera sustancia; columnas = segunda sustancia en el cruce."><span class="corner-title">Fertilizantes</span><span class="corner-sub">Nombres en vertical arriba; el mismo orden que en la columna izquierda.</span></th>';
     for (let j = 0; j < n; j++) {
       const nm = FERTILIZERS[j].name;
-      thead += '<th scope="col" class="col-num" data-j="' + j + '" title="' + esc(nm) + '">' + (j + 1) + '</th>';
+      thead += '<th scope="col" class="col-vlabel" data-j="' + j + '" title="' + esc(nm) + '"><span class="vlabel-inner">' + esc(nm) + '</span></th>';
     }
     thead += '</tr></thead>';
 
