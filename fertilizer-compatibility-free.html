@@ -71,8 +71,14 @@
       text-align: center;
       vertical-align: middle;
       font-size: 11px;
-      min-width: 36px;
-      height: 32px;
+    }
+    /* Celdas C/R/I: tamaño fijo para que ninguna se vea “más pequeña” */
+    .compat tbody td:not(.empty-cell) {
+      width: 48px;
+      min-width: 48px;
+      max-width: 48px;
+      height: 44px;
+      min-height: 44px;
     }
     .compat thead th {
       background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
@@ -81,23 +87,45 @@
       position: sticky;
       top: 0;
       z-index: 3;
-      max-width: 120px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      padding: 4px 6px;
+      padding: 6px 4px;
+    }
+    /* Columnas: número = mismo índice que fila; nombre completo en title (hover / pulsación larga en móvil) */
+    .compat thead th.col-num {
+      width: 44px;
+      min-width: 44px;
+      max-width: 44px;
+      font-size: 12px;
+      cursor: help;
+      line-height: 1.2;
     }
     .compat thead th.corner {
       position: sticky;
       left: 0;
       z-index: 4;
-      min-width: 140px;
+      min-width: 200px;
+      width: 200px;
+      max-width: 200px;
       background: #eff6ff;
       border-right: 2px solid #93c5fd;
+      font-size: 10px;
+      font-weight: 600;
+      color: #475569;
+      vertical-align: middle;
+      line-height: 1.3;
     }
     .compat td.empty-cell {
       background: #f8fafc;
       border-color: #e2e8f0;
+      width: 48px;
+      min-width: 48px;
+      max-width: 48px;
+      height: 44px;
+      min-height: 44px;
+    }
+    .compat tbody th.row-h .row-num {
+      font-weight: 800;
+      color: #64748b;
+      margin-right: 4px;
     }
     .compat tbody th.row-h {
       position: sticky;
@@ -106,19 +134,25 @@
       background: #f8fafc;
       font-weight: 600;
       text-align: left;
-      padding: 4px 8px;
-      font-size: 11px;
+      padding: 6px 8px;
+      font-size: 10px;
       color: #0f172a;
       border-right: 2px solid #e2e8f0;
-      max-width: 160px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      min-width: 200px;
+      max-width: 260px;
+      width: 200px;
+      white-space: normal;
+      line-height: 1.25;
+      word-break: break-word;
+      hyphens: auto;
+      cursor: help;
+      vertical-align: middle;
     }
     .cell-btn {
       width: 100%;
       height: 100%;
-      min-height: 32px;
+      min-height: 44px;
+      min-width: 48px;
       border: none;
       margin: 0;
       padding: 2px;
@@ -216,7 +250,7 @@
     <span class="chip i">I — Incompatible (precipitado / obstrucción)</span>
   </div>
   <p class="hint">
-    Pulsa un <strong>encabezado de fila o columna</strong> para resaltar ese fertilizante. Pulsa una <strong>celda</strong> para ver el detalle técnico del par. Orden: N → P → K → Ca/Mg → complejos NPK → micros → ácidos.
+    Pulsa un <strong>encabezado de fila o columna</strong> para resaltar ese fertilizante. Pulsa una <strong>celda</strong> para ver el detalle técnico del par. Los números de columna coinciden con el orden del listado. <strong>Pasa el cursor o mantén pulsado</strong> un encabezado para ver el nombre completo en el tooltip.
   </p>
 
   <div class="matrix-wrap">
@@ -250,8 +284,6 @@
     { id: 'kcl_soluble', name: 'KCl (cloruro de potasio)' },
     { id: 'sulfato_magnesio', name: 'Sulfato de magnesio' },
     { id: 'triple_19_me', name: 'Triple 19 +Me' },
-    { id: 'npk_12_43_12_me', name: '12-43-12 +Me' },
-    { id: 'npk_10_10_43_me', name: '10-10-43 +Me' },
     { id: 'mix_micros_edta', name: 'Mix micros EDTA' },
     { id: 'quelato_fe', name: 'Fe EDTA' },
     { id: 'fe_dtpa', name: 'Fe DTPA' },
@@ -289,8 +321,6 @@
     kcl_soluble: { k: true, cl: true },
     sulfato_magnesio: { mg: true, so4: true },
     triple_19_me: { npk: true, po4: true, nh4: true, no3: true, k: true, micro: true },
-    npk_12_43_12_me: { npk: true, po4: true, nh4: true, no3: true, k: true, micro: true },
-    npk_10_10_43_me: { npk: true, po4: true, no3: true, k: true, micro: true },
     mix_micros_edta: { chelate: true, edta: true, micro: true },
     quelato_fe: { chelate: true, edta: true, fe: true },
     fe_dtpa: { chelate: true, dtpa: true, fe: true },
@@ -582,17 +612,20 @@
   function buildTable() {
     const n = FERTILIZERS.length;
     const table = document.getElementById('compatTable');
-    let thead = '<thead><tr><th class="corner" scope="col"></th>';
+    const esc = function (s) {
+      return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    };
+    let thead = '<thead><tr><th class="corner" scope="col" title="El número de columna coincide con el de la fila (mismo fertilizante).">N.º<br><span style="font-weight:500;font-size:9px;color:#64748b">= col.</span></th>';
     for (let j = 0; j < n; j++) {
-      const short = FERTILIZERS[j].name.length > 14 ? FERTILIZERS[j].name.slice(0, 12) + '…' : FERTILIZERS[j].name;
-      thead += '<th scope="col" data-j="' + j + '" title="' + FERTILIZERS[j].name.replace(/"/g, '&quot;') + '">' + short + '</th>';
+      const nm = FERTILIZERS[j].name;
+      thead += '<th scope="col" class="col-num" data-j="' + j + '" title="' + esc(nm) + '">' + (j + 1) + '</th>';
     }
     thead += '</tr></thead>';
 
     let tbody = '<tbody>';
     for (let i = 0; i < n; i++) {
       tbody += '<tr>';
-      tbody += '<th scope="row" class="row-h" data-i="' + i + '" title="' + FERTILIZERS[i].name.replace(/"/g, '&quot;') + '">' + FERTILIZERS[i].name + '</th>';
+      tbody += '<th scope="row" class="row-h" data-i="' + i + '" title="' + esc(FERTILIZERS[i].name) + '"><span class="row-num">' + (i + 1) + '.</span> ' + esc(FERTILIZERS[i].name) + '</th>';
       for (let j = 0; j < n; j++) {
         if (j > i) {
           tbody += '<td class="empty-cell"></td>';
@@ -603,7 +636,9 @@
         const lev = inferLevel(ai, aj);
         const L = lev === 'C' ? 'c' : lev === 'R' ? 'r' : 'i';
         const sym = lev === 'C' ? 'C' : lev === 'R' ? 'R' : 'I';
-        tbody += '<td><button type="button" class="cell-btn l-' + L + '" data-i="' + i + '" data-j="' + j + '" data-a="' + ai + '" data-b="' + aj + '" aria-label="' + FERTILIZERS[i].name + ' con ' + FERTILIZERS[j].name + ': ' + sym + '">' + sym + '</button></td>';
+        const tipTxt = FERTILIZERS[i].name + ' ↔ ' + FERTILIZERS[j].name + ' — ' +
+          (sym === 'C' ? 'Compatible' : sym === 'R' ? 'Precaución' : 'Incompatible');
+        tbody += '<td><button type="button" class="cell-btn l-' + L + '" data-i="' + i + '" data-j="' + j + '" data-a="' + ai + '" data-b="' + aj + '" aria-label="' + esc(tipTxt) + '" title="' + esc(tipTxt) + '">' + sym + '</button></td>';
       }
       tbody += '</tr>';
     }
