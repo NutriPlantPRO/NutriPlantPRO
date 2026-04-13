@@ -4767,39 +4767,22 @@ body {
   color: #047857;
 }
 
+/* Dos bloques PM seguidos (carbonatos + especies frecuentes) */
+.nutrient-pm-block + .nutrient-pm-block {
+  margin-top: 14px;
+}
+
 .nutrient-pm-block-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
-/* Referencia de especies (lista informativa, aparte del marco PM) */
-.nutrient-species-frequent {
-  grid-column: 1 / -1;
-  margin-top: 4px;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  padding: 14px 16px;
-  background: #f8fafc;
-}
-
 .nutrient-species-frequent-title {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-size: 1rem;
-  color: #0f172a;
+  color: #065f46;
   font-weight: 700;
-}
-
-.nutrient-species-frequent-list {
-  margin: 0;
-  padding-left: 1.25rem;
-  color: #334155;
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-
-.nutrient-species-frequent-list li {
-  margin: 4px 0;
 }
 
 .nutrient-conversion-group {

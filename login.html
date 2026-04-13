@@ -1272,7 +1272,15 @@
       'cu': { mw: 63.55, valence: 2 },
       'mo': { mw: 95.95, valence: 2 },
       'hco3': { mw: 61.02, valence: 1 },
-      'co3': { mw: 60.01, valence: 2 }
+      'co3': { mw: 60.01, valence: 2 },
+      'h2po4': { mw: 96.99, valence: 1 },
+      'hpo4': { mw: 95.98, valence: 2 },
+      'h3po4': { mw: 97.99, valence: 1 },
+      'hno3': { mw: 63.01, valence: 1 },
+      'h2so4': { mw: 98.08, valence: 2 },
+      'so4': { mw: 96.06, valence: 2 },
+      'no3': { mw: 62.00, valence: 1 },
+      'nh4': { mw: 18.04, valence: 1 }
     };
 
     function convertNutrient(nutrient, sourceUnit) {
@@ -1675,18 +1683,102 @@
               </div>
             </div>
 
-            <div class="nutrient-species-frequent" aria-label="Especies químicas frecuentes">
+            <div class="nutrient-pm-block" aria-label="Especies químicas frecuentes">
               <h3 class="nutrient-species-frequent-title">Especies químicas frecuentes</h3>
-              <ul class="nutrient-species-frequent-list notranslate" translate="no">
-                <li>H₂PO₄⁻</li>
-                <li>HPO₄²⁻</li>
-                <li>H₃PO₄</li>
-                <li>HNO₃</li>
-                <li>H₂SO₄</li>
-                <li>SO₄²⁻</li>
-                <li>NO₃⁻</li>
-                <li>NH₄⁺</li>
-              </ul>
+              <p class="nutrient-pm-block-caption">
+                Conversiones con <strong>peso molecular (PM)</strong> de cada fórmula; el ppm es mg/L <strong>de la especie</strong> (no del elemento suelto). <strong>meq/L</strong> = mmol/L × valencia: iones según |carga|; HNO₃: 1; H₂SO₄: 2; <strong>H₃PO₄: valencia 1</strong> (criterio NutriPlant / solución nutritiva: un equivalente ácido por mol, coherente con modelar el aporte hacia la forma con dos hidrógenos en el medio acuoso de preparación).
+              </p>
+              <div class="nutrient-pm-block-grid">
+                <!-- Orden: N (NO₃⁻, NH₄⁺), S (SO₄²⁻), P (H₂PO₄⁻, HPO₄²⁻, H₃PO₄), ácidos (HNO₃, H₂SO₄) -->
+                <div class="nutrient-conversion-group">
+                  <div class="nutrient-label">
+                    <strong class="notranslate" translate="no">NO₃⁻</strong>
+                    <span class="nutrient-info notranslate" translate="no">PM: 62.00 | Valencia: 1</span>
+                  </div>
+                  <div class="conversion-inputs">
+                    <div class="input-group"><label>ppm (mg/L)</label><input type="number" id="no3-ppm" placeholder="0" step="0.01" oninput="convertNutrient('no3', 'ppm')"></div>
+                    <div class="input-group"><label>mmol/L</label><input type="number" id="no3-mmol" placeholder="0" step="0.01" oninput="convertNutrient('no3', 'mmol')"></div>
+                    <div class="input-group"><label>meq/L</label><input type="number" id="no3-meq" placeholder="0" step="0.01" oninput="convertNutrient('no3', 'meq')"></div>
+                  </div>
+                </div>
+                <div class="nutrient-conversion-group">
+                  <div class="nutrient-label">
+                    <strong class="notranslate" translate="no">NH₄⁺</strong>
+                    <span class="nutrient-info notranslate" translate="no">PM: 18.04 | Valencia: 1</span>
+                  </div>
+                  <div class="conversion-inputs">
+                    <div class="input-group"><label>ppm (mg/L)</label><input type="number" id="nh4-ppm" placeholder="0" step="0.01" oninput="convertNutrient('nh4', 'ppm')"></div>
+                    <div class="input-group"><label>mmol/L</label><input type="number" id="nh4-mmol" placeholder="0" step="0.01" oninput="convertNutrient('nh4', 'mmol')"></div>
+                    <div class="input-group"><label>meq/L</label><input type="number" id="nh4-meq" placeholder="0" step="0.01" oninput="convertNutrient('nh4', 'meq')"></div>
+                  </div>
+                </div>
+                <div class="nutrient-conversion-group">
+                  <div class="nutrient-label">
+                    <strong class="notranslate" translate="no">SO₄²⁻</strong>
+                    <span class="nutrient-info notranslate" translate="no">PM: 96.06 | Valencia: 2</span>
+                  </div>
+                  <div class="conversion-inputs">
+                    <div class="input-group"><label>ppm (mg/L)</label><input type="number" id="so4-ppm" placeholder="0" step="0.01" oninput="convertNutrient('so4', 'ppm')"></div>
+                    <div class="input-group"><label>mmol/L</label><input type="number" id="so4-mmol" placeholder="0" step="0.01" oninput="convertNutrient('so4', 'mmol')"></div>
+                    <div class="input-group"><label>meq/L</label><input type="number" id="so4-meq" placeholder="0" step="0.01" oninput="convertNutrient('so4', 'meq')"></div>
+                  </div>
+                </div>
+                <div class="nutrient-conversion-group">
+                  <div class="nutrient-label">
+                    <strong class="notranslate" translate="no">H₂PO₄⁻</strong>
+                    <span class="nutrient-info notranslate" translate="no">PM: 96.99 | Valencia: 1</span>
+                  </div>
+                  <div class="conversion-inputs">
+                    <div class="input-group"><label>ppm (mg/L)</label><input type="number" id="h2po4-ppm" placeholder="0" step="0.01" oninput="convertNutrient('h2po4', 'ppm')"></div>
+                    <div class="input-group"><label>mmol/L</label><input type="number" id="h2po4-mmol" placeholder="0" step="0.01" oninput="convertNutrient('h2po4', 'mmol')"></div>
+                    <div class="input-group"><label>meq/L</label><input type="number" id="h2po4-meq" placeholder="0" step="0.01" oninput="convertNutrient('h2po4', 'meq')"></div>
+                  </div>
+                </div>
+                <div class="nutrient-conversion-group">
+                  <div class="nutrient-label">
+                    <strong class="notranslate" translate="no">HPO₄²⁻</strong>
+                    <span class="nutrient-info notranslate" translate="no">PM: 95.98 | Valencia: 2</span>
+                  </div>
+                  <div class="conversion-inputs">
+                    <div class="input-group"><label>ppm (mg/L)</label><input type="number" id="hpo4-ppm" placeholder="0" step="0.01" oninput="convertNutrient('hpo4', 'ppm')"></div>
+                    <div class="input-group"><label>mmol/L</label><input type="number" id="hpo4-mmol" placeholder="0" step="0.01" oninput="convertNutrient('hpo4', 'mmol')"></div>
+                    <div class="input-group"><label>meq/L</label><input type="number" id="hpo4-meq" placeholder="0" step="0.01" oninput="convertNutrient('hpo4', 'meq')"></div>
+                  </div>
+                </div>
+                <div class="nutrient-conversion-group">
+                  <div class="nutrient-label">
+                    <strong class="notranslate" translate="no">H₃PO₄</strong>
+                    <span class="nutrient-info notranslate" translate="no">PM: 97.99 | Valencia: 1</span>
+                  </div>
+                  <div class="conversion-inputs">
+                    <div class="input-group"><label>ppm (mg/L)</label><input type="number" id="h3po4-ppm" placeholder="0" step="0.01" oninput="convertNutrient('h3po4', 'ppm')"></div>
+                    <div class="input-group"><label>mmol/L</label><input type="number" id="h3po4-mmol" placeholder="0" step="0.01" oninput="convertNutrient('h3po4', 'mmol')"></div>
+                    <div class="input-group"><label>meq/L</label><input type="number" id="h3po4-meq" placeholder="0" step="0.01" oninput="convertNutrient('h3po4', 'meq')"></div>
+                  </div>
+                </div>
+                <div class="nutrient-conversion-group">
+                  <div class="nutrient-label">
+                    <strong class="notranslate" translate="no">HNO₃</strong>
+                    <span class="nutrient-info notranslate" translate="no">PM: 63.01 | Valencia: 1</span>
+                  </div>
+                  <div class="conversion-inputs">
+                    <div class="input-group"><label>ppm (mg/L)</label><input type="number" id="hno3-ppm" placeholder="0" step="0.01" oninput="convertNutrient('hno3', 'ppm')"></div>
+                    <div class="input-group"><label>mmol/L</label><input type="number" id="hno3-mmol" placeholder="0" step="0.01" oninput="convertNutrient('hno3', 'mmol')"></div>
+                    <div class="input-group"><label>meq/L</label><input type="number" id="hno3-meq" placeholder="0" step="0.01" oninput="convertNutrient('hno3', 'meq')"></div>
+                  </div>
+                </div>
+                <div class="nutrient-conversion-group">
+                  <div class="nutrient-label">
+                    <strong class="notranslate" translate="no">H₂SO₄</strong>
+                    <span class="nutrient-info notranslate" translate="no">PM: 98.08 | Valencia: 2</span>
+                  </div>
+                  <div class="conversion-inputs">
+                    <div class="input-group"><label>ppm (mg/L)</label><input type="number" id="h2so4-ppm" placeholder="0" step="0.01" oninput="convertNutrient('h2so4', 'ppm')"></div>
+                    <div class="input-group"><label>mmol/L</label><input type="number" id="h2so4-mmol" placeholder="0" step="0.01" oninput="convertNutrient('h2so4', 'mmol')"></div>
+                    <div class="input-group"><label>meq/L</label><input type="number" id="h2so4-meq" placeholder="0" step="0.01" oninput="convertNutrient('h2so4', 'meq')"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
