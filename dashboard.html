@@ -6182,48 +6182,70 @@ CONTRATO:
               </div>
             </div>
 
-            <!-- Ión bicarbonato: término químico explícito (mejor para traducción automática que “Bicarbonato” solo) -->
-            <div class="nutrient-conversion-group">
-              <div class="nutrient-label">
-                <strong>Ión bicarbonato <span class="notranslate" translate="no">(HCO₃⁻)</span></strong>
-                <span class="nutrient-info notranslate" translate="no">PM: 61.02 | Valencia: 1</span>
-              </div>
-              <div class="conversion-inputs">
-                <div class="input-group">
-                  <label>ppm (mg/L)</label>
-                  <input type="number" id="hco3-ppm" placeholder="0" step="0.01" oninput="convertNutrient('hco3', 'ppm')">
+            <!-- Iones carbonato/bicarbonato: PM del ión (marco verde) -->
+            <div class="nutrient-pm-block">
+              <p class="nutrient-pm-block-caption">
+                <strong>Ión bicarbonato e ión carbonato:</strong> aquí las conversiones usan el <strong>peso molecular (PM)</strong> de la especie indicada (masa del ión completo), no el peso atómico (PA) de un elemento suelto.
+              </p>
+              <div class="nutrient-pm-block-grid">
+                <!-- Ión bicarbonato: término químico explícito (mejor para traducción automática que “Bicarbonato” solo) -->
+                <div class="nutrient-conversion-group">
+                  <div class="nutrient-label">
+                    <strong>Ión bicarbonato <span class="notranslate" translate="no">(HCO₃⁻)</span></strong>
+                    <span class="nutrient-info notranslate" translate="no">PM: 61.02 | Valencia: 1</span>
+                  </div>
+                  <div class="conversion-inputs">
+                    <div class="input-group">
+                      <label>ppm (mg/L)</label>
+                      <input type="number" id="hco3-ppm" placeholder="0" step="0.01" oninput="convertNutrient('hco3', 'ppm')">
+                    </div>
+                    <div class="input-group">
+                      <label>mmol/L</label>
+                      <input type="number" id="hco3-mmol" placeholder="0" step="0.01" oninput="convertNutrient('hco3', 'mmol')">
+                    </div>
+                    <div class="input-group">
+                      <label>meq/L</label>
+                      <input type="number" id="hco3-meq" placeholder="0" step="0.01" oninput="convertNutrient('hco3', 'meq')">
+                    </div>
+                  </div>
                 </div>
-                <div class="input-group">
-                  <label>mmol/L</label>
-                  <input type="number" id="hco3-mmol" placeholder="0" step="0.01" oninput="convertNutrient('hco3', 'mmol')">
-                </div>
-                <div class="input-group">
-                  <label>meq/L</label>
-                  <input type="number" id="hco3-meq" placeholder="0" step="0.01" oninput="convertNutrient('hco3', 'meq')">
+
+                <!-- Ión carbonato CO₃²⁻ -->
+                <div class="nutrient-conversion-group">
+                  <div class="nutrient-label">
+                    <strong>Ión carbonato <span class="notranslate" translate="no">(CO₃²⁻)</span></strong>
+                    <span class="nutrient-info notranslate" translate="no">PM: 60.01 | Valencia: 2</span>
+                  </div>
+                  <div class="conversion-inputs">
+                    <div class="input-group">
+                      <label>ppm (mg/L)</label>
+                      <input type="number" id="co3-ppm" placeholder="0" step="0.01" oninput="convertNutrient('co3', 'ppm')">
+                    </div>
+                    <div class="input-group">
+                      <label>mmol/L</label>
+                      <input type="number" id="co3-mmol" placeholder="0" step="0.01" oninput="convertNutrient('co3', 'mmol')">
+                    </div>
+                    <div class="input-group">
+                      <label>meq/L</label>
+                      <input type="number" id="co3-meq" placeholder="0" step="0.01" oninput="convertNutrient('co3', 'meq')">
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Ión carbonato CO₃²⁻ -->
-            <div class="nutrient-conversion-group">
-              <div class="nutrient-label">
-                <strong>Ión carbonato <span class="notranslate" translate="no">(CO₃²⁻)</span></strong>
-                <span class="nutrient-info notranslate" translate="no">PM: 60.01 | Valencia: 2</span>
-              </div>
-              <div class="conversion-inputs">
-                <div class="input-group">
-                  <label>ppm (mg/L)</label>
-                  <input type="number" id="co3-ppm" placeholder="0" step="0.01" oninput="convertNutrient('co3', 'ppm')">
-                </div>
-                <div class="input-group">
-                  <label>mmol/L</label>
-                  <input type="number" id="co3-mmol" placeholder="0" step="0.01" oninput="convertNutrient('co3', 'mmol')">
-                </div>
-                <div class="input-group">
-                  <label>meq/L</label>
-                  <input type="number" id="co3-meq" placeholder="0" step="0.01" oninput="convertNutrient('co3', 'meq')">
-                </div>
-              </div>
+            <div class="nutrient-species-frequent" aria-label="Especies químicas frecuentes">
+              <h3 class="nutrient-species-frequent-title">Especies químicas frecuentes</h3>
+              <ul class="nutrient-species-frequent-list notranslate" translate="no">
+                <li>H₂PO₄⁻</li>
+                <li>HPO₄²⁻</li>
+                <li>H₃PO₄</li>
+                <li>HNO₃</li>
+                <li>H₂SO₄</li>
+                <li>SO₄²⁻</li>
+                <li>NO₃⁻</li>
+                <li>NH₄⁺</li>
+              </ul>
             </div>
           </div>
 
