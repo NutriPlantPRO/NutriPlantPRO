@@ -4767,7 +4767,7 @@ body {
   color: #047857;
 }
 
-/* Dos bloques PM seguidos (carbonatos + especies frecuentes) */
+/* Varios bloques PM seguidos en la calculadora */
 .nutrient-pm-block + .nutrient-pm-block {
   margin-top: 14px;
 }
@@ -4776,6 +4776,11 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+/* Tres ácidos en una fila (modal ancho) */
+.nutrient-pm-block-grid--3cols {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .nutrient-species-frequent-title {
@@ -4971,6 +4976,10 @@ body {
   }
 
   .nutrient-pm-block-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nutrient-pm-block-grid--3cols {
     grid-template-columns: 1fr;
   }
 

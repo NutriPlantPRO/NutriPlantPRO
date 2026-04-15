@@ -6191,10 +6191,11 @@ CONTRATO:
               </div>
             </div>
 
-            <!-- Iones carbonato/bicarbonato: PM del ión (marco verde) -->
+            <!-- Iones: PM del ión; meq/L por carga (un solo marco verde; los ácidos van aparte) -->
             <div class="nutrient-pm-block">
+              <h3 class="nutrient-species-frequent-title">Iones en solución</h3>
               <p class="nutrient-pm-block-caption">
-                <strong>Ión bicarbonato e ión carbonato:</strong> aquí las conversiones usan el <strong>peso molecular (PM)</strong> de la especie indicada (masa del ión completo), no el peso atómico (PA) de un elemento suelto.
+                Incluye bicarbonato, carbonato, nitrato, amonio, sulfato, dihidrogenofosfato e hidrogenofosfato. El <strong>peso molecular (PM)</strong> es el de la <strong>especie en solución</strong> (ión completo); el ppm es mg/L <strong>de esa especie</strong>. En <strong>meq/L</strong>, la <strong>valencia</strong> es la <strong>carga iónica</strong> (|z|). Los <strong>ácidos moleculares</strong> (H₃PO₄, HNO₃, H₂SO₄) van en el bloque verde de abajo con otro criterio de «valencia» (equivalente por mol).
               </p>
               <div class="nutrient-pm-block-grid">
                 <!-- Ión bicarbonato: término químico explícito (mejor para traducción automática que “Bicarbonato” solo) -->
@@ -6240,17 +6241,7 @@ CONTRATO:
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <!-- Especies frecuentes: mismo criterio PM + valencia que carbonatos -->
-            <div class="nutrient-pm-block" aria-label="Especies químicas frecuentes">
-              <h3 class="nutrient-species-frequent-title">Especies químicas frecuentes</h3>
-              <p class="nutrient-pm-block-caption">
-                Conversiones con <strong>peso molecular (PM)</strong> de cada fórmula; el ppm es mg/L <strong>de la especie</strong> (no del elemento suelto). <strong>meq/L</strong> = mmol/L × valencia: iones según |carga|; HNO₃: 1; H₂SO₄: 2; <strong>H₃PO₄: valencia 1</strong> (criterio NutriPlant / solución nutritiva: un equivalente ácido por mol, coherente con modelar el aporte hacia la forma con dos hidrógenos en el medio acuoso de preparación).
-              </p>
-              <div class="nutrient-pm-block-grid">
-                <!-- Orden: N (NO₃⁻, NH₄⁺), S (SO₄²⁻), P (H₂PO₄⁻, HPO₄²⁻, H₃PO₄), ácidos (HNO₃, H₂SO₄) -->
                 <div class="nutrient-conversion-group">
                   <div class="nutrient-label">
                     <strong class="notranslate" translate="no">NO₃⁻</strong>
@@ -6273,6 +6264,7 @@ CONTRATO:
                     <div class="input-group"><label>meq/L</label><input type="number" id="nh4-meq" placeholder="0" step="0.01" oninput="convertNutrient('nh4', 'meq')"></div>
                   </div>
                 </div>
+
                 <div class="nutrient-conversion-group">
                   <div class="nutrient-label">
                     <strong class="notranslate" translate="no">SO₄²⁻</strong>
@@ -6306,6 +6298,16 @@ CONTRATO:
                     <div class="input-group"><label>meq/L</label><input type="number" id="hpo4-meq" placeholder="0" step="0.01" oninput="convertNutrient('hpo4', 'meq')"></div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- Ácidos: equivalente por mol (NutriPlant), aparte de iones cargados -->
+            <div class="nutrient-pm-block" aria-label="Ácidos minerales">
+              <h3 class="nutrient-species-frequent-title">Ácidos minerales (equivalente por mol, criterio NutriPlant)</h3>
+              <p class="nutrient-pm-block-caption">
+                Aquí la columna «Valencia» no es la carga de un ión libre, sino los <strong>equivalentes ácidos contados por mol de ácido</strong> según usamos en NutriPlant: <strong>HNO₃: 1</strong>; <strong>H₂SO₄: 2</strong> (dos protones fuertes); <strong>H₃PO₄: 1</strong> (un equivalente por mol para coherencia con el cálculo de solución nutritiva, no tres protones «icas» a la vez). Así se evita mezclar este criterio con el de los <strong>iones cargados</strong> del bloque anterior.
+              </p>
+              <div class="nutrient-pm-block-grid nutrient-pm-block-grid--3cols">
                 <div class="nutrient-conversion-group">
                   <div class="nutrient-label">
                     <strong class="notranslate" translate="no">H₃PO₄</strong>
