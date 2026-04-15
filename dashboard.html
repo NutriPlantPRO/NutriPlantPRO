@@ -5262,7 +5262,7 @@ CONTRATO:
       'mo': { mw: 95.95, valence: 2, molecule: 'Mo²⁺' },
       'hco3': { mw: 61.02, valence: 1, molecule: 'HCO₃⁻' },
       'co3': { mw: 60.01, valence: 2, molecule: 'CO₃²⁻' },
-      /* PM de la especie; meq = mmol × valencia (iones: |carga|; H₃PO₄: 1 eq./mol — criterio solución nutritiva NutriPlant) */
+      /* PM de la especie; meq = mmol × valencia (iones: |carga|; ácidos: H⁺ por mol según fila) */
       'h2po4': { mw: 96.99, valence: 1, molecule: 'H₂PO₄⁻' },
       'hpo4': { mw: 95.98, valence: 2, molecule: 'HPO₄²⁻' },
       'h3po4': { mw: 97.99, valence: 1, molecule: 'H₃PO₄' },
@@ -6195,7 +6195,7 @@ CONTRATO:
             <div class="nutrient-pm-block">
               <h3 class="nutrient-species-frequent-title">Iones en solución</h3>
               <p class="nutrient-pm-block-caption">
-                Incluye bicarbonato, carbonato, nitrato, amonio, sulfato, dihidrogenofosfato e hidrogenofosfato. El <strong>peso molecular (PM)</strong> es el de la <strong>especie en solución</strong> (ión completo); el ppm es mg/L <strong>de esa especie</strong>. En <strong>meq/L</strong>, la <strong>valencia</strong> es la <strong>carga iónica</strong> (|z|). Los <strong>ácidos moleculares</strong> (H₃PO₄, HNO₃, H₂SO₄) van en el bloque verde de abajo con otro criterio de «valencia» (equivalente por mol).
+                Incluye bicarbonato, carbonato, nitrato, amonio, sulfato, dihidrogenofosfato e hidrogenofosfato. El <strong>peso molecular (PM)</strong> es el de la <strong>especie en solución</strong> (ión completo); el ppm es mg/L <strong>de esa especie</strong>. En <strong>meq/L</strong>, la <strong>valencia</strong> es la <strong>carga iónica</strong> (|z|). Los <strong>ácidos moleculares</strong> (H₃PO₄, HNO₃, H₂SO₄) están en el bloque de abajo: allí la valencia refleja los <strong>H⁺ por mol de ácido</strong> al disociarse, no la carga de un ión.
               </p>
               <div class="nutrient-pm-block-grid">
                 <!-- Ión bicarbonato: término químico explícito (mejor para traducción automática que “Bicarbonato” solo) -->
@@ -6301,11 +6301,11 @@ CONTRATO:
               </div>
             </div>
 
-            <!-- Ácidos: equivalente por mol (NutriPlant), aparte de iones cargados -->
+            <!-- Ácidos: valencia = H⁺ contados por mol; aparte del criterio de iones -->
             <div class="nutrient-pm-block" aria-label="Ácidos minerales">
-              <h3 class="nutrient-species-frequent-title">Ácidos minerales (equivalente por mol, criterio NutriPlant)</h3>
+              <h3 class="nutrient-species-frequent-title">Ácidos minerales</h3>
               <p class="nutrient-pm-block-caption">
-                Aquí la columna «Valencia» no es la carga de un ión libre, sino los <strong>equivalentes ácidos contados por mol de ácido</strong> según usamos en NutriPlant: <strong>HNO₃: 1</strong>; <strong>H₂SO₄: 2</strong> (dos protones fuertes); <strong>H₃PO₄: 1</strong> (un equivalente por mol para coherencia con el cálculo de solución nutritiva, no tres protones «icas» a la vez). Así se evita mezclar este criterio con el de los <strong>iones cargados</strong> del bloque anterior.
+                Aquí «Valencia» indica <strong>cuántos protones (H⁺)</strong> se toman <strong>por cada mol de ácido</strong> al pasar de mmol/L a meq/L (según la disociación que se usa en esta tabla): <strong>HNO₃</strong> → 1 H⁺ por mol; <strong>H₂SO₄</strong> → 2 H⁺ por mol; <strong>H₃PO₄</strong> → 1 H⁺ equivalente por mol (el ácido es poliprótico, pero en esta fila se cuenta un solo H⁺ por mol). En el bloque superior, la valencia es la <strong>carga del ión</strong>, no esto.
               </p>
               <div class="nutrient-pm-block-grid nutrient-pm-block-grid--3cols">
                 <div class="nutrient-conversion-group">
