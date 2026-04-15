@@ -280,6 +280,11 @@
           <span class="button-text">Calculadora de Composición de Fertilizantes (%)</span>
         </button>
 
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showExtraccionEtapaCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🔧</span>
+          <span class="button-text">Distribución de extracción por etapa (%)</span>
+        </button>
+
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showPeriodicTableNutrientsCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🧫</span>
           <span class="button-text">Tabla Periódica (Nutrientes)</span>
@@ -809,6 +814,24 @@
       background: #f8fafc;
     }
 
+    .modal-extraccion-etapa {
+      max-width: 1280px;
+      width: 96%;
+      max-height: 92vh;
+      overflow: hidden;
+    }
+    .modal-extraccion-etapa .modal-body {
+      padding: 0;
+      height: calc(92vh - 80px);
+    }
+    .modal-extraccion-etapa iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #f8fafc;
+    }
+
     .modal-header {
       padding: 20px;
       border-bottom: 1px solid #e5e7eb;
@@ -1237,6 +1260,16 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showExtraccionEtapaCalculator() {
+      document.getElementById('extraccionEtapaCalculatorModal').style.display = 'flex';
+    }
+    function closeExtraccionEtapaCalculator() {
+      const modal = document.getElementById('extraccionEtapaCalculatorModal');
+      const frame = document.getElementById('extraccionEtapaCalculatorFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     function showPeriodicTableNutrientsCalculator() {
       document.getElementById('periodicTableNutrientsModal').style.display = 'flex';
     }
@@ -1342,6 +1375,10 @@
       const fertilizerCompatModal = document.getElementById('fertilizerCompatibilityModal');
       if (e.target === fertilizerCompatModal) {
         closeFertilizerCompatibilityCalculator();
+      }
+      const extraccionEtapaModal = document.getElementById('extraccionEtapaCalculatorModal');
+      if (e.target === extraccionEtapaModal) {
+        closeExtraccionEtapaCalculator();
       }
     });
   </script>
@@ -1635,7 +1672,7 @@
             <div class="nutrient-pm-block">
               <h3 class="nutrient-species-frequent-title">Iones en solución</h3>
               <p class="nutrient-pm-block-caption">
-                Incluye bicarbonato, carbonato, nitrato, amonio, sulfato, dihidrogenofosfato e hidrogenofosfato. El <strong>peso molecular (PM)</strong> es el de la <strong>especie en solución</strong> (ión completo); el ppm es mg/L <strong>de esa especie</strong>. En <strong>meq/L</strong>, la <strong>valencia</strong> es la <strong>carga iónica</strong> (|z|). Los <strong>ácidos moleculares</strong> (H₃PO₄, HNO₃, H₂SO₄) están en el bloque de abajo: allí la valencia refleja los <strong>H⁺ por mol de ácido</strong> al disociarse, no la carga de un ión.
+                Incluye bicarbonato, carbonato, nitrato, amonio, sulfato, dihidrogenofosfato e hidrogenofosfato. El <strong>peso molecular (PM)</strong> es el de la <strong>especie en solución</strong> (ión completo); el ppm es mg/L <strong>de esa especie</strong>. En <strong>meq/L</strong>, la <strong>valencia</strong> es la <strong>carga iónica</strong> (|z|).
               </p>
               <div class="nutrient-pm-block-grid">
                 <!-- Ión bicarbonato: término químico explícito (mejor para traducción automática que “Bicarbonato” solo) -->
@@ -1745,7 +1782,7 @@
             <div class="nutrient-pm-block" aria-label="Ácidos minerales">
               <h3 class="nutrient-species-frequent-title">Ácidos minerales</h3>
               <p class="nutrient-pm-block-caption">
-                Aquí «Valencia» indica <strong>cuántos protones (H⁺)</strong> se toman <strong>por cada mol de ácido</strong> al pasar de mmol/L a meq/L (según la disociación que se usa en esta tabla): <strong>HNO₃</strong> → 1 H⁺ por mol; <strong>H₂SO₄</strong> → 2 H⁺ por mol; <strong>H₃PO₄</strong> → 1 H⁺ equivalente por mol (el ácido es poliprótico, pero en esta fila se cuenta un solo H⁺ por mol). En el bloque superior, la valencia es la <strong>carga del ión</strong>, no esto.
+                Aquí «Valencia» indica <strong>cuántos protones (H⁺)</strong> se toman <strong>por cada mol de ácido</strong> al pasar de mmol/L a meq/L (según la disociación que se usa en esta tabla): <strong>HNO₃</strong> → 1 H⁺ por mol; <strong>H₂SO₄</strong> → 2 H⁺ por mol; <strong>H₃PO₄</strong> → 1 H⁺ equivalente por mol (el ácido es poliprótico, pero en esta fila se cuenta un solo H⁺ por mol).
               </p>
               <div class="nutrient-pm-block-grid nutrient-pm-block-grid--3cols">
                 <div class="nutrient-conversion-group">
@@ -1867,6 +1904,19 @@
       </div>
       <div class="modal-body">
         <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html" title="Calculadora de Composición de Fertilizantes"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Distribución de extracción por etapa -->
+  <div id="extraccionEtapaCalculatorModal" class="modal-overlay">
+    <div class="modal modal-extraccion-etapa">
+      <div class="modal-header">
+        <h2 class="modal-title">🔧 Distribución de extracción por etapa (%)</h2>
+        <button class="modal-close" onclick="closeExtraccionEtapaCalculator()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html" title="Distribución de extracción por etapa"></iframe>
       </div>
     </div>
   </div>

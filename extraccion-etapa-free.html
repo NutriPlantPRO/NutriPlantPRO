@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Distribución de extracción por etapa (%)</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #fff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --green-bg: #ecfdf5;
+      --green-border: #86efac;
+      --green-text: #065f46;
+      --blue-bg: #eff6ff;
+      --blue-border: #93c5fd;
+      --amber-bg: #fffbeb;
+      --amber-border: #fcd34d;
+      --ok: #15803d;
+      --warn: #c2410c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 14px 16px 32px;
+      background: var(--bg);
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .guest-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 16px;
+    }
+    .guest-note strong { color: #475569; }
+
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 1.15rem;
+      color: var(--text);
+    }
+    .hero .tagline {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      max-width: 52rem;
+    }
+
+    .legend-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .pill--nut { background: var(--green-bg); border: 1px solid var(--green-border); color: var(--green-text); }
+    .pill--info { background: var(--blue-bg); border: 1px solid var(--blue-border); color: #1e40af; }
+    .pill--warn { background: var(--amber-bg); border: 1px solid var(--amber-border); color: #92400e; }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .panel h2 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      color: #0f172a;
+    }
+    .panel .hint {
+      margin: 0 0 14px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .panel .hint strong { color: #334155; }
+
+    .totals-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+      margin-bottom: 12px;
+    }
+    .totals-wrap label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #334155;
+      min-width: 72px;
+    }
+    .totals-wrap input {
+      width: 88px;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .totals-wrap .nut-wrap {
+      position: relative;
+      padding: 8px 10px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--green-border);
+      background: var(--green-bg);
+    }
+    .totals-wrap .nut-wrap.optional {
+      border-color: #bfdbfe;
+      background: #eff6ff;
+    }
+    .totals-wrap .nut-wrap .rm-nut {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      border: 0;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 2px 4px;
+    }
+    .totals-wrap .nut-wrap .rm-nut:hover { color: #dc2626; }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .btn {
+      border: 0;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-primary { background: #16a34a; color: #fff; }
+    .btn-primary:hover { background: #15803d; }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-ghost { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+    .btn-ghost:hover { background: #e2e8f0; }
+    .btn-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; font-size: 12px; padding: 6px 10px; }
+
+    .scroll-x {
+      overflow-x: auto;
+      margin: 0 -4px;
+      padding: 4px;
+    }
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 520px;
+    }
+    table.data th, table.data td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: right;
+    }
+    table.data th:first-child, table.data td:first-child {
+      text-align: left;
+      min-width: 140px;
+    }
+    table.data thead th {
+      background: #f1f5f9;
+      font-weight: 700;
+      color: #334155;
+    }
+    table.data tbody tr:nth-child(even) { background: #fafafa; }
+    table.data tfoot td {
+      font-weight: 700;
+      background: #f8fafc;
+    }
+    table.data tfoot td.ok { color: var(--ok); }
+    table.data tfoot td.bad { color: var(--warn); }
+    table.data input.pct-in {
+      width: 72px;
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      text-align: right;
+    }
+    table.data input.stage-in {
+      width: 100%;
+      min-width: 120px;
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+    table.data .stage-cell { vertical-align: middle; }
+
+    .warn-banner {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+      display: none;
+    }
+    .warn-banner.show { display: block; }
+
+    .chart-box {
+      position: relative;
+      height: min(420px, 55vh);
+      margin-top: 8px;
+    }
+    .foot-note {
+      margin-top: 16px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <p class="guest-note"><strong>Modo gratuito:</strong> no se guarda al cerrar. Los valores son solo de referencia técnica.</p>
+
+  <header class="hero">
+    <h1>🔧 Distribución de extracción por etapa (%)</h1>
+    <p class="tagline">
+      Define la <strong>extracción total</strong> por nutriente (kg/ha) y repártela en <strong>% por etapa fenológica</strong>.
+      La herramienta calcula los <strong>kg/ha por etapa</strong> y muestra una <strong>gráfica</strong> que se actualiza al editar.
+    </p>
+    <div class="legend-pills" aria-hidden="true">
+      <span class="pill pill--nut">Extracción total → kg/ha ciclo</span>
+      <span class="pill pill--info">% por etapa → debe sumar 100% / nutriente</span>
+      <span class="pill pill--warn">Valida en campo; curvas orientativas</span>
+    </div>
+  </header>
+
+  <section class="panel" id="sec-totals">
+    <h2>1. Extracción total (kg/ha)</h2>
+    <p class="hint">
+      Ingresa la extracción total del cultivo por elemento. Representa la demanda acumulada en el ciclo.
+      Puedes <strong>agregar</strong> micronutrientes y secundarios cuando los necesites.
+    </p>
+    <div class="totals-wrap" id="totalsRow"></div>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="btnAddNut">+ Agregar nutriente</button>
+      <span class="hint" id="nextNutHint" style="margin:0;"></span>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-pct">
+    <h2>2. Distribución por etapa (%)</h2>
+    <p class="hint">
+      Ajusta los <strong>%</strong> por etapa. Puedes cambiar el nombre de etapa (lista o texto libre). La <strong>suma por cada nutriente debe ser 100%</strong>.
+      Hay valores de ejemplo precargados; modifícalos a tu criterio. Usa <strong>+ Agregar etapa</strong> o <strong>Quitar</strong> según tu cultivo.
+    </p>
+    <div class="scroll-x">
+      <table class="data" id="pctTable">
+        <thead id="pctHead"></thead>
+        <tbody id="pctBody"></tbody>
+        <tfoot id="pctFoot"></tfoot>
+      </table>
+    </div>
+    <div class="btn-row" style="margin-top:12px;">
+      <button type="button" class="btn btn-ghost" id="btnAddStage">+ Agregar etapa</button>
+    </div>
+    <div class="warn-banner" id="sumWarn"></div>
+  </section>
+
+  <section class="panel" id="sec-kg">
+    <h2>3. Resultado (kg/ha por etapa)</h2>
+    <p class="hint">kg/ha en cada etapa = extracción total × (% / 100).</p>
+    <div class="scroll-x">
+      <table class="data" id="kgTable">
+        <thead id="kgHead"></thead>
+        <tbody id="kgBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-chart">
+    <h2>4. Gráfica</h2>
+    <p class="hint">Curvas de kg/ha por etapa y nutriente (eje X = etapas). Se actualiza en tiempo real.</p>
+    <div class="chart-box">
+      <canvas id="extChart" aria-label="Gráfica extracción por etapa"></canvas>
+    </div>
+  </section>
+
+  <p class="foot-note">
+    Los cálculos son una guía y deben validarse en campo; la decisión final es responsabilidad del técnico o usuario.
+  </p>
+
+  <datalist id="stagePresets">
+    <option value="Brotación"></option>
+    <option value="Vegetativo"></option>
+    <option value="Floración"></option>
+    <option value="Llenado"></option>
+    <option value="Maduración"></option>
+    <option value="Mes 1"></option>
+    <option value="Mes 2"></option>
+    <option value="Mes 3"></option>
+    <option value="Inicio de ciclo"></option>
+    <option value="Desarrollo"></option>
+    <option value="Cosecha"></option>
+  </datalist>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+(function () {
+  const BASE = [
+    { id: 'n', label: 'N', total: 180 },
+    { id: 'p', label: 'P', total: 40 },
+    { id: 'k', label: 'K', total: 220 },
+    { id: 'ca', label: 'Ca', total: 120 },
+    { id: 'mg', label: 'Mg', total: 35 }
+  ];
+  const OPTIONAL_QUEUE = [
+    { id: 's', label: 'S', total: 25 },
+    { id: 'fe', label: 'Fe', total: 3 },
+    { id: 'mn', label: 'Mn', total: 2 },
+    { id: 'b', label: 'B', total: 0.5 },
+    { id: 'zn', label: 'Zn', total: 0.3 },
+    { id: 'cu', label: 'Cu', total: 0.2 },
+    { id: 'mo', label: 'Mo', total: 0.05 }
+  ];
+
+  const DEFAULT_STAGES = ['Brotación', 'Vegetativo', 'Floración', 'Llenado', 'Maduración'];
+  const DEFAULT_PCT = {
+    n: [10, 30, 20, 30, 10],
+    p: [15, 25, 25, 20, 15],
+    k: [5, 20, 25, 35, 15],
+    ca: [12, 28, 22, 28, 10],
+    mg: [12, 28, 22, 28, 10]
+  };
+
+  const COLORS = [
+    '#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#0891b2',
+    '#ca8a04', '#db2777', '#0d9488', '#4f46e5', '#64748b',
+    '#059669', '#b45309', '#be185d'
+  ];
+
+  let nutrients = BASE.map(function (b) { return { id: b.id, label: b.label, total: b.total, optional: false }; });
+  let optionalQueue = OPTIONAL_QUEUE.slice();
+  let stages = DEFAULT_STAGES.slice();
+  let pct = {};
+  function ensurePct() {
+    nutrients.forEach(function (n) {
+      if (!pct[n.id]) {
+        var eq = equalSplit(stages.length);
+        pct[n.id] = eq;
+      } else if (pct[n.id].length !== stages.length) {
+        resizePctArray(n.id, stages.length);
+      }
+    });
+    Object.keys(pct).forEach(function (k) {
+      if (!nutrients.some(function (n) { return n.id === k; })) delete pct[k];
+    });
+  }
+  function equalSplit(n) {
+    if (n <= 0) return [];
+    var arr = [];
+    var s = 0;
+    var q = 100 / n;
+    for (var i = 0; i < n - 1; i++) {
+      var v = round1(q);
+      arr.push(v);
+      s += v;
+    }
+    arr.push(round1(100 - s));
+    return arr;
+  }
+  function resizePctArray(id, newLen) {
+    var old = pct[id] || [];
+    if (old.length === newLen) return;
+    while (old.length < newLen) {
+      if (!old.length) {
+        old = equalSplit(newLen);
+        pct[id] = old;
+        return;
+      }
+      var last = parseFloat(old[old.length - 1]) || 0;
+      var a = round1(last / 2);
+      var b = round1(last - a);
+      old[old.length - 1] = a;
+      old.push(b);
+      var diff = 100 - sumPct(id);
+      if (Math.abs(diff) > 0.05) {
+        old[old.length - 1] = round1((parseFloat(old[old.length - 1]) || 0) + diff);
+      }
+    }
+    while (old.length > newLen) {
+      var rm = parseFloat(old[old.length - 1]) || 0;
+      old.pop();
+      if (old.length) {
+        old[old.length - 1] = round1((parseFloat(old[old.length - 1]) || 0) + rm);
+      }
+    }
+    pct[id] = old;
+  }
+  function round1(x) { return Math.round(x * 10) / 10; }
+
+  function sumPct(id) {
+    return (pct[id] || []).reduce(function (a, b) { return a + (parseFloat(b) || 0); }, 0);
+  }
+
+  function renderTotals() {
+    var el = document.getElementById('totalsRow');
+    el.innerHTML = '';
+    nutrients.forEach(function (n, idx) {
+      var wrap = document.createElement('div');
+      wrap.className = 'nut-wrap' + (n.optional ? ' optional' : '');
+      var lab = document.createElement('label');
+      lab.textContent = n.label + ' (kg/ha)';
+      var inp = document.createElement('input');
+      inp.type = 'number';
+      inp.step = 'any';
+      inp.min = '0';
+      inp.value = n.total;
+      inp.dataset.nutId = n.id;
+      inp.addEventListener('input', function () {
+        n.total = parseFloat(inp.value) || 0;
+        updateKgAndChart();
+      });
+      lab.appendChild(inp);
+      wrap.appendChild(lab);
+      if (n.optional) {
+        var rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'rm-nut';
+        rm.title = 'Quitar nutriente';
+        rm.innerHTML = '×';
+        rm.addEventListener('click', function () {
+          nutrients = nutrients.filter(function (x) { return x.id !== n.id; });
+          delete pct[n.id];
+          ensurePct();
+          renderAll();
+        });
+        wrap.appendChild(rm);
+      }
+      el.appendChild(wrap);
+    });
+    var hint = document.getElementById('nextNutHint');
+    var btn = document.getElementById('btnAddNut');
+    if (optionalQueue.length) {
+      hint.textContent = 'Siguiente: ' + optionalQueue[0].label;
+      btn.disabled = false;
+    } else {
+      hint.textContent = 'Ya agregaste todos los nutrientes opcionales (S, Fe, Mn, B, Zn, Cu, Mo).';
+      btn.disabled = true;
+    }
+  }
+
+  function renderPctTable() {
+    var thead = document.getElementById('pctHead');
+    var tbody = document.getElementById('pctBody');
+    var tfoot = document.getElementById('pctFoot');
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+    tfoot.innerHTML = '';
+
+    var trh = document.createElement('tr');
+    var th0 = document.createElement('th');
+    th0.textContent = 'Etapa';
+    trh.appendChild(th0);
+    nutrients.forEach(function (n) {
+      var th = document.createElement('th');
+      th.textContent = n.label + ' %';
+      trh.appendChild(th);
+    });
+    var thA = document.createElement('th');
+    thA.textContent = '';
+    trh.appendChild(thA);
+    thead.appendChild(trh);
+
+    stages.forEach(function (st, ri) {
+      var tr = document.createElement('tr');
+      var td0 = document.createElement('td');
+      td0.className = 'stage-cell';
+      var sin = document.createElement('input');
+      sin.type = 'text';
+      sin.className = 'stage-in';
+      sin.setAttribute('list', 'stagePresets');
+      sin.value = st;
+      sin.dataset.stageIndex = String(ri);
+      sin.addEventListener('change', function () {
+        stages[ri] = sin.value.trim() || ('Etapa ' + (ri + 1));
+        updateKgAndChart();
+      });
+      sin.addEventListener('input', function () {
+        stages[ri] = sin.value;
+        updateKgAndChart();
+      });
+      td0.appendChild(sin);
+      tr.appendChild(td0);
+
+      nutrients.forEach(function (n) {
+        var td = document.createElement('td');
+        var inp = document.createElement('input');
+        inp.type = 'number';
+        inp.step = '0.1';
+        inp.className = 'pct-in';
+        inp.value = pct[n.id][ri];
+        inp.dataset.nutId = n.id;
+        inp.dataset.rowIndex = String(ri);
+        inp.addEventListener('input', function () {
+          pct[n.id][ri] = parseFloat(inp.value) || 0;
+          updateSums();
+          updateKgAndChart();
+        });
+        td.appendChild(inp);
+        tr.appendChild(td);
+      });
+
+      var tdAct = document.createElement('td');
+      if (stages.length > 1) {
+        var rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'btn btn-danger';
+        rm.textContent = 'Quitar etapa';
+        rm.addEventListener('click', function () { removeStage(ri); });
+        tdAct.appendChild(rm);
+      } else {
+        tdAct.textContent = '—';
+      }
+      tr.appendChild(tdAct);
+      tbody.appendChild(tr);
+    });
+
+    var trf = document.createElement('tr');
+    var tdL = document.createElement('td');
+    tdL.textContent = 'Σ %';
+    trf.appendChild(tdL);
+    nutrients.forEach(function (n) {
+      var td = document.createElement('td');
+      var s = sumPct(n.id);
+      td.textContent = round1(s) + '%';
+      td.className = Math.abs(s - 100) < 0.05 ? 'ok' : 'bad';
+      trf.appendChild(td);
+    });
+    var tdx = document.createElement('td');
+    trf.appendChild(tdx);
+    tfoot.appendChild(trf);
+
+    var bad = nutrients.some(function (n) { return Math.abs(sumPct(n.id) - 100) >= 0.05; });
+    var ban = document.getElementById('sumWarn');
+    if (bad) {
+      ban.className = 'warn-banner show';
+      ban.textContent = '⚠ La suma de % por nutriente debe ser 100%. Ajusta los valores o reparte en más etapas.';
+    } else {
+      ban.className = 'warn-banner';
+      ban.textContent = '';
+    }
+  }
+
+  function removeStage(ri) {
+    if (stages.length <= 1) return;
+    nutrients.forEach(function (n) {
+      var arr = pct[n.id];
+      var rmv = parseFloat(arr[ri]) || 0;
+      if (ri > 0) {
+        arr[ri - 1] = round1((parseFloat(arr[ri - 1]) || 0) + rmv);
+      } else if (arr.length > 1) {
+        arr[1] = round1((parseFloat(arr[0]) || 0) + (parseFloat(arr[1]) || 0));
+      }
+      arr.splice(ri, 1);
+    });
+    stages.splice(ri, 1);
+    renderAll();
+  }
+
+  function renderKgTable() {
+    var thead = document.getElementById('kgHead');
+    var tbody = document.getElementById('kgBody');
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+    var trh = document.createElement('tr');
+    var h0 = document.createElement('th');
+    h0.textContent = 'Etapa';
+    trh.appendChild(h0);
+    nutrients.forEach(function (n) {
+      var th = document.createElement('th');
+      th.textContent = n.label + ' (kg/ha)';
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh);
+
+    stages.forEach(function (st, ri) {
+      var tr = document.createElement('tr');
+      var td0 = document.createElement('td');
+      td0.textContent = st;
+      tr.appendChild(td0);
+      nutrients.forEach(function (n) {
+        var td = document.createElement('td');
+        var total = parseFloat(n.total) || 0;
+        var p = (parseFloat(pct[n.id][ri]) || 0) / 100;
+        var kg = total * p;
+        td.textContent = kg >= 0.01 ? kg.toFixed(2) : kg.toFixed(4);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  var chartInst = null;
+  function updateChart() {
+    var canvas = document.getElementById('extChart');
+    var labels = stages.slice();
+    var datasets = nutrients.map(function (n, i) {
+      var data = stages.map(function (_, ri) {
+        var total = parseFloat(n.total) || 0;
+        var p = (parseFloat(pct[n.id][ri]) || 0) / 100;
+        return round1(total * p * 100) / 100;
+      });
+      return {
+        label: n.label,
+        data: data,
+        borderColor: COLORS[i % COLORS.length],
+        backgroundColor: COLORS[i % COLORS.length] + '22',
+        tension: 0.35,
+        fill: false,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      };
+    });
+
+    if (typeof Chart === 'undefined') return;
+    if (chartInst) chartInst.destroy();
+    chartInst = new Chart(canvas, {
+      type: 'line',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, padding: 16 } },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                return ctx.dataset.label + ': ' + ctx.parsed.y + ' kg/ha';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Etapa' },
+            ticks: { maxRotation: 45, minRotation: 0 }
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'kg/ha extraídos' }
+          }
+        }
+      }
+    });
+  }
+
+  function updateSums() {
+    var tfoot = document.querySelector('#pctFoot tr');
+    if (!tfoot) return;
+    var cells = tfoot.querySelectorAll('td');
+    nutrients.forEach(function (n, i) {
+      var s = sumPct(n.id);
+      var td = cells[i + 1];
+      if (td) {
+        td.textContent = round1(s) + '%';
+        td.className = Math.abs(s - 100) < 0.05 ? 'ok' : 'bad';
+      }
+    });
+    var bad = nutrients.some(function (n) { return Math.abs(sumPct(n.id) - 100) >= 0.05; });
+    var ban = document.getElementById('sumWarn');
+    if (bad) {
+      ban.className = 'warn-banner show';
+      ban.textContent = '⚠ La suma de % por nutriente debe ser 100%. Ajusta los valores o reparte en más etapas.';
+    } else {
+      ban.className = 'warn-banner';
+    }
+  }
+
+  function updateKgAndChart() {
+    renderKgTable();
+    updateChart();
+  }
+
+  function renderAll() {
+    ensurePct();
+    renderTotals();
+    renderPctTable();
+    renderKgTable();
+    updateChart();
+  }
+
+  document.getElementById('btnAddNut').addEventListener('click', function () {
+    if (!optionalQueue.length) return;
+    var next = optionalQueue.shift();
+    nutrients.push({ id: next.id, label: next.label, total: next.total, optional: true });
+    pct[next.id] = equalSplit(stages.length);
+    renderAll();
+  });
+
+  document.getElementById('btnAddStage').addEventListener('click', function () {
+    stages.push('Nueva etapa');
+    nutrients.forEach(function (n) {
+      var arr = pct[n.id];
+      if (!arr.length) {
+        pct[n.id] = equalSplit(stages.length);
+        return;
+      }
+      var last = parseFloat(arr[arr.length - 1]) || 0;
+      var a = round1(last / 2);
+      var b = round1(last - a);
+      arr[arr.length - 1] = a;
+      arr.push(b);
+      var s = sumPct(n.id);
+      if (Math.abs(s - 100) > 0.05) {
+        var diff = 100 - s;
+        arr[arr.length - 1] = round1((parseFloat(arr[arr.length - 1]) || 0) + diff);
+      }
+    });
+    renderAll();
+  });
+
+  BASE.forEach(function (b) {
+    pct[b.id] = DEFAULT_PCT[b.id] ? DEFAULT_PCT[b.id].slice() : equalSplit(DEFAULT_STAGES.length);
+  });
+  ensurePct();
+  renderAll();
+})();
+  </script>
+</body>
+</html>
