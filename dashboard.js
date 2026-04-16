@@ -16195,7 +16195,6 @@ function createAguaTabHTML() {
             <div class="soil-analysis-form-header">
               <label style="margin-right:8px;">m³ agua de riego:</label>
               <input type="number" step="0.01" min="0" id="aw-m3-riego" placeholder="ej. 100" style="width:80px;" oninput="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('m3Riego',this.value); window.awUpdateKgOxide && window.awUpdateKgOxide(); window.awUpdateAcid && window.awUpdateAcid();">
-              <span id="aw-m3-kg-hint" style="display:none;font-size:11px;color:#b45309;margin-left:8px;max-width:280px;vertical-align:middle;"></span>
               <input type="text" id="aw-meta-title" placeholder="Título" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','title',this.value)">
               <input type="text" id="aw-meta-date" placeholder="Fecha" class="soil-input-inline" onchange="window.saveAguaField && window.saveAguaField('meta','date',this.value)">
               <button type="button" class="btn btn-sm btn-danger" onclick="window.deleteCurrentAguaAnalysis && window.deleteCurrentAguaAnalysis();">Eliminar</button>
@@ -16446,21 +16445,6 @@ window.awUpdateKgOxide = function awUpdateKgOxide() {
   var no3Ppm = an && an.no3_ppm ? parseFloat(an.no3_ppm) : NaN;
   if (!isNaN(no3Ppm) && m3) { var kgN = (no3Ppm * m3) / 1000; var elN = document.getElementById('aw-kg-n'); if (elN) elN.textContent = kgN.toFixed(2); } else { var elN = document.getElementById('aw-kg-n'); if (elN) elN.textContent = '—'; }
   var micros = a.micros; if (micros) { ['b','fe','mn','zn','cu'].forEach(function(k){ var p = parseFloat(micros[k]); var el = document.getElementById('aw-kg-' + k); if (el) el.textContent = (m3 && !isNaN(p)) ? ((p * m3) / 1000).toFixed(3) : '—'; }); }
-  var hint = document.getElementById('aw-m3-kg-hint');
-  if (hint) {
-    var c2 = a.cations; var an2 = a.anions; var mic = a.micros;
-    var hasPpm = false;
-    if (c2) ['ca_ppm','mg_ppm','k_ppm','na_ppm'].forEach(function(k) { var v = parseFloat(c2[k]); if (!isNaN(v) && v > 0) hasPpm = true; });
-    if (an2) ['no3_ppm','po4_ppm','so4_ppm'].forEach(function(k) { var v = parseFloat(an2[k]); if (!isNaN(v) && v > 0) hasPpm = true; });
-    if (mic) ['b','fe','mn','zn','cu'].forEach(function(k) { var v = parseFloat(mic[k]); if (!isNaN(v) && v > 0) hasPpm = true; });
-    if (m3 <= 0 && hasPpm) {
-      hint.style.display = 'inline';
-      hint.textContent = 'Indica m³ arriba: kg = ppm × m³ ÷ 1000.';
-    } else {
-      hint.style.display = 'none';
-      hint.textContent = '';
-    }
-  }
 };
 
 window.awUpdateAcid = function awUpdateAcid() {
