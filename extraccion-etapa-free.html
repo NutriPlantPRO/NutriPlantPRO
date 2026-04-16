@@ -227,11 +227,50 @@
     }
     .warn-banner.show { display: block; }
 
+    .chart-seg {
+      display: inline-flex;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f1f5f9;
+    }
+    .chart-seg button {
+      border: 0;
+      background: transparent;
+      padding: 8px 16px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      color: #64748b;
+    }
+    .chart-seg button.is-on {
+      background: #16a34a;
+      color: #fff;
+    }
+    .chart-seg button:not(.is-on):hover {
+      background: #e2e8f0;
+      color: #334155;
+    }
+    .chart-empty {
+      display: block;
+      margin-top: 8px;
+      padding: 20px 16px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      line-height: 1.45;
+    }
+    .chart-empty[hidden] { display: none !important; }
+
     .chart-box {
       position: relative;
       height: min(420px, 55vh);
       margin-top: 8px;
     }
+    .chart-box[hidden] { display: none !important; }
     .foot-note {
       margin-top: 16px;
       font-size: 11px;
@@ -303,7 +342,16 @@
   <section class="panel" id="sec-chart">
     <h2>4. Gráfica</h2>
     <p class="hint">Curvas de kg/ha por etapa y nutriente (eje X = etapas). Se actualiza en tiempo real.</p>
-    <div class="chart-box">
+    <div class="btn-row" style="margin-bottom: 4px;">
+      <span style="font-size: 12px; font-weight: 700; color: #334155;">Vista:</span>
+      <div class="chart-seg" role="group" aria-label="Macronutrientes o micronutrientes en la gráfica">
+        <button type="button" id="btnChartMacro" class="is-on" aria-pressed="true">Macros (N, P, K, Ca, Mg, S)</button>
+        <button type="button" id="btnChartMicro" aria-pressed="false">Micros (Fe, Mn, B, Zn, Cu, Mo)</button>
+      </div>
+      <span class="hint" style="margin: 0;">Los micros usan su propia escala para poder distinguirlos.</span>
+    </div>
+    <p id="chartEmpty" class="chart-empty" hidden></p>
+    <div id="chartWrap" class="chart-box">
       <canvas id="extChart" aria-label="Gráfica extracción por etapa"></canvas>
     </div>
   </section>
@@ -347,6 +395,11 @@
   ];
 
   const DEFAULT_STAGES = ['Brotación', 'Vegetativo', 'Floración', 'Llenado', 'Maduración'];
+  /** Macros / secundario S — micros aparte para escala legible en la gráfica */
+  const MACRO_IDS = { n: true, p: true, k: true, ca: true, mg: true, s: true };
+  const MICRO_IDS = { fe: true, mn: true, b: true, zn: true, cu: true, mo: true };
+  let chartNutGroup = 'macro';
+
   const DEFAULT_PCT = {
     n: [10, 30, 20, 30, 10],
     p: [15, 25, 25, 20, 15],
@@ -792,10 +845,60 @@
   }
 
   var chartInst = null;
+
+  function nutrientColorIndex(n) {
+    for (var i = 0; i < nutrients.length; i++) {
+      if (nutrients[i].id === n.id) return i;
+    }
+    return 0;
+  }
+
+  function chartFilteredNutrients() {
+    return nutrients.filter(function (n) {
+      return chartNutGroup === 'macro' ? MACRO_IDS[n.id] : MICRO_IDS[n.id];
+    });
+  }
+
+  function syncChartGroupButtons() {
+    var m = document.getElementById('btnChartMacro');
+    var u = document.getElementById('btnChartMicro');
+    if (!m || !u) return;
+    var isMacro = chartNutGroup === 'macro';
+    m.classList.toggle('is-on', isMacro);
+    u.classList.toggle('is-on', !isMacro);
+    m.setAttribute('aria-pressed', isMacro ? 'true' : 'false');
+    u.setAttribute('aria-pressed', !isMacro ? 'true' : 'false');
+  }
+
   function updateChart() {
     var canvas = document.getElementById('extChart');
+    var emptyEl = document.getElementById('chartEmpty');
+    var wrapEl = document.getElementById('chartWrap');
     var labels = stages.slice();
-    var datasets = nutrients.map(function (n, i) {
+    var filtered = chartFilteredNutrients();
+
+    if (typeof Chart === 'undefined') return;
+
+    if (!filtered.length) {
+      if (chartInst) {
+        chartInst.destroy();
+        chartInst = null;
+      }
+      if (emptyEl) {
+        emptyEl.textContent = chartNutGroup === 'micro'
+          ? 'No hay micronutrientes en la lista. Usa «+ Agregar nutriente» para añadir Fe, Mn, B, Zn, Cu o Mo y ver esta vista.'
+          : 'No hay datos para mostrar en esta vista.';
+        emptyEl.hidden = false;
+      }
+      if (wrapEl) wrapEl.hidden = true;
+      return;
+    }
+
+    if (emptyEl) emptyEl.hidden = true;
+    if (wrapEl) wrapEl.hidden = false;
+
+    var datasets = filtered.map(function (n) {
+      var ci = nutrientColorIndex(n);
       var data = stages.map(function (_, ri) {
         var total = parseFloat(n.total) || 0;
         var p = (parseFloat(pct[n.id][ri]) || 0) / 100;
@@ -804,8 +907,8 @@
       return {
         label: n.label,
         data: data,
-        borderColor: COLORS[i % COLORS.length],
-        backgroundColor: COLORS[i % COLORS.length] + '22',
+        borderColor: COLORS[ci % COLORS.length],
+        backgroundColor: COLORS[ci % COLORS.length] + '22',
         tension: 0.35,
         fill: false,
         pointRadius: 4,
@@ -813,7 +916,6 @@
       };
     });
 
-    if (typeof Chart === 'undefined') return;
     if (chartInst) chartInst.destroy();
     chartInst = new Chart(canvas, {
       type: 'line',
@@ -922,6 +1024,19 @@
   });
 
   document.getElementById('btnResetDefaults').addEventListener('click', resetToFactoryDefaults);
+
+  document.getElementById('btnChartMacro').addEventListener('click', function () {
+    if (chartNutGroup === 'macro') return;
+    chartNutGroup = 'macro';
+    syncChartGroupButtons();
+    updateChart();
+  });
+  document.getElementById('btnChartMicro').addEventListener('click', function () {
+    if (chartNutGroup === 'micro') return;
+    chartNutGroup = 'micro';
+    syncChartGroupButtons();
+    updateChart();
+  });
 
   async function boot() {
     updateModeNote();
