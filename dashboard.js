@@ -14551,11 +14551,9 @@ function createFertigationSectionHTML(chartImages) {
         <div class="report-nutrient-wrap">${nutrientGrid(diff, programModeIsElemental, true)}</div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} - Macros</div>
-        <p class="report-note" style="margin:0 0 12px;line-height:1.45;">
-          <strong>Leyenda (útil si compartes este reporte con otro productor o asesor):</strong>
-          Programa <strong>${reportFertiIsMes ? 'mensual' : 'semanal'}</strong> — En cada fila (etapa), las columnas con <strong>nombre de fertilizantes</strong> a la izquierda son las <strong>dosis de producto</strong> del plan.
-          A la <strong>derecha de la línea vertical</strong> se muestran las <strong>cantidades aportadas en macronutrientes</strong> (N, P, K, Ca, Mg, S, SO4…) resultantes de esas dosis, en la unidad del reporte (p. ej. kg/ha).
+        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} - Macros <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
+        <p class="report-note" style="margin:0 0 10px;line-height:1.4;">
+          <strong>Leyenda:</strong> A la izquierda, dosis de cada fertilizante; a la derecha de la línea, <strong>aportes de macronutrientes (kg/ha)</strong>. La tabla Micros usa las mismas filas con los micros en kg/ha —es el mismo plan, no dos aplicaciones.
         </p>
         <table class="report-app-table">
           <thead>
@@ -14581,11 +14579,9 @@ function createFertigationSectionHTML(chartImages) {
         </table>
       </div>
       <div class="report-block">
-        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} - Micros</div>
-        <p class="report-note" style="margin:0 0 12px;line-height:1.45;">
-          <strong>Leyenda:</strong> Son las <strong>mismas etapas y las mismas dosis de producto</strong> que en la tabla de Macros arriba.
-          A la <strong>derecha de la línea</strong> solo se detallan las <strong>cantidades aportadas en micronutrientes</strong> (Fe, Mn, B, Zn, Cu, Mo, Si…) para cada fila.
-          <strong>No es un segundo programa ni hay que duplicar el riego:</strong> Macros y Micros son <strong>dos vistas del mismo plan</strong> —una muestra el aporte en macros y la otra en micros— para que quien lea el reporte no confunda dosis de producto con nutriente.
+        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} - Micros <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
+        <p class="report-note" style="margin:0 0 10px;line-height:1.4;">
+          <strong>Leyenda:</strong> Mismas filas que Macros. A la derecha de la línea, <strong>aportes de micronutrientes (kg/ha)</strong>. No sumar con Macros como si fueran dos riegos distintos.
         </p>
         <table class="report-app-table">
           <thead>

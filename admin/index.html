@@ -9447,9 +9447,9 @@
                             <div><strong>Fertilizantes:</strong> ${columnNames.length ? columnNames.map(n => `<span style="display:inline-block;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px;margin:2px 4px 0 0;">${escapeHtml(n)}</span>`).join('') : '<span style="color:#94a3b8;">Sin columnas</span>'}</div>
                         </div>
                         <div style="margin-bottom:12px;">
-                            <div style="font-weight:600;color:#1e293b;margin-bottom:6px;">Programa ${fertirriegoProgram.timeUnit === 'mes' ? 'Mensual' : 'Semanal'} - Macros</div>
-                            <div style="font-size:12px;color:#475569;line-height:1.45;margin-bottom:8px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-                                <strong>Leyenda:</strong> Programa <strong>${fertirriegoProgram.timeUnit === 'mes' ? 'mensual' : 'semanal'}</strong>. A la izquierda, <strong>dosis de cada fertilizante</strong>; a la derecha de la línea, <strong>aporte en macronutrientes</strong> (kg/ha) calculado con esas dosis.
+                            <div style="font-weight:600;color:#1e293b;margin-bottom:6px;">Programa ${fertirriegoProgram.timeUnit === 'mes' ? 'Mensual' : 'Semanal'} - Macros <span style="color:#64748b;font-weight:600;">(kg/ha)</span></div>
+                            <div style="font-size:12px;color:#475569;line-height:1.4;margin-bottom:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+                                <strong>Leyenda:</strong> Izq. dosis de producto · Der. aportes macro (kg/ha). Micros: mismas filas, aportes micro (kg/ha).
                             </div>
                             <div style="overflow-x:auto;">
                                 <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -9469,9 +9469,9 @@
                             </div>
                         </div>
                         <div style="margin-bottom:12px;">
-                            <div style="font-weight:600;color:#1e293b;margin-bottom:6px;">Programa ${fertirriegoProgram.timeUnit === 'mes' ? 'Mensual' : 'Semanal'} - Micros</div>
-                            <div style="font-size:12px;color:#475569;line-height:1.45;margin-bottom:8px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-                                <strong>Leyenda:</strong> Mismas filas y dosis que Macros. A la derecha, <strong>aporte en micronutrientes</strong> (kg/ha). <strong>Un solo plan</strong> en dos tablas (macros / micros); no duplicar aplicaciones.
+                            <div style="font-weight:600;color:#1e293b;margin-bottom:6px;">Programa ${fertirriegoProgram.timeUnit === 'mes' ? 'Mensual' : 'Semanal'} - Micros <span style="color:#64748b;font-weight:600;">(kg/ha)</span></div>
+                            <div style="font-size:12px;color:#475569;line-height:1.4;margin-bottom:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+                                <strong>Leyenda:</strong> Mismas filas que Macros. Der. aportes micro (kg/ha). No duplicar con la tabla anterior.
                             </div>
                             <div style="overflow-x:auto;">
                                 <table style="width:100%;border-collapse:collapse;font-size:12px;">
