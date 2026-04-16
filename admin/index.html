@@ -9448,6 +9448,9 @@
                         </div>
                         <div style="margin-bottom:12px;">
                             <div style="font-weight:600;color:#1e293b;margin-bottom:6px;">Programa ${fertirriegoProgram.timeUnit === 'mes' ? 'Mensual' : 'Semanal'} - Macros</div>
+                            <div style="font-size:12px;color:#475569;line-height:1.45;margin-bottom:8px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+                                <strong>Leyenda:</strong> Programa <strong>${fertirriegoProgram.timeUnit === 'mes' ? 'mensual' : 'semanal'}</strong>. A la izquierda, <strong>dosis de cada fertilizante</strong>; a la derecha de la línea, <strong>aporte en macronutrientes</strong> (kg/ha) calculado con esas dosis.
+                            </div>
                             <div style="overflow-x:auto;">
                                 <table style="width:100%;border-collapse:collapse;font-size:12px;">
                                     <thead>
@@ -9467,6 +9470,9 @@
                         </div>
                         <div style="margin-bottom:12px;">
                             <div style="font-weight:600;color:#1e293b;margin-bottom:6px;">Programa ${fertirriegoProgram.timeUnit === 'mes' ? 'Mensual' : 'Semanal'} - Micros</div>
+                            <div style="font-size:12px;color:#475569;line-height:1.45;margin-bottom:8px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+                                <strong>Leyenda:</strong> Mismas filas y dosis que Macros. A la derecha, <strong>aporte en micronutrientes</strong> (kg/ha). <strong>Un solo plan</strong> en dos tablas (macros / micros); no duplicar aplicaciones.
+                            </div>
                             <div style="overflow-x:auto;">
                                 <table style="width:100%;border-collapse:collapse;font-size:12px;">
                                     <thead>
