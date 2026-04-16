@@ -4914,6 +4914,46 @@ CONTRATO:
     }
     window.closeFertilizerCompositionCalculator = closeFertilizerCompositionCalculator;
 
+    // Hook de persistencia para herramienta "Extracción por etapa" (iframe)
+    window.nutriplantLoadExtractionStageFromCloud = function(ctx) {
+      try {
+        var userId = (ctx && ctx.userId) || localStorage.getItem('nutriplant_user_id') || '';
+        var projectId = (ctx && ctx.projectId) || localStorage.getItem('nutriplant-current-project') || localStorage.getItem('currentProjectId') || '';
+        if (!userId || !projectId) return null;
+        var raw = localStorage.getItem('nutriplant_project_' + projectId);
+        if (!raw) return null;
+        var project = JSON.parse(raw);
+        if (!project || !project.calculators || !project.calculators.extraccionEtapa) return null;
+        return project.calculators.extraccionEtapa;
+      } catch (e) {
+        console.warn('Load extracción/etapa:', e);
+        return null;
+      }
+    };
+
+    window.nutriplantSaveExtractionStageToCloud = function(payload) {
+      try {
+        var userId = (payload && payload.userId) || localStorage.getItem('nutriplant_user_id') || '';
+        var projectId = (payload && payload.projectId) || localStorage.getItem('nutriplant-current-project') || localStorage.getItem('currentProjectId') || '';
+        var state = payload && payload.state ? payload.state : null;
+        if (!userId || !projectId || !state) return false;
+        var key = 'nutriplant_project_' + projectId;
+        var project = {};
+        try { project = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (_) { project = {}; }
+        if (!project.calculators || typeof project.calculators !== 'object') project.calculators = {};
+        project.calculators.extraccionEtapa = Object.assign({}, state, { updatedAt: Date.now() });
+        project.updatedAt = new Date().toISOString();
+        localStorage.setItem(key, JSON.stringify(project));
+        if (typeof window.nutriplantSyncProjectToCloud === 'function') {
+          try { window.nutriplantSyncProjectToCloud(projectId, project); } catch (syncErr) { console.warn('Sync extracción/etapa:', syncErr); }
+        }
+        return true;
+      } catch (e) {
+        console.warn('Save extracción/etapa:', e);
+        return false;
+      }
+    };
+
     var NP_SIMPLE_CALC_STORAGE = 'np_simple_calc_last';
     function simpleCalcKeydown(e) {
       var modal = document.getElementById('simpleCalculatorModal');
@@ -6461,7 +6501,7 @@ CONTRATO:
         <button class="modal-close" onclick="closeExtraccionEtapaCalculator()">×</button>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html" title="Distribución de extracción por etapa" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard" title="Distribución de extracción por etapa" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

@@ -241,7 +241,7 @@
   </style>
 </head>
 <body>
-  <p class="guest-note"><strong>Modo gratuito:</strong> no se guarda al cerrar. Los valores son solo de referencia técnica.</p>
+  <p class="guest-note" id="modeNote"><strong>Modo gratuito:</strong> no se guarda al cerrar. Los valores son solo de referencia técnica.</p>
 
   <header class="hero">
     <h1>🔧 Distribución de extracción por etapa (%)</h1>
@@ -364,6 +364,147 @@
   let optionalQueue = OPTIONAL_QUEUE.slice();
   let stages = DEFAULT_STAGES.slice();
   let pct = {};
+  const params = new URLSearchParams(window.location.search);
+  const isDashboardMode = params.get('ctx') === 'dashboard';
+  let isBootstrapping = true;
+  let persistTimer = null;
+  const toolStateVersion = 1;
+
+  function getContext() {
+    var ls = window.localStorage;
+    var userId = ls.getItem('nutriplant_user_id') || 'guest';
+    var projectId = ls.getItem('nutriplant-current-project') || ls.getItem('currentProjectId') || 'no-project';
+    return { userId: userId, projectId: projectId };
+  }
+
+  function buildLocalKey(ctx) {
+    return 'np_extraccion_etapa_' + ctx.userId + '_' + ctx.projectId;
+  }
+
+  function normalizeState(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    if (!Array.isArray(raw.nutrients) || !Array.isArray(raw.stages) || !raw.pct || typeof raw.pct !== 'object') return null;
+    var nList = raw.nutrients
+      .filter(function (n) { return n && typeof n.id === 'string' && typeof n.label === 'string'; })
+      .map(function (n) {
+        return {
+          id: n.id,
+          label: n.label,
+          total: parseFloat(n.total) || 0,
+          optional: !!n.optional
+        };
+      });
+    if (!nList.length) return null;
+    var st = raw.stages.map(function (s, i) {
+      var txt = String(s || '').trim();
+      return txt || ('Etapa ' + (i + 1));
+    });
+    if (!st.length) return null;
+    var pctMap = {};
+    nList.forEach(function (n) {
+      var arr = Array.isArray(raw.pct[n.id]) ? raw.pct[n.id].slice(0, st.length) : [];
+      while (arr.length < st.length) arr.push(0);
+      pctMap[n.id] = arr.map(function (v) { return round1(parseFloat(v) || 0); });
+    });
+    return {
+      version: raw.version || toolStateVersion,
+      updatedAt: Number(raw.updatedAt) || Date.now(),
+      nutrients: nList,
+      optionalQueue: Array.isArray(raw.optionalQueue) ? raw.optionalQueue : OPTIONAL_QUEUE.filter(function (o) {
+        return !nList.some(function (n) { return n.id === o.id; });
+      }),
+      stages: st,
+      pct: pctMap
+    };
+  }
+
+  function snapshotState() {
+    return {
+      version: toolStateVersion,
+      updatedAt: Date.now(),
+      nutrients: nutrients.map(function (n) {
+        return { id: n.id, label: n.label, total: parseFloat(n.total) || 0, optional: !!n.optional };
+      }),
+      optionalQueue: optionalQueue.slice(),
+      stages: stages.slice(),
+      pct: JSON.parse(JSON.stringify(pct))
+    };
+  }
+
+  function applyState(state) {
+    if (!state) return false;
+    nutrients = state.nutrients.slice();
+    optionalQueue = Array.isArray(state.optionalQueue) ? state.optionalQueue.slice() : [];
+    stages = state.stages.slice();
+    pct = JSON.parse(JSON.stringify(state.pct || {}));
+    ensurePct();
+    return true;
+  }
+
+  function saveStateLocal(state) {
+    try {
+      var ctx = getContext();
+      localStorage.setItem(buildLocalKey(ctx), JSON.stringify(state));
+    } catch (_) {}
+  }
+
+  function loadStateLocal() {
+    try {
+      var ctx = getContext();
+      var raw = localStorage.getItem(buildLocalKey(ctx));
+      if (!raw) return null;
+      return normalizeState(JSON.parse(raw));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function loadStateCloud() {
+    if (!isDashboardMode) return null;
+    try {
+      var host = window.parent && window.parent !== window ? window.parent : window;
+      if (typeof host.nutriplantLoadExtractionStageFromCloud !== 'function') return null;
+      var ctx = getContext();
+      var data = await host.nutriplantLoadExtractionStageFromCloud(ctx);
+      return normalizeState(data);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function saveStateCloud(state) {
+    if (!isDashboardMode) return;
+    try {
+      var host = window.parent && window.parent !== window ? window.parent : window;
+      if (typeof host.nutriplantSaveExtractionStageToCloud !== 'function') return;
+      var ctx = getContext();
+      host.nutriplantSaveExtractionStageToCloud({
+        userId: ctx.userId,
+        projectId: ctx.projectId,
+        state: state
+      });
+    } catch (_) {}
+  }
+
+  function schedulePersist() {
+    if (!isDashboardMode || isBootstrapping) return;
+    if (persistTimer) clearTimeout(persistTimer);
+    persistTimer = setTimeout(function () {
+      var state = snapshotState();
+      saveStateLocal(state);
+      saveStateCloud(state);
+    }, 550);
+  }
+
+  function updateModeNote() {
+    var el = document.getElementById('modeNote');
+    if (!el) return;
+    if (isDashboardMode) {
+      el.innerHTML = '<strong>Modo dashboard:</strong> guardado automático local + sincronización de proyecto en la nube.';
+    } else {
+      el.innerHTML = '<strong>Modo gratuito:</strong> no se guarda al cerrar. Los valores son solo de referencia técnica.';
+    }
+  }
   function ensurePct() {
     nutrients.forEach(function (n) {
       if (!pct[n.id]) {
@@ -702,6 +843,7 @@
   function updateKgAndChart() {
     renderKgTable();
     updateChart();
+    schedulePersist();
   }
 
   function renderAll() {
@@ -710,6 +852,7 @@
     renderPctTable();
     renderKgTable();
     updateChart();
+    schedulePersist();
   }
 
   document.getElementById('btnAddNut').addEventListener('click', function () {
@@ -742,11 +885,31 @@
     renderAll();
   });
 
-  BASE.forEach(function (b) {
-    pct[b.id] = DEFAULT_PCT[b.id] ? DEFAULT_PCT[b.id].slice() : equalSplit(DEFAULT_STAGES.length);
-  });
-  ensurePct();
-  renderAll();
+  async function boot() {
+    updateModeNote();
+    BASE.forEach(function (b) {
+      pct[b.id] = DEFAULT_PCT[b.id] ? DEFAULT_PCT[b.id].slice() : equalSplit(DEFAULT_STAGES.length);
+    });
+    ensurePct();
+
+    var localState = loadStateLocal();
+    if (localState) applyState(localState);
+    renderAll();
+
+    var cloudState = await loadStateCloud();
+    if (cloudState) {
+      var localTs = localState && localState.updatedAt ? localState.updatedAt : 0;
+      var cloudTs = cloudState.updatedAt || 0;
+      if (cloudTs > localTs) {
+        applyState(cloudState);
+        renderAll();
+        saveStateLocal(snapshotState());
+      }
+    }
+    isBootstrapping = false;
+  }
+
+  boot();
 })();
   </script>
 </body>
