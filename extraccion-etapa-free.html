@@ -265,6 +265,7 @@
     <div class="totals-wrap" id="totalsRow"></div>
     <div class="btn-row">
       <button type="button" class="btn btn-primary" id="btnAddNut">+ Agregar nutriente</button>
+      <button type="button" class="btn btn-ghost" id="btnResetDefaults" title="Vuelve a N, P, K, Ca, Mg, cinco etapas y % de ejemplo">↺ Restaurar ejemplo</button>
       <span class="hint" id="nextNutHint" style="margin:0;"></span>
     </div>
   </section>
@@ -494,6 +495,19 @@
       saveStateLocal(state);
       saveStateCloud(state);
     }, 550);
+  }
+
+  function resetToFactoryDefaults() {
+    if (!window.confirm('¿Restaurar al ejemplo inicial? Se borrarán nutrientes opcionales añadidos y etapas extra; volverán N, P, K, Ca, Mg con totales y % de ejemplo.')) return;
+    nutrients = BASE.map(function (b) { return { id: b.id, label: b.label, total: b.total, optional: false }; });
+    optionalQueue = OPTIONAL_QUEUE.slice();
+    stages = DEFAULT_STAGES.slice();
+    pct = {};
+    BASE.forEach(function (b) {
+      pct[b.id] = DEFAULT_PCT[b.id] ? DEFAULT_PCT[b.id].slice() : equalSplit(DEFAULT_STAGES.length);
+    });
+    ensurePct();
+    renderAll();
   }
 
   function updateModeNote() {
@@ -884,6 +898,8 @@
     });
     renderAll();
   });
+
+  document.getElementById('btnResetDefaults').addEventListener('click', resetToFactoryDefaults);
 
   async function boot() {
     updateModeNote();
