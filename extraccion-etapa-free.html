@@ -687,9 +687,11 @@
     if (optionalQueue.length) {
       hint.textContent = 'Siguiente: ' + optionalQueue[0].label;
       btn.disabled = false;
+      btn.removeAttribute('title');
     } else {
       hint.textContent = 'Ya agregaste todos los nutrientes opcionales (S, Fe, Mn, B, Zn, Cu, Mo).';
       btn.disabled = true;
+      btn.title = 'No hay más nutrientes opcionales por agregar. Puedes quitar uno con × para volver a habilitar este botón.';
     }
   }
 

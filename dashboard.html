@@ -4871,16 +4871,25 @@ CONTRATO:
 
     function showExtraccionEtapaCalculator() {
       var modal = document.getElementById('extraccionEtapaCalculatorModal');
+      var frame = document.getElementById('extraccionEtapaCalculatorFrame');
       if (!modal) return;
+      /* Recargar iframe al abrir: si no, sigue en memoria el estado del proyecto con el que cargó la página
+         y al cambiar de proyecto parece “atascado” o muestra datos viejos hasta cerrar y volver a abrir. */
+      if (frame) {
+        try {
+          var pid = localStorage.getItem('nutriplant-current-project') || localStorage.getItem('currentProjectId') || '';
+          frame.src = 'extraccion-etapa-free.html?ctx=dashboard' + (pid ? '&pid=' + encodeURIComponent(pid) : '') + '&t=' + Date.now();
+        } catch (e) {
+          frame.src = 'extraccion-etapa-free.html?ctx=dashboard&t=' + Date.now();
+        }
+      }
       modal.classList.add('show');
     }
     window.showExtraccionEtapaCalculator = showExtraccionEtapaCalculator;
 
     function closeExtraccionEtapaCalculator() {
       var modal = document.getElementById('extraccionEtapaCalculatorModal');
-      var frame = document.getElementById('extraccionEtapaCalculatorFrame');
       if (modal) modal.classList.remove('show');
-      if (frame) frame.src = frame.src;
     }
     window.closeExtraccionEtapaCalculator = closeExtraccionEtapaCalculator;
 
