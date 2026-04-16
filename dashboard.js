@@ -10556,6 +10556,12 @@ function applyProjectDataToUI() {
         center: currentProject.location.center || null,
         projectId: currentProjectId // CRÍTICO: Incluir projectId para validación
       };
+      const elevSaved = Number(currentProject.location.elevationM);
+      if (Number.isFinite(elevSaved)) {
+        polygonData.elevationM = elevSaved;
+      } else if (currentProject.location.elevationM === null) {
+        polygonData.elevationM = null;
+      }
       
       // Pintar al instante si el mapa ya está listo (al volver a Ubicación); si no, esperar
       const paintPolygon = () => {

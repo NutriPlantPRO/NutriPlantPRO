@@ -1916,7 +1916,10 @@ class NutriPlantMap {
     // Actualizar la interfaz
     this.updateDisplay();
     if (typeof setLocationAltitudeDisplay === 'function') {
-      setLocationAltitudeDisplay(locationData.elevationM);
+      if (Object.prototype.hasOwnProperty.call(locationData, 'elevationM')) {
+        var elv = Number(locationData.elevationM);
+        setLocationAltitudeDisplay(Number.isFinite(elv) ? elv : null);
+      }
     }
     
     // 🚀 CRÍTICO: Solo mostrar mensaje "Predio cargado" si realmente se cargó un polígono válido y visible
