@@ -18606,7 +18606,7 @@ function createVPDSectionHTML() {
       </div>
       <h2 class="text-xl" style="margin-bottom: 24px;">🌡️ Déficit de Presión de Vapor</h2>
       
-      <!-- CALCULADORA AMBIENTAL SIMPLE -->
+      <!-- CALCULADORA AMBIENTAL SIMPLE (arriba, como siempre; sin botón «Calcular»: el clima ya calcula; T/HR manual se recalcula al salir del campo) -->
       <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 12px; padding: 24px; margin-bottom: 32px;">
         <h3 style="margin: 0 0 20px 0; color: #0369a1; font-size: 18px; font-weight: 600;">
           📊 Calculadora Ambiental Simple
@@ -18617,7 +18617,7 @@ function createVPDSectionHTML() {
             <p style="margin: 0; color: #92400e; font-weight: 500;">
               ⚠️ Para usar esta calculadora, primero necesitas agregar un polígono desde la pestaña <strong>Ubicación</strong>.
             </p>
-      </div>
+          </div>
         ` : `
           <div style="margin-bottom: 16px;">
             <p style="margin: 0 0 8px 0; color: #64748b; font-size: 14px;">
@@ -18639,6 +18639,7 @@ function createVPDSectionHTML() {
                 id="vpd-env-temp" 
                 step="0.1" 
                 value="${envData.temperature || ''}"
+                onchange="calculateEnvironmentalVPD()"
                 style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;"
                 placeholder="Ej: 20.5"
               />
@@ -18653,28 +18654,22 @@ function createVPDSectionHTML() {
                 id="vpd-env-humidity" 
                 step="0.1" 
                 value="${envData.humidity || ''}"
+                onchange="calculateEnvironmentalVPD()"
                 style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;"
                 placeholder="Ej: 85"
               />
             </div>
           </div>
           
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+          <div style="margin-bottom: 16px;">
             <button 
-              onclick="getEnvironmentalWeatherData()"
-              style="padding: 14px; background: #0ea5e9; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;"
+              type="button"
+              onclick="getEnvironmentalWeatherData(event)"
+              style="padding: 14px 20px; background: #0ea5e9; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;"
               onmouseover="this.style.background='#0284c7'"
               onmouseout="this.style.background='#0ea5e9'"
             >
               🌐 Obtener del Clima
-            </button>
-            <button 
-              onclick="calculateEnvironmentalVPD()"
-              style="padding: 14px; background: #22c55e; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;"
-              onmouseover="this.style.background='#16a34a'"
-              onmouseout="this.style.background='#22c55e'"
-            >
-              📊 Calcular VPD
             </button>
           </div>
           
@@ -18838,6 +18833,10 @@ function createVPDSectionHTML() {
         <div id="vpd-advanced-results"></div>
       </div>
       
+      <p style="margin: 0 0 8px 0; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #475569; line-height: 1.45;">
+        <strong>Ajuste manual:</strong> usa los mismos campos de <em>Calculadora Ambiental Simple</em> arriba. No hay segundo botón de calcular: tras <em>Obtener del Clima</em> ya queda el VPD; si solo escribes o corrige T y HR, el resultado se actualiza al <strong>salir</strong> de cada campo (VPD simple con aire + humedad).
+      </p>
+      
       <!-- HISTORIAL -->
       ${history.length > 0 ? `
         <div style="margin-top: 32px; padding: 24px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
@@ -18919,7 +18918,7 @@ function loadVPDRangeSavedResults(opts) {
 // ===================================
 
 // Función para obtener datos del clima desde API
-async function getEnvironmentalWeatherData() {
+async function getEnvironmentalWeatherData(ev) {
   const currentProjectId = np_getCurrentProjectId();
   if (!currentProjectId) {
     alert('❌ No hay proyecto activo');
@@ -18933,11 +18932,12 @@ async function getEnvironmentalWeatherData() {
   }
   
   try {
-    // Mostrar loading
-    const button = event.target;
-    const originalText = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = '⏳ Obteniendo datos...';
+    const button = ev && ev.target;
+    const originalText = button ? button.innerHTML : '';
+    if (button) {
+      button.disabled = true;
+      button.innerHTML = '⏳ Obteniendo datos...';
+    }
     
     // Obtener datos del clima
     const weatherData = await getWeatherData(location.lat, location.lng);
@@ -18987,8 +18987,10 @@ async function getEnvironmentalWeatherData() {
       });
     }
     
-    button.disabled = false;
-    button.innerHTML = originalText;
+    if (button) {
+      button.disabled = false;
+      button.innerHTML = originalText;
+    }
     
     console.log('✅ Datos del clima obtenidos:', weatherData);
     console.log('✅ VPD calculado:', results);
@@ -18999,7 +19001,7 @@ async function getEnvironmentalWeatherData() {
     console.error('❌ Error obteniendo datos del clima:', error);
     alert('No se pudo obtener el clima automáticamente. Ingresa los datos manualmente.');
     
-    var btn = event && event.target;
+    var btn = ev && ev.target;
     if (btn) { btn.disabled = false; btn.innerHTML = '🌐 Obtener del Clima'; }
   }
 }
