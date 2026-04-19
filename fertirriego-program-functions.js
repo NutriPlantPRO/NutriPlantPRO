@@ -3,11 +3,11 @@
 // =====================================================
 
 // DB básica de fertilizantes solubles (porcentaje en masa)
-// Nota: En sulfatos el aporte va a SO4; S elemental = 0
+// Nota: En sulfatos use SO4 = % masa del ion SO₄²⁻ en el producto; en hidroponía S elemental = SO4/3 (32/96).
 const FERT_SOLUBLES_DB = [
   // Nitrogenados
-  { id: 'fosfonitrato_33_03_00', name: 'Fosfonitrato', N_NO3: 30, N_NH4: 3, P2O5: 3 },
-  { id: 'sulfato_amonio_soluble', name: 'Sulfato de Amonio Soluble', N_NO3: 0, N_NH4: 21, SO4: 60, S: 0 },
+  { id: 'fosfonitrato_33_03_00', name: 'Fosfonitrato', N_NO3: 16.5, N_NH4: 16.5, P2O5: 3 },
+  { id: 'sulfato_amonio_soluble', name: 'Sulfato de Amonio Soluble', N_NO3: 0, N_NH4: 21, SO4: 72, S: 0 },
 
   // Fosfatos
   { id: 'map', name: 'MAP', N_NO3: 0, N_NH4: 12, P2O5: 61 },
@@ -23,7 +23,7 @@ const FERT_SOLUBLES_DB = [
   { id: 'nitrato_calcio_granular', name: 'Nitrato de Calcio', N_NO3: 14.4, N_NH4: 1.1, CaO: 26 },
   { id: 'nitrato_calcio_cristal', name: 'Nitrato de Calcio Cristal', N_NO3: 12, N_NH4: 0, CaO: 23, MgO: 0.5 },
   { id: 'nitrato_magnesio', name: 'Nitrato de Magnesio', N_NO3: 10.8, N_NH4: 0, MgO: 15 },
-  { id: 'sulfato_magnesio', name: 'Sulfato de Magnesio', N_NO3: 0, N_NH4: 0, MgO: 16, SO4: 13, S: 0 },
+  { id: 'sulfato_magnesio', name: 'Sulfato de Magnesio', N_NO3: 0, N_NH4: 0, MgO: 16, SO4: 37.5, S: 0 },
 
   // Complejos NPK con micros
   { id: 'triple_19_me', name: 'Triple 19 +Me', N_NO3: 9.4, N_NH4: 9.7, P2O5: 19, K2O: 19, SO4: 3.9, Fe: 0.10, Mn: 0.05, B: 0.02, Zn: 0.015, Cu: 0.011, Mo: 0.007 },
