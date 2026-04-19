@@ -14,9 +14,9 @@ const FERT_SOLUBLES_DB = [
   { id: 'mkp', name: 'MKP', N_NO3: 0, N_NH4: 0, P2O5: 52, K2O: 34 },
 
   // Potasio y mezclas
-  { id: 'nks', name: 'NKS', N_NO3: 12, N_NH4: 0, K2O: 46, SO4: 3.6, S: 0 },
+  { id: 'nks', name: 'NKS', N_NO3: 12, N_NH4: 0, K2O: 46, SO4: 8.1, S: 0 },
   { id: 'nk_mg', name: 'NK+Mg', N_NO3: 13.0, N_NH4: 0, K2O: 46, MgO: 2 },
-  { id: 'sop', name: 'SOP', N_NO3: 0, N_NH4: 0, K2O: 50, SO4: 45, S: 0 },
+  { id: 'sop', name: 'SOP', N_NO3: 0, N_NH4: 0, K2O: 50, SO4: 51, S: 0 },
   { id: 'kcl_soluble', name: 'KCl Soluble', N_NO3: 0, N_NH4: 0, K2O: 60 },
 
   // Calcio y Magnesio
