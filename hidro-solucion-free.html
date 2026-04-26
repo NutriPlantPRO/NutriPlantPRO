@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Solución Nutritiva por Etapa</title>
+  <title>Calculadora de Solución Nutritiva</title>
   <link rel="stylesheet" href="dashboard.css" />
   <style>
     body {
@@ -58,6 +58,16 @@
       border-color: #1e3a8a;
       box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.25);
     }
+    /* Tabla ppm editable: conversión inversa ppm → meq/L */
+    #hydroPpmTableWrap input.hydro-input[data-type="ppm"] {
+      border: 2px solid #0f766e;
+      outline: none;
+      box-shadow: 0 0 0 1px rgba(15, 118, 110, 0.15);
+    }
+    #hydroPpmTableWrap input.hydro-input[data-type="ppm"]:focus {
+      border-color: #0d9488;
+      box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.25);
+    }
     @media (max-width: 600px) {
       .hydro-ternary-description {
         font-size: 0.75rem;
@@ -88,7 +98,8 @@
       <div class="tab-content active" id="hidro-solucion">
         <div class="hydro-card">
           <div class="hydro-card-header">
-            <h3>🧪 Solución nutritiva por etapa</h3>
+            <h3>🧪 Solución nutritiva</h3>
+            <p class="hydro-muted" style="margin:6px 0 0 0;font-size:0.8rem;">Podés editar <strong>meq/L</strong> o <strong>ppm</strong>; la otra fila y el % meq se recalculan (pesos equivalentes NutriPlant).</p>
             <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;"></p>
           </div>
           <div id="hydroMeqTableWrap" class="hydro-table-wrap"></div>
@@ -174,6 +185,16 @@
       return ppm;
     }
 
+    /** ppm (elemento / ion reportado) → meq/L, inverso de hydroComputeMacroPpm */
+    function hydroMeqFromMacroPpm(ppmRow) {
+      const meq = {};
+      HYDRO_MEQ_NUTRIENTS.forEach(n => {
+        const w = HYDRO_EQ_WEIGHTS[n];
+        meq[n] = w ? (parseFloat(ppmRow[n]) || 0) / w : 0;
+      });
+      return meq;
+    }
+
     function renderHydroMeqTable() {
       const wrap = document.getElementById('hydroMeqTableWrap');
       if (!wrap) return;
@@ -223,10 +244,10 @@
         const macroPpm = hydroComputeMacroPpm(stage);
         stage.ppm = { ...stage.ppm, ...macroPpm };
         return `
-          <tr>
+          <tr data-stage-id="${stage.id}">
             <td>${stage.name || ''}</td>
             <td>${stage.ce ?? ''}</td>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${(macroPpm[n] || stage.ppm?.[n] || 0).toFixed(1)}</td>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.1" value="${(macroPpm[n] != null ? macroPpm[n] : 0).toFixed(1)}"></td>`).join('')}
             ${HYDRO_MICROS.map((n, idx) => `<td class="${idx === 0 ? 'hydro-micro-start' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.01" value="${stage.ppm?.[n] ?? 0}"></td>`).join('')}
           </tr>
         `;
@@ -517,7 +538,24 @@
           renderHydroTriangle();
         }
         if (type === 'ppm' && nutrient) {
-          stage.ppm[nutrient] = parseFloat(input.value) || 0;
+          if (HYDRO_MEQ_NUTRIENTS.indexOf(nutrient) >= 0) {
+            const tr = input.closest('tr');
+            if (tr) {
+              const ppmRow = {};
+              HYDRO_MEQ_NUTRIENTS.forEach(n => {
+                const el = tr.querySelector(`input[data-type="ppm"][data-nutrient="${n}"]`);
+                ppmRow[n] = parseFloat(el && el.value) || 0;
+              });
+              Object.assign(stage.meq, hydroMeqFromMacroPpm(ppmRow));
+              stage.ce = hydroComputeCE(stage).toFixed(2);
+              Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
+              renderHydroMeqTable();
+              renderHydroDerivedTables();
+              renderHydroTriangle();
+            }
+          } else {
+            stage.ppm[nutrient] = parseFloat(input.value) || 0;
+          }
         }
       });
 
