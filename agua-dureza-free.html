@@ -311,24 +311,24 @@
                 </tr>
                 <tr>
                   <td>Dura</td>
-                  <td>120 a &lt; 200</td>
-                  <td>2,40 a &lt; 4,00</td>
-                  <td>6,72 a &lt; 11,21</td>
-                  <td>12,0 a &lt; 20,0</td>
-                  <td>8,42 a &lt; 14,04</td>
+                  <td>120 a &lt; 180</td>
+                  <td>2,40 a &lt; 3,60</td>
+                  <td>6,72 a &lt; 10,08</td>
+                  <td>12,0 a &lt; 18,0</td>
+                  <td>8,42 a &lt; 12,63</td>
                 </tr>
                 <tr>
                   <td>Muy dura</td>
-                  <td>≥ 200</td>
-                  <td>≥ 4,00</td>
-                  <td>≥ 11,21</td>
-                  <td>≥ 20,0</td>
-                  <td>≥ 14,04</td>
+                  <td>≥ 180</td>
+                  <td>≥ 3,60</td>
+                  <td>≥ 10,08</td>
+                  <td>≥ 18,0</td>
+                  <td>≥ 12,63</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <p class="ref-foot">* «Muy dura» en esta herramienta a partir de <strong>200</strong> mg/L como CaCO₃ (corte algo más exigente que en tablas estricto-US que usan 180). Los rangos en meq/L y grados se redondean a 2 decimales; el valor manda siempre el bloque de mg/L/ppm al comparar con tu análisis.</p>
+          <p class="ref-foot">* Tramos de <strong>mg/L como CaCO₃</strong> alineados con la clasificación de uso frecuente (p. ej. <a href="https://www.usgs.gov/special-topics/water-science-school/science/hardness-water" rel="noopener noreferrer" target="_blank">USGS</a>): 0–60 blanda, 61–120 moderadamente, 121–180 dura, &gt;180 muy dura. En esta app: <em>Dura</em> = 120 a &lt; 180, <em>Muy dura</em> = ≥ 180, equivalente al corte &gt;180. Los meq/L y grados son equivalentes aproximados de esos límites (2 dec.); manda el valor en mg/L/ppm frente a tu análisis.</p>
         </div>
       </div>
     </div>
@@ -603,14 +603,13 @@
     }
 
     /**
-     * Tramos orientativos (mg/L como CaCO₃). "Muy dura" a partir de 200
-     * evita que valores apenas por encima de 180 (p. ej. 182) se sienten
-     * como error; muchas guías usan 180 o 200 como corte — aquí 200 = muy dura.
+     * Tramos mg/L como CaCO₃ alineados con referencia tipo USGS: dura 121–180,
+     * muy dura &gt;180. Aquí: Dura 120 a &lt; 180, Muy dura ≥ 180.
      */
     function hardnessClassByPpm(ppm) {
       if (ppm < 60) return 'Blanda';
       if (ppm < 120) return 'Moderadamente dura';
-      if (ppm < 200) return 'Dura';
+      if (ppm < 180) return 'Dura';
       return 'Muy dura';
     }
 
