@@ -1302,8 +1302,16 @@ function loadChartJs(callback){
   s.onload = callback; document.head.appendChild(s);
 }
 
-function getFertiWeekLabels(){
-  return fertiWeeks.map((w, i) => `${fertiTimeUnit === 'mes' ? 'Mes' : 'Semana'} ${i+1}`);
+/** Etiqueta eje X gráficas: 1.ª línea Mes/Semana N, 2.ª línea nombre de etapa del programa (si hay). */
+function fertiBuildChartAxisLabel(timeUnit, weekObj, index0) {
+  const slot = timeUnit === 'mes' ? 'Mes' : 'Semana';
+  const line1 = `${slot} ${index0 + 1}`;
+  const st = weekObj && weekObj.stage && String(weekObj.stage).trim() ? String(weekObj.stage).trim() : '';
+  return st ? `${line1}\n${st}` : line1;
+}
+
+function getFertiWeekLabels() {
+  return fertiWeeks.map((w, i) => fertiBuildChartAxisLabel(fertiTimeUnit, w, i));
 }
 
 function updateFertiCharts(){
@@ -1363,10 +1371,12 @@ function updateFertiCharts(){
       macroLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg' };
     }
 
+    const chartHasStageSubLabels = fertiWeeks.some(w => w && w.stage && String(w.stage).trim());
     const makeChartOptions = () => ({
       responsive: true,
       maintainAspectRatio: true,
       animation: { duration: 180, easing: 'easeOutQuad' },
+      layout: { padding: { bottom: chartHasStageSubLabels ? 14 : 4 } },
       plugins: {
         legend: {
           position: 'top',
@@ -1470,7 +1480,8 @@ function getFertiChartsDataUrlsForReport(program, callback) {
   loadChartJs(function() {
     const weeks = program.weeks;
     const timeUnit = program.timeUnit || 'semana';
-    const labels = weeks.map(function(w, i) { return (timeUnit === 'mes' ? 'Mes' : 'Semana') + ' ' + (i + 1); });
+    const labels = weeks.map(function(w, i) { return fertiBuildChartAxisLabel(timeUnit, w, i); });
+    const reportHasStageSubLabels = weeks.some(function(w) { return w && w.stage && String(w.stage).trim(); });
     const totalStages = labels.length;
     const reportTickRotation = totalStages >= 16 ? 90 : (totalStages >= 10 ? 50 : 0);
     const reportTickAutoSkip = totalStages >= 16;
@@ -1513,6 +1524,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
           responsive: false,
           maintainAspectRatio: false,
           animation: false,
+          layout: { padding: { bottom: reportHasStageSubLabels ? 14 : 4 } },
           plugins: {
             legend: {
               display: true,
@@ -1547,6 +1559,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
           responsive: false,
           maintainAspectRatio: false,
           animation: false,
+          layout: { padding: { bottom: reportHasStageSubLabels ? 14 : 4 } },
           plugins: {
             legend: {
               display: true,

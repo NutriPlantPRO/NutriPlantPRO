@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍃 Calculadora de Dureza y Acondicionamiento de Agua</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --line: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --leaf: #0f766e;
+      --leaf-soft: #ecfdf5;
+      --warn-bg: #fff7ed;
+      --warn-line: #fdba74;
+      --tip-bg: #eff6ff;
+      --tip-line: #93c5fd;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 14px;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 3px 12px rgba(2, 8, 23, 0.04);
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0 0 8px 0;
+      color: #065f46;
+    }
+    h2 {
+      font-size: 15px;
+      margin: 0 0 10px 0;
+      color: #0f172a;
+    }
+    p.note {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 10px;
+    }
+    .field label {
+      display: block;
+      font-weight: 600;
+      font-size: 12px;
+      color: #1f2937;
+      margin-bottom: 6px;
+    }
+    .field input, .field select {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+    .field input:focus, .field select:focus {
+      border-color: #14b8a6;
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+    }
+    .result-pill {
+      display: inline-block;
+      margin-top: 10px;
+      background: var(--leaf-soft);
+      border: 1px solid #86efac;
+      color: #166534;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 7px 12px;
+    }
+    .summary {
+      margin-top: 10px;
+      border: 1px solid #d1fae5;
+      background: #f0fdf4;
+      border-radius: 10px;
+      padding: 10px;
+      color: #166534;
+      line-height: 1.45;
+    }
+    .warn, .tip {
+      border-radius: 10px;
+      padding: 10px 12px;
+      line-height: 1.45;
+      margin-top: 8px;
+    }
+    .warn {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-line);
+      color: #9a3412;
+    }
+    .tip {
+      background: var(--tip-bg);
+      border: 1px solid var(--tip-line);
+      color: #1e40af;
+    }
+    .kpi {
+      border: 1px solid #bae6fd;
+      background: #f0f9ff;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 10px;
+      color: #0c4a6e;
+    }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>🍃 Calculadora de Dureza y Acondicionamiento de Agua</h1>
+      <p class="note">
+        Calculadora independiente para conversión de dureza, clasificación del agua y estimación de ácido con colchón de seguridad (residual objetivo).
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>1) Dureza del agua (conversiones y rango)</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="hardnessPpm">Dureza como CaCO₃ (ppm o mg/L)</label>
+          <input id="hardnessPpm" type="number" step="0.01" min="0" value="180">
+        </div>
+        <div class="field">
+          <label for="hardnessMeq">Dureza (meq/L)</label>
+          <input id="hardnessMeq" type="number" step="0.01" min="0" value="3.60">
+        </div>
+        <div class="field">
+          <label for="hardnessDh">Dureza (°dH)</label>
+          <input id="hardnessDh" type="number" step="0.01" min="0" value="10.08">
+        </div>
+        <div class="field">
+          <label for="hardnessEh">Dureza (°e)</label>
+          <input id="hardnessEh" type="number" step="0.01" min="0" value="12.63">
+        </div>
+        <div class="field">
+          <label for="hardnessFh">Dureza (°fH)</label>
+          <input id="hardnessFh" type="number" step="0.01" min="0" value="18.00">
+        </div>
+      </div>
+      <div class="result-pill" id="hardnessClass">Clasificación: Dura</div>
+      <div class="summary" id="hardnessSummary"></div>
+    </div>
+
+    <div class="card">
+      <h2>2) Ácido para neutralizar HCO₃⁻ y CO₃²⁻ (con colchón)</h2>
+      <p class="note">
+        Meq ácido = (HCO₃⁻ + CO₃²⁻) − residual objetivo. Si el resultado es negativo, se toma como 0.
+      </p>
+      <div class="grid" style="margin-top:10px;">
+        <div class="field">
+          <label for="hco3Meq">HCO₃⁻ (meq/L)</label>
+          <input id="hco3Meq" type="number" step="0.01" min="0" value="2.00">
+        </div>
+        <div class="field">
+          <label for="co3Meq">CO₃²⁻ (meq/L)</label>
+          <input id="co3Meq" type="number" step="0.01" min="0" value="0.00">
+        </div>
+        <div class="field">
+          <label for="residualMeq">Residual objetivo (meq/L)</label>
+          <input id="residualMeq" type="number" step="0.01" min="0" value="1.00">
+        </div>
+        <div class="field">
+          <label for="waterVolumeM3">Volumen de agua (m³)</label>
+          <input id="waterVolumeM3" type="number" step="0.01" min="0" value="1.00">
+        </div>
+        <div class="field">
+          <label for="acidSelect">Ácido</label>
+          <select id="acidSelect"></select>
+        </div>
+      </div>
+
+      <div class="kpi" id="acidResult"></div>
+
+      <div class="warn">
+        ⚠️ Referencia técnica: no neutralizar al 100% por defecto. Ajusta con colchón (residual objetivo) y valida pH final de la solución.
+      </div>
+      <div class="tip">
+        💡 Tip de aplicación foliar: prioriza compatibilidad del producto y rango de pH recomendado en etiqueta. Esta herramienta orienta, no reemplaza prueba de mezcla.
+      </div>
+      <div class="tip" style="margin-top:6px;">
+        🧪 El cálculo es estimado según tus datos de entrada. Usa EPP y buenas prácticas al manipular ácidos.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const EQ_CACO3 = 50.043; // mg/meq como CaCO3.
+    const PPM_PER_DH = 17.848;
+    const PPM_PER_EH = 14.254;
+    const PPM_PER_FH = 10.0;
+
+    // Catálogo homologado con "Análisis de Agua" del dashboard.
+    const acids = [
+      { id: 'acido_nitrico_55', name: 'Ácido Nítrico 55%', meqPerMl: 11.6, densityKgL: 1.37 },
+      { id: 'acido_sulfurico_98', name: 'Ácido Sulfúrico 98%', meqPerMl: 36.7, densityKgL: 1.84 },
+      { id: 'acido_fosforico_75', name: 'Ácido Fosfórico 75%', meqPerMl: 12.0, densityKgL: 1.57 },
+      { id: 'acido_fosforico_85', name: 'Ácido Fosfórico 85%', meqPerMl: 14.6, densityKgL: 1.69 }
+    ];
+
+    const el = {
+      ppm: document.getElementById('hardnessPpm'),
+      meq: document.getElementById('hardnessMeq'),
+      dh: document.getElementById('hardnessDh'),
+      eh: document.getElementById('hardnessEh'),
+      fh: document.getElementById('hardnessFh'),
+      hClass: document.getElementById('hardnessClass'),
+      hSummary: document.getElementById('hardnessSummary'),
+      hco3: document.getElementById('hco3Meq'),
+      co3: document.getElementById('co3Meq'),
+      residual: document.getElementById('residualMeq'),
+      volume: document.getElementById('waterVolumeM3'),
+      acid: document.getElementById('acidSelect'),
+      acidResult: document.getElementById('acidResult')
+    };
+
+    function n(v) { return Math.max(0, parseFloat(v) || 0); }
+    function f(v, d = 2) { return (parseFloat(v) || 0).toFixed(d); }
+
+    function fillAcids() {
+      el.acid.innerHTML = acids.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+      el.acid.value = 'acido_nitrico_55';
+    }
+
+    function hardnessClassByPpm(ppm) {
+      if (ppm < 60) return 'Blanda';
+      if (ppm < 120) return 'Moderadamente dura';
+      if (ppm < 180) return 'Dura';
+      return 'Muy dura';
+    }
+
+    function updateFromPpm(ppmRaw) {
+      const ppm = n(ppmRaw);
+      const meq = ppm / EQ_CACO3;
+      const dh = ppm / PPM_PER_DH;
+      const eh = ppm / PPM_PER_EH;
+      const fh = ppm / PPM_PER_FH;
+      el.ppm.value = f(ppm, 2);
+      el.meq.value = f(meq, 2);
+      el.dh.value = f(dh, 2);
+      el.eh.value = f(eh, 2);
+      el.fh.value = f(fh, 2);
+
+      const cls = hardnessClassByPpm(ppm);
+      el.hClass.textContent = `Clasificación: ${cls}`;
+      el.hSummary.innerHTML = `
+        <strong>Lectura rápida:</strong> ${cls} · ${f(ppm, 1)} ppm como CaCO₃.<br>
+        <span class="muted">Equivalente estimado: ${f(meq, 2)} meq/L · ${f(dh, 2)} °dH · ${f(eh, 2)} °e · ${f(fh, 2)} °fH.</span>
+      `;
+    }
+
+    function updateAcidCalc() {
+      const hco3 = n(el.hco3.value);
+      const co3 = n(el.co3.value);
+      const residual = n(el.residual.value);
+      const volM3 = n(el.volume.value);
+      const acid = acids.find(a => a.id === el.acid.value) || acids[0];
+      const sourceMeq = hco3 + co3;
+      const needMeq = Math.max(0, sourceMeq - residual);
+      const meqPerMl = parseFloat(acid && acid.meqPerMl) || 0;
+      const mlPerM3 = meqPerMl > 0 ? needMeq / meqPerMl : 0;
+      const totalMl = mlPerM3 * volM3;
+      const totalL = totalMl / 1000;
+      const totalKg = totalL * (parseFloat(acid && acid.densityKgL) || 0);
+
+      el.acidResult.innerHTML = `
+        <strong>Resultado con ${acid.name}:</strong><br>
+        Meq/L a neutralizar = (${f(hco3, 2)} + ${f(co3, 2)}) − ${f(residual, 2)} = <strong>${f(needMeq, 2)} meq/L</strong><br>
+        Dosis estimada = <strong>${f(mlPerM3, 2)} mL/m³</strong><br>
+        Para ${f(volM3, 2)} m³: <strong>${f(totalL, 3)} L</strong> (${f(totalMl, 1)} mL) · aprox. <strong>${f(totalKg, 3)} kg</strong>
+      `;
+    }
+
+    function onHardnessInput(source) {
+      if (source === 'ppm') updateFromPpm(el.ppm.value);
+      if (source === 'meq') updateFromPpm(n(el.meq.value) * EQ_CACO3);
+      if (source === 'dh') updateFromPpm(n(el.dh.value) * PPM_PER_DH);
+      if (source === 'eh') updateFromPpm(n(el.eh.value) * PPM_PER_EH);
+      if (source === 'fh') updateFromPpm(n(el.fh.value) * PPM_PER_FH);
+    }
+
+    fillAcids();
+    updateFromPpm(el.ppm.value);
+    updateAcidCalc();
+
+    el.ppm.addEventListener('input', () => onHardnessInput('ppm'));
+    el.meq.addEventListener('input', () => onHardnessInput('meq'));
+    el.dh.addEventListener('input', () => onHardnessInput('dh'));
+    el.eh.addEventListener('input', () => onHardnessInput('eh'));
+    el.fh.addEventListener('input', () => onHardnessInput('fh'));
+
+    [el.hco3, el.co3, el.residual, el.volume, el.acid].forEach(node => {
+      node.addEventListener('input', updateAcidCalc);
+      node.addEventListener('change', updateAcidCalc);
+    });
+  </script>
+</body>
+</html>

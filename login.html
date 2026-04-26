@@ -260,6 +260,11 @@
           <span class="button-text">Calculadora de Solución Nutritiva</span>
         </button>
 
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showWaterHardnessCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🍃</span>
+          <span class="button-text">Calculadora de Dureza y Acondicionamiento</span>
+        </button>
+
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showVPDCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🌡️</span>
           <span class="button-text">Calculadora de Déficit de Presión de Vapor</span>
@@ -778,6 +783,26 @@
       background: #f8fafc;
     }
 
+    .modal-water-hardness {
+      max-width: 1280px;
+      width: 96%;
+      max-height: 92vh;
+      overflow: hidden;
+    }
+
+    .modal-water-hardness .modal-body {
+      padding: 0;
+      height: calc(92vh - 80px);
+    }
+
+    .modal-water-hardness iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #f8fafc;
+    }
+
     .modal-granular-mix {
       max-width: 1280px;
       width: 96%;
@@ -1207,6 +1232,19 @@
       if (frame) frame.src = frame.src;
     }
 
+    // Calculadora de Dureza y Acondicionamiento (gratis en login, independiente)
+    function showWaterHardnessCalculator() {
+      const modal = document.getElementById('waterHardnessCalculatorModal');
+      modal.style.display = 'flex';
+    }
+
+    function closeWaterHardnessCalculator() {
+      const modal = document.getElementById('waterHardnessCalculatorModal');
+      const frame = document.getElementById('waterHardnessCalculatorFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     function clearNutrientUnitsCalculator() {
       const inputs = document.querySelectorAll('#nutrientUnitsCalculatorModal input');
       inputs.forEach(input => input.value = '');
@@ -1355,6 +1393,10 @@
       const hydroSolutionModal = document.getElementById('hydroSolutionCalculatorModal');
       if (e.target === hydroSolutionModal) {
         closeHydroSolutionCalculator();
+      }
+      const waterHardnessModal = document.getElementById('waterHardnessCalculatorModal');
+      if (e.target === waterHardnessModal) {
+        closeWaterHardnessCalculator();
       }
       const amendmentModal = document.getElementById('amendmentCalculatorModal');
       if (e.target === amendmentModal) {
@@ -1848,6 +1890,21 @@
       </div>
       <div class="modal-body">
         <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html" title="Calculadora de Solución Nutritiva"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Calculadora de Dureza y Acondicionamiento -->
+  <div id="waterHardnessCalculatorModal" class="modal-overlay">
+    <div class="modal modal-water-hardness">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          🍃 Calculadora de Dureza y Acondicionamiento de Agua
+        </h2>
+        <button class="modal-close" onclick="closeWaterHardnessCalculator()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html" title="Calculadora de Dureza y Acondicionamiento de Agua"></iframe>
       </div>
     </div>
   </div>
