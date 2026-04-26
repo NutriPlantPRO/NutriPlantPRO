@@ -62,6 +62,9 @@
     .section-head--green {
       background: linear-gradient(90deg, #0d9488 0%, #14b8a6 50%, #2dd4bf 100%);
     }
+    .section-head--violet {
+      background: linear-gradient(90deg, #5b21b6 0%, #7c3aed 50%, #a78bfa 100%);
+    }
     .section-head--blue {
       background: linear-gradient(90deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);
     }
@@ -119,9 +122,44 @@
       box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
     }
     .field--blue .acid-in { border-color: #7dd3fc; }
+    .field--violet .ion-in, .field--violet .ion-unit {
+      border: 1px solid #c4b5fd;
+    }
+    .field--violet .ion-in:focus, .field--violet .ion-unit:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+      outline: none;
+    }
     .field--blue .acid-in:focus {
       border-color: #0ea5e9;
       box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+    }
+    .ion-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .ion-row .ion-in {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 14px;
+      background: #fff;
+    }
+    .ion-row .ion-unit {
+      flex: 0 0 100px;
+      border-radius: 8px;
+      padding: 9px 8px;
+      font-size: 13px;
+      background: #fff;
+    }
+    .ion-out {
+      font-weight: 700;
+      color: #4c1d95;
+      background: #faf5ff !important;
+      cursor: default;
     }
     .field select {
       width: 100%;
@@ -145,6 +183,16 @@
       font-weight: 700;
       border-radius: 999px;
       padding: 8px 14px;
+    }
+    .result-pill--violet {
+      background: linear-gradient(90deg, #ede9fe, #f5f3ff);
+      border: 1px solid #a78bfa;
+      color: #4c1d95;
+    }
+    .summary--violet {
+      border: 1px solid #c4b5fd;
+      background: linear-gradient(180deg, #f5f3ff 0%, #faf5ff 100%);
+      color: #4c1d95;
     }
     .summary {
       margin-top: 10px;
@@ -190,7 +238,7 @@
       <div class="card-hero">
         <h1>🍃 Calculadora de Dureza y Acondicionamiento de Agua</h1>
         <p class="note">
-          Calculadora independiente para conversión de dureza, clasificación del agua y estimación de ácido con colchón de seguridad (residual objetivo).
+          Calculadora independiente: <strong>1</strong> conversión y tiras o método sencillo; <strong>2</strong> dureza desde Ca y Mg de laboratorio; <strong>3</strong> dosis de ácido con colchón (residual objetivo).
         </p>
       </div>
     </div>
@@ -232,8 +280,48 @@
     </div>
 
     <div class="card">
-      <h2 class="section-head section-head--blue">
+      <h2 class="section-head section-head--violet">
         <span class="section-badge">2</span>
+        Dureza por Ca + Mg
+      </h2>
+      <div class="section-body">
+        <p class="section-note">👉 Para quien trae análisis de laboratorio. Elige en cada renglón si el valor de Ca o Mg está en <strong>ppm (mg/L)</strong> o en <strong>meq/L</strong>; al salir de la casilla se redondea.</p>
+        <div class="input-matrix">
+          <div class="input-matrix__grid">
+            <div class="field field--violet">
+              <label for="caLab">Calcio (Ca) — ppm o meq/L</label>
+              <div class="ion-row">
+                <input id="caLab" class="ion-in" type="text" inputmode="decimal" autocomplete="off" value="" placeholder="ej. 40" data-ion="ca" />
+                <select id="caLabUnit" class="ion-unit" data-ion-unit="ca" aria-label="Unidad de calcio">
+                  <option value="ppm" selected>ppm</option>
+                  <option value="meq">meq/L</option>
+                </select>
+              </div>
+            </div>
+            <div class="field field--violet">
+              <label for="mgLab">Magnesio (Mg) — ppm o meq/L</label>
+              <div class="ion-row">
+                <input id="mgLab" class="ion-in" type="text" inputmode="decimal" autocomplete="off" value="" placeholder="ej. 12" data-ion="mg" />
+                <select id="mgLabUnit" class="ion-unit" data-ion-unit="mg" aria-label="Unidad de magnesio">
+                  <option value="ppm" selected>ppm</option>
+                  <option value="meq">meq/L</option>
+                </select>
+              </div>
+            </div>
+            <div class="field field--violet">
+              <label for="labCaco3Out">Dureza total como CaCO₃ (resultado)</label>
+              <input id="labCaco3Out" type="text" readonly class="ion-in ion-out" value="" placeholder="—" title="Suma de las contribuciones de Ca y Mg a equivalente CaCO₃" />
+            </div>
+          </div>
+        </div>
+        <div class="result-pill result-pill--violet" id="labClass">Clasificación: —</div>
+        <div class="summary summary--violet" id="labSummary"><span class="muted">Introduce al menos un valor (Ca o Mg) del análisis.</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-head section-head--blue">
+        <span class="section-badge">3</span>
         Ácido para neutralizar HCO₃⁻ y CO₃²⁻ (con colchón)
       </h2>
       <div class="section-body">
@@ -285,6 +373,9 @@
 
   <script>
     const EQ_CACO3 = 50.043;
+    /** Equivalente mg/L como CaCO₃ a partir de mg/L del catión (dureza clásica). */
+    const PPM_CACO3_PER_PPM_CA = 100.086 / 40.078;
+    const PPM_CACO3_PER_PPM_MG = 100.086 / 24.305;
     const PPM_PER_DH = 17.848;
     const PPM_PER_EH = 14.254;
     const PPM_PER_FH = 10.0;
@@ -304,6 +395,13 @@
       fh: document.getElementById('hardnessFh'),
       hClass: document.getElementById('hardnessClass'),
       hSummary: document.getElementById('hardnessSummary'),
+      caLab: document.getElementById('caLab'),
+      mgLab: document.getElementById('mgLab'),
+      caLabU: document.getElementById('caLabUnit'),
+      mgLabU: document.getElementById('mgLabUnit'),
+      labOut: document.getElementById('labCaco3Out'),
+      labClass: document.getElementById('labClass'),
+      labSummary: document.getElementById('labSummary'),
       hco3: document.getElementById('hco3Meq'),
       co3: document.getElementById('co3Meq'),
       residual: document.getElementById('residualMeq'),
@@ -338,6 +436,73 @@
     function setHardnessEmptyUI() {
       el.hClass.textContent = 'Clasificación: —';
       el.hSummary.innerHTML = '<span class="muted">Introduce dureza en cualquier unidad (ppm, meq/L, °dH, °e, °fH).</span>';
+    }
+
+    function isAllLabEmpty() {
+      return String(el.caLab.value).trim() === '' && String(el.mgLab.value).trim() === '';
+    }
+
+    function caco3FromCaPpmOrMeq(v, unit) {
+      if (unit === 'meq') return v * EQ_CACO3;
+      return v * PPM_CACO3_PER_PPM_CA;
+    }
+    function caco3FromMgPpmOrMeq(v, unit) {
+      if (unit === 'meq') return v * EQ_CACO3;
+      return v * PPM_CACO3_PER_PPM_MG;
+    }
+
+    function setLabEmptyUI() {
+      el.labClass.textContent = 'Clasificación: —';
+      el.labOut.value = '';
+      el.labOut.placeholder = '—';
+      el.labSummary.innerHTML = '<span class="muted">Introduce al menos un valor (Ca o Mg) del análisis.</span>';
+    }
+
+    function updateLabCalc() {
+      if (isAllLabEmpty()) {
+        setLabEmptyUI();
+        return;
+      }
+      const uCa = el.caLabU.value;
+      const uMg = el.mgLabU.value;
+      const caRaw = String(el.caLab.value).trim();
+      const mgRaw = String(el.mgLab.value).trim();
+      const vCa = caRaw === '' ? 0 : numOrZeroForDisplay(el.caLab.value);
+      const vMg = mgRaw === '' ? 0 : numOrZeroForDisplay(el.mgLab.value);
+      const partCa = caco3FromCaPpmOrMeq(vCa, uCa);
+      const partMg = caco3FromMgPpmOrMeq(vMg, uMg);
+      const total = partCa + partMg;
+      el.labOut.value = f(total, 2);
+      const cls = hardnessClassByPpm(total);
+      el.labClass.textContent = `Clasificación: ${cls}`;
+
+      const lineA = caRaw === ''
+        ? 'Ca: no indicado (0 en la suma).'
+        : (uCa === 'meq' ? `Ca: <strong>${f(vCa, 2)}</strong> meq/L` : `Ca: <strong>${f(vCa, 2)}</strong> ppm`) + ` → <strong>${f(partCa, 1)}</strong> ppm eq. CaCO₃.`;
+      const lineB = mgRaw === ''
+        ? 'Mg: no indicado (0 en la suma).'
+        : (uMg === 'meq' ? `Mg: <strong>${f(vMg, 2)}</strong> meq/L` : `Mg: <strong>${f(vMg, 2)}</strong> ppm`) + ` → <strong>${f(partMg, 1)}</strong> ppm eq. CaCO₃.`;
+
+      el.labSummary.innerHTML = `
+        ${lineA}<br>${lineB}<br>
+        <span class="muted">Suma durezas iónicas: ${f(partCa, 1)} + ${f(partMg, 1)} = <strong>${f(total, 2)} ppm</strong> como CaCO₃ · ${cls}.</span>
+      `;
+    }
+
+    function normalizeLabBlur(e) {
+      const t = e.target;
+      if (!t || t.id !== 'caLab' && t.id !== 'mgLab') return;
+      if (isAllLabEmpty()) {
+        setLabEmptyUI();
+        return;
+      }
+      if (String(t.value).trim() === '') {
+        updateLabCalc();
+        return;
+      }
+      const v = n(t.value);
+      t.value = f(v, 2);
+      updateLabCalc();
     }
 
     function setAcidPlaceholderUI() {
@@ -468,6 +633,7 @@
 
     fillAcids();
     setHardnessEmptyUI();
+    setLabEmptyUI();
     setAcidPlaceholderUI();
 
     Object.keys(hardnessFields).forEach((key) => {
@@ -482,6 +648,16 @@
       node.addEventListener('focusout', normalizeAcidInputBlur);
     });
     el.acid.addEventListener('change', updateAcidCalc);
+
+    [el.caLab, el.mgLab].forEach((node) => {
+      if (!node) return;
+      node.addEventListener('input', () => { updateLabCalc(); });
+      node.addEventListener('focusout', normalizeLabBlur);
+    });
+    [el.caLabU, el.mgLabU].forEach((node) => {
+      if (!node) return;
+      node.addEventListener('change', () => { updateLabCalc(); });
+    });
   </script>
 </body>
 </html>
