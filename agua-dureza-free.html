@@ -267,50 +267,6 @@
     .ref-escala td:first-child { font-weight: 600; color: #0f172a; }
     .ref-escala tbody tr:nth-child(odd) { background: #fff; }
     .ref-escala tbody tr:nth-child(even) { background: #f8fafc; }
-    .copy-box {
-      margin-top: 16px;
-      border: 1px solid #c7d2fe;
-      background: #eef2ff;
-      border-radius: 10px;
-      padding: 12px 14px;
-    }
-    .copy-box h3 {
-      margin: 0 0 8px 0;
-      font-size: 0.9rem;
-      color: #312e81;
-    }
-    .copy-box textarea {
-      width: 100%;
-      min-height: 200px;
-      border: 1px solid #a5b4fc;
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 13px;
-      line-height: 1.5;
-      color: #1e1b4b;
-      background: #fff;
-      font-family: ui-monospace, "Cascadia Code", "Segoe UI", sans-serif;
-      resize: vertical;
-    }
-    .copy-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .copy-btn {
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 13px;
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: 1px solid #6366f1;
-      background: #4f46e5;
-      color: #fff;
-    }
-    .copy-btn:hover { background: #4338ca; }
-    .copy-hint { font-size: 12px; color: #4338ca; }
   </style>
 </head>
 <body>
@@ -373,16 +329,6 @@
             </table>
           </div>
           <p class="ref-foot">* «Muy dura» en esta herramienta a partir de <strong>200</strong> mg/L como CaCO₃ (corte algo más exigente que en tablas estricto-US que usan 180). Los rangos en meq/L y grados se redondean a 2 decimales; el valor manda siempre el bloque de mg/L/ppm al comparar con tu análisis.</p>
-        </div>
-        <div class="copy-box">
-          <h3>📣 Texto listo para publicar (redes / WhatsApp / correo)</h3>
-          <p class="section-note" style="margin:0 0 8px 0;">Cópialo, pega en Instagram, X, Facebook o LinkedIn, y añade el <strong>enlace</strong> a esta página o a tu web donde tengas embebida la calculadora.</p>
-          <label for="socialCopy" class="muted" style="font-size:12px; display:none;">Texto</label>
-          <textarea id="socialCopy" readonly="readonly" title="Clic o botón copiar abajo."></textarea>
-          <div class="copy-row">
-            <button type="button" class="copy-btn" id="copySocialBtn" title="Copiar al portapapeles">Copiar texto</button>
-            <span class="copy-hint" id="copySocialHint" style="min-height:1.2em;" aria-live="polite"></span>
-          </div>
         </div>
       </div>
     </div>
@@ -779,57 +725,6 @@
       const v = n(t.value);
       t.value = f(v, 2);
     }
-
-    const SOCIAL_COPY_TEXT = `🍃 CALCULADORA DE DUREZA Y ACONDICIONAMIENTO DE AGUA (NutriPlant)
-
-Herramienta en 3 pasos:
-1️⃣ Conviertes dureza entre mg/L o ppm (como CaCO₃), meq/L, °dH alemán, °fH francés y °e inglés (Clark) — y ves la clasificación.
-2️⃣ Dureza total desde Ca y Mg del laboratorio (ppm o meq/L).
-3️⃣ Dosis orientativa de ácido para alcalinidad, con colchón (residual objetivo).
-
-📊 CLASIFICACIÓN (eje principal: mg/L o ppm como CaCO₃)
-• Blanda: < 60
-• Moderadamente dura: 60 a < 120
-• Dura: 120 a < 200
-• Muy dura: ≥ 200 (en esta app el corte "muy dura" es 200, no 180)
-
-📐 Mismos cortes aprox. en otras unidades (factores: 1 meq/L ≈ 50,0 ppm; 1°dH ≈ 17,85 ppm; 1°fH = 10 ppm; 1°e ≈ 14,25 ppm):
-
-Blanda — < 60 | < 1,20 meq/L | < 3,36 °dH | < 6,0 °fH | < 4,21 °e
-Moderadamente dura — 60 a < 120 | 1,20 a < 2,40 | 3,36 a < 6,72 | 6,0 a < 12,0 | 4,21 a < 8,42
-Dura — 120 a < 200 | 2,40 a < 4,00 | 6,72 a < 11,21 | 12,0 a < 20,0 | 8,42 a < 14,04
-Muy dura — ≥ 200 | ≥ 4,00 | ≥ 11,21 | ≥ 20,0 | ≥ 14,04
-
-🔗 (Pega aquí el enlace a la calculadora o a tu publicación / bio.)
-
-#riego #fertirriego #fertigación #agua #dureza #alcalinidad #agricultura #pH #laboratorio`;
-
-    (function initSocialShare() {
-      const ta = document.getElementById('socialCopy');
-      const btn = document.getElementById('copySocialBtn');
-      const hint = document.getElementById('copySocialHint');
-      if (ta) ta.value = SOCIAL_COPY_TEXT;
-      if (btn && ta) {
-        btn.addEventListener('click', async function () {
-          try {
-            await navigator.clipboard.writeText(ta.value);
-            if (hint) {
-              hint.textContent = '¡Copiado al portapapeles!';
-              setTimeout(function () { hint.textContent = ''; }, 2800);
-            }
-          } catch (err) {
-            ta.focus();
-            ta.select();
-            try {
-              document.execCommand('copy');
-              if (hint) hint.textContent = '¡Copiado!';
-            } catch (e2) {
-              if (hint) hint.textContent = 'Selecciona el texto y copia (Ctrl/Cmd+C).';
-            }
-          }
-        });
-      }
-    })();
 
     fillAcids();
     setHardnessEmptyUI();
