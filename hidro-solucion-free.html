@@ -195,6 +195,79 @@
       return meq;
     }
 
+    /** Tras re-render (innerHTML), el foco se pierde; se restaura el input activo (ppm) y el cursor. */
+    function hydroSavePpmInputFocusState(input) {
+      if (!input) return null;
+      const s = String(input.value || '');
+      return {
+        stageId: input.getAttribute('data-stage-id'),
+        nutrient: input.getAttribute('data-nutrient'),
+        type: 'ppm',
+        start: (typeof input.selectionStart === 'number' && !isNaN(input.selectionStart)) ? input.selectionStart : s.length,
+        end: (typeof input.selectionEnd === 'number' && !isNaN(input.selectionEnd)) ? input.selectionEnd : s.length
+      };
+    }
+    function hydroRestorePpmInputFocus(fi) {
+      if (!fi || !fi.stageId || !fi.nutrient) return;
+      const cur = document.activeElement;
+      if (cur && cur.getAttribute) {
+        const dt = cur.getAttribute('data-type');
+        if (dt === 'meq' || cur.getAttribute('data-field') === 'ce' || (cur.classList && cur.classList.contains('hydro-stage-select'))) return;
+      }
+      const wrap = document.getElementById('hydroPpmTableWrap');
+      if (!wrap) return;
+      const el = wrap.querySelector(
+        'input.hydro-input[data-type="ppm"][data-stage-id="' + fi.stageId + '"][data-nutrient="' + fi.nutrient + '"]'
+      );
+      if (!el) return;
+      el.focus();
+      if (el.setSelectionRange) {
+        const len = String(el.value).length;
+        const a = Math.max(0, Math.min(fi.start != null ? fi.start : len, len));
+        const b = Math.max(0, Math.min(fi.end != null ? fi.end : len, len));
+        try { el.setSelectionRange(a, b); } catch (e) { /* */ }
+      }
+    }
+
+    /** Recalcula N° meq/CE mientras tipeás en ppm, sin tocar la tabla de ppm (así no se rompe el foco). */
+    function hydroPatchMeqAndCeFromPpmState(container, stage) {
+      if (!container || !stage) return;
+      const id = stage.id;
+      HYDRO_MEQ_NUTRIENTS.forEach(n => {
+        const el = container.querySelector(
+          '#hydroMeqTableWrap input.hydro-input[data-type="meq"][data-stage-id="' + id + '"][data-nutrient="' + n + '"]'
+        );
+        if (el) {
+          const m = (stage.meq && stage.meq[n] != null) ? stage.meq[n] : 0;
+          const v = parseFloat(m) || 0;
+          if (el !== document.activeElement) el.value = v;
+        }
+      });
+      const ce = parseFloat(hydroComputeCE(stage)) || 0;
+      stage.ce = ce.toFixed(2);
+      const ceEl = container.querySelector(
+        '#hydroMeqTableWrap input.hydro-input[data-field="ce"][data-stage-id="' + id + '"]'
+      );
+      if (ceEl) ceEl.value = stage.ce;
+    }
+
+    const HYDRO_PPM_FULL_RENDER_MS = 220;
+    var hydroPpmRenderTimer = null;
+    var hydroPpmLastEditField = null;
+
+    function hydroSchedulePpmFullRender(focusToRestore) {
+      hydroPpmLastEditField = focusToRestore;
+      if (hydroPpmRenderTimer) clearTimeout(hydroPpmRenderTimer);
+      hydroPpmRenderTimer = setTimeout(function() {
+        hydroPpmRenderTimer = null;
+        const fi = hydroPpmLastEditField;
+        renderHydroMeqTable();
+        renderHydroDerivedTables();
+        renderHydroTriangle();
+        requestAnimationFrame(function() { hydroRestorePpmInputFocus(fi); });
+      }, HYDRO_PPM_FULL_RENDER_MS);
+    }
+
     function renderHydroMeqTable() {
       const wrap = document.getElementById('hydroMeqTableWrap');
       if (!wrap) return;
@@ -247,7 +320,7 @@
           <tr data-stage-id="${stage.id}">
             <td>${stage.name || ''}</td>
             <td>${stage.ce ?? ''}</td>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.1" value="${(macroPpm[n] != null ? macroPpm[n] : 0).toFixed(1)}"></td>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="text" inputmode="decimal" autocomplete="off" value="${(macroPpm[n] != null ? macroPpm[n] : 0).toFixed(1)}"></td>`).join('')}
             ${HYDRO_MICROS.map((n, idx) => `<td class="${idx === 0 ? 'hydro-micro-start' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.01" value="${stage.ppm?.[n] ?? 0}"></td>`).join('')}
           </tr>
         `;
@@ -439,7 +512,7 @@
       const [pNO3, pH2PO4, pSO4] = normalize(data.pNO3, data.pH2PO4, data.pSO4);
       const anPoint = toXYA(pNO3, pH2PO4, pSO4);
       const anInside = anZonePts.length >= 3 && hydroPointInPolygon(anPoint.x, anPoint.y, anZonePts);
-      const anCircle = `<circle cx="${anPoint.x}" cy="${anPoint.y}" r="6" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />`;
+      const anSquare = `<rect x="${anPoint.x - 6}" y="${anPoint.y - 6}" width="12" height="12" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />`;
 
       let tickLabels = '';
       for (let i = 1; i <= 9; i++) {
@@ -479,7 +552,7 @@
           ${cut55K}
           <polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#2563eb" stroke-width="2" />
           ${catCircle}
-          ${anCircle}
+          ${anSquare}
           ${tickLabels}
           ${edgeLabels}
     </svg>
@@ -541,6 +614,7 @@
           if (HYDRO_MEQ_NUTRIENTS.indexOf(nutrient) >= 0) {
             const tr = input.closest('tr');
             if (tr) {
+              const fi = hydroSavePpmInputFocusState(input);
               const ppmRow = {};
               HYDRO_MEQ_NUTRIENTS.forEach(n => {
                 const el = tr.querySelector(`input[data-type="ppm"][data-nutrient="${n}"]`);
@@ -549,9 +623,8 @@
               Object.assign(stage.meq, hydroMeqFromMacroPpm(ppmRow));
               stage.ce = hydroComputeCE(stage).toFixed(2);
               Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
-              renderHydroMeqTable();
-              renderHydroDerivedTables();
-              renderHydroTriangle();
+              hydroPatchMeqAndCeFromPpmState(container, stage);
+              hydroSchedulePpmFullRender(fi);
             }
           } else {
             stage.ppm[nutrient] = parseFloat(input.value) || 0;
@@ -568,6 +641,36 @@
         stage.name = select.value;
         renderHydroDerivedTables();
       });
+
+      container.addEventListener('focusout', (e) => {
+        const t = e.target;
+        if (!t || t.getAttribute('data-type') !== 'ppm') return;
+        const n = t.getAttribute('data-nutrient');
+        if (HYDRO_MEQ_NUTRIENTS.indexOf(n) < 0) return;
+        const rel = e.relatedTarget;
+        if (rel && rel.getAttribute && rel.getAttribute('data-type') === 'ppm' && rel.closest && rel.closest('.hydroponia-container')) return;
+        if (hydroPpmRenderTimer) {
+          clearTimeout(hydroPpmRenderTimer);
+          hydroPpmRenderTimer = null;
+        }
+        const stageId = t.getAttribute('data-stage-id');
+        const stage = hydroState.stages.find(s => s.id === stageId);
+        if (!stage) return;
+        const tr = t.closest('tr');
+        if (tr) {
+          const ppmRow = {};
+          HYDRO_MEQ_NUTRIENTS.forEach(nut => {
+            const el = tr.querySelector('input[data-type="ppm"][data-nutrient="' + nut + '"]');
+            ppmRow[nut] = parseFloat(el && el.value) || 0;
+          });
+          Object.assign(stage.meq, hydroMeqFromMacroPpm(ppmRow));
+          Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
+        }
+        stage.ce = hydroComputeCE(stage).toFixed(2);
+        renderHydroMeqTable();
+        renderHydroDerivedTables();
+        renderHydroTriangle();
+      }, true);
     }
 
     function boot() {

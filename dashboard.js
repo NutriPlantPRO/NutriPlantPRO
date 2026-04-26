@@ -1290,6 +1290,7 @@ function sectionTemplate(name) {
             <div class="hydro-card">
               <div class="hydro-card-header">
                 <h3>🧪 Solución nutritiva por etapa</h3>
+                <p class="hydro-muted" style="margin:0 0 0 0;font-size:0.8rem;">Podés editar <strong>meq/L</strong> (azul) o <strong>ppm</strong> de macronutrientes (verde); se recalculan al vuelo y <strong>se guardan con el proyecto</strong> (nube).</p>
                 <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;">Suma de N (meq/L) = N-NO₃⁻ + N-NH₄⁺. Cargando resumen de nitrato/amonio...</p>
               </div>
               <div id="hydroMeqTableWrap" class="hydro-table-wrap"></div>
@@ -14788,7 +14789,7 @@ function buildReportHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
       ${cutLine}
       <polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#2563eb" stroke-width="2" />
       <circle cx="${catPoint.x}" cy="${catPoint.y}" r="6" fill="${catInside ? '#ef4444' : '#b91c1c'}" stroke="#7f1d1d" stroke-width="1.2" />
-      <circle cx="${anPoint.x}" cy="${anPoint.y}" r="6" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />
+      <rect x="${anPoint.x - 6}" y="${anPoint.y - 6}" width="12" height="12" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />
       ${ticks}
       ${edgeLabels}
     </svg></div>`;

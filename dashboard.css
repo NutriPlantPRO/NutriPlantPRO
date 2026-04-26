@@ -3430,17 +3430,27 @@ body {
   box-sizing: border-box;
 }
 
-/* Contorno azul marino en meq y micros ppm (campos editables por el usuario) */
+/* Contorno azul: meq/L y micros ppm */
 #hydroMeqTableWrap input.hydro-input[data-type="meq"],
-#hydroPpmTableWrap input.hydro-input[data-type="ppm"] {
+#hydroPpmTableWrap input.hydro-input[data-type="ppm"]:not(.hydro-ppm-macro) {
   border: 2px solid #1e40af;
   outline: none;
   box-shadow: 0 0 0 1px rgba(30, 64, 175, 0.15);
 }
 #hydroMeqTableWrap input.hydro-input[data-type="meq"]:focus,
-#hydroPpmTableWrap input.hydro-input[data-type="ppm"]:focus {
+#hydroPpmTableWrap input.hydro-input[data-type="ppm"]:not(.hydro-ppm-macro):focus {
   border-color: #1e3a8a;
   box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.25);
+}
+/* ppm de macronutrientes: conversión a meq; borde verde (como calculadora en login) */
+#hydroPpmTableWrap input.hydro-ppm-macro {
+  border: 2px solid #0f766e;
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(15, 118, 110, 0.15);
+}
+#hydroPpmTableWrap input.hydro-ppm-macro:focus {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.25);
 }
 
 /* Cálculo hidro: 7 macros + 6 micros; micros un poco más anchas para Fe (pestaña azul) y decimales tipo 0.05 sin cortar */

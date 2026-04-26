@@ -75,6 +75,8 @@ let hydroCustomMaterialsUser = [];
 
 let hydroSaveTimer = null;
 let hydroRenderTimer = null;
+let hydroPpmLayoutTimer = null;
+const HYDRO_PPM_LAYOUT_MS = 220;
 
 function hydroGetProjectId() {
   try { if (window.projectManager && window.projectManager.getCurrentProject) { const p = window.projectManager.getCurrentProject(); if (p && p.id) return p.id; } } catch {}
@@ -385,6 +387,85 @@ function hydroComputeMacroPpm(stage) {
   return ppm;
 }
 
+/** Inversa de hydroComputeMacroPpm: ppm (elemento) → meq/L (mismos equivalentes de NutriPlant) */
+function hydroMeqFromMacroPpm(ppmRow) {
+  const meq = {};
+  HYDRO_MEQ_NUTRIENTS.forEach(n => {
+    const w = HYDRO_EQ_WEIGHTS[n];
+    meq[n] = w ? (parseFloat(ppmRow[n]) || 0) / w : 0;
+  });
+  return meq;
+}
+
+function hydroSavePpmInputFocusState(input) {
+  if (!input) return null;
+  const s = String(input.value || '');
+  return {
+    stageId: input.getAttribute('data-stage-id'),
+    nutrient: input.getAttribute('data-nutrient'),
+    type: 'ppm',
+    start: (typeof input.selectionStart === 'number' && !isNaN(input.selectionStart)) ? input.selectionStart : s.length,
+    end: (typeof input.selectionEnd === 'number' && !isNaN(input.selectionEnd)) ? input.selectionEnd : s.length
+  };
+}
+
+function hydroRestorePpmInputFocus(fi) {
+  if (!fi || !fi.stageId || !fi.nutrient) return;
+  const cur = document.activeElement;
+  if (cur && cur.getAttribute) {
+    const dt = cur.getAttribute('data-type');
+    if (dt === 'meq' || cur.getAttribute('data-field') === 'ce' || (cur.classList && cur.classList.contains('hydro-stage-select'))) return;
+  }
+  const wrap = document.getElementById('hydroPpmTableWrap');
+  if (!wrap) return;
+  const el = wrap.querySelector(
+    'input.hydro-ppm-macro[data-type="ppm"][data-stage-id="' + fi.stageId + '"][data-nutrient="' + fi.nutrient + '"]'
+  );
+  if (!el) return;
+  el.focus();
+  if (el.setSelectionRange) {
+    const len = String(el.value).length;
+    const a = Math.max(0, Math.min(fi.start != null ? fi.start : len, len));
+    const b = Math.max(0, Math.min(fi.end != null ? fi.end : len, len));
+    try { el.setSelectionRange(a, b); } catch (e) { /* */ }
+  }
+}
+
+/** Actualiza celdas meq/CE mientras tipeás en ppm (sin rearmar toda la tabla = no se cae el foco). */
+function hydroPatchMeqAndCeFromPpmState(root, stage) {
+  if (!root || !stage) return;
+  const id = stage.id;
+  HYDRO_MEQ_NUTRIENTS.forEach(n => {
+    const el = root.querySelector(
+      '#hydroMeqTableWrap input.hydro-input[data-type="meq"][data-stage-id="' + id + '"][data-nutrient="' + n + '"]'
+    );
+    if (el) {
+      const m = (stage.meq && stage.meq[n] != null) ? stage.meq[n] : 0;
+      const v = parseFloat(m) || 0;
+      if (el !== document.activeElement) el.value = v;
+    }
+  });
+  const ce = parseFloat(hydroComputeCE(stage)) || 0;
+  stage.ce = ce.toFixed(2);
+  const ceEl = root.querySelector(
+    '#hydroMeqTableWrap input.hydro-input[data-field="ce"][data-stage-id="' + id + '"]'
+  );
+  if (ceEl) ceEl.value = stage.ce;
+}
+
+function hydroSchedulePpmLayoutSync(focusInfo) {
+  if (hydroPpmLayoutTimer) clearTimeout(hydroPpmLayoutTimer);
+  hydroPpmLayoutTimer = setTimeout(function() {
+    hydroPpmLayoutTimer = null;
+    renderHydroStageTable();
+    renderHydroNitrogenSummary();
+    renderHydroTriangle();
+    renderHydroObjective();
+    renderHydroMissing();
+    requestAnimationFrame(function() { hydroRestorePpmInputFocus(focusInfo); });
+  }, HYDRO_PPM_LAYOUT_MS);
+}
+
 function renderHydroStageTable() {
   const meqWrap = document.getElementById('hydroMeqTableWrap');
   const ppmWrap = document.getElementById('hydroPpmTableWrap');
@@ -432,10 +513,10 @@ function renderHydroStageTable() {
     const macroPpm = hydroComputeMacroPpm(stage);
     stage.ppm = { ...stage.ppm, ...macroPpm };
     return `
-      <tr>
+      <tr data-stage-id="${stage.id}">
         <td>${stage.name || ''}</td>
         <td>${stage.ce ?? ''}</td>
-        ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${(macroPpm[n] || stage.ppm?.[n] || 0).toFixed(1)}</td>`).join('')}
+        ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input hydro-ppm-macro" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="text" inputmode="decimal" autocomplete="off" value="${(macroPpm[n] != null ? macroPpm[n] : 0).toFixed(1)}"></td>`).join('')}
         ${HYDRO_MICROS.map((n, idx) => `<td class="${idx === 0 ? 'hydro-micro-start' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.01" value="${stage.ppm?.[n] ?? 0}"></td>`).join('')}
       </tr>
     `;
@@ -683,7 +764,7 @@ function hydroDrawCombinedTernary(container, data) {
   const [pNO3, pH2PO4, pSO4] = normalize(data.pNO3, data.pH2PO4, data.pSO4);
   const anPoint = toXY_anion(pNO3, pH2PO4, pSO4);
   const anInside = anZonePts.length >= 3 && hydroPointInPolygon(anPoint.x, anPoint.y, anZonePts);
-  const anCircle = `<circle cx="${anPoint.x}" cy="${anPoint.y}" r="6" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />`;
+  const anSquare = `<rect x="${anPoint.x - 6}" y="${anPoint.y - 6}" width="12" height="12" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />`;
 
   // Como en el ejemplo: en las esquinas solo 100 (sin 0). Escalas de 10 en 10 hasta 100.
   // Base: de derecha abajo hacia izquierda → 10, 20, ..., 90 (100 en esquina izq).
@@ -728,7 +809,7 @@ function hydroDrawCombinedTernary(container, data) {
       ${cut55K}
       <polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#2563eb" stroke-width="2" />
       ${catCircle}
-      ${anCircle}
+      ${anSquare}
       ${tickLabels}
       ${edgeLabels}
     </svg>
@@ -1471,10 +1552,33 @@ function bindHydroEvents(container) {
       if (type === 'meq' && nutrient) {
         stage.meq = stage.meq || {};
         stage.meq[nutrient] = parseFloat(input.value) || 0;
-      }
-      if (type === 'ppm' && nutrient) {
-        stage.ppm = stage.ppm || {};
-        stage.ppm[nutrient] = parseFloat(input.value) || 0;
+      } else if (type === 'ppm' && nutrient) {
+        if (HYDRO_MEQ_NUTRIENTS.indexOf(nutrient) >= 0) {
+          const fi = hydroSavePpmInputFocusState(input);
+          const tr = input.closest('tr');
+          if (tr) {
+            const ppmRow = {};
+            HYDRO_MEQ_NUTRIENTS.forEach(n => {
+              const el = tr.querySelector('input.hydro-ppm-macro[data-type="ppm"][data-nutrient="' + n + '"]');
+              ppmRow[n] = parseFloat(el && el.value) || 0;
+            });
+            stage.meq = stage.meq || {};
+            Object.assign(stage.meq, hydroMeqFromMacroPpm(ppmRow));
+            Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
+            const root = input.closest('.hydroponia-container') || document.querySelector('.hydroponia-container');
+            if (root) hydroPatchMeqAndCeFromPpmState(root, stage);
+            renderHydroTriangle();
+            renderHydroNitrogenSummary();
+            renderHydroObjective();
+            renderHydroMissing();
+            hydroSchedulePpmLayoutSync(fi);
+            hydroScheduleSave();
+            return;
+          }
+        } else {
+          stage.ppm = stage.ppm || {};
+          stage.ppm[nutrient] = parseFloat(input.value) || 0;
+        }
       }
       if ((type === 'meq' && (nutrient === 'N_NO3' || nutrient === 'N_NH4')) || field === 'name') {
         renderHydroNitrogenSummary();
@@ -1542,10 +1646,23 @@ function bindHydroEvents(container) {
         if (type === 'meq' && nutrient) {
           stage.meq = stage.meq || {};
           stage.meq[nutrient] = parseFloat(target.value) || 0;
-        }
-        if (type === 'ppm' && nutrient) {
-          stage.ppm = stage.ppm || {};
-          stage.ppm[nutrient] = parseFloat(target.value) || 0;
+        } else if (type === 'ppm' && nutrient) {
+          if (HYDRO_MEQ_NUTRIENTS.indexOf(nutrient) >= 0) {
+            const tr = target.closest('tr');
+            if (tr) {
+              const ppmRow = {};
+              HYDRO_MEQ_NUTRIENTS.forEach(n2 => {
+                const el2 = tr.querySelector('input.hydro-ppm-macro[data-type="ppm"][data-nutrient="' + n2 + '"]');
+                ppmRow[n2] = parseFloat(el2 && el2.value) || 0;
+              });
+              stage.meq = stage.meq || {};
+              Object.assign(stage.meq, hydroMeqFromMacroPpm(ppmRow));
+              Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
+            }
+          } else {
+            stage.ppm = stage.ppm || {};
+            stage.ppm[nutrient] = parseFloat(target.value) || 0;
+          }
         }
         // Recalcular al salir del campo para reflejar el valor final.
         renderHydroStageTable();
@@ -1654,6 +1771,41 @@ function bindHydroEvents(container) {
       if (typeof window.openHydroNewMaterialModal === 'function') window.openHydroNewMaterialModal();
     });
   }
+
+  container.addEventListener('focusout', (e) => {
+    const t = e.target;
+    if (!t || t.getAttribute('data-type') !== 'ppm') return;
+    if (!t.classList || !t.classList.contains('hydro-ppm-macro')) return;
+    const n = t.getAttribute('data-nutrient');
+    if (HYDRO_MEQ_NUTRIENTS.indexOf(n) < 0) return;
+    const rel = e.relatedTarget;
+    if (rel && rel.getAttribute && rel.getAttribute('data-type') === 'ppm' && rel.classList && rel.classList.contains('hydro-ppm-macro') && rel.closest && rel.closest('.hydroponia-container')) return;
+    if (hydroPpmLayoutTimer) {
+      clearTimeout(hydroPpmLayoutTimer);
+      hydroPpmLayoutTimer = null;
+    }
+    const stageId = t.getAttribute('data-stage-id');
+    const stage = hydroState.stages.find(s => s.id === stageId);
+    if (!stage) return;
+    const tr = t.closest('tr');
+    if (tr) {
+      const ppmRow = {};
+      HYDRO_MEQ_NUTRIENTS.forEach(nut => {
+        const el = tr.querySelector('input.hydro-ppm-macro[data-type="ppm"][data-nutrient="' + nut + '"]');
+        ppmRow[nut] = parseFloat(el && el.value) || 0;
+      });
+      stage.meq = stage.meq || {};
+      Object.assign(stage.meq, hydroMeqFromMacroPpm(ppmRow));
+      Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
+    }
+    stage.ce = (hydroComputeCE(stage) || 0).toFixed(2);
+    renderHydroStageTable();
+    renderHydroNitrogenSummary();
+    renderHydroTriangle();
+    renderHydroObjective();
+    renderHydroMissing();
+    hydroScheduleSave();
+  }, true);
 }
 
 function hydroSaveLastTab(tabId) {
