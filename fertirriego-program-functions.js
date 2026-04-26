@@ -1322,12 +1322,28 @@ function resizeFertiCharts() {
   } catch (e) {}
 }
 
+function fertiChartDestroyIfOrphaned(chart) {
+  if (!chart) return null;
+  try {
+    if (!chart.canvas || !chart.canvas.isConnected) {
+      try { chart.destroy(); } catch (e) {}
+      return null;
+    }
+  } catch (e) {
+    try { chart.destroy(); } catch (e2) {}
+    return null;
+  }
+  return chart;
+}
+
 function updateFertiCharts(){
   loadChartJs(() => {
     fertiNormalizeChartWaterByStage();
     renderFertiChartWaterByStageInputs();
     // Asegurar totales por semana al día
     fertiWeeks.forEach(w => computeWeekTotals(w));
+    fertiMacroChart = fertiChartDestroyIfOrphaned(fertiMacroChart);
+    fertiMicroChart = fertiChartDestroyIfOrphaned(fertiMicroChart);
     const labels = getFertiWeekLabels();
     const mk = (n) => fertiWeeks.map(w => parseFloat(w.totals?.[n]||0));
 
@@ -1347,8 +1363,10 @@ function updateFertiCharts(){
     const chartPointHover = chartPoint + 1.1;
     const chartPointBorder = Math.max(1.2, chartStroke - 0.2);
     const xTickRotation = totalStages >= 16 ? 90 : (totalStages >= 10 ? 50 : 0);
-    const xTickAutoSkip = totalStages >= 16;
-    const xTickMaxLimit = totalStages >= 24 ? 12 : (totalStages >= 16 ? 14 : undefined);
+    // autoSkip: en programas largos evita amontonamiento; NO usar maxTicksLimit aquí: en eje
+    // tipo categoría (Mes 1, Mes 2, …) provoca en algunos entornos área de dibujo 0 o gráfico en blanco.
+    const xTickAutoSkip = totalStages >= 10;
+    const xLabelBottomPad = xTickRotation >= 90 ? 36 : (xTickRotation >= 50 ? 32 : 10);
     const makeDataset = (label, data, color) => ({
       label,
       data,
@@ -1381,9 +1399,9 @@ function updateFertiCharts(){
 
     const makeChartOptions = () => ({
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: false,
       animation: { duration: 180, easing: 'easeOutQuad' },
-      layout: { padding: { bottom: 4 } },
+      layout: { padding: { bottom: xLabelBottomPad, top: 6, left: 2, right: 6 } },
       plugins: {
         legend: {
           position: 'top',
@@ -1406,10 +1424,11 @@ function updateFertiCharts(){
         }
       },
       scales: {
-        y: { title: { display: true, text: 'Kg de nutriente' } },
+        y: { beginAtZero: true, title: { display: true, text: 'Kg de nutriente' } },
         x: {
+          type: 'category',
           title: { display: true, text: 'Etapa' },
-          ticks: { minRotation: xTickRotation, maxRotation: xTickRotation, autoSkip: xTickAutoSkip, maxTicksLimit: xTickMaxLimit }
+          ticks: { minRotation: xTickRotation, maxRotation: xTickRotation, autoSkip: xTickAutoSkip, autoSkipPadding: 4 }
         }
       }
     });
@@ -1451,32 +1470,68 @@ function updateFertiCharts(){
 
     const macroCtx = document.getElementById('fertiMacroChart');
     if (macroCtx) {
+      const opts = makeChartOptions();
       if (!fertiMacroChart) {
-        fertiMacroChart = new Chart(macroCtx.getContext('2d'), {
-          type: 'line',
-          data: { labels, datasets: macroDatasets },
-          options: makeChartOptions()
-        });
+        try {
+          fertiMacroChart = new Chart(macroCtx.getContext('2d'), {
+            type: 'line',
+            data: { labels, datasets: macroDatasets },
+            options: opts
+          });
+        } catch (e) { console.warn('Ferti macro chart create:', e); }
       } else {
-        syncChartSeries(fertiMacroChart, labels, macroDatasets, makeChartOptions());
+        try {
+          syncChartSeries(fertiMacroChart, labels, macroDatasets, opts);
+        } catch (e) {
+          console.warn('Ferti macro chart sync, recreando', e);
+          try { fertiMacroChart.destroy(); } catch (e2) {}
+          fertiMacroChart = null;
+          try {
+            fertiMacroChart = new Chart(macroCtx.getContext('2d'), {
+              type: 'line',
+              data: { labels, datasets: macroDatasets },
+              options: makeChartOptions()
+            });
+          } catch (e3) { console.warn('Ferti macro chart recreate:', e3); }
+        }
       }
     }
 
     const microCtx = document.getElementById('fertiMicroChart');
     if (microCtx) {
+      const opts2 = makeChartOptions();
       if (!fertiMicroChart) {
-        fertiMicroChart = new Chart(microCtx.getContext('2d'), {
-          type: 'line',
-          data: { labels, datasets: microDatasets },
-          options: makeChartOptions()
-        });
+        try {
+          fertiMicroChart = new Chart(microCtx.getContext('2d'), {
+            type: 'line',
+            data: { labels, datasets: microDatasets },
+            options: opts2
+          });
+        } catch (e) { console.warn('Ferti micro chart create:', e); }
       } else {
-        syncChartSeries(fertiMicroChart, labels, microDatasets, makeChartOptions());
+        try {
+          syncChartSeries(fertiMicroChart, labels, microDatasets, opts2);
+        } catch (e) {
+          console.warn('Ferti micro chart sync, recreando', e);
+          try { fertiMicroChart.destroy(); } catch (e2) {}
+          fertiMicroChart = null;
+          try {
+            fertiMicroChart = new Chart(microCtx.getContext('2d'), {
+              type: 'line',
+              data: { labels, datasets: microDatasets },
+              options: makeChartOptions()
+            });
+          } catch (e3) { console.warn('Ferti micro chart recreate:', e3); }
+        }
       }
     }
     renderFertiChartsInsights();
+    const doResize = () => { try { resizeFertiCharts(); } catch (e) {} };
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => { resizeFertiCharts(); });
+      requestAnimationFrame(() => {
+        doResize();
+        setTimeout(doResize, 120);
+      });
     });
   });
 }
@@ -1497,8 +1552,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
     const labels = weeks.map(function(w, i) { return fertiChartSlotLabelAtIndex(timeUnit, i); });
     const totalStages = labels.length;
     const reportTickRotation = totalStages >= 16 ? 90 : (totalStages >= 10 ? 50 : 0);
-    const reportTickAutoSkip = totalStages >= 16;
-    const reportTickMaxLimit = totalStages >= 24 ? 12 : (totalStages >= 16 ? 14 : undefined);
+    const reportTickAutoSkip = totalStages >= 10;
     function mk(n) { return weeks.map(function(w) { return parseFloat(w.totals && w.totals[n]) || 0; }); }
     var macros = { N_NO3: mk('N_NO3'), N_NH4: mk('N_NH4'), P2O5: mk('P2O5'), K2O: mk('K2O'), CaO: mk('CaO'), MgO: mk('MgO'), SO4: mk('SO4') };
     var micros = { Fe: mk('Fe'), Mn: mk('Mn'), B: mk('B'), Zn: mk('Zn'), Cu: mk('Cu'), Mo: mk('Mo') };
@@ -1551,7 +1605,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
           },
           scales: {
             y: { beginAtZero: true },
-            x: { ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, maxTicksLimit: reportTickMaxLimit } }
+            x: { type: 'category', ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, autoSkipPadding: 4 } }
           }
         }
       });
@@ -1586,7 +1640,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
           },
           scales: {
             y: { beginAtZero: true },
-            x: { ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, maxTicksLimit: reportTickMaxLimit } }
+            x: { type: 'category', ticks: { minRotation: reportTickRotation, maxRotation: reportTickRotation, autoSkip: reportTickAutoSkip, autoSkipPadding: 4 } }
           }
         }
       });

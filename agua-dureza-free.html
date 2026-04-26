@@ -201,33 +201,33 @@
         Dureza del agua (conversiones y rango)
       </h2>
       <div class="section-body">
-        <p class="section-note">Escribe en cualquier casilla: las demás se actualizan al vuelo; el valor se redondea al salir de la casilla.</p>
+        <p class="section-note">Escribe en cualquier casilla: las demás se actualizan al vuelo; al salir se redondea. Empieza vacío hasta que tú ingreses datos.</p>
         <div class="input-matrix">
           <div class="input-matrix__grid">
             <div class="field field--green">
               <label for="hardnessPpm">Dureza como CaCO₃ (ppm o mg/L)</label>
-              <input id="hardnessPpm" class="hardness-in" type="text" inputmode="decimal" autocomplete="off" value="180" data-hardness="ppm" />
+              <input id="hardnessPpm" class="hardness-in" type="text" inputmode="decimal" autocomplete="off" value="" placeholder="ej. 120" data-hardness="ppm" />
             </div>
             <div class="field field--green">
               <label for="hardnessMeq">Dureza (meq/L)</label>
-              <input id="hardnessMeq" class="hardness-in" type="text" inputmode="decimal" autocomplete="off" value="3.60" data-hardness="meq" />
+              <input id="hardnessMeq" class="hardness-in" type="text" inputmode="decimal" autocomplete="off" value="" placeholder="ej. 2.4" data-hardness="meq" />
             </div>
             <div class="field field--green">
               <label for="hardnessDh">Dureza (°dH)</label>
-              <input id="hardnessDh" class="hardness-in" type="text" inputmode="decimal" autocomplete="off" value="10.08" data-hardness="dh" />
+              <input id="hardnessDh" class="hardness-in" type="text" inputmode="decimal" autocomplete="off" value="" placeholder="ej. 6.7" data-hardness="dh" />
             </div>
             <div class="field field--green">
               <label for="hardnessEh">Dureza (°e)</label>
-              <input id="hardnessEh" class="hardness-in" type="text" inputmode="decimal" autocomplete="off" value="12.63" data-hardness="eh" />
+              <input id="hardnessEh" class="hardness-in" type="text" inputmode="decimal" autocomplete="off" value="" placeholder="ej. 8.4" data-hardness="eh" />
             </div>
             <div class="field field--green">
               <label for="hardnessFh">Dureza (°fH)</label>
-              <input id="hardnessFh" class="hardness-in" type="text" inputmode="decimal" autocomplete="off" value="18.00" data-hardness="fh" />
+              <input id="hardnessFh" class="hardness-in" type="text" inputmode="decimal" autocomplete="off" value="" placeholder="ej. 12" data-hardness="fh" />
             </div>
           </div>
         </div>
-        <div class="result-pill" id="hardnessClass">Clasificación: Dura</div>
-        <div class="summary" id="hardnessSummary"></div>
+        <div class="result-pill" id="hardnessClass">Clasificación: —</div>
+        <div class="summary" id="hardnessSummary"><span class="muted">Introduce dureza en cualquier unidad (ppm, meq/L, °dH, °e, °fH).</span></div>
       </div>
     </div>
 
@@ -238,25 +238,25 @@
       </h2>
       <div class="section-body">
         <p class="section-note">
-          Meq ácido = (HCO₃⁻ + CO₃²⁻) − residual objetivo. Si el resultado es negativo, se toma como 0.
+          Meq de ácido por litro de agua = (HCO₃⁻ + CO₃²⁻) − residual (meq/L). Dosis mL/m³ = (meq/L × 1000) ÷ meq/mL del ácido, igual que en Análisis de agua. El <strong>volumen en litros</strong> es el de tu tanque o calda a preparar (ej. 200 L o 2000 L). Si el resultado es negativo, se toma como 0.
         </p>
         <div class="input-matrix">
           <div class="input-matrix__grid">
             <div class="field field--blue">
               <label for="hco3Meq">HCO₃⁻ (meq/L)</label>
-              <input id="hco3Meq" class="acid-in" type="text" inputmode="decimal" autocomplete="off" data-acid-num="1" value="2.00" />
+              <input id="hco3Meq" class="acid-in" type="text" inputmode="decimal" autocomplete="off" data-acid-num="1" value="" placeholder="ej. 2" />
             </div>
             <div class="field field--blue">
               <label for="co3Meq">CO₃²⁻ (meq/L)</label>
-              <input id="co3Meq" class="acid-in" type="text" inputmode="decimal" autocomplete="off" data-acid-num="1" value="0.00" />
+              <input id="co3Meq" class="acid-in" type="text" inputmode="decimal" autocomplete="off" data-acid-num="1" value="" placeholder="0" />
             </div>
             <div class="field field--blue">
               <label for="residualMeq">Residual objetivo (meq/L)</label>
-              <input id="residualMeq" class="acid-in" type="text" inputmode="decimal" autocomplete="off" data-acid-num="1" value="1.00" />
+              <input id="residualMeq" class="acid-in" type="text" inputmode="decimal" autocomplete="off" data-acid-num="1" value="" placeholder="ej. 1" />
             </div>
             <div class="field field--blue">
-              <label for="waterVolumeM3">Volumen de agua (m³)</label>
-              <input id="waterVolumeM3" class="acid-in" type="text" inputmode="decimal" autocomplete="off" data-acid-num="1" value="1.00" />
+              <label for="waterVolumeL">Volumen de preparación (L)</label>
+              <input id="waterVolumeL" class="acid-in" type="text" inputmode="decimal" autocomplete="off" data-acid-num="1" data-acid-vol="1" value="" placeholder="ej. 200" />
             </div>
             <div class="field field--blue">
               <label for="acidSelect">Ácido</label>
@@ -264,6 +264,9 @@
             </div>
           </div>
         </div>
+        <p class="section-note" id="volM3Equiv" style="margin-top:8px;">
+          <span class="muted">Equivale a <strong>—</strong> m³ de agua (solo referencia).</span>
+        </p>
 
         <div class="kpi" id="acidResult"></div>
 
@@ -304,7 +307,8 @@
       hco3: document.getElementById('hco3Meq'),
       co3: document.getElementById('co3Meq'),
       residual: document.getElementById('residualMeq'),
-      volume: document.getElementById('waterVolumeM3'),
+      volumeL: document.getElementById('waterVolumeL'),
+      volM3Equiv: document.getElementById('volM3Equiv'),
       acid: document.getElementById('acidSelect'),
       acidResult: document.getElementById('acidResult')
     };
@@ -325,6 +329,22 @@
     function fillAcids() {
       el.acid.innerHTML = acids.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
       el.acid.value = 'acido_nitrico_55';
+    }
+
+    function isAllHardnessEmpty() {
+      return Object.keys(hardnessFields).every((k) => String(hardnessFields[k].value).trim() === '');
+    }
+
+    function setHardnessEmptyUI() {
+      el.hClass.textContent = 'Clasificación: —';
+      el.hSummary.innerHTML = '<span class="muted">Introduce dureza en cualquier unidad (ppm, meq/L, °dH, °e, °fH).</span>';
+    }
+
+    function setAcidPlaceholderUI() {
+      el.acidResult.innerHTML = '<span class="muted">Completa alcalinidad (HCO₃⁻, CO₃²⁻), <strong>residual objetivo</strong> y <strong>litros de preparación</strong> (tanque o volumen a acidificar) para ver la dosis de ácido.</span>';
+      if (el.volM3Equiv) {
+        el.volM3Equiv.innerHTML = '<span class="muted">Equivale a <strong>—</strong> m³ de agua (solo referencia).</span>';
+      }
     }
 
     function hardnessClassByPpm(ppm) {
@@ -368,7 +388,12 @@
     }
 
     function onHardnessInput(hardKey) {
+      if (isAllHardnessEmpty()) {
+        setHardnessEmptyUI();
+        return;
+      }
       const raw = hardnessFields[hardKey].value;
+      if (String(raw).trim() === '') return;
       const ppm = ppmFromField(hardKey, raw);
       syncHardnessFromPpm(ppm, hardKey);
     }
@@ -377,42 +402,73 @@
       const node = e.target;
       const key = node.getAttribute('data-hardness');
       if (!key) return;
+      if (isAllHardnessEmpty()) {
+        setHardnessEmptyUI();
+        return;
+      }
+      if (String(node.value).trim() === '') {
+        Object.values(hardnessFields).forEach((inp) => { inp.value = ''; });
+        setHardnessEmptyUI();
+        return;
+      }
       const ppm = ppmFromField(key, node.value);
       syncHardnessFromPpm(ppm, null);
     }
 
     function updateAcidCalc() {
+      const acid = acids.find(a => a.id === el.acid.value) || acids[0];
+      const meqPerMl = parseFloat(acid && acid.meqPerMl) || 0;
+      const rho = parseFloat(acid && acid.densityKgL) || 0;
+
+      const volStr = el.volumeL && String(el.volumeL.value).trim() !== '' ? el.volumeL.value : '';
+      const volL = volStr !== '' ? n(el.volumeL.value) : NaN;
+
+      if (volStr === '' || Number.isNaN(volL)) {
+        setAcidPlaceholderUI();
+        return;
+      }
+
+      if (el.volM3Equiv) {
+        const m3e = (volL / 1000).toFixed(3);
+        el.volM3Equiv.innerHTML = '<span class="muted">Equivale a <strong>' + m3e + '</strong> m³ de agua (solo referencia).</span>';
+      }
+
       const hco3 = n(el.hco3.value);
       const co3 = n(el.co3.value);
       const residual = n(el.residual.value);
-      const volM3 = n(el.volume.value);
-      const acid = acids.find(a => a.id === el.acid.value) || acids[0];
       const sourceMeq = hco3 + co3;
       const needMeq = Math.max(0, sourceMeq - residual);
-      const meqPerMl = parseFloat(acid && acid.meqPerMl) || 0;
-      const mlPerM3 = meqPerMl > 0 ? needMeq / meqPerMl : 0;
+      // Igual que Análisis de agua: meq de ácido por m³ de agua = (meq/L) × 1000; mL/m³ = meq/m³ ÷ meq/mL del ácido.
+      const meqPerM3 = needMeq * 1000;
+      const mlPerM3 = meqPerMl > 0 ? meqPerM3 / meqPerMl : 0;
+      const volM3 = volL / 1000;
       const totalMl = mlPerM3 * volM3;
-      const totalL = totalMl / 1000;
-      const totalKg = totalL * (parseFloat(acid && acid.densityKgL) || 0);
+      const totalLAcid = totalMl / 1000;
+      const kgPerM3Water = (mlPerM3 / 1000) * rho;
+      const kgTotal = totalLAcid * rho;
 
       el.acidResult.innerHTML = `
         <strong>Resultado con ${acid.name}:</strong><br>
         Meq/L a neutralizar = (${f(hco3, 2)} + ${f(co3, 2)}) − ${f(residual, 2)} = <strong>${f(needMeq, 2)} meq/L</strong><br>
-        Dosis estimada = <strong>${f(mlPerM3, 2)} mL/m³</strong><br>
-        Para ${f(volM3, 2)} m³: <strong>${f(totalL, 3)} L</strong> (${f(totalMl, 1)} mL) · aprox. <strong>${f(totalKg, 3)} kg</strong>
+        Dosis = <strong>${f(mlPerM3, 2)} mL/m³</strong> de ácido <span class="muted">(${f(kgPerM3Water, 3)} kg de ácido / m³ de agua, aprox.)</span><br>
+        Para <strong>${f(volL, 2)} L</strong> de agua (${f(volM3, 3)} m³): <strong>${f(totalLAcid, 3)} L</strong> de ácido (${f(totalMl, 1)} mL) · aprox. <strong>${f(kgTotal, 3)} kg</strong>
       `;
     }
 
     function normalizeAcidInputBlur(e) {
       const t = e.target;
       if (!t || !t.getAttribute('data-acid-num')) return;
+      if (String(t.value).trim() === '') {
+        if (t.getAttribute('data-acid-vol') === '1') setAcidPlaceholderUI();
+        return;
+      }
       const v = n(t.value);
       t.value = f(v, 2);
     }
 
     fillAcids();
-    syncHardnessFromPpm(n(el.ppm.value), null);
-    updateAcidCalc();
+    setHardnessEmptyUI();
+    setAcidPlaceholderUI();
 
     Object.keys(hardnessFields).forEach((key) => {
       const node = hardnessFields[key];
@@ -420,7 +476,8 @@
       node.addEventListener('focusout', normalizeHardnessOnBlur);
     });
 
-    [el.hco3, el.co3, el.residual, el.volume].forEach((node) => {
+    [el.hco3, el.co3, el.residual, el.volumeL].forEach((node) => {
+      if (!node) return;
       node.addEventListener('input', () => { updateAcidCalc(); });
       node.addEventListener('focusout', normalizeAcidInputBlur);
     });

@@ -3969,6 +3969,10 @@ body {
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   min-width: 430px;
+  min-height: 360px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-container h4 {
@@ -3977,11 +3981,17 @@ body {
   font-size: 1.125rem;
   font-weight: 600;
   text-align: center;
+  flex: 0 0 auto;
 }
 
+/* Altura fija para Chart.js (maintainAspectRatio: false) — programas largos sin colapsar a 0px */
 .chart-container canvas {
-  width: 100%;
-  height: 300px;
+  display: block;
+  width: 100% !important;
+  min-height: 300px;
+  height: 300px !important;
+  max-height: 320px;
+  flex: 0 0 auto;
 }
 
 /* Mantener 2 columnas y permitir scroll horizontal */
