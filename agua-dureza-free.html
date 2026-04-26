@@ -512,10 +512,15 @@
       }
     }
 
+    /**
+     * Tramos orientativos (mg/L como CaCO₃). "Muy dura" a partir de 200
+     * evita que valores apenas por encima de 180 (p. ej. 182) se sienten
+     * como error; muchas guías usan 180 o 200 como corte — aquí 200 = muy dura.
+     */
     function hardnessClassByPpm(ppm) {
       if (ppm < 60) return 'Blanda';
       if (ppm < 120) return 'Moderadamente dura';
-      if (ppm < 180) return 'Dura';
+      if (ppm < 200) return 'Dura';
       return 'Muy dura';
     }
 
