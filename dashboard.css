@@ -4006,6 +4006,147 @@ body {
   pointer-events: none;
 }
 
+.ferti-charts-water-wrap {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 12px;
+  margin: 0 0 12px 0;
+}
+
+.ferti-charts-water-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ferti-charts-water-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.ferti-charts-water-note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.ferti-charts-water-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.ferti-charts-water-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px;
+  background: #f8fafc;
+}
+
+.ferti-charts-water-item label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.ferti-charts-water-item input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #93c5fd;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+
+.ferti-charts-water-item input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.ferti-charts-insights-wrap {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ferti-charts-insights-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ferti-charts-insights-head label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.ferti-charts-insights-head select {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+
+.ferti-insight-alert {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+}
+
+.ferti-insight-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 12px;
+}
+
+.ferti-insight-card h5 {
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.ferti-insight-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.ferti-insight-table th,
+.ferti-insight-table td {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 6px 7px;
+  text-align: right;
+}
+
+.ferti-insight-table th:first-child,
+.ferti-insight-table td:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+
+.ferti-insight-legend {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
 /* ===== MAP MESSAGE ANIMATIONS ===== */
 @keyframes slideIn {
   from {

@@ -694,6 +694,7 @@ function sectionTemplate(name) {
               <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
                 <button class="btn btn-info btn-sm" onclick="toggleFertiChartsOxideElemental()" id="toggleFertiChartsModeBtn">🔄 Ver en Elemental</button>
               </div>
+              <div id="fertiChartsWaterByStageWrap" class="ferti-charts-water-wrap"></div>
               <div class="fertirriego-graphs-watermark">
                 <img src="assets/NutriPlant_PRO_blue.png" alt="" aria-hidden="true">
               </div>
@@ -707,6 +708,7 @@ function sectionTemplate(name) {
                   <canvas id="fertiMicroChart"></canvas>
                 </div>
               </div>
+              <div id="fertiChartsStageInsightsWrap" class="ferti-charts-insights-wrap"></div>
             </div>
           </div>
         </div>
