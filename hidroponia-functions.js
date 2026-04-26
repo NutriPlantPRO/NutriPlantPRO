@@ -76,7 +76,9 @@ let hydroCustomMaterialsUser = [];
 let hydroSaveTimer = null;
 let hydroRenderTimer = null;
 let hydroPpmLayoutTimer = null;
-const HYDRO_PPM_LAYOUT_MS = 220;
+const HYDRO_PPM_LAYOUT_MS = 480;
+/** Mientras se edita ppm (macros), se conserva el string para el re-render (evita 1 → 1.0 antes de "12") */
+let hydroPpmTyping = null;
 
 function hydroGetProjectId() {
   try { if (window.projectManager && window.projectManager.getCurrentProject) { const p = window.projectManager.getCurrentProject(); if (p && p.id) return p.id; } } catch {}
@@ -387,12 +389,22 @@ function hydroComputeMacroPpm(stage) {
   return ppm;
 }
 
-/** Inversa de hydroComputeMacroPpm: ppm (elemento) → meq/L (mismos equivalentes de NutriPlant) */
+function hydroRound2(v) {
+  const x = parseFloat(v);
+  if (isNaN(x)) return 0;
+  return Math.round(x * 100) / 100;
+}
+
+function hydroEscapeAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+/** Inversa de hydroComputeMacroPpm: ppm (elemento) → meq/L, 2 decimales (mismos equivalentes) */
 function hydroMeqFromMacroPpm(ppmRow) {
   const meq = {};
   HYDRO_MEQ_NUTRIENTS.forEach(n => {
     const w = HYDRO_EQ_WEIGHTS[n];
-    meq[n] = w ? (parseFloat(ppmRow[n]) || 0) / w : 0;
+    meq[n] = w ? hydroRound2((parseFloat(ppmRow[n]) || 0) / w) : 0;
   });
   return meq;
 }
@@ -441,8 +453,8 @@ function hydroPatchMeqAndCeFromPpmState(root, stage) {
     );
     if (el) {
       const m = (stage.meq && stage.meq[n] != null) ? stage.meq[n] : 0;
-      const v = parseFloat(m) || 0;
-      if (el !== document.activeElement) el.value = v;
+      const v = hydroRound2(m);
+      if (el !== document.activeElement) el.value = v.toFixed(2);
     }
   });
   const ce = parseFloat(hydroComputeCE(stage)) || 0;
@@ -487,7 +499,10 @@ function renderHydroStageTable() {
           </select>
         </td>
         <td><input class="hydro-input" data-stage-id="${stage.id}" data-field="ce" type="number" step="0.01" value="${stage.ce ?? ''}" readonly></td>
-        ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.1" value="${stage.meq?.[n] ?? 0}"></td>`).join('')}
+        ${HYDRO_MEQ_NUTRIENTS.map(n => {
+          const mv = (stage.meq && stage.meq[n] != null) ? stage.meq[n] : 0;
+          return `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.01" value="${hydroRound2(mv).toFixed(2)}"></td>`;
+        }).join('')}
       </tr>
     `;
   }).join('');
@@ -516,7 +531,13 @@ function renderHydroStageTable() {
       <tr data-stage-id="${stage.id}">
         <td>${stage.name || ''}</td>
         <td>${stage.ce ?? ''}</td>
-        ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input hydro-ppm-macro" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="text" inputmode="decimal" autocomplete="off" value="${(macroPpm[n] != null ? macroPpm[n] : 0).toFixed(1)}"></td>`).join('')}
+        ${HYDRO_MEQ_NUTRIENTS.map(n => {
+          const useLive = hydroPpmTyping && hydroPpmTyping.stageId === stage.id && hydroPpmTyping.nutrient === n;
+          const vAttr = useLive
+            ? hydroEscapeAttr(hydroPpmTyping.raw)
+            : hydroEscapeAttr((macroPpm[n] != null ? macroPpm[n] : 0).toFixed(1));
+          return `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input hydro-ppm-macro" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="text" inputmode="decimal" autocomplete="off" value="${vAttr}"></td>`;
+        }).join('')}
         ${HYDRO_MICROS.map((n, idx) => `<td class="${idx === 0 ? 'hydro-micro-start' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.01" value="${stage.ppm?.[n] ?? 0}"></td>`).join('')}
       </tr>
     `;
@@ -1502,6 +1523,12 @@ function bindHydroEvents(container) {
       hydroState.activeStageId = stageId;
       renderHydroNitrogenSummary();
     }
+    if (target && target.getAttribute('data-type') === 'ppm' && target.classList && target.classList.contains('hydro-ppm-macro')) {
+      const nut = target.getAttribute('data-nutrient');
+      if (nut && HYDRO_MEQ_NUTRIENTS.indexOf(nut) >= 0) {
+        hydroPpmTyping = { stageId: target.getAttribute('data-stage-id'), nutrient: nut, raw: String(target.value) };
+      }
+    }
   });
 
   container.addEventListener('click', (e) => {
@@ -1551,10 +1578,11 @@ function bindHydroEvents(container) {
       if (field) stage[field] = input.value;
       if (type === 'meq' && nutrient) {
         stage.meq = stage.meq || {};
-        stage.meq[nutrient] = parseFloat(input.value) || 0;
+        stage.meq[nutrient] = hydroRound2(parseFloat(input.value) || 0);
       } else if (type === 'ppm' && nutrient) {
         if (HYDRO_MEQ_NUTRIENTS.indexOf(nutrient) >= 0) {
           const fi = hydroSavePpmInputFocusState(input);
+          hydroPpmTyping = { stageId: stage.id, nutrient: nutrient, raw: String(input.value) };
           const tr = input.closest('tr');
           if (tr) {
             const ppmRow = {};
@@ -1645,7 +1673,7 @@ function bindHydroEvents(container) {
         if (field) stage[field] = target.value;
         if (type === 'meq' && nutrient) {
           stage.meq = stage.meq || {};
-          stage.meq[nutrient] = parseFloat(target.value) || 0;
+          stage.meq[nutrient] = hydroRound2(parseFloat(target.value) || 0);
         } else if (type === 'ppm' && nutrient) {
           if (HYDRO_MEQ_NUTRIENTS.indexOf(nutrient) >= 0) {
             const tr = target.closest('tr');
@@ -1659,6 +1687,7 @@ function bindHydroEvents(container) {
               Object.assign(stage.meq, hydroMeqFromMacroPpm(ppmRow));
               Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
             }
+            hydroPpmTyping = null;
           } else {
             stage.ppm = stage.ppm || {};
             stage.ppm[nutrient] = parseFloat(target.value) || 0;
@@ -1799,6 +1828,7 @@ function bindHydroEvents(container) {
       Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
     }
     stage.ce = (hydroComputeCE(stage) || 0).toFixed(2);
+    hydroPpmTyping = null;
     renderHydroStageTable();
     renderHydroNitrogenSummary();
     renderHydroTriangle();
