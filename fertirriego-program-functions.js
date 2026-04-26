@@ -1255,16 +1255,45 @@ function renderFertiChartsInsights() {
         <div class="ferti-insight-legend" style="margin:0 0 8px 0;">
           Relación de N en la etapa: <strong>N-NO₃⁻ ${fertiNum(summary.nSplit.NO3, 1)}%</strong> · <strong>N-NH₄⁺ ${fertiNum(summary.nSplit.NH4, 1)}%</strong> (sobre N total = NO₃ + NH₄).
         </div>
-        <table class="ferti-insight-table">
-          <thead><tr><th>Nutriente</th><th>kg/ha</th><th>ppm</th><th>meq/L</th><th>% grupo</th></tr></thead>
+        <table class="ferti-insight-table ferti-insight-table--macro-ionic">
+          <thead><tr><th>Nutriente</th><th>kg/ha</th><th>ppm</th><th>meq/L</th><th>% grupo <span class="ferti-pct-col-hint" title="Marcos: suma 100% dentro de aniones o de K+Ca+Mg; NH₄ aparte.">ⓘ</span></th></tr></thead>
           <tbody>
-            <tr><td>N-NO₃⁻</td><td>${fertiNum(summary.kg.N_NO3)}</td><td>${fertiNum(summary.ppm.N_NO3, 1)}</td><td>${fertiNum(summary.meq.N_NO3, 2)}</td><td>${fertiNum(summary.pct.N_NO3, 1)}</td></tr>
-            <tr><td>P-H₂PO₄⁻</td><td>${fertiNum(summary.kg.P)}</td><td>${fertiNum(summary.ppm.P, 1)}</td><td>${fertiNum(summary.meq.P, 2)}</td><td>${fertiNum(summary.pct.P, 1)}</td></tr>
-            <tr><td>S-SO₄²⁻</td><td>${fertiNum(summary.kg.SO4)}</td><td>${fertiNum(summary.ppm.SO4, 1)}</td><td>${fertiNum(summary.meq.SO4, 2)}</td><td>${fertiNum(summary.pct.SO4, 1)}</td></tr>
-            <tr><td>K⁺</td><td>${fertiNum(summary.kg.K)}</td><td>${fertiNum(summary.ppm.K, 1)}</td><td>${fertiNum(summary.meq.K, 2)}</td><td>${fertiNum(summary.pct.K, 1)}</td></tr>
-            <tr><td>Ca²⁺</td><td>${fertiNum(summary.kg.Ca)}</td><td>${fertiNum(summary.ppm.Ca, 1)}</td><td>${fertiNum(summary.meq.Ca, 2)}</td><td>${fertiNum(summary.pct.Ca, 1)}</td></tr>
-            <tr><td>Mg²⁺</td><td>${fertiNum(summary.kg.Mg)}</td><td>${fertiNum(summary.ppm.Mg, 1)}</td><td>${fertiNum(summary.meq.Mg, 2)}</td><td>${fertiNum(summary.pct.Mg, 1)}</td></tr>
-            <tr><td>N-NH₄⁺*</td><td>${fertiNum(summary.kg.N_NH4)}</td><td>${fertiNum(summary.ppm.N_NH4, 1)}</td><td>${fertiNum(summary.meq.N_NH4, 2)}</td><td>${fertiNum(summary.pct.N_NH4, 1)}</td></tr>
+            <tr>
+              <td>N-NO₃⁻</td><td>${fertiNum(summary.kg.N_NO3)}</td><td>${fertiNum(summary.ppm.N_NO3, 1)}</td><td>${fertiNum(summary.meq.N_NO3, 2)}</td>
+              <td rowspan="3" class="ferti-pct-blk td-pct-blk">
+                <div class="ferti-pct-blk__inner ferti-pct-blk--anions notranslate" translate="no">
+                  <div class="ferti-pct-blk__title">Aniones</div>
+                  <div class="ferti-pct-blk__sum">Σ 100%</div>
+                  <div class="ferti-pct-blk__stack">
+                    <div class="ferti-pct-blk__val">${fertiNum(summary.pct.N_NO3, 1)}</div>
+                    <div class="ferti-pct-blk__val">${fertiNum(summary.pct.P, 1)}</div>
+                    <div class="ferti-pct-blk__val">${fertiNum(summary.pct.SO4, 1)}</div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            <tr><td>P-H₂PO₄⁻</td><td>${fertiNum(summary.kg.P)}</td><td>${fertiNum(summary.ppm.P, 1)}</td><td>${fertiNum(summary.meq.P, 2)}</td></tr>
+            <tr><td>S-SO₄²⁻</td><td>${fertiNum(summary.kg.SO4)}</td><td>${fertiNum(summary.ppm.SO4, 1)}</td><td>${fertiNum(summary.meq.SO4, 2)}</td></tr>
+            <tr>
+              <td>K⁺</td><td>${fertiNum(summary.kg.K)}</td><td>${fertiNum(summary.ppm.K, 1)}</td><td>${fertiNum(summary.meq.K, 2)}</td>
+              <td rowspan="3" class="ferti-pct-blk td-pct-blk">
+                <div class="ferti-pct-blk__inner ferti-pct-blk--cations notranslate" translate="no">
+                  <div class="ferti-pct-blk__title">Cationes (triángulo)</div>
+                  <div class="ferti-pct-blk__sum">K+Ca+Mg · Σ 100%</div>
+                  <div class="ferti-pct-blk__stack">
+                    <div class="ferti-pct-blk__val">${fertiNum(summary.pct.K, 1)}</div>
+                    <div class="ferti-pct-blk__val">${fertiNum(summary.pct.Ca, 1)}</div>
+                    <div class="ferti-pct-blk__val">${fertiNum(summary.pct.Mg, 1)}</div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            <tr><td>Ca²⁺</td><td>${fertiNum(summary.kg.Ca)}</td><td>${fertiNum(summary.ppm.Ca, 1)}</td><td>${fertiNum(summary.meq.Ca, 2)}</td></tr>
+            <tr><td>Mg²⁺</td><td>${fertiNum(summary.kg.Mg)}</td><td>${fertiNum(summary.ppm.Mg, 1)}</td><td>${fertiNum(summary.meq.Mg, 2)}</td></tr>
+            <tr>
+              <td>N-NH₄⁺*</td><td>${fertiNum(summary.kg.N_NH4)}</td><td>${fertiNum(summary.ppm.N_NH4, 1)}</td><td>${fertiNum(summary.meq.N_NH4, 2)}</td>
+              <td class="ferti-pct-blk--nh4-wrap"><span class="ferti-pct-blk--nh4 notranslate" translate="no">${fertiNum(summary.pct.N_NH4, 1)}</span> <span class="ferti-pct-blk--nh4-note">% sobre cationes totales *</span></td>
+            </tr>
           </tbody>
         </table>
         <div class="ferti-insight-legend">* N-NH₄⁺ se calcula sobre cationes totales (K+Ca+Mg+NH₄). En cambio, los rangos de cationes (${FERTI_CATION_RANGES}) aplican al triángulo K+Ca+Mg (sin NH₄). ${FERTI_ANION_RANGES}.</div>

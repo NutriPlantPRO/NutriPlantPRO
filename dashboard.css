@@ -4205,6 +4205,98 @@ body {
   border-bottom-color: #bbf7d0;
 }
 
+/* Macro resumen: marcos de % (aniones Σ100%, cationes K+Ca+Mg Σ100%, NH₄ aparte) */
+.ferti-insight-table--macro-ionic th:last-child {
+  max-width: 120px;
+  line-height: 1.2;
+  white-space: normal;
+  font-size: 0.78rem;
+  vertical-align: bottom;
+  padding: 6px 5px 8px;
+}
+.ferti-pct-col-hint {
+  cursor: help;
+  font-weight: 800;
+  opacity: 0.7;
+  margin-left: 1px;
+}
+.ferti-insight-table--macro-ionic .td-pct-blk {
+  vertical-align: middle;
+  text-align: center;
+  width: 118px;
+  min-width: 104px;
+  padding: 8px 6px;
+  background: #f8fafc;
+  border-left: 1px solid #e2e8f0;
+}
+.ferti-pct-blk__inner {
+  border-radius: 10px;
+  padding: 8px 5px 10px;
+  line-height: 1.25;
+}
+.ferti-pct-blk--anions {
+  border: 2px solid #2563eb;
+  background: linear-gradient(180deg, #e0f2fe 0%, #f8fafc 100%);
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.1);
+}
+.ferti-pct-blk--cations {
+  border: 2px solid #0d9488;
+  background: linear-gradient(180deg, #ccfbf1 0%, #f8fafc 100%);
+  box-shadow: 0 2px 10px rgba(13, 148, 136, 0.1);
+}
+.ferti-pct-blk__title {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #0f172a;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+.ferti-pct-blk__sum {
+  font-size: 0.6rem;
+  color: #64748b;
+  font-weight: 600;
+  margin: 0 0 5px 0;
+}
+.ferti-pct-blk__stack .ferti-pct-blk__val {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #0f172a;
+  padding: 5px 2px;
+}
+.ferti-pct-blk__stack .ferti-pct-blk__val + .ferti-pct-blk__val {
+  border-top: 1px dashed rgba(15, 23, 42, 0.14);
+}
+.ferti-pct-blk--nh4-wrap {
+  text-align: center;
+  vertical-align: middle;
+  min-width: 120px;
+  background: #fff;
+}
+.ferti-pct-blk--nh4 {
+  display: inline-block;
+  min-width: 2.3em;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  background: linear-gradient(180deg, #ffedd5 0%, #fffbeb 100%);
+  border: 2px solid #ea580c;
+  color: #9a3412;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.12);
+}
+.ferti-pct-blk--nh4-note {
+  display: block;
+  font-size: 0.58rem;
+  color: #c2410c;
+  font-weight: 600;
+  margin-top: 5px;
+  line-height: 1.25;
+  max-width: 8.5em;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* ===== MAP MESSAGE ANIMATIONS ===== */
 @keyframes slideIn {
   from {
