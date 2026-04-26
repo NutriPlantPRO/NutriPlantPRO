@@ -1229,7 +1229,12 @@ function getFertiStageIonicSummary(stageIndex) {
     Mg: sumCationsKCaMg > 0 ? (meq.Mg / sumCationsKCaMg) * 100 : 0,
     N_NH4: sumCationsTotal > 0 ? (meq.N_NH4 / sumCationsTotal) * 100 : 0
   };
-  return { stage: w, m3ha, kg, ppm, meq, pct };
+  const nTotalMeq = meq.N_NO3 + meq.N_NH4;
+  const nSplit = {
+    NO3: nTotalMeq > 0 ? (meq.N_NO3 / nTotalMeq) * 100 : 0,
+    NH4: nTotalMeq > 0 ? (meq.N_NH4 / nTotalMeq) * 100 : 0
+  };
+  return { stage: w, m3ha, kg, ppm, meq, pct, nSplit };
 }
 
 function renderFertiChartsInsights() {
@@ -1247,6 +1252,9 @@ function renderFertiChartsInsights() {
     body = `
       <div class="ferti-insight-card">
         <h5>Macro resumen · ${fertiStageSlotLabel(idx)} (${summary.stage.stage || 'Etapa'})</h5>
+        <div class="ferti-insight-legend" style="margin:0 0 8px 0;">
+          Relación de N en la etapa: <strong>N-NO₃⁻ ${fertiNum(summary.nSplit.NO3, 1)}%</strong> · <strong>N-NH₄⁺ ${fertiNum(summary.nSplit.NH4, 1)}%</strong> (sobre N total = NO₃ + NH₄).
+        </div>
         <table class="ferti-insight-table">
           <thead><tr><th>Nutriente</th><th>kg/ha</th><th>ppm</th><th>meq/L</th><th>% grupo</th></tr></thead>
           <tbody>
@@ -1259,7 +1267,7 @@ function renderFertiChartsInsights() {
             <tr><td>N-NH₄⁺*</td><td>${fertiNum(summary.kg.N_NH4)}</td><td>${fertiNum(summary.ppm.N_NH4, 1)}</td><td>${fertiNum(summary.meq.N_NH4, 2)}</td><td>${fertiNum(summary.pct.N_NH4, 1)}</td></tr>
           </tbody>
         </table>
-        <div class="ferti-insight-legend">* N-NH₄⁺ se calcula sobre cationes totales (K+Ca+Mg+NH₄). ${FERTI_ANION_RANGES}. ${FERTI_CATION_RANGES}.</div>
+        <div class="ferti-insight-legend">* N-NH₄⁺ se calcula sobre cationes totales (K+Ca+Mg+NH₄). En cambio, los rangos de cationes (${FERTI_CATION_RANGES}) aplican al triángulo K+Ca+Mg (sin NH₄). ${FERTI_ANION_RANGES}.</div>
       </div>
       <div class="ferti-insight-card">
         <h5>Micros · ${fertiStageSlotLabel(idx)} (${summary.stage.stage || 'Etapa'})</h5>
