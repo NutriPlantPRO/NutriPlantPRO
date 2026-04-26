@@ -1302,16 +1302,24 @@ function loadChartJs(callback){
   s.onload = callback; document.head.appendChild(s);
 }
 
-/** Etiqueta eje X gráficas: 1.ª línea Mes/Semana N, 2.ª línea nombre de etapa del programa (si hay). */
-function fertiBuildChartAxisLabel(timeUnit, weekObj, index0) {
+/** Eje X en gráficas: solo "Mes N" / "Semana N" (compacto; la etapa se ve en el selector y resumen). */
+function fertiChartSlotLabelAtIndex(timeUnit, index0) {
   const slot = timeUnit === 'mes' ? 'Mes' : 'Semana';
-  const line1 = `${slot} ${index0 + 1}`;
-  const st = weekObj && weekObj.stage && String(weekObj.stage).trim() ? String(weekObj.stage).trim() : '';
-  return st ? `${line1}\n${st}` : line1;
+  return `${slot} ${index0 + 1}`;
 }
 
 function getFertiWeekLabels() {
-  return fertiWeeks.map((w, i) => fertiBuildChartAxisLabel(fertiTimeUnit, w, i));
+  return fertiWeeks.map((w, i) => fertiChartSlotLabelAtIndex(fertiTimeUnit, i));
+}
+
+/** Fuerza redibujo con tamaño correcto (p. ej. la pestaña Gráficas estuvo oculta y el canvas quedó en 0×0). */
+function resizeFertiCharts() {
+  try {
+    if (fertiMacroChart && typeof fertiMacroChart.resize === 'function') fertiMacroChart.resize();
+  } catch (e) {}
+  try {
+    if (fertiMicroChart && typeof fertiMicroChart.resize === 'function') fertiMicroChart.resize();
+  } catch (e) {}
 }
 
 function updateFertiCharts(){
@@ -1371,12 +1379,11 @@ function updateFertiCharts(){
       macroLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg' };
     }
 
-    const chartHasStageSubLabels = fertiWeeks.some(w => w && w.stage && String(w.stage).trim());
     const makeChartOptions = () => ({
       responsive: true,
       maintainAspectRatio: true,
       animation: { duration: 180, easing: 'easeOutQuad' },
-      layout: { padding: { bottom: chartHasStageSubLabels ? 14 : 4 } },
+      layout: { padding: { bottom: 4 } },
       plugins: {
         legend: {
           position: 'top',
@@ -1408,12 +1415,16 @@ function updateFertiCharts(){
     });
 
     function syncChartSeries(chart, chartLabels, datasets, chartOptions) {
-      chart.data.labels = chartLabels;
-      // Reutiliza datasets existentes para evitar "parpadeo" por destroy/create.
+      chart.data.labels = chartLabels.slice();
+      // Reutiliza datasets existentes; asegurar array `data` nuevo para que Chart.js actualice series.
       datasets.forEach((next, idx) => {
         const curr = chart.data.datasets[idx];
-        if (curr) Object.assign(curr, next);
-        else chart.data.datasets.push({ ...next });
+        if (curr) {
+          Object.assign(curr, next);
+          curr.data = Array.isArray(next.data) ? next.data.slice() : next.data;
+        } else {
+          chart.data.datasets.push({ ...next, data: Array.isArray(next.data) ? next.data.slice() : next.data });
+        }
       });
       chart.data.datasets.length = datasets.length;
       chart.options = chartOptions;
@@ -1464,6 +1475,9 @@ function updateFertiCharts(){
       }
     }
     renderFertiChartsInsights();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { resizeFertiCharts(); });
+    });
   });
 }
 
@@ -1480,8 +1494,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
   loadChartJs(function() {
     const weeks = program.weeks;
     const timeUnit = program.timeUnit || 'semana';
-    const labels = weeks.map(function(w, i) { return fertiBuildChartAxisLabel(timeUnit, w, i); });
-    const reportHasStageSubLabels = weeks.some(function(w) { return w && w.stage && String(w.stage).trim(); });
+    const labels = weeks.map(function(w, i) { return fertiChartSlotLabelAtIndex(timeUnit, i); });
     const totalStages = labels.length;
     const reportTickRotation = totalStages >= 16 ? 90 : (totalStages >= 10 ? 50 : 0);
     const reportTickAutoSkip = totalStages >= 16;
@@ -1524,7 +1537,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
           responsive: false,
           maintainAspectRatio: false,
           animation: false,
-          layout: { padding: { bottom: reportHasStageSubLabels ? 14 : 4 } },
+          layout: { padding: { bottom: 4 } },
           plugins: {
             legend: {
               display: true,
@@ -1559,7 +1572,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
           responsive: false,
           maintainAspectRatio: false,
           animation: false,
-          layout: { padding: { bottom: reportHasStageSubLabels ? 14 : 4 } },
+          layout: { padding: { bottom: 4 } },
           plugins: {
             legend: {
               display: true,
@@ -1807,6 +1820,8 @@ function initFertirriegoProgramUI() {
   window.saveFertirriegoProgram = saveFertirriegoProgram;
   window.setFertiNutrientView = setFertiNutrientView;
   window.updateFertiSummary = updateFertiSummary;
+  window.updateFertiCharts = updateFertiCharts;
+  window.resizeFertiCharts = resizeFertiCharts;
   window.getAllFertiMaterials = getAllFertiMaterials;
   window.getBaseFertiMaterials = getBaseFertiMaterials;
   window.openFertiNewMaterialModal = openFertiNewMaterialModal;

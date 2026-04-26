@@ -6328,6 +6328,9 @@ function initializeFertirriegoTabs() {
           } else if (typeof window.updateFertiCharts === 'function') {
             window.updateFertiCharts();
           }
+          requestAnimationFrame(() => {
+            if (typeof window.resizeFertiCharts === 'function') window.resizeFertiCharts();
+          });
         });
       } catch (e) {
         console.warn('⚠️ No se pudieron refrescar las gráficas de Fertirriego:', e);
