@@ -15,6 +15,7 @@ const FERT_SOLUBLES_DB = [
 
   // Potasio y mezclas
   { id: 'nks', name: 'NKS', N_NO3: 12, N_NH4: 0, K2O: 46, SO4: 8.1, S: 0 },
+  { id: 'nk_9_0_36_s', name: '9-0-36 +S', N_NO3: 4.5, N_NH4: 4.5, P2O5: 0, K2O: 36, SO4: 42, S: 0 },
   { id: 'nk_mg', name: 'NK+Mg', N_NO3: 13.0, N_NH4: 0, K2O: 46, MgO: 2 },
   { id: 'sop', name: 'SOP', N_NO3: 0, N_NH4: 0, K2O: 50, SO4: 51, S: 0 },
   { id: 'kcl_soluble', name: 'KCl Soluble', N_NO3: 0, N_NH4: 0, K2O: 60 },
@@ -29,6 +30,7 @@ const FERT_SOLUBLES_DB = [
   { id: 'triple_19_me', name: 'Triple 19 +Me', N_NO3: 9.4, N_NH4: 9.7, P2O5: 19, K2O: 19, SO4: 3.9, Fe: 0.10, Mn: 0.05, B: 0.02, Zn: 0.015, Cu: 0.011, Mo: 0.007 },
   { id: 'npk_12_43_12_me', name: '12-43-12 +Me', N_NO3: 3.5, N_NH4: 8.5, P2O5: 43, K2O: 12, SO4: 0, MgO: 0, Fe: 0.05, Mn: 0.02, B: 0.01, Zn: 0.01, Cu: 0.005, Mo: 0.003 },
   { id: 'npk_10_10_43_me', name: '10-10-43 +Me', N_NO3: 10, N_NH4: 0, P2O5: 10, K2O: 43, SO4: 0, MgO: 0, Fe: 0.05, Mn: 0.02, B: 0.01, Zn: 0.01, Cu: 0.005, Mo: 0.003 },
+  { id: 'npk_13_04_25_znb', name: '13-4-25 Zn+B', N_NO3: 5.3, N_NH4: 7.7, P2O5: 4, K2O: 25, SO4: 27, S: 0, Zn: 0.08, B: 0.08 },
 
   // Micros
   { id: 'mix_micros_edta', name: 'Mix Micros EDTA', Fe: 6, Mn: 4, Zn: 2, Cu: 1, B: 1 },
