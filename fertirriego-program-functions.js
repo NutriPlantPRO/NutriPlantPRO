@@ -1192,11 +1192,13 @@ function getFertiStageIonicSummary(stageIndex) {
   if (!w) return null;
   const totals = w.totals || {};
   const m3ha = parseFloat(fertiChartWaterByStageM3ha[stageIndex]) || 0;
+  /** En catálogo el aporte está como SO₄ (% masa ion); para macro iónico (como P en elemental): kg S = kg SO₄ × 32/96 + kg S directo. */
+  const kgSFromSo4AndDirect = ((parseFloat(totals.SO4) || 0) / FERTI_CONV.SO4_TO_S) + (parseFloat(totals.S) || 0);
   const kg = {
     N_NO3: parseFloat(totals.N_NO3) || 0,
     N_NH4: parseFloat(totals.N_NH4) || 0,
     P: parseFloat(totals.P) || 0,
-    SO4: parseFloat(totals.SO4) || 0,
+    SO4: kgSFromSo4AndDirect,
     K: parseFloat(totals.K) || 0,
     Ca: parseFloat(totals.Ca) || 0,
     Mg: parseFloat(totals.Mg) || 0,
@@ -1214,6 +1216,7 @@ function getFertiStageIonicSummary(stageIndex) {
     N_NO3: ppm.N_NO3 / FERTI_ION_EQ_WEIGHTS.N_NO3,
     N_NH4: ppm.N_NH4 / FERTI_ION_EQ_WEIGHTS.N_NH4,
     P: ppm.P / FERTI_ION_EQ_WEIGHTS.P,
+    /** ppm.SO4 aquí es ppm de S elemental; peso eq. ~16 (S). */
     SO4: ppm.SO4 / FERTI_ION_EQ_WEIGHTS.SO4,
     K: ppm.K / FERTI_ION_EQ_WEIGHTS.K,
     Ca: ppm.Ca / FERTI_ION_EQ_WEIGHTS.Ca,
@@ -1279,7 +1282,7 @@ function renderFertiChartsInsights() {
               <td>P-H₂PO₄⁻</td><td>${fertiNum(summary.kg.P)}</td><td>${fertiNum(summary.ppm.P, 1)}</td><td>${fertiNum(summary.meq.P, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-anion ferti-pct-anion--mid"><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.P, 1)}</span></td>
             </tr>
-            <tr>
+            <tr title="Columnas kg/ha, ppm y meq/L en base azufre elemental (S): SO₄ del programa × 32/96 + S directo del catálogo.">
               <td>S-SO₄²⁻</td><td>${fertiNum(summary.kg.SO4)}</td><td>${fertiNum(summary.ppm.SO4, 1)}</td><td>${fertiNum(summary.meq.SO4, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-anion ferti-pct-anion--bot"><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.SO4, 1)}</span></td>
             </tr>
