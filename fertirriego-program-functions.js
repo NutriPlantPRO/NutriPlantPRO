@@ -1236,7 +1236,17 @@ function getFertiStageIonicSummary(stageIndex) {
     NO3: nTotalMeq > 0 ? (meq.N_NO3 / nTotalMeq) * 100 : 0,
     NH4: nTotalMeq > 0 ? (meq.N_NH4 / nTotalMeq) * 100 : 0
   };
-  return { stage: w, m3ha, kg, ppm, meq, pct, nSplit };
+  return {
+    stage: w,
+    m3ha,
+    kg,
+    ppm,
+    meq,
+    pct,
+    nSplit,
+    sumAnionsMeq: sumAnions,
+    sumCationsMeq: sumCationsTotal
+  };
 }
 
 function renderFertiChartsInsights() {
@@ -1256,6 +1266,7 @@ function renderFertiChartsInsights() {
         <h5>Macro resumen · ${fertiStageSlotLabel(idx)} (${summary.stage.stage || 'Etapa'})</h5>
         <div class="ferti-insight-legend" style="margin:0 0 8px 0;">
           Relación de N en la etapa: <strong>N-NO₃⁻ ${fertiNum(summary.nSplit.NO3, 1)}%</strong> · <strong>N-NH₄⁺ ${fertiNum(summary.nSplit.NH4, 1)}%</strong> (sobre N total = NO₃ + NH₄).
+          <span class="ferti-insight-meq-sums notranslate" translate="no" title="Σ aniones = N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻; Σ cationes = K⁺ + Ca²⁺ + Mg²⁺ + N-NH₄⁺"> · Σ aniones ${fertiNum(summary.sumAnionsMeq, 2)} meq/L · Σ cationes ${fertiNum(summary.sumCationsMeq, 2)} meq/L</span>
         </div>
         <table class="ferti-insight-table ferti-insight-table--macro-ionic">
           <thead><tr><th>Nutriente</th><th>kg/ha</th><th>ppm</th><th>meq/L</th><th>% grupo <span class="ferti-pct-col-hint" title="Marcos: suma 100% dentro de aniones o de K+Ca+Mg; NH₄ aparte.">ⓘ</span></th></tr></thead>
