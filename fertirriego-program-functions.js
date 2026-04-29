@@ -78,7 +78,7 @@ let fertiChartSelectedStageIndex = 0;
 const FERTI_NUTRIENTS = ['N_NO3','N_NH4','P','P2O5','K','K2O','Ca','CaO','Mg','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','Si','SiO2'];
 
 // Conversión de óxido↔elemental (mismos factores que en requerimiento)
-const FERTI_CONV = { P2O5_TO_P: 2.291, K2O_TO_K: 1.204, CaO_TO_Ca: 1.399, MgO_TO_Mg: 1.658, SiO2_TO_Si: 2.139 };
+const FERTI_CONV = { P2O5_TO_P: 2.291, K2O_TO_K: 1.204, CaO_TO_Ca: 1.399, MgO_TO_Mg: 1.658, SiO2_TO_Si: 2.139, SO4_TO_S: 96 / 32 };
 
 // ==== Utilidades de almacenamiento unificado (formato Enmienda) ====
 function fertiGetUnifiedProjectId(){
@@ -1418,8 +1418,8 @@ function updateFertiCharts(){
       pointBorderColor: '#ffffff'
     });
 
-    // Conversión a elemental si aplica (P2O5->P, K2O->K, CaO->Ca, MgO->Mg)
-    let macroLabels = { P2O5: 'P2O5', K2O: 'K2O', CaO: 'CaO', MgO: 'MgO' };
+    // Conversión a elemental si aplica (P2O5->P, K2O->K, CaO->Ca, MgO->Mg, SO4->S como masa S / masa SO4 en producto)
+    let macroLabels = { P2O5: 'P2O5', K2O: 'K2O', CaO: 'CaO', MgO: 'MgO', SO4: 'SO4' };
     if (fertiChartsElementalMode) {
       macros = {
         N_NO3: macros.N_NO3,
@@ -1428,9 +1428,9 @@ function updateFertiCharts(){
         K2O: macros.K2O.map(v => v / FERTI_CONV.K2O_TO_K),
         CaO: macros.CaO.map(v => v / FERTI_CONV.CaO_TO_Ca),
         MgO: macros.MgO.map(v => v / FERTI_CONV.MgO_TO_Mg),
-        SO4: macros.SO4
+        SO4: macros.SO4.map(v => v / FERTI_CONV.SO4_TO_S)
       };
-      macroLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg' };
+      macroLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SO4: 'S' };
     }
 
     const makeChartOptions = () => ({
@@ -1493,7 +1493,7 @@ function updateFertiCharts(){
       makeDataset(macroLabels.K2O, macros.K2O, macroColors.K2O),
       makeDataset(macroLabels.CaO, macros.CaO, macroColors.CaO),
       makeDataset(macroLabels.MgO, macros.MgO, macroColors.MgO),
-      makeDataset('SO4', macros.SO4, macroColors.SO4)
+      makeDataset(macroLabels.SO4, macros.SO4, macroColors.SO4)
     ];
     const microDatasets = [
       makeDataset('Fe', micros.Fe, microColors.Fe),
@@ -1594,7 +1594,19 @@ function getFertiChartsDataUrlsForReport(program, callback) {
     var micros = { Fe: mk('Fe'), Mn: mk('Mn'), B: mk('B'), Zn: mk('Zn'), Cu: mk('Cu'), Mo: mk('Mo') };
     var macroColors = { N_NO3: '#1f77b4', N_NH4: '#2ca02c', P2O5: '#ff7f0e', K2O: '#98df8a', CaO: '#9467bd', MgO: '#17becf', SO4: '#8c564b' };
     var microColors = { Fe: '#1f77b4', Mn: '#2ca02c', B: '#ff7f0e', Zn: '#9467bd', Cu: '#8c564b', Mo: '#e377c2' };
-    var macroLabels = { P2O5: 'P2O5', K2O: 'K2O', CaO: 'CaO', MgO: 'MgO' };
+    var macroLabels = { P2O5: 'P2O5', K2O: 'K2O', CaO: 'CaO', MgO: 'MgO', SO4: 'SO4' };
+    if (typeof fertiChartsElementalMode !== 'undefined' && fertiChartsElementalMode) {
+      macros = {
+        N_NO3: macros.N_NO3,
+        N_NH4: macros.N_NH4,
+        P2O5: macros.P2O5.map(function(v) { return v / FERTI_CONV.P2O5_TO_P; }),
+        K2O: macros.K2O.map(function(v) { return v / FERTI_CONV.K2O_TO_K; }),
+        CaO: macros.CaO.map(function(v) { return v / FERTI_CONV.CaO_TO_Ca; }),
+        MgO: macros.MgO.map(function(v) { return v / FERTI_CONV.MgO_TO_Mg; }),
+        SO4: macros.SO4.map(function(v) { return v / FERTI_CONV.SO4_TO_S; })
+      };
+      macroLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SO4: 'S' };
+    }
     var W = 480, H = 280;
     var macroCanvas = document.createElement('canvas');
     macroCanvas.width = W;
@@ -1620,7 +1632,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
             { label: macroLabels.K2O, data: macros.K2O, borderColor: macroColors.K2O, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
             { label: macroLabels.CaO, data: macros.CaO, borderColor: macroColors.CaO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
             { label: macroLabels.MgO, data: macros.MgO, borderColor: macroColors.MgO, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 },
-            { label: 'SO4', data: macros.SO4, borderColor: macroColors.SO4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
+            { label: macroLabels.SO4, data: macros.SO4, borderColor: macroColors.SO4, backgroundColor: 'transparent', tension: 0.3, borderWidth: 3 }
           ]
         },
         options: {
