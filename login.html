@@ -299,6 +299,11 @@
           <span class="calculator-icon">🔺</span>
           <span class="button-text">Compatibilidad de fertilizantes (fertirriego)</span>
         </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNMineralizableMoCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🌱</span>
+          <span class="button-text">N mineralizable desde materia orgánica</span>
+        </button>
         
         <!-- Footer: copyright y nota técnica -->
         <div style="
@@ -803,6 +808,24 @@
       background: #f8fafc;
     }
 
+    .modal-n-mineralizable-mo {
+      max-width: 1280px;
+      width: 96%;
+      max-height: 92vh;
+      overflow: hidden;
+    }
+    .modal-n-mineralizable-mo .modal-body {
+      padding: 0;
+      height: calc(92vh - 80px);
+    }
+    .modal-n-mineralizable-mo iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #f8fafc;
+    }
+
     .modal-granular-mix {
       max-width: 1280px;
       width: 96%;
@@ -1245,6 +1268,16 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showNMineralizableMoCalculator() {
+      document.getElementById('nMineralizableMoCalculatorModal').style.display = 'flex';
+    }
+    function closeNMineralizableMoCalculator() {
+      const modal = document.getElementById('nMineralizableMoCalculatorModal');
+      const frame = document.getElementById('nMineralizableMoCalculatorFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     function clearNutrientUnitsCalculator() {
       const inputs = document.querySelectorAll('#nutrientUnitsCalculatorModal input');
       inputs.forEach(input => input.value = '');
@@ -1417,6 +1450,10 @@
       const fertilizerCompatModal = document.getElementById('fertilizerCompatibilityModal');
       if (e.target === fertilizerCompatModal) {
         closeFertilizerCompatibilityCalculator();
+      }
+      const nMineralizableMoModal = document.getElementById('nMineralizableMoCalculatorModal');
+      if (e.target === nMineralizableMoModal) {
+        closeNMineralizableMoCalculator();
       }
       const extraccionEtapaModal = document.getElementById('extraccionEtapaCalculatorModal');
       if (e.target === extraccionEtapaModal) {
@@ -2000,6 +2037,19 @@
       </div>
       <div class="modal-body">
         <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html" title="Compatibilidad de fertilizantes"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal N mineralizable desde MO -->
+  <div id="nMineralizableMoCalculatorModal" class="modal-overlay">
+    <div class="modal modal-n-mineralizable-mo">
+      <div class="modal-header">
+        <h2 class="modal-title">🌱 N mineralizable desde materia orgánica</h2>
+        <button class="modal-close" onclick="closeNMineralizableMoCalculator()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html" title="N mineralizable desde materia orgánica"></iframe>
       </div>
     </div>
   </div>

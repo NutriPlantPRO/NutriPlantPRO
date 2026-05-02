@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌱 N mineralizable desde materia orgánica | NutriPlant</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --line: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --np-green: #0d9488;
+      --np-green-soft: #ecfdf5;
+      --np-blue: #0ea5e9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 14px;
+    }
+    .wrap { max-width: 900px; margin: 0 auto; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+    }
+    .card-hero {
+      padding: 16px 18px;
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%);
+      border-bottom: 1px solid #cbd5e1;
+    }
+    h1 { font-size: 18px; margin: 0 0 8px 0; color: #0f172a; }
+    p.note { margin: 0; color: var(--muted); line-height: 1.5; }
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0;
+      background: linear-gradient(90deg, #0d9488 0%, #14b8a6 50%, #2dd4bf 100%);
+    }
+    .section-head--amber {
+      background: linear-gradient(90deg, #b45309 0%, #d97706 50%, #fbbf24 100%);
+    }
+    .section-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 26px; height: 26px; border-radius: 8px;
+      background: rgba(255,255,255,0.25); font-size: 13px;
+    }
+    .section-body { padding: 14px 16px 16px; }
+    .section-note { margin: 0 0 12px; color: var(--muted); line-height: 1.5; font-size: 13px; }
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block; font-weight: 600; font-size: 12px; color: #334155; margin-bottom: 6px;
+    }
+    .field input[type="number"], .field input[type="text"] {
+      width: 100%; max-width: 220px;
+      border: 1px solid #cbd5e1; border-radius: 8px; padding: 9px 10px; font-size: 14px;
+      background: #fff;
+    }
+    .field input:focus {
+      outline: none; border-color: #14b8a6;
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+    }
+    .field-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .unit { font-size: 12px; color: var(--muted); }
+    .preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .preset-btn {
+      cursor: pointer; font-size: 12px; font-weight: 600;
+      padding: 6px 12px; border-radius: 8px;
+      border: 1px solid #99f6e4; background: #f0fdfa; color: #0f766e;
+    }
+    .preset-btn:hover { background: #ccfbf1; }
+    .preset-btn--active { border-color: #0d9488; background: #ccfbf1; box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2); }
+    .slider-wrap { margin-top: 8px; max-width: 360px; }
+    input[type="range"] {
+      width: 100%; accent-color: #0d9488;
+    }
+    .slider-val {
+      font-weight: 800; color: #0f766e; font-size: 15px; margin-left: 8px;
+    }
+    details.advanced {
+      margin-top: 14px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px;
+      background: #fafafa;
+    }
+    details.advanced summary {
+      cursor: pointer; font-weight: 600; color: #475569; font-size: 13px;
+    }
+    .ref-box {
+      border: 1px solid #d1d5db; border-radius: 10px; background: #fafafa;
+      padding: 12px 14px; margin-top: 12px;
+    }
+    .ref-box h3 { margin: 0 0 8px 0; font-size: 13px; color: #0f172a; }
+    .ref-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .ref-table th, .ref-table td {
+      border: 1px solid #e2e8f0; padding: 6px 8px; text-align: left;
+    }
+    .ref-table th { background: #e2e8f0; color: #334155; }
+    .results-grid {
+      display: grid;
+      gap: 10px;
+    }
+    @media (min-width: 560px) {
+      .results-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .result-tile {
+      border: 1px solid #a7f3d0; border-radius: 10px;
+      background: linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 100%);
+      padding: 14px 16px;
+    }
+    .result-tile--highlight {
+      border-color: #38bdf8;
+      background: linear-gradient(180deg, #eff6ff 0%, #f0f9ff 100%);
+      grid-column: 1 / -1;
+    }
+    .result-tile .label { font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase; letter-spacing: 0.04em; }
+    .result-tile--highlight .label { color: #0369a1; }
+    .result-tile .value { font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-top: 4px; }
+    .result-tile .unit-suffix { font-size: 13px; font-weight: 600; color: #64748b; }
+    .formula-note {
+      margin-top: 12px; font-size: 12px; color: var(--muted); line-height: 1.5;
+      border-top: 1px dashed #cbd5e1; padding-top: 12px;
+    }
+    .warn {
+      background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px;
+      padding: 10px 12px; font-size: 12px; color: #92400e; line-height: 1.45; margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="card-hero">
+        <h1>🌱 Estimación de nitrógeno mineralizable desde materia orgánica</h1>
+        <p class="note">
+          Orden de magnitud anual de N que podría mineralizarse desde la MO del suelo, según profundidad, densidad, exploración radicular, contenido de N en la MO y tasa de mineralización. No sustituye ensayo de campo; usa tus datos de laboratorio y criterio agronómico.
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-head"><span class="section-badge">A</span> Datos de entrada</h2>
+      <div class="section-body">
+        <p class="section-note">Introduce porcentajes como números (ej. 2 para 2 %). Valores por defecto orientativos.</p>
+
+        <div class="field">
+          <label for="inMO">Materia orgánica del suelo</label>
+          <div class="field-inline">
+            <input id="inMO" type="number" step="0.01" min="0" max="100" value="2" placeholder="ej. 2" />
+            <span class="unit">% (del análisis de suelo)</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="inDA">Densidad aparente (DA)</label>
+          <div class="field-inline">
+            <input id="inDA" type="number" step="0.01" min="0.5" max="2.5" value="1.20" />
+            <span class="unit">g/cm³</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="inP">Profundidad efectiva</label>
+          <div class="field-inline">
+            <input id="inP" type="number" step="1" min="1" max="200" value="30" />
+            <span class="unit">cm</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="inR">Suelo explorado por raíces</label>
+          <div class="field-inline">
+            <input id="inR" type="number" step="1" min="1" max="100" value="70" />
+            <span class="unit">%</span>
+          </div>
+          <p class="section-note" style="margin-top:6px;">Sugerido por defecto en NutriPlant: <strong>70 %</strong>. Para frutales/aguacate suele usarse con frecuencia <strong>50–70 %</strong> según sistema.</p>
+        </div>
+
+        <details class="advanced">
+          <summary>N contenido en la MO (avanzado)</summary>
+          <div class="field" style="margin-top:10px;margin-bottom:0;">
+            <label for="inNmo">Fracción de N en la materia orgánica</label>
+            <div class="field-inline">
+              <input id="inNmo" type="number" step="0.1" min="0.1" max="20" value="5" />
+              <span class="unit">% (típico ~5 %)</span>
+            </div>
+          </div>
+        </details>
+
+        <div class="ref-box">
+          <h3>📌 Referencia: % suelo explorado por sistema</h3>
+          <table class="ref-table">
+            <thead><tr><th>Sistema</th><th>% sugerido</th></tr></thead>
+            <tbody>
+              <tr><td>Cultivo extensivo cerrado</td><td>80 – 100</td></tr>
+              <tr><td>Hortaliza en cama o surco</td><td>50 – 80</td></tr>
+              <tr><td>Berry en cama</td><td>40 – 70</td></tr>
+              <tr><td>Aguacate joven</td><td>20 – 50</td></tr>
+              <tr><td>Aguacate adulto</td><td>50 – 80</td></tr>
+              <tr><td>Frutal con calles amplias</td><td>40 – 70</td></tr>
+              <tr><td>Frutal con cobertura activa</td><td>60 – 90</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-head section-head--amber"><span class="section-badge">B</span> Tasa anual de mineralización (T<sub>min</sub>)</h2>
+      <div class="section-body">
+        <p class="section-note">Barra <strong>1 % – 3 %</strong> · recomendación media agrícola <strong>2 %</strong>. Ajusta según temperatura, humedad, laboreo y actividad biológica.</p>
+        <div class="preset-row">
+          <button type="button" class="preset-btn" data-tmin="1" title="Suelo frío, seco, compactado o baja actividad biológica">Conservador · 1 %</button>
+          <button type="button" class="preset-btn preset-btn--active" data-tmin="2" title="Condición agrícola promedio">Medio · 2 %</button>
+          <button type="button" class="preset-btn" data-tmin="3" title="Suelo cálido, húmedo, aireado, alta actividad biológica">Alto · 3 %</button>
+        </div>
+        <div class="slider-wrap">
+          <label for="rangeTmin" style="font-weight:600;font-size:13px;">Desliza o edita el valor</label>
+          <div class="field-inline" style="margin-top:8px;">
+            <input id="rangeTmin" type="range" min="1" max="3" step="0.1" value="2" />
+            <span id="tminDisplay" class="slider-val">2,0 %</span>
+          </div>
+          <div class="field-inline" style="margin-top:8px;">
+            <input id="inTmin" type="number" step="0.1" min="1" max="3" value="2" />
+            <span class="unit">% (editable 1–3)</span>
+          </div>
+        </div>
+
+        <div class="ref-box" style="margin-top:14px;">
+          <h3>Tasa según condición</h3>
+          <table class="ref-table">
+            <thead><tr><th>Opción</th><th>Tasa</th><th>Uso sugerido</th></tr></thead>
+            <tbody>
+              <tr><td>Conservador</td><td>1 %</td><td>Suelo frío, seco, compactado o baja actividad biológica</td></tr>
+              <tr><td>Medio</td><td>2 %</td><td>Condición agrícola promedio (default)</td></tr>
+              <tr><td>Alto</td><td>3 %</td><td>Suelo cálido, húmedo, aireado, alta actividad biológica</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-head" style="background:linear-gradient(90deg,#0284c7,#0ea5e9,#38bdf8);"><span class="section-badge">C</span> Resultados</h2>
+      <div class="section-body">
+        <div class="results-grid" id="resultsWrap">
+          <div class="result-tile">
+            <div class="label">Masa de suelo total evaluada</div>
+            <div class="value" id="outMtotal">—</div>
+            <div class="unit-suffix">kg suelo / ha</div>
+          </div>
+          <div class="result-tile">
+            <div class="label">Masa de suelo efectiva por raíz</div>
+            <div class="value" id="outMeff">—</div>
+            <div class="unit-suffix">kg suelo / ha</div>
+          </div>
+          <div class="result-tile">
+            <div class="label">Materia orgánica estimada</div>
+            <div class="value" id="outMOkg">—</div>
+            <div class="unit-suffix">kg MO / ha</div>
+          </div>
+          <div class="result-tile">
+            <div class="label">N orgánico total estimado</div>
+            <div class="value" id="outNorg">—</div>
+            <div class="unit-suffix">kg N / ha</div>
+          </div>
+          <div class="result-tile result-tile--highlight">
+            <div class="label">N potencialmente mineralizable (anual)</div>
+            <div class="value" id="outNmin">—</div>
+            <div class="unit-suffix">kg N / ha / año</div>
+          </div>
+        </div>
+
+        <div class="warn">
+          ⚠️ Resultado orientativo: sensible a DA, profundidad, % explorado y T<sub>min</sub>. Validar con observación en campo y experiencia local.
+        </div>
+
+        <p class="formula-note">
+          <strong>Fórmula (misma cadena que en NutriPlant):</strong><br>
+          N<sub>min</sub> = 10&nbsp;000 × (P/100) × DA × 1&nbsp;000 × (R/100) × (MO/100) × (N<sub>MO</sub>/100) × (T<sub>min</sub>/100)<br>
+          <span style="color:#64748b;">con P en cm, DA en g/cm³; masas intermedias: suelo total → efectiva × R → MO × MO% → N<sub>org</sub> × N<sub>MO</sub>% → mineralización × T<sub>min</sub>.</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function parseNum(el, fallback) {
+      const v = parseFloat(String(el.value).replace(',', '.'));
+      return Number.isFinite(v) ? v : fallback;
+    }
+
+    function fmt(v, d) {
+      if (!Number.isFinite(v)) return '—';
+      return v.toLocaleString('es-MX', { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
+
+    function clamp(x, a, b) { return Math.min(b, Math.max(a, x)); }
+
+    function compute() {
+      const P = parseNum(document.getElementById('inP'), 30);
+      const DA = parseNum(document.getElementById('inDA'), 1.2);
+      const R = clamp(parseNum(document.getElementById('inR'), 70), 1, 100);
+      const MO = clamp(parseNum(document.getElementById('inMO'), 2), 0, 100);
+      const Nmo = clamp(parseNum(document.getElementById('inNmo'), 5), 0.1, 100);
+      let Tmin = parseNum(document.getElementById('inTmin'), 2);
+      Tmin = clamp(Tmin, 1, 3);
+
+      const Mtotal = 10000 * (P / 100) * DA * 1000;
+      const Meff = Mtotal * (R / 100);
+      const MOkg = Meff * (MO / 100);
+      const Norg = MOkg * (Nmo / 100);
+      const Nmin = Norg * (Tmin / 100);
+
+      document.getElementById('outMtotal').textContent = fmt(Mtotal, 0);
+      document.getElementById('outMeff').textContent = fmt(Meff, 0);
+      document.getElementById('outMOkg').textContent = fmt(MOkg, 0);
+      document.getElementById('outNorg').textContent = fmt(Norg, 1);
+      document.getElementById('outNmin').textContent = fmt(Nmin, 2);
+    }
+
+    function syncTminFromSlider() {
+      const r = document.getElementById('rangeTmin');
+      const n = document.getElementById('inTmin');
+      const v = clamp(parseFloat(r.value), 1, 3);
+      n.value = v.toFixed(1);
+      document.getElementById('tminDisplay').textContent = v.toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %';
+      document.querySelectorAll('.preset-btn').forEach(b => {
+        b.classList.toggle('preset-btn--active', Math.abs(parseFloat(b.getAttribute('data-tmin')) - v) < 0.05);
+      });
+      compute();
+    }
+
+    function syncTminFromInput() {
+      let v = parseNum(document.getElementById('inTmin'), 2);
+      v = clamp(v, 1, 3);
+      document.getElementById('inTmin').value = v.toFixed(1);
+      document.getElementById('rangeTmin').value = v;
+      document.getElementById('tminDisplay').textContent = v.toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %';
+      document.querySelectorAll('.preset-btn').forEach(b => {
+        b.classList.toggle('preset-btn--active', Math.abs(parseFloat(b.getAttribute('data-tmin')) - v) < 0.05);
+      });
+      compute();
+    }
+
+    ['inMO','inDA','inP','inR','inNmo'].forEach(id => {
+      document.getElementById(id).addEventListener('input', compute);
+    });
+    document.getElementById('rangeTmin').addEventListener('input', syncTminFromSlider);
+    document.getElementById('inTmin').addEventListener('input', syncTminFromInput);
+
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const t = parseFloat(this.getAttribute('data-tmin'));
+        document.getElementById('rangeTmin').value = t;
+        document.getElementById('inTmin').value = t.toFixed(1);
+        syncTminFromSlider();
+      });
+    });
+
+    syncTminFromSlider();
+    compute();
+  </script>
+</body>
+</html>
