@@ -1007,7 +1007,7 @@ body {
   justify-content: flex-end;
   gap: 10px;
   overflow-x: auto;
-  overflow-y: hidden;
+  /* Sin overflow-y: hidden para que los tooltips debajo de los iconos no se recorten */
   min-width: 0;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
@@ -1104,6 +1104,94 @@ body {
 .header-buttons .btn-calc-icon-only .btn-calc-icon svg {
   width: 18px;
   height: 18px;
+}
+
+/* Tooltips del header: bonitos (debajo del botón → no los recorta overflow del toolbar) */
+.header-buttons .btn-calculator.np-dash-tooltip,
+.header-buttons .btn-user.np-dash-tooltip {
+  position: relative;
+  overflow: visible;
+}
+.header-buttons .btn-calculator.np-dash-tooltip::before,
+.header-buttons .btn-user.np-dash-tooltip::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 4px);
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-bottom-color: #0f172a;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.2s ease 0.08s,
+    visibility 0.2s ease 0.08s,
+    transform 0.2s ease 0.08s;
+  z-index: 10060;
+  pointer-events: none;
+  filter: drop-shadow(0 -1px 3px rgba(15, 23, 42, 0.15));
+}
+.header-buttons .btn-calculator.np-dash-tooltip::after,
+.header-buttons .btn-user.np-dash-tooltip::after {
+  content: attr(data-np-tooltip);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 14px);
+  transform: translateX(-50%) translateY(-4px);
+  padding: 9px 14px;
+  min-width: 0;
+  max-width: min(300px, 86vw);
+  background: linear-gradient(155deg, #1e3a5f 0%, #0f172a 55%, #0c1222 100%);
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow:
+    0 12px 32px rgba(15, 23, 42, 0.38),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.22s ease 0.08s,
+    visibility 0.22s ease 0.08s,
+    transform 0.22s ease 0.08s;
+  z-index: 10061;
+  pointer-events: none;
+}
+.header-buttons .btn-calculator.np-dash-tooltip:hover::before,
+.header-buttons .btn-calculator.np-dash-tooltip:focus-visible::before,
+.header-buttons .btn-user.np-dash-tooltip:hover::before,
+.header-buttons .btn-user.np-dash-tooltip:focus-visible::before,
+.header-buttons .btn-calculator.np-dash-tooltip:hover::after,
+.header-buttons .btn-calculator.np-dash-tooltip:focus-visible::after,
+.header-buttons .btn-user.np-dash-tooltip:hover::after,
+.header-buttons .btn-user.np-dash-tooltip:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+.header-buttons .btn-calculator.np-dash-tooltip:hover::after,
+.header-buttons .btn-calculator.np-dash-tooltip:focus-visible::after,
+.header-buttons .btn-user.np-dash-tooltip:hover::after,
+.header-buttons .btn-user.np-dash-tooltip:focus-visible::after {
+  transform: translateX(-50%) translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .header-buttons .btn-calculator.np-dash-tooltip::before,
+  .header-buttons .btn-calculator.np-dash-tooltip::after,
+  .header-buttons .btn-user.np-dash-tooltip::before,
+  .header-buttons .btn-user.np-dash-tooltip::after {
+    transition: none;
+  }
+  .header-buttons .btn-calculator.np-dash-tooltip::after,
+  .header-buttons .btn-user.np-dash-tooltip::after {
+    transform: translateX(-50%);
+  }
 }
 
 /* En ventana mediana/chica: botones calculadora compactos */
