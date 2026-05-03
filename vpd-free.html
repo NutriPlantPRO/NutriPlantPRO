@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calculadora VPD</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="stylesheet" href="dashboard.css" />
   <style>
     body {
@@ -60,6 +61,54 @@
         align-items: end;
       }
     }
+    #vpd-free-map {
+      height: 220px;
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      z-index: 1;
+    }
+    .vpd-map-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .vpd-map-actions button {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #0f172a;
+    }
+    .vpd-map-actions button.primary {
+      background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
+      color: #fff;
+      border-color: #0369a1;
+    }
+    .vpd-map-actions button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .vpd-coord-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    @media (max-width: 520px) {
+      .vpd-coord-row { grid-template-columns: 1fr; }
+    }
+    #vpd-geo-status {
+      font-size: 12px;
+      color: #64748b;
+      margin: 0 0 8px;
+      min-height: 1.2em;
+    }
   </style>
 </head>
 <body>
@@ -67,6 +116,29 @@
   <div class="wrap">
     <div class="wm" aria-hidden="true"><img src="assets/NutriPlant_PRO_blue.png" alt=""></div>
     <h2 class="title">🌡️ Déficit de Presión de Vapor</h2>
+
+    <div style="background:#fefce8;border:2px solid #eab308;border-radius:12px;padding:20px;margin-bottom:20px;">
+      <h3 style="margin:0 0 8px;color:#854d0e;font-size:17px;font-weight:600;">🗺️ Clima en un punto (mapa o GPS)</h3>
+      <p style="margin:0 0 14px;font-size:13px;color:#713f12;line-height:1.45;">
+        Elige un punto en el mapa o usa tu ubicación. NutriPlant pide a <strong>Open-Meteo</strong> (sin API key) la temperatura, humedad y radiación solar actual; con radiación se estima <strong>T<sub>hoja</sub></strong> y el VPD como en el dashboard (sin polígono: solo este punto).
+      </p>
+      <div class="vpd-coord-row">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:4px;">Latitud</label>
+          <input id="vpd-free-lat" type="number" step="any" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;" placeholder="ej. 19.4326" />
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:4px;">Longitud</label>
+          <input id="vpd-free-lng" type="number" step="any" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;" placeholder="ej. -99.1332" />
+        </div>
+      </div>
+      <div class="vpd-map-actions">
+        <button type="button" id="vpd-btn-geolocate" onclick="vpdFreeUseMyLocation()">📍 Mi ubicación</button>
+        <button type="button" class="primary" id="vpd-btn-fetch-weather" onclick="vpdFreeFetchWeatherAndCalc()">🌤️ Obtener clima y calcular VPD</button>
+      </div>
+      <p id="vpd-geo-status" aria-live="polite"></p>
+      <div id="vpd-free-map"></div>
+    </div>
 
     <div style="background:#f0f9ff;border:2px solid #0ea5e9;border-radius:12px;padding:24px;margin-bottom:24px;">
       <h3 style="margin:0 0 20px;color:#0369a1;font-size:18px;font-weight:600;">📊 Calculadora Ambiental Simple</h3>
@@ -128,6 +200,7 @@
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
     function isEnglishUI() {
       const title = (document.querySelector('.title') || document.querySelector('h2') || {}).textContent || '';
@@ -159,6 +232,205 @@
       const vpd = esLeaf - ea;
       const hd = (vpd * 216.7) / (airTemp + 273.15);
       return { vpd: parseFloat(vpd.toFixed(2)), hd: parseFloat(hd.toFixed(2)) };
+    }
+
+    var vpdFreeMap = null;
+    var vpdFreeMarker = null;
+
+    function vpdGeoSetStatus(msg) {
+      var el = document.getElementById('vpd-geo-status');
+      if (el) el.textContent = msg || '';
+    }
+
+    function vpdFreeReadCoords() {
+      var lat = parseFloat(document.getElementById('vpd-free-lat').value);
+      var lng = parseFloat(document.getElementById('vpd-free-lng').value);
+      return { lat: lat, lng: lng };
+    }
+
+    function vpdFreeApplyCoords(lat, lng, moveMarker) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+      document.getElementById('vpd-free-lat').value = lat.toFixed(6);
+      document.getElementById('vpd-free-lng').value = lng.toFixed(6);
+      if (moveMarker && vpdFreeMarker && vpdFreeMap) {
+        vpdFreeMarker.setLatLng([lat, lng]);
+        vpdFreeMap.setView([lat, lng], Math.max(vpdFreeMap.getZoom(), 10));
+      }
+    }
+
+    function vpdFreeInitMap() {
+      if (typeof L === 'undefined' || vpdFreeMap) return;
+      var startLat = 19.4326;
+      var startLng = -99.1332;
+      vpdFreeMap = L.map('vpd-free-map', { scrollWheelZoom: true }).setView([startLat, startLng], 5);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(vpdFreeMap);
+      vpdFreeMarker = L.marker([startLat, startLng], { draggable: true }).addTo(vpdFreeMap);
+      vpdFreeMarker.on('dragend', function () {
+        var ll = vpdFreeMarker.getLatLng();
+        vpdFreeApplyCoords(ll.lat, ll.lng, false);
+        vpdGeoSetStatus('');
+      });
+      vpdFreeMap.on('click', function (e) {
+        vpdFreeMarker.setLatLng(e.latlng);
+        vpdFreeApplyCoords(e.latlng.lat, e.latlng.lng, false);
+        vpdGeoSetStatus('');
+      });
+      vpdFreeApplyCoords(startLat, startLng, false);
+      setTimeout(function () { if (vpdFreeMap) vpdFreeMap.invalidateSize(); }, 300);
+      setTimeout(function () { if (vpdFreeMap) vpdFreeMap.invalidateSize(); }, 800);
+    }
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && vpdFreeMap) setTimeout(function () { vpdFreeMap.invalidateSize(); }, 200);
+    });
+
+    ['vpd-free-lat', 'vpd-free-lng'].forEach(function (id) {
+      var inp = document.getElementById(id);
+      if (inp) inp.addEventListener('change', function () {
+        var c = vpdFreeReadCoords();
+        if (Number.isFinite(c.lat) && Number.isFinite(c.lng) && vpdFreeMarker && vpdFreeMap) {
+          vpdFreeMarker.setLatLng([c.lat, c.lng]);
+          vpdFreeMap.setView([c.lat, c.lng], Math.max(vpdFreeMap.getZoom(), 8));
+        }
+      });
+    });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', vpdFreeInitMap);
+    } else {
+      vpdFreeInitMap();
+    }
+
+    async function vpdFreeGetWeatherData(lat, lng) {
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(lat) +
+        '&longitude=' + encodeURIComponent(lng) +
+        '&current=temperature_2m,relative_humidity_2m,shortwave_radiation';
+      var response = await fetch(url);
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      var data = await response.json();
+      if (!data || !data.current) throw new Error('Respuesta inválida');
+      var cur = data.current;
+      var rad = cur.shortwave_radiation;
+      var radNum = (rad != null && Number.isFinite(Number(rad))) ? Number(rad) : null;
+      return {
+        temperature: cur.temperature_2m,
+        humidity: cur.relative_humidity_2m,
+        shortwaveRadiation: radNum
+      };
+    }
+
+    function vpdFreeUseMyLocation() {
+      if (!navigator.geolocation) {
+        alert(t('Tu navegador no permite ubicación.', 'Your browser does not support geolocation.'));
+        return;
+      }
+      var btn = document.getElementById('vpd-btn-geolocate');
+      if (btn) btn.disabled = true;
+      vpdGeoSetStatus(t('📍 Obteniendo ubicación…', '📍 Getting location…'));
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          var la = pos.coords.latitude;
+          var lo = pos.coords.longitude;
+          vpdFreeApplyCoords(la, lo, true);
+          vpdGeoSetStatus(t('Ubicación aplicada. Puedes afinar el punto en el mapa.', 'Location set. Drag the marker or tap the map to refine.'));
+          if (btn) btn.disabled = false;
+          setTimeout(function () { if (vpdFreeMap) vpdFreeMap.invalidateSize(); }, 150);
+        },
+        function () {
+          vpdGeoSetStatus(t('No se pudo leer el GPS. Prueba seleccionando un punto en el mapa.', 'Could not read GPS. Pick a point on the map.'));
+          if (btn) btn.disabled = false;
+        },
+        { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 }
+      );
+    }
+
+    async function vpdFreeFetchWeatherAndCalc() {
+      var c = vpdFreeReadCoords();
+      if (!Number.isFinite(c.lat) || !Number.isFinite(c.lng)) {
+        alert(t('⚠️ Indica latitud y longitud válidas o usa el mapa.', '⚠️ Enter valid latitude/longitude or use the map.'));
+        return;
+      }
+      if (c.lat < -90 || c.lat > 90 || c.lng < -180 || c.lng > 180) {
+        alert(t('⚠️ Coordenadas fuera de rango.', '⚠️ Coordinates out of range.'));
+        return;
+      }
+      var btn = document.getElementById('vpd-btn-fetch-weather');
+      if (btn) btn.disabled = true;
+      vpdGeoSetStatus(t('🌤️ Consultando Open-Meteo…', '🌤️ Fetching Open-Meteo…'));
+      try {
+        var weather = await vpdFreeGetWeatherData(c.lat, c.lng);
+        var temp = Number(weather.temperature);
+        var hum = Number(weather.humidity);
+        if (!Number.isFinite(temp) || !Number.isFinite(hum)) {
+          throw new Error('Datos incompletos');
+        }
+        document.getElementById('vpd-env-temp').value = temp.toFixed(1);
+        document.getElementById('vpd-env-humidity').value = Math.round(hum);
+        document.getElementById('vpd-adv-air-temp').value = temp.toFixed(1);
+        document.getElementById('vpd-adv-humidity').value = Math.round(hum);
+
+        var rad = weather.shortwaveRadiation;
+        var useSolar = rad != null && Number.isFinite(rad) && rad >= 0;
+        if (useSolar) {
+          document.getElementById('vpd-solar-radiation').value = String(Math.round(rad));
+          document.querySelector('input[name="vpd-mode-free"][value="radiation"]').checked = true;
+          toggleVPDModeFree();
+        }
+
+        var results;
+        var leafFromRad = null;
+        if (useSolar) {
+          leafFromRad = calculateLeafTempFromRadiation(temp, rad);
+          results = calculateVPDAdvanced(temp, hum, leafFromRad);
+        } else {
+          results = calculateVPDSimple(temp, hum);
+        }
+
+        var foot = '';
+        if (useSolar && leafFromRad != null) {
+          foot =
+            '<div style="margin:0 0 14px;padding:10px 12px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;font-size:13px;color:#065f46;line-height:1.45;">' +
+            '<strong>' + t('VPD con radiación solar', 'VPD with solar radiation') + '</strong> — Open-Meteo: ' +
+            rad.toFixed(0) + ' W/m². ' +
+            t('T<sub>hoja</sub> estimada', 'Estimated leaf T') + ': <strong>' + leafFromRad + ' °C</strong>. ' +
+            t('Punto:', 'Point:') + ' ' + c.lat.toFixed(5) + ', ' + c.lng.toFixed(5) +
+            '</div>';
+        } else {
+          foot =
+            '<div style="margin:0 0 12px;font-size:13px;color:#64748b;">' +
+            t('Sin dato útil de radiación en esta respuesta — VPD simple (solo T y HR). Punto:',
+              'No usable radiation in this response — simple VPD. Point:') +
+            ' ' + c.lat.toFixed(5) + ', ' + c.lng.toFixed(5) + '</div>';
+        }
+
+        document.getElementById('vpd-environmental-results').innerHTML =
+          foot +
+          '<div style="background:white;padding:20px;border-radius:8px;border:1px solid #e5e7eb;">' +
+          '<h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">' + t('Resultados:', 'Results:') + '</h4>' +
+          '<div style="display:grid;grid-template-columns:' + (useSolar ? 'repeat(3, minmax(0, 1fr))' : '1fr 1fr') + ';gap:16px;margin-bottom:16px;">' +
+          '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">' + t('Déficit de Presión de Vapor', 'Vapor Pressure Deficit') + '</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">' + results.vpd + ' kPa</div></div>' +
+          '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">' + t('Déficit de Humedad', 'Humidity Deficit') + '</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">' + results.hd + ' g/m³</div></div>' +
+          (useSolar
+            ? '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">☀️ ' + t('Radiación solar', 'Solar radiation') + '</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">' + rad.toFixed(0) + ' W/m²</div></div>'
+            : '') +
+          '</div>' +
+          createVPDRangeChart(results.vpd) +
+          '</div>';
+
+        vpdGeoSetStatus(t('✅ Datos aplicados a las calculadoras (simple y campos avanzados).',
+          '✅ Data filled in simple & advanced inputs.'));
+        document.getElementById('vpd-environmental-results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (e) {
+        console.warn(e);
+        vpdGeoSetStatus(t('Error al obtener clima. Intenta de nuevo.', 'Weather fetch failed. Try again.'));
+        alert(t('No se pudieron obtener datos del clima. Revisa tu conexión.', 'Could not fetch weather. Check your connection.'));
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     function createVPDRangeChart(vpdValue) {
