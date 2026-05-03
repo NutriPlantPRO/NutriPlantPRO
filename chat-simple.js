@@ -1628,7 +1628,7 @@ ESTILO DE RESPUESTA:
       out.cultivo = (opt && opt.text) ? opt.text.trim() : (cropEl.value || '').trim();
     }
     if (yieldEl && yieldEl.value !== '') out.rendimiento = String(yieldEl.value).trim();
-    const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B'];
+    const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B'];
     const rows = [];
     const extract = [], total = [], adj = [], eff = [], real = [];
     nutrients.forEach(n => {
@@ -1666,7 +1666,7 @@ ESTILO DE RESPUESTA:
       out.cultivo = (opt && opt.text) ? opt.text.trim() : (cropEl.value || '').trim();
     }
     if (yieldEl && yieldEl.value !== '') out.rendimiento = String(yieldEl.value).trim();
-    const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B'];
+    const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B'];
     const rows = [];
     const extract = [], total = [], adj = [], eff = [], real = [];
     nutrients.forEach(n => {

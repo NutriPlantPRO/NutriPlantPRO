@@ -2,7 +2,7 @@
 // NUTRICIÓN GRANULAR - FUNCIONES SIMPLIFICADAS
 // =====================================================
 
-// Base de datos de materias primas (orden: N → P → K → Ca → Mg+K/Mg → S → micros → complejos; personalizados al final al cargar)
+// Base de datos de materias primas (orden: N → P → K → Ca → Mg+K/Mg → SO4/sulfatos → micros → complejos; personalizados al final al cargar)
 const MATERIALS_DB = {
   // Nitrogenados
   'Urea': { N: 46, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
@@ -23,8 +23,6 @@ const MATERIALS_DB = {
   // Magnesio (K+Mg, sulfato Mg)
   'Sulfato de K y Mg': { N: 0, P2O5: 0, K2O: 22, CaO: 0, S: 0, SO4: 68.91, MgO: 18, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   'Sulfato de Magnesio': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 40, MgO: 16, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
-  // Azufre
-  'Azufre Granular': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 90, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   // Micros: Fe, Mn, Zn, B, Cu, Mo
   'Sulfato de Hierro': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 55, MgO: 0, SiO2: 0, Zn: 0, Fe: 20, B: 0, Mn: 0, Cu: 0, Mo: 0 },
   'Sulfato de Manganeso': { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 55, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 32, Cu: 0, Mo: 0 },
@@ -1231,7 +1229,8 @@ const CONVERSION_FACTORS = {
   MgO_TO_Mg: 1.658,  // MgO → Mg
   Mg_TO_MgO: 1.658,  // Mg → MgO
   SiO2_TO_Si: 2.139, // SiO₂ → Si
-  Si_TO_SiO2: 2.139  // Si → SiO₂
+  Si_TO_SiO2: 2.139,  // Si → SiO₂
+  S_TO_SO4: 96.062 / 32.065 // S → SO₄ (misma base que requerimiento granular)
 };
 
 // Función para formatear números con comas
@@ -1319,7 +1318,8 @@ function updateSummary(options = {}) {
               case 'CaO': v = convertElementalToOxide(v, CONVERSION_FACTORS.Ca_TO_CaO); break;
               case 'MgO': v = convertElementalToOxide(v, CONVERSION_FACTORS.Mg_TO_MgO); break;
               case 'SiO2': v = convertElementalToOxide(v, CONVERSION_FACTORS.Si_TO_SiO2); break;
-              default: /* N, S, SO4, micros no requieren conversión */ break;
+              case 'SO4': v = convertElementalToOxide(v, CONVERSION_FACTORS.S_TO_SO4); break;
+              default: /* N, micros no requieren conversión */ break;
             }
           }
           reqOxide[n] = v;
@@ -1332,6 +1332,9 @@ function updateSummary(options = {}) {
     if (!hasLiveReq && reqData && (hasSavedAdj || hasSavedEff)) {
       nutrientsList.forEach(n => {
         let adj = parseFloat(reqData.adjustment[n]) || 0;
+        if (n === 'SO4') {
+          adj += (parseFloat(reqData.adjustment.S) || 0) * CONVERSION_FACTORS.S_TO_SO4;
+        }
         const eff = parseFloat(reqData.efficiency[n]) || 100;
         // Si el requerimiento fue guardado en modo elemental, convertir a óxido
         if (reqData.isElementalMode) {
@@ -1341,7 +1344,7 @@ function updateSummary(options = {}) {
             case 'CaO': adj = convertElementalToOxide(adj, CONVERSION_FACTORS.Ca_TO_CaO); break;
             case 'MgO': adj = convertElementalToOxide(adj, CONVERSION_FACTORS.Mg_TO_MgO); break;
             case 'SiO2': adj = convertElementalToOxide(adj, CONVERSION_FACTORS.Si_TO_SiO2); break;
-            default: /* N, S, SO4, micros no requieren conversión */ break;
+            default: /* N, SO4 (guardado en óxido), micros */ break;
           }
         }
         reqOxide[n] = eff > 0 ? (adj / (eff / 100)) : adj;

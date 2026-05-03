@@ -34,7 +34,7 @@ const ORIGINAL_GRANULAR_CROP_EXTRACTION_DB = {
 
 // Eficiencia predeterminada para nutrición granular (diferente a fertirriego)
 const GRANULAR_DEFAULT_EFFICIENCY = {
-  N: 65, P2O5: 40, K2O: 85, CaO: 85, MgO: 85, S: 85, SO4: 85, 
+  N: 65, P2O5: 40, K2O: 85, CaO: 85, MgO: 85, SO4: 85, 
   Fe: 80, Mn: 80, B: 80, Zn: 80, Cu: 80, Mo: 80, SiO2: 85
 };
 
@@ -55,7 +55,9 @@ const GRANULAR_CONVERSION_FACTORS = {
   MgO_TO_Mg: 1.658,
   Mg_TO_MgO: 1.658,
   SiO2_TO_Si: 2.139,
-  Si_TO_SiO2: 2.139
+  Si_TO_SiO2: 2.139,
+  /** kg SO₄ por kg S; S (kg) = SO₄ / S_TO_SO4 */
+  S_TO_SO4: 96.062 / 32.065
 };
 
 // ====== Autosave y estado sucio (dirty) ======
@@ -126,10 +128,11 @@ window.toggleGranularRequerimientoOxideElemental = toggleGranularRequerimientoOx
 // Función para obtener etiqueta según modo
 function getGranularLabel(nutrient) {
   if (!isGranularRequerimientoElementalMode) {
+    if (nutrient === 'SO4') return 'SO₄';
     return nutrient;
   }
   const labels = {
-    'P2O5': 'P', 'K2O': 'K', 'CaO': 'Ca', 'MgO': 'Mg', 'SiO2': 'Si'
+    'P2O5': 'P', 'K2O': 'K', 'CaO': 'Ca', 'MgO': 'Mg', 'SiO2': 'Si', 'SO4': 'S'
   };
   return labels[nutrient] || nutrient;
 }
@@ -144,7 +147,8 @@ function getGranularConvertedValue(nutrient, value) {
     'K2O': GRANULAR_CONVERSION_FACTORS.K2O_TO_K,
     'CaO': GRANULAR_CONVERSION_FACTORS.CaO_TO_Ca,
     'MgO': GRANULAR_CONVERSION_FACTORS.MgO_TO_Mg,
-    'SiO2': GRANULAR_CONVERSION_FACTORS.SiO2_TO_Si
+    'SiO2': GRANULAR_CONVERSION_FACTORS.SiO2_TO_Si,
+    'SO4': GRANULAR_CONVERSION_FACTORS.S_TO_SO4
   }[nutrient];
   if (factor) {
     return (parseFloat(value) / factor).toFixed(2);
@@ -286,7 +290,15 @@ function calculateGranularNutrientRequirements(options = {}) {
     
     // Usar finalExtraction en lugar de extraction
     const extraction = finalExtraction;
-    const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    try {
+      var _gs = parseFloat(extraction.S);
+      if (Number.isFinite(_gs) && _gs > 0) {
+        var _gso4 = parseFloat(extraction.SO4);
+        extraction.SO4 = (Number.isFinite(_gso4) ? _gso4 : 0) + _gs * GRANULAR_CONVERSION_FACTORS.S_TO_SO4;
+        extraction.S = 0;
+      }
+    } catch (e) {}
+    const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     const totalExtraction = {};
     const finalAdjustment = {};
     const finalEfficiency = {};
@@ -438,7 +450,7 @@ function renderGranularNutrientTable(extraction, totalExtraction, adjustment, ef
   console.log('🔍 Contenedor encontrado:', container);
   if (!container) { console.error('❌ NO SE ENCONTRÓ granularRequerimientoTableContainer'); return; }
 
-  const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+  const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
   
   // 🚀 SIMPLIFICADO: Usar directamente los valores pasados como parámetros
   // extraction ya viene fusionado (base + overrides) desde calculateGranularNutrientRequirements()
@@ -505,7 +517,8 @@ function granularOxideFactorForNutrient(nutrient) {
     K2O: GRANULAR_CONVERSION_FACTORS.K_TO_K2O,
     CaO: GRANULAR_CONVERSION_FACTORS.Ca_TO_CaO,
     MgO: GRANULAR_CONVERSION_FACTORS.Mg_TO_MgO,
-    SiO2: GRANULAR_CONVERSION_FACTORS.Si_TO_SiO2
+    SiO2: GRANULAR_CONVERSION_FACTORS.Si_TO_SiO2,
+    SO4: GRANULAR_CONVERSION_FACTORS.S_TO_SO4
   }[nutrient];
 }
 
@@ -680,7 +693,8 @@ function closeCustomGranularCropModal() {
     document.getElementById('customCropK2O').value = '0';
     document.getElementById('customCropCaO').value = '0';
     document.getElementById('customCropMgO').value = '0';
-    document.getElementById('customCropS').value = '0';
+    var _sGC = document.getElementById('customCropS');
+    if (_sGC) _sGC.value = '0';
     document.getElementById('customCropSO4').value = '0';
     document.getElementById('customCropFe').value = '0';
     document.getElementById('customCropMn').value = '0';
@@ -809,14 +823,17 @@ function np_removeUserCustomGranularCrop(cropId) {
 }
 
 function readCustomCropExtractionFromModal() {
+  var sLegacyEl = document.getElementById('customCropS');
+  var sLegacy = sLegacyEl ? (parseFloat(sLegacyEl.value) || 0) : 0;
+  var so4Merged = (parseFloat(document.getElementById('customCropSO4').value) || 0) + sLegacy * GRANULAR_CONVERSION_FACTORS.S_TO_SO4;
   return {
     N: parseFloat(document.getElementById('customCropN').value) || 0,
     P2O5: parseFloat(document.getElementById('customCropP2O5').value) || 0,
     K2O: parseFloat(document.getElementById('customCropK2O').value) || 0,
     CaO: parseFloat(document.getElementById('customCropCaO').value) || 0,
     MgO: parseFloat(document.getElementById('customCropMgO').value) || 0,
-    S: parseFloat(document.getElementById('customCropS').value) || 0,
-    SO4: parseFloat(document.getElementById('customCropSO4').value) || 0,
+    S: 0,
+    SO4: so4Merged,
     Fe: parseFloat(document.getElementById('customCropFe').value) || 0,
     Mn: parseFloat(document.getElementById('customCropMn').value) || 0,
     B: parseFloat(document.getElementById('customCropB').value) || 0,
@@ -889,8 +906,11 @@ function openEditCustomGranularCrop(cropId) {
   document.getElementById('customCropK2O').value = extraction.K2O ?? 0;
   document.getElementById('customCropCaO').value = extraction.CaO ?? 0;
   document.getElementById('customCropMgO').value = extraction.MgO ?? 0;
-  document.getElementById('customCropS').value = extraction.S ?? 0;
-  document.getElementById('customCropSO4').value = extraction.SO4 ?? 0;
+  var sOldG = parseFloat(extraction.S) || 0;
+  var so4OldG = parseFloat(extraction.SO4) || 0;
+  document.getElementById('customCropSO4').value = so4OldG + sOldG * GRANULAR_CONVERSION_FACTORS.S_TO_SO4;
+  var sElG = document.getElementById('customCropS');
+  if (sElG) sElG.value = '0';
   document.getElementById('customCropFe').value = extraction.Fe ?? 0;
   document.getElementById('customCropMn').value = extraction.Mn ?? 0;
   document.getElementById('customCropB').value = extraction.B ?? 0;
@@ -1125,7 +1145,7 @@ function saveGranularRequirements(options = {}) {
     const cropType = cropEl.value || '';
     const targetYield = parseFloat(yieldEl.value) || 10;
     
-    const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+    const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
     const adjustment = {};
     const efficiency = {};
     
@@ -1201,7 +1221,8 @@ function saveGranularRequirements(options = {}) {
             'K2O': GRANULAR_CONVERSION_FACTORS.K_TO_K2O,
             'CaO': GRANULAR_CONVERSION_FACTORS.Ca_TO_CaO,
             'MgO': GRANULAR_CONVERSION_FACTORS.Mg_TO_MgO,
-            'SiO2': GRANULAR_CONVERSION_FACTORS.Si_TO_SiO2
+            'SiO2': GRANULAR_CONVERSION_FACTORS.Si_TO_SiO2,
+            'SO4': GRANULAR_CONVERSION_FACTORS.S_TO_SO4
           }[nutrient];
           if (factor) {
             // El valor en el input está en elemental, convertir a óxido
@@ -1309,7 +1330,8 @@ function saveGranularRequirements(options = {}) {
                   'K2O': GRANULAR_CONVERSION_FACTORS.K_TO_K2O,
                   'CaO': GRANULAR_CONVERSION_FACTORS.Ca_TO_CaO,
                   'MgO': GRANULAR_CONVERSION_FACTORS.Mg_TO_MgO,
-                  'SiO2': GRANULAR_CONVERSION_FACTORS.Si_TO_SiO2
+                  'SiO2': GRANULAR_CONVERSION_FACTORS.Si_TO_SiO2,
+                  'SO4': GRANULAR_CONVERSION_FACTORS.S_TO_SO4
                 }[n];
                 if (factor) {
                   // El valor en el input está en elemental, convertir a óxido para guardar
@@ -2181,7 +2203,7 @@ function loadGranularRequirements(retryCount = 0) {
         if (requirementData.extractionOverrides && requirementData.extractionOverrides[requirementData.cropType]) {
           Object.assign(baseExtraction, requirementData.extractionOverrides[requirementData.cropType]);
         }
-        const baseMatches = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'].every(n => {
+        const baseMatches = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'].every(n => {
           const baseValue = parseFloat(((baseExtraction[n] || 0) * requirementData.targetYield).toFixed(2));
           const savedValue = requirementData.adjustment && typeof requirementData.adjustment[n] === 'number' ? requirementData.adjustment[n] : baseValue;
           return Math.abs(baseValue - savedValue) < 0.0001;
@@ -2377,7 +2399,7 @@ window.diagnoseGranularStorage = function() {
     if (cropEl) console.log('  - Cultivo (DOM):', cropEl.value);
     if (yieldEl) console.log('  - Rendimiento (DOM):', yieldEl.value);
     
-    const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+    const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
     console.log('  - Ajustes en DOM:');
     nutrients.forEach(n => {
       const adjEl = document.getElementById(`granular-adj-${n}`);
@@ -2421,7 +2443,7 @@ window.testGranularSaveLoad = function() {
     efficiencies: {}
   };
   
-  const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+  const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
   nutrients.forEach(n => {
     const adjEl = document.getElementById(`granular-adj-${n}`);
     const effEl = document.getElementById(`granular-eff-${n}`);

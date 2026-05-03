@@ -919,7 +919,7 @@ function updateFertiSummary() {
   // Cargar requerimiento real en ÓXIDO
   let reqOxide = {};
   try {
-    const liveIds = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    const liveIds = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     let anyLive = false; const tmp = {};
     const fertiTable = document.getElementById('fertirriegoTableContainer');
     liveIds.forEach(n => {
@@ -941,6 +941,7 @@ function updateFertiSummary() {
             case 'CaO': v *= FERTI_CONV.CaO_TO_Ca; break;
             case 'MgO': v *= FERTI_CONV.MgO_TO_Mg; break;
             case 'SiO2': v *= FERTI_CONV.SiO2_TO_Si; break;
+            case 'SO4': v *= FERTI_CONV.SO4_TO_S; break;
             default: break;
           }
         }
@@ -968,12 +969,15 @@ function updateFertiSummary() {
       const k = `nutriplant_project_${pid}`; const pd = JSON.parse(localStorage.getItem(k) || '{}');
       if (pd.fertirriegoRequirements) data = pd.fertirriegoRequirements;
     }
-    const list = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    const list = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     const hasSavedAdj = !!(data && data.adjustment && typeof data.adjustment === 'object' && Object.keys(data.adjustment).length > 0);
     const hasSavedEff = !!(data && data.efficiency && typeof data.efficiency === 'object' && Object.keys(data.efficiency).length > 0);
     if (!Object.keys(reqOxide).length && data && (hasSavedAdj || hasSavedEff)) {
       list.forEach(n => {
-        const adj = parseFloat(data.adjustment[n]) || 0;
+        let adj = parseFloat(data.adjustment[n]) || 0;
+        if (n === 'SO4') {
+          adj += (parseFloat(data.adjustment.S) || 0) * FERTI_CONV.SO4_TO_S;
+        }
         const eff = parseFloat(data.efficiency[n])||100;
         reqOxide[n] = eff>0 ? adj/(eff/100) : adj;
       });

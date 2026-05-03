@@ -61,7 +61,7 @@ const CROP_EXTRACTION_DB = {
   'pimiento': { N: 5.5, P2O5: 2.2, K2O: 8.5, CaO: 4.5, MgO: 2, S: 0, SO4: 6, Fe: 0.065, Mn: 0.055, B: 0.035, Zn: 0.13, Cu: 0.007, Mo: 0.025, SiO2: 0 }
 };
 
-const FERTIRRIEGO_NUTRIENTS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+const FERTIRRIEGO_NUTRIENTS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
 
 // Eficiencia predeterminada de fertilizantes (%)
 const DEFAULT_EFFICIENCY = {
@@ -90,7 +90,9 @@ const FERTIRRIEGO_CONVERSION_FACTORS = {
   MgO_TO_Mg: 1.658,
   Mg_TO_MgO: 1.658,
   SiO2_TO_Si: 2.139,
-  Si_TO_SiO2: 2.139
+  Si_TO_SiO2: 2.139,
+  /** kg SO₄ por kg S (masas atómicas); S = SO₄ / S_TO_SO4, SO₄ = S × S_TO_SO4 */
+  S_TO_SO4: 96.062 / 32.065
 };
 
 // Estado global para controlar cargas y reutilizar valores ya calculados
@@ -202,7 +204,8 @@ function toggleFertirriegoOxideElemental() {
             'K2O': FERTIRRIEGO_CONVERSION_FACTORS.K_TO_K2O,
             'CaO': FERTIRRIEGO_CONVERSION_FACTORS.Ca_TO_CaO,
             'MgO': FERTIRRIEGO_CONVERSION_FACTORS.Mg_TO_MgO,
-            'SiO2': FERTIRRIEGO_CONVERSION_FACTORS.Si_TO_SiO2
+            'SiO2': FERTIRRIEGO_CONVERSION_FACTORS.Si_TO_SiO2,
+            'SO4': FERTIRRIEGO_CONVERSION_FACTORS.S_TO_SO4
           }[n];
           if (factor) {
             adjValue = adjValue * factor;
@@ -359,14 +362,18 @@ function fertRemoveUserCustomCrop(cropId) {
 }
 
 function fertReadCustomCropExtractionFromModal() {
+  var sLegacyEl = document.getElementById('customCropS');
+  var sLegacy = sLegacyEl ? (parseFloat(sLegacyEl.value) || 0) : 0;
+  var so4Base = parseFloat(document.getElementById('customCropSO4').value) || 0;
+  var so4Merged = so4Base + sLegacy * FERTIRRIEGO_CONVERSION_FACTORS.S_TO_SO4;
   return {
     N: parseFloat(document.getElementById('customCropN').value) || 0,
     P2O5: parseFloat(document.getElementById('customCropP2O5').value) || 0,
     K2O: parseFloat(document.getElementById('customCropK2O').value) || 0,
     CaO: parseFloat(document.getElementById('customCropCaO').value) || 0,
     MgO: parseFloat(document.getElementById('customCropMgO').value) || 0,
-    S: parseFloat(document.getElementById('customCropS').value) || 0,
-    SO4: parseFloat(document.getElementById('customCropSO4').value) || 0,
+    S: 0,
+    SO4: so4Merged,
     Fe: parseFloat(document.getElementById('customCropFe').value) || 0,
     Mn: parseFloat(document.getElementById('customCropMn').value) || 0,
     B: parseFloat(document.getElementById('customCropB').value) || 0,
@@ -451,8 +458,11 @@ function openEditCustomFertirriegoCrop(cropId) {
   document.getElementById('customCropK2O').value = extraction.K2O ?? 0;
   document.getElementById('customCropCaO').value = extraction.CaO ?? 0;
   document.getElementById('customCropMgO').value = extraction.MgO ?? 0;
-  document.getElementById('customCropS').value = extraction.S ?? 0;
-  document.getElementById('customCropSO4').value = extraction.SO4 ?? 0;
+  var sOld = parseFloat(extraction.S) || 0;
+  var so4Old = parseFloat(extraction.SO4) || 0;
+  document.getElementById('customCropSO4').value = so4Old + sOld * FERTIRRIEGO_CONVERSION_FACTORS.S_TO_SO4;
+  var sEl = document.getElementById('customCropS');
+  if (sEl) sEl.value = '0';
   document.getElementById('customCropFe').value = extraction.Fe ?? 0;
   document.getElementById('customCropMn').value = extraction.Mn ?? 0;
   document.getElementById('customCropB').value = extraction.B ?? 0;
@@ -572,7 +582,8 @@ function closeCustomCropModal() {
     document.getElementById('customCropK2O').value = '0';
     document.getElementById('customCropCaO').value = '0';
     document.getElementById('customCropMgO').value = '0';
-    document.getElementById('customCropS').value = '0';
+    var _sC = document.getElementById('customCropS');
+    if (_sC) _sC.value = '0';
     document.getElementById('customCropSO4').value = '0';
     document.getElementById('customCropFe').value = '0';
     document.getElementById('customCropMn').value = '0';
@@ -802,14 +813,22 @@ calculateNutrientRequirements = function(opts) {
     // Si no hay base ni overrides, inicializar con ceros para no cambiar
     // silenciosamente a otro cultivo precargado.
     if (Object.keys(finalExtraction).length === 0) {
-      ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2']
+      ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2']
         .forEach(n => { finalExtraction[n] = 0; });
       console.warn('⚠️ Fertirriego: cultivo sin base ni overrides aún. Se mantiene cultivo y se inicializa extracción en cero temporalmente:', cropType);
     }
     
     // Usar finalExtraction como extraction
     const extraction = finalExtraction;
-    
+    try {
+      var _sM = parseFloat(extraction.S);
+      if (Number.isFinite(_sM) && _sM > 0) {
+        var _so4M = parseFloat(extraction.SO4);
+        extraction.SO4 = (Number.isFinite(_so4M) ? _so4M : 0) + _sM * FERTIRRIEGO_CONVERSION_FACTORS.S_TO_SO4;
+        extraction.S = 0;
+      }
+    } catch (e) {}
+
     // 🚀 DEBUG: Verificar valores de extraction después de fusionar
     console.log('🔍 DEBUG calculateNutrientRequirements - extraction fusionado (base + overrides):', {
       cropType: cropType,
@@ -821,7 +840,7 @@ calculateNutrientRequirements = function(opts) {
     
     // Calcular extracción total
     const totalExtraction = {};
-    const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+    const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
     
     // CRÍTICO: Si NO hay opts, cargar valores guardados SOLO si son para el CULTIVO ACTUAL
     // Esto asegura que cuando el usuario cambia cultivo/rendimiento, se mantengan sus ajustes/eficiencias guardados
@@ -1039,6 +1058,8 @@ function getConvertedValue(nutrient, value) {
         return (numValue / FERTIRRIEGO_CONVERSION_FACTORS.MgO_TO_Mg).toFixed(2);
       case 'SiO2':
         return (numValue / FERTIRRIEGO_CONVERSION_FACTORS.SiO2_TO_Si).toFixed(2);
+      case 'SO4':
+        return (numValue / FERTIRRIEGO_CONVERSION_FACTORS.S_TO_SO4).toFixed(2);
       default:
         return numValue.toFixed(2);
     }
@@ -1065,6 +1086,8 @@ function convertFromElementalToOxide(nutrient, elementalValue) {
       return numValue * FERTIRRIEGO_CONVERSION_FACTORS.MgO_TO_Mg;
     case 'SiO2':
       return numValue * FERTIRRIEGO_CONVERSION_FACTORS.SiO2_TO_Si;
+    case 'SO4':
+      return numValue * FERTIRRIEGO_CONVERSION_FACTORS.S_TO_SO4;
     default:
       return numValue;
   }
@@ -1116,7 +1139,7 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
   }
   console.log('✅ Container encontrado, renderizando tabla...');
   
-  const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+  const nutrients = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
   
   // Función para obtener etiqueta según el modo
   function getLabel(nutrient) {
@@ -1132,9 +1155,11 @@ renderNutrientTable = function(extraction, totalExtraction, adjustment, efficien
         case 'CaO': return 'Ca';
         case 'MgO': return 'Mg';
         case 'SiO2': return 'Si';
+        case 'SO4': return 'S';
         default: return nutrient;
       }
     }
+    if (nutrient === 'SO4') return 'SO₄';
     return nutrient;
   }
   
@@ -1391,7 +1416,7 @@ updateExtractionPerTon = function(nutrient, value) {
     
     // 🚀 CRÍTICO: SIEMPRE guardar en formato ÓXIDO (base) - IGUAL QUE GRANULAR
     // Si estamos en modo elemental, convertir a óxido antes de guardar
-    if (isFertirriegoElementalMode && (nutrient === 'P2O5' || nutrient === 'K2O' || nutrient === 'CaO' || nutrient === 'MgO' || nutrient === 'SiO2')) {
+    if (isFertirriegoElementalMode && (nutrient === 'P2O5' || nutrient === 'K2O' || nutrient === 'CaO' || nutrient === 'MgO' || nutrient === 'SiO2' || nutrient === 'SO4')) {
       // El usuario ingresó valor elemental, necesitamos convertirlo a óxido
       extractionValue = convertFromElementalToOxide(nutrient, extractionValue);
       nutrientKey = nutrient; // Mantener el key original (P2O5, K2O, etc.)

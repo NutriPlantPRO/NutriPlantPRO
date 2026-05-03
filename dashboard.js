@@ -996,7 +996,7 @@ function sectionTemplate(name) {
               Object.assign(finalExtraction, extractionOverrides[cropType]);
             }
             
-            const nutrients=['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+            const nutrients=['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
             const efficiency=Object.assign({}, window.GRANULAR_DEFAULT_EFFICIENCY, (opts&&opts.efficiency)||{});
             const totalExtraction={}, adjustment={}, realRequirement={};
             Object.keys(finalExtraction).forEach(n=>{ if(nutrients.includes(n)){ totalExtraction[n]=(finalExtraction[n]*targetYield).toFixed(2); const savedAdj=opts&&opts.adjustment?opts.adjustment[n]:undefined; adjustment[n]=(typeof savedAdj==='number')?savedAdj:parseFloat(totalExtraction[n]); const eff=efficiency[n]/100; realRequirement[n]=(parseFloat(adjustment[n])/eff).toFixed(2);} });
@@ -1004,7 +1004,7 @@ function sectionTemplate(name) {
           }catch(e){ console.error('fallback granular calc error', e); }
         };
         window.renderGranularNutrientTable = function(extraction,totalExtraction,adjustment,efficiency,realRequirement,targetYield){
-          const container=document.getElementById('granularRequerimientoTableContainer'); if(!container) return; const nutrients=['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+          const container=document.getElementById('granularRequerimientoTableContainer'); if(!container) return; const nutrients=['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
           const html = '\n    <table class="fertirriego-requirement-table">\n      <thead>\n        <tr>\n          <th rowspan="2">Concepto</th>' + nutrients.map(n=>`<th id=\"granular-header-${n}\"><span class=\"notranslate\" translate=\"no\">${getGranularLabel(n)}</span></th>`).join('') + '\n        </tr>\n      </thead>\n      <tbody>\n        <tr>\n          <td><strong>Extracción por tonelada<br>(kg/ton)</strong></td>' + nutrients.map(n=>`<td><input type=\"number\" class=\"fertirriego-input\" id=\"granular-extract-${n}\" value=\"${getGranularConvertedValue(n, extraction[n])}\" step=\"0.01\" onchange=\"updateGranularExtractionPerTon('${n}', this.value)\"></td>`).join('') + '\n        </tr>\n        <tr>\n          <td><strong>Extracción total<br>(kg/ha)</strong></td>' + nutrients.map(n=>`<td id=\"granular-extraccion-total-${n}\">${getGranularConvertedValue(n, totalExtraction[n])}</td>`).join('') + '\n        </tr>\n        <tr>\n          <td><strong>Ajuste por niveles<br>en suelo</strong></td>' + nutrients.map(n=>`<td><input type=\"number\" class=\"fertirriego-input\" id=\"granular-adj-${n}\" value=\"${getGranularConvertedValue(n, adjustment[n])}\" step=\"0.01\" onchange=\"updateGranularAdjustment('${n}', this.value)\"></td>`).join('') + '\n        </tr>\n        <tr>\n          <td><strong>Eficiencia<br>(%)</strong></td>' + nutrients.map(n=>`<td><input type=\"number\" class=\"fertirriego-input\" id=\"granular-eff-${n}\" value=\"${efficiency[n]}\" step=\"0.1\" min=\"1\" max=\"100\" onchange=\"updateGranularEfficiency('${n}', this.value)\"></td>`).join('') + '\n        </tr>\n        <tr class=\"requirement-real-row\">\n          <td><strong>Requerimiento Real<br>(kg/ha)</strong></td>' + nutrients.map(n=>`<td id=\"granular-req-${n}\">${getGranularConvertedValue(n, realRequirement[n])}</td>`).join('') + '\n        </tr>\n      </tbody>\n    </table>';
           container.innerHTML = html;
         };
@@ -9955,7 +9955,7 @@ function collectCurrentData() {
     if (gCrop) currentProject.granular.requirements.cropType = gCrop.value;
     if (gYield) currentProject.granular.requirements.targetYield = parseFloat(gYield.value) || 10;
     
-    const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     const existingGranularAdj = currentProject.granular.requirements.adjustment || {};
     const existingGranularEff = currentProject.granular.requirements.efficiency || {};
     currentProject.granular.requirements.adjustment = { ...existingGranularAdj };
@@ -10014,7 +10014,7 @@ function collectCurrentData() {
     if (fCrop) currentProject.fertirriego.requirements.cropType = fCrop.value;
     if (fYield) currentProject.fertirriego.requirements.targetYield = parseFloat(fYield.value) || 10;
     
-    const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     // Preservar valores existentes: solo sobrescribir desde el DOM cuando el input exista (evita perder datos al generar reporte desde otra pestaña)
     const existingAdj = currentProject.fertirriego.requirements.adjustment || {};
     const existingEff = currentProject.fertirriego.requirements.efficiency || {};
@@ -10106,7 +10106,7 @@ function getGranularDataForSave(existingGranular = {}) {
   // 🚀 CRÍTICO: Capturar valores actuales de extracción por tonelada del DOM si fueron modificados
   const cropType = gCrop.value;
   if (cropType) {
-    const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     const currentExtraction = {};
     let hasModifiedExtraction = false;
     
@@ -10142,7 +10142,7 @@ function getGranularDataForSave(existingGranular = {}) {
     isUserSaved: true
   };
   
-  const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+  const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
   nutrients.forEach(n => {
     const adj = document.getElementById(`granular-adj-${n}`);
     const eff = document.getElementById(`granular-eff-${n}`);
@@ -11117,7 +11117,7 @@ function np_snapshotGranularRequirements() {
     if (!select || !target) return; // no UI visible; dejar que los guardados normales se encarguen
     const cropType = select.value || '';
     const targetYield = parseFloat(target.value) || 10;
-    const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     const adjustment = {}; const efficiency = {};
     nutrients.forEach(n => {
       const adj = document.getElementById(`granular-adj-${n}`);
@@ -11197,11 +11197,11 @@ function np_snapshotFertirriegoRequirements() {
     if (!select || !target) return;
     const cropType = select.value || '';
     const targetYield = parseFloat(target.value) || 25;
-    const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     const adjustment = {}; const efficiency = {};
     nutrients.forEach(n => {
-      const adj = document.getElementById(`adj-${n}`);
-      const eff = document.getElementById(`eff-${n}`);
+      const adj = document.getElementById(`ferti-adj-${n}`);
+      const eff = document.getElementById(`ferti-eff-${n}`);
       if (adj) adjustment[n] = parseFloat(adj.value) || 0;
       if (eff) efficiency[n] = parseFloat(eff.value) || 0;
     });
@@ -11273,7 +11273,7 @@ function saveBeforeTabChange() {
         if (gCrop) unified.granular.lastUI.cropType = gCrop.value;
         if (gYield) unified.granular.lastUI.targetYield = parseFloat(gYield.value) || 0;
         // requirements merge
-        const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+        const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
         const adjustment = {}; const efficiency = {};
         let anyAdj = false, anyEff = false;
         nutrients.forEach(n => {
@@ -11303,7 +11303,7 @@ function saveBeforeTabChange() {
         // Capturar extracción por tonelada si fue editada
         const extractionOverrides = req.extractionOverrides || {};
         if (cropType) {
-          const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+          const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
           const extraction = {};
           let anyExtraction = false;
           nutrients.forEach(n => {
@@ -11368,7 +11368,7 @@ function saveBeforeTabChange() {
         if (fCrop) unified.fertirriego.lastUI.cropType = fCrop.value;
         if (fYield) unified.fertirriego.lastUI.targetYield = parseFloat(fYield.value) || 0;
         // requirements merge
-        const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+        const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
         const adjustment = {}; const efficiency = {};
         let anyAdj = false, anyEff = false;
         nutrients.forEach(n => {
@@ -11398,7 +11398,7 @@ function saveBeforeTabChange() {
         // Capturar extracción por tonelada si fue editada
         const extractionOverrides = req.extractionOverrides || {};
         if (cropType) {
-          const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+          const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
           const extraction = {};
           let anyExtraction = false;
           nutrients.forEach(n => {
@@ -13961,10 +13961,14 @@ function createGranularSectionHTML() {
   const crop = req.cropType || program?.cropSnapshot?.cropLabel || 'N/D';
   const yieldTarget = req.targetYield != null && req.targetYield !== '' ? Number(req.targetYield) : 0;
 
-  const NUTRIENTS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+  /** kg SO₄ por kg S (misma base que nutricion-granular-requerimiento-functions.js) */
+  const REPORT_S_TO_SO4 = 96.062 / 32.065;
+  const NUTRIENTS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+  const iSo4 = NUTRIENTS.indexOf('SO4');
+  const NUTRIENTS_MAT = iSo4 >= 0 ? NUTRIENTS.slice(0, iSo4 + 1).concat(['S'], NUTRIENTS.slice(iSo4 + 1)) : NUTRIENTS.concat(['S']);
   const MICRO_NUTRIENTS = { Fe: true, Mn: true, B: true, Zn: true, Cu: true, Mo: true };
-  const OXIDE_TO_ELEMENTAL = { P2O5: 2.291, K2O: 1.204, CaO: 1.399, MgO: 1.658, SiO2: 2.139 };
-  const ELEMENTAL_LABELS = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SiO2: 'Si' };
+  const OXIDE_TO_ELEMENTAL = { P2O5: 2.291, K2O: 1.204, CaO: 1.399, MgO: 1.658, SiO2: 2.139, SO4: REPORT_S_TO_SO4 };
+  const ELEMENTAL_LABELS = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SiO2: 'Si', SO4: 'S' };
 
   function toNumber(value) {
     const n = Number(value);
@@ -13987,8 +13991,9 @@ function createGranularSectionHTML() {
     return reportFormatOxideLabel(nutrient);
   }
 
-  function renderNutrientPills(source, isElementalMode, useNegativeClass) {
-    const pills = NUTRIENTS.map(nutrient => {
+  function renderNutrientPills(source, isElementalMode, useNegativeClass, keys) {
+    const list = Array.isArray(keys) && keys.length ? keys : NUTRIENTS;
+    const pills = list.map(nutrient => {
       if (!source || source[nutrient] === undefined || source[nutrient] === null || source[nutrient] === '') return '';
       const oxideValue = toNumber(source[nutrient]);
       const displayValue = toDisplayValue(nutrient, oxideValue, isElementalMode);
@@ -14003,22 +14008,37 @@ function createGranularSectionHTML() {
   NUTRIENTS.forEach(nutrient => {
     if (extractionOverrides[nutrient] !== undefined) extraction[nutrient] = toNumber(extractionOverrides[nutrient]);
   });
+  {
+    const sLegacy = toNumber(extractionOverrides.S);
+    if (sLegacy && extraction.SO4 !== undefined) extraction.SO4 = toNumber(extraction.SO4) + sLegacy * REPORT_S_TO_SO4;
+    else if (sLegacy && extraction.SO4 === undefined) extraction.SO4 = sLegacy * REPORT_S_TO_SO4;
+  }
 
   const totalExtraction = {};
   NUTRIENTS.forEach(nutrient => {
     totalExtraction[nutrient] = toNumber(extraction[nutrient]) * toNumber(yieldTarget);
   });
 
-  const GRANULAR_DEFAULT_EFF = { N: 65, P2O5: 40, K2O: 85, CaO: 85, MgO: 85, S: 85, SO4: 85, Fe: 80, Mn: 80, B: 80, Zn: 80, Cu: 80, Mo: 80, SiO2: 85 };
+  const GRANULAR_DEFAULT_EFF = { N: 65, P2O5: 40, K2O: 85, CaO: 85, MgO: 85, SO4: 85, Fe: 80, Mn: 80, B: 80, Zn: 80, Cu: 80, Mo: 80, SiO2: 85 };
   const rawAdj = req.adjustment || {};
   const rawEff = req.efficiency || {};
   const adjustment = {};
   const efficiency = {};
   const realRequirement = {};
   NUTRIENTS.forEach(nutrient => {
-    const hasSavedAdj = rawAdj[nutrient] !== undefined && rawAdj[nutrient] !== null && rawAdj[nutrient] !== '';
     const hasSavedEff = rawEff[nutrient] !== undefined && rawEff[nutrient] !== null && rawEff[nutrient] !== '';
-    adjustment[nutrient] = hasSavedAdj ? toNumber(rawAdj[nutrient]) : (totalExtraction[nutrient] != null ? totalExtraction[nutrient] : null);
+    let adjFromSave = null;
+    if (nutrient === 'SO4') {
+      const hasSo4 = rawAdj.SO4 !== undefined && rawAdj.SO4 !== null && rawAdj.SO4 !== '';
+      const hasLegacyS = rawAdj.S !== undefined && rawAdj.S !== null && rawAdj.S !== '';
+      if (hasSo4 || hasLegacyS) {
+        adjFromSave = (hasSo4 ? toNumber(rawAdj.SO4) : 0) + (hasLegacyS ? toNumber(rawAdj.S) * REPORT_S_TO_SO4 : 0);
+      }
+    } else {
+      const hasSavedAdj = rawAdj[nutrient] !== undefined && rawAdj[nutrient] !== null && rawAdj[nutrient] !== '';
+      if (hasSavedAdj) adjFromSave = toNumber(rawAdj[nutrient]);
+    }
+    adjustment[nutrient] = adjFromSave !== null ? adjFromSave : (totalExtraction[nutrient] != null ? totalExtraction[nutrient] : null);
     efficiency[nutrient] = hasSavedEff ? toNumber(rawEff[nutrient]) : (GRANULAR_DEFAULT_EFF[nutrient] != null ? GRANULAR_DEFAULT_EFF[nutrient] : null);
     const adj = adjustment[nutrient] !== null ? adjustment[nutrient] : 0;
     const eff = efficiency[nutrient] != null && efficiency[nutrient] > 0 ? efficiency[nutrient] : null;
@@ -14028,6 +14048,13 @@ function createGranularSectionHTML() {
   const applications = Array.isArray(program.applications) ? program.applications : [];
   const totalProgram = {};
   NUTRIENTS.forEach(nutrient => { totalProgram[nutrient] = 0; });
+  function addGranularResultsFoldedS(results, totals) {
+    NUTRIENTS.forEach(n => {
+      let add = toNumber(results[n]);
+      if (n === 'SO4') add += toNumber(results.S) * REPORT_S_TO_SO4;
+      totals[n] += add;
+    });
+  }
   applications.forEach(app => {
     let results = app && app.results ? app.results : {};
     const hasResults = Object.keys(results).some(n => toNumber(results[n]) !== 0);
@@ -14038,10 +14065,9 @@ function createGranularSectionHTML() {
       NUTRIENTS.forEach(n => {
         results[n] = (toNumber(comp[n]) * doseKgHa) / 100;
       });
+      results.S = (toNumber(comp.S) * doseKgHa) / 100;
     }
-    NUTRIENTS.forEach(nutrient => {
-      totalProgram[nutrient] += toNumber(results[nutrient]);
-    });
+    addGranularResultsFoldedS(results, totalProgram);
   });
 
   const diffProgram = {};
@@ -14055,11 +14081,12 @@ function createGranularSectionHTML() {
     if (!app || typeof app !== 'object') return output;
 
     const fromResults = app.results && typeof app.results === 'object' ? app.results : {};
-    const hasResults = NUTRIENTS.some(nutrient => toNumber(fromResults[nutrient]) !== 0);
+    const hasResults = NUTRIENTS.some(nutrient => toNumber(fromResults[nutrient]) !== 0) || toNumber(fromResults.S) !== 0;
     if (hasResults) {
       NUTRIENTS.forEach(nutrient => {
         output[nutrient] = toNumber(fromResults[nutrient]);
       });
+      output.SO4 += toNumber(fromResults.S) * REPORT_S_TO_SO4;
       return output;
     }
 
@@ -14068,6 +14095,7 @@ function createGranularSectionHTML() {
     NUTRIENTS.forEach(nutrient => {
       output[nutrient] = (toNumber(composition[nutrient]) * doseKgHa) / 100;
     });
+    output.SO4 += (toNumber(composition.S) * doseKgHa / 100) * REPORT_S_TO_SO4;
     return output;
   }
 
@@ -14077,7 +14105,7 @@ function createGranularSectionHTML() {
       <tr>
         <td>${reportEscapeHtml(material.name || '—')}</td>
         <td>${toNumber(material.percentage).toFixed(2)}</td>
-        ${NUTRIENTS.map(nutrient => {
+        ${NUTRIENTS_MAT.map(nutrient => {
           const v = toDisplayValue(nutrient, toNumber(material[nutrient]), programModeIsElemental);
           return `<td>${v.toFixed(decimalFor(nutrient))}</td>`;
         }).join('')}
@@ -14089,7 +14117,7 @@ function createGranularSectionHTML() {
       <tr class="total-row">
         <td>TOTAL</td>
         <td>100.00</td>
-        ${NUTRIENTS.map(nutrient => {
+        ${NUTRIENTS_MAT.map(nutrient => {
           const v = toDisplayValue(nutrient, toNumber(composition[nutrient]), programModeIsElemental);
           return `<td>${v.toFixed(decimalFor(nutrient))}</td>`;
         }).join('')}
@@ -14102,11 +14130,11 @@ function createGranularSectionHTML() {
           <tr>
             <th>Material</th>
             <th>%</th>
-            ${NUTRIENTS.map(nutrient => `<th>${nutrientLabel(nutrient, programModeIsElemental)}</th>`).join('')}
+            ${NUTRIENTS_MAT.map(nutrient => `<th>${nutrientLabel(nutrient, programModeIsElemental)}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
-          ${rows || `<tr><td colspan="${NUTRIENTS.length + 2}" style="text-align:center;color:#64748b;">No hay materiales en esta aplicación.</td></tr>`}
+          ${rows || `<tr><td colspan="${NUTRIENTS_MAT.length + 2}" style="text-align:center;color:#64748b;">No hay materiales en esta aplicación.</td></tr>`}
           ${totalRow}
         </tbody>
       </table>
@@ -14230,11 +14258,12 @@ function createFertigationSectionHTML(chartImages) {
   const targetYield = Number(req.targetYield) || 0;
   const reqModeIsElemental = !!req.isElementalMode;
   const programModeIsElemental = !!prog.mode;
-  const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+  const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
   const macroCols = ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','S','SO4'];
   const microCols = ['Fe','Mn','B','Zn','Cu','Mo','SiO2'];
-  const conv = { P2O5: 2.291, K2O: 1.204, CaO: 1.399, MgO: 1.658, SiO2: 2.139 };
-  const elemLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SiO2: 'Si' };
+  const REPORT_S_TO_SO4_FERTI = 96.062 / 32.065;
+  const conv = { P2O5: 2.291, K2O: 1.204, CaO: 1.399, MgO: 1.658, SiO2: 2.139, SO4: REPORT_S_TO_SO4_FERTI };
+  const elemLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SiO2: 'Si', SO4: 'S' };
 
   function toNum(v) {
     const n = Number(v);
@@ -14268,21 +14297,36 @@ function createFertigationSectionHTML(chartImages) {
   nutrients.forEach(n => {
     if (extractionOverrides[n] !== undefined) extraction[n] = toNum(extractionOverrides[n]);
   });
+  {
+    const sLegacy = toNum(extractionOverrides.S);
+    if (sLegacy && extraction.SO4 !== undefined) extraction.SO4 = toNum(extraction.SO4) + sLegacy * REPORT_S_TO_SO4_FERTI;
+    else if (sLegacy && extraction.SO4 === undefined) extraction.SO4 = sLegacy * REPORT_S_TO_SO4_FERTI;
+  }
   const totalExtraction = {};
   nutrients.forEach(n => {
     totalExtraction[n] = extraction[n] !== undefined ? extraction[n] * targetYield : null;
   });
 
   // Mismos defaults que la UI de Fertirriego (fertirriego-functions.js) para que admin/reporte = lo que ve el usuario aunque no haya guardado
-  const FERTI_DEFAULT_EFFICIENCY = { N: 75, P2O5: 50, K2O: 90, CaO: 90, MgO: 90, S: 90, SO4: 90, Fe: 85, Mn: 85, B: 85, Zn: 85, Cu: 85, Mo: 85, SiO2: 90 };
+  const FERTI_DEFAULT_EFFICIENCY = { N: 75, P2O5: 50, K2O: 90, CaO: 90, MgO: 90, SO4: 90, Fe: 85, Mn: 85, B: 85, Zn: 85, Cu: 85, Mo: 85, SiO2: 90 };
   const rawAdj = req.adjustment || {};
   const rawEff = req.efficiency || {};
   const adjustment = {};
   const efficiency = {};
   const required = {};
   nutrients.forEach(n => {
-    const adjVal = rawAdj[n] !== undefined && rawAdj[n] !== null && rawAdj[n] !== '' ? toNum(rawAdj[n]) : null;
     const effVal = rawEff[n] !== undefined && rawEff[n] !== null && rawEff[n] !== '' ? toNum(rawEff[n]) : null;
+    let adjVal = null;
+    if (n === 'SO4') {
+      const hasSo4 = rawAdj.SO4 !== undefined && rawAdj.SO4 !== null && rawAdj.SO4 !== '';
+      const hasLegacyS = rawAdj.S !== undefined && rawAdj.S !== null && rawAdj.S !== '';
+      if (hasSo4 || hasLegacyS) {
+        adjVal = (hasSo4 ? toNum(rawAdj.SO4) : 0) + (hasLegacyS ? toNum(rawAdj.S) * REPORT_S_TO_SO4_FERTI : 0);
+      }
+    } else {
+      const hasAdj = rawAdj[n] !== undefined && rawAdj[n] !== null && rawAdj[n] !== '';
+      if (hasAdj) adjVal = toNum(rawAdj[n]);
+    }
     adjustment[n] = adjVal !== null ? adjVal : (totalExtraction[n] !== null ? totalExtraction[n] : null);
     efficiency[n] = effVal !== null ? effVal : (FERTI_DEFAULT_EFFICIENCY[n] != null ? FERTI_DEFAULT_EFFICIENCY[n] : null);
     const adj = adjustment[n] !== null ? adjustment[n] : 0;
