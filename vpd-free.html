@@ -123,6 +123,58 @@
     .vpd-context-note strong {
       color: #0c4a6e;
     }
+    .vpd-env-btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: stretch;
+      margin-bottom: 8px;
+    }
+    .vpd-env-btn-row #vpd-btn-env-calc {
+      flex: 1;
+      min-width: 160px;
+      padding: 14px;
+      background: #22c55e;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .vpd-env-btn-row #vpd-btn-env-calc:hover:not(:disabled) {
+      background: #16a34a;
+    }
+    .vpd-env-btn-row #vpd-btn-env-calc:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .vpd-env-btn-row #vpd-btn-env-clear {
+      padding: 14px 16px;
+      background: #fff;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .vpd-env-btn-row #vpd-btn-env-clear:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+    #vpd-env-simple-locked-hint {
+      display: none;
+      margin: 0 0 10px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #9a3412;
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
   </style>
 </head>
 <body>
@@ -172,7 +224,11 @@
         </div>
       </div>
 
-      <button onclick="calculateEnvironmentalVPDFree()" style="width:100%;padding:14px;background:#22c55e;color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">📊 Calcular VPD</button>
+      <div class="vpd-env-btn-row">
+        <button type="button" id="vpd-btn-env-calc" onclick="calculateEnvironmentalVPDFree()">📊 Calcular VPD</button>
+        <button type="button" id="vpd-btn-env-clear" onclick="vpdFreeClearEnvironmentalSimple()">🧹 Limpiar valores</button>
+      </div>
+      <p id="vpd-env-simple-locked-hint" role="status"></p>
       <div id="vpd-environmental-results" style="margin-top:16px;"></div>
     </div>
 
@@ -227,6 +283,46 @@
 
     function t(es, en) {
       return isEnglishUI() ? en : es;
+    }
+
+    /** Tras «Obtener clima…»: el botón manual simple queda bloqueado hasta «Limpiar valores». */
+    var vpdFreeEnvSimpleLockedAfterSatellite = false;
+
+    function vpdFreeSetEnvSimpleLocked(locked) {
+      vpdFreeEnvSimpleLockedAfterSatellite = !!locked;
+      var calcBtn = document.getElementById('vpd-btn-env-calc');
+      var hint = document.getElementById('vpd-env-simple-locked-hint');
+      if (calcBtn) {
+        calcBtn.disabled = !!locked;
+        calcBtn.title = locked
+          ? t(
+              'Tras usar el clima del mapa: limpia estos campos para volver a calcular manualmente (solo T y HR).',
+              'After map weather: clear fields to calculate manually (T + RH only).'
+            )
+          : '';
+      }
+      if (hint) {
+        if (locked) {
+          hint.style.display = 'block';
+          hint.textContent = t(
+            'El último cálculo vino del clima en el mapa (puede incluir radiación). Para usar solo temperatura y humedad manual aquí, primero pulsa «Limpiar valores» — así no se confunde con un VPD simple distinto.',
+            'The last run used map weather (may include radiation). To use manual T and RH only here, tap «Clear values» first — avoids a mismatched simple VPD.'
+          );
+        } else {
+          hint.style.display = 'none';
+          hint.textContent = '';
+        }
+      }
+    }
+
+    function vpdFreeClearEnvironmentalSimple() {
+      var tIn = document.getElementById('vpd-env-temp');
+      var hIn = document.getElementById('vpd-env-humidity');
+      if (tIn) tIn.value = '';
+      if (hIn) hIn.value = '';
+      var res = document.getElementById('vpd-environmental-results');
+      if (res) res.innerHTML = '';
+      vpdFreeSetEnvSimpleLocked(false);
     }
 
     function calculateVPDSimple(airTemp, humidity) {
@@ -446,6 +542,7 @@
         vpdGeoSetStatus(t('✅ Datos aplicados a las calculadoras (simple y campos avanzados).',
           '✅ Data filled in simple & advanced inputs.'));
         document.getElementById('vpd-environmental-results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        vpdFreeSetEnvSimpleLocked(true);
       } catch (e) {
         console.warn(e);
         vpdGeoSetStatus(t('Error al obtener clima. Intenta de nuevo.', 'Weather fetch failed. Try again.'));
@@ -493,6 +590,15 @@
     }
 
     function calculateEnvironmentalVPDFree() {
+      if (vpdFreeEnvSimpleLockedAfterSatellite) {
+        alert(
+          t(
+            'Primero pulsa «Limpiar valores» para borrar el resultado del clima del mapa y poder calcular manualmente solo con temperatura y humedad.',
+            'First tap «Clear values» to reset map weather results, then you can calculate manually with temperature and humidity only.'
+          )
+        );
+        return;
+      }
       const airTemp = parseFloat(document.getElementById('vpd-env-temp').value);
       const h = parseFloat(document.getElementById('vpd-env-humidity').value);
       if (isNaN(airTemp) || isNaN(h)) {
