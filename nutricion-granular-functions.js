@@ -601,8 +601,7 @@ function renderMaterials(app) {
       <td>${formatProgramValue('K2O', contribution.K2O, 2)}</td>
       <td>${formatProgramValue('CaO', contribution.CaO, 2)}</td>
       <td>${formatProgramValue('MgO', contribution.MgO, 2)}</td>
-      <td>${formatProgramValue('S', contribution.S, 2)}</td>
-      <td>${formatProgramValue('SO4', contribution.SO4, 2)}</td>
+      <td>${formatProgramValue('SO4', granularFoldSToSo4(contribution), 2)}</td>
       <td>${formatProgramValue('Fe', contribution.Fe, 3)}</td>
       <td>${formatProgramValue('Mn', contribution.Mn, 3)}</td>
       <td>${formatProgramValue('B', contribution.B, 3)}</td>
