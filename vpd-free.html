@@ -109,6 +109,20 @@
       margin: 0 0 8px;
       min-height: 1.2em;
     }
+    .vpd-context-note {
+      margin: 0 0 20px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #334155;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-left: 4px solid #38bdf8;
+      border-radius: 0 10px 10px 0;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    }
+    .vpd-context-note strong {
+      color: #0c4a6e;
+    }
   </style>
 </head>
 <body>
@@ -116,6 +130,10 @@
   <div class="wrap">
     <div class="wm" aria-hidden="true"><img src="assets/NutriPlant_PRO_blue.png" alt=""></div>
     <h2 class="title">🌡️ Déficit de Presión de Vapor</h2>
+    <p class="vpd-context-note" role="note">
+      <strong>Foco técnico:</strong> el VPD aquí es <strong>ambiental</strong> (aire a escala meteorológica). Si usas el mapa, el clima viene de modelos con respaldo <strong>satelital</strong> (Open-Meteo en el punto que marcas); en el cultivo el <strong>microclima</strong> puede variar con el <strong>área foliar</strong>, el dosel o la ventilación.
+      La T<sub>hoja</sub> manual o estimada por radiación es orientativa — <strong>valida en campo</strong>.
+    </p>
 
     <div style="background:#fefce8;border:2px solid #eab308;border-radius:12px;padding:20px;margin-bottom:20px;">
       <h3 style="margin:0 0 8px;color:#854d0e;font-size:17px;font-weight:600;">🗺️ Clima en un punto (mapa o GPS)</h3>
