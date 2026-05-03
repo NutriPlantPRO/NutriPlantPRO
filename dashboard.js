@@ -582,7 +582,7 @@ function sectionTemplate(name) {
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiProgLabelCaO">CaO:</span><span class="nutrient-value" id="fertiProgTotalCaO">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiProgLabelMgO">MgO:</span><span class="nutrient-value" id="fertiProgTotalMgO">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="fertiProgTotalS">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="fertiProgTotalSO4">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiProgLabelSO4">SO₄:</span><span class="nutrient-value" id="fertiProgTotalSO4">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="fertiProgTotalFe">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="fertiProgTotalMn">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="fertiProgTotalB">0.0</span></div>
@@ -602,7 +602,7 @@ function sectionTemplate(name) {
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelCaO">CaO:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterCaO" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelMgO">MgO:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterMgO" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterS" step="0.01" value="0.0"></div>
-                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterSO4" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelSO4">SO₄:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterSO4" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterFe" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterMn" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterB" step="0.01" value="0.0"></div>
@@ -622,7 +622,7 @@ function sectionTemplate(name) {
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiTotalWithWaterLabelCaO">CaO:</span><span class="nutrient-value" id="fertiTotalWithWaterCaO">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiTotalWithWaterLabelMgO">MgO:</span><span class="nutrient-value" id="fertiTotalWithWaterMgO">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="fertiTotalWithWaterS">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="fertiTotalWithWaterSO4">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiTotalWithWaterLabelSO4">SO₄:</span><span class="nutrient-value" id="fertiTotalWithWaterSO4">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="fertiTotalWithWaterFe">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="fertiTotalWithWaterMn">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="fertiTotalWithWaterB">0.0</span></div>
@@ -642,7 +642,7 @@ function sectionTemplate(name) {
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiReqLabelCaO">CaO:</span><span class="nutrient-value" id="fertiReqCaO">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiReqLabelMgO">MgO:</span><span class="nutrient-value" id="fertiReqMgO">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="fertiReqS">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="fertiReqSO4">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiReqLabelSO4">SO₄:</span><span class="nutrient-value" id="fertiReqSO4">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="fertiReqFe">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="fertiReqMn">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="fertiReqB">0.0</span></div>
@@ -662,7 +662,7 @@ function sectionTemplate(name) {
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelCaO">CaO:</span><span class="nutrient-value" id="fertiDiffCaO">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelMgO">MgO:</span><span class="nutrient-value" id="fertiDiffMgO">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="fertiDiffS">0.0</span></div>
-                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="fertiDiffSO4">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelSO4">SO₄:</span><span class="nutrient-value" id="fertiDiffSO4">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="fertiDiffFe">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="fertiDiffMn">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="fertiDiffB">0.0</span></div>
@@ -1176,11 +1176,7 @@ function sectionTemplate(name) {
                          <span class="nutrient-value" id="totalMgO">0.0</span>
                        </div>
                        <div class="nutrient-item">
-                         <span class="nutrient-label notranslate" translate="no">S:</span>
-                         <span class="nutrient-value" id="totalS">0.0</span>
-                       </div>
-                       <div class="nutrient-item">
-                         <span class="nutrient-label notranslate" translate="no">SO₄:</span>
+                         <span class="nutrient-label notranslate" translate="no" id="labelSO4">SO₄:</span>
                          <span class="nutrient-value" id="totalSO4">0.0</span>
                        </div>
                        <div class="nutrient-item">
@@ -1221,8 +1217,7 @@ function sectionTemplate(name) {
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="reqLabelK2O">K₂O:</span><span class="nutrient-value" id="reqK2O">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="reqLabelCaO">CaO:</span><span class="nutrient-value" id="reqCaO">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="reqLabelMgO">MgO:</span><span class="nutrient-value" id="reqMgO">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="reqS">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="reqSO4">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="reqLabelSO4">SO₄:</span><span class="nutrient-value" id="reqSO4">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="reqFe">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="reqMn">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="reqB">0.0</span></div>
@@ -1241,8 +1236,7 @@ function sectionTemplate(name) {
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelK2O">K₂O:</span><span class="nutrient-value" id="diffK2O">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelCaO">CaO:</span><span class="nutrient-value" id="diffCaO">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelMgO">MgO:</span><span class="nutrient-value" id="diffMgO">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">S:</span><span class="nutrient-value" id="diffS">0.0</span></div>
-                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">SO₄:</span><span class="nutrient-value" id="diffSO4">0.0</span></div>
+                  <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="diffLabelSO4">SO₄:</span><span class="nutrient-value" id="diffSO4">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Fe:</span><span class="nutrient-value" id="diffFe">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mn:</span><span class="nutrient-value" id="diffMn">0.0</span></div>
                   <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">B:</span><span class="nutrient-value" id="diffB">0.0</span></div>

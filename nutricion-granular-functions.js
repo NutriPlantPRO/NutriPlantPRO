@@ -368,7 +368,7 @@ function getProgramNutrientLabel(nutrient) {
     K2O: 'K',
     CaO: 'Ca',
     MgO: 'Mg',
-    SO4: 'SO₄',
+    SO4: 'S',
     SiO2: 'Si'
   };
   if (isElementalMode) {
@@ -387,13 +387,14 @@ function formatProgramValue(nutrient, value, decimals) {
       case 'CaO': v = convertOxideToElemental(v, CONVERSION_FACTORS.CaO_TO_Ca); break;
       case 'MgO': v = convertOxideToElemental(v, CONVERSION_FACTORS.MgO_TO_Mg); break;
       case 'SiO2': v = convertOxideToElemental(v, CONVERSION_FACTORS.SiO2_TO_Si); break;
+      case 'SO4': v = convertOxideToElemental(v, CONVERSION_FACTORS.S_TO_SO4); break;
       default: break;
     }
   }
   return v.toFixed(decimals);
 }
 
-const GRANULAR_PROGRAM_NUTRIENTS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+const GRANULAR_PROGRAM_NUTRIENTS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
 
 function getGranularAppContribution(app) {
   const contribution = {};
@@ -403,9 +404,11 @@ function getGranularAppContribution(app) {
   }
 
   const current = app.results && typeof app.results === 'object' ? app.results : {};
-  const hasCurrent = GRANULAR_PROGRAM_NUTRIENTS.some(n => (parseFloat(current[n]) || 0) !== 0);
+  const hasCurrent = GRANULAR_PROGRAM_NUTRIENTS.some(n => (parseFloat(current[n]) || 0) !== 0)
+    || (parseFloat(current.S) || 0) !== 0;
   if (hasCurrent) {
     GRANULAR_PROGRAM_NUTRIENTS.forEach(n => { contribution[n] = parseFloat(current[n]) || 0; });
+    contribution.SO4 += (parseFloat(current.S) || 0) * CONVERSION_FACTORS.S_TO_SO4;
     return contribution;
   }
 
@@ -414,6 +417,7 @@ function getGranularAppContribution(app) {
   GRANULAR_PROGRAM_NUTRIENTS.forEach(n => {
     contribution[n] = ((parseFloat(comp[n]) || 0) * dose) / 100;
   });
+  contribution.SO4 += ((parseFloat(comp.S) || 0) * dose) / 100 * CONVERSION_FACTORS.S_TO_SO4;
   return contribution;
 }
 
@@ -480,7 +484,6 @@ function renderApplications() {
               <th class="notranslate" translate="no">${getProgramNutrientLabel('K2O')}</th>
               <th class="notranslate" translate="no">${getProgramNutrientLabel('CaO')}</th>
               <th class="notranslate" translate="no">${getProgramNutrientLabel('MgO')}</th>
-              <th class="notranslate" translate="no">S</th>
               <th class="notranslate" translate="no">${getProgramNutrientLabel('SO4')}</th>
               <th class="notranslate" translate="no">Fe</th>
               <th class="notranslate" translate="no">Mn</th>
@@ -532,7 +535,7 @@ function renderApplications() {
 // Función para renderizar materiales
 function renderMaterials(app) {
   if (!app.materials || app.materials.length === 0) {
-    return '<tr><td colspan="17" style="text-align: center; color: #6b7280;">No hay materias primas</td></tr>';
+    return '<tr><td colspan="16" style="text-align: center; color: #6b7280;">No hay materias primas</td></tr>';
   }
   
   const rows = app.materials.map((material, index) => `
@@ -552,8 +555,7 @@ function renderMaterials(app) {
       <td>${formatProgramValue('K2O', material.K2O, 2)}</td>
       <td>${formatProgramValue('CaO', material.CaO, 2)}</td>
       <td>${formatProgramValue('MgO', material.MgO, 2)}</td>
-      <td>${formatProgramValue('S', material.S, 2)}</td>
-      <td>${formatProgramValue('SO4', material.SO4, 2)}</td>
+      <td>${formatProgramValue('SO4', granularFoldSToSo4(material), 2)}</td>
       <td>${formatProgramValue('Fe', material.Fe, 3)}</td>
       <td>${formatProgramValue('Mn', material.Mn, 3)}</td>
       <td>${formatProgramValue('B', material.B, 3)}</td>
@@ -577,8 +579,7 @@ function renderMaterials(app) {
       <td>${formatProgramValue('K2O', totals.K2O, 2)}</td>
       <td>${formatProgramValue('CaO', totals.CaO, 2)}</td>
       <td>${formatProgramValue('MgO', totals.MgO, 2)}</td>
-      <td>${formatProgramValue('S', totals.S, 2)}</td>
-      <td>${formatProgramValue('SO4', totals.SO4, 2)}</td>
+      <td>${formatProgramValue('SO4', granularFoldSToSo4(totals), 2)}</td>
       <td>${formatProgramValue('Fe', totals.Fe, 3)}</td>
       <td>${formatProgramValue('Mn', totals.Mn, 3)}</td>
       <td>${formatProgramValue('B', totals.B, 3)}</td>
@@ -751,9 +752,9 @@ function closeNewMaterialModal() {
 }
 
 /** Modal de consulta: materias primas precargadas de Nutrición Granular (concentración %) */
-const GRANULAR_CATALOG_COLS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+const GRANULAR_CATALOG_COLS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
 function granularCatalogColLabel(key) {
-  const labels = { N: 'N', P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', S: 'S', SO4: 'SO₄', Fe: 'Fe', Mn: 'Mn', B: 'B', Zn: 'Zn', Cu: 'Cu', Mo: 'Mo', SiO2: 'SiO₂' };
+  const labels = { N: 'N', P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', SO4: 'SO₄', Fe: 'Fe', Mn: 'Mn', B: 'B', Zn: 'Zn', Cu: 'Cu', Mo: 'Mo', SiO2: 'SiO₂' };
   return labels[key] || key;
 }
 function getBaseGranularMaterials() {
@@ -764,7 +765,10 @@ function openGranularPreloadedCatalogModal() {
   const rows = list.map(mat => {
     const cells = [
       (mat.name || '').replace(/</g, '&lt;'),
-      ...GRANULAR_CATALOG_COLS.map(k => (parseFloat(mat[k]) || 0).toFixed(2))
+      ...GRANULAR_CATALOG_COLS.map(k => {
+        const v = k === 'SO4' ? granularFoldSToSo4(mat) : (parseFloat(mat[k]) || 0);
+        return v.toFixed(2);
+      })
     ];
     return `<tr style="border-bottom:1px solid #e5e7eb;">${cells.map((c, i) => `<td style="padding:6px 10px;${i === 0 ? 'font-weight:600;' : 'text-align:right;'}">${c}</td>`).join('')}</tr>`;
   }).join('');
@@ -1233,6 +1237,14 @@ const CONVERSION_FACTORS = {
   S_TO_SO4: 96.062 / 32.065 // S → SO₄ (misma base que requerimiento granular)
 };
 
+/** Masa (o % en mezcla) SO₄ equivalente: SO₄ + S elemental × factor */
+function granularFoldSToSo4(obj) {
+  if (!obj || typeof obj !== 'object') return 0;
+  const so4 = parseFloat(obj.SO4) || 0;
+  const s = parseFloat(obj.S) || 0;
+  return so4 + s * CONVERSION_FACTORS.S_TO_SO4;
+}
+
 // Función para formatear números con comas
 function formatNumberWithCommas(number) {
   if (number === null || number === undefined || isNaN(number)) {
@@ -1271,13 +1283,14 @@ function updateSummary(options = {}) {
     }
     
     // Calcular totales de nutrientes REALES (Kg/Ha) de todas las aplicaciones
-    const totals = { N: 0, P2O5: 0, K2O: 0, CaO: 0, S: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 };
+    const totals = { N: 0, P2O5: 0, K2O: 0, CaO: 0, SO4: 0, MgO: 0, SiO2: 0, Zn: 0, Fe: 0, B: 0, Mn: 0, Cu: 0, Mo: 0 };
     
     applications.forEach(app => {
       console.log(`📊 Aplicación ${app.title}:`, app.results);
       Object.keys(totals).forEach(nutrient => {
         totals[nutrient] += app.results[nutrient] || 0;
       });
+      totals.SO4 += (parseFloat(app.results && app.results.S) || 0) * CONVERSION_FACTORS.S_TO_SO4;
     });
     
     console.log('📈 Totales calculados:', totals);
@@ -1395,6 +1408,11 @@ function updateSummary(options = {}) {
               reqDisplay = convertOxideToElemental(reqDisplay, CONVERSION_FACTORS.SiO2_TO_Si);
               labelText = 'Si:';
               break;
+            case 'SO4':
+              displayValue = convertOxideToElemental(totals['SO4'], CONVERSION_FACTORS.S_TO_SO4);
+              reqDisplay = convertOxideToElemental(reqDisplay, CONVERSION_FACTORS.S_TO_SO4);
+              labelText = 'S:';
+              break;
             default:
               displayValue = totals[nutrient];
               reqDisplay = reqDisplay;
@@ -1419,6 +1437,9 @@ function updateSummary(options = {}) {
               break;
             case 'SiO2':
               labelText = 'SiO₂:';
+              break;
+            case 'SO4':
+              labelText = 'SO₄:';
               break;
             default:
               labelText = '';

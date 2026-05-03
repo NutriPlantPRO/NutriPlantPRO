@@ -113,8 +113,22 @@ function fertiUnifiedMerge(updater){
 }
 
 function isFertiMicroNutrient(key) { return ['Fe','Mn','B','Zn','Cu','Mo','Si','SiO2'].indexOf(key) !== -1; }
-function fertiProgFormat(num, nutrientKey) {
-  const n = parseFloat(num || 0);
+
+/** Una sola columna azufre: óxido = kg SO₄ eq.; elemental = kg S (S + SO₄/ factor). */
+function fertiMergeSulfurKgDisplay(so4Kg, sKg) {
+  const so4 = parseFloat(so4Kg) || 0;
+  const s = parseFloat(sKg) || 0;
+  if (fertProgElementalMode) return s + so4 / FERTI_CONV.SO4_TO_S;
+  return so4 + s * FERTI_CONV.SO4_TO_S;
+}
+
+function fertiProgFormat(num, nutrientKey, sKgOpt) {
+  let n;
+  if (nutrientKey === 'SO4' && sKgOpt !== undefined) {
+    n = fertiMergeSulfurKgDisplay(num, sKgOpt);
+  } else {
+    n = parseFloat(num || 0);
+  }
   const decimals = (nutrientKey && isFertiMicroNutrient(nutrientKey)) ? 3 : 2;
   return isNaN(n) ? (decimals === 3 ? '0.000' : '0.00') : n.toFixed(decimals);
 }
@@ -734,7 +748,7 @@ function renderFertiWeeks() {
     .map(m => `<option value="${m.id}" ${m.id===selectedId?'selected':''}>${m.name}</option>`)
     .join('');
   const cols = getFertiProgramColumns();
-  const headerMap = {N_NO3:'N(NO₃)',N_NH4:'N(NH₄)',P:'P',P2O5:'P₂O₅',K:'K',K2O:'K₂O',Ca:'Ca',CaO:'CaO',Mg:'Mg',MgO:'MgO',S:'S',SO4:'SO₄',Fe:'Fe',Mn:'Mn',B:'B',Zn:'Zn',Cu:'Cu',Mo:'Mo',Si:'Si',SiO2:'SiO₂'};
+  const headerMap = {N_NO3:'N(NO₃)',N_NH4:'N(NH₄)',P:'P',P2O5:'P₂O₅',K:'K',K2O:'K₂O',Ca:'Ca',CaO:'CaO',Mg:'Mg',MgO:'MgO',S:'S',SO4: fertProgElementalMode ? 'S' : 'SO₄',Fe:'Fe',Mn:'Mn',B:'B',Zn:'Zn',Cu:'Cu',Mo:'Mo',Si:'Si',SiO2:'SiO₂'};
 
   // Encabezados de columnas de fertilizante (select compacto + botón X)
   const fertColsHeader = fertiColumns.map(c => {
@@ -780,14 +794,14 @@ function renderFertiWeeks() {
             ${fertiColumns.map(c => `
               <td><input type="number" step="0.01" value="${week.kgByCol?.[c.id]||0}" class="material-input" style="width:88px;" data-week-id="${week.id}" data-col-id="${c.id}" oninput="onWeekKgInput('${week.id}','${c.id}',this.value)" onchange="onWeekKgChange('${week.id}','${c.id}',this.value)"/></td>
             `).join('')}
-            ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}" style="width:60px;text-align:right;">${fertiProgFormat(week.totals?.[n]||0, n)}</td>`).join('')}
+            ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}" style="width:60px;text-align:right;">${fertiProgFormat(week.totals?.[n]||0, n, n === 'SO4' ? (week.totals?.S || 0) : undefined)}</td>`).join('')}
           </tr>
         `).join('');
   const totalsRowHtml = `
           <tr class="total-row">
             <td colspan="2" style="text-align:left;font-weight:700;">TOTAL</td>
             ${fertiColumns.map((c,i)=>`<td><div class="total-value">${fertiProgFormat(fertColTotals[i])}</div><div class="total-label-sm" title="${fertColNames[i]||''}">${(fertColNames[i]||'').slice(0,14)}</div></td>`).join('')}
-            ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}"><div class="total-value">${fertiProgFormat(nutTotals[n]||0, n)}</div><div class="total-label-sm">${headerMap[n]||n}</div></td>`).join('')}
+            ${cols.map((n,i)=>`<td class="nut-col-cell ${i===0?'nut-start':''}"><div class="total-value">${fertiProgFormat(nutTotals[n]||0, n, n === 'SO4' ? (nutTotals.S || 0) : undefined)}</div><div class="total-label-sm">${headerMap[n]||n}</div></td>`).join('')}
           </tr>`;
 
   const timeSelectHtml = `
@@ -849,33 +863,38 @@ function updateFertiSummary() {
   applyFertiSVisibilityPolicy();
   updateFertiProgramTimeTitle();
   const labelMap = fertProgElementalMode
-    ? { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SiO2: 'Si' }
-    : { P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', SiO2: 'SiO₂' };
+    ? { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SiO2: 'Si', SO4: 'S' }
+    : { P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', SiO2: 'SiO₂', SO4: 'SO₄' };
   const labelIds = [
     ['fertiProgLabelP2O5', 'P2O5'],
     ['fertiProgLabelK2O', 'K2O'],
     ['fertiProgLabelCaO', 'CaO'],
     ['fertiProgLabelMgO', 'MgO'],
+    ['fertiProgLabelSO4', 'SO4'],
     ['fertiProgLabelSiO2', 'SiO2'],
     ['fertiReqLabelP2O5', 'P2O5'],
     ['fertiReqLabelK2O', 'K2O'],
     ['fertiReqLabelCaO', 'CaO'],
     ['fertiReqLabelMgO', 'MgO'],
+    ['fertiReqLabelSO4', 'SO4'],
     ['fertiReqLabelSiO2', 'SiO2'],
     ['fertiWaterLabelP2O5', 'P2O5'],
     ['fertiWaterLabelK2O', 'K2O'],
     ['fertiWaterLabelCaO', 'CaO'],
     ['fertiWaterLabelMgO', 'MgO'],
+    ['fertiWaterLabelSO4', 'SO4'],
     ['fertiWaterLabelSiO2', 'SiO2'],
     ['fertiTotalWithWaterLabelP2O5', 'P2O5'],
     ['fertiTotalWithWaterLabelK2O', 'K2O'],
     ['fertiTotalWithWaterLabelCaO', 'CaO'],
     ['fertiTotalWithWaterLabelMgO', 'MgO'],
+    ['fertiTotalWithWaterLabelSO4', 'SO4'],
     ['fertiTotalWithWaterLabelSiO2', 'SiO2'],
     ['fertiDiffLabelP2O5', 'P2O5'],
     ['fertiDiffLabelK2O', 'K2O'],
     ['fertiDiffLabelCaO', 'CaO'],
     ['fertiDiffLabelMgO', 'MgO'],
+    ['fertiDiffLabelSO4', 'SO4'],
     ['fertiDiffLabelSiO2', 'SiO2']
   ];
   labelIds.forEach(([id, key]) => {
@@ -1021,12 +1040,16 @@ function updateFertiSummary() {
   const doseEl = document.getElementById('fertiTotalDoseKgHa'); if (doseEl) doseEl.textContent = fertiProgFormat(totalKg);
   set('fertiProgTotalN_NO3', totals.N_NO3); set('fertiProgTotalN_NH4', totals.N_NH4);
   set('fertiProgTotalP2O5', toElemental('P2O5', totals.P2O5)); set('fertiProgTotalK2O', toElemental('K2O', totals.K2O)); set('fertiProgTotalCaO', toElemental('CaO', totals.CaO)); set('fertiProgTotalMgO', toElemental('MgO', totals.MgO));
-  set('fertiProgTotalS', totals.S); set('fertiProgTotalSO4', totals.SO4); set('fertiProgTotalFe', totals.Fe); set('fertiProgTotalMn', totals.Mn); set('fertiProgTotalB', totals.B); set('fertiProgTotalZn', totals.Zn); set('fertiProgTotalCu', totals.Cu); set('fertiProgTotalMo', totals.Mo); set('fertiProgTotalSiO2', toElemental('SiO2', totals.SiO2));
+  set('fertiProgTotalS', totals.S);
+  set('fertiProgTotalSO4', fertiMergeSulfurKgDisplay(totals.SO4, totals.S));
+  set('fertiProgTotalFe', totals.Fe); set('fertiProgTotalMn', totals.Mn); set('fertiProgTotalB', totals.B); set('fertiProgTotalZn', totals.Zn); set('fertiProgTotalCu', totals.Cu); set('fertiProgTotalMo', totals.Mo); set('fertiProgTotalSiO2', toElemental('SiO2', totals.SiO2));
 
   // Requerimiento
   set('fertiReqN', reqOxide.N||0);
   set('fertiReqP2O5', toElemental('P2O5', reqOxide.P2O5||0)); set('fertiReqK2O', toElemental('K2O', reqOxide.K2O||0)); set('fertiReqCaO', toElemental('CaO', reqOxide.CaO||0)); set('fertiReqMgO', toElemental('MgO', reqOxide.MgO||0));
-  set('fertiReqS', reqOxide.S||0); set('fertiReqSO4', reqOxide.SO4||0); set('fertiReqFe', reqOxide.Fe||0); set('fertiReqMn', reqOxide.Mn||0); set('fertiReqB', reqOxide.B||0); set('fertiReqZn', reqOxide.Zn||0); set('fertiReqCu', reqOxide.Cu||0); set('fertiReqMo', reqOxide.Mo||0); set('fertiReqSiO2', toElemental('SiO2', reqOxide.SiO2||0));
+  set('fertiReqS', reqOxide.S||0);
+  set('fertiReqSO4', fertiMergeSulfurKgDisplay(reqOxide.SO4 || 0, reqOxide.S || 0));
+  set('fertiReqFe', reqOxide.Fe||0); set('fertiReqMn', reqOxide.Mn||0); set('fertiReqB', reqOxide.B||0); set('fertiReqZn', reqOxide.Zn||0); set('fertiReqCu', reqOxide.Cu||0); set('fertiReqMo', reqOxide.Mo||0); set('fertiReqSiO2', toElemental('SiO2', reqOxide.SiO2||0));
 
   // Aporte por agua (inputs editables)
   setInput('fertiWaterN', fertiWaterContributionOxide.N||0);
@@ -1035,7 +1058,7 @@ function updateFertiSummary() {
   setInput('fertiWaterCaO', toElemental('CaO', fertiWaterContributionOxide.CaO||0));
   setInput('fertiWaterMgO', toElemental('MgO', fertiWaterContributionOxide.MgO||0));
   setInput('fertiWaterS', fertiWaterContributionOxide.S||0);
-  setInput('fertiWaterSO4', fertiWaterContributionOxide.SO4||0);
+  setInput('fertiWaterSO4', fertiMergeSulfurKgDisplay(fertiWaterContributionOxide.SO4 || 0, fertiWaterContributionOxide.S || 0));
   setInput('fertiWaterFe', fertiWaterContributionOxide.Fe||0);
   setInput('fertiWaterMn', fertiWaterContributionOxide.Mn||0);
   setInput('fertiWaterB', fertiWaterContributionOxide.B||0);
@@ -1067,7 +1090,7 @@ function updateFertiSummary() {
   set('fertiTotalWithWaterCaO', toElemental('CaO', totalWithWater.CaO));
   set('fertiTotalWithWaterMgO', toElemental('MgO', totalWithWater.MgO));
   set('fertiTotalWithWaterS', totalWithWater.S);
-  set('fertiTotalWithWaterSO4', totalWithWater.SO4);
+  set('fertiTotalWithWaterSO4', fertiMergeSulfurKgDisplay(totalWithWater.SO4, totalWithWater.S));
   set('fertiTotalWithWaterFe', totalWithWater.Fe);
   set('fertiTotalWithWaterMn', totalWithWater.Mn);
   set('fertiTotalWithWaterB', totalWithWater.B);
@@ -1095,7 +1118,9 @@ function updateFertiSummary() {
   };
   setFertiDiff('fertiDiffN', diff.N);
   setFertiDiff('fertiDiffP2O5', toElemental('P2O5', diff.P2O5)); setFertiDiff('fertiDiffK2O', toElemental('K2O', diff.K2O)); setFertiDiff('fertiDiffCaO', toElemental('CaO', diff.CaO)); setFertiDiff('fertiDiffMgO', toElemental('MgO', diff.MgO));
-  setFertiDiff('fertiDiffS', diff.S); setFertiDiff('fertiDiffSO4', diff.SO4); setFertiDiff('fertiDiffFe', diff.Fe); setFertiDiff('fertiDiffMn', diff.Mn); setFertiDiff('fertiDiffB', diff.B); setFertiDiff('fertiDiffZn', diff.Zn); setFertiDiff('fertiDiffCu', diff.Cu); setFertiDiff('fertiDiffMo', diff.Mo); setFertiDiff('fertiDiffSiO2', toElemental('SiO2', diff.SiO2));
+  setFertiDiff('fertiDiffS', diff.S);
+  setFertiDiff('fertiDiffSO4', fertiMergeSulfurKgDisplay(diff.SO4, diff.S));
+  setFertiDiff('fertiDiffFe', diff.Fe); setFertiDiff('fertiDiffMn', diff.Mn); setFertiDiff('fertiDiffB', diff.B); setFertiDiff('fertiDiffZn', diff.Zn); setFertiDiff('fertiDiffCu', diff.Cu); setFertiDiff('fertiDiffMo', diff.Mo); setFertiDiff('fertiDiffSiO2', toElemental('SiO2', diff.SiO2));
 
   try { updateFertiCharts(); } catch {}
 }
@@ -1108,6 +1133,7 @@ function fertiWaterToOxide(key, value) {
     case 'CaO': return value * FERTI_CONV.CaO_TO_Ca;
     case 'MgO': return value * FERTI_CONV.MgO_TO_Mg;
     case 'SiO2': return value * FERTI_CONV.SiO2_TO_Si;
+    case 'SO4': return value * FERTI_CONV.SO4_TO_S;
     default: return value;
   }
 }
