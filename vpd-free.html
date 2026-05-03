@@ -120,7 +120,7 @@
     <div style="background:#fefce8;border:2px solid #eab308;border-radius:12px;padding:20px;margin-bottom:20px;">
       <h3 style="margin:0 0 8px;color:#854d0e;font-size:17px;font-weight:600;">🗺️ Clima en un punto (mapa o GPS)</h3>
       <p style="margin:0 0 14px;font-size:13px;color:#713f12;line-height:1.45;">
-        Elige un punto en el mapa o usa tu ubicación. NutriPlant pide a <strong>Open-Meteo</strong> (sin API key) la temperatura, humedad y radiación solar actual; con radiación se estima <strong>T<sub>hoja</sub></strong> y el VPD como en el dashboard (sin polígono: solo este punto).
+        Elige un punto en el mapa o usa tu ubicación. NutriPlant pide a <strong>Open-Meteo</strong> la temperatura, humedad y radiación solar actual; con radiación se estima <strong>T<sub>hoja</sub></strong> y el VPD como en el dashboard (sin polígono: solo este punto).
       </p>
       <div class="vpd-coord-row">
         <div>
@@ -264,10 +264,14 @@
       var startLat = 19.4326;
       var startLng = -99.1332;
       vpdFreeMap = L.map('vpd-free-map', { scrollWheelZoom: true }).setView([startLat, startLng], 5);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      }).addTo(vpdFreeMap);
+      L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        {
+          maxZoom: 19,
+          attribution:
+            'Imágenes © <a href="https://www.esri.com/">Esri</a> — Maxar, Earthstar Geographics, comunidad GIS'
+        }
+      ).addTo(vpdFreeMap);
       vpdFreeMarker = L.marker([startLat, startLng], { draggable: true }).addTo(vpdFreeMap);
       vpdFreeMarker.on('dragend', function () {
         var ll = vpdFreeMarker.getLatLng();
