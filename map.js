@@ -2164,6 +2164,7 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     div.style.opacity = String(opacity);
     div.style.mixBlendMode = 'normal';
     div.style.filter = 'saturate(1.3) contrast(1.12)';
+    div.style.background = 'rgba(255,255,255,0.01)';
     const img = document.createElement('img');
     img.src = url;
     img.alt = 'Radar NDVI';
@@ -2172,9 +2173,18 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     img.style.display = 'block';
     img.style.objectFit = 'fill';
     img.style.pointerEvents = 'none';
+    img.onload = () => {
+      console.log('✅ Imagen NDVI cargada en overlay');
+      if (typeof overlay.draw === 'function') overlay.draw();
+    };
+    img.onerror = () => {
+      console.error('❌ La imagen NDVI no pudo cargarse en el navegador:', url);
+      const hint = document.getElementById('radarStatusHint');
+      if (hint) hint.textContent = 'No se pudo cargar la imagen NDVI firmada. Vuelve a pulsar Ver última.';
+    };
     div.appendChild(img);
     this.div = div;
-    this.getPanes().overlayMouseTarget.appendChild(div);
+    this.getPanes().floatPane.appendChild(div);
   };
   overlay.draw = function() {
     if (!this.div) return;
@@ -2198,11 +2208,27 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
   radarGroundOverlay = overlay;
 }
 
-function np_applyRadarOverlay(url, bounds) {
+function np_preloadRadarImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(url);
+    img.onerror = () => reject(new Error('La imagen NDVI no cargó'));
+    img.src = url;
+  });
+}
+
+async function np_applyRadarOverlay(url, bounds) {
+  const hint = document.getElementById('radarStatusHint');
+  if (hint) hint.textContent = 'Cargando imagen NDVI en el mapa...';
+  await np_preloadRadarImage(url);
   window.hideRadarNdviOverlay();
   np_showRadarOverlay(url, bounds, 0.98);
   np_setRadarPolygonMask(true);
   np_showRadarLegend(true);
+  if (nutriPlantMap && nutriPlantMap.map && bounds) {
+    nutriPlantMap.map.fitBounds(bounds, { padding: 50 });
+  }
+  if (hint) hint.textContent = 'Imagen NDVI mostrada sobre el predio.';
 }
 
 window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
@@ -2314,9 +2340,10 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
       alert('Aún no hay Radar guardado. Pulsa «Generar / actualizar» (tras sincronizar el predio).');
       return;
     }
-    np_applyRadarOverlay(url, bounds);
+    await np_applyRadarOverlay(url, bounds);
   } catch (e) {
-    alert('No se pudo cargar la imagen Radar.');
+    console.error('Radar NDVI view:', e);
+    alert('No se pudo cargar la imagen Radar. Intenta pulsar Estado y luego Ver última.');
   }
 };
 
@@ -2363,11 +2390,11 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
         }
         await window.refreshRadarNdviStatus();
         if (forcedData.signed_url) {
-          np_applyRadarOverlay(forcedData.signed_url, bounds);
+          await np_applyRadarOverlay(forcedData.signed_url, bounds);
         }
         return;
       }
-      np_applyRadarOverlay(data.latest.signed_url, bounds);
+      await np_applyRadarOverlay(data.latest.signed_url, bounds);
       await window.refreshRadarNdviStatus();
       return;
     }
@@ -2378,9 +2405,10 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     }
     await window.refreshRadarNdviStatus();
     if (data.signed_url) {
-      np_applyRadarOverlay(data.signed_url, bounds);
+      await np_applyRadarOverlay(data.signed_url, bounds);
     }
   } catch (e) {
+    console.error('Radar NDVI generate:', e);
     alert('Error de red al generar Radar.');
   } finally {
     if (btn) btn.disabled = false;
