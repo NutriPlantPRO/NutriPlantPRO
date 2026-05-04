@@ -2120,6 +2120,35 @@ function np_showRadarLegend(show) {
   if (scale) scale.style.display = 'flex';
 }
 
+function np_setRadarBusy(isBusy, message) {
+  const buttons = ['radarBtnRefresh', 'radarBtnView', 'radarBtnGenerate', 'radarBtnHide']
+    .map((id) => document.getElementById(id))
+    .filter(Boolean);
+  const generateBtn = document.getElementById('radarBtnGenerate');
+  const hint = document.getElementById('radarStatusHint');
+
+  if (generateBtn) {
+    if (isBusy) {
+      if (!generateBtn.dataset.originalText) generateBtn.dataset.originalText = generateBtn.textContent || 'Generar / actualizar';
+      generateBtn.textContent = '⏳ Generando NDVI...';
+      generateBtn.classList.add('radar-loading');
+    } else {
+      generateBtn.textContent = generateBtn.dataset.originalText || '✨ Generar / actualizar';
+      generateBtn.classList.remove('radar-loading');
+    }
+  }
+
+  buttons.forEach((btn) => {
+    btn.disabled = !!isBusy;
+    btn.style.opacity = isBusy ? '0.72' : '';
+    btn.style.cursor = isBusy ? 'wait' : '';
+  });
+
+  if (isBusy && hint) {
+    hint.textContent = message || 'Generando imagen NDVI... esto puede tardar unos segundos.';
+  }
+}
+
 function np_isCloudSupabaseUser() {
   const id = localStorage.getItem('nutriplant_user_id');
   return !!id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -2394,8 +2423,7 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     alert('Guarda un polígono en el mapa y sincronízalo a la nube antes de generar Radar.');
     return;
   }
-  const btn = document.getElementById('radarBtnGenerate');
-  if (btn) btn.disabled = true;
+  np_setRadarBusy(true, 'Generando imagen NDVI con Sentinel-2... esto puede tardar unos segundos.');
   try {
     const res = await fetch(np_radarApiUrl(), {
       method: 'POST',
@@ -2408,6 +2436,7 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
         'Ya existe un Radar generado este mes. ¿Quieres regenerarlo con el estilo más intenso? Esto usará 1 crédito adicional.'
       );
       if (regenerate) {
+        np_setRadarBusy(true, 'Regenerando NDVI... preparando imagen actualizada.');
         const forcedRes = await fetch(np_radarApiUrl(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -2442,7 +2471,7 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     console.error('Radar NDVI generate:', e);
     alert('Error de red al generar Radar.');
   } finally {
-    if (btn) btn.disabled = false;
+    np_setRadarBusy(false);
   }
 };
 
