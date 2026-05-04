@@ -124,12 +124,12 @@ function ndviThumbUrl(ee, geometry, lookbackDays) {
 
   const image = coll.median();
   const ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI').clip(geometry);
-  // Interpolación visual: suaviza los saltos entre píxeles Sentinel-2 sin promediar el cultivo.
-  const displayNdvi = ndvi.resample('bilinear').clip(geometry);
+  // Mantener píxeles nítidos: el suavizado bilinear hacía que el NDVI se perdiera sobre el satélite.
+  const displayNdvi = ndvi.clip(geometry);
   const vis = displayNdvi.visualize({
-    min: 0.05,
-    max: 0.85,
-    palette: ['8b0000', 'd73027', 'fdae61', 'ffffbf', 'a6d96a', '1a9850', '006837']
+    min: 0.15,
+    max: 0.78,
+    palette: ['7f0000', 'b91c1c', 'ef4444', 'f97316', 'fde047', '84cc16', '22c55e', '00ff66']
   });
 
   return new Promise((resolve, reject) => {
@@ -402,7 +402,7 @@ exports.handler = async (event) => {
     date_start: thumb.dateStart,
     date_end: thumb.dateEnd,
     source: 'COPERNICUS/S2_SR_HARMONIZED',
-    ndvi_vis: { min: -0.2, max: 0.9 }
+    ndvi_vis: { min: 0.15, max: 0.78, style: 'high_contrast_crisp' }
   };
 
   const { data: insRow, error: insErr } = await supabase
