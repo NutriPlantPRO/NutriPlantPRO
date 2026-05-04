@@ -25,6 +25,9 @@ nutriplant-radar-ee-*.json
 *.tmp
 *.temp
 
+# Dependencias Node (nunca subir; cada quien hace npm install)
+node_modules/
+
 
 
 
