@@ -1428,7 +1428,7 @@ function sectionTemplate(name) {
 
         <div id="radarNdviPanel" class="radar-ndvi-panel" style="margin: 12px 0 0; padding: 12px 14px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;">
           <div style="font-weight: 600; color: #14532d;">🛰️ Radar del cultivo (NDVI)</div>
-          <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Créditos: —</span>
+          <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Disponibles: —</span>
           <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 420px;">Sincroniza el predio a la nube, luego genera la imagen (máx. 1 por proyecto y mes; créditos mensuales según tu plan).</span>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
             <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>

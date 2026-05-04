@@ -33,27 +33,45 @@ function monthKey(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function parseCredentials() {
-  const raw = (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || '').trim();
-  if (!raw) return null;
-  try {
-    return typeof raw === 'string' ? JSON.parse(raw) : raw;
-  } catch (e) {
-    return null;
-  }
-}
-
 let eeInitPromise = null;
 
 function ensureEarthEngine(ee) {
   if (eeInitPromise) return eeInitPromise;
-  const creds = parseCredentials();
-  const projectId = (process.env.EE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || '').trim();
-  if (!creds || !creds.client_email || !creds.private_key) {
-    return Promise.reject(new Error('GOOGLE_APPLICATION_CREDENTIALS_JSON inválida o vacía'));
+  const raw = (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || '')
+    .trim()
+    .replace(/^\uFEFF/, '');
+  if (!raw) {
+    return Promise.reject(
+      new Error(
+        'Netlify no está pasando GOOGLE_APPLICATION_CREDENTIALS_JSON a la función. En Environment variables: edita esa variable y marca alcances Functions + Runtime (y Production). Guarda y Deploy sin caché.'
+      )
+    );
   }
+  let creds;
+  try {
+    creds = JSON.parse(raw);
+  } catch (err) {
+    console.error('radar-ndvi credentials JSON.parse:', err.message);
+    return Promise.reject(
+      new Error(
+        'JSON inválido en GOOGLE_APPLICATION_CREDENTIALS_JSON. Pega otra vez el archivo .json completo, sin texto de más.'
+      )
+    );
+  }
+  if (!creds.client_email || !creds.private_key) {
+    return Promise.reject(
+      new Error(
+        'El JSON no trae client_email o private_key. Debe ser el archivo de cuenta de servicio de Google sin editar.'
+      )
+    );
+  }
+  const projectId = (process.env.EE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || '').trim();
   if (!projectId) {
-    return Promise.reject(new Error('EE_PROJECT_ID no configurada'));
+    return Promise.reject(
+      new Error(
+        'Falta EE_PROJECT_ID en Netlify (ej. nutriplant-radar-ee). Añádela en Environment variables y redeploy.'
+      )
+    );
   }
   eeInitPromise = new Promise((resolve, reject) => {
     ee.data.authenticateViaPrivateKey(

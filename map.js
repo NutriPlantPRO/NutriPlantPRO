@@ -2005,13 +2005,13 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
   const hint = document.getElementById('radarStatusHint');
   if (!label) return;
   if (!np_isCloudSupabaseUser()) {
-    label.textContent = 'Créditos: (cuenta nube)';
+    label.textContent = 'Disponibles: — (cuenta nube)';
     if (hint) hint.textContent = 'Inicia sesión con tu cuenta NutriPlant en la nube para usar Radar.';
     return;
   }
   const token = await np_getRadarAccessToken();
   if (!token) {
-    label.textContent = 'Créditos: (sin sesión)';
+    label.textContent = 'Disponibles: — (sin sesión)';
     return;
   }
   const proj =
@@ -2019,10 +2019,10 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       ? nutriPlantMap.getCurrentProject()
       : null;
   if (!proj || !proj.id) {
-    label.textContent = 'Créditos: —';
+    label.textContent = 'Disponibles: —';
     return;
   }
-  label.textContent = 'Créditos: …';
+  label.textContent = 'Disponibles: …';
   try {
     const res = await fetch(np_radarApiUrl(), {
       method: 'POST',
@@ -2031,12 +2031,13 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      label.textContent = 'Créditos: error';
+      label.textContent = 'Disponibles: error';
       return;
     }
-    const u = data.credits?.used ?? 0;
-    const l = data.credits?.limit ?? 0;
-    label.textContent = 'Créditos: ' + u + ' / ' + l + ' este mes';
+    const u = Number(data.credits?.used) || 0;
+    const l = Number(data.credits?.limit) || 0;
+    const disponibles = Math.max(0, l - u);
+    label.textContent = disponibles + ' disponibles de ' + l + ' este mes';
     if (hint && data.latest?.created_at) {
       hint.textContent =
         'Última imagen: ' + new Date(data.latest.created_at).toLocaleString('es-MX');
@@ -2045,7 +2046,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
         'Sincroniza el predio a la nube, luego genera la imagen (máx. 1 por proyecto y mes).';
     }
   } catch (e) {
-    label.textContent = 'Créditos: red';
+    label.textContent = 'Disponibles: sin conexión';
   }
 };
 
