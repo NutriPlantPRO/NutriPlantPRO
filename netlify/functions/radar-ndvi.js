@@ -124,16 +124,18 @@ function ndviThumbUrl(ee, geometry, lookbackDays) {
 
   const image = coll.median();
   const ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI').clip(geometry);
-  const vis = ndvi.visualize({
-    min: -0.2,
-    max: 0.9,
-    palette: ['781c18', 'c7b358', '2d8f47']
+  // Suavizado leve solo para visualización: evita cuadros duros entre píxeles de 10 m.
+  const displayNdvi = ndvi.focal_mean({ radius: 12, units: 'meters' }).clip(geometry);
+  const vis = displayNdvi.visualize({
+    min: 0.05,
+    max: 0.85,
+    palette: ['8b0000', 'd73027', 'fdae61', 'ffffbf', 'a6d96a', '1a9850', '006837']
   });
 
   return new Promise((resolve, reject) => {
     vis.getThumbURL(
       {
-        dimensions: 1024,
+        dimensions: 2048,
         region: geometry,
         format: 'png'
       },

@@ -1990,7 +1990,7 @@ function np_setRadarPolygonMask(active) {
     }
     polygons.forEach((poly) => {
       poly.setOptions({
-        fillOpacity: 0.02,
+        fillOpacity: 0,
         strokeOpacity: 0.95,
         strokeWeight: 3
       });
@@ -2018,7 +2018,7 @@ function np_showRadarLegend(show) {
     legend = document.createElement('div');
     legend.id = 'radarNdviLegend';
     legend.style.cssText = 'position:absolute;left:14px;bottom:14px;z-index:5;background:rgba(255,255,255,.94);border:1px solid #d1d5db;border-radius:10px;padding:8px 10px;font-size:12px;color:#111827;box-shadow:0 4px 12px rgba(0,0,0,.15);';
-    legend.innerHTML = '<div style="font-weight:700;margin-bottom:4px;">NDVI vigor</div><div style="width:160px;height:10px;border-radius:999px;background:linear-gradient(90deg,#781c18,#c7b358,#2d8f47);margin-bottom:4px;"></div><div style="display:flex;justify-content:space-between;gap:8px;"><span>Bajo</span><span>Medio</span><span>Alto</span></div>';
+    legend.innerHTML = '<div style="font-weight:700;margin-bottom:4px;">NDVI vigor del cultivo</div><div style="width:190px;height:11px;border-radius:999px;background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);margin-bottom:4px;"></div><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;"><span>Bajo</span><span>Medio</span><span>Alto</span></div><div style="max-width:210px;line-height:1.25;color:#374151;">Verde intenso = mayor vigor relativo. Rojo/naranja = menor vigor o posible estrés dentro del polígono.</div>';
     mapContainer.appendChild(legend);
   }
 }
@@ -2198,9 +2198,35 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     });
     const data = await res.json().catch(() => ({}));
     if (res.status === 409 && data.latest && data.latest.signed_url) {
+      const regenerate = confirm(
+        'Ya existe un Radar generado este mes. ¿Quieres regenerarlo con el estilo más intenso? Esto usará 1 crédito adicional.'
+      );
+      if (regenerate) {
+        const forcedRes = await fetch(np_radarApiUrl(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ action: 'generate', project_id: String(proj.id), force: true })
+        });
+        const forcedData = await forcedRes.json().catch(() => ({}));
+        if (!forcedRes.ok) {
+          alert(forcedData.message || forcedData.error || 'No se pudo regenerar Radar.');
+          await window.refreshRadarNdviStatus();
+          return;
+        }
+        await window.refreshRadarNdviStatus();
+        if (forcedData.signed_url) {
+          window.hideRadarNdviOverlay();
+          radarGroundOverlay = new google.maps.GroundOverlay(forcedData.signed_url, bounds);
+          radarGroundOverlay.setOpacity(0.98);
+          radarGroundOverlay.setMap(nutriPlantMap.map);
+          np_setRadarPolygonMask(true);
+          np_showRadarLegend(true);
+        }
+        return;
+      }
       window.hideRadarNdviOverlay();
       radarGroundOverlay = new google.maps.GroundOverlay(data.latest.signed_url, bounds);
-      radarGroundOverlay.setOpacity(0.96);
+      radarGroundOverlay.setOpacity(0.98);
       radarGroundOverlay.setMap(nutriPlantMap.map);
       np_setRadarPolygonMask(true);
       np_showRadarLegend(true);
@@ -2216,7 +2242,7 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     if (data.signed_url) {
       window.hideRadarNdviOverlay();
       radarGroundOverlay = new google.maps.GroundOverlay(data.signed_url, bounds);
-      radarGroundOverlay.setOpacity(0.96);
+      radarGroundOverlay.setOpacity(0.98);
       radarGroundOverlay.setMap(nutriPlantMap.map);
       np_setRadarPolygonMask(true);
       np_showRadarLegend(true);
