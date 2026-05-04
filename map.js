@@ -2164,8 +2164,11 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     div.style.opacity = String(Math.max(opacity, 1));
     div.style.mixBlendMode = 'normal';
     div.style.filter = 'saturate(2.4) contrast(1.55)';
-    div.style.background = 'transparent';
+    div.style.background = 'rgba(255,255,255,0.01)';
+    div.style.border = '3px solid rgba(22, 163, 74, 0.95)';
+    div.style.boxShadow = '0 0 0 9999px rgba(0,0,0,0)';
     div.style.overflow = 'hidden';
+    div.style.borderRadius = '2px';
     const img = document.createElement('img');
     img.src = url;
     img.alt = 'Radar NDVI';
@@ -2186,9 +2189,13 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
       if (hint) hint.textContent = 'No se pudo cargar la imagen NDVI firmada. Vuelve a pulsar Ver última.';
     };
     div.appendChild(img);
+    const badge = document.createElement('div');
+    badge.textContent = 'NDVI';
+    badge.style.cssText = 'position:absolute;left:6px;top:6px;background:rgba(22,163,74,0.95);color:#fff;font-size:12px;font-weight:800;padding:3px 7px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.25);';
+    div.appendChild(badge);
     this.div = div;
     const panes = this.getPanes();
-    (panes.overlayLayer || panes.overlayMouseTarget || panes.floatPane).appendChild(div);
+    (panes.floatPane || panes.overlayMouseTarget || panes.overlayLayer).appendChild(div);
   };
   overlay.draw = function() {
     if (!this.div) return;
