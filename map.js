@@ -1971,35 +1971,58 @@ function forceClearLocationDisplay() {
 /** Radar NDVI (Netlify /api/radar-ndvi): capa opcional sobre el polígono */
 let radarGroundOverlay = null;
 let radarPreviousPolygonStyles = null;
+let radarOutlinePolygons = [];
 
 function np_getRadarPolygons() {
   if (!nutriPlantMap) return [];
-  return [nutriPlantMap.savedPolygon, nutriPlantMap.polygon].filter(Boolean);
+  return [...new Set([nutriPlantMap.savedPolygon, nutriPlantMap.polygon].filter(Boolean))];
 }
 
 function np_setRadarPolygonMask(active) {
   const polygons = np_getRadarPolygons();
   if (active) {
+    if (typeof google === 'undefined' || !google.maps || !nutriPlantMap || !nutriPlantMap.map) return;
     if (!radarPreviousPolygonStyles) {
       radarPreviousPolygonStyles = polygons.map((poly) => ({
         poly,
+        map: poly.getMap ? poly.getMap() : nutriPlantMap.map,
         fillOpacity: poly.get('fillOpacity'),
         strokeOpacity: poly.get('strokeOpacity'),
         strokeWeight: poly.get('strokeWeight')
       }));
     }
+    radarOutlinePolygons.forEach((poly) => poly.setMap(null));
+    radarOutlinePolygons = [];
     polygons.forEach((poly) => {
+      const outline = new google.maps.Polygon({
+        paths: poly.getPath ? poly.getPath().getArray() : [],
+        fillOpacity: 0,
+        strokeColor: '#2563eb',
+        strokeOpacity: 1,
+        strokeWeight: 3,
+        clickable: false,
+        editable: false,
+        draggable: false,
+        zIndex: 999
+      });
+      outline.setMap(nutriPlantMap.map);
+      radarOutlinePolygons.push(outline);
       poly.setOptions({
         fillOpacity: 0,
-        strokeOpacity: 0.95,
-        strokeWeight: 3
+        strokeOpacity: 0,
+        strokeWeight: 0,
+        clickable: false
       });
+      poly.setMap(null);
     });
     return;
   }
+  radarOutlinePolygons.forEach((poly) => poly.setMap(null));
+  radarOutlinePolygons = [];
   if (radarPreviousPolygonStyles) {
-    radarPreviousPolygonStyles.forEach(({ poly, fillOpacity, strokeOpacity, strokeWeight }) => {
+    radarPreviousPolygonStyles.forEach(({ poly, map, fillOpacity, strokeOpacity, strokeWeight }) => {
       if (!poly) return;
+      poly.setMap(map || (nutriPlantMap && nutriPlantMap.map) || null);
       poly.setOptions({ fillOpacity, strokeOpacity, strokeWeight });
     });
     radarPreviousPolygonStyles = null;
@@ -2017,8 +2040,8 @@ function np_showRadarLegend(show) {
   if (!legend) {
     legend = document.createElement('div');
     legend.id = 'radarNdviLegend';
-    legend.style.cssText = 'position:absolute;left:14px;bottom:14px;z-index:5;background:rgba(255,255,255,.94);border:1px solid #d1d5db;border-radius:10px;padding:8px 10px;font-size:12px;color:#111827;box-shadow:0 4px 12px rgba(0,0,0,.15);';
-    legend.innerHTML = '<div style="font-weight:700;margin-bottom:4px;">NDVI vigor del cultivo</div><div style="width:190px;height:11px;border-radius:999px;background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);margin-bottom:4px;"></div><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;"><span>Bajo</span><span>Medio</span><span>Alto</span></div><div style="max-width:210px;line-height:1.25;color:#374151;">Verde intenso = mayor vigor relativo. Rojo/naranja = menor vigor o posible estrés dentro del polígono.</div>';
+    legend.style.cssText = 'position:absolute;left:14px;bottom:14px;z-index:5;background:rgba(255,255,255,.94);border:1px solid #d1d5db;border-radius:10px;padding:7px 9px;font-size:11px;color:#111827;box-shadow:0 4px 12px rgba(0,0,0,.15);';
+    legend.innerHTML = '<div style="font-weight:700;margin-bottom:3px;">NDVI</div><div style="width:150px;height:9px;border-radius:999px;background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);margin-bottom:3px;"></div><div style="display:flex;justify-content:space-between;gap:8px;"><span>Bajo</span><span>Medio</span><span>Alto</span></div>';
     mapContainer.appendChild(legend);
   }
 }

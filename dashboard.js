@@ -1430,6 +1430,7 @@ function sectionTemplate(name) {
           <div style="font-weight: 600; color: #14532d;">🛰️ Radar del cultivo (NDVI)</div>
           <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Disponibles: —</span>
           <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 420px;">Sincroniza el predio a la nube, luego genera la imagen (máx. 1 por proyecto y mes; créditos mensuales según tu plan).</span>
+          <span id="radarNdviHelp" style="font-size: 12px; color: #166534; max-width: 360px;">NDVI relativo al predio: verde = mayor vigor; rojo/naranja = menor vigor o posible estrés.</span>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
             <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>
             <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">👁 Ver última</button>
