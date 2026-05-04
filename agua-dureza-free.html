@@ -416,7 +416,7 @@
       </h2>
       <div class="section-body">
         <p class="section-note">
-          Meq de ácido por litro de agua = (HCO₃⁻ + CO₃²⁻) − residual (meq/L). Dosis mL/m³ = (meq/L × 1000) ÷ meq/mL del ácido, igual que en Análisis de agua. El <strong>volumen en litros</strong> es el de tu tanque o calda a preparar (ej. 200 L o 2000 L). Si el resultado es negativo, se toma como 0.
+          Meq de ácido por litro de agua = (HCO₃⁻ + CO₃²⁻) − residual (meq/L). Dosis mL/m³ = (meq/L × 1000) ÷ meq/mL del ácido, igual que en Análisis de agua. El <strong>volumen de preparación</strong> puede capturarse en L o m³ según tu tanque, calda o volumen a acidificar. Si el resultado es negativo, se toma como 0.
         </p>
         <div class="input-matrix">
           <div class="input-matrix__grid">
@@ -433,8 +433,14 @@
               <input id="residualMeq" class="acid-in" type="text" inputmode="decimal" autocomplete="off" data-acid-num="1" value="" placeholder="ej. 1" />
             </div>
             <div class="field field--blue">
-              <label for="waterVolumeL">Volumen de preparación (L)</label>
-              <input id="waterVolumeL" class="acid-in" type="text" inputmode="decimal" autocomplete="off" data-acid-num="1" data-acid-vol="1" value="" placeholder="ej. 200" />
+              <label for="waterVolumeL">Volumen de preparación</label>
+              <div class="ion-row">
+                <input id="waterVolumeL" class="acid-in ion-in" type="text" inputmode="decimal" autocomplete="off" data-acid-num="1" data-acid-vol="1" value="" placeholder="ej. 200" />
+                <select id="waterVolumeUnit" class="ion-unit" aria-label="Unidad del volumen de preparación">
+                  <option value="L" selected>L</option>
+                  <option value="m3">m³</option>
+                </select>
+              </div>
             </div>
             <div class="field field--blue">
               <label for="acidSelect">Ácido</label>
@@ -496,6 +502,7 @@
       co3: document.getElementById('co3Meq'),
       residual: document.getElementById('residualMeq'),
       volumeL: document.getElementById('waterVolumeL'),
+      volumeUnit: document.getElementById('waterVolumeUnit'),
       volM3Equiv: document.getElementById('volM3Equiv'),
       acid: document.getElementById('acidSelect'),
       acidResult: document.getElementById('acidResult')
@@ -596,10 +603,20 @@
     }
 
     function setAcidPlaceholderUI() {
-      el.acidResult.innerHTML = '<span class="muted">Completa alcalinidad (HCO₃⁻, CO₃²⁻), <strong>residual objetivo</strong> y <strong>litros de preparación</strong> (tanque o volumen a acidificar) para ver la dosis de ácido.</span>';
+      el.acidResult.innerHTML = '<span class="muted">Completa alcalinidad (HCO₃⁻, CO₃²⁻), <strong>residual objetivo</strong> y <strong>volumen de preparación</strong> (tanque o volumen a acidificar, en L o m³) para ver la dosis de ácido.</span>';
       if (el.volM3Equiv) {
         el.volM3Equiv.innerHTML = '<span class="muted">Equivale a <strong>—</strong> m³ de agua (solo referencia).</span>';
       }
+    }
+
+    function getAcidVolume() {
+      const raw = el.volumeL && String(el.volumeL.value).trim() !== '' ? el.volumeL.value : '';
+      const unit = el.volumeUnit ? el.volumeUnit.value : 'L';
+      if (raw === '') return { raw, unit, inputValue: NaN, volL: NaN, volM3: NaN };
+      const inputValue = n(raw);
+      const volM3 = unit === 'm3' ? inputValue : inputValue / 1000;
+      const volL = unit === 'm3' ? inputValue * 1000 : inputValue;
+      return { raw, unit, inputValue, volL, volM3 };
     }
 
     /**
@@ -679,8 +696,10 @@
       const meqPerMl = parseFloat(acid && acid.meqPerMl) || 0;
       const rho = parseFloat(acid && acid.densityKgL) || 0;
 
-      const volStr = el.volumeL && String(el.volumeL.value).trim() !== '' ? el.volumeL.value : '';
-      const volL = volStr !== '' ? n(el.volumeL.value) : NaN;
+      const vol = getAcidVolume();
+      const volStr = vol.raw;
+      const volL = vol.volL;
+      const volM3 = vol.volM3;
 
       if (volStr === '' || Number.isNaN(volL)) {
         setAcidPlaceholderUI();
@@ -688,8 +707,7 @@
       }
 
       if (el.volM3Equiv) {
-        const m3e = (volL / 1000).toFixed(3);
-        el.volM3Equiv.innerHTML = '<span class="muted">Equivale a <strong>' + m3e + '</strong> m³ de agua (solo referencia).</span>';
+        el.volM3Equiv.innerHTML = '<span class="muted">Volumen usado: <strong>' + f(vol.inputValue, 3) + ' ' + (vol.unit === 'm3' ? 'm³' : 'L') + '</strong> = <strong>' + f(volM3, 3) + '</strong> m³ = <strong>' + f(volL, 2) + '</strong> L.</span>';
       }
 
       const hco3 = n(el.hco3.value);
@@ -700,7 +718,6 @@
       // Igual que Análisis de agua: meq de ácido por m³ de agua = (meq/L) × 1000; mL/m³ = meq/m³ ÷ meq/mL del ácido.
       const meqPerM3 = needMeq * 1000;
       const mlPerM3 = meqPerMl > 0 ? meqPerM3 / meqPerMl : 0;
-      const volM3 = volL / 1000;
       const totalMl = mlPerM3 * volM3;
       const totalLAcid = totalMl / 1000;
       const kgPerM3Water = (mlPerM3 / 1000) * rho;
@@ -710,7 +727,7 @@
         <strong>Resultado con ${acid.name}:</strong><br>
         Meq/L a neutralizar = (${f(hco3, 2)} + ${f(co3, 2)}) − ${f(residual, 2)} = <strong>${f(needMeq, 2)} meq/L</strong><br>
         Dosis = <strong>${f(mlPerM3, 2)} mL/m³</strong> de ácido <span class="muted">(${f(kgPerM3Water, 3)} kg de ácido / m³ de agua, aprox.)</span><br>
-        Para <strong>${f(volL, 2)} L</strong> de agua (${f(volM3, 3)} m³): <strong>${f(totalLAcid, 3)} L</strong> de ácido (${f(totalMl, 1)} mL) · aprox. <strong>${f(kgTotal, 3)} kg</strong>
+        Para <strong>${f(vol.inputValue, vol.unit === 'm3' ? 3 : 2)} ${vol.unit === 'm3' ? 'm³' : 'L'}</strong> de agua (${f(volM3, 3)} m³ / ${f(volL, 2)} L): <strong>${f(totalLAcid, 3)} L</strong> de ácido (${f(totalMl, 1)} mL) · aprox. <strong>${f(kgTotal, 3)} kg</strong>
       `;
     }
 
@@ -723,6 +740,12 @@
       }
       const v = n(t.value);
       t.value = f(v, 2);
+    }
+
+    function updateVolumePlaceholder() {
+      if (!el.volumeL || !el.volumeUnit) return;
+      el.volumeL.placeholder = el.volumeUnit.value === 'm3' ? 'ej. 0.2' : 'ej. 200';
+      updateAcidCalc();
     }
 
     fillAcids();
@@ -741,6 +764,7 @@
       node.addEventListener('input', () => { updateAcidCalc(); });
       node.addEventListener('focusout', normalizeAcidInputBlur);
     });
+    if (el.volumeUnit) el.volumeUnit.addEventListener('change', updateVolumePlaceholder);
     el.acid.addEventListener('change', updateAcidCalc);
 
     [el.caLab, el.mgLab].forEach((node) => {
