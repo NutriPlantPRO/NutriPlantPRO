@@ -7,16 +7,10 @@
     "dev": "npx http-server -p 8000 -c-1 --cors -o"
   },
   "dependencies": {
+    "@google/earthengine": "^1.7.25",
     "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
     "http-server": "^14.1.1"
   }
 }
-
-
-
-
-
-
-

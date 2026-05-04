@@ -1425,6 +1425,18 @@ function sectionTemplate(name) {
             <button id="saveLocation" class="btn">Guardar Predio</button>
           </div>
         </div>
+
+        <div id="radarNdviPanel" class="radar-ndvi-panel" style="margin: 12px 0 0; padding: 12px 14px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;">
+          <div style="font-weight: 600; color: #14532d;">🛰️ Radar del cultivo (NDVI)</div>
+          <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Créditos: —</span>
+          <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 420px;">Sincroniza el predio a la nube, luego genera la imagen (máx. 1 por proyecto y mes; créditos mensuales según tu plan).</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
+            <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>
+            <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">👁 Ver última</button>
+            <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;">✨ Generar / actualizar</button>
+            <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;">🙈 Quitar capa</button>
+          </div>
+        </div>
         
         <div class="map-container">
           <div id="map" class="map"></div>
@@ -11582,6 +11594,14 @@ function loadOnTabChange(tabName) {
       } else {
         setTimeout(runLocationTab, 350);
       }
+      setTimeout(() => {
+        try {
+          if (typeof window.refreshRadarNdviStatus === 'function') window.refreshRadarNdviStatus();
+          if (typeof window.initRadarNdviUi === 'function') window.initRadarNdviUi();
+        } catch (e) {
+          console.warn('Radar NDVI UI:', e);
+        }
+      }, 400);
       break;
     }
     case 'Hidroponia':

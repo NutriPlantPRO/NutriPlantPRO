@@ -1968,6 +1968,205 @@ function forceClearLocationDisplay() {
   console.log('✅ Elementos de ubicación limpiados');
 }
 
+/** Radar NDVI (Netlify /api/radar-ndvi): capa opcional sobre el polígono */
+let radarGroundOverlay = null;
+
+function np_isCloudSupabaseUser() {
+  const id = localStorage.getItem('nutriplant_user_id');
+  return !!id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
+async function np_getRadarAccessToken() {
+  if (typeof window.getSupabaseClient !== 'function') return null;
+  const client = window.getSupabaseClient();
+  if (!client) return null;
+  const { data: { session } } = await client.auth.getSession();
+  return session?.access_token || null;
+}
+
+function np_radarApiUrl() {
+  const base =
+    typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : '';
+  return (base || '').replace(/\/$/, '') + '/api/radar-ndvi';
+}
+
+function np_getPolygonBoundsFromMap() {
+  if (!nutriPlantMap || typeof google === 'undefined' || !google.maps || !nutriPlantMap.coordinates) return null;
+  if (!Array.isArray(nutriPlantMap.coordinates) || nutriPlantMap.coordinates.length < 3) return null;
+  const bounds = new google.maps.LatLngBounds();
+  nutriPlantMap.coordinates.forEach((c) => {
+    bounds.extend(new google.maps.LatLng(c[0], c[1]));
+  });
+  return bounds;
+}
+
+window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
+  const label = document.getElementById('radarCreditsLabel');
+  const hint = document.getElementById('radarStatusHint');
+  if (!label) return;
+  if (!np_isCloudSupabaseUser()) {
+    label.textContent = 'Créditos: (cuenta nube)';
+    if (hint) hint.textContent = 'Inicia sesión con tu cuenta NutriPlant en la nube para usar Radar.';
+    return;
+  }
+  const token = await np_getRadarAccessToken();
+  if (!token) {
+    label.textContent = 'Créditos: (sin sesión)';
+    return;
+  }
+  const proj =
+    nutriPlantMap && typeof nutriPlantMap.getCurrentProject === 'function'
+      ? nutriPlantMap.getCurrentProject()
+      : null;
+  if (!proj || !proj.id) {
+    label.textContent = 'Créditos: —';
+    return;
+  }
+  label.textContent = 'Créditos: …';
+  try {
+    const res = await fetch(np_radarApiUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ action: 'status', project_id: String(proj.id) })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      label.textContent = 'Créditos: error';
+      return;
+    }
+    const u = data.credits?.used ?? 0;
+    const l = data.credits?.limit ?? 0;
+    label.textContent = 'Créditos: ' + u + ' / ' + l + ' este mes';
+    if (hint && data.latest?.created_at) {
+      hint.textContent =
+        'Última imagen: ' + new Date(data.latest.created_at).toLocaleString('es-MX');
+    } else if (hint && !data.latest) {
+      hint.textContent =
+        'Sincroniza el predio a la nube, luego genera la imagen (máx. 1 por proyecto y mes).';
+    }
+  } catch (e) {
+    label.textContent = 'Créditos: red';
+  }
+};
+
+window.initRadarNdviUi = function initRadarNdviUi() {
+  const panel = document.getElementById('radarNdviPanel');
+  if (!panel || panel.dataset.radarBound === '1') return;
+  panel.dataset.radarBound = '1';
+  document.getElementById('radarBtnRefresh')?.addEventListener('click', () => {
+    window.refreshRadarNdviStatus();
+  });
+  document.getElementById('radarBtnView')?.addEventListener('click', () => {
+    window.showRadarNdviOnMap();
+  });
+  document.getElementById('radarBtnGenerate')?.addEventListener('click', () => {
+    window.generateRadarNdvi();
+  });
+  document.getElementById('radarBtnHide')?.addEventListener('click', () => {
+    window.hideRadarNdviOverlay();
+  });
+};
+
+window.hideRadarNdviOverlay = function hideRadarNdviOverlay() {
+  if (radarGroundOverlay) {
+    radarGroundOverlay.setMap(null);
+    radarGroundOverlay = null;
+  }
+};
+
+window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
+  if (!nutriPlantMap || !nutriPlantMap.map) {
+    alert('El mapa no está listo.');
+    return;
+  }
+  const bounds = np_getPolygonBoundsFromMap();
+  if (!bounds) {
+    alert('Carga un polígono del predio en el mapa.');
+    return;
+  }
+  const token = await np_getRadarAccessToken();
+  if (!token) {
+    alert('No hay sesión. Vuelve a iniciar sesión.');
+    return;
+  }
+  const proj = nutriPlantMap.getCurrentProject();
+  if (!proj || !proj.id) {
+    alert('Selecciona un proyecto.');
+    return;
+  }
+  try {
+    const res = await fetch(np_radarApiUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ action: 'status', project_id: String(proj.id) })
+    });
+    const data = await res.json().catch(() => ({}));
+    const url = data.latest?.signed_url;
+    if (!url) {
+      alert('Aún no hay Radar guardado. Pulsa «Generar / actualizar» (tras sincronizar el predio).');
+      return;
+    }
+    window.hideRadarNdviOverlay();
+    radarGroundOverlay = new google.maps.GroundOverlay(url, bounds);
+    radarGroundOverlay.setOpacity(0.88);
+    radarGroundOverlay.setMap(nutriPlantMap.map);
+  } catch (e) {
+    alert('No se pudo cargar la imagen Radar.');
+  }
+};
+
+window.generateRadarNdvi = async function generateRadarNdvi() {
+  const token = await np_getRadarAccessToken();
+  if (!token) {
+    alert('Inicia sesión con tu cuenta en la nube.');
+    return;
+  }
+  const proj = nutriPlantMap && nutriPlantMap.getCurrentProject ? nutriPlantMap.getCurrentProject() : null;
+  if (!proj || !proj.id) {
+    alert('Selecciona un proyecto.');
+    return;
+  }
+  const bounds = np_getPolygonBoundsFromMap();
+  if (!bounds) {
+    alert('Guarda un polígono en el mapa y sincronízalo a la nube antes de generar Radar.');
+    return;
+  }
+  const btn = document.getElementById('radarBtnGenerate');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(np_radarApiUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ action: 'generate', project_id: String(proj.id) })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 409 && data.latest && data.latest.signed_url) {
+      window.hideRadarNdviOverlay();
+      radarGroundOverlay = new google.maps.GroundOverlay(data.latest.signed_url, bounds);
+      radarGroundOverlay.setOpacity(0.88);
+      radarGroundOverlay.setMap(nutriPlantMap.map);
+      await window.refreshRadarNdviStatus();
+      return;
+    }
+    if (!res.ok) {
+      alert(data.message || data.error || 'No se pudo generar Radar.');
+      await window.refreshRadarNdviStatus();
+      return;
+    }
+    await window.refreshRadarNdviStatus();
+    if (data.signed_url) {
+      window.hideRadarNdviOverlay();
+      radarGroundOverlay = new google.maps.GroundOverlay(data.signed_url, bounds);
+      radarGroundOverlay.setOpacity(0.88);
+      radarGroundOverlay.setMap(nutriPlantMap.map);
+    }
+  } catch (e) {
+    alert('Error de red al generar Radar.');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
 function initLocationMap() {
   const mapElement = document.getElementById('map');
   if (!mapElement) {

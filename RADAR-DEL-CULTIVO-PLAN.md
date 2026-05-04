@@ -1,6 +1,8 @@
 # Radar del Cultivo — Plan de diseño y pasos
 
-Documento para implementar la funcionalidad **Radar del Cultivo** en la sección **Ubicación del Predio** de NutriPlant PRO, usando la API de Planet (y/o Sentinel-2) para mostrar NDVI sobre el polígono del predio.
+Documento para implementar la funcionalidad **Radar del Cultivo** en la sección **Ubicación del Predio** de NutriPlant PRO: NDVI sobre el polígono del predio.
+
+**Proveedor previsto (actualización):** [Google Earth Engine](https://earthengine.google.com/) (GEE) sobre Google Cloud, con datos **Sentinel-2** (píxeles ~**10 m** en bandas usadas para NDVI). Las secciones antiguas sobre **Planet** y **Sentinel Hub** se mantienen como **alternativas** al final del documento.
 
 ---
 
@@ -17,7 +19,7 @@ Documento para implementar la funcionalidad **Radar del Cultivo** en la sección
 
 | Aspecto | Definición |
 |--------|------------|
-| **Dataset** | Sentinel-2 L2A (o alternativa Planet si aplica) |
+| **Dataset** | Sentinel-2 (colección tipo **Harmonized L2A** en GEE; NDVI desde B8 + B4, resolución efectiva **10 m**) |
 | **Índice** | NDVI |
 | **Entrada** | Polígono del predio (coordenadas desde Supabase) |
 | **Salida** | Imagen raster coloreada dentro del polígono |
@@ -35,19 +37,22 @@ Documento para implementar la funcionalidad **Radar del Cultivo** en la sección
 
 ---
 
-## 2.5 Mejor alternativa y ¿es buena idea 1 consulta/mes/proyecto y tope por usuario?
+## 2.5 Proveedor: Google Earth Engine vs otras opciones
 
-### Mejor alternativa para el MVP
+### Por qué Google Earth Engine (GEE)
 
-| Criterio | Sentinel Hub | Planet |
-|----------|--------------|--------|
-| Dataset NDVI | Sentinel-2 L2A (y otros) | PlanetScope u otros; Sentinel-2 no claro |
-| Forma de cobro | Por Processing Units (tamaño de imagen) | Por km² o por orden (poco claro) |
-| Free tier | Sí (30.000 PU/mes) | Trial con crédito limitado |
-| Coste predecible | Sí (PU por petición) | No hasta tener contrato |
-| Objetivo &lt; 0.50 USD/mes | Sí (0 USD con free tier; bajo si pagas) | Riesgo de pasarse sin precio fijo |
+| Criterio | Google Earth Engine | Sentinel Hub | Planet |
+|----------|---------------------|--------------|--------|
+| NDVI sobre polígono | Sí (compute mask, composición mediana/más reciente, `getMapId` o export) | Sí (Processing API / OGC) | Sí (según producto) |
+| Resolución ~10 m | **Sí** (Sentinel-2 B4/B8 a 10 m) | Sí | Depende del producto |
+| Un solo stack Google | Sí (Cloud + IAM + cuotas) | No (tercero) | No |
+| Coste con pocos usuarios | Depende de registro **comercial vs no comercial** (ver §11) | Free tier por PU | Trial, luego contrato |
 
-**Recomendación:** Usar **Sentinel Hub** para el MVP: Sentinel-2 L2A, NDVI, free tier que encaja con tu techo de coste y cobro por PU (no por superficie), así controlas mejor el gasto. Planet dejarlo como opción futura si más adelante necesitas su catálogo específico.
+**Recomendación actual:** Arquitectura MVP con **Earth Engine** + backend propio (Edge Function, Cloud Run, etc.) que ejecute un script **Python** `ee` o la **REST API**, autenticado con **cuenta de servicio** del proyecto Cloud. El front de NutriPlant solo envía `project_id` / polígono y recibe URL de teselas o imagen ya procesada.
+
+### ¿Sigue siendo buena idea 1 consulta/mes/proyecto y tope por usuario?
+
+**Sí.** Eso es **tu capa de “créditos NutriPlant”** (Supabase), independiente de cómo Google facture EECU/almacenamiento. Así evitas abusos y conflictos de uso aunque el proyecto GEE tenga margen técnico mayor.
 
 ### ¿Es buena idea 1 consulta mensual por proyecto y tope 30?
 
@@ -96,6 +101,8 @@ Se puede empezar con columnas en `profiles` + algo en `projects` (o en `data` de
 ---
 
 ## 5. Planet.com – API Key y pasos para ti
+
+> **Nota:** Esto quedó como **referencia opcional** (Planet / trial). El plan actual del Radar del Cultivo está en **Google Earth Engine (§11)**.
 
 ### 5.1 Dónde está tu API Key
 
@@ -194,7 +201,7 @@ Para ir teniendo claro qué ocupa cada cosa en la página:
 4. Frontend envía **project_id** (y polígono si el backend no lo lee de Supabase) a un **endpoint seguro** (Netlify Function / Edge Function / server.py).
 5. Backend:
    - Lee polígono (de Supabase o del body).
-   - Llama a Planet (o al servicio que dé Sentinel-2/NDVI) para obtener/computar NDVI para esa área y periodo.
+   - Llama a **Google Earth Engine** (cliente Python `ee` o REST) para computar NDVI (Sentinel-2, máscara de nubes, recorte al polígono) y obtener **URL de visualización** (`getMapId`) o teselas exportadas.
    - Devuelve imagen raster o URL de tile/listo para pintar.
 6. Frontend superpone la capa NDVI en el mapa, dibuja la **barra Bajo → Óptimo desarrollo** y muestra el texto fijo debajo.
 7. Backend (o el front tras respuesta) actualiza en Supabase: uso del proyecto este mes y contador del usuario este mes.
@@ -206,14 +213,14 @@ Para ir teniendo claro qué ocupa cada cosa en la página:
 | # | Paso | Responsable |
 |---|------|-------------|
 | 1 | Definir modelo en Supabase (contador usuario + 1 uso/mes/proyecto) | Dev |
-| 2 | Obtener y guardar API Key de Planet en entorno seguro | Tú + Dev |
-| 3 | Crear endpoint backend que reciba polígono y llame a Planet (o Sentinel) y devuelva NDVI/raster | Dev |
-| 4 | En la sección Ubicación: dejar "Ubicación del Predio" como botón claro; agregar botón "Radar del Cultivo" | Dev |
-| 5 | Mostrar contador en la sección (X/1 por proyecto, Y/30 por usuario) desde Supabase | Dev |
-| 6 | Integrar respuesta NDVI en el mapa (capa + barra + texto) | Dev |
+| 2 | Proyecto Google Cloud + Earth Engine registrado (comercial o no comercial); credencial de **cuenta de servicio** solo en backend | Tú + Dev |
+| 3 | Endpoint backend: polígono → GEE → NDVI (Sentinel-2 ~10 m) → tiles o PNG/WebP para el mapa | Dev |
+| 4 | En la sección Ubicación: botón **Radar del Cultivo** + límites desde Supabase | Dev |
+| 5 | Mostrar contador (X/1 por proyecto, Y/20 por usuario) desde Supabase | Dev |
+| 6 | Integrar capa NDVI en el mapa (barra + texto fijo) | Dev |
 | 7 | Actualizar contadores en Supabase tras cada uso correcto | Dev |
-| 8 | En admin: vista o columnas para ver uso Radar por usuario/proyecto | Dev |
-| 9 | Rellenar coste estimado por usuario cuando tengas datos de Planet | Tú |
+| 8 | Admin: uso Radar por usuario/proyecto | Dev |
+| 9 | Revisar facturación Earth Engine en Cloud Console y ajustar topes NutriPlant | Tú |
 
 ---
 
@@ -230,9 +237,78 @@ Para ir teniendo claro qué ocupa cada cosa en la página:
 
 ## 10. Resumen para ti (socio)
 
-- **Radar del Cultivo:** botón al lado de Ubicación del Predio; usa el polígono guardado en Supabase y muestra NDVI en el mismo mapa con barra de colores y texto fijo.
-- **Límites:** 1/mes/proyecto, **20**/mes/usuario (ajustable según consumo); contador en la nube (mismo valor en todos los equipos; admin puede verlo).
-- **Planet:** API Key en account.planet.com (o en Insights); se usa solo desde backend; después del trial hay coste, por eso los límites.
-- **Siguiente:** Conseguir la API Key y guardarla en entorno; luego seguimos con el modelo en Supabase y el endpoint.
+- **Radar del Cultivo:** botón junto a Ubicación del Predio; polígono desde Supabase; NDVI en el mismo mapa (barra + texto fijo).
+- **Límites NutriPlant:** 1/mes/proyecto, **20**/mes/usuario (ajustable); contador en Supabase para que no haya abuso aunque GEE permita más carga técnica.
+- **Proveedor datos/compute:** **Google Earth Engine** + Sentinel-2 (~10 m). Registro y posible facturación en Google Cloud — ver **§11**.
+- **Siguiente:** Completar pasos de §11 (proyecto Cloud, API Earth Engine, registro comercial o cuestionario no comercial, service account). Luego modelo Supabase + endpoint.
 
-Cuando tengas la API Key y (si aplica) algo de info de precios de Planet, lo anotamos aquí y pasamos al paso 1 de implementación.
+---
+
+## 11. Google Earth Engine (GEE) — cómo encaja, costes y pasos en tu cuenta Google
+
+### 11.1 Qué resuelve GEE aquí
+
+- Catálogo ya alineado de **Sentinel-2** (y nubes, fechas, composiciones).
+- Cálculo server-side del **NDVI**, recorte al **polígono** del predio y salida para mapa (p. ej. `visualization` + `getMapId` en Python/JS, o flujo vía **REST API** / **Compute** según implementación).
+- Resolución típica NDVI con S2: **10 m** (bandas rojo e infrarrojo cercano a esa escala en L2A).
+
+### 11.2 “¿No cobra si soy desarrollador y casi no tengo usuarios?”
+
+Hay **dos vías** oficiales; Google decide elegibilidad en la ruta *no comercial*:
+
+| Tipo | Idea | Billing |
+|------|------|--------|
+| **No comercial** | Investigación, docencia, ONG, uso personal no lucrativo, etc. | Tras cuestionario/verificación en Cloud Console, **sin** suscripción comercial típica; igual hay **límites de uso** de la plataforma. |
+| **Comercial** | Producto SaaS (p. ej. NutriPlant PRO vendido o usado como negocio) | Suele requerir plan en cuenta de facturación. En la documentación de precios aparece un plan **“Limited”** orientado a cargas esporádicas (menos cuota fija que planes Basic/Professional); el coste real depende de **EECU** (compute) y almacenamiento. |
+
+**Honestidad útil:** Si NutriPlant PRO es **operación comercial**, asume **comercial** y revisa [precios Earth Engine](https://cloud.google.com/earth-engine/pricing) y el plan que encaje con “pocos usuarios + tope NutriPlant 20 consultas/mes”. El tope en Supabase **no sustituye** el control de coste en Google: solo limita cuántas veces **tu** backend llama a GEE.
+
+### 11.3 Control de uso (créditos del usuario en NutriPlant)
+
+- Mantener lo ya definido: **1 vez/mes/proyecto** + **tope mensual por usuario** (ej. 20) en **Supabase** antes de invocar el backend GEE.
+- Opcional: registrar en tabla `radar_usage` el **job id** o timestamp y superficie (ha) para auditoría y soporte.
+
+### 11.4 Arquitectura recomendada (seguridad)
+
+1. **Nunca** exponer JSON de cuenta de servicio en el navegador.
+2. Backend con variable de entorno `GOOGLE_APPLICATION_CREDENTIALS` o secreto equivalente (Netlify, Supabase Edge, Cloud Run, etc.).
+3. Cuenta de servicio con rol mínimo: p. ej. **Earth Engine Resource Writer** / permisos que indique la guía actual de [acceso y control](https://developers.google.com/earth-engine/guides/access_control).
+4. El front llama solo a **tu** API (`POST /api/radar-ndvi` con `project_id`); el backend valida límites, llama a `ee`, devuelve `tileUrl` + leyenda.
+
+### 11.5 Pasos concretos: crear y registrar el proyecto (orden sugerido)
+
+1. **Cuenta Google** que usarás para administrar el producto (Gmail o Workspace).
+2. Entra a **[Google Cloud Console — creación de proyecto](https://console.cloud.google.com/projectcreate)** y crea un proyecto (ej. `nutriplant-ee-radar`). Anota el **Project ID**.
+3. **Registro Earth Engine (recomendado por Google):** abre **[console.cloud.google.com/earth-engine](https://console.cloud.google.com/earth-engine)** y sigue el asistente para vincular el proyecto y **habilitar la API** de Earth Engine.
+4. **Registro comercial vs no comercial:** en la configuración del proyecto ([documentación acceso](https://developers.google.com/earth-engine/guides/access)):
+   - **No comercial:** cuestionario en Cloud Console (`earth-engine/configuration`); si el uso de NutriPlant no encaja, Google puede pedir vía **comercial**.
+   - **Comercial:** vincular **cuenta de facturación** y elegir plan según [pricing](https://cloud.google.com/earth-engine/pricing).
+5. **Cuenta de servicio:** IAM → Cuentas de servicio → Crear → descargar JSON → guardar solo en el servidor/secretos.
+6. **Probar en Code Editor:** [code.earthengine.google.com](https://code.earthengine.google.com) → icono de perfil → **Change Cloud Project** → elige tu proyecto; prueba un script mínimo Sentinel-2 + NDVI sobre un `ee.Geometry.Polygon` de prueba.
+7. **Probar en Python (local):** instalar `earthengine-api`, `ee.Initialize(project='tu-project-id')` con credenciales de la cuenta de servicio, reproducir el mismo NDVI.
+8. **Integración NutriPlant:** mover esa lógica al endpoint que consumirá el dashboard.
+
+Enlaces oficiales útiles:
+
+- Registro / consola: [console.cloud.google.com/earth-engine](https://console.cloud.google.com/earth-engine)
+- Guía de acceso: [developers.google.com/earth-engine/guides/access](https://developers.google.com/earth-engine/guides/access)
+- Autenticación: [developers.google.com/earth-engine/guides/auth](https://developers.google.com/earth-engine/guides/auth)
+- REST API quickstart: [developers.google.com/earth-engine/reference/Quickstart](https://developers.google.com/earth-engine/reference/Quickstart)
+
+### 11.6 Snippet conceptual (Python, no copiar a prod tal cual)
+
+```text
+ee.Initialize(project='nutriplant-ee-radar')
+s2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')  # ejemplo colección L2A
+# filtrar fechas, nubes, geometry del predio → ndvi = nir.subtract(red).divide(nir.add(red))...
+# mapid = ndvi.clip(polygon).getMapId({...palette...})
+# devolver mapid['tile_fetcher'].url_format al cliente
+```
+
+La colección exacta y la máscara de nubes deben ajustarse a la versión vigente de catálogos GEE.
+
+---
+
+## 12. Alternativas conservadas (referencia)
+
+Las secciones **§5 Planet**, **§6 costes PU / Sentinel Hub** y **§9** siguen siendo referencia si en algún momento quisieras **no** depender de GEE (p. ej. Sentinel Hub solo con Processing API, o Planet para resolutions distintas). El flujo de UI y límites Supabase es el mismo; solo cambia el proveedor detrás del endpoint.

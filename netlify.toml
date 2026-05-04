@@ -30,3 +30,10 @@
   to = "/.netlify/functions/report-view"
   status = 200
   force = true
+
+# Radar NDVI (Earth Engine → Supabase Storage)
+[[redirects]]
+  from = "/api/radar-ndvi"
+  to = "/.netlify/functions/radar-ndvi"
+  status = 200
+  force = true
