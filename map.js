@@ -2063,6 +2063,55 @@ function np_getPolygonBoundsFromMap() {
   return bounds;
 }
 
+function np_showRadarOverlay(url, bounds, opacity = 0.98) {
+  if (typeof google === 'undefined' || !google.maps || !nutriPlantMap || !nutriPlantMap.map) return;
+  if (radarGroundOverlay) {
+    radarGroundOverlay.setMap(null);
+    radarGroundOverlay = null;
+  }
+  const overlay = new google.maps.OverlayView();
+  overlay.onAdd = function() {
+    const div = document.createElement('div');
+    div.style.position = 'absolute';
+    div.style.pointerEvents = 'none';
+    div.style.zIndex = '1000';
+    div.style.opacity = String(opacity);
+    div.style.mixBlendMode = 'normal';
+    div.style.filter = 'saturate(1.3) contrast(1.12)';
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Radar NDVI';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.display = 'block';
+    img.style.objectFit = 'fill';
+    img.style.pointerEvents = 'none';
+    div.appendChild(img);
+    this.div = div;
+    this.getPanes().overlayMouseTarget.appendChild(div);
+  };
+  overlay.draw = function() {
+    if (!this.div) return;
+    const projection = this.getProjection();
+    const sw = projection.fromLatLngToDivPixel(bounds.getSouthWest());
+    const ne = projection.fromLatLngToDivPixel(bounds.getNorthEast());
+    const left = Math.min(sw.x, ne.x);
+    const top = Math.min(sw.y, ne.y);
+    const width = Math.abs(ne.x - sw.x);
+    const height = Math.abs(sw.y - ne.y);
+    this.div.style.left = left + 'px';
+    this.div.style.top = top + 'px';
+    this.div.style.width = width + 'px';
+    this.div.style.height = height + 'px';
+  };
+  overlay.onRemove = function() {
+    if (this.div && this.div.parentNode) this.div.parentNode.removeChild(this.div);
+    this.div = null;
+  };
+  overlay.setMap(nutriPlantMap.map);
+  radarGroundOverlay = overlay;
+}
+
 window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
   const label = document.getElementById('radarCreditsLabel');
   const hint = document.getElementById('radarStatusHint');
@@ -2173,9 +2222,7 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
       return;
     }
     window.hideRadarNdviOverlay();
-    radarGroundOverlay = new google.maps.GroundOverlay(url, bounds);
-    radarGroundOverlay.setOpacity(0.96);
-    radarGroundOverlay.setMap(nutriPlantMap.map);
+    np_showRadarOverlay(url, bounds, 0.98);
     np_setRadarPolygonMask(true);
     np_showRadarLegend(true);
   } catch (e) {
@@ -2227,18 +2274,14 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
         await window.refreshRadarNdviStatus();
         if (forcedData.signed_url) {
           window.hideRadarNdviOverlay();
-          radarGroundOverlay = new google.maps.GroundOverlay(forcedData.signed_url, bounds);
-          radarGroundOverlay.setOpacity(0.98);
-          radarGroundOverlay.setMap(nutriPlantMap.map);
+          np_showRadarOverlay(forcedData.signed_url, bounds, 0.98);
           np_setRadarPolygonMask(true);
           np_showRadarLegend(true);
         }
         return;
       }
       window.hideRadarNdviOverlay();
-      radarGroundOverlay = new google.maps.GroundOverlay(data.latest.signed_url, bounds);
-      radarGroundOverlay.setOpacity(0.98);
-      radarGroundOverlay.setMap(nutriPlantMap.map);
+      np_showRadarOverlay(data.latest.signed_url, bounds, 0.98);
       np_setRadarPolygonMask(true);
       np_showRadarLegend(true);
       await window.refreshRadarNdviStatus();
@@ -2252,9 +2295,7 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     await window.refreshRadarNdviStatus();
     if (data.signed_url) {
       window.hideRadarNdviOverlay();
-      radarGroundOverlay = new google.maps.GroundOverlay(data.signed_url, bounds);
-      radarGroundOverlay.setOpacity(0.98);
-      radarGroundOverlay.setMap(nutriPlantMap.map);
+      np_showRadarOverlay(data.signed_url, bounds, 0.98);
       np_setRadarPolygonMask(true);
       np_showRadarLegend(true);
     }

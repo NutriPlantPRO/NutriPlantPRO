@@ -2218,9 +2218,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  height: calc(100vh - 120px); /* Ajustar altura total del contenedor */
-  max-height: 800px; /* Altura máxima para pantallas grandes */
-  overflow: hidden; /* Evitar que se desborde */
+  min-height: calc(100vh - 90px); /* Dar más aire al mapa dentro de Ubicación */
+  max-height: none;
+  overflow: visible;
 }
 
 .location-header {
@@ -2354,9 +2354,9 @@ body {
 .map-container {
   position: relative;
   flex: 1;
-  height: calc(100vh - 200px); /* Ajustar altura para dejar espacio al footer */
-  max-height: 600px; /* Altura máxima para pantallas grandes */
-  min-height: 400px; /* Altura mínima reducida */
+  height: min(70vh, 760px);
+  max-height: 760px;
+  min-height: 520px;
   border-radius: 12px;
   /* visible: en algunos Chrome/Windows el zoom +/− de Google quedaba recortado abajo-derecha */
   overflow: visible;
@@ -2379,26 +2379,27 @@ body {
 /* Responsive adjustments for map */
 @media (max-height: 800px) {
   .location-container {
-    height: calc(100vh - 100px);
-    max-height: 700px;
+    min-height: calc(100vh - 80px);
+    max-height: none;
   }
   
   .map-container {
-    height: calc(100vh - 180px);
-    max-height: 500px;
+    height: min(66vh, 640px);
+    max-height: 640px;
+    min-height: 460px;
   }
 }
 
 @media (max-height: 600px) {
   .location-container {
-    height: calc(100vh - 80px);
-    max-height: 500px;
+    min-height: calc(100vh - 70px);
+    max-height: none;
   }
   
   .map-container {
-    height: calc(100vh - 160px);
-    max-height: 400px;
-    min-height: 300px;
+    height: 440px;
+    max-height: 440px;
+    min-height: 360px;
   }
 }
 
