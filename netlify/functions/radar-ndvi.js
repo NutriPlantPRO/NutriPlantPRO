@@ -127,9 +127,9 @@ function ndviThumbUrl(ee, geometry, lookbackDays) {
   // Mantener píxeles nítidos: el suavizado bilinear hacía que el NDVI se perdiera sobre el satélite.
   const displayNdvi = ndvi.clip(geometry);
   const vis = displayNdvi.visualize({
-    min: 0.15,
-    max: 0.78,
-    palette: ['7f0000', 'b91c1c', 'ef4444', 'f97316', 'fde047', '84cc16', '22c55e', '00ff66']
+    min: 0.10,
+    max: 0.92,
+    palette: ['7f1d1d', 'b91c1c', 'ea580c', 'f59e0b', 'fde68a', 'bef264', '65a30d', '15803d', '064e3b']
   });
 
   return new Promise((resolve, reject) => {
@@ -402,7 +402,7 @@ exports.handler = async (event) => {
     date_start: thumb.dateStart,
     date_end: thumb.dateEnd,
     source: 'COPERNICUS/S2_SR_HARMONIZED',
-    ndvi_vis: { min: 0.15, max: 0.78, style: 'high_contrast_crisp' }
+    ndvi_vis: { min: 0.10, max: 0.92, style: 'balanced_crisp' }
   };
 
   const { data: insRow, error: insErr } = await supabase

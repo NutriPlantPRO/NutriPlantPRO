@@ -2161,9 +2161,9 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     div.style.position = 'absolute';
     div.style.pointerEvents = 'none';
     div.style.zIndex = '9999';
-    div.style.opacity = String(Math.max(opacity, 1));
-    div.style.mixBlendMode = 'hard-light';
-    div.style.filter = 'saturate(2.4) contrast(1.55)';
+    div.style.opacity = String(Math.min(Math.max(opacity, 0.86), 0.92));
+    div.style.mixBlendMode = 'normal';
+    div.style.filter = 'saturate(1.35) contrast(1.15)';
     div.style.background = 'transparent';
     div.style.border = '0';
     div.style.boxShadow = 'none';
@@ -2178,7 +2178,7 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     img.style.objectFit = 'fill';
     img.style.pointerEvents = 'none';
     img.style.opacity = '1';
-    img.style.filter = 'saturate(2.4) contrast(1.55)';
+    img.style.filter = 'saturate(1.35) contrast(1.15)';
     img.style.imageRendering = 'auto';
     img.onload = () => {
       console.log('✅ Imagen NDVI cargada en overlay');
