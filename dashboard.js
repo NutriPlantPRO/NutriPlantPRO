@@ -1435,7 +1435,7 @@ function sectionTemplate(name) {
             <span>Bajo</span>
             <span style="width:150px;height:9px;border-radius:999px;background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);display:inline-block;"></span>
             <span>Alto</span>
-            <span id="radarNdviHelp" style="color:#166534;">Verde = mayor vigor relativo; rojo/naranja = menor vigor o posible estrés.</span>
+            <span id="radarNdviHelp" style="color:#166534;">Verde = mayor vigor relativo; rojo/naranja = menor vigor relativo.</span>
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
             <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>

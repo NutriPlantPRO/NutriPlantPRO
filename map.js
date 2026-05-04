@@ -2274,11 +2274,27 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     if (!res.ok) {
       label.textContent = 'Disponibles: error';
       if (hint) hint.textContent = data.message || data.error || 'No se pudo consultar Radar.';
+      window.__nutriplantRadarNdviStatus = {
+        ok: false,
+        projectId: proj.id,
+        updatedAt: new Date().toISOString(),
+        error: data.message || data.error || 'No se pudo consultar Radar.'
+      };
       return;
     }
     const u = Number(data.credits?.used) || 0;
     const l = Number(data.credits?.limit) || 0;
     const disponibles = Math.max(0, l - u);
+    window.__nutriplantRadarNdviStatus = {
+      ok: true,
+      projectId: proj.id,
+      updatedAt: new Date().toISOString(),
+      credits: { used: u, limit: l, available: disponibles },
+      latest: data.latest || null,
+      hasLatestImage: !!data.latest?.signed_url,
+      latestCreatedAt: data.latest?.created_at || null,
+      meta: data.latest?.meta || null
+    };
     label.textContent = disponibles + ' disponibles de ' + l + ' este mes';
     if (hint && data.latest?.created_at) {
       hint.textContent =
