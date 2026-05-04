@@ -2222,7 +2222,9 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
       return;
     }
     window.hideRadarNdviOverlay();
-    np_showRadarOverlay(url, bounds, 0.98);
+    radarGroundOverlay = new google.maps.GroundOverlay(url, bounds);
+    radarGroundOverlay.setOpacity(0.98);
+    radarGroundOverlay.setMap(nutriPlantMap.map);
     np_setRadarPolygonMask(true);
     np_showRadarLegend(true);
   } catch (e) {
@@ -2274,14 +2276,18 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
         await window.refreshRadarNdviStatus();
         if (forcedData.signed_url) {
           window.hideRadarNdviOverlay();
-          np_showRadarOverlay(forcedData.signed_url, bounds, 0.98);
+          radarGroundOverlay = new google.maps.GroundOverlay(forcedData.signed_url, bounds);
+          radarGroundOverlay.setOpacity(0.98);
+          radarGroundOverlay.setMap(nutriPlantMap.map);
           np_setRadarPolygonMask(true);
           np_showRadarLegend(true);
         }
         return;
       }
       window.hideRadarNdviOverlay();
-      np_showRadarOverlay(data.latest.signed_url, bounds, 0.98);
+      radarGroundOverlay = new google.maps.GroundOverlay(data.latest.signed_url, bounds);
+      radarGroundOverlay.setOpacity(0.98);
+      radarGroundOverlay.setMap(nutriPlantMap.map);
       np_setRadarPolygonMask(true);
       np_showRadarLegend(true);
       await window.refreshRadarNdviStatus();
@@ -2295,7 +2301,9 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     await window.refreshRadarNdviStatus();
     if (data.signed_url) {
       window.hideRadarNdviOverlay();
-      np_showRadarOverlay(data.signed_url, bounds, 0.98);
+      radarGroundOverlay = new google.maps.GroundOverlay(data.signed_url, bounds);
+      radarGroundOverlay.setOpacity(0.98);
+      radarGroundOverlay.setMap(nutriPlantMap.map);
       np_setRadarPolygonMask(true);
       np_showRadarLegend(true);
     }
