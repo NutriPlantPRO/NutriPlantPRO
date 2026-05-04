@@ -16,7 +16,7 @@ __pycache__/
 supabase-server-config.json
 
 # Google Cloud — claves de cuenta de servicio (Earth Engine, etc.). ¡No subir nunca!
-nutriplant-radar-ee-*.json
+*-radar-ee-*.json
 
 # Logs
 *.log

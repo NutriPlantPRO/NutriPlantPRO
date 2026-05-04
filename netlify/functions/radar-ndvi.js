@@ -4,7 +4,7 @@
  * Variables Netlify:
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  *   GOOGLE_APPLICATION_CREDENTIALS_JSON  — JSON completo de la cuenta de servicio EE (una línea o objeto)
- *   EE_PROJECT_ID                         — ej. nutriplant-radar-ee (proyecto GCP con EE habilitado)
+ *   EE_PROJECT_ID                         — ID del proyecto GCP con EE habilitado
  *   RADAR_MONTHLY_CREDITS                 — opcional, default 25
  *
  * Body JSON:
@@ -69,7 +69,7 @@ function ensureEarthEngine(ee) {
   if (!projectId) {
     return Promise.reject(
       new Error(
-        'Falta EE_PROJECT_ID en Netlify (ej. nutriplant-radar-ee). Añádela en Environment variables y redeploy.'
+        'Falta EE_PROJECT_ID en Netlify. Añádela en Environment variables y redeploy.'
       )
     );
   }
