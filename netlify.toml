@@ -5,6 +5,12 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+  # Evita fallo si en Netlify el comando de build es `npm run build` (antes no existía el script).
+  command = "npm run build"
+
+# Earth Engine es pesado: no empaquetarlo dentro de la función (menos fallos en “Building”).
+[functions]
+  external_node_modules = ["@google/earthengine", "googleapis"]
   # La clave de Google Maps en map.js es para el navegador (restringida por dominio en Google Cloud).
   # Netlify la marca como "likely secret" y falla el build; permitimos que el build continúe.
   [build.environment]

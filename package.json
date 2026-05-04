@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "NutriPlant PRO - Sistema de gestión agrícola",
   "scripts": {
+    "build": "echo \"NutriPlant: sitio estático, sin paso de build\"",
     "start": "npx http-server -p 8000 -c-1 --cors",
     "dev": "npx http-server -p 8000 -c-1 --cors -o"
   },
