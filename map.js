@@ -2263,6 +2263,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       label.textContent = 'Disponibles: error';
+      if (hint) hint.textContent = data.message || data.error || 'No se pudo consultar Radar.';
       return;
     }
     const u = Number(data.credits?.used) || 0;
@@ -2335,6 +2336,10 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
       body: JSON.stringify({ action: 'status', project_id: String(proj.id) })
     });
     const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.message || data.error || 'No se pudo consultar la última imagen Radar.');
+      return;
+    }
     const url = data.latest?.signed_url;
     if (!url) {
       alert('Aún no hay Radar guardado. Pulsa «Generar / actualizar» (tras sincronizar el predio).');

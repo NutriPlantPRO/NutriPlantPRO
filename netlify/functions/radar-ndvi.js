@@ -283,15 +283,6 @@ exports.handler = async (event) => {
     return jsonResponse(403, { error: 'Este proyecto no pertenece a tu cuenta.' });
   }
 
-  const polygon = proj.data?.location?.polygon;
-  const ring = latLngPolygonToEeRing(polygon);
-  if (!ring) {
-    return jsonResponse(400, {
-      error: 'no_polygon',
-      message: 'El proyecto no tiene polígono en la nube. Guarda la ubicación y sincroniza.'
-    });
-  }
-
   const latest = await getLatestRadarRow(supabase, userId, projectId);
   let lastSignedUrl = null;
   if (latest?.image_storage_path) {
@@ -318,6 +309,15 @@ exports.handler = async (event) => {
 
   if (action !== 'generate') {
     return jsonResponse(400, { error: 'action debe ser status o generate' });
+  }
+
+  const polygon = proj.data?.location?.polygon;
+  const ring = latLngPolygonToEeRing(polygon);
+  if (!ring) {
+    return jsonResponse(400, {
+      error: 'no_polygon',
+      message: 'El proyecto no tiene polígono en la nube. Guarda la ubicación y sincroniza.'
+    });
   }
 
   if (limit > 0 && used >= limit) {
