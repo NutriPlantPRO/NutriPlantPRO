@@ -56,16 +56,63 @@ class NutriPlantMap {
       this.showDemoMap();
       return;
     }
+
+    if (window.google && window.google.maps) {
+      this.initializeMap();
+      return;
+    }
+
+    window.gm_authFailure = () => {
+      console.error('❌ Google Maps rechazó la clave o el dominio actual');
+      this.showMapUnavailable('Google Maps no autorizó este dominio. Revisa la API Key y las restricciones de referencia en Google Cloud.');
+    };
     
     // Cargar la API de Google Maps
     const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=drawing,geometry&callback=initNutriPlantMap`;
     script.async = true;
     script.defer = true;
+    script.onerror = () => {
+      console.error('❌ No se pudo cargar Google Maps');
+      this.showMapUnavailable('No se pudo cargar Google Maps. Revisa la conexión o la configuración de la API Key.');
+    };
     document.head.appendChild(script);
     
     // Hacer la función global para el callback
     window.initNutriPlantMap = () => this.initializeMap();
+
+    setTimeout(() => {
+      if (!this.map && (!window.google || !window.google.maps)) {
+        this.showMapUnavailable('Google Maps tardó demasiado en responder. Recarga la página e inténtalo de nuevo.');
+      }
+    }, 12000);
+  }
+
+  showMapUnavailable(message) {
+    const mapElement = document.getElementById('map');
+    if (!mapElement) return;
+
+    mapElement.innerHTML = `
+      <div style="
+        width: 100%;
+        height: 100%;
+        min-height: 360px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+        color: #0f172a;
+        text-align: center;
+        border-radius: 12px;
+      ">
+        <div style="max-width: 520px; background: rgba(255,255,255,0.92); border: 1px solid #dbeafe; border-radius: 16px; padding: 22px; box-shadow: 0 12px 28px rgba(15,23,42,0.10);">
+          <div style="font-size: 36px; margin-bottom: 10px;">🗺️</div>
+          <h3 style="margin: 0 0 8px; color: #1e40af;">Mapa no disponible</h3>
+          <p style="margin: 0; color: #475569; line-height: 1.45;">${message}</p>
+        </div>
+      </div>
+    `;
   }
 
   showDemoMap() {
@@ -2368,6 +2415,7 @@ function initLocationMap() {
   if (nutriPlantMap) {
     console.log('🗑️ Eliminando instancia previa del mapa...');
     try {
+      const currentMapElement = document.getElementById('map');
       if (nutriPlantMap.polygon) {
         nutriPlantMap.polygon.setMap(null);
       }
@@ -2375,9 +2423,10 @@ function initLocationMap() {
         nutriPlantMap.savedPolygon.setMap(null);
       }
       if (nutriPlantMap.map) {
-        // Limpiar el mapa de Google Maps
+        // Limpiar referencias del mapa anterior sin eliminar el contenedor actual.
+        // Google Maps usa #map como su propio div; removerlo deja la vista en blanco.
         const mapDiv = nutriPlantMap.map.getDiv();
-        if (mapDiv && mapDiv.parentNode) {
+        if (mapDiv && mapDiv.parentNode && mapDiv !== currentMapElement) {
           mapDiv.parentNode.removeChild(mapDiv);
         }
       }
