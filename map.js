@@ -1970,6 +1970,58 @@ function forceClearLocationDisplay() {
 
 /** Radar NDVI (Netlify /api/radar-ndvi): capa opcional sobre el polígono */
 let radarGroundOverlay = null;
+let radarPreviousPolygonStyles = null;
+
+function np_getRadarPolygons() {
+  if (!nutriPlantMap) return [];
+  return [nutriPlantMap.savedPolygon, nutriPlantMap.polygon].filter(Boolean);
+}
+
+function np_setRadarPolygonMask(active) {
+  const polygons = np_getRadarPolygons();
+  if (active) {
+    if (!radarPreviousPolygonStyles) {
+      radarPreviousPolygonStyles = polygons.map((poly) => ({
+        poly,
+        fillOpacity: poly.get('fillOpacity'),
+        strokeOpacity: poly.get('strokeOpacity'),
+        strokeWeight: poly.get('strokeWeight')
+      }));
+    }
+    polygons.forEach((poly) => {
+      poly.setOptions({
+        fillOpacity: 0.02,
+        strokeOpacity: 0.95,
+        strokeWeight: 3
+      });
+    });
+    return;
+  }
+  if (radarPreviousPolygonStyles) {
+    radarPreviousPolygonStyles.forEach(({ poly, fillOpacity, strokeOpacity, strokeWeight }) => {
+      if (!poly) return;
+      poly.setOptions({ fillOpacity, strokeOpacity, strokeWeight });
+    });
+    radarPreviousPolygonStyles = null;
+  }
+}
+
+function np_showRadarLegend(show) {
+  let legend = document.getElementById('radarNdviLegend');
+  if (!show) {
+    if (legend) legend.remove();
+    return;
+  }
+  const mapContainer = document.querySelector('.map-container');
+  if (!mapContainer) return;
+  if (!legend) {
+    legend = document.createElement('div');
+    legend.id = 'radarNdviLegend';
+    legend.style.cssText = 'position:absolute;left:14px;bottom:14px;z-index:5;background:rgba(255,255,255,.94);border:1px solid #d1d5db;border-radius:10px;padding:8px 10px;font-size:12px;color:#111827;box-shadow:0 4px 12px rgba(0,0,0,.15);';
+    legend.innerHTML = '<div style="font-weight:700;margin-bottom:4px;">NDVI vigor</div><div style="width:160px;height:10px;border-radius:999px;background:linear-gradient(90deg,#781c18,#c7b358,#2d8f47);margin-bottom:4px;"></div><div style="display:flex;justify-content:space-between;gap:8px;"><span>Bajo</span><span>Medio</span><span>Alto</span></div>';
+    mapContainer.appendChild(legend);
+  }
+}
 
 function np_isCloudSupabaseUser() {
   const id = localStorage.getItem('nutriplant_user_id');
@@ -2073,6 +2125,8 @@ window.hideRadarNdviOverlay = function hideRadarNdviOverlay() {
     radarGroundOverlay.setMap(null);
     radarGroundOverlay = null;
   }
+  np_setRadarPolygonMask(false);
+  np_showRadarLegend(false);
 };
 
 window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
@@ -2109,8 +2163,10 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
     }
     window.hideRadarNdviOverlay();
     radarGroundOverlay = new google.maps.GroundOverlay(url, bounds);
-    radarGroundOverlay.setOpacity(0.88);
+    radarGroundOverlay.setOpacity(0.96);
     radarGroundOverlay.setMap(nutriPlantMap.map);
+    np_setRadarPolygonMask(true);
+    np_showRadarLegend(true);
   } catch (e) {
     alert('No se pudo cargar la imagen Radar.');
   }
@@ -2144,8 +2200,10 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     if (res.status === 409 && data.latest && data.latest.signed_url) {
       window.hideRadarNdviOverlay();
       radarGroundOverlay = new google.maps.GroundOverlay(data.latest.signed_url, bounds);
-      radarGroundOverlay.setOpacity(0.88);
+      radarGroundOverlay.setOpacity(0.96);
       radarGroundOverlay.setMap(nutriPlantMap.map);
+      np_setRadarPolygonMask(true);
+      np_showRadarLegend(true);
       await window.refreshRadarNdviStatus();
       return;
     }
@@ -2158,8 +2216,10 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     if (data.signed_url) {
       window.hideRadarNdviOverlay();
       radarGroundOverlay = new google.maps.GroundOverlay(data.signed_url, bounds);
-      radarGroundOverlay.setOpacity(0.88);
+      radarGroundOverlay.setOpacity(0.96);
       radarGroundOverlay.setMap(nutriPlantMap.map);
+      np_setRadarPolygonMask(true);
+      np_showRadarLegend(true);
     }
   } catch (e) {
     alert('Error de red al generar Radar.');
