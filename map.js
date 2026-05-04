@@ -2160,11 +2160,12 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     const div = document.createElement('div');
     div.style.position = 'absolute';
     div.style.pointerEvents = 'none';
-    div.style.zIndex = '1000';
-    div.style.opacity = String(opacity);
+    div.style.zIndex = '9999';
+    div.style.opacity = String(Math.max(opacity, 1));
     div.style.mixBlendMode = 'normal';
-    div.style.filter = 'saturate(1.3) contrast(1.12)';
-    div.style.background = 'rgba(255,255,255,0.01)';
+    div.style.filter = 'saturate(2.4) contrast(1.55)';
+    div.style.background = 'transparent';
+    div.style.overflow = 'hidden';
     const img = document.createElement('img');
     img.src = url;
     img.alt = 'Radar NDVI';
@@ -2173,6 +2174,8 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     img.style.display = 'block';
     img.style.objectFit = 'fill';
     img.style.pointerEvents = 'none';
+    img.style.opacity = '1';
+    img.style.filter = 'saturate(2.4) contrast(1.55)';
     img.onload = () => {
       console.log('✅ Imagen NDVI cargada en overlay');
       if (typeof overlay.draw === 'function') overlay.draw();
@@ -2184,7 +2187,8 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     };
     div.appendChild(img);
     this.div = div;
-    this.getPanes().floatPane.appendChild(div);
+    const panes = this.getPanes();
+    (panes.overlayLayer || panes.overlayMouseTarget || panes.floatPane).appendChild(div);
   };
   overlay.draw = function() {
     if (!this.div) return;
@@ -2197,8 +2201,10 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     const height = Math.abs(sw.y - ne.y);
     this.div.style.left = left + 'px';
     this.div.style.top = top + 'px';
-    this.div.style.width = width + 'px';
-    this.div.style.height = height + 'px';
+    this.div.style.width = Math.max(width, 2) + 'px';
+    this.div.style.height = Math.max(height, 2) + 'px';
+    this.div.style.display = 'block';
+    console.log('🛰️ NDVI overlay draw:', { left, top, width, height });
   };
   overlay.onRemove = function() {
     if (this.div && this.div.parentNode) this.div.parentNode.removeChild(this.div);
