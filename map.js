@@ -2030,20 +2030,8 @@ function np_setRadarPolygonMask(active) {
 }
 
 function np_showRadarLegend(show) {
-  let legend = document.getElementById('radarNdviLegend');
-  if (!show) {
-    if (legend) legend.remove();
-    return;
-  }
-  const mapContainer = document.querySelector('.map-container');
-  if (!mapContainer) return;
-  if (!legend) {
-    legend = document.createElement('div');
-    legend.id = 'radarNdviLegend';
-    legend.style.cssText = 'position:absolute;left:14px;bottom:14px;z-index:5;background:rgba(255,255,255,.94);border:1px solid #d1d5db;border-radius:10px;padding:7px 9px;font-size:11px;color:#111827;box-shadow:0 4px 12px rgba(0,0,0,.15);';
-    legend.innerHTML = '<div style="font-weight:700;margin-bottom:3px;">NDVI</div><div style="width:150px;height:9px;border-radius:999px;background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);margin-bottom:3px;"></div><div style="display:flex;justify-content:space-between;gap:8px;"><span>Bajo</span><span>Medio</span><span>Alto</span></div>';
-    mapContainer.appendChild(legend);
-  }
+  const scale = document.getElementById('radarNdviScale');
+  if (scale) scale.style.display = 'flex';
 }
 
 function np_isCloudSupabaseUser() {

@@ -124,8 +124,8 @@ function ndviThumbUrl(ee, geometry, lookbackDays) {
 
   const image = coll.median();
   const ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI').clip(geometry);
-  // Suavizado leve solo para visualización: evita cuadros duros entre píxeles de 10 m.
-  const displayNdvi = ndvi.focal_mean({ radius: 12, units: 'meters' }).clip(geometry);
+  // Interpolación visual: suaviza los saltos entre píxeles Sentinel-2 sin promediar el cultivo.
+  const displayNdvi = ndvi.resample('bilinear').clip(geometry);
   const vis = displayNdvi.visualize({
     min: 0.05,
     max: 0.85,

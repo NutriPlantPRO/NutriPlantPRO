@@ -1429,8 +1429,14 @@ function sectionTemplate(name) {
         <div id="radarNdviPanel" class="radar-ndvi-panel" style="margin: 12px 0 0; padding: 12px 14px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;">
           <div style="font-weight: 600; color: #14532d;">🛰️ Radar del cultivo (NDVI)</div>
           <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Disponibles: —</span>
-          <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 420px;">Sincroniza el predio a la nube, luego genera la imagen (máx. 1 por proyecto y mes; créditos mensuales según tu plan).</span>
-          <span id="radarNdviHelp" style="font-size: 12px; color: #166534; max-width: 360px;">NDVI relativo al predio: verde = mayor vigor; rojo/naranja = menor vigor o posible estrés.</span>
+          <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 360px;">Sincroniza el predio a la nube, luego genera la imagen.</span>
+          <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
+            <span style="font-weight:600;color:#166534;">Escala NDVI</span>
+            <span>Bajo</span>
+            <span style="width:150px;height:9px;border-radius:999px;background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);display:inline-block;"></span>
+            <span>Alto</span>
+            <span id="radarNdviHelp" style="color:#166534;">Verde = mayor vigor relativo; rojo/naranja = menor vigor o posible estrés.</span>
+          </div>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
             <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>
             <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">👁 Ver última</button>
