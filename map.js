@@ -40,7 +40,7 @@ class NutriPlantMap {
 
   init() {
     // Esperar a que se cargue la API de Google Maps
-    if (typeof google === 'undefined') {
+    if (!window.google || !window.google.maps || !window.google.maps.Map) {
       this.loadGoogleMapsAPI();
     } else {
       this.initializeMap();
@@ -57,13 +57,23 @@ class NutriPlantMap {
       return;
     }
 
-    if (window.google && window.google.maps) {
+    if (window.google && window.google.maps && window.google.maps.Map) {
       this.initializeMap();
       return;
     }
 
+    window.initNutriPlantMap = () => this.initializeMap();
+
+    if (window.__nutriPlantGoogleMapsLoading) {
+      console.log('🗺️ Google Maps ya está cargando; esperando callback...');
+      return;
+    }
+
+    window.__nutriPlantGoogleMapsLoading = true;
+
     window.gm_authFailure = () => {
       console.error('❌ Google Maps rechazó la clave o el dominio actual');
+      window.__nutriPlantGoogleMapsLoading = false;
       this.showMapUnavailable('Google Maps no autorizó este dominio. Revisa la API Key y las restricciones de referencia en Google Cloud.');
     };
     
@@ -74,15 +84,14 @@ class NutriPlantMap {
     script.defer = true;
     script.onerror = () => {
       console.error('❌ No se pudo cargar Google Maps');
+      window.__nutriPlantGoogleMapsLoading = false;
       this.showMapUnavailable('No se pudo cargar Google Maps. Revisa la conexión o la configuración de la API Key.');
     };
     document.head.appendChild(script);
-    
-    // Hacer la función global para el callback
-    window.initNutriPlantMap = () => this.initializeMap();
 
     setTimeout(() => {
-      if (!this.map && (!window.google || !window.google.maps)) {
+      if (!this.map && (!window.google || !window.google.maps || !window.google.maps.Map)) {
+        window.__nutriPlantGoogleMapsLoading = false;
         this.showMapUnavailable('Google Maps tardó demasiado en responder. Recarga la página e inténtalo de nuevo.');
       }
     }, 12000);
@@ -216,6 +225,7 @@ class NutriPlantMap {
     // 🚀 CRÍTICO: NO limpiar automáticamente aquí - solo inicializar el mapa
     // El polígono se cargará DESPUÉS de que el mapa esté listo
     console.log('🗺️ Inicializando mapa de Google Maps...');
+    window.__nutriPlantGoogleMapsLoading = false;
     
     // NO limpiar variables aquí - se limpiarán solo si no hay polígono guardado
 
@@ -244,6 +254,12 @@ class NutriPlantMap {
 
     // Crear el mapa
     this.map = new google.maps.Map(mapElement, mapOptions);
+
+    google.maps.event.addListenerOnce(this.map, 'idle', () => {
+      const currentCenter = this.map.getCenter() || mapOptions.center;
+      google.maps.event.trigger(this.map, 'resize');
+      this.map.setCenter(currentCenter);
+    });
 
     // Configurar el Drawing Manager
     this.setupDrawingManager();
@@ -2060,7 +2076,6 @@ function np_setRadarPolygonMask(active) {
         strokeWeight: 0,
         clickable: false
       });
-      poly.setMap(null);
     });
     return;
   }
@@ -2157,6 +2172,13 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
   };
   overlay.setMap(nutriPlantMap.map);
   radarGroundOverlay = overlay;
+}
+
+function np_applyRadarOverlay(url, bounds) {
+  window.hideRadarNdviOverlay();
+  np_showRadarOverlay(url, bounds, 0.98);
+  np_setRadarPolygonMask(true);
+  np_showRadarLegend(true);
 }
 
 window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
@@ -2268,12 +2290,7 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
       alert('Aún no hay Radar guardado. Pulsa «Generar / actualizar» (tras sincronizar el predio).');
       return;
     }
-    window.hideRadarNdviOverlay();
-    radarGroundOverlay = new google.maps.GroundOverlay(url, bounds);
-    radarGroundOverlay.setOpacity(0.98);
-    radarGroundOverlay.setMap(nutriPlantMap.map);
-    np_setRadarPolygonMask(true);
-    np_showRadarLegend(true);
+    np_applyRadarOverlay(url, bounds);
   } catch (e) {
     alert('No se pudo cargar la imagen Radar.');
   }
@@ -2322,21 +2339,11 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
         }
         await window.refreshRadarNdviStatus();
         if (forcedData.signed_url) {
-          window.hideRadarNdviOverlay();
-          radarGroundOverlay = new google.maps.GroundOverlay(forcedData.signed_url, bounds);
-          radarGroundOverlay.setOpacity(0.98);
-          radarGroundOverlay.setMap(nutriPlantMap.map);
-          np_setRadarPolygonMask(true);
-          np_showRadarLegend(true);
+          np_applyRadarOverlay(forcedData.signed_url, bounds);
         }
         return;
       }
-      window.hideRadarNdviOverlay();
-      radarGroundOverlay = new google.maps.GroundOverlay(data.latest.signed_url, bounds);
-      radarGroundOverlay.setOpacity(0.98);
-      radarGroundOverlay.setMap(nutriPlantMap.map);
-      np_setRadarPolygonMask(true);
-      np_showRadarLegend(true);
+      np_applyRadarOverlay(data.latest.signed_url, bounds);
       await window.refreshRadarNdviStatus();
       return;
     }
@@ -2347,12 +2354,7 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     }
     await window.refreshRadarNdviStatus();
     if (data.signed_url) {
-      window.hideRadarNdviOverlay();
-      radarGroundOverlay = new google.maps.GroundOverlay(data.signed_url, bounds);
-      radarGroundOverlay.setOpacity(0.98);
-      radarGroundOverlay.setMap(nutriPlantMap.map);
-      np_setRadarPolygonMask(true);
-      np_showRadarLegend(true);
+      np_applyRadarOverlay(data.signed_url, bounds);
     }
   } catch (e) {
     alert('Error de red al generar Radar.');
