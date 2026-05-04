@@ -255,10 +255,9 @@ class NutriPlantMap {
     // Crear el mapa
     this.map = new google.maps.Map(mapElement, mapOptions);
 
-    google.maps.event.addListenerOnce(this.map, 'idle', () => {
-      const currentCenter = this.map.getCenter() || mapOptions.center;
-      google.maps.event.trigger(this.map, 'resize');
-      this.map.setCenter(currentCenter);
+    this.refreshMapView('init');
+    [120, 450, 1000, 1800].forEach((delay) => {
+      setTimeout(() => this.refreshMapView('delayed-' + delay), delay);
     });
 
     // Configurar el Drawing Manager
@@ -274,6 +273,29 @@ class NutriPlantMap {
     // El polígono se cargará desde initLocationMap() DESPUÉS de que el mapa esté completamente inicializado
     // Solo limpiar si NO hay proyecto (se verificará en loadProjectLocation)
     console.log('✅ Mapa de Google Maps inicializado - esperando carga de polígono desde initLocationMap()');
+  }
+
+  refreshMapView(reason = 'manual') {
+    if (!this.map || typeof google === 'undefined' || !google.maps) return;
+
+    const mapDiv = this.map.getDiv && this.map.getDiv();
+    if (!mapDiv) return;
+
+    mapDiv.style.width = '100%';
+    mapDiv.style.height = '100%';
+
+    if (mapDiv.offsetHeight < 240) {
+      mapDiv.style.minHeight = '520px';
+    }
+
+    const currentCenter = this.map.getCenter();
+    google.maps.event.trigger(this.map, 'resize');
+    if (currentCenter) this.map.setCenter(currentCenter);
+
+    console.log('🗺️ Refrescando vista del mapa:', reason, {
+      width: mapDiv.offsetWidth,
+      height: mapDiv.offsetHeight
+    });
   }
 
   setupDrawingManager() {
@@ -1085,6 +1107,7 @@ class NutriPlantMap {
           // Centrar el mapa en la ubicación del usuario
           this.map.setCenter(userLocation);
           this.map.setZoom(15); // Cambiado de 18 a 15 para vista más amplia
+          this.refreshMapView('gps-auto');
           
           // Agregar marcador de ubicación actual
           this.addUserLocationMarker(userLocation);
@@ -1278,6 +1301,7 @@ class NutriPlantMap {
         // Centrar el mapa en la ubicación del usuario
         this.map.setCenter(userLocation);
         this.map.setZoom(15);
+        this.refreshMapView('gps-button');
         
         // Agregar marcador de la ubicación del usuario
         this.addUserLocationMarker(userLocation);
@@ -2389,6 +2413,10 @@ function initLocationMap() {
       
       if (isMapDivValid && isCurrentElementValid && (mapDiv === currentMapElement || mapDiv.parentElement === currentMapElement)) {
         console.log('✅ Mapa ya existe e inicializado - recargando polígono guardado...');
+        if (typeof nutriPlantMap.refreshMapView === 'function') {
+          nutriPlantMap.refreshMapView('reuse');
+          setTimeout(() => nutriPlantMap.refreshMapView('reuse-delayed'), 350);
+        }
         
         // Solo recargar el polígono guardado (no destruir el mapa)
         setTimeout(() => {
@@ -2454,6 +2482,9 @@ function initLocationMap() {
   setTimeout(() => {
     if (nutriPlantMap && nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
       console.log('✅ Mapa inicializado correctamente - cargando polígono guardado...');
+      if (typeof nutriPlantMap.refreshMapView === 'function') {
+        nutriPlantMap.refreshMapView('after-initLocationMap');
+      }
       if (typeof nutriPlantMap.loadProjectLocation === 'function') {
       nutriPlantMap.loadProjectLocation();
     }
