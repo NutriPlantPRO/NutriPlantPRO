@@ -354,6 +354,25 @@
       return { vpd: parseFloat(vpd.toFixed(2)), hd: parseFloat(hd.toFixed(2)) };
     }
 
+    function getHumidityDeficitClass(hdValue) {
+      const hd = Number(hdValue);
+      if (!Number.isFinite(hd)) return { label: t('N/D', 'N/A'), message: t('Sin dato suficiente', 'Not enough data'), color: '#64748b', bg: '#f8fafc' };
+      if (hd < 3) return { label: t('Muy bajo', 'Very low'), message: t('Ambiente húmedo / baja demanda evaporativa', 'Humid environment / low evaporative demand'), color: '#2563eb', bg: '#eff6ff' };
+      if (hd < 6) return { label: t('Bajo-moderado', 'Low-moderate'), message: t('Demanda manejable', 'Manageable demand'), color: '#16a34a', bg: '#f0fdf4' };
+      if (hd < 10) return { label: t('Moderado', 'Moderate'), message: t('Transpiración activa; vigilar cultivo sensible', 'Active transpiration; monitor sensitive crops'), color: '#ca8a04', bg: '#fefce8' };
+      if (hd <= 15) return { label: t('Alto', 'High'), message: t('Alta demanda evaporativa', 'High evaporative demand'), color: '#ea580c', bg: '#fff7ed' };
+      return { label: t('Muy alto', 'Very high'), message: t('Demanda muy alta; validar en campo', 'Very high demand; validate in crop'), color: '#dc2626', bg: '#fef2f2' };
+    }
+
+    function renderHumidityDeficitBadge(hdValue) {
+      const c = getHumidityDeficitClass(hdValue);
+      return '<div style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:5px 8px;border-radius:999px;background:' + c.bg + ';border:1px solid ' + c.color + '33;color:' + c.color + ';font-size:12px;font-weight:700;" title="' + c.message + '">' +
+        '<span style="width:9px;height:9px;border-radius:999px;background:' + c.color + ';display:inline-block;"></span>' +
+        t('Clasificación orientativa', 'Orientative classification') + ': ' + c.label +
+        '</div>' +
+        '<div style="margin-top:4px;color:#64748b;font-size:12px;line-height:1.35;">' + c.message + '</div>';
+    }
+
     var vpdFreeMap = null;
     var vpdFreeMarker = null;
 
@@ -537,7 +556,7 @@
           '<h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">' + t('Resultados:', 'Results:') + '</h4>' +
           '<div style="display:grid;grid-template-columns:' + (useSolar ? 'repeat(3, minmax(0, 1fr))' : '1fr 1fr') + ';gap:16px;margin-bottom:16px;">' +
           '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">' + t('Déficit de Presión de Vapor', 'Vapor Pressure Deficit') + '</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">' + results.vpd + ' kPa</div></div>' +
-          '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">' + t('Déficit de Humedad', 'Humidity Deficit') + '</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">' + results.hd + ' g/m³</div></div>' +
+          '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">' + t('Déficit de Humedad', 'Humidity Deficit') + '</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">' + results.hd + ' g/m³</div>' + renderHumidityDeficitBadge(results.hd) + '</div>' +
           (useSolar
             ? '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">☀️ ' + t('Radiación solar', 'Solar radiation') + '</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">' + rad.toFixed(0) + ' W/m²</div></div>'
             : '') +
@@ -621,7 +640,7 @@
           <h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">${t('Resultados:', 'Results:')}</h4>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
             <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Presión de Vapor', 'Vapor Pressure Deficit')}</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">${r.vpd} kPa</div></div>
-            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Humedad', 'Humidity Deficit')}</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">${r.hd} g/m³</div></div>
+            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Humedad', 'Humidity Deficit')}</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">${r.hd} g/m³</div>${renderHumidityDeficitBadge(r.hd)}</div>
           </div>
           ${createVPDRangeChart(r.vpd)}
         </div>
@@ -665,7 +684,7 @@
           <h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">${t('Resultados:', 'Results:')}</h4>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
             <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Presión de Vapor', 'Vapor Pressure Deficit')}</div><div style="font-size:24px;font-weight:700;color:#22c55e;">${r.vpd} kPa</div></div>
-            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Humedad', 'Humidity Deficit')}</div><div style="font-size:24px;font-weight:700;color:#22c55e;">${r.hd} g/m³</div></div>
+            <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Humedad', 'Humidity Deficit')}</div><div style="font-size:24px;font-weight:700;color:#22c55e;">${r.hd} g/m³</div>${renderHumidityDeficitBadge(r.hd)}</div>
           </div>
           ${calculatedLeafTemp ? `<div style="margin-bottom:16px;padding:12px;background:#f0fdf4;border-radius:6px;border:1px solid #86efac;"><div style="color:#15803d;font-size:14px;margin-bottom:4px;">🌿 ${t('Temperatura de Hoja Calculada', 'Calculated Leaf Temperature')}:</div><div style="font-size:20px;font-weight:700;color:#15803d;">${calculatedLeafTemp} °C</div></div>` : ''}
           ${createVPDRangeChart(r.vpd)}

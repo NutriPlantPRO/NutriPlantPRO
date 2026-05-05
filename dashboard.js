@@ -18089,6 +18089,35 @@ function calculateVPDAdvanced(airTemp, airHumidity, leafTemp) {
   return { vpd: parseFloat(vpd.toFixed(2)), hd: parseFloat(hd.toFixed(2)) };
 }
 
+function getHumidityDeficitClass(hdValue) {
+  var hd = Number(hdValue);
+  if (!Number.isFinite(hd)) {
+    return { label: 'N/D', message: 'Sin dato suficiente', color: '#64748b', bg: '#f8fafc' };
+  }
+  if (hd < 3) {
+    return { label: 'Muy bajo', message: 'Ambiente húmedo / baja demanda evaporativa', color: '#2563eb', bg: '#eff6ff' };
+  }
+  if (hd < 6) {
+    return { label: 'Bajo-moderado', message: 'Demanda manejable', color: '#16a34a', bg: '#f0fdf4' };
+  }
+  if (hd < 10) {
+    return { label: 'Moderado', message: 'Transpiración activa; vigilar cultivo sensible', color: '#ca8a04', bg: '#fefce8' };
+  }
+  if (hd <= 15) {
+    return { label: 'Alto', message: 'Alta demanda evaporativa', color: '#ea580c', bg: '#fff7ed' };
+  }
+  return { label: 'Muy alto', message: 'Demanda muy alta; validar en campo', color: '#dc2626', bg: '#fef2f2' };
+}
+
+function renderHumidityDeficitBadge(hdValue) {
+  var c = getHumidityDeficitClass(hdValue);
+  return '<div style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:5px 8px;border-radius:999px;background:' + c.bg + ';border:1px solid ' + c.color + '33;color:' + c.color + ';font-size:12px;font-weight:700;" title="' + c.message + '">' +
+    '<span style="width:9px;height:9px;border-radius:999px;background:' + c.color + ';display:inline-block;"></span>' +
+    'Clasificación orientativa: ' + c.label +
+    '</div>' +
+    '<div style="margin-top:4px;color:#64748b;font-size:12px;line-height:1.35;">' + c.message + '</div>';
+}
+
 function ensureVPDAnalysisStructures() {
   if (!currentProject.vpdAnalysis || typeof currentProject.vpdAnalysis !== 'object') {
     currentProject.vpdAnalysis = {
@@ -18454,6 +18483,7 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
       '<div>' +
       '<div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Humedad</div>' +
       '<div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">' + hd.toFixed(2) + ' g/m³</div>' +
+      renderHumidityDeficitBadge(hd) +
       '</div>' +
       radCol +
       '</div>' +
@@ -19295,6 +19325,7 @@ function calculateAdvancedVPD() {
           <div>
             <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Humedad</div>
             <div style="font-size: 24px; font-weight: 700; color: #22c55e;">${results.hd} g/m³</div>
+            ${renderHumidityDeficitBadge(results.hd)}
           </div>
         </div>
         ${calculatedLeafTemp ? `
