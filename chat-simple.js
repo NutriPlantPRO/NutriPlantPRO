@@ -42,10 +42,11 @@ Soluciones nutritivas de referencia (para consulta cuando el usuario pida refere
 6) VPD (DÉFICIT DE PRESIÓN DE VAPOR)
 - VPD = presión de saturación a T_hoja − presión real de vapor. Afecta transpiración, absorción de Ca y estrés. Rangos típicos: 0.4–1.2 kPa óptimo según especie; <0.3 riesgo de edema; >1.5 estrés hídrico y cierre estomático. Se usa para programar riego y clima en invernadero.
 
-6B) RADAR DEL CULTIVO (NDVI)
+6B) RADAR DEL CULTIVO (NDVI / NDMI)
 - NDVI (Normalized Difference Vegetation Index) es un indicador relativo de vigor/cobertura fotosintética: valores/tonos verdes = mayor vigor relativo; amarillo/naranja/rojo = menor vigor relativo, suelo descubierto, sombra, estrés hídrico/nutricional, plagas/enfermedades, poda o diferencias de etapa.
-- En NutriPlant el Radar NDVI se genera desde Sentinel-2/Earth Engine para el polígono del predio. La imagen se interpreta como mapa relativo dentro del lote, no como diagnóstico definitivo por sí sola.
-- Buen uso agronómico: detectar zonas para recorrer en campo, cruzar con riego, suelo, textura, drenaje, fertilización, análisis foliar/suelo, plagas y VPD. No recomendar fertilizar solo por color NDVI; usarlo como señal para priorizar muestreo y validar con datos.
+- NDMI (Normalized Difference Moisture Index) usa NIR y SWIR para estimar condición hídrica relativa del dosel/canopia. No llamarlo "humedad exacta del suelo"; habla de humedad/vigor hídrico relativo de la vegetación.
+- En NutriPlant el Radar NDVI/NDMI se genera desde Sentinel-2/Earth Engine para el polígono del predio. Las imágenes se interpretan como mapas relativos dentro del lote, no como diagnóstico definitivo por sí solas.
+- Buen uso agronómico: detectar zonas para recorrer en campo, cruzar NDVI (vigor) con NDMI (condición hídrica relativa), riego, suelo, textura, drenaje, fertilización, análisis foliar/suelo, plagas y VPD. No recomendar fertilizar o regar solo por color; usarlo como señal para priorizar muestreo y validar con datos.
 - Si el contexto indica última imagen, créditos o fecha, puedes responder sobre el estado del Radar del proyecto. Si no hay imagen, indicar que debe guardar/sincronizar el predio y generar/actualizar Radar.
 
 7) CALCULADORAS NUTRIPLANT (ÓXIDO↔ELEMENTAL Y ppm↔mmol↔meq) — Alineado con la app
@@ -971,7 +972,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Historial: se guardan cálculos ambientales y avanzados (fecha, VPD kPa, HD, etc.). Interpreta los datos guardados y las series de rangos cuando el usuario consulte.`,
       ubicacion: `
 - Ubicación: el usuario define el predio dibujando puntos en el mapa (polígono). El asistente recibe en contexto: número de vértices del polígono, superficie/área (ha o m²), perímetro (m) y coordenadas (centro del polígono o referencia). Si no hay polígono aún, se indica "sin polígono definido" y se puede guiar al usuario a ir a la pestaña Ubicación y dibujar los puntos en el mapa. Necesario para la calculadora ambiental de VPD ("Obtener del Clima" usa el centro del polígono), Radar NDVI y reportes PDF.
-- Radar del cultivo (NDVI): usa el polígono del predio para generar una imagen Sentinel-2/Earth Engine. Si el contexto trae última imagen/fecha/créditos, puedes explicar si hay Radar disponible, cuándo se generó y cómo interpretarlo. Verde = mayor vigor relativo; amarillo/naranja/rojo = menor vigor o zona a revisar. No diagnosticar causa única solo con NDVI: cruzar con riego, suelo, foliar, plagas, drenaje, VPD y recorrido en campo.`,
+- Radar del cultivo (NDVI/NDMI): usa el polígono del predio para generar imágenes Sentinel-2/Earth Engine. NDVI = vigor relativo; NDMI = condición hídrica relativa del dosel/canopia (no humedad exacta del suelo). Si el contexto trae última imagen/fecha/créditos, puedes explicar si hay Radar disponible, cuándo se generó y cómo interpretarlo. No diagnosticar causa única solo con índices: cruzar con riego, suelo, foliar, plagas, drenaje, VPD y recorrido en campo.`,
       reportes: `
 - Reportes: esta pestaña sirve para generar y gestionar reportes PDF del proyecto actual. Cómo generar un reporte: (1) El usuario pulsa el botón "Generar Nuevo Reporte PDF" (en la pestaña Reportes o desde la sección de enmiendas). (2) Se abre un modal donde debe seleccionar las secciones o pestañas que quiere incluir en el reporte: Ubicación, Enmiendas, Nutrición granular, Fertirriego, Hidroponía, Déficit de presión de vapor (VPD). (3) El usuario marca (selecciona) las que desee y confirma; se genera el PDF con solo esas secciones. (4) El reporte aparece en la lista; cada uno tiene Descargar (PDF) y Eliminar. Los reportes se guardan en el proyecto y se sincronizan a la nube si está conectado. El chat debe entender esta lógica para explicar al usuario cómo hacerlo: ir a Reportes → "Generar Nuevo Reporte PDF" → en el modal elegir qué secciones incluir → generar.`,
       general: `
@@ -1065,7 +1066,7 @@ ARQUITECTURA NUTRIPLANT Y CONTEXTO GLOBAL DEL PROYECTO:
 - Conoces la arquitectura de NutriPlant: módulos (Inicio, Ubicación, Enmienda, Nutrición Granular, Fertirriego, Hidroponía, Análisis, VPD, Reportes), subpestañas de Análisis (Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar/DOP, Fruta/ICC) y cómo se relacionan (p. ej. Suelo→Enmienda, Agua→Fertirriego/Hidroponía, Foliar/Suelo/Fruta→diagnóstico integrado).
 - Los datos que te pasamos son del MISMO proyecto en su totalidad: incluyen TODAS las secciones que el usuario tenga guardadas (Enmienda, Fertirriego, Granular, Hidroponía, Análisis de Suelo, Foliar, Fruta, Agua, Solución Nutritiva, Extracto de Pasta, etc.), aunque el usuario esté en otra pestaña. Por ejemplo: si está en Fertirriego y te pregunta por su análisis foliar o por su suelo, tienes esos datos en el bloque "DATOS DEL PROYECTO" y debes usarlos para responder e interactuar con él.
 - Puedes usar la lógica y explicar el funcionamiento de cualquier módulo cuando el usuario pregunte; responde con los datos del bloque del módulo del que hablen.
-- Radar/NDVI también forma parte del contexto del proyecto cuando exista el bloque "RADAR DEL CULTIVO (NDVI)". Si el usuario pregunta por vigor, manchas, zonas rojas/amarillas/verdes o "qué significa el NDVI", usa ese bloque y cruza con ubicación, riego, suelo, foliar, VPD y recorrido de campo. No atribuyas causa única solo por color.
+- Radar NDVI/NDMI también forma parte del contexto del proyecto cuando exista el bloque "RADAR DEL CULTIVO (NDVI/NDMI)". Si el usuario pregunta por vigor, humedad del dosel, manchas, zonas rojas/amarillas/verdes o "qué significa el NDVI/NDMI", usa ese bloque y cruza con ubicación, riego, suelo, foliar, VPD y recorrido de campo. No atribuyas causa única solo por color.
 
 UNIDADES POR MÓDULO (NO CONFUNDIR):
 - **Hidroponía**: concentraciones y aportes de fertilizantes son SIEMPRE en forma ELEMENTAL (%, ppm por elemento). No hay modo óxido en hidroponía.
@@ -1457,13 +1458,13 @@ ESTILO DE RESPUESTA:
       typeof window !== 'undefined' &&
       typeof window.hideRadarNdviOverlay === 'function' &&
       document.getElementById('map') &&
-      /Imagen NDVI mostrada/i.test(String(hint?.textContent || ''));
+      /Imagen NDVI mostrada|Imagen NDMI mostrada/i.test(String(hint?.textContent || ''));
 
     const lines = [];
     if (!hasPanel && (!status || String(status.projectId || '') !== String(projectId || ''))) return '';
 
-    lines.push('--- RADAR DEL CULTIVO (NDVI) ---');
-    lines.push('Interpretación: NDVI es vigor relativo/cobertura fotosintética dentro del polígono. Verde = mayor vigor relativo; amarillo/naranja/rojo = menor vigor o zona a revisar. Usarlo para priorizar recorrido y muestreo, no como diagnóstico único.');
+    lines.push('--- RADAR DEL CULTIVO (NDVI/NDMI) ---');
+    lines.push('Interpretación: NDVI = vigor relativo/cobertura fotosintética. NDMI = condición hídrica relativa del dosel/canopia, no humedad exacta del suelo. Usarlos para priorizar recorrido y muestreo, no como diagnóstico único.');
 
     if (status && String(status.projectId || '') === String(projectId || '')) {
       if (status.ok === false) {
@@ -1471,18 +1472,23 @@ ESTILO DE RESPUESTA:
       } else {
         const cr = status.credits || {};
         if (cr.limit != null) lines.push(`Créditos Radar: ${cr.available ?? '—'} disponibles de ${cr.limit}; usados ${cr.used ?? '—'}.`);
+        const hasNdmi = !!(status.latest?.ndmi_signed_url || status.latest?.images?.ndmi?.signed_url || status.meta?.ndmi_storage_path);
         if (status.hasLatestImage) {
           lines.push(`Última imagen NDVI: disponible${status.latestCreatedAt ? `, generada el ${new Date(status.latestCreatedAt).toLocaleString('es-MX')}` : ''}.`);
+          lines.push(`Última imagen NDMI: ${hasNdmi ? 'disponible' : 'no disponible en ese Radar (puede requerir regenerar)'}.`);
         } else {
-          lines.push('Última imagen NDVI: no hay imagen guardada para este proyecto.');
+          lines.push('Últimas imágenes Radar: no hay NDVI/NDMI guardados para este proyecto.');
         }
         if (status.meta) {
           const meta = status.meta;
           const range = meta.date_start && meta.date_end ? `${meta.date_start} a ${meta.date_end}` : '';
           const vis = meta.ndvi_vis && typeof meta.ndvi_vis === 'object'
-            ? `visualización min ${meta.ndvi_vis.min ?? '—'}, max ${meta.ndvi_vis.max ?? '—'}, estilo ${meta.ndvi_vis.style || '—'}`
+            ? `NDVI min ${meta.ndvi_vis.min ?? '—'}, max ${meta.ndvi_vis.max ?? '—'}, estilo ${meta.ndvi_vis.style || '—'}`
             : '';
-          if (range || vis) lines.push(`Metadatos NDVI: ${[range, vis].filter(Boolean).join('; ')}.`);
+          const ndmiVis = meta.ndmi_vis && typeof meta.ndmi_vis === 'object'
+            ? `NDMI min ${meta.ndmi_vis.min ?? '—'}, max ${meta.ndmi_vis.max ?? '—'}, estilo ${meta.ndmi_vis.style || '—'}`
+            : '';
+          if (range || vis || ndmiVis) lines.push(`Metadatos Radar: ${[range, vis, ndmiVis].filter(Boolean).join('; ')}.`);
         }
       }
     } else {
@@ -1493,8 +1499,8 @@ ESTILO DE RESPUESTA:
       if (!labelText && !hintText) lines.push('Panel Radar presente, pero aún sin estado consultado en esta sesión.');
     }
 
-    lines.push(`Capa NDVI visible en mapa: ${hasOverlay ? 'sí (último mensaje indica imagen mostrada)' : 'no confirmado'}.`);
-    lines.push('Respuesta recomendada si preguntan por NDVI: explicar que el mapa muestra variabilidad espacial; zonas rojas/naranjas/amarillas deben recorrerse y cruzarse con riego, suelo, foliar, plagas/enfermedad, drenaje y VPD antes de recomendar una corrección.');
+    lines.push(`Capa Radar visible en mapa: ${hasOverlay ? 'sí (último mensaje indica imagen mostrada)' : 'no confirmado'}.`);
+    lines.push('Respuesta recomendada si preguntan por NDVI/NDMI: explicar que el mapa muestra variabilidad espacial; zonas contrastantes deben recorrerse y cruzarse con riego, suelo, foliar, plagas/enfermedad, drenaje y VPD antes de recomendar una corrección.');
     return lines.join('\n') + '\n\n';
   }
 

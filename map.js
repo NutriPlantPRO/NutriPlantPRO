@@ -2059,6 +2059,72 @@ function forceClearLocationDisplay() {
 let radarGroundOverlay = null;
 let radarPreviousPolygonStyles = null;
 let radarOutlinePolygons = [];
+let radarActiveIndex = 'ndvi';
+
+const RADAR_INDEX_CONFIG = {
+  ndvi: {
+    label: 'NDVI',
+    busyLabel: 'NDVI',
+    title: 'Escala NDVI',
+    low: 'Bajo',
+    high: 'Alto',
+    help: 'Verde = mayor vigor relativo; rojo/naranja = menor vigor relativo.',
+    gradient: 'linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837)',
+    shownText: 'Imagen NDVI mostrada sobre el predio.',
+    loadingText: 'Cargando imagen NDVI en el mapa...'
+  },
+  ndmi: {
+    label: 'NDMI',
+    busyLabel: 'NDMI',
+    title: 'Escala NDMI',
+    low: 'Menor humedad relativa',
+    high: 'Mayor humedad relativa',
+    help: 'NDMI = condición hídrica relativa del dosel; interpretar junto con NDVI, VPD, riego y campo.',
+    gradient: 'linear-gradient(90deg,#7c2d12,#ea580c,#f59e0b,#fde68a,#bbf7d0,#22c55e,#0f766e,#0369a1)',
+    shownText: 'Imagen NDMI mostrada sobre el predio.',
+    loadingText: 'Cargando imagen NDMI en el mapa...'
+  }
+};
+
+function np_getRadarIndexConfig(index) {
+  return RADAR_INDEX_CONFIG[index] || RADAR_INDEX_CONFIG.ndvi;
+}
+
+function np_getSelectedRadarIndex() {
+  const select = document.getElementById('radarIndexSelect');
+  const value = select ? String(select.value || '').toLowerCase() : radarActiveIndex;
+  return value === 'ndmi' ? 'ndmi' : 'ndvi';
+}
+
+function np_setSelectedRadarIndex(index) {
+  radarActiveIndex = index === 'ndmi' ? 'ndmi' : 'ndvi';
+  const select = document.getElementById('radarIndexSelect');
+  if (select) select.value = radarActiveIndex;
+  np_updateRadarScaleUi();
+}
+
+function np_updateRadarScaleUi() {
+  const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
+  const title = document.getElementById('radarScaleTitle');
+  const low = document.getElementById('radarScaleLow');
+  const high = document.getElementById('radarScaleHigh');
+  const bar = document.getElementById('radarScaleBar');
+  const help = document.getElementById('radarNdviHelp');
+  if (title) title.textContent = cfg.title;
+  if (low) low.textContent = cfg.low;
+  if (high) high.textContent = cfg.high;
+  if (bar) bar.style.background = cfg.gradient;
+  if (help) help.textContent = cfg.help;
+}
+
+function np_getRadarSignedUrl(data, index) {
+  const latest = data && data.latest ? data.latest : data;
+  if (!latest) return '';
+  if (index === 'ndmi') {
+    return latest.ndmi_signed_url || latest.images?.ndmi?.signed_url || '';
+  }
+  return latest.signed_url || latest.images?.ndvi?.signed_url || '';
+}
 
 function np_getRadarPolygons() {
   if (!nutriPlantMap) return [];
@@ -2130,7 +2196,7 @@ function np_setRadarBusy(isBusy, message) {
   if (generateBtn) {
     if (isBusy) {
       if (!generateBtn.dataset.originalText) generateBtn.dataset.originalText = generateBtn.textContent || 'Generar / actualizar';
-      generateBtn.textContent = '⏳ Generando NDVI...';
+      generateBtn.textContent = '⏳ Generando Radar...';
       generateBtn.classList.add('radar-loading');
     } else {
       generateBtn.textContent = generateBtn.dataset.originalText || '✨ Generar / actualizar';
@@ -2145,7 +2211,7 @@ function np_setRadarBusy(isBusy, message) {
   });
 
   if (isBusy && hint) {
-    hint.textContent = message || 'Generando imagen NDVI... esto puede tardar unos segundos.';
+    hint.textContent = message || 'Generando imágenes NDVI y NDMI... esto puede tardar unos segundos.';
   }
 }
 
@@ -2200,7 +2266,7 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     div.style.borderRadius = '0';
     const img = document.createElement('img');
     img.src = url;
-    img.alt = 'Radar NDVI';
+    img.alt = 'Radar ' + np_getRadarIndexConfig(np_getSelectedRadarIndex()).label;
     img.style.width = '100%';
     img.style.height = '100%';
     img.style.display = 'block';
@@ -2210,13 +2276,13 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     img.style.filter = 'saturate(1.35) contrast(1.15)';
     img.style.imageRendering = 'auto';
     img.onload = () => {
-      console.log('✅ Imagen NDVI cargada en overlay');
+      console.log('✅ Imagen Radar cargada en overlay');
       if (typeof overlay.draw === 'function') overlay.draw();
     };
     img.onerror = () => {
-      console.error('❌ La imagen NDVI no pudo cargarse en el navegador:', url);
+      console.error('❌ La imagen Radar no pudo cargarse en el navegador:', url);
       const hint = document.getElementById('radarStatusHint');
-      if (hint) hint.textContent = 'No se pudo cargar la imagen NDVI firmada. Vuelve a pulsar Ver última.';
+      if (hint) hint.textContent = 'No se pudo cargar la imagen Radar firmada. Vuelve a pulsar Ver última.';
     };
     div.appendChild(img);
     this.div = div;
@@ -2237,7 +2303,7 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     this.div.style.width = Math.max(width, 2) + 'px';
     this.div.style.height = Math.max(height, 2) + 'px';
     this.div.style.display = 'block';
-    console.log('🛰️ NDVI overlay draw:', { left, top, width, height });
+    console.log('🛰️ Radar overlay draw:', { left, top, width, height });
   };
   overlay.onRemove = function() {
     if (this.div && this.div.parentNode) this.div.parentNode.removeChild(this.div);
@@ -2256,18 +2322,20 @@ function np_preloadRadarImage(url) {
   });
 }
 
-async function np_applyRadarOverlay(url, bounds) {
+async function np_applyRadarOverlay(url, bounds, index) {
   const hint = document.getElementById('radarStatusHint');
-  if (hint) hint.textContent = 'Cargando imagen NDVI en el mapa...';
+  const cfg = np_getRadarIndexConfig(index || np_getSelectedRadarIndex());
+  if (hint) hint.textContent = cfg.loadingText;
   await np_preloadRadarImage(url);
   window.hideRadarNdviOverlay();
+  np_setSelectedRadarIndex(index || np_getSelectedRadarIndex());
   np_showRadarOverlay(url, bounds, 0.98);
   np_setRadarPolygonMask(true);
   np_showRadarLegend(true);
   if (nutriPlantMap && nutriPlantMap.map && bounds) {
     nutriPlantMap.map.fitBounds(bounds, { padding: 50 });
   }
-  if (hint) hint.textContent = 'Imagen NDVI mostrada sobre el predio.';
+  if (hint) hint.textContent = cfg.shownText;
 }
 
 window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
@@ -2321,6 +2389,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       credits: { used: u, limit: l, available: disponibles },
       latest: data.latest || null,
       hasLatestImage: !!data.latest?.signed_url,
+      hasLatestNdmiImage: !!np_getRadarSignedUrl(data, 'ndmi'),
       latestCreatedAt: data.latest?.created_at || null,
       meta: data.latest?.meta || null
     };
@@ -2341,6 +2410,10 @@ window.initRadarNdviUi = function initRadarNdviUi() {
   const panel = document.getElementById('radarNdviPanel');
   if (!panel || panel.dataset.radarBound === '1') return;
   panel.dataset.radarBound = '1';
+  np_setSelectedRadarIndex(radarActiveIndex);
+  document.getElementById('radarIndexSelect')?.addEventListener('change', () => {
+    np_setSelectedRadarIndex(np_getSelectedRadarIndex());
+  });
   document.getElementById('radarBtnRefresh')?.addEventListener('click', () => {
     window.refreshRadarNdviStatus();
   });
@@ -2395,12 +2468,13 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
       alert(data.message || data.error || 'No se pudo consultar la última imagen Radar.');
       return;
     }
-    const url = data.latest?.signed_url;
+    const selectedIndex = np_getSelectedRadarIndex();
+    const url = np_getRadarSignedUrl(data, selectedIndex);
     if (!url) {
-      alert('Aún no hay Radar guardado. Pulsa «Generar / actualizar» (tras sincronizar el predio).');
+      alert('Aún no hay imagen ' + np_getRadarIndexConfig(selectedIndex).label + ' guardada. Pulsa «Generar / actualizar» (tras sincronizar el predio).');
       return;
     }
-    await np_applyRadarOverlay(url, bounds);
+    await np_applyRadarOverlay(url, bounds, selectedIndex);
   } catch (e) {
     console.error('Radar NDVI view:', e);
     alert('No se pudo cargar la imagen Radar. Intenta pulsar Estado y luego Ver última.');
@@ -2423,7 +2497,7 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     alert('Guarda un polígono en el mapa y sincronízalo a la nube antes de generar Radar.');
     return;
   }
-  np_setRadarBusy(true, 'Generando imagen NDVI con Sentinel-2... esto puede tardar unos segundos.');
+  np_setRadarBusy(true, 'Generando imágenes NDVI y NDMI con Sentinel-2... esto puede tardar unos segundos.');
   try {
     const res = await fetch(np_radarApiUrl(), {
       method: 'POST',
@@ -2436,7 +2510,7 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
         'Ya existe un Radar generado este mes. ¿Quieres regenerarlo con el estilo más intenso? Esto usará 1 crédito adicional.'
       );
       if (regenerate) {
-        np_setRadarBusy(true, 'Regenerando NDVI... preparando imagen actualizada.');
+        np_setRadarBusy(true, 'Regenerando NDVI y NDMI... preparando imágenes actualizadas.');
         const forcedRes = await fetch(np_radarApiUrl(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -2449,12 +2523,14 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
           return;
         }
         await window.refreshRadarNdviStatus();
-        if (forcedData.signed_url) {
-          await np_applyRadarOverlay(forcedData.signed_url, bounds);
+        const forcedUrl = np_getRadarSignedUrl(forcedData, np_getSelectedRadarIndex()) || forcedData.signed_url;
+        if (forcedUrl) {
+          await np_applyRadarOverlay(forcedUrl, bounds, np_getSelectedRadarIndex());
         }
         return;
       }
-      await np_applyRadarOverlay(data.latest.signed_url, bounds);
+      const existingUrl = np_getRadarSignedUrl(data.latest || data, np_getSelectedRadarIndex()) || data.latest.signed_url;
+      await np_applyRadarOverlay(existingUrl, bounds, np_getSelectedRadarIndex());
       await window.refreshRadarNdviStatus();
       return;
     }
@@ -2464,8 +2540,9 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
       return;
     }
     await window.refreshRadarNdviStatus();
-    if (data.signed_url) {
-      await np_applyRadarOverlay(data.signed_url, bounds);
+    const generatedUrl = np_getRadarSignedUrl(data, np_getSelectedRadarIndex()) || data.signed_url;
+    if (generatedUrl) {
+      await np_applyRadarOverlay(generatedUrl, bounds, np_getSelectedRadarIndex());
     }
   } catch (e) {
     console.error('Radar NDVI generate:', e);

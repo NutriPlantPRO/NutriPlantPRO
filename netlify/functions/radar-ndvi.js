@@ -1,5 +1,5 @@
 /**
- * Radar del cultivo (NDVI Sentinel-2 ~10 m) via Google Earth Engine.
+ * Radar del cultivo (NDVI/NDMI Sentinel-2 ~10 m) via Google Earth Engine.
  *
  * Variables Netlify:
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -110,11 +110,12 @@ function latLngPolygonToEeRing(polygon) {
   return ring;
 }
 
-function ndviThumbUrl(ee, geometry, lookbackDays) {
+function radarThumbUrl(ee, geometry, lookbackDays, indexType) {
   const end = new Date();
   const start = new Date(end.getTime() - lookbackDays * 86400000);
   const s = start.toISOString().slice(0, 10);
   const e = end.toISOString().slice(0, 10);
+  const type = String(indexType || 'ndvi').toLowerCase();
 
   const coll = ee
     .ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
@@ -123,14 +124,23 @@ function ndviThumbUrl(ee, geometry, lookbackDays) {
     .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 80));
 
   const image = coll.median();
-  const ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI').clip(geometry);
-  // Mantener píxeles nítidos: el suavizado bilinear hacía que el NDVI se perdiera sobre el satélite.
-  const displayNdvi = ndvi.clip(geometry);
-  const vis = displayNdvi.visualize({
-    min: 0.10,
-    max: 0.92,
-    palette: ['7f1d1d', 'b91c1c', 'ea580c', 'f59e0b', 'fde68a', 'bef264', '65a30d', '15803d', '064e3b']
-  });
+  const isNdmi = type === 'ndmi';
+  const index = isNdmi
+    ? image.normalizedDifference(['B8', 'B11']).rename('NDMI').clip(geometry)
+    : image.normalizedDifference(['B8', 'B4']).rename('NDVI').clip(geometry);
+  // Mantener píxeles nítidos: el suavizado bilinear hacía que el índice se perdiera sobre el satélite.
+  const displayIndex = index.clip(geometry);
+  const vis = displayIndex.visualize(isNdmi
+    ? {
+        min: -0.25,
+        max: 0.55,
+        palette: ['7c2d12', 'ea580c', 'f59e0b', 'fde68a', 'bbf7d0', '22c55e', '0f766e', '0369a1']
+      }
+    : {
+        min: 0.10,
+        max: 0.92,
+        palette: ['7f1d1d', 'b91c1c', 'ea580c', 'f59e0b', 'fde68a', 'bef264', '65a30d', '15803d', '064e3b']
+      });
 
   return new Promise((resolve, reject) => {
     vis.getThumbURL(
@@ -142,10 +152,18 @@ function ndviThumbUrl(ee, geometry, lookbackDays) {
       (url, err) => {
         if (err) reject(new Error(String(err)));
         else if (!url) reject(new Error('Sin URL de miniatura'));
-        else resolve({ url, dateStart: s, dateEnd: e });
+        else resolve({ url, dateStart: s, dateEnd: e, type });
       }
     );
   });
+}
+
+function ndviThumbUrl(ee, geometry, lookbackDays) {
+  return radarThumbUrl(ee, geometry, lookbackDays, 'ndvi');
+}
+
+function ndmiThumbUrl(ee, geometry, lookbackDays) {
+  return radarThumbUrl(ee, geometry, lookbackDays, 'ndmi');
 }
 
 async function getSupabaseAdmin() {
@@ -204,6 +222,32 @@ async function signedUrlForPath(supabase, path, ttlSec = 3600) {
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, ttlSec);
   if (error || !data?.signedUrl) return null;
   return data.signedUrl;
+}
+
+function latestResponse(latest, ndviSignedUrl, ndmiSignedUrl) {
+  if (!latest) return null;
+  const meta = latest.meta || {};
+  const ndmiPath = meta.ndmi_storage_path || meta.images?.ndmi?.storage_path || null;
+  return {
+    id: latest.id,
+    created_at: latest.created_at,
+    month_key: latest.month_key,
+    image_storage_path: latest.image_storage_path,
+    ndmi_storage_path: ndmiPath,
+    meta,
+    signed_url: ndviSignedUrl,
+    ndmi_signed_url: ndmiSignedUrl,
+    images: {
+      ndvi: {
+        storage_path: latest.image_storage_path,
+        signed_url: ndviSignedUrl
+      },
+      ndmi: {
+        storage_path: ndmiPath,
+        signed_url: ndmiSignedUrl
+      }
+    }
+  };
 }
 
 exports.handler = async (event) => {
@@ -285,8 +329,13 @@ exports.handler = async (event) => {
 
   const latest = await getLatestRadarRow(supabase, userId, projectId);
   let lastSignedUrl = null;
+  let lastNdmiSignedUrl = null;
   if (latest?.image_storage_path) {
     lastSignedUrl = await signedUrlForPath(supabase, latest.image_storage_path);
+  }
+  const latestNdmiPath = latest?.meta?.ndmi_storage_path || latest?.meta?.images?.ndmi?.storage_path || null;
+  if (latestNdmiPath) {
+    lastNdmiSignedUrl = await signedUrlForPath(supabase, latestNdmiPath);
   }
 
   if (action === 'status') {
@@ -294,16 +343,7 @@ exports.handler = async (event) => {
       ok: true,
       month_key: mk,
       credits: { used, limit, base: baseLimit, bonus },
-      latest: latest
-        ? {
-            id: latest.id,
-            created_at: latest.created_at,
-            month_key: latest.month_key,
-            image_storage_path: latest.image_storage_path,
-            meta: latest.meta || {},
-            signed_url: lastSignedUrl
-          }
-        : null
+      latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl)
     });
   }
 
@@ -344,7 +384,7 @@ exports.handler = async (event) => {
     return jsonResponse(409, {
       error: 'already_generated_this_month',
       message: 'Este mes ya hay un Radar para este proyecto. Usa «Ver última» o reintenta con force si debes regenerar.',
-      latest: { signed_url: lastSignedUrl, month_key: mk }
+      latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl) || { signed_url: lastSignedUrl, ndmi_signed_url: lastNdmiSignedUrl, month_key: mk }
     });
   }
 
@@ -362,32 +402,40 @@ exports.handler = async (event) => {
 
   const geometry = ee.Geometry.Polygon([ring]);
   let thumb;
+  let ndmiThumb;
   try {
     thumb = await ndviThumbUrl(ee, geometry, LOOKBACK_DAYS_FIRST);
+    ndmiThumb = await ndmiThumbUrl(ee, geometry, LOOKBACK_DAYS_FIRST);
   } catch (e1) {
     try {
       thumb = await ndviThumbUrl(ee, geometry, LOOKBACK_DAYS_FALLBACK);
+      ndmiThumb = await ndmiThumbUrl(ee, geometry, LOOKBACK_DAYS_FALLBACK);
     } catch (e2) {
-      console.error('NDVI thumb:', e2);
+      console.error('Radar thumb:', e2);
       return jsonResponse(502, {
-        error: 'ndvi_render_failed',
-        message: (e2 && e2.message) || 'No se pudo generar la miniatura NDVI'
+        error: 'radar_render_failed',
+        message: (e2 && e2.message) || 'No se pudo generar la miniatura Radar'
       });
     }
   }
 
   let buf;
+  let ndmiBuf;
   try {
     const res = await fetch(thumb.url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     buf = Buffer.from(await res.arrayBuffer());
+    const ndmiRes = await fetch(ndmiThumb.url);
+    if (!ndmiRes.ok) throw new Error(`NDMI HTTP ${ndmiRes.status}`);
+    ndmiBuf = Buffer.from(await ndmiRes.arrayBuffer());
   } catch (e) {
     console.error('fetch thumb:', e);
     return jsonResponse(502, { error: 'thumb_download_failed', message: e.message });
   }
 
   const ts = Date.now();
-  const storagePath = `${userId}/${projectId}/${mk}_${ts}.png`;
+  const storagePath = `${userId}/${projectId}/${mk}_${ts}_ndvi.png`;
+  const ndmiStoragePath = `${userId}/${projectId}/${mk}_${ts}_ndmi.png`;
 
   const { error: upErr } = await supabase.storage.from(BUCKET).upload(storagePath, buf, {
     contentType: 'image/png',
@@ -397,12 +445,26 @@ exports.handler = async (event) => {
     console.error('storage upload:', upErr);
     return jsonResponse(500, { error: 'storage_upload_failed', message: upErr.message });
   }
+  const { error: ndmiUpErr } = await supabase.storage.from(BUCKET).upload(ndmiStoragePath, ndmiBuf, {
+    contentType: 'image/png',
+    upsert: true
+  });
+  if (ndmiUpErr) {
+    console.error('storage upload ndmi:', ndmiUpErr);
+    return jsonResponse(500, { error: 'storage_upload_failed', message: ndmiUpErr.message });
+  }
 
   const meta = {
     date_start: thumb.dateStart,
     date_end: thumb.dateEnd,
     source: 'COPERNICUS/S2_SR_HARMONIZED',
-    ndvi_vis: { min: 0.10, max: 0.92, style: 'balanced_crisp' }
+    ndvi_vis: { min: 0.10, max: 0.92, style: 'balanced_crisp' },
+    ndmi_storage_path: ndmiStoragePath,
+    ndmi_vis: { min: -0.25, max: 0.55, style: 'canopy_water_crisp' },
+    images: {
+      ndvi: { storage_path: storagePath, label: 'NDVI', description: 'Vigor relativo / actividad vegetativa' },
+      ndmi: { storage_path: ndmiStoragePath, label: 'NDMI', description: 'Condición hídrica relativa del dosel' }
+    }
   };
 
   const { data: insRow, error: insErr } = await supabase
@@ -423,6 +485,7 @@ exports.handler = async (event) => {
   }
 
   const signed = await signedUrlForPath(supabase, storagePath);
+  const ndmiSigned = await signedUrlForPath(supabase, ndmiStoragePath);
   const newUsed = used + 1;
 
   return jsonResponse(200, {
@@ -431,6 +494,12 @@ exports.handler = async (event) => {
     credits: { used: newUsed, limit, base: baseLimit, bonus },
     storage_path: storagePath,
     signed_url: signed,
+    ndmi_storage_path: ndmiStoragePath,
+    ndmi_signed_url: ndmiSigned,
+    images: {
+      ndvi: { storage_path: storagePath, signed_url: signed },
+      ndmi: { storage_path: ndmiStoragePath, signed_url: ndmiSigned }
+    },
     meta
   });
 };
