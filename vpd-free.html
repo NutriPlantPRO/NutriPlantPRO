@@ -325,17 +325,22 @@
       vpdFreeSetEnvSimpleLocked(false);
     }
 
+    function calculateSaturationAbsoluteHumidity(tempC) {
+      return 5.018 + (0.32321 * tempC) + (0.0081847 * tempC * tempC) + (0.00031243 * tempC * tempC * tempC);
+    }
+
     function calculateVPDSimple(airTemp, humidity) {
       const es = 0.6108 * Math.exp((17.27 * airTemp) / (airTemp + 237.3));
       const ea = es * (humidity / 100);
       const vpd = es - ea;
-      const hd = (vpd * 216.7) / (airTemp + 273.15);
+      const hd = calculateSaturationAbsoluteHumidity(airTemp) * ((100 - humidity) / 100);
       return { vpd: parseFloat(vpd.toFixed(2)), hd: parseFloat(hd.toFixed(2)) };
     }
 
     function calculateLeafTempFromRadiation(airTemp, solarRadiation) {
-      const factor = 250;
-      const leafTemp = airTemp + (solarRadiation / factor) * 2.5;
+      const leafTemp = solarRadiation > 200
+        ? airTemp + (((solarRadiation - 200) * 0.6) / 100)
+        : airTemp;
       return parseFloat(leafTemp.toFixed(1));
     }
 
@@ -344,7 +349,8 @@
       const esAir = 0.6108 * Math.exp((17.27 * airTemp) / (airTemp + 237.3));
       const ea = esAir * (airHumidity / 100);
       const vpd = esLeaf - ea;
-      const hd = (vpd * 216.7) / (airTemp + 273.15);
+      const hd = calculateSaturationAbsoluteHumidity(leafTemp) -
+        (calculateSaturationAbsoluteHumidity(airTemp) * (airHumidity / 100));
       return { vpd: parseFloat(vpd.toFixed(2)), hd: parseFloat(hd.toFixed(2)) };
     }
 

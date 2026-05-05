@@ -18038,6 +18038,11 @@ window.addEventListener('beforeunload', function () {
 // ===================================
 
 // Función para calcular VPD Simple (ambiental)
+function calculateSaturationAbsoluteHumidity(tempC) {
+  // g/m³, misma curva usada por el Excel de referencia para déficit de humedad (HD).
+  return 5.018 + (0.32321 * tempC) + (0.0081847 * tempC * tempC) + (0.00031243 * tempC * tempC * tempC);
+}
+
 function calculateVPDSimple(airTemp, humidity) {
   // Presión de saturación de vapor a temperatura del aire (kPa)
   const es = 0.6108 * Math.exp((17.27 * airTemp) / (airTemp + 237.3));
@@ -18048,19 +18053,18 @@ function calculateVPDSimple(airTemp, humidity) {
   // VPD (kPa)
   const vpd = es - ea;
   
-  // HD (Humidity Deficit) en g/m³
-  const hd = (vpd * 216.7) / (airTemp + 273.15);
+  // HD (Humidity Deficit) en g/m³, alineado con el Excel de referencia.
+  const hd = calculateSaturationAbsoluteHumidity(airTemp) * ((100 - humidity) / 100);
   
   return { vpd: parseFloat(vpd.toFixed(2)), hd: parseFloat(hd.toFixed(2)) };
 }
 
 // Función para calcular temperatura de hoja desde radiación solar
 function calculateLeafTempFromRadiation(airTemp, solarRadiation) {
-  // Fórmula simplificada basada en modelos agrícolas
-  // T_leaf ≈ T_air + (solarRadiation / factor)
-  // Factor ajustable según tipo de cultivo (valores típicos: 200-400)
-  const factor = 250; // Factor promedio para cultivos generales
-  const leafTemp = airTemp + (solarRadiation / factor) * 2.5;
+  // Modelo de referencia: solo aumenta sobre 200 W/m² y suma 0.6 °C por cada 100 W/m² extra.
+  const leafTemp = solarRadiation > 200
+    ? airTemp + (((solarRadiation - 200) * 0.6) / 100)
+    : airTemp;
   return parseFloat(leafTemp.toFixed(1));
 }
 
@@ -18078,8 +18082,9 @@ function calculateVPDAdvanced(airTemp, airHumidity, leafTemp) {
   // VPD (diferencia entre presión de saturación de hoja y presión actual del aire)
   const vpd = es_leaf - ea;
   
-  // HD (Humidity Deficit) en g/m³
-  const hd = (vpd * 216.7) / (airTemp + 273.15);
+  // HD (Humidity Deficit) en g/m³: saturación a hoja menos humedad absoluta real del aire.
+  const hd = calculateSaturationAbsoluteHumidity(leafTemp) -
+    (calculateSaturationAbsoluteHumidity(airTemp) * (airHumidity / 100));
   
   return { vpd: parseFloat(vpd.toFixed(2)), hd: parseFloat(hd.toFixed(2)) };
 }
