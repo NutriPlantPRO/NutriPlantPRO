@@ -1,6 +1,6 @@
 /**
- * Calculadora de unidades (longitud, área, volumen, peso, temperatura, presión, concentración).
- * Compartida por dashboard.html y login.html.
+ * Conversor de magnitudes físicas (longitud, área, volumen, masa, temperatura, presión, concentración).
+ * Compartido por dashboard.html y login.html.
  */
 /* global document */
 var MEASURE_UNITS = {
