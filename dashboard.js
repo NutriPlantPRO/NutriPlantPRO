@@ -19673,6 +19673,11 @@ async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType) {
     var radRaw = Number(hourly.shortwave_radiation && hourly.shortwave_radiation[i]);
     var uvRaw = Number(hourly.uv_index && hourly.uv_index[i]);
     var hasSolar = Number.isFinite(radRaw) && radRaw >= 0;
+    var uvEffective = Number.isFinite(uvRaw) ? uvRaw : null;
+    if ((!Number.isFinite(uvEffective) || uvEffective <= 0) && Number.isFinite(radRaw) && radRaw > 0) {
+      // Respaldo: algunos historicos regresan UV=0 aun con radiacion disponible.
+      uvEffective = radRaw / 100;
+    }
     var leafTemp = null;
     var calc;
     if (hasSolar) {
@@ -19688,7 +19693,7 @@ async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType) {
       temperature: Number(t.toFixed(2)),
       humidity: Number(h.toFixed(2)),
       shortwaveRadiationWm2: hasSolar ? Number(radRaw.toFixed(1)) : null,
-      uvIndex: Number.isFinite(uvRaw) ? Number(uvRaw.toFixed(1)) : null,
+      uvIndex: Number.isFinite(uvEffective) ? Number(uvEffective.toFixed(1)) : null,
       leafTemperature: hasSolar ? Number(leafTemp.toFixed(1)) : null,
       vpdMethod: hasSolar ? 'solar' : 'simple',
       vpd: calc.vpd,
