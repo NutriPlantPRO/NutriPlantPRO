@@ -10002,6 +10002,22 @@
             html += renderAnalysisSection('Análisis Foliar', '🍃🔍', project.foliarAnalyses, 'foliar');
             html += renderAnalysisSection('Análisis de Fruta', '🍎🔬', project.frutaAnalyses, 'fruta');
             
+            function adminFormatUv(v) {
+                var n = Number(v);
+                if (!Number.isFinite(n)) return '—';
+                var u = Math.round(n * 10) / 10;
+                return Number.isInteger(u) ? String(u) : u.toFixed(1);
+            }
+            function adminUvBadge(v) {
+                var n = Number(v);
+                if (!Number.isFinite(n)) return '<span style="font-size:11px;color:#64748b;">N/D</span>';
+                var label = 'Extremo', color = '#6d28d9', bg = '#ede9fe';
+                if (n <= 2) { label = 'Bajo'; color = '#166534'; bg = '#dcfce7'; }
+                else if (n <= 5) { label = 'Moderado'; color = '#92400e'; bg = '#fef3c7'; }
+                else if (n <= 7) { label = 'Alto'; color = '#b45309'; bg = '#ffedd5'; }
+                else if (n <= 10) { label = 'Muy alto'; color = '#be123c'; bg = '#ffe4e6'; }
+                return '<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;color:' + color + ';background:' + bg + ';">' + label + '</span>';
+            }
             // Sección: DÉFICIT DE PRESIÓN DE VAPOR (VPD) - mismo orden que pestañas
             const vpdAnalysis = project.sections?.vpd || project.vpdAnalysis || null;
             const hasVPDData = vpdAnalysis && typeof vpdAnalysis === 'object' && (
@@ -10027,6 +10043,7 @@
                                         <div><strong>Humedad Relativa:</strong> ${vpdAnalysis.environmental.humidity !== null ? vpdAnalysis.environmental.humidity + ' %' : 'N/A'}</div>
                                         <div><strong>VPD:</strong> <span style="color: #059669; font-weight: 600;">${vpdAnalysis.environmental.vpd !== null ? vpdAnalysis.environmental.vpd.toFixed(2) + ' kPa' : 'N/A'}</span></div>
                                         <div><strong>HD:</strong> ${vpdAnalysis.environmental.hd !== null ? vpdAnalysis.environmental.hd.toFixed(2) + ' g/m³' : 'N/A'}</div>
+                                        <div><strong>Índice UV:</strong> ${adminFormatUv(vpdAnalysis.environmental.uvIndex)} ${adminUvBadge(vpdAnalysis.environmental.uvIndex)}</div>
                                         ${vpdAnalysis.environmental.calculatedAt ? `<div><strong>Calculado:</strong> ${new Date(vpdAnalysis.environmental.calculatedAt).toLocaleString('es-MX')}</div>` : ''}
                                         ${vpdAnalysis.environmental.source ? `<div><strong>Fuente:</strong> ${vpdAnalysis.environmental.source === 'api' ? 'API Meteorológica' : 'Manual'}</div>` : ''}
                     </div>
@@ -10067,6 +10084,7 @@
                                             <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursHigh || 0)}</td>
                                             <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursLow || 0)}</td>
                                             <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursOptimal || 0)}</td>
+                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${adminFormatUv(r.maxUv)} ${adminUvBadge(r.maxUv)}</td>
                                             <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.stressPct || 0).toFixed(1)}%</td>
                                         </tr>
                                     `;
@@ -10103,11 +10121,12 @@
                                                         <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">&gt;1.5</th>
                                                         <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">&lt;0.5</th>
                                                         <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">Óptimas</th>
+                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">UV máx</th>
                                                         <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">% estrés</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    ${summaryHtml || '<tr><td colspan="9" style="padding:8px;color:#64748b;text-align:center;">Sin resumen de rango.</td></tr>'}
+                                                    ${summaryHtml || '<tr><td colspan="10" style="padding:8px;color:#64748b;text-align:center;">Sin resumen de rango.</td></tr>'}
                                                 </tbody>
                                             </table>
                                         </div>

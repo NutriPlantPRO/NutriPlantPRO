@@ -451,7 +451,7 @@
     async function vpdFreeGetWeatherData(lat, lng) {
       var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(lat) +
         '&longitude=' + encodeURIComponent(lng) +
-        '&current=temperature_2m,relative_humidity_2m,shortwave_radiation';
+        '&current=temperature_2m,relative_humidity_2m,shortwave_radiation,uv_index';
       var response = await fetch(url);
       if (!response.ok) throw new Error('HTTP ' + response.status);
       var data = await response.json();
@@ -459,10 +459,13 @@
       var cur = data.current;
       var rad = cur.shortwave_radiation;
       var radNum = (rad != null && Number.isFinite(Number(rad))) ? Number(rad) : null;
+      var uv = cur.uv_index;
+      var uvNum = (uv != null && Number.isFinite(Number(uv))) ? Number(uv) : null;
       return {
         temperature: cur.temperature_2m,
         humidity: cur.relative_humidity_2m,
-        shortwaveRadiation: radNum
+        shortwaveRadiation: radNum,
+        uvIndex: uvNum
       };
     }
 
@@ -517,7 +520,19 @@
         document.getElementById('vpd-adv-humidity').value = Math.round(hum);
 
         var rad = weather.shortwaveRadiation;
+        var uv = weather.uvIndex;
         var useSolar = rad != null && Number.isFinite(rad) && rad >= 0;
+        var hasUv = uv != null && Number.isFinite(uv);
+        var uvLabel = hasUv ? ((Math.round(uv * 10) / 10) % 1 === 0 ? String(Math.round(uv * 10) / 10) : (Math.round(uv * 10) / 10).toFixed(1)) : '';
+        var uvBadge = '';
+        if (hasUv) {
+          var label = 'Extremo', color = '#6d28d9', bg = '#ede9fe';
+          if (uv <= 2) { label = t('Bajo', 'Low'); color = '#166534'; bg = '#dcfce7'; }
+          else if (uv <= 5) { label = t('Moderado', 'Moderate'); color = '#92400e'; bg = '#fef3c7'; }
+          else if (uv <= 7) { label = t('Alto', 'High'); color = '#b45309'; bg = '#ffedd5'; }
+          else if (uv <= 10) { label = t('Muy alto', 'Very high'); color = '#be123c'; bg = '#ffe4e6'; }
+          uvBadge = '<div style="margin-top:6px;"><span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;color:' + color + ';background:' + bg + ';">' + label + '</span></div>';
+        }
         if (useSolar) {
           document.getElementById('vpd-solar-radiation').value = String(Math.round(rad));
           document.querySelector('input[name="vpd-mode-free"][value="radiation"]').checked = true;
@@ -554,11 +569,14 @@
           foot +
           '<div style="background:white;padding:20px;border-radius:8px;border:1px solid #e5e7eb;">' +
           '<h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">' + t('Resultados:', 'Results:') + '</h4>' +
-          '<div style="display:grid;grid-template-columns:' + (useSolar ? 'repeat(3, minmax(0, 1fr))' : '1fr 1fr') + ';gap:16px;margin-bottom:16px;">' +
+          '<div style="display:grid;grid-template-columns:repeat(' + (2 + (useSolar ? 1 : 0) + (hasUv ? 1 : 0)) + ', minmax(0, 1fr));gap:16px;margin-bottom:16px;">' +
           '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">' + t('Déficit de Presión de Vapor', 'Vapor Pressure Deficit') + '</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">' + results.vpd + ' kPa</div></div>' +
           '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">' + t('Déficit de Humedad', 'Humidity Deficit') + '</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">' + results.hd + ' g/m³</div>' + renderHumidityDeficitBadge(results.hd) + '</div>' +
           (useSolar
             ? '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">☀️ ' + t('Radiación solar', 'Solar radiation') + '</div><div style="font-size:24px;font-weight:700;color:#0ea5e9;">' + rad.toFixed(0) + ' W/m²</div></div>'
+            : '') +
+          (hasUv
+            ? '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">🟣 ' + t('Índice UV', 'UV Index') + '</div><div style="font-size:24px;font-weight:700;color:#7c3aed;">' + uvLabel + '</div>' + uvBadge + '</div>'
             : '') +
           '</div>' +
           createVPDRangeChart(results.vpd) +

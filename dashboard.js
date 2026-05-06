@@ -1286,7 +1286,7 @@ function sectionTemplate(name) {
             <div class="hydro-card">
               <div class="hydro-card-header">
                 <h3>🧪 Solución nutritiva por etapa</h3>
-                <p class="hydro-muted" style="margin:0 0 0 0;font-size:0.8rem;">Podés editar <strong>meq/L</strong> (azul) o <strong>ppm</strong> de macronutrientes (verde); se recalculan al vuelo y <strong>se guardan con el proyecto</strong> (nube).</p>
+                
                 <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;">Suma de N (meq/L) = N-NO₃⁻ + N-NH₄⁺. Cargando resumen de nitrato/amonio...</p>
               </div>
               <div id="hydroMeqTableWrap" class="hydro-table-wrap"></div>
@@ -13050,7 +13050,9 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-admin-table.report-vpd-wide-table th:nth-child(8),
         .report-admin-table.report-vpd-wide-table td:nth-child(8) { width: 14%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(9),
-        .report-admin-table.report-vpd-wide-table td:nth-child(9) { width: 14%; }
+        .report-admin-table.report-vpd-wide-table td:nth-child(9) { width: 12%; }
+        .report-admin-table.report-vpd-wide-table th:nth-child(10),
+        .report-admin-table.report-vpd-wide-table td:nth-child(10) { width: 12%; }
         .report-admin-table.report-vpd-wide-table:not(.report-vpd-cols-6) th:nth-child(2),
         .report-admin-table.report-vpd-wide-table:not(.report-vpd-cols-6) td:nth-child(2) { border-left: 3px solid #fdba74; }
         .report-admin-table.report-vpd-wide-table th:nth-child(4),
@@ -13062,7 +13064,9 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-admin-table.report-vpd-wide-table th:nth-child(8),
         .report-admin-table.report-vpd-wide-table td:nth-child(8),
         .report-admin-table.report-vpd-wide-table th:nth-child(9),
-        .report-admin-table.report-vpd-wide-table td:nth-child(9) { border-left: 3px solid #fdba74; }
+        .report-admin-table.report-vpd-wide-table td:nth-child(9),
+        .report-admin-table.report-vpd-wide-table th:nth-child(10),
+        .report-admin-table.report-vpd-wide-table td:nth-child(10) { border-left: 3px solid #fdba74; }
         .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 th:nth-child(1),
         .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 td:nth-child(1) { width: 25%; }
         .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 th:nth-child(n+2),
@@ -13625,6 +13629,8 @@ function translateReportHTMLStrings(html, reportLanguage) {
     ['VPD min', 'Min VPD'],
     ['VPD prom', 'Avg VPD'],
     ['Radiación (W/m²)', 'Radiation (W/m²)'],
+    ['Índice UV', 'UV Index'],
+    ['UV máx', 'Max UV'],
     ['Sin datos', 'No data'],
     ['No disponible', 'Not available'],
     ['Cultivo</div>', 'Crop</div>'],
@@ -15404,6 +15410,7 @@ function createVPDReportSectionHTML() {
           <td>${reportNum(r.hoursHigh, 0)}</td>
           <td>${reportNum(r.hoursLow, 0)}</td>
           <td>${reportNum(r.hoursOptimal, 0)}</td>
+          <td>${Number.isFinite(Number(r.maxUv)) ? reportNum(r.maxUv, 1) + '<div>' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div>' : '—'}</td>
           <td>${reportNum(r.stressPct, 1)}%</td>
         </tr>
       `;
@@ -15511,11 +15518,12 @@ function createVPDReportSectionHTML() {
               <th>Horas &gt; 1.5</th>
               <th>Horas &lt; 0.5</th>
               <th>Horas óptimas</th>
+              <th>UV máx</th>
               <th>% estrés</th>
             </tr>
           </thead>
           <tbody>
-            ${stressSummaryRows || '<tr><td colspan="9" style="text-align:center;color:#64748b;">Sin datos de rango.</td></tr>'}
+            ${stressSummaryRows || '<tr><td colspan="10" style="text-align:center;color:#64748b;">Sin datos de rango.</td></tr>'}
           </tbody>
         </table>
       </div>
@@ -18508,6 +18516,29 @@ function getVPDStatus(vpdValue) {
   return 'Alto';
 }
 
+function formatUvIndexValue(value) {
+  var n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  var v = Math.round(n * 10) / 10;
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+
+function getUvSemaforoMeta(value) {
+  var n = Number(value);
+  if (!Number.isFinite(n)) return { label: 'N/D', color: '#64748b', bg: '#f1f5f9' };
+  if (n <= 2) return { label: 'Bajo', color: '#166534', bg: '#dcfce7' };
+  if (n <= 5) return { label: 'Moderado', color: '#92400e', bg: '#fef3c7' };
+  if (n <= 7) return { label: 'Alto', color: '#b45309', bg: '#ffedd5' };
+  if (n <= 10) return { label: 'Muy alto', color: '#be123c', bg: '#ffe4e6' };
+  return { label: 'Extremo', color: '#6d28d9', bg: '#ede9fe' };
+}
+
+function buildUvSemaforoBadgeHtml(value) {
+  var m = getUvSemaforoMeta(value);
+  if (m.label === 'N/D') return '<span style="font-size:12px;color:#64748b;">N/D</span>';
+  return '<span style="display:inline-block;margin-top:6px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;color:' + m.color + ';background:' + m.bg + ';">' + m.label + '</span>';
+}
+
 function vpdStressSummaryRowHtml(rows) {
   var sepLead = 'border-left:3px solid #fdba74;';
   var sep = 'border-left:3px solid #fdba74;';
@@ -18521,6 +18552,7 @@ function vpdStressSummaryRowHtml(rows) {
       '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursHigh)) ? String(r.hoursHigh) : '0') + '</td>' +
       '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursLow)) ? String(r.hoursLow) : '0') + '</td>' +
       '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursOptimal)) ? String(r.hoursOptimal) : '0') + '</td>' +
+      '<td style="' + sep + '">' + formatUvIndexValue(r.maxUv) + '<div>' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div></td>' +
       '<td style="' + sep + '">' + (Number.isFinite(Number(r.stressPct)) ? Number(r.stressPct).toFixed(1) + '%' : '—') + '</td>' +
     '</tr>';
   }).join('');
@@ -18623,11 +18655,11 @@ function getVpdLocationFingerprintForCache() {
   }
 }
 
-// Clima desde Open-Meteo (gratuito, sin API key). T °C, HR %, radiación global onda corta W/m² (tiempo real).
+// Clima desde Open-Meteo (gratuito, sin API key). T °C, HR %, radiación W/m² y UV (índice).
 async function getWeatherData(lat, lng) {
   var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(lat) +
     '&longitude=' + encodeURIComponent(lng) +
-    '&current=temperature_2m,relative_humidity_2m,shortwave_radiation';
+    '&current=temperature_2m,relative_humidity_2m,shortwave_radiation,uv_index';
   var response = await fetch(url);
   if (!response.ok) {
     throw new Error('Error ' + response.status);
@@ -18639,10 +18671,13 @@ async function getWeatherData(lat, lng) {
   var cur = data.current;
   var rad = cur.shortwave_radiation;
   var radNum = (rad != null && Number.isFinite(Number(rad))) ? Number(rad) : null;
+  var uv = cur.uv_index;
+  var uvNum = (uv != null && Number.isFinite(Number(uv))) ? Number(uv) : null;
   return {
     temperature: cur.temperature_2m,
     humidity: cur.relative_humidity_2m,
-    shortwaveRadiation: radNum
+    shortwaveRadiation: radNum,
+    uvIndex: uvNum
   };
 }
 
@@ -18651,6 +18686,7 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
   opts = opts || {};
   var useSolar = opts.useSolar === true;
   var rad = opts.shortwaveRadiationWm2;
+  var uv = Number.isFinite(Number(opts.uvIndex)) ? Number(opts.uvIndex) : null;
   var vpd = typeof results.vpd === 'number' ? results.vpd : parseFloat(results.vpd);
   var hd = typeof results.hd === 'number' ? results.hd : parseFloat(results.hd);
   if (!Number.isFinite(vpd)) vpd = 0;
@@ -18662,13 +18698,23 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
       '<strong>VPD con radiación solar:</strong> Open-Meteo entrega radiación solar global de onda corta (W/m²) en tiempo casi real. NutriPlant estima la temperatura de hoja a partir de esa radiación y calcula el VPD con el modelo avanzado (presión de saturación a T<sub>hoja</sub> frente al vapor del aire).' +
       '</div>';
   }
-  var gridCols = useSolar ? 'repeat(3, minmax(0, 1fr))' : '1fr 1fr';
+  var metricColsCount = 2 + (useSolar && rad != null && Number.isFinite(rad) ? 1 : 0) + (uv != null ? 1 : 0);
+  var gridCols = 'repeat(' + metricColsCount + ', minmax(0, 1fr))';
   var radCol = '';
   if (useSolar && rad != null && Number.isFinite(rad)) {
     radCol =
       '<div>' +
       '<div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Radiación solar (global)</div>' +
       '<div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">' + rad.toFixed(0) + ' W/m²</div>' +
+      '</div>';
+  }
+  var uvCol = '';
+  if (uv != null) {
+    uvCol =
+      '<div>' +
+      '<div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Índice UV</div>' +
+      '<div style="font-size: 24px; font-weight: 700; color: #7c3aed;">' + formatUvIndexValue(uv) + '</div>' +
+      buildUvSemaforoBadgeHtml(uv) +
       '</div>';
   }
   return (
@@ -18686,6 +18732,7 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
       renderHumidityDeficitBadge(hd) +
       '</div>' +
       radCol +
+      uvCol +
       '</div>' +
       createVPDRangeChart(vpd) +
       '<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">' +
@@ -18729,6 +18776,7 @@ function saveVPDCalculation(type, data) {
       location: data.location || {},
       source: data.source || 'api',
       shortwaveRadiationWm2: data.shortwaveRadiationWm2,
+      uvIndex: Number.isFinite(Number(data.uvIndex)) ? Number(data.uvIndex) : null,
       leafTemperature: data.leafTemperature,
       environmentalVpdUsesSolar: data.environmentalVpdUsesSolar === true
     };
@@ -19193,6 +19241,7 @@ function loadVPDSavedResults() {
         {
           useSolar: useSolarLoad,
           shortwaveRadiationWm2: envData.shortwaveRadiationWm2,
+          uvIndex: envData.uvIndex,
           leafTemperature: envData.leafTemperature
         }
       );
@@ -19256,6 +19305,7 @@ async function getEnvironmentalWeatherData(ev) {
     if (humidityInput) humidityInput.value = weatherData.humidity;
     
     var rad = weatherData.shortwaveRadiation;
+    var uv = weatherData.uvIndex;
     var useSolar = rad != null && Number.isFinite(rad) && rad >= 0;
     var leafTemp = null;
     var results;
@@ -19278,6 +19328,7 @@ async function getEnvironmentalWeatherData(ev) {
       location: { lat: location.lat, lng: location.lng },
       source: 'api',
       shortwaveRadiationWm2: useSolar ? rad : undefined,
+      uvIndex: Number.isFinite(Number(uv)) ? Number(uv) : null,
       leafTemperature: useSolar ? leafTemp : undefined,
       environmentalVpdUsesSolar: useSolar
     };
@@ -19289,6 +19340,7 @@ async function getEnvironmentalWeatherData(ev) {
       resultsDiv.innerHTML = buildVpdEnvironmentalResultsHtml(results, {
         useSolar: useSolar,
         shortwaveRadiationWm2: useSolar ? rad : null,
+        uvIndex: Number.isFinite(Number(uv)) ? Number(uv) : null,
         leafTemperature: leafTemp
       });
     }
@@ -19602,7 +19654,7 @@ async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType) {
     '&longitude=' + encodeURIComponent(lng) +
     '&start_date=' + encodeURIComponent(startDate) +
     '&end_date=' + encodeURIComponent(endDate) +
-    '&hourly=temperature_2m,relative_humidity_2m,shortwave_radiation' +
+    '&hourly=temperature_2m,relative_humidity_2m,shortwave_radiation,uv_index' +
     '&timezone=auto';
   var res = await fetch(url);
   if (!res.ok) throw new Error('Clima ' + sourceType + ' HTTP ' + res.status);
@@ -19615,6 +19667,7 @@ async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType) {
     var h = Number(hourly.relative_humidity_2m && hourly.relative_humidity_2m[i]);
     if (!Number.isFinite(t) || !Number.isFinite(h)) continue;
     var radRaw = Number(hourly.shortwave_radiation && hourly.shortwave_radiation[i]);
+    var uvRaw = Number(hourly.uv_index && hourly.uv_index[i]);
     var hasSolar = Number.isFinite(radRaw) && radRaw >= 0;
     var leafTemp = null;
     var calc;
@@ -19631,6 +19684,7 @@ async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType) {
       temperature: Number(t.toFixed(2)),
       humidity: Number(h.toFixed(2)),
       shortwaveRadiationWm2: hasSolar ? Number(radRaw.toFixed(1)) : null,
+      uvIndex: Number.isFinite(uvRaw) ? Number(uvRaw.toFixed(1)) : null,
       leafTemperature: hasSolar ? Number(leafTemp.toFixed(1)) : null,
       vpdMethod: hasSolar ? 'solar' : 'simple',
       vpd: calc.vpd,
@@ -19659,6 +19713,7 @@ function aggregateVPDStressRows(hourlyRows, granularity) {
       hoursHigh: 0,
       hoursLow: 0,
       hoursOptimal: 0,
+      maxUv: null,
       total: 0
     });
     var g = groups.get(key);
@@ -19669,6 +19724,10 @@ function aggregateVPDStressRows(hourlyRows, granularity) {
     if (v > 1.5) g.hoursHigh++;
     else if (v < 0.5) g.hoursLow++;
     else g.hoursOptimal++;
+    var uv = Number(r.uvIndex);
+    if (Number.isFinite(uv)) {
+      g.maxUv = (g.maxUv == null) ? uv : Math.max(g.maxUv, uv);
+    }
     if (compareIsoDates(r.date, g.start) < 0) g.start = r.date;
     if (compareIsoDates(r.date, g.end) > 0) g.end = r.date;
   });
@@ -19690,6 +19749,7 @@ function aggregateVPDStressRows(hourlyRows, granularity) {
         hoursHigh: g.hoursHigh,
         hoursLow: g.hoursLow,
         hoursOptimal: g.hoursOptimal,
+        maxUv: Number.isFinite(Number(g.maxUv)) ? Number(Number(g.maxUv).toFixed(1)) : null,
         stressPct: Number(stressPct.toFixed(1))
       };
     });
@@ -19777,6 +19837,7 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &gt; 1.5</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &lt; 0.5</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas óptimas</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">UV máx</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">% estrés</th>
             </tr>
           </thead>
@@ -19835,6 +19896,7 @@ function renderSavedVPDRangeTableHtml(tbl) {
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &gt; 1.5</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &lt; 0.5</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas óptimas</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">UV máx</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">% estrés</th>
             </tr>
           </thead>
