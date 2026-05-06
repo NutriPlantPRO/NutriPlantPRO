@@ -12,9 +12,9 @@
   
   <!-- Favicon + PWA / acceso directo móvil (Chrome usa manifest.icons) -->
   <link rel="icon" type="image/png" href="assets/N_Hoja_Azul.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/NutriPlant_PRO_blue.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/NutriPlant_PRO_blue.png">
-  <link rel="apple-touch-icon" href="assets/NutriPlant_PRO_blue.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/N_Hoja_Azul.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/N_Hoja_Azul.png">
+  <link rel="apple-touch-icon" href="assets/N_Hoja_Azul.png">
   <link rel="manifest" href="/site.webmanifest">
   
     <link rel="stylesheet" href="dashboard.css?v=1758328003" />
@@ -192,7 +192,7 @@
           <button type="button" id="btn-periodic-table-nutrients" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" title="Tabla periódica (nutrientes)" onclick="window.showPeriodicTableNutrientsCalculator()" data-np-tooltip="Tabla periódica (nutrientes)" aria-label="Tabla periódica de nutrientes">⚛️</button>
           <button type="button" id="btn-fertilizer-compatibility-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" title="Compatibilidad de fertilizantes (fertirriego)" onclick="window.showFertilizerCompatibilityCalculator()" data-np-tooltip="Compatibilidad de fertilizantes (fertirriego)" aria-label="Compatibilidad de fertilizantes para fertirriego">🔺</button>
           <button type="button" id="btn-fertilizer-composition-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" title="Calculadora de composición de fertilizantes (%)" onclick="window.showFertilizerCompositionCalculator()" data-np-tooltip="Calculadora de composición de fertilizantes (%)" aria-label="Calculadora de composición de fertilizantes porcentaje">⚗️</button>
-          <button type="button" id="btn-measure-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" title="Unidades: longitud, área, volumen, peso, temperatura, presión" onclick="window.showMeasureUnitsCalculator()" data-np-tooltip="Unidades: longitud, área, volumen, peso, temperatura, presión" aria-label="Unidades: longitud, área, volumen, peso, temperatura y presión">📐</button>
+          <button type="button" id="btn-measure-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" title="Unidades: longitud, área, volumen, peso, temperatura, presión, concentración" onclick="window.showMeasureUnitsCalculator()" data-np-tooltip="Unidades: longitud, área, volumen, peso, temperatura, presión, concentración" aria-label="Unidades: longitud, área, volumen, peso, temperatura, presión y concentración">📐</button>
           <button type="button" id="btn-simple-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" title="Calculadora simple" onclick="window.showSimpleCalculator()" data-np-tooltip="Calculadora simple" aria-label="Calculadora simple">
             <span class="btn-calc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg></span>
           </button>
@@ -415,6 +415,8 @@
       }, 100);
     });
   </script>
+  
+  <script src="measure-units-calculator.js?v=1764880700"></script>
   
   <script>
     // Exponer funciones de calculadoras globalmente después de que todo se cargue
@@ -4807,54 +4809,6 @@ CONTRATO:
       inputs.forEach(input => input.value = '');
     }
 
-    // —— Calculadora de unidades de medida (longitud, área, volumen)
-    var MEASURE_UNITS = {
-      length: [
-        { id: 'm', name: 'm (metro)', toBase: 1 },
-        { id: 'km', name: 'km', toBase: 1000 },
-        { id: 'cm', name: 'cm', toBase: 0.01 },
-        { id: 'ft', name: 'ft (pie)', toBase: 0.3048 },
-        { id: 'in', name: 'in (pulgada)', toBase: 0.0254 },
-        { id: 'yd', name: 'yd (yarda)', toBase: 0.9144 },
-        { id: 'mi', name: 'mi (milla)', toBase: 1609.344 }
-      ],
-      area: [
-        { id: 'm2', name: 'm²', toBase: 1 },
-        { id: 'ha', name: 'ha (hectárea)', toBase: 10000 },
-        { id: 'acre', name: 'acre', toBase: 4046.86 },
-        { id: 'ft2', name: 'ft²', toBase: 0.092903 },
-        { id: 'km2', name: 'km²', toBase: 1e6 }
-      ],
-      volume: [
-        { id: 'L', name: 'L (litro)', toBase: 1 },
-        { id: 'mL', name: 'mL', toBase: 0.001 },
-        { id: 'm3', name: 'm³', toBase: 1000 },
-        { id: 'galUS', name: 'gal (US)', toBase: 3.78541 },
-        { id: 'galUK', name: 'gal (UK)', toBase: 4.54609 },
-        { id: 'ft3', name: 'ft³', toBase: 28.3168 },
-        { id: 'flozUS', name: 'fl oz (US)', toBase: 0.0295735 }
-      ],
-      weight: [
-        { id: 'kg', name: 'kg', toBase: 1 },
-        { id: 'g', name: 'g', toBase: 0.001 },
-        { id: 'mg', name: 'mg', toBase: 0.000001 },
-        { id: 't', name: 't (tonelada)', toBase: 1000 },
-        { id: 'lb', name: 'lb (libra)', toBase: 0.453592 },
-        { id: 'oz', name: 'oz (onza)', toBase: 0.0283495 }
-      ],
-      temperature: [
-        { id: 'C', name: '°C', toBase: 1, isTemp: true },
-        { id: 'F', name: '°F', toBase: 1, isTemp: true },
-        { id: 'K', name: 'K', toBase: 1, isTemp: true }
-      ],
-      pressure: [
-        { id: 'kPa', name: 'kPa', toBase: 1 },
-        { id: 'psi', name: 'psi', toBase: 6.89476 },
-        { id: 'bar', name: 'bar', toBase: 100 },
-        { id: 'atm', name: 'atm', toBase: 101.325 },
-        { id: 'mmHg', name: 'mmHg', toBase: 0.133322 }
-      ]
-    };
     function showMeasureUnitsCalculator() {
       var modal = document.getElementById('measureUnitsCalculatorModal');
       if (!modal) return;
@@ -5324,46 +5278,6 @@ CONTRATO:
     }
     window.showNotesBlockModal = showNotesBlockModal;
     window.closeNotesBlockModal = closeNotesBlockModal;
-
-    function updateMeasureUnitOptions() {
-      var cat = document.getElementById('measure-category');
-      var from = document.getElementById('measure-from');
-      var to = document.getElementById('measure-to');
-      if (!cat || !from || !to) return;
-      var list = MEASURE_UNITS[cat.value] || MEASURE_UNITS.length;
-      from.innerHTML = list.map(function(u) { return '<option value="' + u.id + '">' + u.name + '</option>'; }).join('');
-      to.innerHTML = from.innerHTML;
-      if (list.length) { from.value = list[0].id; to.value = list[list.length > 1 ? 1 : 0].id; }
-      convertMeasureUnits();
-    }
-    function convertMeasureUnits() {
-      var cat = document.getElementById('measure-category');
-      var valIn = document.getElementById('measure-value');
-      var fromSel = document.getElementById('measure-from');
-      var toSel = document.getElementById('measure-to');
-      var resultEl = document.getElementById('measure-result');
-      if (!cat || !valIn || !fromSel || !toSel || !resultEl) return;
-      var list = MEASURE_UNITS[cat.value];
-      if (!list) return;
-      var num = parseFloat(valIn.value);
-      if (isNaN(num)) { resultEl.value = ''; return; }
-      var fromUnit = list.find(function(u) { return u.id === fromSel.value; });
-      var toUnit = list.find(function(u) { return u.id === toSel.value; });
-      if (!fromUnit || !toUnit) return;
-      var outVal;
-      if (cat.value === 'temperature') {
-        var c = num;
-        if (fromUnit.id === 'F') c = (num - 32) * 5 / 9;
-        else if (fromUnit.id === 'K') c = num - 273.15;
-        if (toUnit.id === 'F') outVal = c * 9 / 5 + 32;
-        else if (toUnit.id === 'K') outVal = c + 273.15;
-        else outVal = c;
-      } else {
-        var baseVal = num * fromUnit.toBase;
-        outVal = baseVal / toUnit.toBase;
-      }
-      resultEl.value = (Math.round(outVal * 1e6) / 1e6).toString();
-    }
 
     // Datos de nutrientes: peso molecular y valencia
     const nutrientData = {
@@ -6492,12 +6406,12 @@ CONTRATO:
   <div id="measureUnitsCalculatorModal" class="modal-overlay">
     <div class="modal modal-wide">
       <div class="modal-header">
-        <h2 class="modal-title">📐 Calculadora de Unidades (longitud, área, volumen, peso, temperatura, presión)</h2>
+        <h2 class="modal-title">📐 Calculadora de Unidades (longitud, área, volumen, peso, temperatura, presión, concentración)</h2>
         <button class="modal-close" onclick="closeMeasureUnitsCalculator()">×</button>
       </div>
       <div class="modal-body">
         <div class="calculator-container">
-          <p style="margin-bottom: 12px;"><em>Convierte entre unidades de longitud, área, volumen, peso, temperatura y presión.</em></p>
+          <p style="margin-bottom: 12px;"><em>Convierte entre unidades de longitud, área, volumen, peso, temperatura, presión y <strong>concentración en agua</strong> (mg/L, ppm, g/m³, kg/m³, etc.). En agua diluida, <strong>ppm ≈ mg/L</strong> y <strong>g/m³ = mg/L</strong> en valor numérico. En EE.&nbsp;UU. siguen usando mucho <strong>ppm</strong> como equivalente práctico a mg/L y, en tratamiento de agua o tanques, <strong>lb por millón de galones (US)</strong> o <strong>lb por 100 gal (US)</strong>; esa misma vista está en el listado como “uso USA”.</em></p>
           <div class="form-group">
             <label>Tipo de magnitud</label>
             <select id="measure-category" onchange="updateMeasureUnitOptions()">
@@ -6507,6 +6421,7 @@ CONTRATO:
               <option value="weight">Peso / Masa</option>
               <option value="temperature">Temperatura</option>
               <option value="pressure">Presión</option>
+              <option value="concentration">Concentración (agua)</option>
             </select>
           </div>
           <div class="measure-conversion-row" style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 16px;">
