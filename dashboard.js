@@ -15426,6 +15426,7 @@ function createVPDReportSectionHTML() {
           <td>${reportNum(r.temperature, 1)}</td>
           <td>${reportNum(r.humidity, 1)}</td>
           <td>${reportEscapeHtml(rad)}</td>
+          <td>${Number.isFinite(Number(r.uvIndex)) ? reportEscapeHtml(formatUvIndexValue(r.uvIndex)) + '<div>' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div>' : '—'}</td>
           <td>${reportEscapeHtml(String(r.type === 'high' ? 'Alto' : 'Bajo'))}</td>
         </tr>
       `;
@@ -15537,11 +15538,12 @@ function createVPDReportSectionHTML() {
               <th>Temp (°C)</th>
               <th>HR (%)</th>
               <th>Radiación (W/m²)</th>
+              <th>Índice UV</th>
               <th>Tipo</th>
             </tr>
           </thead>
           <tbody>
-            ${stressCriticalRows || '<tr><td colspan="6" style="text-align:center;color:#64748b;">Sin horas fuera de rango.</td></tr>'}
+            ${stressCriticalRows || '<tr><td colspan="7" style="text-align:center;color:#64748b;">Sin horas fuera de rango.</td></tr>'}
           </tbody>
         </table>
       </div>
@@ -18563,12 +18565,14 @@ function vpdCriticalEventsRowHtml(rows) {
     var cls = r.type === 'high' ? '#b91c1c' : '#1d4ed8';
     var tag = r.type === 'high' ? 'Alto' : 'Bajo';
     var rad = Number.isFinite(Number(r.shortwaveRadiationWm2)) ? Number(r.shortwaveRadiationWm2).toFixed(0) + ' W/m²' : '—';
+    var uv = Number.isFinite(Number(r.uvIndex)) ? formatUvIndexValue(r.uvIndex) : '—';
     return '<tr>' +
       '<td>' + String(r.at || '—') + '</td>' +
       '<td><strong style="color:' + cls + ';">' + (Number.isFinite(Number(r.vpd)) ? Number(r.vpd).toFixed(2) : '—') + '</strong></td>' +
       '<td>' + (Number.isFinite(Number(r.temperature)) ? Number(r.temperature).toFixed(1) : '—') + '</td>' +
       '<td>' + (Number.isFinite(Number(r.humidity)) ? Number(r.humidity).toFixed(1) : '—') + '</td>' +
       '<td>' + rad + '</td>' +
+      '<td>' + uv + '<div>' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div></td>' +
       '<td><span style="color:' + cls + ';font-weight:600;">' + tag + '</span></td>' +
     '</tr>';
   }).join('');
@@ -19725,7 +19729,14 @@ function aggregateVPDStressRows(hourlyRows, granularity) {
     else if (v < 0.5) g.hoursLow++;
     else g.hoursOptimal++;
     var uv = Number(r.uvIndex);
-    if (Number.isFinite(uv)) {
+    var radW = Number(r.shortwaveRadiationWm2);
+    // UV máx solo en horas de luz (radiación > 0), válido en cualquier zona horaria.
+    var daylight = Number.isFinite(radW) ? radW > 0 : null;
+    var useUvForMax =
+      daylight === true ? (Number.isFinite(uv) && uv >= 0) :
+      daylight === false ? false :
+      (Number.isFinite(uv) && uv > 0); // sin dato de radiación (serie antigua): mismo criterio que antes
+    if (useUvForMax) {
       g.maxUv = (g.maxUv == null) ? uv : Math.max(g.maxUv, uv);
     }
     if (compareIsoDates(r.date, g.start) < 0) g.start = r.date;
@@ -19766,6 +19777,7 @@ function extractVPDCriticalEvents(hourlyRows) {
         temperature: r.temperature,
         humidity: r.humidity,
         shortwaveRadiationWm2: Number.isFinite(Number(r.shortwaveRadiationWm2)) ? Number(r.shortwaveRadiationWm2) : null,
+        uvIndex: Number.isFinite(Number(r.uvIndex)) ? Number(r.uvIndex) : null,
         vpd: r.vpd,
         type: Number(r.vpd) > 1.5 ? 'high' : 'low'
       };
@@ -19858,10 +19870,11 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
                 <th style="border:1px solid #fed7aa;padding:6px;">Temp (°C)</th>
                 <th style="border:1px solid #fed7aa;padding:6px;">HR (%)</th>
                 <th style="border:1px solid #fed7aa;padding:6px;">Radiación (W/m²)</th>
+              <th style="border:1px solid #fed7aa;padding:6px;">Índice UV</th>
                 <th style="border:1px solid #fed7aa;padding:6px;">Tipo</th>
               </tr>
             </thead>
-            <tbody>${critPreview.length ? vpdCriticalEventsRowHtml(critPreview) : '<tr><td colspan="6" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">Sin horas fuera de rango.</td></tr>'}</tbody>
+          <tbody>${critPreview.length ? vpdCriticalEventsRowHtml(critPreview) : '<tr><td colspan="7" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">Sin horas fuera de rango.</td></tr>'}</tbody>
           </table>
         </div>
       </div>

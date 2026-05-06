@@ -10091,12 +10091,14 @@
                                 }).join('');
                                 const criticalHtml = criticalRows.map(function(r) {
                                     const isHigh = r.type === 'high';
+                                    const uvVal = adminFormatUv(r.uvIndex);
                                     return `
                                         <tr style="border-bottom: 1px solid #e5e7eb;">
                                             <td style="padding: 8px;">${escapeHtml(String(r.at || '—'))}</td>
                                             <td style="padding: 8px; text-align: right; font-weight: 700; color: ${isHigh ? '#b91c1c' : '#1d4ed8'};">${Number(r.vpd || 0).toFixed(2)}</td>
                                             <td style="padding: 8px; text-align: right;">${Number(r.temperature || 0).toFixed(1)}</td>
                                             <td style="padding: 8px; text-align: right;">${Number(r.humidity || 0).toFixed(1)}</td>
+                                            <td style="padding: 8px; text-align: right;">${uvVal} ${adminUvBadge(r.uvIndex)}</td>
                                             <td style="padding: 8px; color: ${isHigh ? '#b91c1c' : '#1d4ed8'}; font-weight: 600;">${isHigh ? 'Alto' : 'Bajo'}</td>
                                         </tr>
                                     `;
@@ -10139,11 +10141,12 @@
                                                         <th style="padding: 8px; text-align: right;">VPD</th>
                                                         <th style="padding: 8px; text-align: right;">Temp</th>
                                                         <th style="padding: 8px; text-align: right;">HR</th>
+                                                        <th style="padding: 8px; text-align: right;">Índice UV</th>
                                                         <th style="padding: 8px; text-align: left;">Tipo</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    ${criticalHtml || '<tr><td colspan="5" style="padding:8px;color:#64748b;text-align:center;">Sin horas fuera de rango.</td></tr>'}
+                                                    ${criticalHtml || '<tr><td colspan="6" style="padding:8px;color:#64748b;text-align:center;">Sin horas fuera de rango.</td></tr>'}
                                                 </tbody>
                                             </table>
                                         </div>
