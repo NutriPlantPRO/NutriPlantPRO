@@ -404,12 +404,16 @@ exports.handler = async (event) => {
   let thumb;
   let ndmiThumb;
   try {
-    thumb = await ndviThumbUrl(ee, geometry, LOOKBACK_DAYS_FIRST);
-    ndmiThumb = await ndmiThumbUrl(ee, geometry, LOOKBACK_DAYS_FIRST);
+    [thumb, ndmiThumb] = await Promise.all([
+      ndviThumbUrl(ee, geometry, LOOKBACK_DAYS_FIRST),
+      ndmiThumbUrl(ee, geometry, LOOKBACK_DAYS_FIRST)
+    ]);
   } catch (e1) {
     try {
-      thumb = await ndviThumbUrl(ee, geometry, LOOKBACK_DAYS_FALLBACK);
-      ndmiThumb = await ndmiThumbUrl(ee, geometry, LOOKBACK_DAYS_FALLBACK);
+      [thumb, ndmiThumb] = await Promise.all([
+        ndviThumbUrl(ee, geometry, LOOKBACK_DAYS_FALLBACK),
+        ndmiThumbUrl(ee, geometry, LOOKBACK_DAYS_FALLBACK)
+      ]);
     } catch (e2) {
       console.error('Radar thumb:', e2);
       return jsonResponse(502, {
@@ -422,12 +426,12 @@ exports.handler = async (event) => {
   let buf;
   let ndmiBuf;
   try {
-    const res = await fetch(thumb.url);
+    const [res, ndmiRes] = await Promise.all([fetch(thumb.url), fetch(ndmiThumb.url)]);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    buf = Buffer.from(await res.arrayBuffer());
-    const ndmiRes = await fetch(ndmiThumb.url);
     if (!ndmiRes.ok) throw new Error(`NDMI HTTP ${ndmiRes.status}`);
-    ndmiBuf = Buffer.from(await ndmiRes.arrayBuffer());
+    const [ndviAb, ndmiAb] = await Promise.all([res.arrayBuffer(), ndmiRes.arrayBuffer()]);
+    buf = Buffer.from(ndviAb);
+    ndmiBuf = Buffer.from(ndmiAb);
   } catch (e) {
     console.error('fetch thumb:', e);
     return jsonResponse(502, { error: 'thumb_download_failed', message: e.message });
@@ -437,21 +441,23 @@ exports.handler = async (event) => {
   const storagePath = `${userId}/${projectId}/${mk}_${ts}_ndvi.png`;
   const ndmiStoragePath = `${userId}/${projectId}/${mk}_${ts}_ndmi.png`;
 
-  const { error: upErr } = await supabase.storage.from(BUCKET).upload(storagePath, buf, {
-    contentType: 'image/png',
-    upsert: true
-  });
-  if (upErr) {
-    console.error('storage upload:', upErr);
-    return jsonResponse(500, { error: 'storage_upload_failed', message: upErr.message });
+  const [upNdvi, upNdmi] = await Promise.all([
+    supabase.storage.from(BUCKET).upload(storagePath, buf, {
+      contentType: 'image/png',
+      upsert: true
+    }),
+    supabase.storage.from(BUCKET).upload(ndmiStoragePath, ndmiBuf, {
+      contentType: 'image/png',
+      upsert: true
+    })
+  ]);
+  if (upNdvi.error) {
+    console.error('storage upload:', upNdvi.error);
+    return jsonResponse(500, { error: 'storage_upload_failed', message: upNdvi.error.message });
   }
-  const { error: ndmiUpErr } = await supabase.storage.from(BUCKET).upload(ndmiStoragePath, ndmiBuf, {
-    contentType: 'image/png',
-    upsert: true
-  });
-  if (ndmiUpErr) {
-    console.error('storage upload ndmi:', ndmiUpErr);
-    return jsonResponse(500, { error: 'storage_upload_failed', message: ndmiUpErr.message });
+  if (upNdmi.error) {
+    console.error('storage upload ndmi:', upNdmi.error);
+    return jsonResponse(500, { error: 'storage_upload_failed', message: upNdmi.error.message });
   }
 
   const meta = {
@@ -484,8 +490,10 @@ exports.handler = async (event) => {
     return jsonResponse(500, { error: 'db_insert_failed', message: insErr.message });
   }
 
-  const signed = await signedUrlForPath(supabase, storagePath);
-  const ndmiSigned = await signedUrlForPath(supabase, ndmiStoragePath);
+  const [signed, ndmiSigned] = await Promise.all([
+    signedUrlForPath(supabase, storagePath),
+    signedUrlForPath(supabase, ndmiStoragePath)
+  ]);
   const newUsed = used + 1;
 
   return jsonResponse(200, {

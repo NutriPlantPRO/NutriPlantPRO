@@ -2211,7 +2211,9 @@ function np_setRadarBusy(isBusy, message) {
   });
 
   if (isBusy && hint) {
-    hint.textContent = message || 'Generando imágenes NDVI y NDMI... esto puede tardar unos segundos.';
+    hint.textContent =
+      message ||
+      'Generando imágenes NDVI y NDMI... puede tardar hasta ~1 minuto (primera vez o red lenta).';
   }
 }
 
@@ -2317,7 +2319,7 @@ function np_preloadRadarImage(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(url);
-    img.onerror = () => reject(new Error('La imagen NDVI no cargó'));
+    img.onerror = () => reject(new Error('La imagen Radar no cargó'));
     img.src = url;
   });
 }
@@ -2413,6 +2415,31 @@ window.initRadarNdviUi = function initRadarNdviUi() {
   np_setSelectedRadarIndex(radarActiveIndex);
   document.getElementById('radarIndexSelect')?.addEventListener('change', () => {
     np_setSelectedRadarIndex(np_getSelectedRadarIndex());
+    const busyGen = document.getElementById('radarBtnGenerate')?.classList.contains('radar-loading');
+    if (busyGen) return;
+    if (radarGroundOverlay && nutriPlantMap && np_getPolygonBoundsFromMap()) {
+      window.showRadarNdviOnMap().catch((err) => {
+        console.warn('Radar: cambio de capa', err);
+        const hint = document.getElementById('radarStatusHint');
+        const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
+        if (hint) {
+          hint.textContent =
+            'No se pudo cargar ' +
+            cfg.label +
+            '. Pulsa «Ver última» o revisa «Estado».';
+        }
+      });
+      return;
+    }
+    const hint = document.getElementById('radarStatusHint');
+    if (!hint) return;
+    const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
+    const st = window.__nutriplantRadarNdviStatus;
+    const hasLayer =
+      np_getSelectedRadarIndex() === 'ndmi' ? st?.hasLatestNdmiImage : st?.hasLatestImage;
+    if (st?.ok && hasLayer) {
+      hint.textContent = 'Capa: ' + cfg.label + '. Pulsa «Ver última» para verla en el mapa.';
+    }
   });
   document.getElementById('radarBtnRefresh')?.addEventListener('click', () => {
     window.refreshRadarNdviStatus();
@@ -2497,7 +2524,10 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     alert('Guarda un polígono en el mapa y sincronízalo a la nube antes de generar Radar.');
     return;
   }
-  np_setRadarBusy(true, 'Generando imágenes NDVI y NDMI con Sentinel-2... esto puede tardar unos segundos.');
+  np_setRadarBusy(
+    true,
+    'Generando imágenes NDVI y NDMI con Sentinel-2... puede tardar hasta ~1 minuto (primera vez o red lenta).'
+  );
   try {
     const res = await fetch(np_radarApiUrl(), {
       method: 'POST',

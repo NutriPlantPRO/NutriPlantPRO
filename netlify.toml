@@ -15,6 +15,11 @@
   # EE es pesado: incluir desde node_modules en el zip de la función (evita fallos del bundler).
   external_node_modules = ["@google/earthengine", "googleapis"]
 
+# Límite de ejecución (s). En Netlify el tope por plan puede ser <60s (p. ej. starter) o hasta 60s+ según cuenta;
+# si el deploy no acepta un valor, baja el número o configúralo en el panel: Site → Functions.
+[functions."radar-ndvi"]
+  timeout = 60
+
 [[redirects]]
   from = "/api/openai-assistant"
   to = "/.netlify/functions/openai-assistant"
