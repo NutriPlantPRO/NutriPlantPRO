@@ -2126,6 +2126,39 @@ function np_getRadarSignedUrl(data, index) {
   return latest.signed_url || latest.images?.ndvi?.signed_url || '';
 }
 
+/** Timestamp de la última imagen Radar en caché de estado (para detectar éxito “tardío”). */
+function np_getRadarLatestCreatedAtFromStatus(st) {
+  if (!st || !st.ok) return null;
+  return st.latestCreatedAt || (st.latest && st.latest.created_at) || null;
+}
+
+/**
+ * Tras un error HTTP/red, el servidor a veces sí guardó la imagen. Si hay fila nueva respecto
+ * a prevCreatedAt, mostrar overlay y evitar alertas falsas.
+ */
+async function np_recoverRadarIfBackendSucceeded(prevCreatedAt, bounds) {
+  await window.refreshRadarNdviStatus();
+  const st = window.__nutriplantRadarNdviStatus;
+  const newAt = np_getRadarLatestCreatedAtFromStatus(st);
+  if (!newAt || !st?.latest) return false;
+  if (prevCreatedAt != null && String(newAt) === String(prevCreatedAt)) return false;
+  const url = np_getRadarSignedUrl({ latest: st.latest }, np_getSelectedRadarIndex());
+  if (!url) return false;
+  try {
+    await np_applyRadarOverlay(url, bounds, np_getSelectedRadarIndex());
+    const hint = document.getElementById('radarStatusHint');
+    const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
+    if (hint) {
+      hint.textContent =
+        cfg.shownText + ' La respuesta del servidor tardó; la imagen ya estaba lista.';
+    }
+    return true;
+  } catch (e) {
+    console.warn('Radar recuperación tras error:', e);
+    return false;
+  }
+}
+
 function np_getRadarPolygons() {
   if (!nutriPlantMap) return [];
   return [...new Set([nutriPlantMap.savedPolygon, nutriPlantMap.polygon].filter(Boolean))];
@@ -2528,7 +2561,10 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     true,
     'Generando imágenes NDVI y NDMI con Sentinel-2... puede tardar hasta ~1 minuto (primera vez o red lenta).'
   );
+  let prevRadarCreatedAt = null;
   try {
+    await window.refreshRadarNdviStatus();
+    prevRadarCreatedAt = np_getRadarLatestCreatedAtFromStatus(window.__nutriplantRadarNdviStatus);
     const res = await fetch(np_radarApiUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -2541,6 +2577,10 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
       );
       if (regenerate) {
         np_setRadarBusy(true, 'Regenerando NDVI y NDMI... preparando imágenes actualizadas.');
+        await window.refreshRadarNdviStatus();
+        const prevBeforeForce = np_getRadarLatestCreatedAtFromStatus(
+          window.__nutriplantRadarNdviStatus
+        );
         const forcedRes = await fetch(np_radarApiUrl(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -2548,8 +2588,11 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
         });
         const forcedData = await forcedRes.json().catch(() => ({}));
         if (!forcedRes.ok) {
-          alert(forcedData.message || forcedData.error || 'No se pudo regenerar Radar.');
-          await window.refreshRadarNdviStatus();
+          const recovered = await np_recoverRadarIfBackendSucceeded(prevBeforeForce, bounds);
+          if (!recovered) {
+            alert(forcedData.message || forcedData.error || 'No se pudo regenerar Radar.');
+            await window.refreshRadarNdviStatus();
+          }
           return;
         }
         await window.refreshRadarNdviStatus();
@@ -2565,8 +2608,11 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
       return;
     }
     if (!res.ok) {
-      alert(data.message || data.error || 'No se pudo generar Radar.');
-      await window.refreshRadarNdviStatus();
+      const recovered = await np_recoverRadarIfBackendSucceeded(prevRadarCreatedAt, bounds);
+      if (!recovered) {
+        alert(data.message || data.error || 'No se pudo generar Radar.');
+        await window.refreshRadarNdviStatus();
+      }
       return;
     }
     await window.refreshRadarNdviStatus();
@@ -2576,7 +2622,13 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     }
   } catch (e) {
     console.error('Radar NDVI generate:', e);
-    alert('Error de red al generar Radar.');
+    const boundsCatch = np_getPolygonBoundsFromMap();
+    const recovered =
+      boundsCatch &&
+      (await np_recoverRadarIfBackendSucceeded(prevRadarCreatedAt, boundsCatch));
+    if (!recovered) {
+      alert('Error de red al generar Radar.');
+    }
   } finally {
     np_setRadarBusy(false);
   }
