@@ -1421,9 +1421,19 @@ function sectionTemplate(name) {
           </div>
           <div class="location-controls">
             <button id="centerOnUserLocation" class="btn btn-primary">📍 Mi Ubicación</button>
+            <button id="toggleCoordinateInput" class="btn btn-secondary">✍️ Coordenadas</button>
             <button id="clearPolygon" class="btn btn-secondary">Limpiar</button>
             <button id="saveLocation" class="btn">Guardar Predio</button>
           </div>
+        </div>
+        <div id="coordinateInputPanel" style="display:none;margin:10px 0 0;padding:10px;border:1px dashed #bfdbfe;border-radius:10px;background:#f8fbff;">
+          <div style="font-weight:600;color:#1e40af;margin-bottom:6px;">Pegar coordenadas del polígono</div>
+          <textarea id="polygonCoordinatesInput" rows="5" style="width:100%;resize:vertical;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font-family:monospace;font-size:12px;" placeholder="Formato: lat,lng (una por línea)&#10;Ejemplo:&#10;19.68090,-103.44290&#10;19.68120,-103.44180&#10;19.67990,-103.44120"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <button id="drawPolygonFromCoordinates" class="btn btn-primary" type="button">🗺️ Trazar polígono</button>
+            <button id="clearCoordinateInput" class="btn btn-secondary" type="button">🧹 Limpiar texto</button>
+          </div>
+          <div style="margin-top:6px;font-size:12px;color:#475569;">Acepta decimal y grados/min/seg (ej. 19°40'51.2&quot;N, 103°26'34.0&quot;W). Mínimo 3 puntos.</div>
         </div>
 
         <div id="radarNdviPanel" class="radar-ndvi-panel" style="margin: 12px 0 0; padding: 12px 14px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;">

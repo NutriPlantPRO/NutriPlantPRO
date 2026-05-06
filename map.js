@@ -425,9 +425,147 @@ class NutriPlantMap {
       userLocationBtn.addEventListener('click', () => this.centerOnUserLocation());
     }
 
+    const toggleCoordsBtn = document.getElementById('toggleCoordinateInput');
+    const coordsPanel = document.getElementById('coordinateInputPanel');
+    const coordsInput = document.getElementById('polygonCoordinatesInput');
+    const drawFromCoordsBtn = document.getElementById('drawPolygonFromCoordinates');
+    const clearCoordsInputBtn = document.getElementById('clearCoordinateInput');
+    if (toggleCoordsBtn && coordsPanel) {
+      toggleCoordsBtn.addEventListener('click', () => {
+        const opening = coordsPanel.style.display === 'none';
+        coordsPanel.style.display = opening ? 'block' : 'none';
+        if (opening && coordsInput) coordsInput.focus();
+      });
+    }
+    if (clearCoordsInputBtn && coordsInput) {
+      clearCoordsInputBtn.addEventListener('click', () => {
+        coordsInput.value = '';
+        coordsInput.focus();
+      });
+    }
+    if (drawFromCoordsBtn && coordsInput) {
+      drawFromCoordsBtn.addEventListener('click', () => this.drawPolygonFromCoordinatesText(coordsInput.value));
+    }
+
     if (saveBtn) {
       saveBtn.addEventListener('click', () => this.saveLocation());
     }
+  }
+
+  parseCoordinatesText(rawText) {
+    const text = String(rawText || '').trim();
+    if (!text) return { points: [], error: 'Pega tus coordenadas primero.' };
+    const lines = text
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const points = [];
+    for (let i = 0; i < lines.length; i++) {
+      const src = lines[i].replace(/\t+/g, ' ').trim();
+      const parts = this.splitCoordinatePair(src);
+      if (!parts || parts.length < 2) {
+        return { points: [], error: `Línea ${i + 1} inválida. Usa: lat,lng` };
+      }
+      const lat = this.parseCoordinateComponent(parts[0], 'lat');
+      const lng = this.parseCoordinateComponent(parts[1], 'lng');
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return { points: [], error: `Línea ${i + 1} inválida. Formato decimal o grados/min/seg.` };
+      }
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return { points: [], error: `Línea ${i + 1} fuera de rango. Verifica lat/lng.` };
+      }
+      points.push(new google.maps.LatLng(lat, lng));
+    }
+    if (points.length < 3) return { points: [], error: 'Se requieren al menos 3 puntos.' };
+    return { points, error: '' };
+  }
+
+  splitCoordinatePair(line) {
+    const src = String(line || '').trim();
+    if (!src) return null;
+    if (src.includes(';')) {
+      const parts = src.split(';').map((x) => x.trim()).filter(Boolean);
+      if (parts.length >= 2) return [parts[0], parts[1]];
+    }
+    if (src.includes(',')) {
+      const parts = src.split(',').map((x) => x.trim()).filter(Boolean);
+      if (parts.length >= 2) return [parts[0], parts[1]];
+    }
+    const nsEw = src.match(/(.+?[NS])\s+(.+?[EW])$/i) || src.match(/(.+?[EW])\s+(.+?[NS])$/i);
+    if (nsEw) return [nsEw[1].trim(), nsEw[2].trim()];
+    const parts = src.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return [parts[0], parts[1]];
+    return null;
+  }
+
+  parseCoordinateComponent(rawValue, axis) {
+    const raw = String(rawValue || '').trim();
+    if (!raw) return NaN;
+    const upper = raw.toUpperCase().replace(/º/g, '°');
+    const hasSouth = /S/.test(upper);
+    const hasWest = /W|O/.test(upper); // O = Oeste
+    const hasNorth = /N/.test(upper);
+    const hasEast = /E/.test(upper);
+    const hasSignMinus = /^\s*-/.test(upper);
+    const cleaned = upper.replace(/[NSEWO]/g, '').trim();
+
+    // Decimal simple
+    if (/^[+-]?\d+(?:\.\d+)?$/.test(cleaned)) {
+      let value = parseFloat(cleaned);
+      if ((axis === 'lat' && (hasSouth || hasNorth)) || (axis === 'lng' && (hasWest || hasEast))) {
+        const signed = (hasSouth || hasWest) ? -Math.abs(value) : Math.abs(value);
+        value = signed;
+      }
+      return value;
+    }
+
+    // DMS: grados, minutos, segundos
+    const nums = cleaned.match(/-?\d+(?:\.\d+)?/g);
+    if (!nums || !nums.length) return NaN;
+    const deg = Math.abs(parseFloat(nums[0] || '0'));
+    const min = Math.abs(parseFloat(nums[1] || '0'));
+    const sec = Math.abs(parseFloat(nums[2] || '0'));
+    if (min >= 60 || sec >= 60) return NaN;
+    let value = deg + (min / 60) + (sec / 3600);
+    let sign = hasSignMinus ? -1 : 1;
+    if ((axis === 'lat' && (hasSouth || hasNorth)) || (axis === 'lng' && (hasWest || hasEast))) {
+      sign = (hasSouth || hasWest) ? -1 : 1;
+    }
+    return value * sign;
+  }
+
+  drawPolygonFromCoordinatesText(rawText) {
+    const parsed = this.parseCoordinatesText(rawText);
+    if (parsed.error) {
+      this.showMessage(`⚠️ ${parsed.error}`, 'warning');
+      return;
+    }
+    this.clearAllPolygons();
+    this.polygon = null;
+    this.savedPolygon = null;
+    this.clearTempMarkers();
+    this.isDrawing = false;
+
+    const polygonPath = parsed.points;
+    this.polygon = new google.maps.Polygon({
+      paths: polygonPath,
+      fillColor: '#2563eb',
+      fillOpacity: 0.3,
+      strokeColor: '#2563eb',
+      strokeOpacity: 0.8,
+      strokeWeight: 3,
+      editable: true,
+      draggable: false
+    });
+    this.polygon.setMap(this.map);
+    this.savedPolygon = this.polygon;
+    this.polygonPath = polygonPath;
+    this.coordinates = polygonPath.map((p) => [p.lat(), p.lng()]);
+    this.addPolygonEditListeners();
+    this.calculateAreaAndPerimeter();
+    this.centerOnPolygon();
+    this.updateInstructions('✅ Polígono trazado desde coordenadas. Puedes editarlo o guardar.');
+    this.showMessage(`✅ Polígono creado con ${polygonPath.length} puntos desde coordenadas`, 'success');
   }
 
   startDrawing(latLng) {
