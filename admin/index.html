@@ -552,6 +552,8 @@
                 <h1>Panel de Administración</h1>
                 <p>Gestión completa de usuarios, proyectos y datos</p>
             </div>
+
+            <div id="adminSupabaseCloudBanner" style="display:none;margin:0 0 16px;padding:12px 14px;border-radius:8px;background:#fffbeb;border:1px solid #fcd34d;color:#78350f;font-size:13px;line-height:1.55;"></div>
             
             <div class="admin-stats">
                 <div class="stat-card">
@@ -814,6 +816,32 @@
             _adminCloudDashboardVisitsLastLoadAt = 0;
         }
         resetAdminCloudCache();
+        /** Último motivo por el que no cargó la nube (para mensajes al usuario). */
+        function setAdminCloudLoadDiag(reason) {
+            window._lastAdminCloudDiag = { reason: reason || 'unknown', at: Date.now() };
+        }
+        function updateAdminCloudStatusBanner(loaded) {
+            var el = document.getElementById('adminSupabaseCloudBanner');
+            if (!el) return;
+            var diag = window._lastAdminCloudDiag && window._lastAdminCloudDiag.reason;
+            if (loaded) {
+                el.style.display = 'none';
+                el.textContent = '';
+                return;
+            }
+            var msg;
+            if (diag === 'no_supabase') {
+                msg = '☁️ Supabase no está configurado en este sitio (clave anon / enabled). Los totales salen solo de datos guardados en este navegador.';
+            } else if (diag === 'not_admin') {
+                msg = '☁️ Hay sesión en Supabase, pero tu fila en <strong>profiles</strong> no tiene <strong>is_admin = true</strong>. En Supabase revisa el usuario <strong>admin@nutriplantpro.com</strong>, activa admin, guarda, cierra sesión en este panel y entra de nuevo con la contraseña real de esa cuenta.';
+            } else if (diag === 'profiles_error') {
+                msg = '☁️ No se pudo leer <strong>profiles</strong> (RLS, red o caída temporal). Abre la consola (F12) para el detalle o reintenta.';
+            } else {
+                msg = '☁️ <strong>No hay sesión de Supabase en este navegador.</strong> El panel puede abrirte con la clave interna, pero la nube necesita la <strong>misma contraseña que tiene la cuenta admin en Supabase</strong>. Si cambiaste la clave en Supabase, úsala aquí al iniciar sesión, o entra primero en <strong>login.html</strong> con <strong>admin@nutriplantpro.com</strong> y luego vuelve al admin y pulsa <strong>Refrescar desde Supabase</strong>.';
+            }
+            el.innerHTML = msg;
+            el.style.display = 'block';
+        }
         window.nutriplantAdminLoadFromCloud = async function(options) {
             const opts = options || {};
             const force = !!opts.force;
@@ -828,17 +856,30 @@
                 window._adminCloudCache._cloudLastSuccess === true &&
                 (now - _adminCloudLastLoadAt) < ADMIN_CLOUD_CACHE_TTL_MS
             ) {
+                setAdminCloudLoadDiag('ok');
                 return true;
             }
             _adminCloudLoadPromise = (async function() {
             const client = typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null;
             if (!client) {
+                setAdminCloudLoadDiag('no_supabase');
                 window._adminCloudCache._cloudLoaded = true;
                 window._adminCloudCache._cloudLastSuccess = false;
                 return false;
             }
-            const { data: { user } } = await client.auth.getUser();
+            let user = null;
+            try {
+                const { data: { session } } = await client.auth.getSession();
+                if (session && session.user) user = session.user;
+            } catch (e) { /* ignore */ }
             if (!user) {
+                try {
+                    const { data: { user: u2 } } = await client.auth.getUser();
+                    user = u2 || null;
+                } catch (e2) { user = null; }
+            }
+            if (!user) {
+                setAdminCloudLoadDiag('no_auth');
                 window._adminCloudCache._cloudLoaded = true;
                 window._adminCloudCache._cloudLastSuccess = false;
                 return false;
@@ -849,12 +890,14 @@
                     .select('id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project, radar_credits_bonus, chat_blocked, chat_limit_monthly');
                 if (profilesErr) {
                     console.warn('nutriplantAdminLoadFromCloud profiles:', profilesErr);
+                    setAdminCloudLoadDiag('profiles_error');
                     window._adminCloudCache._cloudLoaded = true;
                     window._adminCloudCache._cloudLastSuccess = false;
                     return false;
                 }
                 const myProfile = (profiles || []).find(p => p.id === user.id);
                 if (!myProfile || !myProfile.is_admin) {
+                    setAdminCloudLoadDiag('not_admin');
                     window._adminCloudCache._cloudLoaded = true;
                     window._adminCloudCache._cloudLastSuccess = false;
                     return false;
@@ -1009,10 +1052,12 @@
                 window._adminCloudCache.chats = cloudChats;
                 window._adminCloudCache._cloudLoaded = true;
                 window._adminCloudCache._cloudLastSuccess = true;
+                setAdminCloudLoadDiag('ok');
                 _adminCloudLastLoadAt = Date.now();
                 return true;
             } catch (e) {
                 console.warn('nutriplantAdminLoadFromCloud:', e);
+                setAdminCloudLoadDiag('profiles_error');
                 window._adminCloudCache._cloudLoaded = true;
                 window._adminCloudCache._cloudLastSuccess = false;
                 return false;
@@ -1475,15 +1520,23 @@
                 localStorage.setItem('admin_username', username);
                 localStorage.setItem('admin_session_timestamp', Date.now().toString());
                 
-                // 🟢 Iniciar sesión en Supabase para cargar datos de la nube
+                // 🟢 Misma cuenta en Supabase = JWT para "Refrescar desde la nube" (si la clave no coincide, el panel igual abre pero sin nube)
+                var supaOk = false;
+                var supaTried = false;
                 const supabaseAuth = window.nutriplantSupabaseAuth;
                 if (supabaseAuth && supabaseAuth.isAvailable && supabaseAuth.isAvailable()) {
+                    supaTried = true;
                     try {
-                        await supabaseAuth.signIn(username, password);
+                        const sr = await supabaseAuth.signIn(username, password);
+                        supaOk = !!(sr && sr.ok);
+                        if (!supaOk && sr && sr.error) console.warn('Admin Supabase sign-in:', sr.error);
                     } catch (err) { console.warn('Admin Supabase sign-in:', err); }
                 }
-                
-                showSuccessMessage('✅ Acceso autorizado');
+                showSuccessMessage(
+                    supaTried && !supaOk
+                        ? '✅ Acceso al panel. ☁️ Supabase no aceptó esta contraseña: para ver datos de la nube usa la misma clave que en login o entra primero en login.html con admin@nutriplantpro.com.'
+                        : (supaOk ? '✅ Acceso autorizado · sesión con Supabase lista' : '✅ Acceso autorizado')
+                );
                 setTimeout(showDashboard, 1000);
             } else {
                 var attempts = parseInt(localStorage.getItem(ADMIN_ATTEMPTS_KEY) || '0', 10) + 1;
@@ -1521,14 +1574,18 @@
             // 🟢 Si la nube está activa, cargar datos de ahí primero; luego pintar estadísticas
             if (typeof window.nutriplantAdminLoadFromCloud === 'function') {
                 window.nutriplantAdminLoadFromCloud()
-                    .then(async function() {
+                    .then(async function(loaded) {
+                        updateAdminCloudStatusBanner(!!loaded);
                         loadAdminStats();
                         try {
                             await ensureAdminDashboardVisitsLoaded({ force: false });
                             loadAdminStats(); // refrescar activos cuando entren visitas de dashboard
                         } catch (e) {}
                     })
-                    .catch(function() { loadAdminStats(); });
+                    .catch(function() {
+                        updateAdminCloudStatusBanner(false);
+                        loadAdminStats();
+                    });
             } else {
                 loadAdminStats();
             }
@@ -1559,14 +1616,16 @@
                 }
                 loadAdminStats();
                 if (closeDataViewer) closeDataViewer();
+                updateAdminCloudStatusBanner(!!loaded);
                 if (loaded) {
                     showSuccessMessage('✅ Datos actualizados desde la nube');
                 } else {
-                    showErrorMessage('No hay sesión de admin en Supabase. Abre la app (login), inicia sesión con admin@nutriplantpro.com, vuelve aquí y pulsa de nuevo.');
+                    showErrorMessage('No se pudo sincronizar con Supabase. Lee el aviso amarillo arriba: suele ser contraseña distinta a la de Supabase o falta iniciar sesión en login.html.');
                 }
             } catch (e) {
                 console.warn('Refrescar nube:', e);
-                showErrorMessage('No se pudo conectar a Supabase. Asegúrate de haber iniciado sesión con admin@nutriplantpro.com.');
+                updateAdminCloudStatusBanner(false);
+                showErrorMessage('Error al conectar con Supabase. Revisa red / proyecto y el aviso amarillo arriba.');
             } finally {
                 _adminRefreshInProgress = false;
                 _adminRefreshLastAt = Date.now();

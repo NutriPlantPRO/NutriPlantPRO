@@ -13720,12 +13720,34 @@ function stripAmendmentWatermark(html) {
   }
 }
 
+/** Leyenda tonal Bajo–Alto para NDVI/NDMI en PDF (misma lectura relativa que el mapa). */
+function createRadarPdfRelativeScaleHTML(rt) {
+  const low = rt('Bajo', 'Low');
+  const high = rt('Alto', 'High');
+  const sub = rt(
+    'Escala relativa solo a esta imagen y a este polígono (no es comparación absoluta entre lotes).',
+    'Relative scale for this map and polygon only (not an absolute comparison across fields).'
+  );
+  const grad = 'linear-gradient(90deg,#a52a2a 0%,#ea580c 16%,#facc15 42%,#86efac 70%,#2e5a31 100%)';
+  return `
+    <div style="margin-top:8px;padding:8px 10px;background:#f8faf8;border-radius:8px;border:1px solid #e5ebe5;">
+      <div style="display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;color:#333e48;">
+        <span style="flex-shrink:0;">${low}</span>
+        <div style="flex:1;height:14px;min-width:40px;border-radius:999px;background:${grad};box-shadow:inset 0 1px 2px rgba(0,0,0,.08);"></div>
+        <span style="flex-shrink:0;">${high}</span>
+      </div>
+      <div style="margin-top:5px;font-size:9px;color:#64748b;line-height:1.35;text-align:center;">${sub}</div>
+    </div>
+  `;
+}
+
 function createLocationRadarBlockHTML(radar, rt, lang) {
   if (!radar || (!radar.ndviDataUrl && !radar.ndmiDataUrl)) return '';
   const locale = lang === 'en' ? 'en-US' : 'es-MX';
   const title = rt('Radar del cultivo (Sentinel-2)', 'Crop Radar (Sentinel-2)');
   const ndviCap = rt('NDVI — vigor vegetativo relativo', 'NDVI — relative vegetation vigor');
   const ndmiCap = rt('NDMI — humedad relativa del dosel', 'NDMI — relative canopy moisture');
+  const scaleHtml = createRadarPdfRelativeScaleHTML(rt);
   const note = rt(
     'Valores relativos dentro del polígono; complementar con visita a campo, riego y otros análisis.',
     'Relative values within the polygon; complement with field visits, irrigation, and other analyses.'
@@ -13743,10 +13765,10 @@ function createLocationRadarBlockHTML(radar, rt, lang) {
   }
   let cols = '';
   if (radar.ndviDataUrl) {
-    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:4px;">${ndviCap}</div><img src="${radar.ndviDataUrl}" alt="NDVI" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" /></div>`;
+    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:4px;">${ndviCap}</div><img src="${radar.ndviDataUrl}" alt="NDVI" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />${scaleHtml}</div>`;
   }
   if (radar.ndmiDataUrl) {
-    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#0f766e;margin-bottom:4px;">${ndmiCap}</div><img src="${radar.ndmiDataUrl}" alt="NDMI" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" /></div>`;
+    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#0f766e;margin-bottom:4px;">${ndmiCap}</div><img src="${radar.ndmiDataUrl}" alt="NDMI" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />${scaleHtml}</div>`;
   }
   return `
     <div style="margin-top:12px;border:1px solid #86efac;background:#f8fafc;border-radius:8px;padding:10px;page-break-inside:avoid;">
