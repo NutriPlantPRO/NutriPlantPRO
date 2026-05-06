@@ -8375,12 +8375,21 @@
                                             ? `<div><strong style="color: #1e293b;">Centro:</strong><br><span style="color: #64748b; font-size: 12px; font-family: monospace;">${location.center.lat.toFixed(6)}, ${location.center.lng.toFixed(6)}</span></div>` 
                                             : ''}
                     </div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
                                     <button onclick="showMapModalForProject('${project.id}')" 
                                             style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;"
                                             onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)';"
                                             onmouseout="this.style.background='#10b981'; this.style.transform='translateY(0)';">
                                         🗺️ Ver en Mapa
                                     </button>
+                                    <button type="button" onclick="showRadarAdminModal(${JSON.stringify(String(project.id))})"
+                                            title="Requiere RADAR_ADMIN_SECRET en Netlify y el mismo valor en localStorage nutriplant_radar_admin_secret (o window.NUTRIPLANT_RADAR_ADMIN_SECRET)"
+                                            style="background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;"
+                                            onmouseover="this.style.background='#047857'; this.style.transform='translateY(-1px)';"
+                                            onmouseout="this.style.background='#059669'; this.style.transform='translateY(0)';">
+                                        🛰️ Radar NDVI/NDMI
+                                    </button>
+                                    </div>
                                 </div>
                             `
                             : `<pre style="background: white; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; max-height: 300px; overflow-y: auto;">${JSON.stringify(location, null, 2)}</pre>`
@@ -10701,6 +10710,132 @@
             showMapModal(projectId, locationData);
         }
         window.showMapModalForProject = showMapModalForProject;
+
+        function getNutriPlantRadarApiUrlForAdmin() {
+            var b = (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) ||
+                (window.location && window.location.origin) || '';
+            return String(b).replace(/\/$/, '') + '/api/radar-ndvi';
+        }
+
+        function getRadarAdminPanelSecret() {
+            try {
+                if (typeof window !== 'undefined' && window.NUTRIPLANT_RADAR_ADMIN_SECRET != null &&
+                    String(window.NUTRIPLANT_RADAR_ADMIN_SECRET).trim()) {
+                    return String(window.NUTRIPLANT_RADAR_ADMIN_SECRET).trim();
+                }
+            } catch (e) { /* ignore */ }
+            try {
+                var ls = localStorage.getItem('nutriplant_radar_admin_secret');
+                if (ls && String(ls).trim()) return String(ls).trim();
+            } catch (e2) { /* ignore */ }
+            return '';
+        }
+
+        function closeRadarAdminModal() {
+            var el = document.getElementById('radarAdminModal');
+            if (el) {
+                el.style.display = 'none';
+                el.innerHTML = '';
+            }
+        }
+        window.closeRadarAdminModal = closeRadarAdminModal;
+
+        function showRadarAdminModal(projectId) {
+            var secret = getRadarAdminPanelSecret();
+            if (!secret) {
+                alert('Para ver Radar NDVI/NDMI en admin:\n\n1) Netlify → Environment variables → RADAR_ADMIN_SECRET (mismo alcance que las demás vars de Radar).\n\n2) En este navegador, una vez:\nlocalStorage.setItem(\"nutriplant_radar_admin_secret\", \"TU_SECRETO\")\n(o define window.NUTRIPLANT_RADAR_ADMIN_SECRET antes de abrir esta página).\n\nEl secreto debe coincidir con RADAR_ADMIN_SECRET.');
+                return;
+            }
+            var pid = String(projectId || '').trim();
+            if (!pid) {
+                alert('ID de proyecto no válido.');
+                return;
+            }
+            var modal = document.getElementById('radarAdminModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'radarAdminModal';
+                modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:57000;justify-content:center;align-items:center;padding:16px;box-sizing:border-box;';
+                document.body.appendChild(modal);
+            }
+            modal.style.zIndex = '57000';
+            modal.innerHTML =
+                '<div style="background:#fff;border-radius:12px;padding:28px;text-align:center;max-width:400px;">' +
+                '<p style="color:#475569;margin:0 0 12px 0;">Cargando Radar…</p>' +
+                '<div style="width:40px;height:40px;border:4px solid #e5e7eb;border-top-color:#10b981;border-radius:50%;animation:nprotspin 1s linear infinite;margin:0 auto;"></div>' +
+                '</div><style>@keyframes nprotspin{to{transform:rotate(360deg)}}</style>';
+            modal.style.display = 'flex';
+
+            fetch(getNutriPlantRadarApiUrlForAdmin(), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Radar-Admin-Secret': secret
+                },
+                body: JSON.stringify({ action: 'admin_status', project_id: pid })
+            })
+                .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; }); })
+                .then(function (res) {
+                    function esc(t) {
+                        return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    }
+                    if (!res.ok || !res.j || res.j.ok === false) {
+                        var msg = (res.j && (res.j.message || res.j.error)) || ('HTTP ' + res.status);
+                        modal.innerHTML =
+                            '<div style="background:#fff;border-radius:12px;padding:24px;max-width:480px;"><p style="color:#b91c1c;">' +
+                            esc(msg) +
+                            '</p><button type="button" onclick="closeRadarAdminModal()" style="margin-top:14px;padding:8px 16px;border-radius:6px;border:none;background:#e2e8f0;cursor:pointer;">Cerrar</button></div>';
+                        return;
+                    }
+                    var latest = res.j.latest;
+                    var ndvi = latest && latest.signed_url ? latest.signed_url : '';
+                    var ndmi = latest && (latest.ndmi_signed_url || (latest.images && latest.images.ndmi && latest.images.ndmi.signed_url)) ? (latest.ndmi_signed_url || latest.images.ndmi.signed_url) : '';
+                    if (!ndvi && !ndmi) {
+                        modal.innerHTML =
+                            '<div style="background:#fff;border-radius:12px;padding:24px;max-width:520px;"><p style="color:#475569;margin:0;">No hay Radar guardado para este proyecto en la nube (el usuario debe generarlo desde Ubicación).</p>' +
+                            '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:16px;padding:8px 16px;border-radius:6px;border:none;background:#10b981;color:#fff;font-weight:600;cursor:pointer;">Cerrar</button></div>';
+                        return;
+                    }
+                    var created = '';
+                    if (latest && latest.created_at) {
+                        try {
+                            created = new Date(latest.created_at).toLocaleString('es-MX');
+                        } catch (e) { created = ''; }
+                    }
+                    var owner = res.j.owner_user_id ? '<div style="font-size:11px;color:#94a3b8;margin-top:8px;">Propietario (user): ' + esc(String(res.j.owner_user_id).slice(0, 36)) + (String(res.j.owner_user_id).length > 36 ? '…' : '') + '</div>' : '';
+                    var blockNdvi = ndvi
+                        ? '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#166534;margin-bottom:6px;font-size:13px;">NDVI — vigor</div><img src="' +
+                          ndvi.replace(/"/g, '&quot;') +
+                          '" alt="NDVI" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;" /></div>'
+                        : '';
+                    var blockNdmi = ndmi
+                        ? '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#0f766e;margin-bottom:6px;font-size:13px;">NDMI — dosel</div><img src="' +
+                          ndmi.replace(/"/g, '&quot;') +
+                          '" alt="NDMI" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;" /></div>'
+                        : '';
+                    modal.innerHTML =
+                        '<div style="background:#fff;border-radius:12px;width:100%;max-width:960px;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);">' +
+                        '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:#fff;">' +
+                        '<h2 style="margin:0;font-size:18px;color:#1e293b;">🛰️ Radar del cultivo (NDVI / NDMI)</h2>' +
+                        '<button type="button" onclick="closeRadarAdminModal()" style="background:none;border:none;font-size:28px;color:#64748b;cursor:pointer;line-height:1;">×</button></div>' +
+                        '<div style="padding:16px 18px 22px;"><p style="margin:0 0 12px 0;font-size:13px;color:#64748b;">' +
+                        (created ? 'Última generación: <strong>' + esc(created) + '</strong>' : 'Última generación: —') +
+                        '</p>' +
+                        '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">' +
+                        blockNdvi +
+                        blockNdmi +
+                        '</div>' +
+                        owner +
+                        '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">Sentinel-2 / Earth Engine. Valores relativos al polígono.</p></div></div>';
+                })
+                .catch(function (err) {
+                    modal.innerHTML =
+                        '<div style="background:#fff;border-radius:12px;padding:24px;"><p style="color:#b91c1c;">Error de red</p>' +
+                        '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:12px;">Cerrar</button></div>';
+                    console.error('Radar admin modal:', err);
+                });
+        }
+        window.showRadarAdminModal = showRadarAdminModal;
         
         // Función para mostrar el mapa con polígono (carga Leaflet dinámicamente)
         function showMapModal(projectId, locationData) {

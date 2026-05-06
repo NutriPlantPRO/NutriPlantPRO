@@ -6,9 +6,11 @@
  *   GOOGLE_APPLICATION_CREDENTIALS_JSON  — JSON completo de la cuenta de servicio EE (una línea o objeto)
  *   EE_PROJECT_ID                         — ID del proyecto GCP con EE habilitado
  *   RADAR_MONTHLY_CREDITS                 — opcional, default 25
+ *   RADAR_ADMIN_SECRET                    — opcional; si está definido, permite action "admin_status" con cabecera
+ *                                           X-Radar-Admin-Secret (solo lectura; sin generar imágenes)
  *
  * Body JSON:
- *   action: "status" | "generate"
+ *   action: "status" | "generate" | "admin_status"
  *   project_id: string
  *   access_token: string (JWT usuario; también se acepta Authorization: Bearer)
  */
@@ -256,7 +258,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Radar-Admin-Secret',
         'Access-Control-Allow-Methods': 'POST, OPTIONS'
       },
       body: ''
@@ -277,6 +279,55 @@ exports.handler = async (event) => {
     body = JSON.parse(event.body || '{}');
   } catch (e) {
     return jsonResponse(400, { error: 'JSON inválido' });
+  }
+
+  const hdr = event.headers || {};
+  const adminSecretCfg = (process.env.RADAR_ADMIN_SECRET || '').trim();
+  const adminHdrRaw = (
+    hdr['x-radar-admin-secret'] ||
+    hdr['X-Radar-Admin-Secret'] ||
+    ''
+  ).trim();
+  const bodyActionEarly = String(body.action || 'status').toLowerCase();
+
+  if (adminSecretCfg && bodyActionEarly === 'admin_status' && adminHdrRaw === adminSecretCfg) {
+    const projectIdAdm = body.project_id != null ? String(body.project_id).trim() : '';
+    if (!projectIdAdm) {
+      return jsonResponse(400, { error: 'project_id es obligatorio' });
+    }
+    const { data: projAdm, error: projAdmErr } = await supabase
+      .from('projects')
+      .select('id, user_id, data')
+      .eq('id', projectIdAdm)
+      .maybeSingle();
+
+    if (projAdmErr || !projAdm) {
+      return jsonResponse(404, {
+        error: 'project_not_found',
+        message: 'Proyecto no encontrado en la nube.'
+      });
+    }
+
+    const ownerUserId = projAdm.user_id;
+    const latestAdm = await getLatestRadarRow(supabase, ownerUserId, projectIdAdm);
+    let sigNdvi = null;
+    let sigNdmi = null;
+    if (latestAdm?.image_storage_path) {
+      sigNdvi = await signedUrlForPath(supabase, latestAdm.image_storage_path);
+    }
+    const ndmiPathAdm =
+      latestAdm?.meta?.ndmi_storage_path || latestAdm?.meta?.images?.ndmi?.storage_path || null;
+    if (ndmiPathAdm) {
+      sigNdmi = await signedUrlForPath(supabase, ndmiPathAdm);
+    }
+
+    return jsonResponse(200, {
+      ok: true,
+      admin: true,
+      project_id: projectIdAdm,
+      owner_user_id: ownerUserId,
+      latest: latestResponse(latestAdm, sigNdvi, sigNdmi)
+    });
   }
 
   const authHeader = (event.headers && (event.headers.Authorization || event.headers.authorization)) || '';

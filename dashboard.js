@@ -8216,6 +8216,120 @@ function buildReportViewShareUrl(reportId, token) {
   return `${window.location.origin}/api/report-view?rid=${rid}&t=${t}`;
 }
 
+function getRadarApiUrlForReport() {
+  const base = typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : '';
+  return String(base || '').replace(/\/$/, '') + '/api/radar-ndvi';
+}
+
+async function getRadarAccessTokenForReport() {
+  if (typeof window.getSupabaseClient !== 'function') return null;
+  const client = window.getSupabaseClient();
+  if (!client) return null;
+  const { data: { session } } = await client.auth.getSession();
+  return session?.access_token || null;
+}
+
+/** Descarga NDVI/NDMI firmados y los pasa a data URL para incrustar en PDF (evita fallos de impresión por dominios externos). */
+async function fetchRadarImagesDataUrlsForReport() {
+  const out = { ndviDataUrl: null, ndmiDataUrl: null, generatedAt: null, error: null };
+  try {
+    if (!currentProject || !currentProject.id) {
+      out.error = 'no_project';
+      return out;
+    }
+    const token = await getRadarAccessTokenForReport();
+    if (!token) {
+      out.error = 'no_session';
+      return out;
+    }
+    const res = await fetch(getRadarApiUrlForReport(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ action: 'status', project_id: String(currentProject.id) })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.latest) {
+      return out;
+    }
+    const ndviUrl =
+      data.latest.signed_url ||
+      (data.latest.images && data.latest.images.ndvi && data.latest.images.ndvi.signed_url);
+    const ndmiUrl =
+      data.latest.ndmi_signed_url ||
+      (data.latest.images && data.latest.images.ndmi && data.latest.images.ndmi.signed_url);
+    out.generatedAt = data.latest.created_at || null;
+
+    async function urlToDataUrl(url) {
+      if (!url || typeof url !== 'string') return null;
+      try {
+        const r = await fetch(url);
+        if (!r.ok) return null;
+        const blob = await r.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch (e) {
+        return null;
+      }
+    }
+
+    const [ndvi, ndmi] = await Promise.all([urlToDataUrl(ndviUrl), urlToDataUrl(ndmiUrl)]);
+    out.ndviDataUrl = ndvi;
+    out.ndmiDataUrl = ndmi;
+    return out;
+  } catch (e) {
+    console.warn('fetchRadarImagesDataUrlsForReport:', e);
+    out.error = e && e.message ? e.message : 'fetch_failed';
+    return out;
+  }
+}
+
+/** Combina gráficas de fertirriego (callback) con imágenes Radar si la sección Ubicación está incluida. */
+function loadChartImagesForReport(selectedSections, callback) {
+  const needFerti =
+    selectedSections.indexOf('fertigation') >= 0 &&
+    typeof window.getFertiChartsDataUrlsForReport === 'function';
+  const needRadar = selectedSections.indexOf('location') >= 0;
+
+  function merge(fertiCharts, radar) {
+    const out = Object.assign({}, fertiCharts || {});
+    if (radar && typeof radar === 'object' && (radar.ndviDataUrl || radar.ndmiDataUrl)) {
+      out.radar = radar;
+    }
+    callback(out);
+  }
+
+  function afterRadar(fertiCharts) {
+    if (!needRadar) {
+      merge(fertiCharts, null);
+      return;
+    }
+    fetchRadarImagesDataUrlsForReport()
+      .then((radar) => merge(fertiCharts, radar))
+      .catch((e) => {
+        console.warn('loadChartImagesForReport radar:', e);
+        merge(fertiCharts, null);
+      });
+  }
+
+  if (needFerti) {
+    try {
+      const prog = getFertirriegoProgramForReport();
+      window.getFertiChartsDataUrlsForReport(prog, function(chartImages) {
+        afterRadar(chartImages || {});
+      });
+    } catch (e) {
+      console.warn('loadChartImagesForReport ferti:', e);
+      afterRadar({});
+    }
+  } else {
+    afterRadar({});
+  }
+}
+
 async function buildReportHtmlSnapshotForShare(report) {
   const selectedSections = normalizeReportSections(Array.isArray(report?.selectedSections) ? report.selectedSections : []);
   if (!selectedSections.length) {
@@ -8223,17 +8337,30 @@ async function buildReportHtmlSnapshotForShare(report) {
     return rawHtml || '';
   }
   const lang = (report && report.reportLanguage === 'en') ? 'en' : 'es';
-  const chartImages = (selectedSections.indexOf('fertigation') >= 0 && typeof window.getFertiChartsDataUrlsForReport === 'function')
-    ? await new Promise(function(resolve) {
-        try {
-          const prog = getFertirriegoProgramForReport();
-          window.getFertiChartsDataUrlsForReport(prog, function(imgs) { resolve(imgs || {}); });
-        } catch (e) {
-          console.warn('buildReportHtmlSnapshotForShare charts:', e);
-          resolve({});
-        }
-      })
-    : {};
+  let chartImages = {};
+  if (selectedSections.indexOf('fertigation') >= 0 && typeof window.getFertiChartsDataUrlsForReport === 'function') {
+    chartImages = await new Promise(function(resolve) {
+      try {
+        const prog = getFertirriegoProgramForReport();
+        window.getFertiChartsDataUrlsForReport(prog, function(imgs) {
+          resolve(imgs || {});
+        });
+      } catch (e) {
+        console.warn('buildReportHtmlSnapshotForShare charts:', e);
+        resolve({});
+      }
+    });
+  }
+  if (selectedSections.indexOf('location') >= 0) {
+    try {
+      const radar = await fetchRadarImagesDataUrlsForReport();
+      if (radar && (radar.ndviDataUrl || radar.ndmiDataUrl)) {
+        chartImages = Object.assign({}, chartImages, { radar });
+      }
+    } catch (e) {
+      console.warn('buildReportHtmlSnapshotForShare radar:', e);
+    }
+  }
   return createReportHTML(selectedSections, chartImages, lang);
 }
 
@@ -9215,14 +9342,7 @@ window.downloadReport = function(reportId) {
       printWindow.focus();
       scheduleReportPrintWhenReady(printWindow);
     }
-    if (printableSections.indexOf('fertigation') >= 0 && typeof window.getFertiChartsDataUrlsForReport === 'function') {
-      var prog = getFertirriegoProgramForReport();
-      window.getFertiChartsDataUrlsForReport(prog, function(chartImages) {
-        openReportWithCharts(chartImages);
-      });
-    } else {
-      openReportWithCharts({});
-    }
+    loadChartImagesForReport(printableSections, openReportWithCharts);
     return;
   }
 
@@ -12531,14 +12651,7 @@ window.generatePDFReport = function() {
     }
   }
 
-  if (selectedSections.indexOf('fertigation') >= 0 && typeof window.getFertiChartsDataUrlsForReport === 'function') {
-    const prog = getFertirriegoProgramForReport();
-    window.getFertiChartsDataUrlsForReport(prog, function(chartImages) {
-      finishPdf(chartImages);
-    });
-  } else {
-    finishPdf({});
-  }
+  loadChartImagesForReport(selectedSections, finishPdf);
 };
 
 // Función para generar el contenido del PDF
@@ -13298,7 +13411,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
   // Agregar secciones seleccionadas (chartImages para gráficas de fertirriego en PDF)
   const chartImgs = chartImages || {};
   selectedSections.forEach((sectionId, idx) => {
-    let sectionHTML = createSectionHTML(sectionId, chartImgs);
+    let sectionHTML = createSectionHTML(sectionId, chartImgs, lang);
     if (typeof sectionHTML === 'string' && sectionHTML.includes('class="section"')) {
       sectionHTML = sectionHTML.replace(
         'class="section"',
@@ -13333,13 +13446,17 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
   return html;
 }
 
-// Función para crear HTML de cada sección (chartImages opcional para fertirriego)
-function createSectionHTML(sectionId, chartImages) {
+// Función para crear HTML de cada sección (chartImages opcional para fertirriego y radar en ubicación)
+function createSectionHTML(sectionId, chartImages, reportLanguage) {
   let html = '';
-  
+  const lang = reportLanguage === 'en' ? 'en' : 'es';
+  const rt = function(es, en) {
+    return lang === 'en' ? en : es;
+  };
+
   switch (sectionId) {
     case 'location':
-      html += createLocationSectionHTML();
+      html += createLocationSectionHTML(chartImages, rt, lang);
       break;
     case 'amendments':
       html += createAmendmentsSectionHTML();
@@ -13603,7 +13720,49 @@ function stripAmendmentWatermark(html) {
   }
 }
 
-function createLocationSectionHTML() {
+function createLocationRadarBlockHTML(radar, rt, lang) {
+  if (!radar || (!radar.ndviDataUrl && !radar.ndmiDataUrl)) return '';
+  const locale = lang === 'en' ? 'en-US' : 'es-MX';
+  const title = rt('Radar del cultivo (Sentinel-2)', 'Crop Radar (Sentinel-2)');
+  const ndviCap = rt('NDVI — vigor vegetativo relativo', 'NDVI — relative vegetation vigor');
+  const ndmiCap = rt('NDMI — humedad relativa del dosel', 'NDMI — relative canopy moisture');
+  const note = rt(
+    'Valores relativos dentro del polígono; complementar con visita a campo, riego y otros análisis.',
+    'Relative values within the polygon; complement with field visits, irrigation, and other analyses.'
+  );
+  let dateLine = '';
+  if (radar.generatedAt) {
+    try {
+      const d = new Date(radar.generatedAt);
+      if (!Number.isNaN(d.getTime())) {
+        dateLine = `<div class="report-note-inline" style="margin-top:8px;">${rt('Generado:', 'Generated:')} <span style="font-family:monospace;">${d.toLocaleString(locale)}</span></div>`;
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  }
+  let cols = '';
+  if (radar.ndviDataUrl) {
+    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:4px;">${ndviCap}</div><img src="${radar.ndviDataUrl}" alt="NDVI" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" /></div>`;
+  }
+  if (radar.ndmiDataUrl) {
+    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#0f766e;margin-bottom:4px;">${ndmiCap}</div><img src="${radar.ndmiDataUrl}" alt="NDMI" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" /></div>`;
+  }
+  return `
+    <div style="margin-top:12px;border:1px solid #86efac;background:#f8fafc;border-radius:8px;padding:10px;page-break-inside:avoid;">
+      <div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:8px;">${title}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:start;">${cols}</div>
+      ${dateLine}
+      <div class="report-note-inline" style="margin-top:8px;">${note}</div>
+    </div>
+  `;
+}
+
+function createLocationSectionHTML(chartImages, rt, lang) {
+  const rtSafe = typeof rt === 'function' ? rt : function(es) {
+    return es;
+  };
+  const langSafe = lang === 'en' ? 'en' : 'es';
   const location = currentProject.location || {};
   const polygon = Array.isArray(location.polygon) ? location.polygon : [];
   const hasPolygon = polygon.length >= 3;
@@ -13621,7 +13780,8 @@ function createLocationSectionHTML() {
         return `<span class="report-nutrient-pill"><strong>${idx + 1}:</strong> ${lat.toFixed(5)}, ${lng.toFixed(5)}</span>`;
       }).filter(Boolean).join('')
     : '';
-  
+  const radarBlock = createLocationRadarBlockHTML(chartImages && chartImages.radar, rtSafe, langSafe);
+
   return `
     <div class="section">
       <h2 class="section-title">📍 Ubicación</h2>
@@ -13642,6 +13802,7 @@ function createLocationSectionHTML() {
           ` : ''}
         </div>
         ${hasPolygon ? createLocationPolygonSVG(polygon) : ''}
+        ${radarBlock}
       </div>
     </div>
   `;
