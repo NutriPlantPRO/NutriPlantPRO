@@ -1,0 +1,24 @@
+{
+  "name": "NutriPlant PRO",
+  "short_name": "NutriPlant",
+  "description": "Diseña, ajusta y nutre — nutrición vegetal y fertirriego.",
+  "start_url": "/login.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "/assets/NutriPlant_PRO_blue.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/NutriPlant_PRO_blue.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}

@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración - NutriPlant PRO</title>
     <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/NutriPlant_PRO_blue.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="../assets/NutriPlant_PRO_blue.png">
+    <link rel="apple-touch-icon" href="../assets/NutriPlant_PRO_blue.png">
+    <link rel="manifest" href="/site.webmanifest">
     <link rel="stylesheet" href="../dashboard.css?v=20260320">
     <script src="../subscription-config.js"></script>
     <script src="../analysis-report-render.js"></script>
@@ -842,7 +846,7 @@
             try {
                 const { data: profiles, error: profilesErr } = await client
                     .from('profiles')
-                    .select('id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project');
+                    .select('id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project, radar_credits_bonus, chat_blocked, chat_limit_monthly');
                 if (profilesErr) {
                     console.warn('nutriplantAdminLoadFromCloud profiles:', profilesErr);
                     window._adminCloudCache._cloudLoaded = true;
@@ -898,7 +902,10 @@
                         user_notes: p.user_notes || null,
                         chat_usage_current_month: p.chat_usage_current_month != null ? p.chat_usage_current_month : null,
                         chat_usage_month: p.chat_usage_month || null,
-                        exclude_from_revenue: p.exclude_from_revenue === true
+                        exclude_from_revenue: p.exclude_from_revenue === true,
+                        radar_credits_bonus: Math.max(0, Math.floor(Number(p.radar_credits_bonus != null ? p.radar_credits_bonus : 0))),
+                        chat_blocked: p.chat_blocked === true,
+                        chat_limit_monthly: p.chat_limit_monthly != null ? Number(p.chat_limit_monthly) : null
                     };
                 });
                 // ENRIQUECER usuarios de nube con datos de localStorage (password, phone, etc.) cuando nube no los tiene
@@ -5981,6 +5988,22 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Créditos extra Radar NDVI / NDMI (bonus mensual en Supabase) -->
+                        <div style="padding: 12px; background: #ecfdf5; border: 1px solid #86efac; border-radius: 8px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #14532d;">🛰️ Radar NDVI / NDMI (créditos)</label>
+                            <p style="margin: 0 0 10px 0; font-size: 13px; color: #475569; line-height: 1.45;">
+                                <strong>Tope mensual</strong> en la app = créditos base del servidor (p. ej. 25 desde Netlify) <strong>más</strong> el número que pongas aquí.
+                                Una generación normal cuenta 1 crédito; si el usuario fuerza regeneración en el mismo mes, puede usar otro más.
+                            </p>
+                            <label style="display: block; margin-bottom: 4px; font-weight: 500; color: #374151;">Bonus mensual (+N créditos Radar)</label>
+                            <input type="number" id="edit-user-radar-credits-bonus" min="0" step="1"
+                                   value="${Math.max(0, Math.floor(Number(user.radar_credits_bonus != null ? user.radar_credits_bonus : 0)))}"
+                                   style="width: 140px; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                            <small style="display: block; color: #64748b; font-size: 12px; margin-top: 8px; line-height: 1.4;">
+                                Pon <strong>0</strong> si no quieres sumar nada extra. Ej. <strong>15</strong> = 15 generaciones mensuales adicionales sobre el límite global (si el proyecto supabase tiene la columna <code style="background:#fff;padding:2px 4px;border-radius:4px;">radar_credits_bonus</code>).
+                            </small>
+                        </div>
                     </div>
                     
                     <div style="display: flex; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
@@ -6670,7 +6693,14 @@
                 subscription_amount: isAdminUser ? 0 : (existingUser.subscription_amount || (window.NUTRIPLANT_CONFIG ? window.NUTRIPLANT_CONFIG.getDefaultSubscriptionAmount() : 49.00)),
                 chat_blocked: document.getElementById('edit-user-chat-blocked').checked,
                 chat_limit_monthly: (function() { var v = document.getElementById('edit-user-chat-limit-monthly').value; if (v === '' || v === null) return -1; var n = parseInt(v, 10); return isNaN(n) ? -1 : Math.max(-1, n); })(),
-                exclude_from_revenue: isAdminUser ? false : !!(document.getElementById('edit-user-exclude-from-revenue') && document.getElementById('edit-user-exclude-from-revenue').checked)
+                exclude_from_revenue: isAdminUser ? false : !!(document.getElementById('edit-user-exclude-from-revenue') && document.getElementById('edit-user-exclude-from-revenue').checked),
+                radar_credits_bonus: (function() {
+                    var el = document.getElementById('edit-user-radar-credits-bonus');
+                    var raw = el && el.value != null ? String(el.value).trim() : '';
+                    var n = parseInt(raw, 10);
+                    if (raw === '' || isNaN(n)) n = 0;
+                    return Math.max(0, n);
+                })()
             };
             
             // Contraseña: si el admin escribió una nueva (campo opcional), se usará y se actualizará en Supabase.
@@ -6753,6 +6783,7 @@
                             chat_usage_current_month: updatedUser.chat_usage_current_month != null ? Number(updatedUser.chat_usage_current_month) : null,
                             chat_usage_month: updatedUser.chat_usage_month || null,
                             exclude_from_revenue: updatedUser.exclude_from_revenue === true,
+                            radar_credits_bonus: Math.max(0, Math.floor(Number(updatedUser.radar_credits_bonus != null ? updatedUser.radar_credits_bonus : 0))),
                             updated_at: new Date().toISOString()
                         };
                         if (newPassword) payload.password_plain = newPassword;
@@ -10421,7 +10452,7 @@
                     if (client) {
                         const { data: freshProfile, error: freshErr } = await client
                             .from('profiles')
-                            .select('name, phone, profession, location, crops, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, subscription_amount, subscription_status, user_notes')
+                            .select('name, phone, profession, location, crops, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, subscription_amount, subscription_status, user_notes, radar_credits_bonus, chat_blocked, chat_limit_monthly')
                             .eq('id', userIdText)
                             .maybeSingle();
                         if (!freshErr && freshProfile) {
@@ -10438,7 +10469,10 @@
                                 paypal_subscription_id: freshProfile.paypal_subscription_id || user.paypal_subscription_id || null,
                                 subscription_status: freshProfile.subscription_status || user.subscription_status,
                                 subscription_amount: freshProfile.subscription_amount ?? user.subscription_amount,
-                                user_notes: freshProfile.user_notes != null ? freshProfile.user_notes : user.user_notes
+                                user_notes: freshProfile.user_notes != null ? freshProfile.user_notes : user.user_notes,
+                                radar_credits_bonus: freshProfile.radar_credits_bonus != null ? Math.max(0, Math.floor(Number(freshProfile.radar_credits_bonus))) : user.radar_credits_bonus,
+                                chat_blocked: typeof freshProfile.chat_blocked === 'boolean' ? freshProfile.chat_blocked : user.chat_blocked,
+                                chat_limit_monthly: freshProfile.chat_limit_monthly != null ? freshProfile.chat_limit_monthly : user.chat_limit_monthly
                             };
                         }
                     }

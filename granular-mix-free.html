@@ -65,7 +65,6 @@
           <th>K₂O</th>
           <th>CaO</th>
           <th>MgO</th>
-          <th>S</th>
           <th>SO₄</th>
           <th>Fe</th>
           <th>Mn</th>
@@ -99,7 +98,6 @@
           <th>K₂O</th>
           <th>CaO</th>
           <th>MgO</th>
-          <th>S</th>
           <th>SO₄</th>
           <th>Fe</th>
           <th>Mn</th>
@@ -128,7 +126,6 @@
         <label>K₂O % <input type="number" id="newK" step="0.01" min="0" value="0" /></label>
         <label>CaO % <input type="number" id="newCaO" step="0.01" min="0" value="0" /></label>
         <label>MgO % <input type="number" id="newMgO" step="0.01" min="0" value="0" /></label>
-        <label>S % <input type="number" id="newS" step="0.01" min="0" value="0" /></label>
         <label>SO₄ % <input type="number" id="newSO4" step="0.01" min="0" value="0" /></label>
         <label>Fe % <input type="number" id="newFe" step="0.01" min="0" value="0" /></label>
         <label>Mn % <input type="number" id="newMn" step="0.01" min="0" value="0" /></label>
@@ -147,7 +144,7 @@
 
   <script>
     const LS_CUSTOM = 'np_login_granular_mix_customs_v1';
-    const KEYS = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    const KEYS = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
     const MATERIAL_NAME_EN = {
       'Fosfonitrato 33-03-00': 'Nitrophosphate 33-03-00',
       'Sulfato de Amonio Granular': 'Granular Ammonium Sulfate',
@@ -267,7 +264,7 @@
         if (!r || !String(r.name || '').trim()) r.name = firstMat;
       });
       if (!rows.length) {
-        tb.innerHTML = '<tr><td colspan="17" style="padding:20px;color:#64748b;">' + (isEnglishUI() ? 'Add fertilizers with the green button.' : 'Agrega fertilizantes con el botón verde.') + '</td></tr>' +
+        tb.innerHTML = '<tr><td colspan="16" style="padding:20px;color:#64748b;">' + (isEnglishUI() ? 'Add fertilizers with the green button.' : 'Agrega fertilizantes con el botón verde.') + '</td></tr>' +
           '<tr class="total-row"><td><strong>TOTAL</strong></td><td id="totalPctCell">0.00</td>' +
           KEYS.map(k => `<td id="tot_${k}">0.00</td>`).join('') + '<td></td></tr>';
         document.getElementById('npkDisplay').textContent = isEnglishUI() ? 'N–P₂O₅–K₂O ratio: —' : 'Relación N–P₂O₅–K₂O: —';
@@ -429,7 +426,6 @@
         K2O: parseFloat(document.getElementById('newK').value) || 0,
         CaO: parseFloat(document.getElementById('newCaO').value) || 0,
         MgO: parseFloat(document.getElementById('newMgO').value) || 0,
-        S: parseFloat(document.getElementById('newS').value) || 0,
         SO4: parseFloat(document.getElementById('newSO4').value) || 0,
         Fe: parseFloat(document.getElementById('newFe').value) || 0,
         Mn: parseFloat(document.getElementById('newMn').value) || 0,
@@ -442,7 +438,7 @@
       list.push({ name, comp });
       saveCustoms(list);
       document.getElementById('newName').value = '';
-      ['newN','newP','newK','newCaO','newMgO','newS','newSO4','newFe','newMn','newB','newZn','newCu','newMo','newSiO2'].forEach(id => {
+      ['newN','newP','newK','newCaO','newMgO','newSO4','newFe','newMn','newB','newZn','newCu','newMo','newSiO2'].forEach(id => {
         const n = document.getElementById(id);
         if (n) n.value = id === 'newName' ? '' : '0';
       });
