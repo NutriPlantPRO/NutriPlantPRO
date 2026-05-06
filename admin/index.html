@@ -816,26 +816,78 @@
             _adminCloudDashboardVisitsLastLoadAt = 0;
         }
         resetAdminCloudCache();
-        /** Último motivo por el que no cargó la nube (para mensajes al usuario). */
-        function setAdminCloudLoadDiag(reason) {
-            window._lastAdminCloudDiag = { reason: reason || 'unknown', at: Date.now() };
+        /** Último motivo por el que no cargó la nube (detail = mensaje Postgres/PostgREST si aplica). */
+        function setAdminCloudLoadDiag(reason, detail) {
+            window._lastAdminCloudDiag = {
+                reason: reason || 'unknown',
+                detail: detail != null ? String(detail) : '',
+                at: Date.now()
+            };
+        }
+        /** True si PostgREST/Postgres rechaza SELECT por columnas nuevas que aún no existen en la BD. */
+        function adminProfilesSelectErrorIsRetryableMissingColumn(err) {
+            if (!err) return false;
+            var msg = String(err.message || '') + String(err.details || '') + String(err.hint || '');
+            var code = String(err.code || '');
+            return /column|does not exist|schema cache|PGRST204/i.test(msg) || code === '42703' || code === 'PGRST204';
+        }
+        /**
+         * Intenta SELECT masivo sobre profiles con listas cada vez más cortas (despliegue sin migración previa).
+         * Si falla por RLS (p. ej. recursión) no tiene sentido reintentar.
+         */
+        async function adminFetchAllProfilesWithSelectFallback(client) {
+            var tiers = [
+                'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project, radar_credits_bonus, chat_blocked, chat_limit_monthly',
+                'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project',
+                'id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login'
+            ];
+            var lastErr = null;
+            for (var t = 0; t < tiers.length; t++) {
+                var q = await client.from('profiles').select(tiers[t]);
+                var error = q.error;
+                lastErr = error;
+                if (!error && q.data) {
+                    if (t > 0) {
+                        console.warn('nutriplantAdminLoadFromCloud: perfiles OK con SELECT reducido (nivel ' + t + ') — aplica migraciones SQL en Supabase cuando puedas.');
+                    }
+                    return { profiles: q.data, error: null };
+                }
+                if (t === 0 && error && !adminProfilesSelectErrorIsRetryableMissingColumn(error)) break;
+                if (error && !adminProfilesSelectErrorIsRetryableMissingColumn(error)) break;
+                if (error && t < tiers.length - 1) {
+                    console.warn('nutriplantAdminLoadFromCloud: reintentando profiles sin algunas columnas:', error.message || error.code || error);
+                }
+            }
+            return { profiles: null, error: lastErr };
         }
         function updateAdminCloudStatusBanner(loaded) {
             var el = document.getElementById('adminSupabaseCloudBanner');
             if (!el) return;
-            var diag = window._lastAdminCloudDiag && window._lastAdminCloudDiag.reason;
+            var d = window._lastAdminCloudDiag || {};
+            var diag = d.reason;
             if (loaded) {
                 el.style.display = 'none';
                 el.textContent = '';
                 return;
             }
-            var msg;
+            var msg = '';
             if (diag === 'no_supabase') {
                 msg = '☁️ Supabase no está configurado en este sitio (clave anon / enabled). Los totales salen solo de datos guardados en este navegador.';
             } else if (diag === 'not_admin') {
                 msg = '☁️ Hay sesión en Supabase, pero tu fila en <strong>profiles</strong> no tiene <strong>is_admin = true</strong>. En Supabase revisa el usuario <strong>admin@nutriplantpro.com</strong>, activa admin, guarda, cierra sesión en este panel y entra de nuevo con la contraseña real de esa cuenta.';
             } else if (diag === 'profiles_error') {
-                msg = '☁️ No se pudo leer <strong>profiles</strong> (RLS, red o caída temporal). Abre la consola (F12) para el detalle o reintenta.';
+                msg = '☁️ Falló la consulta a <strong>profiles</strong>. Causas frecuentes: <strong>columnas nuevas sin migración</strong> en Supabase (el panel ya intenta una lista corta solo), <strong>RLS/recursión en políticas</strong>, o red.';
+                var det = (d.detail || '').trim();
+                if (/infinite recursion|recursión|recursion/i.test(det)) {
+                    msg += '<br><strong>RLS:</strong> en el proyecto (carpeta del código) ejecuta en SQL Editor el script <strong>supabase-fix-rls-recursion.sql</strong> y vuelve a pulsar refrescar.';
+                } else if (det && /column|does not exist|PGRST204/i.test(det)) {
+                    msg += '<br><strong>Migraciones:</strong> en Supabase → SQL ejecuta los <code>.sql</code> de columnas pendientes (<code>20260426_radar_profiles_bonus.sql</code>, chat, etc.) o revisa el detalle debajo.';
+                }
+                if (det) {
+                    var escD = document.createElement('div');
+                    escD.textContent = det;
+                    msg += '<br><small style="word-break:break-word;opacity:.9">' + escD.innerHTML + '</small>';
+                }
             } else {
                 msg = '☁️ <strong>No hay sesión de Supabase en este navegador.</strong> El panel puede abrirte con la clave interna, pero la nube necesita la <strong>misma contraseña que tiene la cuenta admin en Supabase</strong>. Si cambiaste la clave en Supabase, úsala aquí al iniciar sesión, o entra primero en <strong>login.html</strong> con <strong>admin@nutriplantpro.com</strong> y luego vuelve al admin y pulsa <strong>Refrescar desde Supabase</strong>.';
             }
@@ -885,12 +937,15 @@
                 return false;
             }
             try {
-                const { data: profiles, error: profilesErr } = await client
-                    .from('profiles')
-                    .select('id, email, name, is_admin, password_plain, phone, profession, location, crops, subscription_status, subscription_amount, subscription_activated_at, last_payment_date, next_payment_date, paypal_subscription_id, created_at, last_login, custom_ferti_materials, custom_hydro_materials, custom_granular_materials, custom_granular_crops, custom_ferti_crops, custom_amendments, user_notes, chat_usage_current_month, chat_usage_month, exclude_from_revenue, cancelled_by_admin, chat_history_no_project, radar_credits_bonus, chat_blocked, chat_limit_monthly');
+                var profRes = await adminFetchAllProfilesWithSelectFallback(client);
+                var profiles = profRes.profiles;
+                var profilesErr = profRes.error;
                 if (profilesErr) {
+                    var errStr = String(profilesErr.message || profilesErr || '') +
+                        (profilesErr.details ? (' — ' + profilesErr.details) : '') +
+                        (profilesErr.code ? (' [' + profilesErr.code + ']') : '');
                     console.warn('nutriplantAdminLoadFromCloud profiles:', profilesErr);
-                    setAdminCloudLoadDiag('profiles_error');
+                    setAdminCloudLoadDiag('profiles_error', errStr);
                     window._adminCloudCache._cloudLoaded = true;
                     window._adminCloudCache._cloudLastSuccess = false;
                     return false;
