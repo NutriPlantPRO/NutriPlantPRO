@@ -460,6 +460,21 @@
       width: 22px;
       height: 22px;
     }
+    .np-tree-root-pin {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      min-height: 22px;
+      margin-right: 4px;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+    .np-tree-root-pin svg {
+      display: block;
+      filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6));
+    }
     .np-tree-meta {
       flex-shrink: 0;
       font-size: 10px;
@@ -798,7 +813,21 @@
       .np-pillar-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
       .np-pillar-tab { flex-shrink: 0; }
     }
-    .np-sheet-wrap { position: relative; min-height: 280px; margin-bottom: 16px; }
+    .np-sheet-wrap {
+      position: relative;
+      min-height: 280px;
+      margin-bottom: 16px;
+    }
+    /* Sin categoría seleccionada: no reservar alto; la lista del pilar sube */
+    .np-sheet-wrap.np-sheet-wrap--compact {
+      min-height: 0;
+      margin-bottom: 10px;
+    }
+    .np-sheet-wrap.np-sheet-wrap--compact .np-sheet-placeholder {
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
     .np-sheet-placeholder {
       text-align: center;
       padding: 44px 20px;
@@ -1257,6 +1286,60 @@
     .np-prio-baja.np-prio-on { background: linear-gradient(145deg, #bbf7d0, #22c55e); border-color: #16a34a; color: #14532d; }
     .np-prio-media.np-prio-on { background: linear-gradient(145deg, #fef08a, #eab308); border-color: #ca8a04; color: #713f12; }
     .np-prio-alta.np-prio-on { background: linear-gradient(145deg, #fecaca, #ef4444); border-color: #dc2626; color: #7f1d1d; }
+    /* Resumen de semáforos en el panel de categorías (misma vista que la lista de apuntes) */
+    .np-prio-summary {
+      margin-top: 10px;
+    }
+    .np-prio-summary-details {
+      border-radius: 10px;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      background: rgba(255, 255, 255, 0.75);
+      padding: 0 8px 8px;
+    }
+    .np-prio-summary-details summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 8px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #047857;
+      user-select: none;
+    }
+    .np-prio-summary-details summary::-webkit-details-marker { display: none; }
+    .np-prio-summary-details summary::after {
+      content: ' ▸';
+      opacity: 0.55;
+      font-weight: 600;
+    }
+    .np-prio-summary-details[open] summary::after { content: ' ▾'; }
+    .np-prio-summary-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 2px 4px 4px;
+    }
+    .np-prio-summary-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      background: rgba(248, 250, 252, 0.95);
+    }
+    .np-prio-summary-dot { font-size: 11px; line-height: 1; opacity: 0.9; }
+    .np-prio-summary-baja { color: #14532d; }
+    .np-prio-summary-baja .np-prio-summary-dot { color: #22c55e; }
+    .np-prio-summary-media { color: #713f12; }
+    .np-prio-summary-media .np-prio-summary-dot { color: #eab308; }
+    .np-prio-summary-alta { color: #7f1d1d; }
+    .np-prio-summary-alta .np-prio-summary-dot { color: #ef4444; }
     .np-ms-done {
       width: 20px;
       height: 20px;
@@ -1442,8 +1525,8 @@
         </div>
       </div>
       <div class="np-plan-actions np-hide" id="npHeaderLogged">
-        <a class="btn-mac-nav btn-mac-nav-brand" href="../dashboard.html" target="_blank" rel="noopener noreferrer">NutriPlantPRO</a>
-        <a class="btn-mac-nav" href="../admin/index.html" target="_blank" rel="noopener noreferrer">Panel admin</a>
+        <a class="btn-mac-nav btn-mac-nav-brand" href="https://nutriplantpro.com/login" target="_blank" rel="noopener noreferrer">NutriPlantPRO</a>
+        <a class="btn-mac-nav" href="https://nutriplantpro.com/admin/?k=np_admin_key_8f4a2b9c1e7d" target="_blank" rel="noopener noreferrer">Panel admin</a>
         <button type="button" class="btn-mac-nav btn-mac-logout" id="npBtnLogout">Cerrar sesión</button>
       </div>
     </header>
@@ -1493,11 +1576,12 @@
             <input type="checkbox" id="npFilterDesc" checked />
             Incluir subcategorías
           </label>
+          <div id="npPrioSummary" class="np-prio-summary np-hide" aria-live="polite"></div>
           <div id="npSelectedPath" class="np-msg ok np-hide" style="margin-top:12px;padding:10px;font-size:13px;line-height:1.4;"></div>
         </aside>
 
         <div class="np-main-col">
-          <div class="np-sheet-wrap">
+          <div id="npSheetWrap" class="np-sheet-wrap np-sheet-wrap--compact">
             <div id="npSheetPlaceholder" class="np-sheet-placeholder">Selecciona una categoría en el árbol.</div>
 
             <section id="npSheetPanel" class="panel np-sheet np-hide">
@@ -2212,6 +2296,104 @@
     }
     if ((b.variant === 'tasks' || b.variant === 'smart') && ncol >= 4) return 3;
     return -1;
+  }
+
+  function miniSheetColCountForAggr(b) {
+    var headers = b.headers || [];
+    var rows = b.rows || [];
+    var ncol = headers.length;
+    rows.forEach(function (row) {
+      var L = Array.isArray(row) ? row.length : (row && row.cells ? row.cells.length : 0);
+      if (L > ncol) ncol = L;
+    });
+    return Math.max(ncol, b.variant === 'smart' ? 6 : 1);
+  }
+
+  /** Cuenta filas con prioridad en tablas tareas / seguimiento (body_blocks). */
+  function countPrioritiesInMiniSheet(b) {
+    var out = { baja: 0, media: 0, alta: 0 };
+    if (!b || b.type !== 'mini_sheet') return out;
+    if (b.variant !== 'tasks' && b.variant !== 'smart') return out;
+    var headers = b.headers || [];
+    var rows = b.rows || [];
+    if (!rows.length) return out;
+    var ncol = miniSheetColCountForAggr(b);
+    var prioCol = resolvePriorityColIndex(b, headers, ncol);
+    if (prioCol < 0) return out;
+    rows.forEach(function (row, ri) {
+      var rk = b.rowKinds && b.rowKinds[ri];
+      if (b.variant === 'smart' && rk && rk !== 'task') return;
+      var cells = Array.isArray(row) ? row.slice() : (row && row.cells ? row.cells.slice() : []);
+      while (cells.length < ncol) cells.push('');
+      var raw = cells[prioCol];
+      var lv = priorityLevelFromRaw(raw != null ? String(raw) : '');
+      if (lv === 'baja') out.baja++;
+      else if (lv === 'media') out.media++;
+      else if (lv === 'alta') out.alta++;
+    });
+    return out;
+  }
+
+  function aggregatePriorityFromBodyBlocks(blocks) {
+    var tot = { baja: 0, media: 0, alta: 0 };
+    if (!blocks || !Array.isArray(blocks)) return tot;
+    blocks.forEach(function (blk) {
+      var c = countPrioritiesInMiniSheet(blk);
+      tot.baja += c.baja;
+      tot.media += c.media;
+      tot.alta += c.alta;
+    });
+    return tot;
+  }
+
+  function aggregatePriorityFromItemRows(rows) {
+    var tot = { baja: 0, media: 0, alta: 0 };
+    (rows || []).forEach(function (r) {
+      var ab = aggregatePriorityFromBodyBlocks(r.body_blocks);
+      tot.baja += ab.baja;
+      tot.media += ab.media;
+      tot.alta += ab.alta;
+    });
+    return tot;
+  }
+
+  function renderSidebarPrioSummary(rows) {
+    var mount = $('npPrioSummary');
+    if (!mount) return;
+    if (!state.selectedAreaId || !state.selectedCategoryId) {
+      mount.classList.add('np-hide');
+      mount.innerHTML = '';
+      return;
+    }
+    var t = aggregatePriorityFromItemRows(rows);
+    mount.classList.remove('np-hide');
+    mount.innerHTML = '';
+    var det = document.createElement('details');
+    det.className = 'np-prio-summary-details';
+    det.open = true;
+    var summ = document.createElement('summary');
+    summ.className = 'np-prio-summary-sum';
+    summ.textContent = 'Prioridades';
+    det.appendChild(summ);
+    var rowEl = document.createElement('div');
+    rowEl.className = 'np-prio-summary-row';
+    [
+      { key: 'baja', title: 'Baja (verde)' },
+      { key: 'media', title: 'Media (ámbar)' },
+      { key: 'alta', title: 'Alta (rojo)' }
+    ].forEach(function (def) {
+      var lab = document.createElement('span');
+      lab.className = 'np-prio-summary-chip np-prio-summary-' + def.key;
+      lab.title = def.title;
+      var dot = document.createElement('span');
+      dot.className = 'np-prio-summary-dot';
+      dot.textContent = '●';
+      lab.appendChild(dot);
+      lab.appendChild(document.createTextNode(' ' + t[def.key]));
+      rowEl.appendChild(lab);
+    });
+    det.appendChild(rowEl);
+    mount.appendChild(det);
   }
 
   /** Bloques en body_blocks: mini_sheet + note_section (texto intercalado). opts.editable + persistItemId = debounce al modal. */
@@ -2975,11 +3157,12 @@
     state.categoryItemCounts = map;
   }
 
-  function renderTreeNode(node) {
+  function renderTreeNode(node, isRoot) {
+    isRoot = !!isRoot;
     var wrap = document.createElement('div');
     wrap.className = 'np-tree-node';
     var row = document.createElement('div');
-    row.className = 'np-tree-row';
+    row.className = 'np-tree-row' + (isRoot ? ' np-tree-row--root' : '');
     row.setAttribute('role', 'treeitem');
     row.setAttribute('aria-selected', state.selectedCategoryId === node.cat.id ? 'true' : 'false');
     if (state.selectedCategoryId === node.cat.id) row.classList.add('np-tree-active');
@@ -2987,6 +3170,16 @@
       if (e.target.closest('.np-tree-ignore')) return;
       selectCategory(node.cat.id);
     });
+
+    if (isRoot) {
+      var pin = document.createElement('span');
+      pin.className = 'np-tree-root-pin';
+      pin.setAttribute('aria-hidden', 'true');
+      pin.title = 'Categoría raíz';
+      pin.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#10b981" stroke="#047857" stroke-width="0.75"/><circle cx="12" cy="9" r="2.25" fill="#ecfdf5"/></svg>';
+      row.appendChild(pin);
+    }
 
     var childBox = null;
     var chevronSvg =
@@ -2999,7 +3192,7 @@
       inner.className = 'np-tree-children-inner';
       if (!state.treeCollapsed[node.cat.id]) childBox.classList.add('np-tree-children-open');
       node.children.forEach(function (ch) {
-        inner.appendChild(renderTreeNode(ch));
+        inner.appendChild(renderTreeNode(ch, false));
       });
       childBox.appendChild(inner);
 
@@ -3128,7 +3321,7 @@
     mount.innerHTML = '';
     if (!state.selectedAreaId) return;
     nestCategories(state.selectedAreaId).forEach(function (node) {
-      mount.appendChild(renderTreeNode(node));
+      mount.appendChild(renderTreeNode(node, true));
     });
   }
 
@@ -3215,10 +3408,12 @@
   function syncSheetVisibility() {
     var ph = $('npSheetPlaceholder');
     var sp = $('npSheetPanel');
+    var sw = $('npSheetWrap');
     var title = $('npSheetTitle');
     var nav = $('npSheetNavBlocks');
     if (!ph || !sp) return;
     var open = !!(state.selectedAreaId && state.selectedCategoryId);
+    if (sw) sw.classList.toggle('np-sheet-wrap--compact', !open);
     if (!open) {
       ph.classList.remove('np-hide');
       sp.classList.add('np-hide');
@@ -3463,6 +3658,11 @@
       $('npEmpty').classList.remove('np-hide');
       var siw = $('npSheetItemsWrap');
       if (siw) siw.classList.add('np-hide');
+      var ps = $('npPrioSummary');
+      if (ps) {
+        ps.classList.add('np-hide');
+        ps.innerHTML = '';
+      }
       return;
     }
 
@@ -3554,6 +3754,7 @@
     });
 
     syncSheetItemsList(rows);
+    renderSidebarPrioSummary(rows);
     await refreshCategoryItemCounts();
     renderTree();
   }
