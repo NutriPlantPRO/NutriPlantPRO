@@ -8,52 +8,96 @@
   <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png" />
   <style>
     :root {
-      --bg: #f8fafc;
-      --card: #fff;
-      --border: #e2e8f0;
-      --text: #0f172a;
-      --muted: #64748b;
-      --green: #16a34a;
-      --green-d: #15803d;
+      --bg: #eceff3;
+      --card: rgba(255, 255, 255, 0.82);
+      --border: rgba(15, 23, 42, 0.08);
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --green: #22c55e;
+      --green-d: #16a34a;
       --danger: #b91c1c;
+      --blur: saturate(180%) blur(18px);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
       color: var(--text);
       min-height: 100vh;
+      letter-spacing: -0.015em;
+      background:
+        radial-gradient(ellipse 100% 70% at 100% 0%, rgba(147, 197, 253, 0.35) 0%, transparent 52%),
+        radial-gradient(ellipse 90% 55% at 0% 80%, rgba(167, 243, 208, 0.28) 0%, transparent 48%),
+        radial-gradient(ellipse 70% 50% at 50% 100%, rgba(226, 232, 240, 0.9) 0%, transparent 55%),
+        linear-gradient(175deg, #e8ecf2 0%, #eef1f6 45%, #e9edf4 100%);
+      background-attachment: fixed;
     }
-    .wrap { max-width: 1280px; margin: 0 auto; padding: 16px; }
-    header.np-plan-header {
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 18px 32px; }
+    header.np-plan-header.np-mac-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
-      padding: 12px 0 20px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 20px;
+      padding: 14px 20px;
+      margin-bottom: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.58);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      box-shadow:
+        0 10px 40px rgba(15, 23, 42, 0.07),
+        0 1px 0 rgba(255, 255, 255, 0.95) inset;
     }
     .np-plan-brand { display: flex; align-items: center; gap: 12px; }
-    .np-plan-brand img { height: 36px; width: auto; }
+    .np-plan-brand img { height: 38px; width: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.06)); }
     .np-plan-brand h1 {
       margin: 0;
-      font-size: 1.15rem;
-      font-weight: 700;
+      font-size: 1.17rem;
+      font-weight: 600;
       color: var(--text);
+      letter-spacing: -0.03em;
     }
     .np-plan-brand .sub {
       font-size: 12px;
       color: var(--muted);
       font-weight: 500;
+      margin-top: 2px;
+      letter-spacing: -0.01em;
     }
-    .np-plan-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .np-plan-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .btn-mac-nav {
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 980px;
+      padding: 9px 16px;
+      font-weight: 500;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #1d1d1f;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 0 rgba(255,255,255,0.9) inset;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    .btn-mac-nav:hover {
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.09);
+      transform: translateY(-1px);
+    }
+    .btn-mac-muted {
+      opacity: 0.88;
+      background: rgba(248, 250, 252, 0.85);
+    }
     .btn {
       border: 0;
-      border-radius: 8px;
-      padding: 8px 14px;
+      border-radius: 10px;
+      padding: 9px 14px;
       font-weight: 600;
       font-size: 14px;
       cursor: pointer;
@@ -61,28 +105,56 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
-    .btn-primary { background: var(--green); color: #fff; }
-    .btn-primary:hover { background: var(--green-d); }
-    .btn-ghost { background: #f1f5f9; color: #334155; border: 1px solid var(--border); }
-    .btn-danger { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; font-size: 12px; padding: 4px 10px; }
+    .btn-primary {
+      background: linear-gradient(180deg, #34d399 0%, var(--green) 100%);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(34, 197, 94, 0.35);
+      border-radius: 980px;
+      padding: 10px 20px;
+      font-weight: 600;
+    }
+    .btn-primary:hover { filter: brightness(1.03); transform: translateY(-1px); }
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.65);
+      color: #334155;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 10px;
+    }
+    .btn-ghost:hover { background: rgba(255, 255, 255, 0.92); }
+    .btn-danger { background: rgba(254, 242, 242, 0.95); color: var(--danger); border: 1px solid #fecaca; font-size: 12px; padding: 4px 10px; border-radius: 8px; }
     .panel {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 16px;
+      padding: 18px;
       margin-bottom: 16px;
-      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+      backdrop-filter: saturate(160%) blur(14px);
+      -webkit-backdrop-filter: saturate(160%) blur(14px);
+      box-shadow:
+        0 12px 40px rgba(15, 23, 42, 0.06),
+        0 1px 0 rgba(255, 255, 255, 0.88) inset;
     }
     .panel h2 { margin: 0 0 12px; font-size: 1rem; color: #334155; }
     label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
     input, select, textarea {
       width: 100%;
-      padding: 8px 10px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      padding: 10px 12px;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      border-radius: 10px;
       font-size: 14px;
       margin-bottom: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) inset;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(34, 197, 94, 0.45);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
     }
     textarea { min-height: 100px; resize: vertical; }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -98,7 +170,14 @@
       border-bottom: 1px solid var(--border);
       vertical-align: top;
     }
-    th { background: #f8fafc; color: #475569; font-weight: 600; }
+    th {
+      background: rgba(248, 250, 252, 0.95);
+      color: #475569;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
     .np-msg { padding: 16px; border-radius: 8px; font-size: 14px; }
     .np-msg.warn { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; }
     .np-msg.err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
@@ -121,7 +200,9 @@
       position: fixed;
       inset: 0;
       z-index: 1000;
-      background: rgba(15, 23, 42, 0.45);
+      background: rgba(15, 23, 42, 0.38);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       align-items: center;
       justify-content: center;
       padding: 16px;
@@ -129,15 +210,17 @@
     }
     .np-modal-overlay.np-modal-open { display: flex; }
     .np-modal-panel {
-      background: var(--card);
-      border-radius: 12px;
-      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.94);
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.9);
       max-width: 560px;
       width: 100%;
       max-height: min(85vh, 640px);
       display: flex;
       flex-direction: column;
-      box-shadow: 0 20px 40px rgba(0,0,0,.12);
+      box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
     }
     .np-modal-head {
       display: flex;
@@ -190,8 +273,12 @@
       font-size: 13px;
       flex-wrap: wrap;
     }
-    .np-tree-row:hover { background: #f1f5f9; }
-    .np-tree-row.np-tree-active { background: #ecfdf5; outline: 1px solid #86efac; }
+    .np-tree-row:hover { background: rgba(241, 245, 249, 0.85); }
+    .np-tree-row.np-tree-active {
+      background: rgba(236, 253, 245, 0.95);
+      outline: 1px solid rgba(134, 239, 172, 0.85);
+      box-shadow: 0 2px 10px rgba(22, 163, 74, 0.08);
+    }
     .np-tree-children { margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--border); }
     .np-mini-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
     .np-mini-table th, .np-mini-table td { border: 1px solid var(--border); padding: 4px 6px; text-align: left; }
@@ -212,24 +299,31 @@
       min-width: 0;
     }
     .np-pillar-tab {
-      border: 1px solid var(--border);
-      background: #fff;
-      border-radius: 12px;
-      padding: 10px 18px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 14px;
+      padding: 11px 18px;
       font-weight: 600;
-      font-size: 14px;
+      font-size: 13px;
       cursor: pointer;
       color: #475569;
       border-bottom: 3px solid transparent;
-      transition: background .15s, color .15s, box-shadow .15s;
+      transition: background .18s, color .18s, box-shadow .18s, transform .18s;
     }
-    .np-pillar-tab:hover { background: #f8fafc; color: #0f172a; }
+    .np-pillar-tab:hover {
+      background: rgba(255, 255, 255, 0.92);
+      color: #0f172a;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+    }
     .np-pillar-tab-active {
-      background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 55%);
+      background: linear-gradient(175deg, rgba(236, 253, 245, 0.95) 0%, rgba(255, 255, 255, 0.98) 70%);
       color: #14532d;
-      border-color: #86efac;
-      border-bottom-color: #16a34a;
-      box-shadow: 0 2px 10px rgba(22, 163, 74, 0.12);
+      border-color: rgba(134, 239, 172, 0.85);
+      border-bottom-color: #22c55e;
+      box-shadow: 0 6px 20px rgba(22, 163, 74, 0.14);
     }
     .np-pillar-add {
       display: flex;
@@ -242,11 +336,89 @@
       .np-pillar-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
       .np-pillar-tab { flex-shrink: 0; }
     }
+    .np-sheet-wrap { position: relative; min-height: 280px; margin-bottom: 16px; }
+    .np-sheet-placeholder {
+      text-align: center;
+      padding: 44px 20px;
+      border: 1px dashed rgba(148, 163, 184, 0.65);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      transition: opacity .25s ease;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05) inset;
+    }
+    .np-sheet-placeholder strong { color: #475569; }
+    .np-sheet {
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      box-shadow:
+        0 14px 42px rgba(15, 23, 42, 0.09),
+        0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      overflow: hidden;
+      animation: np-sheet-in 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes np-sheet-in {
+      from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .np-sheet-inner { padding: 16px 18px 18px; }
+    .np-sheet-header {
+      padding: 14px 18px;
+      background: linear-gradient(110deg, #ecfdf5 0%, #f0fdf4 35%, #ffffff 90%);
+      border-bottom: 1px solid #d1fae5;
+    }
+    .np-sheet-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #059669;
+      margin-bottom: 6px;
+    }
+    .np-sheet-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+    .np-sheet-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.45;
+    }
+    .np-sheet-branch {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed #bbf7d0;
+    }
+    .np-sheet-branch input {
+      margin-bottom: 0;
+      flex: 1;
+      min-width: 160px;
+      background: #fff;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header class="np-plan-header">
+    <header class="np-plan-header np-mac-bar">
       <div class="np-plan-brand">
         <img src="../assets/NutriPlant_PRO_blue.png" alt="" />
         <div>
@@ -255,8 +427,9 @@
         </div>
       </div>
       <div class="np-plan-actions np-hide" id="npHeaderLogged">
-        <a class="btn btn-ghost" href="../dashboard.html">Ir al dashboard NutriPlant</a>
-        <button type="button" class="btn btn-ghost" id="npBtnLogout">Cerrar sesión</button>
+        <a class="btn-mac-nav" href="../dashboard.html">Dashboard NutriPlant</a>
+        <a class="btn-mac-nav" href="../admin/index.html">Panel admin</a>
+        <button type="button" class="btn-mac-nav btn-mac-muted" id="npBtnLogout">Cerrar sesión</button>
       </div>
     </header>
 
@@ -320,43 +493,61 @@
         </aside>
 
         <div class="np-main-col">
-          <section class="panel">
-            <h2>Nuevo ítem</h2>
-            <div id="npNoAreas" class="np-msg warn np-hide" style="margin-bottom:12px;">
-              No hay pilares (áreas). Ejecuta el seed de Plan PRO en Supabase o crea filas en <code>plan_pro_areas</code> con tu <code>owner_id</code>.
+          <div class="np-sheet-wrap">
+            <div id="npSheetPlaceholder" class="np-sheet-placeholder">
+              <strong>Hoja cerrada.</strong><br />
+              Haz clic en una categoría del árbol (izquierda) para <strong>abrir la hoja</strong> en este panel: podrás escribir, usar mini-tabla y crear ramas nuevas desde la cabecera.
             </div>
-            <div id="npNeedCategory" class="np-msg warn np-hide" style="margin-bottom:12px;">Selecciona una categoría en el árbol (columna izquierda) para guardar el ítem.</div>
-            <p id="npContextLabel" class="np-muted" style="margin-top:0;"></p>
-            <form id="npFormCreate">
-              <label for="npTitle">Título</label>
-              <input id="npTitle" name="title" required maxlength="500" placeholder="Ej. Revisión semanal de gastos" />
-              <div class="row2">
-                <div>
-                  <label for="npDueAt">Fecha objetivo / agenda</label>
-                  <input type="date" id="npDueAt" name="due_at" />
-                </div>
-                <div>
-                  <label for="npStatus">Estado</label>
-                  <input id="npStatus" placeholder="Nuevo" value="Nuevo" />
+
+            <section id="npSheetPanel" class="panel np-sheet np-hide">
+              <div class="np-sheet-header">
+                <div class="np-sheet-kicker">Hoja abierta</div>
+                <div id="npSheetTitle" class="np-sheet-title">—</div>
+                <div id="npSheetSub" class="np-sheet-sub"></div>
+                <div class="np-sheet-branch">
+                  <input type="text" id="npBranchName" maxlength="120" placeholder="Nueva subcategoría bajo esta rama…" autocomplete="off" />
+                  <button type="button" class="btn btn-ghost" id="npBtnBranchHere">Crear rama aquí</button>
                 </div>
               </div>
-              <div class="row2">
-                <div>
-                  <label for="npPriority">Prioridad</label>
-                  <input id="npPriority" placeholder="Media" />
+              <div class="np-sheet-inner">
+                <h2 style="margin:0 0 12px;font-size:1rem;color:#334155;">Nuevo ítem en esta hoja</h2>
+                <div id="npNoAreas" class="np-msg warn np-hide" style="margin-bottom:12px;">
+                  No hay pilares (áreas). Ejecuta el seed de Plan PRO en Supabase o crea filas en <code>plan_pro_areas</code> con tu <code>owner_id</code>.
                 </div>
-                <div></div>
+                <div id="npNeedCategory" class="np-msg warn np-hide" style="margin-bottom:12px;">Selecciona una categoría en el árbol para guardar.</div>
+                <p id="npContextLabel" class="np-muted" style="margin-top:0;"></p>
+                <form id="npFormCreate">
+                  <label for="npTitle">Título</label>
+                  <input id="npTitle" name="title" required maxlength="500" placeholder="Ej. Nota rápida, reunión, pendiente…" />
+                  <div class="row2">
+                    <div>
+                      <label for="npDueAt">Fecha objetivo / agenda</label>
+                      <input type="date" id="npDueAt" name="due_at" />
+                    </div>
+                    <div>
+                      <label for="npStatus">Estado</label>
+                      <input id="npStatus" placeholder="Nuevo" value="Nuevo" />
+                    </div>
+                  </div>
+                  <div class="row2">
+                    <div>
+                      <label for="npPriority">Prioridad</label>
+                      <input id="npPriority" placeholder="Media" />
+                    </div>
+                    <div></div>
+                  </div>
+                  <label for="npBody">Nota / detalle</label>
+                  <textarea id="npBody" placeholder="Escribe aquí como en una hoja en blanco…"></textarea>
+                  <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+                    <button type="button" class="btn btn-ghost" id="npBtnAddMiniSheet">Añadir mini-tabla al ítem (β)</button>
+                    <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
+                  </div>
+                  <div id="npMiniSheetPreview" class="np-hide" style="margin-bottom:12px;overflow:auto;"></div>
+                  <button type="submit" class="btn btn-primary" id="npBtnCreate">Guardar ítem en la hoja</button>
+                </form>
               </div>
-              <label for="npBody">Nota / detalle</label>
-              <textarea id="npBody" placeholder="Texto libre…"></textarea>
-              <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
-                <button type="button" class="btn btn-ghost" id="npBtnAddMiniSheet">Añadir mini-tabla al ítem (β)</button>
-                <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
-              </div>
-              <div id="npMiniSheetPreview" class="np-hide" style="margin-bottom:12px;overflow:auto;"></div>
-              <button type="submit" class="btn btn-primary" id="npBtnCreate">Guardar ítem</button>
-            </form>
-          </section>
+            </section>
+          </div>
 
           <section class="panel">
             <h2>Ítems</h2>
@@ -653,23 +844,55 @@
     });
   }
 
+  function syncSheetVisibility() {
+    var ph = $('npSheetPlaceholder');
+    var sp = $('npSheetPanel');
+    var title = $('npSheetTitle');
+    var sub = $('npSheetSub');
+    if (!ph || !sp) return;
+    var open = !!(state.selectedAreaId && state.selectedCategoryId);
+    if (!open) {
+      ph.classList.remove('np-hide');
+      sp.classList.add('np-hide');
+      return;
+    }
+    ph.classList.add('np-hide');
+    sp.classList.remove('np-hide');
+    if (title) title.textContent = getCategoryPath(state.selectedCategoryId);
+    if (sub) {
+      sub.textContent = 'Pilar «' + (state.areaMap[state.selectedAreaId] || '') + '» · Hoja en blanco para notas, agenda y mini-tabla (β). Usa «Crear rama aquí» para una subcategoría nueva.';
+    }
+    sp.style.animation = 'none';
+    void sp.offsetHeight;
+    sp.style.animation = '';
+  }
+
   function updateSelectionUI() {
     var pathEl = $('npSelectedPath');
     var ctx = $('npContextLabel');
     if (!state.selectedAreaId) {
-      ctx.textContent = '';
-      pathEl.classList.add('np-hide');
+      if (ctx) ctx.textContent = '';
+      if (pathEl) pathEl.classList.add('np-hide');
+      syncSheetVisibility();
       return;
     }
     var aname = state.areaMap[state.selectedAreaId] || '';
     if (!state.selectedCategoryId) {
-      pathEl.classList.add('np-hide');
-      ctx.textContent = 'Pilar: ' + aname + ' · Mostrando todos los ítems de este pilar. Elige una categoría para acotar y guardar nuevos ítems.';
+      if (pathEl) pathEl.classList.add('np-hide');
+      if (ctx) {
+        ctx.textContent = 'Pilar: ' + aname + ' · Mostrando ítems de todo el pilar. Elige una categoría en el árbol para abrir la hoja.';
+      }
+      syncSheetVisibility();
       return;
     }
-    pathEl.classList.remove('np-hide');
-    pathEl.textContent = 'Ruta: ' + getCategoryPath(state.selectedCategoryId);
-    ctx.textContent = 'Nuevo ítem se guardará en: ' + getCategoryPath(state.selectedCategoryId);
+    if (pathEl) {
+      pathEl.classList.remove('np-hide');
+      pathEl.textContent = 'Ruta: ' + getCategoryPath(state.selectedCategoryId);
+    }
+    if (ctx) {
+      ctx.textContent = 'Guardando en: ' + getCategoryPath(state.selectedCategoryId);
+    }
+    syncSheetVisibility();
   }
 
   function slugifyPillar(s) {
@@ -744,8 +967,13 @@
       showToast(res.error.message || 'No se pudo crear la categoría. ¿Ejecutaste supabase-plan-pro-categories-parent.sql?', true);
       return;
     }
+    var newId = res.data && res.data.id;
     await loadLookups();
-    showToast('Subcategoría creada.');
+    if (newId) state.selectedCategoryId = newId;
+    renderTree();
+    updateSelectionUI();
+    loadItems();
+    showToast('Rama creada — la hoja sigue abierta en la nueva categoría.');
   }
 
   async function addRootCategory(title) {
@@ -946,6 +1174,21 @@
       rows: [['', '', ''], ['', '', ''], ['', '', '']]
     });
     refreshPendingHint();
+  });
+
+  $('npBtnBranchHere').addEventListener('click', async function () {
+    if (!state.selectedCategoryId) return;
+    var raw = ($('npBranchName').value || '').trim();
+    if (!raw) return;
+    $('npBranchName').value = '';
+    await addCategoryUnder(state.selectedCategoryId, raw);
+  });
+
+  $('npBranchName').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      $('npBtnBranchHere').click();
+    }
   });
 
   $('npDetailClose').addEventListener('click', closeItemDetail);
