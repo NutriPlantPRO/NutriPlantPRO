@@ -39,11 +39,13 @@
       background-attachment: fixed;
     }
     .wrap {
-      max-width: 1280px;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: min(1920px, 100%);
       margin: 0 auto;
-      padding: 20px 18px 32px;
-      padding-left: max(18px, env(safe-area-inset-left));
-      padding-right: max(18px, env(safe-area-inset-right));
+      padding: 14px 12px 26px;
+      padding-left: max(12px, env(safe-area-inset-left));
+      padding-right: max(12px, env(safe-area-inset-right));
     }
     header.np-plan-header.np-mac-bar {
       display: flex;
@@ -120,6 +122,21 @@
       border-color: rgba(37, 99, 235, 0.55);
       background: rgba(239, 246, 255, 1);
       color: #1e3a8a;
+    }
+    .btn-mac-admin {
+      border: 1px solid rgba(22, 163, 74, 0.45);
+      color: var(--green-d);
+      background: linear-gradient(180deg, rgba(240, 253, 244, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
+      font-weight: 600;
+      box-shadow:
+        0 1px 3px rgba(22, 163, 74, 0.08),
+        0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    }
+    .btn-mac-admin:hover {
+      border-color: rgba(21, 128, 61, 0.62);
+      background: rgba(240, 253, 244, 1);
+      color: #14532d;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.14);
     }
     .btn-mac-muted {
       opacity: 0.88;
@@ -379,7 +396,7 @@
     /* Móvil / tablet: misma vista en dos columnas (no apilar categorías arriba del todo) */
     @media (max-width: 900px) {
       .wrap {
-        padding: 14px max(12px, env(safe-area-inset-right)) 26px max(12px, env(safe-area-inset-left));
+        padding: 12px max(10px, env(safe-area-inset-right)) 22px max(10px, env(safe-area-inset-left));
       }
       .np-layout {
         grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
@@ -689,14 +706,72 @@
         0 14px 36px rgba(15, 23, 42, 0.1),
         0 22px 56px rgba(34, 197, 94, 0.06);
     }
-    .np-modal-body > .np-ms-block:nth-child(3n + 2) {
-      border-top: 3px solid rgba(37, 99, 235, 0.45);
+    /* Tabla libre: bloque verde + título azul (modal y preview de creación) */
+    .np-ms-block.np-ms-block-free {
+      border: 2px solid rgba(34, 197, 94, 0.48);
+      background: linear-gradient(
+        165deg,
+        rgba(240, 253, 244, 0.42) 0%,
+        rgba(255, 255, 255, 0.96) 52%,
+        rgba(248, 250, 252, 0.88) 100%
+      );
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.92) inset,
+        0 6px 18px rgba(34, 197, 94, 0.1),
+        0 12px 32px rgba(15, 23, 42, 0.06);
     }
-    .np-modal-body > .np-ms-block:nth-child(3n + 3) {
-      border-top: 3px solid rgba(34, 197, 94, 0.42);
+    .np-modal-body .np-ms-block-free,
+    #npMiniSheetPreview .np-ms-block-free {
+      border-color: rgba(22, 163, 74, 0.52);
     }
-    .np-modal-body > .np-ms-block:nth-child(3n + 4) {
-      border-top: 3px solid rgba(14, 165, 233, 0.42);
+    .np-modal-body .np-ms-block-free:hover {
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.96) inset,
+        0 8px 22px rgba(34, 197, 94, 0.14),
+        0 16px 40px rgba(15, 23, 42, 0.08);
+    }
+    .np-detail-blocks-mount .np-ms-block-free + .np-ms-block-free,
+    #npMiniSheetPreview .np-ms-block-free + .np-ms-block-free {
+      margin-top: 20px;
+    }
+    .np-ms-block-free .np-ms-sheet {
+      border-color: rgba(34, 197, 94, 0.28);
+      background: rgba(255, 255, 255, 0.72);
+    }
+    .np-ms-block-free .np-ms-title-inline {
+      flex: 1;
+      min-width: 120px;
+      font: inherit;
+      font-weight: 650;
+      font-size: 14px;
+      border-radius: 10px;
+      padding: 7px 12px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 2px solid rgba(37, 99, 235, 0.52);
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12);
+    }
+    .np-ms-block-free .np-ms-title-inline:focus {
+      outline: none;
+      border-color: rgba(29, 78, 216, 0.85);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
+    /* Tabla de montos: acento ámbar en el título */
+    .np-ms-block-ledger .np-ms-title-inline {
+      flex: 1;
+      min-width: 120px;
+      font: inherit;
+      font-weight: 650;
+      font-size: 14px;
+      border-radius: 10px;
+      padding: 7px 12px;
+      background: rgba(255, 252, 237, 0.95);
+      border: 2px solid rgba(234, 179, 8, 0.55);
+      box-shadow: 0 1px 3px rgba(234, 179, 8, 0.12);
+    }
+    .np-ms-block-ledger .np-ms-title-inline:focus {
+      outline: none;
+      border-color: rgba(202, 138, 4, 0.9);
+      box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.22);
     }
     .np-ms-head {
       font-weight: 650;
@@ -1775,7 +1850,7 @@
       </div>
       <div class="np-plan-actions np-hide" id="npHeaderLogged">
         <a class="btn-mac-nav btn-mac-nav-brand" href="https://nutriplantpro.com/login" target="_blank" rel="noopener noreferrer">NutriPlantPRO</a>
-        <a class="btn-mac-nav" href="https://nutriplantpro.com/admin/?k=np_admin_key_8f4a2b9c1e7d" target="_blank" rel="noopener noreferrer">Panel admin</a>
+        <a class="btn-mac-nav btn-mac-admin" href="https://nutriplantpro.com/admin/?k=np_admin_key_8f4a2b9c1e7d" target="_blank" rel="noopener noreferrer">Panel admin</a>
         <button type="button" class="btn-mac-nav btn-mac-logout" id="npBtnLogout">Cerrar sesión</button>
       </div>
     </header>
@@ -3378,8 +3453,6 @@
           b.title ||
           (isLedger ? 'Tabla de montos' : 'Tabla libre');
         titleInp.placeholder = isLedger ? 'Tabla de montos' : 'Tabla libre';
-        titleInp.style.cssText =
-          'flex:1;min-width:120px;font:inherit;font-weight:650;font-size:14px;border:1px solid rgba(148,163,184,0.35);border-radius:10px;padding:6px 10px;background:rgba(255,255,255,0.85);';
         titleInp.addEventListener('input', function () {
           b.title = titleInp.value;
           schedulePersist();
@@ -4267,6 +4340,11 @@
     row.appendChild(title);
     row.appendChild(meta);
     row.appendChild(actions);
+    var catTitleFull = String(node.cat.title || '').trim();
+    if (catTitleFull) {
+      row.setAttribute('title', catTitleFull);
+      title.setAttribute('title', catTitleFull);
+    }
     wrap.appendChild(row);
     if (childBox) wrap.appendChild(childBox);
     return wrap;
