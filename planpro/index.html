@@ -480,10 +480,16 @@
     .np-tree-row:hover { background: rgba(226, 232, 240, 0.65); }
     .np-tree-row.np-tree-active {
       background: rgba(219, 234, 254, 0.55);
-      font-weight: 600;
-      color: #0f172a;
-      box-shadow: inset 3px 0 0 #2563eb;
+      box-shadow: inset 3px 0 0 var(--np-tree-accent, #2563eb);
     }
+    .np-tree-node.np-tree-tone-0 { --np-tree-accent: #2563eb; }
+    .np-tree-node.np-tree-tone-1 { --np-tree-accent: #059669; }
+    .np-tree-node.np-tree-tone-2 { --np-tree-accent: #c026d3; }
+    .np-tree-node.np-tree-tone-3 { --np-tree-accent: #d97706; }
+    .np-tree-node.np-tree-tone-4 { --np-tree-accent: #dc2626; }
+    .np-tree-node.np-tree-tone-5 { --np-tree-accent: #7c3aed; }
+    .np-tree-node.np-tree-tone-6 { --np-tree-accent: #0891b2; }
+    .np-tree-node.np-tree-tone-7 { --np-tree-accent: #ea580c; }
     .np-tree-label {
       flex: 1;
       min-width: 0;
@@ -491,6 +497,17 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       padding: 0 4px;
+    }
+    .np-tree-label-branch {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--np-tree-accent, #0f172a);
+    }
+    .np-tree-label-leaf {
+      font-weight: 600;
+      font-size: 11px;
+      color: var(--np-tree-accent, #334155);
+      opacity: 0.96;
     }
     .np-tree-children {
       display: grid;
@@ -506,6 +523,7 @@
       margin-left: 14px;
       padding-left: 8px;
       border-left: 1px solid rgba(148, 163, 184, 0.35);
+      border-left-color: color-mix(in srgb, var(--np-tree-accent, #94a3b8) 44%, rgba(148, 163, 184, 0.38));
     }
     .np-tree-toggle {
       flex-shrink: 0;
@@ -524,7 +542,7 @@
     }
     .np-tree-toggle:hover {
       background: rgba(148, 163, 184, 0.2);
-      color: #0f172a;
+      color: var(--np-tree-accent, #0f172a);
     }
     .np-tree-toggle .np-tree-chevron {
       display: block;
@@ -1876,20 +1894,20 @@
       <div id="npToast" class="np-msg ok np-hide" style="margin-bottom:12px;"></div>
 
       <section class="panel np-pillar-panel np-section-accent np-section-accent-blue">
-        <h2 style="margin:0 0 10px;font-size:1rem;">Tus pilares</h2>
+        <h2 style="margin:0 0 10px;font-size:1rem;">Tus plantas</h2>
         <div class="np-pillar-tabs-row">
-          <div id="npPillarTabs" class="np-pillar-tabs" role="tablist" aria-label="Pilares"></div>
+          <div id="npPillarTabs" class="np-pillar-tabs" role="tablist" aria-label="Plantas"></div>
           <div class="np-pillar-add">
-            <input type="text" id="npNewPillar" placeholder="Nuevo pilar…" maxlength="80" />
-            <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddPillar">Añadir pilar</button>
+            <input type="text" id="npNewPillar" placeholder="Nueva planta…" maxlength="80" />
+            <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddPillar">Añadir planta</button>
           </div>
         </div>
       </section>
 
       <div class="np-layout">
         <aside class="panel np-tree-sidebar np-section-accent np-section-accent-green">
-          <h2 class="np-tree-sidebar-title">Categorías</h2>
-          <div id="npTreeMount" class="np-tree-mount" role="tree" aria-label="Categorías del pilar"></div>
+          <h2 class="np-tree-sidebar-title">Ramas</h2>
+          <div id="npTreeMount" class="np-tree-mount" role="tree" aria-label="Ramas de la planta"></div>
           <div style="margin-top:12px;">
             <div style="display:flex;gap:8px;margin-top:0;align-items:center;">
               <input type="text" id="npNewRootCat" placeholder="Raíz…" style="margin-bottom:0;flex:1;" />
@@ -1898,7 +1916,7 @@
           </div>
           <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;cursor:pointer;">
             <input type="checkbox" id="npFilterDesc" checked />
-            Incluir subcategorías
+            Incluir hojas
           </label>
           <div id="npPrioSummary" class="np-prio-summary np-hide" aria-live="polite"></div>
           <div id="npSelectedPath" class="np-msg ok np-hide" style="margin-top:12px;padding:10px;font-size:13px;line-height:1.4;"></div>
@@ -1915,7 +1933,7 @@
 
         <div class="np-main-col">
           <div id="npSheetWrap" class="np-sheet-wrap np-sheet-wrap--compact">
-            <div id="npSheetPlaceholder" class="np-sheet-placeholder">Selecciona una categoría en el árbol.</div>
+            <div id="npSheetPlaceholder" class="np-sheet-placeholder">Selecciona una rama en el árbol.</div>
 
             <section id="npSheetPanel" class="panel np-sheet np-hide">
               <div class="np-sheet-header">
@@ -1935,9 +1953,9 @@
                 </div>
                 <h2 style="margin:0 0 14px;font-size:1rem;color:#334155;">Nuevo apunte</h2>
                 <div id="npNoAreas" class="np-msg warn np-hide" style="margin-bottom:12px;">
-                  No hay pilares (áreas). Ejecuta el seed de Plan PRO en Supabase o crea filas en <code>plan_pro_areas</code> con tu <code>owner_id</code>.
+                  No hay plantas (áreas). Ejecuta el seed de Plan PRO en Supabase o crea filas en <code>plan_pro_areas</code> con tu <code>owner_id</code>.
                 </div>
-                <div id="npNeedCategory" class="np-msg warn np-hide" style="margin-bottom:12px;">Selecciona una categoría en el árbol para guardar.</div>
+                <div id="npNeedCategory" class="np-msg warn np-hide" style="margin-bottom:12px;">Selecciona una rama en el árbol para guardar.</div>
                 <form id="npFormCreate">
                   <label for="npTitle" class="np-compact-label">Resumen / título</label>
                   <input id="npTitle" class="np-title-compact" name="title" required maxlength="500" placeholder="Título" />
@@ -1989,14 +2007,14 @@
           </div>
 
           <section class="panel np-section-accent np-section-accent-blue">
-            <h2>Lista del pilar</h2>
+            <h2>Lista de la planta</h2>
             <div style="overflow:auto;">
               <table class="np-pillar-list-table">
                 <thead>
                   <tr>
                     <th>Título</th>
                     <th>Nota</th>
-                    <th>Categoría</th>
+                    <th>Rama</th>
                     <th>Actualizado</th>
                     <th class="np-actions">Eliminar</th>
                   </tr>
@@ -2395,7 +2413,7 @@
     authListenerAttached: false,
     detailItemId: null,
     detailBlocksWorking: null,
-    /** Pilar del apunte abierto en el modal (tinte tablas / borde). */
+    /** Planta (pilar) del apunte abierto en el modal (tinte tablas / borde). */
     detailModalAreaId: null,
     /** Ítems del último loadItems (para modal de prioridades). */
     prioSummaryRowsCache: null,
@@ -3127,6 +3145,15 @@
       });
   }
 
+  function getTreeToneIndex(rootCategoryId) {
+    if (!rootCategoryId || !state.selectedAreaId) return 0;
+    var roots = rootCategoriesForArea(state.selectedAreaId);
+    for (var i = 0; i < roots.length; i++) {
+      if (roots[i].id === rootCategoryId) return i % 8;
+    }
+    return 0;
+  }
+
   function aggregatePriorityByRoot(rows) {
     var map = {};
     (rows || []).forEach(function (r) {
@@ -3276,7 +3303,7 @@
 
     var topLab = document.createElement('div');
     topLab.className = 'np-prio-summary-top-label';
-    topLab.textContent = 'Prioridades por raíz · todo el pilar';
+    topLab.textContent = 'Prioridades por raíz · toda la planta';
     outer.appendChild(topLab);
 
     var rootsWrap = document.createElement('div');
@@ -4189,7 +4216,9 @@
   function renderTreeNode(node, isRoot) {
     isRoot = !!isRoot;
     var wrap = document.createElement('div');
-    wrap.className = 'np-tree-node';
+    var rootForTone = getRootCategoryId(node.cat.id);
+    var toneIdx = getTreeToneIndex(rootForTone);
+    wrap.className = 'np-tree-node np-tree-tone-' + toneIdx;
     var row = document.createElement('div');
     row.className = 'np-tree-row' + (isRoot ? ' np-tree-row--root' : '');
     row.setAttribute('role', 'treeitem');
@@ -4204,7 +4233,7 @@
       var pin = document.createElement('span');
       pin.className = 'np-tree-root-pin';
       pin.setAttribute('aria-hidden', 'true');
-      pin.title = 'Categoría raíz';
+      pin.title = 'Rama raíz';
       pin.innerHTML =
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#10b981" stroke="#047857" stroke-width="0.75"/><circle cx="12" cy="9" r="2.25" fill="#ecfdf5"/></svg>';
       row.appendChild(pin);
@@ -4230,7 +4259,7 @@
       toggle.className = 'np-tree-toggle np-tree-ignore';
       if (state.treeCollapsed[node.cat.id]) toggle.classList.add('np-tree-toggle--collapsed');
       toggle.setAttribute('aria-expanded', state.treeCollapsed[node.cat.id] ? 'false' : 'true');
-      toggle.setAttribute('aria-label', state.treeCollapsed[node.cat.id] ? 'Expandir subcategorías' : 'Contraer subcategorías');
+      toggle.setAttribute('aria-label', state.treeCollapsed[node.cat.id] ? 'Expandir hojas' : 'Contraer hojas');
       toggle.title = state.treeCollapsed[node.cat.id] ? 'Expandir' : 'Contraer';
       toggle.innerHTML = chevronSvg;
       toggle.addEventListener('click', function (e) {
@@ -4238,7 +4267,7 @@
         state.treeCollapsed[node.cat.id] = !state.treeCollapsed[node.cat.id];
         var collapsed = !!state.treeCollapsed[node.cat.id];
         toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-        toggle.setAttribute('aria-label', collapsed ? 'Expandir subcategorías' : 'Contraer subcategorías');
+        toggle.setAttribute('aria-label', collapsed ? 'Expandir hojas' : 'Contraer hojas');
         toggle.title = collapsed ? 'Expandir' : 'Contraer';
         toggle.classList.toggle('np-tree-toggle--collapsed', collapsed);
         childBox.classList.toggle('np-tree-children-open', !collapsed);
@@ -4252,7 +4281,7 @@
     }
 
     var title = document.createElement('span');
-    title.className = 'np-tree-label';
+    title.className = 'np-tree-label ' + (isRoot ? 'np-tree-label-branch' : 'np-tree-label-leaf');
     title.textContent = node.cat.title;
 
     var meta = document.createElement('span');
@@ -4269,13 +4298,13 @@
     var btnSub = document.createElement('button');
     btnSub.type = 'button';
     btnSub.className = 'np-tree-btn-sub np-tree-ignore';
-    btnSub.setAttribute('aria-label', 'Nueva subcategoría aquí');
-    btnSub.title = 'Nueva subcategoría';
+    btnSub.setAttribute('aria-label', 'Nueva hoja aquí');
+    btnSub.title = 'Nueva hoja';
     btnSub.textContent = '+';
     btnSub.addEventListener('click', function (e) {
       e.stopPropagation();
       closeAllTreeMenus();
-      var name = window.prompt('Nombre de la subcategoría (debajo de «' + node.cat.title + '»):', '');
+      var name = window.prompt('Nombre de la hoja (debajo de «' + node.cat.title + '»):', '');
       if (!name || !String(name).trim()) return;
       addCategoryUnder(node.cat.id, String(name).trim());
     });
@@ -4311,7 +4340,7 @@
     btnRename.addEventListener('click', function (e) {
       e.stopPropagation();
       closeAllTreeMenus();
-      var name = window.prompt('Nuevo nombre de la categoría:', node.cat.title);
+      var name = window.prompt('Nuevo nombre de la rama:', node.cat.title);
       if (name == null) return;
       name = String(name).trim();
       if (!name || name === node.cat.title) return;
@@ -4489,7 +4518,7 @@
     var t = String(s || '').trim().toLowerCase()
       .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n')
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    return t || 'pilar';
+    return t || 'planta';
   }
 
   function renderPillarTabs() {
@@ -4533,7 +4562,7 @@
         state.selectedAreaId = res.data.id;
         state.selectedCategoryId = null;
         await loadLookups();
-        showToast('Pilar creado.');
+        showToast('Planta creada.');
         var inp = $('npNewPillar');
         if (inp) inp.value = '';
         return;
@@ -4541,7 +4570,7 @@
       attempt += 1;
       slug = base + '-' + attempt;
     }
-    showToast('No se pudo crear el pilar (revisa que el slug sea único o intenta otro nombre).', true);
+    showToast('No se pudo crear la planta (revisa que el slug sea único o intenta otro nombre).', true);
   }
 
   async function addCategoryUnder(parentId, title) {
@@ -4554,7 +4583,7 @@
       sort_order: 0
     }).select('id').single();
     if (res.error) {
-      showToast(res.error.message || 'No se pudo crear la categoría. ¿Ejecutaste supabase-plan-pro-categories-parent.sql?', true);
+      showToast(res.error.message || 'No se pudo crear la rama. ¿Ejecutaste supabase-plan-pro-categories-parent.sql?', true);
       return;
     }
     var newId = res.data && res.data.id;
@@ -4563,7 +4592,7 @@
     renderTree();
     updateSelectionUI();
     loadItems();
-    showToast('Rama creada — la hoja sigue abierta en la nueva categoría.');
+    showToast('Rama creada — la hoja sigue abierta en la nueva rama.');
   }
 
   async function addRootCategory(title) {
@@ -4575,11 +4604,11 @@
       sort_order: 0
     }).select('id').single();
     if (res.error) {
-      showToast(res.error.message || 'No se pudo crear la categoría.', true);
+      showToast(res.error.message || 'No se pudo crear la rama.', true);
       return;
     }
     await loadLookups();
-    showToast('Categoría raíz creada.');
+    showToast('Rama raíz creada.');
   }
 
   async function renameCategory(catId, titleRaw) {
@@ -4591,7 +4620,7 @@
       return;
     }
     await loadLookups();
-    showToast('Categoría renombrada.');
+    showToast('Rama renombrada.');
   }
 
   async function archiveCategory(catId) {
@@ -4607,7 +4636,7 @@
           cat.title +
           '» y las ' +
           subCount +
-          ' subcategoría' +
+          ' hoja' +
           (subCount === 1 ? '' : 's') +
           ' debajo? Los apuntes no se borran.'
         : '¿Archivar «' + cat.title + '»? Los apuntes no se borran.';
@@ -4635,7 +4664,7 @@
       return;
     }
     await loadLookups();
-    showToast(ids.length > 1 ? 'Rama archivada.' : 'Categoría archivada.');
+    showToast(ids.length > 1 ? 'Ramas archivadas.' : 'Rama archivada.');
   }
 
   function refreshPendingHint() {
@@ -5055,7 +5084,7 @@
     if (!title) return;
     if (!state.selectedCategoryId) {
       $('npNeedCategory').classList.remove('np-hide');
-      showToast('Selecciona una categoría en el árbol (izquierda).', true);
+      showToast('Selecciona una rama en el árbol (izquierda).', true);
       return;
     }
     $('npNeedCategory').classList.add('np-hide');
