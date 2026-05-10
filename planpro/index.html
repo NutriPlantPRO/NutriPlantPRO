@@ -1416,8 +1416,19 @@
       font-size: 11px;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
-      opacity: 0.88;
+      opacity: 0.95;
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .np-prio-sum-mini > .np-prio-summary-baja,
+    .np-prio-sum-mini > .np-prio-summary-media,
+    .np-prio-sum-mini > .np-prio-summary-alta {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
     }
     .np-prio-summary-row {
       display: flex;
@@ -3161,13 +3172,16 @@
       nameSp.textContent = rootCat.title || 'Sin título';
       var mini = document.createElement('span');
       mini.className = 'np-prio-sum-mini';
-      mini.textContent =
-        '● ' +
-        counts.baja +
-        '   ● ' +
-        counts.media +
-        '   ● ' +
-        counts.alta;
+      ['baja', 'media', 'alta'].forEach(function (lvl) {
+        var seg = document.createElement('span');
+        seg.className = 'np-prio-summary-' + lvl;
+        var dot = document.createElement('span');
+        dot.className = 'np-prio-summary-dot';
+        dot.textContent = '●';
+        seg.appendChild(dot);
+        seg.appendChild(document.createTextNode(String(counts[lvl])));
+        mini.appendChild(seg);
+      });
       summ.appendChild(nameSp);
       summ.appendChild(mini);
       det.appendChild(summ);
