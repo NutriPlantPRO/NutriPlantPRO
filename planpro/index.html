@@ -25,7 +25,7 @@
       color: var(--text);
       min-height: 100vh;
     }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 16px; }
     header.np-plan-header {
       display: flex;
       align-items: center;
@@ -169,6 +169,33 @@
       text-decoration: underline;
     }
     .np-actions { white-space: nowrap; }
+    .np-layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 320px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .np-layout { grid-template-columns: 1fr; }
+    }
+    .np-tree-sidebar { position: sticky; top: 12px; }
+    .np-tree-mount { margin-top: 10px; max-height: min(55vh, 420px); overflow: auto; }
+    .np-tree-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+    .np-tree-row:hover { background: #f1f5f9; }
+    .np-tree-row.np-tree-active { background: #ecfdf5; outline: 1px solid #86efac; }
+    .np-tree-children { margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--border); }
+    .np-mini-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    .np-mini-table th, .np-mini-table td { border: 1px solid var(--border); padding: 4px 6px; text-align: left; }
+    .np-mini-table tfoot td { background: #f0fdf4; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -210,66 +237,93 @@
     <main id="npMain" class="np-hide">
       <div id="npToast" class="np-msg ok np-hide" style="margin-bottom:12px;"></div>
 
-      <section class="panel">
-        <h2>Nuevo ítem</h2>
-        <div id="npNoAreas" class="np-msg warn np-hide" style="margin-bottom:12px;">
-          No hay pilares (áreas) para tu cuenta. Ejecuta el seed de Plan PRO en Supabase o crea filas en <code>plan_pro_areas</code> con tu <code>owner_id</code>.
-        </div>
-        <form id="npFormCreate">
-          <label for="npTitle">Título</label>
-          <input id="npTitle" name="title" required maxlength="500" placeholder="Ej. Revisar fuentes UV en dashboard" />
-
-          <div class="row2">
-            <div>
-              <label for="npArea">Pilar (área)</label>
-              <select id="npArea" required></select>
-            </div>
-            <div>
-              <label for="npCategory">Categoría</label>
-              <select id="npCategory"><option value="">—</option></select>
+      <div class="np-layout">
+        <aside class="panel np-tree-sidebar">
+          <h2 style="margin-top:0;">Pilar y categorías</h2>
+          <label for="npTreeArea">Pilar activo</label>
+          <select id="npTreeArea" style="margin-bottom:8px;"></select>
+          <p class="np-muted" style="font-size:12px;line-height:1.45;margin-bottom:10px;">
+            Clic en una categoría para ubicar ítems ahí. <strong>+ Sub</strong> crea subcategorías (ej. Personal → Finanzas → Inversiones).
+            Ejecuta en Supabase el script <code>supabase-plan-pro-categories-parent.sql</code> si aún no tienes columna <code>parent_id</code>.
+          </p>
+          <div id="npTreeMount" class="np-tree-mount"></div>
+          <div style="margin-top:12px;">
+            <label class="np-muted" style="font-size:12px;">Nueva categoría raíz en este pilar</label>
+            <div style="display:flex;gap:8px;margin-top:4px;align-items:center;">
+              <input type="text" id="npNewRootCat" placeholder="Ej. Finanzas, Proyectos…" style="margin-bottom:0;flex:1;" />
+              <button type="button" class="btn btn-ghost" id="npBtnAddRootCat" style="margin-bottom:0;">Añadir</button>
             </div>
           </div>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="npFilterDesc" checked />
+            Al filtrar, incluir subcategorías
+          </label>
+          <div id="npSelectedPath" class="np-msg ok np-hide" style="margin-top:12px;padding:10px;font-size:13px;line-height:1.4;"></div>
+        </aside>
 
-          <div class="row2">
-            <div>
-              <label for="npStatus">Estado</label>
-              <input id="npStatus" placeholder="Nuevo" value="Nuevo" />
+        <div class="np-main-col">
+          <section class="panel">
+            <h2>Nuevo ítem</h2>
+            <div id="npNoAreas" class="np-msg warn np-hide" style="margin-bottom:12px;">
+              No hay pilares (áreas). Ejecuta el seed de Plan PRO en Supabase o crea filas en <code>plan_pro_areas</code> con tu <code>owner_id</code>.
             </div>
-            <div>
-              <label for="npPriority">Prioridad</label>
-              <input id="npPriority" placeholder="Media" />
+            <div id="npNeedCategory" class="np-msg warn np-hide" style="margin-bottom:12px;">Selecciona una categoría en el árbol (columna izquierda) para guardar el ítem.</div>
+            <p id="npContextLabel" class="np-muted" style="margin-top:0;"></p>
+            <form id="npFormCreate">
+              <label for="npTitle">Título</label>
+              <input id="npTitle" name="title" required maxlength="500" placeholder="Ej. Revisión semanal de gastos" />
+              <div class="row2">
+                <div>
+                  <label for="npDueAt">Fecha objetivo / agenda</label>
+                  <input type="date" id="npDueAt" name="due_at" />
+                </div>
+                <div>
+                  <label for="npStatus">Estado</label>
+                  <input id="npStatus" placeholder="Nuevo" value="Nuevo" />
+                </div>
+              </div>
+              <div class="row2">
+                <div>
+                  <label for="npPriority">Prioridad</label>
+                  <input id="npPriority" placeholder="Media" />
+                </div>
+                <div></div>
+              </div>
+              <label for="npBody">Nota / detalle</label>
+              <textarea id="npBody" placeholder="Texto libre…"></textarea>
+              <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+                <button type="button" class="btn btn-ghost" id="npBtnAddMiniSheet">Añadir mini-tabla al ítem (β)</button>
+                <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
+              </div>
+              <div id="npMiniSheetPreview" class="np-hide" style="margin-bottom:12px;overflow:auto;"></div>
+              <button type="submit" class="btn btn-primary" id="npBtnCreate">Guardar ítem</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <h2>Ítems</h2>
+            <p class="np-muted" style="margin-top:0;">Orden por última actualización. Filtra por categoría en el árbol; puedes anidar tantos niveles como necesites.</p>
+            <div style="overflow:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Título</th>
+                    <th>Nota</th>
+                    <th>Categoría</th>
+                    <th>Estado</th>
+                    <th>Prioridad</th>
+                    <th>Fecha</th>
+                    <th>Actualizado</th>
+                    <th class="np-actions">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="npTableBody"></tbody>
+              </table>
             </div>
-          </div>
-
-          <label for="npBody">Nota / detalle</label>
-          <textarea id="npBody" placeholder="Texto libre…"></textarea>
-
-          <button type="submit" class="btn btn-primary" id="npBtnCreate">Guardar ítem</button>
-        </form>
-      </section>
-
-      <section class="panel">
-        <h2>Ítems</h2>
-        <p class="np-muted" style="margin-top:0;">Orden por última actualización. Una creación = una llamada a Supabase (sin saturar).</p>
-        <div style="overflow:auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>Título</th>
-                <th>Nota</th>
-                <th>Pilar</th>
-                <th>Categoría</th>
-                <th>Estado</th>
-                <th>Prioridad</th>
-                <th>Actualizado</th>
-                <th class="np-actions">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="npTableBody"></tbody>
-          </table>
+            <p id="npEmpty" class="np-muted np-hide">No hay ítems en este filtro.</p>
+          </section>
         </div>
-        <p id="npEmpty" class="np-muted np-hide">No hay ítems aún.</p>
-      </section>
+      </div>
     </main>
   </div>
 
@@ -311,6 +365,13 @@
     } catch (e) { return iso; }
   }
 
+  function escapeHtml(s) {
+    if (s == null) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
   /** Vista corta de la nota en tabla (una línea lógica). */
   function truncateNote(s, max) {
     if (s == null || !String(s).trim()) return '';
@@ -319,34 +380,109 @@
     return t.slice(0, max) + '…';
   }
 
+  /** Bloques guardados en body_blocks (mini_sheet = tabla + fila Σ por números). */
+  function renderBodyBlocks(blocks) {
+    var frag = document.createDocumentFragment();
+    if (!blocks || !Array.isArray(blocks)) return frag;
+    blocks.forEach(function (b) {
+      if (!b || b.type !== 'mini_sheet') return;
+      var title = document.createElement('div');
+      title.style.fontWeight = '600';
+      title.style.fontSize = '13px';
+      title.style.marginTop = '10px';
+      title.innerHTML = escapeHtml(b.title || 'Mini tabla');
+      frag.appendChild(title);
+      var tbl = document.createElement('table');
+      tbl.className = 'np-mini-table';
+      var headers = b.headers || [];
+      var rows = b.rows || [];
+      var ncol = Math.max(
+        headers.length,
+        rows.reduce(function (m, row) { return Math.max(m, (row && row.length) || 0); }, 0),
+        1
+      );
+      if (headers.length) {
+        var thead = document.createElement('thead');
+        var trh = document.createElement('tr');
+        for (var hi = 0; hi < headers.length; hi++) {
+          var th = document.createElement('th');
+          th.textContent = headers[hi] != null ? String(headers[hi]) : '';
+          trh.appendChild(th);
+        }
+        thead.appendChild(trh);
+        tbl.appendChild(thead);
+      }
+      var tb = document.createElement('tbody');
+      var colSums = [];
+      rows.forEach(function (row) {
+        var tr = document.createElement('tr');
+        for (var c = 0; c < ncol; c++) {
+          var td = document.createElement('td');
+          var cell = row && row[c] != null && row[c] !== '' ? String(row[c]) : '';
+          td.textContent = cell;
+          tr.appendChild(td);
+          var num = parseFloat(String(cell).replace(/\s/g, '').replace(',', '.'));
+          if (!isNaN(num)) colSums[c] = (colSums[c] || 0) + num;
+        }
+        tb.appendChild(tr);
+      });
+      tbl.appendChild(tb);
+      var anySum = colSums.some(function (x) { return x != null && !isNaN(x) && x !== 0; });
+      if (anySum || colSums.some(function (x) { return x != null && !isNaN(x); })) {
+        var tfoot = document.createElement('tfoot');
+        var trf = document.createElement('tr');
+        for (var c2 = 0; c2 < ncol; c2++) {
+          var tdf = document.createElement('td');
+          if (c2 === 0) tdf.textContent = 'Σ columnas';
+          else if (colSums[c2] != null && !isNaN(colSums[c2])) {
+            tdf.textContent = 'Σ ' + (Math.round(colSums[c2] * 100) / 100);
+          }
+          trf.appendChild(tdf);
+        }
+        tfoot.appendChild(trf);
+        tbl.appendChild(tfoot);
+      }
+      frag.appendChild(tbl);
+    });
+    return frag;
+  }
+
   function openItemDetail(r) {
     $('npDetailTitle').textContent = r.title || '(Sin título)';
     var parts = [
       state.areaMap[r.area_id] || '—',
-      r.category_id ? state.catMap[r.category_id] || '—' : '—',
+      r.category_id ? getCategoryPath(r.category_id) : '—',
       r.status || '—',
       r.priority ? 'Prioridad ' + r.priority : '',
+      r.due_at ? 'Objetivo ' + r.due_at : '',
       fmtDate(r.updated_at)
     ].filter(function (x) { return x; });
     $('npDetailMeta').textContent = parts.join(' · ');
-    var body = r.body_plain;
     var bd = $('npDetailBody');
-    if (body && String(body).trim()) {
-      bd.textContent = body;
-      bd.classList.remove('np-modal-empty');
-    } else {
-      bd.textContent = 'No hay texto en Nota / detalle. Puedes editarlo cuando exista edición en la app.';
+    bd.innerHTML = '';
+    var hasText = r.body_plain && String(r.body_plain).trim();
+    var hasBlocks = r.body_blocks && Array.isArray(r.body_blocks) && r.body_blocks.length;
+    if (!hasText && !hasBlocks) {
+      bd.textContent = 'Sin nota ni tabla en este ítem.';
       bd.classList.add('np-modal-empty');
+    } else {
+      bd.classList.remove('np-modal-empty');
+      if (hasText) {
+        var pre = document.createElement('div');
+        pre.style.whiteSpace = 'pre-wrap';
+        pre.style.marginBottom = hasBlocks ? '12px' : '0';
+        pre.textContent = r.body_plain;
+        bd.appendChild(pre);
+      }
+      if (hasBlocks) bd.appendChild(renderBodyBlocks(r.body_blocks));
     }
-    var mo = $('npDetailModal');
-    mo.classList.add('np-modal-open');
-    mo.setAttribute('aria-hidden', 'false');
+    $('npDetailModal').classList.add('np-modal-open');
+    $('npDetailModal').setAttribute('aria-hidden', 'false');
   }
 
   function closeItemDetail() {
-    var mo = $('npDetailModal');
-    mo.classList.remove('np-modal-open');
-    mo.setAttribute('aria-hidden', 'true');
+    $('npDetailModal').classList.remove('np-modal-open');
+    $('npDetailModal').setAttribute('aria-hidden', 'true');
   }
 
   var state = {
@@ -356,31 +492,192 @@
     categories: [],
     areaMap: {},
     catMap: {},
+    selectedAreaId: null,
+    selectedCategoryId: null,
+    pendingBlocks: [],
     authListenerAttached: false
   };
 
-  function fillAreaSelect() {
-    var sel = $('npArea');
+  function getCategoryPath(id) {
+    if (!id) return '—';
+    var parts = [];
+    var cur = state.categories.filter(function (c) { return c.id === id; })[0];
+    var guard = 0;
+    while (cur && guard++ < 40) {
+      parts.unshift(cur.title);
+      cur = cur.parent_id ? state.categories.filter(function (c) { return c.id === cur.parent_id; })[0] : null;
+    }
+    return parts.length ? parts.join(' › ') : (state.catMap[id] || '—');
+  }
+
+  function nestCategories(areaId) {
+    var list = state.categories.filter(function (c) {
+      return c.area_id === areaId && !c.archived_at;
+    });
+    var byParent = {};
+    list.forEach(function (c) {
+      var pid = c.parent_id ? c.parent_id : '__root__';
+      if (!byParent[pid]) byParent[pid] = [];
+      byParent[pid].push(c);
+    });
+    Object.keys(byParent).forEach(function (k) {
+      byParent[k].sort(function (a, b) {
+        return (a.sort_order || 0) - (b.sort_order || 0) || (a.title || '').localeCompare(b.title || '');
+      });
+    });
+    function walk(pid) {
+      var kids = byParent[pid] || [];
+      return kids.map(function (c) {
+        return { cat: c, children: walk(c.id) };
+      });
+    }
+    return walk('__root__');
+  }
+
+  function collectDescendantIds(rootId) {
+    var out = [rootId];
+    state.categories.filter(function (c) {
+      return c.parent_id === rootId && !c.archived_at;
+    }).forEach(function (ch) {
+      out = out.concat(collectDescendantIds(ch.id));
+    });
+    return out;
+  }
+
+  function renderTreeNode(node) {
+    var wrap = document.createElement('div');
+    var row = document.createElement('div');
+    row.className = 'np-tree-row';
+    if (state.selectedCategoryId === node.cat.id) row.classList.add('np-tree-active');
+    row.addEventListener('click', function (e) {
+      if (e.target.closest('.np-tree-ignore')) return;
+      state.selectedCategoryId = node.cat.id;
+      renderTree();
+      updateSelectionUI();
+      loadItems();
+    });
+    var title = document.createElement('span');
+    title.style.flex = '1';
+    title.style.minWidth = '0';
+    title.textContent = node.cat.title;
+    var btnSub = document.createElement('button');
+    btnSub.type = 'button';
+    btnSub.className = 'btn btn-ghost np-tree-ignore';
+    btnSub.style.fontSize = '11px';
+    btnSub.style.padding = '2px 8px';
+    btnSub.textContent = '+ Sub';
+    btnSub.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var name = window.prompt('Nombre de la subcategoría (debajo de «' + node.cat.title + '»):', '');
+      if (!name || !String(name).trim()) return;
+      addCategoryUnder(node.cat.id, String(name).trim());
+    });
+    row.appendChild(title);
+    row.appendChild(btnSub);
+    wrap.appendChild(row);
+    if (node.children.length) {
+      var box = document.createElement('div');
+      box.className = 'np-tree-children';
+      node.children.forEach(function (ch) {
+        box.appendChild(renderTreeNode(ch));
+      });
+      wrap.appendChild(box);
+    }
+    return wrap;
+  }
+
+  function renderTree() {
+    var mount = $('npTreeMount');
+    mount.innerHTML = '';
+    if (!state.selectedAreaId) return;
+    nestCategories(state.selectedAreaId).forEach(function (node) {
+      mount.appendChild(renderTreeNode(node));
+    });
+  }
+
+  function updateSelectionUI() {
+    var pathEl = $('npSelectedPath');
+    var ctx = $('npContextLabel');
+    if (!state.selectedAreaId) {
+      ctx.textContent = '';
+      pathEl.classList.add('np-hide');
+      return;
+    }
+    var aname = state.areaMap[state.selectedAreaId] || '';
+    if (!state.selectedCategoryId) {
+      pathEl.classList.add('np-hide');
+      ctx.textContent = 'Pilar: ' + aname + ' · Mostrando todos los ítems de este pilar. Elige una categoría para acotar y guardar nuevos ítems.';
+      return;
+    }
+    pathEl.classList.remove('np-hide');
+    pathEl.textContent = 'Ruta: ' + getCategoryPath(state.selectedCategoryId);
+    ctx.textContent = 'Nuevo ítem se guardará en: ' + getCategoryPath(state.selectedCategoryId);
+  }
+
+  function populateTreeAreaSelect() {
+    var sel = $('npTreeArea');
     sel.innerHTML = '';
     state.areas.forEach(function (a) {
       var o = document.createElement('option');
       o.value = a.id;
-      o.textContent = a.title + (a.archived_at ? ' (archivado)' : '');
+      o.textContent = a.title + (a.archived_at ? ' (arch.)' : '');
       sel.appendChild(o);
     });
-    refreshCategorySelect();
+    if (state.areas.length) {
+      if (!state.selectedAreaId || !state.areas.some(function (a) { return a.id === state.selectedAreaId; })) {
+        state.selectedAreaId = state.areas[0].id;
+      }
+      sel.value = state.selectedAreaId;
+    }
   }
 
-  function refreshCategorySelect() {
-    var areaId = $('npArea').value;
-    var sel = $('npCategory');
-    sel.innerHTML = '<option value="">—</option>';
-    state.categories.filter(function (c) { return c.area_id === areaId; }).forEach(function (c) {
-      var o = document.createElement('option');
-      o.value = c.id;
-      o.textContent = c.title;
-      sel.appendChild(o);
-    });
+  async function addCategoryUnder(parentId, title) {
+    var parent = state.categories.filter(function (c) { return c.id === parentId; })[0];
+    if (!parent) return;
+    var res = await state.client.from('plan_pro_categories').insert({
+      area_id: parent.area_id,
+      parent_id: parentId,
+      title: title,
+      sort_order: 0
+    }).select('id').single();
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo crear la categoría. ¿Ejecutaste supabase-plan-pro-categories-parent.sql?', true);
+      return;
+    }
+    await loadLookups();
+    showToast('Subcategoría creada.');
+  }
+
+  async function addRootCategory(title) {
+    if (!state.selectedAreaId) return;
+    var res = await state.client.from('plan_pro_categories').insert({
+      area_id: state.selectedAreaId,
+      parent_id: null,
+      title: title,
+      sort_order: 0
+    }).select('id').single();
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo crear la categoría.', true);
+      return;
+    }
+    await loadLookups();
+    showToast('Categoría raíz creada.');
+  }
+
+  function refreshPendingHint() {
+    var n = state.pendingBlocks.length;
+    var hint = $('npPendingBlocksHint');
+    var prevBox = $('npMiniSheetPreview');
+    if (!n) {
+      hint.textContent = '';
+      prevBox.classList.add('np-hide');
+      prevBox.innerHTML = '';
+      return;
+    }
+    hint.textContent = n + ' bloque(s) en este ítem.';
+    prevBox.classList.remove('np-hide');
+    prevBox.innerHTML = '';
+    prevBox.appendChild(renderBodyBlocks(state.pendingBlocks));
   }
 
   async function loadLookups() {
@@ -392,13 +689,15 @@
     state.areaMap = {};
     state.areas.forEach(function (a) { state.areaMap[a.id] = a.title; });
 
-    var cr = await c.from('plan_pro_categories').select('id,title,area_id').order('sort_order');
+    var cr = await c.from('plan_pro_categories').select('id,title,area_id,parent_id,sort_order,archived_at').order('sort_order');
     if (cr.error) throw cr.error;
     state.categories = cr.data || [];
     state.catMap = {};
     state.categories.forEach(function (x) { state.catMap[x.id] = x.title; });
 
-    fillAreaSelect();
+    populateTreeAreaSelect();
+    renderTree();
+    updateSelectionUI();
     var noAreas = state.areas.length === 0;
     $('npNoAreas').classList.toggle('np-hide', !noAreas);
     $('npBtnCreate').disabled = noAreas;
@@ -407,15 +706,32 @@
   async function loadItems() {
     var c = state.client;
     var uid = state.userId;
-    var res = await c.from('plan_pro_items')
-      .select('id,title,area_id,category_id,status,priority,updated_at,body_plain')
+    if (!state.selectedAreaId && state.areas.length) state.selectedAreaId = state.areas[0].id;
+    if (!state.selectedAreaId) {
+      $('npTableBody').innerHTML = '';
+      $('npEmpty').classList.remove('np-hide');
+      return;
+    }
+
+    var q = c.from('plan_pro_items')
+      .select('id,title,area_id,category_id,status,priority,updated_at,body_plain,due_at,body_blocks')
       .eq('owner_id', uid)
-      .order('updated_at', { ascending: false });
+      .eq('area_id', state.selectedAreaId);
+
+    if (state.selectedCategoryId) {
+      var ids = $('npFilterDesc').checked
+        ? collectDescendantIds(state.selectedCategoryId)
+        : [state.selectedCategoryId];
+      q = q.in('category_id', ids);
+    }
+
+    var res = await q.order('updated_at', { ascending: false });
     if (res.error) throw res.error;
     var rows = res.data || [];
     var tb = $('npTableBody');
     tb.innerHTML = '';
     $('npEmpty').classList.toggle('np-hide', rows.length > 0);
+
     rows.forEach(function (r) {
       var tr = document.createElement('tr');
 
@@ -424,7 +740,7 @@
       tr.appendChild(td1);
 
       var tdNote = document.createElement('td');
-      var prev = truncateNote(r.body_plain, 96);
+      var prev = truncateNote(r.body_plain, 80);
       var span = document.createElement('span');
       span.className = prev ? 'np-note-preview' : 'np-note-preview np-note-empty';
       span.textContent = prev || 'Sin nota';
@@ -437,10 +753,13 @@
         return td;
       }
 
-      tr.appendChild(tdText(state.areaMap[r.area_id] || '—'));
-      tr.appendChild(tdText(r.category_id ? state.catMap[r.category_id] || '—' : '—'));
+      tr.appendChild(tdText(r.category_id ? getCategoryPath(r.category_id) : '—'));
       tr.appendChild(tdText(r.status || '—'));
       tr.appendChild(tdText(r.priority || '—'));
+      var tdDue = document.createElement('td');
+      tdDue.className = 'np-muted';
+      tdDue.textContent = r.due_at ? String(r.due_at) : '—';
+      tr.appendChild(tdDue);
       var tdUp = document.createElement('td');
       tdUp.className = 'np-muted';
       tdUp.textContent = fmtDate(r.updated_at);
@@ -484,7 +803,34 @@
     await loadItems();
   }
 
-  $('npArea').addEventListener('change', refreshCategorySelect);
+  $('npTreeArea').addEventListener('change', function () {
+    state.selectedAreaId = $('npTreeArea').value;
+    state.selectedCategoryId = null;
+    renderTree();
+    updateSelectionUI();
+    loadItems();
+  });
+
+  $('npFilterDesc').addEventListener('change', function () {
+    if (state.selectedCategoryId) loadItems();
+  });
+
+  $('npBtnAddRootCat').addEventListener('click', async function () {
+    var raw = ($('npNewRootCat').value || '').trim();
+    if (!raw) return;
+    $('npNewRootCat').value = '';
+    await addRootCategory(raw);
+  });
+
+  $('npBtnAddMiniSheet').addEventListener('click', function () {
+    state.pendingBlocks.push({
+      type: 'mini_sheet',
+      title: 'Mini tabla',
+      headers: ['Concepto', 'Monto', 'Notas'],
+      rows: [['', '', ''], ['', '', ''], ['', '', '']]
+    });
+    refreshPendingHint();
+  });
 
   $('npDetailClose').addEventListener('click', closeItemDetail);
   $('npDetailModal').addEventListener('click', function (e) {
@@ -504,17 +850,23 @@
     e.preventDefault();
     var title = ($('npTitle').value || '').trim();
     if (!title) return;
-    var areaId = $('npArea').value;
-    var catVal = $('npCategory').value;
+    if (!state.selectedCategoryId) {
+      $('npNeedCategory').classList.remove('np-hide');
+      showToast('Selecciona una categoría en el árbol (izquierda).', true);
+      return;
+    }
+    $('npNeedCategory').classList.add('np-hide');
+    var dueRaw = ($('npDueAt').value || '').trim();
     var payload = {
       owner_id: state.userId,
-      area_id: areaId,
-      category_id: catVal || null,
+      area_id: state.selectedAreaId,
+      category_id: state.selectedCategoryId,
       title: title,
       status: ($('npStatus').value || '').trim() || 'Nuevo',
       priority: ($('npPriority').value || '').trim() || null,
       body_plain: ($('npBody').value || '').trim() || null,
-      body_blocks: [],
+      due_at: dueRaw || null,
+      body_blocks: state.pendingBlocks.length ? state.pendingBlocks : [],
       attachments: []
     };
     var btn = $('npBtnCreate');
@@ -528,6 +880,9 @@
     showToast('Ítem guardado en la nube.');
     $('npTitle').value = '';
     $('npBody').value = '';
+    $('npDueAt').value = '';
+    state.pendingBlocks = [];
+    refreshPendingHint();
     await loadItems();
   });
 

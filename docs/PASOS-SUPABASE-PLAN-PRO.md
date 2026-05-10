@@ -57,6 +57,16 @@ SELECT public.is_admin_user();
 
 ---
 
+## 4bis. Subcategorías anidadas (`parent_id`)
+
+Si ya creaste las tablas **antes** de que existiera la columna `parent_id`, ejecuta una vez en SQL Editor:
+
+- **`supabase-plan-pro-categories-parent.sql`** — añade `parent_id`, índice y trigger “mismo pilar que el padre”.
+
+Si vas a instalar desde cero, **`supabase-plan-pro-tables.sql`** ya incluye `parent_id` y el trigger.
+
+---
+
 ## 5. Probar RLS (opcional pero recomendado)
 
 Con sesión anónima **no** deberías poder leer datos.
@@ -94,6 +104,7 @@ Usa el **primer usuario con `profiles.is_admin = true`** como dueño e inserta (
 | Archivo | Uso |
 |---------|-----|
 | `supabase-plan-pro-tables.sql` | Ejecutar en SQL Editor (paso 3). |
+| `supabase-plan-pro-categories-parent.sql` | Solo si tus tablas ya existían sin `parent_id` (paso 4bis). |
 | `supabase-fix-rls-recursion.sql` o `supabase-EJECUTAR-SQL-EDITOR-UN-SOLO-RUN.sql` | Solo si falta `is_admin_user()` (paso 2). |
 | `docs/PLAN-PRO-CEREBRO-DIGITAL.md` | Especificación del producto. |
 

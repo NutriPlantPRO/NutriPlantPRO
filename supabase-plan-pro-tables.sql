@@ -57,6 +57,7 @@ CREATE TRIGGER tr_plan_pro_areas_updated
 CREATE TABLE IF NOT EXISTS public.plan_pro_categories (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   area_id         uuid NOT NULL REFERENCES public.plan_pro_areas (id) ON DELETE CASCADE,
+  parent_id       uuid REFERENCES public.plan_pro_categories (id) ON DELETE CASCADE,
   sort_order      integer NOT NULL DEFAULT 0,
   title           text NOT NULL,
   archived_at     timestamptz,
@@ -67,10 +68,39 @@ CREATE TABLE IF NOT EXISTS public.plan_pro_categories (
 CREATE INDEX IF NOT EXISTS idx_plan_pro_categories_area
   ON public.plan_pro_categories (area_id) WHERE archived_at IS NULL;
 
+CREATE INDEX IF NOT EXISTS idx_plan_pro_categories_parent
+  ON public.plan_pro_categories (parent_id);
+
 DROP TRIGGER IF EXISTS tr_plan_pro_categories_updated ON public.plan_pro_categories;
 CREATE TRIGGER tr_plan_pro_categories_updated
   BEFORE UPDATE ON public.plan_pro_categories
   FOR EACH ROW EXECUTE PROCEDURE public.plan_pro_set_updated_at();
+
+CREATE OR REPLACE FUNCTION public.plan_pro_categories_same_area_parent()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  p_area uuid;
+BEGIN
+  IF NEW.parent_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+  SELECT area_id INTO p_area FROM public.plan_pro_categories WHERE id = NEW.parent_id;
+  IF p_area IS NULL THEN
+    RAISE EXCEPTION 'plan_pro_categories: padre % no existe', NEW.parent_id;
+  END IF;
+  IF p_area <> NEW.area_id THEN
+    RAISE EXCEPTION 'plan_pro_categories: el padre debe ser del mismo pilar (area_id)';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_plan_pro_categories_same_area ON public.plan_pro_categories;
+CREATE TRIGGER tr_plan_pro_categories_same_area
+  BEFORE INSERT OR UPDATE OF parent_id, area_id ON public.plan_pro_categories
+  FOR EACH ROW EXECUTE PROCEDURE public.plan_pro_categories_same_area_parent();
 
 -- -----------------------------------------------------------------------------
 -- 3) Ítems (capturas: ideas, tareas, notas…)
