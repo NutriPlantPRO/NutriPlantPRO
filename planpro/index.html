@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Plan PRO · Cerebro Digital</title>
   <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png" />
@@ -38,7 +38,13 @@
         linear-gradient(175deg, #e8ecf2 0%, #eef1f6 45%, #e9edf4 100%);
       background-attachment: fixed;
     }
-    .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 18px 32px; }
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 20px 18px 32px;
+      padding-left: max(18px, env(safe-area-inset-left));
+      padding-right: max(18px, env(safe-area-inset-right));
+    }
     header.np-plan-header.np-mac-bar {
       display: flex;
       align-items: center;
@@ -357,14 +363,69 @@
     .np-actions { white-space: nowrap; }
     .np-layout {
       display: grid;
-      grid-template-columns: minmax(260px, 320px) 1fr;
+      grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
       gap: 16px;
       align-items: start;
     }
-    @media (max-width: 900px) {
-      .np-layout { grid-template-columns: 1fr; }
+    .np-main-col {
+      min-width: 0;
     }
-    .np-tree-sidebar { position: sticky; top: 12px; }
+    @media (min-width: 901px) {
+      .np-tree-sidebar {
+        position: sticky;
+        top: 12px;
+      }
+    }
+    /* Móvil / tablet: misma vista en dos columnas (no apilar categorías arriba del todo) */
+    @media (max-width: 900px) {
+      .wrap {
+        padding: 14px max(12px, env(safe-area-inset-right)) 26px max(12px, env(safe-area-inset-left));
+      }
+      .np-layout {
+        grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
+        gap: 10px;
+      }
+      header.np-plan-header.np-mac-bar {
+        padding: 12px 14px;
+        margin-bottom: 16px;
+      }
+      .np-plan-brand img {
+        height: 34px;
+      }
+      .np-plan-brand h1 {
+        font-size: 1.05rem;
+      }
+      .btn-mac-nav {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      .np-tree-sidebar {
+        position: static;
+        min-width: 0;
+      }
+      .np-tree-mount {
+        max-height: min(42vh, 360px);
+      }
+      .np-pillar-tabs-row {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .np-sheet-title {
+        font-size: 1.05rem;
+      }
+    }
+    @media (max-width: 480px) {
+      .np-layout {
+        grid-template-columns: minmax(0, 38%) minmax(0, 1fr);
+        gap: 8px;
+      }
+      #npMain .panel {
+        padding: 12px 12px 14px;
+      }
+      .np-tree-sidebar-title {
+        font-size: 10px;
+      }
+    }
     .np-tree-sidebar-title {
       margin: 0 0 8px;
       font-size: 11px;
@@ -1113,6 +1174,12 @@
       margin-top: 4px;
       margin-bottom: 10px;
     }
+    .np-detail-blocks-tools {
+      margin-top: 14px;
+    }
+    .np-detail-blocks-mount {
+      margin-top: 12px;
+    }
     .np-sheet-nav-blocks {
       margin-top: 16px;
       display: flex;
@@ -1294,32 +1361,70 @@
       border-radius: 10px;
       border: 1px solid rgba(34, 197, 94, 0.2);
       background: rgba(255, 255, 255, 0.75);
-      padding: 0 8px 8px;
+      padding: 8px 8px 10px;
     }
-    .np-prio-summary-details summary {
-      list-style: none;
-      cursor: pointer;
-      padding: 8px 4px;
-      font-size: 11px;
+    .np-prio-summary-top-label {
+      font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       color: #047857;
+      padding: 6px 4px 8px;
+      margin: 0;
+    }
+    .np-prio-summary-roots {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .np-prio-summary-root-details {
+      border-radius: 9px;
+      border: 1px solid rgba(15, 23, 42, 0.07);
+      background: rgba(248, 250, 252, 0.55);
+    }
+    .np-prio-summary-root-details summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 7px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e293b;
+      letter-spacing: -0.01em;
+      text-transform: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       user-select: none;
     }
-    .np-prio-summary-details summary::-webkit-details-marker { display: none; }
-    .np-prio-summary-details summary::after {
-      content: ' ▸';
-      opacity: 0.55;
-      font-weight: 600;
+    .np-prio-summary-root-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: left;
     }
-    .np-prio-summary-details[open] summary::after { content: ' ▾'; }
+    .np-prio-summary-root-details summary::-webkit-details-marker { display: none; }
+    .np-prio-summary-root-details summary::after {
+      content: ' ▸';
+      opacity: 0.45;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .np-prio-summary-root-details[open] summary::after { content: ' ▾'; }
+    .np-prio-sum-mini {
+      font-size: 11px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      opacity: 0.88;
+      white-space: nowrap;
+    }
     .np-prio-summary-row {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
-      padding: 2px 4px 4px;
+      padding: 4px 8px 8px;
     }
     .np-prio-summary-chip {
       display: inline-flex;
@@ -1332,6 +1437,139 @@
       border-radius: 8px;
       border: 1px solid rgba(15, 23, 42, 0.06);
       background: rgba(248, 250, 252, 0.95);
+    }
+    button.np-prio-summary-chip {
+      font: inherit;
+      cursor: pointer;
+      transition: background 0.12s ease, transform 0.1s ease;
+    }
+    button.np-prio-summary-chip:hover {
+      background: #fff;
+      border-color: rgba(34, 197, 94, 0.28);
+    }
+    button.np-prio-summary-chip.np-prio-summary-chip--zero {
+      opacity: 0.55;
+    }
+    .np-sidebar-cal-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .np-sidebar-cal {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(148, 163, 184, 0.35);
+    }
+    .np-sidebar-cal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 650;
+      color: #334155;
+    }
+    #npCalMonthLabel {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+    }
+    .np-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 4px;
+      font-size: 11px;
+    }
+    .np-cal-dow {
+      text-align: center;
+      font-weight: 600;
+      color: #64748b;
+      padding: 2px 0;
+      font-size: 10px;
+    }
+    .np-cal-day {
+      position: relative;
+      box-sizing: border-box;
+      min-height: 46px;
+      padding: 4px 2px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      background: rgba(255, 255, 255, 0.72);
+      cursor: pointer;
+      font-size: 11px;
+      color: #0f172a;
+      font-family: inherit;
+    }
+    .np-cal-day:hover:not(:disabled) {
+      background: rgba(240, 253, 244, 0.5);
+      border-color: rgba(34, 197, 94, 0.35);
+    }
+    .np-cal-day--muted {
+      opacity: 0.4;
+      cursor: default;
+      pointer-events: none;
+    }
+    .np-cal-cell-dots {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 3px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 3px;
+      pointer-events: none;
+      line-height: 0;
+    }
+    .np-cal-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .np-cal-dot-baja {
+      background: #22c55e;
+      box-shadow: 0 0 0 1px rgba(20, 83, 45, 0.15);
+    }
+    .np-cal-dot-media {
+      background: #eab308;
+      box-shadow: 0 0 0 1px rgba(113, 63, 18, 0.15);
+    }
+    .np-cal-dot-alta {
+      background: #ef4444;
+      box-shadow: 0 0 0 1px rgba(127, 29, 29, 0.12);
+    }
+    .np-cal-day-num {
+      display: block;
+      text-align: center;
+      font-weight: 600;
+      padding-top: 1px;
+    }
+    .np-prio-list-body {
+      max-height: min(58vh, 520px);
+      overflow-y: auto;
+      padding-top: 4px;
+    }
+    .np-prio-detail-item {
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+    }
+    .np-prio-detail-item:last-child { border-bottom: none; }
+    .np-prio-detail-item-title {
+      font-weight: 650;
+      font-size: 14px;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    .np-prio-detail-item-meta {
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.45;
+      margin-bottom: 8px;
     }
     .np-prio-summary-dot { font-size: 11px; line-height: 1; opacity: 0.9; }
     .np-prio-summary-baja { color: #14532d; }
@@ -1578,6 +1816,15 @@
           </label>
           <div id="npPrioSummary" class="np-prio-summary np-hide" aria-live="polite"></div>
           <div id="npSelectedPath" class="np-msg ok np-hide" style="margin-top:12px;padding:10px;font-size:13px;line-height:1.4;"></div>
+          <div id="npSidebarCalendar" class="np-sidebar-cal np-hide" aria-label="Calendario de fechas">
+            <div class="np-sidebar-cal-title">Calendario</div>
+            <div class="np-sidebar-cal-head">
+              <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalPrev" style="min-width:36px;padding:4px 8px;" aria-label="Mes anterior">◀</button>
+              <span id="npCalMonthLabel"></span>
+              <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalNext" style="min-width:36px;padding:4px 8px;" aria-label="Mes siguiente">▶</button>
+            </div>
+            <div id="npCalGrid" class="np-cal-grid" role="grid" aria-label="Días del mes"></div>
+          </div>
         </aside>
 
         <div class="np-main-col">
@@ -1676,6 +1923,26 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <div id="npPrioListModal" class="np-modal-overlay" aria-hidden="true">
+    <div class="np-modal-panel np-prio-list-panel" role="dialog" aria-labelledby="npPrioListTitle">
+      <div class="np-modal-head">
+        <h3 id="npPrioListTitle" style="margin:0;font-size:1rem;">—</h3>
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npPrioListClose" style="flex-shrink:0;">Cerrar</button>
+      </div>
+      <div id="npPrioListBody" class="np-modal-body np-prio-list-body"></div>
+    </div>
+  </div>
+
+  <div id="npCalDayModal" class="np-modal-overlay" aria-hidden="true">
+    <div class="np-modal-panel np-prio-list-panel" role="dialog" aria-labelledby="npCalDayTitle">
+      <div class="np-modal-head">
+        <h3 id="npCalDayTitle" style="margin:0;font-size:1rem;">—</h3>
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalDayClose" style="flex-shrink:0;">Cerrar</button>
+      </div>
+      <div id="npCalDayBody" class="np-modal-body np-prio-list-body"></div>
+    </div>
   </div>
 
   <div id="npDetailModal" class="np-modal-overlay" aria-hidden="true">
@@ -1995,37 +2262,13 @@
     var bd = $('npDetailBody');
     bd.innerHTML = '';
     bd.classList.remove('np-modal-has-blocks');
-    var hasMainNote = !!(stripHtml((r.body_html || r.body_plain || '')).trim());
-    var hasBlocks = r.body_blocks && Array.isArray(r.body_blocks) && r.body_blocks.length > 0;
-    var hasExtraNote = false;
-    if (hasBlocks && r.body_blocks) {
-      hasExtraNote = r.body_blocks.some(function (blk) {
-        return blk && blk.type === 'note_section' && stripHtml(blk.html || '').trim();
-      });
-    }
-    var hasText = hasMainNote || hasExtraNote;
-    var hasTablesOrMixed = hasBlocks;
+    bd.classList.remove('np-modal-empty');
     state.detailItemId = r.id;
     state.detailBlocksWorking = deepCloneBlocks(r.body_blocks);
-    if (!hasText && !hasTablesOrMixed) {
-      bd.textContent = 'Sin nota ni tabla en este apunte.';
-      bd.classList.add('np-modal-empty');
-      state.detailItemId = null;
-      state.detailBlocksWorking = null;
-    } else {
-      bd.classList.remove('np-modal-empty');
-      if (hasTablesOrMixed) bd.classList.add('np-modal-has-blocks');
-      mountModalMainNote(bd, r, accentOpen);
-      if (hasTablesOrMixed) {
-        bd.appendChild(
-          renderBodyBlocks(state.detailBlocksWorking, {
-            editable: true,
-            persistItemId: r.id,
-            sheetAccent: accentOpen
-          })
-        );
-      }
-    }
+    mountModalMainNote(bd, r, accentOpen);
+    mountDetailBlocksMountAndToolbar(bd, r.id, accentOpen);
+    if (state.detailBlocksWorking.length) bd.classList.add('np-modal-has-blocks');
+    updateDetailBlocksHint();
     $('npDetailModal').classList.add('np-modal-open');
     $('npDetailModal').setAttribute('aria-hidden', 'false');
   }
@@ -2068,6 +2311,13 @@
     detailBlocksWorking: null,
     /** Pilar del apunte abierto en el modal (tinte tablas / borde). */
     detailModalAreaId: null,
+    /** Ítems del último loadItems (para modal de prioridades). */
+    prioSummaryRowsCache: null,
+    /** Mes visible en el calendario lateral (año, mes 0–11). */
+    sidebarCalYear: null,
+    sidebarCalMonth: null,
+    /** Entradas con fecha para puntos / modal del día (vista actual). */
+    calendarEntriesCache: [],
     treeCollapsed: {},
     categoryItemCounts: {},
     /** Si la BD no tiene body_html aún, las queries omiten esa columna (migración: supabase-plan-pro-body-html.sql). */
@@ -2081,6 +2331,64 @@
     } catch (e) {
       return [];
     }
+  }
+
+  function makePlanProNoteSectionBlock() {
+    return { type: 'note_section', title: '', html: '<p><br></p>' };
+  }
+
+  function makePlanProMiniSheetFreeBlock() {
+    return {
+      type: 'mini_sheet',
+      title: 'Tabla libre',
+      headers: ['Concepto', 'Monto', 'Notas'],
+      rows: [['', '', ''], ['', '', ''], ['', '', '']]
+    };
+  }
+
+  function makePlanProLedgerSheetBlock() {
+    return {
+      type: 'mini_sheet',
+      variant: 'ledger',
+      title: 'Tabla de montos',
+      headers: ['Concepto', 'Monto', '%', 'Notas'],
+      colKinds: ['text', 'currency', 'pct', 'text'],
+      montoCol: 1,
+      pctCol: 2,
+      rows: [
+        ['', '', '', ''],
+        ['', '', '', '']
+      ]
+    };
+  }
+
+  function makePlanProSmartTableBlock() {
+    return {
+      type: 'mini_sheet',
+      variant: 'smart',
+      title: 'Seguimiento · acciones',
+      headers: ['Tipo', 'Título / concepto', 'Prioridad', 'Listo', 'Fecha · $ · %', 'Notas / siguiente paso'],
+      rows: [['', '', '', '', '', '']],
+      rowKinds: ['task'],
+      rowDone: [false]
+    };
+  }
+
+  function makePlanProTaskTableBlock() {
+    return {
+      type: 'mini_sheet',
+      variant: 'tasks',
+      title: 'Lista / tareas',
+      headers: ['Título', 'Descripción', 'Prioridad', 'Listo', 'Fecha objetivo'],
+      rows: [
+        ['', '', '', '', ''],
+        ['', '', '', '', ''],
+        ['', '', '', '', ''],
+        ['', '', '', '', '']
+      ],
+      rowKinds: ['task', 'task', 'task', 'task'],
+      rowDone: [false, false, false, false]
+    };
   }
 
   var NP_SMART_HEADERS_DEFAULT = [
@@ -2298,6 +2606,320 @@
     return -1;
   }
 
+  function resolveDateColIndex(b, headers, ncol) {
+    var c;
+    for (c = 0; c < ncol; c++) {
+      var hl = resolveMiniSheetHeader(b, c);
+      if (columnLooksLikeDate(hl, c, ncol, b.variant)) return c;
+    }
+    if (b.variant === 'smart' && ncol >= 5) return 4;
+    if (b.variant === 'tasks' && ncol >= 1) return ncol - 1;
+    return -1;
+  }
+
+  /** ISO YYYY-MM-DD desde due_at u otros formatos usados en ítems. */
+  function parseDueDateKey(raw) {
+    if (raw == null || raw === '') return '';
+    var s = String(raw).trim();
+    var iso = /^(\d{4}-\d{2}-\d{2})/.exec(s);
+    if (iso) return iso[1];
+    return toDateInputValue(s);
+  }
+
+  var NP_CAL_MONTH_NAMES = [
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre'
+  ];
+
+  function collectCalendarEntries(rows) {
+    var out = [];
+    (rows || []).forEach(function (r) {
+      if (!r || !r.id) return;
+      var dkItem = parseDueDateKey(r.due_at);
+      if (dkItem) {
+        var lvItem = priorityLevelFromRaw(r.priority != null ? String(r.priority) : '');
+        out.push({
+          dateKey: dkItem,
+          level: lvItem,
+          kind: 'item_due',
+          itemId: r.id,
+          itemTitle: r.title || '(Sin título)',
+          catPath: getCategoryPath(r.category_id),
+          rowTitle: 'Objetivo del apunte',
+          blockTitle: '—'
+        });
+      }
+      var blocks = r.body_blocks || [];
+      blocks.forEach(function (b) {
+        if (!b || b.type !== 'mini_sheet') return;
+        if (b.variant !== 'tasks' && b.variant !== 'smart') return;
+        ensureSmartMeta(b);
+        var headers = b.headers || [];
+        var nrow = b.rows || [];
+        var ncol = miniSheetColCountForAggr(b);
+        var prioCol = resolvePriorityColIndex(b, headers, ncol);
+        var dateCol = resolveDateColIndex(b, headers, ncol);
+        if (dateCol < 0) return;
+        nrow.forEach(function (row, ri) {
+          var rk = b.rowKinds && b.rowKinds[ri];
+          if (b.variant === 'smart' && rk && rk !== 'task') return;
+          if (b.rowDone && b.rowDone[ri]) return;
+          var cells = padRowCells(row, ncol);
+          var dateRaw = cells[dateCol];
+          var dk = toDateInputValue(dateRaw != null ? String(dateRaw) : '');
+          if (!dk) return;
+          var lv = prioCol >= 0 ? priorityLevelFromRaw(cells[prioCol] != null ? String(cells[prioCol]) : '') : '';
+          out.push({
+            dateKey: dk,
+            level: lv,
+            kind: 'table_row',
+            itemId: r.id,
+            itemTitle: r.title || '(Sin título)',
+            catPath: getCategoryPath(r.category_id),
+            rowTitle: miniSheetRowTitleForDetail(b, cells) || '—',
+            blockTitle: b.title || (b.variant === 'tasks' ? 'Lista / tareas' : 'Seguimiento')
+          });
+        });
+      });
+    });
+    return out;
+  }
+
+  function buildCalendarDayDotMap(entries) {
+    var map = {};
+    (entries || []).forEach(function (e) {
+      if (!e || !e.dateKey) return;
+      if (!map[e.dateKey]) map[e.dateKey] = { baja: false, media: false, alta: false };
+      if (e.level === 'baja') map[e.dateKey].baja = true;
+      if (e.level === 'media') map[e.dateKey].media = true;
+      if (e.level === 'alta') map[e.dateKey].alta = true;
+    });
+    return map;
+  }
+
+  function formatCalDayTitle(dateKey) {
+    var p = String(dateKey).split('-');
+    if (p.length !== 3) return dateKey;
+    var y = parseInt(p[0], 10);
+    var mo = parseInt(p[1], 10);
+    var d = parseInt(p[2], 10);
+    if (isNaN(y) || isNaN(mo) || isNaN(d) || mo < 1 || mo > 12) return dateKey;
+    return d + ' de ' + NP_CAL_MONTH_NAMES[mo - 1] + ' de ' + y;
+  }
+
+  function calLevelSortKey(lv) {
+    if (lv === 'alta') return 0;
+    if (lv === 'media') return 1;
+    if (lv === 'baja') return 2;
+    return 3;
+  }
+
+  function calLevelLabelForEntry(lv) {
+    if (lv === 'alta') return 'Alta (rojo)';
+    if (lv === 'media') return 'Media (ámbar)';
+    if (lv === 'baja') return 'Baja (verde)';
+    return 'Sin prioridad en semáforo';
+  }
+
+  function ensureSidebarCalMonth() {
+    var now = new Date();
+    if (state.sidebarCalYear == null || state.sidebarCalMonth == null) {
+      state.sidebarCalYear = now.getFullYear();
+      state.sidebarCalMonth = now.getMonth();
+    }
+  }
+
+  function shiftSidebarCalMonth(delta) {
+    ensureSidebarCalMonth();
+    state.sidebarCalMonth += delta;
+    if (state.sidebarCalMonth > 11) {
+      state.sidebarCalMonth = 0;
+      state.sidebarCalYear += 1;
+    } else if (state.sidebarCalMonth < 0) {
+      state.sidebarCalMonth = 11;
+      state.sidebarCalYear -= 1;
+    }
+    renderSidebarCalendarGrid();
+  }
+
+  function renderSidebarCalendar(rows) {
+    var cal = $('npSidebarCalendar');
+    if (!cal) return;
+    if (!state.selectedAreaId || !state.selectedCategoryId) {
+      cal.classList.add('np-hide');
+      state.calendarEntriesCache = [];
+      return;
+    }
+    cal.classList.remove('np-hide');
+    state.calendarEntriesCache = collectCalendarEntries(rows || []);
+    ensureSidebarCalMonth();
+    renderSidebarCalendarGrid();
+  }
+
+  function renderSidebarCalendarGrid() {
+    var grid = $('npCalGrid');
+    var lab = $('npCalMonthLabel');
+    if (!grid || !lab) return;
+    ensureSidebarCalMonth();
+    var y = state.sidebarCalYear;
+    var m = state.sidebarCalMonth;
+    lab.textContent = NP_CAL_MONTH_NAMES[m] + ' ' + y;
+    var dotMap = buildCalendarDayDotMap(state.calendarEntriesCache);
+    var first = new Date(y, m, 1);
+    var startDow = first.getDay();
+    var mondayBased = (startDow + 6) % 7;
+    var lastDay = new Date(y, m + 1, 0).getDate();
+    grid.innerHTML = '';
+    var dowLbl = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    dowLbl.forEach(function (L) {
+      var h = document.createElement('div');
+      h.className = 'np-cal-dow';
+      h.textContent = L;
+      grid.appendChild(h);
+    });
+    var totalCells = mondayBased + lastDay;
+    var padEnd = (7 - (totalCells % 7)) % 7;
+    var i;
+    for (i = 0; i < mondayBased; i++) {
+      var pad = document.createElement('div');
+      pad.className = 'np-cal-day np-cal-day--muted';
+      pad.innerHTML = '<span class="np-cal-day-num"></span>';
+      grid.appendChild(pad);
+    }
+    for (var day = 1; day <= lastDay; day++) {
+      (function (d) {
+        var dateKey =
+          String(y) +
+          '-' +
+          String(m + 1).padStart(2, '0') +
+          '-' +
+          String(d).padStart(2, '0');
+        var flags = dotMap[dateKey] || { baja: false, media: false, alta: false };
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'np-cal-day';
+        btn.setAttribute('data-cal-date', dateKey);
+        btn.setAttribute('aria-label', 'Día ' + d);
+        var num = document.createElement('span');
+        num.className = 'np-cal-day-num';
+        num.textContent = String(d);
+        btn.appendChild(num);
+        var hasDot = flags.baja || flags.media || flags.alta;
+        if (hasDot) {
+          var dots = document.createElement('div');
+          dots.className = 'np-cal-cell-dots';
+          if (flags.baja) {
+            var db = document.createElement('span');
+            db.className = 'np-cal-dot np-cal-dot-baja';
+            db.title = 'Prioridad baja';
+            dots.appendChild(db);
+          }
+          if (flags.media) {
+            var dm = document.createElement('span');
+            dm.className = 'np-cal-dot np-cal-dot-media';
+            dm.title = 'Prioridad media';
+            dots.appendChild(dm);
+          }
+          if (flags.alta) {
+            var da = document.createElement('span');
+            da.className = 'np-cal-dot np-cal-dot-alta';
+            da.title = 'Prioridad alta';
+            dots.appendChild(da);
+          }
+          btn.appendChild(dots);
+        }
+        grid.appendChild(btn);
+      })(day);
+    }
+    for (i = 0; i < padEnd; i++) {
+      var pad2 = document.createElement('div');
+      pad2.className = 'np-cal-day np-cal-day--muted';
+      pad2.innerHTML = '<span class="np-cal-day-num"></span>';
+      grid.appendChild(pad2);
+    }
+  }
+
+  function closeCalDayModal() {
+    var m = $('npCalDayModal');
+    if (!m) return;
+    m.classList.remove('np-modal-open');
+    m.setAttribute('aria-hidden', 'true');
+  }
+
+  function openCalDayModal(dateKey) {
+    var titleEl = $('npCalDayTitle');
+    var body = $('npCalDayBody');
+    if (!titleEl || !body) return;
+    var list = (state.calendarEntriesCache || []).filter(function (e) {
+      return e && e.dateKey === dateKey;
+    });
+    list.sort(function (a, b) {
+      var o = calLevelSortKey(a.level) - calLevelSortKey(b.level);
+      if (o !== 0) return o;
+      return (a.rowTitle || '').localeCompare(b.rowTitle || '');
+    });
+    titleEl.textContent = formatCalDayTitle(dateKey) + ' · ' + list.length + ' pendiente' + (list.length === 1 ? '' : 's');
+    body.innerHTML = '';
+    if (!list.length) {
+      var empty = document.createElement('p');
+      empty.className = 'np-muted';
+      empty.style.margin = '0';
+      empty.textContent = 'Nada programado con fecha para este día.';
+      body.appendChild(empty);
+    } else {
+      list.forEach(function (ent) {
+        var row = document.createElement('div');
+        row.className = 'np-prio-detail-item';
+        var h = document.createElement('div');
+        h.className = 'np-prio-detail-item-title';
+        h.textContent = ent.rowTitle;
+        var meta = document.createElement('div');
+        meta.className = 'np-prio-detail-item-meta';
+        meta.textContent =
+          calLevelLabelForEntry(ent.level) +
+          ' · Apunte: ' +
+          ent.itemTitle +
+          ' · ' +
+          ent.catPath +
+          (ent.kind === 'table_row' ? ' · Tabla: ' + ent.blockTitle : '');
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-ghost btn-ghost-blue';
+        btn.textContent = 'Abrir apunte';
+        (function (itemId) {
+          btn.addEventListener('click', function () {
+            var full = (state.prioSummaryRowsCache || []).filter(function (x) {
+              return x.id === itemId;
+            })[0];
+            if (full) {
+              closeCalDayModal();
+              openItemDetail(full);
+            }
+          });
+        })(ent.itemId);
+        row.appendChild(h);
+        row.appendChild(meta);
+        row.appendChild(btn);
+        body.appendChild(row);
+      });
+    }
+    var modal = $('npCalDayModal');
+    if (modal) {
+      modal.classList.add('np-modal-open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+  }
+
   function miniSheetColCountForAggr(b) {
     var headers = b.headers || [];
     var rows = b.rows || [];
@@ -2346,54 +2968,246 @@
     return tot;
   }
 
-  function aggregatePriorityFromItemRows(rows) {
-    var tot = { baja: 0, media: 0, alta: 0 };
+  function getRootCategoryId(catId) {
+    if (!catId) return null;
+    var cur = state.categories.filter(function (c) {
+      return c.id === catId;
+    })[0];
+    var guard = 0;
+    while (cur && guard++ < 60) {
+      if (!cur.parent_id) return cur.id;
+      cur = state.categories.filter(function (c) {
+        return c.id === cur.parent_id;
+      })[0];
+    }
+    return catId;
+  }
+
+  function rootCategoriesForArea(areaId) {
+    return state.categories
+      .filter(function (c) {
+        return c.area_id === areaId && !c.archived_at && !c.parent_id;
+      })
+      .slice()
+      .sort(function (a, b) {
+        return (a.sort_order || 0) - (b.sort_order || 0) || (a.title || '').localeCompare(b.title || '');
+      });
+  }
+
+  function aggregatePriorityByRoot(rows) {
+    var map = {};
     (rows || []).forEach(function (r) {
+      if (!r || !r.category_id) return;
+      var rid = getRootCategoryId(r.category_id);
+      if (!rid) return;
+      if (!map[rid]) map[rid] = { baja: 0, media: 0, alta: 0 };
       var ab = aggregatePriorityFromBodyBlocks(r.body_blocks);
-      tot.baja += ab.baja;
-      tot.media += ab.media;
-      tot.alta += ab.alta;
+      map[rid].baja += ab.baja;
+      map[rid].media += ab.media;
+      map[rid].alta += ab.alta;
     });
-    return tot;
+    return map;
+  }
+
+  function miniSheetRowTitleForDetail(b, cells) {
+    if (b.variant === 'smart') {
+      return cells[1] != null ? String(cells[1]).trim() : '';
+    }
+    return cells[0] != null ? String(cells[0]).trim() : '';
+  }
+
+  function buildPriorityDetailEntries(rows, rootId, level) {
+    var out = [];
+    (rows || []).forEach(function (r) {
+      if (!r || !r.category_id) return;
+      var rid = getRootCategoryId(r.category_id);
+      if (rootId && rid !== rootId) return;
+      var blocks = r.body_blocks || [];
+      blocks.forEach(function (b) {
+        if (!b || b.type !== 'mini_sheet') return;
+        if (b.variant !== 'tasks' && b.variant !== 'smart') return;
+        var headers = b.headers || [];
+        var nrow = b.rows || [];
+        var ncol = miniSheetColCountForAggr(b);
+        var prioCol = resolvePriorityColIndex(b, headers, ncol);
+        if (prioCol < 0) return;
+        nrow.forEach(function (row, ri) {
+          var rk = b.rowKinds && b.rowKinds[ri];
+          if (b.variant === 'smart' && rk && rk !== 'task') return;
+          var cells = Array.isArray(row) ? row.slice() : (row && row.cells ? row.cells.slice() : []);
+          while (cells.length < ncol) cells.push('');
+          var raw = cells[prioCol];
+          var lv = priorityLevelFromRaw(raw != null ? String(raw) : '');
+          if (lv !== level) return;
+          var rt = miniSheetRowTitleForDetail(b, cells);
+          out.push({
+            itemId: r.id,
+            itemTitle: r.title || '(Sin título)',
+            catPath: getCategoryPath(r.category_id),
+            blockTitle:
+              b.title ||
+              (b.variant === 'tasks' ? 'Lista / tareas' : 'Seguimiento'),
+            rowTitle: rt || '—'
+          });
+        });
+      });
+    });
+    return out;
+  }
+
+  function closePrioListModal() {
+    var m = $('npPrioListModal');
+    if (!m) return;
+    m.classList.remove('np-modal-open');
+    m.setAttribute('aria-hidden', 'true');
+  }
+
+  function openPrioListModal(rootId, level, rootTitle) {
+    var rows = state.prioSummaryRowsCache || [];
+    var entries = buildPriorityDetailEntries(rows, rootId, level);
+    var lvlLab = level === 'baja' ? 'Baja' : level === 'media' ? 'Media' : 'Alta';
+    var titleEl = $('npPrioListTitle');
+    var body = $('npPrioListBody');
+    if (!titleEl || !body) return;
+    titleEl.textContent = rootTitle + ' · ' + lvlLab + ' (' + entries.length + ')';
+    body.innerHTML = '';
+    if (!entries.length) {
+      var empty = document.createElement('p');
+      empty.className = 'np-muted';
+      empty.style.margin = '0';
+      empty.textContent = 'Ninguna fila con esa prioridad en esta vista.';
+      body.appendChild(empty);
+    } else {
+      entries.forEach(function (ent) {
+        var row = document.createElement('div');
+        row.className = 'np-prio-detail-item';
+        var h = document.createElement('div');
+        h.className = 'np-prio-detail-item-title';
+        h.textContent = ent.rowTitle;
+        var meta = document.createElement('div');
+        meta.className = 'np-prio-detail-item-meta';
+        meta.textContent =
+          'Apunte: ' +
+          ent.itemTitle +
+          ' · ' +
+          ent.catPath +
+          ' · Tabla: ' +
+          ent.blockTitle;
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-ghost btn-ghost-blue';
+        btn.textContent = 'Abrir apunte';
+        btn.addEventListener('click', function () {
+          var full = (state.prioSummaryRowsCache || []).filter(function (x) {
+            return x.id === ent.itemId;
+          })[0];
+          if (full) {
+            closePrioListModal();
+            openItemDetail(full);
+          }
+        });
+        row.appendChild(h);
+        row.appendChild(meta);
+        row.appendChild(btn);
+        body.appendChild(row);
+      });
+    }
+    var m = $('npPrioListModal');
+    if (m) {
+      m.classList.add('np-modal-open');
+      m.setAttribute('aria-hidden', 'false');
+    }
   }
 
   function renderSidebarPrioSummary(rows) {
     var mount = $('npPrioSummary');
     if (!mount) return;
+    state.prioSummaryRowsCache = rows || [];
     if (!state.selectedAreaId || !state.selectedCategoryId) {
       mount.classList.add('np-hide');
       mount.innerHTML = '';
+      state.prioSummaryRowsCache = null;
       return;
     }
-    var t = aggregatePriorityFromItemRows(rows);
     mount.classList.remove('np-hide');
     mount.innerHTML = '';
-    var det = document.createElement('details');
-    det.className = 'np-prio-summary-details';
-    det.open = true;
-    var summ = document.createElement('summary');
-    summ.className = 'np-prio-summary-sum';
-    summ.textContent = 'Prioridades';
-    det.appendChild(summ);
-    var rowEl = document.createElement('div');
-    rowEl.className = 'np-prio-summary-row';
-    [
-      { key: 'baja', title: 'Baja (verde)' },
-      { key: 'media', title: 'Media (ámbar)' },
-      { key: 'alta', title: 'Alta (rojo)' }
-    ].forEach(function (def) {
-      var lab = document.createElement('span');
-      lab.className = 'np-prio-summary-chip np-prio-summary-' + def.key;
-      lab.title = def.title;
-      var dot = document.createElement('span');
-      dot.className = 'np-prio-summary-dot';
-      dot.textContent = '●';
-      lab.appendChild(dot);
-      lab.appendChild(document.createTextNode(' ' + t[def.key]));
-      rowEl.appendChild(lab);
+    var byRoot = aggregatePriorityByRoot(rows);
+    var roots = rootCategoriesForArea(state.selectedAreaId);
+    if (!roots.length) {
+      mount.classList.add('np-hide');
+      return;
+    }
+
+    var outer = document.createElement('div');
+    outer.className = 'np-prio-summary-details';
+
+    var topLab = document.createElement('div');
+    topLab.className = 'np-prio-summary-top-label';
+    topLab.textContent = 'Prioridades por raíz';
+    outer.appendChild(topLab);
+
+    var rootsWrap = document.createElement('div');
+    rootsWrap.className = 'np-prio-summary-roots';
+
+    roots.forEach(function (rootCat) {
+      var counts = byRoot[rootCat.id] || { baja: 0, media: 0, alta: 0 };
+      var det = document.createElement('details');
+      det.className = 'np-prio-summary-root-details';
+      det.open = false;
+
+      var summ = document.createElement('summary');
+      var nameSp = document.createElement('span');
+      nameSp.className = 'np-prio-summary-root-name';
+      nameSp.textContent = rootCat.title || 'Sin título';
+      var mini = document.createElement('span');
+      mini.className = 'np-prio-sum-mini';
+      mini.textContent =
+        '● ' +
+        counts.baja +
+        '   ● ' +
+        counts.media +
+        '   ● ' +
+        counts.alta;
+      summ.appendChild(nameSp);
+      summ.appendChild(mini);
+      det.appendChild(summ);
+
+      var rowEl = document.createElement('div');
+      rowEl.className = 'np-prio-summary-row';
+      [
+        { key: 'baja', title: 'Ver prioridad baja (verde)' },
+        { key: 'media', title: 'Ver prioridad media (ámbar)' },
+        { key: 'alta', title: 'Ver prioridad alta (rojo)' }
+      ].forEach(function (def) {
+        var n = counts[def.key];
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className =
+          'np-prio-summary-chip np-prio-summary-' +
+          def.key +
+          (n === 0 ? ' np-prio-summary-chip--zero' : '');
+        btn.title = def.title;
+        btn.setAttribute('aria-label', def.title + ': ' + n);
+        var dot = document.createElement('span');
+        dot.className = 'np-prio-summary-dot';
+        dot.textContent = '●';
+        btn.appendChild(dot);
+        btn.appendChild(document.createTextNode(' ' + n));
+        (function (rid, lvl, rtitle) {
+          btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openPrioListModal(rid, lvl, rtitle);
+          });
+        })(rootCat.id, def.key, rootCat.title || 'Raíz');
+        rowEl.appendChild(btn);
+      });
+      det.appendChild(rowEl);
+      rootsWrap.appendChild(det);
     });
-    det.appendChild(rowEl);
-    mount.appendChild(det);
+
+    outer.appendChild(rootsWrap);
+    mount.appendChild(outer);
   }
 
   /** Bloques en body_blocks: mini_sheet + note_section (texto intercalado). opts.editable + persistItemId = debounce al modal. */
@@ -3062,17 +3876,80 @@
     return frag;
   }
 
+  function scheduleDetailBlocksPersistDebounced() {
+    if (!state.detailItemId || !state.client || !state.detailBlocksWorking) return;
+    if (detailBlocksSaveTimer) clearTimeout(detailBlocksSaveTimer);
+    detailBlocksSaveTimer = setTimeout(function () {
+      detailBlocksSaveTimer = null;
+      persistItemBlocks(state.detailItemId, state.detailBlocksWorking, {});
+    }, 520);
+  }
+
+  function updateDetailBlocksHint() {
+    var hint = $('npDetailBlocksHint');
+    if (!hint || !state.detailBlocksWorking) return;
+    var n = state.detailBlocksWorking.length;
+    hint.textContent = n === 0 ? '' : n === 1 ? '1 bloque' : n + ' bloques';
+  }
+
+  function mountDetailBlocksToolbarRow() {
+    var tools = document.createElement('div');
+    tools.id = 'npDetailBlockTools';
+    tools.className = 'np-tools-row np-detail-blocks-tools';
+    [
+      ['npDetailBtnAddNoteBlock', '＋ Bloque de texto', 'btn btn-ghost btn-ghost-blue'],
+      ['npDetailBtnAddSmartTable', '＋ Tabla seguimiento PRO', 'btn btn-ghost btn-ghost-blue'],
+      ['npDetailBtnAddTaskTable', '＋ Tabla de tareas', 'btn btn-ghost btn-ghost-green'],
+      ['npDetailBtnAddMiniSheet', '＋ Tabla libre', 'btn btn-ghost btn-ghost-green'],
+      ['npDetailBtnAddLedgerSheet', '＋ Tabla de montos', 'btn btn-ghost btn-ghost-blue']
+    ].forEach(function (spec) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.id = spec[0];
+      btn.className = spec[2];
+      btn.textContent = spec[1];
+      tools.appendChild(btn);
+    });
+    var hint = document.createElement('span');
+    hint.id = 'npDetailBlocksHint';
+    hint.className = 'np-muted';
+    hint.style.fontSize = '12px';
+    tools.appendChild(hint);
+    return tools;
+  }
+
+  function mountDetailBlocksMountAndToolbar(bd, itemId, sheetAccent) {
+    bd.appendChild(mountDetailBlocksToolbarRow());
+    var blocksMount = document.createElement('div');
+    blocksMount.id = 'npDetailBlocksMount';
+    blocksMount.className = 'np-detail-blocks-mount';
+    blocksMount.appendChild(
+      renderBodyBlocks(state.detailBlocksWorking, {
+        editable: true,
+        persistItemId: itemId,
+        sheetAccent: sheetAccent
+      })
+    );
+    bd.appendChild(blocksMount);
+  }
+
   function refreshDetailBlocksDOM() {
-    var bd = $('npDetailBody');
-    if (!bd || !$('npDetailModal').classList.contains('np-modal-open') || !state.detailBlocksWorking) return;
-    bd.querySelectorAll('.np-detail-block-chunk').forEach(function (el) { el.remove(); });
-    bd.appendChild(
+    var mount = $('npDetailBlocksMount');
+    if (!mount || !$('npDetailModal').classList.contains('np-modal-open') || !state.detailBlocksWorking) return;
+    mount.innerHTML = '';
+    mount.appendChild(
       renderBodyBlocks(state.detailBlocksWorking, {
         editable: true,
         persistItemId: state.detailItemId,
         sheetAccent: getAreaAccentHex(state.detailModalAreaId)
       })
     );
+    updateDetailBlocksHint();
+    var bd = $('npDetailBody');
+    if (bd) {
+      if (state.detailBlocksWorking.length) bd.classList.add('np-modal-has-blocks');
+      else bd.classList.remove('np-modal-has-blocks');
+    }
   }
 
   function getCategoryPath(id) {
@@ -3663,6 +4540,9 @@
         ps.classList.add('np-hide');
         ps.innerHTML = '';
       }
+      state.prioSummaryRowsCache = null;
+      var calEarly = $('npSidebarCalendar');
+      if (calEarly) calEarly.classList.add('np-hide');
       return;
     }
 
@@ -3755,6 +4635,7 @@
 
     syncSheetItemsList(rows);
     renderSidebarPrioSummary(rows);
+    renderSidebarCalendar(rows);
     await refreshCategoryItemCounts();
     renderTree();
   }
@@ -3845,75 +4726,46 @@
   });
 
   $('npBtnAddMiniSheet').addEventListener('click', function () {
-    state.pendingBlocks.push({
-      type: 'mini_sheet',
-      title: 'Tabla libre',
-      headers: ['Concepto', 'Monto', 'Notas'],
-      rows: [['', '', ''], ['', '', ''], ['', '', '']]
-    });
+    state.pendingBlocks.push(makePlanProMiniSheetFreeBlock());
     refreshPendingHint();
   });
 
   var btnLedgerSheet = $('npBtnAddLedgerSheet');
   if (btnLedgerSheet) {
     btnLedgerSheet.addEventListener('click', function () {
-      state.pendingBlocks.push({
-        type: 'mini_sheet',
-        variant: 'ledger',
-        title: 'Tabla de montos',
-        headers: ['Concepto', 'Monto', '%', 'Notas'],
-        colKinds: ['text', 'currency', 'pct', 'text'],
-        montoCol: 1,
-        pctCol: 2,
-        rows: [
-          ['', '', '', ''],
-          ['', '', '', '']
-        ]
-      });
+      state.pendingBlocks.push(makePlanProLedgerSheetBlock());
       refreshPendingHint();
     });
   }
 
   $('npBtnAddNoteBlock').addEventListener('click', function () {
-    state.pendingBlocks.push({
-      type: 'note_section',
-      title: '',
-      html: '<p><br></p>'
-    });
+    state.pendingBlocks.push(makePlanProNoteSectionBlock());
     refreshPendingHint();
   });
 
   $('npBtnAddSmartTable').addEventListener('click', function () {
-    state.pendingBlocks.push({
-      type: 'mini_sheet',
-      variant: 'smart',
-      title: 'Seguimiento · acciones',
-      headers: ['Tipo', 'Título / concepto', 'Prioridad', 'Listo', 'Fecha · $ · %', 'Notas / siguiente paso'],
-      rows: [
-        ['', '', '', '', '', '']
-      ],
-      rowKinds: ['task'],
-      rowDone: [false]
-    });
+    state.pendingBlocks.push(makePlanProSmartTableBlock());
     refreshPendingHint();
   });
 
   $('npBtnAddTaskTable').addEventListener('click', function () {
-    state.pendingBlocks.push({
-      type: 'mini_sheet',
-      variant: 'tasks',
-      title: 'Lista / tareas',
-      headers: ['Título', 'Descripción', 'Prioridad', 'Listo', 'Fecha objetivo'],
-      rows: [
-        ['', '', '', '', ''],
-        ['', '', '', '', ''],
-        ['', '', '', '', ''],
-        ['', '', '', '', '']
-      ],
-      rowKinds: ['task', 'task', 'task', 'task'],
-      rowDone: [false, false, false, false]
-    });
+    state.pendingBlocks.push(makePlanProTaskTableBlock());
     refreshPendingHint();
+  });
+
+  $('npDetailBody').addEventListener('click', function (e) {
+    var btn = e.target.closest('button');
+    if (!btn || !btn.id || btn.id.indexOf('npDetailBtnAdd') !== 0) return;
+    if (!state.detailItemId || !state.detailBlocksWorking) return;
+    e.preventDefault();
+    if (btn.id === 'npDetailBtnAddNoteBlock') state.detailBlocksWorking.push(makePlanProNoteSectionBlock());
+    else if (btn.id === 'npDetailBtnAddSmartTable') state.detailBlocksWorking.push(makePlanProSmartTableBlock());
+    else if (btn.id === 'npDetailBtnAddTaskTable') state.detailBlocksWorking.push(makePlanProTaskTableBlock());
+    else if (btn.id === 'npDetailBtnAddMiniSheet') state.detailBlocksWorking.push(makePlanProMiniSheetFreeBlock());
+    else if (btn.id === 'npDetailBtnAddLedgerSheet') state.detailBlocksWorking.push(makePlanProLedgerSheetBlock());
+    else return;
+    refreshDetailBlocksDOM();
+    scheduleDetailBlocksPersistDebounced();
   });
 
   $('npBtnBranchHere').addEventListener('click', async function () {
@@ -3941,8 +4793,66 @@
   if (npPanel) {
     npPanel.addEventListener('click', function (e) { e.stopPropagation(); });
   }
+
+  $('npPrioListClose').addEventListener('click', function () {
+    closePrioListModal();
+  });
+  var npPrioListModalEl = $('npPrioListModal');
+  if (npPrioListModalEl) {
+    npPrioListModalEl.addEventListener('click', function (e) {
+      if (e.target === npPrioListModalEl) closePrioListModal();
+    });
+    var npPrioPanel = npPrioListModalEl.querySelector('.np-prio-list-panel');
+    if (npPrioPanel) {
+      npPrioPanel.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+    }
+  }
+
+  $('npCalDayClose').addEventListener('click', function () {
+    closeCalDayModal();
+  });
+  var npCalDayModalEl = $('npCalDayModal');
+  if (npCalDayModalEl) {
+    npCalDayModalEl.addEventListener('click', function (e) {
+      if (e.target === npCalDayModalEl) closeCalDayModal();
+    });
+    var npCalDayPanel = npCalDayModalEl.querySelector('.np-prio-list-panel');
+    if (npCalDayPanel) {
+      npCalDayPanel.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+    }
+  }
+
+  var npCalPrevBtn = $('npCalPrev');
+  if (npCalPrevBtn) npCalPrevBtn.addEventListener('click', function () { shiftSidebarCalMonth(-1); });
+  var npCalNextBtn = $('npCalNext');
+  if (npCalNextBtn) npCalNextBtn.addEventListener('click', function () { shiftSidebarCalMonth(1); });
+
+  var npCalGridEl = $('npCalGrid');
+  if (npCalGridEl) {
+    npCalGridEl.addEventListener('click', function (e) {
+      var cell = e.target.closest('[data-cal-date]');
+      if (!cell) return;
+      var dk = cell.getAttribute('data-cal-date');
+      if (!dk || cell.classList.contains('np-cal-day--muted')) return;
+      openCalDayModal(dk);
+    });
+  }
+
   document.addEventListener('keydown', async function (e) {
-    if (e.key === 'Escape' && $('npDetailModal').classList.contains('np-modal-open')) {
+    if (e.key !== 'Escape') return;
+    if ($('npPrioListModal') && $('npPrioListModal').classList.contains('np-modal-open')) {
+      closePrioListModal();
+      return;
+    }
+    if ($('npCalDayModal') && $('npCalDayModal').classList.contains('np-modal-open')) {
+      closeCalDayModal();
+      return;
+    }
+    if ($('npDetailModal').classList.contains('np-modal-open')) {
       await closeItemDetail();
     }
   });
