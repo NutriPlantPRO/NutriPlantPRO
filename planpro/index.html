@@ -108,6 +108,67 @@
     .np-muted { color: var(--muted); font-size: 12px; }
     .np-login-card { max-width: 420px; margin: 24px auto 0; }
     .np-login-card h2 { margin-top: 0; }
+    .np-note-preview {
+      max-width: 220px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .np-note-empty { color: #cbd5e1; font-style: italic; }
+    .np-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.45);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .np-modal-overlay.np-modal-open { display: flex; }
+    .np-modal-panel {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      max-width: 560px;
+      width: 100%;
+      max-height: min(85vh, 640px);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px rgba(0,0,0,.12);
+    }
+    .np-modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .np-modal-head h3 { margin: 0; font-size: 1.05rem; line-height: 1.3; word-break: break-word; }
+    .np-modal-meta { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+    .np-modal-body {
+      padding: 14px 16px;
+      overflow: auto;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .np-modal-body.np-modal-empty { color: var(--muted); font-style: italic; }
+    .np-btn-link {
+      background: none;
+      border: 0;
+      color: #2563eb;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+    }
+    .np-actions { white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -195,12 +256,13 @@
             <thead>
               <tr>
                 <th>Título</th>
+                <th>Nota</th>
                 <th>Pilar</th>
                 <th>Categoría</th>
                 <th>Estado</th>
                 <th>Prioridad</th>
                 <th>Actualizado</th>
-                <th></th>
+                <th class="np-actions">Acciones</th>
               </tr>
             </thead>
             <tbody id="npTableBody"></tbody>
@@ -209,6 +271,19 @@
         <p id="npEmpty" class="np-muted np-hide">No hay ítems aún.</p>
       </section>
     </main>
+  </div>
+
+  <div id="npDetailModal" class="np-modal-overlay" aria-hidden="true">
+    <div class="np-modal-panel" role="dialog" aria-labelledby="npDetailTitle">
+      <div class="np-modal-head">
+        <div style="min-width:0;">
+          <h3 id="npDetailTitle">—</h3>
+          <div id="npDetailMeta" class="np-modal-meta"></div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="npDetailClose" style="flex-shrink:0;">Cerrar</button>
+      </div>
+      <div id="npDetailBody" class="np-modal-body"></div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -234,6 +309,44 @@
       var d = new Date(iso);
       return isNaN(d.getTime()) ? iso : d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
     } catch (e) { return iso; }
+  }
+
+  /** Vista corta de la nota en tabla (una línea lógica). */
+  function truncateNote(s, max) {
+    if (s == null || !String(s).trim()) return '';
+    var t = String(s).replace(/\s+/g, ' ').trim();
+    if (t.length <= max) return t;
+    return t.slice(0, max) + '…';
+  }
+
+  function openItemDetail(r) {
+    $('npDetailTitle').textContent = r.title || '(Sin título)';
+    var parts = [
+      state.areaMap[r.area_id] || '—',
+      r.category_id ? state.catMap[r.category_id] || '—' : '—',
+      r.status || '—',
+      r.priority ? 'Prioridad ' + r.priority : '',
+      fmtDate(r.updated_at)
+    ].filter(function (x) { return x; });
+    $('npDetailMeta').textContent = parts.join(' · ');
+    var body = r.body_plain;
+    var bd = $('npDetailBody');
+    if (body && String(body).trim()) {
+      bd.textContent = body;
+      bd.classList.remove('np-modal-empty');
+    } else {
+      bd.textContent = 'No hay texto en Nota / detalle. Puedes editarlo cuando exista edición en la app.';
+      bd.classList.add('np-modal-empty');
+    }
+    var mo = $('npDetailModal');
+    mo.classList.add('np-modal-open');
+    mo.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeItemDetail() {
+    var mo = $('npDetailModal');
+    mo.classList.remove('np-modal-open');
+    mo.setAttribute('aria-hidden', 'true');
   }
 
   var state = {
@@ -295,7 +408,7 @@
     var c = state.client;
     var uid = state.userId;
     var res = await c.from('plan_pro_items')
-      .select('id,title,area_id,category_id,status,priority,updated_at')
+      .select('id,title,area_id,category_id,status,priority,updated_at,body_plain')
       .eq('owner_id', uid)
       .order('updated_at', { ascending: false });
     if (res.error) throw res.error;
@@ -305,14 +418,51 @@
     $('npEmpty').classList.toggle('np-hide', rows.length > 0);
     rows.forEach(function (r) {
       var tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td>' + escapeHtml(r.title || '—') + '</td>' +
-        '<td>' + escapeHtml(state.areaMap[r.area_id] || '—') + '</td>' +
-        '<td>' + escapeHtml(r.category_id ? state.catMap[r.category_id] || '—' : '—') + '</td>' +
-        '<td>' + escapeHtml(r.status || '—') + '</td>' +
-        '<td>' + escapeHtml(r.priority || '—') + '</td>' +
-        '<td class="np-muted">' + fmtDate(r.updated_at) + '</td>' +
-        '<td><button type="button" class="btn btn-danger" data-del="' + r.id + '">Eliminar</button></td>';
+
+      var td1 = document.createElement('td');
+      td1.textContent = r.title || '—';
+      tr.appendChild(td1);
+
+      var tdNote = document.createElement('td');
+      var prev = truncateNote(r.body_plain, 96);
+      var span = document.createElement('span');
+      span.className = prev ? 'np-note-preview' : 'np-note-preview np-note-empty';
+      span.textContent = prev || 'Sin nota';
+      tdNote.appendChild(span);
+      tr.appendChild(tdNote);
+
+      function tdText(val) {
+        var td = document.createElement('td');
+        td.textContent = val;
+        return td;
+      }
+
+      tr.appendChild(tdText(state.areaMap[r.area_id] || '—'));
+      tr.appendChild(tdText(r.category_id ? state.catMap[r.category_id] || '—' : '—'));
+      tr.appendChild(tdText(r.status || '—'));
+      tr.appendChild(tdText(r.priority || '—'));
+      var tdUp = document.createElement('td');
+      tdUp.className = 'np-muted';
+      tdUp.textContent = fmtDate(r.updated_at);
+      tr.appendChild(tdUp);
+
+      var tdAct = document.createElement('td');
+      tdAct.className = 'np-actions';
+      var btnOpen = document.createElement('button');
+      btnOpen.type = 'button';
+      btnOpen.className = 'np-btn-link';
+      btnOpen.textContent = 'Abrir';
+      btnOpen.addEventListener('click', function () { openItemDetail(r); });
+      var btnDel = document.createElement('button');
+      btnDel.type = 'button';
+      btnDel.className = 'btn btn-danger';
+      btnDel.style.marginLeft = '8px';
+      btnDel.setAttribute('data-del', r.id);
+      btnDel.textContent = 'Eliminar';
+      tdAct.appendChild(btnOpen);
+      tdAct.appendChild(btnDel);
+      tr.appendChild(tdAct);
+
       tb.appendChild(tr);
     });
     tb.querySelectorAll('[data-del]').forEach(function (btn) {
@@ -322,13 +472,6 @@
         deleteItem(id);
       });
     });
-  }
-
-  function escapeHtml(s) {
-    if (s == null) return '';
-    var d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
   }
 
   async function deleteItem(id) {
@@ -342,6 +485,20 @@
   }
 
   $('npArea').addEventListener('change', refreshCategorySelect);
+
+  $('npDetailClose').addEventListener('click', closeItemDetail);
+  $('npDetailModal').addEventListener('click', function (e) {
+    if (e.target === $('npDetailModal')) closeItemDetail();
+  });
+  var npPanel = $('npDetailModal').querySelector('.np-modal-panel');
+  if (npPanel) {
+    npPanel.addEventListener('click', function (e) { e.stopPropagation(); });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && $('npDetailModal').classList.contains('np-modal-open')) {
+      closeItemDetail();
+    }
+  });
 
   $('npFormCreate').addEventListener('submit', async function (e) {
     e.preventDefault();
