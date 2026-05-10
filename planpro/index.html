@@ -196,6 +196,52 @@
     .np-mini-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
     .np-mini-table th, .np-mini-table td { border: 1px solid var(--border); padding: 4px 6px; text-align: left; }
     .np-mini-table tfoot td { background: #f0fdf4; font-weight: 600; }
+    .np-pillar-panel { margin-bottom: 4px; }
+    .np-pillar-tabs-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 12px;
+      justify-content: space-between;
+    }
+    .np-pillar-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+    .np-pillar-tab {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      color: #475569;
+      border-bottom: 3px solid transparent;
+      transition: background .15s, color .15s, box-shadow .15s;
+    }
+    .np-pillar-tab:hover { background: #f8fafc; color: #0f172a; }
+    .np-pillar-tab-active {
+      background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 55%);
+      color: #14532d;
+      border-color: #86efac;
+      border-bottom-color: #16a34a;
+      box-shadow: 0 2px 10px rgba(22, 163, 74, 0.12);
+    }
+    .np-pillar-add {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .np-pillar-add input { margin-bottom: 0; width: 160px; max-width: 42vw; }
+    @media (max-width: 640px) {
+      .np-pillar-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+      .np-pillar-tab { flex-shrink: 0; }
+    }
   </style>
 </head>
 <body>
@@ -237,14 +283,26 @@
     <main id="npMain" class="np-hide">
       <div id="npToast" class="np-msg ok np-hide" style="margin-bottom:12px;"></div>
 
+      <section class="panel np-pillar-panel">
+        <h2 style="margin:0 0 10px;font-size:1rem;color:#334155;">Tus pilares</h2>
+        <p class="np-muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;">
+          Cada pestaña es un espacio grande (Personal, Work, NutriPlant PRO…). Puedes <strong>añadir más pilares</strong> cuando quieras.
+          Dentro de cada uno, a la izquierda, construyes <strong>categorías y subcategorías</strong>; a la derecha van tus ítems (notas, tablas β, fechas).
+        </p>
+        <div class="np-pillar-tabs-row">
+          <div id="npPillarTabs" class="np-pillar-tabs" role="tablist" aria-label="Pilares"></div>
+          <div class="np-pillar-add">
+            <input type="text" id="npNewPillar" placeholder="Nuevo pilar…" maxlength="80" />
+            <button type="button" class="btn btn-ghost" id="npBtnAddPillar">Añadir pilar</button>
+          </div>
+        </div>
+      </section>
+
       <div class="np-layout">
         <aside class="panel np-tree-sidebar">
-          <h2 style="margin-top:0;">Pilar y categorías</h2>
-          <label for="npTreeArea">Pilar activo</label>
-          <select id="npTreeArea" style="margin-bottom:8px;"></select>
+          <h2 style="margin-top:0;">Categorías en este pilar</h2>
           <p class="np-muted" style="font-size:12px;line-height:1.45;margin-bottom:10px;">
-            Clic en una categoría para ubicar ítems ahí. <strong>+ Sub</strong> crea subcategorías (ej. Personal → Finanzas → Inversiones).
-            Ejecuta en Supabase el script <code>supabase-plan-pro-categories-parent.sql</code> si aún no tienes columna <code>parent_id</code>.
+            Clic en una categoría para filtrar y guardar ítems ahí. <strong>+ Sub</strong> añade un nivel más (ej. Finanzas → Inversiones).
           </p>
           <div id="npTreeMount" class="np-tree-mount"></div>
           <div style="margin-top:12px;">
@@ -614,21 +672,63 @@
     ctx.textContent = 'Nuevo ítem se guardará en: ' + getCategoryPath(state.selectedCategoryId);
   }
 
-  function populateTreeAreaSelect() {
-    var sel = $('npTreeArea');
-    sel.innerHTML = '';
-    state.areas.forEach(function (a) {
-      var o = document.createElement('option');
-      o.value = a.id;
-      o.textContent = a.title + (a.archived_at ? ' (arch.)' : '');
-      sel.appendChild(o);
-    });
+  function slugifyPillar(s) {
+    var t = String(s || '').trim().toLowerCase()
+      .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return t || 'pilar';
+  }
+
+  function renderPillarTabs() {
+    var wrap = $('npPillarTabs');
+    if (!wrap) return;
+    wrap.innerHTML = '';
     if (state.areas.length) {
       if (!state.selectedAreaId || !state.areas.some(function (a) { return a.id === state.selectedAreaId; })) {
         state.selectedAreaId = state.areas[0].id;
       }
-      sel.value = state.selectedAreaId;
     }
+    state.areas.forEach(function (a) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'np-pillar-tab' + (state.selectedAreaId === a.id ? ' np-pillar-tab-active' : '');
+      btn.setAttribute('data-area-id', a.id);
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', state.selectedAreaId === a.id ? 'true' : 'false');
+      btn.textContent = a.title + (a.archived_at ? ' (arch.)' : '');
+      if (state.selectedAreaId === a.id && a.color_hex && /^#[0-9a-fA-F]{6}$/.test(String(a.color_hex).trim())) {
+        btn.style.borderBottom = '3px solid ' + String(a.color_hex).trim();
+      }
+      wrap.appendChild(btn);
+    });
+  }
+
+  async function addNewPillar(titleRaw) {
+    var title = String(titleRaw || '').trim();
+    if (!title) return;
+    var base = slugifyPillar(title);
+    var slug = base;
+    var attempt = 0;
+    while (attempt < 30) {
+      var res = await state.client.from('plan_pro_areas').insert({
+        owner_id: state.userId,
+        title: title,
+        slug: slug,
+        sort_order: state.areas.length
+      }).select('id').single();
+      if (!res.error && res.data && res.data.id) {
+        state.selectedAreaId = res.data.id;
+        state.selectedCategoryId = null;
+        await loadLookups();
+        showToast('Pilar «' + title + '» listo. Ya puedes crear categorías dentro.');
+        var inp = $('npNewPillar');
+        if (inp) inp.value = '';
+        return;
+      }
+      attempt += 1;
+      slug = base + '-' + attempt;
+    }
+    showToast('No se pudo crear el pilar (revisa que el slug sea único o intenta otro nombre).', true);
   }
 
   async function addCategoryUnder(parentId, title) {
@@ -683,7 +783,7 @@
   async function loadLookups() {
     var c = state.client;
     var uid = state.userId;
-    var ar = await c.from('plan_pro_areas').select('id,title,slug,archived_at').eq('owner_id', uid).order('sort_order');
+    var ar = await c.from('plan_pro_areas').select('id,title,slug,archived_at,color_hex').eq('owner_id', uid).order('sort_order');
     if (ar.error) throw ar.error;
     state.areas = ar.data || [];
     state.areaMap = {};
@@ -695,7 +795,7 @@
     state.catMap = {};
     state.categories.forEach(function (x) { state.catMap[x.id] = x.title; });
 
-    populateTreeAreaSelect();
+    renderPillarTabs();
     renderTree();
     updateSelectionUI();
     var noAreas = state.areas.length === 0;
@@ -803,12 +903,28 @@
     await loadItems();
   }
 
-  $('npTreeArea').addEventListener('change', function () {
-    state.selectedAreaId = $('npTreeArea').value;
+  $('npPillarTabs').addEventListener('click', function (e) {
+    var btn = e.target.closest('.np-pillar-tab');
+    if (!btn) return;
+    var id = btn.getAttribute('data-area-id');
+    if (!id || id === state.selectedAreaId) return;
+    state.selectedAreaId = id;
     state.selectedCategoryId = null;
+    renderPillarTabs();
     renderTree();
     updateSelectionUI();
     loadItems();
+  });
+
+  $('npBtnAddPillar').addEventListener('click', async function () {
+    await addNewPillar($('npNewPillar').value);
+  });
+
+  $('npNewPillar').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      $('npBtnAddPillar').click();
+    }
   });
 
   $('npFilterDesc').addEventListener('change', function () {
