@@ -115,6 +115,26 @@ function hasSubscriptionAccess(profile) {
   return new Date() <= endOfPeriod;
 }
 
+/**
+ * Tras login en login.html: destino si la URL trae ?next= (lista cerrada, sin open redirect).
+ */
+function npGetSafeLoginNextUrl() {
+  var allowed = {
+    'dashboard.html': true,
+    'planpro/': true,
+    'planpro/index.html': true,
+    'admin/index.html': true
+  };
+  try {
+    var p = new URLSearchParams(window.location.search);
+    var next = (p.get('next') || '').trim();
+    if (next.charAt(0) === '/') next = next.slice(1);
+    if (allowed[next]) return next;
+  } catch (e) {}
+  return 'dashboard.html';
+}
+window.npGetSafeLoginNextUrl = npGetSafeLoginNextUrl;
+
 // Si estamos en dashboard y no hay sesión, redirige a login:
 if (location.pathname.endsWith("dashboard.html") && !localStorage.getItem(AUTH_KEY)) {
   location.href = "login.html";
@@ -231,7 +251,7 @@ if (form) {
             // Admin existe en Supabase → sesión lista para cargar datos en el panel admin
             localStorage.removeItem('currentProjectId');
             showSuccess("¡Bienvenido Administrador! Ingresando...");
-            setTimeout(() => { location.href = "dashboard.html"; }, 1000);
+            setTimeout(() => { location.href = npGetSafeLoginNextUrl(); }, 1000);
             return;
           }
         } catch (e) { console.warn('Admin Supabase sign-in falló, usando modo local:', e); }
@@ -268,7 +288,7 @@ if (form) {
       }
       localStorage.removeItem('currentProjectId');
       showSuccess("¡Bienvenido Administrador! Ingresando...");
-      setTimeout(() => { location.href = "dashboard.html"; }, 1000);
+      setTimeout(() => { location.href = npGetSafeLoginNextUrl(); }, 1000);
       return;
     }
     
@@ -299,7 +319,7 @@ if (form) {
           const name = result.user?.name || email.split('@')[0];
           clearLoginFailures();
           showSuccess("¡Bienvenido, " + name + "! Ingresando...");
-          setTimeout(() => { location.href = "dashboard.html"; }, 1000);
+          setTimeout(() => { location.href = npGetSafeLoginNextUrl(); }, 1000);
           return;
         }
         if (result.error && result.error !== 'Supabase no configurado') {
@@ -449,7 +469,7 @@ if (form) {
     
     // Redirigir después de un breve delay
     setTimeout(() => {
-      location.href = "dashboard.html";
+      location.href = npGetSafeLoginNextUrl();
     }, 1000);
   });
   

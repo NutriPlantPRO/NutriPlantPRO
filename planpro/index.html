@@ -201,7 +201,8 @@
 (function () {
   'use strict';
 
-  var LOGIN_URL = '../login.html';
+  /* Tras iniciar sesión, auth.js te devuelve aquí gracias a ?next= */
+  var LOGIN_URL = '../login.html?next=' + encodeURIComponent('planpro/');
 
   function $(id) { return document.getElementById(id); }
 
