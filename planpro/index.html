@@ -1415,7 +1415,10 @@
     detailItemId: null,
     detailBlocksWorking: null,
     treeCollapsed: {},
-    categoryItemCounts: {}
+    categoryItemCounts: {},
+    /** Si la BD no tiene body_html aún, las queries omiten esa columna (migración: supabase-plan-pro-body-html.sql). */
+    planProBodyHtmlColumn: true,
+    planProBodyHtmlWarnShown: false
   };
 
   function deepCloneBlocks(blocks) {
@@ -2383,8 +2386,12 @@
       return;
     }
 
+    var selectCols = state.planProBodyHtmlColumn
+      ? 'id,title,area_id,category_id,status,priority,updated_at,body_plain,body_html,due_at,body_blocks'
+      : 'id,title,area_id,category_id,status,priority,updated_at,body_plain,due_at,body_blocks';
+
     var q = c.from('plan_pro_items')
-      .select('id,title,area_id,category_id,status,priority,updated_at,body_plain,body_html,due_at,body_blocks')
+      .select(selectCols)
       .eq('owner_id', uid)
       .eq('area_id', state.selectedAreaId);
 
@@ -2396,7 +2403,18 @@
     }
 
     var res = await q.order('updated_at', { ascending: false });
-    if (res.error) throw res.error;
+    if (res.error) {
+      var em = (res.error.message || '');
+      if (state.planProBodyHtmlColumn && /body_html/i.test(em) && /does not exist/i.test(em)) {
+        state.planProBodyHtmlColumn = false;
+        if (!state.planProBodyHtmlWarnShown) {
+          state.planProBodyHtmlWarnShown = true;
+          showToast('Tu Supabase aún no tiene la columna body_html: Plan PRO funciona en modo compatible (texto sin HTML guardado aparte). Ejecuta el archivo supabase-plan-pro-body-html.sql en el SQL Editor cuando puedas.', false);
+        }
+        return loadItems();
+      }
+      throw res.error;
+    }
     var rows = res.data || [];
     var tb = $('npTableBody');
     tb.innerHTML = '';
@@ -2673,24 +2691,39 @@
       title: title,
       status: null,
       priority: null,
-      body_html: plain.trim() ? rawHtml : null,
       body_plain: plain.trim() ? plain : null,
       due_at: null,
       body_blocks: state.pendingBlocks.length ? state.pendingBlocks : [],
       attachments: []
     };
+    if (state.planProBodyHtmlColumn) {
+      payload.body_html = plain.trim() ? rawHtml : null;
+    }
     var btn = $('npBtnCreate');
     btn.disabled = true;
     var res = await state.client.from('plan_pro_items').insert(payload).select('id').single();
-    btn.disabled = false;
     if (res.error) {
       var msg = res.error.message || 'No se pudo guardar';
-      if (/body_html|column|schema|does not exist/i.test(msg)) {
-        msg += ' · Ejecuta en Supabase el script supabase-plan-pro-body-html.sql';
+      if (state.planProBodyHtmlColumn && /body_html/i.test(msg) && /does not exist/i.test(msg)) {
+        state.planProBodyHtmlColumn = false;
+        delete payload.body_html;
+        res = await state.client.from('plan_pro_items').insert(payload).select('id').single();
+        if (!res.error && !state.planProBodyHtmlWarnShown) {
+          state.planProBodyHtmlWarnShown = true;
+          showToast('Guardado sin columna body_html (modo compatible). Ejecuta supabase-plan-pro-body-html.sql en Supabase cuando puedas.', false);
+        }
       }
-      showToast(msg, true);
-      return;
+      if (res.error) {
+        btn.disabled = false;
+        var msg2 = res.error.message || 'No se pudo guardar';
+        if (/body_html|column|schema|does not exist/i.test(msg2)) {
+          msg2 += ' · Ejecuta en Supabase el script supabase-plan-pro-body-html.sql';
+        }
+        showToast(msg2, true);
+        return;
+      }
     }
+    btn.disabled = false;
     showToast('Apunte guardado en la nube.');
     $('npTitle').value = '';
     clearRichEditor();
