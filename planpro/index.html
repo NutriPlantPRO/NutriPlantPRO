@@ -17,6 +17,12 @@
       --green-d: #16a34a;
       --danger: #b91c1c;
       --blur: saturate(180%) blur(18px);
+      /* Azul marca (NutriPlant PRO · logo) — complementa el verde de acciones principales */
+      --np-blue: #2563eb;
+      --np-blue-d: #1d4ed8;
+      --np-blue-soft: rgba(37, 99, 235, 0.12);
+      --np-blue-ring: rgba(37, 99, 235, 0.22);
+      --np-green-soft: rgba(34, 197, 94, 0.12);
     }
     * { box-sizing: border-box; }
     body {
@@ -55,9 +61,17 @@
     .np-plan-brand h1 {
       margin: 0;
       font-size: 1.17rem;
-      font-weight: 600;
-      color: var(--text);
+      font-weight: 650;
       letter-spacing: -0.03em;
+      color: var(--np-blue-d);
+    }
+    @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+      .np-plan-brand h1 {
+        background: linear-gradient(118deg, var(--np-blue-d) 0%, #0d9488 42%, var(--green-d) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
     }
     .np-plan-brand .sub {
       font-size: 12px;
@@ -89,6 +103,17 @@
       background: rgba(255, 255, 255, 0.95);
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.09);
       transform: translateY(-1px);
+    }
+    .btn-mac-nav-brand {
+      border: 1px solid rgba(37, 99, 235, 0.38);
+      color: var(--np-blue-d);
+      background: linear-gradient(180deg, rgba(239, 246, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
+      font-weight: 600;
+    }
+    .btn-mac-nav-brand:hover {
+      border-color: rgba(37, 99, 235, 0.55);
+      background: rgba(239, 246, 255, 1);
+      color: #1e3a8a;
     }
     .btn-mac-muted {
       opacity: 0.88;
@@ -136,6 +161,26 @@
       border-radius: 10px;
     }
     .btn-ghost:hover { background: rgba(255, 255, 255, 0.92); }
+    .btn-ghost-blue {
+      border-color: rgba(37, 99, 235, 0.28);
+      color: var(--np-blue-d);
+      background: rgba(255, 255, 255, 0.72);
+    }
+    .btn-ghost-blue:hover {
+      background: rgba(239, 246, 255, 0.92);
+      border-color: rgba(37, 99, 235, 0.42);
+      color: #1e3a8a;
+    }
+    .btn-ghost-green {
+      border-color: rgba(34, 197, 94, 0.28);
+      color: var(--green-d);
+      background: rgba(255, 255, 255, 0.72);
+    }
+    .btn-ghost-green:hover {
+      background: rgba(236, 253, 245, 0.92);
+      border-color: rgba(34, 197, 94, 0.42);
+      color: #14532d;
+    }
     .btn-danger { background: rgba(254, 242, 242, 0.95); color: var(--danger); border: 1px solid #fecaca; font-size: 12px; padding: 4px 10px; border-radius: 8px; }
     .panel {
       background: var(--card);
@@ -148,6 +193,45 @@
       box-shadow:
         0 12px 40px rgba(15, 23, 42, 0.06),
         0 1px 0 rgba(255, 255, 255, 0.88) inset;
+    }
+    /* Ritmo visual: azul (marca / navegación) vs verde (árbol / hoja) */
+    .np-section-accent {
+      border-radius: 16px;
+    }
+    .np-section-accent-blue {
+      border-left: 4px solid var(--np-blue);
+      background: linear-gradient(
+        135deg,
+        rgba(239, 246, 255, 0.55) 0%,
+        rgba(255, 255, 255, 0.82) 42%,
+        rgba(255, 255, 255, 0.9) 100%
+      );
+      box-shadow:
+        0 12px 40px rgba(37, 99, 235, 0.06),
+        0 1px 0 rgba(255, 255, 255, 0.88) inset;
+    }
+    .np-section-accent-green {
+      border-left: 4px solid var(--green);
+      background: linear-gradient(
+        135deg,
+        rgba(236, 253, 245, 0.55) 0%,
+        rgba(255, 255, 255, 0.82) 44%,
+        rgba(255, 255, 255, 0.91) 100%
+      );
+      box-shadow:
+        0 12px 40px rgba(22, 163, 74, 0.06),
+        0 1px 0 rgba(255, 255, 255, 0.88) inset;
+    }
+    .np-pillar-list-table thead th {
+      background: linear-gradient(180deg, rgba(239, 246, 255, 0.92) 0%, rgba(248, 250, 252, 0.95) 100%);
+      color: var(--np-blue-d);
+      border-bottom-color: rgba(37, 99, 235, 0.15);
+    }
+    .np-section-accent-blue > h2:first-of-type {
+      color: var(--np-blue-d);
+    }
+    .np-login-card h2 {
+      color: var(--np-blue-d);
     }
     .panel h2 { margin: 0 0 12px; font-size: 1rem; color: #334155; }
     label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
@@ -224,9 +308,9 @@
       background: rgba(255, 255, 255, 0.94);
       border-radius: 18px;
       border: 1px solid rgba(255, 255, 255, 0.9);
-      max-width: min(92vw, 720px);
+      max-width: min(96vw, 1120px);
       width: 100%;
-      max-height: min(85vh, 640px);
+      max-height: min(92vh, 920px);
       display: flex;
       flex-direction: column;
       box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
@@ -281,53 +365,224 @@
       .np-layout { grid-template-columns: 1fr; }
     }
     .np-tree-sidebar { position: sticky; top: 12px; }
-    .np-tree-mount { margin-top: 10px; max-height: min(55vh, 420px); overflow: auto; }
+    .np-tree-sidebar-title {
+      margin: 0 0 8px;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--green-d);
+    }
+    .np-tree-mount {
+      margin-top: 0;
+      max-height: min(55vh, 440px);
+      overflow: auto;
+      padding: 4px 0;
+      border-radius: 10px;
+      background: rgba(248, 250, 252, 0.92);
+      border: 1px solid rgba(15, 23, 42, 0.07);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    }
+    .np-tree-mount:focus { outline: none; }
+    .np-tree-node { position: relative; }
     .np-tree-row {
+      position: relative;
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 8px;
+      gap: 2px;
+      min-height: 28px;
+      padding: 2px 6px 2px 8px;
+      margin: 0 4px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      transition: background 0.12s ease;
     }
-    .np-tree-row:hover { background: rgba(241, 245, 249, 0.85); }
+    .np-tree-row:hover { background: rgba(226, 232, 240, 0.65); }
     .np-tree-row.np-tree-active {
-      background: rgba(236, 253, 245, 0.95);
-      outline: 1px solid rgba(134, 239, 172, 0.85);
-      box-shadow: 0 2px 10px rgba(22, 163, 74, 0.08);
+      background: rgba(219, 234, 254, 0.55);
+      font-weight: 600;
+      color: #0f172a;
+      box-shadow: inset 3px 0 0 #2563eb;
     }
-    .np-tree-children { margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--border); }
+    .np-tree-label {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0 4px;
+    }
+    .np-tree-children {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.2s ease;
+    }
+    .np-tree-children.np-tree-children-open {
+      grid-template-rows: 1fr;
+    }
+    .np-tree-children-inner {
+      overflow: hidden;
+      min-height: 0;
+      margin-left: 14px;
+      padding-left: 8px;
+      border-left: 1px solid rgba(148, 163, 184, 0.35);
+    }
     .np-tree-toggle {
       flex-shrink: 0;
-      width: 26px;
-      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
       padding: 0;
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.85);
-      font-size: 12px;
-      line-height: 1;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
       cursor: pointer;
-      color: #475569;
-      transition: background 0.15s, border-color 0.15s;
+      color: #64748b;
+      transition: background 0.12s ease, color 0.12s ease, transform 0.18s ease;
     }
     .np-tree-toggle:hover {
-      background: rgba(236, 253, 245, 0.85);
-      border-color: rgba(34, 197, 94, 0.35);
-      color: #14532d;
+      background: rgba(148, 163, 184, 0.2);
+      color: #0f172a;
+    }
+    .np-tree-toggle .np-tree-chevron {
+      display: block;
+      transition: transform 0.18s ease;
+    }
+    .np-tree-toggle.np-tree-toggle--collapsed .np-tree-chevron {
+      transform: rotate(-90deg);
+    }
+    .np-tree-spacer {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
     }
     .np-tree-meta {
       flex-shrink: 0;
       font-size: 10px;
       font-weight: 600;
+      font-variant-numeric: tabular-nums;
       color: #94a3b8;
       letter-spacing: 0.02em;
-      max-width: 120px;
+      max-width: 88px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      opacity: 0.5;
+      transition: opacity 0.12s ease;
+    }
+    @media (hover: hover) {
+      .np-tree-meta { opacity: 0; }
+      .np-tree-row:hover .np-tree-meta { opacity: 1; }
+    }
+    .np-tree-row.np-tree-active .np-tree-meta { opacity: 0.85; }
+    .np-tree-actions {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 1px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s ease;
+    }
+    @media (hover: none) {
+      .np-tree-actions {
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+    .np-tree-row:hover .np-tree-actions,
+    .np-tree-row:focus-within .np-tree-actions {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .np-tree-btn-sub {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 22px;
+      padding: 0;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #64748b;
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .np-tree-btn-sub:hover {
+      background: rgba(34, 197, 94, 0.18);
+      color: #15803d;
+    }
+    .np-tree-btn-more {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #64748b;
+      font-size: 15px;
+      line-height: 1;
+      letter-spacing: 0;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .np-tree-btn-more:hover {
+      background: rgba(148, 163, 184, 0.28);
+      color: #0f172a;
+    }
+    .np-tree-menu-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .np-tree-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 3px);
+      min-width: 168px;
+      padding: 4px 0;
+      margin: 0;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      box-shadow:
+        0 4px 6px rgba(15, 23, 42, 0.05),
+        0 12px 28px rgba(15, 23, 42, 0.12);
+      z-index: 40;
+      list-style: none;
+    }
+    .np-tree-menu-item {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: left;
+      padding: 8px 12px;
+      border: 0;
+      background: transparent;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      color: #334155;
+      transition: background 0.1s ease;
+    }
+    .np-tree-menu-item:hover {
+      background: rgba(241, 245, 249, 0.95);
+    }
+    .np-tree-menu-item-danger {
+      color: #b91c1c;
+    }
+    .np-tree-menu-item-danger:hover {
+      background: rgba(254, 226, 226, 0.55);
     }
     /* Mini-hojas / tablas — aspecto PRO, sin rejilla cuadrada */
     .np-ms-block {
@@ -361,9 +616,11 @@
     }
     .np-ms-sheet {
       border-radius: 12px;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
       border: 1px solid rgba(15, 23, 42, 0.05);
       background: rgba(255, 255, 255, 0.55);
+      -webkit-overflow-scrolling: touch;
     }
     .np-ms-row {
       display: grid;
@@ -444,6 +701,18 @@
       line-height: 1.45;
       padding: 8px 4px;
     }
+    .np-ms-cell-prio {
+      justify-content: center;
+      min-width: 96px;
+    }
+    .np-ms-row-head .np-ms-cell-prio {
+      justify-content: center;
+      text-align: center;
+    }
+    .np-ms-cell-notes textarea.np-ms-cell-input {
+      min-height: 96px;
+      padding: 10px 10px;
+    }
     .np-ms-row:not(.np-ms-row-head) .np-ms-cell {
       align-items: stretch;
     }
@@ -504,7 +773,7 @@
     .np-sheet-placeholder {
       text-align: center;
       padding: 44px 20px;
-      border: 1px dashed rgba(148, 163, 184, 0.65);
+      border: 1px dashed rgba(37, 99, 235, 0.28);
       border-radius: 18px;
       background: rgba(255, 255, 255, 0.45);
       backdrop-filter: blur(10px);
@@ -882,25 +1151,30 @@
     tr.np-items-row:hover td {
       background: rgba(236, 253, 245, 0.45);
     }
-    /* Semáforo prioridad */
+    /* Semáforo prioridad — una sola fila, sin saltos al estrechar la ventana */
     .np-prio-wrap {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
+      flex-wrap: nowrap;
+      flex-shrink: 0;
+      width: 100%;
+      box-sizing: border-box;
     }
     .np-prio-dot {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       padding: 0;
       border-radius: 999px;
       border: 2px solid transparent;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
       transition: transform 0.12s, box-shadow 0.12s;
       background: rgba(248, 250, 252, 0.95);
       opacity: 0.45;
@@ -1014,7 +1288,7 @@
         </div>
       </div>
       <div class="np-plan-actions np-hide" id="npHeaderLogged">
-        <a class="btn-mac-nav" href="../dashboard.html" target="_blank" rel="noopener noreferrer">NutriPlantPRO</a>
+        <a class="btn-mac-nav btn-mac-nav-brand" href="../dashboard.html" target="_blank" rel="noopener noreferrer">NutriPlantPRO</a>
         <a class="btn-mac-nav" href="../admin/index.html" target="_blank" rel="noopener noreferrer">Panel admin</a>
         <button type="button" class="btn-mac-nav btn-mac-logout" id="npBtnLogout">Cerrar sesión</button>
       </div>
@@ -1022,7 +1296,7 @@
 
     <div id="npGate">
       <p class="np-loading" id="npLoading">Comprobando sesión…</p>
-      <div id="npLoginPanel" class="panel np-login-card np-hide">
+      <div id="npLoginPanel" class="panel np-login-card np-section-accent np-section-accent-blue np-hide">
         <h2>Entrar a Plan PRO</h2>
         <p class="np-muted" style="margin-top:0;line-height:1.45;">
           Usa el <strong>mismo correo y contraseña</strong> de tu cuenta administrador en Supabase.
@@ -1043,8 +1317,8 @@
     <main id="npMain" class="np-hide">
       <div id="npToast" class="np-msg ok np-hide" style="margin-bottom:12px;"></div>
 
-      <section class="panel np-pillar-panel">
-        <h2 style="margin:0 0 10px;font-size:1rem;color:#334155;">Tus pilares</h2>
+      <section class="panel np-pillar-panel np-section-accent np-section-accent-blue">
+        <h2 style="margin:0 0 10px;font-size:1rem;">Tus pilares</h2>
         <p class="np-muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;">
           Cada pestaña es un espacio grande (Personal, Work, NutriPlant PRO…). Puedes <strong>añadir más pilares</strong> cuando quieras.
           Dentro de cada uno, a la izquierda, construyes <strong>categorías y subcategorías</strong>; a la derecha van tus ítems (notas, tablas β, fechas).
@@ -1053,23 +1327,20 @@
           <div id="npPillarTabs" class="np-pillar-tabs" role="tablist" aria-label="Pilares"></div>
           <div class="np-pillar-add">
             <input type="text" id="npNewPillar" placeholder="Nuevo pilar…" maxlength="80" />
-            <button type="button" class="btn btn-ghost" id="npBtnAddPillar">Añadir pilar</button>
+            <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddPillar">Añadir pilar</button>
           </div>
         </div>
       </section>
 
       <div class="np-layout">
-        <aside class="panel np-tree-sidebar">
-          <h2 style="margin-top:0;">Categorías en este pilar</h2>
-          <p class="np-muted" style="font-size:12px;line-height:1.45;margin-bottom:10px;">
-            Clic en el <strong>nombre</strong> para abrir la hoja de esa categoría. La <strong>flecha ◂▸</strong> solo despliega u oculta ramas (sin cambiar de categoría). <strong>+ Sub</strong> crea un nivel más debajo.
-          </p>
-          <div id="npTreeMount" class="np-tree-mount"></div>
+        <aside class="panel np-tree-sidebar np-section-accent np-section-accent-green">
+          <h2 class="np-tree-sidebar-title">Categorías en este pilar</h2>
+          <div id="npTreeMount" class="np-tree-mount" role="tree" aria-label="Categorías del pilar"></div>
           <div style="margin-top:12px;">
             <label class="np-muted" style="font-size:12px;">Nueva categoría raíz en este pilar</label>
             <div style="display:flex;gap:8px;margin-top:4px;align-items:center;">
               <input type="text" id="npNewRootCat" placeholder="Ej. Finanzas, Proyectos…" style="margin-bottom:0;flex:1;" />
-              <button type="button" class="btn btn-ghost" id="npBtnAddRootCat" style="margin-bottom:0;">Añadir</button>
+              <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddRootCat" style="margin-bottom:0;">Añadir</button>
             </div>
           </div>
           <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;cursor:pointer;">
@@ -1093,7 +1364,7 @@
                 <div id="npSheetSub" class="np-sheet-sub"></div>
                 <div class="np-sheet-branch">
                   <input type="text" id="npBranchName" maxlength="120" placeholder="Nueva subcategoría bajo esta rama…" autocomplete="off" />
-                  <button type="button" class="btn btn-ghost" id="npBtnBranchHere">Crear rama aquí</button>
+                  <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnBranchHere">Crear rama aquí</button>
                 </div>
                 <div id="npSheetNavBlocks" class="np-sheet-nav-blocks np-hide"></div>
               </div>
@@ -1156,10 +1427,10 @@
                     <strong>Herramientas</strong>: puedes ir alternando <strong>tablas</strong> y <strong>bloques de texto</strong> (listas, párrafos…) en el orden que quieras. La libreta grande arriba sigue siendo el bloque principal; abajo añades más tablas y más textos.
                   </p>
                   <div class="np-tools-row">
-                    <button type="button" class="btn btn-ghost" id="npBtnAddNoteBlock">＋ Bloque de texto</button>
-                    <button type="button" class="btn btn-ghost" id="npBtnAddSmartTable">＋ Tabla seguimiento PRO</button>
-                    <button type="button" class="btn btn-ghost" id="npBtnAddTaskTable">＋ Tabla de tareas</button>
-                    <button type="button" class="btn btn-ghost" id="npBtnAddMiniSheet">＋ Tabla libre (montos, columnas…)</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddNoteBlock">＋ Bloque de texto</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddSmartTable">＋ Tabla seguimiento PRO</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddTaskTable">＋ Tabla de tareas</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddMiniSheet">＋ Tabla libre (montos, columnas…)</button>
                     <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
                   </div>
                   <div id="npMiniSheetPreview" class="np-hide" style="margin-bottom:14px;overflow:auto;"></div>
@@ -1169,11 +1440,11 @@
             </section>
           </div>
 
-          <section class="panel">
+          <section class="panel np-section-accent np-section-accent-blue">
             <h2>Lista del pilar</h2>
             <p class="np-muted" style="margin-top:0;">Misma información que arriba; vista compacta de todo el pilar o del filtro del árbol. <strong>Toca una fila</strong> para ver el apunte; solo usa el botón rojo para borrar.</p>
             <div style="overflow:auto;">
-              <table>
+              <table class="np-pillar-list-table">
                 <thead>
                   <tr>
                     <th>Título</th>
@@ -1200,7 +1471,7 @@
           <h3 id="npDetailTitle">—</h3>
           <div id="npDetailMeta" class="np-modal-meta"></div>
         </div>
-        <button type="button" class="btn btn-ghost" id="npDetailClose" style="flex-shrink:0;">Cerrar</button>
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npDetailClose" style="flex-shrink:0;">Cerrar</button>
       </div>
       <div id="npDetailBody" class="np-modal-body"></div>
     </div>
@@ -1217,6 +1488,22 @@
   var detailBlocksSaveTimer = null;
 
   function $(id) { return document.getElementById(id); }
+
+  function closeAllTreeMenus() {
+    var m = $('npTreeMount');
+    if (!m) return;
+    m.querySelectorAll('.np-tree-menu').forEach(function (el) {
+      el.classList.add('np-hide');
+    });
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.closest && e.target.closest('.np-tree-menu-wrap')) return;
+    closeAllTreeMenus();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeAllTreeMenus();
+  });
 
   function showToast(msg, isErr) {
     var el = $('npToast');
@@ -1329,6 +1616,17 @@
   }
 
   function openItemDetail(r) {
+    state.detailModalAreaId = r.area_id || null;
+    var modalPanel = $('npDetailModal').querySelector('.np-modal-panel');
+    var accentOpen = getAreaAccentHex(r.area_id);
+    if (accentOpen) {
+      modalPanel.style.borderTop = '4px solid ' + accentOpen;
+      modalPanel.dataset.areaAccent = accentOpen;
+    } else {
+      modalPanel.style.borderTop = '';
+      delete modalPanel.dataset.areaAccent;
+    }
+
     $('npDetailTitle').textContent = r.title || '(Sin título)';
     var parts = [
       state.areaMap[r.area_id] || '—',
@@ -1379,7 +1677,13 @@
         }
       }
       if (hasTablesOrMixed) {
-        bd.appendChild(renderBodyBlocks(state.detailBlocksWorking, { editable: true, persistItemId: r.id }));
+        bd.appendChild(
+          renderBodyBlocks(state.detailBlocksWorking, {
+            editable: true,
+            persistItemId: r.id,
+            sheetAccent: accentOpen
+          })
+        );
       }
     }
     $('npDetailModal').classList.add('np-modal-open');
@@ -1397,6 +1701,12 @@
     }
     state.detailItemId = null;
     state.detailBlocksWorking = null;
+    state.detailModalAreaId = null;
+    var modalPanel = $('npDetailModal').querySelector('.np-modal-panel');
+    if (modalPanel) {
+      modalPanel.style.borderTop = '';
+      delete modalPanel.dataset.areaAccent;
+    }
     $('npDetailModal').classList.remove('np-modal-open');
     $('npDetailModal').setAttribute('aria-hidden', 'true');
   }
@@ -1414,6 +1724,8 @@
     authListenerAttached: false,
     detailItemId: null,
     detailBlocksWorking: null,
+    /** Pilar del apunte abierto en el modal (tinte tablas / borde). */
+    detailModalAreaId: null,
     treeCollapsed: {},
     categoryItemCounts: {},
     /** Si la BD no tiene body_html aún, las queries omiten esa columna (migración: supabase-plan-pro-body-html.sql). */
@@ -1429,6 +1741,46 @@
     }
   }
 
+  var NP_SMART_HEADERS_DEFAULT = [
+    'Tipo',
+    'Título / concepto',
+    'Prioridad',
+    'Listo',
+    'Fecha · $ · %',
+    'Notas / siguiente paso'
+  ];
+
+  function resolveMiniSheetHeader(b, hi) {
+    var raw = b.headers && b.headers[hi];
+    if (raw != null && String(raw).trim() !== '') return String(raw).trim();
+    if (b.variant === 'smart') {
+      if (hi < NP_SMART_HEADERS_DEFAULT.length) return NP_SMART_HEADERS_DEFAULT[hi];
+      var n = hi - NP_SMART_HEADERS_DEFAULT.length + 1;
+      return 'Notas / campo extra ' + n;
+    }
+    return 'Columna ' + (hi + 1);
+  }
+
+  function hexToRgba(hex, alpha) {
+    var m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || '').trim());
+    if (!m) return 'rgba(34, 197, 94, ' + alpha + ')';
+    var n = parseInt(m[1], 16);
+    var r = (n >> 16) & 255;
+    var g = (n >> 8) & 255;
+    var bl = n & 255;
+    return 'rgba(' + r + ',' + g + ',' + bl + ',' + alpha + ')';
+  }
+
+  function getAreaAccentHex(areaId) {
+    if (!areaId || !state.areas || !state.areas.length) return '';
+    var a = state.areas.filter(function (x) {
+      return x.id === areaId;
+    })[0];
+    if (!a || !a.color_hex) return '';
+    var h = String(a.color_hex).trim();
+    return /^#[0-9a-fA-F]{6}$/.test(h) ? h : '';
+  }
+
   function columnLooksLikeDate(headerName, colIndex, ncol, variant) {
     var h = (headerName != null ? String(headerName) : '').toLowerCase();
     if (/fecha|objetivo|due|plazo|deadline|date/.test(h)) return true;
@@ -1436,10 +1788,13 @@
     return false;
   }
 
-  function columnPrefersTextarea(headerName, colIndex, variant) {
+  function columnPrefersTextarea(headerName, colIndex, variant, ncol) {
+    ncol = ncol || 0;
     var h = (headerName != null ? String(headerName) : '').toLowerCase();
-    if (/descripción|descripcion|desc|nota|detail|note/.test(h)) return true;
+    if (/descripción|descripcion|desc|nota|detail|note|siguiente paso|campo extra/.test(h)) return true;
     if (variant === 'tasks' && colIndex === 1) return true;
+    if (variant === 'smart' && colIndex === 5) return true;
+    if (variant === 'smart' && colIndex > 5) return true;
     return false;
   }
 
@@ -1539,6 +1894,7 @@
     for (i = 0; i < headers.length; i++) {
       if (columnLooksLikePriorityHeader(headers[i])) return i;
     }
+    if (b.variant === 'smart' && ncol >= 3) return 2;
     if (b.variant === 'tasks' && ncol >= 3) return 2;
     return -1;
   }
@@ -1557,6 +1913,7 @@
     opts = opts || {};
     var editable = !!opts.editable;
     var persistItemId = opts.persistItemId || null;
+    var sheetAccent = opts.sheetAccent || '';
     var frag = document.createDocumentFragment();
     if (!blocks || !Array.isArray(blocks)) return frag;
 
@@ -1732,9 +2089,8 @@
       for (var hi = 0; hi < ncol; hi++) {
         var hc = document.createElement('div');
         hc.className = 'np-ms-cell';
-        hc.textContent = headers[hi] != null && String(headers[hi]).trim() !== ''
-          ? String(headers[hi])
-          : ('Columna ' + (hi + 1));
+        if (prioCol === hi) hc.classList.add('np-ms-cell-prio');
+        hc.textContent = resolveMiniSheetHeader(b, hi);
         hr.appendChild(hc);
       }
       sheet.appendChild(hr);
@@ -1761,8 +2117,9 @@
         for (var c = 0; c < ncol; c++) {
           var cell = document.createElement('div');
           cell.className = 'np-ms-cell';
+          if (prioCol === c) cell.classList.add('np-ms-cell-prio');
           var raw = cells[c] != null && cells[c] !== '' ? String(cells[c]) : '';
-          var headerLabel = headers[c] != null ? headers[c] : '';
+          var headerLabel = resolveMiniSheetHeader(b, c);
 
           if (b.variant === 'smart' && c === 0 && editable) {
             var sel = document.createElement('select');
@@ -1810,7 +2167,7 @@
             var isDate = columnLooksLikeDate(headerLabel, c, ncol, b.variant);
             var dateParsed = toDateInputValue(raw);
             if (isDate && raw && !dateParsed) isDate = false;
-            var bigText = !isDate && columnPrefersTextarea(headerLabel, c, b.variant);
+            var bigText = !isDate && columnPrefersTextarea(headerLabel, c, b.variant, ncol);
             if (isDate) {
               var inpD = document.createElement('input');
               inpD.type = 'date';
@@ -1826,8 +2183,17 @@
             } else if (bigText) {
               var tx = document.createElement('textarea');
               tx.className = 'np-ms-cell-input';
-              tx.rows = 2;
+              tx.rows = 3;
               tx.value = raw;
+              cell.classList.add('np-ms-cell-notes');
+              if (sheetAccent) {
+                tx.style.borderRadius = '10px';
+                tx.style.border = '1px solid ' + hexToRgba(sheetAccent, 0.38);
+                tx.style.background =
+                  'linear-gradient(165deg, ' +
+                  hexToRgba(sheetAccent, 0.14) +
+                  ' 0%, rgba(255,255,255,0.97) 62%)';
+              }
               tx.addEventListener('input', function () {
                 setCell(ri, c, tx.value);
               });
@@ -1922,7 +2288,13 @@
     var bd = $('npDetailBody');
     if (!bd || !$('npDetailModal').classList.contains('np-modal-open') || !state.detailBlocksWorking) return;
     bd.querySelectorAll('.np-detail-block-chunk').forEach(function (el) { el.remove(); });
-    bd.appendChild(renderBodyBlocks(state.detailBlocksWorking, { editable: true, persistItemId: state.detailItemId }));
+    bd.appendChild(
+      renderBodyBlocks(state.detailBlocksWorking, {
+        editable: true,
+        persistItemId: state.detailItemId,
+        sheetAccent: getAreaAccentHex(state.detailModalAreaId)
+      })
+    );
   }
 
   function getCategoryPath(id) {
@@ -2009,38 +2381,60 @@
 
   function renderTreeNode(node) {
     var wrap = document.createElement('div');
+    wrap.className = 'np-tree-node';
     var row = document.createElement('div');
     row.className = 'np-tree-row';
+    row.setAttribute('role', 'treeitem');
+    row.setAttribute('aria-selected', state.selectedCategoryId === node.cat.id ? 'true' : 'false');
     if (state.selectedCategoryId === node.cat.id) row.classList.add('np-tree-active');
     row.addEventListener('click', function (e) {
       if (e.target.closest('.np-tree-ignore')) return;
       selectCategory(node.cat.id);
     });
 
+    var childBox = null;
+    var chevronSvg =
+      '<svg class="np-tree-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 5l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
     if (node.children.length) {
+      childBox = document.createElement('div');
+      childBox.className = 'np-tree-children';
+      var inner = document.createElement('div');
+      inner.className = 'np-tree-children-inner';
+      if (!state.treeCollapsed[node.cat.id]) childBox.classList.add('np-tree-children-open');
+      node.children.forEach(function (ch) {
+        inner.appendChild(renderTreeNode(ch));
+      });
+      childBox.appendChild(inner);
+
       var toggle = document.createElement('button');
       toggle.type = 'button';
       toggle.className = 'np-tree-toggle np-tree-ignore';
+      if (state.treeCollapsed[node.cat.id]) toggle.classList.add('np-tree-toggle--collapsed');
       toggle.setAttribute('aria-expanded', state.treeCollapsed[node.cat.id] ? 'false' : 'true');
-      toggle.textContent = state.treeCollapsed[node.cat.id] ? '▸' : '▾';
-      toggle.title = 'Desplegar u ocultar subcategorías';
+      toggle.setAttribute('aria-label', state.treeCollapsed[node.cat.id] ? 'Expandir subcategorías' : 'Contraer subcategorías');
+      toggle.title = state.treeCollapsed[node.cat.id] ? 'Expandir' : 'Contraer';
+      toggle.innerHTML = chevronSvg;
       toggle.addEventListener('click', function (e) {
         e.stopPropagation();
         state.treeCollapsed[node.cat.id] = !state.treeCollapsed[node.cat.id];
-        renderTree();
+        var collapsed = !!state.treeCollapsed[node.cat.id];
+        toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        toggle.setAttribute('aria-label', collapsed ? 'Expandir subcategorías' : 'Contraer subcategorías');
+        toggle.title = collapsed ? 'Expandir' : 'Contraer';
+        toggle.classList.toggle('np-tree-toggle--collapsed', collapsed);
+        childBox.classList.toggle('np-tree-children-open', !collapsed);
       });
       row.appendChild(toggle);
     } else {
       var spacer = document.createElement('span');
-      spacer.style.width = '26px';
-      spacer.style.flexShrink = '0';
+      spacer.className = 'np-tree-spacer';
       spacer.setAttribute('aria-hidden', 'true');
       row.appendChild(spacer);
     }
 
     var title = document.createElement('span');
-    title.style.flex = '1';
-    title.style.minWidth = '0';
+    title.className = 'np-tree-label';
     title.textContent = node.cat.title;
 
     var meta = document.createElement('span');
@@ -2048,35 +2442,88 @@
     var itemsST = totalItemsInSubtree(node.cat.id);
     var branchesBelow = countDescendantCategoryNodes(node);
     meta.textContent = branchesBelow
-      ? (itemsST + ' ap · ' + branchesBelow + ' ramas')
-      : (itemsST + ' ap');
-    meta.title = 'Apuntes en esta rama (incluye subcategorías) · ramas totales bajo esta categoría';
+      ? itemsST + ' ap · ' + branchesBelow + ' ramas'
+      : itemsST + ' ap';
+    meta.title = 'Apuntes en esta rama (incluye subcategorías) · subcategorías debajo';
 
+    var actions = document.createElement('div');
+    actions.className = 'np-tree-actions';
     var btnSub = document.createElement('button');
     btnSub.type = 'button';
-    btnSub.className = 'btn btn-ghost np-tree-ignore';
-    btnSub.style.fontSize = '11px';
-    btnSub.style.padding = '2px 8px';
-    btnSub.textContent = '+ Sub';
+    btnSub.className = 'np-tree-btn-sub np-tree-ignore';
+    btnSub.setAttribute('aria-label', 'Nueva subcategoría aquí');
+    btnSub.title = 'Nueva subcategoría';
+    btnSub.textContent = '+';
     btnSub.addEventListener('click', function (e) {
       e.stopPropagation();
+      closeAllTreeMenus();
       var name = window.prompt('Nombre de la subcategoría (debajo de «' + node.cat.title + '»):', '');
       if (!name || !String(name).trim()) return;
       addCategoryUnder(node.cat.id, String(name).trim());
     });
+    actions.appendChild(btnSub);
+
+    var menuWrap = document.createElement('div');
+    menuWrap.className = 'np-tree-menu-wrap np-tree-ignore';
+
+    var btnMore = document.createElement('button');
+    btnMore.type = 'button';
+    btnMore.className = 'np-tree-btn-more np-tree-ignore';
+    btnMore.setAttribute('aria-label', 'Más acciones');
+    btnMore.setAttribute('aria-haspopup', 'true');
+    btnMore.title = 'Más acciones';
+    btnMore.textContent = '\u22EF';
+
+    var menu = document.createElement('div');
+    menu.className = 'np-tree-menu np-hide';
+    menu.setAttribute('role', 'menu');
+
+    var btnRename = document.createElement('button');
+    btnRename.type = 'button';
+    btnRename.className = 'np-tree-menu-item np-tree-ignore';
+    btnRename.setAttribute('role', 'menuitem');
+    btnRename.textContent = 'Renombrar\u2026';
+
+    var btnArchive = document.createElement('button');
+    btnArchive.type = 'button';
+    btnArchive.className = 'np-tree-menu-item np-tree-menu-item-danger np-tree-ignore';
+    btnArchive.setAttribute('role', 'menuitem');
+    btnArchive.textContent = 'Archivar\u2026';
+
+    btnRename.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeAllTreeMenus();
+      var name = window.prompt('Nuevo nombre de la categoría:', node.cat.title);
+      if (name == null) return;
+      name = String(name).trim();
+      if (!name || name === node.cat.title) return;
+      renameCategory(node.cat.id, name);
+    });
+
+    btnArchive.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeAllTreeMenus();
+      archiveCategory(node.cat.id);
+    });
+
+    btnMore.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var wasHidden = menu.classList.contains('np-hide');
+      closeAllTreeMenus();
+      if (wasHidden) menu.classList.remove('np-hide');
+    });
+
+    menu.appendChild(btnRename);
+    menu.appendChild(btnArchive);
+    menuWrap.appendChild(btnMore);
+    menuWrap.appendChild(menu);
+    actions.appendChild(menuWrap);
+
     row.appendChild(title);
     row.appendChild(meta);
-    row.appendChild(btnSub);
+    row.appendChild(actions);
     wrap.appendChild(row);
-    if (node.children.length) {
-      var box = document.createElement('div');
-      box.className = 'np-tree-children';
-      if (state.treeCollapsed[node.cat.id]) box.style.display = 'none';
-      node.children.forEach(function (ch) {
-        box.appendChild(renderTreeNode(ch));
-      });
-      wrap.appendChild(box);
-    }
+    if (childBox) wrap.appendChild(childBox);
     return wrap;
   }
 
@@ -2334,6 +2781,62 @@
     showToast('Categoría raíz creada.');
   }
 
+  async function renameCategory(catId, titleRaw) {
+    var t = String(titleRaw || '').trim();
+    if (!t) return;
+    var res = await state.client.from('plan_pro_categories').update({ title: t }).eq('id', catId);
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo renombrar.', true);
+      return;
+    }
+    await loadLookups();
+    showToast('Categoría renombrada.');
+  }
+
+  async function archiveCategory(catId) {
+    var cat = state.categories.filter(function (c) {
+      return c.id === catId;
+    })[0];
+    if (!cat) return;
+    var ids = collectDescendantIds(catId);
+    var subCount = ids.length - 1;
+    var msg =
+      subCount > 0
+        ? '¿Archivar «' +
+          cat.title +
+          '» y las ' +
+          subCount +
+          ' subcategoría' +
+          (subCount === 1 ? '' : 's') +
+          ' debajo? Los apuntes no se borran.'
+        : '¿Archivar «' + cat.title + '»? Los apuntes no se borran.';
+    if (!window.confirm(msg)) return;
+
+    var prevSel = state.selectedCategoryId;
+    var nextSel = prevSel;
+    if (prevSel && ids.indexOf(prevSel) >= 0) {
+      nextSel = null;
+      var pid = cat.parent_id;
+      if (pid) {
+        var parentLive = state.categories.filter(function (c) {
+          return c.id === pid && !c.archived_at;
+        })[0];
+        if (parentLive) nextSel = pid;
+      }
+    }
+    state.selectedCategoryId = nextSel;
+
+    var now = new Date().toISOString();
+    var res = await state.client.from('plan_pro_categories').update({ archived_at: now }).in('id', ids);
+    if (res.error) {
+      state.selectedCategoryId = prevSel;
+      showToast(res.error.message || 'No se pudo archivar.', true);
+      return;
+    }
+    await loadLookups();
+    showToast(ids.length > 1 ? 'Rama archivada.' : 'Categoría archivada.');
+  }
+
   function refreshPendingHint() {
     var n = state.pendingBlocks.length;
     var hint = $('npPendingBlocksHint');
@@ -2347,7 +2850,12 @@
     hint.textContent = n === 1 ? '1 bloque en este apunte.' : n + ' bloques en este apunte.';
     prevBox.classList.remove('np-hide');
     prevBox.innerHTML = '';
-    prevBox.appendChild(renderBodyBlocks(state.pendingBlocks, { editable: true }));
+    prevBox.appendChild(
+      renderBodyBlocks(state.pendingBlocks, {
+        editable: true,
+        sheetAccent: getAreaAccentHex(state.selectedAreaId)
+      })
+    );
   }
 
   async function loadLookups() {
