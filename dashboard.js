@@ -18709,7 +18709,7 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
     radCol =
       '<div>' +
       '<div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Radiación solar (global)</div>' +
-      '<div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">' + rad.toFixed(0) + ' W/m²</div>' +
+      '<div style="font-size: 24px; font-weight: 700; color: #d97706;">' + rad.toFixed(0) + ' W/m²</div>' +
       '</div>';
   }
   var uvCol = '';
@@ -18728,11 +18728,11 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
       '<div style="display: grid; grid-template-columns: ' + gridCols + '; gap: 16px; margin-bottom: 16px;">' +
       '<div>' +
       '<div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Presión de Vapor</div>' +
-      '<div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">' + vpd.toFixed(2) + ' kPa</div>' +
+      '<div style="font-size: 24px; font-weight: 700; color: #0284c7;">' + vpd.toFixed(2) + ' kPa</div>' +
       '</div>' +
       '<div>' +
       '<div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Humedad</div>' +
-      '<div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">' + hd.toFixed(2) + ' g/m³</div>' +
+      '<div style="font-size: 24px; font-weight: 700; color: #0d9488;">' + hd.toFixed(2) + ' g/m³</div>' +
       renderHumidityDeficitBadge(hd) +
       '</div>' +
       radCol +
@@ -19576,11 +19576,11 @@ function calculateAdvancedVPD() {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
           <div>
             <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Presión de Vapor</div>
-            <div style="font-size: 24px; font-weight: 700; color: #22c55e;">${results.vpd} kPa</div>
+            <div style="font-size: 24px; font-weight: 700; color: #0284c7;">${results.vpd} kPa</div>
           </div>
           <div>
             <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Humedad</div>
-            <div style="font-size: 24px; font-weight: 700; color: #22c55e;">${results.hd} g/m³</div>
+            <div style="font-size: 24px; font-weight: 700; color: #0d9488;">${results.hd} g/m³</div>
             ${renderHumidityDeficitBadge(results.hd)}
           </div>
         </div>

@@ -2285,13 +2285,13 @@
   }
 
   async function closeItemDetail() {
-    var hadPending = !!detailBlocksSaveTimer;
     if (detailBlocksSaveTimer) {
       clearTimeout(detailBlocksSaveTimer);
       detailBlocksSaveTimer = null;
     }
+    syncDetailBlocksInputsFromDOM();
     await flushDetailMainNote();
-    if (hadPending && state.detailItemId && state.detailBlocksWorking) {
+    if (state.detailItemId && state.detailBlocksWorking && state.client) {
       await persistItemBlocks(state.detailItemId, state.detailBlocksWorking, { skipReload: true });
     }
     state.detailItemId = null;
@@ -2598,6 +2598,53 @@
     if (!opts.skipReload) await loadItems();
   }
 
+  /**
+   * Copia al modelo los valores actuales de los date pickers (y celdas de texto de tabla)
+   * antes de cerrar el modal. Así no se pierde la fecha si el usuario cierra sin disparar blur/change.
+   */
+  function syncDetailBlocksInputsFromDOM() {
+    if (!state.detailBlocksWorking || !state.detailBlocksWorking.length) return;
+    var mount = $('npDetailBlocksMount');
+    if (!mount) return;
+    function applyToBlock(bi, ri, ci, val) {
+      var blk = state.detailBlocksWorking[bi];
+      if (!blk || blk.type !== 'mini_sheet') return;
+      var ncol = miniSheetColCountForAggr(blk);
+      if (!blk.rows) blk.rows = [];
+      while (blk.rows.length <= ri) {
+        var nr = [];
+        for (var p = 0; p < ncol; p++) nr.push('');
+        blk.rows.push(nr);
+      }
+      var rowArr = blk.rows[ri];
+      if (!Array.isArray(rowArr)) rowArr = padRowCells(rowArr, ncol);
+      blk.rows[ri] = rowArr;
+      while (rowArr.length < ncol) rowArr.push('');
+      rowArr[ci] = val;
+    }
+    mount.querySelectorAll('input.np-ms-cell-input-date[data-np-block]').forEach(function (inp) {
+      var bi = parseInt(inp.getAttribute('data-np-block'), 10);
+      var ri = parseInt(inp.getAttribute('data-np-row'), 10);
+      var ci = parseInt(inp.getAttribute('data-np-col'), 10);
+      if (isNaN(bi) || isNaN(ri) || isNaN(ci)) return;
+      applyToBlock(bi, ri, ci, inp.value || '');
+    });
+    mount.querySelectorAll('input.np-ms-cell-input[data-np-block]:not(.np-ms-cell-input-date)').forEach(function (inp) {
+      var bi = parseInt(inp.getAttribute('data-np-block'), 10);
+      var ri = parseInt(inp.getAttribute('data-np-row'), 10);
+      var ci = parseInt(inp.getAttribute('data-np-col'), 10);
+      if (isNaN(bi) || isNaN(ri) || isNaN(ci)) return;
+      applyToBlock(bi, ri, ci, inp.value || '');
+    });
+    mount.querySelectorAll('textarea.np-ms-cell-input[data-np-block]').forEach(function (tx) {
+      var bi = parseInt(tx.getAttribute('data-np-block'), 10);
+      var ri = parseInt(tx.getAttribute('data-np-row'), 10);
+      var ci = parseInt(tx.getAttribute('data-np-col'), 10);
+      if (isNaN(bi) || isNaN(ri) || isNaN(ci)) return;
+      applyToBlock(bi, ri, ci, tx.value || '');
+    });
+  }
+
   function resolvePriorityColIndex(b, headers, ncol) {
     var i;
     for (i = 0; i < headers.length; i++) {
@@ -2766,7 +2813,7 @@
   function renderSidebarCalendar(rows) {
     var cal = $('npSidebarCalendar');
     if (!cal) return;
-    if (!state.selectedAreaId || !state.selectedCategoryId) {
+    if (!state.selectedAreaId) {
       cal.classList.add('np-hide');
       state.calendarEntriesCache = [];
       return;
@@ -3134,7 +3181,7 @@
     var mount = $('npPrioSummary');
     if (!mount) return;
     state.prioSummaryRowsCache = rows || [];
-    if (!state.selectedAreaId || !state.selectedCategoryId) {
+    if (!state.selectedAreaId) {
       mount.classList.add('np-hide');
       mount.innerHTML = '';
       state.prioSummaryRowsCache = null;
@@ -3154,7 +3201,7 @@
 
     var topLab = document.createElement('div');
     topLab.className = 'np-prio-summary-top-label';
-    topLab.textContent = 'Prioridades por raíz';
+    topLab.textContent = 'Prioridades por raíz · todo el pilar';
     outer.appendChild(topLab);
 
     var rootsWrap = document.createElement('div');
@@ -3714,16 +3761,25 @@
               inpD.type = 'date';
               inpD.className = 'np-ms-cell-input-date';
               inpD.value = dateParsed;
+              inpD.setAttribute('data-np-block', String(blockIndex));
+              inpD.setAttribute('data-np-row', String(ri));
+              inpD.setAttribute('data-np-col', String(c));
               inpD.addEventListener('input', function () {
                 setCell(ri, c, inpD.value || '');
               });
               inpD.addEventListener('change', function () {
                 setCell(ri, c, inpD.value || '');
               });
+              inpD.addEventListener('blur', function () {
+                setCell(ri, c, inpD.value || '');
+              });
               cell.appendChild(inpD);
             } else if (bigText) {
               var tx = document.createElement('textarea');
               tx.className = 'np-ms-cell-input';
+              tx.setAttribute('data-np-block', String(blockIndex));
+              tx.setAttribute('data-np-row', String(ri));
+              tx.setAttribute('data-np-col', String(c));
               tx.rows = 3;
               tx.value = raw;
               cell.classList.add('np-ms-cell-notes');
@@ -3738,14 +3794,23 @@
               tx.addEventListener('input', function () {
                 setCell(ri, c, tx.value);
               });
+              tx.addEventListener('blur', function () {
+                setCell(ri, c, tx.value);
+              });
               cell.appendChild(tx);
             } else {
               var inp = document.createElement('input');
               inp.type = 'text';
               inp.className = 'np-ms-cell-input';
+              inp.setAttribute('data-np-block', String(blockIndex));
+              inp.setAttribute('data-np-row', String(ri));
+              inp.setAttribute('data-np-col', String(c));
               inp.value = raw;
               inp.autocomplete = 'off';
               inp.addEventListener('input', function () {
+                setCell(ri, c, inp.value);
+              });
+              inp.addEventListener('blur', function () {
                 setCell(ri, c, inp.value);
               });
               cell.appendChild(inp);
@@ -4564,7 +4629,7 @@
       ? 'id,title,area_id,category_id,status,priority,updated_at,body_plain,body_html,due_at,body_blocks'
       : 'id,title,area_id,category_id,status,priority,updated_at,body_plain,due_at,body_blocks';
 
-    var q = c.from('plan_pro_items')
+    var qFiltered = c.from('plan_pro_items')
       .select(selectCols)
       .eq('owner_id', uid)
       .eq('area_id', state.selectedAreaId);
@@ -4573,12 +4638,17 @@
       var ids = $('npFilterDesc').checked
         ? collectDescendantIds(state.selectedCategoryId)
         : [state.selectedCategoryId];
-      q = q.in('category_id', ids);
+      qFiltered = qFiltered.in('category_id', ids);
     }
 
-    var res = await q.order('updated_at', { ascending: false });
-    if (res.error) {
-      var em = (res.error.message || '');
+    var qAreaAll = c.from('plan_pro_items')
+      .select(selectCols)
+      .eq('owner_id', uid)
+      .eq('area_id', state.selectedAreaId);
+
+    var resFiltered = await qFiltered.order('updated_at', { ascending: false });
+    if (resFiltered.error) {
+      var em = (resFiltered.error.message || '');
       if (state.planProBodyHtmlColumn && /body_html/i.test(em) && /does not exist/i.test(em)) {
         state.planProBodyHtmlColumn = false;
         if (!state.planProBodyHtmlWarnShown) {
@@ -4587,9 +4657,24 @@
         }
         return loadItems();
       }
-      throw res.error;
+      throw resFiltered.error;
     }
-    var rows = res.data || [];
+
+    var rowsForSidebar = resFiltered.data || [];
+    if (state.selectedCategoryId) {
+      var resAreaAll = await qAreaAll.order('updated_at', { ascending: false });
+      if (resAreaAll.error) {
+        var em2 = (resAreaAll.error.message || '');
+        if (state.planProBodyHtmlColumn && /body_html/i.test(em2) && /does not exist/i.test(em2)) {
+          state.planProBodyHtmlColumn = false;
+          return loadItems();
+        }
+        throw resAreaAll.error;
+      }
+      rowsForSidebar = resAreaAll.data || [];
+    }
+
+    var rows = resFiltered.data || [];
     var tb = $('npTableBody');
     tb.innerHTML = '';
     $('npEmpty').classList.toggle('np-hide', rows.length > 0);
@@ -4648,8 +4733,8 @@
     });
 
     syncSheetItemsList(rows);
-    renderSidebarPrioSummary(rows);
-    renderSidebarCalendar(rows);
+    renderSidebarPrioSummary(rowsForSidebar);
+    renderSidebarCalendar(rowsForSidebar);
     await refreshCategoryItemCounts();
     renderTree();
   }
