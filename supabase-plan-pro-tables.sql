@@ -120,6 +120,7 @@ CREATE TABLE IF NOT EXISTS public.plan_pro_items (
   relation_tags     text[],
   title             text,
   body_plain        text,
+  body_html         text,
   body_blocks       jsonb NOT NULL DEFAULT '[]'::jsonb,
   attachments       jsonb NOT NULL DEFAULT '[]'::jsonb,
   created_at        timestamptz NOT NULL DEFAULT now(),
