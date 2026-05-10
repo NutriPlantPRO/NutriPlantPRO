@@ -593,6 +593,35 @@
       border: 1px solid rgba(15, 23, 42, 0.06);
       box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
     }
+    /* En el modal: cada tabla “flota” y se distingue de la libreta y de hermanas */
+    .np-modal-body .np-ms-block {
+      margin-top: 20px;
+      background: linear-gradient(165deg, #ffffff 0%, rgba(248, 250, 252, 0.98) 55%, rgba(241, 245, 249, 0.55) 100%);
+      border: 1px solid rgba(15, 23, 42, 0.09);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 2px 4px rgba(15, 23, 42, 0.05),
+        0 10px 28px rgba(15, 23, 42, 0.08),
+        0 18px 48px rgba(37, 99, 235, 0.05);
+      transform: translateY(0);
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .np-modal-body .np-ms-block:hover {
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.98) inset,
+        0 4px 8px rgba(15, 23, 42, 0.07),
+        0 14px 36px rgba(15, 23, 42, 0.1),
+        0 22px 56px rgba(34, 197, 94, 0.06);
+    }
+    .np-modal-body > .np-ms-block:nth-child(3n + 2) {
+      border-top: 3px solid rgba(37, 99, 235, 0.45);
+    }
+    .np-modal-body > .np-ms-block:nth-child(3n + 3) {
+      border-top: 3px solid rgba(34, 197, 94, 0.42);
+    }
+    .np-modal-body > .np-ms-block:nth-child(3n + 4) {
+      border-top: 3px solid rgba(14, 165, 233, 0.42);
+    }
     .np-ms-head {
       font-weight: 650;
       font-size: 12px;
@@ -634,7 +663,7 @@
       background: linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(241, 245, 249, 0.85) 100%);
       border-bottom: 1px solid rgba(148, 163, 184, 0.18);
     }
-    .np-ms-row:not(.np-ms-row-head):not(.np-ms-row-sum):hover {
+    .np-ms-row:not(.np-ms-row-head):not(.np-ms-row-sum):not(.np-ms-row-ledger-total):hover {
       background: rgba(236, 253, 245, 0.28);
     }
     .np-ms-cell {
@@ -805,9 +834,9 @@
         transform: translateY(0) scale(1);
       }
     }
-    .np-sheet-inner { padding: 16px 18px 18px; }
+    .np-sheet-inner { padding: 12px 14px 16px; }
     .np-sheet-header {
-      padding: 14px 18px;
+      padding: 8px 14px 10px;
       background: linear-gradient(110deg, #ecfdf5 0%, #f0fdf4 35%, #ffffff 90%);
       border-bottom: 1px solid #d1fae5;
     }
@@ -817,7 +846,7 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: #059669;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .np-sheet-title {
       font-size: 1.2rem;
@@ -827,18 +856,20 @@
       word-break: break-word;
     }
     .np-sheet-sub {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 6px;
-      line-height: 1.45;
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 4px;
+      line-height: 1.35;
+      min-height: 0;
     }
+    .np-sheet-sub:empty { display: none; }
     .np-sheet-branch {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
-      margin-top: 14px;
-      padding-top: 12px;
+      margin-top: 8px;
+      padding-top: 8px;
       border-top: 1px dashed #bbf7d0;
     }
     .np-sheet-branch input {
@@ -1000,6 +1031,33 @@
       white-space: normal;
       word-break: break-word;
     }
+    /* Nota principal en el modal: misma sensación de libreta que la hoja del formulario */
+    .np-modal-notebook-stack {
+      margin-bottom: 22px;
+      padding-bottom: 4px;
+    }
+    .np-modal-note-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--green-d);
+      margin-bottom: 6px;
+    }
+    #npModalRichToolbar {
+      margin-bottom: 10px;
+    }
+    .np-modal-notebook-page {
+      min-height: 160px;
+      max-height: min(38vh, 400px);
+      overflow: auto;
+      border-radius: 4px 6px 8px 5px;
+    }
+    #npModalBodyRich.np-rich-editor {
+      min-height: 140px;
+      max-height: min(36vh, 380px);
+      overflow-y: auto;
+    }
     .np-modal-note-rich h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75em 0 0.4em; color: #0f172a; }
     .np-modal-note-rich h3 { font-size: 1.08rem; font-weight: 650; margin: 0.65em 0 0.35em; color: #334155; }
     .np-modal-note-rich ul, .np-modal-note-rich ol { margin: 0.5em 0 0.75em 1.25em; }
@@ -1018,8 +1076,8 @@
       gap: 12px;
     }
     .np-sheet-nav-block {
-      padding: 14px 16px;
-      border-radius: 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
       background: linear-gradient(165deg, rgba(240, 253, 244, 0.65) 0%, rgba(255, 255, 255, 0.75) 100%);
       border: 1px solid rgba(34, 197, 94, 0.14);
       box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
@@ -1227,6 +1285,87 @@
       padding: 8px 10px;
       font-size: 12px;
     }
+    .np-ms-free-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .np-ms-block-free .np-ms-cell {
+      padding: 6px 8px;
+      font-size: 13px;
+    }
+    .np-ms-block-free .np-ms-row-head .np-ms-cell {
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+    .np-ms-head-cell-edit {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      min-width: 0;
+    }
+    .np-ms-head-input {
+      flex: 1;
+      min-width: 0;
+      margin: 0 !important;
+      padding: 6px 8px !important;
+      font-size: 11px !important;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-radius: 8px !important;
+    }
+    .np-ms-col-del,
+    .np-ms-row-del {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: rgba(254, 226, 226, 0.65);
+      color: #b91c1c;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .np-ms-col-del:hover,
+    .np-ms-row-del:hover {
+      background: rgba(254, 202, 202, 0.95);
+    }
+    .np-ms-row-with-del {
+      position: relative;
+      padding-left: 30px !important;
+    }
+    .np-ms-row-del {
+      position: absolute;
+      left: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .np-ms-cell-rowdel-slot .np-ms-row-del {
+      position: static;
+      left: auto;
+      top: auto;
+      transform: none;
+    }
+    .np-ms-cell-num {
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .np-ms-pct-cell {
+      font-weight: 650;
+      color: var(--np-blue-d);
+      font-variant-numeric: tabular-nums;
+    }
+    .np-ms-row-ledger-total .np-ms-cell {
+      font-weight: 700;
+      background: rgba(239, 246, 255, 0.55);
+    }
     /* Fila tabla: acento por prioridad (semáforo) */
     .np-ms-sheet .np-ms-row:not(.np-ms-row-head):not(.np-ms-row-sum).np-ms-accent-baja {
       border-left: 4px solid #22c55e;
@@ -1371,9 +1510,6 @@
               <div class="np-sheet-inner">
                 <div id="npSheetItemsWrap" class="np-sheet-items-wrap np-hide">
                   <h2>Apuntes en esta categoría</h2>
-                  <p class="np-muted" style="margin:0 0 12px;font-size:12px;line-height:1.45;">
-                    Lo guardado en esta rama aparece aquí al entrar; tocando una tarjeta ves el detalle (tablas editables, etc.).
-                  </p>
                   <div id="npSheetItemsMount" class="np-sheet-items-mount"></div>
                   <p id="npSheetItemsEmpty" class="np-muted np-hide" style="margin:8px 0 0;font-size:13px;">
                     Aún no hay apuntes en este filtro. Escribe abajo y guarda.
@@ -1389,9 +1525,6 @@
                   <label for="npTitle" class="np-compact-label">Resumen / título</label>
                   <input id="npTitle" class="np-title-compact" name="title" required maxlength="500" placeholder="Una línea para ubicar el apunte…" />
                   <label class="np-compact-label">Hoja en blanco</label>
-                  <p class="np-muted" style="font-size:11px;margin:-6px 0 10px;line-height:1.45;">
-                    Formato con la barra de abajo; sigue viéndose como libreta. Tablas y fechas por fila en «Tabla de tareas».
-                  </p>
                   <div id="npRichToolbar" class="np-rich-toolbar">
                     <span class="np-rich-grp">
                       <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="bold" title="Negrita"><strong>B</strong></button>
@@ -1423,14 +1556,12 @@
                       <div id="npBodyRich" class="np-rich-editor np-rich-empty" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" data-placeholder="Escribe aquí como en una libreta…"></div>
                     </div>
                   </div>
-                  <p class="np-muted" style="font-size:12px;margin:0 0 8px;line-height:1.45;">
-                    <strong>Herramientas</strong>: puedes ir alternando <strong>tablas</strong> y <strong>bloques de texto</strong> (listas, párrafos…) en el orden que quieras. La libreta grande arriba sigue siendo el bloque principal; abajo añades más tablas y más textos.
-                  </p>
                   <div class="np-tools-row">
                     <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddNoteBlock">＋ Bloque de texto</button>
                     <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddSmartTable">＋ Tabla seguimiento PRO</button>
                     <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddTaskTable">＋ Tabla de tareas</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddMiniSheet">＋ Tabla libre (montos, columnas…)</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddMiniSheet">＋ Tabla libre</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddLedgerSheet">＋ Tabla de montos</button>
                     <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
                   </div>
                   <div id="npMiniSheetPreview" class="np-hide" style="margin-bottom:14px;overflow:auto;"></div>
@@ -1486,6 +1617,7 @@
   'use strict';
 
   var detailBlocksSaveTimer = null;
+  var detailBodySaveTimer = null;
 
   function $(id) { return document.getElementById(id); }
 
@@ -1536,6 +1668,21 @@
     return (d.textContent || '').replace(/\s+/g, ' ').trim();
   }
 
+  function escapeHtmlText(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function plainTextToRichParagraphs(plain) {
+    var t = String(plain || '').trim();
+    if (!t) return '<p><br></p>';
+    var lines = t.split(/\r?\n/);
+    return '<p>' + lines.map(function (ln) { return escapeHtmlText(ln); }).join('<br>') + '</p>';
+  }
+
   function sanitizeRich(html) {
     if (!html || !String(html).trim()) return '';
     var s = String(html);
@@ -1562,8 +1709,8 @@
     return truncateNote(merged, max);
   }
 
-  function syncRichEmptyClass() {
-    var el = $('npBodyRich');
+  function syncRichEmptyClass(el) {
+    el = el || $('npBodyRich');
     if (!el) return;
     var t = stripHtml(el.innerHTML);
     el.classList.toggle('np-rich-empty', !t);
@@ -1581,8 +1728,8 @@
     return el ? el.innerHTML : '';
   }
 
-  function wrapSelectionClass(cls) {
-    var el = $('npBodyRich');
+  function wrapSelectionClass(cls, editorEl) {
+    var el = editorEl || $('npBodyRich');
     if (!el) return;
     el.focus();
     var sel = window.getSelection();
@@ -1601,7 +1748,7 @@
     sel.removeAllRanges();
   }
 
-  function insertRichSnippet(kind) {
+  function insertRichSnippet(kind, editorEl) {
     var html = '';
     if (kind === 'warn') {
       html = '<span class="np-rich-flag">⚠︎ Importante</span>&nbsp;';
@@ -1609,10 +1756,150 @@
       html = '<span class="np-rich-flag np-rich-flag-star">★ Destacado</span>&nbsp;';
     }
     if (!html) return;
-    $('npBodyRich').focus();
+    var target = editorEl || $('npBodyRich');
+    if (!target) return;
+    target.focus();
     try {
       document.execCommand('insertHTML', false, sanitizeRich(html));
     } catch (e) {}
+  }
+
+  function handleRichToolbarClick(e, editorEl) {
+    if (!editorEl) return false;
+    var b = e.target.closest('[data-rich]');
+    if (!b) return false;
+    e.preventDefault();
+    editorEl.focus();
+    var kind = b.getAttribute('data-rich');
+    if (kind === 'cmd') {
+      try {
+        document.execCommand(b.getAttribute('data-v'), false, null);
+      } catch (err) {}
+    } else if (kind === 'fmt') {
+      var tag = b.getAttribute('data-v');
+      try {
+        document.execCommand('formatBlock', false, '<' + tag + '>');
+      } catch (err2) {}
+    } else if (kind === 'wrap') {
+      wrapSelectionClass(b.getAttribute('data-v'), editorEl);
+    } else if (kind === 'snippet') {
+      insertRichSnippet(b.getAttribute('data-snippet'), editorEl);
+    }
+    syncRichEmptyClass(editorEl);
+    return true;
+  }
+
+  function schedulePersistMainBody() {
+    if (!state.detailItemId || !state.client) return;
+    if (detailBodySaveTimer) clearTimeout(detailBodySaveTimer);
+    detailBodySaveTimer = setTimeout(function () {
+      detailBodySaveTimer = null;
+      var ed = $('npModalBodyRich');
+      if (!ed || !state.detailItemId) return;
+      persistItemMainBody(state.detailItemId, ed.innerHTML, { skipReload: true });
+    }, 520);
+  }
+
+  async function persistItemMainBody(itemId, htmlRaw, opts) {
+    opts = opts || {};
+    if (!state.client || !itemId || !state.userId) return;
+    var rawHtml = sanitizeRich(htmlRaw);
+    var plain = stripHtml(rawHtml);
+    var patch = {
+      body_plain: plain.trim() ? plain : null
+    };
+    if (state.planProBodyHtmlColumn) {
+      patch.body_html = plain.trim() ? rawHtml : null;
+    }
+    var res = await state.client.from('plan_pro_items').update(patch).eq('id', itemId).eq('owner_id', state.userId);
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo guardar la nota principal.', true);
+      return;
+    }
+    if (!opts.skipReload) await loadItems();
+  }
+
+  async function flushDetailMainNote() {
+    if (detailBodySaveTimer) {
+      clearTimeout(detailBodySaveTimer);
+      detailBodySaveTimer = null;
+    }
+    var ed = $('npModalBodyRich');
+    if (ed && state.detailItemId) {
+      await persistItemMainBody(state.detailItemId, ed.innerHTML, { skipReload: true });
+    }
+  }
+
+  function mountModalMainNote(bd, r, accentHex) {
+    if (detailBodySaveTimer) {
+      clearTimeout(detailBodySaveTimer);
+      detailBodySaveTimer = null;
+    }
+
+    var richSource = r.body_html && String(r.body_html).trim();
+    var initialHtml = richSource
+      ? sanitizeRich(r.body_html)
+      : plainTextToRichParagraphs(r.body_plain || '');
+
+    var stack = document.createElement('div');
+    stack.id = 'npDetailMainNote';
+    stack.className = 'np-modal-notebook-stack';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'np-modal-note-kicker';
+    kicker.textContent = 'Nota principal · hoja en blanco';
+
+    var hint = document.createElement('p');
+    hint.className = 'np-muted';
+    hint.style.fontSize = '11px';
+    hint.style.margin = '0 0 10px';
+    hint.style.lineHeight = '1.45';
+    hint.textContent =
+      'Misma libreta que al crear el apunte: barra de formato y papel con margen. Las tablas van debajo como bloques aparte.';
+
+    var tb = $('npRichToolbar').cloneNode(true);
+    tb.removeAttribute('id');
+    tb.id = 'npModalRichToolbar';
+
+    var nw = document.createElement('div');
+    nw.className = 'np-notebook-wrap';
+
+    var page = document.createElement('div');
+    page.className = 'np-notebook-page np-notebook-rich np-modal-notebook-page';
+
+    if (accentHex) {
+      page.style.borderColor = hexToRgba(accentHex, 0.35);
+      page.style.boxShadow =
+        '0 1px 0 rgba(255,255,255,0.92) inset, 0 10px 36px rgba(45, 35, 22, 0.07), 0 3px 14px ' +
+        hexToRgba(accentHex, 0.12);
+    }
+
+    var ed = document.createElement('div');
+    ed.id = 'npModalBodyRich';
+    ed.className = 'np-rich-editor np-rich-empty';
+    ed.setAttribute('contenteditable', 'true');
+    ed.setAttribute('spellcheck', 'true');
+    ed.setAttribute('role', 'textbox');
+    ed.setAttribute('aria-multiline', 'true');
+    ed.setAttribute('data-placeholder', 'Escribe aquí como en una libreta…');
+    ed.innerHTML = initialHtml;
+
+    page.appendChild(ed);
+    nw.appendChild(page);
+    stack.appendChild(kicker);
+    stack.appendChild(hint);
+    stack.appendChild(tb);
+    stack.appendChild(nw);
+    bd.appendChild(stack);
+
+    syncRichEmptyClass(ed);
+    ed.addEventListener('input', function () {
+      syncRichEmptyClass(ed);
+      schedulePersistMainBody();
+    });
+    ed.addEventListener('blur', function () {
+      syncRichEmptyClass(ed);
+    });
   }
 
   function openItemDetail(r) {
@@ -1660,22 +1947,7 @@
     } else {
       bd.classList.remove('np-modal-empty');
       if (hasTablesOrMixed) bd.classList.add('np-modal-has-blocks');
-      if (hasMainNote) {
-        var richSource = r.body_html && String(r.body_html).trim();
-        if (richSource) {
-          var richDiv = document.createElement('div');
-          richDiv.className = 'np-modal-note np-modal-note-rich';
-          richDiv.style.marginBottom = hasTablesOrMixed ? '12px' : '0';
-          richDiv.innerHTML = sanitizeRich(r.body_html);
-          bd.appendChild(richDiv);
-        } else {
-          var pre = document.createElement('div');
-          pre.className = 'np-modal-note';
-          pre.style.marginBottom = hasTablesOrMixed ? '12px' : '0';
-          pre.textContent = r.body_plain || '';
-          bd.appendChild(pre);
-        }
-      }
+      mountModalMainNote(bd, r, accentOpen);
       if (hasTablesOrMixed) {
         bd.appendChild(
           renderBodyBlocks(state.detailBlocksWorking, {
@@ -1690,14 +1962,15 @@
     $('npDetailModal').setAttribute('aria-hidden', 'false');
   }
 
-  function closeItemDetail() {
+  async function closeItemDetail() {
     var hadPending = !!detailBlocksSaveTimer;
     if (detailBlocksSaveTimer) {
       clearTimeout(detailBlocksSaveTimer);
       detailBlocksSaveTimer = null;
     }
+    await flushDetailMainNote();
     if (hadPending && state.detailItemId && state.detailBlocksWorking) {
-      persistItemBlocks(state.detailItemId, state.detailBlocksWorking, {});
+      await persistItemBlocks(state.detailItemId, state.detailBlocksWorking, { skipReload: true });
     }
     state.detailItemId = null;
     state.detailBlocksWorking = null;
@@ -1709,6 +1982,7 @@
     }
     $('npDetailModal').classList.remove('np-modal-open');
     $('npDetailModal').setAttribute('aria-hidden', 'true');
+    await loadItems();
   }
 
   var state = {
@@ -1874,6 +2148,54 @@
     return arr;
   }
 
+  function ensureLedgerBlock(b) {
+    if (!b.headers || !b.headers.length) {
+      b.headers = ['Concepto', 'Monto', '%', 'Notas'];
+    }
+    var nh = b.headers.length;
+    if (!b.colKinds || b.colKinds.length !== nh) {
+      b.colKinds = [];
+      for (var i = 0; i < nh; i++) {
+        if (i === 1) b.colKinds.push('currency');
+        else if (i === 2) b.colKinds.push('pct');
+        else b.colKinds.push('text');
+      }
+    }
+    if (typeof b.montoCol !== 'number') b.montoCol = 1;
+    if (typeof b.pctCol !== 'number') b.pctCol = 2;
+    if (!b.rows || !b.rows.length) {
+      b.rows = [['', '', '', ''], ['', '', '', '']];
+    }
+  }
+
+  function ledgerSumMontos(rows, montoCol) {
+    var t = 0;
+    (rows || []).forEach(function (row) {
+      var arr = Array.isArray(row) ? row : [];
+      var raw = arr[montoCol];
+      var v = parseFloat(String(raw != null ? raw : '').replace(/\s/g, '').replace(',', '.'));
+      if (!isNaN(v)) t += v;
+    });
+    return t;
+  }
+
+  function ledgerPctLabel(rowArr, montoCol, totalM) {
+    var raw = Array.isArray(rowArr) ? rowArr[montoCol] : '';
+    var v = parseFloat(String(raw != null ? raw : '').replace(/\s/g, '').replace(',', '.'));
+    if (isNaN(v) || totalM <= 0) return '—';
+    return (Math.round((v / totalM) * 1000) / 10) + '%';
+  }
+
+  function formatLedgerMoney(v) {
+    if (v == null || isNaN(v)) return '—';
+    var x = Math.round(Number(v) * 100) / 100;
+    try {
+      return x.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    } catch (e) {
+      return String(x);
+    }
+  }
+
   async function persistItemBlocks(itemId, blocks, opts) {
     opts = opts || {};
     if (!state.client || !itemId) return;
@@ -1976,6 +2298,15 @@
 
       if (b.variant === 'smart' || b.variant === 'tasks') ensureSmartMeta(b);
 
+      var isLedger = b.variant === 'ledger';
+      var isFreeMini =
+        b.type === 'mini_sheet' &&
+        !isLedger &&
+        b.variant !== 'smart' &&
+        b.variant !== 'tasks';
+
+      if (isLedger) ensureLedgerBlock(b);
+
       var wrap = document.createElement('div');
       wrap.className = 'np-ms-block np-detail-block-chunk';
 
@@ -1985,12 +2316,41 @@
       badge.className = 'np-ms-head-badge';
       if (b.variant === 'smart') badge.textContent = 'Seguimiento';
       else if (b.variant === 'tasks') badge.textContent = 'Tareas';
+      else if (isLedger) badge.textContent = 'Montos';
       else badge.textContent = 'Tabla';
       var ht = document.createElement('span');
-      ht.textContent = b.title || (b.variant === 'smart' ? 'Tabla de acciones' : b.variant === 'tasks' ? 'Lista / tareas' : 'Tabla libre');
+      ht.textContent =
+        b.title ||
+        (b.variant === 'smart'
+          ? 'Tabla de acciones'
+          : b.variant === 'tasks'
+            ? 'Lista / tareas'
+            : isLedger
+              ? 'Tabla de montos'
+              : 'Tabla libre');
       head.appendChild(badge);
-      head.appendChild(ht);
+      if (editable && (isFreeMini || isLedger)) {
+        var titleInp = document.createElement('input');
+        titleInp.type = 'text';
+        titleInp.className = 'np-ms-title-inline';
+        titleInp.value =
+          b.title ||
+          (isLedger ? 'Tabla de montos' : 'Tabla libre');
+        titleInp.placeholder = isLedger ? 'Tabla de montos' : 'Tabla libre';
+        titleInp.style.cssText =
+          'flex:1;min-width:120px;font:inherit;font-weight:650;font-size:14px;border:1px solid rgba(148,163,184,0.35);border-radius:10px;padding:6px 10px;background:rgba(255,255,255,0.85);';
+        titleInp.addEventListener('input', function () {
+          b.title = titleInp.value;
+          schedulePersist();
+        });
+        head.appendChild(titleInp);
+      } else {
+        head.appendChild(ht);
+      }
       wrap.appendChild(head);
+
+      if (isFreeMini) wrap.classList.add('np-ms-block-free');
+      if (isLedger) wrap.classList.add('np-ms-block-ledger');
 
       var headers = b.headers || [];
       var rows = b.rows || [];
@@ -2005,6 +2365,98 @@
 
       var prioCol = resolvePriorityColIndex(b, headers, ncol);
       var doneCol = resolveDoneColIndex(b, headers, ncol);
+
+      if (editable && isFreeMini) {
+        var ftb = document.createElement('div');
+        ftb.className = 'np-ms-free-toolbar';
+        var fbCol = document.createElement('button');
+        fbCol.type = 'button';
+        fbCol.className = 'btn btn-ghost btn-ghost-blue';
+        fbCol.textContent = '＋ Columna';
+        fbCol.addEventListener('click', function () {
+          var name = window.prompt('Nombre de la nueva columna:', 'Columna');
+          if (name == null) return;
+          name = String(name).trim();
+          if (!name) return;
+          if (!b.headers) b.headers = [];
+          b.headers.push(name);
+          b.rows.forEach(function (row, ri) {
+            var arr = Array.isArray(b.rows[ri]) ? b.rows[ri].slice() : padRowCells(b.rows[ri], ncol);
+            arr.push('');
+            b.rows[ri] = arr;
+          });
+          afterStructuralChange();
+        });
+        var fbRow = document.createElement('button');
+        fbRow.type = 'button';
+        fbRow.className = 'btn btn-ghost btn-ghost-green';
+        fbRow.textContent = '＋ Fila';
+        fbRow.addEventListener('click', function () {
+          var n = ncol;
+          var nr = [];
+          for (var pi = 0; pi < n; pi++) nr.push('');
+          b.rows.push(nr);
+          afterStructuralChange();
+        });
+        var fbDel = document.createElement('button');
+        fbDel.type = 'button';
+        fbDel.className = 'btn btn-ghost';
+        fbDel.style.color = '#b91c1c';
+        fbDel.textContent = 'Eliminar tabla';
+        fbDel.addEventListener('click', function () {
+          if (!window.confirm('¿Eliminar esta tabla del apunte?')) return;
+          blocks.splice(blockIndex, 1);
+          afterStructuralChange();
+        });
+        ftb.appendChild(fbCol);
+        ftb.appendChild(fbRow);
+        ftb.appendChild(fbDel);
+        wrap.appendChild(ftb);
+      }
+
+      if (editable && isLedger) {
+        var ltb = document.createElement('div');
+        ltb.className = 'np-ms-free-toolbar';
+        var lbRow = document.createElement('button');
+        lbRow.type = 'button';
+        lbRow.className = 'btn btn-ghost btn-ghost-green';
+        lbRow.textContent = '＋ Fila';
+        lbRow.addEventListener('click', function () {
+          var nr = [];
+          for (var pj = 0; pj < ncol; pj++) nr.push('');
+          b.rows.push(nr);
+          afterStructuralChange();
+        });
+        var lbDel = document.createElement('button');
+        lbDel.type = 'button';
+        lbDel.className = 'btn btn-ghost';
+        lbDel.style.color = '#b91c1c';
+        lbDel.textContent = 'Eliminar tabla';
+        lbDel.addEventListener('click', function () {
+          if (!window.confirm('¿Eliminar esta tabla del apunte?')) return;
+          blocks.splice(blockIndex, 1);
+          afterStructuralChange();
+        });
+        ltb.appendChild(lbRow);
+        ltb.appendChild(lbDel);
+        wrap.appendChild(ltb);
+      }
+
+      var showRowDelCol = editable && (isFreeMini || isLedger);
+
+      function refreshLedgerDerivedUI() {
+        if (!isLedger) return;
+        var totalM = ledgerSumMontos(b.rows, b.montoCol);
+        wrap.querySelectorAll('[data-pct-row]').forEach(function (el) {
+          var pri = parseInt(el.getAttribute('data-pct-row'), 10);
+          if (isNaN(pri) || !b.rows[pri]) return;
+          el.textContent = ledgerPctLabel(b.rows[pri], b.montoCol, totalM);
+        });
+        var fm = wrap.querySelector('[data-ledger-foot-monto]');
+        var fp = wrap.querySelector('[data-ledger-foot-pct]');
+        if (fm) fm.textContent = formatLedgerMoney(totalM);
+        if (fp) fp.textContent = totalM > 0 ? '100%' : '—';
+      }
 
       function setCell(rowIndex, colIndex, value) {
         if (!b.rows) b.rows = [];
@@ -2082,7 +2534,8 @@
 
       var sheet = document.createElement('div');
       sheet.className = 'np-ms-sheet';
-      sheet.style.setProperty('--np-ms-cols', String(ncol));
+      var gridCols = ncol + (showRowDelCol ? 1 : 0);
+      sheet.style.setProperty('--np-ms-cols', String(gridCols));
 
       var hr = document.createElement('div');
       hr.className = 'np-ms-row np-ms-row-head';
@@ -2090,8 +2543,73 @@
         var hc = document.createElement('div');
         hc.className = 'np-ms-cell';
         if (prioCol === hi) hc.classList.add('np-ms-cell-prio');
-        hc.textContent = resolveMiniSheetHeader(b, hi);
+        if (editable && isFreeMini) {
+          var hw = document.createElement('div');
+          hw.className = 'np-ms-head-cell-edit';
+          var inpH = document.createElement('input');
+          inpH.type = 'text';
+          inpH.className = 'np-ms-head-input np-tree-ignore';
+          inpH.value = resolveMiniSheetHeader(b, hi);
+          (function (idx) {
+            inpH.addEventListener('input', function () {
+              if (!b.headers) b.headers = [];
+              while (b.headers.length <= idx) b.headers.push('');
+              b.headers[idx] = inpH.value;
+              schedulePersist();
+            });
+          })(hi);
+          hw.appendChild(inpH);
+          if (ncol > 1) {
+            var delColBtn = document.createElement('button');
+            delColBtn.type = 'button';
+            delColBtn.className = 'np-ms-col-del np-tree-ignore';
+            delColBtn.title = 'Quitar columna';
+            delColBtn.textContent = '×';
+            (function (idx) {
+              delColBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (ncol <= 1) return;
+                if (!window.confirm('¿Eliminar esta columna?')) return;
+                if (b.headers && b.headers.length > idx) b.headers.splice(idx, 1);
+                b.rows.forEach(function (rowItem, rxi) {
+                  var arr = padRowCells(Array.isArray(rowItem) ? rowItem : rowItem, ncol);
+                  arr.splice(idx, 1);
+                  b.rows[rxi] = arr;
+                });
+                afterStructuralChange();
+              });
+            })(hi);
+            hw.appendChild(delColBtn);
+          }
+          hc.appendChild(hw);
+        } else if (editable && isLedger) {
+          var inpHL = document.createElement('input');
+          inpHL.type = 'text';
+          inpHL.className = 'np-ms-head-input np-tree-ignore';
+          inpHL.value = resolveMiniSheetHeader(b, hi);
+          (function (idx) {
+            inpHL.addEventListener('input', function () {
+              if (!b.headers) b.headers = [];
+              while (b.headers.length <= idx) b.headers.push('');
+              b.headers[idx] = inpHL.value;
+              schedulePersist();
+            });
+          })(hi);
+          hc.appendChild(inpHL);
+        } else {
+          hc.textContent = resolveMiniSheetHeader(b, hi);
+        }
         hr.appendChild(hc);
+      }
+      if (showRowDelCol) {
+        var hcDel = document.createElement('div');
+        hcDel.className = 'np-ms-cell np-ms-cell-corner';
+        hcDel.style.maxWidth = '44px';
+        hcDel.style.justifyContent = 'center';
+        hcDel.style.opacity = '0.45';
+        hcDel.style.fontSize = '10px';
+        hcDel.textContent = '';
+        hr.appendChild(hcDel);
       }
       sheet.appendChild(hr);
 
@@ -2120,6 +2638,7 @@
           if (prioCol === c) cell.classList.add('np-ms-cell-prio');
           var raw = cells[c] != null && cells[c] !== '' ? String(cells[c]) : '';
           var headerLabel = resolveMiniSheetHeader(b, c);
+          var colKind = (b.colKinds && b.colKinds[c]) || '';
 
           if (b.variant === 'smart' && c === 0 && editable) {
             var sel = document.createElement('select');
@@ -2144,6 +2663,34 @@
             spk.style.color = '#64748b';
             spk.textContent = kindLab ? kindLab.label : rk;
             cell.appendChild(spk);
+          } else if (isLedger && colKind === 'currency') {
+            if (editable) {
+              var inpCur = document.createElement('input');
+              inpCur.type = 'text';
+              inpCur.inputMode = 'decimal';
+              inpCur.className = 'np-ms-cell-input np-ms-cell-num';
+              inpCur.value = raw;
+              inpCur.autocomplete = 'off';
+              inpCur.addEventListener('input', function () {
+                setCell(ri, c, inpCur.value);
+                refreshLedgerDerivedUI();
+              });
+              cell.appendChild(inpCur);
+            } else {
+              var spCur = document.createElement('div');
+              spCur.className = 'np-ms-cell-static np-ms-cell-num';
+              spCur.textContent = raw ? raw : '—';
+              cell.appendChild(spCur);
+            }
+          } else if (isLedger && colKind === 'pct') {
+            var spanPct = document.createElement('div');
+            spanPct.className = 'np-ms-cell-static np-ms-pct-cell';
+            var totalLive = ledgerSumMontos(rows, b.montoCol);
+            spanPct.textContent = ledgerPctLabel(cells, b.montoCol, totalLive);
+            if (editable) {
+              spanPct.setAttribute('data-pct-row', String(ri));
+            }
+            cell.appendChild(spanPct);
           } else if (editable && prioCol === c) {
             renderPriorityEditor(cell, ri, c);
           } else if (editable && doneCol === c && (b.variant === 'tasks' || (b.variant === 'smart' && rk === 'task'))) {
@@ -2223,15 +2770,74 @@
 
           rr.appendChild(cell);
 
-          if (doneCol !== c) {
+          if (!isLedger && doneCol !== c) {
             var num = parseFloat(String(raw).replace(/\s/g, '').replace(',', '.'));
             if (!isNaN(num)) colSums[c] = (colSums[c] || 0) + num;
           }
         }
+
+        if (showRowDelCol) {
+          var cellDel = document.createElement('div');
+          cellDel.className = 'np-ms-cell np-ms-cell-rowdel-slot';
+          cellDel.style.maxWidth = '44px';
+          cellDel.style.justifyContent = 'center';
+          cellDel.style.padding = '6px';
+          var btnRm = document.createElement('button');
+          btnRm.type = 'button';
+          btnRm.className = 'np-ms-row-del';
+          btnRm.title = 'Quitar fila';
+          btnRm.textContent = '×';
+          if (b.rows.length <= 1) btnRm.disabled = true;
+          (function (rowIdx) {
+            btnRm.addEventListener('click', function (e) {
+              e.preventDefault();
+              if (b.rows.length <= 1) return;
+              b.rows.splice(rowIdx, 1);
+              if (b.rowKinds && b.rowKinds.length > rowIdx) b.rowKinds.splice(rowIdx, 1);
+              if (b.rowDone && b.rowDone.length > rowIdx) b.rowDone.splice(rowIdx, 1);
+              afterStructuralChange();
+            });
+          })(ri);
+          cellDel.appendChild(btnRm);
+          rr.appendChild(cellDel);
+        }
+
         sheet.appendChild(rr);
       });
 
-      var showSum = b.variant !== 'tasks' && b.variant !== 'smart';
+      if (isLedger) {
+        var totalLM = ledgerSumMontos(rows, b.montoCol);
+        var foot = document.createElement('div');
+        foot.className = 'np-ms-row np-ms-row-ledger-total';
+        for (var fc = 0; fc < ncol; fc++) {
+          var fk = (b.colKinds && b.colKinds[fc]) || 'text';
+          var tcell = document.createElement('div');
+          tcell.className = 'np-ms-cell';
+          if (fc === 0) {
+            tcell.textContent = 'Totales';
+          } else if (fk === 'currency') {
+            tcell.setAttribute('data-ledger-foot-monto', '1');
+            tcell.classList.add('np-ms-cell-num');
+            tcell.textContent = formatLedgerMoney(totalLM);
+          } else if (fk === 'pct') {
+            tcell.classList.add('np-ms-pct-cell');
+            tcell.setAttribute('data-ledger-foot-pct', '1');
+            tcell.textContent = totalLM > 0 ? '100%' : '—';
+          } else {
+            tcell.textContent = '';
+          }
+          foot.appendChild(tcell);
+        }
+        if (showRowDelCol) {
+          var tz = document.createElement('div');
+          tz.className = 'np-ms-cell';
+          tz.style.maxWidth = '44px';
+          foot.appendChild(tz);
+        }
+        sheet.appendChild(foot);
+      }
+
+      var showSum = b.variant !== 'tasks' && b.variant !== 'smart' && !isLedger;
       var anySum = showSum && colSums.some(function (x) { return x != null && !isNaN(x) && x !== 0; });
       if (showSum && (anySum || colSums.some(function (x) { return x != null && !isNaN(x); }))) {
         var sumRow = document.createElement('div');
@@ -2244,6 +2850,12 @@
             tdf.textContent = 'Σ ' + (Math.round(colSums[c2] * 100) / 100);
           }
           sumRow.appendChild(tdf);
+        }
+        if (showRowDelCol) {
+          var tdx = document.createElement('div');
+          tdx.className = 'np-ms-cell';
+          tdx.style.maxWidth = '44px';
+          sumRow.appendChild(tdx);
         }
         sheet.appendChild(sumRow);
       }
@@ -2583,12 +3195,12 @@
     block1.className = 'np-sheet-nav-block';
     var lab1 = document.createElement('div');
     lab1.className = 'np-sheet-nav-label';
-    lab1.innerHTML = 'Dentro de esta categoría <span class="np-sheet-nav-hint">· cada chip es una subcategoría con su propia hoja</span>';
+    lab1.textContent = 'Dentro de esta categoría';
     block1.appendChild(lab1);
     if (!children.length) {
       var pEmpty = document.createElement('p');
       pEmpty.className = 'np-sheet-nav-empty';
-      pEmpty.textContent = 'Aún no hay subcategorías aquí. Usa «Crear rama aquí» arriba para crear todas las ramas que quieras.';
+      pEmpty.textContent = 'Sin subcategorías.';
       block1.appendChild(pEmpty);
     } else {
       var row1 = document.createElement('div');
@@ -2610,7 +3222,7 @@
       block2.className = 'np-sheet-nav-block np-sheet-nav-siblings';
       var lab2 = document.createElement('div');
       lab2.className = 'np-sheet-nav-label';
-      lab2.innerHTML = 'Al mismo nivel <span class="np-sheet-nav-hint">· salto rápido entre categorías hermanas</span>';
+      lab2.textContent = 'Al mismo nivel';
       block2.appendChild(lab2);
       var row2 = document.createElement('div');
       row2.className = 'np-sheet-chip-row';
@@ -2648,7 +3260,8 @@
     sp.classList.remove('np-hide');
     if (title) title.textContent = getCategoryPath(state.selectedCategoryId);
     if (sub) {
-      sub.textContent = 'Pilar «' + (state.areaMap[state.selectedAreaId] || '') + '» · Escribe en la libreta; fecha y prioridad por fila van en «Tabla de tareas». «Crear rama aquí» = nueva subcategoría.';
+      var an = state.areaMap[state.selectedAreaId] || '';
+      sub.textContent = an ? 'Pilar «' + an + '»' : '';
     }
     sp.style.animation = 'none';
     void sp.offsetHeight;
@@ -3081,6 +3694,26 @@
     refreshPendingHint();
   });
 
+  var btnLedgerSheet = $('npBtnAddLedgerSheet');
+  if (btnLedgerSheet) {
+    btnLedgerSheet.addEventListener('click', function () {
+      state.pendingBlocks.push({
+        type: 'mini_sheet',
+        variant: 'ledger',
+        title: 'Tabla de montos',
+        headers: ['Concepto', 'Monto', '%', 'Notas'],
+        colKinds: ['text', 'currency', 'pct', 'text'],
+        montoCol: 1,
+        pctCol: 2,
+        rows: [
+          ['', '', '', ''],
+          ['', '', '', '']
+        ]
+      });
+      refreshPendingHint();
+    });
+  }
+
   $('npBtnAddNoteBlock').addEventListener('click', function () {
     state.pendingBlocks.push({
       type: 'note_section',
@@ -3138,40 +3771,29 @@
     }
   });
 
-  $('npDetailClose').addEventListener('click', closeItemDetail);
-  $('npDetailModal').addEventListener('click', function (e) {
-    if (e.target === $('npDetailModal')) closeItemDetail();
+  $('npDetailClose').addEventListener('click', async function () {
+    await closeItemDetail();
+  });
+  $('npDetailModal').addEventListener('click', async function (e) {
+    if (e.target === $('npDetailModal')) await closeItemDetail();
   });
   var npPanel = $('npDetailModal').querySelector('.np-modal-panel');
   if (npPanel) {
     npPanel.addEventListener('click', function (e) { e.stopPropagation(); });
   }
-  document.addEventListener('keydown', function (e) {
+  document.addEventListener('keydown', async function (e) {
     if (e.key === 'Escape' && $('npDetailModal').classList.contains('np-modal-open')) {
-      closeItemDetail();
+      await closeItemDetail();
     }
   });
 
   $('npRichToolbar').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-rich]');
-    if (!b) return;
-    e.preventDefault();
-    var kind = b.getAttribute('data-rich');
-    var ed = $('npBodyRich');
-    if (ed) ed.focus();
-    if (kind === 'cmd') {
-      try { document.execCommand(b.getAttribute('data-v'), false, null); } catch (err) {}
-    } else if (kind === 'fmt') {
-      var tag = b.getAttribute('data-v');
-      try {
-        document.execCommand('formatBlock', false, '<' + tag + '>');
-      } catch (err2) {}
-    } else if (kind === 'wrap') {
-      wrapSelectionClass(b.getAttribute('data-v'));
-    } else if (kind === 'snippet') {
-      insertRichSnippet(b.getAttribute('data-snippet'));
-    }
-    syncRichEmptyClass();
+    handleRichToolbarClick(e, $('npBodyRich'));
+  });
+
+  $('npDetailModal').addEventListener('click', function (e) {
+    if (!e.target.closest('#npModalRichToolbar')) return;
+    handleRichToolbarClick(e, $('npModalBodyRich'));
   });
 
   var npBodyRichEl = $('npBodyRich');
