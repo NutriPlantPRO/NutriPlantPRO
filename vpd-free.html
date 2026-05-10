@@ -572,7 +572,7 @@
           foot +
           '<div style="background:white;padding:20px;border-radius:8px;border:1px solid #e5e7eb;">' +
           '<h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">' + t('Resultados:', 'Results:') + '</h4>' +
-          '<div style="display:grid;grid-template-columns:repeat(' + (2 + (useSolar ? 1 : 0) + (hasUv ? 1 : 0)) + ', minmax(0, 1fr));gap:16px;margin-bottom:16px;">' +
+          '<div class="vpd-results-metrics-grid" style="--vpd-metric-cols:' + (2 + (useSolar ? 1 : 0) + (hasUv ? 1 : 0)) + '">' +
           '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">' + t('Déficit de Presión de Vapor', 'Vapor Pressure Deficit') + '</div><div style="font-size:24px;font-weight:700;color:#0284c7;">' + results.vpd + ' kPa</div></div>' +
           '<div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">' + t('Déficit de Humedad', 'Humidity Deficit') + '</div><div style="font-size:24px;font-weight:700;color:#0d9488;">' + results.hd + ' g/m³</div>' + renderHumidityDeficitBadge(results.hd) + '</div>' +
           (useSolar
@@ -659,7 +659,7 @@
       document.getElementById('vpd-environmental-results').innerHTML = `
         <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e5e7eb;">
           <h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">${t('Resultados:', 'Results:')}</h4>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div class="vpd-results-metrics-grid" style="--vpd-metric-cols:2">
             <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Presión de Vapor', 'Vapor Pressure Deficit')}</div><div style="font-size:24px;font-weight:700;color:#0284c7;">${r.vpd} kPa</div></div>
             <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Humedad', 'Humidity Deficit')}</div><div style="font-size:24px;font-weight:700;color:#0d9488;">${r.hd} g/m³</div>${renderHumidityDeficitBadge(r.hd)}</div>
           </div>
@@ -703,7 +703,7 @@
       document.getElementById('vpd-advanced-results').innerHTML = `
         <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e5e7eb;">
           <h4 style="margin:0 0 16px;color:#1e293b;font-size:16px;font-weight:600;">${t('Resultados:', 'Results:')}</h4>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div class="vpd-results-metrics-grid" style="--vpd-metric-cols:2">
             <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Presión de Vapor', 'Vapor Pressure Deficit')}</div><div style="font-size:24px;font-weight:700;color:#0284c7;">${r.vpd} kPa</div></div>
             <div><div style="color:#64748b;font-size:14px;margin-bottom:4px;">${t('Déficit de Humedad', 'Humidity Deficit')}</div><div style="font-size:24px;font-weight:700;color:#0d9488;">${r.hd} g/m³</div>${renderHumidityDeficitBadge(r.hd)}</div>
           </div>

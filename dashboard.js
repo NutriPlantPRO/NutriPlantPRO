@@ -18706,7 +18706,6 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
       '</div>';
   }
   var metricColsCount = 2 + (useSolar && rad != null && Number.isFinite(rad) ? 1 : 0) + (uv != null ? 1 : 0);
-  var gridCols = 'repeat(' + metricColsCount + ', minmax(0, 1fr))';
   var radCol = '';
   if (useSolar && rad != null && Number.isFinite(rad)) {
     radCol =
@@ -18728,7 +18727,7 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
     '<div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 16px;">' +
       '<h4 style="margin: 0 0 16px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Resultados:</h4>' +
       legendHtml +
-      '<div style="display: grid; grid-template-columns: ' + gridCols + '; gap: 16px; margin-bottom: 16px;">' +
+      '<div class="vpd-results-metrics-grid" style="--vpd-metric-cols: ' + metricColsCount + ';">' +
       '<div>' +
       '<div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Presión de Vapor</div>' +
       '<div style="font-size: 24px; font-weight: 700; color: #0284c7;">' + vpd.toFixed(2) + ' kPa</div>' +
@@ -19576,7 +19575,7 @@ function calculateAdvancedVPD() {
     resultsDiv.innerHTML = `
       <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 16px;">
         <h4 style="margin: 0 0 16px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Resultados:</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <div class="vpd-results-metrics-grid" style="--vpd-metric-cols: 2;">
           <div>
             <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Déficit de Presión de Vapor</div>
             <div style="font-size: 24px; font-weight: 700; color: #0284c7;">${results.vpd} kPa</div>
