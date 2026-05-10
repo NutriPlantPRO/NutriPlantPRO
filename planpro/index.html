@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Plan PRO — NutriPlant PRO</title>
+  <title>Plan PRO · Cerebro Digital</title>
   <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png" />
   <style>
     :root {
@@ -106,26 +106,43 @@
     .np-loading { color: var(--muted); font-size: 14px; }
     .np-hide { display: none !important; }
     .np-muted { color: var(--muted); font-size: 12px; }
+    .np-login-card { max-width: 420px; margin: 24px auto 0; }
+    .np-login-card h2 { margin-top: 0; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header class="np-plan-header">
       <div class="np-plan-brand">
-        <img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO" />
+        <img src="../assets/NutriPlant_PRO_blue.png" alt="" />
         <div>
           <h1>Plan PRO</h1>
-          <div class="sub">Cerebro Digital · solo administración</div>
+          <div class="sub">Cerebro Digital · acceso directo (no requiere abrir NutriPlant)</div>
         </div>
       </div>
-      <div class="np-plan-actions">
-        <a class="btn btn-ghost" href="../dashboard.html">Ir al dashboard</a>
+      <div class="np-plan-actions np-hide" id="npHeaderLogged">
+        <a class="btn btn-ghost" href="../dashboard.html">Ir al dashboard NutriPlant</a>
         <button type="button" class="btn btn-ghost" id="npBtnLogout">Cerrar sesión</button>
       </div>
     </header>
 
     <div id="npGate">
       <p class="np-loading" id="npLoading">Comprobando sesión…</p>
+      <div id="npLoginPanel" class="panel np-login-card np-hide">
+        <h2>Entrar a Plan PRO</h2>
+        <p class="np-muted" style="margin-top:0;line-height:1.45;">
+          Usa el <strong>mismo correo y contraseña</strong> de tu cuenta administrador en Supabase.
+          Puedes usar esta página sola en tu celular u ordenador; la sesión queda en este navegador.
+        </p>
+        <div id="npLoginErr" class="np-msg err np-hide" style="margin-bottom:12px;"></div>
+        <form id="npLoginForm">
+          <label for="npLoginEmail">Correo</label>
+          <input type="email" id="npLoginEmail" name="email" autocomplete="username" required placeholder="tu@correo.com" />
+          <label for="npLoginPass">Contraseña</label>
+          <input type="password" id="npLoginPass" name="password" autocomplete="current-password" required />
+          <button type="submit" class="btn btn-primary" id="npBtnLogin">Entrar</button>
+        </form>
+      </div>
       <div id="npDenied" class="np-msg err np-hide"></div>
     </div>
 
@@ -201,9 +218,6 @@
 (function () {
   'use strict';
 
-  /* Tras iniciar sesión, auth.js te devuelve aquí gracias a ?next= */
-  var LOGIN_URL = '../login.html?next=' + encodeURIComponent('planpro/');
-
   function $(id) { return document.getElementById(id); }
 
   function showToast(msg, isErr) {
@@ -228,7 +242,8 @@
     areas: [],
     categories: [],
     areaMap: {},
-    catMap: {}
+    catMap: {},
+    authListenerAttached: false
   };
 
   function fillAreaSelect() {
@@ -363,43 +378,36 @@
     if (window.nutriplantSupabaseAuth && typeof window.nutriplantSupabaseAuth.signOut === 'function') {
       await window.nutriplantSupabaseAuth.signOut();
     }
-    window.location.href = LOGIN_URL;
+    window.location.reload();
   });
 
-  async function boot() {
-    $('npLoading').textContent = 'Comprobando sesión…';
-    state.client = window.getSupabaseClient && window.getSupabaseClient();
-    if (!state.client) {
-      $('npLoading').classList.add('np-hide');
-      $('npDenied').textContent = 'Supabase no está configurado (supabase-config.js).';
-      $('npDenied').classList.remove('np-hide');
-      return;
-    }
-
-    try {
-      if (window.nutriplantSupabaseAuth && typeof window.nutriplantSupabaseAuth.syncSessionToLocalStorage === 'function') {
-        await window.nutriplantSupabaseAuth.syncSessionToLocalStorage();
-      }
-    } catch (e) {}
+  async function tryShowMain() {
+    $('npLoginErr').classList.add('np-hide');
+    $('npDenied').classList.add('np-hide');
 
     var sessionRes = await state.client.auth.getSession();
     var session = sessionRes.data && sessionRes.data.session;
     if (!session || !session.user) {
-      window.location.href = LOGIN_URL;
+      $('npLoading').classList.add('np-hide');
+      $('npLoginPanel').classList.remove('np-hide');
       return;
     }
+
     state.userId = session.user.id;
+    $('npLoading').textContent = 'Cargando Plan PRO…';
 
     var prof = await state.client.from('profiles').select('is_admin').eq('id', state.userId).maybeSingle();
     if (prof.error) {
       $('npLoading').classList.add('np-hide');
+      $('npLoginPanel').classList.add('np-hide');
       $('npDenied').textContent = 'No se pudo leer el perfil: ' + (prof.error.message || '');
       $('npDenied').classList.remove('np-hide');
       return;
     }
     if (!prof.data || prof.data.is_admin !== true) {
       $('npLoading').classList.add('np-hide');
-      $('npDenied').textContent = 'Acceso restringido: solo cuenta administrador.';
+      $('npLoginPanel').classList.add('np-hide');
+      $('npDenied').textContent = 'Acceso restringido: solo cuenta administrador (perfil is_admin en Supabase).';
       $('npDenied').classList.remove('np-hide');
       return;
     }
@@ -417,12 +425,63 @@
     $('npLoading').classList.add('np-hide');
     $('npGate').classList.add('np-hide');
     $('npMain').classList.remove('np-hide');
+    $('npHeaderLogged').classList.remove('np-hide');
 
-    state.client.auth.onAuthStateChange(function (event, sess) {
-      if (event === 'SIGNED_OUT' || !sess) {
-        window.location.href = LOGIN_URL;
+    if (!state.authListenerAttached) {
+      state.authListenerAttached = true;
+      state.client.auth.onAuthStateChange(function (event, sess) {
+        if (event === 'SIGNED_OUT' || !sess) {
+          window.location.reload();
+        }
+      });
+    }
+  }
+
+  $('npLoginForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    $('npLoginErr').classList.add('np-hide');
+    var email = ($('npLoginEmail').value || '').trim();
+    var pass = $('npLoginPass').value;
+    var btn = $('npBtnLogin');
+    var auth = window.nutriplantSupabaseAuth;
+    if (!auth || typeof auth.signIn !== 'function') {
+      $('npLoginErr').textContent = 'Autenticación no disponible (auth-supabase.js).';
+      $('npLoginErr').classList.remove('np-hide');
+      return;
+    }
+    btn.disabled = true;
+    var r = await auth.signIn(email, pass);
+    btn.disabled = false;
+    if (!r.ok) {
+      $('npLoginErr').textContent = r.error || 'Correo o contraseña incorrectos.';
+      $('npLoginErr').classList.remove('np-hide');
+      return;
+    }
+    $('npLoginPanel').classList.add('np-hide');
+    $('npLoading').classList.remove('np-hide');
+    $('npLoading').textContent = 'Cargando Plan PRO…';
+    await tryShowMain();
+  });
+
+  async function boot() {
+    $('npLoading').textContent = 'Comprobando sesión…';
+    $('npLoading').classList.remove('np-hide');
+    $('npLoginPanel').classList.add('np-hide');
+    state.client = window.getSupabaseClient && window.getSupabaseClient();
+    if (!state.client) {
+      $('npLoading').classList.add('np-hide');
+      $('npDenied').textContent = 'Supabase no está configurado (supabase-config.js).';
+      $('npDenied').classList.remove('np-hide');
+      return;
+    }
+
+    try {
+      if (window.nutriplantSupabaseAuth && typeof window.nutriplantSupabaseAuth.syncSessionToLocalStorage === 'function') {
+        await window.nutriplantSupabaseAuth.syncSessionToLocalStorage();
       }
-    });
+    } catch (e) {}
+
+    await tryShowMain();
   }
 
   if (document.readyState === 'loading') {
