@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Plan PRO — NutriPlant PRO</title>
+  <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png" />
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #fff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --green: #16a34a;
+      --green-d: #15803d;
+      --danger: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    header.np-plan-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 0 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .np-plan-brand { display: flex; align-items: center; gap: 12px; }
+    .np-plan-brand img { height: 36px; width: auto; }
+    .np-plan-brand h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .np-plan-brand .sub {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .np-plan-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: var(--green-d); }
+    .btn-ghost { background: #f1f5f9; color: #334155; border: 1px solid var(--border); }
+    .btn-danger { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; font-size: 12px; padding: 4px 10px; }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .panel h2 { margin: 0 0 12px; font-size: 1rem; color: #334155; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 640px) { .row2 { grid-template-columns: 1fr; } }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th { background: #f8fafc; color: #475569; font-weight: 600; }
+    .np-msg { padding: 16px; border-radius: 8px; font-size: 14px; }
+    .np-msg.warn { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; }
+    .np-msg.err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .np-msg.ok { background: #ecfdf5; border: 1px solid #86efac; color: #14532d; }
+    .np-loading { color: var(--muted); font-size: 14px; }
+    .np-hide { display: none !important; }
+    .np-muted { color: var(--muted); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="np-plan-header">
+      <div class="np-plan-brand">
+        <img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO" />
+        <div>
+          <h1>Plan PRO</h1>
+          <div class="sub">Cerebro Digital · solo administración</div>
+        </div>
+      </div>
+      <div class="np-plan-actions">
+        <a class="btn btn-ghost" href="../dashboard.html">Ir al dashboard</a>
+        <button type="button" class="btn btn-ghost" id="npBtnLogout">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <div id="npGate">
+      <p class="np-loading" id="npLoading">Comprobando sesión…</p>
+      <div id="npDenied" class="np-msg err np-hide"></div>
+    </div>
+
+    <main id="npMain" class="np-hide">
+      <div id="npToast" class="np-msg ok np-hide" style="margin-bottom:12px;"></div>
+
+      <section class="panel">
+        <h2>Nuevo ítem</h2>
+        <div id="npNoAreas" class="np-msg warn np-hide" style="margin-bottom:12px;">
+          No hay pilares (áreas) para tu cuenta. Ejecuta el seed de Plan PRO en Supabase o crea filas en <code>plan_pro_areas</code> con tu <code>owner_id</code>.
+        </div>
+        <form id="npFormCreate">
+          <label for="npTitle">Título</label>
+          <input id="npTitle" name="title" required maxlength="500" placeholder="Ej. Revisar fuentes UV en dashboard" />
+
+          <div class="row2">
+            <div>
+              <label for="npArea">Pilar (área)</label>
+              <select id="npArea" required></select>
+            </div>
+            <div>
+              <label for="npCategory">Categoría</label>
+              <select id="npCategory"><option value="">—</option></select>
+            </div>
+          </div>
+
+          <div class="row2">
+            <div>
+              <label for="npStatus">Estado</label>
+              <input id="npStatus" placeholder="Nuevo" value="Nuevo" />
+            </div>
+            <div>
+              <label for="npPriority">Prioridad</label>
+              <input id="npPriority" placeholder="Media" />
+            </div>
+          </div>
+
+          <label for="npBody">Nota / detalle</label>
+          <textarea id="npBody" placeholder="Texto libre…"></textarea>
+
+          <button type="submit" class="btn btn-primary" id="npBtnCreate">Guardar ítem</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Ítems</h2>
+        <p class="np-muted" style="margin-top:0;">Orden por última actualización. Una creación = una llamada a Supabase (sin saturar).</p>
+        <div style="overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Título</th>
+                <th>Pilar</th>
+                <th>Categoría</th>
+                <th>Estado</th>
+                <th>Prioridad</th>
+                <th>Actualizado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="npTableBody"></tbody>
+          </table>
+        </div>
+        <p id="npEmpty" class="np-muted np-hide">No hay ítems aún.</p>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase-config.js"></script>
+  <script src="../auth-supabase.js"></script>
+  <script>
+(function () {
+  'use strict';
+
+  var LOGIN_URL = '../login.html';
+
+  function $(id) { return document.getElementById(id); }
+
+  function showToast(msg, isErr) {
+    var el = $('npToast');
+    el.textContent = msg;
+    el.className = 'np-msg ' + (isErr ? 'err' : 'ok');
+    el.classList.remove('np-hide');
+    setTimeout(function () { el.classList.add('np-hide'); }, 4500);
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      return isNaN(d.getTime()) ? iso : d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+    } catch (e) { return iso; }
+  }
+
+  var state = {
+    client: null,
+    userId: null,
+    areas: [],
+    categories: [],
+    areaMap: {},
+    catMap: {}
+  };
+
+  function fillAreaSelect() {
+    var sel = $('npArea');
+    sel.innerHTML = '';
+    state.areas.forEach(function (a) {
+      var o = document.createElement('option');
+      o.value = a.id;
+      o.textContent = a.title + (a.archived_at ? ' (archivado)' : '');
+      sel.appendChild(o);
+    });
+    refreshCategorySelect();
+  }
+
+  function refreshCategorySelect() {
+    var areaId = $('npArea').value;
+    var sel = $('npCategory');
+    sel.innerHTML = '<option value="">—</option>';
+    state.categories.filter(function (c) { return c.area_id === areaId; }).forEach(function (c) {
+      var o = document.createElement('option');
+      o.value = c.id;
+      o.textContent = c.title;
+      sel.appendChild(o);
+    });
+  }
+
+  async function loadLookups() {
+    var c = state.client;
+    var uid = state.userId;
+    var ar = await c.from('plan_pro_areas').select('id,title,slug,archived_at').eq('owner_id', uid).order('sort_order');
+    if (ar.error) throw ar.error;
+    state.areas = ar.data || [];
+    state.areaMap = {};
+    state.areas.forEach(function (a) { state.areaMap[a.id] = a.title; });
+
+    var cr = await c.from('plan_pro_categories').select('id,title,area_id').order('sort_order');
+    if (cr.error) throw cr.error;
+    state.categories = cr.data || [];
+    state.catMap = {};
+    state.categories.forEach(function (x) { state.catMap[x.id] = x.title; });
+
+    fillAreaSelect();
+    var noAreas = state.areas.length === 0;
+    $('npNoAreas').classList.toggle('np-hide', !noAreas);
+    $('npBtnCreate').disabled = noAreas;
+  }
+
+  async function loadItems() {
+    var c = state.client;
+    var uid = state.userId;
+    var res = await c.from('plan_pro_items')
+      .select('id,title,area_id,category_id,status,priority,updated_at')
+      .eq('owner_id', uid)
+      .order('updated_at', { ascending: false });
+    if (res.error) throw res.error;
+    var rows = res.data || [];
+    var tb = $('npTableBody');
+    tb.innerHTML = '';
+    $('npEmpty').classList.toggle('np-hide', rows.length > 0);
+    rows.forEach(function (r) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + escapeHtml(r.title || '—') + '</td>' +
+        '<td>' + escapeHtml(state.areaMap[r.area_id] || '—') + '</td>' +
+        '<td>' + escapeHtml(r.category_id ? state.catMap[r.category_id] || '—' : '—') + '</td>' +
+        '<td>' + escapeHtml(r.status || '—') + '</td>' +
+        '<td>' + escapeHtml(r.priority || '—') + '</td>' +
+        '<td class="np-muted">' + fmtDate(r.updated_at) + '</td>' +
+        '<td><button type="button" class="btn btn-danger" data-del="' + r.id + '">Eliminar</button></td>';
+      tb.appendChild(tr);
+    });
+    tb.querySelectorAll('[data-del]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-del');
+        if (!id || !confirm('¿Eliminar este ítem?')) return;
+        deleteItem(id);
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  async function deleteItem(id) {
+    var res = await state.client.from('plan_pro_items').delete().eq('id', id);
+    if (res.error) {
+      showToast(res.error.message || 'Error al eliminar', true);
+      return;
+    }
+    showToast('Ítem eliminado.');
+    await loadItems();
+  }
+
+  $('npArea').addEventListener('change', refreshCategorySelect);
+
+  $('npFormCreate').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var title = ($('npTitle').value || '').trim();
+    if (!title) return;
+    var areaId = $('npArea').value;
+    var catVal = $('npCategory').value;
+    var payload = {
+      owner_id: state.userId,
+      area_id: areaId,
+      category_id: catVal || null,
+      title: title,
+      status: ($('npStatus').value || '').trim() || 'Nuevo',
+      priority: ($('npPriority').value || '').trim() || null,
+      body_plain: ($('npBody').value || '').trim() || null,
+      body_blocks: [],
+      attachments: []
+    };
+    var btn = $('npBtnCreate');
+    btn.disabled = true;
+    var res = await state.client.from('plan_pro_items').insert(payload).select('id').single();
+    btn.disabled = false;
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo guardar', true);
+      return;
+    }
+    showToast('Ítem guardado en la nube.');
+    $('npTitle').value = '';
+    $('npBody').value = '';
+    await loadItems();
+  });
+
+  $('npBtnLogout').addEventListener('click', async function () {
+    if (window.nutriplantSupabaseAuth && typeof window.nutriplantSupabaseAuth.signOut === 'function') {
+      await window.nutriplantSupabaseAuth.signOut();
+    }
+    window.location.href = LOGIN_URL;
+  });
+
+  async function boot() {
+    $('npLoading').textContent = 'Comprobando sesión…';
+    state.client = window.getSupabaseClient && window.getSupabaseClient();
+    if (!state.client) {
+      $('npLoading').classList.add('np-hide');
+      $('npDenied').textContent = 'Supabase no está configurado (supabase-config.js).';
+      $('npDenied').classList.remove('np-hide');
+      return;
+    }
+
+    try {
+      if (window.nutriplantSupabaseAuth && typeof window.nutriplantSupabaseAuth.syncSessionToLocalStorage === 'function') {
+        await window.nutriplantSupabaseAuth.syncSessionToLocalStorage();
+      }
+    } catch (e) {}
+
+    var sessionRes = await state.client.auth.getSession();
+    var session = sessionRes.data && sessionRes.data.session;
+    if (!session || !session.user) {
+      window.location.href = LOGIN_URL;
+      return;
+    }
+    state.userId = session.user.id;
+
+    var prof = await state.client.from('profiles').select('is_admin').eq('id', state.userId).maybeSingle();
+    if (prof.error) {
+      $('npLoading').classList.add('np-hide');
+      $('npDenied').textContent = 'No se pudo leer el perfil: ' + (prof.error.message || '');
+      $('npDenied').classList.remove('np-hide');
+      return;
+    }
+    if (!prof.data || prof.data.is_admin !== true) {
+      $('npLoading').classList.add('np-hide');
+      $('npDenied').textContent = 'Acceso restringido: solo cuenta administrador.';
+      $('npDenied').classList.remove('np-hide');
+      return;
+    }
+
+    try {
+      await loadLookups();
+      await loadItems();
+    } catch (err) {
+      $('npLoading').classList.add('np-hide');
+      $('npDenied').textContent = 'Error cargando datos: ' + (err && err.message ? err.message : err);
+      $('npDenied').classList.remove('np-hide');
+      return;
+    }
+
+    $('npLoading').classList.add('np-hide');
+    $('npGate').classList.add('np-hide');
+    $('npMain').classList.remove('np-hide');
+
+    state.client.auth.onAuthStateChange(function (event, sess) {
+      if (event === 'SIGNED_OUT' || !sess) {
+        window.location.href = LOGIN_URL;
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+  </script>
+</body>
+</html>
