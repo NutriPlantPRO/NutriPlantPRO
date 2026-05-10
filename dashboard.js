@@ -18321,11 +18321,14 @@ function getHumidityDeficitClass(hdValue) {
 
 function renderHumidityDeficitBadge(hdValue) {
   var c = getHumidityDeficitClass(hdValue);
-  return '<div style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:5px 8px;border-radius:999px;background:' + c.bg + ';border:1px solid ' + c.color + '33;color:' + c.color + ';font-size:12px;font-weight:700;" title="' + c.message + '">' +
-    '<span style="width:9px;height:9px;border-radius:999px;background:' + c.color + ';display:inline-block;"></span>' +
+  return '<div style="margin-top:8px;width:100%;max-width:100%;box-sizing:border-box;border-left:3px solid #0d9488;padding:4px 0 0 10px;">' +
+    '<div style="font-size:10px;font-weight:800;color:#0d9488;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">DH</div>' +
+    '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;background:' + c.bg + ';border:1px solid ' + c.color + '33;color:' + c.color + ';font-size:12px;font-weight:700;max-width:100%;box-sizing:border-box;" title="' + c.message + '">' +
+    '<span style="width:9px;height:9px;border-radius:999px;background:' + c.color + ';display:inline-block;flex-shrink:0;"></span>' +
     'Clasificación orientativa: ' + c.label +
     '</div>' +
-    '<div style="margin-top:4px;color:#64748b;font-size:12px;line-height:1.35;">' + c.message + '</div>';
+    '<div style="margin-top:4px;color:#64748b;font-size:12px;line-height:1.35;">' + c.message + '</div>' +
+    '</div>';
 }
 
 function ensureVPDAnalysisStructures() {
