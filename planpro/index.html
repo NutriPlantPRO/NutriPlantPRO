@@ -1036,27 +1036,42 @@
       margin-bottom: 22px;
       padding-bottom: 4px;
     }
-    .np-modal-note-kicker {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      color: var(--green-d);
-      margin-bottom: 6px;
-    }
     #npModalRichToolbar {
       margin-bottom: 10px;
     }
-    .np-modal-notebook-page {
-      min-height: 160px;
-      max-height: min(38vh, 400px);
+    /* Hoja de libreta en el modal: mismo papel que el formulario + líneas tenues */
+    .np-notebook-page.np-modal-notebook-page {
+      min-height: min(34vh, 380px);
+      max-height: min(48vh, 540px);
       overflow: auto;
-      border-radius: 4px 6px 8px 5px;
+    }
+    .np-notebook-page.np-modal-notebook-page::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image: repeating-linear-gradient(
+        transparent 0,
+        transparent calc(1.65em - 1px),
+        rgba(139, 120, 96, 0.14) calc(1.65em - 1px),
+        rgba(139, 120, 96, 0.14) 1.65em
+      );
+      background-position: 0 23px;
     }
     #npModalBodyRich.np-rich-editor {
-      min-height: 140px;
-      max-height: min(36vh, 380px);
+      position: relative;
+      z-index: 1;
+      min-height: min(28vh, 320px);
+      max-height: min(44vh, 500px);
       overflow-y: auto;
+    }
+    /* Sin texto placeholder en la nota del modal */
+    #npModalBodyRich.np-rich-empty:before {
+      content: none !important;
     }
     .np-modal-note-rich h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75em 0 0.4em; color: #0f172a; }
     .np-modal-note-rich h3 { font-size: 1.08rem; font-weight: 650; margin: 0.65em 0 0.35em; color: #334155; }
@@ -1423,7 +1438,7 @@
         <img src="../assets/NutriPlant_PRO_blue.png" alt="" />
         <div>
           <h1>Plan PRO</h1>
-          <div class="sub">Cerebro Digital · acceso directo (no requiere abrir NutriPlant)</div>
+          <div class="sub">Cerebro Digital</div>
         </div>
       </div>
       <div class="np-plan-actions np-hide" id="npHeaderLogged">
@@ -1437,10 +1452,7 @@
       <p class="np-loading" id="npLoading">Comprobando sesión…</p>
       <div id="npLoginPanel" class="panel np-login-card np-section-accent np-section-accent-blue np-hide">
         <h2>Entrar a Plan PRO</h2>
-        <p class="np-muted" style="margin-top:0;line-height:1.45;">
-          Usa el <strong>mismo correo y contraseña</strong> de tu cuenta administrador en Supabase.
-          Puedes usar esta página sola en tu celular u ordenador; la sesión queda en este navegador.
-        </p>
+        <p class="np-muted" style="margin-top:0;line-height:1.45;">Correo y contraseña de administrador.</p>
         <div id="npLoginErr" class="np-msg err np-hide" style="margin-bottom:12px;"></div>
         <form id="npLoginForm">
           <label for="npLoginEmail">Correo</label>
@@ -1458,10 +1470,6 @@
 
       <section class="panel np-pillar-panel np-section-accent np-section-accent-blue">
         <h2 style="margin:0 0 10px;font-size:1rem;">Tus pilares</h2>
-        <p class="np-muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;">
-          Cada pestaña es un espacio grande (Personal, Work, NutriPlant PRO…). Puedes <strong>añadir más pilares</strong> cuando quieras.
-          Dentro de cada uno, a la izquierda, construyes <strong>categorías y subcategorías</strong>; a la derecha van tus ítems (notas, tablas β, fechas).
-        </p>
         <div class="np-pillar-tabs-row">
           <div id="npPillarTabs" class="np-pillar-tabs" role="tablist" aria-label="Pilares"></div>
           <div class="np-pillar-add">
@@ -1473,57 +1481,49 @@
 
       <div class="np-layout">
         <aside class="panel np-tree-sidebar np-section-accent np-section-accent-green">
-          <h2 class="np-tree-sidebar-title">Categorías en este pilar</h2>
+          <h2 class="np-tree-sidebar-title">Categorías</h2>
           <div id="npTreeMount" class="np-tree-mount" role="tree" aria-label="Categorías del pilar"></div>
           <div style="margin-top:12px;">
-            <label class="np-muted" style="font-size:12px;">Nueva categoría raíz en este pilar</label>
-            <div style="display:flex;gap:8px;margin-top:4px;align-items:center;">
-              <input type="text" id="npNewRootCat" placeholder="Ej. Finanzas, Proyectos…" style="margin-bottom:0;flex:1;" />
+            <div style="display:flex;gap:8px;margin-top:0;align-items:center;">
+              <input type="text" id="npNewRootCat" placeholder="Raíz…" style="margin-bottom:0;flex:1;" />
               <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddRootCat" style="margin-bottom:0;">Añadir</button>
             </div>
           </div>
           <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;cursor:pointer;">
             <input type="checkbox" id="npFilterDesc" checked />
-            Al filtrar, incluir subcategorías
+            Incluir subcategorías
           </label>
           <div id="npSelectedPath" class="np-msg ok np-hide" style="margin-top:12px;padding:10px;font-size:13px;line-height:1.4;"></div>
         </aside>
 
         <div class="np-main-col">
           <div class="np-sheet-wrap">
-            <div id="npSheetPlaceholder" class="np-sheet-placeholder">
-              <strong>Hoja cerrada.</strong><br />
-              Haz clic en una categoría del árbol (izquierda) para <strong>abrir la hoja</strong> en este panel: podrás escribir, usar mini-tabla y crear ramas nuevas desde la cabecera.
-            </div>
+            <div id="npSheetPlaceholder" class="np-sheet-placeholder">Selecciona una categoría en el árbol.</div>
 
             <section id="npSheetPanel" class="panel np-sheet np-hide">
               <div class="np-sheet-header">
-                <div class="np-sheet-kicker">Hoja abierta</div>
+                <div class="np-sheet-kicker np-hide" aria-hidden="true">Hoja</div>
                 <div id="npSheetTitle" class="np-sheet-title">—</div>
-                <div id="npSheetSub" class="np-sheet-sub"></div>
                 <div class="np-sheet-branch">
-                  <input type="text" id="npBranchName" maxlength="120" placeholder="Nueva subcategoría bajo esta rama…" autocomplete="off" />
+                  <input type="text" id="npBranchName" maxlength="120" placeholder="Nueva rama…" autocomplete="off" />
                   <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnBranchHere">Crear rama aquí</button>
                 </div>
                 <div id="npSheetNavBlocks" class="np-sheet-nav-blocks np-hide"></div>
               </div>
               <div class="np-sheet-inner">
                 <div id="npSheetItemsWrap" class="np-sheet-items-wrap np-hide">
-                  <h2>Apuntes en esta categoría</h2>
+                  <h2>Apuntes</h2>
                   <div id="npSheetItemsMount" class="np-sheet-items-mount"></div>
-                  <p id="npSheetItemsEmpty" class="np-muted np-hide" style="margin:8px 0 0;font-size:13px;">
-                    Aún no hay apuntes en este filtro. Escribe abajo y guarda.
-                  </p>
+                  <p id="npSheetItemsEmpty" class="np-muted np-hide" style="margin:8px 0 0;font-size:13px;">Sin apuntes.</p>
                 </div>
-                <h2 style="margin:0 0 14px;font-size:1rem;color:#334155;">Nuevo apunte en esta hoja</h2>
+                <h2 style="margin:0 0 14px;font-size:1rem;color:#334155;">Nuevo apunte</h2>
                 <div id="npNoAreas" class="np-msg warn np-hide" style="margin-bottom:12px;">
                   No hay pilares (áreas). Ejecuta el seed de Plan PRO en Supabase o crea filas en <code>plan_pro_areas</code> con tu <code>owner_id</code>.
                 </div>
                 <div id="npNeedCategory" class="np-msg warn np-hide" style="margin-bottom:12px;">Selecciona una categoría en el árbol para guardar.</div>
-                <p id="npContextLabel" class="np-muted" style="margin-top:0;"></p>
                 <form id="npFormCreate">
                   <label for="npTitle" class="np-compact-label">Resumen / título</label>
-                  <input id="npTitle" class="np-title-compact" name="title" required maxlength="500" placeholder="Una línea para ubicar el apunte…" />
+                  <input id="npTitle" class="np-title-compact" name="title" required maxlength="500" placeholder="Título" />
                   <label class="np-compact-label">Hoja en blanco</label>
                   <div id="npRichToolbar" class="np-rich-toolbar">
                     <span class="np-rich-grp">
@@ -1553,7 +1553,7 @@
                   </div>
                   <div class="np-notebook-wrap">
                     <div class="np-notebook-page np-notebook-rich">
-                      <div id="npBodyRich" class="np-rich-editor np-rich-empty" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" data-placeholder="Escribe aquí como en una libreta…"></div>
+                      <div id="npBodyRich" class="np-rich-editor np-rich-empty" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" data-placeholder="Nota…"></div>
                     </div>
                   </div>
                   <div class="np-tools-row">
@@ -1573,7 +1573,6 @@
 
           <section class="panel np-section-accent np-section-accent-blue">
             <h2>Lista del pilar</h2>
-            <p class="np-muted" style="margin-top:0;">Misma información que arriba; vista compacta de todo el pilar o del filtro del árbol. <strong>Toca una fila</strong> para ver el apunte; solo usa el botón rojo para borrar.</p>
             <div style="overflow:auto;">
               <table class="np-pillar-list-table">
                 <thead>
@@ -1588,7 +1587,7 @@
                 <tbody id="npTableBody"></tbody>
               </table>
             </div>
-            <p id="npEmpty" class="np-muted np-hide">No hay ítems en este filtro.</p>
+            <p id="npEmpty" class="np-muted np-hide">Sin ítems.</p>
           </section>
         </div>
       </div>
@@ -1845,18 +1844,6 @@
     stack.id = 'npDetailMainNote';
     stack.className = 'np-modal-notebook-stack';
 
-    var kicker = document.createElement('div');
-    kicker.className = 'np-modal-note-kicker';
-    kicker.textContent = 'Nota principal · hoja en blanco';
-
-    var hint = document.createElement('p');
-    hint.className = 'np-muted';
-    hint.style.fontSize = '11px';
-    hint.style.margin = '0 0 10px';
-    hint.style.lineHeight = '1.45';
-    hint.textContent =
-      'Misma libreta que al crear el apunte: barra de formato y papel con margen. Las tablas van debajo como bloques aparte.';
-
     var tb = $('npRichToolbar').cloneNode(true);
     tb.removeAttribute('id');
     tb.id = 'npModalRichToolbar';
@@ -1881,13 +1868,10 @@
     ed.setAttribute('spellcheck', 'true');
     ed.setAttribute('role', 'textbox');
     ed.setAttribute('aria-multiline', 'true');
-    ed.setAttribute('data-placeholder', 'Escribe aquí como en una libreta…');
     ed.innerHTML = initialHtml;
 
     page.appendChild(ed);
     nw.appendChild(page);
-    stack.appendChild(kicker);
-    stack.appendChild(hint);
     stack.appendChild(tb);
     stack.appendChild(nw);
     bd.appendChild(stack);
@@ -3056,7 +3040,7 @@
     meta.textContent = branchesBelow
       ? itemsST + ' ap · ' + branchesBelow + ' ramas'
       : itemsST + ' ap';
-    meta.title = 'Apuntes en esta rama (incluye subcategorías) · subcategorías debajo';
+    meta.title = '';
 
     var actions = document.createElement('div');
     actions.className = 'np-tree-actions';
@@ -3191,18 +3175,9 @@
       return pk === parentKey;
     }));
 
-    var block1 = document.createElement('div');
-    block1.className = 'np-sheet-nav-block';
-    var lab1 = document.createElement('div');
-    lab1.className = 'np-sheet-nav-label';
-    lab1.textContent = 'Dentro de esta categoría';
-    block1.appendChild(lab1);
-    if (!children.length) {
-      var pEmpty = document.createElement('p');
-      pEmpty.className = 'np-sheet-nav-empty';
-      pEmpty.textContent = 'Sin subcategorías.';
-      block1.appendChild(pEmpty);
-    } else {
+    if (children.length) {
+      var block1 = document.createElement('div');
+      block1.className = 'np-sheet-nav-block';
       var row1 = document.createElement('div');
       row1.className = 'np-sheet-chip-row';
       children.forEach(function (ch) {
@@ -3214,16 +3189,12 @@
         row1.appendChild(btn);
       });
       block1.appendChild(row1);
+      wrap.appendChild(block1);
     }
-    wrap.appendChild(block1);
 
     if (siblings.length > 1) {
       var block2 = document.createElement('div');
       block2.className = 'np-sheet-nav-block np-sheet-nav-siblings';
-      var lab2 = document.createElement('div');
-      lab2.className = 'np-sheet-nav-label';
-      lab2.textContent = 'Al mismo nivel';
-      block2.appendChild(lab2);
       var row2 = document.createElement('div');
       row2.className = 'np-sheet-chip-row';
       siblings.forEach(function (s) {
@@ -3237,13 +3208,14 @@
       block2.appendChild(row2);
       wrap.appendChild(block2);
     }
+
+    if (!wrap.children.length) wrap.classList.add('np-hide');
   }
 
   function syncSheetVisibility() {
     var ph = $('npSheetPlaceholder');
     var sp = $('npSheetPanel');
     var title = $('npSheetTitle');
-    var sub = $('npSheetSub');
     var nav = $('npSheetNavBlocks');
     if (!ph || !sp) return;
     var open = !!(state.selectedAreaId && state.selectedCategoryId);
@@ -3259,10 +3231,6 @@
     ph.classList.add('np-hide');
     sp.classList.remove('np-hide');
     if (title) title.textContent = getCategoryPath(state.selectedCategoryId);
-    if (sub) {
-      var an = state.areaMap[state.selectedAreaId] || '';
-      sub.textContent = an ? 'Pilar «' + an + '»' : '';
-    }
     sp.style.animation = 'none';
     void sp.offsetHeight;
     sp.style.animation = '';
@@ -3271,28 +3239,19 @@
 
   function updateSelectionUI() {
     var pathEl = $('npSelectedPath');
-    var ctx = $('npContextLabel');
     if (!state.selectedAreaId) {
-      if (ctx) ctx.textContent = '';
       if (pathEl) pathEl.classList.add('np-hide');
       syncSheetVisibility();
       return;
     }
-    var aname = state.areaMap[state.selectedAreaId] || '';
     if (!state.selectedCategoryId) {
       if (pathEl) pathEl.classList.add('np-hide');
-      if (ctx) {
-        ctx.textContent = 'Pilar: ' + aname + ' · Mostrando ítems de todo el pilar. Elige una categoría en el árbol para abrir la hoja.';
-      }
       syncSheetVisibility();
       return;
     }
     if (pathEl) {
       pathEl.classList.remove('np-hide');
       pathEl.textContent = 'Ruta: ' + getCategoryPath(state.selectedCategoryId);
-    }
-    if (ctx) {
-      ctx.textContent = 'Guardando en: ' + getCategoryPath(state.selectedCategoryId);
     }
     syncSheetVisibility();
   }
@@ -3345,7 +3304,7 @@
         state.selectedAreaId = res.data.id;
         state.selectedCategoryId = null;
         await loadLookups();
-        showToast('Pilar «' + title + '» listo. Ya puedes crear categorías dentro.');
+        showToast('Pilar creado.');
         var inp = $('npNewPillar');
         if (inp) inp.value = '';
         return;
@@ -3460,7 +3419,7 @@
       prevBox.innerHTML = '';
       return;
     }
-    hint.textContent = n === 1 ? '1 bloque en este apunte.' : n + ' bloques en este apunte.';
+    hint.textContent = n === 1 ? '1 bloque' : n + ' bloques';
     prevBox.classList.remove('np-hide');
     prevBox.innerHTML = '';
     prevBox.appendChild(
