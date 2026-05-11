@@ -1338,6 +1338,12 @@ function renderFertiChartsInsights() {
         </table>
         <div class="ferti-insight-legend">* N-NH₄⁺ se calcula sobre cationes totales (K+Ca+Mg+NH₄). En cambio, los rangos de cationes (${FERTI_CATION_RANGES}) aplican al triángulo K+Ca+Mg (sin NH₄). ${FERTI_ANION_RANGES}.</div>
       </div>
+      <div class="ferti-insight-card ferti-insight-card--ternary">
+        <h5>📐 Diagrama ternario (aniones + cationes)</h5>
+        <p class="ferti-insight-ternary-note">Misma lógica que en Hidroponía · Solución por etapa: cuadrado amarillo = balance aniónico (N-NO₃⁻, P-H₂PO₄⁻, S-SO₄²⁻); círculo rojo = K⁺, Ca²⁺, Mg²⁺ sobre K+Ca+Mg. Zonas sombreadas = rangos de equilibrio de referencia.</p>
+        <div id="fertiChartsTernaryInfo" class="ferti-insight-muted-ternary notranslate" translate="no"></div>
+        <div id="fertiChartsTernaryPlot" class="ferti-charts-ternary-plot hydro-triangle notranslate" translate="no"></div>
+      </div>
       <div class="ferti-insight-card">
         <h5>Micros · ${fertiStageSlotLabel(idx)} (${summary.stage.stage || 'Etapa'})</h5>
         <table class="ferti-insight-table">
@@ -1362,6 +1368,29 @@ function renderFertiChartsInsights() {
     </div>
     ${body}
   `;
+  if (summary && summary.m3ha > 0 && typeof hydroDrawCombinedTernary === 'function') {
+    const tri = document.getElementById('fertiChartsTernaryPlot');
+    if (!tri) return;
+    const triInfo = document.getElementById('fertiChartsTernaryInfo');
+    const anionZ = typeof hydroEquilibriumPolygonAnions === 'function' ? hydroEquilibriumPolygonAnions() : [];
+    const catZ = typeof hydroEquilibriumPolygonCations === 'function' ? hydroEquilibriumPolygonCations() : [];
+    hydroDrawCombinedTernary(tri, {
+      pNO3: summary.pct.N_NO3,
+      pH2PO4: summary.pct.P,
+      pSO4: summary.pct.SO4,
+      pK: summary.pct.K,
+      pCa: summary.pct.Ca,
+      pMg: summary.pct.Mg,
+      anionZone: anionZ,
+      cationZone: catZ
+    });
+    if (triInfo) {
+      triInfo.textContent =
+        `Aniones: N-NO₃⁻ ${fertiNum(summary.pct.N_NO3, 1)}% · P-H₂PO₄⁻ ${fertiNum(summary.pct.P, 1)}% · S-SO₄²⁻ ${fertiNum(summary.pct.SO4, 1)}% | ` +
+        `Cationes (triángulo): K⁺ ${fertiNum(summary.pct.K, 1)}% · Ca²⁺ ${fertiNum(summary.pct.Ca, 1)}% · Mg²⁺ ${fertiNum(summary.pct.Mg, 1)}% · ` +
+        `N-NH₄⁺ ${fertiNum(summary.pct.N_NH4, 1)}% sobre cationes totales (fuera del triángulo).`;
+    }
+  }
 }
 
 function loadChartJs(callback){

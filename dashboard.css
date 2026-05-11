@@ -4415,6 +4415,31 @@ body {
   cursor: help;
 }
 
+/* Tarjeta diagrama ternario (entre macro y micros): acento violeta */
+.ferti-insight-card + .ferti-insight-card.ferti-insight-card--ternary {
+  border-color: #ede9fe;
+  border-left-color: #7c3aed;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.1);
+}
+.ferti-insight-ternary-note {
+  margin: 0 0 8px 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+.ferti-insight-muted-ternary {
+  font-size: 0.78rem;
+  color: #475569;
+  line-height: 1.35;
+}
+.ferti-charts-ternary-plot {
+  max-width: 520px;
+  margin: 0 auto;
+}
+.ferti-charts-ternary-plot .hydro-ternary-chart-svg {
+  max-height: min(440px, 70vh);
+}
+
 /* ===== MAP MESSAGE ANIMATIONS ===== */
 @keyframes slideIn {
   from {
