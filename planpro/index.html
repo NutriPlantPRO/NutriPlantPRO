@@ -53,7 +53,7 @@
     }
     header.np-plan-header.np-mac-bar {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 14px;
       flex-wrap: wrap;
@@ -95,11 +95,31 @@
     .np-plan-actions {
       display: flex;
       flex-direction: column;
-      align-items: stretch;
-      gap: 10px;
+      align-items: flex-end;
+      gap: 8px;
       margin-left: auto;
-      width: max-content;
+      flex: 1;
+      min-width: 0;
       max-width: 100%;
+    }
+    /* Redes + accesos rápidos (NutriPlant, admin…) en una sola franja superior */
+    .np-plan-actions-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px 14px;
+      width: 100%;
+    }
+    .np-plan-actions-top .np-plan-social {
+      width: auto;
+      flex-shrink: 0;
+    }
+    .np-plan-actions-top .np-plan-nav-buttons {
+      flex: 1 1 200px;
+      width: auto;
+      min-width: 0;
+      justify-content: flex-end;
     }
     .np-plan-social {
       display: flex;
@@ -756,6 +776,13 @@
       .np-tree-sidebar-title {
         font-size: 10px;
       }
+      .np-pillar-panel-title {
+        font-size: 10px;
+      }
+      .np-pillar-panel-logo {
+        width: 20px;
+        height: 20px;
+      }
     }
     .np-tree-sidebar-title {
       margin: 0 0 8px;
@@ -1062,9 +1089,13 @@
         0 8px 22px rgba(34, 197, 94, 0.14),
         0 16px 40px rgba(15, 23, 42, 0.08);
     }
-    .np-detail-blocks-mount .np-ms-block-free + .np-ms-block-free,
-    #npMiniSheetPreview .np-ms-block-free + .np-ms-block-free {
-      margin-top: 20px;
+    /* Separación minimalista entre dos tablas seguidas (misma pantalla) */
+    .np-detail-blocks-mount .np-ms-block + .np-ms-block,
+    #npMiniSheetPreview .np-ms-block + .np-ms-block,
+    .np-modal-body .np-ms-block + .np-ms-block {
+      margin-top: 26px;
+      padding-top: 22px;
+      border-top: 1px solid rgba(148, 163, 184, 0.38);
     }
     .np-ms-block-free .np-ms-sheet {
       border-color: rgba(34, 197, 94, 0.28);
@@ -1139,17 +1170,17 @@
       box-sizing: border-box;
     }
     .np-ms-sheet .np-ms-row {
-      min-width: min-content;
+      min-width: 0;
     }
     .np-ms-row {
       display: grid;
-      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(var(--np-ms-col-min, 132px), max-content));
+      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(0, 1fr));
       gap: 0;
       border-bottom: 1px solid rgba(148, 163, 184, 0.14);
       transition: background 0.15s ease;
     }
     .np-ms-sheet.np-ms-sheet--rowdel .np-ms-row {
-      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(var(--np-ms-col-min, 132px), max-content)) minmax(48px, 56px);
+      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(0, 1fr)) minmax(44px, 52px);
     }
     .np-ms-row:last-child { border-bottom: none; }
     .np-ms-row-head {
@@ -1164,9 +1195,14 @@
       font-size: 13px;
       line-height: 1.45;
       color: #1e293b;
-      min-width: auto;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
       display: flex;
       align-items: center;
+      overflow-x: hidden;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .np-ms-row-head .np-ms-cell {
       font-size: 10px;
@@ -1196,7 +1232,8 @@
     .np-ms-cell-input,
     .np-ms-cell-input-date {
       width: 100%;
-      min-width: 7.5rem;
+      max-width: 100%;
+      min-width: 0;
       margin: 0;
       padding: 8px 2px;
       border: none;
@@ -1205,6 +1242,7 @@
       font: inherit;
       color: inherit;
       box-shadow: none;
+      box-sizing: border-box;
     }
     .np-ms-cell-input:focus,
     .np-ms-cell-input-date:focus,
@@ -1215,7 +1253,7 @@
     }
     .np-ms-cell-input-date {
       min-height: 36px;
-      min-width: 11.5rem;
+      min-width: 0;
       max-width: 100%;
       color-scheme: light;
     }
@@ -1228,7 +1266,7 @@
     }
     .np-ms-cell-prio {
       justify-content: center;
-      min-width: 96px;
+      min-width: 0;
     }
     .np-ms-row-head .np-ms-cell-prio {
       justify-content: center;
@@ -1236,14 +1274,36 @@
     }
     .np-ms-cell-notes textarea.np-ms-cell-input {
       min-height: 96px;
-      min-width: 220px;
-      max-width: min(100%, 520px);
+      min-width: 0;
+      width: 100%;
+      max-width: 100%;
       padding: 10px 10px;
+      box-sizing: border-box;
     }
     .np-ms-row:not(.np-ms-row-head) .np-ms-cell {
       align-items: stretch;
     }
     .np-pillar-panel { margin-bottom: 4px; }
+    .np-pillar-panel-title {
+      margin: 0 0 8px;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--np-blue-d);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      line-height: 1.2;
+    }
+    .np-pillar-panel-logo {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      flex-shrink: 0;
+      display: block;
+      filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.12));
+    }
     .np-pillar-tabs-row {
       display: flex;
       flex-wrap: wrap;
@@ -1497,15 +1557,31 @@
       line-height: 1.2;
       transition: background 0.15s, border-color 0.15s;
     }
-    .np-rich-tbtn:hover {
+    .np-rich-tbtn:not(.np-rich-tbtn-color):hover {
       background: #fff;
       border-color: rgba(34, 197, 94, 0.35);
       color: #0f172a;
     }
-    .np-rich-tbtn.np-rich-tbtn-active {
+    .np-rich-tbtn.np-rich-tbtn-color:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+    }
+    .np-rich-tbtn.np-rich-tbtn-active:not(.np-rich-tbtn-color) {
       background: rgba(34, 197, 94, 0.2);
       border-color: rgba(22, 163, 74, 0.55);
       color: #14532d;
+    }
+    .np-rich-tbtn.np-rich-tbtn-color {
+      width: 26px;
+      min-width: 26px;
+      height: 26px;
+      padding: 0;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+    .np-rich-tbtn.np-rich-tbtn-color.np-rich-tbtn-active {
+      box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(22, 163, 74, 0.85);
     }
     .np-rich-editor {
       position: relative;
@@ -1752,13 +1828,24 @@
       line-height: 1.45;
     }
     .np-sheet-items-wrap {
-      margin-bottom: 22px;
-      padding-bottom: 18px;
-      border-bottom: 1px dashed rgba(148, 163, 184, 0.35);
+      margin-bottom: 26px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.42);
+    }
+    .np-sheet-items-wrap.np-hide {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
     }
     .np-sheet-items-wrap h2 {
       margin: 0 0 10px;
       font-size: 1rem;
+      color: #334155;
+    }
+    .np-sheet-new-title {
+      margin: 0 0 14px;
+      font-size: 1rem;
+      font-weight: 700;
       color: #334155;
     }
     .np-sheet-items-mount {
@@ -2095,14 +2182,15 @@
     .np-ms-row-kind-percent .np-ms-cell:nth-child(5):after { content: ' %'; opacity: 0.55; font-weight: 600; }
     .np-ms-kind-select {
       width: 100%;
-      min-width: 9.5rem;
       max-width: 100%;
+      min-width: 0;
       font-size: 11px;
       padding: 6px 4px;
       border-radius: 8px;
       border: 1px solid rgba(15, 23, 42, 0.08);
       background: rgba(255, 255, 255, 0.9);
       cursor: pointer;
+      box-sizing: border-box;
     }
     .np-ms-add-bar {
       display: flex;
@@ -2149,7 +2237,7 @@
     }
     .np-ms-head-input {
       flex: 1;
-      min-width: 6.5rem;
+      min-width: 0;
       max-width: 100%;
       margin: 0 !important;
       padding: 6px 8px !important;
@@ -2158,6 +2246,7 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
       border-radius: 8px !important;
+      box-sizing: border-box;
     }
     .np-ms-col-del,
     .np-ms-row-del {
@@ -2268,6 +2357,7 @@
         </div>
       </div>
       <div class="np-plan-actions np-hide" id="npHeaderLogged">
+        <div class="np-plan-actions-top">
         <div class="np-plan-social" role="navigation" aria-label="Redes NutriPlant PRO">
           <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="facebook" title="Facebook" aria-label="Facebook">
             <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2311,6 +2401,7 @@
               <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
             </svg>
           </button>
+        </div>
         </div>
         <div class="np-plan-link-row" aria-label="Herramientas y cuentas">
           <a class="btn-mac-link btn-mac-link--brand-supabase" href="https://supabase.com/" target="_blank" rel="noopener noreferrer" title="Supabase">Supabase</a>
@@ -2370,7 +2461,10 @@
       <div id="npToast" class="np-msg ok np-hide" style="margin-bottom:12px;"></div>
 
       <section class="panel np-pillar-panel np-section-accent np-section-accent-blue">
-        <h2 style="margin:0 0 10px;font-size:1rem;">Tus plantas</h2>
+        <h2 class="np-pillar-panel-title">
+          <img src="../assets/N_Hoja_Azul.png" alt="" class="np-pillar-panel-logo" width="22" height="22" decoding="async" aria-hidden="true" />
+          Plantas
+        </h2>
         <div class="np-pillar-tabs-row">
           <div id="npPillarTabs" class="np-pillar-tabs" role="tablist" aria-label="Plantas"></div>
           <div class="np-pillar-add">
@@ -2428,7 +2522,7 @@
                   <div id="npSheetItemsMount" class="np-sheet-items-mount"></div>
                   <p id="npSheetItemsEmpty" class="np-muted np-hide" style="margin:8px 0 0;font-size:13px;">Sin apuntes.</p>
                 </div>
-                <h2 style="margin:0 0 14px;font-size:1rem;color:#334155;">Nuevo apunte</h2>
+                <h2 class="np-sheet-new-title">Nuevo apunte</h2>
                 <div id="npNoAreas" class="np-msg warn np-hide" style="margin-bottom:12px;">
                   No hay plantas (áreas). Ejecuta el seed de Plan PRO en Supabase o crea filas en <code>plan_pro_areas</code> con tu <code>owner_id</code>.
                 </div>
@@ -2443,6 +2537,15 @@
                       <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="italic" title="Cursiva"><em>I</em></button>
                       <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="underline" title="Subrayado"><u>U</u></button>
                       <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="strikeThrough" title="Tachado"><s>S</s></button>
+                    </span>
+                    <span class="np-rich-grp" title="Color de texto">
+                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#2563eb" title="Azul" aria-label="Color de texto azul" style="background:#2563eb;border-color:rgba(30,64,175,0.35);"></button>
+                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#16a34a" title="Verde" aria-label="Color de texto verde" style="background:#16a34a;border-color:rgba(21,128,61,0.35);"></button>
+                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#dc2626" title="Rojo" aria-label="Color de texto rojo" style="background:#dc2626;border-color:rgba(153,27,27,0.35);"></button>
+                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#0f172a" title="Negro" aria-label="Color de texto negro" style="background:#0f172a;border-color:rgba(15,23,42,0.45);"></button>
+                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#64748b" title="Gris" aria-label="Color de texto gris" style="background:#64748b;border-color:rgba(51,65,85,0.35);"></button>
+                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#b45309" title="Amarillo (oscuro, legible)" aria-label="Color de texto amarillo oscuro" style="background:#fbbf24;border-color:rgba(180,83,9,0.45);"></button>
+                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#7c3aed" title="Morado" aria-label="Color de texto morado" style="background:#7c3aed;border-color:rgba(91,33,182,0.35);"></button>
                     </span>
                     <span class="np-rich-grp">
                       <button type="button" class="np-rich-tbtn" data-rich="fmt" data-v="h2" title="Título">Título</button>
@@ -2622,8 +2725,8 @@
     var s = String(html);
     if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
       return window.DOMPurify.sanitize(s, {
-        ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'span', 'div', 'blockquote'],
-        ALLOWED_ATTR: ['class', 'style']
+        ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'font'],
+        ALLOWED_ATTR: ['class', 'style', 'color']
       });
     }
     var x = document.createElement('div');
@@ -2679,6 +2782,28 @@
       if (!v) return '';
       return String(v).replace(/[<>]/g, '').toLowerCase();
     } catch (e) {
+      return '';
+    }
+  }
+
+  function rgbStringToHex(rgb) {
+    var m = String(rgb || '').match(/^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (!m) return '';
+    function h(n) {
+      var x = (+n).toString(16);
+      return x.length === 1 ? '0' + x : x;
+    }
+    return ('#' + h(m[1]) + h(m[2]) + h(m[3])).toLowerCase();
+  }
+
+  function normForeColorHex() {
+    try {
+      var v = document.queryCommandValue('foreColor');
+      if (v == null || v === '') return '';
+      v = String(v).trim();
+      if (v.charAt(0) === '#') return v.toLowerCase();
+      return rgbStringToHex(v);
+    } catch (e2) {
       return '';
     }
   }
@@ -2796,6 +2921,10 @@
         ok = wrapClassActive(editorEl, btn.getAttribute('data-v'));
       } else if (kind === 'listdiag') {
         ok = isDiagramListActive(editorEl);
+      } else if (kind === 'color') {
+        var want = (b.getAttribute('data-hex') || '').toLowerCase();
+        var cur = normForeColorHex();
+        ok = !!(want && cur && want === cur);
       }
       if (ok) {
         btn.classList.add('np-rich-tbtn-active');
@@ -2872,6 +3001,14 @@
       wrapSelectionClass(b.getAttribute('data-v'), editorEl);
     } else if (kind === 'listdiag') {
       insertRichDiagramList(editorEl);
+    } else if (kind === 'color') {
+      var hex = b.getAttribute('data-hex');
+      if (hex) {
+        try {
+          document.execCommand('styleWithCSS', false, true);
+          document.execCommand('foreColor', false, hex);
+        } catch (errC) {}
+      }
     } else if (kind === 'snippet') {
       insertRichSnippet(b.getAttribute('data-snippet'), editorEl);
     }
@@ -4410,7 +4547,6 @@
       var sheet = document.createElement('div');
       sheet.className = 'np-ms-sheet';
       sheet.style.setProperty('--np-ms-data-cols', String(ncol));
-      sheet.style.setProperty('--np-ms-col-min', '132px');
       if (showRowDelCol) sheet.classList.add('np-ms-sheet--rowdel');
       else sheet.classList.remove('np-ms-sheet--rowdel');
 
