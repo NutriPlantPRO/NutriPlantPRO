@@ -5172,11 +5172,22 @@
     return isNaN(v) ? 0 : v;
   }
 
-  function computeLedgerDerived(arr, spec) {
+  function computeLedgerDerived(arr, spec, b) {
     if (!spec || !spec.op || !Array.isArray(arr)) return NaN;
     if (spec.op === 'diff') {
-      var laD = parseInt(spec.left, 10);
-      var rbD = parseInt(spec.right, 10);
+      var laD;
+      var rbD;
+      if (b && b.headers && b.headers.length) {
+        var nhDiff = b.headers.length;
+        var pairD = ledgerHealDiffIndices(b, nhDiff, spec.left, spec.right);
+        if (!pairD) return NaN;
+        laD = pairD.left;
+        rbD = pairD.right;
+      } else {
+        laD = parseInt(String(spec.left).trim(), 10);
+        rbD = parseInt(String(spec.right).trim(), 10);
+        if (isNaN(laD) || isNaN(rbD)) return NaN;
+      }
       return ledgerCellNumber(arr, laD) - ledgerCellNumber(arr, rbD);
     }
     if (spec.op === 'sum' && spec.cols && spec.cols.length) {
@@ -5184,7 +5195,7 @@
       for (var i = 0; i < spec.cols.length; i++) t += ledgerCellNumber(arr, parseInt(spec.cols[i], 10));
       return t;
     }
-    if (spec.op === 'product' && spec.cols && spec.cols.length >= 1) {
+    if (spec.op === 'product' && spec.cols && spec.cols.length >= 2) {
       var p = ledgerCellNumber(arr, parseInt(spec.cols[0], 10));
       for (var j = 1; j < spec.cols.length; j++) p *= ledgerCellNumber(arr, parseInt(spec.cols[j], 10));
       return p;
@@ -5213,7 +5224,7 @@
     var t = 0;
     (rows || []).forEach(function (row) {
       var arr = padRowCells(row, ncol);
-      var v = computeLedgerDerived(arr, spec);
+      var v = computeLedgerDerived(arr, spec, b);
       if (!isNaN(v)) t += v;
     });
     return t;
@@ -5232,6 +5243,24 @@
     var n = parseInt(String(raw != null ? raw : '').trim(), 10);
     if (isNaN(n) || n < 0 || n >= maxExclusive) return null;
     return n;
+  }
+
+  /**
+   * Corrige índices de RESTA típicos: minuendo 0 (concepto) suele ser error al elegir columnas;
+   * se usa columna 1 (primer importe) y, si hace falta, se desplaza el sustraendo.
+   */
+  function ledgerHealDiffIndices(b, nh, left, right) {
+    var la = parseInt(String(left).trim(), 10);
+    var rb = parseInt(String(right).trim(), 10);
+    if (isNaN(la) || isNaN(rb) || la < 0 || rb < 0 || la >= nh || rb >= nh) return null;
+    var healedFromZero = false;
+    if (la === 0 && b && b.colKinds && b.colKinds[0] === 'text' && nh >= 3) {
+      la = 1;
+      healedFromZero = true;
+    }
+    if (healedFromZero && rb <= la && la + 1 < nh) rb = la + 1;
+    if (la === rb) return null;
+    return { left: la, right: rb };
   }
 
   /** Encabezados que suelen ser importes (evita marcarlos como "texto" al reconstruir colKinds). */
@@ -5282,10 +5311,9 @@
         else if (spec.op === 'product' && cols.length >= 2) b.ledgerDerivedByCol[key] = { op: 'product', cols: cols };
         else delete b.ledgerDerivedByCol[key];
       } else if (spec.op === 'diff') {
-        var la = parseInt(String(spec.left).trim(), 10);
-        var rb = parseInt(String(spec.right).trim(), 10);
-        if (isNaN(la) || isNaN(rb) || la < 0 || rb < 0 || la >= nh || rb >= nh) delete b.ledgerDerivedByCol[key];
-        else b.ledgerDerivedByCol[key] = { op: 'diff', left: la, right: rb };
+        var diffPair = ledgerHealDiffIndices(b, nh, spec.left, spec.right);
+        if (!diffPair) delete b.ledgerDerivedByCol[key];
+        else b.ledgerDerivedByCol[key] = { op: 'diff', left: diffPair.left, right: diffPair.right };
       } else if (spec.op === 'copy') {
         var cc = parseInt(String(spec.col).trim(), 10);
         if (isNaN(cc) || cc < 0 || cc >= nh) delete b.ledgerDerivedByCol[key];
@@ -5339,7 +5367,11 @@
       b.headers.push('%');
       b.colKinds.push('pct');
     } else if (tipo === '5') {
-      var a = window.prompt(guide + 'RESTA — índice minuendo (A):', nh >= 2 ? '1' : '0');
+      var a = window.prompt(
+        guide +
+          'RESTA — índice A (minuendo). Evita 0 si la columna 0 es concepto (texto); lo habitual: 1=Monto, 2=Pagado…\nÍndice A:',
+        nh >= 2 ? '1' : '0'
+      );
       var ia = ledgerParseColIndex(a, newIdx);
       if (ia == null) {
         showToast('Índice A no válido.', true);
@@ -5378,7 +5410,8 @@
       b.ledgerDerivedByCol[String(newIdx)] = { op: 'sum', cols: cols };
     } else if (tipo === '7') {
       var cp = window.prompt(
-        guide + 'PRODUCTO — índices (ej. 1,2 para unidades × monto):',
+        guide +
+          'PRODUCTO — al menos dos índices (ej. 1,2 = columna1 × columna2). Una sola columna no es producto.\nÍndices:',
         nh >= 2 ? '1,2' : '0,1'
       );
       if (cp == null) return false;
@@ -5542,7 +5575,7 @@
     var v;
     if (b && b.colKinds && b.colKinds[montoCol] === 'derived') {
       var spec = ledgerGetDerivedSpec(b, montoCol);
-      v = spec ? computeLedgerDerived(arr, spec) : NaN;
+      v = spec ? computeLedgerDerived(arr, spec, b) : NaN;
     } else {
       v = ledgerCellNumber(arr, montoCol);
     }
@@ -6771,7 +6804,7 @@
           var spec = ledgerGetDerivedSpec(b, pci);
           if (!spec) return;
           var arr = padRowCells(b.rows[pri], ncol);
-          var dvx = computeLedgerDerived(arr, spec);
+          var dvx = computeLedgerDerived(arr, spec, b);
           el.textContent = isNaN(dvx) ? '—' : formatLedgerMoney(dvx);
         });
         wrap.querySelectorAll('[data-ledger-foot-sum]').forEach(function (tcell) {
@@ -7053,7 +7086,7 @@
           } else if (isLedger && ledgerGetDerivedSpec(b, c)) {
             var specD = ledgerGetDerivedSpec(b, c);
             var arrD = padRowCells(cells, ncol);
-            var dv = computeLedgerDerived(arrD, specD);
+            var dv = computeLedgerDerived(arrD, specD, b);
             var es = document.createElement('div');
             es.className = 'np-ms-cell-static np-ms-cell-num np-ms-cell-derived';
             es.setAttribute('data-ri', String(ri));
