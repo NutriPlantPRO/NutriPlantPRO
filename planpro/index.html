@@ -580,10 +580,10 @@
       line-height: 1.2;
     }
     .np-plan-menu-inline-links {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: stretch;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
+      align-items: stretch;
     }
     .np-plan-header-menu-panel .btn-mac-link {
       font-size: 12px;
@@ -599,15 +599,13 @@
       width: 100%;
     }
     .np-plan-header-menu-panel .np-plan-menu-inline-links .btn-mac-link {
-      flex: 1 1 auto;
-      min-width: min(112px, 100%);
-      width: auto;
+      width: 100%;
+      min-width: 0;
       max-width: none;
     }
     @media (max-width: 400px) {
-      .np-plan-header-menu-panel .np-plan-menu-inline-links .btn-mac-link {
-        min-width: calc(50% - 4px);
-        flex: 1 1 calc(50% - 4px);
+      .np-plan-menu-inline-links {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
     body.np-plan-header-menu-lock {
@@ -1294,7 +1292,6 @@
       overflow-y: visible;
       -webkit-overflow-scrolling: touch;
       margin-bottom: 8px;
-      contain: layout style;
     }
     .np-layout {
       display: grid;
@@ -1901,6 +1898,11 @@
       border: 1px solid color-mix(in srgb, var(--np-sheet-accent, #94a3b8) 34%, #e2e8f0);
       background: rgba(255, 255, 255, 0.78);
     }
+    /* Varias tablas en vista previa: no recortar rejillas por overflow-y del sheet */
+    #npMiniSheetPreview .np-ms-sheet {
+      overflow-x: auto;
+      overflow-y: visible;
+    }
     #npSheetPanel textarea.np-ms-head-input,
     #npMiniSheetPreview textarea.np-ms-head-input {
       min-height: 2.75rem !important;
@@ -2050,7 +2052,7 @@
       padding: 10px 10px;
       box-sizing: border-box;
     }
-    .np-ms-row:not(.np-ms-row-head) .np-ms-cell {
+    .np-ms-row:not(.np-ms-row-head) .np-ms-cell:not(.np-ms-cell-done) {
       align-items: stretch;
     }
     .np-pillar-panel { margin-bottom: 4px; }
@@ -2433,7 +2435,8 @@
         color-mix(in srgb, var(--np-sheet-accent) 7%, #ffffff) 0%,
         #f8fafc 100%
       );
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: visible;
     }
     .np-sheet-inner {
       padding: 12px 14px 16px;
@@ -3234,10 +3237,15 @@
       cursor: pointer;
       accent-color: #22c55e;
     }
+    .np-ms-row:not(.np-ms-row-head) .np-ms-cell.np-ms-cell-done,
     .np-ms-cell.np-ms-cell-done {
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+    .np-ms-cell.np-ms-cell-done .np-ms-done {
+      margin: 0;
+      flex-shrink: 0;
     }
     .np-ms-row-kind-section {
       background: rgba(241, 245, 249, 0.65);
@@ -3446,6 +3454,10 @@
         0 1px 0 rgba(255, 255, 255, 0.96) inset,
         0 8px 24px rgba(99, 102, 241, 0.14),
         0 14px 34px rgba(15, 23, 42, 0.07);
+    }
+    .np-note-section-wrap .np-note-section-toolbar {
+      justify-content: flex-end;
+      margin-bottom: 6px;
     }
     .np-note-section-wrap .np-note-section-title {
       font-size: 11px;
@@ -3918,7 +3930,7 @@
     pendingPreviewRefreshTimer = setTimeout(function () {
       pendingPreviewRefreshTimer = null;
       refreshPendingHint();
-    }, 56);
+    }, 200);
   }
 
   function flushPendingPreviewRefresh() {
@@ -5154,29 +5166,34 @@
   function computeLedgerDerived(arr, spec) {
     if (!spec || !spec.op || !Array.isArray(arr)) return NaN;
     if (spec.op === 'diff') {
-      return ledgerCellNumber(arr, spec.left) - ledgerCellNumber(arr, spec.right);
+      var laD = parseInt(spec.left, 10);
+      var rbD = parseInt(spec.right, 10);
+      return ledgerCellNumber(arr, laD) - ledgerCellNumber(arr, rbD);
     }
     if (spec.op === 'sum' && spec.cols && spec.cols.length) {
       var t = 0;
-      for (var i = 0; i < spec.cols.length; i++) t += ledgerCellNumber(arr, spec.cols[i]);
+      for (var i = 0; i < spec.cols.length; i++) t += ledgerCellNumber(arr, parseInt(spec.cols[i], 10));
       return t;
     }
     if (spec.op === 'product' && spec.cols && spec.cols.length >= 1) {
-      var p = ledgerCellNumber(arr, spec.cols[0]);
-      for (var j = 1; j < spec.cols.length; j++) p *= ledgerCellNumber(arr, spec.cols[j]);
+      var p = ledgerCellNumber(arr, parseInt(spec.cols[0], 10));
+      for (var j = 1; j < spec.cols.length; j++) p *= ledgerCellNumber(arr, parseInt(spec.cols[j], 10));
       return p;
     }
-    if (spec.op === 'copy' && typeof spec.col === 'number') {
-      return ledgerCellNumber(arr, spec.col);
+    if (spec.op === 'copy') {
+      var ccp = parseInt(spec.col, 10);
+      return ledgerCellNumber(arr, ccp);
     }
     return NaN;
   }
 
-  function sumLedgerColumn(rows, colIndex) {
+  function sumLedgerColumn(rows, colIndex, ncol) {
+    if (colIndex == null || colIndex < 0) return 0;
+    var minW = colIndex + 1;
+    if (typeof ncol === 'number' && ncol > minW) minW = ncol;
     var t = 0;
     (rows || []).forEach(function (row) {
-      var arr = Array.isArray(row) ? row : [];
-      t += ledgerCellNumber(arr, colIndex);
+      t += ledgerCellNumber(padRowCells(row, minW), colIndex);
     });
     return t;
   }
@@ -5186,7 +5203,7 @@
     if (!spec) return NaN;
     var t = 0;
     (rows || []).forEach(function (row) {
-      var arr = padRowCells(Array.isArray(row) ? row : row, ncol);
+      var arr = padRowCells(row, ncol);
       var v = computeLedgerDerived(arr, spec);
       if (!isNaN(v)) t += v;
     });
@@ -5206,6 +5223,59 @@
     var n = parseInt(String(raw != null ? raw : '').trim(), 10);
     if (isNaN(n) || n < 0 || n >= maxExclusive) return null;
     return n;
+  }
+
+  /** Encabezados que suelen ser importes (evita marcarlos como "texto" al reconstruir colKinds). */
+  function ledgerHeaderSuggestsMoneyColumn(h) {
+    var s = String(h == null ? '' : h)
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!s || s === '%') return false;
+    if (/^(monto|importe|pagado|precio|subtotal|iva|isr|ret\.|retenc)/.test(s)) return true;
+    if (/\b(monto|importe|pagado|precio|subtotal|eur|usd|mxn|\$|€)\b/.test(s)) return true;
+    return false;
+  }
+
+  /** Repara índices de fórmulas tras cargar JSON o cambiar el número de columnas. */
+  function normalizeLedgerDerivedSpecs(b, nh) {
+    if (!b || !b.ledgerDerivedByCol || typeof b.ledgerDerivedByCol !== 'object' || nh < 1) return;
+    Object.keys(b.ledgerDerivedByCol).forEach(function (k) {
+      var colIx = parseInt(k, 10);
+      if (isNaN(colIx) || colIx < 0 || colIx >= nh) delete b.ledgerDerivedByCol[k];
+    });
+    for (var ci = 0; ci < nh; ci++) {
+      var spec = ledgerGetDerivedSpec(b, ci);
+      if (!spec || !spec.op) continue;
+      var key = String(ci);
+      if (spec.op === 'sum' || spec.op === 'product') {
+        var rawCols = spec.cols;
+        var cols = [];
+        if (Array.isArray(rawCols)) {
+          for (var u = 0; u < rawCols.length; u++) {
+            var ix = parseInt(String(rawCols[u]).trim(), 10);
+            if (!isNaN(ix) && ix >= 0 && ix < nh) cols.push(ix);
+          }
+        } else if (rawCols != null && typeof rawCols === 'object') {
+          Object.keys(rawCols).forEach(function (rk) {
+            var ix2 = parseInt(String(rawCols[rk]).trim(), 10);
+            if (!isNaN(ix2) && ix2 >= 0 && ix2 < nh) cols.push(ix2);
+          });
+        }
+        if (spec.op === 'sum' && cols.length) b.ledgerDerivedByCol[key] = { op: 'sum', cols: cols };
+        else if (spec.op === 'product' && cols.length >= 2) b.ledgerDerivedByCol[key] = { op: 'product', cols: cols };
+        else delete b.ledgerDerivedByCol[key];
+      } else if (spec.op === 'diff') {
+        var la = parseInt(String(spec.left).trim(), 10);
+        var rb = parseInt(String(spec.right).trim(), 10);
+        if (isNaN(la) || isNaN(rb) || la < 0 || rb < 0 || la >= nh || rb >= nh) delete b.ledgerDerivedByCol[key];
+        else b.ledgerDerivedByCol[key] = { op: 'diff', left: la, right: rb };
+      } else if (spec.op === 'copy') {
+        var cc = parseInt(String(spec.col).trim(), 10);
+        if (isNaN(cc) || cc < 0 || cc >= nh) delete b.ledgerDerivedByCol[key];
+        else b.ledgerDerivedByCol[key] = { op: 'copy', col: cc };
+      }
+    }
   }
 
   /**
@@ -5373,6 +5443,8 @@
 
     var nh = b.headers.length;
 
+    normalizeLedgerDerivedSpecs(b, nh);
+
     if (!b.colKinds || b.colKinds.length !== nh) {
       if (nh === 6 && ledgerGetDerivedSpec(b, 3) && ledgerGetDerivedSpec(b, 3).op === 'diff') {
         b.colKinds = ['text', 'currency', 'currency', 'derived', 'pct', 'text'];
@@ -5392,6 +5464,7 @@
           else {
             var hl = String(b.headers[i] || '').trim();
             if (hl === '%' || /^\s*%\s*$/.test(hl)) b.colKinds.push('pct');
+            else if (ledgerHeaderSuggestsMoneyColumn(hl)) b.colKinds.push('currency');
             else b.colKinds.push('text');
           }
         }
@@ -5399,6 +5472,18 @@
     }
     for (var j = 0; j < nh; j++) {
       if (ledgerGetDerivedSpec(b, j)) b.colKinds[j] = 'derived';
+      else if (b.colKinds[j] === 'derived') {
+        b.colKinds[j] = ledgerHeaderSuggestsMoneyColumn(b.headers[j]) ? 'currency' : 'text';
+      }
+    }
+    for (var inf = 1; inf < nh; inf++) {
+      if (ledgerGetDerivedSpec(b, inf)) continue;
+      if (b.colKinds[inf] === 'pct') continue;
+      var hInf = String(b.headers[inf] || '').trim();
+      if (hInf === '%' || /^\s*%\s*$/.test(hInf)) continue;
+      if ((b.colKinds[inf] === 'text' || !b.colKinds[inf]) && ledgerHeaderSuggestsMoneyColumn(b.headers[inf])) {
+        b.colKinds[inf] = 'currency';
+      }
     }
     if (typeof b.montoCol !== 'number' || b.montoCol < 0 || b.montoCol >= nh) b.montoCol = 1;
 
@@ -5420,17 +5505,8 @@
     }
   }
 
-  function ledgerSumMontos(rows, montoCol) {
-    if (typeof montoCol !== 'number' || montoCol < 0) return 0;
-    var t = 0;
-    (rows || []).forEach(function (row) {
-      var arr = Array.isArray(row) ? row : [];
-      if (montoCol >= arr.length) return;
-      var raw = arr[montoCol];
-      var v = parseFloat(String(raw != null ? raw : '').replace(/\s/g, '').replace(',', '.'));
-      if (!isNaN(v)) t += v;
-    });
-    return t;
+  function ledgerSumMontos(rows, montoCol, ncol) {
+    return sumLedgerColumn(rows, montoCol, ncol);
   }
 
   function ledgerPrincipalTotal(rows, b, ncol) {
@@ -5441,7 +5517,7 @@
       var t = sumLedgerDerivedColumn(rows, b, mc, ncol);
       return isNaN(t) ? 0 : t;
     }
-    return ledgerSumMontos(rows, mc);
+    return ledgerSumMontos(rows, mc, ncol);
   }
 
   function ledgerPctLabel(rowArr, montoCol, totalM, b, ncol) {
@@ -5450,7 +5526,7 @@
     var v;
     if (b && b.colKinds && b.colKinds[montoCol] === 'derived') {
       var spec = ledgerGetDerivedSpec(b, montoCol);
-      v = computeLedgerDerived(arr, spec);
+      v = spec ? computeLedgerDerived(arr, spec) : NaN;
     } else {
       v = ledgerCellNumber(arr, montoCol);
     }
@@ -5903,8 +5979,9 @@
     var out = { baja: 0, media: 0, alta: 0 };
     if (!b || b.type !== 'mini_sheet') return out;
     if (b.variant !== 'tasks' && b.variant !== 'smart') return out;
-    var headers = b.headers || [];
-    var rows = b.rows || [];
+    normalizePlanProMiniSheetBlock(b);
+    var headers = Array.isArray(b.headers) ? b.headers : [];
+    var rows = Array.isArray(b.rows) ? b.rows : [];
     if (!rows.length) return out;
     var ncol = miniSheetColCountForAggr(b);
     var prioCol = resolvePriorityColIndex(b, headers, ncol);
@@ -6240,11 +6317,29 @@
     }
 
     blocks.forEach(function (b, blockIndex) {
+      try {
       if (!b) return;
 
       if (b.type === 'note_section') {
         var nw = document.createElement('div');
         nw.className = 'np-note-section-wrap np-note-section-wrap--plan-note np-detail-block-chunk';
+        if (editable) {
+          var noteTb = document.createElement('div');
+          noteTb.className = 'np-ms-free-toolbar np-note-section-toolbar';
+          var noteDel = document.createElement('button');
+          noteDel.type = 'button';
+          noteDel.className = 'btn btn-ghost';
+          noteDel.style.color = '#b91c1c';
+          noteDel.textContent = 'Eliminar bloque';
+          noteDel.title = 'Quitar este bloque de texto del apunte';
+          noteDel.addEventListener('click', function () {
+            if (!window.confirm('¿Eliminar este bloque de texto del apunte?')) return;
+            blocks.splice(blockIndex, 1);
+            afterStructuralChange();
+          });
+          noteTb.appendChild(noteDel);
+          nw.appendChild(noteTb);
+        }
         if (b.title && String(b.title).trim()) {
           var tnh = document.createElement('div');
           tnh.className = 'np-note-section-title';
@@ -6655,7 +6750,7 @@
           if (isNaN(fc)) return;
           var fk = (b.colKinds && b.colKinds[fc]) || '';
           if (fk === 'currency' || fk === 'number') {
-            tcell.textContent = formatLedgerMoney(sumLedgerColumn(b.rows, fc));
+            tcell.textContent = formatLedgerMoney(sumLedgerColumn(b.rows, fc, ncol));
           } else if (fk === 'derived') {
             var tder = sumLedgerDerivedColumn(b.rows, b, fc, ncol);
             tcell.textContent = isNaN(tder) ? '—' : formatLedgerMoney(tder);
@@ -7139,7 +7234,7 @@
           } else if (fk === 'currency' || fk === 'number') {
             tcell.setAttribute('data-ledger-foot-sum', String(fc));
             tcell.classList.add('np-ms-cell-num');
-            tcell.textContent = formatLedgerMoney(sumLedgerColumn(rows, fc));
+            tcell.textContent = formatLedgerMoney(sumLedgerColumn(rows, fc, ncol));
           } else if (fk === 'derived') {
             tcell.setAttribute('data-ledger-foot-sum', String(fc));
             tcell.classList.add('np-ms-cell-num');
@@ -7222,6 +7317,16 @@
       if (pendingFreeToolbar) wrap.appendChild(pendingFreeToolbar);
 
       frag.appendChild(wrap);
+      } catch (errPlanProBlock) {
+        console.error('Plan PRO renderBodyBlocks bloque', blockIndex, b && b.type, errPlanProBlock);
+        var errBox = document.createElement('div');
+        errBox.className = 'np-detail-block-chunk';
+        errBox.style.cssText =
+          'padding:12px 14px;border-radius:12px;border:1px solid rgba(248,113,113,0.55);background:rgba(254,226,226,0.78);color:#991b1b;font-size:13px;line-height:1.45;';
+        errBox.textContent =
+          'No se pudo dibujar este bloque. Recarga la página; si el error continúa, abre la consola (F12) y copia el mensaje en rojo.';
+        frag.appendChild(errBox);
+      }
     });
 
     return frag;
@@ -8110,12 +8215,22 @@
     hint.textContent = n === 1 ? '1 bloque' : n + ' bloques';
     prevBox.classList.remove('np-hide');
     prevBox.innerHTML = '';
-    prevBox.appendChild(
-      renderBodyBlocks(state.pendingBlocks, {
-        editable: true,
-        sheetAccent: sheetAccentHexForSelection()
-      })
-    );
+    try {
+      prevBox.appendChild(
+        renderBodyBlocks(state.pendingBlocks, {
+          editable: true,
+          sheetAccent: sheetAccentHexForSelection()
+        })
+      );
+    } catch (ePrev) {
+      console.error('Plan PRO vista previa bloques:', ePrev);
+      var err = document.createElement('p');
+      err.className = 'np-msg err';
+      err.style.margin = '0';
+      err.textContent =
+        'No se pudo generar la vista previa de los bloques. Recarga la página; si vuelve a fallar, abre la consola (F12) y revisa el error.';
+      prevBox.appendChild(err);
+    }
   }
 
   async function loadLookups() {
