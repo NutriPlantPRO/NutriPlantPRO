@@ -567,6 +567,20 @@
       border-left: 3px solid rgba(13, 148, 136, 0.55);
       background: linear-gradient(90deg, rgba(240, 253, 250, 0.45) 0%, rgba(255, 255, 255, 0.92) 42%);
     }
+    .np-plan-menu-block--accesos-portal {
+      border-left: 3px solid rgba(22, 163, 74, 0.62);
+      background: linear-gradient(90deg, rgba(236, 253, 245, 0.52) 0%, rgba(255, 255, 255, 0.92) 42%);
+    }
+    .np-plan-menu-block--accesos-portal .np-plan-menu-subblock-title {
+      color: #166534;
+    }
+    .np-plan-menu-block--accesos-tools {
+      border-left: 3px solid rgba(79, 70, 229, 0.55);
+      background: linear-gradient(90deg, rgba(238, 242, 255, 0.52) 0%, rgba(255, 255, 255, 0.92) 42%);
+    }
+    .np-plan-menu-block--accesos-tools .np-plan-menu-subblock-title {
+      color: #4338ca;
+    }
     .np-plan-menu-block > .np-plan-menu-subblock-title {
       display: block;
       margin-bottom: 8px;
@@ -1634,6 +1648,9 @@
     /* Mini-hojas / tablas — aspecto PRO, sin rejilla cuadrada */
     .np-ms-block {
       margin-top: 14px;
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
       padding: 14px 16px 16px;
       border-radius: 16px;
       background: linear-gradient(165deg, rgba(250, 252, 251, 0.95) 0%, rgba(255, 255, 255, 0.88) 100%);
@@ -1890,13 +1907,21 @@
     /* Vista previa al crear apunte: marco para que no “floten” bloques sin contexto */
     #npMiniSheetPreview:not(.np-hide) {
       clear: both;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
       width: 100%;
+      min-width: 0;
       box-sizing: border-box;
       padding: 14px 14px 10px;
       margin-bottom: 14px !important;
       border-radius: 12px;
       border: 1px solid color-mix(in srgb, var(--np-sheet-accent, #94a3b8) 34%, #e2e8f0);
       background: rgba(255, 255, 255, 0.78);
+      white-space: normal;
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
     }
     /* Varias tablas en vista previa: no recortar rejillas por overflow-y del sheet */
     #npMiniSheetPreview .np-ms-sheet {
@@ -2789,6 +2814,17 @@
     }
     .np-detail-blocks-mount {
       margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      width: 100%;
+      min-width: 0;
+      white-space: normal;
+    }
+    .np-detail-blocks-mount > .np-detail-block-chunk,
+    #npMiniSheetPreview:not(.np-hide) > .np-detail-block-chunk {
+      flex: 0 0 auto;
+      min-width: 0;
     }
     .np-sheet-nav-blocks {
       margin-top: 16px;
@@ -3553,7 +3589,8 @@
             <button type="button" class="np-plan-header-menu-close" id="npPlanHeaderMenuClose" aria-label="Cerrar menú">×</button>
           </div>
           <div class="np-plan-header-menu-body">
-            <div class="np-plan-menu-block">
+            <div class="np-plan-menu-block np-plan-menu-block--accesos-portal" aria-label="Portal NutriPlant y pagos">
+              <span class="np-plan-menu-subblock-title">Portal y pagos</span>
               <div class="np-plan-actions-top np-plan-actions-top--primary">
                 <div class="np-plan-nav-buttons">
                   <a class="btn-mac-nav btn-mac-nav-brand" href="https://nutriplantpro.com/login" target="_blank" rel="noopener noreferrer">NutriPlantPRO</a>
@@ -3563,7 +3600,8 @@
                 </div>
               </div>
             </div>
-            <div class="np-plan-menu-block">
+            <div class="np-plan-menu-block np-plan-menu-block--accesos-tools" aria-label="Nube y desarrollo">
+              <span class="np-plan-menu-subblock-title">Nube y desarrollo</span>
               <div class="np-plan-link-row np-plan-menu-tools-row" aria-label="Herramientas y cuentas">
                 <a class="btn-mac-link btn-mac-link--brand-supabase" href="https://supabase.com/" target="_blank" rel="noopener noreferrer" title="Supabase">Supabase</a>
                 <a class="btn-mac-link btn-mac-link--brand-ga" href="https://analytics.google.com/analytics/web/#/a378706965p517694954/reports/intelligenthome" target="_blank" rel="noopener noreferrer" title="Google Analytics">Analytics</a>
@@ -3766,7 +3804,7 @@
                     <button type="button" class="btn btn-ghost btn-ghost-np-ledger" id="npBtnAddLedgerSheet">＋ Tabla de montos</button>
                     <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
                   </div>
-                  <div id="npMiniSheetPreview" class="np-hide" style="margin-bottom:14px;overflow:auto;"></div>
+                  <div id="npMiniSheetPreview" class="np-hide"></div>
                   <button type="submit" class="btn btn-primary" id="npBtnCreate">Guardar apunte</button>
                 </form>
               </div>
@@ -4097,10 +4135,32 @@
     try {
       var v = document.queryCommandValue('formatBlock');
       if (!v) return '';
-      return String(v).replace(/[<>]/g, '').toLowerCase();
+      v = String(v).replace(/[<>]/g, '').toLowerCase().trim();
+      if (v === 'normal') return 'p';
+      return v;
     } catch (e) {
       return '';
     }
+  }
+
+  /** Bloque h2/h3/p en el caret si formatBlock viene vacío. */
+  function effectiveFormatBlock(editorEl) {
+    var fb = normFormatBlock();
+    if (fb) return fb;
+    if (!editorEl) return '';
+    try {
+      var sel = window.getSelection();
+      if (!sel || !sel.rangeCount || !selectionInsideEditor(editorEl)) return '';
+      var n = sel.anchorNode;
+      if (n.nodeType === 3) n = n.parentNode;
+      while (n && n !== editorEl) {
+        var tag = n.tagName ? n.tagName.toLowerCase() : '';
+        if (/^h[1-6]$/.test(tag)) return tag;
+        if (tag === 'p' || tag === 'div') return tag;
+        n = n.parentNode;
+      }
+    } catch (eDom) {}
+    return '';
   }
 
   function rgbStringToHex(rgb) {
@@ -4121,6 +4181,24 @@
       if (v.charAt(0) === '#') return v.toLowerCase();
       return rgbStringToHex(v);
     } catch (e2) {
+      return '';
+    }
+  }
+
+  /** Color del texto: foreColor + estilo computado si hace falta. */
+  function effectiveForeColorHex(editorEl) {
+    var fromCmd = normForeColorHex();
+    if (fromCmd) return fromCmd;
+    if (!editorEl) return '';
+    try {
+      var sel = window.getSelection();
+      if (!sel || !sel.rangeCount || !selectionInsideEditor(editorEl)) return '';
+      var n = sel.anchorNode;
+      if (n.nodeType === 3) n = n.parentNode;
+      if (!n || !editorEl.contains(n)) return '';
+      var cs = window.getComputedStyle(n);
+      return rgbStringToHex(cs.color) || '';
+    } catch (e3) {
       return '';
     }
   }
@@ -4212,7 +4290,8 @@
       return;
     }
     clearRichToolbarActive(tb);
-    var fbRaw = normFormatBlock();
+    var fbRaw = effectiveFormatBlock(editorEl);
+    var curColor = effectiveForeColorHex(editorEl);
     tb.querySelectorAll('.np-rich-tbtn[data-rich]').forEach(function (btn) {
       var kind = btn.getAttribute('data-rich');
       var ok = false;
@@ -4239,9 +4318,8 @@
       } else if (kind === 'listdiag') {
         ok = isDiagramListActive(editorEl);
       } else if (kind === 'color') {
-        var want = (b.getAttribute('data-hex') || '').toLowerCase();
-        var cur = normForeColorHex();
-        ok = !!(want && cur && want === cur);
+        var want = (btn.getAttribute('data-hex') || '').toLowerCase();
+        ok = !!(want && curColor && want === curColor);
       }
       if (ok) {
         btn.classList.add('np-rich-tbtn-active');
@@ -4421,6 +4499,11 @@
     stack.appendChild(tb);
     stack.appendChild(nw);
     bd.appendChild(stack);
+
+    /* Clic en la barra: debe ir aquí (no delegado en #npDetailModal) porque .np-modal-panel hace stopPropagation. */
+    tb.addEventListener('click', function (e) {
+      handleRichToolbarClick(e, ed);
+    });
 
     syncRichEmptyClass(ed);
     ed.addEventListener('input', function () {
@@ -5172,7 +5255,7 @@
     return isNaN(v) ? 0 : v;
   }
 
-  function computeLedgerDerived(arr, spec, b) {
+  function computeLedgerDerived(arr, spec, b, derivedColIdx) {
     if (!spec || !spec.op || !Array.isArray(arr)) return NaN;
     if (spec.op === 'diff') {
       var laD;
@@ -5191,8 +5274,23 @@
       return ledgerCellNumber(arr, laD) - ledgerCellNumber(arr, rbD);
     }
     if (spec.op === 'sum' && spec.cols && spec.cols.length) {
+      var nhS = Math.max(arr.length, (b && b.headers && b.headers.length) || 0);
+      var rawList = [];
+      for (var si = 0; si < spec.cols.length; si++) {
+        var sxi = parseInt(String(spec.cols[si]).trim(), 10);
+        if (!isNaN(sxi) && sxi >= 0 && sxi < nhS) rawList.push(sxi);
+      }
+      if (!rawList.length) return NaN;
+      var colList =
+        typeof derivedColIdx === 'number' &&
+        derivedColIdx >= 0 &&
+        b &&
+        b.headers &&
+        b.colKinds
+          ? ledgerHealSumColIndices(b, nhS, derivedColIdx, rawList)
+          : rawList;
       var t = 0;
-      for (var i = 0; i < spec.cols.length; i++) t += ledgerCellNumber(arr, parseInt(spec.cols[i], 10));
+      for (var i = 0; i < colList.length; i++) t += ledgerCellNumber(arr, parseInt(colList[i], 10));
       return t;
     }
     if (spec.op === 'product' && spec.cols && spec.cols.length >= 2) {
@@ -5224,7 +5322,7 @@
     var t = 0;
     (rows || []).forEach(function (row) {
       var arr = padRowCells(row, ncol);
-      var v = computeLedgerDerived(arr, spec, b);
+      var v = computeLedgerDerived(arr, spec, b, colIndex);
       if (!isNaN(v)) t += v;
     });
     return t;
@@ -5261,6 +5359,26 @@
     if (healedFromZero && rb <= la && la + 1 < nh) rb = la + 1;
     if (la === rb) return null;
     return { left: la, right: rb };
+  }
+
+  /**
+   * Si la SUMA solo referencia la última columna numérica antes del TOTAL pero hay más (ej. solo [2] con Monto+Importe),
+   * amplía a todas las columnas moneda/número entre 1 y la columna derivada.
+   */
+  function ledgerHealSumColIndices(b, nh, derivedCi, colsParsed) {
+    if (!colsParsed || !colsParsed.length || derivedCi == null || nh < 1) return colsParsed ? colsParsed.slice() : [];
+    var out = colsParsed.slice();
+    if (out.length !== 1) return out;
+    var k0 = out[0];
+    if (k0 < 1 || k0 >= derivedCi) return out;
+    var cands = [];
+    for (var ii = 1; ii < derivedCi; ii++) {
+      if (ledgerGetDerivedSpec(b, ii)) continue;
+      var fk0 = b.colKinds && b.colKinds[ii];
+      if (fk0 === 'currency' || fk0 === 'number') cands.push(ii);
+    }
+    if (cands.length >= 2 && k0 === cands[cands.length - 1]) return cands.slice();
+    return out;
   }
 
   /** Encabezados que suelen ser importes (evita marcarlos como "texto" al reconstruir colKinds). */
@@ -5307,9 +5425,15 @@
             if (!isNaN(ix2) && ix2 >= 0 && ix2 < nh) cols.push(ix2);
           });
         }
-        if (spec.op === 'sum' && cols.length) b.ledgerDerivedByCol[key] = { op: 'sum', cols: cols };
-        else if (spec.op === 'product' && cols.length >= 2) b.ledgerDerivedByCol[key] = { op: 'product', cols: cols };
-        else delete b.ledgerDerivedByCol[key];
+        if (spec.op === 'sum' && cols.length) {
+          cols.sort(function (x, y) {
+            return x - y;
+          });
+          cols = ledgerHealSumColIndices(b, nh, ci, cols);
+          b.ledgerDerivedByCol[key] = { op: 'sum', cols: cols };
+        } else if (spec.op === 'product' && cols.length >= 2) {
+          b.ledgerDerivedByCol[key] = { op: 'product', cols: cols };
+        } else delete b.ledgerDerivedByCol[key];
       } else if (spec.op === 'diff') {
         var diffPair = ledgerHealDiffIndices(b, nh, spec.left, spec.right);
         if (!diffPair) delete b.ledgerDerivedByCol[key];
@@ -5389,7 +5513,11 @@
       b.colKinds.push('derived');
       b.ledgerDerivedByCol[String(newIdx)] = { op: 'diff', left: ia, right: ib };
     } else if (tipo === '6') {
-      var cs = window.prompt(guide + 'SUMA — índices separados por coma (ej. 1,2):', nh >= 2 ? '1,2' : '0,1');
+      var cs = window.prompt(
+        guide +
+          'SUMA — índices separados por coma. Con Concepto/Monto/Importe lo habitual es 1,2 (Monto+Importe). Si solo indicas la última columna numérica, solo sumará esa.\nÍndices:',
+        nh >= 2 ? '1,2' : '0,1'
+      );
       if (cs == null) return false;
       var cols = String(cs)
         .split(/[,;\s]+/)
@@ -5575,7 +5703,7 @@
     var v;
     if (b && b.colKinds && b.colKinds[montoCol] === 'derived') {
       var spec = ledgerGetDerivedSpec(b, montoCol);
-      v = spec ? computeLedgerDerived(arr, spec, b) : NaN;
+      v = spec ? computeLedgerDerived(arr, spec, b, montoCol) : NaN;
     } else {
       v = ledgerCellNumber(arr, montoCol);
     }
@@ -6804,7 +6932,7 @@
           var spec = ledgerGetDerivedSpec(b, pci);
           if (!spec) return;
           var arr = padRowCells(b.rows[pri], ncol);
-          var dvx = computeLedgerDerived(arr, spec, b);
+          var dvx = computeLedgerDerived(arr, spec, b, pci);
           el.textContent = isNaN(dvx) ? '—' : formatLedgerMoney(dvx);
         });
         wrap.querySelectorAll('[data-ledger-foot-sum]').forEach(function (tcell) {
@@ -7086,7 +7214,7 @@
           } else if (isLedger && ledgerGetDerivedSpec(b, c)) {
             var specD = ledgerGetDerivedSpec(b, c);
             var arrD = padRowCells(cells, ncol);
-            var dv = computeLedgerDerived(arrD, specD, b);
+            var dv = computeLedgerDerived(arrD, specD, b, c);
             var es = document.createElement('div');
             es.className = 'np-ms-cell-static np-ms-cell-num np-ms-cell-derived';
             es.setAttribute('data-ri', String(ri));
@@ -7105,7 +7233,8 @@
               inpCur.value = raw;
               inpCur.autocomplete = 'off';
               inpCur.addEventListener('input', function () {
-                setCell(ri, c, inpCur.value);
+                var ci = parseInt(inpCur.getAttribute('data-np-col'), 10);
+                setCell(ri, isNaN(ci) ? c : ci, inpCur.value);
                 refreshLedgerDerivedUI();
               });
               cell.appendChild(inpCur);
@@ -7128,11 +7257,13 @@
               inpPctM.autocomplete = 'off';
               inpPctM.placeholder = '%';
               inpPctM.addEventListener('input', function () {
-                setCell(ri, c, inpPctM.value);
+                var ciP = parseInt(inpPctM.getAttribute('data-np-col'), 10);
+                setCell(ri, isNaN(ciP) ? c : ciP, inpPctM.value);
                 refreshLedgerDerivedUI();
               });
               inpPctM.addEventListener('blur', function () {
-                setCell(ri, c, inpPctM.value);
+                var ciPb = parseInt(inpPctM.getAttribute('data-np-col'), 10);
+                setCell(ri, isNaN(ciPb) ? c : ciPb, inpPctM.value);
               });
               cell.appendChild(inpPctM);
             } else {
@@ -9118,11 +9249,6 @@
 
   $('npRichToolbar').addEventListener('click', function (e) {
     handleRichToolbarClick(e, $('npBodyRich'));
-  });
-
-  $('npDetailModal').addEventListener('click', function (e) {
-    if (!e.target.closest('#npModalRichToolbar')) return;
-    handleRichToolbarClick(e, $('npModalBodyRich'));
   });
 
   var npBodyRichEl = $('npBodyRich');
