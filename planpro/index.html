@@ -159,8 +159,8 @@
       z-index: 1101;
       top: max(12px, env(safe-area-inset-top));
       right: max(12px, env(safe-area-inset-right));
-      width: min(400px, calc(100vw - 24px));
-      max-height: min(78vh, 620px);
+      width: min(600px, calc(100vw - 24px));
+      max-height: min(90vh, 820px);
       flex-direction: column;
       box-sizing: border-box;
       border-radius: 16px;
@@ -212,21 +212,25 @@
       color: #b91c1c;
     }
     .np-plan-header-menu-body {
-      padding: 12px 14px 16px;
+      padding: 14px 16px 18px;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       align-items: stretch;
       min-height: 0;
     }
     .np-plan-header-menu-body .np-plan-actions-top {
       width: 100%;
       justify-content: flex-start;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
     }
     .np-plan-header-menu-body .np-plan-social {
       justify-content: flex-start;
+      width: 100%;
     }
     .np-plan-header-menu-body .np-plan-nav-buttons {
       justify-content: flex-start;
@@ -234,9 +238,56 @@
     }
     .np-plan-header-menu-body .np-plan-link-row {
       justify-content: flex-start;
-    }
-    .np-plan-header-menu-body .np-plan-link-row--fin {
+      gap: 8px;
       row-gap: 8px;
+    }
+    .np-plan-menu-block {
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.78);
+      padding: 12px 14px 14px;
+      box-sizing: border-box;
+    }
+    .np-plan-menu-block--fin {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      padding: 12px;
+      background: rgba(248, 250, 252, 0.72);
+    }
+    @media (max-width: 720px) {
+      .np-plan-menu-block--fin {
+        grid-template-columns: 1fr;
+      }
+    }
+    .np-plan-menu-subblock {
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 10px 10px 12px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .np-plan-menu-subblock-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #64748b;
+      line-height: 1.2;
+    }
+    .np-plan-menu-subblock-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .np-plan-header-menu-panel .btn-mac-link {
+      font-size: 12px;
+      padding: 6px 11px;
     }
     body.np-plan-header-menu-lock {
       overflow: hidden;
@@ -1535,18 +1586,23 @@
     }
     .np-pillar-tab-more {
       flex: 0 0 auto;
-      width: 36px;
+      width: 26px;
+      min-width: 26px;
       margin: 0;
-      padding: 0 2px;
+      padding: 0;
       border: none;
-      border-left: 1px solid rgba(148, 163, 184, 0.35);
+      border-left: 1px solid rgba(148, 163, 184, 0.28);
       background: transparent;
-      color: #64748b;
-      font-size: 18px;
+      color: #94a3b8;
+      font-size: 15px;
+      font-weight: 500;
       line-height: 1;
       letter-spacing: 0;
       cursor: pointer;
       border-radius: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       transition: background 0.15s ease, color 0.15s ease;
     }
     .np-pillar-tab-more:hover {
@@ -1700,10 +1756,57 @@
       font-size: 13px;
       padding: 8px 10px !important;
     }
-    .np-sheet-header .np-color-edit-bar {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px dashed color-mix(in srgb, var(--np-sheet-accent, #94a3b8) 28%, #cbd5e1);
+    .np-cat-color-flyout .np-color-edit-bar {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+      flex-wrap: wrap;
+    }
+    .np-sheet-branch-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed color-mix(in srgb, var(--np-sheet-accent, #94a3b8) 38%, #cbd5e1);
+    }
+    .np-sheet-branch-row .np-sheet-branch {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+      flex: 1 1 200px;
+      min-width: 0;
+    }
+    .np-sheet-cat-color-more {
+      flex: 0 0 auto;
+      width: 38px;
+      min-height: 40px;
+      margin: 0;
+      padding: 0;
+      border: 1px solid color-mix(in srgb, var(--np-sheet-accent, #94a3b8) 35%, #cbd5e1);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.85);
+      color: #64748b;
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      align-self: center;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .np-sheet-cat-color-more:hover {
+      background: #fff;
+      color: #0f172a;
+      border-color: color-mix(in srgb, var(--np-sheet-accent, #22c55e) 45%, #94a3b8);
+    }
+    .np-sheet-cat-color-more[aria-expanded='true'] {
+      background: rgba(224, 231, 255, 0.95);
+      color: var(--np-blue-d);
+      border-color: rgba(37, 99, 235, 0.35);
     }
     .np-plant-manage-bar {
       display: flex;
@@ -2827,86 +2930,99 @@
             <button type="button" class="np-plan-header-menu-close" id="npPlanHeaderMenuClose" aria-label="Cerrar menú">×</button>
           </div>
           <div class="np-plan-header-menu-body">
-        <div class="np-plan-actions-top">
-        <div class="np-plan-social" role="navigation" aria-label="Redes NutriPlant PRO">
-          <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="facebook" title="Facebook" aria-label="Facebook">
-            <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-            </svg>
-          </a>
-          <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&amp;igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="instagram" title="Instagram" aria-label="Instagram">
-            <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-            </svg>
-          </a>
-          <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&amp;_r=1" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="tiktok" title="TikTok" aria-label="TikTok">
-            <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
-            </svg>
-          </a>
-          <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="youtube" title="YouTube" aria-label="YouTube">
-            <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/>
-              <polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/>
-            </svg>
-          </a>
-          <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="linkedin" title="LinkedIn" aria-label="LinkedIn">
-            <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
-              <rect x="2" y="9" width="4" height="12"/>
-              <circle cx="4" cy="4" r="2"/>
-            </svg>
-          </a>
-        </div>
-        <div class="np-plan-nav-buttons">
-          <a class="btn-mac-nav btn-mac-nav-brand" href="https://nutriplantpro.com/login" target="_blank" rel="noopener noreferrer">NutriPlantPRO</a>
-          <a class="btn-mac-nav btn-mac-admin" href="https://nutriplantpro.com/admin/?k=np_admin_key_8f4a2b9c1e7d" target="_blank" rel="noopener noreferrer">Panel admin</a>
-          <a class="btn-mac-nav btn-mac-paypal" href="https://www.paypal.com/myaccount/" target="_blank" rel="noopener noreferrer" title="Cuenta PayPal (resumen, pagos, suscripciones)">Cuenta PayPal</a>
-          <a class="btn-mac-nav btn-mac-paypal-dev" href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer" title="PayPal Developer: apps, credenciales, webhooks">PayPal Developer</a>
-          <button type="button" class="btn-mac-nav btn-mac-logout btn-mac-logout-icon" id="npBtnLogout" aria-label="Cerrar sesión" title="Cerrar sesión">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 2v10"/>
-              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-            </svg>
-          </button>
-        </div>
-        </div>
-        <div class="np-plan-link-row" aria-label="Herramientas y cuentas">
-          <a class="btn-mac-link btn-mac-link--brand-supabase" href="https://supabase.com/" target="_blank" rel="noopener noreferrer" title="Supabase">Supabase</a>
-          <a class="btn-mac-link btn-mac-link--brand-ga" href="https://analytics.google.com/analytics/web/#/a378706965p517694954/reports/intelligenthome" target="_blank" rel="noopener noreferrer" title="Google Analytics">Analytics</a>
-          <a class="btn-mac-link btn-mac-link--brand-netlify" href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer" title="Netlify">Netlify</a>
-          <a class="btn-mac-link btn-mac-link--brand-github" href="https://github.com/" target="_blank" rel="noopener noreferrer" title="GitHub">GitHub</a>
-          <a class="btn-mac-link btn-mac-link--brand-namecheap" href="https://www.namecheap.com/" target="_blank" rel="noopener noreferrer" title="Namecheap">Namecheap</a>
-          <a class="btn-mac-link btn-mac-link--brand-gcp" href="https://console.cloud.google.com/welcome/new?project=cryptic-episode-472320-h7" target="_blank" rel="noopener noreferrer" title="Google Cloud Console">Google Cloud</a>
-          <a class="btn-mac-link btn-mac-link--brand-openai" href="https://platform.openai.com/login?next=%2Fapi-keys" target="_blank" rel="noopener noreferrer" title="OpenAI API keys">OpenAI</a>
-          <a class="btn-mac-link btn-mac-link--brand-microsoft" href="https://myaccount.microsoft.com/?ref=amc" target="_blank" rel="noopener noreferrer" title="Cuenta Microsoft">Microsoft</a>
-        </div>
-        <div class="np-plan-link-row np-plan-link-row--fin" aria-label="Finanzas y noticias">
-          <div class="np-plan-link-seg" aria-label="Cuentas y ahorro">
-            <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.bbva.mx/" target="_blank" rel="noopener noreferrer" title="BBVA México">BBVA</a>
-            <a class="btn-mac-link btn-mac-link--fin-personal" href="https://gbm.com/" target="_blank" rel="noopener noreferrer" title="GBM">GBM</a>
-            <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.fidelity.com/" target="_blank" rel="noopener noreferrer" title="Fidelity">Fidelity</a>
-            <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.cetesdirecto.com/" target="_blank" rel="noopener noreferrer" title="CETES Directo">CETES</a>
-          </div>
-          <div class="np-plan-link-seg" aria-label="Mercados e información">
-            <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.bmv.com.mx/" target="_blank" rel="noopener noreferrer" title="Bolsa Mexicana de Valores">BMV</a>
-            <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.banxico.org.mx/" target="_blank" rel="noopener noreferrer" title="Banco de México">Banxico</a>
-            <a class="btn-mac-link btn-mac-link--fin-markets" href="https://es.tradingview.com/" target="_blank" rel="noopener noreferrer" title="TradingView">TradingView</a>
-            <a class="btn-mac-link btn-mac-link--fin-markets" href="https://tradingeconomics.com/" target="_blank" rel="noopener noreferrer" title="Trading Economics">T. Economics</a>
-            <a class="btn-mac-link btn-mac-link--fin-markets" href="https://finance.yahoo.com/?guccounter=1" target="_blank" rel="noopener noreferrer" title="Yahoo Finance">Yahoo Finanzas</a>
-            <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.google.com/finance/beta?hl=es" target="_blank" rel="noopener noreferrer" title="Google Finanzas">Google Finanzas</a>
-            <a class="btn-mac-link btn-mac-link--fin-markets" href="https://finviz.com/" target="_blank" rel="noopener noreferrer" title="Finviz">Finviz</a>
-            <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.imf.org/es" target="_blank" rel="noopener noreferrer" title="FMI">FMI</a>
-          </div>
-          <div class="np-plan-link-seg" aria-label="Noticias">
-            <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.elfinanciero.com.mx/" target="_blank" rel="noopener noreferrer" title="El Financiero">El Financiero</a>
-            <a class="btn-mac-link btn-mac-link--fin-news" href="http://spanish.peopledaily.com.cn/" target="_blank" rel="noopener noreferrer" title="Diario del Pueblo (español)">PD China</a>
-            <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.nytimes.com/" target="_blank" rel="noopener noreferrer" title="The New York Times">NY Times</a>
-            <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.wsj.com/" target="_blank" rel="noopener noreferrer" title="The Wall Street Journal">WSJ</a>
-          </div>
-        </div>
+            <div class="np-plan-menu-block">
+              <div class="np-plan-actions-top">
+                <div class="np-plan-social" role="navigation" aria-label="Redes NutriPlant PRO">
+                  <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="facebook" title="Facebook" aria-label="Facebook">
+                    <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                    </svg>
+                  </a>
+                  <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&amp;igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="instagram" title="Instagram" aria-label="Instagram">
+                    <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                    </svg>
+                  </a>
+                  <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&amp;_r=1" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="tiktok" title="TikTok" aria-label="TikTok">
+                    <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
+                    </svg>
+                  </a>
+                  <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="youtube" title="YouTube" aria-label="YouTube">
+                    <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/>
+                      <polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/>
+                    </svg>
+                  </a>
+                  <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="linkedin" title="LinkedIn" aria-label="LinkedIn">
+                    <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                      <rect x="2" y="9" width="4" height="12"/>
+                      <circle cx="4" cy="4" r="2"/>
+                    </svg>
+                  </a>
+                </div>
+                <div class="np-plan-nav-buttons">
+                  <a class="btn-mac-nav btn-mac-nav-brand" href="https://nutriplantpro.com/login" target="_blank" rel="noopener noreferrer">NutriPlantPRO</a>
+                  <a class="btn-mac-nav btn-mac-admin" href="https://nutriplantpro.com/admin/?k=np_admin_key_8f4a2b9c1e7d" target="_blank" rel="noopener noreferrer">Panel admin</a>
+                  <a class="btn-mac-nav btn-mac-paypal" href="https://www.paypal.com/myaccount/" target="_blank" rel="noopener noreferrer" title="Cuenta PayPal (resumen, pagos, suscripciones)">Cuenta PayPal</a>
+                  <a class="btn-mac-nav btn-mac-paypal-dev" href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer" title="PayPal Developer: apps, credenciales, webhooks">PayPal Developer</a>
+                  <button type="button" class="btn-mac-nav btn-mac-logout btn-mac-logout-icon" id="npBtnLogout" aria-label="Cerrar sesión" title="Cerrar sesión">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 2v10"/>
+                      <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="np-plan-menu-block">
+              <div class="np-plan-link-row np-plan-menu-tools-row" aria-label="Herramientas y cuentas">
+                <a class="btn-mac-link btn-mac-link--brand-supabase" href="https://supabase.com/" target="_blank" rel="noopener noreferrer" title="Supabase">Supabase</a>
+                <a class="btn-mac-link btn-mac-link--brand-ga" href="https://analytics.google.com/analytics/web/#/a378706965p517694954/reports/intelligenthome" target="_blank" rel="noopener noreferrer" title="Google Analytics">Analytics</a>
+                <a class="btn-mac-link btn-mac-link--brand-netlify" href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer" title="Netlify">Netlify</a>
+                <a class="btn-mac-link btn-mac-link--brand-github" href="https://github.com/" target="_blank" rel="noopener noreferrer" title="GitHub">GitHub</a>
+                <a class="btn-mac-link btn-mac-link--brand-namecheap" href="https://www.namecheap.com/" target="_blank" rel="noopener noreferrer" title="Namecheap">Namecheap</a>
+                <a class="btn-mac-link btn-mac-link--brand-gcp" href="https://console.cloud.google.com/welcome/new?project=cryptic-episode-472320-h7" target="_blank" rel="noopener noreferrer" title="Google Cloud Console">Google Cloud</a>
+                <a class="btn-mac-link btn-mac-link--brand-openai" href="https://platform.openai.com/login?next=%2Fapi-keys" target="_blank" rel="noopener noreferrer" title="OpenAI API keys">OpenAI</a>
+                <a class="btn-mac-link btn-mac-link--brand-microsoft" href="https://myaccount.microsoft.com/?ref=amc" target="_blank" rel="noopener noreferrer" title="Cuenta Microsoft">Microsoft</a>
+              </div>
+            </div>
+            <div class="np-plan-menu-block np-plan-menu-block--fin" aria-label="Finanzas y noticias">
+              <div class="np-plan-menu-subblock">
+                <span class="np-plan-menu-subblock-title">Cuentas y ahorro</span>
+                <div class="np-plan-menu-subblock-links">
+                  <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.bbva.mx/" target="_blank" rel="noopener noreferrer" title="BBVA México">BBVA</a>
+                  <a class="btn-mac-link btn-mac-link--fin-personal" href="https://gbm.com/" target="_blank" rel="noopener noreferrer" title="GBM">GBM</a>
+                  <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.fidelity.com/" target="_blank" rel="noopener noreferrer" title="Fidelity">Fidelity</a>
+                  <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.cetesdirecto.com/" target="_blank" rel="noopener noreferrer" title="CETES Directo">CETES</a>
+                </div>
+              </div>
+              <div class="np-plan-menu-subblock">
+                <span class="np-plan-menu-subblock-title">Mercados e información</span>
+                <div class="np-plan-menu-subblock-links">
+                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.bmv.com.mx/" target="_blank" rel="noopener noreferrer" title="Bolsa Mexicana de Valores">BMV</a>
+                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.banxico.org.mx/" target="_blank" rel="noopener noreferrer" title="Banco de México">Banxico</a>
+                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://es.tradingview.com/" target="_blank" rel="noopener noreferrer" title="TradingView">TradingView</a>
+                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://tradingeconomics.com/" target="_blank" rel="noopener noreferrer" title="Trading Economics">T. Economics</a>
+                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://finance.yahoo.com/?guccounter=1" target="_blank" rel="noopener noreferrer" title="Yahoo Finance">Yahoo Finanzas</a>
+                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.google.com/finance/beta?hl=es" target="_blank" rel="noopener noreferrer" title="Google Finanzas">Google Finanzas</a>
+                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://finviz.com/" target="_blank" rel="noopener noreferrer" title="Finviz">Finviz</a>
+                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.imf.org/es" target="_blank" rel="noopener noreferrer" title="FMI">FMI</a>
+                </div>
+              </div>
+              <div class="np-plan-menu-subblock">
+                <span class="np-plan-menu-subblock-title">Noticias</span>
+                <div class="np-plan-menu-subblock-links">
+                  <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.elfinanciero.com.mx/" target="_blank" rel="noopener noreferrer" title="El Financiero">El Financiero</a>
+                  <a class="btn-mac-link btn-mac-link--fin-news" href="http://spanish.peopledaily.com.cn/" target="_blank" rel="noopener noreferrer" title="Diario del Pueblo (español)">PD China</a>
+                  <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.nytimes.com/" target="_blank" rel="noopener noreferrer" title="The New York Times">NY Times</a>
+                  <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.wsj.com/" target="_blank" rel="noopener noreferrer" title="The Wall Street Journal">WSJ</a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2942,29 +3058,6 @@
           <div class="np-pillar-add">
             <input type="text" id="npNewPillar" placeholder="Nueva planta…" maxlength="80" />
             <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddPillar">Añadir planta</button>
-          </div>
-        </div>
-        <div id="npPillarTabFlyoutBackdrop" class="np-pillar-tab-flyout-backdrop" aria-hidden="true"></div>
-        <div
-          id="npPillarTabFlyout"
-          class="np-pillar-tab-flyout"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="npPillarTabFlyoutTitle"
-          aria-hidden="true"
-        >
-          <div id="npPillarTabFlyoutTitle" class="np-pillar-tab-flyout-title">Opciones de esta planta</div>
-          <div id="npAreaColorBar" class="np-color-edit-bar">
-            <span class="np-color-edit-label">Color planta</span>
-            <input type="color" id="npAreaColorPicker" class="np-color-edit-picker" title="Elegir color" aria-label="Color de la planta seleccionada" />
-            <input type="text" id="npAreaColorHex" class="np-color-edit-hex" maxlength="7" placeholder="#RRGGBB" spellcheck="false" autocomplete="off" aria-label="Código hexadecimal del color" />
-            <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAreaColorApply">Aplicar</button>
-            <button type="button" class="btn btn-ghost" id="npBtnAreaColorClear">Automático</button>
-          </div>
-          <div id="npPlantManageBar" class="np-plant-manage-bar">
-            <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnRenamePlant">Renombrar planta…</button>
-            <button type="button" class="btn btn-ghost" id="npBtnArchivePlant">Archivar planta…</button>
-            <button type="button" class="btn btn-danger" id="npBtnDeletePlant">Borrar planta…</button>
           </div>
         </div>
       </section>
@@ -3005,16 +3098,23 @@
               <div class="np-sheet-header">
                 <div class="np-sheet-kicker np-hide" aria-hidden="true">Hoja</div>
                 <div id="npSheetTitle" class="np-sheet-title">—</div>
-                <div class="np-sheet-branch">
-                  <input type="text" id="npBranchName" maxlength="120" placeholder="Nueva rama…" autocomplete="off" />
-                  <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnBranchHere">Crear rama aquí</button>
-                </div>
-                <div id="npCatColorBar" class="np-color-edit-bar np-hide">
-                  <span class="np-color-edit-label">Color rama</span>
-                  <input type="color" id="npCatColorPicker" class="np-color-edit-picker" title="Elegir color" aria-label="Color de la rama seleccionada" />
-                  <input type="text" id="npCatColorHex" class="np-color-edit-hex" maxlength="7" placeholder="#RRGGBB" spellcheck="false" autocomplete="off" aria-label="Código hexadecimal del color de la rama" />
-                  <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnCatColorApply">Aplicar</button>
-                  <button type="button" class="btn btn-ghost" id="npBtnCatColorClear">Automático</button>
+                <div class="np-sheet-branch-row">
+                  <div class="np-sheet-branch">
+                    <input type="text" id="npBranchName" maxlength="120" placeholder="Nueva rama…" autocomplete="off" />
+                    <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnBranchHere">Crear rama aquí</button>
+                  </div>
+                  <button
+                    type="button"
+                    id="npCatColorMenuBtn"
+                    class="np-sheet-cat-color-more np-tree-ignore np-hide"
+                    aria-label="Color de la rama"
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                    aria-controls="npCatColorFlyout"
+                    title="Color de la rama"
+                  >
+                    ⋮
+                  </button>
                 </div>
                 <div id="npSheetNavBlocks" class="np-sheet-nav-blocks np-hide"></div>
               </div>
@@ -3112,6 +3212,47 @@
         </div>
       </div>
       </div>
+      <div id="npPillarTabFlyoutBackdrop" class="np-pillar-tab-flyout-backdrop" aria-hidden="true"></div>
+      <div
+        id="npPillarTabFlyout"
+        class="np-pillar-tab-flyout"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="npPillarTabFlyoutTitle"
+        aria-hidden="true"
+      >
+        <div id="npPillarTabFlyoutTitle" class="np-pillar-tab-flyout-title">Opciones de esta planta</div>
+        <div id="npAreaColorBar" class="np-color-edit-bar">
+          <span class="np-color-edit-label">Color planta</span>
+          <input type="color" id="npAreaColorPicker" class="np-color-edit-picker" title="Elegir color" aria-label="Color de la planta seleccionada" />
+          <input type="text" id="npAreaColorHex" class="np-color-edit-hex" maxlength="7" placeholder="#RRGGBB" spellcheck="false" autocomplete="off" aria-label="Código hexadecimal del color" />
+          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAreaColorApply">Aplicar</button>
+          <button type="button" class="btn btn-ghost" id="npBtnAreaColorClear">Automático</button>
+        </div>
+        <div id="npPlantManageBar" class="np-plant-manage-bar">
+          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnRenamePlant">Renombrar planta…</button>
+          <button type="button" class="btn btn-ghost" id="npBtnArchivePlant">Archivar planta…</button>
+          <button type="button" class="btn btn-danger" id="npBtnDeletePlant">Borrar planta…</button>
+        </div>
+      </div>
+      <div id="npCatColorFlyoutBackdrop" class="np-pillar-tab-flyout-backdrop" aria-hidden="true"></div>
+      <div
+        id="npCatColorFlyout"
+        class="np-pillar-tab-flyout np-cat-color-flyout"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="npCatColorFlyoutTitle"
+        aria-hidden="true"
+      >
+        <div id="npCatColorFlyoutTitle" class="np-pillar-tab-flyout-title">Color de esta rama</div>
+        <div id="npCatColorBar" class="np-color-edit-bar">
+          <span class="np-color-edit-label">Color rama</span>
+          <input type="color" id="npCatColorPicker" class="np-color-edit-picker" title="Elegir color" aria-label="Color de la rama seleccionada" />
+          <input type="text" id="npCatColorHex" class="np-color-edit-hex" maxlength="7" placeholder="#RRGGBB" spellcheck="false" autocomplete="off" aria-label="Código hexadecimal del color de la rama" />
+          <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnCatColorApply">Aplicar</button>
+          <button type="button" class="btn btn-ghost" id="npBtnCatColorClear">Automático</button>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -3206,6 +3347,10 @@
   document.addEventListener('click', function (e) {
     if (e.target && e.target.closest && e.target.closest('.np-tree-menu-wrap')) return;
     closeAllTreeMenus();
+    if (e.target && e.target.closest && e.target.closest('#npCatColorFlyout')) return;
+    if (e.target && e.target.closest && e.target.closest('#npCatColorFlyoutBackdrop')) return;
+    if (e.target && e.target.closest && e.target.closest('#npCatColorMenuBtn')) return;
+    closeCatColorFlyout();
     if (e.target && e.target.closest && e.target.closest('#npPillarTabFlyout')) return;
     if (e.target && e.target.closest && e.target.closest('#npPillarTabFlyoutBackdrop')) return;
     if (e.target && e.target.closest && e.target.closest('.np-pillar-tab-more')) return;
@@ -3214,6 +3359,7 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       closeAllTreeMenus();
+      closeCatColorFlyout();
       closePillarTabFlyout();
     }
   });
@@ -3935,6 +4081,69 @@
     });
   }
 
+  function closeCatColorFlyout() {
+    var fly = $('npCatColorFlyout');
+    var bd = $('npCatColorFlyoutBackdrop');
+    var btn = $('npCatColorMenuBtn');
+    if (fly) {
+      fly.classList.remove('np-show');
+      fly.setAttribute('aria-hidden', 'true');
+      fly.style.left = '';
+      fly.style.top = '';
+      fly.style.visibility = '';
+    }
+    if (bd) {
+      bd.classList.remove('np-show');
+      bd.setAttribute('aria-hidden', 'true');
+    }
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+
+  function positionCatColorFlyout(anchorEl) {
+    var fly = $('npCatColorFlyout');
+    if (!fly) return;
+    fly.classList.add('np-show');
+    fly.style.visibility = 'hidden';
+    fly.style.left = '0';
+    fly.style.top = '0';
+    var w = fly.offsetWidth;
+    var h = fly.offsetHeight;
+    var r = null;
+    if (anchorEl && anchorEl.getBoundingClientRect) r = anchorEl.getBoundingClientRect();
+    if (!r) {
+      var sp = $('npSheetPanel');
+      r = sp && sp.getBoundingClientRect ? sp.getBoundingClientRect() : { left: 12, right: 200, bottom: 120, top: 40 };
+    }
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var pad = 10;
+    var top = r.bottom + 8;
+    if (top + h + pad > vh) top = Math.max(pad, r.top - h - 8);
+    var left = (anchorEl ? r.right : r.left + (r.right - r.left) / 2) - w;
+    if (!anchorEl) left = r.left + (r.right - r.left) / 2 - w / 2;
+    if (left < pad) left = pad;
+    if (left + w + pad > vw) left = Math.max(pad, vw - w - pad);
+    fly.style.left = left + 'px';
+    fly.style.top = top + 'px';
+    fly.style.visibility = '';
+  }
+
+  function openCatColorFlyout() {
+    if (!state.selectedCategoryId) return;
+    closePillarTabFlyout();
+    closeAllTreeMenus();
+    syncPlanProCategoryColorBar();
+    var btn = $('npCatColorMenuBtn');
+    var fly = $('npCatColorFlyout');
+    var bd = $('npCatColorFlyoutBackdrop');
+    if (!btn || !fly || !bd || btn.classList.contains('np-hide')) return;
+    bd.classList.add('np-show');
+    bd.setAttribute('aria-hidden', 'false');
+    fly.setAttribute('aria-hidden', 'false');
+    btn.setAttribute('aria-expanded', 'true');
+    positionCatColorFlyout(btn);
+  }
+
   function positionPillarTabFlyout(anchorEl) {
     var fly = $('npPillarTabFlyout');
     if (!fly) return;
@@ -3967,6 +4176,7 @@
   function openPillarTabFlyout(areaId) {
     if (!areaId) return;
     if (typeof closeAllTreeMenus === 'function') closeAllTreeMenus();
+    closeCatColorFlyout();
     closePillarTabFlyout();
     var changed = state.selectedAreaId !== areaId;
     if (changed) {
@@ -4029,20 +4239,19 @@
   }
 
   function syncPlanProCategoryColorBar() {
-    var bar = $('npCatColorBar');
+    var menuBtn = $('npCatColorMenuBtn');
     var pk = $('npCatColorPicker');
     var tx = $('npCatColorHex');
-    if (!bar || !pk || !tx) return;
+    if (!pk || !tx) return;
+    if (menuBtn) menuBtn.classList.add('np-hide');
     if (!state.selectedCategoryId) {
-      bar.classList.add('np-hide');
       return;
     }
     var cat = state.categories.filter(function (c) { return c.id === state.selectedCategoryId; })[0];
     if (!cat || !state.selectedAreaId || cat.area_id !== state.selectedAreaId) {
-      bar.classList.add('np-hide');
       return;
     }
-    bar.classList.remove('np-hide');
+    if (menuBtn) menuBtn.classList.remove('np-hide');
     var stored = getCategoryCustomHex(cat.id);
     var root = getRootCategoryId(cat.id);
     var idx = getTreeToneIndex(root);
@@ -4106,6 +4315,7 @@
     var sp = $('npSheetPanel');
     if (sp) applySheetCategoryAccent(sp);
     syncPlanProCategoryColorBar();
+    closeCatColorFlyout();
     showToast('Color de rama guardado.');
   }
 
@@ -4126,6 +4336,7 @@
     var sp2 = $('npSheetPanel');
     if (sp2) applySheetCategoryAccent(sp2);
     syncPlanProCategoryColorBar();
+    closeCatColorFlyout();
     showToast('Color de rama: automático por raíz.');
   }
 
@@ -5307,14 +5518,20 @@
         ensureSmartMeta(b);
         b.rowDone[rowIndex] = !!done;
         if (persistItemId) schedulePersist();
-        queueRefreshDetailBlocksDOM();
       }
 
-      function setRowKind(rowIndex, kind) {
+      function setRowKind(rowIndex, kind, rowEl) {
         ensureSmartMeta(b);
         b.rowKinds[rowIndex] = kind;
         if (persistItemId) schedulePersist();
-        queueRefreshDetailBlocksDOM();
+        if (rowEl) {
+          Array.from(rowEl.classList).forEach(function (cl) {
+            if (/^np-ms-row-kind-/.test(cl)) rowEl.classList.remove(cl);
+          });
+          rowEl.classList.remove('np-ms-row-kind-section');
+          rowEl.classList.add('np-ms-row-kind-' + kind);
+          if (kind === 'section') rowEl.classList.add('np-ms-row-kind-section');
+        }
       }
 
       function addRow(kindId) {
@@ -5327,7 +5544,7 @@
         afterStructuralChange();
       }
 
-      function renderPriorityEditor(cellWrap, ri, c) {
+      function renderPriorityEditor(cellWrap, ri, c, rowEl) {
         var raw = b.rows[ri] && b.rows[ri][c] != null ? String(b.rows[ri][c]) : '';
         var cur = priorityLevelFromRaw(raw);
         var wrapP = document.createElement('div');
@@ -5344,7 +5561,17 @@
             var curLv = priorityLevelFromRaw(fresh);
             var next = curLv === lvl ? '' : storePriorityFromLevel(lvl);
             setCell(ri, c, next);
-            queueRefreshDetailBlocksDOM();
+            var freshRaw = b.rows[ri] && b.rows[ri][c] != null ? String(b.rows[ri][c]) : '';
+            var newLv = priorityLevelFromRaw(freshRaw);
+            if (rowEl) {
+              rowEl.classList.remove('np-ms-accent-baja', 'np-ms-accent-media', 'np-ms-accent-alta');
+              if (newLv) rowEl.classList.add('np-ms-accent-' + newLv);
+            }
+            Array.prototype.forEach.call(wrapP.children, function (dotBtn, idx) {
+              var lv = ['baja', 'media', 'alta'][idx];
+              if (!dotBtn || !lv) return;
+              dotBtn.classList.toggle('np-prio-on', newLv === lv);
+            });
           });
           wrapP.appendChild(btn);
         });
@@ -5513,7 +5740,7 @@
               sel.appendChild(o);
             });
             sel.addEventListener('change', function () {
-              setRowKind(ri, sel.value);
+              setRowKind(ri, sel.value, rr);
             });
             cell.appendChild(sel);
           } else if (b.variant === 'smart' && c === 0 && !editable) {
@@ -5554,7 +5781,7 @@
             }
             cell.appendChild(spanPct);
           } else if (editable && prioCol === c) {
-            renderPriorityEditor(cell, ri, c);
+            renderPriorityEditor(cell, ri, c, rr);
           } else if (editable && doneCol === c && (b.variant === 'tasks' || b.variant === 'smart')) {
             var doneVal = b.rowDone && b.rowDone[ri];
             var cb = document.createElement('input');
@@ -5926,6 +6153,47 @@
     return n;
   }
 
+  /** Recuento de sub-ramas bajo una categoría (misma métrica que el árbol en pantalla). */
+  function descendantBranchCountFlat(catId) {
+    var kids = state.categories.filter(function (c) {
+      return c.parent_id === catId && !c.archived_at;
+    });
+    var n = 0;
+    kids.forEach(function (ch) {
+      n += 1 + descendantBranchCountFlat(ch.id);
+    });
+    return n;
+  }
+
+  /** Actualiza solo los badges del árbol (sin vaciar el DOM). */
+  function patchTreeMetaBadges() {
+    var mount = $('npTreeMount');
+    if (!mount) return;
+    mount.querySelectorAll('.np-tree-row[data-np-cat-id]').forEach(function (row) {
+      var cid = row.getAttribute('data-np-cat-id');
+      var meta = row.querySelector('.np-tree-meta');
+      if (!cid || !meta) return;
+      var itemsST = totalItemsInSubtree(cid);
+      var branchesBelow = descendantBranchCountFlat(cid);
+      meta.textContent = branchesBelow
+        ? itemsST + ' ap · ' + branchesBelow + ' ramas'
+        : itemsST + ' ap';
+    });
+  }
+
+  /** Marca la rama activa sin reconstruir el árbol. */
+  function syncTreeActiveHighlight() {
+    var mount = $('npTreeMount');
+    if (!mount) return;
+    var sid = state.selectedCategoryId;
+    mount.querySelectorAll('.np-tree-row[data-np-cat-id]').forEach(function (row) {
+      var cid = row.getAttribute('data-np-cat-id');
+      var on = sid && cid === sid;
+      row.classList.toggle('np-tree-active', !!on);
+      row.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+  }
+
   async function refreshCategoryItemCounts() {
     state.categoryItemCounts = {};
     if (!state.client || !state.userId || !state.selectedAreaId) return;
@@ -5955,6 +6223,7 @@
     var row = document.createElement('div');
     row.className = 'np-tree-row' + (isRoot ? ' np-tree-row--root' : '');
     row.setAttribute('role', 'treeitem');
+    row.setAttribute('data-np-cat-id', node.cat.id);
     row.setAttribute('aria-selected', state.selectedCategoryId === node.cat.id ? 'true' : 'false');
     if (state.selectedCategoryId === node.cat.id) row.classList.add('np-tree-active');
     row.addEventListener('click', function (e) {
@@ -6136,7 +6405,7 @@
 
   function selectCategory(catId) {
     state.selectedCategoryId = catId;
-    renderTree();
+    syncTreeActiveHighlight();
     updateSelectionUI();
     loadItems();
   }
@@ -6227,8 +6496,9 @@
       ph.classList.remove('np-hide');
       sp.classList.add('np-hide');
       clearSheetCategoryAccent(sp);
-      var cbar = $('npCatColorBar');
-      if (cbar) cbar.classList.add('np-hide');
+      closeCatColorFlyout();
+      var cbtn = $('npCatColorMenuBtn');
+      if (cbtn) cbtn.classList.add('np-hide');
       if (nav) {
         nav.classList.add('np-hide');
         nav.innerHTML = '';
@@ -6280,6 +6550,7 @@
 
   function renderPillarTabs() {
     closePillarTabFlyout();
+    closeCatColorFlyout();
     var wrap = $('npPillarTabs');
     if (!wrap) return;
     wrap.innerHTML = '';
@@ -6316,7 +6587,7 @@
       more.setAttribute('aria-label', 'Opciones de planta: color y nombre');
       more.setAttribute('aria-expanded', 'false');
       more.setAttribute('aria-haspopup', 'dialog');
-      more.textContent = '\u22EF';
+      more.textContent = '\u22EE';
       (function (aid) {
         more.addEventListener('click', function (e) {
           e.preventDefault();
@@ -6773,7 +7044,8 @@
     renderSidebarPrioSummary(rowsForSidebar);
     renderSidebarCalendar(rowsForSidebar);
     await refreshCategoryItemCounts();
-    renderTree();
+    patchTreeMetaBadges();
+    syncTreeActiveHighlight();
     applyPlanProPlantAccent();
     syncPlanProAreaColorBar();
     var spReload = $('npSheetPanel');
@@ -6839,6 +7111,7 @@
     var id = btn.getAttribute('data-area-id');
     if (!id) return;
     closePillarTabFlyout();
+    closeCatColorFlyout();
     if (id === state.selectedAreaId) return;
     state.selectedAreaId = id;
     state.selectedCategoryId = null;
@@ -6852,6 +7125,26 @@
   if (npPillarFlyoutBd) {
     npPillarFlyoutBd.addEventListener('click', function () {
       closePillarTabFlyout();
+    });
+  }
+  var npCatColorFlyoutBd = $('npCatColorFlyoutBackdrop');
+  if (npCatColorFlyoutBd) {
+    npCatColorFlyoutBd.addEventListener('click', function () {
+      closeCatColorFlyout();
+    });
+  }
+
+  var npCatColorMenuBtn = $('npCatColorMenuBtn');
+  if (npCatColorMenuBtn) {
+    npCatColorMenuBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var fly = $('npCatColorFlyout');
+      if (fly && fly.classList.contains('np-show')) {
+        closeCatColorFlyout();
+      } else {
+        openCatColorFlyout();
+      }
     });
   }
 
@@ -7046,6 +7339,10 @@
 
   document.addEventListener('keydown', async function (e) {
     if (e.key !== 'Escape') return;
+    if ($('npCatColorFlyout') && $('npCatColorFlyout').classList.contains('np-show')) {
+      closeCatColorFlyout();
+      return;
+    }
     if ($('npPillarTabFlyout') && $('npPillarTabFlyout').classList.contains('np-show')) {
       closePillarTabFlyout();
       return;
@@ -7168,6 +7465,7 @@
     if (!menuBtn || !menuPanel || !menuBackdrop) return;
 
     function setHeaderMenuOpen(open) {
+      if (open && typeof closeCatColorFlyout === 'function') closeCatColorFlyout();
       if (open && typeof closePillarTabFlyout === 'function') closePillarTabFlyout();
       menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       menuPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
