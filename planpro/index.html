@@ -176,6 +176,22 @@
     .np-plan-header-menu-panel.np-plan-header-menu-open {
       display: flex;
     }
+    .np-plan-menu-social-bar {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(248, 250, 252, 0.72);
+      flex-shrink: 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .np-plan-menu-social-bar .np-header-social-btn {
+      flex-shrink: 0;
+    }
     .np-plan-header-menu-head {
       display: flex;
       align-items: center;
@@ -221,23 +237,17 @@
       align-items: stretch;
       min-height: 0;
     }
-    /* Bloque 1: redes + accesos en rejilla (menos hueco libre) */
-    .np-plan-header-menu-body .np-plan-menu-block:first-child .np-plan-actions-top {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-      align-items: start;
-    }
-    @media (min-width: 520px) {
-      .np-plan-header-menu-body .np-plan-menu-block:first-child .np-plan-actions-top {
-        grid-template-columns: auto minmax(0, 1fr);
-        align-items: center;
-      }
-    }
-    .np-plan-header-menu-body .np-plan-social {
-      justify-content: flex-start;
-      width: 100%;
+    /* Bloque 1: rejilla de accesos + cierre sesión compacto al final */
+    .np-plan-header-menu-body .np-plan-menu-block:first-child .np-plan-actions-top--primary {
+      display: flex;
       flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+      width: 100%;
+    }
+    .np-plan-header-menu-body .np-plan-menu-block:first-child .np-plan-actions-top--primary .np-plan-nav-buttons {
+      flex: 1 1 auto;
+      min-width: 0;
     }
     .np-plan-header-menu-body .np-plan-nav-buttons {
       display: grid;
@@ -253,13 +263,18 @@
       box-sizing: border-box;
       text-align: center;
     }
-    .np-plan-header-menu-panel .btn-mac-logout-icon {
-      min-width: 0;
+    .np-plan-header-menu-panel .btn-mac-logout-icon.np-plan-access-logout-end {
+      width: auto !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      flex: 0 0 auto;
+      margin-left: auto;
+      padding: 5px 7px !important;
+      border-radius: 10px;
     }
-    .np-plan-header-menu-panel .np-plan-access-logout-full {
-      grid-column: 1 / -1;
-      max-width: 220px;
-      justify-self: center;
+    .np-plan-header-menu-panel .btn-mac-logout-icon.np-plan-access-logout-end svg {
+      width: 17px;
+      height: 17px;
     }
     /* Bloque herramientas: rejilla que ocupa todo el ancho */
     .np-plan-header-menu-body .np-plan-menu-tools-row {
@@ -345,23 +360,11 @@
       gap: 10px 14px;
       width: 100%;
     }
-    .np-plan-actions-top .np-plan-social {
-      width: auto;
-      flex-shrink: 0;
-    }
     .np-plan-actions-top .np-plan-nav-buttons {
       flex: 1 1 200px;
       width: auto;
       min-width: 0;
       justify-content: flex-end;
-    }
-    .np-plan-social {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 8px;
-      width: 100%;
     }
     .np-header-social-btn {
       display: inline-flex;
@@ -972,6 +975,7 @@
       overflow-y: visible;
       -webkit-overflow-scrolling: touch;
       margin-bottom: 8px;
+      contain: layout style;
     }
     .np-layout {
       display: grid;
@@ -1008,9 +1012,6 @@
         margin-left: auto;
         max-width: 100%;
         flex: 0 0 auto;
-      }
-      .np-plan-social {
-        justify-content: flex-end;
       }
       .np-plan-brand img {
         height: 34px;
@@ -1415,6 +1416,17 @@
       border: 1px solid rgba(180, 83, 9, 0.24);
       background: rgba(255, 252, 237, 0.78);
       min-height: 108px;
+      overflow-y: visible;
+    }
+    .np-ms-block-ledger .np-ms-row:not(.np-ms-row-head) .np-ms-cell {
+      align-items: flex-start;
+    }
+    .np-ms-block-ledger .np-ms-row-ledger-total .np-ms-cell {
+      align-items: center;
+    }
+    .np-ms-block-ledger .np-ms-cell-notes textarea.np-ms-cell-input {
+      min-height: 48px !important;
+      max-height: 150px;
     }
     .np-ms-block-ledger .np-ms-row-head .np-ms-head-input {
       background: rgba(255, 255, 255, 0.96) !important;
@@ -1438,6 +1450,18 @@
       background: rgba(255, 255, 255, 0.55);
       border-radius: 8px;
       border: 1px dashed rgba(148, 163, 184, 0.4);
+    }
+    .np-ms-block-ledger .np-ms-cell-static.np-ms-cell-derived {
+      font-weight: 600;
+      color: #0f766e;
+      background: rgba(240, 253, 250, 0.65);
+      border: 1px solid rgba(13, 148, 136, 0.22);
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
     }
     /* Vista previa al crear apunte: marco para que no “floten” bloques sin contexto */
     #npMiniSheetPreview:not(.np-hide) {
@@ -1958,8 +1982,6 @@
       border: 1px dashed rgba(37, 99, 235, 0.28);
       border-radius: 18px;
       background: rgba(255, 255, 255, 0.45);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
       color: var(--muted);
       font-size: 14px;
       line-height: 1.55;
@@ -1982,17 +2004,6 @@
         #f8fafc 100%
       );
       overflow: hidden;
-      animation: np-sheet-in 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    @keyframes np-sheet-in {
-      from {
-        opacity: 0;
-        transform: translateY(16px) scale(0.98);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
     }
     .np-sheet-inner {
       padding: 12px 14px 16px;
@@ -2209,6 +2220,20 @@
       outline: none;
     }
     .np-rich-editor:focus { box-shadow: none !important; }
+    /* Renglones en la libreta: en el editor (no en ::after del papel) para que no queden tapados por el stacking del contenteditable */
+    .np-notebook-page.np-notebook-rich > .np-rich-editor {
+      background-color: transparent !important;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(1.7em - 1px),
+        rgba(92, 74, 55, 0.32) calc(1.7em - 1px),
+        rgba(92, 74, 55, 0.32) 1.7em
+      ) !important;
+      background-size: 100% 1.7em;
+      background-position: 0 24px;
+      background-attachment: local;
+    }
     /* Sin leyenda fantasma encima del texto (antes: attr(data-placeholder)) */
     .np-rich-editor.np-rich-empty:before {
       content: none !important;
@@ -2309,26 +2334,8 @@
       overflow-x: hidden;
       overflow-y: auto;
     }
-    .np-notebook-page.np-modal-notebook-page::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      pointer-events: none;
-      z-index: 0;
-      background-image: repeating-linear-gradient(
-        transparent 0,
-        transparent calc(1.65em - 1px),
-        rgba(139, 120, 96, 0.14) calc(1.65em - 1px),
-        rgba(139, 120, 96, 0.14) 1.65em
-      );
-      background-position: 0 23px;
-    }
     #npModalBodyRich.np-rich-editor {
       position: relative;
-      z-index: 1;
       min-height: min(28vh, 320px);
       max-height: min(44vh, 500px);
       overflow-y: auto;
@@ -3025,57 +3032,57 @@
         </button>
         <div id="npPlanHeaderMenuBackdrop" class="np-plan-header-menu-backdrop" aria-hidden="true"></div>
         <div id="npPlanHeaderMenuPanel" class="np-plan-header-menu-panel" role="dialog" aria-modal="true" aria-labelledby="npPlanHeaderMenuTitle" aria-hidden="true">
+          <div class="np-plan-menu-social-bar" role="navigation" aria-label="Redes NutriPlant PRO">
+            <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="facebook" title="Facebook" aria-label="Facebook">
+              <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+              </svg>
+            </a>
+            <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&amp;igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="instagram" title="Instagram" aria-label="Instagram">
+              <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+              </svg>
+            </a>
+            <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&amp;_r=1" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="tiktok" title="TikTok" aria-label="TikTok">
+              <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
+              </svg>
+            </a>
+            <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="youtube" title="YouTube" aria-label="YouTube">
+              <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/>
+                <polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/>
+              </svg>
+            </a>
+            <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="linkedin" title="LinkedIn" aria-label="LinkedIn">
+              <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                <rect x="2" y="9" width="4" height="12"/>
+                <circle cx="4" cy="4" r="2"/>
+              </svg>
+            </a>
+          </div>
           <div class="np-plan-header-menu-head">
             <span id="npPlanHeaderMenuTitle" class="np-plan-header-menu-title">Accesos</span>
             <button type="button" class="np-plan-header-menu-close" id="npPlanHeaderMenuClose" aria-label="Cerrar menú">×</button>
           </div>
           <div class="np-plan-header-menu-body">
             <div class="np-plan-menu-block">
-              <div class="np-plan-actions-top">
-                <div class="np-plan-social" role="navigation" aria-label="Redes NutriPlant PRO">
-                  <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="facebook" title="Facebook" aria-label="Facebook">
-                    <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-                    </svg>
-                  </a>
-                  <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&amp;igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="instagram" title="Instagram" aria-label="Instagram">
-                    <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-                    </svg>
-                  </a>
-                  <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&amp;_r=1" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="tiktok" title="TikTok" aria-label="TikTok">
-                    <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
-                    </svg>
-                  </a>
-                  <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="youtube" title="YouTube" aria-label="YouTube">
-                    <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/>
-                      <polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/>
-                    </svg>
-                  </a>
-                  <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="linkedin" title="LinkedIn" aria-label="LinkedIn">
-                    <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
-                      <rect x="2" y="9" width="4" height="12"/>
-                      <circle cx="4" cy="4" r="2"/>
-                    </svg>
-                  </a>
-                </div>
+              <div class="np-plan-actions-top np-plan-actions-top--primary">
                 <div class="np-plan-nav-buttons">
                   <a class="btn-mac-nav btn-mac-nav-brand" href="https://nutriplantpro.com/login" target="_blank" rel="noopener noreferrer">NutriPlantPRO</a>
                   <a class="btn-mac-nav btn-mac-admin" href="https://nutriplantpro.com/admin/?k=np_admin_key_8f4a2b9c1e7d" target="_blank" rel="noopener noreferrer">Panel admin</a>
                   <a class="btn-mac-nav btn-mac-paypal" href="https://www.paypal.com/myaccount/" target="_blank" rel="noopener noreferrer" title="Cuenta PayPal (resumen, pagos, suscripciones)">Cuenta PayPal</a>
                   <a class="btn-mac-nav btn-mac-paypal-dev" href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer" title="PayPal Developer: apps, credenciales, webhooks">PayPal Developer</a>
-                  <button type="button" class="btn-mac-nav btn-mac-logout btn-mac-logout-icon np-plan-access-logout-full" id="npBtnLogout" aria-label="Cerrar sesión" title="Cerrar sesión">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M12 2v10"/>
-                      <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-                    </svg>
-                  </button>
                 </div>
+                <button type="button" class="btn-mac-nav btn-mac-logout btn-mac-logout-icon np-plan-access-logout-end" id="npBtnLogout" aria-label="Cerrar sesión" title="Cerrar sesión">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 2v10"/>
+                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                  </svg>
+                </button>
               </div>
             </div>
             <div class="np-plan-menu-block">
@@ -4035,6 +4042,8 @@
       colKinds: ['text', 'currency', 'pct', 'text'],
       montoCol: 1,
       pctCol: 2,
+      ledgerPctMode: 'auto',
+      ledgerDerivedByCol: {},
       rows: [
         ['', '', '', ''],
         ['', '', '', '']
@@ -4450,6 +4459,11 @@
   function columnPrefersTextarea(headerName, colIndex, variant, ncol) {
     ncol = ncol || 0;
     var h = (headerName != null ? String(headerName) : '').toLowerCase();
+    /* Tabla de montos: solo la última columna (Notas) o cabeceras tipo memo — evita que Concepto/Monto hereden altura de textarea */
+    if (variant === 'ledger') {
+      if (ncol >= 1 && colIndex === ncol - 1) return true;
+      return /nota|observaci|comentario|detalle|referencia|memo/i.test(h);
+    }
     if (/descripción|descripcion|desc|nota|detail|note|siguiente paso|campo extra/.test(h)) return true;
     if (variant === 'tasks' && colIndex === 1) return true;
     if (variant === 'tasks' && colIndex >= 5) return true;
@@ -4534,21 +4548,97 @@
     return arr;
   }
 
+  function ledgerGetDerivedSpec(b, colIndex) {
+    if (!b || !b.ledgerDerivedByCol || typeof b.ledgerDerivedByCol !== 'object') return null;
+    var o = b.ledgerDerivedByCol[colIndex];
+    if (o == null) o = b.ledgerDerivedByCol[String(colIndex)];
+    return o && typeof o === 'object' ? o : null;
+  }
+
+  function ledgerCellNumber(arr, colIndex) {
+    if (!Array.isArray(arr) || colIndex == null || colIndex < 0 || colIndex >= arr.length) return 0;
+    var raw = arr[colIndex];
+    var v = parseFloat(String(raw != null ? raw : '').replace(/\s/g, '').replace(',', '.'));
+    return isNaN(v) ? 0 : v;
+  }
+
+  function computeLedgerDerived(arr, spec) {
+    if (!spec || !spec.op || !Array.isArray(arr)) return NaN;
+    if (spec.op === 'diff') {
+      return ledgerCellNumber(arr, spec.left) - ledgerCellNumber(arr, spec.right);
+    }
+    if (spec.op === 'sum' && spec.cols && spec.cols.length) {
+      var t = 0;
+      for (var i = 0; i < spec.cols.length; i++) t += ledgerCellNumber(arr, spec.cols[i]);
+      return t;
+    }
+    if (spec.op === 'product' && spec.cols && spec.cols.length >= 1) {
+      var p = ledgerCellNumber(arr, spec.cols[0]);
+      for (var j = 1; j < spec.cols.length; j++) p *= ledgerCellNumber(arr, spec.cols[j]);
+      return p;
+    }
+    return NaN;
+  }
+
+  function sumLedgerColumn(rows, colIndex) {
+    var t = 0;
+    (rows || []).forEach(function (row) {
+      var arr = Array.isArray(row) ? row : [];
+      t += ledgerCellNumber(arr, colIndex);
+    });
+    return t;
+  }
+
+  function sumLedgerDerivedColumn(rows, b, colIndex, ncol) {
+    var spec = ledgerGetDerivedSpec(b, colIndex);
+    if (!spec) return NaN;
+    var t = 0;
+    (rows || []).forEach(function (row) {
+      var arr = padRowCells(Array.isArray(row) ? row : row, ncol);
+      var v = computeLedgerDerived(arr, spec);
+      if (!isNaN(v)) t += v;
+    });
+    return t;
+  }
+
   function ensureLedgerBlock(b) {
     if (!b.headers || !b.headers.length) {
       b.headers = ['Concepto', 'Monto', '%', 'Notas'];
     }
+    if (!b.ledgerDerivedByCol || typeof b.ledgerDerivedByCol !== 'object') b.ledgerDerivedByCol = {};
+    if (b.ledgerPctMode !== 'manual' && b.ledgerPctMode !== 'auto') b.ledgerPctMode = 'auto';
+
     var nh = b.headers.length;
     if (!b.colKinds || b.colKinds.length !== nh) {
-      b.colKinds = [];
-      for (var i = 0; i < nh; i++) {
-        if (i === 1) b.colKinds.push('currency');
-        else if (i === 2) b.colKinds.push('pct');
-        else b.colKinds.push('text');
+      if (nh === 6 && ledgerGetDerivedSpec(b, 3) && ledgerGetDerivedSpec(b, 3).op === 'diff') {
+        b.colKinds = ['text', 'currency', 'currency', 'derived', 'pct', 'text'];
+        if (typeof b.montoCol !== 'number') b.montoCol = 1;
+        if (typeof b.pctCol !== 'number') b.pctCol = 4;
+      } else if (nh === 5 && ledgerGetDerivedSpec(b, 3) && ledgerGetDerivedSpec(b, 3).op === 'sum') {
+        b.colKinds = ['text', 'currency', 'currency', 'derived', 'text'];
+        if (typeof b.montoCol !== 'number') b.montoCol = 3;
+      } else {
+        b.colKinds = [];
+        for (var i = 0; i < nh; i++) {
+          if (ledgerGetDerivedSpec(b, i)) b.colKinds.push('derived');
+          else if (i === 1 && nh >= 2) b.colKinds.push('currency');
+          else if (i === 2 && nh === 4) b.colKinds.push('pct');
+          else if (i === nh - 1) b.colKinds.push('text');
+          else b.colKinds.push('text');
+        }
       }
     }
-    if (typeof b.montoCol !== 'number') b.montoCol = 1;
-    if (typeof b.pctCol !== 'number') b.pctCol = 2;
+    for (var j = 0; j < nh; j++) {
+      if (ledgerGetDerivedSpec(b, j)) b.colKinds[j] = 'derived';
+    }
+    if (typeof b.montoCol !== 'number' || b.montoCol < 0 || b.montoCol >= nh) b.montoCol = 1;
+    b.pctCol = -1;
+    for (var k = 0; k < nh; k++) {
+      if (b.colKinds[k] === 'pct') {
+        b.pctCol = k;
+        break;
+      }
+    }
     if (!b.rows || !b.rows.length) {
       b.rows = [['', '', '', ''], ['', '', '', '']];
     }
@@ -4558,9 +4648,11 @@
   }
 
   function ledgerSumMontos(rows, montoCol) {
+    if (typeof montoCol !== 'number' || montoCol < 0) return 0;
     var t = 0;
     (rows || []).forEach(function (row) {
       var arr = Array.isArray(row) ? row : [];
+      if (montoCol >= arr.length) return;
       var raw = arr[montoCol];
       var v = parseFloat(String(raw != null ? raw : '').replace(/\s/g, '').replace(',', '.'));
       if (!isNaN(v)) t += v;
@@ -4568,10 +4660,28 @@
     return t;
   }
 
-  function ledgerPctLabel(rowArr, montoCol, totalM) {
-    var raw = Array.isArray(rowArr) ? rowArr[montoCol] : '';
-    var v = parseFloat(String(raw != null ? raw : '').replace(/\s/g, '').replace(',', '.'));
-    if (isNaN(v) || totalM <= 0) return '—';
+  function ledgerPrincipalTotal(rows, b, ncol) {
+    if (!b || typeof b.montoCol !== 'number' || b.montoCol < 0) return 0;
+    var mc = b.montoCol;
+    var fk = (b.colKinds && b.colKinds[mc]) || '';
+    if (fk === 'derived') {
+      var t = sumLedgerDerivedColumn(rows, b, mc, ncol);
+      return isNaN(t) ? 0 : t;
+    }
+    return ledgerSumMontos(rows, mc);
+  }
+
+  function ledgerPctLabel(rowArr, montoCol, totalM, b, ncol) {
+    if (typeof montoCol !== 'number' || montoCol < 0 || totalM <= 0) return '—';
+    var arr = padRowCells(Array.isArray(rowArr) ? rowArr : rowArr, Math.max(ncol || 0, montoCol + 2, 8));
+    var v;
+    if (b && b.colKinds && b.colKinds[montoCol] === 'derived') {
+      var spec = ledgerGetDerivedSpec(b, montoCol);
+      v = computeLedgerDerived(arr, spec);
+    } else {
+      v = ledgerCellNumber(arr, montoCol);
+    }
+    if (isNaN(v) || v === 0) return '—';
     return (Math.round((v / totalM) * 1000) / 10) + '%';
   }
 
@@ -5580,7 +5690,78 @@
           blocks.splice(blockIndex, 1);
           afterStructuralChange();
         });
+        var lbPct = document.createElement('button');
+        lbPct.type = 'button';
+        lbPct.className = 'btn btn-ghost btn-ghost-blue';
+        lbPct.textContent = b.ledgerPctMode === 'manual' ? '% particip. automático' : '% manual (por fila)';
+        lbPct.title =
+          'Automático: % de cada fila según la columna base (montoCol) y el total de esa columna. Manual: tú escribes el % en cada fila.';
+        lbPct.addEventListener('click', function (e) {
+          e.preventDefault();
+          b.ledgerPctMode = b.ledgerPctMode === 'manual' ? 'auto' : 'manual';
+          afterStructuralChange();
+        });
+        var lbTplG = document.createElement('button');
+        lbTplG.type = 'button';
+        lbTplG.className = 'btn btn-ghost btn-ghost-green';
+        lbTplG.textContent = 'Plantilla gasto (Pagado / Restante)';
+        lbTplG.title = 'Restante = Monto − Pagado. % sobre el monto principal.';
+        lbTplG.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (b.headers.length > 4 && !window.confirm('Esto redefine columnas y fórmulas de esta tabla. ¿Seguir?')) return;
+          b.headers = ['Concepto', 'Monto', 'Pagado', 'Restante', '%', 'Notas'];
+          b.colKinds = ['text', 'currency', 'currency', 'derived', 'pct', 'text'];
+          b.montoCol = 1;
+          b.pctCol = 4;
+          b.ledgerDerivedByCol = { '3': { op: 'diff', left: 1, right: 2 } };
+          b.ledgerPctMode = 'auto';
+          b.rows.forEach(function (row, idx) {
+            b.rows[idx] = padRowCells(row, 6);
+          });
+          afterStructuralChange();
+        });
+        var lbTplI = document.createElement('button');
+        lbTplI.type = 'button';
+        lbTplI.className = 'btn btn-ghost btn-ghost-green';
+        lbTplI.textContent = 'Plantilla ingresos (suma A+B)';
+        lbTplI.title = 'Total fila = Monto + Otro ingreso. El % de participación usa la columna Total.';
+        lbTplI.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (b.headers.length > 4 && !window.confirm('Esto redefine columnas y fórmulas de esta tabla. ¿Seguir?')) return;
+          b.headers = ['Concepto', 'Monto', 'Otro ingreso', 'Total fila', 'Notas'];
+          b.colKinds = ['text', 'currency', 'currency', 'derived', 'text'];
+          b.montoCol = 3;
+          b.ledgerDerivedByCol = { '3': { op: 'sum', cols: [1, 2] } };
+          b.ledgerPctMode = 'auto';
+          b.rows.forEach(function (row, idx) {
+            b.rows[idx] = padRowCells(row, 5);
+          });
+          afterStructuralChange();
+        });
+        var lbTplInv = document.createElement('button');
+        lbTplInv.type = 'button';
+        lbTplInv.className = 'btn btn-ghost btn-ghost-green';
+        lbTplInv.textContent = 'Plantilla inversión (unid×precio)';
+        lbTplInv.title = 'Valor posición = Unidades × Precio. % sobre el valor de la posición.';
+        lbTplInv.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (b.headers.length > 4 && !window.confirm('Esto redefine columnas y fórmulas de esta tabla. ¿Seguir?')) return;
+          b.headers = ['Concepto', 'Unidades', 'Precio c/u', 'Valor posición', '%', 'Notas'];
+          b.colKinds = ['text', 'currency', 'currency', 'derived', 'pct', 'text'];
+          b.montoCol = 3;
+          b.pctCol = 4;
+          b.ledgerDerivedByCol = { '3': { op: 'product', cols: [1, 2] } };
+          b.ledgerPctMode = 'auto';
+          b.rows.forEach(function (row, idx) {
+            b.rows[idx] = padRowCells(row, 6);
+          });
+          afterStructuralChange();
+        });
         ltb.appendChild(lbRow);
+        ltb.appendChild(lbPct);
+        ltb.appendChild(lbTplG);
+        ltb.appendChild(lbTplI);
+        ltb.appendChild(lbTplInv);
         ltb.appendChild(lbDel);
         wrap.appendChild(ltb);
       }
@@ -5589,16 +5770,39 @@
 
       function refreshLedgerDerivedUI() {
         if (!isLedger) return;
-        var totalM = ledgerSumMontos(b.rows, b.montoCol);
-        wrap.querySelectorAll('[data-pct-row]').forEach(function (el) {
-          var pri = parseInt(el.getAttribute('data-pct-row'), 10);
-          if (isNaN(pri) || !b.rows[pri]) return;
-          el.textContent = ledgerPctLabel(b.rows[pri], b.montoCol, totalM);
+        var totalM = ledgerPrincipalTotal(b.rows, b, ncol);
+        if (b.ledgerPctMode !== 'manual') {
+          wrap.querySelectorAll('[data-pct-row]').forEach(function (el) {
+            var pri = parseInt(el.getAttribute('data-pct-row'), 10);
+            if (isNaN(pri) || !b.rows[pri]) return;
+            el.textContent = ledgerPctLabel(b.rows[pri], b.montoCol, totalM, b, ncol);
+          });
+        }
+        wrap.querySelectorAll('.np-ms-cell-derived[data-ri]').forEach(function (el) {
+          var pri = parseInt(el.getAttribute('data-ri'), 10);
+          var pci = parseInt(el.getAttribute('data-ci'), 10);
+          if (isNaN(pri) || isNaN(pci) || !b.rows[pri]) return;
+          var spec = ledgerGetDerivedSpec(b, pci);
+          if (!spec) return;
+          var arr = padRowCells(b.rows[pri], ncol);
+          var dvx = computeLedgerDerived(arr, spec);
+          el.textContent = isNaN(dvx) ? '—' : formatLedgerMoney(dvx);
         });
-        var fm = wrap.querySelector('[data-ledger-foot-monto]');
+        wrap.querySelectorAll('[data-ledger-foot-sum]').forEach(function (tcell) {
+          var fc = parseInt(tcell.getAttribute('data-ledger-foot-sum'), 10);
+          if (isNaN(fc)) return;
+          var fk = (b.colKinds && b.colKinds[fc]) || '';
+          if (fk === 'currency') {
+            tcell.textContent = formatLedgerMoney(sumLedgerColumn(b.rows, fc));
+          } else if (fk === 'derived') {
+            var tder = sumLedgerDerivedColumn(b.rows, b, fc, ncol);
+            tcell.textContent = isNaN(tder) ? '—' : formatLedgerMoney(tder);
+          }
+        });
         var fp = wrap.querySelector('[data-ledger-foot-pct]');
-        if (fm) fm.textContent = formatLedgerMoney(totalM);
-        if (fp) fp.textContent = totalM > 0 ? '100%' : '—';
+        if (fp) {
+          fp.textContent = b.ledgerPctMode === 'manual' ? '—' : totalM > 0 ? '100%' : '—';
+        }
       }
 
       function setCell(rowIndex, colIndex, value) {
@@ -5856,12 +6060,25 @@
             spk.style.color = '#64748b';
             spk.textContent = kindLab ? kindLab.label : rk;
             cell.appendChild(spk);
+          } else if (isLedger && ledgerGetDerivedSpec(b, c)) {
+            var specD = ledgerGetDerivedSpec(b, c);
+            var arrD = padRowCells(cells, ncol);
+            var dv = computeLedgerDerived(arrD, specD);
+            var es = document.createElement('div');
+            es.className = 'np-ms-cell-static np-ms-cell-num np-ms-cell-derived';
+            es.setAttribute('data-ri', String(ri));
+            es.setAttribute('data-ci', String(c));
+            es.textContent = isNaN(dv) ? '—' : formatLedgerMoney(dv);
+            cell.appendChild(es);
           } else if (isLedger && colKind === 'currency') {
             if (editable) {
               var inpCur = document.createElement('input');
               inpCur.type = 'text';
               inpCur.inputMode = 'decimal';
               inpCur.className = 'np-ms-cell-input np-ms-cell-num';
+              inpCur.setAttribute('data-np-block', String(blockIndex));
+              inpCur.setAttribute('data-np-row', String(ri));
+              inpCur.setAttribute('data-np-col', String(c));
               inpCur.value = raw;
               inpCur.autocomplete = 'off';
               inpCur.addEventListener('input', function () {
@@ -5875,12 +6092,38 @@
               spCur.textContent = raw ? raw : '—';
               cell.appendChild(spCur);
             }
+          } else if (isLedger && colKind === 'pct' && b.ledgerPctMode === 'manual') {
+            if (editable) {
+              var inpPctM = document.createElement('input');
+              inpPctM.type = 'text';
+              inpPctM.inputMode = 'decimal';
+              inpPctM.className = 'np-ms-cell-input np-ms-cell-num';
+              inpPctM.setAttribute('data-np-block', String(blockIndex));
+              inpPctM.setAttribute('data-np-row', String(ri));
+              inpPctM.setAttribute('data-np-col', String(c));
+              inpPctM.value = raw;
+              inpPctM.autocomplete = 'off';
+              inpPctM.placeholder = '%';
+              inpPctM.addEventListener('input', function () {
+                setCell(ri, c, inpPctM.value);
+                refreshLedgerDerivedUI();
+              });
+              inpPctM.addEventListener('blur', function () {
+                setCell(ri, c, inpPctM.value);
+              });
+              cell.appendChild(inpPctM);
+            } else {
+              var spPctM = document.createElement('div');
+              spPctM.className = 'np-ms-cell-static np-ms-pct-cell';
+              spPctM.textContent = raw || '—';
+              cell.appendChild(spPctM);
+            }
           } else if (isLedger && colKind === 'pct') {
             var spanPct = document.createElement('div');
             spanPct.className = 'np-ms-cell-static np-ms-pct-cell';
-            var totalLive = ledgerSumMontos(rows, b.montoCol);
-            spanPct.textContent = ledgerPctLabel(cells, b.montoCol, totalLive);
-            if (editable) {
+            var totalLive = ledgerPrincipalTotal(rows, b, ncol);
+            spanPct.textContent = ledgerPctLabel(cells, b.montoCol, totalLive, b, ncol);
+            if (editable && b.ledgerPctMode !== 'manual') {
               spanPct.setAttribute('data-pct-row', String(ri));
             }
             cell.appendChild(spanPct);
@@ -6012,9 +6255,9 @@
       });
 
       if (isLedger) {
-        var totalLM = ledgerSumMontos(rows, b.montoCol);
         var foot = document.createElement('div');
         foot.className = 'np-ms-row np-ms-row-ledger-total';
+        var totalLM = ledgerPrincipalTotal(rows, b, ncol);
         for (var fc = 0; fc < ncol; fc++) {
           var fk = (b.colKinds && b.colKinds[fc]) || 'text';
           var tcell = document.createElement('div');
@@ -6022,13 +6265,20 @@
           if (fc === 0) {
             tcell.textContent = 'Totales';
           } else if (fk === 'currency') {
-            tcell.setAttribute('data-ledger-foot-monto', '1');
+            tcell.setAttribute('data-ledger-foot-sum', String(fc));
             tcell.classList.add('np-ms-cell-num');
-            tcell.textContent = formatLedgerMoney(totalLM);
+            tcell.textContent = formatLedgerMoney(sumLedgerColumn(rows, fc));
+          } else if (fk === 'derived') {
+            tcell.setAttribute('data-ledger-foot-sum', String(fc));
+            tcell.classList.add('np-ms-cell-num');
+            var tder = sumLedgerDerivedColumn(rows, b, fc, ncol);
+            tcell.textContent = isNaN(tder) ? '—' : formatLedgerMoney(tder);
           } else if (fk === 'pct') {
             tcell.classList.add('np-ms-pct-cell');
-            tcell.setAttribute('data-ledger-foot-pct', '1');
-            tcell.textContent = totalLM > 0 ? '100%' : '—';
+            if (typeof b.pctCol === 'number' && b.pctCol >= 0 && fc === b.pctCol) {
+              tcell.setAttribute('data-ledger-foot-pct', '1');
+            }
+            tcell.textContent = b.ledgerPctMode === 'manual' ? '—' : totalLM > 0 ? '100%' : '—';
           } else {
             tcell.textContent = '';
           }
@@ -6313,6 +6563,15 @@
       map[row.category_id] = (map[row.category_id] || 0) + 1;
     });
     state.categoryItemCounts = map;
+  }
+
+  /** Cuenta ítems por category_id desde filas ya cargadas (evita otra query a Supabase). */
+  function applyCategoryItemCountsFromRows(itemRows) {
+    state.categoryItemCounts = {};
+    (itemRows || []).forEach(function (row) {
+      if (!row || !row.category_id) return;
+      state.categoryItemCounts[row.category_id] = (state.categoryItemCounts[row.category_id] || 0) + 1;
+    });
   }
 
   function renderTreeNode(node, isRoot) {
@@ -6614,9 +6873,6 @@
     applySheetCategoryAccent(sp);
     syncPlanProCategoryColorBar();
     if (title) title.textContent = getCategoryPath(state.selectedCategoryId);
-    sp.style.animation = 'none';
-    void sp.offsetHeight;
-    sp.style.animation = '';
     renderSheetNavBlocks();
   }
 
@@ -7015,7 +7271,10 @@
     $('npBtnCreate').disabled = getActivePlanAreas().length === 0;
   }
 
+  var npLoadItemsGen = 0;
+
   async function loadItems() {
+    var gen = ++npLoadItemsGen;
     var c = state.client;
     var uid = state.userId;
     if (!state.selectedAreaId && getActivePlanAreas().length) state.selectedAreaId = getActivePlanAreas()[0].id;
@@ -7059,6 +7318,7 @@
       .eq('area_id', state.selectedAreaId);
 
     var resFiltered = await qFiltered.order('updated_at', { ascending: false });
+    if (gen !== npLoadItemsGen) return;
     if (resFiltered.error) {
       var em = (resFiltered.error.message || '');
       if (state.planProBodyHtmlColumn && /body_html/i.test(em) && /does not exist/i.test(em)) {
@@ -7075,6 +7335,7 @@
     var rowsForSidebar = resFiltered.data || [];
     if (state.selectedCategoryId) {
       var resAreaAll = await qAreaAll.order('updated_at', { ascending: false });
+      if (gen !== npLoadItemsGen) return;
       if (resAreaAll.error) {
         var em2 = (resAreaAll.error.message || '');
         if (state.planProBodyHtmlColumn && /body_html/i.test(em2) && /does not exist/i.test(em2)) {
@@ -7088,9 +7349,9 @@
 
     var rows = resFiltered.data || [];
     var tb = $('npTableBody');
-    tb.innerHTML = '';
     $('npEmpty').classList.toggle('np-hide', rows.length > 0);
 
+    var frag = document.createDocumentFragment();
     rows.forEach(function (r) {
       var tr = document.createElement('tr');
       tr.className = 'np-items-row';
@@ -7134,8 +7395,9 @@
         openItemDetail(r);
       });
 
-      tb.appendChild(tr);
+      frag.appendChild(tr);
     });
+    tb.replaceChildren(frag);
     tb.querySelectorAll('[data-del]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var id = btn.getAttribute('data-del');
@@ -7147,8 +7409,11 @@
     syncSheetItemsList(rows);
     renderSidebarPrioSummary(rowsForSidebar);
     renderSidebarCalendar(rowsForSidebar);
-    await refreshCategoryItemCounts();
-    patchTreeMetaBadges();
+    applyCategoryItemCountsFromRows(rowsForSidebar);
+    requestAnimationFrame(function () {
+      if (gen !== npLoadItemsGen) return;
+      patchTreeMetaBadges();
+    });
     syncTreeActiveHighlight();
     applyPlanProPlantAccent();
     syncPlanProAreaColorBar();
@@ -7165,15 +7430,17 @@
     if (!wrap || !mount || !emptyEl) return;
     if (!state.selectedCategoryId) {
       wrap.classList.add('np-hide');
+      mount.replaceChildren();
       return;
     }
     wrap.classList.remove('np-hide');
-    mount.innerHTML = '';
     if (!rows || !rows.length) {
+      mount.replaceChildren();
       emptyEl.classList.remove('np-hide');
       return;
     }
     emptyEl.classList.add('np-hide');
+    var fragM = document.createDocumentFragment();
     rows.forEach(function (r) {
       var card = document.createElement('button');
       card.type = 'button';
@@ -7194,8 +7461,9 @@
       card.addEventListener('click', function () {
         openItemDetail(r);
       });
-      mount.appendChild(card);
+      fragM.appendChild(card);
     });
+    mount.replaceChildren(fragM);
   }
 
   async function deleteItem(id) {
