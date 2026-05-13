@@ -88,7 +88,101 @@
       margin-top: 2px;
       letter-spacing: -0.01em;
     }
-    .np-plan-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .np-plan-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      max-width: 100%;
+    }
+    .np-plan-social {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .np-header-social-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      color: #64748b;
+      text-decoration: none;
+      background: rgba(248, 250, 252, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+      transition: color 0.18s ease, transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+    .np-header-social-btn:hover {
+      color: var(--np-blue);
+      background: rgba(255, 255, 255, 0.95);
+      transform: translateY(-1px);
+    }
+    .np-header-social-btn[data-social="facebook"]:hover { color: #1877f2; }
+    .np-header-social-btn[data-social="instagram"]:hover { color: #e4405f; }
+    .np-header-social-btn[data-social="tiktok"]:hover { color: #0f172a; }
+    .np-header-social-btn[data-social="youtube"]:hover { color: #ff0000; }
+    .np-header-social-btn[data-social="linkedin"]:hover { color: #0077b5; }
+    .np-header-social-icon {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    .np-plan-nav-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .np-plan-link-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      row-gap: 6px;
+      max-width: min(100%, 980px);
+    }
+    .btn-mac-link {
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      border-radius: 8px;
+      padding: 5px 9px;
+      font-weight: 600;
+      font-size: 11px;
+      line-height: 1.2;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      color: #475569;
+      background: rgba(255, 255, 255, 0.62);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-mac-link:hover {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(100, 116, 139, 0.5);
+      color: #1e293b;
+      transform: translateY(-1px);
+    }
+    .btn-mac-logout-icon {
+      padding: 8px !important;
+      min-width: 40px;
+      justify-content: center;
+      border-radius: 12px;
+    }
+    .btn-mac-logout-icon svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
     .btn-mac-nav {
       border: 1px solid rgba(0, 0, 0, 0.06);
       border-radius: 980px;
@@ -137,6 +231,36 @@
       background: rgba(240, 253, 244, 1);
       color: #14532d;
       box-shadow: 0 4px 14px rgba(22, 163, 74, 0.14);
+    }
+    .btn-mac-paypal {
+      border: 1px solid rgba(0, 48, 135, 0.38);
+      color: #003087;
+      background: linear-gradient(180deg, rgba(230, 243, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
+      font-weight: 600;
+      box-shadow:
+        0 1px 3px rgba(0, 48, 135, 0.08),
+        0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    }
+    .btn-mac-paypal:hover {
+      border-color: rgba(0, 48, 135, 0.55);
+      background: rgba(230, 243, 255, 1);
+      color: #001f5c;
+      box-shadow: 0 4px 14px rgba(0, 48, 135, 0.12);
+    }
+    .btn-mac-paypal-dev {
+      border: 1px solid rgba(0, 112, 186, 0.42);
+      color: #005ea6;
+      background: linear-gradient(180deg, rgba(240, 249, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
+      font-weight: 600;
+      box-shadow:
+        0 1px 3px rgba(0, 112, 186, 0.08),
+        0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    }
+    .btn-mac-paypal-dev:hover {
+      border-color: rgba(0, 112, 186, 0.58);
+      background: rgba(240, 249, 255, 1);
+      color: #003d66;
+      box-shadow: 0 4px 14px rgba(0, 112, 186, 0.12);
     }
     .btn-mac-muted {
       opacity: 0.88;
@@ -405,6 +529,14 @@
       header.np-plan-header.np-mac-bar {
         padding: 12px 14px;
         margin-bottom: 16px;
+        align-items: flex-start;
+      }
+      .np-plan-header.np-mac-bar .np-plan-actions {
+        align-items: flex-end;
+        width: 100%;
+      }
+      .np-plan-social {
+        justify-content: flex-end;
       }
       .np-plan-brand img {
         height: 34px;
@@ -415,6 +547,10 @@
       .btn-mac-nav {
         padding: 8px 12px;
         font-size: 12px;
+      }
+      .btn-mac-link {
+        padding: 4px 7px;
+        font-size: 10px;
       }
       .np-tree-sidebar {
         position: static;
@@ -1867,9 +2003,78 @@
         </div>
       </div>
       <div class="np-plan-actions np-hide" id="npHeaderLogged">
-        <a class="btn-mac-nav btn-mac-nav-brand" href="https://nutriplantpro.com/login" target="_blank" rel="noopener noreferrer">NutriPlantPRO</a>
-        <a class="btn-mac-nav btn-mac-admin" href="https://nutriplantpro.com/admin/?k=np_admin_key_8f4a2b9c1e7d" target="_blank" rel="noopener noreferrer">Panel admin</a>
-        <button type="button" class="btn-mac-nav btn-mac-logout" id="npBtnLogout">Cerrar sesión</button>
+        <div class="np-plan-social" role="navigation" aria-label="Redes NutriPlant PRO">
+          <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="facebook" title="Facebook" aria-label="Facebook">
+            <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+            </svg>
+          </a>
+          <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&amp;igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="instagram" title="Instagram" aria-label="Instagram">
+            <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+            </svg>
+          </a>
+          <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&amp;_r=1" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="tiktok" title="TikTok" aria-label="TikTok">
+            <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
+            </svg>
+          </a>
+          <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="youtube" title="YouTube" aria-label="YouTube">
+            <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/>
+              <polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/>
+            </svg>
+          </a>
+          <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="linkedin" title="LinkedIn" aria-label="LinkedIn">
+            <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+              <rect x="2" y="9" width="4" height="12"/>
+              <circle cx="4" cy="4" r="2"/>
+            </svg>
+          </a>
+        </div>
+        <div class="np-plan-nav-buttons">
+          <a class="btn-mac-nav btn-mac-nav-brand" href="https://nutriplantpro.com/login" target="_blank" rel="noopener noreferrer">NutriPlantPRO</a>
+          <a class="btn-mac-nav btn-mac-admin" href="https://nutriplantpro.com/admin/?k=np_admin_key_8f4a2b9c1e7d" target="_blank" rel="noopener noreferrer">Panel admin</a>
+          <a class="btn-mac-nav btn-mac-paypal" href="https://www.paypal.com/myaccount/" target="_blank" rel="noopener noreferrer" title="Cuenta PayPal (resumen, pagos, suscripciones)">Cuenta PayPal</a>
+          <a class="btn-mac-nav btn-mac-paypal-dev" href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer" title="PayPal Developer: apps, credenciales, webhooks">PayPal Developer</a>
+          <button type="button" class="btn-mac-nav btn-mac-logout btn-mac-logout-icon" id="npBtnLogout" aria-label="Cerrar sesión" title="Cerrar sesión">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 2v10"/>
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+            </svg>
+          </button>
+        </div>
+        <div class="np-plan-link-row" aria-label="Herramientas y cuentas">
+          <a class="btn-mac-link" href="https://supabase.com/" target="_blank" rel="noopener noreferrer" title="Supabase">Supabase</a>
+          <a class="btn-mac-link" href="https://analytics.google.com/analytics/web/#/a378706965p517694954/reports/intelligenthome" target="_blank" rel="noopener noreferrer" title="Google Analytics">Analytics</a>
+          <a class="btn-mac-link" href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer" title="Netlify">Netlify</a>
+          <a class="btn-mac-link" href="https://github.com/" target="_blank" rel="noopener noreferrer" title="GitHub">GitHub</a>
+          <a class="btn-mac-link" href="https://www.namecheap.com/" target="_blank" rel="noopener noreferrer" title="Namecheap">Namecheap</a>
+          <a class="btn-mac-link" href="https://console.cloud.google.com/welcome/new?project=cryptic-episode-472320-h7" target="_blank" rel="noopener noreferrer" title="Google Cloud Console">Google Cloud</a>
+          <a class="btn-mac-link" href="https://platform.openai.com/login?next=%2Fapi-keys" target="_blank" rel="noopener noreferrer" title="OpenAI API keys">OpenAI</a>
+          <a class="btn-mac-link" href="https://myaccount.microsoft.com/?ref=amc" target="_blank" rel="noopener noreferrer" title="Cuenta Microsoft">Microsoft</a>
+        </div>
+        <div class="np-plan-link-row" aria-label="Finanzas y noticias">
+          <a class="btn-mac-link" href="https://gbm.com/" target="_blank" rel="noopener noreferrer" title="GBM">GBM</a>
+          <a class="btn-mac-link" href="https://www.fidelity.com/" target="_blank" rel="noopener noreferrer" title="Fidelity">Fidelity</a>
+          <a class="btn-mac-link" href="https://www.bbva.mx/" target="_blank" rel="noopener noreferrer" title="BBVA México">BBVA</a>
+          <a class="btn-mac-link" href="https://es.tradingview.com/" target="_blank" rel="noopener noreferrer" title="TradingView">TradingView</a>
+          <a class="btn-mac-link" href="https://tradingeconomics.com/" target="_blank" rel="noopener noreferrer" title="Trading Economics">T. Economics</a>
+          <a class="btn-mac-link" href="https://finance.yahoo.com/?guccounter=1" target="_blank" rel="noopener noreferrer" title="Yahoo Finance">Yahoo Finanzas</a>
+          <a class="btn-mac-link" href="https://www.google.com/finance/beta?hl=es" target="_blank" rel="noopener noreferrer" title="Google Finanzas">Google Finanzas</a>
+          <a class="btn-mac-link" href="https://www.cetesdirecto.com/" target="_blank" rel="noopener noreferrer" title="CETES Directo">CETES</a>
+          <a class="btn-mac-link" href="https://www.bmv.com.mx/" target="_blank" rel="noopener noreferrer" title="Bolsa Mexicana de Valores">BMV</a>
+          <a class="btn-mac-link" href="https://www.banxico.org.mx/" target="_blank" rel="noopener noreferrer" title="Banco de México">Banxico</a>
+          <a class="btn-mac-link" href="https://finviz.com/" target="_blank" rel="noopener noreferrer" title="Finviz">Finviz</a>
+          <a class="btn-mac-link" href="https://www.imf.org/es" target="_blank" rel="noopener noreferrer" title="FMI">FMI</a>
+          <a class="btn-mac-link" href="https://www.nytimes.com/" target="_blank" rel="noopener noreferrer" title="The New York Times">NY Times</a>
+          <a class="btn-mac-link" href="https://www.wsj.com/" target="_blank" rel="noopener noreferrer" title="The Wall Street Journal">WSJ</a>
+          <a class="btn-mac-link" href="https://www.elfinanciero.com.mx/" target="_blank" rel="noopener noreferrer" title="El Financiero">El Financiero</a>
+          <a class="btn-mac-link" href="http://spanish.peopledaily.com.cn/" target="_blank" rel="noopener noreferrer" title="Diario del Pueblo (español)">PD China</a>
+        </div>
       </div>
     </header>
 
