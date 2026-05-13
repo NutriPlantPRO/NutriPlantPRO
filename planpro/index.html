@@ -3407,6 +3407,15 @@
       font-weight: 700;
       background: rgba(239, 246, 255, 0.55);
     }
+    .np-ms-row-ledger-total .np-ms-cell.np-ms-cell-num {
+      justify-content: flex-end;
+    }
+    .np-ms-row-ledger-total .np-ms-cell.np-ms-cell-foot-muted {
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
     /* Fila tabla: acento por prioridad (semáforo) */
     .np-ms-sheet .np-ms-row:not(.np-ms-row-head):not(.np-ms-row-sum).np-ms-accent-baja {
       border-left: 4px solid #22c55e;
@@ -5256,6 +5265,13 @@
             var ix = parseInt(String(rawCols[u]).trim(), 10);
             if (!isNaN(ix) && ix >= 0 && ix < nh) cols.push(ix);
           }
+        } else if (typeof rawCols === 'string' && String(rawCols).trim()) {
+          String(rawCols)
+            .split(/[,;\s]+/)
+            .forEach(function (piece) {
+              var ixS = parseInt(String(piece).trim(), 10);
+              if (!isNaN(ixS) && ixS >= 0 && ixS < nh) cols.push(ixS);
+            });
         } else if (rawCols != null && typeof rawCols === 'object') {
           Object.keys(rawCols).forEach(function (rk) {
             var ix2 = parseInt(String(rawCols[rk]).trim(), 10);
@@ -6725,6 +6741,19 @@
 
       var showRowDelCol = editable && (isFreeMini || isLedger || b.variant === 'smart' || b.variant === 'tasks');
 
+      /** Texto de la fila Totales por columna (moneda, número, fórmula). */
+      function ledgerFooterAggregateText(fc) {
+        var fk = (b.colKinds && b.colKinds[fc]) || '';
+        if (fk === 'currency' || fk === 'number') {
+          return 'Σ ' + formatLedgerMoney(sumLedgerColumn(b.rows, fc, ncol));
+        }
+        if (fk === 'derived') {
+          var tder = sumLedgerDerivedColumn(b.rows, b, fc, ncol);
+          return isNaN(tder) ? '—' : 'Σ ' + formatLedgerMoney(tder);
+        }
+        return '';
+      }
+
       function refreshLedgerDerivedUI() {
         if (!isLedger) return;
         var totalM = ledgerPrincipalTotal(b.rows, b, ncol);
@@ -6748,13 +6777,8 @@
         wrap.querySelectorAll('[data-ledger-foot-sum]').forEach(function (tcell) {
           var fc = parseInt(tcell.getAttribute('data-ledger-foot-sum'), 10);
           if (isNaN(fc)) return;
-          var fk = (b.colKinds && b.colKinds[fc]) || '';
-          if (fk === 'currency' || fk === 'number') {
-            tcell.textContent = formatLedgerMoney(sumLedgerColumn(b.rows, fc, ncol));
-          } else if (fk === 'derived') {
-            var tder = sumLedgerDerivedColumn(b.rows, b, fc, ncol);
-            tcell.textContent = isNaN(tder) ? '—' : formatLedgerMoney(tder);
-          }
+          var agg = ledgerFooterAggregateText(fc);
+          if (agg) tcell.textContent = agg;
         });
         var fp = wrap.querySelector('[data-ledger-foot-pct]');
         if (fp) {
@@ -6986,7 +7010,7 @@
           if (pLv) rr.classList.add('np-ms-accent-' + pLv);
         }
 
-        for (var c = 0; c < ncol; c++) {
+        for (let c = 0; c < ncol; c++) {
           var cell = document.createElement('div');
           cell.className = 'np-ms-cell';
           if (prioCol === c) cell.classList.add('np-ms-cell-prio');
@@ -7234,12 +7258,11 @@
           } else if (fk === 'currency' || fk === 'number') {
             tcell.setAttribute('data-ledger-foot-sum', String(fc));
             tcell.classList.add('np-ms-cell-num');
-            tcell.textContent = formatLedgerMoney(sumLedgerColumn(rows, fc, ncol));
+            tcell.textContent = ledgerFooterAggregateText(fc);
           } else if (fk === 'derived') {
             tcell.setAttribute('data-ledger-foot-sum', String(fc));
             tcell.classList.add('np-ms-cell-num');
-            var tder = sumLedgerDerivedColumn(rows, b, fc, ncol);
-            tcell.textContent = isNaN(tder) ? '—' : formatLedgerMoney(tder);
+            tcell.textContent = ledgerFooterAggregateText(fc);
           } else if (fk === 'pct') {
             tcell.classList.add('np-ms-pct-cell');
             if (typeof b.pctCol === 'number' && b.pctCol >= 0 && fc === b.pctCol) {
@@ -7247,7 +7270,8 @@
             }
             tcell.textContent = b.ledgerPctMode === 'manual' ? '—' : totalLM > 0 ? '100%' : '—';
           } else {
-            tcell.textContent = '';
+            tcell.classList.add('np-ms-cell-foot-muted');
+            tcell.textContent = '—';
           }
           foot.appendChild(tcell);
         }
