@@ -67,6 +67,9 @@
       box-shadow:
         0 10px 40px rgba(15, 23, 42, 0.07),
         0 1px 0 rgba(255, 255, 255, 0.95) inset;
+      /* Por encima de .panel (#npMain) con backdrop-filter; si no, el menú Accesos queda tapado */
+      position: relative;
+      z-index: 12000;
     }
     .np-plan-brand { display: flex; align-items: center; gap: 12px; }
     .np-plan-brand img { height: 38px; width: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.06)); }
@@ -784,7 +787,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 1000;
+      z-index: 15000;
       background: rgba(15, 23, 42, 0.38);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
@@ -1496,6 +1499,66 @@
       gap: 8px;
       flex: 1 1 100%;
       min-width: 0;
+      align-items: stretch;
+    }
+    .np-pillar-tab-wrap {
+      display: inline-flex;
+      align-items: stretch;
+      border-radius: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      overflow: hidden;
+      transition: background .18s, color .18s, box-shadow .18s, transform .18s, border-color .18s;
+    }
+    .np-pillar-tab-wrap:hover {
+      background: rgba(255, 255, 255, 0.92);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+    }
+    .np-pillar-tab-wrap-active {
+      background: linear-gradient(175deg, rgba(236, 253, 245, 0.95) 0%, rgba(255, 255, 255, 0.98) 70%);
+      border-color: rgba(134, 239, 172, 0.85);
+      box-shadow: 0 6px 20px rgba(22, 163, 74, 0.14);
+    }
+    .np-pillar-tab-wrap .np-pillar-tab {
+      border: none;
+      border-radius: 0;
+      border-bottom: 3px solid transparent;
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 11px 12px 11px 16px;
+    }
+    .np-pillar-tab-wrap-active .np-pillar-tab {
+      color: #14532d;
+    }
+    .np-pillar-tab-more {
+      flex: 0 0 auto;
+      width: 36px;
+      margin: 0;
+      padding: 0 2px;
+      border: none;
+      border-left: 1px solid rgba(148, 163, 184, 0.35);
+      background: transparent;
+      color: #64748b;
+      font-size: 18px;
+      line-height: 1;
+      letter-spacing: 0;
+      cursor: pointer;
+      border-radius: 0;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .np-pillar-tab-more:hover {
+      background: rgba(241, 245, 249, 0.85);
+      color: #0f172a;
+    }
+    .np-pillar-tab-wrap-active .np-pillar-tab-more {
+      color: #15803d;
+    }
+    .np-pillar-tab-more[aria-expanded='true'] {
+      background: rgba(224, 231, 255, 0.95);
+      color: var(--np-blue-d);
     }
     .np-pillar-tab {
       border: 1px solid rgba(15, 23, 42, 0.08);
@@ -1517,12 +1580,72 @@
       transform: translateY(-1px);
       box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
     }
+    .np-pillar-tab-wrap .np-pillar-tab:hover {
+      transform: none;
+      box-shadow: none;
+    }
+    .np-pillar-tab-wrap:hover .np-pillar-tab:not(.np-pillar-tab-active) {
+      background: transparent;
+    }
     .np-pillar-tab-active {
       background: linear-gradient(175deg, rgba(236, 253, 245, 0.95) 0%, rgba(255, 255, 255, 0.98) 70%);
       color: #14532d;
       border-color: rgba(134, 239, 172, 0.85);
       border-bottom-color: #22c55e;
       box-shadow: 0 6px 20px rgba(22, 163, 74, 0.14);
+    }
+    .np-pillar-tab-wrap .np-pillar-tab-active {
+      background: transparent;
+      box-shadow: none;
+      border-color: transparent;
+    }
+    .np-pillar-tab-flyout-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 12490;
+      background: transparent;
+    }
+    .np-pillar-tab-flyout-backdrop.np-show {
+      display: block;
+    }
+    .np-pillar-tab-flyout {
+      display: none;
+      position: fixed;
+      z-index: 12500;
+      box-sizing: border-box;
+      min-width: min(300px, calc(100vw - 24px));
+      max-width: min(380px, calc(100vw - 24px));
+      padding: 14px 16px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 16px 48px rgba(15, 23, 42, 0.14),
+        0 4px 14px rgba(15, 23, 42, 0.08);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .np-pillar-tab-flyout.np-show {
+      display: block;
+    }
+    .np-pillar-tab-flyout-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin: 0 0 10px;
+    }
+    .np-pillar-tab-flyout .np-color-edit-bar {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+    .np-pillar-tab-flyout .np-plant-manage-bar {
+      margin-top: 10px;
+      padding-top: 12px;
     }
     .np-pillar-add {
       display: flex;
@@ -1601,12 +1724,6 @@
     .np-tree-menu-item-warn {
       color: #b45309;
     }
-    .np-tree-sidebar .np-tree-help {
-      margin: -2px 0 10px;
-      font-size: 11px;
-      line-height: 1.4;
-      color: #94a3b8;
-    }
     .np-lista-help {
       margin: 0 0 10px;
       font-size: 12px;
@@ -1615,7 +1732,7 @@
     }
     @media (max-width: 640px) {
       .np-pillar-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
-      .np-pillar-tab { flex-shrink: 0; }
+      .np-pillar-tab-wrap { flex-shrink: 0; }
     }
     .np-sheet-wrap {
       position: relative;
@@ -2827,17 +2944,28 @@
             <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddPillar">Añadir planta</button>
           </div>
         </div>
-        <div id="npAreaColorBar" class="np-color-edit-bar np-hide">
-          <span class="np-color-edit-label">Color planta</span>
-          <input type="color" id="npAreaColorPicker" class="np-color-edit-picker" title="Elegir color" aria-label="Color de la planta seleccionada" />
-          <input type="text" id="npAreaColorHex" class="np-color-edit-hex" maxlength="7" placeholder="#RRGGBB" spellcheck="false" autocomplete="off" aria-label="Código hexadecimal del color" />
-          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAreaColorApply">Aplicar</button>
-          <button type="button" class="btn btn-ghost" id="npBtnAreaColorClear">Automático</button>
-        </div>
-        <div id="npPlantManageBar" class="np-plant-manage-bar np-hide">
-          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnRenamePlant">Renombrar planta…</button>
-          <button type="button" class="btn btn-ghost" id="npBtnArchivePlant">Archivar planta…</button>
-          <button type="button" class="btn btn-danger" id="npBtnDeletePlant">Borrar planta…</button>
+        <div id="npPillarTabFlyoutBackdrop" class="np-pillar-tab-flyout-backdrop" aria-hidden="true"></div>
+        <div
+          id="npPillarTabFlyout"
+          class="np-pillar-tab-flyout"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="npPillarTabFlyoutTitle"
+          aria-hidden="true"
+        >
+          <div id="npPillarTabFlyoutTitle" class="np-pillar-tab-flyout-title">Opciones de esta planta</div>
+          <div id="npAreaColorBar" class="np-color-edit-bar">
+            <span class="np-color-edit-label">Color planta</span>
+            <input type="color" id="npAreaColorPicker" class="np-color-edit-picker" title="Elegir color" aria-label="Color de la planta seleccionada" />
+            <input type="text" id="npAreaColorHex" class="np-color-edit-hex" maxlength="7" placeholder="#RRGGBB" spellcheck="false" autocomplete="off" aria-label="Código hexadecimal del color" />
+            <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAreaColorApply">Aplicar</button>
+            <button type="button" class="btn btn-ghost" id="npBtnAreaColorClear">Automático</button>
+          </div>
+          <div id="npPlantManageBar" class="np-plant-manage-bar">
+            <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnRenamePlant">Renombrar planta…</button>
+            <button type="button" class="btn btn-ghost" id="npBtnArchivePlant">Archivar planta…</button>
+            <button type="button" class="btn btn-danger" id="npBtnDeletePlant">Borrar planta…</button>
+          </div>
         </div>
       </section>
 
@@ -2845,7 +2973,6 @@
       <div class="np-layout">
         <aside class="panel np-tree-sidebar np-section-accent np-section-accent-plant">
           <h2 class="np-tree-sidebar-title">Ramas</h2>
-          <p class="np-tree-help">Archivar rama: la oculta en el árbol; los apuntes siguen en la nube. Para borrar un apunte usa la lista o la tarjeta del apunte (eliminar = borrado en Supabase).</p>
           <div id="npTreeMount" class="np-tree-mount" role="tree" aria-label="Ramas de la planta"></div>
           <div style="margin-top:12px;">
             <div style="display:flex;gap:8px;margin-top:0;align-items:center;">
@@ -3031,6 +3158,40 @@
 
   var detailBlocksSaveTimer = null;
   var detailBodySaveTimer = null;
+  /** Evita varios refreshDetailBlocksDOM seguidos (reconstruye todo el DOM de tablas). */
+  var detailBlocksDomRefreshTimer = null;
+
+  function queueRefreshDetailBlocksDOM() {
+    if (detailBlocksDomRefreshTimer) clearTimeout(detailBlocksDomRefreshTimer);
+    detailBlocksDomRefreshTimer = setTimeout(function () {
+      detailBlocksDomRefreshTimer = null;
+      refreshDetailBlocksDOM();
+    }, 48);
+  }
+
+  function cancelQueuedDetailBlocksDOMRefresh() {
+    if (detailBlocksDomRefreshTimer) {
+      clearTimeout(detailBlocksDomRefreshTimer);
+      detailBlocksDomRefreshTimer = null;
+    }
+  }
+
+  var pendingPreviewRefreshTimer = null;
+  function queueRefreshPendingHint() {
+    if (pendingPreviewRefreshTimer) clearTimeout(pendingPreviewRefreshTimer);
+    pendingPreviewRefreshTimer = setTimeout(function () {
+      pendingPreviewRefreshTimer = null;
+      refreshPendingHint();
+    }, 56);
+  }
+
+  function flushPendingPreviewRefresh() {
+    if (pendingPreviewRefreshTimer) {
+      clearTimeout(pendingPreviewRefreshTimer);
+      pendingPreviewRefreshTimer = null;
+    }
+    refreshPendingHint();
+  }
 
   function $(id) { return document.getElementById(id); }
 
@@ -3045,9 +3206,16 @@
   document.addEventListener('click', function (e) {
     if (e.target && e.target.closest && e.target.closest('.np-tree-menu-wrap')) return;
     closeAllTreeMenus();
+    if (e.target && e.target.closest && e.target.closest('#npPillarTabFlyout')) return;
+    if (e.target && e.target.closest && e.target.closest('#npPillarTabFlyoutBackdrop')) return;
+    if (e.target && e.target.closest && e.target.closest('.np-pillar-tab-more')) return;
+    closePillarTabFlyout();
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeAllTreeMenus();
+    if (e.key === 'Escape') {
+      closeAllTreeMenus();
+      closePillarTabFlyout();
+    }
   });
 
   function showToast(msg, isErr) {
@@ -3543,6 +3711,7 @@
       clearTimeout(detailBlocksSaveTimer);
       detailBlocksSaveTimer = null;
     }
+    cancelQueuedDetailBlocksDOMRefresh();
     syncDetailBlocksInputsFromDOM();
     await flushDetailMainNote();
     if (state.detailItemId && state.detailBlocksWorking && state.client) {
@@ -3747,6 +3916,97 @@
     return NP_PLANT_FALLBACK_HEX[0];
   }
 
+  function closePillarTabFlyout() {
+    var fly = $('npPillarTabFlyout');
+    var bd = $('npPillarTabFlyoutBackdrop');
+    if (fly) {
+      fly.classList.remove('np-show');
+      fly.setAttribute('aria-hidden', 'true');
+      fly.style.left = '';
+      fly.style.top = '';
+      fly.style.visibility = '';
+    }
+    if (bd) {
+      bd.classList.remove('np-show');
+      bd.setAttribute('aria-hidden', 'true');
+    }
+    document.querySelectorAll('.np-pillar-tab-more').forEach(function (b) {
+      b.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  function positionPillarTabFlyout(anchorEl) {
+    var fly = $('npPillarTabFlyout');
+    if (!fly) return;
+    fly.classList.add('np-show');
+    fly.style.visibility = 'hidden';
+    fly.style.left = '0';
+    fly.style.top = '0';
+    var w = fly.offsetWidth;
+    var h = fly.offsetHeight;
+    var r = null;
+    if (anchorEl && anchorEl.getBoundingClientRect) r = anchorEl.getBoundingClientRect();
+    if (!r) {
+      var wrap = $('npPillarTabs');
+      r = wrap && wrap.getBoundingClientRect ? wrap.getBoundingClientRect() : { left: 12, right: 200, bottom: 80, top: 40 };
+    }
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var pad = 10;
+    var top = r.bottom + 8;
+    if (top + h + pad > vh) top = Math.max(pad, r.top - h - 8);
+    var left = (anchorEl ? r.right : r.left + (r.right - r.left) / 2) - w;
+    if (!anchorEl) left = r.left + (r.right - r.left) / 2 - w / 2;
+    if (left < pad) left = pad;
+    if (left + w + pad > vw) left = Math.max(pad, vw - w - pad);
+    fly.style.left = left + 'px';
+    fly.style.top = top + 'px';
+    fly.style.visibility = '';
+  }
+
+  function openPillarTabFlyout(areaId) {
+    if (!areaId) return;
+    if (typeof closeAllTreeMenus === 'function') closeAllTreeMenus();
+    closePillarTabFlyout();
+    var changed = state.selectedAreaId !== areaId;
+    if (changed) {
+      state.selectedAreaId = areaId;
+      state.selectedCategoryId = null;
+      renderPillarTabs();
+      renderTree();
+      updateSelectionUI();
+    }
+    var wrap = $('npPillarTabs');
+    var anchorEl =
+      wrap &&
+      (wrap.querySelector('.np-pillar-tab-more[data-area-id="' + areaId + '"]') ||
+        wrap.querySelector('.np-pillar-tab-wrap[data-area-id="' + areaId + '"]'));
+    function finishOpen() {
+      syncPlanProAreaColorBar();
+      var a = state.areas.filter(function (x) {
+        return x.id === state.selectedAreaId;
+      })[0];
+      var tit = $('npPillarTabFlyoutTitle');
+      if (tit && a) tit.textContent = 'Opciones · ' + (a.title || 'Planta');
+      var fly = $('npPillarTabFlyout');
+      var bd = $('npPillarTabFlyoutBackdrop');
+      if (!fly || !bd) return;
+      var moreBtn = wrap && wrap.querySelector('.np-pillar-tab-more[data-area-id="' + areaId + '"]');
+      if (moreBtn) moreBtn.setAttribute('aria-expanded', 'true');
+      bd.classList.add('np-show');
+      bd.setAttribute('aria-hidden', 'false');
+      fly.setAttribute('aria-hidden', 'false');
+      positionPillarTabFlyout(anchorEl || moreBtn);
+    }
+    if (changed) {
+      Promise.resolve(loadItems()).then(finishOpen).catch(function () {
+        finishOpen();
+      });
+    } else {
+      finishOpen();
+    }
+  }
+
   function applyPlanProPlantAccent() {
     var main = $('npMain');
     if (!main) return;
@@ -3754,40 +4014,18 @@
   }
 
   function syncPlanProAreaColorBar() {
-    var bar = $('npAreaColorBar');
     var pk = $('npAreaColorPicker');
     var tx = $('npAreaColorHex');
-    if (!bar || !pk || !tx) return;
-    if (!state.selectedAreaId || !state.areas.length) {
-      bar.classList.add('np-hide');
-      syncPlantManageBar();
-      return;
-    }
-    var a = state.areas.filter(function (x) { return x.id === state.selectedAreaId; })[0];
-    if (!a || a.archived_at) {
-      bar.classList.add('np-hide');
-      syncPlantManageBar();
-      return;
-    }
-    bar.classList.remove('np-hide');
+    if (!pk || !tx) return;
+    if (!state.selectedAreaId || !state.areas.length) return;
+    var a = state.areas.filter(function (x) {
+      return x.id === state.selectedAreaId;
+    })[0];
+    if (!a || a.archived_at) return;
     var stored = a && a.color_hex ? normalizePlanColorHex(a.color_hex) : '';
     var effective = resolvePlantAccentHex(state.selectedAreaId);
     tx.value = stored;
     pk.value = stored || effective;
-    syncPlantManageBar();
-  }
-
-  function syncPlantManageBar() {
-    var bar = $('npPlantManageBar');
-    if (!bar) return;
-    var a =
-      state.selectedAreaId && state.areas.length
-        ? state.areas.filter(function (x) {
-            return x.id === state.selectedAreaId;
-          })[0]
-        : null;
-    var show = !!(a && !a.archived_at);
-    bar.classList.toggle('np-hide', !show);
   }
 
   function syncPlanProCategoryColorBar() {
@@ -4516,10 +4754,19 @@
     return 0;
   }
 
+  /** Color efectivo de la rama (misma regla que el árbol): custom en la categoría o tono por raíz. */
+  function resolveCategoryAccentHex(catId) {
+    if (!catId) return resolvePlantAccentHex(state.selectedAreaId);
+    var custom = getCategoryCustomHex(catId);
+    if (custom) return custom;
+    var root = getRootCategoryId(catId);
+    var idx = getTreeToneIndex(root);
+    return NP_PLANT_FALLBACK_HEX[idx % NP_PLANT_FALLBACK_HEX.length];
+  }
+
   function sheetAccentHexForSelection() {
     if (state.selectedCategoryId) {
-      var ch = getCategoryCustomHex(state.selectedCategoryId);
-      if (ch) return ch;
+      return resolveCategoryAccentHex(state.selectedCategoryId);
     }
     return resolvePlantAccentHex(state.selectedAreaId);
   }
@@ -4767,20 +5014,16 @@
       if (detailBlocksSaveTimer) clearTimeout(detailBlocksSaveTimer);
       detailBlocksSaveTimer = setTimeout(function () {
         detailBlocksSaveTimer = null;
-        persistItemBlocks(persistItemId, blocks, {});
+        persistItemBlocks(persistItemId, blocks, { skipReload: true });
       }, 520);
     }
 
     function afterStructuralChange() {
       if (persistItemId) {
         schedulePersist();
-        setTimeout(function () {
-          if (typeof refreshDetailBlocksDOM === 'function') refreshDetailBlocksDOM();
-        }, 0);
+        queueRefreshDetailBlocksDOM();
       } else {
-        setTimeout(function () {
-          if (typeof refreshPendingHint === 'function') refreshPendingHint();
-        }, 0);
+        queueRefreshPendingHint();
       }
     }
 
@@ -5064,20 +5307,14 @@
         ensureSmartMeta(b);
         b.rowDone[rowIndex] = !!done;
         if (persistItemId) schedulePersist();
-        setTimeout(function () {
-          if (persistItemId && typeof refreshDetailBlocksDOM === 'function') refreshDetailBlocksDOM();
-          else if (typeof refreshPendingHint === 'function') refreshPendingHint();
-        }, 0);
+        queueRefreshDetailBlocksDOM();
       }
 
       function setRowKind(rowIndex, kind) {
         ensureSmartMeta(b);
         b.rowKinds[rowIndex] = kind;
         if (persistItemId) schedulePersist();
-        setTimeout(function () {
-          if (persistItemId && typeof refreshDetailBlocksDOM === 'function') refreshDetailBlocksDOM();
-          else if (typeof refreshPendingHint === 'function') refreshPendingHint();
-        }, 0);
+        queueRefreshDetailBlocksDOM();
       }
 
       function addRow(kindId) {
@@ -5107,10 +5344,7 @@
             var curLv = priorityLevelFromRaw(fresh);
             var next = curLv === lvl ? '' : storePriorityFromLevel(lvl);
             setCell(ri, c, next);
-            setTimeout(function () {
-              if (persistItemId && typeof refreshDetailBlocksDOM === 'function') refreshDetailBlocksDOM();
-              else if (typeof refreshPendingHint === 'function') refreshPendingHint();
-            }, 0);
+            queueRefreshDetailBlocksDOM();
           });
           wrapP.appendChild(btn);
         });
@@ -5542,7 +5776,7 @@
     if (detailBlocksSaveTimer) clearTimeout(detailBlocksSaveTimer);
     detailBlocksSaveTimer = setTimeout(function () {
       detailBlocksSaveTimer = null;
-      persistItemBlocks(state.detailItemId, state.detailBlocksWorking, {});
+      persistItemBlocks(state.detailItemId, state.detailBlocksWorking, { skipReload: true });
     }, 520);
   }
 
@@ -6045,6 +6279,7 @@
   }
 
   function renderPillarTabs() {
+    closePillarTabFlyout();
     var wrap = $('npPillarTabs');
     if (!wrap) return;
     wrap.innerHTML = '';
@@ -6057,6 +6292,12 @@
       state.selectedAreaId = null;
     }
     tabs.forEach(function (a) {
+      var row = document.createElement('div');
+      row.className =
+        'np-pillar-tab-wrap' + (state.selectedAreaId === a.id ? ' np-pillar-tab-wrap-active' : '');
+      row.setAttribute('role', 'presentation');
+      row.setAttribute('data-area-id', a.id);
+
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'np-pillar-tab' + (state.selectedAreaId === a.id ? ' np-pillar-tab-active' : '');
@@ -6067,7 +6308,26 @@
       if (state.selectedAreaId === a.id) {
         btn.style.borderBottom = '3px solid ' + resolvePlantAccentHex(a.id);
       }
-      wrap.appendChild(btn);
+
+      var more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'np-pillar-tab-more np-tree-ignore';
+      more.setAttribute('data-area-id', a.id);
+      more.setAttribute('aria-label', 'Opciones de planta: color y nombre');
+      more.setAttribute('aria-expanded', 'false');
+      more.setAttribute('aria-haspopup', 'dialog');
+      more.textContent = '\u22EF';
+      (function (aid) {
+        more.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          openPillarTabFlyout(aid);
+        });
+      })(a.id);
+
+      row.appendChild(btn);
+      row.appendChild(more);
+      wrap.appendChild(row);
     });
     applyPlanProPlantAccent();
     syncPlanProAreaColorBar();
@@ -6351,7 +6611,7 @@
     prevBox.appendChild(
       renderBodyBlocks(state.pendingBlocks, {
         editable: true,
-        sheetAccent: getAreaAccentHex(state.selectedAreaId)
+        sheetAccent: sheetAccentHexForSelection()
       })
     );
   }
@@ -6516,6 +6776,10 @@
     renderTree();
     applyPlanProPlantAccent();
     syncPlanProAreaColorBar();
+    var spReload = $('npSheetPanel');
+    if (spReload && state.selectedCategoryId && !spReload.classList.contains('np-hide')) {
+      applySheetCategoryAccent(spReload);
+    }
   }
 
   function syncSheetItemsList(rows) {
@@ -6569,10 +6833,13 @@
   }
 
   $('npPillarTabs').addEventListener('click', function (e) {
+    if (e.target.closest('.np-pillar-tab-more')) return;
     var btn = e.target.closest('.np-pillar-tab');
     if (!btn) return;
     var id = btn.getAttribute('data-area-id');
-    if (!id || id === state.selectedAreaId) return;
+    if (!id) return;
+    closePillarTabFlyout();
+    if (id === state.selectedAreaId) return;
     state.selectedAreaId = id;
     state.selectedCategoryId = null;
     renderPillarTabs();
@@ -6580,6 +6847,13 @@
     updateSelectionUI();
     loadItems();
   });
+
+  var npPillarFlyoutBd = $('npPillarTabFlyoutBackdrop');
+  if (npPillarFlyoutBd) {
+    npPillarFlyoutBd.addEventListener('click', function () {
+      closePillarTabFlyout();
+    });
+  }
 
   $('npBtnAddPillar').addEventListener('click', async function () {
     await addNewPillar($('npNewPillar').value);
@@ -6655,30 +6929,30 @@
 
   $('npBtnAddMiniSheet').addEventListener('click', function () {
     state.pendingBlocks.push(makePlanProMiniSheetFreeBlock());
-    refreshPendingHint();
+    queueRefreshPendingHint();
   });
 
   var btnLedgerSheet = $('npBtnAddLedgerSheet');
   if (btnLedgerSheet) {
     btnLedgerSheet.addEventListener('click', function () {
       state.pendingBlocks.push(makePlanProLedgerSheetBlock());
-      refreshPendingHint();
+      queueRefreshPendingHint();
     });
   }
 
   $('npBtnAddNoteBlock').addEventListener('click', function () {
     state.pendingBlocks.push(makePlanProNoteSectionBlock());
-    refreshPendingHint();
+    queueRefreshPendingHint();
   });
 
   $('npBtnAddSmartTable').addEventListener('click', function () {
     state.pendingBlocks.push(makePlanProSmartTableBlock());
-    refreshPendingHint();
+    queueRefreshPendingHint();
   });
 
   $('npBtnAddTaskTable').addEventListener('click', function () {
     state.pendingBlocks.push(makePlanProTaskTableBlock());
-    refreshPendingHint();
+    queueRefreshPendingHint();
   });
 
   $('npDetailBody').addEventListener('click', function (e) {
@@ -6692,7 +6966,7 @@
     else if (btn.id === 'npDetailBtnAddMiniSheet') state.detailBlocksWorking.push(makePlanProMiniSheetFreeBlock());
     else if (btn.id === 'npDetailBtnAddLedgerSheet') state.detailBlocksWorking.push(makePlanProLedgerSheetBlock());
     else return;
-    refreshDetailBlocksDOM();
+    queueRefreshDetailBlocksDOM();
     scheduleDetailBlocksPersistDebounced();
   });
 
@@ -6772,6 +7046,10 @@
 
   document.addEventListener('keydown', async function (e) {
     if (e.key !== 'Escape') return;
+    if ($('npPillarTabFlyout') && $('npPillarTabFlyout').classList.contains('np-show')) {
+      closePillarTabFlyout();
+      return;
+    }
     if ($('npPrioListModal') && $('npPrioListModal').classList.contains('np-modal-open')) {
       closePrioListModal();
       return;
@@ -6878,7 +7156,7 @@
     $('npTitle').value = '';
     clearRichEditor();
     state.pendingBlocks = [];
-    refreshPendingHint();
+    flushPendingPreviewRefresh();
     await loadItems();
   });
 
@@ -6890,6 +7168,7 @@
     if (!menuBtn || !menuPanel || !menuBackdrop) return;
 
     function setHeaderMenuOpen(open) {
+      if (open && typeof closePillarTabFlyout === 'function') closePillarTabFlyout();
       menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       menuPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
       menuBackdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
