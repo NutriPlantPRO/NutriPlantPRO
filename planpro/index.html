@@ -23,6 +23,10 @@
       --np-blue-soft: rgba(37, 99, 235, 0.12);
       --np-blue-ring: rgba(37, 99, 235, 0.22);
       --np-green-soft: rgba(34, 197, 94, 0.12);
+      /* Dos columnas (Ramas + hoja): ancho mínimo total; si la ventana es más angosta, scroll horizontal */
+      --np-layout-sidebar-min: 288px;
+      --np-layout-main-min: 480px;
+      --np-layout-gap: 16px;
     }
     * { box-sizing: border-box; }
     body {
@@ -91,8 +95,10 @@
     .np-plan-actions {
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
+      align-items: stretch;
       gap: 10px;
+      margin-left: auto;
+      width: max-content;
       max-width: 100%;
     }
     .np-plan-social {
@@ -101,6 +107,7 @@
       align-items: center;
       justify-content: flex-end;
       gap: 8px;
+      width: 100%;
     }
     .np-header-social-btn {
       display: inline-flex;
@@ -137,6 +144,7 @@
       align-items: center;
       justify-content: flex-end;
       gap: 10px;
+      width: 100%;
     }
     .np-plan-link-row {
       display: flex;
@@ -145,7 +153,8 @@
       justify-content: flex-end;
       gap: 6px;
       row-gap: 6px;
-      max-width: min(100%, 980px);
+      width: 100%;
+      max-width: 100%;
     }
     .btn-mac-link {
       border: 1px solid rgba(148, 163, 184, 0.38);
@@ -600,6 +609,31 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
     }
+    /* Modal de nota / apunte: más superficie útil */
+    #npDetailModal.np-modal-overlay {
+      padding: 10px 12px 12px;
+      align-items: center;
+      justify-content: center;
+    }
+    #npDetailModal .np-modal-panel {
+      max-width: min(99vw, 1580px);
+      max-height: min(97vh, 1180px);
+      width: min(99vw, 1580px);
+    }
+    #npDetailModal .np-modal-body {
+      flex: 1;
+      min-height: 0;
+    }
+    @media (max-width: 900px) {
+      #npDetailModal.np-modal-overlay {
+        padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+      }
+      #npDetailModal .np-modal-panel {
+        max-width: 100%;
+        width: 100%;
+        max-height: min(96vh, 1180px);
+      }
+    }
     .np-modal-head {
       display: flex;
       align-items: flex-start;
@@ -638,11 +672,20 @@
       text-decoration: underline;
     }
     .np-actions { white-space: nowrap; }
+    .np-layout-scroll {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 8px;
+    }
     .np-layout {
       display: grid;
-      grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
-      gap: 16px;
+      grid-template-columns: minmax(var(--np-layout-sidebar-min), 320px) minmax(var(--np-layout-main-min), 1fr);
+      gap: var(--np-layout-gap);
       align-items: start;
+      min-width: max(100%, calc(var(--np-layout-sidebar-min) + var(--np-layout-gap) + var(--np-layout-main-min)));
     }
     .np-main-col {
       min-width: 0;
@@ -659,8 +702,7 @@
         padding: 12px max(10px, env(safe-area-inset-right)) 22px max(10px, env(safe-area-inset-left));
       }
       .np-layout {
-        grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
-        gap: 10px;
+        --np-layout-gap: 10px;
       }
       header.np-plan-header.np-mac-bar {
         padding: 12px 14px;
@@ -668,8 +710,10 @@
         align-items: flex-start;
       }
       .np-plan-header.np-mac-bar .np-plan-actions {
-        align-items: flex-end;
+        align-items: stretch;
         width: 100%;
+        margin-left: 0;
+        max-width: 100%;
       }
       .np-plan-social {
         justify-content: flex-end;
@@ -690,7 +734,6 @@
       }
       .np-tree-sidebar {
         position: static;
-        min-width: 0;
       }
       .np-tree-mount {
         max-height: min(42vh, 360px);
@@ -705,8 +748,7 @@
     }
     @media (max-width: 480px) {
       .np-layout {
-        grid-template-columns: minmax(0, 38%) minmax(0, 1fr);
-        gap: 8px;
+        --np-layout-gap: 8px;
       }
       #npMain .panel {
         padding: 12px 12px 14px;
@@ -1091,13 +1133,23 @@
       border: 1px solid rgba(15, 23, 42, 0.05);
       background: rgba(255, 255, 255, 0.55);
       -webkit-overflow-scrolling: touch;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .np-ms-sheet .np-ms-row {
+      min-width: min-content;
     }
     .np-ms-row {
       display: grid;
-      grid-template-columns: repeat(var(--np-ms-cols, 3), minmax(72px, 1fr));
+      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(var(--np-ms-col-min, 132px), max-content));
       gap: 0;
       border-bottom: 1px solid rgba(148, 163, 184, 0.14);
       transition: background 0.15s ease;
+    }
+    .np-ms-sheet.np-ms-sheet--rowdel .np-ms-row {
+      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(var(--np-ms-col-min, 132px), max-content)) minmax(48px, 56px);
     }
     .np-ms-row:last-child { border-bottom: none; }
     .np-ms-row-head {
@@ -1112,7 +1164,7 @@
       font-size: 13px;
       line-height: 1.45;
       color: #1e293b;
-      min-width: 0;
+      min-width: auto;
       display: flex;
       align-items: center;
     }
@@ -1144,6 +1196,7 @@
     .np-ms-cell-input,
     .np-ms-cell-input-date {
       width: 100%;
+      min-width: 7.5rem;
       margin: 0;
       padding: 8px 2px;
       border: none;
@@ -1162,6 +1215,8 @@
     }
     .np-ms-cell-input-date {
       min-height: 36px;
+      min-width: 11.5rem;
+      max-width: 100%;
       color-scheme: light;
     }
     textarea.np-ms-cell-input {
@@ -1181,6 +1236,8 @@
     }
     .np-ms-cell-notes textarea.np-ms-cell-input {
       min-height: 96px;
+      min-width: 220px;
+      max-width: min(100%, 520px);
       padding: 10px 10px;
     }
     .np-ms-row:not(.np-ms-row-head) .np-ms-cell {
@@ -1347,7 +1404,13 @@
       font-size: 15px !important;
       font-weight: 600;
     }
-    .np-notebook-wrap { margin-bottom: 14px; }
+    /* La hoja mantiene ancho mínimo tipo “papel”; si la ventana es más angosta, se desplaza en horizontal sin aplastar listas */
+    .np-notebook-wrap {
+      margin-bottom: 14px;
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+    }
     .np-notebook-page {
       position: relative;
       border-radius: 3px 5px 7px 4px;
@@ -1358,7 +1421,11 @@
         0 10px 36px rgba(45, 35, 22, 0.08),
         0 2px 6px rgba(0, 0, 0, 0.05);
       min-height: min(52vh, 560px);
-      overflow: hidden;
+      min-width: var(--np-note-sheet-min, 680px);
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      overflow-y: visible;
     }
     .np-notebook-page::before {
       content: '';
@@ -1394,6 +1461,7 @@
     .np-notebook-textarea::placeholder { color: #a8a29e; }
     .np-notebook-page.np-notebook-rich {
       min-height: min(48vh, 520px);
+      min-width: var(--np-note-sheet-min, 680px);
     }
     .np-rich-toolbar {
       display: flex;
@@ -1434,13 +1502,21 @@
       border-color: rgba(34, 197, 94, 0.35);
       color: #0f172a;
     }
+    .np-rich-tbtn.np-rich-tbtn-active {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: rgba(22, 163, 74, 0.55);
+      color: #14532d;
+    }
     .np-rich-editor {
       position: relative;
       display: block;
       width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       min-height: min(44vh, 480px);
       max-height: min(70vh, 720px);
       overflow-y: auto;
+      overflow-x: hidden;
       margin: 0 !important;
       padding: 24px 20px 32px 48px;
       border: 0 !important;
@@ -1454,13 +1530,9 @@
       outline: none;
     }
     .np-rich-editor:focus { box-shadow: none !important; }
+    /* Sin leyenda fantasma encima del texto (antes: attr(data-placeholder)) */
     .np-rich-editor.np-rich-empty:before {
-      content: attr(data-placeholder);
-      color: #a8a29e;
-      pointer-events: none;
-      position: absolute;
-      left: 48px;
-      top: 24px;
+      content: none !important;
     }
     .np-rich-editor .np-rich-fs-sm { font-size: 13px; }
     .np-rich-editor .np-rich-fs-md { font-size: 16px; }
@@ -1468,8 +1540,59 @@
     .np-rich-editor .np-rich-fs-xl { font-size: 22px; font-weight: 650; }
     .np-rich-editor h2 { font-size: 1.35rem; font-weight: 700; margin: 0.65em 0 0.4em; color: #0f172a; line-height: 1.25; }
     .np-rich-editor h3 { font-size: 1.12rem; font-weight: 650; margin: 0.55em 0 0.35em; color: #334155; line-height: 1.3; }
-    .np-rich-editor ul, .np-rich-editor ol { margin: 0.4em 0 0.6em 1.2em; padding-left: 1em; }
+    .np-rich-editor ul, .np-rich-editor ol {
+      margin: 0.4em 0 0.6em 0;
+      padding-left: 1.35em;
+      box-sizing: border-box;
+    }
+    .np-rich-editor ol { padding-left: 1.5em; }
     .np-rich-editor li { margin: 0.25em 0; }
+    /* Lista tipo diagrama / ramas (├ └) — editor y bloques de solo lectura */
+    .np-rich-editor ul.np-rich-list-diagram,
+    .np-modal-note-rich ul.np-rich-list-diagram {
+      list-style: none;
+      margin: 0.45em 0 0.65em 0;
+      padding-left: 0;
+    }
+    .np-rich-editor ul.np-rich-list-diagram ul,
+    .np-modal-note-rich ul.np-rich-list-diagram ul {
+      margin: 0.2em 0 0.15em 0;
+      padding-left: 1.15em;
+    }
+    .np-rich-editor ul.np-rich-list-diagram > li,
+    .np-modal-note-rich ul.np-rich-list-diagram > li {
+      position: relative;
+      padding-left: 1.45em;
+      margin: 0.3em 0;
+      min-height: 1.4em;
+    }
+    .np-rich-editor ul.np-rich-list-diagram > li::before,
+    .np-modal-note-rich ul.np-rich-list-diagram > li::before {
+      position: absolute;
+      left: 0;
+      top: 0.05em;
+      width: 1em;
+      text-align: left;
+      font-size: 0.95em;
+      line-height: inherit;
+      color: #64748b;
+      font-weight: 500;
+      content: '├';
+      pointer-events: none;
+    }
+    .np-rich-editor ul.np-rich-list-diagram > li:last-child::before,
+    .np-modal-note-rich ul.np-rich-list-diagram > li:last-child::before {
+      content: '└';
+    }
+    .np-rich-editor ul.np-rich-list-diagram ul > li::before,
+    .np-modal-note-rich ul.np-rich-list-diagram ul > li::before {
+      content: '├';
+      font-size: 0.92em;
+    }
+    .np-rich-editor ul.np-rich-list-diagram ul > li:last-child::before,
+    .np-modal-note-rich ul.np-rich-list-diagram ul > li:last-child::before {
+      content: '└';
+    }
     .np-rich-flag {
       display: inline-flex;
       align-items: center;
@@ -1490,6 +1613,9 @@
     .np-modal-notebook-stack {
       margin-bottom: 22px;
       padding-bottom: 4px;
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
     }
     #npModalRichToolbar {
       margin-bottom: 10px;
@@ -1498,7 +1624,11 @@
     .np-notebook-page.np-modal-notebook-page {
       min-height: min(34vh, 380px);
       max-height: min(48vh, 540px);
-      overflow: auto;
+      min-width: var(--np-note-sheet-min, 680px);
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
     .np-notebook-page.np-modal-notebook-page::after {
       content: '';
@@ -1523,10 +1653,6 @@
       min-height: min(28vh, 320px);
       max-height: min(44vh, 500px);
       overflow-y: auto;
-    }
-    /* Sin texto placeholder en la nota del modal */
-    #npModalBodyRich.np-rich-empty:before {
-      content: none !important;
     }
     .np-modal-note-rich h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75em 0 0.4em; color: #0f172a; }
     .np-modal-note-rich h3 { font-size: 1.08rem; font-weight: 650; margin: 0.65em 0 0.35em; color: #334155; }
@@ -1969,6 +2095,8 @@
     .np-ms-row-kind-percent .np-ms-cell:nth-child(5):after { content: ' %'; opacity: 0.55; font-weight: 600; }
     .np-ms-kind-select {
       width: 100%;
+      min-width: 9.5rem;
+      max-width: 100%;
       font-size: 11px;
       padding: 6px 4px;
       border-radius: 8px;
@@ -2021,7 +2149,8 @@
     }
     .np-ms-head-input {
       flex: 1;
-      min-width: 0;
+      min-width: 6.5rem;
+      max-width: 100%;
       margin: 0 !important;
       padding: 6px 8px !important;
       font-size: 11px !important;
@@ -2251,13 +2380,14 @@
         </div>
       </section>
 
+      <div class="np-layout-scroll">
       <div class="np-layout">
         <aside class="panel np-tree-sidebar np-section-accent np-section-accent-green">
           <h2 class="np-tree-sidebar-title">Ramas</h2>
           <div id="npTreeMount" class="np-tree-mount" role="tree" aria-label="Ramas de la planta"></div>
           <div style="margin-top:12px;">
             <div style="display:flex;gap:8px;margin-top:0;align-items:center;">
-              <input type="text" id="npNewRootCat" placeholder="Raíz…" style="margin-bottom:0;flex:1;" />
+              <input type="text" id="npNewRootCat" aria-label="Nombre de la nueva rama" autocomplete="off" style="margin-bottom:0;flex:1;" />
               <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddRootCat" style="margin-bottom:0;">Añadir</button>
             </div>
           </div>
@@ -2321,6 +2451,8 @@
                     </span>
                     <span class="np-rich-grp">
                       <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="insertUnorderedList" title="Lista con viñetas">• Lista</button>
+                      <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="insertOrderedList" title="Lista numerada">1. Lista</button>
+                      <button type="button" class="np-rich-tbtn" data-rich="listdiag" title="Lista tipo diagrama (ramas ├ └)">Diagrama</button>
                     </span>
                     <span class="np-rich-grp">
                       <button type="button" class="np-rich-tbtn" data-rich="wrap" data-v="np-rich-fs-sm" title="Texto pequeño">Peq</button>
@@ -2335,7 +2467,7 @@
                   </div>
                   <div class="np-notebook-wrap">
                     <div class="np-notebook-page np-notebook-rich">
-                      <div id="npBodyRich" class="np-rich-editor np-rich-empty" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" data-placeholder="Nota…"></div>
+                      <div id="npBodyRich" class="np-rich-editor np-rich-empty" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true"></div>
                     </div>
                   </div>
                   <div class="np-tools-row">
@@ -2372,6 +2504,7 @@
             <p id="npEmpty" class="np-muted np-hide">Sin ítems.</p>
           </section>
         </div>
+      </div>
       </div>
     </main>
   </div>
@@ -2517,6 +2650,160 @@
     el.classList.toggle('np-rich-empty', !t);
   }
 
+  function selectionInsideEditor(editorEl) {
+    if (!editorEl) return false;
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return false;
+    var n = sel.anchorNode;
+    if (n.nodeType === 3) n = n.parentNode;
+    for (; n; n = n.parentNode) {
+      if (n === editorEl) return true;
+      if (n === document.body || n === document.documentElement) return false;
+    }
+    return false;
+  }
+
+  function findRichToolbarForEditor(editorEl) {
+    if (!editorEl) return null;
+    if (editorEl.id === 'npBodyRich') return $('npRichToolbar');
+    if (editorEl.id === 'npModalBodyRich') {
+      var stack = editorEl.closest('.np-modal-notebook-stack');
+      return stack ? stack.querySelector('#npModalRichToolbar') : null;
+    }
+    return null;
+  }
+
+  function normFormatBlock() {
+    try {
+      var v = document.queryCommandValue('formatBlock');
+      if (!v) return '';
+      return String(v).replace(/[<>]/g, '').toLowerCase();
+    } catch (e) {
+      return '';
+    }
+  }
+
+  var richToolbarSyncRaf = 0;
+  var richToolbarSyncTarget = null;
+  function scheduleRichToolbarSync(editorEl) {
+    richToolbarSyncTarget = editorEl;
+    if (richToolbarSyncRaf) return;
+    richToolbarSyncRaf = requestAnimationFrame(function () {
+      richToolbarSyncRaf = 0;
+      var t = richToolbarSyncTarget;
+      richToolbarSyncTarget = null;
+      if (t) updateRichToolbarState(t);
+    });
+  }
+
+  function clearRichToolbarActive(tb) {
+    if (!tb) return;
+    tb.querySelectorAll('.np-rich-tbtn-active').forEach(function (node) {
+      node.classList.remove('np-rich-tbtn-active');
+      node.removeAttribute('aria-pressed');
+    });
+  }
+
+  function wrapClassActive(editorEl, cls) {
+    if (!cls) return false;
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount || !selectionInsideEditor(editorEl)) return false;
+    var n = sel.anchorNode;
+    if (n.nodeType === 3) n = n.parentNode;
+    while (n && n !== editorEl) {
+      if (n.classList && n.classList.contains(cls)) return true;
+      n = n.parentNode;
+    }
+    return false;
+  }
+
+  function closestRichListRoot(editorEl) {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount || !selectionInsideEditor(editorEl)) return null;
+    var n = sel.anchorNode;
+    if (n.nodeType === 3) n = n.parentNode;
+    while (n && n !== editorEl) {
+      if (n.tagName === 'OL' || n.tagName === 'UL') return n;
+      n = n.parentNode;
+    }
+    return null;
+  }
+
+  function isDiagramListActive(editorEl) {
+    var root = closestRichListRoot(editorEl);
+    return !!(root && root.tagName === 'UL' && root.classList && root.classList.contains('np-rich-list-diagram'));
+  }
+
+  function insertRichDiagramList(editorEl) {
+    if (!editorEl) return;
+    editorEl.focus();
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var r = sel.getRangeAt(0);
+    if (!editorEl.contains(r.commonAncestorContainer)) return;
+    var ul = document.createElement('ul');
+    ul.className = 'np-rich-list-diagram';
+    var li = document.createElement('li');
+    li.appendChild(document.createElement('br'));
+    ul.appendChild(li);
+    try {
+      r.deleteContents();
+      r.insertNode(ul);
+    } catch (err) {
+      try {
+        document.execCommand('insertHTML', false, sanitizeRich('<ul class="np-rich-list-diagram"><li><br></li></ul>'));
+      } catch (err2) {}
+      return;
+    }
+    sel.removeAllRanges();
+    var nr = document.createRange();
+    nr.setStart(li, 0);
+    nr.collapse(true);
+    sel.addRange(nr);
+  }
+
+  function updateRichToolbarState(editorEl) {
+    var tb = findRichToolbarForEditor(editorEl);
+    if (!tb) return;
+    if (document.activeElement !== editorEl) {
+      clearRichToolbarActive(tb);
+      return;
+    }
+    clearRichToolbarActive(tb);
+    var fbRaw = normFormatBlock();
+    tb.querySelectorAll('.np-rich-tbtn[data-rich]').forEach(function (btn) {
+      var kind = btn.getAttribute('data-rich');
+      var ok = false;
+      if (kind === 'cmd') {
+        var cmd = btn.getAttribute('data-v');
+        try {
+          if (cmd === 'insertUnorderedList') {
+            ok = document.queryCommandState('insertUnorderedList') && !isDiagramListActive(editorEl);
+          } else {
+            ok = cmd ? document.queryCommandState(cmd) : false;
+          }
+        } catch (e2) {
+          ok = false;
+        }
+      } else if (kind === 'fmt') {
+        var tag = (btn.getAttribute('data-v') || '').toLowerCase();
+        if (tag === 'p') {
+          ok = !fbRaw || fbRaw === 'p' || fbRaw === 'div';
+        } else {
+          ok = fbRaw === tag;
+        }
+      } else if (kind === 'wrap') {
+        ok = wrapClassActive(editorEl, btn.getAttribute('data-v'));
+      } else if (kind === 'listdiag') {
+        ok = isDiagramListActive(editorEl);
+      }
+      if (ok) {
+        btn.classList.add('np-rich-tbtn-active');
+        btn.setAttribute('aria-pressed', 'true');
+      }
+    });
+  }
+
   function clearRichEditor() {
     var el = $('npBodyRich');
     if (!el) return;
@@ -2583,10 +2870,13 @@
       } catch (err2) {}
     } else if (kind === 'wrap') {
       wrapSelectionClass(b.getAttribute('data-v'), editorEl);
+    } else if (kind === 'listdiag') {
+      insertRichDiagramList(editorEl);
     } else if (kind === 'snippet') {
       insertRichSnippet(b.getAttribute('data-snippet'), editorEl);
     }
     syncRichEmptyClass(editorEl);
+    scheduleRichToolbarSync(editorEl);
     return true;
   }
 
@@ -2681,10 +2971,21 @@
     syncRichEmptyClass(ed);
     ed.addEventListener('input', function () {
       syncRichEmptyClass(ed);
+      scheduleRichToolbarSync(ed);
       schedulePersistMainBody();
     });
     ed.addEventListener('blur', function () {
       syncRichEmptyClass(ed);
+      clearRichToolbarActive(findRichToolbarForEditor(ed));
+    });
+    ed.addEventListener('keyup', function () {
+      scheduleRichToolbarSync(ed);
+    });
+    ed.addEventListener('mouseup', function () {
+      scheduleRichToolbarSync(ed);
+    });
+    ed.addEventListener('focus', function () {
+      scheduleRichToolbarSync(ed);
     });
   }
 
@@ -2851,9 +3152,25 @@
     'Notas / siguiente paso'
   ];
 
+  var NP_TASKS_HEADERS_DEFAULT = [
+    'Título',
+    'Descripción',
+    'Prioridad',
+    'Listo',
+    'Fecha objetivo'
+  ];
+
+  var NP_SMART_MIN_COLS = 6;
+  var NP_TASKS_MIN_COLS = 5;
+
   function resolveMiniSheetHeader(b, hi) {
     var raw = b.headers && b.headers[hi];
     if (raw != null && String(raw).trim() !== '') return String(raw).trim();
+    if (b.variant === 'tasks') {
+      if (hi < NP_TASKS_HEADERS_DEFAULT.length) return NP_TASKS_HEADERS_DEFAULT[hi];
+      var nu = hi - NP_TASKS_HEADERS_DEFAULT.length + 1;
+      return 'Notas / campo extra ' + nu;
+    }
     if (b.variant === 'smart') {
       if (hi < NP_SMART_HEADERS_DEFAULT.length) return NP_SMART_HEADERS_DEFAULT[hi];
       var n = hi - NP_SMART_HEADERS_DEFAULT.length + 1;
@@ -2894,6 +3211,7 @@
     var h = (headerName != null ? String(headerName) : '').toLowerCase();
     if (/descripción|descripcion|desc|nota|detail|note|siguiente paso|campo extra/.test(h)) return true;
     if (variant === 'tasks' && colIndex === 1) return true;
+    if (variant === 'tasks' && colIndex >= 5) return true;
     if (variant === 'smart' && colIndex === 5) return true;
     if (variant === 'smart' && colIndex > 5) return true;
     return false;
@@ -3087,8 +3405,9 @@
 
   function resolvePriorityColIndex(b, headers, ncol) {
     var i;
-    for (i = 0; i < headers.length; i++) {
-      if (columnLooksLikePriorityHeader(headers[i])) return i;
+    ncol = ncol || 0;
+    for (i = 0; i < ncol; i++) {
+      if (columnLooksLikePriorityHeader(resolveMiniSheetHeader(b, i))) return i;
     }
     if (b.variant === 'smart' && ncol >= 3) return 2;
     if (b.variant === 'tasks' && ncol >= 3) return 2;
@@ -3097,8 +3416,9 @@
 
   function resolveDoneColIndex(b, headers, ncol) {
     var i;
-    for (i = 0; i < headers.length; i++) {
-      if (columnLooksLikeDoneHeader(headers[i])) return i;
+    ncol = ncol || 0;
+    for (i = 0; i < ncol; i++) {
+      if (columnLooksLikeDoneHeader(resolveMiniSheetHeader(b, i))) return i;
     }
     if ((b.variant === 'tasks' || b.variant === 'smart') && ncol >= 4) return 3;
     return -1;
@@ -3426,7 +3746,10 @@
       var L = Array.isArray(row) ? row.length : (row && row.cells ? row.cells.length : 0);
       if (L > ncol) ncol = L;
     });
-    return Math.max(ncol, b.variant === 'smart' ? 6 : 1);
+    return Math.max(
+      ncol,
+      b.variant === 'smart' ? NP_SMART_MIN_COLS : b.variant === 'tasks' ? NP_TASKS_MIN_COLS : 1
+    );
   }
 
   /** Cuenta filas con prioridad en tablas tareas / seguimiento (body_blocks). */
@@ -3819,14 +4142,27 @@
               ? 'Tabla de montos'
               : 'Tabla libre');
       head.appendChild(badge);
-      if (editable && (isFreeMini || isLedger)) {
+      if (editable && (isFreeMini || isLedger || b.variant === 'smart' || b.variant === 'tasks')) {
         var titleInp = document.createElement('input');
         titleInp.type = 'text';
         titleInp.className = 'np-ms-title-inline';
         titleInp.value =
           b.title ||
-          (isLedger ? 'Tabla de montos' : 'Tabla libre');
-        titleInp.placeholder = isLedger ? 'Tabla de montos' : 'Tabla libre';
+          (b.variant === 'smart'
+            ? 'Tabla de acciones'
+            : b.variant === 'tasks'
+              ? 'Lista / tareas'
+              : isLedger
+                ? 'Tabla de montos'
+                : 'Tabla libre');
+        titleInp.placeholder =
+          b.variant === 'smart'
+            ? 'Tabla de acciones'
+            : b.variant === 'tasks'
+              ? 'Lista / tareas'
+              : isLedger
+                ? 'Tabla de montos'
+                : 'Tabla libre';
         titleInp.addEventListener('input', function () {
           b.title = titleInp.value;
           schedulePersist();
@@ -3848,7 +4184,7 @@
           var L = Array.isArray(row) ? row.length : (row && row.cells ? row.cells.length : 0);
           return Math.max(m, L || 0);
         }, 0),
-        b.variant === 'smart' ? 6 : 1
+        b.variant === 'smart' ? NP_SMART_MIN_COLS : b.variant === 'tasks' ? NP_TASKS_MIN_COLS : 1
       );
 
       var prioCol = resolvePriorityColIndex(b, headers, ncol);
@@ -3902,6 +4238,57 @@
         wrap.appendChild(ftb);
       }
 
+      if (editable && (b.variant === 'smart' || b.variant === 'tasks')) {
+        var stb = document.createElement('div');
+        stb.className = 'np-ms-free-toolbar';
+        var stAddCol = document.createElement('button');
+        stAddCol.type = 'button';
+        stAddCol.className = 'btn btn-ghost btn-ghost-blue';
+        stAddCol.textContent = '＋ Columna';
+        stAddCol.addEventListener('click', function () {
+          var defName =
+            b.variant === 'smart'
+              ? 'Notas / campo extra ' + (Math.max((b.headers || []).length, NP_SMART_MIN_COLS) - NP_SMART_HEADERS_DEFAULT.length + 1)
+              : 'Notas / campo extra ' + (Math.max((b.headers || []).length, NP_TASKS_MIN_COLS) - NP_TASKS_HEADERS_DEFAULT.length + 1);
+          var name = window.prompt('Nombre de la nueva columna:', defName);
+          if (name == null) return;
+          name = String(name).trim();
+          if (!name) return;
+          ensureSmartMeta(b);
+          var curNc = Math.max(
+            (b.headers || []).length,
+            (b.rows || []).reduce(function (m, row) {
+              var L = Array.isArray(row) ? row.length : (row && row.cells ? row.cells.length : 0);
+              return Math.max(m, L || 0);
+            }, 0),
+            b.variant === 'smart' ? NP_SMART_MIN_COLS : NP_TASKS_MIN_COLS
+          );
+          if (!b.headers) b.headers = [];
+          while (b.headers.length < curNc) b.headers.push('');
+          b.headers.push(name);
+          b.rows.forEach(function (rowItem, ri) {
+            var arr = Array.isArray(rowItem) ? rowItem.slice() : padRowCells(rowItem, curNc);
+            while (arr.length < curNc) arr.push('');
+            arr.push('');
+            b.rows[ri] = arr;
+          });
+          afterStructuralChange();
+        });
+        var stDelTbl = document.createElement('button');
+        stDelTbl.type = 'button';
+        stDelTbl.className = 'btn btn-ghost';
+        stDelTbl.style.color = '#b91c1c';
+        stDelTbl.textContent = 'Eliminar tabla';
+        stDelTbl.addEventListener('click', function () {
+          if (!window.confirm('¿Eliminar esta tabla del apunte?')) return;
+          blocks.splice(blockIndex, 1);
+          afterStructuralChange();
+        });
+        stb.appendChild(stAddCol);
+        stb.appendChild(stDelTbl);
+        wrap.appendChild(stb);
+      }
+
       if (editable && isLedger) {
         var ltb = document.createElement('div');
         ltb.className = 'np-ms-free-toolbar';
@@ -3930,7 +4317,7 @@
         wrap.appendChild(ltb);
       }
 
-      var showRowDelCol = editable && (isFreeMini || isLedger);
+      var showRowDelCol = editable && (isFreeMini || isLedger || b.variant === 'smart' || b.variant === 'tasks');
 
       function refreshLedgerDerivedUI() {
         if (!isLedger) return;
@@ -4022,8 +4409,10 @@
 
       var sheet = document.createElement('div');
       sheet.className = 'np-ms-sheet';
-      var gridCols = ncol + (showRowDelCol ? 1 : 0);
-      sheet.style.setProperty('--np-ms-cols', String(gridCols));
+      sheet.style.setProperty('--np-ms-data-cols', String(ncol));
+      sheet.style.setProperty('--np-ms-col-min', '132px');
+      if (showRowDelCol) sheet.classList.add('np-ms-sheet--rowdel');
+      else sheet.classList.remove('np-ms-sheet--rowdel');
 
       var hr = document.createElement('div');
       hr.className = 'np-ms-row np-ms-row-head';
@@ -4070,6 +4459,47 @@
             hw.appendChild(delColBtn);
           }
           hc.appendChild(hw);
+        } else if (editable && (b.variant === 'smart' || b.variant === 'tasks')) {
+          var minCols = b.variant === 'smart' ? NP_SMART_MIN_COLS : NP_TASKS_MIN_COLS;
+          var hwST = document.createElement('div');
+          hwST.className = 'np-ms-head-cell-edit';
+          var inpHST = document.createElement('input');
+          inpHST.type = 'text';
+          inpHST.className = 'np-ms-head-input np-tree-ignore';
+          inpHST.value = resolveMiniSheetHeader(b, hi);
+          (function (idx) {
+            inpHST.addEventListener('input', function () {
+              if (!b.headers) b.headers = [];
+              while (b.headers.length <= idx) b.headers.push('');
+              b.headers[idx] = inpHST.value;
+              schedulePersist();
+            });
+          })(hi);
+          hwST.appendChild(inpHST);
+          if (ncol > minCols && hi >= minCols) {
+            var delColST = document.createElement('button');
+            delColST.type = 'button';
+            delColST.className = 'np-ms-col-del np-tree-ignore';
+            delColST.title = 'Quitar esta columna';
+            delColST.textContent = '×';
+            (function (idx) {
+              delColST.addEventListener('click', function (e) {
+                e.preventDefault();
+                var mc = b.variant === 'smart' ? NP_SMART_MIN_COLS : NP_TASKS_MIN_COLS;
+                if (ncol <= mc) return;
+                if (!window.confirm('¿Eliminar esta columna?')) return;
+                if (b.headers && b.headers.length > idx) b.headers.splice(idx, 1);
+                b.rows.forEach(function (rowItem, rxi) {
+                  var arr = padRowCells(Array.isArray(rowItem) ? rowItem : rowItem, ncol);
+                  arr.splice(idx, 1);
+                  b.rows[rxi] = arr;
+                });
+                afterStructuralChange();
+              });
+            })(hi);
+            hwST.appendChild(delColST);
+          }
+          hc.appendChild(hwST);
         } else if (editable && isLedger) {
           var inpHL = document.createElement('input');
           inpHL.type = 'text';
@@ -4181,23 +4611,17 @@
             cell.appendChild(spanPct);
           } else if (editable && prioCol === c) {
             renderPriorityEditor(cell, ri, c);
-          } else if (editable && doneCol === c && (b.variant === 'tasks' || (b.variant === 'smart' && rk === 'task'))) {
+          } else if (editable && doneCol === c && (b.variant === 'tasks' || b.variant === 'smart')) {
             var doneVal = b.rowDone && b.rowDone[ri];
             var cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.className = 'np-ms-done';
             cb.checked = !!doneVal;
-            cb.title = 'Completada';
+            cb.title = 'Listo / completada';
             cb.addEventListener('change', function () {
               setDone(ri, cb.checked);
             });
             cell.appendChild(cb);
-          } else if (editable && doneCol === c && b.variant === 'smart' && rk !== 'task') {
-            var dash = document.createElement('span');
-            dash.className = 'np-muted';
-            dash.style.fontSize = '12px';
-            dash.textContent = '—';
-            cell.appendChild(dash);
           } else if (editable) {
             var isDate = columnLooksLikeDate(headerLabel, c, ncol, b.variant);
             var dateParsed = toDateInputValue(raw);
@@ -4462,6 +4886,7 @@
   function refreshDetailBlocksDOM() {
     var mount = $('npDetailBlocksMount');
     if (!mount || !$('npDetailModal').classList.contains('np-modal-open') || !state.detailBlocksWorking) return;
+    syncDetailBlocksInputsFromDOM();
     mount.innerHTML = '';
     mount.appendChild(
       renderBodyBlocks(state.detailBlocksWorking, {
@@ -5421,9 +5846,31 @@
 
   var npBodyRichEl = $('npBodyRich');
   if (npBodyRichEl) {
-    npBodyRichEl.addEventListener('input', syncRichEmptyClass);
-    npBodyRichEl.addEventListener('blur', syncRichEmptyClass);
+    npBodyRichEl.addEventListener('input', function () {
+      syncRichEmptyClass(npBodyRichEl);
+      scheduleRichToolbarSync(npBodyRichEl);
+    });
+    npBodyRichEl.addEventListener('blur', function () {
+      syncRichEmptyClass(npBodyRichEl);
+      clearRichToolbarActive($('npRichToolbar'));
+    });
+    npBodyRichEl.addEventListener('keyup', function () {
+      scheduleRichToolbarSync(npBodyRichEl);
+    });
+    npBodyRichEl.addEventListener('mouseup', function () {
+      scheduleRichToolbarSync(npBodyRichEl);
+    });
+    npBodyRichEl.addEventListener('focus', function () {
+      scheduleRichToolbarSync(npBodyRichEl);
+    });
   }
+
+  document.addEventListener('selectionchange', function () {
+    var ed = $('npBodyRich');
+    if (ed && document.activeElement === ed) scheduleRichToolbarSync(ed);
+    var ed2 = $('npModalBodyRich');
+    if (ed2 && document.activeElement === ed2) scheduleRichToolbarSync(ed2);
+  });
 
   $('npFormCreate').addEventListener('submit', async function (e) {
     e.preventDefault();
