@@ -221,23 +221,55 @@
       align-items: stretch;
       min-height: 0;
     }
-    .np-plan-header-menu-body .np-plan-actions-top {
-      width: 100%;
-      justify-content: flex-start;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 12px;
+    /* Bloque 1: redes + accesos en rejilla (menos hueco libre) */
+    .np-plan-header-menu-body .np-plan-menu-block:first-child .np-plan-actions-top {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+    @media (min-width: 520px) {
+      .np-plan-header-menu-body .np-plan-menu-block:first-child .np-plan-actions-top {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+      }
     }
     .np-plan-header-menu-body .np-plan-social {
       justify-content: flex-start;
       width: 100%;
+      flex-wrap: wrap;
     }
     .np-plan-header-menu-body .np-plan-nav-buttons {
-      justify-content: flex-start;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 136px), 1fr));
+      gap: 8px 10px;
+      width: 100%;
+      justify-content: stretch;
+      align-items: stretch;
+    }
+    .np-plan-header-menu-panel .btn-mac-nav {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .np-plan-header-menu-panel .btn-mac-logout-icon {
+      min-width: 0;
+    }
+    .np-plan-header-menu-panel .np-plan-access-logout-full {
+      grid-column: 1 / -1;
+      max-width: 220px;
+      justify-self: center;
+    }
+    /* Bloque herramientas: rejilla que ocupa todo el ancho */
+    .np-plan-header-menu-body .np-plan-menu-tools-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
+      gap: 8px;
       width: 100%;
     }
     .np-plan-header-menu-body .np-plan-link-row {
-      justify-content: flex-start;
+      justify-content: stretch;
       gap: 8px;
       row-gap: 8px;
     }
@@ -245,15 +277,16 @@
       border: 1px solid rgba(148, 163, 184, 0.32);
       border-radius: 14px;
       background: rgba(255, 255, 255, 0.78);
-      padding: 12px 14px 14px;
+      padding: 10px 12px 12px;
       box-sizing: border-box;
     }
     .np-plan-menu-block--fin {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
-      padding: 12px;
+      padding: 10px;
       background: rgba(248, 250, 252, 0.72);
+      align-items: stretch;
     }
     @media (max-width: 720px) {
       .np-plan-menu-block--fin {
@@ -266,6 +299,7 @@
       background: rgba(255, 255, 255, 0.92);
       padding: 10px 10px 12px;
       min-width: 0;
+      min-height: 100%;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -279,15 +313,22 @@
       line-height: 1.2;
     }
     .np-plan-menu-subblock-links {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 92px), 1fr));
       gap: 6px;
-      align-items: center;
-      justify-content: flex-start;
+      flex: 1 1 auto;
+      align-content: start;
     }
     .np-plan-header-menu-panel .btn-mac-link {
       font-size: 12px;
-      padding: 6px 11px;
+      padding: 7px 10px;
+      width: 100%;
+      min-height: 36px;
+      box-sizing: border-box;
+      justify-content: center;
+      text-align: center;
+      white-space: normal;
+      line-height: 1.25;
     }
     body.np-plan-header-menu-lock {
       overflow: hidden;
@@ -993,7 +1034,7 @@
       }
       .np-pillar-tabs-row {
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
       }
       .np-sheet-title {
         font-size: 1.05rem;
@@ -1369,6 +1410,51 @@
       border-color: rgba(202, 138, 4, 0.9);
       box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.22);
     }
+    /* Tabla de montos: inputs legibles (sin esto se ven como rectángulos blancos vacíos) */
+    .np-ms-block-ledger .np-ms-sheet {
+      border: 1px solid rgba(180, 83, 9, 0.24);
+      background: rgba(255, 252, 237, 0.78);
+      min-height: 108px;
+    }
+    .np-ms-block-ledger .np-ms-row-head .np-ms-head-input {
+      background: rgba(255, 255, 255, 0.96) !important;
+      border: 1px solid rgba(234, 179, 8, 0.4) !important;
+      color: #422006;
+      box-shadow: none !important;
+    }
+    .np-ms-block-ledger .np-ms-cell .np-ms-cell-input,
+    .np-ms-block-ledger .np-ms-cell .np-ms-cell-input-date {
+      background: rgba(255, 255, 255, 0.94) !important;
+      border: 1px solid rgba(148, 163, 184, 0.32) !important;
+      color: #0f172a;
+      padding: 8px 10px !important;
+    }
+    .np-ms-block-ledger .np-ms-cell-static.np-ms-pct-cell {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.55);
+      border-radius: 8px;
+      border: 1px dashed rgba(148, 163, 184, 0.4);
+    }
+    /* Vista previa al crear apunte: marco para que no “floten” bloques sin contexto */
+    #npMiniSheetPreview:not(.np-hide) {
+      clear: both;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px 14px 10px;
+      margin-bottom: 14px !important;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--np-sheet-accent, #94a3b8) 34%, #e2e8f0);
+      background: rgba(255, 255, 255, 0.78);
+    }
+    #npSheetPanel textarea.np-ms-head-input,
+    #npMiniSheetPreview textarea.np-ms-head-input {
+      min-height: 2.75rem !important;
+      max-height: 120px;
+    }
     .np-ms-head {
       font-weight: 650;
       font-size: 12px;
@@ -1541,7 +1627,7 @@
       display: flex;
       flex-wrap: wrap;
       align-items: flex-start;
-      gap: 10px 12px;
+      gap: 6px 12px;
       justify-content: flex-start;
     }
     .np-pillar-tabs {
@@ -1706,18 +1792,32 @@
     .np-pillar-add {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px 8px;
       align-items: center;
       justify-content: flex-end;
       width: 100%;
       box-sizing: border-box;
+      padding: 4px 8px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(15, 23, 42, 0.06);
     }
     .np-pillar-add input {
-      margin-bottom: 0;
+      margin-bottom: 0 !important;
       flex: 1 1 auto;
       min-width: min(140px, 100%);
       max-width: min(320px, 100%);
       width: auto;
+      padding: 5px 10px !important;
+      font-size: 13px !important;
+      line-height: 1.3;
+      border-radius: 9px !important;
+    }
+    .np-pillar-add .btn {
+      padding: 5px 11px !important;
+      font-size: 13px !important;
+      margin-bottom: 0 !important;
+      border-radius: 9px !important;
     }
     .np-color-edit-bar {
       display: flex;
@@ -2969,7 +3069,7 @@
                   <a class="btn-mac-nav btn-mac-admin" href="https://nutriplantpro.com/admin/?k=np_admin_key_8f4a2b9c1e7d" target="_blank" rel="noopener noreferrer">Panel admin</a>
                   <a class="btn-mac-nav btn-mac-paypal" href="https://www.paypal.com/myaccount/" target="_blank" rel="noopener noreferrer" title="Cuenta PayPal (resumen, pagos, suscripciones)">Cuenta PayPal</a>
                   <a class="btn-mac-nav btn-mac-paypal-dev" href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer" title="PayPal Developer: apps, credenciales, webhooks">PayPal Developer</a>
-                  <button type="button" class="btn-mac-nav btn-mac-logout btn-mac-logout-icon" id="npBtnLogout" aria-label="Cerrar sesión" title="Cerrar sesión">
+                  <button type="button" class="btn-mac-nav btn-mac-logout btn-mac-logout-icon np-plan-access-logout-full" id="npBtnLogout" aria-label="Cerrar sesión" title="Cerrar sesión">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <path d="M12 2v10"/>
                       <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
@@ -4452,6 +4552,9 @@
     if (!b.rows || !b.rows.length) {
       b.rows = [['', '', '', ''], ['', '', '', '']];
     }
+    for (var r = 0; r < b.rows.length; r++) {
+      b.rows[r] = padRowCells(b.rows[r], nh);
+    }
   }
 
   function ledgerSumMontos(rows, montoCol) {
@@ -5350,6 +5453,7 @@
         }, 0),
         b.variant === 'smart' ? NP_SMART_MIN_COLS : b.variant === 'tasks' ? NP_TASKS_MIN_COLS : 1
       );
+      if (!Number.isFinite(ncol) || ncol < 1) ncol = 1;
 
       var prioCol = resolvePriorityColIndex(b, headers, ncol);
       var doneCol = resolveDoneColIndex(b, headers, ncol);
