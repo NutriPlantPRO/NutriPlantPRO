@@ -5307,11 +5307,11 @@
 
   function sumLedgerColumn(rows, colIndex, ncol) {
     if (colIndex == null || colIndex < 0) return 0;
-    var minW = colIndex + 1;
-    if (typeof ncol === 'number' && ncol > minW) minW = ncol;
+    var padN =
+      typeof ncol === 'number' && ncol > colIndex ? ncol : colIndex + 1;
     var t = 0;
     (rows || []).forEach(function (row) {
-      t += ledgerCellNumber(padRowCells(row, minW), colIndex);
+      t += ledgerCellNumber(padRowCells(row, padN), colIndex);
     });
     return t;
   }
@@ -5376,6 +5376,7 @@
       if (ledgerGetDerivedSpec(b, ii)) continue;
       var fk0 = b.colKinds && b.colKinds[ii];
       if (fk0 === 'currency' || fk0 === 'number') cands.push(ii);
+      else if ((!fk0 || fk0 === '') && b.headers && ledgerHeaderSuggestsMoneyColumn(b.headers[ii])) cands.push(ii);
     }
     if (cands.length >= 2 && k0 === cands[cands.length - 1]) return cands.slice();
     return out;
@@ -5620,8 +5621,6 @@
 
     var nh = b.headers.length;
 
-    normalizeLedgerDerivedSpecs(b, nh);
-
     if (!b.colKinds || b.colKinds.length !== nh) {
       if (nh === 6 && ledgerGetDerivedSpec(b, 3) && ledgerGetDerivedSpec(b, 3).op === 'diff') {
         b.colKinds = ['text', 'currency', 'currency', 'derived', 'pct', 'text'];
@@ -5662,6 +5661,8 @@
         b.colKinds[inf] = 'currency';
       }
     }
+    /* Después de alinear colKinds con nh: la “cura” de SUMA usa colKinds; si corremos antes, ignora p. ej. Monto (índice 1). */
+    normalizeLedgerDerivedSpecs(b, nh);
     if (typeof b.montoCol !== 'number' || b.montoCol < 0 || b.montoCol >= nh) b.montoCol = 1;
 
     b.pctCol = -1;
