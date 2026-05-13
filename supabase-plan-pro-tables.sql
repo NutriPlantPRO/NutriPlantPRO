@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS public.plan_pro_categories (
   parent_id       uuid REFERENCES public.plan_pro_categories (id) ON DELETE CASCADE,
   sort_order      integer NOT NULL DEFAULT 0,
   title           text NOT NULL,
+  color_hex       text,
   archived_at     timestamptz,
   created_at      timestamptz NOT NULL DEFAULT now(),
   updated_at      timestamptz NOT NULL DEFAULT now()
