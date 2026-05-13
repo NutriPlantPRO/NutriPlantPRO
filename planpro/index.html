@@ -71,6 +71,255 @@
       position: relative;
       z-index: 12000;
     }
+    /* Asistente IA (mismo estilo que Admin Assistant) */
+    .np-planpro-chat-wrap {
+      position: fixed;
+      inset: 0;
+      z-index: 16002;
+      pointer-events: none;
+      width: 0;
+      height: 0;
+    }
+    .np-planpro-chat-bubble {
+      pointer-events: auto;
+      position: fixed;
+      right: max(16px, env(safe-area-inset-right));
+      bottom: max(20px, env(safe-area-inset-bottom));
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      color: #fff;
+      border: 3px solid #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.35);
+      padding: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .np-planpro-chat-bubble-ia {
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1;
+      color: #fff;
+    }
+    .np-planpro-chat-bubble-img {
+      margin-top: 2px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
+    .np-planpro-chat-panel {
+      pointer-events: auto;
+      display: none;
+      position: fixed;
+      right: max(16px, env(safe-area-inset-right));
+      bottom: 92px;
+      width: min(350px, calc(100vw - 32px));
+      max-height: min(550px, calc(100vh - 120px));
+      flex-direction: column;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(37, 99, 235, 0.2), 0 4px 12px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+    }
+    .np-planpro-chat-header {
+      padding: 16px;
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      color: #fff;
+      border-radius: 16px 16px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .np-planpro-chat-header-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .np-planpro-chat-logo-ring {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .np-planpro-chat-logo {
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
+    .np-planpro-chat-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .np-planpro-chat-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+    }
+    .np-planpro-chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      font-size: 14px;
+      min-height: 0;
+      background: #f8fafc;
+    }
+    .np-planpro-chat-input-area {
+      padding: 12px;
+      border-top: 1px solid #e5e7eb;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .np-planpro-chat-img-preview-wrap {
+      display: none;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .np-planpro-chat-img-preview {
+      width: 64px;
+      height: 64px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+      background: #f1f5f9;
+    }
+    .np-planpro-chat-img-remove {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: #e2e8f0;
+      color: #64748b;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      padding: 0;
+    }
+    .np-planpro-chat-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .np-planpro-chat-field {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid rgba(37, 99, 235, 0.25);
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 14px;
+      min-width: 0;
+    }
+    .np-planpro-chat-attach {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #64748b;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .np-planpro-chat-send {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+    }
+    .np-planpro-chat-typing {
+      padding: 12px 20px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 10px;
+      margin-left: 8px;
+      max-width: 80%;
+    }
+    .np-planpro-chat-typing span {
+      width: 8px;
+      height: 8px;
+      background: #2563eb;
+      border-radius: 50%;
+      animation: np-planpro-chat-typing-bounce 1.4s infinite;
+      opacity: 0.6;
+    }
+    .np-planpro-chat-typing span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .np-planpro-chat-typing span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes np-planpro-chat-typing-bounce {
+      0%,
+      60%,
+      100% {
+        transform: translateY(0);
+        opacity: 0.6;
+      }
+      30% {
+        transform: translateY(-10px);
+        opacity: 1;
+      }
+    }
+    #planProChatMessages .np-planpro-chat-hl {
+      color: #0f766e;
+      font-weight: 700;
+      background: #ecfdf5;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    #planProChatMessages .np-planpro-chat-hl-num {
+      color: #b45309;
+      font-weight: 700;
+      background: #fef9c3;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    #planProChatMessages .np-planpro-chat-em {
+      font-style: italic;
+      color: #475569;
+    }
+    @media (orientation: landscape) and (min-width: 768px) and (max-height: 820px) {
+      .np-planpro-chat-panel {
+        left: auto;
+        right: calc(12px + env(safe-area-inset-right, 0px));
+        width: min(340px, calc(100vw - 40px));
+        bottom: 88px;
+        height: calc(100vh - 112px);
+        max-height: calc(100vh - 112px);
+      }
+      .np-planpro-chat-bubble {
+        right: calc(12px + env(safe-area-inset-right, 0px));
+      }
+    }
+    @supports (height: 100dvh) {
+      @media (orientation: landscape) and (min-width: 768px) and (max-height: 820px) {
+        .np-planpro-chat-panel {
+          height: calc(100dvh - 112px);
+          max-height: calc(100dvh - 112px);
+        }
+      }
+    }
     .np-plan-brand { display: flex; align-items: center; gap: 12px; }
     .np-plan-brand img { height: 38px; width: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.06)); }
     .np-plan-brand h1 {
@@ -181,7 +430,7 @@
       z-index: 1101;
       top: max(12px, env(safe-area-inset-top));
       right: max(12px, env(safe-area-inset-right));
-      width: min(600px, calc(100vw - 24px));
+      width: min(480px, calc(100vw - 24px));
       max-height: min(90vh, 820px);
       flex-direction: column;
       box-sizing: border-box;
@@ -305,29 +554,22 @@
       padding: 10px 12px 12px;
       box-sizing: border-box;
     }
-    .np-plan-menu-block--fin {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-      padding: 10px;
-      background: rgba(248, 250, 252, 0.72);
-      align-items: stretch;
+    /* Paneles finanzas / noticias / mercados: uno debajo del otro (fila de botones dentro de cada caja) */
+    .np-plan-menu-block--fin-accounts {
+      border-left: 3px solid rgba(37, 99, 235, 0.55);
+      background: linear-gradient(90deg, rgba(239, 246, 255, 0.45) 0%, rgba(255, 255, 255, 0.9) 42%);
     }
-    @media (max-width: 720px) {
-      .np-plan-menu-block--fin {
-        grid-template-columns: 1fr;
-      }
+    .np-plan-menu-block--fin-news {
+      border-left: 3px solid rgba(217, 119, 6, 0.65);
+      background: linear-gradient(90deg, rgba(255, 251, 235, 0.5) 0%, rgba(255, 255, 255, 0.92) 42%);
     }
-    .np-plan-menu-subblock {
-      border: 1px solid rgba(148, 163, 184, 0.28);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.92);
-      padding: 10px 10px 12px;
-      min-width: 0;
-      min-height: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .np-plan-menu-block--fin-markets {
+      border-left: 3px solid rgba(13, 148, 136, 0.55);
+      background: linear-gradient(90deg, rgba(240, 253, 250, 0.45) 0%, rgba(255, 255, 255, 0.92) 42%);
+    }
+    .np-plan-menu-block > .np-plan-menu-subblock-title {
+      display: block;
+      margin-bottom: 8px;
     }
     .np-plan-menu-subblock-title {
       font-size: 10px;
@@ -337,23 +579,36 @@
       color: #64748b;
       line-height: 1.2;
     }
-    .np-plan-menu-subblock-links {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 92px), 1fr));
-      gap: 6px;
-      flex: 1 1 auto;
-      align-content: start;
+    .np-plan-menu-inline-links {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 8px;
     }
     .np-plan-header-menu-panel .btn-mac-link {
       font-size: 12px;
       padding: 7px 10px;
-      width: 100%;
       min-height: 36px;
       box-sizing: border-box;
       justify-content: center;
       text-align: center;
       white-space: normal;
       line-height: 1.25;
+    }
+    .np-plan-header-menu-panel .np-plan-link-row .btn-mac-link {
+      width: 100%;
+    }
+    .np-plan-header-menu-panel .np-plan-menu-inline-links .btn-mac-link {
+      flex: 1 1 auto;
+      min-width: min(112px, 100%);
+      width: auto;
+      max-width: none;
+    }
+    @media (max-width: 400px) {
+      .np-plan-header-menu-panel .np-plan-menu-inline-links .btn-mac-link {
+        min-width: calc(50% - 4px);
+        flex: 1 1 calc(50% - 4px);
+      }
     }
     body.np-plan-header-menu-lock {
       overflow: hidden;
@@ -742,6 +997,57 @@
       background: rgba(236, 253, 245, 0.92);
       border-color: rgba(34, 197, 94, 0.42);
       color: #14532d;
+    }
+    /* Botones “añadir bloque” Plan PRO: un color por tipo (mismo acento que el marco del bloque) */
+    .btn-ghost-np-note {
+      border-color: rgba(99, 102, 241, 0.38);
+      color: #4338ca;
+      background: rgba(255, 255, 255, 0.72);
+    }
+    .btn-ghost-np-note:hover {
+      background: rgba(238, 242, 255, 0.95);
+      border-color: rgba(79, 70, 229, 0.5);
+      color: #3730a3;
+    }
+    .btn-ghost-np-smart {
+      border-color: rgba(37, 99, 235, 0.38);
+      color: #1d4ed8;
+      background: rgba(255, 255, 255, 0.72);
+    }
+    .btn-ghost-np-smart:hover {
+      background: rgba(239, 246, 255, 0.95);
+      border-color: rgba(29, 78, 216, 0.5);
+      color: #1e3a8a;
+    }
+    .btn-ghost-np-tasks {
+      border-color: rgba(13, 148, 136, 0.4);
+      color: #0f766e;
+      background: rgba(255, 255, 255, 0.72);
+    }
+    .btn-ghost-np-tasks:hover {
+      background: rgba(240, 253, 250, 0.95);
+      border-color: rgba(15, 118, 110, 0.52);
+      color: #115e59;
+    }
+    .btn-ghost-np-free {
+      border-color: rgba(5, 150, 105, 0.42);
+      color: #047857;
+      background: rgba(255, 255, 255, 0.72);
+    }
+    .btn-ghost-np-free:hover {
+      background: rgba(236, 253, 245, 0.95);
+      border-color: rgba(4, 120, 87, 0.55);
+      color: #065f46;
+    }
+    .btn-ghost-np-ledger {
+      border-color: rgba(217, 119, 6, 0.45);
+      color: #b45309;
+      background: rgba(255, 255, 255, 0.72);
+    }
+    .btn-ghost-np-ledger:hover {
+      background: rgba(255, 251, 235, 0.95);
+      border-color: rgba(180, 83, 9, 0.58);
+      color: #92400e;
     }
     .btn-danger { background: rgba(254, 242, 242, 0.95); color: var(--danger); border: 1px solid #fecaca; font-size: 12px; padding: 4px 10px; border-radius: 8px; }
     .panel {
@@ -1324,6 +1630,10 @@
     .np-tree-menu-item-danger:hover {
       background: rgba(254, 226, 226, 0.55);
     }
+    .np-ledger-tpl-menu {
+      min-width: min(280px, calc(100vw - 28px));
+      z-index: 50;
+    }
     /* Mini-hojas / tablas — aspecto PRO, sin rejilla cuadrada */
     .np-ms-block {
       margin-top: 14px;
@@ -1353,41 +1663,124 @@
         0 14px 36px rgba(15, 23, 42, 0.1),
         0 22px 56px rgba(34, 197, 94, 0.06);
     }
-    /* Tabla libre: bloque verde + título azul (modal y preview de creación) */
+    /* Tabla libre: marco verde esmeralda (botón “Tabla libre” mismo acento) */
     .np-ms-block.np-ms-block-free {
-      border: 2px solid rgba(34, 197, 94, 0.48);
+      border: 2px solid rgba(5, 150, 105, 0.5);
       background: linear-gradient(
         165deg,
-        rgba(240, 253, 244, 0.42) 0%,
+        rgba(236, 253, 245, 0.55) 0%,
         rgba(255, 255, 255, 0.96) 52%,
         rgba(248, 250, 252, 0.88) 100%
       );
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.92) inset,
-        0 6px 18px rgba(34, 197, 94, 0.1),
+        0 6px 18px rgba(5, 150, 105, 0.12),
         0 12px 32px rgba(15, 23, 42, 0.06);
     }
     .np-modal-body .np-ms-block-free,
     #npMiniSheetPreview .np-ms-block-free {
-      border-color: rgba(22, 163, 74, 0.52);
+      border-color: rgba(4, 120, 87, 0.55);
     }
     .np-modal-body .np-ms-block-free:hover {
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.96) inset,
-        0 8px 22px rgba(34, 197, 94, 0.14),
+        0 8px 22px rgba(5, 150, 105, 0.16),
         0 16px 40px rgba(15, 23, 42, 0.08);
     }
-    /* Separación minimalista entre dos tablas seguidas (misma pantalla) */
-    .np-detail-blocks-mount .np-ms-block + .np-ms-block,
-    #npMiniSheetPreview .np-ms-block + .np-ms-block,
-    .np-modal-body .np-ms-block + .np-ms-block {
+    /* Tabla seguimiento PRO: marco azul */
+    .np-ms-block.np-ms-block-smart {
+      border: 2px solid rgba(37, 99, 235, 0.45);
+      background: linear-gradient(
+        165deg,
+        rgba(239, 246, 255, 0.55) 0%,
+        rgba(255, 255, 255, 0.97) 55%,
+        rgba(248, 250, 252, 0.9) 100%
+      );
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 6px 20px rgba(37, 99, 235, 0.1),
+        0 12px 32px rgba(15, 23, 42, 0.06);
+    }
+    .np-modal-body .np-ms-block-smart:hover,
+    #npMiniSheetPreview .np-ms-block-smart:hover {
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.98) inset,
+        0 8px 24px rgba(37, 99, 235, 0.14),
+        0 16px 40px rgba(15, 23, 42, 0.08);
+    }
+    .np-ms-block-smart .np-ms-sheet {
+      border-color: rgba(37, 99, 235, 0.22);
+      background: rgba(255, 255, 255, 0.78);
+    }
+    .np-ms-block-smart .np-ms-title-inline {
+      flex: 1;
+      min-width: 120px;
+      font: inherit;
+      font-weight: 650;
+      font-size: 14px;
+      border-radius: 10px;
+      padding: 7px 12px;
+      border: 2px solid rgba(37, 99, 235, 0.48);
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+    }
+    .np-ms-block-smart .np-ms-title-inline:focus {
+      border-color: rgba(29, 78, 216, 0.88);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
+    /* Tabla de tareas: marco teal (distinto del verde de tabla libre) */
+    .np-ms-block.np-ms-block-tasks {
+      border: 2px solid rgba(13, 148, 136, 0.48);
+      background: linear-gradient(
+        165deg,
+        rgba(240, 253, 250, 0.55) 0%,
+        rgba(255, 255, 255, 0.97) 55%,
+        rgba(248, 250, 252, 0.9) 100%
+      );
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 6px 20px rgba(13, 148, 136, 0.1),
+        0 12px 32px rgba(15, 23, 42, 0.06);
+    }
+    .np-modal-body .np-ms-block-tasks:hover,
+    #npMiniSheetPreview .np-ms-block-tasks:hover {
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.98) inset,
+        0 8px 24px rgba(13, 148, 136, 0.15),
+        0 16px 40px rgba(15, 23, 42, 0.08);
+    }
+    .np-ms-block-tasks .np-ms-sheet {
+      border-color: rgba(13, 148, 136, 0.24);
+      background: rgba(255, 255, 255, 0.78);
+    }
+    .np-ms-block-tasks .np-ms-title-inline {
+      flex: 1;
+      min-width: 120px;
+      font: inherit;
+      font-weight: 650;
+      font-size: 14px;
+      border-radius: 10px;
+      padding: 7px 12px;
+      border: 2px solid rgba(15, 118, 110, 0.5);
+      box-shadow: 0 1px 3px rgba(13, 148, 136, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+    }
+    .np-ms-block-tasks .np-ms-title-inline:focus {
+      border-color: rgba(15, 118, 110, 0.88);
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+    }
+    /* Separación entre bloques (texto, tablas…) en el mismo apunte */
+    .np-detail-blocks-mount .np-detail-block-chunk + .np-detail-block-chunk,
+    #npMiniSheetPreview .np-detail-block-chunk + .np-detail-block-chunk {
       margin-top: 26px;
       padding-top: 22px;
       border-top: 1px solid rgba(148, 163, 184, 0.38);
     }
     .np-ms-block-free .np-ms-sheet {
-      border-color: rgba(34, 197, 94, 0.28);
+      border-color: rgba(5, 150, 105, 0.32);
       background: rgba(255, 255, 255, 0.72);
+      min-height: 120px;
+      overflow-y: visible;
     }
     .np-ms-block-free .np-ms-title-inline {
       flex: 1;
@@ -1398,13 +1791,34 @@
       border-radius: 10px;
       padding: 7px 12px;
       background: rgba(255, 255, 255, 0.96);
-      border: 2px solid rgba(37, 99, 235, 0.52);
-      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12);
+      border: 2px solid rgba(5, 150, 105, 0.52);
+      box-shadow: 0 1px 3px rgba(5, 150, 105, 0.12);
     }
     .np-ms-block-free .np-ms-title-inline:focus {
       outline: none;
-      border-color: rgba(29, 78, 216, 0.85);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+      border-color: rgba(4, 120, 87, 0.88);
+      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+    }
+    /* Tabla de montos: marco ámbar + título (mismo acento que el botón) */
+    .np-ms-block.np-ms-block-ledger {
+      border: 2px solid rgba(217, 119, 6, 0.5);
+      background: linear-gradient(
+        165deg,
+        rgba(255, 251, 235, 0.52) 0%,
+        rgba(255, 255, 255, 0.96) 52%,
+        rgba(248, 250, 252, 0.88) 100%
+      );
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.92) inset,
+        0 6px 18px rgba(217, 119, 6, 0.12),
+        0 12px 32px rgba(15, 23, 42, 0.06);
+    }
+    .np-modal-body .np-ms-block-ledger:hover,
+    #npMiniSheetPreview .np-ms-block-ledger:hover {
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.96) inset,
+        0 8px 22px rgba(217, 119, 6, 0.16),
+        0 16px 40px rgba(15, 23, 42, 0.08);
     }
     /* Tabla de montos: acento ámbar en el título */
     .np-ms-block-ledger .np-ms-title-inline {
@@ -2820,6 +3234,11 @@
       cursor: pointer;
       accent-color: #22c55e;
     }
+    .np-ms-cell.np-ms-cell-done {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .np-ms-row-kind-section {
       background: rgba(241, 245, 249, 0.65);
       font-weight: 700;
@@ -2999,7 +3418,7 @@
       border-radius: 0 10px 10px 0;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
     }
-    /* Bloques de texto extra entre tablas */
+    /* Bloques de texto extra entre tablas (mismo índigo que el botón “Bloque de texto”) */
     .np-note-section-wrap {
       margin: 16px 0;
       padding: 14px 16px;
@@ -3007,6 +3426,26 @@
       border: 1px solid rgba(15, 23, 42, 0.07);
       background: linear-gradient(165deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.88));
       box-shadow: 0 6px 22px rgba(15, 23, 42, 0.05);
+    }
+    .np-note-section-wrap.np-note-section-wrap--plan-note {
+      border: 2px solid rgba(99, 102, 241, 0.42);
+      background: linear-gradient(
+        165deg,
+        rgba(238, 242, 255, 0.55) 0%,
+        rgba(255, 255, 255, 0.95) 55%,
+        rgba(248, 250, 252, 0.9) 100%
+      );
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.92) inset,
+        0 6px 20px rgba(99, 102, 241, 0.1),
+        0 10px 26px rgba(15, 23, 42, 0.05);
+    }
+    .np-modal-body .np-note-section-wrap--plan-note:hover,
+    #npMiniSheetPreview .np-note-section-wrap--plan-note:hover {
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.96) inset,
+        0 8px 24px rgba(99, 102, 241, 0.14),
+        0 14px 34px rgba(15, 23, 42, 0.07);
     }
     .np-note-section-wrap .np-note-section-title {
       font-size: 11px;
@@ -3115,37 +3554,35 @@
                 <a class="btn-mac-link btn-mac-link--brand-microsoft" href="https://myaccount.microsoft.com/?ref=amc" target="_blank" rel="noopener noreferrer" title="Cuenta Microsoft">Microsoft</a>
               </div>
             </div>
-            <div class="np-plan-menu-block np-plan-menu-block--fin" aria-label="Finanzas y noticias">
-              <div class="np-plan-menu-subblock">
-                <span class="np-plan-menu-subblock-title">Cuentas y ahorro</span>
-                <div class="np-plan-menu-subblock-links">
-                  <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.bbva.mx/" target="_blank" rel="noopener noreferrer" title="BBVA México">BBVA</a>
-                  <a class="btn-mac-link btn-mac-link--fin-personal" href="https://gbm.com/" target="_blank" rel="noopener noreferrer" title="GBM">GBM</a>
-                  <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.fidelity.com/" target="_blank" rel="noopener noreferrer" title="Fidelity">Fidelity</a>
-                  <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.cetesdirecto.com/" target="_blank" rel="noopener noreferrer" title="CETES Directo">CETES</a>
-                </div>
+            <div class="np-plan-menu-block np-plan-menu-block--fin-accounts" aria-label="Cuentas y ahorro">
+              <span class="np-plan-menu-subblock-title">Cuentas y ahorro</span>
+              <div class="np-plan-menu-inline-links">
+                <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.bbva.mx/" target="_blank" rel="noopener noreferrer" title="BBVA México">BBVA</a>
+                <a class="btn-mac-link btn-mac-link--fin-personal" href="https://gbm.com/" target="_blank" rel="noopener noreferrer" title="GBM">GBM</a>
+                <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.fidelity.com/" target="_blank" rel="noopener noreferrer" title="Fidelity">Fidelity</a>
+                <a class="btn-mac-link btn-mac-link--fin-personal" href="https://www.cetesdirecto.com/" target="_blank" rel="noopener noreferrer" title="CETES Directo">CETES</a>
               </div>
-              <div class="np-plan-menu-subblock">
-                <span class="np-plan-menu-subblock-title">Noticias</span>
-                <div class="np-plan-menu-subblock-links">
-                  <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.elfinanciero.com.mx/" target="_blank" rel="noopener noreferrer" title="El Financiero">El Financiero</a>
-                  <a class="btn-mac-link btn-mac-link--fin-news" href="http://spanish.peopledaily.com.cn/" target="_blank" rel="noopener noreferrer" title="Diario del Pueblo (español)">PD China</a>
-                  <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.nytimes.com/" target="_blank" rel="noopener noreferrer" title="The New York Times">NY Times</a>
-                  <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.wsj.com/" target="_blank" rel="noopener noreferrer" title="The Wall Street Journal">WSJ</a>
-                </div>
+            </div>
+            <div class="np-plan-menu-block np-plan-menu-block--fin-news" aria-label="Noticias">
+              <span class="np-plan-menu-subblock-title">Noticias</span>
+              <div class="np-plan-menu-inline-links">
+                <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.elfinanciero.com.mx/" target="_blank" rel="noopener noreferrer" title="El Financiero">El Financiero</a>
+                <a class="btn-mac-link btn-mac-link--fin-news" href="http://spanish.peopledaily.com.cn/" target="_blank" rel="noopener noreferrer" title="Diario del Pueblo (español)">PD China</a>
+                <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.nytimes.com/" target="_blank" rel="noopener noreferrer" title="The New York Times">NY Times</a>
+                <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.wsj.com/" target="_blank" rel="noopener noreferrer" title="The Wall Street Journal">WSJ</a>
               </div>
-              <div class="np-plan-menu-subblock">
-                <span class="np-plan-menu-subblock-title">Mercados e información</span>
-                <div class="np-plan-menu-subblock-links">
-                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.bmv.com.mx/" target="_blank" rel="noopener noreferrer" title="Bolsa Mexicana de Valores">BMV</a>
-                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.banxico.org.mx/" target="_blank" rel="noopener noreferrer" title="Banco de México">Banxico</a>
-                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://es.tradingview.com/" target="_blank" rel="noopener noreferrer" title="TradingView">TradingView</a>
-                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://tradingeconomics.com/" target="_blank" rel="noopener noreferrer" title="Trading Economics">T. Economics</a>
-                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://finance.yahoo.com/?guccounter=1" target="_blank" rel="noopener noreferrer" title="Yahoo Finance">Yahoo Finanzas</a>
-                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.google.com/finance/beta?hl=es" target="_blank" rel="noopener noreferrer" title="Google Finanzas">Google Finanzas</a>
-                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://finviz.com/" target="_blank" rel="noopener noreferrer" title="Finviz">Finviz</a>
-                  <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.imf.org/es" target="_blank" rel="noopener noreferrer" title="FMI">FMI</a>
-                </div>
+            </div>
+            <div class="np-plan-menu-block np-plan-menu-block--fin-markets" aria-label="Mercados e información">
+              <span class="np-plan-menu-subblock-title">Mercados e información</span>
+              <div class="np-plan-menu-inline-links">
+                <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.bmv.com.mx/" target="_blank" rel="noopener noreferrer" title="Bolsa Mexicana de Valores">BMV</a>
+                <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.banxico.org.mx/" target="_blank" rel="noopener noreferrer" title="Banco de México">Banxico</a>
+                <a class="btn-mac-link btn-mac-link--fin-markets" href="https://es.tradingview.com/" target="_blank" rel="noopener noreferrer" title="TradingView">TradingView</a>
+                <a class="btn-mac-link btn-mac-link--fin-markets" href="https://tradingeconomics.com/" target="_blank" rel="noopener noreferrer" title="Trading Economics">T. Economics</a>
+                <a class="btn-mac-link btn-mac-link--fin-markets" href="https://finance.yahoo.com/?guccounter=1" target="_blank" rel="noopener noreferrer" title="Yahoo Finance">Yahoo Finanzas</a>
+                <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.google.com/finance/beta?hl=es" target="_blank" rel="noopener noreferrer" title="Google Finanzas">Google Finanzas</a>
+                <a class="btn-mac-link btn-mac-link--fin-markets" href="https://finviz.com/" target="_blank" rel="noopener noreferrer" title="Finviz">Finviz</a>
+                <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.imf.org/es" target="_blank" rel="noopener noreferrer" title="FMI">FMI</a>
               </div>
             </div>
           </div>
@@ -3301,11 +3738,11 @@
                     </div>
                   </div>
                   <div class="np-tools-row">
-                    <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddNoteBlock">＋ Bloque de texto</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddSmartTable">＋ Tabla seguimiento PRO</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddTaskTable">＋ Tabla de tareas</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddMiniSheet">＋ Tabla libre</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-blue" id="npBtnAddLedgerSheet">＋ Tabla de montos</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-note" id="npBtnAddNoteBlock">＋ Bloque de texto</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-smart" id="npBtnAddSmartTable">＋ Tabla seguimiento PRO</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-tasks" id="npBtnAddTaskTable">＋ Tabla de tareas</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-free" id="npBtnAddMiniSheet">＋ Tabla libre</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-ledger" id="npBtnAddLedgerSheet">＋ Tabla de montos</button>
                     <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
                   </div>
                   <div id="npMiniSheetPreview" class="np-hide" style="margin-bottom:14px;overflow:auto;"></div>
@@ -3381,6 +3818,38 @@
     </main>
   </div>
 
+  <!-- Asistente IA Plan PRO: misma API que Admin (scope admin / __admin__), historial propio en localStorage -->
+  <div id="planProChatWrap" class="np-planpro-chat-wrap" aria-hidden="true">
+    <div id="planProChatPanel" class="np-planpro-chat-panel" role="dialog" aria-modal="true" aria-labelledby="planProChatTitle" aria-hidden="true">
+      <div class="np-planpro-chat-header">
+        <div class="np-planpro-chat-header-inner">
+          <div class="np-planpro-chat-logo-ring" aria-hidden="true">
+            <img src="../assets/N_Hoja_Blanca.png" alt="" class="np-planpro-chat-logo" width="18" height="18" decoding="async" />
+          </div>
+          <span id="planProChatTitle" class="np-planpro-chat-title">Plan PRO Assistant</span>
+        </div>
+        <button type="button" class="np-planpro-chat-close" id="planProChatClose" aria-label="Cerrar asistente">×</button>
+      </div>
+      <div id="planProChatMessages" class="np-planpro-chat-messages"></div>
+      <div id="planProChatInputArea" class="np-planpro-chat-input-area">
+        <div id="planProChatImagePreviewWrap" class="np-planpro-chat-img-preview-wrap" style="display: none;">
+          <div id="planProChatImagePreview" class="np-planpro-chat-img-preview"></div>
+          <button type="button" id="planProChatImageRemove" class="np-planpro-chat-img-remove" title="Quitar imagen">×</button>
+        </div>
+        <div class="np-planpro-chat-input-row">
+          <input type="file" id="planProChatImageInput" accept="image/jpeg,image/png,image/webp" style="display: none;" />
+          <input type="text" id="planProChatInput" class="np-planpro-chat-field" placeholder="Pregunta sobre la planta, apuntes, prioridades…" autocomplete="off" />
+          <button type="button" id="planProChatAttachBtn" class="np-planpro-chat-attach" title="Adjuntar imagen (máx. 5 MB)">📷</button>
+          <button type="button" id="planProChatSend" class="np-planpro-chat-send" title="Enviar">➤</button>
+        </div>
+      </div>
+    </div>
+    <button type="button" id="planProChatBubble" class="np-planpro-chat-bubble" title="Plan PRO Assistant – misma IA que el panel Admin">
+      <span class="np-planpro-chat-bubble-ia">IA</span>
+      <img src="../assets/N_Hoja_Blanca.png" alt="" width="28" height="28" decoding="async" class="np-planpro-chat-bubble-img" />
+    </button>
+  </div>
+
   <div id="npPrioListModal" class="np-modal-overlay" aria-hidden="true">
     <div class="np-modal-panel np-prio-list-panel" role="dialog" aria-labelledby="npPrioListTitle">
       <div class="np-modal-head">
@@ -3417,6 +3886,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script src="../supabase-config.js"></script>
+  <script src="../app-config.js"></script>
   <script src="../auth-supabase.js"></script>
   <script>
 (function () {
@@ -3432,7 +3902,7 @@
     detailBlocksDomRefreshTimer = setTimeout(function () {
       detailBlocksDomRefreshTimer = null;
       refreshDetailBlocksDOM();
-    }, 48);
+    }, 110);
   }
 
   function cancelQueuedDetailBlocksDOMRefresh() {
@@ -3469,6 +3939,15 @@
     });
   }
 
+  function closeAllLedgerTemplateMenus() {
+    document.querySelectorAll('.np-ledger-tpl-menu').forEach(function (el) {
+      el.classList.add('np-hide');
+    });
+    document.querySelectorAll('.np-ledger-tpl-btn').forEach(function (btn) {
+      btn.setAttribute('aria-expanded', 'false');
+    });
+  }
+
   document.addEventListener('click', function (e) {
     if (e.target && e.target.closest && e.target.closest('.np-tree-menu-wrap')) return;
     closeAllTreeMenus();
@@ -3480,10 +3959,12 @@
     if (e.target && e.target.closest && e.target.closest('#npPillarTabFlyoutBackdrop')) return;
     if (e.target && e.target.closest && e.target.closest('.np-pillar-tab-more')) return;
     closePillarTabFlyout();
+    closeAllLedgerTemplateMenus();
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       closeAllTreeMenus();
+      closeAllLedgerTemplateMenus();
       closeCatColorFlyout();
       closePillarTabFlyout();
     }
@@ -3942,6 +4423,11 @@
   }
 
   function openItemDetail(r) {
+    if (detailBlocksSaveTimer) {
+      clearTimeout(detailBlocksSaveTimer);
+      detailBlocksSaveTimer = null;
+    }
+    cancelQueuedDetailBlocksDOMRefresh();
     state.detailModalAreaId = r.area_id || null;
     var modalPanel = $('npDetailModal').querySelector('.np-modal-panel');
     var accentOpen = getAreaAccentHex(r.area_id);
@@ -4018,6 +4504,8 @@
     detailModalAreaId: null,
     /** Ítems del último loadItems (para modal de prioridades). */
     prioSummaryRowsCache: null,
+    /** Resumen ligero de apuntes visibles (lista actual) para el asistente IA. */
+    planProItemsSnapshot: [],
     /** Mes visible en el calendario lateral (año, mes 0–11). */
     sidebarCalYear: null,
     sidebarCalMonth: null,
@@ -4056,15 +4544,14 @@
       type: 'mini_sheet',
       variant: 'ledger',
       title: 'Tabla de montos',
-      headers: ['Concepto', 'Monto', '%', 'Notas'],
-      colKinds: ['text', 'currency', 'pct', 'text'],
+      headers: ['Concepto', 'Monto'],
+      colKinds: ['text', 'currency'],
       montoCol: 1,
-      pctCol: 2,
       ledgerPctMode: 'auto',
       ledgerDerivedByCol: {},
       rows: [
-        ['', '', '', ''],
-        ['', '', '', '']
+        ['', ''],
+        ['', '']
       ]
     };
   }
@@ -4522,6 +5009,36 @@
     { id: 'default', label: '• Fila simple' }
   ];
 
+  /** Selector de tipo de fila solo en tabla seguimiento PRO (variant smart). */
+  var NP_SMART_SEGUIMIENTO_KIND_OPTIONS = [
+    { id: 'task', label: 'Tarea' },
+    { id: 'next_step', label: 'Próximo paso' },
+    { id: 'activity', label: 'Actividad' },
+    { id: 'date_focus', label: 'Fecha clave' }
+  ];
+
+  function rowKindOptionsForBlock(b) {
+    if (b && b.variant === 'smart') return NP_SMART_SEGUIMIENTO_KIND_OPTIONS;
+    return NP_ROW_KIND_OPTIONS;
+  }
+
+  function rowKindLabelForId(id, b) {
+    var opts = rowKindOptionsForBlock(b);
+    var f = opts.filter(function (x) {
+      return x.id === id;
+    })[0];
+    if (f) return f.label;
+    var f2 = NP_ROW_KIND_OPTIONS.filter(function (x) {
+      return x.id === id;
+    })[0];
+    return f2 ? f2.label : id;
+  }
+
+  /** En seguimiento PRO, solo las filas «sección» se excluyen de fechas / prioridad agregada. */
+  function smartRowKindSkipForAggregates(rk) {
+    return rk === 'section';
+  }
+
   function priorityLevelFromRaw(raw) {
     var v = String(raw || '').trim().toLowerCase();
     if (!v) return '';
@@ -4546,6 +5063,60 @@
   function columnLooksLikeDoneHeader(h) {
     var s = (h != null ? String(h) : '').toLowerCase();
     return /done|\u2713|hecho|listo|\bok\b|complet/.test(s);
+  }
+
+  /** Corrige body_blocks guardados con rows/headers no-array (rompen reduce/forEach y dejan la tabla en blanco). */
+  function normalizePlanProMiniSheetBlock(b) {
+    if (!b || b.type !== 'mini_sheet') return;
+    function coerceHeaderList(h) {
+      if (Array.isArray(h)) return h;
+      if (h == null) return [];
+      if (typeof h === 'string') {
+        try {
+          var p = JSON.parse(h);
+          return Array.isArray(p) ? p : [];
+        } catch (e) {
+          return [];
+        }
+      }
+      return [];
+    }
+    function coerceRowList(r) {
+      if (Array.isArray(r)) return r;
+      if (r == null) return [];
+      if (typeof r === 'string') {
+        try {
+          var p2 = JSON.parse(r);
+          return Array.isArray(p2) ? p2 : [];
+        } catch (e2) {
+          return [];
+        }
+      }
+      return [];
+    }
+    b.headers = coerceHeaderList(b.headers);
+    b.rows = coerceRowList(b.rows);
+    var v = b.variant;
+    var freeLike = v !== 'ledger' && v !== 'smart' && v !== 'tasks';
+    if (freeLike && b.rows.length === 0) {
+      var nc = Math.max(b.headers.length, 3);
+      var empty = [];
+      for (var zi = 0; zi < nc; zi++) empty.push('');
+      var blank = empty.slice();
+      b.rows = [blank.slice(), blank.slice(), blank.slice()];
+    }
+    if (b.variant === 'smart' && b.rows.length === 0) {
+      var nhs = Math.max(b.headers.length, NP_SMART_MIN_COLS);
+      var lineS = [];
+      for (var si = 0; si < nhs; si++) lineS.push('');
+      b.rows = [lineS];
+    }
+    if (b.variant === 'tasks' && b.rows.length === 0) {
+      var nht = Math.max(b.headers.length, NP_TASKS_MIN_COLS);
+      var lineT = [];
+      for (var ti = 0; ti < nht; ti++) lineT.push('');
+      b.rows = [lineT];
+    }
   }
 
   function ensureSmartMeta(block) {
@@ -4595,6 +5166,9 @@
       for (var j = 1; j < spec.cols.length; j++) p *= ledgerCellNumber(arr, spec.cols[j]);
       return p;
     }
+    if (spec.op === 'copy' && typeof spec.col === 'number') {
+      return ledgerCellNumber(arr, spec.col);
+    }
     return NaN;
   }
 
@@ -4619,30 +5193,207 @@
     return t;
   }
 
+  function ledgerColGuideLine(b) {
+    var parts = [];
+    (b.headers || []).forEach(function (h, i) {
+      var t = String(h == null ? '' : h).replace(/\s+/g, ' ').trim() || '(sin nombre)';
+      parts.push(i + '·' + (t.length > 20 ? t.slice(0, 20) + '…' : t));
+    });
+    return parts.join('  |  ');
+  }
+
+  function ledgerParseColIndex(raw, maxExclusive) {
+    var n = parseInt(String(raw != null ? raw : '').trim(), 10);
+    if (isNaN(n) || n < 0 || n >= maxExclusive) return null;
+    return n;
+  }
+
+  /**
+   * Añade una columna a la tabla de montos (tipos y fórmulas).
+   * @returns {boolean} true si hubo cambio
+   */
+  function ledgerInteractiveAddColumn(b) {
+    var nh = (b.headers || []).length;
+    var guide = 'Columnas actuales: ' + ledgerColGuideLine(b) + '\n\n';
+    var tipo = window.prompt(
+      guide +
+        'Nueva columna — elige tipo:\n' +
+        '1 = Moneda (otro importe)\n' +
+        '2 = Número (unidades, piezas…)\n' +
+        '3 = Texto / notas\n' +
+        '4 = % participación (respecto a la columna base del %)\n' +
+        '5 = Fórmula RESTA (columna A − columna B)\n' +
+        '6 = Fórmula SUMA (A + B + … ; índices separados por coma)\n' +
+        '7 = Fórmula PRODUCTO (A × B × … ; ej. unidades × precio)\n' +
+        '8 = Copiar valor numérico de otra columna',
+      '1'
+    );
+    if (tipo == null) return false;
+    tipo = String(tipo).trim();
+    var newIdx = nh;
+    if (!b.ledgerDerivedByCol || typeof b.ledgerDerivedByCol !== 'object') b.ledgerDerivedByCol = {};
+    if (!b.colKinds) b.colKinds = [];
+
+    if (tipo === '1') {
+      var h1 = window.prompt('Nombre de la columna (moneda):', 'Importe');
+      if (h1 == null) return false;
+      b.headers.push(String(h1).trim() || 'Importe');
+      b.colKinds.push('currency');
+    } else if (tipo === '2') {
+      var h2 = window.prompt('Nombre de la columna (número):', 'Unidades');
+      if (h2 == null) return false;
+      b.headers.push(String(h2).trim() || 'Unidades');
+      b.colKinds.push('number');
+    } else if (tipo === '3') {
+      var h3 = window.prompt('Nombre de la columna (texto):', 'Notas');
+      if (h3 == null) return false;
+      b.headers.push(String(h3).trim() || 'Notas');
+      b.colKinds.push('text');
+    } else if (tipo === '4') {
+      b.headers.push('%');
+      b.colKinds.push('pct');
+    } else if (tipo === '5') {
+      var a = window.prompt(guide + 'RESTA — índice minuendo (A):', nh >= 2 ? '1' : '0');
+      var ia = ledgerParseColIndex(a, newIdx);
+      if (ia == null) {
+        showToast('Índice A no válido.', true);
+        return false;
+      }
+      var bb = window.prompt(guide + 'RESTA — índice sustraendo (B):', nh >= 2 ? '2' : '1');
+      var ib = ledgerParseColIndex(bb, newIdx);
+      if (ib == null) {
+        showToast('Índice B no válido.', true);
+        return false;
+      }
+      var h5 = window.prompt('Nombre de la columna (resta):', 'Diferencia');
+      if (h5 == null) return false;
+      b.headers.push(String(h5).trim() || 'Resta');
+      b.colKinds.push('derived');
+      b.ledgerDerivedByCol[String(newIdx)] = { op: 'diff', left: ia, right: ib };
+    } else if (tipo === '6') {
+      var cs = window.prompt(guide + 'SUMA — índices separados por coma (ej. 1,2):', nh >= 2 ? '1,2' : '0,1');
+      if (cs == null) return false;
+      var cols = String(cs)
+        .split(/[,;\s]+/)
+        .map(function (x) {
+          return parseInt(String(x).trim(), 10);
+        })
+        .filter(function (x) {
+          return !isNaN(x) && x >= 0 && x < newIdx;
+        });
+      if (cols.length < 1) {
+        showToast('Indica al menos un índice de columna existente.', true);
+        return false;
+      }
+      var h6 = window.prompt('Nombre de la columna (suma):', 'Total');
+      if (h6 == null) return false;
+      b.headers.push(String(h6).trim() || 'Total');
+      b.colKinds.push('derived');
+      b.ledgerDerivedByCol[String(newIdx)] = { op: 'sum', cols: cols };
+    } else if (tipo === '7') {
+      var cp = window.prompt(
+        guide + 'PRODUCTO — índices (ej. 1,2 para unidades × monto):',
+        nh >= 2 ? '1,2' : '0,1'
+      );
+      if (cp == null) return false;
+      var pcols = String(cp)
+        .split(/[,;\s]+/)
+        .map(function (x) {
+          return parseInt(String(x).trim(), 10);
+        })
+        .filter(function (x) {
+          return !isNaN(x) && x >= 0 && x < newIdx;
+        });
+      if (pcols.length < 2) {
+        showToast('Indica al menos dos columnas para multiplicar (ej. unidades y monto).', true);
+        return false;
+      }
+      var h7 = window.prompt('Nombre de la columna (producto):', 'Importe');
+      if (h7 == null) return false;
+      b.headers.push(String(h7).trim() || 'Producto');
+      b.colKinds.push('derived');
+      b.ledgerDerivedByCol[String(newIdx)] = { op: 'product', cols: pcols };
+    } else if (tipo === '8') {
+      var ic = window.prompt(guide + 'COPIAR — índice de la columna cuyo número quieres repetir aquí:', '1');
+      var icx = ledgerParseColIndex(ic, newIdx);
+      if (icx == null) {
+        showToast('Índice no válido.', true);
+        return false;
+      }
+      var h8 = window.prompt('Nombre de la columna (copia):', 'Igual');
+      if (h8 == null) return false;
+      b.headers.push(String(h8).trim() || 'Valor');
+      b.colKinds.push('derived');
+      b.ledgerDerivedByCol[String(newIdx)] = { op: 'copy', col: icx };
+    } else {
+      showToast('Opción no reconocida (usa 1–8).', true);
+      return false;
+    }
+
+    b.rows.forEach(function (row, idx) {
+      var arr = padRowCells(row, newIdx);
+      arr.push('');
+      b.rows[idx] = arr;
+    });
+    return true;
+  }
+
+  function ledgerRemoveLastColumn(b) {
+    var nh = (b.headers || []).length;
+    if (nh <= 2) {
+      showToast('Debe quedar al menos Concepto y Monto.', true);
+      return false;
+    }
+    if (
+      !window.confirm(
+        'Se quitará solo la última columna. Si tenías fórmulas que la usan, revisa índices. ¿Continuar?'
+      )
+    ) {
+      return false;
+    }
+    var last = nh - 1;
+    delete b.ledgerDerivedByCol[String(last)];
+    b.headers.pop();
+    if (b.colKinds && b.colKinds.length) b.colKinds.pop();
+    b.rows.forEach(function (row, idx) {
+      var arr = padRowCells(row, nh);
+      if (arr.length) arr.pop();
+      b.rows[idx] = arr;
+    });
+    if (typeof b.montoCol === 'number' && b.montoCol >= last) b.montoCol = Math.max(1, last - 1);
+    return true;
+  }
+
   function ensureLedgerBlock(b) {
     if (!b.headers || !b.headers.length) {
-      b.headers = ['Concepto', 'Monto', '%', 'Notas'];
+      b.headers = ['Concepto', 'Monto'];
     }
     if (!b.ledgerDerivedByCol || typeof b.ledgerDerivedByCol !== 'object') b.ledgerDerivedByCol = {};
     if (b.ledgerPctMode !== 'manual' && b.ledgerPctMode !== 'auto') b.ledgerPctMode = 'auto';
 
     var nh = b.headers.length;
+
     if (!b.colKinds || b.colKinds.length !== nh) {
       if (nh === 6 && ledgerGetDerivedSpec(b, 3) && ledgerGetDerivedSpec(b, 3).op === 'diff') {
         b.colKinds = ['text', 'currency', 'currency', 'derived', 'pct', 'text'];
         if (typeof b.montoCol !== 'number') b.montoCol = 1;
-        if (typeof b.pctCol !== 'number') b.pctCol = 4;
       } else if (nh === 5 && ledgerGetDerivedSpec(b, 3) && ledgerGetDerivedSpec(b, 3).op === 'sum') {
         b.colKinds = ['text', 'currency', 'currency', 'derived', 'text'];
+        if (typeof b.montoCol !== 'number') b.montoCol = 3;
+      } else if (nh === 6 && ledgerGetDerivedSpec(b, 3) && ledgerGetDerivedSpec(b, 3).op === 'product') {
+        b.colKinds = ['text', 'number', 'currency', 'derived', 'pct', 'text'];
         if (typeof b.montoCol !== 'number') b.montoCol = 3;
       } else {
         b.colKinds = [];
         for (var i = 0; i < nh; i++) {
           if (ledgerGetDerivedSpec(b, i)) b.colKinds.push('derived');
-          else if (i === 1 && nh >= 2) b.colKinds.push('currency');
-          else if (i === 2 && nh === 4) b.colKinds.push('pct');
-          else if (i === nh - 1) b.colKinds.push('text');
-          else b.colKinds.push('text');
+          else if (i === 0) b.colKinds.push('text');
+          else if (i === 1) b.colKinds.push('currency');
+          else {
+            var hl = String(b.headers[i] || '').trim();
+            if (hl === '%' || /^\s*%\s*$/.test(hl)) b.colKinds.push('pct');
+            else b.colKinds.push('text');
+          }
         }
       }
     }
@@ -4650,6 +5401,7 @@
       if (ledgerGetDerivedSpec(b, j)) b.colKinds[j] = 'derived';
     }
     if (typeof b.montoCol !== 'number' || b.montoCol < 0 || b.montoCol >= nh) b.montoCol = 1;
+
     b.pctCol = -1;
     for (var k = 0; k < nh; k++) {
       if (b.colKinds[k] === 'pct') {
@@ -4657,8 +5409,11 @@
         break;
       }
     }
+
     if (!b.rows || !b.rows.length) {
-      b.rows = [['', '', '', ''], ['', '', '', '']];
+      var emptyRow = [];
+      for (var zi = 0; zi < nh; zi++) emptyRow.push('');
+      b.rows = [emptyRow.slice(), emptyRow.slice()];
     }
     for (var r = 0; r < b.rows.length; r++) {
       b.rows[r] = padRowCells(b.rows[r], nh);
@@ -4716,9 +5471,15 @@
   async function persistItemBlocks(itemId, blocks, opts) {
     opts = opts || {};
     if (!state.client || !itemId) return;
+    var payload;
+    try {
+      payload = JSON.parse(JSON.stringify(blocks != null ? blocks : []));
+    } catch (e) {
+      payload = [];
+    }
     var res = await state.client
       .from('plan_pro_items')
-      .update({ body_blocks: blocks })
+      .update({ body_blocks: payload })
       .eq('id', itemId)
       .eq('owner_id', state.userId);
     if (res.error) {
@@ -4726,6 +5487,17 @@
       return;
     }
     if (!opts.skipReload) await loadItems();
+  }
+
+  /** Un solo debounce para guardar body_blocks del modal (evita choque con schedulePersist interno de renderBodyBlocks). */
+  function queuePersistDetailBlocksWorking(expectedItemId) {
+    if (!expectedItemId || !state.client) return;
+    if (detailBlocksSaveTimer) clearTimeout(detailBlocksSaveTimer);
+    detailBlocksSaveTimer = setTimeout(function () {
+      detailBlocksSaveTimer = null;
+      if (!state.detailItemId || state.detailItemId !== expectedItemId || !state.detailBlocksWorking) return;
+      persistItemBlocks(state.detailItemId, state.detailBlocksWorking, { skipReload: true });
+    }, 520);
   }
 
   /**
@@ -4862,7 +5634,7 @@
         if (dateCol < 0) return;
         nrow.forEach(function (row, ri) {
           var rk = b.rowKinds && b.rowKinds[ri];
-          if (b.variant === 'smart' && rk && rk !== 'task') return;
+          if (b.variant === 'smart' && rk && smartRowKindSkipForAggregates(rk)) return;
           if (b.rowDone && b.rowDone[ri]) return;
           var cells = padRowCells(row, ncol);
           var dateRaw = cells[dateCol];
@@ -5111,6 +5883,8 @@
   }
 
   function miniSheetColCountForAggr(b) {
+    if (!b || b.type !== 'mini_sheet') return 1;
+    normalizePlanProMiniSheetBlock(b);
     var headers = b.headers || [];
     var rows = b.rows || [];
     var ncol = headers.length;
@@ -5137,7 +5911,7 @@
     if (prioCol < 0) return out;
     rows.forEach(function (row, ri) {
       var rk = b.rowKinds && b.rowKinds[ri];
-      if (b.variant === 'smart' && rk && rk !== 'task') return;
+      if (b.variant === 'smart' && rk && smartRowKindSkipForAggregates(rk)) return;
       var cells = Array.isArray(row) ? row.slice() : (row && row.cells ? row.cells.slice() : []);
       while (cells.length < ncol) cells.push('');
       var raw = cells[prioCol];
@@ -5262,7 +6036,7 @@
         if (prioCol < 0) return;
         nrow.forEach(function (row, ri) {
           var rk = b.rowKinds && b.rowKinds[ri];
-          if (b.variant === 'smart' && rk && rk !== 'task') return;
+          if (b.variant === 'smart' && rk && smartRowKindSkipForAggregates(rk)) return;
           var cells = Array.isArray(row) ? row.slice() : (row && row.cells ? row.cells.slice() : []);
           while (cells.length < ncol) cells.push('');
           var raw = cells[prioCol];
@@ -5453,11 +6227,7 @@
 
     function schedulePersist() {
       if (!persistItemId || !state.client) return;
-      if (detailBlocksSaveTimer) clearTimeout(detailBlocksSaveTimer);
-      detailBlocksSaveTimer = setTimeout(function () {
-        detailBlocksSaveTimer = null;
-        persistItemBlocks(persistItemId, blocks, { skipReload: true });
-      }, 520);
+      queuePersistDetailBlocksWorking(persistItemId);
     }
 
     function afterStructuralChange() {
@@ -5474,7 +6244,7 @@
 
       if (b.type === 'note_section') {
         var nw = document.createElement('div');
-        nw.className = 'np-note-section-wrap np-detail-block-chunk';
+        nw.className = 'np-note-section-wrap np-note-section-wrap--plan-note np-detail-block-chunk';
         if (b.title && String(b.title).trim()) {
           var tnh = document.createElement('div');
           tnh.className = 'np-note-section-title';
@@ -5504,6 +6274,8 @@
 
       if (b.type !== 'mini_sheet') return;
 
+      normalizePlanProMiniSheetBlock(b);
+
       if (b.variant === 'smart' || b.variant === 'tasks') ensureSmartMeta(b);
 
       var isLedger = b.variant === 'ledger';
@@ -5514,6 +6286,8 @@
         b.variant !== 'tasks';
 
       if (isLedger) ensureLedgerBlock(b);
+
+      var pendingFreeToolbar = null;
 
       var wrap = document.createElement('div');
       wrap.className = 'np-ms-block np-detail-block-chunk';
@@ -5570,9 +6344,11 @@
 
       if (isFreeMini) wrap.classList.add('np-ms-block-free');
       if (isLedger) wrap.classList.add('np-ms-block-ledger');
+      if (b.variant === 'smart') wrap.classList.add('np-ms-block-smart');
+      if (b.variant === 'tasks') wrap.classList.add('np-ms-block-tasks');
 
-      var headers = b.headers || [];
-      var rows = b.rows || [];
+      var headers = Array.isArray(b.headers) ? b.headers : [];
+      var rows = Array.isArray(b.rows) ? b.rows : [];
       var ncol = Math.max(
         headers.length,
         rows.reduce(function (m, row) {
@@ -5631,7 +6407,7 @@
         ftb.appendChild(fbCol);
         ftb.appendChild(fbRow);
         ftb.appendChild(fbDel);
-        wrap.appendChild(ftb);
+        pendingFreeToolbar = ftb;
       }
 
       if (editable && (b.variant === 'smart' || b.variant === 'tasks')) {
@@ -5688,6 +6464,50 @@
       if (editable && isLedger) {
         var ltb = document.createElement('div');
         ltb.className = 'np-ms-free-toolbar';
+        var lbAddCol = document.createElement('button');
+        lbAddCol.type = 'button';
+        lbAddCol.className = 'btn btn-ghost btn-ghost-blue';
+        lbAddCol.textContent = '＋ Columna';
+        lbAddCol.title =
+          'Añade columna: moneda, número (unidades), texto, % o fórmulas (resta, suma, producto, copiar valor).';
+        lbAddCol.addEventListener('click', function (e) {
+          e.preventDefault();
+          ensureLedgerBlock(b);
+          if (ledgerInteractiveAddColumn(b)) afterStructuralChange();
+        });
+        var lbDelCol = document.createElement('button');
+        lbDelCol.type = 'button';
+        lbDelCol.className = 'btn btn-ghost';
+        lbDelCol.textContent = '− Última columna';
+        lbDelCol.title = 'Quita solo la última columna (revisa fórmulas que usen índices).';
+        lbDelCol.addEventListener('click', function (e) {
+          e.preventDefault();
+          ensureLedgerBlock(b);
+          if (ledgerRemoveLastColumn(b)) afterStructuralChange();
+        });
+        var lbBaseM = document.createElement('button');
+        lbBaseM.type = 'button';
+        lbBaseM.className = 'btn btn-ghost';
+        lbBaseM.textContent = 'Base del %';
+        lbBaseM.title =
+          'Define qué columna usa el % automático (suel ser “Monto” o el total calculado de la fila).';
+        lbBaseM.addEventListener('click', function (e) {
+          e.preventDefault();
+          ensureLedgerBlock(b);
+          var g = ledgerColGuideLine(b);
+          var raw = window.prompt(
+            'Índice de la columna base para el % automático (0 = primera columna):\n' + g,
+            String(typeof b.montoCol === 'number' ? b.montoCol : 1)
+          );
+          if (raw == null) return;
+          var mx = ledgerParseColIndex(raw, b.headers.length);
+          if (mx == null) {
+            showToast('Índice no válido.', true);
+            return;
+          }
+          b.montoCol = mx;
+          afterStructuralChange();
+        });
         var lbRow = document.createElement('button');
         lbRow.type = 'button';
         lbRow.className = 'btn btn-ghost btn-ghost-green';
@@ -5719,67 +6539,91 @@
           b.ledgerPctMode = b.ledgerPctMode === 'manual' ? 'auto' : 'manual';
           afterStructuralChange();
         });
-        var lbTplG = document.createElement('button');
-        lbTplG.type = 'button';
-        lbTplG.className = 'btn btn-ghost btn-ghost-green';
-        lbTplG.textContent = 'Plantilla gasto (Pagado / Restante)';
-        lbTplG.title = 'Restante = Monto − Pagado. % sobre el monto principal.';
-        lbTplG.addEventListener('click', function (e) {
-          e.preventDefault();
+        function applyLedgerTemplate(which) {
           if (b.headers.length > 4 && !window.confirm('Esto redefine columnas y fórmulas de esta tabla. ¿Seguir?')) return;
-          b.headers = ['Concepto', 'Monto', 'Pagado', 'Restante', '%', 'Notas'];
-          b.colKinds = ['text', 'currency', 'currency', 'derived', 'pct', 'text'];
-          b.montoCol = 1;
-          b.pctCol = 4;
-          b.ledgerDerivedByCol = { '3': { op: 'diff', left: 1, right: 2 } };
-          b.ledgerPctMode = 'auto';
-          b.rows.forEach(function (row, idx) {
-            b.rows[idx] = padRowCells(row, 6);
-          });
+          if (which === 'gasto') {
+            b.headers = ['Concepto', 'Monto', 'Pagado', 'Restante', '%', 'Notas'];
+            b.colKinds = ['text', 'currency', 'currency', 'derived', 'pct', 'text'];
+            b.montoCol = 1;
+            b.pctCol = 4;
+            b.ledgerDerivedByCol = { '3': { op: 'diff', left: 1, right: 2 } };
+            b.ledgerPctMode = 'auto';
+            b.rows.forEach(function (row, idx) {
+              b.rows[idx] = padRowCells(row, 6);
+            });
+          } else if (which === 'ingresos') {
+            b.headers = ['Concepto', 'Monto', 'Otro ingreso', 'Total fila', 'Notas'];
+            b.colKinds = ['text', 'currency', 'currency', 'derived', 'text'];
+            b.montoCol = 3;
+            b.ledgerDerivedByCol = { '3': { op: 'sum', cols: [1, 2] } };
+            b.ledgerPctMode = 'auto';
+            b.rows.forEach(function (row, idx) {
+              b.rows[idx] = padRowCells(row, 5);
+            });
+          } else if (which === 'inversion') {
+            b.headers = ['Concepto', 'Unidades', 'Precio c/u', 'Valor posición', '%', 'Notas'];
+            b.colKinds = ['text', 'number', 'currency', 'derived', 'pct', 'text'];
+            b.montoCol = 3;
+            b.pctCol = 4;
+            b.ledgerDerivedByCol = { '3': { op: 'product', cols: [1, 2] } };
+            b.ledgerPctMode = 'auto';
+            b.rows.forEach(function (row, idx) {
+              b.rows[idx] = padRowCells(row, 6);
+            });
+          }
           afterStructuralChange();
-        });
-        var lbTplI = document.createElement('button');
-        lbTplI.type = 'button';
-        lbTplI.className = 'btn btn-ghost btn-ghost-green';
-        lbTplI.textContent = 'Plantilla ingresos (suma A+B)';
-        lbTplI.title = 'Total fila = Monto + Otro ingreso. El % de participación usa la columna Total.';
-        lbTplI.addEventListener('click', function (e) {
+        }
+        var tplWrap = document.createElement('div');
+        tplWrap.className = 'np-tree-menu-wrap np-ledger-tpl-wrap np-tree-ignore';
+        var tplBtn = document.createElement('button');
+        tplBtn.type = 'button';
+        tplBtn.className = 'np-tree-btn-more np-tree-ignore np-ledger-tpl-btn';
+        tplBtn.setAttribute('aria-label', 'Plantillas de tabla de montos');
+        tplBtn.setAttribute('aria-haspopup', 'true');
+        tplBtn.setAttribute('aria-expanded', 'false');
+        tplBtn.title = 'Plantillas: gasto, ingresos, inversión';
+        tplBtn.textContent = '\u22EF';
+        var tplMenu = document.createElement('div');
+        tplMenu.className = 'np-tree-menu np-hide np-ledger-tpl-menu';
+        tplMenu.setAttribute('role', 'menu');
+        function addTplMenuItem(label, which) {
+          var mi = document.createElement('button');
+          mi.type = 'button';
+          mi.className = 'np-tree-menu-item np-tree-ignore';
+          mi.setAttribute('role', 'menuitem');
+          mi.textContent = label;
+          mi.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            tplMenu.classList.add('np-hide');
+            tplBtn.setAttribute('aria-expanded', 'false');
+            applyLedgerTemplate(which);
+          });
+          tplMenu.appendChild(mi);
+        }
+        addTplMenuItem('Plantilla gasto (Pagado / Restante)', 'gasto');
+        addTplMenuItem('Plantilla ingresos (suma A+B)', 'ingresos');
+        addTplMenuItem('Plantilla inversión (unid×precio)', 'inversion');
+        tplBtn.addEventListener('click', function (e) {
           e.preventDefault();
-          if (b.headers.length > 4 && !window.confirm('Esto redefine columnas y fórmulas de esta tabla. ¿Seguir?')) return;
-          b.headers = ['Concepto', 'Monto', 'Otro ingreso', 'Total fila', 'Notas'];
-          b.colKinds = ['text', 'currency', 'currency', 'derived', 'text'];
-          b.montoCol = 3;
-          b.ledgerDerivedByCol = { '3': { op: 'sum', cols: [1, 2] } };
-          b.ledgerPctMode = 'auto';
-          b.rows.forEach(function (row, idx) {
-            b.rows[idx] = padRowCells(row, 5);
+          e.stopPropagation();
+          document.querySelectorAll('.np-ledger-tpl-menu').forEach(function (m) {
+            if (m !== tplMenu) m.classList.add('np-hide');
           });
-          afterStructuralChange();
-        });
-        var lbTplInv = document.createElement('button');
-        lbTplInv.type = 'button';
-        lbTplInv.className = 'btn btn-ghost btn-ghost-green';
-        lbTplInv.textContent = 'Plantilla inversión (unid×precio)';
-        lbTplInv.title = 'Valor posición = Unidades × Precio. % sobre el valor de la posición.';
-        lbTplInv.addEventListener('click', function (e) {
-          e.preventDefault();
-          if (b.headers.length > 4 && !window.confirm('Esto redefine columnas y fórmulas de esta tabla. ¿Seguir?')) return;
-          b.headers = ['Concepto', 'Unidades', 'Precio c/u', 'Valor posición', '%', 'Notas'];
-          b.colKinds = ['text', 'currency', 'currency', 'derived', 'pct', 'text'];
-          b.montoCol = 3;
-          b.pctCol = 4;
-          b.ledgerDerivedByCol = { '3': { op: 'product', cols: [1, 2] } };
-          b.ledgerPctMode = 'auto';
-          b.rows.forEach(function (row, idx) {
-            b.rows[idx] = padRowCells(row, 6);
+          document.querySelectorAll('.np-ledger-tpl-btn').forEach(function (btn) {
+            if (btn !== tplBtn) btn.setAttribute('aria-expanded', 'false');
           });
-          afterStructuralChange();
+          tplMenu.classList.toggle('np-hide');
+          tplBtn.setAttribute('aria-expanded', tplMenu.classList.contains('np-hide') ? 'false' : 'true');
         });
+        tplWrap.appendChild(tplBtn);
+        tplWrap.appendChild(tplMenu);
+        ltb.appendChild(lbAddCol);
+        ltb.appendChild(lbDelCol);
+        ltb.appendChild(lbBaseM);
         ltb.appendChild(lbRow);
         ltb.appendChild(lbPct);
-        ltb.appendChild(lbTplG);
-        ltb.appendChild(lbTplI);
-        ltb.appendChild(lbTplInv);
+        ltb.appendChild(tplWrap);
         ltb.appendChild(lbDel);
         wrap.appendChild(ltb);
       }
@@ -5810,7 +6654,7 @@
           var fc = parseInt(tcell.getAttribute('data-ledger-foot-sum'), 10);
           if (isNaN(fc)) return;
           var fk = (b.colKinds && b.colKinds[fc]) || '';
-          if (fk === 'currency') {
+          if (fk === 'currency' || fk === 'number') {
             tcell.textContent = formatLedgerMoney(sumLedgerColumn(b.rows, fc));
           } else if (fk === 'derived') {
             var tder = sumLedgerDerivedColumn(b.rows, b, fc, ncol);
@@ -6058,25 +6902,34 @@
           if (b.variant === 'smart' && c === 0 && editable) {
             var sel = document.createElement('select');
             sel.className = 'np-ms-kind-select np-tree-ignore';
-            NP_ROW_KIND_OPTIONS.forEach(function (opt) {
+            var kindOpts = rowKindOptionsForBlock(b);
+            var hasRk = false;
+            kindOpts.forEach(function (opt) {
+              if (opt.id === rk) hasRk = true;
               var o = document.createElement('option');
               o.value = opt.id;
               o.textContent = opt.label;
               if (opt.id === rk) o.selected = true;
               sel.appendChild(o);
             });
+            if (!hasRk && rk) {
+              var oLegacy = document.createElement('option');
+              oLegacy.value = rk;
+              oLegacy.textContent = rowKindLabelForId(rk, b);
+              oLegacy.selected = true;
+              sel.appendChild(oLegacy);
+            }
             sel.addEventListener('change', function () {
               setRowKind(ri, sel.value, rr);
             });
             cell.appendChild(sel);
           } else if (b.variant === 'smart' && c === 0 && !editable) {
-            var kindLab = NP_ROW_KIND_OPTIONS.filter(function (x) { return x.id === rk; })[0];
             var spk = document.createElement('div');
             spk.className = 'np-ms-cell-static';
             spk.style.fontSize = '12px';
             spk.style.fontWeight = '600';
             spk.style.color = '#64748b';
-            spk.textContent = kindLab ? kindLab.label : rk;
+            spk.textContent = rowKindLabelForId(rk, b);
             cell.appendChild(spk);
           } else if (isLedger && ledgerGetDerivedSpec(b, c)) {
             var specD = ledgerGetDerivedSpec(b, c);
@@ -6088,7 +6941,7 @@
             es.setAttribute('data-ci', String(c));
             es.textContent = isNaN(dv) ? '—' : formatLedgerMoney(dv);
             cell.appendChild(es);
-          } else if (isLedger && colKind === 'currency') {
+          } else if (isLedger && (colKind === 'currency' || colKind === 'number')) {
             if (editable) {
               var inpCur = document.createElement('input');
               inpCur.type = 'text';
@@ -6148,6 +7001,7 @@
           } else if (editable && prioCol === c) {
             renderPriorityEditor(cell, ri, c, rr);
           } else if (editable && doneCol === c && (b.variant === 'tasks' || b.variant === 'smart')) {
+            cell.classList.add('np-ms-cell-done');
             var doneVal = b.rowDone && b.rowDone[ri];
             var cb = document.createElement('input');
             cb.type = 'checkbox';
@@ -6282,7 +7136,7 @@
           tcell.className = 'np-ms-cell';
           if (fc === 0) {
             tcell.textContent = 'Totales';
-          } else if (fk === 'currency') {
+          } else if (fk === 'currency' || fk === 'number') {
             tcell.setAttribute('data-ledger-foot-sum', String(fc));
             tcell.classList.add('np-ms-cell-num');
             tcell.textContent = formatLedgerMoney(sumLedgerColumn(rows, fc));
@@ -6341,13 +7195,14 @@
         lbl.textContent = 'Nueva fila';
         var selKind = document.createElement('select');
         selKind.className = 'np-tree-ignore';
-        NP_ROW_KIND_OPTIONS.forEach(function (opt) {
+        rowKindOptionsForBlock(b).forEach(function (opt) {
           var o = document.createElement('option');
           o.value = opt.id;
           o.textContent = opt.label;
           selKind.appendChild(o);
         });
         if (b.variant === 'tasks') selKind.value = 'task';
+        else if (b.variant === 'smart') selKind.value = 'task';
         var btnAdd = document.createElement('button');
         btnAdd.type = 'button';
         btnAdd.className = 'btn btn-ghost';
@@ -6364,6 +7219,8 @@
         wrap.appendChild(sheet);
       }
 
+      if (pendingFreeToolbar) wrap.appendChild(pendingFreeToolbar);
+
       frag.appendChild(wrap);
     });
 
@@ -6372,11 +7229,7 @@
 
   function scheduleDetailBlocksPersistDebounced() {
     if (!state.detailItemId || !state.client || !state.detailBlocksWorking) return;
-    if (detailBlocksSaveTimer) clearTimeout(detailBlocksSaveTimer);
-    detailBlocksSaveTimer = setTimeout(function () {
-      detailBlocksSaveTimer = null;
-      persistItemBlocks(state.detailItemId, state.detailBlocksWorking, { skipReload: true });
-    }, 520);
+    queuePersistDetailBlocksWorking(state.detailItemId);
   }
 
   function updateDetailBlocksHint() {
@@ -6391,11 +7244,11 @@
     tools.id = 'npDetailBlockTools';
     tools.className = 'np-tools-row np-detail-blocks-tools';
     [
-      ['npDetailBtnAddNoteBlock', '＋ Bloque de texto', 'btn btn-ghost btn-ghost-blue'],
-      ['npDetailBtnAddSmartTable', '＋ Tabla seguimiento PRO', 'btn btn-ghost btn-ghost-blue'],
-      ['npDetailBtnAddTaskTable', '＋ Tabla de tareas', 'btn btn-ghost btn-ghost-green'],
-      ['npDetailBtnAddMiniSheet', '＋ Tabla libre', 'btn btn-ghost btn-ghost-green'],
-      ['npDetailBtnAddLedgerSheet', '＋ Tabla de montos', 'btn btn-ghost btn-ghost-blue']
+      ['npDetailBtnAddNoteBlock', '＋ Bloque de texto', 'btn btn-ghost btn-ghost-np-note'],
+      ['npDetailBtnAddSmartTable', '＋ Tabla seguimiento PRO', 'btn btn-ghost btn-ghost-np-smart'],
+      ['npDetailBtnAddTaskTable', '＋ Tabla de tareas', 'btn btn-ghost btn-ghost-np-tasks'],
+      ['npDetailBtnAddMiniSheet', '＋ Tabla libre', 'btn btn-ghost btn-ghost-np-free'],
+      ['npDetailBtnAddLedgerSheet', '＋ Tabla de montos', 'btn btn-ghost btn-ghost-np-ledger']
     ].forEach(function (spec) {
       var btn = document.createElement('button');
       btn.type = 'button';
@@ -7289,10 +8142,338 @@
     $('npBtnCreate').disabled = getActivePlanAreas().length === 0;
   }
 
+  var PLAN_PRO_CHAT_STORAGE_KEY = 'nutriplant_planpro_chat_history_v1';
+  var PLAN_PRO_CHAT_MAX_MESSAGES = 200;
+  var PLAN_PRO_CHAT_CONTEXT_LIMIT = 20;
+  var PLAN_PRO_CHAT_SEND_COOLDOWN_MS = 1500;
+
+  window.initPlanProAssistant = function () {
+    var wrap = $('planProChatWrap');
+    var bubble = $('planProChatBubble');
+    var panel = $('planProChatPanel');
+    var messagesEl = $('planProChatMessages');
+    var input = $('planProChatInput');
+    var sendBtn = $('planProChatSend');
+    var closeBtn = $('planProChatClose');
+    var imgInput = $('planProChatImageInput');
+    var imgPreviewWrap = $('planProChatImagePreviewWrap');
+    var imgPreview = $('planProChatImagePreview');
+    var imgRemove = $('planProChatImageRemove');
+    var attachBtn = $('planProChatAttachBtn');
+    var inputArea = $('planProChatInputArea');
+    if (!bubble || !panel || !messagesEl || !input || !sendBtn || !closeBtn) return;
+    if (bubble.getAttribute('data-np-ready') === '1') {
+      bubble.style.display = 'flex';
+      if (wrap) wrap.setAttribute('aria-hidden', 'false');
+      return;
+    }
+    bubble.setAttribute('data-np-ready', '1');
+    bubble.style.display = 'flex';
+    if (wrap) wrap.setAttribute('aria-hidden', 'false');
+
+    var pendingImage = null;
+    var MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    var ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+    var history = [];
+    var requestInFlight = false;
+    var lastSendAt = 0;
+
+    function clearPendingImage() {
+      pendingImage = null;
+      if (imgPreview) imgPreview.innerHTML = '';
+      if (imgPreviewWrap) imgPreviewWrap.style.display = 'none';
+      if (imgInput) imgInput.value = '';
+    }
+    function handleImageFile(file) {
+      if (!file || !file.type) return;
+      if (ALLOWED_IMAGE_TYPES.indexOf(file.type) === -1) {
+        showToast('Solo JPEG, PNG o WebP. Máx. 5 MB.', true);
+        return;
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        showToast('La imagen no debe superar 5 MB.', true);
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function () {
+        var dataUrl = reader.result;
+        var base64 = dataUrl.indexOf('base64,') >= 0 ? dataUrl.split('base64,')[1] : dataUrl;
+        pendingImage = { base64: base64, contentType: file.type || 'image/jpeg' };
+        if (imgPreview) {
+          imgPreview.innerHTML = '';
+          var im = document.createElement('img');
+          im.src = dataUrl;
+          im.alt = '';
+          im.style.width = '100%';
+          im.style.height = '100%';
+          im.style.objectFit = 'cover';
+          imgPreview.appendChild(im);
+        }
+        if (imgPreviewWrap) imgPreviewWrap.style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+    }
+    if (attachBtn && imgInput) {
+      attachBtn.addEventListener('click', function () {
+        imgInput.click();
+      });
+    }
+    if (imgInput) {
+      imgInput.addEventListener('change', function (e) {
+        var files = e.target.files;
+        if (files && files.length) handleImageFile(files[0]);
+        e.target.value = '';
+      });
+    }
+    if (imgRemove) imgRemove.addEventListener('click', clearPendingImage);
+    if (inputArea) {
+      inputArea.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        inputArea.style.background = '#ecfdf5';
+      });
+      inputArea.addEventListener('dragleave', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        inputArea.style.background = '#fff';
+      });
+      inputArea.addEventListener('drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        inputArea.style.background = '#fff';
+        var files = e.dataTransfer && e.dataTransfer.files;
+        if (files && files.length) handleImageFile(files[0]);
+      });
+    }
+
+    function trimHistory() {
+      if (history.length > PLAN_PRO_CHAT_MAX_MESSAGES) history = history.slice(-PLAN_PRO_CHAT_MAX_MESSAGES);
+    }
+    function saveHistory() {
+      trimHistory();
+      try {
+        localStorage.setItem(PLAN_PRO_CHAT_STORAGE_KEY, JSON.stringify(history));
+      } catch (e) {}
+    }
+    try {
+      var raw = localStorage.getItem(PLAN_PRO_CHAT_STORAGE_KEY);
+      if (raw && raw.charAt(0) === '[') history = JSON.parse(raw);
+    } catch (e) {}
+    trimHistory();
+
+    function getPlanProAssistantContext() {
+      var lines = [];
+      lines.push('--- PLAN PRO (vista actual) ---');
+      var areas = (state.areas || []).filter(function (a) {
+        return !a.archived_at;
+      });
+      lines.push('Plantas (pilares): ' + areas.length);
+      areas.slice(0, 28).forEach(function (a) {
+        lines.push('- ' + (a.title || a.slug || a.id) + ' [id=' + a.id + ']');
+      });
+      var sid = state.selectedAreaId;
+      if (sid) lines.push('Planta seleccionada: ' + (state.areaMap[sid] || sid) + ' [' + sid + ']');
+      else lines.push('Planta seleccionada: ninguna');
+      if (state.selectedCategoryId) {
+        lines.push(
+          'Rama seleccionada: ' + getCategoryPath(state.selectedCategoryId) + ' [' + state.selectedCategoryId + ']'
+        );
+      } else lines.push('Rama seleccionada: ninguna (lista = apuntes de toda la planta o filtro general)');
+      lines.push('');
+      lines.push('--- Ramas (categorías) en la planta activa (máx. 80) ---');
+      var cats = (state.categories || []).filter(function (c) {
+        return !c.archived_at && (!sid || c.area_id === sid);
+      });
+      var maxC = 80;
+      for (var ci = 0; ci < cats.length && ci < maxC; ci++) {
+        var c = cats[ci];
+        lines.push('- ' + (c.title || '') + ' [id=' + c.id + '] parent=' + (c.parent_id || '—'));
+      }
+      if (cats.length > maxC) lines.push('(' + cats.length + ' ramas; mostrando ' + maxC + '.)');
+      lines.push('');
+      lines.push('--- Apuntes en la lista actual (máx. 100; mismo filtro que la tabla) ---');
+      (state.planProItemsSnapshot || []).forEach(function (it) {
+        lines.push(
+          '- ' +
+            (it.title || '(sin título)') +
+            ' | rama: ' +
+            (it.category_path || '—') +
+            ' | estado: ' +
+            (it.status || '—') +
+            ' | prio: ' +
+            (it.priority || '—') +
+            ' | vence: ' +
+            (it.due_at || '—') +
+            ' | act: ' +
+            (it.updated_at || '—')
+        );
+        lines.push('  nota: ' + String(it.note_preview || '').replace(/\n/g, ' '));
+      });
+      return lines.join('\n');
+    }
+
+    function getPlanProAssistantSystemPrompt() {
+      var data = getPlanProAssistantContext();
+      return (
+        'Eres el asistente de Plan PRO (NutriPlant PRO – Cerebro Digital). El usuario administra plantas (pilares), ramas jerárquicas y apuntes con nota enriquecida y bloques (tablas de seguimiento, tareas, tabla libre, montos, etc.) en body_blocks. ' +
+        'Recibes un resumen de lo que hay cargado en pantalla: plantas, ramas de la planta activa y la lista de apuntes visibles (título, rama, estado, prioridad, vencimiento, extracto de nota). ' +
+        'Ayuda a priorizar, redactar, resumir, detectar huecos y sugerir siguientes pasos usando solo ese contexto. No ejecutas cambios en Supabase; solo orientas. Responde siempre en español. ' +
+        'Si adjunta una imagen (factura, ticket, CFDI impreso, captura de pantalla), lee el texto visible: si pide extraer folio, RFC, razón social o nombre, UUID del timbre, total, fecha de emisión, etc., devuélvelo de forma clara; si no consta, dilo. ' +
+        'Datos en pantalla:\n\n' +
+        data
+      );
+    }
+
+    function renderChat() {
+      messagesEl.innerHTML = '';
+      history.forEach(function (m) {
+        var div = document.createElement('div');
+        div.style.marginBottom = '10px';
+        div.style.padding = '10px 12px';
+        div.style.borderRadius = '10px';
+        div.style.maxWidth = '95%';
+        var raw = String(m.content || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        if (m.role === 'user') {
+          div.style.background = '#2563eb';
+          div.style.borderLeft = '3px solid #1e40af';
+          div.style.marginLeft = '0';
+          div.style.color = '#fff';
+          div.innerHTML = raw.replace(/\n/g, '<br>');
+        } else {
+          div.style.background = '#fff';
+          div.style.borderLeft = '3px solid #e5e7eb';
+          div.style.marginLeft = '8px';
+          div.style.color = '#1e293b';
+          var html = raw.replace(/\n/g, '<br>');
+          html = html.replace(/\*\*([^*]+)\*\*/g, '<span class="np-planpro-chat-hl">$1</span>');
+          html = html.replace(/\*([^*]+)\*/g, '<em class="np-planpro-chat-em">$1</em>');
+          html = html.replace(/\b(\d{1,6})\b/g, '<span class="np-planpro-chat-hl-num">$1</span>');
+          div.innerHTML = html;
+        }
+        messagesEl.appendChild(div);
+      });
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function sendChat() {
+      if (requestInFlight) return;
+      var text = (input.value || '').trim();
+      var hasImage = pendingImage != null;
+      if (!text && !hasImage) return;
+      var cool = Math.max(0, PLAN_PRO_CHAT_SEND_COOLDOWN_MS - (Date.now() - lastSendAt));
+      if (cool > 0) {
+        showToast('Espera ' + Math.ceil(cool / 1000) + 's antes de enviar otro mensaje.', true);
+        return;
+      }
+      requestInFlight = true;
+      lastSendAt = Date.now();
+      input.value = '';
+      var displayContent = text || '[Imagen]';
+      history.push({ role: 'user', content: displayContent });
+      trimHistory();
+      saveHistory();
+      renderChat();
+      sendBtn.disabled = true;
+      var typingEl = document.createElement('div');
+      typingEl.className = 'np-planpro-chat-typing';
+      typingEl.id = 'planProChatTypingIndicator';
+      typingEl.innerHTML = '<span></span><span></span><span></span>';
+      messagesEl.appendChild(typingEl);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      var imageToSend = pendingImage;
+      clearPendingImage();
+      var systemContent = getPlanProAssistantSystemPrompt();
+      var allButLast = history.slice(0, -1);
+      var histApi = (
+        allButLast.length <= PLAN_PRO_CHAT_CONTEXT_LIMIT
+          ? allButLast
+          : allButLast.slice(-PLAN_PRO_CHAT_CONTEXT_LIMIT)
+      ).map(function (m) {
+        return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content };
+      });
+      var lastUserContent = text || 'Describe esta imagen y extrae cualquier dato que pida el usuario.';
+      var messagesForApi = [{ role: 'system', content: systemContent }].concat(histApi).concat([{ role: 'user', content: lastUserContent }]);
+      var base =
+        (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) ||
+        (window.location && window.location.origin) ||
+        'http://localhost:8000';
+      var body = {
+        model: 'gpt-4o-mini',
+        messages: messagesForApi,
+        max_tokens: 1200,
+        temperature: 0.45,
+        userId: '__admin__',
+        scope: 'admin'
+      };
+      if (imageToSend && imageToSend.base64) {
+        body.imageBase64 = imageToSend.base64;
+        body.imageContentType = imageToSend.contentType || 'image/jpeg';
+      }
+      fetch(base + '/api/openai-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (data) {
+          var ind = $('planProChatTypingIndicator');
+          if (ind) ind.remove();
+          sendBtn.disabled = false;
+          requestInFlight = false;
+          var reply =
+            data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
+              ? data.choices[0].message.content
+              : data.error || 'Sin respuesta del servidor.';
+          history.push({ role: 'assistant', content: reply });
+          trimHistory();
+          saveHistory();
+          renderChat();
+        })
+        .catch(function () {
+          var ind = $('planProChatTypingIndicator');
+          if (ind) ind.remove();
+          sendBtn.disabled = false;
+          requestInFlight = false;
+          history.push({
+            role: 'assistant',
+            content: 'Error de conexión. Comprueba la API (Netlify / server) y app-config.js.'
+          });
+          trimHistory();
+          saveHistory();
+          renderChat();
+        });
+    }
+
+    renderChat();
+    bubble.addEventListener('click', function () {
+      var open = panel.style.display === 'none' || !panel.style.display;
+      panel.style.display = open ? 'flex' : 'none';
+      panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+      if (open) input.focus();
+    });
+    closeBtn.addEventListener('click', function () {
+      panel.style.display = 'none';
+      panel.setAttribute('aria-hidden', 'true');
+    });
+    sendBtn.addEventListener('click', sendChat);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendChat();
+      }
+    });
+  };
+
   var npLoadItemsGen = 0;
 
   async function loadItems() {
     var gen = ++npLoadItemsGen;
+    state.planProItemsSnapshot = [];
     var c = state.client;
     var uid = state.userId;
     if (!state.selectedAreaId && getActivePlanAreas().length) state.selectedAreaId = getActivePlanAreas()[0].id;
@@ -7366,6 +8547,18 @@
     }
 
     var rows = resFiltered.data || [];
+    state.planProItemsSnapshot = (rows || []).slice(0, 100).map(function (r) {
+      return {
+        id: r.id,
+        title: r.title || '',
+        category_path: r.category_id ? getCategoryPath(r.category_id) : '—',
+        status: r.status || '',
+        priority: r.priority != null ? String(r.priority) : '',
+        due_at: r.due_at || '',
+        updated_at: r.updated_at || '',
+        note_preview: notePreviewText(r, 200)
+      };
+    });
     var tb = $('npTableBody');
     $('npEmpty').classList.toggle('np-hide', rows.length > 0);
 
@@ -7643,6 +8836,7 @@
     if (!btn || !btn.id || btn.id.indexOf('npDetailBtnAdd') !== 0) return;
     if (!state.detailItemId || !state.detailBlocksWorking) return;
     e.preventDefault();
+    e.stopPropagation();
     if (btn.id === 'npDetailBtnAddNoteBlock') state.detailBlocksWorking.push(makePlanProNoteSectionBlock());
     else if (btn.id === 'npDetailBtnAddSmartTable') state.detailBlocksWorking.push(makePlanProSmartTableBlock());
     else if (btn.id === 'npDetailBtnAddTaskTable') state.detailBlocksWorking.push(makePlanProTaskTableBlock());
@@ -7938,6 +9132,7 @@
     $('npMain').classList.remove('np-hide');
     $('npHeaderLogged').classList.remove('np-hide');
     clearRichEditor();
+    if (typeof window.initPlanProAssistant === 'function') window.initPlanProAssistant();
 
     if (!state.authListenerAttached) {
       state.authListenerAttached = true;
