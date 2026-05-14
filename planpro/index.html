@@ -16,7 +16,7 @@
       --green: #22c55e;
       --green-d: #16a34a;
       --danger: #b91c1c;
-      --blur: saturate(180%) blur(18px);
+      --blur: none;
       /* Azul marca (NutriPlant PRO · logo) — complementa el verde de acciones principales */
       --np-blue: #2563eb;
       --np-blue-d: #1d4ed8;
@@ -40,7 +40,8 @@
         radial-gradient(ellipse 90% 55% at 0% 80%, rgba(167, 243, 208, 0.28) 0%, transparent 48%),
         radial-gradient(ellipse 70% 50% at 50% 100%, rgba(226, 232, 240, 0.9) 0%, transparent 55%),
         linear-gradient(175deg, #e8ecf2 0%, #eef1f6 45%, #e9edf4 100%);
-      background-attachment: fixed;
+      /* fixed + varias capas con blur suelen dejar “huecos” en blanco en Safari/iOS hasta que mueves */
+      background-attachment: scroll;
     }
     .wrap {
       box-sizing: border-box;
@@ -61,11 +62,11 @@
       margin-bottom: 22px;
       border: 1px solid rgba(255, 255, 255, 0.72);
       border-radius: 18px;
-      background: rgba(255, 255, 255, 0.58);
-      backdrop-filter: var(--blur);
-      -webkit-backdrop-filter: var(--blur);
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       box-shadow:
-        0 10px 40px rgba(15, 23, 42, 0.07),
+        0 6px 22px rgba(15, 23, 42, 0.06),
         0 1px 0 rgba(255, 255, 255, 0.95) inset;
       /* Por encima de .panel (#npMain) con backdrop-filter; si no, el menú Accesos queda tapado */
       position: relative;
@@ -320,7 +321,16 @@
         }
       }
     }
-    .np-plan-brand { display: flex; align-items: center; gap: 12px; }
+    .np-plan-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .np-plan-brand > div:last-child {
+      min-width: 0;
+    }
     .np-plan-brand img { height: 38px; width: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.06)); }
     .np-plan-brand h1 {
       margin: 0;
@@ -366,6 +376,7 @@
       z-index: 1;
     }
     .np-plan-header-logout-btn {
+      flex-shrink: 0;
       width: 44px;
       height: 44px;
       min-width: 44px !important;
@@ -379,6 +390,7 @@
       height: 19px;
     }
     .np-plan-header-menu-btn {
+      flex-shrink: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -417,9 +429,9 @@
       position: fixed;
       inset: 0;
       z-index: 1100;
-      background: rgba(15, 23, 42, 0.32);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
+      background: rgba(15, 23, 42, 0.36);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
     .np-plan-header-menu-backdrop.np-plan-header-menu-open {
       display: block;
@@ -440,8 +452,8 @@
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.95) inset,
         0 20px 50px rgba(15, 23, 42, 0.16);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       overflow: hidden;
     }
     .np-plan-header-menu-panel.np-plan-header-menu-open {
@@ -705,9 +717,9 @@
       display: inline-flex;
       align-items: center;
       color: #475569;
-      background: rgba(255, 255, 255, 0.62);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
       transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
       white-space: nowrap;
@@ -877,9 +889,9 @@
       align-items: center;
       gap: 6px;
       color: #1d1d1f;
-      background: rgba(255, 255, 255, 0.72);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 0 rgba(255,255,255,0.9) inset;
       transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
     }
@@ -982,11 +994,11 @@
     }
     .btn-primary:hover { filter: brightness(1.03); transform: translateY(-1px); }
     .btn-ghost {
-      background: rgba(255, 255, 255, 0.65);
+      background: rgba(255, 255, 255, 0.88);
       color: #334155;
       border: 1px solid var(--border);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       border-radius: 10px;
     }
     .btn-ghost:hover { background: rgba(255, 255, 255, 0.92); }
@@ -1063,16 +1075,14 @@
     }
     .btn-danger { background: rgba(254, 242, 242, 0.95); color: var(--danger); border: 1px solid #fecaca; font-size: 12px; padding: 4px 10px; border-radius: 8px; }
     .panel {
-      background: var(--card);
-      border: 1px solid rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(15, 23, 42, 0.06);
       border-radius: 16px;
       padding: 18px;
       margin-bottom: 16px;
-      backdrop-filter: saturate(160%) blur(14px);
-      -webkit-backdrop-filter: saturate(160%) blur(14px);
       box-shadow:
-        0 12px 40px rgba(15, 23, 42, 0.06),
-        0 1px 0 rgba(255, 255, 255, 0.88) inset;
+        0 4px 18px rgba(15, 23, 42, 0.045),
+        0 1px 0 rgba(255, 255, 255, 0.92) inset;
     }
     /* Ritmo visual: azul (marca / navegación) vs verde (árbol / hoja) */
     .np-section-accent {
@@ -1214,9 +1224,9 @@
       position: fixed;
       inset: 0;
       z-index: 15000;
-      background: rgba(15, 23, 42, 0.38);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.42);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       align-items: center;
       justify-content: center;
       padding: 16px;
@@ -1232,9 +1242,9 @@
       max-height: min(92vh, 920px);
       display: flex;
       flex-direction: column;
-      box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 16px 48px rgba(15, 23, 42, 0.14);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
     /* Modal de nota / apunte: más superficie útil */
     #npDetailModal.np-modal-overlay {
@@ -1250,6 +1260,25 @@
     #npDetailModal .np-modal-body {
       flex: 1;
       min-height: 0;
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      header.np-plan-header.np-mac-bar {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(255, 255, 255, 0.94);
+      }
+      .np-modal-overlay {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      .np-modal-panel {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      .np-plan-header-menu-panel {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
     }
     @media (max-width: 900px) {
       #npDetailModal.np-modal-overlay {
@@ -1335,6 +1364,9 @@
         padding: 12px 14px;
         margin-bottom: 16px;
         align-items: flex-start;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(255, 255, 255, 0.94);
       }
       .np-plan-header.np-mac-bar .np-plan-actions {
         align-items: flex-end;
@@ -1369,6 +1401,19 @@
       }
       .np-sheet-title {
         font-size: 1.05rem;
+      }
+      .np-modal-overlay {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      #npDetailModal .np-modal-panel {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      .np-plan-header-menu-panel {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(255, 255, 255, 0.98);
       }
     }
     @media (max-width: 480px) {
@@ -1815,6 +1860,9 @@
     }
     /* Tabla de montos: marco ámbar + título (mismo acento que el botón) */
     .np-ms-block.np-ms-block-ledger {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
       border: 2px solid rgba(217, 119, 6, 0.5);
       background: linear-gradient(
         165deg,
@@ -1854,10 +1902,16 @@
     }
     /* Tabla de montos: inputs legibles (sin esto se ven como rectángulos blancos vacíos) */
     .np-ms-block-ledger .np-ms-sheet {
+      flex: 0 0 auto;
       border: 1px solid rgba(180, 83, 9, 0.24);
       background: rgba(255, 252, 237, 0.78);
       min-height: 108px;
       overflow-y: visible;
+    }
+    .np-ms-block-ledger > .np-ms-free-toolbar {
+      flex-shrink: 0;
+      margin-top: 12px;
+      margin-bottom: 0;
     }
     .np-ms-block-ledger .np-ms-row:not(.np-ms-row-head) .np-ms-cell {
       align-items: flex-start;
@@ -1912,17 +1966,23 @@
       align-items: stretch;
       gap: 14px;
       width: 100%;
+      scroll-margin-top: 16px;
+      scroll-margin-bottom: 24px;
       min-width: 0;
       box-sizing: border-box;
       padding: 14px 14px 10px;
       margin-bottom: 14px !important;
       border-radius: 12px;
       border: 1px solid color-mix(in srgb, var(--np-sheet-accent, #94a3b8) 34%, #e2e8f0);
-      background: rgba(255, 255, 255, 0.78);
+      background: rgba(255, 255, 255, 0.92);
       white-space: normal;
       overflow-x: auto;
       overflow-y: visible;
       -webkit-overflow-scrolling: touch;
+      opacity: 1;
+      visibility: visible;
+      position: relative;
+      z-index: 2;
     }
     /* Varias tablas en vista previa: no recortar rejillas por overflow-y del sheet */
     #npMiniSheetPreview .np-ms-sheet {
@@ -2175,9 +2235,9 @@
       align-items: stretch;
       border-radius: 14px;
       border: 1px solid rgba(15, 23, 42, 0.08);
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       overflow: hidden;
       transition: background .18s, color .18s, box-shadow .18s, transform .18s, border-color .18s;
     }
@@ -2236,9 +2296,9 @@
     }
     .np-pillar-tab {
       border: 1px solid rgba(15, 23, 42, 0.08);
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       border-radius: 14px;
       padding: 11px 18px;
       font-weight: 600;
@@ -2298,8 +2358,8 @@
         0 1px 0 rgba(255, 255, 255, 0.95) inset,
         0 16px 48px rgba(15, 23, 42, 0.14),
         0 4px 14px rgba(15, 23, 42, 0.08);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
     .np-pillar-tab-flyout.np-show {
       display: block;
@@ -2657,12 +2717,12 @@
       min-width: 0;
       width: 100%;
       max-width: 100%;
-      min-height: min(34vh, 400px);
+      min-height: min(26vh, 320px);
       box-sizing: border-box;
     }
     #npFormCreate #npBodyRich.np-rich-editor {
-      min-height: min(28vh, 320px);
-      max-height: min(50vh, 520px);
+      min-height: min(22vh, 260px);
+      max-height: min(44vh, 440px);
     }
     .np-rich-toolbar {
       display: flex;
@@ -2759,7 +2819,8 @@
       ) !important;
       background-size: 100% 1.7em;
       background-position: 0 24px;
-      background-attachment: local;
+      /* “local” provoca fallos de composición en WebKit: texto/tablas que “no existen” hasta hacer scroll */
+      background-attachment: scroll;
     }
     /* Sin leyenda fantasma encima del texto (antes: attr(data-placeholder)) */
     .np-rich-editor.np-rich-empty:before {
@@ -2853,8 +2914,8 @@
     }
     /* Hoja de libreta en el modal: mismo papel que el formulario + líneas tenues */
     .np-notebook-page.np-modal-notebook-page {
-      min-height: min(34vh, 380px);
-      max-height: min(48vh, 540px);
+      min-height: min(26vh, 300px);
+      max-height: min(44vh, 480px);
       min-width: var(--np-note-sheet-min, 680px);
       max-width: 100%;
       box-sizing: border-box;
@@ -2863,8 +2924,8 @@
     }
     #npModalBodyRich.np-rich-editor {
       position: relative;
-      min-height: min(28vh, 320px);
-      max-height: min(44vh, 500px);
+      min-height: min(22vh, 260px);
+      max-height: min(40vh, 460px);
       overflow-y: auto;
     }
     .np-modal-note-rich h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75em 0 0.4em; color: #0f172a; }
@@ -3023,8 +3084,8 @@
         rgba(248, 250, 252, 0.94) 42%,
         color-mix(in srgb, var(--np-sheet-accent) 12%, rgba(255, 255, 255, 0.96)) 100%
       );
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.92) inset,
         0 1px 0 color-mix(in srgb, var(--np-sheet-accent) 22%, transparent),
@@ -3830,6 +3891,16 @@
                 <form id="npFormCreate">
                   <label for="npTitle" class="np-compact-label">Resumen / título</label>
                   <input id="npTitle" class="np-title-compact" name="title" required maxlength="500" placeholder="Título" />
+                  <label class="np-compact-label">Tablas y bloques extra</label>
+                  <div class="np-tools-row">
+                    <button type="button" class="btn btn-ghost btn-ghost-np-note" id="npBtnAddNoteBlock">＋ Bloque de texto</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-smart" id="npBtnAddSmartTable">＋ Tabla seguimiento PRO</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-tasks" id="npBtnAddTaskTable">＋ Tabla de tareas</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-free" id="npBtnAddMiniSheet">＋ Tabla libre</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-ledger" id="npBtnAddLedgerSheet">＋ Tabla de montos</button>
+                    <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
+                  </div>
+                  <div id="npMiniSheetPreview" class="np-hide"></div>
                   <label class="np-compact-label">Hoja en blanco</label>
                   <div id="npRichToolbar" class="np-rich-toolbar">
                     <span class="np-rich-grp">
@@ -3873,15 +3944,6 @@
                       <div id="npBodyRich" class="np-rich-editor np-rich-empty" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true"></div>
                     </div>
                   </div>
-                  <div class="np-tools-row">
-                    <button type="button" class="btn btn-ghost btn-ghost-np-note" id="npBtnAddNoteBlock">＋ Bloque de texto</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-smart" id="npBtnAddSmartTable">＋ Tabla seguimiento PRO</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-tasks" id="npBtnAddTaskTable">＋ Tabla de tareas</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-free" id="npBtnAddMiniSheet">＋ Tabla libre</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-ledger" id="npBtnAddLedgerSheet">＋ Tabla de montos</button>
-                    <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
-                  </div>
-                  <div id="npMiniSheetPreview" class="np-hide"></div>
                   <button type="submit" class="btn btn-primary" id="npBtnCreate">Guardar apunte</button>
                 </form>
               </div>
@@ -6600,6 +6662,7 @@
 
     blocks.forEach(function (b, blockIndex) {
       try {
+      var ledgerToolbarEl = null;
       if (!b) return;
 
       if (b.type === 'note_section') {
@@ -6883,7 +6946,8 @@
             return;
           }
           b.montoCol = mx;
-          afterStructuralChange();
+          refreshLedgerDerivedUI();
+          schedulePersist();
         });
         var lbRow = document.createElement('button');
         lbRow.type = 'button';
@@ -7002,7 +7066,7 @@
         ltb.appendChild(lbPct);
         ltb.appendChild(tplWrap);
         ltb.appendChild(lbDel);
-        wrap.appendChild(ltb);
+        ledgerToolbarEl = ltb;
       }
 
       var showRowDelCol = editable && (isFreeMini || isLedger || b.variant === 'smart' || b.variant === 'tasks');
@@ -7606,6 +7670,8 @@
       } else {
         wrap.appendChild(sheet);
       }
+
+      if (ledgerToolbarEl) wrap.appendChild(ledgerToolbarEl);
 
       if (pendingFreeToolbar) wrap.appendChild(pendingFreeToolbar);
 
@@ -8516,6 +8582,16 @@
           sheetAccent: sheetAccentHexForSelection()
         })
       );
+      requestAnimationFrame(function () {
+        try {
+          var rect = prevBox.getBoundingClientRect();
+          var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+          var pad = 10;
+          if (rect.height > 0 && vh > 0 && (rect.top < pad || rect.bottom > vh - pad)) {
+            prevBox.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+          }
+        } catch (eScrollPeek) {}
+      });
     } catch (ePrev) {
       console.error('Plan PRO vista previa bloques:', ePrev);
       var err = document.createElement('p');
