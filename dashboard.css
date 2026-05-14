@@ -3559,7 +3559,7 @@ body {
   box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.25);
 }
 
-/* Cálculo hidro: 8 macros (incl. Cl⁻) + 6 micros — rejilla fluida para que quepa en el ancho del card */
+/* Cálculo hidro: 7 macros + 6 micros + Cl⁻ al final — rejilla fluida para que quepa en el ancho del card */
 .hydro-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 72px), 1fr));
@@ -3649,11 +3649,24 @@ body {
   color: #0369a1;
 }
 
+.hydro-table th.hydro-col-cl-after-micros,
+.hydro-table td.hydro-col-cl-after-micros {
+  border-left: 3px solid #7dd3fc;
+  padding-left: 10px;
+}
+
 .hydro-grid-item-cl .hydro-grid-label,
 .hydro-grid-item-cl .hydro-grid-value,
 .hydro-grid-item-cl .hydro-input {
   color: #0369a1;
   font-weight: 600;
+}
+
+/* Cl⁻ al final (después de micros): misma separación visual que el bloque micro */
+.hydro-grid-item-cl.hydro-grid-item-cl-tail {
+  border-left: 3px solid #7dd3fc;
+  margin-left: 0;
+  padding-left: 9px;
 }
 
 /* Leyenda % NO₃/NH₄ y NO₃/Cl bajo pendiente (cálculo fertilizantes) */

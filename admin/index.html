@@ -6234,7 +6234,7 @@
         const HYDRO_ANIONS = ['N_NO3','P','S'];
         const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
         const HYDRO_MICROS = ['Fe','Mn','B','Zn','Cu','Mo'];
-        const HYDRO_PPM_NUTRIENTS = ['N_NH4','N_NO3','P','S','Cl','K','Ca','Mg','Fe','Mn','B','Zn','Cu','Mo'];
+        const HYDRO_PPM_NUTRIENTS = ['N_NH4','N_NO3','P','S','K','Ca','Mg','Fe','Mn','B','Zn','Cu','Mo','Cl'];
         const HYDRO_EQ_WEIGHTS = { N_NO3: 14, N_NH4: 14, P: 31, K: 39.1, Ca: 20.04, Mg: 12.15, S: 16.03, Cl: 35.45 };
         function adminHydroLabel(n) {
             const labels = { N_NH4: 'N-NH₄⁺', N_NO3: 'N-NO₃⁻', P: 'P-H₂PO₄⁻', S: 'S-SO₄²⁻', Cl: 'Cl⁻', K: 'K⁺', Ca: 'Ca²⁺', Mg: 'Mg²⁺', Fe: 'Fe', Mn: 'Mn', B: 'B', Zn: 'Zn', Cu: 'Cu', Mo: 'Mo' };
@@ -9806,19 +9806,19 @@
                     const macroPpm = adminHydroMacroPpm(meq);
                     const ppm = stage.ppm || {};
                     const macroCells = HYDRO_MEQ_NUTRIENTS.map(n => `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${(macroPpm[n] != null ? macroPpm[n] : (parseFloat(ppm[n]) || 0)).toFixed(1)}</td>`).join('');
-                    const clCell = `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${(parseFloat(ppm.Cl) || 0).toFixed(1)}</td>`;
                     const microCells = HYDRO_MICROS.map(n => `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${(parseFloat(ppm[n]) || 0).toFixed(2)}</td>`).join('');
-                    return `<tr><td style="padding:6px 8px;border:1px solid #e2e8f0;">${escapeHtml(stage.name || '')}</td>${macroCells}${clCell}${microCells}</tr>`;
+                    const clCell = `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${(parseFloat(ppm.Cl) || 0).toFixed(1)}</td>`;
+                    return `<tr><td style="padding:6px 8px;border:1px solid #e2e8f0;">${escapeHtml(stage.name || '')}</td>${macroCells}${microCells}${clCell}</tr>`;
                 }).join('');
                 const ppmHeaderMacro = HYDRO_MEQ_NUTRIENTS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;">${adminHydroLabel(n)} ppm</th>`).join('');
-                const ppmHeaderCl = `<th style="padding:6px 8px;border:1px solid #cbd5e1;">${adminHydroLabel('Cl')} ppm</th>`;
                 const ppmHeaderMicro = HYDRO_MICROS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;">${adminHydroLabel(n)} ppm</th>`).join('');
+                const ppmHeaderCl = `<th style="padding:6px 8px;border:1px solid #cbd5e1;">${adminHydroLabel('Cl')} ppm</th>`;
                 html += `
                     <div style="margin-bottom: 16px;">
                         <strong style="color: #1e293b; font-size: 14px;">📐 Solución nutritiva por etapa (ppm)</strong>
                         <div style="overflow-x: auto; margin-top: 8px;">
                             <table style="width:100%; border-collapse: collapse; font-size: 13px;">
-                                <thead><tr style="background:#e0f2fe;"><th style="padding:6px 8px;border:1px solid #cbd5e1;">Etapa</th>${ppmHeaderMacro}${ppmHeaderCl}${ppmHeaderMicro}</tr></thead>
+                                <thead><tr style="background:#e0f2fe;"><th style="padding:6px 8px;border:1px solid #cbd5e1;">Etapa</th>${ppmHeaderMacro}${ppmHeaderMicro}${ppmHeaderCl}</tr></thead>
                                 <tbody>${ppmRows}</tbody>
                             </table>
                         </div>

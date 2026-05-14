@@ -15573,9 +15573,8 @@ function createHidroponiaSectionHTML() {
     ? Math.ceil((volumeWaterM3 * injectionRateLperM3) / tankVolumeL)
     : null;
   const meqNutrients = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
-  const hydroPpmMacroOrder = ['N_NH4', 'N_NO3', 'P', 'S', 'Cl', 'K', 'Ca', 'Mg'];
   const microNutrients = ['Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo'];
-  const hydroNutrients = [...hydroPpmMacroOrder, ...microNutrients];
+  const hydroNutrients = [...meqNutrients, ...microNutrients, 'Cl'];
   const eqW = { N_NO3: 14, N_NH4: 14, P: 31, S: 16.03, K: 39.1, Ca: 20.04, Mg: 12.15 };
   function label(n) {
     const map = { N_NH4: 'N-NH₄⁺', N_NO3: 'N-NO₃⁻', P: 'P-H₂PO₄⁻', S: 'S-SO₄²⁻', Cl: 'Cl⁻', K: 'K⁺', Ca: 'Ca²⁺', Mg: 'Mg²⁺' };
@@ -15676,11 +15675,11 @@ function createHidroponiaSectionHTML() {
       const v = ppm[n] != null ? toNum(ppm[n]) : (toNum(meq[n]) * toNum(eqW[n]));
       return `<td>${v.toFixed(1)}</td>`;
     }).join('');
-    const clCell = `<td>${toNum(ppm.Cl).toFixed(1)}</td>`;
     const microCells = microNutrients.map(n => `<td>${toNum(ppm[n]).toFixed(2)}</td>`).join('');
+    const clCell = `<td>${toNum(ppm.Cl).toFixed(1)}</td>`;
     return `<tr>
       <td>${reportEscapeHtml(stage.name || '')}</td>
-      ${macroCells}${clCell}${microCells}
+      ${macroCells}${microCells}${clCell}
     </tr>`;
   }).join('');
   function getHydroFertilizerContributionsForReport(fert, dose) {
@@ -15815,7 +15814,7 @@ function createHidroponiaSectionHTML() {
         <div class="report-block-title">📐 Solución nutritiva por etapa (ppm)</div>
         <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
-          <thead><tr><th>Etapa</th>${meqNutrients.map(n => `<th>${label(n)} ppm</th>`).join('')}<th>${label('Cl')} ppm</th>${microNutrients.map(n => `<th>${n} ppm</th>`).join('')}</tr></thead>
+          <thead><tr><th>Etapa</th>${meqNutrients.map(n => `<th>${label(n)} ppm</th>`).join('')}${microNutrients.map(n => `<th>${n} ppm</th>`).join('')}<th>${label('Cl')} ppm</th></tr></thead>
           <tbody>${stageRowsPpm || `<tr><td colspan="${meqNutrients.length + microNutrients.length + 2}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
         </table>
         </div>
@@ -15845,8 +15844,8 @@ function createHidroponiaSectionHTML() {
         </div>
         <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
-          <thead><tr><th>Fertilizante</th><th>Tanque</th><th>Dosis (ppm)</th>${hydroPpmMacroOrder.map(n => `<th>${label(n)}</th>`).join('')}${microNutrients.map(n => `<th>${n}</th>`).join('')}<th>Total producto</th></tr></thead>
-          <tbody>${fertRows || `<tr><td colspan="${hydroPpmMacroOrder.length + microNutrients.length + 4}" style="text-align:center;color:#64748b;">Sin fertilizantes guardados.</td></tr>`}</tbody>
+          <thead><tr><th>Fertilizante</th><th>Tanque</th><th>Dosis (ppm)</th>${hydroNutrients.map(n => `<th>${label(n)}</th>`).join('')}<th>Total producto</th></tr></thead>
+          <tbody>${fertRows || `<tr><td colspan="${hydroNutrients.length + 4}" style="text-align:center;color:#64748b;">Sin fertilizantes guardados.</td></tr>`}</tbody>
         </table>
         </div>
       </div>
@@ -15864,7 +15863,7 @@ function createHidroponiaSectionHTML() {
         <div class="report-block-title">📊 PPM aportadas totales (solución nutritiva + agua)</div>
         <div class="report-note" style="margin-bottom:8px;">Total por nutriente = aporte de fertilizantes en solución nutritiva + aporte del agua de riego.</div>
         <div class="report-nutrient-wrap report-hydro-nutrient-wrap">
-          ${[...hydroPpmMacroOrder, ...microNutrients].map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(ppmTotalsWithWater[n]).toFixed(2)} ppm</span>`).join('')}
+          ${hydroNutrients.map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(ppmTotalsWithWater[n]).toFixed(2)} ppm</span>`).join('')}
         </div>
       </div>
       ${(() => {
