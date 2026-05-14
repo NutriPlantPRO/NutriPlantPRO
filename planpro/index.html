@@ -1928,6 +1928,12 @@
       overflow-x: auto;
       overflow-y: visible;
     }
+    /* Varios bloques en pantalla pequeña: sombras más ligeras (menos trabajo de pintura). */
+    @media (max-width: 640px) {
+      #npMiniSheetPreview .np-ms-block {
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+      }
+    }
     #npSheetPanel textarea.np-ms-head-input,
     #npMiniSheetPreview textarea.np-ms-head-input {
       min-height: 2.75rem !important;
@@ -2079,6 +2085,53 @@
     }
     .np-ms-row:not(.np-ms-row-head) .np-ms-cell:not(.np-ms-cell-done) {
       align-items: stretch;
+    }
+    /* Móvil / tablet angosta: columnas demasiado estrechas + overflow:hidden recortaban texto e importes. */
+    @media (max-width: 768px) {
+      .np-ms-sheet {
+        overflow-y: visible;
+      }
+      .np-ms-row {
+        grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(122px, 1fr));
+      }
+      .np-ms-sheet.np-ms-sheet--rowdel .np-ms-row {
+        grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(122px, 1fr)) minmax(44px, 52px);
+      }
+      .np-ms-cell {
+        align-items: flex-start;
+        overflow-x: visible;
+        overflow-y: visible;
+        padding-top: 9px;
+        padding-bottom: 9px;
+      }
+      .np-ms-row-head .np-ms-cell {
+        align-items: flex-start;
+      }
+      .np-ms-row:not(.np-ms-row-head) .np-ms-cell.np-ms-cell-done {
+        align-items: center;
+        justify-content: center;
+      }
+      .np-ms-cell-prio {
+        justify-content: flex-start;
+      }
+      .np-ms-cell-input,
+      .np-ms-cell-input-date {
+        min-height: 44px;
+        padding-left: 6px;
+        padding-right: 6px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .np-ms-cell-static {
+        overflow: visible;
+        max-height: none;
+      }
+      .np-ms-block-ledger .np-ms-cell-static.np-ms-pct-cell,
+      .np-ms-block-ledger .np-ms-cell-static.np-ms-cell-derived {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        width: 100%;
+      }
     }
     .np-pillar-panel { margin-bottom: 4px; }
     .np-pillar-panel-title {
@@ -3953,37 +4006,37 @@
 
   var detailBlocksSaveTimer = null;
   var detailBodySaveTimer = null;
-  /** Evita varios refreshDetailBlocksDOM seguidos (reconstruye todo el DOM de tablas). */
-  var detailBlocksDomRefreshTimer = null;
-
+  /** Refresco del modal de bloques: antes ~110 ms de espera; un rAF suele bastar y evita sensación de “lag” en móvil. */
+  var detailBlocksDomRefreshRaf = null;
   function queueRefreshDetailBlocksDOM() {
-    if (detailBlocksDomRefreshTimer) clearTimeout(detailBlocksDomRefreshTimer);
-    detailBlocksDomRefreshTimer = setTimeout(function () {
-      detailBlocksDomRefreshTimer = null;
+    if (detailBlocksDomRefreshRaf != null) cancelAnimationFrame(detailBlocksDomRefreshRaf);
+    detailBlocksDomRefreshRaf = requestAnimationFrame(function () {
+      detailBlocksDomRefreshRaf = null;
       refreshDetailBlocksDOM();
-    }, 110);
+    });
   }
 
   function cancelQueuedDetailBlocksDOMRefresh() {
-    if (detailBlocksDomRefreshTimer) {
-      clearTimeout(detailBlocksDomRefreshTimer);
-      detailBlocksDomRefreshTimer = null;
+    if (detailBlocksDomRefreshRaf != null) {
+      cancelAnimationFrame(detailBlocksDomRefreshRaf);
+      detailBlocksDomRefreshRaf = null;
     }
   }
 
-  var pendingPreviewRefreshTimer = null;
+  /** Refresco de la vista previa de bloques al crear apunte: sin setTimeout largo (antes 200 ms); rAF agrupa cambios seguidos en un solo pintado. */
+  var pendingPreviewRefreshRaf = null;
   function queueRefreshPendingHint() {
-    if (pendingPreviewRefreshTimer) clearTimeout(pendingPreviewRefreshTimer);
-    pendingPreviewRefreshTimer = setTimeout(function () {
-      pendingPreviewRefreshTimer = null;
+    if (pendingPreviewRefreshRaf != null) cancelAnimationFrame(pendingPreviewRefreshRaf);
+    pendingPreviewRefreshRaf = requestAnimationFrame(function () {
+      pendingPreviewRefreshRaf = null;
       refreshPendingHint();
-    }, 200);
+    });
   }
 
   function flushPendingPreviewRefresh() {
-    if (pendingPreviewRefreshTimer) {
-      clearTimeout(pendingPreviewRefreshTimer);
-      pendingPreviewRefreshTimer = null;
+    if (pendingPreviewRefreshRaf != null) {
+      cancelAnimationFrame(pendingPreviewRefreshRaf);
+      pendingPreviewRefreshRaf = null;
     }
     refreshPendingHint();
   }
@@ -5755,15 +5808,14 @@
   }
 
   /**
-   * Copia al modelo los valores actuales de los date pickers (y celdas de texto de tabla)
-   * antes de cerrar el modal. Así no se pierde la fecha si el usuario cierra sin disparar blur/change.
+   * Copia inputs/textareas de tablas desde el DOM al modelo (celdas con data-np-block).
+   * Imprescindible en la vista previa al crear apunte: si no, al añadir columnas los valores
+   * solo en pantalla no llegan a rows y las sumas/restas ven la primera columna monetaria como 0.
    */
-  function syncDetailBlocksInputsFromDOM() {
-    if (!state.detailBlocksWorking || !state.detailBlocksWorking.length) return;
-    var mount = $('npDetailBlocksMount');
-    if (!mount) return;
+  function syncMiniSheetInputsFromMount(mount, blocks) {
+    if (!mount || !blocks || !blocks.length) return;
     function applyToBlock(bi, ri, ci, val) {
-      var blk = state.detailBlocksWorking[bi];
+      var blk = blocks[bi];
       if (!blk || blk.type !== 'mini_sheet') return;
       var ncol = miniSheetColCountForAggr(blk);
       if (!blk.rows) blk.rows = [];
@@ -5799,6 +5851,14 @@
       if (isNaN(bi) || isNaN(ri) || isNaN(ci)) return;
       applyToBlock(bi, ri, ci, tx.value || '');
     });
+  }
+
+  function syncDetailBlocksInputsFromDOM() {
+    syncMiniSheetInputsFromMount($('npDetailBlocksMount'), state.detailBlocksWorking);
+  }
+
+  function syncPendingBlocksInputsFromDOM() {
+    syncMiniSheetInputsFromMount($('npMiniSheetPreview'), state.pendingBlocks);
   }
 
   function resolvePriorityColIndex(b, headers, ncol) {
@@ -8403,6 +8463,7 @@
     }
     hint.textContent = n === 1 ? '1 bloque' : n + ' bloques';
     prevBox.classList.remove('np-hide');
+    syncPendingBlocksInputsFromDOM();
     prevBox.innerHTML = '';
     try {
       prevBox.appendChild(
@@ -8411,6 +8472,9 @@
           sheetAccent: sheetAccentHexForSelection()
         })
       );
+      try {
+        prevBox.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+      } catch (eScroll) {}
     } catch (ePrev) {
       console.error('Plan PRO vista previa bloques:', ePrev);
       var err = document.createElement('p');
@@ -9290,6 +9354,7 @@
       return;
     }
     $('npNeedCategory').classList.add('np-hide');
+    syncPendingBlocksInputsFromDOM();
     var rawHtml = sanitizeRich(getRichEditorHtml());
     var plain = stripHtml(rawHtml);
     var payload = {
