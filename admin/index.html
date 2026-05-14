@@ -9378,12 +9378,12 @@
                     return c.materialId || 'Sin material';
                 }
                 const columnNames = progColumns.map(c => adminFertiColumnName(c));
-                const macroNutrients = ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','S','SO4'];
+                const macroNutrients = ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','SO4'];
                 const microNutrients = ['Fe','Mn','B','Zn','Cu','Mo','SiO2'];
                 const hasDoseInColumn = (c) => weeks.some(w => (parseFloat(w?.kgByCol?.[c?.id]) || 0) > 0);
                 const hasMacroContribution = (c) => {
                     const mat = byId.get(c.materialId) || customById.get(c.materialId) || {};
-                    const hasFromCatalog = macroNutrients.some(n => (parseFloat(mat[n]) || 0) > 0);
+                    const hasFromCatalog = macroNutrients.some(n => (parseFloat(mat[n]) || 0) > 0) || (parseFloat(mat.S) || 0) > 0;
                     if (hasFromCatalog) return true;
                     if ((c?.materialId && String(c.materialId).startsWith('custom_')) || hasDoseInColumn(c)) return true;
                     return false;
@@ -9401,10 +9401,15 @@
                 const microColumnNames = microProgColumns.map(c => adminFertiColumnName(c));
                 const programIsElemental = fertirriegoProgram.mode === true;
                 const hasProgramTotals = weeks.some(w => w && w.totals && typeof w.totals === 'object');
-                const summaryNutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+                const ADMIN_FERTI_S_TO_SO4 = 96.062 / 32.065;
+                function adminFertiMergedSo4FromTotals(t) {
+                    const o = t && typeof t === 'object' ? t : {};
+                    return (parseFloat(o.SO4) || 0) + (parseFloat(o.S) || 0) * ADMIN_FERTI_S_TO_SO4;
+                }
+                const summaryNutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
                 const totalAporteOxide = hasProgramTotals
-                    ? { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, S: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0 }
-                    : { N: null, P2O5: null, K2O: null, CaO: null, MgO: null, S: null, SO4: null, Fe: null, Mn: null, B: null, Zn: null, Cu: null, Mo: null, SiO2: null };
+                    ? { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0 }
+                    : { N: null, P2O5: null, K2O: null, CaO: null, MgO: null, SO4: null, Fe: null, Mn: null, B: null, Zn: null, Cu: null, Mo: null, SiO2: null };
                 if (hasProgramTotals) {
                     weeks.forEach(w => {
                         totalAporteOxide.N += (parseFloat(w?.totals?.N_NO3) || 0) + (parseFloat(w?.totals?.N_NH4) || 0);
@@ -9412,8 +9417,7 @@
                         totalAporteOxide.K2O += parseFloat(w?.totals?.K2O) || 0;
                         totalAporteOxide.CaO += parseFloat(w?.totals?.CaO) || 0;
                         totalAporteOxide.MgO += parseFloat(w?.totals?.MgO) || 0;
-                        totalAporteOxide.S += parseFloat(w?.totals?.S) || 0;
-                        totalAporteOxide.SO4 += parseFloat(w?.totals?.SO4) || 0;
+                        totalAporteOxide.SO4 += adminFertiMergedSo4FromTotals(w?.totals);
                         totalAporteOxide.Fe += parseFloat(w?.totals?.Fe) || 0;
                         totalAporteOxide.Mn += parseFloat(w?.totals?.Mn) || 0;
                         totalAporteOxide.B += parseFloat(w?.totals?.B) || 0;
@@ -9437,15 +9441,33 @@
                 summaryNutrients.forEach(n => {
                     totalExtractionOxide[n] = (baseExt[n] !== undefined ? parseFloat(baseExt[n]) : 0) * targetYield;
                 });
+                const sExtPerTon = parseFloat(baseExt.S);
+                if (!isNaN(sExtPerTon) && sExtPerTon > 0) {
+                    totalExtractionOxide.SO4 = (totalExtractionOxide.SO4 || 0) + sExtPerTon * ADMIN_FERTI_S_TO_SO4 * targetYield;
+                }
                 summaryNutrients.forEach(n => {
-                    const hasSavedAdj = rawAdj[n] !== undefined && rawAdj[n] !== null && rawAdj[n] !== '';
                     const hasSavedEff = rawEff[n] !== undefined && rawEff[n] !== null && rawEff[n] !== '';
-                    let adjVal = hasSavedAdj ? parseFloat(rawAdj[n]) : (totalExtractionOxide[n] || 0);
+                    let adjVal;
+                    if (n === 'SO4') {
+                        const hasSo4 = rawAdj.SO4 !== undefined && rawAdj.SO4 !== null && rawAdj.SO4 !== '';
+                        const hasLegacyS = rawAdj.S !== undefined && rawAdj.S !== null && rawAdj.S !== '';
+                        if (hasSo4 || hasLegacyS) {
+                            adjVal = (hasSo4 ? parseFloat(rawAdj.SO4) : 0) + (hasLegacyS ? parseFloat(rawAdj.S) * ADMIN_FERTI_S_TO_SO4 : 0);
+                        } else {
+                            adjVal = totalExtractionOxide[n] || 0;
+                        }
+                    } else {
+                        const hasSavedAdj = rawAdj[n] !== undefined && rawAdj[n] !== null && rawAdj[n] !== '';
+                        adjVal = hasSavedAdj ? parseFloat(rawAdj[n]) : (totalExtractionOxide[n] || 0);
+                    }
                     const effPct = hasSavedEff ? parseFloat(rawEff[n]) : (FERTI_DEFAULT_EFF[n] != null ? FERTI_DEFAULT_EFF[n] : null);
-                    if (fertiReqIsElemental && hasSavedAdj) {
-                        adjVal = convertAdminElementalToOxide(n, adjVal);
-                    } else if (fertiReqIsElemental && !hasSavedAdj) {
-                        adjVal = totalExtractionOxide[n] || 0;
+                    if (fertiReqIsElemental && n !== 'SO4') {
+                        const hasSavedAdj = rawAdj[n] !== undefined && rawAdj[n] !== null && rawAdj[n] !== '';
+                        if (hasSavedAdj) {
+                            adjVal = convertAdminElementalToOxide(n, adjVal);
+                        } else {
+                            adjVal = totalExtractionOxide[n] || 0;
+                        }
                     }
                     const effOk = effPct != null && !isNaN(effPct) && effPct > 0;
                     reqOxide[n] = effOk ? (adjVal / (effPct / 100)) : null;
@@ -9460,7 +9482,10 @@
                 summaryNutrients.forEach(n => {
                     const aportOx = totalAporteOxide[n] || 0;
                     const reqOx = reqOxide[n];
-                    const waterVal = parseFloat(waterOx[n]) || 0;
+                    let waterVal = parseFloat(waterOx[n]) || 0;
+                    if (n === 'SO4') {
+                        waterVal = (parseFloat(waterOx.SO4) || 0) + (parseFloat(waterOx.S) || 0) * ADMIN_FERTI_S_TO_SO4;
+                    }
                     const totalOx = aportOx + waterVal;
                     const diffOx = reqOx !== null && reqOx !== undefined ? (totalOx - reqOx) : null;
                     summary.aportado[n] = display(n, aportOx);
@@ -9477,7 +9502,7 @@
                 }, 0);
                 const macroFertColTotals = macroProgColumns.map(c => weeks.reduce((acc, w) => acc + (parseFloat(w?.kgByCol?.[c.id]) || 0), 0));
                 const microFertColTotals = microProgColumns.map(c => weeks.reduce((acc, w) => acc + (parseFloat(w?.kgByCol?.[c.id]) || 0), 0));
-                const macroCols = ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','S','SO4'];
+                const macroCols = ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','SO4'];
                 const microCols = ['Fe','Mn','B','Zn','Cu','Mo','SiO2'];
                 const dividerBorder = 'border-left:3px solid #64748b;';
                 const macroLabel = (n) => {
@@ -9509,7 +9534,7 @@
                         <td style="padding:8px;border:1px solid #e2e8f0;">${escapeHtml(w?.stage || '')}</td>
                         <td style="padding:8px;border:1px solid #e2e8f0;text-align:center;">${idx + 1}</td>
                         ${macroProgColumns.map((c, i) => `<td style="padding:8px;border:1px solid #e2e8f0;text-align:right;">${formatAdminValue('N', w?.kgByCol?.[c.id] || 0)}</td>`).join('')}
-                        ${macroCols.map((n, i) => `<td style="padding:8px;border:1px solid #e2e8f0;${i === 0 ? dividerBorder : ''}text-align:right;">${displayMacro(n, w?.totals?.[n])}</td>`).join('')}
+                        ${macroCols.map((n, i) => `<td style="padding:8px;border:1px solid #e2e8f0;${i === 0 ? dividerBorder : ''}text-align:right;">${displayMacro(n, n === 'SO4' ? adminFertiMergedSo4FromTotals(w?.totals) : w?.totals?.[n])}</td>`).join('')}
                     </tr>
                 `).join('');
                 const microRows = weeks.map((w, idx) => `
@@ -9521,7 +9546,7 @@
                     </tr>
                 `).join('');
                 const macroTotals = hasProgramTotals
-                    ? macroCols.map(n => weeks.reduce((acc, w) => acc + (parseFloat(w?.totals?.[n]) || 0), 0))
+                    ? macroCols.map(n => weeks.reduce((acc, w) => acc + (n === 'SO4' ? adminFertiMergedSo4FromTotals(w?.totals) : (parseFloat(w?.totals?.[n]) || 0)), 0))
                     : macroCols.map(() => null);
                 const microTotals = hasProgramTotals
                     ? microCols.map(n => weeks.reduce((acc, w) => acc + (parseFloat(w?.totals?.[n]) || 0), 0))
@@ -10085,8 +10110,8 @@
                                             <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursHigh || 0)}</td>
                                             <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursLow || 0)}</td>
                                             <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursOptimal || 0)}</td>
-                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${adminFormatUv(r.maxUv)} ${adminUvBadge(r.maxUv)}</td>
                                             <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.stressPct || 0).toFixed(1)}%</td>
+                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${adminFormatUv(r.maxUv)} ${adminUvBadge(r.maxUv)}</td>
                                         </tr>
                                     `;
                                 }).join('');
@@ -10099,8 +10124,8 @@
                                             <td style="padding: 8px; text-align: right; font-weight: 700; color: ${isHigh ? '#b91c1c' : '#1d4ed8'};">${Number(r.vpd || 0).toFixed(2)}</td>
                                             <td style="padding: 8px; text-align: right;">${Number(r.temperature || 0).toFixed(1)}</td>
                                             <td style="padding: 8px; text-align: right;">${Number(r.humidity || 0).toFixed(1)}</td>
-                                            <td style="padding: 8px; text-align: right;">${uvVal} ${adminUvBadge(r.uvIndex)}</td>
                                             <td style="padding: 8px; color: ${isHigh ? '#b91c1c' : '#1d4ed8'}; font-weight: 600;">${isHigh ? 'Alto' : 'Bajo'}</td>
+                                            <td style="padding: 8px; text-align: right;">${uvVal} ${adminUvBadge(r.uvIndex)}</td>
                                         </tr>
                                     `;
                                 }).join('');
@@ -10124,8 +10149,8 @@
                                                         <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">&gt;1.5</th>
                                                         <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">&lt;0.5</th>
                                                         <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">Óptimas</th>
-                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">UV máx</th>
                                                         <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">% estrés</th>
+                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">UV máx</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -10142,8 +10167,8 @@
                                                         <th style="padding: 8px; text-align: right;">VPD</th>
                                                         <th style="padding: 8px; text-align: right;">Temp</th>
                                                         <th style="padding: 8px; text-align: right;">HR</th>
-                                                        <th style="padding: 8px; text-align: right;">Índice UV</th>
                                                         <th style="padding: 8px; text-align: left;">Tipo</th>
+                                                        <th style="padding: 8px; text-align: right;">Índice UV</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>

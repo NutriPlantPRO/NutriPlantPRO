@@ -275,8 +275,7 @@ function openEditCustomMaterial(encodedName) {
   document.getElementById('newMaterialK2O').value = comp.K2O ?? 0;
   document.getElementById('newMaterialCaO').value = comp.CaO ?? 0;
   document.getElementById('newMaterialMgO').value = comp.MgO ?? 0;
-  document.getElementById('newMaterialS').value = comp.S ?? 0;
-  document.getElementById('newMaterialSO4').value = comp.SO4 ?? 0;
+  document.getElementById('newMaterialSO4').value = (granularFoldSToSo4(comp)).toFixed(2);
   document.getElementById('newMaterialFe').value = comp.Fe ?? 0;
   document.getElementById('newMaterialMn').value = comp.Mn ?? 0;
   document.getElementById('newMaterialB').value = comp.B ?? 0;
@@ -301,7 +300,7 @@ function saveEditedCustomMaterial() {
     P2O5: parseFloat(document.getElementById('newMaterialP2O5').value) || 0,
     K2O: parseFloat(document.getElementById('newMaterialK2O').value) || 0,
     CaO: parseFloat(document.getElementById('newMaterialCaO').value) || 0,
-    S: parseFloat(document.getElementById('newMaterialS').value) || 0,
+    S: 0,
     SO4: parseFloat(document.getElementById('newMaterialSO4').value) || 0,
     MgO: parseFloat(document.getElementById('newMaterialMgO').value) || 0,
     SiO2: parseFloat(document.getElementById('newMaterialSiO2').value) || 0,
@@ -676,11 +675,7 @@ function showNewMaterialModal(appId) {
               <input type="number" id="newMaterialMgO" min="0" max="100" step="0.01" placeholder="0.00">
             </div>
             <div class="nutrient-input">
-              <label>S:</label>
-              <input type="number" id="newMaterialS" min="0" max="100" step="0.01" placeholder="0.00">
-            </div>
-            <div class="nutrient-input">
-              <label>SO₄:</label>
+              <label title="Azufre solo como SO₄ (% en producto). Si tenías S guardado en catálogos viejos, al editar se muestra ya sumado aquí.">SO₄:</label>
               <input type="number" id="newMaterialSO4" min="0" max="100" step="0.01" placeholder="0.00">
             </div>
             <div class="nutrient-input">
@@ -816,7 +811,7 @@ function addCustomMaterial(appId) {
       P2O5: parseFloat(document.getElementById('newMaterialP2O5').value) || 0,
       K2O: parseFloat(document.getElementById('newMaterialK2O').value) || 0,
       CaO: parseFloat(document.getElementById('newMaterialCaO').value) || 0,
-      S: parseFloat(document.getElementById('newMaterialS').value) || 0,
+      S: 0,
       SO4: parseFloat(document.getElementById('newMaterialSO4').value) || 0,
       MgO: parseFloat(document.getElementById('newMaterialMgO').value) || 0,
       SiO2: parseFloat(document.getElementById('newMaterialSiO2').value) || 0,

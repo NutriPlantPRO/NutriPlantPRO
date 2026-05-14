@@ -377,8 +377,8 @@ function openEditFertiCustomMaterial(encodedKey) {
   overlay.querySelector('#fertiCustom_K2O').value = mat.K2O ?? 0;
   overlay.querySelector('#fertiCustom_CaO').value = mat.CaO ?? 0;
   overlay.querySelector('#fertiCustom_MgO').value = mat.MgO ?? 0;
-  overlay.querySelector('#fertiCustom_S').value = mat.S ?? 0;
-  overlay.querySelector('#fertiCustom_SO4').value = mat.SO4 ?? 0;
+  const mergedSo4 = (parseFloat(mat.SO4) || 0) + (parseFloat(mat.S) || 0) * FERTI_CONV.SO4_TO_S;
+  overlay.querySelector('#fertiCustom_SO4').value = Number(mergedSo4.toFixed(4));
   overlay.querySelector('#fertiCustom_Fe').value = mat.Fe ?? 0;
   overlay.querySelector('#fertiCustom_Mn').value = mat.Mn ?? 0;
   overlay.querySelector('#fertiCustom_B').value = mat.B ?? 0;
@@ -404,9 +404,9 @@ function clearFertiCustomMaterials() {
 }
 
 /** Modal de consulta: fertilizantes precargados con concentración (% óxido/elemento) */
-const FERTI_CATALOG_COLS = ['N_NO3', 'N_NH4', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
+const FERTI_CATALOG_COLS = ['N_NO3', 'N_NH4', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
 function fertiCatalogColLabel(key) {
-  const labels = { N_NO3: 'N(NO₃)', N_NH4: 'N(NH₄)', P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', S: 'S', SO4: 'SO₄', Fe: 'Fe', Mn: 'Mn', B: 'B', Zn: 'Zn', Cu: 'Cu', Mo: 'Mo', SiO2: 'SiO₂' };
+  const labels = { N_NO3: 'N(NO₃)', N_NH4: 'N(NH₄)', P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', SO4: 'SO₄', Fe: 'Fe', Mn: 'Mn', B: 'B', Zn: 'Zn', Cu: 'Cu', Mo: 'Mo', SiO2: 'SiO₂' };
   return labels[key] || key;
 }
 function openFertiPreloadedCatalogModal() {
@@ -414,7 +414,12 @@ function openFertiPreloadedCatalogModal() {
   const rows = list.map(mat => {
     const cells = [
       (mat.name || mat.id || '').replace(/</g, '&lt;'),
-      ...FERTI_CATALOG_COLS.map(k => (parseFloat(mat[k]) || 0).toFixed(2))
+      ...FERTI_CATALOG_COLS.map(k => {
+        const v = k === 'SO4'
+          ? ((parseFloat(mat.SO4) || 0) + (parseFloat(mat.S) || 0) * FERTI_CONV.SO4_TO_S)
+          : (parseFloat(mat[k]) || 0);
+        return v.toFixed(2);
+      })
     ];
     return `<tr style="border-bottom:1px solid #e5e7eb;">${cells.map((c, i) => `<td style="padding:6px 10px;${i === 0 ? 'font-weight:600;' : 'text-align:right;'}">${c}</td>`).join('')}</tr>`;
   }).join('');
@@ -466,7 +471,7 @@ function updateFertiCustomMaterial(overlay) {
     CaO: getNum('fertiCustom_CaO'),
     MgO: getNum('fertiCustom_MgO'),
     SO4: getNum('fertiCustom_SO4'),
-    S: getNum('fertiCustom_S'),
+    S: 0,
     Fe: getNum('fertiCustom_Fe'),
     Mn: getNum('fertiCustom_Mn'),
     Zn: getNum('fertiCustom_Zn'),
@@ -2088,8 +2093,7 @@ function openFertiNewMaterialModal() {
             <div class="nutrient-input"><label>K₂O:</label><input type="number" id="fertiCustom_K2O" step="0.01" placeholder="0.00"></div>
             <div class="nutrient-input"><label>CaO:</label><input type="number" id="fertiCustom_CaO" step="0.01" placeholder="0.00"></div>
             <div class="nutrient-input"><label>MgO:</label><input type="number" id="fertiCustom_MgO" step="0.01" placeholder="0.00"></div>
-            <div class="nutrient-input"><label>S:</label><input type="number" id="fertiCustom_S" step="0.01" placeholder="0.00"></div>
-            <div class="nutrient-input"><label>SO₄:</label><input type="number" id="fertiCustom_SO4" step="0.01" placeholder="0.00"></div>
+            <div class="nutrient-input"><label title="% masa ión SO₄²⁻ en el producto (incluye equivalencia si había S en datos antiguos al editar).">SO₄:</label><input type="number" id="fertiCustom_SO4" step="0.01" placeholder="0.00"></div>
             <div class="nutrient-input"><label>Fe:</label><input type="number" id="fertiCustom_Fe" step="0.001" placeholder="0.000"></div>
             <div class="nutrient-input"><label>Mn:</label><input type="number" id="fertiCustom_Mn" step="0.001" placeholder="0.000"></div>
             <div class="nutrient-input"><label>B:</label><input type="number" id="fertiCustom_B" step="0.001" placeholder="0.000"></div>
@@ -2139,7 +2143,7 @@ function openFertiNewMaterialModal() {
       CaO: getNum('fertiCustom_CaO'),
       MgO: getNum('fertiCustom_MgO'),
       SO4: getNum('fertiCustom_SO4'),
-      S: getNum('fertiCustom_S'),
+      S: 0,
       Fe: getNum('fertiCustom_Fe'),
       Mn: getNum('fertiCustom_Mn'),
       Zn: getNum('fertiCustom_Zn'),

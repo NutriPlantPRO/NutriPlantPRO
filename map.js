@@ -2384,7 +2384,7 @@ function np_setRadarBusy(isBusy, message) {
   if (isBusy && hint) {
     hint.textContent =
       message ||
-      'Generando imágenes NDVI y NDMI... puede tardar hasta ~1 minuto (primera vez o red lenta).';
+      'Generando imágenes NDVI y NDMI... puede tardar hasta ~1 minuto (primera vez o red lenta). Si termina el proceso pero no ves el mapa, pulsa «Ver última».';
   }
 }
 
@@ -2711,7 +2711,9 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     const data = await res.json().catch(() => ({}));
     if (res.status === 409 && data.latest && data.latest.signed_url) {
       const regenerate = confirm(
-        'Ya existe un Radar generado este mes. ¿Quieres regenerarlo con el estilo más intenso? Esto usará 1 crédito adicional.'
+        'Este mes ya hay una imagen Radar guardada para este proyecto.\n\n' +
+          'Si la generación tardó o pareció fallar, suele estar lista en la nube: pulsa «Cancelar» y luego «Ver última» en el panel (no gasta crédito).\n\n' +
+          '¿Quieres regenerar con el estilo más intenso? Eso sí usa 1 crédito adicional.'
       );
       if (regenerate) {
         np_setRadarBusy(true, 'Regenerando NDVI y NDMI... preparando imágenes actualizadas.');
@@ -2728,7 +2730,10 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
         if (!forcedRes.ok) {
           const recovered = await np_recoverRadarIfBackendSucceeded(prevBeforeForce, bounds);
           if (!recovered) {
-            alert(forcedData.message || forcedData.error || 'No se pudo regenerar Radar.');
+            alert(
+              (forcedData.message || forcedData.error || 'No se pudo regenerar Radar.') +
+                '\n\nPrueba «Ver última» por si la imagen anterior sigue disponible; luego «Estado».'
+            );
             await window.refreshRadarNdviStatus();
           }
           return;
@@ -2748,7 +2753,14 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     if (!res.ok) {
       const recovered = await np_recoverRadarIfBackendSucceeded(prevRadarCreatedAt, bounds);
       if (!recovered) {
-        alert(data.message || data.error || 'No se pudo generar Radar.');
+        const serverMsg = data.message || data.error;
+        alert(
+          serverMsg
+            ? serverMsg +
+                '\n\nSi acabas de generar: prueba «Ver última» (a veces la imagen ya quedó guardada aunque la respuesta tardara o fallara). Luego «Estado» para ver fecha y créditos.'
+            : 'No se pudo confirmar la generación (red, tiempo de espera o servidor).\n\n' +
+                'Pulsa «Ver última»: si el Radar ya se guardó, se mostrará sin gastar crédito. Si no hay imagen, «Estado» y vuelve a intentar con el predio sincronizado.'
+        );
         await window.refreshRadarNdviStatus();
       }
       return;
@@ -2765,7 +2777,10 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
       boundsCatch &&
       (await np_recoverRadarIfBackendSucceeded(prevRadarCreatedAt, boundsCatch));
     if (!recovered) {
-      alert('Error de red al generar Radar.');
+      alert(
+        'Error de red al generar Radar.\n\n' +
+          'Pulsa «Ver última» por si la imagen ya quedó en la nube; si no aparece, «Estado» y comprueba conexión o sincroniza el predio.'
+      );
     }
   } finally {
     np_setRadarBusy(false);

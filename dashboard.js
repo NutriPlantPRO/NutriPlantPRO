@@ -1446,7 +1446,10 @@ function sectionTemplate(name) {
             </select>
           </label>
           <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Disponibles: —</span>
-          <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 360px;">Sincroniza el predio a la nube, luego genera la imagen.</span>
+          <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 420px;">Sincroniza el predio a la nube, luego genera la imagen.</span>
+          <div style="width:100%;flex-basis:100%;font-size:11px;color:#64748b;line-height:1.45;padding:6px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.65);border:1px dashed #86efac;">
+            <strong>Tip:</strong> la generación puede tardar ~1 minuto. Si ves error o el mapa no cambia, prueba <strong>Ver última</strong> (la imagen a veces ya está lista). Solo al aceptar «regenerar intenso» se gasta un crédito extra; máx. 1 generación normal por proyecto y mes.
+          </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI</span>
             <span id="radarScaleLow">Bajo</span>
@@ -13095,7 +13098,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-admin-table.report-vpd-saved-table td:nth-child(8) { width: 16%; text-align: right; }
         @media (max-width: 720px) {
           .report-block { overflow-x: auto; }
-          .report-app-table { min-width: 980px; }
+          .report-table-wrap .report-app-table { min-width: 980px; }
           .report-admin-table.report-vpd-wide-table { min-width: 860px; }
           .report-admin-table.report-vpd-saved-table { min-width: 780px; }
         }
@@ -13235,33 +13238,118 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           color: #64748b;
           font-size: 11px;
         }
+        .report-table-legend {
+          margin: 0 0 12px 0 !important;
+          padding: 10px 14px;
+          line-height: 1.45;
+          font-size: 11px;
+          color: #475569;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        }
+        .report-table-wrap {
+          margin-top: 12px;
+          margin-bottom: 8px;
+          border-radius: 14px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          -webkit-overflow-scrolling: touch;
+          border: 1px solid #bfdbfe;
+          background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+          box-shadow: 0 4px 18px rgba(37, 99, 235, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.75) inset;
+        }
+        .report-table-wrap--muted {
+          border-color: #cbd5e1;
+          box-shadow: 0 3px 14px rgba(15, 23, 42, 0.07), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+        }
         .report-app-table {
           width: 100%;
           border-collapse: collapse;
-          margin-top: 8px;
-          font-size: 10px;
+          margin: 0;
+          font-size: 10.5px;
         }
         .report-app-table th,
         .report-app-table td {
-          border: 1px solid #d1d5db;
-          padding: 4px 5px;
+          border: 1px solid #e2e8f0;
+          padding: 7px 9px;
           text-align: center;
+          vertical-align: middle;
         }
         .report-app-table th:first-child,
         .report-app-table td:first-child {
           text-align: left;
         }
-        .report-app-table th {
-          background: #f1f5f9;
-          color: #334155;
+        .report-app-table thead th {
+          background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 100%);
+          color: #0f172a;
           font-weight: 700;
+          font-size: 9.5px;
+          letter-spacing: 0.02em;
+        }
+        .report-app-table tbody tr:nth-child(even):not(.total-row) td {
+          background: #f8fafc;
+        }
+        .report-app-table tbody tr:nth-child(odd):not(.total-row) td {
+          background: #ffffff;
         }
         .report-app-table tr.total-row td {
-          background: #f8fafc;
-          font-weight: 700;
+          background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+          font-weight: 800;
+          color: #0f172a;
+          border-top: 2px solid #94a3b8;
         }
         .report-app-table .report-divider-left {
-          border-left: 3px solid #64748b !important;
+          border-left: 3px solid #2563eb !important;
+          box-shadow: inset 2px 0 0 rgba(37, 99, 235, 0.08);
+        }
+        /* Hidroponía (PDF): tablas con contorno redondeado y rejilla tipo “pro” */
+        .report-hydro-table-wrap {
+          border-radius: 16px;
+          border-color: #7dd3fc;
+          background: linear-gradient(180deg, #ffffff 0%, #f8fcff 100%);
+          box-shadow:
+            0 6px 22px rgba(14, 116, 144, 0.11),
+            0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .report-hydro-table-wrap .report-app-table {
+          border-collapse: separate;
+          border-spacing: 0;
+          border-radius: 12px;
+          overflow: hidden;
+          border: 1px solid #bae6fd;
+        }
+        .report-hydro-table-wrap .report-app-table th,
+        .report-hydro-table-wrap .report-app-table td {
+          border: none;
+          border-right: 1px solid #e2e8f0;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        .report-hydro-table-wrap .report-app-table thead th {
+          background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 100%);
+          color: #0c4a6e;
+          font-weight: 700;
+          font-size: 9.5px;
+          letter-spacing: 0.02em;
+          padding: 8px 10px;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .report-hydro-table-wrap .report-app-table tbody td {
+          background: #ffffff;
+        }
+        .report-hydro-table-wrap .report-app-table tbody tr:nth-child(even) td {
+          background: #f0f9ff;
+        }
+        .report-hydro-table-wrap .report-app-table th:last-child,
+        .report-hydro-table-wrap .report-app-table td:last-child {
+          border-right: none;
+        }
+        .report-hydro-table-wrap .report-app-table tbody tr:last-child td {
+          border-bottom: none;
         }
         .report-json {
           margin-top: 10px;
@@ -14191,11 +14279,15 @@ function createGranularSectionHTML() {
   /** kg SO₄ por kg S (misma base que nutricion-granular-requerimiento-functions.js) */
   const REPORT_S_TO_SO4 = 96.062 / 32.065;
   const NUTRIENTS = ['N', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4', 'Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
-  const iSo4 = NUTRIENTS.indexOf('SO4');
-  const NUTRIENTS_MAT = iSo4 >= 0 ? NUTRIENTS.slice(0, iSo4 + 1).concat(['S'], NUTRIENTS.slice(iSo4 + 1)) : NUTRIENTS.concat(['S']);
+  /** Tabla de materiales: una sola columna SO₄; S legado del catálogo se suma aquí (kg producto como %). */
+  function granularMatOxideVal(obj, nutrient) {
+    const o = obj && typeof obj === 'object' ? obj : {};
+    if (nutrient === 'SO4') return toNumber(o.SO4) + toNumber(o.S) * REPORT_S_TO_SO4;
+    return toNumber(o[nutrient]);
+  }
   const MICRO_NUTRIENTS = { Fe: true, Mn: true, B: true, Zn: true, Cu: true, Mo: true };
   const OXIDE_TO_ELEMENTAL = { P2O5: 2.291, K2O: 1.204, CaO: 1.399, MgO: 1.658, SiO2: 2.139, SO4: REPORT_S_TO_SO4 };
-  const ELEMENTAL_LABELS = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SiO2: 'Si', SO4: 'S' };
+  const ELEMENTAL_LABELS = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SiO2: 'Si', SO4: 'S (SO₄)' };
 
   function toNumber(value) {
     const n = Number(value);
@@ -14332,8 +14424,8 @@ function createGranularSectionHTML() {
       <tr>
         <td>${reportEscapeHtml(material.name || '—')}</td>
         <td>${toNumber(material.percentage).toFixed(2)}</td>
-        ${NUTRIENTS_MAT.map(nutrient => {
-          const v = toDisplayValue(nutrient, toNumber(material[nutrient]), programModeIsElemental);
+        ${NUTRIENTS.map(nutrient => {
+          const v = toDisplayValue(nutrient, granularMatOxideVal(material, nutrient), programModeIsElemental);
           return `<td>${v.toFixed(decimalFor(nutrient))}</td>`;
         }).join('')}
       </tr>
@@ -14344,27 +14436,29 @@ function createGranularSectionHTML() {
       <tr class="total-row">
         <td>TOTAL</td>
         <td>100.00</td>
-        ${NUTRIENTS_MAT.map(nutrient => {
-          const v = toDisplayValue(nutrient, toNumber(composition[nutrient]), programModeIsElemental);
+        ${NUTRIENTS.map(nutrient => {
+          const v = toDisplayValue(nutrient, granularMatOxideVal(composition, nutrient), programModeIsElemental);
           return `<td>${v.toFixed(decimalFor(nutrient))}</td>`;
         }).join('')}
       </tr>
     `;
 
     return `
+      <div class="report-table-wrap report-table-wrap--muted">
       <table class="report-app-table">
         <thead>
           <tr>
             <th>Material</th>
             <th>%</th>
-            ${NUTRIENTS_MAT.map(nutrient => `<th>${nutrientLabel(nutrient, programModeIsElemental)}</th>`).join('')}
+            ${NUTRIENTS.map(nutrient => `<th>${nutrientLabel(nutrient, programModeIsElemental)}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
-          ${rows || `<tr><td colspan="${NUTRIENTS_MAT.length + 2}" style="text-align:center;color:#64748b;">No hay materiales en esta aplicación.</td></tr>`}
+          ${rows || `<tr><td colspan="${NUTRIENTS.length + 2}" style="text-align:center;color:#64748b;">No hay materiales en esta aplicación.</td></tr>`}
           ${totalRow}
         </tbody>
       </table>
+      </div>
     `;
   }
 
@@ -14486,9 +14580,14 @@ function createFertigationSectionHTML(chartImages) {
   const reqModeIsElemental = !!req.isElementalMode;
   const programModeIsElemental = !!prog.mode;
   const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
-  const macroCols = ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','S','SO4'];
+  const macroCols = ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','SO4'];
   const microCols = ['Fe','Mn','B','Zn','Cu','Mo','SiO2'];
   const REPORT_S_TO_SO4_FERTI = 96.062 / 32.065;
+  /** kg SO₄ eq. en totales por etapa (SO₄ + S elemental × factor), alineado con gráficas/resumen. */
+  function fertiReportMergedSo4KgFromTotals(t) {
+    const o = t && typeof t === 'object' ? t : {};
+    return toNum(o.SO4) + toNum(o.S) * REPORT_S_TO_SO4_FERTI;
+  }
   const conv = { P2O5: 2.291, K2O: 1.204, CaO: 1.399, MgO: 1.658, SiO2: 2.139, SO4: REPORT_S_TO_SO4_FERTI };
   const elemLabels = { P2O5: 'P', K2O: 'K', CaO: 'Ca', MgO: 'Mg', SiO2: 'Si', SO4: 'S' };
 
@@ -14582,7 +14681,7 @@ function createFertigationSectionHTML(chartImages) {
     || [];
   const fertiById = new Map((Array.isArray(fertiMaterials) ? fertiMaterials : []).filter(m => m && m.id).map(m => [m.id, m]));
   const fertiCustomById = new Map((Array.isArray(fertiCustomItems) ? fertiCustomItems : []).filter(m => m && m.id).map(m => [m.id, m]));
-  const macroNutrients = ['N_NO3', 'N_NH4', 'P2O5', 'K2O', 'CaO', 'MgO', 'S', 'SO4'];
+  const macroNutrients = ['N_NO3', 'N_NH4', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4'];
   const microNutrients = ['Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
   function columnHasDose(c) {
     return weeks.some(w => toNum(w?.kgByCol?.[c?.id]) > 0);
@@ -14602,7 +14701,7 @@ function createFertigationSectionHTML(chartImages) {
   const columnNames = columns.map((c, idx) => fertiColumnName(c, idx));
   function fertiColumnHasMacro(c) {
     const mat = fertiById.get(c?.materialId) || fertiCustomById.get(c?.materialId) || {};
-    const hasFromCatalog = macroNutrients.some(n => toNum(mat[n]) > 0);
+    const hasFromCatalog = macroNutrients.some(n => toNum(mat[n]) > 0) || toNum(mat.S) > 0;
     // Si no encontramos composición (p.ej. personalizado no resuelto), no ocultar columna si tiene dosis.
     if (hasFromCatalog) return true;
     if ((c?.materialId && String(c.materialId).startsWith('custom_')) || columnHasDose(c)) return true;
@@ -14678,6 +14777,8 @@ function createFertigationSectionHTML(chartImages) {
       nutrients.forEach(n => {
         if (n === 'N') {
           totalProgram[n] += toNum(t.N_NO3) + toNum(t.N_NH4);
+        } else if (n === 'SO4') {
+          totalProgram[n] += fertiReportMergedSo4KgFromTotals(t);
         } else {
           totalProgram[n] += toNum(t[n]);
         }
@@ -14687,9 +14788,20 @@ function createFertigationSectionHTML(chartImages) {
   const totalWithWater = {};
   const diff = {};
   nutrients.forEach(n => {
-    const water = (waterContribution[n] !== undefined && waterContribution[n] !== null && waterContribution[n] !== '')
-      ? toNum(waterContribution[n])
-      : null;
+    let water = null;
+    if (n === 'SO4') {
+      const wSo4 = (waterContribution.SO4 !== undefined && waterContribution.SO4 !== null && waterContribution.SO4 !== '')
+        ? toNum(waterContribution.SO4) : null;
+      const wS = (waterContribution.S !== undefined && waterContribution.S !== null && waterContribution.S !== '')
+        ? toNum(waterContribution.S) : null;
+      if (wSo4 !== null || wS !== null) {
+        water = (wSo4 !== null ? wSo4 : 0) + (wS !== null ? wS * REPORT_S_TO_SO4_FERTI : 0);
+      }
+    } else {
+      water = (waterContribution[n] !== undefined && waterContribution[n] !== null && waterContribution[n] !== '')
+        ? toNum(waterContribution[n])
+        : null;
+    }
     if (totalProgram[n] === null && water === null) totalWithWater[n] = null;
     else totalWithWater[n] = (totalProgram[n] === null ? 0 : totalProgram[n]) + (water === null ? 0 : water);
     diff[n] = (totalWithWater[n] === null || required[n] === null) ? null : (totalWithWater[n] - required[n]);
@@ -14700,7 +14812,10 @@ function createFertigationSectionHTML(chartImages) {
   }, 0);
   const macroDoseColumnTotals = macroDoseColumns.map(c => weeks.reduce((acc, w) => acc + toNum(w?.kgByCol?.[c.id]), 0));
   const microDoseColumnTotals = microDoseColumns.map(c => weeks.reduce((acc, w) => acc + toNum(w?.kgByCol?.[c.id]), 0));
-  const totalMacroCols = hasWeekTotals ? macroCols.map(n => weeks.reduce((acc, w) => acc + toNum(w?.totals?.[n]), 0)) : macroCols.map(() => null);
+  const totalMacroCols = hasWeekTotals ? macroCols.map(n => {
+    if (n === 'SO4') return weeks.reduce((acc, w) => acc + fertiReportMergedSo4KgFromTotals(w?.totals), 0);
+    return weeks.reduce((acc, w) => acc + toNum(w?.totals?.[n]), 0);
+  }) : macroCols.map(() => null);
   const totalMicroCols = hasWeekTotals ? microCols.map(n => weeks.reduce((acc, w) => acc + toNum(w?.totals?.[n]), 0)) : microCols.map(() => null);
 
   const macroRows = weeks.map((w, idx) => `
@@ -14709,7 +14824,8 @@ function createFertigationSectionHTML(chartImages) {
       <td>${idx + 1}</td>
       ${macroDoseColumns.map(c => `<td>${toNum(w?.kgByCol?.[c.id]).toFixed(2)}</td>`).join('')}
       ${macroCols.map((n, i) => {
-        const v = display(n, w?.totals?.[n], programModeIsElemental);
+        const raw = n === 'SO4' ? fertiReportMergedSo4KgFromTotals(w?.totals) : w?.totals?.[n];
+        const v = display(n, raw, programModeIsElemental);
         return `<td class="${i === 0 ? 'report-divider-left' : ''}">${v === null ? '—' : v.toFixed(d(n))}</td>`;
       }).join('')}
     </tr>
@@ -14736,7 +14852,7 @@ function createFertigationSectionHTML(chartImages) {
     K2O: weeks.map(w => toNum(w?.totals?.K2O)),
     CaO: weeks.map(w => toNum(w?.totals?.CaO)),
     MgO: weeks.map(w => toNum(w?.totals?.MgO)),
-    SO4: weeks.map(w => toNum(w?.totals?.SO4))
+    SO4: weeks.map(w => fertiReportMergedSo4KgFromTotals(w?.totals))
   };
   let macroSeriesLabels = { P2O5: 'P₂O₅', K2O: 'K₂O', CaO: 'CaO', MgO: 'MgO', SO4: 'SO₄' };
   if (programModeIsElemental) {
@@ -14829,9 +14945,10 @@ function createFertigationSectionHTML(chartImages) {
       </div>
       <div class="report-block">
         <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} - Macros <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
-        <p class="report-note" style="margin:0 0 10px;line-height:1.4;">
+        <p class="report-note report-table-legend">
           <strong>Leyenda:</strong> A la izquierda, dosis de cada fertilizante; a la derecha de la línea, <strong>aportes de macronutrientes (kg/ha)</strong>. La tabla Micros usa las mismas filas con los micros en kg/ha —es el mismo plan, no dos aplicaciones.
         </p>
+        <div class="report-table-wrap">
         <table class="report-app-table">
           <thead>
             <tr>
@@ -14854,12 +14971,14 @@ function createFertigationSectionHTML(chartImages) {
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
       <div class="report-block">
         <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} - Micros <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
-        <p class="report-note" style="margin:0 0 10px;line-height:1.4;">
+        <p class="report-note report-table-legend">
           <strong>Leyenda:</strong> Mismas filas que Macros. A la derecha de la línea, <strong>aportes de micronutrientes (kg/ha)</strong>. No sumar con Macros como si fueran dos riegos distintos.
         </p>
+        <div class="report-table-wrap">
         <table class="report-app-table">
           <thead>
             <tr>
@@ -14882,6 +15001,7 @@ function createFertigationSectionHTML(chartImages) {
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
       ${chartsBlock}
     </div>
@@ -15291,18 +15411,22 @@ function createHidroponiaSectionHTML() {
         <div class="report-note" style="margin:8px 0 10px 0;">
           <strong>${activeStageName}</strong> · Suma de N (meq/L): <strong>${activeNTotal.toFixed(2)}</strong> · % Nitrato: <strong>${activePctNo3.toFixed(1)}%</strong> · % Amonio: <strong>${activePctNh4.toFixed(1)}%</strong>
         </div>` : ''}
+        <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
           <thead><tr><th>Etapa</th><th>CE (dS/m)</th>${meqNutrients.map(n => `<th>${label(n)} (meq/L)</th>`).join('')}</tr></thead>
           <tbody>${stageRowsMeq || `<tr><td colspan="${meqNutrients.length + 2}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
         </table>
+        </div>
       </div>
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
         <div class="report-block-title">📊 Peso en % de meq (aniones y cationes K+Ca+Mg)</div>
-        <div class="report-note" style="margin-bottom:8px;">Aniones: % sobre el total N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻. Cationes K⁺, Ca²⁺, Mg²⁺: % sobre el total K+Ca+Mg (sin amonio). N-NH₄⁺: % sobre el total de cationes (K+Ca+Mg+NH₄⁺).</div>
+        <div class="report-note report-table-legend" style="margin-bottom:10px;">Aniones: % sobre el total N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻. Cationes K⁺, Ca²⁺, Mg²⁺: % sobre el total K+Ca+Mg (sin amonio). N-NH₄⁺: % sobre el total de cationes (K+Ca+Mg+NH₄⁺).</div>
+        <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
           <thead><tr><th>Etapa</th>${meqNutrients.map(n => `<th>${label(n)} % meq</th>`).join('')}</tr></thead>
           <tbody>${stageRowsPct || `<tr><td colspan="${meqNutrients.length + 1}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
         </table>
+        </div>
       </div>
       ${activeStage ? (function() {
         const meq = activeStage.meq || {};
@@ -15322,10 +15446,12 @@ function createHidroponiaSectionHTML() {
       })() : ''}
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
         <div class="report-block-title">📐 Solución nutritiva por etapa (ppm)</div>
+        <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
           <thead><tr><th>Etapa</th>${meqNutrients.map(n => `<th>${label(n)} ppm</th>`).join('')}${microNutrients.map(n => `<th>${n} ppm</th>`).join('')}</tr></thead>
           <tbody>${stageRowsPpm || `<tr><td colspan="${meqNutrients.length + microNutrients.length + 1}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
         </table>
+        </div>
       </div>
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
         <div class="report-block-title">💧 Análisis de agua (ppm)</div>
@@ -15346,14 +15472,16 @@ function createHidroponiaSectionHTML() {
       </div>
       <div class="report-block">
         <div class="report-block-title">🧮 Fertilizantes</div>
-        <div class="report-note" style="margin-bottom:8px;">
+        <div class="report-note report-table-legend" style="margin-bottom:10px;">
           Los valores por elemento (N, P, K, Ca, Mg, Fe, etc.) se expresan en <strong>ppm</strong> del aporte en la solución final.
           La columna <strong>Total producto</strong> corresponde a la cantidad total requerida para el volumen de agua configurado (sólidos en kg y líquidos en L).
         </div>
+        <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
           <thead><tr><th>Fertilizante</th><th>Tanque</th><th>Dosis (ppm)</th>${meqNutrients.map(n => `<th>${label(n)}</th>`).join('')}${microNutrients.map(n => `<th>${n}</th>`).join('')}<th>Total producto</th></tr></thead>
           <tbody>${fertRows || `<tr><td colspan="${meqNutrients.length + microNutrients.length + 4}" style="text-align:center;color:#64748b;">Sin fertilizantes guardados.</td></tr>`}</tbody>
         </table>
+        </div>
       </div>
       ${tankBlocksHtml ? `
       <div class="report-block">
@@ -15410,8 +15538,8 @@ function createVPDReportSectionHTML() {
           <td>${reportNum(r.hoursHigh, 0)}</td>
           <td>${reportNum(r.hoursLow, 0)}</td>
           <td>${reportNum(r.hoursOptimal, 0)}</td>
-          <td>${Number.isFinite(Number(r.maxUv)) ? reportNum(r.maxUv, 1) + '<div>' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div>' : '—'}</td>
           <td>${reportNum(r.stressPct, 1)}%</td>
+          <td>${Number.isFinite(Number(r.maxUv)) ? reportNum(r.maxUv, 1) + '<div>' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div>' : '—'}</td>
         </tr>
       `;
     }).join('')
@@ -15426,8 +15554,8 @@ function createVPDReportSectionHTML() {
           <td>${reportNum(r.temperature, 1)}</td>
           <td>${reportNum(r.humidity, 1)}</td>
           <td>${reportEscapeHtml(rad)}</td>
-          <td>${Number.isFinite(Number(r.uvIndex)) ? reportEscapeHtml(formatUvIndexValue(r.uvIndex)) + '<div>' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div>' : '—'}</td>
           <td>${reportEscapeHtml(String(r.type === 'high' ? 'Alto' : 'Bajo'))}</td>
+          <td>${Number.isFinite(Number(r.uvIndex)) ? reportEscapeHtml(formatUvIndexValue(r.uvIndex)) + '<div>' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div>' : '—'}</td>
         </tr>
       `;
     }).join('')
@@ -15519,8 +15647,8 @@ function createVPDReportSectionHTML() {
               <th>Horas &gt; 1.5</th>
               <th>Horas &lt; 0.5</th>
               <th>Horas óptimas</th>
-              <th>UV máx</th>
               <th>% estrés</th>
+              <th>UV máx</th>
             </tr>
           </thead>
           <tbody>
@@ -15538,8 +15666,8 @@ function createVPDReportSectionHTML() {
               <th>Temp (°C)</th>
               <th>HR (%)</th>
               <th>Radiación (W/m²)</th>
-              <th>Índice UV</th>
               <th>Tipo</th>
+              <th>Índice UV</th>
             </tr>
           </thead>
           <tbody>
@@ -18557,8 +18685,8 @@ function vpdStressSummaryRowHtml(rows) {
       '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursHigh)) ? String(r.hoursHigh) : '0') + '</td>' +
       '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursLow)) ? String(r.hoursLow) : '0') + '</td>' +
       '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursOptimal)) ? String(r.hoursOptimal) : '0') + '</td>' +
-      '<td style="' + sep + '">' + formatUvIndexValue(r.maxUv) + '<div>' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div></td>' +
       '<td style="' + sep + '">' + (Number.isFinite(Number(r.stressPct)) ? Number(r.stressPct).toFixed(1) + '%' : '—') + '</td>' +
+      '<td style="' + sep + '">' + formatUvIndexValue(r.maxUv) + '<div>' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div></td>' +
     '</tr>';
   }).join('');
 }
@@ -18575,8 +18703,8 @@ function vpdCriticalEventsRowHtml(rows) {
       '<td>' + (Number.isFinite(Number(r.temperature)) ? Number(r.temperature).toFixed(1) : '—') + '</td>' +
       '<td>' + (Number.isFinite(Number(r.humidity)) ? Number(r.humidity).toFixed(1) : '—') + '</td>' +
       '<td>' + rad + '</td>' +
-      '<td>' + uv + '<div>' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div></td>' +
       '<td><span style="color:' + cls + ';font-weight:600;">' + tag + '</span></td>' +
+      '<td>' + uv + '<div>' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div></td>' +
     '</tr>';
   }).join('');
 }
@@ -19856,8 +19984,8 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &gt; 1.5</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &lt; 0.5</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas óptimas</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">UV máx</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">% estrés</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">UV máx</th>
             </tr>
           </thead>
           <tbody>${vpdStressSummaryRowHtml(summaryRows)}</tbody>
@@ -19877,8 +20005,8 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
                 <th style="border:1px solid #fed7aa;padding:6px;">Temp (°C)</th>
                 <th style="border:1px solid #fed7aa;padding:6px;">HR (%)</th>
                 <th style="border:1px solid #fed7aa;padding:6px;">Radiación (W/m²)</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Índice UV</th>
                 <th style="border:1px solid #fed7aa;padding:6px;">Tipo</th>
+                <th style="border:1px solid #fed7aa;padding:6px;">Índice UV</th>
               </tr>
             </thead>
           <tbody>${critPreview.length ? vpdCriticalEventsRowHtml(critPreview) : '<tr><td colspan="7" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">Sin horas fuera de rango.</td></tr>'}</tbody>
@@ -19916,8 +20044,8 @@ function renderSavedVPDRangeTableHtml(tbl) {
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &gt; 1.5</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &lt; 0.5</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas óptimas</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">UV máx</th>
               <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">% estrés</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">UV máx</th>
             </tr>
           </thead>
           <tbody>${vpdStressSummaryRowHtml(summaryRows)}</tbody>
