@@ -35,12 +35,10 @@
       color: var(--text);
       min-height: 100vh;
       letter-spacing: -0.015em;
+      /* Menos capas que antes al hacer scroll: varios radiales superpuestos forzan repintado grande del viewport */
       background:
-        radial-gradient(ellipse 100% 70% at 100% 0%, rgba(147, 197, 253, 0.35) 0%, transparent 52%),
-        radial-gradient(ellipse 90% 55% at 0% 80%, rgba(167, 243, 208, 0.28) 0%, transparent 48%),
-        radial-gradient(ellipse 70% 50% at 50% 100%, rgba(226, 232, 240, 0.9) 0%, transparent 55%),
+        radial-gradient(ellipse 110% 55% at 70% -15%, rgba(147, 197, 253, 0.24) 0%, transparent 58%),
         linear-gradient(175deg, #e8ecf2 0%, #eef1f6 45%, #e9edf4 100%);
-      /* fixed + varias capas con blur suelen dejar “huecos” en blanco en Safari/iOS hasta que mueves */
       background-attachment: scroll;
     }
     .wrap {
@@ -1333,7 +1331,6 @@
       max-width: 100%;
       overflow-x: auto;
       overflow-y: visible;
-      -webkit-overflow-scrolling: touch;
       margin-bottom: 8px;
     }
     .np-layout {
@@ -1350,6 +1347,8 @@
       .np-tree-sidebar {
         position: sticky;
         top: 12px;
+        /* Limita reflujo al mover el scroll principal (árbol no invalida todo el layout de la columna) */
+        contain: layout style;
       }
     }
     /* Móvil / tablet: misma vista en dos columnas (no apilar categorías arriba del todo) */
@@ -1446,6 +1445,7 @@
       margin-top: 0;
       max-height: min(55vh, 440px);
       overflow: auto;
+      overscroll-behavior: contain;
       padding: 4px 0;
       border-radius: 10px;
       background: rgba(248, 250, 252, 0.92);
@@ -1712,8 +1712,7 @@
         0 2px 4px rgba(15, 23, 42, 0.05),
         0 10px 28px rgba(15, 23, 42, 0.08),
         0 18px 48px rgba(37, 99, 235, 0.05);
-      transform: translateY(0);
-      transition: box-shadow 0.2s ease, transform 0.2s ease;
+      /* Sin transition: al hacer scroll por encima, hover enter/sale micro-repinta menos */
     }
     .np-modal-body .np-ms-block:hover {
       box-shadow:
@@ -2576,6 +2575,7 @@
       );
       overflow-x: auto;
       overflow-y: visible;
+      overscroll-behavior-x: contain;
     }
     .np-sheet-inner {
       padding: 12px 14px 16px;
@@ -2680,7 +2680,7 @@
       top: 12px;
       bottom: 12px;
       width: 1px;
-      background: rgba(220, 90, 90, 0.38);
+      background: rgba(220, 90, 90, 0.22);
       pointer-events: none;
       border-radius: 1px;
     }
@@ -2717,12 +2717,12 @@
       min-width: 0;
       width: 100%;
       max-width: 100%;
-      min-height: min(26vh, 320px);
+      min-height: min(52vh, 640px);
       box-sizing: border-box;
     }
     #npFormCreate #npBodyRich.np-rich-editor {
-      min-height: min(22vh, 260px);
-      max-height: min(44vh, 440px);
+      min-height: min(44vh, 520px);
+      max-height: min(78vh, 780px);
     }
     .np-rich-toolbar {
       display: flex;
@@ -2814,8 +2814,8 @@
         to bottom,
         transparent 0,
         transparent calc(1.7em - 1px),
-        rgba(92, 74, 55, 0.32) calc(1.7em - 1px),
-        rgba(92, 74, 55, 0.32) 1.7em
+        rgba(92, 74, 55, 0.13) calc(1.7em - 1px),
+        rgba(92, 74, 55, 0.13) 1.7em
       ) !important;
       background-size: 100% 1.7em;
       background-position: 0 24px;
@@ -2839,6 +2839,22 @@
     }
     .np-rich-editor ol { padding-left: 1.5em; }
     .np-rich-editor li { margin: 0.25em 0; }
+    /* Viñetas PRO y números en negrita; el contenido del ítem sigue tu formato (color, tamaño, etc.) */
+    .np-rich-editor ul:not(.np-rich-list-diagram) li::marker,
+    .np-modal-note-rich ul:not(.np-rich-list-diagram) li::marker {
+      color: #1d4ed8;
+    }
+    .np-rich-editor ul:not(.np-rich-list-diagram) li::marker,
+    .np-modal-note-rich ul:not(.np-rich-list-diagram) li::marker {
+      content: '●';
+      font-size: 0.62em;
+    }
+    .np-rich-editor ol li::marker,
+    .np-modal-note-rich ol li::marker {
+      font-weight: 800;
+      color: #0f172a;
+      font-variant-numeric: tabular-nums;
+    }
     /* Lista tipo diagrama / ramas (├ └) — editor y bloques de solo lectura */
     .np-rich-editor ul.np-rich-list-diagram,
     .np-modal-note-rich ul.np-rich-list-diagram {
@@ -2865,10 +2881,11 @@
       top: 0.05em;
       width: 1em;
       text-align: left;
-      font-size: 0.95em;
+      font-size: 1em;
       line-height: inherit;
-      color: #64748b;
-      font-weight: 500;
+      color: #1e40af;
+      font-weight: 800;
+      font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
       content: '├';
       pointer-events: none;
     }
@@ -2879,7 +2896,9 @@
     .np-rich-editor ul.np-rich-list-diagram ul > li::before,
     .np-modal-note-rich ul.np-rich-list-diagram ul > li::before {
       content: '├';
-      font-size: 0.92em;
+      font-size: 0.98em;
+      font-weight: 800;
+      color: #1e40af;
     }
     .np-rich-editor ul.np-rich-list-diagram ul > li:last-child::before,
     .np-modal-note-rich ul.np-rich-list-diagram ul > li:last-child::before {
@@ -2914,8 +2933,8 @@
     }
     /* Hoja de libreta en el modal: mismo papel que el formulario + líneas tenues */
     .np-notebook-page.np-modal-notebook-page {
-      min-height: min(26vh, 300px);
-      max-height: min(44vh, 480px);
+      min-height: min(52vh, 600px);
+      max-height: min(76vh, 720px);
       min-width: var(--np-note-sheet-min, 680px);
       max-width: 100%;
       box-sizing: border-box;
@@ -2924,8 +2943,8 @@
     }
     #npModalBodyRich.np-rich-editor {
       position: relative;
-      min-height: min(22vh, 260px);
-      max-height: min(40vh, 460px);
+      min-height: min(44vh, 520px);
+      max-height: min(72vh, 680px);
       overflow-y: auto;
     }
     .np-modal-note-rich h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75em 0 0.4em; color: #0f172a; }
