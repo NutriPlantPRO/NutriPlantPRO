@@ -1910,6 +1910,7 @@
       display: flex;
       flex-direction: column;
       align-items: stretch;
+      gap: 14px;
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
@@ -2648,6 +2649,21 @@
       min-height: min(48vh, 520px);
       min-width: var(--np-note-sheet-min, 680px);
     }
+    /* Nuevo apunte: la libreta encaja en la columna (sin min-width 680px rígido) y menos alto vacío. */
+    #npFormCreate .np-notebook-wrap {
+      max-width: 100%;
+    }
+    #npFormCreate .np-notebook-page.np-notebook-rich {
+      min-width: 0;
+      width: 100%;
+      max-width: 100%;
+      min-height: min(34vh, 400px);
+      box-sizing: border-box;
+    }
+    #npFormCreate #npBodyRich.np-rich-editor {
+      min-height: min(28vh, 320px);
+      max-height: min(50vh, 520px);
+    }
     .np-rich-toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -2862,6 +2878,12 @@
       margin-top: 4px;
       margin-bottom: 10px;
     }
+    /* En flex, los .btn encogen por defecto → pueden quedar en ancho 0 (hueco blanco sin texto). */
+    #npFormCreate .np-tools-row > .btn,
+    .np-detail-blocks-tools > .btn {
+      flex-shrink: 0;
+      flex-grow: 0;
+    }
     .np-detail-blocks-tools {
       margin-top: 14px;
     }
@@ -2878,6 +2900,8 @@
     #npMiniSheetPreview:not(.np-hide) > .np-detail-block-chunk {
       flex: 0 0 auto;
       min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
     }
     .np-sheet-nav-blocks {
       margin-top: 16px;
@@ -5428,8 +5452,10 @@
     for (var ii = 1; ii < derivedCi; ii++) {
       if (ledgerGetDerivedSpec(b, ii)) continue;
       var fk0 = b.colKinds && b.colKinds[ii];
+      if (fk0 === 'pct') continue;
       if (fk0 === 'currency' || fk0 === 'number') cands.push(ii);
-      else if ((!fk0 || fk0 === '') && b.headers && ledgerHeaderSuggestsMoneyColumn(b.headers[ii])) cands.push(ii);
+      /* Aunque colKinds siga en "texto", Monto/Importe debe entrar en la suma autoamplificada. */
+      else if (b.headers && ledgerHeaderSuggestsMoneyColumn(b.headers[ii])) cands.push(ii);
     }
     if (cands.length >= 2 && k0 === cands[cands.length - 1]) return cands.slice();
     return out;
@@ -5675,13 +5701,31 @@
     var nh = b.headers.length;
 
     if (!b.colKinds || b.colKinds.length !== nh) {
-      if (nh === 6 && ledgerGetDerivedSpec(b, 3) && ledgerGetDerivedSpec(b, 3).op === 'diff') {
+      /* Plantillas fijas solo si la columna 3 no es un importe con nombre típico (evita Conf/Monto/Imp/Imp/Total). */
+      var legacyCol3Money =
+        nh >= 4 && ledgerHeaderSuggestsMoneyColumn(b.headers && b.headers[3]);
+      if (
+        nh === 6 &&
+        ledgerGetDerivedSpec(b, 3) &&
+        ledgerGetDerivedSpec(b, 3).op === 'diff' &&
+        !legacyCol3Money
+      ) {
         b.colKinds = ['text', 'currency', 'currency', 'derived', 'pct', 'text'];
         if (typeof b.montoCol !== 'number') b.montoCol = 1;
-      } else if (nh === 5 && ledgerGetDerivedSpec(b, 3) && ledgerGetDerivedSpec(b, 3).op === 'sum') {
+      } else if (
+        nh === 5 &&
+        ledgerGetDerivedSpec(b, 3) &&
+        ledgerGetDerivedSpec(b, 3).op === 'sum' &&
+        !legacyCol3Money
+      ) {
         b.colKinds = ['text', 'currency', 'currency', 'derived', 'text'];
         if (typeof b.montoCol !== 'number') b.montoCol = 3;
-      } else if (nh === 6 && ledgerGetDerivedSpec(b, 3) && ledgerGetDerivedSpec(b, 3).op === 'product') {
+      } else if (
+        nh === 6 &&
+        ledgerGetDerivedSpec(b, 3) &&
+        ledgerGetDerivedSpec(b, 3).op === 'product' &&
+        !legacyCol3Money
+      ) {
         b.colKinds = ['text', 'number', 'currency', 'derived', 'pct', 'text'];
         if (typeof b.montoCol !== 'number') b.montoCol = 3;
       } else {
@@ -8472,9 +8516,6 @@
           sheetAccent: sheetAccentHexForSelection()
         })
       );
-      try {
-        prevBox.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
-      } catch (eScroll) {}
     } catch (ePrev) {
       console.error('Plan PRO vista previa bloques:', ePrev);
       var err = document.createElement('p');
