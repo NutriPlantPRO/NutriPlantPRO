@@ -13227,6 +13227,16 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           background: #fff7f7;
           color: #991b1b;
         }
+        .report-nutrient-wrap.report-hydro-nutrient-wrap {
+          gap: 5px 6px;
+        }
+        .report-nutrient-wrap.report-hydro-nutrient-wrap .report-nutrient-pill {
+          font-size: 10px;
+          padding: 2px 6px;
+          white-space: normal;
+          max-width: 100%;
+          line-height: 1.25;
+        }
         /* Tanques hidroponía (mismo criterio que dashboard; PDF: activar «Gráficos de fondo» para sombras/gradientes) */
         .hydro-muted { color: #64748b; font-size: 0.92em; }
         .hydro-tank-blocks {
@@ -13467,14 +13477,14 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           table-layout: fixed;
           width: 100%;
           min-width: 0;
-          font-size: 7.55px;
+          font-size: 7.1px;
         }
         .report-hydro-table-wrap .report-app-table th,
         .report-hydro-table-wrap .report-app-table td {
           border: none;
           border-right: 1px solid #e2e8f0;
           border-bottom: 1px solid #e2e8f0;
-          padding: 3px 4px;
+          padding: 2px 3px;
           overflow-wrap: anywhere;
           word-break: break-word;
         }
@@ -13482,7 +13492,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 100%);
           color: #0c4a6e;
           font-weight: 700;
-          font-size: 7.05px;
+          font-size: 6.75px;
           letter-spacing: 0.02em;
           padding: 4px 3px;
           line-height: 1.12;
@@ -13782,14 +13792,14 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
             padding: 2px 3px;
           }
           .report-hydro-table-wrap .report-app-table {
-            font-size: 7.05px;
+            font-size: 6.85px;
           }
           .report-hydro-table-wrap .report-app-table th,
           .report-hydro-table-wrap .report-app-table td {
-            padding: 2px 3px;
+            padding: 2px 2px;
           }
           .report-hydro-table-wrap .report-app-table thead th {
-            font-size: 6.65px;
+            font-size: 6.45px;
           }
           .report-amend-results-wrap .results-table {
             font-size: 7.35px;
@@ -15813,7 +15823,7 @@ function createHidroponiaSectionHTML() {
       <div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">
         <div class="report-block-title">💧 Análisis de agua (ppm)</div>
         <div class="report-note" style="margin-bottom:8px;">Aportes del agua para calcular el faltante (objetivo − agua).</div>
-        <div class="report-nutrient-wrap">
+        <div class="report-nutrient-wrap report-hydro-nutrient-wrap">
           ${hydroNutrients.map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(h.water && h.water[n]).toFixed(2)} ppm</span>`).join('')}
         </div>
       </div>
@@ -15853,62 +15863,71 @@ function createHidroponiaSectionHTML() {
       <div class="report-block">
         <div class="report-block-title">📊 PPM aportadas totales (solución nutritiva + agua)</div>
         <div class="report-note" style="margin-bottom:8px;">Total por nutriente = aporte de fertilizantes en solución nutritiva + aporte del agua de riego.</div>
-        <div class="report-nutrient-wrap">
+        <div class="report-nutrient-wrap report-hydro-nutrient-wrap">
           ${[...hydroPpmMacroOrder, ...microNutrients].map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(ppmTotalsWithWater[n]).toFixed(2)} ppm</span>`).join('')}
         </div>
       </div>
       ${(() => {
+        const ppmToMeq = typeof hydroPpmToMeqForLegend === 'function'
+          ? hydroPpmToMeqForLegend
+          : function (n, ppm) {
+            const w = { N_NO3: 14, N_NH4: 14, Cl: 35.45 }[n];
+            return w ? (toNum(ppm) || 0) / w : 0;
+          };
         const tNo3 = toNum(ppmTotals.N_NO3);
         const tNh4 = toNum(ppmTotals.N_NH4);
         const tCl = toNum(ppmTotals.Cl);
         const wNo3 = toNum(waterPpm.N_NO3);
         const wNh4 = toNum(waterPpm.N_NH4);
         const wCl = toNum(waterPpm.Cl);
-        const nFer = tNo3 + tNh4;
-        const pNo3F = nFer > 0 ? (tNo3 / nFer) * 100 : 0;
-        const pNh4F = nFer > 0 ? (tNh4 / nFer) * 100 : 0;
-        const ncFer = tNo3 + tCl;
-        const pNo3NcF = ncFer > 0 ? (tNo3 / ncFer) * 100 : 0;
-        const pClF = ncFer > 0 ? (tCl / ncFer) * 100 : 0;
-        const sNo3 = tNo3 + wNo3;
-        const sNh4 = tNh4 + wNh4;
-        const sCl = tCl + wCl;
-        const nSol = sNo3 + sNh4;
-        const pNo3S = nSol > 0 ? (sNo3 / nSol) * 100 : 0;
-        const pNh4S = nSol > 0 ? (sNh4 / nSol) * 100 : 0;
-        const ncSol = sNo3 + sCl;
-        const pNo3NcS = ncSol > 0 ? (sNo3 / ncSol) * 100 : 0;
-        const pClS = ncSol > 0 ? (sCl / ncSol) * 100 : 0;
+        const mNo3F = ppmToMeq('N_NO3', tNo3);
+        const mNh4F = ppmToMeq('N_NH4', tNh4);
+        const mClF = ppmToMeq('Cl', tCl);
+        const nFer = mNo3F + mNh4F;
+        const pNo3F = nFer > 0 ? (mNo3F / nFer) * 100 : 0;
+        const pNh4F = nFer > 0 ? (mNh4F / nFer) * 100 : 0;
+        const ncFer = mNo3F + mClF;
+        const pNo3NcF = ncFer > 0 ? (mNo3F / ncFer) * 100 : 0;
+        const pClF = ncFer > 0 ? (mClF / ncFer) * 100 : 0;
+        const mNo3Sol = mNo3F + ppmToMeq('N_NO3', wNo3);
+        const mNh4Sol = mNh4F + ppmToMeq('N_NH4', wNh4);
+        const mClSol = mClF + ppmToMeq('Cl', wCl);
+        const nSol = mNo3Sol + mNh4Sol;
+        const pNo3S = nSol > 0 ? (mNo3Sol / nSol) * 100 : 0;
+        const pNh4S = nSol > 0 ? (mNh4Sol / nSol) * 100 : 0;
+        const ncSol = mNo3Sol + mClSol;
+        const pNo3NcS = ncSol > 0 ? (mNo3Sol / ncSol) * 100 : 0;
+        const pClS = ncSol > 0 ? (mClSol / ncSol) * 100 : 0;
         const fmt = (x) => (Number.isFinite(x) ? x.toFixed(1) : '0.0');
         if (nFer <= 0 && ncFer <= 0 && nSol <= 0 && ncSol <= 0) return '';
         const bitsF = [];
         if (nFer > 0) {
-          bitsF.push(`del N aportado (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`);
+          bitsF.push(`partición del N en <strong>meq/L</strong> (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`);
         }
         if (ncFer > 0) {
-          bitsF.push(`respecto a N-NO₃⁻ + Cl⁻ en ese aporte: <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`);
-        } else if (tCl <= 0 && nFer > 0) {
-          bitsF.push('sin Cl⁻ aportado por fertilizantes (aparece al usar KCl, cloruro de calcio, etc.)');
+          bitsF.push(`N-NO₃⁻ + Cl⁻ en <strong>meq/L</strong> (mismo aporte): <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`);
+        } else if (mClF <= 0 && nFer > 0) {
+          bitsF.push('sin Cl⁻ en meq/L por fertilizantes (aparece al usar KCl, cloruro de calcio, etc.)');
         }
         const lineF = bitsF.length
-          ? `<strong>Aporte solo fertilizantes (ppm):</strong> ${bitsF.join('; ')}.`
+          ? `<strong>Aporte solo fertilizantes:</strong> porcentajes sobre <strong>meq/L</strong> desde las ppm aportadas (N a 14 mg/meq, Cl⁻ a 35,45 mg/meq). ${bitsF.join('; ')}.`
           : '';
         const bitsS = [];
         if (nSol > 0) {
-          bitsS.push(`del N total (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`);
+          bitsS.push(`partición del N total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`);
         }
         if (ncSol > 0) {
-          bitsS.push(`respecto a N-NO₃⁻ + Cl⁻ total: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (incluye Cl⁻ del agua si lo capturaste)`);
-        } else if (sCl <= 0 && nSol > 0) {
-          bitsS.push('sin Cl⁻ en fertilizantes ni en agua para el par N-NO₃⁻ + Cl⁻');
+          bitsS.push(`N-NO₃⁻ + Cl⁻ total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (incluye agua si capturaste Cl⁻)`);
+        } else if (mClSol <= 0 && nSol > 0) {
+          bitsS.push('sin Cl⁻ en meq/L (fertilizantes ni agua) para el par N-NO₃⁻ + Cl⁻');
         }
         const lineS = bitsS.length
-          ? `<strong>Solución final (fertilizantes + agua, ppm):</strong> ${bitsS.join('; ')}.`
+          ? `<strong>Solución final (fertilizantes + agua):</strong> mismos criterios en <strong>meq/L</strong>. ${bitsS.join('; ')}.`
           : '';
         if (!lineF && !lineS) return '';
         return `
       <div class="report-block">
-        <div class="report-block-title">📎 Relación N-NO₃⁻ / N-NH₄⁺ y N-NO₃⁻ / Cl⁻</div>
+        <div class="report-block-title">📎 Relación N-NO₃⁻ / N-NH₄⁺ y N-NO₃⁻ / Cl⁻ (sobre meq/L)</div>
         <div class="report-note" style="margin-bottom:0;line-height:1.5;">${lineF}${lineF && lineS ? '<br><br>' : ''}${lineS}</div>
       </div>`;
       })()}

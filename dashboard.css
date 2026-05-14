@@ -3559,22 +3559,29 @@ body {
   box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.25);
 }
 
-/* Cálculo hidro: 8 macros (incl. Cl⁻) + 6 micros */
+/* Cálculo hidro: 8 macros (incl. Cl⁻) + 6 micros — rejilla fluida para que quepa en el ancho del card */
 .hydro-grid {
   display: grid;
-  grid-template-columns: repeat(8, minmax(68px, 1fr)) repeat(6, minmax(84px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 72px), 1fr));
+  gap: 6px;
   max-width: 100%;
+}
+
+.hydro-card #hydroObjectiveGrid.hydro-grid,
+.hydro-card #hydroWaterGrid.hydro-grid,
+.hydro-card #hydroMissingGrid.hydro-grid {
+  /* Objetivo / agua / requerimiento: celdas un poco más anchas que el bloque de aportes (más legible) */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 78px), 1fr));
 }
 
 .hydro-grid-item {
   background: #f8fafc;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 8px;
+  padding: 6px 7px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   min-width: 0; /* permite que el contenido respete el ancho de la celda */
 }
 
@@ -3596,13 +3603,14 @@ body {
 }
 
 .hydro-grid-label {
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.15;
   color: #64748b;
   font-weight: 600;
 }
 
 .hydro-grid-value {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: #0f172a;
 }
@@ -3615,11 +3623,11 @@ body {
   font-weight: 600;
 }
 
-/* Separador visual entre macros y micros (línea azul clara) — igual que antes */
+/* Separador visual entre macros y micros (línea azul clara); menos margen cuando la rejilla hace wrap */
 .hydro-grid-item-micro-start {
   border-left: 3px solid #7dd3fc;
-  margin-left: 4px;
-  padding-left: 12px;
+  margin-left: 0;
+  padding-left: 9px;
 }
 
 /* Columna Amonio: solo texto en tinto (no entra al triángulo K-Ca-Mg) */

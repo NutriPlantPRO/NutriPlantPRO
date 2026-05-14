@@ -20,8 +20,18 @@ const HYDRO_EQ_WEIGHTS = {
   K: 39.1,
   Ca: 20.04, // 40.08/2
   Mg: 12.15, // 24.3/2
-  S: 16.03   // SO4 2-
+  S: 16.03,  // SO4 2-
+  /** Cl⁻ (ppm elemental → meq/L). No entra en CE (hydroComputeCE); solo leyendas y conversiones ppm↔meq de Cl */
+  Cl: 35.45
 };
+
+/** N-NO₃⁻, N-NH₄⁺, Cl⁻: ppm en solución → meq/L (misma convención que la tabla meq/L de etapas + Cl manual). */
+function hydroPpmToMeqForLegend(n, ppmVal) {
+  if (n !== 'N_NO3' && n !== 'N_NH4' && n !== 'Cl') return 0;
+  const w = HYDRO_EQ_WEIGHTS[n];
+  if (!w) return 0;
+  return (parseFloat(ppmVal) || 0) / w;
+}
 
 function hydroComputeCE(stage) {
   const meq = stage.meq || {};
@@ -886,8 +896,8 @@ function renderHydroObjective() {
     grid.innerHTML = '<div class="hydro-muted">No hay etapa seleccionada</div>';
     return;
   }
-  grid.innerHTML = HYDRO_PPM_NUTRIENTS.map((n, i) => {
-    const extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : '');
+  grid.innerHTML = HYDRO_PPM_NUTRIENTS.map((n) => {
+    const extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Cl' ? ' hydro-grid-item-cl' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : ''));
     return `
     <div class="hydro-grid-item${extraClass}">
       <span class="hydro-grid-label">${hydroLabelHtml(n)}</span>
@@ -901,7 +911,7 @@ function renderHydroWater() {
   const grid = document.getElementById('hydroWaterGrid');
   if (!grid) return;
   grid.innerHTML = HYDRO_PPM_NUTRIENTS.map(n => {
-    const extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : '');
+    const extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Cl' ? ' hydro-grid-item-cl' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : ''));
     return `
     <div class="hydro-grid-item${extraClass}">
       <span class="hydro-grid-label">${hydroLabelHtml(n)}</span>
@@ -923,7 +933,7 @@ function renderHydroMissing() {
     const obj = parseFloat(stage.ppm?.[n] || 0);
     const water = parseFloat(hydroState.water?.[n] || 0);
     const missing = obj - water;
-    const extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : '');
+    const extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Cl' ? ' hydro-grid-item-cl' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : ''));
     return `
       <div class="hydro-grid-item${extraClass}">
         <span class="hydro-grid-label">${hydroLabelHtml(n)}</span>
@@ -989,45 +999,48 @@ function hydroBuildFertContributionRatioLegendHtml(totals, water) {
   const wNo3 = parseFloat(w.N_NO3) || 0;
   const wNh4 = parseFloat(w.N_NH4) || 0;
   const wCl = parseFloat(w.Cl) || 0;
-  const nFer = tNo3 + tNh4;
-  const pNo3F = nFer > 0 ? (tNo3 / nFer) * 100 : 0;
-  const pNh4F = nFer > 0 ? (tNh4 / nFer) * 100 : 0;
-  const ncFer = tNo3 + tCl;
-  const pNo3NcF = ncFer > 0 ? (tNo3 / ncFer) * 100 : 0;
-  const pClF = ncFer > 0 ? (tCl / ncFer) * 100 : 0;
-  const sNo3 = tNo3 + wNo3;
-  const sNh4 = tNh4 + wNh4;
-  const sCl = tCl + wCl;
-  const nSol = sNo3 + sNh4;
-  const pNo3S = nSol > 0 ? (sNo3 / nSol) * 100 : 0;
-  const pNh4S = nSol > 0 ? (sNh4 / nSol) * 100 : 0;
-  const ncSol = sNo3 + sCl;
-  const pNo3NcS = ncSol > 0 ? (sNo3 / ncSol) * 100 : 0;
-  const pClS = ncSol > 0 ? (sCl / ncSol) * 100 : 0;
+  const mNo3F = hydroPpmToMeqForLegend('N_NO3', tNo3);
+  const mNh4F = hydroPpmToMeqForLegend('N_NH4', tNh4);
+  const mClF = hydroPpmToMeqForLegend('Cl', tCl);
+  const nFer = mNo3F + mNh4F;
+  const pNo3F = nFer > 0 ? (mNo3F / nFer) * 100 : 0;
+  const pNh4F = nFer > 0 ? (mNh4F / nFer) * 100 : 0;
+  const ncFer = mNo3F + mClF;
+  const pNo3NcF = ncFer > 0 ? (mNo3F / ncFer) * 100 : 0;
+  const pClF = ncFer > 0 ? (mClF / ncFer) * 100 : 0;
+  const mNo3Sol = mNo3F + hydroPpmToMeqForLegend('N_NO3', wNo3);
+  const mNh4Sol = mNh4F + hydroPpmToMeqForLegend('N_NH4', wNh4);
+  const mClSol = mClF + hydroPpmToMeqForLegend('Cl', wCl);
+  const nSol = mNo3Sol + mNh4Sol;
+  const pNo3S = nSol > 0 ? (mNo3Sol / nSol) * 100 : 0;
+  const pNh4S = nSol > 0 ? (mNh4Sol / nSol) * 100 : 0;
+  const ncSol = mNo3Sol + mClSol;
+  const pNo3NcS = ncSol > 0 ? (mNo3Sol / ncSol) * 100 : 0;
+  const pClS = ncSol > 0 ? (mClSol / ncSol) * 100 : 0;
   const fmt = (x) => (Number.isFinite(x) ? x.toFixed(1) : '0.0');
   const bitsF = [];
   if (nFer > 0) {
-    bitsF.push(`del N aportado (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`);
+    bitsF.push(`partición del N en <strong>meq/L</strong> (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`);
   }
   if (ncFer > 0) {
-    bitsF.push(`respecto a N-NO₃⁻ + Cl⁻ en ese aporte: <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`);
-  } else if (tCl <= 0 && nFer > 0) {
-    bitsF.push('sin Cl⁻ aportado por fertilizantes (aparece al usar KCl, cloruro de calcio, etc.)');
+    bitsF.push(`N-NO₃⁻ + Cl⁻ en <strong>meq/L</strong> (mismo aporte): <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`);
+  } else if (mClF <= 0 && nFer > 0) {
+    bitsF.push('sin Cl⁻ en meq/L por fertilizantes (aparece al usar KCl, cloruro de calcio, etc.)');
   }
   const lineFert = bitsF.length
-    ? `<strong>Aporte solo fertilizantes (ppm):</strong> ${bitsF.join('; ')}.`
+    ? `<strong>Aporte solo fertilizantes:</strong> porcentajes sobre <strong>meq/L</strong> calculados desde las ppm aportadas (N a 14 mg/meq, Cl⁻ a 35,45 mg/meq). ${bitsF.join('; ')}.`
     : '';
   const bitsS = [];
   if (nSol > 0) {
-    bitsS.push(`del N total (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`);
+    bitsS.push(`partición del N total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`);
   }
   if (ncSol > 0) {
-    bitsS.push(`respecto a N-NO₃⁻ + Cl⁻ total: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (incluye Cl⁻ del agua si lo capturaste)`);
-  } else if (sCl <= 0 && nSol > 0) {
-    bitsS.push('sin Cl⁻ en fertilizantes ni en agua para el par N-NO₃⁻ + Cl⁻');
+    bitsS.push(`N-NO₃⁻ + Cl⁻ total en <strong>meq/L</strong>: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (incluye agua si capturaste Cl⁻)`);
+  } else if (mClSol <= 0 && nSol > 0) {
+    bitsS.push('sin Cl⁻ en meq/L (fertilizantes ni agua) para el par N-NO₃⁻ + Cl⁻');
   }
   const lineSol = bitsS.length
-    ? `<strong>Solución final (fertilizantes + agua, ppm):</strong> ${bitsS.join('; ')}.`
+    ? `<strong>Solución final (fertilizantes + agua):</strong> mismos criterios en <strong>meq/L</strong>. ${bitsS.join('; ')}.`
     : '';
   if (!lineFert && !lineSol) return '';
   return `<div class="hydro-fert-split-legend notranslate" translate="no">${lineFert}${lineFert && lineSol ? '<br>' : ''}${lineSol}</div>`;
@@ -1244,6 +1257,7 @@ function renderHydroFertTotals() {
         • <strong>Aporte total (ppm)</strong> = suma por nutriente de: dosis (ppm producto) × concentración elemental (%) ÷ 100.<br>
         • <strong>Producto sólido (kg)</strong> = dosis (ppm producto) × volumen de agua (m³) ÷ 1000.<br>
         • <strong>Producto líquido (L)</strong> = kg equivalente ÷ densidad (kg/L).<br>
+        La leyenda bajo «Pendiente por cubrir» expresa <strong>% sobre meq/L</strong> (desde las ppm aportadas: N-NO₃⁻/N-NH₄⁺ a 14 mg/meq, Cl⁻ a 35,45 mg/meq), alineado con la tabla meq/L de etapas.<br>
         Para <strong>${vol} m³</strong> de agua, los totales mostrados por tanque (total y por recarga) producen exactamente las ppm del «Aporte total estimado» en toda la solución.
       </div>`;
   }

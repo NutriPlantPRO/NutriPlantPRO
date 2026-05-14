@@ -5726,6 +5726,29 @@
       }
       return ledgerCellNumber(arr, laD) - ledgerCellNumber(arr, rbD);
     }
+    if (spec.op === 'arith') {
+      var laAr;
+      var rbAr;
+      if (b && b.headers && b.headers.length) {
+        var nhAr = b.headers.length;
+        var pairAr = ledgerHealDiffIndices(b, nhAr, spec.left, spec.right);
+        if (!pairAr) return NaN;
+        laAr = pairAr.left;
+        rbAr = pairAr.right;
+      } else {
+        laAr = parseInt(String(spec.left).trim(), 10);
+        rbAr = parseInt(String(spec.right).trim(), 10);
+        if (isNaN(laAr) || isNaN(rbAr)) return NaN;
+      }
+      var opCh = String(spec.operator || '+').trim();
+      var La = ledgerCellNumber(arr, laAr);
+      var Rb = ledgerCellNumber(arr, rbAr);
+      if (opCh === '+') return La + Rb;
+      if (opCh === '-') return La - Rb;
+      if (opCh === '*') return La * Rb;
+      if (opCh === '/') return Rb === 0 ? NaN : La / Rb;
+      return NaN;
+    }
     if (spec.op === 'sum' && spec.cols && spec.cols.length) {
       var nhS = Math.max(arr.length, (b && b.headers && b.headers.length) || 0);
       var rawList = [];
@@ -5794,6 +5817,16 @@
     var n = parseInt(String(raw != null ? raw : '').trim(), 10);
     if (isNaN(n) || n < 0 || n >= maxExclusive) return null;
     return n;
+  }
+
+  /** Normaliza el operador de operación libre A◦B (+ − × ÷). */
+  function ledgerNormalizeArithOperator(raw) {
+    var s = String(raw != null ? raw : '').trim();
+    if (s === '+' || s === '＋') return '+';
+    if (s === '-' || s === '−' || s === '–') return '-';
+    if (s === '*' || s === '×' || s.toLowerCase() === 'x') return '*';
+    if (s === '/' || s === '÷') return '/';
+    return null;
   }
 
   /**
@@ -5898,6 +5931,11 @@
         var cc = parseInt(String(spec.col).trim(), 10);
         if (isNaN(cc) || cc < 0 || cc >= nh) delete b.ledgerDerivedByCol[key];
         else b.ledgerDerivedByCol[key] = { op: 'copy', col: cc };
+      } else if (spec.op === 'arith') {
+        var pairAri = ledgerHealDiffIndices(b, nh, spec.left, spec.right);
+        var opN = ledgerNormalizeArithOperator(spec.operator);
+        if (!pairAri || !opN) delete b.ledgerDerivedByCol[key];
+        else b.ledgerDerivedByCol[key] = { op: 'arith', left: pairAri.left, right: pairAri.right, operator: opN };
       }
     }
   }
@@ -5919,7 +5957,8 @@
         '5 = Fórmula RESTA (columna A − columna B)\n' +
         '6 = Fórmula SUMA (A + B + … ; índices separados por coma)\n' +
         '7 = Fórmula PRODUCTO (A × B × … ; ej. unidades × precio)\n' +
-        '8 = Copiar valor numérico de otra columna',
+        '8 = Copiar valor numérico de otra columna\n' +
+        '9 = Operación libre (A ◦ B : elige + − × ÷ entre dos columnas)',
       '1'
     );
     if (tipo == null) return false;
@@ -6028,8 +6067,40 @@
       b.headers.push(String(h8).trim() || 'Valor');
       b.colKinds.push('derived');
       b.ledgerDerivedByCol[String(newIdx)] = { op: 'copy', col: icx };
+    } else if (tipo === '9') {
+      var a9 = window.prompt(
+        guide +
+          'OPERACIÓN LIBRE — índice columna A (primer operando). Ej: 1=Monto\nÍndice A:',
+        nh >= 2 ? '1' : '0'
+      );
+      var ia9 = ledgerParseColIndex(a9, newIdx);
+      if (ia9 == null) {
+        showToast('Índice A no válido.', true);
+        return false;
+      }
+      var opRaw = window.prompt(
+        guide + 'OPERACIÓN LIBRE — operador entre A y B: +  −  *  /   (también × o ÷)',
+        '+'
+      );
+      if (opRaw == null) return false;
+      var opNorm = ledgerNormalizeArithOperator(opRaw);
+      if (!opNorm) {
+        showToast('Operador no válido. Usa + − * /', true);
+        return false;
+      }
+      var b9 = window.prompt(guide + 'OPERACIÓN LIBRE — índice columna B (segundo operando):', nh >= 2 ? '2' : '1');
+      var ib9 = ledgerParseColIndex(b9, newIdx);
+      if (ib9 == null) {
+        showToast('Índice B no válido.', true);
+        return false;
+      }
+      var h9 = window.prompt('Nombre de la columna (operación):', 'Resultado');
+      if (h9 == null) return false;
+      b.headers.push(String(h9).trim() || 'Resultado');
+      b.colKinds.push('derived');
+      b.ledgerDerivedByCol[String(newIdx)] = { op: 'arith', left: ia9, right: ib9, operator: opNorm };
     } else {
-      showToast('Opción no reconocida (usa 1–8).', true);
+      showToast('Opción no reconocida (usa 1–9).', true);
       return false;
     }
 
@@ -7262,7 +7333,7 @@
         lbAddCol.className = 'btn btn-ghost btn-ghost-blue';
         lbAddCol.textContent = '＋ Columna';
         lbAddCol.title =
-          'Añade columna: moneda, número (unidades), texto, % o fórmulas (resta, suma, producto, copiar valor).';
+          'Añade columna: moneda, número (unidades), texto, % o fórmulas (resta, suma, producto, copiar valor, operación libre +−×÷).';
         lbAddCol.addEventListener('click', function (e) {
           e.preventDefault();
           ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
