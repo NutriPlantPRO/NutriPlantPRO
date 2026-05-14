@@ -4531,17 +4531,42 @@
   function insertRichSnippet(kind, editorEl) {
     var html = '';
     if (kind === 'warn') {
-      html = '<span class="np-rich-flag">⚠︎ Importante</span>&nbsp;';
+      html = '<span class="np-rich-flag">⚠︎ Importante</span>&#xa0;';
     } else if (kind === 'star') {
-      html = '<span class="np-rich-flag np-rich-flag-star">★ Destacado</span>&nbsp;';
+      html = '<span class="np-rich-flag np-rich-flag-star">★ Destacado</span>&#xa0;';
     }
     if (!html) return;
     var target = editorEl || $('npBodyRich');
     if (!target) return;
     target.focus();
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    var range = sel.getRangeAt(0).cloneRange();
+    if (!target.contains(range.commonAncestorContainer)) return;
+
+    var holder = document.createElement('div');
+    holder.innerHTML = sanitizeRich(html);
+    var frag = document.createDocumentFragment();
+    while (holder.firstChild) {
+      frag.appendChild(holder.firstChild);
+    }
+    var last = frag.lastChild;
+    if (!last) return;
+
+    range.deleteContents();
     try {
-      document.execCommand('insertHTML', false, sanitizeRich(html));
-    } catch (e) {}
+      range.insertNode(frag);
+    } catch (errIns) {
+      try {
+        document.execCommand('insertHTML', false, sanitizeRich(html));
+      } catch (e2) {}
+      return;
+    }
+
+    range.setStartAfter(last);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
   }
 
   function handleRichToolbarClick(e, editorEl) {
