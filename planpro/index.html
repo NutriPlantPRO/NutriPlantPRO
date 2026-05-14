@@ -3891,16 +3891,6 @@
                 <form id="npFormCreate">
                   <label for="npTitle" class="np-compact-label">Resumen / título</label>
                   <input id="npTitle" class="np-title-compact" name="title" required maxlength="500" placeholder="Título" />
-                  <label class="np-compact-label">Tablas y bloques extra</label>
-                  <div class="np-tools-row">
-                    <button type="button" class="btn btn-ghost btn-ghost-np-note" id="npBtnAddNoteBlock">＋ Bloque de texto</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-smart" id="npBtnAddSmartTable">＋ Tabla seguimiento PRO</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-tasks" id="npBtnAddTaskTable">＋ Tabla de tareas</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-free" id="npBtnAddMiniSheet">＋ Tabla libre</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-ledger" id="npBtnAddLedgerSheet">＋ Tabla de montos</button>
-                    <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
-                  </div>
-                  <div id="npMiniSheetPreview" class="np-hide"></div>
                   <label class="np-compact-label">Hoja en blanco</label>
                   <div id="npRichToolbar" class="np-rich-toolbar">
                     <span class="np-rich-grp">
@@ -3944,6 +3934,16 @@
                       <div id="npBodyRich" class="np-rich-editor np-rich-empty" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true"></div>
                     </div>
                   </div>
+                  <label class="np-compact-label" style="margin-top:14px;">Tablas y bloques extra</label>
+                  <div class="np-tools-row">
+                    <button type="button" class="btn btn-ghost btn-ghost-np-note" id="npBtnAddNoteBlock">＋ Bloque de texto</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-smart" id="npBtnAddSmartTable">＋ Tabla seguimiento PRO</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-tasks" id="npBtnAddTaskTable">＋ Tabla de tareas</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-free" id="npBtnAddMiniSheet">＋ Tabla libre</button>
+                    <button type="button" class="btn btn-ghost btn-ghost-np-ledger" id="npBtnAddLedgerSheet">＋ Tabla de montos</button>
+                    <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
+                  </div>
+                  <div id="npMiniSheetPreview" class="np-hide"></div>
                   <button type="submit" class="btn btn-primary" id="npBtnCreate">Guardar apunte</button>
                 </form>
               </div>
@@ -4125,6 +4125,16 @@
       pendingPreviewRefreshRaf = null;
     }
     refreshPendingHint();
+  }
+
+  /**
+   * Borrador de tablas/bloques del formulario «crear apunte» es global en memoria.
+   * Si cambias de rama o planta sin vaciarlo, el hint «N bloques» y la vista previa parecen
+   * pertenecer a la rama nueva aunque solo correspondían a la anterior.
+   */
+  function resetCreateFormPendingBlocks() {
+    state.pendingBlocks = [];
+    flushPendingPreviewRefresh();
   }
 
   function $(id) { return document.getElementById(id); }
@@ -5037,6 +5047,7 @@
     closePillarTabFlyout();
     var changed = state.selectedAreaId !== areaId;
     if (changed) {
+      resetCreateFormPendingBlocks();
       state.selectedAreaId = areaId;
       state.selectedCategoryId = null;
       renderPillarTabs();
@@ -5724,6 +5735,7 @@
       arr.push('');
       b.rows[idx] = arr;
     });
+    ensureLedgerBlock(b);
     return true;
   }
 
@@ -6316,6 +6328,44 @@
       ncol,
       b.variant === 'smart' ? NP_SMART_MIN_COLS : b.variant === 'tasks' ? NP_TASKS_MIN_COLS : 1
     );
+  }
+
+  /**
+   * Copia inputs del sheet ledger al modelo antes de sumar pies / fórmulas.
+   * Sin esto, MONTO u otras columnas pueden mostrar Σ 0 aunque haya números en pantalla.
+   */
+  function ledgerSyncEditableCellsFromDOM(wrap, b, ncol) {
+    if (!wrap || !b || b.type !== 'mini_sheet' || b.variant !== 'ledger') return;
+    if (!Array.isArray(b.rows)) b.rows = [];
+    var n =
+      typeof ncol === 'number' && ncol > 0
+        ? ncol
+        : Math.max(miniSheetColCountForAggr(b), (b.headers || []).length, 1);
+    function patchCell(ri, ci, val) {
+      while (b.rows.length <= ri) {
+        var nr = [];
+        for (var p = 0; p < n; p++) nr.push('');
+        b.rows.push(nr);
+      }
+      var rowArr = b.rows[ri];
+      if (!Array.isArray(rowArr)) rowArr = padRowCells(rowArr, n);
+      b.rows[ri] = rowArr;
+      while (rowArr.length < n) rowArr.push('');
+      rowArr[ci] = val;
+    }
+    wrap.querySelectorAll('.np-ms-sheet input.np-ms-cell-input').forEach(function (inp) {
+      if (inp.classList.contains('np-ms-cell-input-date')) return;
+      var ri = parseInt(inp.getAttribute('data-np-row'), 10);
+      var ci = parseInt(inp.getAttribute('data-np-col'), 10);
+      if (isNaN(ri) || isNaN(ci) || ci < 0 || ci >= n) return;
+      patchCell(ri, ci, inp.value != null ? String(inp.value) : '');
+    });
+    wrap.querySelectorAll('.np-ms-sheet textarea.np-ms-cell-input').forEach(function (tx) {
+      var ri = parseInt(tx.getAttribute('data-np-row'), 10);
+      var ci = parseInt(tx.getAttribute('data-np-col'), 10);
+      if (isNaN(ri) || isNaN(ci) || ci < 0 || ci >= n) return;
+      patchCell(ri, ci, tx.value != null ? String(tx.value) : '');
+    });
   }
 
   /** Cuenta filas con prioridad en tablas tareas / seguimiento (body_blocks). */
@@ -6912,6 +6962,7 @@
           'Añade columna: moneda, número (unidades), texto, % o fórmulas (resta, suma, producto, copiar valor).';
         lbAddCol.addEventListener('click', function (e) {
           e.preventDefault();
+          ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
           ensureLedgerBlock(b);
           if (ledgerInteractiveAddColumn(b)) afterStructuralChange();
         });
@@ -6922,6 +6973,7 @@
         lbDelCol.title = 'Quita solo la última columna (revisa fórmulas que usen índices).';
         lbDelCol.addEventListener('click', function (e) {
           e.preventDefault();
+          ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
           ensureLedgerBlock(b);
           if (ledgerRemoveLastColumn(b)) afterStructuralChange();
         });
@@ -6933,6 +6985,7 @@
           'Define qué columna usa el % automático (suel ser “Monto” o el total calculado de la fila).';
         lbBaseM.addEventListener('click', function (e) {
           e.preventDefault();
+          ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
           ensureLedgerBlock(b);
           var g = ledgerColGuideLine(b);
           var raw = window.prompt(
@@ -6954,6 +7007,7 @@
         lbRow.className = 'btn btn-ghost btn-ghost-green';
         lbRow.textContent = '＋ Fila';
         lbRow.addEventListener('click', function () {
+          ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
           var nr = [];
           for (var pj = 0; pj < ncol; pj++) nr.push('');
           b.rows.push(nr);
@@ -6981,6 +7035,7 @@
           afterStructuralChange();
         });
         function applyLedgerTemplate(which) {
+          ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
           if (b.headers.length > 4 && !window.confirm('Esto redefine columnas y fórmulas de esta tabla. ¿Seguir?')) return;
           if (which === 'gasto') {
             b.headers = ['Concepto', 'Monto', 'Pagado', 'Restante', '%', 'Notas'];
@@ -7086,6 +7141,7 @@
 
       function refreshLedgerDerivedUI() {
         if (!isLedger) return;
+        ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
         var totalM = ledgerPrincipalTotal(b.rows, b, ncol);
         if (b.ledgerPctMode !== 'manual') {
           wrap.querySelectorAll('[data-pct-row]').forEach(function (el) {
@@ -7406,6 +7462,11 @@
                 setCell(ri, isNaN(ci) ? c : ci, inpCur.value);
                 refreshLedgerDerivedUI();
               });
+              inpCur.addEventListener('blur', function () {
+                var ciB = parseInt(inpCur.getAttribute('data-np-col'), 10);
+                setCell(ri, isNaN(ciB) ? c : ciB, inpCur.value);
+                refreshLedgerDerivedUI();
+              });
               cell.appendChild(inpCur);
             } else {
               var spCur = document.createElement('div');
@@ -7433,6 +7494,7 @@
               inpPctM.addEventListener('blur', function () {
                 var ciPb = parseInt(inpPctM.getAttribute('data-np-col'), 10);
                 setCell(ri, isNaN(ciPb) ? c : ciPb, inpPctM.value);
+                refreshLedgerDerivedUI();
               });
               cell.appendChild(inpPctM);
             } else {
@@ -7674,6 +7736,13 @@
       if (ledgerToolbarEl) wrap.appendChild(ledgerToolbarEl);
 
       if (pendingFreeToolbar) wrap.appendChild(pendingFreeToolbar);
+
+      if (editable && isLedger) {
+        try {
+          ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
+          refreshLedgerDerivedUI();
+        } catch (eLedFoot) {}
+      }
 
       frag.appendChild(wrap);
       } catch (errPlanProBlock) {
@@ -8102,6 +8171,9 @@
   }
 
   function selectCategory(catId) {
+    if (catId !== state.selectedCategoryId) {
+      resetCreateFormPendingBlocks();
+    }
     state.selectedCategoryId = catId;
     syncTreeActiveHighlight();
     updateSelectionUI();
@@ -8313,6 +8385,7 @@
         sort_order: state.areas.length
       }).select('id').single();
       if (!res.error && res.data && res.data.id) {
+        resetCreateFormPendingBlocks();
         state.selectedAreaId = res.data.id;
         state.selectedCategoryId = null;
         await loadLookups();
@@ -8342,7 +8415,12 @@
     }
     var newId = res.data && res.data.id;
     await loadLookups();
-    if (newId) state.selectedCategoryId = newId;
+    if (newId) {
+      if (newId !== state.selectedCategoryId) {
+        resetCreateFormPendingBlocks();
+      }
+      state.selectedCategoryId = newId;
+    }
     renderTree();
     updateSelectionUI();
     loadItems();
@@ -8418,6 +8496,9 @@
       return;
     }
     await loadLookups();
+    if (nextSel !== prevSel) {
+      resetCreateFormPendingBlocks();
+    }
     showToast(ids.length > 1 ? 'Ramas archivadas.' : 'Rama archivada.');
   }
 
@@ -8454,6 +8535,9 @@
       return;
     }
     await loadLookups();
+    if (nextSel !== prevSel) {
+      resetCreateFormPendingBlocks();
+    }
     showToast('Rama eliminada.');
   }
 
@@ -9181,6 +9265,7 @@
     closePillarTabFlyout();
     closeCatColorFlyout();
     if (id === state.selectedAreaId) return;
+    resetCreateFormPendingBlocks();
     state.selectedAreaId = id;
     state.selectedCategoryId = null;
     renderPillarTabs();
