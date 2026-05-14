@@ -13028,34 +13028,40 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-admin-table.report-vpd-wide-table {
           table-layout: fixed;
           width: 100%;
+          min-width: 0;
+          font-size: 8.5px;
         }
         .report-admin-table.report-vpd-wide-table th,
         .report-admin-table.report-vpd-wide-table td {
           width: auto;
+          padding: 4px 5px;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          vertical-align: middle;
         }
         .report-admin-table.report-vpd-wide-table th {
           width: auto;
         }
         .report-admin-table.report-vpd-wide-table th:nth-child(1),
-        .report-admin-table.report-vpd-wide-table td:nth-child(1) { width: 12%; }
+        .report-admin-table.report-vpd-wide-table td:nth-child(1) { width: 10%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(2),
-        .report-admin-table.report-vpd-wide-table td:nth-child(2) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table td:nth-child(2) { width: 8%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(3),
-        .report-admin-table.report-vpd-wide-table td:nth-child(3) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table td:nth-child(3) { width: 11%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(4),
-        .report-admin-table.report-vpd-wide-table td:nth-child(4) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table td:nth-child(4) { width: 8%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(5),
-        .report-admin-table.report-vpd-wide-table td:nth-child(5) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table td:nth-child(5) { width: 11%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(6),
-        .report-admin-table.report-vpd-wide-table td:nth-child(6) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table td:nth-child(6) { width: 9%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(7),
-        .report-admin-table.report-vpd-wide-table td:nth-child(7) { width: 10%; }
+        .report-admin-table.report-vpd-wide-table td:nth-child(7) { width: 9%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(8),
-        .report-admin-table.report-vpd-wide-table td:nth-child(8) { width: 14%; }
+        .report-admin-table.report-vpd-wide-table td:nth-child(8) { width: 9%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(9),
         .report-admin-table.report-vpd-wide-table td:nth-child(9) { width: 12%; }
         .report-admin-table.report-vpd-wide-table th:nth-child(10),
-        .report-admin-table.report-vpd-wide-table td:nth-child(10) { width: 12%; }
+        .report-admin-table.report-vpd-wide-table td:nth-child(10) { width: 13%; }
         .report-admin-table.report-vpd-wide-table:not(.report-vpd-cols-6) th:nth-child(2),
         .report-admin-table.report-vpd-wide-table:not(.report-vpd-cols-6) td:nth-child(2) { border-left: 3px solid #fdba74; }
         .report-admin-table.report-vpd-wide-table th:nth-child(4),
@@ -13071,12 +13077,17 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-admin-table.report-vpd-wide-table th:nth-child(10),
         .report-admin-table.report-vpd-wide-table td:nth-child(10) { border-left: 3px solid #fdba74; }
         .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 th:nth-child(1),
-        .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 td:nth-child(1) { width: 25%; }
+        .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 td:nth-child(1) { width: 17%; }
         .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 th:nth-child(n+2),
-        .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 td:nth-child(n+2) { width: 15%; }
+        .report-admin-table.report-vpd-wide-table.report-vpd-cols-6 td:nth-child(n+2) { width: 13.833%; }
+        .report-vpd-table-wrap .report-admin-table.report-vpd-history-table {
+          table-layout: fixed;
+          width: 100%;
+        }
         .report-admin-table.report-vpd-saved-table {
           table-layout: fixed;
           width: 100%;
+          min-width: 0;
         }
         .report-admin-table.report-vpd-saved-table th,
         .report-admin-table.report-vpd-saved-table td { width: auto; }
@@ -13096,11 +13107,84 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-admin-table.report-vpd-saved-table td:nth-child(7) { width: 14%; }
         .report-admin-table.report-vpd-saved-table th:nth-child(8),
         .report-admin-table.report-vpd-saved-table td:nth-child(8) { width: 16%; text-align: right; }
+        /* VPD (PDF): contorno redondeado y cabeceras “pro”; cabe en A4 */
+        .report-vpd-table-wrap {
+          margin-top: 8px;
+          border-radius: 14px;
+          overflow: hidden;
+          border: 1px solid #fdba74;
+          background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%);
+          box-shadow:
+            0 4px 16px rgba(245, 158, 11, 0.11),
+            0 0 0 1px rgba(255, 255, 255, 0.82) inset;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .report-vpd-table-wrap .report-admin-table {
+          margin: 0;
+          border: none;
+          font-size: 8.25px;
+        }
+        .report-vpd-table-wrap .report-admin-table th,
+        .report-vpd-table-wrap .report-admin-table td {
+          border-color: #fde68a;
+        }
+        .report-vpd-table-wrap .report-admin-table thead th {
+          background: linear-gradient(180deg, #fde68a 0%, #fef3c7 50%, #fffbeb 100%);
+          color: #78350f;
+          font-weight: 800;
+          font-size: 8.75px;
+          letter-spacing: 0.02em;
+          text-align: center;
+          padding: 8px 6px;
+          vertical-align: middle;
+          width: auto;
+          border-bottom: 2px solid #f59e0b;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .report-vpd-table-wrap .report-admin-table.report-vpd-wide-table thead th {
+          font-size: 7.45px;
+          padding: 7px 4px;
+          line-height: 1.15;
+        }
+        .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table thead th {
+          font-size: 7.85px;
+          padding: 7px 5px;
+        }
+        .report-vpd-table-wrap .report-admin-table.report-vpd-history-table thead th {
+          font-size: 8.35px;
+          padding: 8px 6px;
+        }
+        .report-vpd-table-wrap .report-admin-table tbody td {
+          background: #ffffff;
+          font-size: 8.1px;
+          padding: 5px 5px;
+          vertical-align: middle;
+        }
+        .report-vpd-table-wrap .report-admin-table tbody tr:nth-child(even) td {
+          background: #fffdf5;
+        }
+        .report-vpd-table-wrap .report-admin-table.report-vpd-wide-table td:first-child,
+        .report-vpd-table-wrap .report-admin-table.report-vpd-wide-table th:first-child {
+          text-align: left;
+        }
+        .report-vpd-table-wrap .report-admin-table.report-vpd-wide-table td:not(:first-child) {
+          text-align: center;
+        }
+        .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table td:nth-child(5),
+        .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table td:nth-child(8) {
+          text-align: right;
+        }
+        .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table th:nth-child(5),
+        .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table th:nth-child(8) {
+          text-align: right;
+        }
         @media (max-width: 720px) {
           .report-block { overflow-x: auto; }
-          .report-table-wrap .report-app-table { min-width: 980px; }
-          .report-admin-table.report-vpd-wide-table { min-width: 860px; }
-          .report-admin-table.report-vpd-saved-table { min-width: 780px; }
+          .report-table-wrap:not(.report-granular-materials):not(.report-pdf-compact-table):not(.report-hydro-table-wrap) .report-app-table { min-width: 980px; }
+          .report-admin-table.report-vpd-wide-table { min-width: 0; max-width: 100%; }
+          .report-admin-table.report-vpd-saved-table { min-width: 0; max-width: 100%; }
         }
         .report-admin-table td {
           color: #0f172a;
@@ -13264,6 +13348,66 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           border-color: #cbd5e1;
           box-shadow: 0 3px 14px rgba(15, 23, 42, 0.07), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
         }
+        /* Nutrición granular (PDF): muchas columnas — cabe en ancho útil sin cortar Mo/SiO₂ */
+        .report-table-wrap.report-granular-materials {
+          overflow-x: auto;
+        }
+        .report-table-wrap.report-granular-materials .report-app-table {
+          table-layout: fixed;
+          width: 100%;
+          min-width: 0;
+          font-size: 7.65px;
+        }
+        .report-table-wrap.report-granular-materials .report-app-table th,
+        .report-table-wrap.report-granular-materials .report-app-table td {
+          padding: 3px 4px;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          vertical-align: middle;
+        }
+        .report-table-wrap.report-granular-materials .report-app-table thead th {
+          font-size: 7.1px;
+          line-height: 1.12;
+          padding: 4px 3px;
+        }
+        .report-table-wrap.report-granular-materials .report-app-table th:first-child,
+        .report-table-wrap.report-granular-materials .report-app-table td:first-child {
+          width: 11%;
+        }
+        .report-table-wrap.report-granular-materials .report-app-table th:nth-child(2),
+        .report-table-wrap.report-granular-materials .report-app-table td:nth-child(2) {
+          width: 4.2%;
+        }
+        /* Fertirriego (PDF): tablas Macros/Micros — muchas columnas, mismo criterio que granular */
+        .report-table-wrap.report-pdf-compact-table {
+          overflow-x: auto;
+        }
+        .report-table-wrap.report-pdf-compact-table .report-app-table {
+          table-layout: fixed;
+          width: 100%;
+          min-width: 0;
+          font-size: 7.55px;
+        }
+        .report-table-wrap.report-pdf-compact-table .report-app-table th,
+        .report-table-wrap.report-pdf-compact-table .report-app-table td {
+          padding: 3px 4px;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          vertical-align: middle;
+        }
+        .report-table-wrap.report-pdf-compact-table .report-app-table thead th {
+          font-size: 7px;
+          line-height: 1.12;
+          padding: 4px 3px;
+        }
+        .report-table-wrap.report-pdf-compact-table .report-app-table th:first-child,
+        .report-table-wrap.report-pdf-compact-table .report-app-table td:first-child {
+          width: 8.5%;
+        }
+        .report-table-wrap.report-pdf-compact-table .report-app-table th:nth-child(2),
+        .report-table-wrap.report-pdf-compact-table .report-app-table td:nth-child(2) {
+          width: 3.5%;
+        }
         .report-app-table {
           width: 100%;
           border-collapse: collapse;
@@ -13321,20 +13465,28 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           border-radius: 12px;
           overflow: hidden;
           border: 1px solid #bae6fd;
+          table-layout: fixed;
+          width: 100%;
+          min-width: 0;
+          font-size: 7.55px;
         }
         .report-hydro-table-wrap .report-app-table th,
         .report-hydro-table-wrap .report-app-table td {
           border: none;
           border-right: 1px solid #e2e8f0;
           border-bottom: 1px solid #e2e8f0;
+          padding: 3px 4px;
+          overflow-wrap: anywhere;
+          word-break: break-word;
         }
         .report-hydro-table-wrap .report-app-table thead th {
           background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 100%);
           color: #0c4a6e;
           font-weight: 700;
-          font-size: 9.5px;
+          font-size: 7.05px;
           letter-spacing: 0.02em;
-          padding: 8px 10px;
+          padding: 4px 3px;
+          line-height: 1.12;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
@@ -13461,6 +13613,41 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           .report-section-first {
             break-before: auto;
             page-break-before: auto;
+          }
+          .report-table-wrap.report-granular-materials .report-app-table {
+            font-size: 7.1px;
+          }
+          .report-table-wrap.report-granular-materials .report-app-table th,
+          .report-table-wrap.report-granular-materials .report-app-table td {
+            padding: 2px 3px;
+          }
+          .report-table-wrap.report-pdf-compact-table .report-app-table {
+            font-size: 7.05px;
+          }
+          .report-table-wrap.report-pdf-compact-table .report-app-table th,
+          .report-table-wrap.report-pdf-compact-table .report-app-table td {
+            padding: 2px 3px;
+          }
+          .report-hydro-table-wrap .report-app-table {
+            font-size: 7.05px;
+          }
+          .report-hydro-table-wrap .report-app-table th,
+          .report-hydro-table-wrap .report-app-table td {
+            padding: 2px 3px;
+          }
+          .report-hydro-table-wrap .report-app-table thead th {
+            font-size: 6.65px;
+          }
+          .report-vpd-table-wrap .report-admin-table.report-vpd-wide-table thead th {
+            font-size: 6.85px;
+            padding: 5px 3px;
+          }
+          .report-vpd-table-wrap .report-admin-table tbody td {
+            font-size: 7.35px;
+            padding: 4px 4px;
+          }
+          .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table thead th {
+            font-size: 7.2px;
           }
         }
       </style>
@@ -14444,7 +14631,7 @@ function createGranularSectionHTML() {
     `;
 
     return `
-      <div class="report-table-wrap report-table-wrap--muted">
+      <div class="report-table-wrap report-table-wrap--muted report-granular-materials">
       <table class="report-app-table">
         <thead>
           <tr>
@@ -14948,7 +15135,7 @@ function createFertigationSectionHTML(chartImages) {
         <p class="report-note report-table-legend">
           <strong>Leyenda:</strong> A la izquierda, dosis de cada fertilizante; a la derecha de la línea, <strong>aportes de macronutrientes (kg/ha)</strong>. La tabla Micros usa las mismas filas con los micros en kg/ha —es el mismo plan, no dos aplicaciones.
         </p>
-        <div class="report-table-wrap">
+        <div class="report-table-wrap report-pdf-compact-table">
         <table class="report-app-table">
           <thead>
             <tr>
@@ -14978,7 +15165,7 @@ function createFertigationSectionHTML(chartImages) {
         <p class="report-note report-table-legend">
           <strong>Leyenda:</strong> Mismas filas que Macros. A la derecha de la línea, <strong>aportes de micronutrientes (kg/ha)</strong>. No sumar con Macros como si fueran dos riegos distintos.
         </p>
-        <div class="report-table-wrap">
+        <div class="report-table-wrap report-pdf-compact-table">
         <table class="report-app-table">
           <thead>
             <tr>
@@ -15614,7 +15801,8 @@ function createVPDReportSectionHTML() {
       </div>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
         <div class="report-block-title">📜 Historial de Cálculos (${history.length})</div>
-        <table class="report-admin-table">
+        <div class="report-vpd-table-wrap">
+        <table class="report-admin-table report-vpd-history-table">
           <thead>
             <tr>
               <th>Tipo</th>
@@ -15627,6 +15815,7 @@ function createVPDReportSectionHTML() {
             ${historyRows || '<tr><td colspan="4" style="text-align:center;color:#64748b;">Sin historial de cálculos.</td></tr>'}
           </tbody>
         </table>
+        </div>
       </div>
       ${currentRangeTable ? `
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
@@ -15636,6 +15825,7 @@ function createVPDReportSectionHTML() {
           ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.granularity) || 'diario'))}
           (${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.startDate) || '—'))} a ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.endDate) || '—'))})
         </div>
+        <div class="report-vpd-table-wrap">
         <table class="report-admin-table report-vpd-wide-table">
           <thead>
             <tr>
@@ -15655,9 +15845,11 @@ function createVPDReportSectionHTML() {
             ${stressSummaryRows || '<tr><td colspan="10" style="text-align:center;color:#64748b;">Sin datos de rango.</td></tr>'}
           </tbody>
         </table>
+        </div>
       </div>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
         <div class="report-block-title">⏱️ Horas críticas (${Array.isArray(currentRangeTable.criticalRows) ? currentRangeTable.criticalRows.length : 0})</div>
+        <div class="report-vpd-table-wrap">
         <table class="report-admin-table report-vpd-wide-table report-vpd-cols-6">
           <thead>
             <tr>
@@ -15674,11 +15866,13 @@ function createVPDReportSectionHTML() {
             ${stressCriticalRows || '<tr><td colspan="7" style="text-align:center;color:#64748b;">Sin horas fuera de rango.</td></tr>'}
           </tbody>
         </table>
+        </div>
       </div>
       ` : ''}
       ${savedRangeTables.length ? `
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
         <div class="report-block-title">💾 Cuadros guardados de VPD (${savedRangeTables.length})</div>
+        <div class="report-vpd-table-wrap">
         <table class="report-admin-table report-vpd-saved-table">
           <thead>
             <tr>
@@ -15696,6 +15890,7 @@ function createVPDReportSectionHTML() {
             ${savedRangesRows}
           </tbody>
         </table>
+        </div>
       </div>
       ` : ''}
     </div>

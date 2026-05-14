@@ -94,9 +94,9 @@ function withSharedViewChrome(reportHtml, expiresAt, options) {
       .report-header-meta,.footer-row{flex-direction:column!important;align-items:stretch!important;gap:10px}
       .report-header-generated-by,.report-generated-by{white-space:normal!important;text-align:left!important;margin-left:0!important}
       .report-block{overflow-x:auto}
-      .report-table-wrap .report-app-table{min-width:980px}
-      .report-admin-table.report-vpd-wide-table{min-width:860px}
-      .report-admin-table.report-vpd-saved-table{min-width:780px}
+      .report-table-wrap:not(.report-granular-materials):not(.report-pdf-compact-table):not(.report-hydro-table-wrap) .report-app-table{min-width:980px}
+      .report-admin-table.report-vpd-wide-table{min-width:0;max-width:100%}
+      .report-admin-table.report-vpd-saved-table{min-width:0;max-width:100%}
     }
     /* Solo en vista compartida: evita que la marca de agua quede detrás de la banda */
     .report-watermark-corner{top:60px!important}
