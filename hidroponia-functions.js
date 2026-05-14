@@ -6,8 +6,8 @@ const HYDRO_MEQ_NUTRIENTS = ['N_NH4','N_NO3','P','S','K','Ca','Mg'];
 const HYDRO_ANIONS = ['N_NO3','P','S'];           // % entre ellos (100% aniones)
 const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];   // % entre K+Ca+Mg (100%, triángulo)
 // N_NH4: % del total catiónico (K+Ca+Mg+NH4), no entra al triángulo
-// Mismo orden que Solución por etapa: NH₄⁺, NO₃⁻, H₂PO₄⁻, SO₄²⁻, K⁺, Ca²⁺, Mg²⁺, luego micros
-const HYDRO_PPM_NUTRIENTS = ['N_NH4','N_NO3','P','S','K','Ca','Mg','Fe','Mn','B','Zn','Cu','Mo'];
+// Mismo orden que Solución por etapa: NH₄⁺, NO₃⁻, H₂PO₄⁻, SO₄²⁻, Cl⁻ (objetivo ppm manual), K⁺, Ca²⁺, Mg²⁺, luego micros
+const HYDRO_PPM_NUTRIENTS = ['N_NH4','N_NO3','P','S','Cl','K','Ca','Mg','Fe','Mn','B','Zn','Cu','Mo'];
 const HYDRO_MICROS = ['Fe','Mn','B','Zn','Cu','Mo'];
 const HYDRO_N_SPLIT = { NO3: 95, NH4: 5 };
 // Conversión óxido → elemental (para materiales de fertirriego usados en hidroponía)
@@ -39,6 +39,7 @@ function hydroLabelPlain(n) {
     case 'N_NO3': return 'N-NO₃⁻';
     case 'P': return 'P-H₂PO₄⁻';
     case 'S': return 'S-SO₄²⁻';
+    case 'Cl': return 'Cl⁻';
     case 'K': return 'K⁺';
     case 'Ca': return 'Ca²⁺';
     case 'Mg': return 'Mg²⁺';
@@ -108,7 +109,8 @@ function hydroMaterialToElemental(mat) {
     N_NO3: parseFloat(mat.N_NO3) || 0,
     P, S: S_ele, K, Ca, Mg,
     Fe: parseFloat(mat.Fe) || 0, Mn: parseFloat(mat.Mn) || 0, B: parseFloat(mat.B) || 0,
-    Zn: parseFloat(mat.Zn) || 0, Cu: parseFloat(mat.Cu) || 0, Mo: parseFloat(mat.Mo) || 0
+    Zn: parseFloat(mat.Zn) || 0, Cu: parseFloat(mat.Cu) || 0, Mo: parseFloat(mat.Mo) || 0,
+    Cl: parseFloat(mat.Cl) || 0
   };
 }
 
@@ -357,7 +359,7 @@ function hydroDefaultStage(name) {
     name: name || 'Nueva etapa',
     ce: '',
     meq: { ...baseMeq },
-    ppm: { N_NO3: 0, N_NH4: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0 }
+    ppm: { N_NO3: 0, N_NH4: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Cl: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0 }
   };
 }
 
@@ -538,6 +540,7 @@ function renderHydroStageTable() {
             : hydroEscapeAttr((macroPpm[n] != null ? macroPpm[n] : 0).toFixed(1));
           return `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input hydro-ppm-macro" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="text" inputmode="decimal" autocomplete="off" value="${vAttr}"></td>`;
         }).join('')}
+        <td class="hydro-col-cl"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="Cl" type="number" step="0.01" value="${stage.ppm?.Cl ?? 0}"></td>
         ${HYDRO_MICROS.map((n, idx) => `<td class="${idx === 0 ? 'hydro-micro-start' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.01" value="${stage.ppm?.[n] ?? 0}"></td>`).join('')}
       </tr>
     `;
@@ -551,6 +554,7 @@ function renderHydroStageTable() {
             <th>Etapa</th>
             <th>CE (dS/m)</th>
             ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
+            <th class="hydro-col-cl">${hydroLabelHtml('Cl')} <span class="notranslate" translate="no">ppm</span></th>
             ${HYDRO_MICROS.map((n, idx) => `<th class="${idx === 0 ? 'hydro-micro-start' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
           </tr>
         </thead>
@@ -974,7 +978,60 @@ function hydroFertRowContributionsLegacy(f) {
   return contributions;
 }
 
-const thClass = (n) => n === 'N_NH4' ? ' hydro-col-nh4' : (n === 'Fe' ? ' hydro-micro-start' : '');
+const thClass = (n) => n === 'N_NH4' ? ' hydro-col-nh4' : (n === 'Cl' ? ' hydro-col-cl' : (n === 'Fe' ? ' hydro-micro-start' : ''));
+
+/** Leyenda: % del aporte por fertilizantes (N-NO₃ vs N-NH₄; N-NO₃ vs Cl⁻) y lo mismo en solución (fertilizantes + agua). */
+function hydroBuildFertContributionRatioLegendHtml(totals, water) {
+  const w = water || {};
+  const tNo3 = parseFloat(totals.N_NO3) || 0;
+  const tNh4 = parseFloat(totals.N_NH4) || 0;
+  const tCl = parseFloat(totals.Cl) || 0;
+  const wNo3 = parseFloat(w.N_NO3) || 0;
+  const wNh4 = parseFloat(w.N_NH4) || 0;
+  const wCl = parseFloat(w.Cl) || 0;
+  const nFer = tNo3 + tNh4;
+  const pNo3F = nFer > 0 ? (tNo3 / nFer) * 100 : 0;
+  const pNh4F = nFer > 0 ? (tNh4 / nFer) * 100 : 0;
+  const ncFer = tNo3 + tCl;
+  const pNo3NcF = ncFer > 0 ? (tNo3 / ncFer) * 100 : 0;
+  const pClF = ncFer > 0 ? (tCl / ncFer) * 100 : 0;
+  const sNo3 = tNo3 + wNo3;
+  const sNh4 = tNh4 + wNh4;
+  const sCl = tCl + wCl;
+  const nSol = sNo3 + sNh4;
+  const pNo3S = nSol > 0 ? (sNo3 / nSol) * 100 : 0;
+  const pNh4S = nSol > 0 ? (sNh4 / nSol) * 100 : 0;
+  const ncSol = sNo3 + sCl;
+  const pNo3NcS = ncSol > 0 ? (sNo3 / ncSol) * 100 : 0;
+  const pClS = ncSol > 0 ? (sCl / ncSol) * 100 : 0;
+  const fmt = (x) => (Number.isFinite(x) ? x.toFixed(1) : '0.0');
+  const bitsF = [];
+  if (nFer > 0) {
+    bitsF.push(`del N aportado (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`);
+  }
+  if (ncFer > 0) {
+    bitsF.push(`respecto a N-NO₃⁻ + Cl⁻ en ese aporte: <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`);
+  } else if (tCl <= 0 && nFer > 0) {
+    bitsF.push('sin Cl⁻ aportado por fertilizantes (aparece al usar KCl, cloruro de calcio, etc.)');
+  }
+  const lineFert = bitsF.length
+    ? `<strong>Aporte solo fertilizantes (ppm):</strong> ${bitsF.join('; ')}.`
+    : '';
+  const bitsS = [];
+  if (nSol > 0) {
+    bitsS.push(`del N total (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`);
+  }
+  if (ncSol > 0) {
+    bitsS.push(`respecto a N-NO₃⁻ + Cl⁻ total: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (incluye Cl⁻ del agua si lo capturaste)`);
+  } else if (sCl <= 0 && nSol > 0) {
+    bitsS.push('sin Cl⁻ en fertilizantes ni en agua para el par N-NO₃⁻ + Cl⁻');
+  }
+  const lineSol = bitsS.length
+    ? `<strong>Solución final (fertilizantes + agua, ppm):</strong> ${bitsS.join('; ')}.`
+    : '';
+  if (!lineFert && !lineSol) return '';
+  return `<div class="hydro-fert-split-legend notranslate" translate="no">${lineFert}${lineFert && lineSol ? '<br>' : ''}${lineSol}</div>`;
+}
 
 /** Kg de fertilizante para un volumen de agua: dose (ppm) * volumen_m3 / 1000 */
 function hydroFertRowKg(f) {
@@ -1129,7 +1186,7 @@ function renderHydroFertTotals() {
   });
   const titleHtml = stage ? '<div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:6px;">Aporte total estimado (ppm):</div>' : '';
   grid.innerHTML = titleHtml + HYDRO_PPM_NUTRIENTS.map(n => {
-    let extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : '');
+    let extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Cl' ? ' hydro-grid-item-cl' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : ''));
     if (stage && n !== 'N_NH4') {
       const obj = parseFloat(stage.ppm?.[n] || 0);
       const water = parseFloat(hydroState.water?.[n] || 0);
@@ -1160,7 +1217,7 @@ function renderHydroFertTotals() {
       const faltante = missingByNutrient[n] || 0;
       const aporte = totals[n] || 0;
       const pendiente = faltante - aporte;
-      const extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : '');
+      const extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Cl' ? ' hydro-grid-item-cl' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : ''));
       const valueClass = pendiente > 0.01 ? ' hydro-remaining-positive' : (pendiente < -0.01 ? ' hydro-remaining-negative' : '');
       return `
     <div class="hydro-grid-item${extraClass}">
@@ -1170,7 +1227,8 @@ function renderHydroFertTotals() {
   `;
     }).join('');
     remainingEl.innerHTML =
-      '<div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:4px;font-size:0.9rem;">📉 Pendiente por cubrir (ppm): Faltante − Aporte</div>' + remainingHtml;
+      '<div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:4px;font-size:0.9rem;">📉 Pendiente por cubrir (ppm): Faltante − Aporte</div>' + remainingHtml +
+      hydroBuildFertContributionRatioLegendHtml(totals, hydroState.water || {});
   } else if (remainingEl) {
     remainingEl.innerHTML = '';
   }
@@ -1948,6 +2006,15 @@ function initHydroponiaUI() {
       delete stage.meq.N;
     }
     return stage;
+  });
+  /* ppm Cl objetivo y agua: defaults */
+  (hydroState.stages || []).forEach(s => {
+    s.ppm = s.ppm || {};
+    if (s.ppm.Cl == null || s.ppm.Cl === '') s.ppm.Cl = 0;
+  });
+  hydroState.water = hydroState.water || {};
+  HYDRO_PPM_NUTRIENTS.forEach(key => {
+    if (hydroState.water[key] == null || hydroState.water[key] === '') hydroState.water[key] = 0;
   });
   hydroEnsureDefaults();
   hydroLoadCustomMaterials();

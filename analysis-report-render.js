@@ -352,7 +352,7 @@
             var tdStyle = 'padding:10px 12px;text-align:center;border:1px solid #e2e8f0;';
             var html = '<div class="soil-cations-structure" style="display:flex;flex-wrap:wrap;gap:16px 20px;">';
             html += '<div class="soil-cations-meq-block" style="' + boxStyle + '">';
-            html += '<p class="soil-block-title" style="' + headerStyle + '">Concentraciones (meq/100g)</p>';
+            html += '<p class="soil-block-title" style="' + headerStyle + '"><span class="notranslate" translate="no">Concentraciones (meq/100g o cmol⁺/kg)</span></p>';
             html += '<div style="padding:12px;"><table style="' + tableStyle + '"><thead><tr>';
             ['ca', 'mg', 'k', 'na', 'al', 'h'].forEach(function (p) { html += '<th style="' + thStyle + '">' + escapeHtml(paramLabel(p)) + '</th>'; });
             html += '</tr></thead><tbody><tr>';
@@ -361,7 +361,7 @@
             html += '<div class="soil-cations-pct-box" style="' + boxStyle + '">';
             html += '<p class="soil-block-title soil-block-title-blue" style="' + headerStyle + '">CIC y saturación (%)</p>';
             html += '<div style="padding:12px;"><table style="' + tableStyle + '"><thead><tr>';
-            html += '<th style="' + thStyle + '">CIC (meq/100g)</th>';
+            html += '<th style="' + thStyle + '"><span class="notranslate" translate="no">CIC (meq/100g o cmol⁺/kg)</span></th>';
             CATION_PCT_COLS.forEach(function (p) { html += '<th style="' + thStyle + '">' + escapeHtml(paramLabel(p)) + '</th>'; });
             html += '</tr></thead><tbody><tr>';
             html += '<td style="' + tdStyle + '">' + val('cic') + '</td>';

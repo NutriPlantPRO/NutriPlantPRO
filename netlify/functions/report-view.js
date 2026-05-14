@@ -97,6 +97,7 @@ function withSharedViewChrome(reportHtml, expiresAt, options) {
       .report-table-wrap:not(.report-granular-materials):not(.report-pdf-compact-table):not(.report-hydro-table-wrap) .report-app-table{min-width:980px}
       .report-admin-table.report-vpd-wide-table{min-width:0;max-width:100%}
       .report-admin-table.report-vpd-saved-table{min-width:0;max-width:100%}
+      .report-amend-results-wrap .results-table{min-width:520px}
     }
     /* Solo en vista compartida: evita que la marca de agua quede detrás de la banda */
     .report-watermark-corner{top:60px!important}

@@ -1332,6 +1332,7 @@
       overflow-x: auto;
       overflow-y: visible;
       margin-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
     }
     .np-layout {
       display: grid;
@@ -1343,21 +1344,17 @@
     .np-main-col {
       min-width: 0;
     }
-    @media (min-width: 901px) {
-      .np-tree-sidebar {
-        position: sticky;
-        top: 12px;
-        /* Limita reflujo al mover el scroll principal (árbol no invalida todo el layout de la columna) */
-        contain: layout style;
-      }
+    /* Misma vista dos columnas que en escritorio; en pantallas angostas desliza horizontal este bloque (≈788px+gap). */
+    .np-tree-sidebar {
+      position: sticky;
+      top: 12px;
+      align-self: start;
+      contain: layout style;
     }
-    /* Móvil / tablet: misma vista en dos columnas (no apilar categorías arriba del todo) */
+    /* Tipografía y modales en pantallas pequeñas; el grid Ramas+Hoja no se apila. */
     @media (max-width: 900px) {
       .wrap {
         padding: 12px max(10px, env(safe-area-inset-right)) 22px max(10px, env(safe-area-inset-left));
-      }
-      .np-layout {
-        --np-layout-gap: 10px;
       }
       header.np-plan-header.np-mac-bar {
         padding: 12px 14px;
@@ -1388,12 +1385,6 @@
         padding: 4px 7px;
         font-size: 10px;
       }
-      .np-tree-sidebar {
-        position: static;
-      }
-      .np-tree-mount {
-        max-height: min(42vh, 360px);
-      }
       .np-pillar-tabs-row {
         flex-wrap: wrap;
         gap: 6px;
@@ -1416,9 +1407,6 @@
       }
     }
     @media (max-width: 480px) {
-      .np-layout {
-        --np-layout-gap: 8px;
-      }
       #npMain .panel {
         padding: 12px 12px 14px;
       }
@@ -2916,6 +2904,16 @@
       font-size: 0.92em;
     }
     .np-rich-flag-star { color: #1d4ed8; background: rgba(219, 234, 254, 0.65); }
+    .np-rich-editor img.np-rich-img,
+    .np-modal-note-rich img.np-rich-img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      display: block;
+      margin: 0.55em 0;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+      vertical-align: middle;
+    }
     .np-modal-note-rich {
       white-space: normal;
       word-break: break-word;
@@ -3946,6 +3944,7 @@
                     <span class="np-rich-grp">
                       <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="warn" title="Marcar importancia">⚠︎</button>
                       <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="star" title="Destacar">★</button>
+                      <button type="button" class="np-rich-tbtn" data-rich="image" title="Insertar imagen (se comprime y sube a la nube)">🖼</button>
                     </span>
                   </div>
                   <div class="np-notebook-wrap">
@@ -4100,6 +4099,8 @@
     </div>
   </div>
 
+  <input type="file" id="npRichImageInput" class="np-hide" accept="image/jpeg,image/png,image/webp,image/gif" tabindex="-1" aria-hidden="true" />
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script src="../supabase-config.js"></script>
@@ -4111,6 +4112,8 @@
 
   var detailBlocksSaveTimer = null;
   var detailBodySaveTimer = null;
+  var NP_NOTE_IMAGE_BUCKET = 'plan-pro-note-images';
+  var planProRichImageTargetEditor = null;
   /** Refresco del modal de bloques: antes ~110 ms de espera; un rAF suele bastar y evita sensación de “lag” en móvil. */
   var detailBlocksDomRefreshRaf = null;
   function queueRefreshDetailBlocksDOM() {
@@ -4243,14 +4246,258 @@
     return '<p>' + lines.map(function (ln) { return escapeHtmlText(ln); }).join('<br>') + '</p>';
   }
 
+  function planProPublicNoteImageUrlPrefix() {
+    var base =
+      window.NUTRIPLANT_SUPABASE && window.NUTRIPLANT_SUPABASE.url
+        ? String(window.NUTRIPLANT_SUPABASE.url).replace(/\/$/, '')
+        : '';
+    if (!base) return '';
+    return base + '/storage/v1/object/public/' + NP_NOTE_IMAGE_BUCKET + '/';
+  }
+
+  function planProIsAllowedNoteImageSrc(src) {
+    if (!src || typeof src !== 'string') return false;
+    var p = planProPublicNoteImageUrlPrefix();
+    if (!p) return false;
+    var dec = src.trim();
+    if (dec.indexOf('<') >= 0 || dec.indexOf('javascript:') === 0 || dec.indexOf('data:') === 0) return false;
+    return dec.indexOf(p) === 0 && dec.length < 4096;
+  }
+
+  function planProRandomFileSlug() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = (Math.random() * 16) | 0;
+      var v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
+  function planProCompressImageToJpegBlob(file, maxEdge, quality, done) {
+    maxEdge = maxEdge || 1600;
+    quality = typeof quality === 'number' ? quality : 0.82;
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (eRev) {}
+      var w = img.naturalWidth || img.width;
+      var h = img.naturalHeight || img.height;
+      if (!w || !h) {
+        done(null);
+        return;
+      }
+      var scale = Math.min(1, maxEdge / Math.max(w, h));
+      var cw = Math.max(1, Math.round(w * scale));
+      var ch = Math.max(1, Math.round(h * scale));
+      var canvas = document.createElement('canvas');
+      canvas.width = cw;
+      canvas.height = ch;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) {
+        done(null);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, cw, ch);
+      canvas.toBlob(
+        function (blob) {
+          done(blob || null);
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+    img.onerror = function () {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (eRev2) {}
+      done(null);
+    };
+    img.src = url;
+  }
+
+  function insertRichNodesAtCaret(editorEl, nodeList) {
+    if (!editorEl || !nodeList || !nodeList.length) return;
+    editorEl.focus();
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    var range = sel.getRangeAt(0).cloneRange();
+    if (!editorEl.contains(range.commonAncestorContainer)) return;
+    range.deleteContents();
+    var frag = document.createDocumentFragment();
+    var order = [];
+    nodeList.forEach(function (n) {
+      frag.appendChild(n);
+      order.push(n);
+    });
+    var last = order[order.length - 1];
+    try {
+      range.insertNode(frag);
+    } catch (errIns) {
+      return;
+    }
+    range.setStartAfter(last);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function insertPlanProNoteImageAtCaret(editorEl, publicUrl) {
+    if (!editorEl || !publicUrl) return;
+    var img = document.createElement('img');
+    img.className = 'np-rich-img';
+    img.src = publicUrl;
+    img.alt = '';
+    img.setAttribute('loading', 'lazy');
+    img.setAttribute('decoding', 'async');
+    img.setAttribute('referrerpolicy', 'no-referrer');
+    var zw = document.createTextNode('\u200b');
+    insertRichNodesAtCaret(editorEl, [img, zw]);
+  }
+
+  async function planProUploadNoteImageBlob(blob) {
+    var client = state.client;
+    var uid = state.userId;
+    if (!client || !uid || !blob) {
+      showToast('Sesión requerida para subir imágenes.', true);
+      return null;
+    }
+    var folder = state.detailItemId || 'draft';
+    var path = uid + '/' + folder + '/' + planProRandomFileSlug() + '.jpg';
+    var res = await client.storage.from(NP_NOTE_IMAGE_BUCKET).upload(path, blob, {
+      contentType: 'image/jpeg',
+      cacheControl: '31536000',
+      upsert: false
+    });
+    if (res.error) {
+      showToast(
+        res.error.message ||
+          'No se pudo subir la imagen. Ejecuta supabase-plan-pro-note-images-storage.sql en Supabase.',
+        true
+      );
+      return null;
+    }
+    var pub = client.storage.from(NP_NOTE_IMAGE_BUCKET).getPublicUrl(path);
+    return pub && pub.data && pub.data.publicUrl ? pub.data.publicUrl : null;
+  }
+
+  function wirePlanProRichImageInput() {
+    var inp = $('npRichImageInput');
+    if (!inp || inp.dataset.npWired === '1') return;
+    inp.dataset.npWired = '1';
+    inp.addEventListener('change', function () {
+      var ed = planProRichImageTargetEditor;
+      planProRichImageTargetEditor = null;
+      var f = inp.files && inp.files[0];
+      inp.value = '';
+      if (!f || !ed) return;
+      if (!/^image\//.test(f.type)) {
+        showToast('Elige un archivo de imagen.', true);
+        return;
+      }
+      planProCompressImageToJpegBlob(f, 1600, 0.82, async function (blob) {
+        if (!blob) {
+          showToast('No se pudo procesar la imagen.', true);
+          return;
+        }
+        if (blob.size > 5 * 1024 * 1024) {
+          showToast('La imagen sigue demasiado grande tras comprimir.', true);
+          return;
+        }
+        var url = await planProUploadNoteImageBlob(blob);
+        if (!url) return;
+        insertPlanProNoteImageAtCaret(ed, url);
+        syncRichEmptyClass(ed);
+        scheduleRichToolbarSync(ed);
+        if (ed.id === 'npModalBodyRich') schedulePersistMainBody();
+        showToast('Imagen insertada.', false);
+      });
+    });
+  }
+
+  function bindPlanProRichPasteImages(editorEl) {
+    if (!editorEl || editorEl.dataset.npPasteImg === '1') return;
+    editorEl.dataset.npPasteImg = '1';
+    editorEl.addEventListener('paste', function (ev) {
+      var cb = ev.clipboardData;
+      if (!cb || !cb.files || !cb.files.length) return;
+      var f = null;
+      for (var i = 0; i < cb.files.length; i++) {
+        if (/^image\//.test(cb.files[i].type)) {
+          f = cb.files[i];
+          break;
+        }
+      }
+      if (!f) return;
+      if (!state.client || !state.userId) {
+        showToast('Inicia sesión para pegar imágenes.', true);
+        return;
+      }
+      ev.preventDefault();
+      planProCompressImageToJpegBlob(f, 1600, 0.82, async function (blob) {
+        if (!blob) {
+          showToast('No se pudo pegar la imagen.', true);
+          return;
+        }
+        var url = await planProUploadNoteImageBlob(blob);
+        if (!url) return;
+        insertPlanProNoteImageAtCaret(editorEl, url);
+        syncRichEmptyClass(editorEl);
+        scheduleRichToolbarSync(editorEl);
+        if (editorEl.id === 'npModalBodyRich') schedulePersistMainBody();
+        showToast('Imagen pegada.', false);
+      });
+    });
+  }
+
   function sanitizeRich(html) {
     if (!html || !String(html).trim()) return '';
     var s = String(html);
     if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
-      return window.DOMPurify.sanitize(s, {
-        ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'font'],
-        ALLOWED_ATTR: ['class', 'style', 'color']
+      var cleaned = window.DOMPurify.sanitize(s, {
+        ALLOWED_TAGS: [
+          'p',
+          'br',
+          'strong',
+          'b',
+          'em',
+          'i',
+          'u',
+          's',
+          'strike',
+          'del',
+          'h2',
+          'h3',
+          'h4',
+          'ul',
+          'ol',
+          'li',
+          'span',
+          'div',
+          'blockquote',
+          'font',
+          'img'
+        ],
+        ALLOWED_ATTR: ['class', 'style', 'color', 'src', 'alt', 'loading', 'decoding', 'referrerpolicy']
       });
+      var wrap = document.createElement('div');
+      wrap.innerHTML = cleaned;
+      Array.prototype.slice.call(wrap.querySelectorAll('img')).forEach(function (im) {
+        var src = im.getAttribute('src');
+        if (!planProIsAllowedNoteImageSrc(src)) {
+          if (im.parentNode) im.parentNode.removeChild(im);
+          return;
+        }
+        im.className = 'np-rich-img';
+        im.removeAttribute('style');
+        im.removeAttribute('width');
+        im.removeAttribute('height');
+        if (!im.getAttribute('loading')) im.setAttribute('loading', 'lazy');
+        if (!im.getAttribute('decoding')) im.setAttribute('decoding', 'async');
+        if (!im.getAttribute('referrerpolicy')) im.setAttribute('referrerpolicy', 'no-referrer');
+      });
+      return wrap.innerHTML;
     }
     var x = document.createElement('div');
     x.textContent = s;
@@ -4272,8 +4519,10 @@
   function syncRichEmptyClass(el) {
     el = el || $('npBodyRich');
     if (!el) return;
-    var t = stripHtml(el.innerHTML);
-    el.classList.toggle('np-rich-empty', !t);
+    var html = el.innerHTML || '';
+    var t = stripHtml(html);
+    var hasImg = /<img[\s>]/i.test(html);
+    el.classList.toggle('np-rich-empty', !String(t).trim() && !hasImg);
   }
 
   function selectionInsideEditor(editorEl) {
@@ -4599,6 +4848,15 @@
       }
     } else if (kind === 'snippet') {
       insertRichSnippet(b.getAttribute('data-snippet'), editorEl);
+    } else if (kind === 'image') {
+      if (!state.client || !state.userId) {
+        showToast('Inicia sesión para subir imágenes.', true);
+      } else {
+        wirePlanProRichImageInput();
+        planProRichImageTargetEditor = editorEl;
+        var fi = $('npRichImageInput');
+        if (fi) fi.click();
+      }
     }
     syncRichEmptyClass(editorEl);
     scheduleRichToolbarSync(editorEl);
@@ -4717,6 +4975,7 @@
     ed.addEventListener('focus', function () {
       scheduleRichToolbarSync(ed);
     });
+    bindPlanProRichPasteImages(ed);
   }
 
   function openItemDetail(r) {
@@ -9581,6 +9840,8 @@
     npBodyRichEl.addEventListener('focus', function () {
       scheduleRichToolbarSync(npBodyRichEl);
     });
+    bindPlanProRichPasteImages(npBodyRichEl);
+    wirePlanProRichImageInput();
   }
 
   document.addEventListener('selectionchange', function () {

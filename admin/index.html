@@ -6234,10 +6234,10 @@
         const HYDRO_ANIONS = ['N_NO3','P','S'];
         const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
         const HYDRO_MICROS = ['Fe','Mn','B','Zn','Cu','Mo'];
-        const HYDRO_PPM_NUTRIENTS = ['N_NH4','N_NO3','P','S','K','Ca','Mg','Fe','Mn','B','Zn','Cu','Mo'];
+        const HYDRO_PPM_NUTRIENTS = ['N_NH4','N_NO3','P','S','Cl','K','Ca','Mg','Fe','Mn','B','Zn','Cu','Mo'];
         const HYDRO_EQ_WEIGHTS = { N_NO3: 14, N_NH4: 14, P: 31, K: 39.1, Ca: 20.04, Mg: 12.15, S: 16.03 };
         function adminHydroLabel(n) {
-            const labels = { N_NH4: 'N-NH₄⁺', N_NO3: 'N-NO₃⁻', P: 'P-H₂PO₄⁻', S: 'S-SO₄²⁻', K: 'K⁺', Ca: 'Ca²⁺', Mg: 'Mg²⁺', Fe: 'Fe', Mn: 'Mn', B: 'B', Zn: 'Zn', Cu: 'Cu', Mo: 'Mo' };
+            const labels = { N_NH4: 'N-NH₄⁺', N_NO3: 'N-NO₃⁻', P: 'P-H₂PO₄⁻', S: 'S-SO₄²⁻', Cl: 'Cl⁻', K: 'K⁺', Ca: 'Ca²⁺', Mg: 'Mg²⁺', Fe: 'Fe', Mn: 'Mn', B: 'B', Zn: 'Zn', Cu: 'Cu', Mo: 'Mo' };
             return labels[n] || n;
         }
         // SVG de triángulo hidroponía con la misma estructura visual del dashboard
@@ -6403,7 +6403,7 @@
             const Mg = (parseFloat(mat.MgO)||0)/c.MgO_TO_Mg || parseFloat(mat.Mg)||0;
             const S = parseFloat(mat.S)||0; const SO4 = parseFloat(mat.SO4)||0;
             const S_ele = S > 0 ? S : (SO4 > 0 ? SO4/3 : 0);
-            return { N_NH4: parseFloat(mat.N_NH4)||0, N_NO3: parseFloat(mat.N_NO3)||0, P, S: S_ele, K, Ca, Mg, Fe: parseFloat(mat.Fe)||0, Mn: parseFloat(mat.Mn)||0, B: parseFloat(mat.B)||0, Zn: parseFloat(mat.Zn)||0, Cu: parseFloat(mat.Cu)||0, Mo: parseFloat(mat.Mo)||0, unit: mat.unit || '', density: parseFloat(mat.density)||0 };
+            return { N_NH4: parseFloat(mat.N_NH4)||0, N_NO3: parseFloat(mat.N_NO3)||0, P, S: S_ele, K, Ca, Mg, Cl: parseFloat(mat.Cl)||0, Fe: parseFloat(mat.Fe)||0, Mn: parseFloat(mat.Mn)||0, B: parseFloat(mat.B)||0, Zn: parseFloat(mat.Zn)||0, Cu: parseFloat(mat.Cu)||0, Mo: parseFloat(mat.Mo)||0, unit: mat.unit || '', density: parseFloat(mat.density)||0 };
         }
         function adminGetHydroMaterialsElemental(project) {
             const list = [];
@@ -6412,7 +6412,7 @@
                 list.push({ id: m.id, name: m.name || m.id, ...el });
             });
             const custom = project?.hidroponia?.customMaterials?.items || project?.sections?.hidroponia?.customMaterials?.items || [];
-            if (Array.isArray(custom)) custom.forEach(m => { if (m && (m.id || m.name)) list.push({ id: m.id || m.name, name: m.name || m.id, N_NH4: parseFloat(m.N_NH4)||0, N_NO3: parseFloat(m.N_NO3)||0, P: parseFloat(m.P)||0, S: parseFloat(m.S)||0, K: parseFloat(m.K)||0, Ca: parseFloat(m.Ca)||0, Mg: parseFloat(m.Mg)||0, Fe: parseFloat(m.Fe)||0, Mn: parseFloat(m.Mn)||0, B: parseFloat(m.B)||0, Zn: parseFloat(m.Zn)||0, Cu: parseFloat(m.Cu)||0, Mo: parseFloat(m.Mo)||0, unit: m.unit || '', density: parseFloat(m.density)||0 }); });
+            if (Array.isArray(custom)) custom.forEach(m => { if (m && (m.id || m.name)) list.push({ id: m.id || m.name, name: m.name || m.id, N_NH4: parseFloat(m.N_NH4)||0, N_NO3: parseFloat(m.N_NO3)||0, P: parseFloat(m.P)||0, S: parseFloat(m.S)||0, Cl: parseFloat(m.Cl)||0, K: parseFloat(m.K)||0, Ca: parseFloat(m.Ca)||0, Mg: parseFloat(m.Mg)||0, Fe: parseFloat(m.Fe)||0, Mn: parseFloat(m.Mn)||0, B: parseFloat(m.B)||0, Zn: parseFloat(m.Zn)||0, Cu: parseFloat(m.Cu)||0, Mo: parseFloat(m.Mo)||0, unit: m.unit || '', density: parseFloat(m.density)||0 }); });
             return list;
         }
         function adminHydroComputeDoseAndKg(f, hydroVolM3, materialsElemental) {
@@ -6474,7 +6474,8 @@
             { id: 'nk_9_0_36_s', name: '9-0-36 +S', N_NO3: 4.5, N_NH4: 4.5, P2O5: 0, K2O: 36, SO4: 42, S: 0 },
             { id: 'nk_mg', name: 'NK+Mg', N_NO3: 13.0, N_NH4: 0, K2O: 46, MgO: 2 },
             { id: 'sop', name: 'SOP', N_NO3: 0, N_NH4: 0, K2O: 50, SO4: 51, S: 0 },
-            { id: 'kcl_soluble', name: 'KCl Soluble', N_NO3: 0, N_NH4: 0, K2O: 60 },
+            { id: 'kcl_soluble', name: 'KCl Soluble', N_NO3: 0, N_NH4: 0, K2O: 60, Cl: 45.2 },
+            { id: 'cacl2_dihidratado', name: 'Cloruro de calcio (dihidratado)', N_NO3: 0, N_NH4: 0, CaO: 38.1, Cl: 48.2 },
             // Calcio y Magnesio
             { id: 'nitrato_calcio_granular', name: 'Nitrato de Calcio', N_NO3: 14.4, N_NH4: 1.1, CaO: 26 },
             { id: 'nitrato_calcio_cristal', name: 'Nitrato de Calcio Cristal', N_NO3: 12, N_NH4: 0, CaO: 23, MgO: 0.5 },
@@ -6524,7 +6525,7 @@
             const amountNum = parseFloat(amountInput) || 0;
             const productKg = (mat.unit === 'L' && parseFloat(mat.density)) ? amountNum * parseFloat(mat.density) : amountNum;
             const contrib = {};
-            ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'].forEach(n => {
+            ['N_NO3','N_NH4','P2O5','K2O','CaO','MgO','S','SO4','Cl','Fe','Mn','B','Zn','Cu','Mo','SiO2'].forEach(n => {
                 contrib[n] = productKg * ((parseFloat(mat[n]) || 0) / 100);
             });
             contrib.P = contrib.P2O5 / ADMIN_CONVERSION_FACTORS.P2O5_TO_P;
@@ -6540,7 +6541,7 @@
             const materials = adminGetFertiMaterials(project);
             const byId = new Map(materials.map(m => [m.id, m]));
             program.weeks.forEach(week => {
-                const totals = { N_NO3:0,N_NH4:0,P:0,P2O5:0,K:0,K2O:0,Ca:0,CaO:0,Mg:0,MgO:0,S:0,SO4:0,Fe:0,Mn:0,B:0,Zn:0,Cu:0,Mo:0,Si:0,SiO2:0 };
+                const totals = { N_NO3:0,N_NH4:0,P:0,P2O5:0,K:0,K2O:0,Ca:0,CaO:0,Mg:0,MgO:0,S:0,SO4:0,Cl:0,Fe:0,Mn:0,B:0,Zn:0,Cu:0,Mo:0,Si:0,SiO2:0 };
                 if (!week.kgByCol) week.kgByCol = {};
                 program.columns.forEach(col => {
                     const kg = week.kgByCol[col.id] || 0;
@@ -8586,7 +8587,7 @@
                 if (soilAnalysis.initial && Object.keys(soilAnalysis.initial).some(key => soilAnalysis.initial[key] !== 0 && soilAnalysis.initial[key] !== null && soilAnalysis.initial[key] !== undefined)) {
                     html += `
                         <div style="margin-bottom: 12px;">
-                            <strong style="color: #1e293b; font-size: 14px;">Elementos Iniciales (meq/100g):</strong>
+                            <strong style="color: #1e293b; font-size: 14px;">Elementos Iniciales (<span class="notranslate" translate="no">meq/100g o cmol⁺/kg</span>):</strong>
                             <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                                 ${soilAnalysis.initial.k !== undefined && soilAnalysis.initial.k !== null ? `<div><strong>K:</strong> ${soilAnalysis.initial.k}</div>` : ''}
                                 ${soilAnalysis.initial.ca !== undefined && soilAnalysis.initial.ca !== null ? `<div><strong>Ca:</strong> ${soilAnalysis.initial.ca}</div>` : ''}
@@ -8618,7 +8619,7 @@
                 if (soilAnalysis.adjustments && Object.keys(soilAnalysis.adjustments).some(key => soilAnalysis.adjustments[key] !== 0 && soilAnalysis.adjustments[key] !== null && soilAnalysis.adjustments[key] !== undefined)) {
                 html += `
                         <div style="margin-bottom: 12px;">
-                            <strong style="color: #1e293b; font-size: 14px;">Ajustes Requeridos (meq/100g):</strong>
+                            <strong style="color: #1e293b; font-size: 14px;">Ajustes Requeridos (<span class="notranslate" translate="no">meq/100g o cmol⁺/kg</span>):</strong>
                             <div style="background: white; padding: 10px; border-radius: 4px; margin-top: 6px; font-size: 13px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px;">
                                 ${soilAnalysis.adjustments.k !== undefined && soilAnalysis.adjustments.k !== null && soilAnalysis.adjustments.k !== 0 ? `<div><strong>K:</strong> ${soilAnalysis.adjustments.k > 0 ? '+' : ''}${soilAnalysis.adjustments.k}</div>` : ''}
                                 ${soilAnalysis.adjustments.ca !== undefined && soilAnalysis.adjustments.ca !== null && soilAnalysis.adjustments.ca !== 0 ? `<div><strong>Ca:</strong> ${soilAnalysis.adjustments.ca > 0 ? '+' : ''}${soilAnalysis.adjustments.ca}</div>` : ''}
@@ -9800,17 +9801,19 @@
                     const macroPpm = adminHydroMacroPpm(meq);
                     const ppm = stage.ppm || {};
                     const macroCells = HYDRO_MEQ_NUTRIENTS.map(n => `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${(macroPpm[n] != null ? macroPpm[n] : (parseFloat(ppm[n]) || 0)).toFixed(1)}</td>`).join('');
+                    const clCell = `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${(parseFloat(ppm.Cl) || 0).toFixed(1)}</td>`;
                     const microCells = HYDRO_MICROS.map(n => `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right;">${(parseFloat(ppm[n]) || 0).toFixed(2)}</td>`).join('');
-                    return `<tr><td style="padding:6px 8px;border:1px solid #e2e8f0;">${escapeHtml(stage.name || '')}</td>${macroCells}${microCells}</tr>`;
+                    return `<tr><td style="padding:6px 8px;border:1px solid #e2e8f0;">${escapeHtml(stage.name || '')}</td>${macroCells}${clCell}${microCells}</tr>`;
                 }).join('');
                 const ppmHeaderMacro = HYDRO_MEQ_NUTRIENTS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;">${adminHydroLabel(n)} ppm</th>`).join('');
+                const ppmHeaderCl = `<th style="padding:6px 8px;border:1px solid #cbd5e1;">${adminHydroLabel('Cl')} ppm</th>`;
                 const ppmHeaderMicro = HYDRO_MICROS.map(n => `<th style="padding:6px 8px;border:1px solid #cbd5e1;">${adminHydroLabel(n)} ppm</th>`).join('');
                 html += `
                     <div style="margin-bottom: 16px;">
                         <strong style="color: #1e293b; font-size: 14px;">📐 Solución nutritiva por etapa (ppm)</strong>
                         <div style="overflow-x: auto; margin-top: 8px;">
                             <table style="width:100%; border-collapse: collapse; font-size: 13px;">
-                                <thead><tr style="background:#e0f2fe;"><th style="padding:6px 8px;border:1px solid #cbd5e1;">Etapa</th>${ppmHeaderMacro}${ppmHeaderMicro}</tr></thead>
+                                <thead><tr style="background:#e0f2fe;"><th style="padding:6px 8px;border:1px solid #cbd5e1;">Etapa</th>${ppmHeaderMacro}${ppmHeaderCl}${ppmHeaderMicro}</tr></thead>
                                 <tbody>${ppmRows}</tbody>
                             </table>
                         </div>
@@ -9971,6 +9974,59 @@
                             </div>
                         </div>
                     `;
+                }
+                if (hydroTotalsPpm && typeof hydroTotalsPpm === 'object') {
+                    const tNo3 = parseFloat(hydroTotalsPpm.N_NO3) || 0;
+                    const tNh4 = parseFloat(hydroTotalsPpm.N_NH4) || 0;
+                    const tCl = parseFloat(hydroTotalsPpm.Cl) || 0;
+                    const wNo3 = parseFloat(hydroWaterPpm.N_NO3) || 0;
+                    const wNh4 = parseFloat(hydroWaterPpm.N_NH4) || 0;
+                    const wCl = parseFloat(hydroWaterPpm.Cl) || 0;
+                    const nFer = tNo3 + tNh4;
+                    const pNo3F = nFer > 0 ? (tNo3 / nFer) * 100 : 0;
+                    const pNh4F = nFer > 0 ? (tNh4 / nFer) * 100 : 0;
+                    const ncFer = tNo3 + tCl;
+                    const pNo3NcF = ncFer > 0 ? (tNo3 / ncFer) * 100 : 0;
+                    const pClF = ncFer > 0 ? (tCl / ncFer) * 100 : 0;
+                    const sNo3 = tNo3 + wNo3;
+                    const sNh4 = tNh4 + wNh4;
+                    const sCl = tCl + wCl;
+                    const nSol = sNo3 + sNh4;
+                    const pNo3S = nSol > 0 ? (sNo3 / nSol) * 100 : 0;
+                    const pNh4S = nSol > 0 ? (sNh4 / nSol) * 100 : 0;
+                    const ncSol = sNo3 + sCl;
+                    const pNo3NcS = ncSol > 0 ? (sNo3 / ncSol) * 100 : 0;
+                    const pClS = ncSol > 0 ? (sCl / ncSol) * 100 : 0;
+                    const fmt = function(x) { return (isFinite(x) ? x.toFixed(1) : '0.0'); };
+                    if (nFer > 0 || ncFer > 0 || nSol > 0 || ncSol > 0) {
+                        const bitsF = [];
+                        if (nFer > 0) {
+                            bitsF.push('del N aportado (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ' + fmt(pNo3F) + '%</strong> · <strong>N-NH₄⁺ ' + fmt(pNh4F) + '%</strong>');
+                        }
+                        if (ncFer > 0) {
+                            bitsF.push('respecto a N-NO₃⁻ + Cl⁻ en ese aporte: <strong>N-NO₃⁻ ' + fmt(pNo3NcF) + '%</strong> · <strong>Cl⁻ ' + fmt(pClF) + '%</strong>');
+                        } else if (tCl <= 0 && nFer > 0) {
+                            bitsF.push('sin Cl⁻ aportado por fertilizantes (aparece al usar KCl, cloruro de calcio, etc.)');
+                        }
+                        const lineF = bitsF.length
+                            ? '<strong>Aporte solo fertilizantes (ppm):</strong> ' + bitsF.join('; ') + '.'
+                            : '';
+                        const bitsS = [];
+                        if (nSol > 0) {
+                            bitsS.push('del N total (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ' + fmt(pNo3S) + '%</strong> · <strong>N-NH₄⁺ ' + fmt(pNh4S) + '%</strong>');
+                        }
+                        if (ncSol > 0) {
+                            bitsS.push('respecto a N-NO₃⁻ + Cl⁻ total: <strong>N-NO₃⁻ ' + fmt(pNo3NcS) + '%</strong> · <strong>Cl⁻ ' + fmt(pClS) + '%</strong> (incluye Cl⁻ del agua si lo capturaste)');
+                        } else if (sCl <= 0 && nSol > 0) {
+                            bitsS.push('sin Cl⁻ en fertilizantes ni en agua para el par N-NO₃⁻ + Cl⁻');
+                        }
+                        const lineS = bitsS.length
+                            ? '<strong>Solución final (fertilizantes + agua, ppm):</strong> ' + bitsS.join('; ') + '.'
+                            : '';
+                        if (lineF || lineS) {
+                            html += '<div style="margin-top:12px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#334155;line-height:1.45;"><strong style="color:#1e293b;font-size:13px;">📎 Relación N-NO₃⁻ / N-NH₄⁺ y N-NO₃⁻ / Cl⁻</strong><br><br>' + lineF + (lineF && lineS ? '<br><br>' : '') + lineS + '</div>';
+                        }
+                    }
                 }
             }
             if (!hasHidroponiaData) {

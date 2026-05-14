@@ -664,6 +664,7 @@ Responde de manera amigable y profesional, ayudando al usuario a navegar por las
 • Fertilización y programas nutricionales
 • Agricultura de precisión
 • Y TODO conocimiento agronómico disponible
+• **Equivalencia NutriPlant:** CIC y cationes intercambiables en suelo se expresan en **meq/100 g** = **cmol_c/kg** (misma cifra; carga catiónica por masa de suelo).
 
 CONTEXTO DEL ANÁLISIS DE SUELO:
 ${context}
@@ -725,6 +726,7 @@ Usa formato markdown para mejor legibilidad.`;
     const { k, ca, mg, na, ph, density, depth, cic, percentages } = soil;
     
     let context = `ANÁLISIS DE SUELO ACTUAL:\n`;
+    context += `(Unidades: meq/100g de suelo = cmol_c/kg misma magnitud y misma cifra.)\n`;
     context += `• K⁺: ${k} meq/100g (${percentages.k.toFixed(1)}%)\n`;
     context += `• Ca²⁺: ${ca} meq/100g (${percentages.ca.toFixed(1)}%)\n`;
     context += `• Mg²⁺: ${mg} meq/100g (${percentages.mg.toFixed(1)}%)\n`;
@@ -1194,6 +1196,7 @@ Basándome en tus datos, te recomiendo la siguiente estrategia:`;
     const soilData = this.getSoilDataForAI();
     if (soilData.hasData) {
       context += `DATOS DEL ANÁLISIS DE SUELO:\n`;
+      context += `(meq/100g = cmol_c/kg mismo número para CIC y cationes intercambiables.)\n`;
       const { soil } = soilData;
       const { k, ca, mg, na, ph, density, depth, cic, percentages } = soil;
       
@@ -1636,7 +1639,7 @@ Basándome en tus datos, te recomiendo la siguiente estrategia:`;
 • **Secciones disponibles:** ${projectData.sections.join(', ')}
 
 **CONFIGURACIONES DEL USUARIO:**
-• **Unidades:** meq/100g (CIC)
+• **Unidades (CIC/cationes suelo):** meq/100 g = cmol_c/kg (misma cifra)
 • **Profundidad:** ${document.getElementById('soil-depth')?.value || 'No definida'} cm
 • **Densidad:** ${document.getElementById('soil-density')?.value || 'No definida'} g/cm³
 • **pH:** ${document.getElementById('soil-ph')?.value || 'No definido'}`;
@@ -2444,7 +2447,7 @@ ${microTable}
         return `🏠 **¡Bienvenido a NutriPlant PRO!**\n\nEstás en la página de inicio. Puedo ayudarte con:\n\n• **Proyectos:** Gestionar y analizar tus proyectos agrícolas\n• **Enmiendas:** Analizar suelos y calcular enmiendas\n• **Nutrición:** Programas de fertilización\n• **Soluciones:** Preparación de soluciones nutritivas\n• **Foliar:** Aplicaciones foliares\n\n**¿En qué sección te gustaría trabajar?**`;
         
       case 'amendments':
-        return `📊 **Calculadora de Enmiendas**\n\nPara analizar tu suelo necesito que:\n\n1. **Vayas a la sección de Enmiendas** (haz clic en el ícono de enmiendas)\n2. **Ingreses los datos del análisis inicial:**\n   • K⁺, Ca²⁺, Mg²⁺, Na⁺ (meq/100g)\n   • pH del suelo\n   • Densidad aparente\n   • Profundidad\n\nUna vez que tengas los datos, podré darte recomendaciones específicas de enmiendas.`;
+        return `📊 **Calculadora de Enmiendas**\n\nPara analizar tu suelo necesito que:\n\n1. **Vayas a la sección de Enmiendas** (haz clic en el ícono de enmiendas)\n2. **Ingreses los datos del análisis inicial:**\n   • K⁺, Ca²⁺, Mg²⁺, Na⁺ (meq/100g o cmol_c/kg, mismo número)\n   • pH del suelo\n   • Densidad aparente\n   • Profundidad\n\nUna vez que tengas los datos, podré darte recomendaciones específicas de enmiendas.`;
         
       case 'nutrition':
         return `🌱 **Programas de Nutrición**\n\nEsta sección está en desarrollo. Pronto podré ayudarte con:\n\n• Programas de fertilización\n• Calendarios de aplicación\n• Cálculos de dosis\n\n**Por ahora, ve a la sección de Enmiendas para análisis de suelos.**`;

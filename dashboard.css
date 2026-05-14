@@ -997,6 +997,7 @@ body {
   margin-bottom: 18px;
   flex-wrap: wrap;
   gap: 12px;
+  overflow: visible;
 }
 
 /* Contenedor de botones del header: una sola fila en todas las pestañas; si no cabe, scroll horizontal */
@@ -1007,7 +1008,7 @@ body {
   justify-content: flex-end;
   gap: 10px;
   overflow-x: auto;
-  /* Sin overflow-y: hidden para que los tooltips debajo de los iconos no se recorten */
+  /* Sin overflow-y: hidden para que los tooltips encima de los iconos no se recorten */
   min-width: 0;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
@@ -1106,7 +1107,7 @@ body {
   height: 18px;
 }
 
-/* Tooltips del header: bonitos (debajo del botón → no los recorta overflow del toolbar) */
+/* Tooltips del header: encima del botón (no empujan ni cubren el área bajo la barra) */
 .header-buttons .btn-calculator.np-dash-tooltip,
 .header-buttons .btn-user.np-dash-tooltip {
   position: relative;
@@ -1117,10 +1118,12 @@ body {
   content: "";
   position: absolute;
   left: 50%;
-  top: calc(100% + 4px);
+  bottom: calc(100% + 2px);
+  top: auto;
   transform: translateX(-50%);
   border: 7px solid transparent;
-  border-bottom-color: #0f172a;
+  border-top-color: #0f172a;
+  border-bottom: none;
   opacity: 0;
   visibility: hidden;
   transition:
@@ -1129,15 +1132,16 @@ body {
     transform 0.2s ease 0.08s;
   z-index: 10060;
   pointer-events: none;
-  filter: drop-shadow(0 -1px 3px rgba(15, 23, 42, 0.15));
+  filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.2));
 }
 .header-buttons .btn-calculator.np-dash-tooltip::after,
 .header-buttons .btn-user.np-dash-tooltip::after {
   content: attr(data-np-tooltip);
   position: absolute;
   left: 50%;
-  top: calc(100% + 14px);
-  transform: translateX(-50%) translateY(-4px);
+  bottom: calc(100% + 12px);
+  top: auto;
+  transform: translateX(-50%) translateY(4px);
   padding: 9px 14px;
   min-width: 0;
   max-width: min(300px, 86vw);
@@ -1153,7 +1157,7 @@ body {
   border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.22);
   box-shadow:
-    0 12px 32px rgba(15, 23, 42, 0.38),
+    0 -10px 28px rgba(15, 23, 42, 0.32),
     0 0 0 1px rgba(255, 255, 255, 0.06) inset;
   opacity: 0;
   visibility: hidden;
@@ -3555,10 +3559,10 @@ body {
   box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.25);
 }
 
-/* Cálculo hidro: 7 macros + 6 micros; micros un poco más anchas para Fe (pestaña azul) y decimales tipo 0.05 sin cortar */
+/* Cálculo hidro: 8 macros (incl. Cl⁻) + 6 micros */
 .hydro-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(68px, 1fr)) repeat(6, minmax(84px, 1fr));
+  grid-template-columns: repeat(8, minmax(68px, 1fr)) repeat(6, minmax(84px, 1fr));
   gap: 8px;
   max-width: 100%;
 }
@@ -3626,6 +3630,38 @@ body {
 }
 .hydro-table th.hydro-col-nh4 {
   color: #991b1b;
+}
+
+.hydro-table .hydro-col-cl,
+.hydro-table .hydro-col-cl input {
+  color: #0369a1;
+  font-weight: 600;
+}
+.hydro-table th.hydro-col-cl {
+  color: #0369a1;
+}
+
+.hydro-grid-item-cl .hydro-grid-label,
+.hydro-grid-item-cl .hydro-grid-value,
+.hydro-grid-item-cl .hydro-input {
+  color: #0369a1;
+  font-weight: 600;
+}
+
+/* Leyenda % NO₃/NH₄ y NO₃/Cl bajo pendiente (cálculo fertilizantes) */
+.hydro-fert-split-legend {
+  grid-column: 1 / -1;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #334155;
+  line-height: 1.45;
+}
+.hydro-fert-split-legend strong {
+  color: #0f172a;
 }
 
 /* Aporte total estimado: color por debajo/encima del objetivo (amonio queda en tinto) */
@@ -4415,6 +4451,32 @@ body {
   cursor: help;
 }
 
+/* Cl⁻: anión “independiente” (como NH₄ en cationes): % sobre total aniones ampliado */
+.ferti-insight-table--macro-ionic tbody td.ferti-pct-cl-cell {
+  text-align: center;
+  vertical-align: middle !important;
+  background: #fff;
+  padding: 4px 6px;
+}
+.ferti-insight-table--macro-ionic .ferti-pct-cl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 3.25em;
+  min-height: 2.35em;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(180deg, #e0f2fe 0%, #f0f9ff 100%);
+  border: 2px solid #0284c7;
+  color: #0c4a6e;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.12);
+  cursor: help;
+}
+
 /* Tarjeta diagrama ternario (entre macro y micros): acento violeta */
 .ferti-insight-card + .ferti-insight-card.ferti-insight-card--ternary {
   border-color: #ede9fe;
@@ -4863,6 +4925,121 @@ body {
 
 .results-table tr:hover {
   background: #f9fafb;
+}
+
+/* ===== RESULTADOS ENMIENDAS (bloque PRO, pantalla) ===== */
+.np-amend-results-pro {
+  border-radius: 14px;
+  border: 1px solid #fcd34d;
+  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 55%);
+  box-shadow:
+    0 4px 18px rgba(180, 83, 9, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.85) inset;
+  padding: 14px 16px 16px;
+}
+
+.np-amend-results-title {
+  margin: 0 0 14px 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0c4a6e;
+  letter-spacing: 0.01em;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.45);
+}
+
+.np-amend-results-empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.np-amend-reach-note {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 10px;
+  line-height: 1.4;
+}
+
+.np-amend-results-pro .amendment-summary {
+  background: linear-gradient(180deg, #fffef8 0%, #f8fafc 100%);
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.np-amend-results-pro .amendment-summary h4 {
+  color: #1e3a5f;
+  font-size: 0.98rem;
+}
+
+.np-amend-results-pro .amendment-details {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+}
+
+.np-amend-results-pro .amendment-details h4 {
+  color: #1e3a5f;
+  margin-bottom: 12px;
+}
+
+.np-amend-table-wrap {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+}
+
+.np-amend-results-pro .results-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.82rem;
+}
+
+.np-amend-results-pro .results-table th,
+.np-amend-results-pro .results-table td {
+  border: none;
+  border-right: 1px solid #e7e5e4;
+  border-bottom: 1px solid #e7e5e4;
+  padding: 9px 10px;
+  vertical-align: top;
+}
+
+.np-amend-results-pro .results-table th:last-child,
+.np-amend-results-pro .results-table td:last-child {
+  border-right: none;
+}
+
+.np-amend-results-pro .results-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.np-amend-results-pro .results-table thead th {
+  background: linear-gradient(180deg, #fde68a 0%, #fef3c7 100%);
+  color: #78350f;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+.np-amend-results-pro .results-table tbody td {
+  background: #ffffff;
+  color: #334155;
+}
+
+.np-amend-results-pro .results-table tbody tr:nth-child(even) td {
+  background: #fffef8;
+}
+
+.np-amend-results-pro .results-table tr:hover td {
+  background: #fffbeb;
 }
 
 /* ===== BOTONES PEQUEÑOS ===== */

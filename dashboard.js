@@ -742,7 +742,7 @@ function sectionTemplate(name) {
         <div class="enmienda-content">
           <!-- Análisis de Suelo Inicial -->
           <div class="ideal-ranges">
-            <h3>📊 Análisis de Suelo Inicial (<span class="notranslate" translate="no">meq/100g</span> de suelo)</h3>
+            <h3>📊 Análisis de Suelo Inicial (<span class="notranslate" translate="no">meq/100g o cmol⁺/kg</span> de suelo)</h3>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <div></div>
               <div class="total-display">
@@ -814,9 +814,9 @@ function sectionTemplate(name) {
 
           <!-- Objetivos de Ajuste -->
           <div class="ideal-ranges target-section">
-            <h3>🎯 Meq/100g a ajustar en CIC</h3>
+            <h3>🎯 <span class="notranslate" translate="no">Meq/100g o cmol⁺/kg</span> a ajustar en CIC</h3>
             <p style="margin: -4px 0 12px; font-size: 12px; color: #64748b;">
-              ℹ️ Meq/100g a ajustar: valores positivos indican déficit; valores negativos indican exceso.
+              ℹ️ Misma magnitud en <span class="notranslate" translate="no">meq/100g</span> o <span class="notranslate" translate="no">cmol⁺/kg</span>: valores positivos = déficit; negativos = exceso.
             </p>
             <div class="target-grid">
               <div class="target-item cation-good">
@@ -3306,10 +3306,11 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     naRemoval: (item.naRemoval || 0) * reachFactor
   }));
   
-  let html = `<h3>📊 Resultados del Cálculo de Enmiendas</h3>`;
+  let html = `<div class="np-amend-results-pro">`;
+  html += `<h3 class="np-amend-results-title">📊 Resultados del Cálculo de Enmiendas</h3>`;
   
   if (adjustedDetails.length === 0) {
-    html += '<p>No se requieren enmiendas con las seleccionadas actuales.</p>';
+    html += '<p class="np-amend-results-empty">No se requieren enmiendas con las seleccionadas actuales.</p>';
   } else {
     // Calcular totales reales de todos los nutrientes
     let totalKReal = 0, totalCaReal = 0, totalMgReal = 0, totalSo4Real = 0, totalSiReal = 0;
@@ -3331,12 +3332,12 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
     if (totalSo4Real > 0) html += `<li><strong>Sulfato (<span class="notranslate" translate="no">SO₄²⁻</span>):</strong> ${formatNumber(totalSo4Real)} kg/ha</li>`;
     if (totalSiReal > 0) html += `<li><strong>Silicio (<span class="notranslate" translate="no">Si</span>):</strong> ${formatNumber(totalSiReal)} kg/ha</li>`;
     html += '</ul>';
-    html += `<div style="font-size: 12px; color: #64748b; margin-top: 6px;">% del volumen de suelo explorado por raíces (${formatNumber(reachPercent, 0)}%).</div>`;
+    html += `<div class="np-amend-reach-note">% del volumen de suelo explorado por raíces (${formatNumber(reachPercent, 0)}%).</div>`;
     html += '</div>';
     
     html += '<div class="amendment-details">';
     html += '<h4>📋 Detalles por Enmienda:</h4>';
-    html += '<table class="results-table">';
+    html += '<div class="np-amend-table-wrap"><table class="results-table">';
     html += '<thead><tr><th>Enmienda</th><th>Cantidad (kg/ha)</th><th><span class="notranslate" translate="no">K⁺</span> (kg/ha)</th><th><span class="notranslate" translate="no">Ca²⁺</span> (kg/ha)</th><th><span class="notranslate" translate="no">Mg²⁺</span> (kg/ha)</th><th><span class="notranslate" translate="no">SO₄²⁻</span> (kg/ha)</th><th><span class="notranslate" translate="no">Si</span> (kg/ha)</th></tr></thead>';
     html += '<tbody>';
     
@@ -3357,10 +3358,11 @@ function showCombinedAmendmentResults(amendmentDetails, totalCa, totalMg, totalK
       html += '</tr>';
     });
     
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     html += '</div>';
     
   }
+  html += '</div>';
   
   resultsSection.innerHTML = html;
   resultsSection.style.display = 'block';
@@ -8967,43 +8969,43 @@ function createLegacyReportHTML(data) {
             <tr>
               <td><strong>Potasio (K)</strong></td>
               <td>${data.initialAnalysis.k.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${((data.initialAnalysis.k / data.initialAnalysis.cic) * 100).toFixed(1)}%</td>
             </tr>
             <tr>
               <td><strong>Calcio (Ca)</strong></td>
               <td>${data.initialAnalysis.ca.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${((data.initialAnalysis.ca / data.initialAnalysis.cic) * 100).toFixed(1)}%</td>
             </tr>
             <tr>
               <td><strong>Magnesio (Mg)</strong></td>
               <td>${data.initialAnalysis.mg.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${((data.initialAnalysis.mg / data.initialAnalysis.cic) * 100).toFixed(1)}%</td>
             </tr>
             <tr>
               <td><strong>Hidrógeno (H)</strong></td>
               <td>${data.initialAnalysis.h.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${((data.initialAnalysis.h / data.initialAnalysis.cic) * 100).toFixed(1)}%</td>
             </tr>
             <tr>
               <td><strong>Sodio (Na)</strong></td>
               <td>${data.initialAnalysis.na.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${((data.initialAnalysis.na / data.initialAnalysis.cic) * 100).toFixed(1)}%</td>
             </tr>
             <tr>
               <td><strong>Aluminio (Al)</strong></td>
               <td>${data.initialAnalysis.al.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${((data.initialAnalysis.al / data.initialAnalysis.cic) * 100).toFixed(1)}%</td>
             </tr>
             <tr style="background: #e0f2fe;">
               <td><strong>CIC Total</strong></td>
               <td><strong>${data.initialAnalysis.cic.toFixed(2)}</strong></td>
-              <td><strong>meq/100g</strong></td>
+              <td class="notranslate" translate="no"><strong>meq/100g o cmol⁺/kg</strong></td>
               <td><strong>100%</strong></td>
             </tr>
           </tbody>
@@ -9041,37 +9043,37 @@ function createLegacyReportHTML(data) {
             <tr>
               <td><strong>Potasio (K)</strong></td>
               <td>${data.adjustments.k > 0 ? '+' : ''}${data.adjustments.k.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${data.adjustments.k > 0 ? 'Aumentar' : data.adjustments.k < 0 ? 'Disminuir' : 'Sin cambio'}</td>
             </tr>
             <tr>
               <td><strong>Calcio (Ca)</strong></td>
               <td>${data.adjustments.ca > 0 ? '+' : ''}${data.adjustments.ca.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${data.adjustments.ca > 0 ? 'Aumentar' : data.adjustments.ca < 0 ? 'Disminuir' : 'Sin cambio'}</td>
             </tr>
             <tr>
               <td><strong>Magnesio (Mg)</strong></td>
               <td>${data.adjustments.mg > 0 ? '+' : ''}${data.adjustments.mg.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${data.adjustments.mg > 0 ? 'Aumentar' : data.adjustments.mg < 0 ? 'Disminuir' : 'Sin cambio'}</td>
             </tr>
             <tr>
               <td><strong>Hidrógeno (H)</strong></td>
               <td>${data.adjustments.h > 0 ? '+' : ''}${data.adjustments.h.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${data.adjustments.h > 0 ? 'Aumentar' : data.adjustments.h < 0 ? 'Disminuir' : 'Sin cambio'}</td>
             </tr>
             <tr>
               <td><strong>Sodio (Na)</strong></td>
               <td>${data.adjustments.na > 0 ? '+' : ''}${data.adjustments.na.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${data.adjustments.na > 0 ? 'Aumentar' : data.adjustments.na < 0 ? 'Disminuir' : 'Sin cambio'}</td>
             </tr>
             <tr>
               <td><strong>Aluminio (Al)</strong></td>
               <td>${data.adjustments.al > 0 ? '+' : ''}${data.adjustments.al.toFixed(2)}</td>
-              <td>meq/100g</td>
+              <td class="notranslate" translate="no">meq/100g o cmol⁺/kg</td>
               <td>${data.adjustments.al > 0 ? 'Aumentar' : data.adjustments.al < 0 ? 'Disminuir' : 'Sin cambio'}</td>
             </tr>
           </tbody>
@@ -13165,11 +13167,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-vpd-table-wrap .report-admin-table tbody tr:nth-child(even) td {
           background: #fffdf5;
         }
-        .report-vpd-table-wrap .report-admin-table.report-vpd-wide-table td:first-child,
-        .report-vpd-table-wrap .report-admin-table.report-vpd-wide-table th:first-child {
-          text-align: left;
-        }
-        .report-vpd-table-wrap .report-admin-table.report-vpd-wide-table td:not(:first-child) {
+        .report-vpd-table-wrap .report-admin-table.report-vpd-wide-table tbody td {
           text-align: center;
         }
         .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table td:nth-child(5),
@@ -13185,6 +13183,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           .report-table-wrap:not(.report-granular-materials):not(.report-pdf-compact-table):not(.report-hydro-table-wrap) .report-app-table { min-width: 980px; }
           .report-admin-table.report-vpd-wide-table { min-width: 0; max-width: 100%; }
           .report-admin-table.report-vpd-saved-table { min-width: 0; max-width: 100%; }
+          .report-amend-results-wrap .results-table { min-width: 520px; }
         }
         .report-admin-table td {
           color: #0f172a;
@@ -13503,6 +13502,160 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-hydro-table-wrap .report-app-table tbody tr:last-child td {
           border-bottom: none;
         }
+        /* Enmiendas — resultados (PDF): tarjetas y tabla redondeada tipo PRO */
+        .report-amend-results-wrap.report-amend-results-pro {
+          background: linear-gradient(180deg, #fffbeb 0%, #ffffff 50%);
+          border: 1px solid #fcd34d;
+          border-radius: 14px;
+          padding: 10px 12px 12px;
+          max-height: 580px;
+          overflow: auto;
+          box-shadow:
+            0 6px 20px rgba(180, 83, 9, 0.1),
+            0 0 0 1px rgba(255, 255, 255, 0.88) inset;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .report-amend-results-wrap.report-amend-results-fallback {
+          max-height: none;
+        }
+        .report-amend-results-wrap > h3:first-of-type,
+        .report-amend-results-wrap > .np-amend-results-pro > .np-amend-results-title {
+          display: none !important;
+        }
+        .report-amend-results-wrap .np-amend-results-pro {
+          background: transparent;
+          border: none;
+          box-shadow: none;
+          padding: 0;
+        }
+        .report-amend-results-wrap .np-amend-results-empty {
+          margin: 0;
+          font-size: 11px;
+          color: #64748b;
+          line-height: 1.45;
+        }
+        .report-amend-results-wrap .amendment-summary {
+          background: linear-gradient(180deg, #fffef8 0%, #f8fafc 100%);
+          border: 1px solid #fde68a;
+          border-radius: 12px;
+          padding: 10px 12px;
+          margin: 0 0 10px 0;
+          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .report-amend-results-wrap .amendment-summary h4 {
+          color: #1e3a5f;
+          font-size: 11px;
+          margin: 0 0 8px 0;
+        }
+        .report-amend-results-wrap .amendment-summary ul {
+          margin: 0;
+          padding-left: 18px;
+          font-size: 10.5px;
+          line-height: 1.35;
+          color: #334155;
+        }
+        .report-amend-results-wrap .np-amend-reach-note,
+        .report-amend-results-wrap .amendment-summary > div[style*="font-size: 12px"] {
+          font-size: 9.5px !important;
+          color: #64748b !important;
+          margin-top: 8px !important;
+        }
+        .report-amend-results-wrap .amendment-details {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 10px 12px 12px;
+          box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+        }
+        .report-amend-results-wrap .amendment-details h4 {
+          color: #1e3a5f;
+          font-size: 11px;
+          margin: 0 0 8px 0;
+        }
+        .report-amend-results-wrap .np-amend-table-wrap {
+          border-radius: 11px;
+          overflow: hidden;
+          border: 1px solid #fcd34d;
+          background: #fffbeb;
+        }
+        .report-amend-results-wrap .results-table {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
+          font-size: 8.2px;
+          table-layout: fixed;
+        }
+        .report-amend-results-wrap .results-table th,
+        .report-amend-results-wrap .results-table td {
+          border: none;
+          border-right: 1px solid #e7e5e4;
+          border-bottom: 1px solid #e7e5e4;
+          padding: 4px 4px;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          vertical-align: top;
+        }
+        .report-amend-results-wrap .results-table th:last-child,
+        .report-amend-results-wrap .results-table td:last-child {
+          border-right: none;
+        }
+        .report-amend-results-wrap .results-table tbody tr:last-child td {
+          border-bottom: none;
+        }
+        .report-amend-results-wrap .results-table thead th {
+          background: linear-gradient(180deg, #fde68a 0%, #fef3c7 100%);
+          color: #78350f;
+          font-weight: 700;
+          font-size: 7.55px;
+          letter-spacing: 0.02em;
+          line-height: 1.15;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .report-amend-results-wrap .results-table tbody td {
+          background: #ffffff;
+          color: #334155;
+        }
+        .report-amend-results-wrap .results-table tbody tr:nth-child(even) td {
+          background: #fffef8;
+        }
+        .report-amend-results-wrap .amendment-details > .results-table {
+          border: 1px solid #fcd34d;
+          border-radius: 11px;
+          border-collapse: separate;
+          overflow: hidden;
+        }
+        .report-amend-results-wrap.report-amend-results-fallback .np-amend-fallback-summary {
+          background: linear-gradient(180deg, #fffef8 0%, #f8fafc 100%);
+          border: 1px solid #fde68a;
+          border-radius: 12px;
+          padding: 10px 12px;
+          margin-bottom: 10px;
+        }
+        .report-amend-results-wrap.report-amend-results-fallback .np-amend-fallback-summary-title {
+          font-weight: 700;
+          font-size: 11px;
+          color: #1e3a5f;
+          margin-bottom: 6px;
+        }
+        .report-amend-results-wrap.report-amend-results-fallback .np-amend-fallback-details {
+          background: #fff;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 10px 12px 12px;
+        }
+        .report-amend-results-wrap.report-amend-results-fallback .np-amend-fallback-details-title {
+          font-weight: 700;
+          font-size: 11px;
+          color: #1e3a5f;
+          margin-bottom: 8px;
+        }
+        .report-amend-results-wrap.report-amend-results-fallback .report-admin-table.results-table {
+          font-size: 8.2px;
+        }
         .report-json {
           margin-top: 10px;
           background: #f8fafc;
@@ -13637,6 +13790,16 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           }
           .report-hydro-table-wrap .report-app-table thead th {
             font-size: 6.65px;
+          }
+          .report-amend-results-wrap .results-table {
+            font-size: 7.35px;
+          }
+          .report-amend-results-wrap .results-table th,
+          .report-amend-results-wrap .results-table td {
+            padding: 3px 3px;
+          }
+          .report-amend-results-wrap .results-table thead th {
+            font-size: 6.85px;
           }
           .report-vpd-table-wrap .report-admin-table.report-vpd-wide-table thead th {
             font-size: 6.85px;
@@ -14139,7 +14302,7 @@ function createAmendmentsSectionHTML() {
       <div class="report-block" style="border-color:#fde68a;background:#fffbeb;">
         <div class="report-block-title">🔬 Datos de Análisis de Suelo (para cálculo de enmiendas)</div>
         <div style="background:#fff;padding:10px;border:1px solid #fde68a;border-radius:8px;margin-bottom:10px;">
-          <strong>Elementos Iniciales (meq/100g):</strong>
+          <strong>Elementos Iniciales (<span class="notranslate" translate="no">meq/100g o cmol⁺/kg</span>):</strong>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px;font-size:13px;">
             <div><strong>K:</strong> ${reportNum(initial.k, 2)}</div>
             <div><strong>Ca:</strong> ${reportNum(initial.ca, 2)}</div>
@@ -14159,7 +14322,7 @@ function createAmendmentsSectionHTML() {
           </div>
         </div>
         <div style="background:#fff;padding:10px;border:1px solid #fde68a;border-radius:8px;">
-          <strong>Ajustes Requeridos (meq/100g):</strong>
+          <strong>Ajustes Requeridos (<span class="notranslate" translate="no">meq/100g o cmol⁺/kg</span>):</strong>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px;font-size:13px;">
             <div><strong>K:</strong> ${reportNum(adjustments.k, 2)}</div>
             <div><strong>Ca:</strong> ${reportNum(adjustments.ca, 2)}</div>
@@ -14173,20 +14336,23 @@ function createAmendmentsSectionHTML() {
       <div class="report-block" style="border-color:#fde68a;background:#fffef3;">
         <div class="report-block-title">📊 Resultados del Cálculo de Enmiendas</div>
         ${detailedHTML ? `
-          <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px;max-height:580px;overflow:auto;">
+          <div class="report-amend-results-wrap report-amend-results-pro">
             ${detailedHTML}
           </div>
         ` : `
-          <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px;">
-            <div style="font-weight:700;margin-bottom:8px;">🎯 Aportes Totales</div>
+          <div class="report-amend-results-wrap report-amend-results-pro report-amend-results-fallback">
+            <div class="np-amend-fallback-summary">
+            <div class="np-amend-fallback-summary-title">🎯 Aportes Totales</div>
             <ul class="report-list" style="margin-bottom:8px;">
               <li><strong>Calcio (Ca²⁺):</strong> ${reportNum(rawTotals.totalCa, 2)} kg/ha</li>
               <li><strong>Magnesio (Mg²⁺):</strong> ${reportNum(rawTotals.totalMg, 2)} kg/ha</li>
               <li><strong>Potasio (K⁺):</strong> ${reportNum(rawTotals.totalK, 2)} kg/ha</li>
               <li><strong>Silicio (<span class="notranslate" translate="no">Si</span>):</strong> ${reportNum(rawTotals.totalSi, 2)} kg/ha</li>
             </ul>
-            <div style="font-weight:700;margin-bottom:6px;">🧾 Detalles por Enmienda</div>
-            <table class="report-admin-table">
+            </div>
+            <div class="np-amend-fallback-details">
+            <div class="np-amend-fallback-details-title">🧾 Detalles por Enmienda</div>
+            <div class="np-amend-table-wrap"><table class="report-admin-table results-table">
               <thead>
                 <tr>
                   <th>Enmienda</th>
@@ -14210,7 +14376,8 @@ function createAmendmentsSectionHTML() {
                   </tr>`;
                 }).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b;">No hay enmiendas seleccionadas.</td></tr>'}
               </tbody>
-            </table>
+            </table></div>
+            </div>
           </div>
         `}
       </div>
@@ -15396,11 +15563,12 @@ function createHidroponiaSectionHTML() {
     ? Math.ceil((volumeWaterM3 * injectionRateLperM3) / tankVolumeL)
     : null;
   const meqNutrients = ['N_NH4', 'N_NO3', 'P', 'S', 'K', 'Ca', 'Mg'];
+  const hydroPpmMacroOrder = ['N_NH4', 'N_NO3', 'P', 'S', 'Cl', 'K', 'Ca', 'Mg'];
   const microNutrients = ['Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo'];
-  const hydroNutrients = [...meqNutrients, ...microNutrients];
+  const hydroNutrients = [...hydroPpmMacroOrder, ...microNutrients];
   const eqW = { N_NO3: 14, N_NH4: 14, P: 31, S: 16.03, K: 39.1, Ca: 20.04, Mg: 12.15 };
   function label(n) {
-    const map = { N_NH4: 'N-NH₄⁺', N_NO3: 'N-NO₃⁻', P: 'P-H₂PO₄⁻', S: 'S-SO₄²⁻', K: 'K⁺', Ca: 'Ca²⁺', Mg: 'Mg²⁺' };
+    const map = { N_NH4: 'N-NH₄⁺', N_NO3: 'N-NO₃⁻', P: 'P-H₂PO₄⁻', S: 'S-SO₄²⁻', Cl: 'Cl⁻', K: 'K⁺', Ca: 'Ca²⁺', Mg: 'Mg²⁺' };
     return map[n] || n;
   }
   function toNum(v) {
@@ -15494,13 +15662,15 @@ function createHidroponiaSectionHTML() {
   const stageRowsPpm = stages.map(stage => {
     const meq = stage.meq || {};
     const ppm = stage.ppm || {};
+    const macroCells = meqNutrients.map(n => {
+      const v = ppm[n] != null ? toNum(ppm[n]) : (toNum(meq[n]) * toNum(eqW[n]));
+      return `<td>${v.toFixed(1)}</td>`;
+    }).join('');
+    const clCell = `<td>${toNum(ppm.Cl).toFixed(1)}</td>`;
+    const microCells = microNutrients.map(n => `<td>${toNum(ppm[n]).toFixed(2)}</td>`).join('');
     return `<tr>
       <td>${reportEscapeHtml(stage.name || '')}</td>
-      ${meqNutrients.map(n => {
-        const v = ppm[n] != null ? toNum(ppm[n]) : (toNum(meq[n]) * toNum(eqW[n]));
-        return `<td>${v.toFixed(1)}</td>`;
-      }).join('')}
-      ${microNutrients.map(n => `<td>${toNum(ppm[n]).toFixed(2)}</td>`).join('')}
+      ${macroCells}${clCell}${microCells}
     </tr>`;
   }).join('');
   function getHydroFertilizerContributionsForReport(fert, dose) {
@@ -15635,8 +15805,8 @@ function createHidroponiaSectionHTML() {
         <div class="report-block-title">📐 Solución nutritiva por etapa (ppm)</div>
         <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
-          <thead><tr><th>Etapa</th>${meqNutrients.map(n => `<th>${label(n)} ppm</th>`).join('')}${microNutrients.map(n => `<th>${n} ppm</th>`).join('')}</tr></thead>
-          <tbody>${stageRowsPpm || `<tr><td colspan="${meqNutrients.length + microNutrients.length + 1}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
+          <thead><tr><th>Etapa</th>${meqNutrients.map(n => `<th>${label(n)} ppm</th>`).join('')}<th>${label('Cl')} ppm</th>${microNutrients.map(n => `<th>${n} ppm</th>`).join('')}</tr></thead>
+          <tbody>${stageRowsPpm || `<tr><td colspan="${meqNutrients.length + microNutrients.length + 2}" style="text-align:center;color:#64748b;">Sin etapas configuradas.</td></tr>`}</tbody>
         </table>
         </div>
       </div>
@@ -15665,8 +15835,8 @@ function createHidroponiaSectionHTML() {
         </div>
         <div class="report-table-wrap report-hydro-table-wrap">
         <table class="report-app-table">
-          <thead><tr><th>Fertilizante</th><th>Tanque</th><th>Dosis (ppm)</th>${meqNutrients.map(n => `<th>${label(n)}</th>`).join('')}${microNutrients.map(n => `<th>${n}</th>`).join('')}<th>Total producto</th></tr></thead>
-          <tbody>${fertRows || `<tr><td colspan="${meqNutrients.length + microNutrients.length + 4}" style="text-align:center;color:#64748b;">Sin fertilizantes guardados.</td></tr>`}</tbody>
+          <thead><tr><th>Fertilizante</th><th>Tanque</th><th>Dosis (ppm)</th>${hydroPpmMacroOrder.map(n => `<th>${label(n)}</th>`).join('')}${microNutrients.map(n => `<th>${n}</th>`).join('')}<th>Total producto</th></tr></thead>
+          <tbody>${fertRows || `<tr><td colspan="${hydroPpmMacroOrder.length + microNutrients.length + 4}" style="text-align:center;color:#64748b;">Sin fertilizantes guardados.</td></tr>`}</tbody>
         </table>
         </div>
       </div>
@@ -15684,9 +15854,64 @@ function createHidroponiaSectionHTML() {
         <div class="report-block-title">📊 PPM aportadas totales (solución nutritiva + agua)</div>
         <div class="report-note" style="margin-bottom:8px;">Total por nutriente = aporte de fertilizantes en solución nutritiva + aporte del agua de riego.</div>
         <div class="report-nutrient-wrap">
-          ${[...meqNutrients, ...microNutrients].map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(ppmTotalsWithWater[n]).toFixed(2)} ppm</span>`).join('')}
+          ${[...hydroPpmMacroOrder, ...microNutrients].map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(ppmTotalsWithWater[n]).toFixed(2)} ppm</span>`).join('')}
         </div>
       </div>
+      ${(() => {
+        const tNo3 = toNum(ppmTotals.N_NO3);
+        const tNh4 = toNum(ppmTotals.N_NH4);
+        const tCl = toNum(ppmTotals.Cl);
+        const wNo3 = toNum(waterPpm.N_NO3);
+        const wNh4 = toNum(waterPpm.N_NH4);
+        const wCl = toNum(waterPpm.Cl);
+        const nFer = tNo3 + tNh4;
+        const pNo3F = nFer > 0 ? (tNo3 / nFer) * 100 : 0;
+        const pNh4F = nFer > 0 ? (tNh4 / nFer) * 100 : 0;
+        const ncFer = tNo3 + tCl;
+        const pNo3NcF = ncFer > 0 ? (tNo3 / ncFer) * 100 : 0;
+        const pClF = ncFer > 0 ? (tCl / ncFer) * 100 : 0;
+        const sNo3 = tNo3 + wNo3;
+        const sNh4 = tNh4 + wNh4;
+        const sCl = tCl + wCl;
+        const nSol = sNo3 + sNh4;
+        const pNo3S = nSol > 0 ? (sNo3 / nSol) * 100 : 0;
+        const pNh4S = nSol > 0 ? (sNh4 / nSol) * 100 : 0;
+        const ncSol = sNo3 + sCl;
+        const pNo3NcS = ncSol > 0 ? (sNo3 / ncSol) * 100 : 0;
+        const pClS = ncSol > 0 ? (sCl / ncSol) * 100 : 0;
+        const fmt = (x) => (Number.isFinite(x) ? x.toFixed(1) : '0.0');
+        if (nFer <= 0 && ncFer <= 0 && nSol <= 0 && ncSol <= 0) return '';
+        const bitsF = [];
+        if (nFer > 0) {
+          bitsF.push(`del N aportado (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3F)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4F)}%</strong>`);
+        }
+        if (ncFer > 0) {
+          bitsF.push(`respecto a N-NO₃⁻ + Cl⁻ en ese aporte: <strong>N-NO₃⁻ ${fmt(pNo3NcF)}%</strong> · <strong>Cl⁻ ${fmt(pClF)}%</strong>`);
+        } else if (tCl <= 0 && nFer > 0) {
+          bitsF.push('sin Cl⁻ aportado por fertilizantes (aparece al usar KCl, cloruro de calcio, etc.)');
+        }
+        const lineF = bitsF.length
+          ? `<strong>Aporte solo fertilizantes (ppm):</strong> ${bitsF.join('; ')}.`
+          : '';
+        const bitsS = [];
+        if (nSol > 0) {
+          bitsS.push(`del N total (N-NO₃⁻ + N-NH₄⁺): <strong>N-NO₃⁻ ${fmt(pNo3S)}%</strong> · <strong>N-NH₄⁺ ${fmt(pNh4S)}%</strong>`);
+        }
+        if (ncSol > 0) {
+          bitsS.push(`respecto a N-NO₃⁻ + Cl⁻ total: <strong>N-NO₃⁻ ${fmt(pNo3NcS)}%</strong> · <strong>Cl⁻ ${fmt(pClS)}%</strong> (incluye Cl⁻ del agua si lo capturaste)`);
+        } else if (sCl <= 0 && nSol > 0) {
+          bitsS.push('sin Cl⁻ en fertilizantes ni en agua para el par N-NO₃⁻ + Cl⁻');
+        }
+        const lineS = bitsS.length
+          ? `<strong>Solución final (fertilizantes + agua, ppm):</strong> ${bitsS.join('; ')}.`
+          : '';
+        if (!lineF && !lineS) return '';
+        return `
+      <div class="report-block">
+        <div class="report-block-title">📎 Relación N-NO₃⁻ / N-NH₄⁺ y N-NO₃⁻ / Cl⁻</div>
+        <div class="report-note" style="margin-bottom:0;line-height:1.5;">${lineF}${lineF && lineS ? '<br><br>' : ''}${lineS}</div>
+      </div>`;
+      })()}
     </div>
   `;
 }
@@ -15726,7 +15951,7 @@ function createVPDReportSectionHTML() {
           <td>${reportNum(r.hoursLow, 0)}</td>
           <td>${reportNum(r.hoursOptimal, 0)}</td>
           <td>${reportNum(r.stressPct, 1)}%</td>
-          <td>${Number.isFinite(Number(r.maxUv)) ? reportNum(r.maxUv, 1) + '<div>' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div>' : '—'}</td>
+          <td>${Number.isFinite(Number(r.maxUv)) ? reportNum(r.maxUv, 1) + '<div style="text-align:center">' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div>' : '—'}</td>
         </tr>
       `;
     }).join('')
@@ -15742,7 +15967,7 @@ function createVPDReportSectionHTML() {
           <td>${reportNum(r.humidity, 1)}</td>
           <td>${reportEscapeHtml(rad)}</td>
           <td>${reportEscapeHtml(String(r.type === 'high' ? 'Alto' : 'Bajo'))}</td>
-          <td>${Number.isFinite(Number(r.uvIndex)) ? reportEscapeHtml(formatUvIndexValue(r.uvIndex)) + '<div>' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div>' : '—'}</td>
+          <td>${Number.isFinite(Number(r.uvIndex)) ? reportEscapeHtml(formatUvIndexValue(r.uvIndex)) + '<div style="text-align:center">' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div>' : '—'}</td>
         </tr>
       `;
     }).join('')
@@ -16791,7 +17016,7 @@ function createAguaTabHTML() {
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
       </div>
       <h2 class="text-xl" style="margin-bottom: 16px;">🔬 Análisis de Agua</h2>
-      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de agua de riego. meq/L y ppm con conversión automática, sumas de cationes y aniones, aporte por volumen (m³) en kg elemento y óxido, y cálculo de ácido para neutralizar bicarbonatos/carbonatos.</p>
+      <p style="margin-bottom:12px;font-size:0.9rem;color:#64748b;">Análisis de agua de riego. Columnas <span class="notranslate" translate="no">meq/L o mmolc/L</span> (mismo número para carga iónica) y ppm con conversión automática; sumas de cationes y aniones; aporte por volumen (m³) en kg elemento y óxido; y cálculo de ácido para neutralizar bicarbonatos/carbonatos.</p>
       <p style="margin-bottom:14px;font-size:0.85rem;color:#475569;padding:10px 12px;background:#f8fafc;border-radius:8px;border-left:3px solid #0ea5e9;">Los kilogramos en las tablas (elemento y óxido) son el aporte total para el volumen de agua de riego que indiques en cada reporte (campo m³ agua de riego).</p>
       <div class="soil-analysis-layout">
         <div class="soil-analysis-list-panel">
@@ -16825,25 +17050,25 @@ function createAguaTabHTML() {
                 </div>
               </details>
               <details class="soil-section" data-aw-section="cations" open>
-                <summary>⚗️ Cationes (meq/L, ppm, kg elemento, kg óxido (CaO, MgO, K₂O))</summary>
+                <summary>⚗️ Cationes (<span class="notranslate" translate="no">meq/L o mmolc/L</span>, ppm, kg elemento, kg óxido (CaO, MgO, K₂O))</summary>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
-                    <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>kg elemento</th><th>kg óxido (CaO, MgO, K₂O)</th></tr></thead>
+                    <thead><tr><th>Elemento</th><th><span class="notranslate" translate="no">meq/L<br>o mmolc/L</span></th><th>ppm</th><th>kg elemento</th><th>kg óxido (CaO, MgO, K₂O)</th></tr></thead>
                     <tbody class="notranslate" translate="no">
                       <tr><td>Ca²⁺</td><td><input type="number" step="0.01" id="aw-ca-meq" class="fertirriego-input" data-aw-macro="Ca" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Ca','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-ca-ppm" class="fertirriego-input" data-aw-macro="Ca" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Ca','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-ca">—</td><td id="aw-kg-cao">—</td></tr>
                       <tr><td>Mg²⁺</td><td><input type="number" step="0.01" id="aw-mg-meq" class="fertirriego-input" data-aw-macro="Mg" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Mg','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-mg-ppm" class="fertirriego-input" data-aw-macro="Mg" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Mg','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-mg">—</td><td id="aw-kg-mgo">—</td></tr>
                       <tr><td>K⁺</td><td><input type="number" step="0.01" id="aw-k-meq" class="fertirriego-input" data-aw-macro="K" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('K','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-k-ppm" class="fertirriego-input" data-aw-macro="K" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('K','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-k">—</td><td id="aw-kg-k2o">—</td></tr>
                       <tr><td>Na⁺</td><td><input type="number" step="0.01" id="aw-na-meq" class="fertirriego-input" data-aw-macro="Na" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Na','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-na-ppm" class="fertirriego-input" data-aw-macro="Na" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Na','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-na">—</td><td id="aw-kg-na2o">—</td></tr>
-                      <tr><td colspan="2"><strong>Suma cationes (meq/L)</strong></td><td id="aw-sum-cations-meq" colspan="3">—</td></tr>
+                      <tr><td colspan="2"><strong>Suma cationes (<span class="notranslate" translate="no">meq/L o mmolc/L</span>)</strong></td><td id="aw-sum-cations-meq" colspan="3">—</td></tr>
                     </tbody>
                   </table>
                 </div>
               </details>
               <details class="soil-section" data-aw-section="anions" open>
-                <summary>⚗️ Aniones (meq/L, ppm, kg elemento, kg óxido (P₂O₅, SO₃))</summary>
+                <summary>⚗️ Aniones (<span class="notranslate" translate="no">meq/L o mmolc/L</span>, ppm, kg elemento, kg óxido (P₂O₅, SO₃))</summary>
                 <div class="soil-fertility-table-wrap" style="overflow-x:auto;">
                   <table class="fertirriego-requirement-table soil-fertility-table">
-                    <thead><tr><th>Elemento</th><th>meq/L</th><th>ppm</th><th>kg elemento</th><th>kg óxido (P₂O₅, SO₃)</th></tr></thead>
+                    <thead><tr><th>Elemento</th><th><span class="notranslate" translate="no">meq/L<br>o mmolc/L</span></th><th>ppm</th><th>kg elemento</th><th>kg óxido (P₂O₅, SO₃)</th></tr></thead>
                     <tbody class="notranslate" translate="no">
                       <tr><td>N-NO₃⁻</td><td><input type="number" step="0.01" id="aw-no3-meq" class="fertirriego-input" data-aw-macro="NO3" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('NO3','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-no3-ppm" class="fertirriego-input" data-aw-macro="NO3" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('NO3','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-n">—</td><td>—</td></tr>
                       <tr><td>P-H₂PO₄⁻</td><td><input type="number" step="0.01" id="aw-po4-meq" class="fertirriego-input" data-aw-macro="PO4" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('PO4','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td><input type="number" step="0.01" id="aw-po4-ppm" class="fertirriego-input" data-aw-macro="PO4" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('PO4','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateKgOxide && window.awUpdateKgOxide();"></td><td id="aw-kg-p">—</td><td id="aw-kg-p2o5">—</td></tr>
@@ -16851,7 +17076,7 @@ function createAguaTabHTML() {
                       <tr><td>Cl⁻</td><td><input type="number" step="0.01" id="aw-cl-meq" class="fertirriego-input" data-aw-macro="Cl" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Cl','meq',this); window.awUpdateSums && window.awUpdateSums();"></td><td><input type="number" step="0.01" id="aw-cl-ppm" class="fertirriego-input" data-aw-macro="Cl" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('Cl','ppm',this); window.awUpdateSums && window.awUpdateSums();"></td><td>—</td><td>—</td></tr>
                       <tr><td>HCO₃⁻</td><td><input type="number" step="0.01" id="aw-hco3-meq" class="fertirriego-input" data-aw-macro="HCO3" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('HCO3','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td><input type="number" step="0.01" id="aw-hco3-ppm" class="fertirriego-input" data-aw-macro="HCO3" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('HCO3','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td>—</td><td>—</td></tr>
                       <tr><td>CO₃²⁻</td><td><input type="number" step="0.01" id="aw-co3-meq" class="fertirriego-input" data-aw-macro="CO3" data-aw-unit="meq" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('CO3','meq',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td><input type="number" step="0.01" id="aw-co3-ppm" class="fertirriego-input" data-aw-macro="CO3" data-aw-unit="ppm" oninput="window.awSyncMeqPpm && window.awSyncMeqPpm('CO3','ppm',this); window.awUpdateSums && window.awUpdateSums(); window.awUpdateAcid && window.awUpdateAcid();"></td><td>—</td><td>—</td></tr>
-                      <tr><td colspan="2"><strong>Suma aniones (meq/L)</strong></td><td id="aw-sum-anions-meq" colspan="3">—</td></tr>
+                      <tr><td colspan="2"><strong>Suma aniones (<span class="notranslate" translate="no">meq/L o mmolc/L</span>)</strong></td><td id="aw-sum-anions-meq" colspan="3">—</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -16873,17 +17098,17 @@ function createAguaTabHTML() {
               </details>
               <details class="soil-section" data-aw-section="acid" open style="border:2px solid #16a34a;background:#f0fdf4;border-radius:8px;padding:12px;margin-top:8px;">
                 <summary>🧪 Ácido para neutralizar HCO₃⁻ y CO₃²⁻</summary>
-                <p style="font-size:0.85rem;color:#166534;margin-bottom:8px;">Meq ácido = (HCO₃⁻ + CO₃²⁻) − meq/L residual objetivo. Resultado en mL/m³ y litros totales según el volumen indicado.</p>
+                <p style="font-size:0.85rem;color:#166534;margin-bottom:8px;">Meq ácido = (HCO₃⁻ + CO₃²⁻) − residual objetivo (<span class="notranslate" translate="no">meq/L o mmolc/L</span>). Resultado en mL/m³ y litros totales según el volumen indicado.</p>
                 <div class="soil-fields agua-fields-acid" style="margin-bottom:12px;">
                   <label><span class="agua-field-lbl">Ácido:</span><select id="aw-acid-select" onchange="window.saveAguaField && window.saveAguaField('acidId',this.value); window.awUpdateAcid && window.awUpdateAcid();">` + acidOptions + `</select></label>
-                  <label><span class="agua-field-lbl">Residual objetivo (meq/L):</span><input type="number" step="0.01" min="0" id="aw-acid-residual" style="width:90px;max-width:100%;" oninput="window.saveAguaField && window.saveAguaField('acidResidualMeq',this.value); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('acidResidualMeq',this.value); window.awUpdateAcid && window.awUpdateAcid();"></label>
+                  <label><span class="agua-field-lbl">Residual objetivo (<span class="notranslate" translate="no">meq/L o mmolc/L</span>):</span><input type="number" step="0.01" min="0" id="aw-acid-residual" style="width:90px;max-width:100%;" oninput="window.saveAguaField && window.saveAguaField('acidResidualMeq',this.value); window.awUpdateAcid && window.awUpdateAcid();" onchange="window.saveAguaField && window.saveAguaField('acidResidualMeq',this.value); window.awUpdateAcid && window.awUpdateAcid();"></label>
                 </div>
                 <div class="aw-acid-results" style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:0.9rem;">
                   <span>En base a (m³ agua):</span><span id="aw-acid-m3-ref">—</span>
-                  <span>HCO₃⁻ (meq/L):</span><span id="aw-acid-hco3">—</span>
-                  <span>CO₃²⁻ (meq/L):</span><span id="aw-acid-co3">—</span>
-                  <span>Residual objetivo (meq/L):</span><span id="aw-acid-residual-ref">—</span>
-                  <span>Meq/L ácido necesarios:</span><span id="aw-acid-meq-needed">—</span>
+                  <span>HCO₃⁻ (<span class="notranslate" translate="no">meq/L</span>):</span><span id="aw-acid-hco3">—</span>
+                  <span>CO₃²⁻ (<span class="notranslate" translate="no">meq/L</span>):</span><span id="aw-acid-co3">—</span>
+                  <span>Residual objetivo (<span class="notranslate" translate="no">meq/L o mmolc/L</span>):</span><span id="aw-acid-residual-ref">—</span>
+                  <span><span class="notranslate" translate="no">meq/L o mmolc/L</span> ácido necesarios:</span><span id="aw-acid-meq-needed">—</span>
                 </div>
                 <div class="aw-acid-dosis-box" style="margin-top:10px;padding:10px 14px;border:2px solid #16a34a;border-radius:6px;background:#fff;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:0.9rem;">
                   <span>mL ácido / m³:</span><span id="aw-acid-per-m3">—</span>
@@ -17942,7 +18167,7 @@ function createSoilAnalysisTabHTML() {
                   <div class="soil-fertility-params-row" style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
                     <label title="Profundidad de la capa de suelo considerada en el análisis (ej. 0-20 cm)">Profundidad (cm) <input type="number" id="soil-fertility-depthCm" min="1" step="1" style="width:70px;" placeholder="ej. 20" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','depthCm',this.value); window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();"></label>
                     <label title="Qué parte de esa capa de suelo es realmente explorada por las raíces del cultivo. 100% = toda la capa; 50% = solo la mitad (ej. riego por goteo).">Suelo explorado por raíces (%) <input type="number" id="soil-fertility-reachPct" min="0" max="100" step="1" style="width:70px;" placeholder="100" title="100 = toda la capa; 50 = mitad" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('fertility','reachPct',this.value); window.updateSoilFertilityKgHa && window.updateSoilFertilityKgHa();"></label>
-                    <label title="CIC proviene de la sección Cationes intercambiables y CIC (suma Ca+Mg+K+Na+Al+H). Solo visual.">CIC (meq/100g) <span id="soil-cic-params" class="soil-cic-display">—</span></label>
+                    <label title="CIC proviene de la sección Cationes intercambiables y CIC (suma Ca+Mg+K+Na+Al+H). Solo visual."><span class="notranslate" translate="no">CIC (meq/100g o cmol⁺/kg)</span> <span id="soil-cic-params" class="soil-cic-display">—</span></label>
                   </div>
                   <div class="soil-fertility-params-hint">
                     <strong>Base técnica de ajuste.</strong><br>Los valores calculados no representan una recomendación directa; son un punto de partida sujeto a eficiencia y criterio agronómico.
@@ -18039,7 +18264,7 @@ function createSoilAnalysisTabHTML() {
                 <summary>⚗️ Cationes intercambiables y CIC</summary>
                 <div class="soil-cations-structure">
                   <div class="soil-cations-meq-block">
-                    <p class="soil-block-title">Concentraciones (meq/100g)</p>
+                    <p class="soil-block-title"><span class="notranslate" translate="no">Concentraciones (meq/100g o cmol⁺/kg)</span></p>
                     <div class="soil-fields soil-fields-inline">
                       <label class="notranslate" translate="no">Ca <input type="number" step="0.01" id="soil-cations-ca" data-group="cations" data-field="ca" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','ca',this.value)"></label>
                       <label class="notranslate" translate="no">Mg <input type="number" step="0.01" id="soil-cations-mg" data-group="cations" data-field="mg" onchange="window.saveSoilAnalysisField && window.saveSoilAnalysisField('cations','mg',this.value)"></label>
@@ -18052,7 +18277,7 @@ function createSoilAnalysisTabHTML() {
                   <div class="soil-cations-pct-box">
                     <p class="soil-block-title soil-block-title-blue">CIC y saturación (%)</p>
                     <div class="soil-cations-pct-inner">
-                      <label class="soil-cic-label-blue notranslate" translate="no" title="Calculado: suma de Ca+Mg+K+Na+Al+H (meq/100g)"><strong>CIC (meq/100g)</strong> <input type="text" id="soil-cations-cic" readonly class="soil-ratio-calc" placeholder="—"></label>
+                      <label class="soil-cic-label-blue notranslate" translate="no" title="Calculado: suma de Ca+Mg+K+Na+Al+H (meq/100g o cmol⁺/kg)"><strong>CIC (meq/100g o cmol⁺/kg)</strong> <input type="text" id="soil-cations-cic" readonly class="soil-ratio-calc" placeholder="—"></label>
                       <label class="notranslate" translate="no" title="Calculado: 100 × (Ca meq / CIC)">% Ca <input type="text" id="soil-cations-pctCa" readonly class="soil-ratio-calc" placeholder="—"></label>
                       <label class="notranslate" translate="no" title="Calculado: 100 × (Mg meq / CIC)">% Mg <input type="text" id="soil-cations-pctMg" readonly class="soil-ratio-calc" placeholder="—"></label>
                       <label class="notranslate" translate="no" title="Calculado: 100 × (K meq / CIC)">% K <input type="text" id="soil-cations-pctK" readonly class="soil-ratio-calc" placeholder="—"></label>
@@ -18064,7 +18289,7 @@ function createSoilAnalysisTabHTML() {
                 </div>
               </details>
               <details class="soil-section" data-soil-section="ratios">
-                <summary>📊 Relaciones entre cationes (calculadas desde meq/100g)</summary>
+                <summary>📊 Relaciones entre cationes (calculadas desde <span class="notranslate" translate="no">meq/100g o cmol⁺/kg</span>)</summary>
                 <div class="soil-ratios-structure">
                   <p class="soil-ratios-ref-title notranslate" translate="no">Valores de referencia: Ca/Mg = 6 · Mg/K = 3.5 · (Ca+Mg)/K = 18 · Ca/K = 14</p>
                   <div class="soil-fields soil-ratios-grid">
@@ -18870,36 +19095,40 @@ function buildUvSemaforoBadgeHtml(value) {
 function vpdStressSummaryRowHtml(rows) {
   var sepLead = 'border-left:3px solid #fdba74;';
   var sep = 'border-left:3px solid #fdba74;';
+  var td = function(extra) {
+    return 'padding:6px;border:1px solid #fed7aa;text-align:center;vertical-align:middle;' + (extra || '');
+  };
   return rows.map(function(r) {
     return '<tr>' +
-      '<td>' + String(r.period || '—') + '</td>' +
-      '<td style="' + sepLead + '">' + (Number.isFinite(Number(r.maxVpd)) ? Number(r.maxVpd).toFixed(2) : '—') + '</td>' +
-      '<td>' + String(r.maxAt || '—') + '</td>' +
-      '<td style="' + sep + '">' + (Number.isFinite(Number(r.minVpd)) ? Number(r.minVpd).toFixed(2) : '—') + '</td>' +
-      '<td>' + String(r.minAt || '—') + '</td>' +
-      '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursHigh)) ? String(r.hoursHigh) : '0') + '</td>' +
-      '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursLow)) ? String(r.hoursLow) : '0') + '</td>' +
-      '<td style="' + sep + '">' + (Number.isFinite(Number(r.hoursOptimal)) ? String(r.hoursOptimal) : '0') + '</td>' +
-      '<td style="' + sep + '">' + (Number.isFinite(Number(r.stressPct)) ? Number(r.stressPct).toFixed(1) + '%' : '—') + '</td>' +
-      '<td style="' + sep + '">' + formatUvIndexValue(r.maxUv) + '<div>' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div></td>' +
+      '<td style="' + td() + '">' + String(r.period || '—') + '</td>' +
+      '<td style="' + td(sepLead) + '">' + (Number.isFinite(Number(r.maxVpd)) ? Number(r.maxVpd).toFixed(2) : '—') + '</td>' +
+      '<td style="' + td() + '">' + String(r.maxAt || '—') + '</td>' +
+      '<td style="' + td(sep) + '">' + (Number.isFinite(Number(r.minVpd)) ? Number(r.minVpd).toFixed(2) : '—') + '</td>' +
+      '<td style="' + td() + '">' + String(r.minAt || '—') + '</td>' +
+      '<td style="' + td(sep) + '">' + (Number.isFinite(Number(r.hoursHigh)) ? String(r.hoursHigh) : '0') + '</td>' +
+      '<td style="' + td(sep) + '">' + (Number.isFinite(Number(r.hoursLow)) ? String(r.hoursLow) : '0') + '</td>' +
+      '<td style="' + td(sep) + '">' + (Number.isFinite(Number(r.hoursOptimal)) ? String(r.hoursOptimal) : '0') + '</td>' +
+      '<td style="' + td(sep) + '">' + (Number.isFinite(Number(r.stressPct)) ? Number(r.stressPct).toFixed(1) + '%' : '—') + '</td>' +
+      '<td style="' + td(sep) + '">' + formatUvIndexValue(r.maxUv) + '<div style="text-align:center">' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div></td>' +
     '</tr>';
   }).join('');
 }
 
 function vpdCriticalEventsRowHtml(rows) {
+  var td = 'padding:6px;border:1px solid #fed7aa;text-align:center;vertical-align:middle;';
   return rows.map(function(r) {
     var cls = r.type === 'high' ? '#b91c1c' : '#1d4ed8';
     var tag = r.type === 'high' ? 'Alto' : 'Bajo';
     var rad = Number.isFinite(Number(r.shortwaveRadiationWm2)) ? Number(r.shortwaveRadiationWm2).toFixed(0) + ' W/m²' : '—';
     var uv = Number.isFinite(Number(r.uvIndex)) ? formatUvIndexValue(r.uvIndex) : '—';
     return '<tr>' +
-      '<td>' + String(r.at || '—') + '</td>' +
-      '<td><strong style="color:' + cls + ';">' + (Number.isFinite(Number(r.vpd)) ? Number(r.vpd).toFixed(2) : '—') + '</strong></td>' +
-      '<td>' + (Number.isFinite(Number(r.temperature)) ? Number(r.temperature).toFixed(1) : '—') + '</td>' +
-      '<td>' + (Number.isFinite(Number(r.humidity)) ? Number(r.humidity).toFixed(1) : '—') + '</td>' +
-      '<td>' + rad + '</td>' +
-      '<td><span style="color:' + cls + ';font-weight:600;">' + tag + '</span></td>' +
-      '<td>' + uv + '<div>' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div></td>' +
+      '<td style="' + td + '">' + String(r.at || '—') + '</td>' +
+      '<td style="' + td + '"><strong style="color:' + cls + ';">' + (Number.isFinite(Number(r.vpd)) ? Number(r.vpd).toFixed(2) : '—') + '</strong></td>' +
+      '<td style="' + td + '">' + (Number.isFinite(Number(r.temperature)) ? Number(r.temperature).toFixed(1) : '—') + '</td>' +
+      '<td style="' + td + '">' + (Number.isFinite(Number(r.humidity)) ? Number(r.humidity).toFixed(1) : '—') + '</td>' +
+      '<td style="' + td + '">' + rad + '</td>' +
+      '<td style="' + td + '"><span style="color:' + cls + ';font-weight:600;">' + tag + '</span></td>' +
+      '<td style="' + td + '">' + uv + '<div style="text-align:center">' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div></td>' +
     '</tr>';
   }).join('');
 }
@@ -20171,16 +20400,16 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
           <thead>
             <tr style="background:#fff7ed;">
-              <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Periodo</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD máx</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Hora máx</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD mín</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Hora mín</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &gt; 1.5</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &lt; 0.5</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas óptimas</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">% estrés</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">UV máx</th>
+              <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Periodo</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">VPD máx</th>
+              <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Hora máx</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">VPD mín</th>
+              <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Hora mín</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas &gt; 1.5</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas &lt; 0.5</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas óptimas</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">% estrés</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">UV máx</th>
             </tr>
           </thead>
           <tbody>${vpdStressSummaryRowHtml(summaryRows)}</tbody>
@@ -20195,13 +20424,13 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
           <table style="width:100%;border-collapse:collapse;font-size:12px;">
             <thead>
               <tr style="background:#fff7ed;">
-                <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Fecha/Hora</th>
-                <th style="border:1px solid #fed7aa;padding:6px;">VPD</th>
-                <th style="border:1px solid #fed7aa;padding:6px;">Temp (°C)</th>
-                <th style="border:1px solid #fed7aa;padding:6px;">HR (%)</th>
-                <th style="border:1px solid #fed7aa;padding:6px;">Radiación (W/m²)</th>
-                <th style="border:1px solid #fed7aa;padding:6px;">Tipo</th>
-                <th style="border:1px solid #fed7aa;padding:6px;">Índice UV</th>
+                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Fecha/Hora</th>
+                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">VPD</th>
+                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Temp (°C)</th>
+                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">HR (%)</th>
+                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Radiación (W/m²)</th>
+                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Tipo</th>
+                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Índice UV</th>
               </tr>
             </thead>
           <tbody>${critPreview.length ? vpdCriticalEventsRowHtml(critPreview) : '<tr><td colspan="7" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">Sin horas fuera de rango.</td></tr>'}</tbody>
@@ -20231,16 +20460,16 @@ function renderSavedVPDRangeTableHtml(tbl) {
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
           <thead>
             <tr style="background:#fff7ed;">
-              <th style="border:1px solid #fed7aa;padding:6px;text-align:left;">Periodo</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD máx</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Hora máx</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">VPD mín</th>
-              <th style="border:1px solid #fed7aa;padding:6px;">Hora mín</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &gt; 1.5</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas &lt; 0.5</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">Horas óptimas</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">% estrés</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;">UV máx</th>
+              <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Periodo</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">VPD máx</th>
+              <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Hora máx</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">VPD mín</th>
+              <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Hora mín</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas &gt; 1.5</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas &lt; 0.5</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas óptimas</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">% estrés</th>
+              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">UV máx</th>
             </tr>
           </thead>
           <tbody>${vpdStressSummaryRowHtml(summaryRows)}</tbody>
