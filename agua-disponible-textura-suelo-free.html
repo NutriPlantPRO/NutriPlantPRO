@@ -122,9 +122,13 @@
       gap: 6px;
       min-height: 0;
     }
-    /* Ayuda CC/PMP: bloque aparte para no confundirlo con los campos editables */
-    .field-stack--preset {
-      padding: 11px 12px 13px;
+    /* Referencia textura: fila completa encima de la rejilla (no como “celda”) */
+    .preset-banner {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px 14px 14px;
+      margin-bottom: 4px;
       border-radius: 12px;
       background: linear-gradient(165deg, #eff6ff 0%, #f0f9ff 50%, #ffffff 100%);
       border: 2px solid #60a5fa;
@@ -132,25 +136,39 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.85),
         0 4px 14px rgba(37, 99, 235, 0.12);
     }
-    .field-stack--preset label.f {
+    .preset-banner label.f {
+      min-height: 0;
       color: #1e40af;
       font-weight: 700;
+      font-size: 13px;
     }
-    .field-stack--preset select.sel {
+    .preset-banner select.sel {
+      width: 100%;
+      max-width: 100%;
       border-color: #3b82f6;
       background: #fff;
+      padding: 11px 12px;
+      font-size: 14px;
       box-shadow:
         inset 0 1px 2px rgba(15, 23, 42, 0.05),
         0 1px 0 rgba(255, 255, 255, 0.9);
     }
-    .field-stack--preset select.sel:hover {
+    .preset-banner select.sel:hover {
       border-color: #2563eb;
     }
-    .field-stack--preset select.sel:focus {
+    .preset-banner select.sel:focus {
       border-color: #1d4ed8;
       box-shadow:
         inset 0 1px 2px rgba(15, 23, 42, 0.04),
         0 0 0 3px rgba(59, 130, 246, 0.28);
+    }
+    .form-fields-title {
+      margin: 10px 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
     }
     .calc-box {
       background: linear-gradient(180deg, #e0f2fe 0%, #dbeafe 100%);
@@ -319,11 +337,12 @@
     <h2 class="section-h2">Cálculo y barra volumétrica (CC · PMP · agua disponible)</h2>
     <p class="hint">Puedes usar el desplegable para <strong>cargar una vez</strong> CC y PMP ilustrativos según textura típica; al elegir una fila se rellenan los campos y el menú vuelve solo (así, si luego editas los números, no parece que sigas en esa textura). También puedes escribir CC y PMP a mano. El volumen de suelo es área × profundidad (1 ha × 30 cm = 3 000 m³). La <strong>humedad actual volumétrica</strong> (misma escala que CC/PMP) permite estimar la <strong>lámina a repponer hasta CC</strong> y verla en la barra.</p>
 
+    <div class="preset-banner">
+      <label class="f" for="presetTex">Cargar valores de referencia (CC / PMP)</label>
+      <select class="sel" id="presetTex"></select>
+    </div>
+    <p class="form-fields-title">Tus valores para el cálculo</p>
     <div class="grid-form">
-      <div class="field-stack field-stack--preset">
-        <label class="f" for="presetTex">Cargar valores de referencia (CC / PMP)</label>
-        <select class="sel" id="presetTex"></select>
-      </div>
       <div class="field-stack">
         <label class="f" for="cc">Capacidad de campo CC (% vol.)</label>
         <input class="in" type="number" id="cc" min="0" max="60" step="0.1" value="30" />

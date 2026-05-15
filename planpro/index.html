@@ -4296,11 +4296,12 @@
   var planProRichImageTargetEditor = null;
   /** Refresco del modal de bloques: antes ~110 ms de espera; un rAF suele bastar y evita sensación de “lag” en móvil. */
   var detailBlocksDomRefreshRaf = null;
-  function queueRefreshDetailBlocksDOM() {
+  function queueRefreshDetailBlocksDOM(skipInputSync) {
+    var skip = !!skipInputSync;
     if (detailBlocksDomRefreshRaf != null) cancelAnimationFrame(detailBlocksDomRefreshRaf);
     detailBlocksDomRefreshRaf = requestAnimationFrame(function () {
       detailBlocksDomRefreshRaf = null;
-      refreshDetailBlocksDOM();
+      refreshDetailBlocksDOM(skip);
     });
   }
 
@@ -4313,11 +4314,12 @@
 
   /** Refresco de la vista previa de bloques al crear apunte: sin setTimeout largo (antes 200 ms); rAF agrupa cambios seguidos en un solo pintado. */
   var pendingPreviewRefreshRaf = null;
-  function queueRefreshPendingHint() {
+  function queueRefreshPendingHint(skipInputSync) {
+    var skip = !!skipInputSync;
     if (pendingPreviewRefreshRaf != null) cancelAnimationFrame(pendingPreviewRefreshRaf);
     pendingPreviewRefreshRaf = requestAnimationFrame(function () {
       pendingPreviewRefreshRaf = null;
-      refreshPendingHint();
+      refreshPendingHint(skip);
     });
   }
 
@@ -5205,6 +5207,13 @@
       detailBlocksSaveTimer = null;
     }
     cancelQueuedDetailBlocksDOMRefresh();
+    if (
+      $('npDetailModal').classList.contains('np-modal-open') &&
+      state.detailBlocksWorking &&
+      $('npDetailBlocksMount')
+    ) {
+      refreshDetailBlocksDOM(true);
+    }
     syncDetailBlocksInputsFromDOM();
     await flushDetailMainNote();
     if (state.detailItemId && state.detailBlocksWorking && state.client) {
@@ -5868,33 +5877,43 @@
     while (block.rowDone.length > block.rows.length) block.rowDone.pop();
   }
 
+  /** rowKinds / rowDone siempre misma longitud que rows antes de reordenar filas (evita que mv() ignore arrays cortos y “congele” tipo/listo en el índice equivocado). */
+  function alignMiniSheetRowMeta(block) {
+    if (!block || !Array.isArray(block.rows)) return;
+    var n = block.rows.length;
+    if (block.variant === 'smart' || block.variant === 'tasks') {
+      ensureSmartMeta(block);
+      return;
+    }
+    if (Array.isArray(block.rowKinds)) {
+      while (block.rowKinds.length < n) block.rowKinds.push('default');
+      while (block.rowKinds.length > n) block.rowKinds.pop();
+    }
+    if (Array.isArray(block.rowDone)) {
+      while (block.rowDone.length < n) block.rowDone.push(false);
+      while (block.rowDone.length > n) block.rowDone.pop();
+    }
+  }
+
   /** Intercambia dos filas y metadatos alineados (smart/tasks/ledger/libre). */
   function swapMiniSheetRows(block, i, j) {
     if (!block || !Array.isArray(block.rows) || i === j) return;
     var n = block.rows.length;
     if (i < 0 || j < 0 || i >= n || j >= n) return;
+    alignMiniSheetRowMeta(block);
+    n = block.rows.length;
     var tmp = block.rows[i];
     block.rows[i] = block.rows[j];
     block.rows[j] = tmp;
-    if (block.variant === 'smart' || block.variant === 'tasks') {
-      ensureSmartMeta(block);
+    if (block.rowKinds && block.rowKinds.length === n) {
       tmp = block.rowKinds[i];
       block.rowKinds[i] = block.rowKinds[j];
       block.rowKinds[j] = tmp;
+    }
+    if (block.rowDone && block.rowDone.length === n) {
       tmp = block.rowDone[i];
       block.rowDone[i] = block.rowDone[j];
       block.rowDone[j] = tmp;
-    } else {
-      if (block.rowKinds && block.rowKinds.length >= n) {
-        tmp = block.rowKinds[i];
-        block.rowKinds[i] = block.rowKinds[j];
-        block.rowKinds[j] = tmp;
-      }
-      if (block.rowDone && block.rowDone.length >= n) {
-        tmp = block.rowDone[i];
-        block.rowDone[i] = block.rowDone[j];
-        block.rowDone[j] = tmp;
-      }
     }
   }
 
@@ -5903,7 +5922,8 @@
     if (!block || !Array.isArray(block.rows)) return;
     var n = block.rows.length;
     if (fromIdx === toIdx || fromIdx < 0 || fromIdx >= n || toIdx < 0 || toIdx >= n) return;
-    if (block.variant === 'smart' || block.variant === 'tasks') ensureSmartMeta(block);
+    alignMiniSheetRowMeta(block);
+    n = block.rows.length;
 
     function mv(arr) {
       if (!Array.isArray(arr) || arr.length !== n) return;
@@ -6523,6 +6543,10 @@
     detailBlocksSaveTimer = setTimeout(function () {
       detailBlocksSaveTimer = null;
       if (!state.detailItemId || state.detailItemId !== expectedItemId || !state.detailBlocksWorking) return;
+      cancelQueuedDetailBlocksDOMRefresh();
+      if ($('npDetailModal').classList.contains('np-modal-open') && $('npDetailBlocksMount')) {
+        refreshDetailBlocksDOM(true);
+      }
       persistItemBlocks(state.detailItemId, state.detailBlocksWorking, { skipReload: true });
     }, 520);
   }
@@ -6570,6 +6594,25 @@
       var ci = parseInt(tx.getAttribute('data-np-col'), 10);
       if (isNaN(bi) || isNaN(ri) || isNaN(ci)) return;
       applyToBlock(bi, ri, ci, tx.value || '');
+    });
+    mount.querySelectorAll('select.np-ms-kind-select[data-np-block]').forEach(function (sel) {
+      var bi = parseInt(sel.getAttribute('data-np-block'), 10);
+      var ri = parseInt(sel.getAttribute('data-np-row'), 10);
+      if (isNaN(bi) || isNaN(ri)) return;
+      var blk = blocks[bi];
+      if (!blk || blk.type !== 'mini_sheet' || blk.variant !== 'smart') return;
+      ensureSmartMeta(blk);
+      blk.rowKinds[ri] = sel.value || 'task';
+    });
+    mount.querySelectorAll('input.np-ms-done[type="checkbox"][data-np-block]').forEach(function (cb) {
+      var bi = parseInt(cb.getAttribute('data-np-block'), 10);
+      var ri = parseInt(cb.getAttribute('data-np-row'), 10);
+      if (isNaN(bi) || isNaN(ri)) return;
+      var blk = blocks[bi];
+      if (!blk || blk.type !== 'mini_sheet') return;
+      if (blk.variant !== 'smart' && blk.variant !== 'tasks') return;
+      ensureSmartMeta(blk);
+      blk.rowDone[ri] = !!cb.checked;
     });
   }
 
@@ -7307,9 +7350,14 @@
     function afterStructuralChange() {
       if (persistItemId) {
         schedulePersist();
-        queueRefreshDetailBlocksDOM();
+        cancelQueuedDetailBlocksDOMRefresh();
+        refreshDetailBlocksDOM(true);
       } else {
-        queueRefreshPendingHint();
+        if (pendingPreviewRefreshRaf != null) {
+          cancelAnimationFrame(pendingPreviewRefreshRaf);
+          pendingPreviewRefreshRaf = null;
+        }
+        refreshPendingHint(true);
       }
     }
 
@@ -7669,6 +7717,7 @@
           if (name == null) return;
           name = String(name).trim();
           if (!name) return;
+          syncInputsFromLiveDOMBeforeStructureChange();
           if (!b.headers) b.headers = [];
           b.headers.push(name);
           b.rows.forEach(function (row, ri) {
@@ -7683,6 +7732,7 @@
         fbRow.className = 'btn btn-ghost btn-ghost-green';
         fbRow.textContent = '＋ Fila';
         fbRow.addEventListener('click', function () {
+          syncInputsFromLiveDOMBeforeStructureChange();
           var n = ncol;
           var nr = [];
           for (var pi = 0; pi < n; pi++) nr.push('');
@@ -7722,6 +7772,7 @@
           if (name == null) return;
           name = String(name).trim();
           if (!name) return;
+          syncInputsFromLiveDOMBeforeStructureChange();
           ensureSmartMeta(b);
           var curNc = Math.max(
             (b.headers || []).length,
@@ -7769,6 +7820,7 @@
           'Añade columna: moneda, número (unidades), texto, % o fórmulas (resta, suma, producto, copiar valor, operación libre +−×÷).';
         lbAddCol.addEventListener('click', function (e) {
           e.preventDefault();
+          syncInputsFromLiveDOMBeforeStructureChange();
           ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
           ensureLedgerBlock(b);
           if (ledgerInteractiveAddColumn(b)) afterStructuralChange();
@@ -7780,6 +7832,7 @@
         lbDelCol.title = 'Quita solo la última columna (revisa fórmulas que usen índices).';
         lbDelCol.addEventListener('click', function (e) {
           e.preventDefault();
+          syncInputsFromLiveDOMBeforeStructureChange();
           ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
           ensureLedgerBlock(b);
           if (ledgerRemoveLastColumn(b)) afterStructuralChange();
@@ -7792,6 +7845,7 @@
           'Define qué columna usa el % automático (suel ser “Monto” o el total calculado de la fila).';
         lbBaseM.addEventListener('click', function (e) {
           e.preventDefault();
+          syncInputsFromLiveDOMBeforeStructureChange();
           ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
           ensureLedgerBlock(b);
           var g = ledgerColGuideLine(b);
@@ -7814,6 +7868,7 @@
         lbRow.className = 'btn btn-ghost btn-ghost-green';
         lbRow.textContent = '＋ Fila';
         lbRow.addEventListener('click', function () {
+          syncInputsFromLiveDOMBeforeStructureChange();
           ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
           var nr = [];
           for (var pj = 0; pj < ncol; pj++) nr.push('');
@@ -7839,10 +7894,12 @@
           'Automático: % de cada fila según la columna base (montoCol) y el total de esa columna. Manual: tú escribes el % en cada fila.';
         lbPct.addEventListener('click', function (e) {
           e.preventDefault();
+          syncInputsFromLiveDOMBeforeStructureChange();
           b.ledgerPctMode = b.ledgerPctMode === 'manual' ? 'auto' : 'manual';
           afterStructuralChange();
         });
         function applyLedgerTemplate(which) {
+          syncInputsFromLiveDOMBeforeStructureChange();
           ledgerSyncEditableCellsFromDOM(wrap, b, ncol);
           if (b.headers.length > 4 && !window.confirm('Esto redefine columnas y fórmulas de esta tabla. ¿Seguir?')) return;
           if (which === 'gasto') {
@@ -8018,6 +8075,7 @@
       }
 
       function addRow(kindId) {
+        syncInputsFromLiveDOMBeforeStructureChange();
         ensureSmartMeta(b);
         var nr = [];
         for (var p = 0; p < ncol; p++) nr.push('');
@@ -8101,6 +8159,7 @@
                 e.preventDefault();
                 if (ncol <= 1) return;
                 if (!window.confirm('¿Eliminar esta columna?')) return;
+                syncInputsFromLiveDOMBeforeStructureChange();
                 if (b.headers && b.headers.length > idx) b.headers.splice(idx, 1);
                 b.rows.forEach(function (rowItem, rxi) {
                   var arr = padRowCells(Array.isArray(rowItem) ? rowItem : rowItem, ncol);
@@ -8142,6 +8201,7 @@
                 var mc = b.variant === 'smart' ? NP_SMART_MIN_COLS : NP_TASKS_MIN_COLS;
                 if (ncol <= mc) return;
                 if (!window.confirm('¿Eliminar esta columna?')) return;
+                syncInputsFromLiveDOMBeforeStructureChange();
                 if (b.headers && b.headers.length > idx) b.headers.splice(idx, 1);
                 b.rows.forEach(function (rowItem, rxi) {
                   var arr = padRowCells(Array.isArray(rowItem) ? rowItem : rowItem, ncol);
@@ -8216,6 +8276,8 @@
           if (b.variant === 'smart' && c === 0 && editable) {
             var sel = document.createElement('select');
             sel.className = 'np-ms-kind-select np-tree-ignore';
+            sel.setAttribute('data-np-block', String(blockIndex));
+            sel.setAttribute('data-np-row', String(ri));
             var kindOpts = rowKindOptionsForBlock(b);
             var hasRk = false;
             kindOpts.forEach(function (opt) {
@@ -8329,6 +8391,8 @@
             var cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.className = 'np-ms-done';
+            cb.setAttribute('data-np-block', String(blockIndex));
+            cb.setAttribute('data-np-row', String(ri));
             cb.checked = !!doneVal;
             cb.title = 'Listo / completada';
             cb.addEventListener('change', function () {
@@ -8676,10 +8740,10 @@
     bd.appendChild(blocksMount);
   }
 
-  function refreshDetailBlocksDOM() {
+  function refreshDetailBlocksDOM(skipInputSync) {
     var mount = $('npDetailBlocksMount');
     if (!mount || !$('npDetailModal').classList.contains('np-modal-open') || !state.detailBlocksWorking) return;
-    syncDetailBlocksInputsFromDOM();
+    if (!skipInputSync) syncDetailBlocksInputsFromDOM();
     mount.innerHTML = '';
     mount.appendChild(
       renderBodyBlocks(state.detailBlocksWorking, {
@@ -9515,7 +9579,8 @@
     showToast('Planta eliminada.');
   }
 
-  function refreshPendingHint() {
+  function refreshPendingHint(skipInputSync) {
+    var skipSync = !!skipInputSync;
     var n = state.pendingBlocks.length;
     var hint = $('npPendingBlocksHint');
     var prevBox = $('npMiniSheetPreview');
@@ -9527,7 +9592,7 @@
     }
     hint.textContent = n === 1 ? '1 bloque' : n + ' bloques';
     prevBox.classList.remove('np-hide');
-    syncPendingBlocksInputsFromDOM();
+    if (!skipSync) syncPendingBlocksInputsFromDOM();
     prevBox.innerHTML = '';
     try {
       prevBox.appendChild(
@@ -10428,6 +10493,11 @@
       return;
     }
     $('npNeedCategory').classList.add('np-hide');
+    if (pendingPreviewRefreshRaf != null) {
+      cancelAnimationFrame(pendingPreviewRefreshRaf);
+      pendingPreviewRefreshRaf = null;
+    }
+    refreshPendingHint(true);
     syncPendingBlocksInputsFromDOM();
     var rawHtml = sanitizeRich(getRichEditorHtml());
     var plain = stripHtml(rawHtml);
