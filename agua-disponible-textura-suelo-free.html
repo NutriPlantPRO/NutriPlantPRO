@@ -15,6 +15,23 @@
       --blue-soft: #eff6ff;
       --green: #15803d;
       --green-soft: #ecfdf5;
+      /* Paleta alineada con la barra (PMP · banda útil · deficit rep. · θ ámbar · lámina · aire) */
+      --sw-pmp: #172554;
+      --sw-pmp-soft: #eef2ff;
+      --sw-cc: #15803d;
+      --sw-cc-soft: #f0fdf4;
+      --sw-potential: #15803d;
+      --sw-rep: #4ade80;
+      --sw-rep-ink: #14532d;
+      --sw-teal-occ: #0f766e;
+      --sw-theta: #c2410c;
+      --sw-theta-soft: #fff7ed;
+      --sw-lamina: #0d9488;
+      --sw-lamina-soft: #f0fdfa;
+      --sw-radical: #0369a1;
+      --sw-radical-soft: #e0f2fe;
+      --sw-geom: #475569;
+      --sw-geom-soft: #f8fafc;
     }
     * { box-sizing: border-box; }
     body {
@@ -80,7 +97,7 @@
       color: var(--muted);
       margin: 0 0 12px;
     }
-    label.f {
+    .field-stack label.f {
       display: flex;
       align-items: flex-end;
       flex: 1 1 auto;
@@ -90,6 +107,69 @@
       font-weight: 600;
       color: #475569;
       margin-bottom: 0;
+    }
+    .field-stack--pmp label.f,
+    .field-stack--cc label.f,
+    .field-stack--geom label.f,
+    .field-stack--radical label.f,
+    .field-stack--theta label.f {
+      font-weight: 700;
+    }
+    .field-stack input.in {
+      font-weight: 600;
+    }
+    .field-stack--pmp label.f { color: var(--sw-pmp); }
+    .field-stack--pmp input.in {
+      border-color: #94a3b8;
+      background: var(--sw-pmp-soft);
+      color: var(--sw-pmp);
+    }
+    .field-stack--pmp input.in:hover { border-color: var(--sw-pmp); }
+    .field-stack--pmp input.in:focus {
+      border-color: var(--sw-pmp);
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05), 0 0 0 3px rgba(23, 37, 84, 0.2);
+    }
+    .field-stack--cc label.f { color: var(--sw-cc); }
+    .field-stack--cc input.in {
+      border-color: #86efac;
+      background: var(--sw-cc-soft);
+      color: var(--sw-cc);
+    }
+    .field-stack--cc input.in:hover { border-color: var(--sw-cc); }
+    .field-stack--cc input.in:focus {
+      border-color: #166534;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05), 0 0 0 3px rgba(21, 128, 61, 0.22);
+    }
+    .field-stack--geom label.f { color: var(--sw-geom); }
+    .field-stack--geom input.in {
+      border-color: #cbd5e1;
+      background: var(--sw-geom-soft);
+      color: var(--sw-geom);
+    }
+    .field-stack--geom input.in:focus {
+      border-color: #475569;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05), 0 0 0 3px rgba(71, 85, 105, 0.18);
+    }
+    .field-stack--radical label.f { color: var(--sw-radical); }
+    .field-stack--radical input.in {
+      border-color: #7dd3fc;
+      background: var(--sw-radical-soft);
+      color: var(--sw-radical);
+    }
+    .field-stack--radical input.in:focus {
+      border-color: #0284c7;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05), 0 0 0 3px rgba(14, 165, 233, 0.25);
+    }
+    .field-stack--theta label.f { color: var(--sw-theta); }
+    .field-stack--theta input.in {
+      border-color: #fdba74;
+      background: var(--sw-theta-soft);
+      color: var(--sw-theta);
+    }
+    .field-stack--theta input.in:hover { border-color: #fb923c; }
+    .field-stack--theta input.in:focus {
+      border-color: #ea580c;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05), 0 0 0 3px rgba(234, 88, 12, 0.22);
     }
     input.in, select.sel {
       width: 100%;
@@ -122,45 +202,50 @@
       gap: 6px;
       min-height: 0;
     }
-    /* Referencia textura: fila completa encima de la rejilla (no como “celda”) */
-    .preset-banner {
+    /* Referencias CC/PMP: texto continuo — sin marco ni caja tipo formulario */
+    .preset-inline {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 12px 14px 14px;
-      margin-bottom: 4px;
-      border-radius: 12px;
-      background: linear-gradient(165deg, #eff6ff 0%, #f0f9ff 50%, #ffffff 100%);
-      border: 2px solid #60a5fa;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.85),
-        0 4px 14px rgba(37, 99, 235, 0.12);
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px 12px;
+      margin: 0 0 6px;
+      padding: 0;
     }
-    .preset-banner label.f {
-      min-height: 0;
-      color: #1e40af;
-      font-weight: 700;
+    .preset-inline__label {
       font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      line-height: 1.45;
+      margin: 0;
+      min-height: 0;
     }
-    .preset-banner select.sel {
-      width: 100%;
-      max-width: 100%;
-      border-color: #3b82f6;
-      background: #fff;
-      padding: 11px 12px;
+    .preset-inline select.sel.preset-inline__ctl {
+      flex: 1 1 min(100%, 32rem);
+      min-width: min(100%, 200px);
+      margin: 0;
+      padding: 4px 28px 6px 2px;
+      border: none;
+      border-radius: 0;
+      border-bottom: 1px dashed #93c5fd;
+      background: transparent;
+      box-shadow: none;
       font-size: 14px;
-      box-shadow:
-        inset 0 1px 2px rgba(15, 23, 42, 0.05),
-        0 1px 0 rgba(255, 255, 255, 0.9);
+      font-weight: 700;
+      color: #1d4ed8;
+      cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     }
-    .preset-banner select.sel:hover {
-      border-color: #2563eb;
+    .preset-inline select.sel.preset-inline__ctl:hover {
+      color: #1e3a8a;
+      border-bottom-color: #2563eb;
+      background: rgba(239, 246, 255, 0.45);
     }
-    .preset-banner select.sel:focus {
-      border-color: #1d4ed8;
-      box-shadow:
-        inset 0 1px 2px rgba(15, 23, 42, 0.04),
-        0 0 0 3px rgba(59, 130, 246, 0.28);
+    .preset-inline select.sel.preset-inline__ctl:focus {
+      outline: none;
+      color: #1e3a8a;
+      border-bottom-style: solid;
+      border-bottom-color: #1d4ed8;
+      background: rgba(239, 246, 255, 0.55);
     }
     .form-fields-title {
       margin: 10px 0 8px;
@@ -187,9 +272,25 @@
       flex-wrap: wrap;
       gap: 8px 16px;
       font-size: 13px;
+      line-height: 1.45;
+    }
+    .calc-metric {
       color: #0c4a6e;
     }
-    .calc-row strong { color: #0369a1; }
+    .calc-metric strong {
+      color: inherit;
+      font-weight: 700;
+    }
+    .calc-metric--geom { color: var(--sw-geom); }
+    .calc-metric--pmp-band { color: var(--sw-potential); }
+    .calc-metric--radical { color: var(--sw-radical); }
+    .calc-metric--theta { color: var(--sw-theta); }
+    .calc-metric--rep {
+      color: var(--sw-rep-ink);
+      font-weight: 600;
+    }
+    .calc-metric--lamina { color: var(--sw-lamina); }
+    .calc-metric--muted { color: var(--muted); font-weight: 500; }
     .note-drop {
       display: flex;
       align-items: flex-start;
@@ -326,7 +427,7 @@
   </style>
 </head>
 <body>
-  <p class="lead">Referencia práctica NutriPlant PRO: volumen de agua disponible por hectárea según capacidad de campo (CC), punto de marchitez permanente (PMP) y exploración radical; clasificación textual USDA en español con triángulo ternario interactivo.</p>
+  <p class="lead">Referencia práctica NutriPlant PRO: <strong>capacidad útil CC − PMP</strong> por hectárea (no es tu humedad hoy si ya ingresaste medición), lámina hasta CC según humedad actual, y exploración radical; triángulo textual USDA en español.</p>
 
   <div class="tabs" role="tablist">
     <button type="button" role="tab" id="tab1" aria-selected="true" aria-controls="panel1">1 · Agua disponible</button>
@@ -334,36 +435,36 @@
   </div>
 
   <div id="panel1" class="section-panel active" role="tabpanel" aria-labelledby="tab1">
-    <h2 class="section-h2">Cálculo y barra volumétrica (CC · PMP · agua disponible)</h2>
+    <h2 class="section-h2">Cálculo y barra volumétrica (CC · PMP · capacidad útil CC − PMP)</h2>
     <p class="hint">Puedes usar el desplegable para <strong>cargar una vez</strong> CC y PMP ilustrativos según textura típica; al elegir una fila se rellenan los campos y el menú vuelve solo (así, si luego editas los números, no parece que sigas en esa textura). También puedes escribir CC y PMP a mano. El volumen de suelo es área × profundidad (1 ha × 30 cm = 3 000 m³). La <strong>humedad actual volumétrica</strong> (misma escala que CC/PMP) permite estimar la <strong>lámina a repponer hasta CC</strong> y verla en la barra.</p>
 
-    <div class="preset-banner">
-      <label class="f" for="presetTex">Cargar valores de referencia (CC / PMP)</label>
-      <select class="sel" id="presetTex"></select>
+    <div class="preset-inline">
+      <label class="preset-inline__label" for="presetTex">Cargar valores de referencia (CC / PMP)</label>
+      <select class="sel preset-inline__ctl" id="presetTex"></select>
     </div>
     <p class="form-fields-title">Tus valores para el cálculo</p>
     <div class="grid-form">
-      <div class="field-stack">
+      <div class="field-stack field-stack--cc">
         <label class="f" for="cc">Capacidad de campo CC (% vol.)</label>
         <input class="in" type="number" id="cc" min="0" max="60" step="0.1" value="30" />
       </div>
-      <div class="field-stack">
+      <div class="field-stack field-stack--pmp">
         <label class="f" for="pmp">Punto de marchitez PMP (% vol.)</label>
         <input class="in" type="number" id="pmp" min="0" max="50" step="0.1" value="20" />
       </div>
-      <div class="field-stack">
+      <div class="field-stack field-stack--geom">
         <label class="f" for="depth">Profundidad de suelo (cm)</label>
         <input class="in" type="number" id="depth" min="1" max="200" step="1" value="30" />
       </div>
-      <div class="field-stack">
+      <div class="field-stack field-stack--geom">
         <label class="f" for="areaHa">Área (ha)</label>
         <input class="in" type="number" id="areaHa" min="0.01" max="10000" step="0.01" value="1" />
       </div>
-      <div class="field-stack">
+      <div class="field-stack field-stack--radical">
         <label class="f" for="rootEff">Zona radical efectiva (%)</label>
         <input class="in" type="number" id="rootEff" min="1" max="100" step="1" value="60" />
       </div>
-      <div class="field-stack">
+      <div class="field-stack field-stack--theta">
         <label class="f" for="thetaVol">Humedad actual del suelo (% vol.)</label>
         <input class="in" type="number" id="thetaVol" min="0" max="55" step="0.1" value="" placeholder="Ej. 22" />
       </div>
@@ -374,11 +475,11 @@
       <div class="calc-row" id="calcLines"></div>
       <div class="note-drop">
         <span aria-hidden="true" style="font-size:18px;">💧</span>
-        <span>Este valor indica cuánta agua puede almacenar el suelo para el cultivo antes de requerir riego (referencia; validar en campo).</span>
+        <span>Este bloque muestra cuánto almacén “útil entre PMP y CC” tienes como <strong>referencia de capacidad</strong>; con humedad actual se calculan aparte el <strong>déficit</strong> y la <strong>lámina</strong> hasta CC.</span>
       </div>
     </div>
 
-    <p class="hint">Barras horizontales: la escala muestra tus <strong>PMP</strong> y <strong>CC</strong> como proporción del volumen de poros (% vol.). La zona entre ambos equivale al agua típicamente disponible antes de estrés grave. Si indicas <strong>humedad actual (% vol.)</strong>, el tramo verde más claro es el déficit hasta CC (lámina teórica) y la <strong>línea ámbar</strong> coincide con ese valor en el eje inferior. <strong>Debajo de la gráfica</strong> se resumen mm y lámina para la profundidad que ingresaste.</p>
+    <p class="hint">Barras horizontales: la escala muestra tus <strong>PMP</strong> y <strong>CC</strong> como proporción del volumen de poros (% vol.). Entre ambos aparece la <strong>banda típica de agua útil</strong> (referencia física agronómica, no lo que necesariamente “hay hoy”). Si indicas <strong>humedad actual (% vol.)</strong>, el tramo verde claro muestra cuánto faltaría llegar hasta CC (base de lámina); la <strong>línea ámbar</strong> es tu valor en el eje. <strong>Debajo de la gráfica</strong> se resumen mm y lámina para la profundidad que ingresaste.</p>
     <div class="chart-wrap">
       <svg id="chartSvg" viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
@@ -409,7 +510,7 @@
           <circle cx="48" cy="62" r="4" fill="#fff" stroke="#cbd5e1"/>
           <circle cx="72" cy="68" r="3" fill="#fff" stroke="#cbd5e1"/>
         </svg>
-        <p class="viz-caption">Agua disponible + aire</p>
+        <p class="viz-caption">Agua hasta CC (+ aire en poro)</p>
       </div>
       <div class="viz-card">
         <div class="viz-title">Marchitez permanente (PMP)</div>
@@ -566,10 +667,28 @@
     var realM3 = adM3 * (rootEff / 100);
 
     var spans = [];
-    spans.push('<span><strong>Agua disponible</strong> (CC − PMP): <strong>' + adPct.toFixed(1) + '% vol.</strong></span>');
-    spans.push('<span><strong>Volumen suelo</strong>: <strong>' + volSoilM3.toFixed(0) + ' m³</strong></span>');
-    spans.push('<span><strong>Agua disponible</strong> en el volumen: <strong>' + adM3.toFixed(0) + ' m³</strong></span>');
-    spans.push('<span><strong>Agua disponible real</strong> (× zona radical <strong>' + rootEff + '%</strong>): <strong>' + realM3.toFixed(0) + ' m³</strong></span>');
+    spans.push(
+      '<span class="calc-metric calc-metric--geom"><strong>Volumen de suelo</strong> (área × profundidad): <strong>' +
+        volSoilM3.toFixed(0) +
+        ' m³</strong></span>'
+    );
+    spans.push(
+      '<span class="calc-metric calc-metric--pmp-band"><strong>Potencial de agua útil</strong> (referencia CC − PMP · no es tu humedad hoy): <strong>' +
+        adPct.toFixed(1) +
+        '% vol.</strong></span>'
+    );
+    spans.push(
+      '<span class="calc-metric calc-metric--pmp-band"><strong>Volumen de ese potencial</strong> en el perfil: <strong>' +
+        adM3.toFixed(0) +
+        ' m³</strong></span>'
+    );
+    spans.push(
+      '<span class="calc-metric calc-metric--radical"><strong>Potencial × zona radical</strong> (<strong>' +
+        rootEff +
+        '%</strong>): <strong>' +
+        realM3.toFixed(0) +
+        ' m³</strong></span>'
+    );
 
     if (hasTheta) {
       var deficitPctRaw = cc - thetaVal;
@@ -578,23 +697,39 @@
       var lamMmRad = lamMmTot * (rootEff / 100);
       var lamM3Tot = volSoilM3 * (deficitToCc / 100);
       var lamM3Rad = lamM3Tot * (rootEff / 100);
-      spans.push('<span><strong>Humedad actual</strong> (volumétrica): <strong>' + thetaVal.toFixed(1) + '% vol.</strong></span>');
       spans.push(
-        '<span><strong>Déficit hasta CC</strong> (tu CC − humedad actual): <strong>' + deficitToCc.toFixed(1) + '% vol.</strong>' +
+        '<span class="calc-metric calc-metric--theta"><strong>Humedad actual</strong> (volumétrica): <strong>' +
+          thetaVal.toFixed(1) +
+          '% vol.</strong></span>'
+      );
+      spans.push(
+        '<span class="calc-metric calc-metric--rep"><strong>Déficit hasta CC</strong> (tu CC − humedad actual): <strong>' +
+          deficitToCc.toFixed(1) +
+          '% vol.</strong>' +
           (deficitPctRaw < -0.05
             ? ' <em style="color:#b45309;font-style:normal;font-weight:700">· humedad por encima de CC (riesgo encharcamiento)</em>'
             : '') +
           '</span>'
       );
       spans.push(
-        '<span><strong>Lámina hasta CC</strong> (toda la prof.): <strong>' + lamMmTot.toFixed(1) + ' mm</strong> · <strong>' + lamM3Tot.toFixed(0) + ' m³</strong></span>'
+        '<span class="calc-metric calc-metric--lamina"><strong>Lámina hasta CC</strong> (toda la prof.): <strong>' +
+          lamMmTot.toFixed(1) +
+          ' mm</strong> · <strong>' +
+          lamM3Tot.toFixed(0) +
+          ' m³</strong></span>'
       );
       spans.push(
-        '<span><strong>Lámina ajustada</strong> (× zona radical <strong>' + rootEff + '%</strong>): <strong>' + lamMmRad.toFixed(1) + ' mm</strong> · <strong>' + lamM3Rad.toFixed(0) + ' m³</strong></span>'
+        '<span class="calc-metric calc-metric--lamina"><strong>Lámina ajustada</strong> (× zona radical <strong>' +
+          rootEff +
+          '%</strong>): <strong>' +
+          lamMmRad.toFixed(1) +
+          ' mm</strong> · <strong>' +
+          lamM3Rad.toFixed(0) +
+          ' m³</strong></span>'
       );
     } else {
       spans.push(
-        '<span style="opacity:0.9"><strong>Humedad actual (% vol.)</strong>: sin dato · al ingresarlo se calculan <strong>déficit hasta CC</strong> y <strong>lámina</strong>.</span>'
+        '<span class="calc-metric calc-metric--muted"><strong>Humedad actual (% vol.)</strong>: sin dato · al ingresarlo se calculan <strong>déficit hasta CC</strong> y <strong>lámina</strong>.</span>'
       );
     }
 
@@ -641,7 +776,7 @@
     var padL = 52;
     var padR = 24;
     var barX = padL;
-    var barY = 94;
+    var barY = swapped ? 108 : hasTheta ? 118 : 106;
     var barW = W - padL - padR;
     var barH = 40;
 
@@ -675,13 +810,50 @@
     parts.push('</defs>');
     parts.push('<rect width="' + W + '" height="' + H + '" fill="#fafafa"/>');
 
-    parts.push('<text x="' + (W / 2) + '" y="26" text-anchor="middle" font-size="13" font-weight="800" fill="#1e40af">Contenido hídrico según tus valores (CC, PMP' + (hasTheta ? ' y humedad actual' : '') + ')</text>');
+    parts.push(
+      '<text x="' + W / 2 + '" y="22" text-anchor="middle" font-size="13" font-weight="800" fill="#1e40af">' +
+        'Contenido hídrico según tus valores (CC, PMP' +
+        (hasTheta ? ' y humedad actual' : '') +
+        ')</text>'
+    );
     if (swapped) {
-      parts.push('<text x="' + (W / 2) + '" y="44" text-anchor="middle" font-size="10" font-weight="600" fill="#b45309">Tu PMP (&gt;) tu CC · la barra se ordenó solo como referencia visual; corrige valores si fue un error.</text>');
+      parts.push(
+        '<text x="' +
+          W / 2 +
+          '" y="38" text-anchor="middle" font-size="10" font-weight="600" fill="#b45309">Tu PMP (&gt;) tu CC · la barra solo reordenó la referencia visual.</text>'
+      );
+      parts.push(
+        '<text x="' +
+          W / 2 +
+          '" y="52" text-anchor="middle" font-size="10" font-weight="600" fill="#b45309">Corrige los valores si fue un error.</text>'
+      );
     } else if (hasTheta) {
-      parts.push('<text x="' + (W / 2) + '" y="44" text-anchor="middle" font-size="10" fill="#64748b">Verde oscuro: agua correspondiente a tu humedad actual dentro de la banda útil; verde claro: agua por repponer hasta CC. Línea ámbar: ese % en el eje.</text>');
+      parts.push(
+        '<text x="' +
+          W / 2 +
+          '" y="36" text-anchor="middle" font-size="10" fill="#64748b">Verde oscuro: humedad actual dentro de la banda entre PMP y CC.</text>'
+      );
+      parts.push(
+        '<text x="' +
+          W / 2 +
+          '" y="49" text-anchor="middle" font-size="10" fill="#64748b">Verde claro: agua por repponer hasta CC (base de la lámina).</text>'
+      );
+      parts.push(
+        '<text x="' + W / 2 + '" y="62" text-anchor="middle" font-size="10" fill="#64748b">Ámbar: tu % de humedad actual en el eje.</text>'
+      );
     } else {
-      parts.push('<text x="' + (W / 2) + '" y="44" text-anchor="middle" font-size="10" fill="#64748b">La barra apila proporciones hasta ' + maxScale + '% volumétrico de referencia (no es saturación máxima teórica del suelo).</text>');
+      parts.push(
+        '<text x="' +
+          W / 2 +
+          '" y="40" text-anchor="middle" font-size="10" fill="#64748b">La barra apila proporciones hasta ' +
+          maxScale +
+          '% volumétrico de referencia</text>'
+      );
+      parts.push(
+        '<text x="' +
+          W / 2 +
+          '" y="53" text-anchor="middle" font-size="10" fill="#64748b">(no es saturación máxima teórica del suelo).</text>'
+      );
     }
 
     parts.push('<text x="' + barX + '" y="' + (barY - 12) + '" font-size="11" font-weight="700" fill="#334155">Proporción de agua por estado (respecto a esta escala)</text>');
@@ -733,7 +905,7 @@
     parts.push('<g font-size="9" fill="#334155">');
     parts.push('<text x="' + barX + '" y="' + statsY + '" fill="#172554"><tspan font-weight="700">PMP:</tspan> ' + oP.toFixed(1) + '% vol. · ≈ ' + mmPmp.toFixed(1) + ' mm en ' + depthCm + ' cm</text>');
     parts.push('<text x="' + barX + '" y="' + (statsY + 12) + '" fill="#15803d"><tspan font-weight="700">CC:</tspan> ' + oC.toFixed(1) + '% vol. · ≈ ' + mmCc.toFixed(1) + ' mm en ' + depthCm + ' cm</text>');
-    parts.push('<text x="' + barX + '" y="' + (statsY + 24) + '" fill="#0f766e"><tspan font-weight="700">Disponible (CC−PMP):</tspan> ' + Math.max(0, oC - oP).toFixed(1) + '% vol. · ≈ ' + mmAd.toFixed(1) + ' mm</text>');
+    parts.push('<text x="' + barX + '" y="' + (statsY + 24) + '" fill="#0f766e"><tspan font-weight="700">Potencial útil (CC−PMP):</tspan> ' + Math.max(0, oC - oP).toFixed(1) + '% vol. · ≈ ' + mmAd.toFixed(1) + ' mm</text>');
     if (hasTheta) {
       parts.push(
         '<text x="' + barX + '" y="' + (statsY + 36) + '" fill="#b45309"><tspan font-weight="700">Humedad actual:</tspan> ' + thetaVol.toFixed(1) + '% vol. · ≈ ' + mmTheta.toFixed(1) + ' mm</text>'
@@ -753,7 +925,7 @@
       midLabel(xGreen0, pxFilledGreen, pxFilledGreen >= 30 ? 'act. ' + thetaVol.toFixed(0) + '%' : '');
       midLabel(xGreen0 + pxFilledGreen, pxNeedGreen, pxNeedGreen >= 28 ? '~' + deficitCanonBand.toFixed(0) + '% rep.' : '');
     } else {
-      midLabel(barX + pxP, pxA, pxA >= 34 ? '~' + Math.round(Math.max(0, oC - oP)) + '% disp.' : '');
+      midLabel(barX + pxP, pxA, pxA >= 34 ? '~' + Math.round(Math.max(0, oC - oP)) + '% útil CC−PMP' : '');
     }
 
     parts.push('<g font-size="9">');
@@ -778,7 +950,7 @@
       parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 50) + '" r="5" fill="#4ade80"/><text x="' + (barX + 26) + '" y="' + (legY + 53) + '" fill="#334155"><tspan font-weight="700">Verde claro:</tspan> agua por repponer hasta CC.</text>');
       parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 64) + '" r="4" fill="#d97706" stroke="#fff" stroke-width="1"/><text x="' + (barX + 26) + '" y="' + (legY + 67) + '" fill="#334155"><tspan font-weight="700">Ámbar:</tspan> marcador · tu % actual en el eje.</text>');
     } else {
-      parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 36) + '" r="5" fill="#15803d"/><text x="' + (barX + 26) + '" y="' + (legY + 39) + '" fill="#334155"><tspan font-weight="700">Verde:</tspan> agua típicamente útil hasta CC.</text>');
+      parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 36) + '" r="5" fill="#15803d"/><text x="' + (barX + 26) + '" y="' + (legY + 39) + '" fill="#334155"><tspan font-weight="700">Verde:</tspan> potencial útil CC−PMP (referencia, no lámina).</text>');
     }
     var patBoxW = Math.min(120, Math.max(72, barW - 300));
     if (!hasTheta) {
