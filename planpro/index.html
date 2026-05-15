@@ -7313,8 +7313,16 @@
       }
     }
 
+    /** Antes de mover filas/bloques: volcar inputs al modelo; si no, el refresh posterior usa data-np-row/data-np-block viejos y revierte el orden. */
+    function syncInputsFromLiveDOMBeforeStructureChange() {
+      var mount = persistItemId ? $('npDetailBlocksMount') : $('npMiniSheetPreview');
+      if (!mount) return;
+      syncMiniSheetInputsFromMount(mount, blocks);
+    }
+
     function swapBodyBlocks(i, j) {
       if (!blocks || i === j || i < 0 || j < 0 || i >= blocks.length || j >= blocks.length) return;
+      syncInputsFromLiveDOMBeforeStructureChange();
       var tmp = blocks[i];
       blocks[i] = blocks[j];
       blocks[j] = tmp;
@@ -7324,6 +7332,7 @@
     function moveBodyBlockTo(fromIdx, toIdx) {
       if (!blocks || fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || fromIdx >= blocks.length || toIdx >= blocks.length)
         return;
+      syncInputsFromLiveDOMBeforeStructureChange();
       var item = blocks.splice(fromIdx, 1)[0];
       blocks.splice(toIdx, 0, item);
       afterStructuralChange();
@@ -7411,6 +7420,7 @@
         var tgtRi = parseInt(rrEl.dataset.npRowDropIndex, 10);
         if (isNaN(srcBi) || isNaN(srcRi) || isNaN(tgtRi)) return;
         if (srcBi !== bi) return;
+        syncInputsFromLiveDOMBeforeStructureChange();
         moveMiniSheetRowTo(blockRef, srcRi, tgtRi);
         afterStructuralChange();
       });
@@ -7518,6 +7528,7 @@
           noteDel.title = 'Quitar este bloque de texto del apunte';
           noteDel.addEventListener('click', function () {
             if (!window.confirm('¿Eliminar este bloque de texto del apunte?')) return;
+            syncInputsFromLiveDOMBeforeStructureChange();
             blocks.splice(blockIndex, 1);
             afterStructuralChange();
           });
@@ -7685,6 +7696,7 @@
         fbDel.textContent = 'Eliminar tabla';
         fbDel.addEventListener('click', function () {
           if (!window.confirm('¿Eliminar esta tabla del apunte?')) return;
+          syncInputsFromLiveDOMBeforeStructureChange();
           blocks.splice(blockIndex, 1);
           afterStructuralChange();
         });
@@ -7737,6 +7749,7 @@
         stDelTbl.textContent = 'Eliminar tabla';
         stDelTbl.addEventListener('click', function () {
           if (!window.confirm('¿Eliminar esta tabla del apunte?')) return;
+          syncInputsFromLiveDOMBeforeStructureChange();
           blocks.splice(blockIndex, 1);
           afterStructuralChange();
         });
@@ -7814,6 +7827,7 @@
         lbDel.textContent = 'Eliminar tabla';
         lbDel.addEventListener('click', function () {
           if (!window.confirm('¿Eliminar esta tabla del apunte?')) return;
+          syncInputsFromLiveDOMBeforeStructureChange();
           blocks.splice(blockIndex, 1);
           afterStructuralChange();
         });
@@ -8432,6 +8446,7 @@
               e.preventDefault();
               e.stopPropagation();
               if (rowIdx <= 0) return;
+              syncInputsFromLiveDOMBeforeStructureChange();
               swapMiniSheetRows(b, rowIdx, rowIdx - 1);
               afterStructuralChange();
             });
@@ -8449,6 +8464,7 @@
               e.preventDefault();
               e.stopPropagation();
               if (rowIdx >= b.rows.length - 1) return;
+              syncInputsFromLiveDOMBeforeStructureChange();
               swapMiniSheetRows(b, rowIdx, rowIdx + 1);
               afterStructuralChange();
             });
@@ -8467,6 +8483,7 @@
             btnRm.addEventListener('click', function (e) {
               e.preventDefault();
               if (b.rows.length <= 1) return;
+              syncInputsFromLiveDOMBeforeStructureChange();
               b.rows.splice(rowIdx, 1);
               if (b.rowKinds && b.rowKinds.length > rowIdx) b.rowKinds.splice(rowIdx, 1);
               if (b.rowDone && b.rowDone.length > rowIdx) b.rowDone.splice(rowIdx, 1);
