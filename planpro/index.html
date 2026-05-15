@@ -577,6 +577,13 @@
       border-left: 3px solid rgba(13, 148, 136, 0.55);
       background: linear-gradient(90deg, rgba(240, 253, 250, 0.45) 0%, rgba(255, 255, 255, 0.92) 42%);
     }
+    .np-plan-menu-block--services {
+      border-left: 3px solid rgba(124, 58, 237, 0.52);
+      background: linear-gradient(90deg, rgba(245, 243, 255, 0.55) 0%, rgba(255, 255, 255, 0.92) 42%);
+    }
+    .np-plan-menu-block--services .np-plan-menu-subblock-title {
+      color: #5b21b6;
+    }
     .np-plan-menu-block--accesos-portal {
       border-left: 3px solid rgba(22, 163, 74, 0.62);
       background: linear-gradient(90deg, rgba(236, 253, 245, 0.52) 0%, rgba(255, 255, 255, 0.92) 42%);
@@ -862,6 +869,17 @@
       border-color: rgba(154, 52, 18, 0.52);
       background: rgba(255, 237, 213, 0.98);
       color: #7c2d12;
+      transform: translateY(-1px);
+    }
+    .btn-mac-link--services {
+      border-color: rgba(109, 40, 217, 0.38);
+      color: #5b21b6;
+      background: linear-gradient(180deg, rgba(245, 243, 255, 0.96) 0%, rgba(255, 255, 255, 0.76) 100%);
+    }
+    .btn-mac-link--services:hover {
+      border-color: rgba(91, 33, 182, 0.52);
+      background: rgba(237, 233, 254, 0.98);
+      color: #4c1d95;
       transform: translateY(-1px);
     }
     .btn-mac-logout-icon {
@@ -1344,30 +1362,15 @@
     .np-main-col {
       min-width: 0;
     }
-    /* Dos columnas en escritorio; sticky lateral. En ≤900px una columna (sin scroll horizontal del layout). */
+    /* Dos columnas en escritorio; sticky lateral. ≤900px+portrait: una columna. ≤900px+landscape: dos columnas como escritorio. */
     .np-tree-sidebar {
       position: sticky;
       top: 12px;
       align-self: start;
       contain: layout style;
     }
-    /* Tipografía y modales en pantallas pequeñas; Ramas+Hoja en columna única para ancho de hoja tipo escritorio. */
+    /* Tipografía y modales en pantallas pequeñas. */
     @media (max-width: 900px) {
-      .np-layout-scroll {
-        overflow-x: visible;
-      }
-      .np-layout {
-        grid-template-columns: 1fr;
-        min-width: 0;
-      }
-      .np-tree-sidebar {
-        position: relative;
-        top: auto;
-      }
-      .np-main-col {
-        width: 100%;
-        max-width: none;
-      }
       .wrap {
         padding: 12px max(10px, env(safe-area-inset-right)) 22px max(10px, env(safe-area-inset-left));
       }
@@ -1421,6 +1424,41 @@
         background: rgba(255, 255, 255, 0.98);
       }
     }
+    @media (max-width: 900px) and (orientation: portrait) {
+      .np-layout-scroll {
+        overflow-x: visible;
+      }
+      .np-layout {
+        grid-template-columns: 1fr;
+        min-width: 0;
+      }
+      .np-tree-sidebar {
+        position: relative;
+        top: auto;
+      }
+      .np-main-col {
+        width: 100%;
+        max-width: none;
+      }
+    }
+    @media (max-width: 900px) and (orientation: landscape) {
+      .np-layout-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .np-layout {
+        grid-template-columns: minmax(var(--np-layout-sidebar-min), 320px) minmax(var(--np-layout-main-min), 1fr);
+        min-width: max(100%, calc(var(--np-layout-sidebar-min) + var(--np-layout-gap) + var(--np-layout-main-min)));
+      }
+      .np-tree-sidebar {
+        position: sticky;
+        top: 12px;
+        align-self: start;
+      }
+      .np-main-col {
+        min-width: 0;
+      }
+    }
     @media (max-width: 480px) {
       #npMain .panel {
         padding: 12px 12px 14px;
@@ -1459,17 +1497,27 @@
     .np-tree-node { position: relative; }
     .np-tree-row {
       position: relative;
-      display: flex;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-rows: auto auto;
       align-items: center;
-      gap: 2px;
+      column-gap: 4px;
+      row-gap: 1px;
       min-height: 28px;
-      padding: 2px 6px 2px 8px;
+      padding: 4px 6px 4px 8px;
       margin: 0 4px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
-      flex-wrap: nowrap;
       transition: background 0.12s ease;
+    }
+    .np-tree-row-lead {
+      grid-column: 1;
+      grid-row: 1;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
     }
     .np-tree-row:hover { background: rgba(226, 232, 240, 0.65); }
     .np-tree-row.np-tree-active {
@@ -1485,12 +1533,14 @@
     .np-tree-node.np-tree-tone-6 { --np-tree-accent: #0891b2; }
     .np-tree-node.np-tree-tone-7 { --np-tree-accent: #ea580c; }
     .np-tree-label {
-      flex: 1;
+      grid-column: 2;
+      grid-row: 1;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       padding: 0 4px;
+      align-self: center;
     }
     .np-tree-label-branch {
       font-weight: 700;
@@ -1566,25 +1616,35 @@
       filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6));
     }
     .np-tree-meta {
-      flex-shrink: 0;
-      font-size: 10px;
+      grid-column: 2 / -1;
+      grid-row: 2;
+      justify-self: end;
+      font-size: 9px;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
       color: #94a3b8;
       letter-spacing: 0.02em;
-      max-width: 88px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      opacity: 0.5;
+      max-width: 100%;
+      opacity: 0.62;
       transition: opacity 0.12s ease;
+      line-height: 1.2;
+      padding-right: 2px;
     }
     @media (hover: hover) {
-      .np-tree-meta { opacity: 0; }
-      .np-tree-row:hover .np-tree-meta { opacity: 1; }
+      .np-tree-meta {
+        opacity: 0.48;
+      }
+      .np-tree-row:hover .np-tree-meta {
+        opacity: 0.78;
+      }
     }
     .np-tree-row.np-tree-active .np-tree-meta { opacity: 0.85; }
     .np-tree-actions {
+      grid-column: 3;
+      grid-row: 1;
       flex-shrink: 0;
       display: flex;
       align-items: center;
@@ -1592,6 +1652,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.12s ease;
+      align-self: center;
     }
     @media (hover: none) {
       .np-tree-actions {
@@ -2046,7 +2107,7 @@
       transition: background 0.15s ease;
     }
     .np-ms-sheet.np-ms-sheet--rowdel .np-ms-row {
-      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(0, 1fr)) minmax(44px, 52px);
+      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(0, 1fr)) minmax(52px, 64px);
     }
     .np-ms-row:last-child { border-bottom: none; }
     .np-ms-row-head {
@@ -2158,7 +2219,7 @@
         grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(122px, 1fr));
       }
       .np-ms-sheet.np-ms-sheet--rowdel .np-ms-row {
-        grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(122px, 1fr)) minmax(44px, 52px);
+        grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(122px, 1fr)) minmax(52px, 64px);
       }
       .np-ms-cell {
         align-items: flex-start;
@@ -3251,6 +3312,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       text-align: left;
+      font-weight: 650;
     }
     .np-prio-summary-root-details summary::-webkit-details-marker { display: none; }
     .np-prio-summary-root-details summary::after {
@@ -3600,6 +3662,41 @@
       top: auto;
       transform: none;
     }
+    .np-ms-cell-rowdel-slot {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .np-ms-row-reorder {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+    .np-ms-row-reorder-btn {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: rgba(241, 245, 249, 0.95);
+      color: #475569;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+    }
+    .np-ms-row-reorder-btn:hover:not(:disabled) {
+      background: rgba(226, 232, 240, 0.98);
+      color: #0f172a;
+    }
+    .np-ms-row-reorder-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
     .np-ms-cell-num {
       font-variant-numeric: tabular-nums;
       text-align: right;
@@ -3673,6 +3770,61 @@
     .np-note-section-wrap .np-note-section-toolbar {
       justify-content: flex-end;
       margin-bottom: 6px;
+    }
+    .np-note-section-wrap .np-note-section-toolbar .np-block-reorder {
+      margin-right: auto;
+    }
+    .np-ms-head > .np-block-reorder {
+      margin-right: 2px;
+    }
+    .np-note-section-wrap .np-note-section-toolbar .np-block-drag-handle {
+      margin-right: 6px;
+    }
+    .np-ms-head > .np-block-drag-handle {
+      margin-right: 6px;
+    }
+    .np-detail-block-chunk.np-dnd-drag-over-block {
+      outline: 2px dashed rgba(37, 99, 235, 0.42);
+      outline-offset: 3px;
+      border-radius: 12px;
+    }
+    .np-ms-row.np-ms-row-dnd-over:not(.np-ms-row-head):not(.np-ms-row-sum):not(.np-ms-row-ledger-total) {
+      box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.38);
+    }
+    .np-drag-handle {
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .np-drag-handle:active {
+      cursor: grabbing;
+    }
+    .np-block-drag-handle {
+      width: 28px;
+      height: 28px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #64748b;
+      border-radius: 8px;
+      background: rgba(241, 245, 249, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+    }
+    .np-row-drag-handle {
+      width: 22px;
+      height: 22px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      border-radius: 6px;
+      background: rgba(241, 245, 249, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      margin-bottom: 2px;
     }
     .np-note-section-wrap .np-note-section-title {
       font-size: 11px;
@@ -3796,6 +3948,7 @@
               <span class="np-plan-menu-subblock-title">Noticias</span>
               <div class="np-plan-menu-inline-links">
                 <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.elfinanciero.com.mx/" target="_blank" rel="noopener noreferrer" title="El Financiero">El Financiero</a>
+                <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.eleconomista.com.mx/" target="_blank" rel="noopener noreferrer" title="El Economista">El Economista</a>
                 <a class="btn-mac-link btn-mac-link--fin-news" href="http://spanish.peopledaily.com.cn/" target="_blank" rel="noopener noreferrer" title="Diario del Pueblo (español)">PD China</a>
                 <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.nytimes.com/" target="_blank" rel="noopener noreferrer" title="The New York Times">NY Times</a>
                 <a class="btn-mac-link btn-mac-link--fin-news" href="https://www.wsj.com/" target="_blank" rel="noopener noreferrer" title="The Wall Street Journal">WSJ</a>
@@ -3812,6 +3965,19 @@
                 <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.google.com/finance/beta?hl=es" target="_blank" rel="noopener noreferrer" title="Google Finanzas">Google Finanzas</a>
                 <a class="btn-mac-link btn-mac-link--fin-markets" href="https://finviz.com/" target="_blank" rel="noopener noreferrer" title="Finviz">Finviz</a>
                 <a class="btn-mac-link btn-mac-link--fin-markets" href="https://www.imf.org/es" target="_blank" rel="noopener noreferrer" title="FMI">FMI</a>
+              </div>
+            </div>
+            <div class="np-plan-menu-block np-plan-menu-block--services" aria-label="Servicios">
+              <span class="np-plan-menu-subblock-title">Servicios</span>
+              <div class="np-plan-menu-inline-links">
+                <a class="btn-mac-link btn-mac-link--services" href="https://izzi.mx/login" target="_blank" rel="noopener noreferrer" title="izzi · inicio de sesión">izzi</a>
+                <a class="btn-mac-link btn-mac-link--services" href="https://telmex.com/web/guest/pago_sin_login" target="_blank" rel="noopener noreferrer" title="Telmex · pago sin iniciar sesión">Telmex pago</a>
+                <a class="btn-mac-link btn-mac-link--services" href="https://www.elpalaciodehierro.com/login" target="_blank" rel="noopener noreferrer" title="El Palacio de Hierro · iniciar sesión">Palacio</a>
+                <a class="btn-mac-link btn-mac-link--services" href="https://www.hsbc.com.mx/online/dashboard/" target="_blank" rel="noopener noreferrer" title="HSBC México · banca en línea">HSBC</a>
+                <a class="btn-mac-link btn-mac-link--services" href="https://www.mitelcel.com/mitelcel/login" target="_blank" rel="noopener noreferrer" title="Mi Telcel · iniciar sesión">Mi Telcel</a>
+                <a class="btn-mac-link btn-mac-link--services" href="https://www.mintmobile.com/" target="_blank" rel="noopener noreferrer" title="Mint Mobile">Mint Mobile</a>
+                <a class="btn-mac-link btn-mac-link--services" href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer" title="Cuenta de Google (seguridad, datos y preferencias)">Cuenta Google</a>
+                <a class="btn-mac-link btn-mac-link--services" href="chrome://bookmarks/" target="_self" title="Gestor de marcadores de Chrome en este navegador (no hay página web única para «favoritos» de la cuenta; en Chrome suele abrirse desde aquí)">★ Marcadores Chrome</a>
               </div>
             </div>
           </div>
@@ -5703,6 +5869,54 @@
     while (block.rowDone.length > block.rows.length) block.rowDone.pop();
   }
 
+  /** Intercambia dos filas y metadatos alineados (smart/tasks/ledger/libre). */
+  function swapMiniSheetRows(block, i, j) {
+    if (!block || !Array.isArray(block.rows) || i === j) return;
+    var n = block.rows.length;
+    if (i < 0 || j < 0 || i >= n || j >= n) return;
+    var tmp = block.rows[i];
+    block.rows[i] = block.rows[j];
+    block.rows[j] = tmp;
+    if (block.variant === 'smart' || block.variant === 'tasks') {
+      ensureSmartMeta(block);
+      tmp = block.rowKinds[i];
+      block.rowKinds[i] = block.rowKinds[j];
+      block.rowKinds[j] = tmp;
+      tmp = block.rowDone[i];
+      block.rowDone[i] = block.rowDone[j];
+      block.rowDone[j] = tmp;
+    } else {
+      if (block.rowKinds && block.rowKinds.length >= n) {
+        tmp = block.rowKinds[i];
+        block.rowKinds[i] = block.rowKinds[j];
+        block.rowKinds[j] = tmp;
+      }
+      if (block.rowDone && block.rowDone.length >= n) {
+        tmp = block.rowDone[i];
+        block.rowDone[i] = block.rowDone[j];
+        block.rowDone[j] = tmp;
+      }
+    }
+  }
+
+  /** Mueve una fila a otro índice (misma tabla). */
+  function moveMiniSheetRowTo(block, fromIdx, toIdx) {
+    if (!block || !Array.isArray(block.rows)) return;
+    var n = block.rows.length;
+    if (fromIdx === toIdx || fromIdx < 0 || fromIdx >= n || toIdx < 0 || toIdx >= n) return;
+    if (block.variant === 'smart' || block.variant === 'tasks') ensureSmartMeta(block);
+
+    function mv(arr) {
+      if (!Array.isArray(arr) || arr.length !== n) return;
+      var it = arr.splice(fromIdx, 1)[0];
+      arr.splice(toIdx, 0, it);
+    }
+
+    mv(block.rows);
+    mv(block.rowKinds);
+    mv(block.rowDone);
+  }
+
   function padRowCells(row, ncol) {
     var arr = Array.isArray(row) ? row.slice() : (row && row.cells ? row.cells.slice() : []);
     while (arr.length < ncol) arr.push('');
@@ -7021,6 +7235,7 @@
       var summ = document.createElement('summary');
       var nameSp = document.createElement('span');
       nameSp.className = 'np-prio-summary-root-name';
+      nameSp.style.color = resolveCategoryAccentHex(rootCat.id);
       nameSp.textContent = rootCat.title || 'Sin título';
       var mini = document.createElement('span');
       mini.className = 'np-prio-sum-mini';
@@ -7099,6 +7314,188 @@
       }
     }
 
+    function swapBodyBlocks(i, j) {
+      if (!blocks || i === j || i < 0 || j < 0 || i >= blocks.length || j >= blocks.length) return;
+      var tmp = blocks[i];
+      blocks[i] = blocks[j];
+      blocks[j] = tmp;
+      afterStructuralChange();
+    }
+
+    function moveBodyBlockTo(fromIdx, toIdx) {
+      if (!blocks || fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || fromIdx >= blocks.length || toIdx >= blocks.length)
+        return;
+      var item = blocks.splice(fromIdx, 1)[0];
+      blocks.splice(toIdx, 0, item);
+      afterStructuralChange();
+    }
+
+    function clearPlanProDnDHighlights() {
+      document.querySelectorAll('.np-dnd-drag-over-block').forEach(function (el) {
+        el.classList.remove('np-dnd-drag-over-block');
+      });
+      document.querySelectorAll('.np-ms-row-dnd-over').forEach(function (el) {
+        el.classList.remove('np-ms-row-dnd-over');
+      });
+    }
+
+    function wireChunkBlockDnD(chunkEl, idx) {
+      if (!editable || blocks.length <= 1) return;
+      chunkEl.dataset.npBlockIndex = String(idx);
+      chunkEl.addEventListener('dragover', function (e) {
+        var types = Array.from(e.dataTransfer.types || []);
+        if (
+          types.indexOf('application/x-np-planpro-block') < 0 &&
+          types.indexOf('text/plain') < 0
+        ) {
+          return;
+        }
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        chunkEl.classList.add('np-dnd-drag-over-block');
+      });
+      chunkEl.addEventListener('dragleave', function (e) {
+        if (chunkEl.contains(e.relatedTarget)) return;
+        chunkEl.classList.remove('np-dnd-drag-over-block');
+      });
+      chunkEl.addEventListener('drop', function (e) {
+        var types = Array.from(e.dataTransfer.types || []);
+        if (
+          types.indexOf('application/x-np-planpro-block') < 0 &&
+          types.indexOf('text/plain') < 0
+        ) {
+          return;
+        }
+        e.preventDefault();
+        chunkEl.classList.remove('np-dnd-drag-over-block');
+        var srcStr = e.dataTransfer.getData('application/x-np-planpro-block');
+        if (!srcStr) {
+          var tx = e.dataTransfer.getData('text/plain');
+          if (tx && tx.indexOf('planpro-block:') === 0) srcStr = tx.slice(14);
+        }
+        var src = parseInt(srcStr, 10);
+        var tgt = parseInt(chunkEl.dataset.npBlockIndex, 10);
+        if (isNaN(src) || isNaN(tgt)) return;
+        moveBodyBlockTo(src, tgt);
+      });
+    }
+
+    function wireRowDnD(rrEl, bi, riRef, blockRef, rowDnDEnabled) {
+      if (!editable || !rowDnDEnabled) return;
+      rrEl.dataset.npRowDropIndex = String(riRef);
+      rrEl.addEventListener('dragover', function (e) {
+        var types = Array.from(e.dataTransfer.types || []);
+        if (types.indexOf('application/x-np-planpro-row') < 0 && types.indexOf('text/plain') < 0) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        rrEl.classList.add('np-ms-row-dnd-over');
+      });
+      rrEl.addEventListener('dragleave', function (e) {
+        if (rrEl.contains(e.relatedTarget)) return;
+        rrEl.classList.remove('np-ms-row-dnd-over');
+      });
+      rrEl.addEventListener('drop', function (e) {
+        var types = Array.from(e.dataTransfer.types || []);
+        if (types.indexOf('application/x-np-planpro-row') < 0 && types.indexOf('text/plain') < 0) return;
+        e.preventDefault();
+        rrEl.classList.remove('np-ms-row-dnd-over');
+        var raw = e.dataTransfer.getData('application/x-np-planpro-row');
+        if (!raw) {
+          var tx = e.dataTransfer.getData('text/plain');
+          if (tx && tx.indexOf('planpro-row:') === 0) raw = tx.slice(11);
+        }
+        if (!raw) return;
+        var pipe = raw.indexOf('|');
+        if (pipe < 0) return;
+        var srcBi = parseInt(raw.slice(0, pipe), 10);
+        var srcRi = parseInt(raw.slice(pipe + 1), 10);
+        var tgtRi = parseInt(rrEl.dataset.npRowDropIndex, 10);
+        if (isNaN(srcBi) || isNaN(srcRi) || isNaN(tgtRi)) return;
+        if (srcBi !== bi) return;
+        moveMiniSheetRowTo(blockRef, srcRi, tgtRi);
+        afterStructuralChange();
+      });
+    }
+
+    function createBlockDragHandle(blockIdx) {
+      if (!editable || blocks.length <= 1) return null;
+      var h = document.createElement('span');
+      h.className = 'np-drag-handle np-block-drag-handle';
+      h.draggable = true;
+      h.title = 'Arrastrar para reordenar bloques';
+      h.setAttribute('role', 'button');
+      h.tabIndex = 0;
+      h.textContent = '\u2630';
+      h.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Enter' && ev.key !== ' ') return;
+        ev.preventDefault();
+      });
+      h.addEventListener('dragstart', function (e) {
+        e.stopPropagation();
+        clearPlanProDnDHighlights();
+        var s = String(blockIdx);
+        e.dataTransfer.setData('application/x-np-planpro-block', s);
+        e.dataTransfer.setData('text/plain', 'planpro-block:' + s);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      h.addEventListener('dragend', function () {
+        clearPlanProDnDHighlights();
+      });
+      return h;
+    }
+
+    function createRowDragHandle(blockIdx, rowIdx) {
+      var h = document.createElement('span');
+      h.className = 'np-drag-handle np-row-drag-handle';
+      h.draggable = true;
+      h.title = 'Arrastrar para reordenar filas';
+      h.setAttribute('role', 'button');
+      h.tabIndex = 0;
+      h.textContent = '\u2630';
+      h.addEventListener('dragstart', function (e) {
+        e.stopPropagation();
+        clearPlanProDnDHighlights();
+        var payload = blockIdx + '|' + rowIdx;
+        e.dataTransfer.setData('application/x-np-planpro-row', payload);
+        e.dataTransfer.setData('text/plain', 'planpro-row:' + payload);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      h.addEventListener('dragend', function () {
+        clearPlanProDnDHighlights();
+      });
+      return h;
+    }
+
+    function createBlockReorderControls(blockIdx) {
+      if (!editable || blocks.length <= 1) return null;
+      var span = document.createElement('span');
+      span.className = 'np-block-reorder';
+      function mkBtn(isUp) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'np-ms-row-reorder-btn np-tree-ignore';
+        btn.textContent = isUp ? '\u2191' : '\u2193';
+        btn.title = isUp ? 'Subir bloque (encima del anterior)' : 'Bajar bloque (debajo del siguiente)';
+        btn.setAttribute('aria-label', btn.title);
+        btn.disabled = isUp ? blockIdx === 0 : blockIdx >= blocks.length - 1;
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (isUp) {
+            if (blockIdx <= 0) return;
+            swapBodyBlocks(blockIdx, blockIdx - 1);
+          } else {
+            if (blockIdx >= blocks.length - 1) return;
+            swapBodyBlocks(blockIdx, blockIdx + 1);
+          }
+        });
+        return btn;
+      }
+      span.appendChild(mkBtn(true));
+      span.appendChild(mkBtn(false));
+      return span;
+    }
+
     blocks.forEach(function (b, blockIndex) {
       try {
       var ledgerToolbarEl = null;
@@ -7110,6 +7507,10 @@
         if (editable) {
           var noteTb = document.createElement('div');
           noteTb.className = 'np-ms-free-toolbar np-note-section-toolbar';
+          var dragNs = createBlockDragHandle(blockIndex);
+          if (dragNs) noteTb.appendChild(dragNs);
+          var reorderNs = createBlockReorderControls(blockIndex);
+          if (reorderNs) noteTb.appendChild(reorderNs);
           var noteDel = document.createElement('button');
           noteDel.type = 'button';
           noteDel.className = 'btn btn-ghost';
@@ -7147,6 +7548,7 @@
           nRd.innerHTML = sanitizeRich(b.html || '');
           nw.appendChild(nRd);
         }
+        if (editable && blocks.length > 1) wireChunkBlockDnD(nw, blockIndex);
         frag.appendChild(nw);
         return;
       }
@@ -7173,6 +7575,10 @@
 
       var head = document.createElement('div');
       head.className = 'np-ms-head';
+      var dragMs = createBlockDragHandle(blockIndex);
+      if (dragMs) head.appendChild(dragMs);
+      var reorderMs = createBlockReorderControls(blockIndex);
+      if (reorderMs) head.appendChild(reorderMs);
       var badge = document.createElement('span');
       badge.className = 'np-ms-head-badge';
       if (b.variant === 'smart') badge.textContent = 'Seguimiento';
@@ -7757,7 +8163,8 @@
       if (showRowDelCol) {
         var hcDel = document.createElement('div');
         hcDel.className = 'np-ms-cell np-ms-cell-corner';
-        hcDel.style.maxWidth = '44px';
+        hcDel.style.maxWidth = '64px';
+        hcDel.style.minWidth = '52px';
         hcDel.style.justifyContent = 'center';
         hcDel.style.opacity = '0.45';
         hcDel.style.fontSize = '10px';
@@ -8003,9 +8410,54 @@
         if (showRowDelCol) {
           var cellDel = document.createElement('div');
           cellDel.className = 'np-ms-cell np-ms-cell-rowdel-slot';
-          cellDel.style.maxWidth = '44px';
+          cellDel.style.maxWidth = '64px';
+          cellDel.style.minWidth = '52px';
           cellDel.style.justifyContent = 'center';
-          cellDel.style.padding = '6px';
+          cellDel.style.padding = '6px 4px';
+
+          var rowDh = createRowDragHandle(blockIndex, ri);
+          cellDel.appendChild(rowDh);
+
+          var reorder = document.createElement('div');
+          reorder.className = 'np-ms-row-reorder';
+
+          var btnUp = document.createElement('button');
+          btnUp.type = 'button';
+          btnUp.className = 'np-ms-row-reorder-btn np-tree-ignore';
+          btnUp.title = 'Subir fila';
+          btnUp.setAttribute('aria-label', 'Subir fila');
+          btnUp.textContent = '\u2191';
+          btnUp.disabled = ri === 0;
+          (function (rowIdx) {
+            btnUp.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              if (rowIdx <= 0) return;
+              swapMiniSheetRows(b, rowIdx, rowIdx - 1);
+              afterStructuralChange();
+            });
+          })(ri);
+
+          var btnDn = document.createElement('button');
+          btnDn.type = 'button';
+          btnDn.className = 'np-ms-row-reorder-btn np-tree-ignore';
+          btnDn.title = 'Bajar fila';
+          btnDn.setAttribute('aria-label', 'Bajar fila');
+          btnDn.textContent = '\u2193';
+          btnDn.disabled = ri >= b.rows.length - 1;
+          (function (rowIdx) {
+            btnDn.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              if (rowIdx >= b.rows.length - 1) return;
+              swapMiniSheetRows(b, rowIdx, rowIdx + 1);
+              afterStructuralChange();
+            });
+          })(ri);
+
+          reorder.appendChild(btnUp);
+          reorder.appendChild(btnDn);
+
           var btnRm = document.createElement('button');
           btnRm.type = 'button';
           btnRm.className = 'np-ms-row-del';
@@ -8022,8 +8474,10 @@
               afterStructuralChange();
             });
           })(ri);
+          cellDel.appendChild(reorder);
           cellDel.appendChild(btnRm);
           rr.appendChild(cellDel);
+          wireRowDnD(rr, blockIndex, ri, b, showRowDelCol);
         }
 
         sheet.appendChild(rr);
@@ -8062,7 +8516,8 @@
         if (showRowDelCol) {
           var tz = document.createElement('div');
           tz.className = 'np-ms-cell';
-          tz.style.maxWidth = '44px';
+          tz.style.maxWidth = '64px';
+          tz.style.minWidth = '52px';
           foot.appendChild(tz);
         }
         sheet.appendChild(foot);
@@ -8085,7 +8540,8 @@
         if (showRowDelCol) {
           var tdx = document.createElement('div');
           tdx.className = 'np-ms-cell';
-          tdx.style.maxWidth = '44px';
+          tdx.style.maxWidth = '64px';
+          tdx.style.minWidth = '52px';
           sumRow.appendChild(tdx);
         }
         sheet.appendChild(sumRow);
@@ -8132,6 +8588,8 @@
           refreshLedgerDerivedUI();
         } catch (eLedFoot) {}
       }
+
+      if (editable && blocks.length > 1) wireChunkBlockDnD(wrap, blockIndex);
 
       frag.appendChild(wrap);
       } catch (errPlanProBlock) {
@@ -8387,6 +8845,9 @@
       selectCategory(node.cat.id);
     });
 
+    var rowLead = document.createElement('div');
+    rowLead.className = 'np-tree-row-lead';
+
     if (isRoot) {
       var pin = document.createElement('span');
       pin.className = 'np-tree-root-pin';
@@ -8394,7 +8855,7 @@
       pin.title = 'Rama raíz';
       pin.innerHTML =
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#10b981" stroke="#047857" stroke-width="0.75"/><circle cx="12" cy="9" r="2.25" fill="#ecfdf5"/></svg>';
-      row.appendChild(pin);
+      rowLead.appendChild(pin);
     }
 
     var childBox = null;
@@ -8430,13 +8891,15 @@
         toggle.classList.toggle('np-tree-toggle--collapsed', collapsed);
         childBox.classList.toggle('np-tree-children-open', !collapsed);
       });
-      row.appendChild(toggle);
+      rowLead.appendChild(toggle);
     } else {
       var spacer = document.createElement('span');
       spacer.className = 'np-tree-spacer';
       spacer.setAttribute('aria-hidden', 'true');
-      row.appendChild(spacer);
+      rowLead.appendChild(spacer);
     }
+
+    row.appendChild(rowLead);
 
     var title = document.createElement('span');
     title.className = 'np-tree-label ' + (isRoot ? 'np-tree-label-branch' : 'np-tree-label-leaf');
@@ -8446,10 +8909,12 @@
     meta.className = 'np-tree-meta';
     var itemsST = totalItemsInSubtree(node.cat.id);
     var branchesBelow = countDescendantCategoryNodes(node);
-    meta.textContent = branchesBelow
+    var metaShort = branchesBelow ? itemsST + '·' + branchesBelow : String(itemsST);
+    var metaFull = branchesBelow
       ? itemsST + ' ap · ' + branchesBelow + ' ramas'
       : itemsST + ' ap';
-    meta.title = '';
+    meta.textContent = metaShort;
+    meta.title = metaFull;
 
     var actions = document.createElement('div');
     actions.className = 'np-tree-actions';
@@ -8538,8 +9003,8 @@
     actions.appendChild(menuWrap);
 
     row.appendChild(title);
-    row.appendChild(meta);
     row.appendChild(actions);
+    row.appendChild(meta);
     var catTitleFull = String(node.cat.title || '').trim();
     if (catTitleFull) {
       row.setAttribute('title', catTitleFull);
