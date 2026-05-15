@@ -3035,6 +3035,21 @@
       margin: 0.55em 0;
       box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
       vertical-align: middle;
+      touch-action: manipulation;
+    }
+    /* Arrastra desde la esquina inferior derecha para cambiar tamaño (apuntes). */
+    .np-rich-editor img.np-rich-img:hover {
+      outline: 2px solid rgba(34, 197, 94, 0.28);
+      outline-offset: 3px;
+      box-shadow:
+        0 2px 12px rgba(15, 23, 42, 0.08),
+        inset -5px -5px 0 0 rgba(34, 197, 94, 0.35);
+    }
+    .np-rich-editor img.np-rich-img.np-rich-img-resizing {
+      outline: 2px solid rgba(34, 197, 94, 0.55);
+      outline-offset: 3px;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08), inset -5px -5px 0 0 rgba(22, 163, 74, 0.65);
+      user-select: none;
     }
     .np-modal-note-rich {
       white-space: normal;
@@ -3627,6 +3642,21 @@
       padding: 6px 8px;
       font-size: 13px;
     }
+    /* Texto siempre visible en tabla libre (móvil / tema / WebKit autofill). */
+    .np-ms-block-free .np-ms-cell-input:not(.np-ms-cell-input-date),
+    .np-ms-block-free textarea.np-ms-cell-input {
+      color: #0f172a;
+      -webkit-text-fill-color: #0f172a;
+      caret-color: #2563eb;
+      min-height: 40px;
+      line-height: 1.45;
+    }
+    .np-ms-block-free .np-ms-cell-input:not(.np-ms-cell-input-date)::placeholder,
+    .np-ms-block-free textarea.np-ms-cell-input::placeholder {
+      color: #94a3b8;
+      opacity: 1;
+      -webkit-text-fill-color: #94a3b8;
+    }
     .np-ms-block-free .np-ms-row-head .np-ms-cell {
       padding-top: 8px;
       padding-bottom: 8px;
@@ -4086,7 +4116,7 @@
           <div id="npTreeMount" class="np-tree-mount" role="tree" aria-label="Ramas de la planta"></div>
           <div style="margin-top:12px;">
             <div style="display:flex;gap:8px;margin-top:0;align-items:center;">
-              <input type="text" id="npNewRootCat" aria-label="Nombre de la nueva rama" autocomplete="off" style="margin-bottom:0;flex:1;" />
+              <input type="text" id="npNewRootCat" aria-label="Nombre de la nueva rama" autocomplete="off" placeholder="Nueva rama…" style="margin-bottom:0;flex:1;" />
               <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddRootCat" style="margin-bottom:0;">Añadir</button>
             </div>
           </div>
@@ -4117,7 +4147,7 @@
                 <div id="npSheetTitle" class="np-sheet-title">—</div>
                 <div class="np-sheet-branch-row">
                   <div class="np-sheet-branch">
-                    <input type="text" id="npBranchName" maxlength="120" placeholder="Nueva rama…" autocomplete="off" />
+                    <input type="text" id="npBranchName" maxlength="120" placeholder="Nueva hoja…" autocomplete="off" />
                     <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnBranchHere">Crear rama aquí</button>
                   </div>
                   <button
@@ -4707,6 +4737,74 @@
     });
   }
 
+  /** Redimensionar imágenes en el editor: arrastra desde la esquina inferior derecha. */
+  function bindRichImageCornerResize(editorEl) {
+    if (!editorEl || editorEl.dataset.npImgResize === '1') return;
+    editorEl.dataset.npImgResize = '1';
+
+    function editorMaxImgWidth() {
+      var w = editorEl.clientWidth;
+      if (!w || w < 80) return 1200;
+      return Math.max(80, Math.round(w - 16));
+    }
+
+    editorEl.addEventListener(
+      'pointerdown',
+      function (ev) {
+        if (ev.button !== 0 && ev.pointerType !== 'touch') return;
+        var img = ev.target && ev.target.closest ? ev.target.closest('img.np-rich-img') : null;
+        if (!img || !editorEl.contains(img)) return;
+        var r = img.getBoundingClientRect();
+        var zone = Math.max(28, Math.min(44, Math.round(Math.min(r.width, r.height) * 0.18)));
+        if (ev.pointerType === 'touch') zone = Math.max(zone, 38);
+        var inCorner = ev.clientX >= r.right - zone && ev.clientY >= r.bottom - zone;
+        if (!inCorner) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+
+        var state = {
+          img: img,
+          startX: ev.clientX,
+          startW: Math.round(r.width),
+          pointerId: ev.pointerId
+        };
+        img.classList.add('np-rich-img-resizing');
+        try {
+          img.setPointerCapture(ev.pointerId);
+        } catch (eCap) {}
+
+        function onMove(eMove) {
+          if (!state || eMove.pointerId !== state.pointerId) return;
+          eMove.preventDefault();
+          var dx = eMove.clientX - state.startX;
+          var cap = Math.min(2000, editorMaxImgWidth());
+          var next = Math.max(48, Math.min(cap, Math.round(state.startW + dx)));
+          state.img.width = next;
+          state.img.setAttribute('width', String(next));
+          state.img.removeAttribute('height');
+        }
+
+        function finish(eEnd) {
+          if (!state || eEnd.pointerId !== state.pointerId) return;
+          try {
+            state.img.releasePointerCapture(eEnd.pointerId);
+          } catch (eRel) {}
+          state.img.classList.remove('np-rich-img-resizing');
+          editorEl.dispatchEvent(new Event('input', { bubbles: true }));
+          img.removeEventListener('pointermove', onMove);
+          img.removeEventListener('pointerup', finish);
+          img.removeEventListener('pointercancel', finish);
+          state = null;
+        }
+
+        img.addEventListener('pointermove', onMove, { passive: false });
+        img.addEventListener('pointerup', finish);
+        img.addEventListener('pointercancel', finish);
+      },
+      true
+    );
+  }
+
   function sanitizeRich(html) {
     if (!html || !String(html).trim()) return '';
     var s = String(html);
@@ -4735,7 +4833,7 @@
           'font',
           'img'
         ],
-        ALLOWED_ATTR: ['class', 'style', 'color', 'src', 'alt', 'loading', 'decoding', 'referrerpolicy']
+        ALLOWED_ATTR: ['class', 'style', 'color', 'src', 'alt', 'loading', 'decoding', 'referrerpolicy', 'width']
       });
       var wrap = document.createElement('div');
       wrap.innerHTML = cleaned;
@@ -4747,8 +4845,16 @@
         }
         im.className = 'np-rich-img';
         im.removeAttribute('style');
-        im.removeAttribute('width');
         im.removeAttribute('height');
+        var wAttr = im.getAttribute('width');
+        if (wAttr != null && String(wAttr).trim() !== '') {
+          var nw = parseInt(String(wAttr).replace(/px/gi, '').trim(), 10);
+          if (!isFinite(nw) || nw < 48) im.removeAttribute('width');
+          else if (nw > 2000) im.setAttribute('width', '2000');
+          else im.setAttribute('width', String(Math.round(nw)));
+        } else {
+          im.removeAttribute('width');
+        }
         if (!im.getAttribute('loading')) im.setAttribute('loading', 'lazy');
         if (!im.getAttribute('decoding')) im.setAttribute('decoding', 'async');
         if (!im.getAttribute('referrerpolicy')) im.setAttribute('referrerpolicy', 'no-referrer');
@@ -5232,6 +5338,7 @@
       scheduleRichToolbarSync(ed);
     });
     bindPlanProRichPasteImages(ed);
+    bindRichImageCornerResize(ed);
   }
 
   function openItemDetail(r) {
@@ -5775,9 +5882,11 @@
   }
 
   function columnLooksLikeDate(headerName, colIndex, ncol, variant) {
+    if (variant === 'tasks' && ncol >= 2 && colIndex === ncol - 1) return true;
+    /* Tabla libre / sin variant: no forzar type=date (en móvil no muestra texto libre y parece vacío). */
+    if (variant !== 'tasks' && variant !== 'smart') return false;
     var h = (headerName != null ? String(headerName) : '').toLowerCase();
     if (/fecha|objetivo|due|plazo|deadline|date/.test(h)) return true;
-    if (variant === 'tasks' && ncol >= 2 && colIndex === ncol - 1) return true;
     return false;
   }
 
@@ -10589,6 +10698,7 @@
       scheduleRichToolbarSync(npBodyRichEl);
     });
     bindPlanProRichPasteImages(npBodyRichEl);
+    bindRichImageCornerResize(npBodyRichEl);
     wirePlanProRichImageInput();
   }
 
