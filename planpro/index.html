@@ -1218,6 +1218,27 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
+    .np-pillar-list-table td.np-col-objective,
+    .np-pillar-list-table th.np-col-objective {
+      white-space: normal;
+      min-width: 7rem;
+      max-width: 12rem;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .np-pillar-list-table td.np-col-updated,
+    .np-pillar-list-table th.np-col-updated {
+      white-space: normal;
+      min-width: 6.75rem;
+      max-width: 11rem;
+      overflow-wrap: anywhere;
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+      line-height: 1.35;
+    }
     .np-msg { padding: 16px; border-radius: 8px; font-size: 14px; }
     .np-msg.warn { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; }
     .np-msg.err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
@@ -1362,7 +1383,9 @@
     .np-main-col {
       min-width: 0;
     }
-    /* Dos columnas en escritorio; sticky lateral. ≤900px+portrait: una columna. ≤900px+landscape: dos columnas como escritorio. */
+    /* Dos columnas en escritorio; sticky lateral. ≤640 portrait: una columna (teléfono).
+       ~641–1100 portrait: dos columnas fluidas (Fold abierto, tablets) sin forzar scroll horizontal.
+       ≤900 landscape: dos columnas con scroll si hace falta. */
     .np-tree-sidebar {
       position: sticky;
       top: 12px;
@@ -1424,7 +1447,7 @@
         background: rgba(255, 255, 255, 0.98);
       }
     }
-    @media (max-width: 900px) and (orientation: portrait) {
+    @media (max-width: 640px) and (orientation: portrait) {
       .np-layout-scroll {
         overflow-x: visible;
       }
@@ -1439,6 +1462,24 @@
       .np-main-col {
         width: 100%;
         max-width: none;
+      }
+    }
+    @media (min-width: 641px) and (max-width: 1100px) and (orientation: portrait) {
+      .np-layout-scroll {
+        overflow-x: visible;
+      }
+      .np-layout {
+        grid-template-columns: minmax(240px, min(34vw, 300px)) minmax(260px, 1fr);
+        gap: 12px;
+        min-width: 0;
+      }
+      .np-tree-sidebar {
+        position: sticky;
+        top: 12px;
+        align-self: start;
+      }
+      .np-main-col {
+        min-width: 0;
       }
     }
     @media (max-width: 900px) and (orientation: landscape) {
@@ -2180,9 +2221,14 @@
     }
     .np-ms-cell-input-date {
       min-height: 36px;
-      min-width: 0;
       max-width: 100%;
       color-scheme: light;
+      /* Evita que columnas muy angostas recorten la fecha en móvil */
+      min-width: min(100%, 10.75rem);
+    }
+    .np-ms-cell:has(input.np-ms-cell-input-date) {
+      overflow-x: visible;
+      min-width: 5rem;
     }
     textarea.np-ms-cell-input {
       min-height: 52px;
@@ -3225,6 +3271,21 @@
       font-size: 11px;
       color: #94a3b8;
       font-weight: 500;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .np-sheet-item-card-meta-due {
+      font-size: 12px;
+      font-weight: 650;
+      color: #475569;
+      letter-spacing: -0.01em;
+    }
+    .np-sheet-item-card-meta-rest {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
     }
     tr.np-items-row:hover td {
       background: rgba(236, 253, 245, 0.45);
@@ -4158,7 +4219,8 @@
                     <th>Título</th>
                     <th>Nota</th>
                     <th>Rama</th>
-                    <th>Actualizado</th>
+                    <th class="np-col-objective">Objetivo</th>
+                    <th class="np-col-updated">Actualizado</th>
                     <th class="np-actions">Eliminar</th>
                   </tr>
                 </thead>
@@ -4396,6 +4458,18 @@
       var d = new Date(iso);
       return isNaN(d.getTime()) ? iso : d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
     } catch (e) { return iso; }
+  }
+
+  /** Lista / tarjetas: actualización más corta que fmtDate (móvil). */
+  function fmtUpdatedShort(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return String(iso);
+      return d.toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return String(iso);
+    }
   }
 
   /** Vista corta de la nota en tabla (una línea lógica). */
@@ -6663,6 +6737,34 @@
     var iso = /^(\d{4}-\d{2}-\d{2})/.exec(s);
     if (iso) return iso[1];
     return toDateInputValue(s);
+  }
+
+  /** Fecha objetivo del ítem (due_at) para tabla / tarjetas — compacta y legible en celular. */
+  function fmtObjectiveDueDisplay(raw) {
+    if (raw == null || raw === '') return '—';
+    var key = parseDueDateKey(raw);
+    if (!key) {
+      try {
+        var d = new Date(raw);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+      } catch (e1) {}
+      var s = String(raw).trim();
+      return s.length > 28 ? s.slice(0, 26) + '…' : s;
+    }
+    try {
+      var parts = key.split('-');
+      if (parts.length !== 3) return key;
+      var y = parseInt(parts[0], 10);
+      var mo = parseInt(parts[1], 10) - 1;
+      var da = parseInt(parts[2], 10);
+      var dd = new Date(y, mo, da);
+      if (isNaN(dd.getTime())) return key;
+      return dd.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e2) {
+      return key;
+    }
   }
 
   var NP_CAL_MONTH_NAMES = [
@@ -10090,9 +10192,15 @@
       }
 
       tr.appendChild(tdText(r.category_id ? getCategoryPath(r.category_id) : '—'));
+
+      var tdObj = document.createElement('td');
+      tdObj.className = 'np-col-objective np-muted';
+      tdObj.textContent = fmtObjectiveDueDisplay(r.due_at);
+      tr.appendChild(tdObj);
+
       var tdUp = document.createElement('td');
-      tdUp.className = 'np-muted';
-      tdUp.textContent = fmtDate(r.updated_at);
+      tdUp.className = 'np-col-updated np-muted';
+      tdUp.textContent = fmtUpdatedShort(r.updated_at);
       tr.appendChild(tdUp);
 
       var tdAct = document.createElement('td');
@@ -10169,7 +10277,15 @@
       n.textContent = prev || 'Sin texto en la libreta · revisa tablas en el detalle';
       var meta = document.createElement('div');
       meta.className = 'np-sheet-item-card-meta';
-      meta.textContent = (r.category_id ? getCategoryPath(r.category_id) : '—') + ' · ' + fmtDate(r.updated_at);
+      var metaDue = document.createElement('div');
+      metaDue.className = 'np-sheet-item-card-meta-due';
+      metaDue.textContent = 'Objetivo: ' + fmtObjectiveDueDisplay(r.due_at);
+      var metaRest = document.createElement('div');
+      metaRest.className = 'np-sheet-item-card-meta-rest';
+      metaRest.textContent =
+        (r.category_id ? getCategoryPath(r.category_id) : '—') + ' · Act. ' + fmtUpdatedShort(r.updated_at);
+      meta.appendChild(metaDue);
+      meta.appendChild(metaRest);
       card.appendChild(t);
       card.appendChild(n);
       card.appendChild(meta);
