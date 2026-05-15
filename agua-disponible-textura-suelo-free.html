@@ -436,7 +436,7 @@
 
   <div id="panel1" class="section-panel active" role="tabpanel" aria-labelledby="tab1">
     <h2 class="section-h2">Cálculo y barra volumétrica (CC · PMP · capacidad útil CC − PMP)</h2>
-    <p class="hint">Puedes usar el desplegable para <strong>cargar una vez</strong> CC y PMP ilustrativos según textura típica; al elegir una fila se rellenan los campos y el menú vuelve solo (así, si luego editas los números, no parece que sigas en esa textura). También puedes escribir CC y PMP a mano. El volumen de suelo es área × profundidad (1 ha × 30 cm = 3 000 m³). La <strong>humedad actual volumétrica</strong> (misma escala que CC/PMP) permite estimar la <strong>lámina a repponer hasta CC</strong> y verla en la barra.</p>
+    <p class="hint">Puedes usar el desplegable para <strong>cargar una vez</strong> CC y PMP ilustrativos según textura típica; al elegir una fila se rellenan los campos y el menú vuelve solo (así, si luego editas los números, no parece que sigas en esa textura). También puedes escribir CC y PMP a mano. El volumen de suelo es área × profundidad (1 ha × 30 cm = 3 000 m³). La <strong>humedad actual volumétrica</strong> (misma escala que CC/PMP) permite estimar la <strong>lámina a reponer hasta CC</strong> y verla en la barra.</p>
 
     <div class="preset-inline">
       <label class="preset-inline__label" for="presetTex">Cargar valores de referencia (CC / PMP)</label>
@@ -836,7 +836,7 @@
       parts.push(
         '<text x="' +
           W / 2 +
-          '" y="49" text-anchor="middle" font-size="10" fill="#64748b">Verde claro: agua por repponer hasta CC (base de la lámina).</text>'
+          '" y="49" text-anchor="middle" font-size="10" fill="#64748b">Verde claro: agua por reponer hasta CC (base de la lámina).</text>'
       );
       parts.push(
         '<text x="' + W / 2 + '" y="62" text-anchor="middle" font-size="10" fill="#64748b">Ámbar: tu % de humedad actual en el eje.</text>'
@@ -947,7 +947,7 @@
           (legY + 36) +
           '" fill="#334155"><tspan font-weight="700">Verde oscuro:</tspan> tramo hasta tu humedad actual.</text>'
       );
-      parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 50) + '" r="5" fill="#4ade80"/><text x="' + (barX + 26) + '" y="' + (legY + 53) + '" fill="#334155"><tspan font-weight="700">Verde claro:</tspan> agua por repponer hasta CC.</text>');
+      parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 50) + '" r="5" fill="#4ade80"/><text x="' + (barX + 26) + '" y="' + (legY + 53) + '" fill="#334155"><tspan font-weight="700">Verde claro:</tspan> agua por reponer hasta CC.</text>');
       parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 64) + '" r="4" fill="#d97706" stroke="#fff" stroke-width="1"/><text x="' + (barX + 26) + '" y="' + (legY + 67) + '" fill="#334155"><tspan font-weight="700">Ámbar:</tspan> marcador · tu % actual en el eje.</text>');
     } else {
       parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 36) + '" r="5" fill="#15803d"/><text x="' + (barX + 26) + '" y="' + (legY + 39) + '" fill="#334155"><tspan font-weight="700">Verde:</tspan> potencial útil CC−PMP (referencia, no lámina).</text>');
