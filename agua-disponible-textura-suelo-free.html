@@ -122,6 +122,36 @@
       gap: 6px;
       min-height: 0;
     }
+    /* Ayuda CC/PMP: bloque aparte para no confundirlo con los campos editables */
+    .field-stack--preset {
+      padding: 11px 12px 13px;
+      border-radius: 12px;
+      background: linear-gradient(165deg, #eff6ff 0%, #f0f9ff 50%, #ffffff 100%);
+      border: 2px solid #60a5fa;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 4px 14px rgba(37, 99, 235, 0.12);
+    }
+    .field-stack--preset label.f {
+      color: #1e40af;
+      font-weight: 700;
+    }
+    .field-stack--preset select.sel {
+      border-color: #3b82f6;
+      background: #fff;
+      box-shadow:
+        inset 0 1px 2px rgba(15, 23, 42, 0.05),
+        0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    .field-stack--preset select.sel:hover {
+      border-color: #2563eb;
+    }
+    .field-stack--preset select.sel:focus {
+      border-color: #1d4ed8;
+      box-shadow:
+        inset 0 1px 2px rgba(15, 23, 42, 0.04),
+        0 0 0 3px rgba(59, 130, 246, 0.28);
+    }
     .calc-box {
       background: linear-gradient(180deg, #e0f2fe 0%, #dbeafe 100%);
       border: 1px solid #7dd3fc;
@@ -290,7 +320,7 @@
     <p class="hint">Puedes usar el desplegable para <strong>cargar una vez</strong> CC y PMP ilustrativos según textura típica; al elegir una fila se rellenan los campos y el menú vuelve solo (así, si luego editas los números, no parece que sigas en esa textura). También puedes escribir CC y PMP a mano. El volumen de suelo es área × profundidad (1 ha × 30 cm = 3 000 m³).</p>
 
     <div class="grid-form">
-      <div class="field-stack">
+      <div class="field-stack field-stack--preset">
         <label class="f" for="presetTex">Cargar valores de referencia (CC / PMP)</label>
         <select class="sel" id="presetTex"></select>
       </div>
@@ -509,10 +539,10 @@
     var realM3 = adM3 * (rootEff / 100);
 
     document.getElementById('calcLines').innerHTML =
-      '<span><strong>Agua disponible</strong> (CC − PMP): ' + adPct.toFixed(1) + '% vol.</span>' +
-      '<span><strong>Volumen suelo</strong>: ' + volSoilM3.toFixed(0) + ' m³</span>' +
-      '<span><strong>Agua disponible</strong> en el volumen: ' + adM3.toFixed(0) + ' m³</span>' +
-      '<span><strong>Agua disponible real</strong> (× zona radical ' + rootEff + '%): ' + realM3.toFixed(0) + ' m³</span>';
+      '<span><strong>Agua disponible</strong> (CC − PMP): <strong>' + adPct.toFixed(1) + '% vol.</strong></span>' +
+      '<span><strong>Volumen suelo</strong>: <strong>' + volSoilM3.toFixed(0) + ' m³</strong></span>' +
+      '<span><strong>Agua disponible</strong> en el volumen: <strong>' + adM3.toFixed(0) + ' m³</strong></span>' +
+      '<span><strong>Agua disponible real</strong> (× zona radical <strong>' + rootEff + '%</strong>): <strong>' + realM3.toFixed(0) + ' m³</strong></span>';
 
     drawWaterBarChart(cc, pmp, depth);
   }
