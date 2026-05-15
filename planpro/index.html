@@ -1344,15 +1344,30 @@
     .np-main-col {
       min-width: 0;
     }
-    /* Misma vista dos columnas que en escritorio; en pantallas angostas desliza horizontal este bloque (≈788px+gap). */
+    /* Dos columnas en escritorio; sticky lateral. En ≤900px una columna (sin scroll horizontal del layout). */
     .np-tree-sidebar {
       position: sticky;
       top: 12px;
       align-self: start;
       contain: layout style;
     }
-    /* Tipografía y modales en pantallas pequeñas; el grid Ramas+Hoja no se apila. */
+    /* Tipografía y modales en pantallas pequeñas; Ramas+Hoja en columna única para ancho de hoja tipo escritorio. */
     @media (max-width: 900px) {
+      .np-layout-scroll {
+        overflow-x: visible;
+      }
+      .np-layout {
+        grid-template-columns: 1fr;
+        min-width: 0;
+      }
+      .np-tree-sidebar {
+        position: relative;
+        top: auto;
+      }
+      .np-main-col {
+        width: 100%;
+        max-width: none;
+      }
       .wrap {
         padding: 12px max(10px, env(safe-area-inset-right)) 22px max(10px, env(safe-area-inset-left));
       }

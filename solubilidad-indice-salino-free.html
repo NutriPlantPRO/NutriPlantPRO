@@ -141,6 +141,23 @@
       background: linear-gradient(90deg, #38bdf8 0%, #fbbf24 50%, #ea580c 100%);
       transition: width 0.2s ease;
     }
+    /* Solubilidad (4 primeras columnas) vs. índice salino IS (2 últimas): separador marcado */
+    #dataTable th:nth-child(4),
+    #dataTable td:nth-child(4) {
+      border-right: 3px solid #64748b;
+      padding-right: 18px;
+    }
+    #dataTable th:nth-child(5),
+    #dataTable td:nth-child(5),
+    #dataTable th:nth-child(6),
+    #dataTable td:nth-child(6) {
+      padding-left: 22px;
+    }
+    #dataTable thead th:nth-child(5),
+    #dataTable thead th:nth-child(6) {
+      background: linear-gradient(180deg, #eef2ff 0%, #e2e8f0 100%);
+      border-bottom-color: #cbd5e1;
+    }
     .tabs {
       display: flex;
       flex-wrap: wrap;

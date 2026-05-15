@@ -167,8 +167,19 @@
       background: #fff;
       font-size: 11px;
       color: var(--muted);
+      min-width: 0;
     }
     .viz-card svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+    .viz-caption {
+      margin: 6px 0 0;
+      padding: 0 2px;
+      font-size: 10px;
+      line-height: 1.4;
+      color: var(--muted);
+      text-align: center;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
     .viz-title { font-weight: 700; color: #1e40af; margin-bottom: 6px; font-size: 12px; line-height: 1.35; min-height: 2.55em; display: flex; align-items: flex-end; justify-content: center; text-align: center; padding: 0 4px; }
     .chart-wrap {
       overflow-x: auto;
@@ -177,7 +188,7 @@
       border: 1px solid var(--border);
       background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
     }
-    #chartSvg { display: block; width: 100%; height: auto; min-height: 200px; }
+    #chartSvg { display: block; width: 100%; height: auto; min-height: 240px; }
     .tern-wrap {
       display: grid;
       grid-template-columns: 1fr;
@@ -267,7 +278,6 @@
   </style>
 </head>
 <body>
-  <h1>Agua disponible en el suelo y triángulo de texturas</h1>
   <p class="lead">Referencia práctica NutriPlant PRO: volumen de agua disponible por hectárea según capacidad de campo (CC), punto de marchitez permanente (PMP) y exploración radical; clasificación textual USDA en español con triángulo ternario interactivo.</p>
 
   <div class="tabs" role="tablist">
@@ -315,28 +325,28 @@
       </div>
     </div>
 
-    <p class="hint">Barras horizontales: la escala muestra tus <strong>PMP</strong> y <strong>CC</strong> como proporción del volumen de poros (% vol.). La zona entre ambos equivale al agua típicamente disponible antes de estrés grave. A la derecha se indican laminaciones (mm) para la profundidad que ingresaste.</p>
+    <p class="hint">Barras horizontales: la escala muestra tus <strong>PMP</strong> y <strong>CC</strong> como proporción del volumen de poros (% vol.). La zona entre ambos equivale al agua típicamente disponible antes de estrés grave. <strong>Debajo de la gráfica</strong> se resumen los mm para la profundidad que ingresaste.</p>
     <div class="chart-wrap">
-      <svg id="chartSvg" viewBox="0 0 640 250" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="chartSvg" viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
 
     <h3 class="section-h2" style="margin-top:18px;font-size:0.92rem;">Ayuda visual: saturación · CC · PMP</h3>
     <div class="viz-row">
       <div class="viz-card">
         <div class="viz-title">Punto de saturación</div>
-        <svg viewBox="0 0 120 120" width="140" aria-hidden="true">
+        <svg viewBox="0 0 120 120" width="132" aria-hidden="true">
           <circle cx="60" cy="60" r="52" fill="#faf8f5" stroke="#e2e8f0"/>
           <circle cx="40" cy="45" r="12" fill="#a67c52" stroke="#7c5738"/>
           <circle cx="75" cy="40" r="11" fill="#a67c52" stroke="#7c5738"/>
           <circle cx="55" cy="75" r="13" fill="#a67c52" stroke="#7c5738"/>
           <circle cx="85" cy="72" r="10" fill="#a67c52" stroke="#7c5738"/>
           <ellipse cx="60" cy="58" rx="48" ry="42" fill="rgba(56,189,248,0.85)"/>
-          <text x="60" y="115" text-anchor="middle" font-size="8" fill="#64748b">Todo el poro con agua</text>
         </svg>
+        <p class="viz-caption">Todo el poro con agua</p>
       </div>
       <div class="viz-card">
         <div class="viz-title">Capacidad de campo (CC)</div>
-        <svg viewBox="0 0 120 120" width="140" aria-hidden="true">
+        <svg viewBox="0 0 120 120" width="132" aria-hidden="true">
           <circle cx="60" cy="60" r="52" fill="#faf8f5" stroke="#e2e8f0"/>
           <circle cx="42" cy="48" r="12" fill="#a67c52" stroke="#7c5738"/>
           <circle cx="78" cy="44" r="11" fill="#a67c52" stroke="#7c5738"/>
@@ -345,12 +355,12 @@
           <path fill="rgba(125,211,252,0.95)" stroke="#38bdf8" d="M18 72 Q55 52 92 74 Q105 92 92 98 Q52 112 28 94 Q14 82 18 72"/>
           <circle cx="48" cy="62" r="4" fill="#fff" stroke="#cbd5e1"/>
           <circle cx="72" cy="68" r="3" fill="#fff" stroke="#cbd5e1"/>
-          <text x="60" y="115" text-anchor="middle" font-size="8" fill="#64748b">Agua disponible + aire</text>
         </svg>
+        <p class="viz-caption">Agua disponible + aire</p>
       </div>
       <div class="viz-card">
         <div class="viz-title">Marchitez permanente (PMP)</div>
-        <svg viewBox="0 0 120 120" width="140" aria-hidden="true">
+        <svg viewBox="0 0 120 120" width="132" aria-hidden="true">
           <defs>
             <clipPath id="clipPoroPmp"><circle cx="60" cy="60" r="52"/></clipPath>
           </defs>
@@ -362,8 +372,8 @@
           <g clip-path="url(#clipPoroPmp)">
             <ellipse cx="60" cy="104" rx="22" ry="9" fill="rgba(56,189,248,0.95)" stroke="#0369a1" stroke-width="0.75"/>
           </g>
-          <text x="60" y="115" text-anchor="middle" font-size="8" fill="#64748b">Mínimo agua retenida (película muy pequeña)</text>
         </svg>
+        <p class="viz-caption">Mínimo agua retenida (película muy pequeña)</p>
       </div>
     </div>
   </div>
@@ -529,19 +539,23 @@
     var wRm = Math.max(0, 1 - wP - wAd);
 
     var W = 640;
-    var H = 250;
-    var padL = 54;
-    var padR = 108;
+    var padL = 52;
+    var padR = 24;
     var barX = padL;
-    var barY = 96;
+    var barY = 94;
     var barW = W - padL - padR;
-    var barH = 42;
+    var barH = 40;
 
     var pxP = Math.max(wP > 0 && pmp > 0 ? 3 : 0, Math.round(wP * barW));
     var pxA = Math.max(ad > 0 ? 3 : 0, Math.round(wAd * barW));
     var pxRm = Math.max(0, barW - pxP - pxA);
     var fix = pxP + pxA + pxRm - barW;
     if (fix !== 0) pxRm -= fix;
+
+    var tickY = barY + barH + 22;
+    var statsY = tickY + 26;
+    var legY = statsY + 36 + 10;
+    var H = legY + 50 + 14;
 
     var parts = [];
     parts.push('<defs>');
@@ -551,14 +565,14 @@
     parts.push('</defs>');
     parts.push('<rect width="' + W + '" height="' + H + '" fill="#fafafa"/>');
 
-    parts.push('<text x="' + (W / 2) + '" y="28" text-anchor="middle" font-size="14" font-weight="800" fill="#1e40af">Contenido hídrico según tus valores (CC y PMP)</text>');
+    parts.push('<text x="' + (W / 2) + '" y="26" text-anchor="middle" font-size="13" font-weight="800" fill="#1e40af">Contenido hídrico según tus valores (CC y PMP)</text>');
     if (swapped) {
-      parts.push('<text x="' + (W / 2) + '" y="46" text-anchor="middle" font-size="11" font-weight="600" fill="#b45309">Tu PMP (&gt;) tu CC · la barra se ordenó solo como referencia visual; corrige valores si fue un error.</text>');
+      parts.push('<text x="' + (W / 2) + '" y="44" text-anchor="middle" font-size="10" font-weight="600" fill="#b45309">Tu PMP (&gt;) tu CC · la barra se ordenó solo como referencia visual; corrige valores si fue un error.</text>');
     } else {
-      parts.push('<text x="' + (W / 2) + '" y="46" text-anchor="middle" font-size="11" fill="#64748b">La barra apila proporciones hasta ' + maxScale + '% volumétrico de referencia (no es saturación máxima teórica del suelo).</text>');
+      parts.push('<text x="' + (W / 2) + '" y="44" text-anchor="middle" font-size="10" fill="#64748b">La barra apila proporciones hasta ' + maxScale + '% volumétrico de referencia (no es saturación máxima teórica del suelo).</text>');
     }
 
-    parts.push('<text x="' + barX + '" y="' + (barY - 14) + '" font-size="12" font-weight="700" fill="#334155">Proporción de agua por estado (respecto a esta escala)</text>');
+    parts.push('<text x="' + barX + '" y="' + (barY - 12) + '" font-size="11" font-weight="700" fill="#334155">Proporción de agua por estado (respecto a esta escala)</text>');
 
     parts.push('<g clip-path="url(#clipMainBar)">');
     parts.push('<rect x="' + barX + '" y="' + barY + '" width="' + barW + '" height="' + barH + '" fill="#f8fafc"/>');
@@ -578,24 +592,18 @@
     parts.push('</g>');
     parts.push('<rect x="' + barX + '" y="' + barY + '" width="' + barW + '" height="' + barH + '" rx="10" fill="none" stroke="#64748b" stroke-width="2"/>');
 
-    var tickY = barY + barH + 22;
     [0, 0.25, 0.5, 0.75, 1].forEach(function (f, i) {
       var gx = barX + f * barW;
       parts.push('<line x1="' + gx + '" y1="' + (barY + barH + 4) + '" x2="' + gx + '" y2="' + (barY + barH + 10) + '" stroke="#64748b" stroke-width="1.5"/>');
       var pct = Math.round(maxScale * f);
       parts.push('<text x="' + gx + '" y="' + tickY + '" text-anchor="middle" font-size="10" fill="#475569">' + pct + '</text>');
     });
-    parts.push('<text x="' + (barX + barW / 2) + '" y="' + (tickY + 18) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#334155">% volumétrico de referencia (eje inferior)</text>');
+    parts.push('<text x="' + (barX + barW / 2) + '" y="' + (tickY + 16) + '" text-anchor="middle" font-size="10" font-weight="600" fill="#334155">% volumétrico de referencia (eje inferior)</text>');
 
-    parts.push('<g font-size="11" fill="#334155">');
-    var lx = barX + barW + 14;
-    var ly = barY + 4;
-    parts.push('<text x="' + lx + '" y="' + (ly += 14) + '" fill="#172554"><tspan font-weight="800">PMP:</tspan> ' + oP.toFixed(1) + '% vol.</text>');
-    parts.push('<text x="' + lx + '" y="' + (ly += 16) + '" fill="#475569">≈ ' + mmPmp.toFixed(1) + ' mm en ' + depthCm + ' cm</text>');
-    parts.push('<text x="' + lx + '" y="' + (ly += 22) + '" fill="#15803d"><tspan font-weight="800">CC:</tspan> ' + oC.toFixed(1) + '% vol.</text>');
-    parts.push('<text x="' + lx + '" y="' + (ly += 16) + '" fill="#475569">≈ ' + mmCc.toFixed(1) + ' mm en ' + depthCm + ' cm</text>');
-    parts.push('<text x="' + lx + '" y="' + (ly += 22) + '" fill="#0f766e"><tspan font-weight="800">Disponible (CC−PMP):</tspan> ' + Math.max(0, oC - oP).toFixed(1) + '% vol.</text>');
-    parts.push('<text x="' + lx + '" y="' + (ly += 16) + '" fill="#475569">≈ ' + mmAd.toFixed(1) + ' mm</text>');
+    parts.push('<g font-size="9" fill="#334155">');
+    parts.push('<text x="' + barX + '" y="' + statsY + '" fill="#172554"><tspan font-weight="700">PMP:</tspan> ' + oP.toFixed(1) + '% vol. · ≈ ' + mmPmp.toFixed(1) + ' mm en ' + depthCm + ' cm</text>');
+    parts.push('<text x="' + barX + '" y="' + (statsY + 12) + '" fill="#15803d"><tspan font-weight="700">CC:</tspan> ' + oC.toFixed(1) + '% vol. · ≈ ' + mmCc.toFixed(1) + ' mm en ' + depthCm + ' cm</text>');
+    parts.push('<text x="' + barX + '" y="' + (statsY + 24) + '" fill="#0f766e"><tspan font-weight="700">Disponible (CC−PMP):</tspan> ' + Math.max(0, oC - oP).toFixed(1) + '% vol. · ≈ ' + mmAd.toFixed(1) + ' mm</text>');
     parts.push('</g>');
 
     function midLabel(xLeft, pw, txt) {
@@ -605,15 +613,17 @@
     midLabel(barX, pxP, pxP >= 34 ? Math.round(oP) + '% PMP' : '');
     midLabel(barX + pxP, pxA, pxA >= 34 ? '~' + Math.round(Math.max(0, oC - oP)) + '% disp.' : '');
 
-    var legY = barY + barH + 54;
-    parts.push('<g font-size="10">');
-    parts.push('<rect x="' + barX + '" y="' + legY + '" width="438" height="54" rx="10" fill="#fff" stroke="#94a3b8" stroke-width="1.5"/>');
-    parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 20) + '" r="6" fill="#172554"/><text x="' + (barX + 28) + '" y="' + (legY + 23) + '" fill="#334155"><tspan font-weight="700">Oscuro:</tspan> agua muy retenida (PMP).</text>');
-    parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 39) + '" r="6" fill="#15803d"/><text x="' + (barX + 28) + '" y="' + (legY + 42) + '" fill="#334155"><tspan font-weight="700">Verde:</tspan> agua típicamente útil hasta CC.</text>');
-    parts.push('<rect x="' + (barX + 288) + '" y="' + (legY + 33) + '" width="36" height="12" rx="3" fill="url(#patAirSalt)" stroke="#94a3b8"/><text x="' + (barX + 330) + '" y="' + (legY + 42) + '" fill="#64748b">Resto (aire/es)</text>');
+    parts.push('<g font-size="9">');
+    parts.push('<rect x="' + barX + '" y="' + legY + '" width="' + barW + '" height="50" rx="10" fill="#fff" stroke="#94a3b8" stroke-width="1.25"/>');
+    parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 19) + '" r="5" fill="#172554"/><text x="' + (barX + 26) + '" y="' + (legY + 22) + '" fill="#334155"><tspan font-weight="700">Oscuro:</tspan> agua muy retenida (PMP).</text>');
+    parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 36) + '" r="5" fill="#15803d"/><text x="' + (barX + 26) + '" y="' + (legY + 39) + '" fill="#334155"><tspan font-weight="700">Verde:</tspan> agua típicamente útil hasta CC.</text>');
+    var patBoxW = Math.min(120, Math.max(72, barW - 300));
+    parts.push('<rect x="' + (barX + barW - patBoxW - 12) + '" y="' + (legY + 31) + '" width="' + patBoxW + '" height="11" rx="3" fill="url(#patAirSalt)" stroke="#94a3b8"/><text x="' + (barX + barW - 14) + '" y="' + (legY + 39) + '" text-anchor="end" fill="#64748b">Resto (aire/es)</text>');
     parts.push('</g>');
 
     svg.innerHTML = parts.join('');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('height', String(H));
   }
 
   function barSeg(vPct, scaleMax) {
@@ -691,6 +701,13 @@
     a *= 0.5;
     if (Math.abs(a) < 1e-9) return { x: v[0].x, y: v[0].y };
     return { x: cx / (6 * a), y: cy / (6 * a) };
+  }
+
+  /** Primera palabra arriba, resto abajo; una sola línea si es una sola palabra. */
+  function textureLabelTwoLines(label) {
+    var p = String(label).trim().split(/\s+/);
+    if (p.length <= 1) return { a: label, b: null };
+    return { a: p[0], b: p.slice(1).join(' ') };
   }
 
   function pointInPoly(pt, verts) {
@@ -795,7 +812,19 @@
     for (var tj = 0; tj < USDA_REGIONS.length; tj++) {
       var T = USDA_REGIONS[tj];
       var cPt = polyCentroid(T.ix);
-      h += '<text x="' + cPt.x.toFixed(1) + '" y="' + cPt.y.toFixed(1) + '" text-anchor="middle" dominant-baseline="middle" fill="#1e293b" opacity="0.78" font-size="' + T.fz + '" font-weight="700" style="paint-order: stroke; stroke:rgba(248,250,252,0.92);stroke-width:2">' + T.label + '</text>';
+      var fs = T.fz;
+      var ln = textureLabelTwoLines(T.label);
+      var st = 'paint-order: stroke; stroke:rgba(248,250,252,0.92);stroke-width:2';
+      if (ln.b) {
+        var y1 = cPt.y - fs * 0.48;
+        var lineGap = fs * 1.12;
+        h += '<text text-anchor="middle" fill="#1e293b" opacity="0.78" font-size="' + fs + '" font-weight="700" style="' + st + '">';
+        h += '<tspan x="' + cPt.x.toFixed(1) + '" y="' + y1.toFixed(1) + '">' + ln.a + '</tspan>';
+        h += '<tspan x="' + cPt.x.toFixed(1) + '" dy="' + lineGap.toFixed(1) + '">' + ln.b + '</tspan>';
+        h += '</text>';
+      } else {
+        h += '<text x="' + cPt.x.toFixed(1) + '" y="' + cPt.y.toFixed(1) + '" text-anchor="middle" dominant-baseline="middle" fill="#1e293b" opacity="0.78" font-size="' + fs + '" font-weight="700" style="' + st + '">' + ln.a + '</text>';
+      }
     }
     h += '</g>';
 

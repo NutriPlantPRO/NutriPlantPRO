@@ -384,19 +384,40 @@
       gap: 8px;
       margin-bottom: 6px;
     }
-    .symptom-sub__ic {
+    .symptom-sub__marker {
       flex-shrink: 0;
-      width: 32px;
-      height: 32px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      font-size: 16px;
-      line-height: 1;
-      box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset;
+      margin-top: 3px;
+      box-sizing: border-box;
+    }
+    /* Marcadores tipo diagrama SCADA: rotan punto → guión → triángulo según orden en la columna */
+    .symptom-col > .symptom-sub:nth-child(2) .symptom-sub__marker {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #1e293b;
+    }
+    .symptom-col > .symptom-sub:nth-child(3) .symptom-sub__marker {
+      width: 16px;
+      height: 4px;
+      margin-top: 5px;
+      border-radius: 2px;
+      background: #365314;
+    }
+    .symptom-col > .symptom-sub:nth-child(4) .symptom-sub__marker {
+      width: 0;
+      height: 0;
+      margin-top: 3px;
+      border-style: solid;
+      border-width: 5px 0 5px 8px;
+      border-color: transparent transparent transparent #334155;
+      background: none;
+      border-radius: 0;
+    }
+    .symptom-col > .symptom-sub:nth-child(5) .symptom-sub__marker {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #475569;
     }
     .symptom-sub__bridge {
       margin: 0 0 6px;
@@ -406,6 +427,9 @@
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: #94a3b8;
+    }
+    .symptom-sub__head + .symptom-nuts {
+      margin-top: 6px;
     }
     .symptom-label {
       display: block;
@@ -448,24 +472,58 @@
     }
     .mob-fn-list li {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       align-items: flex-start;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
       font-size: 13px;
       color: #334155;
       line-height: 1.4;
     }
-    .mob-fn-ic {
+    .mob-fn-list li:last-child { margin-bottom: 0; }
+    .mob-fn-marker {
       flex-shrink: 0;
-      width: 26px;
-      height: 26px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: #f0fdf4;
-      border: 1px solid #86efac;
-      border-radius: 8px;
-      font-size: 14px;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+    .mob-fn-marker--1 {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #15803d;
+    }
+    .mob-fn-marker--2 {
+      width: 16px;
+      height: 4px;
+      margin-top: 6px;
+      border-radius: 2px;
+      background: #365314;
+    }
+    .mob-fn-marker--3 {
+      width: 0;
+      height: 0;
+      margin-top: 4px;
+      border-style: solid;
+      border-width: 5px 0 5px 8px;
+      border-color: transparent transparent transparent #334155;
+      background: none;
+    }
+    .mob-fn-copy {
+      flex: 1;
+      min-width: 0;
+    }
+    .mob-fn-lead {
+      display: block;
+      font-weight: 600;
+      color: #1e293b;
+      line-height: 1.35;
+    }
+    .mob-fn-detail {
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 400;
+      color: #64748b;
+      line-height: 1.45;
     }
     .mob-pill-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     .mob-pill {
@@ -493,8 +551,14 @@
 
     .nut-ref {
       margin-top: 22px;
-      padding-top: 18px;
-      border-top: 1px solid #e2e8f0;
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 440px;
+      padding: 14px;
+      border: 1px solid #cce3c8;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #f7fdf7 0%, #fff 32%);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.85) inset;
     }
     .nut-ref__title {
       margin: 0 0 6px;
@@ -502,52 +566,60 @@
       font-weight: 800;
       color: #14532d;
     }
-    .nut-ref .hint { margin-top: 0; margin-bottom: 14px; }
+    .nut-ref .hint { margin-top: 0; margin-bottom: 12px; font-size: 12px; }
     .nut-ref-scroll {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
-      margin-bottom: 16px;
+      margin: 0;
+      border-radius: 10px;
       border: 1px solid #e2e8f0;
-      border-radius: 12px;
       background: #fff;
     }
-    .nut-ref-scroll:last-child { margin-bottom: 0; }
     .nut-ref-table {
       width: 100%;
-      min-width: 520px;
+      table-layout: fixed;
       border-collapse: collapse;
-      font-size: 12px;
+      font-size: 10.5px;
       color: #334155;
     }
     .nut-ref-table caption {
       caption-side: top;
       text-align: left;
-      padding: 12px 14px 8px;
-      font-size: 13px;
+      padding: 8px 10px 6px;
+      font-size: 11.5px;
       font-weight: 800;
-      color: #1e293b;
-      border-bottom: 1px solid #f1f5f9;
-      background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+      color: #166534;
+      border-bottom: 1px solid #ecfccb;
+      background: linear-gradient(180deg, #f0fdf4 0%, #fff 100%);
     }
+    .nut-ref-table col.nut-col-sym { width: 11%; }
+    .nut-ref-table col.nut-col-umol { width: 26%; }
+    .nut-ref-table col.nut-col-exp { width: 24%; }
+    .nut-ref-table col.nut-col-at { width: 26%; }
     .nut-ref-table th,
     .nut-ref-table td {
-      padding: 9px 12px;
+      padding: 5px 6px;
       border-bottom: 1px solid #e8e8e8;
       vertical-align: top;
-      line-height: 1.35;
+      line-height: 1.3;
+      word-wrap: break-word;
     }
     .nut-ref-table thead th {
       font-weight: 700;
-      font-size: 11px;
+      font-size: 9.5px;
+      letter-spacing: 0.01em;
       color: #475569;
-      background: #fafafa;
+      background: #f8fafc;
+      hyphens: auto;
+      -webkit-hyphens: auto;
     }
     .nut-ref-table tbody tr:last-child td { border-bottom: none; }
-    .nut-ref-table .nut-el { font-weight: 700; color: #0f172a; }
+    .nut-ref-table .nut-el { font-weight: 700; color: #0f172a; font-size: 11px; }
     .nut-ref-table .nut-num {
       text-align: right;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
+      font-size: 10px;
     }
     .nut-ref-table .nut-strong { font-weight: 700; }
 
@@ -742,7 +814,7 @@
             <div class="symptom-branch-h">Hojas viejas · parte baja</div>
             <div class="symptom-sub">
               <div class="symptom-sub__head">
-                <span class="symptom-sub__ic" aria-hidden="true">🔥</span>
+                <span class="symptom-sub__marker" aria-hidden="true"></span>
                 <span class="symptom-label">Manchas necróticas (bordes / “quemado”)</span>
               </div>
               <p class="symptom-sub__bridge">Encaja con</p>
@@ -753,7 +825,7 @@
             </div>
             <div class="symptom-sub">
               <div class="symptom-sub__head">
-                <span class="symptom-sub__ic" aria-hidden="true">🧬</span>
+                <span class="symptom-sub__marker" aria-hidden="true"></span>
                 <span class="symptom-label">Sin manchas necróticas al inicio · clorosis intervenal · nerviación verde</span>
               </div>
               <p class="symptom-sub__bridge">Encaja con</p>
@@ -763,7 +835,7 @@
             </div>
             <div class="symptom-sub">
               <div class="symptom-sub__head">
-                <span class="symptom-sub__ic" aria-hidden="true">☀️</span>
+                <span class="symptom-sub__marker" aria-hidden="true"></span>
                 <span class="symptom-label">Clorosis · nerviación amarillenta (no intervenal “típica” Mg)</span>
               </div>
               <p class="symptom-sub__bridge">Encaja con</p>
@@ -773,7 +845,7 @@
             </div>
             <div class="symptom-sub">
               <div class="symptom-sub__head">
-                <span class="symptom-sub__ic" aria-hidden="true">🟣</span>
+                <span class="symptom-sub__marker" aria-hidden="true"></span>
                 <span class="symptom-label">Hoja más oscura · tallos o envés con tonos púrpura (según cultivo)</span>
               </div>
               <p class="symptom-sub__bridge">Encaja con</p>
@@ -786,10 +858,9 @@
             <div class="symptom-branch-h">Hojas jóvenes · parte alta</div>
             <div class="symptom-sub">
               <div class="symptom-sub__head">
-                <span class="symptom-sub__ic" aria-hidden="true">🍃</span>
-                <span class="symptom-label">Clorosis intervenal · <strong>nervaduras verdes</strong> — típico de micronutrientes inmóviles aquí</span>
+                <span class="symptom-sub__marker" aria-hidden="true"></span>
+                <span class="symptom-label"><strong>Clorosis intervenal · nervaduras verdes</strong> — típico de micronutrientes poco móviles en hoja joven</span>
               </div>
-              <p class="symptom-sub__bridge">Solo estos elementos encajan con este patrón visual</p>
               <div class="symptom-nuts">
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="Fe">Fe</button>
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="Mn">Mn</button>
@@ -797,7 +868,7 @@
             </div>
             <div class="symptom-sub">
               <div class="symptom-sub__head">
-                <span class="symptom-sub__ic" aria-hidden="true">⚗️</span>
+                <span class="symptom-sub__marker" aria-hidden="true"></span>
                 <span class="symptom-label">Clorosis más uniforme · nerviación amarillenta</span>
               </div>
               <p class="symptom-sub__bridge">Encaja con</p>
@@ -808,7 +879,7 @@
             </div>
             <div class="symptom-sub">
               <div class="symptom-sub__head">
-                <span class="symptom-sub__ic" aria-hidden="true">🔬</span>
+                <span class="symptom-sub__marker" aria-hidden="true"></span>
                 <span class="symptom-label">Hoja reducida / deforme · “moteada” foliar joven</span>
               </div>
               <p class="symptom-sub__bridge">Encaja con</p>
@@ -818,7 +889,7 @@
             </div>
             <div class="symptom-sub">
               <div class="symptom-sub__head">
-                <span class="symptom-sub__ic" aria-hidden="true">✂️</span>
+                <span class="symptom-sub__marker" aria-hidden="true"></span>
                 <span class="symptom-label">Márgenes necrosados en láminas nuevas · deformación</span>
               </div>
               <p class="symptom-sub__bridge">Encaja con</p>
@@ -831,7 +902,7 @@
             <div class="symptom-branch-h">Brotes · yemas · meristemos · frutos</div>
             <div class="symptom-sub">
               <div class="symptom-sub__head">
-                <span class="symptom-sub__ic" aria-hidden="true">🌱</span>
+                <span class="symptom-sub__marker" aria-hidden="true"></span>
                 <span class="symptom-label">Puntos de crecimiento · flor · fruto · “heart rot” / corky (según cultivo)</span>
               </div>
               <p class="symptom-sub__bridge">Encaja con</p>
@@ -874,143 +945,133 @@
 
       <div class="nut-ref-scroll">
         <table class="nut-ref-table">
-          <caption>Tabla paramétrica de nutrición mineral — micronutrientes (Taiz &amp; Zeiger / Epstein)</caption>
+          <caption>Tabla paramétrica en materia seca (Taiz &amp; Zeiger / Epstein) — micro a macro en continuo</caption>
+          <colgroup>
+            <col />
+            <col class="nut-col-sym" />
+            <col class="nut-col-umol" />
+            <col class="nut-col-exp" />
+            <col class="nut-col-at" />
+          </colgroup>
           <thead>
             <tr>
               <th scope="col">Elemento</th>
-              <th scope="col">Símbolo</th>
-              <th scope="col">Conc. adecuada (materia seca)</th>
-              <th scope="col">Rango % o ppm</th>
-              <th scope="col">Nº relativo de átomos</th>
+              <th scope="col">Símb.</th>
+              <th scope="col">&micro;mol/g</th>
+              <th scope="col">% o ppm</th>
+              <th scope="col">Nº átomos</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td class="nut-el">Molibdeno</td>
               <td>Mo</td>
-              <td>0,001 &micro;mol/g</td>
+              <td class="nut-num">0,001</td>
               <td class="nut-num nut-strong">0,1 ppm</td>
               <td class="nut-num nut-strong">1</td>
             </tr>
             <tr>
               <td class="nut-el">Cobre</td>
               <td>Cu</td>
-              <td>0,10 &micro;mol/g</td>
+              <td class="nut-num">0,10</td>
               <td class="nut-num">6 ppm</td>
               <td class="nut-num">100</td>
             </tr>
             <tr>
               <td class="nut-el">Zinc</td>
               <td>Zn</td>
-              <td>0,30 &micro;mol/g</td>
+              <td class="nut-num">0,30</td>
               <td class="nut-num">20 ppm</td>
               <td class="nut-num">300</td>
             </tr>
             <tr>
               <td class="nut-el">Manganeso</td>
               <td>Mn</td>
-              <td>1,0 &micro;mol/g</td>
+              <td class="nut-num">1,0</td>
               <td class="nut-num">50 ppm</td>
               <td class="nut-num">1.000</td>
             </tr>
             <tr>
               <td class="nut-el">Boro</td>
               <td>B</td>
-              <td>2,0 &micro;mol/g</td>
+              <td class="nut-num">2,0</td>
               <td class="nut-num">20 ppm</td>
               <td class="nut-num">2.000</td>
             </tr>
             <tr>
               <td class="nut-el">Hierro</td>
               <td>Fe</td>
-              <td>2,0 &micro;mol/g</td>
+              <td class="nut-num">2,0</td>
               <td class="nut-num">100 ppm</td>
               <td class="nut-num">2.000</td>
             </tr>
             <tr>
               <td class="nut-el">Cloro</td>
               <td>Cl</td>
-              <td>3,0 &micro;mol/g</td>
+              <td class="nut-num">3,0</td>
               <td class="nut-num">100 ppm</td>
               <td class="nut-num">3.000</td>
             </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="nut-ref-scroll">
-        <table class="nut-ref-table">
-          <caption>Macronutrientes y elementos estructurales (misma referencia bibliográfica)</caption>
-          <thead>
-            <tr>
-              <th scope="col">Elemento</th>
-              <th scope="col">Símbolo</th>
-              <th scope="col">&micro;mol/g (materia seca)</th>
-              <th scope="col">% materia seca</th>
-              <th scope="col">Nº relativo de átomos</th>
-            </tr>
-          </thead>
-          <tbody>
             <tr>
               <td class="nut-el">Azufre</td>
               <td>S</td>
-              <td class="nut-num">30 &micro;mol/g</td>
+              <td class="nut-num">30</td>
               <td class="nut-num">0,1 %</td>
               <td class="nut-num">30.000</td>
             </tr>
             <tr>
               <td class="nut-el">Fósforo</td>
               <td>P</td>
-              <td class="nut-num">60 &micro;mol/g</td>
+              <td class="nut-num">60</td>
               <td class="nut-num">0,2 %</td>
               <td class="nut-num">60.000</td>
             </tr>
             <tr>
               <td class="nut-el">Magnesio</td>
               <td>Mg</td>
-              <td class="nut-num">80 &micro;mol/g</td>
+              <td class="nut-num">80</td>
               <td class="nut-num">0,2 %</td>
               <td class="nut-num">80.000</td>
             </tr>
             <tr>
               <td class="nut-el">Calcio</td>
               <td>Ca</td>
-              <td class="nut-num">125 &micro;mol/g</td>
+              <td class="nut-num">125</td>
               <td class="nut-num">0,5 %</td>
               <td class="nut-num">125.000</td>
             </tr>
             <tr>
               <td class="nut-el">Potasio</td>
               <td>K</td>
-              <td class="nut-num">250 &micro;mol/g</td>
+              <td class="nut-num">250</td>
               <td class="nut-num">1,0 %</td>
               <td class="nut-num">250.000</td>
             </tr>
             <tr>
               <td class="nut-el">Nitrógeno</td>
               <td>N</td>
-              <td class="nut-num">1.000 &micro;mol/g</td>
+              <td class="nut-num">1.000</td>
               <td class="nut-num nut-strong">1,5 %</td>
               <td class="nut-num nut-strong">1.000.000</td>
             </tr>
             <tr>
               <td class="nut-el">Oxígeno</td>
               <td>O</td>
-              <td class="nut-num">30.000 &micro;mol/g</td>
+              <td class="nut-num">30.000</td>
               <td class="nut-num">45,0 %</td>
               <td class="nut-num">30.000.000</td>
             </tr>
             <tr>
               <td class="nut-el">Carbono</td>
               <td>C</td>
-              <td class="nut-num">40.000 &micro;mol/g</td>
+              <td class="nut-num">40.000</td>
               <td class="nut-num">45,0 %</td>
               <td class="nut-num">40.000.000</td>
             </tr>
             <tr>
               <td class="nut-el">Hidrógeno</td>
               <td>H</td>
-              <td class="nut-num">60.000 &micro;mol/g</td>
+              <td class="nut-num">60.000</td>
               <td class="nut-num nut-strong">6,0 %</td>
               <td class="nut-num nut-strong">60.000.000</td>
             </tr>
@@ -1118,7 +1179,7 @@
     },
     fe: {
       ion: 'Fe²⁺ / Fe³⁺',
-      short: 'Fe',
+      short: 'Fe²⁺/Fe³⁺',
       name: 'Hierro (especiación según pH y oxígeno)',
       antagonists: ['h2po4'],
       synergists: ['zn', 'k', 'no3'],
@@ -1154,7 +1215,7 @@
     },
     b: {
       ion: 'H₃BO₃ / B(OH)₄⁻',
-      short: 'B',
+      short: 'H₃BO₃',
       name: 'Boro (especiación según pH)',
       antagonists: ['ca'],
       synergists: ['k', 'nh4', 'h2po4'],
@@ -1257,7 +1318,7 @@
     t.setAttribute('x', p.x);
     t.setAttribute('y', p.y + 4);
     t.setAttribute('text-anchor', 'middle');
-    t.setAttribute('font-size', '11');
+    t.setAttribute('font-size', id === 'fe' ? '8.5' : '11');
     t.setAttribute('font-weight', '800');
     t.setAttribute('fill', '#0f172a');
     t.textContent = SPEC[id].short || SPEC[id].ion;
@@ -1477,40 +1538,104 @@
     N: {
       mob: 'Alta', where: 'Hojas viejas', sym: 'Clorosis general / amarillamiento, a veces con hojas inferiores más pálidas',
       functions: [
-        { icon: '🧬', text: 'Síntesis de proteínas, enzimas y metabolitos nitrogenados' },
-        { icon: '🍃', text: 'Clorofila y fotosíntesis' },
-        { icon: '📈', text: 'Crecimiento vegetativo, ramificación y área foliar' },
-        { icon: '⚗️', text: 'Relación con hormonas y respuesta a estrés abiótico' }
+        {
+          text: 'Síntesis de proteínas, enzimas y metabolitos nitrogenados',
+          detail:
+            'El N entra en aminoácidos y bases nitrogenadas; una baja ingesta limita mitosis, brotación y formación de tejidos de llenado.'
+        },
+        {
+          text: 'Clorofila y fotosíntesis',
+          detail:
+            'La clorofila contiene N en su anillo; al faltar, el follaje palidece y el rendimiento fotosintético cae antes que aparezcan signos muy específicos.'
+        },
+        {
+          text: 'Crecimiento vegetativo, ramificación y área foliar',
+          detail:
+            'Los brotes y hojas nuevas actúan como sumidero activo; el N se moviliza desde lo viejo, de ahí el patrón clásico en deficiencia.'
+        },
+        {
+          text: 'Relación con hormonas y respuesta a estrés abiótico',
+          detail:
+            'Modula rutas de citoquininas y respuestas a sombra, salinidad o restricción hídrica; no es solo “volumen”, también plasticidad fisiológica.'
+        }
       ],
       tip: 'Deficiencia temprana suele mostrarse en hojas más viejas cuando el N se moviliza a tejidos nuevos.'
     },
     P: {
       mob: 'Alta', where: 'Hojas viejas', sym: 'Tonos más oscuros del follaje, púrpuras en nervaduras o tallos en algunos cultivos; crecimiento reducido',
       functions: [
-        { icon: '⚡', text: 'Energía (ATP/ADP) y transferencia de fosfatos' },
-        { icon: '🧬', text: 'Ácidos nucleicos (ADN/ARN) y división celular' },
-        { icon: '🌱', text: 'Desarrollo radicular, floración y formación de semilla/fruto' },
-        { icon: '🔁', text: 'Regulación metabólica y compuestos fosforilados' }
+        {
+          text: 'Energía (ATP/ADP) y transferencia de fosfatos',
+          detail:
+            'Sin ATP no hay transporte electrogénico, biosíntesis ni mantenimiento de gradientes; el metabolismo se “frena” en bloque.'
+        },
+        {
+          text: 'Ácidos nucleicos (ADN/ARN) y división celular',
+          detail:
+            'ADN/ARN son polifosfatos; meristemos, flores y semillas están expuestos porque la demanda celular crece rápido en esas zonas.'
+        },
+        {
+          text: 'Desarrollo radicular, floración y formación de semilla/fruto',
+          detail:
+            'La arquitectura radicular y el encadenamiento floración→polinización→llenado necesitan pulsos continuos de P en etapa clave.'
+        },
+        {
+          text: 'Regulación metabólica y compuestos fosforilados',
+          detail:
+            'Muchas señales y reguladores transitan por estados fosforilados; la carencia muestra lentitud de crecimiento y metabolismo empobrecido.'
+        }
       ],
       tip: 'Fríos, suelos fijadores de P o pH extremos pueden exacerbar síntomas aunque el análisis de suelo sea “medio”.'
     },
     K: {
       mob: 'Alta', where: 'Hojas viejas', sym: 'Clorosis marginal u oscurecimiento; necrosis de bordes (“quemado”) en casos avanzados',
       functions: [
-        { icon: '💧', text: 'Regulación osmótica y apertura/cierre estomático' },
-        { icon: '🚚', text: 'Movilización de azúcares y carga osmótica en fruto' },
-        { icon: '✨', text: 'Calidad (color, sabor, firmeza) y tolerancia a estrés' },
-        { icon: '⚡', text: 'Activación de enzimas y balance iónico con otros cationes' }
+        {
+          text: 'Regulación osmótica y apertura/cierre estomático',
+          detail:
+            'K⁺ acompaña guardias celulares; controla transpiración, entrada de CO₂ y enfriamiento del follaje en condiciones de estrés térmico o hídrico.'
+        },
+        {
+          text: 'Movilización de azúcares y carga osmótica en fruto',
+          detail:
+            'El movimiento de fotoasimilados al fruto suele relacionarse con gradientes osmóticos donde K es protagonista.'
+        },
+        {
+          text: 'Calidad (color, sabor, firmeza) y tolerancia a estrés',
+          detail:
+            'Incide en pigmentación, firmeza y equilibrio hídrico del tejido; carencias muestran bajas relativas incluso cuando el síntoma “clásico” aún es leve.'
+        },
+        {
+          text: 'Activación de enzimas y balance iónico con otros cationes',
+          detail:
+            'Coexiste en solución raíz con Ca²⁺, Mg²⁺ y NH₄⁺; el balance K/Mg/Ca en hoja aclara mejor que una cifra aislada de suelo.'
+        }
       ],
       tip: 'Puede confundirse con Mg; revisar K/Mg/Ca en hoja y síntomas marginales vs intervenales.'
     },
     Mg: {
       mob: 'Alta', where: 'Hojas viejas', sym: 'Clorosis intervenal en láminas maduras, nervadura a menudo más verde',
       functions: [
-        { icon: '☀️', text: 'Átomo central de la molécula de clorofila' },
-        { icon: '🔄', text: 'Fotosíntesis y enzimas clave (p. ej. activadores)' },
-        { icon: '🌿', text: 'Metabolismo de carbono y respuesta a luz' },
-        { icon: '⚗️', text: 'Síntesis de lípidos y estabilidad de membranas' }
+        {
+          text: 'Átomo central de la molécula de clorofila',
+          detail:
+            'Sin Mg estable no hay anillo Mg-porfirínico funcional; la clorosis intervenal en láminas maduras es una señal frecuente al movilizarse desde lo viejo.'
+        },
+        {
+          text: 'Fotosíntesis y enzimas clave (p. ej. activadores)',
+          detail:
+            'Actúa como cofactor en reacciones de transferencia energética; “apaga” rutas fotoquímicas si la disponibilidad es baja.'
+        },
+        {
+          text: 'Metabolismo de carbono y respuesta a luz',
+          detail:
+            'El rendimiento fotosintético integrado depende del acople cloroplasto–citoplasma; Mg insuficiente reduce el gasto efectivo de luz útil.'
+        },
+        {
+          text: 'Síntesis de lípidos y estabilidad de membranas',
+          detail:
+            'Participa en lipídos de membrana y fosfolípidos; no todo síntoma de Mg se limita al patrón clásico intervenal tras largas carencias.'
+        }
       ],
       tip: 'Exceso relativo de K, Ca o NH₄ puede alterar el balance de Mg aunque el análisis global parezca suficiente.'
     },
@@ -1518,9 +1643,21 @@
       mob: 'Alta (matriz de Mo en planta puede variar)', where: 'Hojas viejas (se confunde a veces con carencia de N)',
       sym: 'Amarillamiento general o moteo; en leguminosas puede ligarse a eficiencia del uso de nitrato',
       functions: [
-        { icon: '🧪', text: 'Cofactor de la nitratoreductasa y enzimas del metabolismo del N' },
-        { icon: '🫛', text: 'Fijación biológica de N en leguminosas (nódulos)' },
-        { icon: '⚗️', text: 'Metabolismo de ácidos nucleicos y azufre (contextos específicos)' }
+        {
+          text: 'Cofactor de la nitratoreductasa y enzimas del metabolismo del N',
+          detail:
+            'La reducción NO₃⁻ → NO₂⁻ se detiene si falta Mo; el síntoma puede parecer “falta de N” habiendo nitrato en la solución o el suelo.'
+        },
+        {
+          text: 'Fijación biológica de N en leguminosas (nódulos)',
+          detail:
+            'La nitrogenasa de muchos sistemas símbióticos requiere el centro Fe–Mo; sin él los nódulos existen pero el aporte efectivo cae.'
+        },
+        {
+          text: 'Metabolismo de ácidos nucleicos y azufre (contextos específicos)',
+          detail:
+            'En rutas de asimilación nitrogenada coexisten vínculos con compuestos azufrados; ayuda contextualizar síntomas con el programa N/S de la especie.'
+        }
       ],
       tip: 'Interpretar con especie, forma de N aportada y síntomas foliares; no es un “clásico único” en todas las fichas.'
     },
@@ -1528,45 +1665,105 @@
       mob: 'Intermedia / baja según cultivo y etapa', where: 'Hojas jóvenes',
       sym: 'Clorosis más uniforme en tejido nuevo; en algunas especies puede asociarse a tonos rojizos',
       functions: [
-        { icon: '🔗', text: 'Puentes disulfuro en proteínas (estructura y enzimas)' },
-        { icon: '🛡️', text: 'Compuestos de defensa y metabolitos secundarios azufrados' },
-        { icon: '☀️', text: 'Fotosíntesis (componentes proteicos del aparato fotosintético)' }
+        {
+          text: 'Puentes disulfuro en proteínas (estructura y enzimas)',
+          detail:
+            'Estabiliza plegamiento proteico en cloroplastos y tejidos; la deficiencia afecta estructuras que se renuevan en hoja nueva.'
+        },
+        {
+          text: 'Compuestos de defensa y metabolitos secundarios azufrados',
+          detail:
+            'Glucosinolatos, aliínas u otros compuestos S participan en defensa frente a plagas/patógenos y en calidad aromatica.'
+        },
+        {
+          text: 'Fotosíntesis (componentes proteicos del aparato fotosintético)',
+          detail:
+            'Varias proteína del fotosistema contienen cisteína; tras carencia prolongada se acentúa palidez más homogénea en tejidos jóvenes.'
+        }
       ],
       tip: 'En hidro u inertes puede manifestarse en hoja joven antes que otros patrones “clásicos”.'
     },
     Fe: {
       mob: 'Baja', where: 'Hojas jóvenes', sym: 'Clorosis intervenal con nervaduras más verdes (patrón típico, según especie)',
       functions: [
-        { icon: '🍃', text: 'Síntesis y mantenimiento de cloroplastos (efecto indirecto sobre clorofila)' },
-        { icon: '⚡', text: 'Cadena de transporte de electrones en fotosíntesis y respiración' },
-        { icon: '🧬', text: 'Enzimas redox y metabolismo del nitrógeno' }
+        {
+          text: 'Síntesis y mantenimiento de cloroplastos (efecto indirecto sobre clorofila)',
+          detail:
+            'Fe interviene en la maquinaria de biosíntesis de clorofila dentro del cloroplasto; síntomas se expresan en expansión laminar.'
+        },
+        {
+          text: 'Cadena de transporte de electrones en fotosíntesis y respiración',
+          detail:
+            'Complejos citocrómicos dependen de Fe; antes de necrosis marcada aparece menor eficiencia y cloroplastos “livianos”.'
+        },
+        {
+          text: 'Enzimas redox y metabolismo del nitrógeno',
+          detail:
+            'Rutinas de assimilación/reducción nitrogenada cargan sistemas hierro‑azufre; la clorosis puede cruzarse con programas muy nitratados.'
+        }
       ],
-      tip: 'pH alto, bicarbonatos o frio radical pueden inducir clorosis férrica con Fe “total” alto en suelo.'
+      tip: 'pH alto, bicarbonatos o frío radical pueden inducir clorosis férrica con Fe “total” alto en suelo.'
     },
     Mn: {
       mob: 'Baja', where: 'Hojas jóvenes', sym: 'Moteado, clorosis intervenal; “ojos de pájaro” en algunos casos',
       functions: [
-        { icon: '☀️', text: 'Fotosíntesis (fotosistema y fotoprotección)' },
-        { icon: '⚗️', text: 'Activación de enzimas y metabolismo del oxígeno' },
-        { icon: '🛡️', text: 'Defensa oxidativa (contexto de estrés)' }
+        {
+          text: 'Fotosíntesis (fotosistema y fotoprotección)',
+          detail:
+            'El complejo divisor de agua lleva centro Mn; la fotooxidación aumenta cuando el equipo no está bien armado enzimáticamente.'
+        },
+        {
+          text: 'Activación de enzimas y metabolismo del oxígeno',
+          detail:
+            'Mn²⁺ activa decenas de hidrolasas y descarboxilasas; repercute en lignificación local y desarrollo laminar ordenado.'
+        },
+        {
+          text: 'Defensa oxidativa (contexto de estrés)',
+          detail:
+            'En plantas estrés alta luz/sobreflujo de electrones, Mn equilibra parcialmente el exceso de radicales cuando está disponible en hoja joven.'
+        }
       ],
       tip: 'Síntomas pueden asemejar Fe; la edad de la hoja y el modelo de síntomas ayuda a orientar.'
     },
     Zn: {
       mob: 'Baja', where: 'Hojas jóvenes', sym: 'Hojas más pequeñas, clorosis, hojas “rígidas” o acartonadas en cultivos sensibles',
       functions: [
-        { icon: '📐', text: 'Auxinas y morfogénesis foliar' },
-        { icon: '🔧', text: 'Cofactor de enzimas (carbohidratos, proteínas, defensa)' },
-        { icon: '🧱', text: 'Integridad de membranas y crecimiento meristemático' }
+        {
+          text: 'Auxinas y morfogénesis foliar',
+          detail:
+            'Regula niveles efectivos de auxina en ápices; la carencia se nota como hojas pequeñas en roseta (“achaparramiento”) antes de otros signos tardíos.'
+        },
+        {
+          text: 'Cofactor de enzimas (carbohidratos, proteínas, defensa)',
+          detail:
+            'Carbono anhidrasa, carboxipeptidasas u otras deshidrogenasas Zn‑dependientes acoplan fotosíntesis y uso de fotoasimilados.'
+        },
+        {
+          text: 'Integridad de membranas y crecimiento meristemático',
+          detail:
+            'El meristemo apical es sensible porque la división rápida gasta rutas sintéticas que usan Zinc en varios puntos enzimáticos.'
+        }
       ],
       tip: 'P alto, frío o restricción radicular suelen empeorar la expresión foliar.'
     },
     Cu: {
       mob: 'Baja', where: 'Hojas jóvenes', sym: 'Deformación, clorosis; ápices pueden necrosar en casos fuertes',
       functions: [
-        { icon: '🪵', text: 'Lignificación y pared celular' },
-        { icon: '☀️', text: 'Fotosíntesis (plastocianina) y metabolismo oxidativo' },
-        { icon: '🌸', text: 'Polen y fertilidad (según cultivo)' }
+        {
+          text: 'Lignificación y pared celular',
+          detail:
+            'Laccasas u oxidasas dependientes de cobre endurecen vasos y esclerénquima; deficiencias producen láminas “blandas” o curvadas.'
+        },
+        {
+          text: 'Fotosíntesis (plastocianina) y metabolismo oxidativo',
+          detail:
+            'La plastocianina porta electrones entre fotosistemas; un cuello ahí tiene efecto rápido en cloroplastos nuevos.'
+        },
+        {
+          text: 'Polen y fertilidad (según cultivo)',
+          detail:
+            'El polen fértil requiere integridad enzimática y pared pollinica adecuada; la carencia de Cu aparece antes en programas muy generativos.'
+        }
       ],
       tip: 'Cuidado con acumulación por fungicidas cupríacos en programas intensivos.'
     },
@@ -1574,9 +1771,21 @@
       mob: 'Baja (poco redistribuido en floema)', where: 'Tejidos jóvenes, meristemos, puntos de crecimiento y frutos',
       sym: 'Necrosis marginal en hojas nuevas, deformación, blossom-end rot u otras necrosis en fruto',
       functions: [
-        { icon: '🧱', text: 'Pared celular (pectinas) y estabilidad tisular' },
-        { icon: '📡', text: 'Membranas y señalización (calmodulina, respuesta a estímulos)' },
-        { icon: '🍎', text: 'Integridad de fruto y tejidos en expansión' }
+        {
+          text: 'Pared celular (pectinas) y estabilidad tisular',
+          detail:
+            'Los puentes ion Ca²⁺ entre pectinas dan firmeza; tejidos jóvenes con bajo flujo transpiratorio son focos típicos de fallo.'
+        },
+        {
+          text: 'Membranas y señalización (calmodulina, respuesta a estímulos)',
+          detail:
+            'La calmodulina transduce señales de Ca citosólico; esto ata respuestas a sequía breve o herida con integridad membrane dependiente.'
+        },
+        {
+          text: 'Integridad de fruto y tejidos en expansión',
+          detail:
+            'Frutos de llenado rápido (tomate, pimientos, algunos berry) muestran BER u otras necrosis incluso si el suelo reporta Ca “adecuado”.'
+        }
       ],
       tip: 'Puede haber Ca adecuado en suelo y fallar en fruto/meristemo por baja distribución o baja transpiración local.'
     },
@@ -1585,12 +1794,29 @@
       where: 'Brotes, yemas, meristemos, flores y frutos',
       sym: 'Muerte de puntos de crecimiento, deformación, floración o cuajado irregular',
       functions: [
-        { icon: '🧱', text: 'Pared celular y estabilidad de membranas' },
-        { icon: '🌸', text: 'Polinización (tubo polínico) y retención floral' },
-        { icon: '🚚', text: 'Transporte de azúcares y meristemos en expansión' },
-        { icon: '🍎', text: 'Calidad de fruto y lignificación (según etapa/cultivo)' }
+        {
+          text: 'Pared celular y estabilidad de membranas',
+          detail:
+            'El B interviene en la red de pectinas y en enlaces que ordenan la pared nueva; brotes deformes o láminas “engrosadas” sugieren menor armado ordenado del tejido.'
+        },
+        {
+          text: 'Polinización (tubo polínico) y retención floral',
+          detail:
+            'El tubo polínico debe atravesar el estilo de forma ordenada y requiere continuidad sintética; pueden verse abortos florales o polen poco viable antes que necrosis marcada.'
+        },
+        {
+          text: 'Transporte de azúcares y meristemos en expansión',
+          detail:
+            'Se asocia a movilización de fotoasimilados hacia puntos de crecimiento; meristemos y flores nuevas revelan rápido un cuello de transporte‑metabólico.'
+        },
+        {
+          text: 'Calidad de fruto y lignificación (según etapa/cultivo)',
+          detail:
+            'En aguacate, déficit suele relacionarse con frutos deformes, lignificación irregular o aborted fruitlets en olas de floración tensas; también en otros sensibles con carga alta.'
+        }
       ],
-      tip: 'En manzano, pera y algunas rosáceas el B puede comportarse más móvil que en olivo o vid; validar por cultivo.'
+      tip:
+        'En manzano, pera (rosáceas), aguacate (sensible en olas florales densas) y cultivos delicados en polinización/cuajado, el comportamiento efectivo del B suele diferir respecto de olivo o vid; validar síntomas y análisis foliar/agua‑suelo por cultivo.'
     }
   };
 
@@ -1625,24 +1851,48 @@
     if (!m) return;
     setActiveMobSym(sym);
     mobFichaTitle.textContent = sym + ' — ' + (EL_NAMES[sym] || '');
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
     var fnHtml = '';
     if (m.functions && m.functions.length) {
       fnHtml =
         '<p class="mob-line" style="margin:10px 0 4px;font-weight:600;color:#14532d;">Funciones principales</p>' +
         '<ul class="mob-fn-list">' +
-        m.functions.map(function (item) {
-          return '<li><span class="mob-fn-ic" aria-hidden="true">' + item.icon + '</span><span>' + item.text + '</span></li>';
-        }).join('') +
+        m.functions
+          .map(function (item, idx) {
+            var mk = 'mob-fn-marker--' + ((idx % 3) + 1);
+            var det =
+              item.detail && String(item.detail).trim()
+                ? '<span class="mob-fn-detail">' + esc(item.detail) + '</span>'
+                : '';
+            return (
+              '<li><span class="mob-fn-marker ' +
+              mk +
+              '" aria-hidden="true"></span><span class="mob-fn-copy"><span class="mob-fn-lead">' +
+              esc(item.text) +
+              '</span>' +
+              det +
+              '</span></li>'
+            );
+          })
+          .join('') +
         '</ul>';
     } else if (m.fn) {
-      fnHtml = '<p class="mob-line"><strong>Funciones principales:</strong> ' + m.fn + '</p>';
+      fnHtml = '<p class="mob-line"><strong>Funciones principales:</strong> ' + esc(m.fn) + '</p>';
     }
     mobFichaBody.innerHTML =
-      '<p class="mob-line"><strong>Movilidad:</strong> ' + m.mob + '</p>' +
-      '<p class="mob-line"><strong>Dónde se ve primero:</strong> ' + m.where + '</p>' +
-      '<p class="mob-line"><strong>Síntoma común:</strong> ' + m.sym + '</p>' +
+      '<p class="mob-line"><strong>Movilidad:</strong> ' + esc(m.mob) + '</p>' +
+      '<p class="mob-line"><strong>Dónde se ve primero:</strong> ' + esc(m.where) + '</p>' +
+      '<p class="mob-line"><strong>Síntoma común:</strong> ' + esc(m.sym) + '</p>' +
       fnHtml +
-      '<p class="mob-line" style="margin-top:12px;padding-top:10px;border-top:1px solid #bbf7d0;"><strong>Tip:</strong> ' + m.tip + '</p>';
+      '<p class="mob-line" style="margin-top:12px;padding-top:10px;border-top:1px solid #bbf7d0;"><strong>Tip:</strong> ' +
+      esc(m.tip) +
+      '</p>';
     requestAnimationFrame(function () {
       if (mobFicha) mobFicha.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
