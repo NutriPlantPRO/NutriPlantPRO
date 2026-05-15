@@ -287,11 +287,11 @@
 
   <div id="panel1" class="section-panel active" role="tabpanel" aria-labelledby="tab1">
     <h2 class="section-h2">Cálculo y barra volumétrica (CC · PMP · agua disponible)</h2>
-    <p class="hint">Selecciona una textura de referencia para precargar CC y PMP (valores típicos ilustrativos), o introduce los tuyos. El volumen de suelo es área × profundidad (1 ha × 30 cm = 3 000 m³).</p>
+    <p class="hint">Puedes usar el desplegable para <strong>cargar una vez</strong> CC y PMP ilustrativos según textura típica; al elegir una fila se rellenan los campos y el menú vuelve solo (así, si luego editas los números, no parece que sigas en esa textura). También puedes escribir CC y PMP a mano. El volumen de suelo es área × profundidad (1 ha × 30 cm = 3 000 m³).</p>
 
     <div class="grid-form">
       <div class="field-stack">
-        <label class="f" for="presetTex">Textura de referencia (CC / PMP)</label>
+        <label class="f" for="presetTex">Cargar valores de referencia (CC / PMP)</label>
         <select class="sel" id="presetTex"></select>
       </div>
       <div class="field-stack">
@@ -477,7 +477,7 @@
   var presetSel = document.getElementById('presetTex');
   var ph = document.createElement('option');
   ph.value = '';
-  ph.textContent = '— Precargar textura de referencia (opcional) —';
+  ph.textContent = '— Elige textura ilustrativa para rellenar CC y PMP (una vez) —';
   presetSel.appendChild(ph);
   TEXTURE_SERIES.forEach(function (t, i) {
     var o = document.createElement('option');
@@ -493,6 +493,7 @@
     document.getElementById('cc').value = t.cc;
     document.getElementById('pmp').value = t.pmp;
     updateWater();
+    presetSel.value = '';
   });
 
   function updateWater() {

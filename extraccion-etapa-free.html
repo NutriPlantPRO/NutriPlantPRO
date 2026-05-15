@@ -277,6 +277,54 @@
       color: var(--muted);
       line-height: 1.45;
     }
+    .preset-bar {
+      display: none;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px dashed #93c5fd;
+      background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+    }
+    .preset-bar.is-visible { display: flex; }
+    .preset-bar label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+    .preset-bar select,
+    .preset-bar input[type="text"] {
+      min-width: 0;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .preset-bar select { min-width: 200px; max-width: 100%; cursor: pointer; }
+    .preset-bar input[type="text"] { width: 200px; max-width: 100%; }
+    .preset-bar .preset-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .preset-bar .btn-preset-save { background: #2563eb; color: #fff; }
+    .preset-bar .btn-preset-save:hover { background: #1d4ed8; }
+    .preset-bar .btn-preset-del { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .preset-bar .preset-hint {
+      width: 100%;
+      flex-basis: 100%;
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
   </style>
 </head>
 <body>
@@ -292,6 +340,25 @@
       <span class="pill pill--nut">Extracción total → kg/ha ciclo</span>
       <span class="pill pill--info">% por etapa → debe sumar 100% / nutriente</span>
       <span class="pill pill--warn">Valida en campo; curvas orientativas</span>
+    </div>
+    <div class="preset-bar" id="presetBar" aria-label="Configuraciones guardadas (solo dashboard)">
+      <label for="presetSelect">
+        Configuraciones
+        <select id="presetSelect">
+          <option value="">— Cargar una guardada —</option>
+        </select>
+      </label>
+      <label for="presetTitleInp">
+        Título (nuevo)
+        <input type="text" id="presetTitleInp" maxlength="80" placeholder="Ej. Aguacate hass · curvas ejemplo" autocomplete="off" />
+      </label>
+      <div class="preset-actions">
+        <button type="button" class="btn btn-preset-save" id="btnPresetSave">💾 Guardar como plantilla</button>
+        <button type="button" class="btn btn-ghost btn-preset-del" id="btnPresetDelete" disabled>🗑 Eliminar seleccionada</button>
+      </div>
+      <p class="preset-hint" id="presetHint">
+        Las plantillas se guardan en el <strong>proyecto activo</strong> (local + sincronización con la nube si tu cuenta tiene sync). El trabajo cotidiano sigue guardándose solo en “autosave”.
+      </p>
     </div>
   </header>
 
@@ -423,6 +490,289 @@
   let isBootstrapping = true;
   let persistTimer = null;
   const toolStateVersion = 1;
+  const presetsBucketVersion = 1;
+
+  /** @type {{ id: string, title: string, state: object, savedAt: number }[]} */
+  var presetsList = [];
+  var presetDirtyWired = false;
+
+  function generatePresetId() {
+    return (
+      'pex_' +
+      Date.now().toString(36) +
+      '_' +
+      Math.random().toString(36).slice(2, 10)
+    );
+  }
+
+  function buildPresetsLocalKey(ctx) {
+    return (
+      'np_extraccion_etapa_presets_' +
+      ctx.userId +
+      '_' +
+      ctx.projectId
+    );
+  }
+
+  function normalizePresetsBucket(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var presetsRaw = Array.isArray(raw.presets) ? raw.presets : [];
+    var cleaned = [];
+    for (var i = 0; i < presetsRaw.length; i++) {
+      var p = presetsRaw[i];
+      if (!p || typeof p.title !== 'string' || typeof p.state !== 'object') continue;
+      var st = normalizeState(p.state);
+      if (!st) continue;
+      cleaned.push({
+        id: typeof p.id === 'string' && p.id ? p.id : generatePresetId(),
+        title: String(p.title || 'Sin título').slice(0, 120),
+        state: st,
+        savedAt: Number(p.savedAt) || Date.now()
+      });
+    }
+    return {
+      version: presetsBucketVersion,
+      updatedAt: Number(raw.updatedAt) || Date.now(),
+      presets: cleaned
+    };
+  }
+
+  function loadPresetsLocalBucket() {
+    try {
+      var ctx = getContext();
+      var raw = localStorage.getItem(buildPresetsLocalKey(ctx));
+      if (!raw) return null;
+      return normalizePresetsBucket(JSON.parse(raw));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function savePresetsLocalBucket(bucket) {
+    try {
+      var ctx = getContext();
+      localStorage.setItem(buildPresetsLocalKey(ctx), JSON.stringify(bucket));
+    } catch (_) {}
+  }
+
+  async function loadPresetsCloudBucket() {
+    if (!isDashboardMode) return null;
+    try {
+      var host =
+        window.parent && window.parent !== window ? window.parent : window;
+      if (
+        typeof host.nutriplantLoadExtractionPresetsFromCloud !== 'function'
+      )
+        return null;
+      var ctx = getContext();
+      var data = await host.nutriplantLoadExtractionPresetsFromCloud(ctx);
+      return normalizePresetsBucket(data);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function savePresetsCloudBucket(bucket) {
+    if (!isDashboardMode) return;
+    try {
+      var host =
+        window.parent && window.parent !== window ? window.parent : window;
+      if (
+        typeof host.nutriplantSaveExtractionPresetsToCloud !== 'function'
+      )
+        return;
+      var ctx = getContext();
+      host.nutriplantSaveExtractionPresetsToCloud({
+        userId: ctx.userId,
+        projectId: ctx.projectId,
+        presetsData: bucket
+      });
+    } catch (_) {}
+  }
+
+  async function hydratePresets() {
+    if (!isDashboardMode) return;
+    var loc = loadPresetsLocalBucket();
+    var cld = await loadPresetsCloudBucket();
+    var locTs = loc && loc.updatedAt ? loc.updatedAt : 0;
+    var cldTs = cld && cld.updatedAt ? cld.updatedAt : 0;
+    var pick = null;
+    if (!loc && !cld) pick = null;
+    else if (!cld) pick = loc;
+    else if (!loc) pick = cld;
+    else pick = cldTs >= locTs ? cld : loc;
+    presetsList = pick && pick.presets ? pick.presets.slice() : [];
+    renderPresetSelectUI();
+  }
+
+  function persistFullPresetsBucket() {
+    if (!isDashboardMode) return;
+    var bucket = {
+      version: presetsBucketVersion,
+      updatedAt: Date.now(),
+      presets: presetsList.slice()
+    };
+    savePresetsLocalBucket(bucket);
+    savePresetsCloudBucket(bucket);
+    renderPresetSelectUI();
+  }
+
+  function refreshPresetDeleteButton() {
+    var sel = document.getElementById('presetSelect');
+    var btn = document.getElementById('btnPresetDelete');
+    if (!btn || !sel) return;
+    btn.disabled = !sel.value;
+  }
+
+  function renderPresetSelectUI() {
+    var sel = document.getElementById('presetSelect');
+    if (!sel) return;
+    var current = sel.value;
+    sel.innerHTML = '';
+    var o0 = document.createElement('option');
+    o0.value = '';
+    o0.textContent = '— Cargar una guardada —';
+    sel.appendChild(o0);
+    presetsList
+      .slice()
+      .sort(function (a, b) {
+        return String(a.title).localeCompare(String(b.title), 'es');
+      })
+      .forEach(function (p) {
+        var opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.title;
+        sel.appendChild(opt);
+      });
+    if (
+      presetsList.some(function (p) {
+        return p.id === current;
+      })
+    )
+      sel.value = current;
+    else sel.value = '';
+    refreshPresetDeleteButton();
+  }
+
+  function invalidatePresetChoice() {
+    if (!isDashboardMode) return;
+    var sel = document.getElementById('presetSelect');
+    if (sel) sel.value = '';
+    refreshPresetDeleteButton();
+  }
+
+  function setupPresetBar() {
+    if (!isDashboardMode) return;
+    var bar = document.getElementById('presetBar');
+    if (bar) bar.classList.add('is-visible');
+
+    var sel = document.getElementById('presetSelect');
+    if (sel) {
+      sel.addEventListener('change', function () {
+        refreshPresetDeleteButton();
+        var id = sel.value;
+        if (!id) return;
+        var p = null;
+        for (var i = 0; i < presetsList.length; i++) {
+          if (presetsList[i].id === id) {
+            p = presetsList[i];
+            break;
+          }
+        }
+        if (!p) return;
+        var normalized = normalizeState(p.state);
+        if (!normalized) {
+          alert('No se pudo cargar esa plantilla (datos incompletos).');
+          invalidatePresetChoice();
+          return;
+        }
+        applyState(normalized);
+        ensurePct();
+        renderAll();
+      });
+    }
+
+    var btnSv = document.getElementById('btnPresetSave');
+    if (btnSv) {
+      btnSv.addEventListener('click', function () {
+        var inpTitle = document.getElementById('presetTitleInp');
+        var title =
+          inpTitle && inpTitle.value
+            ? inpTitle.value.trim()
+            : '';
+        if (!title) {
+          title =
+            'Configuración · ' +
+            new Date().toLocaleString('es', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+        }
+        var stInner = snapshotState();
+        var stOk = normalizeState(stInner);
+        if (!stOk) {
+          alert('No es posible guardar: espera que la tabla cargue o revisa valores.');
+          return;
+        }
+        presetsList.push({
+          id: generatePresetId(),
+          title: title.slice(0, 120),
+          state: snapshotState(),
+          savedAt: Date.now()
+        });
+        if (inpTitle) inpTitle.value = '';
+        persistFullPresetsBucket();
+      });
+    }
+
+    var btnDel = document.getElementById('btnPresetDelete');
+    if (btnDel) {
+      btnDel.addEventListener('click', function () {
+        var s = document.getElementById('presetSelect');
+        if (!s || !s.value) return;
+        var idDel = s.value;
+        var titleDel = '';
+        for (var j = 0; j < presetsList.length; j++) {
+          if (presetsList[j].id === idDel) {
+            titleDel = presetsList[j].title;
+            break;
+          }
+        }
+        if (!confirm('¿Eliminar la plantilla «' + titleDel + '»?')) return;
+        presetsList = presetsList.filter(function (x) {
+          return x.id !== idDel;
+        });
+        persistFullPresetsBucket();
+      });
+    }
+  }
+
+  function wirePresetDirtyDetection() {
+    if (!isDashboardMode || presetDirtyWired) return;
+    presetDirtyWired = true;
+    ['sec-totals', 'sec-pct'].forEach(function (id) {
+      var sec = document.getElementById(id);
+      if (!sec) return;
+      sec.addEventListener(
+        'input',
+        function () {
+          invalidatePresetChoice();
+        },
+        true
+      );
+      sec.addEventListener(
+        'change',
+        function () {
+          invalidatePresetChoice();
+        },
+        true
+      );
+    });
+  }
+
 
   function getContext() {
     var ls = window.localStorage;
@@ -560,6 +910,7 @@
       pct[b.id] = DEFAULT_PCT[b.id] ? DEFAULT_PCT[b.id].slice() : equalSplit(DEFAULT_STAGES.length);
     });
     ensurePct();
+    invalidatePresetChoice();
     renderAll();
   }
 
@@ -567,7 +918,9 @@
     var el = document.getElementById('modeNote');
     if (!el) return;
     if (isDashboardMode) {
-      el.innerHTML = '<strong>Modo dashboard:</strong> guardado automático local + sincronización de proyecto en la nube.';
+      el.innerHTML =
+        '<strong>Modo dashboard:</strong> guardado automático local + proyecto en la nube. ' +
+        'Además puedes crear <strong>plantillas con título</strong> (conjuntos de kg/ha y %) que se sincronizan con el proyecto activo.';
     } else {
       el.innerHTML = '<strong>Modo gratuito:</strong> no se guarda al cerrar. Los valores son solo de referencia técnica.';
     }
@@ -676,6 +1029,7 @@
           nutrients = nutrients.filter(function (x) { return x.id !== n.id; });
           delete pct[n.id];
           ensurePct();
+          invalidatePresetChoice();
           renderAll();
         });
         wrap.appendChild(rm);
@@ -810,6 +1164,7 @@
       arr.splice(ri, 1);
     });
     stages.splice(ri, 1);
+    invalidatePresetChoice();
     renderAll();
   }
 
@@ -1000,10 +1355,12 @@
     var next = optionalQueue.shift();
     nutrients.push({ id: next.id, label: next.label, total: next.total, optional: true });
     pct[next.id] = equalSplit(stages.length);
+    invalidatePresetChoice();
     renderAll();
   });
 
   document.getElementById('btnAddStage').addEventListener('click', function () {
+    invalidatePresetChoice();
     stages.push('Nueva etapa');
     nutrients.forEach(function (n) {
       var arr = pct[n.id];
@@ -1062,6 +1419,10 @@
       }
     }
     isBootstrapping = false;
+
+    setupPresetBar();
+    await hydratePresets();
+    wirePresetDirtyDetection();
   }
 
   boot();

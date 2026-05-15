@@ -5030,6 +5030,70 @@ CONTRATO:
       }
     };
 
+    window.nutriplantLoadExtractionPresetsFromCloud = function(ctx) {
+      try {
+        var projectId =
+          (ctx && ctx.projectId) ||
+          localStorage.getItem('nutriplant-current-project') ||
+          localStorage.getItem('currentProjectId') ||
+          '';
+        if (!projectId) return null;
+        var raw = localStorage.getItem('nutriplant_project_' + projectId);
+        if (!raw) return null;
+        var project = JSON.parse(raw);
+        if (
+          !project ||
+          !project.calculators ||
+          typeof project.calculators.extraccionEtapaPresets !== 'object'
+        )
+          return null;
+        return project.calculators.extraccionEtapaPresets;
+      } catch (e) {
+        console.warn('Load extracción/etapa plantillas:', e);
+        return null;
+      }
+    };
+
+    window.nutriplantSaveExtractionPresetsToCloud = function(payload) {
+      try {
+        var userId =
+          (payload && payload.userId) || localStorage.getItem('nutriplant_user_id') || '';
+        var projectId =
+          (payload && payload.projectId) ||
+          localStorage.getItem('nutriplant-current-project') ||
+          localStorage.getItem('currentProjectId') ||
+          '';
+        var presetsData =
+          payload && payload.presetsData ? payload.presetsData : null;
+        if (!userId || !projectId || !presetsData) return false;
+        var key = 'nutriplant_project_' + projectId;
+        var project = {};
+        try {
+          project = JSON.parse(localStorage.getItem(key) || '{}') || {};
+        } catch (_) {
+          project = {};
+        }
+        if (!project.calculators || typeof project.calculators !== 'object')
+          project.calculators = {};
+        project.calculators.extraccionEtapaPresets = Object.assign({}, presetsData, {
+          updatedAt: Date.now()
+        });
+        project.updatedAt = new Date().toISOString();
+        localStorage.setItem(key, JSON.stringify(project));
+        if (typeof window.nutriplantSyncProjectToCloud === 'function') {
+          try {
+            window.nutriplantSyncProjectToCloud(projectId, project);
+          } catch (syncErr) {
+            console.warn('Sync extracción/etapa plantillas:', syncErr);
+          }
+        }
+        return true;
+      } catch (e) {
+        console.warn('Save extracción/etapa plantillas:', e);
+        return false;
+      }
+    };
+
     var NP_SIMPLE_CALC_STORAGE = 'np_simple_calc_last';
     function simpleCalcKeydown(e) {
       var modal = document.getElementById('simpleCalculatorModal');
