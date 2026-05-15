@@ -174,22 +174,94 @@
     .section-h2 { margin: 0 0 10px; font-size: 1rem; font-weight: 700; color: #1e293b; }
     ul.edu { margin: 0 0 8px; padding-left: 20px; color: #334155; font-size: 13px; }
     ul.edu li { margin-bottom: 6px; }
-    .split {
+    .fig-cap { font-size: 11px; color: var(--muted); margin-top: 8px; }
+    .salt-dissociation {
+      margin-top: 18px;
+      padding: 14px 14px 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: linear-gradient(165deg, #f8fafc 0%, #fff 45%, #f1f5f9 100%);
+      box-shadow: 0 2px 12px rgba(15, 23, 42, .05);
+    }
+    .salt-desc {
+      margin: 0 0 14px;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .salt-desc strong { color: #0f172a; }
+    .ion-table {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 14px;
+      gap: 16px;
     }
-    @media (min-width: 920px) {
-      .split { grid-template-columns: 1fr 1fr; align-items: start; }
+    @media (min-width: 640px) {
+      .ion-table { grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
     }
-    .mini-svg {
-      max-width: 100%;
-      height: auto;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+    .ion-col h3 {
+      margin: 0 0 12px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #1e40af;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 2px solid #bfdbfe;
+      padding-bottom: 6px;
     }
-    .fig-cap { font-size: 11px; color: var(--muted); margin-top: 8px; }
+    .ion-col.anions h3 {
+      color: #9a3412;
+      border-bottom-color: #fdba74;
+    }
+    .ion-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+      gap: 14px 12px;
+    }
+    .ion-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+    .ion-sphere {
+      --ion-mid: #64748b;
+      --ion-lit: #94a3b8;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background:
+        radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0) 42%),
+        radial-gradient(circle at 72% 78%, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.08) 45%, transparent 62%),
+        radial-gradient(circle at 48% 48%, var(--ion-lit) 0%, var(--ion-mid) 52%, color-mix(in srgb, var(--ion-mid) 82%, black) 100%);
+      box-shadow:
+        inset 4px -6px 12px rgba(255, 255, 255, 0.25),
+        inset -5px -8px 14px rgba(15, 23, 42, 0.22),
+        0 6px 14px rgba(15, 23, 42, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+    }
+    @supports not (color: color-mix(in srgb, black, white)) {
+      .ion-sphere {
+        background:
+          radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 40%),
+          radial-gradient(circle at 72% 78%, rgba(0, 0, 0, 0.25) 0%, transparent 55%),
+          radial-gradient(circle at 50% 50%, var(--ion-lit), var(--ion-mid));
+      }
+    }
+    .ion-symbol {
+      font-size: 12px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.2;
+      letter-spacing: 0.02em;
+    }
+    .ion-hint {
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.35;
+      max-width: 11em;
+    }
     .refs-foot {
       margin-top: 14px;
       font-size: 11px;
@@ -239,37 +311,42 @@
 
   <div id="panelA" class="section-panel active" role="tabpanel" aria-labelledby="tabA">
     <h2 class="section-h2">La solubilidad depende de</h2>
-    <div class="split">
-      <div>
-        <ul class="edu">
-          <li>🌡️ <strong>Temperatura</strong> — a mayor temperatura suele favorecerse romper la red del cristal y disolver.</li>
-          <li>📦 <strong>Pureza y grado</strong> del fertilizante (industrial vs. soluble, anticaking, rellenos).</li>
-          <li>💎 <strong>Forma cristalina / hidratación</strong> (p. ej. sulfato de magnesio en forma heptahidratada vs. otras).</li>
-          <li>🧪 <strong>Otros iones ya disueltos</strong> — el medio real no es siempre “agua pura” como en tabla de laboratorio.</li>
-        </ul>
+    <ul class="edu">
+      <li>🌡️ <strong>Temperatura</strong> — a mayor temperatura suele favorecerse romper la red del cristal y disolver.</li>
+      <li>📦 <strong>Pureza y grado</strong> del fertilizante (industrial vs. soluble, anticaking, rellenos).</li>
+      <li>💎 <strong>Forma cristalina / hidratación</strong> (p. ej. sulfato de magnesio en forma heptahidratada vs. otras).</li>
+      <li>🧪 <strong>Otros iones ya disueltos</strong> — el medio real no es siempre “agua pura” como en tabla de laboratorio.</li>
+    </ul>
+
+    <div class="salt-dissociation" aria-labelledby="dissocHeading">
+      <h2 id="dissocHeading" class="section-h2" style="margin-bottom:8px;">Una sal se disuelve en iones en el agua</h2>
+      <p class="salt-desc">
+        <strong>Una sal está compuesta por la unión de los iones</strong> que la forman el <em>cation</em> (carga positiva) y el <em>anion</em> (carga negativa) en proporción definida dentro del retículo cristalino. En el agua, la sal puede romper ese enlace — <strong>disociarse</strong> — liberando estos iones, que después quedan rodeados por las moléculas de agua (<em>hidratación / solvatación</em>).
+      </p>
+      <div class="ion-table" role="group" aria-label="Iones típicos de fertilizantes solubles">
+        <div class="ion-col cations">
+          <h3>Cationes (+)</h3>
+          <div class="ion-grid">
+            <div class="ion-cell"><div class="ion-sphere" style="--ion-mid:#1d9bf0;--ion-lit:#7dd3fc"></div><div class="ion-symbol">K⁺</div><div class="ion-hint">Potasio — KCl, KNO₃…</div></div>
+            <div class="ion-cell"><div class="ion-sphere" style="--ion-mid:#059669;--ion-lit:#6ee7b7"></div><div class="ion-symbol">Ca²⁺</div><div class="ion-hint">Calcio — Ca(NO₃)₂…</div></div>
+            <div class="ion-cell"><div class="ion-sphere" style="--ion-mid:#0f766e;--ion-lit:#5eead4"></div><div class="ion-symbol">Mg²⁺</div><div class="ion-hint">Magnesio — Mg(NO₃)₂, MgSO₄…</div></div>
+            <div class="ion-cell"><div class="ion-sphere" style="--ion-mid:#7c3aed;--ion-lit:#c4b5fd"></div><div class="ion-symbol">NH₄⁺</div><div class="ion-hint">Amonio — NH₄NO₃…</div></div>
+            <div class="ion-cell"><div class="ion-sphere" style="--ion-mid:#ea580c;--ion-lit:#fdba74"></div><div class="ion-symbol">Na⁺</div><div class="ion-hint">Sodio — NaNO₃ (referencia IS)…</div></div>
+          </div>
+        </div>
+        <div class="ion-col anions">
+          <h3>Aniones (−)</h3>
+          <div class="ion-grid">
+            <div class="ion-cell"><div class="ion-sphere" style="--ion-mid:#0284c7;--ion-lit:#38bdf8"></div><div class="ion-symbol">NO₃⁻</div><div class="ion-hint">Nitrato — alta solubilidad</div></div>
+            <div class="ion-cell"><div class="ion-sphere" style="--ion-mid:#d97706;--ion-lit:#fde047"></div><div class="ion-symbol">SO₄²⁻</div><div class="ion-hint">Sulfato — sulfatos K, Mg…</div></div>
+            <div class="ion-cell"><div class="ion-sphere" style="--ion-mid:#b91c73;--ion-lit:#f9a8d4"></div><div class="ion-symbol">H₂PO₄⁻</div><div class="ion-hint">Fosfato ácido — MAP / MKP</div></div>
+            <div class="ion-cell"><div class="ion-sphere" style="--ion-mid:#16a34a;--ion-lit:#86efac"></div><div class="ion-symbol">Cl⁻</div><div class="ion-hint">Cloruro — KCl…</div></div>
+          </div>
+        </div>
       </div>
-      <div>
-        <p class="section-h2" style="margin-top:0;">Esquema: red iónica e hidratación (referencia conceptual)</p>
-        <svg class="mini-svg" viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <text x="180" y="22" text-anchor="middle" font-size="13" fill="#0369a1" font-weight="700">Solvatación frente al cristal</text>
-          <rect x="24" y="44" width="120" height="120" rx="8" fill="#fef3c7" stroke="#d97706" stroke-dasharray="4 3"/>
-          <text x="84" y="38" text-anchor="middle" font-size="10" fill="#92400e">Retículo — K₂SO₄ (sólido)</text>
-          <text x="84" y="110" text-anchor="middle" font-size="44" opacity="0.35">⚡</text>
-          <text x="258" y="110" font-size="12" fill="#0f172a">Iones rodeados por H₂O</text>
-          <circle cx="280" cy="58" r="14" fill="#bae6fd" stroke="#0369a1"/>
-          <text x="280" y="62" text-anchor="middle" font-size="11" fill="#0369a1">K⁺</text>
-          <text x="250" y="130" font-size="10" fill="#64748b">Ión hidratado</text>
-          <circle cx="300" cy="130" r="16" fill="#fde68a" stroke="#ca8a04"/>
-          <text x="300" y="134" text-anchor="middle" font-size="9" fill="#854d0e">SO₄²⁻</text>
-          <polygon points="258,154 274,174 246,174" fill="#93c5fd"/>
-          <polygon points="310,154 324,174 296,174" fill="#93c5fd"/>
-          <polygon points="270,174 284,158 274,174" fill="#bfdbfe"/>
-          <polygon points="320,174 336,154 336,174" fill="#bfdbfe"/>
-          <text x="296" y="192" text-anchor="middle" font-size="10" fill="#64748b">H₂O (esquematizado)</text>
-        </svg>
-        <p class="fig-cap">Ilustración educativa: no dibuja proporciones moleculares exactas.</p>
-      </div>
+      <p class="fig-cap" style="margin-top:12px;">Referencia pedagógica: colores y forma esférica sólo ayudan a distinguir cada ion; cargas en solución están estabilizadas por el medio (p. ej. agua).</p>
     </div>
+
     <h2 class="section-h2">Principios químicos útiles</h2>
     <ul class="edu">
       <li><strong>Mayor carga efectiva →</strong> a veces menor solubilidad aparente (red iónica más fuerte).</li>

@@ -290,6 +290,35 @@
       color: var(--muted);
       line-height: 1.4;
     }
+    .symptom-flow {
+      position: relative;
+    }
+    .symptom-flow__top {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 0;
+    }
+    .symptom-flow__connect {
+      display: block;
+      width: 100%;
+      height: 42px;
+      margin: 0 0 6px;
+      color: #64748b;
+    }
+    .symptom-flow__connect path {
+      stroke: currentColor;
+      stroke-width: 2.25;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.9;
+    }
+    .symptom-flow__connect .symptom-flow__joint {
+      fill: #84cc16;
+      stroke: #65a30d;
+      stroke-width: 1.5;
+      opacity: 0.95;
+    }
     .symptom-root {
       text-align: center;
       background: linear-gradient(180deg, #ecfccb 0%, #d9f99d 100%);
@@ -300,7 +329,7 @@
       font-size: 13px;
       color: #365314;
       max-width: 220px;
-      margin: 0 auto 12px;
+      margin: 0 auto 2px;
     }
     .symptom-cols {
       display: grid;
@@ -315,6 +344,22 @@
       border-radius: 12px;
       padding: 10px 8px 12px;
       background: #fafafa;
+      position: relative;
+    }
+    /* “enganche” visual con la línea SCADA en escritorio */
+    @media (min-width: 520px) {
+      .symptom-col::before {
+        content: '';
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 3px;
+        height: 8px;
+        background: linear-gradient(180deg, #94a3b8, #cbd5e1);
+        border-radius: 2px;
+        opacity: 0.85;
+      }
     }
     .symptom-branch-h {
       background: #d9f99d;
@@ -328,17 +373,49 @@
       margin-bottom: 10px;
       line-height: 1.25;
     }
-    .symptom-sub {
-      margin-bottom: 12px;
+    .symptom-sub + .symptom-sub {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(148, 163, 184, 0.75);
     }
-    .symptom-sub:last-child { margin-bottom: 0; }
+    .symptom-sub__head {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .symptom-sub__ic {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 16px;
+      line-height: 1;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset;
+    }
+    .symptom-sub__bridge {
+      margin: 0 0 6px;
+      padding: 0;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
     .symptom-label {
       display: block;
+      flex: 1;
+      min-width: 0;
       font-size: 10px;
       font-weight: 600;
       color: #64748b;
-      margin-bottom: 6px;
-      line-height: 1.3;
+      margin-bottom: 0;
+      line-height: 1.35;
     }
     .symptom-nuts {
       display: flex;
@@ -413,6 +490,67 @@
     }
     .mob-ficha h4 { margin: 0 0 10px; font-size: 15px; color: #14532d; }
     .mob-line { margin: 4px 0; font-size: 13px; color: #334155; }
+
+    .nut-ref {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .nut-ref__title {
+      margin: 0 0 6px;
+      font-size: 16px;
+      font-weight: 800;
+      color: #14532d;
+    }
+    .nut-ref .hint { margin-top: 0; margin-bottom: 14px; }
+    .nut-ref-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #fff;
+    }
+    .nut-ref-scroll:last-child { margin-bottom: 0; }
+    .nut-ref-table {
+      width: 100%;
+      min-width: 520px;
+      border-collapse: collapse;
+      font-size: 12px;
+      color: #334155;
+    }
+    .nut-ref-table caption {
+      caption-side: top;
+      text-align: left;
+      padding: 12px 14px 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #1e293b;
+      border-bottom: 1px solid #f1f5f9;
+      background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+    }
+    .nut-ref-table th,
+    .nut-ref-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #e8e8e8;
+      vertical-align: top;
+      line-height: 1.35;
+    }
+    .nut-ref-table thead th {
+      font-weight: 700;
+      font-size: 11px;
+      color: #475569;
+      background: #fafafa;
+    }
+    .nut-ref-table tbody tr:last-child td { border-bottom: none; }
+    .nut-ref-table .nut-el { font-weight: 700; color: #0f172a; }
+    .nut-ref-table .nut-num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .nut-ref-table .nut-strong { font-weight: 700; }
+
     .foot {
       margin-top: 16px;
       font-size: 11px;
@@ -585,31 +723,60 @@
     <div class="mobility-layout">
       <div class="symptom-diagram" aria-label="Diagrama orientativo: dónde acotar la deficiencia según síntoma">
         <p class="symptom-diagram__note">Basado en esquemas tipo clave dicotómica (hoja vieja vs joven). En campo siempre cruzar con análisis y criterio agronómico.</p>
-        <div class="symptom-root">Síntomas</div>
-        <div class="symptom-cols">
+        <div class="symptom-flow">
+          <div class="symptom-flow__top">
+            <div class="symptom-root">Síntomas</div>
+          </div>
+          <svg class="symptom-flow__connect" viewBox="0 0 300 46" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <path d="M 150 3 L 150 16" />
+            <path d="M 40 16 L 260 16" />
+            <path d="M 50 16 L 50 44" />
+            <path d="M 150 16 L 150 44" />
+            <path d="M 250 16 L 250 44" />
+            <circle class="symptom-flow__joint" cx="50" cy="16" r="3.2" />
+            <circle class="symptom-flow__joint" cx="150" cy="16" r="4" />
+            <circle class="symptom-flow__joint" cx="250" cy="16" r="3.2" />
+          </svg>
+          <div class="symptom-cols">
           <div class="symptom-col">
             <div class="symptom-branch-h">Hojas viejas · parte baja</div>
             <div class="symptom-sub">
-              <span class="symptom-label">Manchas necróticas (bordes / “quemado”)</span>
+              <div class="symptom-sub__head">
+                <span class="symptom-sub__ic" aria-hidden="true">🔥</span>
+                <span class="symptom-label">Manchas necróticas (bordes / “quemado”)</span>
+              </div>
+              <p class="symptom-sub__bridge">Encaja con</p>
               <div class="symptom-nuts">
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="K">K</button>
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="Mo">Mo</button>
               </div>
             </div>
             <div class="symptom-sub">
-              <span class="symptom-label">Sin manchas necróticas al inicio · clorosis intervenal · nerviación verde</span>
+              <div class="symptom-sub__head">
+                <span class="symptom-sub__ic" aria-hidden="true">🧬</span>
+                <span class="symptom-label">Sin manchas necróticas al inicio · clorosis intervenal · nerviación verde</span>
+              </div>
+              <p class="symptom-sub__bridge">Encaja con</p>
               <div class="symptom-nuts">
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="Mg">Mg</button>
               </div>
             </div>
             <div class="symptom-sub">
-              <span class="symptom-label">Clorosis · nerviación amarillenta (no intervenal “típica” Mg)</span>
+              <div class="symptom-sub__head">
+                <span class="symptom-sub__ic" aria-hidden="true">☀️</span>
+                <span class="symptom-label">Clorosis · nerviación amarillenta (no intervenal “típica” Mg)</span>
+              </div>
+              <p class="symptom-sub__bridge">Encaja con</p>
               <div class="symptom-nuts">
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="N">N</button>
               </div>
             </div>
             <div class="symptom-sub">
-              <span class="symptom-label">Hoja más oscura · tallos o envés con tonos púrpura (según cultivo)</span>
+              <div class="symptom-sub__head">
+                <span class="symptom-sub__ic" aria-hidden="true">🟣</span>
+                <span class="symptom-label">Hoja más oscura · tallos o envés con tonos púrpura (según cultivo)</span>
+              </div>
+              <p class="symptom-sub__bridge">Encaja con</p>
               <div class="symptom-nuts">
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="P">P</button>
               </div>
@@ -618,27 +785,43 @@
           <div class="symptom-col">
             <div class="symptom-branch-h">Hojas jóvenes · parte alta</div>
             <div class="symptom-sub">
-              <span class="symptom-label">Clorosis intervenal · <strong>nervaduras verdes</strong></span>
+              <div class="symptom-sub__head">
+                <span class="symptom-sub__ic" aria-hidden="true">🍃</span>
+                <span class="symptom-label">Clorosis intervenal · <strong>nervaduras verdes</strong> — típico de micronutrientes inmóviles aquí</span>
+              </div>
+              <p class="symptom-sub__bridge">Solo estos elementos encajan con este patrón visual</p>
               <div class="symptom-nuts">
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="Fe">Fe</button>
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="Mn">Mn</button>
               </div>
             </div>
             <div class="symptom-sub">
-              <span class="symptom-label">Clorosis más uniforme · nerviación amarillenta</span>
+              <div class="symptom-sub__head">
+                <span class="symptom-sub__ic" aria-hidden="true">⚗️</span>
+                <span class="symptom-label">Clorosis más uniforme · nerviación amarillenta</span>
+              </div>
+              <p class="symptom-sub__bridge">Encaja con</p>
               <div class="symptom-nuts">
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="S">S</button>
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="Cu">Cu</button>
               </div>
             </div>
             <div class="symptom-sub">
-              <span class="symptom-label">Hoja reducida / deforme · “moteada” foliar joven</span>
+              <div class="symptom-sub__head">
+                <span class="symptom-sub__ic" aria-hidden="true">🔬</span>
+                <span class="symptom-label">Hoja reducida / deforme · “moteada” foliar joven</span>
+              </div>
+              <p class="symptom-sub__bridge">Encaja con</p>
               <div class="symptom-nuts">
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="Zn">Zn</button>
               </div>
             </div>
             <div class="symptom-sub">
-              <span class="symptom-label">Márgenes necrosados en láminas nuevas · deformación</span>
+              <div class="symptom-sub__head">
+                <span class="symptom-sub__ic" aria-hidden="true">✂️</span>
+                <span class="symptom-label">Márgenes necrosados en láminas nuevas · deformación</span>
+              </div>
+              <p class="symptom-sub__bridge">Encaja con</p>
               <div class="symptom-nuts">
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="Ca">Ca</button>
               </div>
@@ -647,13 +830,18 @@
           <div class="symptom-col">
             <div class="symptom-branch-h">Brotes · yemas · meristemos · frutos</div>
             <div class="symptom-sub">
-              <span class="symptom-label">Puntos de crecimiento · flor · fruto · “heart rot” / corky (según cultivo)</span>
+              <div class="symptom-sub__head">
+                <span class="symptom-sub__ic" aria-hidden="true">🌱</span>
+                <span class="symptom-label">Puntos de crecimiento · flor · fruto · “heart rot” / corky (según cultivo)</span>
+              </div>
+              <p class="symptom-sub__bridge">Encaja con</p>
               <div class="symptom-nuts">
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="Ca">Ca</button>
                 <button type="button" class="mob-pill mob-pill--flow" data-mob-sym="B">B</button>
               </div>
             </div>
             <p class="symptom-diagram__note" style="margin:10px 0 0;font-size:10px;">Ca y B suelen expresarse en tejidos en expansión o poco transpirantes; se cruzan con síntomas en hoja joven.</p>
+          </div>
           </div>
         </div>
       </div>
@@ -675,6 +863,159 @@
           <h4 id="mobFichaTitle">Ficha del elemento</h4>
           <div id="mobFichaBody"><p class="mob-line" style="margin:0;color:#64748b;">Elige un elemento en el diagrama o en la lista.</p></div>
         </div>
+      </div>
+    </div>
+
+    <div class="nut-ref" aria-label="Referencias de concentración en materia seca">
+      <h3 class="nut-ref__title">Referencia visual — nutrición mineral en materia seca</h3>
+      <p class="hint">
+        Valores <strong>ilustrativos</strong> de manuales de fisiología vegetal (orden de magnitud; dependen de especie, órgano y estado fenológico). Útiles para situar micronutrientes frente a macronutrientes y elementos estructurales.
+      </p>
+
+      <div class="nut-ref-scroll">
+        <table class="nut-ref-table">
+          <caption>Tabla paramétrica de nutrición mineral — micronutrientes (Taiz &amp; Zeiger / Epstein)</caption>
+          <thead>
+            <tr>
+              <th scope="col">Elemento</th>
+              <th scope="col">Símbolo</th>
+              <th scope="col">Conc. adecuada (materia seca)</th>
+              <th scope="col">Rango % o ppm</th>
+              <th scope="col">Nº relativo de átomos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="nut-el">Molibdeno</td>
+              <td>Mo</td>
+              <td>0,001 &micro;mol/g</td>
+              <td class="nut-num nut-strong">0,1 ppm</td>
+              <td class="nut-num nut-strong">1</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Cobre</td>
+              <td>Cu</td>
+              <td>0,10 &micro;mol/g</td>
+              <td class="nut-num">6 ppm</td>
+              <td class="nut-num">100</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Zinc</td>
+              <td>Zn</td>
+              <td>0,30 &micro;mol/g</td>
+              <td class="nut-num">20 ppm</td>
+              <td class="nut-num">300</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Manganeso</td>
+              <td>Mn</td>
+              <td>1,0 &micro;mol/g</td>
+              <td class="nut-num">50 ppm</td>
+              <td class="nut-num">1.000</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Boro</td>
+              <td>B</td>
+              <td>2,0 &micro;mol/g</td>
+              <td class="nut-num">20 ppm</td>
+              <td class="nut-num">2.000</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Hierro</td>
+              <td>Fe</td>
+              <td>2,0 &micro;mol/g</td>
+              <td class="nut-num">100 ppm</td>
+              <td class="nut-num">2.000</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Cloro</td>
+              <td>Cl</td>
+              <td>3,0 &micro;mol/g</td>
+              <td class="nut-num">100 ppm</td>
+              <td class="nut-num">3.000</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="nut-ref-scroll">
+        <table class="nut-ref-table">
+          <caption>Macronutrientes y elementos estructurales (misma referencia bibliográfica)</caption>
+          <thead>
+            <tr>
+              <th scope="col">Elemento</th>
+              <th scope="col">Símbolo</th>
+              <th scope="col">&micro;mol/g (materia seca)</th>
+              <th scope="col">% materia seca</th>
+              <th scope="col">Nº relativo de átomos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="nut-el">Azufre</td>
+              <td>S</td>
+              <td class="nut-num">30 &micro;mol/g</td>
+              <td class="nut-num">0,1 %</td>
+              <td class="nut-num">30.000</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Fósforo</td>
+              <td>P</td>
+              <td class="nut-num">60 &micro;mol/g</td>
+              <td class="nut-num">0,2 %</td>
+              <td class="nut-num">60.000</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Magnesio</td>
+              <td>Mg</td>
+              <td class="nut-num">80 &micro;mol/g</td>
+              <td class="nut-num">0,2 %</td>
+              <td class="nut-num">80.000</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Calcio</td>
+              <td>Ca</td>
+              <td class="nut-num">125 &micro;mol/g</td>
+              <td class="nut-num">0,5 %</td>
+              <td class="nut-num">125.000</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Potasio</td>
+              <td>K</td>
+              <td class="nut-num">250 &micro;mol/g</td>
+              <td class="nut-num">1,0 %</td>
+              <td class="nut-num">250.000</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Nitrógeno</td>
+              <td>N</td>
+              <td class="nut-num">1.000 &micro;mol/g</td>
+              <td class="nut-num nut-strong">1,5 %</td>
+              <td class="nut-num nut-strong">1.000.000</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Oxígeno</td>
+              <td>O</td>
+              <td class="nut-num">30.000 &micro;mol/g</td>
+              <td class="nut-num">45,0 %</td>
+              <td class="nut-num">30.000.000</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Carbono</td>
+              <td>C</td>
+              <td class="nut-num">40.000 &micro;mol/g</td>
+              <td class="nut-num">45,0 %</td>
+              <td class="nut-num">40.000.000</td>
+            </tr>
+            <tr>
+              <td class="nut-el">Hidrógeno</td>
+              <td>H</td>
+              <td class="nut-num">60.000 &micro;mol/g</td>
+              <td class="nut-num nut-strong">6,0 %</td>
+              <td class="nut-num nut-strong">60.000.000</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

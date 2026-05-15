@@ -81,24 +81,46 @@
       margin: 0 0 12px;
     }
     label.f {
-      display: block;
+      display: flex;
+      align-items: flex-end;
+      flex: 1 1 auto;
+      min-height: 2.9em;
+      line-height: 1.33;
       font-size: 12px;
       font-weight: 600;
       color: #475569;
-      margin-bottom: 4px;
+      margin-bottom: 0;
     }
     input.in, select.sel {
       width: 100%;
-      padding: 8px 10px;
-      border: 1px solid var(--border);
+      padding: 9px 10px;
+      border: 2px solid #94a3b8;
       border-radius: 8px;
       font-size: 14px;
+      background: #fff;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input.in:hover, select.sel:hover {
+      border-color: #64748b;
+    }
+    input.in:focus, select.sel:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04), 0 0 0 3px rgba(37, 99, 235, 0.22);
     }
     .grid-form {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+      gap: 12px;
       margin-bottom: 12px;
+      align-items: end;
+    }
+    .field-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 0;
     }
     .calc-box {
       background: linear-gradient(180deg, #e0f2fe 0%, #dbeafe 100%);
@@ -147,7 +169,7 @@
       color: var(--muted);
     }
     .viz-card svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
-    .viz-title { font-weight: 700; color: #1e293b; margin-bottom: 4px; font-size: 12px; }
+    .viz-title { font-weight: 700; color: #1e40af; margin-bottom: 6px; font-size: 12px; line-height: 1.35; min-height: 2.55em; display: flex; align-items: flex-end; justify-content: center; text-align: center; padding: 0 4px; }
     .chart-wrap {
       overflow-x: auto;
       margin-top: 10px;
@@ -155,7 +177,7 @@
       border: 1px solid var(--border);
       background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
     }
-    #chartSvg { display: block; min-width: 520px; width: 100%; height: auto; }
+    #chartSvg { display: block; width: 100%; height: auto; min-height: 200px; }
     .tern-wrap {
       display: grid;
       grid-template-columns: 1fr;
@@ -183,6 +205,35 @@
       font-weight: 700;
       color: var(--green);
     }
+    .particle-ref {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 11px;
+      color: #334155;
+    }
+    .particle-ref h4 {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #1e293b;
+    }
+    .particle-ref table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .particle-ref th,
+    .particle-ref td {
+      text-align: left;
+      padding: 6px 4px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    .particle-ref th { font-weight: 700; color: #0f172a; }
+    .particle-ref tr:last-child td { border-bottom: none; }
+    .particle-ref em { font-style: normal; font-weight: 700; }
     .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
     button.btn-sm {
       padding: 8px 12px;
@@ -225,31 +276,31 @@
   </div>
 
   <div id="panel1" class="section-panel active" role="tabpanel" aria-labelledby="tab1">
-    <h2 class="section-h2">Cálculo y curvas de referencia por textura</h2>
+    <h2 class="section-h2">Cálculo y barra volumétrica (CC · PMP · agua disponible)</h2>
     <p class="hint">Selecciona una textura de referencia para precargar CC y PMP (valores típicos ilustrativos), o introduce los tuyos. El volumen de suelo es área × profundidad (1 ha × 30 cm = 3 000 m³).</p>
 
     <div class="grid-form">
-      <div>
+      <div class="field-stack">
         <label class="f" for="presetTex">Textura de referencia (CC / PMP)</label>
         <select class="sel" id="presetTex"></select>
       </div>
-      <div>
+      <div class="field-stack">
         <label class="f" for="cc">Capacidad de campo CC (% vol.)</label>
         <input class="in" type="number" id="cc" min="0" max="60" step="0.1" value="30" />
       </div>
-      <div>
+      <div class="field-stack">
         <label class="f" for="pmp">Punto de marchitez PMP (% vol.)</label>
         <input class="in" type="number" id="pmp" min="0" max="50" step="0.1" value="20" />
       </div>
-      <div>
+      <div class="field-stack">
         <label class="f" for="depth">Profundidad de suelo (cm)</label>
         <input class="in" type="number" id="depth" min="1" max="200" step="1" value="30" />
       </div>
-      <div>
+      <div class="field-stack">
         <label class="f" for="areaHa">Área (ha)</label>
         <input class="in" type="number" id="areaHa" min="0.01" max="10000" step="0.01" value="1" />
       </div>
-      <div>
+      <div class="field-stack">
         <label class="f" for="rootEff">Zona radical efectiva (%)</label>
         <input class="in" type="number" id="rootEff" min="1" max="100" step="1" value="60" />
       </div>
@@ -264,9 +315,9 @@
       </div>
     </div>
 
-    <p class="hint">Curvas: contenido volumétrico de agua (%). La derecha muestra lámina equivalente para la profundidad indicada (mm).</p>
+    <p class="hint">Barras horizontales: la escala muestra tus <strong>PMP</strong> y <strong>CC</strong> como proporción del volumen de poros (% vol.). La zona entre ambos equivale al agua típicamente disponible antes de estrés grave. A la derecha se indican laminaciones (mm) para la profundidad que ingresaste.</p>
     <div class="chart-wrap">
-      <svg id="chartSvg" viewBox="0 0 640 280" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="chartSvg" viewBox="0 0 640 250" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
 
     <h3 class="section-h2" style="margin-top:18px;font-size:0.92rem;">Ayuda visual: saturación · CC · PMP</h3>
@@ -300,14 +351,18 @@
       <div class="viz-card">
         <div class="viz-title">Marchitez permanente (PMP)</div>
         <svg viewBox="0 0 120 120" width="140" aria-hidden="true">
+          <defs>
+            <clipPath id="clipPoroPmp"><circle cx="60" cy="60" r="52"/></clipPath>
+          </defs>
           <circle cx="60" cy="60" r="52" fill="#faf8f5" stroke="#e2e8f0"/>
           <circle cx="42" cy="48" r="12" fill="#a67c52" stroke="#7c5738"/>
           <circle cx="78" cy="44" r="11" fill="#a67c52" stroke="#7c5738"/>
           <circle cx="58" cy="78" r="13" fill="#a67c52" stroke="#7c5738"/>
           <circle cx="82" cy="70" r="10" fill="#a67c52" stroke="#7c5738"/>
-          <path fill="none" stroke="#0369a1" stroke-width="3" d="M32 52 Q42 58 54 62 Q70 54 88 52"/>
-          <path fill="none" stroke="#0369a1" stroke-width="2.5" d="M40 74 Q54 76 74 74"/>
-          <text x="60" y="115" text-anchor="middle" font-size="8" fill="#64748b">Película residual</text>
+          <g clip-path="url(#clipPoroPmp)">
+            <ellipse cx="60" cy="104" rx="22" ry="9" fill="rgba(56,189,248,0.95)" stroke="#0369a1" stroke-width="0.75"/>
+          </g>
+          <text x="60" y="115" text-anchor="middle" font-size="8" fill="#64748b">Mínimo agua retenida (película muy pequeña)</text>
         </svg>
       </div>
     </div>
@@ -315,20 +370,20 @@
 
   <div id="panel2" class="section-panel" role="tabpanel" aria-labelledby="tab2">
     <h2 class="section-h2">Triángulo de textura (USDA)</h2>
-    <p class="hint">Introduce arena, limo y arcilla (%). Deben sumar 100. Se dibujan las tres líneas de referencia que se cortan en tu punto y se estima la clase de textura (orientativa).</p>
+    <p class="hint">Introduce arena, limo y arcilla (%). Idealmente deben sumar 100%. Las zonas de color reproducen límites oficiales del triángulo USDA (vértices y polígonos como en soiltexture CRAN); el punto y la clase siguen ese mismo sistema.</p>
 
     <div class="tern-wrap">
       <div>
-        <div class="grid-form" style="grid-template-columns: 1fr;">
-          <div>
+        <div class="grid-form" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+          <div class="field-stack">
             <label class="f" for="pctSand">% Arena</label>
             <input class="in" type="number" id="pctSand" min="0" max="100" step="0.1" value="30" />
           </div>
-          <div>
+          <div class="field-stack">
             <label class="f" for="pctSilt">% Limo</label>
             <input class="in" type="number" id="pctSilt" min="0" max="100" step="0.1" value="40" />
           </div>
-          <div>
+          <div class="field-stack">
             <label class="f" for="pctClay">% Arcilla</label>
             <input class="in" type="number" id="pctClay" min="0" max="100" step="0.1" value="30" />
           </div>
@@ -343,16 +398,45 @@
           <div class="legend-line"><span class="sw" style="background:#16a34a;"></span> Línea de limo (constante limo)</div>
           <div class="legend-line"><span class="sw" style="background:#ca8a04;"></span> Línea de arcilla (constante arcilla)</div>
         </div>
+        <div class="particle-ref" aria-label="Referencia de tamaño de partículas">
+          <h4>Tamaño de partículas (referencia USDA / ISSS)</h4>
+          <table>
+            <thead>
+              <tr>
+                <th>Partícula</th>
+                <th>Diámetro (mm)</th>
+                <th>vs arcilla</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Arcilla</td>
+                <td>&lt; 0,002</td>
+                <td>Base (1×)</td>
+              </tr>
+              <tr>
+                <td>Limo</td>
+                <td>0,002 – 0,05</td>
+                <td><em>1 a 25×</em> más grande</td>
+              </tr>
+              <tr>
+                <td>Arena</td>
+                <td>0,05 – 2,0</td>
+                <td><em>25 a 1.000×</em> más grande</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <div class="class-out" id="textureClassOut">—</div>
       </div>
       <div class="chart-wrap" style="margin:0;">
-        <svg id="ternSvg" viewBox="-20 -10 560 490" xmlns="http://www.w3.org/2000/svg"></svg>
+        <svg id="ternSvg" viewBox="-55 -35 640 530" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
     </div>
   </div>
 
   <p class="foot-disclaimer">
-    NutriPlant PRO — material educativo. Los valores típicos de CC y PMP varían con estructura, materia orgánica y método de medición; la clasificación textual es aproximada (límites USDA). Combine con laboratorio y criterio local.
+    NutriPlant PRO — material educativo. Los valores típicos de CC y PMP varían con estructura, materia orgánica y método de medición; el triángulo de texturas sigue polígonos USDA estándar (referencia Soil Survey Manual / soiltexture). Combine con laboratorio y criterio local.
   </p>
 
   <script>
@@ -419,62 +503,122 @@
       '<span><strong>Agua disponible</strong> en el volumen: ' + adM3.toFixed(0) + ' m³</span>' +
       '<span><strong>Agua disponible real</strong> (× zona radical ' + rootEff + '%): ' + realM3.toFixed(0) + ' m³</span>';
 
-    drawChart(depth);
+    drawWaterBarChart(cc, pmp, depth);
   }
 
-  function drawChart(depthCm) {
+  function drawWaterBarChart(ccIn, pmpIn, depthCm) {
     var svg = document.getElementById('chartSvg');
-    var W = 640, H = 280, L = 52, R = 56, T = 28, B = 48;
-    var gw = W - L - R, gh = H - T - B;
-    var n = TEXTURE_SERIES.length;
-    var x0 = L, y0 = T + gh;
-    var dx = gw / (n - 1);
+    var oC = Math.max(0, ccIn);
+    var oP = Math.max(0, pmpIn);
+    var inverted = oP > oC + 0.001;
+    var cc = inverted ? oP : oC;
+    var pmp = inverted ? oC : oP;
+    var swapped = inverted;
+    var ad = Math.max(0, cc - pmp);
 
-    function xAt(i) { return x0 + i * dx; }
-    function yFromPct(p) { return y0 - (p / 40) * gh; }
+    var mmPmp = (oP / 100) * depthCm * 10;
+    var mmCc = (oC / 100) * depthCm * 10;
+    var mmAd = (Math.max(0, oC - oP) / 100) * depthCm * 10;
+
+    var rawMax = Math.max(cc + 10, pmp + 8, 38);
+    var maxScale = Math.min(62, Math.max(32, Math.ceil(rawMax / 5) * 5));
+    if (maxScale < cc + 5) maxScale = Math.ceil((cc + 5) / 5) * 5;
+
+    var wP = barSeg(pmp, maxScale);
+    var wAd = barSeg(ad, maxScale);
+    var wRm = Math.max(0, 1 - wP - wAd);
+
+    var W = 640;
+    var H = 250;
+    var padL = 54;
+    var padR = 108;
+    var barX = padL;
+    var barY = 96;
+    var barW = W - padL - padR;
+    var barH = 42;
+
+    var pxP = Math.max(wP > 0 && pmp > 0 ? 3 : 0, Math.round(wP * barW));
+    var pxA = Math.max(ad > 0 ? 3 : 0, Math.round(wAd * barW));
+    var pxRm = Math.max(0, barW - pxP - pxA);
+    var fix = pxP + pxA + pxRm - barW;
+    if (fix !== 0) pxRm -= fix;
 
     var parts = [];
+    parts.push('<defs>');
+    parts.push('<pattern id="patAirSalt" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(35)">');
+    parts.push('<path d="M0,0 L0,8" stroke="#cbd5e1" stroke-width="1"/></pattern>');
+    parts.push('<clipPath id="clipMainBar"><rect x="' + barX + '" y="' + barY + '" width="' + barW + '" height="' + barH + '" rx="10"/></clipPath>');
+    parts.push('</defs>');
     parts.push('<rect width="' + W + '" height="' + H + '" fill="#fafafa"/>');
-    parts.push('<text x="' + (W / 2) + '" y="18" text-anchor="middle" font-size="13" font-weight="700" fill="#1d4ed8">Contenido de agua por textura (referencia)</text>');
 
-    for (var g = 0; g <= 8; g++) {
-      var p = g * 5;
-      var y = yFromPct(p);
-      parts.push('<line x1="' + L + '" y1="' + y + '" x2="' + (W - R) + '" y2="' + y + '" stroke="#e2e8f0" stroke-width="1"/>');
-      parts.push('<text x="' + (L - 8) + '" y="' + (y + 4) + '" text-anchor="end" font-size="10" fill="#64748b">' + p + '</text>');
+    parts.push('<text x="' + (W / 2) + '" y="28" text-anchor="middle" font-size="14" font-weight="800" fill="#1e40af">Contenido hídrico según tus valores (CC y PMP)</text>');
+    if (swapped) {
+      parts.push('<text x="' + (W / 2) + '" y="46" text-anchor="middle" font-size="11" font-weight="600" fill="#b45309">Tu PMP (&gt;) tu CC · la barra se ordenó solo como referencia visual; corrige valores si fue un error.</text>');
+    } else {
+      parts.push('<text x="' + (W / 2) + '" y="46" text-anchor="middle" font-size="11" fill="#64748b">La barra apila proporciones hasta ' + maxScale + '% volumétrico de referencia (no es saturación máxima teórica del suelo).</text>');
     }
-    parts.push('<text x="' + (L - 8) + '" y="' + (T + 8) + '" text-anchor="end" font-size="10" font-weight="600" fill="#475569">% vol.</text>');
 
-    var mmMax = Math.ceil((40 / 100) * depthCm * 10 / 25) * 25;
-    for (var mm = 0; mm <= mmMax; mm += 25) {
-      var pctEquiv = mm / (depthCm * 10) * 100;
-      var y = yFromPct(Math.min(pctEquiv, 40));
-      parts.push('<text x="' + (W - R + 12) + '" y="' + (y + 3) + '" font-size="9" fill="#94a3b8">' + mm + '</text>');
+    parts.push('<text x="' + barX + '" y="' + (barY - 14) + '" font-size="12" font-weight="700" fill="#334155">Proporción de agua por estado (respecto a esta escala)</text>');
+
+    parts.push('<g clip-path="url(#clipMainBar)">');
+    parts.push('<rect x="' + barX + '" y="' + barY + '" width="' + barW + '" height="' + barH + '" fill="#f8fafc"/>');
+    var xCursor = barX;
+    if (pxP > 0) {
+      parts.push('<rect x="' + xCursor + '" y="' + barY + '" width="' + pxP + '" height="' + barH + '" fill="#172554"/>');
+      xCursor += pxP;
     }
-    parts.push('<text x="' + (W - 14) + '" y="' + (T + 8) + '" text-anchor="end" font-size="10" font-weight="600" fill="#475569">mm (' + depthCm + ' cm)</text>');
+    if (pxA > 0) {
+      parts.push('<rect x="' + xCursor + '" y="' + barY + '" width="' + pxA + '" height="' + barH + '" fill="#15803d"/>');
+      xCursor += pxA;
+    }
+    if (pxRm > 0) {
+      parts.push('<rect x="' + xCursor + '" y="' + barY + '" width="' + pxRm + '" height="' + barH + '" fill="url(#patAirSalt)" opacity="0.85"/>');
+      parts.push('<rect x="' + xCursor + '" y="' + barY + '" width="' + pxRm + '" height="' + barH + '" fill="rgba(226,232,240,0.35)"/>');
+    }
+    parts.push('</g>');
+    parts.push('<rect x="' + barX + '" y="' + barY + '" width="' + barW + '" height="' + barH + '" rx="10" fill="none" stroke="#64748b" stroke-width="2"/>');
 
-    var pathCC = '';
-    var pathPM = '';
-    TEXTURE_SERIES.forEach(function (tex, i) {
-      var x = xAt(i), ycc = yFromPct(tex.cc), ypm = yFromPct(tex.pmp);
-      parts.push('<text x="' + x + '" y="' + (H - B + 16) + '" text-anchor="middle" font-size="11" fill="#334155">' + tex.label + '</text>');
-      pathCC += (i === 0 ? 'M' : 'L') + x + ',' + ycc + ' ';
-      pathPM += (i === 0 ? 'M' : 'L') + x + ',' + ypm + ' ';
+    var tickY = barY + barH + 22;
+    [0, 0.25, 0.5, 0.75, 1].forEach(function (f, i) {
+      var gx = barX + f * barW;
+      parts.push('<line x1="' + gx + '" y1="' + (barY + barH + 4) + '" x2="' + gx + '" y2="' + (barY + barH + 10) + '" stroke="#64748b" stroke-width="1.5"/>');
+      var pct = Math.round(maxScale * f);
+      parts.push('<text x="' + gx + '" y="' + tickY + '" text-anchor="middle" font-size="10" fill="#475569">' + pct + '</text>');
     });
+    parts.push('<text x="' + (barX + barW / 2) + '" y="' + (tickY + 18) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#334155">% volumétrico de referencia (eje inferior)</text>');
 
-    parts.push('<path d="' + pathCC.trim() + '" fill="none" stroke="#2563eb" stroke-width="2.5"/>');
-    parts.push('<path d="' + pathPM.trim() + '" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-dasharray="6 4"/>');
+    parts.push('<g font-size="11" fill="#334155">');
+    var lx = barX + barW + 14;
+    var ly = barY + 4;
+    parts.push('<text x="' + lx + '" y="' + (ly += 14) + '" fill="#172554"><tspan font-weight="800">PMP:</tspan> ' + oP.toFixed(1) + '% vol.</text>');
+    parts.push('<text x="' + lx + '" y="' + (ly += 16) + '" fill="#475569">≈ ' + mmPmp.toFixed(1) + ' mm en ' + depthCm + ' cm</text>');
+    parts.push('<text x="' + lx + '" y="' + (ly += 22) + '" fill="#15803d"><tspan font-weight="800">CC:</tspan> ' + oC.toFixed(1) + '% vol.</text>');
+    parts.push('<text x="' + lx + '" y="' + (ly += 16) + '" fill="#475569">≈ ' + mmCc.toFixed(1) + ' mm en ' + depthCm + ' cm</text>');
+    parts.push('<text x="' + lx + '" y="' + (ly += 22) + '" fill="#0f766e"><tspan font-weight="800">Disponible (CC−PMP):</tspan> ' + Math.max(0, oC - oP).toFixed(1) + '% vol.</text>');
+    parts.push('<text x="' + lx + '" y="' + (ly += 16) + '" fill="#475569">≈ ' + mmAd.toFixed(1) + ' mm</text>');
+    parts.push('</g>');
 
-    TEXTURE_SERIES.forEach(function (tex, i) {
-      var x = xAt(i);
-      parts.push('<circle cx="' + x + '" cy="' + yFromPct(tex.cc) + '" r="4" fill="#2563eb"/>');
-      parts.push('<circle cx="' + x + '" cy="' + yFromPct(tex.pmp) + '" r="4" fill="#16a34a"/>');
-    });
+    function midLabel(xLeft, pw, txt) {
+      if (pw < 30 || !txt) return;
+      parts.push('<text x="' + (xLeft + pw / 2) + '" y="' + (barY + barH / 2 + 4) + '" text-anchor="middle" font-size="11" font-weight="800" fill="#ffffff" style="paint-order: stroke; stroke:rgba(15,23,42,0.35);stroke-width:3">' + txt + '</text>');
+    }
+    midLabel(barX, pxP, pxP >= 34 ? Math.round(oP) + '% PMP' : '');
+    midLabel(barX + pxP, pxA, pxA >= 34 ? '~' + Math.round(Math.max(0, oC - oP)) + '% disp.' : '');
 
-    parts.push('<line x1="' + L + '" y1="' + y0 + '" x2="' + (W - R) + '" y2="' + y0 + '" stroke="#cbd5e1"/>');
-    parts.push('<text x="' + (L + 8) + '" y="' + (T + gh / 2) + '" font-size="11" fill="#2563eb">● CC</text>');
-    parts.push('<text x="' + (L + 52) + '" y="' + (T + gh / 2) + '" font-size="11" fill="#16a34a">● PMP</text>');
+    var legY = barY + barH + 54;
+    parts.push('<g font-size="10">');
+    parts.push('<rect x="' + barX + '" y="' + legY + '" width="438" height="54" rx="10" fill="#fff" stroke="#94a3b8" stroke-width="1.5"/>');
+    parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 20) + '" r="6" fill="#172554"/><text x="' + (barX + 28) + '" y="' + (legY + 23) + '" fill="#334155"><tspan font-weight="700">Oscuro:</tspan> agua muy retenida (PMP).</text>');
+    parts.push('<circle cx="' + (barX + 15) + '" cy="' + (legY + 39) + '" r="6" fill="#15803d"/><text x="' + (barX + 28) + '" y="' + (legY + 42) + '" fill="#334155"><tspan font-weight="700">Verde:</tspan> agua típicamente útil hasta CC.</text>');
+    parts.push('<rect x="' + (barX + 288) + '" y="' + (legY + 33) + '" width="36" height="12" rx="3" fill="url(#patAirSalt)" stroke="#94a3b8"/><text x="' + (barX + 330) + '" y="' + (legY + 42) + '" fill="#64748b">Resto (aire/es)</text>');
+    parts.push('</g>');
+
     svg.innerHTML = parts.join('');
+  }
+
+  function barSeg(vPct, scaleMax) {
+    if (!scaleMax) return 0;
+    return Math.min(1, Math.max(0, vPct / scaleMax));
   }
 
   ['cc', 'pmp', 'depth', 'areaHa', 'rootEff'].forEach(function (id) {
@@ -482,7 +626,7 @@
   });
   updateWater();
 
-  /* —— Triángulo USDA —— */
+  /* —— Triángulo USDA (polígonos tt.points / tt.polygons del paquete R soiltexture, CRAN) —— */
   var BL = { x: 70, y: 420 };
   var BR = { x: 470, y: 420 };
   var TP = { x: 270, y: 70 };
@@ -492,59 +636,113 @@
     return { x: ns * BL.x + ni * BR.x + nc * TP.x, y: ns * BL.y + ni * BR.y + nc * TP.y };
   }
 
-  function lineConstClay(clay, col) {
-    var pL = xyBar(100 - clay, 0, clay);
-    var pR = xyBar(0, 100 - clay, clay);
-    return '<line x1="' + pL.x + '" y1="' + pL.y + '" x2="' + pR.x + '" y2="' + pR.y + '" stroke="' + col + '" stroke-width="2.5"/>';
-  }
-  function lineConstSand(sand, col) {
-    var pLeft = xyBar(sand, 0, 100 - sand);
-    var pBot = xyBar(sand, 100 - sand, 0);
-    return '<line x1="' + pLeft.x + '" y1="' + pLeft.y + '" x2="' + pBot.x + '" y2="' + pBot.y + '" stroke="' + col + '" stroke-width="2.5"/>';
-  }
-  function lineConstSilt(silt, col) {
-    var pBot = xyBar(100 - silt, silt, 0);
-    var pRight = xyBar(0, silt, 100 - silt);
-    return '<line x1="' + pBot.x + '" y1="' + pBot.y + '" x2="' + pRight.x + '" y2="' + pRight.y + '" stroke="' + col + '" stroke-width="2.5"/>';
-  }
-
-  /** Centroid references for Spanish USDA-style labels — orientative */
-  var REFS = [
-    { es: 'Arena', s: 93, si: 5, c: 2 },
-    { es: 'Arena franca', s: 80, si: 13, c: 7 },
-    { es: 'Franco arenoso', s: 63, si: 29, c: 8 },
-    { es: 'Franco', s: 40, si: 40, c: 20 },
-    { es: 'Franco limoso', s: 25, si: 58, c: 17 },
-    { es: 'Limo', s: 12, si: 80, c: 8 },
-    { es: 'Franco arcilloso arenoso', s: 53, si: 25, c: 22 },
-    { es: 'Franco arcilloso', s: 32, si: 36, c: 32 },
-    { es: 'Franco arcilloso limoso', s: 13, si: 53, c: 34 },
-    { es: 'Arcilloso arenoso', s: 52, si: 16, c: 32 },
-    { es: 'Arcilloso limoso', s: 17, si: 43, c: 40 },
-    { es: 'Arcilla', s: 28, si: 26, c: 46 }
+  /** 26 vértices; fracciones (arcilla, limo, arena) coherentes suma≈1 (índices = P01…P26 en soiltexture). */
+  var USDA_PTS_CSS = [
+    [0.55, 0, 0.45], [0.6, 0.4, 0], [0.35, 0, 0.65], [0.35, 0.2, 0.45],
+    [0.4, 0.15, 0.45], [0.4, 0.4, 0.2], [0.4, 0.6, 0], [0.2, 0, 0.8],
+    [0.2, 0.275, 0.525], [0.275, 0.275, 0.45], [0.275, 0.5, 0.225], [0.275, 0.525, 0.2],
+    [0.275, 0.725, 0], [0.15, 0, 0.85], [0.1, 0, 0.9], [0.075, 0.4, 0.525],
+    [0.075, 0.5, 0.425], [0.125, 0.8, 0.075], [0.125, 0.875, 0], [0, 0.15, 0.85],
+    [0, 0.3, 0.7], [0, 0.5, 0.5], [0, 0.8, 0.2], [1, 0, 0], [0, 0, 1], [0, 1, 0]
   ];
 
-  function classifySandSiltClay(sand, silt, clay) {
-    var tot = sand + silt + clay;
-    if (tot < 0.001) return { label: '—' };
-    var s = sand * 100 / tot;
-    var si = silt * 100 / tot;
-    var c = clay * 100 / tot;
-    if (s >= 88 && si + c <= 15) return { label: 'Arena' };
-    if (si >= 82 && s <= 14 && c <= 14) return { label: 'Limo' };
-    if (c >= 52 && si <= 25) return { label: 'Arcilla' };
+  /** Polígonos oficiales: índices 0-based a USDA_PTS_CSS (orden = soiltexture USDA.TT $tt.polygons). */
+  var USDA_REGIONS = [
+    { key: 'Cl', label: 'Arcilla', ix: [23, 0, 4, 5, 1], fill: '#ebb0b0', fz: 8 },
+    { key: 'SiCl', label: 'Arcilloso limoso', ix: [1, 5, 6], fill: '#d9cee8', fz: 9 },
+    { key: 'SaCl', label: 'Arcilloso arenoso', ix: [0, 2, 3, 4], fill: '#6f7a82', fz: 8 },
+    { key: 'ClLo', label: 'Franco arcilloso', ix: [4, 3, 9, 10, 11, 5], fill: '#d4a068', fz: 8 },
+    { key: 'SiClLo', label: 'Franco arcilloso limoso', ix: [5, 11, 12, 6], fill: '#a8cce4', fz: 8 },
+    { key: 'SaClLo', label: 'Franco arcilloso arenoso', ix: [2, 7, 8, 9, 3], fill: '#a8b8cc', fz: 8 },
+    { key: 'Lo', label: 'Franco', ix: [9, 8, 15, 16, 10], fill: '#e6ddc8', fz: 8 },
+    { key: 'SiLo', label: 'Franco limoso', ix: [10, 16, 21, 22, 17, 18, 12, 11], fill: '#bfe4bc', fz: 8 },
+    { key: 'SaLo', label: 'Franco arenoso', ix: [7, 13, 20, 21, 16, 15, 8], fill: '#d4cce8', fz: 8 },
+    { key: 'Si', label: 'Limo', ix: [17, 22, 25, 18], fill: '#f7f4c8', fz: 8 },
+    { key: 'LoSa', label: 'Arena franca', ix: [13, 14, 19, 20], fill: '#e4d4a8', fz: 8 },
+    { key: 'Sa', label: 'Arena', ix: [14, 24, 19], fill: '#f2a848', fz: 9 }
+  ];
 
-    var best = REFS[0];
-    var bestD = Infinity;
-    for (var i = 0; i < REFS.length; i++) {
-      var r = REFS[i];
-      var d = Math.pow(s - r.s, 2) + Math.pow(si - r.si, 2) + Math.pow(c - r.c, 2);
-      if (d < bestD) {
-        bestD = d;
-        best = r;
+  function cssXY(row) {
+    var c = row[0], si = row[1], s = row[2];
+    return xyBar(s * 100, si * 100, c * 100);
+  }
+
+  function polyPath(ix) {
+    var d = '';
+    for (var i = 0; i < ix.length; i++) {
+      var p = cssXY(USDA_PTS_CSS[ix[i]]);
+      d += (i ? ' L ' : 'M ') + p.x + ',' + p.y;
+    }
+    return d + ' Z';
+  }
+
+  function polyCentroid(ix) {
+    var v = ix.map(function (j) {
+      return cssXY(USDA_PTS_CSS[j]);
+    });
+    var a = 0, cx = 0, cy = 0, n = v.length;
+    for (var i = 0; i < n; i++) {
+      var j = (i + 1) % n;
+      var cross = v[i].x * v[j].y - v[j].x * v[i].y;
+      a += cross;
+      cx += (v[i].x + v[j].x) * cross;
+      cy += (v[i].y + v[j].y) * cross;
+    }
+    a *= 0.5;
+    if (Math.abs(a) < 1e-9) return { x: v[0].x, y: v[0].y };
+    return { x: cx / (6 * a), y: cy / (6 * a) };
+  }
+
+  function pointInPoly(pt, verts) {
+    var x = pt.x, y = pt.y;
+    var ins = false;
+    for (var i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+      var xi = verts[i].x, yi = verts[i].y;
+      var xj = verts[j].x, yj = verts[j].y;
+      var inter = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi + 1e-12) + xi;
+      if (inter) ins = !ins;
+    }
+    return ins;
+  }
+
+  function classifyUSDAFrac(sFrac, siFrac, cFrac) {
+    if (!(sFrac + siFrac + cFrac)) return '—';
+    if (Math.abs(sFrac + siFrac + cFrac - 1) > 0.02) return '—';
+    var pt = xyBar(sFrac * 100, siFrac * 100, cFrac * 100);
+    for (var r = 0; r < USDA_REGIONS.length; r++) {
+      var reg = USDA_REGIONS[r];
+      var verts = reg.ix.map(function (j) {
+        return cssXY(USDA_PTS_CSS[j]);
+      });
+      if (pointInPoly(pt, verts)) return reg.label;
+    }
+    var bestLab = USDA_REGIONS[0].label;
+    var bd = Infinity;
+    for (var k = 0; k < USDA_REGIONS.length; k++) {
+      var cen = polyCentroid(USDA_REGIONS[k].ix);
+      var d = (cen.x - pt.x) * (cen.x - pt.x) + (cen.y - pt.y) * (cen.y - pt.y);
+      if (d < bd) {
+        bd = d;
+        bestLab = USDA_REGIONS[k].label;
       }
     }
-    return { label: best.es };
+    return bestLab;
+  }
+
+  function lineConstClayPct(clay, col, sw) {
+    var pL = xyBar(100 - clay, 0, clay);
+    var pR = xyBar(0, 100 - clay, clay);
+    return '<line x1="' + pL.x + '" y1="' + pL.y + '" x2="' + pR.x + '" y2="' + pR.y + '" stroke="' + col + '" stroke-width="' + sw + '"/>';
+  }
+  function lineConstSandPct(sand, col, sw) {
+    var pLeft = xyBar(sand, 0, 100 - sand);
+    var pBot = xyBar(sand, 100 - sand, 0);
+    return '<line x1="' + pLeft.x + '" y1="' + pLeft.y + '" x2="' + pBot.x + '" y2="' + pBot.y + '" stroke="' + col + '" stroke-width="' + sw + '"/>';
+  }
+  function lineConstSiltPct(silt, col, sw) {
+    var pBot = xyBar(100 - silt, silt, 0);
+    var pRight = xyBar(0, silt, 100 - silt);
+    return '<line x1="' + pBot.x + '" y1="' + pBot.y + '" x2="' + pRight.x + '" y2="' + pRight.y + '" stroke="' + col + '" stroke-width="' + sw + '"/>';
   }
 
   function drawTernary() {
@@ -555,8 +753,13 @@
     var sum = sand + silt + clay;
     var warn = document.getElementById('sumWarn');
 
-    var out = classifySandSiltClay(sand, silt, clay);
-    document.getElementById('textureClassOut').textContent = 'Textura estimada: ' + out.label;
+    var sN = sand * 100 / (sum || 1);
+    var siN = silt * 100 / (sum || 1);
+    var cN = clay * 100 / (sum || 1);
+    var frac = sum > 0 ? { s: sand / sum, si: silt / sum, c: clay / sum } : { s: 0, si: 0, c: 0 };
+    var outLabel = classifyUSDAFrac(frac.s, frac.si, frac.c);
+
+    document.getElementById('textureClassOut').textContent = 'Textura estimada: ' + outLabel;
 
     if (sum > 0 && Math.abs(sum - 100) > 1) {
       warn.textContent = 'La suma es ' + sum.toFixed(1) + '%. Usa «Normalizar a 100%» o ajusta los valores.';
@@ -565,39 +768,89 @@
       warn.classList.remove('visible');
     }
 
-    sand = sand * 100 / (sum || 1);
-    silt = silt * 100 / (sum || 1);
-    clay = clay * 100 / (sum || 1);
-
-    var p = xyBar(sand, silt, clay);
+    var p = xyBar(sN, siN, cN);
     var h = '';
 
     var triPath = 'M ' + BL.x + ',' + BL.y + ' L ' + BR.x + ',' + BR.y + ' L ' + TP.x + ',' + TP.y + ' Z';
-    h += '<defs><clipPath id="triClip"><path d="' + triPath + '"/></clipPath></defs>';
-    h += '<path d="' + triPath + '" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>';
+    h += '<defs><clipPath id="triClipTer"><path d="' + triPath + '"/></clipPath></defs>';
 
-    h += '<g font-size="11" fill="#64748b">';
-    h += '<text x="' + (BL.x - 8) + '" y="' + (BL.y + 18) + '" text-anchor="end">Arena 100%</text>';
-    h += '<text x="' + (BR.x + 8) + '" y="' + (BR.y + 18) + '">Limo 100%</text>';
-    h += '<text x="' + (TP.x - 4) + '" y="' + (TP.y - 12) + '" text-anchor="middle">Arcilla 100%</text>';
+    h += '<g clip-path="url(#triClipTer)">';
+    for (var ri = 0; ri < USDA_REGIONS.length; ri++) {
+      var R = USDA_REGIONS[ri];
+      h += '<path d="' + polyPath(R.ix) + '" fill="' + R.fill + '" stroke="rgba(15,23,42,0.12)" stroke-width="0.6"/>';
+    }
+    h += '</g>';
+
+    /* Rejilla 10 % dentro del clip */
+    h += '<g clip-path="url(#triClipTer)" stroke="#94a3b8" stroke-width="0.45" opacity="0.55">';
+    for (var k = 1; k < 10; k++) {
+      h += lineConstClayPct(k * 10, '#94a3b8', 0.45);
+      h += lineConstSandPct(k * 10, '#94a3b8', 0.45);
+      h += lineConstSiltPct(k * 10, '#94a3b8', 0.45);
+    }
+    h += '</g>';
+
+    /* Rótulos de clase (dentro del triángulo) */
+    h += '<g clip-path="url(#triClipTer)" pointer-events="none">';
+    for (var tj = 0; tj < USDA_REGIONS.length; tj++) {
+      var T = USDA_REGIONS[tj];
+      var cPt = polyCentroid(T.ix);
+      h += '<text x="' + cPt.x.toFixed(1) + '" y="' + cPt.y.toFixed(1) + '" text-anchor="middle" dominant-baseline="middle" fill="#1e293b" opacity="0.78" font-size="' + T.fz + '" font-weight="700" style="paint-order: stroke; stroke:rgba(248,250,252,0.92);stroke-width:2">' + T.label + '</text>';
+    }
+    h += '</g>';
+
+    /* Contorno fuerte sobre la rejilla */
+    h += '<path d="' + triPath + '" fill="none" stroke="#475569" stroke-width="2.2"/>';
+
+    /* Marcos de % sobre los tres lados (afuera del contorno típico) */
+    function tickLbl(pt, pct, tangentDeg, ax) {
+      var off = ax === 'bot' ? { x: 0, y: 16 } : ax === 'left' ? { x: -10, y: -4 } : { x: 10, y: -4 };
+      var lx = pt.x + off.x;
+      var ly = pt.y + off.y;
+      return '<text transform="translate(' + lx + ',' + ly + ') rotate(' + tangentDeg + ')" text-anchor="middle" font-size="8" fill="#64748b">' + pct + '</text>';
+    }
+
+    h += '<g font-size="9" fill="#475569" font-weight="600">';
+    for (var b = 0; b <= 100; b += 10) {
+      var pb = xyBar(b, 100 - b, 0);
+      h += '<line x1="' + pb.x + '" y1="' + pb.y + '" x2="' + pb.x + '" y2="' + (pb.y + 10) + '" stroke="#94a3b8" stroke-width="0.8"/>';
+      if (b > 0 && b < 100) h += tickLbl(pb, b, 0, 'bot');
+    }
+    for (var r = 0; r <= 100; r += 10) {
+      var pr = xyBar(0, r, 100 - r);
+      h += '<line x1="' + pr.x + '" y1="' + pr.y + '" x2="' + (pr.x + 9) + '" y2="' + (pr.y - 5) + '" stroke="#94a3b8" stroke-width="0.8"/>';
+      if (r > 0 && r < 100) h += tickLbl(pr, r, 60, 'right');
+    }
+    for (var le = 0; le <= 100; le += 10) {
+      var pl = xyBar(100 - le, 0, le);
+      h += '<line x1="' + pl.x + '" y1="' + pl.y + '" x2="' + (pl.x - 9) + '" y2="' + (pl.y - 5) + '" stroke="#94a3b8" stroke-width="0.8"/>';
+      if (le > 0 && le < 100) h += tickLbl(pl, le, -60, 'left');
+    }
+    h += '</g>';
+
+    /* Nombres de ejes: arena abajo, arcilla izquierda, limo derecha (convención USDA en figuras). */
+    h += '<g font-family="inherit">';
+    h += '<text x="270" y="468" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">Arena (%)</text>';
+    h += '<text transform="translate(128,274) rotate(-60)" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">Arcilla (%)</text>';
+    h += '<text transform="translate(422,274) rotate(60)" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">Limo (%)</text>';
+    h += '</g>';
+
+    /* Vértices 100 % (referencia rápida) */
+    h += '<g fill="#475569" font-size="11" font-weight="700">';
+    h += '<text x="' + (BL.x - 12) + '" y="' + (BL.y + 28) + '" text-anchor="end">Arena 100</text>';
+    h += '<text x="' + (BR.x + 34) + '" y="' + (BR.y + 28) + '" text-anchor="start">Limo 100</text>';
+    h += '<text x="' + TP.x + '" y="' + (TP.y - 18) + '" text-anchor="middle">Arcilla 100</text>';
     h += '</g>';
 
     var colSand = '#2563eb';
     var colSilt = '#16a34a';
     var colClay = '#ca8a04';
 
-    h += '<g clip-path="url(#triClip)" stroke-linecap="round">';
-    var origSand = parseFloat(document.getElementById('pctSand').value) || 0;
-    var origSi = parseFloat(document.getElementById('pctSilt').value) || 0;
-    var origC = parseFloat(document.getElementById('pctClay').value) || 0;
-    var oSum = origSand + origSi + origC;
-    if (oSum > 0) {
-      var os = origSand * 100 / oSum;
-      var oi = origSi * 100 / oSum;
-      var oc = origC * 100 / oSum;
-      h += lineConstClay(oc, colClay);
-      h += lineConstSand(os, colSand);
-      h += lineConstSilt(oi, colSilt);
+    h += '<g clip-path="url(#triClipTer)" stroke-linecap="round" stroke-linejoin="round">';
+    if (sum > 0) {
+      h += lineConstClayPct(cN, colClay, '2.5');
+      h += lineConstSandPct(sN, colSand, '2.5');
+      h += lineConstSiltPct(siN, colSilt, '2.5');
     }
     h += '</g>';
 
@@ -605,7 +858,7 @@
       h += '<circle cx="' + p.x + '" cy="' + p.y + '" r="7" fill="#0f172a" stroke="#fff" stroke-width="2"/>';
     }
 
-    h += '<text x="' + (270) + '" y="' + (455) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">Triángulo de texturas agrícolas (referencia)</text>';
+    h += '<text x="270" y="506" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">Triángulo de texturas agrícolas USDA (referencia)</text>';
 
     svg.innerHTML = h;
   }
