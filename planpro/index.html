@@ -1528,7 +1528,8 @@
       max-height: min(55vh, 440px);
       overflow: auto;
       overscroll-behavior: contain;
-      padding: 4px 0;
+      padding: 4px 0 12px;
+      scroll-padding-bottom: 12px;
       border-radius: 10px;
       background: rgba(248, 250, 252, 0.92);
       border: 1px solid rgba(15, 23, 42, 0.07);
@@ -1767,6 +1768,11 @@
         0 12px 28px rgba(15, 23, 42, 0.12);
       z-index: 40;
       list-style: none;
+    }
+    /* Sin espacio abajo (lista cortada por overflow): abrir hacia arriba dentro del árbol. */
+    .np-tree-menu.np-tree-menu--above {
+      top: auto;
+      bottom: calc(100% + 3px);
     }
     .np-tree-menu-item {
       display: block;
@@ -4440,7 +4446,44 @@
     if (!m) return;
     m.querySelectorAll('.np-tree-menu').forEach(function (el) {
       el.classList.add('np-hide');
+      el.classList.remove('np-tree-menu--above');
     });
+    m.querySelectorAll('.np-tree-btn-more').forEach(function (btn) {
+      btn.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  /** Menú ⋯ del árbol: evita que quede recortado por overflow del panel (#npTreeMount). */
+  function adjustTreeMenuFlip(menuEl, wrapEl) {
+    if (!menuEl || !wrapEl) return;
+    menuEl.classList.remove('np-tree-menu--above');
+    var mount = $('npTreeMount');
+    if (!mount) return;
+    requestAnimationFrame(function () {
+      var mRect = mount.getBoundingClientRect();
+      var wRect = wrapEl.getBoundingClientRect();
+      var menuH = menuEl.offsetHeight || 112;
+      var gap = 6;
+      var spaceBelow = mRect.bottom - wRect.bottom - gap;
+      var spaceAbove = wRect.top - mRect.top - gap;
+      if (spaceBelow < menuH && spaceAbove >= spaceBelow) {
+        menuEl.classList.add('np-tree-menu--above');
+      }
+    });
+  }
+
+  function revealTreeMenuInMount(menuEl) {
+    var mount = $('npTreeMount');
+    if (!mount || !menuEl || menuEl.classList.contains('np-hide')) return;
+    var mRect = mount.getBoundingClientRect();
+    var uRect = menuEl.getBoundingClientRect();
+    var pad = 10;
+    if (uRect.bottom > mRect.bottom - pad) {
+      mount.scrollTop += uRect.bottom - (mRect.bottom - pad);
+    }
+    if (uRect.top < mRect.top + pad) {
+      mount.scrollTop -= (mRect.top + pad) - uRect.top;
+    }
   }
 
   function closeAllLedgerTemplateMenus() {
@@ -9283,7 +9326,17 @@
       e.stopPropagation();
       var wasHidden = menu.classList.contains('np-hide');
       closeAllTreeMenus();
-      if (wasHidden) menu.classList.remove('np-hide');
+      if (wasHidden) {
+        menu.classList.remove('np-hide');
+        btnMore.setAttribute('aria-expanded', 'true');
+        adjustTreeMenuFlip(menu, menuWrap);
+        requestAnimationFrame(function () {
+          revealTreeMenuInMount(menu);
+          requestAnimationFrame(function () {
+            revealTreeMenuInMount(menu);
+          });
+        });
+      }
     });
 
     menu.appendChild(btnRename);
