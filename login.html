@@ -318,6 +318,16 @@
           <span class="calculator-icon">🌱</span>
           <span class="button-text">N mineralizable desde materia orgánica</span>
         </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showSoilWaterTextureTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🪨</span>
+          <span class="button-text">Agua disponible en el suelo y textura (triángulo)</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerSolubilitySaltTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🧂</span>
+          <span class="button-text">Solubilidad e índice salino (fertilizantes solubles)</span>
+        </button>
         
         <!-- Footer: copyright y nota técnica -->
         <div style="
@@ -1351,6 +1361,26 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showSoilWaterTextureTool() {
+      document.getElementById('soilWaterTextureToolModal').style.display = 'flex';
+    }
+    function closeSoilWaterTextureTool() {
+      const modal = document.getElementById('soilWaterTextureToolModal');
+      const frame = document.getElementById('soilWaterTextureToolFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
+    function showFertilizerSolubilitySaltTool() {
+      document.getElementById('fertilizerSolubilitySaltModal').style.display = 'flex';
+    }
+    function closeFertilizerSolubilitySaltTool() {
+      const modal = document.getElementById('fertilizerSolubilitySaltModal');
+      const frame = document.getElementById('fertilizerSolubilitySaltFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     function clearNutrientUnitsCalculator() {
       const inputs = document.querySelectorAll('#nutrientUnitsCalculatorModal input');
       inputs.forEach(input => input.value = '');
@@ -1556,6 +1586,14 @@
       const nMineralizableMoModal = document.getElementById('nMineralizableMoCalculatorModal');
       if (e.target === nMineralizableMoModal) {
         closeNMineralizableMoCalculator();
+      }
+      const soilWaterTextureModal = document.getElementById('soilWaterTextureToolModal');
+      if (e.target === soilWaterTextureModal) {
+        closeSoilWaterTextureTool();
+      }
+      const fertilizerSolubilitySaltModal = document.getElementById('fertilizerSolubilitySaltModal');
+      if (e.target === fertilizerSolubilitySaltModal) {
+        closeFertilizerSolubilitySaltTool();
       }
       const extraccionEtapaModal = document.getElementById('extraccionEtapaCalculatorModal');
       if (e.target === extraccionEtapaModal) {
@@ -2214,6 +2252,31 @@
       </div>
       <div class="modal-body">
         <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html" title="N mineralizable desde materia orgánica"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal agua disponible / triángulo de textura -->
+  <div id="soilWaterTextureToolModal" class="modal-overlay">
+    <div class="modal modal-fertilizer-composition">
+      <div class="modal-header">
+        <h2 class="modal-title">🪨 Agua disponible en el suelo y triángulo de textura</h2>
+        <button class="modal-close" onclick="closeSoilWaterTextureTool()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html" title="Agua disponible en el suelo y textura"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div id="fertilizerSolubilitySaltModal" class="modal-overlay">
+    <div class="modal modal-fertilizer-composition">
+      <div class="modal-header">
+        <h2 class="modal-title">🧂 Solubilidad e índice salino (fertilizantes solubles)</h2>
+        <button class="modal-close" onclick="closeFertilizerSolubilitySaltTool()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html" title="Solubilidad e índice salino"></iframe>
       </div>
     </div>
   </div>

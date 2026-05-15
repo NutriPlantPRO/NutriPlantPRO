@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agua disponible en el suelo y textura — NutriPlant PRO</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --blue: #2563eb;
+      --blue-soft: #eff6ff;
+      --green: #15803d;
+      --green-soft: #ecfdf5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 12px 12px 28px;
+      background: var(--bg);
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .lead {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 58rem;
+    }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .tabs button {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #334155;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .tabs button[aria-selected="true"] {
+      background: var(--blue-soft);
+      border-color: #93c5fd;
+      color: #1e40af;
+    }
+    .section-panel {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, .06);
+    }
+    .section-panel.active { display: block; }
+    .section-h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+    label.f {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+    input.in, select.sel {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .grid-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .calc-box {
+      background: linear-gradient(180deg, #e0f2fe 0%, #dbeafe 100%);
+      border: 1px solid #7dd3fc;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 12px 0;
+    }
+    .calc-box h3 {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
+      color: #0369a1;
+    }
+    .calc-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      font-size: 13px;
+      color: #0c4a6e;
+    }
+    .calc-row strong { color: #0369a1; }
+    .note-drop {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(56, 189, 248, 0.5);
+      font-size: 12px;
+      color: #075985;
+      line-height: 1.4;
+    }
+    .viz-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .viz-card {
+      text-align: center;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .viz-card svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+    .viz-title { font-weight: 700; color: #1e293b; margin-bottom: 4px; font-size: 12px; }
+    .chart-wrap {
+      overflow-x: auto;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+    }
+    #chartSvg { display: block; min-width: 520px; width: 100%; height: auto; }
+    .tern-wrap {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    @media (min-width: 900px) {
+      .tern-wrap { grid-template-columns: minmax(200px, 280px) 1fr; }
+    }
+    .legend-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    .sw { width: 18px; height: 4px; border-radius: 2px; flex-shrink: 0; }
+    .class-out {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--green-soft);
+      border: 1px solid #86efac;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--green);
+    }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    button.btn-sm {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #334155;
+    }
+    button.btn-sm:hover { background: #f1f5f9; }
+    .foot-disclaimer {
+      margin-top: 16px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 58rem;
+    }
+    #sumWarn {
+      font-size: 12px;
+      color: #b45309;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      padding: 8px;
+      border-radius: 8px;
+      margin-top: 8px;
+      display: none;
+    }
+    #sumWarn.visible { display: block; }
+  </style>
+</head>
+<body>
+  <h1>Agua disponible en el suelo y triángulo de texturas</h1>
+  <p class="lead">Referencia práctica NutriPlant PRO: volumen de agua disponible por hectárea según capacidad de campo (CC), punto de marchitez permanente (PMP) y exploración radical; clasificación textual USDA en español con triángulo ternario interactivo.</p>
+
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tab1" aria-selected="true" aria-controls="panel1">1 · Agua disponible</button>
+    <button type="button" role="tab" id="tab2" aria-selected="false" aria-controls="panel2">2 · Triángulo de textura</button>
+  </div>
+
+  <div id="panel1" class="section-panel active" role="tabpanel" aria-labelledby="tab1">
+    <h2 class="section-h2">Cálculo y curvas de referencia por textura</h2>
+    <p class="hint">Selecciona una textura de referencia para precargar CC y PMP (valores típicos ilustrativos), o introduce los tuyos. El volumen de suelo es área × profundidad (1 ha × 30 cm = 3 000 m³).</p>
+
+    <div class="grid-form">
+      <div>
+        <label class="f" for="presetTex">Textura de referencia (CC / PMP)</label>
+        <select class="sel" id="presetTex"></select>
+      </div>
+      <div>
+        <label class="f" for="cc">Capacidad de campo CC (% vol.)</label>
+        <input class="in" type="number" id="cc" min="0" max="60" step="0.1" value="30" />
+      </div>
+      <div>
+        <label class="f" for="pmp">Punto de marchitez PMP (% vol.)</label>
+        <input class="in" type="number" id="pmp" min="0" max="50" step="0.1" value="20" />
+      </div>
+      <div>
+        <label class="f" for="depth">Profundidad de suelo (cm)</label>
+        <input class="in" type="number" id="depth" min="1" max="200" step="1" value="30" />
+      </div>
+      <div>
+        <label class="f" for="areaHa">Área (ha)</label>
+        <input class="in" type="number" id="areaHa" min="0.01" max="10000" step="0.01" value="1" />
+      </div>
+      <div>
+        <label class="f" for="rootEff">Zona radical efectiva (%)</label>
+        <input class="in" type="number" id="rootEff" min="1" max="100" step="1" value="60" />
+      </div>
+    </div>
+
+    <div class="calc-box" id="waterResults">
+      <h3>Resultados (actualizado al cambiar valores)</h3>
+      <div class="calc-row" id="calcLines"></div>
+      <div class="note-drop">
+        <span aria-hidden="true" style="font-size:18px;">💧</span>
+        <span>Este valor indica cuánta agua puede almacenar el suelo para el cultivo antes de requerir riego (referencia; validar en campo).</span>
+      </div>
+    </div>
+
+    <p class="hint">Curvas: contenido volumétrico de agua (%). La derecha muestra lámina equivalente para la profundidad indicada (mm).</p>
+    <div class="chart-wrap">
+      <svg id="chartSvg" viewBox="0 0 640 280" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <h3 class="section-h2" style="margin-top:18px;font-size:0.92rem;">Ayuda visual: saturación · CC · PMP</h3>
+    <div class="viz-row">
+      <div class="viz-card">
+        <div class="viz-title">Punto de saturación</div>
+        <svg viewBox="0 0 120 120" width="140" aria-hidden="true">
+          <circle cx="60" cy="60" r="52" fill="#faf8f5" stroke="#e2e8f0"/>
+          <circle cx="40" cy="45" r="12" fill="#a67c52" stroke="#7c5738"/>
+          <circle cx="75" cy="40" r="11" fill="#a67c52" stroke="#7c5738"/>
+          <circle cx="55" cy="75" r="13" fill="#a67c52" stroke="#7c5738"/>
+          <circle cx="85" cy="72" r="10" fill="#a67c52" stroke="#7c5738"/>
+          <ellipse cx="60" cy="58" rx="48" ry="42" fill="rgba(56,189,248,0.85)"/>
+          <text x="60" y="115" text-anchor="middle" font-size="8" fill="#64748b">Todo el poro con agua</text>
+        </svg>
+      </div>
+      <div class="viz-card">
+        <div class="viz-title">Capacidad de campo (CC)</div>
+        <svg viewBox="0 0 120 120" width="140" aria-hidden="true">
+          <circle cx="60" cy="60" r="52" fill="#faf8f5" stroke="#e2e8f0"/>
+          <circle cx="42" cy="48" r="12" fill="#a67c52" stroke="#7c5738"/>
+          <circle cx="78" cy="44" r="11" fill="#a67c52" stroke="#7c5738"/>
+          <circle cx="58" cy="78" r="13" fill="#a67c52" stroke="#7c5738"/>
+          <circle cx="82" cy="70" r="10" fill="#a67c52" stroke="#7c5738"/>
+          <path fill="rgba(125,211,252,0.95)" stroke="#38bdf8" d="M18 72 Q55 52 92 74 Q105 92 92 98 Q52 112 28 94 Q14 82 18 72"/>
+          <circle cx="48" cy="62" r="4" fill="#fff" stroke="#cbd5e1"/>
+          <circle cx="72" cy="68" r="3" fill="#fff" stroke="#cbd5e1"/>
+          <text x="60" y="115" text-anchor="middle" font-size="8" fill="#64748b">Agua disponible + aire</text>
+        </svg>
+      </div>
+      <div class="viz-card">
+        <div class="viz-title">Marchitez permanente (PMP)</div>
+        <svg viewBox="0 0 120 120" width="140" aria-hidden="true">
+          <circle cx="60" cy="60" r="52" fill="#faf8f5" stroke="#e2e8f0"/>
+          <circle cx="42" cy="48" r="12" fill="#a67c52" stroke="#7c5738"/>
+          <circle cx="78" cy="44" r="11" fill="#a67c52" stroke="#7c5738"/>
+          <circle cx="58" cy="78" r="13" fill="#a67c52" stroke="#7c5738"/>
+          <circle cx="82" cy="70" r="10" fill="#a67c52" stroke="#7c5738"/>
+          <path fill="none" stroke="#0369a1" stroke-width="3" d="M32 52 Q42 58 54 62 Q70 54 88 52"/>
+          <path fill="none" stroke="#0369a1" stroke-width="2.5" d="M40 74 Q54 76 74 74"/>
+          <text x="60" y="115" text-anchor="middle" font-size="8" fill="#64748b">Película residual</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel2" class="section-panel" role="tabpanel" aria-labelledby="tab2">
+    <h2 class="section-h2">Triángulo de textura (USDA)</h2>
+    <p class="hint">Introduce arena, limo y arcilla (%). Deben sumar 100. Se dibujan las tres líneas de referencia que se cortan en tu punto y se estima la clase de textura (orientativa).</p>
+
+    <div class="tern-wrap">
+      <div>
+        <div class="grid-form" style="grid-template-columns: 1fr;">
+          <div>
+            <label class="f" for="pctSand">% Arena</label>
+            <input class="in" type="number" id="pctSand" min="0" max="100" step="0.1" value="30" />
+          </div>
+          <div>
+            <label class="f" for="pctSilt">% Limo</label>
+            <input class="in" type="number" id="pctSilt" min="0" max="100" step="0.1" value="40" />
+          </div>
+          <div>
+            <label class="f" for="pctClay">% Arcilla</label>
+            <input class="in" type="number" id="pctClay" min="0" max="100" step="0.1" value="30" />
+          </div>
+        </div>
+        <div id="sumWarn"></div>
+        <div class="btn-row">
+          <button type="button" class="btn-sm" id="btnNormalize">Normalizar a 100%</button>
+          <button type="button" class="btn-sm" id="btnEjemplo">Ejemplo 30 · 40 · 30</button>
+        </div>
+        <div style="margin-top:14px;">
+          <div class="legend-line"><span class="sw" style="background:#2563eb;"></span> Línea de arena (constante arena)</div>
+          <div class="legend-line"><span class="sw" style="background:#16a34a;"></span> Línea de limo (constante limo)</div>
+          <div class="legend-line"><span class="sw" style="background:#ca8a04;"></span> Línea de arcilla (constante arcilla)</div>
+        </div>
+        <div class="class-out" id="textureClassOut">—</div>
+      </div>
+      <div class="chart-wrap" style="margin:0;">
+        <svg id="ternSvg" viewBox="-20 -10 560 490" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot-disclaimer">
+    NutriPlant PRO — material educativo. Los valores típicos de CC y PMP varían con estructura, materia orgánica y método de medición; la clasificación textual es aproximada (límites USDA). Combine con laboratorio y criterio local.
+  </p>
+
+  <script>
+(function () {
+  /* —— Tabs —— */
+  var tabs = document.querySelectorAll('.tabs button[role="tab"]');
+  var panels = { tab1: document.getElementById('panel1'), tab2: document.getElementById('panel2') };
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.id;
+      tabs.forEach(function (b) { b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+      panels.tab1.classList.toggle('active', id === 'tab1');
+      panels.tab2.classList.toggle('active', id === 'tab2');
+      if (id === 'tab2') drawTernary();
+    });
+  });
+
+  /* —— Referencia CC / PMP por textura (ilustrativo) —— */
+  var TEXTURE_SERIES = [
+    { label: 'Arena', cc: 8, pmp: 3 },
+    { label: 'Franco arenoso', cc: 12, pmp: 6 },
+    { label: 'Franco', cc: 22, pmp: 11 },
+    { label: 'Franco limoso', cc: 28, pmp: 14 },
+    { label: 'Franco arcilloso', cc: 32, pmp: 17 },
+    { label: 'Arcilla', cc: 38, pmp: 22 }
+  ];
+
+  var presetSel = document.getElementById('presetTex');
+  var ph = document.createElement('option');
+  ph.value = '';
+  ph.textContent = '— Precargar textura de referencia (opcional) —';
+  presetSel.appendChild(ph);
+  TEXTURE_SERIES.forEach(function (t, i) {
+    var o = document.createElement('option');
+    o.value = String(i);
+    o.textContent = t.label + ' (CC ' + t.cc + '%, PMP ' + t.pmp + '%)';
+    presetSel.appendChild(o);
+  });
+  presetSel.addEventListener('change', function () {
+    var idx = parseInt(presetSel.value, 10);
+    if (isNaN(idx)) return;
+    var t = TEXTURE_SERIES[idx];
+    if (!t) return;
+    document.getElementById('cc').value = t.cc;
+    document.getElementById('pmp').value = t.pmp;
+    updateWater();
+  });
+
+  function updateWater() {
+    var cc = parseFloat(document.getElementById('cc').value) || 0;
+    var pmp = parseFloat(document.getElementById('pmp').value) || 0;
+    var depth = parseFloat(document.getElementById('depth').value) || 30;
+    var areaHa = parseFloat(document.getElementById('areaHa').value) || 1;
+    var rootEff = parseFloat(document.getElementById('rootEff').value) || 100;
+
+    var adPct = Math.max(0, cc - pmp);
+    var volSoilM3 = areaHa * 10000 * (depth / 100);
+    var adM3 = volSoilM3 * (adPct / 100);
+    var realM3 = adM3 * (rootEff / 100);
+
+    document.getElementById('calcLines').innerHTML =
+      '<span><strong>Agua disponible</strong> (CC − PMP): ' + adPct.toFixed(1) + '% vol.</span>' +
+      '<span><strong>Volumen suelo</strong>: ' + volSoilM3.toFixed(0) + ' m³</span>' +
+      '<span><strong>Agua disponible</strong> en el volumen: ' + adM3.toFixed(0) + ' m³</span>' +
+      '<span><strong>Agua disponible real</strong> (× zona radical ' + rootEff + '%): ' + realM3.toFixed(0) + ' m³</span>';
+
+    drawChart(depth);
+  }
+
+  function drawChart(depthCm) {
+    var svg = document.getElementById('chartSvg');
+    var W = 640, H = 280, L = 52, R = 56, T = 28, B = 48;
+    var gw = W - L - R, gh = H - T - B;
+    var n = TEXTURE_SERIES.length;
+    var x0 = L, y0 = T + gh;
+    var dx = gw / (n - 1);
+
+    function xAt(i) { return x0 + i * dx; }
+    function yFromPct(p) { return y0 - (p / 40) * gh; }
+
+    var parts = [];
+    parts.push('<rect width="' + W + '" height="' + H + '" fill="#fafafa"/>');
+    parts.push('<text x="' + (W / 2) + '" y="18" text-anchor="middle" font-size="13" font-weight="700" fill="#1d4ed8">Contenido de agua por textura (referencia)</text>');
+
+    for (var g = 0; g <= 8; g++) {
+      var p = g * 5;
+      var y = yFromPct(p);
+      parts.push('<line x1="' + L + '" y1="' + y + '" x2="' + (W - R) + '" y2="' + y + '" stroke="#e2e8f0" stroke-width="1"/>');
+      parts.push('<text x="' + (L - 8) + '" y="' + (y + 4) + '" text-anchor="end" font-size="10" fill="#64748b">' + p + '</text>');
+    }
+    parts.push('<text x="' + (L - 8) + '" y="' + (T + 8) + '" text-anchor="end" font-size="10" font-weight="600" fill="#475569">% vol.</text>');
+
+    var mmMax = Math.ceil((40 / 100) * depthCm * 10 / 25) * 25;
+    for (var mm = 0; mm <= mmMax; mm += 25) {
+      var pctEquiv = mm / (depthCm * 10) * 100;
+      var y = yFromPct(Math.min(pctEquiv, 40));
+      parts.push('<text x="' + (W - R + 12) + '" y="' + (y + 3) + '" font-size="9" fill="#94a3b8">' + mm + '</text>');
+    }
+    parts.push('<text x="' + (W - 14) + '" y="' + (T + 8) + '" text-anchor="end" font-size="10" font-weight="600" fill="#475569">mm (' + depthCm + ' cm)</text>');
+
+    var pathCC = '';
+    var pathPM = '';
+    TEXTURE_SERIES.forEach(function (tex, i) {
+      var x = xAt(i), ycc = yFromPct(tex.cc), ypm = yFromPct(tex.pmp);
+      parts.push('<text x="' + x + '" y="' + (H - B + 16) + '" text-anchor="middle" font-size="11" fill="#334155">' + tex.label + '</text>');
+      pathCC += (i === 0 ? 'M' : 'L') + x + ',' + ycc + ' ';
+      pathPM += (i === 0 ? 'M' : 'L') + x + ',' + ypm + ' ';
+    });
+
+    parts.push('<path d="' + pathCC.trim() + '" fill="none" stroke="#2563eb" stroke-width="2.5"/>');
+    parts.push('<path d="' + pathPM.trim() + '" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-dasharray="6 4"/>');
+
+    TEXTURE_SERIES.forEach(function (tex, i) {
+      var x = xAt(i);
+      parts.push('<circle cx="' + x + '" cy="' + yFromPct(tex.cc) + '" r="4" fill="#2563eb"/>');
+      parts.push('<circle cx="' + x + '" cy="' + yFromPct(tex.pmp) + '" r="4" fill="#16a34a"/>');
+    });
+
+    parts.push('<line x1="' + L + '" y1="' + y0 + '" x2="' + (W - R) + '" y2="' + y0 + '" stroke="#cbd5e1"/>');
+    parts.push('<text x="' + (L + 8) + '" y="' + (T + gh / 2) + '" font-size="11" fill="#2563eb">● CC</text>');
+    parts.push('<text x="' + (L + 52) + '" y="' + (T + gh / 2) + '" font-size="11" fill="#16a34a">● PMP</text>');
+    svg.innerHTML = parts.join('');
+  }
+
+  ['cc', 'pmp', 'depth', 'areaHa', 'rootEff'].forEach(function (id) {
+    document.getElementById(id).addEventListener('input', updateWater);
+  });
+  updateWater();
+
+  /* —— Triángulo USDA —— */
+  var BL = { x: 70, y: 420 };
+  var BR = { x: 470, y: 420 };
+  var TP = { x: 270, y: 70 };
+
+  function xyBar(sand, silt, clay) {
+    var ns = sand / 100, ni = silt / 100, nc = clay / 100;
+    return { x: ns * BL.x + ni * BR.x + nc * TP.x, y: ns * BL.y + ni * BR.y + nc * TP.y };
+  }
+
+  function lineConstClay(clay, col) {
+    var pL = xyBar(100 - clay, 0, clay);
+    var pR = xyBar(0, 100 - clay, clay);
+    return '<line x1="' + pL.x + '" y1="' + pL.y + '" x2="' + pR.x + '" y2="' + pR.y + '" stroke="' + col + '" stroke-width="2.5"/>';
+  }
+  function lineConstSand(sand, col) {
+    var pLeft = xyBar(sand, 0, 100 - sand);
+    var pBot = xyBar(sand, 100 - sand, 0);
+    return '<line x1="' + pLeft.x + '" y1="' + pLeft.y + '" x2="' + pBot.x + '" y2="' + pBot.y + '" stroke="' + col + '" stroke-width="2.5"/>';
+  }
+  function lineConstSilt(silt, col) {
+    var pBot = xyBar(100 - silt, silt, 0);
+    var pRight = xyBar(0, silt, 100 - silt);
+    return '<line x1="' + pBot.x + '" y1="' + pBot.y + '" x2="' + pRight.x + '" y2="' + pRight.y + '" stroke="' + col + '" stroke-width="2.5"/>';
+  }
+
+  /** Centroid references for Spanish USDA-style labels — orientative */
+  var REFS = [
+    { es: 'Arena', s: 93, si: 5, c: 2 },
+    { es: 'Arena franca', s: 80, si: 13, c: 7 },
+    { es: 'Franco arenoso', s: 63, si: 29, c: 8 },
+    { es: 'Franco', s: 40, si: 40, c: 20 },
+    { es: 'Franco limoso', s: 25, si: 58, c: 17 },
+    { es: 'Limo', s: 12, si: 80, c: 8 },
+    { es: 'Franco arcilloso arenoso', s: 53, si: 25, c: 22 },
+    { es: 'Franco arcilloso', s: 32, si: 36, c: 32 },
+    { es: 'Franco arcilloso limoso', s: 13, si: 53, c: 34 },
+    { es: 'Arcilloso arenoso', s: 52, si: 16, c: 32 },
+    { es: 'Arcilloso limoso', s: 17, si: 43, c: 40 },
+    { es: 'Arcilla', s: 28, si: 26, c: 46 }
+  ];
+
+  function classifySandSiltClay(sand, silt, clay) {
+    var tot = sand + silt + clay;
+    if (tot < 0.001) return { label: '—' };
+    var s = sand * 100 / tot;
+    var si = silt * 100 / tot;
+    var c = clay * 100 / tot;
+    if (s >= 88 && si + c <= 15) return { label: 'Arena' };
+    if (si >= 82 && s <= 14 && c <= 14) return { label: 'Limo' };
+    if (c >= 52 && si <= 25) return { label: 'Arcilla' };
+
+    var best = REFS[0];
+    var bestD = Infinity;
+    for (var i = 0; i < REFS.length; i++) {
+      var r = REFS[i];
+      var d = Math.pow(s - r.s, 2) + Math.pow(si - r.si, 2) + Math.pow(c - r.c, 2);
+      if (d < bestD) {
+        bestD = d;
+        best = r;
+      }
+    }
+    return { label: best.es };
+  }
+
+  function drawTernary() {
+    var svg = document.getElementById('ternSvg');
+    var sand = parseFloat(document.getElementById('pctSand').value) || 0;
+    var silt = parseFloat(document.getElementById('pctSilt').value) || 0;
+    var clay = parseFloat(document.getElementById('pctClay').value) || 0;
+    var sum = sand + silt + clay;
+    var warn = document.getElementById('sumWarn');
+
+    var out = classifySandSiltClay(sand, silt, clay);
+    document.getElementById('textureClassOut').textContent = 'Textura estimada: ' + out.label;
+
+    if (sum > 0 && Math.abs(sum - 100) > 1) {
+      warn.textContent = 'La suma es ' + sum.toFixed(1) + '%. Usa «Normalizar a 100%» o ajusta los valores.';
+      warn.classList.add('visible');
+    } else {
+      warn.classList.remove('visible');
+    }
+
+    sand = sand * 100 / (sum || 1);
+    silt = silt * 100 / (sum || 1);
+    clay = clay * 100 / (sum || 1);
+
+    var p = xyBar(sand, silt, clay);
+    var h = '';
+
+    var triPath = 'M ' + BL.x + ',' + BL.y + ' L ' + BR.x + ',' + BR.y + ' L ' + TP.x + ',' + TP.y + ' Z';
+    h += '<defs><clipPath id="triClip"><path d="' + triPath + '"/></clipPath></defs>';
+    h += '<path d="' + triPath + '" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>';
+
+    h += '<g font-size="11" fill="#64748b">';
+    h += '<text x="' + (BL.x - 8) + '" y="' + (BL.y + 18) + '" text-anchor="end">Arena 100%</text>';
+    h += '<text x="' + (BR.x + 8) + '" y="' + (BR.y + 18) + '">Limo 100%</text>';
+    h += '<text x="' + (TP.x - 4) + '" y="' + (TP.y - 12) + '" text-anchor="middle">Arcilla 100%</text>';
+    h += '</g>';
+
+    var colSand = '#2563eb';
+    var colSilt = '#16a34a';
+    var colClay = '#ca8a04';
+
+    h += '<g clip-path="url(#triClip)" stroke-linecap="round">';
+    var origSand = parseFloat(document.getElementById('pctSand').value) || 0;
+    var origSi = parseFloat(document.getElementById('pctSilt').value) || 0;
+    var origC = parseFloat(document.getElementById('pctClay').value) || 0;
+    var oSum = origSand + origSi + origC;
+    if (oSum > 0) {
+      var os = origSand * 100 / oSum;
+      var oi = origSi * 100 / oSum;
+      var oc = origC * 100 / oSum;
+      h += lineConstClay(oc, colClay);
+      h += lineConstSand(os, colSand);
+      h += lineConstSilt(oi, colSilt);
+    }
+    h += '</g>';
+
+    if (sum > 0) {
+      h += '<circle cx="' + p.x + '" cy="' + p.y + '" r="7" fill="#0f172a" stroke="#fff" stroke-width="2"/>';
+    }
+
+    h += '<text x="' + (270) + '" y="' + (455) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">Triángulo de texturas agrícolas (referencia)</text>';
+
+    svg.innerHTML = h;
+  }
+
+  document.getElementById('pctSand').addEventListener('input', drawTernary);
+  document.getElementById('pctSilt').addEventListener('input', drawTernary);
+  document.getElementById('pctClay').addEventListener('input', drawTernary);
+
+  document.getElementById('btnNormalize').addEventListener('click', function () {
+    var a = parseFloat(document.getElementById('pctSand').value) || 0;
+    var b = parseFloat(document.getElementById('pctSilt').value) || 0;
+    var c = parseFloat(document.getElementById('pctClay').value) || 0;
+    var t = a + b + c;
+    if (!t) return;
+    document.getElementById('pctSand').value = (a * 100 / t).toFixed(2);
+    document.getElementById('pctSilt').value = (b * 100 / t).toFixed(2);
+    document.getElementById('pctClay').value = (c * 100 / t).toFixed(2);
+    drawTernary();
+  });
+  document.getElementById('btnEjemplo').addEventListener('click', function () {
+    document.getElementById('pctSand').value = '30';
+    document.getElementById('pctSilt').value = '40';
+    document.getElementById('pctClay').value = '30';
+    drawTernary();
+  });
+
+})();
+  </script>
+</body>
+</html>

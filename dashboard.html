@@ -188,6 +188,8 @@
           <button type="button" id="btn-nutrient-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientUnitsCalculator()" data-np-tooltip="Calculadora ppm ↔ mmol/L ↔ meq/L" aria-label="Calculadora ppm ↔ mmol/L ↔ meq/L">🧪</button>
           <button type="button" id="btn-n-mineralizable-mo-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNMineralizableMoCalculator()" data-np-tooltip="N mineralizable desde materia orgánica" aria-label="N mineralizable desde materia orgánica">🌱</button>
           <button type="button" id="btn-water-hardness-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showWaterHardnessCalculator()" data-np-tooltip="Calculadora de Dureza y Acondicionamiento de Agua" aria-label="Calculadora de Dureza y Acondicionamiento de Agua">💦</button>
+          <button type="button" id="btn-soil-water-texture-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSoilWaterTextureTool()" data-np-tooltip="Agua disponible en el suelo y triángulo de textura" aria-label="Agua disponible en el suelo y triángulo de textura">🪨</button>
+          <button type="button" id="btn-fertilizer-solubility-salt-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerSolubilitySaltTool()" data-np-tooltip="Solubilidad e índice salino (fertilizantes solubles)" aria-label="Solubilidad e índice salino fertilizantes solubles">🧂</button>
           <button type="button" id="btn-extraccion-etapa-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showExtraccionEtapaCalculator()" data-np-tooltip="Distribución de extracción por etapa (%)" aria-label="Distribución de extracción por etapa (porcentaje)">📊</button>
           <button type="button" id="btn-periodic-table-nutrients" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showPeriodicTableNutrientsCalculator()" data-np-tooltip="Tabla periódica (nutrientes)" aria-label="Tabla periódica de nutrientes">⚛️</button>
           <button type="button" id="btn-nutrient-interactions-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientInteractionsTool()" data-np-tooltip="Interacciones, absorción y movilidad nutrimental" aria-label="Interacciones, absorción y movilidad nutrimental">🔗</button>
@@ -452,6 +454,12 @@
       if (typeof showNMineralizableMoCalculator !== 'undefined') {
         window.showNMineralizableMoCalculator = showNMineralizableMoCalculator;
       }
+      if (typeof showSoilWaterTextureTool !== 'undefined') {
+        window.showSoilWaterTextureTool = showSoilWaterTextureTool;
+      }
+      if (typeof showFertilizerSolubilitySaltTool !== 'undefined') {
+        window.showFertilizerSolubilitySaltTool = showFertilizerSolubilitySaltTool;
+      }
       if (typeof showNutrientInteractionsTool !== 'undefined') {
         window.showNutrientInteractionsTool = showNutrientInteractionsTool;
       }
@@ -475,6 +483,12 @@
       }
       if (typeof closeNMineralizableMoCalculator !== 'undefined') {
         window.closeNMineralizableMoCalculator = closeNMineralizableMoCalculator;
+      }
+      if (typeof closeSoilWaterTextureTool !== 'undefined') {
+        window.closeSoilWaterTextureTool = closeSoilWaterTextureTool;
+      }
+      if (typeof closeFertilizerSolubilitySaltTool !== 'undefined') {
+        window.closeFertilizerSolubilitySaltTool = closeFertilizerSolubilitySaltTool;
       }
       if (typeof closeNutrientInteractionsTool !== 'undefined') {
         window.closeNutrientInteractionsTool = closeNutrientInteractionsTool;
@@ -4916,6 +4930,36 @@ CONTRATO:
     }
     window.closeNMineralizableMoCalculator = closeNMineralizableMoCalculator;
 
+    function showSoilWaterTextureTool() {
+      var modal = document.getElementById('soilWaterTextureToolModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showSoilWaterTextureTool = showSoilWaterTextureTool;
+
+    function closeSoilWaterTextureTool() {
+      var modal = document.getElementById('soilWaterTextureToolModal');
+      var frame = document.getElementById('soilWaterTextureToolFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeSoilWaterTextureTool = closeSoilWaterTextureTool;
+
+    function showFertilizerSolubilitySaltTool() {
+      var modal = document.getElementById('fertilizerSolubilitySaltModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showFertilizerSolubilitySaltTool = showFertilizerSolubilitySaltTool;
+
+    function closeFertilizerSolubilitySaltTool() {
+      var modal = document.getElementById('fertilizerSolubilitySaltModal');
+      var frame = document.getElementById('fertilizerSolubilitySaltFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeFertilizerSolubilitySaltTool = closeFertilizerSolubilitySaltTool;
+
     function showNutrientInteractionsTool() {
       var modal = document.getElementById('nutrientInteractionsToolModal');
       if (!modal) return;
@@ -6534,6 +6578,32 @@ CONTRATO:
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html" title="N mineralizable desde materia orgánica" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal agua disponible / triángulo textura -->
+  <div id="soilWaterTextureToolModal" class="modal-overlay" onclick="if(event.target===this) closeSoilWaterTextureTool();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title">🪨 Agua disponible en el suelo y triángulo de textura</h2>
+        <button class="modal-close" onclick="closeSoilWaterTextureTool()">×</button>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html" title="Agua disponible en el suelo y textura" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal solubilidad e índice salino -->
+  <div id="fertilizerSolubilitySaltModal" class="modal-overlay" onclick="if(event.target===this) closeFertilizerSolubilitySaltTool();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title">🧂 Solubilidad e índice salino (fertilizantes solubles)</h2>
+        <button class="modal-close" onclick="closeFertilizerSolubilitySaltTool()">×</button>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html" title="Solubilidad e índice salino" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

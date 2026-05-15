@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solubilidad e índice salino — NutriPlant PRO</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --blue: #2563eb;
+      --blue-soft: #eff6ff;
+      --sol-hi: #2563eb;
+      --sol-mid: #ca8a04;
+      --sol-lo: #dc2626;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 12px 12px 28px;
+      background: var(--bg);
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .lead {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 58rem;
+    }
+    .disclaimer {
+      font-size: 12px;
+      color: #0c4a6e;
+      background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+      border: 1px solid #7dd3fc;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      max-width: 58rem;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 18px;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+    .leg-item { display: inline-flex; align-items: center; gap: 7px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dot-hi { background: var(--sol-hi); }
+    .dot-mid { background: var(--sol-mid); }
+    .dot-lo { background: var(--sol-lo); }
+
+    /* Puntos dentro de tabla (sin colisionar clase .dot con letra clave corta — evita errores tipo .dot-dot-hi inválidos) */
+    .sol-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; flex-shrink: 0; }
+    .sol-dot-hi { background: var(--sol-hi); }
+    .sol-dot-mid { background: var(--sol-mid); }
+    .sol-dot-lo { background: var(--sol-lo); }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    #filterInput {
+      flex: 1;
+      min-width: 180px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .muted {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card);
+      box-shadow: 0 2px 10px rgba(15, 23, 42, .05);
+      margin-bottom: 18px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 720px;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    th {
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      font-weight: 700;
+      color: #334155;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    th:hover { color: var(--blue); }
+    tbody tr:hover { background: #f8fafc; }
+    td.formula {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      color: #475569;
+      font-size: 12px;
+    }
+    .sol-cell { font-variant-numeric: tabular-nums; }
+    .is-bar-wrap {
+      min-width: 120px;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .is-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #38bdf8 0%, #fbbf24 50%, #ea580c 100%);
+      transition: width 0.2s ease;
+    }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 18px 0 12px;
+    }
+    .tabs button {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #334155;
+    }
+    .tabs button[aria-selected="true"] {
+      background: var(--blue-soft);
+      border-color: #93c5fd;
+      color: #1e40af;
+    }
+    .section-panel {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, .06);
+    }
+    .section-panel.active { display: block; }
+    .section-h2 { margin: 0 0 10px; font-size: 1rem; font-weight: 700; color: #1e293b; }
+    ul.edu { margin: 0 0 8px; padding-left: 20px; color: #334155; font-size: 13px; }
+    ul.edu li { margin-bottom: 6px; }
+    .split {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 920px) {
+      .split { grid-template-columns: 1fr 1fr; align-items: start; }
+    }
+    .mini-svg {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+    }
+    .fig-cap { font-size: 11px; color: var(--muted); margin-top: 8px; }
+    .refs-foot {
+      margin-top: 14px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 58rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Solubilidad e índice salino (IS) — fertilizantes solubles</h1>
+  <p class="lead">Consulta combinada inspirada en la referencia NutriPlant PRO: solubilidad en agua (rangos típicos, 20–25 °C; varían con pureza y grado técnico/granulado del proveedor) e índice salino tomando <strong>NaNO₃ = 100</strong> como base de comparación técnica.</p>
+  <p class="disclaimer">Los valores de solubilidad son referencias en agua relativamente pura; en campo, temperatura, pH, otros iones y el propio medio pueden cambiar cuánto se disuelve y el impacto sobre la planta. El IS describe el efecto osmótico relativo — no clasifica solo un fertilizante como “bueno” o “malo”; importa la dosis, el agua disponible y el manejo del fertirriego.</p>
+
+  <div class="legend" aria-label="Leyenda de solubilidad">
+    <span class="leg-item"><span class="dot dot-hi" aria-hidden="true"></span> Alta (&gt; 500 g/L)</span>
+    <span class="leg-item"><span class="dot dot-mid" aria-hidden="true"></span> Media (100–500 g/L)</span>
+    <span class="leg-item"><span class="dot dot-lo" aria-hidden="true"></span> Baja (&lt; 100 g/L)</span>
+    <span class="leg-item muted" style="margin-left:auto;">Índice salino: barras proporcionadas al valor IS (referencia tabla).</span>
+  </div>
+
+  <div class="toolbar">
+    <label for="filterInput" class="muted" style="width:100%;min-width:auto;">Filtrar</label>
+    <input type="search" id="filterInput" placeholder="Nombre, fórmula o comentarios…" autocomplete="off" />
+  </div>
+
+  <div class="table-wrap" role="region" aria-label="Tabla solubilidad e índice salino">
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th data-k="name" data-type="str">Fertilizante</th>
+          <th data-k="formula" data-type="str">Fórmula</th>
+          <th data-k="sol" data-type="num">Solubilidad g/L<br><span style="font-weight:600;text-transform:none;letter-spacing:0;color:#64748b;">(aprox., 20–25 °C)</span></th>
+          <th data-k="cat" data-type="num">Clase<br><span style="font-weight:600;text-transform:none;letter-spacing:0;color:#64748b;">solubilidad</span></th>
+          <th data-k="is" data-type="num">IS<br><span style="font-weight:600;text-transform:none;letter-spacing:0;color:#64748b;">(NaNO₃=100)</span></th>
+          <th style="cursor:default">IS visual</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tabA" aria-selected="true" aria-controls="panelA">1 · Solubilidad y proceso</button>
+    <button type="button" role="tab" id="tabB" aria-selected="false" aria-controls="panelB">2 · Índice salino IS</button>
+  </div>
+
+  <div id="panelA" class="section-panel active" role="tabpanel" aria-labelledby="tabA">
+    <h2 class="section-h2">La solubilidad depende de</h2>
+    <div class="split">
+      <div>
+        <ul class="edu">
+          <li>🌡️ <strong>Temperatura</strong> — a mayor temperatura suele favorecerse romper la red del cristal y disolver.</li>
+          <li>📦 <strong>Pureza y grado</strong> del fertilizante (industrial vs. soluble, anticaking, rellenos).</li>
+          <li>💎 <strong>Forma cristalina / hidratación</strong> (p. ej. sulfato de magnesio en forma heptahidratada vs. otras).</li>
+          <li>🧪 <strong>Otros iones ya disueltos</strong> — el medio real no es siempre “agua pura” como en tabla de laboratorio.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="section-h2" style="margin-top:0;">Esquema: red iónica e hidratación (referencia conceptual)</p>
+        <svg class="mini-svg" viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <text x="180" y="22" text-anchor="middle" font-size="13" fill="#0369a1" font-weight="700">Solvatación frente al cristal</text>
+          <rect x="24" y="44" width="120" height="120" rx="8" fill="#fef3c7" stroke="#d97706" stroke-dasharray="4 3"/>
+          <text x="84" y="38" text-anchor="middle" font-size="10" fill="#92400e">Retículo — K₂SO₄ (sólido)</text>
+          <text x="84" y="110" text-anchor="middle" font-size="44" opacity="0.35">⚡</text>
+          <text x="258" y="110" font-size="12" fill="#0f172a">Iones rodeados por H₂O</text>
+          <circle cx="280" cy="58" r="14" fill="#bae6fd" stroke="#0369a1"/>
+          <text x="280" y="62" text-anchor="middle" font-size="11" fill="#0369a1">K⁺</text>
+          <text x="250" y="130" font-size="10" fill="#64748b">Ión hidratado</text>
+          <circle cx="300" cy="130" r="16" fill="#fde68a" stroke="#ca8a04"/>
+          <text x="300" y="134" text-anchor="middle" font-size="9" fill="#854d0e">SO₄²⁻</text>
+          <polygon points="258,154 274,174 246,174" fill="#93c5fd"/>
+          <polygon points="310,154 324,174 296,174" fill="#93c5fd"/>
+          <polygon points="270,174 284,158 274,174" fill="#bfdbfe"/>
+          <polygon points="320,174 336,154 336,174" fill="#bfdbfe"/>
+          <text x="296" y="192" text-anchor="middle" font-size="10" fill="#64748b">H₂O (esquematizado)</text>
+        </svg>
+        <p class="fig-cap">Ilustración educativa: no dibuja proporciones moleculares exactas.</p>
+      </div>
+    </div>
+    <h2 class="section-h2">Principios químicos útiles</h2>
+    <ul class="edu">
+      <li><strong>Mayor carga efectiva →</strong> a veces menor solubilidad aparente (red iónica más fuerte).</li>
+      <li><strong>Hidratación del ion →</strong> si el medio acuoso estabiliza bien los iones liberados (p. ej. nitratos muy solubles).</li>
+      <li><strong>Balanza energética →</strong> costo de romper la red vs. ganancia por solvataración.</li>
+      <li><strong>Densidad de carga y polarización →</strong> radios pequeños y cargas altas pueden reforzar enlace en sólido y dificultar disolver respecto de sales más “compatibles” con el agua.</li>
+    </ul>
+  </div>
+
+  <div id="panelB" class="section-panel" role="tabpanel" aria-labelledby="tabB">
+    <h2 class="section-h2">Qué significa el índice salino</h2>
+    <p style="margin:0 0 10px;color:#334155;font-size:13px;">El IS ordena fertilizantes según la <strong>fuerza relativa del impacto osmótico</strong> cuando se diluyen en una misma masa de nutriente aplicada (referencia clásica: nitrato de sodio NaNO₃ = 100). Un IS alto no prohibe usar el producto — indica vigilancia especial en síembras delicadas, baja humedad, altas concentraciones en solución madre o aplicaciones cercanas al tejido sensible.</p>
+    <ul class="edu">
+      <li><strong>Deshidratación radicular / estrés:</strong> el suelo muy salino puede “competir” por agua contra la planta.</li>
+      <li><strong>Emergencia y siembras:</strong> soluciones muy concentradas pueden dificultar la imbibición de la semilla.</li>
+      <li><strong>Costo energético:</strong> bajo estrés osmótico la planta gasta recurso tomando agua antes que creciendo.</li>
+    </ul>
+    <p class="muted" style="margin-top:14px;"><strong>Escala IS en la tabla de arriba</strong>: cada barra muestra IS relativo dentro del mismo conjunto (máx. KCl sobre las filas de la tabla; productos sin dato práctico muestran “—”).</p>
+  </div>
+
+  <p class="refs-foot">
+    NutriPlant PRO — material educativo compactado a partir de referencias típicas de solubilidad en agua (20–25 °C) y valores de índice salino frecuentes en tablas agronómicas (base NaNO₃ = 100). Verifica siempre fichas del fabricante antes de formulación comercial rigurosa.
+  </p>
+
+  <script>
+(function () {
+  /* Rangos típicos: reflejan dispersión bibliográfica/comercial — no son especificación contractual.
+     IS donde no figura en el infográfico segundo: valores orientativos o “—”.
+  */
+  var ROWS = [
+    { name: 'Nitrato de amonio', formula: 'NH₄NO₃', solLo: 1850, solHi: 1950, is: 104.7 },
+    { name: 'Nitrato de magnesio', formula: 'Mg(NO₃)₂', solLo: 1200, solHi: 1300, is: 60.5 },
+    { name: 'Nitrato de calcio', formula: 'Ca(NO₃)₂', solLo: 1150, solHi: 1250, is: 40.7 },
+    { name: 'Nitrato de potasio', formula: 'KNO₃', solLo: 300, solHi: 330, is: 73.6 },
+    { name: 'Urea', formula: 'CH₄N₂O', solLo: 1000, solHi: 1150, is: 75.4 },
+    { name: 'Fosfato monoamónico (MAP)', formula: 'NH₄H₂PO₄', solLo: 350, solHi: 400, is: 26.7 },
+    { name: 'Fosfato monopotásico (MKP)', formula: 'KH₂PO₄', solLo: 200, solHi: 240, is: 8.4 },
+    { name: 'Cloruro de potasio', formula: 'KCl', solLo: 320, solHi: 360, is: 116.3 },
+    { name: 'Sulfato de amonio', formula: '(NH₄)₂SO₄', solLo: 720, solHi: 780, is: 69.0 },
+    { name: 'Sulfato de magnesio', formula: 'MgSO₄', solLo: 680, solHi: 740, is: 44.0 },
+    { name: 'Sulfato de potasio', formula: 'K₂SO₄', solLo: 105, solHi: 115, is: 46.0, note: 'IS orientativo (referencias agronómicas).' },
+    { name: 'Sulfato de calcio (yeso agrícola)', formula: 'CaSO₄', solLo: 1.5, solHi: 2.8, is: 8, noteIs: '~', note: 'IS muy bajo; solubilidad extremadamente baja en agua.' },
+    { name: 'Carbonato de calcio', formula: 'CaCO₃', solLo: 0.01, solHi: 0.03, is: null, noteIs: '—', note: 'No es fuente soluble en fertirriego; IS despreciable en la práctica.' }
+  ];
+
+  function solClass(mid) {
+      if (mid > 500) return { cls: 'sol-dot-hi', label: 'Alta', c: '#2563eb' };
+    if (mid >= 100) return { cls: 'sol-dot-mid', label: 'Media', c: '#ca8a04' };
+    return { cls: 'sol-dot-lo', label: 'Baja', c: '#dc2626' };
+  }
+
+  var sortState = { k: 'name', dir: 1 };
+
+  var maxIs = ROWS.reduce(function (m, r) {
+    return r.is != null && r.is > m ? r.is : m;
+  }, 0);
+
+  function tbodyFill(list) {
+    var tb = document.getElementById('tbody');
+    var frag = document.createDocumentFragment();
+    list.forEach(function (r) {
+      var mid = (r.solLo + r.solHi) / 2;
+      var cl = solClass(mid);
+      var tr = document.createElement('tr');
+      var barW = r.is != null ? Math.round((r.is / maxIs) * 100) : 0;
+      tr.innerHTML =
+        '<td><strong>' + escapeHtml(r.name) + '</strong>' + (r.note ? '<br><span class="muted">' + escapeHtml(r.note) + '</span>' : '') + '</td>' +
+        '<td class="formula">' + escapeHtml(r.formula) + '</td>' +
+        '<td class="sol-cell">' + formatRange(r.solLo, r.solHi) + '</td>' +
+        '<td><span class="sol-dot ' + cl.cls + '" aria-hidden="true"></span>' + escapeHtml(cl.label) + '</td>' +
+        '<td class="sol-cell">' + formatIS(r) + '</td>' +
+        '<td>' +
+          (r.is != null
+            ? '<div class="is-bar-wrap" title="IS ' + r.is + ' (base NaNO₃ = 100)"><div class="is-bar-fill" style="width:' + barW + '%"></div></div>'
+            : '<span class="muted">—</span>') +
+        '</td>';
+      frag.appendChild(tr);
+    });
+    tb.innerHTML = '';
+    tb.appendChild(frag);
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function formatRange(lo, hi) {
+    if (hi >= 10) return '≈ ' + Math.round(lo) + ' – ' + Math.round(hi);
+    return '≈ ' + lo + ' – ' + hi;
+  }
+
+  function formatIS(r) {
+    if (r.is == null) return r.noteIs || '—';
+    return (r.noteIs || '') + String(r.is);
+  }
+
+  function filterList(q) {
+    q = (q || '').trim().toLowerCase();
+    if (!q) return ROWS.slice();
+    return ROWS.filter(function (r) {
+      return (
+        r.name.toLowerCase().indexOf(q) !== -1 ||
+        r.formula.toLowerCase().indexOf(q) !== -1 ||
+        (r.note && String(r.note).toLowerCase().indexOf(q) !== -1)
+      );
+    });
+  }
+
+  function sortList(list, k, type, dir) {
+    var cp = list.map(function (r) {
+      var mid = (r.solLo + r.solHi) / 2;
+      var cat = mid > 500 ? 2 : mid >= 100 ? 1 : 0;
+      return Object.assign({}, r, { _mid: mid, _cat: cat });
+    });
+    cp.sort(function (a, b) {
+      var va, vb;
+      if (k === 'name' || k === 'formula') {
+        va = a[k].toLowerCase();
+        vb = b[k].toLowerCase();
+        return va < vb ? -dir : va > vb ? dir : 0;
+      }
+      if (k === 'sol') {
+        va = a._mid;
+        vb = b._mid;
+      } else if (k === 'cat') {
+        va = a._cat;
+        vb = b._cat;
+      } else if (k === 'is') {
+        va = a.is == null ? -1 : a.is;
+        vb = b.is == null ? -1 : b.is;
+      }
+      return va === vb ? 0 : va < vb ? -dir : dir;
+    });
+    return cp;
+  }
+
+  function render() {
+    var q = document.getElementById('filterInput').value;
+    var list = sortList(filterList(q), sortState.k, '', sortState.dir);
+    tbodyFill(list);
+  }
+
+  document.getElementById('filterInput').addEventListener('input', render);
+
+  document.querySelectorAll('#dataTable thead th[data-k]').forEach(function (th) {
+    th.addEventListener('click', function () {
+      var k = th.getAttribute('data-k');
+      if (sortState.k === k) sortState.dir *= -1;
+      else {
+        sortState.k = k;
+        sortState.dir = k === 'name' || k === 'formula' ? 1 : -1;
+      }
+      render();
+    });
+  });
+
+  /* Tabs */
+  var tabs = document.querySelectorAll('.tabs button[role="tab"]');
+  var pA = document.getElementById('panelA');
+  var pB = document.getElementById('panelB');
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.id;
+      tabs.forEach(function (b) { b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+      pA.classList.toggle('active', id === 'tabA');
+      pB.classList.toggle('active', id === 'tabB');
+    });
+  });
+
+  render();
+})();
+  </script>
+</body>
+</html>
