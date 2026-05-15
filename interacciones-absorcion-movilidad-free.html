@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interacciones, absorción y movilidad nutrimental</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --green: #15803d;
+      --green-soft: #ecfdf5;
+      --blue: #2563eb;
+      --edge: #cbd5e1;
+      --edge-hi: #2563eb;
+      --ant: #dc2626;
+      --syn: #16a34a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 12px 12px 28px;
+      background: var(--bg);
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .lead {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 58rem;
+    }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .tabs button {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #334155;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .tabs button[aria-selected="true"] {
+      background: var(--green-soft);
+      border-color: #86efac;
+      color: var(--green);
+    }
+    .section-panel {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 2px 10px rgba(15,23,42,.06);
+    }
+    .section-panel.active { display: block; }
+    .section-h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+
+    /* —— Sección 1 diagrama —— */
+    .s1-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 900px) {
+      .s1-grid { grid-template-columns: minmax(280px, 1fr) 340px; align-items: start; }
+    }
+    .mode-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .mode-row label { font-size: 12px; font-weight: 600; color: #475569; }
+    .mode-row select {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      background: #fff;
+    }
+    .diag-wrap {
+      position: relative;
+      width: 100%;
+      min-height: 320px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+      overflow: auto;
+    }
+    #mulderSvg {
+      display: block;
+      width: 100%;
+      max-width: 640px;
+      height: auto;
+      margin: 0 auto;
+    }
+    .node-hit {
+      cursor: pointer;
+      transition: filter .12s;
+    }
+    .node-hit:hover circle { filter: brightness(1.05); }
+    .edge-line {
+      stroke: var(--edge);
+      stroke-width: 1.25;
+      fill: none;
+      opacity: .35;
+      pointer-events: none;
+    }
+    .edge-line.hi-ant {
+      stroke: var(--ant);
+      stroke-width: 2.5;
+      opacity: .9;
+    }
+    .edge-line.hi-fun {
+      stroke: var(--syn);
+      stroke-width: 2;
+      opacity: .75;
+      stroke-dasharray: 5 4;
+    }
+    .edge-line.hi-pair {
+      stroke: var(--blue);
+      stroke-width: 3;
+      opacity: 1;
+    }
+    .n-circle { transition: stroke .15s, stroke-width .15s; }
+    .n-circle.sel { stroke: var(--blue) !important; stroke-width: 3 !important; }
+    .n-circle.dim { opacity: .35; }
+    .detail-card {
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 12px;
+      background: #eff6ff;
+    }
+    .detail-card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      color: #1e3a8a;
+    }
+    .detail-card ul { margin: 6px 0 0; padding-left: 18px; }
+    .detail-card li { margin-bottom: 4px; }
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+    .tag-ant { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .tag-fun { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .dato-corto {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #fff;
+      border-left: 3px solid var(--blue);
+      font-size: 13px;
+      color: #334155;
+    }
+
+    /* —— Sección 2 barras —— */
+    .ion-bars-wrap { overflow-x: auto; padding-bottom: 6px; }
+    .ion-bar-row {
+      display: grid;
+      grid-template-columns: 108px 1fr;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+      min-width: 280px;
+    }
+    .ion-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+      text-align: right;
+      padding: 4px 6px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+    }
+    .ion-label:hover, .ion-label:focus {
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+      outline: none;
+    }
+    .ion-label.active {
+      background: #dbeafe;
+      border-color: #93c5fd;
+      color: #1e40af;
+    }
+    .stack {
+      display: flex;
+      height: 22px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+    .seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.25); }
+    .seg-mf { background: #2563eb; }
+    .seg-dif { background: #16a34a; }
+    .seg-int { background: #ea580c; }
+    .legend2 {
+      display: flex; flex-wrap: wrap; gap: 12px; margin: 10px 0 14px;
+      font-size: 12px; color: #475569;
+    }
+    .legend2 span { display: inline-flex; align-items: center; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .ficha2 {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    .ficha2 h4 { margin: 0 0 6px; font-size: 14px; color: #0f172a; }
+    .ficha2 p { margin: 4px 0; font-size: 13px; color: #334155; }
+    .ficha2 .k { color: #64748b; font-size: 12px; font-weight: 600; }
+
+    /* —— Sección 3 planta —— */
+    .plant-wrap {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 880px) {
+      .plant-wrap { grid-template-columns: 1fr 300px; }
+    }
+    .plant-svg-box {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px;
+    }
+    #plantSvg { width: 100%; max-width: 360px; height: auto; display: block; margin: 0 auto; }
+    .zone-label { font-size: 10px; font-weight: 700; fill: #475569; }
+    .mob-pill-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .mob-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      cursor: pointer;
+    }
+    .mob-pill:hover { background: #e0f2fe; border-color: #7dd3fc; }
+    .mob-ficha {
+      border: 1px solid #dcfce7;
+      background: #f0fdf4;
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 120px;
+    }
+    .mob-ficha h4 { margin: 0 0 8px; font-size: 15px; color: #14532d; }
+    .mob-line { margin: 4px 0; font-size: 13px; color: #334155; }
+    .foot {
+      margin-top: 16px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interacciones, absorción y movilidad nutrimental</h1>
+  <p class="lead">
+    Herramienta didáctica: (1) con quién interactúa el ion en el suelo/solución, (2) cómo puede llegar a la raíz y (3) dónde suele expresarse primero la deficiencia en la planta.
+    Es orientativa; el comportamiento real depende de cultivo, suelo, pH, agua y manejo.
+  </p>
+
+  <div class="tabs" role="tablist" aria-label="Secciones">
+    <button type="button" role="tab" id="tab-btn-1" aria-selected="true" aria-controls="panel-1">1 · Diagrama de interacciones</button>
+    <button type="button" role="tab" id="tab-btn-2" aria-selected="false" aria-controls="panel-2">2 · Mecanismos hacia la raíz</button>
+    <button type="button" role="tab" id="tab-btn-3" aria-selected="false" aria-controls="panel-3">3 · Movilidad y síntomas</button>
+  </div>
+
+  <!-- Sección 1 -->
+  <div id="panel-1" class="section-panel active" role="tabpanel" aria-labelledby="tab-btn-1">
+    <h2 class="section-h2">Diagrama tipo Mulder (iones y formas frecuentes)</h2>
+    <p class="hint">
+      Modo <strong>un ion</strong>: toca un círculo. Modo <strong>comparar</strong>: elige dos iones y revisa el vínculo resaltado y la ficha.
+    </p>
+    <div class="mode-row">
+      <label for="modeSel">Modo</label>
+      <select id="modeSel" aria-label="Modo de diagrama">
+        <option value="single">Un nutriente / ion</option>
+        <option value="compare">Comparar dos</option>
+      </select>
+      <span id="compareCtrls" style="display:none;">
+        <label for="cmpA">Ion A</label>
+        <select id="cmpA" aria-label="Primer ion"></select>
+        <label for="cmpB">Ion B</label>
+        <select id="cmpB" aria-label="Segundo ion"></select>
+      </span>
+    </div>
+    <div class="s1-grid">
+      <div class="diag-wrap">
+        <svg id="mulderSvg" viewBox="0 0 520 420" xmlns="http://www.w3.org/2000/svg" aria-label="Diagrama de interacciones nutrimentales">
+          <defs>
+            <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="b" />
+              <feOffset dx="0" dy="1" in="b" />
+              <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          </defs>
+          <text x="260" y="22" text-anchor="middle" font-size="12" fill="#64748b" font-weight="600">Interacciones ilustrativas (no exhaustivas)</text>
+          <g id="edgesG"></g>
+          <g id="nodesG"></g>
+        </svg>
+      </div>
+      <div id="detailS1" class="detail-card">
+        <h3 id="detailTitle">Toca un ion en el diagrama</h3>
+        <div id="detailBody">
+          <p style="margin:0;color:#64748b;font-size:13px;">En modo comparación, elige dos iones arriba.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección 2 -->
+  <div id="panel-2" class="section-panel" role="tabpanel" aria-labelledby="tab-btn-2" hidden>
+    <h2 class="section-h2">Mecanismos de llegada a la raíz</h2>
+    <p class="hint">Porcentajes <strong>relativos orientativos</strong> entre flujo de masa, difusión e intercepción radicular (varían con agua, densidad radicular, buffer, etc.).</p>
+    <div class="legend2">
+      <span><span class="dot seg-mf"></span> Flujo de masa</span>
+      <span><span class="dot seg-dif"></span> Difusión</span>
+      <span><span class="dot seg-int"></span> Intercepción radicular</span>
+    </div>
+    <div class="ion-bars-wrap" id="ionBars"></div>
+    <div id="fichaArribo" class="ficha2">
+      <h4 id="fichaArrTitle">Selecciona un ion en la lista o en la barra</h4>
+      <p id="fichaArrBody" style="margin:0;color:#64748b;font-size:13px;">Toca la etiqueta a la izquierda de cualquier barra.</p>
+    </div>
+  </div>
+
+  <!-- Sección 3 -->
+  <div id="panel-3" class="section-panel" role="tabpanel" aria-labelledby="tab-btn-3" hidden>
+    <h2 class="section-h2">Movilidad en la planta y zona típica de síntomas</h2>
+    <p class="hint">Basado en patrones generales de cultivos hidropónicos y de suelo; hay excepciones (p. ej. boromovilidad).</p>
+    <div class="plant-wrap">
+      <div class="plant-svg-box">
+        <svg id="plantSvg" viewBox="0 0 220 280" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path id="z-old" d="M30 180 C 50 100, 80 60, 110 20 C 120 60, 95 130, 70 200 Z" fill="#bbf7d0" opacity="0.55" stroke="#16a34a" stroke-width="1.2"/>
+          <path id="z-young" d="M110 20 C 140 50, 175 90, 185 140 C 175 160, 130 175, 100 175 C 100 120, 108 70, 110 20 Z" fill="#bfdbfe" opacity="0.5" stroke="#2563eb" stroke-width="1.2"/>
+          <path id="z-apex" d="M110 20 C 130 5, 150 15, 155 40 C 145 55, 125 45, 110 35 C 100 28, 95 22, 110 20 Z" fill="#fde68a" opacity="0.65" stroke="#ca8a04" stroke-width="1"/>
+          <text class="zone-label" x="42" y="150">Hojas viejas · parte baja</text>
+          <text class="zone-label" x="128" y="95">Hojas jóvenes · parte alta</text>
+          <text class="zone-label" x="118" y="28">Brotes · meristemos · frutos</text>
+          <!-- tallo -->
+          <path d="M95 175 L105 175 L108 260 L92 260 Z" fill="#86efac" stroke="#15803d" stroke-width="1"/>
+        </svg>
+        <div style="font-size:12px;color:#64748b;margin-top:8px;">
+          <strong style="color:#166534;">Verde</strong>: móviles · 
+          <strong style="color:#1e40af;">Azul</strong>: poco móviles · 
+          <strong style="color:#a16207;">Ámbar</strong>: muy poco móviles (meristemos/fruto)
+        </div>
+      </div>
+      <div>
+        <p class="hint" style="margin-top:0;">Toca el símbolo del elemento:</p>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:4px;">Hojas viejas (móviles)</div>
+          <div class="mob-pill-wrap" id="pillsOld"></div>
+        </div>
+        <div style="margin-top:12px;">
+          <div style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;">Hojas jóvenes (poco móviles)</div>
+          <div class="mob-pill-wrap" id="pillsYoung"></div>
+        </div>
+        <div style="margin-top:12px;">
+          <div style="font-size:12px;font-weight:700;color:#a16207;margin-bottom:4px;">Meristemos / frutos (muy poco móviles)</div>
+          <div class="mob-pill-wrap" id="pillsCrit"></div>
+        </div>
+        <div id="mobFicha" class="mob-ficha" style="margin-top:14px;">
+          <h4 id="mobFichaTitle">Ficha del elemento</h4>
+          <div id="mobFichaBody"><p class="mob-line" style="margin:0;color:#64748b;">Elige un elemento.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">
+    NutriPlant PRO — material educativo. Los antagonismos y porcentajes son referencias generales; validar con análisis, síntomas y asesoría local.
+  </p>
+
+  <script>
+(function () {
+  'use strict';
+
+  // ——— Datos sección 1 ———
+  /** @type {Record<string, { ion: string, short: string, name: string, antagonists: string[], functional: string[], shortTip: string }>} */
+  var SPEC = {
+    no3: {
+      ion: 'NO₃⁻',
+      short: 'NO₃⁻',
+      name: 'Nitrato',
+      antagonists: ['cl'],
+      functional: ['Síntesis proteica (con NH₄⁺)', 'Balance aniónico', 'Relación con absorción de cationes'],
+      shortTip: 'En muchos sistemas convive con otros aniones; el Cl⁻ en exceso puede competir por afinidad de transporte en algunas condiciones.'
+    },
+    nh4: {
+      ion: 'NH₄⁺',
+      short: 'NH₄⁺',
+      name: 'Amonio',
+      antagonists: ['k', 'ca', 'mg'],
+      functional: ['Asimilación directa (menos carbono que NO₃⁻)', 'Efecto en rizósfera y pH local'],
+      shortTip: 'NH₄⁺ alto puede competir por sitios de transporte con K⁺, Ca²⁺ y Mg²⁺ y alterar el balance catiónico.'
+    },
+    h2po4: {
+      ion: 'H₂PO₄⁻ / HPO₄²⁻',
+      short: 'H₂PO₄⁻',
+      name: 'Fosfato (formas ácida/alcalina según pH)',
+      antagonists: ['zn', 'fe', 'cu', 'mn'],
+      functional: ['Energía (ATP/ADP)', 'Ácidos nucleicos', 'Estrategia radicular'],
+      shortTip: 'P alto en suelo/solución se asocia a menudo con antagonismo relativo de micronutrientes (Zn, Fe, Cu, Mn); revisar ratios y pH.'
+    },
+    k: {
+      ion: 'K⁺',
+      short: 'K⁺',
+      name: 'Potasio',
+      antagonists: ['mg', 'ca', 'nh4'],
+      functional: ['Regulación osmótica', 'Transporte de azúcares', 'Apertura y cierre estomático'],
+      shortTip: 'K alto puede presionar la absorción o balance de Mg y Ca, especialmente cuando la relación catiónica está desbalanceada.'
+    },
+    ca: {
+      ion: 'Ca²⁺',
+      short: 'Ca²⁺',
+      name: 'Calcio',
+      antagonists: ['mg', 'k', 'nh4'],
+      functional: ['Pared celular', 'Membranas', 'Transmisión de señales'],
+      shortTip: 'Exceso relativo de otros cationes, o competencia por transporte, puede alterar Ca²⁺ hacia tejidos de baja transpiración (p. ej. fruto joven).'
+    },
+    mg: {
+      ion: 'Mg²⁺',
+      short: 'Mg²⁺',
+      name: 'Magnesio',
+      antagonists: ['k', 'ca', 'nh4'],
+      functional: ['Centro de la clorofila', 'Activación enzimática'],
+      shortTip: 'Exceso relativo de K, Ca o NH₄ puede afectar el balance de Mg.'
+    },
+    so4: {
+      ion: 'SO₄²⁻',
+      short: 'SO₄²⁻',
+      name: 'Sulfato',
+      antagonists: ['moo4'],
+      functional: ['Aminoácidos azufrados', 'Estrés y defensas'],
+      shortTip: 'Sulfato en exceso puede afectar toma de molibdato en algunas condiciones (competencia aniónica).'
+    },
+    fe: {
+      ion: 'Fe²⁺ / Fe³⁺',
+      short: 'Fe',
+      name: 'Hierro (especiación según pH y oxígeno)',
+      antagonists: ['h2po4'],
+      functional: ['Cloroplastos', 'Enzimas redox'],
+      shortTip: 'P alto y pH/ carbonatos altos suelen empeorar la “disponibilidad funcional” de Fe aunque el suelo tenga hierro total alto.'
+    },
+    mn: {
+      ion: 'Mn²⁺',
+      short: 'Mn²⁺',
+      name: 'Manganeso',
+      antagonists: ['h2po4', 'fe'],
+      functional: ['Fotosíntesis (fotosistema)', 'Activación enzimática'],
+      shortTip: 'Interactúa con pH y a veces con Fe y P; toxicidad de Mn puede aparecer con bajo pH.'
+    },
+    zn: {
+      ion: 'Zn²⁺',
+      short: 'Zn²⁺',
+      name: 'Zinc',
+      antagonists: ['h2po4', 'cu', 'ca'],
+      functional: ['Auxinas', 'enzimas', 'integridad de membranas'],
+      shortTip: 'P alto puede inducir deficiencia relativa de Zn: revisar ratio P:Zn en suelo y foliar cuando P está alto y Zn bajo.'
+    },
+    cu: {
+      ion: 'Cu²⁺',
+      short: 'Cu²⁺',
+      name: 'Cobre',
+      antagonists: ['zn', 'h2po4', 'fe'],
+      functional: ['Lignificación', 'fotosíntesis'],
+      shortTip: 'Exceso de Zn o interferencia con Fe/P pueden modificar el balance de Cu.'
+    },
+    b: {
+      ion: 'H₃BO₃ / B(OH)₄⁻',
+      short: 'B',
+      name: 'Boro (especiación según pH)',
+      antagonists: ['ca'],
+      functional: ['Pared celular', 'División celular', 'Polinización'],
+      shortTip: 'Ca alto puede reducir B disponible; el B es sensible a humedad y lixiviación.'
+    },
+    moo4: {
+      ion: 'MoO₄²⁻',
+      short: 'MoO₄²⁻',
+      name: 'Molibdato',
+      antagonists: ['so4'],
+      functional: ['Nitrato reductasa', 'fijación de N'],
+      shortTip: 'SO₄²⁻ en exceso puede competir con la absorción de MoO₄²⁻.'
+    },
+    cl: {
+      ion: 'Cl⁻',
+      short: 'Cl⁻',
+      name: 'Cloruro',
+      antagonists: ['no3'],
+      functional: ['Balance iónico', 'fotosíntesis (PSII)', 'adaptación osmótica'],
+      shortTip: 'Cl⁻ y NO₃⁻ pueden interactuar en toma y distribución según cultivo y dosis.'
+    }
+  };
+
+  var NODE_ORDER = ['no3', 'nh4', 'h2po4', 'k', 'ca', 'mg', 'so4', 'fe', 'mn', 'zn', 'cu', 'b', 'moo4', 'cl'];
+
+  /** Aristas solo visuales: antagonismo sólido, “funcional” punteado opcional si comparten proceso */
+  var EDGES = [];
+  var edgeSeen = {};
+  function addEdge(a, b, kind) {
+    if (a > b) { var t = a; a = b; b = t; }
+    var key = a + '|' + b;
+    if (edgeSeen[key]) return;
+    edgeSeen[key] = true;
+    EDGES.push({ a: a, b: b, kind: kind || 'ant' });
+  }
+  NODE_ORDER.forEach(function (id) {
+    var s = SPEC[id];
+    s.antagonists.forEach(function (tid) {
+      if (SPEC[tid]) addEdge(id, tid, 'ant');
+    });
+  });
+
+  /** Pares con texto curado (clave ordenada) */
+  var PAIR_TEXT = {
+    'h2po4|zn': {
+      title: 'H₂PO₄⁻ ↔ Zn²⁺',
+      typeLabel: 'Antagonismo (frecuente a P alto)',
+      body: [
+        'Qué puede pasar: P alto puede inducir deficiencia relativa de Zn.',
+        'Relaciones guía: P:Zn suelo ≈ 5–15 : 1; P:Zn foliar ≈ 80–150 : 1.',
+        'Dato: no implica que siempre ocurra; conviene revisarlo cuando P está alto y Zn bajo.'
+      ]
+    },
+    'k|mg': {
+      title: 'K⁺ ↔ Mg²⁺',
+      typeLabel: 'Competencia / antagonismo catiónico',
+      body: [
+        'Relacionado con sitios de transporte y balance catiónico.',
+        'Con K alto en solución, la toma relativa de Mg puede verse presionada.'
+      ]
+    }
+  };
+
+  function pairKey(x, y) {
+    return x < y ? x + '|' + y : y + '|' + x;
+  }
+
+  // SVG layout
+  var cx = 260, cy = 230, r = 168;
+  var pos = {};
+  NODE_ORDER.forEach(function (id, i) {
+    var ang = -Math.PI / 2 + (i / NODE_ORDER.length) * Math.PI * 2;
+    pos[id] = {
+      x: cx + r * Math.cos(ang),
+      y: cy + r * Math.sin(ang)
+    };
+  });
+
+  var edgesG = document.getElementById('edgesG');
+  var nodesG = document.getElementById('nodesG');
+  var edgeEls = [];
+
+  EDGES.forEach(function (e, idx) {
+    var p1 = pos[e.a], p2 = pos[e.b];
+    var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', p1.x);
+    line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x);
+    line.setAttribute('y2', p2.y);
+    line.setAttribute('class', 'edge-line');
+    line.setAttribute('data-a', e.a);
+    line.setAttribute('data-b', e.b);
+    line.setAttribute('data-k', e.kind);
+    line.setAttribute('id', 'edge-' + idx);
+    edgesG.appendChild(line);
+    edgeEls.push(line);
+  });
+
+  var nodeCircles = {};
+  NODE_ORDER.forEach(function (id) {
+    var p = pos[id];
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'node-hit');
+    g.setAttribute('data-id', id);
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
+    var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', p.x);
+    circle.setAttribute('cy', p.y);
+    circle.setAttribute('r', 22);
+    circle.setAttribute('fill', '#ffffff');
+    circle.setAttribute('stroke', '#94a3b8');
+    circle.setAttribute('stroke-width', '2');
+    circle.setAttribute('class', 'n-circle');
+    circle.setAttribute('filter', 'url(#soft)');
+    var t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    t.setAttribute('x', p.x);
+    t.setAttribute('y', p.y + 4);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('font-size', '11');
+    t.setAttribute('font-weight', '800');
+    t.setAttribute('fill', '#0f172a');
+    t.textContent = SPEC[id].short || SPEC[id].ion;
+    g.appendChild(circle);
+    g.appendChild(t);
+    nodesG.appendChild(g);
+    nodeCircles[id] = circle;
+    g.addEventListener('click', function () { onNodeClick(id); });
+    g.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onNodeClick(id); }
+    });
+  });
+
+  var modeSel = document.getElementById('modeSel');
+  var compareCtrls = document.getElementById('compareCtrls');
+  var cmpA = document.getElementById('cmpA');
+  var cmpB = document.getElementById('cmpB');
+  var selSingle = null;
+  var compareFirstPick = true;
+  var detailTitle = document.getElementById('detailTitle');
+  var detailBody = document.getElementById('detailBody');
+
+  function fillCompareSelects() {
+    cmpA.innerHTML = '';
+    cmpB.innerHTML = '';
+    NODE_ORDER.forEach(function (id) {
+      var o1 = document.createElement('option');
+      o1.value = id;
+      o1.textContent = SPEC[id].ion + ' — ' + SPEC[id].name;
+      cmpA.appendChild(o1);
+      var o2 = document.createElement('option');
+      o2.value = id;
+      o2.textContent = SPEC[id].ion + ' — ' + SPEC[id].name;
+      cmpB.appendChild(o2);
+    });
+    cmpA.value = 'h2po4';
+    cmpB.value = 'zn';
+  }
+  fillCompareSelects();
+
+  function clearEdgeHi() {
+    edgeEls.forEach(function (ln) {
+      ln.setAttribute('class', 'edge-line');
+    });
+  }
+
+  function highlightEdgesForNode(nid) {
+    clearEdgeHi();
+    edgeEls.forEach(function (ln) {
+      var a = ln.getAttribute('data-a');
+      var b = ln.getAttribute('data-b');
+      var k = ln.getAttribute('data-k');
+      if (a === nid || b === nid) {
+        ln.setAttribute('class', k === 'fun' ? 'edge-line hi-fun' : 'edge-line hi-ant');
+      }
+    });
+  }
+
+  function highlightPair(a, b) {
+    clearEdgeHi();
+    edgeEls.forEach(function (ln) {
+      var ea = ln.getAttribute('data-a');
+      var eb = ln.getAttribute('data-b');
+      if (ea === a && eb === b || ea === b && eb === a) {
+        ln.setAttribute('class', 'edge-line hi-pair');
+      }
+    });
+  }
+
+  function setNodeVisual(singleId, compareIds) {
+    NODE_ORDER.forEach(function (id) {
+      nodeCircles[id].classList.remove('sel', 'dim');
+    });
+    if (modeSel.value === 'single' && singleId) {
+      nodeCircles[singleId].classList.add('sel');
+      NODE_ORDER.forEach(function (id) {
+        if (id !== singleId) nodeCircles[id].classList.add('dim');
+      });
+    } else if (modeSel.value === 'compare' && compareIds) {
+      compareIds.forEach(function (id) { nodeCircles[id].classList.add('sel'); });
+      NODE_ORDER.forEach(function (id) {
+        if (compareIds.indexOf(id) === -1) nodeCircles[id].classList.add('dim');
+      });
+    }
+  }
+
+  function renderSingleDetail(id) {
+    var s = SPEC[id];
+    detailTitle.textContent = s.ion + ' — ' + s.name;
+    var ants = s.antagonists.map(function (tid) {
+      return '<span class="tag tag-ant">' + SPEC[tid].ion + '</span>';
+    }).join(' ');
+    var fun = s.functional.map(function (t) {
+      return '<span class="tag tag-fun">' + t + '</span>';
+    }).join(' ');
+    detailBody.innerHTML =
+      '<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#475569;">Compite / antagoniza con (referencia):</p>' +
+      (ants || '<span style="color:#64748b;font-size:13px;">— (no listado en este diagrama simplificado)</span>') +
+      '<p style="margin:12px 0 6px;font-size:13px;font-weight:600;color:#475569;">Puede relacionarse funcionalmente con:</p><div style="margin-top:4px;">' +
+      (fun || '—') + '</div>' +
+      '<div class="dato-corto"><strong>Dato corto:</strong> ' + s.shortTip + '</div>';
+  }
+
+  function renderCompareDetail(a, b) {
+    if (a === b) {
+      detailTitle.textContent = 'Elige dos iones distintos';
+      detailBody.innerHTML = '<p style="margin:0;color:#b91c1c;">Selecciona otro segundo ion.</p>';
+      return;
+    }
+    var pk = pairKey(a, b);
+    var curated = PAIR_TEXT[pk];
+    highlightPair(a, b);
+    if (curated) {
+      detailTitle.textContent = curated.title;
+      detailBody.innerHTML =
+        '<p style="margin:0 0 8px;"><span class="tag tag-ant">' + curated.typeLabel + '</span></p>' +
+        curated.body.map(function (line) { return '<p style="margin:6px 0;font-size:13px;">' + line + '</p>'; }).join('');
+      return;
+    }
+    // genérico
+    var ha = SPEC[a], hb = SPEC[b];
+    var linked = EDGES.some(function (e) {
+      return (e.a === a && e.b === b) || (e.a === b && e.b === a);
+    });
+    detailTitle.textContent = ha.ion + ' ↔ ' + hb.ion;
+    if (linked) {
+      detailBody.innerHTML =
+        '<p style="margin:0 0 8px;font-size:13px;">Hay una línea ilustrativa entre ambos en el diagrama (interacción frecuentemente citada en textos).</p>' +
+        '<p style="margin:0;font-size:13px;color:#334155;">Revisa antagonismos listados en cada ficha individual y el pH/CE del sistema. ' +
+        'Para más detalle, consulta cada ion por separado en modo “Un nutriente”.</p>';
+    } else {
+      detailBody.innerHTML =
+        '<p style="margin:0;font-size:13px;color:#334155;">No hay una arista dedicada entre estos nodos en esta versión didáctica. ' +
+        'Las interacciones reales dependen de concentraciones, pH, cultivo y forma química.</p>';
+    }
+  }
+
+  function onNodeClick(id) {
+    if (modeSel.value === 'compare') {
+      if (compareFirstPick) {
+        cmpA.value = id;
+        compareFirstPick = false;
+      } else {
+        cmpB.value = id;
+        compareFirstPick = true;
+      }
+      onCompareChange();
+      return;
+    }
+    selSingle = id;
+    highlightEdgesForNode(id);
+    setNodeVisual(id, null);
+    renderSingleDetail(id);
+  }
+
+  modeSel.addEventListener('change', function () {
+    var comp = modeSel.value === 'compare';
+    compareCtrls.style.display = comp ? 'inline-flex' : 'none';
+    clearEdgeHi();
+    NODE_ORDER.forEach(function (id) {
+      nodeCircles[id].classList.remove('sel', 'dim');
+    });
+    if (comp) {
+      compareFirstPick = true;
+      onCompareChange();
+    } else {
+      selSingle = null;
+      compareFirstPick = true;
+      detailTitle.textContent = 'Toca un ion en el diagrama';
+      detailBody.innerHTML = '<p style="margin:0;color:#64748b;font-size:13px;">Pulsa un círculo.</p>';
+    }
+  });
+
+  function onCompareChange() {
+    if (modeSel.value !== 'compare') return;
+    var a = cmpA.value, b = cmpB.value;
+    setNodeVisual(null, [a, b]);
+    renderCompareDetail(a, b);
+  }
+  cmpA.addEventListener('change', function () { compareFirstPick = true; onCompareChange(); });
+  cmpB.addEventListener('change', function () { compareFirstPick = true; onCompareChange(); });
+
+  // ——— Sección 2 ———
+  var ARRIVAL = [
+    { id: 'no3', lab: 'NO₃⁻', name: 'Nitrato', mf: 78, dif: 14, int: 8,
+      dom: 'Flujo de masa',
+      mean: 'Se mueve bien con el agua hacia las raíces cuando hay transpiración activa.',
+      dep: 'Transpiración, humedad del suelo, distribución radicular.',
+      risk: 'Lixiviación si el aporte excede la demanda y el sistema es permeable.' },
+    { id: 'nh4', lab: 'NH₄⁺', name: 'Amonio', mf: 50, dif: 35, int: 15,
+      dom: 'Flujo + difusión (según retención)',
+      mean: 'Puede adsorberse en fracciones cambiables; llega por masa y difusión radial.',
+      dep: 'CIC, humedad, temperatura, nitrificación, competencia catiónica.',
+      risk: 'Toxicidad amonio si acumula; competencia con K⁺, Ca²⁺, Mg²⁺.' },
+    { id: 'h2po4', lab: 'H₂PO₄⁻ / HPO₄²⁻', name: 'Fosfato', mf: 8, dif: 80, int: 12,
+      dom: 'Difusión',
+      mean: 'Se mueve lentamente hacia la raíz; la “disponibilidad” en análisis no siempre es acercamiento a la rizósfera.',
+      dep: 'Humedad, raíz activa, pH, Ca, Fe, Al y temperatura.',
+      risk: 'Puede haber P en el suelo, pero no necesariamente entrando al ritmo que la planta demanda.' },
+    { id: 'k', lab: 'K⁺', name: 'Potasio', mf: 72, dif: 18, int: 10,
+      dom: 'Flujo de masa',
+      mean: 'Se transporta con el flujo de solución hacia la raíz.',
+      dep: 'CE, humedad, demanda transpirativa, densidad radicular.',
+      risk: 'Desequilibrio con otros cationes; lixiviación en suelos arenosos.' },
+    { id: 'ca', lab: 'Ca²⁺', name: 'Calcio', mf: 70, dif: 18, int: 12,
+      dom: 'Flujo de masa + intercepción radicular',
+      mean: 'Depende mucho del movimiento de agua, transpiración y raíz activa.',
+      dep: 'Humedad, CE, VPD, raíz activa y demanda del tejido.',
+      risk: 'Puede haber Ca en suelo, pero no llegar bien a fruto o tejidos jóvenes (baja “conductividad” hacia ápices y fruto).' },
+    { id: 'mg', lab: 'Mg²⁺', name: 'Magnesio', mf: 62, dif: 24, int: 14,
+      dom: 'Flujo de masa + difusión',
+      mean: 'Menos dominante que Ca en flujo puro; contribución importante de difusión.',
+      dep: 'CEC, humedad, competencia con K⁺/NH₄⁺/Ca²⁺.',
+      risk: 'Deficiencia relativa con fertilización alta en K.' },
+    { id: 'so4', lab: 'SO₄²⁻', name: 'Sulfato', mf: 58, dif: 30, int: 12,
+      dom: 'Flujo + difusión',
+      mean: 'Anión móvil en solución; menor retención que fosfato en muchos suelos.',
+      dep: 'Humedad, lixiviación, aporte azufre foliar o en agua.',
+      risk: 'Lixiviación; interacción con MoO₄²⁻ en exceso de sulfato.' },
+    { id: 'fe', lab: 'Fe²⁺ / Fe³⁺', name: 'Hierro (especiación)', mf: 35, dif: 45, int: 20,
+      dom: 'Difusión + intercepción (según química)',
+      mean: 'Disponibilidad fuertemente ligada a pH y óxidos de Fe en suelo.',
+      dep: 'pH, carbonatos, redox, competencia (Cu, Mn, Zn), rizósfera.',
+      risk: 'Clorosis férrica con pH alto aunque Fe total sea alto.' },
+    { id: 'mn', lab: 'Mn²⁺', name: 'Manganeso', mf: 38, dif: 42, int: 20,
+      dom: 'Difusión / masa (según pH)',
+      mean: 'Muy sensible a pH y redox.',
+      dep: 'pH bajo aumenta Mn disponible (ojo toxicidad).',
+      risk: 'Toxicidad en suelos ácidos; deficiencia en alcalinos.' },
+    { id: 'zn', lab: 'Zn²⁺', name: 'Zinc', mf: 36, dif: 44, int: 20,
+      dom: 'Difusión principal',
+      mean: 'Baja movilidad en suelo; difusión hacia la rizósfera.',
+      dep: 'pH, P, carbonatos, materia orgánica.',
+      risk: 'Deficiencia relativa con P alto.' },
+    { id: 'cu', lab: 'Cu²⁺', name: 'Cobre', mf: 34, dif: 46, int: 20,
+      dom: 'Difusión',
+      mean: 'Toma ligada a materia orgánica complejante y pH.',
+      dep: 'pH, MO, antagonismos con Zn/Fe.',
+      risk: 'Toxicidad por fungicidas cupríacos acumulados; deficiencia en suelos muy calcareos.' },
+    { id: 'b', lab: 'H₃BO₃ / B(OH)₄⁻', name: 'Boro', mf: 28, dif: 48, int: 24,
+      dom: 'Difusión + masa (según especie y flujo transpirativo)',
+      mean: 'Movimiento hacia raíz por difusión de ácido bórico; masa con transpiración en xilema.',
+      dep: 'Humedad textura, lixiviación, Ca, pH.',
+      risk: 'Bandas de carencia por falta de humedad; toxicidad en exceso.' },
+    { id: 'moo4', lab: 'MoO₄²⁻', name: 'Molibdato', mf: 40, dif: 45, int: 15,
+      dom: 'Flujo + difusión',
+      mean: 'Anión en competencia con sulfato.',
+      dep: 'SO₄²⁻, pH, materia orgánica.',
+      risk: 'Deficiencia en suelos ácidos (Mo menos disponible) dependiendo de mineralogía (reglas generales).' },
+    { id: 'cl', lab: 'Cl⁻', name: 'Cloruro', mf: 75, dif: 15, int: 10,
+      dom: 'Flujo de masa',
+      mean: 'Muy móvil en solución con el agua.',
+      dep: 'Aporte (agua/fertilizante), escurrimiento, NO₃⁻.',
+      risk: 'Sensibilidad varietal a Cl⁻; competencia con NO₃⁻ en algunos contextos.' }
+  ];
+
+  var ionBars = document.getElementById('ionBars');
+  var fichaArrTitle = document.getElementById('fichaArrTitle');
+  var fichaArrBody = document.getElementById('fichaArrBody');
+  var selArrId = null;
+
+  function renderArrivalBars() {
+    ionBars.innerHTML = '';
+    ARRIVAL.forEach(function (row) {
+      var wrap = document.createElement('div');
+      wrap.className = 'ion-bar-row';
+      var lab = document.createElement('button');
+      lab.type = 'button';
+      lab.className = 'ion-label' + (selArrId === row.id ? ' active' : '');
+      lab.textContent = row.lab;
+      lab.addEventListener('click', function () { selectArrival(row.id); });
+      var stack = document.createElement('div');
+      stack.className = 'stack';
+      stack.innerHTML =
+        '<span class="seg seg-mf" style="width:' + row.mf + '%;">' + row.mf + '%</span>' +
+        '<span class="seg seg-dif" style="width:' + row.dif + '%;">' + row.dif + '%</span>' +
+        '<span class="seg seg-int" style="width:' + row.int + '%;">' + row.int + '%</span>';
+      wrap.appendChild(lab);
+      wrap.appendChild(stack);
+      ionBars.appendChild(wrap);
+    });
+  }
+
+  function selectArrival(id) {
+    selArrId = id;
+    var row = ARRIVAL.find(function (r) { return r.id === id; });
+    renderArrivalBars();
+    fichaArrTitle.textContent = row.lab + ' — ' + row.name;
+    fichaArrBody.innerHTML =
+      '<p><span class="k">Vía dominante:</span> ' + row.dom + '</p>' +
+      '<p><span class="k">Qué significa:</span> ' + row.mean + '</p>' +
+      '<p><span class="k">Depende de:</span> ' + row.dep + '</p>' +
+      '<p><span class="k">Riesgo común:</span> ' + row.risk + '</p>';
+  }
+  renderArrivalBars();
+  selectArrival('h2po4');
+
+  // ——— Sección 3 movilidad ———
+  var EL_NAMES = { N: 'Nitrógeno', P: 'Fósforo', K: 'Potasio', Mg: 'Magnesio', Mo: 'Molibdeno', S: 'Azufre', Fe: 'Hierro', Mn: 'Manganeso', Zn: 'Zinc', Cu: 'Cobre', Ca: 'Calcio', B: 'Boro' };
+
+  var MOBILITY = {
+    N: { mob: 'Alta', where: 'Hojas viejas', sym: 'Clorosis general / amarillamiento', fn: 'Proteínas, clorofila, crecimiento vegetativo', tip: 'Deficiencia temprana en hojas inferiores en plantas con prioridad a crecimiento nuevo.' },
+    P: { mob: 'Alta', where: 'Hojas viejas', sym: 'Tonos oscuros/púrpura en algunos cultivos; hojas bajas poco vigorosas', fn: 'ATP, raíces, floración', tip: 'Frío y suelos fijadores de P pueden exacerbar síntomas aunque el análisis sea “medio”.' },
+    K: { mob: 'Alta', where: 'Hojas viejas', sym: 'Clorosis marginal u oscurecimiento; “quemado” en bordes', fn: 'Osmótica, transporte, calidad', tip: 'Mg puede confundirse; revisar K/Mg/Ca en hoja.' },
+    Mg: { mob: 'Alta', where: 'Hojas viejas', sym: 'Clorosis intervenal en hojas maduras', fn: 'Clorofila, fotosíntesis y activación enzimática', tip: 'Exceso relativo de K, Ca o NH₄ puede afectar el balance de Mg.' },
+    Mo: { mob: 'Alta (en muchas especies para el metabolismo del nitrato)', where: 'Hojas viejas', sym: 'Parecido a carencia de N en algunos casos; moteado', fn: 'Nitrato reductasa, nódulos (leguminosas)', tip: 'Síntomas variables; contextualizar con especie y forma de N (NO₃ vs fixation).' },
+    S: { mob: 'Intermedia / baja en algunos cultivos', where: 'Hojas jóvenes', sym: 'Clorosis uniforme en tejido nuevo; reddening asociado en algunas especies', fn: 'Aminoácidos azufrados, defensas', tip: 'En hidroponía a veces aparece antes en hoja joven que macronutriente móvil clásico.' },
+    Fe: { mob: 'Baja', where: 'Hojas jóvenes', sym: 'Clorosis intervenal con nervaduras verdes', fn: 'Formación indirecta de clorofila, enzimas redox y transporte electrónico', tip: 'pH alto, bicarbonatos y baja disponibilidad pueden inducir deficiencia de Fe.' },
+    Mn: { mob: 'Baja', where: 'Hojas jóvenes', sym: 'Moteado o clorosis intervenal; necrosis “ojos de pájaro” en algunos cultivos', fn: 'Fotosistema II, activación enzimática', tip: 'Síntomas similares a Fe; la hoja vieja ayuda a distinguir (Fe/Mn suelen ser jóvenes).' },
+    Zn: { mob: 'Baja', where: 'Hojas jóvenes', sym: 'Hoja pequeña, clorosis, “rozamiento” foliar', fn: 'Auxinas, integralidad de membrana', tip: 'P alto y frío suelen empeorar Cuadro.' },
+    Cu: { mob: 'Baja', where: 'Hojas jóvenes', sym: 'Deformación, clorosis, muerte de ápices en casos severos', fn: 'Lignificación, fotosíntesis', tip: 'Toxicidad por exceso de aplicaciones cupríacas.' },
+    Ca: { mob: 'Baja (poco redistribuido en floema)', where: 'Hojas jóvenes meristemos y frutos', sym: 'Necrosis marginal, blossom-end rot, punta de hoja enrollada', fn: 'Pared celular, membranas, señalización', tip: 'Conductividad con baja transpiración en fruto → BER aunque Ca del suelo sea “adecuado”.' },
+    B: {
+      mob: 'Baja en la mayoría de cultivos (algunos son “boromoviles” vía polioles)',
+      where: 'Hojas jóvenes, brotes, flores, frutos y meristemos',
+      sym: 'Deformación, muerte de puntos de crecimiento, mala floración o bajo amarre',
+      fn: 'Pared celular, crecimiento meristemático, tubo polínico y transporte de azúcares',
+      tip: 'Cultivos con polioles (manzano, pera y algunas rosáceas) pueden redistribuir B hacia órganos jóvenes mayor que olivo o uva; por eso “boromovilidad” no es igual en todos lados.'
+    }
+  };
+
+  var pillsOld = document.getElementById('pillsOld');
+  var pillsYoung = document.getElementById('pillsYoung');
+  var pillsCrit = document.getElementById('pillsCrit');
+  var mobFichaTitle = document.getElementById('mobFichaTitle');
+  var mobFichaBody = document.getElementById('mobFichaBody');
+
+  [['N', 'P', 'K', 'Mg', 'Mo'], ['S', 'Fe', 'Mn', 'Zn', 'Cu', 'Ca', 'B'], ['Ca', 'B']].forEach(function (group, gi) {
+    var host = gi === 0 ? pillsOld : gi === 1 ? pillsYoung : pillsCrit;
+    group.forEach(function (sym) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mob-pill';
+      b.textContent = sym;
+      b.addEventListener('click', function () { showMob(sym); });
+      host.appendChild(b);
+    });
+  });
+
+  function showMob(sym) {
+    var m = MOBILITY[sym];
+    if (!m) return;
+    mobFichaTitle.textContent = sym + ' — ' + (EL_NAMES[sym] || '');
+    mobFichaBody.innerHTML =
+      '<p class="mob-line"><strong>Movilidad:</strong> ' + m.mob + '</p>' +
+      '<p class="mob-line"><strong>Dónde se ve primero:</strong> ' + m.where + '</p>' +
+      '<p class="mob-line"><strong>Síntoma común:</strong> ' + m.sym + '</p>' +
+      '<p class="mob-line"><strong>Funciones principales:</strong> ' + m.fn + '</p>' +
+      '<p class="mob-line"><strong>Tip:</strong> ' + m.tip + '</p>';
+  }
+
+  // Tabs
+  var tabBtns = document.querySelectorAll('[role="tab"]');
+  var panels = [
+    document.getElementById('panel-1'),
+    document.getElementById('panel-2'),
+    document.getElementById('panel-3')
+  ];
+  tabBtns.forEach(function (btn, i) {
+    btn.addEventListener('click', function () {
+      tabBtns.forEach(function (b, j) {
+        b.setAttribute('aria-selected', j === i ? 'true' : 'false');
+      });
+      panels.forEach(function (p, j) {
+        var on = j === i;
+        p.classList.toggle('active', on);
+        p.hidden = !on;
+      });
+    });
+  });
+})();
+  </script>
+</body>
+</html>

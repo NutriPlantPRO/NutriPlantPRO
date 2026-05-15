@@ -309,6 +309,11 @@
           <span class="button-text">Compatibilidad de fertilizantes (fertirriego)</span>
         </button>
 
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientInteractionsTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🔗</span>
+          <span class="button-text">Interacciones, absorción y movilidad nutrimental</span>
+        </button>
+
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showNMineralizableMoCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🌱</span>
           <span class="button-text">N mineralizable desde materia orgánica</span>
@@ -1444,6 +1449,16 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showNutrientInteractionsTool() {
+      document.getElementById('nutrientInteractionsToolModal').style.display = 'flex';
+    }
+    function closeNutrientInteractionsTool() {
+      const modal = document.getElementById('nutrientInteractionsToolModal');
+      const frame = document.getElementById('nutrientInteractionsToolFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     // Datos de nutrientes: peso molecular y valencia
     const nutrientDataLogin = {
       'n': { mw: 14.01, valence: 1 },
@@ -2173,6 +2188,19 @@
       </div>
       <div class="modal-body">
         <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html" title="Compatibilidad de fertilizantes"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Interacciones, absorción y movilidad nutrimental -->
+  <div id="nutrientInteractionsToolModal" class="modal-overlay">
+    <div class="modal modal-fertilizer-composition">
+      <div class="modal-header">
+        <h2 class="modal-title">🔗 Interacciones, absorción y movilidad nutrimental</h2>
+        <button class="modal-close" onclick="closeNutrientInteractionsTool()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html" title="Interacciones, absorción y movilidad nutrimental"></iframe>
       </div>
     </div>
   </div>

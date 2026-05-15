@@ -190,6 +190,7 @@
           <button type="button" id="btn-water-hardness-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showWaterHardnessCalculator()" data-np-tooltip="Calculadora de Dureza y Acondicionamiento de Agua" aria-label="Calculadora de Dureza y Acondicionamiento de Agua">💦</button>
           <button type="button" id="btn-extraccion-etapa-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showExtraccionEtapaCalculator()" data-np-tooltip="Distribución de extracción por etapa (%)" aria-label="Distribución de extracción por etapa (porcentaje)">📊</button>
           <button type="button" id="btn-periodic-table-nutrients" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showPeriodicTableNutrientsCalculator()" data-np-tooltip="Tabla periódica (nutrientes)" aria-label="Tabla periódica de nutrientes">⚛️</button>
+          <button type="button" id="btn-nutrient-interactions-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientInteractionsTool()" data-np-tooltip="Interacciones, absorción y movilidad nutrimental" aria-label="Interacciones, absorción y movilidad nutrimental">🔗</button>
           <button type="button" id="btn-fertilizer-compatibility-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCompatibilityCalculator()" data-np-tooltip="Compatibilidad de fertilizantes (fertirriego)" aria-label="Compatibilidad de fertilizantes para fertirriego">🔺</button>
           <button type="button" id="btn-fertilizer-composition-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCompositionCalculator()" data-np-tooltip="Calculadora de composición de fertilizantes (%)" aria-label="Calculadora de composición de fertilizantes porcentaje">⚗️</button>
           <button type="button" id="btn-measure-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showMeasureUnitsCalculator()" data-np-tooltip="Conversor de magnitudes físicas: longitud, área, volumen, masa, temperatura, presión, concentración" aria-label="Conversor de magnitudes físicas: longitud, área, volumen, masa, temperatura, presión y concentración">📐</button>
@@ -451,6 +452,9 @@
       if (typeof showNMineralizableMoCalculator !== 'undefined') {
         window.showNMineralizableMoCalculator = showNMineralizableMoCalculator;
       }
+      if (typeof showNutrientInteractionsTool !== 'undefined') {
+        window.showNutrientInteractionsTool = showNutrientInteractionsTool;
+      }
       if (typeof closeMeasureUnitsCalculator !== 'undefined') {
         window.closeMeasureUnitsCalculator = closeMeasureUnitsCalculator;
       }
@@ -471,6 +475,9 @@
       }
       if (typeof closeNMineralizableMoCalculator !== 'undefined') {
         window.closeNMineralizableMoCalculator = closeNMineralizableMoCalculator;
+      }
+      if (typeof closeNutrientInteractionsTool !== 'undefined') {
+        window.closeNutrientInteractionsTool = closeNutrientInteractionsTool;
       }
       if (typeof closeConversionCalculator !== 'undefined') {
         window.closeConversionCalculator = closeConversionCalculator;
@@ -4909,6 +4916,21 @@ CONTRATO:
     }
     window.closeNMineralizableMoCalculator = closeNMineralizableMoCalculator;
 
+    function showNutrientInteractionsTool() {
+      var modal = document.getElementById('nutrientInteractionsToolModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showNutrientInteractionsTool = showNutrientInteractionsTool;
+
+    function closeNutrientInteractionsTool() {
+      var modal = document.getElementById('nutrientInteractionsToolModal');
+      var frame = document.getElementById('nutrientInteractionsToolFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeNutrientInteractionsTool = closeNutrientInteractionsTool;
+
     function showFertilizerCompositionCalculator() {
       var modal = document.getElementById('fertilizerCompositionCalculatorModal');
       if (!modal) return;
@@ -6512,6 +6534,19 @@ CONTRATO:
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html" title="N mineralizable desde materia orgánica" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Interacciones, absorción y movilidad nutrimental -->
+  <div id="nutrientInteractionsToolModal" class="modal-overlay" onclick="if(event.target===this) closeNutrientInteractionsTool();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title">🔗 Interacciones, absorción y movilidad nutrimental</h2>
+        <button class="modal-close" onclick="closeNutrientInteractionsTool()">×</button>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html" title="Interacciones, absorción y movilidad nutrimental" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
