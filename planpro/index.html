@@ -4924,36 +4924,66 @@
     npRichImgResizeUI.img = null;
   }
 
+  /** Parte visible del <img> dentro del área de apuntes (scroll del bloc + del editor). */
+  function npClipImgRectToEditorViewport(imgRect, editorEl) {
+    var left = imgRect.left;
+    var top = imgRect.top;
+    var right = imgRect.right;
+    var bottom = imgRect.bottom;
+    function clipTo(el) {
+      if (!el || typeof el.getBoundingClientRect !== 'function') return;
+      var e = el.getBoundingClientRect();
+      left = Math.max(left, e.left);
+      top = Math.max(top, e.top);
+      right = Math.min(right, e.right);
+      bottom = Math.min(bottom, e.bottom);
+    }
+    if (editorEl && editorEl.closest) {
+      clipTo(editorEl.closest('.np-notebook-page'));
+    }
+    clipTo(editorEl);
+    var w = right - left;
+    var h = bottom - top;
+    if (w < 4 || h < 4) return null;
+    return { left: left, top: top, width: w, height: h, right: right, bottom: bottom };
+  }
+
   function positionRichImgResizeOverlay() {
     var ov = npRichImgResizeUI.overlay;
     var img = npRichImgResizeUI.img;
+    var editorEl = npRichImgResizeUI.editorEl;
     if (!ov || !img || ov.classList.contains('np-hide')) return;
     if (!img.isConnected) {
       hideRichImgResizeUI();
       return;
     }
     var r = img.getBoundingClientRect();
+    var vis = npClipImgRectToEditorViewport(r, editorEl);
+    if (!vis) {
+      hideRichImgResizeUI();
+      return;
+    }
     var frame = ov.querySelector('.np-rich-img-resize-frame');
     if (!frame) return;
-    frame.style.left = r.left + 'px';
-    frame.style.top = r.top + 'px';
-    frame.style.width = Math.max(0, r.width) + 'px';
-    frame.style.height = Math.max(0, r.height) + 'px';
+    frame.style.left = vis.left + 'px';
+    frame.style.top = vis.top + 'px';
+    frame.style.width = Math.max(0, vis.width) + 'px';
+    frame.style.height = Math.max(0, vis.height) + 'px';
 
     var coarse =
       typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
     var hw = coarse ? 36 : 26;
     var hh = coarse ? 36 : 26;
     var padGoal = coarse ? 10 : 8;
-    var pad = Math.min(padGoal, Math.max(3, Math.floor(Math.min(r.width, r.height) * 0.06)));
-    if (pad * 2 + hw > r.width) pad = Math.max(0, Math.floor((r.width - hw) / 2));
-    if (pad * 2 + hh > r.height) pad = Math.min(pad, Math.max(0, Math.floor((r.height - hh) / 2)));
+    var pad = Math.min(padGoal, Math.max(3, Math.floor(Math.min(vis.width, vis.height) * 0.06)));
+    if (pad * 2 + hw > vis.width) pad = Math.max(0, Math.floor((vis.width - hw) / 2));
+    if (pad * 2 + hh > vis.height) pad = Math.min(pad, Math.max(0, Math.floor((vis.height - hh) / 2)));
 
     var corners = {
-      nw: { left: r.left + pad, top: r.top + pad, transform: 'none' },
-      ne: { left: r.right - pad, top: r.top + pad, transform: 'translate(-100%, 0)' },
-      sw: { left: r.left + pad, top: r.bottom - pad, transform: 'translate(0, -100%)' },
-      se: { left: r.right - pad, top: r.bottom - pad, transform: 'translate(-100%, -100%)' }
+      nw: { left: vis.left + pad, top: vis.top + pad, transform: 'none' },
+      ne: { left: vis.right - pad, top: vis.top + pad, transform: 'translate(-100%, 0)' },
+      sw: { left: vis.left + pad, top: vis.bottom - pad, transform: 'translate(0, -100%)' },
+      se: { left: vis.right - pad, top: vis.bottom - pad, transform: 'translate(-100%, -100%)' }
     };
     ['nw', 'ne', 'sw', 'se'].forEach(function (c) {
       var btn = ov.querySelector('.np-rich-img-handle--' + c);
