@@ -3061,15 +3061,15 @@
     /* Arrastra desde la esquina inferior derecha para cambiar tamaño (apuntes). */
     .np-rich-editor img.np-rich-img:hover {
       outline: 2px solid rgba(34, 197, 94, 0.28);
-      outline-offset: 3px;
+      outline-offset: -2px;
       box-shadow:
         0 2px 12px rgba(15, 23, 42, 0.08),
         inset -5px -5px 0 0 rgba(34, 197, 94, 0.35);
     }
     .np-rich-editor img.np-rich-img.np-rich-img-resizing {
-      outline: 2px solid rgba(34, 197, 94, 0.55);
-      outline-offset: 3px;
-      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08), inset -5px -5px 0 0 rgba(22, 163, 74, 0.65);
+      outline: 2px solid rgba(34, 197, 94, 0.4);
+      outline-offset: -2px;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
       user-select: none;
     }
     /* Marco + pestañas en esquinas al elegir imagen (redimensionar apuntes). */
@@ -3086,10 +3086,13 @@
       width: 0;
       height: 0;
       box-sizing: border-box;
-      border: 2px solid rgba(22, 163, 74, 0.9);
+      border: none;
       border-radius: 10px;
       pointer-events: none;
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.65) inset;
+      /* Borde dentro del rectángulo (no “sale” de la imagen hacia la barra). */
+      box-shadow:
+        inset 0 0 0 2px rgba(22, 163, 74, 0.92),
+        inset 0 0 0 3px rgba(255, 255, 255, 0.35);
     }
     .np-rich-img-handle {
       position: absolute;
@@ -3103,7 +3106,7 @@
       box-shadow: 0 2px 10px rgba(15, 23, 42, 0.28);
       pointer-events: auto;
       touch-action: none;
-      transform: translate(-50%, -50%);
+      transform: none;
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
@@ -4936,17 +4939,29 @@
     frame.style.top = r.top + 'px';
     frame.style.width = Math.max(0, r.width) + 'px';
     frame.style.height = Math.max(0, r.height) + 'px';
-    var pts = {
-      nw: [r.left, r.top],
-      ne: [r.right, r.top],
-      sw: [r.left, r.bottom],
-      se: [r.right, r.bottom]
+
+    var coarse =
+      typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+    var hw = coarse ? 36 : 26;
+    var hh = coarse ? 36 : 26;
+    var padGoal = coarse ? 10 : 8;
+    var pad = Math.min(padGoal, Math.max(3, Math.floor(Math.min(r.width, r.height) * 0.06)));
+    if (pad * 2 + hw > r.width) pad = Math.max(0, Math.floor((r.width - hw) / 2));
+    if (pad * 2 + hh > r.height) pad = Math.min(pad, Math.max(0, Math.floor((r.height - hh) / 2)));
+
+    var corners = {
+      nw: { left: r.left + pad, top: r.top + pad, transform: 'none' },
+      ne: { left: r.right - pad, top: r.top + pad, transform: 'translate(-100%, 0)' },
+      sw: { left: r.left + pad, top: r.bottom - pad, transform: 'translate(0, -100%)' },
+      se: { left: r.right - pad, top: r.bottom - pad, transform: 'translate(-100%, -100%)' }
     };
     ['nw', 'ne', 'sw', 'se'].forEach(function (c) {
       var btn = ov.querySelector('.np-rich-img-handle--' + c);
       if (!btn) return;
-      btn.style.left = pts[c][0] + 'px';
-      btn.style.top = pts[c][1] + 'px';
+      var p = corners[c];
+      btn.style.left = p.left + 'px';
+      btn.style.top = p.top + 'px';
+      btn.style.transform = p.transform;
     });
   }
 
