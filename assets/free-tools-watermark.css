@@ -1,0 +1,23 @@
+/* Pequeña marca de agua: calculadoras gratuitas desde login.html (iframes o standalone) */
+.np-free-watermark {
+  position: fixed;
+  top: 8px;
+  right: 10px;
+  z-index: 99998;
+  pointer-events: none;
+  line-height: 0;
+}
+.np-free-watermark img {
+  height: 28px;
+  width: auto;
+  max-width: min(38vw, 96px);
+  object-fit: contain;
+  opacity: 0.4;
+  display: block;
+}
+@media (min-width: 640px) {
+  .np-free-watermark img {
+    height: 32px;
+    opacity: 0.43;
+  }
+}

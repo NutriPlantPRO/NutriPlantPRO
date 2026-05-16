@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <title>Calculadora VPD</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="stylesheet" href="dashboard.css" />
@@ -24,16 +25,6 @@
       color: #64748b;
       font-size: 12px;
       text-align: center;
-    }
-    .wm {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      pointer-events: none;
-    }
-    .wm img {
-      max-height: 56px;
-      opacity: 0.25;
     }
     .title {
       margin: 0 0 18px;
@@ -178,9 +169,9 @@
   </style>
 </head>
 <body>
+  <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   <p class="note">Modo gratuito: no guarda datos. Al cerrar, se reinicia.</p>
   <div class="wrap">
-    <div class="wm" aria-hidden="true"><img src="assets/NutriPlant_PRO_blue.png" alt=""></div>
     <h2 class="title">🌡️ Déficit de Presión de Vapor</h2>
     <p class="vpd-context-note" role="note">
       <strong>Foco técnico:</strong> el VPD aquí es <strong>ambiental</strong> (aire a escala meteorológica). Si usas el mapa, el clima viene de modelos con respaldo <strong>satelital</strong> (Open-Meteo en el punto que marcas); en el cultivo el <strong>microclima</strong> puede variar con el <strong>área foliar</strong>, el dosel o la ventilación.

@@ -26,7 +26,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=3" />
+  <link rel="stylesheet" href="auth.css?v=4" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -244,8 +244,21 @@
         </div>
 
         <!-- Invitación a calculadoras sin registro (usuarios curiosos) -->
-        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #86efac; border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: center;">
-          <p style="margin: 0; font-size: 15px; font-weight: 600; color: #166534;">Accede a estas herramientas gratuitas de NutriPlant PRO.<br>Crea una cuenta para utilizar la plataforma completa.</p>
+        <div class="login-free-tools-banner">
+          <div class="login-free-tools-banner__aside">
+            <img
+              src="assets/N_Hoja_Azul.png"
+              alt="NutriPlant PRO"
+              class="login-free-tools-banner__logo"
+              width="72"
+              height="72"
+              decoding="async"
+            />
+          </div>
+          <p class="login-free-tools-banner__text">
+            Accede a estas herramientas gratuitas de NutriPlant PRO.<br />
+            Crea una cuenta para utilizar la plataforma completa.
+          </p>
         </div>
 
         <!-- Calculadoras gratuitas - sin registro -->
@@ -423,9 +436,10 @@
         <h2 class="modal-title">
           🧮 Calculadora de Conversión Óxido ↔ Elemental
         </h2>
-        <button class="modal-close" onclick="closeConversionCalculator()">
-          ×
-        </button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeConversionCalculator()">×</button>
+        </div>
       </div>
       
       <div class="modal-body">
@@ -976,6 +990,8 @@
       margin: 0;
       color: #0f172a;
       font-size: 1.5rem;
+      flex: 1;
+      min-width: 0;
     }
 
     .modal-close {
@@ -994,6 +1010,28 @@
 
     .modal-close:hover {
       color: #0f172a;
+    }
+
+    .modal-header-trailing {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      margin-left: 12px;
+    }
+
+    .modal-free-watermark {
+      pointer-events: none;
+      line-height: 0;
+      opacity: 0.45;
+    }
+
+    .modal-free-watermark img {
+      height: 28px;
+      width: auto;
+      max-width: 82px;
+      object-fit: contain;
+      display: block;
     }
 
     .modal-body {
@@ -1609,9 +1647,10 @@
         <h2 class="modal-title">
           🧪 Calculadora de Unidades de Nutrientes (ppm ↔ mmol/L ↔ meq/L)
         </h2>
-        <button class="modal-close" onclick="closeNutrientUnitsCalculator()">
-          ×
-        </button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeNutrientUnitsCalculator()">×</button>
+        </div>
       </div>
       
       <div class="modal-body">
@@ -2061,7 +2100,10 @@
     <div class="modal modal-wide">
       <div class="modal-header">
         <h2 class="modal-title">📐 Conversor de magnitudes físicas (longitud, área, volumen, masa, temperatura, presión, concentración)</h2>
-        <button class="modal-close" onclick="closeMeasureUnitsCalculator()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeMeasureUnitsCalculator()">×</button>
+        </div>
       </div>
       <div class="modal-body">
         <div class="calculator-container">

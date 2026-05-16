@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="assets/free-tools-watermark.css" />
   <title>Calculadora de Solución Nutritiva</title>
   <link rel="stylesheet" href="dashboard.css" />
   <style>
@@ -21,28 +22,9 @@
     .hydroponia-container {
       margin: 0;
     }
-    /* Logo siempre esquina superior derecha (Mac/lap y cel) */
-    .hydro-card-ternary-wrap {
-      position: relative;
-    }
-    .hydro-card-ternary-wrap .hidroponia-ternary-watermark {
-      position: absolute !important;
-      top: 12px !important;
-      right: 12px !important;
-      left: auto !important;
-      bottom: auto !important;
-      z-index: 1;
-      pointer-events: none;
-    }
-    .hydro-card-ternary-wrap .hidroponia-ternary-watermark img {
-      max-height: 56px;
-      width: auto;
-      opacity: 0.25;
-    }
     .hydro-ternary-header h3 {
       margin: 0;
       min-width: 0;
-      padding-right: 140px;
     }
     .hydro-ternary-description {
       margin: 0 0 8px 0;
@@ -74,12 +56,6 @@
         line-height: 1.4;
         margin-bottom: 8px;
       }
-      .hydro-card-ternary-wrap .hidroponia-ternary-watermark img {
-        max-height: 48px;
-      }
-      .hydro-ternary-header h3 {
-        padding-right: 100px;
-      }
       #hydroTriangleInfoCombined.hydro-muted {
         font-size: 0.72rem;
         line-height: 1.4;
@@ -91,6 +67,7 @@
   </style>
 </head>
 <body>
+  <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   <p class="guest-note">Modo gratuito: no guarda datos. Al cerrar, la calculadora se reinicia.</p>
 
   <div class="hydroponia-container">
@@ -107,10 +84,7 @@
           <div id="hydroPpmTableWrap" class="hydro-table-wrap" style="margin-top:12px;"></div>
         </div>
 
-        <div class="hydro-card hydro-card-ternary-wrap">
-          <div class="hidroponia-ternary-watermark" aria-hidden="true">
-            <img src="assets/NutriPlant_PRO_blue.png" alt="">
-          </div>
+        <div class="hydro-card">
           <div class="hydro-card-header hydro-ternary-header">
             <h3>📐 Diagrama ternario (aniones + cationes)</h3>
           </div>
