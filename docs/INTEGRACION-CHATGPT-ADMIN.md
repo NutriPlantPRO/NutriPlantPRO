@@ -198,8 +198,10 @@ curl -s -X POST http://localhost:8888/api/admin-assistant \
 - [ ] **2.4** `project_vpd_saved` + `project_vpd_live` (Open-Meteo).
 
 ### Fase 3 — Plan PRO
-- [ ] **3.1** `plan_pro_week`, `plan_pro_search`, `plan_pro_item` (parsear `body_blocks`).
-- [ ] **3.2** Filtrar siempre por `owner_id` del admin.
+- [x] **3.1** `plan_pro_week`, `plan_pro_search`, `plan_pro_item` (resumen `body_blocks`).
+- [x] **3.2** Filtrar siempre por `owner_id` del admin.
+- [ ] **3.3** Deploy + pegar OpenAPI 1.2.0 en el GPT.
+- [ ] **3.4** Probar: “¿Qué tengo esta semana en Plan PRO?”
 
 ### Fase 4 — ChatGPT
 - [ ] **4.1** Generar `openapi-nutriplant-admin.yaml` (o schema embebido) para Actions.

@@ -1456,10 +1456,59 @@
         max-height: min(52vh, 300px);
       }
     }
+    /* Celular vertical: Ramas pantalla 1 → apuntes/tablas pantalla 2 (ancho completo, no mitad y mitad). */
+    @media (max-width: 700px) and (orientation: portrait) {
+      .np-layout-scroll {
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+      }
+      .np-layout {
+        display: grid;
+        grid-template-columns: 100% 100%;
+        gap: 0;
+        width: 200%;
+        min-width: 200%;
+      }
+      .np-tree-sidebar,
+      .np-main-col {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        box-sizing: border-box;
+      }
+      .np-tree-sidebar {
+        position: static;
+        contain: none;
+      }
+      .np-main-col {
+        min-width: 0;
+      }
+    }
+    /* Menos márgenes en la columna de apuntes / tablas (móvil). */
+    @media (max-width: 900px) {
+      .np-main-col .panel {
+        padding: 12px 10px 14px;
+      }
+      .np-sheet-inner {
+        margin: 5px 6px 12px;
+        padding: 10px 10px 14px;
+      }
+      .np-sheet-header {
+        padding: 8px 10px 10px;
+      }
+      .np-ms-block {
+        padding: 10px 8px 8px;
+      }
+      #npMiniSheetPreview .np-ms-block {
+        padding: 10px 8px 8px;
+      }
+    }
     /* Tipografía y modales en pantallas pequeñas. */
     @media (max-width: 900px) {
       .wrap {
-        padding: 12px max(10px, env(safe-area-inset-right)) 22px max(10px, env(safe-area-inset-left));
+        padding: 12px max(8px, env(safe-area-inset-right)) 22px max(8px, env(safe-area-inset-left));
       }
       header.np-plan-header.np-mac-bar {
         padding: 12px 14px;
@@ -4277,28 +4326,11 @@
             <div class="np-sidebar-cal-actions">
               <button
                 type="button"
-                class="btn btn-ghost btn-ghost-green"
-                id="npCalWaMonthBtn"
-                title="Abre WhatsApp con la lista del mes (sin servidor)"
-              >
-                Enviar resumen del mes por WhatsApp
-              </button>
-              <button
-                type="button"
                 class="btn btn-ghost btn-ghost-blue"
                 id="npCalDownloadMonthBtn"
                 title="Descarga el .ics en este dispositivo"
               >
                 Descargar agenda del mes (.ics)
-              </button>
-              <button
-                type="button"
-                class="btn btn-ghost btn-ghost-green"
-                id="npCalSendMonthBtn"
-                title="Requiere configurar correo en Netlify"
-                style="font-size:11px;opacity:0.88;"
-              >
-                Enviar invitaciones por correo (opcional)
               </button>
             </div>
             <div id="npCalSendStatus" class="np-hide" aria-live="polite"></div>
@@ -4524,14 +4556,8 @@
       </div>
       <div id="npCalDayBody" class="np-modal-body np-prio-list-body"></div>
       <div class="np-modal-foot" style="padding:12px 16px 16px;border-top:1px solid rgba(148,163,184,0.35);display:flex;flex-direction:column;gap:8px;">
-        <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalDayWaBtn">
-          Enviar este día por WhatsApp
-        </button>
         <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalDayDownloadBtn">
           Descargar este día (.ics)
-        </button>
-        <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalDaySendBtn" style="font-size:11px;opacity:0.88;">
-          Por correo (opcional)
         </button>
         <div id="npCalDaySendStatus" class="np-hide" aria-live="polite" style="font-size:13px;"></div>
       </div>
@@ -7647,48 +7673,6 @@
   }
 
 
-  function calendarShareTitle(scope, dateKey) {
-    if (scope === 'day' && (dateKey || state.calModalDateKey)) {
-      return 'Plan PRO · ' + formatCalDayTitle(dateKey || state.calModalDateKey);
-    }
-    ensureSidebarCalMonth();
-    return 'Plan PRO · ' + NP_CAL_MONTH_NAMES[state.sidebarCalMonth] + ' ' + state.sidebarCalYear;
-  }
-
-  function buildCalendarShareText(scope, dateKey) {
-    var filtered = filterCalendarEntriesByScope(scope, dateKey);
-    filtered = filtered.slice().sort(function (a, b) {
-      var o = npCompareDateKeys(a.dateKey, b.dateKey);
-      if (o !== 0) return o;
-      return String(a.rowTitle || '').localeCompare(String(b.rowTitle || ''));
-    });
-    var lines = [calendarShareTitle(scope, dateKey), ''];
-    filtered.forEach(function (ent) {
-      var title = ent.rowTitle && ent.rowTitle !== '—' ? ent.rowTitle : ent.itemTitle || 'Plan PRO';
-      lines.push('• ' + ent.dateKey + ' — ' + title);
-      if (ent.itemTitle && ent.rowTitle !== ent.itemTitle) lines.push('  Apunte: ' + ent.itemTitle);
-    });
-    if (!filtered.length) lines.push('(Sin fechas en este rango)');
-    lines.push('', 'NutriPlant PRO');
-    return lines.join('\n');
-  }
-
-  function shareCalendarToWhatsApp(scope, dateKey, statusEl) {
-    var filtered = filterCalendarEntriesByScope(scope, dateKey);
-    if (!filtered.length) {
-      setCalSendStatus(statusEl, 'No hay fechas para compartir en ese rango.', true);
-      return;
-    }
-    var text = buildCalendarShareText(scope, dateKey);
-    var url = 'https://wa.me/?text=' + encodeURIComponent(text);
-    window.open(url, '_blank', 'noopener,noreferrer');
-    setCalSendStatus(
-      statusEl,
-      'Se abrió WhatsApp con el resumen. Elige chat (puedes enviártelo a ti mismo).',
-      false
-    );
-  }
-
   function downloadCalendarIcs(scope, dateKey, statusEl) {
     var filtered = filterCalendarEntriesByScope(scope, dateKey);
     filtered = filtered.slice().sort(function (a, b) {
@@ -7740,86 +7724,6 @@
     el.textContent = message;
   }
 
-  function calendarEntriesForApi() {
-    return (state.calendarEntriesCache || []).map(function (e) {
-      return {
-        dateKey: e.dateKey,
-        itemTitle: e.itemTitle,
-        rowTitle: e.rowTitle,
-        catPath: e.catPath,
-        blockTitle: e.blockTitle,
-        kind: e.kind,
-        level: e.level,
-        itemId: e.itemId
-      };
-    });
-  }
-
-  async function sendCalendarInvitesToOutlook(scope, dateKey, statusEl, triggerBtn) {
-    if (!state.client) {
-      setCalSendStatus(statusEl, 'Inicia sesión en Plan PRO.', true);
-      return;
-    }
-    var sessionRes = await state.client.auth.getSession();
-    var token = sessionRes.data && sessionRes.data.session && sessionRes.data.session.access_token;
-    if (!token) {
-      setCalSendStatus(statusEl, 'Sesión expirada. Vuelve a entrar.', true);
-      return;
-    }
-    ensureSidebarCalMonth();
-    var payload = {
-      scope: scope || 'month',
-      entries: calendarEntriesForApi()
-    };
-    if (scope === 'day' || scope === 'week') {
-      payload.dateKey = dateKey || state.calModalDateKey || '';
-    }
-    if (scope === 'month') {
-      payload.year = state.sidebarCalYear;
-      payload.month = state.sidebarCalMonth;
-    }
-    if (triggerBtn) triggerBtn.disabled = true;
-    setCalSendStatus(statusEl, 'Enviando invitaciones a Outlook…', false);
-    var base =
-      (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) ||
-      (window.location && window.location.origin) ||
-      '';
-    try {
-      var res = await fetch(base + '/api/plan-pro-calendar-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token
-        },
-        body: JSON.stringify(payload)
-      });
-      var data = await res.json().catch(function () {
-        return {};
-      });
-      if (!res.ok) {
-        var errMsg =
-          (data && data.message) ||
-          (data && data.error) ||
-          'No se pudo enviar (' + res.status + ').';
-        if (data && data.error === 'smtp_not_configured') {
-          errMsg +=
-            ' Configura en Netlify PLAN_PRO_SMTP_USER y PLAN_PRO_SMTP_PASS (contraseña de aplicación Microsoft 365).';
-        }
-        setCalSendStatus(statusEl, errMsg, true);
-        return;
-      }
-      setCalSendStatus(
-        statusEl,
-        (data && data.message) || 'Revisa tu bandeja en Outlook (y carpeta de spam).',
-        false
-      );
-    } catch (err) {
-      setCalSendStatus(statusEl, 'Error de conexión con el servidor.', true);
-    } finally {
-      if (triggerBtn) triggerBtn.disabled = false;
-    }
-  }
-
   function closeCalDayModal() {
     var m = $('npCalDayModal');
     if (!m) return;
@@ -7832,7 +7736,6 @@
     var titleEl = $('npCalDayTitle');
     var body = $('npCalDayBody');
     if (!titleEl || !body) return;
-    var daySendBtn = $('npCalDaySendBtn');
     var daySendStatus = $('npCalDaySendStatus');
     if (daySendStatus) setCalSendStatus(daySendStatus, '', false);
     var list = (state.calendarEntriesCache || []).filter(function (e) {
@@ -7846,11 +7749,8 @@
     titleEl.textContent = formatCalDayTitle(dateKey) + ' · ' + list.length + ' pendiente' + (list.length === 1 ? '' : 's');
     body.innerHTML = '';
     var dayDlBtn = $('npCalDayDownloadBtn');
-    var dayWaBtn = $('npCalDayWaBtn');
     var emptyDay = list.length < 1;
-    if (daySendBtn) daySendBtn.disabled = emptyDay;
     if (dayDlBtn) dayDlBtn.disabled = emptyDay;
-    if (dayWaBtn) dayWaBtn.disabled = emptyDay;
     if (!list.length) {
       var empty = document.createElement('p');
       empty.className = 'np-muted';
@@ -10061,6 +9961,18 @@
     });
   }
 
+  function scrollNpLayoutToMainColumn() {
+    var sc = document.querySelector('.np-layout-scroll');
+    if (!sc) return;
+    if (typeof window.matchMedia !== 'function') return;
+    if (!window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches) return;
+    var w = sc.clientWidth;
+    if (w < 1) return;
+    requestAnimationFrame(function () {
+      sc.scrollTo({ left: w, behavior: 'smooth' });
+    });
+  }
+
   function selectCategory(catId) {
     if (catId !== state.selectedCategoryId) {
       resetCreateFormPendingBlocks();
@@ -10069,6 +9981,7 @@
     syncTreeActiveHighlight();
     updateSelectionUI();
     loadItems();
+    scrollNpLayoutToMainColumn();
   }
 
   function renderSheetNavBlocks() {
@@ -11401,21 +11314,6 @@
       var dk = state.calModalDateKey || '';
       if (!dk) return;
       downloadCalendarIcs('day', dk, $('npCalDaySendStatus'));
-    });
-  }
-
-  var npCalSendMonthBtn = $('npCalSendMonthBtn');
-  if (npCalSendMonthBtn) {
-    npCalSendMonthBtn.addEventListener('click', function () {
-      sendCalendarInvitesToOutlook('month', null, $('npCalSendStatus'), npCalSendMonthBtn);
-    });
-  }
-  var npCalDaySendBtn = $('npCalDaySendBtn');
-  if (npCalDaySendBtn) {
-    npCalDaySendBtn.addEventListener('click', function () {
-      var dk = state.calModalDateKey || '';
-      if (!dk) return;
-      sendCalendarInvitesToOutlook('day', dk, $('npCalDaySendStatus'), npCalDaySendBtn);
     });
   }
 

@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "1.1.1",
-    "description": "Solo lectura. Siempre envía action y params. Para project_detail: params.project_id o params.project_name."
+    "version": "1.2.0",
+    "description": "Solo lectura: admin, proyectos NutriPlant y Plan PRO. Siempre action + params."
   },
   "servers": [
     {
@@ -14,8 +14,8 @@
     "/api/admin-assistant": {
       "post": {
         "operationId": "nutriplantAdminQuery",
-        "summary": "Consulta NutriPlant (admin o proyectos)",
-        "description": "Obligatorio: action y params (objeto). Ejemplo project_detail: {\"action\":\"project_detail\",\"params\":{\"project_id\":\"AN_PRODUCCION-LIMON-EJE_20260404_140813\"}}. También válido project_name. project_vpd_live igual. admin_stats: params vacío {}.",
+        "summary": "Consulta NutriPlant (admin, proyectos, Plan PRO)",
+        "description": "Obligatorio action + params. Plan PRO: plan_pro_week ({} o days_ahead), plan_pro_search ({\"q\":\"inversión\"}), plan_pro_item ({\"item_id\":\"uuid\"} o {\"q\":\"título\"}). Proyectos: project_detail con project_id o project_name.",
         "requestBody": {
           "required": true,
           "content": {
@@ -50,30 +50,27 @@
               "search_projects",
               "project_detail",
               "project_vpd_live",
+              "plan_pro_week",
+              "plan_pro_search",
+              "plan_pro_item",
               "describe_api"
             ]
           },
           "params": {
             "type": "object",
-            "description": "Parámetros de la acción. Para project_detail y project_vpd_live incluir project_id o project_name.",
+            "description": "Parámetros según action.",
             "properties": {
-              "project_id": {
-                "type": "string",
-                "description": "ID del proyecto, ej. AN_PRODUCCION-LIMON-EJE_20260404_140813"
-              },
-              "project_name": {
-                "type": "string",
-                "description": "Nombre del proyecto, ej. Produccion Limon Ejercicio"
-              },
-              "fertirriego_stage_index": {
-                "type": "integer",
-                "description": "Etapa fertirriego 0 = primera semana/mes"
-              },
-              "email": { "type": "string" },
+              "project_id": { "type": "string" },
+              "project_name": { "type": "string" },
+              "fertirriego_stage_index": { "type": "integer" },
+              "q": { "type": "string", "description": "Búsqueda Plan PRO o proyectos" },
               "search": { "type": "string" },
+              "item_id": { "type": "string", "description": "UUID apunte Plan PRO" },
+              "area_slug": { "type": "string", "description": "Pilar Plan PRO, ej. nutriplant" },
+              "days_ahead": { "type": "integer", "description": "plan_pro_week: días hacia adelante (default 7)" },
+              "email": { "type": "string" },
               "status": { "type": "string" },
               "crop": { "type": "string" },
-              "q": { "type": "string", "description": "Búsqueda proyectos o alias de project_name" },
               "limit": { "type": "integer" }
             },
             "additionalProperties": true

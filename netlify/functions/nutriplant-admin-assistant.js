@@ -99,6 +99,11 @@ function normalizeParams(body) {
     const v = src[key];
     if (v != null && v !== '' && params[key] == null) params[key] = v;
   });
+  const planKeys = ['item_id', 'area_id', 'area_slug', 'thought_type', 'tags', 'days_ahead', 'include_overdue'];
+  planKeys.forEach((key) => {
+    const v = src[key];
+    if (v != null && v !== '' && params[key] == null) params[key] = v;
+  });
   return params;
 }
 
@@ -771,6 +776,360 @@ async function handleProjectVpdLive(supabase, params) {
   };
 }
 
+/* ——— Fase 3: Plan PRO (cerebro digital) ——— */
+const PLAN_PRO_ITEM_SELECT =
+  'id,title,area_id,category_id,status,priority,thought_type,captured_at,due_at,next_action,relation_tags,body_plain,body_html,body_blocks,updated_at,closed_at';
+
+function stripHtmlSimple(html) {
+  return String(html || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function getPlanProOwnerId(supabase) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, email, is_admin')
+    .or('is_admin.eq.true,email.eq.admin@nutriplantpro.com')
+    .limit(5);
+  if (error) throw new Error('plan_pro owner: ' + error.message);
+  const rows = data || [];
+  const admin = rows.find((p) => p.is_admin) || rows.find((p) => (p.email || '').toLowerCase() === ADMIN_EMAIL_LC);
+  return admin ? admin.id : null;
+}
+
+async function fetchPlanProAreas(supabase, ownerId) {
+  const { data, error } = await supabase
+    .from('plan_pro_areas')
+    .select('id,title,slug,color_hex,archived_at')
+    .eq('owner_id', ownerId)
+    .is('archived_at', null)
+    .order('sort_order', { ascending: true });
+  if (error) throw new Error('plan_pro_areas: ' + error.message);
+  return data || [];
+}
+
+async function fetchPlanProCategories(supabase) {
+  const { data, error } = await supabase
+    .from('plan_pro_categories')
+    .select('id,title,area_id,parent_id,archived_at')
+    .is('archived_at', null)
+    .order('sort_order', { ascending: true });
+  if (error) throw new Error('plan_pro_categories: ' + error.message);
+  return data || [];
+}
+
+function areaMapById(areas) {
+  const m = {};
+  (areas || []).forEach((a) => {
+    m[a.id] = a;
+  });
+  return m;
+}
+
+function categoryTitleById(categories, catId) {
+  if (!catId) return null;
+  const c = (categories || []).find((x) => x.id === catId);
+  return c ? c.title : null;
+}
+
+function parseIsoDateOnly(s) {
+  if (!s) return null;
+  const d = new Date(String(s).length <= 10 ? String(s) + 'T12:00:00' : s);
+  return Number.isFinite(d.getTime()) ? d : null;
+}
+
+function dateOnlyKey(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+function weekRangeFromToday(daysAhead) {
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  const end = new Date(today);
+  end.setDate(end.getDate() + Math.max(1, daysAhead) - 1);
+  return { start: today, end, startKey: dateOnlyKey(today), endKey: dateOnlyKey(end) };
+}
+
+function summarizeBodyBlocks(blocks) {
+  if (!Array.isArray(blocks) || !blocks.length) return { blocks_count: 0, blocks: [] };
+  const out = [];
+  blocks.forEach((b, i) => {
+    if (!b || typeof b !== 'object') return;
+    if (b.type === 'note_section') {
+      const text = stripHtmlSimple(b.html || '');
+      out.push({
+        index: i,
+        type: 'note_section',
+        title: b.title || '',
+        text_preview: text.slice(0, 400)
+      });
+      return;
+    }
+    if (b.type === 'mini_sheet') {
+      const rows = Array.isArray(b.rows) ? b.rows : [];
+      const entry = {
+        index: i,
+        type: 'mini_sheet',
+        variant: b.variant || 'free',
+        title: b.title || '',
+        rows_count: rows.length
+      };
+      if (b.variant === 'ledger' && rows.length) {
+        const montoCol = typeof b.montoCol === 'number' ? b.montoCol : 1;
+        let sum = 0;
+        rows.forEach((row) => {
+          const cells = Array.isArray(row) ? row : [];
+          const n = parseFloat(String(cells[montoCol] || '').replace(/[^\d.-]/g, ''));
+          if (Number.isFinite(n)) sum += n;
+        });
+        entry.ledger_sum = Math.round(sum * 100) / 100;
+      }
+      if (b.variant === 'tasks' || b.variant === 'smart') {
+        let open = 0;
+        const doneCol = b.variant === 'tasks' ? 3 : 3;
+        rows.forEach((row, ri) => {
+          const cells = Array.isArray(row) ? row : [];
+          const done = b.rowDone && b.rowDone[ri];
+          const cellDone = String(cells[doneCol] || '').toLowerCase();
+          const isDone = done === true || cellDone === 'sí' || cellDone === 'si' || cellDone === '1' || cellDone === 'true';
+          if (!isDone && (cells[0] || cells[1])) open += 1;
+        });
+        entry.open_task_rows = open;
+      }
+      out.push(entry);
+    }
+  });
+  return { blocks_count: blocks.length, blocks: out };
+}
+
+function planProItemListRow(item, areasById, categories) {
+  const area = areasById[item.area_id];
+  return {
+    id: item.id,
+    title: item.title || '(sin título)',
+    area: area ? area.title : null,
+    area_slug: area ? area.slug : null,
+    category: categoryTitleById(categories, item.category_id),
+    status: item.status,
+    priority: item.priority,
+    thought_type: item.thought_type,
+    due_at: item.due_at,
+    captured_at: item.captured_at,
+    next_action: item.next_action,
+    relation_tags: item.relation_tags || [],
+    preview: stripHtmlSimple(item.body_plain || item.body_html || '').slice(0, 200),
+    updated_at: item.updated_at
+  };
+}
+
+function itemMatchesSearch(item, qLc, areasById) {
+  if (!qLc) return true;
+  const area = areasById[item.area_id];
+  const hay = [
+    item.title,
+    item.body_plain,
+    stripHtmlSimple(item.body_html),
+    item.next_action,
+    item.status,
+    item.priority,
+    item.thought_type,
+    area && area.title,
+    area && area.slug,
+    ...(item.relation_tags || [])
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return hay.includes(qLc);
+}
+
+async function fetchPlanProItems(supabase, ownerId, opts) {
+  opts = opts || {};
+  let q = supabase.from('plan_pro_items').select(PLAN_PRO_ITEM_SELECT).eq('owner_id', ownerId);
+  if (opts.area_id) q = q.eq('area_id', opts.area_id);
+  if (opts.status) q = q.eq('status', opts.status);
+  if (opts.thought_type) q = q.eq('thought_type', opts.thought_type);
+  if (opts.open_only) q = q.is('closed_at', null);
+  q = q.order('due_at', { ascending: true, nullsFirst: false }).order('updated_at', { ascending: false });
+  const limit = Math.min(parseInt(opts.limit, 10) || 80, 120);
+  q = q.limit(limit);
+  const { data, error } = await q;
+  if (error) throw new Error('plan_pro_items: ' + error.message);
+  return data || [];
+}
+
+async function handlePlanProWeek(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'plan_pro', error: 'No se encontró usuario admin para Plan PRO.' };
+  }
+
+  const daysAhead = Math.min(Math.max(parseInt(params.days_ahead, 10) || 7, 1), 31);
+  const includeOverdue = params.include_overdue !== false && params.include_overdue !== 'false';
+  const range = weekRangeFromToday(daysAhead);
+
+  const areas = await fetchPlanProAreas(supabase, ownerId);
+  const areasById = areaMapById(areas);
+  let areaId = (params.area_id || '').trim();
+  if (!areaId && params.area_slug) {
+    const slug = String(params.area_slug).toLowerCase();
+    const a = areas.find((x) => (x.slug || '').toLowerCase() === slug);
+    if (a) areaId = a.id;
+  }
+
+  const items = await fetchPlanProItems(supabase, ownerId, {
+    area_id: areaId || undefined,
+    open_only: true,
+    limit: 120
+  });
+  const categories = await fetchPlanProCategories(supabase);
+
+  const dueThisWindow = [];
+  const overdue = [];
+  const noDue = [];
+
+  items.forEach((item) => {
+    const due = parseIsoDateOnly(item.due_at);
+    const row = planProItemListRow(item, areasById, categories);
+    if (!due) {
+      noDue.push(row);
+      return;
+    }
+    const key = dateOnlyKey(due);
+    if (key >= range.startKey && key <= range.endKey) {
+      dueThisWindow.push(row);
+    } else if (includeOverdue && key < range.startKey) {
+      overdue.push(row);
+    }
+  });
+
+  return {
+    ok: true,
+    domain: 'plan_pro',
+    window: {
+      from: range.startKey,
+      to: range.endKey,
+      days_ahead: daysAhead
+    },
+    counts: {
+      due_in_window: dueThisWindow.length,
+      overdue: overdue.length,
+      open_without_due: noDue.length
+    },
+    due_in_window: dueThisWindow,
+    overdue: overdue.slice(0, 25),
+    open_without_due: noDue.slice(0, 15)
+  };
+}
+
+async function handlePlanProSearch(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'plan_pro', error: 'No se encontró usuario admin para Plan PRO.' };
+  }
+
+  const q = (params.q || params.search || '').trim().toLowerCase();
+  if (!q) {
+    return { ok: true, domain: 'plan_pro', error: 'Indica params.q o params.search (texto a buscar).' };
+  }
+
+  const areas = await fetchPlanProAreas(supabase, ownerId);
+  const areasById = areaMapById(areas);
+  let areaId = (params.area_id || '').trim();
+  if (!areaId && params.area_slug) {
+    const slug = String(params.area_slug).toLowerCase();
+    const a = areas.find((x) => (x.slug || '').toLowerCase() === slug);
+    if (a) areaId = a.id;
+  }
+
+  const items = await fetchPlanProItems(supabase, ownerId, {
+    area_id: areaId || undefined,
+    status: params.status,
+    thought_type: params.thought_type,
+    limit: params.limit || 60
+  });
+  const categories = await fetchPlanProCategories(supabase);
+  const tags = params.tags
+    ? String(params.tags)
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean)
+    : [];
+
+  const matches = items.filter((item) => {
+    if (!itemMatchesSearch(item, q, areasById)) return false;
+    if (tags.length) {
+      const itemTags = (item.relation_tags || []).map((t) => String(t).toLowerCase());
+      if (!tags.some((t) => itemTags.some((it) => it.includes(t)))) return false;
+    }
+    return true;
+  });
+
+  return {
+    ok: true,
+    domain: 'plan_pro',
+    query: q,
+    count: matches.length,
+    items: matches.slice(0, 30).map((item) => planProItemListRow(item, areasById, categories))
+  };
+}
+
+async function handlePlanProItem(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'plan_pro', error: 'No se encontró usuario admin para Plan PRO.' };
+  }
+
+  const itemId = (params.item_id || params.id || '').trim();
+  const q = (params.q || params.search || params.title || '').trim().toLowerCase();
+
+  const areas = await fetchPlanProAreas(supabase, ownerId);
+  const areasById = areaMapById(areas);
+  const categories = await fetchPlanProCategories(supabase);
+
+  let item = null;
+  if (itemId) {
+    const { data, error } = await supabase
+      .from('plan_pro_items')
+      .select(PLAN_PRO_ITEM_SELECT)
+      .eq('owner_id', ownerId)
+      .eq('id', itemId)
+      .maybeSingle();
+    if (error) throw new Error('plan_pro_item: ' + error.message);
+    item = data;
+  } else if (q) {
+    const items = await fetchPlanProItems(supabase, ownerId, { limit: 100 });
+    const hits = items.filter((it) => itemMatchesSearch(it, q, areasById));
+    hits.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+    item = hits[0] || null;
+  } else {
+    return { ok: true, domain: 'plan_pro', error: 'Indica params.item_id o params.q (título/texto).' };
+  }
+
+  if (!item) {
+    return { ok: true, domain: 'plan_pro', found: false, message: 'Apunte no encontrado.' };
+  }
+
+  const area = areasById[item.area_id];
+  return {
+    ok: true,
+    domain: 'plan_pro',
+    found: true,
+    item: {
+      ...planProItemListRow(item, areasById, categories),
+      body_plain: item.body_plain || '',
+      body_html_stripped: stripHtmlSimple(item.body_html || '').slice(0, 8000),
+      body_blocks_summary: summarizeBodyBlocks(item.body_blocks),
+      closed_at: item.closed_at
+    }
+  };
+}
+
 async function handleDescribeApi() {
   return {
     ok: true,
@@ -781,9 +1140,10 @@ async function handleDescribeApi() {
         'project_detail',
         'project_vpd_live'
       ],
-      plan_pro: ['plan_pro_week (fase 3)']
+      plan_pro: ['plan_pro_week', 'plan_pro_search', 'plan_pro_item']
     },
-    usage: 'POST { action, params }. project_detail: project_id o project_name; opcional fertirriego_stage_index (0-based).'
+    usage:
+      'POST { action, params }. Plan PRO: plan_pro_week (días próximos); plan_pro_search (q); plan_pro_item (item_id o q).'
   };
 }
 
@@ -794,6 +1154,9 @@ const HANDLERS = {
   search_projects: (sb, p) => handleSearchProjects(sb, p),
   project_detail: (sb, p) => handleProjectDetail(sb, p),
   project_vpd_live: (sb, p) => handleProjectVpdLive(sb, p),
+  plan_pro_week: (sb, p) => handlePlanProWeek(sb, p),
+  plan_pro_search: (sb, p) => handlePlanProSearch(sb, p),
+  plan_pro_item: (sb, p) => handlePlanProItem(sb, p),
   describe_api: () => handleDescribeApi()
 };
 
@@ -803,8 +1166,8 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '1.1.1',
-      description: 'Solo lectura. Siempre action + params. project_detail: params.project_id o params.project_name.'
+      version: '1.2.0',
+      description: 'Solo lectura. Admin, proyectos y Plan PRO (plan_pro_week, plan_pro_search, plan_pro_item).'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -813,7 +1176,7 @@ function getOpenApiSpec() {
           operationId: 'nutriplantAdminQuery',
           summary: 'Consulta admin o proyectos de usuarios',
           description:
-            'Body: action + params. Admin: admin_stats, list_users, user_summary. Proyectos: search_projects, project_detail (project_name o project_id; fertirriego_stage_index opcional), project_vpd_live. describe_api lista acciones.',
+            'Body: action + params. Plan PRO: plan_pro_week, plan_pro_search (q), plan_pro_item (item_id o q). Proyectos: project_detail, project_vpd_live. Admin: admin_stats, list_users, user_summary.',
           requestBody: {
             required: true,
             content: {
@@ -843,11 +1206,13 @@ function getOpenApiSpec() {
               properties: {
                 project_id: { type: 'string' },
                 project_name: { type: 'string' },
-                fertirriego_stage_index: { type: 'integer' },
+                item_id: { type: 'string' },
+                q: { type: 'string' },
+                area_slug: { type: 'string' },
+                days_ahead: { type: 'integer' },
                 email: { type: 'string' },
                 search: { type: 'string' },
-                crop: { type: 'string' },
-                q: { type: 'string' }
+                crop: { type: 'string' }
               },
               additionalProperties: true
             }
