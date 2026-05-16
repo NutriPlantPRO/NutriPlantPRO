@@ -203,10 +203,17 @@ curl -s -X POST http://localhost:8888/api/admin-assistant \
 - [ ] **3.3** Deploy + pegar OpenAPI 1.2.0 en el GPT.
 - [ ] **3.4** Probar: “¿Qué tengo esta semana en Plan PRO?”
 
-### Fase 4 — ChatGPT
-- [ ] **4.1** Generar `openapi-nutriplant-admin.yaml` (o schema embebido) para Actions.
-- [ ] **4.2** Crear GPT privado y pegar instrucciones.
-- [ ] **4.3** Pruebas de conversación (checklist abajo).
+### Fase 4 — Radar (NDVI / NDMI)
+- [x] **4.1** `radar_project` — último snapshot, URLs NDVI+NDMI, historial por `month_key` / fechas Sentinel, créditos usuario.
+- [x] **4.2** `radar_search` — proyectos con polígono, filtro cultivo/usuario, `has_radar_only`.
+- [x] **4.3** `radar_overview` — totales por cultivo y generaciones del mes.
+- [ ] **4.4** Deploy + OpenAPI 1.4.0 en GPT.
+- [ ] **4.5** Probar: “Radar del proyecto Limon: NDVI y fechas”.
+
+### Fase 5 — ChatGPT (config)
+- [x] GPT privado + Actions + Bearer.
+- [ ] **5.1** Actualizar instrucciones del GPT mencionando Radar y Plan PRO.
+- [ ] **5.2** Pruebas de conversación (checklist abajo).
 
 ### Fase 5 — Pulido (opcional)
 - [ ] **5.1** Logs de uso (sin datos sensibles).

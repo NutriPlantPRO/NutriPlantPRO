@@ -104,6 +104,11 @@ function normalizeParams(body) {
     const v = src[key];
     if (v != null && v !== '' && params[key] == null) params[key] = v;
   });
+  const radarKeys = ['has_radar_only', 'has_polygon_only', 'history_limit', 'user', 'cultivo'];
+  radarKeys.forEach((key) => {
+    const v = src[key];
+    if (v != null && v !== '' && params[key] == null) params[key] = v;
+  });
   return params;
 }
 
@@ -778,13 +783,286 @@ async function handleProjectVpdLive(supabase, params) {
 
 /* ——— Fase 3: Plan PRO (cerebro digital) ——— */
 const PLAN_PRO_ITEM_SELECT =
-  'id,title,area_id,category_id,status,priority,thought_type,captured_at,due_at,next_action,relation_tags,body_plain,body_html,body_blocks,updated_at,closed_at';
+  'id,title,area_id,category_id,status,priority,thought_type,captured_at,due_at,next_action,relation_tags,body_plain,body_html,body_blocks,attachments,updated_at,closed_at';
+
+const PLAN_PRO_NOTE_IMAGE_BUCKET = 'plan-pro-note-images';
 
 function stripHtmlSimple(html) {
   return String(html || '')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function htmlTagAttr(tag, name) {
+  const re = new RegExp(name + '\\s*=\\s*["\']([^"\']*)', 'i');
+  const m = String(tag).match(re);
+  return m ? m[1] : '';
+}
+
+/** Semáforos + fecha incrustados en la nota (.np-rich-due), igual que en planpro/index.html */
+function extractRichDueMarkersFromHtml(html) {
+  const out = [];
+  if (!html || !String(html).trim()) return out;
+  const re = /<[^>]*\bnp-rich-due\b[^>]*>/gi;
+  let m;
+  while ((m = re.exec(html))) {
+    const tag = m[0];
+    const date = htmlTagAttr(tag, 'data-np-due-date');
+    if (!date) continue;
+    const lv = priorityLevelFromRaw(htmlTagAttr(tag, 'data-np-due-level'));
+    out.push({
+      date,
+      label: htmlTagAttr(tag, 'data-np-due-label') || date,
+      priority_level: lv,
+      semaforo: lv || 'sin_prioridad',
+      due_id: htmlTagAttr(tag, 'data-np-due-id') || null
+    });
+  }
+  return out;
+}
+
+function normalizePlanProImageUrl(src) {
+  const s = String(src || '').trim();
+  if (!s || s.indexOf('javascript:') === 0 || s.indexOf('data:') === 0) return null;
+  if (/^https?:\/\//i.test(s)) return s;
+  const base = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+  if (!base) return s.startsWith('/') ? null : s;
+  if (s.indexOf('/storage/v1/object/public/') >= 0) return base + (s.startsWith('/') ? s : '/' + s);
+  const path = s.replace(/^\//, '');
+  if (path.indexOf(PLAN_PRO_NOTE_IMAGE_BUCKET + '/') === 0) {
+    return base + '/storage/v1/object/public/' + path;
+  }
+  return s;
+}
+
+function extractImageUrlsFromHtml(html) {
+  const urls = [];
+  if (!html || !String(html).trim()) return urls;
+  const re = /<img[^>]+>/gi;
+  let m;
+  while ((m = re.exec(html))) {
+    const src = htmlTagAttr(m[0], 'src');
+    const url = normalizePlanProImageUrl(src);
+    if (url) {
+      urls.push({
+        url,
+        alt: htmlTagAttr(m[0], 'alt') || ''
+      });
+    }
+  }
+  return urls;
+}
+
+function collectPlanProImages(item) {
+  const seen = new Set();
+  const images = [];
+  function push(img) {
+    if (!img.url || seen.has(img.url)) return;
+    seen.add(img.url);
+    images.push(img);
+  }
+  extractImageUrlsFromHtml(item.body_html).forEach(push);
+  (item.body_blocks || []).forEach((b) => {
+    if (b && b.type === 'note_section') extractImageUrlsFromHtml(b.html).forEach(push);
+  });
+  (item.attachments || []).forEach((att) => {
+    if (!att || typeof att !== 'object') return;
+    const url = normalizePlanProImageUrl(att.url || att.public_url || att.path);
+    if (url) push({ url, alt: att.name || att.alt || '' });
+  });
+  return images;
+}
+
+function collectAllRichDueMarkers(item) {
+  const markers = extractRichDueMarkersFromHtml(item.body_html).map((m) => ({
+    ...m,
+    location: 'nota_principal'
+  }));
+  (item.body_blocks || []).forEach((b, bi) => {
+    if (!b || b.type !== 'note_section' || !b.html) return;
+    extractRichDueMarkersFromHtml(b.html).forEach((m) => {
+      markers.push({
+        ...m,
+        location: 'bloque_nota',
+        block_index: bi,
+        block_title: b.title || ''
+      });
+    });
+  });
+  return markers;
+}
+
+function padRowCells(row, ncol) {
+  const arr = Array.isArray(row) ? row.slice() : row && row.cells ? row.cells.slice() : [];
+  while (arr.length < ncol) arr.push('');
+  return arr;
+}
+
+function ledgerCellNumber(arr, colIndex) {
+  if (!Array.isArray(arr) || colIndex == null || colIndex < 0 || colIndex >= arr.length) return 0;
+  const v = parseFloat(String(arr[colIndex] != null ? arr[colIndex] : '').replace(/\s/g, '').replace(',', '.'));
+  return Number.isFinite(v) ? v : 0;
+}
+
+function ledgerGetDerivedSpec(b, colIndex) {
+  if (!b || !b.ledgerDerivedByCol || typeof b.ledgerDerivedByCol !== 'object') return null;
+  let o = b.ledgerDerivedByCol[colIndex];
+  if (o == null) o = b.ledgerDerivedByCol[String(colIndex)];
+  return o && typeof o === 'object' ? o : null;
+}
+
+function ledgerHealDiffIndices(b, nh, left, right) {
+  let la = parseInt(String(left).trim(), 10);
+  let rb = parseInt(String(right).trim(), 10);
+  if (Number.isNaN(la) || Number.isNaN(rb) || la < 0 || rb < 0 || la >= nh || rb >= nh) return null;
+  if (la === 0 && b && b.colKinds && b.colKinds[0] === 'text' && nh >= 3) {
+    la = 1;
+    if (rb <= la && la + 1 < nh) rb = la + 1;
+  }
+  if (la === rb) return null;
+  return { left: la, right: rb };
+}
+
+function ledgerHeaderSuggestsMoneyColumn(h) {
+  const s = String(h == null ? '' : h)
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!s || s === '%') return false;
+  if (/^(monto|importe|pagado|precio|subtotal|iva|isr|ret\.|retenc)/.test(s)) return true;
+  if (/\b(monto|importe|pagado|precio|subtotal|eur|usd|mxn|\$|€)\b/.test(s)) return true;
+  return false;
+}
+
+function ledgerHealSumColIndices(b, nh, derivedCi, colsParsed) {
+  if (!colsParsed || !colsParsed.length || derivedCi == null || nh < 1) return colsParsed ? colsParsed.slice() : [];
+  const out = colsParsed.slice();
+  if (out.length !== 1) return out;
+  const k0 = out[0];
+  if (k0 < 1 || k0 >= derivedCi) return out;
+  const cands = [];
+  for (let ii = 1; ii < derivedCi; ii++) {
+    if (ledgerGetDerivedSpec(b, ii)) continue;
+    const fk0 = b.colKinds && b.colKinds[ii];
+    if (fk0 === 'pct') continue;
+    if (fk0 === 'currency' || fk0 === 'number') cands.push(ii);
+    else if (b.headers && ledgerHeaderSuggestsMoneyColumn(b.headers[ii])) cands.push(ii);
+  }
+  if (cands.length >= 2 && k0 === cands[cands.length - 1]) return cands.slice();
+  return out;
+}
+
+function computeLedgerDerived(arr, spec, b, derivedColIdx) {
+  if (!spec || !spec.op || !Array.isArray(arr)) return NaN;
+  const nh = Math.max(arr.length, (b && b.headers && b.headers.length) || 0);
+  if (spec.op === 'diff') {
+    let la;
+    let rb;
+    if (b && b.headers && b.headers.length) {
+      const pair = ledgerHealDiffIndices(b, nh, spec.left, spec.right);
+      if (!pair) return NaN;
+      la = pair.left;
+      rb = pair.right;
+    } else {
+      la = parseInt(String(spec.left).trim(), 10);
+      rb = parseInt(String(spec.right).trim(), 10);
+      if (Number.isNaN(la) || Number.isNaN(rb)) return NaN;
+    }
+    return ledgerCellNumber(arr, la) - ledgerCellNumber(arr, rb);
+  }
+  if (spec.op === 'arith') {
+    let la;
+    let rb;
+    if (b && b.headers && b.headers.length) {
+      const pair = ledgerHealDiffIndices(b, nh, spec.left, spec.right);
+      if (!pair) return NaN;
+      la = pair.left;
+      rb = pair.right;
+    } else {
+      la = parseInt(String(spec.left).trim(), 10);
+      rb = parseInt(String(spec.right).trim(), 10);
+      if (Number.isNaN(la) || Number.isNaN(rb)) return NaN;
+    }
+    const opCh = String(spec.operator || '+').trim();
+    const La = ledgerCellNumber(arr, la);
+    const Rb = ledgerCellNumber(arr, rb);
+    if (opCh === '+') return La + Rb;
+    if (opCh === '-') return La - Rb;
+    if (opCh === '*') return La * Rb;
+    if (opCh === '/') return Rb === 0 ? NaN : La / Rb;
+    return NaN;
+  }
+  if (spec.op === 'sum' && spec.cols && spec.cols.length) {
+    const rawList = spec.cols
+      .map((c) => parseInt(String(c).trim(), 10))
+      .filter((x) => !Number.isNaN(x) && x >= 0 && x < nh);
+    if (!rawList.length) return NaN;
+    const colList =
+      typeof derivedColIdx === 'number' && derivedColIdx >= 0 && b && b.headers && b.colKinds
+        ? ledgerHealSumColIndices(b, nh, derivedColIdx, rawList)
+        : rawList;
+    let t = 0;
+    colList.forEach((ci) => {
+      t += ledgerCellNumber(arr, ci);
+    });
+    return t;
+  }
+  if (spec.op === 'product' && spec.cols && spec.cols.length >= 2) {
+    let p = ledgerCellNumber(arr, parseInt(spec.cols[0], 10));
+    for (let j = 1; j < spec.cols.length; j++) p *= ledgerCellNumber(arr, parseInt(spec.cols[j], 10));
+    return p;
+  }
+  if (spec.op === 'copy') {
+    return ledgerCellNumber(arr, parseInt(spec.col, 10));
+  }
+  return NaN;
+}
+
+function describeLedgerFormula(spec, headers) {
+  if (!spec || !spec.op) return null;
+  const h = (i) => (headers && headers[i]) || 'Col' + (i + 1);
+  if (spec.op === 'sum') {
+    return { op: 'sum', label: 'Suma', columns: (spec.cols || []).map((i) => h(parseInt(i, 10))) };
+  }
+  if (spec.op === 'diff') {
+    return { op: 'diff', label: 'Resta', left: h(parseInt(spec.left, 10)), right: h(parseInt(spec.right, 10)) };
+  }
+  if (spec.op === 'product') {
+    return { op: 'product', label: 'Producto', columns: (spec.cols || []).map((i) => h(parseInt(i, 10))) };
+  }
+  if (spec.op === 'copy') {
+    return { op: 'copy', label: 'Copia', column: h(parseInt(spec.col, 10)) };
+  }
+  if (spec.op === 'arith') {
+    return {
+      op: 'arith',
+      label: 'Operación',
+      left: h(parseInt(spec.left, 10)),
+      operator: spec.operator || '+',
+      right: h(parseInt(spec.right, 10))
+    };
+  }
+  return { op: spec.op, raw: spec };
+}
+
+function buildLedgerComputedForRow(b, row) {
+  const headers = Array.isArray(b.headers) ? b.headers : [];
+  const ncol = headers.length;
+  const arr = padRowCells(row, ncol);
+  const computed = {};
+  if (!b.ledgerDerivedByCol || typeof b.ledgerDerivedByCol !== 'object') return computed;
+  Object.keys(b.ledgerDerivedByCol).forEach((k) => {
+    const colIx = parseInt(k, 10);
+    if (Number.isNaN(colIx) || colIx < 0 || colIx >= ncol) return;
+    const spec = ledgerGetDerivedSpec(b, colIx);
+    if (!spec) return;
+    const v = computeLedgerDerived(arr, spec, b, colIx);
+    if (!Number.isFinite(v) || Number.isNaN(v)) return;
+    const key = headers[colIx] || 'Col' + (colIx + 1);
+    computed[key] = Math.round(v * 100) / 100;
+  });
+  return computed;
 }
 
 async function getPlanProOwnerId(supabase) {
@@ -855,8 +1133,80 @@ function weekRangeFromToday(daysAhead) {
   return { start: today, end, startKey: dateOnlyKey(today), endKey: dateOnlyKey(end) };
 }
 
-function summarizeBodyBlocks(blocks) {
-  if (!Array.isArray(blocks) || !blocks.length) return { blocks_count: 0, blocks: [] };
+function priorityLevelFromRaw(raw) {
+  const v = String(raw || '')
+    .trim()
+    .toLowerCase();
+  if (!v) return '';
+  if (/alta|high|urgente|critical|p1/.test(v)) return 'alta';
+  if (/media|med|normal|p2/.test(v)) return 'media';
+  if (/baja|low|p3/.test(v)) return 'baja';
+  return '';
+}
+
+function columnLooksLikePriorityHeader(h) {
+  const s = String(h || '').toLowerCase();
+  return /prioridad|prio|urgencia|importancia/.test(s);
+}
+
+function columnLooksLikeDoneHeader(h) {
+  const s = String(h || '').toLowerCase();
+  return /done|hecho|listo|\bok\b|complet/.test(s);
+}
+
+function columnLooksLikeDateHeader(h) {
+  const s = String(h || '').toLowerCase();
+  return /fecha|date|vence|deadline|objetivo/.test(s);
+}
+
+function resolvePriorityColIndex(block, headers) {
+  const hs = Array.isArray(headers) ? headers : [];
+  let idx = hs.findIndex((h) => columnLooksLikePriorityHeader(h));
+  if (idx >= 0) return idx;
+  if (block.variant === 'tasks') return 2;
+  if (block.variant === 'smart') return 2;
+  return -1;
+}
+
+function resolveDoneColIndex(block, headers) {
+  const hs = Array.isArray(headers) ? headers : [];
+  let idx = hs.findIndex((h) => columnLooksLikeDoneHeader(h));
+  if (idx >= 0) return idx;
+  if (block.variant === 'tasks' || block.variant === 'smart') return 3;
+  return -1;
+}
+
+function resolveDateColIndex(headers) {
+  const hs = Array.isArray(headers) ? headers : [];
+  return hs.findIndex((h) => columnLooksLikeDateHeader(h));
+}
+
+function rowCellsAsObject(headers, row) {
+  const cells = Array.isArray(row) ? row : row && row.cells ? row.cells : [];
+  const obj = {};
+  const hs = Array.isArray(headers) ? headers : [];
+  const n = Math.max(hs.length, cells.length);
+  for (let i = 0; i < n; i++) {
+    const key = hs[i] || 'Col' + (i + 1);
+    obj[key] = cells[i] != null ? String(cells[i]) : '';
+  }
+  return obj;
+}
+
+function isRowDone(block, row, ri, doneCol) {
+  if (block.rowDone && block.rowDone[ri] === true) return true;
+  const cells = Array.isArray(row) ? row : [];
+  if (doneCol < 0) return false;
+  const cellDone = String(cells[doneCol] || '').toLowerCase();
+  return cellDone === 'sí' || cellDone === 'si' || cellDone === '1' || cellDone === 'true' || cellDone === 'yes';
+}
+
+const PLAN_PRO_MAX_TABLE_ROWS = 60;
+
+function expandBodyBlocksForApi(blocks) {
+  if (!Array.isArray(blocks) || !blocks.length) {
+    return { blocks_count: 0, blocks: [] };
+  }
   const out = [];
   blocks.forEach((b, i) => {
     if (!b || typeof b !== 'object') return;
@@ -866,49 +1216,122 @@ function summarizeBodyBlocks(blocks) {
         index: i,
         type: 'note_section',
         title: b.title || '',
-        text_preview: text.slice(0, 400)
+        text: text.slice(0, 6000),
+        semaforos_en_nota: extractRichDueMarkersFromHtml(b.html),
+        images: extractImageUrlsFromHtml(b.html)
       });
       return;
     }
-    if (b.type === 'mini_sheet') {
-      const rows = Array.isArray(b.rows) ? b.rows : [];
-      const entry = {
-        index: i,
-        type: 'mini_sheet',
-        variant: b.variant || 'free',
-        title: b.title || '',
-        rows_count: rows.length
-      };
-      if (b.variant === 'ledger' && rows.length) {
-        const montoCol = typeof b.montoCol === 'number' ? b.montoCol : 1;
-        let sum = 0;
-        rows.forEach((row) => {
-          const cells = Array.isArray(row) ? row : [];
-          const n = parseFloat(String(cells[montoCol] || '').replace(/[^\d.-]/g, ''));
-          if (Number.isFinite(n)) sum += n;
-        });
-        entry.ledger_sum = Math.round(sum * 100) / 100;
-      }
-      if (b.variant === 'tasks' || b.variant === 'smart') {
-        let open = 0;
-        const doneCol = b.variant === 'tasks' ? 3 : 3;
-        rows.forEach((row, ri) => {
-          const cells = Array.isArray(row) ? row : [];
-          const done = b.rowDone && b.rowDone[ri];
-          const cellDone = String(cells[doneCol] || '').toLowerCase();
-          const isDone = done === true || cellDone === 'sí' || cellDone === 'si' || cellDone === '1' || cellDone === 'true';
-          if (!isDone && (cells[0] || cells[1])) open += 1;
-        });
-        entry.open_task_rows = open;
-      }
-      out.push(entry);
+    if (b.type !== 'mini_sheet') return;
+
+    const headers = Array.isArray(b.headers) ? b.headers : [];
+    const allRows = Array.isArray(b.rows) ? b.rows : [];
+    const prioCol = resolvePriorityColIndex(b, headers);
+    const doneCol = resolveDoneColIndex(b, headers);
+    const dateCol = resolveDateColIndex(headers);
+    const truncated = allRows.length > PLAN_PRO_MAX_TABLE_ROWS;
+
+    const entry = {
+      index: i,
+      type: 'mini_sheet',
+      variant: b.variant || 'free',
+      title: b.title || '',
+      headers,
+      col_kinds: Array.isArray(b.colKinds) ? b.colKinds : [],
+      rows_count: allRows.length,
+      rows: []
+    };
+
+    if (b.ledgerDerivedByCol && typeof b.ledgerDerivedByCol === 'object') {
+      entry.formulas = {};
+      Object.keys(b.ledgerDerivedByCol).forEach((k) => {
+        const colIx = parseInt(k, 10);
+        const spec = ledgerGetDerivedSpec(b, colIx);
+        if (spec) {
+          const colName = headers[colIx] || 'Col' + (colIx + 1);
+          entry.formulas[colName] = describeLedgerFormula(spec, headers);
+        }
+      });
     }
+
+    const rowsSlice = truncated ? allRows.slice(0, PLAN_PRO_MAX_TABLE_ROWS) : allRows;
+    rowsSlice.forEach((row, ri) => {
+      const cellsObj = rowCellsAsObject(headers, row);
+      const cells = Array.isArray(row) ? row : [];
+      const prioRaw = prioCol >= 0 ? cells[prioCol] : '';
+      const rowEntry = {
+        row_index: ri + 1,
+        cells: cellsObj,
+        priority_raw: prioRaw != null ? String(prioRaw) : '',
+        priority_level: priorityLevelFromRaw(prioRaw),
+        semaforo: priorityLevelFromRaw(prioRaw) || 'sin_prioridad',
+        done: isRowDone(b, row, ri, doneCol),
+        date: dateCol >= 0 && cells[dateCol] != null ? String(cells[dateCol]) : ''
+      };
+      if (b.variant === 'smart' && b.rowKinds && b.rowKinds[ri]) {
+        rowEntry.row_kind = b.rowKinds[ri];
+      }
+      const computed = buildLedgerComputedForRow(b, row);
+      if (Object.keys(computed).length) rowEntry.computed_cells = computed;
+      entry.rows.push(rowEntry);
+    });
+
+    if (truncated) {
+      entry.rows_truncated = true;
+      entry.rows_omitted = allRows.length - PLAN_PRO_MAX_TABLE_ROWS;
+    }
+
+    if (b.variant === 'ledger' && allRows.length) {
+      const montoCol = typeof b.montoCol === 'number' ? b.montoCol : 1;
+      let sum = 0;
+      allRows.forEach((row) => {
+        const cells = Array.isArray(row) ? row : [];
+        const n = parseFloat(String(cells[montoCol] || '').replace(/[^\d.-]/g, ''));
+        if (Number.isFinite(n)) sum += n;
+      });
+      entry.ledger_sum = Math.round(sum * 100) / 100;
+    }
+
+    let open = 0;
+    entry.rows.forEach((r) => {
+      if (!r.done && Object.values(r.cells).some((v) => String(v).trim())) open += 1;
+    });
+    entry.open_rows = open;
+
+    out.push(entry);
   });
   return { blocks_count: blocks.length, blocks: out };
 }
 
+function summarizeBodyBlocks(blocks) {
+  const full = expandBodyBlocksForApi(blocks);
+  return {
+    blocks_count: full.blocks_count,
+    blocks: full.blocks.map((b) => {
+      if (b.type === 'note_section') {
+        return {
+          index: b.index,
+          type: b.type,
+          title: b.title,
+          text_preview: (b.text || '').slice(0, 400)
+        };
+      }
+      return {
+        index: b.index,
+        type: b.type,
+        variant: b.variant,
+        title: b.title,
+        rows_count: b.rows_count,
+        open_rows: b.open_rows,
+        ledger_sum: b.ledger_sum
+      };
+    })
+  };
+}
+
 function planProItemListRow(item, areasById, categories) {
   const area = areasById[item.area_id];
+  const lv = priorityLevelFromRaw(item.priority);
   return {
     id: item.id,
     title: item.title || '(sin título)',
@@ -917,8 +1340,11 @@ function planProItemListRow(item, areasById, categories) {
     category: categoryTitleById(categories, item.category_id),
     status: item.status,
     priority: item.priority,
+    priority_level: lv,
+    semaforo_apunte: lv || 'sin_prioridad',
     thought_type: item.thought_type,
     due_at: item.due_at,
+    fecha_objetivo_apunte: item.due_at || null,
     captured_at: item.captured_at,
     next_action: item.next_action,
     relation_tags: item.relation_tags || [],
@@ -1115,7 +1541,9 @@ async function handlePlanProItem(supabase, params) {
     return { ok: true, domain: 'plan_pro', found: false, message: 'Apunte no encontrado.' };
   }
 
-  const area = areasById[item.area_id];
+  const images = collectPlanProImages(item);
+  const noteMarkers = collectAllRichDueMarkers(item);
+
   return {
     ok: true,
     domain: 'plan_pro',
@@ -1124,8 +1552,329 @@ async function handlePlanProItem(supabase, params) {
       ...planProItemListRow(item, areasById, categories),
       body_plain: item.body_plain || '',
       body_html_stripped: stripHtmlSimple(item.body_html || '').slice(0, 8000),
+      semaforos_en_nota: noteMarkers,
+      images,
+      images_count: images.length,
+      images_note:
+        images.length > 0
+          ? 'URLs públicas en Supabase (plan-pro-note-images). Indica al usuario las URLs; ChatGPT Plus puede abrir enlaces si el usuario lo pide.'
+          : null,
       body_blocks_summary: summarizeBodyBlocks(item.body_blocks),
+      body_blocks_tables: expandBodyBlocksForApi(item.body_blocks),
       closed_at: item.closed_at
+    }
+  };
+}
+
+/* ——— Fase 4: Radar (NDVI / NDMI) ——— */
+const RADAR_BUCKET = 'radar-ndvi';
+const RADAR_DEFAULT_MONTHLY = 25;
+
+function radarMonthKey(d = new Date()) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function projectHasPolygon(data) {
+  const loc = data && data.location;
+  return !!(loc && Array.isArray(loc.polygon) && loc.polygon.length >= 3);
+}
+
+async function signedRadarUrl(supabase, path, ttlSec = 3600) {
+  if (!path) return null;
+  const { data, error } = await supabase.storage.from(RADAR_BUCKET).createSignedUrl(path, ttlSec);
+  if (error || !data?.signedUrl) return null;
+  return data.signedUrl;
+}
+
+async function getLatestRadarRowAdmin(supabase, userId, projectId) {
+  const { data, error } = await supabase
+    .from('radar_requests')
+    .select('id, created_at, month_key, image_storage_path, meta, user_id, project_id')
+    .eq('user_id', userId)
+    .eq('project_id', projectId)
+    .not('image_storage_path', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error('radar_requests: ' + error.message);
+  return data;
+}
+
+async function getRadarHistoryAdmin(supabase, userId, projectId, limit) {
+  const { data, error } = await supabase
+    .from('radar_requests')
+    .select('id, created_at, month_key, image_storage_path, meta')
+    .eq('user_id', userId)
+    .eq('project_id', projectId)
+    .not('image_storage_path', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error('radar_history: ' + error.message);
+  return data || [];
+}
+
+async function mapLatestRadarByProjects(supabase, projectIds) {
+  const map = {};
+  if (!projectIds.length) return map;
+  const { data, error } = await supabase
+    .from('radar_requests')
+    .select('project_id, user_id, created_at, month_key, image_storage_path, meta')
+    .in('project_id', projectIds.slice(0, 200))
+    .not('image_storage_path', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(500);
+  if (error) throw new Error('radar map: ' + error.message);
+  (data || []).forEach((row) => {
+    if (!map[row.project_id]) map[row.project_id] = row;
+  });
+  return map;
+}
+
+async function getUserRadarCredits(supabase, userId) {
+  const mk = radarMonthKey();
+  const base = Math.max(
+    0,
+    Math.floor(
+      Number(
+        process.env.RADAR_MONTHLY_CREDITS != null && process.env.RADAR_MONTHLY_CREDITS !== ''
+          ? process.env.RADAR_MONTHLY_CREDITS
+          : RADAR_DEFAULT_MONTHLY
+      )
+    )
+  );
+  const { data: prof } = await supabase
+    .from('profiles')
+    .select('radar_credits_bonus')
+    .eq('id', userId)
+    .maybeSingle();
+  const bonus = Math.max(0, Math.floor(Number(prof?.radar_credits_bonus) || 0));
+  const limit = base + bonus;
+  const { count, error } = await supabase
+    .from('radar_requests')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('month_key', mk)
+    .not('image_storage_path', 'is', null);
+  if (error) throw new Error('radar credits: ' + error.message);
+  const used = count || 0;
+  return { month_key: mk, used, limit, base, bonus, remaining: Math.max(0, limit - used) };
+}
+
+async function buildRadarSnapshot(supabase, row) {
+  if (!row) return null;
+  const meta = row.meta || {};
+  const ndmiPath = meta.ndmi_storage_path || meta.images?.ndmi?.storage_path || null;
+  const [ndviUrl, ndmiUrl] = await Promise.all([
+    signedRadarUrl(supabase, row.image_storage_path),
+    signedRadarUrl(supabase, ndmiPath)
+  ]);
+  return {
+    id: row.id,
+    created_at: row.created_at,
+    month_key: row.month_key,
+    sentinel_period: {
+      from: meta.date_start || null,
+      to: meta.date_end || null
+    },
+    source: meta.source || 'COPERNICUS/S2_SR_HARMONIZED',
+    images: {
+      ndvi: {
+        label: 'NDVI — vigor vegetativo relativo',
+        signed_url: ndviUrl,
+        legend: 'Verde = mayor vigor; rojo/naranja = menor vigor en el predio.'
+      },
+      ndmi: {
+        label: 'NDMI — humedad del dosel',
+        signed_url: ndmiUrl,
+        legend: 'Verde = mayor humedad de dosel; marrón = menor humedad relativa.'
+      }
+    },
+    images_note:
+      'URLs firmadas (~1 h). ChatGPT no analiza píxeles automáticamente; indica enlaces o pide al usuario abrirlos.'
+  };
+}
+
+async function handleRadarProject(supabase, params) {
+  const resolved = await resolveProject(supabase, params);
+  if (!resolved.found) {
+    return { ok: true, domain: 'radar', ...resolved };
+  }
+
+  const row = resolved.project;
+  const data = row.data || {};
+  const hasPoly = projectHasPolygon(data);
+  const profiles = await fetchProfiles(supabase);
+  const prof = profiles.find((p) => p.id === row.user_id);
+  const histLimit = Math.min(Math.max(parseInt(params.history_limit, 10) || 12, 1), 24);
+
+  const [latestRow, historyRows, credits] = await Promise.all([
+    getLatestRadarRowAdmin(supabase, row.user_id, row.id),
+    getRadarHistoryAdmin(supabase, row.user_id, row.id, histLimit),
+    getUserRadarCredits(supabase, row.user_id)
+  ]);
+
+  const latest = await buildRadarSnapshot(supabase, latestRow);
+  const history = historyRows.map((h) => {
+    const m = h.meta || {};
+    return {
+      id: h.id,
+      created_at: h.created_at,
+      month_key: h.month_key,
+      sentinel_period: { from: m.date_start || null, to: m.date_end || null },
+      has_ndvi: !!h.image_storage_path,
+      has_ndmi: !!(m.ndmi_storage_path || m.images?.ndmi?.storage_path)
+    };
+  });
+
+  return {
+    ok: true,
+    domain: 'radar',
+    project: {
+      id: row.id,
+      name: row.name || row.title || 'Sin nombre',
+      crop: getProjectCrop(data),
+      user_email: prof ? prof.email : null,
+      user_name: prof ? prof.name : null
+    },
+    multiple_matches: resolved.multiple_matches || false,
+    location: summarizeLocation(data.location),
+    has_polygon: hasPoly,
+    can_generate_radar: hasPoly,
+    latest_radar: latest,
+    radar_history: history,
+    user_radar_credits_this_month: credits,
+    related: {
+      fertirriego_suelo_vpd: 'project_detail',
+      vpd_ahora: 'project_vpd_live'
+    }
+  };
+}
+
+async function handleRadarSearch(supabase, params) {
+  let list = await fetchProjects(supabase);
+  const profiles = await fetchProfiles(supabase);
+  const byId = new Map(profiles.map((p) => [p.id, p]));
+
+  const cropQ = (params.crop || params.cultivo || '').trim().toLowerCase();
+  const userQ = (params.user || params.email || params.user_email || '').trim().toLowerCase();
+  const projectQ = (params.project || params.project_name || params.q || '').trim().toLowerCase();
+  const polygonOnly =
+    params.has_polygon_only !== false && params.has_polygon_only !== 'false';
+  const radarOnly = params.has_radar_only === true || params.has_radar_only === 'true';
+
+  if (polygonOnly) {
+    list = list.filter((p) => projectHasPolygon(p.data));
+  }
+  if (cropQ) {
+    list = list.filter((p) => getProjectCrop(p.data).toLowerCase().includes(cropQ));
+  }
+  if (projectQ) {
+    list = list.filter((p) => {
+      const n = (p.name || '').toLowerCase();
+      const t = (p.title || '').toLowerCase();
+      return n.includes(projectQ) || t.includes(projectQ) || (p.id || '').toLowerCase().includes(projectQ);
+    });
+  }
+  if (userQ) {
+    list = list.filter((p) => {
+      const prof = byId.get(p.user_id);
+      if (!prof) return false;
+      const email = (prof.email || '').toLowerCase();
+      const name = (prof.name || '').toLowerCase();
+      return email.includes(userQ) || name.includes(userQ);
+    });
+  }
+
+  const radarMap = await mapLatestRadarByProjects(
+    supabase,
+    list.map((p) => p.id)
+  );
+
+  let rows = list.map((p) => {
+    const prof = byId.get(p.user_id);
+    const r = radarMap[p.id];
+    return {
+      project_id: p.id,
+      name: p.name || p.title || 'Sin nombre',
+      crop: getProjectCrop(p.data),
+      user_email: prof ? prof.email : null,
+      user_name: prof ? prof.name : null,
+      has_polygon: projectHasPolygon(p.data),
+      has_radar: !!r,
+      latest_radar_at: r ? r.created_at : null,
+      radar_month_key: r ? r.month_key : null,
+      sentinel_period: r
+        ? { from: r.meta?.date_start || null, to: r.meta?.date_end || null }
+        : null
+    };
+  });
+
+  if (radarOnly) rows = rows.filter((x) => x.has_radar);
+
+  rows.sort((a, b) => {
+    const ta = a.latest_radar_at ? new Date(a.latest_radar_at).getTime() : 0;
+    const tb = b.latest_radar_at ? new Date(b.latest_radar_at).getTime() : 0;
+    return tb - ta;
+  });
+
+  const limit = Math.min(Math.max(parseInt(params.limit, 10) || 40, 1), 80);
+  return {
+    ok: true,
+    domain: 'radar',
+    filters: { crop: cropQ || null, user: userQ || null, has_radar_only: radarOnly, has_polygon_only: polygonOnly },
+    count: rows.length,
+    projects: rows.slice(0, limit),
+    tip: 'Para imágenes NDVI/NDMI usa radar_project con project_id o project_name.'
+  };
+}
+
+async function handleRadarOverview(supabase, params) {
+  const projects = await fetchProjects(supabase);
+  const mk = radarMonthKey();
+  const withPoly = projects.filter((p) => projectHasPolygon(p.data));
+  const radarMap = await mapLatestRadarByProjects(
+    supabase,
+    projects.map((p) => p.id)
+  );
+  const withRadar = withPoly.filter((p) => radarMap[p.id]);
+
+  const { count: gensThisMonth, error: cntErr } = await supabase
+    .from('radar_requests')
+    .select('*', { count: 'exact', head: true })
+    .eq('month_key', mk)
+    .not('image_storage_path', 'is', null);
+  if (cntErr) throw new Error('radar overview: ' + cntErr.message);
+
+  const byCrop = {};
+  withPoly.forEach((p) => {
+    const c = getProjectCrop(p.data) || 'Sin cultivo';
+    if (!byCrop[c]) byCrop[c] = { with_polygon: 0, with_radar_snapshot: 0 };
+    byCrop[c].with_polygon += 1;
+    if (radarMap[p.id]) byCrop[c].with_radar_snapshot += 1;
+  });
+
+  const profiles = await fetchProfiles(supabase);
+  const subs = profiles.filter(isSubscriberProfile);
+  let usersWithBonus = 0;
+  subs.forEach((p) => {
+    if (Math.floor(Number(p.radar_credits_bonus) || 0) > 0) usersWithBonus += 1;
+  });
+
+  return {
+    ok: true,
+    domain: 'radar',
+    month_key: mk,
+    totals: {
+      projects_all: projects.length,
+      projects_with_polygon: withPoly.length,
+      projects_with_radar_saved: withRadar.length,
+      radar_generations_this_month: gensThisMonth || 0,
+      subscribers_with_radar_bonus: usersWithBonus
+    },
+    by_crop: byCrop,
+    legend: {
+      ndvi: 'Vigor vegetativo (Sentinel-2 ~10 m)',
+      ndmi: 'Humedad del dosel'
     }
   };
 }
@@ -1140,10 +1889,11 @@ async function handleDescribeApi() {
         'project_detail',
         'project_vpd_live'
       ],
-      plan_pro: ['plan_pro_week', 'plan_pro_search', 'plan_pro_item']
+      plan_pro: ['plan_pro_week', 'plan_pro_search', 'plan_pro_item'],
+      radar: ['radar_project', 'radar_search', 'radar_overview']
     },
     usage:
-      'POST { action, params }. Plan PRO: plan_pro_week (días próximos); plan_pro_search (q); plan_pro_item (item_id o q).'
+      'Radar: radar_project (NDVI/NDMI URLs + historial fechas), radar_search (por usuario/cultivo), radar_overview. VPD: project_vpd_live.'
   };
 }
 
@@ -1157,6 +1907,9 @@ const HANDLERS = {
   plan_pro_week: (sb, p) => handlePlanProWeek(sb, p),
   plan_pro_search: (sb, p) => handlePlanProSearch(sb, p),
   plan_pro_item: (sb, p) => handlePlanProItem(sb, p),
+  radar_project: (sb, p) => handleRadarProject(sb, p),
+  radar_search: (sb, p) => handleRadarSearch(sb, p),
+  radar_overview: (sb, p) => handleRadarOverview(sb, p),
   describe_api: () => handleDescribeApi()
 };
 
@@ -1166,8 +1919,8 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '1.2.0',
-      description: 'Solo lectura. Admin, proyectos y Plan PRO (plan_pro_week, plan_pro_search, plan_pro_item).'
+      version: '1.4.0',
+      description: 'Solo lectura. Radar: radar_project (NDVI/NDMI), radar_search, radar_overview.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -1176,7 +1929,7 @@ function getOpenApiSpec() {
           operationId: 'nutriplantAdminQuery',
           summary: 'Consulta admin o proyectos de usuarios',
           description:
-            'Body: action + params. Plan PRO: plan_pro_week, plan_pro_search (q), plan_pro_item (item_id o q). Proyectos: project_detail, project_vpd_live. Admin: admin_stats, list_users, user_summary.',
+            'Body: action + params. Radar: radar_project, radar_search, radar_overview. Plan PRO: plan_pro_item. Proyectos: project_detail, project_vpd_live.',
           requestBody: {
             required: true,
             content: {

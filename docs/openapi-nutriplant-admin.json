@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "1.2.0",
-    "description": "Solo lectura: admin, proyectos NutriPlant y Plan PRO. Siempre action + params."
+    "version": "1.4.0",
+    "description": "Solo lectura: admin, proyectos, Plan PRO y Radar NDVI/NDMI (imágenes con URL firmada)."
   },
   "servers": [
     {
@@ -14,8 +14,8 @@
     "/api/admin-assistant": {
       "post": {
         "operationId": "nutriplantAdminQuery",
-        "summary": "Consulta NutriPlant (admin, proyectos, Plan PRO)",
-        "description": "Obligatorio action + params. Plan PRO: plan_pro_week ({} o days_ahead), plan_pro_search ({\"q\":\"inversión\"}), plan_pro_item ({\"item_id\":\"uuid\"} o {\"q\":\"título\"}). Proyectos: project_detail con project_id o project_name.",
+        "summary": "Consulta NutriPlant (admin, proyectos, Plan PRO, Radar)",
+        "description": "Radar: radar_project devuelve latest_radar.images.ndvi/ndmi.signed_url e historial por fechas Sentinel. radar_search filtra por crop/email. radar_overview totales. Ej: {\"action\":\"radar_project\",\"params\":{\"project_name\":\"Limon\"}}.",
         "requestBody": {
           "required": true,
           "content": {
@@ -53,6 +53,9 @@
               "plan_pro_week",
               "plan_pro_search",
               "plan_pro_item",
+              "radar_project",
+              "radar_search",
+              "radar_overview",
               "describe_api"
             ]
           },
@@ -62,15 +65,12 @@
             "properties": {
               "project_id": { "type": "string" },
               "project_name": { "type": "string" },
-              "fertirriego_stage_index": { "type": "integer" },
-              "q": { "type": "string", "description": "Búsqueda Plan PRO o proyectos" },
-              "search": { "type": "string" },
-              "item_id": { "type": "string", "description": "UUID apunte Plan PRO" },
-              "area_slug": { "type": "string", "description": "Pilar Plan PRO, ej. nutriplant" },
-              "days_ahead": { "type": "integer", "description": "plan_pro_week: días hacia adelante (default 7)" },
-              "email": { "type": "string" },
-              "status": { "type": "string" },
-              "crop": { "type": "string" },
+              "email": { "type": "string", "description": "Filtrar radar_search por usuario" },
+              "crop": { "type": "string", "description": "Filtrar por cultivo" },
+              "q": { "type": "string" },
+              "has_radar_only": { "type": "boolean", "description": "radar_search: solo con snapshot" },
+              "history_limit": { "type": "integer", "description": "radar_project: meses en historial" },
+              "item_id": { "type": "string" },
               "limit": { "type": "integer" }
             },
             "additionalProperties": true

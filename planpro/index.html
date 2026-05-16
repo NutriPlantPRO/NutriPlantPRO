@@ -1414,46 +1414,62 @@
       align-self: start;
       contain: layout style;
     }
-    /* Tablet / móvil: misma vista que computadora (Ramas | apuntes), scroll horizontal si no cabe. */
+    /* Tablet / móvil: Ramas fijo | apuntes con el resto del ancho (sin achicar Ramas). */
     @media (max-width: 1100px) {
       :root {
-        /* Al deslizar a la derecha, la columna de apuntes ocupa casi todo el ancho visible. */
+        --np-layout-sidebar-min: 288px;
+        --np-layout-gap: 10px;
+        /* Mínimo al deslizar; si caben las dos columnas, la derecha crece con 1fr. */
         --np-layout-main-min: max(
-          480px,
-          calc(100vw - var(--np-layout-sidebar-min) - var(--np-layout-gap) - 20px)
+          440px,
+          calc(100vw - var(--np-layout-sidebar-min) - var(--np-layout-gap) - 12px)
         );
+      }
+      /* Bloque Plantas + layout: casi borde a borde en el celular. */
+      #npMain .np-pillar-panel {
+        padding: 12px 10px 14px;
+        margin-bottom: 10px;
       }
       .np-layout-scroll {
         overflow-x: auto;
         overflow-y: visible;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-x: contain;
+        box-sizing: border-box;
+        width: calc(
+          100% + max(8px, env(safe-area-inset-left)) + max(8px, env(safe-area-inset-right))
+        );
+        max-width: 100vw;
+        margin-left: calc(-1 * max(8px, env(safe-area-inset-left)));
+        margin-right: calc(-1 * max(8px, env(safe-area-inset-right)));
+        padding-left: max(4px, env(safe-area-inset-left));
+        padding-right: max(4px, env(safe-area-inset-right));
       }
       .np-layout {
         display: grid;
-        grid-template-columns: minmax(var(--np-layout-sidebar-min), 300px) minmax(var(--np-layout-main-min), 1fr);
+        grid-template-columns: var(--np-layout-sidebar-min) minmax(0, 1fr);
         min-width: max(100%, calc(var(--np-layout-sidebar-min) + var(--np-layout-gap) + var(--np-layout-main-min)));
+        width: max(100%, calc(var(--np-layout-sidebar-min) + var(--np-layout-gap) + var(--np-layout-main-min)));
       }
       .np-tree-sidebar {
         position: sticky;
         top: 12px;
         align-self: start;
+        width: var(--np-layout-sidebar-min);
+        min-width: var(--np-layout-sidebar-min);
+        max-width: var(--np-layout-sidebar-min);
+        flex-shrink: 0;
       }
       .np-main-col {
         min-width: var(--np-layout-main-min);
+        width: auto;
+        max-width: none;
       }
     }
-    /* Celular en horizontal: más parecido a laptop (sidebar un poco más angosta). */
+    /* Horizontal en cel: Ramas igual de ancha; apuntes con más alto útil en el árbol. */
     @media (max-width: 1100px) and (orientation: landscape) {
-      :root {
-        --np-layout-sidebar-min: 252px;
-        --np-layout-main-min: max(
-          520px,
-          calc(100vw - var(--np-layout-sidebar-min) - var(--np-layout-gap) - 16px)
-        );
-      }
       .np-tree-mount {
-        max-height: min(52vh, 300px);
+        max-height: min(48vh, 280px);
       }
     }
     /* Celular vertical: Ramas pantalla 1 → apuntes/tablas pantalla 2 (ancho completo, no mitad y mitad). */
@@ -3084,6 +3100,99 @@
       font-size: 0.92em;
     }
     .np-rich-flag-star { color: #1d4ed8; background: rgba(219, 234, 254, 0.65); }
+    /* Semáforo + fecha en línea (nota principal) */
+    .np-rich-due {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      vertical-align: baseline;
+      margin: 0 2px;
+      padding: 1px 7px 1px 5px;
+      border-radius: 999px;
+      font-size: 0.88em;
+      font-weight: 650;
+      line-height: 1.35;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: rgba(248, 250, 252, 0.95);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .np-rich-due-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85);
+    }
+    .np-rich-due--baja { border-color: rgba(34, 197, 94, 0.45); background: rgba(240, 253, 244, 0.92); color: #14532d; }
+    .np-rich-due--baja .np-rich-due-dot { background: #22c55e; }
+    .np-rich-due--media { border-color: rgba(234, 179, 8, 0.5); background: rgba(254, 252, 232, 0.95); color: #713f12; }
+    .np-rich-due--media .np-rich-due-dot { background: #eab308; }
+    .np-rich-due--alta { border-color: rgba(239, 68, 68, 0.45); background: rgba(254, 242, 242, 0.95); color: #7f1d1d; }
+    .np-rich-due--alta .np-rich-due-dot { background: #ef4444; }
+    .np-rich-due-popover {
+      position: fixed;
+      z-index: 16600;
+      min-width: 220px;
+      max-width: min(92vw, 280px);
+      padding: 12px 12px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: #fff;
+      box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
+      box-sizing: border-box;
+    }
+    .np-rich-due-popover.np-hide { display: none !important; }
+    .np-rich-due-popover-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .np-rich-due-popover label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+    .np-rich-due-popover input[type='date'] {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 7px 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .np-rich-due-popover-levels {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .np-rich-due-popover-levels button {
+      flex: 1;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      padding: 6px 4px;
+      font-size: 11px;
+      font-weight: 650;
+      cursor: pointer;
+      background: #f8fafc;
+    }
+    .np-rich-due-popover-levels button.is-on {
+      box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.12);
+    }
+    .np-rich-due-popover-levels button[data-lv='baja'].is-on { background: #dcfce7; border-color: #22c55e; color: #14532d; }
+    .np-rich-due-popover-levels button[data-lv='media'].is-on { background: #fef9c3; border-color: #eab308; color: #713f12; }
+    .np-rich-due-popover-levels button[data-lv='alta'].is-on { background: #fee2e2; border-color: #ef4444; color: #7f1d1d; }
+    .np-rich-due-popover-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .np-rich-tbtn-due { font-size: 14px; line-height: 1; }
     .np-rich-editor img.np-rich-img,
     .np-modal-note-rich img.np-rich-img {
       max-width: 100%;
@@ -4413,6 +4522,7 @@
                       <button type="button" class="np-rich-tbtn" data-rich="wrap" data-v="np-rich-fs-xl" title="Muy grande">XL</button>
                     </span>
                     <span class="np-rich-grp">
+                      <button type="button" class="np-rich-tbtn np-rich-tbtn-due" data-rich="duedate" title="Semáforo y fecha en esta línea (calendario)">🚦</button>
                       <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="warn" title="Marcar importancia">⚠︎</button>
                       <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="star" title="Destacar">★</button>
                       <button type="button" class="np-rich-tbtn" data-rich="image" title="Insertar imagen (se comprime y sube a la nube)">🖼</button>
@@ -4536,6 +4646,22 @@
       <span class="np-planpro-chat-bubble-ia">IA</span>
       <img src="../assets/N_Hoja_Blanca.png" alt="" width="28" height="28" decoding="async" class="np-planpro-chat-bubble-img" />
     </button>
+  </div>
+
+  <div id="npRichDuePopover" class="np-rich-due-popover np-hide" role="dialog" aria-label="Semáforo y fecha">
+    <div class="np-rich-due-popover-title">Semáforo y fecha</div>
+    <label for="npRichDuePopoverDate">Fecha</label>
+    <input type="date" id="npRichDuePopoverDate" />
+    <div class="np-rich-due-popover-levels" role="group" aria-label="Prioridad">
+      <button type="button" data-lv="baja">Baja</button>
+      <button type="button" data-lv="media">Media</button>
+      <button type="button" data-lv="alta">Alta</button>
+    </div>
+    <div class="np-rich-due-popover-actions">
+      <button type="button" class="btn btn-ghost btn-ghost-blue" id="npRichDuePopoverCancel">Cancelar</button>
+      <button type="button" class="btn btn-ghost btn-ghost-green" id="npRichDuePopoverApply">Listo</button>
+      <button type="button" class="btn btn-ghost" id="npRichDuePopoverRemove" style="display:none;color:#b91c1c;">Quitar</button>
+    </div>
   </div>
 
   <div id="npPrioListModal" class="np-modal-overlay" aria-hidden="true">
@@ -5291,7 +5417,23 @@
           'font',
           'img'
         ],
-        ALLOWED_ATTR: ['class', 'style', 'color', 'src', 'alt', 'loading', 'decoding', 'referrerpolicy', 'width']
+        ALLOWED_ATTR: [
+          'class',
+          'style',
+          'color',
+          'src',
+          'alt',
+          'loading',
+          'decoding',
+          'referrerpolicy',
+          'width',
+          'data-np-due-id',
+          'data-np-due-date',
+          'data-np-due-level',
+          'data-np-due-label',
+          'contenteditable',
+          'title'
+        ]
       });
       var wrap = document.createElement('div');
       wrap.innerHTML = cleaned;
@@ -5316,6 +5458,16 @@
         if (!im.getAttribute('loading')) im.setAttribute('loading', 'lazy');
         if (!im.getAttribute('decoding')) im.setAttribute('decoding', 'async');
         if (!im.getAttribute('referrerpolicy')) im.setAttribute('referrerpolicy', 'no-referrer');
+      });
+      Array.prototype.slice.call(wrap.querySelectorAll('.np-rich-due')).forEach(function (el) {
+        var dk = parseDueDateKey(el.getAttribute('data-np-due-date'));
+        if (!dk) {
+          if (el.parentNode) el.parentNode.removeChild(el);
+          return;
+        }
+        var lv = normalizeRichDueLevel(el.getAttribute('data-np-due-level'));
+        applyRichDueMarkerEl(el, dk, lv);
+        el.setAttribute('contenteditable', 'false');
       });
       return wrap.innerHTML;
     }
@@ -5638,6 +5790,288 @@
     sel.addRange(range);
   }
 
+  var NP_RICH_DUE_MONTH_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var richDuePickerState = null;
+
+  function npRichDueNewId() {
+    return 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function formatRichDueDateLabel(dateKey) {
+    var dk = parseDueDateKey(dateKey);
+    if (!dk) return '';
+    var p = dk.split('-').map(Number);
+    if (p.length !== 3 || !p[1] || p[1] < 1 || p[1] > 12) return dk;
+    return p[2] + ' ' + NP_RICH_DUE_MONTH_SHORT[p[1] - 1];
+  }
+
+  function normalizeRichDueLevel(lv) {
+    var x = priorityLevelFromRaw(lv);
+    return x || 'media';
+  }
+
+  function applyRichDueMarkerEl(el, dateKey, level) {
+    if (!el) return;
+    var dk = parseDueDateKey(dateKey);
+    if (!dk) return;
+    var lv = normalizeRichDueLevel(level);
+    var label = formatRichDueDateLabel(dk);
+    el.className = 'np-rich-due np-rich-due--' + lv;
+    el.setAttribute('contenteditable', 'false');
+    if (!el.getAttribute('data-np-due-id')) el.setAttribute('data-np-due-id', npRichDueNewId());
+    el.setAttribute('data-np-due-date', dk);
+    el.setAttribute('data-np-due-level', lv);
+    el.setAttribute('data-np-due-label', label);
+    el.setAttribute(
+      'title',
+      'Semáforo ' + (lv === 'alta' ? 'alta' : lv === 'baja' ? 'baja' : 'media') + ' · ' + dk + ' (clic para editar)'
+    );
+    var dot = el.querySelector('.np-rich-due-dot');
+    if (!dot) {
+      dot = document.createElement('span');
+      dot.className = 'np-rich-due-dot';
+      el.insertBefore(dot, el.firstChild);
+    }
+    var kids = Array.prototype.slice.call(el.childNodes);
+    kids.forEach(function (n) {
+      if (n !== dot) el.removeChild(n);
+    });
+    el.appendChild(document.createTextNode(label));
+  }
+
+  function buildRichDueMarkerHtml(dateKey, level, id) {
+    var dk = parseDueDateKey(dateKey);
+    if (!dk) return '';
+    var lv = normalizeRichDueLevel(level);
+    var uid = id || npRichDueNewId();
+    var holder = document.createElement('div');
+    holder.innerHTML = '<span class="np-rich-due np-rich-due--' + lv + '" contenteditable="false"></span>';
+    var el = holder.firstChild;
+    applyRichDueMarkerEl(el, dk, lv);
+    el.setAttribute('data-np-due-id', uid);
+    return el.outerHTML + '&#xa0;';
+  }
+
+  function insertRichDueAtCursor(editorEl, dateKey, level) {
+    var html = buildRichDueMarkerHtml(dateKey, level);
+    if (!html) return;
+    var target = editorEl || $('npBodyRich');
+    if (!target) return;
+    target.focus();
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    var range = sel.getRangeAt(0).cloneRange();
+    if (!target.contains(range.commonAncestorContainer)) return;
+    var holder = document.createElement('div');
+    holder.innerHTML = sanitizeRich(html);
+    var frag = document.createDocumentFragment();
+    while (holder.firstChild) frag.appendChild(holder.firstChild);
+    var last = frag.lastChild;
+    if (!last) return;
+    range.deleteContents();
+    try {
+      range.insertNode(frag);
+    } catch (errIns) {
+      try {
+        document.execCommand('insertHTML', false, sanitizeRich(html));
+      } catch (e2) {}
+      return;
+    }
+    range.setStartAfter(last);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function positionRichDuePopover(anchorRect) {
+    var pop = $('npRichDuePopover');
+    if (!pop || !anchorRect) return;
+    var pad = 8;
+    var w = pop.offsetWidth || 240;
+    var h = pop.offsetHeight || 200;
+    var left = anchorRect.left + anchorRect.width / 2 - w / 2;
+    var top = anchorRect.bottom + pad;
+    if (left + w > window.innerWidth - pad) left = window.innerWidth - w - pad;
+    if (left < pad) left = pad;
+    if (top + h > window.innerHeight - pad) top = anchorRect.top - h - pad;
+    if (top < pad) top = pad;
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.top = Math.round(top) + 'px';
+  }
+
+  function syncRichDuePickerLevelButtons(lv) {
+    var pop = $('npRichDuePopover');
+    if (!pop) return;
+    pop.querySelectorAll('.np-rich-due-popover-levels button').forEach(function (btn) {
+      btn.classList.toggle('is-on', btn.getAttribute('data-lv') === lv);
+    });
+  }
+
+  function closeRichDuePicker() {
+    var pop = $('npRichDuePopover');
+    if (pop) pop.classList.add('np-hide');
+    richDuePickerState = null;
+  }
+
+  function openRichDuePicker(opts) {
+    opts = opts || {};
+    var pop = $('npRichDuePopover');
+    var editorEl = opts.editorEl;
+    if (!pop || !editorEl) return;
+    var marker = opts.markerEl || null;
+    var now = new Date();
+    var todayKey =
+      now.getFullYear() +
+      '-' +
+      String(now.getMonth() + 1).padStart(2, '0') +
+      '-' +
+      String(now.getDate()).padStart(2, '0');
+    var dateKey = marker ? marker.getAttribute('data-np-due-date') || todayKey : todayKey;
+    var level = marker ? normalizeRichDueLevel(marker.getAttribute('data-np-due-level')) : 'media';
+    var dateInp = $('npRichDuePopoverDate');
+    if (dateInp) dateInp.value = parseDueDateKey(dateKey) || todayKey;
+    syncRichDuePickerLevelButtons(level);
+    var rm = $('npRichDuePopoverRemove');
+    if (rm) rm.style.display = marker ? '' : 'none';
+    richDuePickerState = { editorEl: editorEl, markerEl: marker, level: level };
+    pop.classList.remove('np-hide');
+    var rect = null;
+    if (marker) rect = marker.getBoundingClientRect();
+    else {
+      var sel = window.getSelection();
+      if (sel && sel.rangeCount) {
+        try {
+          rect = sel.getRangeAt(0).getBoundingClientRect();
+        } catch (eR) {}
+      }
+    }
+    if (!rect || (!rect.width && !rect.height)) {
+      rect = editorEl.getBoundingClientRect();
+    }
+    requestAnimationFrame(function () {
+      positionRichDuePopover(rect);
+    });
+  }
+
+  function applyRichDuePicker() {
+    if (!richDuePickerState) return;
+    var dateInp = $('npRichDuePopoverDate');
+    var dk = dateInp ? parseDueDateKey(dateInp.value) : '';
+    if (!dk) {
+      showToast('Elige una fecha válida.', true);
+      return;
+    }
+    var lv = richDuePickerState.level || 'media';
+    var ed = richDuePickerState.editorEl;
+    var marker = richDuePickerState.markerEl;
+    if (marker && ed && ed.contains(marker)) {
+      applyRichDueMarkerEl(marker, dk, lv);
+    } else if (ed) {
+      insertRichDueAtCursor(ed, dk, lv);
+    }
+    closeRichDuePicker();
+    syncRichEmptyClass(ed);
+    if (ed.id === 'npModalBodyRich') schedulePersistMainBody();
+    refreshPlanProCalendarAndPrio();
+  }
+
+  function removeRichDueFromPicker() {
+    if (!richDuePickerState) return;
+    var marker = richDuePickerState.markerEl;
+    var ed = richDuePickerState.editorEl;
+    if (marker && marker.parentNode) marker.parentNode.removeChild(marker);
+    closeRichDuePicker();
+    syncRichEmptyClass(ed);
+    if (ed && ed.id === 'npModalBodyRich') schedulePersistMainBody();
+    refreshPlanProCalendarAndPrio();
+  }
+
+  function bindRichDueMarkers(editorEl) {
+    if (!editorEl || editorEl._npRichDueBound) return;
+    editorEl._npRichDueBound = true;
+    editorEl.addEventListener('click', function (e) {
+      var m = e.target.closest('.np-rich-due');
+      if (!m || !editorEl.contains(m)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openRichDuePicker({ editorEl: editorEl, markerEl: m });
+    });
+  }
+
+  function collectRichDueEntriesFromHtml(html, meta) {
+    var out = [];
+    if (!html || !String(html).trim() || !meta || !meta.id) return out;
+    var wrap = document.createElement('div');
+    wrap.innerHTML = sanitizeRich(html);
+    wrap.querySelectorAll('.np-rich-due[data-np-due-date]').forEach(function (el) {
+      var dk = parseDueDateKey(el.getAttribute('data-np-due-date'));
+      if (!dk) return;
+      var lv = priorityLevelFromRaw(el.getAttribute('data-np-due-level') || '');
+      var label = el.getAttribute('data-np-due-label') || formatRichDueDateLabel(dk);
+      out.push({
+        dateKey: dk,
+        level: lv,
+        kind: 'note_due',
+        itemId: meta.id,
+        itemTitle: meta.title || '(Sin título)',
+        catPath: meta.catPath || '—',
+        rowTitle: 'Semáforo en nota · ' + label,
+        blockTitle: '—',
+        dueId: el.getAttribute('data-np-due-id') || ''
+      });
+    });
+    return out;
+  }
+
+  function countPrioritiesInRichHtml(html) {
+    var out = { baja: 0, media: 0, alta: 0 };
+    if (!html || !String(html).trim()) return out;
+    var wrap = document.createElement('div');
+    wrap.innerHTML = sanitizeRich(html);
+    wrap.querySelectorAll('.np-rich-due[data-np-due-date]').forEach(function (el) {
+      var lv = priorityLevelFromRaw(el.getAttribute('data-np-due-level') || '');
+      if (lv === 'baja') out.baja++;
+      else if (lv === 'media') out.media++;
+      else if (lv === 'alta') out.alta++;
+    });
+    return out;
+  }
+
+  function refreshPlanProCalendarAndPrio() {
+    var rows = state.prioSummaryRowsCache;
+    if (!rows || !state.selectedAreaId) return;
+    renderSidebarPrioSummary(rows);
+    renderSidebarCalendar(rows);
+  }
+
+  function wireRichDuePopoverOnce() {
+    if (wireRichDuePopoverOnce._done) return;
+    wireRichDuePopoverOnce._done = true;
+    var pop = $('npRichDuePopover');
+    if (!pop) return;
+    pop.querySelectorAll('.np-rich-due-popover-levels button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (!richDuePickerState) return;
+        richDuePickerState.level = btn.getAttribute('data-lv') || 'media';
+        syncRichDuePickerLevelButtons(richDuePickerState.level);
+      });
+    });
+    var cancel = $('npRichDuePopoverCancel');
+    var apply = $('npRichDuePopoverApply');
+    var remove = $('npRichDuePopoverRemove');
+    if (cancel) cancel.addEventListener('click', closeRichDuePicker);
+    if (apply) apply.addEventListener('click', applyRichDuePicker);
+    if (remove) remove.addEventListener('click', removeRichDueFromPicker);
+    document.addEventListener('click', function (e) {
+      if (pop.classList.contains('np-hide') || !richDuePickerState) return;
+      if (pop.contains(e.target)) return;
+      if (e.target.closest('.np-rich-due')) return;
+      if (e.target.closest('[data-rich="duedate"]')) return;
+      closeRichDuePicker();
+    });
+  }
+
+
   function handleRichToolbarClick(e, editorEl) {
     if (!editorEl) return false;
     var b = e.target.closest('[data-rich]');
@@ -5668,6 +6102,9 @@
       }
     } else if (kind === 'snippet') {
       insertRichSnippet(b.getAttribute('data-snippet'), editorEl);
+    } else if (kind === 'duedate') {
+      wireRichDuePopoverOnce();
+      openRichDuePicker({ editorEl: editorEl });
     } else if (kind === 'image') {
       if (!state.client || !state.userId) {
         showToast('Inicia sesión para subir imágenes.', true);
@@ -5709,6 +6146,15 @@
     if (res.error) {
       showToast(res.error.message || 'No se pudo guardar la nota principal.', true);
       return;
+    }
+    if (opts.skipReload && state.prioSummaryRowsCache && patch.body_html !== undefined) {
+      state.prioSummaryRowsCache.forEach(function (row) {
+        if (row && row.id === itemId) {
+          row.body_html = patch.body_html;
+          row.body_plain = patch.body_plain;
+        }
+      });
+      refreshPlanProCalendarAndPrio();
     }
     if (!opts.skipReload) await loadItems();
   }
@@ -5797,6 +6243,8 @@
     });
     bindPlanProRichPasteImages(ed);
     bindRichImageCornerResize(ed);
+    bindRichDueMarkers(ed);
+    wireRichDuePopoverOnce();
   }
 
   function openItemDetail(r) {
@@ -7369,7 +7817,7 @@
         });
       }
       var blocks = r.body_blocks || [];
-      blocks.forEach(function (b) {
+      blocks.forEach(function (b, blockIndex) {
         if (!b || b.type !== 'mini_sheet') return;
         if (b.variant !== 'tasks' && b.variant !== 'smart') return;
         ensureSmartMeta(b);
@@ -7396,9 +7844,28 @@
             itemTitle: r.title || '(Sin título)',
             catPath: getCategoryPath(r.category_id),
             rowTitle: miniSheetRowTitleForDetail(b, cells) || '—',
-            blockTitle: b.title || (b.variant === 'tasks' ? 'Lista / tareas' : 'Seguimiento')
+            blockTitle: b.title || (b.variant === 'tasks' ? 'Lista / tareas' : 'Seguimiento'),
+            blockIndex: blockIndex,
+            rowIndex: ri
           });
         });
+      });
+      var itemMeta = {
+        id: r.id,
+        title: r.title || '(Sin título)',
+        catPath: getCategoryPath(r.category_id)
+      };
+      if (r.body_html && String(r.body_html).trim()) {
+        collectRichDueEntriesFromHtml(r.body_html, itemMeta).forEach(function (e) {
+          out.push(e);
+        });
+      }
+      blocks.forEach(function (b) {
+        if (b && b.type === 'note_section' && b.html && String(b.html).trim()) {
+          collectRichDueEntriesFromHtml(b.html, itemMeta).forEach(function (e) {
+            out.push(e);
+          });
+        }
       });
     });
     return out;
@@ -7629,13 +8096,43 @@
   }
 
   function npIcsEventDescription(ent) {
+    var kindLine = 'Objetivo del apunte';
+    if (ent.kind === 'table_row') kindLine = 'Tabla: ' + (ent.blockTitle || '—');
+    else if (ent.kind === 'note_due') kindLine = 'Semáforo en nota principal';
     var lines = [
       ent.rowTitle || 'Plan PRO',
-      ent.kind === 'table_row' ? 'Tabla: ' + (ent.blockTitle || '—') : 'Objetivo del apunte',
+      kindLine,
       'Apunte: ' + (ent.itemTitle || '—'),
       'Rama: ' + (ent.catPath || '—')
     ];
     return lines.join('\n');
+  }
+
+  /** UID estable por evento: al reimportar el .ics, el calendario actualiza el mismo evento en lugar de duplicarlo. */
+  function npCalendarEventUid(ent) {
+    var item = String(ent.itemId || 'x').replace(/[^a-zA-Z0-9_-]/g, '');
+    if (ent.kind === 'item_due') {
+      return 'planpro-' + item + '-item-due@nutriplantpro.com';
+    }
+    if (ent.kind === 'note_due' && ent.dueId) {
+      return (
+        'planpro-' +
+        item +
+        '-note-' +
+        String(ent.dueId).replace(/[^a-zA-Z0-9_-]/g, '') +
+        '@nutriplantpro.com'
+      );
+    }
+    if (ent.kind === 'table_row' && ent.blockIndex != null && ent.rowIndex != null) {
+      return 'planpro-' + item + '-b' + ent.blockIndex + '-r' + ent.rowIndex + '@nutriplantpro.com';
+    }
+    var dk = String(ent.dateKey || '0000-00-00');
+    var slug = String(ent.rowTitle || ent.itemTitle || 'e')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 48);
+    return 'planpro-' + item + '-' + dk + '-' + (ent.kind || 'e') + '-' + (slug || 'evt') + '@nutriplantpro.com';
   }
 
   function buildPlanProIcs(events, organizerEmail) {
@@ -7648,10 +8145,10 @@
       'METHOD:PUBLISH'
     ];
     var stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-    events.forEach(function (ent, idx) {
+    events.forEach(function (ent) {
       var dk = String(ent.dateKey || '').trim();
       if (!/^\d{4}-\d{2}-\d{2}$/.test(dk)) return;
-      var uid = 'planpro-' + (ent.itemId || 'x') + '-' + dk + '-' + (ent.kind || 'e') + '-' + idx + '@nutriplantpro.com';
+      var uid = npCalendarEventUid(ent);
       var summary = npEscapeIcs(ent.rowTitle && ent.rowTitle !== '—' ? ent.rowTitle : ent.itemTitle || 'Plan PRO');
       var desc = npEscapeIcs(npIcsEventDescription(ent));
       var dtStart = dk.replace(/-/g, '');
@@ -7659,6 +8156,8 @@
       lines.push('BEGIN:VEVENT');
       lines.push('UID:' + uid);
       lines.push('DTSTAMP:' + stamp);
+      lines.push('LAST-MODIFIED:' + stamp);
+      lines.push('SEQUENCE:1');
       lines.push('DTSTART;VALUE=DATE:' + dtStart);
       lines.push('DTEND;VALUE=DATE:' + dtEnd);
       lines.push('SUMMARY:' + summary);
@@ -7707,7 +8206,7 @@
         filtered.length +
         ' evento' +
         (filtered.length === 1 ? '' : 's') +
-        '). Ábrelo: doble clic o arrástralo a Outlook.',
+        '). Importa de nuevo en tu calendario: los que ya tenías se actualizan; solo se agregan los nuevos. (Si borraste algo en Plan PRO, puede quedar el evento viejo en el cel — quítalo a mano.)',
       false
     );
   }
@@ -7772,7 +8271,11 @@
           ent.itemTitle +
           ' · ' +
           ent.catPath +
-          (ent.kind === 'table_row' ? ' · Tabla: ' + ent.blockTitle : '');
+          (ent.kind === 'table_row'
+            ? ' · Tabla: ' + ent.blockTitle
+            : ent.kind === 'note_due'
+              ? ' · Nota principal'
+              : '');
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn btn-ghost btn-ghost-blue';
@@ -7966,6 +8469,20 @@
       map[rid].baja += ab.baja;
       map[rid].media += ab.media;
       map[rid].alta += ab.alta;
+      if (r.body_html && String(r.body_html).trim()) {
+        var rh = countPrioritiesInRichHtml(r.body_html);
+        map[rid].baja += rh.baja;
+        map[rid].media += rh.media;
+        map[rid].alta += rh.alta;
+      }
+      (r.body_blocks || []).forEach(function (blk) {
+        if (blk && blk.type === 'note_section' && blk.html) {
+          var ns = countPrioritiesInRichHtml(blk.html);
+          map[rid].baja += ns.baja;
+          map[rid].media += ns.media;
+          map[rid].alta += ns.alta;
+        }
+      });
     });
     return map;
   }
@@ -7983,8 +8500,37 @@
       if (!r || !r.category_id) return;
       var rid = getRootCategoryId(r.category_id);
       if (rootId && rid !== rootId) return;
+      var itemMeta = {
+        id: r.id,
+        title: r.title || '(Sin título)',
+        catPath: getCategoryPath(r.category_id)
+      };
+      if (r.body_html && String(r.body_html).trim()) {
+        collectRichDueEntriesFromHtml(r.body_html, itemMeta).forEach(function (e) {
+          if (e.level !== level) return;
+          out.push({
+            itemId: r.id,
+            itemTitle: r.title || '(Sin título)',
+            catPath: getCategoryPath(r.category_id),
+            blockTitle: 'Nota principal',
+            rowTitle: e.rowTitle
+          });
+        });
+      }
       var blocks = r.body_blocks || [];
       blocks.forEach(function (b) {
+        if (b && b.type === 'note_section' && b.html) {
+          collectRichDueEntriesFromHtml(b.html, itemMeta).forEach(function (e) {
+            if (e.level !== level) return;
+            out.push({
+              itemId: r.id,
+              itemTitle: r.title || '(Sin título)',
+              catPath: getCategoryPath(r.category_id),
+              blockTitle: b.title || 'Sección de nota',
+              rowTitle: e.rowTitle
+            });
+          });
+        }
         if (!b || b.type !== 'mini_sheet') return;
         if (b.variant !== 'tasks' && b.variant !== 'smart') return;
         var headers = b.headers || [];
@@ -9963,13 +10509,24 @@
 
   function scrollNpLayoutToMainColumn() {
     var sc = document.querySelector('.np-layout-scroll');
-    if (!sc) return;
-    if (typeof window.matchMedia !== 'function') return;
-    if (!window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches) return;
-    var w = sc.clientWidth;
-    if (w < 1) return;
+    var sidebar = document.querySelector('.np-tree-sidebar');
+    if (!sc || !sidebar || typeof window.matchMedia !== 'function') return;
     requestAnimationFrame(function () {
-      sc.scrollTo({ left: w, behavior: 'smooth' });
+      if (window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches) {
+        var w = sc.clientWidth;
+        if (w > 0) sc.scrollTo({ left: w, behavior: 'smooth' });
+        return;
+      }
+      if (window.matchMedia('(max-width: 1100px)').matches && sc.scrollWidth > sc.clientWidth + 8) {
+        var gap = 10;
+        try {
+          var g = getComputedStyle(document.querySelector('.np-layout')).gap;
+          if (g) gap = parseFloat(g) || gap;
+        } catch (eGap) {}
+        var x = sidebar.offsetWidth + gap;
+        var maxL = sc.scrollWidth - sc.clientWidth;
+        sc.scrollTo({ left: Math.min(Math.max(0, x), maxL), behavior: 'smooth' });
+      }
     });
   }
 
@@ -11343,6 +11900,10 @@
       closePillarTabFlyout();
       return;
     }
+    if ($('npRichDuePopover') && !$('npRichDuePopover').classList.contains('np-hide')) {
+      closeRichDuePicker();
+      return;
+    }
     if ($('npPrioListModal') && $('npPrioListModal').classList.contains('np-modal-open')) {
       closePrioListModal();
       return;
@@ -11381,6 +11942,8 @@
     });
     bindPlanProRichPasteImages(npBodyRichEl);
     bindRichImageCornerResize(npBodyRichEl);
+    bindRichDueMarkers(npBodyRichEl);
+    wireRichDuePopoverOnce();
     wirePlanProRichImageInput();
   }
 
