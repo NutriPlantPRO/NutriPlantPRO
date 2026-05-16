@@ -1776,10 +1776,18 @@
       z-index: 40;
       list-style: none;
     }
-    /* Sin espacio abajo (lista cortada por overflow): abrir hacia arriba dentro del árbol. */
-    .np-tree-menu.np-tree-menu--above {
-      top: auto;
-      bottom: calc(100% + 3px);
+    /* Menú contextual ⋯: versión fija al viewport (evita recorte por overflow del árbol). */
+    .np-tree-menu.np-tree-menu--fixed {
+      position: fixed !important;
+      right: auto !important;
+      bottom: auto !important;
+      min-width: 168px;
+      max-width: min(92vw, 300px);
+      max-height: min(70vh, 280px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      z-index: 16500;
+      -webkit-overflow-scrolling: touch;
     }
     .np-tree-menu-item {
       display: block;
@@ -3063,6 +3071,60 @@
       outline-offset: 3px;
       box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08), inset -5px -5px 0 0 rgba(22, 163, 74, 0.65);
       user-select: none;
+    }
+    /* Marco + pestañas en esquinas al elegir imagen (redimensionar apuntes). */
+    .np-rich-img-resize-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 16550;
+      pointer-events: none;
+    }
+    .np-rich-img-resize-frame {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 0;
+      box-sizing: border-box;
+      border: 2px solid rgba(22, 163, 74, 0.9);
+      border-radius: 10px;
+      pointer-events: none;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.65) inset;
+    }
+    .np-rich-img-handle {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      margin: 0;
+      padding: 0;
+      border: 2px solid #fff;
+      border-radius: 6px;
+      background: linear-gradient(145deg, #4ade80, #16a34a);
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.28);
+      pointer-events: auto;
+      touch-action: none;
+      transform: translate(-50%, -50%);
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .np-rich-img-handle--nw {
+      cursor: nwse-resize;
+    }
+    .np-rich-img-handle--ne {
+      cursor: nesw-resize;
+    }
+    .np-rich-img-handle--sw {
+      cursor: nesw-resize;
+    }
+    .np-rich-img-handle--se {
+      cursor: nwse-resize;
+    }
+    @media (pointer: coarse) {
+      .np-rich-img-handle {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+      }
     }
     .np-modal-note-rich {
       white-space: normal;
@@ -4407,6 +4469,9 @@
 
   var detailBlocksSaveTimer = null;
   var detailBodySaveTimer = null;
+  var npTreeMenuLayoutListener = null;
+  var npRichImgResizeScrollFn = null;
+  var npRichImgResizeUI = { overlay: null, editorEl: null, img: null };
   var NP_NOTE_IMAGE_BUCKET = 'plan-pro-note-images';
   var planProRichImageTargetEditor = null;
   /** Refresco del modal de bloques: antes ~110 ms de espera; un rAF suele bastar y evita sensación de “lag” en móvil. */
@@ -4459,48 +4524,66 @@
   function $(id) { return document.getElementById(id); }
 
   function closeAllTreeMenus() {
+    if (npTreeMenuLayoutListener) {
+      window.removeEventListener('scroll', npTreeMenuLayoutListener, true);
+      window.removeEventListener('resize', npTreeMenuLayoutListener);
+      var mountScroll = $('npTreeMount');
+      if (mountScroll) mountScroll.removeEventListener('scroll', npTreeMenuLayoutListener, true);
+      npTreeMenuLayoutListener = null;
+    }
     var m = $('npTreeMount');
     if (!m) return;
     m.querySelectorAll('.np-tree-menu').forEach(function (el) {
       el.classList.add('np-hide');
-      el.classList.remove('np-tree-menu--above');
+      el.classList.remove('np-tree-menu--fixed');
+      el.style.left = '';
+      el.style.top = '';
     });
     m.querySelectorAll('.np-tree-btn-more').forEach(function (btn) {
       btn.setAttribute('aria-expanded', 'false');
     });
   }
 
-  /** Menú ⋯ del árbol: evita que quede recortado por overflow del panel (#npTreeMount). */
-  function adjustTreeMenuFlip(menuEl, wrapEl) {
-    if (!menuEl || !wrapEl) return;
-    menuEl.classList.remove('np-tree-menu--above');
-    var mount = $('npTreeMount');
-    if (!mount) return;
-    requestAnimationFrame(function () {
-      var mRect = mount.getBoundingClientRect();
-      var wRect = wrapEl.getBoundingClientRect();
-      var menuH = menuEl.offsetHeight || 112;
-      var gap = 6;
-      var spaceBelow = mRect.bottom - wRect.bottom - gap;
-      var spaceAbove = wRect.top - mRect.top - gap;
-      if (spaceBelow < menuH && spaceAbove >= spaceBelow) {
-        menuEl.classList.add('np-tree-menu--above');
-      }
-    });
+  /** Menú ⋯ del árbol: posición fija en pantalla para que no lo recorte #npTreeMount (overflow). */
+  function positionTreeMenuFixed(menuEl, wrapEl) {
+    if (!menuEl || !wrapEl || menuEl.classList.contains('np-hide')) return;
+    var btn = wrapEl.querySelector('.np-tree-btn-more');
+    if (!btn) return;
+    menuEl.classList.add('np-tree-menu--fixed');
+    var rect = btn.getBoundingClientRect();
+    var mw = menuEl.offsetWidth || 188;
+    var mh = menuEl.offsetHeight || 132;
+    var pad = 10;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var gap = 6;
+    var left = rect.right - mw;
+    left = Math.min(Math.max(pad, left), vw - mw - pad);
+    var top = rect.bottom + gap;
+    if (top + mh > vh - pad) {
+      top = rect.top - mh - gap;
+    }
+    var topMax = vh - mh - pad;
+    if (topMax < pad) topMax = pad;
+    top = Math.max(pad, Math.min(top, topMax));
+    menuEl.style.left = Math.round(left) + 'px';
+    menuEl.style.top = Math.round(top) + 'px';
   }
 
-  function revealTreeMenuInMount(menuEl) {
+  function bindTreeMenuLayoutWatch(menuEl, wrapEl) {
+    if (npTreeMenuLayoutListener) {
+      window.removeEventListener('scroll', npTreeMenuLayoutListener, true);
+      window.removeEventListener('resize', npTreeMenuLayoutListener);
+      var prevMount = $('npTreeMount');
+      if (prevMount) prevMount.removeEventListener('scroll', npTreeMenuLayoutListener, true);
+    }
+    npTreeMenuLayoutListener = function () {
+      positionTreeMenuFixed(menuEl, wrapEl);
+    };
+    window.addEventListener('scroll', npTreeMenuLayoutListener, true);
+    window.addEventListener('resize', npTreeMenuLayoutListener);
     var mount = $('npTreeMount');
-    if (!mount || !menuEl || menuEl.classList.contains('np-hide')) return;
-    var mRect = mount.getBoundingClientRect();
-    var uRect = menuEl.getBoundingClientRect();
-    var pad = 10;
-    if (uRect.bottom > mRect.bottom - pad) {
-      mount.scrollTop += uRect.bottom - (mRect.bottom - pad);
-    }
-    if (uRect.top < mRect.top + pad) {
-      mount.scrollTop -= (mRect.top + pad) - uRect.top;
-    }
+    if (mount) mount.addEventListener('scroll', npTreeMenuLayoutListener, true);
   }
 
   function closeAllLedgerTemplateMenus() {
@@ -4525,8 +4608,12 @@
     closePillarTabFlyout();
     closeAllLedgerTemplateMenus();
   });
+  document.addEventListener('click', function (e) {
+    hideRichImgResizeIfOutside(e);
+  }, true);
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
+      hideRichImgResizeUI();
       closeAllTreeMenus();
       closeAllLedgerTemplateMenus();
       closeCatColorFlyout();
@@ -4797,72 +4884,175 @@
     });
   }
 
-  /** Redimensionar imágenes en el editor: arrastra desde la esquina inferior derecha. */
+  /** Redimensionar imágenes en apuntes: clic en imagen → marco verde y asas en las cuatro esquinas. */
+  function editorMaxImgWidthForRich(editorEl) {
+    var w = editorEl.clientWidth;
+    if (!w || w < 80) return 1200;
+    return Math.max(80, Math.round(w - 16));
+  }
+
+  function unbindRichImgResizeScrollWatch() {
+    if (!npRichImgResizeScrollFn) return;
+    window.removeEventListener('scroll', npRichImgResizeScrollFn, true);
+    window.removeEventListener('resize', npRichImgResizeScrollFn);
+    var ed = npRichImgResizeUI.editorEl;
+    if (ed) ed.removeEventListener('scroll', npRichImgResizeScrollFn, true);
+    npRichImgResizeScrollFn = null;
+  }
+
+  function bindRichImgResizeScrollWatch() {
+    unbindRichImgResizeScrollWatch();
+    var ed = npRichImgResizeUI.editorEl;
+    npRichImgResizeScrollFn = function () {
+      positionRichImgResizeOverlay();
+    };
+    window.addEventListener('scroll', npRichImgResizeScrollFn, true);
+    window.addEventListener('resize', npRichImgResizeScrollFn);
+    if (ed) ed.addEventListener('scroll', npRichImgResizeScrollFn, true);
+  }
+
+  function hideRichImgResizeUI() {
+    unbindRichImgResizeScrollWatch();
+    var ov = npRichImgResizeUI.overlay;
+    if (ov) ov.classList.add('np-hide');
+    var prevImg = npRichImgResizeUI.img;
+    if (prevImg && prevImg.classList) prevImg.classList.remove('np-rich-img-resizing');
+    npRichImgResizeUI.editorEl = null;
+    npRichImgResizeUI.img = null;
+  }
+
+  function positionRichImgResizeOverlay() {
+    var ov = npRichImgResizeUI.overlay;
+    var img = npRichImgResizeUI.img;
+    if (!ov || !img || ov.classList.contains('np-hide')) return;
+    if (!img.isConnected) {
+      hideRichImgResizeUI();
+      return;
+    }
+    var r = img.getBoundingClientRect();
+    var frame = ov.querySelector('.np-rich-img-resize-frame');
+    if (!frame) return;
+    frame.style.left = r.left + 'px';
+    frame.style.top = r.top + 'px';
+    frame.style.width = Math.max(0, r.width) + 'px';
+    frame.style.height = Math.max(0, r.height) + 'px';
+    var pts = {
+      nw: [r.left, r.top],
+      ne: [r.right, r.top],
+      sw: [r.left, r.bottom],
+      se: [r.right, r.bottom]
+    };
+    ['nw', 'ne', 'sw', 'se'].forEach(function (c) {
+      var btn = ov.querySelector('.np-rich-img-handle--' + c);
+      if (!btn) return;
+      btn.style.left = pts[c][0] + 'px';
+      btn.style.top = pts[c][1] + 'px';
+    });
+  }
+
+  function showRichImgResizeUI(editorEl, img) {
+    if (!editorEl || !img) return;
+    ensureRichImgResizeOverlay();
+    npRichImgResizeUI.editorEl = editorEl;
+    npRichImgResizeUI.img = img;
+    npRichImgResizeUI.overlay.classList.remove('np-hide');
+    positionRichImgResizeOverlay();
+    bindRichImgResizeScrollWatch();
+    requestAnimationFrame(function () {
+      positionRichImgResizeOverlay();
+    });
+  }
+
+  function hideRichImgResizeIfOutside(e) {
+    var ov = npRichImgResizeUI.overlay;
+    if (!ov || ov.classList.contains('np-hide')) return;
+    if (ov.contains(e.target)) return;
+    var im = e.target.closest && e.target.closest('img.np-rich-img');
+    if (im === npRichImgResizeUI.img) return;
+    hideRichImgResizeUI();
+  }
+
+  function onRichImgHandlePointerDown(ev) {
+    var editorEl = npRichImgResizeUI.editorEl;
+    var img = npRichImgResizeUI.img;
+    if (!editorEl || !img || !editorEl.contains(img)) return;
+    if (ev.button !== 0 && ev.pointerType !== 'touch') return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    var r = img.getBoundingClientRect();
+    var state = {
+      startX: ev.clientX,
+      startW: Math.round(r.width),
+      pointerId: ev.pointerId
+    };
+    img.classList.add('np-rich-img-resizing');
+    var handle = ev.currentTarget;
+    try {
+      handle.setPointerCapture(ev.pointerId);
+    } catch (eCap) {}
+
+    function onMove(eMove) {
+      if (!state || eMove.pointerId !== state.pointerId) return;
+      eMove.preventDefault();
+      var cap = Math.min(2000, editorMaxImgWidthForRich(editorEl));
+      var next = Math.max(48, Math.min(cap, Math.round(state.startW + (eMove.clientX - state.startX))));
+      img.width = next;
+      img.setAttribute('width', String(next));
+      img.removeAttribute('height');
+      positionRichImgResizeOverlay();
+    }
+
+    function onUp(eEnd) {
+      if (!state || eEnd.pointerId !== state.pointerId) return;
+      try {
+        handle.releasePointerCapture(eEnd.pointerId);
+      } catch (eRel) {}
+      img.classList.remove('np-rich-img-resizing');
+      editorEl.dispatchEvent(new Event('input', { bubbles: true }));
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onUp);
+      state = null;
+      positionRichImgResizeOverlay();
+    }
+
+    handle.addEventListener('pointermove', onMove, { passive: false });
+    handle.addEventListener('pointerup', onUp);
+    handle.addEventListener('pointercancel', onUp);
+  }
+
+  function ensureRichImgResizeOverlay() {
+    if (npRichImgResizeUI.overlay) return npRichImgResizeUI.overlay;
+    var ov = document.createElement('div');
+    ov.id = 'npRichImgResizeOverlay';
+    ov.className = 'np-rich-img-resize-overlay np-hide';
+    ov.setAttribute('aria-hidden', 'true');
+    var frame = document.createElement('div');
+    frame.className = 'np-rich-img-resize-frame';
+    ov.appendChild(frame);
+    ['nw', 'ne', 'sw', 'se'].forEach(function (corner) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'np-rich-img-handle np-rich-img-handle--' + corner;
+      btn.setAttribute('aria-label', 'Redimensionar imagen desde la esquina');
+      btn.addEventListener('pointerdown', onRichImgHandlePointerDown);
+      ov.appendChild(btn);
+    });
+    document.body.appendChild(ov);
+    npRichImgResizeUI.overlay = ov;
+    return ov;
+  }
+
   function bindRichImageCornerResize(editorEl) {
     if (!editorEl || editorEl.dataset.npImgResize === '1') return;
     editorEl.dataset.npImgResize = '1';
-
-    function editorMaxImgWidth() {
-      var w = editorEl.clientWidth;
-      if (!w || w < 80) return 1200;
-      return Math.max(80, Math.round(w - 16));
-    }
-
-    editorEl.addEventListener(
-      'pointerdown',
-      function (ev) {
-        if (ev.button !== 0 && ev.pointerType !== 'touch') return;
-        var img = ev.target && ev.target.closest ? ev.target.closest('img.np-rich-img') : null;
-        if (!img || !editorEl.contains(img)) return;
-        var r = img.getBoundingClientRect();
-        var zone = Math.max(28, Math.min(44, Math.round(Math.min(r.width, r.height) * 0.18)));
-        if (ev.pointerType === 'touch') zone = Math.max(zone, 38);
-        var inCorner = ev.clientX >= r.right - zone && ev.clientY >= r.bottom - zone;
-        if (!inCorner) return;
-        ev.preventDefault();
-        ev.stopPropagation();
-
-        var state = {
-          img: img,
-          startX: ev.clientX,
-          startW: Math.round(r.width),
-          pointerId: ev.pointerId
-        };
-        img.classList.add('np-rich-img-resizing');
-        try {
-          img.setPointerCapture(ev.pointerId);
-        } catch (eCap) {}
-
-        function onMove(eMove) {
-          if (!state || eMove.pointerId !== state.pointerId) return;
-          eMove.preventDefault();
-          var dx = eMove.clientX - state.startX;
-          var cap = Math.min(2000, editorMaxImgWidth());
-          var next = Math.max(48, Math.min(cap, Math.round(state.startW + dx)));
-          state.img.width = next;
-          state.img.setAttribute('width', String(next));
-          state.img.removeAttribute('height');
-        }
-
-        function finish(eEnd) {
-          if (!state || eEnd.pointerId !== state.pointerId) return;
-          try {
-            state.img.releasePointerCapture(eEnd.pointerId);
-          } catch (eRel) {}
-          state.img.classList.remove('np-rich-img-resizing');
-          editorEl.dispatchEvent(new Event('input', { bubbles: true }));
-          img.removeEventListener('pointermove', onMove);
-          img.removeEventListener('pointerup', finish);
-          img.removeEventListener('pointercancel', finish);
-          state = null;
-        }
-
-        img.addEventListener('pointermove', onMove, { passive: false });
-        img.addEventListener('pointerup', finish);
-        img.addEventListener('pointercancel', finish);
-      },
-      true
-    );
+    editorEl.addEventListener('click', function (ev) {
+      var t = ev.target;
+      if (!t || !t.closest) return;
+      var img = t.closest('img.np-rich-img');
+      if (!img || !editorEl.contains(img)) return;
+      showRichImgResizeUI(editorEl, img);
+    });
   }
 
   function sanitizeRich(html) {
@@ -5443,6 +5633,7 @@
   }
 
   async function closeItemDetail() {
+    hideRichImgResizeUI();
     if (detailBlocksSaveTimer) {
       clearTimeout(detailBlocksSaveTimer);
       detailBlocksSaveTimer = null;
@@ -9346,11 +9537,11 @@
       if (wasHidden) {
         menu.classList.remove('np-hide');
         btnMore.setAttribute('aria-expanded', 'true');
-        adjustTreeMenuFlip(menu, menuWrap);
         requestAnimationFrame(function () {
-          revealTreeMenuInMount(menu);
+          positionTreeMenuFixed(menu, menuWrap);
+          bindTreeMenuLayoutWatch(menu, menuWrap);
           requestAnimationFrame(function () {
-            revealTreeMenuInMount(menu);
+            positionTreeMenuFixed(menu, menuWrap);
           });
         });
       }
