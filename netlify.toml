@@ -43,3 +43,21 @@
   to = "/.netlify/functions/radar-ndvi"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/plan-pro-calendar-email"
+  to = "/.netlify/functions/plan-pro-calendar-email"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/admin-assistant"
+  to = "/.netlify/functions/nutriplant-admin-assistant"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/admin-assistant/openapi.json"
+  to = "/.netlify/functions/nutriplant-admin-assistant"
+  status = 200
+  force = true
