@@ -85,6 +85,20 @@ CALCULADORAS PRO (iconos en barra del dashboard; material educativo NutriPlant �
 `;
 }
 
+/** Manual Radar del cultivo (NDVI/NDMI): siempre disponible en el chat del dashboard. */
+function getRadarCultivoManual() {
+  return `
+RADAR DEL CULTIVO (NDVI / NDMI) — NutriPlant PRO:
+- Qué es: imágenes satelitales Sentinel-2 (~10 m) recortadas al polígono del predio (pestaña Ubicación). Se generan con Google Earth Engine; la escala es relativa dentro del lote (Bajo → Alto), no valores absolutos universales.
+- NDVI (Normalized Difference Vegetation Index, B8 vs B4): indicador de vigor relativo / cobertura fotosintética activa. En el mapa: verde = mayor vigor relativo en ese predio; amarillo/naranja/rojo = menor vigor (suelo descubierto, sombra, estrés hídrico o nutricional, plagas/enfermedades, poda reciente, diferencias de etapa fenológica o manejo).
+- NDMI (Normalized Difference Moisture Index, B8 vs B11): condición hídrica relativa del dosel/canopia. En el mapa: verde = mayor humedad relativa del dosel; marrón/tonos secos = menor humedad relativa del dosel. No es humedad exacta del suelo ni % volumétrico de riego.
+- Cómo usarlo bien: (1) detectar zonas heterogéneas para recorrer y muestrear en campo; (2) cruzar NDVI (vigor) con NDMI (dosel), riego, textura, drenaje, suelo, foliar, plagas y VPD; (3) comparar con imágenes anteriores del mismo proyecto (historial mensual). No recomendar fertilizar o regar solo por el color del mapa.
+- Cruces típicos: NDVI bajo + NDMI bajo → priorizar estrés hídrico, raíz, salinidad, compactación; NDVI bajo + NDMI alto → vigor bajo con dosel húmedo (enfermedad, anoxia, exceso de riego, etapa); NDVI alto + NDMI bajo → vigor alto con dosel seco (déficit hídrico incipiente, VPD alto); NDVI alto + NDMI alto → vigor y dosel favorables en esa fecha (validar en campo).
+- En la app: pestaña Ubicación → panel «Radar del cultivo» → sincronizar predio a la nube, dibujar/guardar polígono, «Generar» (consume crédito; máx. 1 generación por proyecto y mes). «Ver última» superpone NDVI o NDMI en el mapa; selector de capa. Sin polígono no hay Radar.
+- Límites: mapas relativos al predio; nubes pueden retrasar la fecha Sentinel; no sustituye análisis de suelo/foliar ni diagnóstico de campo.
+`;
+}
+
 /** Igual que dashboard.js (getSoilIdealByCIC): ppm ideales K, Ca, Mg desde CIC en meq/100g. */
 function computeNutriPlantSoilKCaMgIdealPpmFromCic(cic) {
   const c = parseFloat(cic);
@@ -995,7 +1009,8 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
       general: `
 - NutriPlant PRO: responder con base en datos del proyecto activo y criterio agronómico técnico.
 - Diferenciar siempre hechos del proyecto vs conocimiento general.
-- Calculadoras globales en barra del dashboard (cualquier pestaña): 🔗 Interacciones y movilidad, 🪨 Agua en suelo y textura, 🧂 Solubilidad e índice salino — ver MANUAL CALCULADORAS PRO.`
+- Calculadoras globales en barra del dashboard (cualquier pestaña): 🔗 Interacciones y movilidad, 🪨 Agua en suelo y textura, 🧂 Solubilidad e índice salino — ver MANUAL CALCULADORAS PRO.
+- Radar NDVI/NDMI (Ubicación): ver MANUAL RADAR DEL CULTIVO y bloque "RADAR DEL CULTIVO (NDVI/NDMI)" en datos del proyecto.`
     };
     return base[module] || base.general;
   }
@@ -1056,6 +1071,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
     const context = this.getProjectContext();
     const moduleManual = this.getModuleFocusedManual(snapshot.module);
     const calculatorsManual = getNutriPlantCalculatorsManual();
+    const radarManual = getRadarCultivoManual();
     const modeGuidance = this.buildInteractionModeGuidance(userMessage);
     const isCalculationQuestion = this.isCalculationOrLogicQuestion(userMessage);
 
@@ -1099,6 +1115,9 @@ ${moduleManual}
 
 MANUAL CALCULADORAS PRO (siempre disponible; iconos 🔗 🪨 🧂 en barra del dashboard):
 ${calculatorsManual}
+
+MANUAL RADAR DEL CULTIVO (NDVI/NDMI — siempre disponible; datos del proyecto en bloque RADAR si existen):
+${radarManual}
 
 DATOS DEL PROYECTO ACTUAL DEL USUARIO (usa esto como si estuvieras viendo su pantalla y sus análisis):
 ${context}
@@ -1245,7 +1264,8 @@ ESTILO DE RESPUESTA:
       'meq', 'cic', 'porcentaje', 'porcentajes', 'rango', 'ajuste',
       'calculo', 'cálculo', 'como se calculo', 'cómo se calculó',
       'de donde salio', 'de dónde salió', 'por que sugiere', 'por qué sugiere',
-      'enmienda', 'k', 'ca', 'mg', 'na', 'ph', 'pH'
+      'enmienda', 'k', 'ca', 'mg', 'na', 'ph', 'pH',
+      'ndvi', 'ndmi', 'radar', 'satelite', 'satélite', 'vigor', 'dosel', 'mancha'
     ];
     return keywords.some(k => text.includes(k));
   }
@@ -1442,6 +1462,24 @@ ESTILO DE RESPUESTA:
       const live = this.getLiveGranularRequirementBlocks();
       if (live.tableSummary) return live.tableSummary.split('\n')[0] || live.tableSummary.slice(0, 100);
     }
+    if (mod === 'ubicacion') {
+      const st = window.__nutriplantRadarNdviStatus;
+      const pid = snapshot.projectId;
+      if (st && String(st.projectId || '') === String(pid || '')) {
+        if (st.ok === false) return 'Radar: error al consultar estado.';
+        const cr = st.credits;
+        const cred =
+          cr && cr.limit != null
+            ? `Radar: ${cr.available ?? '—'}/${cr.limit} créditos este mes.`
+            : '';
+        const ndvi = st.hasLatestImage ? 'NDVI guardado' : 'sin NDVI';
+        const ndmi = st.hasLatestNdmiImage ? 'NDMI guardado' : 'sin NDMI';
+        const when = st.latestCreatedAt
+          ? ' Última: ' + new Date(st.latestCreatedAt).toLocaleDateString('es-MX') + '.'
+          : '';
+        return (cred + ' ' + ndvi + '; ' + ndmi + '.' + when).trim();
+      }
+    }
     return '';
   }
 
@@ -1472,58 +1510,99 @@ ESTILO DE RESPUESTA:
     return out.length > maxLen ? out.slice(0, maxLen) + '…' : out;
   }
 
-  getRadarNdviContext(projectId) {
-    const status = window.__nutriplantRadarNdviStatus || null;
+  getRadarNdviContext(projectId, projectData) {
+    if (!projectId) return '';
+
+    const status =
+      window.__nutriplantRadarNdviStatus &&
+      String(window.__nutriplantRadarNdviStatus.projectId || '') === String(projectId)
+        ? window.__nutriplantRadarNdviStatus
+        : null;
     const label = document.getElementById('radarCreditsLabel');
     const hint = document.getElementById('radarStatusHint');
-    const hasPanel = !!document.getElementById('radarNdviPanel');
+    const indexSel = document.getElementById('radarIndexSelect');
+    const helpEl = document.getElementById('radarNdviHelp');
+    const hasPolygon =
+      !!(projectData?.location?.polygon && projectData.location.polygon.length >= 3);
     const hasOverlay =
-      typeof window !== 'undefined' &&
       typeof window.hideRadarNdviOverlay === 'function' &&
       document.getElementById('map') &&
       /Imagen NDVI mostrada|Imagen NDMI mostrada/i.test(String(hint?.textContent || ''));
 
     const lines = [];
-    if (!hasPanel && (!status || String(status.projectId || '') !== String(projectId || ''))) return '';
-
     lines.push('--- RADAR DEL CULTIVO (NDVI/NDMI) ---');
-    lines.push('Interpretación: NDVI = vigor relativo/cobertura fotosintética. NDMI = condición hídrica relativa del dosel/canopia, no humedad exacta del suelo. Usarlos para priorizar recorrido y muestreo, no como diagnóstico único.');
+    lines.push(
+      'NDVI = vigor relativo (verde alto, rojo/naranja bajo). NDMI = humedad relativa del dosel (no humedad de suelo). Mapas relativos al predio; cruzar ambos índices con riego, suelo, foliar, VPD y campo.'
+    );
+    lines.push(`Polígono del predio: ${hasPolygon ? 'definido (Radar habilitado)' : 'sin polígono — ir a Ubicación, dibujar y guardar antes de generar Radar'}.`);
 
-    if (status && String(status.projectId || '') === String(projectId || '')) {
+    if (status) {
       if (status.ok === false) {
         lines.push(`Estado servidor: error (${status.error || 'sin detalle'}).`);
       } else {
         const cr = status.credits || {};
-        if (cr.limit != null) lines.push(`Créditos Radar: ${cr.available ?? '—'} disponibles de ${cr.limit}; usados ${cr.used ?? '—'}.`);
-        const hasNdmi = !!(status.latest?.ndmi_signed_url || status.latest?.images?.ndmi?.signed_url || status.meta?.ndmi_storage_path);
-        if (status.hasLatestImage) {
-          lines.push(`Última imagen NDVI: disponible${status.latestCreatedAt ? `, generada el ${new Date(status.latestCreatedAt).toLocaleString('es-MX')}` : ''}.`);
-          lines.push(`Última imagen NDMI: ${hasNdmi ? 'disponible' : 'no disponible en ese Radar (puede requerir regenerar)'}.`);
-        } else {
-          lines.push('Últimas imágenes Radar: no hay NDVI/NDMI guardados para este proyecto.');
+        if (cr.limit != null) {
+          lines.push(
+            `Créditos Radar (mes actual): ${cr.available ?? '—'} disponibles de ${cr.limit}; usados ${cr.used ?? '—'}.`
+          );
         }
-        if (status.meta) {
-          const meta = status.meta;
-          const range = meta.date_start && meta.date_end ? `${meta.date_start} a ${meta.date_end}` : '';
-          const vis = meta.ndvi_vis && typeof meta.ndvi_vis === 'object'
-            ? `NDVI min ${meta.ndvi_vis.min ?? '—'}, max ${meta.ndvi_vis.max ?? '—'}, estilo ${meta.ndvi_vis.style || '—'}`
-            : '';
-          const ndmiVis = meta.ndmi_vis && typeof meta.ndmi_vis === 'object'
-            ? `NDMI min ${meta.ndmi_vis.min ?? '—'}, max ${meta.ndmi_vis.max ?? '—'}, estilo ${meta.ndmi_vis.style || '—'}`
-            : '';
-          if (range || vis || ndmiVis) lines.push(`Metadatos Radar: ${[range, vis, ndmiVis].filter(Boolean).join('; ')}.`);
+        const hasNdmi =
+          !!status.hasLatestNdmiImage ||
+          !!(status.latest?.ndmi_signed_url || status.latest?.images?.ndmi?.signed_url || status.meta?.ndmi_storage_path);
+        if (status.hasLatestImage || hasNdmi) {
+          if (status.hasLatestImage) {
+            lines.push(
+              `Última imagen NDVI: disponible${status.latestCreatedAt ? `, generada el ${new Date(status.latestCreatedAt).toLocaleString('es-MX')}` : ''}.`
+            );
+          } else {
+            lines.push('Última imagen NDVI: no guardada.');
+          }
+          lines.push(
+            `Última imagen NDMI: ${hasNdmi ? 'disponible' : 'no disponible (regenerar Radar si el snapshot es anterior a NDMI)'}.`
+          );
+        } else {
+          lines.push(
+            'Sin imágenes Radar guardadas: sincronizar predio a la nube y pulsar Generar en Ubicación (máx. 1 por proyecto/mes).'
+          );
+        }
+        const meta = status.meta || status.latest?.meta;
+        if (meta && typeof meta === 'object') {
+          const range =
+            meta.date_start && meta.date_end
+              ? `periodo Sentinel ${meta.date_start} a ${meta.date_end}`
+              : '';
+          const vis =
+            meta.ndvi_vis && typeof meta.ndvi_vis === 'object'
+              ? `NDVI escala min ${meta.ndvi_vis.min ?? '—'} max ${meta.ndvi_vis.max ?? '—'}`
+              : '';
+          const ndmiVis =
+            meta.ndmi_vis && typeof meta.ndmi_vis === 'object'
+              ? `NDMI escala min ${meta.ndmi_vis.min ?? '—'} max ${meta.ndmi_vis.max ?? '—'}`
+              : '';
+          if (range || vis || ndmiVis) {
+            lines.push(`Metadatos: ${[range, vis, ndmiVis].filter(Boolean).join('; ')}.`);
+          }
         }
       }
     } else {
       const labelText = String(label?.textContent || '').trim();
       const hintText = String(hint?.textContent || '').trim();
-      if (labelText) lines.push(`Panel Radar: ${labelText}.`);
-      if (hintText) lines.push(`Mensaje Radar: ${hintText}.`);
-      if (!labelText && !hintText) lines.push('Panel Radar presente, pero aún sin estado consultado en esta sesión.');
+      if (labelText) lines.push(`Panel Ubicación (créditos): ${labelText}.`);
+      if (hintText) lines.push(`Panel Ubicación (estado): ${hintText}.`);
+      if (!labelText && !hintText) {
+        lines.push(
+          'Estado Radar no cargado en esta sesión (el usuario puede abrir Ubicación o pulsar Actualizar en el panel Radar).'
+        );
+      }
     }
 
-    lines.push(`Capa Radar visible en mapa: ${hasOverlay ? 'sí (último mensaje indica imagen mostrada)' : 'no confirmado'}.`);
-    lines.push('Respuesta recomendada si preguntan por NDVI/NDMI: explicar que el mapa muestra variabilidad espacial; zonas contrastantes deben recorrerse y cruzarse con riego, suelo, foliar, plagas/enfermedad, drenaje y VPD antes de recomendar una corrección.');
+    const capa = indexSel && indexSel.value === 'ndmi' ? 'NDMI' : 'NDVI';
+    if (hasOverlay) lines.push(`Capa visible en mapa ahora: ${capa} (según panel).`);
+    else if (helpEl?.textContent) lines.push(`Ayuda escala en pantalla: ${String(helpEl.textContent).trim()}.`);
+
+    lines.push(
+      'Si preguntan por manchas o colores: describir variabilidad espacial, sugerir recorrido de zonas contrastantes y cruzar NDVI+NDMI con datos del proyecto antes de recomendar riego o fertilización.'
+    );
     return lines.join('\n') + '\n\n';
   }
 
@@ -1591,6 +1670,15 @@ ESTILO DE RESPUESTA:
   refreshContextSnapshot(reason = 'manual') {
     this.contextSnapshot = this.getUnifiedProjectSnapshot();
     this.contextSnapshot.reason = reason;
+    const pid = this.contextSnapshot.projectId;
+    const st = window.__nutriplantRadarNdviStatus;
+    const stale =
+      !st ||
+      String(st.projectId || '') !== String(pid || '') ||
+      (st.updatedAt && Date.now() - new Date(st.updatedAt).getTime() > 120000);
+    if (pid && stale && typeof window.refreshRadarNdviStatus === 'function') {
+      window.refreshRadarNdviStatus().catch(() => {});
+    }
   }
 
   // Lee el último resultado de enmienda disponible, priorizando el cálculo en pantalla
@@ -2261,7 +2349,7 @@ ESTILO DE RESPUESTA:
 
       // --- Interconexiones entre pestañas (usa esto para cruzar datos y guiar al usuario) ---
       context += '--- INTERCONEXIONES ENTRE PESTAÑAS ---\n';
-      context += 'Ubicación → VPD (el polígono del predio define la ubicación; "Obtener del Clima" y la Serie VPD por rango usan el centro del polígono para obtener datos de clima; sin polígono esas funciones no están disponibles); Reportes (incluyen mapa). Análisis de Suelo (CIC, cationes) → Enmienda (recomendaciones y dosis). Análisis de Agua → Fertirriego y Hidroponía (aporte del agua se resta del requerimiento). Suelo, Foliar, Fruta, Solución/Extracto/Agua → diagnóstico integrado (priorizar suelo → foliar → programa). VPD → cruzar con nutrición/riego para timing y estrés. Todas las pestañas de datos → Reportes (PDF).\n\n';
+      context += 'Ubicación → VPD ("Obtener del Clima" y Serie VPD usan el centro del polígono; sin polígono no hay clima ni Radar). Ubicación → Radar NDVI/NDMI (Sentinel-2 ~10 m sobre el polígono; ver bloque RADAR y MANUAL RADAR). Reportes (incluyen mapa). Análisis de Suelo (CIC, cationes) → Enmienda. Análisis de Agua → Fertirriego y Hidroponía. Suelo, Foliar, Fruta, Solución/Extracto/Agua → diagnóstico integrado (priorizar suelo → foliar → programa). VPD y Radar → cruzar con riego, suelo y campo. Todas las pestañas → Reportes (PDF).\n\n';
 
       // --- Ubicación (polígono del predio: puntos en el mapa, superficie, perímetro, coordenadas) ---
       if (project.location) {
@@ -2290,8 +2378,7 @@ ESTILO DE RESPUESTA:
         context += '\n';
       }
 
-      const radarContext = this.getRadarNdviContext(projectId);
-      if (radarContext) context += radarContext;
+      context += this.getRadarNdviContext(projectId, project);
 
       // --- Análisis de suelo INICIAL (datos usados en Enmienda; no confundir con pestaña Análisis de Suelo) ---
       if (project.soilAnalysis) {
