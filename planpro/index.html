@@ -1974,6 +1974,93 @@
     .np-ms-block-smart .np-ms-row {
       --np-ms-col-min: 104px;
     }
+    /* Seguimiento PRO: 6 columnas fijas (Tipo…Notas) para que títulos y celdas coincidan */
+    .np-ms-block-smart .np-ms-sheet.np-ms-sheet--smart6 .np-ms-row {
+      grid-template-columns:
+        minmax(92px, 0.78fr)
+        minmax(112px, 1.28fr)
+        minmax(68px, 0.58fr)
+        minmax(52px, 0.42fr)
+        minmax(118px, 0.92fr)
+        minmax(168px, 1.85fr);
+    }
+    .np-ms-block-smart .np-ms-sheet.np-ms-sheet--smart6.np-ms-sheet--rowdel .np-ms-row {
+      grid-template-columns:
+        minmax(92px, 0.78fr)
+        minmax(112px, 1.28fr)
+        minmax(68px, 0.58fr)
+        minmax(52px, 0.42fr)
+        minmax(118px, 0.92fr)
+        minmax(168px, 1.85fr)
+        minmax(52px, 64px);
+    }
+    .np-ms-block-tasks .np-ms-sheet.np-ms-sheet--tasks5 .np-ms-row {
+      grid-template-columns:
+        minmax(112px, 1.35fr)
+        minmax(128px, 1.45fr)
+        minmax(68px, 0.58fr)
+        minmax(52px, 0.42fr)
+        minmax(118px, 0.95fr);
+    }
+    .np-ms-block-tasks .np-ms-sheet.np-ms-sheet--tasks5.np-ms-sheet--rowdel .np-ms-row {
+      grid-template-columns:
+        minmax(112px, 1.35fr)
+        minmax(128px, 1.45fr)
+        minmax(68px, 0.58fr)
+        minmax(52px, 0.42fr)
+        minmax(118px, 0.95fr)
+        minmax(52px, 64px);
+    }
+    /* Tabla de montos: rejillas fijas para plantillas habituales */
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger2 .np-ms-row {
+      grid-template-columns: minmax(140px, 1.55fr) minmax(100px, 1fr);
+    }
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger2.np-ms-sheet--rowdel .np-ms-row {
+      grid-template-columns: minmax(140px, 1.55fr) minmax(100px, 1fr) minmax(52px, 64px);
+    }
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger5 .np-ms-row {
+      grid-template-columns:
+        minmax(120px, 1.4fr)
+        minmax(92px, 0.8fr)
+        minmax(92px, 0.8fr)
+        minmax(92px, 0.8fr)
+        minmax(128px, 1.15fr);
+    }
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger5.np-ms-sheet--rowdel .np-ms-row {
+      grid-template-columns:
+        minmax(120px, 1.4fr)
+        minmax(92px, 0.8fr)
+        minmax(92px, 0.8fr)
+        minmax(92px, 0.8fr)
+        minmax(128px, 1.15fr)
+        minmax(52px, 64px);
+    }
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger6 .np-ms-row {
+      grid-template-columns:
+        minmax(118px, 1.35fr)
+        minmax(88px, 0.72fr)
+        minmax(88px, 0.72fr)
+        minmax(88px, 0.72fr)
+        minmax(52px, 0.42fr)
+        minmax(132px, 1.2fr);
+    }
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger6.np-ms-sheet--rowdel .np-ms-row {
+      grid-template-columns:
+        minmax(118px, 1.35fr)
+        minmax(88px, 0.72fr)
+        minmax(88px, 0.72fr)
+        minmax(88px, 0.72fr)
+        minmax(52px, 0.42fr)
+        minmax(132px, 1.2fr)
+        minmax(52px, 64px);
+    }
+    /* Tabla libre: 3 columnas por defecto al crear */
+    .np-ms-block-free .np-ms-sheet.np-ms-sheet--free3 .np-ms-row {
+      grid-template-columns: minmax(108px, 1fr) minmax(108px, 1fr) minmax(108px, 1fr);
+    }
+    .np-ms-block-free .np-ms-sheet.np-ms-sheet--free3.np-ms-sheet--rowdel .np-ms-row {
+      grid-template-columns: minmax(108px, 1fr) minmax(108px, 1fr) minmax(108px, 1fr) minmax(52px, 64px);
+    }
     .np-ms-block-smart .np-ms-title-inline {
       flex: 1;
       min-width: 120px;
@@ -6394,7 +6481,7 @@
       type: 'mini_sheet',
       variant: 'smart',
       title: 'Seguimiento · acciones',
-      headers: ['Tipo', 'Título / concepto', 'Prioridad', 'Listo', 'Fecha · $ · %', 'Notas / siguiente paso'],
+      headers: ['Tipo', 'Título / concepto', 'Prioridad', 'Listo', 'Fecha', 'Notas / siguiente paso'],
       rows: [['', '', '', '', '', '']],
       rowKinds: ['task'],
       rowDone: [false]
@@ -6423,7 +6510,7 @@
     'Título / concepto',
     'Prioridad',
     'Listo',
-    'Fecha · $ · %',
+    'Fecha',
     'Notas / siguiente paso'
   ];
 
@@ -6901,6 +6988,82 @@
     return /done|\u2713|hecho|listo|\bok\b|complet/.test(s);
   }
 
+  function columnLooksLikeTipoHeader(h) {
+    var s = (h != null ? String(h) : '').toLowerCase().trim();
+    return /^tipo$|tipo de fila|tipo fila|kind|row type/.test(s);
+  }
+
+  function columnLooksLikeTitleHeader(h) {
+    var s = (h != null ? String(h) : '').toLowerCase();
+    return /t[ií]tulo|concepto|nombre|tarea|actividad/.test(s);
+  }
+
+  /** Repara tablas seguimiento/tareas cuyos headers perdieron Tipo/Título pero las filas siguen con 6/5 celdas. */
+  function ensureSmartTasksTableShape(b) {
+    if (!b || b.type !== 'mini_sheet') return;
+    var min =
+      b.variant === 'smart' ? NP_SMART_MIN_COLS : b.variant === 'tasks' ? NP_TASKS_MIN_COLS : 0;
+    if (!min) return;
+    var defaults = b.variant === 'smart' ? NP_SMART_HEADERS_DEFAULT : NP_TASKS_HEADERS_DEFAULT;
+    if (!b.headers) b.headers = [];
+    if (!b.rows) b.rows = [];
+
+    var h0 = b.headers[0] != null ? String(b.headers[0]).trim() : '';
+    var needsTipoTitle =
+      h0 &&
+      columnLooksLikePriorityHeader(h0) &&
+      !columnLooksLikeTipoHeader(h0) &&
+      !columnLooksLikeTitleHeader(h0);
+    if (needsTipoTitle) {
+      b.headers.unshift(defaults[1], defaults[0]);
+      b.rows.forEach(function (row, ri) {
+        var arr = padRowCells(row, Math.max(0, b.headers.length - 2));
+        arr.unshift('', '');
+        b.rows[ri] = arr;
+      });
+    }
+
+    while (b.headers.length < min) {
+      b.headers.push(defaults[b.headers.length] || '');
+    }
+    for (var hi = 0; hi < min; hi++) {
+      if (b.headers[hi] == null || String(b.headers[hi]).trim() === '') {
+        b.headers[hi] = defaults[hi];
+      }
+    }
+    if (b.variant === 'smart' && b.headers[4] != null) {
+      var h4leg = String(b.headers[4]).trim();
+      if (h4leg === 'Fecha · $ · %' || /fecha\s*[·.]+\s*\$/i.test(h4leg)) b.headers[4] = 'Fecha';
+    }
+    var ncol = Math.max(min, b.headers.length);
+    b.rows.forEach(function (row, ri) {
+      b.rows[ri] = padRowCells(row, ncol);
+    });
+    if (b.variant === 'smart' || b.variant === 'tasks') ensureSmartMeta(b);
+  }
+
+  /** Tabla libre / montos: mismas columnas en títulos y filas (evita desfase). */
+  function ensureLedgerFreeTableShape(b) {
+    if (!b || b.type !== 'mini_sheet') return;
+    if (b.variant === 'smart' || b.variant === 'tasks') return;
+    if (!b.headers) b.headers = [];
+    if (!b.rows) b.rows = [];
+    var ncol = b.headers.length;
+    (b.rows || []).forEach(function (row) {
+      var L = Array.isArray(row) ? row.length : row && row.cells ? row.cells.length : 0;
+      if (L > ncol) ncol = L;
+    });
+    var floor = b.variant === 'ledger' ? 2 : 3;
+    if (ncol < floor) ncol = floor;
+    while (b.headers.length < ncol) {
+      b.headers.push('Columna ' + (b.headers.length + 1));
+    }
+    if (b.headers.length > ncol) b.headers = b.headers.slice(0, ncol);
+    b.rows.forEach(function (row, ri) {
+      b.rows[ri] = padRowCells(row, ncol);
+    });
+  }
+
   /** Corrige body_blocks guardados con rows/headers no-array (rompen reduce/forEach y dejan la tabla en blanco). */
   function normalizePlanProMiniSheetBlock(b) {
     if (!b || b.type !== 'mini_sheet') return;
@@ -6953,6 +7116,8 @@
       for (var ti = 0; ti < nht; ti++) lineT.push('');
       b.rows = [lineT];
     }
+    if (b.variant === 'smart' || b.variant === 'tasks') ensureSmartTasksTableShape(b);
+    else ensureLedgerFreeTableShape(b);
   }
 
   function ensureSmartMeta(block) {
@@ -9512,6 +9677,15 @@
       sheet.style.setProperty('--np-ms-data-cols', String(ncol));
       if (showRowDelCol) sheet.classList.add('np-ms-sheet--rowdel');
       else sheet.classList.remove('np-ms-sheet--rowdel');
+      if (b.variant === 'smart' && ncol === NP_SMART_MIN_COLS) sheet.classList.add('np-ms-sheet--smart6');
+      else sheet.classList.remove('np-ms-sheet--smart6');
+      if (b.variant === 'tasks' && ncol === NP_TASKS_MIN_COLS) sheet.classList.add('np-ms-sheet--tasks5');
+      else sheet.classList.remove('np-ms-sheet--tasks5');
+      sheet.classList.remove('np-ms-sheet--ledger2', 'np-ms-sheet--ledger5', 'np-ms-sheet--ledger6', 'np-ms-sheet--free3');
+      if (isLedger && ncol === 2) sheet.classList.add('np-ms-sheet--ledger2');
+      else if (isLedger && ncol === 5) sheet.classList.add('np-ms-sheet--ledger5');
+      else if (isLedger && ncol === 6) sheet.classList.add('np-ms-sheet--ledger6');
+      else if (isFreeMini && ncol === 3) sheet.classList.add('np-ms-sheet--free3');
 
       var hr = document.createElement('div');
       hr.className = 'np-ms-row np-ms-row-head';
