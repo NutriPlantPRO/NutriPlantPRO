@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "1.0.0",
-    "description": "Solo lectura. Consultas admin y proyectos NutriPlant PRO."
+    "version": "1.1.0",
+    "description": "Solo lectura. Admin, proyectos (detalle, fertirriego, suelo, ubicación, VPD) y Plan PRO (fase 3)."
   },
   "servers": [
     {
@@ -14,8 +14,8 @@
     "/api/admin-assistant": {
       "post": {
         "operationId": "nutriplantAdminQuery",
-        "summary": "Consulta admin o proyectos de usuarios",
-        "description": "Body JSON: action + params. Acciones: admin_stats, list_users, user_summary, search_projects, describe_api.",
+        "summary": "Consulta NutriPlant (admin o proyectos)",
+        "description": "action + params. project_detail: project_name o project_id; opcional fertirriego_stage_index (0=primera etapa). project_vpd_live: VPD actual con Open-Meteo. search_projects, admin_stats, list_users, user_summary.",
         "requestBody": {
           "required": true,
           "content": {
@@ -31,6 +31,8 @@
                       "list_users",
                       "user_summary",
                       "search_projects",
+                      "project_detail",
+                      "project_vpd_live",
                       "describe_api"
                     ]
                   },
@@ -47,7 +49,16 @@
           "200": {
             "description": "Respuesta JSON con ok y datos"
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }

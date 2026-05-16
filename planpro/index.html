@@ -3136,6 +3136,9 @@
       align-items: center;
       margin-top: 4px;
       margin-bottom: 10px;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
     }
     /* En flex, los .btn encogen por defecto → pueden quedar en ancho 0 (hueco blanco sin texto). */
     #npFormCreate .np-tools-row > .btn,
@@ -3145,6 +3148,48 @@
     }
     .np-detail-blocks-tools {
       margin-top: 14px;
+    }
+    /* Móvil / columna estrecha: una sola franja deslizable (como 4–5 en fila en laptop, sin partir en 2). */
+    @media (max-width: 900px) {
+      .np-tools-row,
+      .np-ms-free-toolbar,
+      .np-note-section-toolbar {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: thin;
+        padding-bottom: 6px;
+        gap: 8px;
+      }
+      .np-tools-row > .btn,
+      .np-detail-blocks-tools > .btn,
+      .np-ms-free-toolbar > .btn,
+      .np-note-section-toolbar > .btn {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        font-size: 11px;
+        padding: 8px 11px;
+        line-height: 1.25;
+      }
+      .np-tools-row > .np-muted,
+      .np-detail-blocks-tools > .np-muted {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        align-self: center;
+      }
+      .np-rich-toolbar {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+      }
+      .np-rich-toolbar .np-rich-grp {
+        flex-wrap: nowrap;
+        flex-shrink: 0;
+      }
     }
     .np-detail-blocks-mount {
       margin-top: 12px;

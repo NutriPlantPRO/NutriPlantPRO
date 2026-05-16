@@ -174,7 +174,13 @@ Marca cada paso cuando lo terminemos juntos.
 - [x] **1.1** Crear `netlify/functions/nutriplant-admin-assistant.js` (router + auth).
 - [x] **1.2** Implementar `admin_stats`, `list_users`, `user_summary`, `search_projects`.
 - [x] **1.3** Redirect en `netlify.toml`: `/api/admin-assistant` → función.
-- [ ] **1.4** Probar con `curl` (tras deploy y token en Netlify).
+- [x] **1.4** Probar con `curl` y ChatGPT (GPT privado + Bearer).
+
+### Fase 2 — Proyectos (detalle)
+- [x] **2.1** `project_detail` — ubicación, suelo, fertirriego (etapas + ppm/meq si hay m³/ha), granular, VPD guardado.
+- [x] **2.2** `project_vpd_live` — VPD ahora vía Open-Meteo + polígono.
+- [ ] **2.3** Deploy + actualizar esquema OpenAPI en el GPT (`docs/openapi-nutriplant-admin.json`).
+- [ ] **2.4** Probar: “Produccion Limon Ejercicio, ¿tiene fertirriego?”
 
 **Probar en local (con `netlify dev` y variables en `.env` o panel):**
 ```bash
