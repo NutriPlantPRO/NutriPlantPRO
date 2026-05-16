@@ -10128,7 +10128,7 @@
                         ? `<div style="background: white; padding: 16px; border-radius: 6px;">
                             ${vpdAnalysis.environmental && vpdAnalysis.environmental.vpd !== null && vpdAnalysis.environmental.vpd !== undefined ? `
                                 <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
-                                    <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">📊 Calculadora Ambiental</h4>
+                                    <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">📊 Estimador ambiental simple</h4>
                                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 12px; font-size: 14px;">
                                         <div><strong>Temperatura:</strong> ${vpdAnalysis.environmental.temperature !== null ? vpdAnalysis.environmental.temperature + ' °C' : 'N/A'}</div>
                                         <div><strong>Humedad Relativa:</strong> ${vpdAnalysis.environmental.humidity !== null ? vpdAnalysis.environmental.humidity + ' %' : 'N/A'}</div>
@@ -10142,7 +10142,7 @@
                             ` : ''}
                             ${vpdAnalysis.advanced && vpdAnalysis.advanced.vpd !== null && vpdAnalysis.advanced.vpd !== undefined ? `
                                 <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
-                                    <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">🔬 Calculadora Avanzada</h4>
+                                    <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">🔬 Estimador avanzado</h4>
                                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 12px; font-size: 14px;">
                                         <div><strong>Temperatura Aire:</strong> ${vpdAnalysis.advanced.airTemperature !== null ? vpdAnalysis.advanced.airTemperature + ' °C' : 'N/A'}</div>
                                         <div><strong>Humedad Relativa:</strong> ${vpdAnalysis.advanced.airHumidity !== null ? vpdAnalysis.advanced.airHumidity + ' %' : 'N/A'}</div>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
-  <title>Calculadora VPD</title>
+  <title>Estimador de déficit de presión de vapor</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="stylesheet" href="dashboard.css" />
   <style>
@@ -172,7 +172,7 @@
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   <p class="note">Modo gratuito: no guarda datos. Al cerrar, se reinicia.</p>
   <div class="wrap">
-    <h2 class="title">🌡️ Déficit de Presión de Vapor</h2>
+    <h2 class="title">🌡️ Estimador de déficit de presión de vapor</h2>
     <p class="vpd-context-note" role="note">
       <strong>Foco técnico:</strong> el VPD aquí es <strong>ambiental</strong> (aire a escala meteorológica). Si usas el mapa, el clima viene de modelos con respaldo <strong>satelital</strong> (Open-Meteo en el punto que marcas); en el cultivo el <strong>microclima</strong> puede variar con el <strong>área foliar</strong>, el dosel o la ventilación.
       La T<sub>hoja</sub> manual o estimada por radiación es orientativa — <strong>valida en campo</strong>.
@@ -202,7 +202,7 @@
     </div>
 
     <div style="background:#f0f9ff;border:2px solid #0ea5e9;border-radius:12px;padding:24px;margin-bottom:24px;">
-      <h3 style="margin:0 0 20px;color:#0369a1;font-size:18px;font-weight:600;">📊 Calculadora Ambiental Simple</h3>
+      <h3 style="margin:0 0 20px;color:#0369a1;font-size:18px;font-weight:600;">📊 Estimador ambiental simple</h3>
 
       <div class="vpd-grid-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
         <div class="vpd-grid-cell" style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
@@ -224,7 +224,7 @@
     </div>
 
     <div style="background:#f0fdf4;border:2px solid #22c55e;border-radius:12px;padding:24px;">
-      <h3 style="margin:0 0 20px;color:#15803d;font-size:18px;font-weight:600;">🔬 Calculadora Avanzada</h3>
+      <h3 style="margin:0 0 20px;color:#15803d;font-size:18px;font-weight:600;">🔬 Estimador avanzado</h3>
 
       <div class="vpd-grid-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
         <div class="vpd-grid-cell" style="background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb;">
@@ -576,7 +576,7 @@
           createVPDRangeChart(results.vpd) +
           '</div>';
 
-        vpdGeoSetStatus(t('✅ Datos aplicados a las calculadoras (simple y campos avanzados).',
+        vpdGeoSetStatus(t('✅ Datos aplicados al estimador ambiental simple y a los campos del estimador avanzado.',
           '✅ Data filled in simple & advanced inputs.'));
         document.getElementById('vpd-environmental-results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         vpdFreeSetEnvSimpleLocked(true);

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
-  <title>Calculadora de Solución Nutritiva</title>
+  <title>Diseño de solución nutritiva</title>
   <link rel="stylesheet" href="dashboard.css" />
   <style>
     body {
@@ -68,14 +68,14 @@
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
-  <p class="guest-note">Modo gratuito: no guarda datos. Al cerrar, la calculadora se reinicia.</p>
+  <p class="guest-note">Modo gratuito: no guarda datos. Al cerrar, la herramienta se reinicia.</p>
 
   <div class="hydroponia-container">
     <div class="hydroponia-content">
       <div class="tab-content active" id="hidro-solucion">
         <div class="hydro-card">
           <div class="hydro-card-header">
-            <h3>🧪 Solución nutritiva</h3>
+            <h3>🧪 Diseño de solución nutritiva</h3>
             <p class="hydro-muted" style="margin:6px 0 0 0;font-size:0.8rem;">Podés editar <strong>meq/L</strong> o <strong>ppm</strong>; la otra fila y el % meq se recalculan (pesos equivalentes NutriPlant).</p>
             <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;"></p>
           </div>
@@ -104,7 +104,7 @@
     const HYDRO_MEQ_NUTRIENTS = ['N_NH4','N_NO3','P','S','K','Ca','Mg'];
     const HYDRO_ANIONS = ['N_NO3','P','S'];
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
-    // En la calculadora gratuita no se muestran micros en ppm.
+    // En la versión gratuita no se muestran micros en ppm.
     const HYDRO_MICROS = [];
     const HYDRO_STAGE_OPTIONS = ['Establecimiento','Vegetativo','Prefloración','Floración','Amarre','Llenado','Cosecha'];
     const HYDRO_EQ_WEIGHTS = { N_NO3:14.0, N_NH4:14.0, P:31.0, K:39.1, Ca:20.04, Mg:12.15, S:16.03 };

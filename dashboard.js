@@ -724,7 +724,7 @@ function sectionTemplate(name) {
         </div>
         <div class="enmienda-header">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 class="text-2xl font-bold text-gray-800 mb-0">🚜 Calculadora de Enmiendas (ajuste de CIC del suelo)</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-0">🚜 Balance de enmiendas por CIC (ajuste de CIC del suelo)</h2>
           </div>
           <div class="ideal-ranges">
             <h3>📊 Rangos Ideales de Cationes:</h3>
@@ -14020,8 +14020,8 @@ function translateReportHTMLStrings(html, reportLanguage) {
     ['vértices)', 'vertices)'],
     ['Sin polígono', 'No polygon'],
     ['No disponibles', 'Not available'],
-    ['📊 Calculadora Ambiental', '📊 Environmental Calculator'],
-    ['🔬 Calculadora Avanzada', '🔬 Advanced Calculator'],
+    ['📊 Estimador ambiental simple', '📊 Environmental Calculator'],
+    ['🔬 Estimador avanzado', '🔬 Advanced Calculator'],
     ['📜 Historial de Cálculos', '📜 Calculation History'],
     ['🗓️ Serie VPD por Rango (Estrés)', '🗓️ VPD Range Series (Stress)'],
     ['💾 Cuadros guardados de VPD', '💾 Saved VPD tables'],
@@ -16020,7 +16020,7 @@ function createVPDReportSectionHTML() {
     <div class="section">
       <h2 class="section-title">🌡️ Déficit de Presión de Vapor (VPD)</h2>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">📊 Calculadora Ambiental</div>
+        <div class="report-block-title">📊 Estimador ambiental simple</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
           <div><strong>Temperatura:</strong> ${reportNum(env.temperature, 2)} °C</div>
           <div><strong>Humedad Relativa:</strong> ${reportNum(env.humidity, 2)} %</div>
@@ -16032,7 +16032,7 @@ function createVPDReportSectionHTML() {
         </div>
       </div>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">🔬 Calculadora Avanzada</div>
+        <div class="report-block-title">🔬 Estimador avanzado</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
           <div><strong>Temperatura Aire:</strong> ${reportNum(adv.airTemperature, 2)} °C</div>
           <div><strong>Humedad Relativa:</strong> ${reportNum(adv.airHumidity, 2)} %</div>
@@ -17246,7 +17246,7 @@ window.awUpdateSums = function awUpdateSums() {
 };
 
 var AW_OXIDE_FACTORS = { ca: 1.399, mg: 1.658, na: 1.348, k: 1.205 };
-/* Aniones: P→P₂O₅ ×2.291 (GRANULAR); S→SO₃ mismo factor que Calculadora Óxido ↔ Elemental (dashboard) */
+/* Aniones: P→P₂O₅ ×2.291 (GRANULAR); S→SO₃ mismo factor que Conversor Óxido ↔ Elemental (dashboard) */
 var AW_P_TO_P2O5 = 2.291;
 var AW_S_TO_SO3 = 2.497;
 /** m³ de riego: objeto guardado o valor actual del input (evita desfase; sin m³ no hay kg). */
@@ -19539,7 +19539,7 @@ function createVPDSectionHTML() {
       <!-- CALCULADORA AMBIENTAL SIMPLE (arriba, como siempre; sin botón «Calcular»: el clima ya calcula; T/HR manual se recalcula al salir del campo) -->
       <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 12px; padding: 24px; margin-bottom: 32px;">
         <h3 style="margin: 0 0 20px 0; color: #0369a1; font-size: 18px; font-weight: 600;">
-          📊 Calculadora Ambiental Simple
+          📊 Estimador ambiental simple
         </h3>
         
         ${!hasPolygon ? `
@@ -19659,7 +19659,7 @@ function createVPDSectionHTML() {
       <!-- CALCULADORA AVANZADA -->
       <div style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 12px; padding: 24px;">
         <h3 style="margin: 0 0 20px 0; color: #15803d; font-size: 18px; font-weight: 600;">
-          🔬 Calculadora Avanzada
+          🔬 Estimador avanzado
         </h3>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
@@ -19764,7 +19764,7 @@ function createVPDSectionHTML() {
       </div>
       
       <p style="margin: 0 0 8px 0; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #475569; line-height: 1.45;">
-        <strong>Ajuste manual:</strong> usa los mismos campos de <em>Calculadora Ambiental Simple</em> arriba. No hay segundo botón de calcular: tras <em>Obtener del Clima</em> ya queda el VPD; si solo escribes o corrige T y HR, el resultado se actualiza al <strong>salir</strong> de cada campo (VPD simple con aire + humedad).
+        <strong>Ajuste manual:</strong> usa los mismos campos de <em>Estimador ambiental simple</em> arriba. No hay segundo botón de calcular: tras <em>Obtener del Clima</em> ya queda el VPD; si solo escribes o corrige T y HR, el resultado se actualiza al <strong>salir</strong> de cada campo (VPD simple con aire + humedad).
       </p>
       
       <!-- HISTORIAL -->
