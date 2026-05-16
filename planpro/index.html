@@ -1776,9 +1776,13 @@
       z-index: 40;
       list-style: none;
     }
-    /* Menú contextual ⋯: versión fija al viewport (evita recorte por overflow del árbol). */
+    /* Menú contextual ⋯: versión fija al viewport (evita recorte por overflow del árbol).
+       Importante: anular top/right del .np-tree-menu absoluto — con fixed, calc(100%+3px)
+       usa el viewport y el menú aparece muy abajo hasta que JS asigna coordenadas. */
     .np-tree-menu.np-tree-menu--fixed {
       position: fixed !important;
+      top: 0;
+      left: 0;
       right: auto !important;
       bottom: auto !important;
       min-width: 168px;
@@ -4553,6 +4557,7 @@
     var btn = wrapEl.querySelector('.np-tree-btn-more');
     if (!btn) return;
     menuEl.classList.add('np-tree-menu--fixed');
+    void menuEl.offsetWidth;
     var rect = btn.getBoundingClientRect();
     var mw = menuEl.offsetWidth || 188;
     var mh = menuEl.offsetHeight || 132;
@@ -4900,6 +4905,17 @@
     window.removeEventListener('resize', npRichImgResizeScrollFn);
     var ed = npRichImgResizeUI.editorEl;
     if (ed) ed.removeEventListener('scroll', npRichImgResizeScrollFn, true);
+    if (ed && ed.closest) {
+      var nbPage = ed.closest('.np-notebook-page');
+      if (nbPage) nbPage.removeEventListener('scroll', npRichImgResizeScrollFn, true);
+      var modalBody = ed.closest('.np-modal-body');
+      if (modalBody) modalBody.removeEventListener('scroll', npRichImgResizeScrollFn, true);
+    }
+    var vv = window.visualViewport;
+    if (vv && npRichImgResizeScrollFn) {
+      vv.removeEventListener('scroll', npRichImgResizeScrollFn);
+      vv.removeEventListener('resize', npRichImgResizeScrollFn);
+    }
     npRichImgResizeScrollFn = null;
   }
 
@@ -4912,6 +4928,17 @@
     window.addEventListener('scroll', npRichImgResizeScrollFn, true);
     window.addEventListener('resize', npRichImgResizeScrollFn);
     if (ed) ed.addEventListener('scroll', npRichImgResizeScrollFn, true);
+    if (ed && ed.closest) {
+      var nbPage = ed.closest('.np-notebook-page');
+      if (nbPage) nbPage.addEventListener('scroll', npRichImgResizeScrollFn, true);
+      var modalBody = ed.closest('.np-modal-body');
+      if (modalBody) modalBody.addEventListener('scroll', npRichImgResizeScrollFn, true);
+    }
+    var vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener('scroll', npRichImgResizeScrollFn);
+      vv.addEventListener('resize', npRichImgResizeScrollFn);
+    }
   }
 
   function hideRichImgResizeUI() {
@@ -4924,7 +4951,7 @@
     npRichImgResizeUI.img = null;
   }
 
-  /** Parte visible del <img> dentro del área de apuntes (scroll del bloc + del editor). */
+  /** Recorte del marco al área realmente visible (cuerpo modal, libreta, editor, pantalla). */
   function npClipImgRectToEditorViewport(imgRect, editorEl) {
     var left = imgRect.left;
     var top = imgRect.top;
@@ -4939,9 +4966,24 @@
       bottom = Math.min(bottom, e.bottom);
     }
     if (editorEl && editorEl.closest) {
+      clipTo(editorEl.closest('.np-modal-body'));
       clipTo(editorEl.closest('.np-notebook-page'));
     }
     clipTo(editorEl);
+    var vv = window.visualViewport;
+    if (vv && typeof vv.width === 'number' && vv.width > 0) {
+      var vl = vv.offsetLeft;
+      var vt = vv.offsetTop;
+      left = Math.max(left, vl);
+      top = Math.max(top, vt);
+      right = Math.min(right, vl + vv.width);
+      bottom = Math.min(bottom, vt + vv.height);
+    } else {
+      left = Math.max(left, 0);
+      top = Math.max(top, 0);
+      right = Math.min(right, window.innerWidth);
+      bottom = Math.min(bottom, window.innerHeight);
+    }
     var w = right - left;
     var h = bottom - top;
     if (w < 4 || h < 4) return null;
@@ -9582,9 +9624,10 @@
       if (wasHidden) {
         menu.classList.remove('np-hide');
         btnMore.setAttribute('aria-expanded', 'true');
+        positionTreeMenuFixed(menu, menuWrap);
+        bindTreeMenuLayoutWatch(menu, menuWrap);
         requestAnimationFrame(function () {
           positionTreeMenuFixed(menu, menuWrap);
-          bindTreeMenuLayoutWatch(menu, menuWrap);
           requestAnimationFrame(function () {
             positionTreeMenuFixed(menu, menuWrap);
           });
