@@ -1972,53 +1972,83 @@
       background: rgba(255, 255, 255, 0.78);
     }
     .np-ms-block-smart .np-ms-row {
-      --np-ms-col-min: 104px;
+      --np-ms-col-min: 112px;
     }
-    /* Seguimiento PRO: 6 columnas fijas (Tipo…Notas) para que títulos y celdas coincidan */
+    /*
+     * Rejilla compartida (subgrid): títulos y filas usan las MISMAS columnas.
+     * Sin esto cada fila calcula anchos distintos y se ve el desfase.
+     * minmax(…) con mínimos amplios + scroll horizontal si el panel es angosto.
+     */
+    .np-ms-block-smart .np-ms-sheet.np-ms-sheet--smart6 {
+      display: grid;
+      min-width: min(100%, 860px);
+      grid-template-columns:
+        minmax(108px, 0.82fr)
+        minmax(148px, 1.35fr)
+        minmax(88px, 0.62fr)
+        minmax(58px, 0.46fr)
+        minmax(132px, 0.98fr)
+        minmax(200px, 2fr);
+    }
+    .np-ms-block-smart .np-ms-sheet.np-ms-sheet--smart6.np-ms-sheet--rowdel {
+      grid-template-columns:
+        minmax(108px, 0.82fr)
+        minmax(148px, 1.35fr)
+        minmax(88px, 0.62fr)
+        minmax(58px, 0.46fr)
+        minmax(132px, 0.98fr)
+        minmax(200px, 2fr)
+        minmax(56px, 68px);
+    }
     .np-ms-block-smart .np-ms-sheet.np-ms-sheet--smart6 .np-ms-row {
-      grid-template-columns:
-        minmax(92px, 0.78fr)
-        minmax(112px, 1.28fr)
-        minmax(68px, 0.58fr)
-        minmax(52px, 0.42fr)
-        minmax(118px, 0.92fr)
-        minmax(168px, 1.85fr);
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: 1 / -1;
+      width: 100%;
+      min-width: 0;
     }
-    .np-ms-block-smart .np-ms-sheet.np-ms-sheet--smart6.np-ms-sheet--rowdel .np-ms-row {
+    .np-ms-block-tasks .np-ms-sheet.np-ms-sheet--tasks5 {
+      display: grid;
+      min-width: min(100%, 720px);
       grid-template-columns:
-        minmax(92px, 0.78fr)
-        minmax(112px, 1.28fr)
-        minmax(68px, 0.58fr)
-        minmax(52px, 0.42fr)
-        minmax(118px, 0.92fr)
-        minmax(168px, 1.85fr)
-        minmax(52px, 64px);
+        minmax(128px, 1.4fr)
+        minmax(148px, 1.5fr)
+        minmax(88px, 0.62fr)
+        minmax(58px, 0.46fr)
+        minmax(132px, 1fr);
+    }
+    .np-ms-block-tasks .np-ms-sheet.np-ms-sheet--tasks5.np-ms-sheet--rowdel {
+      grid-template-columns:
+        minmax(128px, 1.4fr)
+        minmax(148px, 1.5fr)
+        minmax(88px, 0.62fr)
+        minmax(58px, 0.46fr)
+        minmax(132px, 1fr)
+        minmax(56px, 68px);
     }
     .np-ms-block-tasks .np-ms-sheet.np-ms-sheet--tasks5 .np-ms-row {
-      grid-template-columns:
-        minmax(112px, 1.35fr)
-        minmax(128px, 1.45fr)
-        minmax(68px, 0.58fr)
-        minmax(52px, 0.42fr)
-        minmax(118px, 0.95fr);
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: 1 / -1;
+      width: 100%;
+      min-width: 0;
     }
-    .np-ms-block-tasks .np-ms-sheet.np-ms-sheet--tasks5.np-ms-sheet--rowdel .np-ms-row {
-      grid-template-columns:
-        minmax(112px, 1.35fr)
-        minmax(128px, 1.45fr)
-        minmax(68px, 0.58fr)
-        minmax(52px, 0.42fr)
-        minmax(118px, 0.95fr)
-        minmax(52px, 64px);
-    }
-    /* Tabla de montos: rejillas fijas para plantillas habituales */
-    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger2 .np-ms-row {
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger2 {
+      display: grid;
       grid-template-columns: minmax(140px, 1.55fr) minmax(100px, 1fr);
     }
-    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger2.np-ms-sheet--rowdel .np-ms-row {
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger2.np-ms-sheet--rowdel {
       grid-template-columns: minmax(140px, 1.55fr) minmax(100px, 1fr) minmax(52px, 64px);
     }
-    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger5 .np-ms-row {
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger2 .np-ms-row {
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: 1 / -1;
+      width: 100%;
+      min-width: 0;
+    }
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger5 {
+      display: grid;
       grid-template-columns:
         minmax(120px, 1.4fr)
         minmax(92px, 0.8fr)
@@ -2026,7 +2056,7 @@
         minmax(92px, 0.8fr)
         minmax(128px, 1.15fr);
     }
-    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger5.np-ms-sheet--rowdel .np-ms-row {
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger5.np-ms-sheet--rowdel {
       grid-template-columns:
         minmax(120px, 1.4fr)
         minmax(92px, 0.8fr)
@@ -2035,7 +2065,15 @@
         minmax(128px, 1.15fr)
         minmax(52px, 64px);
     }
-    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger6 .np-ms-row {
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger5 .np-ms-row {
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: 1 / -1;
+      width: 100%;
+      min-width: 0;
+    }
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger6 {
+      display: grid;
       grid-template-columns:
         minmax(118px, 1.35fr)
         minmax(88px, 0.72fr)
@@ -2044,7 +2082,7 @@
         minmax(52px, 0.42fr)
         minmax(132px, 1.2fr);
     }
-    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger6.np-ms-sheet--rowdel .np-ms-row {
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger6.np-ms-sheet--rowdel {
       grid-template-columns:
         minmax(118px, 1.35fr)
         minmax(88px, 0.72fr)
@@ -2054,12 +2092,27 @@
         minmax(132px, 1.2fr)
         minmax(52px, 64px);
     }
-    /* Tabla libre: 3 columnas por defecto al crear */
-    .np-ms-block-free .np-ms-sheet.np-ms-sheet--free3 .np-ms-row {
-      grid-template-columns: minmax(108px, 1fr) minmax(108px, 1fr) minmax(108px, 1fr);
+    .np-ms-block-ledger .np-ms-sheet.np-ms-sheet--ledger6 .np-ms-row {
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: 1 / -1;
+      width: 100%;
+      min-width: 0;
     }
-    .np-ms-block-free .np-ms-sheet.np-ms-sheet--free3.np-ms-sheet--rowdel .np-ms-row {
-      grid-template-columns: minmax(108px, 1fr) minmax(108px, 1fr) minmax(108px, 1fr) minmax(52px, 64px);
+    .np-ms-block-free .np-ms-sheet.np-ms-sheet--free3 {
+      display: grid;
+      min-width: min(100%, 420px);
+      grid-template-columns: minmax(124px, 1fr) minmax(124px, 1fr) minmax(124px, 1fr);
+    }
+    .np-ms-block-free .np-ms-sheet.np-ms-sheet--free3.np-ms-sheet--rowdel {
+      grid-template-columns: minmax(124px, 1fr) minmax(124px, 1fr) minmax(124px, 1fr) minmax(56px, 68px);
+    }
+    .np-ms-block-free .np-ms-sheet.np-ms-sheet--free3 .np-ms-row {
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: 1 / -1;
+      width: 100%;
+      min-width: 0;
     }
     .np-ms-block-smart .np-ms-title-inline {
       flex: 1;
@@ -2103,7 +2156,7 @@
       background: rgba(255, 255, 255, 0.78);
     }
     .np-ms-block-tasks .np-ms-row {
-      --np-ms-col-min: 104px;
+      --np-ms-col-min: 112px;
     }
     .np-ms-block-tasks .np-ms-title-inline {
       flex: 1;
@@ -2338,7 +2391,7 @@
     }
     .np-ms-row {
       display: grid;
-      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(var(--np-ms-col-min, 96px), 1fr));
+      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(var(--np-ms-col-min, 108px), 1fr));
       gap: 0;
       border-bottom: 1px solid rgba(148, 163, 184, 0.14);
       transition: background 0.15s ease;
@@ -2347,8 +2400,8 @@
       box-sizing: border-box;
     }
     .np-ms-sheet.np-ms-sheet--rowdel .np-ms-row {
-      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(var(--np-ms-col-min, 96px), 1fr))
-        minmax(52px, 64px);
+      grid-template-columns: repeat(var(--np-ms-data-cols, 3), minmax(var(--np-ms-col-min, 108px), 1fr))
+        minmax(56px, 68px);
     }
     .np-ms-row:last-child { border-bottom: none; }
     .np-ms-row-head {
@@ -2375,10 +2428,23 @@
       font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.04em;
       color: #64748b;
       padding-top: 11px;
       padding-bottom: 11px;
+      align-items: flex-start;
+    }
+    .np-ms-block-smart .np-ms-row-head .np-ms-cell,
+    .np-ms-block-tasks .np-ms-row-head .np-ms-cell {
+      min-height: 2.6em;
+    }
+    .np-ms-block-smart .np-ms-head-input,
+    .np-ms-block-tasks .np-ms-head-input {
+      white-space: normal;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      min-height: 2.35em;
     }
     .np-ms-row-sum {
       background: rgba(240, 253, 244, 0.55);
@@ -2438,7 +2504,7 @@
     }
     .np-ms-cell-prio {
       justify-content: center;
-      min-width: var(--np-ms-col-min-narrow, 56px);
+      min-width: var(--np-ms-col-min-narrow, 72px);
     }
     .np-ms-row-head .np-ms-cell-prio {
       justify-content: center;
@@ -3976,9 +4042,9 @@
     .np-ms-kind-select {
       width: 100%;
       max-width: 100%;
-      min-width: 0;
-      font-size: 11px;
-      padding: 6px 4px;
+      min-width: 6.5rem;
+      font-size: 12px;
+      padding: 6px 6px;
       border-radius: 8px;
       border: 1px solid rgba(15, 23, 42, 0.08);
       background: rgba(255, 255, 255, 0.9);
@@ -6998,6 +7064,20 @@
     return /t[ií]tulo|concepto|nombre|tarea|actividad/.test(s);
   }
 
+  function smartTasksHeadersCorrupt(b) {
+    if (!b || !b.headers || !b.headers.length) return false;
+    var h0 = String(b.headers[0] || '').trim();
+    if (!h0) return false;
+    if (b.variant === 'smart') {
+      if (columnLooksLikePriorityHeader(h0) || columnLooksLikeDoneHeader(h0)) return true;
+      if (b.headers.length >= 2 && columnLooksLikeDoneHeader(String(b.headers[1] || ''))) return true;
+    }
+    if (b.variant === 'tasks') {
+      if (columnLooksLikePriorityHeader(h0) || columnLooksLikeDoneHeader(h0)) return true;
+    }
+    return false;
+  }
+
   /** Repara tablas seguimiento/tareas cuyos headers perdieron Tipo/Título pero las filas siguen con 6/5 celdas. */
   function ensureSmartTasksTableShape(b) {
     if (!b || b.type !== 'mini_sheet') return;
@@ -7019,6 +7099,16 @@
       b.rows.forEach(function (row, ri) {
         var arr = padRowCells(row, Math.max(0, b.headers.length - 2));
         arr.unshift('', '');
+        b.rows[ri] = arr;
+      });
+    }
+
+    if (smartTasksHeadersCorrupt(b)) {
+      while (b.headers.length < min) b.headers.push('');
+      for (var fixHi = 0; fixHi < min; fixHi++) b.headers[fixHi] = defaults[fixHi];
+      b.rows.forEach(function (row, ri) {
+        var arr = padRowCells(row, min);
+        while (arr.length > min) arr.pop();
         b.rows[ri] = arr;
       });
     }
