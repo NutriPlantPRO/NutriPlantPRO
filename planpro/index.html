@@ -4538,23 +4538,28 @@
       if (mountScroll) mountScroll.removeEventListener('scroll', npTreeMenuLayoutListener, true);
       npTreeMenuLayoutListener = null;
     }
-    var m = $('npTreeMount');
-    if (!m) return;
-    m.querySelectorAll('.np-tree-menu').forEach(function (el) {
+    document.querySelectorAll('.np-tree-menu[data-np-tree-branch-menu]').forEach(function (el) {
       el.classList.add('np-hide');
       el.classList.remove('np-tree-menu--fixed');
       el.style.left = '';
       el.style.top = '';
+      var host = el._npTreeMenuWrapHost;
+      if (host && el.parentNode !== host) {
+        host.appendChild(el);
+      }
     });
-    m.querySelectorAll('.np-tree-btn-more').forEach(function (btn) {
-      btn.setAttribute('aria-expanded', 'false');
-    });
+    var m = $('npTreeMount');
+    if (m) {
+      m.querySelectorAll('.np-tree-btn-more').forEach(function (btn) {
+        btn.setAttribute('aria-expanded', 'false');
+      });
+    }
   }
 
-  /** Menú ⋯ del árbol: posición fija en pantalla para que no lo recorte #npTreeMount (overflow). */
+  /** Menú ⋯ del árbol: fijo en viewport; el DOM se mueve a body al abrir (evita bug de fixed dentro del sidebar). */
   function positionTreeMenuFixed(menuEl, wrapEl) {
     if (!menuEl || !wrapEl || menuEl.classList.contains('np-hide')) return;
-    var btn = wrapEl.querySelector('.np-tree-btn-more');
+    var btn = menuEl._npTreeMenuAnchorBtn || wrapEl.querySelector('.np-tree-btn-more');
     if (!btn) return;
     menuEl.classList.add('np-tree-menu--fixed');
     void menuEl.offsetWidth;
@@ -4604,6 +4609,8 @@
   }
 
   document.addEventListener('click', function (e) {
+    if (e.target && e.target.closest && e.target.closest('.np-tree-menu[data-np-tree-branch-menu]'))
+      return;
     if (e.target && e.target.closest && e.target.closest('.np-tree-menu-wrap')) return;
     closeAllTreeMenus();
     if (e.target && e.target.closest && e.target.closest('#npCatColorFlyout')) return;
@@ -9576,6 +9583,7 @@
     var menu = document.createElement('div');
     menu.className = 'np-tree-menu np-hide';
     menu.setAttribute('role', 'menu');
+    menu.setAttribute('data-np-tree-branch-menu', '1');
 
     var btnRename = document.createElement('button');
     btnRename.type = 'button';
@@ -9624,6 +9632,7 @@
       if (wasHidden) {
         menu.classList.remove('np-hide');
         btnMore.setAttribute('aria-expanded', 'true');
+        document.body.appendChild(menu);
         positionTreeMenuFixed(menu, menuWrap);
         bindTreeMenuLayoutWatch(menu, menuWrap);
         requestAnimationFrame(function () {
@@ -9640,6 +9649,8 @@
     menu.appendChild(btnHardDelete);
     menuWrap.appendChild(btnMore);
     menuWrap.appendChild(menu);
+    menu._npTreeMenuAnchorBtn = btnMore;
+    menu._npTreeMenuWrapHost = menuWrap;
     actions.appendChild(menuWrap);
 
     row.appendChild(title);
