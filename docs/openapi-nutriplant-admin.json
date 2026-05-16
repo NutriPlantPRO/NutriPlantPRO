@@ -3,20 +3,19 @@
   "info": {
     "title": "NutriPlant Admin Assistant",
     "version": "1.0.0",
-    "description": "Solo lectura. Admin (suscriptores) y búsqueda de proyectos. Importar en ChatGPT Actions; URL en producción: https://nutriplantpro.com/api/admin-assistant"
+    "description": "Solo lectura. Consultas admin y proyectos NutriPlant PRO."
   },
   "servers": [
     {
-      "url": "https://nutriplantpro.com/api/admin-assistant"
+      "url": "https://nutriplantpro.com"
     }
   ],
   "paths": {
-    "/": {
+    "/api/admin-assistant": {
       "post": {
         "operationId": "nutriplantAdminQuery",
-        "summary": "Consulta NutriPlant (admin o proyectos)",
-        "description": "Usa domain implícito por action. admin_stats: métricas panel. list_users: filtrar por subscription_status (pending, active), q, active_last_30_days. user_summary: email o nombre. search_projects: crop/cultivo, user, project (proyectos de suscriptores en NutriPlant).",
-        "security": [{ "bearerAuth": [] }],
+        "summary": "Consulta admin o proyectos de usuarios",
+        "description": "Body JSON: action + params. Acciones: admin_stats, list_users, user_summary, search_projects, describe_api.",
         "requestBody": {
           "required": true,
           "content": {
@@ -37,19 +36,7 @@
                   },
                   "params": {
                     "type": "object",
-                    "properties": {
-                      "subscription_status": { "type": "string" },
-                      "q": { "type": "string" },
-                      "search": { "type": "string" },
-                      "active_last_30_days": { "type": "boolean" },
-                      "email": { "type": "string" },
-                      "name": { "type": "string" },
-                      "crop": { "type": "string" },
-                      "cultivo": { "type": "string" },
-                      "user": { "type": "string" },
-                      "project": { "type": "string" },
-                      "limit": { "type": "integer" }
-                    }
+                    "additionalProperties": true
                   }
                 }
               }
@@ -58,18 +45,9 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "Respuesta JSON con ok y datos"
           }
         }
-      }
-    }
-  },
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "description": "NUTRIPLANT_ADMIN_GPT_TOKEN en Netlify"
       }
     }
   }

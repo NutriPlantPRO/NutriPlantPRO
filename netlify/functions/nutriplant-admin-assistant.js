@@ -351,30 +351,23 @@ const HANDLERS = {
   describe_api: () => handleDescribeApi()
 };
 
-function getOpenApiSpec(event) {
-  const host =
-    (event.headers && (event.headers['x-forwarded-host'] || event.headers.host)) ||
-    'nutriplantpro.com';
-  const proto = (event.headers && event.headers['x-forwarded-proto']) || 'https';
-  const base = `${proto}://${host}/api/admin-assistant`;
-
+function getOpenApiSpec() {
+  /* Formato 3.0.3 + servers.url raíz: compatible con importador de Actions en ChatGPT */
   return {
     openapi: '3.1.0',
     info: {
-      title: 'NutriPlant Admin Assistant (solo lectura)',
+      title: 'NutriPlant Admin Assistant',
       version: '1.0.0',
-      description:
-        'Consulta datos de admin, proyectos de suscriptores y (fase 2) Plan PRO. No modifica datos.'
+      description: 'Solo lectura. Consultas admin y proyectos NutriPlant PRO.'
     },
-    servers: [{ url: base }],
+    servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
-      '/': {
+      '/api/admin-assistant': {
         post: {
           operationId: 'nutriplantAdminQuery',
-          summary: 'Ejecutar consulta admin o proyectos',
+          summary: 'Consulta admin o proyectos de usuarios',
           description:
-            'Envía action y params. Admin: admin_stats, list_users, user_summary. Proyectos usuarios: search_projects (crop, user, project).',
-          security: [{ bearerAuth: [] }],
+            'Body JSON: action + params. Acciones: admin_stats, list_users, user_summary, search_projects, describe_api.',
           requestBody: {
             required: true,
             content: {
@@ -389,39 +382,15 @@ function getOpenApiSpec(event) {
                     },
                     params: { type: 'object', additionalProperties: true }
                   }
-                },
-                examples: {
-                  activeUsers: {
-                    value: { action: 'admin_stats', params: {} }
-                  },
-                  avocadoProjects: {
-                    value: {
-                      action: 'search_projects',
-                      params: { crop: 'aguacate', limit: 30 }
-                    }
-                  }
                 }
               }
             }
           },
           responses: {
             '200': {
-              description: 'Resultado JSON',
-              content: {
-                'application/json': {
-                  schema: { type: 'object', additionalProperties: true }
-                }
-              }
+              description: 'Respuesta JSON con ok y datos'
             }
           }
-        }
-      }
-    },
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer'
         }
       }
     }
@@ -435,7 +404,7 @@ exports.handler = async function handler(event) {
 
   const path = (event.path || '').toLowerCase();
   if (event.httpMethod === 'GET' && (path.includes('openapi') || path.endsWith('.json'))) {
-    return jsonResponse(200, getOpenApiSpec(event));
+    return jsonResponse(200, getOpenApiSpec());
   }
 
   const auth = verifyAuth(event);
