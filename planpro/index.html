@@ -1414,7 +1414,15 @@
       align-self: start;
       contain: layout style;
     }
+    /* Tablet / móvil: misma vista que computadora (Ramas | apuntes), scroll horizontal si no cabe. */
     @media (max-width: 1100px) {
+      :root {
+        /* Al deslizar a la derecha, la columna de apuntes ocupa casi todo el ancho visible. */
+        --np-layout-main-min: max(
+          480px,
+          calc(100vw - var(--np-layout-sidebar-min) - var(--np-layout-gap) - 20px)
+        );
+      }
       .np-layout-scroll {
         overflow-x: auto;
         overflow-y: visible;
@@ -1422,7 +1430,8 @@
         overscroll-behavior-x: contain;
       }
       .np-layout {
-        grid-template-columns: minmax(var(--np-layout-sidebar-min), 320px) minmax(var(--np-layout-main-min), 1fr);
+        display: grid;
+        grid-template-columns: minmax(var(--np-layout-sidebar-min), 300px) minmax(var(--np-layout-main-min), 1fr);
         min-width: max(100%, calc(var(--np-layout-sidebar-min) + var(--np-layout-gap) + var(--np-layout-main-min)));
       }
       .np-tree-sidebar {
@@ -1432,6 +1441,19 @@
       }
       .np-main-col {
         min-width: var(--np-layout-main-min);
+      }
+    }
+    /* Celular en horizontal: más parecido a laptop (sidebar un poco más angosta). */
+    @media (max-width: 1100px) and (orientation: landscape) {
+      :root {
+        --np-layout-sidebar-min: 252px;
+        --np-layout-main-min: max(
+          520px,
+          calc(100vw - var(--np-layout-sidebar-min) - var(--np-layout-gap) - 16px)
+        );
+      }
+      .np-tree-mount {
+        max-height: min(52vh, 300px);
       }
     }
     /* Tipografía y modales en pantallas pequeñas. */
@@ -3062,12 +3084,12 @@
     }
     .np-rich-img-handle {
       position: absolute;
-      width: 26px;
-      height: 26px;
+      width: 18px;
+      height: 18px;
       margin: 0;
       padding: 0;
-      border: 2px solid #fff;
-      border-radius: 6px;
+      border: 1.5px solid #fff;
+      border-radius: 4px;
       background: linear-gradient(145deg, #4ade80, #16a34a);
       box-shadow: 0 2px 10px rgba(15, 23, 42, 0.28);
       pointer-events: auto;
@@ -3090,9 +3112,9 @@
     }
     @media (pointer: coarse) {
       .np-rich-img-handle {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
+        width: 26px;
+        height: 26px;
+        border-radius: 5px;
       }
     }
     .np-modal-note-rich {
@@ -4264,14 +4286,6 @@
               <button
                 type="button"
                 class="btn btn-ghost btn-ghost-blue"
-                id="npCalShareMonthBtn"
-                title="Compartir archivo .ics por WhatsApp, correo, etc."
-              >
-                Compartir archivo .ics del mes
-              </button>
-              <button
-                type="button"
-                class="btn btn-ghost btn-ghost-blue"
                 id="npCalDownloadMonthBtn"
                 title="Descarga el .ics en este dispositivo"
               >
@@ -4512,9 +4526,6 @@
       <div class="np-modal-foot" style="padding:12px 16px 16px;border-top:1px solid rgba(148,163,184,0.35);display:flex;flex-direction:column;gap:8px;">
         <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalDayWaBtn">
           Enviar este día por WhatsApp
-        </button>
-        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalDayShareBtn">
-          Compartir .ics de este día
         </button>
         <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalDayDownloadBtn">
           Descargar este día (.ics)
@@ -5098,9 +5109,9 @@
 
     var coarse =
       typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
-    var hw = coarse ? 36 : 26;
-    var hh = coarse ? 36 : 26;
-    var padGoal = coarse ? 10 : 8;
+    var hw = coarse ? 26 : 18;
+    var hh = coarse ? 26 : 18;
+    var padGoal = coarse ? 8 : 6;
     var pad = Math.min(padGoal, Math.max(3, Math.floor(Math.min(vis.width, vis.height) * 0.06)));
     if (pad * 2 + hw > vis.width) pad = Math.max(0, Math.floor((vis.width - hw) / 2));
     if (pad * 2 + hh > vis.height) pad = Math.min(pad, Math.max(0, Math.floor((vis.height - hh) / 2)));
@@ -7678,53 +7689,6 @@
     );
   }
 
-  function getCalendarIcsBlobAndName(scope, dateKey) {
-    var filtered = filterCalendarEntriesByScope(scope, dateKey);
-    filtered = filtered.slice().sort(function (a, b) {
-      return npCompareDateKeys(a.dateKey, b.dateKey);
-    });
-    if (!filtered.length) return null;
-    var ics = buildPlanProIcs(filtered, 'admin@nutriplantpro.com');
-    var fname = 'plan-pro-agenda';
-    if (scope === 'day' && (dateKey || state.calModalDateKey)) {
-      fname += '-' + (dateKey || state.calModalDateKey);
-    } else if (scope === 'month') {
-      ensureSidebarCalMonth();
-      fname += '-' + state.sidebarCalYear + '-' + String(state.sidebarCalMonth + 1).padStart(2, '0');
-    }
-    fname += '.ics';
-    return { blob: new Blob([ics], { type: 'text/calendar;charset=utf-8' }), fname: fname, count: filtered.length };
-  }
-
-  async function shareCalendarIcsFile(scope, dateKey, statusEl) {
-    var pack = getCalendarIcsBlobAndName(scope, dateKey);
-    if (!pack) {
-      setCalSendStatus(statusEl, 'No hay fechas para compartir.', true);
-      return;
-    }
-    var file = new File([pack.blob], pack.fname, { type: 'text/calendar' });
-    var shareData = {
-      title: 'Plan PRO agenda',
-      text: 'Agenda Plan PRO (' + pack.count + ' fechas). Ábrela en Outlook o el calendario.',
-      files: [file]
-    };
-    try {
-      if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
-        await navigator.share(shareData);
-        setCalSendStatus(statusEl, 'Compartido. En WhatsApp elige el chat y envía el archivo.', false);
-        return;
-      }
-    } catch (err) {
-      if (err && err.name === 'AbortError') return;
-    }
-    downloadCalendarIcs(scope, dateKey, statusEl);
-    setCalSendStatus(
-      statusEl,
-      'Archivo descargado. En WhatsApp: clip 📎 → Documento → elige el .ics.',
-      false
-    );
-  }
-
   function downloadCalendarIcs(scope, dateKey, statusEl) {
     var filtered = filterCalendarEntriesByScope(scope, dateKey);
     filtered = filtered.slice().sort(function (a, b) {
@@ -7883,12 +7847,10 @@
     body.innerHTML = '';
     var dayDlBtn = $('npCalDayDownloadBtn');
     var dayWaBtn = $('npCalDayWaBtn');
-    var dayShareBtn = $('npCalDayShareBtn');
     var emptyDay = list.length < 1;
     if (daySendBtn) daySendBtn.disabled = emptyDay;
     if (dayDlBtn) dayDlBtn.disabled = emptyDay;
     if (dayWaBtn) dayWaBtn.disabled = emptyDay;
-    if (dayShareBtn) dayShareBtn.disabled = emptyDay;
     if (!list.length) {
       var empty = document.createElement('p');
       empty.className = 'np-muted';

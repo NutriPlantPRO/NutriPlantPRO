@@ -74,6 +74,34 @@ function resolveAction(event, body) {
   return last;
 }
 
+/** ChatGPT Actions a veces manda project_id en la raíz, no dentro de params. */
+function normalizeParams(body) {
+  const src = body && typeof body === 'object' ? body : {};
+  const params =
+    src.params && typeof src.params === 'object' && !Array.isArray(src.params) ? { ...src.params } : {};
+  const passthrough = [
+    'project_id',
+    'id',
+    'project_name',
+    'project',
+    'q',
+    'fertirriego_stage_index',
+    'stage_index',
+    'email',
+    'user_email',
+    'search',
+    'status',
+    'crop',
+    'limit',
+    'active_last_30_days'
+  ];
+  passthrough.forEach((key) => {
+    const v = src[key];
+    if (v != null && v !== '' && params[key] == null) params[key] = v;
+  });
+  return params;
+}
+
 function isSubscriberProfile(p) {
   if (!p || p.is_admin) return false;
   return (p.email || '').toLowerCase() !== ADMIN_EMAIL_LC;
@@ -775,8 +803,8 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '1.1.0',
-      description: 'Solo lectura. Admin, detalle de proyecto (fertirriego, suelo, VPD) y Plan PRO (fase 3).'
+      version: '1.1.1',
+      description: 'Solo lectura. Siempre action + params. project_detail: params.project_id o params.project_name.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -790,17 +818,7 @@ function getOpenApiSpec() {
             required: true,
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['action'],
-                  properties: {
-                    action: {
-                      type: 'string',
-                      enum: Object.keys(HANDLERS)
-                    },
-                    params: { type: 'object', additionalProperties: true }
-                  }
-                }
+                schema: { $ref: '#/components/schemas/AdminRequest' }
               }
             }
           },
@@ -814,6 +832,28 @@ function getOpenApiSpec() {
       }
     },
     components: {
+      schemas: {
+        AdminRequest: {
+          type: 'object',
+          required: ['action', 'params'],
+          properties: {
+            action: { type: 'string', enum: Object.keys(HANDLERS) },
+            params: {
+              type: 'object',
+              properties: {
+                project_id: { type: 'string' },
+                project_name: { type: 'string' },
+                fertirriego_stage_index: { type: 'integer' },
+                email: { type: 'string' },
+                search: { type: 'string' },
+                crop: { type: 'string' },
+                q: { type: 'string' }
+              },
+              additionalProperties: true
+            }
+          }
+        }
+      },
       securitySchemes: {
         bearerAuth: { type: 'http', scheme: 'bearer' }
       }
@@ -856,7 +896,7 @@ exports.handler = async function handler(event) {
   }
 
   try {
-    const result = await HANDLERS[action](supabase, body.params || {});
+    const result = await HANDLERS[action](supabase, normalizeParams(body));
     return jsonResponse(200, result);
   } catch (err) {
     console.error('nutriplant-admin-assistant:', action, err);

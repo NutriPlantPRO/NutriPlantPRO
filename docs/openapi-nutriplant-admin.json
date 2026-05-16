@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "1.1.0",
-    "description": "Solo lectura. Admin, proyectos (detalle, fertirriego, suelo, ubicación, VPD) y Plan PRO (fase 3)."
+    "version": "1.1.1",
+    "description": "Solo lectura. Siempre envía action y params. Para project_detail: params.project_id o params.project_name."
   },
   "servers": [
     {
@@ -15,32 +15,13 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Consulta NutriPlant (admin o proyectos)",
-        "description": "action + params. project_detail: project_name o project_id; opcional fertirriego_stage_index (0=primera etapa). project_vpd_live: VPD actual con Open-Meteo. search_projects, admin_stats, list_users, user_summary.",
+        "description": "Obligatorio: action y params (objeto). Ejemplo project_detail: {\"action\":\"project_detail\",\"params\":{\"project_id\":\"AN_PRODUCCION-LIMON-EJE_20260404_140813\"}}. También válido project_name. project_vpd_live igual. admin_stats: params vacío {}.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": ["action"],
-                "properties": {
-                  "action": {
-                    "type": "string",
-                    "enum": [
-                      "admin_stats",
-                      "list_users",
-                      "user_summary",
-                      "search_projects",
-                      "project_detail",
-                      "project_vpd_live",
-                      "describe_api"
-                    ]
-                  },
-                  "params": {
-                    "type": "object",
-                    "additionalProperties": true
-                  }
-                }
+                "$ref": "#/components/schemas/AdminRequest"
               }
             }
           }
@@ -55,6 +36,51 @@
     }
   },
   "components": {
+    "schemas": {
+      "AdminRequest": {
+        "type": "object",
+        "required": ["action", "params"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "admin_stats",
+              "list_users",
+              "user_summary",
+              "search_projects",
+              "project_detail",
+              "project_vpd_live",
+              "describe_api"
+            ]
+          },
+          "params": {
+            "type": "object",
+            "description": "Parámetros de la acción. Para project_detail y project_vpd_live incluir project_id o project_name.",
+            "properties": {
+              "project_id": {
+                "type": "string",
+                "description": "ID del proyecto, ej. AN_PRODUCCION-LIMON-EJE_20260404_140813"
+              },
+              "project_name": {
+                "type": "string",
+                "description": "Nombre del proyecto, ej. Produccion Limon Ejercicio"
+              },
+              "fertirriego_stage_index": {
+                "type": "integer",
+                "description": "Etapa fertirriego 0 = primera semana/mes"
+              },
+              "email": { "type": "string" },
+              "search": { "type": "string" },
+              "status": { "type": "string" },
+              "crop": { "type": "string" },
+              "q": { "type": "string", "description": "Búsqueda proyectos o alias de project_name" },
+              "limit": { "type": "integer" }
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    },
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
