@@ -2518,6 +2518,23 @@
       padding: 10px 10px;
       box-sizing: border-box;
     }
+    /* Título / concepto: varias líneas como Notas (menos alto por defecto) */
+    .np-ms-block-smart .np-ms-cell-multiline textarea.np-ms-cell-input,
+    .np-ms-block-tasks .np-ms-cell-multiline textarea.np-ms-cell-input,
+    .np-ms-block-ledger .np-ms-cell-multiline textarea.np-ms-cell-input {
+      min-height: 72px;
+      max-height: 200px;
+      resize: vertical;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      line-height: 1.45;
+    }
+    .np-ms-cell-multiline .np-ms-cell-static {
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
     .np-ms-row:not(.np-ms-row-head) .np-ms-cell:not(.np-ms-cell-done) {
       align-items: stretch;
     }
@@ -6953,16 +6970,26 @@
   function columnPrefersTextarea(headerName, colIndex, variant, ncol) {
     ncol = ncol || 0;
     var h = (headerName != null ? String(headerName) : '').toLowerCase();
-    /* Tabla de montos: solo la última columna (Notas) o cabeceras tipo memo — evita que Concepto/Monto hereden altura de textarea */
     if (variant === 'ledger') {
+      if (colIndex === 0) return true;
       if (ncol >= 1 && colIndex === ncol - 1) return true;
       return /nota|observaci|comentario|detalle|referencia|memo/i.test(h);
     }
+    if (/t[ií]tulo|concepto|nombre|actividad/.test(h)) return true;
     if (/descripción|descripcion|desc|nota|detail|note|siguiente paso|campo extra/.test(h)) return true;
+    if (variant === 'tasks' && colIndex === 0) return true;
     if (variant === 'tasks' && colIndex === 1) return true;
     if (variant === 'tasks' && colIndex >= 5) return true;
+    if (variant === 'smart' && colIndex === 1) return true;
     if (variant === 'smart' && colIndex === 5) return true;
     if (variant === 'smart' && colIndex > 5) return true;
+    return false;
+  }
+
+  function columnIsTitleOrConceptCol(colIndex, variant, colKind) {
+    if (variant === 'smart' && colIndex === 1) return true;
+    if (variant === 'tasks' && colIndex === 0) return true;
+    if (variant === 'ledger' && colIndex === 0 && (!colKind || colKind === 'text')) return true;
     return false;
   }
 
@@ -10081,9 +10108,11 @@
               tx.setAttribute('data-np-block', String(blockIndex));
               tx.setAttribute('data-np-row', String(ri));
               tx.setAttribute('data-np-col', String(c));
-              tx.rows = 3;
+              var titleConceptCol = columnIsTitleOrConceptCol(c, b.variant, colKind);
+              tx.rows = titleConceptCol ? 2 : 3;
               tx.value = raw;
               cell.classList.add('np-ms-cell-notes');
+              if (titleConceptCol) cell.classList.add('np-ms-cell-multiline');
               if (sheetAccent) {
                 tx.style.borderRadius = '10px';
                 tx.style.border = '1px solid ' + hexToRgba(sheetAccent, 0.38);
@@ -10119,6 +10148,11 @@
           } else {
             var span = document.createElement('div');
             span.className = 'np-ms-cell-static';
+            if (columnPrefersTextarea(headerLabel, c, b.variant, ncol)) {
+              if (columnIsTitleOrConceptCol(c, b.variant, colKind)) {
+                cell.classList.add('np-ms-cell-multiline');
+              }
+            }
             if (prioCol === c) {
               var pv = priorityLevelFromRaw(raw);
               span.textContent = pv ? storePriorityFromLevel(pv) : raw || '—';
