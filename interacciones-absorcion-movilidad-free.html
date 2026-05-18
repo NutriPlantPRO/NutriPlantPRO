@@ -1306,10 +1306,10 @@
       ion: 'H₂PO₄⁻ / HPO₄²⁻',
       short: 'H₂PO₄⁻',
       name: 'Fosfato (formas ácida/alcalina según pH)',
-      antagonists: ['zn', 'fe', 'cu', 'mn'],
-      synergists: ['nh4', 'k', 'so4', 'mg'],
+      antagonists: ['zn', 'fe', 'cu', 'mn', 'ca'],
+      synergists: ['nh4', 'k', 'mg'],
       functional: ['Energía (ATP/ADP)', 'Ácidos nucleicos', 'Estrategia radicular'],
-      shortTip: 'P alto en suelo/solución se asocia a menudo con antagonismo relativo de micronutrientes (Zn, Fe, Cu, Mn); revisar ratios y pH.'
+      shortTip: 'P alto en suelo/solución se asocia a menudo con antagonismo relativo de micronutrientes (Zn, Fe, Cu, Mn) y con Ca²⁺ (precipitación / fijación de fosfatos en suelos calcareos o con mucho Ca); revisar ratios y pH.'
     },
     k: {
       ion: 'K⁺',
@@ -1324,10 +1324,10 @@
       ion: 'Ca²⁺',
       short: 'Ca²⁺',
       name: 'Calcio',
-      antagonists: ['mg', 'k', 'nh4'],
-      synergists: ['h2po4', 'so4', 'no3', 'moo4'],
+      antagonists: ['mg', 'k', 'nh4', 'h2po4'],
+      synergists: ['so4', 'no3', 'moo4'],
       functional: ['Pared celular', 'Membranas', 'Transmisión de señales'],
-      shortTip: 'Exceso relativo de otros cationes, o competencia por transporte, puede alterar Ca²⁺ hacia tejidos de baja transpiración (p. ej. fruto joven).'
+      shortTip: 'Exceso de P puede reducir Ca²⁺ disponible por precipitación/fijación; otros cationes o baja transpiración también afectan el llegado a fruto y tejidos jóvenes.'
     },
     mg: {
       ion: 'Mg²⁺',
@@ -1351,17 +1351,17 @@
       ion: 'Fe²⁺ / Fe³⁺',
       short: 'Fe²⁺/Fe³⁺',
       name: 'Hierro (especiación según pH y oxígeno)',
-      antagonists: ['h2po4'],
-      synergists: ['zn', 'k', 'no3'],
+      antagonists: ['h2po4', 'zn', 'cu', 'mn'],
+      synergists: ['k', 'no3', 'moo4'],
       functional: ['Cloroplastos', 'Enzimas redox'],
-      shortTip: 'P alto y pH/ carbonatos altos suelen empeorar la “disponibilidad funcional” de Fe aunque el suelo tenga hierro total alto.'
+      shortTip: 'P alto, Zn o Cu en exceso, y Mn en condiciones ácidas suelen empeorar la Fe disponible; pH alto y carbonatos también. Mo apoya la cadena del N cuando hay NO₃⁻.'
     },
     mn: {
       ion: 'Mn²⁺',
       short: 'Mn²⁺',
       name: 'Manganeso',
-      antagonists: ['h2po4', 'fe'],
-      synergists: ['zn', 'k', 'no3', 'cu'],
+      antagonists: ['h2po4', 'fe', 'zn'],
+      synergists: ['k', 'no3', 'cu'],
       functional: ['Fotosíntesis (fotosistema)', 'Activación enzimática'],
       shortTip: 'Interactúa con pH y a veces con Fe y P; toxicidad de Mn puede aparecer con bajo pH.'
     },
@@ -1369,10 +1369,10 @@
       ion: 'Zn²⁺',
       short: 'Zn²⁺',
       name: 'Zinc',
-      antagonists: ['h2po4', 'cu', 'ca'],
-      synergists: ['fe', 'mn', 'k'],
+      antagonists: ['h2po4', 'cu', 'ca', 'fe', 'mn'],
+      synergists: ['k'],
       functional: ['Auxinas', 'enzimas', 'integridad de membranas'],
-      shortTip: 'P alto puede inducir deficiencia relativa de Zn: revisar ratio P:Zn en suelo y foliar cuando P está alto y Zn bajo.'
+      shortTip: 'P alto, Fe o Cu en exceso, y Mn en suelos ácidos pueden inducir Zn relativo bajo; revisar ratio P:Zn en suelo y hoja.'
     },
     cu: {
       ion: 'Cu²⁺',
@@ -1388,7 +1388,7 @@
       short: 'H₃BO₃',
       name: 'Boro (especiación según pH)',
       antagonists: ['ca'],
-      synergists: ['k', 'nh4', 'h2po4'],
+      synergists: ['k', 'nh4'],
       functional: ['Pared celular', 'División celular', 'Polinización'],
       shortTip: 'Ca alto puede reducir B disponible; el B es sensible a humedad y lixiviación.'
     },
@@ -1543,13 +1543,20 @@
     }
   }
 
+  function relationIdsFor(nid, kind) {
+    return NODE_ORDER.filter(function (tid) {
+      if (tid === nid) return false;
+      return kind === 'ant' ? antagonistic(nid, tid) : synergistic(nid, tid);
+    });
+  }
+
   function renderSingleDetail(id) {
     var s = SPEC[id];
     detailTitle.textContent = s.ion + ' — ' + s.name;
-    var ants = s.antagonists.map(function (tid) {
+    var ants = relationIdsFor(id, 'ant').map(function (tid) {
       return '<span class="tag tag-ant">' + SPEC[tid].ion + '</span>';
     }).join(' ');
-    var syns = (s.synergists || []).map(function (tid) {
+    var syns = relationIdsFor(id, 'syn').map(function (tid) {
       return '<span class="tag tag-syn">' + SPEC[tid].ion + '</span>';
     }).join(' ');
     var fun = s.functional.map(function (t) {

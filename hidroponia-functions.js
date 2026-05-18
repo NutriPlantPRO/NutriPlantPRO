@@ -293,6 +293,8 @@ function hydroSaveData() {
       const c = f.contributions || {};
       HYDRO_PPM_NUTRIENTS.forEach(n => { fertilizerTotalsPpm[n] += (parseFloat(c[n]) || 0); });
     });
+    const fertilizerTotalsMeq = hydroFertTotalsPpmToMeq(fertilizerTotalsPpm);
+    const fertilizerTotalsPctMeq = hydroComputePctMeqFromMeq(fertilizerTotalsMeq);
     hydroLoadCustomMaterials();
     const payload = {
       stages: hydroState.stages,
@@ -303,6 +305,8 @@ function hydroSaveData() {
       water: hydroState.water,
       fertilizers: fertilizersToSave,
       fertilizerTotalsPpm,
+      fertilizerTotalsMeq,
+      fertilizerTotalsPctMeq,
       customMaterials: { items: Array.isArray(hydroCustomMaterialsUser) ? hydroCustomMaterialsUser : [] }
     };
     if (window.projectStorage) {
@@ -990,6 +994,88 @@ function hydroFertRowContributionsLegacy(f) {
 
 const thClass = (n) => n === 'N_NH4' ? ' hydro-col-nh4' : (n === 'Fe' ? ' hydro-micro-start' : (n === 'Cl' ? ' hydro-col-cl hydro-col-cl-after-micros' : ''));
 
+/** Totales ppm del aporte de fertilizantes en solución (Cálculo de fertilizantes). */
+function hydroGetFertTotalsPpm() {
+  const totals = {};
+  HYDRO_PPM_NUTRIENTS.forEach(n => { totals[n] = 0; });
+  hydroState.fertilizers.forEach(f => {
+    let dose, comp;
+    if (f.materialId != null && f.materialId !== '') {
+      const c = hydroFertRowComputed(f);
+      dose = c.dose;
+      comp = c.comp;
+    } else {
+      dose = parseFloat(f.dose || 0);
+      comp = f.comp || {};
+    }
+    HYDRO_PPM_NUTRIENTS.forEach(n => {
+      const pct = parseFloat(comp[n] || 0);
+      totals[n] += dose * (pct / 100);
+    });
+  });
+  return totals;
+}
+
+/** ppm aportadas → meq/L (macros + Cl⁻; mismos equivalentes que la tabla de etapas). */
+function hydroFertTotalsPpmToMeq(totals) {
+  const ppmMacro = {};
+  HYDRO_MEQ_NUTRIENTS.forEach(n => { ppmMacro[n] = parseFloat(totals[n]) || 0; });
+  const meq = hydroMeqFromMacroPpm(ppmMacro);
+  meq.Cl = hydroPpmToMeqForLegend('Cl', totals.Cl);
+  return meq;
+}
+
+/** % meq como en «Solución nutritiva por etapa»: aniones sin Cl; K+Ca+Mg sin NH₄; NH₄ sobre catiónico total. */
+function hydroComputePctMeqFromMeq(meq) {
+  const sumAnions = HYDRO_ANIONS.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+  const sumKCaMg = HYDRO_CATIONS_TRIANGLE.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+  const totalCations = sumKCaMg + (parseFloat(meq.N_NH4) || 0);
+  const pct = {};
+  HYDRO_MEQ_NUTRIENTS.forEach(n => {
+    const val = parseFloat(meq[n]) || 0;
+    if (HYDRO_ANIONS.includes(n)) pct[n] = sumAnions > 0 ? (val / sumAnions) * 100 : 0;
+    else if (HYDRO_CATIONS_TRIANGLE.includes(n)) pct[n] = sumKCaMg > 0 ? (val / sumKCaMg) * 100 : 0;
+    else pct[n] = totalCations > 0 ? (val / totalCations) * 100 : 0;
+  });
+  return pct;
+}
+
+/** Bloque meq/L + tabla % meq del aporte de fertilizantes (UI, reporte, admin). */
+function hydroBuildFertMeqContributionHtml(totals) {
+  const hasAny = HYDRO_PPM_NUTRIENTS.some(n => (parseFloat(totals[n]) || 0) > 0);
+  if (!hasAny) return '';
+  const meq = hydroFertTotalsPpmToMeq(totals);
+  const pct = hydroComputePctMeqFromMeq(meq);
+  const meqDisplay = (n) => {
+    if (HYDRO_MEQ_NUTRIENTS.includes(n)) return (parseFloat(meq[n]) || 0).toFixed(2);
+    if (n === 'Cl') return (parseFloat(meq.Cl) || 0).toFixed(2);
+    return '—';
+  };
+  const meqGrid = `
+    <div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:6px;margin-top:4px;">Aporte total estimado (meq/L):</div>
+    ${HYDRO_PPM_NUTRIENTS.map(n => {
+      let extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : (n === 'Cl' ? ' hydro-grid-item-cl hydro-grid-item-cl-tail' : ''));
+      return `<div class="hydro-grid-item${extraClass}"><span class="hydro-grid-label">${hydroLabelHtml(n)}</span><span class="hydro-grid-value">${meqDisplay(n)}</span></div>`;
+    }).join('')}
+  `;
+  const pctTable = `
+    <div class="hydro-fert-meq-pct-wrap">
+      <p class="hydro-muted hydro-fert-meq-pct-note">% sobre meq/L aportado (misma lógica que «Solución nutritiva por etapa»): aniones N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻ = 100%; cationes K⁺ + Ca²⁺ + Mg²⁺ = 100%; N-NH₄⁺ sobre el total catiónico (K+Ca+Mg+NH₄).</p>
+      <div class="hydro-table-scroll hydro-table-colored">
+        <table class="hydro-table hydro-table-colored hydro-table-compact">
+          <thead><tr>
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">% meq</span></th>`).join('')}
+          </tr></thead>
+          <tbody><tr>
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${pct[n].toFixed(1)}</td>`).join('')}
+          </tr></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  return `<div class="hydro-grid hydro-fert-meq-grid">${meqGrid}</div>${pctTable}`;
+}
+
 /** Leyenda: % del aporte por fertilizantes (N-NO₃ vs N-NH₄; N-NO₃ vs Cl⁻) y lo mismo en solución (fertilizantes + agua). */
 function hydroBuildFertContributionRatioLegendHtml(totals, water) {
   const w = water || {};
@@ -1178,25 +1264,10 @@ function renderHydroFertTable() {
 
 function renderHydroFertTotals() {
   const grid = document.getElementById('hydroFertTotals');
+  const meqWrap = document.getElementById('hydroFertMeqWrap');
   const stage = hydroGetActiveStage();
   if (!grid) return;
-  const totals = {};
-  HYDRO_PPM_NUTRIENTS.forEach(n => { totals[n] = 0; });
-  hydroState.fertilizers.forEach(f => {
-    let dose, comp;
-    if (f.materialId != null && f.materialId !== '') {
-      const c = hydroFertRowComputed(f);
-      dose = c.dose;
-      comp = c.comp;
-    } else {
-      dose = parseFloat(f.dose || 0);
-      comp = f.comp || {};
-    }
-    HYDRO_PPM_NUTRIENTS.forEach(n => {
-      const pct = parseFloat(comp[n] || 0);
-      totals[n] += dose * (pct / 100);
-    });
-  });
+  const totals = hydroGetFertTotalsPpm();
   const titleHtml = stage ? '<div class="hydro-muted hydro-grid-title" style="grid-column:1/-1;margin-bottom:6px;">Aporte total estimado (ppm):</div>' : '';
   grid.innerHTML = titleHtml + HYDRO_PPM_NUTRIENTS.map(n => {
     let extraClass = n === 'N_NH4' ? ' hydro-grid-item-nh4' : (n === 'Fe' ? ' hydro-grid-item-micro-start' : (n === 'Cl' ? ' hydro-grid-item-cl hydro-grid-item-cl-tail' : ''));
@@ -1246,6 +1317,10 @@ function renderHydroFertTotals() {
     remainingEl.innerHTML = '';
   }
 
+  if (meqWrap) {
+    meqWrap.innerHTML = hydroBuildFertMeqContributionHtml(totals);
+  }
+
   // Nota de validación: fórmulas para que el usuario pueda verificar el cálculo
   const validationEl = document.getElementById('hydroValidationNote');
   if (validationEl) {
@@ -1257,6 +1332,7 @@ function renderHydroFertTotals() {
         • <strong>Aporte total (ppm)</strong> = suma por nutriente de: dosis (ppm producto) × concentración elemental (%) ÷ 100.<br>
         • <strong>Producto sólido (kg)</strong> = dosis (ppm producto) × volumen de agua (m³) ÷ 1000.<br>
         • <strong>Producto líquido (L)</strong> = kg equivalente ÷ densidad (kg/L).<br>
+        Debajo del aporte en ppm verás el <strong>aporte en meq/L</strong> y la tabla <strong>% meq</strong> (aniones sin Cl; cationes K+Ca+Mg sin NH₄), igual que en Solución nutritiva por etapa.<br>
         La leyenda bajo «Pendiente por cubrir» expresa <strong>% sobre meq/L</strong> (desde las ppm aportadas: N-NO₃⁻/N-NH₄⁺ a 14 mg/meq, Cl⁻ a 35,45 mg/meq), alineado con la tabla meq/L de etapas.<br>
         Para <strong>${vol} m³</strong> de agua, los totales mostrados por tanque (total y por recarga) producen exactamente las ppm del «Aporte total estimado» en toda la solución.
       </div>`;
@@ -2045,3 +2121,7 @@ window.openEditHydroCustomMaterial = openEditHydroCustomMaterial;
 window.openHydroPreloadedCatalogModal = openHydroPreloadedCatalogModal;
 window.removeHydroCustomMaterial = removeHydroCustomMaterial;
 window.clearHydroCustomMaterials = clearHydroCustomMaterials;
+window.hydroBuildFertMeqContributionHtml = hydroBuildFertMeqContributionHtml;
+window.hydroGetFertTotalsPpm = hydroGetFertTotalsPpm;
+window.hydroFertTotalsPpmToMeq = hydroFertTotalsPpmToMeq;
+window.hydroComputePctMeqFromMeq = hydroComputePctMeqFromMeq;

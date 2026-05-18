@@ -33,10 +33,11 @@ function getNutriPlantProManual() {
 - Macros en % materia seca (N, P, K, Ca, Mg, S); micronutrientes en mg/kg (Fe, Mn, Zn, Cu, B, Mo). Óptimos dependen de especie y etapa; en NutriPlant son editables por análisis.
 - Cruce con suelo y programa: foliar bajo en K con suelo bajo en K sugiere reforzar K en suelo y/o fertirriego; foliar alto en N con programa alto en N sugiere bajar dosis de N.
 
-5) EXTRACTO DE PASTA Y SOLUCIÓN NUTRITIVA
+5) EXTRACTO DE PASTA Y SOLUCIÓN NUTRITIVA / BALANCE IÓNICO (% meq)
 - Extracto de pasta saturada: CE (dS/m), RAS, pH; cationes y aniones en meq/L o ppm (NO₃, K, Ca, Mg, Na, SO₄, Cl, HCO₃, etc.). Interpretación de salinidad (CE), sodio (RAS) y balance iónico.
 - Análisis de agua (riego): el RAS en NutriPlant es un campo manual (la app no lo calcula desde cationes). Si preguntan la fórmula: RAS = SAR = Na⁺ / √((Ca²⁺ + Mg²⁺)/2) con Na, Ca y Mg en meq/L.
-- Solución nutritiva: macronutrientes en meq/L o ppm; rangos de referencia (ej. N 140–200, K 180–300 ppm) para comparar. Diagrama ternario: proporciones aniones (NO₃, H₂PO₄, SO₄) y cationes (K, Ca, Mg, NH₄) para evitar antagonismos y precipitados. NutriPlant usa rangos de referencia tipo Steiner para la zona de equilibrio: aniones NO3 20–80%, H2PO4 1.25–10%, SO4 10–70%; cationes K 10–65%, Ca 22.5–62.5%, Mg 0.5–40%.
+- **% meq en Hidroponía y Fertirriego (gráficas)**: ver MANUAL % meq / BALANCE IÓNICO. Resumen: triángulo aniones = solo N-NO₃⁻ + P + S (100%, sin Cl); triángulo cationes = solo K + Ca + Mg (100%, sin NH₄); NH₄ y Cl tienen % sobre totales ampliados y no entran a los triángulos. En Fertirriego, Cl % es sobre NO₃+P+S+Cl pero el ternario sigue siendo N-P-S.
+- Solución nutritiva / hidroponía: macronutrientes en meq/L o ppm; diagrama ternario con rangos Steiner en app: aniones NO₃ 20–80%, H₂PO₄ 1,25–10%, SO₄ 10–70%; cationes K 10–65%, Ca 22,5–62,5%, Mg 0,5–40%.
 
 Soluciones nutritivas de referencia (para consulta cuando el usuario pida referencias o compare con Hoagland/Steiner/otros): Hoagland (Hoagland & Arnon): cationes meq/L K ~6, Ca ~8, Mg ~2, NH₄ ~1; aniones meq/L NO₃ ~14–16, H₂PO₄ ~2, SO₄ ~2; micros ppm Fe 2–3, Mn 0.1–0.5, B 0.2–0.5, Zn 0.05–0.1, Cu 0.02–0.05, Mo 0.01–0.05. Steiner (Steiner 1961): cationes meq/L K ~6–7, Ca ~9, Mg ~4; aniones meq/L NO₃ ~12, H₂PO₄ ~1, SO₄ ~6–7; micros ppm Fe ~1–2, Mn ~0.5, B ~0.4, Zn/Cu en traza. Rangos típicos micros (varios autores) ppm: Fe 1–5, Mn 0.2–1, B 0.2–0.5, Zn 0.05–0.2, Cu 0.02–0.1, Mo 0.01–0.05. Son referencias “fuerza completa”; en práctica se usan diluciones según etapa y cultivo. Comparar con los datos del proyecto cuando el usuario pregunte. Al dar referencias o ideales, anclar siempre al mismo marco que el bloque del que preguntan (solución = ppm en solución; foliar = mg/kg en tejido; suelo = meq/100g = cmol_c/kg misma cifra; agua = meq/L, equivalente de carga **mmol_c/L** mismo número que meq/L en las sumas iónicas de la app).
 
@@ -82,6 +83,60 @@ CALCULADORAS PRO (iconos en barra del dashboard; material educativo NutriPlant �
 - 🔗 Interacciones y movilidad nutrimental: (1) Diagrama tipo Mulder — rojo = antagonismo/competencia, azul = sinergia; referencias frecuentes: K⁺ vs Ca²⁺/Mg²⁺; NH₄⁺ vs K⁺/Ca²⁺/Mg²⁺; P alto vs Zn/Fe/Cu/Mn; SO₄²⁻ vs Mo; NO₃⁻ vs Cl⁻. (2) Mecanismos hacia la raíz: flujo de masa, difusión, interceptación. (3) Movilidad y síntomas (orientativo): N,P,K,Mg móviles (síntoma en hoja vieja); Ca,B poco móviles (punta/hoja nueva); Fe,Mn,Zn,Cu según especie. (4) Disponibilidad vs pH: acidez → más Fe/Mn (y Al tóxico); alcalinidad → P, Fe, Zn, Cu, B, Mo más limitados.
 - 🪨 Agua en suelo y textura — pestaña Agua: CC y PMP (% volumétrico), profundidad (cm), área (ha), zona radical efectiva (%), humedad actual θ (% vol., opcional). Volumen de suelo (m³) = área_ha × profundidad_cm / 10 (1 ha × 30 cm = 3 000 m³). Capacidad útil (% vol.) = CC − PMP. Agua útil referencia (m³) ≈ volumen_suelo × (CC−PMP)/100 × (zona_radical_%/100). Con θ: déficit hasta CC = CC − θ; lámina (mm) ≈ (déficit/100) × profundidad_cm × 10; lámina (m³) ≈ lámina_mm/1000 × área_ha × 10 000 (la app ajusta por zona radical). Preset textura USDA: CC/PMP ilustrativos. Pestaña Textura: % arena, limo, arcilla → clase USDA.
 - 🧂 Solubilidad e índice salino: solubilidad (g/L, ~20–25 °C, agua relativamente pura) y IS (NaNO₃ = 100). Clases: Alta >500, Media 100–500, Baja <100 g/L. IS alto = mayor estrés osmótico relativo (cuidado en emergencia, solución madre muy concentrada, poco agua disponible); no significa “prohibido”. Nitratos y muchos potásicos muy solubles; yeso y varios fosfatos poco solubles. Antes de mezclar fertilizantes en tanque: revisar solubilidad y compatibilidad (precipitados, salting out K/NO₃ + sulfatos).
+`;
+}
+
+/**
+ * Manual fijo: % meq aniones/cationes, triángulos y leyendas N/Cl en NutriPlant.
+ * La app usa varios denominadores; el chat debe explicarlos igual que la plataforma.
+ */
+function getNutriPlantIonicPercentManual() {
+  return `
+MANUAL % meq / BALANCE IÓNICO (Hidroponía y Fertirriego — siempre aplicar esta lógica al interpretar pantallas, tablas y preguntas del usuario):
+
+A) REGLA GENERAL EN NUTRIPLANT
+- Los % NO son todos sobre la misma suma. Hay tres familias de porcentaje:
+  1) **Triángulo de aniones** (diagrama amarillo / columna % junto a N-NO₃⁻, P-H₂PO₄⁻, S-SO₄²⁻): cada uno es % sobre la suma **solo** de esos tres meq/L → **N-NO₃⁻ + P + S = 100%**. **Cl⁻ NO entra** al triángulo ni a esa suma del 100%.
+  2) **Triángulo de cationes** (diagrama rojo / columna % junto a K⁺, Ca²⁺, Mg²⁺): cada uno es % sobre **K⁺ + Ca²⁺ + Mg²⁺ = 100%**. **N-NH₄⁺ NO entra** al triángulo ni a esa suma del 100%.
+  3) **Iones “aparte”**: **N-NH₄⁺** y **Cl⁻** tienen % sobre un total **más amplio** (ver B y C según módulo), mostrados en columna aparte con asterisco o nota.
+- **Σ aniones** en leyendas puede incluir Cl (balance iónico total); eso **no** cambia el triángulo N-P-S.
+- Pesos equivalentes para meq/L desde ppm elemental (misma app): N-NO₃⁻ y N-NH₄⁺ → 14; P-H₂PO₄⁻ → 31 (ppm P); S-SO₄²⁻ → 16 (ppm S); K⁺ 39,1; Ca²⁺ 20,04; Mg²⁺ 12,15; Cl⁻ → 35,45.
+
+B) HIDROPONÍA · Solución nutritiva por etapa (tabla meq/L, % meq, ppm, diagrama ternario)
+- El usuario captura **meq/L** por etapa; la app calcula **% meq** y **ppm** del elemento.
+- **% meq — aniones del triángulo**: N-NO₃⁻, P-H₂PO₄⁻, S-SO₄²⁻ → cada % = (meq del ion) / (NO₃ + P + SO₄ en meq/L) × 100. Los tres suman 100%. Cl⁻ **no** aparece en esta tabla % meq de etapa (sí puede tener ppm objetivo manual al final).
+- **% meq — cationes del triángulo**: K⁺, Ca²⁺, Mg²⁺ → cada % = meq / (K + Ca + Mg) × 100. Los tres suman 100%.
+- **% meq — N-NH₄⁺**: % = meq NH₄ / (K + Ca + Mg + NH₄ en meq/L) × 100. **No** está en el triángulo K-Ca-Mg.
+- **Diagrama ternario**: solo usa los % del triángulo (aniones N-P-S; cationes K-Ca-Mg). Rangos de referencia NutriPlant (tipo Steiner): aniones N-NO₃⁻ 20–80%, P-H₂PO₄⁻ 1,25–10%, S-SO₄²⁻ 10–70%; cationes K⁺ 10–65%, Ca²⁺ 22,5–62,5%, Mg²⁺ 0,5–40%. Fuera de zona → riesgo de antagonismos/precipitados.
+- **N total**: Suma de N (meq/L) = N-NO₃⁻ + N-NH₄⁺ (resumen bajo las tablas).
+
+C) HIDROPONÍA · Cálculo de fertilizantes (bloque tras «Aporte total estimado (ppm)»)
+- **Tabla % meq del aporte de fertilizantes**: misma lógica que Solución por etapa (B): aniones triángulo 100% sin Cl; cationes triángulo 100% sin NH₄; NH₄ % sobre K+Ca+Mg+NH₄. Incluye fila meq/L + tabla % meq.
+- **Leyenda bajo «Pendiente por cubrir»** (otro criterio — NO confundir con la tabla % meq de etapa):
+  · Partición del **N en meq/L**: N-NO₃⁻ % y N-NH₄⁺ % sobre (meq NO₃ + meq NH₄) del aporte.
+  · Partición **N-NO₃⁻ + Cl⁻**: % de cada uno sobre (meq NO₃ + meq Cl) — solo fertilizantes, y otra línea **solución final** sumando también ppm del análisis de agua.
+  · Conversiones leyenda: N a 14 mg/meq; Cl⁻ a 35,45 mg/meq.
+
+D) FERTIRRIEGO · Gráficas · Macro resumen iónico (por etapa/semana/mes, con m³/ha de lámina)
+- Dos tablas lado a lado: (1) solo fertilizante del programa; (2) fertilizante + **aporte por agua** (Programa de nutrición). El ternario usa la mezcla **con agua**.
+- Misma lógica de % que B, con matices Fertirriego:
+  · **Triángulo aniones (N-NO₃⁻, P, S)**: % = meq / (NO₃ + P + SO₄) × 100 → suman 100%.
+  · **Cl⁻**: % = meq Cl / (NO₃ + P + SO₄ + Cl) × 100 — **sobre aniones totales incluyendo Cl**, pero **Cl no mueve el punto del triángulo** N-P-S.
+  · **Triángulo cationes (K, Ca, Mg)**: % = meq / (K + Ca + Mg) × 100.
+  · **N-NH₄⁺**: % = meq NH₄ / (K + Ca + Mg + NH₄) × 100 — fuera del triángulo cationes.
+- **Aporte por agua** (kg/ha en Programa): el campo se etiqueta **N-NO₃⁻** (no N genérico); en gráficas todo el N del agua se trata como **nitrato** (N-NH₄⁺ del agua = 0). También puede haber Cl⁻ en agua.
+- Sin m³/ha de riego en la etapa no hay ppm/meq en gráficas iónicas.
+
+E) ERRORES FRECUENTES QUE EL CHAT NO DEBE COMETER
+- Decir que «todos los aniones suman 100% incluyendo Cl» en el triángulo (falso: Cl está aparte).
+- Decir que «NH₄ entra al triángulo K-Ca-Mg» (falso: NH₄ tiene % sobre catiónico total ampliado).
+- Mezclar la leyenda N-NO₃/Cl del cálculo de fertilizantes (hidroponía) con la tabla % meq de solución por etapa.
+- Usar % de saturación de CIC del suelo (Enmienda) cuando el usuario pregunta por % meq de solución o fertirriego.
+
+F) CUANDO EL USUARIO PREGUNTE «¿POR QUÉ NO SUMAN 100?» o «¿QUÉ INCLUYE EL %?»
+- Identificar pantalla: Hidroponía solución / Hidroponía cálculo / Fertirriego gráficas / Enmienda CIC.
+- Nombrar el **denominador exacto** (triángulo N-P-S, triángulo K-Ca-Mg, catiónico total con NH₄, aniones totales con Cl en fertirriego, o partición N/Cl en leyenda hidroponía).
+- Si hay datos en «BLOQUES … PANTALLA ACTUAL» o tablas del contexto, citar números del proyecto; si no, explicar la regla NutriPlant sin inventar cifras.
 `;
 }
 
@@ -962,7 +1017,8 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Resultado del cálculo: el asistente ve la enmienda seleccionada, los valores usados para el cálculo (meq a ajustar, % suelo explorado) y los resultados obtenidos: tipo de enmienda, cantidad (kg/ha), aportes (p. ej. Ca²⁺, SO₄²⁻). Priorizar la línea "Resultado en pantalla (prioridad alta)" cuando exista.
 - Regla de signo: meq a ajustar >0 subir ese catión; <0 bajar. Priorizar correcciones que reducen riesgos de Na alto y desbalance catiónico.`,
       fertirriego: `
-- Fertirriego tiene tres subsecciones y la información está relacionada entre sí: (1) Requerimiento Nutricional: tabla con Extracción por tonelada (kg/ton), Extracción total (kg/ha), Ajuste por niveles en suelo, Eficiencia (%), Requerimiento real (kg/ha). Cultivo y rendimiento objetivo definen la extracción; misma lógica que granular. (2) Programa de Nutrición: programa por semanas o por meses (el usuario elige la unidad de tiempo); fertilizantes/materias y dosis; aporte del programa y aporte del agua; total (programa + agua). (3) Gráficas: visualización de aportes vs requerimiento por nutriente. Relación: el Requerimiento define la meta (kg/ha por nutriente); el Programa genera los aportes por etapa; las Gráficas comparan aporte vs requerimiento para ver si el programa cumple la meta. La eficiencia (%) y el ajuste por niveles en suelo son valores que el usuario configura; el chat los ve en contexto y aporta en base a la lógica de NutriPlant usando esos valores — no son reglas fijas, sino lo que el usuario tiene en su proyecto.
+- Fertirriego tiene tres subsecciones y la información está relacionada entre sí: (1) Requerimiento Nutricional: tabla con Extracción por tonelada (kg/ton), Extracción total (kg/ha), Ajuste por niveles en suelo, Eficiencia (%), Requerimiento real (kg/ha). Cultivo y rendimiento objetivo definen la extracción; misma lógica que granular. (2) Programa de Nutrición: programa por semanas o por meses (el usuario elige la unidad de tiempo); fertilizantes/materias y dosis; aporte del programa y **aporte por agua** (kg/ha; el N del agua se etiqueta **N-NO₃⁻** y en gráficas iónicas se trata como nitrato); total (programa + agua). (3) Gráficas: curvas aporte vs requerimiento **y** Macro resumen iónico + diagrama ternario por etapa (requiere m³/ha de lámina). Relación: Requerimiento = meta; Programa = aportes; Gráficas = comparación y balance iónico.
+- **Gráficas · % meq y ternario** (ver MANUAL % meq / BALANCE IÓNICO): dos tablas (solo fertilizante vs fertilizante+agua). Triángulo aniones: N-NO₃⁻ + P + S = 100% (Cl⁻ aparte, % sobre NO₃+P+S+Cl). Triángulo cationes: K+Ca+Mg = 100% (NH₄⁺ aparte, % sobre K+Ca+Mg+NH₄). El ternario en pantalla usa fertilizante+agua.
 - En Fertirriego y en Granular la plataforma permite cambiar entre modo óxido (P₂O₅, K₂O, CaO, MgO, SO₄...) y modo elemental (P, K, Ca, Mg, S...); los valores y etiquetas que ves en contexto corresponden al modo en que el usuario tiene guardado el proyecto. En Fertirriego el programa puede ser por semana o por mes; el asistente recibe en contexto la unidad de tiempo (semana/mes) y el modo (óxido/elemental), además de semanas/meses, fertilizantes y aporte total del programa.
 - En Fertirriego el usuario puede agregar cultivos personalizados y fertilizantes/materias personalizados; esos corresponden a la pestaña Fertirriego (cada módulo tiene su propia pestaña). El asistente recibe en contexto las semanas o meses, fertilizantes y aporte total del programa (kg/ha por nutriente), así que ve los resultados del programa de fertirriego.
 - Contrastar requerimiento por extracción vs aporte real del suelo y agua. Validar semanas/meses, materiales y concentración para evitar sobredosis.`,
@@ -970,13 +1026,12 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Granular tiene dos subsecciones y la información está relacionada entre sí: (1) Requerimiento Nutricional: tabla con Extracción por tonelada (kg/ton), Extracción total (kg/ha), Ajuste por niveles en suelo, Eficiencia (%), Requerimiento real (kg/ha). Cultivo y rendimiento objetivo definen la extracción; la lógica es extracción total = extracción/ton × rendimiento; requerimiento real considera ajuste y eficiencia. (2) Programa: aplicaciones con dosis (kg/ha) y materiales (fertilizantes). La plataforma permite ver y trabajar en modo óxido (P₂O₅, K₂O, CaO, MgO...) o modo elemental (P, K, Ca, Mg...); los valores en contexto reflejan el modo del usuario. Cultivos y fertilizantes pueden ser predefinidos o personalizados; los que el usuario agrega corresponden a la pestaña Nutrición Granular (cada módulo tiene su propia pestaña). Relación: el Requerimiento define la meta (kg/ha por nutriente); el Programa son las aplicaciones (dosis y materiales) que deben cubrir esa meta. La eficiencia (%) y el ajuste por niveles en suelo son valores que el usuario configura en NutriPlant; el chat los ve en contexto (bloque del proyecto) y aporta en base a la lógica de NutriPlant usando esos valores — no son reglas fijas, sino lo que el usuario tiene definido en su proyecto. El asistente recibe en contexto la lista de aplicaciones granulares (título, dosis kg/ha, materiales), así que ve los resultados del programa de nutrición granular.
 - Contrastar plan de K/Ca/Mg contra diagnóstico de suelo para evitar excesos.`,
       hidroponia: `
-- Hidroponía tiene dos subsecciones relacionadas: (1) Solución por etapa: etapas, meq/L, % meq, ppm por nutriente; triángulo aniones/cationes; N total = N-NO₃⁻ + N-NH₄⁺. (2) Cálculo de fertilizantes: objetivo (ppm), análisis de agua (ppm), requerimiento = objetivo − agua; volumen (m³), tanque (L), inyección (L/m³); fertilizantes y dosis.
-- Orden de nutrientes en pantalla (macros → micros → Cl⁻ al final): N-NH₄⁺, N-NO₃⁻, P-H₂PO₄⁻, S-SO₄²⁻, K⁺, Ca²⁺, Mg²⁺, Fe, Mn, B, Zn, Cu, Mo, **Cl⁻** (objetivo ppm manual en solución por etapa; también en análisis de agua del cálculo). Cl⁻ no entra al cálculo de CE (suma meq de la tabla de etapa) pero sí al requerimiento y aportes con KCl, cloruro de calcio, etc.
+- Hidroponía tiene dos subsecciones relacionadas: (1) Solución por etapa: etapas, meq/L, **tabla % meq**, ppm, diagrama ternario; N total = N-NO₃⁻ + N-NH₄⁺. (2) Cálculo de fertilizantes: objetivo (ppm), análisis de agua (ppm), requerimiento = objetivo − agua; volumen (m³), tanque (L), inyección (L/m³); fertilizantes, dosis, **meq/L + % meq del aporte** y leyenda N/Cl.
+- **% meq — reglas NutriPlant** (detalle en MANUAL % meq / BALANCE IÓNICO): (a) Triángulo aniones: N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻ = 100% — **sin Cl⁻**. (b) Triángulo cationes: K⁺ + Ca²⁺ + Mg²⁺ = 100% — **sin N-NH₄⁺**. (c) N-NH₄⁺: % sobre (K+Ca+Mg+NH₄). (d) En cálculo de fertilizantes hay además leyenda N-NO₃/NH₄ y N-NO₃/Cl sobre meq/L (distinto denominador que la tabla de etapa).
+- Orden de nutrientes en pantalla (macros → micros → Cl⁻ al final): N-NH₄⁺, N-NO₃⁻, P-H₂PO₄⁻, S-SO₄²⁻, K⁺, Ca²⁺, Mg²⁺, Fe, Mn, B, Zn, Cu, Mo, **Cl⁻**. Cl⁻ no entra al triángulo ni al 100% aniónico del triángulo; sí al requerimiento y aportes (KCl, etc.).
 - Análisis de agua en hidroponía: mismos nutrientes en ppm que el objetivo; el usuario captura lo que aporta el agua de riego (incluido Cl⁻) para restarlo del objetivo antes de fertilizar.
-- Leyenda bajo «Pendiente por cubrir» (solo Cálculo de fertilizantes): porcentajes sobre **meq/L** calculados desde las ppm aportadas — N-NO₃⁻ y N-NH₄⁺ a 14 mg/meq; Cl⁻ a 35,45 mg/meq. (A) Solo fertilizantes: partición del N en meq/L (NO₃ vs NH₄); partición N-NO₃⁻ + Cl⁻ en meq/L del aporte de fertilizantes. (B) Solución final: mismos criterios sumando también las ppm del análisis de agua. No confundir con % meq de la tabla «Solución por etapa» (ahí el % es sobre sumas de meq de la etapa, no esta leyenda del cálculo).
 - Catálogo y aportes: el asistente recibe catálogo (precargado + personalizado, % elemental incl. Cl si el material lo tiene) y fertilizantes añadidos con dosis y totales ppm por nutriente.
-- Cálculo de fertilizantes (fórmulas): requerimiento total = objetivo − agua; aporte fertilizantes ppm = Σ(dosis ppm producto × % elemental ÷ 100); kg sólido = dosis × volumen_m³ ÷ 1000; L líquido = kg eq ÷ densidad; concentrado = volumen_m³ × tasa_L/m³; recargas = techo(concentrado_L ÷ tanque_L); relación 1:(1000÷tasa). Todo elemental (%, ppm); óxidos → usar calculadora óxido↔elemental.
-- Solución por etapa: % meq aniones (NO₃+P+S=100%), cationes triángulo (K+Ca+Mg=100%), NH₄ % sobre K+Ca+Mg+NH₄. ppm = meq × peso eq. elemento (N 14, P 31, S 16, K 39.1, Ca 20.04, Mg 12.15; Cl ppm objetivo manual). Triángulo Steiner en app: aniones NO₃ 20–80%, H₂PO₄ 1.25–10%, SO₄ 10–70%; cationes K 10–65%, Ca 22.5–62.5%, Mg 0.5–40%.
+- Cálculo de fertilizantes (fórmulas): requerimiento total = objetivo − agua; aporte fertilizantes ppm = Σ(dosis ppm producto × % elemental ÷ 100); kg sólido = dosis × volumen_m³ ÷ 1000; L líquido = kg eq ÷ densidad; concentrado = volumen_m³ × tasa_L/m³; recargas = techo(concentrado_L ÷ tanque_L). Todo elemental (%, ppm); óxidos → calculadora óxido↔elemental.
 - Validar equilibrio y compatibilidad de mezclas (antagonismos, precipitados, solubilidad — ver calculadora 🧂).`,
       analisis: `
 - Análisis agrupa varias subpestañas: Análisis de Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar (DOP), Fruta (ICC). Análisis de Suelo: panel "Reportes en este proyecto" con "+ Agregar análisis"; cada reporte tiene título, fecha, Eliminar, y secciones: Propiedades físicas (densidad aparente, etc.), pH y salinidad, Fertilidad del suelo, Cationes intercambiables y CIC. Los datos de suelo se usan en Enmienda (CIC/cationes).
@@ -1072,6 +1127,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
     const moduleManual = this.getModuleFocusedManual(snapshot.module);
     const calculatorsManual = getNutriPlantCalculatorsManual();
     const radarManual = getRadarCultivoManual();
+    const ionicPercentManual = getNutriPlantIonicPercentManual();
     const modeGuidance = this.buildInteractionModeGuidance(userMessage);
     const isCalculationQuestion = this.isCalculationOrLogicQuestion(userMessage);
 
@@ -1119,6 +1175,9 @@ ${calculatorsManual}
 MANUAL RADAR DEL CULTIVO (NDVI/NDMI — siempre disponible; datos del proyecto en bloque RADAR si existen):
 ${radarManual}
 
+MANUAL % meq / BALANCE IÓNICO (Hidroponía y Fertirriego — usar cuando pregunten por % aniones, % cationes, triángulo, NH₄, Cl⁻, «por qué no suman 100», macro resumen iónico o leyenda N/Cl):
+${ionicPercentManual}
+
 DATOS DEL PROYECTO ACTUAL DEL USUARIO (usa esto como si estuvieras viendo su pantalla y sus análisis):
 ${context}
 
@@ -1138,7 +1197,7 @@ INSTRUCCIONES:
 - Tu valor diferenciador es usar SIEMPRE los datos que ves del proyecto (análisis, programa, cultivo, CIC, solución nutritiva, etc.) para dar recomendaciones específicas a este agronomista, no genéricas. Interpreta sus números con la lógica NutriPlant PRO, sugiere acciones concretas y saca de apuros con pasos claros (qué cambiar, en qué rango, por qué).
 - Usa el bloque INTERCONEXIONES ENTRE PESTAÑAS cuando convenga: si preguntan por qué algo no funciona (ej. VPD sin clima), de dónde sale un dato (ej. enmienda que usa CIC de suelo) o qué pestaña completar primero; indica la pestaña origen o la que debe configurarse.
 - Si preguntan por conversión óxido↔elemental (P₂O₅/P, K₂O/K, CaO/Ca, MgO/Mg, S/SO₄, Zn/ZnO) o por ppm↔mmol/L↔meq/L, usa exactamente los factores y fórmulas del manual sección 7 (Calculadoras NutriPlant) para que tu respuesta coincida con las calculadoras de la plataforma.
-- Solución nutritiva e hidroponía: conversión meq/L ↔ ppm en NutriPlant usa el peso equivalente del ELEMENTO para que el resultado sea ppm del elemento (ej. P-H2PO4 → 31 da ppm P; S-SO4 → 16 da ppm S). El porqué: en agronomía y etiquetas se trabaja con concentración elemental; así el usuario ve ppm P, ppm S, ppm K directamente y puede comparar con análisis y referencias. Si el usuario duda o cuestiona por qué está así, explica esta lógica y el beneficio. Diagrama ternario: NutriPlant tiene definidos los máximos y mínimos de referencia (tipo Steiner) en la plataforma: nitrato (NO3) 20–80%, H2PO4 1.25–10%, SO4 10–70%; cationes K 10–65%, Ca 22.5–62.5%, Mg 0.5–40%. Dentro de esa zona = equilibrio; fuera = riesgo de antagonismos o precipitados. Si preguntan por Steiner o por los máximos y mínimos del triángulo, usa estos valores exactos. Si habla de pasar a ppm, meq o mmol de cada elemento, usa los pesos equivalentes del manual (N 14, P 31, S 16, K 39.1, Ca 20.04, Mg 12.15) y la misma lógica que la calculadora de la plataforma. Si piden soluciones de referencia (Hoagland, Steiner u otros autores) para meq/L de aniones/cationes o ppm de microelementos, usa la sección "Soluciones nutritivas de referencia" del manual (Hoagland, Steiner, rangos típicos de micros) y compáralas con los datos del proyecto del usuario cuando aplique.
+- Solución nutritiva e hidroponía: conversión meq/L ↔ ppm usa peso equivalente del ELEMENTO (ppm P, ppm S, etc.). Para **% meq, triángulos, NH₄ y Cl⁻** usa el MANUAL % meq / BALANCE IÓNICO (denominadores distintos; Cl y NH₄ fuera de los triángulos). Rangos Steiner en triángulo: aniones N-NO₃⁻ 20–80%, P-H₂PO₄⁻ 1,25–10%, S-SO₄²⁻ 10–70%; cationes K⁺ 10–65%, Ca²⁺ 22,5–62,5%, Mg²⁺ 0,5–40%. Pesos: N 14, P 31, S 16, K 39,1, Ca 20,04, Mg 12,15, Cl 35,45. Referencias Hoagland/Steiner: sección "Soluciones nutritivas de referencia" del manual.
 - En Cálculo de fertilizantes (Hidroponía): objetivo, análisis de agua (incl. Cl⁻), requerimiento, volumen/tanque/inyección, tanques A/B/C, aporte total ppm, leyenda % sobre meq/L (N-NO₃ vs N-NH₄ y N-NO₃ vs Cl, con y sin agua). Orden nutrientes: macros, micros, Cl al final. Todo elemental; óxidos → calculadora óxido↔elemental. Para antagonismos/movilidad/solubilidad → MANUAL CALCULADORAS PRO (🔗 🪨 🧂).
 - Si preguntan por la calculadora 🔗 Interacciones, 🪨 Agua en suelo y textura, o 🧂 Solubilidad e índice salino: usa el MANUAL CALCULADORAS PRO (están en la barra del dashboard, no guardan datos en el proyecto).
 - Regla crítica de coherencia: en cationes/CIC, si un elemento está por ENCIMA del rango ideal o el "meq a ajustar" es NEGATIVO, NO recomiendes aumentarlo; en ese caso la dirección correcta es disminuir/contener/aplazar ese elemento.
@@ -1828,12 +1887,18 @@ ESTILO DE RESPUESTA:
   }
 
   getLiveFertirriegoBlocks() {
-    const out = { subsection: '', cultivo: '', rendimiento: '', tableSummary: '' };
+    const out = { subsection: '', cultivo: '', rendimiento: '', tableSummary: '', macroIonicSummary: '', waterContributionSummary: '' };
     const activeBtn = document.querySelector('.fertirriego-tabs .tab-button.active');
     const tab = activeBtn && activeBtn.getAttribute('data-tab');
     if (tab === 'extraccion') out.subsection = 'Requerimiento Nutricional';
     else if (tab === 'programa') out.subsection = 'Programa de Nutrición';
-    else if (tab === 'graficas') out.subsection = 'Gráficas';
+    else if (tab === 'graficas') {
+      out.subsection = 'Gráficas';
+      const insights = document.getElementById('fertiChartsStageInsightsWrap');
+      if (insights && insights.textContent) {
+        out.macroIonicSummary = insights.innerText.replace(/\s+/g, ' ').trim().slice(0, 1200);
+      }
+    }
     const cropEl = document.getElementById('fertirriegoCropType');
     const yieldEl = document.getElementById('fertirriegoTargetYield');
     if (cropEl) {
@@ -1862,11 +1927,17 @@ ESTILO DE RESPUESTA:
     if (eff.length) rows.push('Eficiencia (%): ' + eff.join(', '));
     if (real.length) rows.push('Requerimiento real (kg/ha): ' + real.join(', '));
     if (rows.length) out.tableSummary = rows.join('\n');
+    const waterN = document.getElementById('fertiWaterN');
+    const waterCl = document.getElementById('fertiWaterCl');
+    const waterParts = [];
+    if (waterN && waterN.value !== '' && parseFloat(waterN.value) !== 0) waterParts.push(`N-NO₃⁻:${waterN.value} kg/ha`);
+    if (waterCl && waterCl.value !== '' && parseFloat(waterCl.value) !== 0) waterParts.push(`Cl⁻:${waterCl.value} kg/ha`);
+    if (waterParts.length) out.waterContributionSummary = waterParts.join(', ');
     return out;
   }
 
   getLiveHidroponiaBlocks() {
-    const out = { subsection: '', volume: '', objectiveSummary: '', waterSummary: '', missingSummary: '', solutionMeqTable: '', solutionPercentTable: '', solutionPpmTable: '', nitrogenSummary: '', triangleInfo: '' };
+    const out = { subsection: '', volume: '', objectiveSummary: '', waterSummary: '', missingSummary: '', solutionMeqTable: '', solutionPercentTable: '', solutionPpmTable: '', nitrogenSummary: '', triangleInfo: '', fertMeqSummary: '', fertLegendSummary: '' };
     const activeBtn = document.querySelector('.hydroponia-tabs .tab-button.active');
     const tab = activeBtn && activeBtn.getAttribute('data-tab');
     if (tab === 'hidro-solucion') {
@@ -1883,6 +1954,10 @@ ESTILO DE RESPUESTA:
       if (tri && tri.textContent) out.triangleInfo = tri.textContent.replace(/\s+/g, ' ').trim().slice(0, 500);
     } else if (tab === 'hidro-calculo') {
       out.subsection = 'Cálculo de fertilizantes';
+      const meqWrap = document.getElementById('hydroFertMeqWrap');
+      const fertLegend = document.querySelector('.hydro-fert-split-legend');
+      if (meqWrap && meqWrap.textContent) out.fertMeqSummary = meqWrap.innerText.replace(/\s+/g, ' ').trim().slice(0, 700);
+      if (fertLegend && fertLegend.textContent) out.fertLegendSummary = fertLegend.textContent.replace(/\s+/g, ' ').trim().slice(0, 500);
       try {
         const raw = localStorage.getItem('hydroCustomMaterials_global_user');
         if (raw) {
@@ -2513,18 +2588,27 @@ ESTILO DE RESPUESTA:
           const aporteStr = Object.keys(nutTotals).filter(n => nutTotals[n] > 0).map(n => `${n}: ${Math.round(nutTotals[n] * 100) / 100}`).join(', ');
           if (aporteStr) context += `  Aporte total del programa (kg/ha): ${aporteStr}\n`;
         } else context += '  Sin programa guardado.\n';
-        context += 'Subsección Gráficas: visualización de aportes vs requerimiento por nutriente.\n';
+        const waterOx = (prog && prog.waterContribution) ? prog.waterContribution : (f.program && f.program.waterContribution);
+        if (waterOx && typeof waterOx === 'object') {
+          const wParts = [];
+          if (waterOx.N != null && parseFloat(waterOx.N) !== 0) wParts.push(`N-NO₃⁻(agua):${waterOx.N} kg/ha`);
+          if (waterOx.Cl != null && parseFloat(waterOx.Cl) !== 0) wParts.push(`Cl⁻(agua):${waterOx.Cl} kg/ha`);
+          if (wParts.length) context += `Aporte por agua guardado: ${wParts.join(', ')}\n`;
+        }
+        context += 'Subsección Gráficas: aportes vs requerimiento + Macro resumen iónico (% meq: triángulo N-P-S y K-Ca-Mg sin Cl/NH₄; ver MANUAL % meq) y diagrama ternario (fertilizante+agua).\n';
         context += '\n';
       }
       // BLOQUES EN VIVO FERTIRRIEGO (pantalla actual: subsección activa, cultivo, rendimiento, tabla requerimiento)
       if (snapshot.module === 'fertirriego') {
         const liveFerti = this.getLiveFertirriegoBlocks();
-        if (liveFerti.cultivo || liveFerti.rendimiento || liveFerti.tableSummary || liveFerti.subsection) {
+        if (liveFerti.cultivo || liveFerti.rendimiento || liveFerti.tableSummary || liveFerti.subsection || liveFerti.macroIonicSummary || liveFerti.waterContributionSummary) {
           context += '--- BLOQUES FERTIRRIEGO (PANTALLA ACTUAL) ---\n';
           if (liveFerti.subsection) context += `Subsección visible: ${liveFerti.subsection}\n`;
           context += `Cultivo en pantalla: ${liveFerti.cultivo || '—'}\n`;
           context += `Rendimiento objetivo en pantalla: ${liveFerti.rendimiento || '—'} ton/ha\n`;
           if (liveFerti.tableSummary) context += `Tabla Requerimiento Nutricional (valores visibles):\n${liveFerti.tableSummary}\n`;
+          if (liveFerti.waterContributionSummary) context += `Aporte por agua (pantalla Programa, kg/ha): ${liveFerti.waterContributionSummary} (N del agua = N-NO₃⁻ en gráficas iónicas)\n`;
+          if (liveFerti.macroIonicSummary) context += `Macro resumen iónico / ternario (etapa visible en Gráficas; interpretar % con MANUAL % meq): ${liveFerti.macroIonicSummary}\n`;
           context += '\n';
         }
       }
@@ -2534,7 +2618,7 @@ ESTILO DE RESPUESTA:
       if (hydro) {
         context += '--- HIDROPONÍA (Solución por etapa + Cálculo de fertilizantes) ---\n';
         context += 'Las dos subsecciones están relacionadas: Solución por etapa define el objetivo (ppm/meq por etapa); Cálculo de fertilizantes usa ese objetivo, resta el aporte del agua, y calcula fertilizantes y dosis para cubrir el requerimiento.\n';
-        context += 'Subsección Solución por etapa: el usuario define meq/L; la plataforma calcula % meq (aniones NO3+P+S=100%; cationes K+Ca+Mg=100% en triángulo; NH4 % total catiónico) y ppm = meq×peso equivalente del ELEMENTO (P-H2PO4→31 ppm P, S-SO4→16 ppm S, N 14, K 39.1, Ca 20.04, Mg 12.15) para que el usuario vea ppm elemental y pueda comparar con análisis/etiquetas. Diagrama ternario: referencia tipo Steiner en NutriPlant — aniones NO3 20–80%, H2PO4 1.25–10%, SO4 10–70%; cationes K 10–65%, Ca 22.5–62.5%, Mg 0.5–40%. Dentro = equilibrio; fuera = riesgo antagonismos/precipitados. Misma lógica en la calculadora meq/ppm de la plataforma.\n';
+        context += 'Subsección Solución por etapa: meq/L → % meq y ppm elemental. % meq: triángulo aniones N-NO₃⁻+P+S=100% (sin Cl); triángulo cationes K+Ca+Mg=100% (sin NH₄); NH₄ % sobre K+Ca+Mg+NH₄. Ver MANUAL % meq / BALANCE IÓNICO. Triángulo Steiner: aniones 20–80 / 1,25–10 / 10–70; cationes K 10–65, Ca 22,5–62,5, Mg 0,5–40.\n';
         context += 'Subsección Solución por etapa (datos): etapas con objetivo meq/L y ppm; triángulo de equivalentes.\n';
         if (Array.isArray(hydro.stages) && hydro.stages.length) {
           context += `Etapas (guardado): ${hydro.stages.map(s => s.name || s.id || '—').join(', ')}\n`;
@@ -2576,7 +2660,7 @@ ESTILO DE RESPUESTA:
       // BLOQUES EN VIVO HIDROPONÍA (pantalla actual: subsección, volumen/tanque/inyección, objetivo/agua/requerimiento, solución por etapa)
       if (snapshot.module === 'hidroponia') {
         const liveHydro = this.getLiveHidroponiaBlocks();
-        if (liveHydro.subsection || liveHydro.volume || liveHydro.objectiveSummary || liveHydro.waterSummary || liveHydro.missingSummary || liveHydro.nitrogenSummary || liveHydro.triangleInfo) {
+        if (liveHydro.subsection || liveHydro.volume || liveHydro.objectiveSummary || liveHydro.waterSummary || liveHydro.missingSummary || liveHydro.nitrogenSummary || liveHydro.triangleInfo || liveHydro.fertMeqSummary || liveHydro.fertLegendSummary) {
           context += '--- BLOQUES HIDROPONÍA (PANTALLA ACTUAL) ---\n';
           if (liveHydro.subsection) context += `Subsección visible: ${liveHydro.subsection}\n`;
           if (liveHydro.volume) context += `Volumen/tanque/inyección: ${liveHydro.volume}\n`;
@@ -2591,8 +2675,10 @@ ESTILO DE RESPUESTA:
             if (liveHydro.solutionPpmTable) context += `  Tabla ppm: ${liveHydro.solutionPpmTable}\n`;
             if (liveHydro.triangleInfo) context += `  Diagrama ternario (aniones/cationes): ${liveHydro.triangleInfo}\n`;
           }
-          if (liveHydro.subsection === 'Cálculo de fertilizantes' && liveHydro.catalogSummary) {
-            context += `Catálogo de fertilizantes disponibles (personalizados, % elemental): ${liveHydro.catalogSummary}\n`;
+          if (liveHydro.subsection === 'Cálculo de fertilizantes') {
+            if (liveHydro.catalogSummary) context += `Catálogo de fertilizantes disponibles (personalizados, % elemental): ${liveHydro.catalogSummary}\n`;
+            if (liveHydro.fertMeqSummary) context += `Aporte fertilizantes (meq/L y % meq en pantalla; ver MANUAL % meq): ${liveHydro.fertMeqSummary}\n`;
+            if (liveHydro.fertLegendSummary) context += `Leyenda N-NO₃/NH₄ y N-NO₃/Cl (meq/L, distinto a tabla % meq de etapa): ${liveHydro.fertLegendSummary}\n`;
           }
           context += '\n';
         }

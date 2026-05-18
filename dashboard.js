@@ -590,13 +590,14 @@ function sectionTemplate(name) {
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><span class="nutrient-value" id="fertiProgTotalCu">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><span class="nutrient-value" id="fertiProgTotalMo">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiProgLabelSiO2">SiO₂:</span><span class="nutrient-value" id="fertiProgTotalSiO2">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cl⁻:</span><span class="nutrient-value" id="fertiProgTotalCl">0.0</span></div>
                   </div>
                 </div>
 
                 <div class="summary-nutrients" style="margin-top: 16px;">
                   <h4>💧 Aporte por agua (Kg/Ha):</h4>
                   <div class="nutrients-grid">
-                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">N:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterN" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelN">N-NO₃⁻:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterN" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelP2O5">P₂O₅:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterP2O5" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelK2O">K₂O:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterK2O" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelCaO">CaO:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterCaO" step="0.01" value="0.0"></div>
@@ -610,6 +611,7 @@ function sectionTemplate(name) {
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterCu" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterMo" step="0.01" value="0.0"></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiWaterLabelSiO2">SiO₂:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterSiO2" step="0.01" value="0.0"></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cl⁻:</span><input type="number" class="nutrient-input ferti-water-input" id="fertiWaterCl" step="0.01" value="0.0"></div>
                   </div>
                 </div>
 
@@ -630,6 +632,7 @@ function sectionTemplate(name) {
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><span class="nutrient-value" id="fertiTotalWithWaterCu">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><span class="nutrient-value" id="fertiTotalWithWaterMo">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiTotalWithWaterLabelSiO2">SiO₂:</span><span class="nutrient-value" id="fertiTotalWithWaterSiO2">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cl⁻:</span><span class="nutrient-value" id="fertiTotalWithWaterCl">0.0</span></div>
                   </div>
                 </div>
 
@@ -670,6 +673,7 @@ function sectionTemplate(name) {
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cu:</span><span class="nutrient-value" id="fertiDiffCu">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Mo:</span><span class="nutrient-value" id="fertiDiffMo">0.0</span></div>
                     <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no" id="fertiDiffLabelSiO2">SiO₂:</span><span class="nutrient-value" id="fertiDiffSiO2">0.0</span></div>
+                    <div class="nutrient-item"><span class="nutrient-label notranslate" translate="no">Cl⁻:</span><span class="nutrient-value nutrient-diff" id="fertiDiffCl">0.0</span></div>
                   </div>
                 </div>
               </div>
@@ -1344,6 +1348,7 @@ function sectionTemplate(name) {
               <div id="hydroVolumeCard" class="hydro-volume-card" style="margin-bottom:14px;"></div>
               <div id="hydroFertTableWrap" class="hydro-table-wrap"></div>
               <div id="hydroFertTotals" class="hydro-grid" style="margin-top:10px;"></div>
+              <div id="hydroFertMeqWrap" class="hydro-fert-meq-wrap"></div>
               <div id="hydroFertRemaining" class="hydro-grid hydro-grid-remaining" style="margin-top:8px;font-size:0.85rem;opacity:0.92;"></div>
               <div id="hydroValidationNote" class="hydro-validation-note" style="margin-top:12px;"></div>
             </div>
@@ -10110,7 +10115,7 @@ function collectCurrentData() {
     if (gCrop) currentProject.granular.requirements.cropType = gCrop.value;
     if (gYield) currentProject.granular.requirements.targetYield = parseFloat(gYield.value) || 10;
     
-    const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+    const nutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2','Cl'];
     const existingGranularAdj = currentProject.granular.requirements.adjustment || {};
     const existingGranularEff = currentProject.granular.requirements.efficiency || {};
     currentProject.granular.requirements.adjustment = { ...existingGranularAdj };
@@ -14959,9 +14964,11 @@ function createFertigationSectionHTML(chartImages) {
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
   }
-  function label(n, elemental) {
+  function label(n, elemental, opts) {
+    if (n === 'N' && opts && opts.waterNAsNo3) return 'N-NO₃⁻';
     if (n === 'N_NO3') return 'N-NO₃⁻';
     if (n === 'N_NH4') return 'N-NH₄⁺';
+    if (n === 'Cl') return 'Cl⁻';
     if (elemental) return elemLabels[n] || n;
     return reportFormatOxideLabel(n);
   }
@@ -14972,12 +14979,12 @@ function createFertigationSectionHTML(chartImages) {
     return raw / conv[n];
   }
   function d(n) { return ['Fe','Mn','B','Zn','Cu','Mo','SiO2'].includes(n) ? 3 : 2; }
-  function nutrientGrid(values, elemental, cls) {
+  function nutrientGrid(values, elemental, cls, opts) {
     const pills = nutrients.map(n => {
       const v = display(n, values ? values[n] : null, elemental);
       const extra = (v !== null && cls && v < 0) ? ' negative' : '';
       const text = v === null ? '—' : v.toFixed(d(n));
-      return `<span class="report-nutrient-pill${extra}"><strong>${label(n, elemental)}:</strong> ${text}</span>`;
+      return `<span class="report-nutrient-pill${extra}"><strong>${label(n, elemental, opts)}:</strong> ${text}</span>`;
     }).join('');
     return pills || '<span class="report-note-inline">Sin datos disponibles.</span>';
   }
@@ -15143,6 +15150,8 @@ function createFertigationSectionHTML(chartImages) {
           totalProgram[n] += toNum(t.N_NO3) + toNum(t.N_NH4);
         } else if (n === 'SO4') {
           totalProgram[n] += fertiReportMergedSo4KgFromTotals(t);
+        } else if (n === 'Cl') {
+          totalProgram[n] += toNum(t.Cl);
         } else {
           totalProgram[n] += toNum(t[n]);
         }
@@ -15299,7 +15308,7 @@ function createFertigationSectionHTML(chartImages) {
         <div class="report-subtitle">Aporte del programa de nutrición (kg/ha):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(totalProgram, programModeIsElemental, false)}</div>
         <div class="report-subtitle">Aporte por agua (kg/ha):</div>
-        <div class="report-nutrient-wrap">${nutrientGrid(waterContribution, programModeIsElemental, false)}</div>
+        <div class="report-nutrient-wrap">${nutrientGrid(waterContribution, programModeIsElemental, false, { waterNAsNo3: true })}</div>
         <div class="report-subtitle">Aporte total (programa + agua) (kg/ha):</div>
         <div class="report-nutrient-wrap">${nutrientGrid(totalWithWater, programModeIsElemental, false)}</div>
         <div class="report-subtitle">Requerimiento Real (kg/ha):</div>
@@ -15859,6 +15868,21 @@ function createHidroponiaSectionHTML() {
           ${tankBlocksHtml}
         </div>
       </div>` : ''}
+      ${(() => {
+        const hasFertPpm = hydroNutrients.some(n => toNum(ppmTotals[n]) > 0);
+        if (!hasFertPpm) return '';
+        const ppmPills = hydroNutrients.map(n => `<span class="report-nutrient-pill"><strong>${label(n)}:</strong> ${toNum(ppmTotals[n]).toFixed(2)} ppm</span>`).join('');
+        const meqBlock = (typeof hydroBuildFertMeqContributionHtml === 'function')
+          ? hydroBuildFertMeqContributionHtml(ppmTotals)
+          : '';
+        return `
+      <div class="report-block" style="border-color:#bae6fd;background:#f8fafc;">
+        <div class="report-block-title">📊 Aporte total estimado (fertilizantes)</div>
+        <div class="report-note" style="margin-bottom:8px;">Solo aporte de la tabla de fertilizantes. Debajo: meq/L y % meq (aniones sin Cl; cationes K+Ca+Mg sin NH₄).</div>
+        <div class="report-nutrient-wrap report-hydro-nutrient-wrap" style="margin-bottom:10px;">${ppmPills}</div>
+        ${meqBlock ? `<div class="report-hydro-fert-meq-wrap">${meqBlock}</div>` : ''}
+      </div>`;
+      })()}
       <div class="report-block">
         <div class="report-block-title">📊 PPM aportadas totales (solución nutritiva + agua)</div>
         <div class="report-note" style="margin-bottom:8px;">Total por nutriente = aporte de fertilizantes en solución nutritiva + aporte del agua de riego.</div>

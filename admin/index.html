@@ -6173,7 +6173,8 @@
                 'SO3': 'SO₃',
                 'SiO2': 'SiO₂',
                 'N_NO3': 'N-NO₃⁻',
-                'N_NH4': 'N-NH₄⁺'
+                'N_NH4': 'N-NH₄⁺',
+                'Cl': 'Cl⁻'
             };
             if (!isElementalMode) return oxidePretty[nutrient] || nutrient;
             const labels = {
@@ -6244,6 +6245,50 @@
             if (n !== 'N_NO3' && n !== 'N_NH4' && n !== 'Cl') return 0;
             var w = HYDRO_EQ_WEIGHTS[n];
             return w ? (parseFloat(ppm) || 0) / w : 0;
+        }
+        function adminHydroPpmToMeq(n, ppm) {
+            var w = HYDRO_EQ_WEIGHTS[n];
+            return w ? (parseFloat(ppm) || 0) / w : 0;
+        }
+        function adminBuildHydroFertMeqBlock(hydroTotalsPpm) {
+            if (!hydroTotalsPpm || typeof hydroTotalsPpm !== 'object') return '';
+            var hasAny = HYDRO_PPM_NUTRIENTS.some(function(n) { return (parseFloat(hydroTotalsPpm[n]) || 0) > 0; });
+            if (!hasAny) return '';
+            var meq = {};
+            HYDRO_MEQ_NUTRIENTS.forEach(function(n) {
+                meq[n] = Math.round(adminHydroPpmToMeq(n, hydroTotalsPpm[n]) * 100) / 100;
+            });
+            meq.Cl = adminHydroPpmToMeq('Cl', hydroTotalsPpm.Cl);
+            var sumAn = HYDRO_ANIONS.reduce(function(a, n) { return a + (parseFloat(meq[n]) || 0); }, 0);
+            var sumKCM = HYDRO_CATIONS_TRIANGLE.reduce(function(a, n) { return a + (parseFloat(meq[n]) || 0); }, 0);
+            var totCat = sumKCM + (parseFloat(meq.N_NH4) || 0);
+            var pct = {};
+            HYDRO_MEQ_NUTRIENTS.forEach(function(n) {
+                var v = parseFloat(meq[n]) || 0;
+                if (HYDRO_ANIONS.indexOf(n) >= 0) pct[n] = sumAn > 0 ? (v / sumAn) * 100 : 0;
+                else if (HYDRO_CATIONS_TRIANGLE.indexOf(n) >= 0) pct[n] = sumKCM > 0 ? (v / sumKCM) * 100 : 0;
+                else pct[n] = totCat > 0 ? (v / totCat) * 100 : 0;
+            });
+            var meqCells = HYDRO_PPM_NUTRIENTS.map(function(n) {
+                var v = HYDRO_MEQ_NUTRIENTS.indexOf(n) >= 0 ? meq[n] : (n === 'Cl' ? meq.Cl : null);
+                var txt = v != null ? v.toFixed(2) : '—';
+                return '<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;background:#fff;"><span style="color:#0369a1;font-weight:600;">' + adminHydroLabel(n) + '</span><br><span style="font-weight:600;">' + txt + '</span> meq/L</td>';
+            }).join('');
+            var meqHeader = HYDRO_PPM_NUTRIENTS.map(function(n) {
+                return '<th style="padding:6px 8px;border:1px solid #cbd5e1;text-align:center;">' + adminHydroLabel(n) + ' meq/L</th>';
+            }).join('');
+            var pctCells = HYDRO_MEQ_NUTRIENTS.map(function(n) {
+                return '<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;">' + pct[n].toFixed(1) + '</td>';
+            }).join('');
+            var pctHeader = HYDRO_MEQ_NUTRIENTS.map(function(n) {
+                return '<th style="padding:6px 8px;border:1px solid #cbd5e1;text-align:center;">' + adminHydroLabel(n) + ' % meq</th>';
+            }).join('');
+            return '<div style="margin-top:14px;"><strong style="color:#1e293b;font-size:14px;">⚖️ Aporte total estimado (meq/L)</strong>' +
+                '<p style="margin:6px 0 8px 0;color:#64748b;font-size:12px;">Desde las ppm aportadas por fertilizantes. Micros sin equivalente: —.</p>' +
+                '<div style="overflow-x:auto;margin-bottom:10px;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#e0f2fe;">' + meqHeader + '</tr></thead><tbody><tr>' + meqCells + '</tr></tbody></table></div>' +
+                '<strong style="color:#1e293b;font-size:13px;">% sobre meq/L aportado</strong>' +
+                '<p style="margin:6px 0 8px 0;color:#64748b;font-size:12px;">Aniones: N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻ = 100% (sin Cl). Cationes: K⁺ + Ca²⁺ + Mg²⁺ = 100% (sin NH₄). N-NH₄⁺: % sobre K+Ca+Mg+NH₄.</p>' +
+                '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#f1f5f9;">' + pctHeader + '</tr></thead><tbody><tr>' + pctCells + '</tr></tbody></table></div></div>';
         }
         // SVG de triángulo hidroponía con la misma estructura visual del dashboard
         function adminBuildHydroTriangleSvg(pNO3, pH2PO4, pSO4, pK, pCa, pMg) {
@@ -9413,10 +9458,10 @@
                     const o = t && typeof t === 'object' ? t : {};
                     return (parseFloat(o.SO4) || 0) + (parseFloat(o.S) || 0) * ADMIN_FERTI_S_TO_SO4;
                 }
-                const summaryNutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
+                const summaryNutrients = ['N','P2O5','K2O','CaO','MgO','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2','Cl'];
                 const totalAporteOxide = hasProgramTotals
-                    ? { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0 }
-                    : { N: null, P2O5: null, K2O: null, CaO: null, MgO: null, SO4: null, Fe: null, Mn: null, B: null, Zn: null, Cu: null, Mo: null, SiO2: null };
+                    ? { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0, Cl: 0 }
+                    : { N: null, P2O5: null, K2O: null, CaO: null, MgO: null, SO4: null, Fe: null, Mn: null, B: null, Zn: null, Cu: null, Mo: null, SiO2: null, Cl: null };
                 if (hasProgramTotals) {
                     weeks.forEach(w => {
                         totalAporteOxide.N += (parseFloat(w?.totals?.N_NO3) || 0) + (parseFloat(w?.totals?.N_NH4) || 0);
@@ -9432,6 +9477,7 @@
                         totalAporteOxide.Cu += parseFloat(w?.totals?.Cu) || 0;
                         totalAporteOxide.Mo += parseFloat(w?.totals?.Mo) || 0;
                         totalAporteOxide.SiO2 += parseFloat(w?.totals?.SiO2) || 0;
+                        totalAporteOxide.Cl += parseFloat(w?.totals?.Cl) || 0;
                     });
                 }
                 const reqOxide = {};
@@ -9597,7 +9643,7 @@
                                 <strong style="color:#0369a1;font-size:13px;">💧 Aporte por agua (Kg/Ha):</strong>
                                 <div style="background:#fff;padding:8px;border-radius:6px;margin-top:6px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));gap:6px;">
                                     ${summaryNutrients.map(n => {
-                                        const label = getAdminNutrientLabel(n, programIsElemental);
+                                        const label = n === 'N' ? 'N-NO₃⁻' : getAdminNutrientLabel(n, programIsElemental);
                                         return `<div><strong>${label}:</strong> <span style="color:#0369a1;font-weight:600;">${formatAdminValue(n, summary.aportadoAgua[n])}</span></div>`;
                                     }).join('')}
                                 </div>
@@ -9979,6 +10025,9 @@
                             </div>
                         </div>
                     `;
+                }
+                if (hydroTotalsPpm) {
+                    html += adminBuildHydroFertMeqBlock(hydroTotalsPpm);
                 }
                 if (hydroTotalsPpm && typeof hydroTotalsPpm === 'object') {
                     const tNo3 = parseFloat(hydroTotalsPpm.N_NO3) || 0;

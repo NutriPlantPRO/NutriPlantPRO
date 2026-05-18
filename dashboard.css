@@ -3709,6 +3709,35 @@ body {
 .hydro-grid-remaining .hydro-grid-label {
   font-size: 0.8rem;
 }
+.hydro-fert-meq-wrap {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #bfdbfe;
+}
+
+.hydro-fert-meq-pct-note {
+  margin: 0 0 8px 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.hydro-fert-meq-pct-wrap .hydro-table-compact th,
+.hydro-fert-meq-pct-wrap .hydro-table-compact td {
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.report-hydro-fert-meq-wrap .hydro-fert-meq-grid {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.report-hydro-fert-meq-wrap .hydro-fert-meq-wrap {
+  border-top: none;
+  padding-top: 0;
+}
+
 .hydro-grid-remaining .hydro-grid-value {
   font-size: 0.9rem;
 }
@@ -4496,6 +4525,41 @@ body {
   color: #0c4a6e;
   box-shadow: 0 2px 8px rgba(2, 132, 199, 0.12);
   cursor: help;
+}
+
+/* Macro resumen: dos tablas lado a lado (fertilizante vs fertilizante + agua) */
+.ferti-insight-card--macro-dual {
+  border-left-color: #2563eb;
+}
+
+.ferti-macro-dual-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.ferti-macro-dual-col {
+  min-width: 0;
+}
+
+.ferti-macro-dual-title {
+  margin: 0 0 8px 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #1e40af;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.ferti-macro-dual-col + .ferti-macro-dual-col .ferti-macro-dual-title {
+  color: #0f766e;
+}
+
+@media (max-width: 960px) {
+  .ferti-macro-dual-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Tarjeta diagrama ternario (entre macro y micros): acento violeta */

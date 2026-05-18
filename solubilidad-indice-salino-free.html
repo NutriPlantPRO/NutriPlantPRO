@@ -91,6 +91,23 @@
       font-size: 12px;
       color: var(--muted);
     }
+    .row-note {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      line-height: 1.3;
+      color: var(--muted);
+    }
+    .table-scope {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #334155;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+    }
 
     .table-wrap {
       overflow-x: auto;
@@ -298,6 +315,10 @@
   <p class="lead">Consulta combinada inspirada en la referencia NutriPlant PRO: solubilidad en agua (rangos típicos, 20–25 °C; varían con pureza y grado técnico/granulado del proveedor) e índice salino tomando <strong>NaNO₃ = 100</strong> como base de comparación técnica.</p>
   <p class="disclaimer">Los valores de solubilidad son referencias en agua relativamente pura; en campo, temperatura, pH, otros iones y el propio medio pueden cambiar cuánto se disuelve y el impacto sobre la planta. El IS describe el efecto osmótico relativo — no clasifica solo un fertilizante como “bueno” o “malo”; importa la dosis, el agua disponible y el manejo del fertirriego.</p>
 
+  <p class="table-scope">
+    <strong>Fertilizantes hidrosolubles</strong> de uso habitual en <strong>fertirriego</strong>, con excepción del <strong>sulfato de calcio</strong> y el <strong>carbonato de calcio</strong> (solo referencia, enmienda).
+  </p>
+
   <div class="legend" aria-label="Leyenda de solubilidad">
     <span class="leg-item"><span class="dot dot-hi" aria-hidden="true"></span> Alta (&gt; 500 g/L)</span>
     <span class="leg-item"><span class="dot dot-mid" aria-hidden="true"></span> Media (100–500 g/L)</span>
@@ -409,9 +430,9 @@
     { name: 'Cloruro de potasio', formula: 'KCl', solLo: 320, solHi: 360, is: 116.3 },
     { name: 'Sulfato de amonio', formula: '(NH₄)₂SO₄', solLo: 720, solHi: 780, is: 69.0 },
     { name: 'Sulfato de magnesio', formula: 'MgSO₄', solLo: 680, solHi: 740, is: 44.0 },
-    { name: 'Sulfato de potasio', formula: 'K₂SO₄', solLo: 105, solHi: 115, is: 46.0, note: 'IS orientativo (referencias agronómicas).' },
-    { name: 'Sulfato de calcio (yeso agrícola)', formula: 'CaSO₄', solLo: 1.5, solHi: 2.8, is: 8, noteIs: '~', note: 'IS muy bajo; solubilidad extremadamente baja en agua.' },
-    { name: 'Carbonato de calcio', formula: 'CaCO₃', solLo: 0.01, solHi: 0.03, is: null, noteIs: '—', note: 'No es fuente soluble en fertirriego; IS despreciable en la práctica.' }
+    { name: 'Sulfato de potasio', formula: 'K₂SO₄', solLo: 105, solHi: 115, is: 46.0 },
+    { name: 'Sulfato de calcio (yeso agrícola)', formula: 'CaSO₄', solLo: 1.5, solHi: 2.8, is: 8, noteIs: '~', note: 'Enmienda · no soluble en fertirriego (referencia).' },
+    { name: 'Carbonato de calcio', formula: 'CaCO₃', solLo: 0.01, solHi: 0.03, is: null, noteIs: '—', note: 'Enmienda · no soluble en fertirriego (referencia).' }
   ];
 
   function solClass(mid) {
@@ -435,7 +456,7 @@
       var tr = document.createElement('tr');
       var barW = r.is != null ? Math.round((r.is / maxIs) * 100) : 0;
       tr.innerHTML =
-        '<td><strong>' + escapeHtml(r.name) + '</strong>' + (r.note ? '<br><span class="muted">' + escapeHtml(r.note) + '</span>' : '') + '</td>' +
+        '<td><strong>' + escapeHtml(r.name) + '</strong>' + (r.note ? '<span class="row-note">' + escapeHtml(r.note) + '</span>' : '') + '</td>' +
         '<td class="formula">' + escapeHtml(r.formula) + '</td>' +
         '<td class="sol-cell">' + formatRange(r.solLo, r.solHi) + '</td>' +
         '<td><span class="sol-dot ' + cl.cls + '" aria-hidden="true"></span>' + escapeHtml(cl.label) + '</td>' +

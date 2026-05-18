@@ -73,7 +73,7 @@ let fertiChartsResizeTimer = null;
 let fertiWaterInputsBound = false;
 let fertiWaterContributionOxide = {
   N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, S: 0, SO4: 0,
-  Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0
+  Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0, Cl: 0
 };
 // Gráficas: lámina de riego por etapa (m3/ha) y etapa seleccionada para análisis.
 let fertiChartWaterByStageM3ha = [];
@@ -935,7 +935,7 @@ function updateFertiSummary() {
     }
   };
   // Sumar aportes de todas las semanas
-  const totals = { N_NO3:0,N_NH4:0,P:0,P2O5:0,K:0,K2O:0,Ca:0,CaO:0,Mg:0,MgO:0,S:0,SO4:0,Fe:0,Mn:0,B:0,Zn:0,Cu:0,Mo:0,Si:0,SiO2:0 };
+  const totals = { N_NO3:0,N_NH4:0,P:0,P2O5:0,K:0,K2O:0,Ca:0,CaO:0,Mg:0,MgO:0,S:0,SO4:0,Cl:0,Fe:0,Mn:0,B:0,Zn:0,Cu:0,Mo:0,Si:0,SiO2:0 };
   let totalKg = 0;
   fertiWeeks.forEach(w => {
     computeWeekTotals(w);
@@ -944,6 +944,7 @@ function updateFertiSummary() {
       Object.values(w.kgByCol).forEach(v => { totalKg += parseFloat(v || 0); });
     }
     FERTI_NUTRIENTS.forEach(n => totals[n] += parseFloat(w.totals?.[n]||0));
+    totals.Cl += parseFloat(w.totals?.Cl || 0);
   });
 
   // Cargar requerimiento real en ÓXIDO
@@ -1053,7 +1054,8 @@ function updateFertiSummary() {
   set('fertiProgTotalP2O5', toElemental('P2O5', totals.P2O5)); set('fertiProgTotalK2O', toElemental('K2O', totals.K2O)); set('fertiProgTotalCaO', toElemental('CaO', totals.CaO)); set('fertiProgTotalMgO', toElemental('MgO', totals.MgO));
   set('fertiProgTotalS', totals.S);
   set('fertiProgTotalSO4', fertiMergeSulfurKgDisplay(totals.SO4, totals.S));
-  set('fertiProgTotalFe', totals.Fe); set('fertiProgTotalMn', totals.Mn); set('fertiProgTotalB', totals.B); set('fertiProgTotalZn', totals.Zn); set('fertiProgTotalCu', totals.Cu); set('fertiProgTotalMo', totals.Mo); set('fertiProgTotalSiO2', toElemental('SiO2', totals.SiO2));
+  set('fertiProgTotalFe', totals.Fe); set('fertiProgTotalMn', totals.Mn); set('fertiProgTotalB', totals.B); set('fertiProgTotalZn', totals.Zn); set('fertiProgTotalCu', totals.Cu); set('fertiProgTotalMo', totals.Mo);   set('fertiProgTotalSiO2', toElemental('SiO2', totals.SiO2));
+  set('fertiProgTotalCl', totals.Cl);
 
   // Requerimiento
   set('fertiReqN', reqOxide.N||0);
@@ -1077,6 +1079,7 @@ function updateFertiSummary() {
   setInput('fertiWaterCu', fertiWaterContributionOxide.Cu||0);
   setInput('fertiWaterMo', fertiWaterContributionOxide.Mo||0);
   setInput('fertiWaterSiO2', toElemental('SiO2', fertiWaterContributionOxide.SiO2||0));
+  setInput('fertiWaterCl', fertiWaterContributionOxide.Cl||0);
 
   // Aporte total (programa + agua) — mismo criterio que Diferencia: no se cuenta el agua dos veces
   const totalWithWater = {
@@ -1093,7 +1096,8 @@ function updateFertiSummary() {
     Zn: (totals.Zn) + (fertiWaterContributionOxide.Zn||0),
     Cu: (totals.Cu) + (fertiWaterContributionOxide.Cu||0),
     Mo: (totals.Mo) + (fertiWaterContributionOxide.Mo||0),
-    SiO2: (totals.SiO2) + (fertiWaterContributionOxide.SiO2||0)
+    SiO2: (totals.SiO2) + (fertiWaterContributionOxide.SiO2||0),
+    Cl: (totals.Cl) + (fertiWaterContributionOxide.Cl||0)
   };
   set('fertiTotalWithWaterN', totalWithWater.N);
   set('fertiTotalWithWaterP2O5', toElemental('P2O5', totalWithWater.P2O5));
@@ -1109,6 +1113,7 @@ function updateFertiSummary() {
   set('fertiTotalWithWaterCu', totalWithWater.Cu);
   set('fertiTotalWithWaterMo', totalWithWater.Mo);
   set('fertiTotalWithWaterSiO2', toElemental('SiO2', totalWithWater.SiO2));
+  set('fertiTotalWithWaterCl', totalWithWater.Cl);
 
   // Diferencia = Aporte total (programa + agua) - Requerimiento — el agua no se resta dos veces
   const diff = {
@@ -1125,13 +1130,15 @@ function updateFertiSummary() {
     Zn: (totals.Zn) - (reqOxide.Zn||0) + (fertiWaterContributionOxide.Zn||0),
     Cu: (totals.Cu) - (reqOxide.Cu||0) + (fertiWaterContributionOxide.Cu||0),
     Mo: (totals.Mo) - (reqOxide.Mo||0) + (fertiWaterContributionOxide.Mo||0),
-    SiO2: (totals.SiO2) - (reqOxide.SiO2||0) + (fertiWaterContributionOxide.SiO2||0)
+    SiO2: (totals.SiO2) - (reqOxide.SiO2||0) + (fertiWaterContributionOxide.SiO2||0),
+    Cl: (totals.Cl) - (reqOxide.Cl||0) + (fertiWaterContributionOxide.Cl||0)
   };
   setFertiDiff('fertiDiffN', diff.N);
   setFertiDiff('fertiDiffP2O5', toElemental('P2O5', diff.P2O5)); setFertiDiff('fertiDiffK2O', toElemental('K2O', diff.K2O)); setFertiDiff('fertiDiffCaO', toElemental('CaO', diff.CaO)); setFertiDiff('fertiDiffMgO', toElemental('MgO', diff.MgO));
   setFertiDiff('fertiDiffS', diff.S);
   setFertiDiff('fertiDiffSO4', fertiMergeSulfurKgDisplay(diff.SO4, diff.S));
-  setFertiDiff('fertiDiffFe', diff.Fe); setFertiDiff('fertiDiffMn', diff.Mn); setFertiDiff('fertiDiffB', diff.B); setFertiDiff('fertiDiffZn', diff.Zn); setFertiDiff('fertiDiffCu', diff.Cu); setFertiDiff('fertiDiffMo', diff.Mo); setFertiDiff('fertiDiffSiO2', toElemental('SiO2', diff.SiO2));
+  setFertiDiff('fertiDiffFe', diff.Fe); setFertiDiff('fertiDiffMn', diff.Mn); setFertiDiff('fertiDiffB', diff.B); setFertiDiff('fertiDiffZn', diff.Zn); setFertiDiff('fertiDiffCu', diff.Cu); setFertiDiff('fertiDiffMo', diff.Mo);   setFertiDiff('fertiDiffSiO2', toElemental('SiO2', diff.SiO2));
+  setFertiDiff('fertiDiffCl', diff.Cl);
 
   try { updateFertiCharts(); } catch {}
 }
@@ -1228,46 +1235,71 @@ function renderFertiChartWaterByStageInputs() {
   `;
 }
 
-function getFertiStageIonicSummary(stageIndex) {
-  const w = fertiWeeks[stageIndex];
-  if (!w) return null;
-  const totals = w.totals || {};
-  const m3ha = parseFloat(fertiChartWaterByStageM3ha[stageIndex]) || 0;
-  /** En catálogo el aporte está como SO₄ (% masa ion); para macro iónico (como P en elemental): kg S = kg SO₄ × 32/96 + kg S directo. */
-  const kgSFromSo4AndDirect = ((parseFloat(totals.SO4) || 0) / FERTI_CONV.SO4_TO_S) + (parseFloat(totals.S) || 0);
-  const kg = {
-    N_NO3: parseFloat(totals.N_NO3) || 0,
-    N_NH4: parseFloat(totals.N_NH4) || 0,
-    P: parseFloat(totals.P) || 0,
+function fertiKgFromStageTotals(totals) {
+  const t = totals || {};
+  const kgSFromSo4AndDirect = ((parseFloat(t.SO4) || 0) / FERTI_CONV.SO4_TO_S) + (parseFloat(t.S) || 0);
+  return {
+    N_NO3: parseFloat(t.N_NO3) || 0,
+    N_NH4: parseFloat(t.N_NH4) || 0,
+    P: parseFloat(t.P) || 0,
     SO4: kgSFromSo4AndDirect,
-    Cl: parseFloat(totals.Cl) || 0,
-    K: parseFloat(totals.K) || 0,
-    Ca: parseFloat(totals.Ca) || 0,
-    Mg: parseFloat(totals.Mg) || 0,
-    Fe: parseFloat(totals.Fe) || 0,
-    Mn: parseFloat(totals.Mn) || 0,
-    B: parseFloat(totals.B) || 0,
-    Zn: parseFloat(totals.Zn) || 0,
-    Cu: parseFloat(totals.Cu) || 0,
-    Mo: parseFloat(totals.Mo) || 0
+    Cl: parseFloat(t.Cl) || 0,
+    K: parseFloat(t.K) || 0,
+    Ca: parseFloat(t.Ca) || 0,
+    Mg: parseFloat(t.Mg) || 0,
+    Fe: parseFloat(t.Fe) || 0,
+    Mn: parseFloat(t.Mn) || 0,
+    B: parseFloat(t.B) || 0,
+    Zn: parseFloat(t.Zn) || 0,
+    Cu: parseFloat(t.Cu) || 0,
+    Mo: parseFloat(t.Mo) || 0
   };
-  if (m3ha <= 0) return { stage: w, m3ha, kg };
+}
+
+/** kg/ha elementales del aporte de agua (pestaña Programa de nutrición). N del agua = N-NO₃⁻ (gráficas). */
+function getFertiWaterKgElemental(fertNo3, fertNh4) {
+  const w = fertiWaterContributionOxide || {};
+  const waterN = parseFloat(w.N) || 0;
+  const kgSFromSo4AndDirect = ((parseFloat(w.SO4) || 0) / FERTI_CONV.SO4_TO_S) + (parseFloat(w.S) || 0);
+  return {
+    N_NO3: waterN,
+    N_NH4: 0,
+    P: (parseFloat(w.P2O5) || 0) / FERTI_CONV.P2O5_TO_P,
+    SO4: kgSFromSo4AndDirect,
+    Cl: parseFloat(w.Cl) || 0,
+    K: (parseFloat(w.K2O) || 0) / FERTI_CONV.K2O_TO_K,
+    Ca: (parseFloat(w.CaO) || 0) / FERTI_CONV.CaO_TO_Ca,
+    Mg: (parseFloat(w.MgO) || 0) / FERTI_CONV.MgO_TO_Mg,
+    Fe: parseFloat(w.Fe) || 0,
+    Mn: parseFloat(w.Mn) || 0,
+    B: parseFloat(w.B) || 0,
+    Zn: parseFloat(w.Zn) || 0,
+    Cu: parseFloat(w.Cu) || 0,
+    Mo: parseFloat(w.Mo) || 0
+  };
+}
+
+function fertiMergeKg(a, b) {
+  const out = { ...a };
+  Object.keys(b).forEach(k => { out[k] = (parseFloat(out[k]) || 0) + (parseFloat(b[k]) || 0); });
+  return out;
+}
+
+function computeFertiIonicSummaryFromKg(kg, m3ha, stage) {
+  if (m3ha <= 0) return { stage, m3ha, kg };
   const ppm = {};
   Object.keys(kg).forEach(k => { ppm[k] = (kg[k] * 1000) / m3ha; });
   const meq = {
     N_NO3: ppm.N_NO3 / FERTI_ION_EQ_WEIGHTS.N_NO3,
     N_NH4: ppm.N_NH4 / FERTI_ION_EQ_WEIGHTS.N_NH4,
     P: ppm.P / FERTI_ION_EQ_WEIGHTS.P,
-    /** ppm.SO4 aquí es ppm de S elemental; peso eq. ~16 (S). */
     SO4: ppm.SO4 / FERTI_ION_EQ_WEIGHTS.SO4,
     Cl: ppm.Cl / FERTI_ION_EQ_WEIGHTS.Cl,
     K: ppm.K / FERTI_ION_EQ_WEIGHTS.K,
     Ca: ppm.Ca / FERTI_ION_EQ_WEIGHTS.Ca,
     Mg: ppm.Mg / FERTI_ION_EQ_WEIGHTS.Mg
   };
-  /** Triángulo aniónico (rangos de referencia): solo NO₃ + H₂PO₄ + SO₄ = 100%. */
   const sumAnionsTriangle = meq.N_NO3 + meq.P + meq.SO4;
-  /** Σ aniones en balance iónico: incluye Cl⁻ (KCl, CaCl₂, etc.). */
   const sumAnionsTotal = sumAnionsTriangle + meq.Cl;
   const sumCationsKCaMg = meq.K + meq.Ca + meq.Mg;
   const sumCationsTotal = sumCationsKCaMg + meq.N_NH4;
@@ -1287,7 +1319,7 @@ function getFertiStageIonicSummary(stageIndex) {
     NH4: nTotalMeq > 0 ? (meq.N_NH4 / nTotalMeq) * 100 : 0
   };
   return {
-    stage: w,
+    stage,
     m3ha,
     kg,
     ppm,
@@ -1300,21 +1332,22 @@ function getFertiStageIonicSummary(stageIndex) {
   };
 }
 
-function renderFertiChartsInsights() {
-  const wrap = document.getElementById('fertiChartsStageInsightsWrap');
-  if (!wrap) return;
-  fertiNormalizeChartWaterByStage();
-  if (!fertiWeeks.length) { wrap.innerHTML = ''; return; }
-  const idx = fertiChartSelectedStageIndex;
-  const summary = getFertiStageIonicSummary(idx);
-  const options = fertiWeeks.map((w, i) => `<option value="${i}" ${i === idx ? 'selected' : ''}>${fertiStageSlotLabel(i)} · ${w.stage || ''}</option>`).join('');
-  let body = '';
-  if (!summary || summary.m3ha <= 0) {
-    body = `<div class="ferti-insight-alert">Ingresa <strong>m³/ha</strong> en la lámina de riego de ${fertiStageSlotLabel(idx)} para calcular ppm y meq.</div>`;
-  } else {
-    body = `
-      <div class="ferti-insight-card">
-        <h5>Macro resumen · ${fertiStageSlotLabel(idx)} (${summary.stage.stage || 'Etapa'})</h5>
+function getFertiStageIonicSummary(stageIndex, opts) {
+  const includeWater = opts && opts.includeWater;
+  const w = fertiWeeks[stageIndex];
+  if (!w) return null;
+  const m3ha = parseFloat(fertiChartWaterByStageM3ha[stageIndex]) || 0;
+  let kg = fertiKgFromStageTotals(w.totals || {});
+  if (includeWater) {
+    const waterKg = getFertiWaterKgElemental(kg.N_NO3, kg.N_NH4);
+    kg = fertiMergeKg(kg, waterKg);
+  }
+  return computeFertiIonicSummaryFromKg(kg, m3ha, w);
+}
+
+function renderFertiMacroIonicTableHtml(summary) {
+  if (!summary || !summary.ppm) return '';
+  return `
         <div class="ferti-insight-legend" style="margin:0 0 8px 0;">
           Relación de N en la etapa: <strong>N-NO₃⁻ ${fertiNum(summary.nSplit.NO3, 1)}%</strong> · <strong>N-NH₄⁺ ${fertiNum(summary.nSplit.NH4, 1)}%</strong> (sobre N total = NO₃ + NH₄).
           <span class="ferti-insight-meq-sums notranslate" translate="no" title="Σ aniones = N-NO₃⁻ + P-H₂PO₄⁻ + S-SO₄²⁻ + Cl⁻ (balance iónico). Los % del cuadrado ternario siguen siendo solo los tres primeros. Σ cationes = K⁺ + Ca²⁺ + Mg²⁺ + N-NH₄⁺"> · Σ aniones ${fertiNum(summary.sumAnionsMeq, 2)} meq/L · Σ cationes ${fertiNum(summary.sumCationsMeq, 2)} meq/L</span>
@@ -1359,26 +1392,56 @@ function renderFertiChartsInsights() {
               </td>
             </tr>
           </tbody>
-        </table>
-        <div class="ferti-insight-legend">* N-NH₄⁺ se calcula sobre cationes totales (K+Ca+Mg+NH₄). En cambio, los rangos de cationes (${FERTI_CATION_RANGES}) aplican al triángulo K+Ca+Mg (sin NH₄). ** Cl⁻: % sobre aniones totales (NO₃+H₂PO₄+SO₄+Cl); el diagrama ternario y ${FERTI_ANION_RANGES} siguen referidos solo a N-P-S (sin Cl).</div>
+        </table>`;
+}
+
+function renderFertiChartsInsights() {
+  const wrap = document.getElementById('fertiChartsStageInsightsWrap');
+  if (!wrap) return;
+  fertiNormalizeChartWaterByStage();
+  if (!fertiWeeks.length) { wrap.innerHTML = ''; return; }
+  const idx = fertiChartSelectedStageIndex;
+  const summaryFert = getFertiStageIonicSummary(idx);
+  const summaryWithWater = getFertiStageIonicSummary(idx, { includeWater: true });
+  const summaryTernary = (summaryWithWater && summaryWithWater.ppm) ? summaryWithWater : summaryFert;
+  const options = fertiWeeks.map((w, i) => `<option value="${i}" ${i === idx ? 'selected' : ''}>${fertiStageSlotLabel(i)} · ${w.stage || ''}</option>`).join('');
+  let body = '';
+  if (!summaryFert || summaryFert.m3ha <= 0) {
+    body = `<div class="ferti-insight-alert">Ingresa <strong>m³/ha</strong> en la lámina de riego de ${fertiStageSlotLabel(idx)} para calcular ppm y meq.</div>`;
+  } else {
+    const stageLabel = summaryFert.stage.stage || 'Etapa';
+    body = `
+      <div class="ferti-insight-card ferti-insight-card--macro-dual">
+        <h5>Macro resumen · ${fertiStageSlotLabel(idx)} (${stageLabel})</h5>
+        <div class="ferti-macro-dual-grid">
+          <div class="ferti-macro-dual-col">
+            <h6 class="ferti-macro-dual-title">Aporte de fertilizante</h6>
+            ${renderFertiMacroIonicTableHtml(summaryFert)}
+          </div>
+          <div class="ferti-macro-dual-col">
+            <h6 class="ferti-macro-dual-title">Fertilizante más aporte de agua</h6>
+            ${renderFertiMacroIonicTableHtml(summaryWithWater)}
+          </div>
+        </div>
+        <div class="ferti-insight-legend">* N-NH₄⁺ se calcula sobre cationes totales (K+Ca+Mg+NH₄). En cambio, los rangos de cationes (${FERTI_CATION_RANGES}) aplican al triángulo K+Ca+Mg (sin NH₄). ** Cl⁻: % sobre aniones totales (NO₃+H₂PO₄+SO₄+Cl); el diagrama ternario y ${FERTI_ANION_RANGES} siguen referidos solo a N-P-S (sin Cl). El aporte de agua proviene de la pestaña Programa de nutrición; si está en cero, ambas tablas coinciden.</div>
       </div>
       <div class="ferti-insight-card ferti-insight-card--ternary">
         <h5>📐 Diagrama ternario (aniones + cationes)</h5>
-        <p class="ferti-insight-ternary-note">Misma lógica que en Hidroponía · Solución por etapa: cuadrado amarillo = balance aniónico solo entre N-NO₃⁻, P-H₂PO₄⁻ y S-SO₄²⁻ (100%); el Cl⁻ del programa (KCl, cloruro de calcio dihidratado, etc.) suma en Σ aniones y en su % aparte, sin mover el punto del triángulo. Círculo rojo = K⁺, Ca²⁺, Mg²⁺ sobre K+Ca+Mg. Zonas sombreadas = rangos de equilibrio de referencia.</p>
+        <p class="ferti-insight-ternary-note">Basado en <strong>fertilizante + aporte de agua</strong> de la etapa seleccionada. Misma lógica que en Hidroponía · Solución por etapa: cuadrado amarillo = balance aniónico solo entre N-NO₃⁻, P-H₂PO₄⁻ y S-SO₄²⁻ (100%); el Cl⁻ suma en Σ aniones y en su % aparte, sin mover el punto del triángulo. Círculo rojo = K⁺, Ca²⁺, Mg²⁺ sobre K+Ca+Mg.</p>
         <div id="fertiChartsTernaryInfo" class="ferti-insight-muted-ternary notranslate" translate="no"></div>
         <div id="fertiChartsTernaryPlot" class="ferti-charts-ternary-plot hydro-triangle notranslate" translate="no"></div>
       </div>
       <div class="ferti-insight-card">
-        <h5>Micros · ${fertiStageSlotLabel(idx)} (${summary.stage.stage || 'Etapa'})</h5>
+        <h5>Micros · ${fertiStageSlotLabel(idx)} (${stageLabel}) · fertilizante + agua</h5>
         <table class="ferti-insight-table">
           <thead><tr><th>Nutriente</th><th>kg/ha</th><th>ppm</th></tr></thead>
           <tbody>
-            <tr><td>Fe</td><td>${fertiNum(summary.kg.Fe, 3)}</td><td>${fertiNum(summary.ppm.Fe, 2)}</td></tr>
-            <tr><td>Mn</td><td>${fertiNum(summary.kg.Mn, 3)}</td><td>${fertiNum(summary.ppm.Mn, 2)}</td></tr>
-            <tr><td>B</td><td>${fertiNum(summary.kg.B, 3)}</td><td>${fertiNum(summary.ppm.B, 2)}</td></tr>
-            <tr><td>Zn</td><td>${fertiNum(summary.kg.Zn, 3)}</td><td>${fertiNum(summary.ppm.Zn, 2)}</td></tr>
-            <tr><td>Cu</td><td>${fertiNum(summary.kg.Cu, 3)}</td><td>${fertiNum(summary.ppm.Cu, 2)}</td></tr>
-            <tr><td>Mo</td><td>${fertiNum(summary.kg.Mo, 3)}</td><td>${fertiNum(summary.ppm.Mo, 2)}</td></tr>
+            <tr><td>Fe</td><td>${fertiNum(summaryTernary.kg.Fe, 3)}</td><td>${fertiNum(summaryTernary.ppm.Fe, 2)}</td></tr>
+            <tr><td>Mn</td><td>${fertiNum(summaryTernary.kg.Mn, 3)}</td><td>${fertiNum(summaryTernary.ppm.Mn, 2)}</td></tr>
+            <tr><td>B</td><td>${fertiNum(summaryTernary.kg.B, 3)}</td><td>${fertiNum(summaryTernary.ppm.B, 2)}</td></tr>
+            <tr><td>Zn</td><td>${fertiNum(summaryTernary.kg.Zn, 3)}</td><td>${fertiNum(summaryTernary.ppm.Zn, 2)}</td></tr>
+            <tr><td>Cu</td><td>${fertiNum(summaryTernary.kg.Cu, 3)}</td><td>${fertiNum(summaryTernary.ppm.Cu, 2)}</td></tr>
+            <tr><td>Mo</td><td>${fertiNum(summaryTernary.kg.Mo, 3)}</td><td>${fertiNum(summaryTernary.ppm.Mo, 2)}</td></tr>
           </tbody>
         </table>
       </div>
@@ -1388,32 +1451,32 @@ function renderFertiChartsInsights() {
     <div class="ferti-charts-insights-head">
       <label for="fertiChartsStageSelect">Etapa a analizar:</label>
       <select id="fertiChartsStageSelect" onchange="onFertiChartStageSelect(this.value)">${options}</select>
-      <span class="ferti-charts-water-note">Lámina: ${summary && summary.m3ha > 0 ? fertiNum(summary.m3ha, 2) + ' m³/ha' : 'sin dato'}</span>
+      <span class="ferti-charts-water-note">Lámina: ${summaryFert && summaryFert.m3ha > 0 ? fertiNum(summaryFert.m3ha, 2) + ' m³/ha' : 'sin dato'}</span>
     </div>
     ${body}
   `;
-  if (summary && summary.m3ha > 0 && typeof hydroDrawCombinedTernary === 'function') {
+  if (summaryTernary && summaryTernary.m3ha > 0 && summaryTernary.pct && typeof hydroDrawCombinedTernary === 'function') {
     const tri = document.getElementById('fertiChartsTernaryPlot');
     if (!tri) return;
     const triInfo = document.getElementById('fertiChartsTernaryInfo');
     const anionZ = typeof hydroEquilibriumPolygonAnions === 'function' ? hydroEquilibriumPolygonAnions() : [];
     const catZ = typeof hydroEquilibriumPolygonCations === 'function' ? hydroEquilibriumPolygonCations() : [];
     hydroDrawCombinedTernary(tri, {
-      pNO3: summary.pct.N_NO3,
-      pH2PO4: summary.pct.P,
-      pSO4: summary.pct.SO4,
-      pK: summary.pct.K,
-      pCa: summary.pct.Ca,
-      pMg: summary.pct.Mg,
+      pNO3: summaryTernary.pct.N_NO3,
+      pH2PO4: summaryTernary.pct.P,
+      pSO4: summaryTernary.pct.SO4,
+      pK: summaryTernary.pct.K,
+      pCa: summaryTernary.pct.Ca,
+      pMg: summaryTernary.pct.Mg,
       anionZone: anionZ,
       cationZone: catZ
     });
     if (triInfo) {
       triInfo.textContent =
-        `Aniones (triángulo): N-NO₃⁻ ${fertiNum(summary.pct.N_NO3, 1)}% · P-H₂PO₄⁻ ${fertiNum(summary.pct.P, 1)}% · S-SO₄²⁻ ${fertiNum(summary.pct.SO4, 1)}% | ` +
-        `Cl⁻ ${fertiNum(summary.pct.Cl, 1)}% sobre aniones totales (fuera del triángulo) | ` +
-        `Cationes (triángulo): K⁺ ${fertiNum(summary.pct.K, 1)}% · Ca²⁺ ${fertiNum(summary.pct.Ca, 1)}% · Mg²⁺ ${fertiNum(summary.pct.Mg, 1)}% · ` +
-        `N-NH₄⁺ ${fertiNum(summary.pct.N_NH4, 1)}% sobre cationes totales (fuera del triángulo).`;
+        `Aniones (triángulo): N-NO₃⁻ ${fertiNum(summaryTernary.pct.N_NO3, 1)}% · P-H₂PO₄⁻ ${fertiNum(summaryTernary.pct.P, 1)}% · S-SO₄²⁻ ${fertiNum(summaryTernary.pct.SO4, 1)}% | ` +
+        `Cl⁻ ${fertiNum(summaryTernary.pct.Cl, 1)}% sobre aniones totales (fuera del triángulo) | ` +
+        `Cationes (triángulo): K⁺ ${fertiNum(summaryTernary.pct.K, 1)}% · Ca²⁺ ${fertiNum(summaryTernary.pct.Ca, 1)}% · Mg²⁺ ${fertiNum(summaryTernary.pct.Mg, 1)}% · ` +
+        `N-NH₄⁺ ${fertiNum(summaryTernary.pct.N_NH4, 1)}% sobre cationes totales (fuera del triángulo).`;
     }
   }
 }
@@ -1970,7 +2033,7 @@ function loadFertirriegoProgram() {
       fertiWaterContributionOxide = { ...fertiWaterContributionOxide, ...data.waterContribution };
     } else {
       // Proyecto nuevo o sin aporte por agua guardado: no mostrar valores de otro proyecto
-      fertiWaterContributionOxide = { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, S: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0 };
+      fertiWaterContributionOxide = { N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, S: 0, SO4: 0, Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0, Cl: 0 };
     }
     fertiWeeks.forEach(w => { if (!w.kgByCol) w.kgByCol = {}; fertiColumns.forEach(c => { if (w.kgByCol[c.id] == null) w.kgByCol[c.id] = 0; }); });
     fertiNormalizeChartWaterByStage();
@@ -1994,7 +2057,7 @@ function initFertirriegoProgramUI() {
   fertiChartSelectedStageIndex = 0;
   fertiWaterContributionOxide = {
     N: 0, P2O5: 0, K2O: 0, CaO: 0, MgO: 0, S: 0, SO4: 0,
-    Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0
+    Fe: 0, Mn: 0, B: 0, Zn: 0, Cu: 0, Mo: 0, SiO2: 0, Cl: 0
   };
   fertiProgDirty = false;
 
