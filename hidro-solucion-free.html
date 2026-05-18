@@ -79,34 +79,41 @@
     .hydro-free-solution .hydro-table-colored {
       border-radius: 14px;
     }
+    /* Encabezados: casilla sombreada neutra; color solo en el texto del título */
     .hydro-free-solution .hydro-table-colored thead th {
-      background: #f1f5f9;
-      color: #334155;
+      background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+      color: #475569;
+      font-weight: 600;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
     }
     .hydro-free-solution .hydro-table-colored tbody td {
       background: #f8fafc;
     }
-    .hydro-free-solution thead th.hydro-col-an {
-      background: linear-gradient(180deg, #fef9c3 0%, #fde68a 100%);
-      color: #92400e;
+    .hydro-free-solution thead th.hydro-col-an,
+    .hydro-free-solution .hydro-th-group--an {
+      color: #a16207 !important;
     }
-    .hydro-free-solution thead th.hydro-col-cl {
-      background: linear-gradient(180deg, #fef3c7 0%, #fcd34d 100%);
-      color: #854d0e;
+    .hydro-free-solution thead th.hydro-col-cl,
+    .hydro-free-solution .hydro-th-group--cl {
+      color: #b45309 !important;
     }
-    .hydro-free-solution thead th.hydro-col-cat {
-      background: linear-gradient(180deg, #fee2e2 0%, #fecaca 100%);
-      color: #991b1b;
+    .hydro-free-solution thead th.hydro-col-cat,
+    .hydro-free-solution .hydro-th-group--cat {
+      color: #b91c1c !important;
     }
-    .hydro-free-solution thead th.hydro-col-nh4 {
-      background: linear-gradient(180deg, #ffe4e6 0%, #fda4af 100%);
-      color: #9f1239;
+    .hydro-free-solution thead th.hydro-col-nh4,
+    .hydro-free-solution .hydro-th-group--nh4 {
+      color: #be123c !important;
     }
-    .hydro-free-solution thead th.hydro-col-ce {
-      background: linear-gradient(180deg, #ede9fe 0%, #ddd6fe 100%);
-      color: #5b21b6;
+    .hydro-free-solution thead th.hydro-col-ce,
+    .hydro-free-solution .hydro-th-group--ce {
+      color: #6d28d9 !important;
     }
-    /* Cuerpo de tabla: fondo neutro; color solo en títulos (thead) */
+    .hydro-free-solution thead th .hydro-th-unit {
+      color: #94a3b8;
+      font-weight: 500;
+    }
     .hydro-free-solution .hydro-th-group {
       font-size: 0.68rem;
       font-weight: 700;
@@ -114,25 +121,18 @@
       letter-spacing: 0.03em;
       padding: 6px 4px;
     }
-    .hydro-free-solution .hydro-th-group--an {
-      background: rgba(234, 179, 8, 0.35) !important;
-      color: #92400e !important;
-    }
-    .hydro-free-solution .hydro-th-group--cl {
-      background: rgba(234, 179, 8, 0.5) !important;
-      color: #78350f !important;
-    }
-    .hydro-free-solution .hydro-th-group--cat {
-      background: rgba(185, 28, 28, 0.2) !important;
-      color: #991b1b !important;
-    }
-    .hydro-free-solution .hydro-th-group--nh4 {
-      background: rgba(185, 28, 28, 0.28) !important;
-      color: #991b1b !important;
-    }
-    .hydro-free-solution .hydro-th-group--ce {
-      background: rgba(124, 58, 237, 0.22) !important;
-      color: #5b21b6 !important;
+    /* Prioridad sobre dashboard.css (evita fondos/tintes fuertes en th) */
+    .hydro-free-solution .hydro-table th.hydro-col-an,
+    .hydro-free-solution .hydro-table th.hydro-col-cl,
+    .hydro-free-solution .hydro-table th.hydro-col-cat,
+    .hydro-free-solution .hydro-table th.hydro-col-nh4,
+    .hydro-free-solution .hydro-table th.hydro-col-ce,
+    .hydro-free-solution .hydro-table th.hydro-th-group--an,
+    .hydro-free-solution .hydro-table th.hydro-th-group--cl,
+    .hydro-free-solution .hydro-table th.hydro-th-group--cat,
+    .hydro-free-solution .hydro-table th.hydro-th-group--nh4,
+    .hydro-free-solution .hydro-table th.hydro-th-group--ce {
+      background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%) !important;
     }
     #hydroMeqTableWrap input.hydro-input[data-type="meq"][data-nutrient="Cl"],
     #hydroPpmTableWrap input.hydro-input[data-type="ppm"][data-nutrient="Cl"] {
@@ -515,7 +515,7 @@
             <thead>
               ${hydroTableGroupHeaderRow(true)}
               <tr>
-                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">(meq/L)</span></th>`).join('')}
+                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate hydro-th-unit" translate="no">(meq/L)</span></th>`).join('')}
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -561,8 +561,8 @@
             <thead>
               ${hydroTableGroupHeaderRow(true)}
               <tr>
-                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
-                ${HYDRO_MICROS.map((n, idx) => `<th class="${idx === 0 ? 'hydro-micro-start' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
+                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate hydro-th-unit" translate="no">ppm</span></th>`).join('')}
+                ${HYDRO_MICROS.map((n, idx) => `<th class="${idx === 0 ? 'hydro-micro-start' : ''}">${hydroLabelHtml(n)} <span class="notranslate hydro-th-unit" translate="no">ppm</span></th>`).join('')}
               </tr>
             </thead>
             <tbody>${ppmRows}</tbody>
@@ -585,7 +585,7 @@
             <thead>
               ${hydroTableGroupHeaderRow(false)}
               <tr>
-                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">% meq</span></th>`).join('')}
+                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate hydro-th-unit" translate="no">% meq</span></th>`).join('')}
               </tr>
             </thead>
             <tbody>${pctRows}</tbody>
