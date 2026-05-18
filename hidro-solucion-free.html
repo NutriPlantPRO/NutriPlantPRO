@@ -210,6 +210,31 @@
       border: 1px solid #ca8a04;
       color: #713f12;
     }
+    .hydro-tern-chip-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hydro-tern-marker {
+      display: inline-block;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+    /* Mismos símbolos que en el diagrama: cuadrado amarillo · círculo rojo */
+    .hydro-tern-marker--sq {
+      width: 10px;
+      height: 10px;
+      background: #eab308;
+      border: 1.2px solid #92400e;
+      border-radius: 1px;
+    }
+    .hydro-tern-marker--circ {
+      width: 10px;
+      height: 10px;
+      background: #ef4444;
+      border: 1.2px solid #7f1d1d;
+      border-radius: 50%;
+    }
     .hydro-tern-chip--an strong { color: #92400e; }
     .hydro-tern-chip--cat {
       background: rgba(185, 28, 28, 0.12);
@@ -773,9 +798,11 @@
       if (!info || !stage) return;
       const p = hydroTernaryPercents(stage);
       info.innerHTML =
-        '<span class="hydro-tern-chip hydro-tern-chip--an"><strong>Aniones (triángulo)</strong> ' +
+        '<span class="hydro-tern-chip hydro-tern-chip--an"><strong class="hydro-tern-chip-title">' +
+        '<span class="hydro-tern-marker hydro-tern-marker--sq" aria-hidden="true"></span>Aniones (triángulo)</strong> ' +
         'N-NO₃⁻ ' + p.pNO3.toFixed(1) + '% · P-H₂PO₄⁻ ' + p.pH2PO4.toFixed(1) + '% · S-SO₄²⁻ ' + p.pSO4.toFixed(1) + '%</span>' +
-        '<span class="hydro-tern-chip hydro-tern-chip--cat"><strong>Cationes (triángulo)</strong> ' +
+        '<span class="hydro-tern-chip hydro-tern-chip--cat"><strong class="hydro-tern-chip-title">' +
+        '<span class="hydro-tern-marker hydro-tern-marker--circ" aria-hidden="true"></span>Cationes (triángulo)</strong> ' +
         'K⁺ ' + p.pK.toFixed(1) + '% · Ca²⁺ ' + p.pCa.toFixed(1) + '% · Mg²⁺ ' + p.pMg.toFixed(1) + '% · N-NH₄⁺ fuera del triángulo</span>';
     }
 
