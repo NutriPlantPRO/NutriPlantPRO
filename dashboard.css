@@ -4460,22 +4460,22 @@ body {
   padding-top: 10px;
 }
 
-/* Macro resumen: filas Cl⁻ y N-NH₄⁺ (datos en tono suave; % grupo mantiene su chip) */
+/* Macro resumen: filas Cl⁻ y N-NH₄⁺ (tinte muy suave; sin confundir con fórmula) */
 .ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-cl > td:nth-child(1),
 .ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-cl > td:nth-child(2),
 .ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-cl > td:nth-child(3),
 .ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-cl > td:nth-child(4) {
-  background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%) !important;
-  color: #0c4a6e;
-  font-weight: 600;
+  background: #f8fafc !important;
+  color: #475569;
+  font-weight: 500;
 }
 .ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-nh4 > td:nth-child(1),
 .ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-nh4 > td:nth-child(2),
 .ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-nh4 > td:nth-child(3),
 .ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-nh4 > td:nth-child(4) {
-  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%) !important;
-  color: #9a3412;
-  font-weight: 600;
+  background: #fafaf9 !important;
+  color: #57534e;
+  font-weight: 500;
 }
 
 /* Macro resumen: % por fila (alineado al nutriente); marcos unidos en 3 celdas */
@@ -4577,12 +4577,12 @@ body {
   padding: 0 12px;
   border-radius: 8px;
   font-size: 0.92rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
-  background: linear-gradient(180deg, #ffedd5 0%, #fffbeb 100%);
-  border: 2px solid #ea580c;
-  color: #9a3412;
-  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.12);
+  background: #fafaf9;
+  border: 1px solid #e7e5e4;
+  color: #57534e;
+  box-shadow: none;
   cursor: help;
 }
 
@@ -4603,12 +4603,12 @@ body {
   padding: 0 12px;
   border-radius: 8px;
   font-size: 0.92rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
-  background: linear-gradient(180deg, #e0f2fe 0%, #f0f9ff 100%);
-  border: 2px solid #0284c7;
-  color: #0c4a6e;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.12);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  box-shadow: none;
   cursor: help;
 }
 

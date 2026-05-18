@@ -102,10 +102,11 @@
       background: linear-gradient(180deg, #ffe4e6 0%, #fda4af 100%);
       color: #9f1239;
     }
-    .hydro-free-solution tbody td.hydro-col-an { background: #fffbeb !important; }
-    .hydro-free-solution tbody td.hydro-col-cl { background: #fffbeb !important; }
-    .hydro-free-solution tbody td.hydro-col-cat { background: #fff1f2 !important; }
-    .hydro-free-solution tbody td.hydro-col-nh4 { background: #fff1f2 !important; }
+    .hydro-free-solution thead th.hydro-col-ce {
+      background: linear-gradient(180deg, #ede9fe 0%, #ddd6fe 100%);
+      color: #5b21b6;
+    }
+    /* Cuerpo de tabla: fondo neutro; color solo en títulos (thead) */
     .hydro-free-solution .hydro-th-group {
       font-size: 0.68rem;
       font-weight: 700;
@@ -128,6 +129,10 @@
     .hydro-free-solution .hydro-th-group--nh4 {
       background: rgba(185, 28, 28, 0.28) !important;
       color: #991b1b !important;
+    }
+    .hydro-free-solution .hydro-th-group--ce {
+      background: rgba(124, 58, 237, 0.22) !important;
+      color: #5b21b6 !important;
     }
     #hydroMeqTableWrap input.hydro-input[data-type="meq"][data-nutrient="Cl"],
     #hydroPpmTableWrap input.hydro-input[data-type="ppm"][data-nutrient="Cl"] {
@@ -217,7 +222,7 @@
         <div class="hydro-card">
           <div class="hydro-card-header">
             <h3>🧪 Diseño de solución nutritiva</h3>
-            <p class="hydro-muted" style="margin:6px 0 0 0;font-size:0.8rem;">Podés empezar con <strong>CE (dS/m)</strong> y arrastrar el triángulo (define % → meq/L → ppm), o editar <strong>meq/L</strong> / <strong>ppm</strong> directamente.</p>
+            <p class="hydro-muted" style="margin:6px 0 0 0;font-size:0.8rem;">Podés empezar con <strong>CE (dS/m)</strong> y arrastrar el triángulo (define % → meq/L → ppm), o editar <strong>meq/L</strong> / <strong>ppm</strong> directamente. Si arrastrás sin CE, la app reparte <strong>30 meq/L</strong> solo en el triángulo (N-P-S y K-Ca-Mg); <strong>N-NH₄⁺ no se rellena solo</strong> — capturalo aparte si lo necesitás.</p>
             <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;"></p>
           </div>
           <div id="hydroMeqTableWrap" class="hydro-table-wrap"></div>
@@ -232,7 +237,7 @@
           <div class="hydro-muted hydro-ternary-description">
             <strong>Rangos por elemento (%).</strong> Aniones: N-NO₃⁻ 20–80, P-H₂PO₄⁻ 1.25–10, S-SO₄²⁻ 10–70.
             Cationes: K⁺ 10–65, Ca²⁺ 22.5–62.5, Mg²⁺ 0.5–40.
-            El % de NH₄⁺ es sobre el total catiónico (K+Ca+Mg+NH₄⁺) y no entra al triángulo catiónico. El Cl⁻ se captura en <strong>ppm</strong> (no suma a la CE ni al triángulo N-P-S); su % aniónico es sobre NO₃+P+S+Cl. Arrastra el cuadrado (aniones) o el círculo (cationes K-Ca-Mg).
+            El % de NH₄⁺ es sobre el total catiónico (K+Ca+Mg+NH₄⁺) y no entra al triángulo catiónico (no se asigna al arrastrar). El Cl⁻ se captura en <strong>ppm</strong> (no suma a la CE ni al triángulo N-P-S); su % aniónico es sobre NO₃+P+S+Cl. Arrastra el cuadrado (aniones) o el círculo (cationes K-Ca-Mg).
           </div>
           <div id="hydroTriangleInfoCombined" class="hydro-tern-chip-row"></div>
           <div id="hydroNNLegend" class="hydro-n-legend" style="display:none;"></div>
@@ -291,7 +296,7 @@
       return isNaN(sumMeq / 20) ? 0 : (sumMeq / 20);
     }
 
-    /** Reparte CE×20 meq/L en partes iguales (triángulos 33/33/33); sin NH₄ automático. */
+    /** Reparte CE×20 meq/L en partes iguales (triángulos 33/33/33); NH₄ no se toca (solo si el usuario lo captura). */
     function hydroBootstrapFromCe(stage) {
       const ce = parseFloat(stage.ce) || 0;
       if (ce <= 0) return;
@@ -374,7 +379,7 @@
       return '';
     }
     function hydroTableGroupHeaderRow(ceCol) {
-      const ce = ceCol ? '<th>CE (dS/m)</th>' : '';
+      const ce = ceCol ? '<th rowspan="2" class="hydro-col-ce hydro-th-group--ce">CE (dS/m)</th>' : '';
       return `<tr class="hydro-ion-group-row">${ce}<th colspan="3" class="hydro-th-group hydro-th-group--an">Aniones · triángulo</th><th class="hydro-th-group hydro-th-group--cl">Cl⁻</th><th colspan="3" class="hydro-th-group hydro-th-group--cat">Cationes · triángulo</th><th class="hydro-th-group hydro-th-group--nh4">N-NH₄⁺</th></tr>`;
     }
 
@@ -498,7 +503,7 @@
             ${HYDRO_MEQ_NUTRIENTS.map(n => {
               const mv = (stage.meq && stage.meq[n] != null) ? stage.meq[n] : 0;
               const title = n === 'Cl' ? ' title="Cl⁻: no suma a CE ni al triángulo N-P-S"' : '';
-              return `<td class="${hydroColClass(n)}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.01" min="0"${title} value="${hydroRound2(mv).toFixed(2)}"></td>`;
+              return `<td><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.01" min="0"${title} value="${hydroRound2(mv).toFixed(2)}"></td>`;
             }).join('')}
           </tr>
         `;
@@ -510,7 +515,6 @@
             <thead>
               ${hydroTableGroupHeaderRow(true)}
               <tr>
-                <th>CE (dS/m)</th>
                 ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">(meq/L)</span></th>`).join('')}
               </tr>
             </thead>
@@ -544,7 +548,7 @@
                 : hydroEscapeAttr(hydroRound2(src).toFixed(1));
               const inpType = n === 'Cl' ? 'number' : 'text';
               const extra = n === 'Cl' ? ' step="0.01" min="0"' : ' inputmode="decimal" autocomplete="off"';
-              return `<td class="${hydroColClass(n)}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="${inpType}"${extra} value="${vAttr}"></td>`;
+              return `<td><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="${inpType}"${extra} value="${vAttr}"></td>`;
             }).join('')}
             ${HYDRO_MICROS.map((n, idx) => `<td class="${idx === 0 ? 'hydro-micro-start' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.01" value="${stage.ppm?.[n] ?? 0}"></td>`).join('')}
           </tr>
@@ -557,7 +561,6 @@
             <thead>
               ${hydroTableGroupHeaderRow(true)}
               <tr>
-                <th>CE (dS/m)</th>
                 ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
                 ${HYDRO_MICROS.map((n, idx) => `<th class="${idx === 0 ? 'hydro-micro-start' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
               </tr>
@@ -571,7 +574,7 @@
         const pct = hydroPctMeqRow(stage);
         return `
           <tr>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${hydroColClass(n)}">${pct[n].toFixed(1)}</td>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td>${pct[n].toFixed(1)}</td>`).join('')}
           </tr>
         `;
       }).join('');
@@ -676,20 +679,20 @@
       return hydroPointInPolygon(x, y, [geom.vTop, geom.vLeft, geom.vRight]);
     }
 
+    /**
+     * Si el triángulo está vacío (todo en 0), reparte meq solo entre N-P-S y K-Ca-Mg para poder arrastrar.
+     * Sin CE capturada usa 30 meq/L de referencia (≈ CE 1,5 dS/m solo triángulos); NH₄ queda en 0 hasta que lo edites.
+     */
     function hydroEnsureGroupMeqTotals(stage) {
       const sumAn = HYDRO_ANIONS.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
       const sumKcm = HYDRO_CATIONS_TRIANGLE.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
       const nh4 = parseFloat(stage.meq.N_NH4) || 0;
-      if (sumAn + sumKcm + nh4 < 0.01) {
+      if (sumAn + sumKcm < 0.01 && nh4 < 0.01) {
         const ce = parseFloat(stage.ce) || 0;
-        const total = ce > 0 ? ce * 20 : 30;
-        const rest = Math.max(0, total - nh4);
-        const third = rest / 6;
+        const totalTriangle = ce > 0 ? Math.max(0, ce * 20 - nh4) : 30;
+        const third = totalTriangle / 6;
         HYDRO_ANIONS.forEach(n => { stage.meq[n] = hydroRound2(third); });
         HYDRO_CATIONS_TRIANGLE.forEach(n => { stage.meq[n] = hydroRound2(third); });
-        if (!nh4 && total > 0 && !(parseFloat(stage.ce) > 0)) {
-          stage.meq.N_NH4 = hydroRound2(rest * 0.1);
-        }
         stage.ce = hydroComputeCE(stage).toFixed(2);
       }
     }

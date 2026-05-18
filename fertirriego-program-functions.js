@@ -1368,7 +1368,7 @@ function renderFertiMacroIonicTableHtml(summary) {
               <td class="ferti-pct-cell ferti-pct-anion ferti-pct-anion--bot"><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.SO4, 1)}</span></td>
             </tr>
             <tr class="ferti-macro-row-cl" title="Cl⁻ en % masa del catálogo (p. ej. KCl, CaCl₂·2H₂O); meq/L = ppm Cl / 35,45.">
-              <td>Cl⁻**</td><td>${fertiNum(summary.kg.Cl)}</td><td>${fertiNum(summary.ppm.Cl, 1)}</td><td>${fertiNum(summary.meq.Cl, 2)}</td>
+              <td>Cl⁻</td><td>${fertiNum(summary.kg.Cl)}</td><td>${fertiNum(summary.ppm.Cl, 1)}</td><td>${fertiNum(summary.meq.Cl, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-cl-cell">
                 <span class="ferti-pct-cl notranslate" translate="no" title="% sobre aniones totales (NO₃+H₂PO₄+SO₄+Cl); no entra al triángulo N-P-S.">${fertiNum(summary.pct.Cl, 1)}</span>
               </td>
@@ -1387,7 +1387,7 @@ function renderFertiMacroIonicTableHtml(summary) {
               <td class="ferti-pct-cell ferti-pct-cat ferti-pct-cat--bot"><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.Mg, 1)}</span></td>
             </tr>
             <tr class="ferti-macro-row-nh4">
-              <td>N-NH₄⁺*</td><td>${fertiNum(summary.kg.N_NH4)}</td><td>${fertiNum(summary.ppm.N_NH4, 1)}</td><td>${fertiNum(summary.meq.N_NH4, 2)}</td>
+              <td>N-NH₄⁺</td><td>${fertiNum(summary.kg.N_NH4)}</td><td>${fertiNum(summary.ppm.N_NH4, 1)}</td><td>${fertiNum(summary.meq.N_NH4, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-nh4-cell">
                 <span class="ferti-pct-nh4 notranslate" translate="no" title="% sobre cationes totales (K+Ca+Mg+NH₄); ver nota al pie.">${fertiNum(summary.pct.N_NH4, 1)}</span>
               </td>
@@ -1437,7 +1437,7 @@ function renderFertiChartsInsights() {
             ${renderFertiMacroIonicTableHtml(summaryWithWater)}
           </div>
         </div>
-        <div class="ferti-insight-legend">* N-NH₄⁺ se calcula sobre cationes totales (K+Ca+Mg+NH₄). En cambio, los rangos de cationes (${FERTI_CATION_RANGES}) aplican al triángulo K+Ca+Mg (sin NH₄). ** Cl⁻: % sobre aniones totales (NO₃+H₂PO₄+SO₄+Cl); el diagrama ternario y ${FERTI_ANION_RANGES} siguen referidos solo a N-P-S (sin Cl). El aporte de agua proviene de la pestaña Programa de nutrición; si está en cero, ambas tablas coinciden.</div>
+        <div class="ferti-insight-legend">N-NH₄⁺: % sobre cationes totales (K+Ca+Mg+NH₄). Los rangos de cationes (${FERTI_CATION_RANGES}) aplican al triángulo K+Ca+Mg (sin NH₄). Cl⁻: % sobre aniones totales (NO₃+H₂PO₄+SO₄+Cl); el diagrama ternario y ${FERTI_ANION_RANGES} siguen referidos solo a N-P-S (sin Cl). El aporte de agua proviene de la pestaña Programa de nutrición; si está en cero, ambas tablas coinciden.</div>
       </div>
       <div class="ferti-insight-card ferti-insight-card--ternary">
         <h5>📐 Diagrama ternario (aniones + cationes)</h5>
