@@ -106,13 +106,38 @@
       margin: 10px 0 8px;
       padding: 10px 12px;
       border-radius: 12px;
-      background: #eff6ff;
-      border: 1px solid #93c5fd;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
       font-size: 12px;
       line-height: 1.5;
-      color: #1e3a8a;
+      color: #334155;
     }
-    .hydro-n-legend strong { color: #1d4ed8; }
+    .hydro-n-legend strong { color: #1e293b; }
+    .hydro-tern-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .hydro-tern-chip {
+      flex: 1 1 200px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+    .hydro-tern-chip--an {
+      background: rgba(234, 179, 8, 0.22);
+      border: 1px solid #ca8a04;
+      color: #713f12;
+    }
+    .hydro-tern-chip--an strong { color: #92400e; }
+    .hydro-tern-chip--cat {
+      background: rgba(185, 28, 28, 0.12);
+      border: 1px solid #b91c1c;
+      color: #7f1d1d;
+    }
+    .hydro-tern-chip--cat strong { color: #991b1b; }
     .hydro-tern-drag-hint {
       margin: 8px 0 0;
       font-size: 11px;
@@ -165,7 +190,7 @@
             Cationes: K⁺ 10–65, Ca²⁺ 22.5–62.5, Mg²⁺ 0.5–40.
             El % de NH₄⁺ es sobre el total catiónico (K+Ca+Mg+NH₄⁺) y no entra al triángulo catiónico. El Cl⁻ se captura en <strong>ppm</strong> (no suma a la CE ni al triángulo N-P-S); su % aniónico es sobre NO₃+P+S+Cl. Arrastra el cuadrado (aniones) o el círculo (cationes K-Ca-Mg).
           </div>
-          <div id="hydroTriangleInfoCombined" class="hydro-muted" style="margin-bottom:8px;"></div>
+          <div id="hydroTriangleInfoCombined" class="hydro-tern-chip-row"></div>
           <div id="hydroNNLegend" class="hydro-n-legend" style="display:none;"></div>
           <div id="hydroTriangleCombined" class="hydro-triangle"></div>
         </div>
@@ -602,13 +627,81 @@
       stage.meq.Ca = hydroRound2(sumKcm * pRight / 100);
     }
 
-    function hydroRenderFromTriangleDrag() {
+    function hydroTernaryPercents(stage) {
+      const meq = stage.meq || {};
+      const sumAnions = HYDRO_ANIONS.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+      const sumKCaMg = HYDRO_CATIONS_TRIANGLE.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
+      return {
+        pNO3: sumAnions > 0 ? (parseFloat(meq.N_NO3) || 0) / sumAnions * 100 : 33.3,
+        pH2PO4: sumAnions > 0 ? (parseFloat(meq.P) || 0) / sumAnions * 100 : 33.3,
+        pSO4: sumAnions > 0 ? (parseFloat(meq.S) || 0) / sumAnions * 100 : 33.3,
+        pK: sumKCaMg > 0 ? (parseFloat(meq.K) || 0) / sumKCaMg * 100 : 33.3,
+        pCa: sumKCaMg > 0 ? (parseFloat(meq.Ca) || 0) / sumKCaMg * 100 : 33.3,
+        pMg: sumKCaMg > 0 ? (parseFloat(meq.Mg) || 0) / sumKCaMg * 100 : 33.3
+      };
+    }
+
+    function hydroUpdateTriangleInfo(stage) {
+      const info = document.getElementById('hydroTriangleInfoCombined');
+      if (!info || !stage) return;
+      const p = hydroTernaryPercents(stage);
+      info.innerHTML =
+        '<span class="hydro-tern-chip hydro-tern-chip--an"><strong>Aniones (triángulo)</strong> ' +
+        'N-NO₃⁻ ' + p.pNO3.toFixed(1) + '% · P-H₂PO₄⁻ ' + p.pH2PO4.toFixed(1) + '% · S-SO₄²⁻ ' + p.pSO4.toFixed(1) + '%</span>' +
+        '<span class="hydro-tern-chip hydro-tern-chip--cat"><strong>Cationes (triángulo)</strong> ' +
+        'K⁺ ' + p.pK.toFixed(1) + '% · Ca²⁺ ' + p.pCa.toFixed(1) + '% · Mg²⁺ ' + p.pMg.toFixed(1) + '% · N-NH₄⁺ fuera del triángulo</span>';
+    }
+
+    function hydroPatchTriangleMarkers(stage) {
+      const wrap = document.getElementById('hydroTriangleCombined');
+      const svg = wrap && wrap.querySelector('svg');
+      if (!svg || !hydroTernGeom) return;
+      const g = hydroTernGeom;
+      const p = hydroTernaryPercents(stage);
+      const norm3 = (a, b, c) => {
+        let pa = Math.max(0, a), pb = Math.max(0, b), pc = Math.max(0, c);
+        const s = pa + pb + pc;
+        if (s > 0) { pa = (pa / s) * 100; pb = (pb / s) * 100; pc = (pc / s) * 100; }
+        return [pa, pb, pc];
+      };
+      const [pNO3, pH2PO4, pSO4] = norm3(p.pNO3, p.pH2PO4, p.pSO4);
+      const [pK, pCa, pMg] = norm3(p.pK, p.pCa, p.pMg);
+      const anPt = hydroBaryToXY(g.vTop, g.vLeft, g.vRight, pNO3, pH2PO4, pSO4);
+      const catPt = hydroBaryToXY(g.vTop, g.vLeft, g.vRight, pK, pCa, pMg);
+      const hitAn = svg.querySelector('.tern-hit-an');
+      const hitCat = svg.querySelector('.tern-hit-cat');
+      const visAn = svg.querySelector('.tern-vis-an');
+      const visCat = svg.querySelector('.tern-vis-cat');
+      if (hitAn) {
+        hitAn.setAttribute('x', anPt.x - 14);
+        hitAn.setAttribute('y', anPt.y - 14);
+      }
+      if (visAn) {
+        visAn.setAttribute('x', anPt.x - 6);
+        visAn.setAttribute('y', anPt.y - 6);
+      }
+      if (hitCat) {
+        hitCat.setAttribute('cx', catPt.x);
+        hitCat.setAttribute('cy', catPt.y);
+      }
+      if (visCat) {
+        visCat.setAttribute('cx', catPt.x);
+        visCat.setAttribute('cy', catPt.y);
+      }
+    }
+
+    function hydroRenderFromTriangleDrag(skipTriangleRedraw) {
       const stage = hydroGetActiveStage();
       stage.ce = hydroComputeCE(stage).toFixed(2);
       Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
       renderHydroMeqTable();
       renderHydroDerivedTables();
-      renderHydroTriangle();
+      hydroUpdateTriangleInfo(stage);
+      if (skipTriangleRedraw) {
+        hydroPatchTriangleMarkers(stage);
+      } else {
+        renderHydroTriangle();
+      }
     }
 
     function hydroUpdateNNLegend(stage) {
@@ -695,7 +788,7 @@
       const norm = (a, b, c) => { const s = a + b + c; return s > 0 ? [a/s*100, b/s*100, c/s*100] : [a, b, c]; };
       const [k65, ca25, mg15] = norm(65, 25, 15);
       const cutLineEnd = toXYC(k65, ca25, mg15);
-      const cut55K = `<line x1="${cutLineStart.x}" y1="${cutLineStart.y}" x2="${cutLineEnd.x}" y2="${cutLineEnd.y}" stroke="#1e40af" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.7" />`;
+      const cut55K = `<line x1="${cutLineStart.x}" y1="${cutLineStart.y}" x2="${cutLineEnd.x}" y2="${cutLineEnd.y}" stroke="#b91c1c" stroke-width="1.5" stroke-dasharray="6,4" />`;
 
       let catZonePts = catZonePtsFull;
       if (catZonePtsFull.length >= 3) {
@@ -724,22 +817,22 @@
         if (isBottom) return false;
         return i % 2 === 1;
       };
-      const catPoly = catZonePts.length >= 3 ? polygonMixed(catZonePts, 'rgba(14,165,233,0.28)', '#0369a1', 2, catDashedFn) : '';
+      const catPoly = catZonePts.length >= 3 ? polygonMixed(catZonePts, 'rgba(185,28,28,0.28)', '#b91c1c', 2, catDashedFn) : '';
       const [pK, pCa, pMg] = normalize(data.pK, data.pCa, data.pMg);
       const catPoint = toXYC(pK, pCa, pMg);
       const catInside = catZonePts.length >= 3 && hydroPointInPolygon(catPoint.x, catPoint.y, catZonePts);
       const catCircle =
-        `<circle class="tern-hit-cat" data-tern-role="cat" cx="${catPoint.x}" cy="${catPoint.y}" r="16" fill="transparent" stroke="none" />` +
-        `<circle cx="${catPoint.x}" cy="${catPoint.y}" r="7" fill="${catInside ? '#38bdf8' : '#2563eb'}" stroke="#1e3a8a" stroke-width="1.5" pointer-events="none" />`;
+        `<circle class="tern-hit-cat" data-tern-role="cat" cx="${catPoint.x}" cy="${catPoint.y}" r="18" fill="transparent" stroke="none" />` +
+        `<circle class="tern-vis-cat" cx="${catPoint.x}" cy="${catPoint.y}" r="6" fill="${catInside ? '#ef4444' : '#b91c1c'}" stroke="#7f1d1d" stroke-width="1.2" pointer-events="none" />`;
 
       const anZonePts = (data.anionZone || []).map(([no3, h2po4, so4]) => toXYA(no3, h2po4, so4));
-      const anPoly = anZonePts.length >= 3 ? polygonMixed(anZonePts, 'rgba(59,130,246,0.22)', '#1d4ed8', 2) : '';
+      const anPoly = anZonePts.length >= 3 ? polygonMixed(anZonePts, 'rgba(234,179,8,0.35)', '#ca8a04', 2) : '';
       const [pNO3, pH2PO4, pSO4] = normalize(data.pNO3, data.pH2PO4, data.pSO4);
       const anPoint = toXYA(pNO3, pH2PO4, pSO4);
       const anInside = anZonePts.length >= 3 && hydroPointInPolygon(anPoint.x, anPoint.y, anZonePts);
       const anSquare =
         `<rect class="tern-hit-an" data-tern-role="an" x="${anPoint.x - 14}" y="${anPoint.y - 14}" width="28" height="28" fill="transparent" stroke="none" />` +
-        `<rect x="${anPoint.x - 6}" y="${anPoint.y - 6}" width="12" height="12" fill="${anInside ? '#60a5fa' : '#1d4ed8'}" stroke="#1e3a8a" stroke-width="1.5" pointer-events="none" />`;
+        `<rect class="tern-vis-an" x="${anPoint.x - 6}" y="${anPoint.y - 6}" width="12" height="12" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" pointer-events="none" />`;
 
       let tickLabels = '';
       for (let i = 1; i <= 9; i++) {
@@ -777,44 +870,30 @@
           ${anPoly}
           ${catPoly}
           ${cut55K}
-          <polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#1d4ed8" stroke-width="2.2" />
-          ${catCircle}
+          <polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#2563eb" stroke-width="2" />
           ${anSquare}
+          ${catCircle}
           ${tickLabels}
           ${edgeLabels}
     </svg>
     </div>
-    <p class="hydro-tern-drag-hint">Primero podés fijar <strong>CE</strong>; al arrastrar el <strong>cuadrado</strong> (aniones) o el <strong>círculo</strong> (K-Ca-Mg) se definen los <strong>%</strong> y se calculan meq/L y ppm manteniendo los totales de cada grupo (CE constante).</p>
+    <p class="hydro-tern-drag-hint">Primero podés fijar <strong>CE</strong>. Arrastra el <strong style="color:#b45309">cuadrado amarillo</strong> (aniones) o el <strong style="color:#b91c1c">círculo rojo</strong> (K-Ca-Mg); se actualizan % meq, meq/L y ppm.</p>
       `;
     }
 
     function renderHydroTriangle() {
       const container = document.getElementById('hydroTriangleCombined');
-      const info = document.getElementById('hydroTriangleInfoCombined');
       const stage = hydroGetActiveStage();
       if (!container || !stage) return;
 
-      const meq = stage.meq || {};
-      const sumAnions = HYDRO_ANIONS.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
-      const sumKCaMg = HYDRO_CATIONS_TRIANGLE.reduce((acc, n) => acc + (parseFloat(meq[n]) || 0), 0);
-
-      const pNO3 = sumAnions > 0 ? (parseFloat(meq.N_NO3) || 0) / sumAnions * 100 : 33.3;
-      const pH2PO4 = sumAnions > 0 ? (parseFloat(meq.P) || 0) / sumAnions * 100 : 33.3;
-      const pSO4 = sumAnions > 0 ? (parseFloat(meq.S) || 0) / sumAnions * 100 : 33.3;
-      const pK = sumKCaMg > 0 ? (parseFloat(meq.K) || 0) / sumKCaMg * 100 : 33.3;
-      const pCa = sumKCaMg > 0 ? (parseFloat(meq.Ca) || 0) / sumKCaMg * 100 : 33.3;
-      const pMg = sumKCaMg > 0 ? (parseFloat(meq.Mg) || 0) / sumKCaMg * 100 : 33.3;
-
+      const p = hydroTernaryPercents(stage);
       hydroDrawCombinedTernary(container, {
-        pNO3, pH2PO4, pSO4,
-        pK, pCa, pMg,
+        pNO3: p.pNO3, pH2PO4: p.pH2PO4, pSO4: p.pSO4,
+        pK: p.pK, pCa: p.pCa, pMg: p.pMg,
         anionZone: hydroEquilibriumPolygonAnions(),
         cationZone: hydroEquilibriumPolygonCations()
       });
-
-      if (info) {
-        info.textContent = `Aniones: N-NO₃⁻ ${pNO3.toFixed(1)}% · P-H₂PO₄⁻ ${pH2PO4.toFixed(1)}% · S-SO₄²⁻ ${pSO4.toFixed(1)}%. Cationes: K⁺ ${pK.toFixed(1)}% · Ca²⁺ ${pCa.toFixed(1)}% · Mg²⁺ ${pMg.toFixed(1)}% (N-NH₄⁺ fuera del triángulo).`;
-      }
+      hydroUpdateTriangleInfo(stage);
       hydroUpdateNNLegend(stage);
     }
 
@@ -848,7 +927,7 @@
         if (!hydroTernDrag.raf) {
           hydroTernDrag.raf = requestAnimationFrame(function () {
             hydroTernDrag.raf = null;
-            hydroRenderFromTriangleDrag();
+            hydroRenderFromTriangleDrag(true);
           });
         }
       }
@@ -857,11 +936,10 @@
         const role = e.target.getAttribute && e.target.getAttribute('data-tern-role');
         if (role !== 'an' && role !== 'cat') return;
         hydroTernDrag.role = role;
+        wrap.classList.add('tern-dragging');
         const svg = wrap.querySelector('svg');
-        if (svg) {
-          svg.classList.add('tern-dragging');
-          try { svg.setPointerCapture(e.pointerId); } catch (_) {}
-        }
+        if (svg) svg.classList.add('tern-dragging');
+        try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
         applyAt(e.clientX, e.clientY);
         e.preventDefault();
       });
@@ -874,12 +952,13 @@
 
       function endDrag(e) {
         if (!hydroTernDrag.role) return;
+        const wasRole = hydroTernDrag.role;
         hydroTernDrag.role = null;
+        wrap.classList.remove('tern-dragging');
         const svg = wrap.querySelector('svg');
-        if (svg) {
-          svg.classList.remove('tern-dragging');
-          try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
-        }
+        if (svg) svg.classList.remove('tern-dragging');
+        try { wrap.releasePointerCapture(e.pointerId); } catch (_) {}
+        if (wasRole) hydroRenderFromTriangleDrag(false);
       }
       wrap.addEventListener('pointerup', endDrag);
       wrap.addEventListener('pointercancel', endDrag);
