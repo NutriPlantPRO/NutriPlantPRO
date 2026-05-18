@@ -71,6 +71,33 @@
       border-color: #bae6fd;
       box-shadow: 0 2px 12px rgba(37, 99, 235, 0.08);
     }
+    /* Bloques separados: meq/L · % meq · ppm */
+    .hydro-free-solution .hydro-table-block {
+      margin-top: 14px;
+      padding: 10px 12px 12px;
+      border: 1px solid #93c5fd;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.07);
+    }
+    .hydro-free-solution .hydro-card-header + .hydro-table-block {
+      margin-top: 10px;
+    }
+    .hydro-free-solution .hydro-table-block::before {
+      content: attr(data-label);
+      display: block;
+      margin: 0 0 8px 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #1e40af;
+    }
+    .hydro-free-solution .hydro-table-block .hydro-table-scroll {
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+    }
     .hydro-free-solution .hydro-table-scroll {
       border-radius: 14px;
       border: 1px solid #93c5fd;
@@ -235,9 +262,9 @@
             <p class="hydro-muted" style="margin:6px 0 0 0;font-size:0.8rem;" title="Con CE: arrastra el triángulo (actualiza % meq, meq/L y ppm). Sin CE al arrastrar: reparte 30 meq/L solo en N-P-S y K-Ca-Mg; NH₄⁺ no se autocompleta.">CE + triángulo, o edita <strong>meq/L</strong> / <strong>ppm</strong>. Sin CE: <strong>30 meq/L</strong> en el triángulo; <strong>N-NH₄⁺</strong> aparte.</p>
             <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;"></p>
           </div>
-          <div id="hydroMeqTableWrap" class="hydro-table-wrap"></div>
-          <div id="hydroMeqPercentWrap" class="hydro-table-wrap" style="margin-top:12px;"></div>
-          <div id="hydroPpmTableWrap" class="hydro-table-wrap" style="margin-top:12px;"></div>
+          <div id="hydroMeqTableWrap" class="hydro-table-wrap hydro-table-block" data-label="meq/L"></div>
+          <div id="hydroMeqPercentWrap" class="hydro-table-wrap hydro-table-block" data-label="% meq"></div>
+          <div id="hydroPpmTableWrap" class="hydro-table-wrap hydro-table-block" data-label="ppm"></div>
         </div>
 
         <div class="hydro-card">
