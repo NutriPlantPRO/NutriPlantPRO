@@ -659,16 +659,7 @@
       if (ppmWrap.firstElementChild) ppmWrap.firstElementChild.scrollLeft = savedPpmScroll;
       if (pctWrap.firstElementChild) pctWrap.firstElementChild.scrollLeft = savedPctScroll;
 
-      const summaryEl = document.getElementById('hydroNitrogenSummaryText');
-      if (summaryEl) {
-        const stage = hydroGetActiveStage();
-        const nNo3 = parseFloat(stage.meq?.N_NO3 || 0);
-        const nNh4 = parseFloat(stage.meq?.N_NH4 || 0);
-        const nTotal = nNo3 + nNh4;
-        const pctNo3 = nTotal > 0 ? (nNo3 / nTotal) * 100 : 0;
-        const pctNh4 = nTotal > 0 ? (nNh4 / nTotal) * 100 : 0;
-        summaryEl.textContent = `Suma de N (meq/L): ${nTotal.toFixed(2)} · % Nitrato: ${pctNo3.toFixed(1)}% · % Amonio: ${pctNh4.toFixed(1)}%`;
-      }
+      hydroUpdateNitrogenSummary(hydroGetActiveStage());
       hydroUpdateNNLegend(hydroGetActiveStage());
     }
 
@@ -856,6 +847,29 @@
       } else {
         renderHydroTriangle();
       }
+    }
+
+    /** Resumen compacto arriba: N total, partición NO₃/NH₄ (sobre N) y NO₃/Cl (sobre meq NO₃+Cl). */
+    function hydroUpdateNitrogenSummary(stage) {
+      const summaryEl = document.getElementById('hydroNitrogenSummaryText');
+      if (!summaryEl || !stage) return;
+      hydroSyncClMeqPpm(stage);
+      const mNo3 = parseFloat(stage.meq?.N_NO3 || 0);
+      const mNh4 = parseFloat(stage.meq?.N_NH4 || 0);
+      const mCl = hydroGetClMeq(stage);
+      const nTotal = mNo3 + mNh4;
+      const pctNo3OnN = nTotal > 0 ? (mNo3 / nTotal) * 100 : 0;
+      const pctNh4OnN = nTotal > 0 ? (mNh4 / nTotal) * 100 : 0;
+      const ncPair = mNo3 + mCl;
+      const pctNo3VsCl = ncPair > 0 ? (mNo3 / ncPair) * 100 : 0;
+      const pctClVsCl = ncPair > 0 ? (mCl / ncPair) * 100 : 0;
+      summaryEl.title =
+        '% Nitrato y % Amonio: sobre N total (NO₃ + NH₄ en meq/L). ' +
+        '% Nitrato vs Cl y % Cl: sobre la suma meq/L de N-NO₃⁻ + Cl⁻.';
+      summaryEl.textContent =
+        'Suma de N (meq/L): ' + nTotal.toFixed(2) +
+        ' · % Nitrato: ' + pctNo3OnN.toFixed(1) + '% · % Amonio: ' + pctNh4OnN.toFixed(1) + '%' +
+        ' · % Nitrato vs Cl: ' + pctNo3VsCl.toFixed(1) + '% · % Cl: ' + pctClVsCl.toFixed(1) + '%';
     }
 
     function hydroUpdateNNLegend(stage) {
