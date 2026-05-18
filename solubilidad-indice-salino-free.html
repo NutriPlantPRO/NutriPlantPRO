@@ -441,7 +441,7 @@
     return { cls: 'sol-dot-lo', label: 'Baja', c: '#dc2626' };
   }
 
-  var sortState = { k: 'name', dir: 1 };
+  var sortState = { k: 'is', dir: -1 };
 
   var maxIs = ROWS.reduce(function (m, r) {
     return r.is != null && r.is > m ? r.is : m;

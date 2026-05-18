@@ -30,6 +30,18 @@
       margin: 0 0 8px 0;
       line-height: 1.35;
     }
+    /* CE objetivo: punto de partida didáctico (CE → triángulo → % → meq → ppm) */
+    #hydroMeqTableWrap input.hydro-input[data-field="ce"] {
+      border: 2px solid #7c3aed;
+      font-weight: 600;
+      background: #faf5ff;
+      outline: none;
+      box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.15);
+    }
+    #hydroMeqTableWrap input.hydro-input[data-field="ce"]:focus {
+      border-color: #6d28d9;
+      box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.25);
+    }
     /* Contorno azul marino en la sección meq para indicar que son los campos editables */
     #hydroMeqTableWrap input.hydro-input[data-type="meq"] {
       border: 2px solid #1e40af;
@@ -50,6 +62,66 @@
       border-color: #0d9488;
       box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.25);
     }
+    /* Estilo propio herramienta gratuita (diferente a hidroponía PRO) */
+    .hydro-free-solution .hydro-card {
+      border-radius: 16px;
+      border-color: #bae6fd;
+      box-shadow: 0 2px 12px rgba(37, 99, 235, 0.08);
+    }
+    .hydro-free-solution .hydro-table-scroll {
+      border-radius: 14px;
+      border: 1px solid #93c5fd;
+      overflow: hidden;
+    }
+    .hydro-free-solution .hydro-table-colored {
+      border-radius: 14px;
+    }
+    .hydro-free-solution .hydro-table-colored thead th {
+      background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+      color: #1e3a8a;
+    }
+    .hydro-free-solution .hydro-table-colored tbody td {
+      background: #f8fafc;
+    }
+    .hydro-free-solution .hydro-col-nh4 {
+      background: #f0f9ff !important;
+    }
+    .hydro-free-solution .hydro-col-cl {
+      background: #ecfeff !important;
+    }
+    #hydroPpmTableWrap input.hydro-input[data-type="ppm"][data-nutrient="Cl"] {
+      border: 2px solid #0e7490;
+      box-shadow: 0 0 0 1px rgba(14, 116, 144, 0.15);
+    }
+    #hydroPpmTableWrap input.hydro-input[data-type="ppm"][data-nutrient="Cl"]:focus {
+      border-color: #155e75;
+      box-shadow: 0 0 0 2px rgba(14, 116, 144, 0.25);
+    }
+    .hydro-free-solution .hydro-ternary-svg-wrap svg {
+      background: #f8fafc !important;
+      border-radius: 14px;
+      border: 1px solid #93c5fd;
+    }
+    .hydro-n-legend {
+      margin: 10px 0 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #eff6ff;
+      border: 1px solid #93c5fd;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #1e3a8a;
+    }
+    .hydro-n-legend strong { color: #1d4ed8; }
+    .hydro-tern-drag-hint {
+      margin: 8px 0 0;
+      font-size: 11px;
+      color: #64748b;
+      text-align: center;
+    }
+    .hydro-ternary-chart-svg { cursor: crosshair; touch-action: none; }
+    .hydro-ternary-chart-svg.tern-dragging { cursor: grabbing; }
+    .tern-hit-an, .tern-hit-cat { cursor: grab; }
     @media (max-width: 600px) {
       .hydro-ternary-description {
         font-size: 0.75rem;
@@ -70,13 +142,13 @@
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   <p class="guest-note">Modo gratuito: no guarda datos. Al cerrar, la herramienta se reinicia.</p>
 
-  <div class="hydroponia-container">
+  <div class="hydroponia-container hydro-free-solution">
     <div class="hydroponia-content">
       <div class="tab-content active" id="hidro-solucion">
         <div class="hydro-card">
           <div class="hydro-card-header">
             <h3>🧪 Diseño de solución nutritiva</h3>
-            <p class="hydro-muted" style="margin:6px 0 0 0;font-size:0.8rem;">Podés editar <strong>meq/L</strong> o <strong>ppm</strong>; la otra fila y el % meq se recalculan (pesos equivalentes NutriPlant).</p>
+            <p class="hydro-muted" style="margin:6px 0 0 0;font-size:0.8rem;">Podés empezar con <strong>CE (dS/m)</strong> y arrastrar el triángulo (define % → meq/L → ppm), o editar <strong>meq/L</strong> / <strong>ppm</strong> directamente.</p>
             <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;"></p>
           </div>
           <div id="hydroMeqTableWrap" class="hydro-table-wrap"></div>
@@ -91,9 +163,10 @@
           <div class="hydro-muted hydro-ternary-description">
             <strong>Rangos por elemento (%).</strong> Aniones: N-NO₃⁻ 20–80, P-H₂PO₄⁻ 1.25–10, S-SO₄²⁻ 10–70.
             Cationes: K⁺ 10–65, Ca²⁺ 22.5–62.5, Mg²⁺ 0.5–40.
-            El % de NH₄⁺ se calcula sobre el total de cationes (K+Ca+Mg+NH₄⁺) y no entra en el triángulo.
+            El % de NH₄⁺ es sobre el total catiónico (K+Ca+Mg+NH₄⁺) y no entra al triángulo catiónico. El Cl⁻ se captura en <strong>ppm</strong> (no suma a la CE ni al triángulo N-P-S); su % aniónico es sobre NO₃+P+S+Cl. Arrastra el cuadrado (aniones) o el círculo (cationes K-Ca-Mg).
           </div>
           <div id="hydroTriangleInfoCombined" class="hydro-muted" style="margin-bottom:8px;"></div>
+          <div id="hydroNNLegend" class="hydro-n-legend" style="display:none;"></div>
           <div id="hydroTriangleCombined" class="hydro-triangle"></div>
         </div>
       </div>
@@ -106,14 +179,14 @@
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
     // En la versión gratuita no se muestran micros en ppm.
     const HYDRO_MICROS = [];
-    const HYDRO_EQ_WEIGHTS = { N_NO3:14.0, N_NH4:14.0, P:31.0, K:39.1, Ca:20.04, Mg:12.15, S:16.03 };
+    const HYDRO_EQ_WEIGHTS = { N_NO3:14.0, N_NH4:14.0, P:31.0, K:39.1, Ca:20.04, Mg:12.15, S:16.03, Cl:35.45 };
 
     const hydroState = {
       stages: [{
         id: 'stage_1',
         ce: '0.00',
         meq: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0 },
-        ppm: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0 }
+        ppm: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0, Cl: 0 }
       }],
       activeStageId: 'stage_1'
     };
@@ -127,6 +200,7 @@
         case 'K': return 'K⁺';
         case 'Ca': return 'Ca²⁺';
         case 'Mg': return 'Mg²⁺';
+        case 'Cl': return 'Cl⁻';
         default: return n;
       }
     }
@@ -135,12 +209,44 @@
     }
     function hydroLabel(n) { return hydroLabelPlain(n); }
 
-    function hydroComputeCE(stage) {
+    function hydroSumMeqForCe(stage) {
       const meq = stage.meq || {};
-      const sumMeq =
-        (parseFloat(meq.N_NO3) || 0) + (parseFloat(meq.N_NH4) || 0) + (parseFloat(meq.P) || 0) +
+      return (parseFloat(meq.N_NO3) || 0) + (parseFloat(meq.N_NH4) || 0) + (parseFloat(meq.P) || 0) +
         (parseFloat(meq.K) || 0) + (parseFloat(meq.Ca) || 0) + (parseFloat(meq.Mg) || 0) + (parseFloat(meq.S) || 0);
+    }
+
+    function hydroComputeCE(stage) {
+      const sumMeq = hydroSumMeqForCe(stage);
       return isNaN(sumMeq / 20) ? 0 : (sumMeq / 20);
+    }
+
+    /** Reparte CE×20 meq/L en partes iguales (triángulos 33/33/33); sin NH₄ automático. */
+    function hydroBootstrapFromCe(stage) {
+      const ce = parseFloat(stage.ce) || 0;
+      if (ce <= 0) return;
+      const total = ce * 20;
+      const nh4 = parseFloat(stage.meq?.N_NH4) || 0;
+      const rest = Math.max(0, total - nh4);
+      const third = rest / 6;
+      HYDRO_ANIONS.forEach(n => { stage.meq[n] = hydroRound2(third); });
+      HYDRO_CATIONS_TRIANGLE.forEach(n => { stage.meq[n] = hydroRound2(third); });
+      stage.ce = hydroComputeCE(stage).toFixed(2);
+    }
+
+    /** Si ya hay meq, escala todos los macros para alcanzar la CE objetivo (mantiene %). */
+    function hydroScaleMeqToCe(stage, newCe) {
+      const target = Math.max(0, newCe) * 20;
+      const current = hydroSumMeqForCe(stage);
+      if (target <= 0) return;
+      if (current < 0.01) {
+        hydroBootstrapFromCe(stage);
+        return;
+      }
+      const factor = target / current;
+      HYDRO_MEQ_NUTRIENTS.forEach(n => {
+        stage.meq[n] = hydroRound2((parseFloat(stage.meq[n]) || 0) * factor);
+      });
+      stage.ce = hydroComputeCE(stage).toFixed(2);
     }
 
     function hydroGetActiveStage() {
@@ -161,6 +267,20 @@
       const x = parseFloat(v);
       if (isNaN(x)) return 0;
       return Math.round(x * 100) / 100;
+    }
+
+    /** Cl⁻: solo ppm → meq/L para leyenda; no entra en CE ni en triángulo aniónico N-P-S. */
+    function hydroMeqClFromPpm(ppmCl) {
+      const w = HYDRO_EQ_WEIGHTS.Cl;
+      return w ? hydroRound2((parseFloat(ppmCl) || 0) / w) : 0;
+    }
+    function hydroMeqCl(stage) {
+      return hydroMeqClFromPpm(stage.ppm?.Cl);
+    }
+    function hydroColClass(n) {
+      if (n === 'N_NH4') return 'hydro-col-nh4';
+      if (n === 'Cl') return 'hydro-col-cl';
+      return '';
     }
 
     function hydroEscapeAttr(s) {
@@ -261,10 +381,10 @@
         stage.ce = computedCe.toFixed(2);
         return `
           <tr data-stage-id="${stage.id}">
-            <td><input class="hydro-input" data-stage-id="${stage.id}" data-field="ce" type="number" step="0.01" value="${stage.ce ?? ''}" readonly></td>
+            <td><input class="hydro-input" data-stage-id="${stage.id}" data-field="ce" type="number" step="0.01" min="0" value="${stage.ce ?? ''}" title="CE objetivo (dS/m). Con meq en cero, reparte CE×20 entre iones del triángulo."></td>
             ${HYDRO_MEQ_NUTRIENTS.map(n => {
               const mv = (stage.meq && stage.meq[n] != null) ? stage.meq[n] : 0;
-              return `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.01" value="${hydroRound2(mv).toFixed(2)}"></td>`;
+              return `<td class="${hydroColClass(n)}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.01" value="${hydroRound2(mv).toFixed(2)}"></td>`;
             }).join('')}
           </tr>
         `;
@@ -276,7 +396,7 @@
             <thead>
               <tr>
                 <th>CE (dS/m)</th>
-                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">(meq/L)</span></th>`).join('')}
+                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">(meq/L)</span></th>`).join('')}
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -305,8 +425,9 @@
               const vAttr = useLive
                 ? hydroEscapeAttr(hydroPpmTyping.raw)
                 : hydroEscapeAttr((macroPpm[n] != null ? macroPpm[n] : 0).toFixed(1));
-              return `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="text" inputmode="decimal" autocomplete="off" value="${vAttr}"></td>`;
+              return `<td class="${hydroColClass(n)}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="text" inputmode="decimal" autocomplete="off" value="${vAttr}"></td>`;
             }).join('')}
+            <td class="hydro-col-cl"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="Cl" type="number" step="0.01" min="0" value="${hydroRound2(stage.ppm?.Cl ?? 0).toFixed(1)}" title="Cl⁻ manual: no suma a CE ni al triángulo N-P-S"></td>
             ${HYDRO_MICROS.map((n, idx) => `<td class="${idx === 0 ? 'hydro-micro-start' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.01" value="${stage.ppm?.[n] ?? 0}"></td>`).join('')}
           </tr>
         `;
@@ -318,7 +439,8 @@
             <thead>
               <tr>
                 <th>CE (dS/m)</th>
-                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
+                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
+                <th class="hydro-col-cl">${hydroLabelHtml('Cl')} <span class="notranslate" translate="no">ppm</span></th>
                 ${HYDRO_MICROS.map((n, idx) => `<th class="${idx === 0 ? 'hydro-micro-start' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
               </tr>
             </thead>
@@ -340,7 +462,7 @@
         });
         return `
           <tr>
-            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${pct[n].toFixed(1)}</td>`).join('')}
+            ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${hydroColClass(n)}">${pct[n].toFixed(1)}</td>`).join('')}
           </tr>
         `;
       }).join('');
@@ -350,7 +472,7 @@
           <table class="hydro-table hydro-table-colored">
             <thead>
               <tr>
-                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${n === 'N_NH4' ? 'hydro-col-nh4' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">% meq</span></th>`).join('')}
+                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">% meq</span></th>`).join('')}
               </tr>
             </thead>
             <tbody>${pctRows}</tbody>
@@ -371,6 +493,7 @@
         const pctNh4 = nTotal > 0 ? (nNh4 / nTotal) * 100 : 0;
         summaryEl.textContent = `Suma de N (meq/L): ${nTotal.toFixed(2)} · % Nitrato: ${pctNo3.toFixed(1)}% · % Amonio: ${pctNh4.toFixed(1)}%`;
       }
+      hydroUpdateNNLegend(hydroGetActiveStage());
     }
 
     const HYDRO_ANION_LIMITS = { NO3: [20, 80], H2PO4: [1.25, 10], SO4: [10, 70] };
@@ -423,6 +546,122 @@
       return { x: (vA.x * pA + vB.x * pB + vC.x * pC) / 100, y: (vA.y * pA + vB.y * pB + vC.y * pC) / 100 };
     }
 
+    var hydroTernGeom = null;
+    var hydroTernDrag = { role: null, raf: null };
+
+    function hydroXYToBaryPct(x, y, geom) {
+      const vT = geom.vTop, vL = geom.vLeft, vR = geom.vRight;
+      const denom = (vL.y - vR.y) * (vT.x - vR.x) + (vR.x - vL.x) * (vT.y - vR.y);
+      if (Math.abs(denom) < 1e-9) return { top: 33.33, left: 33.33, right: 33.34 };
+      let wTop = ((vL.y - vR.y) * (x - vR.x) + (vR.x - vL.x) * (y - vR.y)) / denom;
+      let wLeft = ((vR.y - vT.y) * (x - vR.x) + (vT.x - vR.x) * (y - vR.y)) / denom;
+      let wRight = 1 - wTop - wLeft;
+      wTop = Math.max(0, wTop); wLeft = Math.max(0, wLeft); wRight = Math.max(0, wRight);
+      const s = wTop + wLeft + wRight;
+      if (s < 1e-9) return { top: 33.33, left: 33.33, right: 33.34 };
+      return { top: (wTop / s) * 100, left: (wLeft / s) * 100, right: (wRight / s) * 100 };
+    }
+
+    function hydroPointInTri(x, y, geom) {
+      return hydroPointInPolygon(x, y, [geom.vTop, geom.vLeft, geom.vRight]);
+    }
+
+    function hydroEnsureGroupMeqTotals(stage) {
+      const sumAn = HYDRO_ANIONS.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
+      const sumKcm = HYDRO_CATIONS_TRIANGLE.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
+      const nh4 = parseFloat(stage.meq.N_NH4) || 0;
+      if (sumAn + sumKcm + nh4 < 0.01) {
+        const ce = parseFloat(stage.ce) || 0;
+        const total = ce > 0 ? ce * 20 : 30;
+        const rest = Math.max(0, total - nh4);
+        const third = rest / 6;
+        HYDRO_ANIONS.forEach(n => { stage.meq[n] = hydroRound2(third); });
+        HYDRO_CATIONS_TRIANGLE.forEach(n => { stage.meq[n] = hydroRound2(third); });
+        if (!nh4 && total > 0 && !(parseFloat(stage.ce) > 0)) {
+          stage.meq.N_NH4 = hydroRound2(rest * 0.1);
+        }
+        stage.ce = hydroComputeCE(stage).toFixed(2);
+      }
+    }
+
+    function hydroApplyAnionPct(stage, pTop, pLeft, pRight) {
+      hydroEnsureGroupMeqTotals(stage);
+      let sumAn = HYDRO_ANIONS.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
+      if (sumAn <= 0) sumAn = 30;
+      stage.meq.N_NO3 = hydroRound2(sumAn * pTop / 100);
+      stage.meq.P = hydroRound2(sumAn * pLeft / 100);
+      stage.meq.S = hydroRound2(sumAn * pRight / 100);
+    }
+
+    function hydroApplyCationPct(stage, pTop, pLeft, pRight) {
+      hydroEnsureGroupMeqTotals(stage);
+      let sumKcm = HYDRO_CATIONS_TRIANGLE.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
+      if (sumKcm <= 0) sumKcm = 30;
+      stage.meq.K = hydroRound2(sumKcm * pTop / 100);
+      stage.meq.Mg = hydroRound2(sumKcm * pLeft / 100);
+      stage.meq.Ca = hydroRound2(sumKcm * pRight / 100);
+    }
+
+    function hydroRenderFromTriangleDrag() {
+      const stage = hydroGetActiveStage();
+      stage.ce = hydroComputeCE(stage).toFixed(2);
+      Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
+      renderHydroMeqTable();
+      renderHydroDerivedTables();
+      renderHydroTriangle();
+    }
+
+    function hydroUpdateNNLegend(stage) {
+      const el = document.getElementById('hydroNNLegend');
+      if (!el) return;
+      const mNo3 = parseFloat(stage.meq?.N_NO3) || 0;
+      const mNh4 = parseFloat(stage.meq?.N_NH4) || 0;
+      const mCl = hydroMeqCl(stage);
+      const ppmCl = parseFloat(stage.ppm?.Cl) || 0;
+      const nTot = mNo3 + mNh4;
+      const sumAnTri = HYDRO_ANIONS.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
+      const sumAnTotal = sumAnTri + mCl;
+      const sumKcm = HYDRO_CATIONS_TRIANGLE.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
+      const totalCat = sumKcm + mNh4;
+      const pctNno3 = nTot > 0 ? (mNo3 / nTot) * 100 : 0;
+      const pctNnh4 = nTot > 0 ? (mNh4 / nTot) * 100 : 0;
+      const pctNh4Cat = totalCat > 0 ? (mNh4 / totalCat) * 100 : 0;
+      const pctNo3Tri = sumAnTri > 0 ? (mNo3 / sumAnTri) * 100 : 0;
+      const ncPair = mNo3 + mCl;
+      const pctNo3Nc = ncPair > 0 ? (mNo3 / ncPair) * 100 : 0;
+      const pctClNc = ncPair > 0 ? (mCl / ncPair) * 100 : 0;
+      const pctClAnTotal = sumAnTotal > 0 ? (mCl / sumAnTotal) * 100 : 0;
+      const pctNo3AnTotal = sumAnTotal > 0 ? (mNo3 / sumAnTotal) * 100 : 0;
+      if (nTot <= 0 && mNh4 <= 0 && mCl <= 0 && ppmCl <= 0) {
+        el.style.display = 'none';
+        el.textContent = '';
+        return;
+      }
+      const parts = [];
+      if (nTot > 0 || mNh4 > 0) {
+        parts.push(
+          '<strong>N-NO₃⁻ / N-NH₄⁺</strong> (fuera del triángulo catiónico): meq/L ' +
+          '<strong>N-NO₃⁻ ' + mNo3.toFixed(2) + '</strong> · <strong>N-NH₄⁺ ' + mNh4.toFixed(2) + '</strong> ' +
+          '(N = ' + nTot.toFixed(2) + ' meq/L). % del N: NO₃ <strong>' + pctNno3.toFixed(1) + '%</strong> · NH₄ <strong>' + pctNnh4.toFixed(1) + '%</strong>. ' +
+          'NH₄ sobre K+Ca+Mg+NH₄: <strong>' + pctNh4Cat.toFixed(1) + '%</strong>. ' +
+          'NO₃ sobre triángulo aniónico (NO₃+P+S): <strong>' + pctNo3Tri.toFixed(1) + '%</strong>.'
+        );
+      }
+      if (mCl > 0 || ppmCl > 0) {
+        parts.push(
+          '<strong>Cl⁻</strong> (fuera del triángulo N-P-S; <strong>no suma a la CE</strong>): ' +
+          '<strong>' + ppmCl.toFixed(1) + ' ppm</strong> ≈ <strong>' + mCl.toFixed(2) + ' meq/L</strong> (35,45 mg/meq). ' +
+          (ncPair > 0
+            ? 'Par N-NO₃⁻ + Cl⁻ en meq/L: NO₃ <strong>' + pctNo3Nc.toFixed(1) + '%</strong> · Cl <strong>' + pctClNc.toFixed(1) + '%</strong>. '
+            : '') +
+          'Cl sobre aniones totales (NO₃+P+S+Cl): <strong>' + pctClAnTotal.toFixed(1) + '%</strong>; ' +
+          'NO₃ sobre ese total: <strong>' + pctNo3AnTotal.toFixed(1) + '%</strong>.'
+        );
+      }
+      el.style.display = 'block';
+      el.innerHTML = parts.join(' ');
+    }
+
     function hydroDrawCombinedTernary(container, data) {
       if (!container) return;
       const width = 460, height = 430, pad = 44;
@@ -432,6 +671,7 @@
       const vTop = { x: width / 2, y: pad };
       const vLeft = { x: pad, y: pad + triHeight };
       const vRight = { x: width - pad, y: pad + triHeight };
+      hydroTernGeom = { vTop: vTop, vLeft: vLeft, vRight: vRight, width: width, height: height };
       const toXYC = (k, ca, mg) => hydroBaryToXY(vTop, vLeft, vRight, k, ca, mg);
       const toXYA = (no3, h2po4, so4) => hydroBaryToXY(vTop, vLeft, vRight, no3, h2po4, so4);
 
@@ -455,7 +695,7 @@
       const norm = (a, b, c) => { const s = a + b + c; return s > 0 ? [a/s*100, b/s*100, c/s*100] : [a, b, c]; };
       const [k65, ca25, mg15] = norm(65, 25, 15);
       const cutLineEnd = toXYC(k65, ca25, mg15);
-      const cut55K = `<line x1="${cutLineStart.x}" y1="${cutLineStart.y}" x2="${cutLineEnd.x}" y2="${cutLineEnd.y}" stroke="#b91c1c" stroke-width="1.5" stroke-dasharray="6,4" />`;
+      const cut55K = `<line x1="${cutLineStart.x}" y1="${cutLineStart.y}" x2="${cutLineEnd.x}" y2="${cutLineEnd.y}" stroke="#1e40af" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.7" />`;
 
       let catZonePts = catZonePtsFull;
       if (catZonePtsFull.length >= 3) {
@@ -484,18 +724,22 @@
         if (isBottom) return false;
         return i % 2 === 1;
       };
-      const catPoly = catZonePts.length >= 3 ? polygonMixed(catZonePts, 'rgba(185,28,28,0.28)', '#b91c1c', 2, catDashedFn) : '';
+      const catPoly = catZonePts.length >= 3 ? polygonMixed(catZonePts, 'rgba(14,165,233,0.28)', '#0369a1', 2, catDashedFn) : '';
       const [pK, pCa, pMg] = normalize(data.pK, data.pCa, data.pMg);
       const catPoint = toXYC(pK, pCa, pMg);
       const catInside = catZonePts.length >= 3 && hydroPointInPolygon(catPoint.x, catPoint.y, catZonePts);
-      const catCircle = `<circle cx="${catPoint.x}" cy="${catPoint.y}" r="6" fill="${catInside ? '#ef4444' : '#b91c1c'}" stroke="#7f1d1d" stroke-width="1.2" />`;
+      const catCircle =
+        `<circle class="tern-hit-cat" data-tern-role="cat" cx="${catPoint.x}" cy="${catPoint.y}" r="16" fill="transparent" stroke="none" />` +
+        `<circle cx="${catPoint.x}" cy="${catPoint.y}" r="7" fill="${catInside ? '#38bdf8' : '#2563eb'}" stroke="#1e3a8a" stroke-width="1.5" pointer-events="none" />`;
 
       const anZonePts = (data.anionZone || []).map(([no3, h2po4, so4]) => toXYA(no3, h2po4, so4));
-      const anPoly = anZonePts.length >= 3 ? polygonMixed(anZonePts, 'rgba(234,179,8,0.35)', '#ca8a04') : '';
+      const anPoly = anZonePts.length >= 3 ? polygonMixed(anZonePts, 'rgba(59,130,246,0.22)', '#1d4ed8', 2) : '';
       const [pNO3, pH2PO4, pSO4] = normalize(data.pNO3, data.pH2PO4, data.pSO4);
       const anPoint = toXYA(pNO3, pH2PO4, pSO4);
       const anInside = anZonePts.length >= 3 && hydroPointInPolygon(anPoint.x, anPoint.y, anZonePts);
-      const anSquare = `<rect x="${anPoint.x - 6}" y="${anPoint.y - 6}" width="12" height="12" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" />`;
+      const anSquare =
+        `<rect class="tern-hit-an" data-tern-role="an" x="${anPoint.x - 14}" y="${anPoint.y - 14}" width="28" height="28" fill="transparent" stroke="none" />` +
+        `<rect x="${anPoint.x - 6}" y="${anPoint.y - 6}" width="12" height="12" fill="${anInside ? '#60a5fa' : '#1d4ed8'}" stroke="#1e3a8a" stroke-width="1.5" pointer-events="none" />`;
 
       let tickLabels = '';
       for (let i = 1; i <= 9; i++) {
@@ -528,18 +772,19 @@
 
       container.innerHTML = `
     <div class="hydro-ternary-svg-wrap notranslate" translate="no">
-    <svg xmlns="http://www.w3.org/2000/svg" class="notranslate hydro-ternary-chart-svg" translate="no" viewBox="0 0 ${width} ${height}" width="100%" height="${height}" preserveAspectRatio="xMidYMid meet" style="background:#fff;border-radius:8px;overflow:visible;display:block;max-width:100%;">
+    <svg xmlns="http://www.w3.org/2000/svg" class="notranslate hydro-ternary-chart-svg" translate="no" viewBox="0 0 ${width} ${height}" width="100%" height="${height}" preserveAspectRatio="xMidYMid meet" style="background:#f8fafc;border-radius:14px;overflow:visible;display:block;max-width:100%;">
           ${grid}
           ${anPoly}
           ${catPoly}
           ${cut55K}
-          <polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#2563eb" stroke-width="2" />
+          <polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#1d4ed8" stroke-width="2.2" />
           ${catCircle}
           ${anSquare}
           ${tickLabels}
           ${edgeLabels}
     </svg>
     </div>
+    <p class="hydro-tern-drag-hint">Primero podés fijar <strong>CE</strong>; al arrastrar el <strong>cuadrado</strong> (aniones) o el <strong>círculo</strong> (K-Ca-Mg) se definen los <strong>%</strong> y se calculan meq/L y ppm manteniendo los totales de cada grupo (CE constante).</p>
       `;
     }
 
@@ -570,6 +815,74 @@
       if (info) {
         info.textContent = `Aniones: N-NO₃⁻ ${pNO3.toFixed(1)}% · P-H₂PO₄⁻ ${pH2PO4.toFixed(1)}% · S-SO₄²⁻ ${pSO4.toFixed(1)}%. Cationes: K⁺ ${pK.toFixed(1)}% · Ca²⁺ ${pCa.toFixed(1)}% · Mg²⁺ ${pMg.toFixed(1)}% (N-NH₄⁺ fuera del triángulo).`;
       }
+      hydroUpdateNNLegend(stage);
+    }
+
+    function hydroTernClientToSvg(svg, clientX, clientY) {
+      const pt = svg.createSVGPoint();
+      pt.x = clientX;
+      pt.y = clientY;
+      const ctm = svg.getScreenCTM();
+      if (!ctm) return { x: 0, y: 0 };
+      const sp = pt.matrixTransform(ctm.inverse());
+      return { x: sp.x, y: sp.y };
+    }
+
+    function setupTernaryDrag() {
+      const wrap = document.getElementById('hydroTriangleCombined');
+      if (!wrap || wrap._ternDragReady) return;
+      wrap._ternDragReady = true;
+
+      function applyAt(clientX, clientY) {
+        if (!hydroTernGeom || !hydroTernDrag.role) return;
+        const svg = wrap.querySelector('svg');
+        if (!svg) return;
+        const p = hydroTernClientToSvg(svg, clientX, clientY);
+        const b = hydroXYToBaryPct(p.x, p.y, hydroTernGeom);
+        const stage = hydroGetActiveStage();
+        if (hydroTernDrag.role === 'an') {
+          hydroApplyAnionPct(stage, b.top, b.left, b.right);
+        } else if (hydroTernDrag.role === 'cat') {
+          hydroApplyCationPct(stage, b.top, b.left, b.right);
+        }
+        if (!hydroTernDrag.raf) {
+          hydroTernDrag.raf = requestAnimationFrame(function () {
+            hydroTernDrag.raf = null;
+            hydroRenderFromTriangleDrag();
+          });
+        }
+      }
+
+      wrap.addEventListener('pointerdown', function (e) {
+        const role = e.target.getAttribute && e.target.getAttribute('data-tern-role');
+        if (role !== 'an' && role !== 'cat') return;
+        hydroTernDrag.role = role;
+        const svg = wrap.querySelector('svg');
+        if (svg) {
+          svg.classList.add('tern-dragging');
+          try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+        }
+        applyAt(e.clientX, e.clientY);
+        e.preventDefault();
+      });
+
+      wrap.addEventListener('pointermove', function (e) {
+        if (!hydroTernDrag.role) return;
+        applyAt(e.clientX, e.clientY);
+        e.preventDefault();
+      });
+
+      function endDrag(e) {
+        if (!hydroTernDrag.role) return;
+        hydroTernDrag.role = null;
+        const svg = wrap.querySelector('svg');
+        if (svg) {
+          svg.classList.remove('tern-dragging');
+          try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+        }
+      }
+      wrap.addEventListener('pointerup', endDrag);
+      wrap.addEventListener('pointercancel', endDrag);
     }
 
     function bindEvents() {
@@ -582,6 +895,19 @@
         if (!stageId) return;
         const stage = hydroState.stages.find(s => s.id === stageId);
         if (!stage) return;
+
+        if (input.getAttribute('data-field') === 'ce') {
+          const newCe = Math.max(0, parseFloat(input.value) || 0);
+          stage.ce = newCe.toFixed(2);
+          const sumNow = hydroSumMeqForCe(stage);
+          if (sumNow < 0.01) hydroBootstrapFromCe(stage);
+          else hydroScaleMeqToCe(stage, newCe);
+          input.value = stage.ce;
+          renderHydroMeqTable();
+          renderHydroDerivedTables();
+          renderHydroTriangle();
+          return;
+        }
 
         const type = input.getAttribute('data-type');
         const nutrient = input.getAttribute('data-nutrient');
@@ -610,6 +936,9 @@
               hydroPatchMeqAndCeFromPpmState(container, stage);
               hydroSchedulePpmFullRender(fi);
             }
+          } else if (nutrient === 'Cl') {
+            stage.ppm.Cl = hydroRound2(parseFloat(input.value) || 0);
+            hydroUpdateNNLegend(stage);
           } else {
             stage.ppm[nutrient] = parseFloat(input.value) || 0;
           }
@@ -660,6 +989,7 @@
       renderHydroDerivedTables();
       renderHydroTriangle();
       bindEvents();
+      setupTernaryDrag();
     }
 
     document.addEventListener('DOMContentLoaded', boot);

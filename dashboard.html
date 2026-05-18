@@ -186,6 +186,7 @@
         <button id="btn-new-nutriplant" class="btn btn-pill btn-primary" type="button" title="Crear un nuevo proyecto NutriPlant" onclick="window.showNewProjectModal()">+ Nuevo NutriPlant</button>
           <button type="button" id="btn-conversion-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showConversionCalculator()" data-np-tooltip="Conversor Óxido ↔ Elemental" aria-label="Conversor Óxido ↔ Elemental">🧮</button>
           <button type="button" id="btn-nutrient-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientUnitsCalculator()" data-np-tooltip="Conversor de unidades (ppm/mmol/meq)" aria-label="Conversor de unidades (ppm/mmol/meq)">🧪</button>
+          <button type="button" id="btn-hydro-solution-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showHydroSolutionCalculator()" data-np-tooltip="Diseño de solución nutritiva (triángulo didáctico)" aria-label="Diseño de solución nutritiva">💧</button>
           <button type="button" id="btn-n-mineralizable-mo-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNMineralizableMoCalculator()" data-np-tooltip="Estimación de N mineralizable" aria-label="Estimación de N mineralizable">🌱</button>
           <button type="button" id="btn-water-hardness-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showWaterHardnessCalculator()" data-np-tooltip="Diagnóstico de agua y acondicionamiento" aria-label="Diagnóstico de agua y acondicionamiento">💦</button>
           <button type="button" id="btn-soil-water-texture-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSoilWaterTextureTool()" data-np-tooltip="Agua en suelo y textura" aria-label="Agua en suelo y textura">🪨</button>
@@ -433,6 +434,9 @@
       if (typeof showNutrientUnitsCalculator !== 'undefined') {
         window.showNutrientUnitsCalculator = showNutrientUnitsCalculator;
       }
+      if (typeof showHydroSolutionCalculator !== 'undefined') {
+        window.showHydroSolutionCalculator = showHydroSolutionCalculator;
+      }
       if (typeof showMeasureUnitsCalculator !== 'undefined') {
         window.showMeasureUnitsCalculator = showMeasureUnitsCalculator;
       }
@@ -498,6 +502,9 @@
       }
       if (typeof closeNutrientUnitsCalculator !== 'undefined') {
         window.closeNutrientUnitsCalculator = closeNutrientUnitsCalculator;
+      }
+      if (typeof closeHydroSolutionCalculator !== 'undefined') {
+        window.closeHydroSolutionCalculator = closeHydroSolutionCalculator;
       }
       
       console.log('✅ Funciones de calculadoras configuradas:', {
@@ -4930,6 +4937,21 @@ CONTRATO:
     }
     window.closeNMineralizableMoCalculator = closeNMineralizableMoCalculator;
 
+    function showHydroSolutionCalculator() {
+      var modal = document.getElementById('hydroSolutionCalculatorModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showHydroSolutionCalculator = showHydroSolutionCalculator;
+
+    function closeHydroSolutionCalculator() {
+      var modal = document.getElementById('hydroSolutionCalculatorModal');
+      var frame = document.getElementById('hydroSolutionCalculatorFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeHydroSolutionCalculator = closeHydroSolutionCalculator;
+
     function showSoilWaterTextureTool() {
       var modal = document.getElementById('soilWaterTextureToolModal');
       if (!modal) return;
@@ -6642,6 +6664,19 @@ CONTRATO:
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html" title="Estimación de N mineralizable" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Diseño de solución nutritiva (didáctico; distinto de Hidroponía PRO en el proyecto) -->
+  <div id="hydroSolutionCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeHydroSolutionCalculator();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title">💧 Diseño de solución nutritiva</h2>
+        <button class="modal-close" onclick="closeHydroSolutionCalculator()">×</button>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html" title="Diseño de solución nutritiva" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

@@ -365,6 +365,25 @@
       font-size: 14px;
       font-weight: 700;
       color: var(--green);
+      line-height: 1.45;
+    }
+    .class-out__main { display: block; }
+    .class-out__cc-pmp {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(21, 128, 61, 0.22);
+      font-size: 12px;
+      font-weight: 600;
+      color: #166534;
+    }
+    .class-out__cc-pmp strong { font-weight: 800; }
+    .class-out__ref-note {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #15803d;
+      opacity: 0.92;
     }
     .particle-ref {
       margin-top: 14px;
@@ -414,6 +433,13 @@
       line-height: 1.45;
       max-width: 58rem;
     }
+    #ternSvg {
+      cursor: crosshair;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #ternSvg.tex-dragging { cursor: grabbing; }
     #sumWarn {
       font-size: 12px;
       color: #b45309;
@@ -536,7 +562,7 @@
 
   <div id="panel2" class="section-panel" role="tabpanel" aria-labelledby="tab2">
     <h2 class="section-h2">Triángulo de textura (USDA)</h2>
-    <p class="hint">Introduce arena, limo y arcilla (%). Idealmente deben sumar 100%. Las zonas de color reproducen límites oficiales del triángulo USDA (vértices y polígonos como en soiltexture CRAN); el punto y la clase siguen ese mismo sistema.</p>
+    <p class="hint">Introduce arena, limo y arcilla (%) o <strong>arrastra el punto</strong> dentro del triángulo; los tres campos, la textura y un <strong>rango típico de CC y PMP</strong> aparecen en el recuadro verde. Idealmente deben sumar 100%. Las zonas de color reproducen límites oficiales USDA (soiltexture CRAN).</p>
 
     <div class="tern-wrap">
       <div>
@@ -593,7 +619,10 @@
             </tbody>
           </table>
         </div>
-        <div class="class-out" id="textureClassOut">—</div>
+        <div class="class-out" id="textureClassOut">
+          <span class="class-out__main" id="textureClassMain">—</span>
+          <div class="class-out__cc-pmp" id="textureCcPmpOut" hidden></div>
+        </div>
       </div>
       <div class="chart-wrap" style="margin:0;">
         <svg id="ternSvg" viewBox="-55 -35 640 530" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -629,6 +658,46 @@
     { label: 'Franco arcilloso', cc: 32, pmp: 17 },
     { label: 'Arcilla', cc: 38, pmp: 22 }
   ];
+
+  /** Rangos típicos % vol. CC/PMP por clase USDA del triángulo (referencia ilustrativa, alineada con pestaña Agua). */
+  var TEXTURE_CC_PMP_MAP = {
+    'Arena': { ccLo: 5, ccHi: 12, pmpLo: 1, pmpHi: 5 },
+    'Arena franca': { ccLo: 8, ccHi: 15, pmpLo: 2, pmpHi: 6 },
+    'Franco arenoso': { ccLo: 10, ccHi: 16, pmpLo: 4, pmpHi: 8 },
+    'Franco': { ccLo: 18, ccHi: 26, pmpLo: 8, pmpHi: 14 },
+    'Franco limoso': { ccLo: 24, ccHi: 32, pmpLo: 10, pmpHi: 18 },
+    'Limo': { ccLo: 26, ccHi: 34, pmpLo: 12, pmpHi: 18 },
+    'Franco arcilloso': { ccLo: 28, ccHi: 36, pmpLo: 14, pmpHi: 20 },
+    'Franco arcilloso limoso': { ccLo: 30, ccHi: 38, pmpLo: 15, pmpHi: 22 },
+    'Franco arcilloso arenoso': { ccLo: 26, ccHi: 34, pmpLo: 12, pmpHi: 18 },
+    'Arcilloso limoso': { ccLo: 32, ccHi: 40, pmpLo: 16, pmpHi: 22 },
+    'Arcilloso arenoso': { ccLo: 22, ccHi: 30, pmpLo: 10, pmpHi: 16 },
+    'Arcilla': { ccLo: 34, ccHi: 45, pmpLo: 18, pmpHi: 26 }
+  };
+
+  function updateTextureClassPanel(outLabel, sum) {
+    var mainEl = document.getElementById('textureClassMain');
+    var ccPmpEl = document.getElementById('textureCcPmpOut');
+    if (!mainEl || !ccPmpEl) return;
+    if (!sum || sum <= 0 || !outLabel || outLabel === '—') {
+      mainEl.textContent = 'Ingresa arena, limo y arcilla (o arrastra el punto) para estimar textura.';
+      ccPmpEl.hidden = true;
+      ccPmpEl.textContent = '';
+      return;
+    }
+    mainEl.textContent = 'Textura estimada: ' + outLabel;
+    var ref = TEXTURE_CC_PMP_MAP[outLabel];
+    if (ref) {
+      ccPmpEl.innerHTML =
+        '<span><strong>CC</strong> típica ' + ref.ccLo + '–' + ref.ccHi + '% vol.</span> · ' +
+        '<span><strong>PMP</strong> típico ' + ref.pmpLo + '–' + ref.pmpHi + '% vol.</span>' +
+        '<span class="class-out__ref-note">Referencia ilustrativa (varía con MO, compactación y método). En «Agua en suelo» puedes cargar un valor puntual desde el desplegable.</span>';
+      ccPmpEl.hidden = false;
+    } else {
+      ccPmpEl.hidden = true;
+      ccPmpEl.textContent = '';
+    }
+  }
 
   var presetSel = document.getElementById('presetTex');
   var ph = document.createElement('option');
@@ -991,6 +1060,90 @@
     return { x: ns * BL.x + ni * BR.x + nc * TP.x, y: ns * BL.y + ni * BR.y + nc * TP.y };
   }
 
+  /** Inversa de xyBar: coordenadas SVG → % arena, limo, arcilla (baricéntricas en BL/BR/TP). */
+  function barFromXY(x, y) {
+    var x0 = BL.x, y0 = BL.y;
+    var x1 = BR.x, y1 = BR.y;
+    var x2 = TP.x, y2 = TP.y;
+    var denom = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0 - y2);
+    if (Math.abs(denom) < 1e-9) return { sand: 0, silt: 0, clay: 0 };
+    var wSand = ((y1 - y2) * (x - x2) + (x2 - x1) * (y - y2)) / denom;
+    var wSilt = ((y2 - y0) * (x - x2) + (x0 - x2) * (y - y2)) / denom;
+    var wClay = 1 - wSand - wSilt;
+    wSand = Math.max(0, wSand);
+    wSilt = Math.max(0, wSilt);
+    wClay = Math.max(0, wClay);
+    var s = wSand + wSilt + wClay;
+    if (s < 1e-9) return { sand: 33.3, silt: 33.3, clay: 33.4 };
+    return { sand: (wSand / s) * 100, silt: (wSilt / s) * 100, clay: (wClay / s) * 100 };
+  }
+
+  function pointInTextureTriangle(x, y) {
+    return pointInPoly({ x: x, y: y }, [BL, BR, TP]);
+  }
+
+  function clientToSvg(svg, clientX, clientY) {
+    var pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    var ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    var sp = pt.matrixTransform(ctm.inverse());
+    return { x: sp.x, y: sp.y };
+  }
+
+  var texDrag = { active: false, raf: null };
+
+  function applyTextureFromSvgPoint(x, y) {
+    var bar = barFromXY(x, y);
+    document.getElementById('pctSand').value = bar.sand.toFixed(1);
+    document.getElementById('pctSilt').value = bar.silt.toFixed(1);
+    document.getElementById('pctClay').value = bar.clay.toFixed(1);
+    drawTernary();
+  }
+
+  function setupTernaryDrag() {
+    var svg = document.getElementById('ternSvg');
+    if (!svg || svg._texDragReady) return;
+    svg._texDragReady = true;
+
+    function moveAt(e) {
+      var p = clientToSvg(svg, e.clientX, e.clientY);
+      if (!texDrag.raf) {
+        texDrag.raf = requestAnimationFrame(function () {
+          texDrag.raf = null;
+          applyTextureFromSvgPoint(p.x, p.y);
+        });
+      }
+    }
+
+    svg.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      var p = clientToSvg(svg, e.clientX, e.clientY);
+      if (!pointInTextureTriangle(p.x, p.y)) return;
+      texDrag.active = true;
+      svg.classList.add('tex-dragging');
+      try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+      applyTextureFromSvgPoint(p.x, p.y);
+      e.preventDefault();
+    });
+
+    svg.addEventListener('pointermove', function (e) {
+      if (!texDrag.active) return;
+      moveAt(e);
+      e.preventDefault();
+    });
+
+    function endDrag(e) {
+      if (!texDrag.active) return;
+      texDrag.active = false;
+      svg.classList.remove('tex-dragging');
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+    }
+    svg.addEventListener('pointerup', endDrag);
+    svg.addEventListener('pointercancel', endDrag);
+  }
+
   /** 26 vértices; fracciones (arcilla, limo, arena) coherentes suma≈1 (índices = P01…P26 en soiltexture). */
   var USDA_PTS_CSS = [
     [0.55, 0, 0.45], [0.6, 0.4, 0], [0.35, 0, 0.65], [0.35, 0.2, 0.45],
@@ -1121,7 +1274,7 @@
     var frac = sum > 0 ? { s: sand / sum, si: silt / sum, c: clay / sum } : { s: 0, si: 0, c: 0 };
     var outLabel = classifyUSDAFrac(frac.s, frac.si, frac.c);
 
-    document.getElementById('textureClassOut').textContent = 'Textura estimada: ' + outLabel;
+    updateTextureClassPanel(outLabel, sum);
 
     if (sum > 0 && Math.abs(sum - 100) > 1) {
       warn.textContent = 'La suma es ' + sum.toFixed(1) + '%. Usa «Normalizar a 100%» o ajusta los valores.';
@@ -1229,7 +1382,8 @@
     h += '</g>';
 
     if (sum > 0) {
-      h += '<circle cx="' + p.x + '" cy="' + p.y + '" r="7" fill="#0f172a" stroke="#fff" stroke-width="2"/>';
+      h += '<circle class="tex-marker-hit" cx="' + p.x + '" cy="' + p.y + '" r="16" fill="transparent" stroke="none"/>';
+      h += '<circle class="tex-marker-dot" cx="' + p.x + '" cy="' + p.y + '" r="7" fill="#0f172a" stroke="#fff" stroke-width="2" pointer-events="none"/>';
     }
 
     h += '<text x="270" y="506" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">Triángulo de texturas agrícolas USDA (referencia)</text>';
@@ -1258,6 +1412,9 @@
     document.getElementById('pctClay').value = '30';
     drawTernary();
   });
+
+  setupTernaryDrag();
+  drawTernary();
 
 })();
   </script>
