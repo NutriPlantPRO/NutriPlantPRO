@@ -1,5 +1,5 @@
 /**
- * Conversor de magnitudes físicas (longitud, área, volumen, masa, temperatura, presión, concentración).
+ * Conversor de magnitudes físicas (longitud, área, volumen, masa, temperatura, presión, concentración, carga iónica).
  * Compartido por dashboard.html y login.html.
  */
 /* global document */
@@ -61,6 +61,14 @@ var MEASURE_UNITS = {
     { id: 'lbMgalUS', name: 'lb / millón US gal (trat. agua, USA)', toBase: 0.1198264273 },
     { id: 'lb100galUS', name: 'lb / 100 US gal (tanques, USA)', toBase: 1198.264273 },
     { id: 'ozGalUSmass', name: 'oz masa / US gal (USA)', toBase: 7489.086034 }
+  ],
+  /* Carga equivalente (agrícola). No mezclar suelo con solución: grupos distintos. */
+  ionic: [
+    { id: 'meqL', name: 'meq/L (solución o agua)', toBase: 1, group: 'solution' },
+    { id: 'cmolL', name: 'cmol(+)/L (solución)', toBase: 10, group: 'solution' },
+    { id: 'mmolL', name: 'mmol/L (monovalente ≈ meq/L)', toBase: 1, group: 'solution' },
+    { id: 'meq100g', name: 'meq/100 g (suelo, CIC)', toBase: 1, group: 'soil' },
+    { id: 'cmolKg', name: 'cmolc/kg = cmol(+)/kg (suelo)', toBase: 1, group: 'soil' }
   ]
 };
 
@@ -79,6 +87,10 @@ function updateMeasureUnitOptions() {
   to.innerHTML = from.innerHTML;
   from.value = list[0].id;
   to.value = list[list.length > 1 ? 1 : 0].id;
+  var hint = document.getElementById('measure-ionic-hint');
+  if (hint) {
+    hint.style.display = cat.value === 'ionic' ? 'block' : 'none';
+  }
   convertMeasureUnits();
 }
 
@@ -96,6 +108,12 @@ function convertMeasureUnits() {
   var fromUnit = list.find(function(u) { return u.id === fromSel.value; });
   var toUnit = list.find(function(u) { return u.id === toSel.value; });
   if (!fromUnit || !toUnit) return;
+  if (cat.value === 'ionic' && fromUnit.group && toUnit.group && fromUnit.group !== toUnit.group) {
+    resultEl.value = '—';
+    resultEl.title = 'No se puede convertir entre unidades de suelo y de solución. Elige unidades del mismo grupo.';
+    return;
+  }
+  resultEl.title = '';
   var outVal;
   if (cat.value === 'temperature') {
     var c = num;

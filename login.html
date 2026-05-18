@@ -885,15 +885,21 @@
     }
 
     .modal-water-hardness {
-      max-width: 1280px;
-      width: 96%;
-      max-height: 92vh;
+      width: min(98vw, 100%);
+      max-width: none;
+      max-height: 96vh;
+      height: 96vh;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
     }
 
     .modal-water-hardness .modal-body {
+      flex: 1;
+      min-height: 0;
       padding: 0;
-      height: calc(92vh - 80px);
+      height: auto;
+      overflow: hidden;
     }
 
     .modal-water-hardness iframe {
@@ -905,14 +911,20 @@
     }
 
     .modal-n-mineralizable-mo {
-      max-width: 1280px;
-      width: 96%;
-      max-height: 92vh;
+      width: min(98vw, 100%);
+      max-width: none;
+      max-height: 96vh;
+      height: 96vh;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
     }
     .modal-n-mineralizable-mo .modal-body {
+      flex: 1;
+      min-height: 0;
       padding: 0;
-      height: calc(92vh - 80px);
+      height: auto;
+      overflow: hidden;
     }
     .modal-n-mineralizable-mo iframe {
       width: 100%;
@@ -2107,7 +2119,7 @@
       </div>
       <div class="modal-body">
         <div class="calculator-container">
-          <p style="margin-bottom: 12px;"><em>Convierte entre unidades de longitud, área, volumen, peso, temperatura, presión y concentración en agua (mg/L, ppm, g/m³, kg/m³, etc.).</em></p>
+          <p style="margin-bottom: 12px;"><em>Convierte entre unidades de longitud, área, volumen, peso, temperatura, presión, concentración en agua (mg/L, ppm…) y <strong>carga iónica</strong> (meq / cmol en suelo o solución).</em></p>
           <div class="form-group">
             <label>Tipo de magnitud</label>
             <select id="measure-category" onchange="updateMeasureUnitOptions()">
@@ -2118,8 +2130,12 @@
               <option value="temperature">Temperatura</option>
               <option value="pressure">Presión</option>
               <option value="concentration">Concentración (agua)</option>
+              <option value="ionic">Carga iónica (meq / cmol)</option>
             </select>
           </div>
+          <p id="measure-ionic-hint" style="display:none; margin:10px 0 0; padding:10px 12px; font-size:12px; line-height:1.45; color:#475569; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;">
+            <strong>Suelo:</strong> 1 meq/100 g = 1 cmolc/kg (misma cifra). <strong>Solución:</strong> 1 cmol(+)/L = 10 meq/L. Para <strong>ppm ↔ meq/L</strong> por nutriente (K, Ca, NO₃…), usa la calculadora de unidades de nutrientes — depende del ion.
+          </p>
           <div class="measure-conversion-row" style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 16px;">
             <div class="form-group" style="flex: 1; min-width: 120px;">
               <label>Valor</label>
@@ -2172,7 +2188,7 @@
         <button class="modal-close" onclick="closeWaterHardnessCalculator()">×</button>
       </div>
       <div class="modal-body">
-        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?v=1764880001" title="Diagnóstico de agua y acondicionamiento"></iframe>
+        <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=1764880001" title="Diagnóstico de agua y acondicionamiento"></iframe>
       </div>
     </div>
   </div>
@@ -2293,7 +2309,7 @@
         <button class="modal-close" onclick="closeNMineralizableMoCalculator()">×</button>
       </div>
       <div class="modal-body">
-        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html" title="Estimación de N mineralizable"></iframe>
+        <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=dashboard" title="Estimación de N mineralizable"></iframe>
       </div>
     </div>
   </div>

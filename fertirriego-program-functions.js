@@ -1367,13 +1367,14 @@ function renderFertiMacroIonicTableHtml(summary) {
               <td>S-SO₄²⁻</td><td>${fertiNum(summary.kg.SO4)}</td><td>${fertiNum(summary.ppm.SO4, 1)}</td><td>${fertiNum(summary.meq.SO4, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-anion ferti-pct-anion--bot"><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.SO4, 1)}</span></td>
             </tr>
-            <tr title="Cl⁻ en % masa del catálogo (p. ej. KCl, CaCl₂·2H₂O); meq/L = ppm Cl / 35,45.">
+            <tr class="ferti-macro-row-cl" title="Cl⁻ en % masa del catálogo (p. ej. KCl, CaCl₂·2H₂O); meq/L = ppm Cl / 35,45.">
               <td>Cl⁻**</td><td>${fertiNum(summary.kg.Cl)}</td><td>${fertiNum(summary.ppm.Cl, 1)}</td><td>${fertiNum(summary.meq.Cl, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-cl-cell">
                 <span class="ferti-pct-cl notranslate" translate="no" title="% sobre aniones totales (NO₃+H₂PO₄+SO₄+Cl); no entra al triángulo N-P-S.">${fertiNum(summary.pct.Cl, 1)}</span>
               </td>
             </tr>
-            <tr>
+            <tr class="ferti-macro-ion-split" aria-hidden="true"><td colspan="5"><span class="ferti-macro-ion-split-line" title="Aniones arriba · Cationes abajo"></span></td></tr>
+            <tr class="ferti-macro-cation-start">
               <td>K⁺</td><td>${fertiNum(summary.kg.K)}</td><td>${fertiNum(summary.ppm.K, 1)}</td><td>${fertiNum(summary.meq.K, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-cat ferti-pct-cat--top" title="Suma 100% entre K⁺+Ca²⁺+Mg²⁺ (triángulo; sin NH₄)."><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.K, 1)}</span></td>
             </tr>
@@ -1385,13 +1386,26 @@ function renderFertiMacroIonicTableHtml(summary) {
               <td>Mg²⁺</td><td>${fertiNum(summary.kg.Mg)}</td><td>${fertiNum(summary.ppm.Mg, 1)}</td><td>${fertiNum(summary.meq.Mg, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-cat ferti-pct-cat--bot"><span class="ferti-pct-val notranslate" translate="no">${fertiNum(summary.pct.Mg, 1)}</span></td>
             </tr>
-            <tr>
+            <tr class="ferti-macro-row-nh4">
               <td>N-NH₄⁺*</td><td>${fertiNum(summary.kg.N_NH4)}</td><td>${fertiNum(summary.ppm.N_NH4, 1)}</td><td>${fertiNum(summary.meq.N_NH4, 2)}</td>
               <td class="ferti-pct-cell ferti-pct-nh4-cell">
                 <span class="ferti-pct-nh4 notranslate" translate="no" title="% sobre cationes totales (K+Ca+Mg+NH₄); ver nota al pie.">${fertiNum(summary.pct.N_NH4, 1)}</span>
               </td>
             </tr>
           </tbody>
+        </table>`;
+}
+
+const FERTI_MICRO_INSIGHT_NUTRIENTS = ['Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo'];
+
+function renderFertiMicroTableHtml(summary) {
+  if (!summary || !summary.kg) return '';
+  const rows = FERTI_MICRO_INSIGHT_NUTRIENTS.map(n => `
+            <tr><td>${n}</td><td>${fertiNum(summary.kg[n], 3)}</td><td>${fertiNum(summary.ppm[n], 2)}</td></tr>`).join('');
+  return `
+        <table class="ferti-insight-table ferti-insight-table--micro">
+          <thead><tr><th>Nutriente</th><th>kg/ha</th><th>ppm</th></tr></thead>
+          <tbody>${rows}</tbody>
         </table>`;
 }
 
@@ -1431,19 +1445,19 @@ function renderFertiChartsInsights() {
         <div id="fertiChartsTernaryInfo" class="ferti-insight-muted-ternary notranslate" translate="no"></div>
         <div id="fertiChartsTernaryPlot" class="ferti-charts-ternary-plot hydro-triangle notranslate" translate="no"></div>
       </div>
-      <div class="ferti-insight-card">
-        <h5>Micros · ${fertiStageSlotLabel(idx)} (${stageLabel}) · fertilizante + agua</h5>
-        <table class="ferti-insight-table">
-          <thead><tr><th>Nutriente</th><th>kg/ha</th><th>ppm</th></tr></thead>
-          <tbody>
-            <tr><td>Fe</td><td>${fertiNum(summaryTernary.kg.Fe, 3)}</td><td>${fertiNum(summaryTernary.ppm.Fe, 2)}</td></tr>
-            <tr><td>Mn</td><td>${fertiNum(summaryTernary.kg.Mn, 3)}</td><td>${fertiNum(summaryTernary.ppm.Mn, 2)}</td></tr>
-            <tr><td>B</td><td>${fertiNum(summaryTernary.kg.B, 3)}</td><td>${fertiNum(summaryTernary.ppm.B, 2)}</td></tr>
-            <tr><td>Zn</td><td>${fertiNum(summaryTernary.kg.Zn, 3)}</td><td>${fertiNum(summaryTernary.ppm.Zn, 2)}</td></tr>
-            <tr><td>Cu</td><td>${fertiNum(summaryTernary.kg.Cu, 3)}</td><td>${fertiNum(summaryTernary.ppm.Cu, 2)}</td></tr>
-            <tr><td>Mo</td><td>${fertiNum(summaryTernary.kg.Mo, 3)}</td><td>${fertiNum(summaryTernary.ppm.Mo, 2)}</td></tr>
-          </tbody>
-        </table>
+      <div class="ferti-insight-card ferti-insight-card--micro-dual">
+        <h5>Micros · ${fertiStageSlotLabel(idx)} (${stageLabel})</h5>
+        <div class="ferti-macro-dual-grid ferti-micro-dual-grid">
+          <div class="ferti-macro-dual-col">
+            <h6 class="ferti-macro-dual-title ferti-micro-dual-title">Aporte de fertilizante</h6>
+            ${renderFertiMicroTableHtml(summaryFert)}
+          </div>
+          <div class="ferti-macro-dual-col">
+            <h6 class="ferti-macro-dual-title ferti-micro-dual-title ferti-micro-dual-title--water">Fertilizante más aporte de agua</h6>
+            ${renderFertiMicroTableHtml(summaryWithWater)}
+          </div>
+        </div>
+        <p class="ferti-insight-legend" style="margin:10px 0 0;">Los ppm de micros usan la misma lámina de riego (m³/ha) de la etapa. Si el aporte de agua en Programa de nutrición está en cero, ambas columnas coinciden.</p>
       </div>
     `;
   }

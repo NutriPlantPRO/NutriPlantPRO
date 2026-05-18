@@ -3567,11 +3567,57 @@ body {
   max-width: 100%;
 }
 
+/* Objetivo / agua / requerimiento / aporte total: 14 nutrientes en una sola fila */
 .hydro-card #hydroObjectiveGrid.hydro-grid,
 .hydro-card #hydroWaterGrid.hydro-grid,
-.hydro-card #hydroMissingGrid.hydro-grid {
-  /* Objetivo / agua / requerimiento: celdas un poco más anchas que el bloque de aportes (más legible) */
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 78px), 1fr));
+.hydro-card #hydroMissingGrid.hydro-grid,
+#hydroFertTotals.hydro-grid,
+#hydroFertRemaining.hydro-grid {
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 5px;
+}
+
+#hidro-calculo .hydro-card:has(#hydroObjectiveGrid),
+#hidro-calculo .hydro-card:has(#hydroWaterGrid),
+#hidro-calculo .hydro-card:has(#hydroMissingGrid) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.hydro-card #hydroObjectiveGrid .hydro-grid-item,
+.hydro-card #hydroWaterGrid .hydro-grid-item,
+.hydro-card #hydroMissingGrid .hydro-grid-item,
+#hydroFertTotals .hydro-grid-item,
+#hydroFertRemaining .hydro-grid-item {
+  padding: 5px 4px;
+  gap: 2px;
+}
+
+.hydro-card #hydroObjectiveGrid .hydro-grid-label,
+.hydro-card #hydroWaterGrid .hydro-grid-label,
+.hydro-card #hydroMissingGrid .hydro-grid-label,
+#hydroFertTotals .hydro-grid-label,
+#hydroFertRemaining .hydro-grid-label {
+  font-size: 10px;
+  line-height: 1.1;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.hydro-card #hydroObjectiveGrid .hydro-grid-value,
+.hydro-card #hydroWaterGrid .hydro-grid-value,
+.hydro-card #hydroMissingGrid .hydro-grid-value,
+.hydro-card #hydroObjectiveGrid .hydro-input,
+.hydro-card #hydroWaterGrid .hydro-input,
+.hydro-card #hydroMissingGrid .hydro-input,
+#hydroFertTotals .hydro-grid-value,
+#hydroFertRemaining .hydro-grid-value {
+  font-size: 12px;
+}
+
+#hidro-calculo .hydro-card:has(#hydroFertTotals) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .hydro-grid-item {
@@ -4393,6 +4439,45 @@ body {
   border-bottom-color: #bbf7d0;
 }
 
+/* Macro resumen: línea aniones | cationes */
+.ferti-insight-table--macro-ionic tbody tr.ferti-macro-ion-split td {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  vertical-align: middle;
+  line-height: 0;
+}
+.ferti-macro-ion-split-line {
+  display: block;
+  width: 100%;
+  margin: 5px 0 7px;
+  border: 0;
+  border-top: 3px solid #334155;
+  border-radius: 1px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+.ferti-insight-table--macro-ionic tbody tr.ferti-macro-cation-start > td:first-child {
+  padding-top: 10px;
+}
+
+/* Macro resumen: filas Cl⁻ y N-NH₄⁺ (datos en tono suave; % grupo mantiene su chip) */
+.ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-cl > td:nth-child(1),
+.ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-cl > td:nth-child(2),
+.ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-cl > td:nth-child(3),
+.ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-cl > td:nth-child(4) {
+  background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+  color: #0c4a6e;
+  font-weight: 600;
+}
+.ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-nh4 > td:nth-child(1),
+.ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-nh4 > td:nth-child(2),
+.ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-nh4 > td:nth-child(3),
+.ferti-insight-table--macro-ionic tbody tr.ferti-macro-row-nh4 > td:nth-child(4) {
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%) !important;
+  color: #9a3412;
+  font-weight: 600;
+}
+
 /* Macro resumen: % por fila (alineado al nutriente); marcos unidos en 3 celdas */
 .ferti-insight-table--macro-ionic th:last-child {
   max-width: 100px;
@@ -4560,6 +4645,26 @@ body {
   .ferti-macro-dual-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Micros resumen: dos tablas (fertilizante vs fertilizante + agua) */
+.ferti-insight-card--micro-dual {
+  border-color: #dcfce7;
+  border-left-color: #16a34a;
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.08);
+}
+
+.ferti-insight-card--micro-dual .ferti-insight-table--micro thead th {
+  background: linear-gradient(180deg, #dcfce7 0%, #f0fdf4 100%);
+  border-bottom-color: #bbf7d0;
+}
+
+.ferti-micro-dual-title {
+  color: #15803d;
+}
+
+.ferti-micro-dual-title--water {
+  color: #0f766e;
 }
 
 /* Tarjeta diagrama ternario (entre macro y micros): acento violeta */

@@ -39,7 +39,7 @@ function getNutriPlantProManual() {
 - **% meq en Hidroponía y Fertirriego (gráficas)**: ver MANUAL % meq / BALANCE IÓNICO. Resumen: triángulo aniones = solo N-NO₃⁻ + P + S (100%, sin Cl); triángulo cationes = solo K + Ca + Mg (100%, sin NH₄); NH₄ y Cl tienen % sobre totales ampliados y no entran a los triángulos. En Fertirriego, Cl % es sobre NO₃+P+S+Cl pero el ternario sigue siendo N-P-S.
 - Solución nutritiva / hidroponía: macronutrientes en meq/L o ppm; diagrama ternario con rangos Steiner en app: aniones NO₃ 20–80%, H₂PO₄ 1,25–10%, SO₄ 10–70%; cationes K 10–65%, Ca 22,5–62,5%, Mg 0,5–40%.
 
-Soluciones nutritivas de referencia (para consulta cuando el usuario pida referencias o compare con Hoagland/Steiner/otros): Hoagland (Hoagland & Arnon): cationes meq/L K ~6, Ca ~8, Mg ~2, NH₄ ~1; aniones meq/L NO₃ ~14–16, H₂PO₄ ~2, SO₄ ~2; micros ppm Fe 2–3, Mn 0.1–0.5, B 0.2–0.5, Zn 0.05–0.1, Cu 0.02–0.05, Mo 0.01–0.05. Steiner (Steiner 1961): cationes meq/L K ~6–7, Ca ~9, Mg ~4; aniones meq/L NO₃ ~12, H₂PO₄ ~1, SO₄ ~6–7; micros ppm Fe ~1–2, Mn ~0.5, B ~0.4, Zn/Cu en traza. Rangos típicos micros (varios autores) ppm: Fe 1–5, Mn 0.2–1, B 0.2–0.5, Zn 0.05–0.2, Cu 0.02–0.1, Mo 0.01–0.05. Son referencias “fuerza completa”; en práctica se usan diluciones según etapa y cultivo. Comparar con los datos del proyecto cuando el usuario pregunte. Al dar referencias o ideales, anclar siempre al mismo marco que el bloque del que preguntan (solución = ppm en solución; foliar = mg/kg en tejido; suelo = meq/100g = cmol_c/kg misma cifra; agua = meq/L, equivalente de carga **mmol_c/L** mismo número que meq/L en las sumas iónicas de la app).
+Soluciones nutritivas de referencia (para consulta cuando el usuario pida referencias o compare con Hoagland/Steiner/otros): Hoagland (Hoagland & Arnon): cationes meq/L K ~6, Ca ~8, Mg ~2, NH₄ ~1; aniones meq/L NO₃ ~14–16, H₂PO₄ ~2, SO₄ ~2; micros ppm Fe 2–3, Mn 0.1–0.5, B 0.2–0.5, Zn 0.05–0.1, Cu 0.02–0.05, Mo 0.01–0.05. Steiner (Steiner 1961): cationes meq/L K ~6–7, Ca ~9, Mg ~4; aniones meq/L NO₃ ~12, H₂PO₄ ~1, SO₄ ~6–7; micros ppm Fe ~1–2, Mn ~0.5, B ~0.4, Zn/Cu en traza. Rangos típicos micros (varios autores) ppm: Fe 1–5, Mn 0.2–1, B 0.2–0.5, Zn 0.05–0.2, Cu 0.02–0.1, Mo 0.01–0.05. Son referencias “fuerza completa”; en práctica se usan diluciones según etapa y cultivo. Comparar con los datos del proyecto cuando el usuario pregunte. Al dar referencias o ideales, anclar siempre al mismo marco que el bloque del que preguntan (solución = ppm o meq/L; foliar = mg/kg en tejido; suelo = meq/100g = cmol_c/kg misma cifra; agua/solución = meq/L en NutriPlant — ver MANUAL UNIDADES meq / cmol / mmol si el usuario habla en cmol/L).
 
 6) VPD (DÉFICIT DE PRESIÓN DE VAPOR)
 - VPD = presión de saturación a T_hoja − presión real de vapor. Afecta transpiración, absorción de Ca y estrés. Rangos típicos: 0.4–1.2 kPa óptimo según especie; <0.3 riesgo de edema; >1.5 estrés hídrico y cierre estomático. Se usa para programar riego y clima en invernadero.
@@ -80,7 +80,7 @@ function getNutriPlantCalculatorsManual() {
   return `
 CALCULADORAS PRO (iconos en barra del dashboard; material educativo NutriPlant — no son datos guardados del proyecto):
 - El usuario las abre en modal desde el dashboard. No recibes la tabla visual en tiempo real; explica la misma lógica y fórmulas que la herramienta.
-- 🔗 Interacciones y movilidad nutrimental: (1) Diagrama tipo Mulder — rojo = antagonismo/competencia, azul = sinergia; referencias frecuentes: K⁺ vs Ca²⁺/Mg²⁺; NH₄⁺ vs K⁺/Ca²⁺/Mg²⁺; P alto vs Zn/Fe/Cu/Mn; SO₄²⁻ vs Mo; NO₃⁻ vs Cl⁻. (2) Mecanismos hacia la raíz: flujo de masa, difusión, interceptación. (3) Movilidad y síntomas (orientativo): N,P,K,Mg móviles (síntoma en hoja vieja); Ca,B poco móviles (punta/hoja nueva); Fe,Mn,Zn,Cu según especie. (4) Disponibilidad vs pH: acidez → más Fe/Mn (y Al tóxico); alcalinidad → P, Fe, Zn, Cu, B, Mo más limitados.
+- 🔗 Interacciones y movilidad nutrimental: (1) Diagrama tipo Mulder — rojo = antagonismo/competencia (bidireccional); azul = sinergia solo según la ficha del ion tocado (no inflada por el otro). Referencias frecuentes: K⁺ vs Ca²⁺/Mg²⁺/NH₄⁺; P alto vs Zn/Fe/Cu/Mn/Ca; SO₄²⁻ vs Mo; NO₃⁻ vs Cl⁻. NO₃⁻ azul típico: K⁺, NH₄⁺, MoO₄²⁻. (2) Mecanismos hacia la raíz: flujo de masa, difusión, interceptación. (3) Movilidad y síntomas (orientativo): N,P,K,Mg móviles (síntoma en hoja vieja); Ca,B poco móviles (punta/hoja nueva); Fe,Mn,Zn,Cu según especie. (4) Disponibilidad vs pH: acidez → más Fe/Mn (y Al tóxico); alcalinidad → P, Fe, Zn, Cu, B, Mo más limitados.
 - 🪨 Agua en suelo y textura — pestaña Agua: CC y PMP (% volumétrico), profundidad (cm), área (ha), zona radical efectiva (%), humedad actual θ (% vol., opcional). Volumen de suelo (m³) = área_ha × profundidad_cm / 10 (1 ha × 30 cm = 3 000 m³). Capacidad útil (% vol.) = CC − PMP. Agua útil referencia (m³) ≈ volumen_suelo × (CC−PMP)/100 × (zona_radical_%/100). Con θ: déficit hasta CC = CC − θ; lámina (mm) ≈ (déficit/100) × profundidad_cm × 10; lámina (m³) ≈ lámina_mm/1000 × área_ha × 10 000 (la app ajusta por zona radical). Preset textura USDA: CC/PMP ilustrativos. Pestaña Textura: % arena, limo, arcilla → clase USDA.
 - 🧂 Solubilidad e índice salino: solubilidad (g/L, ~20–25 °C, agua relativamente pura) y IS (NaNO₃ = 100). Clases: Alta >500, Media 100–500, Baja <100 g/L. IS alto = mayor estrés osmótico relativo (cuidado en emergencia, solución madre muy concentrada, poco agua disponible); no significa “prohibido”. Nitratos y muchos potásicos muy solubles; yeso y varios fosfatos poco solubles. Antes de mezclar fertilizantes en tanque: revisar solubilidad y compatibilidad (precipitados, salting out K/NO₃ + sulfatos).
 - 💧 Diseño de solución nutritiva (herramienta didáctica global, distinta de la pestaña Hidroponía del proyecto): CE, meq/L, % meq y ppm; triángulos aniónico (NO₃/P/SO₄) y catiónico (K/Ca/Mg) arrastrables en azul; N-NH₄⁺ fuera del triángulo catiónico (leyenda vs N-NO₃⁻, % sobre K+Ca+Mg+NH₄); Cl⁻ solo en ppm (no CE ni triángulo N-P-S), leyenda N-NO₃⁻ vs Cl⁻ en meq/L y % sobre NO₃+P+S+Cl. No guarda en el proyecto; al cerrar el modal se reinicia el iframe.
@@ -138,6 +138,49 @@ F) CUANDO EL USUARIO PREGUNTE «¿POR QUÉ NO SUMAN 100?» o «¿QUÉ INCLUYE EL
 - Identificar pantalla: Hidroponía solución / Hidroponía cálculo / Fertirriego gráficas / Enmienda CIC.
 - Nombrar el **denominador exacto** (triángulo N-P-S, triángulo K-Ca-Mg, catiónico total con NH₄, aniones totales con Cl en fertirriego, o partición N/Cl en leyenda hidroponía).
 - Si hay datos en «BLOQUES … PANTALLA ACTUAL» o tablas del contexto, citar números del proyecto; si no, explicar la regla NutriPlant sin inventar cifras.
+`;
+}
+
+/**
+ * Manual fijo: meq, cmol, mmol — suelo vs solución/agua (terminología por país).
+ */
+function getNutriPlantEquivalentsUnitsManual() {
+  return `
+MANUAL UNIDADES: meq · cmol · mmol (suelo, agua, solución — usar cuando pregunten conversión, CIC, cmol de carga, o unidades del laboratorio):
+
+A) QUÉ USA NUTRIPLANT
+- **Suelo / Enmienda / CIC (cationes intercambiables):** **meq/100 g de suelo** en pantalla.
+- **Hidroponía, fertirriego (balance iónico), agua de riego:** **meq/L** (y ppm del elemento).
+- El chat debe **entender** cuando el usuario dice **cmol**, **cmolc**, **cmol(+)/kg**, **cmol/L** y traducir sin confundir contextos.
+
+B) SUELO — CIC Y CATIONES (misma magnitud, distinta etiqueta)
+- **1 meq/100 g = 1 cmolc/kg = 1 cmol(+)/kg** → **misma cifra numérica** (sin multiplicar ni dividir por 10).
+- Ejemplos: CIC 15 cmolc/kg → 15 meq/100 g en NutriPlant. K 0,5 cmolc/kg → 0,5 meq/100 g. Ca 9 cmolc/kg → 9 meq/100 g.
+- Sinónimos frecuentes en informes: CEC, CIC, T (capacidad de intercambio catiónico), saturación de bases en % sobre esa CIC.
+- **cmolc/dm³** (a veces Brasil u otros): **no** asumir automáticamente igual a cmolc/kg; depende de cómo el laboratorio exprese la base (masa vs volumen) y de la densidad aparente. Si el usuario solo tiene cmol/dm³, pedir la unidad exacta del informe o la conversión del lab antes de comparar con NutriPlant (base meq/100 g).
+- Conversión meq/100 g → ppm en suelo (NutriPlant): K × 391; Ca × 200,4; Mg × 121,5; Na × 230 (aprox.).
+
+C) SOLUCIÓN, AGUA, EXTRACTOS (factor 10 con cmol/L)
+- NutriPlant trabaja en **meq/L** para balance iónico y sumas de aniones/cationes.
+- **mmol/L** (iones univalentes K⁺, Na⁺, NO₃⁻, Cl⁻): **1 meq/L = 1 mmol/L** (mismo número).
+- **cmol(+)/L** o **cmolc/L** (común en agua/solución en varios países): **1 cmol(+)/L = 10 meq/L**.
+  · Ejemplo: K **2 cmol/L** = **20 meq/L** = 20 mmol/L de K⁺.
+  · Ejemplo: Ca **4 cmol/L** como Ca²⁺ en carga → **40 meq/L** de Ca²⁺ = **20 mmol/L** de ion Ca²⁺ (valencia 2).
+- Para pasar datos del usuario a NutriPlant: **meq/L = cmol/L × 10** (carga equivalente).
+- Para explicar al usuario en cmol: **cmol/L = meq/L ÷ 10**.
+
+D) NO CONFUNDIR (errores graves del chat)
+- **NO** multiplicar por 10 entre meq/100 g y cmolc/kg en **suelo** (son equivalentes 1:1).
+- **NO** olvidar el factor **×10** entre **cmol/L** y **meq/L** en **solución/agua**.
+- **NO** mezclar **% saturación de CIC** (suelo) con **% meq** del triángulo iónico (hidroponía/fertirriego).
+- **NO** usar ppm de suelo y ppm de solución como si fueran lo mismo.
+
+E) CÓMO RESPONDER SI PREGUNTAN «cmol vs meq»
+1) Inferir: ¿**suelo** (CIC, intercambiables) o **solución/agua**?
+2) **Suelo:** cmolc/kg → mismo número en meq/100 g; ejemplo con su nutriente.
+3) **Solución:** cmol/L → ×10 = meq/L; ejemplo numérico.
+4) Validar unidad del informe (kg, 100 g, L, dm³) si viene de laboratorio extranjero.
+5) Cerrar: «En NutriPlant capturas [meq/100 g | meq/L]; tu valor X cmol equivale a Y en la app.»
 `;
 }
 
@@ -1129,6 +1172,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
     const calculatorsManual = getNutriPlantCalculatorsManual();
     const radarManual = getRadarCultivoManual();
     const ionicPercentManual = getNutriPlantIonicPercentManual();
+    const equivalentsUnitsManual = getNutriPlantEquivalentsUnitsManual();
     const modeGuidance = this.buildInteractionModeGuidance(userMessage);
     const isCalculationQuestion = this.isCalculationOrLogicQuestion(userMessage);
 
@@ -1162,7 +1206,7 @@ ARQUITECTURA NUTRIPLANT Y CONTEXTO GLOBAL DEL PROYECTO:
 
 UNIDADES POR MÓDULO (NO CONFUNDIR):
 - **Hidroponía**: concentraciones y aportes de fertilizantes son SIEMPRE en forma ELEMENTAL (%, ppm por elemento). No hay modo óxido en hidroponía.
-- **Orden para determinar el marco de contexto** (usa este orden cuando pregunten por *sus* datos o por interpretar *su* pantalla): (1) **Mención explícita en el mensaje**: si el usuario dice "solución nutritiva", "foliar", "análisis de agua", "enmienda", "suelo", "hidroponía", "extracto de pasta", etc. → el marco es el de ese bloque. (2) **Módulo activo**: en "DATOS DEL PROYECTO" aparece "Módulo activo: X"; si X = hidroponia → marco solución (ppm en solución); si X = enmienda → marco suelo inicial (**meq/100g = cmol_c/kg** misma cifra); si X = analisis → ver (3). (3) **Dentro de Análisis**: en el bloque "ANÁLISIS (pestaña actual)" se indica qué subpestañas tienen datos "en pantalla" y "Reporte seleccionado"; usar la subpestaña que el usuario nombre o la que tenga reporte seleccionado, o inferir por palabras del mensaje (ej. "micros en solución" → solución; "ppm foliar" o "DOP" → foliar). (4) **Marco = unidades de ese bloque**: solución/hidroponía → ppm en solución; foliar → mg/kg en tejido; suelo (CIC/cationes) → meq/100g o cmol_c/kg (equivalente); agua → meq/L o mmol_c/L (misma cifra que meq/L en sumas de la app); granular/fertirriego → kg/ha. Una vez determinado el marco, referencias/ideales/literatura en las MISMAS unidades; no mezcles (ej. no des rangos foliares si el marco es solución, ni al revés).
+- **Orden para determinar el marco de contexto** (usa este orden cuando pregunten por *sus* datos o por interpretar *su* pantalla): (1) **Mención explícita en el mensaje**: si el usuario dice "solución nutritiva", "foliar", "análisis de agua", "enmienda", "suelo", "hidroponía", "extracto de pasta", "cmol", "meq", etc. → el marco es el de ese bloque. (2) **Módulo activo**: en "DATOS DEL PROYECTO" aparece "Módulo activo: X"; si X = hidroponia → marco solución (ppm/meq/L); si X = enmienda → marco suelo inicial (**meq/100g = cmol_c/kg** misma cifra); si X = analisis → ver (3). (3) **Dentro de Análisis**: en el bloque "ANÁLISIS (pestaña actual)" se indica qué subpestañas tienen datos "en pantalla" y "Reporte seleccionado"; usar la subpestaña que el usuario nombre o la que tenga reporte seleccionado, o inferir por palabras del mensaje (ej. "micros en solución" → solución; "ppm foliar" o "DOP" → foliar). (4) **Marco = unidades de ese bloque**: solución/hidroponía → ppm y meq/L; foliar → mg/kg en tejido; suelo (CIC/cationes) → meq/100g = cmol_c/kg (misma cifra); agua/solución en cmol/L del usuario → convertir ×10 a meq/L; granular/fertirriego → kg/ha. Una vez determinado el marco, referencias/ideales/literatura en las MISMAS unidades; no mezcles (ej. no des rangos foliares si el marco es solución, ni al revés). Si preguntan conversión cmol/meq/mmol → MANUAL UNIDADES meq / cmol / mmol.
 - **Preguntas técnicas generales (nutrición vegetal, antagonismos, rangos, DOP, etc.) sin "mis datos" ni "mi proyecto"**: no ancles al Módulo activo ni a un bloque. Usa el marco (unidades) que la pregunta indique: "rangos foliares" → responde en mg/kg; "en solución nutritiva" → ppm en solución; "CIC/suelo" → meq/100g o cmol_c/kg (misma magnitud). Responde con conocimiento técnico general; si aplica, puedes añadir "en tu proyecto, si lo ves en [bloque X], sería..." y separar "Contexto del proyecto" vs "Conocimiento general".
 - **Granular y Fertirriego**: la plataforma trabaja en modo ÓXIDO (P₂O₅, K₂O, CaO, MgO...) o ELEMENTAL (P, K, Ca, Mg...) según lo que tenga guardado el usuario; los valores en contexto vienen en ese modo. Ambos módulos permiten cambiar a elemental (calculadora óxido↔elemental en la plataforma).
 - No apliques reglas de hidroponía (solo elemental) a Granular/Fertirriego ni al revés: en hidroponía todo es elemental; en Granular y Fertirriego depende del modo guardado.
@@ -1178,6 +1222,9 @@ ${radarManual}
 
 MANUAL % meq / BALANCE IÓNICO (Hidroponía y Fertirriego — usar cuando pregunten por % aniones, % cationes, triángulo, NH₄, Cl⁻, «por qué no suman 100», macro resumen iónico o leyenda N/Cl):
 ${ionicPercentManual}
+
+MANUAL UNIDADES meq / cmol / mmol (siempre disponible — usar cuando pregunten por cmol de carga, CIC en cmol/kg, cmol/L, conversión meq↔cmol, unidades del laboratorio de otro país, o «¿es lo mismo meq y cmol?»):
+${equivalentsUnitsManual}
 
 DATOS DEL PROYECTO ACTUAL DEL USUARIO (usa esto como si estuvieras viendo su pantalla y sus análisis):
 ${context}
@@ -1198,6 +1245,7 @@ INSTRUCCIONES:
 - Tu valor diferenciador es usar SIEMPRE los datos que ves del proyecto (análisis, programa, cultivo, CIC, solución nutritiva, etc.) para dar recomendaciones específicas a este agronomista, no genéricas. Interpreta sus números con la lógica NutriPlant PRO, sugiere acciones concretas y saca de apuros con pasos claros (qué cambiar, en qué rango, por qué).
 - Usa el bloque INTERCONEXIONES ENTRE PESTAÑAS cuando convenga: si preguntan por qué algo no funciona (ej. VPD sin clima), de dónde sale un dato (ej. enmienda que usa CIC de suelo) o qué pestaña completar primero; indica la pestaña origen o la que debe configurarse.
 - Si preguntan por conversión óxido↔elemental (P₂O₅/P, K₂O/K, CaO/Ca, MgO/Mg, S/SO₄, Zn/ZnO) o por ppm↔mmol/L↔meq/L, usa exactamente los factores y fórmulas del manual sección 7 (Calculadoras NutriPlant) para que tu respuesta coincida con las calculadoras de la plataforma.
+- Si preguntan por **cmol**, **cmolc/kg**, **cmol/L**, **meq/100g vs cmol**, o unidades de laboratorio de Brasil/Chile/México/etc., usa el **MANUAL UNIDADES meq / cmol / mmol**: en suelo 1:1 (meq/100g = cmolc/kg); en solución/agua cmol/L × 10 = meq/L.
 - Solución nutritiva e hidroponía: conversión meq/L ↔ ppm usa peso equivalente del ELEMENTO (ppm P, ppm S, etc.). Para **% meq, triángulos, NH₄ y Cl⁻** usa el MANUAL % meq / BALANCE IÓNICO (denominadores distintos; Cl y NH₄ fuera de los triángulos). Rangos Steiner en triángulo: aniones N-NO₃⁻ 20–80%, P-H₂PO₄⁻ 1,25–10%, S-SO₄²⁻ 10–70%; cationes K⁺ 10–65%, Ca²⁺ 22,5–62,5%, Mg²⁺ 0,5–40%. Pesos: N 14, P 31, S 16, K 39,1, Ca 20,04, Mg 12,15, Cl 35,45. Referencias Hoagland/Steiner: sección "Soluciones nutritivas de referencia" del manual.
 - En Cálculo de fertilizantes (Hidroponía): objetivo, análisis de agua (incl. Cl⁻), requerimiento, volumen/tanque/inyección, tanques A/B/C, aporte total ppm, leyenda % sobre meq/L (N-NO₃ vs N-NH₄ y N-NO₃ vs Cl, con y sin agua). Orden nutrientes: macros, micros, Cl al final. Todo elemental; óxidos → calculadora óxido↔elemental. Para antagonismos/movilidad/solubilidad → MANUAL CALCULADORAS PRO (🔗 🪨 🧂).
 - Si preguntan por 💧 Diseño de solución nutritiva (barra dashboard), 🔗 Interacciones, 🪨 Agua en suelo y textura, o 🧂 Solubilidad e índice salino: usa el MANUAL CALCULADORAS PRO (no guardan datos en el proyecto; la 💧 es distinta de Hidroponía PRO por etapa).

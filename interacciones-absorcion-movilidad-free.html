@@ -880,7 +880,7 @@
   <!-- Sección 1 -->
   <div id="panel-1" class="section-panel active" role="tabpanel" aria-labelledby="tab-btn-1">
     <h2 class="section-h2">Diagrama tipo Mulder (iones y formas frecuentes)</h2>
-    <p class="hint">Toca un icono en el círculo: verás en rojo el <strong>antagonismo/competencia</strong> y en azul la <strong>sinergia</strong> (favorecimiento conjunto) con otros iones. La ficha a la derecha corresponde solo al ion seleccionado.</p>
+    <p class="hint">Toca un icono en el círculo: en rojo, <strong>antagonismo/competencia</strong> (referencia en ambos sentidos); en azul, <strong>sinergia</strong> solo según la ficha del ion seleccionado (no se duplican por el otro ion). La ficha a la derecha corresponde solo al ion elegido.</p>
     <div class="s1-grid">
       <div class="diag-wrap">
         <svg id="mulderSvg" viewBox="0 0 520 420" xmlns="http://www.w3.org/2000/svg" aria-label="Diagrama de interacciones nutrimentales">
@@ -1289,9 +1289,9 @@
       short: 'NO₃⁻',
       name: 'Nitrato',
       antagonists: ['cl'],
-      synergists: ['k', 'moo4', 'nh4'],
+      synergists: ['k', 'nh4', 'moo4'],
       functional: ['Síntesis proteica (con NH₄⁺)', 'Balance aniónico', 'Relación con absorción de cationes'],
-      shortTip: 'En muchos sistemas convive con otros aniones; el Cl⁻ en exceso puede competir por afinidad de transporte en algunas condiciones.'
+      shortTip: 'Sinergias azules = manejo conjunto frecuente (p. ej. KNO₃, N amoniacal+nitrato, Mo en cadena del NO₃⁻). El Cl⁻ en exceso puede competir por transporte (rojo).'
     },
     nh4: {
       ion: 'NH₄⁺',
@@ -1343,7 +1343,7 @@
       short: 'SO₄²⁻',
       name: 'Sulfato',
       antagonists: ['moo4'],
-      synergists: ['no3', 'nh4', 'mg', 'k'],
+      synergists: ['no3', 'nh4', 'k'],
       functional: ['Aminoácidos azufrados', 'Estrés y defensas'],
       shortTip: 'Sulfato en exceso puede afectar toma de molibdato en algunas condiciones (competencia aniónica).'
     },
@@ -1352,7 +1352,7 @@
       short: 'Fe²⁺/Fe³⁺',
       name: 'Hierro (especiación según pH y oxígeno)',
       antagonists: ['h2po4', 'zn', 'cu', 'mn'],
-      synergists: ['k', 'no3', 'moo4'],
+      synergists: ['no3', 'moo4'],
       functional: ['Cloroplastos', 'Enzimas redox'],
       shortTip: 'P alto, Zn o Cu en exceso, y Mn en condiciones ácidas suelen empeorar la Fe disponible; pH alto y carbonatos también. Mo apoya la cadena del N cuando hay NO₃⁻.'
     },
@@ -1361,16 +1361,16 @@
       short: 'Mn²⁺',
       name: 'Manganeso',
       antagonists: ['h2po4', 'fe', 'zn'],
-      synergists: ['k', 'no3', 'cu'],
+      synergists: ['no3'],
       functional: ['Fotosíntesis (fotosistema)', 'Activación enzimática'],
-      shortTip: 'Interactúa con pH y a veces con Fe y P; toxicidad de Mn puede aparecer con bajo pH.'
+      shortTip: 'Interactúa con pH y a veces con Fe, Cu y P; con Cu y Zn suele predominar competencia más que sinergia de absorción.'
     },
     zn: {
       ion: 'Zn²⁺',
       short: 'Zn²⁺',
       name: 'Zinc',
       antagonists: ['h2po4', 'cu', 'ca', 'fe', 'mn'],
-      synergists: ['k'],
+      synergists: [],
       functional: ['Auxinas', 'enzimas', 'integridad de membranas'],
       shortTip: 'P alto, Fe o Cu en exceso, y Mn en suelos ácidos pueden inducir Zn relativo bajo; revisar ratio P:Zn en suelo y hoja.'
     },
@@ -1379,16 +1379,16 @@
       short: 'Cu²⁺',
       name: 'Cobre',
       antagonists: ['zn', 'h2po4', 'fe'],
-      synergists: ['mn', 'k', 'no3'],
+      synergists: ['no3'],
       functional: ['Lignificación', 'fotosíntesis'],
-      shortTip: 'Exceso de Zn o interferencia con Fe/P pueden modificar el balance de Cu.'
+      shortTip: 'Exceso de Zn o interferencia con Fe/P pueden modificar el balance de Cu; con Mn suele haber más competencia que sinergia.'
     },
     b: {
       ion: 'H₃BO₃ / B(OH)₄⁻',
       short: 'H₃BO₃',
       name: 'Boro (especiación según pH)',
       antagonists: ['ca'],
-      synergists: ['k', 'nh4'],
+      synergists: ['nh4'],
       functional: ['Pared celular', 'División celular', 'Polinización'],
       shortTip: 'Ca alto puede reducir B disponible; el B es sensible a humedad y lixiviación.'
     },
@@ -1397,18 +1397,18 @@
       short: 'MoO₄²⁻',
       name: 'Molibdato',
       antagonists: ['so4'],
-      synergists: ['no3', 'nh4', 'fe'],
-      functional: ['Nitrato reductasa', 'fijación de N'],
-      shortTip: 'SO₄²⁻ en exceso puede competir con la absorción de MoO₄²⁻.'
+      synergists: ['no3', 'nh4'],
+      functional: ['Nitrato reductasa', 'fijación de N', 'Cofactores Fe en cadena del N'],
+      shortTip: 'SO₄²⁻ en exceso puede competir con MoO₄²⁻. La relación con Fe es funcional (enzimas del N), no sinergia directa de absorción.'
     },
     cl: {
       ion: 'Cl⁻',
       short: 'Cl⁻',
       name: 'Cloruro',
       antagonists: ['no3'],
-      synergists: ['k', 'nh4', 'mg'],
+      synergists: ['k', 'nh4'],
       functional: ['Balance iónico', 'fotosíntesis (PSII)', 'adaptación osmótica'],
-      shortTip: 'Cl⁻ y NO₃⁻ pueden interactuar en toma y distribución según cultivo y dosis.'
+      shortTip: 'Cl⁻ y NO₃⁻ compiten en algunas condiciones (rojo). Con K⁺ y NH₄⁺ suele manejarse en sales comunes (KCl, NH₄Cl).'
     }
   };
 
@@ -1514,8 +1514,9 @@
   function antagonistic(a, b) {
     return SPEC[a].antagonists.indexOf(b) !== -1 || SPEC[b].antagonists.indexOf(a) !== -1;
   }
-  function synergistic(a, b) {
-    return (SPEC[a].synergists || []).indexOf(b) !== -1 || (SPEC[b].synergists || []).indexOf(a) !== -1;
+  /** Sinergia mostrada solo desde el ion focal (evita inflar p. ej. K⁺ con micros que lo listaban). */
+  function synergyFrom(focusId, otherId) {
+    return (SPEC[focusId].synergists || []).indexOf(otherId) !== -1;
   }
 
   function highlightEdgesForNode(nid) {
@@ -1527,7 +1528,7 @@
       var other = a === nid ? b : (b === nid ? a : null);
       if (other === null) return;
       if (k === 'ant' && antagonistic(nid, other)) ln.setAttribute('class', 'edge-line hi-ant');
-      else if (k === 'syn' && synergistic(nid, other)) ln.setAttribute('class', 'edge-line hi-syn');
+      else if (k === 'syn' && synergyFrom(nid, other)) ln.setAttribute('class', 'edge-line hi-syn');
     });
   }
 
@@ -1546,7 +1547,8 @@
   function relationIdsFor(nid, kind) {
     return NODE_ORDER.filter(function (tid) {
       if (tid === nid) return false;
-      return kind === 'ant' ? antagonistic(nid, tid) : synergistic(nid, tid);
+      if (kind === 'ant') return antagonistic(nid, tid);
+      return synergyFrom(nid, tid);
     });
   }
 
@@ -1565,7 +1567,7 @@
     detailBody.innerHTML =
       '<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#475569;">Compite / antagoniza con (referencia):</p>' +
       (ants || '<span style="color:#64748b;font-size:13px;">—</span>') +
-      '<p style="margin:12px 0 6px;font-size:13px;font-weight:600;color:#475569;">Sinergia / favorecimiento conjunto con (referencia):</p>' +
+      '<p style="margin:12px 0 6px;font-size:13px;font-weight:600;color:#475569;">Sinergia / favorecimiento conjunto (desde este ion):</p>' +
       (syns || '<span style="color:#64748b;font-size:13px;">—</span>') +
       '<p style="margin:12px 0 6px;font-size:13px;font-weight:600;color:#475569;">Relaciones funcionales (conceptos):</p><div style="margin-top:4px;">' +
       (fun || '—') + '</div>' +

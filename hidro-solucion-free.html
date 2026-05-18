@@ -19,6 +19,9 @@
       color: #64748b;
       text-align: center;
     }
+    body.embed-dashboard .guest-note {
+      display: none;
+    }
     .hydroponia-container {
       margin: 0;
     }
@@ -77,25 +80,59 @@
       border-radius: 14px;
     }
     .hydro-free-solution .hydro-table-colored thead th {
-      background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
-      color: #1e3a8a;
+      background: #f1f5f9;
+      color: #334155;
     }
     .hydro-free-solution .hydro-table-colored tbody td {
       background: #f8fafc;
     }
-    .hydro-free-solution .hydro-col-nh4 {
-      background: #f0f9ff !important;
+    .hydro-free-solution thead th.hydro-col-an {
+      background: linear-gradient(180deg, #fef9c3 0%, #fde68a 100%);
+      color: #92400e;
     }
-    .hydro-free-solution .hydro-col-cl {
-      background: #ecfeff !important;
+    .hydro-free-solution thead th.hydro-col-cl {
+      background: linear-gradient(180deg, #fef3c7 0%, #fcd34d 100%);
+      color: #854d0e;
     }
+    .hydro-free-solution thead th.hydro-col-cat {
+      background: linear-gradient(180deg, #fee2e2 0%, #fecaca 100%);
+      color: #991b1b;
+    }
+    .hydro-free-solution thead th.hydro-col-nh4 {
+      background: linear-gradient(180deg, #ffe4e6 0%, #fda4af 100%);
+      color: #9f1239;
+    }
+    .hydro-free-solution tbody td.hydro-col-an { background: #fffbeb !important; }
+    .hydro-free-solution tbody td.hydro-col-cl { background: #fffbeb !important; }
+    .hydro-free-solution tbody td.hydro-col-cat { background: #fff1f2 !important; }
+    .hydro-free-solution tbody td.hydro-col-nh4 { background: #fff1f2 !important; }
+    .hydro-free-solution .hydro-th-group {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 6px 4px;
+    }
+    .hydro-free-solution .hydro-th-group--an {
+      background: rgba(234, 179, 8, 0.35) !important;
+      color: #92400e !important;
+    }
+    .hydro-free-solution .hydro-th-group--cl {
+      background: rgba(234, 179, 8, 0.5) !important;
+      color: #78350f !important;
+    }
+    .hydro-free-solution .hydro-th-group--cat {
+      background: rgba(185, 28, 28, 0.2) !important;
+      color: #991b1b !important;
+    }
+    .hydro-free-solution .hydro-th-group--nh4 {
+      background: rgba(185, 28, 28, 0.28) !important;
+      color: #991b1b !important;
+    }
+    #hydroMeqTableWrap input.hydro-input[data-type="meq"][data-nutrient="Cl"],
     #hydroPpmTableWrap input.hydro-input[data-type="ppm"][data-nutrient="Cl"] {
-      border: 2px solid #0e7490;
-      box-shadow: 0 0 0 1px rgba(14, 116, 144, 0.15);
-    }
-    #hydroPpmTableWrap input.hydro-input[data-type="ppm"][data-nutrient="Cl"]:focus {
-      border-color: #155e75;
-      box-shadow: 0 0 0 2px rgba(14, 116, 144, 0.25);
+      border: 2px solid #ca8a04;
+      box-shadow: 0 0 0 1px rgba(202, 138, 4, 0.15);
     }
     .hydro-free-solution .hydro-ternary-svg-wrap svg {
       background: #f8fafc !important;
@@ -162,6 +199,13 @@
       }
     }
   </style>
+  <script>
+    (function () {
+      if (/[?&]embed=dashboard(?:&|$)/.test(location.search || '')) {
+        document.documentElement.classList.add('embed-dashboard');
+      }
+    })();
+  </script>
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
@@ -199,9 +243,11 @@
   </div>
 
   <script>
-    const HYDRO_MEQ_NUTRIENTS = ['N_NH4','N_NO3','P','S','K','Ca','Mg'];
     const HYDRO_ANIONS = ['N_NO3','P','S'];
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
+    /** Orden tablas: aniones (triángulo + Cl) · cationes (triángulo + NH₄) */
+    const HYDRO_MEQ_NUTRIENTS = ['N_NO3','P','S','Cl','K','Ca','Mg','N_NH4'];
+    const HYDRO_MEQ_CE_PARTICIPANTS = ['N_NO3','P','S','K','Ca','Mg','N_NH4'];
     // En la versión gratuita no se muestran micros en ppm.
     const HYDRO_MICROS = [];
     const HYDRO_EQ_WEIGHTS = { N_NO3:14.0, N_NH4:14.0, P:31.0, K:39.1, Ca:20.04, Mg:12.15, S:16.03, Cl:35.45 };
@@ -210,7 +256,7 @@
       stages: [{
         id: 'stage_1',
         ce: '0.00',
-        meq: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0 },
+        meq: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, Cl: 0, K: 0, Ca: 0, Mg: 0 },
         ppm: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0, Cl: 0 }
       }],
       activeStageId: 'stage_1'
@@ -268,7 +314,7 @@
         return;
       }
       const factor = target / current;
-      HYDRO_MEQ_NUTRIENTS.forEach(n => {
+      HYDRO_MEQ_CE_PARTICIPANTS.forEach(n => {
         stage.meq[n] = hydroRound2((parseFloat(stage.meq[n]) || 0) * factor);
       });
       stage.ce = hydroComputeCE(stage).toFixed(2);
@@ -285,6 +331,12 @@
       ['P','K','Ca','Mg','S'].forEach(n => {
         ppm[n] = (parseFloat(stage.meq?.[n] || 0)) * (HYDRO_EQ_WEIGHTS[n] || 0);
       });
+      const mCl = parseFloat(stage.meq?.Cl);
+      if (!isNaN(mCl)) {
+        ppm.Cl = mCl * HYDRO_EQ_WEIGHTS.Cl;
+      } else {
+        ppm.Cl = parseFloat(stage.ppm?.Cl) || 0;
+      }
       return ppm;
     }
 
@@ -294,18 +346,36 @@
       return Math.round(x * 100) / 100;
     }
 
-    /** Cl⁻: solo ppm → meq/L para leyenda; no entra en CE ni en triángulo aniónico N-P-S. */
     function hydroMeqClFromPpm(ppmCl) {
       const w = HYDRO_EQ_WEIGHTS.Cl;
       return w ? hydroRound2((parseFloat(ppmCl) || 0) / w) : 0;
     }
-    function hydroMeqCl(stage) {
+    function hydroGetClMeq(stage) {
+      if (stage.meq && stage.meq.Cl != null && stage.meq.Cl !== '') {
+        return parseFloat(stage.meq.Cl) || 0;
+      }
       return hydroMeqClFromPpm(stage.ppm?.Cl);
     }
+    function hydroSyncClMeqPpm(stage) {
+      const m = hydroGetClMeq(stage);
+      if (!stage.meq) stage.meq = {};
+      if (!stage.ppm) stage.ppm = {};
+      stage.meq.Cl = hydroRound2(m);
+      stage.ppm.Cl = hydroRound2(m * HYDRO_EQ_WEIGHTS.Cl);
+    }
+    function hydroMeqCl(stage) {
+      return hydroGetClMeq(stage);
+    }
     function hydroColClass(n) {
-      if (n === 'N_NH4') return 'hydro-col-nh4';
       if (n === 'Cl') return 'hydro-col-cl';
+      if (n === 'N_NH4') return 'hydro-col-nh4';
+      if (HYDRO_ANIONS.includes(n)) return 'hydro-col-an';
+      if (HYDRO_CATIONS_TRIANGLE.includes(n)) return 'hydro-col-cat';
       return '';
+    }
+    function hydroTableGroupHeaderRow(ceCol) {
+      const ce = ceCol ? '<th>CE (dS/m)</th>' : '';
+      return `<tr class="hydro-ion-group-row">${ce}<th colspan="3" class="hydro-th-group hydro-th-group--an">Aniones · triángulo</th><th class="hydro-th-group hydro-th-group--cl">Cl⁻</th><th colspan="3" class="hydro-th-group hydro-th-group--cat">Cationes · triángulo</th><th class="hydro-th-group hydro-th-group--nh4">N-NH₄⁺</th></tr>`;
     }
 
     function hydroEscapeAttr(s) {
@@ -320,6 +390,23 @@
         meq[n] = w ? hydroRound2((parseFloat(ppmRow[n]) || 0) / w) : 0;
       });
       return meq;
+    }
+
+    function hydroPctMeqRow(stage) {
+      hydroSyncClMeqPpm(stage);
+      const sumAnions = HYDRO_ANIONS.reduce((acc, n) => acc + (parseFloat(stage.meq?.[n] || 0)), 0);
+      const sumAnTotal = sumAnions + hydroGetClMeq(stage);
+      const sumKCaMg = HYDRO_CATIONS_TRIANGLE.reduce((acc, n) => acc + (parseFloat(stage.meq?.[n] || 0)), 0);
+      const totalCations = sumKCaMg + (parseFloat(stage.meq?.N_NH4 || 0));
+      const pct = {};
+      HYDRO_MEQ_NUTRIENTS.forEach(n => {
+        const val = parseFloat(stage.meq?.[n] || 0);
+        if (HYDRO_ANIONS.includes(n)) pct[n] = sumAnions > 0 ? (val / sumAnions) * 100 : 0;
+        else if (n === 'Cl') pct[n] = sumAnTotal > 0 ? (val / sumAnTotal) * 100 : 0;
+        else if (HYDRO_CATIONS_TRIANGLE.includes(n)) pct[n] = sumKCaMg > 0 ? (val / sumKCaMg) * 100 : 0;
+        else pct[n] = totalCations > 0 ? (val / totalCations) * 100 : 0;
+      });
+      return pct;
     }
 
     /** Tras re-render (innerHTML), el foco se pierde; se restaura el input activo (ppm) y el cursor. */
@@ -402,6 +489,7 @@
       if (!wrap) return;
       var savedScroll = (wrap.firstElementChild && typeof wrap.firstElementChild.scrollLeft === 'number') ? wrap.firstElementChild.scrollLeft : 0;
       const rows = hydroState.stages.map(stage => {
+        hydroSyncClMeqPpm(stage);
         const computedCe = hydroComputeCE(stage);
         stage.ce = computedCe.toFixed(2);
         return `
@@ -409,7 +497,8 @@
             <td><input class="hydro-input" data-stage-id="${stage.id}" data-field="ce" type="number" step="0.01" min="0" value="${stage.ce ?? ''}" title="CE objetivo (dS/m). Con meq en cero, reparte CE×20 entre iones del triángulo."></td>
             ${HYDRO_MEQ_NUTRIENTS.map(n => {
               const mv = (stage.meq && stage.meq[n] != null) ? stage.meq[n] : 0;
-              return `<td class="${hydroColClass(n)}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.01" value="${hydroRound2(mv).toFixed(2)}"></td>`;
+              const title = n === 'Cl' ? ' title="Cl⁻: no suma a CE ni al triángulo N-P-S"' : '';
+              return `<td class="${hydroColClass(n)}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.01" min="0"${title} value="${hydroRound2(mv).toFixed(2)}"></td>`;
             }).join('')}
           </tr>
         `;
@@ -419,6 +508,7 @@
         <div class="hydro-table-scroll hydro-table-colored">
           <table class="hydro-table hydro-table-colored">
             <thead>
+              ${hydroTableGroupHeaderRow(true)}
               <tr>
                 <th>CE (dS/m)</th>
                 ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">(meq/L)</span></th>`).join('')}
@@ -440,6 +530,7 @@
       var savedPctScroll = (pctWrap.firstElementChild && typeof pctWrap.firstElementChild.scrollLeft === 'number') ? pctWrap.firstElementChild.scrollLeft : 0;
 
       const ppmRows = hydroState.stages.map(stage => {
+        hydroSyncClMeqPpm(stage);
         const macroPpm = hydroComputeMacroPpm(stage);
         stage.ppm = { ...stage.ppm, ...macroPpm };
         return `
@@ -447,12 +538,14 @@
             <td>${stage.ce ?? ''}</td>
             ${HYDRO_MEQ_NUTRIENTS.map(n => {
               const useLive = hydroPpmTyping && hydroPpmTyping.stageId === stage.id && hydroPpmTyping.nutrient === n;
+              const src = n === 'Cl' ? (stage.ppm?.Cl ?? 0) : (macroPpm[n] != null ? macroPpm[n] : 0);
               const vAttr = useLive
                 ? hydroEscapeAttr(hydroPpmTyping.raw)
-                : hydroEscapeAttr((macroPpm[n] != null ? macroPpm[n] : 0).toFixed(1));
-              return `<td class="${hydroColClass(n)}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="text" inputmode="decimal" autocomplete="off" value="${vAttr}"></td>`;
+                : hydroEscapeAttr(hydroRound2(src).toFixed(1));
+              const inpType = n === 'Cl' ? 'number' : 'text';
+              const extra = n === 'Cl' ? ' step="0.01" min="0"' : ' inputmode="decimal" autocomplete="off"';
+              return `<td class="${hydroColClass(n)}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="${inpType}"${extra} value="${vAttr}"></td>`;
             }).join('')}
-            <td class="hydro-col-cl"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="Cl" type="number" step="0.01" min="0" value="${hydroRound2(stage.ppm?.Cl ?? 0).toFixed(1)}" title="Cl⁻ manual: no suma a CE ni al triángulo N-P-S"></td>
             ${HYDRO_MICROS.map((n, idx) => `<td class="${idx === 0 ? 'hydro-micro-start' : ''}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="ppm" data-nutrient="${n}" type="number" step="0.01" value="${stage.ppm?.[n] ?? 0}"></td>`).join('')}
           </tr>
         `;
@@ -462,10 +555,10 @@
         <div class="hydro-table-scroll hydro-table-colored">
           <table class="hydro-table hydro-table-colored">
             <thead>
+              ${hydroTableGroupHeaderRow(true)}
               <tr>
                 <th>CE (dS/m)</th>
                 ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
-                <th class="hydro-col-cl">${hydroLabelHtml('Cl')} <span class="notranslate" translate="no">ppm</span></th>
                 ${HYDRO_MICROS.map((n, idx) => `<th class="${idx === 0 ? 'hydro-micro-start' : ''}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">ppm</span></th>`).join('')}
               </tr>
             </thead>
@@ -475,16 +568,7 @@
       `;
 
       const pctRows = hydroState.stages.map(stage => {
-        const sumAnions = HYDRO_ANIONS.reduce((acc, n) => acc + (parseFloat(stage.meq?.[n] || 0)), 0);
-        const sumKCaMg = HYDRO_CATIONS_TRIANGLE.reduce((acc, n) => acc + (parseFloat(stage.meq?.[n] || 0)), 0);
-        const totalCations = sumKCaMg + (parseFloat(stage.meq?.N_NH4 || 0));
-        const pct = {};
-        HYDRO_MEQ_NUTRIENTS.forEach(n => {
-          const val = parseFloat(stage.meq?.[n] || 0);
-          if (HYDRO_ANIONS.includes(n)) pct[n] = sumAnions > 0 ? (val / sumAnions) * 100 : 0;
-          else if (HYDRO_CATIONS_TRIANGLE.includes(n)) pct[n] = sumKCaMg > 0 ? (val / sumKCaMg) * 100 : 0;
-          else pct[n] = totalCations > 0 ? (val / totalCations) * 100 : 0;
-        });
+        const pct = hydroPctMeqRow(stage);
         return `
           <tr>
             ${HYDRO_MEQ_NUTRIENTS.map(n => `<td class="${hydroColClass(n)}">${pct[n].toFixed(1)}</td>`).join('')}
@@ -496,6 +580,7 @@
         <div class="hydro-table-scroll hydro-table-colored">
           <table class="hydro-table hydro-table-colored">
             <thead>
+              ${hydroTableGroupHeaderRow(false)}
               <tr>
                 ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate" translate="no">% meq</span></th>`).join('')}
               </tr>
@@ -622,9 +707,10 @@
       hydroEnsureGroupMeqTotals(stage);
       let sumKcm = HYDRO_CATIONS_TRIANGLE.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
       if (sumKcm <= 0) sumKcm = 30;
+      // Igual que hidroponia-functions.js: vTop=K, vLeft=Ca, vRight=Mg (no invertir Ca/Mg)
       stage.meq.K = hydroRound2(sumKcm * pTop / 100);
-      stage.meq.Mg = hydroRound2(sumKcm * pLeft / 100);
-      stage.meq.Ca = hydroRound2(sumKcm * pRight / 100);
+      stage.meq.Ca = hydroRound2(sumKcm * pLeft / 100);
+      stage.meq.Mg = hydroRound2(sumKcm * pRight / 100);
     }
 
     function hydroTernaryPercents(stage) {
@@ -992,6 +1078,9 @@
         const nutrient = input.getAttribute('data-nutrient');
         if (type === 'meq' && nutrient) {
           stage.meq[nutrient] = hydroRound2(parseFloat(input.value) || 0);
+          if (nutrient === 'Cl') {
+            stage.ppm.Cl = hydroRound2((parseFloat(stage.meq.Cl) || 0) * HYDRO_EQ_WEIGHTS.Cl);
+          }
           stage.ce = hydroComputeCE(stage).toFixed(2);
           const ceInput = container.querySelector(`input[data-stage-id="${stageId}"][data-field="ce"]`);
           if (ceInput) ceInput.value = stage.ce;
@@ -1015,9 +1104,6 @@
               hydroPatchMeqAndCeFromPpmState(container, stage);
               hydroSchedulePpmFullRender(fi);
             }
-          } else if (nutrient === 'Cl') {
-            stage.ppm.Cl = hydroRound2(parseFloat(input.value) || 0);
-            hydroUpdateNNLegend(stage);
           } else {
             stage.ppm[nutrient] = parseFloat(input.value) || 0;
           }

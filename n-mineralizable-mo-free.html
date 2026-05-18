@@ -138,12 +138,75 @@
       background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px;
       padding: 10px 12px; font-size: 12px; color: #92400e; line-height: 1.45; margin-top: 12px;
     }
+    .tool-main-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    html.embed-dashboard body {
+      padding: 10px 14px 16px;
+      min-height: 100%;
+    }
+    html.embed-dashboard .wrap {
+      max-width: none;
+      width: 100%;
+    }
+    html.embed-dashboard .card-intro {
+      display: none;
+    }
+    html.embed-dashboard .embed-lead {
+      display: block;
+      margin: 0 0 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%);
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .embed-lead { display: none; }
+    @media (min-width: 900px) {
+      html.embed-dashboard .tool-main-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+        gap: 16px;
+        align-items: start;
+      }
+      html.embed-dashboard .tool-col-results {
+        position: sticky;
+        top: 8px;
+      }
+      html.embed-dashboard .tool-col-inputs {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      html.embed-dashboard .field input[type="number"],
+      html.embed-dashboard .field input[type="text"] {
+        max-width: 280px;
+      }
+      html.embed-dashboard .results-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (min-width: 1200px) {
+      html.embed-dashboard .results-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      html.embed-dashboard .result-tile--highlight {
+        grid-column: 1 / -1;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   <div class="wrap">
-    <div class="card">
+    <p class="embed-lead">
+      Orden de magnitud anual de N mineralizable desde la MO del suelo (profundidad, densidad, exploración radicular, N en MO y tasa). Orientativo; no sustituye ensayo de campo.
+    </p>
+    <div class="card card-intro">
       <div class="card-hero">
         <h1>🌱 Estimación de N mineralizable</h1>
         <p class="note">
@@ -152,6 +215,8 @@
       </div>
     </div>
 
+    <div class="tool-main-grid">
+    <div class="tool-col-inputs">
     <div class="card">
       <h2 class="section-head"><span class="section-badge">A</span> Datos de entrada</h2>
       <div class="section-body">
@@ -253,7 +318,9 @@
         </div>
       </div>
     </div>
+    </div>
 
+    <div class="tool-col-results">
     <div class="card">
       <h2 class="section-head" style="background:linear-gradient(90deg,#0284c7,#0ea5e9,#38bdf8);"><span class="section-badge">C</span> Resultados</h2>
       <div class="section-body">
@@ -296,9 +363,14 @@
         </p>
       </div>
     </div>
+    </div>
+    </div>
   </div>
 
   <script>
+    if (/[?&]embed=dashboard(?:&|$)/.test(location.search || '')) {
+      document.documentElement.classList.add('embed-dashboard');
+    }
     function parseNum(el, fallback) {
       const v = parseFloat(String(el.value).replace(',', '.'));
       return Number.isFinite(v) ? v : fallback;

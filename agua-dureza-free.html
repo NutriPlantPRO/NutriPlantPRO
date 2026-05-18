@@ -268,12 +268,65 @@
     .ref-escala td:first-child { font-weight: 600; color: #0f172a; }
     .ref-escala tbody tr:nth-child(odd) { background: #fff; }
     .ref-escala tbody tr:nth-child(even) { background: #f8fafc; }
+    .tool-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .embed-lead { display: none; }
+    html.embed-dashboard body {
+      padding: 10px 14px 16px;
+      min-height: 100%;
+    }
+    html.embed-dashboard .wrap {
+      max-width: none;
+      width: 100%;
+    }
+    html.embed-dashboard .card-intro .card-hero {
+      display: none;
+    }
+    html.embed-dashboard .embed-lead {
+      display: block;
+      margin: 0 0 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%);
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    html.embed-dashboard .card-intro .ref-box {
+      margin-top: 0;
+    }
+    @media (min-width: 1000px) {
+      html.embed-dashboard .tool-sections {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        align-items: start;
+      }
+      html.embed-dashboard .tool-section--acid {
+        grid-column: 1 / -1;
+      }
+    }
+    @media (min-width: 1400px) {
+      html.embed-dashboard .tool-sections {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      html.embed-dashboard .tool-section--acid {
+        grid-column: auto;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   <div class="wrap">
-    <div class="card">
+    <p class="embed-lead">
+      <strong>1</strong> conversión y tiras · <strong>2</strong> dureza desde Ca y Mg de laboratorio · <strong>3</strong> dosis de ácido con colchón (residual objetivo).
+    </p>
+    <div class="card card-intro">
       <div class="card-hero">
         <h1>💦 Diagnóstico de agua y acondicionamiento</h1>
         <p class="note">
@@ -335,7 +388,8 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="tool-sections">
+    <div class="card tool-section tool-section--hardness">
       <h2 class="section-head section-head--green">
         <span class="section-badge">1</span>
         Dureza del agua (conversiones y rango)
@@ -371,7 +425,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card tool-section tool-section--lab">
       <h2 class="section-head section-head--violet">
         <span class="section-badge">2</span>
         Dureza por Ca + Mg
@@ -411,7 +465,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card tool-section tool-section--acid">
       <h2 class="section-head section-head--blue">
         <span class="section-badge">3</span>
         Ácido para neutralizar HCO₃⁻ y CO₃²⁻ (con colchón)
@@ -467,9 +521,13 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 
   <script>
+    if (/[?&]embed=dashboard(?:&|$)/.test(location.search || '')) {
+      document.documentElement.classList.add('embed-dashboard');
+    }
     const EQ_CACO3 = 50.043;
     /** Equivalente mg/L como CaCO₃ a partir de mg/L del catión (dureza clásica). */
     const PPM_CACO3_PER_PPM_CA = 100.086 / 40.078;
