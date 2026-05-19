@@ -3299,6 +3299,7 @@ body {
 /* Barra tipo carpeta: Fertirriego, Hidroponía, Nutrición granular */
 .fertirriego-tabs,
 .hydroponia-tabs,
+.climate-tabs,
 .nutricion-granular-container .tab-navigation {
   display: flex;
   flex-wrap: wrap;
@@ -3315,6 +3316,7 @@ body {
 
 .fertirriego-container .tab-button,
 .hydroponia-container .tab-button,
+.climate-container .tab-button,
 .nutricion-granular-container .tab-button {
   position: relative;
   z-index: 0;
@@ -3339,6 +3341,7 @@ body {
 
 .fertirriego-container .tab-button:hover,
 .hydroponia-container .tab-button:hover,
+.climate-container .tab-button:hover,
 .nutricion-granular-container .tab-button:hover {
   background: linear-gradient(180deg, #ffffff 0%, #e8eef5 100%);
   color: #0f172a;
@@ -3348,6 +3351,7 @@ body {
 
 .fertirriego-container .tab-button.active,
 .hydroponia-container .tab-button.active,
+.climate-container .tab-button.active,
 .nutricion-granular-container .tab-button.active {
   z-index: 2;
   color: #fff;

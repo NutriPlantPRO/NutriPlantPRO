@@ -414,7 +414,7 @@ class NutriPlantChat {
     if (key.includes('granular')) return 'granular';
     if (key.includes('fertirriego') || key.includes('fertigation')) return 'fertirriego';
     if (key.includes('hidro')) return 'hidroponia';
-    if (key.includes('vpd') || key.includes('vapor')) return 'vpd';
+    if (key.includes('clima') || key.includes('vpd') || key.includes('vapor')) return 'clima';
     if (key.includes('analisis') || key === 'suelo' || key === 'extracto' || key === 'pasta' || key === 'agua' || key === 'foliar' || key === 'fruta') return 'analisis';
     if (key.includes('ubicacion') || key.includes('ubicación')) return 'ubicacion';
     if (key.includes('reporte')) return 'reportes';
@@ -1104,7 +1104,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Ubicación: el usuario define el predio dibujando puntos en el mapa (polígono). El asistente recibe en contexto: número de vértices del polígono, superficie/área (ha o m²), perímetro (m) y coordenadas (centro del polígono o referencia). Si no hay polígono aún, se indica "sin polígono definido" y se puede guiar al usuario a ir a la pestaña Ubicación y dibujar los puntos en el mapa. Necesario para la calculadora ambiental de VPD ("Obtener del Clima" usa el centro del polígono), Radar NDVI y reportes PDF.
 - Radar del cultivo (NDVI/NDMI): usa el polígono del predio para generar imágenes Sentinel-2/Earth Engine. NDVI = vigor relativo; NDMI = condición hídrica relativa del dosel/canopia (no humedad exacta del suelo). Si el contexto trae última imagen/fecha/créditos, puedes explicar si hay Radar disponible, cuándo se generó y cómo interpretarlo. No diagnosticar causa única solo con índices: cruzar con riego, suelo, foliar, plagas, drenaje, VPD y recorrido en campo.`,
       reportes: `
-- Reportes: esta pestaña sirve para generar y gestionar reportes PDF del proyecto actual. Cómo generar un reporte: (1) El usuario pulsa el botón "Generar Nuevo Reporte PDF" (en la pestaña Reportes o desde la sección de enmiendas). (2) Se abre un modal donde debe seleccionar las secciones o pestañas que quiere incluir en el reporte: Ubicación, Enmiendas, Nutrición granular, Fertirriego, Hidroponía, Déficit de presión de vapor (VPD). (3) El usuario marca (selecciona) las que desee y confirma; se genera el PDF con solo esas secciones. (4) El reporte aparece en la lista; cada uno tiene Descargar (PDF) y Eliminar. Los reportes se guardan en el proyecto y se sincronizan a la nube si está conectado. El chat debe entender esta lógica para explicar al usuario cómo hacerlo: ir a Reportes → "Generar Nuevo Reporte PDF" → en el modal elegir qué secciones incluir → generar.`,
+- Reportes: esta pestaña sirve para generar y gestionar reportes PDF del proyecto actual. Cómo generar un reporte: (1) El usuario pulsa el botón "Generar Nuevo Reporte PDF" (en la pestaña Reportes o desde la sección de enmiendas). (2) Se abre un modal donde debe seleccionar las secciones o pestañas que quiere incluir en el reporte: Ubicación, Enmiendas, Nutrición granular, Fertirriego, Hidroponía, Clima (VPD, lluvia, ET₀). (3) El usuario marca (selecciona) las que desee y confirma; se genera el PDF con solo esas secciones. (4) El reporte aparece en la lista; cada uno tiene Descargar (PDF) y Eliminar. Los reportes se guardan en el proyecto y se sincronizan a la nube si está conectado. El chat debe entender esta lógica para explicar al usuario cómo hacerlo: ir a Reportes → "Generar Nuevo Reporte PDF" → en el modal elegir qué secciones incluir → generar.`,
       general: `
 - NutriPlant PRO: responder con base en datos del proyecto activo y criterio agronómico técnico.
 - Diferenciar siempre hechos del proyecto vs conocimiento general.
@@ -1484,7 +1484,7 @@ ESTILO DE RESPUESTA:
     if (title.includes('granular')) return 'granular';
     if (title.includes('fertirriego')) return 'fertirriego';
     if (title.includes('hidro')) return 'hidroponia';
-    if (title.includes('vapor') || title.includes('vpd')) return 'vpd';
+    if (title.includes('clima') || title.includes('vapor') || title.includes('vpd')) return 'clima';
     if (title.includes('análisis') || title.includes('analisis')) return 'analisis';
     if (title.includes('ubicación') || title.includes('ubicacion')) return 'ubicacion';
     if (title.includes('reporte')) return 'reportes';
@@ -1610,7 +1610,9 @@ ESTILO DE RESPUESTA:
     if (project.granular) push('granular', project.granular);
     if (project.hidroponia || project.sections?.hidroponia) push('hidroponia', project.hidroponia || project.sections?.hidroponia);
     if (project.location && (project.location.polygon || project.location.areaHectares != null)) push('ubicacion', { areaHectares: project.location.areaHectares, area: project.location.area, hasPolygon: !!(project.location.polygon && project.location.polygon.length >= 3) });
-    if (project.vpdAnalysis) push('vpd', project.vpdAnalysis);
+    if (project.vpdAnalysis || project.climateAnalysis) {
+      push('clima', { vpdAnalysis: project.vpdAnalysis || null, climateAnalysis: project.climateAnalysis || null });
+    }
     if (Array.isArray(project.soilAnalyses) && project.soilAnalyses.length) push('analisisSuelo_count', project.soilAnalyses.length);
     if (Array.isArray(project.foliarAnalyses) && project.foliarAnalyses.length) push('analisisFoliar_count', project.foliarAnalyses.length);
     if (Array.isArray(project.frutaAnalyses) && project.frutaAnalyses.length) push('analisisFruta_count', project.frutaAnalyses.length);
@@ -2920,9 +2922,9 @@ ESTILO DE RESPUESTA:
       }
 
       // --- VPD (pestaña actual: Déficit de Presión de Vapor) ---
-      if (snapshot.module === 'vpd') {
+      if (snapshot.module === 'vpd' || snapshot.module === 'clima') {
         context += '--- VPD (pestaña actual) ---\n';
-        context += 'El usuario está en la pestaña Déficit de Presión de Vapor. Los datos de clima ("Obtener del Clima" y Serie VPD por rango) provienen de la ubicación del predio (centro del polígono en Ubicación). Dos calculadoras: Ambiental Simple (temp. aire, humedad; manual o "Obtener del Clima"; "Calcular VPD") y Avanzada (temp. aire, humedad + Temperatura de Hoja °C o Radiación Solar W/m²; "Calcular VPD"). Serie por rango: vista diaria/semanal/mensual y fechas; tablas guardadas por el usuario.\n';
+        context += 'El usuario está en la pestaña Clima (subpestaña VPD, lluvia o tiempo actual). Los datos de clima ("Obtener del Clima" y Serie VPD por rango) provienen de la ubicación del predio (centro del polígono en Ubicación). Dos calculadoras: Ambiental Simple (temp. aire, humedad; manual o "Obtener del Clima"; "Calcular VPD") y Avanzada (temp. aire, humedad + Temperatura de Hoja °C o Radiación Solar W/m²; "Calcular VPD"). Serie por rango: vista diaria/semanal/mensual y fechas; tablas guardadas por el usuario.\n';
         const liveVPD = this.getLiveVPDBlocks();
         if (liveVPD.visible) {
           if (!liveVPD.hasLocation) {

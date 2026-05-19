@@ -8499,7 +8499,7 @@
                                 granular: 'Nutrición Granular',
                                 fertigation: 'Fertirriego',
                                 hidroponia: 'Hidroponía',
-                                vpd: 'Déficit de Presión de Vapor'
+                                vpd: 'Clima (VPD)'
                             };
                             const sectionsText = sections.length
                                 ? sections.map(s => sectionLabelMap[s] || s).join(', ')
@@ -10170,7 +10170,7 @@
                 html += `
                 <div style="background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
                     <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">
-                        🌡️ Déficit de Presión de Vapor (VPD)
+                        🌤️ Clima (VPD)
                         ${!hasVPDData ? '<span style="color: #64748b; font-size: 14px; font-weight: normal; margin-left: 8px;">(Sin datos)</span>' : ''}
                     </h3>
                     ${hasVPDData 
@@ -10361,6 +10361,33 @@
                                     </div>
                                 </div>
                             ` : ''}
+                            ${(function() {
+                                const ca = project.climateAnalysis || (project.data && project.data.climateAnalysis) || null;
+                                if (!ca) return '';
+                                const rain = ca.rainfall;
+                                const live = ca.lastReading;
+                                let out = '';
+                                if (rain && rain.monthsPrev) {
+                                    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+                                    function row(label, obj, maxM) {
+                                        return '<tr><td style="padding:6px;font-weight:600;">' + escapeHtml(label) + '</td>' + months.map(function(_, i) {
+                                            const k = String(i+1).padStart(2,'0');
+                                            if (maxM != null && i+1 > maxM) return '<td style="text-align:center;color:#94a3b8;">—</td>';
+                                            const v = obj && obj[k];
+                                            return '<td style="padding:6px;text-align:center;">' + (v != null && !isNaN(Number(v)) ? Number(v).toFixed(1) : '—') + '</td>';
+                                        }).join('') + '</tr>';
+                                    }
+                                    const maxM = new Date().getMonth() + 1;
+                                    out += '<div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;"><h4 style="margin:0 0 8px 0;">🌧️ Lluvia acumulada (mm/mes)</h4><div style="overflow-x:auto;"><table style="width:100%;min-width:640px;font-size:12px;border-collapse:collapse;"><thead><tr><th>Año</th>' + months.map(function(m){return '<th>'+m+'</th>';}).join('') + '</tr></thead><tbody>' + row(String(rain.previousYear), rain.monthsPrev, 12) + row(String(rain.currentYear)+' (parcial)', rain.monthsCurr, maxM) + row('Diferencia', rain.diff, maxM) + '</tbody></table></div></div>';
+                                }
+                                if (ca.et0 && ca.et0.monthsPrev) {
+                                    out += '<p style="margin:10px 0 0;font-size:13px;color:#64748b;">☀️ ET₀ mensual guardado en el proyecto (detalle en app).</p>';
+                                }
+                                if (live && live.temperature != null) {
+                                    out += '<div style="margin-top:12px;"><h4 style="margin:0 0 8px 0;">🌤️ Última lectura</h4><div style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;"><div>T: ' + live.temperature + ' °C</div><div>HR: ' + live.humidity + ' %</div><div>UV: ' + (live.uvIndex != null ? live.uvIndex : '—') + '</div><div>Viento: ' + (live.windSpeedKmh != null ? live.windSpeedKmh + ' km/h' : '—') + '</div></div></div>';
+                                }
+                                return out;
+                            })()}
                         </div>`
                         : '<p style="color: #94a3b8; font-style: italic; margin: 0;">Esta sección aún no ha sido configurada en el proyecto.</p>'
                     }

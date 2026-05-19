@@ -33,8 +33,17 @@ const ICONS = {
   "Análisis: Agua": "💧🔬",
   "Análisis: Foliar": "🍃🔍",
   "Análisis: Fruta": "🍎🔬",
-  "Análisis: Déficit de Presión de Vapor": "🌡️📊",
+  "Análisis: Clima": "🌤️",
 };
+
+/** Nombre de sección Clima (antes VPD). */
+const CLIMATE_SECTION = 'Análisis: Clima';
+const LEGACY_CLIMATE_SECTION = 'Análisis: Déficit de Presión de Vapor';
+
+function normalizeClimateSectionName(name) {
+  if (name === LEGACY_CLIMATE_SECTION) return CLIMATE_SECTION;
+  return name;
+}
 
 // Referencias al DOM del panel
 const menu  = document.getElementById("menu");
@@ -1386,7 +1395,7 @@ function sectionTemplate(name) {
             <li>Nutrición granular</li>
             <li>Fertirriego</li>
             <li>Hidroponía</li>
-            <li>Déficit de presión de vapor (VPD)</li>
+            <li>Clima (VPD, lluvia, ET₀, tiempo actual)</li>
           </ul>
         </div>
       </div>
@@ -1490,8 +1499,8 @@ function sectionTemplate(name) {
   if (name === "Análisis: Agua")      return createAguaTabHTML();
   if (name === "Análisis: Foliar")    return (typeof createFoliarTabHTML === 'function' ? createFoliarTabHTML() : '<div class="card"><h2 class="text-xl">🔬 Análisis Foliar</h2><p>Cargando…</p></div>');
   if (name === "Análisis: Fruta") return (typeof createFrutaTabHTML === 'function' ? createFrutaTabHTML() : '<div class="card"><h2 class="text-xl">🍎 Análisis de Fruta</h2><p>Cargando…</p></div>');
-  if (name === "Análisis: Déficit de Presión de Vapor") {
-    return createVPDSectionHTML();
+  if (name === CLIMATE_SECTION) {
+    return typeof createClimateSectionHTML === 'function' ? createClimateSectionHTML() : createVPDSectionHTML();
   }
 
   return `<div class="card"><p>Sección: ${name}</p></div>`;
@@ -1519,7 +1528,7 @@ function highlightStack(name) {
     "Análisis: Agua":     "agua",
     "Análisis: Foliar":   "foliar",
     "Análisis: Fruta":    "fruta",
-    "Análisis: Déficit de Presión de Vapor": "vpd",
+    "Análisis: Clima": "clima",
   };
 
   const stack = document.getElementById("sbStack");
@@ -1558,6 +1567,7 @@ function emitProjectContextUpdate(detail = {}) {
 }
 
 function selectSection(name, el) {
+  name = normalizeClimateSectionName(name);
   console.log('🔄 selectSection ejecutándose para:', name);
   try {
     document.dispatchEvent(new CustomEvent('np:section-changed', { detail: { section: name, at: new Date().toISOString() } }));
@@ -1624,10 +1634,13 @@ function selectSection(name, el) {
         try { window.saveFrutaUIState(); } catch (e) { console.warn('saveFrutaUIState', e); }
       }
     }
-    if (previousSection === 'Análisis: Déficit de Presión de Vapor' && currentProject.id) {
+    if (previousSection === CLIMATE_SECTION && currentProject.id) {
       try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
       if (typeof window.saveVPDAnalysisFromUIToStorage === 'function') {
         try { window.saveVPDAnalysisFromUIToStorage(); } catch (e) { console.warn('saveVPDAnalysisFromUIToStorage', e); }
+      }
+      if (typeof window.persistClimateAnalysis === 'function') {
+        try { window.persistClimateAnalysis(); } catch (e) { console.warn('persistClimateAnalysis', e); }
       }
     }
   }
@@ -1713,6 +1726,7 @@ function selectSection(name, el) {
       if (cachedData.granular !== undefined) currentProject.granular = cachedData.granular;
       if (cachedData.hidroponia !== undefined) currentProject.hidroponia = cachedData.hidroponia;
       if (cachedData.vpdAnalysis !== undefined) currentProject.vpdAnalysis = cachedData.vpdAnalysis;
+      if (cachedData.climateAnalysis !== undefined) currentProject.climateAnalysis = cachedData.climateAnalysis;
       if (cachedData.soilAnalyses !== undefined) currentProject.soilAnalyses = Array.isArray(cachedData.soilAnalyses) ? cachedData.soilAnalyses : [];
       if (cachedData.solucionNutritivaAnalyses !== undefined) currentProject.solucionNutritivaAnalyses = Array.isArray(cachedData.solucionNutritivaAnalyses) ? cachedData.solucionNutritivaAnalyses : [];
       if (cachedData.extractoPastaAnalyses !== undefined) currentProject.extractoPastaAnalyses = Array.isArray(cachedData.extractoPastaAnalyses) ? cachedData.extractoPastaAnalyses : [];
@@ -1740,7 +1754,7 @@ function selectSection(name, el) {
       prevHolder.innerHTML = '';
       while (view.firstChild) prevHolder.appendChild(view.firstChild);
       sectionDomCache[previousCacheKey] = prevHolder;
-      if (previousSection === 'Análisis: Déficit de Presión de Vapor') {
+      if (previousSection === 'Análisis: Clima') {
         try {
           sectionDomCacheVpdFp[previousCacheKey] = getVpdLocationFingerprintForCache();
         } catch (e) {}
@@ -1754,7 +1768,7 @@ function selectSection(name, el) {
   var reusedCachedDom = false;
   if (view) {
     var currentCacheKey = getSectionCacheKey(name);
-    if (name === 'Análisis: Déficit de Presión de Vapor' && sectionDomCache[currentCacheKey] &&
+    if (name === 'Análisis: Clima' && sectionDomCache[currentCacheKey] &&
         sectionDomCache[currentCacheKey].childNodes && sectionDomCache[currentCacheKey].childNodes.length > 0) {
       var fpNow = getVpdLocationFingerprintForCache();
       var fpThen = sectionDomCacheVpdFp[currentCacheKey];
@@ -1786,18 +1800,16 @@ function selectSection(name, el) {
     });
   }
   
-  // Cargar resultados guardados de VPD después de renderizar (solo si no hay resultados nuevos)
-  if (name === "Análisis: Déficit de Presión de Vapor") {
-    // Delay para asegurar que el DOM esté completamente renderizado
-    setTimeout(() => {
-      const resultsDiv = document.getElementById('vpd-environmental-results');
-      // Solo cargar resultados guardados si el div está completamente vacío
-      if (resultsDiv && resultsDiv.innerHTML.trim() === '') {
+  // Cargar VPD + clima (pestañas internas) después de renderizar
+  if (name === CLIMATE_SECTION) {
+    setTimeout(function () {
+      var resultsDiv = document.getElementById('vpd-environmental-results');
+      if (resultsDiv && resultsDiv.innerHTML.trim() === '' && typeof loadVPDSavedResults === 'function') {
         loadVPDSavedResults();
       }
-      if (typeof loadVPDRangeSavedResults === 'function') {
-        loadVPDRangeSavedResults();
-      }
+      if (typeof loadVPDRangeSavedResults === 'function') loadVPDRangeSavedResults();
+      if (typeof window.initClimateTabs === 'function') window.initClimateTabs();
+      if (typeof window.loadClimateSavedData === 'function') window.loadClimateSavedData();
     }, 100);
   }
 
@@ -2283,7 +2295,7 @@ card2.innerHTML = `
   vpdCard.className = "sb-card sb-vpd-card";
   vpdCard.innerHTML = `
     <div class="sb-chiprow">
-      <button class="sb-chip" data-section="vpd">🌡️ <span class="text">Déficit de Presión de Vapor</span></button>
+      <button class="sb-chip" data-section="clima">🌤️ <span class="text">Clima</span></button>
     </div>
   `;
   sbStack.appendChild(vpdCard);
@@ -5536,6 +5548,13 @@ function np_setCurrentProject(id, projectMeta) {
     rangeTables: [],
     lastUpdated: null
   };
+  currentProject.climateAnalysis = {
+    lastTab: 'climate-vpd',
+    lastReading: null,
+    rainfall: null,
+    et0: null,
+    lastUpdated: null
+  };
   
   // 🚀 CRÍTICO: Limpiar caché en memoria cuando se cambia de proyecto
   if (window.projectStorage) {
@@ -6198,7 +6217,8 @@ document.addEventListener("click", (e) => {
       agua: "Análisis: Agua",
       foliar: "Análisis: Foliar",
       fruta: "Análisis: Fruta",
-      vpd: "Análisis: Déficit de Presión de Vapor",
+      vpd: "Análisis: Clima",
+      clima: "Análisis: Clima",
     };
 
     target = SECTION_MAP[key] || null;
@@ -10482,6 +10502,19 @@ function loadProjectData() {
         };
         console.log('✅ Estructura vpdAnalysis inicializada vacía (proyecto sin datos VPD)');
       }
+
+      if (loadedProject.climateAnalysis && typeof loadedProject.climateAnalysis === 'object') {
+        currentProject.climateAnalysis = JSON.parse(JSON.stringify(loadedProject.climateAnalysis));
+        console.log('✅ Datos climateAnalysis cargados');
+      } else {
+        currentProject.climateAnalysis = {
+          lastTab: 'climate-vpd',
+          lastReading: null,
+          rainfall: null,
+          et0: null,
+          lastUpdated: null
+        };
+      }
       
       // CRÍTICO: Validar location.projectId si existe
       if (loadedProject.location) {
@@ -11684,6 +11717,7 @@ function loadOnTabChange(tabName) {
       if (cachedData.granular) currentProject.granular = cachedData.granular;
       if (cachedData.hidroponia !== undefined) currentProject.hidroponia = cachedData.hidroponia;
       if (cachedData.vpdAnalysis !== undefined) currentProject.vpdAnalysis = cachedData.vpdAnalysis;
+      if (cachedData.climateAnalysis !== undefined) currentProject.climateAnalysis = cachedData.climateAnalysis;
       if (cachedData.soilAnalyses !== undefined) currentProject.soilAnalyses = Array.isArray(cachedData.soilAnalyses) ? cachedData.soilAnalyses : [];
       if (cachedData.solucionNutritivaAnalyses !== undefined) currentProject.solucionNutritivaAnalyses = Array.isArray(cachedData.solucionNutritivaAnalyses) ? cachedData.solucionNutritivaAnalyses : [];
       if (cachedData.extractoPastaAnalyses !== undefined) currentProject.extractoPastaAnalyses = Array.isArray(cachedData.extractoPastaAnalyses) ? cachedData.extractoPastaAnalyses : [];
@@ -11776,14 +11810,15 @@ function loadOnTabChange(tabName) {
       // 3. loadGranularRequirements()
       console.log('ℹ️ Nutrición Granular: carga manejada por selectGranularSubTab()');
       break;
-    case 'Análisis: Déficit de Presión de Vapor':
-      // Datos ya en currentProject (merge en selectSection + loadOnTabChange); pintar resultados al instante sin re-render
-      requestAnimationFrame(() => {
+    case 'Análisis: Clima':
+      requestAnimationFrame(function () {
         try {
           if (typeof loadVPDSavedResults === 'function') loadVPDSavedResults();
           if (typeof loadVPDRangeSavedResults === 'function') loadVPDRangeSavedResults();
+          if (typeof window.initClimateTabs === 'function') window.initClimateTabs();
+          if (typeof window.loadClimateSavedData === 'function') window.loadClimateSavedData();
         } catch (e) {
-          console.warn('⚠️ VPD load results:', e);
+          console.warn('⚠️ Clima load results:', e);
         }
       });
       break;
@@ -13391,6 +13426,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-table-wrap.report-granular-materials .report-app-table th:nth-child(2),
         .report-table-wrap.report-granular-materials .report-app-table td:nth-child(2) {
           width: 4.2%;
+          border-right: 2px solid #64748b;
         }
         /* Fertirriego (PDF): tablas Macros/Micros — muchas columnas, mismo criterio que granular */
         .report-table-wrap.report-pdf-compact-table {
@@ -13421,6 +13457,27 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-table-wrap.report-pdf-compact-table .report-app-table th:nth-child(2),
         .report-table-wrap.report-pdf-compact-table .report-app-table td:nth-child(2) {
           width: 3.5%;
+        }
+        /* Micros: menos columnas — recuadro azul ceñido a la tabla (sin banda vacía ni halo) */
+        .report-ferti-micros-block {
+          overflow: hidden;
+        }
+        .report-ferti-micros-block + .report-block {
+          margin-top: 14px;
+        }
+        .report-table-wrap.report-ferti-micros-table {
+          display: block;
+          width: fit-content;
+          max-width: 100%;
+          margin-top: 10px;
+          box-shadow: 0 2px 10px rgba(37, 99, 235, 0.08), 0 0 0 1px rgba(191, 219, 254, 0.9) inset;
+        }
+        .report-table-wrap.report-ferti-micros-table .report-app-table {
+          width: auto;
+          table-layout: auto;
+        }
+        .report-app-table .report-dose-divider-right {
+          border-right: 2px solid #64748b !important;
         }
         .report-app-table {
           width: 100%;
@@ -13936,6 +13993,7 @@ function createSectionHTML(sectionId, chartImages, reportLanguage) {
       break;
     case 'vpd':
       html += createVPDReportSectionHTML();
+      html += createClimateReportSectionHTML();
       break;
     case 'granular':
       html += createGranularSectionHTML();
@@ -14077,6 +14135,7 @@ function translateReportHTMLStrings(html, reportLanguage) {
     ['Rango óptimo', 'Optimal range'],
     ['Rango Óptimo', 'Optimal Range'],
     ['Horas críticas', 'Critical hours'],
+    ['Tipo (VPD)', 'Type (VPD)'],
     ['Periodo', 'Period'],
     ['VPD máx', 'Max VPD'],
     ['VPD min', 'Min VPD'],
@@ -15207,7 +15266,7 @@ function createFertigationSectionHTML(chartImages) {
     <tr>
       <td>${reportEscapeHtml(w?.stage || '')}</td>
       <td>${idx + 1}</td>
-      ${microDoseColumns.map(c => `<td>${toNum(w?.kgByCol?.[c.id]).toFixed(2)}</td>`).join('')}
+      ${microDoseColumns.map((c, i) => `<td class="${i === microDoseColumns.length - 1 ? 'report-dose-divider-right' : ''}">${toNum(w?.kgByCol?.[c.id]).toFixed(2)}</td>`).join('')}
       ${microCols.map((n, i) => {
         const v = display(n, w?.totals?.[n], programModeIsElemental);
         return `<td class="${i === 0 ? 'report-divider-left' : ''}">${v === null ? '—' : v.toFixed(d(n))}</td>`;
@@ -15346,18 +15405,18 @@ function createFertigationSectionHTML(chartImages) {
         </table>
         </div>
       </div>
-      <div class="report-block">
+      <div class="report-block report-ferti-micros-block">
         <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} - Micros <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
         <p class="report-note report-table-legend">
           <strong>Leyenda:</strong> Mismas filas que Macros. A la derecha de la línea, <strong>aportes de micronutrientes (kg/ha)</strong>. No sumar con Macros como si fueran dos riegos distintos.
         </p>
-        <div class="report-table-wrap report-pdf-compact-table">
+        <div class="report-table-wrap report-pdf-compact-table report-ferti-micros-table">
         <table class="report-app-table">
           <thead>
             <tr>
               <th>Etapa</th>
               <th>#</th>
-              ${microDoseColumnNames.map(name => `<th>${reportEscapeHtml(name)}</th>`).join('')}
+              ${microDoseColumnNames.map((name, i) => `<th class="${i === microDoseColumnNames.length - 1 ? 'report-dose-divider-right' : ''}">${reportEscapeHtml(name)}</th>`).join('')}
               ${microCols.map((n, i) => `<th class="${i === 0 ? 'report-divider-left' : ''}">${label(n, programModeIsElemental)}</th>`).join('')}
             </tr>
           </thead>
@@ -15366,7 +15425,7 @@ function createFertigationSectionHTML(chartImages) {
             <tr class="total-row">
               <td>TOTAL</td>
               <td></td>
-              ${microDoseColumnTotals.map(v => `<td>${v.toFixed(2)}</td>`).join('')}
+              ${microDoseColumnTotals.map((v, i) => `<td class="${i === microDoseColumnTotals.length - 1 ? 'report-dose-divider-right' : ''}">${v.toFixed(2)}</td>`).join('')}
               ${microCols.map((n, i) => {
                 const v = display(n, totalMicroCols[i], programModeIsElemental);
                 return `<td class="${i === 0 ? 'report-divider-left' : ''}">${v === null ? '—' : v.toFixed(d(n))}</td>`;
@@ -15992,7 +16051,7 @@ function createVPDReportSectionHTML() {
           <td>${reportNum(r.hoursHigh, 0)}</td>
           <td>${reportNum(r.hoursLow, 0)}</td>
           <td>${reportNum(r.hoursOptimal, 0)}</td>
-          <td>${reportNum(r.stressPct, 1)}%</td>
+          <td>${buildVpdStressPctCellHtml(r.stressPct)}</td>
           <td>${Number.isFinite(Number(r.maxUv)) ? reportNum(r.maxUv, 1) + '<div style="text-align:center">' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div>' : '—'}</td>
         </tr>
       `;
@@ -16008,7 +16067,7 @@ function createVPDReportSectionHTML() {
           <td>${reportNum(r.temperature, 1)}</td>
           <td>${reportNum(r.humidity, 1)}</td>
           <td>${reportEscapeHtml(rad)}</td>
-          <td>${reportEscapeHtml(String(r.type === 'high' ? 'Alto' : 'Bajo'))}</td>
+          <td style="text-align:center">${buildVpdTypeBadgeHtml(r.type)}</td>
           <td>${Number.isFinite(Number(r.uvIndex)) ? reportEscapeHtml(formatUvIndexValue(r.uvIndex)) + '<div style="text-align:center">' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div>' : '—'}</td>
         </tr>
       `;
@@ -16035,14 +16094,14 @@ function createVPDReportSectionHTML() {
         <td>${rows.length}</td>
         <td>${reportEscapeHtml(mode)}</td>
         <td>${reportEscapeHtml(coverage)}</td>
-        <td>${reportNum(avgStress, 1)}%</td>
+        <td>${buildVpdStressPctCellHtml(avgStress)}</td>
       </tr>
     `;
   }).join('');
 
   return `
     <div class="section">
-      <h2 class="section-title">🌡️ Déficit de Presión de Vapor (VPD)</h2>
+      <h2 class="section-title">🌤️ Clima — VPD</h2>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
         <div class="report-block-title">📊 Estimador ambiental simple</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
@@ -16091,6 +16150,11 @@ function createVPDReportSectionHTML() {
           <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa ·
           ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.granularity) || 'diario'))}
           (${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.startDate) || '—'))} a ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.endDate) || '—'))})
+          <div style="margin-top:8px;font-size:11px;color:#64748b;line-height:1.45;">
+            <strong>% estrés</strong> (colores): intensidad de horas fuera del rango óptimo.
+            <strong> UV máx</strong> (colores): severidad del índice UV, no del VPD.
+            En horas críticas, <strong>Tipo (VPD)</strong>: exceso (&gt;1.5 kPa) o déficit (&lt;0.5 kPa).
+          </div>
         </div>
         <div class="report-vpd-table-wrap">
         <table class="report-admin-table report-vpd-wide-table">
@@ -16125,7 +16189,7 @@ function createVPDReportSectionHTML() {
               <th>Temp (°C)</th>
               <th>HR (%)</th>
               <th>Radiación (W/m²)</th>
-              <th>Tipo</th>
+              <th>Tipo (VPD)</th>
               <th>Índice UV</th>
             </tr>
           </thead>
@@ -16162,6 +16226,70 @@ function createVPDReportSectionHTML() {
       ` : ''}
     </div>
   `;
+}
+
+function createClimateReportSectionHTML() {
+  const ca = currentProject.climateAnalysis || {};
+  const rain = ca.rainfall;
+  const et0 = ca.et0;
+  const live = ca.lastReading;
+  const monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  function monthRow(label, obj, maxM) {
+    if (!obj) return '';
+    var cells = monthLabels.map(function (_, i) {
+      var key = String(i + 1).padStart(2, '0');
+      if (maxM != null && i + 1 > maxM) return '<td style="text-align:center;color:#94a3b8;">—</td>';
+      var v = obj[key];
+      return '<td style="padding:6px;text-align:center;">' + (v != null && Number.isFinite(Number(v)) ? Number(v).toFixed(1) : '—') + '</td>';
+    }).join('');
+    return '<tr><td style="padding:6px;font-weight:600;">' + reportEscapeHtml(label) + '</td>' + cells + '</tr>';
+  }
+  var maxMonth = new Date().getMonth() + 1;
+  var rainTable = '';
+  if (rain && rain.monthsPrev) {
+    rainTable =
+      '<table class="report-admin-table" style="width:100%;font-size:11px;border-collapse:collapse;margin-top:8px;">' +
+      '<thead><tr><th>Año</th>' + monthLabels.map(function (l) { return '<th>' + l + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      monthRow(String(rain.previousYear), rain.monthsPrev, 12) +
+      monthRow(String(rain.currentYear) + ' (parcial)', rain.monthsCurr, maxMonth) +
+      monthRow('Diferencia', rain.diff, maxMonth) +
+      '</tbody></table>';
+  }
+  var et0Table = '';
+  if (et0 && et0.monthsPrev) {
+    et0Table =
+      '<table class="report-admin-table" style="width:100%;font-size:11px;border-collapse:collapse;margin-top:8px;">' +
+      '<thead><tr><th>Año</th>' + monthLabels.map(function (l) { return '<th>' + l + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      monthRow(String(et0.previousYear), et0.monthsPrev, 12) +
+      monthRow(String(et0.currentYear) + ' (parcial)', et0.monthsCurr, maxMonth) +
+      monthRow('Diferencia', et0.diff, maxMonth) +
+      '</tbody></table>';
+  }
+  var liveBlock = '';
+  if (live && live.temperature != null) {
+    liveBlock =
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;font-size:13px;">' +
+      '<div><strong>T:</strong> ' + reportNum(live.temperature, 1) + ' °C</div>' +
+      '<div><strong>HR:</strong> ' + reportNum(live.humidity, 0) + ' %</div>' +
+      '<div><strong>Radiación:</strong> ' + (live.shortwaveRadiation != null ? Math.round(live.shortwaveRadiation) + ' W/m²' : '—') + '</div>' +
+      '<div><strong>UV:</strong> ' + reportNum(live.uvIndex, 1) + '</div>' +
+      '<div><strong>Rocío:</strong> ' + reportNum(live.dewPoint, 1) + ' °C</div>' +
+      '<div><strong>Viento:</strong> ' + reportNum(live.windSpeedKmh, 1) + ' km/h</div>' +
+      '</div>';
+  }
+  if (!rainTable && !et0Table && !liveBlock) return '';
+  var satNote =
+    '<p style="margin:0 0 12px 0;padding:8px 10px;font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">' +
+    '<strong>Nota:</strong> estimaciones basadas en información satelital en el predio; pueden diferir del clima en campo.</p>';
+  return (
+    '<div class="section">' +
+    '<h2 class="section-title" style="margin-top:24px;">🌧️ Clima — Lluvia, ET₀ y tiempo actual</h2>' +
+    satNote +
+    (rainTable ? '<div class="report-block"><div class="report-block-title">Precipitación (mm/mes)</div>' + rainTable + '</div>' : '') +
+    (et0Table ? '<div class="report-block"><div class="report-block-title">ET₀ (mm/mes, suma diaria)</div>' + et0Table + '</div>' : '') +
+    (liveBlock ? '<div class="report-block"><div class="report-block-title">Última lectura</div>' + liveBlock + '</div>' : '') +
+    '</div>'
+  );
 }
 
 function createAnalysesListSectionHTML(title, list) {
@@ -19020,7 +19148,7 @@ function persistVPDAnalysisAfterMutation() {
 
 function invalidateVpdSectionDomCache() {
   try {
-    var key = getSectionCacheKey('Análisis: Déficit de Presión de Vapor');
+    var key = getSectionCacheKey('Análisis: Clima');
     delete sectionDomCache[key];
     delete sectionDomCacheVpdFp[key];
   } catch (e) {
@@ -19031,11 +19159,11 @@ function invalidateVpdSectionDomCache() {
 function refreshVpdAnalysisSectionIfVisible() {
   invalidateVpdSectionDomCache();
   if (!view) return;
-  var titleOk = title && String(title.textContent || '').trim() === 'Análisis: Déficit de Presión de Vapor';
+  var titleOk = title && String(title.textContent || '').trim() === 'Análisis: Clima';
   var domVpd = !!(document.getElementById('vpd-range-granularity') || document.getElementById('vpd-range-results'));
   if (!titleOk && !domVpd) return;
   view.innerHTML = '';
-  view.innerHTML = sectionTemplate('Análisis: Déficit de Presión de Vapor');
+  view.innerHTML = sectionTemplate('Análisis: Clima');
   view.setAttribute('data-render-project-id', (currentProject && currentProject.id) ? String(currentProject.id) : '');
   if (typeof addProjectIndicator === 'function') addProjectIndicator(view);
   setTimeout(function() {
@@ -19128,10 +19256,44 @@ function getUvSemaforoMeta(value) {
   return { label: 'Extremo', color: '#6d28d9', bg: '#ede9fe' };
 }
 
-function buildUvSemaforoBadgeHtml(value) {
-  var m = getUvSemaforoMeta(value);
-  if (m.label === 'N/D') return '<span style="font-size:12px;color:#64748b;">N/D</span>';
+function buildSemaforoBadgeHtml(meta) {
+  var m = meta || {};
+  if (!m.label || m.label === 'N/D') return '<span style="font-size:12px;color:#64748b;">N/D</span>';
   return '<span style="display:inline-block;margin-top:6px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;color:' + m.color + ';background:' + m.bg + ';">' + m.label + '</span>';
+}
+
+function buildUvSemaforoBadgeHtml(value) {
+  return buildSemaforoBadgeHtml(getUvSemaforoMeta(value));
+}
+
+function getVpdStressPctMeta(pct) {
+  var n = Number(pct);
+  if (!Number.isFinite(n)) return { label: 'N/D', color: '#64748b', bg: '#f1f5f9' };
+  if (n <= 10) return { label: 'Bajo', color: '#166534', bg: '#dcfce7' };
+  if (n <= 30) return { label: 'Moderado', color: '#92400e', bg: '#fef3c7' };
+  if (n <= 60) return { label: 'Alto', color: '#b45309', bg: '#ffedd5' };
+  if (n <= 80) return { label: 'Muy alto', color: '#be123c', bg: '#ffe4e6' };
+  return { label: 'Extremo', color: '#6d28d9', bg: '#ede9fe' };
+}
+
+function buildVpdStressPctBadgeHtml(pct) {
+  return buildSemaforoBadgeHtml(getVpdStressPctMeta(pct));
+}
+
+function buildVpdStressPctCellHtml(pct) {
+  var n = Number(pct);
+  if (!Number.isFinite(n)) return '—';
+  return reportNum(n, 1) + '%<div style="text-align:center">' + buildVpdStressPctBadgeHtml(pct) + '</div>';
+}
+
+function getVpdTypeMeta(type) {
+  if (type === 'high') return { label: 'Alto', color: '#b91c1c', bg: '#fee2e2' };
+  if (type === 'low') return { label: 'Bajo', color: '#1d4ed8', bg: '#dbeafe' };
+  return { label: 'N/D', color: '#64748b', bg: '#f1f5f9' };
+}
+
+function buildVpdTypeBadgeHtml(type) {
+  return buildSemaforoBadgeHtml(getVpdTypeMeta(type));
 }
 
 function vpdStressSummaryRowHtml(rows) {
@@ -19150,7 +19312,7 @@ function vpdStressSummaryRowHtml(rows) {
       '<td style="' + td(sep) + '">' + (Number.isFinite(Number(r.hoursHigh)) ? String(r.hoursHigh) : '0') + '</td>' +
       '<td style="' + td(sep) + '">' + (Number.isFinite(Number(r.hoursLow)) ? String(r.hoursLow) : '0') + '</td>' +
       '<td style="' + td(sep) + '">' + (Number.isFinite(Number(r.hoursOptimal)) ? String(r.hoursOptimal) : '0') + '</td>' +
-      '<td style="' + td(sep) + '">' + (Number.isFinite(Number(r.stressPct)) ? Number(r.stressPct).toFixed(1) + '%' : '—') + '</td>' +
+      '<td style="' + td(sep) + '">' + buildVpdStressPctCellHtml(r.stressPct) + '</td>' +
       '<td style="' + td(sep) + '">' + formatUvIndexValue(r.maxUv) + '<div style="text-align:center">' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div></td>' +
     '</tr>';
   }).join('');
@@ -19160,7 +19322,6 @@ function vpdCriticalEventsRowHtml(rows) {
   var td = 'padding:6px;border:1px solid #fed7aa;text-align:center;vertical-align:middle;';
   return rows.map(function(r) {
     var cls = r.type === 'high' ? '#b91c1c' : '#1d4ed8';
-    var tag = r.type === 'high' ? 'Alto' : 'Bajo';
     var rad = Number.isFinite(Number(r.shortwaveRadiationWm2)) ? Number(r.shortwaveRadiationWm2).toFixed(0) + ' W/m²' : '—';
     var uv = Number.isFinite(Number(r.uvIndex)) ? formatUvIndexValue(r.uvIndex) : '—';
     return '<tr>' +
@@ -19169,7 +19330,7 @@ function vpdCriticalEventsRowHtml(rows) {
       '<td style="' + td + '">' + (Number.isFinite(Number(r.temperature)) ? Number(r.temperature).toFixed(1) : '—') + '</td>' +
       '<td style="' + td + '">' + (Number.isFinite(Number(r.humidity)) ? Number(r.humidity).toFixed(1) : '—') + '</td>' +
       '<td style="' + td + '">' + rad + '</td>' +
-      '<td style="' + td + '"><span style="color:' + cls + ';font-weight:600;">' + tag + '</span></td>' +
+      '<td style="' + td + '">' + buildVpdTypeBadgeHtml(r.type) + '</td>' +
       '<td style="' + td + '">' + uv + '<div style="text-align:center">' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div></td>' +
     '</tr>';
   }).join('');
@@ -19296,7 +19457,7 @@ function buildVpdEnvironmentalResultsHtml(results, opts) {
   if (useSolar) {
     legendHtml =
       '<div style="margin:0 0 14px 0;padding:10px 12px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;font-size:13px;color:#065f46;line-height:1.45;">' +
-      '<strong>VPD con radiación solar:</strong> Open-Meteo entrega radiación solar global de onda corta (W/m²) en tiempo casi real. NutriPlant estima la temperatura de hoja a partir de esa radiación y calcula el VPD con el modelo avanzado (presión de saturación a T<sub>hoja</sub> frente al vapor del aire).' +
+      '<strong>VPD con radiación solar:</strong> la radiación (W/m²) proviene de estimaciones con información satelital en el predio. NutriPlant estima la temperatura de hoja a partir de esa radiación y calcula el VPD con el modelo avanzado (presión de saturación a T<sub>hoja</sub> frente al vapor del aire).' +
       '</div>';
   }
   var metricColsCount = 2 + (useSolar && rad != null && Number.isFinite(rad) ? 1 : 0) + (uv != null ? 1 : 0);
@@ -19441,8 +19602,8 @@ window.deleteVPDHistoryEntry = function deleteVPDHistoryEntry(displayIndex) {
   }
   const view = document.getElementById('view');
   const title = document.getElementById('section-title');
-  if (view) view.innerHTML = sectionTemplate('Análisis: Déficit de Presión de Vapor');
-  if (title) title.textContent = 'Análisis: Déficit de Presión de Vapor';
+  if (view) view.innerHTML = sectionTemplate('Análisis: Clima');
+  if (title) title.textContent = 'Análisis: Clima';
   if (typeof addProjectIndicator === 'function') addProjectIndicator(view);
   setTimeout(function() { if (typeof loadVPDSavedResults === 'function') loadVPDSavedResults(); }, 150);
 };
@@ -19517,6 +19678,57 @@ function createVPDRangeChart(vpdValue) {
   `;
 }
 
+function createClimateSectionHTML() {
+  if (typeof window.ensureClimateAnalysisStructures === 'function') window.ensureClimateAnalysisStructures();
+  var dataProject = currentProject;
+  var pid = '';
+  try {
+    var pm = window.projectManager && typeof window.projectManager.getCurrentProject === 'function' && window.projectManager.getCurrentProject();
+    var mem = window.projectStorage && typeof window.projectStorage.getCurrentProjectFromMemory === 'function' && window.projectStorage.getCurrentProjectFromMemory();
+    pid = typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : (localStorage.getItem('nutriplant-current-project') || '');
+    if (pm && pm.id === pid) dataProject = pm;
+    else if (mem && mem.id === pid) dataProject = mem;
+  } catch (e) {}
+  var vpdLocation = getVPDLocation(dataProject);
+  var hasPolygon = vpdLocation && vpdLocation.lat != null && vpdLocation.lng != null;
+  var loc = hasPolygon ? vpdLocation : { lat: 0, lng: 0 };
+  var rainfallTab =
+    typeof window.createClimateRainfallTabHTML === 'function'
+      ? window.createClimateRainfallTabHTML(hasPolygon, loc)
+      : '<p>Pestaña lluvia no disponible.</p>';
+  var liveTab =
+    typeof window.createClimateLiveTabHTML === 'function'
+      ? window.createClimateLiveTabHTML(hasPolygon, loc)
+      : '<p>Pestaña tiempo actual no disponible.</p>';
+  var vpdInner = createVPDSectionHTML();
+  var satelliteNote =
+    typeof window.climateSatelliteNoteHtml === 'function'
+      ? window.climateSatelliteNoteHtml()
+      : '';
+  return (
+    '<div class="climate-container">' +
+    satelliteNote +
+    '<div class="climate-tabs hydroponia-tabs">' +
+    '<button type="button" class="tab-button active" data-tab="climate-vpd"><span class="tab-icon">🌡️</span><span class="tab-text">VPD</span></button>' +
+    '<button type="button" class="tab-button" data-tab="climate-rainfall"><span class="tab-icon">🌧️</span><span class="tab-text">Lluvia y ET₀</span></button>' +
+    '<button type="button" class="tab-button" data-tab="climate-live"><span class="tab-icon">🌤️</span><span class="tab-text">Tiempo actual</span></button>' +
+    '</div>' +
+    '<div class="climate-content">' +
+    '<div class="tab-content active" id="climate-vpd">' +
+    vpdInner +
+    '</div>' +
+    '<div class="tab-content" id="climate-rainfall">' +
+    rainfallTab +
+    '</div>' +
+    '<div class="tab-content" id="climate-live">' +
+    liveTab +
+    '</div>' +
+    '</div>' +
+    '</div>'
+  );
+}
+window.createClimateSectionHTML = createClimateSectionHTML;
+
 function createVPDSectionHTML() {
   ensureVPDAnalysisStructures();
   // Usar el proyecto más actualizado para evitar mostrar "agrega polígono" cuando sí hay polígono (race/caché)
@@ -19558,8 +19770,6 @@ function createVPDSectionHTML() {
       <div class="soil-analysis-watermark" aria-hidden="true">
         <img src="assets/NutriPlant_PRO_blue.png" alt="">
       </div>
-      <h2 class="text-xl" style="margin-bottom: 24px;">🌡️ Déficit de Presión de Vapor</h2>
-      
       <!-- CALCULADORA AMBIENTAL SIMPLE (arriba, como siempre; sin botón «Calcular»: el clima ya calcula; T/HR manual se recalcula al salir del campo) -->
       <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 12px; padding: 24px; margin-bottom: 32px;">
         <h3 style="margin: 0 0 20px 0; color: #0369a1; font-size: 18px; font-weight: 600;">
@@ -20047,8 +20257,8 @@ function saveEnvironmentalVPD() {
     alert('✅ Cálculo ambiental guardado exitosamente');
     // Recargar la sección para actualizar historial
     const title = document.getElementById('sectionTitle');
-    if (title && title.textContent.trim() === "Análisis: Déficit de Presión de Vapor") {
-      selectSection("Análisis: Déficit de Presión de Vapor");
+    if (title && title.textContent.trim() === "Análisis: Clima") {
+      selectSection("Análisis: Clima");
     }
   } else {
     alert('❌ Error al guardar el cálculo');
@@ -20228,8 +20438,8 @@ function saveAdvancedVPD() {
     alert('✅ Cálculo avanzado guardado exitosamente');
     // Recargar la sección para actualizar historial
     const title = document.getElementById('sectionTitle');
-    if (title && title.textContent.trim() === "Análisis: Déficit de Presión de Vapor") {
-      selectSection("Análisis: Déficit de Presión de Vapor");
+    if (title && title.textContent.trim() === "Análisis: Clima") {
+      selectSection("Análisis: Clima");
     }
   } else {
     alert('❌ Error al guardar el cálculo');
@@ -20437,6 +20647,11 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
       </div>
       <div style="margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
         <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
+        <div style="margin-top:6px;font-size:11px;color:#7c2d12;line-height:1.4;">
+          <strong>% estrés</strong> (colores): intensidad de horas fuera del rango.
+          <strong> UV máx</strong>: severidad del índice UV (no del VPD).
+          <strong> Tipo (VPD)</strong>: exceso (&gt;1.5) o déficit (&lt;0.5 kPa).
+        </div>
       </div>
       <div style="overflow:auto;max-height:300px;">
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -20471,7 +20686,7 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
                 <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Temp (°C)</th>
                 <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">HR (%)</th>
                 <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Radiación (W/m²)</th>
-                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Tipo</th>
+                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Tipo (VPD)</th>
                 <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Índice UV</th>
               </tr>
             </thead>
@@ -20627,7 +20842,7 @@ function saveCurrentVPDRangeTable() {
   alert('✅ Cuadro VPD guardado en este proyecto (nube/local).');
   if (typeof invalidateVpdSectionDomCache === 'function') invalidateVpdSectionDomCache();
   if (typeof selectSection === 'function') {
-    selectSection("Análisis: Déficit de Presión de Vapor");
+    selectSection("Análisis: Clima");
   }
 }
 

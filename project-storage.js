@@ -902,7 +902,7 @@ class ProjectStorage {
       // - resto de secciones: debounce estándar.
       if (!skippedNoopSave) {
         const sp = typeof window !== 'undefined' ? window.nutriplantSupabaseProjects : null;
-        if ((section === 'vpdAnalysis' || section === 'fertirriego') && sp && typeof sp.syncProjectNow === 'function') {
+        if ((section === 'vpdAnalysis' || section === 'climateAnalysis' || section === 'fertirriego') && sp && typeof sp.syncProjectNow === 'function') {
           try {
             if (typeof sp.cancelScheduledProjectCloudSync === 'function') {
               sp.cancelScheduledProjectCloudSync(projectId);
@@ -1518,6 +1518,7 @@ class ProjectStorage {
         fertirriego: project.fertirriego || null,
         hidroponia: project.hidroponia || (project.sections && project.sections.hidroponia) || null,
         vpdAnalysis: project.vpdAnalysis || null,
+        climateAnalysis: project.climateAnalysis || null,
         analyses: {
           soil: project.soilAnalyses || [],
           solucionNutritiva: project.solucionNutritivaAnalyses || [],
