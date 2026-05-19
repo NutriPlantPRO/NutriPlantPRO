@@ -13573,6 +13573,105 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-hydro-table-wrap .report-app-table tbody tr:last-child td {
           border-bottom: none;
         }
+        /* Clima — lluvia / ET₀ mensual (PDF): contorno redondeado y encabezados con color */
+        .report-climate-monthly-wrap {
+          margin-top: 8px;
+          border-radius: 14px;
+          overflow: hidden;
+          border: 1px solid #cbd5e1;
+          background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+          box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.85) inset;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .report-climate-monthly-wrap--rain {
+          border-color: #7dd3fc;
+          background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%);
+        }
+        .report-climate-monthly-wrap--et0 {
+          border-color: #fcd34d;
+          background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%);
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
+          font-size: 9px;
+          table-layout: fixed;
+          min-width: 0;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table th,
+        .report-climate-monthly-wrap .report-climate-monthly-table td {
+          border: none;
+          border-right: 1px solid #e2e8f0;
+          border-bottom: 1px solid #e2e8f0;
+          padding: 5px 4px;
+          text-align: center;
+          vertical-align: middle;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table thead th {
+          font-weight: 700;
+          font-size: 8.5px;
+          line-height: 1.15;
+          letter-spacing: 0.02em;
+          padding: 7px 4px;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .report-climate-monthly-wrap--rain .report-climate-monthly-table thead th {
+          background: linear-gradient(180deg, #93c5fd 0%, #dbeafe 100%);
+          color: #1e3a8a;
+        }
+        .report-climate-monthly-wrap--et0 .report-climate-monthly-table thead th {
+          background: linear-gradient(180deg, #fcd34d 0%, #fef3c7 100%);
+          color: #92400e;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table .report-climate-col-year {
+          text-align: left;
+          font-weight: 700;
+          white-space: nowrap;
+          width: 11%;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table .report-climate-col-acum {
+          font-weight: 800;
+          background: #f1f5f9;
+          width: 8%;
+        }
+        .report-climate-monthly-wrap--rain .report-climate-monthly-table .report-climate-col-acum {
+          background: #e0f2fe;
+        }
+        .report-climate-monthly-wrap--et0 .report-climate-monthly-table .report-climate-col-acum {
+          background: #fef9c3;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table tbody tr:nth-child(even) td {
+          background: #f8fafc;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table tbody tr:nth-child(odd) td {
+          background: #ffffff;
+        }
+        .report-climate-monthly-wrap--rain .report-climate-monthly-table tbody tr:nth-child(even) td:not(.report-climate-col-acum) {
+          background: #f0f9ff;
+        }
+        .report-climate-monthly-wrap--et0 .report-climate-monthly-table tbody tr:nth-child(even) td:not(.report-climate-col-acum) {
+          background: #fffbeb;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table tr.report-climate-row-diff td {
+          background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+          font-weight: 700;
+          border-top: 2px solid #94a3b8;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table td.report-climate-cell-empty {
+          color: #94a3b8;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table th:last-child,
+        .report-climate-monthly-wrap .report-climate-monthly-table td:last-child {
+          border-right: none;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table tbody tr:last-child td {
+          border-bottom: none;
+        }
         /* Enmiendas — resultados (PDF): tarjetas y tabla redondeada tipo PRO */
         .report-amend-results-wrap.report-amend-results-pro {
           background: linear-gradient(180deg, #fffbeb 0%, #ffffff 50%);
@@ -15145,23 +15244,14 @@ function createFertigationSectionHTML(chartImages) {
     if ((c?.materialId && String(c.materialId).startsWith('custom_')) || columnHasDose(c)) return true;
     return false;
   }
-  function fertiColumnHasMicro(c) {
-    const mat = fertiById.get(c?.materialId) || fertiCustomById.get(c?.materialId) || {};
-    const hasFromCatalog = microNutrients.some(n => toNum(mat[n]) > 0);
-    if (hasFromCatalog) return true;
-    if ((c?.materialId && String(c.materialId).startsWith('custom_')) || columnHasDose(c)) return true;
-    return false;
-  }
   const macroDoseColumns = columns.filter(fertiColumnHasMacro);
   const macroDoseColumnNames = macroDoseColumns.map(c => {
     const idx = columns.indexOf(c);
     return idx >= 0 ? columnNames[idx] : fertiColumnName(c, 0);
   });
-  const microDoseColumns = columns.filter(fertiColumnHasMicro);
-  const microDoseColumnNames = microDoseColumns.map(c => {
-    const idx = columns.indexOf(c);
-    return idx >= 0 ? columnNames[idx] : fertiColumnName(c, 0);
-  });
+  // Mismas columnas de fertilizante que Macros (mismo plan; mostrar dosis aunque sea 0).
+  const microDoseColumns = macroDoseColumns;
+  const microDoseColumnNames = macroDoseColumnNames;
   const hasWeekTotals = weeks.some(w => w && w.totals && typeof w.totals === 'object');
   const reportFertiIsMes = prog.timeUnit === 'mes';
 
@@ -16242,36 +16332,67 @@ function createClimateReportSectionHTML() {
   const et0 = ca.et0;
   const live = ca.lastReading;
   const monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  function monthRow(label, obj, maxM) {
+  function sumClimateMonthsTotal(obj, maxM) {
+    if (!obj || typeof obj !== 'object') return null;
+    var sum = 0;
+    var hasAny = false;
+    for (var m = 1; m <= 12; m++) {
+      if (maxM != null && m > maxM) continue;
+      var key = String(m).padStart(2, '0');
+      var v = obj[key];
+      if (v != null && Number.isFinite(Number(v))) {
+        sum += Number(v);
+        hasAny = true;
+      }
+    }
+    return hasAny ? Math.round(sum * 10) / 10 : null;
+  }
+  function monthRow(label, obj, maxM, isDiff) {
     if (!obj) return '';
+    var annual = sumClimateMonthsTotal(obj, maxM);
+    var totalCell =
+      '<td class="report-climate-col-acum">' +
+      (annual != null ? annual.toFixed(1) : '—') +
+      '</td>';
     var cells = monthLabels.map(function (_, i) {
       var key = String(i + 1).padStart(2, '0');
-      if (maxM != null && i + 1 > maxM) return '<td style="text-align:center;color:#94a3b8;">—</td>';
+      if (maxM != null && i + 1 > maxM) return '<td class="report-climate-cell-empty">—</td>';
       var v = obj[key];
-      return '<td style="padding:6px;text-align:center;">' + (v != null && Number.isFinite(Number(v)) ? Number(v).toFixed(1) : '—') + '</td>';
+      return '<td>' + (v != null && Number.isFinite(Number(v)) ? Number(v).toFixed(1) : '—') + '</td>';
     }).join('');
-    return '<tr><td style="padding:6px;font-weight:600;">' + reportEscapeHtml(label) + '</td>' + cells + '</tr>';
+    var trClass = isDiff ? ' class="report-climate-row-diff"' : '';
+    return '<tr' + trClass + '><td class="report-climate-col-year">' + reportEscapeHtml(label) + '</td>' + totalCell + cells + '</tr>';
+  }
+  var monthHead =
+    '<thead><tr>' +
+    '<th class="report-climate-col-year">Año</th>' +
+    '<th class="report-climate-col-acum">Acum. anual (mm)</th>' +
+    monthLabels.map(function (l) { return '<th>' + l + '</th>'; }).join('') +
+    '</tr></thead>';
+  function wrapClimateMonthlyTable(variant, bodyRows) {
+    return (
+      '<div class="report-table-wrap report-climate-monthly-wrap report-climate-monthly-wrap--' + variant + '">' +
+      '<table class="report-admin-table report-climate-monthly-table">' +
+      monthHead +
+      '<tbody>' + bodyRows + '</tbody></table></div>'
+    );
   }
   var maxMonth = new Date().getMonth() + 1;
   var rainTable = '';
   if (rain && rain.monthsPrev) {
-    rainTable =
-      '<table class="report-admin-table" style="width:100%;font-size:11px;border-collapse:collapse;margin-top:8px;">' +
-      '<thead><tr><th>Año</th>' + monthLabels.map(function (l) { return '<th>' + l + '</th>'; }).join('') + '</tr></thead><tbody>' +
-      monthRow(String(rain.previousYear), rain.monthsPrev, 12) +
-      monthRow(String(rain.currentYear) + ' (parcial)', rain.monthsCurr, maxMonth) +
-      monthRow('Diferencia', rain.diff, maxMonth) +
-      '</tbody></table>';
+    rainTable = wrapClimateMonthlyTable('rain',
+      monthRow(String(rain.previousYear), rain.monthsPrev, 12, false) +
+      monthRow(String(rain.currentYear) + ' (parcial)', rain.monthsCurr, maxMonth, false) +
+      monthRow('Diferencia', rain.diff, maxMonth, true)
+    );
   }
   var et0Table = '';
   if (et0 && et0.monthsPrev) {
-    et0Table =
-      '<table class="report-admin-table" style="width:100%;font-size:11px;border-collapse:collapse;margin-top:8px;">' +
-      '<thead><tr><th>Año</th>' + monthLabels.map(function (l) { return '<th>' + l + '</th>'; }).join('') + '</tr></thead><tbody>' +
-      monthRow(String(et0.previousYear), et0.monthsPrev, 12) +
-      monthRow(String(et0.currentYear) + ' (parcial)', et0.monthsCurr, maxMonth) +
-      monthRow('Diferencia', et0.diff, maxMonth) +
-      '</tbody></table>';
+    et0Table = wrapClimateMonthlyTable('et0',
+      monthRow(String(et0.previousYear), et0.monthsPrev, 12, false) +
+      monthRow(String(et0.currentYear) + ' (parcial)', et0.monthsCurr, maxMonth, false) +
+      monthRow('Diferencia', et0.diff, maxMonth, true)
+    );
   }
   var liveBlock = '';
   if (live && live.temperature != null) {

@@ -223,7 +223,40 @@
     return round1(v).toFixed(1);
   }
 
+  function sumMonthsTotal(monthsObj, maxMonth) {
+    if (!monthsObj || typeof monthsObj !== 'object') return null;
+    var sum = 0;
+    var hasAny = false;
+    for (var m = 1; m <= 12; m++) {
+      if (maxMonth != null && m > maxMonth) continue;
+      var key = String(m).padStart(2, '0');
+      var v = monthsObj[key];
+      if (v != null && Number.isFinite(Number(v))) {
+        sum += Number(v);
+        hasAny = true;
+      }
+    }
+    return hasAny ? round1(sum) : null;
+  }
+
+  function buildMonthlyTableHead() {
+    return (
+      '<thead><tr style="background:#f1f5f9;border-bottom:2px solid #cbd5e1;">' +
+      '<th style="padding:8px;text-align:left;">Año</th>' +
+      '<th style="padding:8px;text-align:center;white-space:nowrap;" title="Suma de los meses mostrados en la fila">Acum. anual (mm)</th>' +
+      MONTH_LABELS.map(function (l) {
+        return '<th style="padding:8px;text-align:center;">' + l + '</th>';
+      }).join('') +
+      '</tr></thead>'
+    );
+  }
+
   function buildMonthlyTableRow(label, monthsObj, year, maxMonth) {
+    var annualTotal = sumMonthsTotal(monthsObj, maxMonth);
+    var totalCell =
+      '<td style="padding:8px;text-align:center;font-weight:700;background:#f8fafc;color:#0f172a;">' +
+      fmtMm(annualTotal) +
+      '</td>';
     var cells = MONTH_LABELS.map(function (_, idx) {
       var m = String(idx + 1).padStart(2, '0');
       if (maxMonth != null && idx + 1 > maxMonth) {
@@ -236,6 +269,7 @@
       '<td style="padding:8px;font-weight:600;white-space:nowrap;">' +
       label +
       '</td>' +
+      totalCell +
       cells +
       '</tr>'
     );
@@ -257,13 +291,7 @@
     var maxMonthCurr = now.getMonth() + 1;
     var prevY = rain.previousYear || now.getFullYear() - 1;
     var currY = rain.currentYear || now.getFullYear();
-    var head =
-      '<thead><tr style="background:#f1f5f9;border-bottom:2px solid #cbd5e1;">' +
-      '<th style="padding:8px;text-align:left;">Año</th>' +
-      MONTH_LABELS.map(function (l) {
-        return '<th style="padding:8px;text-align:center;">' + l + '</th>';
-      }).join('') +
-      '</tr></thead>';
+    var head = buildMonthlyTableHead();
 
     var rainHtml =
       '<div style="margin-bottom:24px;">' +
