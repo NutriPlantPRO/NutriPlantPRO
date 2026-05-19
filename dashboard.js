@@ -13458,7 +13458,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-table-wrap.report-pdf-compact-table .report-app-table td:nth-child(2) {
           width: 3.5%;
         }
-        /* Micros: menos columnas — recuadro azul ceñido a la tabla (sin banda vacía ni halo) */
+        /* Micros: en pantalla = mismo ancho/alineación que Macros; en PDF se ceñe al contenido */
         .report-ferti-micros-block {
           overflow: hidden;
         }
@@ -13466,15 +13466,14 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           margin-top: 14px;
         }
         .report-table-wrap.report-ferti-micros-table {
-          display: block;
-          width: fit-content;
-          max-width: 100%;
           margin-top: 10px;
-          box-shadow: 0 2px 10px rgba(37, 99, 235, 0.08), 0 0 0 1px rgba(191, 219, 254, 0.9) inset;
+          width: 100%;
+          box-sizing: border-box;
         }
         .report-table-wrap.report-ferti-micros-table .report-app-table {
-          width: auto;
-          table-layout: auto;
+          width: 100%;
+          table-layout: fixed;
+          min-width: 0;
         }
         .report-app-table .report-dose-divider-right {
           border-right: 2px solid #64748b !important;
@@ -13852,6 +13851,15 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           .report-table-wrap.report-pdf-compact-table .report-app-table th,
           .report-table-wrap.report-pdf-compact-table .report-app-table td {
             padding: 2px 3px;
+          }
+          .report-table-wrap.report-ferti-micros-table {
+            width: fit-content;
+            max-width: 100%;
+            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.08), 0 0 0 1px rgba(191, 219, 254, 0.9) inset;
+          }
+          .report-table-wrap.report-ferti-micros-table .report-app-table {
+            width: auto;
+            table-layout: auto;
           }
           .report-hydro-table-wrap .report-app-table {
             font-size: 6.85px;

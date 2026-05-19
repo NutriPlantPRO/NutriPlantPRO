@@ -125,8 +125,14 @@
       '&daily=precipitation_sum,et0_fao_evapotranspiration' +
       '&timezone=auto';
     var res = await fetch(url);
-    if (!res.ok) throw new Error('Open-Meteo HTTP ' + res.status);
-    var data = await res.json();
+    var data = await res.json().catch(function () { return null; });
+    if (!res.ok) {
+      var reason = data && (data.reason || data.error);
+      throw new Error(reason ? String(reason) : 'Open-Meteo HTTP ' + res.status);
+    }
+    if (data && data.error) {
+      throw new Error(data.reason ? String(data.reason) : 'Open-Meteo rechazó la consulta');
+    }
     var daily = data && data.daily ? data.daily : null;
     if (!daily || !Array.isArray(daily.time)) throw new Error('Sin datos diarios');
     return daily;
@@ -137,7 +143,9 @@
     var end = endDateOverride || year + '-12-31';
     var today = todayIso();
     if (end > today) end = today;
-    var useArchive = end < today || year < new Date().getFullYear();
+    var currYear = new Date().getFullYear();
+    // Año actual hasta hoy: archivo (forecast solo cubre ~últimos 90 días y falla con start_date en enero).
+    var useArchive = year < currYear || end <= today;
     try {
       return await fetchOpenMeteoDailyRange(lat, lng, start, end, useArchive);
     } catch (e) {
@@ -202,8 +210,9 @@
       if (status) status.textContent = '✅ Actualizado ' + new Date().toLocaleString('es-MX');
     } catch (err) {
       console.error(err);
-      if (status) status.textContent = '❌ ' + (err.message || 'Error al obtener datos');
-      alert('No se pudo obtener lluvia/ET₀. Intenta de nuevo o más tarde.');
+      var msg = err && err.message ? String(err.message) : 'Error al obtener datos';
+      if (status) status.textContent = '❌ ' + msg;
+      alert('No se pudo obtener lluvia/ET₀.\n\n' + msg + '\n\nIntenta de nuevo en unos minutos.');
     } finally {
       if (btn) btn.disabled = false;
     }
