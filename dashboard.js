@@ -13425,8 +13425,16 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         }
         .report-table-wrap.report-granular-materials .report-app-table th:nth-child(2),
         .report-table-wrap.report-granular-materials .report-app-table td:nth-child(2) {
-          width: 4.2%;
+          width: 5.2%;
           border-right: 2px solid #64748b;
+        }
+        .report-table-wrap.report-granular-materials .report-granular-material-name,
+        .report-table-wrap.report-granular-materials .report-granular-pct {
+          font-weight: 800;
+          color: #0f172a;
+        }
+        .report-table-wrap.report-granular-materials .report-granular-pct {
+          white-space: nowrap;
         }
         /* Fertirriego (PDF): tablas Macros/Micros — muchas columnas, mismo criterio que granular */
         .report-table-wrap.report-pdf-compact-table {
@@ -13457,6 +13465,14 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-table-wrap.report-pdf-compact-table .report-app-table th:nth-child(2),
         .report-table-wrap.report-pdf-compact-table .report-app-table td:nth-child(2) {
           width: 3.5%;
+        }
+        .report-table-wrap.report-pdf-compact-table .report-ferti-stage-cell,
+        .report-table-wrap.report-pdf-compact-table .report-ferti-stage-num {
+          font-weight: 800;
+          color: #0f172a;
+        }
+        .report-table-wrap.report-pdf-compact-table .report-ferti-stage-cell {
+          text-align: left;
         }
         /* Micros: en pantalla = mismo ancho/alineación que Macros; en PDF se ceñe al contenido */
         .report-ferti-micros-block {
@@ -13577,7 +13593,8 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         .report-climate-monthly-wrap {
           margin-top: 8px;
           border-radius: 14px;
-          overflow: hidden;
+          overflow-x: auto;
+          overflow-y: hidden;
           border: 1px solid #cbd5e1;
           background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
           box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.85) inset;
@@ -13598,7 +13615,13 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           border-spacing: 0;
           font-size: 9px;
           table-layout: fixed;
-          min-width: 0;
+          min-width: 640px;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table col.report-climate-col-year {
+          width: 96px;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table col.report-climate-col-acum {
+          width: 72px;
         }
         .report-climate-monthly-wrap .report-climate-monthly-table th,
         .report-climate-monthly-wrap .report-climate-monthly-table td {
@@ -13608,8 +13631,11 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           padding: 5px 4px;
           text-align: center;
           vertical-align: middle;
-          overflow-wrap: anywhere;
-          word-break: break-word;
+          overflow-wrap: normal;
+          word-break: normal;
+        }
+        .report-climate-monthly-wrap .report-admin-table.report-climate-monthly-table td {
+          word-break: normal;
         }
         .report-climate-monthly-wrap .report-climate-monthly-table thead th {
           font-weight: 700;
@@ -13632,12 +13658,22 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           text-align: left;
           font-weight: 700;
           white-space: nowrap;
-          width: 11%;
+          padding-left: 8px;
+          padding-right: 6px;
         }
         .report-climate-monthly-wrap .report-climate-monthly-table .report-climate-col-acum {
           font-weight: 800;
           background: #f1f5f9;
-          width: 8%;
+          white-space: nowrap;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table th.report-climate-col-acum {
+          white-space: normal;
+          line-height: 1.2;
+          font-size: 8px;
+          padding: 6px 4px;
+        }
+        .report-climate-monthly-wrap .report-climate-monthly-table .report-climate-col-month {
+          width: auto;
         }
         .report-climate-monthly-wrap--rain .report-climate-monthly-table .report-climate-col-acum {
           background: #e0f2fe;
@@ -14957,8 +14993,8 @@ function createGranularSectionHTML() {
     const materials = Array.isArray(app.materials) ? app.materials : [];
     const rows = materials.map(material => `
       <tr>
-        <td>${reportEscapeHtml(material.name || '—')}</td>
-        <td>${toNumber(material.percentage).toFixed(2)}</td>
+        <td class="report-granular-material-name">${reportEscapeHtml(material.name || '—')}</td>
+        <td class="report-granular-pct">${toNumber(material.percentage).toFixed(1)}</td>
         ${NUTRIENTS.map(nutrient => {
           const v = toDisplayValue(nutrient, granularMatOxideVal(material, nutrient), programModeIsElemental);
           return `<td>${v.toFixed(decimalFor(nutrient))}</td>`;
@@ -14970,7 +15006,7 @@ function createGranularSectionHTML() {
     const totalRow = `
       <tr class="total-row">
         <td>TOTAL</td>
-        <td>100.00</td>
+        <td class="report-granular-pct">100.0</td>
         ${NUTRIENTS.map(nutrient => {
           const v = toDisplayValue(nutrient, granularMatOxideVal(composition, nutrient), programModeIsElemental);
           return `<td>${v.toFixed(decimalFor(nutrient))}</td>`;
@@ -15218,11 +15254,6 @@ function createFertigationSectionHTML(chartImages) {
     || [];
   const fertiById = new Map((Array.isArray(fertiMaterials) ? fertiMaterials : []).filter(m => m && m.id).map(m => [m.id, m]));
   const fertiCustomById = new Map((Array.isArray(fertiCustomItems) ? fertiCustomItems : []).filter(m => m && m.id).map(m => [m.id, m]));
-  const macroNutrients = ['N_NO3', 'N_NH4', 'P2O5', 'K2O', 'CaO', 'MgO', 'SO4'];
-  const microNutrients = ['Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo', 'SiO2'];
-  function columnHasDose(c) {
-    return weeks.some(w => toNum(w?.kgByCol?.[c?.id]) > 0);
-  }
   function fertiColumnName(c, idx) {
     const explicit = (c && (c.name || c.label)) ? String(c.name || c.label).trim() : '';
     if (explicit) return explicit;
@@ -15236,23 +15267,29 @@ function createFertigationSectionHTML(chartImages) {
     return `Fertilizante ${idx + 1}`;
   }
   const columnNames = columns.map((c, idx) => fertiColumnName(c, idx));
-  function fertiColumnHasMacro(c) {
-    const mat = fertiById.get(c?.materialId) || fertiCustomById.get(c?.materialId) || {};
-    const hasFromCatalog = macroNutrients.some(n => toNum(mat[n]) > 0) || toNum(mat.S) > 0;
-    // Si no encontramos composición (p.ej. personalizado no resuelto), no ocultar columna si tiene dosis.
-    if (hasFromCatalog) return true;
-    if ((c?.materialId && String(c.materialId).startsWith('custom_')) || columnHasDose(c)) return true;
-    return false;
-  }
-  const macroDoseColumns = columns.filter(fertiColumnHasMacro);
-  const macroDoseColumnNames = macroDoseColumns.map(c => {
-    const idx = columns.indexOf(c);
-    return idx >= 0 ? columnNames[idx] : fertiColumnName(c, 0);
-  });
-  // Mismas columnas de fertilizante que Macros (mismo plan; mostrar dosis aunque sea 0).
-  const microDoseColumns = macroDoseColumns;
-  const microDoseColumnNames = macroDoseColumnNames;
+  const programDoseColumns = columns;
+  const programDoseColumnNames = columnNames;
   const hasWeekTotals = weeks.some(w => w && w.totals && typeof w.totals === 'object');
+  function fertiReportEtapaTd(stage) {
+    return `<td class="report-ferti-stage-cell">${reportEscapeHtml(String(stage || ''))}</td>`;
+  }
+  function fertiReportNumTd(n) {
+    return `<td class="report-ferti-stage-num">${n}</td>`;
+  }
+  function fertiNutrientRaw(n, totals) {
+    if (n === 'SO4') return fertiReportMergedSo4KgFromTotals(totals);
+    return totals && totals[n];
+  }
+  function fertiNutrientTd(n, totals, dividerClass) {
+    const v = display(n, fertiNutrientRaw(n, totals), programModeIsElemental);
+    const cls = dividerClass ? ` class="${dividerClass}"` : '';
+    return `<td${cls}>${v === null ? '—' : v.toFixed(d(n))}</td>`;
+  }
+  function fertiNutrientTdVal(n, rawVal, dividerClass) {
+    const v = display(n, rawVal, programModeIsElemental);
+    const cls = dividerClass ? ` class="${dividerClass}"` : '';
+    return `<td${cls}>${v === null ? '—' : v.toFixed(d(n))}</td>`;
+  }
   const reportFertiIsMes = prog.timeUnit === 'mes';
 
   function buildReportInlineSvgChart(labels, datasets) {
@@ -15340,35 +15377,26 @@ function createFertigationSectionHTML(chartImages) {
     const kgByCol = w && w.kgByCol ? w.kgByCol : {};
     return acc + Object.values(kgByCol).reduce((s, x) => s + toNum(x), 0);
   }, 0);
-  const macroDoseColumnTotals = macroDoseColumns.map(c => weeks.reduce((acc, w) => acc + toNum(w?.kgByCol?.[c.id]), 0));
-  const microDoseColumnTotals = microDoseColumns.map(c => weeks.reduce((acc, w) => acc + toNum(w?.kgByCol?.[c.id]), 0));
+  const programDoseColumnTotals = programDoseColumns.map(c => weeks.reduce((acc, w) => acc + toNum(w?.kgByCol?.[c.id]), 0));
   const totalMacroCols = hasWeekTotals ? macroCols.map(n => {
     if (n === 'SO4') return weeks.reduce((acc, w) => acc + fertiReportMergedSo4KgFromTotals(w?.totals), 0);
     return weeks.reduce((acc, w) => acc + toNum(w?.totals?.[n]), 0);
   }) : macroCols.map(() => null);
   const totalMicroCols = hasWeekTotals ? microCols.map(n => weeks.reduce((acc, w) => acc + toNum(w?.totals?.[n]), 0)) : microCols.map(() => null);
 
-  const macroRows = weeks.map((w, idx) => `
+  const doseRows = weeks.map((w, idx) => `
     <tr>
-      <td>${reportEscapeHtml(w?.stage || '')}</td>
-      <td>${idx + 1}</td>
-      ${macroDoseColumns.map(c => `<td>${toNum(w?.kgByCol?.[c.id]).toFixed(2)}</td>`).join('')}
-      ${macroCols.map((n, i) => {
-        const raw = n === 'SO4' ? fertiReportMergedSo4KgFromTotals(w?.totals) : w?.totals?.[n];
-        const v = display(n, raw, programModeIsElemental);
-        return `<td class="${i === 0 ? 'report-divider-left' : ''}">${v === null ? '—' : v.toFixed(d(n))}</td>`;
-      }).join('')}
+      ${fertiReportEtapaTd(w?.stage)}
+      ${fertiReportNumTd(idx + 1)}
+      ${programDoseColumns.map(c => `<td>${toNum(w?.kgByCol?.[c.id]).toFixed(2)}</td>`).join('')}
     </tr>
   `).join('');
-  const microRows = weeks.map((w, idx) => `
+  const nutrientAporteRows = weeks.map((w, idx) => `
     <tr>
-      <td>${reportEscapeHtml(w?.stage || '')}</td>
-      <td>${idx + 1}</td>
-      ${microDoseColumns.map((c, i) => `<td class="${i === microDoseColumns.length - 1 ? 'report-dose-divider-right' : ''}">${toNum(w?.kgByCol?.[c.id]).toFixed(2)}</td>`).join('')}
-      ${microCols.map((n, i) => {
-        const v = display(n, w?.totals?.[n], programModeIsElemental);
-        return `<td class="${i === 0 ? 'report-divider-left' : ''}">${v === null ? '—' : v.toFixed(d(n))}</td>`;
-      }).join('')}
+      ${fertiReportEtapaTd(w?.stage)}
+      ${fertiReportNumTd(idx + 1)}
+      ${macroCols.map(n => fertiNutrientTd(n, w?.totals, '')).join('')}
+      ${microCols.map((n, i) => fertiNutrientTd(n, w?.totals, i === 0 ? 'report-divider-left' : '')).join('')}
     </tr>
   `).join('');
 
@@ -15474,9 +15502,9 @@ function createFertigationSectionHTML(chartImages) {
         <div class="report-nutrient-wrap">${nutrientGrid(diff, programModeIsElemental, true)}</div>
       </div>
       <div class="report-block">
-        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} - Macros <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
+        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} — Fertilizantes <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
         <p class="report-note report-table-legend">
-          <strong>Leyenda:</strong> A la izquierda, dosis de cada fertilizante; a la derecha de la línea, <strong>aportes de macronutrientes (kg/ha)</strong>. La tabla Micros usa las mismas filas con los micros en kg/ha —es el mismo plan, no dos aplicaciones.
+          <strong>Leyenda:</strong> Dosis de cada fertilizante del programa por ${reportFertiIsMes ? 'mes' : 'semana'}. Use la misma <strong>Etapa</strong> y <strong>#</strong> para relacionar con la tabla de aportes.
         </p>
         <div class="report-table-wrap report-pdf-compact-table">
         <table class="report-app-table">
@@ -15484,50 +15512,42 @@ function createFertigationSectionHTML(chartImages) {
             <tr>
               <th>Etapa</th>
               <th>#</th>
-              ${macroDoseColumnNames.map(name => `<th>${reportEscapeHtml(name)}</th>`).join('')}
-              ${macroCols.map((n, i) => `<th class="${i === 0 ? 'report-divider-left' : ''}">${label(n, programModeIsElemental)}</th>`).join('')}
+              ${programDoseColumnNames.map(name => `<th>${reportEscapeHtml(name)}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
-            ${macroRows || `<tr><td colspan="${2 + macroDoseColumns.length + macroCols.length}" style="text-align:center;color:#64748b;">Sin ${reportFertiIsMes ? 'meses' : 'semanas'} configurados.</td></tr>`}
+            ${doseRows || `<tr><td colspan="${2 + programDoseColumns.length}" style="text-align:center;color:#64748b;">Sin ${reportFertiIsMes ? 'meses' : 'semanas'} configurados.</td></tr>`}
             <tr class="total-row">
               <td>TOTAL</td>
               <td></td>
-              ${macroDoseColumnTotals.map(v => `<td>${v.toFixed(2)}</td>`).join('')}
-              ${macroCols.map((n, i) => {
-                const v = display(n, totalMacroCols[i], programModeIsElemental);
-                return `<td class="${i === 0 ? 'report-divider-left' : ''}">${v === null ? '—' : v.toFixed(d(n))}</td>`;
-              }).join('')}
+              ${programDoseColumnTotals.map(v => `<td>${v.toFixed(2)}</td>`).join('')}
             </tr>
           </tbody>
         </table>
         </div>
       </div>
-      <div class="report-block report-ferti-micros-block">
-        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} - Micros <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
+      <div class="report-block">
+        <div class="report-block-title">Programa ${reportFertiIsMes ? 'Mensual' : 'Semanal'} — Aporte nutricional <span style="font-weight:600;color:#64748b;">(kg/ha)</span></div>
         <p class="report-note report-table-legend">
-          <strong>Leyenda:</strong> Mismas filas que Macros. A la derecha de la línea, <strong>aportes de micronutrientes (kg/ha)</strong>. No sumar con Macros como si fueran dos riegos distintos.
+          <strong>Leyenda:</strong> Mismas filas (Etapa y #). Tras la línea: <strong>macros y micros</strong> aportados en esa ${reportFertiIsMes ? 'mes' : 'semana'} — un solo plan, no sumar tablas.
         </p>
-        <div class="report-table-wrap report-pdf-compact-table report-ferti-micros-table">
+        <div class="report-table-wrap report-pdf-compact-table">
         <table class="report-app-table">
           <thead>
             <tr>
               <th>Etapa</th>
               <th>#</th>
-              ${microDoseColumnNames.map((name, i) => `<th class="${i === microDoseColumnNames.length - 1 ? 'report-dose-divider-right' : ''}">${reportEscapeHtml(name)}</th>`).join('')}
+              ${macroCols.map(n => `<th>${label(n, programModeIsElemental)}</th>`).join('')}
               ${microCols.map((n, i) => `<th class="${i === 0 ? 'report-divider-left' : ''}">${label(n, programModeIsElemental)}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
-            ${microRows || `<tr><td colspan="${2 + microDoseColumns.length + microCols.length}" style="text-align:center;color:#64748b;">Sin ${reportFertiIsMes ? 'meses' : 'semanas'} configurados.</td></tr>`}
+            ${nutrientAporteRows || `<tr><td colspan="${2 + macroCols.length + microCols.length}" style="text-align:center;color:#64748b;">Sin ${reportFertiIsMes ? 'meses' : 'semanas'} configurados.</td></tr>`}
             <tr class="total-row">
               <td>TOTAL</td>
               <td></td>
-              ${microDoseColumnTotals.map((v, i) => `<td class="${i === microDoseColumnTotals.length - 1 ? 'report-dose-divider-right' : ''}">${v.toFixed(2)}</td>`).join('')}
-              ${microCols.map((n, i) => {
-                const v = display(n, totalMicroCols[i], programModeIsElemental);
-                return `<td class="${i === 0 ? 'report-divider-left' : ''}">${v === null ? '—' : v.toFixed(d(n))}</td>`;
-              }).join('')}
+              ${macroCols.map((n, i) => fertiNutrientTdVal(n, totalMacroCols[i], '')).join('')}
+              ${microCols.map((n, i) => fertiNutrientTdVal(n, totalMicroCols[i], i === 0 ? 'report-divider-left' : '')).join('')}
             </tr>
           </tbody>
         </table>
@@ -16363,11 +16383,18 @@ function createClimateReportSectionHTML() {
     var trClass = isDiff ? ' class="report-climate-row-diff"' : '';
     return '<tr' + trClass + '><td class="report-climate-col-year">' + reportEscapeHtml(label) + '</td>' + totalCell + cells + '</tr>';
   }
+  var monthColgroup =
+    '<colgroup>' +
+    '<col class="report-climate-col-year">' +
+    '<col class="report-climate-col-acum">' +
+    '<col span="12" class="report-climate-col-month">' +
+    '</colgroup>';
   var monthHead =
+    monthColgroup +
     '<thead><tr>' +
     '<th class="report-climate-col-year">Año</th>' +
-    '<th class="report-climate-col-acum">Acum. anual (mm)</th>' +
-    monthLabels.map(function (l) { return '<th>' + l + '</th>'; }).join('') +
+    '<th class="report-climate-col-acum">Acum.<br>anual (mm)</th>' +
+    monthLabels.map(function (l) { return '<th class="report-climate-col-month">' + l + '</th>'; }).join('') +
     '</tr></thead>';
   function wrapClimateMonthlyTable(variant, bodyRows) {
     return (
