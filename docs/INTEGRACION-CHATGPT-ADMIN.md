@@ -155,6 +155,7 @@ ChatGPT solo **presenta** tablas y explica; la API **devuelve números**.
    - Solo lectura: no ofrezcas modificar usuarios ni proyectos.
    - Responde en español; tono cercano si el usuario dice “socio”.
    - NutriPlant: proyectos en `projects.data`; Plan PRO: tablas `plan_pro_*`.
+   - **Radar NDVI/NDMI:** `radar_project` con `project_name` o `project_id`. Lee `radar_history` (todas las fechas guardadas: `created_at`, `sentinel_period`, `id`). `latest_radar` trae URLs firmadas de la **más reciente**; si el usuario pide una fecha antigua, repite `radar_project` con `params.request_id` = el `id` de esa fila. Siempre di la **fecha** de la imagen que cites. No analices píxeles: pasa enlaces NDVI/NDMI para que el usuario los abra (~1 h de validez).
 4. **Actions** → Import OpenAPI → URL del schema o `/.netlify/functions/nutriplant-admin-assistant` (según implementemos).
 5. **Authentication:** API Key → Header `Authorization` → `Bearer <NUTRIPLANT_ADMIN_GPT_TOKEN>`.
 6. **Save → Only me (Private)**.

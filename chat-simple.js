@@ -193,7 +193,7 @@ RADAR DEL CULTIVO (NDVI / NDMI) — NutriPlant PRO:
 - NDMI (Normalized Difference Moisture Index, B8 vs B11): condición hídrica relativa del dosel/canopia. En el mapa: verde = mayor humedad relativa del dosel; marrón/tonos secos = menor humedad relativa del dosel. No es humedad exacta del suelo ni % volumétrico de riego.
 - Cómo usarlo bien: (1) detectar zonas heterogéneas para recorrer y muestrear en campo; (2) cruzar NDVI (vigor) con NDMI (dosel), riego, textura, drenaje, suelo, foliar, plagas y VPD; (3) comparar con imágenes anteriores del mismo proyecto (historial mensual). No recomendar fertilizar o regar solo por el color del mapa.
 - Cruces típicos: NDVI bajo + NDMI bajo → priorizar estrés hídrico, raíz, salinidad, compactación; NDVI bajo + NDMI alto → vigor bajo con dosel húmedo (enfermedad, anoxia, exceso de riego, etapa); NDVI alto + NDMI bajo → vigor alto con dosel seco (déficit hídrico incipiente, VPD alto); NDVI alto + NDMI alto → vigor y dosel favorables en esa fecha (validar en campo).
-- En la app: pestaña Ubicación → panel «Radar del cultivo» → sincronizar predio a la nube, dibujar/guardar polígono, «Generar» (consume crédito; máx. 1 generación por proyecto y mes). «Ver última» superpone NDVI o NDMI en el mapa; selector de capa. Sin polígono no hay Radar.
+- En la app: pestaña Ubicación → panel «Radar del cultivo» → listado «Imagen» con todas las guardadas del proyecto (fecha + periodo Sentinel); «Ver en mapa» muestra la elegida e indica su fecha. Capa NDVI/NDMI aparte. Sin polígono no hay Radar.
 - Límites: mapas relativos al predio; nubes pueden retrasar la fecha Sentinel; no sustituye análisis de suelo/foliar ni diagnóstico de campo.
 `;
 }
@@ -1674,6 +1674,27 @@ ESTILO DE RESPUESTA:
           lines.push(
             'Sin imágenes Radar guardadas: sincronizar predio a la nube y pulsar Generar en Ubicación (máx. 1 por proyecto/mes).'
           );
+        }
+        const history = Array.isArray(status.history) ? status.history : [];
+        if (history.length) {
+          lines.push(`Historial Radar del proyecto (${history.length} imagen${history.length === 1 ? '' : 'es'} guardada${history.length === 1 ? '' : 's'}):`);
+          history.slice(0, 15).forEach((h, idx) => {
+            const gen = h.created_at
+              ? new Date(h.created_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })
+              : '—';
+            const sp = h.sentinel_period || {};
+            const sent =
+              sp.from && sp.to ? `; Sentinel ${sp.from} – ${sp.to}` : h.month_key ? `; ${h.month_key}` : '';
+            lines.push(`  ${idx + 1}. ${gen}${sent}${h.has_ndmi ? ' (NDVI+NDMI)' : ' (NDVI)'}.`);
+          });
+          const sel = document.getElementById('radarSnapshotSelect');
+          const selId = sel && !sel.disabled ? String(sel.value || '') : '';
+          const picked = history.find((h) => String(h.id) === selId);
+          if (picked) {
+            lines.push(
+              `Imagen elegida en el panel Ubicación: ${new Date(picked.created_at).toLocaleString('es-MX')}${picked.sentinel_period?.from ? '; Sentinel ' + picked.sentinel_period.from + ' – ' + picked.sentinel_period.to : ''}.`
+            );
+          }
         }
         const meta = status.meta || status.latest?.meta;
         if (meta && typeof meta === 'object') {

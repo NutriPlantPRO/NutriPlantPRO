@@ -1459,10 +1459,16 @@ function sectionTemplate(name) {
               <option value="ndmi">NDMI humedad del dosel</option>
             </select>
           </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">
+            Imagen
+            <select id="radarSnapshotSelect" disabled title="Imágenes Radar guardadas de este proyecto" style="border:1px solid #86efac;border-radius:8px;padding:5px 8px;background:#fff;color:#14532d;font-size:12px;font-weight:600;min-width:160px;max-width:min(320px,100%);">
+              <option value="">Sin imágenes guardadas</option>
+            </select>
+          </label>
           <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Disponibles: —</span>
           <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 420px;">Sincroniza el predio a la nube, luego genera la imagen.</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#64748b;line-height:1.45;padding:6px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.65);border:1px dashed #86efac;">
-            <strong>Tip:</strong> la generación puede tardar ~1 minuto. Si ves error o el mapa no cambia, prueba <strong>Ver última</strong> (la imagen a veces ya está lista). Solo al aceptar «regenerar intenso» se gasta un crédito extra; máx. 1 generación normal por proyecto y mes.
+            <strong>Tip:</strong> elige la <strong>imagen</strong> en el listado (todas las guardadas del proyecto). Al verla en el mapa se muestra la <strong>fecha de generación</strong> y el periodo Sentinel. La generación puede tardar ~1 min; si falla, prueba <strong>Ver en mapa</strong>. Regenerar intenso gasta crédito extra; máx. 1 generación normal por proyecto y mes.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI</span>
@@ -1473,7 +1479,7 @@ function sectionTemplate(name) {
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
             <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>
-            <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">👁 Ver última</button>
+            <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">👁 Ver en mapa</button>
             <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;">✨ Generar / actualizar</button>
             <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;">🙈 Quitar capa</button>
           </div>

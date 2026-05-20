@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "1.5.0",
-    "description": "Solo lectura. Clima: project_climate (lluvia/ET0/tiempo guardados o en vivo). Radar NDVI/NDMI. Plan PRO."
+    "version": "1.5.1",
+    "description": "Solo lectura. Radar: radar_project devuelve radar_history (todas las fechas) y latest_radar (URLs NDVI/NDMI; opcional params.request_id para una del historial). Clima y Plan PRO."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Consulta NutriPlant (admin, proyectos, clima, Radar, Plan PRO)",
-        "description": "Clima: project_climate params.mode=saved (lluvia/ET0/tiempo guardados), live (tiempo ahora), rainfall_refresh (consulta Open-Meteo), all. project_detail incluye sections.climate. VPD: project_vpd_live.",
+        "description": "Radar: radar_project → radar_history[] (id, created_at, sentinel_period) + latest_radar (URLs firmadas). params.request_id = imagen concreta del historial. Clima: project_climate mode saved|live|rainfall_refresh|all. VPD: project_vpd_live.",
         "requestBody": {
           "required": true,
           "content": {
@@ -73,6 +73,14 @@
               "email": { "type": "string" },
               "crop": { "type": "string" },
               "q": { "type": "string" },
+              "history_limit": {
+                "type": "integer",
+                "description": "radar_project: máx. imágenes en radar_history (default 24)"
+              },
+              "request_id": {
+                "type": "string",
+                "description": "radar_project: uuid de radar_history[] para URLs NDVI/NDMI de esa fecha (no solo la más reciente)"
+              },
               "item_id": { "type": "string" },
               "limit": { "type": "integer" }
             },

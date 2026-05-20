@@ -220,6 +220,65 @@ async function getLatestRadarRow(supabase, userId, projectId) {
   return data;
 }
 
+async function getRadarHistoryRows(supabase, userId, projectId, limit) {
+  const { data, error } = await supabase
+    .from('radar_requests')
+    .select('id, created_at, month_key, image_storage_path, meta')
+    .eq('user_id', userId)
+    .eq('project_id', projectId)
+    .not('image_storage_path', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.warn('getRadarHistoryRows:', error.message);
+    return [];
+  }
+  return data || [];
+}
+
+async function getRadarRowById(supabase, userId, projectId, requestId) {
+  const { data, error } = await supabase
+    .from('radar_requests')
+    .select('id, created_at, month_key, image_storage_path, meta')
+    .eq('id', requestId)
+    .eq('user_id', userId)
+    .eq('project_id', projectId)
+    .not('image_storage_path', 'is', null)
+    .maybeSingle();
+  if (error) {
+    console.warn('getRadarRowById:', error.message);
+    return null;
+  }
+  return data;
+}
+
+function historyItemFromRow(row) {
+  if (!row) return null;
+  const meta = row.meta || {};
+  const ndmiPath = meta.ndmi_storage_path || meta.images?.ndmi?.storage_path || null;
+  return {
+    id: row.id,
+    created_at: row.created_at,
+    month_key: row.month_key,
+    sentinel_period: {
+      from: meta.date_start || null,
+      to: meta.date_end || null
+    },
+    has_ndmi: !!ndmiPath
+  };
+}
+
+async function signRadarRow(supabase, row) {
+  if (!row?.image_storage_path) return { ndvi: null, ndmi: null };
+  const meta = row.meta || {};
+  const ndmiPath = meta.ndmi_storage_path || meta.images?.ndmi?.storage_path || null;
+  const [ndviSignedUrl, ndmiSignedUrl] = await Promise.all([
+    signedUrlForPath(supabase, row.image_storage_path),
+    signedUrlForPath(supabase, ndmiPath)
+  ]);
+  return { ndviSignedUrl, ndmiSignedUrl };
+}
+
 async function signedUrlForPath(supabase, path, ttlSec = 3600) {
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, ttlSec);
   if (error || !data?.signedUrl) return null;
@@ -378,28 +437,63 @@ exports.handler = async (event) => {
     return jsonResponse(403, { error: 'Este proyecto no pertenece a tu cuenta.' });
   }
 
+  const historyLimit = Math.min(Math.max(parseInt(body.history_limit, 10) || 24, 1), 36);
   const latest = await getLatestRadarRow(supabase, userId, projectId);
-  let lastSignedUrl = null;
-  let lastNdmiSignedUrl = null;
-  if (latest?.image_storage_path) {
-    lastSignedUrl = await signedUrlForPath(supabase, latest.image_storage_path);
-  }
-  const latestNdmiPath = latest?.meta?.ndmi_storage_path || latest?.meta?.images?.ndmi?.storage_path || null;
-  if (latestNdmiPath) {
-    lastNdmiSignedUrl = await signedUrlForPath(supabase, latestNdmiPath);
-  }
+  const historyRows = await getRadarHistoryRows(supabase, userId, projectId, historyLimit);
+  const history = historyRows.map(historyItemFromRow).filter(Boolean);
 
   if (action === 'status') {
+    let lastSignedUrl = null;
+    let lastNdmiSignedUrl = null;
+    if (latest?.image_storage_path) {
+      const signed = await signRadarRow(supabase, latest);
+      lastSignedUrl = signed.ndviSignedUrl;
+      lastNdmiSignedUrl = signed.ndmiSignedUrl;
+    }
     return jsonResponse(200, {
       ok: true,
       month_key: mk,
       credits: { used, limit, base: baseLimit, bonus },
-      latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl)
+      latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl),
+      history
+    });
+  }
+
+  if (action === 'view') {
+    const requestId = body.request_id != null ? String(body.request_id).trim() : '';
+    let row = latest;
+    if (requestId) {
+      row = await getRadarRowById(supabase, userId, projectId, requestId);
+      if (!row) {
+        return jsonResponse(404, {
+          error: 'radar_snapshot_not_found',
+          message: 'No se encontró esa imagen Radar en este proyecto.'
+        });
+      }
+    }
+    if (!row?.image_storage_path) {
+      return jsonResponse(404, {
+        error: 'no_radar_image',
+        message: 'Aún no hay imágenes Radar guardadas para este proyecto.'
+      });
+    }
+    const signed = await signRadarRow(supabase, row);
+    return jsonResponse(200, {
+      ok: true,
+      snapshot: latestResponse(row, signed.ndviSignedUrl, signed.ndmiSignedUrl)
     });
   }
 
   if (action !== 'generate') {
-    return jsonResponse(400, { error: 'action debe ser status o generate' });
+    return jsonResponse(400, { error: 'action debe ser status, view o generate' });
+  }
+
+  let lastSignedUrl = null;
+  let lastNdmiSignedUrl = null;
+  if (latest?.image_storage_path) {
+    const signedLatest = await signRadarRow(supabase, latest);
+    lastSignedUrl = signedLatest.ndviSignedUrl;
+    lastNdmiSignedUrl = signedLatest.ndmiSignedUrl;
   }
 
   const polygon = proj.data?.location?.polygon;

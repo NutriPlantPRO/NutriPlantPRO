@@ -1961,6 +1961,19 @@ async function getRadarHistoryAdmin(supabase, userId, projectId, limit) {
   return data || [];
 }
 
+async function getRadarRowByIdAdmin(supabase, userId, projectId, requestId) {
+  const { data, error } = await supabase
+    .from('radar_requests')
+    .select('id, created_at, month_key, image_storage_path, meta, user_id, project_id')
+    .eq('id', requestId)
+    .eq('user_id', userId)
+    .eq('project_id', projectId)
+    .not('image_storage_path', 'is', null)
+    .maybeSingle();
+  if (error) throw new Error('radar_requests by id: ' + error.message);
+  return data;
+}
+
 async function mapLatestRadarByProjects(supabase, projectIds) {
   const map = {};
   if (!projectIds.length) return map;
@@ -2053,7 +2066,8 @@ async function handleRadarProject(supabase, params) {
   const hasPoly = projectHasPolygon(data);
   const profiles = await fetchProfiles(supabase);
   const prof = profiles.find((p) => p.id === row.user_id);
-  const histLimit = Math.min(Math.max(parseInt(params.history_limit, 10) || 12, 1), 24);
+  const histLimit = Math.min(Math.max(parseInt(params.history_limit, 10) || 24, 1), 36);
+  const requestId = (params.request_id || '').trim();
 
   const [latestRow, historyRows, credits] = await Promise.all([
     getLatestRadarRowAdmin(supabase, row.user_id, row.id),
@@ -2061,7 +2075,6 @@ async function handleRadarProject(supabase, params) {
     getUserRadarCredits(supabase, row.user_id)
   ]);
 
-  const latest = await buildRadarSnapshot(supabase, latestRow);
   const history = historyRows.map((h) => {
     const m = h.meta || {};
     return {
@@ -2073,6 +2086,30 @@ async function handleRadarProject(supabase, params) {
       has_ndmi: !!(m.ndmi_storage_path || m.images?.ndmi?.storage_path)
     };
   });
+
+  let viewRow = latestRow;
+  if (requestId) {
+    viewRow = await getRadarRowByIdAdmin(supabase, row.user_id, row.id, requestId);
+    if (!viewRow) {
+      return {
+        ok: false,
+        domain: 'radar',
+        error: 'radar_snapshot_not_found',
+        message:
+          'No se encontró esa imagen Radar. Usa radar_history[].id de una consulta previa o omite request_id para la más reciente.',
+        project: {
+          id: row.id,
+          name: row.name || row.title || 'Sin nombre',
+          crop: getProjectCrop(data)
+        },
+        radar_history: history
+      };
+    }
+  }
+
+  const displayRadar = await buildRadarSnapshot(supabase, viewRow);
+  const isNewest =
+    !latestRow || !viewRow || String(latestRow.id) === String(viewRow.id);
 
   return {
     ok: true,
@@ -2088,9 +2125,18 @@ async function handleRadarProject(supabase, params) {
     location: summarizeLocation(data.location),
     has_polygon: hasPoly,
     can_generate_radar: hasPoly,
-    latest_radar: latest,
+    latest_radar: displayRadar,
+    radar_view: {
+      request_id: viewRow ? viewRow.id : null,
+      is_newest: isNewest,
+      created_at: viewRow ? viewRow.created_at : null,
+      month_key: viewRow ? viewRow.month_key : null
+    },
     radar_history: history,
+    radar_history_count: history.length,
     user_radar_credits_this_month: credits,
+    gpt_radar_note:
+      'radar_history lista todas las imágenes guardadas (id, created_at, sentinel_period). latest_radar trae URLs firmadas NDVI/NDMI de la más reciente o de request_id si lo pasas. ChatGPT no ve píxeles: da fechas y enlaces; el usuario abre las URLs (~1 h).',
     related: {
       fertirriego_suelo_vpd: 'project_detail',
       vpd_ahora: 'project_vpd_live'
@@ -2172,7 +2218,7 @@ async function handleRadarSearch(supabase, params) {
     filters: { crop: cropQ || null, user: userQ || null, has_radar_only: radarOnly, has_polygon_only: polygonOnly },
     count: rows.length,
     projects: rows.slice(0, limit),
-    tip: 'Para imágenes NDVI/NDMI usa radar_project con project_id o project_name.'
+    tip: 'radar_project: project_name + radar_history (fechas). request_id en params para URLs de una imagen concreta del listado.'
   };
 }
 
@@ -2242,7 +2288,7 @@ async function handleDescribeApi() {
       radar: ['radar_project', 'radar_search', 'radar_overview']
     },
     usage:
-      'Clima: project_climate mode saved|live|rainfall_refresh|all. project_detail incluye sections.climate. VPD vivo: project_vpd_live.'
+      'Clima: project_climate mode saved|live|rainfall_refresh|all. Radar: radar_project (latest_radar URLs + radar_history fechas; params.request_id para imagen del historial). VPD: project_vpd_live.'
   };
 }
 
@@ -2269,8 +2315,8 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '1.5.0',
-      description: 'Solo lectura. Clima: project_climate (lluvia, ET0, tiempo). Radar y Plan PRO.'
+      version: '1.5.1',
+      description: 'Solo lectura. Radar: radar_history + latest_radar (request_id opcional). Clima y Plan PRO.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
