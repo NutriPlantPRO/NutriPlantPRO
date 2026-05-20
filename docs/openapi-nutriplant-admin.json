@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "1.4.0",
-    "description": "Solo lectura: admin, proyectos, Plan PRO y Radar NDVI/NDMI (imágenes con URL firmada)."
+    "version": "1.5.0",
+    "description": "Solo lectura. Clima: project_climate (lluvia/ET0/tiempo guardados o en vivo). Radar NDVI/NDMI. Plan PRO."
   },
   "servers": [
     {
@@ -14,8 +14,8 @@
     "/api/admin-assistant": {
       "post": {
         "operationId": "nutriplantAdminQuery",
-        "summary": "Consulta NutriPlant (admin, proyectos, Plan PRO, Radar)",
-        "description": "Radar: radar_project devuelve latest_radar.images.ndvi/ndmi.signed_url e historial por fechas Sentinel. radar_search filtra por crop/email. radar_overview totales. Ej: {\"action\":\"radar_project\",\"params\":{\"project_name\":\"Limon\"}}.",
+        "summary": "Consulta NutriPlant (admin, proyectos, clima, Radar, Plan PRO)",
+        "description": "Clima: project_climate params.mode=saved (lluvia/ET0/tiempo guardados), live (tiempo ahora), rainfall_refresh (consulta Open-Meteo), all. project_detail incluye sections.climate. VPD: project_vpd_live.",
         "requestBody": {
           "required": true,
           "content": {
@@ -50,6 +50,7 @@
               "search_projects",
               "project_detail",
               "project_vpd_live",
+              "project_climate",
               "plan_pro_week",
               "plan_pro_search",
               "plan_pro_item",
@@ -65,11 +66,13 @@
             "properties": {
               "project_id": { "type": "string" },
               "project_name": { "type": "string" },
-              "email": { "type": "string", "description": "Filtrar radar_search por usuario" },
-              "crop": { "type": "string", "description": "Filtrar por cultivo" },
+              "mode": {
+                "type": "string",
+                "description": "project_climate: saved | live | rainfall_refresh | all"
+              },
+              "email": { "type": "string" },
+              "crop": { "type": "string" },
               "q": { "type": "string" },
-              "has_radar_only": { "type": "boolean", "description": "radar_search: solo con snapshot" },
-              "history_limit": { "type": "integer", "description": "radar_project: meses en historial" },
               "item_id": { "type": "string" },
               "limit": { "type": "integer" }
             },
