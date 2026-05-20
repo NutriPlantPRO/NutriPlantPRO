@@ -114,6 +114,11 @@ function normalizeParams(body) {
     const v = src[key];
     if (v != null && v !== '' && params[key] == null) params[key] = v;
   });
+  const analysisKeys = ['type', 'analysis_type'];
+  analysisKeys.forEach((key) => {
+    const v = src[key];
+    if (v != null && v !== '' && params[key] == null) params[key] = v;
+  });
   return params;
 }
 
@@ -559,6 +564,313 @@ function summarizeSoil(data) {
       depth_cm: props.depth
     },
     adjustments_meq: adj
+  };
+}
+
+/* ——— Análisis (reportes por pestaña) ——— */
+const ANALYSIS_TYPES = {
+  suelo: { key: 'soilAnalyses', label: 'Análisis de suelo' },
+  solucion_nutritiva: { key: 'solucionNutritivaAnalyses', label: 'Solución nutritiva' },
+  extracto_pasta: { key: 'extractoPastaAnalyses', label: 'Extracto de pasta' },
+  agua: { key: 'aguaAnalyses', label: 'Análisis de agua' },
+  foliar: { key: 'foliarAnalyses', label: 'Análisis foliar' },
+  fruta: { key: 'frutaAnalyses', label: 'Análisis de fruta' }
+};
+
+function analysisReportMeta(a) {
+  return {
+    id: a && a.id ? a.id : null,
+    title: (a && (a.title || a.name)) || '(sin título)',
+    date: (a && a.date) || (a && a.meta && a.meta.date) || null
+  };
+}
+
+function numOrNull(v) {
+  if (v == null || v === '') return null;
+  const n = parseFloat(String(v).replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+
+function diffPct(val, opt) {
+  const v = numOrNull(val);
+  const o = numOrNull(opt);
+  if (v == null || o == null || o === 0) return null;
+  return Math.round(((v - o) / o) * 1000) / 10;
+}
+
+function summarizeSoilAnalysisReport(a) {
+  const ph = a.phSection || {};
+  const fert = a.fertility || {};
+  const ideal = fert.ideal || {};
+  const cat = a.cations || {};
+  return {
+    ...analysisReportMeta(a),
+    ph: numOrNull(ph.ph),
+    salinity_ds_m: numOrNull(ph.salinity),
+    fertility_ppm: {
+      p: numOrNull(fert.p),
+      k: numOrNull(fert.k),
+      ca: numOrNull(fert.ca),
+      mg: numOrNull(fert.mg),
+      fe: numOrNull(fert.fe),
+      mn: numOrNull(fert.mn),
+      zn: numOrNull(fert.zn)
+    },
+    cations_meq_100g: {
+      ca: numOrNull(cat.ca),
+      mg: numOrNull(cat.mg),
+      k: numOrNull(cat.k),
+      na: numOrNull(cat.na),
+      cic: numOrNull(cat.cic)
+    },
+    ideal_ref_ppm: ideal
+  };
+}
+
+function summarizeSolucionReport(a) {
+  const cat = a.cations || {};
+  const an = a.anions || {};
+  const ideal = a.ideal || {};
+  const g = a.general || {};
+  const ppm = (obj, k, isCat) => numOrNull(isCat ? obj[k + '_ppm'] : obj[k + '_ppm']);
+  const keysCat = ['k', 'ca', 'mg', 'na'];
+  const keysAn = ['no3', 'so4', 'po4', 'cl'];
+  const values = {};
+  keysCat.forEach((k) => {
+    values[k] = { ppm: ppm(cat, k, true), ideal_ppm: numOrNull(ideal[k]), diff_vs_ideal: null };
+    if (values[k].ppm != null && values[k].ideal_ppm != null) {
+      values[k].diff_vs_ideal = Math.round((values[k].ppm - values[k].ideal_ppm) * 10) / 10;
+    }
+  });
+  keysAn.forEach((k) => {
+    values[k] = { ppm: ppm(an, k, false), ideal_ppm: numOrNull(ideal[k]), diff_vs_ideal: null };
+    if (values[k].ppm != null && values[k].ideal_ppm != null) {
+      values[k].diff_vs_ideal = Math.round((values[k].ppm - values[k].ideal_ppm) * 10) / 10;
+    }
+  });
+  return {
+    ...analysisReportMeta(a),
+    general: { ce_ds_m: numOrNull(g.ce), ph: numOrNull(g.ph), ras: numOrNull(g.ras) },
+    nutrients_ppm: values,
+    micros_ppm: a.micros || {}
+  };
+}
+
+function summarizeExtractoPastaReport(a) {
+  const g = a.general || {};
+  const cat = a.cations || {};
+  const an = a.anions || {};
+  const ideal = a.ideal || {};
+  return {
+    ...analysisReportMeta(a),
+    general: { ce: numOrNull(g.cee != null ? g.cee : g.ce), ph: numOrNull(g.phe != null ? g.phe : g.ph), ras: numOrNull(g.ras) },
+    cations_ppm: { k: numOrNull(cat.k_ppm), ca: numOrNull(cat.ca_ppm), mg: numOrNull(cat.mg_ppm) },
+    anions_ppm: { no3: numOrNull(an.no3_ppm), so4: numOrNull(an.so4_ppm) },
+    ideal_ppm: ideal,
+    diff_ppm: {
+      k: numOrNull(cat.k_ppm) != null && numOrNull(ideal.k) != null ? numOrNull(cat.k_ppm) - numOrNull(ideal.k) : null,
+      ca: numOrNull(cat.ca_ppm) != null && numOrNull(ideal.ca) != null ? numOrNull(cat.ca_ppm) - numOrNull(ideal.ca) : null,
+      no3: numOrNull(an.no3_ppm) != null && numOrNull(ideal.no3) != null ? numOrNull(an.no3_ppm) - numOrNull(ideal.no3) : null
+    }
+  };
+}
+
+function summarizeAguaReport(a) {
+  const cat = a.cations || {};
+  const an = a.anions || {};
+  const g = a.general || {};
+  const micros = a.micros || {};
+  return {
+    ...analysisReportMeta(a),
+    m3_riego: numOrNull(a.m3Riego),
+    general: { ce: numOrNull(g.ce), ph: numOrNull(g.ph), ras: numOrNull(g.ras) },
+    cations_ppm: {
+      ca: numOrNull(cat.ca_ppm),
+      mg: numOrNull(cat.mg_ppm),
+      k: numOrNull(cat.k_ppm),
+      na: numOrNull(cat.na_ppm)
+    },
+    anions: {
+      no3_ppm: numOrNull(an.no3_ppm),
+      so4_ppm: numOrNull(an.so4_ppm),
+      hco3_meq: numOrNull(an.hco3_meq),
+      co3_meq: numOrNull(an.co3_meq)
+    },
+    acid_residual_meq_L: numOrNull(a.acidResidualMeq),
+    acid_id: a.acidId || null,
+    micros_ppm: micros
+  };
+}
+
+function summarizeFoliarReport(a) {
+  const mac = a.macros || {};
+  const mic = a.micros || {};
+  const optMacro = a.optimalMacro || {};
+  const optMicro = a.optimalMicro || {};
+  const defMacro = { N: 3, P: 0.275, K: 2.5, Ca: 1.25, Mg: 0.4, S: 0.325 };
+  const defMicro = { Fe: 150, Mn: 160, Zn: 60, Cu: 15, B: 62.5, Mo: 2.55 };
+  const row = (val, opt, def, unit) => {
+    const o = numOrNull(opt != null && opt !== '' ? opt : def);
+    const v = numOrNull(val);
+    return {
+      value: v,
+      optimal: o,
+      unit,
+      dop_percent: diffPct(v, o)
+    };
+  };
+  const macros = {};
+  ['N', 'P', 'K', 'Ca', 'Mg', 'S'].forEach((n) => {
+    macros[n] = row(mac[n], optMacro[n], defMacro[n], '%');
+  });
+  const microsOut = {};
+  ['Fe', 'Mn', 'Zn', 'Cu', 'B', 'Mo'].forEach((n) => {
+    microsOut[n] = row(mic[n], optMicro[n], defMicro[n], 'ppm');
+  });
+  return { ...analysisReportMeta(a), macros, micros: microsOut };
+}
+
+function summarizeFrutaReport(a) {
+  const mac = a.macros || {};
+  const mic = a.micros || {};
+  const calidad = a.calidad || {};
+  const calcio = a.calcio || {};
+  const optMacro = a.optimalMacro || {};
+  const optMicro = a.optimalMicro || {};
+  const optCalidad = a.optimalCalidad || {};
+  const optCalcio = a.optimalCalcio || {};
+  const defMacro = { N: 1.8, P: 0.25, K: 1.5, Ca: 0.25, Mg: 0.2, S: 0.18 };
+  const defMicro = { Fe: 80, Mn: 40, Zn: 35, Cu: 10, B: 50, Mo: 0.5 };
+  const iccRow = (val, opt, def) => {
+    const o = numOrNull(opt != null && opt !== '' ? opt : def);
+    const v = numOrNull(val);
+    return { value: v, optimal: o, icc_percent: diffPct(v, o) };
+  };
+  const macros = {};
+  ['N', 'P', 'K', 'Ca', 'Mg', 'S'].forEach((n) => {
+    macros[n] = iccRow(mac[n], optMacro[n], defMacro[n]);
+  });
+  const microsOut = {};
+  ['Fe', 'Mn', 'Zn', 'Cu', 'B', 'Mo'].forEach((n) => {
+    microsOut[n] = iccRow(mic[n], optMicro[n], defMicro[n]);
+  });
+  const calidadOut = {};
+  ['materiaSeca', 'brix', 'firmeza', 'acidezTitulable'].forEach((k) => {
+    calidadOut[k] = iccRow(calidad[k], optCalidad[k], { materiaSeca: 15, brix: 12, firmeza: 5, acidezTitulable: 0.5 }[k]);
+  });
+  return {
+    ...analysisReportMeta(a),
+    macros,
+    micros: microsOut,
+    calidad: calidadOut,
+    calcio: {
+      caTotal: iccRow(calcio.caTotal, optCalcio.caTotal, 20),
+      caSolublePct: iccRow(calcio.caSolublePct, optCalcio.caSolublePct, 18),
+      caLigadoPct: iccRow(calcio.caLigadoPct, optCalcio.caLigadoPct, 25),
+      caInsolublePct: iccRow(calcio.caInsolublePct, optCalcio.caInsolublePct, 55)
+    }
+  };
+}
+
+const ANALYSIS_SUMMARIZERS = {
+  suelo: summarizeSoilAnalysisReport,
+  solucion_nutritiva: summarizeSolucionReport,
+  extracto_pasta: summarizeExtractoPastaReport,
+  agua: summarizeAguaReport,
+  foliar: summarizeFoliarReport,
+  fruta: summarizeFrutaReport
+};
+
+function summarizeAnalysisList(list, typeKey) {
+  const cfg = ANALYSIS_TYPES[typeKey];
+  const arr = Array.isArray(list) ? list : [];
+  const summarize = ANALYSIS_SUMMARIZERS[typeKey];
+  const reports = arr
+    .filter((a) => a && typeof a === 'object')
+    .map((a) => summarize(a));
+  return {
+    label: cfg.label,
+    reports_count: reports.length,
+    reports
+  };
+}
+
+function summarizeAllProjectAnalyses(data) {
+  const d = data && typeof data === 'object' ? data : {};
+  const out = {
+    suelo_enmienda_inicial: summarizeSoil(d),
+    note_suelo:
+      'suelo_enmienda_inicial = pestaña Enmiendas. suelo_reportes = lista en Análisis → Suelo.'
+  };
+  Object.keys(ANALYSIS_TYPES).forEach((typeKey) => {
+    const storageKey = ANALYSIS_TYPES[typeKey].key;
+    out[typeKey === 'suelo' ? 'suelo_reportes' : typeKey] = summarizeAnalysisList(d[storageKey], typeKey);
+  });
+  const total = Object.keys(ANALYSIS_TYPES).reduce((n, tk) => {
+    const k = tk === 'suelo' ? 'suelo_reportes' : tk;
+    return n + (out[k] && out[k].reports_count ? out[k].reports_count : 0);
+  }, 0);
+  out.total_reports = total;
+  return out;
+}
+
+async function handleProjectAnalyses(supabase, params) {
+  const resolved = await resolveProject(supabase, params);
+  if (!resolved.found) {
+    return { ok: true, domain: 'nutriplant_analyses', ...resolved };
+  }
+
+  const row = resolved.project;
+  const data = row.data || {};
+  const profiles = await fetchProfiles(supabase);
+  const prof = profiles.find((p) => p.id === row.user_id);
+  const typeRaw = String(params.type || params.analysis_type || 'all')
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+  const all = summarizeAllProjectAnalyses(data);
+
+  let analyses = all;
+  if (typeRaw !== 'all' && typeRaw !== '') {
+    const alias = {
+      suelo: 'suelo_reportes',
+      soil: 'suelo_reportes',
+      solucion: 'solucion_nutritiva',
+      nutritiva: 'solucion_nutritiva',
+      pasta: 'extracto_pasta',
+      extracto: 'extracto_pasta',
+      water: 'agua',
+      leaf: 'foliar',
+      fruit: 'fruta'
+    };
+    const key = alias[typeRaw] || typeRaw;
+    if (!all[key]) {
+      return {
+        ok: true,
+        domain: 'nutriplant_analyses',
+        error:
+          'Tipo no válido. Usa: suelo, solucion_nutritiva, extracto_pasta, agua, foliar, fruta o all.'
+      };
+    }
+    analyses = {
+      total_reports: all[key].reports_count || 0,
+      [key]: all[key],
+      suelo_enmienda_inicial: key === 'suelo_reportes' ? all.suelo_enmienda_inicial : undefined
+    };
+    if (analyses.suelo_enmienda_inicial === undefined) delete analyses.suelo_enmienda_inicial;
+  }
+
+  return {
+    ok: true,
+    domain: 'nutriplant_analyses',
+    project: {
+      id: row.id,
+      name: row.name || row.title || 'Sin nombre',
+      crop: getProjectCrop(data),
+      user_email: prof ? prof.email : null,
+      user_name: prof ? prof.name : null
+    },
+    multiple_matches: resolved.multiple_matches || false,
+    analyses
   };
 }
 
@@ -1077,6 +1389,7 @@ async function handleProjectDetail(supabase, params) {
     sections: {
       location: summarizeLocation(data.location),
       soil: summarizeSoil(data),
+      analyses: summarizeAllProjectAnalyses(data),
       fertirriego: summarizeFertirriego(program, stageIdx),
       granular: summarizeGranular(data),
       vpd_saved: summarizeVpdSaved(data.vpdAnalysis),
@@ -2281,6 +2594,7 @@ async function handleDescribeApi() {
       nutriplant_projects: [
         'search_projects',
         'project_detail',
+        'project_analyses',
         'project_vpd_live',
         'project_climate'
       ],
@@ -2288,7 +2602,7 @@ async function handleDescribeApi() {
       radar: ['radar_project', 'radar_search', 'radar_overview']
     },
     usage:
-      'Clima: project_climate mode saved|live|rainfall_refresh|all. Radar: radar_project (latest_radar URLs + radar_history fechas; params.request_id para imagen del historial). VPD: project_vpd_live.'
+      'Análisis: project_analyses (type: suelo|solucion_nutritiva|extracto_pasta|agua|foliar|fruta|all). project_detail incluye sections.analyses. Clima: project_climate. Radar: radar_project. VPD: project_vpd_live.'
   };
 }
 
@@ -2298,6 +2612,7 @@ const HANDLERS = {
   user_summary: (sb, p) => handleUserSummary(sb, p),
   search_projects: (sb, p) => handleSearchProjects(sb, p),
   project_detail: (sb, p) => handleProjectDetail(sb, p),
+  project_analyses: (sb, p) => handleProjectAnalyses(sb, p),
   project_vpd_live: (sb, p) => handleProjectVpdLive(sb, p),
   project_climate: (sb, p) => handleProjectClimate(sb, p),
   plan_pro_week: (sb, p) => handlePlanProWeek(sb, p),
@@ -2315,8 +2630,8 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '1.5.1',
-      description: 'Solo lectura. Radar: radar_history + latest_radar (request_id opcional). Clima y Plan PRO.'
+      version: '1.6.0',
+      description: 'Solo lectura. Análisis (6 tipos), Clima, Radar, Plan PRO.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -2325,7 +2640,7 @@ function getOpenApiSpec() {
           operationId: 'nutriplantAdminQuery',
           summary: 'Consulta admin o proyectos de usuarios',
           description:
-            'Body: action + params. Clima: project_climate (mode saved|live|rainfall_refresh|all). Radar, Plan PRO, project_detail.',
+            'Body: action + params. Análisis: project_analyses. Clima: project_climate. Radar, Plan PRO, project_detail.',
           requestBody: {
             required: true,
             content: {
@@ -2361,7 +2676,16 @@ function getOpenApiSpec() {
                 days_ahead: { type: 'integer' },
                 email: { type: 'string' },
                 search: { type: 'string' },
-                crop: { type: 'string' }
+                crop: { type: 'string' },
+                type: {
+                  type: 'string',
+                  description:
+                    'project_analyses: suelo|solucion_nutritiva|extracto_pasta|agua|foliar|fruta|all'
+                },
+                mode: {
+                  type: 'string',
+                  description: 'project_climate: saved|live|rainfall_refresh|all'
+                }
               },
               additionalProperties: true
             }

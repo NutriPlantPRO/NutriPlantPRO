@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "1.5.1",
-    "description": "Solo lectura. Radar: radar_project devuelve radar_history (todas las fechas) y latest_radar (URLs NDVI/NDMI; opcional params.request_id para una del historial). Clima y Plan PRO."
+    "version": "1.6.0",
+    "description": "Solo lectura. Análisis de laboratorio (6 tipos), Clima, Radar, Plan PRO."
   },
   "servers": [
     {
@@ -14,8 +14,8 @@
     "/api/admin-assistant": {
       "post": {
         "operationId": "nutriplantAdminQuery",
-        "summary": "Consulta NutriPlant (admin, proyectos, clima, Radar, Plan PRO)",
-        "description": "Radar: radar_project → radar_history[] (id, created_at, sentinel_period) + latest_radar (URLs firmadas). params.request_id = imagen concreta del historial. Clima: project_climate mode saved|live|rainfall_refresh|all. VPD: project_vpd_live.",
+        "summary": "Consulta NutriPlant (admin, proyectos, análisis, clima, Radar, Plan PRO)",
+        "description": "Análisis guardados del suscriptor: project_analyses (params.type: suelo|solucion_nutritiva|extracto_pasta|agua|foliar|fruta|all). project_detail incluye sections.analyses. Clima: project_climate.",
         "requestBody": {
           "required": true,
           "content": {
@@ -49,6 +49,7 @@
               "user_summary",
               "search_projects",
               "project_detail",
+              "project_analyses",
               "project_vpd_live",
               "project_climate",
               "plan_pro_week",
@@ -66,21 +67,14 @@
             "properties": {
               "project_id": { "type": "string" },
               "project_name": { "type": "string" },
-              "mode": {
+              "type": {
                 "type": "string",
-                "description": "project_climate: saved | live | rainfall_refresh | all"
+                "description": "project_analyses: suelo|solucion_nutritiva|extracto_pasta|agua|foliar|fruta|all"
               },
+              "mode": { "type": "string", "description": "project_climate: saved|live|rainfall_refresh|all" },
               "email": { "type": "string" },
               "crop": { "type": "string" },
               "q": { "type": "string" },
-              "history_limit": {
-                "type": "integer",
-                "description": "radar_project: máx. imágenes en radar_history (default 24)"
-              },
-              "request_id": {
-                "type": "string",
-                "description": "radar_project: uuid de radar_history[] para URLs NDVI/NDMI de esa fecha (no solo la más reciente)"
-              },
               "item_id": { "type": "string" },
               "limit": { "type": "integer" }
             },
