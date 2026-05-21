@@ -106,6 +106,7 @@ function normalizeParams(body) {
     'area_title',
     'category_id',
     'category_title',
+    'rama',
     'thought_type',
     'tags',
     'days_ahead',
@@ -2331,20 +2332,112 @@ async function resolvePlanProAreaId(params, areas) {
   return null;
 }
 
-function resolvePlanProCategoryId(params, categories, areaId) {
-  const inArea = (categories || []).filter((c) => c.area_id === areaId);
+function planProCategoriesForOwner(categories, areas) {
+  const areaIds = new Set((areas || []).map((a) => a.id));
+  return (categories || []).filter((c) => areaIds.has(c.area_id));
+}
+
+function categorySearchTerms(params) {
+  const raw = (params.category_title || params.category || params.rama || '').trim();
+  if (!raw) return [];
+  const terms = [raw.toLowerCase()];
+  if (raw.includes('->')) {
+    const tail = raw.split('->').pop().trim().toLowerCase();
+    if (tail && !terms.includes(tail)) terms.push(tail);
+  }
+  if (raw.includes('·')) {
+    const tail = raw.split('·').pop().trim().toLowerCase();
+    if (tail && !terms.includes(tail)) terms.push(tail);
+  }
+  return terms;
+}
+
+/** Resuelve pilar + rama; si category_id es válido, el pilar sale de esa rama (no exige coincidir area_slug). */
+function resolvePlanProAreaAndCategory(params, areas, categories) {
+  const ownedCats = planProCategoriesForOwner(categories, areas);
   const catId = (params.category_id || '').trim();
+
   if (catId) {
-    return inArea.some((c) => c.id === catId) ? catId : null;
+    const byId = ownedCats.find((c) => c.id === catId);
+    if (byId) {
+      return {
+        areaId: byId.area_id,
+        categoryId: byId.id,
+        matched_by: 'category_id'
+      };
+    }
+    return {
+      error: 'category_id no encontrado en tu Plan PRO (o no es de tus pilares).',
+      category_id: catId,
+      hint: 'Llama plan_pro_catalog y usa id de categories tal cual.'
+    };
   }
-  const catQ = (params.category_title || params.category || '').trim().toLowerCase();
-  if (catQ) {
-    const c = inArea.find((x) => (x.title || '').toLowerCase().includes(catQ));
-    if (c) return c.id;
+
+  const terms = categorySearchTerms(params);
+  if (terms.length) {
+    for (let i = 0; i < terms.length; i++) {
+      const term = terms[i];
+      const hits = ownedCats.filter((c) => {
+        const t = (c.title || '').toLowerCase();
+        return t.includes(term) || term.includes(t);
+      });
+      if (hits.length === 1) {
+        return {
+          areaId: hits[0].area_id,
+          categoryId: hits[0].id,
+          matched_by: 'category_title',
+          category_title: hits[0].title
+        };
+      }
+      if (hits.length > 1) {
+        let areaId = resolvePlanProAreaId(params, areas);
+        if (areaId) {
+          const inArea = hits.filter((c) => c.area_id === areaId);
+          if (inArea.length === 1) {
+            return {
+              areaId: inArea[0].area_id,
+              categoryId: inArea[0].id,
+              matched_by: 'category_title+area'
+            };
+          }
+        }
+        return {
+          error: 'Varias ramas coinciden; indica category_id.',
+          matches: hits.slice(0, 8).map((c) => ({
+            id: c.id,
+            title: c.title,
+            area_id: c.area_id
+          }))
+        };
+      }
+    }
   }
+
+  const areaId = resolvePlanProAreaId(params, areas);
+  if (!areaId) {
+    return {
+      error: 'missing_area',
+      areas: areas.map((a) => ({ id: a.id, title: a.title, slug: a.slug }))
+    };
+  }
+
+  const inArea = ownedCats.filter((c) => c.area_id === areaId);
   const roots = inArea.filter((c) => !c.parent_id);
   const pool = roots.length ? roots : inArea;
-  return pool.length ? pool[0].id : null;
+  if (!pool.length) {
+    return {
+      error: 'no_category_in_area',
+      area_id: areaId,
+      categories_in_area: [],
+      hint: 'Crea una rama en Plan PRO en ese pilar o pasa category_id de plan_pro_catalog.'
+    };
+  }
+  return {
+    areaId,
+    categoryId: pool[0].id,
+    matched_by: 'default_first_branch',
+    category_title: pool[0].title
+  };
 }
 
 async function handlePlanProCatalog(supabase) {
@@ -2434,26 +2527,24 @@ async function handlePlanProCreate(supabase, params) {
   }
 
   const areas = await fetchPlanProAreas(supabase, ownerId);
-  const areaId = resolvePlanProAreaId(params, areas);
-  if (!areaId) {
-    return {
-      ok: true,
-      domain: 'plan_pro',
-      error: 'Indica params.area_id, area_slug o area_title (pilar).',
-      areas: areas.map((a) => ({ id: a.id, title: a.title, slug: a.slug }))
-    };
-  }
-
   const categories = await fetchPlanProCategories(supabase);
-  const categoryId = resolvePlanProCategoryId(params, categories, areaId);
-  if (!categoryId) {
-    return {
+  const resolved = resolvePlanProAreaAndCategory(params, areas, categories);
+  if (resolved.error) {
+    const out = {
       ok: true,
       domain: 'plan_pro',
-      error: 'No hay rama (categoría) en ese pilar. Crea una en Plan PRO o indica category_id.',
-      area_id: areaId
+      error: resolved.error,
+      hint: resolved.hint
     };
+    if (resolved.areas) out.areas = resolved.areas;
+    if (resolved.area_id) out.area_id = resolved.area_id;
+    if (resolved.category_id) out.category_id = resolved.category_id;
+    if (resolved.matches) out.matches = resolved.matches;
+    if (resolved.categories_in_area) out.categories_in_area = resolved.categories_in_area;
+    return out;
   }
+  const areaId = resolved.areaId;
+  const categoryId = resolved.categoryId;
 
   const bodyPlain = (params.body_plain || params.note || params.body || '').trim();
   const dueAt = parsePlanProDueDateParam(params.due_at || params.due_date || params.fecha);
@@ -2497,6 +2588,8 @@ async function handlePlanProCreate(supabase, params) {
     domain: 'plan_pro',
     created: true,
     message: 'Apunte creado en Plan PRO.',
+    matched_by: resolved.matched_by,
+    category_title: resolved.category_title || categoryTitleById(categories, categoryId),
     item: planProItemListRow(data, areasById, categories)
   };
 }
@@ -2586,10 +2679,16 @@ async function handlePlanProUpdate(supabase, params) {
     const newAreaId = resolvePlanProAreaId(params, areas);
     if (newAreaId) patch.area_id = newAreaId;
   }
-  if (params.category_id != null || params.category_title != null) {
-    const areaForCat = patch.area_id || item.area_id;
-    const catId = resolvePlanProCategoryId(params, categories, areaForCat);
-    if (catId) patch.category_id = catId;
+  if (params.category_id != null || params.category_title != null || params.rama != null) {
+    const sub = { ...params };
+    if (!sub.area_id && !sub.area_slug && !sub.area_title) {
+      sub.area_id = patch.area_id || item.area_id;
+    }
+    const resolved = resolvePlanProAreaAndCategory(sub, areas, categories);
+    if (resolved.areaId && resolved.categoryId) {
+      patch.area_id = resolved.areaId;
+      patch.category_id = resolved.categoryId;
+    }
   }
 
   const wantClose =

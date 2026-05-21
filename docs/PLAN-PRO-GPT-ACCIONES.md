@@ -16,7 +16,7 @@ OpenAPI **v2.0.0** · Misma función `nutriplantAdminQuery` · Solo usuario admi
 
 | action | Campos clave |
 |--------|----------------|
-| `plan_pro_create` | **title** (obligatorio), **area_slug** o area_id, note/body_plain, priority (alta/media/baja), due_at (YYYY-MM-DD), next_action, tags, category_id opcional |
+| `plan_pro_create` | **title** (obligatorio), **category_id** (recomendado, de `plan_pro_catalog`) o category_title ("333"); area_slug opcional si ya envías category_id; note, priority, due_at |
 | `plan_pro_update` | **item_id** o **q**, luego: title, note, append_note, priority, due_at, next_action, status, close:true, reopen:true |
 
 ## Ejemplos de chat

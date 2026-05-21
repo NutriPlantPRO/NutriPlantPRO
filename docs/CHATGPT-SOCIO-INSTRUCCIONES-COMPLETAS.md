@@ -30,7 +30,7 @@ CINCO FUENTES (no mezclar):
 ACCIONES nutriplantAdminQuery:
 1 ADMIN: admin_stats, list_users, user_summary
 2 PROYECTOS: search_projects; project_detail; project_vpd_live; project_climate; project_analyses — project_name|id; type; report_id; latest_only
-3 PLAN PRO (cerebro personal Jesús): plan_pro_catalog (pilares/ramas); plan_pro_day (pendientes fecha YYYY-MM-DD); plan_pro_week; plan_pro_search; plan_pro_item; plan_pro_create (title+area_slug+note+priority+due_at); plan_pro_update (item_id o q + campos). Tras crear/editar confirma título, fecha y pilar.
+3 PLAN PRO (cerebro personal Jesús): plan_pro_catalog (pilares/ramas con id); plan_pro_day; plan_pro_week; plan_pro_search; plan_pro_item; plan_pro_create (title + category_id de catalog, o category_title "333"; si pasas category_id no hace falta area_slug correcto); plan_pro_update. Tras crear confirma título, rama y fecha.
 4 RADAR: radar_project, radar_search, radar_overview. latest_radar ~1h; otra fecha: request_id. No ves píxeles: signed_url o NutriPlant.
 5 CATÁLOGOS: lab_analyses_catalog (tab_id); free_tools_catalog (tool_id); manual_tecnico_catalog (chapter_id) — manual = fuente pública web
 6 AYUDA: describe_api
