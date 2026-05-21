@@ -2289,6 +2289,22 @@ function normalizePlanProPriorityInput(raw) {
   return s || null;
 }
 
+/** HTML mínimo para que Plan PRO (modal) muestre lo mismo que body_plain tras editar vía GPT. */
+function plainTextToBodyHtml(plain) {
+  const t = String(plain || '').trim();
+  if (!t) return null;
+  const esc = (s) =>
+    String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  return t
+    .split(/\n{2,}/)
+    .map((p) => `<p>${esc(p.trim()).replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
+
 function parsePlanProDueDateParam(raw) {
   if (raw == null || raw === '') return null;
   const s = String(raw).trim();
@@ -2571,6 +2587,7 @@ async function handlePlanProCreate(supabase, params) {
         : null,
     relation_tags: parseRelationTagsParam(params.relation_tags || params.tags),
     body_plain: bodyPlain || null,
+    body_html: bodyPlain ? plainTextToBodyHtml(bodyPlain) : null,
     body_blocks: [],
     attachments: []
   };
@@ -2701,6 +2718,10 @@ async function handlePlanProUpdate(supabase, params) {
     if (!patch.status) patch.status = 'Cerrado';
   } else if (wantReopen) {
     patch.closed_at = null;
+  }
+
+  if (patch.body_plain !== undefined) {
+    patch.body_html = patch.body_plain ? plainTextToBodyHtml(patch.body_plain) : null;
   }
 
   if (!Object.keys(patch).length) {

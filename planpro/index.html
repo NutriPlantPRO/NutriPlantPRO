@@ -1361,6 +1361,38 @@
     }
     .np-modal-head h3 { margin: 0; font-size: 1.05rem; line-height: 1.3; word-break: break-word; }
     .np-modal-meta { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+    .np-modal-meta-wrap { display: block; }
+    .np-modal-meta-path { font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .np-detail-item-meta-edit {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 14px;
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(248, 250, 252, 0.88);
+      border: 1px solid var(--border);
+    }
+    .np-detail-meta-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      flex-shrink: 0;
+    }
+    .np-detail-due-input {
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      min-height: 32px;
+      color: var(--text);
+      background: #fff;
+    }
+    .np-detail-prio-wrap .np-prio-dot { width: 22px; height: 22px; font-size: 11px; }
+    .np-modal-meta-foot { font-size: 11px; color: var(--muted); margin-top: 6px; opacity: 0.88; }
     .np-modal-body {
       padding: 14px 16px;
       overflow: auto;
@@ -4779,6 +4811,7 @@
                     <th>Título</th>
                     <th>Nota</th>
                     <th>Rama</th>
+                    <th class="np-col-priority">Prioridad</th>
                     <th class="np-col-objective">Objetivo</th>
                     <th class="np-col-updated">Actualizado</th>
                     <th class="np-actions">Eliminar</th>
@@ -4915,7 +4948,7 @@
       <div class="np-modal-head">
         <div style="min-width:0;">
           <h3 id="npDetailTitle">—</h3>
-          <div id="npDetailMeta" class="np-modal-meta"></div>
+          <div id="npDetailMeta" class="np-modal-meta np-modal-meta-wrap"></div>
         </div>
         <button type="button" class="btn btn-ghost btn-ghost-blue" id="npDetailClose" style="flex-shrink:0;">Cerrar</button>
       </div>
@@ -4936,6 +4969,7 @@
 
   var detailBlocksSaveTimer = null;
   var detailBodySaveTimer = null;
+  var detailMetaSaveTimer = null;
   var npTreeMenuLayoutListener = null;
   var npRichImgResizeScrollFn = null;
   var npRichImgResizeUI = { overlay: null, editorEl: null, img: null };
@@ -6351,6 +6385,152 @@
     }, 520);
   }
 
+  function renderDetailItemMeta(r) {
+    var el = $('npDetailMeta');
+    if (!el || !r) return;
+    el.className = 'np-modal-meta np-modal-meta-wrap';
+    el.innerHTML = '';
+    var path = document.createElement('div');
+    path.className = 'np-modal-meta-path';
+    var pathParts = [
+      state.areaMap[r.area_id] || '—',
+      r.category_id ? getCategoryPath(r.category_id) : '—'
+    ];
+    if (r.status) pathParts.push(r.status);
+    path.textContent = pathParts.join(' · ');
+    el.appendChild(path);
+
+    var edit = document.createElement('div');
+    edit.className = 'np-detail-item-meta-edit';
+    edit.setAttribute('role', 'group');
+    edit.setAttribute('aria-label', 'Ficha del apunte: fecha y prioridad');
+
+    var labDue = document.createElement('label');
+    labDue.className = 'np-detail-meta-label';
+    labDue.setAttribute('for', 'npDetailDueInput');
+    labDue.textContent = 'Fecha objetivo';
+
+    var inpDue = document.createElement('input');
+    inpDue.type = 'date';
+    inpDue.id = 'npDetailDueInput';
+    inpDue.className = 'np-detail-due-input';
+    inpDue.value = parseDueDateKey(r.due_at || '') || '';
+    inpDue.addEventListener('change', function () {
+      var v = inpDue.value.trim();
+      schedulePersistItemMeta({ due_at: v ? v : null });
+    });
+
+    var labP = document.createElement('span');
+    labP.className = 'np-detail-meta-label';
+    labP.id = 'npDetailPrioLabel';
+    labP.textContent = 'Prioridad';
+
+    var wrapP = document.createElement('div');
+    wrapP.className = 'np-prio-wrap np-detail-prio-wrap';
+    wrapP.setAttribute('role', 'group');
+    wrapP.setAttribute('aria-labelledby', 'npDetailPrioLabel');
+    var curLv = priorityLevelFromRaw(r.priority != null ? String(r.priority) : '');
+    ['baja', 'media', 'alta'].forEach(function (lvl) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'np-prio-dot np-prio-' + lvl + (curLv === lvl ? ' np-prio-on' : '');
+      btn.title = lvl.charAt(0).toUpperCase() + lvl.slice(1) + ' (clic para activar o quitar)';
+      btn.setAttribute('aria-label', 'Prioridad ' + lvl);
+      btn.setAttribute('aria-pressed', curLv === lvl ? 'true' : 'false');
+      btn.textContent = lvl === 'baja' ? '🟢' : lvl === 'media' ? '🟡' : '🔴';
+      btn.addEventListener('click', function () {
+        var rec = state.detailItemRecord;
+        var fresh = priorityLevelFromRaw(rec && rec.priority != null ? String(rec.priority) : '');
+        var nextLv = fresh === lvl ? '' : lvl;
+        var stored = nextLv ? storePriorityFromLevel(nextLv) : null;
+        if (rec) rec.priority = stored;
+        wrapP.querySelectorAll('.np-prio-dot').forEach(function (b) {
+          var m = (b.className.match(/np-prio-(baja|media|alta)/) || [])[1];
+          var on = nextLv && m === nextLv;
+          b.classList.toggle('np-prio-on', !!on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        schedulePersistItemMeta({ priority: stored });
+      });
+      wrapP.appendChild(btn);
+    });
+
+    edit.appendChild(labDue);
+    edit.appendChild(inpDue);
+    edit.appendChild(labP);
+    edit.appendChild(wrapP);
+    el.appendChild(edit);
+
+    var foot = document.createElement('div');
+    foot.className = 'np-modal-meta-foot';
+    foot.id = 'npDetailMetaFoot';
+    foot.textContent = 'Actualizado ' + fmtDate(r.updated_at);
+    el.appendChild(foot);
+  }
+
+  function schedulePersistItemMeta(patch) {
+    if (!state.detailItemId || !state.client || !patch) return;
+    state.detailItemMetaPending = Object.assign(state.detailItemMetaPending || {}, patch);
+    if (detailMetaSaveTimer) clearTimeout(detailMetaSaveTimer);
+    detailMetaSaveTimer = setTimeout(function () {
+      detailMetaSaveTimer = null;
+      var p = state.detailItemMetaPending;
+      state.detailItemMetaPending = null;
+      if (!p) return;
+      persistItemMeta(state.detailItemId, p, { skipReload: true });
+    }, 420);
+  }
+
+  async function flushDetailItemMeta(patchOptional) {
+    if (detailMetaSaveTimer) {
+      clearTimeout(detailMetaSaveTimer);
+      detailMetaSaveTimer = null;
+    }
+    var patch = patchOptional || state.detailItemMetaPending;
+    state.detailItemMetaPending = null;
+    if (!patch || !state.detailItemId || !state.client) return;
+    await persistItemMeta(state.detailItemId, patch, { skipReload: true });
+  }
+
+  async function persistItemMeta(itemId, patch, opts) {
+    opts = opts || {};
+    if (!state.client || !itemId || !state.userId || !patch) return;
+    var dbPatch = {};
+    if (patch.priority !== undefined) dbPatch.priority = patch.priority;
+    if (patch.due_at !== undefined) {
+      if (patch.due_at == null || patch.due_at === '') dbPatch.due_at = null;
+      else {
+        var key = parseDueDateKey(patch.due_at);
+        dbPatch.due_at = key || patch.due_at;
+      }
+    }
+    if (!Object.keys(dbPatch).length) return;
+    var res = await state.client.from('plan_pro_items').update(dbPatch).eq('id', itemId).eq('owner_id', state.userId);
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo guardar prioridad o fecha objetivo.', true);
+      if (state.detailItemRecord && state.detailItemRecord.id === itemId) renderDetailItemMeta(state.detailItemRecord);
+      return;
+    }
+    if (state.detailItemRecord && state.detailItemRecord.id === itemId) {
+      if (dbPatch.priority !== undefined) state.detailItemRecord.priority = dbPatch.priority;
+      if (dbPatch.due_at !== undefined) state.detailItemRecord.due_at = dbPatch.due_at;
+      state.detailItemRecord.updated_at = new Date().toISOString();
+    }
+    if (opts.skipReload && state.prioSummaryRowsCache) {
+      state.prioSummaryRowsCache.forEach(function (row) {
+        if (row && row.id === itemId) {
+          if (dbPatch.priority !== undefined) row.priority = dbPatch.priority;
+          if (dbPatch.due_at !== undefined) row.due_at = dbPatch.due_at;
+          row.updated_at = new Date().toISOString();
+        }
+      });
+      refreshPlanProCalendarAndPrio();
+      var foot = $('npDetailMetaFoot');
+      if (foot) foot.textContent = 'Actualizado ' + fmtDate(new Date().toISOString());
+    }
+    if (!opts.skipReload) await loadItems();
+  }
+
   async function persistItemMainBody(itemId, htmlRaw, opts) {
     opts = opts || {};
     if (!state.client || !itemId || !state.userId) return;
@@ -6390,16 +6570,36 @@
     }
   }
 
+  /** Si Socio actualizó body_plain pero quedó body_html viejo, mostrar el texto nuevo. */
+  function resolveModalNoteHtml(r) {
+    var plain = (r.body_plain || '').trim();
+    var htmlRaw = (r.body_html || '').trim();
+    if (htmlRaw) {
+      var stripped = stripHtml(htmlRaw).trim();
+      if (!plain || stripped === plain) return sanitizeRich(r.body_html);
+      if (plain.length > stripped.length + 8 || (plain.split('\n').length > stripped.split('\n').length)) {
+        return plainTextToRichParagraphs(r.body_plain);
+      }
+      return sanitizeRich(r.body_html);
+    }
+    return plainTextToRichParagraphs(r.body_plain || '');
+  }
+
+  function fmtItemPriorityShort(raw) {
+    var lv = priorityLevelFromRaw(raw != null ? String(raw) : '');
+    if (lv === 'alta') return 'Alta';
+    if (lv === 'media') return 'Media';
+    if (lv === 'baja') return 'Baja';
+    return '—';
+  }
+
   function mountModalMainNote(bd, r, accentHex) {
     if (detailBodySaveTimer) {
       clearTimeout(detailBodySaveTimer);
       detailBodySaveTimer = null;
     }
 
-    var richSource = r.body_html && String(r.body_html).trim();
-    var initialHtml = richSource
-      ? sanitizeRich(r.body_html)
-      : plainTextToRichParagraphs(r.body_plain || '');
+    var initialHtml = resolveModalNoteHtml(r);
 
     var stack = document.createElement('div');
     stack.id = 'npDetailMainNote';
@@ -6485,15 +6685,8 @@
     }
 
     $('npDetailTitle').textContent = r.title || '(Sin título)';
-    var parts = [
-      state.areaMap[r.area_id] || '—',
-      r.category_id ? getCategoryPath(r.category_id) : '—'
-    ];
-    if (r.status) parts.push(r.status);
-    if (r.priority) parts.push('Prioridad ' + r.priority);
-    if (r.due_at) parts.push('Objetivo ' + r.due_at);
-    parts.push(fmtDate(r.updated_at));
-    $('npDetailMeta').textContent = parts.join(' · ');
+    state.detailItemRecord = r;
+    renderDetailItemMeta(r);
     var bd = $('npDetailBody');
     bd.innerHTML = '';
     bd.classList.remove('np-modal-has-blocks');
@@ -6524,10 +6717,13 @@
     }
     syncDetailBlocksInputsFromDOM();
     await flushDetailMainNote();
+    await flushDetailItemMeta();
     if (state.detailItemId && state.detailBlocksWorking && state.client) {
       await persistItemBlocks(state.detailItemId, state.detailBlocksWorking, { skipReload: true });
     }
     state.detailItemId = null;
+    state.detailItemRecord = null;
+    state.detailItemMetaPending = null;
     state.detailBlocksWorking = null;
     state.detailModalAreaId = null;
     var modalPanel = $('npDetailModal').querySelector('.np-modal-panel');
@@ -6552,6 +6748,9 @@
     pendingBlocks: [],
     authListenerAttached: false,
     detailItemId: null,
+    /** Registro del apunte abierto (prioridad / due_at editables en cabecera). */
+    detailItemRecord: null,
+    detailItemMetaPending: null,
     detailBlocksWorking: null,
     /** Planta (pilar) del apunte abierto en el modal (tinte tablas / borde). */
     detailModalAreaId: null,
@@ -11876,6 +12075,12 @@
       }
 
       tr.appendChild(tdText(r.category_id ? getCategoryPath(r.category_id) : '—', 'Rama'));
+
+      var tdPri = document.createElement('td');
+      tdPri.setAttribute('data-label', 'Prioridad');
+      tdPri.className = 'np-col-priority np-muted';
+      tdPri.textContent = fmtItemPriorityShort(r.priority);
+      tr.appendChild(tdPri);
 
       var tdObj = document.createElement('td');
       tdObj.setAttribute('data-label', 'Objetivo');
