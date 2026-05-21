@@ -6725,6 +6725,19 @@
     if (!state.client || !itemId || !state.userId) return;
     var rawHtml = sanitizeRich(htmlRaw);
     var plain = stripHtml(rawHtml);
+    if (
+      editorHtmlIsEffectivelyEmpty(rawHtml) &&
+      state.detailItemNoteHadContent &&
+      !opts.forceClear
+    ) {
+      if (opts.warn !== false) {
+        showToast(
+          'No se guardó libreta vacía: este apunte ya tenía contenido. Recarga la página si no lo ves.',
+          true
+        );
+      }
+      return;
+    }
     var patch = {
       body_plain: plain.trim() ? plain : null
     };
@@ -6757,6 +6770,25 @@
     if (ed && state.detailItemId) {
       await persistItemMainBody(state.detailItemId, ed.innerHTML, { skipReload: true });
     }
+  }
+
+  function editorHtmlIsEffectivelyEmpty(html) {
+    var rawHtml = sanitizeRich(html || '');
+    if (String(stripHtml(rawHtml)).trim()) return false;
+    if (/<img[\s>]/i.test(rawHtml)) return false;
+    if (/np-rich-due|np-rich-flag/i.test(rawHtml)) return false;
+    return true;
+  }
+
+  function recordHadNoteContent(r) {
+    if (!r) return false;
+    if (String(r.body_plain || '').trim()) return true;
+    var htmlRaw = (r.body_html || '').trim();
+    if (htmlRaw) {
+      if (String(stripHtml(htmlRaw)).trim()) return true;
+      if (richHtmlHasFormattedContent(htmlRaw)) return true;
+    }
+    return false;
   }
 
   function richHtmlHasFormattedContent(html) {
@@ -6920,6 +6952,7 @@
 
     $('npDetailTitle').textContent = row.title || '(Sin título)';
     state.detailItemRecord = row;
+    state.detailItemNoteHadContent = recordHadNoteContent(row);
     renderDetailItemMeta(row);
     var bd = $('npDetailBody');
     bd.innerHTML = '';
@@ -6958,6 +6991,7 @@
     }
     state.detailItemId = null;
     state.detailItemRecord = null;
+    state.detailItemNoteHadContent = false;
     state.detailItemMetaPending = null;
     state.detailBlocksWorking = null;
     state.detailModalAreaId = null;
@@ -6986,6 +7020,8 @@
     /** Registro del apunte abierto (prioridad / due_at editables en cabecera). */
     detailItemRecord: null,
     detailItemMetaPending: null,
+    /** true si al abrir el modal la libreta ya tenía texto/HTML (anti-borrado accidental). */
+    detailItemNoteHadContent: false,
     detailBlocksWorking: null,
     /** Planta (pilar) del apunte abierto en el modal (tinte tablas / borde). */
     detailModalAreaId: null,

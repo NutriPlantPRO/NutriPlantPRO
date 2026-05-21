@@ -2594,6 +2594,17 @@ function planProWriteVerifySemaforos(item) {
   };
 }
 
+function itemHadStoredNoteContent(item) {
+  if (!item) return false;
+  if (String(item.body_plain || '').trim()) return true;
+  if (stripHtmlSimple(item.body_html || '').trim()) return true;
+  return false;
+}
+
+function authorNoteTextIsEmpty(text) {
+  return !String(preprocessNoteAuthorInput(text || '')).trim();
+}
+
 function applyNotePlainAndHtml(patch, plainRaw) {
   const raw = preprocessNoteAuthorInput(String(plainRaw || '').trim());
   patch.body_plain = raw ? plainTextForStorageFromAuthor(raw) : null;
@@ -2980,8 +2991,17 @@ async function handlePlanProUpdate(supabase, params) {
     patch.title = String(params.title).trim().slice(0, 500);
   }
   const notePayload = buildNoteAuthorPayload(params);
+  let noteClearBlocked = false;
   if (notePayload) {
-    if (notePayload.mode === 'replace') {
+    if (
+      notePayload.mode === 'replace' &&
+      authorNoteTextIsEmpty(notePayload.text) &&
+      itemHadStoredNoteContent(item) &&
+      params.clear_note !== true &&
+      params.clear_note !== 'true'
+    ) {
+      noteClearBlocked = true;
+    } else if (notePayload.mode === 'replace') {
       applyNotePlainAndHtml(patch, notePayload.text);
     } else {
       appendNoteChunkToPatch(patch, item, notePayload.text);
@@ -3042,6 +3062,18 @@ async function handlePlanProUpdate(supabase, params) {
   }
 
   if (!Object.keys(patch).length) {
+    if (noteClearBlocked) {
+      return {
+        ok: true,
+        domain: 'plan_pro',
+        updated: false,
+        note_clear_blocked: true,
+        aviso_nota:
+          'No se borró la libreta (ya tenía contenido). Usa append_note para añadir o clear_note:true para vaciar a propósito.',
+        item: planProItemListRow(item, areasById, categories),
+        semaforos_en_nota: collectAllRichDueMarkers(item)
+      };
+    }
     return {
       ok: true,
       domain: 'plan_pro',
@@ -3065,6 +3097,10 @@ async function handlePlanProUpdate(supabase, params) {
     updated: true,
     fields_changed: Object.keys(patch),
     message: 'Apunte actualizado en Plan PRO.',
+    note_clear_blocked: noteClearBlocked || undefined,
+    aviso_nota: noteClearBlocked
+      ? 'No se borró la libreta (ya tenía contenido). Usa append_note para añadir o clear_note:true para vaciar a propósito.'
+      : undefined,
     ...planProWriteVerifySemaforos(data),
     item: planProItemListRow(data, areasById, categories)
   };
