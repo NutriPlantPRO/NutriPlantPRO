@@ -20,11 +20,17 @@
 [functions."radar-ndvi"]
   timeout = 60
 
+# Inicio público = login (herramientas gratis + acceso plataforma)
+[[redirects]]
+  from = "/"
+  to = "/login.html"
+  status = 302
+
+# Manual técnico: servir index explícito (evita bucle 301 /manual-tecnico/ → /manual-tecnico/)
 [[redirects]]
   from = "/manual-tecnico"
-  to = "/manual-tecnico/"
+  to = "/manual-tecnico/index.html"
   status = 301
-  force = true
 
 [[redirects]]
   from = "/api/openai-assistant"
