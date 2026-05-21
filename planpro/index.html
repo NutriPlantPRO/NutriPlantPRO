@@ -1464,6 +1464,40 @@
       flex: 1 1 100%;
       line-height: 1.35;
     }
+    .np-ficha-meta-row {
+      padding: 2px 0 4px;
+      margin-top: 4px;
+      border: none;
+      background: transparent;
+      gap: 6px;
+    }
+    button.np-ficha-due-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      vertical-align: baseline;
+      margin: 0;
+      padding: 1px 7px 1px 5px;
+      border-radius: 999px;
+      font-size: 0.88em;
+      font-weight: 650;
+      line-height: 1.35;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    button.np-ficha-due-pill.np-rich-due {
+      border: 1px solid rgba(148, 163, 184, 0.45);
+    }
+    button.np-ficha-due-pill--empty {
+      border: 1px dashed rgba(148, 163, 184, 0.45);
+      background: rgba(248, 250, 252, 0.92);
+      color: #64748b;
+      font-weight: 600;
+      font-size: 0.82em;
+      padding: 1px 8px;
+    }
     .np-modal-body {
       padding: 14px 16px;
       overflow: auto;
@@ -4811,12 +4845,10 @@
                 <form id="npFormCreate">
                   <label for="npTitle" class="np-compact-label">Resumen / título</label>
                   <input id="npTitle" class="np-title-compact" name="title" required maxlength="500" placeholder="Título" />
-                  <div class="np-create-item-meta np-detail-item-meta-edit" id="npCreateItemMeta">
-                    <label class="np-detail-meta-label" for="npCreateDueInput">Fecha objetivo</label>
-                    <input type="date" id="npCreateDueInput" class="np-detail-due-input" aria-label="Fecha objetivo del apunte (opcional)" />
-                    <span class="np-detail-meta-label" id="npCreatePrioLabel">Prioridad</span>
-                    <div id="npCreatePrioWrap" class="np-prio-wrap np-detail-prio-wrap" role="group" aria-labelledby="npCreatePrioLabel"></div>
-                    <span class="np-create-meta-hint np-muted">Opcional · también puedes usar solo 🚦 en la libreta</span>
+                  <div class="np-create-item-meta np-detail-item-meta-edit np-ficha-meta-row" id="npCreateItemMeta">
+                    <span class="np-detail-meta-label">Objetivo</span>
+                    <button type="button" id="npCreateFichaPill" class="np-ficha-due-pill np-ficha-due-pill--empty" aria-label="Semáforo y fecha del apunte (opcional)">Semáforo y fecha</button>
+                    <span class="np-create-meta-hint np-muted">Opcional · en la libreta usa 🚦 por línea</span>
                   </div>
                   <label class="np-compact-label">Hoja en blanco</label>
                   <div id="npRichToolbar" class="np-rich-toolbar">
@@ -5050,6 +5082,7 @@
   var detailMetaSaveTimer = null;
   /** Prioridad al crear apunte: '' | baja | media | alta (vacío = sin prioridad en ficha). */
   var createFormPriorityLevel = '';
+  var createFormDueKey = '';
   var npTreeMenuLayoutListener = null;
   var npRichImgResizeScrollFn = null;
   var npRichImgResizeUI = { overlay: null, editorEl: null, img: null };
@@ -6252,27 +6285,93 @@
     richDuePickerState = null;
   }
 
-  function openRichDuePicker(opts) {
-    opts = opts || {};
-    var pop = $('npRichDuePopover');
-    var editorEl = opts.editorEl;
-    if (!pop || !editorEl) return;
-    var marker = opts.markerEl || null;
+  function todayDateKey() {
     var now = new Date();
-    var todayKey =
+    return (
       now.getFullYear() +
       '-' +
       String(now.getMonth() + 1).padStart(2, '0') +
       '-' +
-      String(now.getDate()).padStart(2, '0');
+      String(now.getDate()).padStart(2, '0')
+    );
+  }
+
+  function updateFichaDuePillEl(pill, dueAt, priorityRaw) {
+    if (!pill) return;
+    var dk = parseDueDateKey(dueAt || '');
+    var lv = priorityLevelFromRaw(priorityRaw != null ? String(priorityRaw) : '');
+    pill.className = 'np-ficha-due-pill';
+    pill.innerHTML = '';
+    if (!dk && !lv) {
+      pill.classList.add('np-ficha-due-pill--empty');
+      pill.textContent = 'Semáforo y fecha';
+      pill.title = 'Fecha y prioridad del apunte (opcional)';
+      return;
+    }
+    var useLv = lv || 'media';
+    pill.classList.add('np-rich-due', 'np-rich-due--' + useLv);
+    var dot = document.createElement('span');
+    dot.className = 'np-rich-due-dot';
+    pill.appendChild(dot);
+    var label = dk
+      ? formatRichDueDateLabel(dk)
+      : useLv === 'alta'
+        ? 'Alta'
+        : useLv === 'baja'
+          ? 'Baja'
+          : 'Media';
+    pill.appendChild(document.createTextNode(label));
+    pill.title = 'Clic para editar objetivo del apunte';
+  }
+
+  function openRichDuePicker(opts) {
+    opts = opts || {};
+    wireRichDuePopoverOnce();
+    var pop = $('npRichDuePopover');
+    if (!pop) return;
+
+    var mode = opts.mode || 'marker';
+    var todayKey = todayDateKey();
+    var dateInp = $('npRichDuePopoverDate');
+    var rm = $('npRichDuePopoverRemove');
+
+    if (mode === 'detail' || mode === 'create') {
+      var anchorEl = opts.anchorEl;
+      if (!anchorEl) return;
+      var dk0 = parseDueDateKey(
+        mode === 'create' ? createFormDueKey || '' : state.detailItemRecord && state.detailItemRecord.due_at
+      );
+      var lv0 =
+        mode === 'create'
+          ? createFormPriorityLevel
+          : priorityLevelFromRaw(
+              state.detailItemRecord && state.detailItemRecord.priority != null
+                ? String(state.detailItemRecord.priority)
+                : ''
+            );
+      var dateKey = dk0 || todayKey;
+      var level = lv0 ? normalizeRichDueLevel(lv0) : 'media';
+      if (dateInp) dateInp.value = dateKey;
+      syncRichDuePickerLevelButtons(level);
+      var hasVal = !!(dk0 || lv0);
+      if (rm) rm.style.display = hasVal ? '' : 'none';
+      richDuePickerState = { mode: mode, anchorEl: anchorEl, level: level };
+      pop.classList.remove('np-hide');
+      requestAnimationFrame(function () {
+        positionRichDuePopover(anchorEl.getBoundingClientRect());
+      });
+      return;
+    }
+
+    var editorEl = opts.editorEl;
+    if (!editorEl) return;
+    var marker = opts.markerEl || null;
     var dateKey = marker ? marker.getAttribute('data-np-due-date') || todayKey : todayKey;
     var level = marker ? normalizeRichDueLevel(marker.getAttribute('data-np-due-level')) : 'media';
-    var dateInp = $('npRichDuePopoverDate');
     if (dateInp) dateInp.value = parseDueDateKey(dateKey) || todayKey;
     syncRichDuePickerLevelButtons(level);
-    var rm = $('npRichDuePopoverRemove');
     if (rm) rm.style.display = marker ? '' : 'none';
-    richDuePickerState = { editorEl: editorEl, markerEl: marker, level: level };
+    richDuePickerState = { mode: 'marker', editorEl: editorEl, markerEl: marker, level: level };
     pop.classList.remove('np-hide');
     var rect = null;
     if (marker) rect = marker.getBoundingClientRect();
@@ -6301,6 +6400,27 @@
       return;
     }
     var lv = richDuePickerState.level || 'media';
+    var mode = richDuePickerState.mode || 'marker';
+
+    if (mode === 'detail' || mode === 'create') {
+      var stored = storePriorityFromLevel(lv);
+      if (mode === 'create') {
+        createFormDueKey = dk;
+        createFormPriorityLevel = lv;
+        updateFichaDuePillEl($('npCreateFichaPill'), dk, stored);
+      } else {
+        if (state.detailItemRecord) {
+          state.detailItemRecord.due_at = dk;
+          state.detailItemRecord.priority = stored;
+        }
+        updateFichaDuePillEl($('npDetailFichaPill'), dk, stored);
+        schedulePersistItemMeta({ due_at: dk, priority: stored });
+      }
+      closeRichDuePicker();
+      refreshPlanProCalendarAndPrio();
+      return;
+    }
+
     var ed = richDuePickerState.editorEl;
     var marker = richDuePickerState.markerEl;
     if (marker && ed && ed.contains(marker)) {
@@ -6310,12 +6430,32 @@
     }
     closeRichDuePicker();
     syncRichEmptyClass(ed);
-    if (ed.id === 'npModalBodyRich') schedulePersistMainBody();
+    if (ed && ed.id === 'npModalBodyRich') schedulePersistMainBody();
     refreshPlanProCalendarAndPrio();
   }
 
   function removeRichDueFromPicker() {
     if (!richDuePickerState) return;
+    var mode = richDuePickerState.mode || 'marker';
+
+    if (mode === 'detail' || mode === 'create') {
+      if (mode === 'create') {
+        createFormDueKey = '';
+        createFormPriorityLevel = '';
+        updateFichaDuePillEl($('npCreateFichaPill'), '', '');
+      } else {
+        if (state.detailItemRecord) {
+          state.detailItemRecord.due_at = null;
+          state.detailItemRecord.priority = null;
+        }
+        updateFichaDuePillEl($('npDetailFichaPill'), '', '');
+        schedulePersistItemMeta({ due_at: null, priority: null });
+      }
+      closeRichDuePicker();
+      refreshPlanProCalendarAndPrio();
+      return;
+    }
+
     var marker = richDuePickerState.markerEl;
     var ed = richDuePickerState.editorEl;
     if (marker && marker.parentNode) marker.parentNode.removeChild(marker);
@@ -6405,6 +6545,7 @@
       if (pop.classList.contains('np-hide') || !richDuePickerState) return;
       if (pop.contains(e.target)) return;
       if (e.target.closest('.np-rich-due')) return;
+      if (e.target.closest('.np-ficha-due-pill')) return;
       if (e.target.closest('[data-rich="duedate"]')) return;
       closeRichDuePicker();
     });
@@ -6486,64 +6627,27 @@
     el.appendChild(path);
 
     var edit = document.createElement('div');
-    edit.className = 'np-detail-item-meta-edit';
+    edit.className = 'np-detail-item-meta-edit np-ficha-meta-row';
     edit.setAttribute('role', 'group');
-    edit.setAttribute('aria-label', 'Ficha del apunte: fecha y prioridad');
+    edit.setAttribute('aria-label', 'Objetivo del apunte');
 
-    var labDue = document.createElement('label');
-    labDue.className = 'np-detail-meta-label';
-    labDue.setAttribute('for', 'npDetailDueInput');
-    labDue.textContent = 'Fecha objetivo';
+    var labObj = document.createElement('span');
+    labObj.className = 'np-detail-meta-label';
+    labObj.textContent = 'Objetivo';
 
-    var inpDue = document.createElement('input');
-    inpDue.type = 'date';
-    inpDue.id = 'npDetailDueInput';
-    inpDue.className = 'np-detail-due-input';
-    inpDue.value = parseDueDateKey(r.due_at || '') || '';
-    inpDue.addEventListener('change', function () {
-      var v = inpDue.value.trim();
-      schedulePersistItemMeta({ due_at: v ? v : null });
+    var pill = document.createElement('button');
+    pill.type = 'button';
+    pill.id = 'npDetailFichaPill';
+    pill.className = 'np-ficha-due-pill';
+    updateFichaDuePillEl(pill, r.due_at, r.priority);
+    pill.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openRichDuePicker({ mode: 'detail', anchorEl: pill });
     });
 
-    var labP = document.createElement('span');
-    labP.className = 'np-detail-meta-label';
-    labP.id = 'npDetailPrioLabel';
-    labP.textContent = 'Prioridad';
-
-    var wrapP = document.createElement('div');
-    wrapP.className = 'np-prio-wrap np-detail-prio-wrap';
-    wrapP.setAttribute('role', 'group');
-    wrapP.setAttribute('aria-labelledby', 'npDetailPrioLabel');
-    var curLv = priorityLevelFromRaw(r.priority != null ? String(r.priority) : '');
-    ['baja', 'media', 'alta'].forEach(function (lvl) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'np-prio-dot np-prio-' + lvl + (curLv === lvl ? ' np-prio-on' : '');
-      btn.title = lvl.charAt(0).toUpperCase() + lvl.slice(1) + ' (clic para activar o quitar)';
-      btn.setAttribute('aria-label', 'Prioridad ' + lvl);
-      btn.setAttribute('aria-pressed', curLv === lvl ? 'true' : 'false');
-      btn.textContent = '';
-      btn.addEventListener('click', function () {
-        var rec = state.detailItemRecord;
-        var fresh = priorityLevelFromRaw(rec && rec.priority != null ? String(rec.priority) : '');
-        var nextLv = fresh === lvl ? '' : lvl;
-        var stored = nextLv ? storePriorityFromLevel(nextLv) : null;
-        if (rec) rec.priority = stored;
-        wrapP.querySelectorAll('.np-prio-dot').forEach(function (b) {
-          var m = (b.className.match(/np-prio-(baja|media|alta)/) || [])[1];
-          var on = nextLv && m === nextLv;
-          b.classList.toggle('np-prio-on', !!on);
-          b.setAttribute('aria-pressed', on ? 'true' : 'false');
-        });
-        schedulePersistItemMeta({ priority: stored });
-      });
-      wrapP.appendChild(btn);
-    });
-
-    edit.appendChild(labDue);
-    edit.appendChild(inpDue);
-    edit.appendChild(labP);
-    edit.appendChild(wrapP);
+    edit.appendChild(labObj);
+    edit.appendChild(pill);
     el.appendChild(edit);
 
     var foot = document.createElement('div');
@@ -6655,11 +6759,25 @@
     }
   }
 
-  /** Texto del apunte: body_plain manda (Socio/API); body_html solo si no hay plain. */
+  function richHtmlHasFormattedContent(html) {
+    if (!html || !String(html).trim()) return false;
+    return /np-rich-due|np-rich-flag|np-rich-fs-|<(strong|b|em|i|u|s|strike|h2|h3|ul|ol|img)\b/i.test(String(html));
+  }
+
+  /** Libreta con diseño (🚦, negritas, colores) → body_html; solo texto plano de Socio → body_plain. */
   function resolveModalNoteHtml(r) {
-    var plain = (r.body_plain || '').trim();
-    if (plain) return plainTextToRichParagraphs(r.body_plain);
     var htmlRaw = (r.body_html || '').trim();
+    var plain = (r.body_plain || '').trim();
+    if (htmlRaw && richHtmlHasFormattedContent(htmlRaw)) return sanitizeRich(r.body_html);
+    if (htmlRaw && !plain) return sanitizeRich(r.body_html);
+    if (plain && htmlRaw) {
+      var stripped = stripHtml(htmlRaw).trim();
+      if (stripped === plain || plain.length > stripped.length + 12) {
+        return plainTextToRichParagraphs(r.body_plain);
+      }
+      return sanitizeRich(r.body_html);
+    }
+    if (plain) return plainTextToRichParagraphs(r.body_plain);
     if (htmlRaw) return sanitizeRich(r.body_html);
     return '<p><br></p>';
   }
@@ -6679,42 +6797,21 @@
     return res.data || null;
   }
 
-  function wireCreateFormPriorityDots() {
-    var wrap = $('npCreatePrioWrap');
-    if (!wrap || wrap.dataset.wired === '1') return;
-    wrap.dataset.wired = '1';
-    wrap.innerHTML = '';
-    ['baja', 'media', 'alta'].forEach(function (lvl) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'np-prio-dot np-prio-' + lvl;
-      btn.title = lvl.charAt(0).toUpperCase() + lvl.slice(1) + ' (opcional; clic otra vez para quitar)';
-      btn.setAttribute('aria-label', 'Prioridad ' + lvl);
-      btn.setAttribute('aria-pressed', 'false');
-      btn.addEventListener('click', function () {
-        createFormPriorityLevel = createFormPriorityLevel === lvl ? '' : lvl;
-        wrap.querySelectorAll('.np-prio-dot').forEach(function (b) {
-          var m = (b.className.match(/np-prio-(baja|media|alta)/) || [])[1];
-          var on = createFormPriorityLevel && m === createFormPriorityLevel;
-          b.classList.toggle('np-prio-on', !!on);
-          b.setAttribute('aria-pressed', on ? 'true' : 'false');
-        });
-      });
-      wrap.appendChild(btn);
+  function wireCreateFichaPill() {
+    var pill = $('npCreateFichaPill');
+    if (!pill || pill.dataset.wired === '1') return;
+    pill.dataset.wired = '1';
+    pill.addEventListener('click', function (e) {
+      e.preventDefault();
+      openRichDuePicker({ mode: 'create', anchorEl: pill });
     });
+    updateFichaDuePillEl(pill, createFormDueKey, createFormPriorityLevel);
   }
 
   function resetCreateFormMeta() {
     createFormPriorityLevel = '';
-    var dueInp = $('npCreateDueInput');
-    if (dueInp) dueInp.value = '';
-    var wrap = $('npCreatePrioWrap');
-    if (wrap) {
-      wrap.querySelectorAll('.np-prio-dot').forEach(function (b) {
-        b.classList.remove('np-prio-on');
-        b.setAttribute('aria-pressed', 'false');
-      });
-    }
+    createFormDueKey = '';
+    updateFichaDuePillEl($('npCreateFichaPill'), '', '');
   }
 
   function fmtItemPriorityShort(raw) {
@@ -6839,6 +6936,7 @@
   }
 
   async function closeItemDetail() {
+    closeRichDuePicker();
     hideRichImgResizeUI();
     if (detailBlocksSaveTimer) {
       clearTimeout(detailBlocksSaveTimer);
@@ -12670,7 +12768,7 @@
     syncPendingBlocksInputsFromDOM();
     var rawHtml = sanitizeRich(getRichEditorHtml());
     var plain = stripHtml(rawHtml);
-    var dueCreate = ($('npCreateDueInput') && $('npCreateDueInput').value || '').trim();
+    var dueCreate = createFormDueKey || '';
     var prioCreate = createFormPriorityLevel ? storePriorityFromLevel(createFormPriorityLevel) : null;
     var payload = {
       owner_id: state.userId,
@@ -12811,7 +12909,7 @@
     $('npGate').classList.add('np-hide');
     $('npMain').classList.remove('np-hide');
     $('npHeaderLogged').classList.remove('np-hide');
-    wireCreateFormPriorityDots();
+    wireCreateFichaPill();
     clearRichEditor();
     if (typeof window.initPlanProAssistant === 'function') window.initPlanProAssistant();
 
