@@ -1568,6 +1568,27 @@ function stripHtmlSimple(html) {
     .trim();
 }
 
+/** Renglones no vacíos de body_plain (texto real del apunte). */
+function bodyPlainAsLines(plain) {
+  return String(plain || '')
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
+
+/** Vista corta para listados: conserva renglones (no los fusiona en una sola línea). */
+function notePreviewMultiline(plain, html, maxLen) {
+  const max = maxLen != null ? maxLen : 200;
+  let lines = bodyPlainAsLines(plain);
+  if (!lines.length && html) {
+    lines = String(stripHtmlSimple(html))
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+  const joined = lines.join(' · ');
+  return joined.length <= max ? joined : joined.slice(0, max) + '…';
+}
+
 function htmlTagAttr(tag, name) {
   const re = new RegExp(name + '\\s*=\\s*["\']([^"\']*)', 'i');
   const m = String(tag).match(re);
@@ -2122,7 +2143,9 @@ function planProItemListRow(item, areasById, categories) {
     captured_at: item.captured_at,
     next_action: item.next_action,
     relation_tags: item.relation_tags || [],
-    preview: stripHtmlSimple(item.body_plain || item.body_html || '').slice(0, 200),
+    preview: notePreviewMultiline(item.body_plain, item.body_html, 200),
+    preview_note:
+      'preview une renglones con · ; el texto completo está en body_plain (plan_pro_item) o body_plain_lines.',
     updated_at: item.updated_at
   };
 }
@@ -2791,6 +2814,8 @@ async function handlePlanProItem(supabase, params) {
   const images = collectPlanProImages(item);
   const noteMarkers = collectAllRichDueMarkers(item);
 
+  const plainLines = bodyPlainAsLines(item.body_plain);
+
   return {
     ok: true,
     domain: 'plan_pro',
@@ -2798,7 +2823,11 @@ async function handlePlanProItem(supabase, params) {
     item: {
       ...planProItemListRow(item, areasById, categories),
       body_plain: item.body_plain || '',
+      body_plain_lines: plainLines,
+      body_plain_line_count: plainLines.length,
       body_html_stripped: stripHtmlSimple(item.body_html || '').slice(0, 8000),
+      lectura_nota:
+        'Usa body_plain o body_plain_lines (no solo preview). Si line_count es 1 pero esperas más renglones, vuelve a plan_pro_update con note o append_note.',
       semaforos_en_nota: noteMarkers,
       images,
       images_count: images.length,

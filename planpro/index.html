@@ -1367,15 +1367,15 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 8px 14px;
-      margin-top: 8px;
-      padding: 8px 10px;
-      border-radius: 10px;
+      gap: 4px 10px;
+      margin-top: 6px;
+      padding: 5px 8px;
+      border-radius: 8px;
       background: rgba(248, 250, 252, 0.88);
       border: 1px solid var(--border);
     }
     .np-detail-meta-label {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
       color: var(--muted);
       text-transform: uppercase;
@@ -1383,16 +1383,35 @@
       flex-shrink: 0;
     }
     .np-detail-due-input {
-      font-size: 13px;
-      padding: 4px 8px;
-      border-radius: 8px;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 6px;
       border: 1px solid var(--border);
-      min-height: 32px;
+      min-height: 26px;
+      max-width: 148px;
       color: var(--text);
       background: #fff;
     }
-    .np-detail-prio-wrap .np-prio-dot { width: 22px; height: 22px; font-size: 11px; }
-    .np-modal-meta-foot { font-size: 11px; color: var(--muted); margin-top: 6px; opacity: 0.88; }
+    .np-detail-prio-wrap {
+      gap: 3px !important;
+    }
+    .np-detail-prio-wrap .np-prio-dot {
+      width: 14px;
+      height: 14px;
+      font-size: 0;
+      border-width: 1.5px;
+      line-height: 0;
+    }
+    .np-detail-prio-wrap .np-prio-dot.np-prio-on {
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.14);
+    }
+    .np-modal-meta-foot { font-size: 10px; color: var(--muted); margin-top: 4px; opacity: 0.88; }
+    #npFormCreate .np-create-item-meta { margin-bottom: 10px; width: 100%; }
+    #npFormCreate .np-create-meta-hint {
+      font-size: 10px;
+      flex: 1 1 100%;
+      line-height: 1.35;
+    }
     .np-modal-body {
       padding: 14px 16px;
       overflow: auto;
@@ -4740,6 +4759,13 @@
                 <form id="npFormCreate">
                   <label for="npTitle" class="np-compact-label">Resumen / título</label>
                   <input id="npTitle" class="np-title-compact" name="title" required maxlength="500" placeholder="Título" />
+                  <div class="np-create-item-meta np-detail-item-meta-edit" id="npCreateItemMeta">
+                    <label class="np-detail-meta-label" for="npCreateDueInput">Fecha objetivo</label>
+                    <input type="date" id="npCreateDueInput" class="np-detail-due-input" aria-label="Fecha objetivo del apunte (opcional)" />
+                    <span class="np-detail-meta-label" id="npCreatePrioLabel">Prioridad</span>
+                    <div id="npCreatePrioWrap" class="np-prio-wrap np-detail-prio-wrap" role="group" aria-labelledby="npCreatePrioLabel"></div>
+                    <span class="np-create-meta-hint np-muted">Opcional · también puedes usar solo 🚦 en la libreta</span>
+                  </div>
                   <label class="np-compact-label">Hoja en blanco</label>
                   <div id="npRichToolbar" class="np-rich-toolbar">
                     <span class="np-rich-grp">
@@ -4970,6 +4996,8 @@
   var detailBlocksSaveTimer = null;
   var detailBodySaveTimer = null;
   var detailMetaSaveTimer = null;
+  /** Prioridad al crear apunte: '' | baja | media | alta (vacío = sin prioridad en ficha). */
+  var createFormPriorityLevel = '';
   var npTreeMenuLayoutListener = null;
   var npRichImgResizeScrollFn = null;
   var npRichImgResizeUI = { overlay: null, editorEl: null, img: null };
@@ -5732,7 +5760,12 @@
 
   function notePreviewText(r, maxLen) {
     var max = maxLen != null ? maxLen : 140;
-    var chunks = [stripHtml((r.body_html || r.body_plain || ''))];
+    var plainRaw = (r.body_plain || '').trim();
+    var plain = plainRaw || stripHtml((r.body_html || ''));
+    var lineParts = plain.split(/\r?\n/).map(function (ln) {
+      return ln.trim();
+    }).filter(Boolean);
+    var chunks = [lineParts.length > 1 ? lineParts.join(' · ') : plain];
     if (r.body_blocks && Array.isArray(r.body_blocks)) {
       r.body_blocks.forEach(function (blk) {
         if (blk && blk.type === 'note_section' && blk.html) chunks.push(stripHtml(blk.html));
@@ -6437,7 +6470,7 @@
       btn.title = lvl.charAt(0).toUpperCase() + lvl.slice(1) + ' (clic para activar o quitar)';
       btn.setAttribute('aria-label', 'Prioridad ' + lvl);
       btn.setAttribute('aria-pressed', curLv === lvl ? 'true' : 'false');
-      btn.textContent = lvl === 'baja' ? '🟢' : lvl === 'media' ? '🟡' : '🔴';
+      btn.textContent = '';
       btn.addEventListener('click', function () {
         var rec = state.detailItemRecord;
         var fresh = priorityLevelFromRaw(rec && rec.priority != null ? String(rec.priority) : '');
@@ -6570,19 +6603,66 @@
     }
   }
 
-  /** Si Socio actualizó body_plain pero quedó body_html viejo, mostrar el texto nuevo. */
+  /** Texto del apunte: body_plain manda (Socio/API); body_html solo si no hay plain. */
   function resolveModalNoteHtml(r) {
     var plain = (r.body_plain || '').trim();
+    if (plain) return plainTextToRichParagraphs(r.body_plain);
     var htmlRaw = (r.body_html || '').trim();
-    if (htmlRaw) {
-      var stripped = stripHtml(htmlRaw).trim();
-      if (!plain || stripped === plain) return sanitizeRich(r.body_html);
-      if (plain.length > stripped.length + 8 || (plain.split('\n').length > stripped.split('\n').length)) {
-        return plainTextToRichParagraphs(r.body_plain);
-      }
-      return sanitizeRich(r.body_html);
+    if (htmlRaw) return sanitizeRich(r.body_html);
+    return '<p><br></p>';
+  }
+
+  async function fetchPlanProItemForDetail(itemId) {
+    if (!state.client || !state.userId || !itemId) return null;
+    var cols = state.planProBodyHtmlColumn
+      ? 'id,title,area_id,category_id,status,priority,due_at,updated_at,body_plain,body_html,body_blocks'
+      : 'id,title,area_id,category_id,status,priority,due_at,updated_at,body_plain,body_blocks';
+    var res = await state.client
+      .from('plan_pro_items')
+      .select(cols)
+      .eq('id', itemId)
+      .eq('owner_id', state.userId)
+      .maybeSingle();
+    if (res.error) return null;
+    return res.data || null;
+  }
+
+  function wireCreateFormPriorityDots() {
+    var wrap = $('npCreatePrioWrap');
+    if (!wrap || wrap.dataset.wired === '1') return;
+    wrap.dataset.wired = '1';
+    wrap.innerHTML = '';
+    ['baja', 'media', 'alta'].forEach(function (lvl) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'np-prio-dot np-prio-' + lvl;
+      btn.title = lvl.charAt(0).toUpperCase() + lvl.slice(1) + ' (opcional; clic otra vez para quitar)';
+      btn.setAttribute('aria-label', 'Prioridad ' + lvl);
+      btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('click', function () {
+        createFormPriorityLevel = createFormPriorityLevel === lvl ? '' : lvl;
+        wrap.querySelectorAll('.np-prio-dot').forEach(function (b) {
+          var m = (b.className.match(/np-prio-(baja|media|alta)/) || [])[1];
+          var on = createFormPriorityLevel && m === createFormPriorityLevel;
+          b.classList.toggle('np-prio-on', !!on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      });
+      wrap.appendChild(btn);
+    });
+  }
+
+  function resetCreateFormMeta() {
+    createFormPriorityLevel = '';
+    var dueInp = $('npCreateDueInput');
+    if (dueInp) dueInp.value = '';
+    var wrap = $('npCreatePrioWrap');
+    if (wrap) {
+      wrap.querySelectorAll('.np-prio-dot').forEach(function (b) {
+        b.classList.remove('np-prio-on');
+        b.setAttribute('aria-pressed', 'false');
+      });
     }
-    return plainTextToRichParagraphs(r.body_plain || '');
   }
 
   function fmtItemPriorityShort(raw) {
@@ -6667,15 +6747,20 @@
     wireRichDuePopoverOnce();
   }
 
-  function openItemDetail(r) {
+  async function openItemDetail(r) {
     if (detailBlocksSaveTimer) {
       clearTimeout(detailBlocksSaveTimer);
       detailBlocksSaveTimer = null;
     }
     cancelQueuedDetailBlocksDOMRefresh();
-    state.detailModalAreaId = r.area_id || null;
+    var row = r;
+    if (r && r.id) {
+      var fresh = await fetchPlanProItemForDetail(r.id);
+      if (fresh) row = Object.assign({}, r, fresh);
+    }
+    state.detailModalAreaId = row.area_id || null;
     var modalPanel = $('npDetailModal').querySelector('.np-modal-panel');
-    var accentOpen = getAreaAccentHex(r.area_id);
+    var accentOpen = getAreaAccentHex(row.area_id);
     if (accentOpen) {
       modalPanel.style.borderTop = '4px solid ' + accentOpen;
       modalPanel.dataset.areaAccent = accentOpen;
@@ -6684,17 +6769,17 @@
       delete modalPanel.dataset.areaAccent;
     }
 
-    $('npDetailTitle').textContent = r.title || '(Sin título)';
-    state.detailItemRecord = r;
-    renderDetailItemMeta(r);
+    $('npDetailTitle').textContent = row.title || '(Sin título)';
+    state.detailItemRecord = row;
+    renderDetailItemMeta(row);
     var bd = $('npDetailBody');
     bd.innerHTML = '';
     bd.classList.remove('np-modal-has-blocks');
     bd.classList.remove('np-modal-empty');
-    state.detailItemId = r.id;
-    state.detailBlocksWorking = deepCloneBlocks(r.body_blocks);
-    mountModalMainNote(bd, r, accentOpen);
-    mountDetailBlocksMountAndToolbar(bd, r.id, accentOpen);
+    state.detailItemId = row.id;
+    state.detailBlocksWorking = deepCloneBlocks(row.body_blocks);
+    mountModalMainNote(bd, row, accentOpen);
+    mountDetailBlocksMountAndToolbar(bd, row.id, accentOpen);
     if (state.detailBlocksWorking.length) bd.classList.add('np-modal-has-blocks');
     updateDetailBlocksHint();
     $('npDetailModal').classList.add('np-modal-open');
@@ -12533,15 +12618,17 @@
     syncPendingBlocksInputsFromDOM();
     var rawHtml = sanitizeRich(getRichEditorHtml());
     var plain = stripHtml(rawHtml);
+    var dueCreate = ($('npCreateDueInput') && $('npCreateDueInput').value || '').trim();
+    var prioCreate = createFormPriorityLevel ? storePriorityFromLevel(createFormPriorityLevel) : null;
     var payload = {
       owner_id: state.userId,
       area_id: state.selectedAreaId,
       category_id: state.selectedCategoryId,
       title: title,
       status: null,
-      priority: null,
+      priority: prioCreate,
       body_plain: plain.trim() ? plain : null,
-      due_at: null,
+      due_at: dueCreate || null,
       body_blocks: state.pendingBlocks.length ? state.pendingBlocks : [],
       attachments: []
     };
@@ -12575,6 +12662,7 @@
     btn.disabled = false;
     showToast('Apunte guardado en la nube.');
     $('npTitle').value = '';
+    resetCreateFormMeta();
     clearRichEditor();
     state.pendingBlocks = [];
     flushPendingPreviewRefresh();
@@ -12671,6 +12759,7 @@
     $('npGate').classList.add('np-hide');
     $('npMain').classList.remove('np-hide');
     $('npHeaderLogged').classList.remove('np-hide');
+    wireCreateFormPriorityDots();
     clearRichEditor();
     if (typeof window.initPlanProAssistant === 'function') window.initPlanProAssistant();
 
