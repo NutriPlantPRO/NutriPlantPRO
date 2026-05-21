@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.0.0",
-    "description": "Lectura NutriPlant (proyectos, lab, manual). Plan PRO personal: lectura y escritura (create/update) solo cerebro digital admin."
+    "version": "2.2.0",
+    "description": "Plan PRO: note con tokens (sem, warn, star, **bold**, color, listas…). Sin imágenes. Ficha: priority+due_at. Ver PLAN-PRO-GPT-ACCIONES.md."
   },
   "servers": [
     {
@@ -84,8 +84,15 @@
               "q": { "type": "string", "description": "Búsqueda o título de apunte Plan PRO" },
               "item_id": { "type": "string", "description": "UUID apunte Plan PRO" },
               "title": { "type": "string", "description": "plan_pro_create/update: título" },
-              "note": { "type": "string", "description": "plan_pro_create/update: nota (body_plain)" },
+              "note": {
+                "type": "string",
+                "description": "Nota con tokens Plan PRO: [[sem:fecha:media]], [[warn]], [[star]], **bold**, [[color:blue]]x[[/color]], ## titulo, - lista. Sin imagenes."
+              },
               "body_plain": { "type": "string" },
+              "append_due_marker": {
+                "type": "string",
+                "description": "plan_pro_update/create: chip 🚦 al final. Objeto {due_at,priority} o 2026-05-26:media"
+              },
               "priority": { "type": "string", "description": "alta|media|baja o Alta|Media|Baja" },
               "due_at": { "type": "string", "description": "YYYY-MM-DD fecha objetivo" },
               "due_on": { "type": "string", "description": "plan_pro_day: YYYY-MM-DD" },

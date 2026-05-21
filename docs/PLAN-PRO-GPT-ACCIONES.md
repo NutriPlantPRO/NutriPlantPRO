@@ -1,6 +1,35 @@
 # Plan PRO — Acciones GPT (asistente personal)
 
-OpenAPI **v2.0.0** · Misma función `nutriplantAdminQuery` · Solo usuario admin (RLS).
+OpenAPI **v2.2.0** · Misma función `nutriplantAdminQuery` · Solo usuario admin (RLS).
+
+## Dos semáforos
+
+| Dónde | API | En el portal |
+|--------|-----|----------------|
+| **Apunte entero** | `priority` + `due_at` | Pastilla Objetivo bajo el título |
+| **Dentro de la nota** | `[[sem:YYYY-MM-DD:media]]` en `note` / `append_note`, o `append_due_marker` | Chip 🚦 como en la libreta |
+
+Tras guardar, `plan_pro_item` devuelve `semaforos_en_nota` si el chip se insertó bien.
+
+## Herramientas de la libreta (en `note` / `append_note`)
+
+| Toolbar | Token / sintaxis Socio | Ejemplo |
+|---------|------------------------|---------|
+| 🚦 Semáforo | `[[sem:YYYY-MM-DD:media]]` o `append_due_marker` | `[[sem:2026-05-26:alta]]` |
+| ⚠︎ Importante | `[[warn]]` o `[[importante]]` | `[[warn]] Revisar lab` |
+| ★ Destacado | `[[star]]` o `[[destacado]]` | `[[star]] Cliente clave` |
+| **B** negrita | `**texto**` o `[[b]]texto[[/b]]` | `**urgente**` |
+| *I* cursiva | `*texto*` o `[[i]]texto[[/i]]` | |
+| U subrayado | `__texto__` o `[[u]]texto[[/u]]` | |
+| S tachado | `~~texto~~` o `[[s]]texto[[/s]]` | |
+| Color | `[[color:blue]]texto[[/color]]` | blue, green, red, black, gray, yellow, purple |
+| Peq–XL | `[[size:lg]]texto[[/size]]` | sm, md, lg, xl |
+| Título | `## texto` o `[[h2]]texto[[/h2]]` | línea sola |
+| Sub | `### texto` o `[[h3]]texto[[/h3]]` | |
+| • Lista | líneas `- item` | bloque con `-` |
+| 1. Lista | líneas `1. item` | |
+| Diagrama | `[[diagram]]` + líneas debajo | |
+| 🖼 Imagen | **NO** — solo manual en portal | |
 
 ## Leer
 
@@ -17,7 +46,7 @@ OpenAPI **v2.0.0** · Misma función `nutriplantAdminQuery` · Solo usuario admi
 | action | Campos clave |
 |--------|----------------|
 | `plan_pro_create` | **title** (obligatorio), **category_id** (recomendado, de `plan_pro_catalog`) o category_title ("333"); area_slug opcional si ya envías category_id; note, priority, due_at |
-| `plan_pro_update` | **item_id** o **q**, luego: title, note, append_note, priority, due_at, next_action, status, close:true, reopen:true |
+| `plan_pro_update` | **item_id** o **q**, luego: title, note, append_note, **append_due_marker**, priority, due_at, … |
 
 ## Ejemplos de chat
 
@@ -27,7 +56,11 @@ OpenAPI **v2.0.0** · Misma función `nutriplantAdminQuery` · Solo usuario admi
 2. «Agrega: llamar distribuidor HiTec, prioridad alta, viernes 28 may, pilar Yara, nota: cerrar pedido Q2»  
    → `plan_pro_create` con title, area_slug `yara` (o el slug real), priority alta, due_at, note
 
-3. «Al apunte de HiTec añade nota: confirmar precio lista»  
+3. «Al apunte de HiTec añade semáforo media 26 may en la nota»  
+   → `plan_pro_update` `q`: "HiTec", `append_due_marker`: `{"due_at":"2026-05-26","priority":"media"}`  
+   o `append_note`: "Seguimiento [[sem:2026-05-26:media]]"
+
+4. «Al apunte de HiTec añade nota: confirmar precio lista»  
    → `plan_pro_update` con `q`: "HiTec", `append_note`: "..."
 
 ## Después del deploy

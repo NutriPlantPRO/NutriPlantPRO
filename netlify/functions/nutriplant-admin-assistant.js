@@ -2312,20 +2312,279 @@ function normalizePlanProPriorityInput(raw) {
   return s || null;
 }
 
-/** HTML mínimo para que Plan PRO (modal) muestre lo mismo que body_plain tras editar vía GPT. */
-function plainTextToBodyHtml(plain) {
-  const t = String(plain || '').trim();
-  if (!t) return null;
+const NP_RICH_DUE_MONTH_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+const RE_SEM_TOKEN = /\[\[sem:(\d{4}-\d{2}-\d{2})(?::(alta|media|baja))?\]\]/gi;
+
+const NOTE_COLOR_HEX = {
+  blue: '#2563eb',
+  azul: '#2563eb',
+  green: '#16a34a',
+  verde: '#16a34a',
+  red: '#dc2626',
+  rojo: '#dc2626',
+  black: '#0f172a',
+  negro: '#0f172a',
+  gray: '#64748b',
+  grey: '#64748b',
+  gris: '#64748b',
+  yellow: '#b45309',
+  amarillo: '#b45309',
+  purple: '#7c3aed',
+  morado: '#7c3aed'
+};
+
+const NOTE_SIZE_CLASS = {
+  sm: 'np-rich-fs-sm',
+  peq: 'np-rich-fs-sm',
+  md: 'np-rich-fs-md',
+  l: 'np-rich-fs-lg',
+  lg: 'np-rich-fs-lg',
+  xl: 'np-rich-fs-xl'
+};
+
+function npRichDueNewId() {
+  return 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function formatRichDueDateLabel(dateKey) {
+  const dk = parsePlanProDueDateParam(dateKey);
+  if (!dk) return '';
+  const p = dk.split('-').map(Number);
+  if (p.length !== 3 || !p[1] || p[1] < 1 || p[1] > 12) return dk;
+  return p[2] + ' ' + NP_RICH_DUE_MONTH_SHORT[p[1] - 1];
+}
+
+/** Chip 🚦 idéntico al editor Plan PRO (.np-rich-due). */
+function buildRichDueMarkerHtml(dateKey, level) {
+  const dk = parsePlanProDueDateParam(dateKey);
+  if (!dk) return '';
+  const lv = priorityLevelFromRaw(level) || 'media';
+  const label = formatRichDueDateLabel(dk);
+  const uid = npRichDueNewId();
   const esc = (s) =>
     String(s)
       .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  return (
+    `<span class="np-rich-due np-rich-due--${lv}" contenteditable="false" data-np-due-id="${esc(uid)}" data-np-due-date="${esc(dk)}" data-np-due-level="${esc(lv)}" data-np-due-label="${esc(label)}" title="Semáforo ${esc(lv)} · ${esc(dk)}"><span class="np-rich-due-dot"></span>${esc(label)}</span>&nbsp;`
+  );
+}
+
+function segmentAuthorInline(text) {
+  const parts = [];
+  const s = String(text || '');
+  let last = 0;
+  const re =
+    /\[\[sem:(\d{4}-\d{2}-\d{2})(?::(alta|media|baja))?\]\]|\[\[(?:warn|importante)\]\]|\[\[(?:star|destacado)\]\]/gi;
+  let m;
+  while ((m = re.exec(s))) {
+    if (m.index > last) parts.push({ type: 'text', value: s.slice(last, m.index) });
+    const tok = m[0].toLowerCase();
+    if (tok.indexOf('[sem:') === 0) parts.push({ type: 'sem', date: m[1], level: m[2] || 'media' });
+    else if (/warn|importante/.test(tok)) parts.push({ type: 'warn' });
+    else parts.push({ type: 'star' });
+    last = m.index + m[0].length;
+  }
+  if (last < s.length) parts.push({ type: 'text', value: s.slice(last) });
+  if (!parts.length && s) parts.push({ type: 'text', value: s });
+  return parts;
+}
+
+function noteColorToStyle(nameOrHex) {
+  const raw = String(nameOrHex || '').trim().toLowerCase();
+  if (!raw) return '';
+  if (/^#[0-9a-f]{3,8}$/i.test(raw)) return `color:${raw}`;
+  const hex = NOTE_COLOR_HEX[raw];
+  return hex ? `color:${hex}` : '';
+}
+
+function replacePairedAuthorTags(s, tag, wrapFn) {
+  const re = new RegExp(`\\[\\[${tag}(?::([^\\]]+))?\\]\\]([\\s\\S]*?)\\[\\[\\/${tag}\\]\\]`, 'gi');
+  return s.replace(re, (_, opt, inner) => wrapFn(opt, inner));
+}
+
+function formatMarkdownInline(s) {
+  let t = String(s || '');
+  t = replacePairedAuthorTags(t, 'color', (opt, inner) => {
+    const st = noteColorToStyle(opt);
+    const body = formatMarkdownInline(inner);
+    return st ? `<span style="${st.replace(/"/g, '&quot;')}">${body}</span>` : body;
+  });
+  t = replacePairedAuthorTags(t, 'size', (opt, inner) => {
+    const cls = NOTE_SIZE_CLASS[String(opt || '').trim().toLowerCase()] || 'np-rich-fs-md';
+    return `<span class="${cls}">${formatMarkdownInline(inner)}</span>`;
+  });
+  t = replacePairedAuthorTags(t, 'b', (_, inner) => `<strong>${formatMarkdownInline(inner)}</strong>`);
+  t = replacePairedAuthorTags(t, 'i', (_, inner) => `<em>${formatMarkdownInline(inner)}</em>`);
+  t = replacePairedAuthorTags(t, 'u', (_, inner) => `<u>${formatMarkdownInline(inner)}</u>`);
+  t = replacePairedAuthorTags(t, 's', (_, inner) => `<s>${formatMarkdownInline(inner)}</s>`);
+  t = t.replace(/\*\*([^*]+)\*\*/g, (_, x) => `<strong>${htmlEscapePlain(x)}</strong>`);
+  t = t.replace(/__([^_]+)__/g, (_, x) => `<u>${htmlEscapePlain(x)}</u>`);
+  t = t.replace(/~~([^~]+)~~/g, (_, x) => `<s>${htmlEscapePlain(x)}</s>`);
+  t = t.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, (_, pre, x) => `${pre}<em>${htmlEscapePlain(x)}</em>`);
+  if (!/<[a-z]/i.test(t)) return htmlEscapePlain(t);
+  return t;
+}
+
+function inlineAuthorToHtml(s) {
+  const parts = segmentAuthorInline(s);
+  return parts
+    .map((p) => {
+      if (p.type === 'sem') return buildRichDueMarkerHtml(p.date, p.level);
+      if (p.type === 'warn') return '<span class="np-rich-flag">⚠︎ Importante</span>&nbsp;';
+      if (p.type === 'star') return '<span class="np-rich-flag np-rich-flag-star">★ Destacado</span>&nbsp;';
+      return formatMarkdownInline(p.value);
+    })
+    .join('');
+}
+
+function parseAuthorBlock(block) {
+  const raw = String(block || '').trim();
+  if (!raw) return '';
+  const lines = raw.split(/\n/).map((l) => l.trim());
+  const nonEmpty = lines.filter(Boolean);
+  if (!nonEmpty.length) return '<p><br></p>';
+
+  if (nonEmpty.length === 1) {
+    const one = nonEmpty[0];
+    const h2m = /^(?:##\s+|\[\[h2\]\])([\s\S]*?)(?:\[\[\/h2\]\])?$/i.exec(one);
+    if (h2m) return `<h2>${inlineAuthorToHtml(h2m[1].trim())}</h2>`;
+    const h3m = /^(?:###\s+|\[\[h3\]\])([\s\S]*?)(?:\[\[\/h3\]\])?$/i.exec(one);
+    if (h3m) return `<h3>${inlineAuthorToHtml(h3m[1].trim())}</h3>`;
+  }
+
+  if (/^\[\[diagram\]\]$/i.test(nonEmpty[0]) || /^\[\[lista diagrama\]\]$/i.test(nonEmpty[0])) {
+    const items = nonEmpty.slice(1);
+    const lis = items.length
+      ? items.map((it) => `<li>${inlineAuthorToHtml(it)}</li>`).join('')
+      : '<li><br></li>';
+    return `<ul class="np-rich-list-diagram">${lis}</ul>`;
+  }
+
+  if (nonEmpty.every((l) => /^[-*]\s+/.test(l))) {
+    return `<ul>${nonEmpty.map((l) => `<li>${inlineAuthorToHtml(l.replace(/^[-*]\s+/, ''))}</li>`).join('')}</ul>`;
+  }
+
+  if (nonEmpty.every((l) => /^\d+\.\s+/.test(l))) {
+    return `<ol>${nonEmpty.map((l) => `<li>${inlineAuthorToHtml(l.replace(/^\d+\.\s+/, ''))}</li>`).join('')}</ol>`;
+  }
+
+  const inner = nonEmpty.map((l) => inlineAuthorToHtml(l)).join('<br>');
+  return `<p>${inner || '<br>'}</p>`;
+}
+
+function authorNoteLooksRich(plain) {
+  const t = String(plain || '');
+  return (
+    /\[\[(sem|warn|importante|star|destacado|b|i|u|s|color|size|h2|h3|diagram)/i.test(t) ||
+    /\*\*|__|~~/.test(t) ||
+    /^##\s/m.test(t) ||
+    /^###\s/m.test(t) ||
+    /^[-*]\s/m.test(t) ||
+    /^\d+\.\s/m.test(t)
+  );
+}
+
+function authorNoteToBodyHtml(plain) {
+  const t = String(plain || '').trim();
+  if (!t) return null;
+  return t.split(/\n{2,}/).map(parseAuthorBlock).join('');
+}
+
+function stripAuthorTokensForPlain(plain) {
+  return String(plain || '')
+    .replace(RE_SEM_TOKEN, (_, d, lv) => {
+      const lab = formatRichDueDateLabel(d);
+      return lab ? `${lab} (${lv || 'media'})` : '';
+    })
+    .replace(/\[\[(?:warn|importante)\]\]/gi, '⚠ Importante ')
+    .replace(/\[\[(?:star|destacado)\]\]/gi, '★ Destacado ')
+    .replace(/\[\[(?:b|i|u|s|color|size):?[^\]]*\]\]([\s\S]*?)\[\[\/(?:b|i|u|s|color|size)\]\]/gi, '$1')
+    .replace(/\[\[h2\]\]([\s\S]*?)\[\[\/h2\]\]/gi, '$1\n')
+    .replace(/\[\[h3\]\]([\s\S]*?)\[\[\/h3\]\]/gi, '$1\n')
+    .replace(/\[\[diagram\]\]/gi, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/~~([^~]+)~~/g, '$1');
+}
+
+function htmlEscapePlain(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Convierte nota con tokens/markdown Plan PRO a body_html (sin imágenes). */
+function plainTextToRichBodyHtml(plain) {
+  const t = String(plain || '').trim();
+  if (!t) return null;
+  if (authorNoteLooksRich(t)) return authorNoteToBodyHtml(t);
+  return plainTextToBodyHtml(t);
+}
+
+/** HTML mínimo (sin semáforos en texto). */
+function plainTextToBodyHtml(plain) {
+  const t = String(plain || '').trim();
+  if (!t) return null;
+  const esc = htmlEscapePlain;
   return t
     .split(/\n{2,}/)
     .map((p) => `<p>${esc(p.trim()).replace(/\n/g, '<br>')}</p>`)
     .join('');
+}
+
+/** body_plain legible (sin tokens de autor). */
+function plainTextForStorageFromAuthor(plain) {
+  return stripAuthorTokensForPlain(plain);
+}
+
+function semTokenFromMarkerInput(raw) {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    const dk = parsePlanProDueDateParam(raw.due_at || raw.due_date || raw.fecha || raw.date);
+    if (!dk) return null;
+    const lv = priorityLevelFromRaw(raw.priority || raw.priority_level || raw.level || 'media') || 'media';
+    return `[[sem:${dk}:${lv}]]`;
+  }
+  const s = String(raw).trim();
+  const inline = /\[\[sem:\d{4}-\d{2}-\d{2}/i.test(s);
+  if (inline) return s;
+  const m = /^(\d{4}-\d{2}-\d{2})(?:[:|,\s]+(alta|media|baja))?$/i.exec(s);
+  if (m) return `[[sem:${m[1]}:${(m[2] || 'media').toLowerCase()}]]`;
+  return null;
+}
+
+function applyNotePlainAndHtml(patch, plainRaw) {
+  const raw = String(plainRaw || '').trim();
+  patch.body_plain = raw ? plainTextForStorageFromAuthor(raw) : null;
+  patch.body_html = raw ? plainTextToRichBodyHtml(raw) : null;
+}
+
+function itemNoteBaseHtml(item, patch) {
+  const fromPatch = patch && patch.body_html != null ? patch.body_html : null;
+  if (fromPatch && String(fromPatch).trim()) return String(fromPatch).trim();
+  if (item.body_html && String(item.body_html).trim()) return String(item.body_html).trim();
+  if (item.body_plain && String(item.body_plain).trim()) {
+    return plainTextToRichBodyHtml(item.body_plain) || plainTextToBodyHtml(item.body_plain) || '';
+  }
+  return '';
+}
+
+function appendNoteChunkToPatch(patch, item, chunkPlain) {
+  const add = String(chunkPlain || '').trim();
+  if (!add) return;
+  const chunkHtml = plainTextToRichBodyHtml(add);
+  if (!chunkHtml) return;
+  const baseHtml = itemNoteBaseHtml(item, patch);
+  patch.body_html = baseHtml ? baseHtml + chunkHtml : chunkHtml;
+  const basePlain = (
+    patch.body_plain != null ? patch.body_plain : item.body_plain || ''
+  ).trim();
+  const addPlain = plainTextForStorageFromAuthor(add);
+  patch.body_plain = basePlain ? basePlain + '\n' + addPlain : addPlain;
 }
 
 function parsePlanProDueDateParam(raw) {
@@ -2585,7 +2844,11 @@ async function handlePlanProCreate(supabase, params) {
   const areaId = resolved.areaId;
   const categoryId = resolved.categoryId;
 
-  const bodyPlain = (params.body_plain || params.note || params.body || '').trim();
+  let bodyPlain = (params.body_plain || params.note || params.body || '').trim();
+  const semAppend = semTokenFromMarkerInput(params.append_due_marker);
+  if (semAppend) {
+    bodyPlain = bodyPlain ? bodyPlain + '\n' + semAppend : semAppend;
+  }
   const dueAt = parsePlanProDueDateParam(params.due_at || params.due_date || params.fecha);
   const capturedAt = parsePlanProDueDateParam(params.captured_at) || dateOnlyKey(new Date());
 
@@ -2609,8 +2872,8 @@ async function handlePlanProCreate(supabase, params) {
         ? String(params.next_action).trim().slice(0, 500)
         : null,
     relation_tags: parseRelationTagsParam(params.relation_tags || params.tags),
-    body_plain: bodyPlain || null,
-    body_html: bodyPlain ? plainTextToBodyHtml(bodyPlain) : null,
+    body_plain: bodyPlain ? plainTextForStorageFromAuthor(bodyPlain) : null,
+    body_html: bodyPlain ? plainTextToRichBodyHtml(bodyPlain) : null,
     body_blocks: [],
     attachments: []
   };
@@ -2681,13 +2944,18 @@ async function handlePlanProUpdate(supabase, params) {
     patch.title = String(params.title).trim().slice(0, 500);
   }
   if (params.body_plain != null || params.note != null) {
-    const bp = String(params.body_plain != null ? params.body_plain : params.note).trim();
-    patch.body_plain = bp || null;
-  }
-  if (params.append_note != null && String(params.append_note).trim()) {
-    const add = String(params.append_note).trim();
-    const prev = (item.body_plain || '').trim();
-    patch.body_plain = prev ? prev + '\n\n' + add : add;
+    applyNotePlainAndHtml(
+      patch,
+      String(params.body_plain != null ? params.body_plain : params.note).trim()
+    );
+  } else {
+    if (params.append_note != null && String(params.append_note).trim()) {
+      appendNoteChunkToPatch(patch, item, String(params.append_note).trim());
+    }
+    if (params.append_due_marker != null) {
+      const token = semTokenFromMarkerInput(params.append_due_marker);
+      if (token) appendNoteChunkToPatch(patch, item, token);
+    }
   }
   if (params.priority != null) {
     patch.priority = normalizePlanProPriorityInput(params.priority);
@@ -2743,16 +3011,12 @@ async function handlePlanProUpdate(supabase, params) {
     patch.closed_at = null;
   }
 
-  if (patch.body_plain !== undefined) {
-    patch.body_html = patch.body_plain ? plainTextToBodyHtml(patch.body_plain) : null;
-  }
-
   if (!Object.keys(patch).length) {
     return {
       ok: true,
       domain: 'plan_pro',
       error:
-        'Nada que actualizar. Usa title, note/body_plain, priority, due_at, next_action, status, tags, close/reopen.'
+        'Nada que actualizar. Usa title, note/body_plain, append_note, append_due_marker ([[sem:YYYY-MM-DD:media]]), priority, due_at, next_action, status, tags, close/reopen.'
     };
   }
 
@@ -3271,7 +3535,11 @@ async function handleDescribeApi() {
       manual_publico: ['manual_tecnico_catalog']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item (leer), plan_pro_create/plan_pro_update (escribir solo cerebro digital). plan_pro_catalog = pilares y ramas. Manual: manual_tecnico_catalog.'
+      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item (leer), plan_pro_create/plan_pro_update (escribir). Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog.',
+    plan_pro_nota_semaforo:
+      'Chip en libreta: [[sem:2026-05-26:media]] o append_due_marker. Ficha apunte: priority + due_at.',
+    plan_pro_nota_herramientas:
+      'En note/append_note (NO imágenes 🖼): [[warn]] [[star]]; **negrita** *cursiva* __subrayado__ ~~tachado~~; [[color:blue]]texto[[/color]]; [[size:lg]]texto[[/size]]; ## Título ### Sub; líneas "- item" o "1. item"; [[diagram]] luego líneas. Ver docs PLAN-PRO-GPT-ACCIONES.md.'
   };
 }
 

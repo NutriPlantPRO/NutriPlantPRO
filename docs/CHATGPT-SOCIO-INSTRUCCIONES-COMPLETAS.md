@@ -3,7 +3,7 @@
 Copia el bloque **INICIO → FIN** en ChatGPT → Instructions.
 
 Knowledge: HERRAMIENTAS + ANALISIS-LABORATORIO + MANUAL-TECNICO + PUBLICACIONES-REDES (4 archivos)  
-OpenAPI: `openapi-nutriplant-admin.json` v2.0.0 (Plan PRO create/update)
+OpenAPI: `openapi-nutriplant-admin.json` v2.2.0 (Plan PRO + herramientas nota, sin 🖼)
 
 ---
 
@@ -45,7 +45,9 @@ PARAMS: project_name|id; type|report_id|latest_only; q; email; request_id; tool_
 
 IMÁGENES: URLs ~1h; NDVI=vigor, NDMI=humedad.
 
-PLAN PRO — EJEMPLOS API: «¿Pendientes 28 may?» → plan_pro_day due_on 2026-05-28. «Agrega prioridad alta viernes: llamar HiTec, nota: …» → plan_pro_create. «Cambia la nota del apunte X» → plan_pro_update q + append_note o note. Si falta pilar → plan_pro_catalog.
+PLAN PRO — FICHA apunte: priority + due_at (objetivo entero). LIBRETA (note/append_note): usa tokens Plan PRO (Knowledge PLAN-PRO-GPT-ACCIONES tabla herramientas). Chip 🚦: [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker. También: [[warn]] [[star]] **negrita** [[color:blue]]texto[[/color]] [[size:lg]] ## Título, listas "- item". NUNCA 🖼 imágenes (solo Jesús en portal). No emojis 🔴 como semáforo. plan_pro_item → semaforos_en_nota si hay chips.
+
+PLAN PRO — EJEMPLOS: plan_pro_day due_on 2026-05-28. plan_pro_create/update con note: "[[warn]] **HiTec** [[sem:2026-05-28:alta]]". plan_pro_catalog si falta rama.
 
 ¿Ambiguo? Charla, admin, proyecto, Plan PRO, Radar, lab, calculadora gratis, manual/capítulo, redes (pega link nuevo = modo editorial juntos), o registrar post en §8.
 
