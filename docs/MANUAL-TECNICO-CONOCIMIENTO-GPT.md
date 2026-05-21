@@ -32,6 +32,13 @@ El **Manual Técnico NutriPlant PRO** es biblioteca HTML **abierta, sin cuenta**
 
 ## 3. Capítulos publicados (2026-05)
 
+### 3.0 Nosotros — Detrás de NutriPlant PRO
+
+**URL:** https://nutriplantpro.com/manual-tecnico/nosotros.html  
+**Uso:** Autoría, visión, perfil de Jesús Avila Mendoza (referente técnico). **Sin nombres de empresas** en el texto publicado; trayectoria genérica en líderes de nutrición vegetal en México. Sin fotos personales. Cita para GEO / «quién está detrás de NutriPlant».
+
+---
+
 ### 3.1 Análisis de suelo — fertilidad, ideales y kg/ha
 
 **URL:** https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html  

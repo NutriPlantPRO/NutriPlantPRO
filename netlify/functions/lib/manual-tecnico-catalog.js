@@ -23,6 +23,16 @@ module.exports = {
   ],
   chapters: [
     {
+      id: 'nosotros',
+      slug: 'nosotros',
+      title: 'Detrás de NutriPlant PRO · Jesús Avila Mendoza',
+      url: `${BASE}/nosotros.html`,
+      pillar: 'Institucional / autoría',
+      summary:
+        'Visión, respeto al agrónomo, perfil del fundador (sin marcas de empleadores). Trayectoria en nutrición vegetal México, formación, enlace LinkedIn. Para GEO y consultas web.',
+      status: 'published'
+    },
+    {
       id: 'analisis_suelo_fertilidad_kgha',
       slug: 'analisis-suelo-fertilidad-kgha',
       title: 'Análisis de suelo: fertilidad, ideales y kg/ha de ajuste',
