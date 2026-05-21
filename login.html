@@ -27,7 +27,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=5" />
+  <link rel="stylesheet" href="auth.css?v=7" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -51,17 +51,9 @@
   <!-- Header consistente con el dashboard -->
   <header class="site-header auth-header">
     <div class="brandline">
-      <a href="index.html" class="brand-section" title="Volver al inicio" style="text-decoration:none;">
+      <div class="brand-section">
         <img src="assets/NutriPlant_PRO_blue.png" alt="NutriPlant Pro" class="brand-logo auth-logo" />
-      </a>
-      <nav class="auth-header-portal-nav" aria-label="Acceso rápido">
-        <a href="index.html" class="auth-header-portal-link auth-header-portal-link--home" title="Portada NutriPlant PRO">Inicio</a>
-        <a href="manual-tecnico/index.html" class="auth-header-portal-link auth-header-portal-link--manual" title="Manual técnico público — sin cuenta">
-          <span aria-hidden="true">📘</span>
-          <span class="auth-header-manual-link__label-long">Manual técnico</span>
-          <span class="auth-header-manual-link__label-short">Manual</span>
-        </a>
-      </nav>
+      </div>
       <div class="social-links">
         <button class="social-btn" onclick="window.showAboutUsModal()" title="Sobre Nosotros" aria-label="Sobre Nosotros" type="button" style="
           display: inline-flex;
@@ -118,14 +110,13 @@
     <div class="auth-container">
       <div class="auth-card">
         <div class="auth-header-content">
-          <a href="index.html" class="auth-logo-container" title="Volver al inicio" style="display:block;text-decoration:none;">
+          <div class="auth-logo-container">
             <img src="assets/NutriPlant_PRO_blue.png" alt="NutriPlant Pro" class="auth-card-logo" />
-          </a>
+          </div>
           <h1 class="auth-title">Bienvenido a NutriPlant PRO</h1>
           <p style="margin: 8px 0 0; font-size: 15px; color: #475569; font-weight: 500; text-align: center;">Diseña, ajusta y nutre con criterio técnico</p>
-          <div class="auth-portal-ctas" role="navigation" aria-label="Otras entradas">
-            <a href="manual-tecnico/index.html" class="auth-portal-cta auth-portal-cta--manual">📘 Manual técnico <span class="auth-portal-cta__sub">sin cuenta</span></a>
-            <a href="index.html" class="auth-portal-cta auth-portal-cta--home">← Portada</a>
+          <div class="auth-portal-ctas" role="navigation" aria-label="Manual técnico público">
+            <a href="manual-tecnico/index.html" class="auth-portal-cta auth-portal-cta--manual" target="_blank" rel="noopener noreferrer" title="Abrir manual técnico en una pestaña nueva">📘 Manual técnico <span class="auth-portal-cta__sub">sin cuenta</span></a>
           </div>
         </div>
 
@@ -374,7 +365,7 @@
             Los cálculos son una guía y deben validarse en campo; la decisión final es responsabilidad del técnico o usuario.
           </p>
           <nav class="login-public-footer-links" aria-label="Enlaces públicos">
-            <a href="manual-tecnico/index.html">Manual técnico</a>
+            <a href="manual-tecnico/index.html" target="_blank" rel="noopener noreferrer">Manual técnico</a>
             <span class="sep" aria-hidden="true">·</span>
             <a href="politicas-privacidad.html" target="_blank" rel="noopener">Privacidad</a>
             <span class="sep" aria-hidden="true">·</span>
@@ -3661,9 +3652,9 @@
             </div>
           </div>
           <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #e5e7eb; text-align: center;">
-            <a href="manual-tecnico/index.html" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Manual técnico</a>
+            <a href="manual-tecnico/index.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Manual técnico</a>
             <span style="margin: 0 8px; color: #94a3b8;">·</span>
-            <a href="manual-tecnico/autoria.html" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Autoría del manual</a>
+            <a href="manual-tecnico/autoria.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Autoría del manual</a>
             <span style="margin: 0 8px; color: #94a3b8;">·</span>
             <a href="politicas-privacidad.html" target="_blank" rel="noopener" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Políticas de privacidad</a>
             <span style="margin: 0 8px; color: #94a3b8;">·</span>

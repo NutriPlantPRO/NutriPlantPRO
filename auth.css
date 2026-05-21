@@ -640,7 +640,14 @@
   }
 }
 
-/* Portada + manual — header login */
+/* Login: sin Inicio ni Manual en la barra superior (solo el botón bajo el subtítulo) */
+.auth-page .site-header.auth-header .auth-header-portal-nav,
+.auth-page .site-header.auth-header .auth-header-portal-link,
+.auth-page .site-header.auth-header a.auth-header-manual-link {
+  display: none !important;
+}
+
+/* Portada + manual — header (dashboard y páginas que usen portal-nav) */
 .auth-header-portal-nav {
   display: flex;
   align-items: center;
