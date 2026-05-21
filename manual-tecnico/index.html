@@ -65,6 +65,8 @@
   </header>
 
   <main class="mt-wrap mt-wrap--wide">
+    <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../../login.html" aria-label="Volver a la página anterior">← Volver</button></p>
+
     <div class="mt-hero mt-hero--index">
       <div class="mt-hero__main">
         <span class="mt-badge">Biblioteca pública · v2026.05.3</span>
@@ -97,47 +99,47 @@
     <h2>Pilares del manual</h2>
     <div class="mt-pillars">
       <div class="mt-pillar">
-        <h3>A · Fundamentos</h3>
+        <h3 class="mt-pillar-heading"><span class="mt-pillar-icon" aria-hidden="true">📐</span><span>A · Fundamentos</span></h3>
         <ul>
           <li>Unidades ppm, meq, óxidos</li>
           <li>Balance iónico y % meq</li>
         </ul>
       </div>
       <div class="mt-pillar">
-        <h3>B · Suelo y enmiendas</h3>
+        <h3 class="mt-pillar-heading"><span class="mt-pillar-icon" aria-hidden="true">🌱</span><span>B · Suelo y enmiendas</span></h3>
         <ul>
           <li>CIC y saturación</li>
           <li>kg/ha desde análisis</li>
         </ul>
       </div>
       <div class="mt-pillar">
-        <h3>C · Análisis (6 tipos)</h3>
+        <h3 class="mt-pillar-heading"><span class="mt-pillar-icon" aria-hidden="true">🔬</span><span>C · Análisis (6 tipos)</span></h3>
         <ul>
           <li>Suelo, agua, pasta, solución</li>
           <li>Foliar, fruta</li>
         </ul>
       </div>
       <div class="mt-pillar">
-        <h3>D · Programas</h3>
+        <h3 class="mt-pillar-heading"><span class="mt-pillar-icon" aria-hidden="true">📈</span><span>D · Programas</span></h3>
         <ul>
           <li>Fertirriego, hidroponía</li>
           <li>Granular, extracción por etapa</li>
         </ul>
       </div>
       <div class="mt-pillar">
-        <h3>E · Agua y clima</h3>
+        <h3 class="mt-pillar-heading"><span class="mt-pillar-icon" aria-hidden="true">💧</span><span>E · Agua y clima</span></h3>
         <ul>
           <li>VPD, dureza, solubilidad</li>
         </ul>
       </div>
       <div class="mt-pillar">
-        <h3>F · Interacciones</h3>
+        <h3 class="mt-pillar-heading"><span class="mt-pillar-icon" aria-hidden="true">🔗</span><span>F · Interacciones</span></h3>
         <ul>
           <li>Mulder, compatibilidad</li>
         </ul>
       </div>
       <div class="mt-pillar">
-        <h3>G · Redes y comunicación</h3>
+        <h3 class="mt-pillar-heading"><span class="mt-pillar-icon" aria-hidden="true">📣</span><span>G · Redes y comunicación</span></h3>
         <ul>
           <li>Publicaciones técnicas</li>
           <li>Enlaces al manual (GEO)</li>
@@ -208,7 +210,7 @@
       </li>
     </ul>
 
-    <h3 class="mt-chapters-sub">Interacciones (Pilar F)</h3>
+    <h3 class="mt-chapters-sub">Interacciones</h3>
     <ul class="mt-chapter-list mt-chapter-list--wide">
       <li>
         <a href="capitulos/interacciones-mulder-compatibilidad.html">Interacciones Mulder y compatibilidad de fertilizantes</a>
@@ -253,22 +255,19 @@
     </ul>
 
     <h2>Autoría técnica</h2>
-    <p class="mt-meta">Referente y criterio del manual — distinto del apartado Nosotros en login.</p>
+    <p class="mt-meta">Referente técnico, trayectoria y criterio detrás del manual.</p>
     <ul class="mt-chapter-list">
       <li>
         <a href="autoria.html">Detrás de NutriPlant PRO · Jesús Avila Mendoza</a>
         <span class="mt-status mt-status--live">Disponible</span>
       </li>
     </ul>
-
-    <p style="font-size:14px;color:#64748b;">
-      Plan editorial completo en el repositorio: <code>docs/MANUAL-TECNICO-NUTRIPLANT-PLAN.md</code>
-    </p>
   </main>
 
   <footer class="mt-footer">
     <p>© NutriPlant PRO · Manual técnico público</p>
     <p><a href="../login.html">Ir a la plataforma</a> · <a href="../politicas-privacidad.html">Privacidad</a></p>
   </footer>
+  <script src="assets/manual-nav.js"></script>
 </body>
 </html>

@@ -39,6 +39,7 @@ Hasta que no esté en §8, el Socio usa solo el enlace y el texto que pegues en 
 | YouTube | https://youtube.com/@nutriplantpro |
 | TikTok | https://www.tiktok.com/@nutriplantpro |
 | Facebook | https://www.facebook.com/share/16tGD4XMM9/ |
+| WhatsApp (consultas) | https://wa.me/13868044542?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20NutriPlant%20PRO |
 | Plataforma / gratis | https://nutriplantpro.com/login.html |
 | Manual técnico índice | https://nutriplantpro.com/manual-tecnico/index.html |
 
