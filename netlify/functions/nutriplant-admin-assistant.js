@@ -2550,15 +2550,52 @@ function semTokenFromMarkerInput(raw) {
     return `[[sem:${dk}:${lv}]]`;
   }
   const s = String(raw).trim();
-  const inline = /\[\[sem:\d{4}-\d{2}-\d{2}/i.test(s);
-  if (inline) return s;
+  const inline = /\[\[sem:/i.test(s) || /\[\[semaforo:/i.test(s);
+  if (inline) return preprocessNoteAuthorInput(s);
   const m = /^(\d{4}-\d{2}-\d{2})(?:[:|,\s]+(alta|media|baja))?$/i.exec(s);
   if (m) return `[[sem:${m[1]}:${(m[2] || 'media').toLowerCase()}]]`;
   return null;
 }
 
+/** Normaliza alias y tokens antes de generar body_html. */
+function preprocessNoteAuthorInput(text) {
+  return String(text || '')
+    .replace(/\[\[semaforo:/gi, '[[sem:')
+    .replace(/\[\[traffic:/gi, '[[sem:');
+}
+
+/** Arma texto de nota desde note / append_note / append_due_marker (pueden combinarse). */
+function buildNoteAuthorPayload(params) {
+  const hasReplace = params.body_plain != null || params.note != null;
+  const chunks = [];
+  if (hasReplace) {
+    chunks.push(String(params.body_plain != null ? params.body_plain : params.note).trim());
+  }
+  if (params.append_note != null && String(params.append_note).trim()) {
+    chunks.push(String(params.append_note).trim());
+  }
+  const semTok = semTokenFromMarkerInput(params.append_due_marker);
+  if (semTok) chunks.push(semTok);
+  const merged = preprocessNoteAuthorInput(chunks.filter(Boolean).join('\n\n'));
+  if (!merged) return null;
+  return { mode: hasReplace ? 'replace' : 'append', text: merged };
+}
+
+function planProWriteVerifySemaforos(item) {
+  const markers = collectAllRichDueMarkers(item);
+  return {
+    semaforos_en_nota: markers,
+    semaforos_en_nota_count: markers.length,
+    chip_semaforo_interno_ok: markers.length > 0,
+    verificacion_chip:
+      markers.length > 0
+        ? 'Chip(s) 🚦 internos guardados en body_html.'
+        : 'Sin chips 🚦 en la nota. Semáforo INTERNO = [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker. [[star]]/[[warn]] NO son semáforo. Tras guardar, semaforos_en_nota_count debe ser ≥1.'
+  };
+}
+
 function applyNotePlainAndHtml(patch, plainRaw) {
-  const raw = String(plainRaw || '').trim();
+  const raw = preprocessNoteAuthorInput(String(plainRaw || '').trim());
   patch.body_plain = raw ? plainTextForStorageFromAuthor(raw) : null;
   patch.body_html = raw ? plainTextToRichBodyHtml(raw) : null;
 }
@@ -2574,7 +2611,7 @@ function itemNoteBaseHtml(item, patch) {
 }
 
 function appendNoteChunkToPatch(patch, item, chunkPlain) {
-  const add = String(chunkPlain || '').trim();
+  const add = preprocessNoteAuthorInput(String(chunkPlain || '').trim());
   if (!add) return;
   const chunkHtml = plainTextToRichBodyHtml(add);
   if (!chunkHtml) return;
@@ -2844,11 +2881,9 @@ async function handlePlanProCreate(supabase, params) {
   const areaId = resolved.areaId;
   const categoryId = resolved.categoryId;
 
-  let bodyPlain = (params.body_plain || params.note || params.body || '').trim();
-  const semAppend = semTokenFromMarkerInput(params.append_due_marker);
-  if (semAppend) {
-    bodyPlain = bodyPlain ? bodyPlain + '\n' + semAppend : semAppend;
-  }
+  let bodyPlain = preprocessNoteAuthorInput((params.body_plain || params.note || params.body || '').trim());
+  const notePayloadCreate = buildNoteAuthorPayload(params);
+  if (notePayloadCreate) bodyPlain = notePayloadCreate.text;
   const dueAt = parsePlanProDueDateParam(params.due_at || params.due_date || params.fecha);
   const capturedAt = parsePlanProDueDateParam(params.captured_at) || dateOnlyKey(new Date());
 
@@ -2893,6 +2928,7 @@ async function handlePlanProCreate(supabase, params) {
     message: 'Apunte creado en Plan PRO.',
     matched_by: resolved.matched_by,
     category_title: resolved.category_title || categoryTitleById(categories, categoryId),
+    ...planProWriteVerifySemaforos(data),
     item: planProItemListRow(data, areasById, categories)
   };
 }
@@ -2943,18 +2979,12 @@ async function handlePlanProUpdate(supabase, params) {
   if (params.title != null && String(params.title).trim()) {
     patch.title = String(params.title).trim().slice(0, 500);
   }
-  if (params.body_plain != null || params.note != null) {
-    applyNotePlainAndHtml(
-      patch,
-      String(params.body_plain != null ? params.body_plain : params.note).trim()
-    );
-  } else {
-    if (params.append_note != null && String(params.append_note).trim()) {
-      appendNoteChunkToPatch(patch, item, String(params.append_note).trim());
-    }
-    if (params.append_due_marker != null) {
-      const token = semTokenFromMarkerInput(params.append_due_marker);
-      if (token) appendNoteChunkToPatch(patch, item, token);
+  const notePayload = buildNoteAuthorPayload(params);
+  if (notePayload) {
+    if (notePayload.mode === 'replace') {
+      applyNotePlainAndHtml(patch, notePayload.text);
+    } else {
+      appendNoteChunkToPatch(patch, item, notePayload.text);
     }
   }
   if (params.priority != null) {
@@ -3035,6 +3065,7 @@ async function handlePlanProUpdate(supabase, params) {
     updated: true,
     fields_changed: Object.keys(patch),
     message: 'Apunte actualizado en Plan PRO.',
+    ...planProWriteVerifySemaforos(data),
     item: planProItemListRow(data, areasById, categories)
   };
 }

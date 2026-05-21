@@ -326,9 +326,18 @@
       color: var(--muted);
       line-height: 1.35;
     }
+    /* Evita parpadeo al abrir: no mostrar tablas hasta terminar carga local/nube */
+    body.np-booting header.hero,
+    body.np-booting section.panel {
+      visibility: hidden;
+    }
+    body:not(.np-booting) header.hero,
+    body:not(.np-booting) section.panel {
+      visibility: visible;
+    }
   </style>
 </head>
-<body>
+<body class="np-booting">
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   <p class="guest-note" id="modeNote" style="display:none;" aria-hidden="true"></p>
 
@@ -779,8 +788,38 @@
   function getContext() {
     var ls = window.localStorage;
     var userId = ls.getItem('nutriplant_user_id') || 'guest';
-    var projectId = ls.getItem('nutriplant-current-project') || ls.getItem('currentProjectId') || 'no-project';
+    var projectId =
+      params.get('pid') ||
+      ls.getItem('nutriplant-current-project') ||
+      ls.getItem('currentProjectId') ||
+      'no-project';
     return { userId: userId, projectId: projectId };
+  }
+
+  function pickNewestState(localState, cloudState) {
+    if (localState && cloudState) {
+      var localTs = localState.updatedAt || 0;
+      var cloudTs = cloudState.updatedAt || 0;
+      return cloudTs > localTs ? cloudState : localState;
+    }
+    return cloudState || localState || null;
+  }
+
+  async function resolveInitialState() {
+    var localState = loadStateLocal();
+    var cloudState = isDashboardMode ? await loadStateCloud() : null;
+    return {
+      state: pickNewestState(localState, cloudState),
+      localState: localState,
+      cloudState: cloudState
+    };
+  }
+
+  function finishBootReveal() {
+    isBootstrapping = false;
+    requestAnimationFrame(function () {
+      document.body.classList.remove('np-booting');
+    });
   }
 
   function buildLocalKey(ctx) {
@@ -1403,32 +1442,46 @@
   });
 
   async function boot() {
+    document.body.classList.add('np-booting');
+    isBootstrapping = true;
     updateModeNote();
     BASE.forEach(function (b) {
       pct[b.id] = DEFAULT_PCT[b.id] ? DEFAULT_PCT[b.id].slice() : equalSplit(DEFAULT_STAGES.length);
     });
     ensurePct();
 
-    var localState = loadStateLocal();
-    if (localState) applyState(localState);
+    var resolved = await resolveInitialState();
+    if (resolved.state) applyState(resolved.state);
     renderAll();
-
-    var cloudState = await loadStateCloud();
-    if (cloudState) {
-      var localTs = localState && localState.updatedAt ? localState.updatedAt : 0;
-      var cloudTs = cloudState.updatedAt || 0;
-      if (cloudTs > localTs) {
-        applyState(cloudState);
-        renderAll();
-        saveStateLocal(snapshotState());
-      }
+    if (
+      resolved.cloudState &&
+      resolved.localState &&
+      (resolved.cloudState.updatedAt || 0) > (resolved.localState.updatedAt || 0)
+    ) {
+      saveStateLocal(snapshotState());
     }
-    isBootstrapping = false;
 
     setupPresetBar();
     await hydratePresets();
     wirePresetDirtyDetection();
+    finishBootReveal();
   }
+
+  async function softReloadFromParent() {
+    if (!isDashboardMode) return;
+    isBootstrapping = true;
+    document.body.classList.add('np-booting');
+    var resolved = await resolveInitialState();
+    if (resolved.state) applyState(resolved.state);
+    renderAll();
+    await hydratePresets();
+    finishBootReveal();
+  }
+
+  window.addEventListener('message', function (ev) {
+    if (!ev.data || ev.data.type !== 'np-extraccion-etapa-reload') return;
+    softReloadFromParent();
+  });
 
   boot();
 })();

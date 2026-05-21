@@ -15,9 +15,9 @@ Tras guardar, `plan_pro_item` devuelve `semaforos_en_nota` si el chip se insert�
 
 | Toolbar | Token / sintaxis Socio | Ejemplo |
 |---------|------------------------|---------|
-| 🚦 Semáforo | `[[sem:YYYY-MM-DD:media]]` o `append_due_marker` | `[[sem:2026-05-26:alta]]` |
-| ⚠︎ Importante | `[[warn]]` o `[[importante]]` | `[[warn]] Revisar lab` |
-| ★ Destacado | `[[star]]` o `[[destacado]]` | `[[star]] Cliente clave` |
+| 🚦 **Semáforo interno** (chip fecha+prio en texto) | `[[sem:2026-05-27:media]]` o `append_due_marker` | Aparece en `semaforos_en_nota` |
+| ⚠︎ Importante | `[[warn]]` | **No** es semáforo |
+| ★ Destacado | `[[star]]` | **No** es semáforo — no confundir con 🚦 |
 | **B** negrita | `**texto**` o `[[b]]texto[[/b]]` | `**urgente**` |
 | *I* cursiva | `*texto*` o `[[i]]texto[[/i]]` | |
 | U subrayado | `__texto__` o `[[u]]texto[[/u]]` | |
