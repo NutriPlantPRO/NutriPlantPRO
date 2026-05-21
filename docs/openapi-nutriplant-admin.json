@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "1.6.0",
-    "description": "Solo lectura. Análisis de laboratorio (6 tipos), Clima, Radar, Plan PRO."
+    "version": "1.8.0",
+    "description": "Solo lectura. Análisis lab (6 tipos), Clima, Radar, Plan PRO, catálogos GPT."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Consulta NutriPlant (admin, proyectos, análisis, clima, Radar, Plan PRO)",
-        "description": "Análisis guardados del suscriptor: project_analyses (params.type: suelo|solucion_nutritiva|extracto_pasta|agua|foliar|fruta|all). project_detail incluye sections.analyses. Clima: project_climate.",
+        "description": "Reportes lab en nube: project_analyses (type, report_id, latest_only). Criterios: lab_analyses_catalog. Calculadoras gratis: free_tools_catalog. Clima, Radar, Plan PRO.",
         "requestBody": {
           "required": true,
           "content": {
@@ -58,6 +58,8 @@
               "radar_project",
               "radar_search",
               "radar_overview",
+              "free_tools_catalog",
+              "lab_analyses_catalog",
               "describe_api"
             ]
           },
@@ -76,7 +78,23 @@
               "crop": { "type": "string" },
               "q": { "type": "string" },
               "item_id": { "type": "string" },
-              "limit": { "type": "integer" }
+              "limit": { "type": "integer" },
+              "tool_id": {
+                "type": "string",
+                "description": "free_tools_catalog: id herramienta (ej. hidro_solucion)"
+              },
+              "tab_id": {
+                "type": "string",
+                "description": "lab_analyses_catalog: suelo|solucion_nutritiva|extracto_pasta|agua|foliar|fruta"
+              },
+              "report_id": {
+                "type": "string",
+                "description": "project_analyses: id del reporte (sa_*, sn_*, etc.)"
+              },
+              "latest_only": {
+                "type": "boolean",
+                "description": "project_analyses: solo el reporte más reciente por tipo"
+              }
             },
             "additionalProperties": true
           }

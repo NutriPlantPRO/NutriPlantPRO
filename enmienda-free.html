@@ -115,8 +115,6 @@
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
-  <p class="guest-note">Modo gratuito: esta herramienta no guarda datos. Al cerrar, se reinicia.</p>
-
   <div class="enmienda-container">
     <div class="enmienda-header">
       <div class="enmienda-header-row" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 12px;">
@@ -677,6 +675,26 @@
     }
 
     document.addEventListener('DOMContentLoaded', boot);
+  </script>
+  <script src="assets/np-free-local-persist.js"></script>
+  <script>
+    (function () {
+      var IDS = [
+        'k-initial', 'ca-initial', 'mg-initial', 'h-initial', 'na-initial', 'al-initial',
+        'k-target', 'ca-target', 'mg-target', 'h-target', 'na-target', 'al-target',
+        'cic-total', 'soil-density', 'soil-depth', 'soil-ph', 'soil-reach-percent'
+      ];
+      function apply(d) {
+        window.NpFreePersist.applyIds(d, IDS);
+        if (typeof calculateCIC === 'function') calculateCIC();
+        if (typeof updatePHIndicator === 'function') updatePHIndicator();
+      }
+      document.addEventListener('DOMContentLoaded', function () {
+        window.NpFreePersist.bind('enmienda', function () {
+          return window.NpFreePersist.collectIds(IDS);
+        }, apply);
+      });
+    })();
   </script>
 </body>
 </html>

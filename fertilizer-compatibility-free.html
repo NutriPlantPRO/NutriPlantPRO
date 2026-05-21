@@ -313,6 +313,7 @@
     </div>
   </div>
 
+  <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
   /** Orden y nombres alineados con fertirriego (FERT_SOLUBLES_DB) + urea, nitrato amonio, sulfatos micros y Si */
@@ -743,7 +744,21 @@
     });
   }
 
+  function restoreCompatUi(d) {
+    if (!d) return;
+    if (d.pair && d.pair.length === 2) {
+      var btn = document.querySelector('.cell-btn[data-i="' + d.pair[0] + '"][data-j="' + d.pair[1] + '"]');
+      if (btn) btn.click();
+    } else if (d.fert != null) highlightFert(d.fert);
+  }
+
   buildTable();
+  var compatPersist = window.NpFreePersist.bind('fertilizer_compatibility', function () {
+    return { fert: selectedFert, pair: selectedPair };
+  }, restoreCompatUi);
+  document.getElementById('compatTable').addEventListener('click', function () {
+    compatPersist.saveNow();
+  });
 })();
   </script>
 </body>

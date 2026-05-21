@@ -170,7 +170,6 @@
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
-  <p class="note">Modo gratuito: no guarda datos. Al cerrar, se reinicia.</p>
   <div class="wrap">
     <h2 class="title">🌡️ Estimador de déficit de presión de vapor</h2>
     <p class="vpd-context-note" role="note">
@@ -703,6 +702,27 @@
         </div>
       `;
     }
+  </script>
+  <script src="assets/np-free-local-persist.js"></script>
+  <script>
+    (function () {
+      var IDS = [
+        'vpd-free-lat', 'vpd-free-lng', 'vpd-env-temp', 'vpd-env-humidity',
+        'vpd-adv-air-temp', 'vpd-adv-humidity', 'vpd-leaf-temp', 'vpd-solar-radiation'
+      ];
+      function snap() {
+        var o = window.NpFreePersist.collectIds(IDS);
+        o.mode = window.NpFreePersist.getRadio('vpd-mode-free');
+        return o;
+      }
+      function apply(d) {
+        if (!d) return;
+        window.NpFreePersist.applyIds(d, IDS);
+        if (d.mode) window.NpFreePersist.applyRadio('vpd-mode-free', d.mode);
+        if (typeof toggleVPDModeFree === 'function') toggleVPDModeFree();
+      }
+      window.NpFreePersist.bind('vpd', snap, apply);
+    })();
   </script>
 </body>
 </html>

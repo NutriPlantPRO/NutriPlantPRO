@@ -47,10 +47,6 @@
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
-  <p class="guest-note">
-    <strong>Modo gratuito:</strong> la mezcla no se guarda al cerrar. Los fertilizantes <strong>personalizados</strong> (máx. 3) se guardan solo en este navegador para esta herramienta.
-  </p>
-
   <div class="gm-header">
     <h1 class="gm-title">📦 Formulación de mezclas granulares</h1>
     <div class="npk-badge" id="npkDisplay">Relación N–P₂O₅–K₂O: —</div>
@@ -449,7 +445,32 @@
       alert('Personalizado guardado en este navegador.');
     }
 
-    renderRows();
+    function snapshotMix() {
+      return {
+        rowId: rowId,
+        dose: document.getElementById('doseKgHa').value,
+        rows: rows.map(function (r) { return { name: r.name, pct: r.pct }; })
+      };
+    }
+    function applyMix(d) {
+      if (!d || !Array.isArray(d.rows)) return;
+      rowId = Number(d.rowId) || 0;
+      rows.length = 0;
+      d.rows.forEach(function (r) {
+        rows.push({ id: ++rowId, name: r.name || '', pct: r.pct != null ? r.pct : '' });
+      });
+      if (d.dose != null) document.getElementById('doseKgHa').value = d.dose;
+      renderRows();
+    }
+  </script>
+  <script src="assets/np-free-local-persist.js"></script>
+  <script>
+    (function () {
+      var loaded = window.NpFreePersist.load('granular_mix');
+      if (loaded && loaded.rows && loaded.rows.length) applyMix(loaded);
+      else renderRows();
+      window.NpFreePersist.bind('granular_mix', snapshotMix, applyMix);
+    })();
   </script>
 </body>
 </html>

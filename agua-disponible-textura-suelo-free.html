@@ -634,6 +634,7 @@
     NutriPlant PRO — material educativo. Los valores típicos de CC y PMP varían con estructura, materia orgánica y método de medición; el triángulo de texturas sigue polígonos USDA estándar (referencia Soil Survey Manual / soiltexture). Combine con laboratorio y criterio local.
   </p>
 
+  <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
   /* —— Tabs —— */
@@ -1415,6 +1416,24 @@
 
   setupTernaryDrag();
   drawTernary();
+
+  var TEX_IDS = ['cc', 'pmp', 'depth', 'areaHa', 'rootEff', 'thetaVol', 'presetTex', 'pctSand', 'pctSilt', 'pctClay'];
+  function snapTexSoil() {
+    var tabBtn = document.querySelector('.tabs button[role="tab"][aria-selected="true"]');
+    return { fields: window.NpFreePersist.collectIds(TEX_IDS), tab: tabBtn ? tabBtn.id : 'tab1' };
+  }
+  function applyTexSoil(d) {
+    if (!d) return;
+    var f = d.fields || d;
+    window.NpFreePersist.applyIds(f, TEX_IDS);
+    if (d.tab === 'tab2') {
+      var t2 = document.getElementById('tab2');
+      if (t2) t2.click();
+    }
+    updateWater();
+    drawTernary();
+  }
+  window.NpFreePersist.bind('agua_disponible_textura', snapTexSoil, applyTexSoil);
 
 })();
   </script>

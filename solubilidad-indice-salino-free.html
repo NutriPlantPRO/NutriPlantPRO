@@ -414,6 +414,7 @@
     NutriPlant PRO — material educativo compactado a partir de referencias típicas de solubilidad en agua (20–25 °C) y valores de índice salino frecuentes en tablas agronómicas (base NaNO₃ = 100). Verifica siempre fichas del fabricante antes de formulación comercial rigurosa.
   </p>
 
+  <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
   /* Rangos típicos: reflejan dispersión bibliográfica/comercial — no son especificación contractual.
@@ -563,6 +564,28 @@
     });
   });
 
+  function snapSol() {
+    var tabBtn = document.querySelector('.tabs button[role="tab"][aria-selected="true"]');
+    return {
+      filter: document.getElementById('filterInput').value,
+      tab: tabBtn ? tabBtn.id : 'tabA',
+      sortK: sortState.k,
+      sortDir: sortState.dir
+    };
+  }
+  function applySol(d) {
+    if (!d) return;
+    if (d.filter != null) document.getElementById('filterInput').value = d.filter;
+    if (d.sortK) sortState.k = d.sortK;
+    if (d.sortDir) sortState.dir = d.sortDir;
+    if (d.tab === 'tabB') {
+      var tb = document.getElementById('tabB');
+      if (tb) tb.click();
+    }
+    render();
+  }
+
+  window.NpFreePersist.bind('solubilidad_is', snapSol, applySol);
   render();
 })();
   </script>

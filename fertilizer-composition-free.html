@@ -112,10 +112,6 @@
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
-  <p class="guest-note">
-    <strong>Modo gratuito:</strong> no se guarda al cerrar. Catálogo personalizado solo en este navegador.
-  </p>
-
   <p class="lead">
     Agrega una o más <strong>filas</strong>: en cada una eliges la <strong>fórmula</strong> y el <strong>% en el producto</strong>. Debajo de cada fila verás la <strong>composición teórica de esa molécula pura</strong> (PM, tarjetas, óxidos). Al final, <strong>Otros %</strong> y el <strong>total ponderado</strong> del producto cuando la suma sea 100%.
   </p>
@@ -762,8 +758,35 @@
       blendRows.forEach(function(r) { hideRowSuggestions(r.id); });
     });
 
+    function snapshotBlend() {
+      return {
+        blendRowId: blendRowId,
+        othersPct: document.getElementById('othersPctInput').value,
+        rows: blendRows.map(function (r) { return { material: r.material, pct: r.pct }; })
+      };
+    }
+    function applyBlend(d) {
+      if (!d || !Array.isArray(d.rows) || !d.rows.length) return;
+      blendRowId = Number(d.blendRowId) || 0;
+      blendRows.length = 0;
+      d.rows.forEach(function (r) {
+        blendRows.push({ id: ++blendRowId, material: r.material || '', pct: r.pct != null ? String(r.pct) : '' });
+      });
+      othersPct = parseFloat(d.othersPct) || 0;
+      document.getElementById('othersPctInput').value = othersPct;
+      renderBlend();
+    }
+
     refreshSuggestions();
-    addBlendRow('', '100');
+  </script>
+  <script src="assets/np-free-local-persist.js"></script>
+  <script>
+    (function () {
+      var loaded = window.NpFreePersist.load('fertilizer_composition');
+      if (loaded && loaded.rows && loaded.rows.length) applyBlend(loaded);
+      else addBlendRow('', '100');
+      window.NpFreePersist.bind('fertilizer_composition', snapshotBlend, applyBlend);
+    })();
   </script>
 </body>
 </html>

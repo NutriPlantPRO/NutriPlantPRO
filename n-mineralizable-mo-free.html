@@ -444,8 +444,24 @@
       });
     });
 
-    syncTminFromSlider();
-    compute();
+  </script>
+  <script src="assets/np-free-local-persist.js"></script>
+  <script>
+    (function () {
+      var IDS = ['inP', 'inDA', 'inR', 'inMO', 'inNmo', 'inTmin'];
+      function apply(d) {
+        window.NpFreePersist.applyIds(d, IDS);
+        if (d && d.inTmin != null) {
+          document.getElementById('rangeTmin').value = d.inTmin;
+        }
+        syncTminFromSlider();
+      }
+      window.NpFreePersist.bind('n_mineralizable_mo', function () {
+        return window.NpFreePersist.collectIds(IDS);
+      }, apply);
+      syncTminFromSlider();
+      compute();
+    })();
   </script>
 </body>
 </html>

@@ -836,6 +836,36 @@
       if (!node) return;
       node.addEventListener('change', () => { updateLabCalc(); });
     });
+
+    function snapshotAcidHardness() {
+      return {
+        ppm: el.ppm.value, meq: el.meq.value, dh: el.dh.value, eh: el.eh.value, fh: el.fh.value,
+        caLab: el.caLab.value, mgLab: el.mgLab.value, caLabU: el.caLabU.value, mgLabU: el.mgLabU.value,
+        hco3: el.hco3.value, co3: el.co3.value, residual: el.residual.value,
+        volumeL: el.volumeL.value, volumeUnit: el.volumeUnit.value, acid: el.acid.value
+      };
+    }
+    function applyAcidHardness(d) {
+      if (!d) return;
+      ['ppm', 'meq', 'dh', 'eh', 'fh', 'caLab', 'mgLab', 'hco3', 'co3', 'residual', 'volumeL'].forEach((k) => {
+        if (d[k] != null && el[k]) el[k].value = d[k];
+      });
+      if (d.caLabU != null) el.caLabU.value = d.caLabU;
+      if (d.mgLabU != null) el.mgLabU.value = d.mgLabU;
+      if (d.volumeUnit != null) el.volumeUnit.value = d.volumeUnit;
+      if (d.acid != null) el.acid.value = d.acid;
+      if (String(el.ppm.value || '').trim()) onHardnessInput('ppm');
+      else setHardnessEmptyUI();
+      updateLabCalc();
+      updateVolumePlaceholder();
+      updateAcidCalc();
+    }
+  </script>
+  <script src="assets/np-free-local-persist.js"></script>
+  <script>
+    (function () {
+      window.NpFreePersist.bind('agua_dureza', snapshotAcidHardness, applyAcidHardness);
+    })();
   </script>
 </body>
 </html>

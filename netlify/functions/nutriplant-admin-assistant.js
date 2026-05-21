@@ -598,32 +598,103 @@ function diffPct(val, opt) {
   return Math.round(((v - o) / o) * 1000) / 10;
 }
 
+function soilKgHaFromReport(a) {
+  const fert = a.fertility || {};
+  const ideal = fert.ideal || {};
+  const bulk = numOrNull(a.physical && a.physical.bulkDensity) || 1;
+  const depth = numOrNull(fert.depthCm) || 20;
+  const reach = numOrNull(fert.reachPct) || 100;
+  const factor = 0.1 * depth * bulk * (reach / 100);
+  const keys = ['mo', 'nNo3', 'p', 'k', 'ca', 'mg', 'na', 's', 'fe', 'mn', 'b', 'zn', 'cu', 'moly', 'al'];
+  const out = {};
+  keys.forEach((key) => {
+    const lab = numOrNull(fert[key]);
+    const idealVal = numOrNull(ideal[key]);
+    if (lab == null) return;
+    const diff = idealVal == null ? lab : lab - idealVal;
+    out[key] = {
+      lab_ppm: lab,
+      ideal_ppm: idealVal,
+      diff_ppm: idealVal == null ? null : Math.round((lab - idealVal) * 10) / 10,
+      kg_ha_adjustment: Math.round(diff * factor * 100) / 100
+    };
+  });
+  return {
+    factor_formula: 'kg/ha = (lab − ideal) × 0.1 × profundidad_cm × densidad_aparente × (suelo_explorado_% / 100)',
+    depth_cm: depth,
+    bulk_density_g_cm3: bulk,
+    root_reach_pct: reach,
+    factor,
+    nutrients: out
+  };
+}
+
 function summarizeSoilAnalysisReport(a) {
   const ph = a.phSection || {};
   const fert = a.fertility || {};
   const ideal = fert.ideal || {};
   const cat = a.cations || {};
+  const phys = a.physical || {};
+  const ratios = a.ratios || {};
   return {
     ...analysisReportMeta(a),
+    physical: {
+      textural_class: phys.texturalClass || null,
+      bulk_density_g_cm3: numOrNull(phys.bulkDensity),
+      field_capacity_pct: numOrNull(phys.fieldCapacity),
+      wilting_point_pct: numOrNull(phys.wiltingPoint)
+    },
     ph: numOrNull(ph.ph),
+    ph_buffer: numOrNull(ph.phBuffer),
     salinity_ds_m: numOrNull(ph.salinity),
-    fertility_ppm: {
-      p: numOrNull(fert.p),
-      k: numOrNull(fert.k),
-      ca: numOrNull(fert.ca),
-      mg: numOrNull(fert.mg),
-      fe: numOrNull(fert.fe),
-      mn: numOrNull(fert.mn),
-      zn: numOrNull(fert.zn)
+    total_carbonates_pct: numOrNull(ph.totalCarbonates),
+    fertility: {
+      p_method: fert.pMethod || null,
+      depth_cm: numOrNull(fert.depthCm),
+      root_reach_pct: numOrNull(fert.reachPct),
+      lab_ppm: {
+        mo: numOrNull(fert.mo),
+        n_no3: numOrNull(fert.nNo3),
+        p: numOrNull(fert.p),
+        k: numOrNull(fert.k),
+        ca: numOrNull(fert.ca),
+        mg: numOrNull(fert.mg),
+        na: numOrNull(fert.na),
+        s: numOrNull(fert.s),
+        fe: numOrNull(fert.fe),
+        mn: numOrNull(fert.mn),
+        b: numOrNull(fert.b),
+        zn: numOrNull(fert.zn),
+        cu: numOrNull(fert.cu),
+        al: numOrNull(fert.al),
+        moly: numOrNull(fert.moly)
+      },
+      ideal_ppm: ideal,
+      kg_ha: soilKgHaFromReport(a)
     },
     cations_meq_100g: {
       ca: numOrNull(cat.ca),
       mg: numOrNull(cat.mg),
       k: numOrNull(cat.k),
       na: numOrNull(cat.na),
+      al: numOrNull(cat.al),
+      h: numOrNull(cat.h),
       cic: numOrNull(cat.cic)
     },
-    ideal_ref_ppm: ideal
+    cations_pct: {
+      ca: numOrNull(cat.pctCa),
+      mg: numOrNull(cat.pctMg),
+      k: numOrNull(cat.pctK),
+      na: numOrNull(cat.pctNa),
+      al: numOrNull(cat.pctAl),
+      h: numOrNull(cat.pctH)
+    },
+    ratios: {
+      ca_mg: numOrNull(ratios.caMg),
+      mg_k: numOrNull(ratios.mgK),
+      ca_mg_k: numOrNull(ratios.caMgK),
+      ca_k: numOrNull(ratios.caK)
+    }
   };
 }
 
@@ -781,21 +852,37 @@ const ANALYSIS_SUMMARIZERS = {
   fruta: summarizeFrutaReport
 };
 
-function summarizeAnalysisList(list, typeKey) {
+function filterAnalysisReports(arr, params) {
+  let list = arr.filter((a) => a && typeof a === 'object');
+  const reportId = params && (params.report_id || params.analysis_id);
+  if (reportId) {
+    list = list.filter((a) => a.id === reportId);
+  }
+  if (params && (params.latest_only === true || params.latest_only === 'true') && list.length > 1) {
+    list = list.slice().sort((a, b) => {
+      const da = Date.parse(a.date || '') || 0;
+      const db = Date.parse(b.date || '') || 0;
+      return db - da;
+    });
+    list = list.slice(0, 1);
+  }
+  return list;
+}
+
+function summarizeAnalysisList(list, typeKey, params) {
   const cfg = ANALYSIS_TYPES[typeKey];
-  const arr = Array.isArray(list) ? list : [];
+  const arr = filterAnalysisReports(Array.isArray(list) ? list : [], params || {});
   const summarize = ANALYSIS_SUMMARIZERS[typeKey];
-  const reports = arr
-    .filter((a) => a && typeof a === 'object')
-    .map((a) => summarize(a));
+  const reports = arr.map((a) => summarize(a));
   return {
     label: cfg.label,
     reports_count: reports.length,
+    report_ids: arr.map((a) => a.id).filter(Boolean),
     reports
   };
 }
 
-function summarizeAllProjectAnalyses(data) {
+function summarizeAllProjectAnalyses(data, params) {
   const d = data && typeof data === 'object' ? data : {};
   const out = {
     suelo_enmienda_inicial: summarizeSoil(d),
@@ -804,7 +891,7 @@ function summarizeAllProjectAnalyses(data) {
   };
   Object.keys(ANALYSIS_TYPES).forEach((typeKey) => {
     const storageKey = ANALYSIS_TYPES[typeKey].key;
-    out[typeKey === 'suelo' ? 'suelo_reportes' : typeKey] = summarizeAnalysisList(d[storageKey], typeKey);
+    out[typeKey === 'suelo' ? 'suelo_reportes' : typeKey] = summarizeAnalysisList(d[storageKey], typeKey, params);
   });
   const total = Object.keys(ANALYSIS_TYPES).reduce((n, tk) => {
     const k = tk === 'suelo' ? 'suelo_reportes' : tk;
@@ -827,7 +914,7 @@ async function handleProjectAnalyses(supabase, params) {
   const typeRaw = String(params.type || params.analysis_type || 'all')
     .toLowerCase()
     .replace(/\s+/g, '_');
-  const all = summarizeAllProjectAnalyses(data);
+  const all = summarizeAllProjectAnalyses(data, params);
 
   let analyses = all;
   if (typeRaw !== 'all' && typeRaw !== '') {
@@ -870,6 +957,8 @@ async function handleProjectAnalyses(supabase, params) {
       user_name: prof ? prof.name : null
     },
     multiple_matches: resolved.multiple_matches || false,
+    api_hint:
+      'Valores desde Supabase projects.data. Filtros: type, report_id, latest_only. Catálogo/criterios: lab_analyses_catalog.',
     analyses
   };
 }
@@ -2586,6 +2675,32 @@ async function handleRadarOverview(supabase, params) {
   };
 }
 
+function handleLabAnalysesCatalog(params) {
+  const catalog = require('./lib/lab-analyses-catalog');
+  const tabId = params && (params.tab_id || params.type);
+  if (tabId) {
+    const tab = catalog.tabs.find((t) => t.id === tabId);
+    if (!tab) {
+      return { ok: false, error: 'tab_id no encontrado', available_ids: catalog.tabs.map((t) => t.id) };
+    }
+    return { ok: true, tab, storage: catalog.storage, api: catalog.api, gptRules: catalog.gptRules };
+  }
+  return { ok: true, ...catalog };
+}
+
+function handleFreeToolsCatalog(params) {
+  const catalog = require('./lib/free-tools-catalog');
+  const toolId = params && params.tool_id;
+  if (toolId) {
+    const tool = catalog.tools.find((t) => t.id === toolId);
+    if (!tool) {
+      return { ok: false, error: 'tool_id no encontrado', available_ids: catalog.tools.map((t) => t.id) };
+    }
+    return { ok: true, tool, persistence: catalog.persistence, gptRules: catalog.gptRules };
+  }
+  return { ok: true, ...catalog };
+}
+
 async function handleDescribeApi() {
   return {
     ok: true,
@@ -2599,10 +2714,12 @@ async function handleDescribeApi() {
         'project_climate'
       ],
       plan_pro: ['plan_pro_week', 'plan_pro_search', 'plan_pro_item'],
-      radar: ['radar_project', 'radar_search', 'radar_overview']
+      radar: ['radar_project', 'radar_search', 'radar_overview'],
+      free_tools: ['free_tools_catalog'],
+      lab_analyses: ['lab_analyses_catalog', 'project_analyses']
     },
     usage:
-      'Análisis: project_analyses (type: suelo|solucion_nutritiva|extracto_pasta|agua|foliar|fruta|all). project_detail incluye sections.analyses. Clima: project_climate. Radar: radar_project. VPD: project_vpd_live.'
+      'Reportes laboratorio (nube): project_analyses con project_name/id, type, report_id, latest_only. Criterios/flujo: lab_analyses_catalog. project_detail incluye analyses. Calculadoras gratis: free_tools_catalog. Clima/Radar/Plan PRO: acciones existentes.'
   };
 }
 
@@ -2621,6 +2738,8 @@ const HANDLERS = {
   radar_project: (sb, p) => handleRadarProject(sb, p),
   radar_search: (sb, p) => handleRadarSearch(sb, p),
   radar_overview: (sb, p) => handleRadarOverview(sb, p),
+  free_tools_catalog: (_sb, p) => handleFreeToolsCatalog(p),
+  lab_analyses_catalog: (_sb, p) => handleLabAnalysesCatalog(p),
   describe_api: () => handleDescribeApi()
 };
 

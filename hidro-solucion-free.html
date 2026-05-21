@@ -13,17 +13,20 @@
       background: #f8fafc;
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     }
-    .guest-note {
-      margin: 0 0 12px;
-      font-size: 12px;
-      color: #64748b;
-      text-align: center;
-    }
-    body.embed-dashboard .guest-note {
-      display: none;
+    html.embed-dashboard,
+    html.embed-dashboard body {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .hydroponia-container {
       margin: 0;
+      max-width: 100%;
+      min-width: 0;
+    }
+    .hydro-free-solution .hydroponia-content,
+    .hydro-free-solution .hydro-card {
+      max-width: 100%;
+      min-width: 0;
     }
     .hydro-ternary-header h3 {
       margin: 0;
@@ -45,25 +48,44 @@
       border-color: #6d28d9;
       box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.25);
     }
-    /* Contorno azul marino en la sección meq para indicar que son los campos editables */
-    #hydroMeqTableWrap input.hydro-input[data-type="meq"] {
-      border: 2px solid #1e40af;
+    /* Contorno de inputs por grupo iónico (mismo código que el triángulo) */
+    .hydro-free-solution input.hydro-input[data-nutrient="N_NO3"],
+    .hydro-free-solution input.hydro-input[data-nutrient="P"],
+    .hydro-free-solution input.hydro-input[data-nutrient="S"] {
+      border: 2px solid #ca8a04;
+      background: #fffbeb;
       outline: none;
-      box-shadow: 0 0 0 1px rgba(30, 64, 175, 0.15);
+      box-shadow: 0 0 0 1px rgba(202, 138, 4, 0.12);
     }
-    #hydroMeqTableWrap input.hydro-input[data-type="meq"]:focus {
-      border-color: #1e3a8a;
-      box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.25);
+    .hydro-free-solution input.hydro-input[data-nutrient="N_NO3"]:focus,
+    .hydro-free-solution input.hydro-input[data-nutrient="P"]:focus,
+    .hydro-free-solution input.hydro-input[data-nutrient="S"]:focus {
+      border-color: #b45309;
+      box-shadow: 0 0 0 2px rgba(202, 138, 4, 0.28);
     }
-    /* Tabla ppm editable: conversión inversa ppm → meq/L */
-    #hydroPpmTableWrap input.hydro-input[data-type="ppm"] {
-      border: 2px solid #0f766e;
+    .hydro-free-solution input.hydro-input[data-nutrient="K"],
+    .hydro-free-solution input.hydro-input[data-nutrient="Ca"],
+    .hydro-free-solution input.hydro-input[data-nutrient="Mg"] {
+      border: 2px solid #b91c1c;
+      background: #fff5f5;
       outline: none;
-      box-shadow: 0 0 0 1px rgba(15, 118, 110, 0.15);
+      box-shadow: 0 0 0 1px rgba(185, 28, 28, 0.12);
     }
-    #hydroPpmTableWrap input.hydro-input[data-type="ppm"]:focus {
-      border-color: #0d9488;
-      box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.25);
+    .hydro-free-solution input.hydro-input[data-nutrient="K"]:focus,
+    .hydro-free-solution input.hydro-input[data-nutrient="Ca"]:focus,
+    .hydro-free-solution input.hydro-input[data-nutrient="Mg"]:focus {
+      border-color: #991b1b;
+      box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.22);
+    }
+    .hydro-free-solution input.hydro-input[data-nutrient="N_NH4"] {
+      border: 2px solid #be123c;
+      background: #fff1f2;
+      outline: none;
+      box-shadow: 0 0 0 1px rgba(190, 18, 60, 0.12);
+    }
+    .hydro-free-solution input.hydro-input[data-nutrient="N_NH4"]:focus {
+      border-color: #9f1239;
+      box-shadow: 0 0 0 2px rgba(190, 18, 60, 0.22);
     }
     /* Estilo propio herramienta gratuita (diferente a hidroponía PRO) */
     .hydro-free-solution .hydro-card {
@@ -93,15 +115,26 @@
       text-transform: uppercase;
       color: #1e40af;
     }
-    .hydro-free-solution .hydro-table-block .hydro-table-scroll {
+    .hydro-free-solution .hydro-table-wrap {
+      max-width: 100%;
+      min-width: 0;
+    }
+    .hydro-free-solution .hydro-table-block .hydro-table-scroll,
+    .hydro-free-solution .hydro-table-scroll {
       border-radius: 10px;
       border: 1px solid #e2e8f0;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      touch-action: pan-x pan-y;
+      max-width: 100%;
+      scrollbar-width: thin;
+      scrollbar-color: #93c5fd #f1f5f9;
     }
     .hydro-free-solution .hydro-table-scroll {
-      border-radius: 14px;
       border: 1px solid #93c5fd;
-      overflow: hidden;
+      border-radius: 14px;
     }
     .hydro-free-solution .hydro-table-colored {
       border-radius: 14px;
@@ -158,6 +191,13 @@
       letter-spacing: 0.03em;
       padding: 6px 4px;
     }
+    .hydro-free-solution .hydro-th-group-inner {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
     /* Prioridad sobre dashboard.css (evita fondos/tintes fuertes en th) */
     .hydro-free-solution .hydro-table th.hydro-col-an,
     .hydro-free-solution .hydro-table th.hydro-col-cl,
@@ -171,10 +211,28 @@
     .hydro-free-solution .hydro-table th.hydro-th-group--ce {
       background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%) !important;
     }
-    #hydroMeqTableWrap input.hydro-input[data-type="meq"][data-nutrient="Cl"],
-    #hydroPpmTableWrap input.hydro-input[data-type="ppm"][data-nutrient="Cl"] {
-      border: 2px solid #ca8a04;
-      box-shadow: 0 0 0 1px rgba(202, 138, 4, 0.15);
+    .hydro-free-solution input.hydro-input[data-nutrient="Cl"] {
+      border: 2px solid #d97706;
+      background: #fffbeb;
+      outline: none;
+      box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.15);
+    }
+    .hydro-free-solution input.hydro-input[data-nutrient="Cl"]:focus {
+      border-color: #b45309;
+      box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.25);
+    }
+    /* Celdas % meq: marco suave del mismo color */
+    .hydro-free-solution tbody td.hydro-col-an {
+      box-shadow: inset 0 0 0 1px rgba(202, 138, 4, 0.35);
+    }
+    .hydro-free-solution tbody td.hydro-col-cl {
+      box-shadow: inset 0 0 0 1px rgba(217, 119, 6, 0.4);
+    }
+    .hydro-free-solution tbody td.hydro-col-cat {
+      box-shadow: inset 0 0 0 1px rgba(185, 28, 28, 0.3);
+    }
+    .hydro-free-solution tbody td.hydro-col-nh4 {
+      box-shadow: inset 0 0 0 1px rgba(190, 18, 60, 0.3);
     }
     .hydro-free-solution .hydro-ternary-svg-wrap svg {
       background: #f8fafc !important;
@@ -183,12 +241,12 @@
     }
     .hydro-n-legend {
       margin: 10px 0 8px;
-      padding: 10px 12px;
+      padding: 8px 12px;
       border-radius: 12px;
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      font-size: 12px;
-      line-height: 1.5;
+      font-size: 0.8rem;
+      line-height: 1.4;
       color: #334155;
     }
     .hydro-n-legend strong { color: #1e293b; }
@@ -248,9 +306,41 @@
       color: #64748b;
       text-align: center;
     }
+    #hydroTriangleCombined.hydro-triangle {
+      touch-action: pan-y;
+      max-width: 100%;
+    }
     .hydro-ternary-chart-svg { cursor: crosshair; touch-action: none; }
+    .hydro-free-solution .hydro-table-scroll::-webkit-scrollbar {
+      height: 8px;
+    }
+    .hydro-free-solution .hydro-table-scroll::-webkit-scrollbar-thumb {
+      background: #93c5fd;
+      border-radius: 4px;
+    }
     .hydro-ternary-chart-svg.tern-dragging { cursor: grabbing; }
     .tern-hit-an, .tern-hit-cat { cursor: grab; }
+    .tern-vis-an {
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+    }
+    .tern-vis-cat {
+      filter: drop-shadow(0 0 0 2px #ffffff) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
+    }
+    .hydro-ternary-chart-svg.tern-dragging .tern-vis-an { opacity: 0.45; }
+    .hydro-ternary-chart-svg.tern-dragging .tern-vis-cat { opacity: 0.45; }
+    .hydro-ternary-chart-svg.tern-dragging-an .tern-vis-an { opacity: 1; filter: drop-shadow(0 0 0 2px #fef08a); }
+    .hydro-ternary-chart-svg.tern-dragging-cat .tern-vis-cat { opacity: 1; filter: drop-shadow(0 0 0 3px #ffffff) drop-shadow(0 0 0 5px #fca5a5); }
+    @media (max-width: 768px) {
+      .hydro-free-solution .hydro-table-block::after {
+        content: '← Deslizá horizontalmente para ver todas las columnas →';
+        display: block;
+        margin-top: 6px;
+        font-size: 0.68rem;
+        color: #64748b;
+        text-align: center;
+        line-height: 1.3;
+      }
+    }
     @media (max-width: 600px) {
       .hydro-ternary-description {
         font-size: 0.75rem;
@@ -276,8 +366,6 @@
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
-  <p class="guest-note">Modo gratuito: no guarda datos. Al cerrar, la herramienta se reinicia.</p>
-
   <div class="hydroponia-container hydro-free-solution">
     <div class="hydroponia-content">
       <div class="tab-content active" id="hidro-solucion">
@@ -299,7 +387,7 @@
           <div class="hydro-muted hydro-ternary-description">
             <strong>Rangos por elemento (%).</strong> Aniones: N-NO₃⁻ 20–80, P-H₂PO₄⁻ 1.25–10, S-SO₄²⁻ 10–70.
             Cationes: K⁺ 10–65, Ca²⁺ 22.5–62.5, Mg²⁺ 0.5–40.
-            El % de NH₄⁺ es sobre el total catiónico (K+Ca+Mg+NH₄⁺) y no entra al triángulo catiónico (no se asigna al arrastrar). El Cl⁻ se captura en <strong>ppm</strong> (no suma a la CE ni al triángulo N-P-S); su % aniónico es sobre NO₃+P+S+Cl. Arrastra el cuadrado (aniones) o el círculo (cationes K-Ca-Mg).
+            El % de NH₄⁺ es sobre el total catiónico (K+Ca+Mg+NH₄⁺) y no entra al triángulo catiónico (no se asigna al arrastrar). El Cl⁻ suma a la <strong>CE</strong> (meq/L) pero no al triángulo N-P-S; su % aniónico es sobre NO₃+P+S+Cl. Arrastra el cuadrado (aniones) o el círculo (cationes K-Ca-Mg).
           </div>
           <div id="hydroTriangleInfoCombined" class="hydro-tern-chip-row"></div>
           <div id="hydroNNLegend" class="hydro-n-legend" style="display:none;"></div>
@@ -314,20 +402,111 @@
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
     /** Orden tablas: aniones (triángulo + Cl) · cationes (triángulo + NH₄) */
     const HYDRO_MEQ_NUTRIENTS = ['N_NO3','P','S','Cl','K','Ca','Mg','N_NH4'];
-    const HYDRO_MEQ_CE_PARTICIPANTS = ['N_NO3','P','S','K','Ca','Mg','N_NH4'];
+    const HYDRO_MEQ_CE_PARTICIPANTS = ['N_NO3','P','S','Cl','K','Ca','Mg','N_NH4'];
     // En la versión gratuita no se muestran micros en ppm.
     const HYDRO_MICROS = [];
     const HYDRO_EQ_WEIGHTS = { N_NO3:14.0, N_NH4:14.0, P:31.0, K:39.1, Ca:20.04, Mg:12.15, S:16.03, Cl:35.45 };
 
-    const hydroState = {
-      stages: [{
+    const HYDRO_LS_KEY = 'nutriplant_hydro_solucion_free_v1';
+    const HYDRO_LS_VERSION = 1;
+    var hydroSaveTimer = null;
+
+    function hydroDefaultStage() {
+      return {
         id: 'stage_1',
         ce: '0.00',
         meq: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, Cl: 0, K: 0, Ca: 0, Mg: 0 },
         ppm: { N_NO3: 0, N_NH4: 0, P: 0, S: 0, K: 0, Ca: 0, Mg: 0, Cl: 0 }
-      }],
-      activeStageId: 'stage_1'
-    };
+      };
+    }
+
+    function hydroDefaultState() {
+      return { stages: [hydroDefaultStage()], activeStageId: 'stage_1' };
+    }
+
+    const hydroState = hydroDefaultState();
+
+    function hydroNormalizeMeqPpm(obj, keys) {
+      const out = {};
+      keys.forEach(function (k) {
+        const n = parseFloat(obj && obj[k]);
+        out[k] = isNaN(n) ? 0 : n;
+      });
+      return out;
+    }
+
+    function hydroNormalizeSaved(raw) {
+      if (!raw || typeof raw !== 'object' || !Array.isArray(raw.stages) || !raw.stages.length) return null;
+      const meqKeys = ['N_NO3', 'N_NH4', 'P', 'S', 'Cl', 'K', 'Ca', 'Mg'];
+      const ppmKeys = ['N_NO3', 'N_NH4', 'P', 'S', 'Cl', 'K', 'Ca', 'Mg'];
+      const stages = raw.stages.slice(0, 1).map(function (s, i) {
+        const ceNum = parseFloat(s && s.ce);
+        return {
+          id: (s && s.id) ? String(s.id) : ('stage_' + (i + 1)),
+          ce: isNaN(ceNum) ? '0.00' : ceNum.toFixed(2),
+          meq: hydroNormalizeMeqPpm(s && s.meq, meqKeys),
+          ppm: hydroNormalizeMeqPpm(s && s.ppm, ppmKeys)
+        };
+      });
+      const activeStageId = stages.some(function (s) { return s.id === raw.activeStageId; })
+        ? raw.activeStageId
+        : stages[0].id;
+      return { stages: stages, activeStageId: activeStageId };
+    }
+
+    function hydroSnapshotForStorage() {
+      const stage = hydroGetActiveStage();
+      hydroSyncClMeqPpm(stage);
+      return {
+        version: HYDRO_LS_VERSION,
+        updatedAt: Date.now(),
+        activeStageId: hydroState.activeStageId,
+        stages: hydroState.stages.map(function (s) {
+          return {
+            id: s.id,
+            ce: s.ce,
+            meq: Object.assign({}, s.meq),
+            ppm: Object.assign({}, s.ppm)
+          };
+        })
+      };
+    }
+
+    function hydroSaveLocal() {
+      try {
+        localStorage.setItem(HYDRO_LS_KEY, JSON.stringify(hydroSnapshotForStorage()));
+      } catch (_) { /* quota / modo privado */ }
+    }
+
+    function hydroScheduleSave() {
+      if (hydroSaveTimer) clearTimeout(hydroSaveTimer);
+      hydroSaveTimer = setTimeout(function () {
+        hydroSaveTimer = null;
+        hydroSaveLocal();
+      }, 280);
+    }
+
+    function hydroLoadLocal() {
+      try {
+        const raw = localStorage.getItem(HYDRO_LS_KEY);
+        if (!raw) return null;
+        return hydroNormalizeSaved(JSON.parse(raw));
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function hydroApplyLoadedState(loaded) {
+      if (!loaded) return false;
+      hydroState.stages = loaded.stages;
+      hydroState.activeStageId = loaded.activeStageId;
+      hydroState.stages.forEach(function (stage) {
+        hydroSyncClMeqPpm(stage);
+        stage.ce = hydroComputeCE(stage).toFixed(2);
+        Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
+      });
+      return true;
+    }
 
     function hydroLabelPlain(n) {
       switch (n) {
@@ -350,7 +529,8 @@
     function hydroSumMeqForCe(stage) {
       const meq = stage.meq || {};
       return (parseFloat(meq.N_NO3) || 0) + (parseFloat(meq.N_NH4) || 0) + (parseFloat(meq.P) || 0) +
-        (parseFloat(meq.K) || 0) + (parseFloat(meq.Ca) || 0) + (parseFloat(meq.Mg) || 0) + (parseFloat(meq.S) || 0);
+        (parseFloat(meq.S) || 0) + hydroGetClMeq(stage) +
+        (parseFloat(meq.K) || 0) + (parseFloat(meq.Ca) || 0) + (parseFloat(meq.Mg) || 0);
     }
 
     function hydroComputeCE(stage) {
@@ -364,19 +544,24 @@
       if (ce <= 0) return;
       const total = ce * 20;
       const nh4 = parseFloat(stage.meq?.N_NH4) || 0;
-      const rest = Math.max(0, total - nh4);
+      const cl = hydroGetClMeq(stage);
+      const rest = Math.max(0, total - nh4 - cl);
       const third = rest / 6;
       HYDRO_ANIONS.forEach(n => { stage.meq[n] = hydroRound2(third); });
       HYDRO_CATIONS_TRIANGLE.forEach(n => { stage.meq[n] = hydroRound2(third); });
-      stage.ce = hydroComputeCE(stage).toFixed(2);
+      stage.ce = ce.toFixed(2);
     }
 
     /** Si ya hay meq, escala todos los macros para alcanzar la CE objetivo (mantiene %). */
     function hydroScaleMeqToCe(stage, newCe) {
       const target = Math.max(0, newCe) * 20;
       const current = hydroSumMeqForCe(stage);
-      if (target <= 0) return;
+      if (target <= 0) {
+        stage.ce = '0.00';
+        return;
+      }
       if (current < 0.01) {
+        stage.ce = newCe.toFixed(2);
         hydroBootstrapFromCe(stage);
         return;
       }
@@ -384,7 +569,25 @@
       HYDRO_MEQ_CE_PARTICIPANTS.forEach(n => {
         stage.meq[n] = hydroRound2((parseFloat(stage.meq[n]) || 0) * factor);
       });
-      stage.ce = hydroComputeCE(stage).toFixed(2);
+      stage.ce = newCe.toFixed(2);
+    }
+
+    function hydroParseCeRaw(raw) {
+      const s = String(raw).trim().replace(',', '.');
+      if (s === '' || s === '.' || s === '-') return null;
+      const n = parseFloat(s);
+      return isNaN(n) ? null : Math.max(0, n);
+    }
+
+    function hydroCommitCeTarget(stage, newCe) {
+      const sumNow = hydroSumMeqForCe(stage);
+      if (sumNow < 0.01) {
+        stage.ce = newCe.toFixed(2);
+        hydroBootstrapFromCe(stage);
+      } else {
+        hydroScaleMeqToCe(stage, newCe);
+      }
+      Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
     }
 
     function hydroGetActiveStage() {
@@ -443,7 +646,15 @@
     }
     function hydroTableGroupHeaderRow(ceCol) {
       const ce = ceCol ? '<th rowspan="2" class="hydro-col-ce hydro-th-group--ce">CE (dS/m)</th>' : '';
-      return `<tr class="hydro-ion-group-row">${ce}<th colspan="3" class="hydro-th-group hydro-th-group--an">Aniones · triángulo</th><th class="hydro-th-group hydro-th-group--cl">Cl⁻</th><th colspan="3" class="hydro-th-group hydro-th-group--cat hydro-ion-divide">Cationes · triángulo</th><th class="hydro-th-group hydro-th-group--nh4">N-NH₄⁺</th></tr>`;
+      const anGroup =
+        '<th colspan="3" class="hydro-th-group hydro-th-group--an">' +
+        '<span class="hydro-th-group-inner notranslate" translate="no">' +
+        '<span class="hydro-tern-marker hydro-tern-marker--sq" aria-hidden="true"></span> Aniones</span></th>';
+      const catGroup =
+        '<th colspan="3" class="hydro-th-group hydro-th-group--cat hydro-ion-divide">' +
+        '<span class="hydro-th-group-inner notranslate" translate="no">' +
+        '<span class="hydro-tern-marker hydro-tern-marker--circ" aria-hidden="true"></span> Cationes</span></th>';
+      return `<tr class="hydro-ion-group-row">${ce}${anGroup}<th class="hydro-th-group hydro-th-group--cl notranslate" translate="no">Cl⁻</th>${catGroup}<th class="hydro-th-group hydro-th-group--nh4 notranslate" translate="no">N-NH₄⁺</th></tr>`;
     }
 
     function hydroEscapeAttr(s) {
@@ -530,14 +741,54 @@
       const ceEl = container.querySelector(
         '#hydroMeqTableWrap input.hydro-input[data-field="ce"][data-stage-id="' + id + '"]'
       );
-      if (ceEl) ceEl.value = stage.ce;
+      if (ceEl && ceEl !== document.activeElement && !(hydroCeTyping && hydroCeTyping.stageId === id)) {
+        ceEl.value = stage.ce;
+      }
     }
 
     const HYDRO_PPM_FULL_RENDER_MS = 480;
+    const HYDRO_CE_APPLY_MS = 450;
     var hydroPpmRenderTimer = null;
+    var hydroCeApplyTimer = null;
     var hydroPpmLastEditField = null;
     /** Mientras tipeás en una celda ppm, conservamos el texto (evita que pase 1 → 1.0 antes de "12") */
     var hydroPpmTyping = null;
+    /** CE editable como texto: no re-renderizar la celda hasta blur (permite borrar y escribir) */
+    var hydroCeTyping = null;
+
+    function hydroPatchMeqRowDom(container, stage) {
+      if (!container || !stage) return;
+      const id = stage.id;
+      HYDRO_MEQ_NUTRIENTS.forEach(n => {
+        const el = container.querySelector(
+          '#hydroMeqTableWrap input.hydro-input[data-type="meq"][data-stage-id="' + id + '"][data-nutrient="' + n + '"]'
+        );
+        if (el && el !== document.activeElement) {
+          const m = (stage.meq && stage.meq[n] != null) ? stage.meq[n] : 0;
+          el.value = hydroRound2(m).toFixed(2);
+        }
+      });
+      hydroPatchMeqAndCeFromPpmState(container, stage);
+    }
+
+    function hydroScheduleCeApply(container, input) {
+      if (hydroCeApplyTimer) clearTimeout(hydroCeApplyTimer);
+      hydroCeApplyTimer = setTimeout(function() {
+        hydroCeApplyTimer = null;
+        if (!input || input !== document.activeElement) return;
+        const stageId = input.getAttribute('data-stage-id');
+        const stage = hydroState.stages.find(s => s.id === stageId);
+        if (!stage) return;
+        const newCe = hydroParseCeRaw(input.value);
+        if (newCe == null) return;
+        hydroCommitCeTarget(stage, newCe);
+        hydroPatchMeqRowDom(container, stage);
+        renderHydroDerivedTables();
+        renderHydroTriangle();
+        hydroUpdateTriangleInfo(stage);
+        hydroScheduleSave();
+      }, HYDRO_CE_APPLY_MS);
+    }
 
     function hydroSchedulePpmFullRender(focusToRestore) {
       hydroPpmLastEditField = focusToRestore;
@@ -548,6 +799,7 @@
         renderHydroMeqTable();
         renderHydroDerivedTables();
         renderHydroTriangle();
+        hydroScheduleSave();
         requestAnimationFrame(function() { hydroRestorePpmInputFocus(fi); });
       }, HYDRO_PPM_FULL_RENDER_MS);
     }
@@ -558,14 +810,17 @@
       var savedScroll = (wrap.firstElementChild && typeof wrap.firstElementChild.scrollLeft === 'number') ? wrap.firstElementChild.scrollLeft : 0;
       const rows = hydroState.stages.map(stage => {
         hydroSyncClMeqPpm(stage);
-        const computedCe = hydroComputeCE(stage);
-        stage.ce = computedCe.toFixed(2);
+        if (!(hydroCeTyping && hydroCeTyping.stageId === stage.id)) {
+          stage.ce = hydroComputeCE(stage).toFixed(2);
+        }
+        const ceLive = hydroCeTyping && hydroCeTyping.stageId === stage.id;
+        const ceAttr = ceLive ? hydroEscapeAttr(hydroCeTyping.raw) : hydroEscapeAttr(stage.ce ?? '');
         return `
           <tr data-stage-id="${stage.id}">
-            <td><input class="hydro-input" data-stage-id="${stage.id}" data-field="ce" type="number" step="0.01" min="0" value="${stage.ce ?? ''}" title="CE objetivo (dS/m). Con meq en cero, reparte CE×20 entre iones del triángulo."></td>
+            <td><input class="hydro-input" data-stage-id="${stage.id}" data-field="ce" type="text" inputmode="decimal" autocomplete="off" value="${ceAttr}" title="CE (dS/m) = Σ meq/L ÷ 20 (incluye N, P, S, Cl, K, Ca, Mg y NH₄). Al fijar CE con todo en cero, reparte el resto en el triángulo N-P-S y K-Ca-Mg."></td>
             ${HYDRO_MEQ_NUTRIENTS.map(n => {
               const mv = (stage.meq && stage.meq[n] != null) ? stage.meq[n] : 0;
-              const title = n === 'Cl' ? ' title="Cl⁻: no suma a CE ni al triángulo N-P-S"' : '';
+              const title = n === 'Cl' ? ' title="Cl⁻: suma a la CE (meq/L); fuera del triángulo N-P-S"' : '';
               return `<td class="${hydroColClass(n)}"><input class="hydro-input" data-stage-id="${stage.id}" data-type="meq" data-nutrient="${n}" type="number" step="0.01" min="0"${title} value="${hydroRound2(mv).toFixed(2)}"></td>`;
             }).join('')}
           </tr>
@@ -733,6 +988,63 @@
       return hydroPointInPolygon(x, y, [geom.vTop, geom.vLeft, geom.vRight]);
     }
 
+    /** Si aniones y cationes caen en el mismo punto, separa un poco el cuadrado y el círculo para verlos y arrastrarlos. */
+    function hydroTernMarkerLayout(anPt, catPt) {
+      const dx = catPt.x - anPt.x;
+      const dy = catPt.y - anPt.y;
+      const dist = Math.hypot(dx, dy);
+      const minSep = 24;
+      if (dist >= minSep) return { an: anPt, cat: catPt };
+      const ang = dist > 0.5 ? Math.atan2(dy, dx) : (-Math.PI / 4);
+      const off = (minSep - dist) * 0.5 + 10;
+      return {
+        an: { x: anPt.x - Math.cos(ang) * off, y: anPt.y - Math.sin(ang) * off },
+        cat: { x: catPt.x + Math.cos(ang) * off, y: catPt.y + Math.sin(ang) * off }
+      };
+    }
+
+    function hydroTernMarkerSvg(anVis, catVis, anInside, catInside) {
+      const anFill = anInside ? '#eab308' : '#b45309';
+      const catFill = catInside ? '#ef4444' : '#dc2626';
+      const catHit =
+        `<circle class="tern-hit-cat" data-tern-role="cat" cx="${catVis.x}" cy="${catVis.y}" r="16" fill="transparent" stroke="none" />` +
+        `<circle class="tern-vis-cat" cx="${catVis.x}" cy="${catVis.y}" r="7" fill="${catFill}" stroke="#ffffff" stroke-width="2.5" pointer-events="none" />` +
+        `<circle class="tern-vis-cat-ring" cx="${catVis.x}" cy="${catVis.y}" r="7" fill="none" stroke="#7f1d1d" stroke-width="1.2" pointer-events="none" />`;
+      const anHit =
+        `<rect class="tern-hit-an" data-tern-role="an" x="${anVis.x - 14}" y="${anVis.y - 14}" width="28" height="28" fill="transparent" stroke="none" />` +
+        `<rect class="tern-vis-an" x="${anVis.x - 7}" y="${anVis.y - 7}" width="14" height="14" fill="${anFill}" stroke="#ffffff" stroke-width="2" pointer-events="none" />` +
+        `<rect class="tern-vis-an" x="${anVis.x - 7}" y="${anVis.y - 7}" width="14" height="14" fill="none" stroke="#92400e" stroke-width="1.2" pointer-events="none" />`;
+      return catHit + anHit;
+    }
+
+    function hydroTernApplyMarkerAttrs(svg, anVis, catVis) {
+      const hitAn = svg.querySelector('.tern-hit-an');
+      const hitCat = svg.querySelector('.tern-hit-cat');
+      const visAn = svg.querySelectorAll('.tern-vis-an');
+      const visCat = svg.querySelector('.tern-vis-cat');
+      const ringCat = svg.querySelector('.tern-vis-cat-ring');
+      if (hitAn) {
+        hitAn.setAttribute('x', anVis.x - 14);
+        hitAn.setAttribute('y', anVis.y - 14);
+      }
+      visAn.forEach(el => {
+        el.setAttribute('x', anVis.x - 7);
+        el.setAttribute('y', anVis.y - 7);
+      });
+      if (hitCat) {
+        hitCat.setAttribute('cx', catVis.x);
+        hitCat.setAttribute('cy', catVis.y);
+      }
+      if (visCat) {
+        visCat.setAttribute('cx', catVis.x);
+        visCat.setAttribute('cy', catVis.y);
+      }
+      if (ringCat) {
+        ringCat.setAttribute('cx', catVis.x);
+        ringCat.setAttribute('cy', catVis.y);
+      }
+    }
+
     /**
      * Si el triángulo está vacío (todo en 0), reparte meq solo entre N-P-S y K-Ca-Mg para poder arrastrar.
      * Sin CE capturada usa 30 meq/L de referencia (≈ CE 1,5 dS/m solo triángulos); NH₄ queda en 0 hasta que lo edites.
@@ -741,9 +1053,10 @@
       const sumAn = HYDRO_ANIONS.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
       const sumKcm = HYDRO_CATIONS_TRIANGLE.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
       const nh4 = parseFloat(stage.meq.N_NH4) || 0;
-      if (sumAn + sumKcm < 0.01 && nh4 < 0.01) {
+      const cl = hydroGetClMeq(stage);
+      if (sumAn + sumKcm < 0.01 && nh4 < 0.01 && cl < 0.01) {
         const ce = parseFloat(stage.ce) || 0;
-        const totalTriangle = ce > 0 ? Math.max(0, ce * 20 - nh4) : 30;
+        const totalTriangle = ce > 0 ? Math.max(0, ce * 20 - nh4 - cl) : 30;
         const third = totalTriangle / 6;
         HYDRO_ANIONS.forEach(n => { stage.meq[n] = hydroRound2(third); });
         HYDRO_CATIONS_TRIANGLE.forEach(n => { stage.meq[n] = hydroRound2(third); });
@@ -813,26 +1126,8 @@
       const [pK, pCa, pMg] = norm3(p.pK, p.pCa, p.pMg);
       const anPt = hydroBaryToXY(g.vTop, g.vLeft, g.vRight, pNO3, pH2PO4, pSO4);
       const catPt = hydroBaryToXY(g.vTop, g.vLeft, g.vRight, pK, pCa, pMg);
-      const hitAn = svg.querySelector('.tern-hit-an');
-      const hitCat = svg.querySelector('.tern-hit-cat');
-      const visAn = svg.querySelector('.tern-vis-an');
-      const visCat = svg.querySelector('.tern-vis-cat');
-      if (hitAn) {
-        hitAn.setAttribute('x', anPt.x - 14);
-        hitAn.setAttribute('y', anPt.y - 14);
-      }
-      if (visAn) {
-        visAn.setAttribute('x', anPt.x - 6);
-        visAn.setAttribute('y', anPt.y - 6);
-      }
-      if (hitCat) {
-        hitCat.setAttribute('cx', catPt.x);
-        hitCat.setAttribute('cy', catPt.y);
-      }
-      if (visCat) {
-        visCat.setAttribute('cx', catPt.x);
-        visCat.setAttribute('cy', catPt.y);
-      }
+      const lay = hydroTernMarkerLayout(anPt, catPt);
+      hydroTernApplyMarkerAttrs(svg, lay.an, lay.cat);
     }
 
     function hydroRenderFromTriangleDrag(skipTriangleRedraw) {
@@ -847,6 +1142,7 @@
       } else {
         renderHydroTriangle();
       }
+      hydroScheduleSave();
     }
 
     /** Resumen compacto arriba: N total, partición NO₃/NH₄ (sobre N) y NO₃/Cl (sobre meq NO₃+Cl). */
@@ -881,7 +1177,6 @@
       const ppmCl = parseFloat(stage.ppm?.Cl) || 0;
       const nTot = mNo3 + mNh4;
       const sumAnTri = HYDRO_ANIONS.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
-      const sumAnTotal = sumAnTri + mCl;
       const sumKcm = HYDRO_CATIONS_TRIANGLE.reduce((a, n) => a + (parseFloat(stage.meq[n]) || 0), 0);
       const totalCat = sumKcm + mNh4;
       const pctNno3 = nTot > 0 ? (mNo3 / nTot) * 100 : 0;
@@ -891,36 +1186,26 @@
       const ncPair = mNo3 + mCl;
       const pctNo3Nc = ncPair > 0 ? (mNo3 / ncPair) * 100 : 0;
       const pctClNc = ncPair > 0 ? (mCl / ncPair) * 100 : 0;
-      const pctClAnTotal = sumAnTotal > 0 ? (mCl / sumAnTotal) * 100 : 0;
-      const pctNo3AnTotal = sumAnTotal > 0 ? (mNo3 / sumAnTotal) * 100 : 0;
       if (nTot <= 0 && mNh4 <= 0 && mCl <= 0 && ppmCl <= 0) {
         el.style.display = 'none';
         el.textContent = '';
         return;
       }
-      const parts = [];
+      const bits = [];
       if (nTot > 0 || mNh4 > 0) {
-        parts.push(
-          '<strong>N-NO₃⁻ / N-NH₄⁺</strong> (fuera del triángulo catiónico): meq/L ' +
-          '<strong>N-NO₃⁻ ' + mNo3.toFixed(2) + '</strong> · <strong>N-NH₄⁺ ' + mNh4.toFixed(2) + '</strong> ' +
-          '(N = ' + nTot.toFixed(2) + ' meq/L). % del N: NO₃ <strong>' + pctNno3.toFixed(1) + '%</strong> · NH₄ <strong>' + pctNnh4.toFixed(1) + '%</strong>. ' +
-          'NH₄ sobre K+Ca+Mg+NH₄: <strong>' + pctNh4Cat.toFixed(1) + '%</strong>. ' +
-          'NO₃ sobre triángulo aniónico (NO₃+P+S): <strong>' + pctNo3Tri.toFixed(1) + '%</strong>.'
-        );
+        bits.push('N ' + nTot.toFixed(2) + ' meq/L → NO₃ ' + pctNno3.toFixed(1) + '% · NH₄ ' + pctNnh4.toFixed(1) + '% del N');
+        if (mNh4 > 0 || totalCat > 0) bits.push('NH₄ en catiónico ' + pctNh4Cat.toFixed(1) + '%');
+        if (sumAnTri > 0) bits.push('NO₃ en N-P-S ' + pctNo3Tri.toFixed(1) + '%');
       }
       if (mCl > 0 || ppmCl > 0) {
-        parts.push(
-          '<strong>Cl⁻</strong> (fuera del triángulo N-P-S; <strong>no suma a la CE</strong>): ' +
-          '<strong>' + ppmCl.toFixed(1) + ' ppm</strong> ≈ <strong>' + mCl.toFixed(2) + ' meq/L</strong> (35,45 mg/meq). ' +
-          (ncPair > 0
-            ? 'Par N-NO₃⁻ + Cl⁻ en meq/L: NO₃ <strong>' + pctNo3Nc.toFixed(1) + '%</strong> · Cl <strong>' + pctClNc.toFixed(1) + '%</strong>. '
-            : '') +
-          'Cl sobre aniones totales (NO₃+P+S+Cl): <strong>' + pctClAnTotal.toFixed(1) + '%</strong>; ' +
-          'NO₃ sobre ese total: <strong>' + pctNo3AnTotal.toFixed(1) + '%</strong>.'
-        );
+        bits.push('Cl⁻ ' + mCl.toFixed(2) + ' meq · ' + ppmCl.toFixed(1) + ' ppm (+CE, fuera N-P-S)');
+        if (ncPair > 0) bits.push('NO₃/(NO₃+Cl) ' + pctNo3Nc.toFixed(1) + '% · Cl ' + pctClNc.toFixed(1) + '%');
       }
+      el.title =
+        'Detalle: NH₄ y Cl fuera de los triángulos de arrastre. % N sobre NO₃+NH₄; % NH₄ sobre K+Ca+Mg+NH₄; ' +
+        '% NO₃ en triángulo solo N-P-S; % NO₃/Cl sobre meq/L de N-NO₃⁻+Cl⁻ (también arriba en el encabezado).';
       el.style.display = 'block';
-      el.innerHTML = parts.join(' ');
+      el.textContent = bits.join(' · ');
     }
 
     function hydroDrawCombinedTernary(container, data) {
@@ -989,18 +1274,14 @@
       const [pK, pCa, pMg] = normalize(data.pK, data.pCa, data.pMg);
       const catPoint = toXYC(pK, pCa, pMg);
       const catInside = catZonePts.length >= 3 && hydroPointInPolygon(catPoint.x, catPoint.y, catZonePts);
-      const catCircle =
-        `<circle class="tern-hit-cat" data-tern-role="cat" cx="${catPoint.x}" cy="${catPoint.y}" r="18" fill="transparent" stroke="none" />` +
-        `<circle class="tern-vis-cat" cx="${catPoint.x}" cy="${catPoint.y}" r="6" fill="${catInside ? '#ef4444' : '#b91c1c'}" stroke="#7f1d1d" stroke-width="1.2" pointer-events="none" />`;
 
       const anZonePts = (data.anionZone || []).map(([no3, h2po4, so4]) => toXYA(no3, h2po4, so4));
       const anPoly = anZonePts.length >= 3 ? polygonMixed(anZonePts, 'rgba(234,179,8,0.35)', '#ca8a04', 2) : '';
       const [pNO3, pH2PO4, pSO4] = normalize(data.pNO3, data.pH2PO4, data.pSO4);
       const anPoint = toXYA(pNO3, pH2PO4, pSO4);
       const anInside = anZonePts.length >= 3 && hydroPointInPolygon(anPoint.x, anPoint.y, anZonePts);
-      const anSquare =
-        `<rect class="tern-hit-an" data-tern-role="an" x="${anPoint.x - 14}" y="${anPoint.y - 14}" width="28" height="28" fill="transparent" stroke="none" />` +
-        `<rect class="tern-vis-an" x="${anPoint.x - 6}" y="${anPoint.y - 6}" width="12" height="12" fill="${anInside ? '#eab308' : '#b45309'}" stroke="#92400e" stroke-width="1.2" pointer-events="none" />`;
+      const ternLay = hydroTernMarkerLayout(anPoint, catPoint);
+      const ternMarkers = hydroTernMarkerSvg(ternLay.an, ternLay.cat, anInside, catInside);
 
       let tickLabels = '';
       for (let i = 1; i <= 9; i++) {
@@ -1039,8 +1320,7 @@
           ${catPoly}
           ${cut55K}
           <polygon points="${vTop.x},${vTop.y} ${vRight.x},${vRight.y} ${vLeft.x},${vLeft.y}" fill="none" stroke="#2563eb" stroke-width="2" />
-          ${anSquare}
-          ${catCircle}
+          ${ternMarkers}
           ${tickLabels}
           ${edgeLabels}
     </svg>
@@ -1106,7 +1386,11 @@
         hydroTernDrag.role = role;
         wrap.classList.add('tern-dragging');
         const svg = wrap.querySelector('svg');
-        if (svg) svg.classList.add('tern-dragging');
+        if (svg) {
+          svg.classList.add('tern-dragging');
+          svg.classList.remove('tern-dragging-an', 'tern-dragging-cat');
+          svg.classList.add(role === 'an' ? 'tern-dragging-an' : 'tern-dragging-cat');
+        }
         try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
         applyAt(e.clientX, e.clientY);
         e.preventDefault();
@@ -1124,7 +1408,7 @@
         hydroTernDrag.role = null;
         wrap.classList.remove('tern-dragging');
         const svg = wrap.querySelector('svg');
-        if (svg) svg.classList.remove('tern-dragging');
+        if (svg) svg.classList.remove('tern-dragging', 'tern-dragging-an', 'tern-dragging-cat');
         try { wrap.releasePointerCapture(e.pointerId); } catch (_) {}
         if (wasRole) hydroRenderFromTriangleDrag(false);
       }
@@ -1144,15 +1428,8 @@
         if (!stage) return;
 
         if (input.getAttribute('data-field') === 'ce') {
-          const newCe = Math.max(0, parseFloat(input.value) || 0);
-          stage.ce = newCe.toFixed(2);
-          const sumNow = hydroSumMeqForCe(stage);
-          if (sumNow < 0.01) hydroBootstrapFromCe(stage);
-          else hydroScaleMeqToCe(stage, newCe);
-          input.value = stage.ce;
-          renderHydroMeqTable();
-          renderHydroDerivedTables();
-          renderHydroTriangle();
+          hydroCeTyping = { stageId: stage.id, raw: String(input.value) };
+          hydroScheduleCeApply(container, input);
           return;
         }
 
@@ -1165,9 +1442,12 @@
           }
           stage.ce = hydroComputeCE(stage).toFixed(2);
           const ceInput = container.querySelector(`input[data-stage-id="${stageId}"][data-field="ce"]`);
-          if (ceInput) ceInput.value = stage.ce;
+          if (ceInput && ceInput !== document.activeElement && !(hydroCeTyping && hydroCeTyping.stageId === stageId)) {
+            ceInput.value = stage.ce;
+          }
           renderHydroDerivedTables();
           renderHydroTriangle();
+          hydroScheduleSave();
         }
         if (type === 'ppm' && nutrient) {
           if (HYDRO_MEQ_NUTRIENTS.indexOf(nutrient) >= 0) {
@@ -1194,14 +1474,43 @@
 
       container.addEventListener('focusin', (e) => {
         const t = e.target;
-        if (!t || t.getAttribute('data-type') !== 'ppm') return;
+        if (!t || !t.getAttribute) return;
+        if (t.getAttribute('data-field') === 'ce') {
+          hydroCeTyping = { stageId: t.getAttribute('data-stage-id'), raw: String(t.value) };
+          return;
+        }
+        if (t.getAttribute('data-type') !== 'ppm') return;
         if (HYDRO_MEQ_NUTRIENTS.indexOf(t.getAttribute('data-nutrient')) < 0) return;
         hydroPpmTyping = { stageId: t.getAttribute('data-stage-id'), nutrient: t.getAttribute('data-nutrient'), raw: String(t.value) };
       }, true);
 
       container.addEventListener('focusout', (e) => {
         const t = e.target;
-        if (!t || t.getAttribute('data-type') !== 'ppm') return;
+        if (!t || !t.getAttribute) return;
+        if (t.getAttribute('data-field') === 'ce') {
+          if (hydroCeApplyTimer) {
+            clearTimeout(hydroCeApplyTimer);
+            hydroCeApplyTimer = null;
+          }
+          const stageId = t.getAttribute('data-stage-id');
+          const stage = hydroState.stages.find(s => s.id === stageId);
+          if (stage) {
+            const newCe = hydroParseCeRaw(t.value);
+            if (newCe != null) hydroCommitCeTarget(stage, newCe);
+            else {
+              stage.ce = '0.00';
+              if (hydroSumMeqForCe(stage) < 0.01) hydroBootstrapFromCe(stage);
+            }
+            t.value = stage.ce;
+          }
+          hydroCeTyping = null;
+          renderHydroMeqTable();
+          renderHydroDerivedTables();
+          renderHydroTriangle();
+          hydroScheduleSave();
+          return;
+        }
+        if (t.getAttribute('data-type') !== 'ppm') return;
         const n = t.getAttribute('data-nutrient');
         if (HYDRO_MEQ_NUTRIENTS.indexOf(n) < 0) return;
         const rel = e.relatedTarget;
@@ -1228,10 +1537,12 @@
         renderHydroMeqTable();
         renderHydroDerivedTables();
         renderHydroTriangle();
+        hydroScheduleSave();
       }, true);
     }
 
     function boot() {
+      hydroApplyLoadedState(hydroLoadLocal());
       renderHydroMeqTable();
       renderHydroDerivedTables();
       renderHydroTriangle();
@@ -1239,6 +1550,7 @@
       setupTernaryDrag();
     }
 
+    window.addEventListener('beforeunload', function () { hydroSaveLocal(); });
     document.addEventListener('DOMContentLoaded', boot);
   </script>
 </body>

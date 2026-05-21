@@ -1277,6 +1277,7 @@
     NutriPlant PRO — material educativo. Los antagonismos y porcentajes son referencias generales; validar con análisis, síntomas y asesoría local.
   </p>
 
+  <script src="assets/np-free-local-persist.js"></script>
   <script>
 (function () {
   'use strict';
@@ -1574,7 +1575,11 @@
       '<div class="dato-corto"><strong>Dato corto:</strong> ' + s.shortTip + '</div>';
   }
 
+  var diagramFocusId = null;
+  var mobSymActive = 'N';
+
   function onNodeClick(id) {
+    diagramFocusId = id;
     highlightEdgesForNode(id);
     setNodeVisual(id);
     renderSingleDetail(id);
@@ -2028,6 +2033,7 @@
   function showMob(sym) {
     var m = MOBILITY[sym];
     if (!m) return;
+    mobSymActive = sym;
     setActiveMobSym(sym);
     mobFichaTitle.textContent = sym + ' — ' + (EL_NAMES[sym] || '');
     function esc(s) {
@@ -2344,6 +2350,23 @@
       });
     });
   });
+
+  function snapInteractions() {
+    var tabIdx = 0;
+    tabBtns.forEach(function (b, i) {
+      if (b.getAttribute('aria-selected') === 'true') tabIdx = i;
+    });
+    return { tab: tabIdx, arr: selArrId, ph: selPhId, mob: mobSymActive, diagram: diagramFocusId };
+  }
+  function applyInteractions(d) {
+    if (!d) return;
+    if (d.tab != null && tabBtns[d.tab]) tabBtns[d.tab].click();
+    if (d.arr) selectArrival(d.arr);
+    if (d.ph) selectPhNutrient(d.ph);
+    if (d.mob) showMob(d.mob);
+    if (d.diagram) onNodeClick(d.diagram);
+  }
+  window.NpFreePersist.bind('interacciones_absorcion', snapInteractions, applyInteractions);
 })();
   </script>
 </body>

@@ -330,7 +330,7 @@
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
-  <p class="guest-note" id="modeNote"><strong>Modo gratuito:</strong> no se guarda al cerrar. Los valores son solo de referencia técnica.</p>
+  <p class="guest-note" id="modeNote" style="display:none;" aria-hidden="true"></p>
 
   <header class="hero">
     <h1>📊 Distribución nutrimental por etapa (%)</h1>
@@ -920,11 +920,14 @@
     var el = document.getElementById('modeNote');
     if (!el) return;
     if (isDashboardMode) {
+      el.style.display = '';
+      el.removeAttribute('aria-hidden');
       el.innerHTML =
         '<strong>Modo dashboard:</strong> guardado automático local + proyecto en la nube. ' +
         'Además puedes crear <strong>plantillas con título</strong> (conjuntos de kg/ha y %) que se sincronizan con el proyecto activo.';
     } else {
-      el.innerHTML = '<strong>Modo gratuito:</strong> no se guarda al cerrar. Los valores son solo de referencia técnica.';
+      el.style.display = 'none';
+      el.setAttribute('aria-hidden', 'true');
     }
   }
   function ensurePct() {
