@@ -89,4 +89,13 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 | % meq | https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html |
 | Enmiendas CIC | https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html |
 
+---
+
+## Paso F — Fase 3 SEO (código hecho; Search Console en navegador)
+
+Tras deploy del repo con Fase 3:
+
+1. Guía: `docs/SEARCH-CONSOLE-FASE-3.md` (verificar dominio + enviar `sitemap.xml`).
+2. En el repo ya están: JSON-LD `Article` en 20 capítulos, `FAQPage` en FAQ, `CollectionPage` en índice, `ProfilePage` en autoría; `llms.txt` con las 21 URLs.
+
 *Listo para una sola actualización en ChatGPT.*

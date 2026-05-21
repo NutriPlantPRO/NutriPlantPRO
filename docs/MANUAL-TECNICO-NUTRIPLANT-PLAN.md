@@ -172,10 +172,11 @@ Prioridad: lo que más preguntan y lo que ya está documentado en el repo.
 
 ### Fase 3 — Descubrimiento para IA y SEO
 
-- `llms.txt` en raíz del sitio apuntando al manual.
-- JSON-LD `Article` / `FAQPage` por capítulo.
-- `sitemap-manual.xml` incluido en Search Console.
-- Enlaces desde `login.html`, footer web y dashboard (“Manual técnico”).
+- [x] `llms.txt` en raíz y `/manual-tecnico/` con las 21 URLs canónicas.
+- [x] JSON-LD `Article` / `FAQPage` por capítulo (`scripts/inject-manual-jsonld.mjs`).
+- [x] `sitemap.xml` en raíz (incluye manual).
+- [x] Enlaces desde `login.html`, footer web y dashboard (“Manual técnico”).
+- [ ] **Search Console:** ver `docs/SEARCH-CONSOLE-FASE-3.md` (socio, en navegador).
 
 ---
 

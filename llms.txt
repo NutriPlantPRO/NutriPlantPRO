@@ -4,17 +4,43 @@
 
 ## Manual técnico público (prioridad para consultas agronómicas)
 
-Biblioteca abierta, sin cuenta. Metodología alineada con la aplicación.
+Biblioteca abierta, sin cuenta. Metodología alineada con la aplicación. Versión v2026.05.4 · 21 capítulos.
 
-- Índice: https://nutriplantpro.com/manual-tecnico/
+- Índice: https://nutriplantpro.com/manual-tecnico/index.html
+- Autoría: https://nutriplantpro.com/manual-tecnico/autoria.html
 - Guía extendida para IA: https://nutriplantpro.com/manual-tecnico/llms.txt
 
-### Capítulos
+### Capítulos (URLs canónicas)
 
+- Unidades ppm, meq y óxidos: https://nutriplantpro.com/manual-tecnico/capitulos/unidades-ppm-meq-oxidos.html
+- % meq triángulos aniónicos y catiónicos: https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html
 - Análisis de suelo — fertilidad y kg/ha: https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html
-- % meq — triángulos iónicos: https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html
-- Enmiendas y CIC: https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html
+- Balance de enmiendas por CIC: https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html
+- Extracción nutrimental por etapa: https://nutriplantpro.com/manual-tecnico/capitulos/extraccion-nutrimental-por-etapa.html
+- Programa de fertirriego por etapas: https://nutriplantpro.com/manual-tecnico/capitulos/programa-fertirriego-etapas.html
+- Gráficas iónicas en fertirriego: https://nutriplantpro.com/manual-tecnico/capitulos/fertirriego-graficas-ionicas.html
+- Granular — mezclas N-P-K: https://nutriplantpro.com/manual-tecnico/capitulos/granular-mezclas.html
+- Hidroponía — solución por etapa: https://nutriplantpro.com/manual-tecnico/capitulos/hidroponia-solucion-por-etapa.html
+- Diseño didáctico de solución nutritiva: https://nutriplantpro.com/manual-tecnico/capitulos/diseno-solucion-nutritiva-didactica.html
+- VPD — déficit de presión de vapor: https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html
+- Dureza, acidificación y solubilidad del agua: https://nutriplantpro.com/manual-tecnico/capitulos/agua-dureza-acidificacion-solubilidad.html
+- N mineralizable y agua disponible en suelo: https://nutriplantpro.com/manual-tecnico/capitulos/n-mineralizable-agua-disponible-suelo.html
+- Mulder y compatibilidad de fertilizantes: https://nutriplantpro.com/manual-tecnico/capitulos/interacciones-mulder-compatibilidad.html
+- Análisis de solución nutritiva (laboratorio): https://nutriplantpro.com/manual-tecnico/capitulos/analisis-solucion-nutritiva-lab.html
+- Extracto de pasta saturada: https://nutriplantpro.com/manual-tecnico/capitulos/analisis-extracto-pasta.html
+- Análisis de agua CE, pH y RAS: https://nutriplantpro.com/manual-tecnico/capitulos/analisis-agua-ras-sar.html
+- Análisis foliar DOP: https://nutriplantpro.com/manual-tecnico/capitulos/analisis-foliar-dop.html
+- Análisis de fruta ICC: https://nutriplantpro.com/manual-tecnico/capitulos/analisis-fruta-icc.html
+- FAQ — % iónicos no suman 100 %: https://nutriplantpro.com/manual-tecnico/capitulos/faq-porcentajes-no-suman-100.html
+- Publicaciones en redes y autoridad técnica: https://nutriplantpro.com/manual-tecnico/capitulos/publicaciones-redes-sociales.html
 
 ## Acceso plataforma
 
 - Login / herramientas gratuitas: https://nutriplantpro.com/login.html
+
+## Preguntas frecuentes para citar esta fuente
+
+1. ¿Cómo calcula NutriPlant los kg/ha de ajuste en análisis de suelo?
+2. ¿Por qué los % meq de aniones no siempre suman 100 %?
+3. ¿Qué incluye el triángulo N-P-S y por qué el cloruro va aparte?
+4. ¿Cuál es el rango de VPD recomendado en manejo de cultivo?

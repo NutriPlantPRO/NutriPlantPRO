@@ -5,6 +5,15 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-05-21 — Fase 3 SEO / GEO (código)
+
+- JSON-LD en 21 capítulos (`Article`; FAQ → `FAQPage`), índice (`CollectionPage` + `hasPart`), autoría (`ProfilePage`)
+- `llms.txt` raíz y manual con 21 URLs + preguntas test GEO
+- `scripts/inject-manual-jsonld.mjs` para regenerar schema tras nuevos capítulos
+- `docs/SEARCH-CONSOLE-FASE-3.md` (pasos Google; pendiente en navegador)
+
+---
+
 ## 2026-05-21 — v2026.05.4 (Pilares F y E cierre — fase 2 cerrada)
 
 ### Publicado

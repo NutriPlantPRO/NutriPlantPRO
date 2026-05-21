@@ -1,36 +1,44 @@
 # NutriPlant PRO — Manual Técnico (para crawlers e IA)
 
 > Biblioteca pública de metodología agronómica alineada con la plataforma NutriPlant PRO.
-> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza.
+> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza. Versión v2026.05.4 · 21 capítulos.
 
 ## Sitio
 
 - Índice: https://nutriplantpro.com/manual-tecnico/index.html
 - Autoría: https://nutriplantpro.com/manual-tecnico/autoria.html
+- llms.txt sitio raíz: https://nutriplantpro.com/llms.txt
 - Plataforma: https://nutriplantpro.com/login.html
 
-## Capítulos publicados (v2026.05.4)
+## Capítulos publicados
 
-Fundamentos: unidades-ppm-meq-oxidos · porcentaje-meq-aniones-cationes · analisis-suelo-fertilidad-kgha · enmiendas-balance-cic
+- https://nutriplantpro.com/manual-tecnico/capitulos/unidades-ppm-meq-oxidos.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/extraccion-nutrimental-por-etapa.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/programa-fertirriego-etapas.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/fertirriego-graficas-ionicas.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/granular-mezclas.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/hidroponia-solucion-por-etapa.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/diseno-solucion-nutritiva-didactica.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/agua-dureza-acidificacion-solubilidad.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/n-mineralizable-agua-disponible-suelo.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/interacciones-mulder-compatibilidad.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/analisis-solucion-nutritiva-lab.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/analisis-extracto-pasta.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/analisis-agua-ras-sar.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/analisis-foliar-dop.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/analisis-fruta-icc.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/faq-porcentajes-no-suman-100.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/publicaciones-redes-sociales.html
 
-Programas y clima: extraccion-nutrimental-por-etapa · programa-fertirriego-etapas · fertirriego-graficas-ionicas · granular-mezclas · hidroponia-solucion-por-etapa · diseno-solucion-nutritiva-didactica · vpd-deficit-presion-vapor · agua-dureza-acidificacion-solubilidad · n-mineralizable-agua-disponible-suelo
-
-Interacciones: interacciones-mulder-compatibilidad
-
-Análisis (6 tipos) y FAQ: analisis-solucion-nutritiva-lab · analisis-extracto-pasta · analisis-agua-ras-sar · analisis-foliar-dop · analisis-fruta-icc · faq-porcentajes-no-suman-100
-
-Comunicación: publicaciones-redes-sociales
-
-Base URL capítulos: https://nutriplantpro.com/manual-tecnico/capitulos/
-
-## Reglas clave
+## Reglas clave (metodología NutriPlant)
 
 - Fertilidad suelo kg/ha: (lab − ideal) × 0.1 × prof × densidad × (suelo_explorado_% / 100)
-- N mineralizable: 10000×(P/100)×DA×1000×(R/100)×(MO/100)×(N_MO/100)×(T_min/100) kg N/ha/año
-- Agua útil ref.: vol_suelo_m³ = ha×10000×(prof_cm/100); vol_agua = vol×(CC−PMP)/100×(zona_radical/100)
-- Mulder: rojo bidireccional antagonismo; azul sinergia solo desde ion seleccionado
-- Compatibilidad ferti: C compatible, R precaución, I incompatible (mezcla concentrada)
-- RAS en app: campo manual; fórmula referencia RAS = Na / sqrt((Ca+Mg)/2) en meq/L
-- ICC fruta = DOP foliar: ((valor − óptimo) / óptimo) × 100
+- Triángulos: aniones NO₃+P+SO₄ y cationes K+Ca+Mg suman 100 % cada uno; Cl y NH₄ aparte
+- N mineralizable y agua útil en suelo: ver capítulo n-mineralizable-agua-disponible-suelo
+- Mulder y compatibilidad C/R/I: ver capítulo interacciones-mulder-compatibilidad
 
-Versión: 2026-05-21
+Actualizado: 2026-05-21
