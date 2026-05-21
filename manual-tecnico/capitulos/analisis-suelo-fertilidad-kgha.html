@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Análisis de suelo: fertilidad, ideales y kg/ha — Manual NutriPlant PRO</title>
+  <meta name="description" content="Cómo NutriPlant PRO calcula ideales de referencia y kg/ha de ajuste en Fertilidad del suelo a partir del análisis de laboratorio, profundidad, densidad y % de suelo explorado por raíces.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css">
+</head>
+<body>
+  <header class="mt-header">
+    <div class="mt-header-inner">
+      <a class="mt-brand" href="../index.html">
+        <img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO">
+        <span>Manual técnico</span>
+      </a>
+      <nav class="mt-nav" aria-label="Enlaces">
+        <a href="../index.html">Índice</a>
+        <a href="../../login.html">Plataforma</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar C · Análisis de suelo</p>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    <h1>Análisis de suelo: fertilidad, ideales y kg/ha de ajuste</h1>
+
+    <h2>Resumen</h2>
+    <p>
+      En la pestaña <strong>Análisis → Análisis de Suelo</strong>, la sección <strong>Fertilidad del suelo</strong>
+      compara el nivel de laboratorio con un valor <strong>Ideal</strong> de referencia y muestra la diferencia en
+      <strong>kg/ha</strong> para la capa de suelo que las raíces pueden explorar. Es una base numérica de apoyo;
+      no sustituye la recomendación final del agrónomo.
+    </p>
+
+    <p class="mt-disclaimer">
+      Los valores calculados no representan una recomendación directa; son un punto de partida sujeto a eficiencia y criterio agronómico.
+    </p>
+
+    <h2>Contexto agronómico</h2>
+    <p>
+      Un informe de suelo entrega nutrientes en ppm (o % en materia orgánica). Para planificar fertilización o enmiendas
+      conviene expresar el <em>gap</em> frente a una referencia en <strong>kg por hectárea</strong> en el volumen de
+      suelo relevante: profundidad de muestreo, densidad aparente y fracción del perfil que el sistema radicular
+      realmente explora.
+    </p>
+
+    <h2>Datos de entrada</h2>
+    <ul>
+      <li><strong>Nivel</strong> — Valores del laboratorio por nutriente (ppm, excepto MO en %).</li>
+      <li><strong>Propiedades físicas</strong> — Densidad aparente (g/cm³).</li>
+      <li><strong>Fertilidad</strong> — Profundidad considerada (cm) y % de suelo explorado por raíces.</li>
+      <li><strong>Cationes y CIC</strong> — Para recalcular ideales de K, Ca y Mg desde la CIC del mismo reporte.</li>
+      <li><strong>Método de P</strong> — Bray, Olsen o Mehlich 3 (define el ideal de fósforo).</li>
+    </ul>
+
+    <h2>Cálculo en NutriPlant PRO</h2>
+
+    <h3>Factor volumétrico</h3>
+    <div class="mt-formula">
+      factor = 0,1 × profundidad_cm × densidad_aparente × (suelo_explorado_% / 100)<br>
+      kg/ha = (nivel_laboratorio − ideal) × factor
+    </div>
+    <p>
+      El factor convierte la diferencia en ppm (o % MO) a kg/ha en la capa indicada. En la columna kg/ha:
+      <strong>valor negativo = déficit</strong> (falta aportar respecto al ideal);
+      <strong>positivo = exceso</strong> respecto al ideal.
+    </p>
+
+    <h3>Valores ideales de referencia</h3>
+    <table class="mt-table">
+      <thead>
+        <tr><th>Nutriente / parámetro</th><th>Origen del ideal en NutriPlant</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>K, Ca, Mg</td><td>CIC del análisis (meq/100 g): meq ideal = CIC × fracción (K 5 %, Ca 70 %, Mg 13 %); ppm = meq × factor (K ×391, Ca ×200,4, Mg ×121,5)</td></tr>
+        <tr><td>P</td><td>Bray 40 ppm · Olsen 25 ppm · Mehlich 3 (Merich) 40 ppm</td></tr>
+        <tr><td>MO, N-NO₃, Na, S, micronutrientes</td><td>Referencias agronómicas generales (p. ej. MO 3 %, N-NO₃ 20 ppm, Na 0, S 15, Fe 20, Mn 20, Zn 3, Cu 1,5, B 1, Mo 0,1, Al 0)</td></tr>
+      </tbody>
+    </table>
+    <p>
+      El botón <strong>Recargar valores ideales de referencia</strong> aplica esos generales y, si hay CIC en
+      Cationes, recalcula K, Ca y Mg desde saturaciones objetivo fijas.
+    </p>
+
+    <h3>Ejemplo numérico</h3>
+    <p>Profundidad 20 cm, densidad 1,3 g/cm³, 100 % suelo explorado, P Bray laboratorio 18 ppm, ideal 40 ppm:</p>
+    <div class="mt-formula">
+      factor = 0,1 × 20 × 1,3 × 1 = 2,6<br>
+      kg/ha P = (18 − 40) × 2,6 = −57,2 kg/ha (déficit)
+    </div>
+
+    <h2>Relación con otros módulos</h2>
+    <ul>
+      <li><strong>Enmiendas</strong> — Usa cationes y CIC del <em>Análisis de suelo inicial</em> del proyecto (no el listado de reportes).</li>
+      <li><strong>Programas granular / fertirriego</strong> — El «Ajuste por niveles en suelo» puede tomar otro criterio; este capítulo describe solo Fertilidad del reporte en Análisis.</li>
+    </ul>
+
+    <div class="mt-note">
+      <strong>En la plataforma:</strong> Dashboard → proyecto → Análisis → Análisis de Suelo → reporte → Fertilidad del suelo.
+    </div>
+
+    <nav class="mt-chapter-nav" aria-label="Capítulos">
+      <a href="../index.html">← Índice</a>
+      <a href="porcentaje-meq-aniones-cationes.html">Siguiente: % meq →</a>
+    </nav>
+  </main>
+
+  <footer class="mt-footer">
+    <p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Balance de enmiendas por CIC del suelo — Manual NutriPlant PRO</title>
+  <meta name="description" content="Metodología NutriPlant PRO para ajuste de CIC: meq/100 g, saturación catiónica, meq a ajustar y cálculo de kg/ha de enmienda.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css">
+</head>
+<body>
+  <header class="mt-header">
+    <div class="mt-header-inner">
+      <a class="mt-brand" href="../index.html">
+        <img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO">
+        <span>Manual técnico</span>
+      </a>
+      <nav class="mt-nav" aria-label="Enlaces">
+        <a href="../index.html">Índice</a>
+        <a href="../../login.html">Plataforma</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar B · Suelo y enmiendas</p>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    <h1>Balance de enmiendas por CIC del suelo</h1>
+
+    <h2>Resumen</h2>
+    <p>
+      El módulo <strong>Enmiendas</strong> equilibra la capacidad de intercambio catiónico (CIC) del suelo
+      expresada en <strong>meq/100 g</strong> (equivalente a <strong>cmol<sub>c</sub>/kg</strong> con la misma cifra).
+      A partir del análisis inicial y de los <strong>meq a ajustar</strong> por catión, la plataforma estima
+      cantidades de enmienda en <strong>kg/ha</strong> según composición del producto, profundidad, densidad y
+      % de suelo explorado por raíces.
+    </p>
+
+    <h2>Contexto agronómico</h2>
+    <p>
+      La fertilidad del suelo depende de qué catión ocupa los sitios de intercambio: exceso de Na⁺ o Al³⁺,
+      déficit de Ca²⁺ o Mg²⁺, o K fuera de rango afectan disponibilidad y estructura. Las enmiendas (yeso,
+      cal, dolomita, etc.) modifican la proporción de cationes en la CIC; el cálculo cuantifica cuánto aportar.
+    </p>
+
+    <h2>Datos de entrada</h2>
+    <ul>
+      <li><strong>Análisis de suelo inicial</strong> — K⁺, Ca²⁺, Mg²⁺, H⁺, Na⁺, Al³⁺ en meq/100 g; CIC total (suma o valor de laboratorio).</li>
+      <li><strong>Objetivos de ajuste</strong> — Campos «meq a ajustar» por catión (editables; la app puede sugerirlos).</li>
+      <li><strong>Propiedades del perfil</strong> — Profundidad (cm), densidad aparente (g/cm³), % suelo explorado por raíces.</li>
+      <li><strong>Enmiendas seleccionadas</strong> — Catálogo o personalizadas, con composición (% o meq aportados por tonelada).</li>
+      <li><strong>pH del suelo</strong> — Condiciona priorización (p. ej. yeso vs cal).</li>
+    </ul>
+
+    <h2>CIC y saturación en pantalla</h2>
+    <div class="mt-formula">
+      CIC = K + Ca + Mg + H + Na + Al  (meq/100 g)<br>
+      Saturación (%) de un catión = (meq catión / CIC) × 100
+    </div>
+    <p>Rangos de interpretación usados en iconos de estado (referencia literatura):</p>
+    <table class="mt-table">
+      <thead><tr><th>Catión</th><th>Rango típico (% saturación)</th></tr></thead>
+      <tbody>
+        <tr><td>K⁺</td><td>3 – 7 %</td></tr>
+        <tr><td>Ca²⁺</td><td>65 – 75 %</td></tr>
+        <tr><td>Mg²⁺</td><td>10 – 15 %</td></tr>
+        <tr><td>Na⁺</td><td>0 – 1 %</td></tr>
+        <tr><td>Al³⁺</td><td>0 – 1 %</td></tr>
+        <tr><td>H⁺</td><td>0 – 10 %</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Meq a ajustar</h2>
+    <p>
+      Los campos objetivo guardan la magnitud en <strong>meq/100 g a corregir</strong> en la CIC
+      (misma unidad que el análisis). En la interfaz:
+      <strong>valores positivos = déficit</strong> (hay que aportar ese catión al balance);
+      <strong>negativos = exceso</strong>.
+    </p>
+    <p>
+      La suma de meq objetivo debería coincidir con el CIC total; la app resalta en verde si
+      |Σ meq objetivo − CIC| &lt; 0,1 y en rojo si no cuadra.
+    </p>
+
+    <h2>De meq a kg/ha de enmienda</h2>
+    <p>Flujo simplificado del motor de cálculo:</p>
+    <ol>
+      <li>Tomar meq a ajustar por catión (K, Ca, Mg, H, Na, Al).</li>
+      <li>Convertir a meq/kg de suelo: <code>meq/kg = meq/100g × 10</code>.</li>
+      <li>Convertir a ppm (mg/kg) con peso equivalente: K ×39,1; Ca ×20,04; Mg ×12,15; H ×1,008; Na ×23; Al ×8,99.</li>
+      <li>Estimar masa de suelo por ha: volumen (m³/ha) × densidad × 1000 → kg suelo/ha.</li>
+      <li><code>kg elemento/ha = (ppm × kg suelo/ha) / 1 000 000</code>, repartido según % suelo explorado.</li>
+      <li>Distribuir necesidades entre enmiendas seleccionadas (priorización por pH, Ca/Mg limitante, yeso, etc.).</li>
+    </ol>
+
+    <div class="mt-note">
+      <strong>Diferencia con Análisis de Suelo (reportes):</strong> Enmienda usa el bloque
+      <em>Análisis de suelo inicial</em> del proyecto. Los reportes guardados en Análisis son otro flujo
+      (fertilidad kg/ha por reporte). Puede sincronizarse criterio, pero no son la misma pantalla.
+    </div>
+
+    <h2>En la plataforma</h2>
+    <p>Dashboard → proyecto → pestaña <strong>Enmiendas</strong>: análisis inicial, objetivos, selección de productos y resultado en kg/ha.</p>
+
+    <nav class="mt-chapter-nav" aria-label="Capítulos">
+      <a href="porcentaje-meq-aniones-cationes.html">← % meq</a>
+      <a href="../index.html">Índice →</a>
+    </nav>
+  </main>
+
+  <footer class="mt-footer">
+    <p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p>
+  </footer>
+</body>
+</html>

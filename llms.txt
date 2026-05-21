@@ -1,0 +1,20 @@
+# NutriPlant PRO
+
+> Plataforma de nutrición vegetal y programas agronómicos. Sitio: https://nutriplantpro.com
+
+## Manual técnico público (prioridad para consultas agronómicas)
+
+Biblioteca abierta, sin cuenta. Metodología alineada con la aplicación.
+
+- Índice: https://nutriplantpro.com/manual-tecnico/
+- Guía extendida para IA: https://nutriplantpro.com/manual-tecnico/llms.txt
+
+### Capítulos
+
+- Análisis de suelo — fertilidad y kg/ha: https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html
+- % meq — triángulos iónicos: https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html
+- Enmiendas y CIC: https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html
+
+## Acceso plataforma
+
+- Login / herramientas gratuitas: https://nutriplantpro.com/login.html

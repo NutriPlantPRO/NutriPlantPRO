@@ -1,0 +1,6 @@
+# NutriPlant PRO — acceso público a manual técnico y sitio
+User-agent: *
+Allow: /
+Allow: /manual-tecnico/
+
+Sitemap: https://nutriplantpro.com/sitemap.xml

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>% meq: triángulos aniónicos y catiónicos — Manual NutriPlant PRO</title>
+  <meta name="description" content="Reglas NutriPlant PRO para porcentaje en meq/L: triángulos N-P-S y K-Ca-Mg, N-NH4 y Cl aparte, diferencias entre hidroponía y fertirriego.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css">
+</head>
+<body>
+  <header class="mt-header">
+    <div class="mt-header-inner">
+      <a class="mt-brand" href="../index.html">
+        <img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO">
+        <span>Manual técnico</span>
+      </a>
+      <nav class="mt-nav" aria-label="Enlaces">
+        <a href="../index.html">Índice</a>
+        <a href="../../login.html">Plataforma</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar A / D · Balance iónico</p>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    <h1>% meq: triángulos aniónicos y catiónicos</h1>
+
+    <h2>Resumen</h2>
+    <p>
+      En solución nutritiva (hidroponía) y en el balance iónico de fertirriego, NutriPlant muestra <strong>% meq</strong>
+      junto a meq/L y diagramas ternarios. <strong>No todos los porcentajes comparten el mismo denominador</strong>:
+      hay triángulos que suman 100 % y iones que se calculan aparte.
+    </p>
+
+    <h2>Regla general: tres familias de %</h2>
+    <ol>
+      <li><strong>Triángulo de aniones</strong> — N-NO₃⁻, P-H₂PO₄⁻, S-SO₄²⁻: cada % = meq del ion ÷ (NO₃ + P + SO₄) × 100. <strong>Los tres suman 100 %.</strong> Cl⁻ no entra al triángulo ni a esa suma.</li>
+      <li><strong>Triángulo de cationes</strong> — K⁺, Ca²⁺, Mg²⁺: cada % = meq ÷ (K + Ca + Mg) × 100. <strong>Los tres suman 100 %.</strong> N-NH₄⁺ no entra al triángulo.</li>
+      <li><strong>Iones aparte</strong> — N-NH₄⁺ y Cl⁻ usan un total más amplio (ver módulo).</li>
+    </ol>
+
+    <h2>Hidroponía · Solución por etapa</h2>
+    <p>El usuario captura <strong>meq/L</strong> por etapa; la app calcula % meq y ppm del elemento.</p>
+    <div class="mt-formula">
+      % anión (triángulo) = meq_ion / (meq NO₃ + meq P + meq SO₄) × 100<br>
+      % catión (triángulo) = meq_ion / (meq K + meq Ca + meq Mg) × 100<br>
+      % N-NH₄⁺ = meq NH₄ / (meq K + meq Ca + meq Mg + meq NH₄) × 100
+    </div>
+    <p>
+      El diagrama ternario usa solo los % del triángulo. Rangos de referencia tipo Steiner en la app:
+      aniones N-NO₃⁻ 20–80 %, P 1,25–10 %, S 10–70 %; cationes K 10–65 %, Ca 22,5–62,5 %, Mg 0,5–40 %.
+    </p>
+    <p><strong>N total (meq/L)</strong> = N-NO₃⁻ + N-NH₄⁺ (resumen bajo las tablas).</p>
+
+    <h2>Fertirriego · Gráficas iónicas</h2>
+    <p>Misma lógica de triángulos, con matices:</p>
+    <ul>
+      <li><strong>Cl⁻</strong> — % = meq Cl ÷ (NO₃ + P + SO₄ + Cl) × 100 (sobre aniones totales con Cl), pero <strong>Cl no mueve el punto del triángulo</strong> N-P-S.</li>
+      <li><strong>N del agua de riego</strong> — Se etiqueta N-NO₃⁻; en gráficas el N del agua se trata como nitrato (NH₄ del agua = 0).</li>
+      <li>Requiere <strong>m³/ha de lámina</strong> de riego en la etapa para expresar ppm/meq en gráficas.</li>
+    </ul>
+
+    <h2>No confundir con suelo (Enmienda)</h2>
+    <div class="mt-warn">
+      El <strong>% de saturación de la CIC</strong> en análisis de suelo (K, Ca, Mg sobre CIC en meq/100 g)
+      es otro concepto. Si la pregunta es «% meq de la solución», use las reglas de este capítulo, no las de CIC.
+    </div>
+
+    <h2>FAQ: ¿Por qué no suman 100 %?</h2>
+    <ol>
+      <li>Identificar pantalla: hidroponía solución, hidroponía cálculo de fertilizantes, fertirriego gráficas o enmienda CIC.</li>
+      <li>Nombrar el <strong>denominador exacto</strong> (triángulo N-P-S, triángulo K-Ca-Mg, catiónico con NH₄, aniones con Cl en fertirriego, etc.).</li>
+      <li>No mezclar la leyenda N/Cl del cálculo de fertilizantes (hidroponía) con la tabla % meq de solución por etapa.</li>
+    </ol>
+
+    <h2>Pesos equivalentes (ppm → meq/L)</h2>
+    <p>Misma convención en la app: N-NO₃⁻ y N-NH₄⁺ → 14; P (como P en H₂PO₄⁻) → 31; S (como S en SO₄²⁻) → 16; K⁺ 39,1; Ca²⁺ 20,04; Mg²⁺ 12,15; Cl⁻ 35,45.</p>
+
+    <div class="mt-note">
+      <strong>En la plataforma:</strong> Hidroponía → Solución nutritiva por etapa; Fertirriego → Gráficas → Macro resumen iónico.
+    </div>
+
+    <nav class="mt-chapter-nav" aria-label="Capítulos">
+      <a href="analisis-suelo-fertilidad-kgha.html">← Fertilidad kg/ha</a>
+      <a href="enmiendas-balance-cic.html">Siguiente: Enmiendas →</a>
+    </nav>
+  </main>
+
+  <footer class="mt-footer">
+    <p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p>
+  </footer>
+</body>
+</html>

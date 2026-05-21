@@ -1,0 +1,231 @@
+/* Manual Técnico NutriPlant PRO — estilos públicos */
+:root {
+  --mt-bg: #f8fafc;
+  --mt-surface: #ffffff;
+  --mt-text: #0f172a;
+  --mt-muted: #64748b;
+  --mt-border: #e2e8f0;
+  --mt-accent: #0369a1;
+  --mt-accent-soft: #e0f2fe;
+  --mt-green-soft: #ecfdf5;
+  --mt-max: 760px;
+  --mt-font: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--mt-font);
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--mt-text);
+  background: var(--mt-bg);
+}
+
+.mt-header {
+  background: var(--mt-surface);
+  border-bottom: 1px solid var(--mt-border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.mt-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.mt-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+.mt-brand img { height: 36px; width: auto; }
+.mt-brand span { font-weight: 700; font-size: 15px; color: var(--mt-accent); }
+.mt-nav a {
+  color: var(--mt-muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  margin-left: 16px;
+}
+.mt-nav a:hover { color: var(--mt-accent); }
+
+.mt-wrap {
+  max-width: var(--mt-max);
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+.mt-wrap--wide { max-width: 960px; }
+
+.mt-hero {
+  background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
+  border: 1px solid #7dd3fc;
+  border-radius: 12px;
+  padding: 28px 24px;
+  margin-bottom: 32px;
+}
+.mt-hero h1 {
+  margin: 0 0 10px;
+  font-size: 1.75rem;
+  line-height: 1.25;
+}
+.mt-hero .lead {
+  margin: 0;
+  color: #334155;
+  font-size: 1.05rem;
+}
+.mt-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mt-accent);
+  background: var(--mt-accent-soft);
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.mt-meta {
+  font-size: 13px;
+  color: var(--mt-muted);
+  margin-bottom: 24px;
+}
+
+h2 {
+  font-size: 1.25rem;
+  margin: 32px 0 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--mt-border);
+}
+h2:first-of-type { border-top: 0; padding-top: 0; margin-top: 20px; }
+h3 { font-size: 1.05rem; margin: 20px 0 8px; color: #1e293b; }
+
+p, li { color: #334155; }
+ul, ol { padding-left: 1.25rem; margin: 0 0 14px; }
+
+.mt-formula {
+  background: #f1f5f9;
+  border-left: 4px solid var(--mt-accent);
+  padding: 14px 16px;
+  margin: 16px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  border-radius: 0 8px 8px 0;
+}
+.mt-note {
+  background: var(--mt-accent-soft);
+  border: 1px solid #7dd3fc;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 16px 0;
+  font-size: 14px;
+}
+.mt-note strong { color: #0c4a6e; }
+.mt-disclaimer {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0c4a6e;
+  margin: 12px 0;
+}
+.mt-warn {
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+  margin: 16px 0;
+}
+
+.mt-pillars { display: grid; gap: 12px; margin: 24px 0; }
+@media (min-width: 640px) {
+  .mt-pillars { grid-template-columns: 1fr 1fr; }
+}
+
+.mt-pillar {
+  background: var(--mt-surface);
+  border: 1px solid var(--mt-border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.mt-pillar h3 { margin: 0 0 8px; font-size: 15px; }
+.mt-pillar ul { margin: 0; padding-left: 18px; font-size: 14px; }
+
+.mt-chapter-list { list-style: none; padding: 0; margin: 0; }
+.mt-chapter-list li {
+  border-bottom: 1px solid var(--mt-border);
+  padding: 12px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.mt-chapter-list a {
+  color: var(--mt-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.mt-chapter-list a:hover { text-decoration: underline; }
+.mt-status {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.mt-status--live { background: var(--mt-green-soft); color: #166534; }
+.mt-status--soon { background: #f1f5f9; color: #64748b; }
+
+.mt-footer {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--mt-border);
+  font-size: 13px;
+  color: var(--mt-muted);
+  text-align: center;
+}
+.mt-footer a { color: var(--mt-accent); }
+
+table.mt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 16px 0;
+}
+table.mt-table th, table.mt-table td {
+  border: 1px solid var(--mt-border);
+  padding: 8px 10px;
+  text-align: left;
+}
+table.mt-table th { background: #f1f5f9; font-weight: 600; }
+
+.mt-breadcrumb {
+  font-size: 13px;
+  color: var(--mt-muted);
+  margin-bottom: 20px;
+}
+.mt-breadcrumb a { color: var(--mt-accent); text-decoration: none; }
+.mt-breadcrumb a:hover { text-decoration: underline; }
+.mt-chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--mt-border);
+  font-size: 14px;
+}
+.mt-chapter-nav a { color: var(--mt-accent); font-weight: 600; text-decoration: none; }
+.mt-chapter-nav a:hover { text-decoration: underline; }

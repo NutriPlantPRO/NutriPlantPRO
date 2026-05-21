@@ -1,0 +1,31 @@
+# NutriPlant PRO — Manual Técnico (para crawlers e IA)
+
+> Biblioteca pública de metodología agronómica alineada con la plataforma NutriPlant PRO.
+> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza.
+
+## Sitio
+
+- Índice: https://nutriplantpro.com/manual-tecnico/
+- Plataforma (login): https://nutriplantpro.com/login.html
+
+## Capítulos publicados (2026-05)
+
+- Análisis de suelo — fertilidad, ideales y kg/ha de ajuste
+  https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html
+
+- % meq — triángulos aniónicos (N-P-S) y catiónicos (K-Ca-Mg); N-NH4 y Cl aparte
+  https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html
+
+- Balance de enmiendas por CIC del suelo (meq/100 g, kg/ha de enmienda)
+  https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html
+
+## Reglas clave (resumen)
+
+- Fertilidad suelo kg/ha: (lab − ideal) × 0.1 × profundidad_cm × densidad × (suelo_explorado_% / 100)
+- CIC suelo: 1 meq/100 g = 1 cmolc/kg (misma cifra)
+- % meq solución: triángulos N-P-S y K-Ca-Mg suman 100% cada uno; Cl y NH4 con denominadores distintos
+- No confundir % saturación CIC (suelo) con % meq de solución (hidroponía/fertirriego)
+
+## Actualización
+
+Versión manual: 2026-05. Plan editorial: repositorio docs/MANUAL-TECNICO-NUTRIPLANT-PLAN.md

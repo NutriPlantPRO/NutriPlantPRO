@@ -2701,6 +2701,23 @@ function handleFreeToolsCatalog(params) {
   return { ok: true, ...catalog };
 }
 
+function handleManualTecnicoCatalog(params) {
+  const catalog = require('./lib/manual-tecnico-catalog');
+  const chapterId = params && params.chapter_id;
+  if (chapterId) {
+    const ch = catalog.chapters.find((c) => c.id === chapterId || c.slug === chapterId);
+    if (!ch) {
+      return {
+        ok: false,
+        error: 'chapter_id no encontrado',
+        available_ids: catalog.chapters.map((c) => c.id)
+      };
+    }
+    return { ok: true, chapter: ch, publicUrls: catalog.publicUrls, gptRules: catalog.gptRules };
+  }
+  return { ok: true, ...catalog };
+}
+
 async function handleDescribeApi() {
   return {
     ok: true,
@@ -2716,10 +2733,11 @@ async function handleDescribeApi() {
       plan_pro: ['plan_pro_week', 'plan_pro_search', 'plan_pro_item'],
       radar: ['radar_project', 'radar_search', 'radar_overview'],
       free_tools: ['free_tools_catalog'],
-      lab_analyses: ['lab_analyses_catalog', 'project_analyses']
+      lab_analyses: ['lab_analyses_catalog', 'project_analyses'],
+      manual_publico: ['manual_tecnico_catalog']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses con project_name/id, type, report_id, latest_only. Criterios/flujo: lab_analyses_catalog. project_detail incluye analyses. Calculadoras gratis: free_tools_catalog. Clima/Radar/Plan PRO: acciones existentes.'
+      'Reportes laboratorio (nube): project_analyses con project_name/id, type, report_id, latest_only. Criterios/flujo: lab_analyses_catalog. project_detail incluye analyses. Calculadoras gratis: free_tools_catalog. Manual técnico público (web): manual_tecnico_catalog. Clima/Radar/Plan PRO: acciones existentes.'
   };
 }
 
@@ -2740,6 +2758,7 @@ const HANDLERS = {
   radar_overview: (sb, p) => handleRadarOverview(sb, p),
   free_tools_catalog: (_sb, p) => handleFreeToolsCatalog(p),
   lab_analyses_catalog: (_sb, p) => handleLabAnalysesCatalog(p),
+  manual_tecnico_catalog: (_sb, p) => handleManualTecnicoCatalog(p),
   describe_api: () => handleDescribeApi()
 };
 

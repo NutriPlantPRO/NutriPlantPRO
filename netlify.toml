@@ -21,6 +21,12 @@
   timeout = 60
 
 [[redirects]]
+  from = "/manual-tecnico"
+  to = "/manual-tecnico/"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/api/openai-assistant"
   to = "/.netlify/functions/openai-assistant"
   status = 200

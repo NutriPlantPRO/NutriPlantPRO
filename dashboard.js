@@ -18502,7 +18502,7 @@ function createSoilAnalysisTabHTML() {
                     <label title="CIC proviene de la sección Cationes intercambiables y CIC (suma Ca+Mg+K+Na+Al+H). Solo visual."><span class="notranslate" translate="no">CIC (meq/100g o cmol⁺/kg)</span> <span id="soil-cic-params" class="soil-cic-display">—</span></label>
                   </div>
                   <div class="soil-fertility-params-hint">
-                    <strong>Base técnica de ajuste.</strong><br>Los valores calculados no representan una recomendación directa; son un punto de partida sujeto a eficiencia y criterio agronómico.
+                    <strong>Base técnica de ajuste.</strong><br><span class="soil-fertility-disclaimer">Los valores calculados no representan una recomendación directa; son un punto de partida sujeto a eficiencia y criterio agronómico.</span>
                     <br>En kg/ha se considera solo el suelo que las raíces aprovechan en la profundidad indicada. Ideales K, Ca y Mg (ppm): desde la CIC de Cationes — meq ideal = CIC × saturación objetivo (K 5 %, Mg 13 %, Ca 70 %) y ppm = meq × factor equivalente (K 391, Mg 121,5, Ca 200,4).
                     <button type="button" class="btn btn-sm soil-btn-ideal-ref" style="margin-left:8px; font-size:10px; padding:2px 8px; color:#0369a1; border:1px solid #0369a1; background:transparent; border-radius:4px; cursor:pointer;" onclick="window.applyGeneralIdealReferences && window.applyGeneralIdealReferences();" title="Llena la fila Ideal con valores de referencia generales (MO, N-NO₃, P por método, Na, S, micronutrientes). K, Ca y Mg se calculan desde la CIC (meq ideales y conversión a ppm).">Recargar valores ideales de referencia</button>
                   </div>

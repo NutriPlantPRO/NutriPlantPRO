@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "1.8.0",
-    "description": "Solo lectura. Análisis lab (6 tipos), Clima, Radar, Plan PRO, catálogos GPT."
+    "version": "1.9.0",
+    "description": "Solo lectura. Análisis lab, Manual técnico público, Clima, Radar, Plan PRO, catálogos GPT."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Consulta NutriPlant (admin, proyectos, análisis, clima, Radar, Plan PRO)",
-        "description": "Reportes lab en nube: project_analyses (type, report_id, latest_only). Criterios: lab_analyses_catalog. Calculadoras gratis: free_tools_catalog. Clima, Radar, Plan PRO.",
+        "description": "Reportes lab: project_analyses. Manual público web: manual_tecnico_catalog. Criterios lab: lab_analyses_catalog. Calculadoras gratis: free_tools_catalog. Clima, Radar, Plan PRO.",
         "requestBody": {
           "required": true,
           "content": {
@@ -60,6 +60,7 @@
               "radar_overview",
               "free_tools_catalog",
               "lab_analyses_catalog",
+              "manual_tecnico_catalog",
               "describe_api"
             ]
           },
@@ -94,6 +95,10 @@
               "latest_only": {
                 "type": "boolean",
                 "description": "project_analyses: solo el reporte más reciente por tipo"
+              },
+              "chapter_id": {
+                "type": "string",
+                "description": "manual_tecnico_catalog: id o slug del capítulo (ej. analisis_suelo_fertilidad_kgha)"
               }
             },
             "additionalProperties": true

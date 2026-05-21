@@ -118,9 +118,11 @@ Body: `{ "action": "...", "params": { ... } }`
 | `plan_pro_item` | Detalle de un apunte (incl. mini-tablas) | “Resume mi apunte de proyección X” |
 | `free_tools_catalog` | Catálogo calculadoras gratis (fórmulas, archivos, persistencia local) | “¿Cómo funciona la calculadora de solución nutritiva gratis?” |
 | `lab_analyses_catalog` | Flujo y criterios de las 6 pestañas Análisis (sin datos de proyecto) | “¿Cómo se calcula kg/ha en análisis de suelo?” |
+| `manual_tecnico_catalog` | **Manual web público** — capítulos, URLs, reglas GEO (sin cuenta) | “¿Qué dice el manual público sobre % meq?” |
 | `project_analyses` | **Valores reales** en nube: suelo, solución, pasta, agua, foliar, fruta | “¿Qué foliar tiene el proyecto Limón?” |
 
-**Paquete de actualización GPT (Knowledge + Instructions + OpenAPI 1.8):** ver `docs/CHATGPT-SOCIO-PAQUETE-ACTUALIZACION.md`.
+**Paquete de actualización GPT (Knowledge + Instructions + OpenAPI 1.9):** ver `docs/CHATGPT-SOCIO-PAQUETE-ACTUALIZACION.md`.  
+**Manual público en web:** https://nutriplantpro.com/manual-tecnico/ · Knowledge: `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md`
 
 **Fase 2 (opcional):** geocodificación inversa de `lat/lng` → estado/región; más acciones granulares.
 
@@ -164,12 +166,14 @@ ChatGPT solo **presenta** tablas y explica; la API **devuelve números**.
    - NutriPlant: proyectos en `projects.data`; Plan PRO: tablas `plan_pro_*`.
    - **Análisis de laboratorio (6 pestañas):** datos en nube → **siempre** `project_analyses` con `project_name` o `project_id`. Knowledge: `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`. Criterios: `lab_analyses_catalog`. No confundir Enmiendas (`soilAnalysis`) con reportes Suelo (`soilAnalyses[]`).
    - **Calculadoras gratuitas:** Knowledge `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` y/o `free_tools_catalog`. Solo localStorage; no sustituyen reportes del suscriptor.
+   - **Manual técnico público (GEO/web):** Knowledge `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` y/o `manual_tecnico_catalog`. Citas: https://nutriplantpro.com/manual-tecnico/ — no sustituye `project_analyses`.
    - **Guía paso a paso:** `docs/CHATGPT-SOCIO-PAQUETE-ACTUALIZACION.md`.
    - **Radar NDVI/NDMI:** `radar_project` con `project_name` o `project_id`. Lee `radar_history` (todas las fechas guardadas: `created_at`, `sentinel_period`, `id`). `latest_radar` trae URLs firmadas de la **más reciente**; si el usuario pide una fecha antigua, repite `radar_project` con `params.request_id` = el `id` de esa fila. Siempre di la **fecha** de la imagen que cites. No analices píxeles: pasa enlaces NDVI/NDMI para que el usuario los abra (~1 h de validez).
-4. **Knowledge (obligatorio para criterios):** sube los dos archivos:
+4. **Knowledge (obligatorio para criterios):** sube los tres archivos:
    - `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`
    - `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
-5. **Actions** → Import OpenAPI → `docs/openapi-nutriplant-admin.json` (v1.8+) o `/.netlify/functions/nutriplant-admin-assistant`.
+   - `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` (fuente pública del manual web)
+5. **Actions** → Import OpenAPI → `docs/openapi-nutriplant-admin.json` (v1.9+) o `/.netlify/functions/nutriplant-admin-assistant`.
 6. **Authentication:** API Key → Header `Authorization` → `Bearer <NUTRIPLANT_ADMIN_GPT_TOKEN>`.
 7. **Save → Only me (Private)**.
 
