@@ -99,7 +99,30 @@ function normalizeParams(body) {
     const v = src[key];
     if (v != null && v !== '' && params[key] == null) params[key] = v;
   });
-  const planKeys = ['item_id', 'area_id', 'area_slug', 'thought_type', 'tags', 'days_ahead', 'include_overdue'];
+  const planKeys = [
+    'item_id',
+    'area_id',
+    'area_slug',
+    'area_title',
+    'category_id',
+    'category_title',
+    'thought_type',
+    'tags',
+    'days_ahead',
+    'include_overdue',
+    'due_on',
+    'due_date',
+    'fecha',
+    'title',
+    'body_plain',
+    'note',
+    'priority',
+    'next_action',
+    'status',
+    'close',
+    'reopen',
+    'append_note'
+  ];
   planKeys.forEach((key) => {
     const v = src[key];
     if (v != null && v !== '' && params[key] == null) params[key] = v;
@@ -2255,6 +2278,360 @@ async function handlePlanProSearch(supabase, params) {
   };
 }
 
+function normalizePlanProPriorityInput(raw) {
+  if (raw == null || raw === '') return null;
+  const lv = priorityLevelFromRaw(raw);
+  if (lv === 'alta') return 'Alta';
+  if (lv === 'media') return 'Media';
+  if (lv === 'baja') return 'Baja';
+  const s = String(raw).trim();
+  return s || null;
+}
+
+function parsePlanProDueDateParam(raw) {
+  if (raw == null || raw === '') return null;
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = parseIsoDateOnly(s);
+  return d ? dateOnlyKey(d) : null;
+}
+
+function parseRelationTagsParam(raw) {
+  if (raw == null) return null;
+  if (Array.isArray(raw)) {
+    const tags = raw.map((t) => String(t).trim()).filter(Boolean);
+    return tags.length ? tags : [];
+  }
+  const s = String(raw).trim();
+  if (!s) return [];
+  return s
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
+async function resolvePlanProAreaId(params, areas) {
+  const id = (params.area_id || '').trim();
+  if (id) {
+    return areas.some((a) => a.id === id) ? id : null;
+  }
+  if (params.area_slug) {
+    const slug = String(params.area_slug).toLowerCase();
+    const a = areas.find((x) => (x.slug || '').toLowerCase() === slug);
+    if (a) return a.id;
+  }
+  const areaQ = (params.area_title || params.area || '').trim().toLowerCase();
+  if (areaQ) {
+    const a = areas.find(
+      (x) =>
+        (x.title || '').toLowerCase().includes(areaQ) || (x.slug || '').toLowerCase().includes(areaQ)
+    );
+    if (a) return a.id;
+  }
+  return null;
+}
+
+function resolvePlanProCategoryId(params, categories, areaId) {
+  const inArea = (categories || []).filter((c) => c.area_id === areaId);
+  const catId = (params.category_id || '').trim();
+  if (catId) {
+    return inArea.some((c) => c.id === catId) ? catId : null;
+  }
+  const catQ = (params.category_title || params.category || '').trim().toLowerCase();
+  if (catQ) {
+    const c = inArea.find((x) => (x.title || '').toLowerCase().includes(catQ));
+    if (c) return c.id;
+  }
+  const roots = inArea.filter((c) => !c.parent_id);
+  const pool = roots.length ? roots : inArea;
+  return pool.length ? pool[0].id : null;
+}
+
+async function handlePlanProCatalog(supabase) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'plan_pro', error: 'No se encontró usuario admin para Plan PRO.' };
+  }
+  const areas = await fetchPlanProAreas(supabase, ownerId);
+  const categories = await fetchPlanProCategories(supabase);
+  const byArea = areas.map((a) => ({
+    id: a.id,
+    title: a.title,
+    slug: a.slug,
+    categories: categories
+      .filter((c) => c.area_id === a.id)
+      .map((c) => ({ id: c.id, title: c.title, parent_id: c.parent_id }))
+  }));
+  return {
+    ok: true,
+    domain: 'plan_pro',
+    areas: byArea,
+    hint: 'Para crear: plan_pro_create con title + area_slug o area_id; category_id opcional (si falta, primera rama del pilar).'
+  };
+}
+
+async function handlePlanProDay(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'plan_pro', error: 'No se encontró usuario admin para Plan PRO.' };
+  }
+  const dayKey = parsePlanProDueDateParam(params.due_on || params.due_date || params.fecha || params.date);
+  if (!dayKey) {
+    return {
+      ok: true,
+      domain: 'plan_pro',
+      error: 'Indica params.due_on o params.due_date (YYYY-MM-DD), ej. 2026-05-28.'
+    };
+  }
+
+  const areas = await fetchPlanProAreas(supabase, ownerId);
+  const areasById = areaMapById(areas);
+  let areaId = (params.area_id || '').trim();
+  if (!areaId && params.area_slug) {
+    const slug = String(params.area_slug).toLowerCase();
+    const a = areas.find((x) => (x.slug || '').toLowerCase() === slug);
+    if (a) areaId = a.id;
+  }
+
+  const items = await fetchPlanProItems(supabase, ownerId, {
+    area_id: areaId || undefined,
+    open_only: params.include_closed !== true && params.include_closed !== 'true',
+    limit: 120
+  });
+  const categories = await fetchPlanProCategories(supabase);
+
+  const dueOnDay = [];
+  const noDue = [];
+  items.forEach((item) => {
+    const due = parseIsoDateOnly(item.due_at);
+    const row = planProItemListRow(item, areasById, categories);
+    if (!due) {
+      noDue.push(row);
+      return;
+    }
+    if (dateOnlyKey(due) === dayKey) dueOnDay.push(row);
+  });
+
+  return {
+    ok: true,
+    domain: 'plan_pro',
+    due_on: dayKey,
+    count: dueOnDay.length,
+    items: dueOnDay,
+    open_without_due_on_that_day: params.include_no_due ? noDue.slice(0, 10) : undefined
+  };
+}
+
+async function handlePlanProCreate(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'plan_pro', error: 'No se encontró usuario admin para Plan PRO.' };
+  }
+
+  const title = (params.title || '').trim();
+  if (!title) {
+    return { ok: true, domain: 'plan_pro', error: 'Indica params.title (título del apunte).' };
+  }
+
+  const areas = await fetchPlanProAreas(supabase, ownerId);
+  const areaId = resolvePlanProAreaId(params, areas);
+  if (!areaId) {
+    return {
+      ok: true,
+      domain: 'plan_pro',
+      error: 'Indica params.area_id, area_slug o area_title (pilar).',
+      areas: areas.map((a) => ({ id: a.id, title: a.title, slug: a.slug }))
+    };
+  }
+
+  const categories = await fetchPlanProCategories(supabase);
+  const categoryId = resolvePlanProCategoryId(params, categories, areaId);
+  if (!categoryId) {
+    return {
+      ok: true,
+      domain: 'plan_pro',
+      error: 'No hay rama (categoría) en ese pilar. Crea una en Plan PRO o indica category_id.',
+      area_id: areaId
+    };
+  }
+
+  const bodyPlain = (params.body_plain || params.note || params.body || '').trim();
+  const dueAt = parsePlanProDueDateParam(params.due_at || params.due_date || params.fecha);
+  const capturedAt = parsePlanProDueDateParam(params.captured_at) || dateOnlyKey(new Date());
+
+  const insert = {
+    owner_id: ownerId,
+    area_id: areaId,
+    category_id: categoryId,
+    title: title.slice(0, 500),
+    status: params.status != null && String(params.status).trim() ? String(params.status).trim() : null,
+    priority: normalizePlanProPriorityInput(params.priority),
+    thought_type:
+      params.thought_type != null && String(params.thought_type).trim()
+        ? String(params.thought_type).trim()
+        : params.tipo != null && String(params.tipo).trim()
+          ? String(params.tipo).trim()
+          : null,
+    captured_at: capturedAt,
+    due_at: dueAt,
+    next_action:
+      params.next_action != null && String(params.next_action).trim()
+        ? String(params.next_action).trim().slice(0, 500)
+        : null,
+    relation_tags: parseRelationTagsParam(params.relation_tags || params.tags),
+    body_plain: bodyPlain || null,
+    body_blocks: [],
+    attachments: []
+  };
+
+  const { data, error } = await supabase
+    .from('plan_pro_items')
+    .insert(insert)
+    .select(PLAN_PRO_ITEM_SELECT)
+    .single();
+  if (error) throw new Error('plan_pro_create: ' + error.message);
+
+  const areasById = areaMapById(areas);
+  return {
+    ok: true,
+    domain: 'plan_pro',
+    created: true,
+    message: 'Apunte creado en Plan PRO.',
+    item: planProItemListRow(data, areasById, categories)
+  };
+}
+
+async function handlePlanProUpdate(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'plan_pro', error: 'No se encontró usuario admin para Plan PRO.' };
+  }
+
+  const itemId = (params.item_id || params.id || '').trim();
+  const q = (params.q || params.search || params.title || '').trim().toLowerCase();
+  if (!itemId && !q) {
+    return {
+      ok: true,
+      domain: 'plan_pro',
+      error: 'Indica params.item_id o params.q (título) del apunte a editar.'
+    };
+  }
+
+  const areas = await fetchPlanProAreas(supabase, ownerId);
+  const areasById = areaMapById(areas);
+  const categories = await fetchPlanProCategories(supabase);
+
+  let item = null;
+  if (itemId) {
+    const { data, error } = await supabase
+      .from('plan_pro_items')
+      .select(PLAN_PRO_ITEM_SELECT)
+      .eq('owner_id', ownerId)
+      .eq('id', itemId)
+      .maybeSingle();
+    if (error) throw new Error('plan_pro_update: ' + error.message);
+    item = data;
+  } else {
+    const items = await fetchPlanProItems(supabase, ownerId, { limit: 100 });
+    const hits = items.filter((it) => itemMatchesSearch(it, q, areasById));
+    hits.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+    item = hits[0] || null;
+  }
+
+  if (!item) {
+    return { ok: true, domain: 'plan_pro', found: false, message: 'Apunte no encontrado.' };
+  }
+
+  const patch = {};
+
+  if (params.title != null && String(params.title).trim()) {
+    patch.title = String(params.title).trim().slice(0, 500);
+  }
+  if (params.body_plain != null || params.note != null) {
+    const bp = String(params.body_plain != null ? params.body_plain : params.note).trim();
+    patch.body_plain = bp || null;
+  }
+  if (params.append_note != null && String(params.append_note).trim()) {
+    const add = String(params.append_note).trim();
+    const prev = (item.body_plain || '').trim();
+    patch.body_plain = prev ? prev + '\n\n' + add : add;
+  }
+  if (params.priority != null) {
+    patch.priority = normalizePlanProPriorityInput(params.priority);
+  }
+  if (params.due_at != null || params.due_date != null || params.fecha != null) {
+    const rawDue = params.due_at != null ? params.due_at : params.due_date != null ? params.due_date : params.fecha;
+    if (rawDue === '' || rawDue === false) {
+      patch.due_at = null;
+    } else {
+      patch.due_at = parsePlanProDueDateParam(rawDue);
+    }
+  }
+  if (params.next_action != null) {
+    const na = String(params.next_action).trim();
+    patch.next_action = na ? na.slice(0, 500) : null;
+  }
+  if (params.status != null) {
+    const st = String(params.status).trim();
+    patch.status = st || null;
+  }
+  if (params.thought_type != null || params.tipo != null) {
+    const tt = String(params.thought_type != null ? params.thought_type : params.tipo).trim();
+    patch.thought_type = tt || null;
+  }
+  if (params.relation_tags != null || params.tags != null) {
+    patch.relation_tags = parseRelationTagsParam(params.relation_tags != null ? params.relation_tags : params.tags);
+  }
+  if (params.area_id != null || params.area_slug != null || params.area_title != null) {
+    const newAreaId = resolvePlanProAreaId(params, areas);
+    if (newAreaId) patch.area_id = newAreaId;
+  }
+  if (params.category_id != null || params.category_title != null) {
+    const areaForCat = patch.area_id || item.area_id;
+    const catId = resolvePlanProCategoryId(params, categories, areaForCat);
+    if (catId) patch.category_id = catId;
+  }
+
+  const wantClose =
+    params.close === true ||
+    params.close === 'true' ||
+    (params.status && /cerrad|closed|hecho|done/i.test(String(params.status)));
+  const wantReopen = params.reopen === true || params.reopen === 'true';
+  if (wantClose) {
+    patch.closed_at = new Date().toISOString();
+    if (!patch.status) patch.status = 'Cerrado';
+  } else if (wantReopen) {
+    patch.closed_at = null;
+  }
+
+  if (!Object.keys(patch).length) {
+    return {
+      ok: true,
+      domain: 'plan_pro',
+      error:
+        'Nada que actualizar. Usa title, note/body_plain, priority, due_at, next_action, status, tags, close/reopen.'
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('plan_pro_items')
+    .update(patch)
+    .eq('id', item.id)
+    .eq('owner_id', ownerId)
+    .select(PLAN_PRO_ITEM_SELECT)
+    .single();
+  if (error) throw new Error('plan_pro_update: ' + error.message);
+
+  return {
+    ok: true,
+    domain: 'plan_pro',
+    updated: true,
+    fields_changed: Object.keys(patch),
+    message: 'Apunte actualizado en Plan PRO.',
+    item: planProItemListRow(data, areasById, categories)
+  };
+}
+
 async function handlePlanProItem(supabase, params) {
   const ownerId = await getPlanProOwnerId(supabase);
   if (!ownerId) {
@@ -2730,14 +3107,22 @@ async function handleDescribeApi() {
         'project_vpd_live',
         'project_climate'
       ],
-      plan_pro: ['plan_pro_week', 'plan_pro_search', 'plan_pro_item'],
+      plan_pro: [
+        'plan_pro_catalog',
+        'plan_pro_day',
+        'plan_pro_week',
+        'plan_pro_search',
+        'plan_pro_item',
+        'plan_pro_create',
+        'plan_pro_update'
+      ],
       radar: ['radar_project', 'radar_search', 'radar_overview'],
       free_tools: ['free_tools_catalog'],
       lab_analyses: ['lab_analyses_catalog', 'project_analyses'],
       manual_publico: ['manual_tecnico_catalog']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses con project_name/id, type, report_id, latest_only. Criterios/flujo: lab_analyses_catalog. project_detail incluye analyses. Calculadoras gratis: free_tools_catalog. Manual técnico público (web): manual_tecnico_catalog. Clima/Radar/Plan PRO: acciones existentes.'
+      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item (leer), plan_pro_create/plan_pro_update (escribir solo cerebro digital). plan_pro_catalog = pilares y ramas. Manual: manual_tecnico_catalog.'
   };
 }
 
@@ -2750,9 +3135,13 @@ const HANDLERS = {
   project_analyses: (sb, p) => handleProjectAnalyses(sb, p),
   project_vpd_live: (sb, p) => handleProjectVpdLive(sb, p),
   project_climate: (sb, p) => handleProjectClimate(sb, p),
+  plan_pro_catalog: (sb) => handlePlanProCatalog(sb),
+  plan_pro_day: (sb, p) => handlePlanProDay(sb, p),
   plan_pro_week: (sb, p) => handlePlanProWeek(sb, p),
   plan_pro_search: (sb, p) => handlePlanProSearch(sb, p),
   plan_pro_item: (sb, p) => handlePlanProItem(sb, p),
+  plan_pro_create: (sb, p) => handlePlanProCreate(sb, p),
+  plan_pro_update: (sb, p) => handlePlanProUpdate(sb, p),
   radar_project: (sb, p) => handleRadarProject(sb, p),
   radar_search: (sb, p) => handleRadarSearch(sb, p),
   radar_overview: (sb, p) => handleRadarOverview(sb, p),
@@ -2768,8 +3157,8 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '1.6.0',
-      description: 'Solo lectura. Análisis (6 tipos), Clima, Radar, Plan PRO.'
+      version: '2.0.0',
+      description: 'Lectura NutriPlant + Plan PRO escritura (create/update). Análisis, Clima, Radar, Manual.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {

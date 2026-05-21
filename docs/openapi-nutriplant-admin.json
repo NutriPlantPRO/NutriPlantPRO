@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "1.9.0",
-    "description": "Solo lectura. Análisis lab, Manual técnico público, Clima, Radar, Plan PRO, catálogos GPT."
+    "version": "2.0.0",
+    "description": "Lectura NutriPlant (proyectos, lab, manual). Plan PRO personal: lectura y escritura (create/update) solo cerebro digital admin."
   },
   "servers": [
     {
@@ -14,8 +14,8 @@
     "/api/admin-assistant": {
       "post": {
         "operationId": "nutriplantAdminQuery",
-        "summary": "Consulta NutriPlant (admin, proyectos, análisis, clima, Radar, Plan PRO)",
-        "description": "Reportes lab: project_analyses. Manual público web: manual_tecnico_catalog. Criterios lab: lab_analyses_catalog. Calculadoras gratis: free_tools_catalog. Clima, Radar, Plan PRO.",
+        "summary": "Consulta NutriPlant y Plan PRO (lectura + crear/editar apuntes)",
+        "description": "NutriPlant: project_analyses, manual_tecnico_catalog, etc. Plan PRO (solo Jesús): plan_pro_day, plan_pro_week, plan_pro_create, plan_pro_update. Nunca inventar datos de clientes.",
         "requestBody": {
           "required": true,
           "content": {
@@ -52,9 +52,13 @@
               "project_analyses",
               "project_vpd_live",
               "project_climate",
+              "plan_pro_catalog",
+              "plan_pro_day",
               "plan_pro_week",
               "plan_pro_search",
               "plan_pro_item",
+              "plan_pro_create",
+              "plan_pro_update",
               "radar_project",
               "radar_search",
               "radar_overview",
@@ -77,29 +81,36 @@
               "mode": { "type": "string", "description": "project_climate: saved|live|rainfall_refresh|all" },
               "email": { "type": "string" },
               "crop": { "type": "string" },
-              "q": { "type": "string" },
-              "item_id": { "type": "string" },
+              "q": { "type": "string", "description": "Búsqueda o título de apunte Plan PRO" },
+              "item_id": { "type": "string", "description": "UUID apunte Plan PRO" },
+              "title": { "type": "string", "description": "plan_pro_create/update: título" },
+              "note": { "type": "string", "description": "plan_pro_create/update: nota (body_plain)" },
+              "body_plain": { "type": "string" },
+              "priority": { "type": "string", "description": "alta|media|baja o Alta|Media|Baja" },
+              "due_at": { "type": "string", "description": "YYYY-MM-DD fecha objetivo" },
+              "due_on": { "type": "string", "description": "plan_pro_day: YYYY-MM-DD" },
+              "due_date": { "type": "string" },
+              "area_id": { "type": "string" },
+              "area_slug": { "type": "string" },
+              "area_title": { "type": "string" },
+              "category_id": { "type": "string" },
+              "category_title": { "type": "string" },
+              "next_action": { "type": "string" },
+              "status": { "type": "string" },
+              "thought_type": { "type": "string" },
+              "relation_tags": { "type": "string", "description": "tags separados por coma" },
+              "tags": { "type": "string" },
+              "close": { "type": "boolean", "description": "plan_pro_update: marcar cerrado" },
+              "reopen": { "type": "boolean" },
+              "append_note": { "type": "string", "description": "plan_pro_update: añadir texto a nota" },
+              "days_ahead": { "type": "integer" },
+              "include_overdue": { "type": "boolean" },
               "limit": { "type": "integer" },
-              "tool_id": {
-                "type": "string",
-                "description": "free_tools_catalog: id herramienta (ej. hidro_solucion)"
-              },
-              "tab_id": {
-                "type": "string",
-                "description": "lab_analyses_catalog: suelo|solucion_nutritiva|extracto_pasta|agua|foliar|fruta"
-              },
-              "report_id": {
-                "type": "string",
-                "description": "project_analyses: id del reporte (sa_*, sn_*, etc.)"
-              },
-              "latest_only": {
-                "type": "boolean",
-                "description": "project_analyses: solo el reporte más reciente por tipo"
-              },
-              "chapter_id": {
-                "type": "string",
-                "description": "manual_tecnico_catalog: id o slug del capítulo (ej. analisis_suelo_fertilidad_kgha)"
-              }
+              "tool_id": { "type": "string" },
+              "tab_id": { "type": "string" },
+              "report_id": { "type": "string" },
+              "latest_only": { "type": "boolean" },
+              "chapter_id": { "type": "string" }
             },
             "additionalProperties": true
           }

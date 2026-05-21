@@ -41,7 +41,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 ## Paso C — Actions (OpenAPI)
 
 1. **Actions** → elimina schema anterior si da conflicto.
-2. Importa `docs/openapi-nutriplant-admin.json` **v1.9.0**.
+2. Importa `docs/openapi-nutriplant-admin.json` **v2.0.0** (incluye Plan PRO create/update).
 3. Auth sin cambios: `Authorization: Bearer <NUTRIPLANT_ADMIN_GPT_TOKEN>`.
 
 ---
