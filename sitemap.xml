@@ -6,7 +6,7 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://nutriplantpro.com/manual-tecnico/nosotros.html</loc>
+    <loc>https://nutriplantpro.com/manual-tecnico/autoria.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
@@ -29,6 +29,101 @@
     <loc>https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/unidades-ppm-meq-oxidos.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/programa-fertirriego-etapas.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/fertirriego-graficas-ionicas.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/diseno-solucion-nutritiva-didactica.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/agua-dureza-acidificacion-solubilidad.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/interacciones-mulder-compatibilidad.html</loc>
+    <lastmod>2026-05-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/n-mineralizable-agua-disponible-suelo.html</loc>
+    <lastmod>2026-05-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/analisis-foliar-dop.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/faq-porcentajes-no-suman-100.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/extraccion-nutrimental-por-etapa.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/hidroponia-solucion-por-etapa.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/analisis-solucion-nutritiva-lab.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/analisis-extracto-pasta.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/analisis-agua-ras-sar.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/analisis-fruta-icc.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/granular-mezclas.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nutriplantpro.com/manual-tecnico/capitulos/publicaciones-redes-sociales.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://nutriplantpro.com/politicas-privacidad.html</loc>

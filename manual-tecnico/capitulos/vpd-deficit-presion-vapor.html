@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VPD: déficit de presión de vapor — Manual NutriPlant PRO</title>
+  <meta name="description" content="VPD en NutriPlant PRO: cálculo, rangos de manejo, registro por proyecto y relación con estrés hídrico del cultivo.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css">
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <div class="mt-social-links" aria-label="Redes sociales">
+        <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="facebook" title="Facebook"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+        <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="instagram" title="Instagram"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg></a>
+        <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&_r=1" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="tiktok" title="TikTok"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg></a>
+        <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="youtube" title="YouTube"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33z"/><polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/></svg></a>
+        <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="linkedin" title="LinkedIn"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
+      </div>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Clima</p>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    <h1>VPD: déficit de presión de vapor</h1>
+    <h2>Resumen</h2>
+    <p>El <strong>VPD</strong> (Vapor Pressure Deficit) expresa cuánta “capacidad de secado” tiene el aire. NutriPlant lo calcula en la pestaña <strong>VPD</strong> del proyecto y en la herramienta gratuita del login.</p>
+    <h2>Entradas</h2>
+    <ul>
+      <li>Temperatura del aire (°C).</li>
+      <li>Humedad relativa (%).</li>
+      <li>Opcional: radiación, viento (versión avanzada en proyecto).</li>
+    </ul>
+    <h2>Interpretación orientativa (kPa)</h2>
+    <table class="mt-table">
+      <thead><tr><th>VPD</th><th>Interpretación general</th></tr></thead>
+      <tbody>
+        <tr><td>&lt; 0,4</td><td>Aire muy húmedo; transpiración limitada</td></tr>
+        <tr><td>0,8 – 1,2</td><td>Rango útil en muchos cultivos de invernadero</td></tr>
+        <tr><td>&gt; 1,5–2</td><td>Alto déficit; riesgo de estrés si persiste</td></tr>
+      </tbody>
+    </table>
+    <p>Depende de cultivo, fase y radiación. Validar en campo.</p>
+    <h2>En el proyecto</h2>
+    <p>Con polígono en <strong>Ubicación</strong>, puede obtenerse VPD en vivo y guardar histórico (máximos por fecha). Cruce recomendado: riego, NDVI/NDMI, análisis foliar.</p>
+    <nav class="mt-chapter-nav"><a href="../index.html">Índice</a></nav>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+</body>
+</html>

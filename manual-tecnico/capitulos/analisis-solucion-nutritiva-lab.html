@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Análisis de solución nutritiva (laboratorio) — Manual NutriPlant PRO</title>
+  <meta name="description" content="Registro e interpretación de análisis de solución nutritiva o licor de riego en NutriPlant: CE, pH, meq/L, ppm, ideales y diferencia vs objetivo.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/analisis-solucion-nutritiva-lab.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css">
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <div class="mt-social-links" aria-label="Redes sociales">
+        <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="linkedin" title="LinkedIn"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
+      </div>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar C · Solución nutritiva</p>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    <h1>Análisis de solución nutritiva (laboratorio)</h1>
+    <h2>Resumen</h2>
+    <p>En <strong>Análisis → Solución nutritiva</strong> se guardan reportes de <strong>licor de fertirriego, drenaje, tanque o muestra de solución</strong> del proyecto. Sirve para documentar lo que realmente circula en el sistema, comparar contra un objetivo editable y cruzar con el diseño en Hidroponía o Fertirriego.</p>
+    <div class="mt-warn"><strong>No confundir</strong> con la subpestaña <strong>Extracto de pasta</strong> (muestra de suelo saturado) ni con la herramienta gratis <a href="diseno-solucion-nutritiva-didactica.html">Diseño didáctico de solución</a> (localStorage, sin proyecto).</div>
+    <h2>Dónde está en la app</h2>
+    <ul>
+      <li>Dashboard del proyecto → pestaña <strong>Análisis</strong> → chip <strong>Solución nutritiva</strong>.</li>
+      <li>Almacenamiento: arreglo <code>solucionNutritivaAnalyses[]</code> en la nube del proyecto.</li>
+      <li>API Socio: <code>project_analyses</code> con <code>type: "solucion_nutritiva"</code>.</li>
+    </ul>
+    <h2>Qué captura cada reporte</h2>
+    <ul>
+      <li><strong>General:</strong> CE (dS/m), pH, RAS (campo numérico manual).</li>
+      <li><strong>Cationes:</strong> Ca, Mg, K, Na en <strong>meq/L y ppm</strong> (sincronización automática en pantalla).</li>
+      <li><strong>Aniones:</strong> N-NO₃⁻, P (H₂PO₄⁻), S (SO₄²⁻), Cl⁻, HCO₃⁻, CO₃²⁻ en meq/L y ppm.</li>
+      <li><strong>Microelementos:</strong> B, Fe, Mn, Zn, Cu, Mo (ppm).</li>
+      <li><strong>Ideal (opcional):</strong> ppm objetivo por nutriente, editable por reporte.</li>
+    </ul>
+    <h2>Conversión meq/L ↔ ppm</h2>
+    <p>En la app, al editar meq/L o ppm de un ion, el otro se actualiza con el peso equivalente del elemento (misma lógica que en todo NutriPlant):</p>
+    <div class="mt-formula">ppm ≈ meq/L × peso equivalente (g/eq)<br>Ejemplos: Ca 20,04 · Mg 12,15 · K 39,1 · NO₃ 14 · PO₄ 31 · SO₄ 16,03</div>
+    <p>Ver también <a href="unidades-ppm-meq-oxidos.html">Unidades ppm y meq</a>.</p>
+    <h2>Referencias y diferencia</h2>
+    <ul>
+      <li><strong>Rangos min–max (ppm):</strong> referencias internas NutriPlant por nutriente (p. ej. Ca 140–220, K 180–300, N-NO₃ 140–200). La columna <em>Estado</em> indica si el valor de laboratorio cae dentro del rango.</li>
+      <li><strong>Ideal (opcional):</strong> si el técnico define un ppm objetivo, la app calcula <strong>diferencia = laboratorio − ideal</strong>. Negativo = por debajo del objetivo; positivo = por encima.</li>
+    </ul>
+    <p>Los rangos por defecto en código (<code>SN_REF_DEFAULT</code>) son orientativos para solución de invernadero intensivo; el agrónomo puede ajustar ideales según cultivo, etapa y programa.</p>
+    <h2>RAS</h2>
+    <p>Como en agua de riego, el campo <strong>RAS se ingresa manualmente</strong> (no se calcula automáticamente desde las cationes del mismo formulario). Fórmula de referencia: <a href="analisis-agua-ras-sar.html">RAS en análisis de agua</a>.</p>
+    <h2>Interpretación agronómica</h2>
+    <ul>
+      <li>Compare el reporte con el <strong>objetivo de la etapa</strong> en Hidroponía o con la solución que diseñó en Fertirriego.</li>
+      <li>Un CE o Na elevados en drenaje pueden indicar acumulación o estrés salino; un NO₃ muy bajo en tanque puede señalar desbalance de inyección.</li>
+      <li>Los micros fuera de rango en solución suelen requerir revisar quelatos, pH de mezcla y compatibilidad de fertilizantes.</li>
+    </ul>
+    <h2>Relación con otros módulos</h2>
+    <table class="mt-table">
+      <thead><tr><th>Módulo</th><th>Relación</th></tr></thead>
+      <tbody>
+        <tr><td><a href="hidroponia-solucion-por-etapa.html">Hidroponía</a></td><td>Objetivo por etapa (meq/L, CE); el análisis valida tanque o drenaje real.</td></tr>
+        <tr><td><a href="programa-fertirriego-etapas.html">Fertirriego</a></td><td>Programa y aporte de agua; el licor analizado es la ejecución en campo.</td></tr>
+        <tr><td><a href="porcentaje-meq-aniones-cationes.html">% meq</a></td><td>Balance iónico en diseño; aquí se documentan ppm/meq de laboratorio.</td></tr>
+        <tr><td><a href="analisis-extracto-pasta.html">Extracto de pasta</a></td><td>Otra subpestaña: disponibilidad en suelo saturado, no licor de riego.</td></tr>
+      </tbody>
+    </table>
+    <nav class="mt-chapter-nav"><a href="analisis-extracto-pasta.html">Extracto de pasta →</a><a href="analisis-agua-ras-sar.html">Análisis de agua →</a><a href="../index.html">Índice</a></nav>
+    <p class="mt-disclaimer">Guía técnica de apoyo. Los rangos no sustituyen el criterio del agrónomo ni el método de muestreo del laboratorio.</p>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+</body>
+</html>

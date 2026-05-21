@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dureza, acidificación y solubilidad del agua — Manual NutriPlant PRO</title>
+  <meta name="description" content="Dureza del agua como CaCO₃, neutralización de bicarbonatos con ácido y referencia de solubilidad e índice salino (IS) en NutriPlant PRO.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/agua-dureza-acidificacion-solubilidad.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css">
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <div class="mt-social-links" aria-label="Redes sociales">
+        <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="linkedin" title="LinkedIn"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
+      </div>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Agua y clima</p>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    <h1>Dureza, acidificación y solubilidad del agua</h1>
+    <h2>Resumen</h2>
+    <p>Antes de diseñar una solución nutritiva conviene <strong>diagnosticar el agua</strong>: dureza (Ca + Mg), alcalinidad (bicarbonatos y carbonatos) y el impacto osmótico relativo de los fertilizantes que se disuelven. NutriPlant ofrece herramientas gratuitas alineadas con la pestaña <a href="analisis-agua-ras-sar.html">Análisis de agua</a> y con el manejo de fertirriego.</p>
+    <h2>Herramientas gratuitas (login)</h2>
+    <table class="mt-table">
+      <thead><tr><th>Herramienta</th><th>Archivo</th><th>Uso</th></tr></thead>
+      <tbody>
+        <tr><td>Diagnóstico de agua y acondicionamiento</td><td><code>agua-dureza-free.html</code></td><td>Dureza, Ca/Mg lab, dosis de ácido</td></tr>
+        <tr><td>Solubilidad e índice salino</td><td><code>solubilidad-indice-salino-free.html</code></td><td>Tabla g/L e IS (NaNO₃ = 100)</td></tr>
+      </tbody>
+    </table>
+    <p>Persistencia: <code>localStorage</code> del navegador (<code>nutriplant_free_agua_dureza_v1</code>, <code>nutriplant_free_solubilidad_is_v1</code>). No sustituyen un reporte guardado en el proyecto PRO.</p>
+
+    <h2>1. Dureza del agua</h2>
+    <p>La <strong>dureza total</strong> se expresa casi siempre como <strong>mg/L o ppm equivalentes a CaCO₃</strong> (aunque provenga de Ca y Mg). En la herramienta NutriPlant puedes convertir entre:</p>
+    <ul>
+      <li>ppm (mg/L) como CaCO₃</li>
+      <li>meq/L (÷ 50,043 ≈ peso equivalente de CaCO₃ en mg por meq)</li>
+      <li>°dH (alemán), °fH (francés), °e (inglés Clark)</li>
+    </ul>
+    <div class="mt-formula">meq/L ≈ ppm (CaCO₃) ÷ 50,043</div>
+    <p><strong>Clasificación orientativa</strong> (referencia USGS, misma tabla en la app):</p>
+    <table class="mt-table">
+      <thead><tr><th>Clase</th><th>ppm CaCO₃</th></tr></thead>
+      <tbody>
+        <tr><td>Blanda</td><td>&lt; 60</td></tr>
+        <tr><td>Moderadamente dura</td><td>60 – &lt; 120</td></tr>
+        <tr><td>Dura</td><td>120 – &lt; 180</td></tr>
+        <tr><td>Muy dura</td><td>≥ 180</td></tr>
+      </tbody>
+    </table>
+    <h3>Dureza desde Ca y Mg del laboratorio</h3>
+    <p>Si el análisis trae Ca y Mg en ppm o meq/L, la app suma su aporte a equivalente CaCO₃:</p>
+    <div class="mt-formula">Contribución Ca (ppm CaCO₃) ≈ ppm Ca × (100,086 ÷ 40,078)<br>Contribución Mg (ppm CaCO₃) ≈ ppm Mg × (100,086 ÷ 24,305)</div>
+    <p>Dureza alta implica más riesgo de <strong>precipitación</strong> al mezclar con fosfatos o sulfatos en fertirriego, y de competencia con micronutrientes quelatados si no se acondiciona el agua.</p>
+
+    <h2>2. Acidificación y alcalinidad (HCO₃⁻ y CO₃²⁻)</h2>
+    <p>Los <strong>bicarbonatos y carbonatos</strong> elevan la alcalinidad del agua. En fertirriego y mezclas concentradas pueden reaccionar con Ca²⁺, Mg²⁺, Fe o Zn y formar precipitados. Por eso no basta con «bajar pH»: conviene neutralizar parte de la alcalinidad con criterio.</p>
+    <h3>Lógica en NutriPlant</h3>
+    <div class="mt-formula">meq ácido por L de agua = (HCO₃⁻ + CO₃²⁻) en meq/L − residual objetivo (meq/L)</div>
+    <div class="mt-formula">mL de ácido por m³ de agua = (meq/L × 1000) ÷ meq por mL del ácido elegido</div>
+    <p>El <strong>residual objetivo</strong> es el colchón de alcalinidad que el técnico decide dejar (p. ej. 1 meq/L). No se recomienda neutralizar al 100 % por defecto: validar pH final de la solución y compatibilidad del programa.</p>
+    <p><strong>Ácidos en catálogo de la herramienta</strong> (meq/mL orientativos en la app): nítrico 55 %, sulfúrico 98 %, fosfórico 75 % y 85 %. El ácido nítrico aporta N-NO₃ a la mezcla; el sulfúrico aporta SO₄²⁻ — intégralo en el balance del programa.</p>
+    <div class="mt-note">
+      <p><strong>Ejemplo (misma lógica que publicaciones NutriPlant):</strong> 3,7 meq/L de alcalinidad (HCO₃⁻ + CO₃²⁻), residual 1,0 meq/L → se neutralizan 2,7 meq/L. Con ácido nítrico al 55 % (~11,6 meq/mL), ≈ 233 mL/m³ de agua.</p>
+    </div>
+    <p>En <strong>Análisis → Agua</strong> del proyecto puedes registrar residual ácido y tipo de ácido por reporte; la herramienta gratis replica el cálculo para campo sin abrir un proyecto.</p>
+
+    <h2>3. Solubilidad e índice salino (IS)</h2>
+    <p>La herramienta <strong>Solubilidad e índice salino</strong> combina dos lecturas técnicas distintas:</p>
+    <h3>Solubilidad (g/L en agua, ~20–25 °C)</h3>
+    <ul>
+      <li>Indica qué tan fácil disuelve un fertilizante en agua pura a temperatura de laboratorio.</li>
+      <li>Nitratos suelen ser muy solubles; sulfatos y carbonatos más limitados; depende del producto y pureza.</li>
+      <li>En campo, temperatura, otros iones y el medio modifican el comportamiento real.</li>
+    </ul>
+    <p>La solubilidad <strong>no define si un producto es bueno o malo</strong>: define qué tan fácil puedes trabajarlo en tanque y si necesitas dividir la mezcla.</p>
+    <h3>Índice salino (IS)</h3>
+    <p>El <strong>IS</strong> compara el efecto osmótico relativo de un fertilizante frente a <strong>NaNO₃ = 100</strong> (referencia clásica en tablas agronómicas). Un IS alto (p. ej. KCl, NH₄NO₃) implica más cuidado en:</p>
+    <ul>
+      <li>soluciones madre concentradas,</li>
+      <li>arranque o plántulas sensibles,</li>
+      <li>baja humedad de suelo o estrés hídrico.</li>
+    </ul>
+    <p>MKP u otros con IS bajo no son «mejores» por definición: son menos osmóticos en la misma base de comparación. La dosis, el agua disponible y el momento fenológico mandan.</p>
+
+    <h2>Relación con fertirriego y análisis</h2>
+    <ul>
+      <li><a href="analisis-agua-ras-sar.html">Análisis de agua</a> — CE, pH, RAS, HCO₃⁻, residual ácido en nube.</li>
+      <li><a href="programa-fertirriego-etapas.html">Programa de fertirriego</a> — el agua aporta iones y condiciona compatibilidad de mezcla.</li>
+      <li><a href="hidroponia-solucion-por-etapa.html">Hidroponía</a> — objetivo de solución vs calidad real del agua de relleno.</li>
+      <li><a href="interacciones-mulder-compatibilidad.html">Mulder y compatibilidad de fertilizantes</a> (Pilar F).</li>
+    </ul>
+    <nav class="mt-chapter-nav"><a href="vpd-deficit-presion-vapor.html">← VPD</a><a href="interacciones-mulder-compatibilidad.html">Mulder / compatibilidad →</a><a href="../index.html">Índice</a></nav>
+    <p class="mt-disclaimer">Guía técnica de apoyo. Manipule ácidos con EPP y normativa local. Verifique fichas técnicas del fabricante antes de formulaciones comerciales.</p>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interacciones Mulder y compatibilidad de fertilizantes — Manual NutriPlant PRO</title>
+  <meta name="description" content="Diagrama Mulder (antagonismo y sinergia iónica), movilidad nutrimental y matriz C/R/I de compatibilidad de fertilizantes solubles en NutriPlant PRO.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/interacciones-mulder-compatibilidad.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css">
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar F · Interacciones</p>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    <h1>Interacciones Mulder y compatibilidad de fertilizantes</h1>
+    <h2>Resumen</h2>
+    <p>Dos lecturas complementarias: <strong>interacciones iónicas en planta y suelo</strong> (diagrama tipo Mulder, movilidad, pH) y <strong>riesgo de mezcla en tanque</strong> (matriz C/R/I entre productos solubles). Antes de mezclar, conviene revisar también <a href="agua-dureza-acidificacion-solubilidad.html">solubilidad e índice salino</a> y la calidad del <a href="analisis-agua-ras-sar.html">agua</a>.</p>
+
+    <h2>Herramientas gratuitas (login)</h2>
+    <table class="mt-table">
+      <thead><tr><th>Herramienta</th><th>Archivo</th><th>Uso</th></tr></thead>
+      <tbody>
+        <tr><td>Interacciones y movilidad nutrimental</td><td><code>interacciones-absorcion-movilidad-free.html</code></td><td>4 pestañas: Mulder, mecanismos, movilidad, pH</td></tr>
+        <tr><td>Compatibilidad de fertilizantes</td><td><code>fertilizer-compatibility-free.html</code></td><td>Matriz triangular C / R / I</td></tr>
+      </tbody>
+    </table>
+    <p>Persistencia local: <code>nutriplant_free_interacciones_absorcion_v1</code>, <code>nutriplant_free_fertilizer_compatibility_v1</code>. Material educativo; no sustituye fichas del fabricante ni ensayo en campo.</p>
+
+    <h2>1. Diagrama Mulder (interacciones iónicas)</h2>
+    <p>La herramienta muestra iones representativos (NO₃⁻, NH₄⁺, K⁺, Ca²⁺, Mg²⁺, H₂PO₄⁻, SO₄²⁻, Fe, Mn, Zn, Cu, B, Mo…). Al tocar un ion:</p>
+    <ul>
+      <li><strong>Rojo (antagonismo / competencia):</strong> relación bidireccional en el diagrama — si A antagoniza a B, se marca en ambos sentidos al explorar cualquiera de los dos.</li>
+      <li><strong>Azul (sinergia / favorecimiento conjunto):</strong> solo desde el <strong>ion que seleccionaste</strong>; no se duplican sinergias cruzadas para no inflar listas.</li>
+    </ul>
+    <p>La ficha lateral describe antagonistas, sinergistas y notas funcionales <strong>solo del ion focal</strong>.</p>
+
+    <h3>Referencias frecuentes (alineadas con la app)</h3>
+    <table class="mt-table">
+      <thead><tr><th>Ion / tema</th><th>Qué vigilar</th></tr></thead>
+      <tbody>
+        <tr><td>K⁺</td><td>Competencia con Ca²⁺, Mg²⁺, NH₄⁺ en exceso relativo</td></tr>
+        <tr><td>NH₄⁺</td><td>Competencia con K⁺, Ca²⁺, Mg²⁺; sinergia de manejo con NO₃⁻ y PO₄</td></tr>
+        <tr><td>H₂PO₄⁻ / P alto</td><td>Antagonismo relativo de Zn, Fe, Cu, Mn; fijación/precipitación con Ca en suelos calcareos</td></tr>
+        <tr><td>SO₄²⁻</td><td>Competencia con MoO₄²⁻ en condiciones de sulfato alto</td></tr>
+        <tr><td>NO₃⁻</td><td>Cl⁻ en exceso puede competir; sinergias típicas K⁺, NH₄⁺, Mo (cadena del N)</td></tr>
+      </tbody>
+    </table>
+    <div class="mt-note">
+      <p>Mulder en NutriPlant es <strong>referencia agronómica general</strong>, no diagnóstico por sí solo. Validar con análisis de suelo, hoja, solución, síntomas y asesoría local.</p>
+    </div>
+
+    <h2>2. Mecanismos hacia la raíz y movilidad</h2>
+    <p><strong>Pestaña Mecanismos:</strong> flujo de masa (con transpiración), difusión en película de suelo y interceptación por crecimiento radicular — útil para explicar por qué un nutriente «está en el suelo» pero no llega a la planta.</p>
+    <p><strong>Pestaña Movilidad (orientativa):</strong></p>
+    <ul>
+      <li><strong>Móviles</strong> (síntoma suele aparecer en hoja vieja): N, P, K, Mg.</li>
+      <li><strong>Poco móviles</strong> (punta / hoja nueva): Ca, B.</li>
+      <li><strong>Fe, Mn, Zn, Cu:</strong> dependen de especie, pH y condiciones de rizósfera.</li>
+    </ul>
+    <p><strong>Pestaña Disponibilidad vs pH:</strong> curvas relativas — acidez favorece Fe/Mn (y riesgo de Al tóxico); alcalinidad limita P, Fe, Zn, Cu, B, Mo.</p>
+
+    <h2>3. Compatibilidad de fertilizantes (mezcla en tanque)</h2>
+    <p>Matriz triangular alineada con el catálogo de <strong>fertilizantes solubles</strong> de fertirriego (urea, nitratos, MAP, MKP, sulfatos, ácidos, quelatos EDTA/DTPA/EDDHA, micros, etc.).</p>
+    <table class="mt-table">
+      <thead><tr><th>Código</th><th>Significado</th></tr></thead>
+      <tbody>
+        <tr><td><strong>C — Compatible</strong></td><td>Mezcla típica aceptable en solución madre o tanque de trabajo (según dilución)</td></tr>
+        <tr><td><strong>R — Precaución</strong></td><td>Solubilidad limitada, salting-out o interacción moderada; orden de disolución y dilución</td></tr>
+        <tr><td><strong>I — Incompatible</strong></td><td>Riesgo alto de precipitado u obstrucción en mezcla concentrada</td></tr>
+      </tbody>
+    </table>
+    <p>Los códigos reflejan riesgo en <strong>solución madre concentrada</strong> o mezclas poco diluidas. En tanque de trabajo muy diluido muchas parejas pasan de I/R a manejables, pero la <strong>separación en tanques A/B</strong> sigue siendo buena práctica.</p>
+    <h3>Buenas prácticas de campo</h3>
+    <ul>
+      <li>Disolver primero nitratos y la mayor parte de potásicos; fosfatos y calcio con cuidado y dilución.</li>
+      <li>No mezclar sin revisar: Ca²⁺ + PO₄/SO₄ concentrados; sulfatos micros + fosfatos; ácidos + bases sin criterio de orden.</li>
+      <li>Integrar <strong>pH de mezcla</strong>, temperatura, dureza y alcalinidad del agua (<a href="agua-dureza-acidificacion-solubilidad.html">capítulo agua</a>).</li>
+      <li>En programa PRO, validar el balance iónico en <a href="programa-fertirriego-etapas.html">fertirriego por etapas</a> y <a href="fertirriego-graficas-ionicas.html">gráficas iónicas</a>.</li>
+    </ul>
+
+    <h2>Relación con otros capítulos</h2>
+    <ul>
+      <li><a href="porcentaje-meq-aniones-cationes.html">% meq y triángulos</a> — misma CE puede tener composición iónica distinta (KCl vs SOP, NO₃ vs NH₄).</li>
+      <li><a href="analisis-solucion-nutritiva-lab.html">Solución nutritiva (lab)</a> — detectar desbalances antes de ajustar mezcla.</li>
+      <li><a href="granular-mezclas.html">Granular</a> — compatibilidad <em>física</em> de granulados es otro tema; este capítulo es para solubles en fertirriego.</li>
+    </ul>
+    <nav class="mt-chapter-nav"><a href="agua-dureza-acidificacion-solubilidad.html">← Agua / IS</a><a href="n-mineralizable-agua-disponible-suelo.html">N mineralizable y agua en suelo →</a><a href="../index.html">Índice</a></nav>
+    <p class="mt-disclaimer">Guía técnica de apoyo. La decisión final de mezcla corresponde al técnico según agua, pH, temperatura, orden de disolución y concentración real.</p>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+</body>
+</html>

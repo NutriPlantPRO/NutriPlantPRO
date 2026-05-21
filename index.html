@@ -3,17 +3,80 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NutriPlant PRO</title>
-  <meta name="description" content="NutriPlant PRO — Diseña, ajusta y nutre. Inicio de sesión y herramientas gratuitas.">
+  <title>NutriPlant PRO — Inicio</title>
+  <meta name="description" content="NutriPlant PRO: inicia sesión o consulta el Manual técnico público. Redirigiendo a la plataforma…">
   <link rel="canonical" href="https://nutriplantpro.com/login.html">
+  <!-- Entrada habitual: ir al login; si el redirect falla, queda la portada debajo -->
   <meta http-equiv="refresh" content="0;url=login.html">
-  <link rel="icon" type="image/png" href="assets/N_Hoja_Azul.png">
-</head>
-<body>
-  <p style="font-family:system-ui,sans-serif;text-align:center;padding:2rem;color:#475569;">
-    Redirigiendo a <a href="login.html">inicio de sesión</a>…
-    · <a href="manual-tecnico/index.html">Manual técnico</a>
-  </p>
   <script>location.replace('login.html');</script>
+  <link rel="icon" type="image/png" href="assets/N_Hoja_Azul.png">
+  <link rel="apple-touch-icon" href="assets/N_Hoja_Azul.png">
+  <meta property="og:title" content="NutriPlant PRO">
+  <meta property="og:description" content="Diseña, ajusta y nutre. Plataforma y manual técnico para agrónomos.">
+  <meta property="og:image" content="https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png">
+  <meta property="og:url" content="https://nutriplantpro.com/">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="alternate" type="text/plain" href="manual-tecnico/llms.txt" title="Manual técnico para asistentes IA">
+  <link rel="stylesheet" href="assets/np-home.css">
+</head>
+<body class="np-home">
+  <main class="np-home__main">
+    <div class="np-home__card">
+      <div class="np-home__logo-wrap">
+        <img
+          class="np-home__logo"
+          src="assets/NutriPlant_PRO_blue.png"
+          alt="NutriPlant PRO"
+          width="560"
+          height="120"
+          fetchpriority="high"
+        >
+      </div>
+      <p class="np-home__tagline">Diseña, ajusta y nutre</p>
+      <p class="np-home__lead">
+        Plataforma para programas nutricionales y análisis agrícolas.
+        También puedes consultar el manual técnico sin iniciar sesión.
+      </p>
+      <div class="np-home__actions">
+        <a href="login.html" class="np-home__btn np-home__btn--primary">
+          <span class="np-home__btn-icon" aria-hidden="true">🔐</span>
+          <span>
+            Iniciar sesión
+            <span class="np-home__btn-sub">Entrar a NutriPlant PRO</span>
+          </span>
+        </a>
+        <a href="manual-tecnico/index.html" class="np-home__btn np-home__btn--secondary">
+          <span class="np-home__btn-icon" aria-hidden="true">📘</span>
+          <span>
+            Manual técnico
+            <span class="np-home__btn-sub">Metodología pública · sin cuenta</span>
+          </span>
+        </a>
+      </div>
+      <p class="np-home__hint">
+        Si no te llevó solo al inicio de sesión,
+        <a href="login.html" style="color:#2563eb;font-weight:700;">pulsa aquí para entrar</a>.
+        Herramientas gratuitas disponibles en la plataforma.
+      </p>
+      <noscript>
+        <p class="np-home__hint" style="margin-top:12px;">
+          JavaScript desactivado:
+          <a href="login.html" style="color:#2563eb;font-weight:700;">Iniciar sesión</a>
+          ·
+          <a href="manual-tecnico/index.html" style="color:#2563eb;font-weight:700;">Manual técnico</a>
+        </p>
+      </noscript>
+    </div>
+  </main>
+  <footer class="np-home__footer">
+    <nav aria-label="Enlaces legales y manual">
+      <a href="manual-tecnico/index.html">Manual técnico</a>
+      <a href="login.html">Iniciar sesión</a>
+      <a href="politicas-privacidad.html">Privacidad</a>
+      <a href="terminos-condiciones.html">Términos</a>
+    </nav>
+    <p>© NutriPlant PRO · Guía técnica de apoyo — decisión final del agrónomo en campo</p>
+  </footer>
 </body>
 </html>

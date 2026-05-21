@@ -16,13 +16,14 @@ Sube el repo (o deploy manual) para que existan en producción:
 
 ---
 
-## Paso B — Knowledge (3 archivos)
+## Paso B — Knowledge (4 archivos)
 
 En ChatGPT → tu GPT → **Configure → Knowledge → Upload**:
 
 1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← **fuente pública del manual web**
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web v2026.05.4 (**21 capítulos**, fase 2 E/F cerrada; re-subir tras cada tanda)
+4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` ← posts LinkedIn/IG; **§8 con 24 posts empresa** (añade filas si publicas nuevos)
 
 *(Opcional: borra knowledge viejo duplicado si tenías notas sueltas.)*
 
@@ -61,6 +62,12 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 5. “¿Qué pestañas hay en Análisis?” → `lab_analyses_catalog`
 6. **“¿Qué capítulos tiene el manual técnico público?”** → `manual_tecnico_catalog`
 7. **“¿Cómo calculamos kg/ha en fertilidad del suelo? Cita la URL pública”** → `manual_tecnico_catalog` chapter `analisis_suelo_fertilidad_kgha` o Knowledge MANUAL
+8. **“Redacta un post LinkedIn sobre % meq que no suman 100”** → PUBLICACIONES-REDES + capítulo FAQ + URL manual
+9. **“¿Qué capítulos tenemos para publicar esta semana?”** → `manual_tecnico_catalog` + pilar G `publicaciones_redes_sociales`
+
+**Redes en el día a día:** cuando publiques algo nuevo, pega el link al Socio en ChatGPT y redactáis juntos (ver flujo en `PUBLICACIONES-REDES` intro y en Instructions § fuente 5). Para que lo recuerde en futuros chats: añade la fila en §8 y re-sube el Knowledge #4 (o actualiza en Cursor y vuelve a subir).
+
+**Antes de subir / re-subir Knowledge #4:** §8 tiene 24 posts empresa; añade filas de posts nuevos desde la última sesión editorial.
 
 ---
 

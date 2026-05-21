@@ -5,30 +5,32 @@
 
 ## Sitio
 
-- Índice: https://nutriplantpro.com/manual-tecnico/
-- Plataforma (login): https://nutriplantpro.com/login.html
+- Índice: https://nutriplantpro.com/manual-tecnico/index.html
+- Autoría: https://nutriplantpro.com/manual-tecnico/autoria.html
+- Plataforma: https://nutriplantpro.com/login.html
 
-## Capítulos publicados (2026-05)
+## Capítulos publicados (v2026.05.4)
 
-- Nosotros — Detrás de NutriPlant PRO (autoría, visión, Jesús Avila Mendoza)
-  https://nutriplantpro.com/manual-tecnico/nosotros.html
+Fundamentos: unidades-ppm-meq-oxidos · porcentaje-meq-aniones-cationes · analisis-suelo-fertilidad-kgha · enmiendas-balance-cic
 
-- Análisis de suelo — fertilidad, ideales y kg/ha de ajuste
-  https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html
+Programas y clima: extraccion-nutrimental-por-etapa · programa-fertirriego-etapas · fertirriego-graficas-ionicas · granular-mezclas · hidroponia-solucion-por-etapa · diseno-solucion-nutritiva-didactica · vpd-deficit-presion-vapor · agua-dureza-acidificacion-solubilidad · n-mineralizable-agua-disponible-suelo
 
-- % meq — triángulos aniónicos (N-P-S) y catiónicos (K-Ca-Mg); N-NH4 y Cl aparte
-  https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html
+Interacciones: interacciones-mulder-compatibilidad
 
-- Balance de enmiendas por CIC del suelo (meq/100 g, kg/ha de enmienda)
-  https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html
+Análisis (6 tipos) y FAQ: analisis-solucion-nutritiva-lab · analisis-extracto-pasta · analisis-agua-ras-sar · analisis-foliar-dop · analisis-fruta-icc · faq-porcentajes-no-suman-100
 
-## Reglas clave (resumen)
+Comunicación: publicaciones-redes-sociales
 
-- Fertilidad suelo kg/ha: (lab − ideal) × 0.1 × profundidad_cm × densidad × (suelo_explorado_% / 100)
-- CIC suelo: 1 meq/100 g = 1 cmolc/kg (misma cifra)
-- % meq solución: triángulos N-P-S y K-Ca-Mg suman 100% cada uno; Cl y NH4 con denominadores distintos
-- No confundir % saturación CIC (suelo) con % meq de solución (hidroponía/fertirriego)
+Base URL capítulos: https://nutriplantpro.com/manual-tecnico/capitulos/
 
-## Actualización
+## Reglas clave
 
-Versión manual: 2026-05. Plan editorial: repositorio docs/MANUAL-TECNICO-NUTRIPLANT-PLAN.md
+- Fertilidad suelo kg/ha: (lab − ideal) × 0.1 × prof × densidad × (suelo_explorado_% / 100)
+- N mineralizable: 10000×(P/100)×DA×1000×(R/100)×(MO/100)×(N_MO/100)×(T_min/100) kg N/ha/año
+- Agua útil ref.: vol_suelo_m³ = ha×10000×(prof_cm/100); vol_agua = vol×(CC−PMP)/100×(zona_radical/100)
+- Mulder: rojo bidireccional antagonismo; azul sinergia solo desde ion seleccionado
+- Compatibilidad ferti: C compatible, R precaución, I incompatible (mezcla concentrada)
+- RAS en app: campo manual; fórmula referencia RAS = Na / sqrt((Ca+Mg)/2) en meq/L
+- ICC fruta = DOP foliar: ((valor − óptimo) / óptimo) × 100
+
+Versión: 2026-05-21

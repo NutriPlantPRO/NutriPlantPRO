@@ -5,7 +5,7 @@
 const BASE = 'https://nutriplantpro.com/manual-tecnico';
 
 module.exports = {
-  version: '2026-05-21',
+  version: '2026-05-22',
   scope:
     'Biblioteca HTML pública, sin cuenta. Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO.',
   publicUrls: {
@@ -23,11 +23,11 @@ module.exports = {
   ],
   chapters: [
     {
-      id: 'nosotros',
-      slug: 'nosotros',
-      title: 'Detrás de NutriPlant PRO · Jesús Avila Mendoza',
-      url: `${BASE}/nosotros.html`,
-      pillar: 'Institucional / autoría',
+      id: 'autoria',
+      slug: 'autoria',
+      title: 'Autoría — Detrás de NutriPlant PRO · Jesús Avila Mendoza',
+      url: `${BASE}/autoria.html`,
+      pillar: 'Autoría / referente técnico',
       summary:
         'Visión, respeto al agrónomo, perfil del fundador (sin marcas de empleadores). Trayectoria en nutrición vegetal México, formación, enlace LinkedIn. Para GEO y consultas web.',
       status: 'published'
@@ -61,15 +61,175 @@ module.exports = {
       summary:
         'CIC en meq/100g (= cmolc/kg). Saturación % = meq/CIC×100. Meq a ajustar → kg/ha enmienda según profundidad, densidad, % suelo explorado. Distinto de reportes Análisis→Suelo (lista en nube).',
       status: 'published'
+    },
+    {
+      id: 'unidades_ppm_meq_oxidos',
+      slug: 'unidades-ppm-meq-oxidos',
+      title: 'Unidades: ppm, meq/L y óxidos agronómicos',
+      url: `${BASE}/capitulos/unidades-ppm-meq-oxidos.html`,
+      pillar: 'A — Fundamentos',
+      summary: 'ppm, meq/L, cmol/L×10, meq/100g=cmolc/kg. Factores óxido-elemental P₂O₅ K₂O CaO MgO.',
+      status: 'published'
+    },
+    {
+      id: 'programa_fertirriego_etapas',
+      slug: 'programa-fertirriego-etapas',
+      title: 'Programa de fertirriego por etapas',
+      url: `${BASE}/capitulos/programa-fertirriego-etapas.html`,
+      pillar: 'D — Fertirriego',
+      summary: 'Requerimiento kg/ha, programa por semana/mes, aporte agua N-NO3, lámina m³/ha.',
+      status: 'published'
+    },
+    {
+      id: 'fertirriego_graficas_ionicas',
+      slug: 'fertirriego-graficas-ionicas',
+      title: 'Gráficas iónicas en fertirriego',
+      url: `${BASE}/capitulos/fertirriego-graficas-ionicas.html`,
+      pillar: 'D — Fertirriego',
+      summary: 'Macro resumen iónico: fertilizante solo vs con agua; ternarios; % meq con Cl aparte.',
+      status: 'published'
+    },
+    {
+      id: 'diseno_solucion_nutritiva_didactica',
+      slug: 'diseno-solucion-nutritiva-didactica',
+      title: 'Diseño didáctico de solución nutritiva (CE y triángulos)',
+      url: `${BASE}/capitulos/diseno-solucion-nutritiva-didactica.html`,
+      pillar: 'E — Solución',
+      summary: 'Herramienta gratis vs hidroponía proyecto; CE, triángulos, Cl, NH4.',
+      status: 'published'
+    },
+    {
+      id: 'vpd_deficit_presion_vapor',
+      slug: 'vpd-deficit-presion-vapor',
+      title: 'VPD: déficit de presión de vapor',
+      url: `${BASE}/capitulos/vpd-deficit-presion-vapor.html`,
+      pillar: 'F — Clima',
+      summary: 'VPD kPa, rangos orientativos, pestaña proyecto y herramienta gratis.',
+      status: 'published'
+    },
+    {
+      id: 'analisis_foliar_dop',
+      slug: 'analisis-foliar-dop',
+      title: 'Análisis foliar: DOP frente al óptimo',
+      url: `${BASE}/capitulos/analisis-foliar-dop.html`,
+      pillar: 'C — Análisis foliar',
+      summary: 'DOP % = ((nivel−óptimo)/óptimo)×100; cruce con suelo y programa.',
+      status: 'published'
+    },
+    {
+      id: 'faq_porcentajes_no_suman_100',
+      slug: 'faq-porcentajes-no-suman-100',
+      title: 'FAQ: ¿por qué los % iónicos no suman 100 %?',
+      url: `${BASE}/capitulos/faq-porcentajes-no-suman-100.html`,
+      pillar: 'H — FAQ',
+      summary: 'Denominadores distintos por pantalla; triángulos vs NH4 vs Cl.',
+      status: 'published'
+    },
+    {
+      id: 'extraccion_nutrimental_por_etapa',
+      slug: 'extraccion-nutrimental-por-etapa',
+      title: 'Extracción y distribución nutrimental por etapa',
+      url: `${BASE}/capitulos/extraccion-nutrimental-por-etapa.html`,
+      pillar: 'D — Programas',
+      summary: 'Extracción/ton × rendimiento; ajuste; eficiencia; requerimiento real; distribución por etapa.',
+      status: 'published'
+    },
+    {
+      id: 'hidroponia_solucion_por_etapa',
+      slug: 'hidroponia-solucion-por-etapa',
+      title: 'Hidroponía: solución nutritiva por etapa',
+      url: `${BASE}/capitulos/hidroponia-solucion-por-etapa.html`,
+      pillar: 'D — Hidroponía',
+      summary: 'Etapas, meq/L, CE, tanques A–E, agua de relleno; proyecto en nube.',
+      status: 'published'
+    },
+    {
+      id: 'analisis_agua_ras_sar',
+      slug: 'analisis-agua-ras-sar',
+      title: 'Análisis de agua: CE, pH y RAS',
+      url: `${BASE}/capitulos/analisis-agua-ras-sar.html`,
+      pillar: 'C — Análisis agua',
+      summary: 'Reportes agua; RAS manual; fórmula SAR referencia; residual ácido.',
+      status: 'published'
+    },
+    {
+      id: 'analisis_fruta_icc',
+      slug: 'analisis-fruta-icc',
+      title: 'Análisis de fruta: ICC frente al óptimo',
+      url: `${BASE}/capitulos/analisis-fruta-icc.html`,
+      pillar: 'C — Análisis fruta',
+      summary: 'ICC %; calidad °Brix/firmeza; Ca en fruta; semáforo |ICC|.',
+      status: 'published'
+    },
+    {
+      id: 'granular_mezclas',
+      slug: 'granular-mezclas',
+      title: 'Granular: mezclas y relación N-P-K',
+      url: `${BASE}/capitulos/granular-mezclas.html`,
+      pillar: 'D — Granular',
+      summary: '% en mezcla; relación N-P2O5-K2O normalizada; kg/ha por nutriente.',
+      status: 'published'
+    },
+    {
+      id: 'publicaciones_redes_sociales',
+      slug: 'publicaciones-redes-sociales',
+      title: 'Publicaciones en redes y autoridad técnica',
+      url: `${BASE}/capitulos/publicaciones-redes-sociales.html`,
+      pillar: 'G — Redes / comunicación',
+      summary:
+        'Canales oficiales, tono técnico, mapa capítulo→post, plantilla LinkedIn. URLs de posts en docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md.',
+      status: 'published'
+    },
+    {
+      id: 'analisis_solucion_nutritiva_lab',
+      slug: 'analisis-solucion-nutritiva-lab',
+      title: 'Análisis de solución nutritiva (laboratorio)',
+      url: `${BASE}/capitulos/analisis-solucion-nutritiva-lab.html`,
+      pillar: 'C — Análisis solución',
+      summary:
+        'solucionNutritivaAnalyses[]; CE/pH/RAS; cationes/aniones meq↔ppm; SN_REF_DEFAULT; diff lab−ideal; ≠ extracto pasta ni herramienta gratis.',
+      status: 'published'
+    },
+    {
+      id: 'analisis_extracto_pasta',
+      slug: 'analisis-extracto-pasta',
+      title: 'Extracto de pasta saturada',
+      url: `${BASE}/capitulos/analisis-extracto-pasta.html`,
+      pillar: 'C — Análisis pasta',
+      summary:
+        'extractoPastaAnalyses[]; misma UI iónica que solución; interpretar rizósfera/salinidad; API type extracto_pasta.',
+      status: 'published'
+    },
+    {
+      id: 'agua_dureza_acidificacion_solubilidad',
+      slug: 'agua-dureza-acidificacion-solubilidad',
+      title: 'Dureza, acidificación y solubilidad del agua',
+      url: `${BASE}/capitulos/agua-dureza-acidificacion-solubilidad.html`,
+      pillar: 'E — Agua y clima',
+      summary:
+        'agua-dureza-free: dureza CaCO₃, Ca+Mg, ácido HCO3/CO3 con residual; solubilidad-indice-salino-free: g/L e IS (NaNO3=100). Enlace analisis agua y fertirriego.',
+      status: 'published'
+    },
+    {
+      id: 'interacciones_mulder_compatibilidad',
+      slug: 'interacciones-mulder-compatibilidad',
+      title: 'Interacciones Mulder y compatibilidad de fertilizantes',
+      url: `${BASE}/capitulos/interacciones-mulder-compatibilidad.html`,
+      pillar: 'F — Interacciones',
+      summary:
+        'interacciones-absorcion-movilidad-free: Mulder antagonismo/sinergia focal, movilidad, pH; fertilizer-compatibility-free: matriz C/R/I solubles.',
+      status: 'published'
+    },
+    {
+      id: 'n_mineralizable_agua_suelo',
+      slug: 'n-mineralizable-agua-disponible-suelo',
+      title: 'N mineralizable y agua disponible en suelo',
+      url: `${BASE}/capitulos/n-mineralizable-agua-disponible-suelo.html`,
+      pillar: 'E — Agua y suelo',
+      summary:
+        'n-mineralizable-mo-free: N_min kg/ha/año desde MO; agua-disponible-textura-suelo-free: CC-PMP, lámina, textura USDA.',
+      status: 'published'
     }
   ],
-  upcoming: [
-    'unidades-ppm-meq-oxidos',
-    'programa-fertirriego-etapas',
-    'graficas-ionicas-fertirriego',
-    'solucion-nutritiva-ce-triangulos',
-    'vpd-deficit-presion-vapor',
-    'analisis-foliar-dop',
-    'faq-porcentajes-no-suman-100'
-  ]
+  upcoming: []
 };

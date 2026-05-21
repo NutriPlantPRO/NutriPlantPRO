@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>N mineralizable y agua disponible en suelo — Manual NutriPlant PRO</title>
+  <meta name="description" content="Estimación de N mineralizable desde materia orgánica y agua útil CC−PMP con textura USDA en NutriPlant PRO.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/n-mineralizable-agua-disponible-suelo.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css">
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Suelo y agua</p>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    <h1>N mineralizable y agua disponible en suelo</h1>
+    <h2>Resumen</h2>
+    <p>Dos estimaciones de apoyo en suelo: <strong>aportes anuales de N desde la materia orgánica mineralizable</strong> y <strong>capacidad de almacenamiento hídrico</strong> (CC − PMP) con opción de lámina hasta capacidad de campo según humedad actual. Complementan <a href="analisis-suelo-fertilidad-kgha.html">fertilidad en kg/ha</a> y el manejo de riego, pero no reemplazan laboratorio ni sensores.</p>
+
+    <h2>Herramientas gratuitas (login)</h2>
+    <table class="mt-table">
+      <thead><tr><th>Herramienta</th><th>Archivo</th><th>Uso</th></tr></thead>
+      <tbody>
+        <tr><td>Estimación de N mineralizable</td><td><code>n-mineralizable-mo-free.html</code></td><td>MO, profundidad, DA, zona radical</td></tr>
+        <tr><td>Agua en suelo y textura</td><td><code>agua-disponible-textura-suelo-free.html</code></td><td>CC, PMP, lámina; triángulo USDA</td></tr>
+      </tbody>
+    </table>
+    <p>Persistencia: <code>nutriplant_free_n_mineralizable_mo_v1</code>, <code>nutriplant_free_agua_disponible_textura_v1</code>.</p>
+
+    <h2>1. N mineralizable (kg N/ha/año)</h2>
+    <p>Estima el N que podría liberarse por <strong>mineralización</strong> de la materia orgánica en la capa explorada por raíces, con un factor anual <strong>T_min</strong> (1–3 %, slider en la app).</p>
+    <h3>Entradas</h3>
+    <ul>
+      <li><strong>P</strong> — profundidad de la capa (cm)</li>
+      <li><strong>DA</strong> — densidad aparente (g/cm³)</li>
+      <li><strong>R</strong> — % del perfil explorado por raíces (1–100)</li>
+      <li><strong>MO</strong> — % materia orgánica</li>
+      <li><strong>N_MO</strong> — % N en la materia orgánica</li>
+      <li><strong>T_min</strong> — % mineralizable al año (1–3; presets conservador / medio / optimista)</li>
+    </ul>
+    <h3>Cadena de cálculo (misma lógica que la app)</h3>
+    <div class="mt-formula">
+      Masa suelo capa (kg/ha) = 10 000 × (P/100) × DA × 1 000<br>
+      Masa efectiva = Masa × (R/100)<br>
+      MO (kg/ha) = Masa efectiva × (MO/100)<br>
+      N orgánico (kg N/ha) = MO × (N_MO/100)<br>
+      <strong>N mineralizable (kg N/ha/año) = N orgánico × (T_min/100)</strong>
+    </div>
+    <p>Equivalente compacto:</p>
+    <div class="mt-formula">N_min ≈ 10 000 × (P/100) × DA × 1 000 × (R/100) × (MO/100) × (N_MO/100) × (T_min/100)</div>
+    <div class="mt-note">
+      <p>Es un <strong>orden de magnitud</strong> para planificar fertilización nitrogenada, no un reemplazo de ensayos de mineralización ni de la demanda del cultivo por etapa (<a href="extraccion-nutrimental-por-etapa.html">extracción por etapa</a>).</p>
+    </div>
+
+    <h2>2. Agua en suelo (CC, PMP, lámina)</h2>
+    <p><strong>Capacidad de campo (CC)</strong> y <strong>punto de marchitez permanente (PMP)</strong> se expresan en <strong>% volumétrico</strong>. La banda entre ambos es el <strong>potencial de agua útil</strong> (referencia física), no necesariamente la humedad «de hoy».</p>
+    <h3>Volumen de suelo</h3>
+    <div class="mt-formula">Volumen suelo (m³) = área (ha) × 10 000 × (profundidad_cm / 100)</div>
+    <h3>Agua útil de referencia</h3>
+    <div class="mt-formula">
+      Agua útil (% vol.) = CC − PMP<br>
+      Volumen agua útil (m³) = Volumen suelo × (CC − PMP) / 100<br>
+      Ajuste zona radical = Volumen × (zona_radical_% / 100)
+    </div>
+    <h3>Humedad actual (θ) y lámina hasta CC</h3>
+    <p>Si ingresas <strong>humedad volumétrica actual θ</strong> (% vol., misma escala que CC/PMP):</p>
+    <div class="mt-formula">
+      Déficit hasta CC (% vol.) = max(0, CC − θ)<br>
+      Lámina (mm) = (déficit / 100) × profundidad_cm × 10<br>
+      Lámina ajustada = Lámina × (zona_radical_% / 100)
+    </div>
+    <p>Si θ &gt; CC, la app advierte riesgo de encharcamiento. La lámina es una <strong>referencia de riego</strong>; validar con tensiómetros, sensores o método agronómico local.</p>
+
+    <h2>3. Textura USDA (pestaña Textura)</h2>
+    <p>Con % arena, limo y arcilla (suma ideal 100 %), el triángulo arrastrable clasifica la textura (USDA / soiltexture). La app muestra <strong>rangos típicos ilustrativos de CC y PMP</strong> por clase — útiles para cargar una vez valores de referencia en la pestaña Agua; luego puedes editarlos a mano.</p>
+    <p>Los rangos varían con estructura, materia orgánica y método de medición de humedad. Combine siempre con análisis de suelo y criterio local.</p>
+
+    <h2>Relación con otros capítulos</h2>
+    <ul>
+      <li><a href="analisis-suelo-fertilidad-kgha.html">Análisis de suelo (kg/ha)</a> — ajuste por nutriente vs ideal en proyecto PRO.</li>
+      <li><a href="vpd-deficit-presion-vapor.html">VPD</a> — demanda atmosférica del cultivo (complementa, no sustituye, agua en suelo).</li>
+      <li><a href="interacciones-mulder-compatibilidad.html">Interacciones y compatibilidad</a> — fertilización cuando el suelo ya tiene agua y N disponibles limitados.</li>
+    </ul>
+    <nav class="mt-chapter-nav"><a href="interacciones-mulder-compatibilidad.html">← Mulder / compatibilidad</a><a href="analisis-suelo-fertilidad-kgha.html">Fertilidad suelo →</a><a href="../index.html">Índice</a></nav>
+    <p class="mt-disclaimer">Guía técnica de apoyo. Parámetros CC/PMP y T_min son estimaciones educativas; calibrar con laboratorio y experiencia de campo.</p>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+</body>
+</html>

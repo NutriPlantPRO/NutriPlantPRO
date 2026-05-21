@@ -5,6 +5,119 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-05-21 — v2026.05.4 (Pilares F y E cierre — fase 2 cerrada)
+
+### Publicado
+
+- `interacciones-mulder-compatibilidad.html` — Mulder (antagonismo/sinergia focal), movilidad, pH; matriz C/R/I (`interacciones-absorcion-movilidad-free`, `fertilizer-compatibility-free`)
+- `n-mineralizable-agua-disponible-suelo.html` — N_min, CC−PMP, lámina, textura USDA (`n-mineralizable-mo-free`, `agua-disponible-textura-suelo-free`)
+
+### Actualizado para ChatGPT Socio
+
+- `MANUAL-TECNICO-CONOCIMIENTO-GPT.md` §3 + §4.13–4.14 + fase 2 cerrada · v2026.05.4 · **21 capítulos**
+- `index.html` (sin «Próximamente»), `sitemap.xml`, `llms.txt`, `manual-tecnico-catalog.js` (`upcoming: []`)
+- `agua-dureza-acidificacion-solubilidad.html`, `publicaciones-redes-sociales.html`, `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` (mapa capítulos)
+- `CHATGPT-SOCIO-PAQUETE-ACTUALIZACION.md`
+
+---
+
+## 2026-05-22 — v2026.05.3d (Pilar E — dureza, ácido, solubilidad/IS)
+
+### Publicado
+
+- `agua-dureza-acidificacion-solubilidad.html` — alineado con `agua-dureza-free.html` y `solubilidad-indice-salino-free.html`
+
+### Actualizado para ChatGPT Socio
+
+- `MANUAL-TECNICO-CONOCIMIENTO-GPT.md` §3 tabla + §4.12 + fase 2
+- `index.html`, `sitemap.xml`, `llms.txt`, `manual-tecnico-catalog.js`
+- `analisis-agua-ras-sar.html` (enlace al capítulo)
+
+---
+
+## 2026-05-22 — v2026.05.3c (Pilar C completo — 6 análisis)
+
+### Publicado
+
+- `analisis-solucion-nutritiva-lab.html` — `solucionNutritivaAnalyses[]`, meq↔ppm, SN_REF, diff vs ideal
+- `analisis-extracto-pasta.html` — `extractoPastaAnalyses[]`, rizósfera vs licor
+
+### Actualizado
+
+- `index.html` (18 capítulos; Pilar C completo)
+- `sitemap.xml`, `llms.txt`, `manual-tecnico-catalog.js`, `MANUAL-TECNICO-CONOCIMIENTO-GPT.md`
+
+---
+
+## 2026-05-22 — v2026.05.3b (Catálogo LinkedIn empresa)
+
+### Knowledge / manual
+
+- `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` — **§8:** 24 posts NutriPlant PRO (URLs urn:li:activity:*), IDs `li_*`, mapa capítulo, §8b instrucciones Socio
+- `publicaciones-redes-sociales.html` — tabla destacados + enlace al catálogo completo
+- `CHATGPT-SOCIO-PAQUETE-ACTUALIZACION.md` — §8 ya poblado
+
+Temas registrados: P-Zn, cierre estomático, NDVI, VPD, N mineralizable, meq→kg, movilidad nutriente suelo, aportes iónicos/CE, IS, compatibilidad, solubilidad, mol→meq, CIC, % fertilizantes, agua, DOP, Mn, agua disponible, rizosfera, apoplasto, yeso/Na, qué es meq, fijación P, microelementos.
+
+---
+
+## 2026-05-21 — v2026.05.3 (Pilar G redes + Knowledge Socio)
+
+### Publicado
+
+- `publicaciones-redes-sociales.html` — Pilar G: canales, tono, mapa capítulo→post
+
+### Knowledge GPT Socio (listo para subir cuando Jesús quiera)
+
+- `MANUAL-TECNICO-CONOCIMIENTO-GPT.md` — reescrito v2026.05.2 (15 técnicos + redes + tabla índice)
+- `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` — nuevo; §8 catálogo LinkedIn
+- `CHATGPT-SOCIO-INSTRUCCIONES-COMPLETAS.md` — quinta fuente redes
+- `CHATGPT-SOCIO-PAQUETE-ACTUALIZACION.md` — 4 archivos Knowledge
+
+---
+
+## 2026-05-21 — v2026.05.2 (MVP plan + inicio fase 2)
+
+### Publicado
+
+- `extraccion-nutrimental-por-etapa.html`
+- `hidroponia-solucion-por-etapa.html`
+- `analisis-agua-ras-sar.html`
+- `analisis-fruta-icc.html`
+- `granular-mezclas.html`
+
+### Actualizado
+
+- `index.html` — 15 capítulos + bloque «Próximamente» fase 2
+- `llms.txt`, `sitemap.xml`, `manual-tecnico-catalog.js`
+
+### Pendiente GPT Socio
+
+- No subir Knowledge hasta cerrar más capítulos de fase 2 (usuario).
+
+---
+
+## 2026-05-21 — v2026.05.1 (MVP completo — 10 capítulos)
+
+### Publicado
+
+- `unidades-ppm-meq-oxidos.html` — Unidades ppm, meq/L y óxidos
+- `programa-fertirriego-etapas.html` — Programa de fertirriego por etapas
+- `fertirriego-graficas-ionicas.html` — Gráficas iónicas en fertirriego
+- `diseno-solucion-nutritiva-didactica.html` — Diseño didáctico solución nutritiva
+- `vpd-deficit-presion-vapor.html` — VPD
+- `analisis-foliar-dop.html` — Análisis foliar DOP
+- `faq-porcentajes-no-suman-100.html` — FAQ % iónicos
+
+### Actualizado
+
+- `index.html` — Los 10 capítulos en «Disponible», agrupados por pilares
+- `llms.txt`, `sitemap.xml` — URLs nuevas
+- `manual-tecnico-catalog.js` — Catálogo API Socio (7 capítulos + upcoming fase 2)
+- `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` — Knowledge §3.1b–3.9
+
+---
+
 ## 2026-05-21 — v2026.05 (MVP web)
 
 ### Publicado en `/manual-tecnico/`

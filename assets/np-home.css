@@ -1,0 +1,199 @@
+/* NutriPlant PRO — Página de inicio pública (index.html) */
+
+:root {
+  --np-blue: #2563eb;
+  --np-blue-dark: #1e40af;
+  --np-green: #16a34a;
+  --np-green-dark: #15803d;
+  --np-ink: #0f172a;
+  --np-muted: #64748b;
+  --np-card: #ffffff;
+  --np-line: #e2e8f0;
+}
+
+.np-home {
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--np-ink);
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(37, 99, 235, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 60% at 100% 50%, rgba(22, 163, 74, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 50% at 0% 80%, rgba(37, 99, 235, 0.06) 0%, transparent 45%),
+    linear-gradient(165deg, #f8fafc 0%, #f0f9ff 42%, #ecfdf5 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.np-home__main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px 40px;
+}
+
+.np-home__card {
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+  background: var(--np-card);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  padding: 40px 32px 36px;
+  box-shadow:
+    0 4px 6px rgba(15, 23, 42, 0.04),
+    0 24px 48px rgba(37, 99, 235, 0.1),
+    0 0 0 1px rgba(226, 232, 240, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+.np-home__card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--np-blue) 0%, var(--np-green) 100%);
+}
+
+.np-home__logo-wrap {
+  margin: 0 auto 20px;
+  max-width: min(280px, 88vw);
+}
+
+.np-home__logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 24px rgba(37, 99, 235, 0.18));
+}
+
+.np-home__tagline {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--np-blue-dark) 0%, var(--np-green-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.np-home__lead {
+  margin: 0 0 28px;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--np-muted);
+  max-width: 34ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.np-home__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.np-home__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 2px solid transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-sizing: border-box;
+}
+
+.np-home__btn:active {
+  transform: scale(0.98);
+}
+
+.np-home__btn--primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--np-blue) 0%, var(--np-blue-dark) 55%, var(--np-green) 100%);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+}
+
+.np-home__btn--primary:hover {
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.42);
+  transform: translateY(-2px);
+}
+
+.np-home__btn--secondary {
+  color: var(--np-blue-dark);
+  background: #f8fafc;
+  border-color: #93c5fd;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.np-home__btn--secondary:hover {
+  background: #eff6ff;
+  border-color: var(--np-blue);
+  transform: translateY(-2px);
+}
+
+.np-home__btn-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.np-home__btn-sub {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.np-home__hint {
+  margin: 20px 0 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.np-home__footer {
+  padding: 16px 20px 24px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--np-muted);
+}
+
+.np-home__footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 14px;
+  margin-bottom: 10px;
+}
+
+.np-home__footer a {
+  color: var(--np-blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.np-home__footer a:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 480px) {
+  .np-home__card {
+    padding: 48px 40px 40px;
+  }
+  .np-home__logo-wrap {
+    max-width: 300px;
+  }
+}

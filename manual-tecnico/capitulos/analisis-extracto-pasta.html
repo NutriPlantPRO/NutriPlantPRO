@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Extracto de pasta saturada — Manual NutriPlant PRO</title>
+  <meta name="description" content="Análisis de extracto de pasta saturada en NutriPlant: CE, pH, RAS, iones en ppm/meq y lectura de disponibilidad en rizósfera.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/analisis-extracto-pasta.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css">
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+      <div class="mt-social-links" aria-label="Redes sociales">
+        <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="social-btn" data-social="linkedin" title="LinkedIn"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
+      </div>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar C · Extracto de pasta</p>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    <h1>Extracto de pasta saturada (análisis de laboratorio)</h1>
+    <h2>Resumen</h2>
+    <p>El <strong>extracto de pasta saturada</strong> estima la composición de la solución del suelo en condición de saturación (agua añadida hasta pasta). En NutriPlant se registra en <strong>Análisis → Extracto de pasta</strong>, con la misma estructura iónica que solución nutritiva, pero con otro significado agronómico: <strong>disponibilidad en la rizósfera</strong>, no el licor del fertirriego.</p>
+    <div class="mt-warn"><strong>No mezclar datos:</strong> <code>extractoPastaAnalyses[]</code> y <code>solucionNutritivaAnalyses[]</code> son listas independientes. El GPT y los reportes deben usar el tipo correcto en la API.</div>
+    <h2>Dónde está en la app</h2>
+    <ul>
+      <li>Dashboard → <strong>Análisis</strong> → chip <strong>Extracto de pasta</strong>.</li>
+      <li>Almacenamiento: <code>extractoPastaAnalyses[]</code>.</li>
+      <li>API Socio: <code>type: "extracto_pasta"</code>.</li>
+    </ul>
+    <h2>Qué captura cada reporte</h2>
+    <ul>
+      <li><strong>General:</strong> CE (dS/m), pH, RAS (manual).</li>
+      <li><strong>Cationes y aniones:</strong> meq/L y ppm con sincronización automática (Ca, Mg, K, Na; NO₃, P, S, Cl, HCO₃, CO₃).</li>
+      <li><strong>Microelementos</strong> en ppm y fila de ideal opcional.</li>
+      <li><strong>Referencias y diferencia:</strong> mismos rangos orientativos y lógica <em>lab − ideal</em> que en solución nutritiva.</li>
+    </ul>
+    <h2>Contexto agronómico</h2>
+    <p>La pasta saturada aproxima qué nutrientes y sales están en solución alrededor de la raíz en el momento del muestreo. Es útil para:</p>
+    <ul>
+      <li>Detectar <strong>acumulación de sales</strong> (CE alta en extracto vs expectativa del cultivo).</li>
+      <li>Observar <strong>Na o bicarbonatos</strong> que condicionan absorción y estructura del suelo.</li>
+      <li>Cruzar con <a href="analisis-suelo-fertilidad-kgha.html">análisis de suelo</a> (reservas en suelo sólido) y con <a href="analisis-solucion-nutritiva-lab.html">solución nutritiva</a> (lo que entra por riego).</li>
+    </ul>
+    <p>No es lo mismo que un análisis de suelo total: el extracto refleja la <strong>fase soluble</strong> bajo saturación, no kg/ha de fertilidad del perfil.</p>
+    <h2>Interpretación con criterio</h2>
+    <ul>
+      <li>Valores altos de NO₃ o K en extracto pueden indicar exceso de fertilización reciente o baja lixiviación.</li>
+      <li>CE y Na elevados sugieren revisar calidad de agua, drenaje y enmiendas (ver <a href="enmiendas-balance-cic.html">enmiendas y CIC</a>).</li>
+      <li>La muestra depende de <strong>profundidad, humedad y hora de muestreo</strong>; un solo punto no define el ciclo completo.</li>
+    </ul>
+    <h2>RAS y CE</h2>
+    <p>CE del extracto se interpreta como salinidad de la solución del suelo en pasta; umbrales dependen del cultivo y del sistema (campo abierto vs sustrato). RAS: campo manual; fórmula de referencia en <a href="analisis-agua-ras-sar.html">análisis de agua</a>.</p>
+    <h2>Relación con otros capítulos</h2>
+    <table class="mt-table">
+      <thead><tr><th>Capítulo</th><th>Uso conjunto</th></tr></thead>
+      <tbody>
+        <tr><td><a href="analisis-suelo-fertilidad-kgha.html">Suelo kg/ha</a></td><td>Reservas y ajuste de fertilidad en perfil.</td></tr>
+        <tr><td><a href="analisis-solucion-nutritiva-lab.html">Solución nutritiva</a></td><td>Licor aplicado vs condición en rizósfera.</td></tr>
+        <tr><td><a href="extraccion-nutrimental-por-etapa.html">Extracción por etapa</a></td><td>Demanda del cultivo frente a lo disponible en extracto.</td></tr>
+      </tbody>
+    </table>
+    <nav class="mt-chapter-nav"><a href="analisis-solucion-nutritiva-lab.html">← Solución nutritiva</a><a href="analisis-suelo-fertilidad-kgha.html">Suelo kg/ha →</a><a href="../index.html">Índice</a></nav>
+    <p class="mt-disclaimer">Guía técnica de apoyo. Valide muestreo, método de laboratorio y condiciones locales antes de ajustar el programa.</p>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+</body>
+</html>
