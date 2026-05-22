@@ -136,6 +136,13 @@
     table.mol-table tr.is-nutrient td { background: #f0fdf4; }
     .mol-bar { height: 6px; border-radius: 999px; background: #e2e8f0; margin-top: 4px; overflow: hidden; }
     .mol-bar > span { display: block; height: 100%; background: #16a34a; border-radius: 999px; }
+    .mol-section-title { margin: 16px 0 8px; font-size: 13px; font-weight: 800; color: #1e3a8a; }
+    .mol-groups { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+    .mol-group-card {
+      background: #eff6ff; border: 1px solid #93c5fd; border-radius: 10px;
+      padding: 8px 12px; font-size: 12px; color: #1e3a8a;
+    }
+    .mol-group-card strong { display: block; font-size: 16px; color: #0f172a; }
   </style>
 </head>
 <body>
@@ -202,6 +209,23 @@
       <p id="molError" class="mol-err" hidden></p>
       <div id="molResults" hidden>
         <div class="mol-summary" id="molSummary"></div>
+        <p class="mol-section-title">Bloques de la fórmula (sales + agua)</p>
+        <div class="mol-table-wrap">
+          <table class="mol-table">
+            <thead>
+              <tr>
+                <th>Bloque</th>
+                <th>Cantidad</th>
+                <th>PM unitario (g/mol)</th>
+                <th>Masa en fórmula (g/mol)</th>
+                <th>% peso</th>
+              </tr>
+            </thead>
+            <tbody id="molBlocksBody"></tbody>
+          </table>
+        </div>
+        <div class="mol-groups" id="molGroups"></div>
+        <p class="mol-section-title">Composición elemental (%)</p>
         <div class="mol-table-wrap">
           <table class="mol-table">
             <thead>
@@ -251,7 +275,7 @@
       { label: 'KNO₃', formula: 'KNO3' },
       { label: 'H₂SO₄', formula: 'H2SO4' },
       { label: 'Nitrato Ca · 4H₂O', formula: 'Ca(NO3)2+4H2O' },
-      { label: 'Nitrato Ca granular (sal doble)', formula: '5Ca(NO3)2+NH4NO3+10H2O' },
+      { label: 'Nitrato Ca granular (sal doble)', formula: '5Ca(NO3)2+NH4NO3+10H2O', note: '5 nitrato Ca + 1 nitrato amonio + 10 aguas' },
       { label: 'NH₄NO₃', formula: 'NH4NO3' },
       { label: '(NH₄)₂SO₄', formula: '(NH4)2SO4' },
       { label: 'KH₂PO₄', formula: 'KH2PO4' },
@@ -421,12 +445,55 @@
       });
     }
 
+    function countMotifInTerms(terms, mult, motif) {
+      let total = 0;
+      for (let i = 0; i <= terms.length - motif.length; i += 1) {
+        let ok = true;
+        for (let j = 0; j < motif.length; j += 1) {
+          const term = terms[i + j];
+          const m = motif[j];
+          if (!term || term.type !== 'element' || term.symbol !== m.symbol || Math.abs(term.count - m.count) > 1e-9) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) total += mult;
+      }
+      terms.forEach(function(t) {
+        if (t.type === 'group') total += countMotifInTerms(t.terms, mult * t.count, motif);
+      });
+      return total;
+    }
+
+    function blockUnitMw(terms) {
+      const ac = {};
+      collectElements(terms, 1, ac);
+      let mw = 0;
+      Object.keys(ac).forEach(function(sym) { mw += ac[sym] * ATOMIC_WEIGHTS[sym]; });
+      return mw;
+    }
+
+    function formatBlockLabel(part) {
+      const m = part.match(/^(\d+(?:\.\d+)?)(.*)$/);
+      if (m && m[2]) return m[1] + ' × ' + formatNormalizedDisplay(m[2]);
+      return '1 × ' + formatNormalizedDisplay(part);
+    }
+
+    function blockDisplayName(body) {
+      const b = body.replace(/^\(/, '').replace(/\)$/, '');
+      if (/^Ca\(NO3\)2$/i.test(b) || b === 'Ca(NO3)2') return 'Nitrato de calcio Ca(NO₃)₂';
+      if (/^NH4NO3$/i.test(b)) return 'Nitrato de amonio NH₄NO₃';
+      if (/^H2O$/i.test(b) || b === '(H2O)' || b === 'H2O') return 'Agua H₂O';
+      return formatNormalizedDisplay(body);
+    }
+
     function parseCompound(rawFormula) {
       const normalized = normalizeFormula(rawFormula);
       if (!normalized) throw new Error('Escribe una fórmula.');
       const parts = normalized.split(/[·•.]/).filter(Boolean);
       if (!parts.length) throw new Error('Fórmula no válida.');
       const segments = [];
+      const blocks = [];
       parts.forEach(function(part) {
         const m = part.match(/^(\d+(?:\.\d+)?)(.*)$/);
         let coef = 1;
@@ -434,14 +501,49 @@
         if (m && m[2]) { coef = Number(m[1]); body = m[2]; }
         const parsed = parseTerms(body, 0, null);
         if (parsed.index !== body.length) throw new Error('Error al parsear la fórmula.');
-        segments.push({ coef: coef, terms: parsed.terms });
+        segments.push({ coef: coef, terms: parsed.terms, body: body, raw: part });
+        const unitMw = blockUnitMw(parsed.terms);
+        const mass = unitMw * coef;
+        blocks.push({
+          label: formatBlockLabel(part),
+          name: blockDisplayName(body),
+          coef: coef,
+          unitMw: unitMw,
+          mass: mass
+        });
       });
       const atomCounts = {};
       segments.forEach(function(seg) { collectElements(seg.terms, seg.coef, atomCounts); });
       let mw = 0;
       Object.keys(atomCounts).forEach(function(sym) { mw += atomCounts[sym] * ATOMIC_WEIGHTS[sym]; });
       if (!(mw > 0)) throw new Error('No se pudo calcular el peso molecular.');
-      return { normalized: normalized, atomCounts: atomCounts, mw: mw };
+      blocks.forEach(function(blk) { blk.pct = (blk.mass / mw) * 100; });
+
+      const NO3 = [{ symbol: 'N', count: 1 }, { symbol: 'O', count: 3 }];
+      const NH4 = [{ symbol: 'N', count: 1 }, { symbol: 'H', count: 4 }];
+      let no3 = 0;
+      let nh4 = 0;
+      segments.forEach(function(seg) {
+        no3 += countMotifInTerms(seg.terms, seg.coef, NO3);
+        nh4 += countMotifInTerms(seg.terms, seg.coef, NH4);
+      });
+      const caNitrateUnits = segments.reduce(function(sum, seg) {
+        if (/Ca\(NO3\)2/i.test(seg.body)) return sum + seg.coef;
+        return sum;
+      }, 0);
+
+      return {
+        normalized: normalized,
+        atomCounts: atomCounts,
+        mw: mw,
+        blocks: blocks,
+        ions: {
+          no3: no3,
+          nh4: nh4,
+          ca: atomCounts.Ca || 0,
+          caNitrateUnits: caNitrateUnits
+        }
+      };
     }
 
     function inferMoleculeEquivalent(atomCounts, mw) {
@@ -478,6 +580,8 @@
       const errEl = document.getElementById('molError');
       const resEl = document.getElementById('molResults');
       const summaryEl = document.getElementById('molSummary');
+      const blocksEl = document.getElementById('molBlocksBody');
+      const groupsEl = document.getElementById('molGroups');
       const bodyEl = document.getElementById('molTableBody');
       errEl.hidden = true;
       errEl.textContent = '';
@@ -494,6 +598,31 @@
       ].filter(Boolean).map(function(row) {
         return '<div class="card"><div class="k">' + row[0] + '</div><div class="v">' + row[1] + '</div></div>';
       }).join('');
+
+      blocksEl.innerHTML = parsed.blocks.map(function(blk) {
+        return '<tr>' +
+          '<td><strong>' + blk.label + '</strong><br><span style="color:#64748b;font-size:11px;">' + blk.name + '</span></td>' +
+          '<td class="num">' + fmtNum(blk.coef, blk.coef % 1 ? 2 : 0) + '</td>' +
+          '<td class="num">' + fmtNum(blk.unitMw, 3) + '</td>' +
+          '<td class="num">' + fmtNum(blk.mass, 3) + '</td>' +
+          '<td class="num">' + fmtNum(blk.pct, 2) + '%</td>' +
+          '</tr>';
+      }).join('');
+
+      const ionCards = [];
+      if (parsed.ions.caNitrateUnits > 0) {
+        ionCards.push('<div class="mol-group-card"><strong>' + fmtNum(parsed.ions.caNitrateUnits, 0) + '</strong>Unidades Ca(NO₃)₂ (nitrato de calcio)</div>');
+      }
+      if (parsed.ions.no3 > 0) {
+        ionCards.push('<div class="mol-group-card"><strong>' + fmtNum(parsed.ions.no3, 0) + '</strong>Grupos nitrato NO₃⁻</div>');
+      }
+      if (parsed.ions.nh4 > 0) {
+        ionCards.push('<div class="mol-group-card"><strong>' + fmtNum(parsed.ions.nh4, 0) + '</strong>Grupos amonio NH₄⁺</div>');
+      }
+      if (parsed.ions.ca > 0 && !parsed.ions.caNitrateUnits) {
+        ionCards.push('<div class="mol-group-card"><strong>' + fmtNum(parsed.ions.ca, 0) + '</strong>Átomos Ca²⁺</div>');
+      }
+      groupsEl.innerHTML = ionCards.join('');
 
       const symbols = Object.keys(parsed.atomCounts).sort(function(a, b) {
         return parsed.atomCounts[b] * ATOMIC_WEIGHTS[b] - parsed.atomCounts[a] * ATOMIC_WEIGHTS[a];
@@ -572,7 +701,7 @@
       chip.type = 'button';
       chip.className = 'mol-chip';
       chip.textContent = ex.label;
-      chip.title = ex.formula;
+      chip.title = (ex.note ? ex.note + ' — ' : '') + ex.formula;
       chip.addEventListener('click', function() {
         molFormula.value = ex.formula;
         switchTab('mol');
