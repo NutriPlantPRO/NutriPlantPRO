@@ -170,14 +170,14 @@
   </div>
 
   <div id="paneMol" class="tab-pane" role="tabpanel">
-    <p class="lead">Escribe una <strong>fórmula química</strong> (elemento o molécula) y obtén peso molecular, peso equivalente y % de cada elemento. Acepta subíndices Unicode, paréntesis e hidratos (<code>Ca(NO₃)₂·4H₂O</code>).</p>
+    <p class="lead">Escribe una <strong>fórmula química</strong> (elemento o molécula) y obtén peso molecular, peso equivalente y % de cada elemento. Para <strong>agua de hidratación</strong> o sales dobles usa <strong>+</strong> o <strong>*</strong> en lugar del punto medio (·): <code>Ca(NO3)2+4H2O</code> o <code>Ca(NO3)2 + 5(H2O)</code>.</p>
     <div class="panel">
       <h2>Peso molecular y composición</h2>
       <p class="mol-hint">Desde la pestaña <strong>Tabla periódica</strong>, selecciona un elemento y pulsa <strong>+ Usar en calculadora molecular</strong>. Ejemplos rápidos:</p>
       <div class="mol-chips" id="molExamples"></div>
       <div class="mol-row">
         <label>Fórmula
-          <input type="text" id="molFormula" placeholder="KNO3, H2SO4, (NH4)2SO4, Ca(NO3)2·4H2O" autocomplete="off" spellcheck="false" />
+          <input type="text" id="molFormula" placeholder="Ca(NO3)2+4H2O, 5Ca(NO3)2+NH4NO3+10H2O" autocomplete="off" spellcheck="false" />
         </label>
         <button type="button" class="mol-btn" id="molCalcBtn">Calcular</button>
         <button type="button" class="mol-btn secondary" id="molClearBtn">Limpiar</button>
@@ -230,7 +230,18 @@
       '⁺':'+','⁻':'-'
     };
 
-    const MOL_EXAMPLES = ['KNO3', 'H2SO4', 'Ca(NO3)2', 'NH4NO3', '(NH4)2SO4', 'KH2PO4', 'MgSO4·7H2O', 'H3BO3', 'ZnSO4'];
+    const MOL_EXAMPLES = [
+      { label: 'KNO₃', formula: 'KNO3' },
+      { label: 'H₂SO₄', formula: 'H2SO4' },
+      { label: 'Nitrato Ca · 4H₂O', formula: 'Ca(NO3)2+4H2O' },
+      { label: 'Nitrato Ca granular (sal doble)', formula: '5Ca(NO3)2+NH4NO3+10H2O' },
+      { label: 'NH₄NO₃', formula: 'NH4NO3' },
+      { label: '(NH₄)₂SO₄', formula: '(NH4)2SO4' },
+      { label: 'KH₂PO₄', formula: 'KH2PO4' },
+      { label: 'MgSO₄ · 7H₂O', formula: 'MgSO4+7H2O' },
+      { label: 'H₃BO₃', formula: 'H3BO3' },
+      { label: 'ZnSO₄', formula: 'ZnSO4' }
+    ];
 
     const DEFAULT_VALENCE = {
       H:1, Li:1, Na:1, K:1, Rb:1, Cs:1, Ag:1, Cu:1, Tl:1, N:1, P:1, Cl:1, F:1, Br:1, I:1,
@@ -322,13 +333,18 @@
     function normalizeFormula(raw) {
       const text = String(raw || '').trim();
       if (!text) return '';
-      return text.split('').map(function(ch) { return SUBSCRIPT_MAP[ch] || ch; }).join('')
+      let out = text.split('').map(function(ch) { return SUBSCRIPT_MAP[ch] || ch; }).join('')
         .replace(/[−]/g, '-').replace(/\s+/g, '')
         .replace(/\{/g, '(').replace(/\}/g, ')').replace(/\[/g, '(').replace(/\]/g, ')')
-        .replace(/:/g, '·').replace(/\)\(/g, ')*(').replace(/\.+/g, '.');
+        .replace(/:/g, '·').replace(/\)\(/g, ')*(');
+      // + o * entre bloques (hidrato / sal doble). No toca cargas iónicas sueltas (NH4+ al final).
+      out = out.replace(/([0-9)\]])([\*+])([0-9(A-Z])/g, '$1·$3');
+      return out.replace(/\.+/g, '.');
     }
 
-    function parseNumber(str, index) {
+    function formatNormalizedDisplay(normalized) {
+      return String(normalized || '').replace(/·/g, ' + ');
+    }
       let i = index;
       let seenDot = false;
       let token = '';
@@ -453,7 +469,7 @@
 
       summaryEl.innerHTML = [
         ['Peso molecular (PM)', fmtNum(parsed.mw, 3) + ' g/mol'],
-        ['Fórmula normalizada', parsed.normalized],
+        ['Fórmula normalizada', formatNormalizedDisplay(parsed.normalized)],
         eqMol ? ['Peso equivalente (molécula)', fmtNum(eqMol, 3) + ' g/eq'] : null,
         eqInfo ? ['Criterio eq. molécula', eqInfo.label] : null
       ].filter(Boolean).map(function(row) {
@@ -519,13 +535,14 @@
     });
 
     const examplesEl = document.getElementById('molExamples');
-    MOL_EXAMPLES.forEach(function(f) {
+    MOL_EXAMPLES.forEach(function(ex) {
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.className = 'mol-chip';
-      chip.textContent = f;
+      chip.textContent = ex.label;
+      chip.title = ex.formula;
       chip.addEventListener('click', function() {
-        molFormula.value = f;
+        molFormula.value = ex.formula;
         switchTab('mol');
         runMolCalc();
       });
