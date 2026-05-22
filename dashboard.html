@@ -694,6 +694,21 @@
       height: auto;
       overflow: hidden;
     }
+    @media (max-width: 767px) {
+      .modal-tool-iframe-fit {
+        height: auto !important;
+        max-height: 92dvh;
+      }
+      .modal-tool-iframe-fit .modal-body {
+        flex: 0 1 auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        max-height: calc(92dvh - 64px);
+      }
+      .modal-tool-iframe-fit iframe {
+        min-height: 280px;
+      }
+    }
 
     .modal-close {
       background: none;
@@ -4949,6 +4964,7 @@ CONTRATO:
     function showWaterHardnessCalculator() {
       var modal = document.getElementById('waterHardnessCalculatorModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('waterHardnessCalculatorFrame');
       modal.classList.add('show');
     }
     window.showWaterHardnessCalculator = showWaterHardnessCalculator;
@@ -4964,6 +4980,7 @@ CONTRATO:
     function showNMineralizableMoCalculator() {
       var modal = document.getElementById('nMineralizableMoCalculatorModal');
       if (!modal) return;
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('nMineralizableMoCalculatorFrame');
       modal.classList.add('show');
     }
     window.showNMineralizableMoCalculator = showNMineralizableMoCalculator;
@@ -6687,7 +6704,7 @@ CONTRATO:
 
   <!-- Modal Diagnóstico de agua y acondicionamiento -->
   <div id="waterHardnessCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeWaterHardnessCalculator();">
-    <div class="modal modal-tool-iframe-full">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title">💦 Diagnóstico de agua y acondicionamiento</h2>
         <button class="modal-close" onclick="closeWaterHardnessCalculator()">×</button>
@@ -6700,7 +6717,7 @@ CONTRATO:
 
   <!-- Modal Estimación de N mineralizable -->
   <div id="nMineralizableMoCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeNMineralizableMoCalculator();">
-    <div class="modal modal-tool-iframe-full">
+    <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title">🌱 Estimación de N mineralizable</h2>
         <button class="modal-close" onclick="closeNMineralizableMoCalculator()">×</button>
@@ -7617,5 +7634,6 @@ CONTRATO:
       });
     })();
   </script>
+  <script src="assets/free-tools-modal-parent.js"></script>
 </body>
 </html>

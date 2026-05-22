@@ -276,7 +276,11 @@
     .embed-lead { display: none; }
     html.embed-dashboard body {
       padding: 10px 14px 16px;
-      min-height: 100%;
+      min-height: 0;
+      height: auto;
+    }
+    html.embed-dashboard {
+      height: auto;
     }
     html.embed-dashboard .wrap {
       max-width: none;
@@ -862,6 +866,7 @@
     }
   </script>
   <script src="assets/np-free-local-persist.js"></script>
+  <script src="assets/free-tools-embed.js"></script>
   <script>
     (function () {
       window.NpFreePersist.bind('agua_dureza', snapshotAcidHardness, applyAcidHardness);

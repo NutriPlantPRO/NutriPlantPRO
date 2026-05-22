@@ -92,7 +92,8 @@ module.exports = {
       id: 'tabla_periodica',
       title: 'Tabla Periódica (Nutrientes Esenciales)',
       file: 'tabla-periodica-nutrientes-free.html',
-      summary: 'Referencia visual/educativa; sin formulario persistente.'
+      summary:
+        'Tabla visual de nutrientes + calculadora interna: peso molecular, % elemental y peso equivalente (meq) por fórmula.'
     },
     {
       id: 'fertilizer_compatibility',

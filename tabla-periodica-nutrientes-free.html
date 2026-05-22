@@ -90,10 +90,55 @@
     .card .v { margin-top: 3px; font-size: 14px; font-weight: 700; color: #0f172a; }
     .role { margin-top: 10px; font-size: 13px; color: #334155; line-height: 1.45; }
     .foot { margin-top: 10px; font-size: 11px; color: #64748b; }
+
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .tab-btn {
+      border: 1px solid #cbd5e1; background: #fff; color: #334155;
+      border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+    .tab-btn.active { background: #1e3a8a; border-color: #1e3a8a; color: #fff; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .mol-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
+    .mol-row label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; color: #334155; flex: 1 1 220px; }
+    .mol-row input[type="text"] {
+      width: 100%; box-sizing: border-box; padding: 10px 12px;
+      border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-family: ui-monospace, monospace;
+    }
+    .mol-btn {
+      border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer;
+      background: #16a34a; color: #fff;
+    }
+    .mol-btn.secondary { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+    .mol-hint { margin: 0 0 10px; font-size: 12px; color: #64748b; line-height: 1.45; }
+    .mol-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .mol-chip {
+      border: 1px solid #93c5fd; background: #eff6ff; color: #1e40af;
+      border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .mol-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 12px 0; }
+    .mol-summary .card { border-color: #86efac; background: #f0fdf4; }
+    .mol-err { color: #b91c1c; font-size: 13px; margin: 8px 0 0; font-weight: 600; }
+    .mol-table-wrap { overflow-x: auto; margin-top: 10px; }
+    table.mol-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.mol-table th, table.mol-table td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; }
+    table.mol-table th { background: #f1f5f9; color: #334155; font-size: 11px; text-transform: uppercase; letter-spacing: .02em; }
+    table.mol-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.mol-table tr.is-nutrient td { background: #f0fdf4; }
+    .mol-bar { height: 6px; border-radius: 999px; background: #e2e8f0; margin-top: 4px; overflow: hidden; }
+    .mol-bar > span { display: block; height: 100%; background: #16a34a; border-radius: 999px; }
   </style>
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab-btn active" data-tab="table" role="tab" aria-selected="true">Tabla periódica</button>
+    <button type="button" class="tab-btn" data-tab="mol" role="tab" aria-selected="false">Peso molecular</button>
+  </div>
+
+  <div id="paneTable" class="tab-pane active" role="tabpanel">
   <p class="lead">Elementos de interés para nutrición vegetal resaltados. Toca cualquier cuadro para ver ficha rápida (número atómico, peso atómico, valencias, radio atómico y electronegatividad).</p>
 
   <div class="legend">
@@ -119,13 +164,79 @@
     <div id="selMeta" class="meta">Pulsa un cuadro de la tabla para ver detalles.</div>
     <div id="selGrid" class="grid"></div>
     <div id="selRole" class="role"></div>
+    <button type="button" id="selUseInMol" class="mol-btn" style="margin-top:10px;">+ Usar en calculadora molecular</button>
     <div class="foot">Nota: algunos datos pueden mostrarse como “—” cuando no se usan comúnmente en agronomía práctica de campo.</div>
+  </div>
+  </div>
+
+  <div id="paneMol" class="tab-pane" role="tabpanel">
+    <p class="lead">Escribe una <strong>fórmula química</strong> (elemento o molécula) y obtén peso molecular, peso equivalente y % de cada elemento. Acepta subíndices Unicode, paréntesis e hidratos (<code>Ca(NO₃)₂·4H₂O</code>).</p>
+    <div class="panel">
+      <h2>Peso molecular y composición</h2>
+      <p class="mol-hint">Desde la pestaña <strong>Tabla periódica</strong>, selecciona un elemento y pulsa <strong>+ Usar en calculadora molecular</strong>. Ejemplos rápidos:</p>
+      <div class="mol-chips" id="molExamples"></div>
+      <div class="mol-row">
+        <label>Fórmula
+          <input type="text" id="molFormula" placeholder="KNO3, H2SO4, (NH4)2SO4, Ca(NO3)2·4H2O" autocomplete="off" spellcheck="false" />
+        </label>
+        <button type="button" class="mol-btn" id="molCalcBtn">Calcular</button>
+        <button type="button" class="mol-btn secondary" id="molClearBtn">Limpiar</button>
+      </div>
+      <p id="molError" class="mol-err" hidden></p>
+      <div id="molResults" hidden>
+        <div class="mol-summary" id="molSummary"></div>
+        <div class="mol-table-wrap">
+          <table class="mol-table">
+            <thead>
+              <tr>
+                <th>Elemento</th>
+                <th>Átomos</th>
+                <th>Masa parcial (g/mol)</th>
+                <th>% en molécula</th>
+                <th>P. eq. meq (g/eq)</th>
+              </tr>
+            </thead>
+            <tbody id="molTableBody"></tbody>
+          </table>
+        </div>
+        <p class="foot">P. eq. meq = peso atómico ÷ valencia agronómica habitual (meq/L ↔ ppm elemental en NutriPlant). Peso equivalente de la molécula = PM ÷ n cuando se detecta ácido/base típico (H⁺ u OH⁻ intercambiables).</p>
+      </div>
+    </div>
   </div>
 
   <script>
     const ESSENTIAL = new Set(['N','P','K','Ca','Mg','S','Fe','Mn','Zn','Cu','B','Mo','Cl','Ni']);
     const BENEFICIAL = new Set(['Si','Na','Ti','Al','Co','Se','V']);
     const CHO = new Set(['C','H','O']);
+
+    const ATOMIC_WEIGHTS = {
+      H:1.008, He:4.003, Li:6.94, Be:9.012, B:10.81, C:12.011, N:14.007, O:15.999, F:18.998, Ne:20.180,
+      Na:22.990, Mg:24.305, Al:26.982, Si:28.085, P:30.974, S:32.06, Cl:35.45, Ar:39.948,
+      K:39.098, Ca:40.078, Sc:44.956, Ti:47.867, V:50.942, Cr:51.996, Mn:54.938, Fe:55.845, Co:58.933, Ni:58.693,
+      Cu:63.546, Zn:65.38, Ga:69.723, Ge:72.630, As:74.922, Se:78.971, Br:79.904, Kr:83.798,
+      Rb:85.468, Sr:87.62, Y:88.906, Zr:91.224, Nb:92.906, Mo:95.95, Tc:98, Ru:101.07, Rh:102.91, Pd:106.42,
+      Ag:107.87, Cd:112.41, In:114.82, Sn:118.71, Sb:121.76, Te:127.60, I:126.90, Xe:131.29,
+      Cs:132.91, Ba:137.33, La:138.91, Ce:140.12, Pr:140.91, Nd:144.24, Pm:145, Sm:150.36, Eu:151.96, Gd:157.25,
+      Tb:158.93, Dy:162.50, Ho:164.93, Er:167.26, Tm:168.93, Yb:173.05, Lu:174.97, Hf:178.49, Ta:180.95, W:183.84,
+      Re:186.21, Os:190.23, Ir:192.22, Pt:195.08, Au:196.97, Hg:200.59, Tl:204.38, Pb:207.2, Bi:208.98, Po:209,
+      At:210, Rn:222, Fr:223, Ra:226, Ac:227, Th:232.04, Pa:231.04, U:238.03, Np:237, Pu:244, Am:243, Cm:247,
+      Bk:247, Cf:251, Es:252, Fm:257, Md:258, No:259, Lr:266, Rf:267, Db:268, Sg:269, Bh:270, Hs:277, Mt:278,
+      Ds:281, Rg:282, Cn:285, Nh:286, Fl:289, Mc:290, Lv:293, Ts:294, Og:294
+    };
+
+    const SUBSCRIPT_MAP = {
+      '₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9',
+      '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9',
+      '⁺':'+','⁻':'-'
+    };
+
+    const MOL_EXAMPLES = ['KNO3', 'H2SO4', 'Ca(NO3)2', 'NH4NO3', '(NH4)2SO4', 'KH2PO4', 'MgSO4·7H2O', 'H3BO3', 'ZnSO4'];
+
+    const DEFAULT_VALENCE = {
+      H:1, Li:1, Na:1, K:1, Rb:1, Cs:1, Ag:1, Cu:1, Tl:1, N:1, P:1, Cl:1, F:1, Br:1, I:1,
+      Ca:2, Mg:2, Sr:2, Ba:2, Zn:2, Mn:2, Ni:2, Co:2, Cd:2, Hg:2, Pb:2, Fe:2, Cu:2,
+      Al:3, B:3, Fe:3, Cr:3, As:3, S:2, O:2, C:4, Si:4, Se:2, Mo:6
+    };
 
     const DETAILS = {
       H:  { aw: '1.008',   val: '+1',               rad: '53 pm',  en: '2.20', role: 'Elemento estructural (CHO). Presente en agua y compuestos orgánicos.' },
@@ -182,7 +293,251 @@
     const selMeta = document.getElementById('selMeta');
     const selGrid = document.getElementById('selGrid');
     const selRole = document.getElementById('selRole');
+    const molFormula = document.getElementById('molFormula');
     let selectedBtn = null;
+    let lastClickedSymbol = '';
+
+    function fmtNum(n, digits) {
+      if (!Number.isFinite(n)) return '—';
+      return n.toLocaleString('es-MX', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    }
+
+    function primaryValence(symbol) {
+      const d = DETAILS[symbol];
+      if (d && d.val) {
+        const plus = d.val.match(/\+(\d+)/g);
+        if (plus && plus.length) {
+          const vals = plus.map(function(x) { return Number(x.replace('+', '')); });
+          return Math.min.apply(null, vals);
+        }
+        const minus = d.val.match(/-(\d+)/g);
+        if (minus && minus.length) {
+          const vals = minus.map(function(x) { return Number(x.replace('-', '')); });
+          return Math.min.apply(null, vals);
+        }
+      }
+      return DEFAULT_VALENCE[symbol] || null;
+    }
+
+    function normalizeFormula(raw) {
+      const text = String(raw || '').trim();
+      if (!text) return '';
+      return text.split('').map(function(ch) { return SUBSCRIPT_MAP[ch] || ch; }).join('')
+        .replace(/[−]/g, '-').replace(/\s+/g, '')
+        .replace(/\{/g, '(').replace(/\}/g, ')').replace(/\[/g, '(').replace(/\]/g, ')')
+        .replace(/:/g, '·').replace(/\)\(/g, ')*(').replace(/\.+/g, '.');
+    }
+
+    function parseNumber(str, index) {
+      let i = index;
+      let seenDot = false;
+      let token = '';
+      while (i < str.length) {
+        const ch = str[i];
+        if (ch >= '0' && ch <= '9') { token += ch; i += 1; continue; }
+        if (ch === '.' && !seenDot) { seenDot = true; token += ch; i += 1; continue; }
+        break;
+      }
+      if (!token) return { value: 1, index: i };
+      const val = Number(token);
+      if (!Number.isFinite(val) || val <= 0) throw new Error('Número inválido en fórmula.');
+      return { value: val, index: i };
+    }
+
+    function parseTerms(str, index, stopChar) {
+      const terms = [];
+      let i = index;
+      while (i < str.length) {
+        const ch = str[i];
+        if (stopChar && ch === stopChar) return { terms: terms, index: i + 1 };
+        if (ch === '+' || ch === '-' || ch === '^') { i += 1; continue; }
+        if (ch === '(') {
+          const nested = parseTerms(str, i + 1, ')');
+          const cnt = parseNumber(str, nested.index);
+          terms.push({ type: 'group', terms: nested.terms, count: cnt.value });
+          i = cnt.index;
+          continue;
+        }
+        if (ch >= 'A' && ch <= 'Z') {
+          let symbol = ch;
+          i += 1;
+          if (i < str.length && str[i] >= 'a' && str[i] <= 'z') { symbol += str[i]; i += 1; }
+          if (!Object.prototype.hasOwnProperty.call(ATOMIC_WEIGHTS, symbol)) {
+            throw new Error('Elemento no reconocido: ' + symbol);
+          }
+          const cnt = parseNumber(str, i);
+          terms.push({ type: 'element', symbol: symbol, count: cnt.value });
+          i = cnt.index;
+          continue;
+        }
+        throw new Error('Carácter inválido en fórmula: ' + ch);
+      }
+      if (stopChar) throw new Error('Paréntesis sin cerrar en fórmula.');
+      return { terms: terms, index: i };
+    }
+
+    function collectElements(terms, mult, out) {
+      terms.forEach(function(t) {
+        if (t.type === 'element') {
+          out[t.symbol] = (out[t.symbol] || 0) + (t.count * mult);
+        } else {
+          collectElements(t.terms, mult * t.count, out);
+        }
+      });
+    }
+
+    function parseCompound(rawFormula) {
+      const normalized = normalizeFormula(rawFormula);
+      if (!normalized) throw new Error('Escribe una fórmula.');
+      const parts = normalized.split(/[·•.]/).filter(Boolean);
+      if (!parts.length) throw new Error('Fórmula no válida.');
+      const segments = [];
+      parts.forEach(function(part) {
+        const m = part.match(/^(\d+(?:\.\d+)?)(.*)$/);
+        let coef = 1;
+        let body = part;
+        if (m && m[2]) { coef = Number(m[1]); body = m[2]; }
+        const parsed = parseTerms(body, 0, null);
+        if (parsed.index !== body.length) throw new Error('Error al parsear la fórmula.');
+        segments.push({ coef: coef, terms: parsed.terms });
+      });
+      const atomCounts = {};
+      segments.forEach(function(seg) { collectElements(seg.terms, seg.coef, atomCounts); });
+      let mw = 0;
+      Object.keys(atomCounts).forEach(function(sym) { mw += atomCounts[sym] * ATOMIC_WEIGHTS[sym]; });
+      if (!(mw > 0)) throw new Error('No se pudo calcular el peso molecular.');
+      return { normalized: normalized, atomCounts: atomCounts, mw: mw };
+    }
+
+    function inferMoleculeEquivalent(atomCounts, mw) {
+      const h = atomCounts.H || 0;
+      const o = atomCounts.O || 0;
+      const p = atomCounts.P || 0;
+      const s = atomCounts.S || 0;
+      const b = atomCounts.B || 0;
+      const cl = atomCounts.Cl || 0;
+      if (h > 0 && s > 0 && Math.abs(h / s - 2) < 0.01) {
+        return { n: h, label: 'Ácido sulfúrico (2 H⁺ por S)' };
+      }
+      if (h > 0 && p > 0 && h % p === 0 && h / p <= 3) {
+        return { n: h, label: 'Ácido fosforoso (H/P)' };
+      }
+      if (h > 0 && b > 0 && h % b === 0) {
+        return { n: h, label: 'Ácido bórico (H/B)' };
+      }
+      if (h > 0 && cl > 0 && h === cl) {
+        return { n: h, label: 'Ácido clorhídrico' };
+      }
+      if (h > 0 && o > 0 && h % 2 === 0 && h / 2 === o && !p && !s && !b) {
+        return { n: h, label: 'Hidróxido (OH⁻)' };
+      }
+      return null;
+    }
+
+    function elementName(symbol) {
+      const hit = ELEMENTS.find(function(el) { return el.s === symbol; });
+      return hit ? hit.n : symbol;
+    }
+
+    function renderMolResults(parsed) {
+      const errEl = document.getElementById('molError');
+      const resEl = document.getElementById('molResults');
+      const summaryEl = document.getElementById('molSummary');
+      const bodyEl = document.getElementById('molTableBody');
+      errEl.hidden = true;
+      errEl.textContent = '';
+      resEl.hidden = false;
+
+      const eqInfo = inferMoleculeEquivalent(parsed.atomCounts, parsed.mw);
+      const eqMol = eqInfo ? parsed.mw / eqInfo.n : null;
+
+      summaryEl.innerHTML = [
+        ['Peso molecular (PM)', fmtNum(parsed.mw, 3) + ' g/mol'],
+        ['Fórmula normalizada', parsed.normalized],
+        eqMol ? ['Peso equivalente (molécula)', fmtNum(eqMol, 3) + ' g/eq'] : null,
+        eqInfo ? ['Criterio eq. molécula', eqInfo.label] : null
+      ].filter(Boolean).map(function(row) {
+        return '<div class="card"><div class="k">' + row[0] + '</div><div class="v">' + row[1] + '</div></div>';
+      }).join('');
+
+      const symbols = Object.keys(parsed.atomCounts).sort(function(a, b) {
+        return parsed.atomCounts[b] * ATOMIC_WEIGHTS[b] - parsed.atomCounts[a] * ATOMIC_WEIGHTS[a];
+      });
+
+      bodyEl.innerHTML = symbols.map(function(sym) {
+        const atoms = parsed.atomCounts[sym];
+        const partial = atoms * ATOMIC_WEIGHTS[sym];
+        const pct = (partial / parsed.mw) * 100;
+        const val = primaryValence(sym);
+        const eq = val ? ATOMIC_WEIGHTS[sym] / val : null;
+        const isNut = ESSENTIAL.has(sym) || BENEFICIAL.has(sym) || CHO.has(sym);
+        return '<tr class="' + (isNut ? 'is-nutrient' : '') + '">' +
+          '<td><strong>' + sym + '</strong> <span style="color:#64748b;font-weight:400;">' + elementName(sym) + '</span></td>' +
+          '<td class="num">' + fmtNum(atoms, atoms % 1 ? 2 : 0) + '</td>' +
+          '<td class="num">' + fmtNum(partial, 3) + '</td>' +
+          '<td class="num">' + fmtNum(pct, 2) + '%<div class="mol-bar"><span style="width:' + Math.min(100, pct).toFixed(1) + '%"></span></div></td>' +
+          '<td class="num">' + (eq ? fmtNum(eq, 3) : '—') + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    function runMolCalc() {
+      const errEl = document.getElementById('molError');
+      const resEl = document.getElementById('molResults');
+      try {
+        const parsed = parseCompound(molFormula.value);
+        renderMolResults(parsed);
+      } catch (e) {
+        resEl.hidden = true;
+        errEl.hidden = false;
+        errEl.textContent = e.message || 'No se pudo calcular.';
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        const on = btn.getAttribute('data-tab') === tabId;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      document.getElementById('paneTable').classList.toggle('active', tabId === 'table');
+      document.getElementById('paneMol').classList.toggle('active', tabId === 'mol');
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() { switchTab(btn.getAttribute('data-tab')); });
+    });
+
+    document.getElementById('molCalcBtn').addEventListener('click', runMolCalc);
+    document.getElementById('molClearBtn').addEventListener('click', function() {
+      molFormula.value = '';
+      document.getElementById('molError').hidden = true;
+      document.getElementById('molResults').hidden = true;
+    });
+    molFormula.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); runMolCalc(); }
+    });
+
+    const examplesEl = document.getElementById('molExamples');
+    MOL_EXAMPLES.forEach(function(f) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'mol-chip';
+      chip.textContent = f;
+      chip.addEventListener('click', function() {
+        molFormula.value = f;
+        switchTab('mol');
+        runMolCalc();
+      });
+      examplesEl.appendChild(chip);
+    });
+
+    window.npPeriodicAppendSymbol = function(symbol) {
+      lastClickedSymbol = symbol;
+      molFormula.value = (molFormula.value || '') + symbol;
+      switchTab('mol');
+      molFormula.focus();
+    };
 
     // Encabezado superior de grupos 1-18
     for (let g = 1; g <= 18; g += 1) {
@@ -229,6 +584,12 @@
           return '<div class="card"><div class="k">' + row[0] + '</div><div class="v">' + row[1] + '</div></div>';
         }).join('');
         selRole.textContent = display(d.role, 'Sin ficha agronómica resumida para este elemento en esta vista.');
+        var useBtn = document.getElementById('selUseInMol');
+        if (useBtn) {
+          useBtn.onclick = function() {
+            if (typeof window.npPeriodicAppendSymbol === 'function') window.npPeriodicAppendSymbol(el.s);
+          };
+        }
       });
       board.appendChild(btn);
     });

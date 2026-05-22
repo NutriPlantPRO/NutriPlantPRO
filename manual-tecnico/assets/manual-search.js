@@ -6,6 +6,13 @@
 
   var CHAPTERS = [
     {
+      href: 'capitulos/flujo-nutriplant-pro.html',
+      icon: '🧭',
+      pillar: 'H · Flujo de la plataforma',
+      title: 'Guía rápida: flujo de plataforma y criterio de uso',
+      keywords: 'flujo plataforma login proyecto dashboard diagnóstico enmiendas programa seguimiento módulo objetivo errores comunes dato decisión'
+    },
+    {
       href: 'capitulos/unidades-ppm-meq-oxidos.html',
       icon: '📐',
       pillar: 'A · Fundamentos',

@@ -1,17 +1,19 @@
 # NutriPlant PRO — Manual Técnico (para crawlers e IA)
 
 > Biblioteca pública de metodología agronómica alineada con la plataforma NutriPlant PRO.
-> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza. Versión v2026.05.4 · 21 capítulos.
+> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza. Versión v2026.05.4 · 22 capítulos.
 
 ## Sitio
 
 - Índice: https://nutriplantpro.com/manual-tecnico/index.html
 - Autoría: https://nutriplantpro.com/manual-tecnico/autoria.html
+- Flujo plataforma: https://nutriplantpro.com/manual-tecnico/capitulos/flujo-nutriplant-pro.html
 - llms.txt sitio raíz: https://nutriplantpro.com/llms.txt
 - Plataforma: https://nutriplantpro.com/login.html
 
 ## Capítulos publicados
 
+- https://nutriplantpro.com/manual-tecnico/capitulos/flujo-nutriplant-pro.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/unidades-ppm-meq-oxidos.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html
@@ -36,6 +38,7 @@
 
 ## Reglas clave (metodología NutriPlant)
 
+- Flujo plataforma: Dato → Interpretación → Ajuste → Programa → Seguimiento (capítulo flujo-nutriplant-pro)
 - Fertilidad suelo kg/ha: (lab − ideal) × 0.1 × prof × densidad × (suelo_explorado_% / 100)
 - Triángulos: aniones NO₃+P+SO₄ y cationes K+Ca+Mg suman 100 % cada uno; Cl y NH₄ aparte
 - N mineralizable y agua útil en suelo: ver capítulo n-mineralizable-agua-disponible-suelo

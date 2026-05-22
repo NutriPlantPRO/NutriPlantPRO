@@ -314,6 +314,82 @@ body {
   padding: 10px 12px;
 }
 
+/* Banner flujo plataforma (índice) */
+.mt-flow-banner {
+  display: block;
+  margin: 0 0 28px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #e0f2fe 100%);
+  border: 1px solid #7dd3fc;
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.mt-flow-banner:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(3, 105, 161, 0.12);
+}
+.mt-flow-banner__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.mt-flow-banner__icon { font-size: 1.5rem; line-height: 1; }
+.mt-flow-banner__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0c4a6e;
+}
+.mt-flow-banner__text {
+  margin: 0;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+}
+.mt-flow-banner__cta {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mt-accent);
+}
+
+.mt-flow-map {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 16px 0 20px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+}
+.mt-flow-map__step {
+  font-weight: 700;
+  font-size: 14px;
+  color: #0c4a6e;
+  background: var(--mt-surface);
+  border: 1px solid #7dd3fc;
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+.mt-flow-map__arrow {
+  color: var(--mt-muted);
+  font-weight: 700;
+  font-size: 15px;
+}
+.mt-flow-map__example {
+  flex: 1 1 100%;
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.55;
+}
+
 .mt-hero {
   background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
   border: 1px solid #7dd3fc;
@@ -444,6 +520,10 @@ ul, ol { padding-left: 1.25rem; margin: 0 0 14px; }
   border: 1px solid var(--mt-border);
   border-radius: 10px;
   padding: 16px;
+}
+.mt-pillar--highlight {
+  border-color: #7dd3fc;
+  background: linear-gradient(180deg, #f0f9ff 0%, var(--mt-surface) 100%);
 }
 .mt-pillar-heading {
   display: flex;

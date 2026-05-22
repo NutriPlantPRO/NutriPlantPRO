@@ -945,6 +945,22 @@
       background: #f8fafc;
     }
 
+    @media (max-width: 767px) {
+      .modal-tool-iframe-fit {
+        height: auto;
+        max-height: 92dvh;
+      }
+      .modal-tool-iframe-fit .modal-body {
+        flex: 0 1 auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        max-height: calc(92dvh - 64px);
+      }
+      .modal-tool-iframe-fit iframe {
+        min-height: 280px;
+      }
+    }
+
     .modal-granular-mix {
       max-width: 1280px;
       width: 96%;
@@ -1402,6 +1418,7 @@
     // Diagnóstico de agua y acondicionamiento (gratis en login, independiente)
     function showWaterHardnessCalculator() {
       const modal = document.getElementById('waterHardnessCalculatorModal');
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('waterHardnessCalculatorFrame');
       modal.style.display = 'flex';
     }
 
@@ -1413,6 +1430,7 @@
     }
 
     function showNMineralizableMoCalculator() {
+      if (window.resetFreeToolIframeHeight) window.resetFreeToolIframeHeight('nMineralizableMoCalculatorFrame');
       document.getElementById('nMineralizableMoCalculatorModal').style.display = 'flex';
     }
     function closeNMineralizableMoCalculator() {
@@ -2191,7 +2209,7 @@
 
   <!-- Modal de Diagnóstico de agua y acondicionamiento -->
   <div id="waterHardnessCalculatorModal" class="modal-overlay">
-    <div class="modal modal-water-hardness">
+    <div class="modal modal-water-hardness modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title">
           💦 Diagnóstico de agua y acondicionamiento
@@ -2314,7 +2332,7 @@
 
   <!-- Modal N mineralizable desde MO -->
   <div id="nMineralizableMoCalculatorModal" class="modal-overlay">
-    <div class="modal modal-n-mineralizable-mo">
+    <div class="modal modal-n-mineralizable-mo modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title">🌱 Estimación de N mineralizable</h2>
         <button class="modal-close" onclick="closeNMineralizableMoCalculator()">×</button>
@@ -3746,5 +3764,6 @@
       });
     })();
   </script>
+  <script src="assets/free-tools-modal-parent.js"></script>
 </body>
 </html>
