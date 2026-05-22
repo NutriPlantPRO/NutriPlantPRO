@@ -22,7 +22,7 @@ En ChatGPT → tu GPT → **Configure → Knowledge → Upload**:
 
 1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web v2026.05.4 (**21 capítulos**, fase 2 E/F cerrada; re-subir tras cada tanda)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web **v2026.05.5** (**22 capítulos**, pilares A–H; capítulo `flujo-nutriplant-pro`; re-subir tras cada tanda)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` ← posts LinkedIn/IG; **§8 con 24 posts empresa** (añade filas si publicas nuevos)
 
 *(Opcional: borra knowledge viejo duplicado si tenías notas sueltas.)*
@@ -41,7 +41,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 ## Paso C — Actions (OpenAPI)
 
 1. **Actions** → elimina schema anterior si da conflicto.
-2. Importa `docs/openapi-nutriplant-admin.json` **v2.0.0** (incluye Plan PRO create/update).
+2. Importa `docs/openapi-nutriplant-admin.json` **v2.2.0** (Plan PRO create/update + catálogos manual/lab/tools).
 3. Auth sin cambios: `Authorization: Bearer <NUTRIPLANT_ADMIN_GPT_TOKEN>`.
 
 ---
@@ -85,6 +85,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 | Capítulo | URL |
 |----------|-----|
 | Índice | https://nutriplantpro.com/manual-tecnico/ |
+| Flujo plataforma (Pilar H) | https://nutriplantpro.com/manual-tecnico/capitulos/flujo-nutriplant-pro.html |
 | Suelo kg/ha | https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html |
 | % meq | https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html |
 | Enmiendas CIC | https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html |
@@ -96,6 +97,6 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 Tras deploy del repo con Fase 3:
 
 1. Guía: `docs/SEARCH-CONSOLE-FASE-3.md` (verificar dominio + enviar `sitemap.xml`).
-2. En el repo ya están: JSON-LD `Article` en 20 capítulos, `FAQPage` en FAQ, `CollectionPage` en índice, `ProfilePage` en autoría; `llms.txt` con las 21 URLs.
+2. En el repo ya están: JSON-LD `Article` en capítulos, `FAQPage` en FAQ, `CollectionPage` en índice, `ProfilePage` en autoría; `llms.txt` con **22** URLs de capítulo + flujo.
 
 *Listo para una sola actualización en ChatGPT.*

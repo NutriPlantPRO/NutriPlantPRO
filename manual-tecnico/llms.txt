@@ -1,7 +1,7 @@
 # NutriPlant PRO — Manual Técnico (para crawlers e IA)
 
 > Biblioteca pública de metodología agronómica alineada con la plataforma NutriPlant PRO.
-> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza. Versión v2026.05.4 · 22 capítulos.
+> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza. Versión v2026.05.5 · 22 capítulos.
 
 ## Sitio
 
@@ -44,4 +44,4 @@
 - N mineralizable y agua útil en suelo: ver capítulo n-mineralizable-agua-disponible-suelo
 - Mulder y compatibilidad C/R/I: ver capítulo interacciones-mulder-compatibilidad
 
-Actualizado: 2026-05-21
+Actualizado: 2026-05-22

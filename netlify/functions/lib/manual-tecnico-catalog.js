@@ -7,7 +7,7 @@ const BASE = 'https://nutriplantpro.com/manual-tecnico';
 module.exports = {
   version: '2026-05-22',
   scope:
-    'Biblioteca HTML pública, sin cuenta. Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO.',
+    'Biblioteca HTML pública, sin cuenta. 22 capítulos (pilares A–H). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO.',
   publicUrls: {
     index: `${BASE}/`,
     llms: `${BASE}/llms.txt`,
@@ -22,6 +22,16 @@ module.exports = {
     'Español primero. Orientativo: decisión final del agrónomo.'
   ],
   chapters: [
+    {
+      id: 'flujo_nutriplant_pro',
+      slug: 'flujo-nutriplant-pro',
+      title: 'Guía rápida: flujo de plataforma y criterio de uso',
+      url: `${BASE}/capitulos/flujo-nutriplant-pro.html`,
+      pillar: 'H — Flujo de la plataforma',
+      summary:
+        'Entrada al manual: login vs proyecto PRO; Dato→Interpretación→Ajuste→Programa→Seguimiento; módulo por objetivo; errores comunes (suelo≠enmiendas, % meq≠CIC, etc.).',
+      status: 'published'
+    },
     {
       id: 'autoria',
       slug: 'autoria',
@@ -101,10 +111,10 @@ module.exports = {
     {
       id: 'vpd_deficit_presion_vapor',
       slug: 'vpd-deficit-presion-vapor',
-      title: 'VPD: déficit de presión de vapor',
+      title: 'VPD, NDVI y NDMI',
       url: `${BASE}/capitulos/vpd-deficit-presion-vapor.html`,
-      pillar: 'F — Clima',
-      summary: 'VPD kPa, rangos orientativos, pestaña proyecto y herramienta gratis.',
+      pillar: 'E — Agua y clima',
+      summary: 'VPD kPa (Tetens/simple/avanzada); NDVI vigor y NDMI humedad (lectura satelital); proyecto + calculadora gratis. No sustituye campo.',
       status: 'published'
     },
     {
@@ -119,10 +129,10 @@ module.exports = {
     {
       id: 'faq_porcentajes_no_suman_100',
       slug: 'faq-porcentajes-no-suman-100',
-      title: 'FAQ: ¿por qué los % iónicos no suman 100 %?',
+      title: '% meq en hidroponía y fertirriego: por qué no todo suma 100 %',
       url: `${BASE}/capitulos/faq-porcentajes-no-suman-100.html`,
-      pillar: 'H — FAQ',
-      summary: 'Denominadores distintos por pantalla; triángulos vs NH4 vs Cl.',
+      pillar: 'A — Fundamentos',
+      summary: 'Triángulos N-P-S y K-Ca-Mg suman 100% cada uno; Cl y NH4 aparte. ≠ % saturación CIC suelo.',
       status: 'published'
     },
     {
@@ -164,10 +174,11 @@ module.exports = {
     {
       id: 'granular_mezclas',
       slug: 'granular-mezclas',
-      title: 'Granular: mezclas y relación N-P-K',
+      title: 'Granular: requerimiento, programa y mezclas',
       url: `${BASE}/capitulos/granular-mezclas.html`,
       pillar: 'D — Granular',
-      summary: '% en mezcla; relación N-P2O5-K2O normalizada; kg/ha por nutriente.',
+      summary:
+        'Requerimiento kg/ha (extracción×rend, ajuste suelo, eficiencia); programa aplicaciones (mezcla física o 100 %); aporte vs meta; relación N-P2O5-K2O; gratis solo formulación mezcla.',
       status: 'published'
     },
     {
@@ -193,7 +204,7 @@ module.exports = {
     {
       id: 'analisis_extracto_pasta',
       slug: 'analisis-extracto-pasta',
-      title: 'Extracto de pasta saturada',
+      title: 'Extracto de pasta saturada (análisis de laboratorio)',
       url: `${BASE}/capitulos/analisis-extracto-pasta.html`,
       pillar: 'C — Análisis pasta',
       summary:

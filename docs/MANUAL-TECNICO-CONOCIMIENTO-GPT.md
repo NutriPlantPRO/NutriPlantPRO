@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.05.4 · **21 capítulos** publicados (fase 2 E/F cerrada).  
+**Versión manual web:** v2026.05.5 · **22 capítulos** publicados (pilares A–H).  
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
-**API:** `manual_tecnico_catalog` · OpenAPI v1.9.0  
-**Versión Knowledge:** 2026-05-21 · **v2026.05.4**
+**API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
+**Versión Knowledge:** 2026-05-22 · **v2026.05.5**
 
 ---
 
@@ -21,7 +21,8 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | Concepto | Qué es |
 |----------|--------|
 | Manual técnico (web) | Metodología pública, capítulos con URL |
-| Autoría (`autoria.html`) | Referente Jesús Avila; ≠ modal «Nosotros» en login |
+| Pilar H flujo | Entrada «¿por dónde empiezo?» → `flujo-nutriplant-pro` |
+| Autoría (`autoria.html`) | Plataforma NutriPlant + referente Jesús; ≠ modal «Nosotros» en login |
 | Pilar G redes | Editorial y canales; ver `publicaciones-redes-sociales` + Knowledge PUBLICACIONES |
 | `project_analyses` | Datos reales del suscriptor en nube (privado, API) |
 
@@ -32,6 +33,7 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | Recurso | URL |
 |---------|-----|
 | Índice manual | https://nutriplantpro.com/manual-tecnico/index.html |
+| Flujo plataforma (Pilar H) | https://nutriplantpro.com/manual-tecnico/capitulos/flujo-nutriplant-pro.html |
 | Autoría | https://nutriplantpro.com/manual-tecnico/autoria.html |
 | Pilar redes | https://nutriplantpro.com/manual-tecnico/capitulos/publicaciones-redes-sociales.html |
 | llms.txt manual | https://nutriplantpro.com/manual-tecnico/llms.txt |
@@ -42,29 +44,30 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 
 ## 3. Índice de capítulos publicados (tabla rápida)
 
-| Slug | Título corto |
-|------|----------------|
-| `unidades-ppm-meq-oxidos` | Unidades ppm, meq, óxidos |
-| `porcentaje-meq-aniones-cationes` | % meq triángulos |
-| `analisis-suelo-fertilidad-kgha` | Suelo fertilidad kg/ha |
-| `enmiendas-balance-cic` | Enmiendas CIC |
-| `extraccion-nutrimental-por-etapa` | Extracción por etapa |
-| `programa-fertirriego-etapas` | Fertirriego programa |
-| `fertirriego-graficas-ionicas` | Gráficas iónicas ferti |
-| `granular-mezclas` | Granular mezclas N-P-K |
-| `hidroponia-solucion-por-etapa` | Hidroponía por etapa |
-| `diseno-solucion-nutritiva-didactica` | Solución didáctica (gratis) |
-| `vpd-deficit-presion-vapor` | VPD |
-| `agua-dureza-acidificacion-solubilidad` | Dureza, ácido HCO₃, solubilidad/IS |
-| `n-mineralizable-agua-disponible-suelo` | N mineralizable, CC−PMP, textura |
-| `interacciones-mulder-compatibilidad` | Mulder, matriz C/R/I ferti |
-| `analisis-solucion-nutritiva-lab` | Solución lab (licor/drenaje) |
-| `analisis-extracto-pasta` | Extracto pasta saturada |
-| `analisis-agua-ras-sar` | Agua CE, pH, RAS |
-| `analisis-foliar-dop` | Foliar DOP |
-| `analisis-fruta-icc` | Fruta ICC |
-| `faq-porcentajes-no-suman-100` | FAQ % iónicos |
-| `publicaciones-redes-sociales` | Redes y editorial |
+| Slug | Título corto | Pilar |
+|------|----------------|-------|
+| `flujo-nutriplant-pro` | Guía rápida: flujo y criterio de uso | H |
+| `unidades-ppm-meq-oxidos` | Unidades ppm, meq, óxidos | A |
+| `porcentaje-meq-aniones-cationes` | % meq triángulos | A |
+| `analisis-suelo-fertilidad-kgha` | Suelo fertilidad kg/ha | B / C |
+| `enmiendas-balance-cic` | Enmiendas CIC | B |
+| `extraccion-nutrimental-por-etapa` | Extracción y distribución nutrimental por etapa | D |
+| `programa-fertirriego-etapas` | Fertirriego programa | D |
+| `fertirriego-graficas-ionicas` | Gráficas iónicas ferti | D |
+| `granular-mezclas` | Granular: requerimiento, programa y mezclas | D |
+| `hidroponia-solucion-por-etapa` | Hidroponía: solución nutritiva por etapa | D |
+| `diseno-solucion-nutritiva-didactica` | Solución didáctica (gratis) | D |
+| `vpd-deficit-presion-vapor` | VPD, NDVI y NDMI | E |
+| `agua-dureza-acidificacion-solubilidad` | Dureza, ácido HCO₃, solubilidad/IS | E |
+| `n-mineralizable-agua-disponible-suelo` | N mineralizable, CC−PMP, textura | B |
+| `interacciones-mulder-compatibilidad` | Mulder, matriz C/R/I ferti | F |
+| `analisis-solucion-nutritiva-lab` | Solución lab (licor/drenaje) | C |
+| `analisis-extracto-pasta` | Extracto de pasta saturada (laboratorio) | C |
+| `analisis-agua-ras-sar` | Agua CE, pH, RAS | C |
+| `analisis-foliar-dop` | Foliar DOP | C |
+| `analisis-fruta-icc` | Fruta ICC | C |
+| `faq-porcentajes-no-suman-100` | % meq: por qué no todo suma 100 % | A |
+| `publicaciones-redes-sociales` | Publicaciones en redes y autoridad técnica | G |
 
 URL: `https://nutriplantpro.com/manual-tecnico/capitulos/<slug>.html`
 
@@ -72,9 +75,18 @@ URL: `https://nutriplantpro.com/manual-tecnico/capitulos/<slug>.html`
 
 ## 4. Capítulos — resumen técnico (detalle)
 
-### 4.0 Autoría
+### 4.0 Flujo plataforma (Pilar H — leer primero si «¿por dónde empiezo?»)
 
-**URL:** …/autoria.html · Perfil Jesús Avila Mendoza; visión «la herramienta suma»; LinkedIn personal y empresa. Sin marcas empleadores en copy público.
+**URL:** …/flujo-nutriplant-pro.html  
+- NutriPlant PRO = plataforma (login herramientas gratis vs dashboard PRO proyecto en nube).  
+- Cadena: **Dato → Interpretación → Ajuste → Programa → Seguimiento**.  
+- Flujo 5 pasos: diagnóstico (Análisis) → Enmiendas → Extracción → Fertirriego/Granular/Hidro → seguimiento (foliar, VPD/NDVI, campo).  
+- Tabla **módulo según objetivo** (Análisis, Enmiendas, Extracción, Fertirriego, Granular, Hidroponía, VPD, herramientas gratis).  
+- **Errores comunes:** suelo ≠ enmiendas; % meq solución ≠ % CIC; CE ≠ composición iónica; gratis ≠ proyecto PRO; kg/ha/DOP/ICC no son receta; no neutralizar 100 % HCO₃; NDVI/VPD no sustituyen campo.
+
+### 4.0b Autoría
+
+**URL:** …/autoria.html · NutriPlant PRO como **plataforma** para agrónomos; visión «la herramienta suma»; perfil Jesús Avila Mendoza; LinkedIn personal y empresa. Sin marcas empleadores en copy público.
 
 ### 4.1 Unidades
 
@@ -115,9 +127,13 @@ Extracción total = kg/ton × rendimiento. Requerimiento = Ajuste ÷ (Eficiencia
 
 **URL:** …/fertirriego-graficas-ionicas.html · Fertilizante solo vs + agua; ternarios; Cl aparte.
 
-### 4.8 Granular mezclas
+### 4.8 Granular: requerimiento, programa y mezclas
 
-**URL:** …/granular-mezclas.html · % en mezcla × composición material → relación N-P₂O₅-K₂O normalizada al mínimo; kg/ha = dosis × % nutriente/100.
+**URL:** …/granular-mezclas.html  
+- **Requerimiento** (Dashboard → Nutrición granular): extracción total = kg/ton × rendimiento; requerimiento real = Ajuste ÷ (Eficiencia/100). Ajuste kg/ha editable por reservas/déficit suelo (criterio agrónomo; no obligatorio desde reporte lab). Eficiencias default granular: N 65 %, P₂O₅ 40 %, K₂O 85 %, CaO/MgO/SO₄ 85 %, micros 80 %, SiO₂ 85 % (editables).  
+- **Programa:** aplicaciones numeradas; **mezcla física** (% TM por material, habitualmente 100 %) o **fertilizante al 100 %**; dosis kg/ha por aplicación → aporte nutriente = dosis × (% nutriente en mezcla / 100). Total programa = suma de aplicaciones; resumen **Aporte − Requerimiento = Diferencia**. Sin aporte por agua (≠ fertirriego).  
+- **Formulación:** % nutriente en mezcla = Σ(% TM × % material); relación N-P₂O₅-K₂O normalizada al mínimo de los tres; kg/ha = dosis × %/100.  
+- **Gratis** (`granular-mix-free`): solo formulación de mezcla + kg/ha según dosis (localStorage). **Proyecto nube:** requerimiento + programa + resumen. Modo óxido/elemental como fertirriego.
 
 ### 4.9 Hidroponía por etapa
 
@@ -127,9 +143,9 @@ Extracción total = kg/ton × rendimiento. Requerimiento = Ajuste ÷ (Eficiencia
 
 **URL:** …/diseno-solucion-nutritiva-didactica.html · login localStorage; triángulos, CE, Cl, NH₄.
 
-### 4.11 VPD
+### 4.11 VPD, NDVI y NDMI
 
-**URL:** …/vpd-deficit-presion-vapor.html · VPD kPa desde T y HR; proyecto + calculadora gratis.
+**URL:** …/vpd-deficit-presion-vapor.html · VPD kPa (Tetens / simple / avanzada); lectura satelital multiespectral NDVI (vigor) y NDMI (humedad/canopeo); proyecto + calculadora gratis. Apoyo a decisión, no sustituye recorrido de campo.
 
 ### 4.12 Dureza, acidificación y solubilidad (agua)
 
@@ -158,7 +174,7 @@ Extracción total = kg/ton × rendimiento. Requerimiento = Ajuste ÷ (Eficiencia
 
 ### 4.16 Extracto de pasta
 
-**URL:** …/analisis-extracto-pasta.html · `extractoPastaAnalyses[]`. Misma estructura iónica; interpretación = solución en pasta saturada / rizósfera. API `extracto_pasta`. No mezclar con solución nutritiva.
+**URL:** …/analisis-extracto-pasta.html · Misma estructura iónica que solución nutritiva; interpretación = disponibilidad en rizósfera (pasta saturada), no licor de fertirriego. ≠ solución nutritiva lab.
 
 ### 4.17 Agua RAS
 
@@ -172,9 +188,9 @@ Extracción total = kg/ton × rendimiento. Requerimiento = Ajuste ÷ (Eficiencia
 
 **URL:** …/analisis-fruta-icc.html · ICC % misma fórmula que DOP. Semáforo |ICC|: ≤10 verde, 10–25 amarillo, 25–50 naranja, &gt;50 rojo. Calidad °Brix, firmeza; Ca total/soluble/ligado.
 
-### 4.20 FAQ % iónicos
+### 4.20 FAQ % meq (hidroponía y fertirriego)
 
-**URL:** …/faq-porcentajes-no-suman-100.html · Identificar pantalla y denominador (§4.2).
+**URL:** …/faq-porcentajes-no-suman-100.html · Título web: «% meq en hidroponía y fertirriego: por qué no todo suma 100 %». Triángulos N-P-S y K-Ca-Mg suman 100 % cada uno; Cl y NH₄ aparte. ≠ % saturación CIC suelo (§4.2).
 
 ### 4.21 Publicaciones en redes (pilar G)
 
@@ -187,6 +203,7 @@ Canales oficiales; tono técnico; mapa capítulo→post; plantilla LinkedIn. **P
 
 | Pregunta | Fuente |
 |----------|--------|
+| «¿Por dónde empiezo en NutriPlant?» | Capítulo `flujo-nutriplant-pro` (§4.0) |
 | Metodología / citar web / GEO | Este Knowledge + URL capítulo |
 | Índice o slug | `manual_tecnico_catalog` o §3 |
 | Redactar post LinkedIn/IG | `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` + capítulo §4 |
@@ -198,12 +215,12 @@ Canales oficiales; tono técnico; mapa capítulo→post; plantilla LinkedIn. **P
 
 ---
 
-## 6. Fase 2 manual
+## 6. Mantenimiento manual
 
-**Cerrada en web (v2026.05.4):** Mulder/compatibilidad · N mineralizable/agua en suelo. Mantenimiento: alinear capítulo si cambia código en `*-free.html`.
+**Versión web v2026.05.5:** 22 capítulos · Pilar H flujo · granular ampliado (requerimiento + programa) · títulos FAQ/VPD alineados · buscador índice · limpieza copy público.
 
 Plan histórico: `docs/MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
-*Alineado con manual-tecnico/ v2026.05.4 en repo*
+*Alineado con manual-tecnico/ v2026.05.5 en repo*

@@ -70,6 +70,7 @@ Hasta que no esté en §8, el Socio usa solo el enlace y el texto que pegues en 
 
 | Tema del post | Slug / URL capítulo |
 |---------------|---------------------|
+| ¿Por dónde empiezo? / flujo plataforma | `flujo-nutriplant-pro` |
 | Unidades ppm, meq, óxidos | `unidades-ppm-meq-oxidos` |
 | % meq triángulos | `porcentaje-meq-aniones-cationes` |
 | Fertilidad suelo kg/ha | `analisis-suelo-fertilidad-kgha` |
@@ -77,20 +78,20 @@ Hasta que no esté en §8, el Socio usa solo el enlace y el texto que pegues en 
 | Extracción por etapa | `extraccion-nutrimental-por-etapa` |
 | Fertirriego programa | `programa-fertirriego-etapas` |
 | Gráficas iónicas ferti | `fertirriego-graficas-ionicas` |
-| Granular mezclas NPK | `granular-mezclas` |
+| Granular requerimiento y programa | `granular-mezclas` |
 | Hidroponía por etapa | `hidroponia-solucion-por-etapa` |
 | Solución didáctica (gratis) | `diseno-solucion-nutritiva-didactica` |
-| VPD | `vpd-deficit-presion-vapor` |
+| VPD, NDVI, NDMI | `vpd-deficit-presion-vapor` |
 | Solución lab (licor/drenaje) | `analisis-solucion-nutritiva-lab` |
 | Extracto pasta | `analisis-extracto-pasta` |
 | Agua RAS | `analisis-agua-ras-sar` |
 | Foliar DOP | `analisis-foliar-dop` |
 | Fruta ICC | `analisis-fruta-icc` |
-| FAQ % no suman 100 | `faq-porcentajes-no-suman-100` |
+| FAQ % meq no suman 100 | `faq-porcentajes-no-suman-100` |
 | Redes / editorial | `publicaciones-redes-sociales` |
 | P : Zn suelo | `analisis-suelo-fertilidad-kgha` |
 | Cierre estomático / estrés hídrico | `vpd-deficit-presion-vapor` |
-| NDVI (producto) | `publicaciones-redes-sociales` (sin capítulo dedicado aún) |
+| NDVI (producto) | `vpd-deficit-presion-vapor` · `flujo-nutriplant-pro` (seguimiento) |
 | N mineralizable | `n-mineralizable-agua-disponible-suelo` |
 | Mulder / compatibilidad ferti | `interacciones-mulder-compatibilidad` |
 | Dureza / ácido / IS | `agua-dureza-acidificacion-solubilidad` |
@@ -128,14 +129,15 @@ La decisión en campo sigue siendo del agrónomo. NutriPlant suma criterio, no l
 
 Usar cuando Jesús pida «dame un post» sin especificar enlace previo:
 
-1. **FAQ % meq** — «¿Por qué en mi solución los porcentajes no suman 100?» → capítulo FAQ.
+1. **FAQ % meq** — «¿Por qué en hidroponía/fertirriego los % no suman todos juntos 100?» → capítulo FAQ.
 2. **kg/ha suelo** — fórmula factor × (lab − ideal); no es recomendación automática.
 3. **CIC vs % meq solución** — no confundir saturación de suelo con triángulo hidroponía.
 4. **RAS agua** — fórmula SAR de referencia; en app el campo RAS es manual.
 5. **ICC fruta** — semáforo |ICC| ≤10 % verde; cruce con programa pre-cosecha.
-6. **VPD** — por qué importa en invernadero; rangos orientativos NutriPlant.
-7. **Manual técnico público** — 15 capítulos, biblioteca para agrónomos e IA (GEO).
-8. **Herramientas gratis** — solución nutritiva, mezcla granular, VPD en login.
+6. **VPD / NDVI** — por qué importan; apoyo, no sustituyen campo.
+7. **Manual técnico público** — **22 capítulos**, pilares A–H; biblioteca para agrónomos e IA (GEO).
+8. **Flujo NutriPlant** — dato → interpretación → programa → seguimiento → `flujo-nutriplant-pro`.
+9. **Herramientas gratis** — solución nutritiva, mezcla granular, VPD en login.
 
 ---
 
@@ -199,8 +201,8 @@ Tras sesión con Socio en ChatGPT: pegar fila aquí → re-subir este archivo al
 | «Redacta post LinkedIn sobre X» | §6 + capítulo §5 + tono §3 |
 | «Calendario 2 semanas» | Rotar §4; mezclar §8 (ya probado) + capítulos nuevos del manual |
 | «Reutiliza [URL]» | Buscar URL en §8 → §8b |
-| «¿Qué publicamos del manual?» | `manual_tecnico_catalog` + §5 |
+| «¿Qué publicamos del manual?» | `manual_tecnico_catalog` + §5 · entrada: `flujo-nutriplant-pro` |
 
 ---
 
-*Versión: 2026-05-22 · 24 posts LinkedIn NutriPlant PRO registrados · Complementa MANUAL-TECNICO-CONOCIMIENTO-GPT.md*
+*Versión: 2026-05-22 · 24 posts LinkedIn NutriPlant PRO · Manual web v2026.05.5 (22 cap.) · Complementa MANUAL-TECNICO-CONOCIMIENTO-GPT.md*
