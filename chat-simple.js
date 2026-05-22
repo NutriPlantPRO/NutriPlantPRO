@@ -194,7 +194,7 @@ RADAR DEL CULTIVO (NDVI / NDMI) — NutriPlant PRO:
 - NDMI (Normalized Difference Moisture Index, B8 vs B11): condición hídrica relativa del dosel/canopia. En el mapa: verde = mayor humedad relativa del dosel; marrón/tonos secos = menor humedad relativa del dosel. No es humedad exacta del suelo ni % volumétrico de riego.
 - Cómo usarlo bien: (1) detectar zonas heterogéneas para recorrer y muestrear en campo; (2) cruzar NDVI (vigor) con NDMI (dosel), riego, textura, drenaje, suelo, foliar, plagas y VPD; (3) comparar con imágenes anteriores del mismo proyecto (historial mensual). No recomendar fertilizar o regar solo por el color del mapa.
 - Cruces típicos: NDVI bajo + NDMI bajo → priorizar estrés hídrico, raíz, salinidad, compactación; NDVI bajo + NDMI alto → vigor bajo con dosel húmedo (enfermedad, anoxia, exceso de riego, etapa); NDVI alto + NDMI bajo → vigor alto con dosel seco (déficit hídrico incipiente, VPD alto); NDVI alto + NDMI alto → vigor y dosel favorables en esa fecha (validar en campo).
-- En la app: pestaña Ubicación → panel «Radar del cultivo» → listado «Imagen» con todas las guardadas del proyecto (fecha + periodo Sentinel); «Ver en mapa» muestra la elegida e indica su fecha. Capa NDVI/NDMI aparte. Sin polígono no hay Radar.
+- En la app: pestaña Ubicación → listado «Imagen»; «Ver en mapa» ancla NDVI/NDMI al polígono guardado al generar (location_snapshot en meta). Si el predio actual es distinto, avisa y muestra la imagen donde correspondía.
 - Límites: mapas relativos al predio; nubes pueden retrasar la fecha Sentinel; no sustituye análisis de suelo/foliar ni diagnóstico de campo.
 `;
 }

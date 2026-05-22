@@ -2282,7 +2282,7 @@ function np_formatRadarHistoryOption(item) {
   return gen;
 }
 
-function np_formatRadarDisplayedCaption(snap) {
+function np_formatRadarDisplayedCaption(snap, overlayCtx) {
   if (!snap) return '';
   const parts = [];
   if (snap.created_at) parts.push('Generada: ' + np_formatRadarDateTime(snap.created_at));
@@ -2290,6 +2290,8 @@ function np_formatRadarDisplayedCaption(snap) {
   const from = meta.date_start || snap.sentinel_period?.from;
   const to = meta.date_end || snap.sentinel_period?.to;
   if (from && to) parts.push('datos Sentinel ' + from + ' – ' + to);
+  const locNote = np_formatRadarLocationNote(overlayCtx, snap);
+  if (locNote) parts.push(locNote);
   return parts.length ? '(' + parts.join('; ') + ')' : '';
 }
 
@@ -2326,16 +2328,15 @@ function np_populateRadarSnapshotSelect(history, preferredId) {
 
 function np_snapshotFromRadarApi(data) {
   if (!data) return null;
-  const snap = data.snapshot || data.latest || null;
-  const meta = data.meta || snap?.meta || {};
-  return {
-    created_at: snap?.created_at || data.request?.created_at || null,
-    meta,
-    sentinel_period: {
-      from: meta.date_start || snap?.sentinel_period?.from || null,
-      to: meta.date_end || snap?.sentinel_period?.to || null
-    }
-  };
+  if (data.snapshot) return data.snapshot;
+  if (data.latest) return data.latest;
+  if (data.meta) {
+    return {
+      created_at: data.request?.created_at || null,
+      meta: data.meta
+    };
+  }
+  return null;
 }
 
 function np_updateRadarStatusHintFromSelection() {
@@ -2373,14 +2374,15 @@ async function np_recoverRadarIfBackendSucceeded(prevCreatedAt, bounds) {
   if (!url) return false;
   try {
     const snap = st.latest || null;
-    await np_applyRadarOverlay(url, bounds, np_getSelectedRadarIndex(), snap);
+    await np_applyRadarOverlay(url, snap, np_getSelectedRadarIndex());
     const hint = document.getElementById('radarStatusHint');
     const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
+    const overlayCtx = np_getRadarOverlayContext(snap);
     if (hint) {
       hint.textContent =
         cfg.shownText +
         ' ' +
-        np_formatRadarDisplayedCaption(snap) +
+        np_formatRadarDisplayedCaption(snap, overlayCtx) +
         ' La respuesta del servidor tardó; la imagen ya estaba lista.';
     }
     return true;
@@ -2395,7 +2397,7 @@ function np_getRadarPolygons() {
   return [...new Set([nutriPlantMap.savedPolygon, nutriPlantMap.polygon].filter(Boolean))];
 }
 
-function np_setRadarPolygonMask(active) {
+function np_setRadarPolygonMask(active, snapshotCoords) {
   const polygons = np_getRadarPolygons();
   if (active) {
     if (typeof google === 'undefined' || !google.maps || !nutriPlantMap || !nutriPlantMap.map) return;
@@ -2410,6 +2412,38 @@ function np_setRadarPolygonMask(active) {
     }
     radarOutlinePolygons.forEach((poly) => poly.setMap(null));
     radarOutlinePolygons = [];
+
+    const useSnapshot =
+      Array.isArray(snapshotCoords) && snapshotCoords.length >= 3;
+    if (useSnapshot) {
+      const path = snapshotCoords.map((c) => ({
+        lat: Number(c[0]),
+        lng: Number(c[1])
+      }));
+      const outline = new google.maps.Polygon({
+        paths: path,
+        fillOpacity: 0,
+        strokeColor: '#2563eb',
+        strokeOpacity: 1,
+        strokeWeight: 3,
+        clickable: false,
+        editable: false,
+        draggable: false,
+        zIndex: 999
+      });
+      outline.setMap(nutriPlantMap.map);
+      radarOutlinePolygons.push(outline);
+      polygons.forEach((poly) => {
+        poly.setOptions({
+          fillOpacity: 0,
+          strokeOpacity: 0,
+          strokeWeight: 0,
+          clickable: false
+        });
+      });
+      return;
+    }
+
     polygons.forEach((poly) => {
       const outline = new google.maps.Polygon({
         paths: poly.getPath ? poly.getPath().getArray() : [],
@@ -2503,11 +2537,102 @@ function np_radarApiUrl() {
 function np_getPolygonBoundsFromMap() {
   if (!nutriPlantMap || typeof google === 'undefined' || !google.maps || !nutriPlantMap.coordinates) return null;
   if (!Array.isArray(nutriPlantMap.coordinates) || nutriPlantMap.coordinates.length < 3) return null;
+  return np_boundsFromLatLngCoords(nutriPlantMap.coordinates);
+}
+
+function np_boundsFromLatLngCoords(coords) {
+  if (!coords || !coords.length || typeof google === 'undefined' || !google.maps) return null;
   const bounds = new google.maps.LatLngBounds();
-  nutriPlantMap.coordinates.forEach((c) => {
-    bounds.extend(new google.maps.LatLng(c[0], c[1]));
+  coords.forEach((c) => {
+    const lat = Array.isArray(c) ? Number(c[0]) : Number(c.lat);
+    const lng = Array.isArray(c) ? Number(c[1]) : Number(c.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      bounds.extend(new google.maps.LatLng(lat, lng));
+    }
   });
   return bounds;
+}
+
+function np_normalizeRadarPolygonCoords(source) {
+  if (!source) return null;
+  const loc = source.location_snapshot || source;
+  const poly = loc.polygon;
+  if (!Array.isArray(poly) || poly.length < 3) return null;
+  const out = [];
+  poly.forEach((pt) => {
+    if (Array.isArray(pt) && pt.length >= 2) {
+      const lat = Number(pt[0]);
+      const lng = Number(pt[1]);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) out.push([lat, lng]);
+    } else if (pt && pt.lat != null && pt.lng != null) {
+      const lat = Number(pt.lat);
+      const lng = Number(pt.lng);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) out.push([lat, lng]);
+    }
+  });
+  return out.length >= 3 ? out : null;
+}
+
+function np_centerOfCoords(coords) {
+  if (!coords || !coords.length) return null;
+  let sumLat = 0;
+  let sumLng = 0;
+  coords.forEach((c) => {
+    sumLat += Number(c[0]);
+    sumLng += Number(c[1]);
+  });
+  return [sumLat / coords.length, sumLng / coords.length];
+}
+
+function np_radarMapDiffersFromSnapshot(snapshotCoords) {
+  const current = nutriPlantMap && nutriPlantMap.coordinates;
+  if (!snapshotCoords || snapshotCoords.length < 3 || !current || current.length < 3) return false;
+  const a = np_centerOfCoords(snapshotCoords);
+  const b = np_centerOfCoords(current);
+  if (!a || !b) return false;
+  return Math.abs(a[0] - b[0]) > 0.00015 || Math.abs(a[1] - b[1]) > 0.00015;
+}
+
+/** Bounds y polígono para superponer Radar: prioriza coordenadas guardadas al generar. */
+function np_getRadarOverlayContext(snap) {
+  const meta = (snap && snap.meta) || {};
+  const snapshotCoords = np_normalizeRadarPolygonCoords(meta);
+  if (snapshotCoords) {
+    const bounds = np_boundsFromLatLngCoords(snapshotCoords);
+    if (bounds) {
+      return {
+        bounds,
+        polygon: snapshotCoords,
+        fromSnapshot: true,
+        center: meta.location_snapshot && meta.location_snapshot.center ? meta.location_snapshot.center : null
+      };
+    }
+  }
+  return {
+    bounds: np_getPolygonBoundsFromMap(),
+    polygon: nutriPlantMap && nutriPlantMap.coordinates ? nutriPlantMap.coordinates.slice() : null,
+    fromSnapshot: false,
+    center: null
+  };
+}
+
+function np_formatRadarLocationNote(overlayCtx, snap) {
+  if (!overlayCtx) return '';
+  const meta = (snap && snap.meta) || {};
+  const loc = meta.location_snapshot;
+  if (overlayCtx.fromSnapshot && loc && loc.center) {
+    const lat = Number(loc.center.lat).toFixed(4);
+    const lng = Number(loc.center.lng).toFixed(4);
+    let note = 'Anclada al predio de generación (centro ' + lat + ', ' + lng + ')';
+    if (np_radarMapDiffersFromSnapshot(overlayCtx.polygon)) {
+      note += '. El polígono actual del mapa es distinto';
+    }
+    return note;
+  }
+  if (!overlayCtx.fromSnapshot) {
+    return 'Sin coordenadas guardadas en esta imagen; superpuesta al predio actual del mapa';
+  }
+  return '';
 }
 
 function np_showRadarOverlay(url, bounds, opacity = 0.98) {
@@ -2588,21 +2713,30 @@ function np_preloadRadarImage(url) {
   });
 }
 
-async function np_applyRadarOverlay(url, bounds, index, snapshotMeta) {
+async function np_applyRadarOverlay(url, snap, index) {
   const hint = document.getElementById('radarStatusHint');
   const cfg = np_getRadarIndexConfig(index || np_getSelectedRadarIndex());
+  const overlayCtx = np_getRadarOverlayContext(snap);
+  const bounds = overlayCtx && overlayCtx.bounds;
+  if (!bounds) {
+    if (hint) hint.textContent = 'No hay coordenadas para ubicar esta imagen Radar.';
+    return;
+  }
   if (hint) hint.textContent = cfg.loadingText;
   await np_preloadRadarImage(url);
   window.hideRadarNdviOverlay();
   np_setSelectedRadarIndex(index || np_getSelectedRadarIndex());
   np_showRadarOverlay(url, bounds, 0.98);
-  np_setRadarPolygonMask(true);
+  np_setRadarPolygonMask(
+    true,
+    overlayCtx.fromSnapshot ? overlayCtx.polygon : null
+  );
   np_showRadarLegend(true);
   if (nutriPlantMap && nutriPlantMap.map && bounds) {
     nutriPlantMap.map.fitBounds(bounds, { padding: 50 });
   }
   if (hint) {
-    const cap = np_formatRadarDisplayedCaption(snapshotMeta);
+    const cap = np_formatRadarDisplayedCaption(snap, overlayCtx);
     hint.textContent = cfg.shownText + (cap ? ' ' + cap : '');
   }
 }
@@ -2750,10 +2884,6 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
     return;
   }
   const bounds = np_getPolygonBoundsFromMap();
-  if (!bounds) {
-    alert('Carga un polígono del predio en el mapa.');
-    return;
-  }
   const token = await np_getRadarAccessToken();
   if (!token) {
     alert('No hay sesión. Vuelve a iniciar sesión.');
@@ -2786,6 +2916,11 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
     }
     const selectedIndex = np_getSelectedRadarIndex();
     const snap = data.snapshot || null;
+    const overlayCtx = np_getRadarOverlayContext(snap);
+    if (!overlayCtx.bounds && !bounds) {
+      alert('Carga un polígono del predio en el mapa o elige una imagen con coordenadas guardadas.');
+      return;
+    }
     const url = np_getRadarSignedUrl({ snapshot: snap }, selectedIndex);
     if (!url) {
       alert(
@@ -2795,7 +2930,7 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
       );
       return;
     }
-    await np_applyRadarOverlay(url, bounds, selectedIndex, snap);
+    await np_applyRadarOverlay(url, snap, selectedIndex);
   } catch (e) {
     console.error('Radar NDVI view:', e);
     alert('No se pudo cargar la imagen Radar. Intenta pulsar Estado y luego Ver en mapa.');
@@ -2866,9 +3001,8 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
         if (forcedUrl) {
           await np_applyRadarOverlay(
             forcedUrl,
-            bounds,
-            np_getSelectedRadarIndex(),
-            np_snapshotFromRadarApi(forcedData)
+            np_snapshotFromRadarApi(forcedData),
+            np_getSelectedRadarIndex()
           );
         }
         return;
@@ -2876,9 +3010,8 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
       const existingUrl = np_getRadarSignedUrl(data.latest || data, np_getSelectedRadarIndex()) || data.latest.signed_url;
       await np_applyRadarOverlay(
         existingUrl,
-        bounds,
-        np_getSelectedRadarIndex(),
-        np_snapshotFromRadarApi(data)
+        np_snapshotFromRadarApi(data),
+        np_getSelectedRadarIndex()
       );
       await window.refreshRadarNdviStatus();
       return;
@@ -2903,9 +3036,8 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
     if (generatedUrl) {
       await np_applyRadarOverlay(
         generatedUrl,
-        bounds,
-        np_getSelectedRadarIndex(),
-        np_snapshotFromRadarApi(data)
+        np_snapshotFromRadarApi(data),
+        np_getSelectedRadarIndex()
       );
     }
   } catch (e) {

@@ -58,7 +58,84 @@
     <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Hidroponía: solución nutritiva por etapa</h1>
     <h2>Resumen</h2>
-    <p>En <strong>Dashboard → Hidroponía</strong>, cada etapa fenológica (Establecimiento, Vegetativo, Floración, etc.) define la <strong>solución objetivo</strong> en ppm y meq/L. A partir de ahí se calculan fertilizantes solubles, tanques de inyección y aporte del agua de relleno.</p>
+    <p>
+      En <strong>Dashboard → Hidroponía</strong>, cada etapa fenológica define la
+      <strong>solución objetivo</strong> (ppm y meq/L). En <strong>Cálculo de fertilizantes</strong>
+      se resta el aporte del <strong>agua de relleno</strong>, se cubre el faltante con sales solubles
+      y, con el <strong>volumen de agua (m³)</strong>, la app pasa de ppm a <strong>kg</strong> (o L en
+      líquidos) por tanque.
+    </p>
+
+    <h2>Flujo en NutriPlant</h2>
+    <ol>
+      <li><strong>Solución por etapa</strong> — objetivo ppm/meq por etapa (Establecimiento, Vegetativo, Floración…).</li>
+      <li><strong>Agua de relleno</strong> — ppm del análisis de agua (macros, micros, Cl⁻).</li>
+      <li><strong>Faltante</strong> = objetivo − agua (ppm por nutriente).</li>
+      <li><strong>Fertilizantes</strong> — materiales solubles, nutriente a cubrir y ppm faltantes → dosis ppm producto → kg o L según volumen.</li>
+      <li><strong>Tanques A–E</strong> — reparto por tanque, tasa L/m³ y recargas.</li>
+    </ol>
+
+    <h2>Objetivo, agua y faltante (ppm)</h2>
+    <p>
+      Todas las ppm son concentración en la <strong>solución final</strong> (mg/L del
+      <strong>elemento</strong>). El bloque «Agua de relleno» toma los valores del
+      <strong>análisis de agua</strong> del proyecto (pestaña Análisis → Agua). Por nutriente:
+    </p>
+    <div class="mt-formula">Faltante (ppm) = Objetivo etapa (ppm) − Agua de relleno (ppm)</div>
+    <p>
+      En Cálculo de fertilizantes cada fila elige material soluble, el <strong>elemento a
+      cubrir</strong> (Ca, K, N-NO₃⁻, etc.) y las <strong>ppm faltantes</strong> de ese nutriente.
+      El aporte del fertilizante también aporta otros elementos de su ficha (% en catálogo): por
+      ejemplo el nitrato de calcio suma Ca y N-NO₃⁻ (y algo de N-NH₄⁺ según grado).
+    </p>
+
+    <h2>ppm ↔ meq/L</h2>
+    <p>
+      En hidroponía NutriPlant usa ppm del <strong>elemento</strong> y convierte a meq/L con el
+      <strong>peso equivalente del elemento</strong> (no del ion completo). Detalle en
+      <a href="unidades-ppm-meq-oxidos.html">Unidades: ppm, meq/L y óxidos</a>.
+    </p>
+    <div class="mt-formula">
+      meq/L = ppm elemento ÷ peso equivalente<br>
+      ppm = meq/L × peso equivalente
+    </div>
+    <p>Pesos equivalentes NutriPlant (hidroponía): N-NO₃⁻ / N-NH₄⁺ → <strong>14</strong>; P → <strong>31</strong>; S → <strong>16,03</strong>; K⁺ → <strong>39,1</strong>; Ca²⁺ → <strong>20,04</strong>; Mg²⁺ → <strong>12,15</strong>; Cl⁻ → <strong>35,45</strong>.</p>
+    <p><strong>Ejemplo Ca:</strong> objetivo <strong>200 ppm Ca</strong> → meq/L = 200 ÷ 20,04 ≈ <strong>9,98 meq/L Ca²⁺</strong>. Si el agua trae 40 ppm Ca, faltan 160 ppm ≈ <strong>7,98 meq/L</strong>.</p>
+
+    <h2>De ppm a kg de fertilizante (volumen de agua)</h2>
+    <p>
+      Indicas el <strong>volumen de agua a fertirrigar (m³)</strong> — la «lámina» de trabajo del
+      lote o tanque de mezcla. Con la dosis del producto en ppm (concentración del fertilizante en
+      la solución final):
+    </p>
+    <div class="mt-formula">
+      Dosis producto (ppm) = ppm faltante del elemento × 100 ÷ (% elemental en el material)<br>
+      kg producto sólido = Dosis (ppm) × Volumen agua (m³) ÷ 1 000<br>
+      L producto líquido = kg equivalente ÷ densidad (kg/L)
+    </div>
+    <p>
+      <strong>Aporte ppm</strong> de cada nutriente en la fila = dosis producto × (% del nutriente en
+      el material ÷ 100). El «Aporte total estimado» es la suma de todas las filas; «Pendiente por
+      cubrir» = Faltante − Aporte.
+    </p>
+
+    <h3>Ejemplo: Ca con nitrato de calcio (granular o cristal)</h3>
+    <p>Etapa con objetivo <strong>200 ppm Ca</strong>. Agua de relleno <strong>40 ppm Ca</strong>.
+      Material: <strong>Nitrato de Calcio</strong> (catálogo NutriPlant, composición en % elemental
+      tras conversión desde la ficha: ~<strong>18,6 % Ca</strong>, ~14,4 % N-NO₃⁻, ~1,1 % N-NH₄⁺ en
+      grado granular). Volumen: <strong>100 m³</strong>.</p>
+    <div class="mt-formula">
+      Faltante Ca = 200 − 40 = 160 ppm<br>
+      Dosis nitrato de calcio = 160 × 100 ÷ 18,6 ≈ 860 ppm producto<br>
+      kg nitrato de calcio ≈ 860 × 100 ÷ 1 000 = <strong>86 kg</strong>
+    </div>
+    <p>
+      Ese mismo producto aporta además (aprox.): N-NO₃⁻ ≈ 860 × 0,144 ≈ <strong>124 ppm</strong>;
+      N-NH₄⁺ ≈ 860 × 0,011 ≈ <strong>9 ppm</strong>. Conviene revisar el balance de N en la etapa y
+      ajustar otras filas. El grado <strong>cristal</strong> tiene otros % en catálogo (menos N, otro
+      Ca); la app usa la ficha del material seleccionado.
+    </p>
+
     <h2>Relación con la herramienta didáctica</h2>
     <p>La calculadora gratis «Diseño de solución nutritiva» en login comparte criterio iónico (% meq, CE), pero <strong>no sustituye</strong> este módulo: aquí los datos se guardan en el <strong>proyecto en nube</strong> y alimentan el cálculo de materiales. Ver capítulo <a href="diseno-solucion-nutritiva-didactica.html">Diseño didáctico</a>.</p>
     <h2>CE y meq/L</h2>
@@ -66,9 +143,10 @@
     <p>División típica de N: ~95 % N-NO₃⁻ y ~5 % N-NH₄⁺ (editable). Triángulos: N-P-S y K-Ca-Mg (ver <a href="porcentaje-meq-aniones-cationes.html">% meq</a>).</p>
     <h2>Etapas, agua y tanques</h2>
     <ul>
-      <li>Varias <strong>etapas</strong> con composición independiente.</li>
-      <li><strong>Agua de relleno</strong> — se resta su aporte iónico del objetivo de la etapa.</li>
-      <li><strong>Tanques A–E</strong> — volumen de tanque, L/m³ de inyección y materiales solubles (catálogo + personalizados).</li>
+      <li>Varias <strong>etapas</strong> con composición independiente (ppm/meq editables; triángulos N-P-S y K-Ca-Mg).</li>
+      <li><strong>Agua de relleno</strong> — ppm por nutriente desde análisis de agua; se restan del objetivo de la etapa activa.</li>
+      <li><strong>Volumen de agua (m³)</strong> — base para convertir dosis ppm → kg/L totales del programa.</li>
+      <li><strong>Tanques A–E</strong> — capacidad (L), tasa de inyección (L/m³), materiales por tanque; volumen de concentrado y recargas.</li>
     </ul>
     <h2>Microelementos y Cl</h2>
     <p>Fe, Mn, B, Zn, Cu, Mo en ppm; Cl⁻ al final de la tabla, manual. Los óxidos de materiales (P₂O₅, K₂O…) se convierten a elemental con factores NutriPlant antes del balance.</p>

@@ -63,8 +63,49 @@
     <div class="mt-formula">1 meq/100 g = 1 cmol<sub>c</sub>/kg (misma cifra, sin ×10)</div>
     <p>Conversión meq/100 g → ppm (aprox.): K ×391 · Ca ×200,4 · Mg ×121,5 · Na ×230.</p>
     <h2>Solución y agua</h2>
-    <div class="mt-formula">meq/L = ppm ÷ peso equivalente del ion<br>1 cmol/L = 10 meq/L</div>
+    <div class="mt-formula">meq/L = ppm ÷ peso equivalente del elemento<br>1 cmol/L = 10 meq/L</div>
     <p>mmol/L de iones univalentes (K⁺, NO₃⁻, Cl⁻): mismo número que meq/L.</p>
+
+    <h3>ppm del elemento, forma iónica en solución</h3>
+    <p>
+      En NutriPlant los <strong>ppm</strong> de solución, fertirriego e hidroponía son siempre
+      <strong>mg/L del elemento</strong> (N, P, S, K, Ca, Mg…), no del compuesto ni del ion completo.
+      En tablas y gráficas se indica la <strong>especie en solución</strong> — N-NO₃⁻, N-NH₄⁺, P-H₂PO₄⁻,
+      S-SO₄²⁻ — porque así se encuentra y se absorbe el nutriente; pero el número ppm es del
+      <em>elemento</em>, igual que en la calculadora de unidades de la plataforma.
+    </p>
+    <p>
+      Para pasar a <strong>meq/L</strong> se usa el <strong>peso equivalente del elemento</strong>, no la masa
+      molecular del ion entero. Criterio NutriPlant:
+    </p>
+    <div class="mt-formula">
+      peso equivalente = peso atómico del elemento ÷ valencia con la que aporta carga en esa forma
+    </div>
+    <p>
+      Es la misma regla general (masa equivalente = masa ÷ valencia): al expresar ppm del elemento,
+      basta el peso equivalente <strong>del elemento</strong>. Equivale a tomar la masa molecular del ion,
+      dividirla entre su valencia y multiplicar por la fracción del elemento en ese ion — el resultado
+      coincide con el peso atómico ÷ valencia del elemento.
+    </p>
+    <table class="mt-table">
+      <thead>
+        <tr><th>Forma en solución (etiqueta)</th><th>ppm de</th><th>PA (g/mol)</th><th>Valencia</th><th>Peso eq. NutriPlant (g/mol)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>N-NO₃⁻</td><td>N</td><td>14,01</td><td>1</td><td><strong>14,0</strong></td></tr>
+        <tr><td>N-NH₄⁺</td><td>N</td><td>14,01</td><td>1</td><td><strong>14,0</strong></td></tr>
+        <tr><td>P-H₂PO₄⁻</td><td>P</td><td>30,97</td><td>1</td><td><strong>31,0</strong></td></tr>
+        <tr><td>S-SO₄²⁻</td><td>S</td><td>32,07</td><td>2</td><td><strong>16,03</strong></td></tr>
+        <tr><td>K⁺</td><td>K</td><td>39,10</td><td>1</td><td>39,1</td></tr>
+        <tr><td>Ca²⁺</td><td>Ca</td><td>40,08</td><td>2</td><td>20,04</td></tr>
+        <tr><td>Mg²⁺</td><td>Mg</td><td>24,31</td><td>2</td><td>12,15</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Ejemplo:</strong> 140 ppm N-NO₃⁻ → meq/L = 140 ÷ 14 = <strong>10 meq/L</strong>.
+      31 ppm P-H₂PO₄⁻ → 31 ÷ 31 = <strong>1 meq/L</strong>.
+      48 ppm S-SO₄²⁻ → 48 ÷ 16,03 ≈ <strong>2,99 meq/L</strong>.
+    </p>
     <h2>Óxido ↔ elemental (factores NutriPlant)</h2>
     <table class="mt-table">
       <thead><tr><th>Óxido</th><th>× factor → elemental</th></tr></thead>
@@ -73,9 +114,18 @@
         <tr><td>K₂O → K</td><td>0,830</td></tr>
         <tr><td>CaO → Ca</td><td>0,715</td></tr>
         <tr><td>MgO → Mg</td><td>0,603</td></tr>
+        <tr><td>SO₄ → S</td><td>0,333</td></tr>
+        <tr><td>SO₃ → S</td><td>0,400</td></tr>
+        <tr><td>Fe₂O₃ → Fe</td><td>0,699</td></tr>
+        <tr><td>MnO → Mn</td><td>0,775</td></tr>
+        <tr><td>B₂O₃ → B</td><td>0,311</td></tr>
+        <tr><td>ZnO → Zn</td><td>0,803</td></tr>
+        <tr><td>CuO → Cu</td><td>0,799</td></tr>
+        <tr><td>MoO₃ → Mo</td><td>0,667</td></tr>
+        <tr><td>SiO₂ → Si</td><td>0,467</td></tr>
       </tbody>
     </table>
-    <p>Herramienta gratis en login: Conversor óxido ↔ elemental.</p>
+    <p>Herramienta gratis en login: Conversor óxido ↔ elemental (incluye también los factores inversos elemental → óxido).</p>
     <div class="mt-warn">No confundir meq/100 g (suelo) con cmol/L (solución): en solución hay factor 10 entre cmol/L y meq/L.</div>
     <nav class="mt-chapter-nav"><a href="porcentaje-meq-aniones-cationes.html">% meq →</a><a href="../index.html">Índice</a></nav>
   </main>

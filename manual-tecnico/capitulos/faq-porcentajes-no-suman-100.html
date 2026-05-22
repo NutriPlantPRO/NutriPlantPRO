@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FAQ: ¿por qué los % iónicos no suman 100 %? — Manual NutriPlant PRO</title>
-  <meta name="description" content="Por qué en NutriPlant los % meq de aniones y cationes no siempre suman 100 %: triángulos N-P-S, K-Ca-Mg, NH4 y Cl con denominadores distintos.">
+  <title>% meq en hidroponía y fertirriego: por qué no todo suma 100 % — Manual NutriPlant PRO</title>
+  <meta name="description" content="En tablas y gráficas iónicas de NutriPlant, N-P-S y K-Ca-Mg suman 100 % cada uno; Cl⁻ y N-NH₄⁺ van aparte. Explicación por pantalla.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/faq-porcentajes-no-suman-100.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css">
@@ -12,8 +12,8 @@
 {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  "name": "FAQ: ¿por qué los % iónicos no suman 100 %?",
-  "description": "Por qué en NutriPlant los % meq de aniones y cationes no siempre suman 100 %: triángulos N-P-S, K-Ca-Mg, NH4 y Cl con denominadores distintos.",
+  "name": "% meq en hidroponía y fertirriego: por qué no todo suma 100 %",
+  "description": "En tablas y gráficas iónicas de NutriPlant, N-P-S y K-Ca-Mg suman 100 % cada uno; Cl⁻ y N-NH₄⁺ van aparte. Explicación por pantalla.",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/faq-porcentajes-no-suman-100.html",
   "inLanguage": "es",
   "author": {
@@ -30,7 +30,7 @@
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "¿Por qué los % iónicos no siempre suman 100 % en NutriPlant?",
+      "name": "¿Por qué al sumar todos los % meq de una fila no da 100 %?",
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Porque N-P-S y K-Ca-Mg usan denominadores distintos en triángulos; Cl⁻ y N-NH₄⁺ se muestran aparte con su propio %."
@@ -72,23 +72,28 @@
     </div>
   </div></header>
   <main class="mt-wrap">
-    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · FAQ</p>
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar A / D · Balance iónico</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
     <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
-    <h1>FAQ: ¿por qué los % iónicos no suman 100 %?</h1>
+    <h1>% meq en hidroponía y fertirriego: por qué no todo suma 100 %</h1>
     <h2>Resumen</h2>
-    <p>En hidroponía y fertirriego, NutriPlant muestra varios porcentajes en la misma tabla. <strong>No comparten un solo denominador</strong>. Por eso N-P-S puede sumar 100 % mientras Cl o NH₄ tienen otro % aparte.</p>
-    <h2>Paso 1 — Identificar la pantalla</h2>
+    <p>
+      En <strong>Hidroponía</strong> y <strong>Fertirriego</strong>, NutriPlant muestra <strong>% meq</strong> junto a meq/L y diagramas ternarios.
+      Si sumas <strong>todos</strong> los % de la misma fila, <strong>no obtienes 100 %</strong> — y es correcto: la app usa
+      <strong>denominadores distintos</strong> según el ion. Los triángulos <strong>N-P-S</strong> y <strong>K-Ca-Mg</strong> sí suman 100 % cada uno;
+      <strong>Cl⁻</strong> y <strong>N-NH₄⁺</strong> se calculan aparte.
+    </p>
+    <h2>Dónde lo ves en la app</h2>
     <ul>
-      <li>Hidroponía → Solución por etapa</li>
-      <li>Hidroponía → Cálculo de fertilizantes (leyenda N/Cl distinta)</li>
-      <li>Fertirriego → Gráficas iónicas (mezcla con agua de riego)</li>
-      <li>Enmienda / suelo → % saturación de CIC (otro concepto)</li>
+      <li><strong>Hidroponía → Solución por etapa</strong> — tabla meq/L y % meq por etapa.</li>
+      <li><strong>Hidroponía → Cálculo de fertilizantes</strong> — misma lógica; leyenda N/Cl distinta.</li>
+      <li><strong>Fertirriego → Gráficas iónicas</strong> — balance con mezcla de agua de riego.</li>
     </ul>
-    <h2>Paso 2 — Triángulos que sí suman 100 %</h2>
+    <p class="mt-note"><strong>No confundir:</strong> en <strong>Enmienda / suelo</strong>, el % de saturación de la CIC (K, Ca, Mg sobre CIC) es otro concepto. Ver capítulo de <a href="porcentaje-meq-aniones-cationes.html">% meq — triángulos</a>.</p>
+    <h2>Triángulos que sí suman 100 %</h2>
     <div class="mt-formula">Aniones triángulo: % = meq / (NO₃ + P + SO₄) × 100 → suman 100 %<br>Cationes triángulo: % = meq / (K + Ca + Mg) × 100 → suman 100 %</div>
     <p>Cl⁻ y N-NH₄⁺ <strong>no</strong> entran a esos triángulos.</p>
-    <h2>Paso 3 — Iones aparte</h2>
+    <h2>Cl⁻ y N-NH₄⁺ (aparte del triángulo)</h2>
     <ul>
       <li><strong>N-NH₄⁺:</strong> % sobre (K + Ca + Mg + NH₄)</li>
       <li><strong>Cl⁻ en fertirriego:</strong> % sobre aniones totales con Cl, pero el triángulo N-P-S no incluye Cl</li>

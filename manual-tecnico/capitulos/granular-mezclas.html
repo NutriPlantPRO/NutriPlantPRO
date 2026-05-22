@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Granular: mezclas y relación N-P-K — Manual NutriPlant PRO</title>
-  <meta name="description" content="Formulación de mezclas granulares en NutriPlant: % en mezcla, relación N-P₂O₅-K₂O y kg/ha por nutriente según dosis.">
+  <title>Granular: requerimiento, programa y mezclas — Manual NutriPlant PRO</title>
+  <meta name="description" content="Nutrición granular NutriPlant: requerimiento kg/ha, programa de aplicaciones (mezcla física o fertilizante al 100 %), relación N-P₂O₅-K₂O y aporte por dosis.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/granular-mezclas.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css">
@@ -12,8 +12,8 @@
 {
   "@context": "https://schema.org",
   "@type": "Article",
-  "headline": "Granular: mezclas y relación N-P-K",
-  "description": "Formulación de mezclas granulares en NutriPlant: % en mezcla, relación N-P₂O₅-K₂O y kg/ha por nutriente según dosis.",
+  "headline": "Granular: requerimiento, programa y mezclas",
+  "description": "Nutrición granular NutriPlant: requerimiento kg/ha, programa de aplicaciones (mezcla física o fertilizante al 100 %), relación N-P₂O₅-K₂O y aporte por dosis.",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/granular-mezclas.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
@@ -56,26 +56,95 @@
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar D · Granular</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
     <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
-    <h1>Granular: formulación de mezclas y relación N-P-K</h1>
+    <h1>Granular: requerimiento, programa y mezclas</h1>
+
     <h2>Resumen</h2>
-    <p>NutriPlant permite armar <strong>mezclas de fertilizantes granulares</strong> (herramienta gratis y módulo de proyecto) indicando material y <strong>% en la mezcla</strong>. La app calcula la <strong>composición ponderada</strong>, la relación <strong>N–P₂O₅–K₂O</strong> y los <strong>kg/ha de nutriente</strong> según la dosis de mezcla.</p>
-    <h2>Cálculo de composición</h2>
-    <p>Por cada fila (material + % en mezcla):</p>
+    <p>
+      La <strong>nutrición granular</strong> en NutriPlant tiene dos piezas en el proyecto:
+      <strong>Requerimiento</strong> (meta en kg/ha) y <strong>Programa</strong> (aplicaciones con
+      mezcla física o fertilizante al 100 %). Cada aplicación define materiales, % en la mezcla y
+      dosis kg/ha; la app calcula composición, relación N–P₂O₅–K₂O y aporte acumulado por nutriente.
+      La herramienta gratis del login hace solo la parte de <strong>formulación de mezcla</strong>.
+    </p>
+
+    <h2>Flujo en NutriPlant</h2>
+    <ol>
+      <li><strong>Requerimiento</strong> — extracción del cultivo → ajuste por suelo → eficiencia → requerimiento real (kg/ha).</li>
+      <li><strong>Programa</strong> — una o más <strong>aplicaciones</strong>; en cada una, mezcla de fertilizantes (o un solo producto) + dosis kg/ha → aporte por nutriente.</li>
+      <li><strong>Resumen</strong> — suma de todas las aplicaciones vs requerimiento (diferencia por nutriente).</li>
+    </ol>
+    <p>Misma lógica de requerimiento que fertirriego; ver también
+      <a href="programa-fertirriego-etapas.html">Programa de fertirriego</a> y
+      <a href="extraccion-nutrimental-por-etapa.html">Extracción por etapa</a>.</p>
+
+    <h2>1. Requerimiento nutricional</h2>
+    <p>Tabla en <strong>Dashboard → Nutrición granular → Requerimiento</strong>:</p>
+    <div class="mt-formula">
+      Extracción total (kg/ha) = extracción por ton (kg/ton) × rendimiento objetivo (ton/ha)<br>
+      Requerimiento real (kg/ha) = Ajuste ÷ (Eficiencia ÷ 100)
+    </div>
+    <p><strong>Extracción total</strong> — demanda del cultivo al rendimiento objetivo (base editable por cultivo).</p>
+    <p><strong>Ajuste por niveles en suelo</strong> — kg/ha editable por nutriente. Por defecto igual a la
+      extracción total; el agrónomo <strong>sube o baja</strong> kg según reservas o déficit del suelo
+      (criterio técnico, no obligatorio desde el reporte de laboratorio). Referencia en
+      <a href="analisis-suelo-fertilidad-kgha.html">Análisis de suelo: fertilidad y kg/ha</a>.</p>
+    <p><strong>Eficiencia (%)</strong> — fracción esperada de aprovechamiento del fertilizante aplicado
+      al suelo. En granular los valores predeterminados son más conservadores que en fertirriego
+      (editables): N 65 %, P₂O₅ 40 %, K₂O 85 %, CaO/MgO/SO₄ 85 %, micros 80 %, SiO₂ 85 %.</p>
+    <p><strong>Ejemplo:</strong> ajuste P₂O₅ = 80 kg/ha, eficiencia 40 % → requerimiento real P₂O₅ = 80 ÷ 0,40 = <strong>200 kg/ha</strong>.</p>
+
+    <h2>2. Programa de aplicaciones</h2>
+    <p>En <strong>Programa</strong> se crean aplicaciones numeradas (1ª, 2ª, 3ª…). Cada aplicación puede ser:</p>
+    <ul>
+      <li><strong>Fertilizante al 100 %</strong> — un solo material con <strong>100 % por TM</strong> (tonelada métrica de la mezcla).</li>
+      <li><strong>Mezcla física</strong> — varios granulados con % en la mezcla (habitualmente suman 100 %).</li>
+    </ul>
+    <p>Por aplicación se captura:</p>
+    <ul>
+      <li>Fila(s) de material + <strong>% por TM</strong> (composición del catálogo NutriPlant).</li>
+      <li>Fila <strong>TOTAL</strong> — % de nutriente en la mezcla (composición ponderada).</li>
+      <li><strong>Dosis kg/ha</strong> — cuántos kg de esa mezcla (o producto puro) se aplican en esa visita.</li>
+    </ul>
+    <div class="mt-formula">
+      % nutriente en mezcla = Σ (% TM<sub>i</sub> / 100 × % nutriente en material<sub>i</sub> )<br>
+      Aporte nutriente (kg/ha) = Dosis mezcla (kg/ha) × (% nutriente en mezcla / 100)
+    </div>
+    <p>
+      El aporte de la aplicación aparece en la fila de resultados bajo «Dosis Kg/Ha». El
+      <strong>total del programa</strong> es la <strong>suma</strong> de los aportes de todas las
+      aplicaciones. En el resumen inferior: <strong>Aporte total</strong>, <strong>Requerimiento</strong>
+      y <strong>Diferencia</strong> = aporte − requerimiento (negativo = falta cubrir; positivo = exceso).
+      No hay aporte por agua como en fertirriego.
+    </p>
+
+    <h2>3. Formulación de mezcla (composición y N-P-K)</h2>
+    <p>La lógica de mezcla es la misma en el programa del proyecto y en la herramienta gratis
+      (<code>granular-mix-free.html</code>). Por cada fila (material + % en mezcla):</p>
     <div class="mt-formula">Aporte nutriente (%) = (% en mezcla / 100) × (% del nutriente en el material)<br>Total en mezcla = suma de aportes de todas las filas</div>
     <p>Nutrientes mostrados: N, P₂O₅, K₂O, CaO, MgO, S, SO₄, Fe, Mn, B, Zn, Cu, Mo, SiO₂ (según composición del catálogo del material).</p>
     <h2>Relación N–P₂O₅–K₂O</h2>
     <p>Si N, P₂O₅ y K₂O en la mezcla son todos &gt; 0, la relación se normaliza al menor de los tres:</p>
     <div class="mt-formula">Relación a - b - c donde a = N/m, b = P₂O₅/m, c = K₂O/m, m = min(N, P₂O₅, K₂O)</div>
     <p>Ejemplo: totales 20-10-10 → relación <strong>2 - 1 - 1</strong> (equivalente a mezcla 20-10-10 comercial).</p>
-    <h2>kg/ha de nutriente</h2>
+    <h2>kg/ha por nutriente (una aplicación)</h2>
     <div class="mt-formula">kg nutriente/ha = Dosis mezcla (kg/ha) × (% nutriente en mezcla / 100)</div>
-    <h2>En el proyecto vs gratis</h2>
+    <p>Ejemplo: mezcla 20-10-10 (% en mezcla) aplicada a 500 kg/ha → 100 kg N/ha, 50 kg P₂O₅/ha, 50 kg K₂O/ha.</p>
+
+    <h2>En el proyecto vs herramienta gratis</h2>
     <ul>
-      <li><strong>Login</strong> — <code>granular-mix-free.html</code>, datos en localStorage.</li>
-      <li><strong>Dashboard → Nutrición granular</strong> — requerimiento + programa de aplicación por tiempo, guardado en nube.</li>
+      <li><strong>Login</strong> — <code>granular-mix-free.html</code>: solo formulación de mezcla y kg/ha según dosis; datos en localStorage.</li>
+      <li><strong>Dashboard → Nutrición granular</strong> — requerimiento + programa de aplicaciones, guardado en nube; resumen aporte vs meta.</li>
     </ul>
-    <p>El requerimiento granular parte de la misma lógica de extracción que fertirriego, con eficiencias predeterminadas más conservadoras (N y P₂O₅ menores). Ver <a href="extraccion-nutrimental-por-etapa.html">Extracción por etapa</a>.</p>
-    <nav class="mt-chapter-nav"><a href="extraccion-nutrimental-por-etapa.html">← Extracción</a><a href="../index.html">Índice</a></nav>
+
+    <h2>Modo óxido o elemental</h2>
+    <p>El usuario elige modo en requerimiento y programa; tablas y resumen muestran P₂O₅/K₂O/CaO/MgO/SO₄/SiO₂ o P/K/Ca/Mg/S/Si. Misma lógica de conversión que fertirriego
+      (<a href="unidades-ppm-meq-oxidos.html">Unidades: óxido ↔ elemental</a>).</p>
+
+    <div class="mt-note">
+      <strong>En la plataforma:</strong> Nutrición granular → Requerimiento (meta) · Programa (aplicaciones y dosis) · resumen inferior (aporte, requerimiento, diferencia).
+    </div>
+
+    <nav class="mt-chapter-nav"><a href="extraccion-nutrimental-por-etapa.html">← Extracción</a><a href="programa-fertirriego-etapas.html">Fertirriego →</a><a href="../index.html">Índice</a></nav>
     <p class="mt-disclaimer">Guía técnica de apoyo. Verifique compatibilidad física de granulados y normativa de aplicación.</p>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>

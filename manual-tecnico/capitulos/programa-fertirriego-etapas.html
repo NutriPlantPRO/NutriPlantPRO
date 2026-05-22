@@ -58,16 +58,128 @@
     <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Programa de fertirriego por etapas</h1>
     <h2>Resumen</h2>
-    <p>El módulo Fertirriego une <strong>requerimiento nutricional</strong> (meta en kg/ha) con <strong>programa por tiempo</strong> (semanas o meses), materiales y dosis. El aporte del <strong>agua de riego</strong> se resta del requerimiento.</p>
+    <p>
+      El módulo Fertirriego une <strong>requerimiento nutricional</strong> (meta en kg/ha) con
+      <strong>programa por tiempo</strong> (semanas o meses), materiales y dosis. En el resumen del
+      programa se suma el <strong>aporte del agua de riego</strong> (kg/ha por elemento, desde el
+      análisis de agua) y se compara contra el requerimiento. Las gráficas iónicas convierten kg/ha
+      a ppm y meq/L cuando hay <strong>lámina de riego</strong> (m³/ha) por etapa.
+    </p>
+
     <h2>Flujo en NutriPlant</h2>
     <ol>
-      <li><strong>Requerimiento</strong> — Extracción/ton × rendimiento → extracción total; ajuste por suelo; eficiencia → requerimiento real (kg/ha).</li>
-      <li><strong>Programa</strong> — Por etapa temporal: fertilizantes, dosis (kg/ha o concentración), aporte acumulado del programa.</li>
-      <li><strong>Aporte por agua</strong> — N del agua como <strong>N-NO₃⁻</strong>; suma al total del programa.</li>
-      <li><strong>Gráficas</strong> — Comparación aporte vs requerimiento; balance iónico si hay m³/ha de lámina.</li>
+      <li><strong>Requerimiento</strong> — de extracción del cultivo al requerimiento real (kg/ha).</li>
+      <li><strong>Programa</strong> — fertilizantes, dosis por etapa y aporte acumulado del programa.</li>
+      <li><strong>Aporte por agua</strong> — kg/ha de elementos que aporta el agua de riego.</li>
+      <li><strong>Gráficas</strong> — aporte vs requerimiento; balance iónico (ppm/meq) con lámina.</li>
     </ol>
+
+    <h3>1. Requerimiento nutricional</h3>
+    <p>Tabla en <strong>Fertirriego → Requerimiento</strong>. Misma lógica que granular y que
+      <a href="extraccion-nutrimental-por-etapa.html">Extracción por etapa</a>:</p>
+    <div class="mt-formula">
+      Extracción total (kg/ha) = extracción por ton (kg/ton) × rendimiento objetivo (ton/ha)<br>
+      Requerimiento real (kg/ha) = Ajuste ÷ (Eficiencia ÷ 100)
+    </div>
+
+    <p><strong>Extracción total</strong> — cuánto nutriente retira el cultivo al rendimiento objetivo,
+      según la base del cultivo (editable). Punto de partida numérico.</p>
+
+    <p><strong>Ajuste por niveles en suelo</strong> — columna editable en kg/ha por nutriente. Por
+      defecto parte igual a la extracción total; el agrónomo puede <strong>subir o bajar</strong> esos
+      kg según el suelo: si el análisis o la fertilidad indican <em>déficit</em>, se aumenta el ajuste;
+      si hay <em>reserva o exceso</em> aprovechable, se reduce. No es un cálculo automático obligatorio
+      desde el reporte de suelo: es el kg/ha neto que el técnico decide fertilizar antes de aplicar
+      eficiencia. Ver criterio de referencia en
+      <a href="analisis-suelo-fertilidad-kgha.html">Análisis de suelo: fertilidad y kg/ha</a>.</p>
+
+    <p><strong>Eficiencia (%)</strong> — fracción del fertilizante aplicado que espera aprovechar la
+      planta (pérdidas por lixiviación, fijación, volatilización, etc.). NutriPlant eleva el
+      requerimiento cuando la eficiencia es menor. Valores predeterminados en fertirriego (editables):
+      N 75 %, P₂O₅ 50 %, K₂O 90 %, CaO/MgO/S/SO₄ 90 %, micros 85–90 %.</p>
+
+    <p><strong>Ejemplo requerimiento:</strong> extracción total K₂O = 180 kg/ha; ajuste por suelo bajo
+      → 200 kg/ha; eficiencia K₂O 90 %:</p>
+    <div class="mt-formula">Requerimiento real K₂O = 200 ÷ 0,90 = 222,2 kg/ha</div>
+
+    <h3>2. Programa de nutrición</h3>
+    <p>Tabla por <strong>semana o mes</strong> (etapa fenológica + número de periodo). Por etapa:</p>
+    <ul>
+      <li>Columnas de <strong>fertilizantes</strong> del catálogo (sólidos en kg/ha; líquidos en L/ha
+        con densidad).</li>
+      <li>Cada celda = dosis de ese producto en esa etapa.</li>
+      <li>Columnas de nutrientes = aporte calculado de esa etapa.</li>
+    </ul>
+    <div class="mt-formula">
+      Aporte nutriente (kg/ha) = dosis producto × (% del nutriente en el material ÷ 100)
+    </div>
+    <p>
+      El aporte de una etapa es la <strong>suma</strong> de todos los productos de esa fila. El
+      <strong>total del programa</strong> es la suma de todas las etapas (fila TOTAL). Esos totales
+      alimentan el resumen «Aporte del programa» y las curvas de Gráficas. Los números salen del
+      catálogo de materiales (% en etiqueta o ficha del fertilizante), no de una tabla fija externa.
+    </p>
+
+    <h3>3. Aporte por agua</h3>
+    <p>
+      Bloque editable en <strong>Programa de nutrición → Aporte por agua</strong>. Representa cuántos
+      <strong>kg/ha de cada elemento</strong> aporta el agua de riego durante el ciclo (referencia del
+      proyecto), calculados desde el <strong>análisis de agua</strong> (meq/L y ppm) y el volumen de
+      agua de referencia (m³). Fórmula típica para macros/micros en ppm:
+    </p>
+    <div class="mt-formula">kg elemento/ha ≈ ppm × m³ agua ÷ 1 000</div>
+    <p>
+      Cationes y aniones del agua se convierten a kg de elemento u óxido según el modo del usuario.
+      El <strong>N del agua</strong> se contabiliza como nutriente total y, en gráficas iónicas, se
+      trata como <strong>N-NO₃⁻</strong>. El resumen suma <strong>programa + agua</strong>; la
+      <strong>Diferencia</strong> = (aporte programa + aporte agua) − requerimiento real (negativo =
+      falta cubrir; positivo = exceso).
+    </p>
+
+    <h3>4. Gráficas</h3>
+    <p>
+      Curvas de aporte acumulado vs requerimiento por nutriente. El <strong>Macro resumen iónico</strong>
+      y el diagrama ternario (etapa seleccionada) requieren lámina m³/ha — ver siguiente sección y
+      <a href="fertirriego-graficas-ionicas.html">Gráficas iónicas</a>.
+    </p>
+
     <h2>Lámina de riego (m³/ha)</h2>
-    <p>Por etapa se captura volumen de agua aplicado. Sin lámina no hay conversión a ppm/meq en gráficas iónicas de esa etapa.</p>
+    <p>
+      En <strong>Gráficas</strong>, por cada semana/mes se captura el <strong>volumen de agua
+      aplicado acumulado en esa etapa</strong> (m³/ha). Sin lámina &gt; 0 la plataforma muestra solo
+      kg/ha del programa; <em>no</em> calcula ppm ni meq/L ni % iónicos de esa etapa.
+    </p>
+    <p>Con lámina, el aporte iónico de la etapa (fertilizante ± agua según tabla) se convierte así:</p>
+    <div class="mt-formula">
+      ppm elemento = (kg elemento/ha × 1 000) ÷ m³/ha<br>
+      meq/L = ppm ÷ peso equivalente del elemento
+    </div>
+    <p>
+      Los pesos equivalentes son los de NutriPlant (N-NO₃⁻ / N-NH₄⁺ → 14; P-H₂PO₄⁻ → 31; S-SO₄²⁻ →
+      16,03; K⁺ → 39,1; Ca²⁺ → 20,04; Mg²⁺ → 12,15). Detalle en
+      <a href="unidades-ppm-meq-oxidos.html">Unidades: ppm, meq/L y óxidos</a>.
+    </p>
+
+    <p><strong>Ejemplo kg → ppm → meq (una etapa):</strong> en la semana 3 acumulas 40 kg/ha de N
+      (programa + agua) y aplicaste 2 000 m³/ha de lámina:</p>
+    <div class="mt-formula">
+      ppm N = (40 × 1 000) ÷ 2 000 = 20 ppm<br>
+      meq/L N-NO₃⁻ = 20 ÷ 14 ≈ 1,43 meq/L
+    </div>
+
+    <p><strong>Misma relación iónica al repartir en varias aplicaciones:</strong> si divides la etapa
+      en <strong>4 fertirrigaciones iguales</strong> (misma cantidad de agua y mismo fertilizante
+      cada vez), cada aplicación lleva ¼ del kg/ha y ¼ de la lámina. Al dividir numerador y denominador
+      por 4, el <strong>ppm y los meq/L no cambian</strong>; tampoco los <strong>% meq</strong> entre
+      aniones (N-P-S) ni entre cationes (K-Ca-Mg), porque todas las concentraciones escalan igual con
+      la lámina. Lo que sí cambia entre etapas es el acumulado de kg/ha del programa; la lámina de
+      Gráficas es la del periodo que estás analizando.</p>
+
+    <div class="mt-note">
+      <strong>En la plataforma:</strong> Fertirriego → Gráficas → «Lámina de riego por etapa (m³/ha)».
+      Dos tablas iónicas: solo fertilizante del programa vs fertilizante + agua (la mezcla real).
+    </div>
+
     <h2>Modo óxido o elemental</h2>
     <p>El usuario elige modo; tablas y gráficas reflejan P₂O₅/K₂O/CaO/MgO o P/K/Ca/Mg. Misma lógica que nutrición granular.</p>
     <nav class="mt-chapter-nav"><a href="fertirriego-graficas-ionicas.html">Gráficas iónicas →</a><a href="../index.html">Índice</a></nav>

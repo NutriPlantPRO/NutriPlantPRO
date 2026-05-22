@@ -3297,6 +3297,7 @@ async function buildRadarSnapshot(supabase, row) {
       to: meta.date_end || null
     },
     source: meta.source || 'COPERNICUS/S2_SR_HARMONIZED',
+    location_snapshot: meta.location_snapshot || null,
     images: {
       ndvi: {
         label: 'NDVI — vigor vegetativo relativo',
@@ -3336,13 +3337,19 @@ async function handleRadarProject(supabase, params) {
 
   const history = historyRows.map((h) => {
     const m = h.meta || {};
+    const loc = m.location_snapshot || null;
     return {
       id: h.id,
       created_at: h.created_at,
       month_key: h.month_key,
       sentinel_period: { from: m.date_start || null, to: m.date_end || null },
       has_ndvi: !!h.image_storage_path,
-      has_ndmi: !!(m.ndmi_storage_path || m.images?.ndmi?.storage_path)
+      has_ndmi: !!(m.ndmi_storage_path || m.images?.ndmi?.storage_path),
+      has_location_snapshot: !!(loc && Array.isArray(loc.polygon) && loc.polygon.length >= 3),
+      location_center: loc && loc.center ? loc.center : null,
+      location_bounds: loc && loc.bounds ? loc.bounds : null,
+      area_hectares: loc && loc.area_hectares != null ? loc.area_hectares : null,
+      perimeter_m: loc && loc.perimeter_m != null ? loc.perimeter_m : null
     };
   });
 
@@ -3395,7 +3402,7 @@ async function handleRadarProject(supabase, params) {
     radar_history_count: history.length,
     user_radar_credits_this_month: credits,
     gpt_radar_note:
-      'radar_history lista todas las imágenes guardadas (id, created_at, sentinel_period). latest_radar trae URLs firmadas NDVI/NDMI de la más reciente o de request_id si lo pasas. ChatGPT no ve píxeles: da fechas y enlaces; el usuario abre las URLs (~1 h).',
+      'radar_history lista imágenes (id, created_at, sentinel_period, location_center, bounds, area_ha). latest_radar incluye location_snapshot (polígono, centro, bounds) de la imagen mostrada o de request_id. Imágenes antiguas pueden no tener coords. ChatGPT no ve píxeles: fechas, coords y enlaces NDVI/NDMI.',
     related: {
       fertirriego_suelo_vpd: 'project_detail',
       vpd_ahora: 'project_vpd_live'

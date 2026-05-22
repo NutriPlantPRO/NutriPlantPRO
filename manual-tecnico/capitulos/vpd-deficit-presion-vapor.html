@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VPD: déficit de presión de vapor — Manual NutriPlant PRO</title>
-  <meta name="description" content="VPD en NutriPlant PRO: cálculo, rangos de manejo, registro por proyecto y relación con estrés hídrico del cultivo.">
+  <title>VPD, NDVI y NDMI — Manual NutriPlant PRO</title>
+  <meta name="description" content="VPD (cálculo kPa), Radar del cultivo NDVI/NDMI por lectura satelital multiespectral, rangos de manejo y uso en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css">
@@ -12,8 +12,8 @@
 {
   "@context": "https://schema.org",
   "@type": "Article",
-  "headline": "VPD: déficit de presión de vapor",
-  "description": "VPD en NutriPlant PRO: cálculo, rangos de manejo, registro por proyecto y relación con estrés hídrico del cultivo.",
+  "headline": "VPD, NDVI y NDMI",
+  "description": "VPD (cálculo kPa), Radar del cultivo NDVI/NDMI por lectura satelital multiespectral, rangos de manejo y uso en NutriPlant PRO.",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
@@ -56,16 +56,58 @@
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Clima</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
     <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
-    <h1>VPD: déficit de presión de vapor</h1>
+    <h1>VPD, NDVI y NDMI</h1>
     <h2>Resumen</h2>
-    <p>El <strong>VPD</strong> (Vapor Pressure Deficit) expresa cuánta “capacidad de secado” tiene el aire. NutriPlant lo calcula en la pestaña <strong>VPD</strong> del proyecto y en la herramienta gratuita del login.</p>
-    <h2>Entradas</h2>
-    <ul>
-      <li>Temperatura del aire (°C).</li>
-      <li>Humedad relativa (%).</li>
-      <li>Opcional: radiación, viento (versión avanzada en proyecto).</li>
-    </ul>
-    <h2>Interpretación orientativa (kPa)</h2>
+    <p>
+      El <strong>VPD</strong> (déficit de presión de vapor) mide la “capacidad de secado” del aire a partir de
+      <strong>temperatura y humedad</strong> (clima de estación o valores manuales). El <strong>Radar del
+      cultivo</strong> (pestaña <strong>Ubicación</strong>) muestra mapas <strong>NDVI</strong> y
+      <strong>NDMI</strong> obtenidos por <strong>lectura satelital multiespectral</strong> sobre el polígono
+      del predio. Son herramientas complementarias: VPD = clima; NDVI/NDMI = vigor y condición hídrica relativa
+      del dosel vistos desde arriba.
+    </p>
+
+    <h2>VPD — qué es y de dónde salen los datos</h2>
+    <p>
+      NutriPlant calcula VPD en la pestaña <strong>VPD</strong> del proyecto y en la herramienta gratuita del
+      login (<code>vpd-free.html</code>). Con polígono en <strong>Ubicación</strong>, «Obtener del Clima» y la
+      <strong>Serie VPD por rango</strong> usan las coordenadas del centro del predio para traer temperatura y
+      humedad actuales o históricas desde un <strong>servicio meteorológico</strong> (no satelital). También
+      puedes capturar T y HR manualmente.
+    </p>
+
+    <h2>VPD — cálculo (kPa)</h2>
+    <p>NutriPlant usa la ecuación de <strong>Tetens / Magnus</strong> para la presión de vapor de saturación (kPa):</p>
+    <div class="mt-formula">
+      e<sub>s</sub> (kPa) = 0,6108 × exp(17,27 × T ÷ (T + 237,3)) &nbsp;&nbsp; (T en °C)
+    </div>
+
+    <h3>Calculadora ambiental (simple)</h3>
+    <p>Presión de vapor actual del aire y déficit respecto al aire:</p>
+    <div class="mt-formula">
+      e<sub>a</sub> = e<sub>s</sub>(T aire) × (HR ÷ 100)<br>
+      VPD = e<sub>s</sub>(T aire) − e<sub>a</sub>
+    </div>
+    <p>
+      También se muestra <strong>HD</strong> (déficit de humedad absoluta, g/m³) con la curva de humedad
+      saturada del aire a esa temperatura.
+    </p>
+
+    <h3>Calculadora avanzada</h3>
+    <p>
+      El VPD que importa a la planta compara la presión de saturación en la <strong>hoja</strong> con la
+      presión de vapor real del <strong>aire</strong>:
+    </p>
+    <div class="mt-formula">
+      VPD = e<sub>s</sub>(T hoja) − e<sub>a</sub>(T aire, HR)
+    </div>
+    <p>
+      <strong>T hoja</strong> puede ingresarse directamente o estimarse desde <strong>radiación solar</strong>
+      (W/m²): si la radiación supera 200 W/m², NutriPlant suma 0,6 °C por cada 100 W/m² extra sobre 200 al
+      aire; si no, T hoja = T aire.
+    </p>
+
+    <h2>Interpretación orientativa del VPD (kPa)</h2>
     <table class="mt-table">
       <thead><tr><th>VPD</th><th>Interpretación general</th></tr></thead>
       <tbody>
@@ -75,8 +117,46 @@
       </tbody>
     </table>
     <p>Depende de cultivo, fase y radiación. Validar en campo.</p>
+
+    <h2>NDVI y NDMI — Radar del cultivo (lectura satelital)</h2>
+    <p>
+      En <strong>Ubicación → Radar del cultivo</strong>, NutriPlant genera mapas sobre el
+      <strong>polígono del predio</strong> a partir de <strong>imágenes satelitales multiespectrales</strong>:
+      sensores que miden reflectancia en bandas del visible e <strong>infrarrojo</strong> (cercano NIR y,
+      para NDMI, infrarrojo de onda corta SWIR). No es una foto RGB común: cada banda responde distinto a la
+      vegetación y al agua en el dosel.
+    </p>
+    <p>De esas bandas se calculan <strong>índices normalizados</strong> (diferencia normalizada entre dos bandas):</p>
+    <div class="mt-formula">
+      NDVI ≈ (NIR − Rojo) ÷ (NIR + Rojo)<br>
+      NDMI ≈ (NIR − SWIR) ÷ (NIR + SWIR)
+    </div>
+    <ul>
+      <li><strong>NDVI</strong> (Normalized Difference Vegetation Index) — <strong>vigor relativo</strong> y
+        actividad fotosintética dentro del lote. En el mapa: tonos verdes = mayor vigor relativo; amarillo,
+        naranja o rojo = menor vigor (suelo desnudo, sombra, estrés, poda, heterogeneidad de manejo, etc.).</li>
+      <li><strong>NDMI</strong> (Normalized Difference Moisture Index) — <strong>condición hídrica relativa
+        del dosel/canopia</strong>. En el mapa: verdes = mayor humedad relativa en la vegetación; tonos secos =
+        menor. <em>No</em> es humedad volumétrica del suelo ni lámina de riego medida en campo.</li>
+    </ul>
+    <p>
+      Los valores son <strong>relativos al predio y a la fecha</strong> de la imagen: sirven para detectar
+      zonas distintas, priorizar recorridos y cruzar con riego, suelo, foliar, VPD y observación en campo.
+      No sustituyen diagnóstico por una sola mancha de color.
+    </p>
+    <div class="mt-warn">
+      Requisito: polígono guardado en <strong>Ubicación</strong>. La imagen queda anclada al contorno del
+      predio al generarla. Hay límite mensual de generaciones por cuenta; el historial permite comparar
+      fechas del mismo proyecto.
+    </div>
+
     <h2>En el proyecto</h2>
-    <p>Con polígono en <strong>Ubicación</strong>, puede obtenerse VPD en vivo y guardar histórico (máximos por fecha). Cruce recomendado: riego, NDVI/NDMI, análisis foliar.</p>
+    <p>
+      <strong>VPD:</strong> calculadoras simple y avanzada, historial de cálculos y series por día/semana/mes
+      (máximos por fecha). <strong>Radar:</strong> capas NDVI y NDMI, «Ver en mapa» y listado de imágenes
+      generadas. Cruce recomendado: riego, textura/drenaje, análisis foliar/suelo, VPD y recorrido de zonas
+      contrastantes en el mapa.
+    </p>
     <nav class="mt-chapter-nav"><a href="../index.html">Índice</a></nav>
   </main>
   <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>

@@ -112,6 +112,67 @@ function latLngPolygonToEeRing(polygon) {
   return ring;
 }
 
+/** Polígono del predio en el momento de generar Radar (para anclar NDVI/NDMI al lugar correcto). */
+function buildLocationSnapshot(location) {
+  if (!location || !Array.isArray(location.polygon) || location.polygon.length < 3) return null;
+  const polygon = location.polygon
+    .map((pt) => {
+      if (Array.isArray(pt) && pt.length >= 2) {
+        const lat = Number(pt[0]);
+        const lng = Number(pt[1]);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) return [lat, lng];
+      }
+      if (pt && typeof pt === 'object' && pt.lat != null && pt.lng != null) {
+        const lat = Number(pt.lat);
+        const lng = Number(pt.lng);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) return [lat, lng];
+      }
+      return null;
+    })
+    .filter(Boolean);
+  if (polygon.length < 3) return null;
+
+  let north = -90;
+  let south = 90;
+  let east = -180;
+  let west = 180;
+  let sumLat = 0;
+  let sumLng = 0;
+  polygon.forEach(([lat, lng]) => {
+    north = Math.max(north, lat);
+    south = Math.min(south, lat);
+    east = Math.max(east, lng);
+    west = Math.min(west, lng);
+    sumLat += lat;
+    sumLng += lng;
+  });
+
+  const centerFromLoc =
+    location.center &&
+    typeof location.center === 'object' &&
+    location.center.lat != null &&
+    location.center.lng != null
+      ? { lat: Number(location.center.lat), lng: Number(location.center.lng) }
+      : { lat: sumLat / polygon.length, lng: sumLng / polygon.length };
+
+  return {
+    polygon,
+    vertex_count: polygon.length,
+    center: centerFromLoc,
+    bounds: { north, south, east, west },
+    area_hectares:
+      location.areaHectares != null && Number.isFinite(Number(location.areaHectares))
+        ? Number(location.areaHectares)
+        : null,
+    area_m2: location.area != null && Number.isFinite(Number(location.area)) ? Number(location.area) : null,
+    perimeter_m:
+      location.perimeter != null && Number.isFinite(Number(location.perimeter))
+        ? Number(location.perimeter)
+        : null,
+    captured_at: new Date().toISOString()
+  };
+}
+
 function radarThumbUrl(ee, geometry, lookbackDays, indexType) {
   const end = new Date();
   const start = new Date(end.getTime() - lookbackDays * 86400000);
@@ -256,6 +317,7 @@ function historyItemFromRow(row) {
   if (!row) return null;
   const meta = row.meta || {};
   const ndmiPath = meta.ndmi_storage_path || meta.images?.ndmi?.storage_path || null;
+  const loc = meta.location_snapshot || null;
   return {
     id: row.id,
     created_at: row.created_at,
@@ -264,7 +326,10 @@ function historyItemFromRow(row) {
       from: meta.date_start || null,
       to: meta.date_end || null
     },
-    has_ndmi: !!ndmiPath
+    has_ndmi: !!ndmiPath,
+    has_location_snapshot: !!(loc && Array.isArray(loc.polygon) && loc.polygon.length >= 3),
+    location_center: loc && loc.center ? loc.center : null,
+    area_hectares: loc && loc.area_hectares != null ? loc.area_hectares : null
   };
 }
 
@@ -609,6 +674,7 @@ exports.handler = async (event) => {
     date_start: thumb.dateStart,
     date_end: thumb.dateEnd,
     source: 'COPERNICUS/S2_SR_HARMONIZED',
+    location_snapshot: buildLocationSnapshot(proj.data?.location),
     ndvi_vis: { min: 0.10, max: 0.92, style: 'balanced_crisp' },
     ndmi_storage_path: ndmiStoragePath,
     ndmi_vis: { min: -0.25, max: 0.55, style: 'canopy_water_crisp' },

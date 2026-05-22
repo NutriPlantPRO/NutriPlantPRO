@@ -224,6 +224,96 @@ body {
   .mt-index-intro .mt-note { margin: 0; height: 100%; }
 }
 
+/* Búsqueda en índice */
+.mt-search {
+  margin: 28px 0 32px;
+  padding: 20px clamp(16px, 2vw, 24px);
+  background: var(--mt-surface);
+  border: 1px solid var(--mt-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.mt-search-label {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+.mt-search-field { position: relative; }
+.mt-search-input {
+  width: 100%;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--mt-text);
+  background: var(--mt-bg);
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.mt-search-input:focus {
+  border-color: var(--mt-accent);
+  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.15);
+}
+.mt-search-hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--mt-muted);
+}
+.mt-search-results {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 1px solid var(--mt-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--mt-surface);
+}
+.mt-search-item { border-bottom: 1px solid var(--mt-border); }
+.mt-search-item:last-child { border-bottom: 0; }
+.mt-search-item.is-active { background: var(--mt-accent-soft); }
+.mt-search-item-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  color: inherit;
+  text-decoration: none;
+}
+.mt-search-item-link:hover,
+.mt-search-item.is-active .mt-search-item-link {
+  background: var(--mt-accent-soft);
+}
+.mt-search-item-icon {
+  flex-shrink: 0;
+  font-size: 1.2rem;
+  line-height: 1.35;
+}
+.mt-search-item-body { min-width: 0; }
+.mt-search-item-title {
+  display: block;
+  font-weight: 600;
+  color: var(--mt-accent);
+  line-height: 1.35;
+}
+.mt-search-item-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--mt-muted);
+}
+.mt-search-empty {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
 .mt-hero {
   background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
   border: 1px solid #7dd3fc;
@@ -413,6 +503,14 @@ ul, ol { padding-left: 1.25rem; margin: 0 0 14px; }
   color: var(--mt-accent);
   font-weight: 600;
   text-decoration: none;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.mt-chapter-pillar-icon {
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  line-height: 1.35;
 }
 .mt-chapter-list a:hover { text-decoration: underline; }
 .mt-status {
