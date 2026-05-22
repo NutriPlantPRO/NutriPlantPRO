@@ -9,9 +9,9 @@
   --mt-accent-soft: #e0f2fe;
   --mt-green-soft: #ecfdf5;
   --mt-max-chapter: 48rem;
-  --mt-max-index: 80rem;
-  --mt-header-max: 90rem;
-  --mt-pad-x: clamp(16px, 3vw, 56px);
+  --mt-max-index: min(108rem, calc(100vw - 48px));
+  --mt-header-max: min(108rem, calc(100vw - 48px));
+  --mt-pad-x: clamp(16px, 2vw, 32px);
   --mt-font: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
 
@@ -435,6 +435,9 @@ ul, ol { padding-left: 1.25rem; margin: 0 0 14px; }
   .mt-pillars { gap: 18px; }
   .mt-pillar { padding: 18px 20px; }
 }
+@media (min-width: 1440px) {
+  .mt-pillars { grid-template-columns: repeat(4, 1fr); }
+}
 
 .mt-pillar {
   background: var(--mt-surface);
@@ -473,7 +476,7 @@ ul, ol { padding-left: 1.25rem; margin: 0 0 14px; }
   .mt-chapter-list--pending {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: clamp(24px, 4vw, 48px);
+    column-gap: clamp(24px, 3vw, 56px);
   }
   .mt-chapter-list--wide li,
   .mt-chapter-list--pending li {
@@ -481,6 +484,7 @@ ul, ol { padding-left: 1.25rem; margin: 0 0 14px; }
   }
 }
 @media (min-width: 1100px) {
+  .mt-chapter-list--wide,
   .mt-chapter-list--pending {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
