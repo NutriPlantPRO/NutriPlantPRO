@@ -49,6 +49,14 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
 
+  function addDaysIsoLocal(isoDate, days) {
+    if (typeof addDaysIso === 'function') return addDaysIso(isoDate, days);
+    var d = new Date(isoDate + 'T00:00:00');
+    if (isNaN(d.getTime())) return isoDate;
+    d.setDate(d.getDate() + days);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
   function ensureClimateAnalysisStructures() {
     var p = getProject();
     if (!p) return;
@@ -124,7 +132,19 @@
       encodeURIComponent(endDate) +
       '&daily=precipitation_sum,et0_fao_evapotranspiration' +
       '&timezone=auto';
-    var res = await fetch(url);
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = controller ? setTimeout(function () { try { controller.abort(); } catch (e) {} }, 25000) : null;
+    var res;
+    try {
+      res = await fetch(url, controller ? { signal: controller.signal } : undefined);
+    } catch (fetchErr) {
+      if (fetchErr && fetchErr.name === 'AbortError') {
+        throw new Error('Tiempo de espera agotado consultando ' + (useArchive ? 'histórico' : 'pronóstico'));
+      }
+      throw fetchErr;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
     var data = await res.json().catch(function () { return null; });
     if (!res.ok) {
       var reason = data && (data.reason || data.error);
@@ -150,7 +170,14 @@
       return await fetchOpenMeteoDailyRange(lat, lng, start, end, useArchive);
     } catch (e) {
       if (useArchive) {
-        return await fetchOpenMeteoDailyRange(lat, lng, start, end, false);
+        // Forecast solo acepta una ventana reciente (~92 días hacia atrás). Si archive falla,
+        // no repetir desde enero porque Open-Meteo responde 400 "start_date out of allowed range".
+        var forecastStart = addDaysIsoLocal(today, -92);
+        var fallbackStart = start > forecastStart ? start : forecastStart;
+        if (fallbackStart <= end) {
+          console.warn('Lluvia/ET0: archive falló; usando forecast parcial desde', fallbackStart, e);
+          return await fetchOpenMeteoDailyRange(lat, lng, fallbackStart, end, false);
+        }
       }
       throw e;
     }
