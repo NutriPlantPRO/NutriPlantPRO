@@ -116,6 +116,23 @@
     return out;
   }
 
+  function emptyDailyRange(reason) {
+    return {
+      time: [],
+      precipitation_sum: [],
+      et0_fao_evapotranspiration: [],
+      unavailable: true,
+      reason: reason || 'Sin datos'
+    };
+  }
+
+  function hasAnyMonthValue(monthsObj) {
+    if (!monthsObj || typeof monthsObj !== 'object') return false;
+    return Object.keys(monthsObj).some(function (k) {
+      return monthsObj[k] != null && Number.isFinite(Number(monthsObj[k]));
+    });
+  }
+
   async function fetchOpenMeteoDailyRange(lat, lng, startDate, endDate, useArchive) {
     var base = useArchive
       ? 'https://archive-api.open-meteo.com/v1/archive'
@@ -178,6 +195,8 @@
           console.warn('Lluvia/ET0: archive falló; usando forecast parcial desde', fallbackStart, e);
           return await fetchOpenMeteoDailyRange(lat, lng, fallbackStart, end, false);
         }
+        console.warn('Lluvia/ET0: histórico no disponible y forecast no cubre el rango', year, e);
+        return emptyDailyRange(e && e.message ? String(e.message) : 'Histórico no disponible');
       }
       throw e;
     }
@@ -207,6 +226,10 @@
       var rainCurr = aggregateDailyByMonth(dailyCurr.time, dailyCurr.precipitation_sum, currYear);
       var et0Prev = aggregateDailyByMonth(dailyPrev.time, dailyPrev.et0_fao_evapotranspiration, prevYear);
       var et0Curr = aggregateDailyByMonth(dailyCurr.time, dailyCurr.et0_fao_evapotranspiration, currYear);
+      var hasRainPrev = hasAnyMonthValue(rainPrev);
+      var hasRainCurr = hasAnyMonthValue(rainCurr);
+      var hasEt0Prev = hasAnyMonthValue(et0Prev);
+      var hasEt0Curr = hasAnyMonthValue(et0Curr);
 
       var p = getProject();
       var fetchedAt = new Date().toISOString();
@@ -218,7 +241,9 @@
         currentYear: currYear,
         monthsPrev: rainPrev,
         monthsCurr: rainCurr,
-        diff: monthDiff(rainCurr, rainPrev)
+        diff: hasRainPrev && hasRainCurr ? monthDiff(rainCurr, rainPrev) : {},
+        partial: !!(dailyPrev.unavailable || dailyCurr.unavailable),
+        notes: dailyPrev.unavailable ? ('Histórico ' + prevYear + ' no disponible: ' + (dailyPrev.reason || 'sin respuesta')) : ''
       };
       p.climateAnalysis.et0 = {
         fetchedAt: fetchedAt,
@@ -228,13 +253,17 @@
         currentYear: currYear,
         monthsPrev: et0Prev,
         monthsCurr: et0Curr,
-        diff: monthDiff(et0Curr, et0Prev),
+        diff: hasEt0Prev && hasEt0Curr ? monthDiff(et0Curr, et0Prev) : {},
+        partial: !!(dailyPrev.unavailable || dailyCurr.unavailable),
+        notes: dailyPrev.unavailable ? ('Histórico ' + prevYear + ' no disponible: ' + (dailyPrev.reason || 'sin respuesta')) : '',
         unit: 'mm'
       };
       p.climateAnalysis.lastUpdated = fetchedAt;
       persistClimateAnalysis();
       renderClimateRainfallTables();
-      if (status) status.textContent = '✅ Actualizado ' + new Date().toLocaleString('es-MX');
+      if (status) {
+        status.textContent = (dailyPrev.unavailable ? '⚠️ Actualizado parcial ' : '✅ Actualizado ') + new Date().toLocaleString('es-MX');
+      }
     } catch (err) {
       console.error(err);
       var msg = err && err.message ? String(err.message) : 'Error al obtener datos';
@@ -327,7 +356,12 @@
       Number(rain.lat).toFixed(5) +
       ', ' +
       Number(rain.lng).toFixed(5) +
-      '. Año anterior completo; año en curso hasta el mes actual.</p>' +
+      '. ' +
+      (rain.partial
+        ? 'Consulta parcial: el proveedor histórico no respondió; se muestra la información disponible.'
+        : 'Año anterior completo; año en curso hasta el mes actual.') +
+      '</p>' +
+      (rain.notes ? '<p style="margin:0 0 10px 0;font-size:12px;color:#b45309;">⚠️ ' + rain.notes + '</p>' : '') +
       '<div style="overflow-x:auto;"><table style="width:100%;min-width:720px;border-collapse:collapse;font-size:13px;">' +
       head +
       '<tbody>' +
@@ -341,7 +375,10 @@
       et0Html =
         '<div style="margin-bottom:8px;">' +
         '<h4 style="margin:0 0 10px 0;color:#b45309;">☀️ ET₀ — Evapotranspiración de referencia (mm/mes, suma diaria)</h4>' +
-        '<p style="margin:0 0 10px 0;font-size:13px;color:#64748b;">Evapotranspiración de referencia (FAO). Misma ventana que la lluvia.</p>' +
+        '<p style="margin:0 0 10px 0;font-size:13px;color:#64748b;">Evapotranspiración de referencia (FAO). ' +
+        (et0.partial ? 'Consulta parcial por disponibilidad del proveedor histórico.' : 'Misma ventana que la lluvia.') +
+        '</p>' +
+        (et0.notes ? '<p style="margin:0 0 10px 0;font-size:12px;color:#b45309;">⚠️ ' + et0.notes + '</p>' : '') +
         '<div style="overflow-x:auto;"><table style="width:100%;min-width:720px;border-collapse:collapse;font-size:13px;">' +
         head +
         '<tbody>' +
