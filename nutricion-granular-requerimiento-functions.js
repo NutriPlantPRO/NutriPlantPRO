@@ -2030,6 +2030,14 @@ function loadGranularRequirements(retryCount = 0) {
         } catch (e) {
           console.warn('⚠️ Error verificando localStorage al cargar:', e);
         }
+      } else if (granularSection && granularSection.lastUI) {
+        requirementData = {
+          cropType: granularSection.lastUI.cropType || '',
+          targetYield: granularSection.lastUI.targetYield,
+          isUserSaved: true,
+          source: 'granular.lastUI'
+        };
+        console.log('✅ Granular: usando lastUI del sistema centralizado como requerimiento base:', requirementData);
       }
     }
     
@@ -2043,6 +2051,14 @@ function loadGranularRequirements(retryCount = 0) {
           if (o && o.granular && o.granular.requirements) {
             requirementData = o.granular.requirements;
             console.log('✅ Datos Granular cargados desde unificado:', { cropType: requirementData.cropType, targetYield: requirementData.targetYield });
+          } else if (o && o.granular && o.granular.lastUI) {
+            requirementData = {
+              cropType: o.granular.lastUI.cropType || '',
+              targetYield: o.granular.lastUI.targetYield,
+              isUserSaved: true,
+              source: 'granular.lastUI.local'
+            };
+            console.log('✅ Granular: usando lastUI local como requerimiento base:', requirementData);
           }
         }
       } catch (e) {
@@ -2113,7 +2129,8 @@ function loadGranularRequirements(retryCount = 0) {
       const hasAdj = !!(req.adjustment && Object.keys(req.adjustment).length > 0);
       const hasEff = !!(req.efficiency && Object.keys(req.efficiency).length > 0);
       const hasExt = !!(req.extractionOverrides && Object.keys(req.extractionOverrides).length > 0);
-      return hasAdj || hasEff || hasExt;
+      const hasCore = !!(req.isUserSaved === true || req.cropType || req.targetYield != null);
+      return hasCore || hasAdj || hasEff || hasExt;
     }
     if (requirementData && !np_hasRichGranularReq(requirementData)) {
       try {
@@ -2239,7 +2256,15 @@ function loadGranularRequirements(retryCount = 0) {
       typeof requirementData.extractionOverrides === 'object' &&
       Object.keys(requirementData.extractionOverrides).length > 0
     );
-    const hasAnySavedValues = hasSavedAdjustment || hasSavedEfficiency || hasSavedExtractionOverrides;
+    const hasSavedCore = !!(
+      requirementData &&
+      (
+        requirementData.isUserSaved === true ||
+        requirementData.cropType ||
+        requirementData.targetYield != null
+      )
+    );
+    const hasAnySavedValues = hasSavedCore || hasSavedAdjustment || hasSavedEfficiency || hasSavedExtractionOverrides;
 
     if (requirementData && hasAnySavedValues) {
       console.log('✅ Aplicando valores guardados de Granular (incluye guardado parcial):', {
@@ -2247,6 +2272,7 @@ function loadGranularRequirements(retryCount = 0) {
         cropTypeActual: currentCropType,
         targetYieldGuardado: requirementData.targetYield,
         targetYieldActual: currentTargetYield,
+        hasCore: hasSavedCore,
         hasAdjustment: hasSavedAdjustment,
         hasEfficiency: hasSavedEfficiency,
         hasExtractionOverrides: hasSavedExtractionOverrides
