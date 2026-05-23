@@ -21173,7 +21173,9 @@ function formatEventTimestampLabel(ts) {
   }
 }
 
-async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType) {
+async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType, options) {
+  options = options || {};
+  var timeoutMs = Number.isFinite(Number(options.timeoutMs)) ? Number(options.timeoutMs) : 28000;
   var base = sourceType === 'archive'
     ? 'https://archive-api.open-meteo.com/v1/archive'
     : 'https://api.open-meteo.com/v1/forecast';
@@ -21184,9 +21186,24 @@ async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType) {
     '&end_date=' + encodeURIComponent(endDate) +
     '&hourly=temperature_2m,relative_humidity_2m,shortwave_radiation,uv_index' +
     '&timezone=auto';
-  var res = await fetch(url);
+  var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  var timer = controller ? setTimeout(function () { try { controller.abort(); } catch (e) {} }, timeoutMs) : null;
+  var res;
+  try {
+    res = await fetch(url, controller ? { signal: controller.signal } : undefined);
+  } catch (fetchErr) {
+    if (fetchErr && fetchErr.name === 'AbortError') {
+      throw new Error('Tiempo de espera agotado consultando clima (' + sourceType + ')');
+    }
+    throw fetchErr;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
   if (!res.ok) throw new Error('Clima ' + sourceType + ' HTTP ' + res.status);
   var data = await res.json();
+  if (data && data.error) {
+    throw new Error(data.reason ? String(data.reason) : ('Clima ' + sourceType + ' rechazó la consulta'));
+  }
   var hourly = data && data.hourly ? data.hourly : null;
   if (!hourly || !Array.isArray(hourly.time)) return [];
   var out = [];
@@ -21225,6 +21242,45 @@ async function fetchOpenMeteoHourly(lat, lng, startDate, endDate, sourceType) {
     });
   }
   return out;
+}
+
+/** Open-Meteo forecast incluye ~92 días hacia atrás; archive a veces cuelga en fechas recientes. */
+var OPEN_METEO_FORECAST_PAST_DAYS = 92;
+
+async function fetchVPDRangeHourlyRows(lat, lng, startDate, endDate) {
+  var today = getTodayIsoDate();
+  var forecastFloor = addDaysIso(today, -OPEN_METEO_FORECAST_PAST_DAYS);
+  var hourlyRows = [];
+
+  if (compareIsoDates(startDate, today) <= 0) {
+    var pastEnd = compareIsoDates(endDate, today) <= 0 ? endDate : today;
+    if (compareIsoDates(startDate, forecastFloor) >= 0) {
+      hourlyRows = hourlyRows.concat(await fetchOpenMeteoHourly(lat, lng, startDate, pastEnd, 'forecast'));
+    } else {
+      var archiveEnd = compareIsoDates(pastEnd, addDaysIso(forecastFloor, -1)) <= 0
+        ? pastEnd
+        : addDaysIso(forecastFloor, -1);
+      if (compareIsoDates(startDate, archiveEnd) <= 0) {
+        try {
+          hourlyRows = hourlyRows.concat(await fetchOpenMeteoHourly(lat, lng, startDate, archiveEnd, 'archive'));
+        } catch (archiveErr) {
+          console.warn('fetchVPDRangeHourlyRows: archive falló, se continúa con forecast reciente', archiveErr);
+        }
+      }
+      if (compareIsoDates(forecastFloor, pastEnd) <= 0) {
+        hourlyRows = hourlyRows.concat(await fetchOpenMeteoHourly(lat, lng, forecastFloor, pastEnd, 'forecast'));
+      }
+    }
+  }
+
+  if (compareIsoDates(endDate, today) > 0) {
+    var futureStart = compareIsoDates(startDate, today) > 0 ? startDate : addDaysIso(today, 1);
+    if (compareIsoDates(futureStart, endDate) <= 0) {
+      hourlyRows = hourlyRows.concat(await fetchOpenMeteoHourly(lat, lng, futureStart, endDate, 'forecast'));
+    }
+  }
+
+  return hourlyRows;
 }
 
 function aggregateVPDStressRows(hourlyRows, granularity) {
@@ -21478,18 +21534,7 @@ async function fetchVPDRangeData(evt) {
   var original = btn ? btn.innerHTML : '';
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Descargando...'; }
   try {
-    var today = getTodayIsoDate();
-    var hourlyRows = [];
-    if (compareIsoDates(startDate, today) <= 0) {
-      var pastEnd = compareIsoDates(endDate, today) <= 0 ? endDate : today;
-      hourlyRows = hourlyRows.concat(await fetchOpenMeteoHourly(location.lat, location.lng, startDate, pastEnd, 'archive'));
-    }
-    if (compareIsoDates(endDate, today) > 0) {
-      var futureStart = compareIsoDates(startDate, today) > 0 ? startDate : addDaysIso(today, 1);
-      if (compareIsoDates(futureStart, endDate) <= 0) {
-        hourlyRows = hourlyRows.concat(await fetchOpenMeteoHourly(location.lat, location.lng, futureStart, endDate, 'forecast'));
-      }
-    }
+    var hourlyRows = await fetchVPDRangeHourlyRows(location.lat, location.lng, startDate, endDate);
     hourlyRows.sort(function(a, b) {
       return String(a.at || '').localeCompare(String(b.at || ''));
     });
@@ -21520,7 +21565,8 @@ async function fetchVPDRangeData(evt) {
     persistVPDAnalysisAfterMutation();
   } catch (e) {
     console.error('fetchVPDRangeData:', e);
-    alert('❌ No se pudo descargar la serie VPD para ese rango.');
+    var errMsg = (e && e.message) ? String(e.message) : 'Error de red';
+    alert('❌ No se pudo descargar la serie VPD para ese rango.\n\n' + errMsg);
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = original || '⬇️ Descargar serie'; }
   }
