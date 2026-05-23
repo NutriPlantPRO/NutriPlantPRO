@@ -902,7 +902,7 @@ class ProjectStorage {
       // - resto de secciones: debounce estándar.
       if (!skippedNoopSave) {
         const sp = typeof window !== 'undefined' ? window.nutriplantSupabaseProjects : null;
-        if ((section === 'vpdAnalysis' || section === 'climateAnalysis' || section === 'fertirriego') && sp && typeof sp.syncProjectNow === 'function') {
+        if ((section === 'vpdAnalysis' || section === 'climateAnalysis' || section === 'fertirriego' || section === 'granular') && sp && typeof sp.syncProjectNow === 'function') {
           try {
             if (typeof sp.cancelScheduledProjectCloudSync === 'function') {
               sp.cancelScheduledProjectCloudSync(projectId);

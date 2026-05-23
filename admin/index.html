@@ -145,6 +145,23 @@
             padding: 20px !important;
             background: #ffffff;
         }
+        .admin-ext-library-block summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 18px;
+            list-style-position: outside;
+        }
+        .admin-ext-library-block .admin-ext-library-body {
+            margin-top: 16px;
+        }
+        .admin-ext-library-item summary {
+            cursor: pointer;
+            padding: 12px 14px;
+            font-weight: 700;
+            color: #0c4a6e;
+            list-style-position: outside;
+        }
         .admin-reports-list {
             margin-bottom: 4px;
         }
@@ -7108,10 +7125,14 @@
                 return {
                     html: `
                     <div style="background:#f0f9ff;padding:20px;border-radius:8px;border-left:4px solid #0284c7;margin-bottom:20px;">
-                        <h3 style="margin:0 0 8px 0;color:#1e293b;font-size:18px;">📚 Biblioteca de curvas de extracción (usuario)</h3>
-                        <p style="margin:0;color:#64748b;font-size:13px;font-style:italic;">
-                            Este usuario aún no tiene curvas guardadas con <strong>Guardar en mi biblioteca</strong> en la herramienta 📊.
-                        </p>
+                        <details class="admin-ext-library-block" style="margin:0;">
+                            <summary>📚 Biblioteca de curvas de extracción (usuario)</summary>
+                            <div class="admin-ext-library-body">
+                                <p style="margin:0;color:#64748b;font-size:13px;font-style:italic;">
+                                    Este usuario aún no tiene curvas guardadas con <strong>Guardar en mi biblioteca</strong> en la herramienta 📊.
+                                </p>
+                            </div>
+                        </details>
                     </div>`,
                     chartJobs: []
                 };
@@ -7125,8 +7146,8 @@
                 var savedTxt = p.savedAt ? new Date(p.savedAt).toLocaleString('es-MX') : '';
                 var inner = adminBuildExtraccionEtapaDetailHtml(p.state, { macroWrapId: macroWrapId, microWrapId: microWrapId, compact: true });
                 return `
-                    <details style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:0;margin-bottom:10px;" ${idx === 0 ? 'open' : ''}>
-                        <summary style="cursor:pointer;padding:12px 14px;font-weight:700;color:#0c4a6e;list-style-position:outside;">
+                    <details class="admin-ext-library-item" style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:0;margin-bottom:10px;">
+                        <summary>
                             ${escapeHtml(p.title)}
                             ${savedTxt ? '<span style="font-weight:400;font-size:12px;color:#64748b;margin-left:8px;">· ' + escapeHtml(savedTxt) + '</span>' : ''}
                         </summary>
@@ -7134,15 +7155,22 @@
                     </details>
                 `;
             }).join('');
+            var countLabel = presetsList.length + ' curva' + (presetsList.length === 1 ? '' : 's');
             return {
                 html: `
                 <div style="background:#f0f9ff;padding:20px;border-radius:8px;border-left:4px solid #0284c7;margin-bottom:20px;">
-                    <h3 style="margin:0 0 8px 0;color:#1e293b;font-size:18px;">📚 Biblioteca de curvas de extracción (usuario)</h3>
-                    <p style="margin:0 0 14px 0;font-size:13px;color:#64748b;line-height:1.45;">
-                        Todas las curvas que el usuario guardó en su cuenta con <strong>Mis curvas guardadas</strong> (herramienta 📊). Sobreviven aunque borre un proyecto.
-                        <strong> ${presetsList.length}</strong> curva${presetsList.length === 1 ? '' : 's'} en biblioteca.
-                    </p>
-                    ${cards}
+                    <details class="admin-ext-library-block" style="margin:0;">
+                        <summary>
+                            📚 Biblioteca de curvas de extracción (usuario)
+                            <span style="font-weight:400;font-size:13px;color:#64748b;margin-left:8px;">(${countLabel} — clic para desplegar)</span>
+                        </summary>
+                        <div class="admin-ext-library-body">
+                            <p style="margin:0 0 14px 0;font-size:13px;color:#64748b;line-height:1.45;">
+                                Todas las curvas que el usuario guardó en su cuenta con <strong>Mis curvas guardadas</strong> (herramienta 📊). Sobreviven aunque borre un proyecto.
+                            </p>
+                            ${cards}
+                        </div>
+                    </details>
                 </div>`,
                 chartJobs: chartJobs
             };

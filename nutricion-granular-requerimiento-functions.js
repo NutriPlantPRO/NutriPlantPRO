@@ -1387,6 +1387,8 @@ function saveGranularRequirements(options = {}) {
       extractionOverrides,
       customCrops, // Guardar cultivos personalizados
       timestamp: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       // Marcar que estos son valores guardados del usuario (no precargados)
       isUserSaved: true
     };
@@ -1428,6 +1430,11 @@ function saveGranularRequirements(options = {}) {
       if (unifiedOk) {
         // Mantener estado rápido del selector/rendimiento.
         rememberGranularUIState();
+        try {
+          if (window.nutriplantSupabaseProjects && typeof window.nutriplantSupabaseProjects.flushPendingProjectCloudSync === 'function') {
+            window.nutriplantSupabaseProjects.flushPendingProjectCloudSync();
+          }
+        } catch (e) {}
         return;
       }
     }

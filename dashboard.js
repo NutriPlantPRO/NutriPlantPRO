@@ -7573,6 +7573,8 @@ async function np_refreshCurrentProjectFromCloud(options) {
           if (!forceCloud && localTs && (!cloudTs || cloudTs <= localTs + 1000)) {
             var localFertiReq = localObj && localObj.fertirriego && localObj.fertirriego.requirements;
             var cloudFertiReq = toStore && toStore.fertirriego && toStore.fertirriego.requirements;
+            var localGranularReq = localObj && localObj.granular && localObj.granular.requirements;
+            var cloudGranularReq = toStore && toStore.granular && toStore.granular.requirements;
             var localFertiRich = !!(localFertiReq && (
               (localFertiReq.adjustment && Object.keys(localFertiReq.adjustment).length > 0) ||
               (localFertiReq.efficiency && Object.keys(localFertiReq.efficiency).length > 0) ||
@@ -7583,18 +7585,27 @@ async function np_refreshCurrentProjectFromCloud(options) {
               (cloudFertiReq.efficiency && Object.keys(cloudFertiReq.efficiency).length > 0) ||
               (cloudFertiReq.extractionOverrides && Object.keys(cloudFertiReq.extractionOverrides).length > 0)
             ));
+            var localGranularRich = hasRichGranularReq(localGranularReq);
+            var cloudGranularRich = hasRichGranularReq(cloudGranularReq);
             var localReqTs = localFertiReq && (localFertiReq.timestamp || localFertiReq.savedAt || localFertiReq.lastUpdated)
               ? new Date(localFertiReq.timestamp || localFertiReq.savedAt || localFertiReq.lastUpdated).getTime()
               : 0;
             var cloudReqTs = cloudFertiReq && (cloudFertiReq.timestamp || cloudFertiReq.savedAt || cloudFertiReq.lastUpdated)
               ? new Date(cloudFertiReq.timestamp || cloudFertiReq.savedAt || cloudFertiReq.lastUpdated).getTime()
               : 0;
+            var localGranularReqTs = localGranularReq && (localGranularReq.updated_at || localGranularReq.updatedAt || localGranularReq.timestamp || localGranularReq.savedAt)
+              ? new Date(localGranularReq.updated_at || localGranularReq.updatedAt || localGranularReq.timestamp || localGranularReq.savedAt).getTime()
+              : 0;
+            var cloudGranularReqTs = cloudGranularReq && (cloudGranularReq.updated_at || cloudGranularReq.updatedAt || cloudGranularReq.timestamp || cloudGranularReq.savedAt)
+              ? new Date(cloudGranularReq.updated_at || cloudGranularReq.updatedAt || cloudGranularReq.timestamp || cloudGranularReq.savedAt).getTime()
+              : 0;
             var cloudReqIsNewer = !!(cloudReqTs && (!localReqTs || cloudReqTs > localReqTs + 1000));
-            if (!(cloudReqIsNewer || (cloudFertiRich && !localFertiRich))) {
+            var cloudGranularReqIsNewer = !!(cloudGranularReqTs && (!localGranularReqTs || cloudGranularReqTs > localGranularReqTs + 1000));
+            if (!(cloudReqIsNewer || (cloudFertiRich && !localFertiRich) || cloudGranularReqIsNewer || (cloudGranularRich && !localGranularRich))) {
               console.log('⏭️ Nube omitida: local es más reciente/igual o nube sin timestamp confiable');
               return;
             }
-            console.warn('🛡️ Local-first omitido: Fertirriego cloud más completo/reciente, aplicando hidratación cloud.');
+            console.warn('🛡️ Local-first omitido: Fertirriego/Granular cloud más completo/reciente, aplicando hidratación cloud.');
           }
 
           // Blindaje: si la nube viene "pobre" en granular, preservar lo local "rico".
@@ -7610,6 +7621,33 @@ async function np_refreshCurrentProjectFromCloud(options) {
                 if (hasRichGranularReq(localReq) && !hasRichGranularReq(cloudReq)) {
                   toStore.granular.requirements = localReq;
                   console.warn('🛡️ Cloud refresh: preservando granular.requirements local (cloud incompleto)');
+                } else if (localReq && cloudReq) {
+                  var localGranularReqTs = (localReq.updated_at || localReq.updatedAt || localReq.timestamp || localReq.savedAt)
+                    ? new Date(localReq.updated_at || localReq.updatedAt || localReq.timestamp || localReq.savedAt).getTime()
+                    : 0;
+                  var cloudGranularReqTs = (cloudReq.updated_at || cloudReq.updatedAt || cloudReq.timestamp || cloudReq.savedAt)
+                    ? new Date(cloudReq.updated_at || cloudReq.updatedAt || cloudReq.timestamp || cloudReq.savedAt).getTime()
+                    : 0;
+                  if (cloudGranularReqTs > localGranularReqTs + 1000) {
+                    if (!toStore.granular.requirements) toStore.granular.requirements = { ...cloudReq };
+                    else {
+                      toStore.granular.requirements.cropType = cloudReq.cropType != null ? cloudReq.cropType : toStore.granular.requirements.cropType;
+                      toStore.granular.requirements.targetYield = cloudReq.targetYield != null ? cloudReq.targetYield : toStore.granular.requirements.targetYield;
+                      if (cloudReq.adjustment) toStore.granular.requirements.adjustment = cloudReq.adjustment;
+                      if (cloudReq.efficiency) toStore.granular.requirements.efficiency = cloudReq.efficiency;
+                      if (cloudReq.extractionOverrides) toStore.granular.requirements.extractionOverrides = cloudReq.extractionOverrides;
+                      toStore.granular.requirements.updated_at = cloudReq.updated_at || cloudReq.updatedAt || cloudReq.timestamp;
+                    }
+                    if (cloudGranular.lastUI) toStore.granular.lastUI = cloudGranular.lastUI;
+                    console.warn('🛡️ Cloud refresh: aplicando granular.requirements más reciente de nube (incl. rendimiento objetivo)');
+                  } else if (localGranularReqTs > cloudGranularReqTs + 1000) {
+                    if (!toStore.granular.requirements) toStore.granular.requirements = { ...localReq };
+                    else {
+                      toStore.granular.requirements.cropType = localReq.cropType != null ? localReq.cropType : toStore.granular.requirements.cropType;
+                      toStore.granular.requirements.targetYield = localReq.targetYield != null ? localReq.targetYield : toStore.granular.requirements.targetYield;
+                    }
+                    if (localGranular.lastUI) toStore.granular.lastUI = localGranular.lastUI;
+                  }
                 }
 
                 const localProgram = localGranular.program;
