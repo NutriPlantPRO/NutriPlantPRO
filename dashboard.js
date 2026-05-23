@@ -16875,9 +16875,9 @@ function createExtraccionEtapaSectionHTML(chartImages) {
   if (!state) {
     return `
     <div class="section">
-      <h2 class="section-title">📊 Distribución nutrimental por etapa</h2>
+      <h2 class="section-title">📊 Extracción nutrimental por etapa (%)</h2>
       <div class="report-note">
-        No hay datos guardados para este proyecto. Configura la herramienta <strong>Distribución nutrimental por etapa (%)</strong> desde el botón 📊 del panel (con el proyecto activo) y vuelve a generar el reporte.
+        No hay datos guardados para este proyecto. Configura la herramienta <strong>Extracción nutrimental por etapa (%)</strong> desde el botón 📊 del panel (con el proyecto activo) y vuelve a generar el reporte.
       </div>
     </div>`;
   }
@@ -16924,7 +16924,7 @@ function createExtraccionEtapaSectionHTML(chartImages) {
 
   return `
     <div class="section">
-      <h2 class="section-title">📊 Distribución nutrimental por etapa</h2>
+      <h2 class="section-title">📊 Extracción nutrimental por etapa (%)</h2>
       <p class="report-note" style="margin-top:0;">
         Datos del proyecto activo: extracción total (kg/ha), reparto % por etapa fenológica y curvas de kg/ha extraídos. Los cálculos son una guía y deben validarse en campo.
       </p>

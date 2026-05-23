@@ -1749,7 +1749,7 @@ function fertiStageSlotLabelFromProgram(program, index0) {
 }
 
 function getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, opts) {
-  const includeWater = opts && opts.includeWater;
+  const includeWater = opts === true || (opts && opts.includeWater);
   const weeks = Array.isArray(program && program.weeks) ? program.weeks : [];
   const waterArr = fertiNormalizeWaterM3haFromProgram(program);
   const week = weeks[stageIndex];
@@ -1760,6 +1760,147 @@ function getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, opts
     kg = fertiMergeKg(kg, getFertiWaterKgElemental(kg.N_NO3, kg.N_NH4, waterOx));
   }
   return computeFertiIonicSummaryFromKg(kg, m3ha, week);
+}
+
+var FERTI_REPORT_INSIGHTS_COMPACT_THRESHOLD = 7;
+var FERTI_REPORT_PIVOT_CHUNK_SIZE = 12;
+
+var FERTI_MACRO_PIVOT_ROWS = [
+  { label: 'N-NO₃⁻', key: 'N_NO3' },
+  { label: 'P-H₂PO₄⁻', key: 'P' },
+  { label: 'S-SO₄²⁻', key: 'SO4' },
+  { label: 'Cl⁻', key: 'Cl' },
+  { label: 'K⁺', key: 'K' },
+  { label: 'Ca²⁺', key: 'Ca' },
+  { label: 'Mg²⁺', key: 'Mg' },
+  { label: 'N-NH₄⁺', key: 'N_NH4' }
+];
+
+function fertiEscapeInsightsLabel(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function fertiGetStageColLabelForPivot(program, stageIndex) {
+  const week = program.weeks[stageIndex];
+  const slot = fertiStageSlotLabelFromProgram(program, stageIndex);
+  const name = week && (week.stage || week.label);
+  if (name) return slot + ' · ' + String(name);
+  return slot;
+}
+
+function fertiChunkStageIndexes(stageIndexes, chunkSize) {
+  const chunks = [];
+  for (let i = 0; i < stageIndexes.length; i += chunkSize) {
+    chunks.push(stageIndexes.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+function fertiCollectStageSummariesForReport(program, waterOx, stageIndexes, includeWater) {
+  return stageIndexes.map(function (i) {
+    return getFertiStageIonicSummaryFromProgram(program, i, waterOx, { includeWater: !!includeWater });
+  });
+}
+
+function buildFertiInsightsPivotTableReport(opts) {
+  const title = opts.title || '';
+  const unit = opts.unit || '';
+  const decimals = opts.decimals != null ? opts.decimals : 1;
+  const stageIndexes = opts.stageIndexes || [];
+  const summaries = opts.summaries || [];
+  const waterArr = opts.waterArr || [];
+  const rowDefs = opts.rowDefs || [];
+  const partSuffix = opts.partSuffix ? ' ' + opts.partSuffix : '';
+  const thStage = stageIndexes.map(function (i) {
+    const lbl = fertiGetStageColLabelForPivot(opts.program, i);
+    return '<th title="' + fertiEscapeInsightsLabel(lbl) + '">' + fertiEscapeInsightsLabel(lbl) + '</th>';
+  }).join('');
+  const m3Row = '<tr><td class="report-ferti-stage-cell">Lámina (m³/ha)</td>' +
+    stageIndexes.map(function (i) {
+      return '<td class="report-ferti-stage-num">' + fertiNum(waterArr[i], 2) + '</td>';
+    }).join('') + '</tr>';
+  const body = rowDefs.map(function (rd) {
+    const cells = stageIndexes.map(function (si, ci) {
+      const s = summaries[ci];
+      let v = s && rd.pick ? rd.pick(s) : null;
+      if (v == null || isNaN(v)) return '<td class="report-ferti-stage-num">—</td>';
+      return '<td class="report-ferti-stage-num">' + fertiNum(v, decimals) + '</td>';
+    }).join('');
+    return '<tr><td class="report-ferti-stage-cell">' + rd.label + '</td>' + cells + '</tr>';
+  }).join('');
+  return (
+    '<div class="report-block" style="margin-bottom:10px;padding:10px 12px;">' +
+    '<div class="report-block-title">' + title + partSuffix + (unit ? ' (' + unit + ')' : '') + '</div>' +
+    '<div class="report-table-wrap report-pdf-compact-table">' +
+    '<table class="report-app-table"><thead><tr><th>Nutriente</th>' + thStage + '</tr></thead>' +
+    '<tbody>' + m3Row + body + '</tbody></table></div></div>'
+  );
+}
+
+function buildFertiChartsInsightsCompactHtmlForReport(program, waterOx, stageIndexes, waterArr) {
+  const chunks = fertiChunkStageIndexes(stageIndexes, FERTI_REPORT_PIVOT_CHUNK_SIZE);
+  const ppmRows = FERTI_MACRO_PIVOT_ROWS.map(function (r) {
+    return { label: r.label, pick: function (s) { return s.ppm && s.ppm[r.key]; } };
+  });
+  const meqRows = FERTI_MACRO_PIVOT_ROWS.map(function (r) {
+    return { label: r.label, pick: function (s) { return s.meq && s.meq[r.key]; } };
+  });
+  const pctRows = FERTI_MACRO_PIVOT_ROWS.map(function (r) {
+    return { label: r.label, pick: function (s) { return s.pct && s.pct[r.key]; } };
+  });
+  const microRows = FERTI_MICRO_INSIGHT_NUTRIENTS.map(function (n) {
+    return { label: n, pick: function (s) { return s.ppm && s.ppm[n]; } };
+  });
+  let html = '';
+  chunks.forEach(function (chunk, chunkIdx) {
+    const summaries = fertiCollectStageSummariesForReport(program, waterOx, chunk, true);
+    const partSuffix = chunks.length > 1 ? '(parte ' + (chunkIdx + 1) + '/' + chunks.length + ')' : '';
+    html += buildFertiInsightsPivotTableReport({
+      title: 'Macro · ppm',
+      unit: 'fertilizante + agua',
+      decimals: 1,
+      program: program,
+      stageIndexes: chunk,
+      summaries: summaries,
+      waterArr: waterArr,
+      rowDefs: ppmRows,
+      partSuffix: partSuffix
+    });
+    html += buildFertiInsightsPivotTableReport({
+      title: 'Macro · meq/L',
+      unit: 'fertilizante + agua',
+      decimals: 2,
+      program: program,
+      stageIndexes: chunk,
+      summaries: summaries,
+      waterArr: waterArr,
+      rowDefs: meqRows,
+      partSuffix: partSuffix
+    });
+    html += buildFertiInsightsPivotTableReport({
+      title: 'Macro · % grupo',
+      unit: 'fertilizante + agua',
+      decimals: 1,
+      program: program,
+      stageIndexes: chunk,
+      summaries: summaries,
+      waterArr: waterArr,
+      rowDefs: pctRows,
+      partSuffix: partSuffix
+    });
+    html += buildFertiInsightsPivotTableReport({
+      title: 'Micro · ppm',
+      unit: 'fertilizante + agua',
+      decimals: 2,
+      program: program,
+      stageIndexes: chunk,
+      summaries: summaries,
+      waterArr: waterArr,
+      rowDefs: microRows,
+      partSuffix: partSuffix
+    });
+  });
+  return html;
 }
 
 function renderFertiMacroIonicTableHtmlForReport(summary) {
@@ -1797,8 +1938,8 @@ function buildFertiStageInsightsBlockForReport(program, waterOx, stageIndex, m3h
   const week = program.weeks[stageIndex];
   const slotLabel = fertiStageSlotLabelFromProgram(program, stageIndex);
   const stageName = String((week && (week.stage || week.label)) || 'Etapa').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const summaryFert = getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, false);
-  const summaryWithWater = getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, true);
+  const summaryFert = getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, { includeWater: false });
+  const summaryWithWater = getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, { includeWater: true });
   return `
     <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px dashed #cbd5e1;">
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:10px;">
@@ -1860,16 +2001,26 @@ function buildFertiChartsInsightsHtmlForReport(program, waterOx, opts) {
   const waterSummary = stageIndexes.map(i =>
     `${fertiStageSlotLabelFromProgram(program, i)}: <strong>${fertiNum(waterArr[i], 2)} m³/ha</strong>`
   ).join(' · ');
-  const stageBlocks = stageIndexes.map(i =>
-    buildFertiStageInsightsBlockForReport(program, waterOx, i, waterArr[i])
-  ).join('');
+  const useCompact = stageIndexes.length >= FERTI_REPORT_INSIGHTS_COMPACT_THRESHOLD;
+  const stageBlocks = useCompact
+    ? buildFertiChartsInsightsCompactHtmlForReport(program, waterOx, stageIndexes, waterArr)
+    : stageIndexes.map(i =>
+        buildFertiStageInsightsBlockForReport(program, waterOx, i, waterArr[i])
+      ).join('');
+  const introNote = useCompact
+    ? `<p class="report-note" style="margin-top:0;margin-bottom:12px;">
+        <strong>Vista compacta</strong> (${stageIndexes.length} etapas con lámina): tablas cruzadas por nutriente.
+        Base operativa: <strong>fertilizante + aporte de agua</strong>. Lámina: ${waterSummary}.
+        Los % siguen la misma lógica que Gráficas (triángulos N-P-S y K-Ca-Mg; Cl⁻ y N-NH₄⁺ aparte).
+      </p>`
+    : `<p class="report-note" style="margin-top:0;margin-bottom:12px;">
+        Lámina capturada en Gráficas: ${waterSummary}. Misma lógica que el panel de Gráficas y el admin.
+        El aporte de agua proviene del Programa de nutrición; si está en cero, ambas columnas coinciden.
+      </p>`;
   return `
     <div class="report-block" style="border-color:#5eead4;background:#f0fdfa;">
       <div class="report-block-title">⚗️ Relación ppm · meq/L · % (por lámina de riego)</div>
-      <p class="report-note" style="margin-top:0;margin-bottom:12px;">
-        Lámina capturada en Gráficas: ${waterSummary}. Misma lógica que el panel de Gráficas y el admin.
-        El aporte de agua proviene del Programa de nutrición; si está en cero, ambas columnas coinciden.
-      </p>
+      ${introNote}
       ${stageBlocks}
     </div>`;
 }
@@ -2008,6 +2159,8 @@ function getFertiChartsDataUrlsForReport(program, callback) {
 }
 window.getFertiChartsDataUrlsForReport = getFertiChartsDataUrlsForReport;
 window.buildFertiChartsInsightsHtmlForReport = buildFertiChartsInsightsHtmlForReport;
+window.buildFertiChartsInsightsCompactHtmlForReport = buildFertiChartsInsightsCompactHtmlForReport;
+window.FERTI_REPORT_INSIGHTS_COMPACT_THRESHOLD = FERTI_REPORT_INSIGHTS_COMPACT_THRESHOLD;
 
 function toggleFertiChartsOxideElemental(){
   fertiChartsElementalMode = !fertiChartsElementalMode;

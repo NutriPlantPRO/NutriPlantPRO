@@ -470,6 +470,25 @@
         #connMapModal {
             z-index: 56000 !important;
         }
+        #radarAdminModal {
+            z-index: 57000 !important;
+        }
+        #adminCustomReportModal.modal-overlay {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 56000 !important;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
         .data-viewer-modal-titlebar {
             display: flex;
             flex-wrap: wrap;
@@ -5237,7 +5256,7 @@
     </div>
 
     <!-- Modal: generar reporte admin (solo lectura) -->
-    <div id="adminCustomReportModal" class="modal-overlay" style="display: none; z-index: 56000; align-items: center; justify-content: center; padding: 16px;">
+    <div id="adminCustomReportModal" class="modal-overlay">
         <div style="background:#fff;border-radius:12px;max-width:640px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
             <div style="padding:16px 18px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;">
                 <div>
@@ -5287,7 +5306,7 @@
                     </div>
                     <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('extraccionEtapa')" data-section="extraccionEtapa">
                         <div class="report-section-info">
-                            <div class="report-section-title">📊 Distribución por etapa</div>
+                            <div class="report-section-title">📊 Extracción nutrimental por etapa (%)</div>
                             <div class="report-section-description">Curva guardada en el proyecto: tablas %, kg/ha y gráficas</div>
                         </div>
                     </div>
@@ -7303,6 +7322,94 @@
             return '<table style="width:100%;border-collapse:collapse;margin-top:6px;"><thead><tr><th style="' + th + 'text-align:left;">Nutriente</th><th style="' + th + '">kg/ha</th><th style="' + th + '">ppm</th></tr></thead><tbody>' + rows + '</tbody></table>';
         }
 
+        var ADMIN_FERTI_REPORT_COMPACT_THRESHOLD = 7;
+        var ADMIN_FERTI_PIVOT_CHUNK_SIZE = 12;
+        var ADMIN_FERTI_MACRO_PIVOT_ROWS = [
+            { label: 'N-NO₃⁻', key: 'N_NO3' },
+            { label: 'P-H₂PO₄⁻', key: 'P' },
+            { label: 'S-SO₄²⁻', key: 'SO4' },
+            { label: 'Cl⁻', key: 'Cl' },
+            { label: 'K⁺', key: 'K' },
+            { label: 'Ca²⁺', key: 'Ca' },
+            { label: 'Mg²⁺', key: 'Mg' },
+            { label: 'N-NH₄⁺', key: 'N_NH4' }
+        ];
+
+        function adminFertiGetStageColLabel(program, stageIndex) {
+            var weeks = program.weeks || [];
+            var week = weeks[stageIndex];
+            var slot = adminFertiStageSlotLabel(program.timeUnit === 'mes' ? 'mes' : 'semana', stageIndex);
+            var name = week && (week.stage || week.label);
+            return name ? (slot + ' · ' + name) : slot;
+        }
+
+        function adminFertiChunkStageIndexes(stageIndexes, chunkSize) {
+            var chunks = [];
+            for (var i = 0; i < stageIndexes.length; i += chunkSize) {
+                chunks.push(stageIndexes.slice(i, i + chunkSize));
+            }
+            return chunks;
+        }
+
+        function adminBuildFertiPivotTableHtml(opts) {
+            var th = 'padding:5px 6px;border:1px solid #cbd5e1;background:#e2e8f0;font-size:10px;text-align:center;white-space:nowrap;';
+            var td = 'padding:5px 6px;border:1px solid #e2e8f0;font-size:10px;text-align:right;';
+            var tdL = 'padding:5px 6px;border:1px solid #e2e8f0;font-size:10px;text-align:left;white-space:nowrap;';
+            var stageIndexes = opts.stageIndexes || [];
+            var summaries = opts.summaries || [];
+            var waterArr = opts.waterArr || [];
+            var rowDefs = opts.rowDefs || [];
+            var head = stageIndexes.map(function (i) {
+                return '<th style="' + th + '" title="' + escapeHtml(adminFertiGetStageColLabel(opts.program, i)) + '">' + escapeHtml(adminFertiGetStageColLabel(opts.program, i)) + '</th>';
+            }).join('');
+            var m3Row = '<tr><td style="' + tdL + 'font-weight:600;">Lámina (m³/ha)</td>' + stageIndexes.map(function (i) {
+                return '<td style="' + td + '">' + adminFertiNum(waterArr[i], 2) + '</td>';
+            }).join('') + '</tr>';
+            var body = rowDefs.map(function (rd) {
+                return '<tr><td style="' + tdL + '">' + rd.label + '</td>' + stageIndexes.map(function (si, ci) {
+                    var s = summaries[ci];
+                    var v = s && rd.pick ? rd.pick(s) : null;
+                    if (v == null || isNaN(v)) return '<td style="' + td + '">—</td>';
+                    return '<td style="' + td + '">' + adminFertiNum(v, opts.decimals != null ? opts.decimals : 1) + '</td>';
+                }).join('') + '</tr>';
+            }).join('');
+            return (
+                '<div style="margin-bottom:12px;">' +
+                '<div style="font-weight:600;color:#0f766e;font-size:13px;margin-bottom:6px;">' + escapeHtml(opts.title) + (opts.partSuffix ? ' ' + escapeHtml(opts.partSuffix) : '') + '</div>' +
+                '<div style="overflow-x:auto;border:1px solid #cbd5e1;border-radius:8px;background:#fff;">' +
+                '<table style="width:100%;border-collapse:collapse;min-width:480px;"><thead><tr><th style="' + th + 'text-align:left;">Nutriente</th>' + head + '</tr></thead>' +
+                '<tbody>' + m3Row + body + '</tbody></table></div></div>'
+            );
+        }
+
+        function adminBuildFertiChartsInsightsCompactHtml(program, waterOx, stageIndexes, waterArr) {
+            var chunks = adminFertiChunkStageIndexes(stageIndexes, ADMIN_FERTI_PIVOT_CHUNK_SIZE);
+            var ppmRows = ADMIN_FERTI_MACRO_PIVOT_ROWS.map(function (r) {
+                return { label: r.label, pick: function (s) { return s.ppm && s.ppm[r.key]; } };
+            });
+            var meqRows = ADMIN_FERTI_MACRO_PIVOT_ROWS.map(function (r) {
+                return { label: r.label, pick: function (s) { return s.meq && s.meq[r.key]; } };
+            });
+            var pctRows = ADMIN_FERTI_MACRO_PIVOT_ROWS.map(function (r) {
+                return { label: r.label, pick: function (s) { return s.pct && s.pct[r.key]; } };
+            });
+            var microRows = ADMIN_FERTI_MICRO_NUTRIENTS.map(function (n) {
+                return { label: n, pick: function (s) { return s.ppm && s.ppm[n]; } };
+            });
+            var html = '';
+            chunks.forEach(function (chunk, chunkIdx) {
+                var summaries = chunk.map(function (i) {
+                    return adminGetFertiStageIonicSummary(program.weeks[i], waterArr[i], waterOx, true);
+                });
+                var partSuffix = chunks.length > 1 ? '(parte ' + (chunkIdx + 1) + '/' + chunks.length + ')' : '';
+                html += adminBuildFertiPivotTableHtml({ title: 'Macro · ppm (fertilizante + agua)', program: program, stageIndexes: chunk, summaries: summaries, waterArr: waterArr, rowDefs: ppmRows, decimals: 1, partSuffix: partSuffix });
+                html += adminBuildFertiPivotTableHtml({ title: 'Macro · meq/L (fertilizante + agua)', program: program, stageIndexes: chunk, summaries: summaries, waterArr: waterArr, rowDefs: meqRows, decimals: 2, partSuffix: partSuffix });
+                html += adminBuildFertiPivotTableHtml({ title: 'Macro · % grupo (fertilizante + agua)', program: program, stageIndexes: chunk, summaries: summaries, waterArr: waterArr, rowDefs: pctRows, decimals: 1, partSuffix: partSuffix });
+                html += adminBuildFertiPivotTableHtml({ title: 'Micro · ppm (fertilizante + agua)', program: program, stageIndexes: chunk, summaries: summaries, waterArr: waterArr, rowDefs: microRows, decimals: 2, partSuffix: partSuffix });
+            });
+            return html;
+        }
+
         function adminBuildFertiChartsInsightsHtml(program, waterOx, projectId, stageIndex) {
             var weeks = Array.isArray(program && program.weeks) ? program.weeks : [];
             if (!weeks.length) {
@@ -7310,18 +7417,39 @@
             }
             var timeUnit = program.timeUnit === 'mes' ? 'mes' : 'semana';
             var waterArr = adminFertiNormalizeWaterM3ha(program);
+            var stageIndexes = weeks.map(function (_, i) { return i; }).filter(function (i) { return (waterArr[i] || 0) > 0; });
+            var canCompact = stageIndexes.length >= ADMIN_FERTI_REPORT_COMPACT_THRESHOLD;
             var idx = Math.max(0, Math.min(parseInt(stageIndex, 10) || 0, weeks.length - 1));
+            var safePid = escapeHtml(String(projectId || ''));
+            window._adminFertiInsightsCompact = window._adminFertiInsightsCompact || {};
+            var compactMode = !!window._adminFertiInsightsCompact[projectId];
+            var toggleHtml = canCompact
+                ? '<label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#475569;cursor:pointer;">' +
+                '<input type="checkbox"' + (compactMode ? ' checked' : '') + ' onchange="onAdminFertiInsightsViewToggle(\'' + safePid.replace(/'/g, "\\'") + '\', this.checked)">' +
+                ' Vista compacta (todas las etapas)</label>'
+                : '';
+            if (canCompact && compactMode) {
+                return (
+                    '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;">' +
+                    toggleHtml +
+                    '<span style="font-size:12px;color:#64748b;">' + stageIndexes.length + ' etapas con lámina · base: fertilizante + agua</span>' +
+                    '</div>' +
+                    '<div style="padding:10px 12px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;color:#065f46;font-size:12px;margin-bottom:12px;">' +
+                    'Vista compacta: nutrientes en filas, etapas en columnas (ppm · meq/L · % · micros). Misma lógica que el PDF con programas largos.</div>' +
+                    adminBuildFertiChartsInsightsCompactHtml(program, waterOx, stageIndexes, waterArr)
+                );
+            }
             var week = weeks[idx];
             var m3ha = waterArr[idx] || 0;
             var summaryFert = adminGetFertiStageIonicSummary(week, m3ha, waterOx, false);
             var summaryWithWater = adminGetFertiStageIonicSummary(week, m3ha, waterOx, true);
-            var safePid = escapeHtml(String(projectId || ''));
             var options = weeks.map(function (w, i) {
                 var label = adminFertiStageSlotLabel(timeUnit, i) + ' · ' + (w.stage || w.label || '');
                 return '<option value="' + i + '"' + (i === idx ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
             }).join('');
             var head =
                 '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;">' +
+                (canCompact ? toggleHtml : '') +
                 '<label style="font-size:13px;color:#475569;font-weight:600;">Etapa a analizar:</label>' +
                 '<select onchange="onAdminFertiChartStageSelect(\'' + safePid.replace(/'/g, "\\'") + '\', this.value)" style="flex:1;min-width:220px;max-width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;background:#fff;color:#1e293b;">' +
                 options +
@@ -7368,12 +7496,20 @@
         function renderAdminFertiChartsInsights(projectId, stageIndex) {
             var cache = window._adminFertiInsightsCache && window._adminFertiInsightsCache[projectId];
             if (!cache) return;
+            cache.selectedStage = parseInt(stageIndex, 10) || 0;
             var wrap = document.getElementById('adminFertiChartsInsights_' + adminSafeId(projectId));
             if (!wrap) return;
             wrap.innerHTML = adminBuildFertiChartsInsightsHtml(cache.program, cache.waterOx, projectId, stageIndex);
         }
         window.onAdminFertiChartStageSelect = function (projectId, stageIdx) {
             renderAdminFertiChartsInsights(projectId, parseInt(stageIdx, 10) || 0);
+        };
+        window.onAdminFertiInsightsViewToggle = function (projectId, compact) {
+            window._adminFertiInsightsCompact = window._adminFertiInsightsCompact || {};
+            window._adminFertiInsightsCompact[projectId] = !!compact;
+            var cache = window._adminFertiInsightsCache && window._adminFertiInsightsCache[projectId];
+            var idx = cache && cache.selectedStage != null ? cache.selectedStage : 0;
+            renderAdminFertiChartsInsights(projectId, idx);
         };
 
         function buildRealRequirementOxide(granularRequirements) {
@@ -9182,7 +9318,7 @@
                                 fertigation: 'Fertirriego',
                                 hidroponia: 'Hidroponía',
                                 vpd: 'Clima (VPD)',
-                                extraccionEtapa: 'Distribución por etapa'
+                                extraccionEtapa: 'Extracción nutrimental por etapa (%)'
                             };
                             const sectionsText = sections.length
                                 ? sections.map(s => sectionLabelMap[s] || s).join(', ')
@@ -9263,7 +9399,7 @@
                                             onmouseout="this.style.background='#10b981'; this.style.transform='translateY(0)';">
                                         🗺️ Ver en Mapa
                                     </button>
-                                    <button type="button" onclick="showRadarAdminModal(${JSON.stringify(String(project.id))})"
+                                    <button type="button" onclick="showRadarAdminModal('${String(project.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')"
                                             title="Ver historial de imágenes Radar NDVI/NDMI guardadas en la nube para este proyecto"
                                             style="background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;"
                                             onmouseover="this.style.background='#047857'; this.style.transform='translateY(-1px)';"
@@ -11283,6 +11419,13 @@
             }
             var modal = document.getElementById('adminCustomReportModal');
             if (!modal) return;
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
+            document.querySelectorAll('#adminCustomReportModal .admin-report-section-item').forEach(function (el, idx) {
+                if (idx === 0) el.classList.add('selected');
+                else el.classList.remove('selected');
+            });
             modal.style.display = 'flex';
             updateAdminCustomReportBtn();
         };
@@ -11961,6 +12104,7 @@
 
         function renderRadarAdminModalContent(modal, res, projectId) {
             var esc = escRadarAdminHtml;
+            modal.style.display = 'flex';
             if (!res.ok || !res.j || res.j.ok === false) {
                 var msg = (res.j && (res.j.message || res.j.error)) || ('HTTP ' + res.status);
                 modal.innerHTML =
