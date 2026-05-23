@@ -84,6 +84,7 @@ CALCULADORAS PRO (iconos en barra del dashboard; material educativo NutriPlant �
 - 🪨 Agua en suelo y textura — pestaña Agua: CC y PMP (% volumétrico), profundidad (cm), área (ha), zona radical efectiva (%), humedad actual θ (% vol., opcional). Volumen de suelo (m³) = área_ha × profundidad_cm / 10 (1 ha × 30 cm = 3 000 m³). Capacidad útil (% vol.) = CC − PMP. Agua útil referencia (m³) ≈ volumen_suelo × (CC−PMP)/100 × (zona_radical_%/100). Con θ: déficit hasta CC = CC − θ; lámina (mm) ≈ (déficit/100) × profundidad_cm × 10; lámina (m³) ≈ lámina_mm/1000 × área_ha × 10 000 (la app ajusta por zona radical). Preset textura USDA: CC/PMP ilustrativos. Pestaña Textura: % arena, limo, arcilla → clase USDA.
 - 🧂 Solubilidad e índice salino: solubilidad (g/L, ~20–25 °C, agua relativamente pura) y IS (NaNO₃ = 100). Clases: Alta >500, Media 100–500, Baja <100 g/L. IS alto = mayor estrés osmótico relativo (cuidado en emergencia, solución madre muy concentrada, poco agua disponible); no significa “prohibido”. Nitratos y muchos potásicos muy solubles; yeso y varios fosfatos poco solubles. Antes de mezclar fertilizantes en tanque: revisar solubilidad y compatibilidad (precipitados, salting out K/NO₃ + sulfatos).
 - 💧 Diseño de solución nutritiva (herramienta didáctica global, distinta de la pestaña Hidroponía del proyecto): CE, meq/L, % meq y ppm; triángulos aniónico (NO₃/P/SO₄) y catiónico (K/Ca/Mg) arrastrables; Cl⁻ suma a CE pero no al triángulo N-P-S; N-NH₄⁺ fuera del triángulo K-Ca-Mg. Persistencia local en el navegador (no en proyecto Supabase).
+- 📊 Distribución nutrimental por etapa (%): calculadora global del dashboard (botón 📊). Extracción total kg/ha por nutriente + reparto % por etapa fenológica → kg/ha por etapa y curvas. **Biblioteca personal** «Mis curvas guardadas» (por usuario, con título); **curva activa** guardada en el proyecto activo. Los datos numéricos llegan al chat en el bloque EXTRACCIÓN POR ETAPA; no recibes la imagen de la gráfica pero sí tablas y números para interpretar.
 - Las calculadoras gratis del login/dashboard guardan entradas en localStorage del navegador; no sustituyen datos guardados del proyecto del suscriptor.
 `;
 }
@@ -209,6 +210,95 @@ function computeNutriPlantSoilKCaMgIdealPpmFromCic(cic) {
     ca: r(c * 0.70 * 200.4),
     mg: r(c * 0.13 * 121.5)
   };
+}
+
+function normalizeChatExtraccionEtapaState(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  if (!Array.isArray(raw.nutrients) || !Array.isArray(raw.stages) || !raw.pct || typeof raw.pct !== 'object') return null;
+  const nutrients = raw.nutrients.filter(function (n) {
+    return n && typeof n.id === 'string' && typeof n.label === 'string';
+  }).map(function (n) {
+    return { id: n.id, label: n.label, total: Number(n.total) || 0, optional: !!n.optional };
+  });
+  if (!nutrients.length) return null;
+  const stages = raw.stages.map(function (s, i) {
+    const txt = String(s || '').trim();
+    return txt || ('Etapa ' + (i + 1));
+  });
+  if (!stages.length) return null;
+  const pct = {};
+  nutrients.forEach(function (n) {
+    const arr = Array.isArray(raw.pct[n.id]) ? raw.pct[n.id].slice(0, stages.length) : [];
+    while (arr.length < stages.length) arr.push(0);
+    pct[n.id] = arr.map(function (v) { return Math.round((Number(v) || 0) * 10) / 10; });
+  });
+  return { nutrients: nutrients, stages: stages, pct: pct, updatedAt: Number(raw.updatedAt) || 0 };
+}
+
+function chatExtraccionEtapaKgHa(nutrient, stageIndex, state) {
+  const total = Number(nutrient.total) || 0;
+  const pctArr = (state.pct && state.pct[nutrient.id]) || [];
+  const p = (Number(pctArr[stageIndex]) || 0) / 100;
+  return Math.round(total * p * 100) / 100;
+}
+
+function summarizeChatExtraccionEtapaState(state, label) {
+  if (!state) return '';
+  const lines = [];
+  if (label) lines.push(label);
+  const nutrients = state.nutrients || [];
+  const stages = state.stages || [];
+  const totals = nutrients.map(function (n) {
+    return n.label + ':' + (Number(n.total) || 0);
+  }).join(', ');
+  lines.push('Totales kg/ha (ciclo): ' + totals);
+  stages.forEach(function (st, ri) {
+    const parts = nutrients.map(function (n) {
+      const pctVal = (state.pct[n.id] && state.pct[n.id][ri] != null) ? state.pct[n.id][ri] : 0;
+      const kg = chatExtraccionEtapaKgHa(n, ri, state);
+      return n.label + ' ' + pctVal + '% (' + kg + ' kg/ha)';
+    });
+    lines.push('  · ' + st + ': ' + parts.join('; '));
+  });
+  return lines.join('\n');
+}
+
+function parseChatExtraccionPresetsList(bucket) {
+  if (!bucket || typeof bucket !== 'object') return [];
+  const presetsRaw = Array.isArray(bucket.presets) ? bucket.presets : [];
+  const cleaned = [];
+  presetsRaw.forEach(function (p, i) {
+    if (!p || typeof p.title !== 'string' || typeof p.state !== 'object') return;
+    const st = normalizeChatExtraccionEtapaState(p.state);
+    if (!st) return;
+    cleaned.push({
+      id: typeof p.id === 'string' && p.id ? p.id : ('pex_' + i),
+      title: String(p.title || 'Sin título').slice(0, 120),
+      state: st,
+      savedAt: Number(p.savedAt) || 0
+    });
+  });
+  cleaned.sort(function (a, b) { return String(a.title).localeCompare(String(b.title), 'es'); });
+  return cleaned;
+}
+
+function mergeChatExtraccionPresetBuckets(buckets) {
+  const merged = { version: 1, updatedAt: 0, presets: [] };
+  const seen = {};
+  (buckets || []).forEach(function (bucket) {
+    if (!bucket || typeof bucket !== 'object') return;
+    const ts = Number(bucket.updatedAt) || 0;
+    if (ts > merged.updatedAt) merged.updatedAt = ts;
+    const list = Array.isArray(bucket.presets) ? bucket.presets : [];
+    list.forEach(function (p) {
+      if (!p || typeof p !== 'object') return;
+      const id = typeof p.id === 'string' && p.id ? p.id : '';
+      if (id && seen[id]) return;
+      if (id) seen[id] = true;
+      merged.presets.push(p);
+    });
+  });
+  return merged;
 }
 
 class NutriPlantChat {
@@ -1166,6 +1256,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
     console.log('🤖 Llamando al backend de IA...', imageData ? '(con imagen)' : '');
     // Siempre refrescar contexto al enviar para incluir los valores más recientes (guardados y pantalla actual)
     this.refreshContextSnapshot('call-openai');
+    await this.ensureExtraccionEtapaLibraryCached();
 
     const snapshot = this.contextSnapshot || this.getUnifiedProjectSnapshot();
     const context = this.getProjectContext();
@@ -1181,7 +1272,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 
 CONTEXTO DE CONOCIMIENTO (qué tienes tú vs qué te pasamos):
 - TU CONOCIMIENTO (no hace falta que te lo den): Agronomía, nutrición vegetal, CIC, meq/L, ppm, rangos ideales, antagonismos, fórmulas (óxido/elemental, conversiones), diagnósticos integrados, mejores prácticas. Eso ya lo dominas por tu entrenamiento.
-- LO QUE TE PASAMOS: Solo los DATOS DEL PROYECTO del usuario (suelo, enmiendas, fertirriego, hidroponía, solución nutritiva, VPD, análisis, etc.) en el bloque "DATOS DEL PROYECTO". Con eso + tu conocimiento debes dominar el contexto y sacar de apuros sin que tengan que "darte contexto" de cada pantalla.
+- LO QUE TE PASAMOS: Solo los DATOS DEL PROYECTO del usuario (suelo, enmiendas, fertirriego, hidroponía, solución nutritiva, VPD, curvas de extracción por etapa 📊, análisis, etc.) en el bloque "DATOS DEL PROYECTO". Con eso + tu conocimiento debes dominar el contexto y sacar de apuros sin que tengan que "darte contexto" de cada pantalla.
 - Conclusión: No pidas datos que ya están en el bloque de abajo. Interpreta todo lo que haya (resúmenes, tablas, volcado completo) con tu expertise y responde con acciones concretas.
 
 REGLA DE ORO: El bloque de abajo es como si el usuario te hubiera pegado su pantalla. Tu primer paso mental es LEERLO TODO. Luego responde con datos CONCRETOS, números y pasos que saquen de apuros; evita respuestas genéricas.
@@ -1195,13 +1286,13 @@ ${(() => {
 })()}
 
 IDENTIDAD Y CAPACIDADES:
-- Dominas lógica de NutriPlant: Enmienda, Suelo, Granular, Fertirriego, Hidroponía, Análisis y VPD.
+- Dominas lógica de NutriPlant: Enmienda, Suelo, Granular, Fertirriego, Hidroponía, Análisis, VPD y Distribución nutrimental por etapa (📊 curvas kg/ha y % por etapa fenológica).
 - Diferencias claramente cálculo de plataforma vs criterio técnico general.
 - Tu respuesta debe ser accionable, coherente y trazable.
 
 ARQUITECTURA NUTRIPLANT Y CONTEXTO GLOBAL DEL PROYECTO:
 - Conoces la arquitectura de NutriPlant: módulos (Inicio, Ubicación, Enmienda, Nutrición Granular, Fertirriego, Hidroponía, Análisis, VPD, Reportes), subpestañas de Análisis (Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar/DOP, Fruta/ICC) y cómo se relacionan (p. ej. Suelo→Enmienda, Agua→Fertirriego/Hidroponía, Foliar/Suelo/Fruta→diagnóstico integrado).
-- Los datos que te pasamos son del MISMO proyecto en su totalidad: incluyen TODAS las secciones que el usuario tenga guardadas (Enmienda, Fertirriego, Granular, Hidroponía, Análisis de Suelo, Foliar, Fruta, Agua, Solución Nutritiva, Extracto de Pasta, etc.), aunque el usuario esté en otra pestaña. Por ejemplo: si está en Fertirriego y te pregunta por su análisis foliar o por su suelo, tienes esos datos en el bloque "DATOS DEL PROYECTO" y debes usarlos para responder e interactuar con él.
+- Los datos que te pasamos son del MISMO proyecto en su totalidad: incluyen TODAS las secciones que el usuario tenga guardadas (Enmienda, Fertirriego, Granular, Hidroponía, Análisis de Suelo, Foliar, Fruta, Agua, Solución Nutritiva, Extracto de Pasta, Extracción por etapa 📊, etc.), aunque el usuario esté en otra pestaña. Por ejemplo: si está en Fertirriego y te pregunta por su análisis foliar o por su suelo, tienes esos datos en el bloque "DATOS DEL PROYECTO" y debes usarlos para responder e interactuar con él.
 - Puedes usar la lógica y explicar el funcionamiento de cualquier módulo cuando el usuario pregunte; responde con los datos del bloque del módulo del que hablen.
 - Radar NDVI/NDMI también forma parte del contexto del proyecto cuando exista el bloque "RADAR DEL CULTIVO (NDVI/NDMI)". Si el usuario pregunta por vigor, humedad del dosel, manchas, zonas rojas/amarillas/verdes o "qué significa el NDVI/NDMI", usa ese bloque y cruza con ubicación, riego, suelo, foliar, VPD y recorrido de campo. No atribuyas causa única solo por color.
 
@@ -1261,6 +1352,7 @@ INSTRUCCIONES:
 - Para nutrición vegetal: da recomendaciones técnicas, basadas en ciencia y en el manual; usa términos agronómicos correctos y nivel experto (relaciones, antagonismos, momentos de aplicación, diagnóstico integrado).
 - Sé conciso pero completo; usa formato markdown para mejor legibilidad.
 - GRÁFICAS DE FERTIRRIEGO: Si preguntan si "puedes ver las gráficas" o "las gráficas de fertirriego que tengo abiertas": NO digas que no puedes ver nada. Tienes los DATOS del proyecto (requerimiento nutricional, programa por semanas, cultivo, rendimiento, aportes del programa y del agua). Responde que tienes esos datos y puedes interpretarlos y dar recomendaciones; lo que no recibes es la imagen visual de la gráfica. Invita a que te describan qué ven (p. ej. qué nutriente está por encima o por debajo del requerimiento en qué etapas) o pregunten por un nutriente/mes concreto, y entonces das recomendaciones precisas con los números del contexto.
+- CURVAS 📊 EXTRACCIÓN POR ETAPA: Si preguntan por sus curvas de extracción, distribución % por etapa o kg/ha fenológicos: usa el bloque EXTRACCIÓN NUTRIMENTAL POR ETAPA (biblioteca personal + curva activa del proyecto). Tienes totales, % y kg/ha por etapa; no recibes la imagen de la gráfica pero sí los números para interpretar picos, déficits por etapa y coherencia con el programa de fertirriego/granular.
 - Si el usuario adjunta una imagen, interpreta su contenido (análisis, gráfica, planta, suelo, resultado de laboratorio, etc.) en contexto agronómico y responde en consecuencia usando también los datos del proyecto cuando aplique.
 - IMPORTANTE: cuando venga una imagen adjunta en el mensaje del usuario, asume que SÍ tienes visión habilitada y NUNCA respondas que "no puedes ver imágenes" o "no puedes interpretar adjuntos". En su lugar, describe lo que observas y pide zoom o re-subida solo si la imagen viene borrosa o incompleta.
 - FÓRMULAS Y CÁLCULOS: No uses nunca LaTeX ni código (evita \\frac, \\times, \\text, \\[, \\]). Escribe las fórmulas en texto legible para que el usuario las entienda en el chat: usa el símbolo × para multiplicar, / para dividir, = para igual, y saltos de línea. Ejemplo: "Peso del suelo = 3.000 m³ × 1.100 kg/m³ = 3.300.000 kg". Así se lee directo sin confusión.
@@ -1617,8 +1709,85 @@ ESTILO DE RESPUESTA:
     if (Array.isArray(project.soilAnalyses) && project.soilAnalyses.length) push('analisisSuelo_count', project.soilAnalyses.length);
     if (Array.isArray(project.foliarAnalyses) && project.foliarAnalyses.length) push('analisisFoliar_count', project.foliarAnalyses.length);
     if (Array.isArray(project.frutaAnalyses) && project.frutaAnalyses.length) push('analisisFruta_count', project.frutaAnalyses.length);
+    if (project.calculators && project.calculators.extraccionEtapa) {
+      push('extraccionEtapa_proyecto', project.calculators.extraccionEtapa);
+    }
     const out = lines.join('\n');
     return out.length > maxLen ? out.slice(0, maxLen) + '…' : out;
+  }
+
+  async ensureExtraccionEtapaLibraryCached() {
+    const userId = localStorage.getItem('nutriplant_user_id') || '';
+    if (!userId) {
+      this._extraccionLibraryPresets = [];
+      this._extraccionLibraryUserId = '';
+      return;
+    }
+    if (this._extraccionLibraryUserId === userId && Array.isArray(this._extraccionLibraryPresets)) return;
+    const buckets = [];
+    try {
+      const rawLocal = localStorage.getItem('np_extraccion_etapa_presets_user_' + userId);
+      if (rawLocal) buckets.push(JSON.parse(rawLocal));
+    } catch (_) {}
+    if (typeof window.nutriplantFetchExtraccionEtapaPresetsFromCloud === 'function') {
+      try {
+        const cloud = await window.nutriplantFetchExtraccionEtapaPresetsFromCloud(userId);
+        if (cloud) buckets.push(cloud);
+      } catch (_) {}
+    }
+    this._extraccionLibraryPresets = buckets.length
+      ? parseChatExtraccionPresetsList(mergeChatExtraccionPresetBuckets(buckets))
+      : [];
+    this._extraccionLibraryUserId = userId;
+  }
+
+  getExtraccionEtapaStateFromProject(project, userId, projectId) {
+    function tryNorm(raw) { return normalizeChatExtraccionEtapaState(raw); }
+    if (project && project.calculators && project.calculators.extraccionEtapa) {
+      const fromCalc = tryNorm(project.calculators.extraccionEtapa);
+      if (fromCalc) return fromCalc;
+    }
+    if (userId && projectId) {
+      try {
+        const rawLocal = localStorage.getItem('np_extraccion_etapa_' + userId + '_' + projectId);
+        if (rawLocal) {
+          const fromLocal = tryNorm(JSON.parse(rawLocal));
+          if (fromLocal) return fromLocal;
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  buildExtraccionEtapaChatContext(project, projectId) {
+    const userId = localStorage.getItem('nutriplant_user_id') || '';
+    let block = '--- EXTRACCIÓN NUTRIMENTAL POR ETAPA (📊 calculadora global) ---\n';
+    block += 'Herramienta del dashboard (botón 📊): extracción total kg/ha, reparto % por etapa fenológica, kg/ha por etapa. NO confundir con Requerimiento Nutricional de Fertirriego/Granular (extracción/ton × rendimiento).\n';
+    block += 'Biblioteca personal «Mis curvas guardadas» = curvas con título del usuario (persisten aunque borre proyectos). Curva activa del proyecto = la cargada en 📊 para este expediente (usa en reporte PDF).\n';
+
+    const library = Array.isArray(this._extraccionLibraryPresets) ? this._extraccionLibraryPresets : [];
+    if (library.length) {
+      block += `Biblioteca del usuario (${library.length} curva${library.length === 1 ? '' : 's'}):\n`;
+      library.forEach(function (p, idx) {
+        if (idx >= 12) return;
+        const saved = p.savedAt ? new Date(p.savedAt).toLocaleString('es-MX') : '';
+        block += `\n[Biblioteca · ${p.title}${saved ? ' · ' + saved : ''}]\n`;
+        block += summarizeChatExtraccionEtapaState(p.state, '') + '\n';
+      });
+      if (library.length > 12) block += `\n… y ${library.length - 12} curva(s) más en biblioteca (solo títulos omitidos por espacio).\n`;
+    } else {
+      block += 'Biblioteca del usuario: sin curvas guardadas con «Guardar en mi biblioteca».\n';
+    }
+
+    const projectState = this.getExtraccionEtapaStateFromProject(project, userId, projectId);
+    block += '\nCurva activa en ESTE proyecto:\n';
+    if (projectState) {
+      block += summarizeChatExtraccionEtapaState(projectState, '') + '\n';
+    } else {
+      block += 'Sin curva cargada/guardada en el proyecto activo. El usuario puede elegir una de su biblioteca en 📊.\n';
+    }
+    block += 'Si preguntan por gráficas 📊: tienes los números (totales, % y kg/ha por etapa); no recibes la imagen visual pero puedes interpretar tendencias por etapa con estos datos.\n\n';
+    return block;
   }
 
   getRadarNdviContext(projectId, projectData) {
@@ -2671,6 +2840,10 @@ ESTILO DE RESPUESTA:
         context += 'Subsección Gráficas: aportes vs requerimiento + Macro resumen iónico (% meq: triángulo N-P-S y K-Ca-Mg sin Cl/NH₄; ver MANUAL % meq) y diagrama ternario (fertilizante+agua).\n';
         context += '\n';
       }
+
+      const extCtx = this.buildExtraccionEtapaChatContext(project, projectId);
+      if (extCtx) context += extCtx;
+
       // BLOQUES EN VIVO FERTIRRIEGO (pantalla actual: subsección activa, cultivo, rendimiento, tabla requerimiento)
       if (snapshot.module === 'fertirriego') {
         const liveFerti = this.getLiveFertirriegoBlocks();

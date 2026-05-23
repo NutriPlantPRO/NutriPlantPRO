@@ -3004,6 +3004,43 @@ body {
   text-align: center;
 }
 
+.enmienda-units-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #334155;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border-left: 4px solid #22c55e;
+  border-radius: 0 8px 8px 0;
+}
+.enmienda-units-note strong {
+  color: #14532d;
+}
+.enmienda-units-note table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.enmienda-units-note th,
+.enmienda-units-note td {
+  padding: 4px 6px;
+  border: 1px solid #bbf7d0;
+  text-align: center;
+}
+.enmienda-units-note th {
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
+  font-weight: 600;
+}
+html.embed-login .enmienda-header h2 {
+  display: none;
+}
+html.embed-login body {
+  padding: 12px 14px 16px;
+}
+
 .ranges-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr); /* FIJO: 6 columnas */
@@ -5829,16 +5866,17 @@ body {
   }
 
   .nutrient-conversions-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .nutrient-pm-block-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .nutrient-pm-block-grid--3cols {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .conversion-inputs {

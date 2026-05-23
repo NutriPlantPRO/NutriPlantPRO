@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Extracción nutrimental por etapa — Manual NutriPlant PRO</title>
-  <meta name="description" content="Extracción por tonelada, rendimiento objetivo, eficiencia y distribución por etapa fenológica en NutriPlant (fertirriego y granular).">
+  <meta name="description" content="Extracción nutrimental por etapa: requerimiento en Fertirriego/Granular, herramienta 📊 de curvas kg/ha, biblioteca personal y reporte PDF en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/extraccion-nutrimental-por-etapa.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css">
@@ -13,11 +13,11 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "Extracción nutrimental por etapa",
-  "description": "Extracción por tonelada, rendimiento objetivo, eficiencia y distribución por etapa fenológica en NutriPlant (fertirriego y granular).",
+  "description": "Extracción nutrimental por etapa: requerimiento en Fertirriego/Granular, herramienta 📊 de curvas kg/ha, biblioteca personal y reporte PDF en NutriPlant PRO.",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/extraccion-nutrimental-por-etapa.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
-  "dateModified": "2026-05-21",
+  "dateModified": "2026-05-23",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -58,23 +58,80 @@
     <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
     <h1>Extracción y distribución nutrimental por etapa</h1>
     <h2>Resumen</h2>
-    <p>Antes del programa de fertilización (granular o fertirriego), NutriPlant estima <strong>cuánto nutriente exige el cultivo</strong> según extracción por tonelada y rendimiento objetivo, y opcionalmente <strong>cómo repartirlo</strong> entre etapas fenológicas.</p>
-    <h2>Datos de entrada</h2>
+    <p>En NutriPlant hay <strong>dos niveles</strong> relacionados con la extracción por etapa:</p>
+    <ol>
+      <li><strong>Requerimiento nutricional</strong> (pestañas <a href="programa-fertirriego-etapas.html">Fertirriego</a> y <a href="granular-mezclas.html">Granular</a>) — cuánto nutriente exige el cultivo según extracción por tonelada, rendimiento, ajuste por suelo y eficiencia.</li>
+      <li><strong>Curva fenológica 📊</strong> (herramienta «Distribución nutrimental por etapa») — sobre kg/ha totales ya definidos, reparte <strong>% por etapa</strong> y muestra kg/ha y gráficas de demanda en el ciclo.</li>
+    </ol>
+    <p>El programa de fertilización (semanas/meses, dosis, fertilizantes) vive en Fertirriego/Granular. La herramienta 📊 documenta y visualiza la <strong>curva de extracción</strong>; no calcula dosis ni sustituye el programa.</p>
+
+    <h2>Requerimiento en Fertirriego y Granular</h2>
+    <h3>Datos de entrada</h3>
     <ul>
       <li><strong>Cultivo</strong> — base de extracción kg/ton (referencia NutriPlant, editable).</li>
       <li><strong>Rendimiento objetivo</strong> — ton/ha.</li>
       <li><strong>Ajuste</strong> — kg/ha por nutriente (puede partir de extracción total o de análisis de suelo).</li>
       <li><strong>Eficiencia %</strong> — por nutriente; distinta en granular vs fertirriego (fertirriego suele ser mayor en N y K).</li>
     </ul>
-    <h2>Cálculo en NutriPlant</h2>
+    <h3>Cálculo</h3>
     <div class="mt-formula">Extracción total (kg/ha) = extracción por ton × rendimiento (ton/ha)<br>Requerimiento real (kg/ha) = Ajuste ÷ (Eficiencia / 100)</div>
-    <p>Orden de nutrientes en tablas: <strong>N, P₂O₅, K₂O, CaO, MgO, S, SO₄, Fe, Mn, B, Zn, Cu, Mo, SiO₂</strong>. En fertirriego, si el usuario captura S elemental, la app puede sumarlo a SO₄ con factor de conversión.</p>
-    <h2>Distribución por etapa</h2>
+    <p>Orden habitual en tablas: <strong>N, P₂O₅, K₂O, CaO, MgO, S, SO₄, Fe, Mn, B, Zn, Cu, Mo, SiO₂</strong>. En fertirriego, si el usuario captura S elemental, la app puede sumarlo a SO₄ con factor de conversión.</p>
+    <p>El <strong>programa temporal</strong> (por semana o mes) reparte el requerimiento en aplicaciones concretas — ver <a href="programa-fertirriego-etapas.html">programa de fertirriego</a> y <a href="granular-mezclas.html">granular</a>.</p>
+
+    <h2>Herramienta 📊 Distribución nutrimental por etapa</h2>
+    <p>Calculadora global (<code>extraccion-etapa-free.html</code>): parte de <strong>kg/ha totales por nutriente</strong> (demanda del ciclo) y permite definir <strong>etapas fenológicas</strong> con % de reparto. No pide cultivo ni rendimiento en pantalla; el técnico trae esos totales del requerimiento del proyecto, bibliografía o criterio propio.</p>
+
+    <h3>Dónde abrirla</h3>
     <ul>
-      <li><strong>Proyecto (Fertirriego / Granular)</strong> — el programa temporal reparte el requerimiento en semanas o meses.</li>
-      <li><strong>Herramienta gratis</strong> — «Distribución por etapa» en login: kg/ha totales y % por etapa con gráficas; en dashboard puede sincronizarse con el proyecto.</li>
+      <li><strong>Login (gratis)</strong> — botón 📊 en la pantalla de acceso. Guarda en <strong>localStorage</strong> del navegador; útil para practicar o borradores sin proyecto.</li>
+      <li><strong>Dashboard PRO</strong> — botón 📊 en la barra de calculadoras. El trabajo del día se <strong>autoguarda en el proyecto activo</strong> (nube + respaldo local). Ahí aparece la barra <strong>Mis curvas guardadas</strong>.</li>
     </ul>
-    <p>Los % por etapa son decisión del técnico (curva de demanda del cultivo); la app no impone una curva fija universal.</p>
+
+    <h3>Pasos en la herramienta</h3>
+    <ol>
+      <li><strong>Extracción total (kg/ha)</strong> — captura la demanda acumulada del ciclo por nutriente. Puedes agregar micronutrientes y secundarios además de N, P, K, Ca, Mg.</li>
+      <li><strong>Distribución por etapa (%)</strong> — nombra las etapas (Brotación, Vegetativo, Floración… o texto libre). Por cada nutriente, la <strong>suma de % debe ser 100</strong>. Puedes agregar o quitar etapas según el cultivo.</li>
+      <li><strong>Resultado (kg/ha por etapa)</strong> — la app calcula automáticamente:<br>
+        <span class="mt-formula" style="display:inline-block;margin-top:8px;">kg/ha en etapa = extracción total × (% / 100)</span></li>
+      <li><strong>Gráfica</strong> — curvas de kg/ha por etapa y nutriente (eje X = etapas). Vista separada para macros y micros; se actualiza al editar la tabla.</li>
+    </ol>
+    <p>Los % por etapa son <strong>decisión del técnico</strong> (curva de demanda del cultivo); NutriPlant no impone una curva fija universal.</p>
+
+    <h3>Biblioteca «Mis curvas guardadas» (solo dashboard)</h3>
+    <ul>
+      <li>La biblioteca es <strong>por usuario</strong>, no por proyecto: puedes guardar varias curvas con título (ej. «Aguacate hass · referencia») y reutilizarlas.</li>
+      <li><strong>Guardar en mi biblioteca</strong> — guarda el estado actual (totales, etapas, % y kg/ha) con un título.</li>
+      <li><strong>Elegir curva</strong> — carga una curva guardada en el proyecto abierto (sobrescribe lo que tengas en pantalla).</li>
+      <li><strong>Eliminar seleccionada</strong> — quita la curva de tu biblioteca personal.</li>
+      <li>Sincronización en perfil de usuario (nube). Si borras un proyecto, <strong>las curvas de la biblioteca no se pierden</strong>.</li>
+      <li>La biblioteca <strong>no se reparte sola</strong> entre proyectos: en cada proyecto eliges qué curva cargar desde el desplegable.</li>
+    </ul>
+    <p><strong>Dos capas de datos:</strong> (1) <em>biblioteca personal</em> = plantillas reutilizables; (2) <em>curva activa del proyecto</em> = lo que queda guardado en ese proyecto (autosave). El reporte PDF y el asistente GPT usan la curva del <strong>proyecto activo</strong>, no toda la biblioteca.</p>
+
+    <h3>Flujo recomendado para el técnico</h3>
+    <ol>
+      <li>Calcula o revisa los <strong>kg/ha totales</strong> del ciclo (desde Requerimiento en Fertirriego/Granular, literatura o tu criterio).</li>
+      <li>Abre 📊 en el dashboard del proyecto y captura esos totales.</li>
+      <li>Define etapas fenológicas del cultivo y reparte % según la curva de demanda.</li>
+      <li>Valida la gráfica y la tabla kg/ha por etapa.</li>
+      <li>Si reutilizarás la misma curva en otros campos o cultivos similares, <strong>guárdala en biblioteca</strong> con un título claro.</li>
+      <li>Contrasta la curva con el <strong>programa de fertirriego o granular</strong> del mismo proyecto (referencia cruzada; no hay enlace automático de dosis).</li>
+      <li>Para entregar al cliente, incluye la sección <strong>Distribución por etapa</strong> en el reporte PDF del proyecto.</li>
+    </ol>
+
+    <h3>Reporte PDF y asistente</h3>
+    <ul>
+      <li><strong>Reporte PDF</strong> — sección «📊 Distribución por etapa»: tablas y gráficas de la curva <strong>cargada en ese proyecto</strong> (activar en el modal de reporte).</li>
+      <li><strong>Asistente GPT</strong> — recibe totales, % y kg/ha por etapa de la curva del proyecto y, si existen, las curvas de tu biblioteca; puede interpretar picos y coherencia con el programa, pero no ve la imagen de la gráfica.</li>
+    </ul>
+
+    <h3>Qué no hace esta herramienta</h3>
+    <ul>
+      <li>No sustituye el <strong>programa de fertilización</strong> (semanas, meses, kg/ha de producto).</li>
+      <li>No calcula <strong>dosis de fertilizantes</strong> ni mezclas.</li>
+      <li>No sincroniza sola % con Fertirriego/Granular: es documentación y guía de demanda fenológica.</li>
+    </ul>
+
     <h2>Límites</h2>
     <div class="mt-warn">Las extracciones por cultivo son <strong>referenciales</strong>: cambian por variedad, manejo, clima y rendimiento real. El requerimiento calculado es punto de partida, no dosis obligatoria.</div>
     <nav class="mt-chapter-nav"><a href="programa-fertirriego-etapas.html">Programa fertirriego →</a><a href="granular-mezclas.html">Granular →</a><a href="../index.html">Índice</a></nav>

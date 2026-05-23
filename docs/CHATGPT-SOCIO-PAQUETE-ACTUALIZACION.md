@@ -20,9 +20,9 @@ Sube el repo (o deploy manual) para que existan en producción:
 
 En ChatGPT → tu GPT → **Configure → Knowledge → Upload**:
 
-1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`
+1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← incluye 📊 biblioteca «Mis curvas guardadas» (2026-05-23)
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web **v2026.05.5** (**22 capítulos**, pilares A–H; capítulo `flujo-nutriplant-pro`; re-subir tras cada tanda)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web **v2026.05.6** (**22 capítulos**; capítulo extracción 📊 ampliado: biblioteca, curva por proyecto, PDF; re-subir tras cada tanda)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` ← posts LinkedIn/IG; **§8 con 24 posts empresa** (añade filas si publicas nuevos)
 
 *(Opcional: borra knowledge viejo duplicado si tenías notas sueltas.)*
@@ -85,7 +85,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 | Capítulo | URL |
 |----------|-----|
 | Índice | https://nutriplantpro.com/manual-tecnico/ |
-| Flujo plataforma (Pilar H) | https://nutriplantpro.com/manual-tecnico/capitulos/flujo-nutriplant-pro.html |
+| Flujo plataforma (Pilar 1) | https://nutriplantpro.com/manual-tecnico/capitulos/flujo-nutriplant-pro.html |
 | Suelo kg/ha | https://nutriplantpro.com/manual-tecnico/capitulos/analisis-suelo-fertilidad-kgha.html |
 | % meq | https://nutriplantpro.com/manual-tecnico/capitulos/porcentaje-meq-aniones-cationes.html |
 | Enmiendas CIC | https://nutriplantpro.com/manual-tecnico/capitulos/enmiendas-balance-cic.html |

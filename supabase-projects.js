@@ -1014,6 +1014,41 @@
       } catch (e) { console.warn('⚠️ syncUserCustomHydroMaterials:', e); }
     },
 
+    /** Biblioteca de curvas extracción/etapa del usuario (profiles.extraccion_etapa_presets) */
+    fetchUserExtraccionEtapaPresets: async function(userId) {
+      if (!userId || !UUID_REGEX.test(String(userId))) return null;
+      const client = getClient();
+      if (!client) return null;
+      try {
+        const { data, error } = await client.from('profiles').select('extraccion_etapa_presets').eq('id', userId).single();
+        if (error) {
+          if (error.code !== 'PGRST116') console.warn('⚠️ Supabase fetch extraccion_etapa_presets:', error.message);
+          return null;
+        }
+        return data && data.extraccion_etapa_presets && typeof data.extraccion_etapa_presets === 'object'
+          ? data.extraccion_etapa_presets
+          : null;
+      } catch (e) { return null; }
+    },
+
+    /** Sincronizar biblioteca de curvas extracción/etapa a Supabase (profiles.extraccion_etapa_presets) */
+    syncUserExtraccionEtapaPresets: async function(userId, presetsBucket) {
+      if (!userId || !UUID_REGEX.test(String(userId))) return;
+      const client = getClient();
+      if (!client) return;
+      try {
+        const payload = presetsBucket && typeof presetsBucket === 'object'
+          ? presetsBucket
+          : { version: 1, presets: [], updatedAt: Date.now() };
+        const { error } = await client.from('profiles').update({
+          extraccion_etapa_presets: payload,
+          updated_at: new Date().toISOString()
+        }).eq('id', userId);
+        if (error) console.warn('⚠️ Supabase sync extraccion_etapa_presets:', error.message);
+        else console.log('☁️ Biblioteca extracción/etapa sincronizada a la nube');
+      } catch (e) { console.warn('⚠️ syncUserExtraccionEtapaPresets:', e); }
+    },
+
     /** Obtener bloque de notas del usuario desde Supabase (profiles.user_notes). Requiere columna user_notes (text) en profiles. */
     fetchUserNotes: async function(userId) {
       if (!userId || !UUID_REGEX.test(String(userId))) return null;
@@ -1266,6 +1301,21 @@
       return window.nutriplantSupabaseProjects.syncUserNotes(userId, htmlContent);
     }
     return Promise.resolve();
+  };
+
+  /** Obtener biblioteca de curvas extracción/etapa desde la nube (por usuario) */
+  window.nutriplantFetchExtraccionEtapaPresetsFromCloud = function(userId) {
+    if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.fetchUserExtraccionEtapaPresets) {
+      return window.nutriplantSupabaseProjects.fetchUserExtraccionEtapaPresets(userId);
+    }
+    return Promise.resolve(null);
+  };
+
+  /** Sincronizar biblioteca de curvas extracción/etapa a la nube (por usuario) */
+  window.nutriplantSyncExtraccionEtapaPresetsToCloud = function(userId, presetsBucket) {
+    if (window.nutriplantSupabaseProjects && window.nutriplantSupabaseProjects.syncUserExtraccionEtapaPresets) {
+      window.nutriplantSupabaseProjects.syncUserExtraccionEtapaPresets(userId, presetsBucket);
+    }
   };
 
   /** Obtener bloque de notas del usuario desde la nube (profiles.user_notes). Requiere columna user_notes en profiles. */

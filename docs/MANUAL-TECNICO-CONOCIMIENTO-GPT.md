@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.05.5 · **22 capítulos** publicados (pilares A–H).  
+**Versión manual web:** v2026.05.7 · **22 capítulos** publicados (pilar **1** + pilares A–G).  
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-05-22 · **v2026.05.5**
+**Versión Knowledge:** 2026-05-23 · **v2026.05.6**
 
 ---
 
@@ -21,7 +21,7 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | Concepto | Qué es |
 |----------|--------|
 | Manual técnico (web) | Metodología pública, capítulos con URL |
-| Pilar H flujo | Entrada «¿por dónde empiezo?» → `flujo-nutriplant-pro` |
+| Pilar 1 flujo | Entrada «¿por dónde empiezo?» → `flujo-nutriplant-pro` |
 | Autoría (`autoria.html`) | Plataforma NutriPlant + referente Jesús; ≠ modal «Nosotros» en login |
 | Pilar G redes | Editorial y canales; ver `publicaciones-redes-sociales` + Knowledge PUBLICACIONES |
 | `project_analyses` | Datos reales del suscriptor en nube (privado, API) |
@@ -33,7 +33,7 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | Recurso | URL |
 |---------|-----|
 | Índice manual | https://nutriplantpro.com/manual-tecnico/index.html |
-| Flujo plataforma (Pilar H) | https://nutriplantpro.com/manual-tecnico/capitulos/flujo-nutriplant-pro.html |
+| Flujo plataforma (Pilar 1) | https://nutriplantpro.com/manual-tecnico/capitulos/flujo-nutriplant-pro.html |
 | Autoría | https://nutriplantpro.com/manual-tecnico/autoria.html |
 | Pilar redes | https://nutriplantpro.com/manual-tecnico/capitulos/publicaciones-redes-sociales.html |
 | llms.txt manual | https://nutriplantpro.com/manual-tecnico/llms.txt |
@@ -75,7 +75,7 @@ URL: `https://nutriplantpro.com/manual-tecnico/capitulos/<slug>.html`
 
 ## 4. Capítulos — resumen técnico (detalle)
 
-### 4.0 Flujo plataforma (Pilar H — leer primero si «¿por dónde empiezo?»)
+### 4.0 Flujo plataforma (Pilar 1 — leer primero si «¿por dónde empiezo?»)
 
 **URL:** …/flujo-nutriplant-pro.html  
 - NutriPlant PRO = plataforma (login herramientas gratis vs dashboard PRO proyecto en nube).  
@@ -117,7 +117,25 @@ Ideales K/Ca/Mg desde CIC (5/70/13 %). P: Bray 40, Olsen 25, Mehlich 40 ppm. Ori
 ### 4.5 Extracción por etapa
 
 **URL:** …/extraccion-nutrimental-por-etapa.html  
-Extracción total = kg/ton × rendimiento. Requerimiento = Ajuste ÷ (Eficiencia/100). Orden nutrientes N, P₂O₅, K₂O, CaO, MgO, S, SO₄, micros. Fertirriego y granular; herramienta gratis «Distribución por etapa».
+
+**Dos niveles (no confundir):**
+
+| Nivel | Dónde | Qué hace |
+|-------|--------|----------|
+| **Requerimiento** | Fertirriego / Granular → pestaña Requerimiento | Extracción total = kg/ton × rendimiento; Requerimiento real = Ajuste ÷ (Eficiencia/100). Orden nutrientes N, P₂O₅, K₂O, CaO, MgO, S, SO₄, micros. |
+| **Curva fenológica 📊** | Herramienta «Distribución nutrimental por etapa» (`extraccion-etapa-free.html`) | Sobre **kg/ha totales** ya definidos, reparte **% por etapa** → kg/ha por etapa + gráficas. No pide cultivo/rendimiento en pantalla. |
+
+**Herramienta 📊 — pasos:** (1) Extracción total kg/ha por nutriente. (2) % por etapa (suma 100 %/nutriente; etapas editables). (3) Resultado kg/ha etapa = total × (%/100). (4) Gráfica macros/micros.
+
+**Dónde abrirla:** Login (gratis, solo localStorage) · Dashboard botón 📊 (autosave en **proyecto activo** + barra **Mis curvas guardadas**).
+
+**Biblioteca personal (solo dashboard):** curvas con título guardadas **por usuario** (Supabase perfil + LS `np_extraccion_etapa_presets_user_{userId}`). Guardar / elegir / eliminar. **No se pierden** al borrar un proyecto. **No se reparten solas** entre proyectos: en cada proyecto cargas la curva que quieras.
+
+**Dos capas:** biblioteca = plantillas reutilizables · curva activa del proyecto = `calculators.extraccionEtapa` (+ LS `np_extraccion_etapa_{userId}_{projectId}`). Reporte PDF y chat app usan la curva **del proyecto**, no toda la biblioteca.
+
+**Qué NO hace 📊:** no calcula dosis ni fertilizantes; no sustituye programa semanal/mensual de Fertirriego/Granular; no sincroniza sola con el programa.
+
+Los % por etapa son decisión del técnico; la app no impone curva universal fija.
 
 ### 4.6 Fertirriego programa
 
@@ -146,6 +164,8 @@ Extracción total = kg/ton × rendimiento. Requerimiento = Ajuste ÷ (Eficiencia
 ### 4.11 VPD, NDVI y NDMI
 
 **URL:** …/vpd-deficit-presion-vapor.html · VPD kPa (Tetens / simple / avanzada); lectura satelital multiespectral NDVI (vigor) y NDMI (humedad/canopeo); proyecto + calculadora gratis. Apoyo a decisión, no sustituye recorrido de campo.
+
+**Créditos Radar (NDVI+NDMI juntos, una generación):** superficie del polígono trazado en Ubicación → ≤30 ha = **1** · >30 ha = **2** · >100 ha = **3**. Tope mensual base **20** créditos/cuenta (+ bonus admin). Ver historial / «Ver en mapa» no gasta. Regenerar en el mismo mes sí consume de nuevo según ha. Sincronizar predio a nube para que el área sea correcta.
 
 ### 4.12 Dureza, acidificación y solubilidad (agua)
 
@@ -217,10 +237,10 @@ Canales oficiales; tono técnico; mapa capítulo→post; plantilla LinkedIn. **P
 
 ## 6. Mantenimiento manual
 
-**Versión web v2026.05.5:** 22 capítulos · Pilar H flujo · granular ampliado (requerimiento + programa) · títulos FAQ/VPD alineados · buscador índice · limpieza copy público.
+**Versión web v2026.05.6:** 22 capítulos · capítulo extracción ampliado (herramienta 📊, biblioteca, flujo técnico, PDF) · Pilar H flujo · granular ampliado · buscador índice.
 
 Plan histórico: `docs/MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
-*Alineado con manual-tecnico/ v2026.05.5 en repo*
+*Alineado con manual-tecnico/ v2026.05.7 en repo*

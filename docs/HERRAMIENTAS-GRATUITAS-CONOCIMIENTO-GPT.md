@@ -10,7 +10,7 @@
 - Páginas HTML (`*-free.html`) y modales en **login.html** (sin cuenta) y en **dashboard** (iconos de la barra lateral).
 - Son **material educativo / calculadoras**; no sustituyen el programa nutricional guardado del suscriptor.
 - **Persistencia (2026):** casi todas guardan entradas en **localStorage del navegador** (`nutriplant_free_*_v1`). Al cerrar el modal o la pestaña, al volver en el **mismo navegador** se restauran los valores. **No** van a Supabase ni al proyecto del cliente.
-- **Excepción importante:** *Distribución por etapa* en modo dashboard guarda también en nube por proyecto; en login solo local.
+- **Excepción importante — 📊 Distribución por etapa:** en **login** solo localStorage del navegador. En **dashboard** (`?ctx=dashboard`): (1) **curva activa** autoguardada en el proyecto (nube + LS por proyecto); (2) **biblioteca «Mis curvas guardadas»** por usuario (LS + Supabase perfil), independiente del proyecto.
 
 ---
 
@@ -69,8 +69,21 @@
 
 ### 📊 Distribución por etapa (`extraccion-etapa-free.html`)
 
-- kg/ha totales por nutriente y % repartido por etapas; gráficas.
-- **Login:** solo localStorage. **Dashboard (`?ctx=dashboard`):** local + sincronización con proyecto y plantillas con título.
+**Qué hace:** captura **kg/ha totales** por nutriente (demanda del ciclo) y reparte **% por etapa fenológica** → calcula kg/ha por etapa y muestra **gráficas** (macros / micros). No calcula dosis de fertilizantes.
+
+**Flujo en pantalla:** (1) Extracción total kg/ha · (2) % por etapa (suma 100 % por nutriente; nombres de etapa editables) · (3) Tabla kg/ha por etapa · (4) Gráfica.
+
+**Login (gratis):** botón 📊 en login. Persistencia solo **localStorage** del navegador.
+
+**Dashboard PRO:** botón 📊 en barra de calculadoras (iframe `?ctx=dashboard`).
+- **Curva del proyecto:** autosave en `project.calculators.extraccionEtapa` + LS `np_extraccion_etapa_{userId}_{projectId}` + sync nube.
+- **Biblioteca «Mis curvas guardadas»:** barra con desplegable, título, **Guardar en mi biblioteca**, **Eliminar seleccionada**. Guardado **por usuario** (LS `np_extraccion_etapa_presets_user_{userId}` + Supabase `extraccion_etapa_presets` en perfil). Varias curvas con título; cargar una en el proyecto activo. Si borras un proyecto, la biblioteca **no se pierde**. La biblioteca **no se copia sola** a otros proyectos.
+
+**Relación con Fertirriego/Granular:** el requerimiento (kg/ton × rendimiento, eficiencia) vive en esas pestañas; 📊 documenta la **curva fenológica** sobre kg/ha totales que el técnico trae de ahí, bibliografía o criterio. Referencia cruzada manual; **sin enlace automático** de dosis.
+
+**Reporte PDF (proyecto):** sección «Distribución por etapa» = curva cargada en ese proyecto (no toda la biblioteca).
+
+**Manual público:** https://nutriplantpro.com/manual-tecnico/capitulos/extraccion-nutrimental-por-etapa.html
 
 ### ⚛️ Tabla periódica nutrientes (`tabla-periodica-nutrientes-free.html`)
 

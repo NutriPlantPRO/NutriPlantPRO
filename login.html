@@ -1111,8 +1111,8 @@
 
     @media (max-width: 768px) {
       #nutrientUnitsCalculatorModal .nutrient-conversions-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
       }
     }
 
@@ -2232,7 +2232,7 @@
         <button class="modal-close" onclick="closeVPDCalculator()">×</button>
       </div>
       <div class="modal-body">
-        <iframe id="vpdCalculatorFrame" src="vpd-free.html?v=1764880008" title="Estimador de déficit de presión de vapor"></iframe>
+        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=login&v=1764880009" title="Estimador de déficit de presión de vapor"></iframe>
       </div>
     </div>
   </div>
@@ -2247,7 +2247,7 @@
         <button class="modal-close" onclick="closeAmendmentCalculator()">×</button>
       </div>
       <div class="modal-body">
-        <iframe id="amendmentCalculatorFrame" src="enmienda-free.html" title="Balance de enmiendas por CIC"></iframe>
+        <iframe id="amendmentCalculatorFrame" src="enmienda-free.html?embed=login&v=1764880010" title="Balance de enmiendas por CIC"></iframe>
       </div>
     </div>
   </div>
@@ -2273,7 +2273,7 @@
         <button class="modal-close" onclick="closeFertilizerCompositionCalculator()">×</button>
       </div>
       <div class="modal-body">
-        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html" title="Composición de fertilizantes"></iframe>
+        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260523" title="Composición de fertilizantes"></iframe>
       </div>
     </div>
   </div>
@@ -2299,7 +2299,7 @@
         <button class="modal-close" onclick="closePeriodicTableNutrientsCalculator()">×</button>
       </div>
       <div class="modal-body">
-        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?v=20260522c" title="Tabla Periódica (Nutrientes Esenciales)"></iframe>
+        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?v=20260523" title="Tabla Periódica (Nutrientes Esenciales)"></iframe>
       </div>
     </div>
   </div>

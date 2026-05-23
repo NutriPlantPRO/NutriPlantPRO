@@ -5,6 +5,26 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-05-23 — v2026.05.7 (Pilar flujo = 1, no H)
+
+### Actualizado
+
+- `index.html`, `flujo-nutriplant-pro.html`, `manual-search.js` — **1 · Flujo de la plataforma** (antes H; va primero en el índice, alineado al orden visual)
+- `manual-tecnico-catalog.js`, Knowledge GPT e instrucciones Socio — pilar **1** + pilares A–G
+
+---
+
+## 2026-05-23 — v2026.05.6 (Créditos Radar NDVI/NDMI)
+
+### Actualizado
+
+- `vpd-deficit-presion-vapor.html` — sección **Créditos Radar**: costo por superficie del polígono (≤30 ha = 1 · >30 ha = 2 · >100 ha = 3), tope mensual 20, regenerar vs ver historial
+- `MANUAL-TECNICO-CONOCIMIENTO-GPT.md` §4.11 + versión v2026.05.6
+- `manual-tecnico-catalog.js` — summary capítulo VPD/NDVI
+- `manual-search.js` — keywords créditos Radar
+
+---
+
 ## 2026-05-21 — Fase 3 SEO / GEO (código)
 
 - JSON-LD en 21 capítulos (`Article`; FAQ → `FAQPage`), índice (`CollectionPage` + `hasPart`), autoría (`ProfilePage`)

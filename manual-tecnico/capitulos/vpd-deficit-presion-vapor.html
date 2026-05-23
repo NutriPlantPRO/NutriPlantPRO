@@ -17,7 +17,7 @@
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
-  "dateModified": "2026-05-21",
+  "dateModified": "2026-05-23",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -145,10 +145,36 @@
       No sustituyen diagnóstico por una sola mancha de color.
     </p>
     <div class="mt-warn">
-      Requisito: polígono guardado en <strong>Ubicación</strong>. La imagen queda anclada al contorno del
-      predio al generarla. Hay límite mensual de generaciones por cuenta; el historial permite comparar
-      fechas del mismo proyecto.
+      Requisito: polígono guardado y <strong>sincronizado a la nube</strong> en
+      <strong>Ubicación</strong>. La superficie en hectáreas se calcula al trazar el contorno del predio;
+      esa área define el costo en créditos Radar. La imagen queda anclada al polígono al generarla.
     </div>
+
+    <h2>Créditos Radar (NDVI + NDMI juntos)</h2>
+    <p>
+      Cada <strong>generación</strong> produce las dos capas (<strong>NDVI</strong> y
+      <strong>NDMI</strong>) en una sola operación. El consumo depende de la
+      <strong>superficie trazada del predio</strong>, no del número de capas que consultes después.
+    </p>
+    <table class="mt-table">
+      <thead><tr><th>Superficie del polígono</th><th>Créditos por generación</th></tr></thead>
+      <tbody>
+        <tr><td>Hasta 30 ha (≤ 30 ha)</td><td><strong>1</strong> crédito</td></tr>
+        <tr><td>Más de 30 ha (&gt; 30 ha)</td><td><strong>2</strong> créditos</td></tr>
+        <tr><td>Más de 100 ha (&gt; 100 ha)</td><td><strong>3</strong> créditos</td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li><strong>Tope mensual base:</strong> 20 créditos por cuenta (puede aumentarse con bonus asignado por administración).</li>
+      <li><strong>Primera generación del mes</strong> por proyecto: consume créditos según la tabla anterior.</li>
+      <li><strong>Regenerar</strong> en el mismo mes (forzar una imagen nueva): consume créditos adicionales con la misma regla por superficie.</li>
+      <li><strong>Ver en mapa</strong> o consultar imágenes ya guardadas en el historial: <strong>no</strong> gasta créditos.</li>
+      <li>Si el predio aún no tiene área en la nube, el sistema asume <strong>1 crédito</strong> hasta que guardes y sincronices el polígono.</li>
+    </ul>
+    <p>
+      En el panel Radar de Ubicación verás cuántos créditos cuesta <em>tu</em> predio (por ejemplo:
+      «45,20 ha → 2 créditos por generación») y cuántos te quedan disponibles ese mes.
+    </p>
 
     <h2>En el proyecto</h2>
     <p>

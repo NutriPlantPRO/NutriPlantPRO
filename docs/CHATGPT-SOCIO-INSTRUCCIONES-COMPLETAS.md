@@ -24,7 +24,7 @@ CINCO FUENTES (no mezclar):
 1) Reportes lab suscriptor → project_analyses / project_detail (suelo, solucion_nutritiva, extracto_pasta, agua, foliar, fruta).
 2) Calculadoras gratis → localStorage; HERRAMIENTAS o free_tools_catalog.
 3) Enmiendas proyecto → soilAnalysis en project_detail (≠ soilAnalyses[] reportes Análisis).
-4) MANUAL TÉCNICO PÚBLICO → https://nutriplantpro.com/manual-tecnico/ — **22 capítulos** (pilares **A–H**). Entrada: `flujo-nutriplant-pro` (flujo, módulos, errores comunes). MANUAL-TECNICO o manual_tecnico_catalog. Cita URL capítulo en web/GEO. NO sustituye datos del usuario.
+4) MANUAL TÉCNICO PÚBLICO → https://nutriplantpro.com/manual-tecnico/ — **22 capítulos** (pilar **1** + pilares **A–G**). Entrada: `flujo-nutriplant-pro` (flujo, módulos, errores comunes). MANUAL-TECNICO o manual_tecnico_catalog. Cita URL capítulo en web/GEO. NO sustituye datos del usuario.
 5) REDES / POSTS → Knowledge PUBLICACIONES-REDES (§8 = 24 posts empresa). Flujo con Jesús: cuando publique algo nuevo, pega el enlace del post y trabajad juntos (segunda parte, comentario técnico, carrusel, CTA manual). Si el post NO está en §8: usa el enlace que pegó + tono §3; NO inventes URL. Redactar: PUBLICACIONES + capítulo manual. Persistir en Knowledge: al cerrar, ofrece fila §8 (ID li_*, tema, slug capítulo) para que Jesús la guarde en el repo o re-subida del archivo.
 
 ACCIONES nutriplantAdminQuery:
@@ -35,7 +35,7 @@ ACCIONES nutriplantAdminQuery:
 5 CATÁLOGOS: lab_analyses_catalog (tab_id); free_tools_catalog (tool_id); manual_tecnico_catalog (chapter_id) — manual = fuente pública web
 6 AYUDA: describe_api
 
-MANUAL PÚBLICO (v2026.05.5, **22 cap.**): Pilar H flujo plataforma + pilares A–G. Incluye unidades, % meq, suelo, enmiendas, extracción, fertirriego, granular, hidro, VPD/NDVI/NDMI, dureza/ácido/IS, Mulder/compat, N mineralizable/agua suelo, 6 análisis lab, FAQ, redes. «¿Por dónde empiezo?» → capítulo flujo. Posts: PUBLICACIONES-REDES §8. Cliente → project_analyses.
+MANUAL PÚBLICO (v2026.05.7, **22 cap.**): Pilar 1 flujo plataforma + pilares A–G. Incluye unidades, % meq, suelo, enmiendas, extracción, fertirriego, granular, hidro, VPD/NDVI/NDMI, dureza/ácido/IS, Mulder/compat, N mineralizable/agua suelo, 6 análisis lab, FAQ, redes. «¿Por dónde empiezo?» → capítulo flujo. Posts: PUBLICACIONES-REDES §8. Cliente → project_analyses.
 
 ANÁLISIS LAB (API): ppm, ideales, kg/ha, DOP, ICC. "Último X" → type + latest_only. Flujo → lab_analyses_catalog.
 
@@ -43,7 +43,7 @@ CALCULADORAS GRATIS: login/dashboard; solo ese navegador. Hidro gratis ≠ Hidro
 
 PARAMS: project_name|id; type|report_id|latest_only; q; email; request_id; tool_id|tab_id|chapter_id
 
-IMÁGENES: URLs ~1h; NDVI=vigor, NDMI=humedad.
+IMÁGENES: URLs ~1h; NDVI=vigor, NDMI=humedad. RADAR CRÉDITOS: ≤30 ha=1 · >30 ha=2 · >100 ha=3 por generación (NDVI+NDMI juntos); tope 20/mes base; cap. vpd-deficit-presion-vapor.
 
 PLAN PRO — FICHA apunte: priority + due_at (objetivo entero). SEMÁFORO INTERNO en libreta (chip 🚦 fecha+color): SOLO [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. [[star]]=Destacado, [[warn]]=Importante: NO son semáforo. Para AÑADIR usa append_note/append_due_marker; NUNCA note/body_plain salvo reemplazo total pedido. No vacíes libreta (API bloquea). Tras update revisa semaforos_en_nota_count. plan_pro_item lee tablas (body_blocks_tables).
 

@@ -763,6 +763,25 @@ function sectionTemplate(name) {
                 <input type="number" id="cic-total" step="0.01" value="0.00" class="total-input" readonly>
               </div>
             </div>
+            <div class="enmienda-units-note" role="note">
+              <strong>Unidades:</strong> <span class="notranslate" translate="no">meq/100g</span> y
+              <span class="notranslate" translate="no">cmol⁺/kg</span> son la <strong>misma magnitud</strong> (misma cifra numérica).
+              Captura los cationes del laboratorio en esas unidades; la CIC total suele venir en el reporte o como suma de cationes.
+              <table>
+                <thead>
+                  <tr>
+                    <th>Textura orientativa</th>
+                    <th><span class="notranslate" translate="no">CIC</span> típica<br><span class="notranslate" translate="no">meq/100g</span> o <span class="notranslate" translate="no">cmol⁺/kg</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Arenosa</td><td>~ 3 – 8</td></tr>
+                  <tr><td>Franca</td><td>~ 10 – 20</td></tr>
+                  <tr><td>Arcillosa</td><td>~ 20 – 40+</td></tr>
+                </tbody>
+              </table>
+              Referencia agronómica general. Si tienes análisis de suelo, <strong>usa siempre la CIC del laboratorio</strong>.
+            </div>
             <div class="analysis-grid">
               <div class="analysis-item cation-good">
                 <label class="notranslate" translate="no">K⁺:</label>
@@ -1396,6 +1415,7 @@ function sectionTemplate(name) {
             <li>Fertirriego</li>
             <li>Hidroponía</li>
             <li>Clima (VPD, lluvia, ET₀, tiempo actual)</li>
+            <li>La lista guarda <strong>metadatos</strong> (secciones, fecha, idioma); el PDF se genera al pulsar <strong>Descargar</strong>. Con cuenta en la nube se sincroniza el historial entre dispositivos.</li>
           </ul>
         </div>
       </div>
@@ -1468,7 +1488,7 @@ function sectionTemplate(name) {
           <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Disponibles: —</span>
           <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 420px;">Sincroniza el predio a la nube, luego genera la imagen.</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#64748b;line-height:1.45;padding:6px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.65);border:1px dashed #86efac;">
-            <strong>Tip:</strong> elige la <strong>imagen</strong> en el listado (todas las guardadas del proyecto). Al verla en el mapa se muestra la <strong>fecha de generación</strong> y el periodo Sentinel. La generación puede tardar ~1 min; si falla, prueba <strong>Ver en mapa</strong>. Regenerar intenso gasta crédito extra; máx. 1 generación normal por proyecto y mes.
+            <strong>Tip:</strong> elige la <strong>imagen</strong> en el listado (todas las guardadas del proyecto). Al verla en el mapa se muestra la <strong>fecha de generación</strong> y el periodo Sentinel. La generación puede tardar ~1 min. Créditos por predio según superficie trazada: ≤30 ha = 1 · &gt;30 ha = 2 · &gt;100 ha = 3 (NDVI+NDMI juntos). Tope mensual base: 20 créditos.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI</span>
@@ -8275,6 +8295,19 @@ async function getRadarAccessTokenForReport() {
   return session?.access_token || null;
 }
 
+/** Imagen Radar para el reporte: la seleccionada en Ubicación (persistida) o la más reciente. */
+function getRadarRequestIdForReport() {
+  const sel = document.getElementById('radarSnapshotSelect');
+  if (sel && !sel.disabled && sel.value) {
+    return String(sel.value).trim();
+  }
+  const loc = currentProject && currentProject.location;
+  if (loc && loc.radarSelectedRequestId) {
+    return String(loc.radarSelectedRequestId).trim();
+  }
+  return '';
+}
+
 /** Descarga NDVI/NDMI firmados y los pasa a data URL para incrustar en PDF (evita fallos de impresión por dominios externos). */
 async function fetchRadarImagesDataUrlsForReport() {
   const out = { ndviDataUrl: null, ndmiDataUrl: null, generatedAt: null, error: null };
@@ -8288,22 +8321,40 @@ async function fetchRadarImagesDataUrlsForReport() {
       out.error = 'no_session';
       return out;
     }
+    const requestId = getRadarRequestIdForReport();
+    const body = requestId
+      ? { action: 'view', project_id: String(currentProject.id), request_id: requestId }
+      : { action: 'status', project_id: String(currentProject.id) };
     const res = await fetch(getRadarApiUrlForReport(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ action: 'status', project_id: String(currentProject.id) })
+      body: JSON.stringify(body)
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.latest) {
+    let snap = requestId ? data.snapshot : data.latest;
+    if (requestId && (!res.ok || !snap)) {
+      const fallbackRes = await fetch(getRadarApiUrlForReport(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ action: 'status', project_id: String(currentProject.id) })
+      });
+      const fallbackData = await fallbackRes.json().catch(() => ({}));
+      if (fallbackRes.ok && fallbackData.latest) {
+        snap = fallbackData.latest;
+      } else {
+        return out;
+      }
+    }
+    if (!snap) {
       return out;
     }
     const ndviUrl =
-      data.latest.signed_url ||
-      (data.latest.images && data.latest.images.ndvi && data.latest.images.ndvi.signed_url);
+      snap.signed_url ||
+      (snap.images && snap.images.ndvi && snap.images.ndvi.signed_url);
     const ndmiUrl =
-      data.latest.ndmi_signed_url ||
-      (data.latest.images && data.latest.images.ndmi && data.latest.images.ndmi.signed_url);
-    out.generatedAt = data.latest.created_at || null;
+      snap.ndmi_signed_url ||
+      (snap.images && snap.images.ndmi && snap.images.ndmi.signed_url);
+    out.generatedAt = snap.created_at || null;
 
     async function urlToDataUrl(url) {
       if (!url || typeof url !== 'string') return null;
@@ -8333,31 +8384,47 @@ async function fetchRadarImagesDataUrlsForReport() {
   }
 }
 
-/** Combina gráficas de fertirriego (callback) con imágenes Radar si la sección Ubicación está incluida. */
+/** Combina gráficas de fertirriego, Radar, distribución por etapa, etc. para el PDF. */
 function loadChartImagesForReport(selectedSections, callback) {
   const needFerti =
     selectedSections.indexOf('fertigation') >= 0 &&
     typeof window.getFertiChartsDataUrlsForReport === 'function';
   const needRadar = selectedSections.indexOf('location') >= 0;
+  const needExtraccionEtapa = selectedSections.indexOf('extraccionEtapa') >= 0;
 
-  function merge(fertiCharts, radar) {
-    const out = Object.assign({}, fertiCharts || {});
-    if (radar && typeof radar === 'object' && (radar.ndviDataUrl || radar.ndmiDataUrl)) {
-      out.radar = radar;
+  function finish(out) {
+    if (!needExtraccionEtapa) {
+      callback(out);
+      return;
     }
-    callback(out);
+    try {
+      const state = getExtraccionEtapaStateForReport();
+      getExtraccionEtapaChartsDataUrlsForReport(state, function(imgs) {
+        if (imgs && (imgs.macro || imgs.micro)) out.extraccionEtapa = imgs;
+        callback(out);
+      });
+    } catch (e) {
+      console.warn('loadChartImagesForReport extraccionEtapa:', e);
+      callback(out);
+    }
   }
 
   function afterRadar(fertiCharts) {
+    const out = Object.assign({}, fertiCharts || {});
     if (!needRadar) {
-      merge(fertiCharts, null);
+      finish(out);
       return;
     }
     fetchRadarImagesDataUrlsForReport()
-      .then((radar) => merge(fertiCharts, radar))
+      .then((radar) => {
+        if (radar && typeof radar === 'object' && (radar.ndviDataUrl || radar.ndmiDataUrl)) {
+          out.radar = radar;
+        }
+        finish(out);
+      })
       .catch((e) => {
         console.warn('loadChartImagesForReport radar:', e);
-        merge(fertiCharts, null);
+        finish(out);
       });
   }
 
@@ -8383,31 +8450,11 @@ async function buildReportHtmlSnapshotForShare(report) {
     return rawHtml || '';
   }
   const lang = (report && report.reportLanguage === 'en') ? 'en' : 'es';
-  let chartImages = {};
-  if (selectedSections.indexOf('fertigation') >= 0 && typeof window.getFertiChartsDataUrlsForReport === 'function') {
-    chartImages = await new Promise(function(resolve) {
-      try {
-        const prog = getFertirriegoProgramForReport();
-        window.getFertiChartsDataUrlsForReport(prog, function(imgs) {
-          resolve(imgs || {});
-        });
-      } catch (e) {
-        console.warn('buildReportHtmlSnapshotForShare charts:', e);
-        resolve({});
-      }
+  return new Promise(function(resolve) {
+    loadChartImagesForReport(selectedSections, function(chartImages) {
+      resolve(createReportHTML(selectedSections, chartImages || {}, lang));
     });
-  }
-  if (selectedSections.indexOf('location') >= 0) {
-    try {
-      const radar = await fetchRadarImagesDataUrlsForReport();
-      if (radar && (radar.ndviDataUrl || radar.ndmiDataUrl)) {
-        chartImages = Object.assign({}, chartImages, { radar });
-      }
-    } catch (e) {
-      console.warn('buildReportHtmlSnapshotForShare radar:', e);
-    }
-  }
-  return createReportHTML(selectedSections, chartImages, lang);
+  });
 }
 
 var shareReportViewInFlight = Object.create(null);
@@ -8643,6 +8690,231 @@ window.shareReportView = async function(reportId) {
     setShareViewButtonBusy(rid, false);
   }
 };
+
+const EXTRACTION_ETAPA_MACRO_IDS = { n: true, p: true, k: true, ca: true, mg: true, s: true };
+const EXTRACTION_ETAPA_MICRO_IDS = { fe: true, mn: true, b: true, zn: true, cu: true, mo: true };
+const EXTRACTION_ETAPA_CHART_COLORS = [
+  '#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#0891b2',
+  '#ca8a04', '#db2777', '#0d9488', '#4f46e5', '#64748b',
+  '#059669', '#b45309', '#be185d'
+];
+
+function loadChartJsForReport(callback) {
+  if (typeof window.loadChartJs === 'function') {
+    window.loadChartJs(callback);
+    return;
+  }
+  if (window.Chart) {
+    callback();
+    return;
+  }
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+  s.onload = callback;
+  s.onerror = function() { callback(); };
+  document.head.appendChild(s);
+}
+
+function normalizeExtraccionEtapaState(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  if (!Array.isArray(raw.nutrients) || !Array.isArray(raw.stages) || !raw.pct || typeof raw.pct !== 'object') return null;
+  const nutrients = raw.nutrients.filter(function(n) {
+    return n && typeof n.id === 'string' && typeof n.label === 'string';
+  }).map(function(n) {
+    return {
+      id: n.id,
+      label: n.label,
+      total: Number(n.total) || 0,
+      optional: !!n.optional
+    };
+  });
+  if (!nutrients.length) return null;
+  const stages = raw.stages.map(function(s, i) {
+    const txt = String(s || '').trim();
+    return txt || ('Etapa ' + (i + 1));
+  });
+  if (!stages.length) return null;
+  const pct = {};
+  nutrients.forEach(function(n) {
+    const arr = Array.isArray(raw.pct[n.id]) ? raw.pct[n.id].slice(0, stages.length) : [];
+    while (arr.length < stages.length) arr.push(0);
+    pct[n.id] = arr.map(function(v) { return Math.round((Number(v) || 0) * 10) / 10; });
+  });
+  return { nutrients: nutrients, stages: stages, pct: pct, updatedAt: Number(raw.updatedAt) || 0 };
+}
+
+/** Estado guardado de Distribución nutrimental por etapa (proyecto activo). */
+function getExtraccionEtapaStateForReport() {
+  const pid = currentProject && currentProject.id ? String(currentProject.id) : '';
+  if (!pid) return null;
+
+  function tryNormalize(raw) {
+    return normalizeExtraccionEtapaState(raw);
+  }
+
+  if (window._nutriplantAdminReadOnlyReport) {
+    if (currentProject && currentProject.calculators && currentProject.calculators.extraccionEtapa) {
+      const parsedAdmin = tryNormalize(currentProject.calculators.extraccionEtapa);
+      if (parsedAdmin) return parsedAdmin;
+    }
+    return null;
+  }
+
+  const userId = localStorage.getItem('nutriplant_user_id') || '';
+  const ownerUserId = (currentProject && (currentProject.user_id || currentProject.userId))
+    ? String(currentProject.user_id || currentProject.userId)
+    : userId;
+  try {
+    if (ownerUserId) {
+      const rawLocal = localStorage.getItem('np_extraccion_etapa_' + ownerUserId + '_' + pid);
+      if (rawLocal) {
+        const parsed = tryNormalize(JSON.parse(rawLocal));
+        if (parsed) return parsed;
+      }
+    }
+  } catch (e) {}
+
+  if (currentProject && currentProject.calculators && currentProject.calculators.extraccionEtapa) {
+    const parsed = tryNormalize(currentProject.calculators.extraccionEtapa);
+    if (parsed) return parsed;
+  }
+
+  try {
+    if (window.projectStorage && typeof window.projectStorage.loadProject === 'function') {
+      const loaded = window.projectStorage.loadProject(pid);
+      if (loaded && loaded.calculators && loaded.calculators.extraccionEtapa) {
+        const parsed = tryNormalize(loaded.calculators.extraccionEtapa);
+        if (parsed) return parsed;
+      }
+    }
+  } catch (e) {}
+
+  try {
+    const rawProject = localStorage.getItem('nutriplant_project_' + pid);
+    if (rawProject) {
+      const project = JSON.parse(rawProject);
+      if (project && project.calculators && project.calculators.extraccionEtapa) {
+        const parsed = tryNormalize(project.calculators.extraccionEtapa);
+        if (parsed) return parsed;
+      }
+    }
+  } catch (e) {}
+
+  if (typeof window.nutriplantLoadExtractionStageFromCloud === 'function') {
+    try {
+      const cloud = window.nutriplantLoadExtractionStageFromCloud({ userId: userId, projectId: pid });
+      const parsed = tryNormalize(cloud);
+      if (parsed) return parsed;
+    } catch (e) {}
+  }
+
+  return null;
+}
+
+function extraccionEtapaKgHa(nutrient, stageIndex, state) {
+  const total = Number(nutrient.total) || 0;
+  const pctArr = (state.pct && state.pct[nutrient.id]) || [];
+  const p = (Number(pctArr[stageIndex]) || 0) / 100;
+  return Math.round(total * p * 100) / 100;
+}
+
+function extraccionEtapaSumPct(nutrientId, state) {
+  const arr = (state.pct && state.pct[nutrientId]) || [];
+  return arr.reduce(function(acc, v) { return acc + (Number(v) || 0); }, 0);
+}
+
+function buildExtraccionEtapaChartDatasets(state, group) {
+  const idMap = group === 'macro' ? EXTRACTION_ETAPA_MACRO_IDS : EXTRACTION_ETAPA_MICRO_IDS;
+  const filtered = (state.nutrients || []).filter(function(n) { return idMap[n.id]; });
+  return filtered.map(function(n) {
+    const idx = (state.nutrients || []).findIndex(function(x) { return x.id === n.id; });
+    return {
+      label: n.label,
+      data: (state.stages || []).map(function(_, ri) { return extraccionEtapaKgHa(n, ri, state); }),
+      color: EXTRACTION_ETAPA_CHART_COLORS[(idx >= 0 ? idx : 0) % EXTRACTION_ETAPA_CHART_COLORS.length]
+    };
+  });
+}
+
+function getExtraccionEtapaChartsDataUrlsForReport(state, callback) {
+  if (!state || !Array.isArray(state.stages) || !state.stages.length) {
+    if (typeof callback === 'function') callback({});
+    return;
+  }
+  loadChartJsForReport(function() {
+    if (typeof Chart === 'undefined') {
+      if (typeof callback === 'function') callback({});
+      return;
+    }
+    const labels = state.stages.slice();
+    const macroSets = buildExtraccionEtapaChartDatasets(state, 'macro');
+    const microSets = buildExtraccionEtapaChartDatasets(state, 'micro');
+    const W = 640;
+    const H = 320;
+    const result = {};
+
+    function renderOne(canvas, datasets, yTitle) {
+      if (!datasets.length) return null;
+      canvas.width = W;
+      canvas.height = H;
+      canvas.style.cssText = 'position:fixed;left:-9999px;top:0;';
+      document.body.appendChild(canvas);
+      let chart = null;
+      try {
+        chart = new Chart(canvas.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: datasets.map(function(ds) {
+              return {
+                label: ds.label,
+                data: ds.data,
+                borderColor: ds.color,
+                backgroundColor: 'transparent',
+                tension: 0.35,
+                borderWidth: 3,
+                pointRadius: 4
+              };
+            })
+          },
+          options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+              legend: {
+                display: true,
+                position: 'bottom',
+                labels: { usePointStyle: true, boxWidth: 10, boxHeight: 10 }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: { display: true, text: yTitle }
+              },
+              x: {
+                title: { display: true, text: 'Etapa' },
+                ticks: { maxRotation: 45, minRotation: 0 }
+              }
+            }
+          }
+        });
+        return (chart && chart.toBase64Image) ? chart.toBase64Image() : canvas.toDataURL('image/png');
+      } catch (e) {
+        console.warn('getExtraccionEtapaChartsDataUrlsForReport:', e);
+        return null;
+      } finally {
+        if (chart) try { chart.destroy(); } catch (e2) {}
+        canvas.remove();
+      }
+    }
+
+    if (macroSets.length) result.macro = renderOne(document.createElement('canvas'), macroSets, 'kg/ha extraídos');
+    if (microSets.length) result.micro = renderOne(document.createElement('canvas'), microSets, 'kg/ha extraídos');
+    if (typeof callback === 'function') callback(result);
+  });
+}
 
 /** Programa fertirriego para reporte/PDF (mismo criterio que admin y descarga). */
 function getFertirriegoProgramForReport() {
@@ -9212,6 +9484,7 @@ function createLegacyReportHTML(data) {
 
 // Guardar reporte en la lista
 function saveReportToList(reportData) {
+  if (window._nutriplantAdminReadOnlyReport) return;
   if (!reportData || typeof reportData !== 'object') return;
   ensurePendingReportSyncHooks();
   const scope = getCurrentReportScope();
@@ -9305,7 +9578,7 @@ function updateReportsList() {
     reportsList.innerHTML = `
       <div class="no-reports" style="text-align: center; padding: 40px; color: #666;">
         <p>📋 No hay reportes generados aún</p>
-        <p style="font-size: 14px; margin-top: 10px;">Genera tu primer reporte desde la sección de enmiendas</p>
+        <p style="font-size: 14px; margin-top: 10px;">Pulsa «Generar Nuevo Reporte PDF» arriba. La lista se guarda en este navegador y, con cuenta en la nube, también en Supabase. Descargar regenera el PDF al momento (no ocupa caché pesada).</p>
       </div>
     `;
     return;
@@ -9408,7 +9681,33 @@ window.deleteReport = function(reportId) {
   }
 };
 
-// Cargar reportes guardados (primero desde la nube si hay usuario Supabase, luego fallback a localStorage)
+function mergeReportsLists(cloudList, localList, pendingList) {
+  const byId = new Map();
+  function add(report, cloudWins) {
+    if (!report || !report.id) return;
+    const id = String(report.id);
+    const existing = byId.get(id);
+    if (!existing) {
+      byId.set(id, report);
+      return;
+    }
+    if (cloudWins) {
+      byId.set(id, report);
+      return;
+    }
+    const existingTs = getReportDisplayTimestamp(existing).getTime();
+    const incomingTs = getReportDisplayTimestamp(report).getTime();
+    byId.set(id, incomingTs >= existingTs ? report : existing);
+  }
+  (localList || []).forEach(function(r) { add(r, false); });
+  (pendingList || []).forEach(function(r) { add(r, false); });
+  (cloudList || []).forEach(function(r) { add(r, true); });
+  return Array.from(byId.values()).sort(function(a, b) {
+    return getReportDisplayTimestamp(b).getTime() - getReportDisplayTimestamp(a).getTime();
+  });
+}
+
+// Cargar reportes guardados (nube + caché local; no borrar local si la nube aún no tiene el reporte)
 function loadSavedReports() {
   ensurePendingReportSyncHooks();
   const scope = getCurrentReportScope();
@@ -9455,21 +9754,26 @@ function loadSavedReports() {
               ? window.nutriplantGetLastFetchReportsError()
               : null;
             if (retryErr === 'NO_SESSION') return;
-            applyReports(Array.isArray(retryCloudReports) ? retryCloudReports : []);
+            var retryLocal = readLocalReports();
+            var retryPending = readPendingReportSyncList(currentScope);
+            applyReports(mergeReportsLists(retryCloudReports, retryLocal, retryPending));
           }).catch(function() {});
         }, 900);
         return;
       }
-      // Si la nube responde, usar siempre esa lista (aunque esté vacía). Así si borraste en otro dispositivo, aquí se actualiza.
-      var list = Array.isArray(cloudReports) ? cloudReports : [];
-      applyReports(list);
+      var local = readLocalReports();
+      var pending = readPendingReportSyncList(scope);
+      applyReports(mergeReportsLists(cloudReports, local, pending));
+      flushPendingReportSync(scope, { silent: true });
     }).catch(function() {
-      applyReports(readLocalReports());
+      var local = readLocalReports();
+      var pending = readPendingReportSyncList(scope);
+      applyReports(mergeReportsLists([], local, pending));
     });
     return;
   }
 
-  applyReports(readLocalReports());
+  applyReports(mergeReportsLists([], readLocalReports(), readPendingReportSyncList(scope)));
 }
 
 // Inicializar sistema de reportes
@@ -12570,11 +12874,13 @@ function updateGenerateButton() {
   }
 }
 
-const REPORT_ALLOWED_SECTIONS = ['location', 'amendments', 'granular', 'fertigation', 'hidroponia', 'vpd'];
+const REPORT_ALLOWED_SECTIONS = ['location', 'amendments', 'granular', 'fertigation', 'hidroponia', 'vpd', 'extraccionEtapa'];
+const REPORT_SECTION_ORDER = ['location', 'amendments', 'granular', 'fertigation', 'hidroponia', 'vpd', 'extraccionEtapa'];
 
 function normalizeReportSections(sections) {
   if (!Array.isArray(sections)) return [];
-  return sections.filter(sectionId => REPORT_ALLOWED_SECTIONS.includes(sectionId));
+  const filtered = sections.filter(sectionId => REPORT_ALLOWED_SECTIONS.includes(sectionId));
+  return REPORT_SECTION_ORDER.filter(id => filtered.includes(id));
 }
 
 function getSelectedReportSections() {
@@ -12715,6 +13021,88 @@ window.generatePDFReport = function() {
   loadChartImagesForReport(selectedSections, finishPdf);
 };
 
+/** Admin: genera PDF con datos del proyecto del usuario sin guardar ni modificar nada suyo. */
+window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
+  function setStatus(msg) {
+    if (typeof statusCallback === 'function') statusCallback(msg);
+  }
+  if (!job || !job.project || !Array.isArray(job.selectedSections) || !job.selectedSections.length) {
+    alert('Datos de reporte inválidos.');
+    try { window.close(); } catch (e) {}
+    return;
+  }
+  const selectedSections = normalizeReportSections(job.selectedSections);
+  if (!selectedSections.length) {
+    alert('No hay secciones válidas seleccionadas.');
+    try { window.close(); } catch (e) {}
+    return;
+  }
+  const reportLanguage = job.reportLanguage === 'en' ? 'en' : 'es';
+  const prevProject = (typeof currentProject !== 'undefined') ? currentProject : null;
+  window._nutriplantAdminReadOnlyReport = true;
+  window._nutriplantAdminReadOnlyReportAuthor = job.adminAuthorName || 'Consulta Admin NutriPlant PRO';
+  currentProject = job.project;
+  if (job.userId && currentProject && typeof currentProject === 'object') {
+    currentProject.user_id = job.userId;
+    currentProject.userId = job.userId;
+  }
+
+  const printWindow = window.open('about:blank', '_blank');
+  if (!printWindow) {
+    alert('Tu navegador bloqueó la ventana de impresión. Habilita pop-ups e inténtalo de nuevo.');
+    window._nutriplantAdminReadOnlyReport = false;
+    window._nutriplantAdminReadOnlyReportAuthor = '';
+    currentProject = prevProject;
+    try { window.close(); } catch (e) {}
+    return;
+  }
+  try {
+    printWindow.document.open();
+    printWindow.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>NutriPlant PRO</title></head><body style="margin:0;font-family:system-ui,sans-serif;background:#f8fafc;color:#475569;"><p style="padding:24px;margin:0;font-size:15px;">Generando reporte…</p></body></html>');
+    printWindow.document.close();
+  } catch (e0) { /* ignore */ }
+
+  function cleanup() {
+    window._nutriplantAdminReadOnlyReport = false;
+    window._nutriplantAdminReadOnlyReportAuthor = '';
+    currentProject = prevProject;
+    setTimeout(function() {
+      try { window.close(); } catch (e) {}
+    }, 800);
+  }
+
+  function finishPdf(chartImages) {
+    try {
+      setStatus('Abriendo vista de impresión…');
+      let reportHTML = '';
+      try {
+        reportHTML = createReportHTML(selectedSections, chartImages || {}, reportLanguage);
+      } catch (renderErr) {
+        if (reportLanguage === 'en') {
+          reportHTML = createReportHTML(selectedSections, chartImages || {}, 'es');
+        } else {
+          throw renderErr;
+        }
+      }
+      printWindow.document.open();
+      printWindow.document.write(reportHTML);
+      printWindow.document.close();
+      printWindow.focus();
+      scheduleReportPrintWhenReady(printWindow);
+      setStatus('Reporte listo. Usa Imprimir → Guardar como PDF.');
+    } catch (error) {
+      console.error('runAdminReadOnlyReportFromJob:', error);
+      alert('Error generando reporte: ' + (error && error.message ? error.message : error));
+      try { printWindow.close(); } catch (eClose) {}
+    } finally {
+      cleanup();
+    }
+  }
+
+  setStatus('Calculando gráficas y secciones…');
+  loadChartImagesForReport(selectedSections, finishPdf);
+};
+
 // Función para generar el contenido del PDF
 function generatePDFContent(selectedSections) {
   console.log('📄 Generando contenido del PDF...');
@@ -12767,7 +13155,9 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
   const projectVariedad = currentProject.variedad || rt('No especificado', 'Not specified');
   const currentUserId = localStorage.getItem('nutriplant_user_id');
   let reportAuthorName = 'Usuario NutriPlant';
-  if (currentUserId) {
+  if (window._nutriplantAdminReadOnlyReportAuthor) {
+    reportAuthorName = window._nutriplantAdminReadOnlyReportAuthor;
+  } else if (currentUserId) {
     try {
       const rawUser = localStorage.getItem(`nutriplant_user_${currentUserId}`);
       if (rawUser) {
@@ -12778,6 +13168,9 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
       console.warn('⚠️ No se pudo leer perfil del usuario para firma de reporte:', error);
     }
   }
+  const adminReportNoteHtml = window._nutriplantAdminReadOnlyReport
+    ? `<p style="margin:8px 0 0;font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:6px 10px;">${rt('Consulta administrativa (solo lectura). No modifica los datos del usuario.', 'Administrative consultation (read-only). Does not modify user data.')}</p>`
+    : '';
   const safeReportAuthorName = (typeof escapeHtml === 'function') ? escapeHtml(String(reportAuthorName)) : String(reportAuthorName);
   // URL absoluta para assets (evita que en celular/print no carguen imagen ni marcas de agua)
   let reportAssetBase = '';
@@ -14045,6 +14438,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
             <img src="${reportAssetBase}N_Hoja_Azul.png" alt="NutriPlant PRO" class="logo-icon">
           </div>
           <h1>${rt('Reporte de Análisis Agrícola', 'Agricultural Analysis Report')}</h1>
+          ${adminReportNoteHtml}
           <div class="report-header-meta">
             <div class="report-header-legal">
               <strong>© 2026 NutriPlant PRO</strong><br>
@@ -14149,6 +14543,9 @@ function createSectionHTML(sectionId, chartImages, reportLanguage) {
       break;
     case 'hidroponia':
       html += createHidroponiaSectionHTML();
+      break;
+    case 'extraccionEtapa':
+      html += createExtraccionEtapaSectionHTML(chartImages);
       break;
     case 'soil_analyses':
       html += createAnalysesListSectionHTML('🟫 Análisis: Suelo (reportes)', currentProject.soilAnalyses);
@@ -15468,6 +15865,9 @@ function createFertigationSectionHTML(chartImages) {
         </div>
       </div>
   ` : '';
+  const fertiInsightsBlock = (weeks.length > 0 && typeof window.buildFertiChartsInsightsHtmlForReport === 'function')
+    ? window.buildFertiChartsInsightsHtmlForReport(prog, waterContribution)
+    : '';
 
   return `
     <div class="section">
@@ -15560,6 +15960,7 @@ function createFertigationSectionHTML(chartImages) {
         </div>
       </div>
       ${chartsBlock}
+      ${fertiInsightsBlock}
     </div>
   `;
 }
@@ -16429,7 +16830,21 @@ function createClimateReportSectionHTML() {
   }
   var liveBlock = '';
   if (live && live.temperature != null) {
+    var liveWhen = '';
+    var liveTs = live.fetchedAt || ca.lastUpdated || null;
+    if (liveTs) {
+      try {
+        liveWhen =
+          '<p style="margin:0 0 8px;font-size:12px;color:#64748b;">' +
+          '<strong>Lectura:</strong> ' +
+          reportEscapeHtml(new Date(liveTs).toLocaleString('es-MX')) +
+          '</p>';
+      } catch (e) {
+        liveWhen = '';
+      }
+    }
     liveBlock =
+      liveWhen +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;font-size:13px;">' +
       '<div><strong>T:</strong> ' + reportNum(live.temperature, 1) + ' °C</div>' +
       '<div><strong>HR:</strong> ' + reportNum(live.humidity, 0) + ' %</div>' +
@@ -16452,6 +16867,109 @@ function createClimateReportSectionHTML() {
     (liveBlock ? '<div class="report-block"><div class="report-block-title">Última lectura</div>' + liveBlock + '</div>' : '') +
     '</div>'
   );
+}
+
+function createExtraccionEtapaSectionHTML(chartImages) {
+  const state = getExtraccionEtapaStateForReport();
+  const imgs = (chartImages && chartImages.extraccionEtapa) ? chartImages.extraccionEtapa : {};
+  if (!state) {
+    return `
+    <div class="section">
+      <h2 class="section-title">📊 Distribución nutrimental por etapa</h2>
+      <div class="report-note">
+        No hay datos guardados para este proyecto. Configura la herramienta <strong>Distribución nutrimental por etapa (%)</strong> desde el botón 📊 del panel (con el proyecto activo) y vuelve a generar el reporte.
+      </div>
+    </div>`;
+  }
+
+  const nutrients = state.nutrients || [];
+  const stages = state.stages || [];
+
+  const totalsRow = nutrients.map(function(n) {
+    return '<td class="report-ferti-stage-num">' + reportNum(n.total, 2) + '</td>';
+  }).join('');
+
+  const pctHead = nutrients.map(function(n) {
+    return '<th>' + reportEscapeHtml(n.label) + ' %</th>';
+  }).join('');
+  const pctRows = stages.map(function(st, ri) {
+    const cells = nutrients.map(function(n) {
+      const val = (state.pct[n.id] && state.pct[n.id][ri]) != null ? state.pct[n.id][ri] : 0;
+      return '<td>' + reportNum(val, 1) + '</td>';
+    }).join('');
+    return '<tr><td class="report-ferti-stage-cell">' + reportEscapeHtml(st) + '</td>' + cells + '</tr>';
+  }).join('');
+  const pctFoot = nutrients.map(function(n) {
+    const sum = extraccionEtapaSumPct(n.id, state);
+    const ok = Math.abs(sum - 100) < 0.05;
+    return '<td style="' + (ok ? 'color:#059669;font-weight:700;' : 'color:#b45309;font-weight:700;') + '">' + reportNum(sum, 1) + '%</td>';
+  }).join('');
+
+  const kgHead = nutrients.map(function(n) {
+    return '<th>' + reportEscapeHtml(n.label) + ' (kg/ha)</th>';
+  }).join('');
+  const kgRows = stages.map(function(st, ri) {
+    const cells = nutrients.map(function(n) {
+      return '<td class="report-ferti-stage-num">' + reportNum(extraccionEtapaKgHa(n, ri, state), 2) + '</td>';
+    }).join('');
+    return '<tr><td class="report-ferti-stage-cell">' + reportEscapeHtml(st) + '</td>' + cells + '</tr>';
+  }).join('');
+
+  const macroImg = imgs.macro
+    ? '<img src="' + imgs.macro + '" alt="Macros por etapa" style="max-width:100%;height:auto;display:block;border-radius:8px;" />'
+    : '<div class="report-note">Sin macronutrientes configurados para graficar.</div>';
+  const microImg = imgs.micro
+    ? '<img src="' + imgs.micro + '" alt="Micros por etapa" style="max-width:100%;height:auto;display:block;border-radius:8px;" />'
+    : '<div class="report-note">Sin micronutrientes en la lista (usa + Agregar nutriente en la herramienta).</div>';
+
+  return `
+    <div class="section">
+      <h2 class="section-title">📊 Distribución nutrimental por etapa</h2>
+      <p class="report-note" style="margin-top:0;">
+        Datos del proyecto activo: extracción total (kg/ha), reparto % por etapa fenológica y curvas de kg/ha extraídos. Los cálculos son una guía y deben validarse en campo.
+      </p>
+      <div class="report-block" style="border-color:#bfdbfe;background:#eff6ff;">
+        <div class="report-block-title">Extracción total por nutriente (kg/ha)</div>
+        <div class="report-table-wrap report-pdf-compact-table">
+          <table class="report-app-table">
+            <thead><tr><th>Nutriente</th>${nutrients.map(function(n) { return '<th>' + reportEscapeHtml(n.label) + '</th>'; }).join('')}</tr></thead>
+            <tbody><tr><td>Total ciclo</td>${totalsRow}</tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="report-block">
+        <div class="report-block-title">Reparto por etapa (%)</div>
+        <div class="report-table-wrap report-pdf-compact-table">
+          <table class="report-app-table">
+            <thead><tr><th>Etapa</th>${pctHead}</tr></thead>
+            <tbody>${pctRows}</tbody>
+            <tfoot><tr class="total-row"><td>Σ %</td>${pctFoot}</tr></tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="report-block">
+        <div class="report-block-title">Resultado kg/ha por etapa</div>
+        <div class="report-table-wrap report-pdf-compact-table">
+          <table class="report-app-table">
+            <thead><tr><th>Etapa</th>${kgHead}</tr></thead>
+            <tbody>${kgRows}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="report-block" style="border-color:#93c5fd;background:#eff6ff;">
+        <div class="report-block-title">Gráficas kg/ha por etapa</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+          <div>
+            <div class="report-subtitle" style="margin-bottom:6px;">Macronutrientes (N, P, K, Ca, Mg, S)</div>
+            ${macroImg}
+          </div>
+          <div>
+            <div class="report-subtitle" style="margin-bottom:6px;">Micronutrientes (Fe, Mn, B, Zn, Cu, Mo)</div>
+            ${microImg}
+          </div>
+        </div>
+      </div>
+    </div>`;
 }
 
 function createAnalysesListSectionHTML(title, list) {

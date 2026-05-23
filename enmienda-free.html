@@ -143,6 +143,25 @@
             <input type="number" id="cic-total" step="0.01" value="0.00" class="total-input" readonly>
           </div>
         </div>
+        <div class="enmienda-units-note" role="note">
+          <strong>Unidades:</strong> <span class="notranslate" translate="no">meq/100g</span> y
+          <span class="notranslate" translate="no">cmol⁺/kg</span> son la <strong>misma magnitud</strong> (misma cifra numérica).
+          Captura los cationes del laboratorio en esas unidades; la CIC total suele venir en el reporte o como suma de cationes.
+          <table>
+            <thead>
+              <tr>
+                <th>Textura orientativa</th>
+                <th><span class="notranslate" translate="no">CIC</span> típica<br><span class="notranslate" translate="no">meq/100g</span> o <span class="notranslate" translate="no">cmol⁺/kg</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Arenosa</td><td>~ 3 – 8</td></tr>
+              <tr><td>Franca</td><td>~ 10 – 20</td></tr>
+              <tr><td>Arcillosa</td><td>~ 20 – 40+</td></tr>
+            </tbody>
+          </table>
+          Referencia agronómica general. Si tienes análisis de suelo, <strong>usa siempre la CIC del laboratorio</strong>.
+        </div>
         <div class="analysis-grid">
           <div class="analysis-item cation-good">
             <label>K⁺:</label>
@@ -678,6 +697,9 @@
   </script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
+    if (/[?&]embed=(?:login|dashboard)(?:&|$)/.test(location.search || '')) {
+      document.documentElement.classList.add('embed-login');
+    }
     (function () {
       var IDS = [
         'k-initial', 'ca-initial', 'mg-initial', 'h-initial', 'na-initial', 'al-initial',

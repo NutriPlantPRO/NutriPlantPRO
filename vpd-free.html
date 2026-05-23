@@ -32,6 +32,12 @@
       color: #0f172a;
       font-weight: 800;
     }
+    html.embed-login .title {
+      display: none;
+    }
+    html.embed-login body {
+      padding: 12px 14px 16px;
+    }
     /* Móvil: alinear inputs Temp y Humedad (misma altura) */
     @media (max-width: 600px) {
       .vpd-grid-cell {
@@ -173,14 +179,14 @@
   <div class="wrap">
     <h2 class="title">🌡️ Estimador de déficit de presión de vapor</h2>
     <p class="vpd-context-note" role="note">
-      <strong>Foco técnico:</strong> el VPD aquí es <strong>ambiental</strong> (aire a escala meteorológica). Si usas el mapa, el clima viene de modelos con respaldo <strong>satelital</strong> (Open-Meteo en el punto que marcas); en el cultivo el <strong>microclima</strong> puede variar con el <strong>área foliar</strong>, el dosel o la ventilación.
+      <strong>Foco técnico:</strong> el VPD aquí es <strong>ambiental</strong> (aire a escala meteorológica). Si usas el mapa, NutriPlant toma en ese punto temperatura, humedad y radiación a partir de <strong>información meteorológica con respaldo satelital</strong>; en el cultivo el <strong>microclima</strong> puede variar con el <strong>área foliar</strong>, el dosel o la ventilación.
       La T<sub>hoja</sub> manual o estimada por radiación es orientativa — <strong>valida en campo</strong>.
     </p>
 
     <div style="background:#fefce8;border:2px solid #eab308;border-radius:12px;padding:20px;margin-bottom:20px;">
       <h3 style="margin:0 0 8px;color:#854d0e;font-size:17px;font-weight:600;">🗺️ Clima en un punto (mapa o GPS)</h3>
       <p style="margin:0 0 14px;font-size:13px;color:#713f12;line-height:1.45;">
-        Elige un punto en el mapa o usa tu ubicación. NutriPlant pide a <strong>Open-Meteo</strong> la temperatura, humedad y radiación solar actual; con radiación se estima <strong>T<sub>hoja</sub></strong> y el VPD como en el dashboard (sin polígono: solo este punto).
+        Elige un punto en el mapa o usa tu ubicación. NutriPlant obtiene la temperatura, humedad y radiación solar actuales en ese punto (<strong>información meteorológica con respaldo satelital</strong>); con radiación se estima <strong>T<sub>hoja</sub></strong> y el VPD como en el dashboard (sin polígono: solo este punto).
       </p>
       <div class="vpd-coord-row">
         <div>
@@ -266,6 +272,10 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
+    if (/[?&]embed=(?:login|dashboard)(?:&|$)/.test(location.search || '')) {
+      document.documentElement.classList.add('embed-login');
+    }
+
     function isEnglishUI() {
       const title = (document.querySelector('.title') || document.querySelector('h2') || {}).textContent || '';
       return /\b(Vapor Pressure|Deficit|Calculator|Results|Humidity)\b/i.test(title);
@@ -499,7 +509,7 @@
       }
       var btn = document.getElementById('vpd-btn-fetch-weather');
       if (btn) btn.disabled = true;
-      vpdGeoSetStatus(t('🌤️ Consultando Open-Meteo…', '🌤️ Fetching Open-Meteo…'));
+      vpdGeoSetStatus(t('🌤️ Consultando clima en el punto…', '🌤️ Fetching weather at point…'));
       try {
         var weather = await vpdFreeGetWeatherData(c.lat, c.lng);
         var temp = Number(weather.temperature);
@@ -545,7 +555,7 @@
         if (useSolar && leafFromRad != null) {
           foot =
             '<div style="margin:0 0 14px;padding:10px 12px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;font-size:13px;color:#065f46;line-height:1.45;">' +
-            '<strong>' + t('VPD con radiación solar', 'VPD with solar radiation') + '</strong> — Open-Meteo: ' +
+            '<strong>' + t('VPD con radiación solar', 'VPD with solar radiation') + '</strong> — ' +
             rad.toFixed(0) + ' W/m². ' +
             t('T<sub>hoja</sub> estimada', 'Estimated leaf T') + ': <strong>' + leafFromRad + ' °C</strong>. ' +
             t('Punto:', 'Point:') + ' ' + c.lat.toFixed(5) + ', ' + c.lng.toFixed(5) +

@@ -185,23 +185,14 @@
   </div>
 
   <div id="paneMol" class="tab-pane" role="tabpanel">
-    <p class="lead">Escribe una <strong>fórmula química</strong> (elemento o molécula) y obtén peso molecular, peso equivalente y % de cada elemento. Para <strong>agua de hidratación</strong> o sales dobles usa <strong>+</strong> o <strong>*</strong> en lugar del punto medio (·): <code>Ca(NO3)2+4H2O</code> o <code>Ca(NO3)2 + 5(H2O)</code>.</p>
+    <p class="lead">Escribe una <strong>fórmula química</strong> (elemento o molécula) y obtén su <strong>peso molecular (g/mol)</strong> y el <strong>% de peso de cada átomo</strong> en la molécula. Para sales dobles, hidratos o mezclas de varias moléculas usa la herramienta <strong>Composición de fertilizantes</strong>.</p>
     <div class="panel">
-      <h2>Peso molecular y composición</h2>
-      <p class="mol-hint">Desde la pestaña <strong>Tabla periódica</strong>, selecciona un elemento y pulsa <strong>+ Usar en calculadora molecular</strong>. Ejemplos rápidos:</p>
+      <h2>Peso molecular y composición elemental</h2>
+      <p class="mol-hint">Desde la pestaña <strong>Tabla periódica</strong>, selecciona un elemento y pulsa <strong>+ Usar en calculadora molecular</strong>. Ejemplos de moléculas:</p>
       <div class="mol-chips" id="molExamples"></div>
-      <div class="mol-insert-bar">
-        <span class="mol-insert-lbl">Insertar en fórmula:</span>
-        <button type="button" class="mol-ins" data-ins="+">+</button>
-        <button type="button" class="mol-ins" data-ins="·">·</button>
-        <button type="button" class="mol-ins" data-ins="(H2O)">(H2O)</button>
-        <button type="button" class="mol-ins" data-ins="4H2O">4H2O</button>
-        <button type="button" class="mol-ins" data-ins="10H2O">10H2O</button>
-        <button type="button" class="mol-ins" data-ins="NH4NO3">NH4NO3</button>
-      </div>
       <div class="mol-row">
         <label>Fórmula
-          <input type="text" id="molFormula" placeholder="Ca(NO3)2+4H2O, 5Ca(NO3)2+NH4NO3+10H2O" autocomplete="off" spellcheck="false" />
+          <input type="text" id="molFormula" placeholder="KNO3, H2SO4, Ca(NO3)2, NH4NO3" autocomplete="off" spellcheck="false" />
         </label>
         <button type="button" class="mol-btn" id="molCalcBtn">Calcular</button>
         <button type="button" class="mol-btn secondary" id="molClearBtn">Limpiar</button>
@@ -209,22 +200,6 @@
       <p id="molError" class="mol-err" hidden></p>
       <div id="molResults" hidden>
         <div class="mol-summary" id="molSummary"></div>
-        <p class="mol-section-title">Bloques de la fórmula (sales + agua)</p>
-        <div class="mol-table-wrap">
-          <table class="mol-table">
-            <thead>
-              <tr>
-                <th>Bloque</th>
-                <th>Cantidad</th>
-                <th>PM unitario (g/mol)</th>
-                <th>Masa en fórmula (g/mol)</th>
-                <th>% peso</th>
-              </tr>
-            </thead>
-            <tbody id="molBlocksBody"></tbody>
-          </table>
-        </div>
-        <div class="mol-groups" id="molGroups"></div>
         <p class="mol-section-title">Composición elemental (%)</p>
         <div class="mol-table-wrap">
           <table class="mol-table">
@@ -274,12 +249,11 @@
     const MOL_EXAMPLES = [
       { label: 'KNO₃', formula: 'KNO3' },
       { label: 'H₂SO₄', formula: 'H2SO4' },
-      { label: 'Nitrato Ca · 4H₂O', formula: 'Ca(NO3)2+4H2O' },
-      { label: 'Nitrato Ca granular (sal doble)', formula: '5Ca(NO3)2+NH4NO3+10H2O', note: '5 nitrato Ca + 1 nitrato amonio + 10 aguas' },
+      { label: 'Ca(NO₃)₂', formula: 'Ca(NO3)2' },
       { label: 'NH₄NO₃', formula: 'NH4NO3' },
       { label: '(NH₄)₂SO₄', formula: '(NH4)2SO4' },
       { label: 'KH₂PO₄', formula: 'KH2PO4' },
-      { label: 'MgSO₄ · 7H₂O', formula: 'MgSO4+7H2O' },
+      { label: 'MgSO₄', formula: 'MgSO4' },
       { label: 'H₃BO₃', formula: 'H3BO3' },
       { label: 'ZnSO₄', formula: 'ZnSO4' }
     ];
@@ -580,8 +554,6 @@
       const errEl = document.getElementById('molError');
       const resEl = document.getElementById('molResults');
       const summaryEl = document.getElementById('molSummary');
-      const blocksEl = document.getElementById('molBlocksBody');
-      const groupsEl = document.getElementById('molGroups');
       const bodyEl = document.getElementById('molTableBody');
       errEl.hidden = true;
       errEl.textContent = '';
@@ -598,31 +570,6 @@
       ].filter(Boolean).map(function(row) {
         return '<div class="card"><div class="k">' + row[0] + '</div><div class="v">' + row[1] + '</div></div>';
       }).join('');
-
-      blocksEl.innerHTML = parsed.blocks.map(function(blk) {
-        return '<tr>' +
-          '<td><strong>' + blk.label + '</strong><br><span style="color:#64748b;font-size:11px;">' + blk.name + '</span></td>' +
-          '<td class="num">' + fmtNum(blk.coef, blk.coef % 1 ? 2 : 0) + '</td>' +
-          '<td class="num">' + fmtNum(blk.unitMw, 3) + '</td>' +
-          '<td class="num">' + fmtNum(blk.mass, 3) + '</td>' +
-          '<td class="num">' + fmtNum(blk.pct, 2) + '%</td>' +
-          '</tr>';
-      }).join('');
-
-      const ionCards = [];
-      if (parsed.ions.caNitrateUnits > 0) {
-        ionCards.push('<div class="mol-group-card"><strong>' + fmtNum(parsed.ions.caNitrateUnits, 0) + '</strong>Unidades Ca(NO₃)₂ (nitrato de calcio)</div>');
-      }
-      if (parsed.ions.no3 > 0) {
-        ionCards.push('<div class="mol-group-card"><strong>' + fmtNum(parsed.ions.no3, 0) + '</strong>Grupos nitrato NO₃⁻</div>');
-      }
-      if (parsed.ions.nh4 > 0) {
-        ionCards.push('<div class="mol-group-card"><strong>' + fmtNum(parsed.ions.nh4, 0) + '</strong>Grupos amonio NH₄⁺</div>');
-      }
-      if (parsed.ions.ca > 0 && !parsed.ions.caNitrateUnits) {
-        ionCards.push('<div class="mol-group-card"><strong>' + fmtNum(parsed.ions.ca, 0) + '</strong>Átomos Ca²⁺</div>');
-      }
-      groupsEl.innerHTML = ionCards.join('');
 
       const symbols = Object.keys(parsed.atomCounts).sort(function(a, b) {
         return parsed.atomCounts[b] * ATOMIC_WEIGHTS[b] - parsed.atomCounts[a] * ATOMIC_WEIGHTS[a];
@@ -680,19 +627,6 @@
     });
     molFormula.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') { e.preventDefault(); runMolCalc(); }
-    });
-
-    document.querySelectorAll('.mol-ins').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        var piece = btn.getAttribute('data-ins') || '';
-        var el = molFormula;
-        var start = el.selectionStart == null ? el.value.length : el.selectionStart;
-        var end = el.selectionEnd == null ? start : el.selectionEnd;
-        el.value = el.value.slice(0, start) + piece + el.value.slice(end);
-        var pos = start + piece.length;
-        el.focus();
-        if (el.setSelectionRange) el.setSelectionRange(pos, pos);
-      });
     });
 
     const examplesEl = document.getElementById('molExamples');

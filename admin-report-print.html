@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generando reporte — NutriPlant PRO Admin</title>
+  <link rel="stylesheet" href="dashboard.css?v=20260320">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, sans-serif;
+      background: #f8fafc;
+      color: #334155;
+      padding: 24px;
+    }
+    .box {
+      max-width: 420px;
+      text-align: center;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 28px 24px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #dbeafe;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="spinner" aria-hidden="true"></div>
+    <p id="status" style="margin:0;font-size:15px;line-height:1.5;">Generando reporte (solo lectura)…</p>
+    <p style="margin:12px 0 0;font-size:12px;color:#64748b;">No se guarda nada en la cuenta del usuario.</p>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-supabase.js?v=1762793900"></script>
+  <script src="analysis-report-render.js"></script>
+  <script src="fertirriego-program-functions.js?v=20260523"></script>
+  <script src="dashboard.js?v=20260523"></script>
+  <script>
+    (function () {
+      function setStatus(msg) {
+        var el = document.getElementById('status');
+        if (el) el.textContent = msg;
+      }
+      window.addEventListener('load', function () {
+        var raw = null;
+        try { raw = sessionStorage.getItem('nutriplant_admin_report_job'); } catch (e) {}
+        if (!raw) {
+          setStatus('No hay datos de reporte. Cierra esta ventana e inténtalo de nuevo desde admin.');
+          return;
+        }
+        var job = null;
+        try {
+          job = JSON.parse(raw);
+          sessionStorage.removeItem('nutriplant_admin_report_job');
+        } catch (e) {
+          setStatus('Error leyendo la configuración del reporte.');
+          return;
+        }
+        if (typeof window.runAdminReadOnlyReportFromJob !== 'function') {
+          setStatus('Motor de reportes no disponible. Recarga la página.');
+          return;
+        }
+        setStatus('Preparando PDF…');
+        window.runAdminReadOnlyReportFromJob(job, setStatus);
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Consulta NutriPlant y Plan PRO (lectura + crear/editar apuntes)",
-        "description": "NutriPlant: project_analyses, manual_tecnico_catalog, etc. Plan PRO (solo Jesús): plan_pro_day, plan_pro_week, plan_pro_create, plan_pro_update. Nunca inventar datos de clientes.",
+        "description": "NutriPlant: project_analyses, manual_tecnico_catalog, nutrition_catalogs (fertilizantes/cultivos), etc. Plan PRO (solo Jesús): plan_pro_day, plan_pro_week, plan_pro_create, plan_pro_update. Nunca inventar datos de clientes.",
         "requestBody": {
           "required": true,
           "content": {
@@ -65,6 +65,7 @@
               "free_tools_catalog",
               "lab_analyses_catalog",
               "manual_tecnico_catalog",
+              "nutrition_catalogs",
               "describe_api"
             ]
           },
@@ -117,7 +118,18 @@
               "tab_id": { "type": "string" },
               "report_id": { "type": "string" },
               "latest_only": { "type": "boolean" },
-              "chapter_id": { "type": "string" }
+              "chapter_id": { "type": "string" },
+              "catalog": {
+                "type": "string",
+                "description": "nutrition_catalogs: fertirriego_materials|granular_materials|fertirriego_crops|granular_crops|all"
+              },
+              "scope": {
+                "type": "string",
+                "description": "nutrition_catalogs: builtin|user|all|project (default all)"
+              },
+              "material_id": { "type": "string", "description": "nutrition_catalogs: id o nombre de fertilizante" },
+              "crop_id": { "type": "string", "description": "nutrition_catalogs: id de cultivo" },
+              "name": { "type": "string", "description": "nutrition_catalogs: buscar por nombre exacto" }
             },
             "additionalProperties": true
           }

@@ -113,7 +113,7 @@
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   <p class="lead">
-    Agrega una o más <strong>filas</strong>: en cada una eliges la <strong>fórmula</strong> y el <strong>% en el producto</strong>. Debajo de cada fila verás la <strong>composición teórica de esa molécula pura</strong> (PM, tarjetas, óxidos). Al final, <strong>Otros %</strong> y el <strong>total ponderado</strong> del producto cuando la suma sea 100%.
+    Agrega una o más <strong>filas</strong>: en cada una eliges la <strong>fórmula</strong> y el <strong>% en el producto</strong>. Soporta <strong>hidratos</strong> (<code>Ca(NO3)2·4H2O</code>) y <strong>sales dobles / mezclas</strong> con <strong>+</strong> o <strong>·</strong> entre bloques (ej. nitrato de calcio granular: <code>5Ca(NO3)2+NH4NO3+10H2O</code>). Debajo de cada fila verás la composición teórica de esa molécula; al final, <strong>Otros %</strong> y el total ponderado cuando la suma sea 100%.
   </p>
 
   <div class="panel blend-panel">
@@ -157,6 +157,7 @@
       { formula: 'NH4NO3', aliases: ['nitrato de amonio', 'Nitrato de amonio', 'NO3NH4'] },
       { formula: 'Ca(NO3)2·4H2O', aliases: ['nitrato de calcio tetrahidratado', 'Nitrato de calcio tetrahidratado'] },
       { formula: 'Ca(NO3)2' },
+      { formula: '5Ca(NO3)2+NH4NO3+10H2O', aliases: ['nitrato de calcio granular', 'Nitrato de calcio granular', 'sal doble calcio', 'calcio granular'] },
       { formula: '(NH4)2SO4' },
 
       // Fosforados
@@ -236,6 +237,7 @@
         .replace(/\]/g, ')')
         .replace(/:/g, '·')
         .replace(/\)\(/g, ')*(')
+        .replace(/([0-9)\]])([\*+])([0-9(A-Z])/g, '$1·$3')
         .replace(/\.+/g, '.');
     }
 

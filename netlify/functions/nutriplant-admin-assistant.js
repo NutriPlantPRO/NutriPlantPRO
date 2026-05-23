@@ -3175,7 +3175,7 @@ async function handlePlanProItem(supabase, params) {
 
 /* ——— Fase 4: Radar (NDVI / NDMI) ——— */
 const RADAR_BUCKET = 'radar-ndvi';
-const RADAR_DEFAULT_MONTHLY = 25;
+const radarCreditsLib = require('./lib/radar-credits');
 
 function radarMonthKey(d = new Date()) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
@@ -3252,16 +3252,7 @@ async function mapLatestRadarByProjects(supabase, projectIds) {
 
 async function getUserRadarCredits(supabase, userId) {
   const mk = radarMonthKey();
-  const base = Math.max(
-    0,
-    Math.floor(
-      Number(
-        process.env.RADAR_MONTHLY_CREDITS != null && process.env.RADAR_MONTHLY_CREDITS !== ''
-          ? process.env.RADAR_MONTHLY_CREDITS
-          : RADAR_DEFAULT_MONTHLY
-      )
-    )
-  );
+  const base = radarCreditsLib.getMonthlyBaseLimit();
   const { data: prof } = await supabase
     .from('profiles')
     .select('radar_credits_bonus')
@@ -3269,14 +3260,14 @@ async function getUserRadarCredits(supabase, userId) {
     .maybeSingle();
   const bonus = Math.max(0, Math.floor(Number(prof?.radar_credits_bonus) || 0));
   const limit = base + bonus;
-  const { count, error } = await supabase
+  const { data, error } = await supabase
     .from('radar_requests')
-    .select('*', { count: 'exact', head: true })
+    .select('meta')
     .eq('user_id', userId)
     .eq('month_key', mk)
     .not('image_storage_path', 'is', null);
   if (error) throw new Error('radar credits: ' + error.message);
-  const used = count || 0;
+  const used = radarCreditsLib.sumCreditsFromRows(data);
   return { month_key: mk, used, limit, base, bonus, remaining: Math.max(0, limit - used) };
 }
 
@@ -3376,6 +3367,8 @@ async function handleRadarProject(supabase, params) {
   const displayRadar = await buildRadarSnapshot(supabase, viewRow);
   const isNewest =
     !latestRow || !viewRow || String(latestRow.id) === String(viewRow.id);
+  const areaHa = radarCreditsLib.getAreaHectaresFromLocation(data.location);
+  const radarPricing = radarCreditsLib.getRadarCreditPricingInfo(areaHa);
 
   return {
     ok: true,
@@ -3401,8 +3394,9 @@ async function handleRadarProject(supabase, params) {
     radar_history: history,
     radar_history_count: history.length,
     user_radar_credits_this_month: credits,
+    radar_pricing: radarPricing,
     gpt_radar_note:
-      'radar_history lista imágenes (id, created_at, sentinel_period, location_center, bounds, area_ha). latest_radar incluye location_snapshot (polígono, centro, bounds) de la imagen mostrada o de request_id. Imágenes antiguas pueden no tener coords. ChatGPT no ve píxeles: fechas, coords y enlaces NDVI/NDMI.',
+      'radar_history lista imágenes (id, created_at, sentinel_period, location_center, bounds, area_ha). latest_radar incluye location_snapshot (polígono, centro, bounds) de la imagen mostrada o de request_id. Créditos mensuales: base 20 + bonus usuario; costo por generación según area_hectares del polígono: ≤30 ha = 1 · >30 ha = 2 · >100 ha = 3 (NDVI+NDMI juntos). radar_pricing indica el costo del predio actual. ChatGPT no ve píxeles: fechas, coords y enlaces NDVI/NDMI.',
     related: {
       fertirriego_suelo_vpd: 'project_detail',
       vpd_ahora: 'project_vpd_live'
@@ -3582,6 +3576,11 @@ function handleManualTecnicoCatalog(params) {
   return { ok: true, ...catalog };
 }
 
+async function handleNutritionCatalogs(supabase, params) {
+  const mod = require('./lib/nutrition-catalogs');
+  return mod.handleNutritionCatalogs(supabase, params || {});
+}
+
 async function handleDescribeApi() {
   return {
     ok: true,
@@ -3606,10 +3605,11 @@ async function handleDescribeApi() {
       radar: ['radar_project', 'radar_search', 'radar_overview'],
       free_tools: ['free_tools_catalog'],
       lab_analyses: ['lab_analyses_catalog', 'project_analyses'],
-      manual_publico: ['manual_tecnico_catalog']
+      manual_publico: ['manual_tecnico_catalog'],
+      nutrition: ['nutrition_catalogs']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item (leer), plan_pro_create/plan_pro_update (escribir). Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog.',
+      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item (leer), plan_pro_create/plan_pro_update (escribir). Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
     plan_pro_nota_semaforo:
       'Chip en libreta: [[sem:2026-05-26:media]] o append_due_marker. Ficha apunte: priority + due_at.',
     plan_pro_nota_herramientas:
@@ -3639,6 +3639,7 @@ const HANDLERS = {
   free_tools_catalog: (_sb, p) => handleFreeToolsCatalog(p),
   lab_analyses_catalog: (_sb, p) => handleLabAnalysesCatalog(p),
   manual_tecnico_catalog: (_sb, p) => handleManualTecnicoCatalog(p),
+  nutrition_catalogs: (sb, p) => handleNutritionCatalogs(sb, p),
   describe_api: () => handleDescribeApi()
 };
 

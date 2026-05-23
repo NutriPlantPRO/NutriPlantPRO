@@ -5,9 +5,13 @@
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  *   GOOGLE_APPLICATION_CREDENTIALS_JSON  — JSON completo de la cuenta de servicio EE (una línea o objeto)
  *   EE_PROJECT_ID                         — ID del proyecto GCP con EE habilitado
- *   RADAR_MONTHLY_CREDITS                 — opcional, default 25
- *   RADAR_ADMIN_SECRET                    — opcional; si está definido, permite action "admin_status" con cabecera
- *                                           X-Radar-Admin-Secret (solo lectura; sin generar imágenes)
+ *   RADAR_MONTHLY_CREDITS                 — opcional, default 20
+ *   RADAR_AREA_TIER2_HA                   — opcional, default 30 (> esto = 2 créditos)
+ *   RADAR_AREA_TIER3_HA                   — opcional, default 100 (> esto = 3 créditos)
+ *   RADAR_CREDITS_TIER2                   — opcional, default 2
+ *   RADAR_CREDITS_TIER3                   — opcional, default 3
+ *   RADAR_ADMIN_SECRET                    — opcional; cabecera X-Radar-Admin-Secret para action "admin_status"
+ *   NUTRIPLANT_ADMIN_KEY                  — opcional; admin_key en body (misma clave ?k= del panel admin)
  *
  * Body JSON:
  *   action: "status" | "generate" | "admin_status"
@@ -15,10 +19,11 @@
  *   access_token: string (JWT usuario; también se acepta Authorization: Bearer)
  */
 
-const DEFAULT_MONTHLY = 25;
+const DEFAULT_MONTHLY = 20;
 const BUCKET = 'radar-ndvi';
 const LOOKBACK_DAYS_FIRST = 120;
 const LOOKBACK_DAYS_FALLBACK = 365;
+const radarCredits = require('./lib/radar-credits');
 
 function corsHeaders() {
   return {
@@ -237,18 +242,18 @@ async function getSupabaseAdmin() {
   return createClient(url, key);
 }
 
-async function countMonthlyUsage(supabase, userId, mk) {
-  const { count, error } = await supabase
+async function sumMonthlyCreditsUsed(supabase, userId, mk) {
+  const { data, error } = await supabase
     .from('radar_requests')
-    .select('*', { count: 'exact', head: true })
+    .select('meta')
     .eq('user_id', userId)
     .eq('month_key', mk)
     .not('image_storage_path', 'is', null);
   if (error) {
-    console.warn('countMonthlyUsage:', error.message);
+    console.warn('sumMonthlyCreditsUsed:', error.message);
     return 0;
   }
-  return count || 0;
+  return radarCredits.sumCreditsFromRows(data);
 }
 
 async function getBonusCredits(supabase, userId) {
@@ -350,6 +355,22 @@ async function signedUrlForPath(supabase, path, ttlSec = 3600) {
   return data.signedUrl;
 }
 
+function isAdminRadarAuthorized(event, body) {
+  const hdr = event.headers || {};
+  const adminSecretCfg = (process.env.RADAR_ADMIN_SECRET || '').trim();
+  const adminHdrRaw = (
+    hdr['x-radar-admin-secret'] ||
+    hdr['X-Radar-Admin-Secret'] ||
+    ''
+  ).trim();
+  if (adminSecretCfg && adminHdrRaw === adminSecretCfg) {
+    return true;
+  }
+  const expectedAdminKey = (process.env.NUTRIPLANT_ADMIN_KEY || 'np_admin_key_8f4a2b9c1e7d').trim();
+  const bodyAdminKey = body && body.admin_key != null ? String(body.admin_key).trim() : '';
+  return !!(expectedAdminKey && bodyAdminKey === expectedAdminKey);
+}
+
 function latestResponse(latest, ndviSignedUrl, ndmiSignedUrl) {
   if (!latest) return null;
   const meta = latest.meta || {};
@@ -405,16 +426,16 @@ exports.handler = async (event) => {
     return jsonResponse(400, { error: 'JSON inválido' });
   }
 
-  const hdr = event.headers || {};
-  const adminSecretCfg = (process.env.RADAR_ADMIN_SECRET || '').trim();
-  const adminHdrRaw = (
-    hdr['x-radar-admin-secret'] ||
-    hdr['X-Radar-Admin-Secret'] ||
-    ''
-  ).trim();
   const bodyActionEarly = String(body.action || 'status').toLowerCase();
 
-  if (adminSecretCfg && bodyActionEarly === 'admin_status' && adminHdrRaw === adminSecretCfg) {
+  if (bodyActionEarly === 'admin_status') {
+    if (!isAdminRadarAuthorized(event, body)) {
+      return jsonResponse(403, {
+        error: 'admin_unauthorized',
+        message: 'Acceso admin denegado. Abre el panel con ?k= válido o usa X-Radar-Admin-Secret.'
+      });
+    }
+
     const projectIdAdm = body.project_id != null ? String(body.project_id).trim() : '';
     if (!projectIdAdm) {
       return jsonResponse(400, { error: 'project_id es obligatorio' });
@@ -433,16 +454,33 @@ exports.handler = async (event) => {
     }
 
     const ownerUserId = projAdm.user_id;
-    const latestAdm = await getLatestRadarRow(supabase, ownerUserId, projectIdAdm);
+    const histLimitAdm = Math.min(Math.max(parseInt(body.history_limit, 10) || 36, 1), 48);
+    const requestIdAdm = body.request_id != null ? String(body.request_id).trim() : '';
+    const [latestAdm, historyRowsAdm] = await Promise.all([
+      getLatestRadarRow(supabase, ownerUserId, projectIdAdm),
+      getRadarHistoryRows(supabase, ownerUserId, projectIdAdm, histLimitAdm)
+    ]);
+    const historyAdm = historyRowsAdm.map(historyItemFromRow).filter(Boolean);
+
+    let viewRowAdm = latestAdm;
+    if (requestIdAdm) {
+      viewRowAdm = await getRadarRowById(supabase, ownerUserId, projectIdAdm, requestIdAdm);
+      if (!viewRowAdm) {
+        return jsonResponse(404, {
+          error: 'radar_snapshot_not_found',
+          message: 'No se encontró esa imagen Radar en este proyecto.',
+          history: historyAdm,
+          history_count: historyAdm.length
+        });
+      }
+    }
+
     let sigNdvi = null;
     let sigNdmi = null;
-    if (latestAdm?.image_storage_path) {
-      sigNdvi = await signedUrlForPath(supabase, latestAdm.image_storage_path);
-    }
-    const ndmiPathAdm =
-      latestAdm?.meta?.ndmi_storage_path || latestAdm?.meta?.images?.ndmi?.storage_path || null;
-    if (ndmiPathAdm) {
-      sigNdmi = await signedUrlForPath(supabase, ndmiPathAdm);
+    if (viewRowAdm?.image_storage_path) {
+      const signed = await signRadarRow(supabase, viewRowAdm);
+      sigNdvi = signed.ndviSignedUrl;
+      sigNdmi = signed.ndmiSignedUrl;
     }
 
     return jsonResponse(200, {
@@ -450,7 +488,12 @@ exports.handler = async (event) => {
       admin: true,
       project_id: projectIdAdm,
       owner_user_id: ownerUserId,
-      latest: latestResponse(latestAdm, sigNdvi, sigNdmi)
+      latest: latestResponse(viewRowAdm, sigNdvi, sigNdmi),
+      history: historyAdm,
+      history_count: historyAdm.length,
+      view_request_id: viewRowAdm ? viewRowAdm.id : null,
+      is_latest:
+        !latestAdm || !viewRowAdm || String(latestAdm.id) === String(viewRowAdm.id)
     });
   }
 
@@ -474,17 +517,10 @@ exports.handler = async (event) => {
 
   const action = String(body.action || 'status').toLowerCase();
   const mk = monthKey();
-  const baseLimit = Math.max(
-    0,
-    Math.floor(
-      Number(process.env.RADAR_MONTHLY_CREDITS != null && process.env.RADAR_MONTHLY_CREDITS !== ''
-        ? process.env.RADAR_MONTHLY_CREDITS
-        : DEFAULT_MONTHLY)
-    )
-  );
+  const baseLimit = radarCredits.getMonthlyBaseLimit();
   const bonus = await getBonusCredits(supabase, userId);
   const limit = baseLimit + bonus;
-  const used = await countMonthlyUsage(supabase, userId, mk);
+  const used = await sumMonthlyCreditsUsed(supabase, userId, mk);
 
   const { data: proj, error: projErr } = await supabase
     .from('projects')
@@ -515,10 +551,13 @@ exports.handler = async (event) => {
       lastSignedUrl = signed.ndviSignedUrl;
       lastNdmiSignedUrl = signed.ndmiSignedUrl;
     }
+    const areaHa = radarCredits.getAreaHectaresFromLocation(proj.data?.location);
+    const pricing = radarCredits.getRadarCreditPricingInfo(areaHa);
     return jsonResponse(200, {
       ok: true,
       month_key: mk,
-      credits: { used, limit, base: baseLimit, bonus },
+      credits: { used, limit, base: baseLimit, bonus, available: Math.max(0, limit - used) },
+      pricing,
       latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl),
       history
     });
@@ -570,11 +609,21 @@ exports.handler = async (event) => {
     });
   }
 
-  if (limit > 0 && used >= limit) {
+  const areaHa = radarCredits.getAreaHectaresFromLocation(proj.data?.location);
+  const creditCost = radarCredits.getRadarCreditCostForArea(areaHa);
+  const pricing = radarCredits.getRadarCreditPricingInfo(areaHa);
+
+  if (limit > 0 && used + creditCost > limit) {
     return jsonResponse(429, {
       error: 'radar_quota_exceeded',
-      message: 'Has agotado tus créditos Radar este mes.',
-      credits: { used, limit, base: baseLimit, bonus }
+      message:
+        'No tienes créditos Radar suficientes este mes. Este predio requiere ' +
+        creditCost +
+        ' crédito' +
+        (creditCost === 1 ? '' : 's') +
+        (areaHa != null ? ' (' + areaHa.toFixed(2) + ' ha).' : '.'),
+      credits: { used, limit, base: baseLimit, bonus, required: creditCost, available: Math.max(0, limit - used) },
+      pricing
     });
   }
 
@@ -594,6 +643,7 @@ exports.handler = async (event) => {
     return jsonResponse(409, {
       error: 'already_generated_this_month',
       message: 'Este mes ya hay un Radar para este proyecto. Usa «Ver última» o reintenta con force si debes regenerar.',
+      pricing,
       latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl) || { signed_url: lastSignedUrl, ndmi_signed_url: lastNdmiSignedUrl, month_key: mk }
     });
   }
@@ -675,6 +725,8 @@ exports.handler = async (event) => {
     date_end: thumb.dateEnd,
     source: 'COPERNICUS/S2_SR_HARMONIZED',
     location_snapshot: buildLocationSnapshot(proj.data?.location),
+    area_hectares: areaHa,
+    credits_charged: creditCost,
     ndvi_vis: { min: 0.10, max: 0.92, style: 'balanced_crisp' },
     ndmi_storage_path: ndmiStoragePath,
     ndmi_vis: { min: -0.25, max: 0.55, style: 'canopy_water_crisp' },
@@ -705,12 +757,13 @@ exports.handler = async (event) => {
     signedUrlForPath(supabase, storagePath),
     signedUrlForPath(supabase, ndmiStoragePath)
   ]);
-  const newUsed = used + 1;
+  const newUsed = used + creditCost;
 
   return jsonResponse(200, {
     ok: true,
     request: insRow,
-    credits: { used: newUsed, limit, base: baseLimit, bonus },
+    credits: { used: newUsed, limit, base: baseLimit, bonus, charged: creditCost, available: Math.max(0, limit - newUsed) },
+    pricing,
     storage_path: storagePath,
     signed_url: signed,
     ndmi_storage_path: ndmiStoragePath,

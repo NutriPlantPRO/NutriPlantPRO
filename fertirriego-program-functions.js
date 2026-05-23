@@ -1257,8 +1257,8 @@ function fertiKgFromStageTotals(totals) {
 }
 
 /** kg/ha elementales del aporte de agua (pestaña Programa de nutrición). N del agua = N-NO₃⁻ (gráficas). */
-function getFertiWaterKgElemental(fertNo3, fertNh4) {
-  const w = fertiWaterContributionOxide || {};
+function getFertiWaterKgElemental(fertNo3, fertNh4, waterOxOverride) {
+  const w = waterOxOverride || fertiWaterContributionOxide || {};
   const waterN = parseFloat(w.N) || 0;
   const kgSFromSo4AndDirect = ((parseFloat(w.SO4) || 0) / FERTI_CONV.SO4_TO_S) + (parseFloat(w.S) || 0);
   return {
@@ -1736,6 +1736,144 @@ function updateFertiCharts(){
   });
 }
 
+function fertiNormalizeWaterM3haFromProgram(program) {
+  const weeks = Array.isArray(program && program.weeks) ? program.weeks : [];
+  const arr = Array.isArray(program && program.chartWaterByStageM3ha) ? program.chartWaterByStageM3ha.slice(0, weeks.length) : [];
+  while (arr.length < weeks.length) arr.push(0);
+  return arr.map(v => Math.max(0, parseFloat(v) || 0));
+}
+
+function fertiStageSlotLabelFromProgram(program, index0) {
+  const timeUnit = program && program.timeUnit === 'mes' ? 'mes' : 'semana';
+  return fertiChartSlotLabelAtIndex(timeUnit, index0);
+}
+
+function getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, opts) {
+  const includeWater = opts && opts.includeWater;
+  const weeks = Array.isArray(program && program.weeks) ? program.weeks : [];
+  const waterArr = fertiNormalizeWaterM3haFromProgram(program);
+  const week = weeks[stageIndex];
+  if (!week) return null;
+  const m3ha = waterArr[stageIndex] || 0;
+  let kg = fertiKgFromStageTotals(week.totals || {});
+  if (includeWater) {
+    kg = fertiMergeKg(kg, getFertiWaterKgElemental(kg.N_NO3, kg.N_NH4, waterOx));
+  }
+  return computeFertiIonicSummaryFromKg(kg, m3ha, week);
+}
+
+function renderFertiMacroIonicTableHtmlForReport(summary) {
+  if (!summary || !summary.ppm) return '';
+  const th = 'padding:6px 8px;border:1px solid #cbd5e1;background:#e2e8f0;font-size:11px;text-align:center;';
+  const td = 'padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:right;';
+  const tdL = 'padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:left;';
+  const s = summary;
+  return '<table style="width:100%;border-collapse:collapse;margin-top:6px;">' +
+    '<thead><tr><th style="' + th + 'text-align:left;">Nutriente</th><th style="' + th + '">kg/ha</th><th style="' + th + '">ppm</th><th style="' + th + '">meq/L</th><th style="' + th + '">% grupo</th></tr></thead><tbody>' +
+    '<tr><td style="' + tdL + '">N-NO₃⁻</td><td style="' + td + '">' + fertiNum(s.kg.N_NO3) + '</td><td style="' + td + '">' + fertiNum(s.ppm.N_NO3, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.N_NO3, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.N_NO3, 1) + '</td></tr>' +
+    '<tr><td style="' + tdL + '">P-H₂PO₄⁻</td><td style="' + td + '">' + fertiNum(s.kg.P) + '</td><td style="' + td + '">' + fertiNum(s.ppm.P, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.P, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.P, 1) + '</td></tr>' +
+    '<tr><td style="' + tdL + '">S-SO₄²⁻</td><td style="' + td + '">' + fertiNum(s.kg.SO4) + '</td><td style="' + td + '">' + fertiNum(s.ppm.SO4, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.SO4, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.SO4, 1) + '</td></tr>' +
+    '<tr><td style="' + tdL + '">Cl⁻</td><td style="' + td + '">' + fertiNum(s.kg.Cl) + '</td><td style="' + td + '">' + fertiNum(s.ppm.Cl, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.Cl, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.Cl, 1) + '</td></tr>' +
+    '<tr style="background:#f8fafc;"><td style="' + tdL + 'font-weight:600;">K⁺</td><td style="' + td + '">' + fertiNum(s.kg.K) + '</td><td style="' + td + '">' + fertiNum(s.ppm.K, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.K, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.K, 1) + '</td></tr>' +
+    '<tr><td style="' + tdL + '">Ca²⁺</td><td style="' + td + '">' + fertiNum(s.kg.Ca) + '</td><td style="' + td + '">' + fertiNum(s.ppm.Ca, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.Ca, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.Ca, 1) + '</td></tr>' +
+    '<tr><td style="' + tdL + '">Mg²⁺</td><td style="' + td + '">' + fertiNum(s.kg.Mg) + '</td><td style="' + td + '">' + fertiNum(s.ppm.Mg, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.Mg, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.Mg, 1) + '</td></tr>' +
+    '<tr><td style="' + tdL + '">N-NH₄⁺</td><td style="' + td + '">' + fertiNum(s.kg.N_NH4) + '</td><td style="' + td + '">' + fertiNum(s.ppm.N_NH4, 1) + '</td><td style="' + td + '">' + fertiNum(s.meq.N_NH4, 2) + '</td><td style="' + td + '">' + fertiNum(s.pct.N_NH4, 1) + '</td></tr>' +
+    '</tbody></table>' +
+    '<div style="margin-top:8px;font-size:11px;color:#64748b;">N: NO₃ ' + fertiNum(s.nSplit.NO3, 1) + '% · NH₄ ' + fertiNum(s.nSplit.NH4, 1) + '% · Σ aniones ' + fertiNum(s.sumAnionsMeq, 2) + ' meq/L · Σ cationes ' + fertiNum(s.sumCationsMeq, 2) + ' meq/L</div>';
+}
+
+function renderFertiMicroTableHtmlForReport(summary) {
+  if (!summary || !summary.kg) return '';
+  const th = 'padding:6px 8px;border:1px solid #cbd5e1;background:#e2e8f0;font-size:11px;text-align:center;';
+  const td = 'padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:right;';
+  const tdL = 'padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:left;';
+  const rows = FERTI_MICRO_INSIGHT_NUTRIENTS.map(n =>
+    '<tr><td style="' + tdL + '">' + n + '</td><td style="' + td + '">' + fertiNum(summary.kg[n], 3) + '</td><td style="' + td + '">' + fertiNum(summary.ppm && summary.ppm[n], 2) + '</td></tr>'
+  ).join('');
+  return '<table style="width:100%;border-collapse:collapse;margin-top:6px;"><thead><tr><th style="' + th + 'text-align:left;">Nutriente</th><th style="' + th + '">kg/ha</th><th style="' + th + '">ppm</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+function buildFertiStageInsightsBlockForReport(program, waterOx, stageIndex, m3ha) {
+  const week = program.weeks[stageIndex];
+  const slotLabel = fertiStageSlotLabelFromProgram(program, stageIndex);
+  const stageName = String((week && (week.stage || week.label)) || 'Etapa').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const summaryFert = getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, false);
+  const summaryWithWater = getFertiStageIonicSummaryFromProgram(program, stageIndex, waterOx, true);
+  return `
+    <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px dashed #cbd5e1;">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:10px;">
+        <strong style="color:#0f766e;font-size:14px;">${slotLabel} · ${stageName}</strong>
+        <span style="font-size:12px;color:#64748b;">Lámina: <strong>${fertiNum(m3ha, 2)} m³/ha</strong></span>
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:12px;">
+        <div style="font-weight:600;color:#166534;margin-bottom:10px;">Macro resumen</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;">
+          <div style="background:#fff;border:1px solid #d1fae5;border-radius:8px;padding:10px;">
+            <div style="font-weight:600;color:#1e293b;font-size:13px;margin-bottom:4px;">Aporte de fertilizante</div>
+            ${renderFertiMacroIonicTableHtmlForReport(summaryFert)}
+          </div>
+          <div style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:10px;">
+            <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:4px;">Fertilizante más aporte de agua</div>
+            ${renderFertiMacroIonicTableHtmlForReport(summaryWithWater)}
+          </div>
+        </div>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;">
+        <div style="font-weight:600;color:#1d4ed8;margin-bottom:10px;">Micronutrientes</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;">
+          <div style="background:#fff;border:1px solid #dbeafe;border-radius:8px;padding:10px;">
+            <div style="font-weight:600;color:#1e293b;font-size:13px;margin-bottom:4px;">Aporte de fertilizante</div>
+            ${renderFertiMicroTableHtmlForReport(summaryFert)}
+          </div>
+          <div style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:10px;">
+            <div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:4px;">Fertilizante más aporte de agua</div>
+            ${renderFertiMicroTableHtmlForReport(summaryWithWater)}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/**
+ * HTML para PDF/reporte: ppm, meq/L y % por etapa según m³/ha capturados en Gráficas.
+ * program.chartWaterByStageM3ha + program.waterContribution (o waterOx pasado).
+ */
+function buildFertiChartsInsightsHtmlForReport(program, waterOx, opts) {
+  opts = opts || {};
+  const weeks = Array.isArray(program && program.weeks) ? program.weeks : [];
+  if (!weeks.length) return '';
+  const waterArr = fertiNormalizeWaterM3haFromProgram(program);
+  const stageIndexes = weeks.map((_, i) => i).filter(i => (waterArr[i] || 0) > 0);
+  const timeUnitLabel = program.timeUnit === 'mes' ? 'mes' : 'semana';
+  if (!stageIndexes.length) {
+    const idx = Math.max(0, Math.min(parseInt(program.chartSelectedStageIndex, 10) || 0, weeks.length - 1));
+    const slotLabel = fertiStageSlotLabelFromProgram(program, idx);
+    return `
+      <div class="report-block" style="border-color:#fde68a;background:#fffbeb;">
+        <div class="report-block-title">⚗️ Relación ppm · meq/L · % (lámina de riego)</div>
+        <div class="report-note" style="margin:0;">
+          Captura <strong>m³/ha</strong> de lámina en Gráficas de Fertirriego para cada ${timeUnitLabel} (p. ej. ${slotLabel}).
+          Sin ese dato no se calculan ppm, meq/L ni % en el reporte.
+        </div>
+      </div>`;
+  }
+  const waterSummary = stageIndexes.map(i =>
+    `${fertiStageSlotLabelFromProgram(program, i)}: <strong>${fertiNum(waterArr[i], 2)} m³/ha</strong>`
+  ).join(' · ');
+  const stageBlocks = stageIndexes.map(i =>
+    buildFertiStageInsightsBlockForReport(program, waterOx, i, waterArr[i])
+  ).join('');
+  return `
+    <div class="report-block" style="border-color:#5eead4;background:#f0fdfa;">
+      <div class="report-block-title">⚗️ Relación ppm · meq/L · % (por lámina de riego)</div>
+      <p class="report-note" style="margin-top:0;margin-bottom:12px;">
+        Lámina capturada en Gráficas: ${waterSummary}. Misma lógica que el panel de Gráficas y el admin.
+        El aporte de agua proviene del Programa de nutrición; si está en cero, ambas columnas coinciden.
+      </p>
+      ${stageBlocks}
+    </div>`;
+}
+
 /**
  * Genera imágenes de las gráficas Macro/Micro desde datos del programa (para PDF sin depender del DOM).
  * program = { weeks: [{ totals: { N_NO3, N_NH4, ... } }], timeUnit: 'mes'|'semana' }
@@ -1869,6 +2007,7 @@ function getFertiChartsDataUrlsForReport(program, callback) {
   });
 }
 window.getFertiChartsDataUrlsForReport = getFertiChartsDataUrlsForReport;
+window.buildFertiChartsInsightsHtmlForReport = buildFertiChartsInsightsHtmlForReport;
 
 function toggleFertiChartsOxideElemental(){
   fertiChartsElementalMode = !fertiChartsElementalMode;

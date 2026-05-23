@@ -55,7 +55,7 @@ module.exports = {
       file: 'vpd-free.html',
       lsKey: 'nutriplant_free_vpd_v1',
       summary:
-        'Mapa Open-Meteo (punto), VPD ambiental simple, VPD avanzado (T hoja manual o estimada por radiación). Rangos óptimo ~0.5–1.5 kPa.'
+        'Mapa (punto GPS), clima con respaldo satelital, VPD ambiental simple, VPD avanzado (T hoja manual o estimada por radiación). Rangos óptimo ~0.5–1.5 kPa.'
     },
     {
       id: 'enmienda',
@@ -86,7 +86,7 @@ module.exports = {
       title: 'Distribución nutrimental por etapa (%)',
       file: 'extraccion-etapa-free.html',
       summary:
-        'kg/ha totales y % por etapa (N,P,K,Ca,Mg…). Gratuito: guardado local por usuario+proyecto en LS. Dashboard: además nube + plantillas con título.'
+        'kg/ha totales + % por etapa → kg/ha y gráficas. Login: solo LS. Dashboard: curva autoguardada en proyecto (nube) + biblioteca «Mis curvas guardadas» por usuario (LS + Supabase perfil). No calcula dosis.'
     },
     {
       id: 'tabla_periodica',

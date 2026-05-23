@@ -5108,26 +5108,95 @@ CONTRATO:
       }
     };
 
-    window.nutriplantLoadExtractionPresetsFromCloud = function(ctx) {
+    function mergeExtraccionPresetBuckets(buckets) {
+      var merged = { version: 1, updatedAt: 0, presets: [] };
+      var seen = {};
+      (buckets || []).forEach(function (bucket) {
+        if (!bucket || typeof bucket !== 'object') return;
+        var ts = Number(bucket.updatedAt) || 0;
+        if (ts > merged.updatedAt) merged.updatedAt = ts;
+        var list = Array.isArray(bucket.presets) ? bucket.presets : [];
+        list.forEach(function (p) {
+          if (!p || typeof p !== 'object') return;
+          var id = typeof p.id === 'string' && p.id ? p.id : '';
+          if (id && seen[id]) return;
+          if (id) seen[id] = true;
+          merged.presets.push(p);
+        });
+      });
+      if (!merged.updatedAt) merged.updatedAt = Date.now();
+      return merged;
+    }
+
+    function collectLegacyExtraccionPresetBuckets(userId) {
+      var buckets = [];
+      if (!userId) return buckets;
       try {
-        var projectId =
-          (ctx && ctx.projectId) ||
-          localStorage.getItem('nutriplant-current-project') ||
-          localStorage.getItem('currentProjectId') ||
-          '';
-        if (!projectId) return null;
-        var raw = localStorage.getItem('nutriplant_project_' + projectId);
-        if (!raw) return null;
-        var project = JSON.parse(raw);
-        if (
-          !project ||
-          !project.calculators ||
-          typeof project.calculators.extraccionEtapaPresets !== 'object'
-        )
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (!key) continue;
+          if (key.indexOf('np_extraccion_etapa_presets_' + userId + '_') === 0) {
+            try {
+              var oldLocal = JSON.parse(localStorage.getItem(key) || 'null');
+              if (oldLocal) buckets.push(oldLocal);
+            } catch (_) {}
+          }
+          if (key.indexOf('nutriplant_project_') === 0) {
+            try {
+              var project = JSON.parse(localStorage.getItem(key) || 'null');
+              if (
+                project &&
+                project.calculators &&
+                project.calculators.extraccionEtapaPresets
+              ) {
+                buckets.push(project.calculators.extraccionEtapaPresets);
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (_) {}
+      return buckets;
+    }
+
+    window.nutriplantLoadExtractionPresetsFromCloud = async function(ctx) {
+      try {
+        var userId =
+          (ctx && ctx.userId) || localStorage.getItem('nutriplant_user_id') || '';
+        if (!userId || userId === 'guest') return null;
+        var userKey = 'np_extraccion_etapa_presets_user_' + userId;
+        var localBucket = null;
+        try {
+          localBucket = JSON.parse(localStorage.getItem(userKey) || 'null');
+        } catch (_) {
+          localBucket = null;
+        }
+        var cloudBucket = null;
+        if (typeof window.nutriplantFetchExtraccionEtapaPresetsFromCloud === 'function') {
+          cloudBucket = await window.nutriplantFetchExtraccionEtapaPresetsFromCloud(userId);
+        }
+        var migrateFlag = 'np_extraccion_etapa_presets_user_migrated_' + userId;
+        var legacyBuckets = [];
+        if (!localStorage.getItem(migrateFlag)) {
+          legacyBuckets = collectLegacyExtraccionPresetBuckets(userId);
+        }
+        var merged = mergeExtraccionPresetBuckets(
+          [localBucket, cloudBucket].concat(legacyBuckets)
+        );
+        if (!merged.presets.length && !localBucket && !cloudBucket && !legacyBuckets.length) {
           return null;
-        return project.calculators.extraccionEtapaPresets;
+        }
+        if (legacyBuckets.length) {
+          localStorage.setItem(userKey, JSON.stringify(merged));
+          localStorage.setItem(migrateFlag, '1');
+          if (typeof window.nutriplantSyncExtraccionEtapaPresetsToCloud === 'function') {
+            try {
+              window.nutriplantSyncExtraccionEtapaPresetsToCloud(userId, merged);
+            } catch (_) {}
+          }
+        }
+        return merged;
       } catch (e) {
-        console.warn('Load extracción/etapa plantillas:', e);
+        console.warn('Load extracción/etapa biblioteca:', e);
         return null;
       }
     };
@@ -5136,38 +5205,22 @@ CONTRATO:
       try {
         var userId =
           (payload && payload.userId) || localStorage.getItem('nutriplant_user_id') || '';
-        var projectId =
-          (payload && payload.projectId) ||
-          localStorage.getItem('nutriplant-current-project') ||
-          localStorage.getItem('currentProjectId') ||
-          '';
         var presetsData =
           payload && payload.presetsData ? payload.presetsData : null;
-        if (!userId || !projectId || !presetsData) return false;
-        var key = 'nutriplant_project_' + projectId;
-        var project = {};
-        try {
-          project = JSON.parse(localStorage.getItem(key) || '{}') || {};
-        } catch (_) {
-          project = {};
-        }
-        if (!project.calculators || typeof project.calculators !== 'object')
-          project.calculators = {};
-        project.calculators.extraccionEtapaPresets = Object.assign({}, presetsData, {
-          updatedAt: Date.now()
-        });
-        project.updatedAt = new Date().toISOString();
-        localStorage.setItem(key, JSON.stringify(project));
-        if (typeof window.nutriplantSyncProjectToCloud === 'function') {
+        if (!userId || userId === 'guest' || !presetsData) return false;
+        var userKey = 'np_extraccion_etapa_presets_user_' + userId;
+        var bucket = Object.assign({}, presetsData, { updatedAt: Date.now() });
+        localStorage.setItem(userKey, JSON.stringify(bucket));
+        if (typeof window.nutriplantSyncExtraccionEtapaPresetsToCloud === 'function') {
           try {
-            window.nutriplantSyncProjectToCloud(projectId, project);
+            window.nutriplantSyncExtraccionEtapaPresetsToCloud(userId, bucket);
           } catch (syncErr) {
-            console.warn('Sync extracción/etapa plantillas:', syncErr);
+            console.warn('Sync extracción/etapa biblioteca:', syncErr);
           }
         }
         return true;
       } catch (e) {
-        console.warn('Save extracción/etapa plantillas:', e);
+        console.warn('Save extracción/etapa biblioteca:', e);
         return false;
       }
     };
@@ -5848,6 +5901,13 @@ CONTRATO:
           <div class="report-section-info">
             <div class="report-section-title">🌤️ Clima</div>
             <div class="report-section-description">VPD, lluvia acumulada, ET₀ y lectura meteorológica</div>
+          </div>
+        </div>
+
+        <div class="report-section-item" onclick="toggleReportSection('extraccionEtapa')" data-section="extraccionEtapa">
+          <div class="report-section-info">
+            <div class="report-section-title">📊 Distribución por etapa</div>
+            <div class="report-section-description">Extracción nutrimental por etapa fenológica (% y kg/ha) del proyecto activo</div>
           </div>
         </div>
       </div>
@@ -6671,7 +6731,7 @@ CONTRATO:
         <button class="modal-close" onclick="closePeriodicTableNutrientsCalculator()">×</button>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?v=20260522c" title="Tabla Periódica (Nutrientes Esenciales)" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?v=20260523" title="Tabla Periódica (Nutrientes Esenciales)" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
@@ -6788,7 +6848,7 @@ CONTRATO:
         <button class="modal-close" onclick="closeFertilizerCompositionCalculator()">×</button>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
-        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html" title="Composición de fertilizantes" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+        <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260523" title="Composición de fertilizantes" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

@@ -5235,6 +5235,83 @@
             <div id="dataViewerContent"></div>
         </div>
     </div>
+
+    <!-- Modal: generar reporte admin (solo lectura) -->
+    <div id="adminCustomReportModal" class="modal-overlay" style="display: none; z-index: 56000; align-items: center; justify-content: center; padding: 16px;">
+        <div style="background:#fff;border-radius:12px;max-width:640px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+            <div style="padding:16px 18px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;">
+                <div>
+                    <h3 style="margin:0;font-size:17px;color:#1e293b;">📄 Reporte personalizado (admin)</h3>
+                    <p style="margin:4px 0 0;font-size:12px;color:#64748b;">Solo lectura · no se guarda en la cuenta del usuario</p>
+                </div>
+                <button type="button" onclick="closeAdminCustomReportModal()" style="background:none;border:none;font-size:24px;color:#64748b;cursor:pointer;">×</button>
+            </div>
+            <div style="padding:18px;">
+                <p style="margin:0 0 12px;font-size:13px;color:#475569;">Selecciona las secciones del proyecto que quieres incluir en el PDF:</p>
+                <div class="report-sections" style="display:grid;gap:10px;margin-bottom:16px;">
+                    <div class="report-section-item admin-report-section-item selected" onclick="toggleAdminReportSection('location')" data-section="location">
+                        <div class="report-section-info">
+                            <div class="report-section-title">📍 Ubicación y Mapa</div>
+                            <div class="report-section-description">Polígono, área, Radar NDVI/NDMI</div>
+                        </div>
+                    </div>
+                    <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('amendments')" data-section="amendments">
+                        <div class="report-section-info">
+                            <div class="report-section-title">🚜 Análisis de Enmiendas</div>
+                            <div class="report-section-description">Análisis de suelo y recomendaciones</div>
+                        </div>
+                    </div>
+                    <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('granular')" data-section="granular">
+                        <div class="report-section-info">
+                            <div class="report-section-title">🌾 Nutrición Granular</div>
+                            <div class="report-section-description">Requerimiento y programa granular</div>
+                        </div>
+                    </div>
+                    <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('fertigation')" data-section="fertigation">
+                        <div class="report-section-info">
+                            <div class="report-section-title">💧 Fertirriego</div>
+                            <div class="report-section-description">Programa, gráficas, ppm/meq/%</div>
+                        </div>
+                    </div>
+                    <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('hidroponia')" data-section="hidroponia">
+                        <div class="report-section-info">
+                            <div class="report-section-title">💧 Hidroponía</div>
+                            <div class="report-section-description">Solución nutritiva por etapa</div>
+                        </div>
+                    </div>
+                    <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('vpd')" data-section="vpd">
+                        <div class="report-section-info">
+                            <div class="report-section-title">🌤️ Clima</div>
+                            <div class="report-section-description">VPD, lluvia, ET₀</div>
+                        </div>
+                    </div>
+                    <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('extraccionEtapa')" data-section="extraccionEtapa">
+                        <div class="report-section-info">
+                            <div class="report-section-title">📊 Distribución por etapa</div>
+                            <div class="report-section-description">Curva guardada en el proyecto: tablas %, kg/ha y gráficas</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label for="adminReportLanguageSelect" style="font-size:13px;font-weight:600;color:#475569;">Idioma del reporte</label>
+                    <select id="adminReportLanguageSelect" style="display:block;margin-top:6px;width:100%;max-width:220px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;">
+                        <option value="es" selected>Español</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button type="button" id="adminCustomReportGenerateBtn" onclick="generateAdminCustomReport()"
+                            style="flex:1;min-width:180px;background:#4f46e5;color:#fff;border:none;padding:12px 16px;border-radius:8px;font-weight:600;cursor:pointer;">
+                        🖨️ Generar e imprimir PDF
+                    </button>
+                    <button type="button" onclick="closeAdminCustomReportModal()"
+                            style="padding:12px 16px;border:1px solid #cbd5e1;background:#fff;border-radius:8px;cursor:pointer;">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- Modal para editar usuario -->
     <div id="editUserModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 55000; overflow-y: auto;">
@@ -6108,15 +6185,15 @@
                         <div style="padding: 12px; background: #ecfdf5; border: 1px solid #86efac; border-radius: 8px;">
                             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #14532d;">🛰️ Radar NDVI / NDMI (créditos)</label>
                             <p style="margin: 0 0 10px 0; font-size: 13px; color: #475569; line-height: 1.45;">
-                                <strong>Tope mensual</strong> en la app = créditos base del servidor (p. ej. 25 desde Netlify) <strong>más</strong> el número que pongas aquí.
-                                Una generación normal cuenta 1 crédito; si el usuario fuerza regeneración en el mismo mes, puede usar otro más.
+                                <strong>Tope mensual</strong> en la app = créditos base del servidor (p. ej. 20 desde Netlify) <strong>más</strong> el número que pongas aquí.
+                                Costo por generación según superficie del polígono: ≤30 ha = 1 crédito · &gt;30 ha = 2 · &gt;100 ha = 3 (NDVI+NDMI juntos).
                             </p>
                             <label style="display: block; margin-bottom: 4px; font-weight: 500; color: #374151;">Bonus mensual (+N créditos Radar)</label>
                             <input type="number" id="edit-user-radar-credits-bonus" min="0" step="1"
                                    value="${Math.max(0, Math.floor(Number(user.radar_credits_bonus != null ? user.radar_credits_bonus : 0)))}"
                                    style="width: 140px; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
                             <small style="display: block; color: #64748b; font-size: 12px; margin-top: 8px; line-height: 1.4;">
-                                Pon <strong>0</strong> si no quieres sumar nada extra. Ej. <strong>15</strong> = 15 generaciones mensuales adicionales sobre el límite global (si el proyecto supabase tiene la columna <code style="background:#fff;padding:2px 4px;border-radius:4px;">radar_credits_bonus</code>).
+                                Pon <strong>0</strong> si no quieres sumar nada extra. Ej. <strong>10</strong> = 10 créditos Radar adicionales al tope mensual (según superficie del predio: 1–3 créditos por generación).
                             </small>
                         </div>
                     </div>
@@ -6730,6 +6807,574 @@
                 console.warn('⚠️ Error renderizando gráficas de Fertirriego (admin):', e);
             }
         }
+
+        // ===== Distribución nutrimental por etapa (Admin) =====
+        var ADMIN_EXT_ETAPA_MACRO_IDS = { n: true, p: true, k: true, ca: true, mg: true, s: true };
+        var ADMIN_EXT_ETAPA_MICRO_IDS = { fe: true, mn: true, b: true, zn: true, cu: true, mo: true };
+        var ADMIN_EXT_ETAPA_CHART_COLORS = [
+            '#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#0891b2',
+            '#ca8a04', '#db2777', '#0d9488', '#4f46e5', '#64748b',
+            '#059669', '#b45309', '#be185d'
+        ];
+
+        function adminNormalizeExtraccionEtapaState(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+            if (!Array.isArray(raw.nutrients) || !Array.isArray(raw.stages) || !raw.pct || typeof raw.pct !== 'object') return null;
+            var nutrients = raw.nutrients.filter(function (n) {
+                return n && typeof n.id === 'string' && typeof n.label === 'string';
+            }).map(function (n) {
+                return {
+                    id: n.id,
+                    label: n.label,
+                    total: Number(n.total) || 0,
+                    optional: !!n.optional
+                };
+            });
+            if (!nutrients.length) return null;
+            var stages = raw.stages.map(function (s, i) {
+                var txt = String(s || '').trim();
+                return txt || ('Etapa ' + (i + 1));
+            });
+            if (!stages.length) return null;
+            var pct = {};
+            nutrients.forEach(function (n) {
+                var arr = Array.isArray(raw.pct[n.id]) ? raw.pct[n.id].slice(0, stages.length) : [];
+                while (arr.length < stages.length) arr.push(0);
+                pct[n.id] = arr.map(function (v) { return Math.round((Number(v) || 0) * 10) / 10; });
+            });
+            return { nutrients: nutrients, stages: stages, pct: pct, updatedAt: Number(raw.updatedAt) || 0 };
+        }
+
+        function adminGetExtraccionEtapaStateFromProject(project, ownerUserId, projectId) {
+            function tryNorm(raw) { return adminNormalizeExtraccionEtapaState(raw); }
+            if (project && project.calculators && project.calculators.extraccionEtapa) {
+                var fromCalc = tryNorm(project.calculators.extraccionEtapa);
+                if (fromCalc) return fromCalc;
+            }
+            if (ownerUserId && projectId) {
+                try {
+                    var rawLocal = localStorage.getItem('np_extraccion_etapa_' + ownerUserId + '_' + projectId);
+                    if (rawLocal) {
+                        var fromLocal = tryNorm(JSON.parse(rawLocal));
+                        if (fromLocal) return fromLocal;
+                    }
+                } catch (_) {}
+            }
+            return null;
+        }
+
+        function adminExtraccionEtapaKgHa(nutrient, stageIndex, state) {
+            var total = Number(nutrient.total) || 0;
+            var pctArr = (state.pct && state.pct[nutrient.id]) || [];
+            var p = (Number(pctArr[stageIndex]) || 0) / 100;
+            return Math.round(total * p * 100) / 100;
+        }
+
+        function adminExtraccionEtapaSumPct(nutrientId, state) {
+            var arr = (state.pct && state.pct[nutrientId]) || [];
+            return arr.reduce(function (acc, v) { return acc + (Number(v) || 0); }, 0);
+        }
+
+        function adminBuildExtraccionEtapaChartDatasets(state, group) {
+            var idMap = group === 'macro' ? ADMIN_EXT_ETAPA_MACRO_IDS : ADMIN_EXT_ETAPA_MICRO_IDS;
+            var filtered = (state.nutrients || []).filter(function (n) { return idMap[n.id]; });
+            return filtered.map(function (n) {
+                var idx = (state.nutrients || []).findIndex(function (x) { return x.id === n.id; });
+                return {
+                    label: n.label,
+                    data: (state.stages || []).map(function (_, ri) { return adminExtraccionEtapaKgHa(n, ri, state); }),
+                    color: ADMIN_EXT_ETAPA_CHART_COLORS[(idx >= 0 ? idx : 0) % ADMIN_EXT_ETAPA_CHART_COLORS.length]
+                };
+            });
+        }
+
+        function renderAdminExtraccionEtapaCharts(state, chartTargets) {
+            try {
+                if (!state || !Array.isArray(state.stages) || !state.stages.length) return;
+                var macroEl = chartTargets && chartTargets.macroEl;
+                var microEl = chartTargets && chartTargets.microEl;
+                if (!macroEl && !microEl) return;
+                var labels = state.stages.slice();
+                var macroSets = adminBuildExtraccionEtapaChartDatasets(state, 'macro');
+                var microSets = adminBuildExtraccionEtapaChartDatasets(state, 'micro');
+                if (macroEl) {
+                    if (!macroSets.length) {
+                        macroEl.innerHTML = '<div style="color:#94a3b8;font-style:italic;">Sin macronutrientes configurados.</div>';
+                    } else {
+                        buildAdminSvgChart(macroEl, labels, macroSets);
+                    }
+                }
+                if (microEl) {
+                    if (!microSets.length) {
+                        microEl.innerHTML = '<div style="color:#94a3b8;font-style:italic;">Sin micronutrientes (el usuario puede agregarlos en la herramienta 📊).</div>';
+                    } else {
+                        buildAdminSvgChart(microEl, labels, microSets);
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ Error renderizando gráficas extracción/etapa (admin):', e);
+            }
+        }
+
+        function adminBuildExtraccionEtapaDetailHtml(state, chartIds) {
+            if (!state) return '';
+            var nutrients = state.nutrients || [];
+            var stages = state.stages || [];
+            var totalsRow = nutrients.map(function (n) {
+                return '<td style="padding:6px;text-align:right;">' + (Number(n.total) || 0).toFixed(2) + '</td>';
+            }).join('');
+            var pctHead = nutrients.map(function (n) {
+                return '<th style="padding:6px;text-align:center;">' + escapeHtml(n.label) + ' %</th>';
+            }).join('');
+            var pctRows = stages.map(function (st, ri) {
+                var cells = nutrients.map(function (n) {
+                    var val = (state.pct[n.id] && state.pct[n.id][ri] != null) ? state.pct[n.id][ri] : 0;
+                    return '<td style="padding:6px;text-align:center;">' + Number(val).toFixed(1) + '</td>';
+                }).join('');
+                return '<tr><td style="padding:6px;font-weight:600;">' + escapeHtml(st) + '</td>' + cells + '</tr>';
+            }).join('');
+            var pctFoot = nutrients.map(function (n) {
+                var sum = adminExtraccionEtapaSumPct(n.id, state);
+                var ok = Math.abs(sum - 100) < 0.05;
+                return '<td style="padding:6px;text-align:center;font-weight:700;color:' + (ok ? '#059669' : '#b45309') + ';">' + sum.toFixed(1) + '%</td>';
+            }).join('');
+            var kgHead = nutrients.map(function (n) {
+                return '<th style="padding:6px;text-align:center;">' + escapeHtml(n.label) + '</th>';
+            }).join('');
+            var kgRows = stages.map(function (st, ri) {
+                var cells = nutrients.map(function (n) {
+                    return '<td style="padding:6px;text-align:right;">' + adminExtraccionEtapaKgHa(n, ri, state).toFixed(2) + '</td>';
+                }).join('');
+                return '<tr><td style="padding:6px;font-weight:600;">' + escapeHtml(st) + '</td>' + cells + '</tr>';
+            }).join('');
+            var updatedTxt = state.updatedAt
+                ? new Date(state.updatedAt).toLocaleString('es-MX')
+                : '';
+            return `
+                <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 8px 0; color: #1e293b; font-size: 18px;">${chartIds.compact ? '📈 Curva' : '📊 Curva en este proyecto'}</h3>
+                    <p style="margin: 0 0 14px 0; font-size: 13px; color: #64748b; line-height: 1.45;">
+                        ${chartIds.compact ? 'Datos guardados en la biblioteca personal del usuario.' : 'Curva cargada y guardada en <strong>este proyecto</strong> (kg/ha, % por etapa). También en el reporte admin si marcas la sección correspondiente.'}
+                        ${updatedTxt ? ' <strong>Actualizado:</strong> ' + escapeHtml(updatedTxt) + '.' : ''}
+                    </p>
+                    <div style="margin-bottom: 14px;">
+                        <strong style="color:#1e293b;font-size:14px;">Extracción total (kg/ha)</strong>
+                        <div style="overflow-x:auto;margin-top:6px;">
+                            <table style="width:100%;min-width:480px;font-size:12px;border-collapse:collapse;background:#fff;border-radius:6px;">
+                                <thead><tr><th style="padding:6px;text-align:left;">Nutriente</th>${nutrients.map(function(n){return '<th style="padding:6px;text-align:center;">'+escapeHtml(n.label)+'</th>';}).join('')}</tr></thead>
+                                <tbody><tr><td style="padding:6px;font-weight:600;">Total ciclo</td>${totalsRow}</tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 14px;">
+                        <strong style="color:#1e293b;font-size:14px;">Reparto por etapa (%)</strong>
+                        <div style="overflow-x:auto;margin-top:6px;">
+                            <table style="width:100%;min-width:520px;font-size:12px;border-collapse:collapse;background:#fff;border-radius:6px;">
+                                <thead><tr><th style="padding:6px;text-align:left;">Etapa</th>${pctHead}</tr></thead>
+                                <tbody>${pctRows}</tbody>
+                                <tfoot><tr style="background:#f8fafc;"><td style="padding:6px;font-weight:700;">Σ %</td>${pctFoot}</tr></tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 14px;">
+                        <strong style="color:#1e293b;font-size:14px;">Resultado kg/ha por etapa</strong>
+                        <div style="overflow-x:auto;margin-top:6px;">
+                            <table style="width:100%;min-width:520px;font-size:12px;border-collapse:collapse;background:#fff;border-radius:6px;">
+                                <thead><tr><th style="padding:6px;text-align:left;">Etapa</th>${kgHead}</tr></thead>
+                                <tbody>${kgRows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div>
+                        <strong style="color:#1e293b;font-size:14px;">Gráficas kg/ha por etapa</strong>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:10px;">
+                            <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #bfdbfe;">
+                                <div style="font-size:13px;font-weight:600;color:#334155;margin-bottom:8px;">Macronutrientes</div>
+                                <div id="${chartIds.macroWrapId}" style="min-height:200px;color:#94a3b8;font-style:italic;">Cargando gráfica…</div>
+                            </div>
+                            <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #bfdbfe;">
+                                <div style="font-size:13px;font-weight:600;color:#334155;margin-bottom:8px;">Micronutrientes</div>
+                                <div id="${chartIds.microWrapId}" style="min-height:200px;color:#94a3b8;font-style:italic;">Cargando gráfica…</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function adminParseExtraccionEtapaPresetsList(bucket) {
+            if (!bucket || typeof bucket !== 'object') return [];
+            var presetsRaw = Array.isArray(bucket.presets) ? bucket.presets : [];
+            var cleaned = [];
+            for (var i = 0; i < presetsRaw.length; i++) {
+                var p = presetsRaw[i];
+                if (!p || typeof p.title !== 'string' || typeof p.state !== 'object') continue;
+                var st = adminNormalizeExtraccionEtapaState(p.state);
+                if (!st) continue;
+                cleaned.push({
+                    id: typeof p.id === 'string' && p.id ? p.id : ('pex_' + i),
+                    title: String(p.title || 'Sin título').slice(0, 120),
+                    state: st,
+                    savedAt: Number(p.savedAt) || 0
+                });
+            }
+            cleaned.sort(function (a, b) {
+                return String(a.title).localeCompare(String(b.title), 'es');
+            });
+            return cleaned;
+        }
+
+        function adminMergeExtraccionPresetBuckets(buckets) {
+            var merged = { version: 1, updatedAt: 0, presets: [] };
+            var seen = {};
+            (buckets || []).forEach(function (bucket) {
+                if (!bucket || typeof bucket !== 'object') return;
+                var ts = Number(bucket.updatedAt) || 0;
+                if (ts > merged.updatedAt) merged.updatedAt = ts;
+                var list = Array.isArray(bucket.presets) ? bucket.presets : [];
+                list.forEach(function (p) {
+                    if (!p || typeof p !== 'object') return;
+                    var id = typeof p.id === 'string' && p.id ? p.id : '';
+                    if (id && seen[id]) return;
+                    if (id) seen[id] = true;
+                    merged.presets.push(p);
+                });
+            });
+            return merged;
+        }
+
+        async function adminFetchUserExtraccionEtapaLibrary(userId) {
+            if (!userId) return [];
+            var uid = String(userId);
+            var buckets = [];
+            var isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
+            if (isUuid) {
+                try {
+                    if (typeof window.nutriplantFetchExtraccionEtapaPresetsFromCloud === 'function') {
+                        var cloudBucket = await window.nutriplantFetchExtraccionEtapaPresetsFromCloud(uid);
+                        if (cloudBucket) buckets.push(cloudBucket);
+                    } else if (window.getSupabaseClient) {
+                        var client = window.getSupabaseClient();
+                        if (client) {
+                            var res = await client.from('profiles').select('extraccion_etapa_presets').eq('id', uid).maybeSingle();
+                            if (!res.error && res.data && res.data.extraccion_etapa_presets) {
+                                buckets.push(res.data.extraccion_etapa_presets);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('adminFetchUserExtraccionEtapaLibrary cloud:', e);
+                }
+            }
+            try {
+                var userKey = 'np_extraccion_etapa_presets_user_' + uid;
+                var rawLocal = localStorage.getItem(userKey);
+                if (rawLocal) buckets.push(JSON.parse(rawLocal));
+            } catch (_) {}
+            try {
+                for (var li = 0; li < localStorage.length; li++) {
+                    var lk = localStorage.key(li);
+                    if (!lk || lk.indexOf('np_extraccion_etapa_presets_' + uid + '_') !== 0) continue;
+                    var legacy = localStorage.getItem(lk);
+                    if (legacy) buckets.push(JSON.parse(legacy));
+                }
+            } catch (_) {}
+            if (!buckets.length) return [];
+            return adminParseExtraccionEtapaPresetsList(adminMergeExtraccionPresetBuckets(buckets));
+        }
+
+        function adminBuildUserExtraccionLibrarySectionHtml(userId, presetsList) {
+            var safeUser = adminSafeId(userId || 'user');
+            if (!presetsList || !presetsList.length) {
+                return {
+                    html: `
+                    <div style="background:#f0f9ff;padding:20px;border-radius:8px;border-left:4px solid #0284c7;margin-bottom:20px;">
+                        <h3 style="margin:0 0 8px 0;color:#1e293b;font-size:18px;">📚 Biblioteca de curvas de extracción (usuario)</h3>
+                        <p style="margin:0;color:#64748b;font-size:13px;font-style:italic;">
+                            Este usuario aún no tiene curvas guardadas con <strong>Guardar en mi biblioteca</strong> en la herramienta 📊.
+                        </p>
+                    </div>`,
+                    chartJobs: []
+                };
+            }
+            var chartJobs = [];
+            var cards = presetsList.map(function (p, idx) {
+                var safePreset = adminSafeId(p.id || ('p' + idx));
+                var macroWrapId = 'adminExtLibMacro_' + safeUser + '_' + safePreset;
+                var microWrapId = 'adminExtLibMicro_' + safeUser + '_' + safePreset;
+                chartJobs.push({ state: p.state, macroWrapId: macroWrapId, microWrapId: microWrapId });
+                var savedTxt = p.savedAt ? new Date(p.savedAt).toLocaleString('es-MX') : '';
+                var inner = adminBuildExtraccionEtapaDetailHtml(p.state, { macroWrapId: macroWrapId, microWrapId: microWrapId, compact: true });
+                return `
+                    <details style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:0;margin-bottom:10px;" ${idx === 0 ? 'open' : ''}>
+                        <summary style="cursor:pointer;padding:12px 14px;font-weight:700;color:#0c4a6e;list-style-position:outside;">
+                            ${escapeHtml(p.title)}
+                            ${savedTxt ? '<span style="font-weight:400;font-size:12px;color:#64748b;margin-left:8px;">· ' + escapeHtml(savedTxt) + '</span>' : ''}
+                        </summary>
+                        <div style="padding:0 14px 14px;border-top:1px solid #e0f2fe;">${inner}</div>
+                    </details>
+                `;
+            }).join('');
+            return {
+                html: `
+                <div style="background:#f0f9ff;padding:20px;border-radius:8px;border-left:4px solid #0284c7;margin-bottom:20px;">
+                    <h3 style="margin:0 0 8px 0;color:#1e293b;font-size:18px;">📚 Biblioteca de curvas de extracción (usuario)</h3>
+                    <p style="margin:0 0 14px 0;font-size:13px;color:#64748b;line-height:1.45;">
+                        Todas las curvas que el usuario guardó en su cuenta con <strong>Mis curvas guardadas</strong> (herramienta 📊). Sobreviven aunque borre un proyecto.
+                        <strong> ${presetsList.length}</strong> curva${presetsList.length === 1 ? '' : 's'} en biblioteca.
+                    </p>
+                    ${cards}
+                </div>`,
+                chartJobs: chartJobs
+            };
+        }
+
+        function adminScheduleExtraccionLibraryCharts(chartJobs, rootEl) {
+            if (!chartJobs || !chartJobs.length) return;
+            var scope = rootEl || document;
+            var run = function () {
+                chartJobs.forEach(function (job) {
+                    var macroEl = document.getElementById(job.macroWrapId);
+                    var microEl = document.getElementById(job.microWrapId);
+                    if (!macroEl && !microEl) return;
+                    renderAdminExtraccionEtapaCharts(job.state, { macroEl: macroEl, microEl: microEl });
+                });
+            };
+            run();
+            requestAnimationFrame(run);
+            setTimeout(run, 50);
+            setTimeout(run, 200);
+        }
+
+        const ADMIN_FERTI_SO4_TO_S = 96 / 32;
+        const ADMIN_FERTI_ION_EQ = { N_NO3: 14.0, N_NH4: 14.0, P: 31.0, SO4: 16.03, Cl: 35.45, K: 39.1, Ca: 20.04, Mg: 12.15 };
+        const ADMIN_FERTI_MICRO_NUTRIENTS = ['Fe', 'Mn', 'B', 'Zn', 'Cu', 'Mo'];
+
+        function adminFertiNum(v, d) {
+            d = d == null ? 2 : d;
+            var n = parseFloat(v);
+            if (isNaN(n)) return (0).toFixed(d);
+            return n.toFixed(d);
+        }
+
+        function adminFertiStageSlotLabel(timeUnit, i) {
+            return (timeUnit === 'mes' ? 'Mes' : 'Semana') + ' ' + (i + 1);
+        }
+
+        function adminFertiNormalizeWaterM3ha(program) {
+            var weeks = Array.isArray(program && program.weeks) ? program.weeks : [];
+            var arr = Array.isArray(program && program.chartWaterByStageM3ha) ? program.chartWaterByStageM3ha.slice(0, weeks.length) : [];
+            while (arr.length < weeks.length) arr.push(0);
+            return arr.map(function (v) { return Math.max(0, parseFloat(v) || 0); });
+        }
+
+        function adminFertiKgFromStageTotals(totals) {
+            var t = totals || {};
+            var kgS = ((parseFloat(t.SO4) || 0) / ADMIN_FERTI_SO4_TO_S) + (parseFloat(t.S) || 0);
+            return {
+                N_NO3: parseFloat(t.N_NO3) || 0,
+                N_NH4: parseFloat(t.N_NH4) || 0,
+                P: parseFloat(t.P) || ((parseFloat(t.P2O5) || 0) / ADMIN_CONVERSION_FACTORS.P2O5_TO_P),
+                SO4: kgS,
+                Cl: parseFloat(t.Cl) || 0,
+                K: parseFloat(t.K) || ((parseFloat(t.K2O) || 0) / ADMIN_CONVERSION_FACTORS.K2O_TO_K),
+                Ca: parseFloat(t.Ca) || ((parseFloat(t.CaO) || 0) / ADMIN_CONVERSION_FACTORS.CaO_TO_Ca),
+                Mg: parseFloat(t.Mg) || ((parseFloat(t.MgO) || 0) / ADMIN_CONVERSION_FACTORS.MgO_TO_Mg),
+                Fe: parseFloat(t.Fe) || 0,
+                Mn: parseFloat(t.Mn) || 0,
+                B: parseFloat(t.B) || 0,
+                Zn: parseFloat(t.Zn) || 0,
+                Cu: parseFloat(t.Cu) || 0,
+                Mo: parseFloat(t.Mo) || 0
+            };
+        }
+
+        function adminFertiWaterKgElemental(waterOx) {
+            var w = waterOx || {};
+            var waterN = parseFloat(w.N) || 0;
+            var kgS = ((parseFloat(w.SO4) || 0) / ADMIN_FERTI_SO4_TO_S) + (parseFloat(w.S) || 0);
+            return {
+                N_NO3: waterN,
+                N_NH4: 0,
+                P: (parseFloat(w.P2O5) || 0) / ADMIN_CONVERSION_FACTORS.P2O5_TO_P,
+                SO4: kgS,
+                Cl: parseFloat(w.Cl) || 0,
+                K: (parseFloat(w.K2O) || 0) / ADMIN_CONVERSION_FACTORS.K2O_TO_K,
+                Ca: (parseFloat(w.CaO) || 0) / ADMIN_CONVERSION_FACTORS.CaO_TO_Ca,
+                Mg: (parseFloat(w.MgO) || 0) / ADMIN_CONVERSION_FACTORS.MgO_TO_Mg,
+                Fe: parseFloat(w.Fe) || 0,
+                Mn: parseFloat(w.Mn) || 0,
+                B: parseFloat(w.B) || 0,
+                Zn: parseFloat(w.Zn) || 0,
+                Cu: parseFloat(w.Cu) || 0,
+                Mo: parseFloat(w.Mo) || 0
+            };
+        }
+
+        function adminFertiMergeKg(a, b) {
+            var out = Object.assign({}, a || {});
+            Object.keys(b || {}).forEach(function (k) {
+                out[k] = (parseFloat(out[k]) || 0) + (parseFloat(b[k]) || 0);
+            });
+            return out;
+        }
+
+        function adminComputeFertiIonicSummaryFromKg(kg, m3ha, stage) {
+            if (m3ha <= 0) return { stage: stage, m3ha: m3ha, kg: kg };
+            var ppm = {};
+            Object.keys(kg).forEach(function (k) { ppm[k] = (kg[k] * 1000) / m3ha; });
+            var meq = {
+                N_NO3: ppm.N_NO3 / ADMIN_FERTI_ION_EQ.N_NO3,
+                N_NH4: ppm.N_NH4 / ADMIN_FERTI_ION_EQ.N_NH4,
+                P: ppm.P / ADMIN_FERTI_ION_EQ.P,
+                SO4: ppm.SO4 / ADMIN_FERTI_ION_EQ.SO4,
+                Cl: ppm.Cl / ADMIN_FERTI_ION_EQ.Cl,
+                K: ppm.K / ADMIN_FERTI_ION_EQ.K,
+                Ca: ppm.Ca / ADMIN_FERTI_ION_EQ.Ca,
+                Mg: ppm.Mg / ADMIN_FERTI_ION_EQ.Mg
+            };
+            var sumAnionsTriangle = meq.N_NO3 + meq.P + meq.SO4;
+            var sumAnionsTotal = sumAnionsTriangle + meq.Cl;
+            var sumCationsKCaMg = meq.K + meq.Ca + meq.Mg;
+            var sumCationsTotal = sumCationsKCaMg + meq.N_NH4;
+            var nTotalMeq = meq.N_NO3 + meq.N_NH4;
+            return {
+                stage: stage,
+                m3ha: m3ha,
+                kg: kg,
+                ppm: ppm,
+                meq: meq,
+                pct: {
+                    N_NO3: sumAnionsTriangle > 0 ? (meq.N_NO3 / sumAnionsTriangle) * 100 : 0,
+                    P: sumAnionsTriangle > 0 ? (meq.P / sumAnionsTriangle) * 100 : 0,
+                    SO4: sumAnionsTriangle > 0 ? (meq.SO4 / sumAnionsTriangle) * 100 : 0,
+                    Cl: sumAnionsTotal > 0 ? (meq.Cl / sumAnionsTotal) * 100 : 0,
+                    K: sumCationsKCaMg > 0 ? (meq.K / sumCationsKCaMg) * 100 : 0,
+                    Ca: sumCationsKCaMg > 0 ? (meq.Ca / sumCationsKCaMg) * 100 : 0,
+                    Mg: sumCationsKCaMg > 0 ? (meq.Mg / sumCationsKCaMg) * 100 : 0,
+                    N_NH4: sumCationsTotal > 0 ? (meq.N_NH4 / sumCationsTotal) * 100 : 0
+                },
+                nSplit: {
+                    NO3: nTotalMeq > 0 ? (meq.N_NO3 / nTotalMeq) * 100 : 0,
+                    NH4: nTotalMeq > 0 ? (meq.N_NH4 / nTotalMeq) * 100 : 0
+                },
+                sumAnionsMeq: sumAnionsTotal,
+                sumCationsMeq: sumCationsTotal
+            };
+        }
+
+        function adminGetFertiStageIonicSummary(week, m3ha, waterOx, includeWater) {
+            if (!week) return null;
+            var kg = adminFertiKgFromStageTotals(week.totals || {});
+            if (includeWater) {
+                kg = adminFertiMergeKg(kg, adminFertiWaterKgElemental(waterOx));
+            }
+            return adminComputeFertiIonicSummaryFromKg(kg, parseFloat(m3ha) || 0, week);
+        }
+
+        function adminRenderFertiMacroIonicTableHtml(summary) {
+            if (!summary || !summary.ppm) return '';
+            var s = summary;
+            var th = 'padding:6px 8px;border:1px solid #cbd5e1;background:#e2e8f0;font-size:11px;text-align:center;';
+            var td = 'padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:right;';
+            var tdL = 'padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:left;';
+            return '<table style="width:100%;border-collapse:collapse;margin-top:6px;">' +
+                '<thead><tr><th style="' + th + 'text-align:left;">Nutriente</th><th style="' + th + '">kg/ha</th><th style="' + th + '">ppm</th><th style="' + th + '">meq/L</th><th style="' + th + '">% grupo</th></tr></thead><tbody>' +
+                '<tr><td style="' + tdL + '">N-NO₃⁻</td><td style="' + td + '">' + adminFertiNum(s.kg.N_NO3) + '</td><td style="' + td + '">' + adminFertiNum(s.ppm.N_NO3, 1) + '</td><td style="' + td + '">' + adminFertiNum(s.meq.N_NO3, 2) + '</td><td style="' + td + '">' + adminFertiNum(s.pct.N_NO3, 1) + '</td></tr>' +
+                '<tr><td style="' + tdL + '">P-H₂PO₄⁻</td><td style="' + td + '">' + adminFertiNum(s.kg.P) + '</td><td style="' + td + '">' + adminFertiNum(s.ppm.P, 1) + '</td><td style="' + td + '">' + adminFertiNum(s.meq.P, 2) + '</td><td style="' + td + '">' + adminFertiNum(s.pct.P, 1) + '</td></tr>' +
+                '<tr><td style="' + tdL + '">S-SO₄²⁻</td><td style="' + td + '">' + adminFertiNum(s.kg.SO4) + '</td><td style="' + td + '">' + adminFertiNum(s.ppm.SO4, 1) + '</td><td style="' + td + '">' + adminFertiNum(s.meq.SO4, 2) + '</td><td style="' + td + '">' + adminFertiNum(s.pct.SO4, 1) + '</td></tr>' +
+                '<tr><td style="' + tdL + '">Cl⁻</td><td style="' + td + '">' + adminFertiNum(s.kg.Cl) + '</td><td style="' + td + '">' + adminFertiNum(s.ppm.Cl, 1) + '</td><td style="' + td + '">' + adminFertiNum(s.meq.Cl, 2) + '</td><td style="' + td + '">' + adminFertiNum(s.pct.Cl, 1) + '</td></tr>' +
+                '<tr style="background:#f8fafc;"><td style="' + tdL + 'font-weight:600;">K⁺</td><td style="' + td + '">' + adminFertiNum(s.kg.K) + '</td><td style="' + td + '">' + adminFertiNum(s.ppm.K, 1) + '</td><td style="' + td + '">' + adminFertiNum(s.meq.K, 2) + '</td><td style="' + td + '">' + adminFertiNum(s.pct.K, 1) + '</td></tr>' +
+                '<tr><td style="' + tdL + '">Ca²⁺</td><td style="' + td + '">' + adminFertiNum(s.kg.Ca) + '</td><td style="' + td + '">' + adminFertiNum(s.ppm.Ca, 1) + '</td><td style="' + td + '">' + adminFertiNum(s.meq.Ca, 2) + '</td><td style="' + td + '">' + adminFertiNum(s.pct.Ca, 1) + '</td></tr>' +
+                '<tr><td style="' + tdL + '">Mg²⁺</td><td style="' + td + '">' + adminFertiNum(s.kg.Mg) + '</td><td style="' + td + '">' + adminFertiNum(s.ppm.Mg, 1) + '</td><td style="' + td + '">' + adminFertiNum(s.meq.Mg, 2) + '</td><td style="' + td + '">' + adminFertiNum(s.pct.Mg, 1) + '</td></tr>' +
+                '<tr><td style="' + tdL + '">N-NH₄⁺</td><td style="' + td + '">' + adminFertiNum(s.kg.N_NH4) + '</td><td style="' + td + '">' + adminFertiNum(s.ppm.N_NH4, 1) + '</td><td style="' + td + '">' + adminFertiNum(s.meq.N_NH4, 2) + '</td><td style="' + td + '">' + adminFertiNum(s.pct.N_NH4, 1) + '</td></tr>' +
+                '</tbody></table>' +
+                '<div style="margin-top:8px;font-size:11px;color:#64748b;">N: NO₃ ' + adminFertiNum(s.nSplit.NO3, 1) + '% · NH₄ ' + adminFertiNum(s.nSplit.NH4, 1) + '% · Σ aniones ' + adminFertiNum(s.sumAnionsMeq, 2) + ' meq/L · Σ cationes ' + adminFertiNum(s.sumCationsMeq, 2) + ' meq/L</div>';
+        }
+
+        function adminRenderFertiMicroTableHtml(summary) {
+            if (!summary || !summary.kg) return '';
+            var th = 'padding:6px 8px;border:1px solid #cbd5e1;background:#e2e8f0;font-size:11px;text-align:center;';
+            var td = 'padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:right;';
+            var tdL = 'padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:left;';
+            var rows = ADMIN_FERTI_MICRO_NUTRIENTS.map(function (n) {
+                return '<tr><td style="' + tdL + '">' + n + '</td><td style="' + td + '">' + adminFertiNum(summary.kg[n], 3) + '</td><td style="' + td + '">' + adminFertiNum(summary.ppm && summary.ppm[n], 2) + '</td></tr>';
+            }).join('');
+            return '<table style="width:100%;border-collapse:collapse;margin-top:6px;"><thead><tr><th style="' + th + 'text-align:left;">Nutriente</th><th style="' + th + '">kg/ha</th><th style="' + th + '">ppm</th></tr></thead><tbody>' + rows + '</tbody></table>';
+        }
+
+        function adminBuildFertiChartsInsightsHtml(program, waterOx, projectId, stageIndex) {
+            var weeks = Array.isArray(program && program.weeks) ? program.weeks : [];
+            if (!weeks.length) {
+                return '<div style="padding:10px 12px;background:#fffbeb;border:1px dashed #f59e0b;border-radius:8px;color:#92400e;font-size:12px;">Sin etapas en el programa.</div>';
+            }
+            var timeUnit = program.timeUnit === 'mes' ? 'mes' : 'semana';
+            var waterArr = adminFertiNormalizeWaterM3ha(program);
+            var idx = Math.max(0, Math.min(parseInt(stageIndex, 10) || 0, weeks.length - 1));
+            var week = weeks[idx];
+            var m3ha = waterArr[idx] || 0;
+            var summaryFert = adminGetFertiStageIonicSummary(week, m3ha, waterOx, false);
+            var summaryWithWater = adminGetFertiStageIonicSummary(week, m3ha, waterOx, true);
+            var safePid = escapeHtml(String(projectId || ''));
+            var options = weeks.map(function (w, i) {
+                var label = adminFertiStageSlotLabel(timeUnit, i) + ' · ' + (w.stage || w.label || '');
+                return '<option value="' + i + '"' + (i === idx ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+            }).join('');
+            var head =
+                '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;">' +
+                '<label style="font-size:13px;color:#475569;font-weight:600;">Etapa a analizar:</label>' +
+                '<select onchange="onAdminFertiChartStageSelect(\'' + safePid.replace(/'/g, "\\'") + '\', this.value)" style="flex:1;min-width:220px;max-width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;background:#fff;color:#1e293b;">' +
+                options +
+                '</select>' +
+                '<span style="font-size:12px;color:#64748b;">Lámina: <strong>' + (m3ha > 0 ? adminFertiNum(m3ha, 2) + ' m³/ha' : 'sin dato') + '</strong></span>' +
+                '</div>';
+            if (!summaryFert || m3ha <= 0) {
+                return head +
+                    '<div style="padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;color:#92400e;font-size:12px;">' +
+                    'El usuario no capturó <strong>m³/ha</strong> de lámina en Gráficas para ' + escapeHtml(adminFertiStageSlotLabel(timeUnit, idx)) +
+                    '. Sin ese dato no se calculan ppm, meq/L ni %.</div>';
+            }
+            var stageName = escapeHtml(week.stage || week.label || 'Etapa');
+            var slotLabel = escapeHtml(adminFertiStageSlotLabel(timeUnit, idx));
+            return head +
+                '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:12px;">' +
+                '<div style="font-weight:600;color:#166534;margin-bottom:10px;">Macro resumen · ' + slotLabel + ' (' + stageName + ')</div>' +
+                '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;">' +
+                '<div style="background:#fff;border:1px solid #d1fae5;border-radius:8px;padding:10px;">' +
+                '<div style="font-weight:600;color:#1e293b;font-size:13px;margin-bottom:4px;">Aporte de fertilizante</div>' +
+                adminRenderFertiMacroIonicTableHtml(summaryFert) +
+                '</div>' +
+                '<div style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:10px;">' +
+                '<div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:4px;">Fertilizante más aporte de agua</div>' +
+                adminRenderFertiMacroIonicTableHtml(summaryWithWater) +
+                '</div>' +
+                '</div>' +
+                '<div style="font-size:11px;color:#64748b;margin-top:10px;">Misma lógica que Gráficas del usuario. El aporte de agua viene del Programa de nutrición; si está en cero, ambas columnas coinciden.</div>' +
+                '</div>' +
+                '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;">' +
+                '<div style="font-weight:600;color:#1d4ed8;margin-bottom:10px;">Micros · ' + slotLabel + ' (' + stageName + ')</div>' +
+                '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;">' +
+                '<div style="background:#fff;border:1px solid #dbeafe;border-radius:8px;padding:10px;">' +
+                '<div style="font-weight:600;color:#1e293b;font-size:13px;margin-bottom:4px;">Aporte de fertilizante</div>' +
+                adminRenderFertiMicroTableHtml(summaryFert) +
+                '</div>' +
+                '<div style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:10px;">' +
+                '<div style="font-weight:600;color:#0369a1;font-size:13px;margin-bottom:4px;">Fertilizante más aporte de agua</div>' +
+                adminRenderFertiMicroTableHtml(summaryWithWater) +
+                '</div>' +
+                '</div></div>';
+        }
+
+        function renderAdminFertiChartsInsights(projectId, stageIndex) {
+            var cache = window._adminFertiInsightsCache && window._adminFertiInsightsCache[projectId];
+            if (!cache) return;
+            var wrap = document.getElementById('adminFertiChartsInsights_' + adminSafeId(projectId));
+            if (!wrap) return;
+            wrap.innerHTML = adminBuildFertiChartsInsightsHtml(cache.program, cache.waterOx, projectId, stageIndex);
+        }
+        window.onAdminFertiChartStageSelect = function (projectId, stageIdx) {
+            renderAdminFertiChartsInsights(projectId, parseInt(stageIdx, 10) || 0);
+        };
 
         function buildRealRequirementOxide(granularRequirements) {
             const nutrients = ['N','P2O5','K2O','CaO','MgO','S','SO4','Fe','Mn','B','Zn','Cu','Mo','SiO2'];
@@ -8395,6 +9040,33 @@
                 const db = new Date(b?.timestamp || b?.createdAt || b?.date || 0).getTime();
                 return db - da;
             });
+
+            window._adminViewProjectContext = {
+                project: JSON.parse(JSON.stringify(project)),
+                userId: reportOwnerUserId,
+                projectId: projectId
+            };
+
+            const adminExtEtapaState = adminGetExtraccionEtapaStateFromProject(project, reportOwnerUserId, projectId);
+            let extraccionEtapaChartIds = null;
+            if (adminExtEtapaState && project.id) {
+                const safeExtProjectId = adminSafeId(project.id);
+                extraccionEtapaChartIds = {
+                    macroWrapId: 'adminExtEtapaMacroWrap_' + safeExtProjectId,
+                    microWrapId: 'adminExtEtapaMicroWrap_' + safeExtProjectId,
+                    state: adminExtEtapaState
+                };
+            }
+
+            let adminUserExtLibraryBuilt = { html: '', chartJobs: [] };
+            if (reportOwnerUserId) {
+                try {
+                    var adminUserExtPresets = await adminFetchUserExtraccionEtapaLibrary(reportOwnerUserId);
+                    adminUserExtLibraryBuilt = adminBuildUserExtraccionLibrarySectionHtml(reportOwnerUserId, adminUserExtPresets);
+                } catch (libErr) {
+                    console.warn('viewProjectDetails: biblioteca extracción/etapa', libErr);
+                }
+            }
             
             // Construir HTML con todas las secciones
             let html = `
@@ -8478,7 +9150,17 @@
 
             html += `
                 <div style="background: #eef2ff; padding: 20px; border-radius: 8px; border-left: 4px solid #6366f1;">
-                    <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">📄 Reportes Generados (${generatedReports.length})</h3>
+                    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px;">
+                        <h3 style="margin: 0; color: #1e293b; font-size: 18px;">📄 Reportes Generados (${generatedReports.length})</h3>
+                        <button type="button" onclick="openAdminCustomReportModal()"
+                                style="background:#059669;color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;"
+                                title="Elige secciones y genera un PDF con los datos actuales del usuario (no se guarda en su cuenta)">
+                            📄 Generar reporte personalizado (solo lectura)
+                        </button>
+                    </div>
+                    <p style="margin:0 0 14px 0;font-size:12px;color:#64748b;line-height:1.45;">
+                        Los reportes guardados abajo son los que generó el usuario. El botón verde te permite elegir pestañas y descargar un PDF para ti, sin modificar ni guardar nada en su proyecto.
+                    </p>
                     ${generatedReports.length
                         ? generatedReports.map((r, idx) => {
                             const reportName = r?.project?.name || r?.projectName || project.name || `Reporte ${idx + 1}`;
@@ -8499,7 +9181,8 @@
                                 granular: 'Nutrición Granular',
                                 fertigation: 'Fertirriego',
                                 hidroponia: 'Hidroponía',
-                                vpd: 'Clima (VPD)'
+                                vpd: 'Clima (VPD)',
+                                extraccionEtapa: 'Distribución por etapa'
                             };
                             const sectionsText = sections.length
                                 ? sections.map(s => sectionLabelMap[s] || s).join(', ')
@@ -8581,7 +9264,7 @@
                                         🗺️ Ver en Mapa
                                     </button>
                                     <button type="button" onclick="showRadarAdminModal(${JSON.stringify(String(project.id))})"
-                                            title="Requiere RADAR_ADMIN_SECRET en Netlify y el mismo valor en localStorage nutriplant_radar_admin_secret (o window.NUTRIPLANT_RADAR_ADMIN_SECRET)"
+                                            title="Ver historial de imágenes Radar NDVI/NDMI guardadas en la nube para este proyecto"
                                             style="background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;"
                                             onmouseover="this.style.background='#047857'; this.style.transform='translateY(-1px)';"
                                             onmouseout="this.style.background='#059669'; this.style.transform='translateY(0)';">
@@ -9413,6 +10096,7 @@
                 const chartMicroId = `adminFertiMicroChart_${safeProjectId}`;
                 const chartMacroWrapId = `adminFertiMacroChartWrap_${safeProjectId}`;
                 const chartMicroWrapId = `adminFertiMicroChartWrap_${safeProjectId}`;
+                const fertiInsightsWrapId = `adminFertiChartsInsights_${safeProjectId}`;
                 fertiChartIds = { macroId: chartMacroId, microId: chartMicroId, macroWrapId: chartMacroWrapId, microWrapId: chartMicroWrapId };
                 const progColumns = Array.isArray(fertirriegoProgram.columns) ? fertirriegoProgram.columns : [];
                 const weeks = Array.isArray(fertirriegoProgram.weeks) ? fertirriegoProgram.weeks : [];
@@ -9526,6 +10210,9 @@
                     reqOxide[n] = effOk ? (adjVal / (effPct / 100)) : null;
                 });
                 const waterOx = fertirriegoProgram.waterContribution || {};
+                const fertiInsightsStageIdx = Math.max(0, Math.min(parseInt(fertirriegoProgram.chartSelectedStageIndex, 10) || 0, weeks.length - 1));
+                window._adminFertiInsightsCache = window._adminFertiInsightsCache || {};
+                window._adminFertiInsightsCache[project.id] = { program: fertirriegoProgram, waterOx: waterOx };
                 const summary = { aportado: {}, requerido: {}, aportadoAgua: {}, totalWithWater: {}, diferencia: {} };
                 const display = (n, val) => {
                     if (val === null || val === undefined) return null;
@@ -9733,6 +10420,12 @@
                             <div style="flex: 1; min-width: 320px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px;">
                                 <div style="font-weight: 600; color: #1e293b; margin-bottom: 8px;">Micronutrientes</div>
                                 <div id="${chartMicroWrapId}" style="width:100%;min-height:200px;color:#94a3b8;font-style:italic;">Cargando gráfica...</div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+                            <div style="font-weight:600;color:#1e293b;font-size:15px;margin-bottom:8px;">📊 Relaciones por etapa (ppm · meq/L · %)</div>
+                            <div id="${fertiInsightsWrapId}">
+                                ${adminBuildFertiChartsInsightsHtml(fertirriegoProgram, waterOx, project.id, fertiInsightsStageIdx)}
                             </div>
                         </div>
                         <details>
@@ -10384,7 +11077,9 @@
                                     out += '<p style="margin:10px 0 0;font-size:13px;color:#64748b;">☀️ ET₀ mensual guardado en el proyecto (detalle en app).</p>';
                                 }
                                 if (live && live.temperature != null) {
-                                    out += '<div style="margin-top:12px;"><h4 style="margin:0 0 8px 0;">🌤️ Última lectura</h4><div style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;"><div>T: ' + live.temperature + ' °C</div><div>HR: ' + live.humidity + ' %</div><div>UV: ' + (live.uvIndex != null ? live.uvIndex : '—') + '</div><div>Viento: ' + (live.windSpeedKmh != null ? live.windSpeedKmh + ' km/h' : '—') + '</div></div></div>';
+                                    var liveTs = live.fetchedAt || ca.lastUpdated || null;
+                                    var liveWhen = liveTs ? '<p style="margin:0 0 6px;font-size:12px;color:#64748b;"><strong>Lectura:</strong> ' + escapeHtml(new Date(liveTs).toLocaleString('es-MX')) + '</p>' : '';
+                                    out += '<div style="margin-top:12px;"><h4 style="margin:0 0 8px 0;">🌤️ Última lectura</h4>' + liveWhen + '<div style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;"><div>T: ' + live.temperature + ' °C</div><div>HR: ' + live.humidity + ' %</div><div>UV: ' + (live.uvIndex != null ? live.uvIndex : '—') + '</div><div>Viento: ' + (live.windSpeedKmh != null ? live.windSpeedKmh + ' km/h' : '—') + '</div></div></div>';
                                 }
                                 return out;
                             })()}
@@ -10393,6 +11088,32 @@
                     }
                 </div>
             `;
+
+            if (adminUserExtLibraryBuilt && adminUserExtLibraryBuilt.html) {
+                html += adminUserExtLibraryBuilt.html;
+            }
+
+            if (adminExtEtapaState && extraccionEtapaChartIds) {
+                html += adminBuildExtraccionEtapaDetailHtml(adminExtEtapaState, extraccionEtapaChartIds);
+            } else if (!adminUserExtLibraryBuilt || !adminUserExtLibraryBuilt.chartJobs || !adminUserExtLibraryBuilt.chartJobs.length) {
+                html += `
+                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #94a3b8; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 8px 0; color: #1e293b; font-size: 18px;">📊 Curva en este proyecto</h3>
+                    <p style="margin: 0; color: #64748b; font-size: 13px; font-style: italic;">
+                        Ninguna curva cargada en este proyecto. El usuario puede elegir una de su biblioteca en la herramienta 📊.
+                    </p>
+                </div>
+                `;
+            } else {
+                html += `
+                <div style="background: #f8fafc; padding: 16px 20px; border-radius: 8px; border-left: 4px solid #94a3b8; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 6px 0; color: #1e293b; font-size: 16px;">📊 Curva en este proyecto</h3>
+                    <p style="margin: 0; color: #64748b; font-size: 13px; font-style: italic;">
+                        Sin curva aplicada a este proyecto. Arriba ves su biblioteca personal; aquí solo aparecería la curva activa de este expediente.
+                    </p>
+                </div>
+                `;
+            }
             
             // Historial de Chat
             if (project.chat_history && Array.isArray(project.chat_history) && project.chat_history.length > 0) {
@@ -10460,6 +11181,20 @@
                     requestAnimationFrame(tryRender);
                     setTimeout(tryRender, 50);
                     setTimeout(tryRender, 200);
+                }
+                if (extraccionEtapaChartIds && extraccionEtapaChartIds.state && typeof renderAdminExtraccionEtapaCharts === 'function') {
+                    const tryRenderExt = () => {
+                        const macroExtEl = document.getElementById(extraccionEtapaChartIds.macroWrapId);
+                        const microExtEl = document.getElementById(extraccionEtapaChartIds.microWrapId);
+                        renderAdminExtraccionEtapaCharts(extraccionEtapaChartIds.state, { macroEl: macroExtEl, microEl: microExtEl });
+                    };
+                    tryRenderExt();
+                    requestAnimationFrame(tryRenderExt);
+                    setTimeout(tryRenderExt, 50);
+                    setTimeout(tryRenderExt, 200);
+                }
+                if (adminUserExtLibraryBuilt && adminUserExtLibraryBuilt.chartJobs && adminUserExtLibraryBuilt.chartJobs.length) {
+                    adminScheduleExtraccionLibraryCharts(adminUserExtLibraryBuilt.chartJobs, content);
                 }
             }
         }
@@ -10534,6 +11269,88 @@
             const w = window.open(url, '_blank');
             if (!w) {
                 alert('❌ Tu navegador bloqueó la ventana emergente. Habilita pop-ups para abrir el link compartido.');
+            }
+        };
+
+        var ADMIN_REPORT_ALLOWED_SECTIONS = ['location', 'amendments', 'granular', 'fertigation', 'hidroponia', 'vpd', 'extraccionEtapa'];
+        var ADMIN_REPORT_SECTION_ORDER = ['location', 'amendments', 'granular', 'fertigation', 'hidroponia', 'vpd', 'extraccionEtapa'];
+
+        window.openAdminCustomReportModal = function () {
+            var ctx = window._adminViewProjectContext;
+            if (!ctx || !ctx.project) {
+                alert('Abre primero el detalle de un proyecto para generar un reporte.');
+                return;
+            }
+            var modal = document.getElementById('adminCustomReportModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            updateAdminCustomReportBtn();
+        };
+
+        window.closeAdminCustomReportModal = function () {
+            var modal = document.getElementById('adminCustomReportModal');
+            if (modal) modal.style.display = 'none';
+        };
+
+        window.toggleAdminReportSection = function (sectionId) {
+            var el = document.querySelector('#adminCustomReportModal .admin-report-section-item[data-section="' + sectionId + '"]');
+            if (el) el.classList.toggle('selected');
+            updateAdminCustomReportBtn();
+        };
+
+        function updateAdminCustomReportBtn() {
+            var btn = document.getElementById('adminCustomReportGenerateBtn');
+            if (!btn) return;
+            var n = document.querySelectorAll('#adminCustomReportModal .admin-report-section-item.selected').length;
+            btn.disabled = n === 0;
+            btn.style.opacity = n === 0 ? '0.55' : '1';
+            btn.style.cursor = n === 0 ? 'not-allowed' : 'pointer';
+        }
+
+        function getAdminSelectedReportSections() {
+            return Array.from(document.querySelectorAll('#adminCustomReportModal .admin-report-section-item.selected'))
+                .map(function (el) { return el.getAttribute('data-section'); })
+                .filter(function (s) { return s && ADMIN_REPORT_ALLOWED_SECTIONS.indexOf(s) >= 0; });
+        }
+
+        function normalizeAdminReportSections(sections) {
+            if (!Array.isArray(sections)) return [];
+            var filtered = sections.filter(function (s) { return ADMIN_REPORT_ALLOWED_SECTIONS.indexOf(s) >= 0; });
+            return ADMIN_REPORT_SECTION_ORDER.filter(function (id) { return filtered.indexOf(id) >= 0; });
+        }
+
+        window.generateAdminCustomReport = function () {
+            var ctx = window._adminViewProjectContext;
+            if (!ctx || !ctx.project) {
+                alert('No hay proyecto cargado.');
+                return;
+            }
+            var sections = normalizeAdminReportSections(getAdminSelectedReportSections());
+            if (!sections.length) {
+                alert('Selecciona al menos una sección.');
+                return;
+            }
+            var langSel = document.getElementById('adminReportLanguageSelect');
+            var lang = (langSel && langSel.value === 'en') ? 'en' : 'es';
+            var job = {
+                project: ctx.project,
+                userId: ctx.userId || null,
+                projectId: ctx.projectId || (ctx.project && ctx.project.id) || null,
+                selectedSections: sections,
+                reportLanguage: lang,
+                adminMode: true,
+                adminAuthorName: 'Consulta Admin NutriPlant PRO'
+            };
+            try {
+                sessionStorage.setItem('nutriplant_admin_report_job', JSON.stringify(job));
+            } catch (e) {
+                alert('No se pudo preparar el reporte. Los datos del proyecto pueden ser demasiado grandes para esta ventana.');
+                return;
+            }
+            closeAdminCustomReportModal();
+            var w = window.open('../admin-report-print.html', '_blank');
+            if (!w) {
+                alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para generar el reporte.');
             }
         };
         
@@ -10811,6 +11628,14 @@
                 }
             } catch (e) {}
             const userChatCost = (userChatInteractions * 0.001).toFixed(4);
+
+            let adminUserExtLibraryBuilt = { html: '', chartJobs: [] };
+            try {
+                var adminUserExtPresets = await adminFetchUserExtraccionEtapaLibrary(viewCanonicalId);
+                adminUserExtLibraryBuilt = adminBuildUserExtraccionLibrarySectionHtml(viewCanonicalId, adminUserExtPresets);
+            } catch (libErr) {
+                console.warn('viewUserDetails: biblioteca extracción/etapa', libErr);
+            }
             
             // Fechas de pago para mostrar (o fallback desde activación)
             const hasPayPalSubscription = !!user.paypal_subscription_id;
@@ -10915,6 +11740,8 @@
                             </details>
                         </div>
                         
+                        ${adminUserExtLibraryBuilt.html}
+                        
                         <!-- Proyectos del Usuario -->
                         <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
                             <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">📁 Proyectos del Usuario (${userProjects.length})</h3>
@@ -11013,6 +11840,9 @@
                 content.innerHTML = html;
                 modal.style.display = 'flex';
                 lockBodyScrollForDataViewer();
+                if (adminUserExtLibraryBuilt && adminUserExtLibraryBuilt.chartJobs && adminUserExtLibraryBuilt.chartJobs.length) {
+                    adminScheduleExtraccionLibraryCharts(adminUserExtLibraryBuilt.chartJobs, content);
+                }
             }
         }
         window.viewUserDetails = viewUserDetails;
@@ -11054,6 +11884,15 @@
             return String(b).replace(/\/$/, '') + '/api/radar-ndvi';
         }
 
+        function getAdminPanelAccessKey() {
+            try {
+                var params = new URLSearchParams(window.location.search);
+                var k = params.get('k');
+                if (k && String(k).trim()) return String(k).trim();
+            } catch (e) { /* ignore */ }
+            return '';
+        }
+
         function getRadarAdminPanelSecret() {
             try {
                 if (typeof window !== 'undefined' && window.NUTRIPLANT_RADAR_ADMIN_SECRET != null &&
@@ -11077,17 +11916,29 @@
         }
         window.closeRadarAdminModal = closeRadarAdminModal;
 
-        function showRadarAdminModal(projectId) {
-            var secret = getRadarAdminPanelSecret();
-            if (!secret) {
-                alert('Para ver Radar NDVI/NDMI en admin:\n\n1) Netlify → Environment variables → RADAR_ADMIN_SECRET (mismo alcance que las demás vars de Radar).\n\n2) En este navegador, una vez:\nlocalStorage.setItem(\"nutriplant_radar_admin_secret\", \"TU_SECRETO\")\n(o define window.NUTRIPLANT_RADAR_ADMIN_SECRET antes de abrir esta página).\n\nEl secreto debe coincidir con RADAR_ADMIN_SECRET.');
-                return;
+        function escRadarAdminHtml(t) {
+            return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function formatRadarAdminDate(iso) {
+            if (!iso) return '—';
+            try {
+                return new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+            } catch (e) {
+                return String(iso);
             }
-            var pid = String(projectId || '').trim();
-            if (!pid) {
-                alert('ID de proyecto no válido.');
-                return;
-            }
+        }
+
+        function formatRadarAdminSentinelPeriod(item) {
+            if (!item || !item.sentinel_period) return '';
+            var from = item.sentinel_period.from;
+            var to = item.sentinel_period.to;
+            if (from && to) return ' · Sentinel ' + from + ' → ' + to;
+            if (from || to) return ' · Sentinel ' + (from || to);
+            return '';
+        }
+
+        function ensureRadarAdminModal() {
             var modal = document.getElementById('radarAdminModal');
             if (!modal) {
                 modal = document.createElement('div');
@@ -11096,75 +11947,148 @@
                 document.body.appendChild(modal);
             }
             modal.style.zIndex = '57000';
+            return modal;
+        }
+
+        function showRadarAdminLoading(modal, message) {
             modal.innerHTML =
                 '<div style="background:#fff;border-radius:12px;padding:28px;text-align:center;max-width:400px;">' +
-                '<p style="color:#475569;margin:0 0 12px 0;">Cargando Radar…</p>' +
+                '<p style="color:#475569;margin:0 0 12px 0;">' + escRadarAdminHtml(message || 'Cargando Radar…') + '</p>' +
                 '<div style="width:40px;height:40px;border:4px solid #e5e7eb;border-top-color:#10b981;border-radius:50%;animation:nprotspin 1s linear infinite;margin:0 auto;"></div>' +
                 '</div><style>@keyframes nprotspin{to{transform:rotate(360deg)}}</style>';
             modal.style.display = 'flex';
+        }
 
-            fetch(getNutriPlantRadarApiUrlForAdmin(), {
+        function renderRadarAdminModalContent(modal, res, projectId) {
+            var esc = escRadarAdminHtml;
+            if (!res.ok || !res.j || res.j.ok === false) {
+                var msg = (res.j && (res.j.message || res.j.error)) || ('HTTP ' + res.status);
+                modal.innerHTML =
+                    '<div style="background:#fff;border-radius:12px;padding:24px;max-width:480px;"><p style="color:#b91c1c;">' +
+                    esc(msg) +
+                    '</p><button type="button" onclick="closeRadarAdminModal()" style="margin-top:14px;padding:8px 16px;border-radius:6px;border:none;background:#e2e8f0;cursor:pointer;">Cerrar</button></div>';
+                return;
+            }
+
+            var history = Array.isArray(res.j.history) ? res.j.history : [];
+            var historyCount = res.j.history_count != null ? res.j.history_count : history.length;
+            var latest = res.j.latest;
+            var viewId = res.j.view_request_id || (latest && latest.id) || '';
+            var ndvi = latest && latest.signed_url ? latest.signed_url : '';
+            var ndmi = latest && (latest.ndmi_signed_url || (latest.images && latest.images.ndmi && latest.images.ndmi.signed_url))
+                ? (latest.ndmi_signed_url || latest.images.ndmi.signed_url)
+                : '';
+
+            if (!history.length && !ndvi && !ndmi) {
+                modal.innerHTML =
+                    '<div style="background:#fff;border-radius:12px;padding:24px;max-width:520px;"><p style="color:#475569;margin:0;">No hay Radar guardado para este proyecto en la nube (el usuario debe generarlo desde Ubicación).</p>' +
+                    '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:16px;padding:8px 16px;border-radius:6px;border:none;background:#10b981;color:#fff;font-weight:600;cursor:pointer;">Cerrar</button></div>';
+                return;
+            }
+
+            var created = formatRadarAdminDate(latest && latest.created_at);
+            var owner = res.j.owner_user_id
+                ? '<div style="font-size:11px;color:#94a3b8;margin-top:8px;">Propietario (user): ' +
+                  esc(String(res.j.owner_user_id).slice(0, 36)) + (String(res.j.owner_user_id).length > 36 ? '…' : '') + '</div>'
+                : '';
+
+            var selectHtml = '';
+            if (history.length > 0) {
+                var options = history.map(function (item, idx) {
+                    var label = formatRadarAdminDate(item.created_at) + formatRadarAdminSentinelPeriod(item);
+                    if (idx === 0) label += ' · más reciente';
+                    var selected = String(item.id) === String(viewId) ? ' selected' : '';
+                    return '<option value="' + esc(String(item.id)) + '"' + selected + '>' + esc(label) + '</option>';
+                }).join('');
+                selectHtml =
+                    '<div style="margin:0 0 14px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">' +
+                    '<label style="font-size:13px;color:#475569;font-weight:600;">Generación:</label>' +
+                    '<select id="radarAdminHistorySelect" data-project-id="' + esc(String(projectId)) + '" onchange="loadRadarAdminSnapshot(this.dataset.projectId, this.value)" ' +
+                    'style="flex:1;min-width:220px;max-width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;background:#fff;color:#1e293b;">' +
+                    options +
+                    '</select>' +
+                    '<span style="font-size:12px;color:#64748b;">' + esc(String(historyCount)) + ' guardada' + (historyCount === 1 ? '' : 's') + '</span>' +
+                    '</div>';
+            }
+
+            var blockNdvi = ndvi
+                ? '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#166534;margin-bottom:6px;font-size:13px;">NDVI — vigor</div><img src="' +
+                  ndvi.replace(/"/g, '&quot;') +
+                  '" alt="NDVI" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;" /></div>'
+                : '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#166534;margin-bottom:6px;font-size:13px;">NDVI — vigor</div><p style="color:#94a3b8;font-size:13px;margin:0;">Sin imagen NDVI en esta generación.</p></div>';
+            var blockNdmi = ndmi
+                ? '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#0f766e;margin-bottom:6px;font-size:13px;">NDMI — dosel</div><img src="' +
+                  ndmi.replace(/"/g, '&quot;') +
+                  '" alt="NDMI" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;" /></div>'
+                : '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#0f766e;margin-bottom:6px;font-size:13px;">NDMI — dosel</div><p style="color:#94a3b8;font-size:13px;margin:0;">Sin imagen NDMI en esta generación.</p></div>';
+
+            modal.innerHTML =
+                '<div style="background:#fff;border-radius:12px;width:100%;max-width:960px;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:#fff;z-index:1;">' +
+                '<h2 style="margin:0;font-size:18px;color:#1e293b;">🛰️ Radar del cultivo (NDVI / NDMI)</h2>' +
+                '<button type="button" onclick="closeRadarAdminModal()" style="background:none;border:none;font-size:28px;color:#64748b;cursor:pointer;line-height:1;">×</button></div>' +
+                '<div style="padding:16px 18px 22px;">' +
+                selectHtml +
+                '<p style="margin:0 0 12px 0;font-size:13px;color:#64748b;">Mostrando generación del <strong>' + esc(created) + '</strong></p>' +
+                '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">' +
+                blockNdvi +
+                blockNdmi +
+                '</div>' +
+                owner +
+                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">Sentinel-2 / Earth Engine. Valores relativos al polígono.</p></div></div>';
+        }
+
+        function fetchRadarAdminData(projectId, requestId) {
+            var adminKey = getAdminPanelAccessKey();
+            var secret = getRadarAdminPanelSecret();
+            var fetchHeaders = { 'Content-Type': 'application/json' };
+            if (secret) fetchHeaders['X-Radar-Admin-Secret'] = secret;
+            var payload = {
+                action: 'admin_status',
+                project_id: String(projectId || '').trim(),
+                admin_key: adminKey || undefined,
+                history_limit: 36
+            };
+            if (requestId) payload.request_id = String(requestId);
+            return fetch(getNutriPlantRadarApiUrlForAdmin(), {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Radar-Admin-Secret': secret
-                },
-                body: JSON.stringify({ action: 'admin_status', project_id: pid })
-            })
-                .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; }); })
-                .then(function (res) {
-                    function esc(t) {
-                        return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    }
-                    if (!res.ok || !res.j || res.j.ok === false) {
-                        var msg = (res.j && (res.j.message || res.j.error)) || ('HTTP ' + res.status);
-                        modal.innerHTML =
-                            '<div style="background:#fff;border-radius:12px;padding:24px;max-width:480px;"><p style="color:#b91c1c;">' +
-                            esc(msg) +
-                            '</p><button type="button" onclick="closeRadarAdminModal()" style="margin-top:14px;padding:8px 16px;border-radius:6px;border:none;background:#e2e8f0;cursor:pointer;">Cerrar</button></div>';
-                        return;
-                    }
-                    var latest = res.j.latest;
-                    var ndvi = latest && latest.signed_url ? latest.signed_url : '';
-                    var ndmi = latest && (latest.ndmi_signed_url || (latest.images && latest.images.ndmi && latest.images.ndmi.signed_url)) ? (latest.ndmi_signed_url || latest.images.ndmi.signed_url) : '';
-                    if (!ndvi && !ndmi) {
-                        modal.innerHTML =
-                            '<div style="background:#fff;border-radius:12px;padding:24px;max-width:520px;"><p style="color:#475569;margin:0;">No hay Radar guardado para este proyecto en la nube (el usuario debe generarlo desde Ubicación).</p>' +
-                            '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:16px;padding:8px 16px;border-radius:6px;border:none;background:#10b981;color:#fff;font-weight:600;cursor:pointer;">Cerrar</button></div>';
-                        return;
-                    }
-                    var created = '';
-                    if (latest && latest.created_at) {
-                        try {
-                            created = new Date(latest.created_at).toLocaleString('es-MX');
-                        } catch (e) { created = ''; }
-                    }
-                    var owner = res.j.owner_user_id ? '<div style="font-size:11px;color:#94a3b8;margin-top:8px;">Propietario (user): ' + esc(String(res.j.owner_user_id).slice(0, 36)) + (String(res.j.owner_user_id).length > 36 ? '…' : '') + '</div>' : '';
-                    var blockNdvi = ndvi
-                        ? '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#166534;margin-bottom:6px;font-size:13px;">NDVI — vigor</div><img src="' +
-                          ndvi.replace(/"/g, '&quot;') +
-                          '" alt="NDVI" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;" /></div>'
-                        : '';
-                    var blockNdmi = ndmi
-                        ? '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#0f766e;margin-bottom:6px;font-size:13px;">NDMI — dosel</div><img src="' +
-                          ndmi.replace(/"/g, '&quot;') +
-                          '" alt="NDMI" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;" /></div>'
-                        : '';
+                headers: fetchHeaders,
+                body: JSON.stringify(payload)
+            }).then(function (r) {
+                return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; });
+            });
+        }
+
+        function loadRadarAdminSnapshot(projectId, requestId) {
+            var modal = ensureRadarAdminModal();
+            showRadarAdminLoading(modal, 'Cargando imagen…');
+            fetchRadarAdminData(projectId, requestId)
+                .then(function (res) { renderRadarAdminModalContent(modal, res, projectId); })
+                .catch(function (err) {
                     modal.innerHTML =
-                        '<div style="background:#fff;border-radius:12px;width:100%;max-width:960px;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);">' +
-                        '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:#fff;">' +
-                        '<h2 style="margin:0;font-size:18px;color:#1e293b;">🛰️ Radar del cultivo (NDVI / NDMI)</h2>' +
-                        '<button type="button" onclick="closeRadarAdminModal()" style="background:none;border:none;font-size:28px;color:#64748b;cursor:pointer;line-height:1;">×</button></div>' +
-                        '<div style="padding:16px 18px 22px;"><p style="margin:0 0 12px 0;font-size:13px;color:#64748b;">' +
-                        (created ? 'Última generación: <strong>' + esc(created) + '</strong>' : 'Última generación: —') +
-                        '</p>' +
-                        '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">' +
-                        blockNdvi +
-                        blockNdmi +
-                        '</div>' +
-                        owner +
-                        '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">Sentinel-2 / Earth Engine. Valores relativos al polígono.</p></div></div>';
-                })
+                        '<div style="background:#fff;border-radius:12px;padding:24px;"><p style="color:#b91c1c;">Error de red</p>' +
+                        '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:12px;">Cerrar</button></div>';
+                    console.error('Radar admin modal:', err);
+                });
+        }
+        window.loadRadarAdminSnapshot = loadRadarAdminSnapshot;
+
+        function showRadarAdminModal(projectId) {
+            var adminKey = getAdminPanelAccessKey();
+            var secret = getRadarAdminPanelSecret();
+            if (!adminKey && !secret) {
+                alert('No se encontró la clave del panel admin (parámetro ?k= en la URL). Abre el panel con el enlace completo que incluye ?k=...');
+                return;
+            }
+            var pid = String(projectId || '').trim();
+            if (!pid) {
+                alert('ID de proyecto no válido.');
+                return;
+            }
+            var modal = ensureRadarAdminModal();
+            showRadarAdminLoading(modal, 'Cargando Radar…');
+            fetchRadarAdminData(pid, '')
+                .then(function (res) { renderRadarAdminModalContent(modal, res, pid); })
                 .catch(function (err) {
                     modal.innerHTML =
                         '<div style="background:#fff;border-radius:12px;padding:24px;"><p style="color:#b91c1c;">Error de red</p>' +

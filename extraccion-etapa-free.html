@@ -352,11 +352,11 @@
       <span class="pill pill--info">% por etapa → debe sumar 100% / nutriente</span>
       <span class="pill pill--warn">Valida en campo; curvas orientativas</span>
     </div>
-    <div class="preset-bar" id="presetBar" aria-label="Configuraciones guardadas (solo dashboard)">
+    <div class="preset-bar" id="presetBar" aria-label="Mis curvas guardadas (solo dashboard)">
       <label for="presetSelect">
-        Configuraciones
+        Mis curvas guardadas
         <select id="presetSelect">
-          <option value="">— Cargar una guardada —</option>
+          <option value="">— Elegir curva —</option>
         </select>
       </label>
       <label for="presetTitleInp">
@@ -364,11 +364,11 @@
         <input type="text" id="presetTitleInp" maxlength="80" placeholder="Ej. Aguacate hass · curvas ejemplo" autocomplete="off" />
       </label>
       <div class="preset-actions">
-        <button type="button" class="btn btn-preset-save" id="btnPresetSave">💾 Guardar como plantilla</button>
+        <button type="button" class="btn btn-preset-save" id="btnPresetSave">💾 Guardar en mi biblioteca</button>
         <button type="button" class="btn btn-ghost btn-preset-del" id="btnPresetDelete" disabled>🗑 Eliminar seleccionada</button>
       </div>
       <p class="preset-hint" id="presetHint">
-        Las plantillas se guardan en el <strong>proyecto activo</strong> (local + sincronización con la nube si tu cuenta tiene sync). El trabajo cotidiano sigue guardándose solo en “autosave”.
+        Tu biblioteca es <strong>por usuario</strong> (no por proyecto): puedes tener varias curvas de distintos cultivos y cargar la que quieras en cualquier proyecto. Si borras un proyecto, estas curvas <strong>no se pierden</strong>. El trabajo del día sigue en autosave del proyecto activo.
       </p>
     </div>
   </header>
@@ -517,12 +517,7 @@
   }
 
   function buildPresetsLocalKey(ctx) {
-    return (
-      'np_extraccion_etapa_presets_' +
-      ctx.userId +
-      '_' +
-      ctx.projectId
-    );
+    return 'np_extraccion_etapa_presets_user_' + ctx.userId;
   }
 
   function normalizePresetsBucket(raw) {
@@ -595,7 +590,6 @@
       var ctx = getContext();
       host.nutriplantSaveExtractionPresetsToCloud({
         userId: ctx.userId,
-        projectId: ctx.projectId,
         presetsData: bucket
       });
     } catch (_) {}
@@ -642,7 +636,7 @@
     sel.innerHTML = '';
     var o0 = document.createElement('option');
     o0.value = '';
-    o0.textContent = '— Cargar una guardada —';
+    o0.textContent = '— Elegir curva —';
     sel.appendChild(o0);
     presetsList
       .slice()
@@ -693,7 +687,7 @@
         if (!p) return;
         var normalized = normalizeState(p.state);
         if (!normalized) {
-          alert('No se pudo cargar esa plantilla (datos incompletos).');
+          alert('No se pudo cargar esa curva (datos incompletos).');
           invalidatePresetChoice();
           return;
         }
@@ -713,7 +707,7 @@
             : '';
         if (!title) {
           title =
-            'Configuración · ' +
+            'Curva · ' +
             new Date().toLocaleString('es', {
               day: '2-digit',
               month: 'short',
@@ -752,7 +746,7 @@
             break;
           }
         }
-        if (!confirm('¿Eliminar la plantilla «' + titleDel + '»?')) return;
+        if (!confirm('¿Eliminar la curva «' + titleDel + '» de tu biblioteca?')) return;
         presetsList = presetsList.filter(function (x) {
           return x.id !== idDel;
         });
@@ -963,7 +957,7 @@
       el.removeAttribute('aria-hidden');
       el.innerHTML =
         '<strong>Modo dashboard:</strong> guardado automático local + proyecto en la nube. ' +
-        'Además puedes crear <strong>plantillas con título</strong> (conjuntos de kg/ha y %) que se sincronizan con el proyecto activo.';
+        'Además puedes guardar <strong>curvas con título</strong> en tu biblioteca personal (kg/ha y %); las ves en todos tus proyectos y no se pierden si borras uno.';
     } else {
       el.style.display = 'none';
       el.setAttribute('aria-hidden', 'true');

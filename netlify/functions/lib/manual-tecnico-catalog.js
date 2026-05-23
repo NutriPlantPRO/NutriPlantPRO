@@ -7,7 +7,7 @@ const BASE = 'https://nutriplantpro.com/manual-tecnico';
 module.exports = {
   version: '2026-05-22',
   scope:
-    'Biblioteca HTML pública, sin cuenta. 22 capítulos (pilares A–H). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO.',
+    'Biblioteca HTML pública, sin cuenta. 22 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO.',
   publicUrls: {
     index: `${BASE}/`,
     llms: `${BASE}/llms.txt`,
@@ -27,7 +27,7 @@ module.exports = {
       slug: 'flujo-nutriplant-pro',
       title: 'Guía rápida: flujo de plataforma y criterio de uso',
       url: `${BASE}/capitulos/flujo-nutriplant-pro.html`,
-      pillar: 'H — Flujo de la plataforma',
+      pillar: '1 — Flujo de la plataforma',
       summary:
         'Entrada al manual: login vs proyecto PRO; Dato→Interpretación→Ajuste→Programa→Seguimiento; módulo por objetivo; errores comunes (suelo≠enmiendas, % meq≠CIC, etc.).',
       status: 'published'
@@ -114,7 +114,7 @@ module.exports = {
       title: 'VPD, NDVI y NDMI',
       url: `${BASE}/capitulos/vpd-deficit-presion-vapor.html`,
       pillar: 'E — Agua y clima',
-      summary: 'VPD kPa (Tetens/simple/avanzada); NDVI vigor y NDMI humedad (lectura satelital); proyecto + calculadora gratis. No sustituye campo.',
+      summary: 'VPD kPa (Tetens/simple/avanzada); NDVI vigor y NDMI humedad (lectura satelital); créditos Radar por ha (≤30=1, >30=2, >100=3; tope 20/mes); proyecto + calculadora gratis. No sustituye campo.',
       status: 'published'
     },
     {
@@ -141,7 +141,8 @@ module.exports = {
       title: 'Extracción y distribución nutrimental por etapa',
       url: `${BASE}/capitulos/extraccion-nutrimental-por-etapa.html`,
       pillar: 'D — Programas',
-      summary: 'Extracción/ton × rendimiento; ajuste; eficiencia; requerimiento real; distribución por etapa.',
+      summary:
+        'Requerimiento (Ferti/Granular): kg/ton×rendimiento; ajuste; eficiencia. Herramienta 📊: kg/ha totales + % por etapa → curvas; biblioteca por usuario; curva activa por proyecto; PDF. Manual ampliado 2026-05-23.',
       status: 'published'
     },
     {

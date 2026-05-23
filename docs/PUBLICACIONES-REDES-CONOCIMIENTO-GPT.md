@@ -135,7 +135,7 @@ Usar cuando Jesús pida «dame un post» sin especificar enlace previo:
 4. **RAS agua** — fórmula SAR de referencia; en app el campo RAS es manual.
 5. **ICC fruta** — semáforo |ICC| ≤10 % verde; cruce con programa pre-cosecha.
 6. **VPD / NDVI** — por qué importan; apoyo, no sustituyen campo.
-7. **Manual técnico público** — **22 capítulos**, pilares A–H; biblioteca para agrónomos e IA (GEO).
+7. **Manual técnico público** — **22 capítulos**, pilar **1** + pilares A–G; biblioteca para agrónomos e IA (GEO).
 8. **Flujo NutriPlant** — dato → interpretación → programa → seguimiento → `flujo-nutriplant-pro`.
 9. **Herramientas gratis** — solución nutritiva, mezcla granular, VPD en login.
 

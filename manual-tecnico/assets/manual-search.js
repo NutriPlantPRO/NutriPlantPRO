@@ -8,7 +8,7 @@
     {
       href: 'capitulos/flujo-nutriplant-pro.html',
       icon: '🧭',
-      pillar: 'H · Flujo de la plataforma',
+      pillar: '1 · Flujo de la plataforma',
       title: 'Guía rápida: flujo de plataforma y criterio de uso',
       keywords: 'flujo plataforma login proyecto dashboard diagnóstico enmiendas programa seguimiento módulo objetivo errores comunes dato decisión'
     },
@@ -94,7 +94,7 @@
       icon: '📈',
       pillar: 'D · Programas',
       title: 'Extracción y distribución nutrimental por etapa',
-      keywords: 'extracción nutrimental etapa fenológica cultivo curva absorción distribución'
+      keywords: 'extracción nutrimental etapa fenológica curva distribución kg/ha biblioteca mis curvas guardadas herramienta gráfica reporte pdf'
     },
     {
       href: 'capitulos/programa-fertirriego-etapas.html',
@@ -136,7 +136,7 @@
       icon: '💧',
       pillar: 'E · Agua y clima',
       title: 'VPD, NDVI y NDMI',
-      keywords: 'VPD déficit presión vapor invernadero clima estrés hídrico NDVI NDMI satélite índice vegetación humedad'
+      keywords: 'VPD déficit presión vapor invernadero clima estrés hídrico NDVI NDMI satélite índice vegetación humedad créditos Radar hectáreas'
     },
     {
       href: 'capitulos/agua-dureza-acidificacion-solubilidad.html',
