@@ -2014,8 +2014,7 @@ function buildFertiChartsInsightsHtmlForReport(program, waterOx, opts) {
         Los % siguen la misma lógica que Gráficas (triángulos N-P-S y K-Ca-Mg; Cl⁻ y N-NH₄⁺ aparte).
       </p>`
     : `<p class="report-note" style="margin-top:0;margin-bottom:12px;">
-        Lámina capturada en Gráficas: ${waterSummary}. Misma lógica que el panel de Gráficas y el admin.
-        El aporte de agua proviene del Programa de nutrición; si está en cero, ambas columnas coinciden.
+        Lámina capturada en Gráficas: ${waterSummary}.
       </p>`;
   return `
     <div class="report-block" style="border-color:#5eead4;background:#f0fdfa;">

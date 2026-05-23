@@ -13897,11 +13897,7 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
         }
         .report-table-wrap.report-pdf-compact-table .report-app-table th:first-child,
         .report-table-wrap.report-pdf-compact-table .report-app-table td:first-child {
-          width: 8.5%;
-        }
-        .report-table-wrap.report-pdf-compact-table .report-app-table th:nth-child(2),
-        .report-table-wrap.report-pdf-compact-table .report-app-table td:nth-child(2) {
-          width: 3.5%;
+          width: 11.5%;
         }
         .report-table-wrap.report-pdf-compact-table .report-ferti-stage-cell,
         .report-table-wrap.report-pdf-compact-table .report-ferti-stage-num {
