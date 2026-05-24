@@ -146,6 +146,10 @@
     return daysFromTodayToStartDate(startDate) > OPEN_METEO_ARCHIVE_THRESHOLD_DAYS;
   }
 
+  function climateSatelliteUnavailableMessage() {
+    return 'La lectura satelital de lluvia y ET₀ no está disponible en este momento. Intenta de nuevo más tarde; tus datos guardados se mantienen sin cambios.';
+  }
+
   function hasAnyMonthValue(monthsObj) {
     if (!monthsObj || typeof monthsObj !== 'object') return false;
     return Object.keys(monthsObj).some(function (k) {
@@ -268,9 +272,9 @@
       }
     } catch (err) {
       console.error(err);
-      var msg = err && err.message ? String(err.message) : 'Error al obtener datos';
-      if (status) status.textContent = '❌ ' + msg;
-      alert('No se pudo obtener lluvia/ET₀.\n\n' + msg + '\n\nIntenta de nuevo en unos minutos.');
+      var userMsg = climateSatelliteUnavailableMessage();
+      if (status) status.textContent = '⚠️ ' + userMsg;
+      alert(userMsg);
     } finally {
       if (btn) btn.disabled = false;
     }

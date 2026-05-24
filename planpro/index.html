@@ -1816,6 +1816,15 @@
       font-size: 13px;
       transition: background 0.12s ease;
     }
+    .np-tree-row[draggable='true'] {
+      cursor: grab;
+    }
+    .np-tree-row.np-dnd-drop-before {
+      box-shadow: inset 0 3px 0 var(--np-tree-accent, #2563eb);
+    }
+    .np-tree-row.np-dnd-drop-after {
+      box-shadow: inset 0 -3px 0 var(--np-tree-accent, #2563eb);
+    }
     .np-tree-row-lead {
       grid-column: 1;
       grid-row: 1;
@@ -2788,6 +2797,19 @@
       background: rgba(255, 255, 255, 0.92);
       transform: translateY(-1px);
       box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+    }
+    .np-pillar-tab-wrap[draggable='true'] {
+      cursor: grab;
+    }
+    .np-pillar-tab-wrap.np-dnd-dragging,
+    .np-tree-row.np-dnd-dragging {
+      opacity: 0.48;
+    }
+    .np-pillar-tab-wrap.np-dnd-drop-before {
+      box-shadow: -4px 0 0 #2563eb, 0 8px 22px rgba(37, 99, 235, 0.14);
+    }
+    .np-pillar-tab-wrap.np-dnd-drop-after {
+      box-shadow: 4px 0 0 #2563eb, 0 8px 22px rgba(37, 99, 235, 0.14);
     }
     .np-pillar-tab-wrap-active {
       background: linear-gradient(175deg, rgba(236, 253, 245, 0.95) 0%, rgba(255, 255, 255, 0.98) 70%);
@@ -7038,7 +7060,9 @@
     categoryItemCounts: {},
     /** Si la BD no tiene body_html aún, las queries omiten esa columna (migración: supabase-plan-pro-body-html.sql). */
     planProBodyHtmlColumn: true,
-    planProBodyHtmlWarnShown: false
+    planProBodyHtmlWarnShown: false,
+    planProDnd: null,
+    lastPlanProDndEndedAt: 0
   };
 
   function deepCloneBlocks(blocks) {
@@ -10978,6 +11002,104 @@
     return parts.length ? parts.join(' › ') : (state.catMap[id] || '—');
   }
 
+  function normalizePlanParentId(parentId) {
+    return parentId == null ? null : parentId;
+  }
+
+  function sortPlanRecords(arr) {
+    return arr.slice().sort(function (a, b) {
+      return (a.sort_order || 0) - (b.sort_order || 0) || (a.title || '').localeCompare(b.title || '');
+    });
+  }
+
+  function moveIdAroundTarget(ids, dragId, targetId, insertAfter) {
+    var next = ids.filter(function (id) { return id !== dragId; });
+    var idx = next.indexOf(targetId);
+    if (idx < 0) return ids.slice();
+    next.splice(idx + (insertAfter ? 1 : 0), 0, dragId);
+    return next;
+  }
+
+  function clearPlanDndClasses(scope) {
+    (scope || document).querySelectorAll('.np-dnd-dragging,.np-dnd-drop-before,.np-dnd-drop-after').forEach(function (el) {
+      el.classList.remove('np-dnd-dragging', 'np-dnd-drop-before', 'np-dnd-drop-after');
+    });
+  }
+
+  function markPlanDropTarget(el, insertAfter) {
+    document.querySelectorAll('.np-dnd-drop-before,.np-dnd-drop-after').forEach(function (dropEl) {
+      dropEl.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after');
+    });
+    if (!el) return;
+    el.classList.add(insertAfter ? 'np-dnd-drop-after' : 'np-dnd-drop-before');
+  }
+
+  function getSiblingCategoriesForReorder(cat) {
+    if (!cat) return [];
+    var parentKey = normalizePlanParentId(cat.parent_id);
+    return sortPlanRecords(state.categories.filter(function (c) {
+      return c.area_id === cat.area_id &&
+        !c.archived_at &&
+        normalizePlanParentId(c.parent_id) === parentKey;
+    }));
+  }
+
+  async function persistPlanSortOrder(tableName, ids) {
+    var updates = ids.map(function (id, idx) {
+      return state.client.from(tableName).update({ sort_order: idx * 10 }).eq('id', id);
+    });
+    var results = await Promise.all(updates);
+    var failed = results.filter(function (r) { return r && r.error; })[0];
+    if (failed) throw failed.error;
+  }
+
+  async function reorderPlanAreas(dragId, targetId, insertAfter) {
+    if (!dragId || !targetId || dragId === targetId) return;
+    var tabs = getActivePlanAreas();
+    var ids = tabs.map(function (a) { return a.id; });
+    if (ids.indexOf(dragId) < 0 || ids.indexOf(targetId) < 0) return;
+    var nextIds = moveIdAroundTarget(ids, dragId, targetId, insertAfter);
+    state.areas.forEach(function (a) {
+      var idx = nextIds.indexOf(a.id);
+      if (idx >= 0) a.sort_order = idx * 10;
+    });
+    renderPillarTabs();
+    try {
+      await persistPlanSortOrder('plan_pro_areas', nextIds);
+      showToast('Plantas ordenadas.');
+    } catch (err) {
+      console.error(err);
+      showToast('No se pudo guardar el orden de las plantas.', true);
+      await loadLookups();
+    }
+  }
+
+  async function reorderPlanCategories(dragId, targetId, insertAfter) {
+    if (!dragId || !targetId || dragId === targetId) return;
+    var dragCat = state.categories.filter(function (c) { return c.id === dragId; })[0];
+    var targetCat = state.categories.filter(function (c) { return c.id === targetId; })[0];
+    if (!dragCat || !targetCat) return;
+    if (dragCat.area_id !== targetCat.area_id) return;
+    if (normalizePlanParentId(dragCat.parent_id) !== normalizePlanParentId(targetCat.parent_id)) return;
+    var siblings = getSiblingCategoriesForReorder(dragCat);
+    var ids = siblings.map(function (c) { return c.id; });
+    var nextIds = moveIdAroundTarget(ids, dragId, targetId, insertAfter);
+    state.categories.forEach(function (c) {
+      var idx = nextIds.indexOf(c.id);
+      if (idx >= 0) c.sort_order = idx * 10;
+    });
+    renderTree();
+    renderSheetNavBlocks();
+    try {
+      await persistPlanSortOrder('plan_pro_categories', nextIds);
+      showToast('Ramas ordenadas.');
+    } catch (err) {
+      console.error(err);
+      showToast('No se pudo guardar el orden de las ramas.', true);
+      await loadLookups();
+    }
+  }
+
   function nestCategories(areaId) {
     var list = state.categories.filter(function (c) {
       return c.area_id === areaId && !c.archived_at;
@@ -10989,9 +11111,7 @@
       byParent[pid].push(c);
     });
     Object.keys(byParent).forEach(function (k) {
-      byParent[k].sort(function (a, b) {
-        return (a.sort_order || 0) - (b.sort_order || 0) || (a.title || '').localeCompare(b.title || '');
-      });
+      byParent[k] = sortPlanRecords(byParent[k]);
     });
     function walk(pid) {
       var kids = byParent[pid] || [];
@@ -11124,11 +11244,62 @@
     row.className = 'np-tree-row' + (isRoot ? ' np-tree-row--root' : '');
     row.setAttribute('role', 'treeitem');
     row.setAttribute('data-np-cat-id', node.cat.id);
+    row.setAttribute('draggable', 'true');
     row.setAttribute('aria-selected', state.selectedCategoryId === node.cat.id ? 'true' : 'false');
     if (state.selectedCategoryId === node.cat.id) row.classList.add('np-tree-active');
     row.addEventListener('click', function (e) {
       if (e.target.closest('.np-tree-ignore')) return;
+      if (Date.now() - state.lastPlanProDndEndedAt < 250) return;
       selectCategory(node.cat.id);
+    });
+    row.addEventListener('dragstart', function (e) {
+      if (e.target && e.target.closest && e.target.closest('.np-tree-ignore')) {
+        e.preventDefault();
+        return;
+      }
+      state.planProDnd = {
+        type: 'category',
+        id: node.cat.id,
+        areaId: node.cat.area_id,
+        parentId: normalizePlanParentId(node.cat.parent_id)
+      };
+      row.classList.add('np-dnd-dragging');
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', node.cat.id);
+      }
+    });
+    row.addEventListener('dragover', function (e) {
+      var dnd = state.planProDnd;
+      if (!dnd || dnd.type !== 'category' || dnd.id === node.cat.id) return;
+      if (dnd.areaId !== node.cat.area_id || dnd.parentId !== normalizePlanParentId(node.cat.parent_id)) return;
+      e.preventDefault();
+      var r = row.getBoundingClientRect();
+      var after = e.clientY > r.top + r.height / 2;
+      markPlanDropTarget(row, after);
+      row.dataset.npDropAfter = after ? '1' : '0';
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    });
+    row.addEventListener('dragleave', function () {
+      row.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after');
+      delete row.dataset.npDropAfter;
+    });
+    row.addEventListener('drop', async function (e) {
+      var dnd = state.planProDnd;
+      if (!dnd || dnd.type !== 'category') return;
+      if (dnd.areaId !== node.cat.area_id || dnd.parentId !== normalizePlanParentId(node.cat.parent_id)) return;
+      e.preventDefault();
+      var after = row.dataset.npDropAfter === '1';
+      var dragId = dnd.id;
+      state.lastPlanProDndEndedAt = Date.now();
+      state.planProDnd = null;
+      clearPlanDndClasses(document);
+      await reorderPlanCategories(dragId, node.cat.id, after);
+    });
+    row.addEventListener('dragend', function () {
+      state.lastPlanProDndEndedAt = Date.now();
+      state.planProDnd = null;
+      clearPlanDndClasses(document);
     });
 
     var rowLead = document.createElement('div');
@@ -11497,9 +11668,9 @@
   }
 
   function getActivePlanAreas() {
-    return state.areas.filter(function (a) {
+    return sortPlanRecords(state.areas.filter(function (a) {
       return !a.archived_at;
-    });
+    }));
   }
 
   function renderPillarTabs() {
@@ -11522,6 +11693,50 @@
         'np-pillar-tab-wrap' + (state.selectedAreaId === a.id ? ' np-pillar-tab-wrap-active' : '');
       row.setAttribute('role', 'presentation');
       row.setAttribute('data-area-id', a.id);
+      row.setAttribute('draggable', 'true');
+      row.title = 'Arrastra para ordenar plantas';
+      (function (aid, rowEl) {
+        rowEl.addEventListener('dragstart', function (e) {
+          if (e.target && e.target.closest && e.target.closest('.np-pillar-tab-more')) {
+            e.preventDefault();
+            return;
+          }
+          state.planProDnd = { type: 'area', id: aid };
+          rowEl.classList.add('np-dnd-dragging');
+          if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', aid);
+          }
+        });
+        rowEl.addEventListener('dragover', function (e) {
+          if (!state.planProDnd || state.planProDnd.type !== 'area' || state.planProDnd.id === aid) return;
+          e.preventDefault();
+          var r = rowEl.getBoundingClientRect();
+          var after = e.clientX > r.left + r.width / 2;
+          markPlanDropTarget(rowEl, after);
+          rowEl.dataset.npDropAfter = after ? '1' : '0';
+          if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+        });
+        rowEl.addEventListener('dragleave', function () {
+          rowEl.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after');
+          delete rowEl.dataset.npDropAfter;
+        });
+        rowEl.addEventListener('drop', async function (e) {
+          if (!state.planProDnd || state.planProDnd.type !== 'area') return;
+          e.preventDefault();
+          var dragId = state.planProDnd.id;
+          var after = rowEl.dataset.npDropAfter === '1';
+          state.lastPlanProDndEndedAt = Date.now();
+          state.planProDnd = null;
+          clearPlanDndClasses(document);
+          await reorderPlanAreas(dragId, aid, after);
+        });
+        rowEl.addEventListener('dragend', function () {
+          state.lastPlanProDndEndedAt = Date.now();
+          state.planProDnd = null;
+          clearPlanDndClasses(document);
+        });
+      })(a.id, row);
 
       var btn = document.createElement('button');
       btn.type = 'button';
@@ -11878,7 +12093,7 @@
   async function loadLookups() {
     var c = state.client;
     var uid = state.userId;
-    var ar = await c.from('plan_pro_areas').select('id,title,slug,archived_at,color_hex').eq('owner_id', uid).order('sort_order');
+    var ar = await c.from('plan_pro_areas').select('id,title,slug,sort_order,archived_at,color_hex').eq('owner_id', uid).order('sort_order');
     if (ar.error) throw ar.error;
     state.areas = ar.data || [];
     state.areaMap = {};
@@ -12472,6 +12687,7 @@
 
   $('npPillarTabs').addEventListener('click', function (e) {
     if (e.target.closest('.np-pillar-tab-more')) return;
+    if (Date.now() - state.lastPlanProDndEndedAt < 250) return;
     var btn = e.target.closest('.np-pillar-tab');
     if (!btn) return;
     var id = btn.getAttribute('data-area-id');
