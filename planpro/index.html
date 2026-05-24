@@ -5934,6 +5934,24 @@
     return truncateNote(merged, max);
   }
 
+  function noteFullText(r) {
+    var chunks = [];
+    var plainRaw = (r && r.body_plain ? r.body_plain : '').trim();
+    var plain = plainRaw || stripHtml((r && r.body_html) || '');
+    if (plain) chunks.push(plain);
+    if (r && r.body_blocks && Array.isArray(r.body_blocks)) {
+      r.body_blocks.forEach(function (blk) {
+        if (blk && blk.type === 'note_section' && blk.html) chunks.push(stripHtml(blk.html));
+      });
+    }
+    return chunks.filter(Boolean).join(' ');
+  }
+
+  function firstUrlFromText(s) {
+    var m = String(s || '').match(/https?:\/\/[^\s<>"')\]]+/i);
+    return m ? m[0].replace(/[.,;:]+$/g, '') : '';
+  }
+
   function syncRichEmptyClass(el) {
     el = el || $('npBodyRich');
     if (!el) return;
@@ -8688,6 +8706,7 @@
       var itemPlantTitle = getPlanAreaTitle(r.area_id);
       var itemCatPath = getCategoryPath(r.category_id);
       var itemNotePreview = notePreviewText(r, 250);
+      var itemNoteLink = firstUrlFromText(noteFullText(r));
       var dkItem = parseDueDateKey(r.due_at);
       if (dkItem) {
         var lvItem = priorityLevelFromRaw(r.priority != null ? String(r.priority) : '');
@@ -8701,6 +8720,7 @@
           plantTitle: itemPlantTitle,
           catPath: itemCatPath,
           notePreview: itemNotePreview,
+          noteLink: itemNoteLink,
           rowTitle: 'Objetivo del apunte',
           blockTitle: '—'
         });
@@ -8735,6 +8755,7 @@
             plantTitle: itemPlantTitle,
             catPath: itemCatPath,
             notePreview: itemNotePreview,
+            noteLink: itemNoteLink,
             rowTitle: miniSheetRowTitleForDetail(b, cells) || '—',
             blockTitle: b.title || (b.variant === 'tasks' ? 'Lista / tareas' : 'Seguimiento'),
             blockIndex: blockIndex,
@@ -8748,7 +8769,8 @@
         areaId: r.area_id || '',
         plantTitle: itemPlantTitle,
         catPath: itemCatPath,
-        notePreview: itemNotePreview
+        notePreview: itemNotePreview,
+        noteLink: itemNoteLink
       };
       if (r.body_html && String(r.body_html).trim()) {
         collectRichDueEntriesFromHtml(r.body_html, itemMeta).forEach(function (e) {
@@ -9010,6 +9032,7 @@
       'Rama: ' + (ent.catPath || '—')
     ];
     if (ent.notePreview) lines.push('Nota: ' + ent.notePreview);
+    if (ent.noteLink) lines.push('Link: ' + ent.noteLink);
     return lines.join('\n');
   }
 
@@ -9185,7 +9208,8 @@
           ent.itemTitle +
           ' · ' +
           ent.catPath +
-          (ent.notePreview ? ' · Nota: ' + ent.notePreview : '');
+          (ent.notePreview ? ' · Nota: ' + ent.notePreview : '') +
+          (ent.noteLink ? ' · Link: ' + ent.noteLink : '');
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn btn-ghost btn-ghost-blue';
