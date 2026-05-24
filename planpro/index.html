@@ -1825,6 +1825,54 @@
     .np-tree-row.np-dnd-drop-after {
       box-shadow: inset 0 -3px 0 var(--np-tree-accent, #2563eb);
     }
+    .np-flow-search {
+      margin-top: 12px;
+      padding: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.26);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.68);
+    }
+    .np-flow-search input {
+      width: 100%;
+      margin-bottom: 0;
+      font-size: 13px;
+      padding: 9px 10px;
+    }
+    .np-flow-search-results {
+      display: grid;
+      gap: 8px;
+      margin-top: 9px;
+      max-height: 220px;
+      overflow: auto;
+    }
+    .np-flow-search-result {
+      padding: 8px 9px;
+      border-radius: 9px;
+      background: #fff;
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+    .np-flow-search-kind {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .np-flow-search-path {
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #0f172a;
+    }
+    .np-flow-search-preview {
+      margin-top: 3px;
+      font-size: 11px;
+      line-height: 1.35;
+      color: #64748b;
+    }
     .np-tree-row-lead {
       grid-column: 1;
       grid-row: 1;
@@ -4797,6 +4845,10 @@
               <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddRootCat" style="margin-bottom:0;">Añadir</button>
             </div>
           </div>
+          <div class="np-flow-search" aria-label="Buscar ubicación de apuntes, ramas o plantas">
+            <input type="search" id="npFlowSearchInput" autocomplete="off" placeholder="Buscar apunte, rama o planta…" aria-label="Buscar flujo" />
+            <div id="npFlowSearchResults" class="np-flow-search-results np-hide" aria-live="polite"></div>
+          </div>
           <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;cursor:pointer;">
             <input type="checkbox" id="npFilterDesc" checked />
             Incluir hojas
@@ -7062,7 +7114,9 @@
     planProBodyHtmlColumn: true,
     planProBodyHtmlWarnShown: false,
     planProDnd: null,
-    lastPlanProDndEndedAt: 0
+    lastPlanProDndEndedAt: 0,
+    flowSearchTimer: null,
+    flowSearchGen: 0
   };
 
   function deepCloneBlocks(blocks) {
@@ -11002,6 +11056,121 @@
     return parts.length ? parts.join(' › ') : (state.catMap[id] || '—');
   }
 
+  function getPlanAreaTitle(areaId) {
+    var a = state.areas.filter(function (x) { return x.id === areaId; })[0];
+    return a ? (a.title || a.slug || 'Planta') : 'Planta';
+  }
+
+  function getPlanFlowPath(areaId, categoryId, itemTitle) {
+    var parts = [getPlanAreaTitle(areaId)];
+    if (categoryId) {
+      var catPath = getCategoryPath(categoryId);
+      if (catPath && catPath !== '—') parts = parts.concat(catPath.split(' › '));
+    }
+    if (itemTitle) parts.push(itemTitle);
+    return parts.filter(Boolean).join(' › ');
+  }
+
+  function normalizePlanSearchText(s) {
+    return String(s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  }
+
+  function renderPlanFlowSearchResults(results, message) {
+    var box = $('npFlowSearchResults');
+    if (!box) return;
+    box.innerHTML = '';
+    if (message) {
+      var msg = document.createElement('div');
+      msg.className = 'np-muted';
+      msg.style.fontSize = '12px';
+      msg.style.lineHeight = '1.35';
+      msg.textContent = message;
+      box.appendChild(msg);
+      box.classList.remove('np-hide');
+      return;
+    }
+    if (!results || !results.length) {
+      box.classList.add('np-hide');
+      return;
+    }
+    results.slice(0, 20).forEach(function (r) {
+      var item = document.createElement('div');
+      item.className = 'np-flow-search-result';
+      var kind = document.createElement('span');
+      kind.className = 'np-flow-search-kind';
+      kind.textContent = r.kind;
+      var path = document.createElement('div');
+      path.className = 'np-flow-search-path';
+      path.textContent = r.path;
+      item.appendChild(kind);
+      item.appendChild(path);
+      if (r.preview) {
+        var prev = document.createElement('div');
+        prev.className = 'np-flow-search-preview';
+        prev.textContent = r.preview;
+        item.appendChild(prev);
+      }
+      box.appendChild(item);
+    });
+    box.classList.remove('np-hide');
+  }
+
+  async function runPlanFlowSearch(queryRaw) {
+    var q = normalizePlanSearchText(queryRaw);
+    var gen = ++state.flowSearchGen;
+    if (!q || q.length < 2) {
+      renderPlanFlowSearchResults([], '');
+      return;
+    }
+    renderPlanFlowSearchResults([], 'Buscando flujo…');
+    var results = [];
+    state.areas.filter(function (a) {
+      return !a.archived_at && normalizePlanSearchText(a.title || a.slug).indexOf(q) >= 0;
+    }).forEach(function (a) {
+      results.push({ kind: 'Planta', path: getPlanFlowPath(a.id, null, null) });
+    });
+    state.categories.filter(function (c) {
+      return !c.archived_at && normalizePlanSearchText(c.title).indexOf(q) >= 0;
+    }).forEach(function (c) {
+      results.push({ kind: 'Rama', path: getPlanFlowPath(c.area_id, c.id, null) });
+    });
+    try {
+      var res = await state.client
+        .from('plan_pro_items')
+        .select('id,title,area_id,category_id,status,priority,due_at,updated_at,body_plain,body_blocks')
+        .eq('owner_id', state.userId)
+        .order('updated_at', { ascending: false })
+        .limit(500);
+      if (gen !== state.flowSearchGen) return;
+      if (res.error) throw res.error;
+      (res.data || []).forEach(function (r) {
+        var haystack = normalizePlanSearchText(
+          [
+            r.title || '',
+            r.body_plain || '',
+            r.category_id ? getCategoryPath(r.category_id) : '',
+            getPlanAreaTitle(r.area_id)
+          ].join(' ')
+        );
+        if (haystack.indexOf(q) < 0) return;
+        var preview = notePreviewText(r, 90);
+        results.push({
+          kind: 'Apunte',
+          path: getPlanFlowPath(r.area_id, r.category_id, r.title || 'Sin título'),
+          preview: preview || ''
+        });
+      });
+      renderPlanFlowSearchResults(results, results.length ? '' : 'Sin coincidencias en plantas, ramas o apuntes.');
+    } catch (err) {
+      console.error(err);
+      renderPlanFlowSearchResults([], 'No se pudo buscar en este momento.');
+    }
+  }
+
   function normalizePlanParentId(parentId) {
     return parentId == null ? null : parentId;
   }
@@ -12795,6 +12964,25 @@
   $('npFilterDesc').addEventListener('change', function () {
     if (state.selectedCategoryId) loadItems();
   });
+
+  var npFlowSearchInput = $('npFlowSearchInput');
+  if (npFlowSearchInput) {
+    npFlowSearchInput.addEventListener('input', function () {
+      var val = this.value || '';
+      if (state.flowSearchTimer) clearTimeout(state.flowSearchTimer);
+      state.flowSearchTimer = setTimeout(function () {
+        runPlanFlowSearch(val);
+      }, 250);
+    });
+    npFlowSearchInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        npFlowSearchInput.value = '';
+        ++state.flowSearchGen;
+        renderPlanFlowSearchResults([], '');
+      }
+    });
+  }
 
   $('npBtnAddRootCat').addEventListener('click', async function () {
     var raw = ($('npNewRootCat').value || '').trim();
