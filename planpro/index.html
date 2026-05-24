@@ -8687,7 +8687,7 @@
       if (!r || !r.id) return;
       var itemPlantTitle = getPlanAreaTitle(r.area_id);
       var itemCatPath = getCategoryPath(r.category_id);
-      var itemNotePreview = notePreviewText(r, 120);
+      var itemNotePreview = notePreviewText(r, 250);
       var dkItem = parseDueDateKey(r.due_at);
       if (dkItem) {
         var lvItem = priorityLevelFromRaw(r.priority != null ? String(r.priority) : '');
