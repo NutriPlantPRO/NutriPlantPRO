@@ -9054,7 +9054,7 @@
       var dk = String(ent.dateKey || '').trim();
       if (!/^\d{4}-\d{2}-\d{2}$/.test(dk)) return;
       var uid = npCalendarEventUid(ent);
-      var summary = npEscapeIcs(ent.rowTitle && ent.rowTitle !== '—' ? ent.rowTitle : ent.itemTitle || 'Plan PRO');
+      var summary = npEscapeIcs('Plan PRO');
       var desc = npEscapeIcs(npIcsEventDescription(ent));
       var dtStart = dk.replace(/-/g, '');
       var dtEnd = npAddDaysToDateKey(dk, 1).replace(/-/g, '');
