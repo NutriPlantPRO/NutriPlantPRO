@@ -5948,8 +5948,15 @@
   }
 
   function firstUrlFromText(s) {
-    var m = String(s || '').match(/https?:\/\/[^\s<>"')\]]+/i);
-    return m ? m[0].replace(/[.,;:]+$/g, '') : '';
+    var text = String(s || '');
+    var m = text.match(/https?:\/\/[^\s<>"')\]]+/i);
+    if (!m) {
+      m = text.match(/\b(?:www\.)?(?:google\.com\/maps|maps\.google\.com|maps\.app\.goo\.gl|goo\.gl\/maps|waze\.com\/ul)[^\s<>"')\]]*/i);
+    }
+    if (!m) return '';
+    var url = m[0].replace(/[.,;:]+$/g, '');
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    return url;
   }
 
   function syncRichEmptyClass(el) {
@@ -9019,6 +9026,10 @@
       .replace(/\r/g, '');
   }
 
+  function npIcsUrlValue(url) {
+    return String(url || '').replace(/\s+/g, '').replace(/\r?\n/g, '');
+  }
+
   function npIcsEventDescription(ent) {
     var kindLine = 'Objetivo del apunte';
     if (ent.kind === 'table_row') kindLine = 'Tabla: ' + (ent.blockTitle || '—');
@@ -9090,6 +9101,7 @@
       lines.push('DTEND;VALUE=DATE:' + dtEnd);
       lines.push('SUMMARY:' + summary);
       lines.push('DESCRIPTION:' + desc);
+      if (ent.noteLink) lines.push('URL:' + npIcsUrlValue(ent.noteLink));
       lines.push('ORGANIZER;CN=Plan PRO:mailto:' + org);
       lines.push('STATUS:CONFIRMED');
       lines.push('TRANSP:TRANSPARENT');
