@@ -1165,7 +1165,39 @@ function climateMonthDiff(curr, prev) {
   return out;
 }
 
+const OPEN_METEO_ARCHIVE_THRESHOLD_DAYS = 92;
+
+function parseClimateIsoDateLocal(isoDate) {
+  const parts = String(isoDate || '').split('-').map((p) => parseInt(p, 10));
+  if (parts.length !== 3 || parts.some((p) => !Number.isFinite(p))) return null;
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function climateTodayKey() {
+  const today = new Date();
+  return (
+    today.getFullYear() +
+    '-' +
+    String(today.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(today.getDate()).padStart(2, '0')
+  );
+}
+
+function daysFromTodayToClimateStartDate(startDate) {
+  const today = parseClimateIsoDateLocal(climateTodayKey());
+  const start = parseClimateIsoDateLocal(startDate);
+  if (!today || !start) return 0;
+  return Math.floor((today.getTime() - start.getTime()) / 86400000);
+}
+
+function shouldUseOpenMeteoArchiveClimate(startDate) {
+  return daysFromTodayToClimateStartDate(startDate) > OPEN_METEO_ARCHIVE_THRESHOLD_DAYS;
+}
+
 async function fetchOpenMeteoDailyClimate(lat, lng, startDate, endDate, useArchive) {
+  if (typeof useArchive !== 'boolean') useArchive = shouldUseOpenMeteoArchiveClimate(startDate);
   const base = useArchive
     ? 'https://archive-api.open-meteo.com/v1/archive'
     : 'https://api.open-meteo.com/v1/forecast';
@@ -1196,22 +1228,9 @@ async function fetchOpenMeteoDailyClimate(lat, lng, startDate, endDate, useArchi
 async function fetchYearDailyClimate(lat, lng, year, endDateOverride) {
   const start = year + '-01-01';
   let end = endDateOverride || year + '-12-31';
-  const today = new Date();
-  const todayKey =
-    today.getFullYear() +
-    '-' +
-    String(today.getMonth() + 1).padStart(2, '0') +
-    '-' +
-    String(today.getDate()).padStart(2, '0');
+  const todayKey = climateTodayKey();
   if (end > todayKey) end = todayKey;
-  const currYear = today.getFullYear();
-  const useArchive = year < currYear || end <= todayKey;
-  try {
-    return await fetchOpenMeteoDailyClimate(lat, lng, start, end, useArchive);
-  } catch (e) {
-    if (useArchive) return await fetchOpenMeteoDailyClimate(lat, lng, start, end, false);
-    throw e;
-  }
+  return await fetchOpenMeteoDailyClimate(lat, lng, start, end, shouldUseOpenMeteoArchiveClimate(start));
 }
 
 async function fetchRainfallEt0FromOpenMeteo(lat, lng) {

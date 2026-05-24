@@ -126,6 +126,26 @@
     };
   }
 
+  var OPEN_METEO_ARCHIVE_THRESHOLD_DAYS = 92;
+
+  function parseIsoDateLocal(isoDate) {
+    var parts = String(isoDate || '').split('-').map(function (p) { return parseInt(p, 10); });
+    if (parts.length !== 3 || parts.some(function (p) { return !Number.isFinite(p); })) return null;
+    var d = new Date(parts[0], parts[1] - 1, parts[2]);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function daysFromTodayToStartDate(startDate) {
+    var today = parseIsoDateLocal(todayIso());
+    var start = parseIsoDateLocal(startDate);
+    if (!today || !start) return 0;
+    return Math.floor((today.getTime() - start.getTime()) / 86400000);
+  }
+
+  function shouldUseOpenMeteoArchive(startDate) {
+    return daysFromTodayToStartDate(startDate) > OPEN_METEO_ARCHIVE_THRESHOLD_DAYS;
+  }
+
   function hasAnyMonthValue(monthsObj) {
     if (!monthsObj || typeof monthsObj !== 'object') return false;
     return Object.keys(monthsObj).some(function (k) {
@@ -134,6 +154,7 @@
   }
 
   async function fetchOpenMeteoDailyRange(lat, lng, startDate, endDate, useArchive) {
+    if (typeof useArchive !== 'boolean') useArchive = shouldUseOpenMeteoArchive(startDate);
     var base = useArchive
       ? 'https://archive-api.open-meteo.com/v1/archive'
       : 'https://api.open-meteo.com/v1/forecast';
@@ -180,26 +201,7 @@
     var end = endDateOverride || year + '-12-31';
     var today = todayIso();
     if (end > today) end = today;
-    var currYear = new Date().getFullYear();
-    // Año actual hasta hoy: archivo (forecast solo cubre ~últimos 90 días y falla con start_date en enero).
-    var useArchive = year < currYear || end <= today;
-    try {
-      return await fetchOpenMeteoDailyRange(lat, lng, start, end, useArchive);
-    } catch (e) {
-      if (useArchive) {
-        // Forecast solo acepta una ventana reciente (~92 días hacia atrás). Si archive falla,
-        // no repetir desde enero porque Open-Meteo responde 400 "start_date out of allowed range".
-        var forecastStart = addDaysIsoLocal(today, -92);
-        var fallbackStart = start > forecastStart ? start : forecastStart;
-        if (fallbackStart <= end) {
-          console.warn('Lluvia/ET0: archive falló; usando forecast parcial desde', fallbackStart, e);
-          return await fetchOpenMeteoDailyRange(lat, lng, fallbackStart, end, false);
-        }
-        console.warn('Lluvia/ET0: histórico no disponible y forecast no cubre el rango', year, e);
-        return emptyDailyRange(e && e.message ? String(e.message) : 'Histórico no disponible');
-      }
-      throw e;
-    }
+    return await fetchOpenMeteoDailyRange(lat, lng, start, end, shouldUseOpenMeteoArchive(start));
   }
 
   async function fetchClimateRainfallAndET0(ev) {
