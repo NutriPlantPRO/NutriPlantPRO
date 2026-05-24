@@ -6567,7 +6567,10 @@
         kind: 'note_due',
         itemId: meta.id,
         itemTitle: meta.title || '(Sin título)',
+        areaId: meta.areaId || '',
+        plantTitle: meta.plantTitle || '',
         catPath: meta.catPath || '—',
+        notePreview: meta.notePreview || '',
         rowTitle: 'Semáforo en nota · ' + label,
         blockTitle: '—',
         dueId: el.getAttribute('data-np-due-id') || ''
@@ -8682,6 +8685,9 @@
     var out = [];
     (rows || []).forEach(function (r) {
       if (!r || !r.id) return;
+      var itemPlantTitle = getPlanAreaTitle(r.area_id);
+      var itemCatPath = getCategoryPath(r.category_id);
+      var itemNotePreview = notePreviewText(r, 120);
       var dkItem = parseDueDateKey(r.due_at);
       if (dkItem) {
         var lvItem = priorityLevelFromRaw(r.priority != null ? String(r.priority) : '');
@@ -8691,7 +8697,10 @@
           kind: 'item_due',
           itemId: r.id,
           itemTitle: r.title || '(Sin título)',
-          catPath: getCategoryPath(r.category_id),
+          areaId: r.area_id || '',
+          plantTitle: itemPlantTitle,
+          catPath: itemCatPath,
+          notePreview: itemNotePreview,
           rowTitle: 'Objetivo del apunte',
           blockTitle: '—'
         });
@@ -8722,7 +8731,10 @@
             kind: 'table_row',
             itemId: r.id,
             itemTitle: r.title || '(Sin título)',
-            catPath: getCategoryPath(r.category_id),
+            areaId: r.area_id || '',
+            plantTitle: itemPlantTitle,
+            catPath: itemCatPath,
+            notePreview: itemNotePreview,
             rowTitle: miniSheetRowTitleForDetail(b, cells) || '—',
             blockTitle: b.title || (b.variant === 'tasks' ? 'Lista / tareas' : 'Seguimiento'),
             blockIndex: blockIndex,
@@ -8733,7 +8745,10 @@
       var itemMeta = {
         id: r.id,
         title: r.title || '(Sin título)',
-        catPath: getCategoryPath(r.category_id)
+        areaId: r.area_id || '',
+        plantTitle: itemPlantTitle,
+        catPath: itemCatPath,
+        notePreview: itemNotePreview
       };
       if (r.body_html && String(r.body_html).trim()) {
         collectRichDueEntriesFromHtml(r.body_html, itemMeta).forEach(function (e) {
@@ -8785,6 +8800,13 @@
     if (lv === 'media') return 'Media (ámbar)';
     if (lv === 'baja') return 'Baja (verde)';
     return 'Sin prioridad en semáforo';
+  }
+
+  function calLevelPlainLabel(lv) {
+    if (lv === 'alta') return 'Alta';
+    if (lv === 'media') return 'Media';
+    if (lv === 'baja') return 'Baja';
+    return 'Sin prioridad';
   }
 
   function ensureSidebarCalMonth() {
@@ -8981,10 +9003,13 @@
     else if (ent.kind === 'note_due') kindLine = 'Semáforo en nota principal';
     var lines = [
       ent.rowTitle || 'Plan PRO',
-      kindLine,
+      'Tipo: ' + kindLine,
+      'Semáforo: ' + calLevelPlainLabel(ent.level),
+      'Planta: ' + (ent.plantTitle || (ent.areaId ? getPlanAreaTitle(ent.areaId) : '—')),
       'Apunte: ' + (ent.itemTitle || '—'),
       'Rama: ' + (ent.catPath || '—')
     ];
+    if (ent.notePreview) lines.push('Nota: ' + ent.notePreview);
     return lines.join('\n');
   }
 
@@ -9146,16 +9171,21 @@
         var meta = document.createElement('div');
         meta.className = 'np-prio-detail-item-meta';
         meta.textContent =
-          calLevelLabelForEntry(ent.level) +
+          'Semáforo: ' +
+          calLevelPlainLabel(ent.level) +
+          ' · Tipo: ' +
+          (ent.kind === 'table_row'
+            ? 'Tabla: ' + ent.blockTitle
+            : ent.kind === 'note_due'
+              ? 'Semáforo en nota principal'
+              : 'Objetivo del apunte') +
+          ' · Planta: ' +
+          (ent.plantTitle || (ent.areaId ? getPlanAreaTitle(ent.areaId) : '—')) +
           ' · Apunte: ' +
           ent.itemTitle +
           ' · ' +
           ent.catPath +
-          (ent.kind === 'table_row'
-            ? ' · Tabla: ' + ent.blockTitle
-            : ent.kind === 'note_due'
-              ? ' · Nota principal'
-              : '');
+          (ent.notePreview ? ' · Nota: ' + ent.notePreview : '');
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn btn-ghost btn-ghost-blue';
