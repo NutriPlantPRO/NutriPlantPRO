@@ -3825,8 +3825,8 @@
     .np-rich-due-popover {
       position: fixed;
       z-index: 16600;
-      min-width: 220px;
-      max-width: min(92vw, 280px);
+      min-width: 320px;
+      max-width: min(94vw, 560px);
       padding: 12px 12px 10px;
       border-radius: 12px;
       border: 1px solid rgba(148, 163, 184, 0.45);
@@ -3859,7 +3859,7 @@
     }
     .np-rich-due-time-row {
       display: grid;
-      grid-template-columns: 1fr 1fr auto;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
       gap: 8px;
       align-items: center;
       margin-bottom: 10px;
@@ -3870,6 +3870,7 @@
       padding: 7px 8px;
       font-size: 14px;
       box-sizing: border-box;
+      min-width: 0;
     }
     .np-rich-due-allday {
       display: inline-flex !important;
@@ -3883,6 +3884,14 @@
     }
     .np-rich-due-allday input {
       margin: 0;
+    }
+    @media (max-width: 520px) {
+      .np-rich-due-time-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .np-rich-due-allday {
+        grid-column: 1 / -1;
+      }
     }
     .np-rich-due-popover-levels {
       display: flex;
