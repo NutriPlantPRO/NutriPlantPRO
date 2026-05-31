@@ -1545,10 +1545,11 @@
     }
     #npFormCreate .np-create-maps-row {
       display: grid;
-      grid-template-columns: auto minmax(180px, 420px);
+      grid-template-columns: auto minmax(180px, 420px) auto;
       align-items: center;
       gap: 8px;
       margin: -2px 0 12px;
+      width: fit-content;
       max-width: 100%;
     }
     #npFormCreate .np-create-maps-row .np-detail-meta-label {
@@ -1622,6 +1623,37 @@
       color: #b91c1c;
       border-color: rgba(185, 28, 28, 0.24);
     }
+    .np-map-picker-panel {
+      width: min(760px, calc(100vw - 28px));
+      max-height: min(86vh, 760px);
+    }
+    .np-map-picker-body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px 14px 14px;
+    }
+    .np-map-picker-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .np-map-picker-help {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    #npMapsPickerMap {
+      width: 100%;
+      height: min(56vh, 420px);
+      min-height: 280px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #e2e8f0;
+    }
     .np-ficha-meta-row {
       padding: 2px 0 4px;
       margin-top: 4px;
@@ -1660,9 +1692,17 @@
       #npFormCreate .np-create-maps-row {
         grid-template-columns: 1fr;
         gap: 4px;
+        width: 100%;
       }
       #npCreateMapsUrl {
         border-radius: 12px;
+      }
+      .np-map-picker-panel {
+        width: calc(100vw - 18px);
+      }
+      #npMapsPickerMap {
+        min-height: 320px;
+        height: 58vh;
       }
     }
     .np-modal-body {
@@ -5103,6 +5143,7 @@
                   <div class="np-create-maps-row">
                     <label for="npCreateMapsUrl" class="np-detail-meta-label">Ubicación / Maps</label>
                     <input id="npCreateMapsUrl" type="url" inputmode="url" autocomplete="off" placeholder="Pega aquí link de Google Maps (opcional)" />
+                    <button type="button" class="np-detail-maps-action" id="npCreateMapsPickBtn">Elegir en mapa</button>
                   </div>
                   <label class="np-compact-label">Hoja en blanco</label>
                   <div id="npRichToolbar" class="np-rich-toolbar">
@@ -5228,6 +5269,26 @@
           <input type="text" id="npCatColorHex" class="np-color-edit-hex" maxlength="7" placeholder="#RRGGBB" spellcheck="false" autocomplete="off" aria-label="Código hexadecimal del color de la rama" />
           <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnCatColorApply">Aplicar</button>
           <button type="button" class="btn btn-ghost" id="npBtnCatColorClear">Automático</button>
+        </div>
+      </div>
+
+      <div id="npMapsPickerModal" class="np-modal-overlay" aria-hidden="true">
+        <div class="np-modal-panel np-map-picker-panel" role="dialog" aria-labelledby="npMapsPickerTitle">
+          <div class="np-modal-head">
+            <h3 id="npMapsPickerTitle">Elegir ubicación</h3>
+            <button type="button" class="btn btn-ghost btn-ghost-blue" id="npMapsPickerClose" style="flex-shrink:0;">Cerrar</button>
+          </div>
+          <div class="np-map-picker-body">
+            <div class="np-map-picker-toolbar">
+              <button type="button" class="btn btn-ghost btn-ghost-blue" id="npMapsPickerLocate">📍 Mi ubicación</button>
+              <span class="np-map-picker-help">Mueve el pin o toca el mapa. Al guardar se genera un link de Google Maps.</span>
+            </div>
+            <div id="npMapsPickerMap" aria-label="Mapa para elegir ubicación"></div>
+            <div class="np-modal-foot" style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:0;border-top:0;">
+              <button type="button" class="btn btn-ghost" id="npMapsPickerCancel">Cancelar</button>
+              <button type="button" class="btn btn-primary" id="npMapsPickerUse">Usar esta ubicación</button>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -5763,6 +5824,15 @@
   var npRichImgResizeUI = { overlay: null, editorEl: null, img: null };
   var NP_NOTE_IMAGE_BUCKET = 'plan-pro-note-images';
   var planProRichImageTargetEditor = null;
+  var npMapsPickerState = {
+    inputEl: null,
+    autoSaveDetail: false,
+    map: null,
+    marker: null,
+    lat: 23.6345,
+    lng: -102.5528,
+    leafletPromise: null
+  };
   /** Refresco del modal de bloques: antes ~110 ms de espera; un rAF suele bastar y evita sensación de “lag” en móvil. */
   var detailBlocksDomRefreshRaf = null;
   function queueRefreshDetailBlocksDOM(skipInputSync) {
@@ -5975,6 +6045,152 @@
     var maps = makePlanProMapsAttachment(rawUrl);
     if (maps) next.push(maps);
     return next;
+  }
+
+  function planProMapsUrlFromCoords(lat, lng) {
+    var a = Number(lat);
+    var b = Number(lng);
+    if (!isFinite(a) || !isFinite(b)) return '';
+    return 'https://www.google.com/maps?q=' + a.toFixed(6) + ',' + b.toFixed(6);
+  }
+
+  function planProCoordsFromMapsText(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return null;
+    var plain = /(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/.exec(s);
+    if (plain) return { lat: parseFloat(plain[1]), lng: parseFloat(plain[2]) };
+    try {
+      var u = new URL(/^https?:\/\//i.test(s) ? s : 'https://' + s);
+      var q = u.searchParams.get('q') || u.searchParams.get('ll') || '';
+      var qp = /^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/.exec(q);
+      if (qp) return { lat: parseFloat(qp[1]), lng: parseFloat(qp[2]) };
+      var at = /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(u.href);
+      if (at) return { lat: parseFloat(at[1]), lng: parseFloat(at[2]) };
+    } catch (e) {}
+    return null;
+  }
+
+  function loadPlanProLeaflet() {
+    if (window.L && typeof window.L.map === 'function') return Promise.resolve();
+    if (npMapsPickerState.leafletPromise) return npMapsPickerState.leafletPromise;
+    npMapsPickerState.leafletPromise = new Promise(function (resolve, reject) {
+      if (!document.querySelector('link[data-planpro-leaflet]')) {
+        var css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        css.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+        css.crossOrigin = '';
+        css.setAttribute('data-planpro-leaflet', '1');
+        document.head.appendChild(css);
+      }
+      var js = document.createElement('script');
+      js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      js.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+      js.crossOrigin = '';
+      js.onload = function () { resolve(); };
+      js.onerror = function () { reject(new Error('No se pudo cargar Leaflet. Revisa conexión.')); };
+      document.head.appendChild(js);
+    });
+    return npMapsPickerState.leafletPromise;
+  }
+
+  function setPlanProMapsPickerPosition(lat, lng, zoom) {
+    npMapsPickerState.lat = Number(lat);
+    npMapsPickerState.lng = Number(lng);
+    if (!isFinite(npMapsPickerState.lat) || !isFinite(npMapsPickerState.lng)) return;
+    if (!npMapsPickerState.map || !window.L) return;
+    var ll = [npMapsPickerState.lat, npMapsPickerState.lng];
+    npMapsPickerState.map.setView(ll, zoom || Math.max(npMapsPickerState.map.getZoom() || 5, 14));
+    if (!npMapsPickerState.marker) {
+      npMapsPickerState.marker = L.marker(ll, { draggable: true }).addTo(npMapsPickerState.map);
+      npMapsPickerState.marker.on('dragend', function () {
+        var pos = npMapsPickerState.marker.getLatLng();
+        npMapsPickerState.lat = pos.lat;
+        npMapsPickerState.lng = pos.lng;
+      });
+    } else {
+      npMapsPickerState.marker.setLatLng(ll);
+    }
+  }
+
+  function closePlanProMapsPicker() {
+    var modal = $('npMapsPickerModal');
+    if (modal) {
+      modal.classList.remove('np-modal-open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    npMapsPickerState.inputEl = null;
+    npMapsPickerState.autoSaveDetail = false;
+  }
+
+  async function openPlanProMapsPicker(inputEl, opts) {
+    if (!inputEl) return;
+    opts = opts || {};
+    npMapsPickerState.inputEl = inputEl;
+    npMapsPickerState.autoSaveDetail = !!opts.autoSaveDetail;
+    var current = planProCoordsFromMapsText(inputEl.value);
+    if (current) {
+      npMapsPickerState.lat = current.lat;
+      npMapsPickerState.lng = current.lng;
+    }
+    var modal = $('npMapsPickerModal');
+    if (!modal) return;
+    modal.classList.add('np-modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+    try {
+      await loadPlanProLeaflet();
+    } catch (e) {
+      showToast((e && e.message) || 'No se pudo cargar el mapa.', true);
+      return;
+    }
+    var mount = $('npMapsPickerMap');
+    if (!mount) return;
+    if (!npMapsPickerState.map) {
+      npMapsPickerState.map = L.map(mount, { scrollWheelZoom: true, zoomControl: true }).setView([npMapsPickerState.lat, npMapsPickerState.lng], current ? 15 : 5);
+      L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        {
+          attribution: 'Imágenes © Esri — Maxar, Earthstar Geographics, comunidad GIS',
+          maxZoom: 19
+        }
+      ).addTo(npMapsPickerState.map);
+      npMapsPickerState.map.on('click', function (e) {
+        setPlanProMapsPickerPosition(e.latlng.lat, e.latlng.lng, npMapsPickerState.map.getZoom());
+      });
+    }
+    requestAnimationFrame(function () {
+      npMapsPickerState.map.invalidateSize();
+      setPlanProMapsPickerPosition(npMapsPickerState.lat, npMapsPickerState.lng, current ? 15 : 5);
+    });
+  }
+
+  function planProMapsPickerUseMyLocation() {
+    if (!navigator.geolocation) {
+      showToast('Este navegador no permite obtener ubicación.', true);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        setPlanProMapsPickerPosition(pos.coords.latitude, pos.coords.longitude, 16);
+      },
+      function (err) {
+        showToast((err && err.message) || 'No se pudo obtener tu ubicación.', true);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  }
+
+  async function applyPlanProMapsPickerSelection() {
+    var input = npMapsPickerState.inputEl;
+    if (!input) return;
+    input.value = planProMapsUrlFromCoords(npMapsPickerState.lat, npMapsPickerState.lng);
+    try {
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    } catch (e) {}
+    var shouldSave = npMapsPickerState.autoSaveDetail;
+    closePlanProMapsPicker();
+    if (shouldSave) await persistDetailMapsUrl(input.value);
   }
 
   /** Lista / tarjetas: actualización más corta que fmtDate (móvil). */
@@ -7437,6 +7653,15 @@
       await persistDetailMapsUrl(mapsInput.value);
     });
     mapsRow.appendChild(mapsSave);
+
+    var mapsPick = document.createElement('button');
+    mapsPick.type = 'button';
+    mapsPick.className = 'np-detail-maps-action';
+    mapsPick.textContent = 'Elegir en mapa';
+    mapsPick.addEventListener('click', function () {
+      openPlanProMapsPicker(mapsInput, { autoSaveDetail: true });
+    });
+    mapsRow.appendChild(mapsPick);
 
     if (mapsUrl) {
       var mapsClear = document.createElement('button');
@@ -13890,6 +14115,26 @@
   if (npBtnCatColorApply) npBtnCatColorApply.addEventListener('click', function () { savePlanProCategoryColor(); });
   var npBtnCatColorClear = $('npBtnCatColorClear');
   if (npBtnCatColorClear) npBtnCatColorClear.addEventListener('click', function () { clearPlanProCategoryColor(); });
+  var npCreateMapsPickBtn = $('npCreateMapsPickBtn');
+  if (npCreateMapsPickBtn) {
+    npCreateMapsPickBtn.addEventListener('click', function () {
+      openPlanProMapsPicker($('npCreateMapsUrl'));
+    });
+  }
+  var npMapsPickerClose = $('npMapsPickerClose');
+  if (npMapsPickerClose) npMapsPickerClose.addEventListener('click', closePlanProMapsPicker);
+  var npMapsPickerCancel = $('npMapsPickerCancel');
+  if (npMapsPickerCancel) npMapsPickerCancel.addEventListener('click', closePlanProMapsPicker);
+  var npMapsPickerLocate = $('npMapsPickerLocate');
+  if (npMapsPickerLocate) npMapsPickerLocate.addEventListener('click', planProMapsPickerUseMyLocation);
+  var npMapsPickerUse = $('npMapsPickerUse');
+  if (npMapsPickerUse) npMapsPickerUse.addEventListener('click', applyPlanProMapsPickerSelection);
+  var npMapsPickerModal = $('npMapsPickerModal');
+  if (npMapsPickerModal) {
+    npMapsPickerModal.addEventListener('click', function (e) {
+      if (e.target === npMapsPickerModal) closePlanProMapsPicker();
+    });
+  }
 
   $('npFilterDesc').addEventListener('change', function () {
     if (state.selectedCategoryId) loadItems();
@@ -14058,6 +14303,10 @@
 
   document.addEventListener('keydown', async function (e) {
     if (e.key !== 'Escape') return;
+    if ($('npMapsPickerModal') && $('npMapsPickerModal').classList.contains('np-modal-open')) {
+      closePlanProMapsPicker();
+      return;
+    }
     if ($('npCatColorFlyout') && $('npCatColorFlyout').classList.contains('np-show')) {
       closeCatColorFlyout();
       return;
