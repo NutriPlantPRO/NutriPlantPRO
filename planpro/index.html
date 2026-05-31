@@ -3859,7 +3859,7 @@
     }
     .np-rich-due-time-row {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr 1fr auto;
       gap: 8px;
       align-items: center;
       margin-bottom: 10px;
@@ -5427,9 +5427,10 @@
     <div class="np-rich-due-popover-title">Semáforo y fecha</div>
     <label for="npRichDuePopoverDate">Fecha</label>
     <input type="date" id="npRichDuePopoverDate" />
-    <label for="npRichDuePopoverTime">Hora</label>
+    <label for="npRichDuePopoverTimeStart">Hora</label>
     <div class="np-rich-due-time-row">
-      <input type="time" id="npRichDuePopoverTime" />
+      <input type="time" id="npRichDuePopoverTimeStart" aria-label="Hora de inicio" />
+      <input type="time" id="npRichDuePopoverTimeEnd" aria-label="Hora de fin" />
       <label class="np-rich-due-allday">
         <input type="checkbox" id="npRichDuePopoverAllDay" checked />
         Todo el día
@@ -5925,6 +5926,7 @@
   var createFormPriorityLevel = '';
   var createFormDueKey = '';
   var createFormDueTime = '';
+  var createFormDueEndTime = '';
   var npTreeMenuLayoutListener = null;
   var npRichImgResizeScrollFn = null;
   var npRichImgResizeUI = { overlay: null, editorEl: null, img: null };
@@ -6162,16 +6164,27 @@
     return '';
   }
 
-  function buildPlanProAttachmentsWithDueTime(item, dueTime) {
+  function getPlanProItemDueEndTime(item) {
+    var atts = item && Array.isArray(item.attachments) ? item.attachments : [];
+    for (var i = atts.length - 1; i >= 0; i--) {
+      var a = atts[i];
+      if (a && a.type === 'item_due_schedule') return normalizeDueTime(a.end_time);
+    }
+    return '';
+  }
+
+  function buildPlanProAttachmentsWithDueTime(item, dueTime, dueEndTime) {
     var base = item && Array.isArray(item.attachments) ? item.attachments : [];
     var next = base.filter(function (a) {
       return !(a && a.type === 'item_due_schedule');
     });
     var tm = normalizeDueTime(dueTime);
     if (tm) {
+      var endTm = normalizeDueTime(dueEndTime);
       next.push({
         type: 'item_due_schedule',
         time: tm,
+        end_time: endTm || null,
         all_day: false,
         updated_at: new Date().toISOString()
       });
@@ -7045,6 +7058,7 @@
           'data-np-due-id',
           'data-np-due-date',
           'data-np-due-time',
+          'data-np-due-end-time',
           'data-np-due-level',
           'data-np-due-label',
           'contenteditable',
@@ -7082,7 +7096,7 @@
           return;
         }
         var lv = normalizeRichDueLevel(el.getAttribute('data-np-due-level'));
-        applyRichDueMarkerEl(el, dk, lv, el.getAttribute('data-np-due-time'));
+        applyRichDueMarkerEl(el, dk, lv, el.getAttribute('data-np-due-time'), el.getAttribute('data-np-due-end-time'));
         el.setAttribute('contenteditable', 'false');
       });
       return wrap.innerHTML;
@@ -7478,17 +7492,27 @@
     return tm ? base + ' · ' + tm : base;
   }
 
+  function addMinutesToDueTime(raw, minutes) {
+    var t = normalizeDueTime(raw);
+    if (!t) return '';
+    var p = t.split(':').map(Number);
+    var d = new Date(2000, 0, 1, p[0], p[1]);
+    d.setMinutes(d.getMinutes() + (minutes || 60));
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
   function normalizeRichDueLevel(lv) {
     var x = priorityLevelFromRaw(lv);
     return x || 'media';
   }
 
-  function applyRichDueMarkerEl(el, dateKey, level, dueTime) {
+  function applyRichDueMarkerEl(el, dateKey, level, dueTime, dueEndTime) {
     if (!el) return;
     var dk = parseDueDateKey(dateKey);
     if (!dk) return;
     var lv = normalizeRichDueLevel(level);
     var tm = normalizeDueTime(dueTime);
+    var endTm = normalizeDueTime(dueEndTime);
     var label = formatRichDueLabel(dk, tm);
     el.className = 'np-rich-due np-rich-due--' + lv;
     el.setAttribute('contenteditable', 'false');
@@ -7498,9 +7522,11 @@
     el.setAttribute('data-np-due-label', label);
     if (tm) el.setAttribute('data-np-due-time', tm);
     else el.removeAttribute('data-np-due-time');
+    if (endTm) el.setAttribute('data-np-due-end-time', endTm);
+    else el.removeAttribute('data-np-due-end-time');
     el.setAttribute(
       'title',
-      'Semáforo ' + (lv === 'alta' ? 'alta' : lv === 'baja' ? 'baja' : 'media') + ' · ' + dk + (tm ? ' ' + tm : ' · todo el día') + ' (clic para editar)'
+      'Semáforo ' + (lv === 'alta' ? 'alta' : lv === 'baja' ? 'baja' : 'media') + ' · ' + dk + (tm ? ' ' + tm + (endTm ? '-' + endTm : '') : ' · todo el día') + ' (clic para editar)'
     );
     var dot = el.querySelector('.np-rich-due-dot');
     if (!dot) {
@@ -7515,7 +7541,7 @@
     el.appendChild(document.createTextNode(label));
   }
 
-  function buildRichDueMarkerHtml(dateKey, level, id, dueTime) {
+  function buildRichDueMarkerHtml(dateKey, level, id, dueTime, dueEndTime) {
     var dk = parseDueDateKey(dateKey);
     if (!dk) return '';
     var lv = normalizeRichDueLevel(level);
@@ -7523,13 +7549,13 @@
     var holder = document.createElement('div');
     holder.innerHTML = '<span class="np-rich-due np-rich-due--' + lv + '" contenteditable="false"></span>';
     var el = holder.firstChild;
-    applyRichDueMarkerEl(el, dk, lv, dueTime);
+    applyRichDueMarkerEl(el, dk, lv, dueTime, dueEndTime);
     el.setAttribute('data-np-due-id', uid);
     return el.outerHTML + '&#xa0;';
   }
 
-  function insertRichDueAtCursor(editorEl, dateKey, level, dueTime) {
-    var html = buildRichDueMarkerHtml(dateKey, level, null, dueTime);
+  function insertRichDueAtCursor(editorEl, dateKey, level, dueTime, dueEndTime) {
+    var html = buildRichDueMarkerHtml(dateKey, level, null, dueTime, dueEndTime);
     if (!html) return;
     var target = editorEl || $('npBodyRich');
     if (!target) return;
@@ -7637,7 +7663,8 @@
     var mode = opts.mode || 'marker';
     var todayKey = todayDateKey();
     var dateInp = $('npRichDuePopoverDate');
-    var timeInp = $('npRichDuePopoverTime');
+    var timeInp = $('npRichDuePopoverTimeStart');
+    var endInp = $('npRichDuePopoverTimeEnd');
     var allDayInp = $('npRichDuePopoverAllDay');
     var rm = $('npRichDuePopoverRemove');
 
@@ -7658,10 +7685,15 @@
       var dateKey = dk0 || todayKey;
       var level = lv0 ? normalizeRichDueLevel(lv0) : 'media';
       var dueTime = mode === 'create' ? createFormDueTime : getPlanProItemDueTime(state.detailItemRecord);
+      var dueEndTime = mode === 'create' ? createFormDueEndTime : getPlanProItemDueEndTime(state.detailItemRecord);
       if (dateInp) dateInp.value = dateKey;
       if (timeInp) {
         timeInp.value = dueTime || '';
         timeInp.disabled = !dueTime;
+      }
+      if (endInp) {
+        endInp.value = dueEndTime || (dueTime ? addMinutesToDueTime(dueTime, 60) : '');
+        endInp.disabled = !dueTime;
       }
       if (allDayInp) allDayInp.checked = !dueTime;
       syncRichDuePickerLevelButtons(level);
@@ -7681,10 +7713,15 @@
     var dateKey = marker ? marker.getAttribute('data-np-due-date') || todayKey : todayKey;
     var level = marker ? normalizeRichDueLevel(marker.getAttribute('data-np-due-level')) : 'media';
     var markerTime = marker ? normalizeDueTime(marker.getAttribute('data-np-due-time')) : '';
+    var markerEndTime = marker ? normalizeDueTime(marker.getAttribute('data-np-due-end-time')) : '';
     if (dateInp) dateInp.value = parseDueDateKey(dateKey) || todayKey;
     if (timeInp) {
       timeInp.value = markerTime || '';
       timeInp.disabled = !markerTime;
+    }
+    if (endInp) {
+      endInp.value = markerEndTime || (markerTime ? addMinutesToDueTime(markerTime, 60) : '');
+      endInp.disabled = !markerTime;
     }
     if (allDayInp) allDayInp.checked = !markerTime;
     syncRichDuePickerLevelButtons(level);
@@ -7719,11 +7756,17 @@
     }
     var lv = richDuePickerState.level || 'media';
     var mode = richDuePickerState.mode || 'marker';
-    var timeInp = $('npRichDuePopoverTime');
+    var timeInp = $('npRichDuePopoverTimeStart');
+    var endInp = $('npRichDuePopoverTimeEnd');
     var allDayInp = $('npRichDuePopoverAllDay');
     var dueTime = allDayInp && allDayInp.checked ? '' : normalizeDueTime(timeInp && timeInp.value);
+    var dueEndTime = dueTime ? normalizeDueTime(endInp && endInp.value) : '';
     if (timeInp && timeInp.value && !dueTime && !(allDayInp && allDayInp.checked)) {
       showToast('Elige una hora válida o marca todo el día.', true);
+      return;
+    }
+    if (dueTime && endInp && endInp.value && !dueEndTime) {
+      showToast('Elige una hora de fin válida o déjala vacía.', true);
       return;
     }
 
@@ -7733,15 +7776,16 @@
         createFormDueKey = dk;
         createFormPriorityLevel = lv;
         createFormDueTime = dueTime;
+        createFormDueEndTime = dueEndTime;
         updateFichaDuePillEl($('npCreateFichaPill'), dk, stored, dueTime);
       } else {
         if (state.detailItemRecord) {
           state.detailItemRecord.due_at = dk;
           state.detailItemRecord.priority = stored;
-          state.detailItemRecord.attachments = buildPlanProAttachmentsWithDueTime(state.detailItemRecord, dueTime);
+          state.detailItemRecord.attachments = buildPlanProAttachmentsWithDueTime(state.detailItemRecord, dueTime, dueEndTime);
         }
         updateFichaDuePillEl($('npDetailFichaPill'), dk, stored, dueTime);
-        schedulePersistItemMeta({ due_at: dk, priority: stored, due_time: dueTime });
+        schedulePersistItemMeta({ due_at: dk, priority: stored, due_time: dueTime, due_end_time: dueEndTime });
       }
       closeRichDuePicker();
       refreshPlanProCalendarAndPrio();
@@ -7751,9 +7795,9 @@
     var ed = richDuePickerState.editorEl;
     var marker = richDuePickerState.markerEl;
     if (marker && ed && ed.contains(marker)) {
-      applyRichDueMarkerEl(marker, dk, lv, dueTime);
+      applyRichDueMarkerEl(marker, dk, lv, dueTime, dueEndTime);
     } else if (ed) {
-      insertRichDueAtCursor(ed, dk, lv, dueTime);
+      insertRichDueAtCursor(ed, dk, lv, dueTime, dueEndTime);
     }
     closeRichDuePicker();
     syncRichEmptyClass(ed);
@@ -7770,15 +7814,16 @@
         createFormDueKey = '';
         createFormPriorityLevel = '';
         createFormDueTime = '';
+        createFormDueEndTime = '';
         updateFichaDuePillEl($('npCreateFichaPill'), '', '');
       } else {
         if (state.detailItemRecord) {
           state.detailItemRecord.due_at = null;
           state.detailItemRecord.priority = null;
-          state.detailItemRecord.attachments = buildPlanProAttachmentsWithDueTime(state.detailItemRecord, '');
+          state.detailItemRecord.attachments = buildPlanProAttachmentsWithDueTime(state.detailItemRecord, '', '');
         }
         updateFichaDuePillEl($('npDetailFichaPill'), '', '');
-        schedulePersistItemMeta({ due_at: null, priority: null, due_time: '' });
+        schedulePersistItemMeta({ due_at: null, priority: null, due_time: '', due_end_time: '' });
       }
       closeRichDuePicker();
       refreshPlanProCalendarAndPrio();
@@ -7816,10 +7861,12 @@
       if (!dk) return;
       var lv = priorityLevelFromRaw(el.getAttribute('data-np-due-level') || '');
       var dueTime = normalizeDueTime(el.getAttribute('data-np-due-time'));
+      var dueEndTime = normalizeDueTime(el.getAttribute('data-np-due-end-time'));
       var label = el.getAttribute('data-np-due-label') || formatRichDueLabel(dk, dueTime);
       out.push({
         dateKey: dk,
         time: dueTime,
+        endTime: dueEndTime,
         level: lv,
         kind: 'note_due',
         itemId: meta.id,
@@ -7875,15 +7922,27 @@
     var apply = $('npRichDuePopoverApply');
     var remove = $('npRichDuePopoverRemove');
     var allDay = $('npRichDuePopoverAllDay');
-    var timeInp = $('npRichDuePopoverTime');
+    var timeInp = $('npRichDuePopoverTimeStart');
+    var endInp = $('npRichDuePopoverTimeEnd');
     if (cancel) cancel.addEventListener('click', closeRichDuePicker);
     if (apply) apply.addEventListener('click', applyRichDuePicker);
     if (remove) remove.addEventListener('click', removeRichDueFromPicker);
     if (allDay && timeInp) {
       allDay.addEventListener('change', function () {
         timeInp.disabled = allDay.checked;
-        if (allDay.checked) timeInp.value = '';
-        else if (!timeInp.value) timeInp.value = '09:00';
+        if (endInp) endInp.disabled = allDay.checked;
+        if (allDay.checked) {
+          timeInp.value = '';
+          if (endInp) endInp.value = '';
+        } else {
+          if (!timeInp.value) timeInp.value = '09:00';
+          if (endInp && !endInp.value) endInp.value = addMinutesToDueTime(timeInp.value, 60);
+        }
+      });
+    }
+    if (timeInp && endInp) {
+      timeInp.addEventListener('change', function () {
+        if (!endInp.value && timeInp.value) endInp.value = addMinutesToDueTime(timeInp.value, 60);
       });
     }
     document.addEventListener('click', function (e) {
@@ -8131,8 +8190,8 @@
         dbPatch.due_at = key || patch.due_at;
       }
     }
-    if (patch.due_time !== undefined && state.detailItemRecord && state.detailItemRecord.id === itemId) {
-      dbPatch.attachments = buildPlanProAttachmentsWithDueTime(state.detailItemRecord, patch.due_time);
+    if ((patch.due_time !== undefined || patch.due_end_time !== undefined) && state.detailItemRecord && state.detailItemRecord.id === itemId) {
+      dbPatch.attachments = buildPlanProAttachmentsWithDueTime(state.detailItemRecord, patch.due_time, patch.due_end_time);
     }
     if (!Object.keys(dbPatch).length) return;
     var res = await npCloudSyncTrack(function () {
@@ -8301,6 +8360,7 @@
     createFormPriorityLevel = '';
     createFormDueKey = '';
     createFormDueTime = '';
+    createFormDueEndTime = '';
     updateFichaDuePillEl($('npCreateFichaPill'), '', '');
     var maps = $('npCreateMapsUrl');
     if (maps) maps.value = '';
@@ -10153,12 +10213,14 @@
       var itemNoteLink = firstUrlFromText(noteFullText(r));
       var itemMapsUrl = getPlanProMapsUrlFromItem(r);
       var itemDueTime = getPlanProItemDueTime(r);
+      var itemDueEndTime = getPlanProItemDueEndTime(r);
       var dkItem = parseDueDateKey(r.due_at);
       if (dkItem) {
         var lvItem = priorityLevelFromRaw(r.priority != null ? String(r.priority) : '');
         out.push({
           dateKey: dkItem,
           time: itemDueTime,
+          endTime: itemDueEndTime,
           level: lvItem,
           kind: 'item_due',
           itemId: r.id,
@@ -10477,6 +10539,15 @@
     return npIcsUrlValue(url).replace(/,/g, '%2C');
   }
 
+  function npIcsMapsCoords(url) {
+    var c = planProCoordsFromMapsText(url);
+    if (!c || !isFinite(c.lat) || !isFinite(c.lng)) return null;
+    return {
+      lat: Number(c.lat).toFixed(6),
+      lng: Number(c.lng).toFixed(6)
+    };
+  }
+
   function npIcsDateTimeLocal(dateKey, timeRaw) {
     var tm = normalizeDueTime(timeRaw);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey || '')) || !tm) return '';
@@ -10510,7 +10581,7 @@
       ent.rowTitle || 'Plan PRO',
       '🏷️ Tipo: ' + kindLine,
       '🚦 Semáforo: ' + calLevelPlainLabel(ent.level),
-      '🕒 Hora: ' + (ent.time ? formatDueTimeLabel(ent.time) : 'Todo el día'),
+      '🕒 Hora: ' + (ent.time ? formatDueTimeLabel(ent.time) + (ent.endTime ? ' - ' + formatDueTimeLabel(ent.endTime) : '') : 'Todo el día'),
       '🌱 Planta: ' + (ent.plantTitle || (ent.areaId ? getPlanAreaTitle(ent.areaId) : '—')),
       '🌿 Rama: ' + (ent.catPath || '—'),
       '📝 Apunte: ' + (ent.itemTitle || '—')
@@ -10566,9 +10637,11 @@
       var desc = npEscapeIcs(npIcsEventDescription(ent));
       var mapsUrl = normalizePlanProMapsUrl(ent.mapsUrl || '');
       var mapsUrlIcs = mapsUrl ? npIcsMapsUrlValue(mapsUrl) : '';
+      var mapsCoords = mapsUrl ? npIcsMapsCoords(mapsUrl) : null;
       var dtStart = dk.replace(/-/g, '');
       var dtEnd = npAddDaysToDateKey(dk, 1).replace(/-/g, '');
       var eventTime = normalizeDueTime(ent.time);
+      var eventEndTime = normalizeDueTime(ent.endTime);
       lines.push('BEGIN:VEVENT');
       lines.push('UID:' + uid);
       lines.push('DTSTAMP:' + stamp);
@@ -10576,7 +10649,7 @@
       lines.push('SEQUENCE:1');
       if (eventTime) {
         lines.push('DTSTART:' + npIcsDateTimeLocal(dk, eventTime));
-        lines.push('DTEND:' + npIcsAddMinutesLocal(dk, eventTime, 60));
+        lines.push('DTEND:' + (eventEndTime ? npIcsDateTimeLocal(dk, eventEndTime) : npIcsAddMinutesLocal(dk, eventTime, 60)));
       } else {
         lines.push('DTSTART;VALUE=DATE:' + dtStart);
         lines.push('DTEND;VALUE=DATE:' + dtEnd);
@@ -10584,7 +10657,8 @@
       lines.push('SUMMARY:' + summary);
       lines.push('DESCRIPTION:' + desc);
       if (mapsUrlIcs) {
-        lines.push('LOCATION:' + npEscapeIcs(mapsUrlIcs));
+        lines.push('LOCATION:' + npEscapeIcs(mapsCoords ? mapsCoords.lat + ',' + mapsCoords.lng : mapsUrlIcs));
+        if (mapsCoords) lines.push('GEO:' + mapsCoords.lat + ';' + mapsCoords.lng);
         lines.push('X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-TITLE=' + npEscapeIcs('Ubicación Plan PRO') + ':' + mapsUrlIcs);
       }
       if (ent.noteLink) lines.push('URL:' + npIcsUrlValue(ent.noteLink));
@@ -14867,6 +14941,7 @@
       createAttachments.push({
         type: 'item_due_schedule',
         time: createFormDueTime,
+        end_time: createFormDueEndTime || null,
         all_day: false,
         updated_at: new Date().toISOString()
       });
