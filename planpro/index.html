@@ -10348,15 +10348,15 @@
     else if (ent.kind === 'note_due') kindLine = 'Semáforo en nota principal';
     var lines = [
       ent.rowTitle || 'Plan PRO',
-      'Tipo: ' + kindLine,
-      'Semáforo: ' + calLevelPlainLabel(ent.level),
-      'Planta: ' + (ent.plantTitle || (ent.areaId ? getPlanAreaTitle(ent.areaId) : '—')),
-      'Apunte: ' + (ent.itemTitle || '—'),
-      'Rama: ' + (ent.catPath || '—')
+      '🏷️ Tipo: ' + kindLine,
+      '🚦 Semáforo: ' + calLevelPlainLabel(ent.level),
+      '🌱 Planta: ' + (ent.plantTitle || (ent.areaId ? getPlanAreaTitle(ent.areaId) : '—')),
+      '🌿 Rama: ' + (ent.catPath || '—'),
+      '📝 Apunte: ' + (ent.itemTitle || '—')
     ];
-    if (ent.notePreview) lines.push('Nota: ' + ent.notePreview);
-    if (ent.noteLink) lines.push('Link: ' + ent.noteLink);
-    if (ent.mapsUrl) lines.push('Ubicación Maps: ' + npIcsMapsUrlValue(ent.mapsUrl));
+    if (ent.notePreview) lines.push('📌 Nota: ' + ent.notePreview);
+    if (ent.noteLink) lines.push('🔗 Link: ' + ent.noteLink);
+    if (ent.mapsUrl) lines.push('📍 Ubicación Maps: ' + npIcsMapsUrlValue(ent.mapsUrl));
     return lines.join('\n');
   }
 
