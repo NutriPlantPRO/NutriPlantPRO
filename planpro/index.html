@@ -1654,6 +1654,26 @@
       font-size: 13px;
       background: rgba(255, 255, 255, 0.95);
     }
+    .np-map-picker-favorites {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto auto;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+    }
+    .np-map-picker-favorites select {
+      min-height: 34px;
+      margin: 0;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.95);
+    }
+    .np-map-picker-favorites-empty {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
     .np-map-picker-help {
       font-size: 12px;
       color: var(--muted);
@@ -1719,6 +1739,9 @@
         height: 58vh;
       }
       .np-map-picker-search {
+        grid-template-columns: 1fr;
+      }
+      .np-map-picker-favorites {
         grid-template-columns: 1fr;
       }
     }
@@ -3754,6 +3777,15 @@
       font-size: 0.92em;
     }
     .np-rich-flag-star { color: #1d4ed8; background: rgba(219, 234, 254, 0.65); }
+    .np-rich-separator {
+      display: block;
+      width: min(100%, 680px);
+      height: 1px;
+      margin: 18px auto;
+      border: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(37, 99, 235, 0.24) 18%, rgba(20, 184, 166, 0.42) 50%, rgba(37, 99, 235, 0.24) 82%, transparent 100%);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+    }
     /* Semáforo + fecha en línea (nota principal) */
     .np-rich-due {
       display: inline-flex;
@@ -5202,6 +5234,7 @@
                       <button type="button" class="np-rich-tbtn np-rich-tbtn-due" data-rich="duedate" title="Semáforo y fecha en esta línea (calendario)">🚦</button>
                       <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="warn" title="Marcar importancia">⚠︎</button>
                       <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="star" title="Destacar">★</button>
+                      <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="separator" title="Insertar línea separadora">—</button>
                       <button type="button" class="np-rich-tbtn" data-rich="image" title="Insertar imagen (se comprime y sube a la nube)">🖼</button>
                     </span>
                   </div>
@@ -5303,6 +5336,14 @@
               <input id="npMapsPickerSearch" type="search" autocomplete="off" placeholder="Buscar lugar o dirección (ej. Guadalajara, Zapopan...)" aria-label="Buscar lugar en el mapa" />
               <button type="button" class="btn btn-ghost btn-ghost-blue" id="npMapsPickerSearchBtn">Buscar</button>
             </div>
+            <div class="np-map-picker-favorites">
+              <select id="npMapsFavoriteSelect" aria-label="Favoritos de ubicación">
+                <option value="">Favoritos de ubicación…</option>
+              </select>
+              <button type="button" class="btn btn-ghost btn-ghost-green" id="npMapsFavoriteSave">Guardar favorito</button>
+              <button type="button" class="btn btn-ghost" id="npMapsFavoriteDelete">Borrar</button>
+            </div>
+            <div id="npMapsFavoriteStatus" class="np-map-picker-favorites-empty" aria-live="polite"></div>
             <div class="np-map-picker-toolbar">
               <button type="button" class="btn btn-ghost btn-ghost-blue" id="npMapsPickerLocate">📍 Mi ubicación</button>
               <span class="np-map-picker-help">Mueve el pin o toca el mapa. Al guardar se genera un link de Google Maps.</span>
@@ -6161,6 +6202,7 @@
     if (!modal) return;
     modal.classList.add('np-modal-open');
     modal.setAttribute('aria-hidden', 'false');
+    loadPlanProLocationFavorites();
     try {
       await loadPlanProLeaflet();
     } catch (e) {
@@ -6214,9 +6256,11 @@
     var btn = $('npMapsPickerSearchBtn');
     if (btn) btn.disabled = true;
     try {
+      var hasCountryHint = /,\s*[a-zA-ZÁÉÍÓÚÜÑáéíóúüñ .'-]{3,}$/.test(q);
+      var searchText = hasCountryHint ? q : (q + ', México');
       var url =
         'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=0&q=' +
-        encodeURIComponent(q);
+        encodeURIComponent(searchText);
       var res = await fetch(url, {
         headers: {
           Accept: 'application/json'
@@ -6225,6 +6269,16 @@
       if (!res.ok) throw new Error('Búsqueda no disponible (' + res.status + ')');
       var data = await res.json();
       var first = Array.isArray(data) && data.length ? data[0] : null;
+      if (!first && !hasCountryHint) {
+        var urlGlobal =
+          'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=0&q=' +
+          encodeURIComponent(q);
+        var resGlobal = await fetch(urlGlobal, { headers: { Accept: 'application/json' } });
+        if (resGlobal.ok) {
+          var dataGlobal = await resGlobal.json();
+          first = Array.isArray(dataGlobal) && dataGlobal.length ? dataGlobal[0] : null;
+        }
+      }
       if (!first || first.lat == null || first.lon == null) {
         showToast('No encontré ese lugar. Prueba con ciudad, estado o dirección completa.', true);
         return;
@@ -6242,6 +6296,133 @@
     } finally {
       if (btn) btn.disabled = false;
     }
+  }
+
+  function renderPlanProLocationFavorites() {
+    var sel = $('npMapsFavoriteSelect');
+    var status = $('npMapsFavoriteStatus');
+    if (!sel) return;
+    var current = sel.value || '';
+    sel.innerHTML = '<option value="">Favoritos de ubicación…</option>';
+    var favs = (state && Array.isArray(state.locationFavorites)) ? state.locationFavorites : [];
+    favs.forEach(function (f) {
+      var opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = f.title || 'Favorito';
+      sel.appendChild(opt);
+    });
+    if (current && favs.some(function (f) { return f.id === current; })) sel.value = current;
+    if (status) {
+      if (state && state.locationFavoritesReady === false) {
+        status.textContent = 'Favoritos no disponibles: ejecuta supabase-plan-pro-location-favorites.sql.';
+      } else if (favs.length) {
+        status.textContent = favs.length + ' favorito' + (favs.length === 1 ? '' : 's') + ' guardado' + (favs.length === 1 ? '' : 's') + '.';
+      } else {
+        status.textContent = 'Sin favoritos guardados todavía.';
+      }
+    }
+  }
+
+  async function loadPlanProLocationFavorites() {
+    if (!state || !state.client || !state.userId) return;
+    var res = await state.client
+      .from('plan_pro_location_favorites')
+      .select('id,title,lat,lng,maps_url,updated_at')
+      .eq('owner_id', state.userId)
+      .order('updated_at', { ascending: false })
+      .limit(100);
+    if (res.error) {
+      state.locationFavoritesReady = false;
+      state.locationFavorites = [];
+      renderPlanProLocationFavorites();
+      return;
+    }
+    state.locationFavoritesReady = true;
+    state.locationFavorites = res.data || [];
+    renderPlanProLocationFavorites();
+  }
+
+  function applyPlanProLocationFavoriteById(favId) {
+    var favs = (state && Array.isArray(state.locationFavorites)) ? state.locationFavorites : [];
+    var fav = favs.filter(function (f) { return f.id === favId; })[0];
+    if (!fav) return;
+    setPlanProMapsPickerPosition(fav.lat, fav.lng, 16);
+    var search = $('npMapsPickerSearch');
+    if (search) search.value = fav.title || '';
+  }
+
+  async function saveCurrentPlanProLocationFavorite() {
+    if (!state || !state.client || !state.userId) return;
+    if (state.locationFavoritesReady === false) {
+      showToast('Ejecuta primero supabase-plan-pro-location-favorites.sql en Supabase.', true);
+      return;
+    }
+    var title = window.prompt('Nombre del favorito:', ($('npMapsPickerSearch') && $('npMapsPickerSearch').value) || '');
+    title = String(title || '').trim();
+    if (!title) return;
+    var lat = Number(npMapsPickerState.lat);
+    var lng = Number(npMapsPickerState.lng);
+    if (!isFinite(lat) || !isFinite(lng)) {
+      showToast('El pin no tiene coordenadas válidas.', true);
+      return;
+    }
+    var row = {
+      owner_id: state.userId,
+      title: title,
+      lat: lat,
+      lng: lng,
+      maps_url: planProMapsUrlFromCoords(lat, lng)
+    };
+    var res;
+    try {
+      res = await npCloudSyncTrack(function () {
+        return state.client.from('plan_pro_location_favorites').insert(row).select('id').single();
+      });
+    } catch (e) {
+      showToast((e && e.message) || 'No se pudo guardar el favorito.', true);
+      return;
+    }
+    if (res.error) {
+      state.locationFavoritesReady = !/relation|does not exist|schema|plan_pro_location_favorites/i.test(res.error.message || '');
+      showToast(
+        state.locationFavoritesReady === false
+          ? 'Ejecuta supabase-plan-pro-location-favorites.sql en Supabase para guardar favoritos.'
+          : (res.error.message || 'No se pudo guardar el favorito.'),
+        true
+      );
+      renderPlanProLocationFavorites();
+      return;
+    }
+    showToast('Favorito guardado.');
+    await loadPlanProLocationFavorites();
+    if (res.data && res.data.id && $('npMapsFavoriteSelect')) $('npMapsFavoriteSelect').value = res.data.id;
+  }
+
+  async function deleteSelectedPlanProLocationFavorite() {
+    if (!state || !state.client || !state.userId) return;
+    var sel = $('npMapsFavoriteSelect');
+    var id = sel ? sel.value : '';
+    if (!id) {
+      showToast('Elige un favorito para borrar.', true);
+      return;
+    }
+    var fav = (state.locationFavorites || []).filter(function (f) { return f.id === id; })[0];
+    if (!window.confirm('¿Borrar favorito "' + ((fav && fav.title) || 'ubicación') + '"?')) return;
+    var res;
+    try {
+      res = await npCloudSyncTrack(function () {
+        return state.client.from('plan_pro_location_favorites').delete().eq('id', id).eq('owner_id', state.userId);
+      });
+    } catch (e) {
+      showToast((e && e.message) || 'No se pudo borrar el favorito.', true);
+      return;
+    }
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo borrar el favorito.', true);
+      return;
+    }
+    showToast('Favorito borrado.');
+    await loadPlanProLocationFavorites();
   }
 
   async function applyPlanProMapsPickerSelection() {
@@ -7152,6 +7333,8 @@
       html = '<span class="np-rich-flag">⚠︎ Importante</span>&#xa0;';
     } else if (kind === 'star') {
       html = '<span class="np-rich-flag np-rich-flag-star">★ Destacado</span>&#xa0;';
+    } else if (kind === 'separator') {
+      html = '<div class="np-rich-separator" contenteditable="false"></div><p><br></p>';
     }
     if (!html) return;
     var target = editorEl || $('npBodyRich');
@@ -7913,7 +8096,7 @@
     var rawHtml = sanitizeRich(html || '');
     if (String(stripHtml(rawHtml)).trim()) return false;
     if (/<img[\s>]/i.test(rawHtml)) return false;
-    if (/np-rich-due|np-rich-flag/i.test(rawHtml)) return false;
+    if (/np-rich-due|np-rich-flag|np-rich-separator/i.test(rawHtml)) return false;
     return true;
   }
 
@@ -7930,7 +8113,7 @@
 
   function richHtmlHasFormattedContent(html) {
     if (!html || !String(html).trim()) return false;
-    return /np-rich-due|np-rich-flag|np-rich-fs-|<(strong|b|em|i|u|s|strike|h2|h3|ul|ol|img)\b/i.test(String(html));
+    return /np-rich-due|np-rich-flag|np-rich-separator|np-rich-fs-|<(strong|b|em|i|u|s|strike|h2|h3|ul|ol|img)\b/i.test(String(html));
   }
 
   /** Libreta con diseño (🚦, negritas, colores) → body_html; solo texto plano de Socio → body_plain. */
@@ -8173,6 +8356,8 @@
     sidebarCalMonth: null,
     /** Entradas con fecha para puntos / modal del día (vista actual). */
     calendarEntriesCache: [],
+    locationFavorites: [],
+    locationFavoritesReady: true,
     treeCollapsed: {},
     categoryItemCounts: {},
     /** Si la BD no tiene body_html aún, las queries omiten esa columna (migración: supabase-plan-pro-body-html.sql). */
@@ -13641,6 +13826,25 @@
       }
       if (cats.length > maxC) lines.push('(' + cats.length + ' ramas; mostrando ' + maxC + '.)');
       lines.push('');
+      lines.push('--- Favoritos de ubicación (máx. 80) ---');
+      var favs = Array.isArray(state.locationFavorites) ? state.locationFavorites : [];
+      if (favs.length) {
+        favs.slice(0, 80).forEach(function (f) {
+          lines.push(
+            '- ' +
+              (f.title || 'Favorito') +
+              ' | lat: ' +
+              (f.lat != null ? f.lat : '—') +
+              ' | lng: ' +
+              (f.lng != null ? f.lng : '—') +
+              ' | maps: ' +
+              (f.maps_url || planProMapsUrlFromCoords(f.lat, f.lng) || '—')
+          );
+        });
+      } else {
+        lines.push(state.locationFavoritesReady === false ? 'No disponibles (falta tabla o permisos).' : 'Sin favoritos guardados.');
+      }
+      lines.push('');
       lines.push('--- Apuntes en la lista actual (máx. 100; mismo filtro que la tabla) ---');
       (state.planProItemsSnapshot || []).forEach(function (it) {
         lines.push(
@@ -13668,7 +13872,7 @@
       var data = getPlanProAssistantContext();
       return (
         'Eres el asistente de Plan PRO (NutriPlant PRO – Cerebro Digital). El usuario administra plantas (pilares), ramas jerárquicas y apuntes con nota enriquecida y bloques (tablas de seguimiento, tareas, tabla libre, montos, etc.) en body_blocks. ' +
-        'Recibes un resumen de lo que hay cargado en pantalla: plantas, ramas de la planta activa y la lista de apuntes visibles (título, rama, estado, prioridad, vencimiento, ubicación Maps si existe, extracto de nota). ' +
+        'Recibes un resumen de lo que hay cargado en pantalla: plantas, ramas de la planta activa, favoritos de ubicación y la lista de apuntes visibles (título, rama, estado, prioridad, vencimiento, ubicación Maps si existe, extracto de nota). ' +
         'Ayuda a priorizar, redactar, resumir, detectar huecos y sugerir siguientes pasos usando solo ese contexto. No ejecutas cambios en Supabase; solo orientas. Responde siempre en español. ' +
         'Si adjunta una imagen (factura, ticket, CFDI impreso, captura de pantalla), lee el texto visible: si pide extraer folio, RFC, razón social o nombre, UUID del timbre, total, fecha de emisión, etc., devuélvelo de forma clara; si no consta, dilo. ' +
         'Datos en pantalla:\n\n' +
@@ -14201,6 +14405,16 @@
       searchPlanProMapsPickerPlace();
     });
   }
+  var npMapsFavoriteSelect = $('npMapsFavoriteSelect');
+  if (npMapsFavoriteSelect) {
+    npMapsFavoriteSelect.addEventListener('change', function () {
+      if (this.value) applyPlanProLocationFavoriteById(this.value);
+    });
+  }
+  var npMapsFavoriteSave = $('npMapsFavoriteSave');
+  if (npMapsFavoriteSave) npMapsFavoriteSave.addEventListener('click', saveCurrentPlanProLocationFavorite);
+  var npMapsFavoriteDelete = $('npMapsFavoriteDelete');
+  if (npMapsFavoriteDelete) npMapsFavoriteDelete.addEventListener('click', deleteSelectedPlanProLocationFavorite);
   var npMapsPickerUse = $('npMapsPickerUse');
   if (npMapsPickerUse) npMapsPickerUse.addEventListener('click', applyPlanProMapsPickerSelection);
   var npMapsPickerModal = $('npMapsPickerModal');
@@ -14605,6 +14819,7 @@
     try {
       await loadLookups();
       await loadItems();
+      await loadPlanProLocationFavorites();
     } catch (err) {
       $('npLoading').classList.add('np-hide');
       $('npDenied').textContent = 'Error cargando datos: ' + (err && err.message ? err.message : err);

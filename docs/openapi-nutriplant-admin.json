@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Consulta NutriPlant y Plan PRO (lectura + crear/editar apuntes)",
-        "description": "NutriPlant: project_analyses, manual_tecnico_catalog, nutrition_catalogs (fertilizantes/cultivos), etc. Plan PRO (solo Jesús): plan_pro_day, plan_pro_week, plan_pro_create, plan_pro_update. Nunca inventar datos de clientes.",
+        "description": "NutriPlant: project_analyses, manual_tecnico_catalog, nutrition_catalogs (fertilizantes/cultivos), etc. Plan PRO (solo Jesús): plan_pro_day, plan_pro_week, plan_pro_search, plan_pro_item, plan_pro_locations, plan_pro_create, plan_pro_update. Nunca inventar datos de clientes.",
         "requestBody": {
           "required": true,
           "content": {
@@ -57,6 +57,7 @@
               "plan_pro_week",
               "plan_pro_search",
               "plan_pro_item",
+              "plan_pro_locations",
               "plan_pro_create",
               "plan_pro_update",
               "radar_project",
@@ -114,6 +115,8 @@
               "days_ahead": { "type": "integer" },
               "include_overdue": { "type": "boolean" },
               "limit": { "type": "integer" },
+              "include_favorites": { "type": "boolean", "description": "plan_pro_locations: incluir favoritos de ubicación" },
+              "include_items": { "type": "boolean", "description": "plan_pro_locations: incluir apuntes con ubicación Maps" },
               "tool_id": { "type": "string" },
               "tab_id": { "type": "string" },
               "report_id": { "type": "string" },

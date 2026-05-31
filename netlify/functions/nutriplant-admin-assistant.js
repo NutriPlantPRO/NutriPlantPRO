@@ -1688,6 +1688,33 @@ function collectPlanProImages(item) {
   return images;
 }
 
+function normalizePlanProMapsUrl(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '';
+  if (/^https?:\/\//i.test(s)) return s;
+  return '';
+}
+
+function getPlanProMapsLocation(item) {
+  const attachments = Array.isArray(item && item.attachments) ? item.attachments : [];
+  for (let i = attachments.length - 1; i >= 0; i--) {
+    const att = attachments[i];
+    if (!att || typeof att !== 'object') continue;
+    if (att.type !== 'maps_location') continue;
+    const url = normalizePlanProMapsUrl(att.url || att.maps_url);
+    if (!url) continue;
+    const coord = /[?&]q=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(url);
+    return {
+      title: att.title || 'Ubicación / Maps',
+      maps_url: url,
+      lat: coord ? parseFloat(coord[1]) : null,
+      lng: coord ? parseFloat(coord[2]) : null,
+      created_at: att.created_at || null
+    };
+  }
+  return null;
+}
+
 function collectAllRichDueMarkers(item) {
   const markers = extractRichDueMarkersFromHtml(item.body_html).map((m) => ({
     ...m,
@@ -2146,6 +2173,7 @@ function summarizeBodyBlocks(blocks) {
 function planProItemListRow(item, areasById, categories) {
   const area = areasById[item.area_id];
   const lv = priorityLevelFromRaw(item.priority);
+  const mapsLocation = getPlanProMapsLocation(item);
   return {
     id: item.id,
     title: item.title || '(sin título)',
@@ -2165,6 +2193,8 @@ function planProItemListRow(item, areasById, categories) {
     preview: notePreviewMultiline(item.body_plain, item.body_html, 200),
     preview_note:
       'preview une renglones con · ; el texto completo está en body_plain (plan_pro_item) o body_plain_lines.',
+    maps_location: mapsLocation,
+    maps_url: mapsLocation ? mapsLocation.maps_url : null,
     updated_at: item.updated_at
   };
 }
@@ -2180,6 +2210,7 @@ function itemMatchesSearch(item, qLc, areasById) {
     item.status,
     item.priority,
     item.thought_type,
+    getPlanProMapsLocation(item) && getPlanProMapsLocation(item).maps_url,
     area && area.title,
     area && area.slug,
     ...(item.relation_tags || [])
@@ -2319,6 +2350,90 @@ async function handlePlanProSearch(supabase, params) {
     count: matches.length,
     items: matches.slice(0, 30).map((item) => planProItemListRow(item, areasById, categories))
   };
+}
+
+async function fetchPlanProLocationFavorites(supabase, ownerId, limit) {
+  const max = Math.min(parseInt(limit, 10) || 100, 200);
+  const { data, error } = await supabase
+    .from('plan_pro_location_favorites')
+    .select('id,title,lat,lng,maps_url,updated_at')
+    .eq('owner_id', ownerId)
+    .order('updated_at', { ascending: false })
+    .limit(max);
+  if (error) {
+    if (/relation .* does not exist|schema|plan_pro_location_favorites/i.test(error.message || '')) {
+      return { available: false, rows: [], error: 'Tabla plan_pro_location_favorites no existe. Ejecuta supabase-plan-pro-location-favorites.sql.' };
+    }
+    throw new Error('plan_pro_location_favorites: ' + error.message);
+  }
+  return { available: true, rows: data || [], error: null };
+}
+
+async function handlePlanProLocations(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'plan_pro', error: 'No se encontró usuario admin para Plan PRO.' };
+  }
+
+  const q = (params.q || params.search || '').trim().toLowerCase();
+  const includeFavorites = params.include_favorites !== false && params.include_favorites !== 'false';
+  const includeItems = params.include_items !== false && params.include_items !== 'false';
+  const limit = Math.min(parseInt(params.limit, 10) || 100, 200);
+
+  const areas = await fetchPlanProAreas(supabase, ownerId);
+  const areasById = areaMapById(areas);
+  const categories = await fetchPlanProCategories(supabase);
+  const out = {
+    ok: true,
+    domain: 'plan_pro',
+    action: 'plan_pro_locations',
+    query: q || null,
+    favorites_available: true,
+    favorites: [],
+    items_with_location: []
+  };
+
+  if (includeFavorites) {
+    const fav = await fetchPlanProLocationFavorites(supabase, ownerId, limit);
+    out.favorites_available = fav.available;
+    if (fav.error) out.favorites_note = fav.error;
+    out.favorites = fav.rows
+      .filter((f) => {
+        if (!q) return true;
+        return [f.title, f.maps_url, f.lat, f.lng].filter((x) => x != null).join(' ').toLowerCase().includes(q);
+      })
+      .map((f) => ({
+        id: f.id,
+        title: f.title,
+        lat: f.lat,
+        lng: f.lng,
+        maps_url: f.maps_url,
+        updated_at: f.updated_at
+      }));
+  }
+
+  if (includeItems) {
+    const items = await fetchPlanProItems(supabase, ownerId, { limit: 200 });
+    out.items_with_location = items
+      .map((item) => ({ item, location: getPlanProMapsLocation(item) }))
+      .filter((x) => x.location)
+      .filter((x) => {
+        if (!q) return true;
+        return itemMatchesSearch(x.item, q, areasById) || String(x.location.maps_url || '').toLowerCase().includes(q);
+      })
+      .slice(0, limit)
+      .map((x) => ({
+        ...planProItemListRow(x.item, areasById, categories),
+        maps_location: x.location,
+        maps_url: x.location.maps_url
+      }));
+  }
+
+  out.counts = {
+    favorites: out.favorites.length,
+    items_with_location: out.items_with_location.length
+  };
+  return out;
 }
 
 function normalizePlanProPriorityInput(raw) {
@@ -3618,6 +3733,7 @@ async function handleDescribeApi() {
         'plan_pro_week',
         'plan_pro_search',
         'plan_pro_item',
+        'plan_pro_locations',
         'plan_pro_create',
         'plan_pro_update'
       ],
@@ -3628,7 +3744,7 @@ async function handleDescribeApi() {
       nutrition: ['nutrition_catalogs']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item (leer), plan_pro_create/plan_pro_update (escribir). Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
+      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item/locations (leer), plan_pro_create/plan_pro_update (escribir). plan_pro_locations devuelve favoritos y apuntes con ubicación Maps. Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
     plan_pro_nota_semaforo:
       'Chip en libreta: [[sem:2026-05-26:media]] o append_due_marker. Ficha apunte: priority + due_at.',
     plan_pro_nota_herramientas:
@@ -3650,6 +3766,7 @@ const HANDLERS = {
   plan_pro_week: (sb, p) => handlePlanProWeek(sb, p),
   plan_pro_search: (sb, p) => handlePlanProSearch(sb, p),
   plan_pro_item: (sb, p) => handlePlanProItem(sb, p),
+  plan_pro_locations: (sb, p) => handlePlanProLocations(sb, p),
   plan_pro_create: (sb, p) => handlePlanProCreate(sb, p),
   plan_pro_update: (sb, p) => handlePlanProUpdate(sb, p),
   radar_project: (sb, p) => handleRadarProject(sb, p),
