@@ -10338,6 +10338,10 @@
     return String(url || '').replace(/\s+/g, '').replace(/\r?\n/g, '');
   }
 
+  function npIcsMapsUrlValue(url) {
+    return npIcsUrlValue(url).replace(/,/g, '%2C');
+  }
+
   function npIcsEventDescription(ent) {
     var kindLine = 'Objetivo del apunte';
     if (ent.kind === 'table_row') kindLine = 'Tabla: ' + (ent.blockTitle || '—');
@@ -10352,7 +10356,7 @@
     ];
     if (ent.notePreview) lines.push('Nota: ' + ent.notePreview);
     if (ent.noteLink) lines.push('Link: ' + ent.noteLink);
-    if (ent.mapsUrl) lines.push('Ubicación Maps: ' + ent.mapsUrl);
+    if (ent.mapsUrl) lines.push('Ubicación Maps: ' + npIcsMapsUrlValue(ent.mapsUrl));
     return lines.join('\n');
   }
 
@@ -10400,6 +10404,7 @@
       var summary = npEscapeIcs('Plan PRO');
       var desc = npEscapeIcs(npIcsEventDescription(ent));
       var mapsUrl = normalizePlanProMapsUrl(ent.mapsUrl || '');
+      var mapsUrlIcs = mapsUrl ? npIcsMapsUrlValue(mapsUrl) : '';
       var dtStart = dk.replace(/-/g, '');
       var dtEnd = npAddDaysToDateKey(dk, 1).replace(/-/g, '');
       lines.push('BEGIN:VEVENT');
@@ -10411,12 +10416,12 @@
       lines.push('DTEND;VALUE=DATE:' + dtEnd);
       lines.push('SUMMARY:' + summary);
       lines.push('DESCRIPTION:' + desc);
-      if (mapsUrl) {
-        lines.push('LOCATION:' + npEscapeIcs(mapsUrl));
-        lines.push('X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-TITLE=' + npEscapeIcs('Ubicación Plan PRO') + ':' + npIcsUrlValue(mapsUrl));
+      if (mapsUrlIcs) {
+        lines.push('LOCATION:' + npEscapeIcs(mapsUrlIcs));
+        lines.push('X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-TITLE=' + npEscapeIcs('Ubicación Plan PRO') + ':' + mapsUrlIcs);
       }
       if (ent.noteLink) lines.push('URL:' + npIcsUrlValue(ent.noteLink));
-      else if (mapsUrl) lines.push('URL:' + npIcsUrlValue(mapsUrl));
+      else if (mapsUrlIcs) lines.push('URL:' + mapsUrlIcs);
       lines.push('ORGANIZER;CN=Plan PRO:mailto:' + org);
       lines.push('STATUS:CONFIRMED');
       lines.push('TRANSP:TRANSPARENT');
