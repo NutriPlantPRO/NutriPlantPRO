@@ -542,10 +542,7 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 6px 10px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.22);
-      background: rgba(248, 250, 252, 0.72);
-      flex-shrink: 0;
+      padding: 2px 0 0;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -597,15 +594,15 @@
       align-items: stretch;
       min-height: 0;
     }
-    /* Bloque 1: rejilla de accesos (cerrar sesión va en la barra superior junto al menú) */
-    .np-plan-header-menu-body .np-plan-menu-block:first-child .np-plan-actions-top--primary {
+    /* Portal y pagos: rejilla de accesos (cerrar sesión va en la barra superior junto al menú) */
+    .np-plan-header-menu-body .np-plan-menu-block--accesos-portal .np-plan-actions-top--primary {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 8px 12px;
       width: 100%;
     }
-    .np-plan-header-menu-body .np-plan-menu-block:first-child .np-plan-actions-top--primary .np-plan-nav-buttons {
+    .np-plan-header-menu-body .np-plan-menu-block--accesos-portal .np-plan-actions-top--primary .np-plan-nav-buttons {
       flex: 1 1 auto;
       min-width: 0;
       width: 100%;
@@ -676,6 +673,13 @@
     }
     .np-plan-menu-block--accesos-portal .np-plan-menu-subblock-title {
       color: #166534;
+    }
+    .np-plan-menu-block--social {
+      border-left: 3px solid rgba(37, 99, 235, 0.48);
+      background: linear-gradient(90deg, rgba(239, 246, 255, 0.52) 0%, rgba(255, 255, 255, 0.92) 42%);
+    }
+    .np-plan-menu-block--social .np-plan-menu-subblock-title {
+      color: #1d4ed8;
     }
     .np-plan-menu-block--accesos-tools {
       border-left: 3px solid rgba(79, 70, 229, 0.55);
@@ -4849,43 +4853,46 @@
         </div>
         <div id="npPlanHeaderMenuBackdrop" class="np-plan-header-menu-backdrop" aria-hidden="true"></div>
         <div id="npPlanHeaderMenuPanel" class="np-plan-header-menu-panel" role="dialog" aria-modal="true" aria-labelledby="npPlanHeaderMenuTitle" aria-hidden="true">
-          <div class="np-plan-menu-social-bar" role="navigation" aria-label="Redes NutriPlant PRO">
-            <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="facebook" title="Facebook" aria-label="Facebook">
-              <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-              </svg>
-            </a>
-            <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&amp;igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="instagram" title="Instagram" aria-label="Instagram">
-              <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-              </svg>
-            </a>
-            <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&amp;_r=1" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="tiktok" title="TikTok" aria-label="TikTok">
-              <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
-              </svg>
-            </a>
-            <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="youtube" title="YouTube" aria-label="YouTube">
-              <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/>
-                <polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/>
-              </svg>
-            </a>
-            <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="linkedin" title="LinkedIn" aria-label="LinkedIn">
-              <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
-                <rect x="2" y="9" width="4" height="12"/>
-                <circle cx="4" cy="4" r="2"/>
-              </svg>
-            </a>
-          </div>
           <div class="np-plan-header-menu-head">
             <span id="npPlanHeaderMenuTitle" class="np-plan-header-menu-title">Accesos</span>
             <button type="button" class="np-plan-header-menu-close" id="npPlanHeaderMenuClose" aria-label="Cerrar menú">×</button>
           </div>
           <div class="np-plan-header-menu-body">
+            <div class="np-plan-menu-block np-plan-menu-block--social" aria-label="Redes NutriPlant PRO">
+              <span class="np-plan-menu-subblock-title">Redes NutriPlant PRO</span>
+              <div class="np-plan-menu-social-bar" role="navigation" aria-label="Redes NutriPlant PRO">
+                <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="facebook" title="Facebook" aria-label="Facebook">
+                  <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                  </svg>
+                </a>
+                <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&amp;igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="instagram" title="Instagram" aria-label="Instagram">
+                  <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                  </svg>
+                </a>
+                <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&amp;_r=1" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="tiktok" title="TikTok" aria-label="TikTok">
+                  <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
+                  </svg>
+                </a>
+                <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="youtube" title="YouTube" aria-label="YouTube">
+                  <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/>
+                    <polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/>
+                  </svg>
+                </a>
+                <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="np-header-social-btn" data-social="linkedin" title="LinkedIn" aria-label="LinkedIn">
+                  <svg class="np-header-social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                    <rect x="2" y="9" width="4" height="12"/>
+                    <circle cx="4" cy="4" r="2"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
             <div class="np-plan-menu-block np-plan-menu-block--accesos-portal" aria-label="Portal NutriPlant y pagos">
               <span class="np-plan-menu-subblock-title">Portal y pagos</span>
               <div class="np-plan-actions-top np-plan-actions-top--primary">
