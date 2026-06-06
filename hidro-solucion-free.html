@@ -250,6 +250,66 @@
       color: #334155;
     }
     .hydro-n-legend strong { color: #1e293b; }
+    .hydro-n-summary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 10px;
+      margin: 8px 0 0;
+      font-size: 0.86rem;
+      line-height: 1.45;
+      color: #475569;
+    }
+    .hydro-n-summary strong { font-weight: 800; }
+    .hydro-n-sum-base strong { color: #0f172a; }
+    .hydro-n-sum-block {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+    .hydro-n-sum-block-label {
+      font-size: 0.62rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #64748b;
+      margin-right: 2px;
+    }
+    .hydro-n-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .hydro-n-pill--no3,
+    .hydro-n-pill--no3-nc {
+      color: #92400e;
+      background: #fffbeb;
+      border-color: #ca8a04;
+    }
+    .hydro-n-pill--no3 strong,
+    .hydro-n-pill--no3-nc strong { color: #78350f; }
+    .hydro-n-pill--nh4 {
+      color: #be123c;
+      background: #fff1f2;
+      border-color: #fda4af;
+    }
+    .hydro-n-pill--nh4 strong { color: #9f1239; }
+    .hydro-n-pill--cl {
+      color: #b45309;
+      background: #fff7ed;
+      border-color: #fdba74;
+    }
+    .hydro-n-pill--cl strong { color: #9a3412; }
     .hydro-tern-chip-row {
       display: flex;
       flex-wrap: wrap;
@@ -373,7 +433,7 @@
           <div class="hydro-card-header">
             <h3>🧪 Diseño de solución nutritiva</h3>
             <p class="hydro-muted" style="margin:6px 0 0 0;font-size:0.8rem;" title="Con CE: arrastra el triángulo (actualiza % meq, meq/L y ppm). Sin CE al arrastrar: reparte 30 meq/L solo en N-P-S y K-Ca-Mg; NH₄⁺ no se autocompleta.">CE + triángulo, o edita <strong>meq/L</strong> / <strong>ppm</strong>. Sin CE: <strong>30 meq/L</strong> en el triángulo; <strong>N-NH₄⁺</strong> aparte.</p>
-            <p id="hydroNitrogenSummaryText" class="hydro-muted" style="margin:8px 0 0 0;font-size:0.9rem;"></p>
+            <div id="hydroNitrogenSummaryText" class="hydro-n-summary"></div>
           </div>
           <div id="hydroMeqTableWrap" class="hydro-table-wrap hydro-table-block" data-label="meq/L"></div>
           <div id="hydroMeqPercentWrap" class="hydro-table-wrap hydro-table-block" data-label="% meq"></div>
@@ -1160,12 +1220,20 @@
       const pctNo3VsCl = ncPair > 0 ? (mNo3 / ncPair) * 100 : 0;
       const pctClVsCl = ncPair > 0 ? (mCl / ncPair) * 100 : 0;
       summaryEl.title =
-        '% Nitrato y % Amonio: sobre N total (NO₃ + NH₄ en meq/L). ' +
-        '% Nitrato vs Cl y % Cl: sobre la suma meq/L de N-NO₃⁻ + Cl⁻.';
-      summaryEl.textContent =
-        'Suma de N (meq/L): ' + nTotal.toFixed(2) +
-        ' · % Nitrato: ' + pctNo3OnN.toFixed(1) + '% · % Amonio: ' + pctNh4OnN.toFixed(1) + '%' +
-        ' · % Nitrato vs Cl: ' + pctNo3VsCl.toFixed(1) + '% · % Cl: ' + pctClVsCl.toFixed(1) + '%';
+        'N total: % Nitrato y % Amonio sobre N-NO₃⁻ + N-NH₄⁺ (meq/L). ' +
+        'NO₃ + Cl: % Nitrato y % Cl sobre N-NO₃⁻ + Cl⁻ (meq/L).';
+      summaryEl.innerHTML =
+        '<span class="hydro-n-sum-base">Suma de N (meq/L): <strong>' + nTotal.toFixed(2) + '</strong></span>' +
+        '<span class="hydro-n-sum-block" aria-label="Partición del nitrógeno">' +
+          '<span class="hydro-n-sum-block-label">Sobre N total</span>' +
+          '<span class="hydro-n-pill hydro-n-pill--no3">Nitrato <strong>' + pctNo3OnN.toFixed(1) + '%</strong></span>' +
+          '<span class="hydro-n-pill hydro-n-pill--nh4">Amonio <strong>' + pctNh4OnN.toFixed(1) + '%</strong></span>' +
+        '</span>' +
+        '<span class="hydro-n-sum-block" aria-label="Nitrato frente a cloro">' +
+          '<span class="hydro-n-sum-block-label">NO₃ + Cl</span>' +
+          '<span class="hydro-n-pill hydro-n-pill--no3-nc">Nitrato <strong>' + pctNo3VsCl.toFixed(1) + '%</strong></span>' +
+          '<span class="hydro-n-pill hydro-n-pill--cl">Cl <strong>' + pctClVsCl.toFixed(1) + '%</strong></span>' +
+        '</span>';
     }
 
     function hydroUpdateNNLegend(stage) {

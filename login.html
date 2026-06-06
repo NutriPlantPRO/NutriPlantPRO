@@ -526,24 +526,7 @@
                   <input type="number" id="mgo-output" placeholder="MgO" readonly>
                 </div>
               </div>
-              <!-- SO₄ (misma lógica que macros: izq. compuesto→elemental, der. elemental→compuesto) -->
-              <div class="conversion-item">
-                <label>SO₄ → S</label>
-                <div class="conversion-formula">
-                  <input type="number" id="so4-input" placeholder="SO₄" step="0.01">
-                  <span>× 0.333 =</span>
-                  <input type="number" id="s-output" placeholder="S" readonly>
-                </div>
-              </div>
-              <div class="conversion-item">
-                <label>S → SO₄</label>
-                <div class="conversion-formula">
-                  <input type="number" id="s-input" placeholder="S" step="0.01">
-                  <span>× 3.000 =</span>
-                  <input type="number" id="so4-output" placeholder="SO₄" readonly>
-                </div>
-              </div>
-              <!-- SO₃ -->
+              <!-- SO₃ (óxido de azufre en etiquetas) -->
               <div class="conversion-item">
                 <label>SO₃ → S</label>
                 <div class="conversion-formula">
@@ -681,17 +664,74 @@
               </div>
             </div>
           </div>
+
+          <div class="conversion-section">
+            <div class="conversion-ion-box">
+              <h3>⚗️ Elemental ↔ formas iónicas (equipos de medición)</h3>
+              <p class="conversion-ion-lead">Para ionómetros y análisis que reportan <strong>NO₃⁻</strong>, <strong>NH₄⁺</strong> o <strong>SO₄²⁻</strong> en solución — no es conversión de óxidos de fertilizante.</p>
+              <div class="conversion-grid">
+                <div class="conversion-item conversion-item--ion">
+                  <label>N → NO₃</label>
+                  <div class="conversion-formula">
+                    <input type="number" id="n-to-no3-input" placeholder="N" step="0.01">
+                    <span>× 4.429 =</span>
+                    <input type="number" id="n-to-no3-output" placeholder="NO₃" readonly>
+                  </div>
+                </div>
+                <div class="conversion-item conversion-item--ion">
+                  <label>NO₃ → N</label>
+                  <div class="conversion-formula">
+                    <input type="number" id="no3-to-n-input" placeholder="NO₃" step="0.01">
+                    <span>× 0.226 =</span>
+                    <input type="number" id="no3-to-n-output" placeholder="N" readonly>
+                  </div>
+                </div>
+                <div class="conversion-item conversion-item--ion">
+                  <label>N → NH₄</label>
+                  <div class="conversion-formula">
+                    <input type="number" id="n-to-nh4-input" placeholder="N" step="0.01">
+                    <span>× 1.286 =</span>
+                    <input type="number" id="n-to-nh4-output" placeholder="NH₄" readonly>
+                  </div>
+                </div>
+                <div class="conversion-item conversion-item--ion">
+                  <label>NH₄ → N</label>
+                  <div class="conversion-formula">
+                    <input type="number" id="nh4-to-n-input" placeholder="NH₄" step="0.01">
+                    <span>× 0.778 =</span>
+                    <input type="number" id="nh4-to-n-output" placeholder="N" readonly>
+                  </div>
+                </div>
+                <div class="conversion-item conversion-item--ion">
+                  <label>S → SO₄</label>
+                  <div class="conversion-formula">
+                    <input type="number" id="s-input" placeholder="S" step="0.01">
+                    <span>× 3.000 =</span>
+                    <input type="number" id="so4-output" placeholder="SO₄" readonly>
+                  </div>
+                </div>
+                <div class="conversion-item conversion-item--ion">
+                  <label>SO₄ → S</label>
+                  <div class="conversion-formula">
+                    <input type="number" id="so4-input" placeholder="SO₄" step="0.01">
+                    <span>× 0.333 =</span>
+                    <input type="number" id="s-output" placeholder="S" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           
           <div class="conversion-section">
             <h3>ℹ️ Información</h3>
             <div class="info-box">
-              <p><strong>Factores de Conversión:</strong></p>
+              <p><strong>Factores de conversión (óxidos y formas de etiqueta):</strong></p>
+              <p class="info-sublead">P₂O₅, K₂O, CaO, MgO, SO₃ y óxidos de micros — formas habituales en <strong>fertilizantes</strong>. El N en etiqueta ya va como <strong>N elemental</strong> (no como óxido).</p>
               <ul>
                 <li><strong class="oxide-conv-label">P₂O₅ → P</strong>: 0.436 | <strong class="oxide-conv-label">P → P₂O₅</strong>: 2.291</li>
                 <li><strong class="oxide-conv-label">K₂O → K</strong>: 0.830 | <strong class="oxide-conv-label">K → K₂O</strong>: 1.205</li>
                 <li><strong class="oxide-conv-label">CaO → Ca</strong>: 0.715 | <strong class="oxide-conv-label">Ca → CaO</strong>: 1.399</li>
                 <li><strong class="oxide-conv-label">MgO → Mg</strong>: 0.603 | <strong class="oxide-conv-label">Mg → MgO</strong>: 1.658</li>
-                <li><strong class="oxide-conv-label">SO₄ → S</strong>: 0.333 | <strong class="oxide-conv-label">S → SO₄</strong>: 3.000</li>
                 <li><strong class="oxide-conv-label">SO₃ → S</strong>: 0.400 | <strong class="oxide-conv-label">S → SO₃</strong>: 2.497</li>
                 <li><strong class="oxide-conv-label">Fe₂O₃ → Fe</strong>: 0.699 | <strong class="oxide-conv-label">Fe → Fe₂O₃</strong>: 1.430</li>
                 <li><strong class="oxide-conv-label">MnO → Mn</strong>: 0.775 | <strong class="oxide-conv-label">Mn → MnO</strong>: 1.291</li>
@@ -701,6 +741,15 @@
                 <li><strong class="oxide-conv-label">MoO₃ → Mo</strong>: 0.667 | <strong class="oxide-conv-label">Mo → MoO₃</strong>: 1.500</li>
                 <li><strong class="oxide-conv-label">SiO₂ → Si</strong>: 0.467 | <strong class="oxide-conv-label">Si → SiO₂</strong>: 2.139</li>
               </ul>
+              <div class="info-ion-box">
+                <p><strong>Elemental ↔ iones (equipos de medición y análisis):</strong></p>
+                <ul>
+                  <li><strong class="ion-conv-label">N → NO₃</strong>: 4.429 | <strong class="ion-conv-label">NO₃ → N</strong>: 0.226</li>
+                  <li><strong class="ion-conv-label">N → NH₄</strong>: 1.286 | <strong class="ion-conv-label">NH₄ → N</strong>: 0.778</li>
+                  <li><strong class="ion-conv-label">S → SO₄</strong>: 3.000 | <strong class="ion-conv-label">SO₄ → S</strong>: 0.333</li>
+                </ul>
+                <p class="info-ion-note">En <strong>fertilizantes</strong> el N no se expresa como óxido (a diferencia de P₂O₅ o K₂O): va en <strong>N elemental</strong>. En <strong>ionómetros</strong>, sensores de campo y algunos informes de solución o suelo, a veces el resultado aparece como <strong>NO₃⁻</strong>, <strong>NH₄⁺</strong> o <strong>SO₄²⁻</strong> (anión o catión en solución). <strong>SO₄ tampoco es un óxido</strong> como SO₃ en etiqueta; aquí se usa el mismo criterio iónico. Usa el bloque superior para etiquetas agronómicas y el recuadro verde para cruzar con equipos y análisis iónicos.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -1178,6 +1227,62 @@
       font-size: 14px;
     }
 
+    .info-sublead {
+      margin: 6px 0 10px;
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.45;
+    }
+
+    .conversion-ion-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .conversion-ion-box h3 {
+      margin: 0 0 8px;
+      color: #166534;
+      font-size: 1.05rem;
+    }
+
+    .conversion-ion-lead {
+      margin: 0 0 14px;
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.45;
+    }
+
+    .conversion-item--ion label {
+      color: #166534;
+    }
+
+    .info-ion-box {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: #ecfdf5;
+      border-radius: 8px;
+      border-left: 4px solid #22c55e;
+    }
+
+    .info-ion-box ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    .info-box .ion-conv-label {
+      color: #166534;
+      font-weight: 600;
+    }
+
+    .info-ion-note {
+      margin: 10px 0 0;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+    }
+
     .btn {
       padding: 8px 16px;
       border-radius: 4px;
@@ -1205,7 +1310,7 @@
     }
   </style>
   
-  <script src="measure-units-calculator.js?v=1764880700"></script>
+  <script src="measure-units-calculator.js?v=1764880800"></script>
   <script>
     // Funciones para la calculadora de conversión
     function showConversionCalculator() {
@@ -1271,6 +1376,30 @@
       document.getElementById('mg-input').addEventListener('input', function() {
         const value = parseFloat(this.value) || 0;
         document.getElementById('mgo-output').value = (value * 1.658).toFixed(3);
+      });
+
+      // N → NO₃
+      document.getElementById('n-to-no3-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('n-to-no3-output').value = (value * 4.429).toFixed(3);
+      });
+
+      // NO₃ → N
+      document.getElementById('no3-to-n-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('no3-to-n-output').value = (value * 0.226).toFixed(3);
+      });
+
+      // N → NH₄
+      document.getElementById('n-to-nh4-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('n-to-nh4-output').value = (value * 1.286).toFixed(3);
+      });
+
+      // NH₄ → N
+      document.getElementById('nh4-to-n-input').addEventListener('input', function() {
+        const value = parseFloat(this.value) || 0;
+        document.getElementById('nh4-to-n-output').value = (value * 0.778).toFixed(3);
       });
 
       // S → SO₄
@@ -1594,12 +1723,19 @@
       'nh4': { mw: 18.04, valence: 1 }
     };
 
+    const NUTRIENT_USE_UMOL = { fe: 1, mn: 1, zn: 1, b: 1, cu: 1, mo: 1 };
+
+    function nutrientMolInputId(nutrient) {
+      return NUTRIENT_USE_UMOL[nutrient] ? nutrient + '-umol' : nutrient + '-mmol';
+    }
+
     function convertNutrient(nutrient, sourceUnit) {
       const data = nutrientDataLogin[nutrient];
       if (!data) return;
 
+      const useUmol = !!NUTRIENT_USE_UMOL[nutrient];
       const ppmInput = document.getElementById(`${nutrient}-ppm`);
-      const mmolInput = document.getElementById(`${nutrient}-mmol`);
+      const molInput = document.getElementById(nutrientMolInputId(nutrient));
       const meqInput = document.getElementById(`${nutrient}-meq`);
 
       let ppm, mmol, meq;
@@ -1608,8 +1744,9 @@
         ppm = parseFloat(ppmInput.value) || 0;
         mmol = ppm / data.mw;
         meq = mmol * data.valence;
-      } else if (sourceUnit === 'mmol') {
-        mmol = parseFloat(mmolInput.value) || 0;
+      } else if (sourceUnit === 'mmol' || sourceUnit === 'umol') {
+        const shown = parseFloat(molInput.value) || 0;
+        mmol = useUmol ? shown / 1000 : shown;
         ppm = mmol * data.mw;
         meq = mmol * data.valence;
       } else if (sourceUnit === 'meq') {
@@ -1618,9 +1755,10 @@
         ppm = mmol * data.mw;
       }
 
-      // Actualizar los campos (sin disparar eventos)
       if (sourceUnit !== 'ppm') ppmInput.value = ppm.toFixed(3);
-      if (sourceUnit !== 'mmol') mmolInput.value = mmol.toFixed(3);
+      if (sourceUnit !== 'mmol' && sourceUnit !== 'umol') {
+        molInput.value = useUmol ? (mmol * 1000).toFixed(2) : mmol.toFixed(3);
+      }
       if (sourceUnit !== 'meq') meqInput.value = meq.toFixed(3);
     }
 
@@ -1698,7 +1836,7 @@
         <div class="calculator-container">
           <div class="calculator-instructions">
             <p><strong>Instrucciones:</strong> Ingresa el valor en cualquier campo y las conversiones se calcularán automáticamente.</p>
-            <p><em>Esta herramienta convierte entre ppm (mg/L), mmol/L (milimoles por litro) y meq/L (miliequivalentes por litro).</em></p>
+            <p><em>Esta herramienta convierte entre ppm (mg/L), mmol/L (macronutrientes e iones) o <strong>µmol/L</strong> (Fe, Mn, Zn, B, Cu, Mo) y meq/L.</em></p>
             <p><em><strong>Nota técnica:</strong><br>Las concentraciones se expresan en ppm del elemento (N, P, S).<br>Las especies químicas indicadas (NO₃⁻, NH₄⁺, H₂PO₄⁻, SO₄²⁻) representan la forma en que los nutrientes se encuentran y son absorbidos en solución, pero los cálculos se realizan con base en el peso atómico del elemento, no del ion.</em></p>
           </div>
 
@@ -1847,8 +1985,8 @@
                   <input type="number" id="fe-ppm" placeholder="0" step="0.01" oninput="convertNutrient('fe', 'ppm')">
                 </div>
                 <div class="input-group">
-                  <label>mmol/L</label>
-                  <input type="number" id="fe-mmol" placeholder="0" step="0.01" oninput="convertNutrient('fe', 'mmol')">
+                  <label>µmol/L</label>
+                  <input type="number" id="fe-umol" placeholder="0" step="0.1" oninput="convertNutrient('fe', 'umol')">
                 </div>
                 <div class="input-group">
                   <label>meq/L</label>
@@ -1869,8 +2007,8 @@
                   <input type="number" id="mn-ppm" placeholder="0" step="0.01" oninput="convertNutrient('mn', 'ppm')">
                 </div>
                 <div class="input-group">
-                  <label>mmol/L</label>
-                  <input type="number" id="mn-mmol" placeholder="0" step="0.01" oninput="convertNutrient('mn', 'mmol')">
+                  <label>µmol/L</label>
+                  <input type="number" id="mn-umol" placeholder="0" step="0.1" oninput="convertNutrient('mn', 'umol')">
                 </div>
                 <div class="input-group">
                   <label>meq/L</label>
@@ -1891,8 +2029,8 @@
                   <input type="number" id="b-ppm" placeholder="0" step="0.01" oninput="convertNutrient('b', 'ppm')">
                 </div>
                 <div class="input-group">
-                  <label>mmol/L</label>
-                  <input type="number" id="b-mmol" placeholder="0" step="0.01" oninput="convertNutrient('b', 'mmol')">
+                  <label>µmol/L</label>
+                  <input type="number" id="b-umol" placeholder="0" step="0.1" oninput="convertNutrient('b', 'umol')">
                 </div>
                 <div class="input-group">
                   <label>meq/L</label>
@@ -1913,8 +2051,8 @@
                   <input type="number" id="zn-ppm" placeholder="0" step="0.01" oninput="convertNutrient('zn', 'ppm')">
                 </div>
                 <div class="input-group">
-                  <label>mmol/L</label>
-                  <input type="number" id="zn-mmol" placeholder="0" step="0.01" oninput="convertNutrient('zn', 'mmol')">
+                  <label>µmol/L</label>
+                  <input type="number" id="zn-umol" placeholder="0" step="0.1" oninput="convertNutrient('zn', 'umol')">
                 </div>
                 <div class="input-group">
                   <label>meq/L</label>
@@ -1935,8 +2073,8 @@
                   <input type="number" id="cu-ppm" placeholder="0" step="0.01" oninput="convertNutrient('cu', 'ppm')">
                 </div>
                 <div class="input-group">
-                  <label>mmol/L</label>
-                  <input type="number" id="cu-mmol" placeholder="0" step="0.01" oninput="convertNutrient('cu', 'mmol')">
+                  <label>µmol/L</label>
+                  <input type="number" id="cu-umol" placeholder="0" step="0.1" oninput="convertNutrient('cu', 'umol')">
                 </div>
                 <div class="input-group">
                   <label>meq/L</label>
@@ -1948,7 +2086,7 @@
             <!-- Molibdeno (Mo) -->
             <div class="nutrient-conversion-group">
               <div class="nutrient-label">
-                <strong><span class="nutrient-element-tag">Mo:</span> Mo²⁺</strong>
+                <strong><span class="nutrient-element-tag">Mo:</span> MoO₄²⁻</strong>
                 <span class="nutrient-info">PA: 95.95 | Valencia: 2</span>
               </div>
               <div class="conversion-inputs">
@@ -1957,8 +2095,8 @@
                   <input type="number" id="mo-ppm" placeholder="0" step="0.01" oninput="convertNutrient('mo', 'ppm')">
                 </div>
                 <div class="input-group">
-                  <label>mmol/L</label>
-                  <input type="number" id="mo-mmol" placeholder="0" step="0.01" oninput="convertNutrient('mo', 'mmol')">
+                  <label>µmol/L</label>
+                  <input type="number" id="mo-umol" placeholder="0" step="0.1" oninput="convertNutrient('mo', 'umol')">
                 </div>
                 <div class="input-group">
                   <label>meq/L</label>
@@ -2125,11 +2263,15 @@
             <p><strong>Fórmulas de Conversión:</strong></p>
             <ul>
               <li><strong>ppm a mmol/L:</strong> mmol/L = ppm ÷ Peso Molecular o Atómico</li>
+              <li><strong>ppm a µmol/L</strong> (Fe, Mn, Zn, B, Cu, Mo): µmol/L = (ppm ÷ Peso Atómico) × 1000</li>
+              <li><strong>µmol/L a mmol/L:</strong> mmol/L = µmol/L ÷ 1000</li>
               <li><strong>mmol/L a meq/L:</strong> meq/L = mmol/L × Valencia</li>
               <li><strong>ppm a meq/L:</strong> meq/L = (ppm ÷ Peso Atómico/Molecular) × Valencia</li>
             </ul>
-            <p style="margin-top:10px;"><strong>Ejemplo (P-H₂PO₄⁻):</strong> se usa 30.97 porque el reporte es en ppm de P elemental (PA del P), no en masa total del ion H₂PO₄⁻.</p>
+            <p style="margin-top:10px;"><strong>Ejemplo macro (P-H₂PO₄⁻):</strong> se usa 30.97 porque el reporte es en ppm de P elemental (PA del P), no en masa total del ion H₂PO₄⁻.</p>
             <p style="margin-top:6px;"><em>Si P = 61.94 ppm: mmol/L = 61.94 ÷ 30.97 = 2.00; meq/L = 2.00 × 1 = 2.00.</em></p>
+            <p style="margin-top:10px;"><strong>Ejemplo micro (Fe²⁺):</strong> µmol/L evita decimales muy pequeños en mmol/L.</p>
+            <p style="margin-top:6px;"><em>Si Fe = 3.00 ppm: µmol/L = (3.00 ÷ 55.85) × 1000 = 53.71; mmol/L = 0.054; meq/L = 0.107.</em></p>
           </div>
         </div>
       </div>
@@ -2163,7 +2305,7 @@
             </select>
           </div>
           <p id="measure-ionic-hint" style="display:none; margin:10px 0 0; padding:10px 12px; font-size:12px; line-height:1.45; color:#475569; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;">
-            <strong>Suelo:</strong> 1 meq/100 g = 1 cmolc/kg (misma cifra). <strong>Solución:</strong> 1 cmol(+)/L = 10 meq/L. Para <strong>ppm ↔ meq/L</strong> por nutriente (K, Ca, NO₃…), usa la calculadora de unidades de nutrientes — depende del ion.
+            <strong>Suelo:</strong> 1 meq/100 g = 1 cmolc/kg (misma cifra). <strong>Solución:</strong> 1 cmol(+)/L = 10 meq/L; 1000 µmol/L ≈ 1 meq/L (ión monovalente, igual que mmol/L). Para <strong>ppm ↔ meq/L</strong> por nutriente (K, Ca, NO₃…), usa la calculadora de unidades de nutrientes — depende del ion.
           </p>
           <div class="measure-conversion-row" style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 16px;">
             <div class="form-group" style="flex: 1; min-width: 120px;">

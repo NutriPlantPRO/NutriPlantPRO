@@ -4,7 +4,7 @@
  * Mantener alineado con docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md
  */
 module.exports = {
-  version: '2026-05-21',
+  version: '2026-06-06',
   scope:
     'Herramientas HTML en iframe/modal sin cuenta. Persistencia solo localStorage del navegador (no Supabase). Misma lógica en login.html y dashboard (iconos barra).',
   persistence: {
@@ -25,7 +25,26 @@ module.exports = {
       id: 'conversor_unidades_nutrientes',
       title: 'Conversor de unidades (ppm / mmol / meq)',
       file: 'login.html + measure-units-calculator.js',
-      summary: 'ppm ↔ mmol/L ↔ meq/L por ion (peso equivalente). Incluye categoría carga iónica (meq/cmol).'
+      summary:
+        'ppm ↔ mmol/L (macros e iones) o µmol/L (Fe, Mn, Zn, B, Cu, Mo) ↔ meq/L por ion (ppm elemental; MoO₄²⁻). Incluye categoría carga iónica (meq/cmol).',
+      micronutrients_umol: {
+        rule: 'Fe, Mn, Zn, B, Cu, Mo usan µmol/L en pantalla (no mmol/L); ppm sigue siendo del elemento.',
+        formulas: [
+          'µmol/L = (ppm elemento ÷ PA) × 1000',
+          'mmol/L = µmol/L ÷ 1000',
+          'meq/L = mmol/L × valencia'
+        ],
+        species: [
+          { form: 'Fe²⁺', element: 'Fe', pa: 55.85, valence: 2 },
+          { form: 'Mn²⁺', element: 'Mn', pa: 54.94, valence: 2 },
+          { form: 'Zn²⁺', element: 'Zn', pa: 65.38, valence: 2 },
+          { form: 'Cu²⁺', element: 'Cu', pa: 63.55, valence: 2 },
+          { form: 'H₃BO₃', element: 'B', pa: 10.81, valence: 1 },
+          { form: 'MoO₄²⁻', element: 'Mo', pa: 95.95, valence: 2 }
+        ],
+        example_fe_3ppm: { umol_L: 53.7, mmol_L: 0.054, meq_L: 0.107 },
+        manual_chapter: 'unidades_ppm_meq_oxidos'
+      }
     },
     {
       id: 'conversor_magnitudes',
@@ -108,7 +127,15 @@ module.exports = {
       file: 'interacciones-absorcion-movilidad-free.html',
       lsKey: 'nutriplant_free_interacciones_absorcion_v1',
       summary:
-        '4 pestañas: Mulder (antagonismo/sinergia desde ion focal), mecanismos hacia raíz, movilidad/síntomas, disponibilidad vs pH.'
+        '4 pestañas: Mulder (antagonismo/sinergia desde ion focal), mecanismos hacia raíz, movilidad/síntomas, disponibilidad vs pH.',
+      mulder_antagonisms: [
+        'K vs Ca/Mg/NH4',
+        'P alto vs Zn/Fe/Cu/Mn/Ca',
+        'Cu ↔ Mn (micros, bidireccional rojo)',
+        'Cu ↔ Zn, Cu ↔ Fe, Mn ↔ Fe, Mn ↔ Zn',
+        'SO4 vs MoO4',
+        'NO3 vs Cl'
+      ]
     },
     {
       id: 'n_mineralizable',

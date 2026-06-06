@@ -15,7 +15,6 @@ const FERT_SOLUBLES_DB = [
 
   // Potasio y mezclas
   { id: 'nks', name: 'NKS', N_NO3: 12, N_NH4: 0, K2O: 46, SO4: 8.1, S: 0 },
-  { id: 'nk_9_0_36_s', name: '9-0-36 +S', N_NO3: 4.5, N_NH4: 4.5, P2O5: 0, K2O: 36, SO4: 42, S: 0 },
   { id: 'nk_mg', name: 'NK+Mg', N_NO3: 13.0, N_NH4: 0, K2O: 46, MgO: 2 },
   { id: 'sop', name: 'SOP', N_NO3: 0, N_NH4: 0, K2O: 50, SO4: 51, S: 0 },
   /** K₂O 60% típico; Cl ≈ (K₂O/1,204)×(35,45/39,10) coherente con sal KCl. */

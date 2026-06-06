@@ -5,7 +5,7 @@
 const BASE = 'https://nutriplantpro.com/manual-tecnico';
 
 module.exports = {
-  version: '2026-05-22',
+  version: '2026-06-06',
   scope:
     'Biblioteca HTML pública, sin cuenta. 22 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO.',
   publicUrls: {
@@ -78,7 +78,8 @@ module.exports = {
       title: 'Unidades: ppm, meq/L y óxidos agronómicos',
       url: `${BASE}/capitulos/unidades-ppm-meq-oxidos.html`,
       pillar: 'A — Fundamentos',
-      summary: 'ppm, meq/L, cmol/L×10, meq/100g=cmolc/kg. Factores óxido-elemental P₂O₅ K₂O CaO MgO.',
+      summary:
+        'ppm, meq/L, cmol/L×10, meq/100g=cmolc/kg. Factores óxido-elemental. Calculadora gratis: macros en mmol/L; micros Fe/Mn/Zn/B/Cu/Mo en µmol/L (MoO₄²⁻, valencia 2).',
       status: 'published'
     },
     {
@@ -229,7 +230,8 @@ module.exports = {
       url: `${BASE}/capitulos/interacciones-mulder-compatibilidad.html`,
       pillar: 'F — Interacciones',
       summary:
-        'interacciones-absorcion-movilidad-free: Mulder antagonismo/sinergia focal, movilidad, pH; fertilizer-compatibility-free: matriz C/R/I solubles.',
+      summary:
+        'interacciones-absorcion-movilidad-free: Mulder antagonismo/sinergia focal (Cu↔Mn rojo bidireccional), movilidad, pH; fertilizer-compatibility-free: matriz C/R/I solubles.',
       status: 'published'
     },
     {

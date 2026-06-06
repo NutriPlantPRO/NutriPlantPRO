@@ -90,7 +90,9 @@ URL: `https://nutriplantpro.com/manual-tecnico/capitulos/<slug>.html`
 
 ### 4.1 Unidades
 
-**URL:** …/unidades-ppm-meq-oxidos.html · ppm; meq/L = ppm÷peso eq.; 1 cmol/L = 10 meq/L; meq/100g = cmolc/kg. Óxidos: P₂O₅×0,436, K₂O×0,830, CaO×0,715, MgO×0,603.
+**URL:** …/unidades-ppm-meq-oxidos.html · ppm; meq/L = ppm÷peso eq. elemental; 1 cmol/L = 10 meq/L; meq/100g = cmolc/kg. Óxidos: P₂O₅×0,436, K₂O×0,830, CaO×0,715, MgO×0,603.
+
+**µmol/L en microelementos (calculadora gratis ppm/meq):** Fe, Mn, Zn, B, Cu, Mo muestran **µmol/L** (no mmol/L). **µmol/L = (ppm ÷ PA elemento) × 1000**; mmol/L = µmol/L ÷ 1000; meq/L = mmol/L × valencia. ppm = mg/L del **elemento**. Formas: Fe²⁺, Mn²⁺, Zn²⁺, Cu²⁺, H₃BO₃ (B), **MoO₄²⁻** (Mo, PA 95,95, valencia 2). Ejemplo: 3 ppm Fe ≈ 53,7 µmol/L. Macros e iones de solución siguen en **mmol/L**.
 
 ### 4.2 % meq triángulos
 
@@ -177,7 +179,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 ### 4.13 Mulder y compatibilidad (Pilar F)
 
 **URL:** …/interacciones-mulder-compatibilidad.html  
-- **Mulder:** rojo = antagonismo bidireccional en aristas; azul = sinergia **solo desde ion seleccionado** (ficha lateral = ion focal). Referencias: K⁺ vs Ca/Mg/NH₄; P alto vs Zn/Fe/Cu/Mn/Ca; SO₄ vs Mo; NO₃ sinergia K, NH₄, Mo.  
+- **Mulder:** rojo = antagonismo bidireccional en aristas; azul = sinergia **solo desde ion seleccionado** (ficha lateral = ion focal). Referencias: K⁺ vs Ca/Mg/NH₄; P alto vs Zn/Fe/Cu/Mn/Ca; **Cu²⁺ ↔ Mn²⁺** competencia entre micros (rojo en diagrama); SO₄ vs Mo; NO₃ sinergia K, NH₄, Mo.  
 - **Movilidad:** N,P,K,Mg móviles (hoja vieja); Ca,B punta; Fe,Mn,Zn,Cu según especie/pH. Mecanismos: masa, difusión, interceptación.  
 - **Compatibilidad:** matriz C/R/I alineada FERT_SOLUBLES; C compatible, R precaución (solubilidad/salting-out), I precipitado en madre concentrada. Tanques A/B. Herramientas: `interacciones`, `fertilizer_compatibility`.
 
@@ -224,6 +226,7 @@ Canales oficiales; tono técnico; mapa capítulo→post; plantilla LinkedIn. **P
 | Pregunta | Fuente |
 |----------|--------|
 | «¿Por dónde empiezo en NutriPlant?» | Capítulo `flujo-nutriplant-pro` (§4.0) |
+| «¿Cómo convierto ppm de Fe a µmol/L?» / micros en conversor | §4.1 + HERRAMIENTAS (conversor µmol) + `free_tools_catalog` `conversor_unidades_nutrientes` |
 | Metodología / citar web / GEO | Este Knowledge + URL capítulo |
 | Índice o slug | `manual_tecnico_catalog` o §3 |
 | Redactar post LinkedIn/IG | `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` + capítulo §4 |

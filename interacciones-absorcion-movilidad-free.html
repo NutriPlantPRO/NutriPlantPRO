@@ -124,13 +124,16 @@
     }
     .edge-line.hi-ant {
       stroke: var(--ant);
-      stroke-width: 2.5;
-      opacity: .9;
+      stroke-width: 3;
+      opacity: 1;
     }
     .edge-line.hi-syn {
       stroke: #2563eb;
-      stroke-width: 2.5;
-      opacity: .92;
+      stroke-width: 3;
+      opacity: 1;
+    }
+    #edgesHiG .edge-line {
+      pointer-events: none;
     }
     .n-circle { transition: stroke .15s, stroke-width .15s; }
     .n-circle.sel { stroke: var(--blue) !important; stroke-width: 3 !important; }
@@ -819,7 +822,7 @@
       background: #f1f5f9;
       border-radius: 8px;
       border: 1px solid #e2e8f0;
-      min-height: 36px;
+      min-height: 48px;
     }
     .ph-row.is-active .ph-row__lab {
       background: #dbeafe;
@@ -828,7 +831,7 @@
     }
     .ph-row__svg {
       width: 100%;
-      height: 38px;
+      height: 52px;
       display: block;
       border-radius: 8px;
       border: 1px solid #e2e8f0;
@@ -860,7 +863,28 @@
       border-radius: 6px;
       margin-bottom: 8px;
     }
-  </style>
+    .ph-color-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      margin: 10px 0 0;
+      padding: 0;
+      list-style: none;
+      font-size: 11px;
+      color: #64748b;
+    }
+    .ph-color-legend li {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .ph-color-legend .sw {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      flex-shrink: 0;
+    }
 </head>
 <body>
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
@@ -880,7 +904,7 @@
   <!-- Sección 1 -->
   <div id="panel-1" class="section-panel active" role="tabpanel" aria-labelledby="tab-btn-1">
     <h2 class="section-h2">Diagrama tipo Mulder (iones y formas frecuentes)</h2>
-    <p class="hint">Toca un icono en el círculo: en rojo, <strong>antagonismo/competencia</strong> (referencia en ambos sentidos); en azul, <strong>sinergia</strong> solo según la ficha del ion seleccionado (no se duplican por el otro ion). La ficha a la derecha corresponde solo al ion elegido.</p>
+    <p class="hint">Toca un icono en el círculo: en rojo, <strong>antagonismo/competencia</strong> (referencia en ambos sentidos); en azul, <strong>sinergia</strong> según la ficha del ion seleccionado.</p>
     <div class="s1-grid">
       <div class="diag-wrap">
         <svg id="mulderSvg" viewBox="0 0 520 420" xmlns="http://www.w3.org/2000/svg" aria-label="Diagrama de interacciones nutrimentales">
@@ -895,6 +919,7 @@
           <text x="260" y="34" text-anchor="middle" font-size="10" fill="#64748b">Rojo: competencia / antagonismo · Azul: sinergia / favorecimiento conjunto</text>
           <g id="edgesG"></g>
           <g id="nodesG"></g>
+          <g id="edgesHiG"></g>
         </svg>
       </div>
       <div id="detailS1" class="detail-card">
@@ -909,9 +934,9 @@
   <!-- Sección 2 -->
   <div id="panel-2" class="section-panel" role="tabpanel" aria-labelledby="tab-btn-2" hidden>
     <h2 class="section-h2">Mecanismos de llegada a la raíz</h2>
-    <p class="hint">Porcentajes <strong>relativos orientativos</strong> entre flujo de masa, difusión e intercepción radicular (varían con agua, densidad radicular, buffer, etc.). <strong>Toca cualquier parte de la fila</strong> (ion + barra): se resalta todo el bloque para no perder la referencia visual.</p>
+    <p class="hint">Porcentajes <strong>relativos orientativos</strong> entre flujo de masas, difusión e intercepción radicular (varían con agua, densidad radicular, buffer, etc.). <strong>Toca cualquier parte de la fila</strong> (ion + barra): se resalta todo el bloque para no perder la referencia visual.</p>
     <div class="legend2">
-      <span><span class="dot seg-mf"></span> Flujo de masa</span>
+      <span><span class="dot seg-mf"></span> Flujo de masas</span>
       <span><span class="dot seg-dif"></span> Difusión</span>
       <span><span class="dot seg-int"></span> Intercepción radicular</span>
     </div>
@@ -925,7 +950,7 @@
       <h4>¿Qué es cada mecanismo?</h4>
       <dl>
         <div class="arrival-defs__item">
-          <dt><span class="dot seg-mf" aria-hidden="true"></span> Flujo de masa</dt>
+          <dt><span class="dot seg-mf" aria-hidden="true"></span> Flujo de masas</dt>
           <dd>
             Cuando transpira la planta, el agua mueve grandes volúmenes de <strong>solución del suelo</strong>; los iones van “arrastrados” con ese caudual hacia la rizósfera. Predomina si el nutritivo tiene <strong>baja adsorción/segregación fuerte fuera de la solución</strong> y el cultivo mueve suficiente agua.
           </dd>
@@ -1257,7 +1282,18 @@
     <p class="hint">
       Curvas <strong>esquemáticas</strong> (no un mapa de tu parcela): la forma depende de arcilla, MO, CEC, redox, fósforo total, etc.
       La banda gris marca un rango de pH habitualmente “manejable” para muchos cultivos. <strong>Toca una fila</strong> (símbolo o gráfica) para leer el criterio químico-agronómico.
+      Lo que importa es la <strong>altura de la curva</strong> (disponibilidad relativa frente al pH), no el color en sí.
     </p>
+    <ul class="ph-color-legend" aria-label="Significado de colores en las curvas">
+      <li><span class="sw" style="background:#15803d"></span> N — ciclo orgánico</li>
+      <li><span class="sw" style="background:#18181b"></span> P</li>
+      <li><span class="sw" style="background:#52525b"></span> K, Ca, Mg — cationes base</li>
+      <li><span class="sw" style="background:#0f766e"></span> S</li>
+      <li><span class="sw" style="background:#dc2626"></span> Fe, Mn, Zn, Cu — micros cationicos sensibles a pH alto</li>
+      <li><span class="sw" style="background:#ca8a04"></span> B</li>
+      <li><span class="sw" style="background:#2563eb"></span> Mo, Cl — aniones</li>
+      <li><span class="sw" style="background:#a16207"></span> Al — toxicidad (no nutriente)</li>
+    </ul>
     <div class="ph-section">
       <div class="ph-head-scale" aria-hidden="true">
         <span style="font-size:10px;color:#94a3b8;text-align:right;line-height:1.2;">pH<br/>escala</span>
@@ -1361,7 +1397,7 @@
       ion: 'Mn²⁺',
       short: 'Mn²⁺',
       name: 'Manganeso',
-      antagonists: ['h2po4', 'fe', 'zn'],
+      antagonists: ['h2po4', 'fe', 'zn', 'cu'],
       synergists: ['no3'],
       functional: ['Fotosíntesis (fotosistema)', 'Activación enzimática'],
       shortTip: 'Interactúa con pH y a veces con Fe, Cu y P; con Cu y Zn suele predominar competencia más que sinergia de absorción.'
@@ -1379,7 +1415,7 @@
       ion: 'Cu²⁺',
       short: 'Cu²⁺',
       name: 'Cobre',
-      antagonists: ['zn', 'h2po4', 'fe'],
+      antagonists: ['zn', 'h2po4', 'fe', 'mn'],
       synergists: ['no3'],
       functional: ['Lignificación', 'fotosíntesis'],
       shortTip: 'Exceso de Zn o interferencia con Fe/P pueden modificar el balance de Cu; con Mn suele haber más competencia que sinergia.'
@@ -1438,7 +1474,7 @@
   });
 
   // SVG layout
-  var cx = 260, cy = 230, r = 168;
+  var cx = 260, cy = 230, r = 168, NODE_R = 24;
   var pos = {};
   NODE_ORDER.forEach(function (id, i) {
     var ang = -Math.PI / 2 + (i / NODE_ORDER.length) * Math.PI * 2;
@@ -1448,17 +1484,31 @@
     };
   });
 
+  function edgeEndpoints(idA, idB) {
+    var p1 = pos[idA], p2 = pos[idB];
+    var dx = p2.x - p1.x, dy = p2.y - p1.y;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var ux = dx / len, uy = dy / len;
+    return {
+      x1: p1.x + ux * NODE_R,
+      y1: p1.y + uy * NODE_R,
+      x2: p2.x - ux * NODE_R,
+      y2: p2.y - uy * NODE_R
+    };
+  }
+
   var edgesG = document.getElementById('edgesG');
+  var edgesHiG = document.getElementById('edgesHiG');
   var nodesG = document.getElementById('nodesG');
   var edgeEls = [];
 
   EDGES.forEach(function (e, idx) {
-    var p1 = pos[e.a], p2 = pos[e.b];
+    var ep = edgeEndpoints(e.a, e.b);
     var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', p1.x);
-    line.setAttribute('y1', p1.y);
-    line.setAttribute('x2', p2.x);
-    line.setAttribute('y2', p2.y);
+    line.setAttribute('x1', ep.x1);
+    line.setAttribute('y1', ep.y1);
+    line.setAttribute('x2', ep.x2);
+    line.setAttribute('y2', ep.y2);
     line.setAttribute('class', 'edge-line');
     line.setAttribute('data-a', e.a);
     line.setAttribute('data-b', e.b);
@@ -1510,6 +1560,18 @@
     edgeEls.forEach(function (ln) {
       ln.setAttribute('class', 'edge-line');
     });
+    edgesHiG.innerHTML = '';
+  }
+
+  function drawHiEdge(a, b, cls) {
+    var ep = edgeEndpoints(a, b);
+    var hi = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    hi.setAttribute('x1', ep.x1);
+    hi.setAttribute('y1', ep.y1);
+    hi.setAttribute('x2', ep.x2);
+    hi.setAttribute('y2', ep.y2);
+    hi.setAttribute('class', cls);
+    edgesHiG.appendChild(hi);
   }
 
   function antagonistic(a, b) {
@@ -1528,8 +1590,8 @@
       var k = ln.getAttribute('data-k');
       var other = a === nid ? b : (b === nid ? a : null);
       if (other === null) return;
-      if (k === 'ant' && antagonistic(nid, other)) ln.setAttribute('class', 'edge-line hi-ant');
-      else if (k === 'syn' && synergyFrom(nid, other)) ln.setAttribute('class', 'edge-line hi-syn');
+      if (k === 'ant' && antagonistic(nid, other)) drawHiEdge(a, b, 'edge-line hi-ant');
+      else if (k === 'syn' && synergyFrom(nid, other)) drawHiEdge(a, b, 'edge-line hi-syn');
     });
   }
 
@@ -1588,13 +1650,13 @@
   // ——— Sección 2 ———
   var ARRIVAL = [
     { id: 'no3', lab: 'NO₃⁻', name: 'Nitrato', mf: 78, dif: 14, int: 8,
-      dom: 'Flujo de masa',
+      dom: 'Flujo de masas',
       mean: 'Se mueve bien con el agua hacia las raíces cuando hay transpiración activa.',
       dep: 'Transpiración, humedad del suelo, distribución radicular.',
       risk: 'Lixiviación si el aporte excede la demanda y el sistema es permeable.' },
     { id: 'nh4', lab: 'NH₄⁺', name: 'Amonio', mf: 38, dif: 47, int: 15,
-      dom: 'Difusión + flujo (según retención)',
-      mean: 'Gran parte queda en cambiable; en solución suele ser menos móvil que el nitrato: la llegada mezcla difusión y flujo según CIC, nitrificación y recarga en solución.',
+      dom: 'Difusión + flujo de masas (según retención)',
+      mean: 'Gran parte queda en cambiable; en solución suele ser menos móvil que el nitrato: la llegada mezcla difusión y flujo de masas según CIC, nitrificación y recarga en solución.',
       dep: 'CIC, humedad, temperatura, nitrificación, competencia catiónica.',
       risk: 'Toxicidad amonio si acumula; competencia con K⁺, Ca²⁺, Mg²⁺.' },
     { id: 'h2po4', lab: 'H₂PO₄⁻ / HPO₄²⁻', name: 'Fosfato', mf: 8, dif: 80, int: 12,
@@ -1603,22 +1665,22 @@
       dep: 'Humedad, raíz activa, pH, Ca, Fe, Al y temperatura.',
       risk: 'Puede haber P en el suelo, pero no necesariamente entrando al ritmo que la planta demanda.' },
     { id: 'k', lab: 'K⁺', name: 'Potasio', mf: 24, dif: 66, int: 10,
-      dom: 'Difusión (fuerte) + flujo',
+      dom: 'Difusión (fuerte) + flujo de masas',
       mean: 'Con alta demanda suele crearse una zona menos concentrada cerca de la raíz; en muchos sistemas la llegada efectiva se explica más por difusión desde el potasio intercambiable (y el contenido en solución) que solo por el volumen de agua transpirada.',
       dep: 'CIC, buffers de K⁺ en suelo, humedad, densidad radicular, demanda transpirativa.',
       risk: 'Desequilibrio con otros cationes; lixiviación en suelos arenosos.' },
     { id: 'ca', lab: 'Ca²⁺', name: 'Calcio', mf: 70, dif: 18, int: 12,
-      dom: 'Flujo de masa + intercepción radicular',
+      dom: 'Flujo de masas + intercepción radicular',
       mean: 'Depende mucho del movimiento de agua, transpiración y raíz activa.',
       dep: 'Humedad, CE, VPD, raíz activa y demanda del tejido.',
       risk: 'Puede haber Ca en suelo, pero no llegar bien a fruto o tejidos jóvenes (baja “conductividad” hacia ápices y fruto).' },
     { id: 'mg', lab: 'Mg²⁺', name: 'Magnesio', mf: 62, dif: 24, int: 14,
-      dom: 'Flujo de masa + difusión',
-      mean: 'Menos dominante que Ca en flujo puro; contribución importante de difusión.',
+      dom: 'Flujo de masas + difusión',
+      mean: 'Menos dominante que Ca en flujo de masas puro; contribución importante de difusión.',
       dep: 'CEC, humedad, competencia con K⁺/NH₄⁺/Ca²⁺.',
       risk: 'Deficiencia relativa con fertilización alta en K.' },
     { id: 'so4', lab: 'SO₄²⁻', name: 'Sulfato', mf: 58, dif: 30, int: 12,
-      dom: 'Flujo + difusión',
+      dom: 'Flujo de masas + difusión',
       mean: 'Anión móvil en solución; menor retención que fosfato en muchos suelos.',
       dep: 'Humedad, lixiviación, aporte azufre foliar o en agua.',
       risk: 'Lixiviación; interacción con MoO₄²⁻ en exceso de sulfato.' },
@@ -1628,7 +1690,7 @@
       dep: 'pH, carbonatos, redox, competencia (Cu, Mn, Zn), rizósfera.',
       risk: 'Clorosis férrica con pH alto aunque Fe total sea alto.' },
     { id: 'mn', lab: 'Mn²⁺', name: 'Manganeso', mf: 38, dif: 42, int: 20,
-      dom: 'Difusión / masa (según pH)',
+      dom: 'Difusión + flujo de masas (según pH)',
       mean: 'Muy sensible a pH y redox.',
       dep: 'pH bajo aumenta Mn disponible (ojo toxicidad).',
       risk: 'Toxicidad en suelos ácidos; deficiencia en alcalinos.' },
@@ -1643,17 +1705,17 @@
       dep: 'pH, MO, antagonismos con Zn/Fe.',
       risk: 'Toxicidad por fungicidas cupríacos acumulados; deficiencia en suelos muy calcareos.' },
     { id: 'b', lab: 'H₃BO₃ / B(OH)₄⁻', name: 'Boro', mf: 28, dif: 48, int: 24,
-      dom: 'Difusión + masa (según especie y flujo transpirativo)',
-      mean: 'Movimiento hacia raíz por difusión de ácido bórico; masa con transpiración en xilema.',
+      dom: 'Difusión + flujo de masas (según especie y transpiración)',
+      mean: 'Movimiento hacia raíz por difusión de ácido bórico; flujo de masas con transpiración en xilema.',
       dep: 'Humedad textura, lixiviación, Ca, pH.',
       risk: 'Bandas de carencia por falta de humedad; toxicidad en exceso.' },
     { id: 'moo4', lab: 'MoO₄²⁻', name: 'Molibdato', mf: 40, dif: 45, int: 15,
-      dom: 'Flujo + difusión',
+      dom: 'Flujo de masas + difusión',
       mean: 'Anión en competencia con sulfato.',
       dep: 'SO₄²⁻, pH, materia orgánica.',
       risk: 'Deficiencia en suelos ácidos (Mo menos disponible) dependiendo de mineralogía (reglas generales).' },
     { id: 'cl', lab: 'Cl⁻', name: 'Cloruro', mf: 75, dif: 15, int: 10,
-      dom: 'Flujo de masa',
+      dom: 'Flujo de masas',
       mean: 'Muy móvil en solución con el agua.',
       dep: 'Aporte (agua/fertilizante), escurrimiento, NO₃⁻.',
       risk: 'Sensibilidad varietal a Cl⁻; competencia con NO₃⁻ en algunos contextos.' }
@@ -2095,20 +2157,24 @@
   // ——— Sección 4: disponibilidad ~ pH (esquemático) ———
   var PH_MIN = 4;
   var PH_MAX = 9;
+  var PH_CHART_H = 48;
+  var PH_CHART_PAD_TOP = 6;
+  var PH_CHART_CURVE_H = PH_CHART_H - PH_CHART_PAD_TOP - 6;
   function phX(pH) {
     return (pH - PH_MIN) / (PH_MAX - PH_MIN) * 100;
   }
   function phY(av) {
-    return 5 + (1 - av) * 23;
+    return PH_CHART_PAD_TOP + (1 - av) * PH_CHART_CURVE_H;
   }
   function phAreaPath(points) {
     if (!points.length) return '';
+    var baseY = PH_CHART_H - 2;
     var x0 = phX(points[0][0]);
-    var d = 'M ' + x0 + ' 32 L ' + x0 + ' ' + phY(points[0][1]);
+    var d = 'M ' + x0 + ' ' + baseY + ' L ' + x0 + ' ' + phY(points[0][1]);
     for (var i = 1; i < points.length; i++) {
       d += ' L ' + phX(points[i][0]) + ' ' + phY(points[i][1]);
     }
-    d += ' L ' + phX(points[points.length - 1][0]) + ' 32 Z';
+    d += ' L ' + phX(points[points.length - 1][0]) + ' ' + baseY + ' Z';
     return d;
   }
   function phPolyPoints(points) {
@@ -2282,7 +2348,7 @@
       lab.textContent = row.lab;
       var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('class', 'ph-row__svg');
-      svg.setAttribute('viewBox', '0 0 100 34');
+      svg.setAttribute('viewBox', '0 0 100 ' + PH_CHART_H);
       svg.setAttribute('preserveAspectRatio', 'none');
       svg.setAttribute('aria-hidden', 'true');
       var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
@@ -2290,9 +2356,9 @@
       var band = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       band.setAttribute('class', 'ph-ideal-band');
       band.setAttribute('x', String(phX(5.5)));
-      band.setAttribute('y', '4');
+      band.setAttribute('y', String(PH_CHART_PAD_TOP - 2));
       band.setAttribute('width', String(phX(7) - phX(5.5)));
-      band.setAttribute('height', '26');
+      band.setAttribute('height', String(PH_CHART_CURVE_H + 4));
       var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('fill', 'url(#' + gid + ')');
       path.setAttribute('opacity', '0.5');
@@ -2300,7 +2366,7 @@
       var line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
       line.setAttribute('fill', 'none');
       line.setAttribute('stroke', row.color);
-      line.setAttribute('stroke-width', '1.1');
+      line.setAttribute('stroke-width', '1.35');
       line.setAttribute('stroke-linejoin', 'round');
       line.setAttribute('points', phPolyPoints(row.points));
       svg.appendChild(defs);

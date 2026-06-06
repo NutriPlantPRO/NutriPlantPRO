@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Unidades: ppm, meq/L y óxidos — Manual NutriPlant PRO</title>
-  <meta name="description" content="Conversión ppm, meq/L, mmol/L y cmol en suelo y solución; factores óxido-elemental en NutriPlant PRO.">
+  <meta name="description" content="Conversión ppm, meq/L, mmol/L, µmol/L (micros) y cmol en suelo y solución; factores óxido-elemental en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/unidades-ppm-meq-oxidos.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css">
@@ -13,11 +13,11 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "Unidades: ppm, meq/L y óxidos",
-  "description": "Conversión ppm, meq/L, mmol/L y cmol en suelo y solución; factores óxido-elemental en NutriPlant PRO.",
+  "description": "Conversión ppm, meq/L, mmol/L, µmol/L (micros) y cmol en suelo y solución; factores óxido-elemental en NutriPlant PRO.",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/unidades-ppm-meq-oxidos.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
-  "dateModified": "2026-05-21",
+  "dateModified": "2026-06-06",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -65,6 +65,7 @@
     <h2>Solución y agua</h2>
     <div class="mt-formula">meq/L = ppm ÷ peso equivalente del elemento<br>1 cmol/L = 10 meq/L</div>
     <p>mmol/L de iones univalentes (K⁺, NO₃⁻, Cl⁻): mismo número que meq/L.</p>
+    <p>Macros e iones de solución en la calculadora: <strong>mmol/L</strong>. Micronutrientes en la misma herramienta: <strong>µmol/L</strong> (ver abajo).</p>
 
     <h3>ppm del elemento, forma iónica en solución</h3>
     <p>
@@ -106,6 +107,40 @@
       31 ppm P-H₂PO₄⁻ → 31 ÷ 31 = <strong>1 meq/L</strong>.
       48 ppm S-SO₄²⁻ → 48 ÷ 16,03 ≈ <strong>2,99 meq/L</strong>.
     </p>
+
+    <h2>Micronutrientes — µmol/L (calculadora gratis)</h2>
+    <p>
+      En el conversor <strong>ppm / meq</strong> del login y dashboard, Fe, Mn, Zn, B, Cu y Mo muestran
+      <strong>µmol/L</strong> en lugar de mmol/L. Las concentraciones típicas son menores a 1 mmol/L;
+      expresarlas en micromoles evita muchos decimales. El <strong>ppm sigue siendo del elemento</strong>
+      (mg/L de Fe, Mo, etc.), igual que en análisis y programas NutriPlant.
+    </p>
+    <div class="mt-formula">
+      µmol/L = (ppm ÷ peso atómico del elemento) × 1000<br>
+      mmol/L = µmol/L ÷ 1000<br>
+      meq/L = mmol/L × valencia
+    </div>
+    <table class="mt-table">
+      <thead>
+        <tr><th>Forma en calculadora</th><th>ppm de</th><th>PA (g/mol)</th><th>Valencia</th><th>Unidad mol en app</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Fe²⁺</td><td>Fe</td><td>55,85</td><td>2</td><td>µmol/L</td></tr>
+        <tr><td>Mn²⁺</td><td>Mn</td><td>54,94</td><td>2</td><td>µmol/L</td></tr>
+        <tr><td>Zn²⁺</td><td>Zn</td><td>65,38</td><td>2</td><td>µmol/L</td></tr>
+        <tr><td>Cu²⁺</td><td>Cu</td><td>63,55</td><td>2</td><td>µmol/L</td></tr>
+        <tr><td>H₃BO₃</td><td>B</td><td>10,81</td><td>1</td><td>µmol/L</td></tr>
+        <tr><td>MoO₄²⁻</td><td>Mo</td><td>95,95</td><td>2</td><td>µmol/L</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Ejemplo Fe:</strong> 3,00 ppm Fe → µmol/L = (3,00 ÷ 55,85) × 1000 ≈ <strong>53,7</strong>;
+      mmol/L = 0,054; meq/L = 0,107.<br>
+      <strong>Mo:</strong> en solución se absorbe como molibdato <strong>MoO₄²⁻</strong> (valencia 2), análogo a
+      S-SO₄²⁻ en la calculadora; el ppm reportado es de <strong>Mo elemental</strong>.
+    </p>
+    <p>Herramienta: <strong>Conversor de unidades (ppm/mmol/meq)</strong> en login y dashboard.</p>
+
     <h2>Óxido ↔ elemental (factores NutriPlant)</h2>
     <table class="mt-table">
       <thead><tr><th>Óxido</th><th>× factor → elemental</th></tr></thead>

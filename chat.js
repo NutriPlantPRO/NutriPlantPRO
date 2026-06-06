@@ -1775,8 +1775,10 @@ Basándome en tus datos, te recomiendo la siguiente estrategia:`;
   3) % ternario de cationes (K, Ca, Mg) respecto a K+Ca+Mg (sin NH4),
   4) % de N nítrico y N amoniacal (NO3 vs NH4) respecto al N total.
 - Lógica NutriPlant de conversión meq->ppm: se expresa ppm de ELEMENTO (N, P, S, K, Ca, Mg), no ppm del ion completo. Usar pesos equivalentes elementales (N 14, P 31, S 16, K 39.1, Ca 20.04, Mg 12.15).
+- Calculadora gratis ppm/meq: macros e iones en **mmol/L**; microelementos Fe, Mn, Zn, B, Cu, Mo en **µmol/L** (µmol/L = ppm÷PA×1000; meq/L = mmol/L×valencia). Mo como **MoO₄²⁻** (valencia 2).
 - Si preguntan "¿por qué no ppm del ion?": explicar que NutriPlant trabaja en base elemental para comparación agronómica directa con etiquetas, análisis y objetivos nutricionales.
-- Si preguntan por óxido/elemental: explicar conversión P2O5<->P, K2O<->K, CaO<->Ca, MgO<->Mg, SiO2<->Si y su uso en etiquetas de fertilizantes.
+- Si preguntan por óxido/elemental: factores P₂O₅↔P, K₂O↔K, CaO↔Ca, MgO↔Mg, SO₃↔S, SiO₂↔Si y óxidos de micros — **etiquetas de fertilizante**; el N en ficha ya es **N elemental** (no óxido).
+- Si preguntan N↔NO₃, N↔NH₄ o S↔SO₄ (ionómetro, informe iónico): N→NO₃ ×4.429; NO₃→N ×0.226; N→NH₄ ×1.286; NH₄→N ×0.778; S→SO₄ ×3; SO₄→S ×0.333 — **iones en solución**, no confundir SO₄ con SO₃ ni con conversión óxido.
 - Aclarar siempre que son referencias técnicas y se ajustan por cultivo, etapa, variedad, clima y calidad de agua.`;
   }
 

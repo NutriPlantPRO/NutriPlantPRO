@@ -67,6 +67,7 @@ var MEASURE_UNITS = {
     { id: 'meqL', name: 'meq/L (solución o agua)', toBase: 1, group: 'solution' },
     { id: 'cmolL', name: 'cmol(+)/L (solución)', toBase: 10, group: 'solution' },
     { id: 'mmolL', name: 'mmol/L (monovalente ≈ meq/L)', toBase: 1, group: 'solution' },
+    { id: 'umolL', name: 'µmol/L (monovalente; 1000 µmol/L ≈ 1 meq/L)', toBase: 0.001, group: 'solution' },
     { id: 'meq100g', name: 'meq/100 g (suelo, CIC)', toBase: 1, group: 'soil' },
     { id: 'cmolKg', name: 'cmolc/kg = cmol(+)/kg (suelo)', toBase: 1, group: 'soil' }
   ]

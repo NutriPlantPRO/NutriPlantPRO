@@ -10582,19 +10582,39 @@
     );
   }
 
+  function npIcsEventKindLine(ent) {
+    if (ent.kind === 'table_row') return 'Tabla: ' + (ent.blockTitle || '—');
+    if (ent.kind === 'note_due') return 'Semáforo en nota principal';
+    return 'Objetivo del apunte';
+  }
+
+  function npIcsEventSummary(ent) {
+    var rowTitle = String(ent.rowTitle || '').trim();
+    if (ent.kind === 'table_row' && rowTitle && rowTitle !== '—') return rowTitle;
+    if (ent.kind === 'note_due' && rowTitle) return rowTitle;
+    var itemTitle = String(ent.itemTitle || '').trim();
+    if (itemTitle && itemTitle !== '(Sin título)') return itemTitle;
+    return 'Plan PRO';
+  }
+
   function npIcsEventDescription(ent) {
-    var kindLine = 'Objetivo del apunte';
-    if (ent.kind === 'table_row') kindLine = 'Tabla: ' + (ent.blockTitle || '—');
-    else if (ent.kind === 'note_due') kindLine = 'Semáforo en nota principal';
-    var lines = [
-      ent.rowTitle || 'Plan PRO',
-      '🏷️ Tipo: ' + kindLine,
-      '🚦 Semáforo: ' + calLevelPlainLabel(ent.level),
-      '🕒 Hora: ' + (ent.time ? formatDueTimeLabel(ent.time) + (ent.endTime ? ' - ' + formatDueTimeLabel(ent.endTime) : '') : 'Todo el día'),
-      '🌱 Planta: ' + (ent.plantTitle || (ent.areaId ? getPlanAreaTitle(ent.areaId) : '—')),
-      '🌿 Rama: ' + (ent.catPath || '—'),
-      '📝 Apunte: ' + (ent.itemTitle || '—')
-    ];
+    var kindLine = npIcsEventKindLine(ent);
+    var lines = [];
+    var rowTitle = String(ent.rowTitle || '').trim();
+    if (rowTitle && rowTitle !== '—' && rowTitle !== kindLine && rowTitle !== 'Objetivo del apunte') {
+      lines.push(rowTitle);
+    }
+    lines.push('🏷️ Tipo: ' + kindLine);
+    lines.push('🚦 Semáforo: ' + calLevelPlainLabel(ent.level));
+    lines.push(
+      '🕒 Hora: ' +
+        (ent.time
+          ? formatDueTimeLabel(ent.time) + (ent.endTime ? ' - ' + formatDueTimeLabel(ent.endTime) : '')
+          : 'Todo el día')
+    );
+    lines.push('🌱 Planta: ' + (ent.plantTitle || (ent.areaId ? getPlanAreaTitle(ent.areaId) : '—')));
+    lines.push('🌿 Rama: ' + (ent.catPath || '—'));
+    lines.push('📝 Apunte: ' + (ent.itemTitle || '—'));
     if (ent.notePreview) lines.push('📌 Nota: ' + ent.notePreview);
     if (ent.noteLink) lines.push('🔗 Link: ' + ent.noteLink);
     if (ent.mapsUrl) lines.push('📍 Ubicación Maps: ' + npIcsMapsUrlValue(ent.mapsUrl));
@@ -10642,7 +10662,7 @@
       var dk = String(ent.dateKey || '').trim();
       if (!/^\d{4}-\d{2}-\d{2}$/.test(dk)) return;
       var uid = npCalendarEventUid(ent);
-      var summary = npEscapeIcs('Plan PRO');
+      var summary = npEscapeIcs(npIcsEventSummary(ent));
       var desc = npEscapeIcs(npIcsEventDescription(ent));
       var mapsUrl = normalizePlanProMapsUrl(ent.mapsUrl || '');
       var mapsUrlIcs = mapsUrl ? npIcsMapsUrlValue(mapsUrl) : '';

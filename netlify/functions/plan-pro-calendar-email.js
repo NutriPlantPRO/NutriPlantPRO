@@ -117,13 +117,31 @@ function filterEntries(scope, entries, opts) {
   return list;
 }
 
+function eventKindLine(ent) {
+  if (ent.kind === 'table_row') return `Tabla: ${ent.blockTitle || '—'}`;
+  if (ent.kind === 'note_due') return 'Semáforo en nota principal';
+  return 'Objetivo del apunte';
+}
+
+function eventSummary(ent) {
+  const rowTitle = String(ent.rowTitle || '').trim();
+  if (ent.kind === 'table_row' && rowTitle && rowTitle !== '—') return rowTitle;
+  if (ent.kind === 'note_due' && rowTitle) return rowTitle;
+  const itemTitle = String(ent.itemTitle || '').trim();
+  if (itemTitle && itemTitle !== '(Sin título)') return itemTitle;
+  return 'Plan PRO';
+}
+
 function buildEventDescription(ent) {
-  const lines = [
-    ent.rowTitle || 'Plan PRO',
-    ent.kind === 'table_row' ? `Tabla: ${ent.blockTitle || '—'}` : 'Objetivo del apunte',
-    `Apunte: ${ent.itemTitle || '—'}`,
-    `Rama: ${ent.catPath || '—'}`
-  ];
+  const kindLine = eventKindLine(ent);
+  const lines = [];
+  const rowTitle = String(ent.rowTitle || '').trim();
+  if (rowTitle && rowTitle !== '—' && rowTitle !== kindLine && rowTitle !== 'Objetivo del apunte') {
+    lines.push(rowTitle);
+  }
+  lines.push(`Tipo: ${kindLine}`);
+  lines.push(`Apunte: ${ent.itemTitle || '—'}`);
+  lines.push(`Rama: ${ent.catPath || '—'}`);
   return lines.join('\n');
 }
 
@@ -142,9 +160,7 @@ function buildIcsCalendar(events, organizerEmail, organizerName) {
     const dk = String(ent.dateKey || '').trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dk)) return;
     const uid = `planpro-${ent.itemId || 'x'}-${dk}-${ent.kind || 'e'}-${idx}@nutriplantpro.com`;
-    const summary = escapeIcs(
-      ent.rowTitle && ent.rowTitle !== '—' ? ent.rowTitle : ent.itemTitle || 'Plan PRO'
-    );
+    const summary = escapeIcs(eventSummary(ent));
     const desc = escapeIcs(buildEventDescription(ent));
     const dtEnd = addDaysToDateKey(dk, 1).replace(/-/g, '');
     const dtStart = dk.replace(/-/g, '');
@@ -199,7 +215,7 @@ function buildHtmlList(events) {
   const items = events
     .slice(0, 40)
     .map((e) => {
-      const title = e.rowTitle && e.rowTitle !== '—' ? e.rowTitle : e.itemTitle || 'Plan PRO';
+      const title = eventSummary(e);
       return `<li><strong>${title}</strong> · ${e.dateKey} · ${e.itemTitle || ''}</li>`;
     })
     .join('');
@@ -309,7 +325,7 @@ exports.handler = async function handler(event) {
   const subject = `Plan PRO · Agenda (${label})`;
 
   const textLines = filtered.map((e) => {
-    const title = e.rowTitle && e.rowTitle !== '—' ? e.rowTitle : e.itemTitle;
+    const title = eventSummary(e);
     return `• ${e.dateKey} — ${title} (${e.itemTitle || ''})`;
   });
   const textBody =

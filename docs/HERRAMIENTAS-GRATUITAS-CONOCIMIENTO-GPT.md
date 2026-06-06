@@ -31,9 +31,51 @@
 
 | Herramienta | Función |
 |-------------|---------|
-| **Óxido ↔ Elemental** | P₂O₅, K₂O, CaO, MgO, SiO₂ ↔ elemental con factores estándar. |
-| **ppm / mmol / meq** | Por ion; peso equivalente; categoría meq/cmol en conversor de magnitudes. |
+| **Óxido ↔ Elemental** | Bloque superior: P₂O₅, K₂O, CaO, MgO, SO₃, óxidos de micros ↔ elemental (etiquetas fertilizante). **N en ficha = elemental** (no óxido). Recuadro verde aparte: **N↔NO₃, N↔NH₄, S↔SO₄** (ionómetros / informes iónicos — **no confundir SO₄ con SO₃**). |
+| **ppm / mmol / meq** | Macros e iones en mmol/L; **micros (Fe, Mn, Zn, B, Cu, Mo) en µmol/L**; ppm del elemento; Mo como MoO₄²⁻; peso equivalente; categoría meq/cmol en conversor de magnitudes. |
 | **Magnitudes físicas** | Longitud, área, volumen, masa, presión, etc. |
+
+#### Conversor Óxido ↔ Elemental — dos bloques distintos
+
+**1) Óxidos de etiqueta (fertilizante / enmienda):** P₂O₅↔P (×0,436 / ×2,291), K₂O↔K (×0,830 / ×1,205), CaO↔Ca, MgO↔Mg, SO₃↔S, Fe₂O₃↔Fe, MnO↔Mn, B₂O₃↔B, ZnO↔Zn, CuO↔Cu, MoO₃↔Mo, SiO₂↔Si — mismos factores que `login.html` / `dashboard.html`.
+
+**2) Elemental ↔ iones en solución (recuadro verde — equipos de medición):**
+
+| Conversión | Factor |
+|------------|--------|
+| N → NO₃ | ×4,429 |
+| NO₃ → N | ×0,226 |
+| N → NH₄ | ×1,286 |
+| NH₄ → N | ×0,778 |
+| S → SO₄ | ×3,000 |
+| SO₄ → S | ×0,333 |
+
+**Errores frecuentes a evitar:** mezclar SO₄ (ión) con SO₃ (óxido en etiqueta); aplicar factores de P₂O₅ cuando el usuario pregunta por NO₃ de un ionómetro; asumir que el N de fertilizante viene como óxido.
+
+#### Conversor ppm / mmol / meq — regla µmol/L en microelementos
+
+En **login** y **dashboard** (`measure-units-calculator.js`), NutriPlant usa **mmol/L** para macros e iones de solución (N, P, S, K, Ca, Mg, Na, NO₃, H₂PO₄, SO₄, Cl…) y **µmol/L** para micronutrientes porque sus concentraciones típicas son &lt;1 mmol/L.
+
+| Forma en calculadora | ppm de | PA (g/mol) | Valencia | Unidad mol |
+|---------------------|--------|------------|----------|------------|
+| Fe²⁺ | Fe | 55,85 | 2 | µmol/L |
+| Mn²⁺ | Mn | 54,94 | 2 | µmol/L |
+| Zn²⁺ | Zn | 65,38 | 2 | µmol/L |
+| Cu²⁺ | Cu | 63,55 | 2 | µmol/L |
+| H₃BO₃ | B | 10,81 | 1 | µmol/L |
+| MoO₄²⁻ | Mo | 95,95 | 2 | µmol/L |
+
+**Fórmulas (NutriPlant):**
+- **µmol/L = (ppm elemento ÷ PA) × 1000**
+- mmol/L = µmol/L ÷ 1000
+- **meq/L = mmol/L × valencia** (igual que macros)
+- ppm = mg/L del **elemento** (ppm Fe, ppm Mo…), no del compuesto iónico completo
+
+**Ejemplo Fe:** 3,00 ppm Fe → µmol/L = (3 ÷ 55,85) × 1000 ≈ **53,7**; mmol/L = 0,054; meq/L = 0,107.
+
+**Mo:** en solución se modela como **MoO₄²⁻** (valencia 2), análogo a S-SO₄²⁻; el ppm reportado es de **Mo elemental**.
+
+**API Socio:** `free_tools_catalog` con `tool_id: "conversor_unidades_nutrientes"`. Manual web: capítulo `unidades-ppm-meq-oxidos`.
 
 ### 💧 Diseño de solución nutritiva (`hidro-solucion-free.html`)
 
@@ -96,9 +138,10 @@
 ### 🔗 Interacciones y movilidad (`interacciones-absorcion-movilidad-free.html`)
 
 1. **Mulder:** rojo = antagonismo (bidireccional en aristas); azul = sinergia **solo desde el ion que el usuario seleccionó** (no inflar listas cruzadas).
-2. **Mecanismos hacia la raíz:** flujo de masa, difusión, interceptación.
-3. **Movilidad:** N,P,K,Mg móviles (síntoma hoja vieja); Ca,B poco móviles (punta); Fe,Mn,Zn,Cu según especie.
-4. **pH:** disponibilidad relativa por nutriente vs acidez/alcalinidad.
+2. **Antagonismos micros en diagrama (2026):** **Cu²⁺ ↔ Mn²⁺** marcados en rojo (competencia entre micros; también Cu–Zn, Cu–Fe, Mn–Fe, Mn–Zn, P alto vs micros). Al tocar Cu²⁺ o Mn²⁺ la ficha y la línea coinciden.
+3. **Mecanismos hacia la raíz:** flujo de masa, difusión, interceptación.
+4. **Movilidad:** N,P,K,Mg móviles (síntoma hoja vieja); Ca,B poco móviles (punta); Fe,Mn,Zn,Cu según especie.
+5. **pH:** disponibilidad relativa por nutriente vs acidez/alcalinidad.
 
 ### 🌱 N mineralizable (`n-mineralizable-mo-free.html`)
 

@@ -17,7 +17,7 @@
       icon: '📐',
       pillar: 'A · Fundamentos',
       title: 'Unidades: ppm, meq/L y óxidos agronómicos',
-      keywords: 'ppm meq meq/L óxidos P2O5 K2O CaO MgO conversión unidades peso equivalente elemento'
+      keywords: 'ppm meq meq/L mmol µmol micromol microelementos Fe Mn Zn B Cu Mo MoO4 óxidos P2O5 K2O CaO MgO conversión unidades peso equivalente elemento'
     },
     {
       href: 'capitulos/porcentaje-meq-aniones-cationes.html',
@@ -150,7 +150,7 @@
       icon: '🔗',
       pillar: 'F · Interacciones',
       title: 'Interacciones Mulder y compatibilidad de fertilizantes',
-      keywords: 'Mulder interacciones antagonismo sinergia compatibilidad fertilizantes mezcla tanque movilidad pH'
+      keywords: 'Mulder interacciones antagonismo sinergia Cu Mn cobre manganeso compatibilidad fertilizantes mezcla tanque movilidad pH'
     },
     {
       href: 'capitulos/publicaciones-redes-sociales.html',
