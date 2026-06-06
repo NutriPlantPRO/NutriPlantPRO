@@ -1220,19 +1220,19 @@
       const pctNo3VsCl = ncPair > 0 ? (mNo3 / ncPair) * 100 : 0;
       const pctClVsCl = ncPair > 0 ? (mCl / ncPair) * 100 : 0;
       summaryEl.title =
-        'N total: % Nitrato y % Amonio sobre N-NO₃⁻ + N-NH₄⁺ (meq/L). ' +
-        'NO₃ + Cl: % Nitrato y % Cl sobre N-NO₃⁻ + Cl⁻ (meq/L).';
+        'N total: % NO₃⁻ y % NH₄⁺ sobre N-NO₃⁻ + N-NH₄⁺ (meq/L). ' +
+        'NO₃⁻ + Cl⁻: % NO₃⁻ y % Cl⁻ sobre N-NO₃⁻ + Cl⁻ (meq/L).';
       summaryEl.innerHTML =
         '<span class="hydro-n-sum-base">Suma de N (meq/L): <strong>' + nTotal.toFixed(2) + '</strong></span>' +
         '<span class="hydro-n-sum-block" aria-label="Partición del nitrógeno">' +
           '<span class="hydro-n-sum-block-label">Sobre N total</span>' +
-          '<span class="hydro-n-pill hydro-n-pill--no3">Nitrato <strong>' + pctNo3OnN.toFixed(1) + '%</strong></span>' +
-          '<span class="hydro-n-pill hydro-n-pill--nh4">Amonio <strong>' + pctNh4OnN.toFixed(1) + '%</strong></span>' +
+          '<span class="hydro-n-pill hydro-n-pill--no3">NO₃⁻ <strong>' + pctNo3OnN.toFixed(1) + '%</strong></span>' +
+          '<span class="hydro-n-pill hydro-n-pill--nh4">NH₄⁺ <strong>' + pctNh4OnN.toFixed(1) + '%</strong></span>' +
         '</span>' +
         '<span class="hydro-n-sum-block" aria-label="Nitrato frente a cloro">' +
-          '<span class="hydro-n-sum-block-label">NO₃ + Cl</span>' +
-          '<span class="hydro-n-pill hydro-n-pill--no3-nc">Nitrato <strong>' + pctNo3VsCl.toFixed(1) + '%</strong></span>' +
-          '<span class="hydro-n-pill hydro-n-pill--cl">Cl <strong>' + pctClVsCl.toFixed(1) + '%</strong></span>' +
+          '<span class="hydro-n-sum-block-label">NO₃⁻ + Cl⁻</span>' +
+          '<span class="hydro-n-pill hydro-n-pill--no3-nc">NO₃⁻ <strong>' + pctNo3VsCl.toFixed(1) + '%</strong></span>' +
+          '<span class="hydro-n-pill hydro-n-pill--cl">Cl⁻ <strong>' + pctClVsCl.toFixed(1) + '%</strong></span>' +
         '</span>';
     }
 
