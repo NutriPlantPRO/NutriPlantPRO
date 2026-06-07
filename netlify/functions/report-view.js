@@ -6,7 +6,7 @@
  *
  * Seguridad:
  * - Usa SUPABASE_SERVICE_ROLE_KEY en backend (nunca en navegador).
- * - Devuelve HTML solo si rid + token coinciden y el link no está vencido.
+ * - Devuelve HTML solo si rid + token coinciden (sin fecha de vencimiento).
  */
 
 function htmlResponse(statusCode, html) {
@@ -53,15 +53,11 @@ function errorPage(title, message) {
 </html>`;
 }
 
-function withSharedViewChrome(reportHtml, expiresAt, options) {
+function withSharedViewChrome(reportHtml, options) {
   const opts = options || {};
   const proto = String(opts.proto || 'https').split(',')[0].trim();
   const host = String(opts.host || 'nutriplantpro.com').split(',')[0].trim();
   const baseHref = String(opts.baseUrl || `${proto}://${host}/`).replace(/\/?$/, '/');
-
-  const expText = expiresAt
-    ? new Date(expiresAt).toLocaleString('es-MX', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-    : '30 días';
 
   const baseTag = `<base href="${escapeHtml(baseHref)}">`;
 
@@ -133,7 +129,7 @@ function withSharedViewChrome(reportHtml, expiresAt, options) {
       </nav>
     </div>
   </header>
-  <div class="np-shared-note">Vista compartida de reporte. Este link es temporal y tiene vigencia de 30 días (vence: ${escapeHtml(expText)}).</div>`;
+  <div class="np-shared-note">Vista compartida de reporte NutriPlant PRO. Este link permanece activo; solo deja de servir si se genera uno nuevo desde el panel.</div>`;
 
   let out = String(reportHtml || '');
   const docHasBase = /<base\s/i.test(out);
@@ -188,16 +184,9 @@ exports.handler = async function(event) {
     const data = row.data || {};
     const shareEnabled = !(data.shareEnabled === false || data.share_enabled === false);
     const storedToken = String(data.shareToken || data.share_token || '').trim();
-    const expiresAt = data.shareExpiresAt || data.share_expires_at || null;
 
     if (!shareEnabled || !storedToken || storedToken !== token) {
       return htmlResponse(403, errorPage('Acceso denegado', 'Este link no coincide con el reporte en el servidor. Suele pasar si la subida a la nube falló al compartir, o si abriste un link viejo tras volver a compartir (cada vez se genera un token nuevo). Vuelve al panel, pulsa Compartir vista una sola vez y espera el mensaje de éxito.'));
-    }
-    if (expiresAt) {
-      const expMs = new Date(expiresAt).getTime();
-      if (Number.isFinite(expMs) && expMs < Date.now()) {
-        return htmlResponse(410, errorPage('Link vencido', 'El link de vista compartida expiró. Solicita uno nuevo.'));
-      }
     }
 
     const html = typeof data.reportHTML === 'string' ? data.reportHTML : '';
@@ -210,7 +199,7 @@ exports.handler = async function(event) {
     const xfHost = (h['x-forwarded-host'] || h['X-Forwarded-Host'] || h.host || h.Host || 'nutriplantpro.com').toString().split(',')[0].trim();
     const baseUrl = `${xfProto}://${xfHost}/`;
 
-    return htmlResponse(200, withSharedViewChrome(html, expiresAt, {
+    return htmlResponse(200, withSharedViewChrome(html, {
       proto: xfProto,
       host: xfHost,
       baseUrl: baseUrl

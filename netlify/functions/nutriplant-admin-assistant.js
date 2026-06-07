@@ -18,6 +18,10 @@ const ADMIN_EMAIL_LC = 'admin@nutriplantpro.com';
 const crypto = require('crypto');
 const nutriContentSearch = require('./lib/nutri-pro-content-search');
 const { extractNutriProText, extOf } = require('./lib/nutri-pro-text-extract');
+const {
+  createNutriProUploadTicket,
+  readNutriProUploadTicketState
+} = require('./nutri-pro-upload');
 
 function corsHeaders() {
   return {
@@ -2534,6 +2538,48 @@ function sanitizeNutriProFilename(name) {
   return base;
 }
 
+function validateNutriProSaveBuffer(buffer, filename, fromBinary) {
+  if (!fromBinary || !buffer || !buffer.length) return null;
+  const ext = extOf(filename);
+  const size = buffer.length;
+  const minByExt = { pdf: 200, docx: 1500, xlsx: 1500, xls: 1500, pptx: 1500, png: 80, jpg: 100, jpeg: 100, webp: 80 };
+  const min = minByExt[ext] || 80;
+  const gptFix =
+    'ChatGPT NO recibe el binario del adjunto en Actions. Lee el archivo en el chat y usa nutri_pro_save con params.content (texto íntegro) y filename .md o .txt (indexable). NO inventes content_base64. Para guardar el PDF/Excel ORIGINAL tal cual: Plan PRO en nutriplantpro.com → chat Socio → 📎 adjuntar → guardar en carpeta.';
+  if (size < min) {
+    return {
+      error:
+        'Binario inválido o incompleto (' +
+        size +
+        ' bytes) para .' +
+        (ext || '?') +
+        '. Probablemente ChatGPT no pudo enviar el adjunto real.',
+      gpt_fix: gptFix,
+      chatgpt_attachment_limit: true
+    };
+  }
+  if (ext === 'pdf') {
+    const head = buffer.slice(0, 5).toString('latin1');
+    if (!head.startsWith('%PDF')) {
+      return {
+        error: 'No es un PDF válido (falta cabecera %PDF).',
+        gpt_fix: gptFix,
+        chatgpt_attachment_limit: true
+      };
+    }
+  }
+  if (ext === 'docx' || ext === 'xlsx' || ext === 'xls' || ext === 'pptx') {
+    if (buffer[0] !== 0x50 || buffer[1] !== 0x4b) {
+      return {
+        error: 'No es un archivo Office válido (debe empezar con PK/ZIP).',
+        gpt_fix: gptFix,
+        chatgpt_attachment_limit: true
+      };
+    }
+  }
+  return null;
+}
+
 function mimeTypeFromNutriFilename(filename) {
   const ext = extOf(filename);
   const map = {
@@ -2691,6 +2737,20 @@ async function handleNutriProSave(supabase, params) {
   }
   if (!/\./.test(filename)) filename += '.txt';
 
+  const bufferCheck = validateNutriProSaveBuffer(buffer, filename, fromBinary);
+  if (bufferCheck) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      saved: false,
+      error: bufferCheck.error,
+      gpt_fix: bufferCheck.gpt_fix,
+      chatgpt_attachment_limit: bufferCheck.chatgpt_attachment_limit === true,
+      gpt_usage:
+        'No se guardó nada en Storage. Reintenta con params.content (texto leído del adjunto) y filename .md/.txt, o indica al usuario subir el original en Plan PRO → Socio 📎.'
+    };
+  }
+
   const folderId = await resolveNutriProFolderId(supabase, ownerId, params);
   const foldersRes = await fetchNutriProFolders(supabase, ownerId);
   if (!foldersRes.ok) {
@@ -2788,6 +2848,125 @@ async function handleNutriProSave(supabase, params) {
     gpt_usage:
       'Archivo en Supabase (nube). Visible en Plan PRO → Nutri PRO. Futuras preguntas: nutri_pro_ask con el tema o nutri_pro_file_text con nutri_file_id. Si text_indexed=false, indica extract_status al usuario.'
   };
+}
+
+async function handleNutriProUploadLink(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'nutri_pro', error: 'No se encontró usuario admin para Nutri PRO.' };
+  }
+
+  const foldersRes = await fetchNutriProFolders(supabase, ownerId);
+  if (!foldersRes.ok) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      available: false,
+      error: 'Nutri PRO no instalado.',
+      setup_sql: foldersRes.setup
+    };
+  }
+
+  const folderId = await resolveNutriProFolderId(supabase, ownerId, params);
+  const foldersById = nutriFolderMapById(foldersRes.rows);
+  const folderPath = folderId ? nutriFolderPathChain(folderId, foldersById).join(' / ') : 'Raíz';
+  const ttlMin = Math.min(Math.max(parseInt(params.ttl_minutes, 10) || 30, 5), 120);
+
+  let created;
+  try {
+    created = await createNutriProUploadTicket(supabase, {
+      owner_id: ownerId,
+      folder_id: folderId,
+      folder_path: folderPath,
+      title_hint: (params.title || params.title_hint || '').trim() || null,
+      suggested_filename: (params.suggested_filename || params.filename || '').trim() || null,
+      ttl_sec: ttlMin * 60,
+      public_base: (process.env.NUTRIPLANT_PUBLIC_URL || 'https://nutriplantpro.com').replace(/\/$/, '')
+    });
+  } catch (eTicket) {
+    return { ok: true, domain: 'nutri_pro', error: (eTicket && eTicket.message) || 'No se pudo crear el enlace.' };
+  }
+
+  return {
+    ok: true,
+    domain: 'nutri_pro',
+    action: 'nutri_pro_upload_link',
+    upload_id: created.upload_id,
+    upload_url: created.upload_url,
+    expires_at: created.expires_at,
+    folder_id: created.folder_id,
+    folder_path: created.folder_path,
+    message:
+      'Abre upload_url en el celular o PC (misma sesión NutriPlant admin), sube el archivo y luego nutri_pro_upload_status con upload_id.',
+    gpt_usage:
+      'Cuando Jesús adjunte PDF/Excel y quiera el ORIGINAL: NO uses nutri_pro_save con .pdf. Envía upload_url y pide que abra el enlace, inicie sesión si hace falta, suba el archivo. Después nutri_pro_upload_status(upload_id). Para texto generado: nutri_pro_save con content.',
+    instructions_for_user:
+      '1) Abre el enlace 2) Inicia sesión NutriPlant si te lo pide 3) Elige archivo y Subir 4) Vuelve al chat y di «ya subí»'
+  };
+}
+
+async function handleNutriProUploadStatus(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'nutri_pro', error: 'No se encontró usuario admin para Nutri PRO.' };
+  }
+
+  const uploadId = String(params.upload_id || params.uploadId || '').trim();
+  if (!uploadId) {
+    return { ok: true, domain: 'nutri_pro', error: 'Indica params.upload_id (devuelto por nutri_pro_upload_link).' };
+  }
+
+  const state = await readNutriProUploadTicketState(supabase, uploadId);
+  if (!state) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      upload_id: uploadId,
+      status: 'unknown',
+      message: 'No hay registro de ese enlace. Puede haber expirado; genera uno nuevo con nutri_pro_upload_link.'
+    };
+  }
+
+  if (state.owner_id && state.owner_id !== ownerId) {
+    return { ok: true, domain: 'nutri_pro', error: 'upload_id no corresponde a este admin.' };
+  }
+
+  const out = {
+    ok: true,
+    domain: 'nutri_pro',
+    action: 'nutri_pro_upload_status',
+    upload_id: uploadId,
+    status: state.status || 'pending',
+    folder_path: state.folder_path || null,
+    expires_at: state.expires_at || null,
+    file_id: state.file_id || null,
+    nutri_file_id: state.file_id || null,
+    filename: state.filename || null,
+    short_path: state.short_path || null,
+    completed_at: state.completed_at || null
+  };
+
+  if (state.status === 'done' && state.file_id) {
+    const foldersRes = await fetchNutriProFolders(supabase, ownerId);
+    const foldersById = foldersRes.ok ? nutriFolderMapById(foldersRes.rows) : {};
+    const { data: fileRec } = await supabase
+      .from('plan_pro_nutri_files')
+      .select('id,folder_id,title,original_name,mime_type,size_bytes,updated_at')
+      .eq('id', state.file_id)
+      .maybeSingle();
+    if (fileRec) {
+      const extractMap = await fetchNutriProExtractsMap(supabase, ownerId, [fileRec.id]);
+      out.file = mapNutriProFileRow(fileRec, foldersById, extractMap);
+      out.text_indexed = !!(out.file && out.file.text_indexed);
+      out.message = 'Subida completada: ' + (out.file.short_path || state.filename);
+    } else {
+      out.message = 'Marcado como subido pero el archivo ya no está en la lista.';
+    }
+  } else {
+    out.message = 'Aún pendiente: el usuario debe abrir upload_url y subir el archivo.';
+  }
+
+  return out;
 }
 
 function collectAllRichDueMarkers(item) {
@@ -4827,7 +5006,15 @@ async function handleDescribeApi() {
         'plan_pro_create',
         'plan_pro_update'
       ],
-      nutri_pro: ['nutri_pro_catalog', 'nutri_pro_search', 'nutri_pro_ask', 'nutri_pro_file_text', 'nutri_pro_save'],
+      nutri_pro: [
+        'nutri_pro_catalog',
+        'nutri_pro_search',
+        'nutri_pro_ask',
+        'nutri_pro_file_text',
+        'nutri_pro_save',
+        'nutri_pro_upload_link',
+        'nutri_pro_upload_status'
+      ],
       radar: ['radar_project', 'radar_search', 'radar_overview'],
       free_tools: ['free_tools_catalog'],
       lab_analyses: ['lab_analyses_catalog', 'project_analyses'],
@@ -4835,9 +5022,9 @@ async function handleDescribeApi() {
       nutrition: ['nutrition_catalogs']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item/locations (leer), plan_pro_create/plan_pro_update (escribir). plan_pro_item incluye nutri_refs (enlaces 📎 a Nutri PRO). Nutri PRO: nutri_pro_ask (pregunta + snippets + apuntes enlazados), nutri_pro_search (ranking), nutri_pro_file_text (leer), nutri_pro_save (guardar reporte/archivo en carpeta Supabase). plan_pro_locations devuelve favoritos y apuntes con ubicación Maps. Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
+      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item/locations (leer), plan_pro_create/plan_pro_update (escribir). plan_pro_item incluye nutri_refs (enlaces 📎 a Nutri PRO). Nutri PRO: nutri_pro_ask, nutri_pro_search, nutri_pro_file_text, nutri_pro_save (texto generado), nutri_pro_upload_link + nutri_pro_upload_status (PDF/Excel ORIGINAL vía enlace móvil). plan_pro_locations devuelve favoritos y apuntes con ubicación Maps. Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
     nutri_pro_gpt:
-      'Preguntas: nutri_pro_ask. Guardar reportes: nutri_pro_save con content + filename + folder_path (usa nutri_pro_catalog para rutas). Tras guardar, text_indexed=true permite nutri_pro_ask futuro. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
+      'Texto generado: nutri_pro_save. Adjunto binario real: nutri_pro_upload_link → usuario abre upload_url → nutri_pro_upload_status. Preguntas: nutri_pro_ask. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
     plan_pro_nota_semaforo:
       'Chip en libreta: [[sem:2026-05-26:media]] o append_due_marker. Ficha apunte: priority + due_at.',
     plan_pro_nota_herramientas:
@@ -4867,6 +5054,8 @@ const HANDLERS = {
   nutri_pro_ask: (sb, p) => handleNutriProAsk(sb, p),
   nutri_pro_file_text: (sb, p) => handleNutriProFileText(sb, p),
   nutri_pro_save: (sb, p) => handleNutriProSave(sb, p),
+  nutri_pro_upload_link: (sb, p) => handleNutriProUploadLink(sb, p),
+  nutri_pro_upload_status: (sb, p) => handleNutriProUploadStatus(sb, p),
   radar_project: (sb, p) => handleRadarProject(sb, p),
   radar_search: (sb, p) => handleRadarSearch(sb, p),
   radar_overview: (sb, p) => handleRadarOverview(sb, p),
@@ -4883,9 +5072,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.7.0',
+      version: '2.8.0',
       description:
-        'NutriPlant + Plan PRO + Nutri PRO (nutri_pro_ask, nutri_pro_save a Supabase). Plan PRO escritura. Análisis, Clima, Radar.'
+        'NutriPlant + Plan PRO + Nutri PRO (nutri_pro_save, nutri_pro_upload_link para archivos reales). Plan PRO escritura. Análisis, Clima, Radar.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {

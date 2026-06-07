@@ -8550,8 +8550,8 @@ function showReportViewShareModal(url, autoCopied) {
   p.style.fontSize = '14px';
   p.style.lineHeight = '1.5';
   p.textContent = autoCopied
-    ? 'El enlace ya se copió al portapapeles: pégalo donde quieras (Cmd+V o Ctrl+V). Vigencia: 30 días. Si vuelves a pulsar «Compartir vista», se genera otro link y el anterior deja de servir.'
-    : 'Tu navegador no permitió copiar solo; selecciona el texto y cópialo (Cmd+C / Ctrl+C). Vigencia: 30 días. Si vuelves a compartir, el link cambia.';
+    ? 'El enlace ya se copió al portapapeles: pégalo donde quieras (Cmd+V o Ctrl+V). El link no vence; solo deja de servir si vuelves a pulsar «Compartir vista» (se genera otro token).'
+    : 'Tu navegador no permitió copiar solo; selecciona el texto y cópialo (Cmd+C / Ctrl+C). El link no vence; si vuelves a compartir, el enlace cambia.';
   body.appendChild(p);
 
   var inp = document.createElement('input');
@@ -8662,10 +8662,9 @@ window.shareReportView = async function(reportId) {
       return;
     }
 
-    // Al compartir nuevamente: regenerar token y vigencia (el link anterior deja de servir).
+    // Al compartir nuevamente: regenerar token (el link anterior deja de servir).
     var token = generateReportShareToken();
     var nowIso = new Date().toISOString();
-    var expiresIso = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString();
     var htmlSnapshot = await buildReportHtmlSnapshotForShare(report);
     if (!htmlSnapshot) {
       showMessage('⚠️ No se pudo preparar la vista del reporte para compartir.', 'warning');
@@ -8680,7 +8679,7 @@ window.shareReportView = async function(reportId) {
       shareToken: token,
       shareEnabled: true,
       shareCreatedAt: report.shareCreatedAt || nowIso,
-      shareExpiresAt: expiresIso
+      shareExpiresAt: null
     };
 
     // Sincronizar snapshot + token a nube antes de entregar URL (si falla, no copiar link: el servidor no tendría el token).
@@ -8702,7 +8701,7 @@ window.shareReportView = async function(reportId) {
       shareToken: token,
       shareEnabled: true,
       shareCreatedAt: cloudPayload.shareCreatedAt,
-      shareExpiresAt: expiresIso
+      shareExpiresAt: null
     };
     delete localUpdated.reportHTML;
     generatedReports[reportIndex] = localUpdated;

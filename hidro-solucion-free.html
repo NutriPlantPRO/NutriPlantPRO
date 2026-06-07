@@ -676,17 +676,16 @@
     .fert-aporte-comp-row--flat {
       display: flex;
       flex-wrap: nowrap;
-      gap: 4px;
+      gap: 6px;
       align-items: flex-end;
-      width: max-content;
-      min-width: min(100%, max-content);
+      width: max(100%, max-content);
+      min-width: 100%;
       padding: 2px 0 4px;
     }
     .fert-comp-cell {
-      flex: 0 0 92px;
-      width: 92px;
-      min-width: 92px;
-      padding: 6px 5px 5px;
+      flex: 1 1 104px;
+      min-width: 104px;
+      padding: 6px 6px 5px;
       border-radius: 8px;
       box-sizing: border-box;
     }
@@ -764,6 +763,85 @@
       line-height: 1.45;
       background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
       border-top: 1px solid #e2e8f0;
+    }
+    .fert-aporte-row-out-head {
+      margin: 0 0 8px 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .fert-aporte-row-out-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      max-width: 100%;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 #f1f5f9;
+    }
+    .fert-aporte-row-out-scroll::-webkit-scrollbar { height: 5px; }
+    .fert-aporte-row-out-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .fert-aporte-row-out-chips {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 6px;
+      width: max(100%, max-content);
+      min-width: 100%;
+    }
+    .fert-aporte-aporte-chip {
+      flex: 1 1 128px;
+      min-width: 128px;
+      padding: 8px 10px 7px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      box-sizing: border-box;
+    }
+    .fert-aporte-aporte-chip-ion {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .fert-aporte-aporte-chip-val {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      line-height: 1.35;
+    }
+    .fert-aporte-aporte-chip.fert-comp-cell--an {
+      background: rgba(254, 243, 199, 0.55);
+      border-color: rgba(202, 138, 4, 0.2);
+    }
+    .fert-aporte-aporte-chip.fert-comp-cell--an .fert-aporte-aporte-chip-ion { color: #a16207; }
+    .fert-aporte-aporte-chip.fert-comp-cell--cl {
+      background: rgba(255, 237, 213, 0.48);
+      border-color: rgba(217, 119, 6, 0.18);
+    }
+    .fert-aporte-aporte-chip.fert-comp-cell--cl .fert-aporte-aporte-chip-ion { color: #c2410c; }
+    .fert-aporte-aporte-chip.fert-comp-cell--cat {
+      background: rgba(254, 226, 226, 0.5);
+      border-color: rgba(185, 28, 28, 0.18);
+    }
+    .fert-aporte-aporte-chip.fert-comp-cell--cat .fert-aporte-aporte-chip-ion { color: #b91c1c; }
+    .fert-aporte-aporte-chip.fert-comp-cell--nh4 {
+      background: rgba(255, 241, 246, 0.55);
+      border-color: rgba(190, 18, 60, 0.18);
+    }
+    .fert-aporte-aporte-chip.fert-comp-cell--nh4 .fert-aporte-aporte-chip-ion { color: #be123c; }
+    .fert-aporte-aporte-chip.fert-comp-cell--micro {
+      background: rgba(226, 232, 240, 0.55);
+      border-color: rgba(100, 116, 139, 0.2);
+    }
+    .fert-aporte-aporte-chip.fert-comp-cell--micro .fert-aporte-aporte-chip-ion { color: #475569; }
+    .fert-aporte-aporte-empty {
+      color: #94a3b8;
+      font-style: italic;
     }
     .fert-aporte-actions {
       flex: 0 0 auto;
@@ -2560,6 +2638,41 @@
       return cat.sumRows(fertAporteState.rows);
     }
 
+    function fertAporteBuildRowSummaryHtml(row) {
+      if (!row.totals) return '<span class="fert-aporte-aporte-empty">Sin aporte (dosis 0 o % en 0)</span>';
+      var t = row.totals;
+      var chips = [];
+      ['N_NO3', 'N_NH4', 'P', 'K', 'Ca', 'Mg', 'S', 'Cl'].forEach(function (k) {
+        var m = t.meq[k];
+        if (m > 0.001) {
+          chips.push(
+            '<div class="fert-aporte-aporte-chip ' + fertAporteCompCellClass(k) + '">' +
+              '<span class="fert-aporte-aporte-chip-ion">' + fertAporteLabelNutrient(k) + '</span>' +
+              '<span class="fert-aporte-aporte-chip-val">' + m.toFixed(2) + ' meq</span>' +
+              '<span class="fert-aporte-aporte-chip-val">' + t.ppm[k].toFixed(1) + ' ppm</span>' +
+            '</div>'
+          );
+        }
+      });
+      window.HydroFertAporteCatalog.MICRO_KEYS.forEach(function (k) {
+        var p = t.ppm[k];
+        if (p > 0.001) {
+          chips.push(
+            '<div class="fert-aporte-aporte-chip ' + fertAporteCompCellClass(k) + '">' +
+              '<span class="fert-aporte-aporte-chip-ion">' + fertAporteLabelNutrient(k) + '</span>' +
+              '<span class="fert-aporte-aporte-chip-val">' + p.toFixed(2) + ' ppm</span>' +
+            '</div>'
+          );
+        }
+      });
+      if (!chips.length) return '<span class="fert-aporte-aporte-empty">Sin aporte (dosis 0 o % en 0)</span>';
+      return (
+        '<div class="fert-aporte-row-out-scroll">' +
+          '<div class="fert-aporte-row-out-chips">' + chips.join('') + '</div>' +
+        '</div>'
+      );
+    }
+
     function fertAporteFormatRowSummary(row) {
       if (!row.totals) return '';
       var t = row.totals;
@@ -2581,7 +2694,11 @@
         var card = document.querySelector('[data-fert-card="' + row.id + '"]');
         if (!card) return;
         var out = card.querySelector('.fert-aporte-row-out');
-        if (out) out.innerHTML = '<strong>Aporte fila:</strong> ' + fertAporteFormatRowSummary(row);
+        if (out) {
+          out.innerHTML =
+            '<div class="fert-aporte-row-out-head"><strong>Aporte fila</strong></div>' +
+            fertAporteBuildRowSummaryHtml(row);
+        }
       });
       fertAporteRenderTotalsTable('fertAporteMeqWrap', 'meq');
       fertAporteRenderTotalsTable('fertAportePpmWrap', 'ppm');
@@ -2827,7 +2944,10 @@
           (isInlineFormula ? '<div class="fert-aporte-note">Escribe la fórmula y pulsa <strong>Calcular %</strong>. Luego ajusta % si tu producto difiere del teórico.</div>' : '') +
           (isInlinePct ? '<div class="fert-aporte-note">Captura los <strong>% elementales</strong> de la ficha del proveedor (mezcla comercial). Todos los campos son editables.</div>' : '') +
           compGrid +
-          '<div class="fert-aporte-row-out"><strong>Aporte fila:</strong> ' + fertAporteFormatRowSummary(row) + '</div>' +
+          '<div class="fert-aporte-row-out">' +
+            '<div class="fert-aporte-row-out-head"><strong>Aporte fila</strong></div>' +
+            fertAporteBuildRowSummaryHtml(row) +
+          '</div>' +
           '</div>'
         );
       }).join('');

@@ -97,3 +97,9 @@
   to = "/.netlify/functions/plan-pro-nutri-ask"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/nutri-pro-upload"
+  to = "/.netlify/functions/nutri-pro-upload"
+  status = 200
+  force = true

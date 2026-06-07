@@ -1,4 +1,4 @@
-# Nutri PRO — Conocimiento ChatGPT Socio (OpenAPI v2.7)
+# Nutri PRO — Conocimiento ChatGPT Socio (OpenAPI v2.8)
 
 ## Acción principal: `nutri_pro_ask`
 
@@ -94,7 +94,49 @@ Cuando Jesús pida **guardar un reporte**, resumen o documento en una carpeta:
 
 Respuesta útil: `short_path`, `nutri_file_id`, `text_indexed`, `folder_path`. Confirma al usuario que ya está en la nube y en Plan PRO → Nutri PRO.
 
-**Word (.docx):** si solo envías texto, el servidor guarda como `.txt` indexable. Para binario real usa `content_base64`.
+**Word (.docx):** si solo envías texto, el servidor guarda como `.txt` indexable.
+
+### ⚠️ Adjunto PDF/Excel en ChatGPT (muy importante)
+
+**ChatGPT Actions NO puede enviar el archivo adjunto en binario real** a la API. Si mandas `content_base64` inventado o truncado, Supabase guardará un archivo corrupto (p. ej. PDF de 12 bytes, `Invalid PDF structure`).
+
+| Lo que pide Jesús | Qué debes hacer |
+|-------------------|-----------------|
+| Guardar **contenido** del PDF adjunto | Lee el PDF en el chat → `nutri_pro_save` con **`content`** + `filename` **`.md` o `.txt`** |
+| Guardar el **PDF original** tal cual | **No uses** `nutri_pro_save` con `.pdf`. Dile: subir en **Plan PRO → chat Socio → 📎** o manual en Nutri PRO |
+| Reporte que tú generas | `content` + `.md` — perfecto |
+
+**Nunca:** `filename: "algo.pdf"` + `content` con texto suelto, ni `content_base64` si no tienes el binario completo verificado.
+
+Si la API responde `chatgpt_attachment_limit: true`, explica el límite y ofrece guardar versión `.md` indexada o subir original en Plan PRO.
+
+## Subir archivo ORIGINAL (PDF, Excel…): `nutri_pro_upload_link`
+
+Cuando Jesús **adjunta un archivo** y quiere el **binario real** en Nutri PRO:
+
+1. `nutri_pro_upload_link` con `folder_path` o `folder_title` (y opcional `title`, `suggested_filename`).
+2. Devuelve **`upload_url`** — envías ese enlace tal cual (cópialo en el chat).
+3. Jesús abre el enlace en **celular o PC**, inicia sesión NutriPlant admin si hace falta, sube el archivo.
+4. Cuando diga **«ya subí»**: `nutri_pro_upload_status` con `upload_id`.
+
+```json
+{
+  "action": "nutri_pro_upload_link",
+  "params": {
+    "folder_path": "Personal",
+    "title": "SAT segunda prueba desde GPT",
+    "suggested_filename": "SAT-segunda-prueba.pdf",
+    "ttl_minutes": 30
+  }
+}
+```
+
+Confirma con `short_path`, `text_indexed` y que ya está en la nube.
+
+| Situación | Acción |
+|-----------|--------|
+| Texto que tú generas | `nutri_pro_save` + `content` |
+| PDF/Excel adjunto original | `nutri_pro_upload_link` → enlace → `nutri_pro_upload_status` |
 
 ## Otras acciones
 
@@ -103,7 +145,9 @@ Respuesta útil: `short_path`, `nutri_file_id`, `text_indexed`, `folder_path`. C
 | `nutri_pro_search` | Buscar archivos **y** enlaces por palabra (`kind`: `all`, `files`, `links`) |
 | `nutri_pro_catalog` | Inventario: carpetas, archivos (`description` = nota breve) y `links[]` |
 | `nutri_pro_file_text` | Más texto de archivo (`offset` para paginar) |
-| `nutri_pro_save` | **Guardar** reporte/archivo en carpeta Supabase (indexa texto) |
+| `nutri_pro_save` | **Guardar** texto generado (content) en carpeta |
+| `nutri_pro_upload_link` | **Enlace móvil** para subir PDF/Excel real |
+| `nutri_pro_upload_status` | Comprobar si ya subió (`upload_id`) |
 | `plan_pro_item` | Detalle apunte + `nutri_refs` |
 
 ## Reglas
@@ -115,4 +159,4 @@ Respuesta útil: `short_path`, `nutri_file_id`, `text_indexed`, `folder_path`. C
 
 ## Deploy
 
-OpenAPI **v2.7.0** + este archivo en Knowledge. Reimporta Actions en ChatGPT tras deploy.
+OpenAPI **v2.8.0** + este archivo en Knowledge. Reimporta Actions en ChatGPT tras deploy.

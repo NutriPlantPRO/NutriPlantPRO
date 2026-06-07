@@ -9330,12 +9330,8 @@
                             const rawDate = r?.timestamp || r?.createdAt || r?.date || '';
                             const dateText = rawDate ? new Date(rawDate).toLocaleString('es-MX') : 'Fecha no disponible';
                             const shareToken = String(r?.shareToken || r?.share_token || '').trim();
-                            const shareExpiresAt = r?.shareExpiresAt || r?.share_expires_at || null;
                             const shareCreatedAt = r?.shareCreatedAt || r?.share_created_at || null;
-                            const shareExpMs = shareExpiresAt ? new Date(shareExpiresAt).getTime() : NaN;
-                            const shareIsExpired = Number.isFinite(shareExpMs) ? (shareExpMs < Date.now()) : false;
                             const shareEnabled = !!shareToken && (r?.shareEnabled !== false && r?.share_enabled !== false);
-                            const shareExpText = shareExpiresAt ? new Date(shareExpiresAt).toLocaleString('es-MX') : '';
                             const shareCreatedText = shareCreatedAt ? new Date(shareCreatedAt).toLocaleString('es-MX') : '';
                             const sections = Array.isArray(r?.selectedSections) ? r.selectedSections : [];
                             const sectionLabelMap = {
@@ -9358,7 +9354,7 @@
                                             <div style="font-size:12px;color:#64748b;margin-top:4px;">${escapeHtml(dateText)}</div>
                                             <div style="font-size:12px;color:#334155;margin-top:6px;"><strong>Secciones:</strong> ${escapeHtml(sectionsText)}</div>
                                             ${shareEnabled
-                                                ? `<div style="font-size:11px;margin-top:4px;color:${shareIsExpired ? '#b45309' : '#065f46'};">🔗 Link compartido: ${shareIsExpired ? 'Vencido' : 'Vigente'}${shareExpText ? ` (vence: ${escapeHtml(shareExpText)})` : ''}${shareCreatedText ? ` · generado: ${escapeHtml(shareCreatedText)}` : ''}</div>`
+                                                ? `<div style="font-size:11px;margin-top:4px;color:#065f46;">🔗 Link compartido: Activo (sin vencimiento)${shareCreatedText ? ` · generado: ${escapeHtml(shareCreatedText)}` : ''}</div>`
                                                 : '<div style="font-size:11px;color:#64748b;margin-top:4px;">🔗 Link compartido: no generado</div>'}
                                             ${r?.reportHTML
                                                 ? '<div style="font-size:11px;color:#059669;margin-top:4px;">HTML de reporte disponible para abrir/imprimir</div>'
@@ -9372,8 +9368,8 @@
                                             </button>
                                             ${shareEnabled
                                                 ? `<button onclick="openProjectSharedReportLink('${encodeURIComponent(String(r?.id || ''))}', '${encodeURIComponent(shareToken)}')"
-                                                        style="background:${shareIsExpired ? '#9ca3af' : '#0ea5e9'};color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;"
-                                                        title="${shareIsExpired ? 'Este link está vencido; al abrir mostrará expirado.' : 'Abrir link compartido (vista pública)'}">
+                                                        style="background:#0ea5e9;color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;"
+                                                        title="Abrir link compartido (vista pública)">
                                                     🔗 Abrir link
                                                 </button>`
                                                 : ''}
