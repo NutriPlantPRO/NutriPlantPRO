@@ -594,11 +594,12 @@
       padding-right: 4px;
     }
     .np-nutri-folder-row {
+      position: relative;
       display: flex;
       align-items: center;
       gap: 6px;
       width: 100%;
-      padding: 8px 10px;
+      padding: 8px 10px 8px 14px;
       margin-bottom: 4px;
       border: 0;
       border-radius: 10px;
@@ -610,13 +611,37 @@
       text-align: left;
       cursor: pointer;
       transition: background 0.12s ease;
+      overflow: visible;
+    }
+    .np-nutri-folder-row::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 5px;
+      bottom: 5px;
+      width: 5px;
+      border-radius: 0 6px 6px 0;
+      background: var(--np-nutri-folder-accent, #94a3b8);
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--np-nutri-folder-accent, #94a3b8) 35%, transparent);
+      transition: width 0.12s ease, top 0.12s ease, bottom 0.12s ease;
     }
     .np-nutri-folder-row:hover {
       background: rgba(226, 232, 240, 0.65);
     }
+    .np-nutri-folder-row:hover::before {
+      width: 6px;
+    }
     .np-nutri-folder-row--active {
-      background: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 12%, #fff);
-      box-shadow: inset 3px 0 0 var(--np-nutri-folder-accent, #059669);
+      background: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 14%, #fff);
+    }
+    .np-nutri-folder-row--active::before {
+      top: 3px;
+      bottom: 3px;
+      width: 7px;
+      border-radius: 0 7px 7px 0;
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 22%, transparent),
+        0 2px 6px color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 28%, transparent);
     }
     .np-nutri-folder-swatch {
       flex-shrink: 0;
@@ -637,6 +662,23 @@
       margin: 8px 0 0;
       font-size: 11px;
       line-height: 1.4;
+    }
+    .np-nutri-folder-add-section {
+      margin-top: 10px;
+    }
+    .np-nutri-folder-add-section--sub {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(148, 163, 184, 0.35);
+    }
+    .np-nutri-folder-add-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
     .np-nutri-folders-sidebar .np-color-edit-bar {
       margin-top: 0;
@@ -879,9 +921,7 @@
       border-color: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 28%, rgba(148, 163, 184, 0.28));
     }
     .np-nutri-folder-wrap--child {
-      border-left: 2px solid var(--np-nutri-folder-accent, #94a3b8);
-      padding-left: 6px;
-      border-radius: 0 0 0 4px;
+      padding-left: 2px;
     }
     .np-nutri-link-form {
       display: grid;
@@ -6116,10 +6156,6 @@
       </div>
 
       <div id="npViewNutriPro" class="np-hide">
-        <section class="panel np-nutri-hero np-section-accent np-section-accent-green">
-          <h2>Nutri PRO</h2>
-          <p>Conocimiento técnico en la nube — archivos, enlaces clasificados y carpetas. Respaldo para ti y base para la IA.</p>
-        </section>
         <div id="npNutriSetupMsg" class="np-msg warn np-hide" style="margin-bottom:12px;">
           Ejecuta en Supabase SQL Editor: <code>supabase-plan-pro-nutri-pro.sql</code>, <code>supabase-plan-pro-nutri-pro-storage.sql</code>, <code>supabase-plan-pro-nutri-pro-links.sql</code> y <code>supabase-plan-pro-nutri-pro-folder-color.sql</code>
         </div>
@@ -6157,11 +6193,22 @@
                   <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriFolderRenameSave">Guardar</button>
                 </div>
               </div>
-              <div class="np-nutri-folder-add">
-                <input type="text" id="npNutriNewFolder" autocomplete="off" placeholder="Nueva carpeta…" aria-label="Nombre de nueva carpeta" />
-                <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriBtnAddFolder">Crear</button>
+              <div class="np-nutri-folder-add-section">
+                <span class="np-nutri-folder-add-label">Carpeta principal</span>
+                <div class="np-nutri-folder-add">
+                  <input type="text" id="npNutriNewRootFolder" autocomplete="off" placeholder="Ej. Fertirriego, Laboratorio…" aria-label="Nombre de carpeta principal" />
+                  <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriBtnAddRootFolder">Crear</button>
+                </div>
+                <p class="np-muted np-nutri-folder-add-hint">Al mismo nivel que Personal (carpetas de primer nivel).</p>
               </div>
-              <p id="npNutriFolderAddHint" class="np-muted np-nutri-folder-add-hint">Selecciona una carpeta y pulsa Crear para añadir subcarpetas dentro.</p>
+              <div class="np-nutri-folder-add-section np-nutri-folder-add-section--sub">
+                <span class="np-nutri-folder-add-label">Subcarpeta</span>
+                <div class="np-nutri-folder-add">
+                  <input type="text" id="npNutriNewFolder" autocomplete="off" placeholder="Subcarpeta…" aria-label="Nombre de subcarpeta" />
+                  <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriBtnAddFolder">Crear</button>
+                </div>
+                <p id="npNutriFolderAddHint" class="np-muted np-nutri-folder-add-hint">Dentro de la carpeta seleccionada en el árbol.</p>
+              </div>
             </aside>
             <div class="np-main-col">
               <section id="npNutriContentPanel" class="panel np-section-accent np-section-accent-nutri-folder">
@@ -17524,7 +17571,7 @@
       var empty = document.createElement('p');
       empty.className = 'np-muted';
       empty.style.cssText = 'margin:8px 4px 0;font-size:12px;line-height:1.4;';
-      empty.textContent = 'Sin carpetas. Crea la primera abajo.';
+      empty.textContent = 'Sin carpetas. Crea la primera carpeta principal abajo.';
       mount.appendChild(empty);
     }
     flat.forEach(function (row) {
@@ -17539,7 +17586,7 @@
       btn.type = 'button';
       btn.className =
         'np-nutri-folder-row' + (state.nutriProSelectedFolderId === f.id ? ' np-nutri-folder-row--active' : '');
-      btn.style.paddingLeft = 10 + row.depth * 14 + 'px';
+      btn.style.paddingLeft = 14 + row.depth * 12 + 'px';
       applyNutriProFolderRowAccent(btn, f.id);
       var sw = document.createElement('span');
       sw.className = 'np-nutri-folder-swatch';
@@ -17869,35 +17916,65 @@
     }
   }
 
-  async function createNutriProFolder() {
-    if (!state.client || !state.userId || !state.nutriProReady) return;
-    var inp = $('npNutriNewFolder');
-    var raw = inp && inp.value ? inp.value.trim() : '';
-    if (!raw) return;
-    var row = {
-      owner_id: state.userId,
-      parent_id: state.nutriProSelectedFolderId || null,
-      title: raw,
-      sort_order: 0
-    };
+  async function insertNutriProFolder(title, parentId) {
+    if (!state.client || !state.userId || !state.nutriProReady) return null;
+    var raw = String(title || '').trim();
+    if (!raw) return null;
     var res = await npCloudSyncTrack(function () {
-      return state.client.from('plan_pro_nutri_folders').insert(row).select('id').single();
+      return state.client
+        .from('plan_pro_nutri_folders')
+        .insert({
+          owner_id: state.userId,
+          parent_id: parentId || null,
+          title: raw,
+          sort_order: 0
+        })
+        .select('id')
+        .single();
     });
     if (res.error) {
       showToast(res.error.message || 'No se pudo crear la carpeta.', true);
-      return;
+      return null;
     }
+    return res.data || null;
+  }
+
+  async function createNutriProRootFolder() {
+    var inp = $('npNutriNewRootFolder');
+    var raw = inp && inp.value ? inp.value.trim() : '';
+    if (!raw) return;
+    var created = await insertNutriProFolder(raw, null);
+    if (!created || !created.id) return;
     if (inp) inp.value = '';
-    var parentTitle = state.nutriProSelectedFolderId ? nutriProFolderLabel(state.nutriProSelectedFolderId) : '';
-    showToast(parentTitle ? 'Subcarpeta creada en «' + parentTitle + '».' : 'Carpeta creada.');
+    showToast('Carpeta principal «' + raw + '» creada.');
     await loadNutriProFolders();
-    if (res.data && res.data.id) {
-      state.nutriProSelectedFolderId = res.data.id;
-      state.nutriProFolderEditingId = null;
-    }
+    state.nutriProSelectedFolderId = created.id;
+    state.nutriProFolderEditingId = null;
     renderNutriProFolderTree();
     syncNutriProFolderContext();
-    await loadNutriProFiles(state.nutriProSelectedFolderId);
+    await loadNutriProFiles(created.id);
+  }
+
+  async function createNutriProFolder() {
+    if (!state.nutriProSelectedFolderId) {
+      showToast('Selecciona una carpeta en el árbol para crear una subcarpeta.', true);
+      return;
+    }
+    var inp = $('npNutriNewFolder');
+    var raw = inp && inp.value ? inp.value.trim() : '';
+    if (!raw) return;
+    var parentId = state.nutriProSelectedFolderId;
+    var parentTitle = nutriProFolderLabel(parentId);
+    var created = await insertNutriProFolder(raw, parentId);
+    if (!created || !created.id) return;
+    if (inp) inp.value = '';
+    showToast('Subcarpeta creada en «' + parentTitle + '».');
+    await loadNutriProFolders();
+    state.nutriProSelectedFolderId = created.id;
+    state.nutriProFolderEditingId = null;
+    renderNutriProFolderTree();
+    syncNutriProFolderContext();
+    await loadNutriProFiles(created.id);
   }
 
   function updateNutriProUploadUi() {
@@ -18310,15 +18387,15 @@
     }
     if (addHint) {
       addHint.textContent = state.nutriProSelectedFolderId
-        ? 'Crear aquí añade una subcarpeta dentro de «' + folderTitle + '».'
-        : 'Crea una carpeta de primer nivel con el campo de abajo.';
+        ? 'Se creará dentro de «' + folderTitle + '».'
+        : 'Selecciona una carpeta en el árbol para crear una subcarpeta.';
     }
     if (newInp) {
       if (state.nutriProSelectedFolderId) {
         var short = folderTitle.length > 22 ? folderTitle.slice(0, 22) + '…' : folderTitle;
         newInp.placeholder = 'Subcarpeta en «' + short + '»…';
       } else {
-        newInp.placeholder = 'Nueva carpeta…';
+        newInp.placeholder = 'Subcarpeta…';
       }
     }
     syncNutriProFolderColorBar();
@@ -18647,6 +18724,23 @@
           nutriSearchInp.value = '';
           ++state.nutriProSearchGen;
           renderNutriProFileSearchResults([], '');
+        }
+      });
+    }
+    var addRootF = $('npNutriBtnAddRootFolder');
+    if (addRootF && addRootF.dataset.npWired !== '1') {
+      addRootF.dataset.npWired = '1';
+      addRootF.addEventListener('click', function () {
+        createNutriProRootFolder();
+      });
+    }
+    var newRootF = $('npNutriNewRootFolder');
+    if (newRootF && newRootF.dataset.npWired !== '1') {
+      newRootF.dataset.npWired = '1';
+      newRootF.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          createNutriProRootFolder();
         }
       });
     }
