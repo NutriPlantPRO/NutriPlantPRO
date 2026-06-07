@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.plan_pro_nutri_files (
   original_name   text NOT NULL,
   storage_path    text NOT NULL,
   mime_type       text,
+  description     text,
   size_bytes      bigint NOT NULL DEFAULT 0,
   created_at      timestamptz NOT NULL DEFAULT now(),
   updated_at      timestamptz NOT NULL DEFAULT now()

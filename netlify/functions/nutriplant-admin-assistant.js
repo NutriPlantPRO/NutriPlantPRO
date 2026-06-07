@@ -1866,7 +1866,7 @@ async function fetchNutriProFiles(supabase, ownerId, opts) {
   opts = opts || {};
   let q = supabase
     .from('plan_pro_nutri_files')
-    .select('id,folder_id,title,original_name,mime_type,size_bytes,storage_path,created_at,updated_at')
+    .select('id,folder_id,title,original_name,description,mime_type,size_bytes,storage_path,created_at,updated_at')
     .eq('owner_id', ownerId)
     .order('title', { ascending: true });
   if (opts.folder_id) q = q.eq('folder_id', opts.folder_id);
@@ -1909,6 +1909,7 @@ function mapNutriProFileRow(file, foldersById, extractByFileId) {
     folder_id: file.folder_id || null,
     title: file.title || file.original_name || 'Archivo',
     original_name: file.original_name || null,
+    description: (file.description || '').trim() || null,
     short_path: nutriFileShortPath(file, foldersById),
     mime_type: file.mime_type || null,
     size_bytes: file.size_bytes || 0,
@@ -2021,7 +2022,7 @@ async function enrichNutriRefsWithFiles(supabase, ownerId, refs, foldersById) {
   const ids = refs.map((r) => r.nutri_file_id).filter(Boolean);
   const { data, error } = await supabase
     .from('plan_pro_nutri_files')
-    .select('id,folder_id,title,original_name,mime_type,size_bytes,updated_at')
+    .select('id,folder_id,title,original_name,description,mime_type,size_bytes,updated_at')
     .eq('owner_id', ownerId)
     .in('id', ids);
   if (error && !nutriProSchemaMissing(error)) throw new Error('nutri_refs enrich: ' + error.message);
@@ -2038,6 +2039,7 @@ async function enrichNutriRefsWithFiles(supabase, ownerId, refs, foldersById) {
       ...r,
       file_found: true,
       title: f.title || f.original_name,
+      description: (f.description || '').trim() || null,
       short_path: nutriFileShortPath(f, foldersById),
       mime_type: f.mime_type || null,
       size_bytes: f.size_bytes || 0,
@@ -2195,7 +2197,7 @@ async function handleNutriProSearch(supabase, params) {
 
     files = ranked
       .filter((f) => {
-        const hay = [f.title, f.original_name, f.short_path, f.mime_type].filter(Boolean).join(' ').toLowerCase();
+        const hay = [f.title, f.original_name, f.description, f.short_path, f.mime_type].filter(Boolean).join(' ').toLowerCase();
         return hay.includes(q) || extractTextByFileId[f.id] || f.matched_in_content || f.score > 0;
       })
       .map((f) => {
@@ -2230,7 +2232,7 @@ async function handleNutriProSearch(supabase, params) {
   if (nutriFileId && !files.some((f) => f.id === nutriFileId)) {
     const { data: one } = await supabase
       .from('plan_pro_nutri_files')
-      .select('id,folder_id,title,original_name,mime_type,size_bytes,updated_at')
+      .select('id,folder_id,title,original_name,description,mime_type,size_bytes,updated_at')
       .eq('owner_id', ownerId)
       .eq('id', nutriFileId)
       .maybeSingle();
@@ -2295,7 +2297,7 @@ async function handleNutriProAsk(supabase, params) {
   if (nutriFileId) {
     const { data: oneFile } = await supabase
       .from('plan_pro_nutri_files')
-      .select('id,folder_id,title,original_name,mime_type,size_bytes,storage_path,updated_at')
+      .select('id,folder_id,title,original_name,description,mime_type,size_bytes,storage_path,updated_at')
       .eq('owner_id', ownerId)
       .eq('id', nutriFileId)
       .maybeSingle();
@@ -2347,6 +2349,7 @@ async function handleNutriProAsk(supabase, params) {
       rank: idx + 1,
       nutri_file_id: hit.id,
       title: hit.title,
+      description: hit.description || null,
       short_path: hit.short_path,
       format: hit.extract_format || null,
       text_indexed: hit.text_indexed,
@@ -2470,7 +2473,7 @@ async function handleNutriProFileText(supabase, params) {
 
   const { data: fileRec, error: fileErr } = await supabase
     .from('plan_pro_nutri_files')
-    .select('id,folder_id,title,original_name,mime_type,size_bytes,updated_at')
+    .select('id,folder_id,title,original_name,description,mime_type,size_bytes,updated_at')
     .eq('owner_id', ownerId)
     .eq('id', fileId)
     .maybeSingle();

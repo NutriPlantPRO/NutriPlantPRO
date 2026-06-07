@@ -13,7 +13,7 @@ Para **cualquier pregunta sobre documentos** (PDF, Excel, Word, cifras, tablas):
 | Campo | Uso |
 |-------|-----|
 | `unified_citations[]` | **Cita principal.** Cada `line`: `📝 Apunte ↔ 📎 ruta: «fragmento»` |
-| `sources[]` | Detalle por archivo (snippets, relevance_score) |
+| `sources[]` | Detalle por archivo (snippets, `description`, relevance_score) |
 | `linked_apuntes` | Apuntes Plan PRO con 📎 a esos archivos |
 | `related_apuntes` | Apuntes que mencionan el tema sin enlace directo |
 | `link_gap_suggestions` | «Este apunte no tiene 📎 pero hay 3 PDFs…» — **dilo al usuario** |
@@ -37,7 +37,7 @@ Ejemplo de tono:
 | action | Cuándo |
 |--------|--------|
 | `nutri_pro_search` | Listar/buscar por palabra (`include_snippets: true`) |
-| `nutri_pro_catalog` | Inventario bóveda |
+| `nutri_pro_catalog` | Inventario bóveda (incluye `description` = nota breve del usuario por archivo) |
 | `nutri_pro_file_text` | Más texto (`offset` para paginar) |
 | `plan_pro_item` | Detalle apunte + `nutri_refs` |
 

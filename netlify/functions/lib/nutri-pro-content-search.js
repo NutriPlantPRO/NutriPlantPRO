@@ -120,11 +120,13 @@ function countTermOccurrences(textLc, term) {
 }
 
 /**
- * @param {{ title?: string, original_name?: string, short_path?: string, text_plain?: string }} meta
+ * @param {{ title?: string, original_name?: string, short_path?: string, description?: string, text_plain?: string }} meta
  */
 function scoreNutriContentMatch(meta, terms, qRaw) {
   const q = normalizeForSearch(qRaw);
-  const titleHay = normalizeForSearch([meta.title, meta.original_name, meta.short_path].filter(Boolean).join(' '));
+  const titleHay = normalizeForSearch(
+    [meta.title, meta.original_name, meta.short_path, meta.description].filter(Boolean).join(' ')
+  );
   const textHay = normalizeForSearch(meta.text_plain || '');
   let score = 0;
   const matchedTerms = [];
