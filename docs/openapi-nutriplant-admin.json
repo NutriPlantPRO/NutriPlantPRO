@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.4.0",
-    "description": "Plan PRO + Nutri PRO (catálogo, búsqueda en texto, nutri_pro_file_text). plan_pro_item incluye nutri_refs. Ver NUTRI-PRO-CONOCIMIENTO-GPT.md."
+    "version": "2.6.0",
+    "description": "Plan PRO + Nutri PRO Fase 4 (nutri_pro_ask unified_citations, link_gap_suggestions). Ver NUTRI-PRO-CONOCIMIENTO-GPT.md."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Consulta NutriPlant, Plan PRO y Nutri PRO",
-        "description": "NutriPlant: project_analyses, manual_tecnico_catalog, nutrition_catalogs. Plan PRO: plan_pro_day/week/search/item, create/update. Nutri PRO: nutri_pro_catalog, nutri_pro_search (nombre + texto indexado), nutri_pro_file_text (leer PDF/Word/Excel/PowerPoint). plan_pro_item devuelve nutri_refs.",
+        "description": "NutriPlant + Plan PRO. Nutri PRO Fase 4: nutri_pro_ask devuelve unified_citations (apunte↔archivo↔fragmento) y link_gap_suggestions. También nutri_pro_search, nutri_pro_file_text, plan_pro_item.nutri_refs.",
         "requestBody": {
           "required": true,
           "content": {
@@ -62,6 +62,7 @@
               "plan_pro_update",
               "nutri_pro_catalog",
               "nutri_pro_search",
+              "nutri_pro_ask",
               "nutri_pro_file_text",
               "radar_project",
               "radar_search",
@@ -86,7 +87,10 @@
               "mode": { "type": "string", "description": "project_climate: saved|live|rainfall_refresh|all" },
               "email": { "type": "string" },
               "crop": { "type": "string" },
-              "q": { "type": "string", "description": "Búsqueda texto (apuntes, Nutri PRO archivos/enlaces)" },
+              "q": { "type": "string", "description": "Búsqueda o pregunta (apuntes, Nutri PRO; nutri_pro_ask)" },
+              "question": { "type": "string", "description": "nutri_pro_ask: alias de q" },
+              "include_snippets": { "type": "boolean", "description": "nutri_pro_search: devolver fragmentos de texto" },
+              "snippet_chars": { "type": "integer", "description": "nutri_pro_ask: longitud máx. por fragmento (default 320)" },
               "item_id": { "type": "string", "description": "UUID apunte Plan PRO" },
               "nutri_file_id": { "type": "string", "description": "UUID archivo Nutri PRO" },
               "file_id": { "type": "string", "description": "Alias de nutri_file_id" },

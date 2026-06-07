@@ -15,6 +15,8 @@ const PROFILE_SELECT =
 
 const ADMIN_EMAIL_LC = 'admin@nutriplantpro.com';
 
+const nutriContentSearch = require('./lib/nutri-pro-content-search');
+
 function corsHeaders() {
   return {
     'Content-Type': 'application/json',
@@ -1945,6 +1947,60 @@ async function fetchNutriProExtractsMap(supabase, ownerId, fileIds) {
   return map;
 }
 
+async function fetchNutriProIndexedExtracts(supabase, ownerId, opts) {
+  opts = opts || {};
+  let q = supabase
+    .from('plan_pro_nutri_file_extracts')
+    .select('file_id,status,format_kind,text_plain,meta_json,extracted_at')
+    .eq('owner_id', ownerId)
+    .eq('status', 'done');
+  if (opts.file_id) q = q.eq('file_id', opts.file_id);
+  const term = (opts.ilike_term || '').trim();
+  if (term) q = q.ilike('text_plain', '%' + term + '%');
+  const limit = Math.min(parseInt(opts.limit, 10) || 120, 150);
+  q = q.limit(limit);
+  const { data, error } = await q;
+  if (error) {
+    if (/plan_pro_nutri_file_extracts|does not exist|schema/i.test(error.message || '')) return [];
+    throw new Error('plan_pro_nutri_file_extracts search: ' + error.message);
+  }
+  return data || [];
+}
+
+async function findApuntesForNutriAsk(supabase, ownerId, fileIds, qRaw, areasById, categories, opts) {
+  opts = opts || {};
+  const limit = Math.min(parseInt(opts.limit, 10) || 10, 20);
+  const items = await fetchPlanProItems(supabase, ownerId, { limit: 150 });
+  const idSet = new Set(fileIds || []);
+  const qLc = nutriContentSearch.normalizeForSearch(qRaw);
+  const terms = nutriContentSearch.tokenizeQuery(qRaw);
+  const linked = [];
+  const related = [];
+
+  items.forEach((item) => {
+    const refs = collectNutriRefsFromItem(item);
+    const linkedRefs = refs.filter((r) => idSet.has(r.nutri_file_id));
+    const row = planProItemListRow(item, areasById, categories);
+    if (linkedRefs.length) {
+      linked.push({
+        ...row,
+        nutri_file_ids: linkedRefs.map((r) => r.nutri_file_id),
+        nutri_ref_labels: linkedRefs.map((r) => r.label)
+      });
+      return;
+    }
+    const textHit =
+      (qLc && itemMatchesSearch(item, qLc, areasById)) ||
+      terms.some((t) => itemMatchesSearch(item, t, areasById));
+    if (textHit) related.push(row);
+  });
+
+  return {
+    linked_apuntes: linked.slice(0, limit),
+    related_apuntes: related.slice(0, limit)
+  };
+}
+
 function mapNutriProLinkRow(link, foldersById) {
   const folderPath = link.folder_id ? nutriFolderPathChain(link.folder_id, foldersById).join(' / ') : 'Raíz';
   return {
@@ -2046,9 +2102,9 @@ async function handleNutriProCatalog(supabase, params) {
     files,
     links,
     gpt_usage:
-      'Lista tu bóveda Nutri PRO. nutri_pro_search busca por nombre y dentro del texto indexado. nutri_pro_file_text lee el contenido extraído (PDF, Word, Excel, PowerPoint, txt). plan_pro_item.nutri_refs cruza apuntes con archivos.',
+      'Lista tu bóveda Nutri PRO. nutri_pro_ask responde preguntas con fragmentos citados. nutri_pro_search busca con ranking. nutri_pro_file_text lee texto completo por trozos.',
     lectura_archivos:
-      'Formatos indexados: PDF, .docx, .xlsx/.xls/.csv, .pptx, .txt/.rtf, OpenDocument (.odt/.ods/.odp). Imágenes y .doc/.ppt antiguos: sin texto aún. Usa nutri_pro_file_text con nutri_file_id.'
+      'Formatos indexados: PDF, .docx, .xlsx/.xls/.csv, .pptx, .txt/.rtf, OpenDocument (.odt/.ods/.odp). Imágenes y .doc/.ppt antiguos: sin texto aún. Preguntas: nutri_pro_ask.'
   };
 }
 
@@ -2058,7 +2114,8 @@ async function handleNutriProSearch(supabase, params) {
     return { ok: true, domain: 'nutri_pro', error: 'No se encontró usuario admin para Nutri PRO.' };
   }
 
-  const q = (params.q || params.search || '').trim().toLowerCase();
+  const qRaw = (params.q || params.search || '').trim();
+  const q = qRaw.toLowerCase();
   if (!q) {
     return { ok: true, domain: 'nutri_pro', error: 'Indica params.q o params.search (texto a buscar).' };
   }
@@ -2079,6 +2136,9 @@ async function handleNutriProSearch(supabase, params) {
   const kind = String(params.kind || 'all').toLowerCase();
   const category = (params.category || '').trim() || null;
   const limit = Math.min(parseInt(params.limit, 10) || 40, 80);
+  const includeSnippets = params.include_snippets === true || params.include_snippets === 'true';
+  const terms = nutriContentSearch.tokenizeQuery(qRaw);
+  const dbTerm = nutriContentSearch.bestDbFilterTerm(terms, qRaw);
 
   const fileOpts = { limit: 500 };
   const linkOpts = { limit: 500 };
@@ -2091,39 +2151,69 @@ async function handleNutriProSearch(supabase, params) {
   let files = [];
   let links = [];
 
-  const contentFileIds = new Set();
-  if (kind !== 'links') {
-    const { data: contentHits, error: contentErr } = await supabase
-      .from('plan_pro_nutri_file_extracts')
-      .select('file_id')
-      .eq('owner_id', ownerId)
-      .eq('status', 'done')
-      .ilike('text_plain', '%' + q + '%')
-      .limit(80);
-    if (!contentErr) {
-      (contentHits || []).forEach((row) => {
-        if (row && row.file_id) contentFileIds.add(row.file_id);
-      });
-    }
-  }
+  const extractTextByFileId = {};
 
   if (kind !== 'links') {
     const filesRes = await fetchNutriProFiles(supabase, ownerId, fileOpts);
-    const extractMap = await fetchNutriProExtractsMap(
-      supabase,
-      ownerId,
-      (filesRes.rows || []).map((f) => f.id)
+    const fileIds = (filesRes.rows || []).map((f) => f.id);
+    const extractMap = await fetchNutriProExtractsMap(supabase, ownerId, fileIds);
+
+    const contentRows = await fetchNutriProIndexedExtracts(supabase, ownerId, {
+      ilike_term: dbTerm || q,
+      limit: 100
+    });
+    contentRows.forEach((row) => {
+      if (row && row.file_id) extractTextByFileId[row.file_id] = row.text_plain || '';
+    });
+
+    const missingTextIds = fileIds.filter(
+      (id) => extractMap[id] && extractMap[id].status === 'done' && !extractTextByFileId[id]
     );
-    files = (filesRes.rows || [])
-      .map((f) => mapNutriProFileRow(f, foldersById, extractMap))
+    if (missingTextIds.length) {
+      const { data: moreText, error: moreErr } = await supabase
+        .from('plan_pro_nutri_file_extracts')
+        .select('file_id,text_plain')
+        .eq('owner_id', ownerId)
+        .eq('status', 'done')
+        .in('file_id', missingTextIds.slice(0, 80));
+      if (!moreErr) {
+        (moreText || []).forEach((row) => {
+          if (row && row.file_id) extractTextByFileId[row.file_id] = row.text_plain || '';
+        });
+      }
+    }
+
+    const ranked = nutriContentSearch.rankNutriHits(
+      (filesRes.rows || []).map((f) => ({
+        ...mapNutriProFileRow(f, foldersById, extractMap),
+        text_plain: extractTextByFileId[f.id] || ''
+      })),
+      terms,
+      qRaw,
+      120
+    );
+
+    files = ranked
       .filter((f) => {
         const hay = [f.title, f.original_name, f.short_path, f.mime_type].filter(Boolean).join(' ').toLowerCase();
-        return hay.includes(q) || contentFileIds.has(f.id);
+        return hay.includes(q) || extractTextByFileId[f.id] || f.matched_in_content || f.score > 0;
       })
-      .map((f) => ({
-        ...f,
-        matched_in_content: contentFileIds.has(f.id) || undefined
-      }));
+      .map((f) => {
+        const textPlain = extractTextByFileId[f.id] || '';
+        const row = {
+          ...f,
+          matched_in_content: !!textPlain || f.matched_in_content || undefined,
+          relevance_score: f.score
+        };
+        if (includeSnippets && textPlain) {
+          row.snippets = nutriContentSearch.extractSnippets(textPlain, terms.length ? terms : [q], {
+            maxSnippets: 2,
+            maxSnippetLen: 280
+          });
+        }
+        delete row.text_plain;
+        return row;
+      });
   }
 
   if (kind !== 'files') {
@@ -2159,8 +2249,205 @@ async function handleNutriProSearch(supabase, params) {
     counts: { files: files.length, links: links.length },
     files: files.slice(0, limit),
     links: links.slice(0, limit),
+    search_terms: terms,
+    ranked: true,
     gpt_hint:
-      'Si matched_in_content es true, el texto está indexado: usa nutri_pro_file_text con nutri_file_id para leer fragmentos. Cruza apuntes con plan_pro_item.nutri_refs.'
+      'Ordenado por relevance_score. snippets (si include_snippets) o nutri_pro_ask para preguntas. Cruza apuntes con plan_pro_item / linked_apuntes en nutri_pro_ask.'
+  };
+}
+
+async function handleNutriProAsk(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'nutri_pro', error: 'No se encontró usuario admin para Nutri PRO.' };
+  }
+
+  const qRaw = (params.q || params.question || params.search || '').trim();
+  if (!qRaw) {
+    return { ok: true, domain: 'nutri_pro', error: 'Indica params.q o params.question (tu pregunta).' };
+  }
+
+  const foldersRes = await fetchNutriProFolders(supabase, ownerId);
+  if (!foldersRes.ok) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      available: false,
+      error: 'Nutri PRO no instalado.',
+      setup_sql: foldersRes.setup
+    };
+  }
+
+  const foldersById = nutriFolderMapById(foldersRes.rows);
+  const folderId = (params.folder_id || '').trim() || null;
+  const nutriFileId = (params.nutri_file_id || params.file_id || '').trim() || null;
+  const limit = Math.min(parseInt(params.limit, 10) || 6, 12);
+  const snippetChars = Math.min(parseInt(params.snippet_chars, 10) || 320, 500);
+  const terms = nutriContentSearch.tokenizeQuery(qRaw);
+  const dbTerm = nutriContentSearch.bestDbFilterTerm(terms, qRaw);
+
+  const fileOpts = { limit: 500 };
+  if (folderId) fileOpts.folder_id = folderId;
+
+  let candidateFiles = [];
+  const extractTextByFileId = {};
+
+  if (nutriFileId) {
+    const { data: oneFile } = await supabase
+      .from('plan_pro_nutri_files')
+      .select('id,folder_id,title,original_name,mime_type,size_bytes,storage_path,updated_at')
+      .eq('owner_id', ownerId)
+      .eq('id', nutriFileId)
+      .maybeSingle();
+    if (oneFile) candidateFiles = [oneFile];
+    const rows = await fetchNutriProIndexedExtracts(supabase, ownerId, { file_id: nutriFileId, limit: 1 });
+    rows.forEach((row) => {
+      if (row && row.file_id) extractTextByFileId[row.file_id] = row.text_plain || '';
+    });
+  } else {
+    const contentRows = await fetchNutriProIndexedExtracts(supabase, ownerId, {
+      ilike_term: dbTerm || nutriContentSearch.normalizeForSearch(qRaw),
+      limit: 100
+    });
+    contentRows.forEach((row) => {
+      if (row && row.file_id) extractTextByFileId[row.file_id] = row.text_plain || '';
+    });
+    const filesRes = await fetchNutriProFiles(supabase, ownerId, fileOpts);
+    candidateFiles = filesRes.rows || [];
+  }
+
+  const extractMap = await fetchNutriProExtractsMap(
+    supabase,
+    ownerId,
+    candidateFiles.map((f) => f.id)
+  );
+
+  const ranked = nutriContentSearch.rankNutriHits(
+    candidateFiles.map((f) => {
+      const mapped = mapNutriProFileRow(f, foldersById, extractMap);
+      return {
+        ...mapped,
+        text_plain: extractTextByFileId[f.id] || ''
+      };
+    }),
+    terms,
+    qRaw,
+    limit
+  );
+
+  const sources = ranked.map((hit, idx) => {
+    const textPlain = extractTextByFileId[hit.id] || hit.text_plain || '';
+    const snippets = textPlain
+      ? nutriContentSearch.extractSnippets(textPlain, terms.length ? terms : [nutriContentSearch.normalizeForSearch(qRaw)], {
+          maxSnippets: 3,
+          maxSnippetLen: snippetChars
+        })
+      : [];
+    return {
+      rank: idx + 1,
+      nutri_file_id: hit.id,
+      title: hit.title,
+      short_path: hit.short_path,
+      format: hit.extract_format || null,
+      text_indexed: hit.text_indexed,
+      relevance_score: hit.score,
+      matched_terms: hit.matched_terms || [],
+      snippets,
+      citation: '📎 ' + (hit.short_path || hit.title),
+      aviso:
+        !hit.text_indexed && hit.extract_note
+          ? hit.extract_note
+          : !hit.text_indexed
+            ? 'Sin texto indexado en este archivo.'
+            : null
+    };
+  });
+
+  const topFileIds = sources.map((s) => s.nutri_file_id).filter(Boolean);
+  const areas = await fetchPlanProAreas(supabase, ownerId);
+  const areasById = areaMapById(areas);
+  const categories = await fetchPlanProCategories(supabase);
+  const apunteHits = await findApuntesForNutriAsk(supabase, ownerId, topFileIds, qRaw, areasById, categories, {
+    limit: 8
+  });
+
+  const suggestions = [];
+  const linkGapSuggestions = [];
+
+  if (!sources.length) {
+    suggestions.push('No hay fragmentos con esa pregunta. Prueba otra palabra o sube/indexa el archivo en Nutri PRO.');
+  } else if (!sources.some((s) => s.text_indexed)) {
+    suggestions.push('Hay archivos por nombre pero sin texto indexado. Convierte a docx/xlsx/pptx o espera la indexación.');
+  }
+
+  const topPaths = sources
+    .slice(0, 4)
+    .map((s) => s.short_path || s.title)
+    .filter(Boolean);
+
+  if (apunteHits.linked_apuntes.length) {
+    suggestions.push('Hay apuntes Plan PRO enlazados a estos archivos (ver linked_apuntes y unified_citations).');
+  } else if (sources.length && apunteHits.related_apuntes.length) {
+    apunteHits.related_apuntes.slice(0, 3).forEach((a) => {
+      linkGapSuggestions.push(
+        'El apunte «' +
+          (a.title || 'sin título') +
+          '» habla del tema pero no tiene 📎 enlazado; hay ' +
+          sources.length +
+          ' archivo(s) en Nutri PRO (' +
+          topPaths.join(', ') +
+          '). Enlaza desde Nutri PRO → Enlazar apunte.'
+      );
+    });
+  } else if (sources.length >= 1 && !apunteHits.linked_apuntes.length && !apunteHits.related_apuntes.length) {
+    linkGapSuggestions.push(
+      'Hay ' + sources.length + ' documento(s) sobre el tema (' + topPaths.join(', ') + ') sin apunte Plan PRO vinculado.'
+    );
+  }
+
+  const linkedByFile = {};
+  apunteHits.linked_apuntes.forEach((a) => {
+    (a.nutri_file_ids || []).forEach((fid) => {
+      if (!linkedByFile[fid]) linkedByFile[fid] = [];
+      linkedByFile[fid].push(a.title || 'Apunte');
+    });
+  });
+
+  const unifiedCitations = sources
+    .map((s) => {
+      const snip = s.snippets && s.snippets[0] ? s.snippets[0].snippet : '';
+      const apuntes = linkedByFile[s.nutri_file_id] || [];
+      const line = apuntes.length
+        ? '📝 ' + apuntes.join(', ') + ' ↔ ' + (s.citation || s.short_path) + (snip ? ': «' + snip + '»' : '')
+        : (s.citation || s.short_path) + (snip ? ': «' + snip + '»' : '');
+      return {
+        nutri_file_id: s.nutri_file_id,
+        file: s.citation || s.short_path,
+        snippet: snip || null,
+        apuntes_enlazados: apuntes,
+        line
+      };
+    })
+    .filter((c) => c.file);
+
+  return {
+    ok: true,
+    domain: 'nutri_pro',
+    question: qRaw,
+    search_terms: terms,
+    folder_id: folderId,
+    nutri_file_id: nutriFileId || null,
+    source_count: sources.length,
+    sources,
+    linked_apuntes: apunteHits.linked_apuntes,
+    related_apuntes: apunteHits.related_apuntes,
+    unified_citations: unifiedCitations,
+    suggestions,
+    link_gap_suggestions: linkGapSuggestions,
+    gpt_usage:
+      'Fase 4: usa unified_citations (apunte ↔ archivo ↔ fragmento). Cita line tal cual. link_gap_suggestions = apunte sin 📎 pero documentos existentes. Más texto: nutri_pro_file_text. No inventes cifras fuera de snippets.',
+    gpt_citation_format:
+      '📝 [Apunte] ↔ 📎 [ruta archivo]: «fragmento» — responde integrando apunte + documento cuando unified_citations lo permita.'
   };
 }
 
@@ -3825,7 +4112,7 @@ async function handlePlanProItem(supabase, params) {
       nutri_refs_count: nutriRefs.length,
       nutri_refs_note:
         nutriRefs.length > 0
-          ? 'Rutas cortas 📎 a archivos Nutri PRO. Usa nutri_pro_file_text con nutri_file_id para leer texto indexado (PDF, Word, Excel, PowerPoint).'
+          ? 'Rutas cortas 📎 a archivos Nutri PRO. Usa nutri_pro_ask o nutri_pro_file_text con nutri_file_id para leer contenido indexado.'
           : null,
       apunte_refs: apunteRefs,
       apunte_refs_count: apunteRefs.length,
@@ -4272,7 +4559,7 @@ async function handleDescribeApi() {
         'plan_pro_create',
         'plan_pro_update'
       ],
-      nutri_pro: ['nutri_pro_catalog', 'nutri_pro_search', 'nutri_pro_file_text'],
+      nutri_pro: ['nutri_pro_catalog', 'nutri_pro_search', 'nutri_pro_ask', 'nutri_pro_file_text'],
       radar: ['radar_project', 'radar_search', 'radar_overview'],
       free_tools: ['free_tools_catalog'],
       lab_analyses: ['lab_analyses_catalog', 'project_analyses'],
@@ -4280,9 +4567,9 @@ async function handleDescribeApi() {
       nutrition: ['nutrition_catalogs']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item/locations (leer), plan_pro_create/plan_pro_update (escribir). plan_pro_item incluye nutri_refs (enlaces 📎 a Nutri PRO). Nutri PRO: nutri_pro_catalog, nutri_pro_search (nombre + texto indexado), nutri_pro_file_text (leer contenido). plan_pro_locations devuelve favoritos y apuntes con ubicación Maps. Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
+      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item/locations (leer), plan_pro_create/plan_pro_update (escribir). plan_pro_item incluye nutri_refs (enlaces 📎 a Nutri PRO). Nutri PRO: nutri_pro_ask (pregunta + snippets + apuntes enlazados), nutri_pro_search (ranking), nutri_pro_file_text. plan_pro_locations devuelve favoritos y apuntes con ubicación Maps. Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
     nutri_pro_gpt:
-      'nutri_pro_catalog lista carpetas/archivos/enlaces (extract_status, text_indexed). nutri_pro_search busca nombre y contenido. nutri_pro_file_text lee texto extraído. Formatos: PDF, docx, xlsx/xls/csv, pptx, txt/rtf, odt/ods/odp. Imágenes y .doc/.ppt antiguos: sin texto. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
+      'Preguntas sobre documentos: nutri_pro_ask (fragmentos + linked_apuntes). nutri_pro_search con relevance_score e include_snippets. nutri_pro_file_text para más texto. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
     plan_pro_nota_semaforo:
       'Chip en libreta: [[sem:2026-05-26:media]] o append_due_marker. Ficha apunte: priority + due_at.',
     plan_pro_nota_herramientas:
@@ -4309,6 +4596,7 @@ const HANDLERS = {
   plan_pro_update: (sb, p) => handlePlanProUpdate(sb, p),
   nutri_pro_catalog: (sb, p) => handleNutriProCatalog(sb, p),
   nutri_pro_search: (sb, p) => handleNutriProSearch(sb, p),
+  nutri_pro_ask: (sb, p) => handleNutriProAsk(sb, p),
   nutri_pro_file_text: (sb, p) => handleNutriProFileText(sb, p),
   radar_project: (sb, p) => handleRadarProject(sb, p),
   radar_search: (sb, p) => handleRadarSearch(sb, p),
@@ -4326,9 +4614,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.4.0',
+      version: '2.6.0',
       description:
-        'Lectura NutriPlant + Plan PRO + Nutri PRO (catálogo, búsqueda en texto, nutri_pro_file_text). Plan PRO escritura. Análisis, Clima, Radar, Manual.'
+        'NutriPlant + Plan PRO + Nutri PRO Fase 4 (nutri_pro_ask unified_citations, link_gap_suggestions). Plan PRO escritura. Análisis, Clima, Radar.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -4395,6 +4683,18 @@ function getOpenApiSpec() {
     }
   };
 }
+
+module.exports.runAdminAction = async function runAdminAction(action, params) {
+  const supabase = await getSupabase();
+  if (!supabase) {
+    return { ok: false, error: 'Supabase no configurado (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).' };
+  }
+  const fn = HANDLERS[action];
+  if (!fn) {
+    return { ok: false, error: 'Acción desconocida: ' + action };
+  }
+  return fn(supabase, params || {});
+};
 
 exports.handler = async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {

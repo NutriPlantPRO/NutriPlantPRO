@@ -1,99 +1,52 @@
-# Nutri PRO — Conocimiento para ChatGPT Socio (Custom GPT)
+# Nutri PRO — Conocimiento ChatGPT Socio (OpenAPI v2.6)
 
-**Nutri PRO** es la bóveda técnica privada dentro de **Plan PRO** (Cerebro Digital de Jesús): carpetas, archivos (PDF, Excel, Office, imágenes) y enlaces clasificados. Los apuntes Plan PRO pueden enlazar archivos con rutas cortas 📎 en la libreta.
+## Acción principal: `nutri_pro_ask`
 
-## Actions API (OpenAPI v2.4+)
-
-| action | Uso |
-|--------|-----|
-| `nutri_pro_catalog` | Lista carpetas, archivos y enlaces. En archivos: `extract_status`, `text_indexed`, `text_char_count`. |
-| `nutri_pro_search` | Busca por `q` en nombres, rutas **y texto indexado** (`matched_in_content`). |
-| `nutri_pro_file_text` | Lee fragmento del texto extraído de un archivo (`nutri_file_id`). |
-| `plan_pro_item` | Detalle de apunte; incluye **`nutri_refs`** (enlaces 📎 a archivos). |
-| `plan_pro_search` | Busca apuntes por título/nota (complemento). |
-
-### Parámetros útiles
-
-**nutri_pro_catalog** — `params: {}` o `{ "limit": 200 }`
-
-**nutri_pro_search** — ejemplos:
+Para **cualquier pregunta sobre documentos** (PDF, Excel, Word, cifras, tablas):
 
 ```json
-{ "action": "nutri_pro_search", "params": { "q": "fertirriego" } }
+{ "action": "nutri_pro_ask", "params": { "q": "¿Cuánto potasio en el Excel de costos?" } }
 ```
 
-```json
-{ "action": "nutri_pro_search", "params": { "q": "potasio", "kind": "files" } }
-```
+### Respuesta Fase 4 (usa esto para responder)
 
-```json
-{ "action": "nutri_pro_search", "params": { "nutri_file_id": "uuid-del-archivo" } }
-```
+| Campo | Uso |
+|-------|-----|
+| `unified_citations[]` | **Cita principal.** Cada `line`: `📝 Apunte ↔ 📎 ruta: «fragmento»` |
+| `sources[]` | Detalle por archivo (snippets, relevance_score) |
+| `linked_apuntes` | Apuntes Plan PRO con 📎 a esos archivos |
+| `related_apuntes` | Apuntes que mencionan el tema sin enlace directo |
+| `link_gap_suggestions` | «Este apunte no tiene 📎 pero hay 3 PDFs…» — **dilo al usuario** |
+| `suggestions` | Notas generales |
 
-**nutri_pro_file_text** — leer contenido:
+### Formato de respuesta al usuario (Socio)
 
-```json
-{ "action": "nutri_pro_file_text", "params": { "nutri_file_id": "uuid", "max_chars": 12000 } }
-```
+Integra en una sola respuesta:
 
-Paginación: `offset` (siguiente trozo si `has_more` es true).
+1. **Fragmento citado** del documento (`unified_citations.line`)
+2. **Apunte enlazado** si existe (`linked_apuntes`)
+3. **Sugerencia de enlace** si `link_gap_suggestions` no está vacío
 
-**plan_pro_item** — ver rutas Nutri en un apunte:
+Ejemplo de tono:
 
-```json
-{ "action": "plan_pro_item", "params": { "q": "título del apunte" } }
-```
+> En 📎 Fertirriego/costos.xlsx aparece: «Potasio K2O 120 ppm…». Tu apunte «Costos temporada» ya lo enlaza.  
+> *(o)* El apunte «Fertirriego sandía» habla del tema pero no tiene archivo 📎; hay 2 Excel en Nutri PRO que podrías enlazar.
 
-## Formatos con texto indexado (Fase 2)
+## Otras acciones
 
-| Formato | Indexación |
-|---------|------------|
-| PDF | ✅ texto (no OCR si es escaneado) |
-| Word `.docx` | ✅ |
-| Excel `.xlsx`, `.xls`, `.csv` | ✅ (hojas como CSV en texto) |
-| PowerPoint `.pptx` | ✅ (texto de diapositivas) |
-| `.txt`, `.rtf` | ✅ |
-| OpenDocument `.odt`, `.ods`, `.odp` | ✅ |
-| Word `.doc`, PowerPoint `.ppt` (antiguos) | ❌ — guardar como docx/pptx |
-| Imágenes (png, jpg, etc.) | ❌ — OCR en fase posterior |
+| action | Cuándo |
+|--------|--------|
+| `nutri_pro_search` | Listar/buscar por palabra (`include_snippets: true`) |
+| `nutri_pro_catalog` | Inventario bóveda |
+| `nutri_pro_file_text` | Más texto (`offset` para paginar) |
+| `plan_pro_item` | Detalle apunte + `nutri_refs` |
 
-Tras subir en Plan PRO → Nutri PRO, la indexación corre en segundo plano (unos segundos).
+## Reglas
 
-## Qué SÍ puedes hacer hoy
-
-- Listar documentos (nombre, carpeta, si tiene texto indexado).
-- Buscar por palabra en **nombre o contenido**.
-- Leer fragmentos con `nutri_pro_file_text` y citar `short_path`.
-- Cruzar apunte ↔ archivo vía `nutri_refs` en `plan_pro_item`.
-- Responder preguntas sobre tablas Excel o párrafos PDF **si** `text_indexed` es true.
-
-## Qué NO puedes hacer aún
-
-- OCR en imágenes o PDF escaneado sin capa de texto.
-- Leer `.doc` / `.ppt` binarios antiguos (sugerir re-guardar como docx/pptx).
-- Abrir URL firmada del binario (solo texto en Supabase).
-
-Si `extract.status` es `skipped` o `missing`, explica el motivo (`error_message`) y sugiere re-subir o convertir formato.
-
-## Clasificación de enlaces
-
-Categorías fijas: nutrición vegetal, agronomía, trabajo, personal, negocio, investigación, herramientas, inglés, escuela, idiomas, finanzas, salud, otro. Categorías personalizadas: `custom_nombre`.
-
-## Storage y tablas
-
-- Bucket: `plan-pro-nutri-pro` (privado).
-- Tablas: `plan_pro_nutri_folders`, `plan_pro_nutri_files`, `plan_pro_nutri_links`, `plan_pro_nutri_file_extracts`.
-
-## Flujo recomendado en chat
-
-1. “¿Qué tengo sobre X?” → `nutri_pro_search` con `q: X`.
-2. “¿Qué dice el PDF/Excel sobre Y?” → search → `nutri_pro_file_text` con el `nutri_file_id`.
-3. “¿Qué apuntes enlazan ese archivo?” → `plan_pro_item` / `plan_pro_search` + `nutri_refs`.
-4. “Resume mi bóveda” → `nutri_pro_catalog`.
+- **No inventes** cifras fuera de `snippets` / `unified_citations`.
+- Siempre cita `📎 ruta` y `📝 apunte` cuando existan.
+- Propón enlazar apunte↔archivo cuando `link_gap_suggestions` lo indique.
 
 ## Deploy
 
-1. SQL: `supabase-plan-pro-nutri-pro-extracts.sql` en Supabase.
-2. Deploy Netlify.
-3. Reimportar `docs/openapi-nutriplant-admin.json` **v2.4.0** en ChatGPT Actions.
-4. Subir este archivo a **Knowledge**.
+OpenAPI **v2.6.0** + este archivo en Knowledge.

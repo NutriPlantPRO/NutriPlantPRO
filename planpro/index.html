@@ -15793,17 +15793,89 @@
       return lines.join('\n');
     }
 
-    function getPlanProAssistantSystemPrompt() {
+    function planProQuestionLooksNutriDoc(text) {
+      var t = String(text || '').toLowerCase();
+      if (!t || t.length < 4) return false;
+      if (/nutri\s*pro|📎|bóveda|boveda/.test(t)) return true;
+      if (/\b(pdf|excel|xlsx|word|docx|powerpoint|pptx|documento|archivo|hoja|celda|tabla)\b/.test(t)) return true;
+      if (
+        /(qué dice|que dice|qué pone|que pone|cuánto|cuanto|dónde dice|donde dice|en (mi|el|la) (archivo|excel|pdf|documento|hoja|presentación|presentacion))/.test(
+          t
+        )
+      ) {
+        return true;
+      }
+      var hasNutriRef = (state.planProItemsSnapshot || []).some(function (it) {
+        return it.nutri_refs && it.nutri_refs.length;
+      });
+      if (hasNutriRef && /(apunte|nota|vinculado|enlazado|documento|archivo|vincula|enlaza)/.test(t)) return true;
+      return false;
+    }
+
+    function formatNutriAskForAssistant(data) {
+      if (!data || !data.ok) return '';
+      if (data.error) return '--- NUTRI PRO (sin datos) ---\n' + data.error;
+      var lines = ['--- NUTRI PRO (búsqueda automática) ---', 'Pregunta: ' + (data.question || '')];
+      (data.unified_citations || []).forEach(function (c, i) {
+        lines.push(i + 1 + '. ' + (c.line || c.file || ''));
+      });
+      if (!(data.unified_citations && data.unified_citations.length)) {
+        (data.sources || []).forEach(function (s) {
+          lines.push('- ' + (s.citation || s.short_path || s.title));
+          (s.snippets || []).forEach(function (sn) {
+            lines.push('  «' + (sn.snippet || '') + '»');
+          });
+        });
+      }
+      (data.link_gap_suggestions || []).forEach(function (s) {
+        lines.push('Sugerencia enlace: ' + s);
+      });
+      (data.suggestions || []).forEach(function (s) {
+        lines.push('Nota: ' + s);
+      });
+      lines.push(
+        'Usa estos fragmentos para responder; cita 📎 y 📝 cuando aplique. No inventes cifras fuera de las citas.'
+      );
+      return lines.join('\n');
+    }
+
+    async function fetchPlanProNutriAsk(q) {
+      if (!state.client || !q) return null;
+      var sessRes = await state.client.auth.getSession();
+      var token =
+        sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.access_token
+          ? sessRes.data.session.access_token
+          : '';
+      if (!token) return null;
+      var base = nutriProApiBase();
+      try {
+        var res = await fetch(base + '/api/plan-pro-nutri-ask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          },
+          body: JSON.stringify({ q: q })
+        });
+        return await res.json();
+      } catch (eAsk) {
+        return null;
+      }
+    }
+
+    function getPlanProAssistantSystemPrompt(extraNutriBlock) {
       var data = getPlanProAssistantContext();
-      return (
+      var base =
         'Eres el asistente de Plan PRO (NutriPlant PRO – Cerebro Digital). El usuario administra plantas (pilares), ramas jerárquicas y apuntes con nota enriquecida y bloques (tablas de seguimiento, tareas, tabla libre, montos, etc.) en body_blocks. ' +
         'Recibes un resumen de lo que hay cargado en pantalla: plantas, ramas de la planta activa, favoritos de ubicación y la lista de apuntes visibles (título, rama, estado, prioridad, vencimiento, ubicación Maps si existe, extracto de nota). ' +
-        'En cada apunte, si hay rutas cortas insertadas en la libreta, aparecen en «rutas/enlaces en la nota»: 📎 Carpeta/archivo con nutri_file_id (archivo en Nutri PRO) o 📝 ruta de otro apunte con apunte_id. Cítalas cuando ayuden; no puedes abrir el PDF/binario, pero sí saber qué documento técnico está vinculado. ' +
-        'Ayuda a priorizar, redactar, resumir, detectar huecos y sugerir siguientes pasos usando solo ese contexto. No ejecutas cambios en Supabase; solo orientas. Responde siempre en español. ' +
+        'En cada apunte, si hay rutas cortas insertadas en la libreta, aparecen en «rutas/enlaces en la nota»: 📎 Carpeta/archivo con nutri_file_id (archivo en Nutri PRO) o 📝 ruta de otro apunte con apunte_id. ' +
+        'Si la pregunta es sobre documentos (PDF, Excel, Word…), puede incluirse un bloque NUTRI PRO con fragmentos citados y sugerencias de enlace apunte↔archivo: úsalo como fuente principal para cifras y párrafos. ' +
+        'Ayuda a priorizar, redactar, resumir, detectar huecos y sugerir siguientes pasos. No ejecutas cambios en Supabase; solo orientas. Responde siempre en español. ' +
         'Si adjunta una imagen (factura, ticket, CFDI impreso, captura de pantalla), lee el texto visible: si pide extraer folio, RFC, razón social o nombre, UUID del timbre, total, fecha de emisión, etc., devuélvelo de forma clara; si no consta, dilo. ' +
         'Datos en pantalla:\n\n' +
-        data
-      );
+        data;
+      if (extraNutriBlock) base += '\n\n' + extraNutriBlock;
+      return base;
     }
 
     function renderChat() {
@@ -15867,54 +15939,73 @@
       messagesEl.scrollTop = messagesEl.scrollHeight;
       var imageToSend = pendingImage;
       clearPendingImage();
-      var systemContent = getPlanProAssistantSystemPrompt();
-      var allButLast = history.slice(0, -1);
-      var histApi = (
-        allButLast.length <= PLAN_PRO_CHAT_CONTEXT_LIMIT
-          ? allButLast
-          : allButLast.slice(-PLAN_PRO_CHAT_CONTEXT_LIMIT)
-      ).map(function (m) {
-        return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content };
-      });
       var lastUserContent = text || 'Describe esta imagen y extrae cualquier dato que pida el usuario.';
-      var messagesForApi = [{ role: 'system', content: systemContent }].concat(histApi).concat([{ role: 'user', content: lastUserContent }]);
-      var base =
-        (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) ||
-        (window.location && window.location.origin) ||
-        'http://localhost:8000';
-      var body = {
-        model: 'gpt-4o-mini',
-        messages: messagesForApi,
-        max_tokens: 1200,
-        temperature: 0.45,
-        userId: '__admin__',
-        scope: 'admin'
-      };
-      if (imageToSend && imageToSend.base64) {
-        body.imageBase64 = imageToSend.base64;
-        body.imageContentType = imageToSend.contentType || 'image/jpeg';
-      }
-      fetch(base + '/api/openai-assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      })
-        .then(function (r) {
-          return r.json();
+
+      function dispatchToOpenAi(extraNutriBlock) {
+        var systemContent = getPlanProAssistantSystemPrompt(extraNutriBlock || '');
+        var allButLast = history.slice(0, -1);
+        var histApi = (
+          allButLast.length <= PLAN_PRO_CHAT_CONTEXT_LIMIT
+            ? allButLast
+            : allButLast.slice(-PLAN_PRO_CHAT_CONTEXT_LIMIT)
+        ).map(function (m) {
+          return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content };
+        });
+        var messagesForApi = [{ role: 'system', content: systemContent }]
+          .concat(histApi)
+          .concat([{ role: 'user', content: lastUserContent }]);
+        var base =
+          (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) ||
+          (window.location && window.location.origin) ||
+          'http://localhost:8000';
+        var body = {
+          model: 'gpt-4o-mini',
+          messages: messagesForApi,
+          max_tokens: 1400,
+          temperature: 0.45,
+          userId: '__admin__',
+          scope: 'admin'
+        };
+        if (imageToSend && imageToSend.base64) {
+          body.imageBase64 = imageToSend.base64;
+          body.imageContentType = imageToSend.contentType || 'image/jpeg';
+        }
+        return fetch(base + '/api/openai-assistant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
         })
-        .then(function (data) {
-          var ind = $('planProChatTypingIndicator');
-          if (ind) ind.remove();
-          sendBtn.disabled = false;
-          requestInFlight = false;
-          var reply =
-            data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
-              ? data.choices[0].message.content
-              : data.error || 'Sin respuesta del servidor.';
-          history.push({ role: 'assistant', content: reply });
-          trimHistory();
-          saveHistory();
-          renderChat();
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (data) {
+            var ind = $('planProChatTypingIndicator');
+            if (ind) ind.remove();
+            sendBtn.disabled = false;
+            requestInFlight = false;
+            var reply =
+              data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
+                ? data.choices[0].message.content
+                : data.error || 'Sin respuesta del servidor.';
+            history.push({ role: 'assistant', content: reply });
+            trimHistory();
+            saveHistory();
+            renderChat();
+          });
+      }
+
+      var nutriPromise;
+      if (text && !imageToSend && planProQuestionLooksNutriDoc(text)) {
+        nutriPromise = fetchPlanProNutriAsk(text).then(function (nutriData) {
+          return formatNutriAskForAssistant(nutriData);
+        });
+      } else {
+        nutriPromise = Promise.resolve('');
+      }
+
+      nutriPromise
+        .then(function (nutriBlock) {
+          return dispatchToOpenAi(nutriBlock);
         })
         .catch(function () {
           var ind = $('planProChatTypingIndicator');
