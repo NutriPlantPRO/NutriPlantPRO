@@ -97,10 +97,10 @@
     .hydro-free-solution .hydro-table-block {
       margin-top: 14px;
       padding: 10px 12px 12px;
-      border: 1px solid #93c5fd;
+      border: 2px solid #2563eb;
       border-radius: 12px;
       background: #ffffff;
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.07);
+      box-shadow: 0 2px 12px rgba(37, 99, 235, 0.14), 0 0 0 1px rgba(29, 78, 216, 0.08);
     }
     .hydro-free-solution .hydro-card-header + .hydro-table-block {
       margin-top: 10px;
@@ -122,7 +122,7 @@
     .hydro-free-solution .hydro-table-block .hydro-table-scroll,
     .hydro-free-solution .hydro-table-scroll {
       border-radius: 10px;
-      border: 1px solid #e2e8f0;
+      border: 2px solid #3b82f6;
       overflow-x: auto;
       overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
@@ -130,14 +130,20 @@
       touch-action: pan-x pan-y;
       max-width: 100%;
       scrollbar-width: thin;
-      scrollbar-color: #93c5fd #f1f5f9;
+      scrollbar-color: #3b82f6 #eff6ff;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
     }
     .hydro-free-solution .hydro-table-scroll {
-      border: 1px solid #93c5fd;
       border-radius: 14px;
     }
     .hydro-free-solution .hydro-table-colored {
-      border-radius: 14px;
+      border-radius: 12px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .hydro-free-solution .hydro-table-colored th,
+    .hydro-free-solution .hydro-table-colored td {
+      border: 1px solid #93c5fd;
     }
     /* Encabezados: tinte azul NutriPlant suave; color en el texto del ion */
     .hydro-free-solution .hydro-table-colored thead th {
@@ -198,18 +204,27 @@
       gap: 6px;
       white-space: nowrap;
     }
-    /* Prioridad sobre dashboard.css (evita fondos/tintes fuertes en th) */
+    /* Prioridad sobre dashboard.css — fila de grupos: aniones/Cl amarillo, cationes/NH₄ rojo */
     .hydro-free-solution .hydro-table th.hydro-col-an,
     .hydro-free-solution .hydro-table th.hydro-col-cl,
     .hydro-free-solution .hydro-table th.hydro-col-cat,
     .hydro-free-solution .hydro-table th.hydro-col-nh4,
-    .hydro-free-solution .hydro-table th.hydro-col-ce,
-    .hydro-free-solution .hydro-table th.hydro-th-group--an,
-    .hydro-free-solution .hydro-table th.hydro-th-group--cl,
-    .hydro-free-solution .hydro-table th.hydro-th-group--cat,
-    .hydro-free-solution .hydro-table th.hydro-th-group--nh4,
-    .hydro-free-solution .hydro-table th.hydro-th-group--ce {
+    .hydro-free-solution .hydro-table th.hydro-col-ce {
       background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%) !important;
+    }
+    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--an,
+    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--cl {
+      background: linear-gradient(180deg, rgba(254, 249, 195, 0.92) 0%, rgba(253, 224, 71, 0.38) 100%) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(202, 138, 4, 0.35) !important;
+    }
+    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--cat,
+    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--nh4 {
+      background: linear-gradient(180deg, rgba(254, 226, 226, 0.92) 0%, rgba(252, 165, 165, 0.38) 100%) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(185, 28, 28, 0.32) !important;
+    }
+    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--ce {
+      background: linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 #ddd6fe !important;
     }
     .hydro-free-solution input.hydro-input[data-nutrient="Cl"] {
       border: 2px solid #d97706;
@@ -415,6 +430,175 @@
         overflow-wrap: anywhere;
       }
     }
+
+    .hydro-main-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 14px;
+      padding: 0 4px;
+    }
+    .hydro-main-tabs button {
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      padding: 9px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #334155;
+    }
+    .hydro-main-tabs button[aria-selected="true"] {
+      background: #ecfdf5;
+      border-color: #86efac;
+      color: #15803d;
+    }
+    .hydro-main-panel { display: none; }
+    .hydro-main-panel.active { display: block; }
+    .fert-aporte-lead { margin: 0 0 12px; font-size: 13px; color: #64748b; line-height: 1.45; max-width: 52rem; }
+    .fert-aporte-rows { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+    .fert-aporte-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px 14px;
+      box-shadow: 0 1px 4px rgba(15,23,42,.04);
+    }
+    .fert-aporte-card-head {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+      margin-bottom: 8px;
+    }
+    .fert-aporte-field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .fert-aporte-field select,
+    .fert-aporte-field input[type="number"],
+    .fert-aporte-field input[type="text"] {
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13px;
+      min-width: 0;
+    }
+    .fert-aporte-field--product { flex: 1 1 180px; max-width: 260px; }
+    .fert-aporte-field--product select { width: 100%; }
+    .fert-aporte-field--formula { flex: 1 1 160px; max-width: 220px; }
+    .fert-aporte-field--formula input { width: 100%; box-sizing: border-box; }
+    .fert-aporte-field--dose { flex: 0 0 auto; }
+    .fert-aporte-field--dose input { width: 88px; text-align: right; }
+    .fert-aporte-dose-hint { font-size: 10px; color: #94a3b8; margin-top: 3px; font-weight: 600; }
+    .fert-aporte-note {
+      font-size: 12px;
+      color: #475569;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin: 0 0 8px;
+      line-height: 1.4;
+    }
+    .fert-aporte-comp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+      gap: 6px;
+      margin: 8px 0;
+    }
+    .fert-aporte-comp-grid label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .fert-aporte-comp-grid input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 5px 6px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 12px;
+      text-align: right;
+    }
+    .fert-aporte-row-out { font-size: 12px; color: #334155; margin-top: 6px; line-height: 1.45; }
+    .fert-aporte-actions { margin-left: auto; display: flex; gap: 6px; align-items: flex-end; }
+    .fert-aporte-btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .fert-aporte-btn--add { background: #16a34a; color: #fff; margin-bottom: 12px; }
+    .fert-aporte-btn--del { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .fert-aporte-totals-title { margin: 16px 0 8px; font-size: 1rem; font-weight: 800; color: #0f172a; }
+    .fert-aporte-totals-hint { font-size: 12px; color: #64748b; margin: 0 0 10px; }
+    .fert-custom-panel {
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+    .fert-custom-panel h4 { margin: 0 0 8px; font-size: 0.95rem; color: #1e40af; }
+    .fert-custom-panel > p { margin: 0 0 10px; font-size: 12px; color: #475569; line-height: 1.4; }
+    .fert-custom-mode-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .fert-custom-mode-tabs button {
+      border: 1px solid #93c5fd;
+      background: #fff;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #1d4ed8;
+    }
+    .fert-custom-mode-tabs button.is-active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+    .fert-custom-form-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
+    .fert-custom-form-row input[type="text"] {
+      flex: 1 1 140px;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .fert-custom-form-row .fert-aporte-btn { margin: 0; }
+    .fert-custom-msg { font-size: 12px; margin: 6px 0 0; min-height: 1.2em; }
+    .fert-custom-msg.is-err { color: #b91c1c; }
+    .fert-custom-msg.is-ok { color: #15803d; }
+    .fert-custom-saved { margin-top: 10px; border-top: 1px solid #bfdbfe; padding-top: 8px; }
+    .fert-custom-saved h5 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; }
+    .fert-custom-saved ul { list-style: none; margin: 0; padding: 0; }
+    .fert-custom-saved li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      padding: 5px 0;
+      border-bottom: 1px solid #dbeafe;
+    }
+    .fert-custom-saved li:last-child { border-bottom: 0; }
+    .fert-custom-saved .fert-custom-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .fert-aporte-btn--calc { background: #2563eb; color: #fff; }
+    .fert-aporte-btn--save { background: #16a34a; color: #fff; }
+    .fert-aporte-btn--mini { padding: 4px 8px; font-size: 11px; }
   </style>
   <script>
     (function () {
@@ -428,6 +612,12 @@
   <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   <div class="hydroponia-container hydro-free-solution">
     <div class="hydroponia-content">
+      <div class="hydro-main-tabs" role="tablist" aria-label="Secciones solución nutritiva">
+        <button type="button" role="tab" id="hydroTabBtnDesign" aria-selected="true" aria-controls="hydroPanelDesign">1 · Diseño objetivo</button>
+        <button type="button" role="tab" id="hydroTabBtnFert" aria-selected="false" aria-controls="hydroPanelFert">2 · Aporte fertilizantes</button>
+      </div>
+
+      <div id="hydroPanelDesign" class="hydro-main-panel active" role="tabpanel" aria-labelledby="hydroTabBtnDesign">
       <div class="tab-content active" id="hidro-solucion">
         <div class="hydro-card">
           <div class="hydro-card-header">
@@ -454,9 +644,59 @@
           <div id="hydroTriangleCombined" class="hydro-triangle"></div>
         </div>
       </div>
+      </div><!-- /hydroPanelDesign -->
+
+      <div id="hydroPanelFert" class="hydro-main-panel" role="tabpanel" aria-labelledby="hydroTabBtnFert" hidden>
+        <div class="hydro-card">
+          <div class="hydro-card-header">
+            <h3>🧪 Aporte de fertilizantes solubles</h3>
+            <p class="fert-aporte-lead">
+              Calcula <strong>ppm</strong> y <strong>meq/L</strong> por producto. Dosis <strong>g/L = kg/m³</strong>.
+              Puedes usar el catálogo, escribir una <strong>molécula</strong>, cargar <strong>% de mezcla del proveedor</strong> o guardar fertilizantes en <strong>caché del navegador</strong>.
+            </p>
+          </div>
+
+          <div class="fert-custom-panel" id="fertCustomPanel">
+            <h4>➕ Agregar fertilizante a mi lista (solo caché)</h4>
+            <p>Guarda sales propias o mezclas comerciales del proveedor (solo % elemental). Login y dashboard comparten la misma caché en este navegador.</p>
+            <div class="fert-custom-mode-tabs" role="tablist">
+              <button type="button" class="is-active" data-fert-custom-mode="formula" aria-selected="true">Desde molécula</button>
+              <button type="button" data-fert-custom-mode="percent" aria-selected="false">Desde % elemento</button>
+            </div>
+            <div id="fertCustomFormulaBlock">
+              <div class="fert-custom-form-row">
+                <input type="text" id="fertCustomNameFormula" placeholder="Nombre (ej. Mi KNO₃)" aria-label="Nombre fertilizante molécula">
+                <input type="text" id="fertCustomFormulaInput" placeholder="Fórmula (ej. KNO3, Ca(NO3)2·4H2O)" aria-label="Fórmula química">
+                <button type="button" class="fert-aporte-btn fert-aporte-btn--save" id="fertCustomSaveFormulaBtn">Guardar en lista</button>
+              </div>
+            </div>
+            <div id="fertCustomPercentBlock" hidden>
+              <div class="fert-custom-form-row">
+                <input type="text" id="fertCustomNamePct" placeholder="Nombre mezcla proveedor" aria-label="Nombre mezcla">
+                <button type="button" class="fert-aporte-btn fert-aporte-btn--save" id="fertCustomSavePctBtn">Guardar en lista</button>
+              </div>
+              <div class="fert-aporte-comp-grid" id="fertCustomPctGrid"></div>
+            </div>
+            <p class="fert-custom-msg" id="fertCustomMsg" aria-live="polite"></p>
+            <div class="fert-custom-saved">
+              <h5>Mis fertilizantes guardados</h5>
+              <ul id="fertCustomSavedList"><li style="color:#94a3b8;border:0;">Ninguno guardado aún.</li></ul>
+            </div>
+          </div>
+
+          <button type="button" class="fert-aporte-btn fert-aporte-btn--add" id="fertAporteAddBtn">+ Agregar fila al cálculo</button>
+          <div id="fertAporteRows" class="fert-aporte-rows"></div>
+          <h4 class="fert-aporte-totals-title">Totales del aporte (suma filas)</h4>
+          <p class="fert-aporte-totals-hint">Sin comparación con la pestaña Diseño — herramienta didáctica independiente de Hidroponía PRO.</p>
+          <div id="fertAporteMeqWrap" class="hydro-table-wrap hydro-table-block" data-label="meq/L aporte"></div>
+          <div id="fertAportePpmWrap" class="hydro-table-wrap hydro-table-block" data-label="ppm aporte"></div>
+        </div>
+      </div>
     </div>
   </div>
 
+  <script src="assets/fert-formula-engine.js"></script>
+  <script src="assets/hydro-fert-aporte-catalog.js"></script>
   <script>
     const HYDRO_ANIONS = ['N_NO3','P','S'];
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
@@ -468,8 +708,29 @@
     const HYDRO_EQ_WEIGHTS = { N_NO3:14.0, N_NH4:14.0, P:31.0, K:39.1, Ca:20.04, Mg:12.15, S:16.03, Cl:35.45 };
 
     const HYDRO_LS_KEY = 'nutriplant_hydro_solucion_free_v1';
-    const HYDRO_LS_VERSION = 1;
+    const HYDRO_LS_VERSION = 3;
     var hydroSaveTimer = null;
+    var fertAporteRowSeq = 0;
+    var hydroActiveMainTab = 0;
+
+    function fertAporteDefaultRow(materialId) {
+      fertAporteRowSeq += 1;
+      var cat = window.HydroFertAporteCatalog;
+      var mid = materialId || 'nitrato_calcio_cristal';
+      var entry = cat.getById(mid);
+      var comp = entry ? Object.assign({}, entry.compNutriPlant) : cat.zeroComp();
+      return {
+        id: 'fr_' + fertAporteRowSeq,
+        materialId: mid,
+        customFormula: entry && entry.id === '_custom' ? '' : (entry ? entry.formula : ''),
+        dose: 0,
+        compUsed: comp
+      };
+    }
+
+    var fertAporteState = {
+      rows: [fertAporteDefaultRow('nitrato_calcio_cristal')]
+    };
 
     function hydroDefaultStage() {
       return {
@@ -511,7 +772,32 @@
       const activeStageId = stages.some(function (s) { return s.id === raw.activeStageId; })
         ? raw.activeStageId
         : stages[0].id;
-      return { stages: stages, activeStageId: activeStageId };
+      return { stages: stages, activeStageId: activeStageId, activeMainTab: raw.activeMainTab || 0, fertAporte: raw.fertAporte || null };
+    }
+
+    function fertAporteNormalizeSaved(raw) {
+      if (!raw || !Array.isArray(raw.rows)) return null;
+      var cat = window.HydroFertAporteCatalog;
+      var rows = raw.rows.map(function (r, i) {
+        var entry = cat.getById(r.materialId) || cat.getById('_custom');
+        var base = entry ? Object.assign({}, entry.compNutriPlant) : cat.zeroComp();
+        var compUsed = Object.assign({}, base);
+        if (r.compUsed && typeof r.compUsed === 'object') {
+          cat.KEYS.forEach(function (k) {
+            if (r.compUsed[k] != null && r.compUsed[k] !== '') compUsed[k] = parseFloat(r.compUsed[k]) || 0;
+          });
+        }
+        return {
+          id: r.id || ('fr_' + (i + 1)),
+          materialId: r.materialId || cat.INLINE_PCT_ID,
+          customFormula: r.customFormula != null ? String(r.customFormula) : '',
+          customName: r.customName != null ? String(r.customName) : '',
+          dose: parseFloat(r.dose) || 0,
+          compUsed: compUsed
+        };
+      });
+      if (!rows.length) rows = [fertAporteDefaultRow('nitrato_calcio_cristal')];
+      return { rows: rows, userMaterials: Array.isArray(raw.userMaterials) ? raw.userMaterials : null };
     }
 
     function hydroSnapshotForStorage() {
@@ -521,6 +807,7 @@
         version: HYDRO_LS_VERSION,
         updatedAt: Date.now(),
         activeStageId: hydroState.activeStageId,
+        activeMainTab: hydroActiveMainTab,
         stages: hydroState.stages.map(function (s) {
           return {
             id: s.id,
@@ -528,7 +815,20 @@
             meq: Object.assign({}, s.meq),
             ppm: Object.assign({}, s.ppm)
           };
-        })
+        }),
+        fertAporte: {
+          rows: fertAporteState.rows.map(function (r) {
+            return {
+              id: r.id,
+              materialId: r.materialId,
+              customFormula: r.customFormula,
+              customName: r.customName,
+              dose: r.dose,
+              compUsed: Object.assign({}, r.compUsed)
+            };
+          }),
+          userMaterials: window.HydroFertAporteCatalog.getUserMaterialsSnapshot()
+        }
       };
     }
 
@@ -565,6 +865,14 @@
         stage.ce = hydroComputeCE(stage).toFixed(2);
         Object.assign(stage.ppm, hydroComputeMacroPpm(stage));
       });
+      if (loaded.fertAporte) {
+        var fa = fertAporteNormalizeSaved(loaded.fertAporte);
+        if (fa) {
+          if (fa.userMaterials) window.HydroFertAporteCatalog.loadUserMaterials(fa.userMaterials);
+          fertAporteState.rows = fa.rows;
+        }
+      }
+      if (loaded.activeMainTab != null) hydroActiveMainTab = loaded.activeMainTab ? 1 : 0;
       return true;
     }
 
@@ -1609,12 +1917,397 @@
       }, true);
     }
 
+    function switchHydroMainTab(idx) {
+      hydroActiveMainTab = idx ? 1 : 0;
+      var btns = [document.getElementById('hydroTabBtnDesign'), document.getElementById('hydroTabBtnFert')];
+      var panels = [document.getElementById('hydroPanelDesign'), document.getElementById('hydroPanelFert')];
+      btns.forEach(function (b, i) {
+        if (!b) return;
+        b.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+      });
+      panels.forEach(function (p, i) {
+        if (!p) return;
+        var on = i === idx;
+        p.classList.toggle('active', on);
+        p.hidden = !on;
+      });
+      if (idx === 1) renderFertAporteAll();
+      hydroScheduleSave();
+    }
+
+    function fertAporteLabelNutrient(n) {
+      return hydroLabelPlain(n);
+    }
+
+    function fertAporteCompKeysForRow(row) {
+      var cat = window.HydroFertAporteCatalog;
+      if (cat.isEditablePctRow(row.materialId) || row.materialId === cat.INLINE_PCT_ID) return cat.KEYS.slice();
+      if (row.materialId === cat.INLINE_FORMULA_ID) return cat.KEYS.slice();
+      var keys = cat.MACRO_KEYS.slice();
+      cat.MICRO_KEYS.forEach(function (k) {
+        if ((row.compUsed[k] || 0) > 0.001) keys.push(k);
+      });
+      return keys;
+    }
+
+    function fertAporteApplyMaterial(row, materialId) {
+      var cat = window.HydroFertAporteCatalog;
+      row.materialId = materialId;
+      var entry = cat.getById(materialId);
+      if (!entry) return;
+      if (materialId === cat.INLINE_FORMULA_ID) {
+        row.customFormula = row.customFormula || '';
+        row.compUsed = cat.zeroComp();
+        return;
+      }
+      if (materialId === cat.INLINE_PCT_ID) {
+        row.customFormula = '';
+        row.customName = row.customName || '';
+        row.compUsed = cat.zeroComp();
+        return;
+      }
+      row.customFormula = entry.formula || '';
+      row.customName = '';
+      row.compUsed = cat.cloneComp(entry.compNutriPlant);
+    }
+
+    function fertAporteApplyFormulaToRow(row) {
+      var cat = window.HydroFertAporteCatalog;
+      var eng = window.FertFormulaEngine;
+      if (!eng) return 'Motor de fórmulas no disponible.';
+      var parsed = eng.tryCompFromFormula(row.customFormula || '');
+      if (!parsed.ok) return parsed.error;
+      row.compUsed = cat.cloneComp(parsed.comp);
+      if (parsed.normalized) row.customFormula = parsed.normalized;
+      return null;
+    }
+
+    function fertAporteBuildSelectOptions(selectedId) {
+      var cat = window.HydroFertAporteCatalog;
+      var list = cat.getCatalogList();
+      var builtin = list.filter(function (e) { return !e.isUser && !cat.isInlineKind(e.id); });
+      var users = list.filter(function (e) { return e.isUser; });
+      var inline = list.filter(function (e) { return cat.isInlineKind(e.id); });
+      function opts(arr) {
+        return arr.map(function (e) {
+          var sel = e.id === selectedId ? ' selected' : '';
+          return '<option value="' + e.id + '"' + sel + '>' + e.name + '</option>';
+        }).join('');
+      }
+      var html = '<optgroup label="Catálogo NutriPlant">' + opts(builtin) + '</optgroup>';
+      if (users.length) html += '<optgroup label="Mis fertilizantes (caché)">' + opts(users) + '</optgroup>';
+      html += '<optgroup label="Uso puntual">' + opts(inline) + '</optgroup>';
+      return html;
+    }
+
+    function renderFertCustomPctGrid() {
+      var grid = document.getElementById('fertCustomPctGrid');
+      if (!grid) return;
+      var cat = window.HydroFertAporteCatalog;
+      grid.innerHTML = cat.KEYS.map(function (k) {
+        return '<div><label>' + fertAporteLabelNutrient(k) + ' %</label>' +
+          '<input type="number" step="0.01" min="0" data-fert-custom-pct="' + k + '" value="0"></div>';
+      }).join('');
+    }
+
+    function fertCustomCollectPctComp() {
+      var cat = window.HydroFertAporteCatalog;
+      var comp = cat.zeroComp();
+      document.querySelectorAll('[data-fert-custom-pct]').forEach(function (el) {
+        var k = el.getAttribute('data-fert-custom-pct');
+        if (k) comp[k] = parseFloat(el.value) || 0;
+      });
+      return comp;
+    }
+
+    function fertCustomSetMsg(text, ok) {
+      var el = document.getElementById('fertCustomMsg');
+      if (!el) return;
+      el.textContent = text || '';
+      el.className = 'fert-custom-msg' + (text ? (ok ? ' is-ok' : ' is-err') : '');
+    }
+
+    function renderFertCustomSavedList() {
+      var ul = document.getElementById('fertCustomSavedList');
+      if (!ul) return;
+      var cat = window.HydroFertAporteCatalog;
+      var users = cat.getCatalogList().filter(function (e) { return e.isUser; });
+      if (!users.length) {
+        ul.innerHTML = '<li style="color:#94a3b8;border:0;">Ninguno guardado aún.</li>';
+        return;
+      }
+      ul.innerHTML = users.map(function (u) {
+        var tag = u.kind === 'user_formula' ? 'Molécula' : '% proveedor';
+        var sub = u.formula ? ' · ' + u.formula : '';
+        return '<li><span class="fert-custom-tag">' + tag + '</span><strong>' + u.name + '</strong><span style="color:#64748b;">' + sub + '</span>' +
+          '<button type="button" class="fert-aporte-btn fert-aporte-btn--mini fert-aporte-btn--calc" data-fert-use-custom="' + u.id + '">Usar</button>' +
+          '<button type="button" class="fert-aporte-btn fert-aporte-btn--mini fert-aporte-btn--del" data-fert-del-custom="' + u.id + '">Quitar</button></li>';
+      }).join('');
+    }
+
+    function switchFertCustomMode(mode) {
+      var isFormula = mode === 'formula';
+      document.querySelectorAll('[data-fert-custom-mode]').forEach(function (btn) {
+        var on = btn.getAttribute('data-fert-custom-mode') === mode;
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      var fBlock = document.getElementById('fertCustomFormulaBlock');
+      var pBlock = document.getElementById('fertCustomPercentBlock');
+      if (fBlock) fBlock.hidden = !isFormula;
+      if (pBlock) pBlock.hidden = isFormula;
+    }
+
+    function fertAporteRecalcRows() {
+      var cat = window.HydroFertAporteCatalog;
+      fertAporteState.rows.forEach(function (row) {
+        row.totals = cat.rowTotals(row.dose, row.compUsed);
+      });
+      return cat.sumRows(fertAporteState.rows);
+    }
+
+    function fertAporteFormatRowSummary(row) {
+      if (!row.totals) return '';
+      var t = row.totals;
+      var bits = [];
+      ['N_NO3', 'N_NH4', 'P', 'K', 'Ca', 'Mg', 'S', 'Cl'].forEach(function (k) {
+        var m = t.meq[k];
+        if (m > 0.001) bits.push(fertAporteLabelNutrient(k) + ' ' + m.toFixed(2) + ' meq · ' + t.ppm[k].toFixed(1) + ' ppm');
+      });
+      return bits.length ? bits.join(' · ') : 'Sin aporte (dosis 0 o % en 0)';
+    }
+
+    function fertAporteRenderTotalsTable(wrapId, kind) {
+      var wrap = document.getElementById(wrapId);
+      if (!wrap) return;
+      var sum = fertAporteRecalcRows();
+      var data = kind === 'meq' ? sum.meq : sum.ppm;
+      var dec = kind === 'meq' ? 2 : 1;
+      var cols = HYDRO_MEQ_NUTRIENTS;
+      var head = cols.map(function (n) { return '<th class="' + hydroColClass(n) + '">' + hydroLabelHtml(n) + '</th>'; }).join('');
+      var cells = cols.map(function (n) {
+        var v = data[n] || 0;
+        return '<td class="' + hydroColClass(n) + '">' + (v > 0.0005 ? v.toFixed(dec) : '—') + '</td>';
+      }).join('');
+      wrap.innerHTML =
+        '<div class="hydro-table-scroll hydro-table-colored">' +
+        '<table class="hydro-table hydro-table-colored"><thead><tr>' + head + '</tr></thead>' +
+        '<tbody><tr>' + cells + '</tr></tbody></table></div>';
+    }
+
+    function renderFertAporteRows() {
+      var host = document.getElementById('fertAporteRows');
+      if (!host) return;
+      var cat = window.HydroFertAporteCatalog;
+      fertAporteRecalcRows();
+      host.innerHTML = fertAporteState.rows.map(function (row) {
+        var entry = cat.getById(row.materialId);
+        var note = '';
+        if (entry && entry.blend && entry.blend.note) note = '<div class="fert-aporte-note">' + entry.blend.note + '</div>';
+        var compKeys = fertAporteCompKeysForRow(row);
+        var compGrid = compKeys.map(function (k) {
+          var v = row.compUsed[k] != null ? row.compUsed[k] : 0;
+          return '<div><label>' + fertAporteLabelNutrient(k) + ' %</label>' +
+            '<input type="number" step="0.01" min="0" data-fert-row="' + row.id + '" data-fert-comp="' + k + '" value="' + v + '"></div>';
+        }).join('');
+        var isInlineFormula = row.materialId === cat.INLINE_FORMULA_ID;
+        var isInlinePct = row.materialId === cat.INLINE_PCT_ID;
+        var formulaReadonly = !isInlineFormula && !(entry && entry.isUser && entry.kind === 'user_formula');
+        var formulaVal = isInlinePct ? '' : (row.customFormula || (entry ? entry.formula : ''));
+        var calcBtn = isInlineFormula
+          ? '<button type="button" class="fert-aporte-btn fert-aporte-btn--calc" data-fert-apply-formula="' + row.id + '">Calcular %</button>'
+          : '';
+        return (
+          '<div class="fert-aporte-card" data-fert-card="' + row.id + '">' +
+          '<div class="fert-aporte-card-head">' +
+            '<div class="fert-aporte-field fert-aporte-field--product"><label>Producto</label>' +
+              '<select data-fert-row="' + row.id + '" data-fert-field="material">' + fertAporteBuildSelectOptions(row.materialId) + '</select></div>' +
+            '<div class="fert-aporte-field fert-aporte-field--formula"><label>Fórmula</label>' +
+              '<input type="text" data-fert-row="' + row.id + '" data-fert-field="formula" value="' + String(formulaVal).replace(/"/g, '&quot;') + '"' + (formulaReadonly ? ' readonly' : '') + '></div>' +
+            calcBtn +
+            '<div class="fert-aporte-field fert-aporte-field--dose"><label>Dosis</label>' +
+              '<input type="number" step="0.01" min="0" data-fert-row="' + row.id + '" data-fert-field="dose" value="' + (row.dose || 0) + '">' +
+              '<div class="fert-aporte-dose-hint">g/L = kg/m³</div></div>' +
+            '<div class="fert-aporte-actions"><button type="button" class="fert-aporte-btn fert-aporte-btn--del" data-fert-del="' + row.id + '">Eliminar</button></div>' +
+          '</div>' +
+          note +
+          (isInlineFormula ? '<div class="fert-aporte-note">Escribe la fórmula y pulsa <strong>Calcular %</strong>. Luego ajusta % si tu producto difiere del teórico.</div>' : '') +
+          (isInlinePct ? '<div class="fert-aporte-note">Captura los <strong>% elementales</strong> de la ficha del proveedor (mezcla comercial). Todos los campos son editables.</div>' : '') +
+          '<div class="fert-aporte-comp-grid">' + compGrid + '</div>' +
+          '<div class="fert-aporte-row-out"><strong>Aporte fila:</strong> ' + fertAporteFormatRowSummary(row) + '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+
+    function renderFertAporteAll() {
+      renderFertCustomSavedList();
+      renderFertAporteRows();
+      fertAporteRenderTotalsTable('fertAporteMeqWrap', 'meq');
+      fertAporteRenderTotalsTable('fertAportePpmWrap', 'ppm');
+    }
+
+    function bindFertAporteEvents() {
+      renderFertCustomPctGrid();
+      switchFertCustomMode('formula');
+
+      document.querySelectorAll('[data-fert-custom-mode]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          switchFertCustomMode(btn.getAttribute('data-fert-custom-mode'));
+        });
+      });
+
+      var saveFormulaBtn = document.getElementById('fertCustomSaveFormulaBtn');
+      if (saveFormulaBtn) {
+        saveFormulaBtn.addEventListener('click', function () {
+          var cat = window.HydroFertAporteCatalog;
+          var name = (document.getElementById('fertCustomNameFormula') || {}).value || '';
+          var formula = (document.getElementById('fertCustomFormulaInput') || {}).value || '';
+          var eng = window.FertFormulaEngine;
+          var comp = null;
+          if (eng) {
+            var parsed = eng.tryCompFromFormula(formula);
+            if (!parsed.ok) { fertCustomSetMsg(parsed.error, false); return; }
+            comp = parsed.comp;
+            formula = parsed.normalized || formula;
+          }
+          var res = cat.addUserMaterial({ name: name, kind: 'formula', formula: formula, comp: comp });
+          if (!res.ok) { fertCustomSetMsg(res.error, false); return; }
+          fertCustomSetMsg('Guardado: ' + name, true);
+          document.getElementById('fertCustomNameFormula').value = '';
+          document.getElementById('fertCustomFormulaInput').value = '';
+          renderFertAporteAll();
+          hydroScheduleSave();
+        });
+      }
+
+      var savePctBtn = document.getElementById('fertCustomSavePctBtn');
+      if (savePctBtn) {
+        savePctBtn.addEventListener('click', function () {
+          var cat = window.HydroFertAporteCatalog;
+          var name = (document.getElementById('fertCustomNamePct') || {}).value || '';
+          var comp = fertCustomCollectPctComp();
+          var res = cat.addUserMaterial({ name: name, kind: 'percent', comp: comp });
+          if (!res.ok) { fertCustomSetMsg(res.error, false); return; }
+          fertCustomSetMsg('Guardado: ' + name, true);
+          document.getElementById('fertCustomNamePct').value = '';
+          renderFertCustomPctGrid();
+          renderFertAporteAll();
+          hydroScheduleSave();
+        });
+      }
+
+      var customPanel = document.getElementById('fertCustomPanel');
+      if (customPanel) {
+        customPanel.addEventListener('click', function (e) {
+          var useBtn = e.target.closest('[data-fert-use-custom]');
+          if (useBtn) {
+            var id = useBtn.getAttribute('data-fert-use-custom');
+            fertAporteState.rows.push(fertAporteDefaultRow(id));
+            renderFertAporteAll();
+            hydroScheduleSave();
+            return;
+          }
+          var delBtn = e.target.closest('[data-fert-del-custom]');
+          if (delBtn) {
+            var delId = delBtn.getAttribute('data-fert-del-custom');
+            window.HydroFertAporteCatalog.removeUserMaterial(delId);
+            fertAporteState.rows.forEach(function (r) {
+              if (r.materialId === delId) fertAporteApplyMaterial(r, window.HydroFertAporteCatalog.INLINE_PCT_ID);
+            });
+            renderFertAporteAll();
+            hydroScheduleSave();
+          }
+        });
+      }
+
+      var addBtn = document.getElementById('fertAporteAddBtn');
+      if (addBtn) {
+        addBtn.addEventListener('click', function () {
+          fertAporteState.rows.push(fertAporteDefaultRow('mkp'));
+          renderFertAporteAll();
+          hydroScheduleSave();
+        });
+      }
+      document.getElementById('hydroTabBtnDesign').addEventListener('click', function () { switchHydroMainTab(0); });
+      document.getElementById('hydroTabBtnFert').addEventListener('click', function () { switchHydroMainTab(1); });
+
+      var rowsHost = document.getElementById('fertAporteRows');
+      if (!rowsHost) return;
+      rowsHost.addEventListener('change', function (e) {
+        var t = e.target;
+        if (!t || !t.getAttribute) return;
+        var rowId = t.getAttribute('data-fert-row');
+        var row = fertAporteState.rows.find(function (r) { return r.id === rowId; });
+        if (!row) return;
+        if (t.getAttribute('data-fert-field') === 'material') {
+          fertAporteApplyMaterial(row, t.value);
+          renderFertAporteAll();
+          hydroScheduleSave();
+          return;
+        }
+        if (t.getAttribute('data-fert-field') === 'formula') {
+          row.customFormula = t.value;
+          hydroScheduleSave();
+        }
+      });
+      rowsHost.addEventListener('input', function (e) {
+        var t = e.target;
+        if (!t || !t.getAttribute) return;
+        var rowId = t.getAttribute('data-fert-row');
+        var row = fertAporteState.rows.find(function (r) { return r.id === rowId; });
+        if (!row) return;
+        var compKey = t.getAttribute('data-fert-comp');
+        if (compKey) {
+          row.compUsed[compKey] = parseFloat(t.value) || 0;
+          renderFertAporteAll();
+          hydroScheduleSave();
+          return;
+        }
+        if (t.getAttribute('data-fert-field') === 'dose') {
+          row.dose = parseFloat(t.value) || 0;
+          renderFertAporteAll();
+          hydroScheduleSave();
+          return;
+        }
+        if (t.getAttribute('data-fert-field') === 'formula') {
+          row.customFormula = t.value;
+        }
+      });
+      rowsHost.addEventListener('click', function (e) {
+        var applyBtn = e.target.closest('[data-fert-apply-formula]');
+        if (applyBtn) {
+          var rid = applyBtn.getAttribute('data-fert-apply-formula');
+          var row = fertAporteState.rows.find(function (r) { return r.id === rid; });
+          if (!row) return;
+          var card = applyBtn.closest('[data-fert-card]');
+          var fIn = card && card.querySelector('[data-fert-field="formula"]');
+          if (fIn) row.customFormula = fIn.value;
+          var err = fertAporteApplyFormulaToRow(row);
+          if (err) fertCustomSetMsg(err, false);
+          else fertCustomSetMsg('Composición calculada desde fórmula.', true);
+          renderFertAporteAll();
+          hydroScheduleSave();
+          return;
+        }
+        var btn = e.target.closest('[data-fert-del]');
+        if (!btn) return;
+        var id = btn.getAttribute('data-fert-del');
+        if (fertAporteState.rows.length <= 1) return;
+        fertAporteState.rows = fertAporteState.rows.filter(function (r) { return r.id !== id; });
+        renderFertAporteAll();
+        hydroScheduleSave();
+      });
+    }
+
     function boot() {
       hydroApplyLoadedState(hydroLoadLocal());
+      switchHydroMainTab(hydroActiveMainTab);
       renderHydroMeqTable();
       renderHydroDerivedTables();
       renderHydroTriangle();
       bindEvents();
+      bindFertAporteEvents();
       setupTernaryDrag();
     }
 
