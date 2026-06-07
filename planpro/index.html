@@ -643,6 +643,22 @@
         0 0 0 1px color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 22%, transparent),
         0 2px 6px color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 28%, transparent);
     }
+    .np-nutri-folder-row--child::before {
+      width: 3px;
+      top: 6px;
+      bottom: 6px;
+      border-radius: 0 4px 4px 0;
+      opacity: 0.92;
+    }
+    .np-nutri-folder-row--child:hover::before {
+      width: 3px;
+    }
+    .np-nutri-folder-row--child.np-nutri-folder-row--active::before {
+      top: 5px;
+      bottom: 5px;
+      width: 4px;
+      border-radius: 0 5px 5px 0;
+    }
     .np-nutri-folder-swatch {
       flex-shrink: 0;
       width: 10px;
@@ -718,9 +734,32 @@
     .np-nutri-folder-action:focus-visible {
       opacity: 1;
     }
-    .np-nutri-folder-rename:hover {
+    .np-nutri-folder-rename:hover,
+    .np-nutri-folder-rename--active {
       background: rgba(219, 234, 254, 0.9);
       color: #1d4ed8;
+      opacity: 1;
+    }
+    .np-nutri-folder-collapse {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 28px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #64748b;
+      font-size: 11px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .np-nutri-folder-collapse:hover {
+      background: rgba(226, 232, 240, 0.75);
+      color: #334155;
     }
     .np-nutri-folder-del:hover {
       background: rgba(254, 226, 226, 0.85);
@@ -759,6 +798,27 @@
       gap: 10px;
       margin-bottom: 14px;
     }
+    .np-nutri-content-folder-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .np-nutri-content-folder-tab {
+      flex-shrink: 0;
+      width: 7px;
+      height: 28px;
+      border-radius: 0 7px 7px 0;
+      background: var(--np-nutri-folder-accent, #059669);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 18%, transparent),
+        0 2px 6px color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 28%, transparent);
+    }
+    .np-nutri-content-folder-tab--child {
+      width: 4px;
+      height: 24px;
+      border-radius: 0 5px 5px 0;
+    }
     .np-nutri-files-head h2 {
       margin: 0;
       font-size: 1rem;
@@ -776,6 +836,52 @@
       height: 1px;
       opacity: 0;
       pointer-events: none;
+    }
+    .np-nutri-upload-progress {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 22%, rgba(148, 163, 184, 0.28));
+      background: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 6%, #fff);
+    }
+    .np-nutri-upload-progress-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      line-height: 1.35;
+      color: #475569;
+    }
+    .np-nutri-upload-progress-label {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .np-nutri-upload-progress-pct {
+      flex-shrink: 0;
+      font-weight: 700;
+      color: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 50%, #0f172a);
+    }
+    .np-nutri-upload-progress-track {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.22);
+      overflow: hidden;
+    }
+    .np-nutri-upload-progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 78%, #fff),
+        var(--np-nutri-folder-accent, #059669)
+      );
+      transition: width 0.18s ease;
     }
     .np-nutri-file-list {
       display: grid;
@@ -6199,15 +6305,13 @@
                   <input type="text" id="npNutriNewRootFolder" autocomplete="off" placeholder="Ej. Fertirriego, Laboratorio…" aria-label="Nombre de carpeta principal" />
                   <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriBtnAddRootFolder">Crear</button>
                 </div>
-                <p class="np-muted np-nutri-folder-add-hint">Al mismo nivel que Personal (carpetas de primer nivel).</p>
               </div>
               <div class="np-nutri-folder-add-section np-nutri-folder-add-section--sub">
-                <span class="np-nutri-folder-add-label">Subcarpeta</span>
+                <span class="np-nutri-folder-add-label" id="npNutriFolderAddInnerLabel">Dentro de la carpeta</span>
                 <div class="np-nutri-folder-add">
-                  <input type="text" id="npNutriNewFolder" autocomplete="off" placeholder="Subcarpeta…" aria-label="Nombre de subcarpeta" />
+                  <input type="text" id="npNutriNewFolder" autocomplete="off" placeholder="Nueva carpeta…" aria-label="Nombre de carpeta dentro de la seleccionada" />
                   <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriBtnAddFolder">Crear</button>
                 </div>
-                <p id="npNutriFolderAddHint" class="np-muted np-nutri-folder-add-hint">Dentro de la carpeta seleccionada en el árbol.</p>
               </div>
             </aside>
             <div class="np-main-col">
@@ -6218,7 +6322,10 @@
                 </div>
                 <div id="npNutriPanelFiles">
                   <div class="np-nutri-files-head">
-                    <h2 id="npNutriFolderTitle">Nutri PRO</h2>
+                    <div class="np-nutri-content-folder-title">
+                      <span id="npNutriContentFolderTab" class="np-nutri-content-folder-tab" aria-hidden="true"></span>
+                      <h2 id="npNutriFolderTitle">Nutri PRO</h2>
+                    </div>
                     <div class="np-nutri-files-actions">
                       <input type="file" id="npNutriFileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.odt,.ods,.odp,.png,.jpg,.jpeg,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.svg,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv" aria-hidden="true" tabindex="-1" />
                       <button type="button" class="btn btn-ghost btn-ghost-blue" id="npNutriBtnPickFiles">Elegir archivos</button>
@@ -6226,12 +6333,24 @@
                     </div>
                   </div>
                   <p id="npNutriUploadStatus" class="np-muted np-hide" style="margin:0 0 12px;font-size:13px;" aria-live="polite"></p>
+                  <div id="npNutriUploadProgress" class="np-nutri-upload-progress np-hide" aria-live="polite">
+                    <div class="np-nutri-upload-progress-meta">
+                      <span id="npNutriUploadProgressLabel" class="np-nutri-upload-progress-label">Subiendo…</span>
+                      <span id="npNutriUploadProgressPct" class="np-nutri-upload-progress-pct">0%</span>
+                    </div>
+                    <div class="np-nutri-upload-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                      <div id="npNutriUploadProgressFill" class="np-nutri-upload-progress-fill"></div>
+                    </div>
+                  </div>
                   <div id="npNutriFilesMount" class="np-nutri-file-list"></div>
                   <p id="npNutriFilesEmpty" class="np-muted">Sin archivos en esta carpeta. PDF, Office, imágenes (PNG, JPG, WebP…) y más.</p>
                 </div>
                 <div id="npNutriPanelLinks" class="np-hide">
                   <div class="np-nutri-files-head">
-                    <h2 id="npNutriLinksTitle">Enlaces · Nutri PRO</h2>
+                    <div class="np-nutri-content-folder-title">
+                      <span id="npNutriContentFolderTabLinks" class="np-nutri-content-folder-tab" aria-hidden="true"></span>
+                      <h2 id="npNutriLinksTitle">Enlaces · Nutri PRO</h2>
+                    </div>
                   </div>
                   <form id="npNutriLinkForm" class="np-nutri-link-form">
                     <input type="hidden" id="npNutriLinkEditId" value="" />
@@ -9342,6 +9461,8 @@
     }
     setPlanProAppMode('nutri-pro');
     state.nutriProSelectedFolderId = res.data.folder_id || null;
+    state.nutriProFolderEditingId = null;
+    if (res.data.folder_id) nutriProExpandFolderAncestors(res.data.folder_id);
     renderNutriProFolderTree();
     syncNutriProFolderContext();
     setNutriProPanel('files');
@@ -10341,12 +10462,14 @@
     nutriProFiles: [],
     nutriProSelectedFolderId: null,
     nutriProPendingUploads: null,
+    nutriProUploading: false,
     nutriProPanel: 'files',
     nutriProLinks: [],
     nutriProLinkFilterCategory: '',
     nutriProLinksReady: true,
     nutriProFocusRename: false,
     nutriProFolderEditingId: null,
+    nutriProCollapsedFolderIds: {},
     nutriProHighlightFileId: null,
     nutriProCustomLinkCategories: [],
     nutriProSearchTimer: null,
@@ -17217,13 +17340,31 @@
     el.style.setProperty('--np-nutri-folder-accent', hex);
   }
 
+  function nutriProFolderDepth(folderId) {
+    if (!folderId) return 0;
+    var depth = 0;
+    var f = nutriProGetFolderById(folderId);
+    while (f && f.parent_id) {
+      depth += 1;
+      f = nutriProGetFolderById(f.parent_id);
+    }
+    return depth;
+  }
+
   function syncNutriProContentPanelAccent() {
     var panel = $('npNutriContentPanel');
     var sidebar = $('npNutriFoldersSidebar');
     var fid = state.nutriProSelectedFolderId;
     var hex = fid ? resolveNutriProFolderInheritedHex(fid) : '#059669';
+    var isChild = nutriProFolderDepth(fid) > 0;
     if (panel) panel.style.setProperty('--np-nutri-folder-accent', hex);
     if (sidebar) sidebar.style.setProperty('--np-nutri-folder-accent', hex);
+    ['npNutriContentFolderTab', 'npNutriContentFolderTabLinks'].forEach(function (tabId) {
+      var tab = $(tabId);
+      if (!tab) return;
+      tab.style.setProperty('--np-nutri-folder-accent', hex);
+      tab.classList.toggle('np-nutri-content-folder-tab--child', isChild);
+    });
   }
 
   function getNutriProFileDisplayPath(fileRec) {
@@ -17311,6 +17452,7 @@
         return f && f.id === folderId;
       });
       if (!exists) await loadNutriProFolders();
+      nutriProExpandFolderAncestors(folderId);
     }
     renderNutriProFolderTree();
     syncNutriProFolderContext();
@@ -17507,6 +17649,32 @@
     renameNutriProFolder(state.nutriProSelectedFolderId, inp && inp.value ? inp.value : '');
   }
 
+  function nutriProFolderHasChildren(folderId) {
+    if (!folderId) return false;
+    return (state.nutriProFolders || []).some(function (f) {
+      return f && f.parent_id === folderId;
+    });
+  }
+
+  function nutriProExpandFolderAncestors(folderId) {
+    if (!folderId) return;
+    var f = nutriProGetFolderById(folderId);
+    while (f && f.parent_id) {
+      delete state.nutriProCollapsedFolderIds[f.parent_id];
+      f = nutriProGetFolderById(f.parent_id);
+    }
+  }
+
+  function toggleNutriProFolderCollapse(folderId) {
+    if (!folderId || !nutriProFolderHasChildren(folderId)) return;
+    if (state.nutriProCollapsedFolderIds[folderId]) {
+      delete state.nutriProCollapsedFolderIds[folderId];
+    } else {
+      state.nutriProCollapsedFolderIds[folderId] = true;
+    }
+    renderNutriProFolderTree();
+  }
+
   function beginNutriProFolderEdit(folderRec) {
     if (!folderRec || !folderRec.id) return;
     state.nutriProSelectedFolderId = folderRec.id;
@@ -17516,6 +17684,21 @@
     syncNutriProFolderContext();
     loadNutriProFiles(folderRec.id);
     if (state.nutriProPanel === 'links') loadNutriProLinks();
+  }
+
+  function toggleNutriProFolderEdit(folderRec) {
+    if (!folderRec || !folderRec.id) return;
+    if (
+      state.nutriProFolderEditingId === folderRec.id &&
+      state.nutriProSelectedFolderId === folderRec.id
+    ) {
+      state.nutriProFolderEditingId = null;
+      state.nutriProFocusRename = false;
+      renderNutriProFolderTree();
+      syncNutriProFolderContext();
+      return;
+    }
+    beginNutriProFolderEdit(folderRec);
   }
 
   async function clearNutriProFolderColor() {
@@ -17557,7 +17740,9 @@
       });
     kids.forEach(function (f) {
       out.push({ folder: f, depth: depth });
-      nutriProBuildFolderTreeRows(f.id, depth + 1, out);
+      if (!state.nutriProCollapsedFolderIds[f.id]) {
+        nutriProBuildFolderTreeRows(f.id, depth + 1, out);
+      }
     });
     return out;
   }
@@ -17579,14 +17764,36 @@
       var wrap = document.createElement('div');
       wrap.className = 'np-nutri-folder-wrap' + (row.depth > 0 ? ' np-nutri-folder-wrap--child' : '');
       if (row.depth > 0) {
-        wrap.style.marginLeft = 4 + (row.depth - 1) * 6 + 'px';
+        wrap.style.marginLeft = row.depth * 14 + 'px';
       }
       applyNutriProFolderRowAccent(wrap, f.id);
+      var hasKids = nutriProFolderHasChildren(f.id);
+      if (hasKids) {
+        var col = document.createElement('button');
+        col.type = 'button';
+        col.className = 'np-nutri-folder-collapse';
+        col.title = state.nutriProCollapsedFolderIds[f.id] ? 'Mostrar subcarpetas' : 'Ocultar subcarpetas';
+        col.setAttribute(
+          'aria-label',
+          (state.nutriProCollapsedFolderIds[f.id] ? 'Expandir' : 'Contraer') + ' carpeta ' + (f.title || '')
+        );
+        col.textContent = state.nutriProCollapsedFolderIds[f.id] ? '▸' : '▾';
+        (function (fid) {
+          col.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleNutriProFolderCollapse(fid);
+          });
+        })(f.id);
+        wrap.appendChild(col);
+      }
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className =
-        'np-nutri-folder-row' + (state.nutriProSelectedFolderId === f.id ? ' np-nutri-folder-row--active' : '');
-      btn.style.paddingLeft = 14 + row.depth * 12 + 'px';
+        'np-nutri-folder-row' +
+        (row.depth > 0 ? ' np-nutri-folder-row--child' : '') +
+        (state.nutriProSelectedFolderId === f.id ? ' np-nutri-folder-row--active' : '');
+      btn.style.paddingLeft = '14px';
       applyNutriProFolderRowAccent(btn, f.id);
       var sw = document.createElement('span');
       sw.className = 'np-nutri-folder-swatch';
@@ -17609,15 +17816,20 @@
       })(f.id);
       var ren = document.createElement('button');
       ren.type = 'button';
-      ren.className = 'np-nutri-folder-action np-nutri-folder-rename';
-      ren.title = 'Editar nombre y color';
+      ren.className =
+        'np-nutri-folder-action np-nutri-folder-rename' +
+        (state.nutriProFolderEditingId === f.id ? ' np-nutri-folder-rename--active' : '');
+      ren.title =
+        state.nutriProFolderEditingId === f.id
+          ? 'Cerrar edición'
+          : 'Editar nombre y color';
       ren.setAttribute('aria-label', 'Editar carpeta ' + (f.title || ''));
       ren.textContent = '✎';
       (function (folderRec) {
         ren.addEventListener('click', function (e) {
           e.preventDefault();
           e.stopPropagation();
-          beginNutriProFolderEdit(folderRec);
+          toggleNutriProFolderEdit(folderRec);
         });
       })(f);
       var del = document.createElement('button');
@@ -17970,6 +18182,7 @@
     if (inp) inp.value = '';
     showToast('Subcarpeta creada en «' + parentTitle + '».');
     await loadNutriProFolders();
+    delete state.nutriProCollapsedFolderIds[parentId];
     state.nutriProSelectedFolderId = created.id;
     state.nutriProFolderEditingId = null;
     renderNutriProFolderTree();
@@ -17977,12 +18190,61 @@
     await loadNutriProFiles(created.id);
   }
 
+  function nutriProUploadTotals(files) {
+    var count = 0;
+    var bytes = 0;
+    (files || []).forEach(function (f) {
+      if (!f || !f.name) return;
+      count += 1;
+      bytes += f.size || 0;
+    });
+    return { count: count, bytes: bytes };
+  }
+
+  function setNutriProUploadProgress(doneCount, doneBytes, totals, label) {
+    var box = $('npNutriUploadProgress');
+    var fill = $('npNutriUploadProgressFill');
+    var lbl = $('npNutriUploadProgressLabel');
+    var pctEl = $('npNutriUploadProgressPct');
+    var track = box && box.querySelector('[role="progressbar"]');
+    if (!box || !totals || !totals.count) {
+      if (box) box.classList.add('np-hide');
+      if (fill) fill.style.width = '0%';
+      if (track) track.setAttribute('aria-valuenow', '0');
+      return;
+    }
+    var ratio = 0;
+    if (totals.bytes > 0) ratio = Math.min(1, doneBytes / totals.bytes);
+    else ratio = Math.min(1, doneCount / totals.count);
+    var pct = Math.round(ratio * 100);
+    box.classList.remove('np-hide');
+    if (fill) fill.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = pct + '%';
+    if (lbl) lbl.textContent = label || 'Subiendo…';
+    if (track) track.setAttribute('aria-valuenow', String(pct));
+  }
+
+  function hideNutriProUploadProgress() {
+    var box = $('npNutriUploadProgress');
+    if (box) box.classList.add('np-hide');
+    setNutriProUploadProgress(0, 0, null, '');
+  }
+
   function updateNutriProUploadUi() {
     var btn = $('npNutriBtnUpload');
+    var pick = $('npNutriBtnPickFiles');
     var pending = state.nutriProPendingUploads;
-    if (btn) btn.disabled = !(pending && pending.length);
+    var uploading = !!state.nutriProUploading;
+    if (btn) btn.disabled = uploading || !(pending && pending.length);
+    if (pick) pick.disabled = uploading;
     var st = $('npNutriUploadStatus');
     if (!st) return;
+    if (uploading) {
+      st.classList.add('np-hide');
+      st.textContent = '';
+      return;
+    }
+    hideNutriProUploadProgress();
     if (!pending || !pending.length) {
       st.classList.add('np-hide');
       st.textContent = '';
@@ -18001,25 +18263,47 @@
   async function uploadNutriProPendingFiles() {
     var files = state.nutriProPendingUploads;
     if (!files || !files.length || !state.client || !state.userId || !state.nutriProReady) return;
+    if (state.nutriProUploading) return;
+    state.nutriProUploading = true;
     var btn = $('npNutriBtnUpload');
+    var pick = $('npNutriBtnPickFiles');
     if (btn) btn.disabled = true;
+    if (pick) pick.disabled = true;
+    var st = $('npNutriUploadStatus');
+    if (st) {
+      st.classList.add('np-hide');
+      st.textContent = '';
+    }
+    var totals = nutriProUploadTotals(files);
+    var doneCount = 0;
+    var doneBytes = 0;
+    setNutriProUploadProgress(0, 0, totals, 'Iniciando subida (0 de ' + totals.count + ')…');
     var folderId = state.nutriProSelectedFolderId;
     var folderSeg = folderId || 'root';
     var ok = 0;
     var fail = 0;
     var lastErr = '';
     var uploadedIds = [];
+    try {
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
       if (!file || !file.name) continue;
+      var safeName = nutriProSanitizeFilename(file.name);
+      setNutriProUploadProgress(
+        doneCount,
+        doneBytes,
+        totals,
+        'Subiendo ' + (doneCount + 1) + ' de ' + totals.count + ': ' + safeName
+      );
       if (!nutriProFileIsAllowed(file)) {
         fail += 1;
+        doneCount += 1;
         lastErr = 'Tipo no permitido: ' + (file.name || 'archivo');
         showToast(lastErr, true);
+        setNutriProUploadProgress(doneCount, doneBytes, totals, 'Omitido: ' + safeName);
         continue;
       }
       var fileId = npCloudUuid();
-      var safeName = nutriProSanitizeFilename(file.name);
       var path = state.userId + '/' + folderSeg + '/' + fileId + '/' + safeName;
       var up;
       try {
@@ -18035,6 +18319,8 @@
       }
       if (up.error) {
         fail += 1;
+        doneCount += 1;
+        doneBytes += file.size || 0;
         lastErr = up.error.message || 'Error al subir ' + safeName;
         if (/bucket|not found|does not exist/i.test(lastErr)) {
           lastErr += ' · Verifica el bucket plan-pro-nutri-pro (SQL storage) en Supabase.';
@@ -18043,6 +18329,7 @@
             ' · Vuelve a ejecutar supabase-plan-pro-nutri-pro-storage.sql en Supabase (políticas de subida).';
         }
         showToast(lastErr, true);
+        setNutriProUploadProgress(doneCount, doneBytes, totals, 'Error: ' + safeName);
         continue;
       }
       var ins = await npCloudSyncTrack(function () {
@@ -18063,6 +18350,8 @@
       });
       if (ins.error) {
         fail += 1;
+        doneCount += 1;
+        doneBytes += file.size || 0;
         lastErr = ins.error.message || 'Error al registrar ' + safeName;
         if (/plan_pro_nutri_files|does not exist|schema/i.test(lastErr)) {
           lastErr += ' · Ejecuta supabase-plan-pro-nutri-pro.sql en Supabase.';
@@ -18071,21 +18360,35 @@
           await state.client.storage.from(NP_NUTRI_PRO_BUCKET).remove([path]);
         } catch (eRm) {}
         showToast(lastErr, true);
+        setNutriProUploadProgress(doneCount, doneBytes, totals, 'Error: ' + safeName);
         continue;
       }
       ok += 1;
       uploadedIds.push(fileId);
+      doneCount += 1;
+      doneBytes += file.size || 0;
+      setNutriProUploadProgress(
+        doneCount,
+        doneBytes,
+        totals,
+        doneCount >= totals.count ? 'Finalizando…' : 'Completado: ' + safeName
+      );
     }
+    setNutriProUploadProgress(totals.count, totals.bytes, totals, 'Subida terminada');
+    } catch (eUpload) {
+      hideNutriProUploadProgress();
+      showToast((eUpload && eUpload.message) || 'Error inesperado al subir.', true);
+    } finally {
     state.nutriProPendingUploads = null;
+    state.nutriProUploading = false;
     var inp = $('npNutriFileInput');
     if (inp) inp.value = '';
-    updateNutriProUploadUi();
-    if (btn) btn.disabled = true;
     var stDone = $('npNutriUploadStatus');
     if (ok) {
       showToast(
         ok + ' archivo' + (ok === 1 ? '' : 's') + ' subido' + (ok === 1 ? '' : 's') + ' a Nutri PRO.'
       );
+      window.setTimeout(hideNutriProUploadProgress, 700);
       if (stDone) {
         stDone.classList.add('np-hide');
         stDone.textContent = '';
@@ -18099,10 +18402,15 @@
     } else if (fail) {
       var finalMsg = lastErr || 'No se pudieron subir los archivos.';
       showToast(finalMsg, true);
+      hideNutriProUploadProgress();
       if (stDone) {
         stDone.classList.remove('np-hide');
         stDone.textContent = finalMsg;
       }
+    } else {
+      hideNutriProUploadProgress();
+    }
+    updateNutriProUploadUi();
     }
   }
 
@@ -18373,10 +18681,15 @@
   function syncNutriProFolderContext() {
     var hint = $('npNutriLinkFolderHint');
     var linksTitle = $('npNutriLinksTitle');
-    var addHint = $('npNutriFolderAddHint');
     var newInp = $('npNutriNewFolder');
+    var innerLabel = $('npNutriFolderAddInnerLabel');
     var folderLabel = nutriProFolderLabel(state.nutriProSelectedFolderId);
     var folderTitle = state.nutriProSelectedFolderId ? folderLabel : '';
+    if (innerLabel) {
+      innerLabel.textContent = folderTitle
+        ? 'Dentro de «' + folderTitle + '»'
+        : 'Dentro de la carpeta';
+    }
     if (hint) {
       hint.textContent = state.nutriProSelectedFolderId
         ? 'Se guardará en carpeta: «' + folderTitle + '».'
@@ -18385,17 +18698,12 @@
     if (linksTitle) {
       linksTitle.textContent = 'Enlaces · ' + (state.nutriProSelectedFolderId ? folderTitle : 'Nutri PRO');
     }
-    if (addHint) {
-      addHint.textContent = state.nutriProSelectedFolderId
-        ? 'Se creará dentro de «' + folderTitle + '».'
-        : 'Selecciona una carpeta en el árbol para crear una subcarpeta.';
-    }
     if (newInp) {
       if (state.nutriProSelectedFolderId) {
         var short = folderTitle.length > 22 ? folderTitle.slice(0, 22) + '…' : folderTitle;
-        newInp.placeholder = 'Subcarpeta en «' + short + '»…';
+        newInp.placeholder = 'Nueva carpeta en «' + short + '»…';
       } else {
-        newInp.placeholder = 'Subcarpeta…';
+        newInp.placeholder = 'Nueva carpeta…';
       }
     }
     syncNutriProFolderColorBar();
