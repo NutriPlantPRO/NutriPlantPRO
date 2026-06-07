@@ -5176,10 +5176,41 @@
       padding-bottom: 0;
       border-bottom: none;
     }
-    .np-sheet-items-wrap h2 {
-      margin: 0 0 10px;
+    .np-sheet-items-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .np-sheet-items-head h2 {
+      margin: 0;
       font-size: 1rem;
       color: #334155;
+    }
+    .np-sheet-items-head .np-nutri-sort-select {
+      flex: 0 1 auto;
+      min-width: 118px;
+      max-width: 148px;
+      margin: 0;
+    }
+    .np-sheet-item-card[draggable='true'] {
+      cursor: grab;
+    }
+    .np-sheet-item-card.np-dnd-dragging {
+      opacity: 0.55;
+    }
+    .np-sheet-item-row.np-dnd-drop-before .np-sheet-item-card {
+      box-shadow:
+        inset 0 3px 0 var(--np-sheet-accent, #059669),
+        0 1px 0 rgba(255, 255, 255, 0.92) inset,
+        0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+    .np-sheet-item-row.np-dnd-drop-after .np-sheet-item-card {
+      box-shadow:
+        inset 0 -3px 0 var(--np-sheet-accent, #059669),
+        0 1px 0 rgba(255, 255, 255, 0.92) inset,
+        0 4px 12px rgba(15, 23, 42, 0.06);
     }
     .np-sheet-new-title {
       margin: 0 0 14px;
@@ -6215,7 +6246,14 @@
               </div>
               <div class="np-sheet-inner">
                 <div id="npSheetItemsWrap" class="np-sheet-items-wrap np-hide">
-                  <h2>Apuntes</h2>
+                  <div class="np-sheet-items-head">
+                    <h2>Apuntes</h2>
+                    <select id="npPlanItemSort" class="np-nutri-sort-select" aria-label="Orden de apuntes" title="Orden de apuntes">
+                      <option value="manual">Mi orden</option>
+                      <option value="title">Nombre A–Z</option>
+                      <option value="date">Más reciente</option>
+                    </select>
+                  </div>
                   <div id="npSheetItemsMount" class="np-sheet-items-mount"></div>
                   <p id="npSheetItemsEmpty" class="np-muted np-hide" style="margin:8px 0 0;font-size:13px;">Sin apuntes.</p>
                 </div>
@@ -10536,6 +10574,8 @@
     planProBodyHtmlWarnShown: false,
     planProDnd: null,
     lastPlanProDndEndedAt: 0,
+    planProItemSortMode: 'date',
+    planProItemsRows: [],
     flowSearchTimer: null,
     flowSearchGen: 0,
     /** Nutri PRO: carpetas/archivos técnicos en Storage. */
@@ -14905,6 +14945,157 @@
     }
   }
 
+  function planProInitItemSortPrefs() {
+    try {
+      var m = localStorage.getItem('np_plan_pro_item_sort');
+      if (m === 'manual' || m === 'title' || m === 'date') state.planProItemSortMode = m;
+    } catch (e) {}
+    syncPlanProItemSortSelect();
+  }
+
+  function syncPlanProItemSortSelect() {
+    var sel = $('npPlanItemSort');
+    if (sel) sel.value = state.planProItemSortMode || 'date';
+  }
+
+  function planProSetItemSortMode(mode) {
+    if (mode !== 'manual' && mode !== 'title' && mode !== 'date') return;
+    state.planProItemSortMode = mode;
+    try {
+      localStorage.setItem('np_plan_pro_item_sort', mode);
+    } catch (e) {}
+    syncPlanProItemSortSelect();
+    syncSheetItemsList(state.planProItemsRows);
+  }
+
+  function sortPlanItemsByMode(arr, mode) {
+    var list = (arr || []).slice();
+    if (mode === 'title') {
+      return list.sort(function (a, b) {
+        return String(a.title || '').localeCompare(String(b.title || ''));
+      });
+    }
+    if (mode === 'date') {
+      return list.sort(function (a, b) {
+        var da = new Date(a.updated_at || a.created_at || 0).getTime();
+        var db = new Date(b.updated_at || b.created_at || 0).getTime();
+        return db - da || String(a.title || '').localeCompare(String(b.title || ''));
+      });
+    }
+    return sortPlanRecords(list);
+  }
+
+  function sortPlanItemsForDisplay(items) {
+    return sortPlanItemsByMode(items || [], state.planProItemSortMode || 'date');
+  }
+
+  function planProNextItemSortOrder(categoryId) {
+    var max = 0;
+    (state.planProItemsRows || []).forEach(function (r) {
+      if (!r) return;
+      if ((r.category_id || null) !== (categoryId || null)) return;
+      if ((r.sort_order || 0) > max) max = r.sort_order;
+    });
+    return max + 10;
+  }
+
+  async function reorderPlanItems(dragId, targetId, insertAfter) {
+    if (!dragId || !targetId || dragId === targetId || !state.client) return;
+    var dragR = (state.planProItemsRows || []).filter(function (r) {
+      return r && r.id === dragId;
+    })[0];
+    var targetR = (state.planProItemsRows || []).filter(function (r) {
+      return r && r.id === targetId;
+    })[0];
+    if (!dragR || !targetR) return;
+    if ((dragR.category_id || null) !== (targetR.category_id || null)) return;
+    var catKey = dragR.category_id || null;
+    var siblings = sortPlanItemsByMode(
+      (state.planProItemsRows || []).filter(function (r) {
+        return r && (r.category_id || null) === catKey;
+      }),
+      'manual'
+    );
+    var ids = siblings.map(function (r) {
+      return r.id;
+    });
+    var nextIds = moveIdAroundTarget(ids, dragId, targetId, insertAfter);
+    state.planProItemsRows.forEach(function (r) {
+      if (!r || (r.category_id || null) !== catKey) return;
+      var idx = nextIds.indexOf(r.id);
+      if (idx >= 0) r.sort_order = idx * 10;
+    });
+    state.planProItemSortMode = 'manual';
+    try {
+      localStorage.setItem('np_plan_pro_item_sort', 'manual');
+    } catch (e) {}
+    syncPlanProItemSortSelect();
+    syncSheetItemsList(state.planProItemsRows);
+    try {
+      await persistPlanSortOrder('plan_pro_items', nextIds);
+      showToast('Apuntes ordenados.');
+    } catch (err) {
+      console.error(err);
+      var em = (err && err.message) || '';
+      if (/sort_order|column|schema cache/i.test(em)) {
+        showToast('Ejecuta supabase-plan-pro-items-sort-order.sql en Supabase.', true);
+      } else {
+        showToast('No se pudo guardar el orden de apuntes.', true);
+      }
+      if (state.selectedCategoryId) await loadItems();
+    }
+  }
+
+  function wirePlanSheetItemCardDnd(row, card, itemRec) {
+    if (!row || !card || !itemRec || !itemRec.id) return;
+    card.setAttribute('draggable', 'true');
+    card.setAttribute('data-np-plan-item-id', itemRec.id);
+    card.addEventListener('dragstart', function (e) {
+      state.planProDnd = {
+        type: 'item',
+        id: itemRec.id,
+        categoryId: itemRec.category_id || null
+      };
+      card.classList.add('np-dnd-dragging');
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', itemRec.id);
+      }
+    });
+    row.addEventListener('dragover', function (e) {
+      var dnd = state.planProDnd;
+      if (!dnd || dnd.type !== 'item' || dnd.id === itemRec.id) return;
+      if ((dnd.categoryId || null) !== (itemRec.category_id || null)) return;
+      e.preventDefault();
+      var r = row.getBoundingClientRect();
+      var after = e.clientY > r.top + r.height / 2;
+      markPlanDropTarget(row, after);
+      row.dataset.npDropAfter = after ? '1' : '0';
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    });
+    row.addEventListener('dragleave', function () {
+      row.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after');
+      delete row.dataset.npDropAfter;
+    });
+    row.addEventListener('drop', async function (e) {
+      var dnd = state.planProDnd;
+      if (!dnd || dnd.type !== 'item') return;
+      e.preventDefault();
+      var dragId = dnd.id;
+      var after = row.dataset.npDropAfter === '1';
+      state.lastPlanProDndEndedAt = Date.now();
+      state.planProDnd = null;
+      clearPlanDndClasses();
+      await reorderPlanItems(dragId, itemRec.id, after);
+    });
+    card.addEventListener('dragend', function () {
+      state.lastPlanProDndEndedAt = Date.now();
+      state.planProDnd = null;
+      card.classList.remove('np-dnd-dragging');
+      clearPlanDndClasses();
+    });
+  }
+
   async function reorderPlanCategories(dragId, targetId, insertAfter) {
     if (!dragId || !targetId || dragId === targetId) return;
     var dragCat = state.categories.filter(function (c) { return c.id === dragId; })[0];
@@ -16417,6 +16608,7 @@
     var uid = state.userId;
     if (!state.selectedAreaId && getActivePlanAreas().length) state.selectedAreaId = getActivePlanAreas()[0].id;
     if (!state.selectedAreaId) {
+      state.planProItemsRows = [];
       $('npTableBody').innerHTML = '';
       $('npEmpty').classList.remove('np-hide');
       var siw = $('npSheetItemsWrap');
@@ -16435,8 +16627,8 @@
     }
 
     var selectCols = state.planProBodyHtmlColumn
-      ? 'id,title,area_id,category_id,status,priority,updated_at,body_plain,body_html,due_at,body_blocks,attachments'
-      : 'id,title,area_id,category_id,status,priority,updated_at,body_plain,due_at,body_blocks,attachments';
+      ? 'id,title,area_id,category_id,status,priority,sort_order,updated_at,body_plain,body_html,due_at,body_blocks,attachments'
+      : 'id,title,area_id,category_id,status,priority,sort_order,updated_at,body_plain,due_at,body_blocks,attachments';
 
     var qFiltered = c.from('plan_pro_items')
       .select(selectCols)
@@ -16455,19 +16647,37 @@
       .eq('owner_id', uid)
       .eq('area_id', state.selectedAreaId);
 
-    var resFiltered = await qFiltered.order('updated_at', { ascending: false });
+    var resFiltered = await qFiltered.order('sort_order', { ascending: true });
     if (gen !== npLoadItemsGen) return;
     if (resFiltered.error) {
       var em = (resFiltered.error.message || '');
-      if (state.planProBodyHtmlColumn && /body_html/i.test(em) && /does not exist/i.test(em)) {
-        state.planProBodyHtmlColumn = false;
-        if (!state.planProBodyHtmlWarnShown) {
-          state.planProBodyHtmlWarnShown = true;
-          showToast('Tu Supabase aún no tiene la columna body_html: Plan PRO funciona en modo compatible (texto sin HTML guardado aparte). Ejecuta el archivo supabase-plan-pro-body-html.sql en el SQL Editor cuando puedas.', false);
+      if (/sort_order|column|schema cache/i.test(em)) {
+        selectCols = state.planProBodyHtmlColumn
+          ? 'id,title,area_id,category_id,status,priority,updated_at,body_plain,body_html,due_at,body_blocks,attachments'
+          : 'id,title,area_id,category_id,status,priority,updated_at,body_plain,due_at,body_blocks,attachments';
+        qFiltered = c.from('plan_pro_items').select(selectCols).eq('owner_id', uid).eq('area_id', state.selectedAreaId);
+        if (state.selectedCategoryId) {
+          var idsFb = $('npFilterDesc').checked
+            ? collectDescendantIds(state.selectedCategoryId)
+            : [state.selectedCategoryId];
+          qFiltered = qFiltered.in('category_id', idsFb);
         }
-        return loadItems();
+        resFiltered = await qFiltered.order('updated_at', { ascending: false });
+        if (gen !== npLoadItemsGen) return;
+        qAreaAll = c.from('plan_pro_items').select(selectCols).eq('owner_id', uid).eq('area_id', state.selectedAreaId);
       }
-      throw resFiltered.error;
+      if (resFiltered.error) {
+        em = (resFiltered.error.message || '');
+        if (state.planProBodyHtmlColumn && /body_html/i.test(em) && /does not exist/i.test(em)) {
+          state.planProBodyHtmlColumn = false;
+          if (!state.planProBodyHtmlWarnShown) {
+            state.planProBodyHtmlWarnShown = true;
+            showToast('Tu Supabase aún no tiene la columna body_html: Plan PRO funciona en modo compatible (texto sin HTML guardado aparte). Ejecuta el archivo supabase-plan-pro-body-html.sql en el SQL Editor cuando puedas.', false);
+          }
+          return loadItems();
+        }
+        throw resFiltered.error;
+      }
     }
 
     var rowsForSidebar = resFiltered.data || [];
@@ -16486,6 +16696,7 @@
     }
 
     var rows = resFiltered.data || [];
+    state.planProItemsRows = rows;
     state.planProItemsSnapshot = (rows || []).slice(0, 100).map(function (r) {
       var itemRefs = extractPlanProRefsFromItem(r);
       return {
@@ -16606,14 +16817,18 @@
       return;
     }
     wrap.classList.remove('np-hide');
-    if (!rows || !rows.length) {
+    syncPlanProItemSortSelect();
+    var displayRows = sortPlanItemsForDisplay(rows || []);
+    if (!displayRows.length) {
       mount.replaceChildren();
       emptyEl.classList.remove('np-hide');
       return;
     }
     emptyEl.classList.add('np-hide');
     var fragM = document.createDocumentFragment();
-    rows.forEach(function (r) {
+    displayRows.forEach(function (r) {
+      var row = document.createElement('div');
+      row.className = 'np-sheet-item-row';
       var card = document.createElement('button');
       card.type = 'button';
       card.className = 'np-sheet-item-card';
@@ -16639,9 +16854,12 @@
       card.appendChild(n);
       card.appendChild(meta);
       card.addEventListener('click', function () {
+        if (Date.now() - state.lastPlanProDndEndedAt < 250) return;
         openItemDetail(r);
       });
-      fragM.appendChild(card);
+      row.appendChild(card);
+      wirePlanSheetItemCardDnd(row, card, r);
+      fragM.appendChild(row);
     });
     mount.replaceChildren(fragM);
   }
@@ -16807,6 +17025,15 @@
   if (npMapsPickerModal) {
     npMapsPickerModal.addEventListener('click', function (e) {
       if (e.target === npMapsPickerModal) closePlanProMapsPicker();
+    });
+  }
+
+  planProInitItemSortPrefs();
+  var npPlanItemSort = $('npPlanItemSort');
+  if (npPlanItemSort && npPlanItemSort.dataset.npWired !== '1') {
+    npPlanItemSort.dataset.npWired = '1';
+    npPlanItemSort.addEventListener('change', function () {
+      planProSetItemSortMode(this.value);
     });
   }
 
@@ -17121,7 +17348,8 @@
       body_plain: plain.trim() ? plain : null,
       due_at: dueCreate || null,
       body_blocks: state.pendingBlocks.length ? state.pendingBlocks : [],
-      attachments: createAttachments
+      attachments: createAttachments,
+      sort_order: planProNextItemSortOrder(state.selectedCategoryId)
     };
     if (state.planProBodyHtmlColumn) {
       payload.body_html = plain.trim() ? rawHtml : null;
@@ -17143,6 +17371,12 @@
           state.planProBodyHtmlWarnShown = true;
           showToast('Guardado sin columna body_html (modo compatible). Ejecuta supabase-plan-pro-body-html.sql en Supabase cuando puedas.', false);
         }
+      }
+      if (res.error && /sort_order|column|schema cache/i.test(res.error.message || '')) {
+        delete payload.sort_order;
+        res = await npCloudSyncTrack(function () {
+          return state.client.from('plan_pro_items').insert(payload).select('id').single();
+        }, npCloudInsertOp('plan_pro_items', payload, 'id', { id: newItemId }));
       }
       if (res.error) {
         btn.disabled = false;

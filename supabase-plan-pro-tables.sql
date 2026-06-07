@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS public.plan_pro_items (
   body_html         text,
   body_blocks       jsonb NOT NULL DEFAULT '[]'::jsonb,
   attachments       jsonb NOT NULL DEFAULT '[]'::jsonb,
+  sort_order        integer NOT NULL DEFAULT 0,
   created_at        timestamptz NOT NULL DEFAULT now(),
   updated_at        timestamptz NOT NULL DEFAULT now(),
   closed_at         timestamptz
@@ -134,6 +135,7 @@ CREATE INDEX IF NOT EXISTS idx_plan_pro_items_area ON public.plan_pro_items (are
 CREATE INDEX IF NOT EXISTS idx_plan_pro_items_category ON public.plan_pro_items (category_id);
 CREATE INDEX IF NOT EXISTS idx_plan_pro_items_status ON public.plan_pro_items (status);
 CREATE INDEX IF NOT EXISTS idx_plan_pro_items_captured ON public.plan_pro_items (captured_at);
+CREATE INDEX IF NOT EXISTS idx_plan_pro_items_category_sort ON public.plan_pro_items (category_id, sort_order);
 
 DROP TRIGGER IF EXISTS tr_plan_pro_items_updated ON public.plan_pro_items;
 CREATE TRIGGER tr_plan_pro_items_updated
