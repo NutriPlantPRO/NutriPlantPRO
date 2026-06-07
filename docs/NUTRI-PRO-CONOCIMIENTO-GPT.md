@@ -1,4 +1,4 @@
-# Nutri PRO — Conocimiento ChatGPT Socio (OpenAPI v2.6)
+# Nutri PRO — Conocimiento ChatGPT Socio (OpenAPI v2.7)
 
 ## Acción principal: `nutri_pro_ask`
 
@@ -71,6 +71,31 @@ Además de archivos, Nutri PRO guarda **links** con título, **descripción**, U
 
 Prioriza coincidencias en `description` y `title`. Si no hay enlace relevante, dilo; no inventes URLs.
 
+## Guardar en Nutri PRO: `nutri_pro_save`
+
+Cuando Jesús pida **guardar un reporte**, resumen o documento en una carpeta:
+
+1. Opcional: `nutri_pro_catalog` para ver rutas (`work / Personal`, etc.).
+2. Redacta el contenido (markdown o texto plano).
+3. Llama `nutri_pro_save` con `content`, `filename` (`.md` o `.txt` indexan bien) y `folder_path` o `folder_title`.
+
+```json
+{
+  "action": "nutri_pro_save",
+  "params": {
+    "folder_path": "work / Personal",
+    "filename": "informe-investigacion-banano.md",
+    "title": "Informe investigación banano",
+    "description": "Resumen Socio ChatGPT junio 2026",
+    "content": "# Informe\n\n..."
+  }
+}
+```
+
+Respuesta útil: `short_path`, `nutri_file_id`, `text_indexed`, `folder_path`. Confirma al usuario que ya está en la nube y en Plan PRO → Nutri PRO.
+
+**Word (.docx):** si solo envías texto, el servidor guarda como `.txt` indexable. Para binario real usa `content_base64`.
+
 ## Otras acciones
 
 | action | Cuándo |
@@ -78,6 +103,7 @@ Prioriza coincidencias en `description` y `title`. Si no hay enlace relevante, d
 | `nutri_pro_search` | Buscar archivos **y** enlaces por palabra (`kind`: `all`, `files`, `links`) |
 | `nutri_pro_catalog` | Inventario: carpetas, archivos (`description` = nota breve) y `links[]` |
 | `nutri_pro_file_text` | Más texto de archivo (`offset` para paginar) |
+| `nutri_pro_save` | **Guardar** reporte/archivo en carpeta Supabase (indexa texto) |
 | `plan_pro_item` | Detalle apunte + `nutri_refs` |
 
 ## Reglas
@@ -89,4 +115,4 @@ Prioriza coincidencias en `description` y `title`. Si no hay enlace relevante, d
 
 ## Deploy
 
-OpenAPI **v2.6.0** + este archivo en Knowledge.
+OpenAPI **v2.7.0** + este archivo en Knowledge. Reimporta Actions en ChatGPT tras deploy.

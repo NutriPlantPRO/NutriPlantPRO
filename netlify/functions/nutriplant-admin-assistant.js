@@ -15,7 +15,9 @@ const PROFILE_SELECT =
 
 const ADMIN_EMAIL_LC = 'admin@nutriplantpro.com';
 
+const crypto = require('crypto');
 const nutriContentSearch = require('./lib/nutri-pro-content-search');
+const { extractNutriProText, extOf } = require('./lib/nutri-pro-text-extract');
 
 function corsHeaders() {
   return {
@@ -2104,7 +2106,7 @@ async function handleNutriProCatalog(supabase, params) {
     files,
     links,
     gpt_usage:
-      'Lista tu bóveda Nutri PRO. nutri_pro_ask responde preguntas con fragmentos citados. nutri_pro_search busca con ranking. nutri_pro_file_text lee texto completo por trozos.',
+      'Lista tu bóveda Nutri PRO. nutri_pro_ask responde preguntas con fragmentos citados. nutri_pro_search busca con ranking. nutri_pro_file_text lee texto completo por trozos. nutri_pro_save guarda content en folder_path (carpeta).',
     lectura_archivos:
       'Formatos indexados: PDF, .docx, .xlsx/.xls/.csv, .pptx, .txt/.rtf, OpenDocument (.odt/.ods/.odp). Imágenes y .doc/.ppt antiguos: sin texto aún. Preguntas: nutri_pro_ask.'
   };
@@ -2522,6 +2524,269 @@ async function handleNutriProFileText(supabase, params) {
         },
     gpt_usage:
       'Responde citando short_path del archivo. Si status no es done, explica por qué (imagen, .doc antiguo, PDF escaneado, etc.).'
+  };
+}
+
+function sanitizeNutriProFilename(name) {
+  let base = String(name || 'socio-reporte.txt').trim() || 'socio-reporte.txt';
+  base = base.replace(/[/\\?%*:|"<>]/g, '_');
+  if (base.length > 180) base = base.slice(0, 180);
+  return base;
+}
+
+function mimeTypeFromNutriFilename(filename) {
+  const ext = extOf(filename);
+  const map = {
+    txt: 'text/plain',
+    md: 'text/markdown',
+    csv: 'text/csv',
+    json: 'application/json',
+    html: 'text/html',
+    pdf: 'application/pdf',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+  };
+  return map[ext] || 'application/octet-stream';
+}
+
+async function resolveNutriProFolderId(supabase, ownerId, params) {
+  const fid = String(params.folder_id || '').trim();
+  if (fid) {
+    const { data } = await supabase
+      .from('plan_pro_nutri_folders')
+      .select('id')
+      .eq('id', fid)
+      .eq('owner_id', ownerId)
+      .maybeSingle();
+    if (data && data.id) return data.id;
+  }
+  const hint = String(params.folder_path || params.folder_title || params.folder || '').trim();
+  if (!hint) return null;
+  const foldersRes = await fetchNutriProFolders(supabase, ownerId);
+  if (!foldersRes.ok) return null;
+  const foldersById = nutriFolderMapById(foldersRes.rows);
+  const normHint = hint
+    .toLowerCase()
+    .replace(/nutri\s*pro\s*[>/]?\s*/gi, '')
+    .replace(/[>/\\]/g, '/')
+    .trim();
+  let best = null;
+  let bestScore = 0;
+  (foldersRes.rows || []).forEach((f) => {
+    if (!f || !f.id) return;
+    const path = nutriFolderPathChain(f.id, foldersById).join(' / ').toLowerCase();
+    const title = String(f.title || '').toLowerCase();
+    if (path === normHint || title === normHint) {
+      best = f.id;
+      bestScore = 10000;
+      return;
+    }
+    if (normHint.indexOf('/') >= 0 && path.indexOf(normHint) >= 0 && path.length > bestScore) {
+      best = f.id;
+      bestScore = path.length;
+    }
+    if (
+      (title.indexOf(normHint) >= 0 || normHint.indexOf(title) >= 0) &&
+      title.length > bestScore &&
+      title.length >= 2
+    ) {
+      best = f.id;
+      bestScore = title.length;
+    }
+  });
+  return best;
+}
+
+async function indexNutriProSavedFile(supabase, ownerId, fileId, buffer, fileRec) {
+  const processingRow = {
+    file_id: fileId,
+    owner_id: ownerId,
+    status: 'processing',
+    format_kind: null,
+    text_plain: null,
+    meta_json: {},
+    error_message: null,
+    extracted_at: null
+  };
+  const { error: upsertErr } = await supabase.from('plan_pro_nutri_file_extracts').upsert(processingRow, {
+    onConflict: 'file_id'
+  });
+  if (upsertErr) {
+    if (/plan_pro_nutri_file_extracts|does not exist|schema/i.test(upsertErr.message || '')) {
+      return {
+        indexed: false,
+        extract_status: 'unavailable',
+        extract_note: 'Tabla plan_pro_nutri_file_extracts no instalada.'
+      };
+    }
+    throw new Error('nutri_pro_save extract upsert: ' + upsertErr.message);
+  }
+  const extracted = await extractNutriProText(buffer, fileRec.original_name, fileRec.mime_type);
+  const patch = {
+    status: extracted.status,
+    format_kind: extracted.format_kind || null,
+    text_plain: extracted.text_plain || null,
+    meta_json: extracted.meta_json || {},
+    error_message: extracted.error_message || null,
+    extracted_at: new Date().toISOString()
+  };
+  const { error: patchErr } = await supabase.from('plan_pro_nutri_file_extracts').update(patch).eq('file_id', fileId);
+  if (patchErr) throw new Error('nutri_pro_save extract update: ' + patchErr.message);
+  return {
+    indexed: extracted.status === 'done',
+    extract_status: extracted.status,
+    char_count: (extracted.meta_json && extracted.meta_json.char_count) || (extracted.text_plain || '').length,
+    extract_note: extracted.error_message || null
+  };
+}
+
+async function handleNutriProSave(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'nutri_pro', error: 'No se encontró usuario admin para Nutri PRO.' };
+  }
+
+  const content = params.content != null ? String(params.content) : '';
+  const contentBase64 = String(params.content_base64 || '').trim();
+  if (!content.trim() && !contentBase64) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      error: 'Indica params.content (texto del reporte) o params.content_base64 (binario en base64).'
+    };
+  }
+
+  let buffer;
+  let fromBinary = false;
+  if (contentBase64) {
+    try {
+      buffer = Buffer.from(contentBase64, 'base64');
+      fromBinary = true;
+    } catch (eB64) {
+      return { ok: true, domain: 'nutri_pro', error: 'content_base64 inválido.' };
+    }
+  } else {
+    buffer = Buffer.from(content, 'utf8');
+  }
+
+  const MAX_BYTES = 12 * 1024 * 1024;
+  if (buffer.length > MAX_BYTES) {
+    return { ok: true, domain: 'nutri_pro', error: 'Archivo demasiado grande (máx. ~12 MB).' };
+  }
+  if (!buffer.length) {
+    return { ok: true, domain: 'nutri_pro', error: 'Contenido vacío.' };
+  }
+
+  let filename = sanitizeNutriProFilename(params.filename || params.original_name || params.title || '');
+  let formatNote = null;
+  if (!fromBinary && /\.(docx|xlsx|pptx|pdf)$/i.test(filename)) {
+    const base = filename.replace(/\.[^.]+$/, '');
+    const oldName = filename;
+    filename = base + '.txt';
+    formatNote =
+      'El contenido era texto; se guardó como .txt indexable. Para un ' +
+      oldName +
+      ' binario real, envía content_base64.';
+  }
+  if (!/\./.test(filename)) filename += '.txt';
+
+  const folderId = await resolveNutriProFolderId(supabase, ownerId, params);
+  const foldersRes = await fetchNutriProFolders(supabase, ownerId);
+  if (!foldersRes.ok) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      available: false,
+      error: 'Nutri PRO no instalado.',
+      setup_sql: foldersRes.setup
+    };
+  }
+  const foldersById = nutriFolderMapById(foldersRes.rows);
+  const folderPath = folderId ? nutriFolderPathChain(folderId, foldersById).join(' / ') : 'Raíz';
+
+  const fileId = crypto.randomUUID();
+  const folderSeg = folderId || 'root';
+  const storagePath = ownerId + '/' + folderSeg + '/' + fileId + '/' + filename;
+  const mimeType = mimeTypeFromNutriFilename(filename);
+
+  const { error: upErr } = await supabase.storage.from(NUTRI_PRO_STORAGE_BUCKET).upload(storagePath, buffer, {
+    contentType: mimeType,
+    upsert: false,
+    cacheControl: '3600'
+  });
+  if (upErr) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      error: 'Error al subir a Storage: ' + (upErr.message || 'desconocido')
+    };
+  }
+
+  const title = (params.title && String(params.title).trim()) || filename.replace(/\.[^.]+$/, '') || filename;
+  const description = (params.description && String(params.description).trim()) || null;
+  const insertRow = {
+    id: fileId,
+    owner_id: ownerId,
+    folder_id: folderId || null,
+    title,
+    original_name: filename,
+    storage_path: storagePath,
+    mime_type: mimeType,
+    description,
+    size_bytes: buffer.length,
+    sort_order: Date.now() % 1000000000
+  };
+
+  let ins = await supabase.from('plan_pro_nutri_files').insert(insertRow).select('id').single();
+  if (ins.error && /sort_order|column|schema cache/i.test(ins.error.message || '')) {
+    delete insertRow.sort_order;
+    ins = await supabase.from('plan_pro_nutri_files').insert(insertRow).select('id').single();
+  }
+  if (ins.error) {
+    try {
+      await supabase.storage.from(NUTRI_PRO_STORAGE_BUCKET).remove([storagePath]);
+    } catch (eRm) {}
+    return { ok: true, domain: 'nutri_pro', error: 'Error al registrar archivo: ' + ins.error.message };
+  }
+
+  const fileRec = { original_name: filename, mime_type: mimeType };
+  let indexResult = { indexed: false, extract_status: 'pending' };
+  try {
+    indexResult = await indexNutriProSavedFile(supabase, ownerId, fileId, buffer, fileRec);
+  } catch (exErr) {
+    indexResult = {
+      indexed: false,
+      extract_status: 'error',
+      extract_note: (exErr && exErr.message) || String(exErr)
+    };
+  }
+
+  const shortPath = folderId
+    ? nutriFolderPathChain(folderId, foldersById).join('/') + '/' + filename
+    : filename;
+
+  return {
+    ok: true,
+    domain: 'nutri_pro',
+    action: 'nutri_pro_save',
+    saved: true,
+    nutri_file_id: fileId,
+    folder_id: folderId,
+    folder_path: folderPath,
+    filename,
+    title,
+    short_path: shortPath,
+    size_bytes: buffer.length,
+    storage_bucket: NUTRI_PRO_STORAGE_BUCKET,
+    text_indexed: indexResult.indexed,
+    extract_status: indexResult.extract_status,
+    char_count: indexResult.char_count || 0,
+    extract_note: indexResult.extract_note || null,
+    format_note: formatNote,
+    message: 'Guardado en Nutri PRO › ' + folderPath + ' › ' + filename,
+    gpt_usage:
+      'Archivo en Supabase (nube). Visible en Plan PRO → Nutri PRO. Futuras preguntas: nutri_pro_ask con el tema o nutri_pro_file_text con nutri_file_id. Si text_indexed=false, indica extract_status al usuario.'
   };
 }
 
@@ -4562,7 +4827,7 @@ async function handleDescribeApi() {
         'plan_pro_create',
         'plan_pro_update'
       ],
-      nutri_pro: ['nutri_pro_catalog', 'nutri_pro_search', 'nutri_pro_ask', 'nutri_pro_file_text'],
+      nutri_pro: ['nutri_pro_catalog', 'nutri_pro_search', 'nutri_pro_ask', 'nutri_pro_file_text', 'nutri_pro_save'],
       radar: ['radar_project', 'radar_search', 'radar_overview'],
       free_tools: ['free_tools_catalog'],
       lab_analyses: ['lab_analyses_catalog', 'project_analyses'],
@@ -4570,9 +4835,9 @@ async function handleDescribeApi() {
       nutrition: ['nutrition_catalogs']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item/locations (leer), plan_pro_create/plan_pro_update (escribir). plan_pro_item incluye nutri_refs (enlaces 📎 a Nutri PRO). Nutri PRO: nutri_pro_ask (pregunta + snippets + apuntes enlazados), nutri_pro_search (ranking), nutri_pro_file_text. plan_pro_locations devuelve favoritos y apuntes con ubicación Maps. Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
+      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item/locations (leer), plan_pro_create/plan_pro_update (escribir). plan_pro_item incluye nutri_refs (enlaces 📎 a Nutri PRO). Nutri PRO: nutri_pro_ask (pregunta + snippets + apuntes enlazados), nutri_pro_search (ranking), nutri_pro_file_text (leer), nutri_pro_save (guardar reporte/archivo en carpeta Supabase). plan_pro_locations devuelve favoritos y apuntes con ubicación Maps. Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
     nutri_pro_gpt:
-      'Preguntas sobre documentos: nutri_pro_ask (fragmentos + linked_apuntes). nutri_pro_search con relevance_score e include_snippets. nutri_pro_file_text para más texto. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
+      'Preguntas: nutri_pro_ask. Guardar reportes: nutri_pro_save con content + filename + folder_path (usa nutri_pro_catalog para rutas). Tras guardar, text_indexed=true permite nutri_pro_ask futuro. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
     plan_pro_nota_semaforo:
       'Chip en libreta: [[sem:2026-05-26:media]] o append_due_marker. Ficha apunte: priority + due_at.',
     plan_pro_nota_herramientas:
@@ -4601,6 +4866,7 @@ const HANDLERS = {
   nutri_pro_search: (sb, p) => handleNutriProSearch(sb, p),
   nutri_pro_ask: (sb, p) => handleNutriProAsk(sb, p),
   nutri_pro_file_text: (sb, p) => handleNutriProFileText(sb, p),
+  nutri_pro_save: (sb, p) => handleNutriProSave(sb, p),
   radar_project: (sb, p) => handleRadarProject(sb, p),
   radar_search: (sb, p) => handleRadarSearch(sb, p),
   radar_overview: (sb, p) => handleRadarOverview(sb, p),
@@ -4617,9 +4883,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.6.0',
+      version: '2.7.0',
       description:
-        'NutriPlant + Plan PRO + Nutri PRO Fase 4 (nutri_pro_ask unified_citations, link_gap_suggestions). Plan PRO escritura. Análisis, Clima, Radar.'
+        'NutriPlant + Plan PRO + Nutri PRO (nutri_pro_ask, nutri_pro_save a Supabase). Plan PRO escritura. Análisis, Clima, Radar.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {

@@ -302,6 +302,117 @@
       font-style: italic;
       color: #475569;
     }
+    .np-planpro-chat-msg-attach {
+      margin-top: 6px;
+      font-size: 12px;
+      opacity: 0.92;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .np-planpro-chat-save-card {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ecfdf5 0%, #f8fafc 100%);
+      border: 1px solid rgba(5, 150, 105, 0.28);
+      font-size: 13px;
+      color: #0f172a;
+    }
+    .np-planpro-chat-save-card-title {
+      font-weight: 700;
+      color: #047857;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .np-planpro-chat-save-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .np-planpro-chat-save-row label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .np-planpro-chat-save-select,
+    .np-planpro-chat-save-filename {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      box-sizing: border-box;
+      background: #fff;
+    }
+    .np-planpro-chat-save-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .np-planpro-chat-save-btn {
+      padding: 7px 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .np-planpro-chat-save-btn--primary {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      color: #fff;
+    }
+    .np-planpro-chat-save-btn--ghost {
+      background: #fff;
+      color: #64748b;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+    .np-planpro-chat-save-done {
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #047857;
+    }
+    .np-planpro-chat-save-link {
+      margin-top: 8px;
+      padding: 0;
+      border: none;
+      background: none;
+      color: #047857;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .np-planpro-chat-file-preview {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      font-size: 12px;
+      color: #334155;
+      max-width: 100%;
+    }
+    .np-planpro-chat-file-preview-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
     @media (orientation: landscape) and (min-width: 768px) and (max-height: 820px) {
       .np-planpro-chat-panel {
         left: auto;
@@ -6833,9 +6944,9 @@
           <button type="button" id="planProChatImageRemove" class="np-planpro-chat-img-remove" title="Quitar imagen">×</button>
         </div>
         <div class="np-planpro-chat-input-row">
-          <input type="file" id="planProChatImageInput" accept="image/jpeg,image/png,image/webp" style="display: none;" />
-          <input type="text" id="planProChatInput" class="np-planpro-chat-field" placeholder="Pregunta sobre la planta, apuntes, prioridades…" autocomplete="off" />
-          <button type="button" id="planProChatAttachBtn" class="np-planpro-chat-attach" title="Adjuntar imagen (máx. 5 MB)">📷</button>
+          <input type="file" id="planProChatFileInput" accept="image/jpeg,image/png,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.odt,.ods,.odp" style="display: none;" />
+          <input type="text" id="planProChatInput" class="np-planpro-chat-field" placeholder="Pregunta o «guárdalo en Nutri PRO › carpeta»…" autocomplete="off" />
+          <button type="button" id="planProChatAttachBtn" class="np-planpro-chat-attach" title="Adjuntar imagen o archivo (Nutri PRO)">📎</button>
           <button type="button" id="planProChatSend" class="np-planpro-chat-send" title="Enviar">➤</button>
         </div>
       </div>
@@ -16586,7 +16697,7 @@
     var input = $('planProChatInput');
     var sendBtn = $('planProChatSend');
     var closeBtn = $('planProChatClose');
-    var imgInput = $('planProChatImageInput');
+    var fileInput = $('planProChatFileInput');
     var imgPreviewWrap = $('planProChatImagePreviewWrap');
     var imgPreview = $('planProChatImagePreview');
     var imgRemove = $('planProChatImageRemove');
@@ -16602,61 +16713,114 @@
     bubble.style.display = 'flex';
     if (wrap) wrap.setAttribute('aria-hidden', 'false');
 
-    var pendingImage = null;
+    var pendingAttachment = null;
     var MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    var MAX_FILE_BYTES = 30 * 1024 * 1024;
     var ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
     var history = [];
     var requestInFlight = false;
     var lastSendAt = 0;
 
-    function clearPendingImage() {
-      pendingImage = null;
+    function clearPendingAttachment() {
+      pendingAttachment = null;
       if (imgPreview) imgPreview.innerHTML = '';
       if (imgPreviewWrap) imgPreviewWrap.style.display = 'none';
-      if (imgInput) imgInput.value = '';
+      if (fileInput) fileInput.value = '';
     }
-    function handleImageFile(file) {
-      if (!file || !file.type) return;
-      if (ALLOWED_IMAGE_TYPES.indexOf(file.type) === -1) {
-        showToast('Solo JPEG, PNG o WebP. Máx. 5 MB.', true);
-        return;
-      }
-      if (file.size > MAX_IMAGE_BYTES) {
-        showToast('La imagen no debe superar 5 MB.', true);
-        return;
-      }
-      var reader = new FileReader();
-      reader.onload = function () {
-        var dataUrl = reader.result;
-        var base64 = dataUrl.indexOf('base64,') >= 0 ? dataUrl.split('base64,')[1] : dataUrl;
-        pendingImage = { base64: base64, contentType: file.type || 'image/jpeg' };
-        if (imgPreview) {
-          imgPreview.innerHTML = '';
+
+    function isChatImageFile(file) {
+      if (!file) return false;
+      var mt = String(file.type || '').toLowerCase();
+      if (ALLOWED_IMAGE_TYPES.indexOf(mt) >= 0) return true;
+      return /\.(jpe?g|png|webp)$/i.test(file.name || '');
+    }
+
+    function showAttachmentPreview(file, kind) {
+      if (!imgPreviewWrap || !imgPreview) return;
+      imgPreview.innerHTML = '';
+      if (kind === 'image') {
+        var reader = new FileReader();
+        reader.onload = function () {
           var im = document.createElement('img');
-          im.src = dataUrl;
+          im.src = reader.result;
           im.alt = '';
           im.style.width = '100%';
           im.style.height = '100%';
           im.style.objectFit = 'cover';
           imgPreview.appendChild(im);
-        }
-        if (imgPreviewWrap) imgPreviewWrap.style.display = 'flex';
-      };
-      reader.readAsDataURL(file);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        var row = document.createElement('div');
+        row.className = 'np-planpro-chat-file-preview';
+        row.innerHTML =
+          '<span>' +
+          nutriProFileIcon(file.name, file.type) +
+          '</span><span class="np-planpro-chat-file-preview-name">' +
+          String(file.name || 'archivo')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;') +
+          '</span>';
+        imgPreview.appendChild(row);
+        imgPreview.style.width = 'auto';
+        imgPreview.style.height = 'auto';
+        imgPreview.style.minWidth = '120px';
+        imgPreview.style.maxWidth = '100%';
+      }
+      imgPreviewWrap.style.display = 'flex';
     }
-    if (attachBtn && imgInput) {
+
+    function handleAttachmentFile(file) {
+      if (!file || !file.name) return;
+      if (isChatImageFile(file)) {
+        if (file.size > MAX_IMAGE_BYTES) {
+          showToast('La imagen no debe superar 5 MB.', true);
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function () {
+          var dataUrl = reader.result;
+          var base64 = dataUrl.indexOf('base64,') >= 0 ? dataUrl.split('base64,')[1] : dataUrl;
+          pendingAttachment = {
+            kind: 'image',
+            file: file,
+            base64: base64,
+            contentType: file.type || 'image/jpeg'
+          };
+          imgPreview.style.width = '64px';
+          imgPreview.style.height = '64px';
+          showAttachmentPreview(file, 'image');
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+      if (!nutriProFileIsAllowed(file)) {
+        showToast('Tipo de archivo no permitido en Nutri PRO.', true);
+        return;
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        showToast('El archivo no debe superar 30 MB.', true);
+        return;
+      }
+      pendingAttachment = { kind: 'file', file: file };
+      imgPreview.style.width = 'auto';
+      imgPreview.style.height = 'auto';
+      showAttachmentPreview(file, 'file');
+    }
+
+    if (attachBtn && fileInput) {
       attachBtn.addEventListener('click', function () {
-        imgInput.click();
+        fileInput.click();
       });
     }
-    if (imgInput) {
-      imgInput.addEventListener('change', function (e) {
+    if (fileInput) {
+      fileInput.addEventListener('change', function (e) {
         var files = e.target.files;
-        if (files && files.length) handleImageFile(files[0]);
+        if (files && files.length) handleAttachmentFile(files[0]);
         e.target.value = '';
       });
     }
-    if (imgRemove) imgRemove.addEventListener('click', clearPendingImage);
+    if (imgRemove) imgRemove.addEventListener('click', clearPendingAttachment);
     if (inputArea) {
       inputArea.addEventListener('dragover', function (e) {
         e.preventDefault();
@@ -16673,8 +16837,138 @@
         e.stopPropagation();
         inputArea.style.background = '#fff';
         var files = e.dataTransfer && e.dataTransfer.files;
-        if (files && files.length) handleImageFile(files[0]);
+        if (files && files.length) handleAttachmentFile(files[0]);
       });
+    }
+
+    async function ensureNutriProFoldersForChat() {
+      if (!state.client || !state.nutriProReady) return;
+      if (!(state.nutriProFolders || []).length) {
+        try {
+          await loadNutriProFolders();
+        } catch (eFold) {}
+      }
+      ensureNutriProFolderSelection();
+    }
+
+    function getLastAssistantMessage() {
+      for (var i = history.length - 1; i >= 0; i--) {
+        if (history[i] && history[i].role === 'assistant' && history[i].content) return history[i].content;
+      }
+      return '';
+    }
+
+    function makeNutriSaveOffer(opts) {
+      opts = opts || {};
+      var folderId = resolveNutriProFolderIdFromHint(opts.folderHint || '');
+      return {
+        status: 'pending',
+        source: opts.source || 'text',
+        content: opts.content || '',
+        attachmentMsgId: opts.attachmentMsgId || null,
+        suggestedFilename: opts.suggestedFilename || planProChatSuggestFilename({ content: opts.content, userText: opts.userText }),
+        folderId: folderId,
+        userText: opts.userText || ''
+      };
+    }
+
+    async function executeNutriSave(msgIndex, folderId, filename) {
+      var msg = history[msgIndex];
+      if (!msg || !msg.nutriSave || msg.nutriSave.status !== 'pending') return;
+      await ensureNutriProFoldersForChat();
+      var save = msg.nutriSave;
+      var fileToUpload = null;
+      var defaultExt = '';
+      if (save.source === 'attachment' && save.attachmentMsgId) {
+        fileToUpload = planProChatAttachmentStore[save.attachmentMsgId] || null;
+      } else if (save.source === 'text' && save.content) {
+        var fname = filename || save.suggestedFilename || 'socio-chat.md';
+        var ext = fname.indexOf('.') >= 0 ? fname.slice(fname.lastIndexOf('.')).toLowerCase() : '.md';
+        var mime =
+          ext === '.csv'
+            ? 'text/csv'
+            : ext === '.json'
+              ? 'application/json'
+              : ext === '.txt'
+                ? 'text/plain'
+                : 'text/markdown';
+        fileToUpload = new File([save.content], fname, { type: mime });
+        defaultExt = ext;
+      }
+      if (!fileToUpload) {
+        showToast('No hay archivo o contenido para guardar.', true);
+        return;
+      }
+      var res = await uploadNutriProSingleFile(folderId || null, fileToUpload, {
+        filename: filename || save.suggestedFilename,
+        defaultExt: defaultExt
+      });
+      if (!res.ok) {
+        showToast(res.error || 'No se pudo guardar en Nutri PRO.', true);
+        return;
+      }
+      save.status = 'saved';
+      save.savedLabel = (res.folderLabel || 'Nutri PRO') + ' · ' + (res.safeName || '');
+      save.savedFileId = res.fileId;
+      delete planProChatAttachmentStore[save.attachmentMsgId];
+      saveHistory();
+      renderChat();
+      showToast('Guardado en Nutri PRO: ' + (res.safeName || 'archivo'));
+    }
+
+    function mountNutriSaveCard(parentEl, msgIndex) {
+      var msg = history[msgIndex];
+      if (!msg || !msg.nutriSave) return;
+      var save = msg.nutriSave;
+      if (save.status === 'saved') {
+        var done = document.createElement('div');
+        done.className = 'np-planpro-chat-save-done';
+        done.textContent = '✓ Guardado en ' + (save.savedLabel || 'Nutri PRO');
+        parentEl.appendChild(done);
+        return;
+      }
+      if (save.status === 'dismissed') return;
+      var card = document.createElement('div');
+      card.className = 'np-planpro-chat-save-card';
+      card.innerHTML =
+        '<div class="np-planpro-chat-save-card-title">📎 Guardar en Nutri PRO</div>' +
+        '<div class="np-planpro-chat-save-row"><label>Carpeta</label>' +
+        '<select class="np-planpro-chat-save-select" data-np-save-folder>' +
+        buildNutriProFolderSelectOptions(save.folderId) +
+        '</select></div>' +
+        '<div class="np-planpro-chat-save-row"><label>Nombre de archivo</label>' +
+        '<input type="text" class="np-planpro-chat-save-filename" data-np-save-filename value="' +
+        String(save.suggestedFilename || '')
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/</g, '&lt;') +
+        '" /></div>' +
+        '<div class="np-planpro-chat-save-actions">' +
+        '<button type="button" class="np-planpro-chat-save-btn np-planpro-chat-save-btn--primary" data-np-save-confirm>Guardar</button>' +
+        '<button type="button" class="np-planpro-chat-save-btn np-planpro-chat-save-btn--ghost" data-np-save-cancel>Cancelar</button>' +
+        '</div>';
+      parentEl.appendChild(card);
+      var btnOk = card.querySelector('[data-np-save-confirm]');
+      var btnNo = card.querySelector('[data-np-save-cancel]');
+      if (btnOk) {
+        btnOk.addEventListener('click', function () {
+          var sel = card.querySelector('[data-np-save-folder]');
+          var inp = card.querySelector('[data-np-save-filename]');
+          var fid = sel && sel.value ? sel.value : null;
+          var fname = inp ? String(inp.value || '').trim() : save.suggestedFilename;
+          btnOk.disabled = true;
+          executeNutriSave(msgIndex, fid, fname).finally(function () {
+            btnOk.disabled = false;
+          });
+        });
+      }
+      if (btnNo) {
+        btnNo.addEventListener('click', function () {
+          save.status = 'dismissed';
+          saveHistory();
+          renderChat();
+        });
+      }
     }
 
     function trimHistory() {
@@ -16721,6 +17015,21 @@
         lines.push('- ' + (c.title || '') + ' [id=' + c.id + '] parent=' + (c.parent_id || '—'));
       }
       if (cats.length > maxC) lines.push('(' + cats.length + ' ramas; mostrando ' + maxC + '.)');
+      lines.push('');
+      lines.push('--- Carpetas Nutri PRO (máx. 60) ---');
+      var nFolders = (state.nutriProFolders || []).slice().sort(function (a, b) {
+        return nutriProFolderDisplayPath(a.id).localeCompare(nutriProFolderDisplayPath(b.id));
+      });
+      if (nFolders.length) {
+        nFolders.slice(0, 60).forEach(function (f) {
+          lines.push('- ' + nutriProFolderDisplayPath(f.id) + ' [folder_id=' + f.id + ']');
+        });
+        if (state.nutriProSelectedFolderId) {
+          lines.push('Carpeta Nutri PRO activa: ' + nutriProFolderDisplayPath(state.nutriProSelectedFolderId));
+        }
+      } else {
+        lines.push(state.nutriProReady === false ? 'Nutri PRO no instalado.' : 'Sin carpetas aún.');
+      }
       lines.push('');
       lines.push('--- Favoritos de ubicación (máx. 80) ---');
       var favs = Array.isArray(state.locationFavorites) ? state.locationFavorites : [];
@@ -16846,7 +17155,9 @@
         'Recibes un resumen de lo que hay cargado en pantalla: plantas, ramas de la planta activa, favoritos de ubicación y la lista de apuntes visibles (título, rama, estado, prioridad, vencimiento, ubicación Maps si existe, extracto de nota). ' +
         'En cada apunte, si hay rutas cortas insertadas en la libreta, aparecen en «rutas/enlaces en la nota»: 📎 Carpeta/archivo con nutri_file_id (archivo en Nutri PRO) o 📝 ruta de otro apunte con apunte_id. ' +
         'Si la pregunta es sobre documentos (PDF, Excel, Word…), puede incluirse un bloque NUTRI PRO con fragmentos citados y sugerencias de enlace apunte↔archivo: úsalo como fuente principal para cifras y párrafos. ' +
-        'Ayuda a priorizar, redactar, resumir, detectar huecos y sugerir siguientes pasos. No ejecutas cambios en Supabase; solo orientas. Responde siempre en español. ' +
+        'Ayuda a priorizar, redactar, resumir, detectar huecos y sugerir siguientes pasos. Responde siempre en español. ' +
+        'Guardar en Nutri PRO: si el usuario pide guardar algo («guárdalo en work», «sube a Nutri PRO › Personal»), genera el contenido útil (tablas en markdown, CSV en bloque ```csv, texto estructurado) y confirma la carpeta sugerida; la app mostrará un panel de confirmación para subir el archivo (tú no subes directamente). ' +
+        'Si adjunta imagen, léela; si adjunta PDF/Excel/Word, indica que puede guardarlo en Nutri PRO desde el panel de confirmación (aún no lo analizas hasta que esté en la bóveda). ' +
         'Si adjunta una imagen (factura, ticket, CFDI impreso, captura de pantalla), lee el texto visible: si pide extraer folio, RFC, razón social o nombre, UUID del timbre, total, fecha de emisión, etc., devuélvelo de forma clara; si no consta, dilo. ' +
         'Datos en pantalla:\n\n' +
         data;
@@ -16856,7 +17167,7 @@
 
     function renderChat() {
       messagesEl.innerHTML = '';
-      history.forEach(function (m) {
+      history.forEach(function (m, msgIndex) {
         var div = document.createElement('div');
         div.style.marginBottom = '10px';
         div.style.padding = '10px 12px';
@@ -16872,6 +17183,13 @@
           div.style.marginLeft = '0';
           div.style.color = '#fff';
           div.innerHTML = raw.replace(/\n/g, '<br>');
+          if (m.attachment && m.attachment.name) {
+            var att = document.createElement('div');
+            att.className = 'np-planpro-chat-msg-attach';
+            att.textContent =
+              (m.attachment.kind === 'file' ? '📎 ' : '🖼️ ') + String(m.attachment.name || 'adjunto');
+            div.appendChild(att);
+          }
         } else {
           div.style.background = '#fff';
           div.style.borderLeft = '3px solid #e5e7eb';
@@ -16882,17 +17200,45 @@
           html = html.replace(/\*([^*]+)\*/g, '<em class="np-planpro-chat-em">$1</em>');
           html = html.replace(/\b(\d{1,6})\b/g, '<span class="np-planpro-chat-hl-num">$1</span>');
           div.innerHTML = html;
+          if (
+            !m.nutriSave &&
+            extractSavableContentFromAssistant(m.content) &&
+            String(m.content || '').length > 80
+          ) {
+            var saveLink = document.createElement('button');
+            saveLink.type = 'button';
+            saveLink.className = 'np-planpro-chat-save-link';
+            saveLink.textContent = '📎 Guardar esta respuesta en Nutri PRO';
+            saveLink.addEventListener('click', function () {
+              m.nutriSave = makeNutriSaveOffer({
+                source: 'text',
+                content: extractSavableContentFromAssistant(m.content),
+                userText: ''
+              });
+              saveHistory();
+              renderChat();
+            });
+            div.appendChild(saveLink);
+          }
         }
+        if (m.nutriSave) mountNutriSaveCard(div, msgIndex);
         messagesEl.appendChild(div);
       });
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
+    function finishChatRequest() {
+      var ind = $('planProChatTypingIndicator');
+      if (ind) ind.remove();
+      sendBtn.disabled = false;
+      requestInFlight = false;
+    }
+
     function sendChat() {
       if (requestInFlight) return;
       var text = (input.value || '').trim();
-      var hasImage = pendingImage != null;
-      if (!text && !hasImage) return;
+      var hasAttachment = pendingAttachment != null;
+      if (!text && !hasAttachment) return;
       var cool = Math.max(0, PLAN_PRO_CHAT_SEND_COOLDOWN_MS - (Date.now() - lastSendAt));
       if (cool > 0) {
         showToast('Espera ' + Math.ceil(cool / 1000) + 's antes de enviar otro mensaje.', true);
@@ -16901,8 +17247,26 @@
       requestInFlight = true;
       lastSendAt = Date.now();
       input.value = '';
-      var displayContent = text || '[Imagen]';
-      history.push({ role: 'user', content: displayContent });
+      var saveIntent = planProChatDetectNutriSaveIntent(text);
+      var attachmentToSend = pendingAttachment;
+      var msgId = 'm' + Date.now();
+      if (attachmentToSend && attachmentToSend.file) {
+        planProChatAttachmentStore[msgId] = attachmentToSend.file;
+      }
+      var displayContent =
+        text ||
+        (attachmentToSend && attachmentToSend.kind === 'file'
+          ? '[Archivo: ' + attachmentToSend.file.name + ']'
+          : '[Imagen]');
+      var userEntry = { role: 'user', content: displayContent, id: msgId };
+      if (attachmentToSend && attachmentToSend.file) {
+        userEntry.attachment = {
+          kind: attachmentToSend.kind,
+          name: attachmentToSend.file.name,
+          size: attachmentToSend.file.size
+        };
+      }
+      history.push(userEntry);
       trimHistory();
       saveHistory();
       renderChat();
@@ -16913,89 +17277,189 @@
       typingEl.innerHTML = '<span></span><span></span><span></span>';
       messagesEl.appendChild(typingEl);
       messagesEl.scrollTop = messagesEl.scrollHeight;
-      var imageToSend = pendingImage;
-      clearPendingImage();
-      var lastUserContent = text || 'Describe esta imagen y extrae cualquier dato que pida el usuario.';
+      var imageToSend = attachmentToSend && attachmentToSend.kind === 'image' ? attachmentToSend : null;
+      var fileAttachment = attachmentToSend && attachmentToSend.kind === 'file' ? attachmentToSend : null;
+      clearPendingAttachment();
 
-      function dispatchToOpenAi(extraNutriBlock) {
-        var systemContent = getPlanProAssistantSystemPrompt(extraNutriBlock || '');
-        var allButLast = history.slice(0, -1);
-        var histApi = (
-          allButLast.length <= PLAN_PRO_CHAT_CONTEXT_LIMIT
-            ? allButLast
-            : allButLast.slice(-PLAN_PRO_CHAT_CONTEXT_LIMIT)
-        ).map(function (m) {
-          return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content };
-        });
-        var messagesForApi = [{ role: 'system', content: systemContent }]
-          .concat(histApi)
-          .concat([{ role: 'user', content: lastUserContent }]);
-        var base =
-          (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) ||
-          (window.location && window.location.origin) ||
-          'http://localhost:8000';
-        var body = {
-          model: 'gpt-4o-mini',
-          messages: messagesForApi,
-          max_tokens: 1400,
-          temperature: 0.45,
-          userId: '__admin__',
-          scope: 'admin'
-        };
-        if (imageToSend && imageToSend.base64) {
-          body.imageBase64 = imageToSend.base64;
-          body.imageContentType = imageToSend.contentType || 'image/jpeg';
+      function pushAssistantWithSave(reply, opts) {
+        opts = opts || {};
+        var entry = { role: 'assistant', content: reply };
+        if (opts.nutriSave) entry.nutriSave = opts.nutriSave;
+        history.push(entry);
+        trimHistory();
+        saveHistory();
+        renderChat();
+      }
+
+      function attachSaveToUserMessage(offer) {
+        userEntry.nutriSave = offer;
+        saveHistory();
+        renderChat();
+      }
+
+      ensureNutriProFoldersForChat().then(function () {
+        var prevAssistantContent = extractSavableContentFromAssistant(getLastAssistantMessage());
+        var wantsNewContent = /(genera|crea|hazme|resume|escribe|elabora|prepara|dame un|dame la|haz un|haz una)/i.test(text);
+        var wantsSaveLast =
+          !fileAttachment &&
+          !imageToSend &&
+          prevAssistantContent &&
+          !wantsNewContent &&
+          (planProChatIsSavePreviousOnly(text) || (saveIntent && String(text || '').length < 160));
+        if (wantsSaveLast) {
+          finishChatRequest();
+          if (prevAssistantContent) {
+            pushAssistantWithSave('Confirma carpeta y nombre para guardar la respuesta anterior en Nutri PRO.', {
+              nutriSave: makeNutriSaveOffer({
+                source: 'text',
+                content: prevAssistantContent,
+                folderHint: saveIntent ? saveIntent.folderHint : '',
+                userText: text
+              })
+            });
+          }
+          return;
         }
-        return fetch(base + '/api/openai-assistant', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        })
-          .then(function (r) {
-            return r.json();
+
+        if (saveIntent && imageToSend && imageToSend.file) {
+          finishChatRequest();
+          attachSaveToUserMessage(
+            makeNutriSaveOffer({
+              source: 'attachment',
+              attachmentMsgId: msgId,
+              suggestedFilename: imageToSend.file.name,
+              folderHint: saveIntent.folderHint,
+              userText: text
+            })
+          );
+          pushAssistantWithSave('Confirma carpeta y nombre para guardar la imagen en Nutri PRO.');
+          return;
+        }
+
+        if (fileAttachment && (saveIntent || !text)) {
+          finishChatRequest();
+          attachSaveToUserMessage(
+            makeNutriSaveOffer({
+              source: 'attachment',
+              attachmentMsgId: msgId,
+              suggestedFilename: fileAttachment.file.name,
+              folderHint: saveIntent ? saveIntent.folderHint : '',
+              userText: text
+            })
+          );
+          if (text && !saveIntent) {
+            pushAssistantWithSave(
+              'Archivo adjunto listo. Confirma arriba para guardarlo en Nutri PRO. Cuando esté en la bóveda podrás preguntarme sobre su contenido indexado.'
+            );
+          } else {
+            pushAssistantWithSave('Elige carpeta y confirma para guardar el archivo en Nutri PRO.');
+          }
+          return;
+        }
+
+        var lastUserContent = text || 'Describe esta imagen y extrae cualquier dato que pida el usuario.';
+        if (fileAttachment && fileAttachment.file) {
+          lastUserContent +=
+            '\n[El usuario también adjuntó un archivo: ' +
+            fileAttachment.file.name +
+            '. Indica que puede guardarlo en Nutri PRO con el panel de confirmación.]';
+        }
+
+        function dispatchToOpenAi(extraNutriBlock) {
+          var systemContent = getPlanProAssistantSystemPrompt(extraNutriBlock || '');
+          var allButLast = history.slice(0, -1);
+          var histApi = (
+            allButLast.length <= PLAN_PRO_CHAT_CONTEXT_LIMIT
+              ? allButLast
+              : allButLast.slice(-PLAN_PRO_CHAT_CONTEXT_LIMIT)
+          ).map(function (m) {
+            return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content };
+          });
+          var messagesForApi = [{ role: 'system', content: systemContent }]
+            .concat(histApi)
+            .concat([{ role: 'user', content: lastUserContent }]);
+          var base =
+            (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) ||
+            (window.location && window.location.origin) ||
+            'http://localhost:8000';
+          var body = {
+            model: 'gpt-4o-mini',
+            messages: messagesForApi,
+            max_tokens: 1400,
+            temperature: 0.45,
+            userId: '__admin__',
+            scope: 'admin'
+          };
+          if (imageToSend && imageToSend.base64) {
+            body.imageBase64 = imageToSend.base64;
+            body.imageContentType = imageToSend.contentType || 'image/jpeg';
+          }
+          return fetch(base + '/api/openai-assistant', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
           })
-          .then(function (data) {
-            var ind = $('planProChatTypingIndicator');
-            if (ind) ind.remove();
-            sendBtn.disabled = false;
-            requestInFlight = false;
-            var reply =
-              data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
-                ? data.choices[0].message.content
-                : data.error || 'Sin respuesta del servidor.';
-            history.push({ role: 'assistant', content: reply });
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (data) {
+              finishChatRequest();
+              var reply =
+                data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
+                  ? data.choices[0].message.content
+                  : data.error || 'Sin respuesta del servidor.';
+              var assistantEntry = { role: 'assistant', content: reply };
+              if (saveIntent) {
+                var savable = extractSavableContentFromAssistant(reply);
+                if (savable) {
+                  assistantEntry.nutriSave = makeNutriSaveOffer({
+                    source: 'text',
+                    content: savable,
+                    folderHint: saveIntent.folderHint,
+                    userText: text
+                  });
+                }
+              }
+              if (fileAttachment && fileAttachment.file && !userEntry.nutriSave) {
+                userEntry.nutriSave = makeNutriSaveOffer({
+                  source: 'attachment',
+                  attachmentMsgId: msgId,
+                  suggestedFilename: fileAttachment.file.name,
+                  folderHint: saveIntent ? saveIntent.folderHint : '',
+                  userText: text
+                });
+              }
+              history.push(assistantEntry);
+              trimHistory();
+              saveHistory();
+              renderChat();
+            });
+        }
+
+        var nutriPromise;
+        if (text && !imageToSend && !fileAttachment && planProQuestionLooksNutriDoc(text)) {
+          nutriPromise = fetchPlanProNutriAsk(text).then(function (nutriData) {
+            return formatNutriAskForAssistant(nutriData);
+          });
+        } else {
+          nutriPromise = Promise.resolve('');
+        }
+
+        return nutriPromise
+          .then(function (nutriBlock) {
+            return dispatchToOpenAi(nutriBlock);
+          })
+          .catch(function () {
+            finishChatRequest();
+            history.push({
+              role: 'assistant',
+              content: 'Error de conexión. Comprueba la API (Netlify / server) y app-config.js.'
+            });
             trimHistory();
             saveHistory();
             renderChat();
           });
-      }
-
-      var nutriPromise;
-      if (text && !imageToSend && planProQuestionLooksNutriDoc(text)) {
-        nutriPromise = fetchPlanProNutriAsk(text).then(function (nutriData) {
-          return formatNutriAskForAssistant(nutriData);
-        });
-      } else {
-        nutriPromise = Promise.resolve('');
-      }
-
-      nutriPromise
-        .then(function (nutriBlock) {
-          return dispatchToOpenAi(nutriBlock);
-        })
-        .catch(function () {
-          var ind = $('planProChatTypingIndicator');
-          if (ind) ind.remove();
-          sendBtn.disabled = false;
-          requestInFlight = false;
-          history.push({
-            role: 'assistant',
-            content: 'Error de conexión. Comprueba la API (Netlify / server) y app-config.js.'
-          });
-          trimHistory();
-          saveHistory();
-          renderChat();
-        });
+      });
     }
 
     renderChat();
@@ -17003,7 +17467,10 @@
       var open = panel.style.display === 'none' || !panel.style.display;
       panel.style.display = open ? 'flex' : 'none';
       panel.setAttribute('aria-hidden', open ? 'false' : 'true');
-      if (open) input.focus();
+      if (open) {
+        input.focus();
+        ensureNutriProFoldersForChat();
+      }
     });
     closeBtn.addEventListener('click', function () {
       panel.style.display = 'none';
@@ -19647,6 +20114,240 @@
       ' listo' +
       (pending.length === 1 ? '' : 's') +
       ' para subir.';
+  }
+
+  var planProChatAttachmentStore = {};
+
+  function nutriProFolderPathNorm(folderId) {
+    return nutriProFolderPathChain(folderId)
+      .map(function (p) {
+        return normalizePlanSearchText(p);
+      })
+      .join('/');
+  }
+
+  function nutriProFolderDisplayPath(folderId) {
+    var parts = nutriProFolderPathChain(folderId);
+    return parts.length ? parts.join(' › ') : 'Raíz (sin carpeta)';
+  }
+
+  function resolveNutriProFolderIdFromHint(hint) {
+    var folders = state.nutriProFolders || [];
+    var fallback = state.nutriProSelectedFolderId || null;
+    if (!folders.length) return fallback;
+    var raw = String(hint || '').trim();
+    if (!raw) return fallback;
+    raw = raw
+      .replace(/nutri\s*pro\s*[›>\/]?\s*/gi, '')
+      .replace(/^carpeta\s+/i, '')
+      .trim();
+    var normHint = normalizePlanSearchText(raw.replace(/[›>/\\]/g, '/'));
+    if (!normHint) return fallback;
+    var bestId = null;
+    var bestScore = 0;
+    folders.forEach(function (f) {
+      if (!f || !f.id) return;
+      var pathNorm = nutriProFolderPathNorm(f.id);
+      var titleNorm = normalizePlanSearchText(f.title || '');
+      if (pathNorm === normHint || titleNorm === normHint) {
+        bestId = f.id;
+        bestScore = 1000;
+        return;
+      }
+      if (normHint.indexOf('/') >= 0 && pathNorm && (pathNorm === normHint || pathNorm.indexOf(normHint) >= 0)) {
+        var sc = pathNorm.length;
+        if (sc > bestScore) {
+          bestId = f.id;
+          bestScore = sc;
+        }
+      }
+      if (titleNorm && (titleNorm === normHint || titleNorm.indexOf(normHint) >= 0 || normHint.indexOf(titleNorm) >= 0)) {
+        var sc2 = titleNorm.length;
+        if (sc2 > bestScore) {
+          bestId = f.id;
+          bestScore = sc2;
+        }
+      }
+    });
+    return bestId || fallback;
+  }
+
+  function planProChatDetectNutriSaveIntent(text) {
+    var t = String(text || '').toLowerCase().trim();
+    if (!t) return null;
+    if (
+      !/(guarda|guárdalo|guardalo|guárdame|guardame|sube|subir|almacena|archiva|guardar en|sube a|guárdalo en|guardalo en|ponlo en|colócalo en|colocalo en)/.test(
+        t
+      )
+    ) {
+      return null;
+    }
+    var folderHint = '';
+    var m =
+      t.match(/(?:en|a|dentro de|carpeta)\s+([a-záéíóúñ0-9_\s/›>-]{2,80})/i) ||
+      t.match(/nutri\s*pro\s*[›>/]\s*([a-záéíóúñ0-9_\s/›>-]{2,80})/i);
+    if (m) folderHint = String(m[1] || '').trim();
+    return { folderHint: folderHint };
+  }
+
+  function planProChatIsSavePreviousOnly(text) {
+    var t = String(text || '').toLowerCase();
+    return (
+      /(guarda|guárdalo|guardalo|sube|archiva|guárdame|guardame)/.test(t) &&
+      /(anterior|eso|esta respuesta|lo anterior|mensaje anterior|último|ultimo|lo que dijiste|tu respuesta)/.test(t)
+    );
+  }
+
+  function extractSavableContentFromAssistant(text) {
+    if (!text) return '';
+    var blocks = [];
+    var re = /```[\w]*\n([\s\S]*?)```/g;
+    var m;
+    while ((m = re.exec(text))) {
+      if (m[1] && m[1].trim()) blocks.push(m[1].trim());
+    }
+    if (blocks.length) return blocks.join('\n\n');
+    var stripped = String(text).trim();
+    if (stripped.length < 16) return '';
+    return stripped;
+  }
+
+  function planProChatSuggestFilename(opts) {
+    opts = opts || {};
+    var content = opts.content || '';
+    var userText = opts.userText || '';
+    var defaultExt = opts.defaultExt || '.md';
+    var nameM = String(userText || '').match(/(?:nombre|archivo|como)\s+["']?([\w.\-áéíóúñÑÁÉÍÓÚ ]+)/i);
+    if (nameM && nameM[1]) return nutriProSanitizeFilename(nameM[1].trim());
+    var codeM = String(content || '').match(/```(\w+)?/);
+    if (codeM) {
+      var lang = String(codeM[1] || '').toLowerCase();
+      var extMap = {
+        csv: '.csv',
+        json: '.json',
+        html: '.html',
+        xml: '.xml',
+        txt: '.txt',
+        text: '.txt',
+        markdown: '.md',
+        md: '.md',
+        sql: '.sql'
+      };
+      if (extMap[lang]) defaultExt = extMap[lang];
+    }
+    var stamp = new Date().toISOString().slice(0, 10);
+    return 'socio-chat-' + stamp + defaultExt;
+  }
+
+  function buildNutriProFolderSelectOptions(selectedId) {
+    var folders = (state.nutriProFolders || []).slice().sort(function (a, b) {
+      var pa = nutriProFolderDisplayPath(a.id);
+      var pb = nutriProFolderDisplayPath(b.id);
+      return pa.localeCompare(pb);
+    });
+    var html = '<option value="">Raíz (sin carpeta)</option>';
+    folders.forEach(function (f) {
+      if (!f || !f.id) return;
+      var label = nutriProFolderDisplayPath(f.id);
+      html +=
+        '<option value="' +
+        String(f.id).replace(/"/g, '&quot;') +
+        '"' +
+        (f.id === selectedId ? ' selected' : '') +
+        '>' +
+        label.replace(/</g, '&lt;') +
+        '</option>';
+    });
+    return html;
+  }
+
+  async function uploadNutriProSingleFile(folderId, file, options) {
+    options = options || {};
+    if (!file || !state.client || !state.userId) {
+      return { ok: false, error: 'Sin sesión o archivo.' };
+    }
+    if (!state.nutriProReady) {
+      return { ok: false, error: 'Nutri PRO no está listo. Ejecuta el SQL de Nutri PRO en Supabase.' };
+    }
+    if (!nutriProFileIsAllowed(file)) {
+      return { ok: false, error: 'Tipo de archivo no permitido en Nutri PRO.' };
+    }
+    var safeName = nutriProSanitizeFilename(options.filename || file.name);
+    if (!/\./.test(safeName) && options.defaultExt) {
+      safeName += options.defaultExt;
+    }
+    var fileId = npCloudUuid();
+    var folderSeg = folderId || 'root';
+    var path = state.userId + '/' + folderSeg + '/' + fileId + '/' + safeName;
+    var up;
+    try {
+      up = await npCloudSyncTrack(function () {
+        return state.client.storage.from(NP_NUTRI_PRO_BUCKET).upload(path, file, {
+          contentType: file.type || 'application/octet-stream',
+          upsert: false,
+          cacheControl: '3600'
+        });
+      });
+    } catch (eUp) {
+      up = { error: { message: (eUp && eUp.message) || String(eUp) } };
+    }
+    if (up.error) {
+      return { ok: false, error: up.error.message || 'Error al subir el archivo.' };
+    }
+    var nextSort = nutriProNextFileSortOrder(folderId);
+    var ins = await npCloudSyncTrack(function () {
+      return state.client
+        .from('plan_pro_nutri_files')
+        .insert({
+          id: fileId,
+          owner_id: state.userId,
+          folder_id: folderId,
+          title: safeName.replace(/\.[^.]+$/, '') || safeName,
+          original_name: safeName,
+          storage_path: path,
+          mime_type: file.type || null,
+          size_bytes: file.size || 0,
+          sort_order: nextSort
+        })
+        .select('id')
+        .single();
+    });
+    if (ins.error && /sort_order|column|schema cache/i.test(ins.error.message || '')) {
+      ins = await npCloudSyncTrack(function () {
+        return state.client
+          .from('plan_pro_nutri_files')
+          .insert({
+            id: fileId,
+            owner_id: state.userId,
+            folder_id: folderId,
+            title: safeName.replace(/\.[^.]+$/, '') || safeName,
+            original_name: safeName,
+            storage_path: path,
+            mime_type: file.type || null,
+            size_bytes: file.size || 0
+          })
+          .select('id')
+          .single();
+      });
+    }
+    if (ins.error) {
+      try {
+        await state.client.storage.from(NP_NUTRI_PRO_BUCKET).remove([path]);
+      } catch (eRm) {}
+      return { ok: false, error: ins.error.message || 'Error al registrar el archivo.' };
+    }
+    requestNutriProFileExtract(fileId, false);
+    scheduleNutriProExtractRefresh([3000, 10000, 25000]);
+    schedulePlanProStorageUsageRefresh(5000, true);
+    if (state.nutriProSelectedFolderId === folderId || (!state.nutriProSelectedFolderId && !folderId)) {
+      await loadNutriProFiles(folderId);
+    }
+    return {
+      ok: true,
+      fileId: fileId,
+      safeName: safeName,
+      folderLabel: nutriProFolderDisplayPath(folderId)
+    };
   }
 
   async function uploadNutriProPendingFiles() {

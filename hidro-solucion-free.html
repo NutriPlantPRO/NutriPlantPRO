@@ -779,8 +779,11 @@
       background: rgba(226, 232, 240, 0.55) !important;
     }
     .fert-aporte-micro-td {
-      font-weight: 600;
-      color: #334155;
+      text-align: center;
+    }
+    .fert-aporte-micro-td .fert-aporte-total-in {
+      max-width: 108px;
+      margin: 0 auto;
     }
     @media (max-width: 720px) {
       .fert-aporte-comp-panel-hint::after {
@@ -2611,7 +2614,8 @@
       }).join('');
       var cells = microKeys.map(function (n) {
         var v = sum.ppm[n] || 0;
-        return '<td class="fert-aporte-micro-td">' + (v > 0.0005 ? v.toFixed(2) : '—') + '</td>';
+        return '<td class="fert-aporte-micro-td"><div class="fert-aporte-total-val">' +
+          fertAporteTotalInputHtml('ppm', n, v, 2) + '</div></td>';
       }).join('');
       wrap.hidden = false;
       wrap.innerHTML =
@@ -2655,7 +2659,7 @@
       }
       if (clearBtn) clearBtn.hidden = n === 0;
       if (hint) {
-        hint.textContent = n + '/' + max + ' productos · Edita meq o ppm en totales para recalcular dosis.';
+        hint.textContent = n + '/' + max + ' productos · Edita meq, ppm o micros en totales para recalcular dosis.';
       }
     }
 
@@ -2684,20 +2688,33 @@
       return Math.round(n * 10000) / 10000;
     }
 
+    function fertAporteIsMicroNutrient(n) {
+      var cat = window.HydroFertAporteCatalog;
+      return cat && cat.MICRO_KEYS && cat.MICRO_KEYS.indexOf(n) >= 0;
+    }
+
     function fertAporteApplyTargetForNutrient(n, kind, rawValue) {
       var target = fertAporteParseDose(rawValue);
       if (!Number.isFinite(target) || target <= 0) return false;
       var current = fertAporteRecalcRows();
       var currentVal = current[kind][n] || 0;
       var ppmTarget = fertAporteTargetToPpm(n, kind, target);
+      var isMicro = fertAporteIsMicroNutrient(n);
 
       if (currentVal > 0.0005) {
         var factor = target / currentVal;
         fertAporteState.rows.forEach(function (r) {
           var d = parseFloat(r.dose) || 0;
-          if (d > 0) r.dose = fertAporteFormatDose(d * factor);
+          if (d <= 0) return;
+          if (isMicro && (r.compUsed[n] || 0) <= 0.001) return;
+          r.dose = fertAporteFormatDose(d * factor);
         });
-        fertCustomSetMsg('Dosis ajustadas proporcionalmente para alcanzar el objetivo.', true);
+        fertCustomSetMsg(
+          isMicro
+            ? 'Dosis ajustadas en productos con ' + fertAporteLabelNutrient(n) + '.'
+            : 'Dosis ajustadas proporcionalmente para alcanzar el objetivo.',
+          true
+        );
         return true;
       }
 

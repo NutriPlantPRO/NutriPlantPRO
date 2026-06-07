@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.6.0",
-    "description": "Plan PRO + Nutri PRO Fase 4 (nutri_pro_ask unified_citations, link_gap_suggestions). Ver NUTRI-PRO-CONOCIMIENTO-GPT.md."
+    "version": "2.7.0",
+    "description": "Plan PRO + Nutri PRO (nutri_pro_ask, nutri_pro_save a Supabase). Ver NUTRI-PRO-CONOCIMIENTO-GPT.md."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Consulta NutriPlant, Plan PRO y Nutri PRO",
-        "description": "NutriPlant + Plan PRO. Nutri PRO Fase 4: nutri_pro_ask devuelve unified_citations (apunte↔archivo↔fragmento) y link_gap_suggestions. También nutri_pro_search, nutri_pro_file_text, plan_pro_item.nutri_refs.",
+        "description": "NutriPlant + Plan PRO. Nutri PRO: nutri_pro_ask, nutri_pro_save (guardar en carpeta Supabase), nutri_pro_search, nutri_pro_file_text.",
         "requestBody": {
           "required": true,
           "content": {
@@ -64,6 +64,7 @@
               "nutri_pro_search",
               "nutri_pro_ask",
               "nutri_pro_file_text",
+              "nutri_pro_save",
               "radar_project",
               "radar_search",
               "radar_overview",
@@ -94,7 +95,13 @@
               "item_id": { "type": "string", "description": "UUID apunte Plan PRO" },
               "nutri_file_id": { "type": "string", "description": "UUID archivo Nutri PRO" },
               "file_id": { "type": "string", "description": "Alias de nutri_file_id" },
-              "folder_id": { "type": "string", "description": "UUID carpeta Nutri PRO (filtro)" },
+              "folder_id": { "type": "string", "description": "UUID carpeta Nutri PRO (filtro o nutri_pro_save)" },
+              "folder_path": { "type": "string", "description": "nutri_pro_save: ruta carpeta ej. work / Personal" },
+              "folder_title": { "type": "string", "description": "nutri_pro_save: nombre carpeta ej. work" },
+              "filename": { "type": "string", "description": "nutri_pro_save: nombre archivo ej. informe-investigacion.md" },
+              "content": { "type": "string", "description": "nutri_pro_save: texto del reporte (UTF-8)" },
+              "content_base64": { "type": "string", "description": "nutri_pro_save: binario en base64 (alternativa a content)" },
+              "description": { "type": "string", "description": "nutri_pro_save: nota breve del archivo en Nutri PRO" },
               "kind": {
                 "type": "string",
                 "description": "nutri_pro_search: all|files|links"

@@ -150,8 +150,8 @@ async function extractNutriProText(buffer, fileName, mimeType) {
       result = await extractPptx(buffer);
     } else if (ext === 'odt' || ext === 'odp') {
       result = await extractOdf(buffer, ext);
-    } else if (ext === 'txt' || ext === 'rtf') {
-      result = await extractPlain(buffer, ext);
+    } else if (ext === 'txt' || ext === 'rtf' || ext === 'md') {
+      result = await extractPlain(buffer, ext === 'md' ? 'md' : ext);
     } else {
       return {
         status: 'skipped',
