@@ -6729,7 +6729,7 @@
           </div>
           <div class="np-map-picker-body">
             <div class="np-map-picker-search">
-              <input id="npMapsPickerSearch" type="search" autocomplete="off" placeholder="Buscar lugar o dirección (ej. Guadalajara, Zapopan...)" aria-label="Buscar lugar en el mapa" />
+              <input id="npMapsPickerSearch" type="search" autocomplete="off" placeholder="Buscar lugar, dirección o pegar link de Maps…" aria-label="Buscar lugar o link de Maps en el mapa" />
               <button type="button" class="btn btn-ghost btn-ghost-blue" id="npMapsPickerSearchBtn">Buscar</button>
             </div>
             <div class="np-map-picker-favorites">
@@ -7791,19 +7791,76 @@
     return 'https://www.google.com/maps?q=' + a.toFixed(6) + ',' + b.toFixed(6);
   }
 
-  function planProCoordsFromMapsText(raw) {
-    var s = String(raw || '').trim();
+  function planProCoordsFromMapsHref(href) {
+    var s = String(href || '').trim();
     if (!s) return null;
-    var plain = /(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/.exec(s);
+    var plain = /^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/.exec(s);
     if (plain) return { lat: parseFloat(plain[1]), lng: parseFloat(plain[2]) };
+    var at = /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(s);
+    if (at) return { lat: parseFloat(at[1]), lng: parseFloat(at[2]) };
+    var d34 = /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/i.exec(s);
+    if (d34) return { lat: parseFloat(d34[1]), lng: parseFloat(d34[2]) };
     try {
       var u = new URL(/^https?:\/\//i.test(s) ? s : 'https://' + s);
-      var q = u.searchParams.get('q') || u.searchParams.get('ll') || '';
+      var q = u.searchParams.get('q') || u.searchParams.get('ll') || u.searchParams.get('center') || '';
       var qp = /^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/.exec(q);
       if (qp) return { lat: parseFloat(qp[1]), lng: parseFloat(qp[2]) };
-      var at = /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(u.href);
-      if (at) return { lat: parseFloat(at[1]), lng: parseFloat(at[2]) };
+      var pathAt = /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(u.pathname + u.search + u.hash);
+      if (pathAt) return { lat: parseFloat(pathAt[1]), lng: parseFloat(pathAt[2]) };
+      var hashD = /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/i.exec(u.hash || '');
+      if (hashD) return { lat: parseFloat(hashD[1]), lng: parseFloat(hashD[2]) };
     } catch (e) {}
+    return null;
+  }
+
+  function planProCoordsFromMapsText(raw) {
+    return planProCoordsFromMapsHref(String(raw || '').trim());
+  }
+
+  function planProLooksLikeMapsUrl(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return false;
+    return /maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps|maps\.google/i.test(s);
+  }
+
+  async function expandPlanProMapsUrl(raw) {
+    var norm = normalizePlanProMapsUrl(raw);
+    if (!norm) return '';
+    if (planProCoordsFromMapsHref(norm)) return norm;
+    if (!planProLooksLikeMapsUrl(norm)) return norm;
+    try {
+      var res = await fetch(norm, { method: 'HEAD', redirect: 'follow' });
+      if (res && res.url && res.url !== norm) return res.url;
+    } catch (e1) {
+      try {
+        var res2 = await fetch(norm, { method: 'GET', redirect: 'follow' });
+        if (res2 && res2.url && res2.url !== norm) return res2.url;
+      } catch (e2) {}
+    }
+    return norm;
+  }
+
+  async function resolvePlanProMapsSearchCoords(raw) {
+    var q = String(raw || '').trim();
+    if (!q) return null;
+    var direct = planProCoordsFromMapsText(q);
+    if (direct) return direct;
+    var favs = (state && Array.isArray(state.locationFavorites)) ? state.locationFavorites : [];
+    var i;
+    var normQ = normalizePlanProMapsUrl(q);
+    for (i = 0; i < favs.length; i++) {
+      var f = favs[i];
+      if (!f) continue;
+      if (f.lat != null && f.lng != null && f.maps_url && normQ && normalizePlanProMapsUrl(f.maps_url) === normQ) {
+        return { lat: Number(f.lat), lng: Number(f.lng) };
+      }
+    }
+    if (!planProLooksLikeMapsUrl(q) && !normQ) return null;
+    var expanded = await expandPlanProMapsUrl(q);
+    if (expanded) {
+      direct = planProCoordsFromMapsHref(expanded);
+      if (direct) return direct;
+    }
     return null;
   }
 
@@ -7896,9 +7953,16 @@
         setPlanProMapsPickerPosition(e.latlng.lat, e.latlng.lng, npMapsPickerState.map.getZoom());
       });
     }
+    var searchInp = $('npMapsPickerSearch');
+    if (searchInp) searchInp.value = String(inputEl.value || '').trim();
     requestAnimationFrame(function () {
       npMapsPickerState.map.invalidateSize();
       setPlanProMapsPickerPosition(npMapsPickerState.lat, npMapsPickerState.lng, current ? 15 : 5);
+      if (!current && inputEl.value && planProLooksLikeMapsUrl(inputEl.value)) {
+        resolvePlanProMapsSearchCoords(inputEl.value).then(function (c) {
+          if (c) setPlanProMapsPickerPosition(c.lat, c.lng, 16);
+        });
+      }
     });
   }
 
@@ -7922,12 +7986,25 @@
     var inp = $('npMapsPickerSearch');
     var q = inp ? String(inp.value || '').trim() : '';
     if (!q) {
-      showToast('Escribe un lugar o dirección para buscar.', true);
+      showToast('Escribe un lugar, dirección o link de Maps.', true);
       return;
     }
     var btn = $('npMapsPickerSearchBtn');
     if (btn) btn.disabled = true;
     try {
+      if (planProLooksLikeMapsUrl(q) || planProCoordsFromMapsText(q)) {
+        showToast('Leyendo link de Maps…', false);
+        var fromLink = await resolvePlanProMapsSearchCoords(q);
+        if (fromLink && isFinite(fromLink.lat) && isFinite(fromLink.lng)) {
+          setPlanProMapsPickerPosition(fromLink.lat, fromLink.lng, 16);
+          showToast('Ubicación del link cargada en el mapa.');
+          return;
+        }
+        if (planProLooksLikeMapsUrl(q)) {
+          showToast('No pude leer coordenadas de ese link. Prueba abrirlo en Maps y copiar el link largo.', true);
+          return;
+        }
+      }
       var hasCountryHint = /,\s*[a-zA-ZÁÉÍÓÚÜÑáéíóúüñ .'-]{3,}$/.test(q);
       var searchText = hasCountryHint ? q : (q + ', México');
       var url =

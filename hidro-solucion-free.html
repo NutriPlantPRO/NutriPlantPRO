@@ -222,14 +222,25 @@
       background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
     }
     .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--an,
-    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--cl {
-      background: linear-gradient(180deg, rgba(254, 249, 195, 0.92) 0%, rgba(253, 224, 71, 0.38) 100%) !important;
+    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--cat {
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(202, 138, 4, 0.35) !important;
     }
-    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--cat,
-    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--nh4 {
+    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--an {
+      background: linear-gradient(180deg, rgba(254, 249, 195, 0.92) 0%, rgba(253, 224, 71, 0.38) 100%) !important;
+    }
+    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--cat {
       background: linear-gradient(180deg, rgba(254, 226, 226, 0.92) 0%, rgba(252, 165, 165, 0.38) 100%) !important;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(185, 28, 28, 0.32) !important;
+    }
+    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--cl {
+      background: linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(241, 245, 249, 0.92) 100%) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+      color: #94a3b8 !important;
+    }
+    .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--nh4 {
+      background: linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(241, 245, 249, 0.92) 100%) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+      color: #94a3b8 !important;
     }
     .hydro-free-solution .hydro-table tr.hydro-ion-group-row th.hydro-th-group--ce {
       background: linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%) !important;
@@ -257,6 +268,32 @@
     }
     .hydro-free-solution tbody td.hydro-col-nh4 {
       box-shadow: inset 0 0 0 1px rgba(190, 18, 60, 0.16);
+    }
+    /* Cl⁻ y N-NH₄⁺: tono tenue — no suman al % del triángulo */
+    .hydro-free-solution .hydro-table-colored th.hydro-col-outside-pct,
+    .hydro-free-solution .hydro-table-colored td.hydro-col-outside-pct {
+      background: rgba(248, 250, 252, 0.98) !important;
+      color: #94a3b8 !important;
+      box-shadow: none !important;
+    }
+    .hydro-free-solution #hydroMeqTableWrap tbody td.hydro-col-outside-pct,
+    .hydro-free-solution #hydroPpmTableWrap tbody td.hydro-col-outside-pct {
+      background: rgba(248, 250, 252, 0.95) !important;
+    }
+    .hydro-free-solution #hydroMeqPercentWrap tbody td.hydro-col-outside-pct {
+      font-weight: 500;
+      font-style: italic;
+    }
+    .hydro-free-solution #hydroMeqPercentWrap thead th.hydro-col-outside-pct .hydro-th-unit {
+      color: #94a3b8;
+      font-size: 0.62rem;
+    }
+    .hydro-pct-meq-note {
+      font-size: 11px;
+      color: #64748b;
+      margin: 6px 0 0;
+      line-height: 1.35;
+      padding: 0 2px 2px;
     }
     .hydro-free-solution .hydro-ternary-svg-wrap svg {
       background: #f8fafc !important;
@@ -559,22 +596,25 @@
       flex: 0 0 108px;
       background: rgba(255, 255, 255, 0.72);
     }
-    .fert-aporte-field--dose label { color: #1e40af; }
+    .fert-aporte-field--dose label {
+      color: #1e3a8a;
+      font-weight: 800;
+    }
     .fert-aporte-field--dose input {
       width: 100%;
       box-sizing: border-box;
       text-align: right;
-      font-size: 13px;
-      font-weight: 600;
-      border-color: rgba(37, 99, 235, 0.35);
-      background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
-      color: #0f172a;
+      font-size: 14px;
+      font-weight: 800;
+      border-color: rgba(30, 58, 138, 0.45);
+      background: linear-gradient(180deg, #fff 0%, #f0f4ff 100%);
+      color: #1e3a8a;
     }
     .fert-aporte-dose-hint {
       display: inline;
       font-size: 9px;
-      font-weight: 600;
-      color: #64748b;
+      font-weight: 700;
+      color: #1e40af;
       margin-left: 3px;
       text-transform: none;
       letter-spacing: 0;
@@ -603,11 +643,21 @@
       border: 1px solid #e2e8f0;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
+    .fert-aporte-comp-panel-hint {
+      margin: 0 0 8px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
     .fert-aporte-comp-row {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
       gap: 8px;
       align-items: stretch;
+    }
+    .fert-aporte-comp-row:not(.fert-aporte-comp-row--micro) {
+      grid-template-columns: minmax(0, 1.45fr) minmax(68px, 0.55fr) minmax(0, 1.25fr) minmax(76px, 0.6fr);
     }
     .fert-aporte-comp-row + .fert-aporte-comp-row {
       margin-top: 8px;
@@ -615,41 +665,43 @@
       border-top: 1px dashed rgba(148, 163, 184, 0.45);
     }
     .fert-aporte-comp-group {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
       gap: 6px;
       padding: 8px 8px 6px;
       border-radius: 10px;
-      flex: 1 1 auto;
       min-width: 0;
+      align-content: start;
     }
     .fert-aporte-comp-group--an {
       background: rgba(254, 243, 199, 0.55);
       border: 1px solid rgba(202, 138, 4, 0.22);
-      flex: 2.2 1 220px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .fert-aporte-comp-group--cl {
       background: rgba(255, 237, 213, 0.55);
       border: 1px solid rgba(217, 119, 6, 0.22);
-      flex: 0.6 1 72px;
+      grid-template-columns: minmax(0, 1fr);
     }
     .fert-aporte-comp-group--cat {
       background: rgba(254, 226, 226, 0.5);
       border: 1px solid rgba(185, 28, 28, 0.2);
-      flex: 2 1 200px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .fert-aporte-comp-group--nh4 {
       background: rgba(255, 228, 230, 0.55);
       border: 1px solid rgba(190, 18, 60, 0.22);
-      flex: 0.7 1 80px;
+      grid-template-columns: minmax(0, 1fr);
     }
     .fert-aporte-comp-group--micro {
       background: rgba(226, 232, 240, 0.45);
       border: 1px solid rgba(100, 116, 139, 0.22);
-      flex: 1 1 100%;
+      grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    }
+    .fert-aporte-comp-row--micro {
+      grid-template-columns: 1fr;
     }
     .fert-aporte-comp-group-title {
-      flex: 0 0 100%;
+      grid-column: 1 / -1;
       font-size: 9px;
       font-weight: 800;
       letter-spacing: 0.06em;
@@ -664,9 +716,8 @@
     .fert-aporte-comp-group--nh4 .fert-aporte-comp-group-title { color: #be123c; }
     .fert-aporte-comp-group--micro .fert-aporte-comp-group-title { color: #475569; }
     .fert-comp-cell {
-      flex: 1 1 68px;
-      min-width: 62px;
-      max-width: 100%;
+      min-width: 0;
+      width: 100%;
     }
     .fert-comp-cell label {
       display: block;
@@ -675,9 +726,10 @@
       color: #64748b;
       margin-bottom: 3px;
       line-height: 1.15;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    }
+    .fert-comp-unit {
+      font-weight: 800;
+      color: #475569;
     }
     .fert-comp-cell input {
       width: 100%;
@@ -706,6 +758,13 @@
     .fert-comp-cell--nh4 input { border-color: rgba(190, 18, 60, 0.32); background: #fff5f7; }
     .fert-comp-cell--micro label { color: #475569; }
     .fert-comp-cell--micro input { border-color: rgba(100, 116, 139, 0.32); background: #fff; }
+    .fert-comp-cell--solo input { margin-top: 2px; }
+    .fert-aporte-comp-group--solo {
+      align-content: start;
+    }
+    .fert-aporte-comp-group--solo .fert-aporte-comp-group-title {
+      margin-bottom: 4px;
+    }
     .fert-custom-pct-wrap { margin-top: 4px; }
     .fert-custom-pct-wrap .fert-aporte-comp-panel { margin: 0; }
     .fert-aporte-row-out {
@@ -726,10 +785,39 @@
       border-left: 1px solid rgba(148, 163, 184, 0.22);
       background: #f8fafc;
     }
+    .fert-aporte-micro-table th,
+    .fert-aporte-micro-table td {
+      background: rgba(241, 245, 249, 0.95);
+    }
+    .fert-aporte-micro-td {
+      font-weight: 600;
+      color: #334155;
+    }
+    @media (max-width: 720px) {
+      .fert-aporte-comp-row:not(.fert-aporte-comp-row--micro) {
+        grid-template-columns: 1fr 1fr;
+      }
+      .fert-aporte-comp-group--an,
+      .fert-aporte-comp-group--cat {
+        grid-column: 1 / -1;
+      }
+    }
     @media (max-width: 640px) {
       .fert-aporte-card-head { flex-wrap: wrap; }
-      .fert-aporte-card-head-main { flex: 1 1 100%; }
-      .fert-aporte-field--dose { flex: 1 1 100px; }
+      .fert-aporte-card-head-main {
+        flex: 1 1 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: end;
+      }
+      .fert-aporte-field--product,
+      .fert-aporte-field--formula,
+      .fert-aporte-field--dose {
+        grid-column: 1 / -1;
+      }
+      .fert-aporte-comp-row:not(.fert-aporte-comp-row--micro) {
+        grid-template-columns: 1fr;
+      }
       .fert-aporte-actions {
         flex: 1 1 100%;
         border-left: 0;
@@ -993,13 +1081,14 @@
           <h4 class="fert-aporte-totals-title">Totales del aporte (suma filas)</h4>
           <div id="fertAporteMeqWrap" class="hydro-table-wrap hydro-table-block" data-label="meq/L aporte"></div>
           <div id="fertAportePpmWrap" class="hydro-table-wrap hydro-table-block" data-label="ppm aporte"></div>
+          <div id="fertAporteMicroPpmWrap" class="hydro-table-wrap hydro-table-block" data-label="ppm microelementos" hidden></div>
         </div>
       </div>
     </div>
   </div>
 
   <script src="assets/fert-formula-engine.js"></script>
-  <script src="assets/hydro-fert-aporte-catalog.js"></script>
+  <script src="assets/hydro-fert-aporte-catalog.js?v=20260534"></script>
   <script>
     const HYDRO_ANIONS = ['N_NO3','P','S'];
     const HYDRO_CATIONS_TRIANGLE = ['K','Ca','Mg'];
@@ -1309,12 +1398,16 @@
       return hydroGetClMeq(stage);
     }
     function hydroColClass(n) {
-      if (n === 'Cl') return 'hydro-col-cl';
-      if (n === 'N_NH4') return 'hydro-col-nh4';
+      if (n === 'Cl') return 'hydro-col-cl hydro-col-outside-pct';
+      if (n === 'N_NH4') return 'hydro-col-nh4 hydro-col-outside-pct';
       if (HYDRO_ANIONS.includes(n)) return 'hydro-col-an';
       if (n === 'K') return 'hydro-col-cat hydro-ion-divide';
       if (HYDRO_CATIONS_TRIANGLE.includes(n)) return 'hydro-col-cat';
       return '';
+    }
+    function hydroPctMeqUnitLabel(n) {
+      if (n === 'Cl' || n === 'N_NH4') return '% total meq';
+      return '% meq';
     }
     function hydroTableGroupHeaderRow(ceCol) {
       const ce = ceCol ? '<th rowspan="2" class="hydro-col-ce hydro-th-group--ce">CE (dS/m)</th>' : '';
@@ -1575,12 +1668,13 @@
             <thead>
               ${hydroTableGroupHeaderRow(false)}
               <tr>
-                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate hydro-th-unit" translate="no">% meq</span></th>`).join('')}
+                ${HYDRO_MEQ_NUTRIENTS.map(n => `<th class="${hydroColClass(n)}">${hydroLabelHtml(n)} <span class="notranslate hydro-th-unit" translate="no">${hydroPctMeqUnitLabel(n)}</span></th>`).join('')}
               </tr>
             </thead>
             <tbody>${pctRows}</tbody>
           </table>
         </div>
+        <p class="hydro-pct-meq-note">Aniones (N-P-S) y cationes (K-Ca-Mg) suman 100% entre sí. Cl⁻ y N-NH₄⁺ van aparte (% sobre el total meq).</p>
       `;
 
       if (ppmWrap.firstElementChild) ppmWrap.firstElementChild.scrollLeft = savedPpmScroll;
@@ -2281,10 +2375,15 @@
       var rowAttr = opts.custom
         ? ''
         : ' data-fert-row="' + row.id + '"';
+      var soloCls = opts.hideLabel ? ' fert-comp-cell--solo' : '';
+      var labelHtml = opts.hideLabel
+        ? ''
+        : '<label><span class="fert-comp-ion">' + fertAporteLabelNutrient(k) + '</span> <span class="fert-comp-unit">%</span></label>';
+      var aria = opts.hideLabel ? ' aria-label="' + fertAporteLabelNutrient(k) + ' %"' : '';
       return (
-        '<div class="fert-comp-cell ' + fertAporteCompCellClass(k) + '">' +
-          '<label>' + fertAporteLabelNutrient(k) + '</label>' +
-          '<input type="text" inputmode="decimal" autocomplete="off"' + rowAttr + ' ' + compAttr + ' value="' + val + '">' +
+        '<div class="fert-comp-cell ' + fertAporteCompCellClass(k) + soloCls + '">' +
+          labelHtml +
+          '<input type="text" inputmode="decimal" autocomplete="off"' + rowAttr + ' ' + compAttr + aria + ' value="' + val + '">' +
         '</div>'
       );
     }
@@ -2306,12 +2405,14 @@
         else groups.push({ id: meta.id, title: meta.title, keys: [k] });
       });
       var macroHtml = groups.map(function (g) {
+        var soloIon = (g.id === 'cl' || g.id === 'nh4') && g.keys.length === 1;
         var cells = g.keys.map(function (k) {
           var v = row.compUsed[k] != null ? row.compUsed[k] : 0;
-          return fertAporteCompCellHtml(row, k, v, opts);
+          var cellOpts = Object.assign({}, opts, { hideLabel: soloIon });
+          return fertAporteCompCellHtml(row, k, v, cellOpts);
         }).join('');
-        return '<div class="fert-aporte-comp-group fert-aporte-comp-group--' + g.id + '">' +
-          '<div class="fert-aporte-comp-group-title">' + g.title + '</div>' + cells + '</div>';
+        return '<div class="fert-aporte-comp-group fert-aporte-comp-group--' + g.id + (soloIon ? ' fert-aporte-comp-group--solo' : '') + '">' +
+          '<div class="fert-aporte-comp-group-title">' + g.title + ' %</div>' + cells + '</div>';
       }).join('');
       var microHtml = '';
       if (microKeys.length) {
@@ -2325,6 +2426,7 @@
           '</div></div>';
       }
       return '<div class="fert-aporte-comp-panel">' +
+        '<p class="fert-aporte-comp-panel-hint">Composición · % elemental</p>' +
         '<div class="fert-aporte-comp-row">' + macroHtml + '</div>' +
         microHtml +
         '</div>';
@@ -2462,6 +2564,10 @@
         var m = t.meq[k];
         if (m > 0.001) bits.push(fertAporteLabelNutrient(k) + ' ' + m.toFixed(2) + ' meq · ' + t.ppm[k].toFixed(1) + ' ppm');
       });
+      window.HydroFertAporteCatalog.MICRO_KEYS.forEach(function (k) {
+        var p = t.ppm[k];
+        if (p > 0.001) bits.push(fertAporteLabelNutrient(k) + ' ' + p.toFixed(2) + ' ppm');
+      });
       return bits.length ? bits.join(' · ') : 'Sin aporte (dosis 0 o % en 0)';
     }
 
@@ -2475,6 +2581,42 @@
       });
       fertAporteRenderTotalsTable('fertAporteMeqWrap', 'meq');
       fertAporteRenderTotalsTable('fertAportePpmWrap', 'ppm');
+      fertAporteRenderMicroTotalsTable();
+    }
+
+    function fertAporteGetActiveMicroKeys() {
+      var cat = window.HydroFertAporteCatalog;
+      var set = {};
+      fertAporteState.rows.forEach(function (row) {
+        fertAporteCompKeysForRow(row).forEach(function (k) {
+          if (cat.MICRO_KEYS.indexOf(k) >= 0 && (row.compUsed[k] || 0) > 0.001) set[k] = true;
+        });
+      });
+      return cat.MICRO_KEYS.filter(function (k) { return set[k]; });
+    }
+
+    function fertAporteRenderMicroTotalsTable() {
+      var wrap = document.getElementById('fertAporteMicroPpmWrap');
+      if (!wrap) return;
+      var microKeys = fertAporteGetActiveMicroKeys();
+      if (!microKeys.length) {
+        wrap.hidden = true;
+        wrap.innerHTML = '';
+        return;
+      }
+      var sum = fertAporteRecalcRows();
+      var head = microKeys.map(function (n) {
+        return '<th class="fert-aporte-micro-th">' + hydroLabelHtml(n) + ' <span class="notranslate hydro-th-unit" translate="no">ppm</span></th>';
+      }).join('');
+      var cells = microKeys.map(function (n) {
+        var v = sum.ppm[n] || 0;
+        return '<td class="fert-aporte-micro-td">' + (v > 0.0005 ? v.toFixed(2) : '—') + '</td>';
+      }).join('');
+      wrap.hidden = false;
+      wrap.innerHTML =
+        '<div class="hydro-table-scroll hydro-table-colored">' +
+        '<table class="hydro-table hydro-table-colored fert-aporte-micro-table"><thead><tr>' + head + '</tr></thead>' +
+        '<tbody><tr>' + cells + '</tr></tbody></table></div>';
     }
 
     function fertAporteMeqGroupPcts(meqData) {
@@ -2678,6 +2820,7 @@
       renderFertAporteRows();
       fertAporteRenderTotalsTable('fertAporteMeqWrap', 'meq');
       fertAporteRenderTotalsTable('fertAportePpmWrap', 'ppm');
+      fertAporteRenderMicroTotalsTable();
       fertAporteUpdateAddBtnState();
     }
 

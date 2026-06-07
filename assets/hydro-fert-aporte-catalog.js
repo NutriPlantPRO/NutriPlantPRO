@@ -106,7 +106,13 @@
     { id: 'sulfato_ferroso', name: 'Sulfato ferroso', formula: 'FeSO₄·7H₂O', Fe: 20.0, SO4: 38.0 },
     { id: 'acido_borico', name: 'Ácido bórico', formula: 'H₃BO₃', B: 17 },
     { id: 'molibdato_sodio', name: 'Molibdato de sodio', formula: 'Na₂MoO₄·2H₂O', Mo: 39 },
+    { id: 'mix_micros_edta', name: 'Mix micros EDTA', formula: 'Mezcla quelatos EDTA', kind: 'blend', Fe: 6, Mn: 4, Zn: 2, Cu: 1, B: 1 },
     { id: 'quelato_fe', name: 'Fe EDTA', formula: 'Fe-EDTA', Fe: 13 },
+    { id: 'fe_dtpa', name: 'Fe DTPA', formula: 'Fe-DTPA', Fe: 11 },
+    { id: 'fe_eddha', name: 'Fe EDDHA', formula: 'Fe-EDDHA', Fe: 6 },
+    { id: 'quelato_mn', name: 'Mn EDTA', formula: 'Mn-EDTA', Mn: 13 },
+    { id: 'quelato_zn', name: 'Zn EDTA', formula: 'Zn-EDTA', Zn: 13 },
+    { id: 'quelato_cu', name: 'Cu EDTA', formula: 'Cu-EDTA', Cu: 14 },
     { id: 'acido_nitrico_55', name: 'Ácido nítrico 55%', formula: 'HNO₃ (55%)', N_NO3: 12.2, unit: 'L', density: 1.33 },
     { id: 'acido_fosforico_75', name: 'Ácido fosfórico 75%', formula: 'H₃PO₄ (75%)', P2O5: 54, unit: 'L', density: 1.57 },
     { id: 'acido_sulfurico_98', name: 'Ácido sulfúrico 98%', formula: 'H₂SO₄ (98%)', SO4: 96, unit: 'L', density: 1.84 }
