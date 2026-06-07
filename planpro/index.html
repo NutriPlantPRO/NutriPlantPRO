@@ -1197,6 +1197,11 @@
       color: #475569;
       letter-spacing: -0.01em;
     }
+    .np-nutri-file-truncated-warn {
+      font-size: 11px;
+      font-weight: 700;
+      color: #b45309;
+    }
     .np-nutri-file-desc-wrap {
       width: 100%;
       padding-top: 2px;
@@ -18354,6 +18359,10 @@
     return /\.(png|jpe?g|webp|gif|bmp|tiff?|heic|heif|svg)$/i.test(n);
   }
 
+  function nutriProExtractIsTruncated(ex) {
+    return !!(ex && ex.meta_json && ex.meta_json.truncated);
+  }
+
   function nutriProExtractStatusLabel(ex) {
     if (!ex || !ex.status) return '';
     if (ex.status === 'done') {
@@ -19806,6 +19815,14 @@
       subStrong.className = 'np-nutri-file-sub-strong';
       subStrong.textContent = formatPlanProStorageSize(file.size_bytes || 0) + nutriProExtractStatusLabel(file._extract);
       sub.appendChild(subStrong);
+      if (nutriProExtractIsTruncated(file._extract)) {
+        var truncWarn = document.createElement('span');
+        truncWarn.className = 'np-nutri-file-truncated-warn';
+        truncWarn.textContent = ' · ⚠ indexación parcial (500k máx.)';
+        truncWarn.title =
+          'El archivo tiene más texto del que se indexó. Socio y el buscador solo ven los primeros 500.000 caracteres; abre el archivo original para el resto.';
+        sub.appendChild(truncWarn);
+      }
       sub.appendChild(document.createTextNode(' · Act. ' + fmtUpdatedShort(file.updated_at)));
       meta.appendChild(t);
       meta.appendChild(preview);
