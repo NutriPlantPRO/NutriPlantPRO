@@ -683,10 +683,10 @@
       padding: 2px 0 4px;
     }
     .fert-comp-cell {
-      flex: 0 0 72px;
-      width: 72px;
-      min-width: 72px;
-      padding: 5px 4px 4px;
+      flex: 0 0 92px;
+      width: 92px;
+      min-width: 92px;
+      padding: 6px 5px 5px;
       border-radius: 8px;
       box-sizing: border-box;
     }
@@ -776,7 +776,7 @@
     }
     .fert-aporte-micro-table th,
     .fert-aporte-micro-table td {
-      background: rgba(241, 245, 249, 0.95);
+      background: rgba(226, 232, 240, 0.55) !important;
     }
     .fert-aporte-micro-td {
       font-weight: 600;
@@ -874,15 +874,16 @@
     }
     .fert-aporte-total-in {
       width: 100%;
-      max-width: 76px;
+      max-width: 96px;
+      min-width: 72px;
       box-sizing: border-box;
-      padding: 4px 5px;
+      padding: 5px 6px;
       border: 1px solid rgba(148, 163, 184, 0.55);
       border-radius: 6px;
       font-size: 13px;
       font-weight: 600;
       text-align: right;
-      background: #fff;
+      background: rgba(255, 255, 255, 0.92);
     }
     .fert-aporte-total-in:focus {
       outline: none;
@@ -911,9 +912,50 @@
       color: #64748b;
     }
     .hydro-free-solution .hydro-table-colored th.fert-aporte-total-muted-h {
-      background: rgba(248, 250, 252, 0.98) !important;
+      background: rgba(248, 250, 252, 0.85) !important;
       color: #94a3b8 !important;
       font-weight: 500;
+    }
+    /* Totales aporte — tintes translúcidos por ion */
+    #fertAporteMeqWrap .hydro-table-colored th.hydro-col-an,
+    #fertAporteMeqWrap .hydro-table-colored td.hydro-col-an,
+    #fertAportePpmWrap .hydro-table-colored th.hydro-col-an,
+    #fertAportePpmWrap .hydro-table-colored td.hydro-col-an {
+      background: rgba(254, 243, 199, 0.48) !important;
+    }
+    #fertAporteMeqWrap .hydro-table-colored th.hydro-col-cl,
+    #fertAporteMeqWrap .hydro-table-colored td.hydro-col-cl,
+    #fertAportePpmWrap .hydro-table-colored th.hydro-col-cl,
+    #fertAportePpmWrap .hydro-table-colored td.hydro-col-cl {
+      background: rgba(248, 250, 252, 0.88) !important;
+    }
+    #fertAporteMeqWrap .hydro-table-colored th.hydro-col-cat,
+    #fertAporteMeqWrap .hydro-table-colored td.hydro-col-cat,
+    #fertAportePpmWrap .hydro-table-colored th.hydro-col-cat,
+    #fertAportePpmWrap .hydro-table-colored td.hydro-col-cat {
+      background: rgba(254, 226, 226, 0.45) !important;
+    }
+    #fertAporteMeqWrap .hydro-table-colored th.hydro-col-nh4,
+    #fertAporteMeqWrap .hydro-table-colored td.hydro-col-nh4,
+    #fertAportePpmWrap .hydro-table-colored th.hydro-col-nh4,
+    #fertAportePpmWrap .hydro-table-colored td.hydro-col-nh4 {
+      background: rgba(248, 250, 252, 0.88) !important;
+    }
+    #fertAporteMeqWrap .hydro-table-colored th,
+    #fertAporteMeqWrap .hydro-table-colored td,
+    #fertAportePpmWrap .hydro-table-colored th,
+    #fertAportePpmWrap .hydro-table-colored td {
+      min-width: 88px;
+    }
+    #fertAporteMicroPpmWrap .hydro-table-colored th,
+    #fertAporteMicroPpmWrap .hydro-table-colored td {
+      background: rgba(226, 232, 240, 0.55) !important;
+      min-width: 88px;
+    }
+    #fertAporteMeqWrap.hydro-table-block,
+    #fertAportePpmWrap.hydro-table-block,
+    #fertAporteMicroPpmWrap.hydro-table-block {
+      background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
     }
     .fert-custom-panel {
       border: 1px solid #bfdbfe;
