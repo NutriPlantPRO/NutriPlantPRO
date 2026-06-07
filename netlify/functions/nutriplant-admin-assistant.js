@@ -143,6 +143,11 @@ function normalizeParams(body) {
     const v = src[key];
     if (v != null && v !== '' && params[key] == null) params[key] = v;
   });
+  const nutriKeys = ['folder_id', 'nutri_file_id', 'file_id', 'kind', 'category'];
+  nutriKeys.forEach((key) => {
+    const v = src[key];
+    if (v != null && v !== '' && params[key] == null) params[key] = v;
+  });
   return params;
 }
 
@@ -1715,6 +1720,384 @@ function getPlanProMapsLocation(item) {
   return null;
 }
 
+/* ——— Nutri PRO (bóveda técnica: carpetas, archivos, enlaces) ——— */
+const NUTRI_PRO_STORAGE_BUCKET = 'plan-pro-nutri-pro';
+
+const NUTRI_LINK_CAT_LABELS = {
+  nutricion_vegetal: 'Nutrición vegetal',
+  agronomia: 'Agronomía',
+  trabajo: 'Trabajo',
+  personal: 'Personal',
+  negocio: 'Negocio / NutriPlant',
+  investigacion: 'Investigación',
+  herramientas: 'Herramientas',
+  ingles: 'Inglés',
+  escuela: 'Escuela / Educación',
+  idiomas: 'Idiomas',
+  finanzas: 'Finanzas',
+  salud: 'Salud',
+  otro: 'Otro'
+};
+
+function nutriProSchemaMissing(error) {
+  const em = (error && error.message) || '';
+  return /plan_pro_nutri|does not exist|schema cache/i.test(em);
+}
+
+function nutriLinkCategoryLabel(catId) {
+  if (!catId) return 'Otro';
+  if (NUTRI_LINK_CAT_LABELS[catId]) return NUTRI_LINK_CAT_LABELS[catId];
+  return String(catId)
+    .replace(/^custom_/, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function nutriFolderMapById(folders) {
+  const m = {};
+  (folders || []).forEach((f) => {
+    if (f && f.id) m[f.id] = f;
+  });
+  return m;
+}
+
+function nutriFolderPathChain(folderId, foldersById) {
+  const parts = [];
+  let cur = folderId || null;
+  let guard = 0;
+  while (cur && guard++ < 50) {
+    const f = foldersById[cur];
+    if (!f) break;
+    parts.unshift(f.title || 'Carpeta');
+    cur = f.parent_id || null;
+  }
+  return parts;
+}
+
+function nutriFileShortPath(file, foldersById) {
+  if (!file) return 'Archivo';
+  const fname = file.title || file.original_name || 'Archivo';
+  const chain = nutriFolderPathChain(file.folder_id, foldersById);
+  return chain.length ? chain.join('/') + '/' + fname : fname;
+}
+
+function extractNutriRefsFromHtml(html) {
+  const out = [];
+  if (!html || !String(html).trim()) return out;
+  const re = /<[^>]*\bnp-rich-nutri-ref\b[^>]*>/gi;
+  let m;
+  while ((m = re.exec(html))) {
+    const tag = m[0];
+    const fileId = htmlTagAttr(tag, 'data-np-nutri-file-id');
+    if (!fileId) continue;
+    const label = htmlTagAttr(tag, 'data-np-ref-label') || stripHtmlSimple(tag).replace(/^📎\s*/, '');
+    out.push({ nutri_file_id: fileId, label: label || 'Archivo Nutri PRO' });
+  }
+  return out;
+}
+
+function extractApunteRefsFromHtml(html) {
+  const out = [];
+  if (!html || !String(html).trim()) return out;
+  const re = /<[^>]*\bnp-rich-apunte-ref\b[^>]*>/gi;
+  let m;
+  while ((m = re.exec(html))) {
+    const tag = m[0];
+    const itemId = htmlTagAttr(tag, 'data-np-apunte-id');
+    if (!itemId) continue;
+    const label = htmlTagAttr(tag, 'data-np-ref-label') || stripHtmlSimple(tag).replace(/^📝\s*/, '');
+    out.push({ apunte_id: itemId, label: label || 'Apunte' });
+  }
+  return out;
+}
+
+function collectNutriRefsFromItem(item) {
+  const seen = new Set();
+  const out = [];
+  function merge(list) {
+    (list || []).forEach((r) => {
+      if (!r || !r.nutri_file_id || seen.has(r.nutri_file_id)) return;
+      seen.add(r.nutri_file_id);
+      out.push(r);
+    });
+  }
+  if (!item) return out;
+  merge(extractNutriRefsFromHtml(item.body_html));
+  (item.body_blocks || []).forEach((b) => {
+    if (b && b.type === 'note_section') merge(extractNutriRefsFromHtml(b.html));
+  });
+  return out;
+}
+
+function collectApunteRefsFromItem(item) {
+  const seen = new Set();
+  const out = [];
+  function merge(list) {
+    (list || []).forEach((r) => {
+      if (!r || !r.apunte_id || seen.has(r.apunte_id)) return;
+      seen.add(r.apunte_id);
+      out.push(r);
+    });
+  }
+  if (!item) return out;
+  merge(extractApunteRefsFromHtml(item.body_html));
+  (item.body_blocks || []).forEach((b) => {
+    if (b && b.type === 'note_section') merge(extractApunteRefsFromHtml(b.html));
+  });
+  return out;
+}
+
+async function fetchNutriProFolders(supabase, ownerId) {
+  const { data, error } = await supabase
+    .from('plan_pro_nutri_folders')
+    .select('id,parent_id,title,color_hex,sort_order,updated_at')
+    .eq('owner_id', ownerId)
+    .order('title', { ascending: true });
+  if (error) {
+    if (nutriProSchemaMissing(error)) return { ok: false, rows: [], setup: 'supabase-plan-pro-nutri-pro.sql' };
+    throw new Error('plan_pro_nutri_folders: ' + error.message);
+  }
+  return { ok: true, rows: data || [] };
+}
+
+async function fetchNutriProFiles(supabase, ownerId, opts) {
+  opts = opts || {};
+  let q = supabase
+    .from('plan_pro_nutri_files')
+    .select('id,folder_id,title,original_name,mime_type,size_bytes,storage_path,created_at,updated_at')
+    .eq('owner_id', ownerId)
+    .order('title', { ascending: true });
+  if (opts.folder_id) q = q.eq('folder_id', opts.folder_id);
+  else if (opts.root_only) q = q.is('folder_id', null);
+  const limit = Math.min(parseInt(opts.limit, 10) || 500, 500);
+  q = q.limit(limit);
+  const { data, error } = await q;
+  if (error) {
+    if (nutriProSchemaMissing(error)) return { ok: false, rows: [], setup: 'supabase-plan-pro-nutri-pro.sql' };
+    throw new Error('plan_pro_nutri_files: ' + error.message);
+  }
+  return { ok: true, rows: data || [] };
+}
+
+async function fetchNutriProLinks(supabase, ownerId, opts) {
+  opts = opts || {};
+  let q = supabase
+    .from('plan_pro_nutri_links')
+    .select('id,folder_id,title,description,url,category,created_at,updated_at')
+    .eq('owner_id', ownerId)
+    .order('title', { ascending: true });
+  if (opts.folder_id) q = q.eq('folder_id', opts.folder_id);
+  else if (opts.root_only) q = q.is('folder_id', null);
+  if (opts.category) q = q.eq('category', opts.category);
+  const limit = Math.min(parseInt(opts.limit, 10) || 500, 500);
+  q = q.limit(limit);
+  const { data, error } = await q;
+  if (error) {
+    if (nutriProSchemaMissing(error)) return { ok: false, rows: [], setup: 'supabase-plan-pro-nutri-pro-links.sql' };
+    throw new Error('plan_pro_nutri_links: ' + error.message);
+  }
+  return { ok: true, rows: data || [] };
+}
+
+function mapNutriProFileRow(file, foldersById) {
+  return {
+    id: file.id,
+    nutri_file_id: file.id,
+    folder_id: file.folder_id || null,
+    title: file.title || file.original_name || 'Archivo',
+    original_name: file.original_name || null,
+    short_path: nutriFileShortPath(file, foldersById),
+    mime_type: file.mime_type || null,
+    size_bytes: file.size_bytes || 0,
+    storage_bucket: NUTRI_PRO_STORAGE_BUCKET,
+    updated_at: file.updated_at
+  };
+}
+
+function mapNutriProLinkRow(link, foldersById) {
+  const folderPath = link.folder_id ? nutriFolderPathChain(link.folder_id, foldersById).join(' / ') : 'Raíz';
+  return {
+    id: link.id,
+    folder_id: link.folder_id || null,
+    folder_path: folderPath,
+    title: link.title || 'Enlace',
+    description: link.description || null,
+    url: link.url,
+    category: link.category || 'otro',
+    category_label: nutriLinkCategoryLabel(link.category),
+    updated_at: link.updated_at
+  };
+}
+
+async function enrichNutriRefsWithFiles(supabase, ownerId, refs, foldersById) {
+  if (!refs || !refs.length) return [];
+  const ids = refs.map((r) => r.nutri_file_id).filter(Boolean);
+  const { data, error } = await supabase
+    .from('plan_pro_nutri_files')
+    .select('id,folder_id,title,original_name,mime_type,size_bytes,updated_at')
+    .eq('owner_id', ownerId)
+    .in('id', ids);
+  if (error && !nutriProSchemaMissing(error)) throw new Error('nutri_refs enrich: ' + error.message);
+  const byId = {};
+  (data || []).forEach((f) => {
+    if (f && f.id) byId[f.id] = f;
+  });
+  return refs.map((r) => {
+    const f = byId[r.nutri_file_id];
+    if (!f) {
+      return { ...r, file_found: false, aviso: 'Archivo no encontrado en Nutri PRO (pudo borrarse).' };
+    }
+    return {
+      ...r,
+      file_found: true,
+      title: f.title || f.original_name,
+      short_path: nutriFileShortPath(f, foldersById),
+      mime_type: f.mime_type || null,
+      size_bytes: f.size_bytes || 0,
+      folder_id: f.folder_id || null
+    };
+  });
+}
+
+async function handleNutriProCatalog(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'nutri_pro', error: 'No se encontró usuario admin para Nutri PRO.' };
+  }
+
+  const foldersRes = await fetchNutriProFolders(supabase, ownerId);
+  if (!foldersRes.ok) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      available: false,
+      error: 'Nutri PRO no está instalado en Supabase.',
+      setup_sql: [foldersRes.setup, 'supabase-plan-pro-nutri-pro-storage.sql', 'supabase-plan-pro-nutri-pro-links.sql']
+    };
+  }
+
+  const filesRes = await fetchNutriProFiles(supabase, ownerId, { limit: (params && params.limit) || 400 });
+  const linksRes = await fetchNutriProLinks(supabase, ownerId, { limit: (params && params.limit) || 400 });
+  const foldersById = nutriFolderMapById(foldersRes.rows);
+
+  const folders = foldersRes.rows.map((f) => ({
+    id: f.id,
+    parent_id: f.parent_id || null,
+    title: f.title,
+    path: nutriFolderPathChain(f.id, foldersById).join(' / '),
+    color_hex: f.color_hex || null,
+    updated_at: f.updated_at
+  }));
+
+  const files = (filesRes.rows || []).map((f) => mapNutriProFileRow(f, foldersById));
+  const links = (linksRes.rows || []).map((l) => mapNutriProLinkRow(l, foldersById));
+
+  const bytesTotal = files.reduce((s, f) => s + (f.size_bytes || 0), 0);
+
+  return {
+    ok: true,
+    domain: 'nutri_pro',
+    available: true,
+    counts: {
+      folders: folders.length,
+      files: files.length,
+      links: links.length,
+      storage_bytes: bytesTotal
+    },
+    folders,
+    files,
+    links,
+    gpt_usage:
+      'Lista tu bóveda Nutri PRO. Para buscar por nombre usa nutri_pro_search. En apuntes Plan PRO, rutas 📎 aparecen en plan_pro_item como nutri_refs. Aún no hay texto extraído de PDF/Excel (fase 2).',
+    lectura_archivos:
+      'Solo metadatos y rutas; no puedes leer el binario del PDF/Excel hasta la fase de extracción de texto.'
+  };
+}
+
+async function handleNutriProSearch(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'nutri_pro', error: 'No se encontró usuario admin para Nutri PRO.' };
+  }
+
+  const q = (params.q || params.search || '').trim().toLowerCase();
+  if (!q) {
+    return { ok: true, domain: 'nutri_pro', error: 'Indica params.q o params.search (texto a buscar).' };
+  }
+
+  const foldersRes = await fetchNutriProFolders(supabase, ownerId);
+  if (!foldersRes.ok) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      available: false,
+      error: 'Nutri PRO no está instalado en Supabase.',
+      setup_sql: foldersRes.setup
+    };
+  }
+
+  const foldersById = nutriFolderMapById(foldersRes.rows);
+  const folderId = (params.folder_id || '').trim() || null;
+  const kind = String(params.kind || 'all').toLowerCase();
+  const category = (params.category || '').trim() || null;
+  const limit = Math.min(parseInt(params.limit, 10) || 40, 80);
+
+  const fileOpts = { limit: 500 };
+  const linkOpts = { limit: 500 };
+  if (folderId) {
+    fileOpts.folder_id = folderId;
+    linkOpts.folder_id = folderId;
+  }
+  if (category) linkOpts.category = category;
+
+  let files = [];
+  let links = [];
+
+  if (kind !== 'links') {
+    const filesRes = await fetchNutriProFiles(supabase, ownerId, fileOpts);
+    files = (filesRes.rows || [])
+      .map((f) => mapNutriProFileRow(f, foldersById))
+      .filter((f) => {
+        const hay = [f.title, f.original_name, f.short_path, f.mime_type].filter(Boolean).join(' ').toLowerCase();
+        return hay.includes(q);
+      });
+  }
+
+  if (kind !== 'files') {
+    const linksRes = await fetchNutriProLinks(supabase, ownerId, linkOpts);
+    links = (linksRes.rows || [])
+      .map((l) => mapNutriProLinkRow(l, foldersById))
+      .filter((l) => {
+        const hay = [l.title, l.description, l.url, l.category_label, l.folder_path].filter(Boolean).join(' ').toLowerCase();
+        return hay.includes(q);
+      });
+  }
+
+  const nutriFileId = (params.nutri_file_id || params.file_id || '').trim();
+  if (nutriFileId && !files.some((f) => f.id === nutriFileId)) {
+    const { data: one } = await supabase
+      .from('plan_pro_nutri_files')
+      .select('id,folder_id,title,original_name,mime_type,size_bytes,updated_at')
+      .eq('owner_id', ownerId)
+      .eq('id', nutriFileId)
+      .maybeSingle();
+    if (one) files.unshift(mapNutriProFileRow(one, foldersById));
+  }
+
+  return {
+    ok: true,
+    domain: 'nutri_pro',
+    query: q,
+    folder_id: folderId,
+    kind,
+    counts: { files: files.length, links: links.length },
+    files: files.slice(0, limit),
+    links: links.slice(0, limit),
+    gpt_hint:
+      'Para ver qué apuntes enlazan un archivo, usa plan_pro_search o plan_pro_item y revisa nutri_refs en el apunte.'
+  };
+}
+
 function collectAllRichDueMarkers(item) {
   const markers = extractRichDueMarkersFromHtml(item.body_html).map((m) => ({
     ...m,
@@ -3278,6 +3661,13 @@ async function handlePlanProItem(supabase, params) {
 
   const images = collectPlanProImages(item);
   const noteMarkers = collectAllRichDueMarkers(item);
+  const nutriRefsRaw = collectNutriRefsFromItem(item);
+  const apunteRefs = collectApunteRefsFromItem(item);
+  const foldersRes = await fetchNutriProFolders(supabase, ownerId);
+  const foldersById = foldersRes.ok ? nutriFolderMapById(foldersRes.rows) : {};
+  const nutriRefs = foldersRes.ok
+    ? await enrichNutriRefsWithFiles(supabase, ownerId, nutriRefsRaw, foldersById)
+    : nutriRefsRaw.map((r) => ({ ...r, file_found: null, aviso: 'Nutri PRO no disponible en Supabase.' }));
 
   const plainLines = bodyPlainAsLines(item.body_plain);
 
@@ -3294,6 +3684,14 @@ async function handlePlanProItem(supabase, params) {
       lectura_nota:
         'Usa body_plain o body_plain_lines (no solo preview). Si line_count es 1 pero esperas más renglones, vuelve a plan_pro_update con note o append_note.',
       semaforos_en_nota: noteMarkers,
+      nutri_refs: nutriRefs,
+      nutri_refs_count: nutriRefs.length,
+      nutri_refs_note:
+        nutriRefs.length > 0
+          ? 'Rutas cortas 📎 a archivos Nutri PRO en la libreta/bloques. Usa nutri_file_id con nutri_pro_search o nutri_pro_catalog. Contenido PDF/Excel aún no indexado.'
+          : null,
+      apunte_refs: apunteRefs,
+      apunte_refs_count: apunteRefs.length,
       images,
       images_count: images.length,
       images_note:
@@ -3737,6 +4135,7 @@ async function handleDescribeApi() {
         'plan_pro_create',
         'plan_pro_update'
       ],
+      nutri_pro: ['nutri_pro_catalog', 'nutri_pro_search'],
       radar: ['radar_project', 'radar_search', 'radar_overview'],
       free_tools: ['free_tools_catalog'],
       lab_analyses: ['lab_analyses_catalog', 'project_analyses'],
@@ -3744,7 +4143,9 @@ async function handleDescribeApi() {
       nutrition: ['nutrition_catalogs']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item/locations (leer), plan_pro_create/plan_pro_update (escribir). plan_pro_locations devuelve favoritos y apuntes con ubicación Maps. Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
+      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item/locations (leer), plan_pro_create/plan_pro_update (escribir). plan_pro_item incluye nutri_refs (enlaces 📎 a Nutri PRO). Nutri PRO (bóveda archivos/enlaces): nutri_pro_catalog, nutri_pro_search. plan_pro_locations devuelve favoritos y apuntes con ubicación Maps. Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
+    nutri_pro_gpt:
+      'nutri_pro_catalog lista carpetas/archivos/enlaces. nutri_pro_search busca por nombre/ruta. plan_pro_item.nutri_refs cruza apuntes con archivos. Aún sin lectura de contenido PDF/Excel (fase 2). Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
     plan_pro_nota_semaforo:
       'Chip en libreta: [[sem:2026-05-26:media]] o append_due_marker. Ficha apunte: priority + due_at.',
     plan_pro_nota_herramientas:
@@ -3769,6 +4170,8 @@ const HANDLERS = {
   plan_pro_locations: (sb, p) => handlePlanProLocations(sb, p),
   plan_pro_create: (sb, p) => handlePlanProCreate(sb, p),
   plan_pro_update: (sb, p) => handlePlanProUpdate(sb, p),
+  nutri_pro_catalog: (sb, p) => handleNutriProCatalog(sb, p),
+  nutri_pro_search: (sb, p) => handleNutriProSearch(sb, p),
   radar_project: (sb, p) => handleRadarProject(sb, p),
   radar_search: (sb, p) => handleRadarSearch(sb, p),
   radar_overview: (sb, p) => handleRadarOverview(sb, p),
@@ -3785,8 +4188,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.0.0',
-      description: 'Lectura NutriPlant + Plan PRO escritura (create/update). Análisis, Clima, Radar, Manual.'
+      version: '2.3.0',
+      description:
+        'Lectura NutriPlant + Plan PRO + Nutri PRO (catálogo/búsqueda archivos). Plan PRO escritura (create/update). Análisis, Clima, Radar, Manual.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {

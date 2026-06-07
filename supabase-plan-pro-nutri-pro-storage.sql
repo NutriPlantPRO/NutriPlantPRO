@@ -19,48 +19,49 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = COALESCE(EXCLUDED.file_size_limit, storage.buckets.file_size_limit),
   allowed_mime_types = COALESCE(EXCLUDED.allowed_mime_types, storage.buckets.allowed_mime_types);
 
--- Solo admin autenticado; primera carpeta del path = auth.uid()
+-- Misma regla que plan-pro-note-images: usuario autenticado solo en su carpeta {auth.uid()}/...
+-- (Plan PRO ya exige is_admin en la app; is_admin_user() en Storage a veces bloquea el INSERT.)
 DROP POLICY IF EXISTS "plan_pro_nutri_pro_select_admin" ON storage.objects;
-CREATE POLICY "plan_pro_nutri_pro_select_admin"
+DROP POLICY IF EXISTS "plan_pro_nutri_pro_insert_admin" ON storage.objects;
+DROP POLICY IF EXISTS "plan_pro_nutri_pro_update_admin" ON storage.objects;
+DROP POLICY IF EXISTS "plan_pro_nutri_pro_delete_admin" ON storage.objects;
+DROP POLICY IF EXISTS "plan_pro_nutri_pro_select_own" ON storage.objects;
+DROP POLICY IF EXISTS "plan_pro_nutri_pro_insert_own" ON storage.objects;
+DROP POLICY IF EXISTS "plan_pro_nutri_pro_update_own" ON storage.objects;
+DROP POLICY IF EXISTS "plan_pro_nutri_pro_delete_own" ON storage.objects;
+
+CREATE POLICY "plan_pro_nutri_pro_select_own"
   ON storage.objects FOR SELECT
   TO authenticated
   USING (
     bucket_id = 'plan-pro-nutri-pro'
-    AND public.is_admin_user()
     AND split_part(name, '/', 1) = auth.uid()::text
   );
 
-DROP POLICY IF EXISTS "plan_pro_nutri_pro_insert_admin" ON storage.objects;
-CREATE POLICY "plan_pro_nutri_pro_insert_admin"
+CREATE POLICY "plan_pro_nutri_pro_insert_own"
   ON storage.objects FOR INSERT
   TO authenticated
   WITH CHECK (
     bucket_id = 'plan-pro-nutri-pro'
-    AND public.is_admin_user()
     AND split_part(name, '/', 1) = auth.uid()::text
   );
 
-DROP POLICY IF EXISTS "plan_pro_nutri_pro_update_admin" ON storage.objects;
-CREATE POLICY "plan_pro_nutri_pro_update_admin"
+CREATE POLICY "plan_pro_nutri_pro_update_own"
   ON storage.objects FOR UPDATE
   TO authenticated
   USING (
     bucket_id = 'plan-pro-nutri-pro'
-    AND public.is_admin_user()
     AND split_part(name, '/', 1) = auth.uid()::text
   )
   WITH CHECK (
     bucket_id = 'plan-pro-nutri-pro'
-    AND public.is_admin_user()
     AND split_part(name, '/', 1) = auth.uid()::text
   );
 
-DROP POLICY IF EXISTS "plan_pro_nutri_pro_delete_admin" ON storage.objects;
-CREATE POLICY "plan_pro_nutri_pro_delete_admin"
+CREATE POLICY "plan_pro_nutri_pro_delete_own"
   ON storage.objects FOR DELETE
   TO authenticated
   USING (
     bucket_id = 'plan-pro-nutri-pro'
-    AND public.is_admin_user()
     AND split_part(name, '/', 1) = auth.uid()::text
   );

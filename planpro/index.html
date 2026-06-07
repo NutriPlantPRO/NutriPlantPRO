@@ -615,8 +615,89 @@
       background: rgba(226, 232, 240, 0.65);
     }
     .np-nutri-folder-row--active {
-      background: color-mix(in srgb, #059669 12%, #fff);
-      box-shadow: inset 3px 0 0 #059669;
+      background: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 12%, #fff);
+      box-shadow: inset 3px 0 0 var(--np-nutri-folder-accent, #059669);
+    }
+    .np-nutri-folder-swatch {
+      flex-shrink: 0;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--np-nutri-folder-accent, #94a3b8);
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.1);
+    }
+    .np-nutri-folder-label {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .np-nutri-folder-add-hint {
+      margin: 8px 0 0;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .np-nutri-folders-sidebar .np-color-edit-bar {
+      margin-top: 0;
+      margin-bottom: 10px;
+      padding-top: 10px;
+    }
+    .np-nutri-folder-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .np-nutri-folder-wrap .np-nutri-folder-row {
+      flex: 1;
+      min-width: 0;
+      margin-bottom: 0;
+    }
+    .np-nutri-folder-action {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.55;
+      transition: background 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+    }
+    .np-nutri-folder-wrap:hover .np-nutri-folder-action,
+    .np-nutri-folder-action:focus-visible {
+      opacity: 1;
+    }
+    .np-nutri-folder-rename:hover {
+      background: rgba(219, 234, 254, 0.9);
+      color: #1d4ed8;
+    }
+    .np-nutri-folder-del:hover {
+      background: rgba(254, 226, 226, 0.85);
+      color: #b91c1c;
+    }
+    .np-nutri-folder-rename-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+    }
+    .np-nutri-folder-rename-row input {
+      flex: 1;
+      min-width: 0;
+      margin-bottom: 0;
+      font-size: 13px;
+    }
+    .np-nutri-folder-rename-bar {
+      margin-bottom: 10px;
     }
     .np-nutri-folder-add {
       display: flex;
@@ -739,6 +820,32 @@
     .np-nutri-link-form textarea {
       min-height: 64px;
       resize: vertical;
+    }
+    .np-nutri-link-cat-custom {
+      margin-top: 6px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px dashed rgba(5, 150, 105, 0.35);
+      background: rgba(236, 253, 245, 0.45);
+    }
+    .np-nutri-link-cat-custom label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .np-nutri-link-cat-custom-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 6px;
+    }
+    .np-nutri-link-cat-custom-row input {
+      flex: 1;
+      min-width: 140px;
+      margin-bottom: 0 !important;
     }
     .np-nutri-link-form-row {
       display: grid;
@@ -4326,6 +4433,72 @@
     .np-rich-due--media .np-rich-due-dot { background: #eab308; }
     .np-rich-due--alta { border-color: rgba(239, 68, 68, 0.45); background: rgba(254, 242, 242, 0.95); color: #7f1d1d; }
     .np-rich-due--alta .np-rich-due-dot { background: #ef4444; }
+    .np-rich-ref {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      vertical-align: baseline;
+      margin: 0 2px;
+      padding: 1px 8px 1px 6px;
+      border-radius: 8px;
+      font-size: 0.86em;
+      font-weight: 650;
+      line-height: 1.35;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: rgba(248, 250, 252, 0.96);
+      cursor: grab;
+      user-select: none;
+      white-space: nowrap;
+      max-width: min(92vw, 420px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .np-rich-ref:active { cursor: grabbing; }
+    .np-rich-nutri-ref {
+      border-color: rgba(5, 150, 105, 0.42);
+      background: rgba(236, 253, 245, 0.95);
+      color: #065f46;
+    }
+    .np-rich-apunte-ref {
+      border-color: rgba(37, 99, 235, 0.4);
+      background: rgba(239, 246, 255, 0.96);
+      color: #1e3a8a;
+    }
+    .np-crosslink-picker-list {
+      max-height: min(52vh, 380px);
+      overflow: auto;
+      margin-top: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 10px;
+    }
+    .np-crosslink-picker-item {
+      display: block;
+      width: 100%;
+      padding: 10px 12px;
+      border: 0;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+      background: #fff;
+      text-align: left;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .np-crosslink-picker-item:last-child { border-bottom: 0; }
+    .np-crosslink-picker-item:hover { background: rgba(241, 245, 249, 0.95); }
+    .np-crosslink-picker-item-title {
+      font-size: 13px;
+      font-weight: 650;
+      color: #1e293b;
+    }
+    .np-crosslink-picker-item-sub {
+      margin-top: 2px;
+      font-size: 11px;
+      color: #64748b;
+    }
+    .np-nutri-file-row--highlight {
+      box-shadow: inset 0 0 0 2px rgba(5, 150, 105, 0.55);
+      border-radius: 10px;
+    }
     .np-rich-due-popover {
       position: fixed;
       z-index: 16600;
@@ -5808,6 +5981,7 @@
                       <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="star" title="Destacar">★</button>
                       <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="separator" title="Insertar línea separadora">—</button>
                       <button type="button" class="np-rich-tbtn" data-rich="image" title="Insertar imagen (se comprime y sube a la nube)">🖼</button>
+                      <button type="button" class="np-rich-tbtn" data-rich="nutri-link" title="Enlace corto a archivo Nutri PRO">📎</button>
                     </span>
                   </div>
                   <div class="np-notebook-wrap">
@@ -5863,17 +6037,32 @@
           <p>Conocimiento técnico en la nube — archivos, enlaces clasificados y carpetas. Respaldo para ti y base para la IA.</p>
         </section>
         <div id="npNutriSetupMsg" class="np-msg warn np-hide" style="margin-bottom:12px;">
-          Ejecuta en Supabase SQL Editor: <code>supabase-plan-pro-nutri-pro.sql</code>, <code>supabase-plan-pro-nutri-pro-storage.sql</code> y <code>supabase-plan-pro-nutri-pro-links.sql</code>
+          Ejecuta en Supabase SQL Editor: <code>supabase-plan-pro-nutri-pro.sql</code>, <code>supabase-plan-pro-nutri-pro-storage.sql</code>, <code>supabase-plan-pro-nutri-pro-links.sql</code> y <code>supabase-plan-pro-nutri-pro-folder-color.sql</code>
         </div>
         <div class="np-layout-scroll">
           <div class="np-layout">
             <aside class="panel np-nutri-folders-sidebar np-section-accent np-section-accent-green">
               <h2 class="np-tree-sidebar-title">Carpetas</h2>
               <div id="npNutriFolderTree" class="np-nutri-folder-tree" role="tree" aria-label="Carpetas Nutri PRO"></div>
+              <div id="npNutriFolderColorBar" class="np-color-edit-bar np-hide">
+                <span class="np-color-edit-label">Color carpeta</span>
+                <input type="color" id="npNutriFolderColorPicker" class="np-color-edit-picker" title="Elegir color" aria-label="Color de la carpeta seleccionada" />
+                <input type="text" id="npNutriFolderColorHex" class="np-color-edit-hex" maxlength="7" placeholder="#RRGGBB" spellcheck="false" autocomplete="off" aria-label="Código hexadecimal del color de la carpeta" />
+                <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriFolderColorApply">Aplicar</button>
+                <button type="button" class="btn btn-ghost" id="npNutriFolderColorClear">Automático</button>
+              </div>
+              <div id="npNutriFolderRenameBar" class="np-nutri-folder-rename-bar np-color-edit-bar np-hide">
+                <span class="np-color-edit-label">Nombre carpeta</span>
+                <div class="np-nutri-folder-rename-row">
+                  <input type="text" id="npNutriFolderRenameInput" maxlength="120" placeholder="Nombre de la carpeta" autocomplete="off" aria-label="Nombre de la carpeta seleccionada" />
+                  <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriFolderRenameSave">Guardar</button>
+                </div>
+              </div>
               <div class="np-nutri-folder-add">
-                <input type="text" id="npNutriNewFolder" autocomplete="off" placeholder="Nueva carpeta…" aria-label="Nombre de nueva carpeta" />
+                <input type="text" id="npNutriNewFolder" autocomplete="off" placeholder="Nueva carpeta en raíz…" aria-label="Nombre de nueva carpeta" />
                 <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriBtnAddFolder">Crear</button>
               </div>
+              <p id="npNutriFolderAddHint" class="np-muted np-nutri-folder-add-hint">Selecciona una carpeta y pulsa Crear para añadir subcarpetas dentro.</p>
             </aside>
             <div class="np-main-col">
               <section class="panel np-section-accent np-section-accent-green">
@@ -5907,16 +6096,14 @@
                       </div>
                       <div>
                         <label for="npNutriLinkCategory">Clasificación</label>
-                        <select id="npNutriLinkCategory">
-                          <option value="nutricion_vegetal">Nutrición vegetal</option>
-                          <option value="agronomia">Agronomía</option>
-                          <option value="trabajo">Trabajo</option>
-                          <option value="personal">Personal</option>
-                          <option value="negocio">Negocio / NutriPlant</option>
-                          <option value="investigacion">Investigación</option>
-                          <option value="herramientas">Herramientas</option>
-                          <option value="otro">Otro</option>
-                        </select>
+                        <select id="npNutriLinkCategory" aria-label="Clasificación del enlace"></select>
+                        <div id="npNutriLinkCategoryCustomWrap" class="np-nutri-link-cat-custom np-hide">
+                          <label for="npNutriLinkCategoryCustom">Nombre de la categoría</label>
+                          <div class="np-nutri-link-cat-custom-row">
+                            <input type="text" id="npNutriLinkCategoryCustom" maxlength="48" placeholder="Ej. Inglés, Escuela, Finanzas…" autocomplete="off" />
+                            <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriLinkCategorySaveCustom">Guardar categoría</button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <div>
@@ -6073,6 +6260,20 @@
       <button type="button" class="btn btn-ghost btn-ghost-blue" id="npRichDuePopoverCancel">Cancelar</button>
       <button type="button" class="btn btn-ghost btn-ghost-green" id="npRichDuePopoverApply">Listo</button>
       <button type="button" class="btn btn-ghost" id="npRichDuePopoverRemove" style="display:none;color:#b91c1c;">Quitar</button>
+    </div>
+  </div>
+
+  <div id="npCrossLinkPicker" class="np-modal-overlay" aria-hidden="true">
+    <div class="np-modal-panel" role="dialog" aria-labelledby="npCrossLinkPickerTitle" style="max-width:520px;">
+      <div class="np-modal-head">
+        <h3 id="npCrossLinkPickerTitle" style="margin:0;font-size:1rem;">Enlazar</h3>
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCrossLinkPickerClose" style="flex-shrink:0;">Cerrar</button>
+      </div>
+      <div class="np-modal-body" style="padding-top:8px;">
+        <input type="search" id="npCrossLinkPickerSearch" autocomplete="off" placeholder="Buscar…" aria-label="Buscar enlace" style="margin-bottom:0;" />
+        <div id="npCrossLinkPickerList" class="np-crosslink-picker-list" role="listbox" aria-label="Resultados"></div>
+        <p id="npCrossLinkPickerEmpty" class="np-muted np-hide" style="margin:10px 0 0;font-size:13px;">Sin resultados.</p>
+      </div>
     </div>
   </div>
 
@@ -6756,17 +6957,23 @@
   var NP_NUTRI_PRO_BUCKET = 'plan-pro-nutri-pro';
   var NP_NUTRI_FILE_EXT_OK =
     /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|rtf|odt|ods|odp|png|jpe?g|webp|gif|bmp|tiff?|heic|heif|svg)$/i;
-  var NP_NUTRI_LINK_CATEGORIES = [
-    { id: '', label: 'Todas' },
+  var NP_NUTRI_LINK_CAT_NEW = '__new__';
+  var NP_NUTRI_LINK_CATS_BUILTIN = [
     { id: 'nutricion_vegetal', label: 'Nutrición vegetal' },
     { id: 'agronomia', label: 'Agronomía' },
     { id: 'trabajo', label: 'Trabajo' },
     { id: 'personal', label: 'Personal' },
-    { id: 'negocio', label: 'Negocio' },
+    { id: 'negocio', label: 'Negocio / NutriPlant' },
     { id: 'investigacion', label: 'Investigación' },
     { id: 'herramientas', label: 'Herramientas' },
+    { id: 'ingles', label: 'Inglés' },
+    { id: 'escuela', label: 'Escuela / Educación' },
+    { id: 'idiomas', label: 'Idiomas' },
+    { id: 'finanzas', label: 'Finanzas' },
+    { id: 'salud', label: 'Salud' },
     { id: 'otro', label: 'Otro' }
   ];
+  var NP_NUTRI_LINK_CATS_STORAGE_KEY = 'nutriplant_nutri_pro_link_cats_v1';
   var planProRichImageTargetEditor = null;
   var npMapsPickerState = {
     inputEl: null,
@@ -7898,7 +8105,11 @@
           'data-np-due-end-time',
           'data-np-due-level',
           'data-np-due-label',
+          'data-np-nutri-file-id',
+          'data-np-apunte-id',
+          'data-np-ref-label',
           'contenteditable',
+          'draggable',
           'title'
         ]
       });
@@ -7936,6 +8147,9 @@
         applyRichDueMarkerEl(el, dk, lv, el.getAttribute('data-np-due-time'), el.getAttribute('data-np-due-end-time'));
         el.setAttribute('contenteditable', 'false');
       });
+      Array.prototype.slice.call(wrap.querySelectorAll('.np-rich-ref')).forEach(function (el) {
+        applyRichRefMarkerEl(el);
+      });
       return wrap.innerHTML;
     }
     var x = document.createElement('div');
@@ -7971,6 +8185,84 @@
       });
     }
     return chunks.filter(Boolean).join(' ');
+  }
+
+  function extractNutriRefsFromHtml(html) {
+    var out = [];
+    if (!html || !String(html).trim()) return out;
+    var wrap = document.createElement('div');
+    wrap.innerHTML = sanitizeRich(html);
+    wrap.querySelectorAll('.np-rich-nutri-ref[data-np-nutri-file-id]').forEach(function (el) {
+      var fid = el.getAttribute('data-np-nutri-file-id');
+      if (!fid) return;
+      out.push({
+        fileId: fid,
+        label: el.getAttribute('data-np-ref-label') || stripHtml(el.textContent || '')
+      });
+    });
+    return out;
+  }
+
+  function extractApunteRefsFromHtml(html) {
+    var out = [];
+    if (!html || !String(html).trim()) return out;
+    var wrap = document.createElement('div');
+    wrap.innerHTML = sanitizeRich(html);
+    wrap.querySelectorAll('.np-rich-apunte-ref[data-np-apunte-id]').forEach(function (el) {
+      var aid = el.getAttribute('data-np-apunte-id');
+      if (!aid) return;
+      out.push({
+        itemId: aid,
+        label: el.getAttribute('data-np-ref-label') || stripHtml(el.textContent || '')
+      });
+    });
+    return out;
+  }
+
+  function extractPlanProRefsFromItem(r) {
+    var nutri = [];
+    var apunte = [];
+    var seenNutri = {};
+    var seenApunte = {};
+    function mergeNutri(list) {
+      (list || []).forEach(function (x) {
+        if (!x || !x.fileId || seenNutri[x.fileId]) return;
+        seenNutri[x.fileId] = true;
+        nutri.push(x);
+      });
+    }
+    function mergeApunte(list) {
+      (list || []).forEach(function (x) {
+        if (!x || !x.itemId || seenApunte[x.itemId]) return;
+        seenApunte[x.itemId] = true;
+        apunte.push(x);
+      });
+    }
+    if (!r) return { nutri: nutri, apunte: apunte };
+    if (r.body_html) {
+      mergeNutri(extractNutriRefsFromHtml(r.body_html));
+      mergeApunte(extractApunteRefsFromHtml(r.body_html));
+    }
+    if (r.body_blocks && Array.isArray(r.body_blocks)) {
+      r.body_blocks.forEach(function (blk) {
+        if (!blk || blk.type !== 'note_section' || !blk.html) return;
+        mergeNutri(extractNutriRefsFromHtml(blk.html));
+        mergeApunte(extractApunteRefsFromHtml(blk.html));
+      });
+    }
+    return { nutri: nutri, apunte: apunte };
+  }
+
+  function formatPlanProRefsForAssistant(refs) {
+    refs = refs || {};
+    var parts = [];
+    (refs.nutri || []).forEach(function (ref) {
+      parts.push('Nutri PRO: ' + (ref.label || 'archivo') + ' [nutri_file_id=' + ref.fileId + ']');
+    });
+    (refs.apunte || []).forEach(function (ref) {
+      parts.push('Apunte: ' + (ref.label || 'apunte') + ' [apunte_id=' + ref.itemId + ']');
+    });
+    return parts.join(' · ');
   }
 
   function firstUrlFromText(s) {
@@ -8688,6 +8980,480 @@
     });
   }
 
+  function escapeAttrText(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;');
+  }
+
+  function nutriProFolderPathChain(folderId) {
+    var parts = [];
+    var cur = folderId || null;
+    var guard = 0;
+    while (cur && guard++ < 50) {
+      var f = nutriProGetFolderById(cur);
+      if (!f) break;
+      parts.unshift(f.title || 'Carpeta');
+      cur = f.parent_id || null;
+    }
+    return parts;
+  }
+
+  function nutriProFileShortLabel(fileRec) {
+    if (!fileRec) return 'Archivo';
+    var fname = fileRec.title || fileRec.original_name || 'Archivo';
+    var chain = nutriProFolderPathChain(fileRec.folder_id);
+    if (chain.length) return chain.join('/') + '/' + fname;
+    return fname;
+  }
+
+  function apunteShortLabel(itemRec) {
+    if (!itemRec) return 'Apunte';
+    var plant = state.areaMap[itemRec.area_id] || 'Planta';
+    var branch = itemRec.category_id ? getCategoryPath(itemRec.category_id) : '—';
+    return plant + ' › ' + branch + ' › ' + (itemRec.title || '(Sin título)');
+  }
+
+  function applyRichRefMarkerEl(el) {
+    if (!el) return;
+    var lbl = el.getAttribute('data-np-ref-label') || '';
+    if (!lbl) {
+      if (el.classList.contains('np-rich-nutri-ref')) lbl = 'Archivo Nutri PRO';
+      else if (el.classList.contains('np-rich-apunte-ref')) lbl = 'Apunte';
+    }
+    var icon = el.classList.contains('np-rich-apunte-ref') ? '📝' : '📎';
+    el.textContent = icon + ' ' + lbl;
+    el.setAttribute('contenteditable', 'false');
+    el.setAttribute('draggable', 'true');
+    if (el.classList.contains('np-rich-nutri-ref')) {
+      el.setAttribute('title', 'Abrir archivo en Nutri PRO · arrastra para mover');
+    } else {
+      el.setAttribute('title', 'Abrir apunte · arrastra para mover');
+    }
+  }
+
+  function buildNutriRefHtml(fileId, label) {
+    var lbl = String(label || 'Archivo').trim();
+    return (
+      '<span class="np-rich-ref np-rich-nutri-ref" contenteditable="false" draggable="true" ' +
+      'data-np-nutri-file-id="' +
+      escapeAttrText(fileId) +
+      '" data-np-ref-label="' +
+      escapeAttrText(lbl) +
+      '">📎 ' +
+      escapeHtmlText(lbl) +
+      '</span>'
+    );
+  }
+
+  function buildApunteRefHtml(itemId, label) {
+    var lbl = String(label || 'Apunte').trim();
+    return (
+      '<span class="np-rich-ref np-rich-apunte-ref" contenteditable="false" draggable="true" ' +
+      'data-np-apunte-id="' +
+      escapeAttrText(itemId) +
+      '" data-np-ref-label="' +
+      escapeAttrText(lbl) +
+      '">📝 ' +
+      escapeHtmlText(lbl) +
+      '</span>'
+    );
+  }
+
+  function insertRichHtmlSnippet(html, editorEl, onAfter) {
+    if (!html || !editorEl) return;
+    var target = editorEl;
+    target.focus();
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    var range = sel.getRangeAt(0).cloneRange();
+    if (!target.contains(range.commonAncestorContainer)) {
+      range.selectNodeContents(target);
+      range.collapse(false);
+    }
+    var holder = document.createElement('div');
+    holder.innerHTML = sanitizeRich(html);
+    var frag = document.createDocumentFragment();
+    while (holder.firstChild) frag.appendChild(holder.firstChild);
+    var last = frag.lastChild;
+    if (!last) return;
+    range.deleteContents();
+    try {
+      range.insertNode(frag);
+    } catch (errIns) {
+      try {
+        document.execCommand('insertHTML', false, sanitizeRich(html));
+      } catch (e2) {}
+      if (onAfter) onAfter();
+      return;
+    }
+    var sp = document.createTextNode('\u00a0');
+    if (last.parentNode) last.parentNode.insertBefore(sp, last.nextSibling);
+    range.setStartAfter(sp);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    if (onAfter) onAfter();
+  }
+
+  function caretRangeFromPointInEditor(clientX, clientY, editorEl) {
+    if (!editorEl) return null;
+    var range = null;
+    if (document.caretRangeFromPoint) {
+      range = document.caretRangeFromPoint(clientX, clientY);
+    } else if (document.caretPositionFromPoint) {
+      var pos = document.caretPositionFromPoint(clientX, clientY);
+      if (pos) {
+        range = document.createRange();
+        range.setStart(pos.offsetNode, pos.offset);
+        range.collapse(true);
+      }
+    }
+    if (!range || !editorEl.contains(range.startContainer)) {
+      range = document.createRange();
+      range.selectNodeContents(editorEl);
+      range.collapse(false);
+    }
+    return range;
+  }
+
+  function bindRichRefMarkers(editorEl, onChange) {
+    if (!editorEl) return;
+    editorEl.querySelectorAll('.np-rich-ref').forEach(applyRichRefMarkerEl);
+    if (editorEl._npRichRefBound) return;
+    editorEl._npRichRefBound = true;
+    var dragRef = null;
+    editorEl.addEventListener('click', function (e) {
+      if (dragRef) return;
+      var nutri = e.target.closest('.np-rich-nutri-ref');
+      var apunte = e.target.closest('.np-rich-apunte-ref');
+      var ref = nutri || apunte;
+      if (!ref || !editorEl.contains(ref)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (nutri) navigateToNutriRef(nutri);
+      else navigateToApunteRef(apunte);
+    });
+    editorEl.addEventListener('dragstart', function (e) {
+      var ref = e.target.closest('.np-rich-ref');
+      if (!ref || !editorEl.contains(ref)) return;
+      dragRef = ref;
+      e.dataTransfer.setData('text/plain', 'planpro-rich-ref');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    editorEl.addEventListener('dragend', function () {
+      dragRef = null;
+    });
+    editorEl.addEventListener('dragover', function (e) {
+      if (!dragRef) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+    editorEl.addEventListener('drop', function (e) {
+      if (!dragRef || !editorEl.contains(dragRef)) return;
+      e.preventDefault();
+      var moved = dragRef;
+      dragRef = null;
+      var range = caretRangeFromPointInEditor(e.clientX, e.clientY, editorEl);
+      if (!range) return;
+      if (moved.parentNode) moved.parentNode.removeChild(moved);
+      range.insertNode(moved);
+      var sp = document.createTextNode('\u00a0');
+      if (moved.parentNode) moved.parentNode.insertBefore(sp, moved.nextSibling);
+      if (onChange) onChange();
+    });
+  }
+
+  function bindRichRefMarkersReadOnly(rootEl) {
+    if (!rootEl || rootEl._npRichRefReadBound) return;
+    rootEl._npRichRefReadBound = true;
+    rootEl.querySelectorAll('.np-rich-ref').forEach(applyRichRefMarkerEl);
+    rootEl.addEventListener('click', function (e) {
+      var nutri = e.target.closest('.np-rich-nutri-ref');
+      var apunte = e.target.closest('.np-rich-apunte-ref');
+      if (!nutri && !apunte) return;
+      e.preventDefault();
+      if (nutri) navigateToNutriRef(nutri);
+      else navigateToApunteRef(apunte);
+    });
+  }
+
+  async function navigateToNutriRef(el) {
+    var fileId = el && el.getAttribute ? el.getAttribute('data-np-nutri-file-id') : '';
+    if (!fileId || !state.client) return;
+    try {
+      await loadNutriProFolders();
+    } catch (e) {}
+    var res = await state.client
+      .from('plan_pro_nutri_files')
+      .select('id,folder_id,title,original_name,mime_type,storage_path')
+      .eq('id', fileId)
+      .maybeSingle();
+    if (res.error || !res.data) {
+      showToast('Archivo no encontrado en Nutri PRO.', true);
+      return;
+    }
+    setPlanProAppMode('nutri-pro');
+    state.nutriProSelectedFolderId = res.data.folder_id || null;
+    renderNutriProFolderTree();
+    syncNutriProFolderContext();
+    setNutriProPanel('files');
+    await loadNutriProFiles(state.nutriProSelectedFolderId);
+    state.nutriProHighlightFileId = fileId;
+    renderNutriProFilesList();
+    window.setTimeout(function () {
+      state.nutriProHighlightFileId = null;
+      renderNutriProFilesList();
+    }, 3200);
+  }
+
+  async function navigateToApunteRef(el) {
+    var itemId = el && el.getAttribute ? el.getAttribute('data-np-apunte-id') : '';
+    if (!itemId || !state.client) return;
+    var row = await fetchPlanProItemForDetail(itemId);
+    if (!row) {
+      showToast('Apunte no encontrado.', true);
+      return;
+    }
+    setPlanProAppMode('apuntes');
+    if (row.area_id) state.selectedAreaId = row.area_id;
+    if (row.category_id) state.selectedCategoryId = row.category_id;
+    await loadItems();
+    await openItemDetail(row);
+  }
+
+  var crossLinkPickerState = null;
+  var crossLinkPickerCache = null;
+
+  function closeCrossLinkPicker() {
+    var modal = $('npCrossLinkPicker');
+    if (modal) {
+      modal.classList.remove('np-modal-open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    crossLinkPickerState = null;
+  }
+
+  function renderCrossLinkPickerList(rows) {
+    var mount = $('npCrossLinkPickerList');
+    var empty = $('npCrossLinkPickerEmpty');
+    if (!mount) return;
+    mount.innerHTML = '';
+    if (empty) empty.classList.toggle('np-hide', !!(rows && rows.length));
+    (rows || []).forEach(function (row) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'np-crosslink-picker-item';
+      btn.setAttribute('role', 'option');
+      var t = document.createElement('div');
+      t.className = 'np-crosslink-picker-item-title';
+      t.textContent = row.title || row.label || '—';
+      btn.appendChild(t);
+      if (row.sub) {
+        var s = document.createElement('div');
+        s.className = 'np-crosslink-picker-item-sub';
+        s.textContent = row.sub;
+        btn.appendChild(s);
+      }
+      (function (rec) {
+        btn.addEventListener('click', function () {
+          if (!crossLinkPickerState || !crossLinkPickerState.onPick) return;
+          crossLinkPickerState.onPick(rec.raw || rec);
+          closeCrossLinkPicker();
+        });
+      })(row);
+      mount.appendChild(btn);
+    });
+  }
+
+  function filterCrossLinkPickerRows(q) {
+    if (!crossLinkPickerCache) return [];
+    var needle = String(q || '')
+      .trim()
+      .toLowerCase();
+    if (!needle) return crossLinkPickerCache.slice();
+    return crossLinkPickerCache.filter(function (row) {
+      return (
+        String(row.search || '')
+          .toLowerCase()
+          .indexOf(needle) !== -1
+      );
+    });
+  }
+
+  async function loadCrossLinkPickerNutriRows() {
+    if (!state.client) return [];
+    await loadNutriProFolders();
+    var res = await state.client
+      .from('plan_pro_nutri_files')
+      .select('id,folder_id,title,original_name,mime_type,updated_at')
+      .order('title', { ascending: true });
+    if (res.error) throw res.error;
+    return (res.data || []).map(function (f) {
+      var short = nutriProFileShortLabel(f);
+      return {
+        title: short,
+        sub: nutriProFileIcon(f.original_name || f.title, f.mime_type) + ' Nutri PRO',
+        search: short + ' ' + (f.original_name || '') + ' ' + (f.title || ''),
+        raw: f
+      };
+    });
+  }
+
+  async function loadCrossLinkPickerApunteRows() {
+    if (!state.client || !state.userId) return [];
+    var res = await state.client
+      .from('plan_pro_items')
+      .select('id,title,area_id,category_id,updated_at')
+      .eq('owner_id', state.userId)
+      .order('updated_at', { ascending: false })
+      .limit(400);
+    if (res.error) throw res.error;
+    return (res.data || []).map(function (r) {
+      var short = apunteShortLabel(r);
+      return {
+        title: r.title || '(Sin título)',
+        sub: short,
+        search: short + ' ' + (r.title || ''),
+        raw: r
+      };
+    });
+  }
+
+  async function openCrossLinkPicker(opts) {
+    opts = opts || {};
+    if (!state.client) {
+      showToast('Inicia sesión para enlazar.', true);
+      return;
+    }
+    var modal = $('npCrossLinkPicker');
+    var titleEl = $('npCrossLinkPickerTitle');
+    var search = $('npCrossLinkPickerSearch');
+    if (!modal) return;
+    crossLinkPickerState = {
+      mode: opts.mode === 'apunte' ? 'apunte' : 'nutri',
+      editorEl: opts.editorEl || null,
+      onPick: opts.onPick || null
+    };
+    if (titleEl) {
+      titleEl.textContent =
+        crossLinkPickerState.mode === 'apunte'
+          ? 'Elegir apunte destino'
+          : 'Elegir archivo Nutri PRO';
+    }
+    if (search) {
+      search.value = '';
+      search.placeholder =
+        crossLinkPickerState.mode === 'apunte' ? 'Buscar apunte…' : 'Buscar archivo Nutri PRO…';
+    }
+    modal.classList.add('np-modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+    try {
+      crossLinkPickerCache =
+        crossLinkPickerState.mode === 'apunte'
+          ? await loadCrossLinkPickerApunteRows()
+          : await loadCrossLinkPickerNutriRows();
+      renderCrossLinkPickerList(filterCrossLinkPickerRows(''));
+    } catch (e) {
+      showToast((e && e.message) || 'No se pudo cargar la lista.', true);
+      closeCrossLinkPicker();
+      return;
+    }
+    if (search) search.focus();
+  }
+
+  function openNutriLinkPickerForEditor(editorEl, onAfter) {
+    openCrossLinkPicker({
+      mode: 'nutri',
+      editorEl: editorEl,
+      onPick: function (fileRec) {
+        if (!fileRec || !fileRec.id || !editorEl) return;
+        var html = buildNutriRefHtml(fileRec.id, nutriProFileShortLabel(fileRec)) + '\u00a0';
+        insertRichHtmlSnippet(html, editorEl, function () {
+          bindRichRefMarkers(editorEl, onAfter);
+          if (onAfter) onAfter();
+        });
+      }
+    });
+  }
+
+  function findApunteAppendTarget(blocks) {
+    blocks = blocks || [];
+    for (var i = blocks.length - 1; i >= 0; i--) {
+      if (blocks[i] && blocks[i].type === 'note_section') return { kind: 'block', index: i };
+    }
+    return { kind: 'main' };
+  }
+
+  async function appendNutriRefToApunte(itemId, fileRec) {
+    if (!state.client || !itemId || !fileRec || !fileRec.id) return;
+    var refHtml = buildNutriRefHtml(fileRec.id, nutriProFileShortLabel(fileRec));
+    var appendSnippet = '<p>' + refHtml + ' </p>';
+
+    if (state.detailItemId === itemId) {
+      var target = findApunteAppendTarget(state.detailBlocksWorking || []);
+      if (target.kind === 'block' && state.detailBlocksWorking && state.detailBlocksWorking[target.index]) {
+        var blk = state.detailBlocksWorking[target.index];
+        blk.html = sanitizeRich((blk.html || '<p><br></p>') + appendSnippet);
+        refreshDetailBlocksDOM();
+        await persistItemBlocks(itemId, state.detailBlocksWorking, { skipReload: true });
+        showToast('Enlace Nutri PRO añadido al final del apunte.');
+        return;
+      }
+      var ed = $('npModalBodyRich');
+      if (ed) {
+        ed.innerHTML = sanitizeRich((ed.innerHTML || '<p><br></p>') + appendSnippet);
+        syncRichEmptyClass(ed);
+        bindRichRefMarkers(ed, function () {
+          schedulePersistMainBody();
+        });
+        await persistItemMainBody(itemId, ed.innerHTML, {
+          skipReload: true,
+          ignoreEmptyGuard: true,
+          hadContent: true
+        });
+        showToast('Enlace Nutri PRO añadido al final del apunte.');
+        return;
+      }
+    }
+
+    var item = await fetchPlanProItemForDetail(itemId);
+    if (!item) {
+      showToast('Apunte no encontrado.', true);
+      return;
+    }
+    var blocks = deepCloneBlocks(item.body_blocks || []);
+    var remoteTarget = findApunteAppendTarget(blocks);
+    if (remoteTarget.kind === 'block' && blocks[remoteTarget.index]) {
+      blocks[remoteTarget.index].html = sanitizeRich(
+        (blocks[remoteTarget.index].html || '<p><br></p>') + appendSnippet
+      );
+      await persistItemBlocks(itemId, blocks, { skipReload: true });
+      showToast('Enlace añadido al final de «' + (item.title || 'apunte') + '».');
+      return;
+    }
+    var main = resolveModalNoteHtml(item);
+    var newHtml = sanitizeRich((main || '<p><br></p>') + appendSnippet);
+    await persistItemMainBody(itemId, newHtml, {
+      skipReload: true,
+      ignoreEmptyGuard: true,
+      hadContent: recordHadNoteContent(item) || true
+    });
+    showToast('Enlace añadido al final de «' + (item.title || 'apunte') + '».');
+  }
+
+  function openApunteLinkPickerForNutriFile(fileRec) {
+    if (!fileRec || !fileRec.id) return;
+    openCrossLinkPicker({
+      mode: 'apunte',
+      onPick: function (itemRec) {
+        if (!itemRec || !itemRec.id) return;
+        appendNutriRefToApunte(itemRec.id, fileRec);
+      }
+    });
+  }
+
   function collectRichDueEntriesFromHtml(html, meta) {
     var out = [];
     if (!html || !String(html).trim() || !meta || !meta.id) return out;
@@ -8835,6 +9601,14 @@
         var fi = $('npRichImageInput');
         if (fi) fi.click();
       }
+    } else if (kind === 'nutri-link') {
+      var afterNutri =
+        editorEl.id === 'npModalBodyRich'
+          ? function () {
+              schedulePersistMainBody();
+            }
+          : null;
+      openNutriLinkPickerForEditor(editorEl, afterNutri);
     }
     syncRichEmptyClass(editorEl);
     scheduleRichToolbarSync(editorEl);
@@ -9071,10 +9845,12 @@
     if (!state.client || !itemId || !state.userId) return;
     var rawHtml = sanitizeRich(htmlRaw);
     var plain = stripHtml(rawHtml);
+    var hadContent = opts.hadContent != null ? opts.hadContent : state.detailItemNoteHadContent;
     if (
       editorHtmlIsEffectivelyEmpty(rawHtml) &&
-      state.detailItemNoteHadContent &&
-      !opts.forceClear
+      hadContent &&
+      !opts.forceClear &&
+      !opts.ignoreEmptyGuard
     ) {
       if (opts.warn !== false) {
         showToast(
@@ -9129,7 +9905,7 @@
     var rawHtml = sanitizeRich(html || '');
     if (String(stripHtml(rawHtml)).trim()) return false;
     if (/<img[\s>]/i.test(rawHtml)) return false;
-    if (/np-rich-due|np-rich-flag|np-rich-separator/i.test(rawHtml)) return false;
+    if (/np-rich-due|np-rich-flag|np-rich-separator|np-rich-ref/i.test(rawHtml)) return false;
     return true;
   }
 
@@ -9146,7 +9922,7 @@
 
   function richHtmlHasFormattedContent(html) {
     if (!html || !String(html).trim()) return false;
-    return /np-rich-due|np-rich-flag|np-rich-separator|np-rich-fs-|<(strong|b|em|i|u|s|strike|h2|h3|ul|ol|img)\b/i.test(String(html));
+    return /np-rich-due|np-rich-flag|np-rich-separator|np-rich-ref|np-rich-fs-|<(strong|b|em|i|u|s|strike|h2|h3|ul|ol|img)\b/i.test(String(html));
   }
 
   /** Libreta con diseño (🚦, negritas, colores) → body_html; solo texto plano de Socio → body_plain. */
@@ -9282,6 +10058,9 @@
     bindPlanProRichPasteImages(ed);
     bindRichImageCornerResize(ed);
     bindRichDueMarkers(ed);
+    bindRichRefMarkers(ed, function () {
+      schedulePersistMainBody();
+    });
     wireRichDuePopoverOnce();
   }
 
@@ -9412,7 +10191,10 @@
     nutriProPanel: 'files',
     nutriProLinks: [],
     nutriProLinkFilterCategory: '',
-    nutriProLinksReady: true
+    nutriProLinksReady: true,
+    nutriProFocusRename: false,
+    nutriProHighlightFileId: null,
+    nutriProCustomLinkCategories: []
   };
 
   function deepCloneBlocks(blocks) {
@@ -12344,6 +13126,20 @@
             afterStructuralChange();
           });
           noteTb.appendChild(noteDel);
+          var noteNutri = document.createElement('button');
+          noteNutri.type = 'button';
+          noteNutri.className = 'btn btn-ghost btn-ghost-green';
+          noteNutri.textContent = '📎 Nutri PRO';
+          noteNutri.title = 'Insertar enlace corto a archivo Nutri PRO';
+          noteNutri.addEventListener('click', function () {
+            var nEdPick = nw.querySelector('.np-note-section-editor');
+            if (!nEdPick) return;
+            openNutriLinkPickerForEditor(nEdPick, function () {
+              b.html = sanitizeRich(nEdPick.innerHTML);
+              schedulePersist();
+            });
+          });
+          noteTb.appendChild(noteNutri);
           nw.appendChild(noteTb);
         }
         if (b.title && String(b.title).trim()) {
@@ -12362,11 +13158,16 @@
             b.html = sanitizeRich(nEd.innerHTML);
             schedulePersist();
           });
+          bindRichRefMarkers(nEd, function () {
+            b.html = sanitizeRich(nEd.innerHTML);
+            schedulePersist();
+          });
           nw.appendChild(nEd);
         } else {
           var nRd = document.createElement('div');
           nRd.className = 'np-note-section-read np-modal-note-rich';
           nRd.innerHTML = sanitizeRich(b.html || '');
+          bindRichRefMarkersReadOnly(nRd);
           nw.appendChild(nRd);
         }
         if (editable && blocks.length > 1) wireChunkBlockDnD(nw, blockIndex);
@@ -14983,6 +15784,11 @@
             (it.updated_at || '—')
         );
         lines.push('  nota: ' + String(it.note_preview || '').replace(/\n/g, ' '));
+        var refLine = formatPlanProRefsForAssistant({
+          nutri: it.nutri_refs,
+          apunte: it.apunte_refs
+        });
+        if (refLine) lines.push('  rutas/enlaces en la nota: ' + refLine);
       });
       return lines.join('\n');
     }
@@ -14992,6 +15798,7 @@
       return (
         'Eres el asistente de Plan PRO (NutriPlant PRO – Cerebro Digital). El usuario administra plantas (pilares), ramas jerárquicas y apuntes con nota enriquecida y bloques (tablas de seguimiento, tareas, tabla libre, montos, etc.) en body_blocks. ' +
         'Recibes un resumen de lo que hay cargado en pantalla: plantas, ramas de la planta activa, favoritos de ubicación y la lista de apuntes visibles (título, rama, estado, prioridad, vencimiento, ubicación Maps si existe, extracto de nota). ' +
+        'En cada apunte, si hay rutas cortas insertadas en la libreta, aparecen en «rutas/enlaces en la nota»: 📎 Carpeta/archivo con nutri_file_id (archivo en Nutri PRO) o 📝 ruta de otro apunte con apunte_id. Cítalas cuando ayuden; no puedes abrir el PDF/binario, pero sí saber qué documento técnico está vinculado. ' +
         'Ayuda a priorizar, redactar, resumir, detectar huecos y sugerir siguientes pasos usando solo ese contexto. No ejecutas cambios en Supabase; solo orientas. Responde siempre en español. ' +
         'Si adjunta una imagen (factura, ticket, CFDI impreso, captura de pantalla), lee el texto visible: si pide extraer folio, RFC, razón social o nombre, UUID del timbre, total, fecha de emisión, etc., devuélvelo de forma clara; si no consta, dilo. ' +
         'Datos en pantalla:\n\n' +
@@ -15223,6 +16030,7 @@
 
     var rows = resFiltered.data || [];
     state.planProItemsSnapshot = (rows || []).slice(0, 100).map(function (r) {
+      var itemRefs = extractPlanProRefsFromItem(r);
       return {
         id: r.id,
         title: r.title || '',
@@ -15232,7 +16040,9 @@
         due_at: r.due_at || '',
         updated_at: r.updated_at || '',
         maps_url: getPlanProMapsUrlFromItem(r),
-        note_preview: notePreviewText(r, 200)
+        note_preview: notePreviewText(r, 200),
+        nutri_refs: itemRefs.nutri,
+        apunte_refs: itemRefs.apunte
       };
     });
     var tb = $('npTableBody');
@@ -15643,6 +16453,34 @@
     npPanel.addEventListener('click', function (e) { e.stopPropagation(); });
   }
 
+  var npCrossLinkClose = $('npCrossLinkPickerClose');
+  if (npCrossLinkClose) {
+    npCrossLinkClose.addEventListener('click', function () {
+      closeCrossLinkPicker();
+    });
+  }
+  var npCrossLinkModal = $('npCrossLinkPicker');
+  if (npCrossLinkModal) {
+    npCrossLinkModal.addEventListener('click', function (e) {
+      if (e.target === npCrossLinkModal) closeCrossLinkPicker();
+    });
+    var npCrossLinkPanel = npCrossLinkModal.querySelector('.np-modal-panel');
+    if (npCrossLinkPanel) {
+      npCrossLinkPanel.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+    }
+  }
+  var npCrossLinkSearch = $('npCrossLinkPickerSearch');
+  if (npCrossLinkSearch) {
+    npCrossLinkSearch.addEventListener('input', function () {
+      renderCrossLinkPickerList(filterCrossLinkPickerRows(npCrossLinkSearch.value));
+    });
+    npCrossLinkSearch.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeCrossLinkPicker();
+    });
+  }
+
   $('npPrioListClose').addEventListener('click', function () {
     closePrioListModal();
   });
@@ -15765,6 +16603,7 @@
     bindPlanProRichPasteImages(npBodyRichEl);
     bindRichImageCornerResize(npBodyRichEl);
     bindRichDueMarkers(npBodyRichEl);
+    bindRichRefMarkers(npBodyRichEl);
     wireRichDuePopoverOnce();
     wirePlanProRichImageInput();
   }
@@ -15967,10 +16806,177 @@
 
   function nutriProFolderLabel(folderId) {
     if (!folderId) return 'Raíz · Nutri PRO';
-    var f = (state.nutriProFolders || []).filter(function (x) {
-      return x.id === folderId;
-    })[0];
+    var f = nutriProGetFolderById(folderId);
     return f && f.title ? f.title : 'Carpeta';
+  }
+
+  function nutriProGetFolderById(folderId) {
+    if (!folderId) return null;
+    return (
+      (state.nutriProFolders || []).filter(function (x) {
+        return x && x.id === folderId;
+      })[0] || null
+    );
+  }
+
+  function getNutriProFolderCustomHex(folderId) {
+    var f = nutriProGetFolderById(folderId);
+    if (!f || f.color_hex == null || String(f.color_hex).trim() === '') return '';
+    return normalizePlanColorHex(f.color_hex);
+  }
+
+  function resolveNutriProFolderAccentHex(folderId) {
+    var stored = getNutriProFolderCustomHex(folderId);
+    if (stored) return stored;
+    var flat = nutriProBuildFolderTreeRows(null, 0, []);
+    var idx = 0;
+    for (var i = 0; i < flat.length; i++) {
+      if (flat[i].folder && flat[i].folder.id === folderId) {
+        idx = i;
+        break;
+      }
+    }
+    return NP_PLANT_FALLBACK_HEX[idx % NP_PLANT_FALLBACK_HEX.length];
+  }
+
+  function applyNutriProFolderRowAccent(el, folderId) {
+    if (!el) return;
+    var hex = folderId ? resolveNutriProFolderAccentHex(folderId) : '#059669';
+    el.style.setProperty('--np-nutri-folder-accent', hex);
+  }
+
+  function syncNutriProFolderColorBar() {
+    var bar = $('npNutriFolderColorBar');
+    var pk = $('npNutriFolderColorPicker');
+    var tx = $('npNutriFolderColorHex');
+    if (!bar || !pk || !tx) return;
+    var fid = state.nutriProSelectedFolderId;
+    if (!fid) {
+      bar.classList.add('np-hide');
+      return;
+    }
+    bar.classList.remove('np-hide');
+    var stored = getNutriProFolderCustomHex(fid);
+    var effective = resolveNutriProFolderAccentHex(fid);
+    tx.value = stored;
+    pk.value = stored || effective;
+  }
+
+  async function saveNutriProFolderColor() {
+    if (!state.client || !state.nutriProSelectedFolderId) return;
+    var tx = $('npNutriFolderColorHex');
+    var pk = $('npNutriFolderColorPicker');
+    var raw = tx && tx.value.trim() ? tx.value.trim() : pk && pk.value ? pk.value : '';
+    var hex = normalizePlanColorHex(raw);
+    if (!hex) {
+      showToast('Usa un color válido (#RGB o #RRGGBB).', true);
+      return;
+    }
+    var fid = state.nutriProSelectedFolderId;
+    var res = await npCloudSyncTrack(function () {
+      return state.client.from('plan_pro_nutri_folders').update({ color_hex: hex }).eq('id', fid);
+    });
+    if (res.error) {
+      var em = res.error.message || '';
+      if (/column|schema|does not exist|color_hex/i.test(em)) {
+        showToast(
+          'En Supabase ejecuta supabase-plan-pro-nutri-pro-folder-color.sql y vuelve a intentar.',
+          true
+        );
+      } else {
+        showToast(em || 'No se pudo guardar el color de la carpeta.', true);
+      }
+      return;
+    }
+    (state.nutriProFolders || []).forEach(function (f) {
+      if (f && f.id === fid) f.color_hex = hex;
+    });
+    renderNutriProFolderTree();
+    syncNutriProFolderColorBar();
+    showToast('Color de carpeta guardado.');
+  }
+
+  function syncNutriProFolderRenameBar() {
+    var bar = $('npNutriFolderRenameBar');
+    var inp = $('npNutriFolderRenameInput');
+    if (!bar || !inp) return;
+    var fid = state.nutriProSelectedFolderId;
+    if (!fid) {
+      bar.classList.add('np-hide');
+      inp.value = '';
+      return;
+    }
+    bar.classList.remove('np-hide');
+    var f = nutriProGetFolderById(fid);
+    inp.value = f && f.title ? f.title : '';
+    if (state.nutriProFocusRename) {
+      state.nutriProFocusRename = false;
+      window.setTimeout(function () {
+        inp.focus();
+        inp.select();
+      }, 0);
+    }
+  }
+
+  async function renameNutriProFolder(folderId, titleRaw) {
+    if (!state.client || !folderId) return;
+    var folder = nutriProGetFolderById(folderId);
+    if (!folder) return;
+    var title = String(titleRaw || '').trim();
+    if (!title) {
+      showToast('El nombre no puede estar vacío.', true);
+      return;
+    }
+    if (title === folder.title) return;
+    var res = await npCloudSyncTrack(function () {
+      return state.client.from('plan_pro_nutri_folders').update({ title: title }).eq('id', folderId);
+    });
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo renombrar la carpeta.', true);
+      return;
+    }
+    folder.title = title;
+    renderNutriProFolderTree();
+    renderNutriProFilesList();
+    showToast('Carpeta renombrada.');
+  }
+
+  function saveNutriProFolderRenameFromInput() {
+    if (!state.nutriProSelectedFolderId) return;
+    var inp = $('npNutriFolderRenameInput');
+    renameNutriProFolder(state.nutriProSelectedFolderId, inp && inp.value ? inp.value : '');
+  }
+
+  function beginNutriProFolderRename(folderRec) {
+    if (!folderRec || !folderRec.id) return;
+    state.nutriProSelectedFolderId = folderRec.id;
+    state.nutriProFocusRename = true;
+    renderNutriProFolderTree();
+    loadNutriProFiles(folderRec.id);
+    if (state.nutriProPanel === 'links') loadNutriProLinks();
+  }
+
+  async function clearNutriProFolderColor() {
+    if (!state.client || !state.nutriProSelectedFolderId) return;
+    var fid = state.nutriProSelectedFolderId;
+    var res = await npCloudSyncTrack(function () {
+      return state.client.from('plan_pro_nutri_folders').update({ color_hex: null }).eq('id', fid);
+    });
+    if (res.error) {
+      var em = res.error.message || '';
+      if (/column|schema|does not exist|color_hex/i.test(em)) {
+        showToast('En Supabase ejecuta supabase-plan-pro-nutri-pro-folder-color.sql.', true);
+      } else {
+        showToast(em || 'No se pudo quitar el color.', true);
+      }
+      return;
+    }
+    (state.nutriProFolders || []).forEach(function (f) {
+      if (f && f.id === fid) f.color_hex = null;
+    });
+    renderNutriProFolderTree();
+    syncNutriProFolderColorBar();
+    showToast('Color de carpeta: automático.');
   }
 
   function nutriProBuildFolderTreeRows(parentId, depth, out) {
@@ -16001,7 +17007,15 @@
     rootBtn.type = 'button';
     rootBtn.className =
       'np-nutri-folder-row' + (!state.nutriProSelectedFolderId ? ' np-nutri-folder-row--active' : '');
-    rootBtn.textContent = '📁 Raíz';
+    applyNutriProFolderRowAccent(rootBtn, null);
+    var rootSw = document.createElement('span');
+    rootSw.className = 'np-nutri-folder-swatch';
+    rootSw.setAttribute('aria-hidden', 'true');
+    var rootLbl = document.createElement('span');
+    rootLbl.className = 'np-nutri-folder-label';
+    rootLbl.textContent = 'Raíz';
+    rootBtn.appendChild(rootSw);
+    rootBtn.appendChild(rootLbl);
     rootBtn.addEventListener('click', function () {
       state.nutriProSelectedFolderId = null;
       renderNutriProFolderTree();
@@ -16012,12 +17026,23 @@
     mount.appendChild(rootBtn);
     nutriProBuildFolderTreeRows(null, 0, []).forEach(function (row) {
       var f = row.folder;
+      var wrap = document.createElement('div');
+      wrap.className = 'np-nutri-folder-wrap';
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className =
         'np-nutri-folder-row' + (state.nutriProSelectedFolderId === f.id ? ' np-nutri-folder-row--active' : '');
       btn.style.paddingLeft = 10 + row.depth * 14 + 'px';
-      btn.textContent = '📂 ' + (f.title || '(Sin nombre)');
+      applyNutriProFolderRowAccent(btn, f.id);
+      var sw = document.createElement('span');
+      sw.className = 'np-nutri-folder-swatch';
+      sw.setAttribute('aria-hidden', 'true');
+      applyNutriProFolderRowAccent(sw, f.id);
+      var lbl = document.createElement('span');
+      lbl.className = 'np-nutri-folder-label';
+      lbl.textContent = f.title || '(Sin nombre)';
+      btn.appendChild(sw);
+      btn.appendChild(lbl);
       (function (fid) {
         btn.addEventListener('click', function () {
           state.nutriProSelectedFolderId = fid;
@@ -16027,8 +17052,101 @@
           if (state.nutriProPanel === 'links') loadNutriProLinks();
         });
       })(f.id);
-      mount.appendChild(btn);
+      var ren = document.createElement('button');
+      ren.type = 'button';
+      ren.className = 'np-nutri-folder-action np-nutri-folder-rename';
+      ren.title = 'Renombrar carpeta';
+      ren.setAttribute('aria-label', 'Renombrar carpeta ' + (f.title || ''));
+      ren.textContent = '✎';
+      (function (folderRec) {
+        ren.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          beginNutriProFolderRename(folderRec);
+        });
+      })(f);
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'np-nutri-folder-action np-nutri-folder-del';
+      del.title = 'Eliminar carpeta';
+      del.setAttribute('aria-label', 'Eliminar carpeta ' + (f.title || ''));
+      del.textContent = '×';
+      (function (folderRec) {
+        del.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          deleteNutriProFolder(folderRec);
+        });
+      })(f);
+      wrap.appendChild(btn);
+      wrap.appendChild(ren);
+      wrap.appendChild(del);
+      mount.appendChild(wrap);
     });
+    syncNutriProFolderContext();
+  }
+
+  async function nutriProFolderDeleteBlockers(folderId) {
+    if (!state.client || !folderId) return ['Carpeta no válida.'];
+    var reasons = [];
+    var sub = (state.nutriProFolders || []).filter(function (x) {
+      return x && x.parent_id === folderId;
+    });
+    if (sub.length) reasons.push('tiene ' + sub.length + ' subcarpeta' + (sub.length === 1 ? '' : 's'));
+    var fc = await state.client
+      .from('plan_pro_nutri_files')
+      .select('id', { count: 'exact', head: true })
+      .eq('folder_id', folderId);
+    if (!fc.error && (fc.count || 0) > 0) {
+      reasons.push((fc.count || 0) + ' archivo' + (fc.count === 1 ? '' : 's'));
+    }
+    var lc = await state.client
+      .from('plan_pro_nutri_links')
+      .select('id', { count: 'exact', head: true })
+      .eq('folder_id', folderId);
+    if (!lc.error && (lc.count || 0) > 0) {
+      reasons.push((lc.count || 0) + ' enlace' + (lc.count === 1 ? '' : 's'));
+    }
+    return reasons;
+  }
+
+  async function deleteNutriProFolder(folderRec) {
+    if (!folderRec || !folderRec.id || !state.client) return;
+    var blockers = await nutriProFolderDeleteBlockers(folderRec.id);
+    if (blockers.length) {
+      showToast(
+        'No se puede borrar «' +
+          (folderRec.title || 'carpeta') +
+          '»: ' +
+          blockers.join(', ') +
+          '. Vacía la carpeta primero.',
+        true
+      );
+      return;
+    }
+    if (
+      !window.confirm(
+        '¿Eliminar la carpeta «' + (folderRec.title || '') + '»? No se puede deshacer.'
+      )
+    ) {
+      return;
+    }
+    var res = await npCloudSyncTrack(function () {
+      return state.client.from('plan_pro_nutri_folders').delete().eq('id', folderRec.id);
+    });
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo eliminar la carpeta.', true);
+      return;
+    }
+    if (state.nutriProSelectedFolderId === folderRec.id) {
+      state.nutriProSelectedFolderId = null;
+    }
+    showToast('Carpeta eliminada.');
+    await loadNutriProFolders();
+    renderNutriProFolderTree();
+    syncNutriProFolderContext();
+    await loadNutriProFiles(state.nutriProSelectedFolderId);
+    if (state.nutriProPanel === 'links') await loadNutriProLinks();
   }
 
   function renderNutriProFilesList() {
@@ -16043,7 +17161,9 @@
     files.forEach(function (file) {
       if (!file || !file.id) return;
       var row = document.createElement('div');
-      row.className = 'np-nutri-file-row';
+      row.className =
+        'np-nutri-file-row' +
+        (state.nutriProHighlightFileId === file.id ? ' np-nutri-file-row--highlight' : '');
       var icon = document.createElement('span');
       icon.className = 'np-nutri-file-icon';
       icon.textContent = nutriProFileIcon(file.original_name || file.title, file.mime_type);
@@ -16074,6 +17194,16 @@
         })(file);
         btns.appendChild(view);
       }
+      var linkAp = document.createElement('button');
+      linkAp.type = 'button';
+      linkAp.className = 'btn btn-ghost btn-ghost-green';
+      linkAp.textContent = 'Enlazar apunte';
+      linkAp.title = 'Añadir ruta corta de este archivo al final de un apunte';
+      (function (rec) {
+        linkAp.addEventListener('click', function () {
+          openApunteLinkPickerForNutriFile(rec);
+        });
+      })(file);
       var dl = document.createElement('button');
       dl.type = 'button';
       dl.className = 'btn btn-ghost btn-ghost-blue';
@@ -16093,6 +17223,7 @@
           deleteNutriProFile(rec);
         });
       })(file);
+      btns.appendChild(linkAp);
       btns.appendChild(dl);
       btns.appendChild(del);
       row.appendChild(icon);
@@ -16111,7 +17242,7 @@
     if (!state.client || !state.nutriProReady) return [];
     var res = await state.client
       .from('plan_pro_nutri_folders')
-      .select('id,parent_id,title,sort_order,created_at,updated_at')
+      .select('id,parent_id,title,color_hex,sort_order,created_at,updated_at')
       .order('title', { ascending: true });
     if (res.error) {
       if (/plan_pro_nutri|does not exist|schema cache/i.test(res.error.message || '')) {
@@ -16182,7 +17313,8 @@
       return;
     }
     if (inp) inp.value = '';
-    showToast('Carpeta creada.');
+    var parentTitle = state.nutriProSelectedFolderId ? nutriProFolderLabel(state.nutriProSelectedFolderId) : '';
+    showToast(parentTitle ? 'Subcarpeta creada en «' + parentTitle + '».' : 'Carpeta creada en raíz.');
     await loadNutriProFolders();
     renderNutriProFolderTree();
   }
@@ -16217,26 +17349,41 @@
     var folderSeg = folderId || 'root';
     var ok = 0;
     var fail = 0;
+    var lastErr = '';
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
       if (!file || !file.name) continue;
       if (!nutriProFileIsAllowed(file)) {
         fail += 1;
-        showToast('Tipo no permitido: ' + (file.name || 'archivo'), true);
+        lastErr = 'Tipo no permitido: ' + (file.name || 'archivo');
+        showToast(lastErr, true);
         continue;
       }
       var fileId = npCloudUuid();
       var safeName = nutriProSanitizeFilename(file.name);
       var path = state.userId + '/' + folderSeg + '/' + fileId + '/' + safeName;
-      var up = await npCloudSyncTrack(function () {
-        return state.client.storage.from(NP_NUTRI_PRO_BUCKET).upload(path, file, {
-          contentType: file.type || 'application/octet-stream',
-          upsert: false
+      var up;
+      try {
+        up = await npCloudSyncTrack(function () {
+          return state.client.storage.from(NP_NUTRI_PRO_BUCKET).upload(path, file, {
+            contentType: file.type || 'application/octet-stream',
+            upsert: false,
+            cacheControl: '3600'
+          });
         });
-      });
+      } catch (eUp) {
+        up = { error: { message: (eUp && eUp.message) || String(eUp) } };
+      }
       if (up.error) {
         fail += 1;
-        showToast(up.error.message || 'Error al subir ' + safeName, true);
+        lastErr = up.error.message || 'Error al subir ' + safeName;
+        if (/bucket|not found|does not exist/i.test(lastErr)) {
+          lastErr += ' · Verifica el bucket plan-pro-nutri-pro (SQL storage) en Supabase.';
+        } else if (/row-level security|policy|permission|403/i.test(lastErr)) {
+          lastErr +=
+            ' · Vuelve a ejecutar supabase-plan-pro-nutri-pro-storage.sql en Supabase (políticas de subida).';
+        }
+        showToast(lastErr, true);
         continue;
       }
       var ins = await npCloudSyncTrack(function () {
@@ -16257,8 +17404,14 @@
       });
       if (ins.error) {
         fail += 1;
-        await state.client.storage.from(NP_NUTRI_PRO_BUCKET).remove([path]);
-        showToast(ins.error.message || 'Error al registrar ' + safeName, true);
+        lastErr = ins.error.message || 'Error al registrar ' + safeName;
+        if (/plan_pro_nutri_files|does not exist|schema/i.test(lastErr)) {
+          lastErr += ' · Ejecuta supabase-plan-pro-nutri-pro.sql en Supabase.';
+        }
+        try {
+          await state.client.storage.from(NP_NUTRI_PRO_BUCKET).remove([path]);
+        } catch (eRm) {}
+        showToast(lastErr, true);
         continue;
       }
       ok += 1;
@@ -16268,14 +17421,25 @@
     if (inp) inp.value = '';
     updateNutriProUploadUi();
     if (btn) btn.disabled = true;
+    var stDone = $('npNutriUploadStatus');
     if (ok) {
       showToast(
         ok + ' archivo' + (ok === 1 ? '' : 's') + ' subido' + (ok === 1 ? '' : 's') + ' a Nutri PRO.'
       );
+      if (stDone) {
+        stDone.classList.add('np-hide');
+        stDone.textContent = '';
+      }
       schedulePlanProStorageUsageRefresh(5000, true);
       await loadNutriProFiles(folderId);
+    } else if (fail) {
+      var finalMsg = lastErr || 'No se pudieron subir los archivos.';
+      showToast(finalMsg, true);
+      if (stDone) {
+        stDone.classList.remove('np-hide');
+        stDone.textContent = finalMsg;
+      }
     }
-    if (fail && !ok) showToast('No se pudieron subir los archivos.', true);
   }
 
   async function nutriProFileSignedUrl(fileRec) {
@@ -16327,11 +17491,206 @@
     await loadNutriProFiles(state.nutriProSelectedFolderId);
   }
 
-  function nutriProLinkCategoryLabel(catId) {
-    var c = NP_NUTRI_LINK_CATEGORIES.filter(function (x) {
-      return x.id === catId;
+  function nutriProLinkCatBuiltinMap() {
+    var m = {};
+    NP_NUTRI_LINK_CATS_BUILTIN.forEach(function (c) {
+      if (c && c.id) m[c.id] = c.label;
+    });
+    return m;
+  }
+
+  function nutriProCategoryIdFromLabel(label) {
+    var base = String(label || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '')
+      .slice(0, 40);
+    return base ? 'custom_' + base : '';
+  }
+
+  function nutriProHumanizeCategoryId(catId) {
+    if (!catId) return 'Otro';
+    var built = nutriProLinkCatBuiltinMap()[catId];
+    if (built) return built;
+    var custom = (state.nutriProCustomLinkCategories || []).filter(function (x) {
+      return x && x.id === catId;
     })[0];
-    return c && c.label ? c.label : 'Otro';
+    if (custom && custom.label) return custom.label;
+    return String(catId)
+      .replace(/^custom_/, '')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, function (ch) {
+        return ch.toUpperCase();
+      });
+  }
+
+  function nutriProLinkCategoryLabel(catId) {
+    return nutriProHumanizeCategoryId(catId);
+  }
+
+  function loadNutriProCustomLinkCategories() {
+    try {
+      var raw = localStorage.getItem(NP_NUTRI_LINK_CATS_STORAGE_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter(function (x) {
+          return x && x.id && x.label;
+        })
+        .map(function (x) {
+          return { id: String(x.id), label: String(x.label).trim() };
+        });
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveNutriProCustomLinkCategories(list) {
+    state.nutriProCustomLinkCategories = (list || []).slice();
+    try {
+      localStorage.setItem(NP_NUTRI_LINK_CATS_STORAGE_KEY, JSON.stringify(state.nutriProCustomLinkCategories));
+    } catch (e) {}
+  }
+
+  function nutriProGetAllLinkCategories() {
+    var out = [];
+    var seen = {};
+    NP_NUTRI_LINK_CATS_BUILTIN.forEach(function (c) {
+      if (!c || !c.id || seen[c.id]) return;
+      seen[c.id] = true;
+      out.push({ id: c.id, label: c.label });
+    });
+    (state.nutriProCustomLinkCategories || []).forEach(function (c) {
+      if (!c || !c.id || seen[c.id]) return;
+      seen[c.id] = true;
+      out.push({ id: c.id, label: c.label });
+    });
+    return out;
+  }
+
+  function nutriProGetLinkCategoriesForFilter() {
+    return [{ id: '', label: 'Todas' }].concat(nutriProGetAllLinkCategories());
+  }
+
+  function nutriProEnsureCustomLinkCategory(label) {
+    var name = String(label || '').trim();
+    if (!name) return '';
+    var built = nutriProLinkCatBuiltinMap();
+    var lower = name.toLowerCase();
+    var matchBuilt = NP_NUTRI_LINK_CATS_BUILTIN.filter(function (c) {
+      return c && c.label && c.label.toLowerCase() === lower;
+    })[0];
+    if (matchBuilt) return matchBuilt.id;
+    var id = nutriProCategoryIdFromLabel(name);
+    if (!id) return 'otro';
+    if (built[id]) return id;
+    var list = (state.nutriProCustomLinkCategories || []).slice();
+    var exists = list.filter(function (x) {
+      return x.id === id;
+    })[0];
+    if (!exists) {
+      list.push({ id: id, label: name });
+      saveNutriProCustomLinkCategories(list);
+    } else if (exists.label !== name) {
+      exists.label = name;
+      saveNutriProCustomLinkCategories(list);
+    }
+    return id;
+  }
+
+  function nutriProIngestLinkCategoriesFromData(links) {
+    var list = (state.nutriProCustomLinkCategories || []).slice();
+    var seen = {};
+    list.forEach(function (c) {
+      if (c && c.id) seen[c.id] = true;
+    });
+    var built = nutriProLinkCatBuiltinMap();
+    var changed = false;
+    (links || []).forEach(function (link) {
+      if (!link || !link.category) return;
+      var cid = String(link.category);
+      if (built[cid] || seen[cid]) return;
+      list.push({ id: cid, label: nutriProHumanizeCategoryId(cid) });
+      seen[cid] = true;
+      changed = true;
+    });
+    if (changed) saveNutriProCustomLinkCategories(list);
+  }
+
+  function renderNutriProLinkCategorySelect(selectedId) {
+    var sel = $('npNutriLinkCategory');
+    if (!sel) return;
+    var cur = selectedId != null ? selectedId : sel.value;
+    sel.innerHTML = '';
+    nutriProGetAllLinkCategories().forEach(function (cat) {
+      var opt = document.createElement('option');
+      opt.value = cat.id;
+      opt.textContent = cat.label;
+      sel.appendChild(opt);
+    });
+    var optNew = document.createElement('option');
+    optNew.value = NP_NUTRI_LINK_CAT_NEW;
+    optNew.textContent = '＋ Nueva categoría…';
+    sel.appendChild(optNew);
+    if (cur && cur !== NP_NUTRI_LINK_CAT_NEW) {
+      var has = nutriProGetAllLinkCategories().some(function (c) {
+        return c.id === cur;
+      });
+      if (has) sel.value = cur;
+      else {
+        nutriProEnsureCustomLinkCategory(nutriProHumanizeCategoryId(cur));
+        renderNutriProLinkCategorySelect(cur);
+        return;
+      }
+    } else if (cur === NP_NUTRI_LINK_CAT_NEW) {
+      sel.value = NP_NUTRI_LINK_CAT_NEW;
+    }
+    syncNutriProLinkCategoryCustomUi();
+  }
+
+  function syncNutriProLinkCategoryCustomUi() {
+    var sel = $('npNutriLinkCategory');
+    var wrap = $('npNutriLinkCategoryCustomWrap');
+    var inp = $('npNutriLinkCategoryCustom');
+    if (!wrap) return;
+    var isNew = sel && sel.value === NP_NUTRI_LINK_CAT_NEW;
+    wrap.classList.toggle('np-hide', !isNew);
+    if (!isNew && inp) inp.value = '';
+  }
+
+  function resolveNutriProLinkCategoryForSave() {
+    var sel = $('npNutriLinkCategory');
+    var val = sel && sel.value ? sel.value : 'nutricion_vegetal';
+    if (val === NP_NUTRI_LINK_CAT_NEW) {
+      var inp = $('npNutriLinkCategoryCustom');
+      var name = inp && inp.value ? inp.value.trim() : '';
+      if (!name) {
+        showToast('Escribe el nombre de la nueva categoría.', true);
+        if (inp) inp.focus();
+        return null;
+      }
+      return nutriProEnsureCustomLinkCategory(name);
+    }
+    return val;
+  }
+
+  function addNutriProLinkCategoryFromUi() {
+    var inp = $('npNutriLinkCategoryCustom');
+    var name = inp && inp.value ? inp.value.trim() : '';
+    if (!name) {
+      showToast('Escribe un nombre para la categoría.', true);
+      if (inp) inp.focus();
+      return;
+    }
+    var id = nutriProEnsureCustomLinkCategory(name);
+    renderNutriProLinkCategorySelect(id);
+    renderNutriProLinkFilters();
+    if (inp) inp.value = '';
+    showToast('Categoría «' + name + '» lista.');
   }
 
   function normalizeNutriProLinkUrl(raw) {
@@ -16350,16 +17709,33 @@
   function syncNutriProFolderContext() {
     var hint = $('npNutriLinkFolderHint');
     var linksTitle = $('npNutriLinksTitle');
+    var addHint = $('npNutriFolderAddHint');
+    var newInp = $('npNutriNewFolder');
     var folderLabel = nutriProFolderLabel(state.nutriProSelectedFolderId);
+    var folderTitle = state.nutriProSelectedFolderId ? folderLabel : '';
     if (hint) {
       hint.textContent = state.nutriProSelectedFolderId
-        ? 'Se guardará en carpeta: «' + folderLabel.replace(' · Nutri PRO', '') + '».'
+        ? 'Se guardará en carpeta: «' + folderTitle + '».'
         : 'Se guardará en raíz (sin carpeta).';
     }
     if (linksTitle) {
-      linksTitle.textContent =
-        'Enlaces · ' + (state.nutriProSelectedFolderId ? folderLabel.replace(' · Nutri PRO', '') : 'Raíz');
+      linksTitle.textContent = 'Enlaces · ' + (state.nutriProSelectedFolderId ? folderTitle : 'Raíz');
     }
+    if (addHint) {
+      addHint.textContent = state.nutriProSelectedFolderId
+        ? 'Crear aquí añade una subcarpeta dentro de «' + folderTitle + '».'
+        : 'Selecciona una carpeta y pulsa Crear para añadir subcarpetas dentro.';
+    }
+    if (newInp) {
+      if (state.nutriProSelectedFolderId) {
+        var short = folderTitle.length > 22 ? folderTitle.slice(0, 22) + '…' : folderTitle;
+        newInp.placeholder = 'Subcarpeta en «' + short + '»…';
+      } else {
+        newInp.placeholder = 'Nueva carpeta en raíz…';
+      }
+    }
+    syncNutriProFolderColorBar();
+    syncNutriProFolderRenameBar();
   }
 
   function setNutriProPanel(panel) {
@@ -16390,7 +17766,7 @@
     var mount = $('npNutriLinkFilters');
     if (!mount) return;
     mount.innerHTML = '';
-    NP_NUTRI_LINK_CATEGORIES.forEach(function (cat) {
+    nutriProGetLinkCategoriesForFilter().forEach(function (cat) {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className =
@@ -16413,14 +17789,13 @@
     var tit = $('npNutriLinkTitle');
     var url = $('npNutriLinkUrl');
     var desc = $('npNutriLinkDesc');
-    var cat = $('npNutriLinkCategory');
     var cancel = $('npNutriLinkCancelBtn');
     var save = $('npNutriLinkSaveBtn');
     if (edit) edit.value = '';
     if (tit) tit.value = '';
     if (url) url.value = '';
     if (desc) desc.value = '';
-    if (cat) cat.value = 'nutricion_vegetal';
+    renderNutriProLinkCategorySelect('nutricion_vegetal');
     if (cancel) cancel.classList.add('np-hide');
     if (save) save.textContent = 'Guardar enlace';
   }
@@ -16431,14 +17806,13 @@
     var tit = $('npNutriLinkTitle');
     var url = $('npNutriLinkUrl');
     var desc = $('npNutriLinkDesc');
-    var cat = $('npNutriLinkCategory');
     var cancel = $('npNutriLinkCancelBtn');
     var save = $('npNutriLinkSaveBtn');
     if (edit) edit.value = link.id || '';
     if (tit) tit.value = link.title || '';
     if (url) url.value = link.url || '';
     if (desc) desc.value = link.description || '';
-    if (cat) cat.value = link.category || 'otro';
+    renderNutriProLinkCategorySelect(link.category || 'otro');
     if (cancel) cancel.classList.remove('np-hide');
     if (save) save.textContent = 'Actualizar enlace';
     $('npNutriLinkForm') && $('npNutriLinkForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -16579,6 +17953,9 @@
       throw res.error;
     }
     state.nutriProLinks = res.data || [];
+    nutriProIngestLinkCategoriesFromData(state.nutriProLinks);
+    renderNutriProLinkCategorySelect();
+    renderNutriProLinkFilters();
     renderNutriProLinksList();
     return state.nutriProLinks;
   }
@@ -16589,7 +17966,7 @@
     var tit = ($('npNutriLinkTitle') && $('npNutriLinkTitle').value.trim()) || '';
     var rawUrl = ($('npNutriLinkUrl') && $('npNutriLinkUrl').value.trim()) || '';
     var desc = ($('npNutriLinkDesc') && $('npNutriLinkDesc').value.trim()) || '';
-    var cat = ($('npNutriLinkCategory') && $('npNutriLinkCategory').value) || 'otro';
+    var cat = resolveNutriProLinkCategoryForSave();
     var editId = ($('npNutriLinkEditId') && $('npNutriLinkEditId').value.trim()) || '';
     var url = normalizeNutriProLinkUrl(rawUrl);
     if (!tit) {
@@ -16600,6 +17977,7 @@
       showToast('Pega una URL válida (https://…).', true);
       return;
     }
+    if (!cat) return;
     var row = {
       owner_id: state.userId,
       folder_id: state.nutriProSelectedFolderId || null,
@@ -16682,6 +18060,45 @@
         }
       });
     }
+    var nutriFolderPk = $('npNutriFolderColorPicker');
+    if (nutriFolderPk && nutriFolderPk.dataset.npWired !== '1') {
+      nutriFolderPk.dataset.npWired = '1';
+      nutriFolderPk.addEventListener('input', function () {
+        var tx = $('npNutriFolderColorHex');
+        if (tx) tx.value = this.value;
+      });
+    }
+    var nutriFolderColorApply = $('npNutriFolderColorApply');
+    if (nutriFolderColorApply && nutriFolderColorApply.dataset.npWired !== '1') {
+      nutriFolderColorApply.dataset.npWired = '1';
+      nutriFolderColorApply.addEventListener('click', function () {
+        saveNutriProFolderColor();
+      });
+    }
+    var nutriFolderColorClear = $('npNutriFolderColorClear');
+    if (nutriFolderColorClear && nutriFolderColorClear.dataset.npWired !== '1') {
+      nutriFolderColorClear.dataset.npWired = '1';
+      nutriFolderColorClear.addEventListener('click', function () {
+        clearNutriProFolderColor();
+      });
+    }
+    var nutriFolderRenameSave = $('npNutriFolderRenameSave');
+    if (nutriFolderRenameSave && nutriFolderRenameSave.dataset.npWired !== '1') {
+      nutriFolderRenameSave.dataset.npWired = '1';
+      nutriFolderRenameSave.addEventListener('click', function () {
+        saveNutriProFolderRenameFromInput();
+      });
+    }
+    var nutriFolderRenameInput = $('npNutriFolderRenameInput');
+    if (nutriFolderRenameInput && nutriFolderRenameInput.dataset.npWired !== '1') {
+      nutriFolderRenameInput.dataset.npWired = '1';
+      nutriFolderRenameInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveNutriProFolderRenameFromInput();
+        }
+      });
+    }
     var pick = $('npNutriBtnPickFiles');
     var finp = $('npNutriFileInput');
     if (pick && finp && pick.dataset.npWired !== '1') {
@@ -16735,6 +18152,28 @@
       linkCancel.dataset.npWired = '1';
       linkCancel.addEventListener('click', function () {
         resetNutriProLinkForm();
+      });
+    }
+    state.nutriProCustomLinkCategories = loadNutriProCustomLinkCategories();
+    renderNutriProLinkCategorySelect('nutricion_vegetal');
+    var linkCatSel = $('npNutriLinkCategory');
+    if (linkCatSel && linkCatSel.dataset.npWired !== '1') {
+      linkCatSel.dataset.npWired = '1';
+      linkCatSel.addEventListener('change', syncNutriProLinkCategoryCustomUi);
+    }
+    var linkCatSave = $('npNutriLinkCategorySaveCustom');
+    if (linkCatSave && linkCatSave.dataset.npWired !== '1') {
+      linkCatSave.dataset.npWired = '1';
+      linkCatSave.addEventListener('click', addNutriProLinkCategoryFromUi);
+    }
+    var linkCatCustomInp = $('npNutriLinkCategoryCustom');
+    if (linkCatCustomInp && linkCatCustomInp.dataset.npWired !== '1') {
+      linkCatCustomInp.dataset.npWired = '1';
+      linkCatCustomInp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addNutriProLinkCategoryFromUi();
+        }
       });
     }
   }

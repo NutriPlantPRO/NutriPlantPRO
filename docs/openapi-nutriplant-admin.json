@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.2.0",
-    "description": "Plan PRO: note con tokens (sem, warn, star, **bold**, color, listas…). Sin imágenes. Ficha: priority+due_at. Ver PLAN-PRO-GPT-ACCIONES.md."
+    "version": "2.3.0",
+    "description": "Plan PRO + Nutri PRO (catálogo/búsqueda archivos). plan_pro_item incluye nutri_refs. Ver NUTRI-PRO-CONOCIMIENTO-GPT.md y PLAN-PRO-GPT-ACCIONES.md."
   },
   "servers": [
     {
@@ -14,8 +14,8 @@
     "/api/admin-assistant": {
       "post": {
         "operationId": "nutriplantAdminQuery",
-        "summary": "Consulta NutriPlant y Plan PRO (lectura + crear/editar apuntes)",
-        "description": "NutriPlant: project_analyses, manual_tecnico_catalog, nutrition_catalogs (fertilizantes/cultivos), etc. Plan PRO (solo Jesús): plan_pro_day, plan_pro_week, plan_pro_search, plan_pro_item, plan_pro_locations, plan_pro_create, plan_pro_update. Nunca inventar datos de clientes.",
+        "summary": "Consulta NutriPlant, Plan PRO y Nutri PRO",
+        "description": "NutriPlant: project_analyses, manual_tecnico_catalog, nutrition_catalogs. Plan PRO: plan_pro_day/week/search/item, create/update. Nutri PRO: nutri_pro_catalog, nutri_pro_search (carpetas, archivos PDF/Excel, enlaces). plan_pro_item devuelve nutri_refs (rutas 📎 en apuntes).",
         "requestBody": {
           "required": true,
           "content": {
@@ -60,6 +60,8 @@
               "plan_pro_locations",
               "plan_pro_create",
               "plan_pro_update",
+              "nutri_pro_catalog",
+              "nutri_pro_search",
               "radar_project",
               "radar_search",
               "radar_overview",
@@ -83,8 +85,16 @@
               "mode": { "type": "string", "description": "project_climate: saved|live|rainfall_refresh|all" },
               "email": { "type": "string" },
               "crop": { "type": "string" },
-              "q": { "type": "string", "description": "Búsqueda o título de apunte Plan PRO" },
+              "q": { "type": "string", "description": "Búsqueda texto (apuntes, Nutri PRO archivos/enlaces)" },
               "item_id": { "type": "string", "description": "UUID apunte Plan PRO" },
+              "nutri_file_id": { "type": "string", "description": "UUID archivo Nutri PRO" },
+              "file_id": { "type": "string", "description": "Alias de nutri_file_id" },
+              "folder_id": { "type": "string", "description": "UUID carpeta Nutri PRO (filtro)" },
+              "kind": {
+                "type": "string",
+                "description": "nutri_pro_search: all|files|links"
+              },
+              "category": { "type": "string", "description": "nutri_pro_search: categoría de enlace (ej. investigacion, ingles)" },
               "title": { "type": "string", "description": "plan_pro_create/update: título" },
               "note": {
                 "type": "string",

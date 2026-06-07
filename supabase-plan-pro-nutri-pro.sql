@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.plan_pro_nutri_folders (
   owner_id        uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
   parent_id       uuid REFERENCES public.plan_pro_nutri_folders (id) ON DELETE CASCADE,
   title           text NOT NULL,
+  color_hex       text,
   sort_order      integer NOT NULL DEFAULT 0,
   created_at      timestamptz NOT NULL DEFAULT now(),
   updated_at      timestamptz NOT NULL DEFAULT now()
