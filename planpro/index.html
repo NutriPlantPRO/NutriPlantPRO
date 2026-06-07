@@ -15876,39 +15876,42 @@
       return pk === parentKey;
     }));
 
-    if (children.length) {
-      var block1 = document.createElement('div');
-      block1.className = 'np-sheet-nav-block';
-      var row1 = document.createElement('div');
-      row1.className = 'np-sheet-chip-row';
-      children.forEach(function (ch) {
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'np-sheet-chip';
-        btn.textContent = ch.title || 'Sin título';
-        btn.addEventListener('click', function () { selectCategory(ch.id); });
-        row1.appendChild(btn);
-      });
-      block1.appendChild(row1);
-      wrap.appendChild(block1);
-    }
-
+    var blocks = [];
     if (siblings.length > 1) {
-      var block2 = document.createElement('div');
-      block2.className = 'np-sheet-nav-block np-sheet-nav-siblings';
-      var row2 = document.createElement('div');
-      row2.className = 'np-sheet-chip-row';
+      var sibBlock = document.createElement('div');
+      sibBlock.className = 'np-sheet-nav-block np-sheet-nav-siblings';
+      var sibRow = document.createElement('div');
+      sibRow.className = 'np-sheet-chip-row';
       siblings.forEach(function (s) {
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'np-sheet-chip np-sheet-chip-sibling' + (s.id === cid ? ' np-sheet-chip-active' : '');
         btn.textContent = s.title || 'Sin título';
         btn.addEventListener('click', function () { selectCategory(s.id); });
-        row2.appendChild(btn);
+        sibRow.appendChild(btn);
       });
-      block2.appendChild(row2);
-      wrap.appendChild(block2);
+      sibBlock.appendChild(sibRow);
+      blocks.push(sibBlock);
     }
+    if (children.length) {
+      var childBlock = document.createElement('div');
+      childBlock.className = 'np-sheet-nav-block';
+      var childRow = document.createElement('div');
+      childRow.className = 'np-sheet-chip-row';
+      children.forEach(function (ch) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'np-sheet-chip';
+        btn.textContent = ch.title || 'Sin título';
+        btn.addEventListener('click', function () { selectCategory(ch.id); });
+        childRow.appendChild(btn);
+      });
+      childBlock.appendChild(childRow);
+      blocks.push(childBlock);
+    }
+    blocks.forEach(function (b) {
+      wrap.appendChild(b);
+    });
 
     if (!wrap.children.length) wrap.classList.add('np-hide');
   }
@@ -18399,46 +18402,8 @@
     var children = nutriProFolderSiblings(fid);
     var parentKey = cur.parent_id || null;
     var siblings = nutriProFolderSiblings(parentKey);
-    var hasBlocks = false;
-    if (children.length) {
-      hasBlocks = true;
-      var childBlock = document.createElement('div');
-      childBlock.className = 'np-nutri-folder-nav-block';
-      var childLabel = document.createElement('div');
-      childLabel.className = 'np-nutri-folder-nav-label';
-      childLabel.textContent = 'Dentro de «' + (cur.title || 'carpeta') + '»';
-      var childRow = document.createElement('div');
-      childRow.className = 'np-nutri-folder-chip-row';
-      children.forEach(function (ch) {
-        if (!ch || !ch.id) return;
-        childRow.appendChild(nutriProMakeFolderChip(ch, { sibling: false, active: false }));
-      });
-      childBlock.appendChild(childLabel);
-      childBlock.appendChild(childRow);
-      wrap.appendChild(childBlock);
-    }
-    if (cur.parent_id) {
-      var parent = nutriProGetFolderById(cur.parent_id);
-      if (parent) {
-        hasBlocks = true;
-        var upBlock = document.createElement('div');
-        upBlock.className = 'np-nutri-folder-nav-block np-nutri-folder-nav-block--siblings';
-        var upRow = document.createElement('div');
-        upRow.className = 'np-nutri-folder-chip-row';
-        var upBtn = document.createElement('button');
-        upBtn.type = 'button';
-        upBtn.className = 'np-nutri-folder-chip np-nutri-folder-chip--sibling';
-        upBtn.textContent = '↑ ' + (parent.title || 'Carpeta padre');
-        upBtn.addEventListener('click', function () {
-          nutriProSelectFolder(parent.id);
-        });
-        upRow.appendChild(upBtn);
-        upBlock.appendChild(upRow);
-        wrap.appendChild(upBlock);
-      }
-    }
+    var blocks = [];
     if (siblings.length > 1) {
-      hasBlocks = true;
       var sibBlock = document.createElement('div');
       sibBlock.className = 'np-nutri-folder-nav-block np-nutri-folder-nav-block--siblings';
       var sibLabel = document.createElement('div');
@@ -18454,9 +18419,47 @@
       });
       sibBlock.appendChild(sibLabel);
       sibBlock.appendChild(sibRow);
-      wrap.appendChild(sibBlock);
+      blocks.push(sibBlock);
     }
-    wrap.classList.toggle('np-hide', !hasBlocks);
+    if (cur.parent_id) {
+      var parent = nutriProGetFolderById(cur.parent_id);
+      if (parent) {
+        var upBlock = document.createElement('div');
+        upBlock.className = 'np-nutri-folder-nav-block np-nutri-folder-nav-block--siblings';
+        var upRow = document.createElement('div');
+        upRow.className = 'np-nutri-folder-chip-row';
+        var upBtn = document.createElement('button');
+        upBtn.type = 'button';
+        upBtn.className = 'np-nutri-folder-chip np-nutri-folder-chip--sibling';
+        upBtn.textContent = '↑ ' + (parent.title || 'Carpeta padre');
+        upBtn.addEventListener('click', function () {
+          nutriProSelectFolder(parent.id);
+        });
+        upRow.appendChild(upBtn);
+        upBlock.appendChild(upRow);
+        blocks.push(upBlock);
+      }
+    }
+    if (children.length) {
+      var childBlock = document.createElement('div');
+      childBlock.className = 'np-nutri-folder-nav-block';
+      var childLabel = document.createElement('div');
+      childLabel.className = 'np-nutri-folder-nav-label';
+      childLabel.textContent = 'Dentro de «' + (cur.title || 'carpeta') + '»';
+      var childRow = document.createElement('div');
+      childRow.className = 'np-nutri-folder-chip-row';
+      children.forEach(function (ch) {
+        if (!ch || !ch.id) return;
+        childRow.appendChild(nutriProMakeFolderChip(ch, { sibling: false, active: false }));
+      });
+      childBlock.appendChild(childLabel);
+      childBlock.appendChild(childRow);
+      blocks.push(childBlock);
+    }
+    blocks.forEach(function (b) {
+      wrap.appendChild(b);
+    });
+    wrap.classList.toggle('np-hide', !blocks.length);
   }
 
   function nutriProFolderHasChildren(folderId) {
