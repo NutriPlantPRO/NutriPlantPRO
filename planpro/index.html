@@ -466,6 +466,363 @@
       0%, 100% { transform: scale(1); opacity: 1; }
       50% { transform: scale(1.15); opacity: 0.75; }
     }
+    .np-storage-usage-pill {
+      flex-shrink: 0;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 72px;
+      height: 44px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+      color: #334155;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+      transition: background 0.18s ease, border-color 0.2s ease, transform 0.15s ease;
+      font-family: inherit;
+      line-height: 1.15;
+    }
+    .np-storage-usage-pill:hover,
+    .np-storage-usage-pill:focus-visible {
+      background: rgba(255, 255, 255, 0.98);
+      border-color: color-mix(in srgb, var(--np-plant-accent, #22c55e) 35%, rgba(148, 163, 184, 0.38));
+      transform: translateY(-1px);
+      outline: none;
+    }
+    .np-storage-usage-pill[data-state='loading'] {
+      color: #64748b;
+    }
+    .np-storage-usage-pill[data-state='warn'] {
+      border-color: rgba(245, 158, 11, 0.45);
+      color: #b45309;
+    }
+    .np-storage-usage-num {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+    .np-storage-usage-sub {
+      font-size: 8px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    .np-storage-usage-pill[data-state='cached'] .np-storage-usage-sub {
+      color: #94a3b8;
+    }
+    @media (max-width: 520px) {
+      .np-storage-usage-pill {
+        min-width: 62px;
+        padding: 4px 7px;
+      }
+      .np-storage-usage-num {
+        font-size: 11px;
+      }
+    }
+    .np-app-mode-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .np-app-mode-btn {
+      flex: 1 1 auto;
+      min-width: 120px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(148, 163, 184, 0.35);
+      background: rgba(255, 255, 255, 0.88);
+      color: #475569;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .np-app-mode-btn:hover {
+      background: #fff;
+      border-color: color-mix(in srgb, var(--np-plant-accent, #22c55e) 30%, rgba(148, 163, 184, 0.35));
+    }
+    .np-app-mode-btn--active {
+      color: color-mix(in srgb, var(--np-plant-accent, #16a34a) 55%, #0f172a);
+      border-color: color-mix(in srgb, var(--np-plant-accent, #22c55e) 45%, rgba(148, 163, 184, 0.3));
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--np-plant-accent, #22c55e) 10%, #fff) 0%,
+        rgba(255, 255, 255, 0.96) 100%
+      );
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    }
+    .np-nutri-hero {
+      margin-bottom: 12px;
+      padding: 14px 16px 16px;
+      border-radius: 16px;
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, #059669 8%, #fff) 0%,
+        rgba(255, 255, 255, 0.95) 55%,
+        rgba(248, 250, 252, 0.92) 100%
+      );
+      border: 1px solid color-mix(in srgb, #059669 22%, rgba(148, 163, 184, 0.28));
+    }
+    .np-nutri-hero h2 {
+      margin: 0 0 6px;
+      font-size: 1.05rem;
+      color: color-mix(in srgb, #059669 50%, #0f172a);
+    }
+    .np-nutri-hero p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #64748b;
+    }
+    .np-nutri-folders-sidebar {
+      position: sticky;
+      top: 12px;
+      align-self: start;
+    }
+    .np-nutri-folder-tree {
+      max-height: min(52vh, 420px);
+      overflow: auto;
+      margin-bottom: 10px;
+      padding-right: 4px;
+    }
+    .np-nutri-folder-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      padding: 8px 10px;
+      margin-bottom: 4px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .np-nutri-folder-row:hover {
+      background: rgba(226, 232, 240, 0.65);
+    }
+    .np-nutri-folder-row--active {
+      background: color-mix(in srgb, #059669 12%, #fff);
+      box-shadow: inset 3px 0 0 #059669;
+    }
+    .np-nutri-folder-add {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .np-nutri-folder-add input {
+      margin-bottom: 0;
+      flex: 1;
+      font-size: 13px;
+    }
+    .np-nutri-files-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .np-nutri-files-head h2 {
+      margin: 0;
+      font-size: 1rem;
+      color: #334155;
+    }
+    .np-nutri-files-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .np-nutri-files-actions input[type='file'] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .np-nutri-file-list {
+      display: grid;
+      gap: 8px;
+    }
+    .np-nutri-file-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    }
+    .np-nutri-file-icon {
+      font-size: 22px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .np-nutri-file-meta {
+      flex: 1;
+      min-width: 140px;
+    }
+    .np-nutri-file-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+    .np-nutri-file-sub {
+      margin-top: 2px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .np-nutri-file-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .np-nutri-subtabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .np-nutri-subtab {
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      background: rgba(255, 255, 255, 0.9);
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+    .np-nutri-subtab--active {
+      border-color: color-mix(in srgb, #059669 40%, rgba(148, 163, 184, 0.3));
+      background: color-mix(in srgb, #059669 10%, #fff);
+      color: color-mix(in srgb, #059669 55%, #0f172a);
+    }
+    .np-nutri-link-form {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 0.92) 100%);
+    }
+    .np-nutri-link-form label {
+      margin-bottom: 0;
+    }
+    .np-nutri-link-form input,
+    .np-nutri-link-form select,
+    .np-nutri-link-form textarea {
+      margin-bottom: 0;
+      font-size: 13px;
+    }
+    .np-nutri-link-form textarea {
+      min-height: 64px;
+      resize: vertical;
+    }
+    .np-nutri-link-form-row {
+      display: grid;
+      gap: 10px;
+    }
+    @media (min-width: 640px) {
+      .np-nutri-link-form-row--2 {
+        grid-template-columns: 1fr 200px;
+      }
+    }
+    .np-nutri-link-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .np-nutri-link-filter {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .np-nutri-link-filter--active {
+      border-color: color-mix(in srgb, #059669 42%, rgba(148, 163, 184, 0.28));
+      background: color-mix(in srgb, #059669 12%, #fff);
+      color: #047857;
+    }
+    .np-nutri-link-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    }
+    .np-nutri-link-meta {
+      flex: 1;
+      min-width: 180px;
+    }
+    .np-nutri-link-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.3;
+    }
+    .np-nutri-link-desc {
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #64748b;
+    }
+    .np-nutri-link-url {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #2563eb;
+      word-break: break-all;
+      line-height: 1.35;
+    }
+    .np-nutri-link-chip {
+      flex-shrink: 0;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: color-mix(in srgb, #059669 14%, #fff);
+      color: #047857;
+      border: 1px solid color-mix(in srgb, #059669 28%, transparent);
+    }
+    .np-nutri-link-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
     .np-plan-header-menu-btn {
       flex-shrink: 0;
       display: inline-flex;
@@ -2077,25 +2434,172 @@
     .np-tree-row.np-dnd-drop-after {
       box-shadow: inset 0 -3px 0 var(--np-tree-accent, #2563eb);
     }
+    .np-sidebar-tools {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
     .np-flow-search {
-      margin-top: 12px;
-      padding: 10px;
-      border: 1px solid rgba(148, 163, 184, 0.26);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.68);
+      margin-top: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+    .np-flow-search-field {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      border-radius: 14px;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.98) 0%,
+        color-mix(in srgb, var(--np-plant-accent, #22c55e) 7%, #ffffff) 100%
+      );
+      border: 1.5px solid color-mix(in srgb, var(--np-plant-accent, #22c55e) 24%, rgba(148, 163, 184, 0.32));
+      box-shadow:
+        0 4px 14px rgba(15, 23, 42, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .np-flow-search-field:focus-within {
+      border-color: color-mix(in srgb, var(--np-plant-accent, #22c55e) 52%, rgba(148, 163, 184, 0.2));
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--np-plant-accent, #22c55e) 16%, transparent),
+        0 6px 18px rgba(15, 23, 42, 0.07);
+    }
+    .np-flow-search-icon {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      margin-left: 4px;
+      color: color-mix(in srgb, var(--np-plant-accent, #16a34a) 55%, #64748b);
+      pointer-events: none;
+    }
+    .np-flow-search-icon svg {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
     .np-flow-search input {
-      width: 100%;
+      flex: 1;
+      width: auto;
+      min-width: 0;
       margin-bottom: 0;
       font-size: 13px;
-      padding: 9px 10px;
+      font-weight: 500;
+      padding: 11px 12px 11px 2px;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      color: #0f172a;
+    }
+    .np-flow-search input::placeholder {
+      color: #94a3b8;
+      font-weight: 400;
+    }
+    .np-flow-search input:focus {
+      outline: none;
+      border-color: transparent;
+      box-shadow: none;
+    }
+    .np-filter-leaves {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(248, 250, 252, 0.96) 0%, rgba(255, 255, 255, 0.88) 100%);
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      user-select: none;
+    }
+    .np-filter-leaves:hover {
+      background: rgba(241, 245, 249, 0.98);
+      border-color: color-mix(in srgb, var(--np-plant-accent, #22c55e) 28%, rgba(148, 163, 184, 0.28));
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    }
+    .np-filter-leaves-input {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0;
+      width: 42px;
+      height: 24px;
+      margin: 0;
+      cursor: pointer;
+      z-index: 1;
+    }
+    .np-filter-leaves-ui {
+      flex-shrink: 0;
+      width: 42px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.38);
+      position: relative;
+      transition: background 0.22s ease;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+    .np-filter-leaves-ui::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
+      transition: transform 0.22s ease;
+    }
+    .np-filter-leaves-input:checked + .np-filter-leaves-ui {
+      background: color-mix(in srgb, var(--np-plant-accent, #22c55e) 78%, #16a34a);
+    }
+    .np-filter-leaves-input:checked + .np-filter-leaves-ui::after {
+      transform: translateX(18px);
+    }
+    .np-filter-leaves-input:focus-visible + .np-filter-leaves-ui {
+      outline: 2px solid color-mix(in srgb, var(--np-plant-accent, #22c55e) 45%, transparent);
+      outline-offset: 2px;
+    }
+    .np-filter-leaves-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+      line-height: 1.25;
+    }
+    .np-filter-leaves-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .np-filter-leaves-hint {
+      font-size: 11px;
+      font-weight: 500;
+      color: #64748b;
     }
     .np-flow-search-results {
       display: grid;
       gap: 8px;
-      margin-top: 9px;
+      margin-top: 10px;
+      padding: 10px;
       max-height: 220px;
       overflow: auto;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
     }
     .np-flow-search-result {
       padding: 8px 9px;
@@ -4966,6 +5470,10 @@
       </div>
       <div class="np-plan-actions np-hide" id="npHeaderLogged">
         <div class="np-plan-header-actions-inline">
+          <button type="button" class="np-storage-usage-pill" id="npStorageUsageBtn" data-state="loading" aria-live="polite" aria-label="Uso de almacenamiento en la nube" title="Archivos en Supabase · calculando…">
+            <span class="np-storage-usage-num" id="npStorageUsageNum">…</span>
+            <span class="np-storage-usage-sub" id="npStorageUsageSub">NutriPlant nube</span>
+          </button>
           <button type="button" class="np-cloud-sync-btn" id="npCloudSyncBtn" data-state="idle" aria-live="polite" aria-label="Estado de sincronización con la nube" title="Sincronización con la nube">
             <svg class="np-cloud-sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
@@ -5024,6 +5532,12 @@
                     <circle cx="4" cy="4" r="2"/>
                   </svg>
                 </a>
+              </div>
+            </div>
+            <div class="np-plan-menu-block" aria-label="Nutri PRO">
+              <span class="np-plan-menu-subblock-title">Plan PRO</span>
+              <div class="np-plan-nav-buttons">
+                <button type="button" class="btn-mac-nav btn-mac-nav-brand" id="npMenuOpenNutriPro">Nutri PRO · archivos</button>
               </div>
             </div>
             <div class="np-plan-menu-block np-plan-menu-block--accesos-portal" aria-label="Portal NutriPlant y pagos">
@@ -5129,6 +5643,12 @@
     <main id="npMain" class="np-hide">
       <div id="npToast" class="np-msg ok np-hide" style="margin-bottom:12px;"></div>
 
+      <nav class="np-app-mode-tabs" aria-label="Sección Plan PRO">
+        <button type="button" class="np-app-mode-btn np-app-mode-btn--active" id="npModeBtnApuntes">Apuntes</button>
+        <button type="button" class="np-app-mode-btn" id="npModeBtnNutriPro">Nutri PRO</button>
+      </nav>
+
+      <div id="npViewApuntes">
       <section class="panel np-pillar-panel np-section-accent np-section-accent-plant">
         <h2 class="np-pillar-panel-title">
           <img src="../assets/N_Hoja_Azul.png" alt="" class="np-pillar-panel-logo" width="22" height="22" decoding="async" aria-hidden="true" />
@@ -5147,6 +5667,25 @@
       <div class="np-layout">
         <aside class="panel np-tree-sidebar np-section-accent np-section-accent-plant">
           <h2 class="np-tree-sidebar-title">Ramas</h2>
+          <div class="np-sidebar-tools">
+            <div class="np-flow-search" aria-label="Buscar ubicación de apuntes, ramas o plantas">
+              <div class="np-flow-search-field">
+                <span class="np-flow-search-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+                </span>
+                <input type="search" id="npFlowSearchInput" autocomplete="off" placeholder="Buscar apunte, rama o planta…" aria-label="Buscar apunte, rama o planta" />
+              </div>
+              <div id="npFlowSearchResults" class="np-flow-search-results np-hide" aria-live="polite"></div>
+            </div>
+            <label class="np-filter-leaves" for="npFilterDesc">
+              <input type="checkbox" id="npFilterDesc" class="np-filter-leaves-input" checked />
+              <span class="np-filter-leaves-ui" aria-hidden="true"></span>
+              <span class="np-filter-leaves-text">
+                <span class="np-filter-leaves-title">Incluir hojas</span>
+                <span class="np-filter-leaves-hint">Muestra apuntes de sub-ramas</span>
+              </span>
+            </label>
+          </div>
           <div id="npTreeMount" class="np-tree-mount" role="tree" aria-label="Ramas de la planta"></div>
           <div style="margin-top:12px;">
             <div style="display:flex;gap:8px;margin-top:0;align-items:center;">
@@ -5154,14 +5693,6 @@
               <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddRootCat" style="margin-bottom:0;">Añadir</button>
             </div>
           </div>
-          <div class="np-flow-search" aria-label="Buscar ubicación de apuntes, ramas o plantas">
-            <input type="search" id="npFlowSearchInput" autocomplete="off" placeholder="Buscar apunte, rama o planta…" aria-label="Buscar flujo" />
-            <div id="npFlowSearchResults" class="np-flow-search-results np-hide" aria-live="polite"></div>
-          </div>
-          <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;cursor:pointer;">
-            <input type="checkbox" id="npFilterDesc" checked />
-            Incluir hojas
-          </label>
           <div id="npPrioSummary" class="np-prio-summary np-hide" aria-live="polite"></div>
           <div id="npSelectedPath" class="np-msg ok np-hide" style="margin-top:12px;padding:10px;font-size:13px;line-height:1.4;"></div>
           <div id="npSidebarCalendar" class="np-sidebar-cal np-hide" aria-label="Calendario de fechas">
@@ -5324,6 +5855,94 @@
         </div>
       </div>
       </div>
+      </div>
+
+      <div id="npViewNutriPro" class="np-hide">
+        <section class="panel np-nutri-hero np-section-accent np-section-accent-green">
+          <h2>Nutri PRO</h2>
+          <p>Conocimiento técnico en la nube — archivos, enlaces clasificados y carpetas. Respaldo para ti y base para la IA.</p>
+        </section>
+        <div id="npNutriSetupMsg" class="np-msg warn np-hide" style="margin-bottom:12px;">
+          Ejecuta en Supabase SQL Editor: <code>supabase-plan-pro-nutri-pro.sql</code>, <code>supabase-plan-pro-nutri-pro-storage.sql</code> y <code>supabase-plan-pro-nutri-pro-links.sql</code>
+        </div>
+        <div class="np-layout-scroll">
+          <div class="np-layout">
+            <aside class="panel np-nutri-folders-sidebar np-section-accent np-section-accent-green">
+              <h2 class="np-tree-sidebar-title">Carpetas</h2>
+              <div id="npNutriFolderTree" class="np-nutri-folder-tree" role="tree" aria-label="Carpetas Nutri PRO"></div>
+              <div class="np-nutri-folder-add">
+                <input type="text" id="npNutriNewFolder" autocomplete="off" placeholder="Nueva carpeta…" aria-label="Nombre de nueva carpeta" />
+                <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriBtnAddFolder">Crear</button>
+              </div>
+            </aside>
+            <div class="np-main-col">
+              <section class="panel np-section-accent np-section-accent-green">
+                <div class="np-nutri-subtabs" role="tablist" aria-label="Contenido Nutri PRO">
+                  <button type="button" class="np-nutri-subtab np-nutri-subtab--active" id="npNutriSubtabFiles" role="tab" aria-selected="true">📁 Archivos</button>
+                  <button type="button" class="np-nutri-subtab" id="npNutriSubtabLinks" role="tab" aria-selected="false">🔗 Enlaces</button>
+                </div>
+                <div id="npNutriPanelFiles">
+                  <div class="np-nutri-files-head">
+                    <h2 id="npNutriFolderTitle">Raíz · Nutri PRO</h2>
+                    <div class="np-nutri-files-actions">
+                      <input type="file" id="npNutriFileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.odt,.ods,.odp,.png,.jpg,.jpeg,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.svg,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv" aria-hidden="true" tabindex="-1" />
+                      <button type="button" class="btn btn-ghost btn-ghost-blue" id="npNutriBtnPickFiles">Elegir archivos</button>
+                      <button type="button" class="btn btn-primary" id="npNutriBtnUpload" disabled>Subir</button>
+                    </div>
+                  </div>
+                  <p id="npNutriUploadStatus" class="np-muted np-hide" style="margin:0 0 12px;font-size:13px;" aria-live="polite"></p>
+                  <div id="npNutriFilesMount" class="np-nutri-file-list"></div>
+                  <p id="npNutriFilesEmpty" class="np-muted">Sin archivos en esta carpeta. PDF, Office, imágenes (PNG, JPG, WebP…) y más.</p>
+                </div>
+                <div id="npNutriPanelLinks" class="np-hide">
+                  <div class="np-nutri-files-head">
+                    <h2 id="npNutriLinksTitle">Enlaces · Nutri PRO</h2>
+                  </div>
+                  <form id="npNutriLinkForm" class="np-nutri-link-form">
+                    <input type="hidden" id="npNutriLinkEditId" value="" />
+                    <div class="np-nutri-link-form-row np-nutri-link-form-row--2">
+                      <div>
+                        <label for="npNutriLinkTitle">Título</label>
+                        <input type="text" id="npNutriLinkTitle" maxlength="240" placeholder="Ej. Manual NDVI FAO" required />
+                      </div>
+                      <div>
+                        <label for="npNutriLinkCategory">Clasificación</label>
+                        <select id="npNutriLinkCategory">
+                          <option value="nutricion_vegetal">Nutrición vegetal</option>
+                          <option value="agronomia">Agronomía</option>
+                          <option value="trabajo">Trabajo</option>
+                          <option value="personal">Personal</option>
+                          <option value="negocio">Negocio / NutriPlant</option>
+                          <option value="investigacion">Investigación</option>
+                          <option value="herramientas">Herramientas</option>
+                          <option value="otro">Otro</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label for="npNutriLinkUrl">URL del enlace</label>
+                      <input type="url" id="npNutriLinkUrl" placeholder="https://…" required />
+                    </div>
+                    <div>
+                      <label for="npNutriLinkDesc">Descripción breve (opcional)</label>
+                      <textarea id="npNutriLinkDesc" maxlength="800" placeholder="Para qué sirve, cuándo usarlo…"></textarea>
+                    </div>
+                    <p id="npNutriLinkFolderHint" class="np-muted" style="margin:0;font-size:12px;">Se guardará en la carpeta seleccionada a la izquierda (o en raíz).</p>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                      <button type="submit" class="btn btn-primary" id="npNutriLinkSaveBtn">Guardar enlace</button>
+                      <button type="button" class="btn btn-ghost np-hide" id="npNutriLinkCancelBtn">Cancelar edición</button>
+                    </div>
+                  </form>
+                  <div id="npNutriLinkFilters" class="np-nutri-link-filters" aria-label="Filtrar por clasificación"></div>
+                  <div id="npNutriLinksMount" class="np-nutri-file-list"></div>
+                  <p id="npNutriLinksEmpty" class="np-muted">Sin enlaces guardados. Arriba puedes añadir el primero.</p>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="npPillarTabFlyoutBackdrop" class="np-pillar-tab-flyout-backdrop" aria-hidden="true"></div>
       <div
         id="npPillarTabFlyout"
@@ -5522,6 +6141,16 @@
   };
   var NP_CLOUD_QUEUE_PREFIX = 'planpro:cloudQueue:v1:';
   var NP_CLOUD_QUEUE_MAX = 120;
+  var NP_STORAGE_QUOTA_GB = 100;
+  var NP_STORAGE_CACHE_PREFIX = 'planpro:storageUsage:v1:';
+  /** No consultar Supabase en cada visita: lectura en caché ~10 min (evita saturar). */
+  var NP_STORAGE_CACHE_TTL_MS = 10 * 60 * 1000;
+  /** Al tocar “actualizar”, mínimo 45 s entre lecturas reales. */
+  var NP_STORAGE_MIN_REFRESH_MS = 45 * 1000;
+  var planProStorageUsageRefreshTimer = null;
+  var planProStorageRpcMissing = false;
+  var planProStorageLastFetchAt = 0;
+  var planProStorageFetchInFlight = false;
 
   function npCloudHasPendingEdits() {
     if (!state) return false;
@@ -5591,6 +6220,182 @@
 
   function npCloudSyncTouch() {
     npCloudSyncRender();
+  }
+
+  function formatPlanProStorageSize(bytes) {
+    var n = Number(bytes) || 0;
+    if (n < 1) return '0 GB';
+    if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+    if (n < 1073741824) return (n / 1048576).toFixed(2) + ' MB';
+    return (n / 1073741824).toFixed(2) + ' GB';
+  }
+
+  function formatPlanProStorageGbLine(bytes, quotaGb) {
+    var n = Number(bytes) || 0;
+    var gb = n / 1073741824;
+    var usedStr = gb < 0.01 && gb > 0 ? gb.toFixed(3) : gb < 1 ? gb.toFixed(2) : gb.toFixed(2);
+    return usedStr + ' / ' + (quotaGb || NP_STORAGE_QUOTA_GB) + ' GB';
+  }
+
+  function planProStorageCacheKey() {
+    return NP_STORAGE_CACHE_PREFIX + (state && state.userId ? state.userId : 'anon');
+  }
+
+  function planProStorageCacheRead() {
+    try {
+      var raw = localStorage.getItem(planProStorageCacheKey());
+      if (!raw) return null;
+      var c = JSON.parse(raw);
+      if (!c || !c.data || !c.fetchedAt) return null;
+      return c;
+    } catch (e1) {
+      return null;
+    }
+  }
+
+  function planProStorageCacheWrite(data) {
+    try {
+      localStorage.setItem(
+        planProStorageCacheKey(),
+        JSON.stringify({ data: data, fetchedAt: Date.now() })
+      );
+    } catch (e2) {}
+  }
+
+  function planProStorageAgeLabel(fetchedAt) {
+    if (!fetchedAt) return 'sin fecha';
+    var mins = Math.max(0, Math.round((Date.now() - fetchedAt) / 60000));
+    if (mins < 1) return 'hace un momento';
+    if (mins === 1) return 'hace 1 min';
+    if (mins < 60) return 'hace ' + mins + ' min';
+    var hrs = Math.round(mins / 60);
+    return hrs === 1 ? 'hace 1 h' : 'hace ' + hrs + ' h';
+  }
+
+  function renderPlanProStorageUsage(data, errMsg, meta) {
+    meta = meta || {};
+    var btn = $('npStorageUsageBtn');
+    var num = $('npStorageUsageNum');
+    var sub = $('npStorageUsageSub');
+    if (!btn || !num || !sub) return;
+    if (errMsg || !data) {
+      btn.setAttribute('data-state', planProStorageRpcMissing ? 'warn' : 'idle');
+      num.textContent = '— / ' + NP_STORAGE_QUOTA_GB + ' GB';
+      sub.textContent = 'NutriPlant nube';
+      var hint = errMsg || 'No se pudo leer el uso de archivos.';
+      if (planProStorageRpcMissing) {
+        hint += ' Ejecuta supabase-plan-pro-storage-usage.sql en Supabase (SQL Editor).';
+      }
+      btn.title = hint;
+      btn.setAttribute('aria-label', hint);
+      return;
+    }
+    var total = Number(data.total_bytes) || 0;
+    var quotaGb = Number(data.quota_gb) || NP_STORAGE_QUOTA_GB;
+    var quotaBytes = quotaGb * 1073741824;
+    var freeBytes = Math.max(0, quotaBytes - total);
+    var pct = quotaGb > 0 ? (total / quotaBytes) * 100 : 0;
+    var fetchedAt = meta.fetchedAt || planProStorageLastFetchAt || 0;
+    var fromCache = !!meta.fromCache;
+    num.textContent = formatPlanProStorageGbLine(total, quotaGb);
+    sub.textContent = fromCache ? 'NutriPlant · caché' : 'NutriPlant nube';
+    btn.setAttribute('data-state', pct >= 92 ? 'warn' : fromCache ? 'cached' : 'idle');
+    var lines = [
+      'NutriPlant PRO · almacenamiento total en Supabase (Plan Pro $25)',
+      'Usado: ' + formatPlanProStorageSize(total) + ' · Disponible: ~' + formatPlanProStorageSize(freeBytes),
+      'Cuota incluida: ' + quotaGb + ' GB de archivos',
+      'Lectura ' + planProStorageAgeLabel(fetchedAt) + ' · se actualiza sola cada ~10 min',
+      'Toca para forzar actualización (máx. 1 vez cada 45 s).'
+    ];
+    var buckets = data.buckets;
+    if (buckets && buckets.length) {
+      lines.push('');
+      lines.push('Por bucket:');
+      buckets.forEach(function (b) {
+        if (!b || !b.bucket_id) return;
+        lines.push('• ' + b.bucket_id + ': ' + formatPlanProStorageSize(b.bytes));
+      });
+    }
+    btn.title = lines.join('\n');
+    btn.setAttribute(
+      'aria-label',
+      formatPlanProStorageGbLine(total, quotaGb) + ' usados en la nube NutriPlant'
+    );
+  }
+
+  function schedulePlanProStorageUsageRefresh(delayMs, force) {
+    if (planProStorageUsageRefreshTimer) clearTimeout(planProStorageUsageRefreshTimer);
+    planProStorageUsageRefreshTimer = setTimeout(function () {
+      planProStorageUsageRefreshTimer = null;
+      refreshPlanProStorageUsage({ force: !!force, afterUpload: true });
+    }, delayMs == null ? 0 : delayMs);
+  }
+
+  async function refreshPlanProStorageUsage(opts) {
+    opts = opts || {};
+    if (!state || !state.client || !state.userId) return;
+    if (planProStorageRpcMissing) {
+      renderPlanProStorageUsage(null, 'Función de uso no instalada en Supabase.');
+      return;
+    }
+
+    var force = !!opts.force;
+    var afterUpload = !!opts.afterUpload;
+    var now = Date.now();
+    var cached = planProStorageCacheRead();
+    var cacheFresh = cached && now - cached.fetchedAt < NP_STORAGE_CACHE_TTL_MS;
+
+    if (!force && cacheFresh) {
+      planProStorageLastFetchAt = cached.fetchedAt;
+      renderPlanProStorageUsage(cached.data, null, { fetchedAt: cached.fetchedAt, fromCache: true });
+      return;
+    }
+
+    if (force && planProStorageLastFetchAt && now - planProStorageLastFetchAt < NP_STORAGE_MIN_REFRESH_MS) {
+      if (cached && cached.data) {
+        renderPlanProStorageUsage(cached.data, null, { fetchedAt: cached.fetchedAt, fromCache: true });
+      }
+      showToast('Lectura reciente — espera ~45 s para volver a consultar Supabase.', false);
+      return;
+    }
+
+    if (afterUpload && cacheFresh) {
+      return;
+    }
+
+    if (planProStorageFetchInFlight) return;
+    planProStorageFetchInFlight = true;
+
+    var btn = $('npStorageUsageBtn');
+    var num = $('npStorageUsageNum');
+    if (btn && force) btn.setAttribute('data-state', 'loading');
+    if (num && force && (!cached || !cached.data)) num.textContent = '…';
+
+    try {
+      var res = await state.client.rpc('plan_pro_storage_usage');
+      if (res.error) {
+        if (/plan_pro_storage_usage|not exist|does not exist|42883/i.test(res.error.message || '')) {
+          planProStorageRpcMissing = true;
+        }
+        if (cached && cached.data) {
+          renderPlanProStorageUsage(cached.data, null, { fetchedAt: cached.fetchedAt, fromCache: true });
+        } else {
+          renderPlanProStorageUsage(null, res.error.message || 'Error al leer almacenamiento.');
+        }
+        return;
+      }
+      planProStorageLastFetchAt = Date.now();
+      planProStorageCacheWrite(res.data || {});
+      renderPlanProStorageUsage(res.data || {}, null, { fetchedAt: planProStorageLastFetchAt, fromCache: false });
+    } catch (e) {
+      if (cached && cached.data) {
+        renderPlanProStorageUsage(cached.data, null, { fetchedAt: cached.fetchedAt, fromCache: true });
+      } else {
+        renderPlanProStorageUsage(null, (e && e.message) || String(e));
+      }
+    } finally {
+      planProStorageFetchInFlight = false;
+    }
   }
 
   function npCloudSyncBegin() {
@@ -5907,6 +6712,14 @@
   }
 
   function wireNpCloudSyncIndicator() {
+    var storageBtn = $('npStorageUsageBtn');
+    if (storageBtn && storageBtn.dataset.npWired !== '1') {
+      storageBtn.dataset.npWired = '1';
+      storageBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        refreshPlanProStorageUsage({ force: true });
+      });
+    }
     var cloudBtn = $('npCloudSyncBtn');
     if (cloudBtn && cloudBtn.dataset.npWired !== '1') {
       cloudBtn.dataset.npWired = '1';
@@ -5940,6 +6753,20 @@
   var npRichImgResizeScrollFn = null;
   var npRichImgResizeUI = { overlay: null, editorEl: null, img: null };
   var NP_NOTE_IMAGE_BUCKET = 'plan-pro-note-images';
+  var NP_NUTRI_PRO_BUCKET = 'plan-pro-nutri-pro';
+  var NP_NUTRI_FILE_EXT_OK =
+    /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|rtf|odt|ods|odp|png|jpe?g|webp|gif|bmp|tiff?|heic|heif|svg)$/i;
+  var NP_NUTRI_LINK_CATEGORIES = [
+    { id: '', label: 'Todas' },
+    { id: 'nutricion_vegetal', label: 'Nutrición vegetal' },
+    { id: 'agronomia', label: 'Agronomía' },
+    { id: 'trabajo', label: 'Trabajo' },
+    { id: 'personal', label: 'Personal' },
+    { id: 'negocio', label: 'Negocio' },
+    { id: 'investigacion', label: 'Investigación' },
+    { id: 'herramientas', label: 'Herramientas' },
+    { id: 'otro', label: 'Otro' }
+  ];
   var planProRichImageTargetEditor = null;
   var npMapsPickerState = {
     inputEl: null,
@@ -6703,6 +7530,7 @@
       );
       return null;
     }
+    schedulePlanProStorageUsageRefresh(5000, true);
     var pub = client.storage.from(NP_NOTE_IMAGE_BUCKET).getPublicUrl(path);
     return pub && pub.data && pub.data.publicUrl ? pub.data.publicUrl : null;
   }
@@ -8573,7 +9401,18 @@
     planProDnd: null,
     lastPlanProDndEndedAt: 0,
     flowSearchTimer: null,
-    flowSearchGen: 0
+    flowSearchGen: 0,
+    /** Nutri PRO: carpetas/archivos técnicos en Storage. */
+    nutriProReady: true,
+    nutriProAppMode: 'apuntes',
+    nutriProFolders: [],
+    nutriProFiles: [],
+    nutriProSelectedFolderId: null,
+    nutriProPendingUploads: null,
+    nutriProPanel: 'files',
+    nutriProLinks: [],
+    nutriProLinkFilterCategory: '',
+    nutriProLinksReady: true
   };
 
   function deepCloneBlocks(blocks) {
@@ -15075,6 +15914,831 @@
     window.location.reload();
   });
 
+  function setPlanProAppMode(mode) {
+    var m = mode === 'nutri-pro' ? 'nutri-pro' : 'apuntes';
+    state.nutriProAppMode = m;
+    var vAp = $('npViewApuntes');
+    var vNu = $('npViewNutriPro');
+    var bAp = $('npModeBtnApuntes');
+    var bNu = $('npModeBtnNutriPro');
+    if (vAp) vAp.classList.toggle('np-hide', m !== 'apuntes');
+    if (vNu) vNu.classList.toggle('np-hide', m !== 'nutri-pro');
+    if (bAp) bAp.classList.toggle('np-app-mode-btn--active', m === 'apuntes');
+    if (bNu) bNu.classList.toggle('np-app-mode-btn--active', m === 'nutri-pro');
+    if (m === 'nutri-pro') {
+      loadNutriProVault();
+    }
+  }
+
+  function nutriProFileIsImage(name, mime) {
+    var n = String(name || '').toLowerCase();
+    var mt = String(mime || '').toLowerCase();
+    if (/^image\//.test(mt)) return true;
+    return /\.(png|jpe?g|webp|gif|bmp|tiff?|heic|heif|svg)$/i.test(n);
+  }
+
+  function nutriProFileIsAllowed(file) {
+    if (!file || !file.name) return false;
+    if (NP_NUTRI_FILE_EXT_OK.test(file.name)) return true;
+    var mt = String(file.type || '').toLowerCase();
+    if (/^image\//.test(mt)) return true;
+    if (mt === 'application/pdf' || mt === 'text/plain' || mt === 'text/csv') return true;
+    if (/word|excel|spreadsheet|presentation|msword|officedocument|rtf/.test(mt)) return true;
+    return false;
+  }
+
+  function nutriProFileIcon(name, mime) {
+    var n = String(name || '').toLowerCase();
+    var mt = String(mime || '').toLowerCase();
+    if (nutriProFileIsImage(n, mt)) return '🖼️';
+    if (/\.pdf$/.test(n) || mt.indexOf('pdf') >= 0) return '📕';
+    if (/\.(xls|xlsx|csv|ods)$/.test(n) || mt.indexOf('spreadsheet') >= 0 || mt.indexOf('excel') >= 0) return '📊';
+    if (/\.(ppt|pptx|odp)$/.test(n) || mt.indexOf('presentation') >= 0 || mt.indexOf('powerpoint') >= 0) return '📽️';
+    if (/\.(doc|docx|odt|rtf|txt)$/.test(n) || mt.indexOf('word') >= 0 || mt === 'text/plain') return '📝';
+    return '📄';
+  }
+
+  function nutriProSanitizeFilename(name) {
+    var base = String(name || 'archivo').trim() || 'archivo';
+    base = base.replace(/[/\\?%*:|"<>]/g, '_');
+    if (base.length > 180) base = base.slice(0, 180);
+    return base;
+  }
+
+  function nutriProFolderLabel(folderId) {
+    if (!folderId) return 'Raíz · Nutri PRO';
+    var f = (state.nutriProFolders || []).filter(function (x) {
+      return x.id === folderId;
+    })[0];
+    return f && f.title ? f.title : 'Carpeta';
+  }
+
+  function nutriProBuildFolderTreeRows(parentId, depth, out) {
+    out = out || [];
+    depth = depth || 0;
+    var kids = (state.nutriProFolders || [])
+      .filter(function (f) {
+        if (!f) return false;
+        var pid = f.parent_id || null;
+        if (parentId) return pid === parentId;
+        return !pid;
+      })
+      .sort(function (a, b) {
+        return String(a.title || '').localeCompare(String(b.title || ''));
+      });
+    kids.forEach(function (f) {
+      out.push({ folder: f, depth: depth });
+      nutriProBuildFolderTreeRows(f.id, depth + 1, out);
+    });
+    return out;
+  }
+
+  function renderNutriProFolderTree() {
+    var mount = $('npNutriFolderTree');
+    if (!mount) return;
+    mount.innerHTML = '';
+    var rootBtn = document.createElement('button');
+    rootBtn.type = 'button';
+    rootBtn.className =
+      'np-nutri-folder-row' + (!state.nutriProSelectedFolderId ? ' np-nutri-folder-row--active' : '');
+    rootBtn.textContent = '📁 Raíz';
+    rootBtn.addEventListener('click', function () {
+      state.nutriProSelectedFolderId = null;
+      renderNutriProFolderTree();
+      syncNutriProFolderContext();
+      loadNutriProFiles(null);
+      if (state.nutriProPanel === 'links') loadNutriProLinks();
+    });
+    mount.appendChild(rootBtn);
+    nutriProBuildFolderTreeRows(null, 0, []).forEach(function (row) {
+      var f = row.folder;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className =
+        'np-nutri-folder-row' + (state.nutriProSelectedFolderId === f.id ? ' np-nutri-folder-row--active' : '');
+      btn.style.paddingLeft = 10 + row.depth * 14 + 'px';
+      btn.textContent = '📂 ' + (f.title || '(Sin nombre)');
+      (function (fid) {
+        btn.addEventListener('click', function () {
+          state.nutriProSelectedFolderId = fid;
+          renderNutriProFolderTree();
+          syncNutriProFolderContext();
+          loadNutriProFiles(fid);
+          if (state.nutriProPanel === 'links') loadNutriProLinks();
+        });
+      })(f.id);
+      mount.appendChild(btn);
+    });
+  }
+
+  function renderNutriProFilesList() {
+    var mount = $('npNutriFilesMount');
+    var empty = $('npNutriFilesEmpty');
+    var titleEl = $('npNutriFolderTitle');
+    if (titleEl) titleEl.textContent = nutriProFolderLabel(state.nutriProSelectedFolderId);
+    if (!mount) return;
+    mount.innerHTML = '';
+    var files = state.nutriProFiles || [];
+    if (empty) empty.classList.toggle('np-hide', files.length > 0);
+    files.forEach(function (file) {
+      if (!file || !file.id) return;
+      var row = document.createElement('div');
+      row.className = 'np-nutri-file-row';
+      var icon = document.createElement('span');
+      icon.className = 'np-nutri-file-icon';
+      icon.textContent = nutriProFileIcon(file.original_name || file.title, file.mime_type);
+      var meta = document.createElement('div');
+      meta.className = 'np-nutri-file-meta';
+      var t = document.createElement('div');
+      t.className = 'np-nutri-file-title';
+      t.textContent = file.title || file.original_name || 'Archivo';
+      var sub = document.createElement('div');
+      sub.className = 'np-nutri-file-sub';
+      sub.textContent =
+        formatPlanProStorageSize(file.size_bytes || 0) +
+        (file.updated_at ? ' · ' + fmtDate(file.updated_at) : '');
+      meta.appendChild(t);
+      meta.appendChild(sub);
+      var btns = document.createElement('div');
+      btns.className = 'np-nutri-file-btns';
+      var isImg = nutriProFileIsImage(file.original_name || file.title, file.mime_type);
+      if (isImg) {
+        var view = document.createElement('button');
+        view.type = 'button';
+        view.className = 'btn btn-ghost btn-ghost-green';
+        view.textContent = 'Ver';
+        (function (rec) {
+          view.addEventListener('click', function () {
+            openNutriProFile(rec, false);
+          });
+        })(file);
+        btns.appendChild(view);
+      }
+      var dl = document.createElement('button');
+      dl.type = 'button';
+      dl.className = 'btn btn-ghost btn-ghost-blue';
+      dl.textContent = 'Descargar';
+      (function (rec) {
+        dl.addEventListener('click', function () {
+          downloadNutriProFile(rec);
+        });
+      })(file);
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn btn-ghost';
+      del.style.color = '#b91c1c';
+      del.textContent = 'Eliminar';
+      (function (rec) {
+        del.addEventListener('click', function () {
+          deleteNutriProFile(rec);
+        });
+      })(file);
+      btns.appendChild(dl);
+      btns.appendChild(del);
+      row.appendChild(icon);
+      row.appendChild(meta);
+      row.appendChild(btns);
+      mount.appendChild(row);
+    });
+  }
+
+  function setNutriProSetupVisible(show) {
+    var el = $('npNutriSetupMsg');
+    if (el) el.classList.toggle('np-hide', !show);
+  }
+
+  async function loadNutriProFolders() {
+    if (!state.client || !state.nutriProReady) return [];
+    var res = await state.client
+      .from('plan_pro_nutri_folders')
+      .select('id,parent_id,title,sort_order,created_at,updated_at')
+      .order('title', { ascending: true });
+    if (res.error) {
+      if (/plan_pro_nutri|does not exist|schema cache/i.test(res.error.message || '')) {
+        state.nutriProReady = false;
+        setNutriProSetupVisible(true);
+      }
+      throw res.error;
+    }
+    state.nutriProFolders = res.data || [];
+    setNutriProSetupVisible(false);
+    return state.nutriProFolders;
+  }
+
+  async function loadNutriProFiles(folderId) {
+    if (!state.client || !state.nutriProReady) return [];
+    var q = state.client
+      .from('plan_pro_nutri_files')
+      .select('id,folder_id,title,original_name,storage_path,mime_type,size_bytes,created_at,updated_at')
+      .order('title', { ascending: true });
+    if (folderId) q = q.eq('folder_id', folderId);
+    else q = q.is('folder_id', null);
+    var res = await q;
+    if (res.error) {
+      if (/plan_pro_nutri|does not exist|schema cache/i.test(res.error.message || '')) {
+        state.nutriProReady = false;
+        setNutriProSetupVisible(true);
+      }
+      throw res.error;
+    }
+    state.nutriProFiles = res.data || [];
+    renderNutriProFilesList();
+    return state.nutriProFiles;
+  }
+
+  async function loadNutriProVault() {
+    if (!state.client || !state.userId) return;
+    try {
+      await loadNutriProFolders();
+      renderNutriProFolderTree();
+      syncNutriProFolderContext();
+      await loadNutriProFiles(state.nutriProSelectedFolderId);
+      if (state.nutriProPanel === 'links') {
+        renderNutriProLinkFilters();
+        await loadNutriProLinks();
+      }
+    } catch (e) {
+      if (!state.nutriProReady && !state.nutriProLinksReady) return;
+      showToast((e && e.message) || 'No se pudo cargar Nutri PRO.', true);
+    }
+  }
+
+  async function createNutriProFolder() {
+    if (!state.client || !state.userId || !state.nutriProReady) return;
+    var inp = $('npNutriNewFolder');
+    var raw = inp && inp.value ? inp.value.trim() : '';
+    if (!raw) return;
+    var row = {
+      owner_id: state.userId,
+      parent_id: state.nutriProSelectedFolderId || null,
+      title: raw,
+      sort_order: 0
+    };
+    var res = await npCloudSyncTrack(function () {
+      return state.client.from('plan_pro_nutri_folders').insert(row).select('id').single();
+    });
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo crear la carpeta.', true);
+      return;
+    }
+    if (inp) inp.value = '';
+    showToast('Carpeta creada.');
+    await loadNutriProFolders();
+    renderNutriProFolderTree();
+  }
+
+  function updateNutriProUploadUi() {
+    var btn = $('npNutriBtnUpload');
+    var pending = state.nutriProPendingUploads;
+    if (btn) btn.disabled = !(pending && pending.length);
+    var st = $('npNutriUploadStatus');
+    if (!st) return;
+    if (!pending || !pending.length) {
+      st.classList.add('np-hide');
+      st.textContent = '';
+      return;
+    }
+    st.classList.remove('np-hide');
+    st.textContent =
+      pending.length +
+      ' archivo' +
+      (pending.length === 1 ? '' : 's') +
+      ' listo' +
+      (pending.length === 1 ? '' : 's') +
+      ' para subir.';
+  }
+
+  async function uploadNutriProPendingFiles() {
+    var files = state.nutriProPendingUploads;
+    if (!files || !files.length || !state.client || !state.userId || !state.nutriProReady) return;
+    var btn = $('npNutriBtnUpload');
+    if (btn) btn.disabled = true;
+    var folderId = state.nutriProSelectedFolderId;
+    var folderSeg = folderId || 'root';
+    var ok = 0;
+    var fail = 0;
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+      if (!file || !file.name) continue;
+      if (!nutriProFileIsAllowed(file)) {
+        fail += 1;
+        showToast('Tipo no permitido: ' + (file.name || 'archivo'), true);
+        continue;
+      }
+      var fileId = npCloudUuid();
+      var safeName = nutriProSanitizeFilename(file.name);
+      var path = state.userId + '/' + folderSeg + '/' + fileId + '/' + safeName;
+      var up = await npCloudSyncTrack(function () {
+        return state.client.storage.from(NP_NUTRI_PRO_BUCKET).upload(path, file, {
+          contentType: file.type || 'application/octet-stream',
+          upsert: false
+        });
+      });
+      if (up.error) {
+        fail += 1;
+        showToast(up.error.message || 'Error al subir ' + safeName, true);
+        continue;
+      }
+      var ins = await npCloudSyncTrack(function () {
+        return state.client
+          .from('plan_pro_nutri_files')
+          .insert({
+            id: fileId,
+            owner_id: state.userId,
+            folder_id: folderId,
+            title: safeName.replace(/\.[^.]+$/, '') || safeName,
+            original_name: safeName,
+            storage_path: path,
+            mime_type: file.type || null,
+            size_bytes: file.size || 0
+          })
+          .select('id')
+          .single();
+      });
+      if (ins.error) {
+        fail += 1;
+        await state.client.storage.from(NP_NUTRI_PRO_BUCKET).remove([path]);
+        showToast(ins.error.message || 'Error al registrar ' + safeName, true);
+        continue;
+      }
+      ok += 1;
+    }
+    state.nutriProPendingUploads = null;
+    var inp = $('npNutriFileInput');
+    if (inp) inp.value = '';
+    updateNutriProUploadUi();
+    if (btn) btn.disabled = true;
+    if (ok) {
+      showToast(
+        ok + ' archivo' + (ok === 1 ? '' : 's') + ' subido' + (ok === 1 ? '' : 's') + ' a Nutri PRO.'
+      );
+      schedulePlanProStorageUsageRefresh(5000, true);
+      await loadNutriProFiles(folderId);
+    }
+    if (fail && !ok) showToast('No se pudieron subir los archivos.', true);
+  }
+
+  async function nutriProFileSignedUrl(fileRec) {
+    if (!fileRec || !fileRec.storage_path || !state.client) return null;
+    var res = await state.client.storage.from(NP_NUTRI_PRO_BUCKET).createSignedUrl(fileRec.storage_path, 3600);
+    if (res.error || !res.data || !res.data.signedUrl) {
+      showToast(res.error ? res.error.message : 'No se pudo abrir el archivo.', true);
+      return null;
+    }
+    return res.data.signedUrl;
+  }
+
+  async function openNutriProFile(fileRec, forceDownload) {
+    var url = await nutriProFileSignedUrl(fileRec);
+    if (!url) return;
+    if (forceDownload) {
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = fileRec.original_name || fileRec.title || 'archivo';
+      a.rel = 'noopener';
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  async function downloadNutriProFile(fileRec) {
+    await openNutriProFile(fileRec, true);
+  }
+
+  async function deleteNutriProFile(fileRec) {
+    if (!fileRec || !fileRec.id || !state.client) return;
+    if (!window.confirm('¿Eliminar «' + (fileRec.title || fileRec.original_name) + '» de Nutri PRO?')) return;
+    if (fileRec.storage_path) {
+      await state.client.storage.from(NP_NUTRI_PRO_BUCKET).remove([fileRec.storage_path]);
+    }
+    var res = await npCloudSyncTrack(function () {
+      return state.client.from('plan_pro_nutri_files').delete().eq('id', fileRec.id);
+    });
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo eliminar.', true);
+      return;
+    }
+    showToast('Archivo eliminado.');
+    schedulePlanProStorageUsageRefresh(5000, true);
+    await loadNutriProFiles(state.nutriProSelectedFolderId);
+  }
+
+  function nutriProLinkCategoryLabel(catId) {
+    var c = NP_NUTRI_LINK_CATEGORIES.filter(function (x) {
+      return x.id === catId;
+    })[0];
+    return c && c.label ? c.label : 'Otro';
+  }
+
+  function normalizeNutriProLinkUrl(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return '';
+    if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+    try {
+      var u = new URL(s);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+      return u.href;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function syncNutriProFolderContext() {
+    var hint = $('npNutriLinkFolderHint');
+    var linksTitle = $('npNutriLinksTitle');
+    var folderLabel = nutriProFolderLabel(state.nutriProSelectedFolderId);
+    if (hint) {
+      hint.textContent = state.nutriProSelectedFolderId
+        ? 'Se guardará en carpeta: «' + folderLabel.replace(' · Nutri PRO', '') + '».'
+        : 'Se guardará en raíz (sin carpeta).';
+    }
+    if (linksTitle) {
+      linksTitle.textContent =
+        'Enlaces · ' + (state.nutriProSelectedFolderId ? folderLabel.replace(' · Nutri PRO', '') : 'Raíz');
+    }
+  }
+
+  function setNutriProPanel(panel) {
+    var p = panel === 'links' ? 'links' : 'files';
+    state.nutriProPanel = p;
+    var pf = $('npNutriPanelFiles');
+    var pl = $('npNutriPanelLinks');
+    var tf = $('npNutriSubtabFiles');
+    var tl = $('npNutriSubtabLinks');
+    if (pf) pf.classList.toggle('np-hide', p !== 'files');
+    if (pl) pl.classList.toggle('np-hide', p !== 'links');
+    if (tf) {
+      tf.classList.toggle('np-nutri-subtab--active', p === 'files');
+      tf.setAttribute('aria-selected', p === 'files' ? 'true' : 'false');
+    }
+    if (tl) {
+      tl.classList.toggle('np-nutri-subtab--active', p === 'links');
+      tl.setAttribute('aria-selected', p === 'links' ? 'true' : 'false');
+    }
+    if (p === 'links') {
+      syncNutriProFolderContext();
+      renderNutriProLinkFilters();
+      loadNutriProLinks();
+    }
+  }
+
+  function renderNutriProLinkFilters() {
+    var mount = $('npNutriLinkFilters');
+    if (!mount) return;
+    mount.innerHTML = '';
+    NP_NUTRI_LINK_CATEGORIES.forEach(function (cat) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className =
+        'np-nutri-link-filter' +
+        (state.nutriProLinkFilterCategory === cat.id ? ' np-nutri-link-filter--active' : '');
+      btn.textContent = cat.label;
+      (function (cid) {
+        btn.addEventListener('click', function () {
+          state.nutriProLinkFilterCategory = cid;
+          renderNutriProLinkFilters();
+          renderNutriProLinksList();
+        });
+      })(cat.id);
+      mount.appendChild(btn);
+    });
+  }
+
+  function resetNutriProLinkForm() {
+    var edit = $('npNutriLinkEditId');
+    var tit = $('npNutriLinkTitle');
+    var url = $('npNutriLinkUrl');
+    var desc = $('npNutriLinkDesc');
+    var cat = $('npNutriLinkCategory');
+    var cancel = $('npNutriLinkCancelBtn');
+    var save = $('npNutriLinkSaveBtn');
+    if (edit) edit.value = '';
+    if (tit) tit.value = '';
+    if (url) url.value = '';
+    if (desc) desc.value = '';
+    if (cat) cat.value = 'nutricion_vegetal';
+    if (cancel) cancel.classList.add('np-hide');
+    if (save) save.textContent = 'Guardar enlace';
+  }
+
+  function fillNutriProLinkForm(link) {
+    if (!link) return;
+    var edit = $('npNutriLinkEditId');
+    var tit = $('npNutriLinkTitle');
+    var url = $('npNutriLinkUrl');
+    var desc = $('npNutriLinkDesc');
+    var cat = $('npNutriLinkCategory');
+    var cancel = $('npNutriLinkCancelBtn');
+    var save = $('npNutriLinkSaveBtn');
+    if (edit) edit.value = link.id || '';
+    if (tit) tit.value = link.title || '';
+    if (url) url.value = link.url || '';
+    if (desc) desc.value = link.description || '';
+    if (cat) cat.value = link.category || 'otro';
+    if (cancel) cancel.classList.remove('np-hide');
+    if (save) save.textContent = 'Actualizar enlace';
+    $('npNutriLinkForm') && $('npNutriLinkForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function copyNutriProLinkUrl(url) {
+    var u = normalizeNutriProLinkUrl(url);
+    if (!u) {
+      showToast('Enlace no válido.', true);
+      return;
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(u);
+        showToast('Enlace copiado.');
+        return;
+      }
+    } catch (e1) {}
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = u;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      showToast('Enlace copiado.');
+    } catch (e2) {
+      showToast('No se pudo copiar. Abre el enlace y cópialo a mano.', true);
+    }
+  }
+
+  function renderNutriProLinksList() {
+    var mount = $('npNutriLinksMount');
+    var empty = $('npNutriLinksEmpty');
+    if (!mount) return;
+    mount.innerHTML = '';
+    var links = (state.nutriProLinks || []).slice();
+    if (state.nutriProLinkFilterCategory) {
+      links = links.filter(function (l) {
+        return l && l.category === state.nutriProLinkFilterCategory;
+      });
+    }
+    if (empty) empty.classList.toggle('np-hide', links.length > 0);
+    links.forEach(function (link) {
+      if (!link || !link.id) return;
+      var row = document.createElement('div');
+      row.className = 'np-nutri-link-row';
+      var chip = document.createElement('span');
+      chip.className = 'np-nutri-link-chip';
+      chip.textContent = nutriProLinkCategoryLabel(link.category);
+      var meta = document.createElement('div');
+      meta.className = 'np-nutri-link-meta';
+      var t = document.createElement('div');
+      t.className = 'np-nutri-link-title';
+      t.textContent = link.title || 'Enlace';
+      meta.appendChild(t);
+      if (link.description && String(link.description).trim()) {
+        var d = document.createElement('div');
+        d.className = 'np-nutri-link-desc';
+        d.textContent = link.description;
+        meta.appendChild(d);
+      }
+      var u = document.createElement('div');
+      u.className = 'np-nutri-link-url';
+      u.textContent = link.url || '';
+      meta.appendChild(u);
+      var btns = document.createElement('div');
+      btns.className = 'np-nutri-link-btns';
+      var copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.className = 'btn btn-ghost btn-ghost-green';
+      copyBtn.textContent = 'Copiar';
+      (function (url) {
+        copyBtn.addEventListener('click', function () {
+          copyNutriProLinkUrl(url);
+        });
+      })(link.url);
+      var openBtn = document.createElement('button');
+      openBtn.type = 'button';
+      openBtn.className = 'btn btn-ghost btn-ghost-blue';
+      openBtn.textContent = 'Abrir';
+      (function (url) {
+        openBtn.addEventListener('click', function () {
+          var nu = normalizeNutriProLinkUrl(url);
+          if (!nu) {
+            showToast('Enlace no válido.', true);
+            return;
+          }
+          window.open(nu, '_blank', 'noopener,noreferrer');
+        });
+      })(link.url);
+      var editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'btn btn-ghost';
+      editBtn.textContent = 'Editar';
+      (function (rec) {
+        editBtn.addEventListener('click', function () {
+          fillNutriProLinkForm(rec);
+        });
+      })(link);
+      var delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'btn btn-ghost';
+      delBtn.style.color = '#b91c1c';
+      delBtn.textContent = 'Eliminar';
+      (function (rec) {
+        delBtn.addEventListener('click', function () {
+          deleteNutriProLink(rec);
+        });
+      })(link);
+      btns.appendChild(copyBtn);
+      btns.appendChild(openBtn);
+      btns.appendChild(editBtn);
+      btns.appendChild(delBtn);
+      row.appendChild(chip);
+      row.appendChild(meta);
+      row.appendChild(btns);
+      mount.appendChild(row);
+    });
+  }
+
+  async function loadNutriProLinks() {
+    if (!state.client || !state.nutriProLinksReady) return [];
+    var q = state.client
+      .from('plan_pro_nutri_links')
+      .select('id,folder_id,title,description,url,category,created_at,updated_at')
+      .order('title', { ascending: true });
+    if (state.nutriProSelectedFolderId) q = q.eq('folder_id', state.nutriProSelectedFolderId);
+    else q = q.is('folder_id', null);
+    var res = await q;
+    if (res.error) {
+      if (/plan_pro_nutri_links|does not exist|schema cache/i.test(res.error.message || '')) {
+        state.nutriProLinksReady = false;
+        setNutriProSetupVisible(true);
+      }
+      throw res.error;
+    }
+    state.nutriProLinks = res.data || [];
+    renderNutriProLinksList();
+    return state.nutriProLinks;
+  }
+
+  async function saveNutriProLinkFromForm(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!state.client || !state.userId || !state.nutriProLinksReady) return;
+    var tit = ($('npNutriLinkTitle') && $('npNutriLinkTitle').value.trim()) || '';
+    var rawUrl = ($('npNutriLinkUrl') && $('npNutriLinkUrl').value.trim()) || '';
+    var desc = ($('npNutriLinkDesc') && $('npNutriLinkDesc').value.trim()) || '';
+    var cat = ($('npNutriLinkCategory') && $('npNutriLinkCategory').value) || 'otro';
+    var editId = ($('npNutriLinkEditId') && $('npNutriLinkEditId').value.trim()) || '';
+    var url = normalizeNutriProLinkUrl(rawUrl);
+    if (!tit) {
+      showToast('Escribe un título.', true);
+      return;
+    }
+    if (!url) {
+      showToast('Pega una URL válida (https://…).', true);
+      return;
+    }
+    var row = {
+      owner_id: state.userId,
+      folder_id: state.nutriProSelectedFolderId || null,
+      title: tit,
+      description: desc || null,
+      url: url,
+      category: cat
+    };
+    var res;
+    if (editId) {
+      res = await npCloudSyncTrack(function () {
+        return state.client
+          .from('plan_pro_nutri_links')
+          .update({
+            folder_id: row.folder_id,
+            title: row.title,
+            description: row.description,
+            url: row.url,
+            category: row.category
+          })
+          .eq('id', editId);
+      });
+    } else {
+      res = await npCloudSyncTrack(function () {
+        return state.client.from('plan_pro_nutri_links').insert(row).select('id').single();
+      });
+    }
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo guardar el enlace.', true);
+      return;
+    }
+    showToast(editId ? 'Enlace actualizado.' : 'Enlace guardado.');
+    resetNutriProLinkForm();
+    await loadNutriProLinks();
+  }
+
+  async function deleteNutriProLink(linkRec) {
+    if (!linkRec || !linkRec.id || !state.client) return;
+    if (!window.confirm('¿Eliminar el enlace «' + (linkRec.title || '') + '»?')) return;
+    var res = await npCloudSyncTrack(function () {
+      return state.client.from('plan_pro_nutri_links').delete().eq('id', linkRec.id);
+    });
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo eliminar.', true);
+      return;
+    }
+    showToast('Enlace eliminado.');
+    await loadNutriProLinks();
+  }
+
+  function wireNutriProVault() {
+    var modeAp = $('npModeBtnApuntes');
+    var modeNu = $('npModeBtnNutriPro');
+    if (modeAp && modeAp.dataset.npWired !== '1') {
+      modeAp.dataset.npWired = '1';
+      modeAp.addEventListener('click', function () {
+        setPlanProAppMode('apuntes');
+      });
+    }
+    if (modeNu && modeNu.dataset.npWired !== '1') {
+      modeNu.dataset.npWired = '1';
+      modeNu.addEventListener('click', function () {
+        setPlanProAppMode('nutri-pro');
+      });
+    }
+    var addF = $('npNutriBtnAddFolder');
+    if (addF && addF.dataset.npWired !== '1') {
+      addF.dataset.npWired = '1';
+      addF.addEventListener('click', function () {
+        createNutriProFolder();
+      });
+    }
+    var newF = $('npNutriNewFolder');
+    if (newF && newF.dataset.npWired !== '1') {
+      newF.dataset.npWired = '1';
+      newF.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          createNutriProFolder();
+        }
+      });
+    }
+    var pick = $('npNutriBtnPickFiles');
+    var finp = $('npNutriFileInput');
+    if (pick && finp && pick.dataset.npWired !== '1') {
+      pick.dataset.npWired = '1';
+      pick.addEventListener('click', function () {
+        finp.click();
+      });
+      finp.addEventListener('change', function () {
+        var list = finp.files ? Array.prototype.slice.call(finp.files) : [];
+        state.nutriProPendingUploads = list.length ? list : null;
+        updateNutriProUploadUi();
+      });
+    }
+    var upl = $('npNutriBtnUpload');
+    if (upl && upl.dataset.npWired !== '1') {
+      upl.dataset.npWired = '1';
+      upl.addEventListener('click', function () {
+        uploadNutriProPendingFiles();
+      });
+    }
+    var menuNutri = $('npMenuOpenNutriPro');
+    if (menuNutri && menuNutri.dataset.npWired !== '1') {
+      menuNutri.dataset.npWired = '1';
+      menuNutri.addEventListener('click', function () {
+        setPlanProAppMode('nutri-pro');
+        var bd = $('npPlanHeaderMenuBackdrop');
+        if (bd) bd.click();
+      });
+    }
+    var subFiles = $('npNutriSubtabFiles');
+    var subLinks = $('npNutriSubtabLinks');
+    if (subFiles && subFiles.dataset.npWired !== '1') {
+      subFiles.dataset.npWired = '1';
+      subFiles.addEventListener('click', function () {
+        setNutriProPanel('files');
+      });
+    }
+    if (subLinks && subLinks.dataset.npWired !== '1') {
+      subLinks.dataset.npWired = '1';
+      subLinks.addEventListener('click', function () {
+        setNutriProPanel('links');
+      });
+    }
+    var linkForm = $('npNutriLinkForm');
+    if (linkForm && linkForm.dataset.npWired !== '1') {
+      linkForm.dataset.npWired = '1';
+      linkForm.addEventListener('submit', saveNutriProLinkFromForm);
+    }
+    var linkCancel = $('npNutriLinkCancelBtn');
+    if (linkCancel && linkCancel.dataset.npWired !== '1') {
+      linkCancel.dataset.npWired = '1';
+      linkCancel.addEventListener('click', function () {
+        resetNutriProLinkForm();
+      });
+    }
+  }
+
   async function tryShowMain() {
     $('npLoginErr').classList.add('np-hide');
     $('npDenied').classList.add('np-hide');
@@ -15124,8 +16788,10 @@
     $('npHeaderLogged').classList.remove('np-hide');
     npCloudSync.sessionReady = true;
     npCloudSyncRender();
+    refreshPlanProStorageUsage();
     npCloudOfflineFlushQueue();
     wireCreateFichaPill();
+    wireNutriProVault();
     clearRichEditor();
     if (typeof window.initPlanProAssistant === 'function') window.initPlanProAssistant();
 
