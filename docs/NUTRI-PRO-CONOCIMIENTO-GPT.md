@@ -2,12 +2,13 @@
 
 **Nutri PRO** es la bóveda técnica privada dentro de **Plan PRO** (Cerebro Digital de Jesús): carpetas, archivos (PDF, Excel, Office, imágenes) y enlaces clasificados. Los apuntes Plan PRO pueden enlazar archivos con rutas cortas 📎 en la libreta.
 
-## Actions API (OpenAPI v2.3+)
+## Actions API (OpenAPI v2.4+)
 
 | action | Uso |
 |--------|-----|
-| `nutri_pro_catalog` | Lista carpetas, archivos y enlaces (metadatos, rutas, tamaños). |
-| `nutri_pro_search` | Busca por `q` en nombres de archivo, ruta (`short_path`), enlaces, URL. |
+| `nutri_pro_catalog` | Lista carpetas, archivos y enlaces. En archivos: `extract_status`, `text_indexed`, `text_char_count`. |
+| `nutri_pro_search` | Busca por `q` en nombres, rutas **y texto indexado** (`matched_in_content`). |
+| `nutri_pro_file_text` | Lee fragmento del texto extraído de un archivo (`nutri_file_id`). |
 | `plan_pro_item` | Detalle de apunte; incluye **`nutri_refs`** (enlaces 📎 a archivos). |
 | `plan_pro_search` | Busca apuntes por título/nota (complemento). |
 
@@ -22,16 +23,20 @@
 ```
 
 ```json
-{ "action": "nutri_pro_search", "params": { "q": "manual", "kind": "files" } }
-```
-
-```json
-{ "action": "nutri_pro_search", "params": { "q": "ndvi", "kind": "links", "category": "investigacion" } }
+{ "action": "nutri_pro_search", "params": { "q": "potasio", "kind": "files" } }
 ```
 
 ```json
 { "action": "nutri_pro_search", "params": { "nutri_file_id": "uuid-del-archivo" } }
 ```
+
+**nutri_pro_file_text** — leer contenido:
+
+```json
+{ "action": "nutri_pro_file_text", "params": { "nutri_file_id": "uuid", "max_chars": 12000 } }
+```
+
+Paginación: `offset` (siguiente trozo si `has_more` es true).
 
 **plan_pro_item** — ver rutas Nutri en un apunte:
 
@@ -39,37 +44,56 @@
 { "action": "plan_pro_item", "params": { "q": "título del apunte" } }
 ```
 
-Revisa `item.nutri_refs`: cada entrada tiene `nutri_file_id`, `label`, `short_path` (si el archivo existe).
+## Formatos con texto indexado (Fase 2)
+
+| Formato | Indexación |
+|---------|------------|
+| PDF | ✅ texto (no OCR si es escaneado) |
+| Word `.docx` | ✅ |
+| Excel `.xlsx`, `.xls`, `.csv` | ✅ (hojas como CSV en texto) |
+| PowerPoint `.pptx` | ✅ (texto de diapositivas) |
+| `.txt`, `.rtf` | ✅ |
+| OpenDocument `.odt`, `.ods`, `.odp` | ✅ |
+| Word `.doc`, PowerPoint `.ppt` (antiguos) | ❌ — guardar como docx/pptx |
+| Imágenes (png, jpg, etc.) | ❌ — OCR en fase posterior |
+
+Tras subir en Plan PRO → Nutri PRO, la indexación corre en segundo plano (unos segundos).
 
 ## Qué SÍ puedes hacer hoy
 
-- Listar qué documentos hay en Nutri PRO (nombre, carpeta, tipo MIME, tamaño).
-- Buscar archivos/enlaces por palabra clave.
-- Cruzar **apunte ↔ archivo** vía `nutri_refs` en `plan_pro_item`.
-- Citar rutas: `Fertirriego/Manual_NPK.pdf` y el `nutri_file_id`.
+- Listar documentos (nombre, carpeta, si tiene texto indexado).
+- Buscar por palabra en **nombre o contenido**.
+- Leer fragmentos con `nutri_pro_file_text` y citar `short_path`.
+- Cruzar apunte ↔ archivo vía `nutri_refs` en `plan_pro_item`.
+- Responder preguntas sobre tablas Excel o párrafos PDF **si** `text_indexed` es true.
 
-## Qué NO puedes hacer aún (fase 2)
+## Qué NO puedes hacer aún
 
-- Leer el **contenido** dentro de PDF/Excel (tablas, cifras, párrafos).
-- Responder “¿cuánto K hay en la celda B12?” sin extracción de texto indexada.
+- OCR en imágenes o PDF escaneado sin capa de texto.
+- Leer `.doc` / `.ppt` binarios antiguos (sugerir re-guardar como docx/pptx).
+- Abrir URL firmada del binario (solo texto en Supabase).
 
-Si el usuario pide eso, indica que el archivo está catalogado pero el texto aún no está indexado; sugiere abrirlo en Plan PRO → Nutri PRO o esperar fase de extracción.
+Si `extract.status` es `skipped` o `missing`, explica el motivo (`error_message`) y sugiere re-subir o convertir formato.
 
 ## Clasificación de enlaces
 
-Categorías fijas: nutrición vegetal, agronomía, trabajo, personal, negocio, investigación, herramientas, inglés, escuela, idiomas, finanzas, salud, otro. El usuario puede crear **categorías personalizadas** (se guardan como `custom_nombre`).
+Categorías fijas: nutrición vegetal, agronomía, trabajo, personal, negocio, investigación, herramientas, inglés, escuela, idiomas, finanzas, salud, otro. Categorías personalizadas: `custom_nombre`.
 
-## Storage
+## Storage y tablas
 
-- Bucket archivos: `plan-pro-nutri-pro` (privado; la API no devuelve URL firmada en fase 1).
-- Tablas: `plan_pro_nutri_folders`, `plan_pro_nutri_files`, `plan_pro_nutri_links`.
+- Bucket: `plan-pro-nutri-pro` (privado).
+- Tablas: `plan_pro_nutri_folders`, `plan_pro_nutri_files`, `plan_pro_nutri_links`, `plan_pro_nutri_file_extracts`.
 
 ## Flujo recomendado en chat
 
 1. “¿Qué tengo sobre X?” → `nutri_pro_search` con `q: X`.
-2. “¿Qué apuntes hablan de ese PDF?” → `plan_pro_search` + `plan_pro_item` y revisar `nutri_refs`.
-3. “Resume mi bóveda” → `nutri_pro_catalog` y agrupa por carpetas/categorías.
+2. “¿Qué dice el PDF/Excel sobre Y?” → search → `nutri_pro_file_text` con el `nutri_file_id`.
+3. “¿Qué apuntes enlazan ese archivo?” → `plan_pro_item` / `plan_pro_search` + `nutri_refs`.
+4. “Resume mi bóveda” → `nutri_pro_catalog`.
 
 ## Deploy
 
-Tras cambios en Netlify: reimportar `docs/openapi-nutriplant-admin.json` v2.3.0 en ChatGPT Actions y subir este archivo a **Knowledge**.
+1. SQL: `supabase-plan-pro-nutri-pro-extracts.sql` en Supabase.
+2. Deploy Netlify.
+3. Reimportar `docs/openapi-nutriplant-admin.json` **v2.4.0** en ChatGPT Actions.
+4. Subir este archivo a **Knowledge**.

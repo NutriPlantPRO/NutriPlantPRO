@@ -16776,6 +16776,74 @@
     return /\.(png|jpe?g|webp|gif|bmp|tiff?|heic|heif|svg)$/i.test(n);
   }
 
+  function nutriProExtractStatusLabel(ex) {
+    if (!ex || !ex.status) return '';
+    if (ex.status === 'done') {
+      var n = ex.meta_json && ex.meta_json.char_count != null ? ex.meta_json.char_count : null;
+      return ' · ✓ texto indexado' + (n != null ? ' (' + n + ' car.)' : '');
+    }
+    if (ex.status === 'processing' || ex.status === 'pending') return ' · ⏳ indexando…';
+    if (ex.status === 'skipped') return ' · sin texto extraíble';
+    if (ex.status === 'error') return ' · error al indexar';
+    return '';
+  }
+
+  function nutriProApiBase() {
+    return (
+      (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) ||
+      (window.location && window.location.origin) ||
+      'http://localhost:8000'
+    );
+  }
+
+  async function requestNutriProFileExtract(fileId, force) {
+    if (!fileId || !state.client) return null;
+    var sessRes = await state.client.auth.getSession();
+    var token =
+      sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.access_token
+        ? sessRes.data.session.access_token
+        : '';
+    if (!token) return null;
+    try {
+      var res = await fetch(nutriProApiBase() + '/api/nutri-pro-extract', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        },
+        body: JSON.stringify({ file_id: fileId, force: !!force })
+      });
+      return await res.json();
+    } catch (eReq) {
+      return null;
+    }
+  }
+
+  function scheduleNutriProExtractRefresh(delays) {
+    (delays || [3000, 10000]).forEach(function (ms) {
+      setTimeout(function () {
+        if (state.nutriProReady) loadNutriProFiles(state.nutriProSelectedFolderId);
+      }, ms);
+    });
+  }
+
+  async function loadNutriProFileExtracts(fileIds) {
+    var map = {};
+    if (!state.client || !fileIds || !fileIds.length) return map;
+    var res = await state.client
+      .from('plan_pro_nutri_file_extracts')
+      .select('file_id,status,format_kind,meta_json,error_message,extracted_at')
+      .in('file_id', fileIds);
+    if (res.error) {
+      if (/plan_pro_nutri_file_extracts|does not exist|schema cache/i.test(res.error.message || '')) return map;
+      throw res.error;
+    }
+    (res.data || []).forEach(function (row) {
+      if (row && row.file_id) map[row.file_id] = row;
+    });
+    return map;
+  }
+
   function nutriProFileIsAllowed(file) {
     if (!file || !file.name) return false;
     if (NP_NUTRI_FILE_EXT_OK.test(file.name)) return true;
@@ -17176,7 +17244,8 @@
       sub.className = 'np-nutri-file-sub';
       sub.textContent =
         formatPlanProStorageSize(file.size_bytes || 0) +
-        (file.updated_at ? ' · ' + fmtDate(file.updated_at) : '');
+        (file.updated_at ? ' · ' + fmtDate(file.updated_at) : '') +
+        nutriProExtractStatusLabel(file._extract);
       meta.appendChild(t);
       meta.appendChild(sub);
       var btns = document.createElement('div');
@@ -17272,7 +17341,15 @@
       }
       throw res.error;
     }
-    state.nutriProFiles = res.data || [];
+    var files = res.data || [];
+    var ids = files.map(function (f) {
+      return f && f.id;
+    }).filter(Boolean);
+    var extractMap = await loadNutriProFileExtracts(ids);
+    files.forEach(function (f) {
+      if (f && f.id && extractMap[f.id]) f._extract = extractMap[f.id];
+    });
+    state.nutriProFiles = files;
     renderNutriProFilesList();
     return state.nutriProFiles;
   }
@@ -17350,6 +17427,7 @@
     var ok = 0;
     var fail = 0;
     var lastErr = '';
+    var uploadedIds = [];
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
       if (!file || !file.name) continue;
@@ -17415,6 +17493,7 @@
         continue;
       }
       ok += 1;
+      uploadedIds.push(fileId);
     }
     state.nutriProPendingUploads = null;
     var inp = $('npNutriFileInput');
@@ -17431,6 +17510,10 @@
         stDone.textContent = '';
       }
       schedulePlanProStorageUsageRefresh(5000, true);
+      uploadedIds.forEach(function (fid) {
+        requestNutriProFileExtract(fid, false);
+      });
+      scheduleNutriProExtractRefresh([3000, 10000, 25000]);
       await loadNutriProFiles(folderId);
     } else if (fail) {
       var finalMsg = lastErr || 'No se pudieron subir los archivos.';

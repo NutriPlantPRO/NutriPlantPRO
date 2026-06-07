@@ -35,12 +35,7 @@ Estado vivo del plan para correlacionar apuntes, archivos y chat.
 | Action `nutri_pro_search` (por nombre/carpeta) | ✅ |
 | `plan_pro_item` devuelve `nutri_refs` | ✅ |
 | Knowledge `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` | ✅ |
-| OpenAPI v2.3 con acciones Nutri PRO | ✅ |
-
-**Tú en ChatGPT Socio (después del deploy):**
-1. Reimportar `docs/openapi-nutriplant-admin.json` v2.3.0 en Actions.
-2. Subir `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` a Knowledge.
-3. Probar: «¿Qué archivos tengo sobre fertirriego?» → `nutri_pro_search`.
+| OpenAPI v2.3+ con acciones Nutri PRO | ✅ |
 
 **Resultado:** ChatGPT Socio lista archivos/enlaces y cruza con apuntes vía `nutri_refs`.
 
@@ -50,11 +45,26 @@ Estado vivo del plan para correlacionar apuntes, archivos y chat.
 
 | Paso | Estado |
 |------|--------|
-| Tabla `plan_pro_nutri_file_extracts` (texto extraído) | ⬜ |
-| Extractor PDF al subir | ⬜ |
-| Extractor Excel (.xlsx) al subir | ⬜ |
-| Extractor Word (.docx) | ⬜ |
+| Tabla `plan_pro_nutri_file_extracts` | ✅ |
+| Función Netlify `nutri-pro-extract` tras subida | ✅ |
+| PDF | ✅ |
+| Excel (.xlsx, .xls, .csv) | ✅ |
+| Word (.docx) | ✅ |
+| PowerPoint (.pptx) | ✅ |
+| Texto (.txt, .rtf) | ✅ |
+| OpenDocument (.odt, .ods, .odp) | ✅ |
+| Action `nutri_pro_file_text` (GPT lee fragmentos) | ✅ |
+| `nutri_pro_search` también busca en texto indexado | ✅ |
 | OCR imágenes / PDF escaneado | ⬜ |
+| .doc / .ppt antiguos (binario) | ⬜ (guardar como docx/pptx) |
+
+**Formatos aceptados en subida pero sin texto aún:** imágenes (png, jpg…), `.doc`, `.ppt` legacy.
+
+**Tú en Supabase + deploy:**
+1. Ejecutar `supabase-plan-pro-nutri-pro-extracts.sql`.
+2. Deploy Netlify (instala `pdf-parse`, `xlsx`, `mammoth`, `jszip`).
+3. Reimportar OpenAPI **v2.4.0** en ChatGPT Socio.
+4. Probar subir un PDF y preguntar: «¿Qué dice el Excel de costos sobre K?» → `nutri_pro_search` + `nutri_pro_file_text`.
 
 **Resultado:** El archivo deja de ser caja negra; hay texto buscable en Supabase.
 
@@ -64,12 +74,12 @@ Estado vivo del plan para correlacionar apuntes, archivos y chat.
 
 | Paso | Estado |
 |------|--------|
-| Búsqueda full-text en extracts | ⬜ |
+| Búsqueda full-text avanzada (ranking, snippets) | ⬜ |
 | Action `nutri_pro_ask` (fragmentos + cita) | ⬜ |
 | Cruce automático: pregunta → apuntes + archivos enlazados | ⬜ |
 | Embeddings / pgvector (si hace falta escala) | ⬜ |
 
-**Resultado:** “¿Cuánto K en el Excel de costos?” busca dentro del xlsx y cita la fuente.
+**Resultado:** “¿Cuánto K en el Excel de costos?” busca dentro del xlsx y cita la fuente con fragmento preciso.
 
 ---
 
@@ -86,10 +96,10 @@ Estado vivo del plan para correlacionar apuntes, archivos y chat.
 ## Orden recomendado
 
 1. ~~**Fase 1**~~ ✅ — API catálogo para ChatGPT Socio.
-2. **Fase 2** — PDF + Excel primero (siguiente paso de código).
-3. **Fase 3** — búsqueda en texto extraído.
+2. ~~**Fase 2**~~ ✅ — extracción PDF/Office/texto al subir.
+3. **Fase 3** — búsqueda avanzada y `nutri_pro_ask`.
 4. **Fase 4** — automatizar en ambos chats.
 
 ---
 
-*Última actualización: Fase 1 API + nutri_refs en plan_pro_item.*
+*Última actualización: Fase 2 extracción de texto + nutri_pro_file_text (OpenAPI v2.4).*

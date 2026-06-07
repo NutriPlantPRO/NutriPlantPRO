@@ -20,6 +20,10 @@
 [functions."radar-ndvi"]
   timeout = 60
 
+[functions."nutri-pro-extract"]
+  timeout = 60
+  external_node_modules = ["pdf-parse", "xlsx", "mammoth", "jszip"]
+
 # Inicio: por defecto ir a login (la mayoría de equipos)
 [[redirects]]
   from = "/"
@@ -79,5 +83,11 @@
 [[redirects]]
   from = "/api/admin-assistant/openapi.json"
   to = "/.netlify/functions/nutriplant-admin-assistant"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/nutri-pro-extract"
+  to = "/.netlify/functions/nutri-pro-extract"
   status = 200
   force = true
