@@ -109,3 +109,9 @@
   to = "/.netlify/functions/plan-pro-fx-rate"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/plan-pro-calendar-feed"
+  to = "/.netlify/functions/plan-pro-calendar-feed"
+  status = 200
+  force = true

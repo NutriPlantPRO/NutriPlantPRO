@@ -8530,6 +8530,14 @@
               >
                 Descargar agenda del mes (.ics)
               </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-ghost-green"
+                id="npCalSubscribeBtn"
+                title="Suscripción automática en Outlook (se actualiza sola)"
+              >
+                Enlace para Outlook
+              </button>
             </div>
             <div id="npCalSendStatus" class="np-hide" aria-live="polite"></div>
           </div>
@@ -9059,10 +9067,44 @@
         <div id="npCalOverlayGrid" class="np-cal-overlay-grid" role="grid" aria-label="Mes con semáforos"></div>
       </div>
       <div id="npCalOverlaySummaryPop" class="np-cal-overlay-summary-pop np-hide" role="dialog" aria-hidden="true" aria-label="Detalle de semáforos"></div>
-      <div class="np-modal-foot" style="padding:10px 16px 14px;border-top:1px solid rgba(148,163,184,0.35);">
+      <div class="np-modal-foot" style="padding:10px 16px 14px;border-top:1px solid rgba(148,163,184,0.35);display:flex;flex-wrap:wrap;gap:8px;">
         <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayDownloadBtn">
           Descargar agenda del mes (.ics)
         </button>
+        <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlaySubscribeBtn">
+          Enlace para Outlook
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="npCalSubscribeModal" class="np-modal-overlay" aria-hidden="true">
+    <div class="np-modal-panel" role="dialog" aria-labelledby="npCalSubscribeTitle" style="max-width:520px;">
+      <div class="np-modal-head">
+        <h3 id="npCalSubscribeTitle" style="margin:0;font-size:1rem;">Suscribir calendario Plan PRO</h3>
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalSubscribeClose" style="flex-shrink:0;">Cerrar</button>
+      </div>
+      <div class="np-modal-body" style="padding-top:8px;">
+        <p class="np-muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;">
+          Outlook consultará este enlace de forma periódica y actualizará tus eventos cuando cambies fechas en Plan PRO.
+          <strong>No abras el enlace en Chrome para suscribirte</strong> — úsalo solo dentro de Outlook.
+        </p>
+        <label for="npCalSubscribeHttps" class="np-compact-label">Enlace HTTPS</label>
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+          <input type="text" id="npCalSubscribeHttps" readonly autocomplete="off" style="flex:1;font-size:12px;" />
+          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalSubscribeCopyHttps">Copiar</button>
+        </div>
+        <label for="npCalSubscribeWebcal" class="np-compact-label">Enlace webcal (alternativo)</label>
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+          <input type="text" id="npCalSubscribeWebcal" readonly autocomplete="off" style="flex:1;font-size:12px;" />
+          <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalSubscribeCopyWebcal">Copiar</button>
+        </div>
+        <ol class="np-cal-subscribe-steps" style="margin:0;padding-left:20px;font-size:13px;line-height:1.55;color:#334155;">
+          <li>Outlook web o app → <strong>Agregar calendario</strong> → <strong>Suscribirse desde web</strong>.</li>
+          <li>Pega el enlace HTTPS (o webcal).</li>
+          <li>Guarda. Los cambios en Plan PRO aparecerán en la próxima sincronización (puede tardar horas).</li>
+        </ol>
+        <p id="npCalSubscribeErr" class="np-hide" style="margin:12px 0 0;font-size:13px;color:#b91c1c;"></p>
       </div>
     </div>
   </div>
@@ -17243,6 +17285,98 @@
     el.textContent = message;
   }
 
+  function planProApiBase() {
+    return (
+      (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) ||
+      (window.location && window.location.origin) ||
+      'http://localhost:8888'
+    );
+  }
+
+  function closePlanProCalendarSubscribeModal() {
+    var modal = $('npCalSubscribeModal');
+    if (!modal) return;
+    modal.classList.remove('np-modal-open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  async function fetchPlanProCalendarSubscribeUrls() {
+    if (!state.client) throw new Error('Sin conexión a Supabase.');
+    var sessRes = await state.client.auth.getSession();
+    var token =
+      sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.access_token
+        ? sessRes.data.session.access_token
+        : '';
+    if (!token) throw new Error('Inicia sesión como administrador.');
+    var res = await fetch(planProApiBase() + '/api/plan-pro-calendar-feed', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/json' },
+      cache: 'no-store'
+    });
+    var data = {};
+    try {
+      data = await res.json();
+    } catch (eJson) {}
+    if (!res.ok) {
+      throw new Error((data && (data.message || data.error)) || 'No se pudo obtener el enlace.');
+    }
+    return data;
+  }
+
+  async function copyTextToClipboard(text) {
+    var val = String(text || '');
+    if (!val) return false;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(val);
+      return true;
+    }
+    var ta = document.createElement('textarea');
+    ta.value = val;
+    ta.setAttribute('readonly', 'readonly');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch (eCopy) {}
+    ta.remove();
+    return ok;
+  }
+
+  async function openPlanProCalendarSubscribeModal() {
+    var modal = $('npCalSubscribeModal');
+    var httpsInp = $('npCalSubscribeHttps');
+    var webcalInp = $('npCalSubscribeWebcal');
+    var errEl = $('npCalSubscribeErr');
+    if (!modal || !httpsInp || !webcalInp) return;
+    if (errEl) {
+      errEl.classList.add('np-hide');
+      errEl.textContent = '';
+    }
+    httpsInp.value = 'Cargando enlace…';
+    webcalInp.value = '';
+    modal.classList.add('np-modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+    try {
+      var data = await fetchPlanProCalendarSubscribeUrls();
+      httpsInp.value = data.httpsUrl || '';
+      webcalInp.value = data.webcalUrl || data.httpsUrl || '';
+      setCalSendStatus($('npCalSendStatus'), 'Enlace listo para Outlook.', false);
+    } catch (err) {
+      httpsInp.value = '';
+      webcalInp.value = '';
+      var msg = (err && err.message) || 'No se pudo cargar el enlace.';
+      if (errEl) {
+        errEl.textContent = msg;
+        errEl.classList.remove('np-hide');
+      } else {
+        showToast(msg, true);
+      }
+    }
+  }
+
   function closeCalDayModal() {
     var m = $('npCalDayModal');
     if (!m) return;
@@ -22689,6 +22823,50 @@
   if (npCalDownloadMonthBtn) {
     npCalDownloadMonthBtn.addEventListener('click', function () {
       downloadCalendarIcs('month', null, $('npCalSendStatus'));
+    });
+  }
+  var npCalSubscribeBtn = $('npCalSubscribeBtn');
+  if (npCalSubscribeBtn && npCalSubscribeBtn.dataset.npWired !== '1') {
+    npCalSubscribeBtn.dataset.npWired = '1';
+    npCalSubscribeBtn.addEventListener('click', function () {
+      openPlanProCalendarSubscribeModal();
+    });
+  }
+  var npCalOverlaySubscribeBtn = $('npCalOverlaySubscribeBtn');
+  if (npCalOverlaySubscribeBtn && npCalOverlaySubscribeBtn.dataset.npWired !== '1') {
+    npCalOverlaySubscribeBtn.dataset.npWired = '1';
+    npCalOverlaySubscribeBtn.addEventListener('click', function () {
+      openPlanProCalendarSubscribeModal();
+    });
+  }
+  var npCalSubscribeClose = $('npCalSubscribeClose');
+  if (npCalSubscribeClose && npCalSubscribeClose.dataset.npWired !== '1') {
+    npCalSubscribeClose.dataset.npWired = '1';
+    npCalSubscribeClose.addEventListener('click', closePlanProCalendarSubscribeModal);
+  }
+  var npCalSubscribeModal = $('npCalSubscribeModal');
+  if (npCalSubscribeModal && npCalSubscribeModal.dataset.npWired !== '1') {
+    npCalSubscribeModal.dataset.npWired = '1';
+    npCalSubscribeModal.addEventListener('click', function (e) {
+      if (e.target === npCalSubscribeModal) closePlanProCalendarSubscribeModal();
+    });
+  }
+  var npCalSubscribeCopyHttps = $('npCalSubscribeCopyHttps');
+  if (npCalSubscribeCopyHttps && npCalSubscribeCopyHttps.dataset.npWired !== '1') {
+    npCalSubscribeCopyHttps.dataset.npWired = '1';
+    npCalSubscribeCopyHttps.addEventListener('click', async function () {
+      var inp = $('npCalSubscribeHttps');
+      var ok = await copyTextToClipboard(inp && inp.value);
+      showToast(ok ? 'Enlace HTTPS copiado.' : 'No se pudo copiar.', !ok);
+    });
+  }
+  var npCalSubscribeCopyWebcal = $('npCalSubscribeCopyWebcal');
+  if (npCalSubscribeCopyWebcal && npCalSubscribeCopyWebcal.dataset.npWired !== '1') {
+    npCalSubscribeCopyWebcal.dataset.npWired = '1';
+    npCalSubscribeCopyWebcal.addEventListener('click', async function () {
+      var inp = $('npCalSubscribeWebcal');
+      var ok = await copyTextToClipboard(inp && inp.value);
+      showToast(ok ? 'Enlace webcal copiado.' : 'No se pudo copiar.', !ok);
     });
   }
   var npCalDayDownloadBtn = $('npCalDayDownloadBtn');
