@@ -9024,12 +9024,13 @@
     var res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('No se pudo consultar el tipo de cambio.');
     var data = await res.json();
-    if (!data || data.result !== 'success' || !data.conversion_rates || data.conversion_rates[t] == null) {
+    var rates = (data && (data.rates || data.conversion_rates)) || null;
+    if (!data || data.result !== 'success' || !rates || rates[t] == null) {
       throw new Error('Par de monedas no disponible.');
     }
     var updatedAt = Date.now();
     if (data.time_last_update_unix) updatedAt = data.time_last_update_unix * 1000;
-    return { rate: Number(data.conversion_rates[t]), updatedAt: updatedAt, source: 'open.er-api' };
+    return { rate: Number(rates[t]), updatedAt: updatedAt, source: 'open.er-api' };
   }
 
   async function refreshPlanProFxRate(force) {
@@ -9440,57 +9441,74 @@
     };
   }
 
+  async function planProWeatherApplyCoords(lat, lng, geocode) {
+    var moved = planProWeatherCoordsChanged(lat, lng);
+    planProWeatherState.lat = lat;
+    planProWeatherState.lng = lng;
+    if (geocode && (moved || !planProWeatherState.placeName)) {
+      try {
+        planProWeatherState.placeName = await planProReverseGeocodeWeather(lat, lng);
+      } catch (geoErr) {
+        planProWeatherState.placeName = lat.toFixed(3) + ', ' + lng.toFixed(3);
+      }
+    }
+    planProWeatherSaveCachedLoc();
+  }
+
+  async function planProWeatherTryUpdateLocation(forceFresh) {
+    if (planProWeatherLocLoading) return null;
+    planProWeatherLocLoading = true;
+    try {
+      var loc = await planProWeatherRequestLocation(!!forceFresh);
+      await planProWeatherApplyCoords(loc.lat, loc.lng, true);
+      return loc;
+    } catch (e) {
+      return null;
+    } finally {
+      planProWeatherLocLoading = false;
+    }
+  }
+
+  async function planProWeatherFetchAndRender() {
+    if (!isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng)) {
+      throw new Error('Permite ubicación o pulsa «Mi ubicación».');
+    }
+    var hit = await planProFetchWeatherReading(planProWeatherState.lat, planProWeatherState.lng);
+    planProWeatherState.temp = hit.temp;
+    planProWeatherState.humidity = hit.humidity;
+    planProWeatherState.uv = hit.uv;
+    planProWeatherState.cloudCover = hit.cloudCover;
+    planProWeatherState.weatherCode = hit.weatherCode;
+    planProWeatherState.conditionShort = hit.conditionShort;
+    planProWeatherState.conditionLong = hit.conditionLong;
+    planProWeatherState.updatedAt = hit.updatedAt;
+    planProWeatherRenderUi({});
+  }
+
   async function refreshPlanProWeather(opts) {
     opts = opts || {};
     if (planProWeatherLoading && !opts.force) return;
     planProWeatherLoading = true;
-    var needLoc = opts.requestLocation || !isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng);
-    planProWeatherRenderUi({ loading: true, locating: !!needLoc });
+    var hasCoords = isFinite(planProWeatherState.lat) && isFinite(planProWeatherState.lng);
+    var mustLocate = !hasCoords || !!opts.forceLocation;
+    planProWeatherRenderUi({ loading: true, locating: mustLocate && !hasCoords });
     try {
-      if (needLoc) {
-        if (planProWeatherLocLoading && !opts.force) {
-          planProWeatherLoading = false;
-          return;
+      if (mustLocate) {
+        var loc = await planProWeatherTryUpdateLocation(!!opts.forceLocation);
+        if (!loc && !hasCoords) {
+          throw new Error('Permite ubicación o pulsa «Mi ubicación».');
         }
-        planProWeatherLocLoading = true;
-        try {
-          var loc = await planProWeatherRequestLocation(!!opts.forceLocation);
-          var moved = planProWeatherCoordsChanged(loc.lat, loc.lng);
-          planProWeatherState.lat = loc.lat;
-          planProWeatherState.lng = loc.lng;
-          if (moved || !planProWeatherState.placeName) {
-            try {
-              planProWeatherState.placeName = await planProReverseGeocodeWeather(loc.lat, loc.lng);
-            } catch (geoErr) {
-              planProWeatherState.placeName = loc.lat.toFixed(3) + ', ' + loc.lng.toFixed(3);
-            }
-          }
-          planProWeatherSaveCachedLoc();
-        } catch (locErr) {
-          if (!isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng)) {
-            throw locErr;
-          }
-        } finally {
-          planProWeatherLocLoading = false;
-        }
+      } else if (opts.requestLocation) {
+        planProWeatherTryUpdateLocation(false).then(function (locHit) {
+          if (!locHit) return;
+          planProWeatherFetchAndRender().catch(function () {});
+        });
       }
-      if (!isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng)) {
-        throw new Error('Permite ubicación o pulsa «Mi ubicación».');
-      }
-      var hit = await planProFetchWeatherReading(planProWeatherState.lat, planProWeatherState.lng);
-      planProWeatherState.temp = hit.temp;
-      planProWeatherState.humidity = hit.humidity;
-      planProWeatherState.uv = hit.uv;
-      planProWeatherState.cloudCover = hit.cloudCover;
-      planProWeatherState.weatherCode = hit.weatherCode;
-      planProWeatherState.conditionShort = hit.conditionShort;
-      planProWeatherState.conditionLong = hit.conditionLong;
-      planProWeatherState.updatedAt = hit.updatedAt;
-      planProWeatherRenderUi({});
+      await planProWeatherFetchAndRender();
     } catch (err) {
       planProWeatherRenderUi({
         error: (err && err.message) || 'Clima no disponible',
-        errorShort: needLoc ? 'sin GPS' : 'sin datos'
+        errorShort: mustLocate ? 'sin GPS' : 'sin datos'
       });
     } finally {
       planProWeatherLoading = false;
