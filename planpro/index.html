@@ -6778,6 +6778,15 @@
       justify-content: center;
       text-align: center;
     }
+    button.np-cal-download-btn--compact {
+      width: auto !important;
+      align-self: flex-start;
+      max-width: 100%;
+      font-size: 10px !important;
+      padding: 4px 9px !important;
+      line-height: 1.25 !important;
+      font-weight: 600;
+    }
     #npCalDaySendStatus {
       margin-top: 10px;
       font-size: 13px;
@@ -8524,7 +8533,7 @@
             <div class="np-sidebar-cal-actions">
               <button
                 type="button"
-                class="btn btn-ghost btn-ghost-blue"
+                class="btn btn-ghost btn-ghost-blue np-cal-download-btn--compact"
                 id="npCalDownloadMonthBtn"
                 title="Descarga el .ics en este dispositivo"
               >
@@ -8532,8 +8541,10 @@
               </button>
               <button
                 type="button"
-                class="btn btn-ghost btn-ghost-green"
+                class="btn btn-ghost btn-ghost-green np-hide"
                 id="npCalSubscribeBtn"
+                hidden
+                aria-hidden="true"
                 title="Suscripción automática en Outlook (se actualiza sola)"
               >
                 Enlace para Outlook
@@ -9068,10 +9079,16 @@
       </div>
       <div id="npCalOverlaySummaryPop" class="np-cal-overlay-summary-pop np-hide" role="dialog" aria-hidden="true" aria-label="Detalle de semáforos"></div>
       <div class="np-modal-foot" style="padding:10px 16px 14px;border-top:1px solid rgba(148,163,184,0.35);display:flex;flex-wrap:wrap;gap:8px;">
-        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayDownloadBtn">
+        <button type="button" class="btn btn-ghost btn-ghost-blue np-cal-download-btn--compact" id="npCalOverlayDownloadBtn">
           Descargar agenda del mes (.ics)
         </button>
-        <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlaySubscribeBtn">
+        <button
+          type="button"
+          class="btn btn-ghost btn-ghost-green np-hide"
+          id="npCalOverlaySubscribeBtn"
+          hidden
+          aria-hidden="true"
+        >
           Enlace para Outlook
         </button>
       </div>
