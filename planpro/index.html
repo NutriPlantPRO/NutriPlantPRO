@@ -627,6 +627,124 @@
     .np-storage-usage-pill[data-state='cached'] .np-storage-usage-sub {
       color: #94a3b8;
     }
+    .np-fx-rate-pill {
+      flex-shrink: 0;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 88px;
+      max-width: 148px;
+      height: 44px;
+      padding: 4px 9px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+      color: #334155;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+      transition: background 0.18s ease, border-color 0.2s ease, transform 0.15s ease;
+      font-family: inherit;
+      line-height: 1.15;
+    }
+    .np-fx-rate-pill:hover,
+    .np-fx-rate-pill:focus-visible,
+    .np-fx-rate-pill.np-fx-rate-pill--open {
+      background: rgba(255, 255, 255, 0.98);
+      border-color: color-mix(in srgb, #2563eb 32%, rgba(148, 163, 184, 0.38));
+      transform: translateY(-1px);
+      outline: none;
+    }
+    .np-fx-rate-pill[data-state='loading'] {
+      color: #64748b;
+    }
+    .np-fx-rate-pill[data-state='error'] {
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #b91c1c;
+    }
+    .np-fx-rate-num {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .np-fx-rate-sub {
+      font-size: 8px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .np-fx-rate-popover {
+      position: fixed;
+      z-index: 12050;
+      width: min(92vw, 300px);
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+      padding: 12px 12px 10px;
+      box-sizing: border-box;
+    }
+    .np-fx-rate-popover.np-hide {
+      display: none;
+    }
+    .np-fx-rate-pop-head {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 8px;
+    }
+    .np-fx-rate-pop-live {
+      margin: 0 0 10px;
+      font-size: 18px;
+      font-weight: 800;
+      color: #1e3a8a;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+    .np-fx-rate-pop-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .np-fx-rate-pop-row label {
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .np-fx-rate-pop-row select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: #fff;
+      font-size: 12px;
+      font-family: inherit;
+      color: #334155;
+    }
+    .np-fx-rate-pop-meta {
+      margin: 0 0 8px;
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.35;
+    }
+    .np-fx-rate-pop-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .np-fx-rate-pop-actions .btn-mac-link {
+      font-size: 10px;
+      padding: 5px 8px;
+    }
     @media (max-width: 520px) {
       .np-storage-usage-pill {
         min-width: 62px;
@@ -635,6 +753,146 @@
       .np-storage-usage-num {
         font-size: 11px;
       }
+      .np-fx-rate-pill {
+        min-width: 72px;
+        max-width: 118px;
+        padding: 4px 6px;
+      }
+      .np-fx-rate-num {
+        font-size: 10px;
+      }
+      .np-weather-pill {
+        min-width: 92px;
+        max-width: 132px;
+        padding: 4px 6px;
+      }
+      .np-weather-num {
+        font-size: 9px;
+      }
+      .np-weather-sub {
+        font-size: 7px;
+      }
+    }
+    .np-weather-pill {
+      flex-shrink: 0;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 108px;
+      max-width: 168px;
+      height: 44px;
+      padding: 4px 9px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      background: linear-gradient(180deg, rgba(255, 253, 247, 0.96) 0%, rgba(254, 249, 235, 0.9) 100%);
+      color: #334155;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+      transition: background 0.18s ease, border-color 0.2s ease, transform 0.15s ease;
+      font-family: inherit;
+      line-height: 1.15;
+    }
+    .np-weather-pill:hover,
+    .np-weather-pill:focus-visible,
+    .np-weather-pill.np-weather-pill--open {
+      background: rgba(255, 253, 247, 0.99);
+      border-color: color-mix(in srgb, #d97706 32%, rgba(148, 163, 184, 0.38));
+      transform: translateY(-1px);
+      outline: none;
+    }
+    .np-weather-pill[data-state='loading'] {
+      color: #64748b;
+    }
+    .np-weather-pill[data-state='error'] {
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #b91c1c;
+    }
+    .np-weather-num {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .np-weather-sub {
+      font-size: 8px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .np-weather-popover {
+      position: fixed;
+      z-index: 12050;
+      width: min(92vw, 300px);
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+      padding: 12px 12px 10px;
+      box-sizing: border-box;
+    }
+    .np-weather-popover.np-hide {
+      display: none;
+    }
+    .np-weather-pop-head {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 6px;
+    }
+    .np-weather-pop-live {
+      margin: 0 0 8px;
+      font-size: 17px;
+      font-weight: 800;
+      color: #92400e;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.25;
+    }
+    .np-weather-pop-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 10px;
+      margin: 0 0 8px;
+    }
+    .np-weather-pop-grid div {
+      font-size: 11px;
+      color: #334155;
+      line-height: 1.35;
+    }
+    .np-weather-pop-grid strong {
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+    .np-weather-pop-place {
+      margin: 0 0 8px;
+      font-size: 10px;
+      color: #475569;
+      line-height: 1.35;
+    }
+    .np-weather-pop-meta {
+      margin: 0 0 8px;
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.35;
+    }
+    .np-weather-pop-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .np-weather-pop-actions .btn-mac-link {
+      font-size: 10px;
+      padding: 5px 8px;
     }
     .np-app-mode-tabs {
       display: flex;
@@ -6425,7 +6683,7 @@
       align-items: center;
       justify-content: center;
       gap: 8px 12px;
-      padding: 4px 6px 6px;
+      padding: 2px 6px 4px;
       margin-bottom: 2px;
       border-bottom: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 12%, rgba(148, 163, 184, 0.32));
       position: sticky;
@@ -6447,29 +6705,29 @@
       letter-spacing: 0.01em;
     }
     .np-cal-overlay-panel .np-modal-head {
-      padding-bottom: 8px;
+      padding-bottom: 6px;
     }
     .np-cal-overlay-summary-wrap {
       position: relative;
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      margin: 0 0 4px;
+      margin: 0 0 2px;
       flex-shrink: 0;
       min-width: 0;
     }
     .np-cal-overlay-summary {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
       font-size: 11px;
       color: #64748b;
       width: 100%;
       max-width: 100%;
       min-width: 0;
       box-sizing: border-box;
-      padding: 6px 10px;
-      border-radius: 10px;
+      padding: 4px 8px;
+      border-radius: 9px;
       border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, rgba(148, 163, 184, 0.35));
       background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 5%, rgba(255, 255, 255, 0.88));
       overflow: hidden;
@@ -6482,8 +6740,9 @@
       width: 100%;
       justify-content: center;
       box-sizing: border-box;
-      padding: 5px 10px;
+      padding: 4px 8px;
       font-size: 11px;
+      line-height: 1.25;
     }
     .np-cal-overlay-summary-cols {
       display: flex;
@@ -6496,7 +6755,7 @@
     .np-cal-overlay-summary-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px 8px;
+      gap: 3px 6px;
       align-items: center;
       width: 100%;
       max-width: 100%;
@@ -6504,18 +6763,18 @@
       box-sizing: border-box;
     }
     .np-cal-overlay-summary-row--detail {
-      padding: 5px 8px;
-      border-radius: 8px;
+      padding: 3px 6px;
+      border-radius: 7px;
       background: rgba(255, 255, 255, 0.52);
       border: 1px solid rgba(148, 163, 184, 0.24);
       align-items: stretch;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
     }
     .np-cal-overlay-summary-chip-strip {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(min(100%, 148px), 1fr));
-      gap: 4px;
+      gap: 3px;
       width: 100%;
       max-width: 100%;
       min-width: 0;
@@ -6761,7 +7020,7 @@
       min-height: 0;
       min-width: 0;
       overflow: auto;
-      padding: 4px 12px 6px;
+      padding: 2px 12px 6px;
       display: flex;
       flex-direction: column;
     }
@@ -7027,18 +7286,18 @@
         gap: 8px;
       }
       .np-cal-overlay-body {
-        padding: 4px 6px 6px;
+        padding: 2px 6px 6px;
       }
       .np-cal-overlay-summary-wrap {
-        margin-bottom: 3px;
+        margin-bottom: 2px;
       }
       .np-cal-overlay-summary {
-        padding: 5px 8px;
-        gap: 3px;
+        padding: 3px 6px;
+        gap: 2px;
       }
       .np-cal-overlay-month-bar {
-        padding: 3px 4px 5px;
-        margin-bottom: 2px;
+        padding: 2px 4px 3px;
+        margin-bottom: 1px;
       }
       .np-cal-overlay-month-label {
         font-size: 0.98rem;
@@ -7532,6 +7791,50 @@
       </div>
       <div class="np-plan-actions np-hide" id="npHeaderLogged">
         <div class="np-plan-header-actions-inline">
+          <button type="button" class="np-fx-rate-pill" id="npFxRateBtn" data-state="loading" aria-live="polite" aria-expanded="false" aria-controls="npFxRatePopover" title="Tipo de cambio de referencia · toca para elegir monedas">
+            <span class="np-fx-rate-num" id="npFxRateNum">TC …</span>
+            <span class="np-fx-rate-sub" id="npFxRateSub">USD → MXN</span>
+          </button>
+          <div id="npFxRatePopover" class="np-fx-rate-popover np-hide" role="dialog" aria-hidden="true" aria-labelledby="npFxRatePopTitle">
+            <p id="npFxRatePopTitle" class="np-fx-rate-pop-head">Tipo de cambio</p>
+            <p id="npFxRatePopLive" class="np-fx-rate-pop-live">—</p>
+            <div class="np-fx-rate-pop-row">
+              <div>
+                <label for="npFxRateFrom">De</label>
+                <select id="npFxRateFrom" aria-label="Moneda origen"></select>
+              </div>
+              <div>
+                <label for="npFxRateTo">A</label>
+                <select id="npFxRateTo" aria-label="Moneda destino"></select>
+              </div>
+            </div>
+            <p id="npFxRatePopMeta" class="np-fx-rate-pop-meta">Referencia orientativa · se actualiza cada 5 min.</p>
+            <div class="np-fx-rate-pop-actions">
+              <a id="npFxRateGoogleLink" class="btn-mac-link btn-mac-link--brand-ga" href="https://www.google.com/search?q=1+USD+to+MXN" target="_blank" rel="noopener noreferrer">Ver en Google</a>
+              <button type="button" class="btn-mac-link" id="npFxRateRefreshBtn">Actualizar</button>
+            </div>
+          </div>
+          <button type="button" class="np-weather-pill" id="npWeatherBtn" data-state="loading" aria-live="polite" aria-expanded="false" aria-controls="npWeatherPopover" title="Clima local · toca para detalle">
+            <span class="np-weather-num" id="npWeatherNum">Clima …</span>
+            <span class="np-weather-sub" id="npWeatherSub">ubicación</span>
+          </button>
+          <div id="npWeatherPopover" class="np-weather-popover np-hide" role="dialog" aria-hidden="true" aria-labelledby="npWeatherPopTitle">
+            <p id="npWeatherPopTitle" class="np-weather-pop-head">Clima local</p>
+            <p id="npWeatherPopLive" class="np-weather-pop-live">—</p>
+            <div class="np-weather-pop-grid">
+              <div><strong>Humedad</strong><span id="npWeatherPopHum">—</span></div>
+              <div><strong>Índice UV</strong><span id="npWeatherPopUv">—</span></div>
+              <div><strong>Condición</strong><span id="npWeatherPopCond">—</span></div>
+              <div><strong>Nubosidad</strong><span id="npWeatherPopCloud">—</span></div>
+            </div>
+            <p id="npWeatherPopPlace" class="np-weather-pop-place">—</p>
+            <p id="npWeatherPopMeta" class="np-weather-pop-meta">Open-Meteo · referencia orientativa · cada 5 min.</p>
+            <div class="np-weather-pop-actions">
+              <a id="npWeatherGoogleLink" class="btn-mac-link btn-mac-link--brand-ga" href="https://www.google.com/search?q=clima" target="_blank" rel="noopener noreferrer">Ver en Google</a>
+              <button type="button" class="btn-mac-link" id="npWeatherLocBtn">Mi ubicación</button>
+              <button type="button" class="btn-mac-link" id="npWeatherRefreshBtn">Actualizar</button>
+            </div>
+          </div>
           <button type="button" class="np-storage-usage-pill" id="npStorageUsageBtn" data-state="loading" aria-live="polite" aria-label="Uso de almacenamiento en la nube" title="Archivos en Supabase · calculando…">
             <span class="np-storage-usage-num" id="npStorageUsageNum">…</span>
             <span class="np-storage-usage-sub" id="npStorageUsageSub">NutriPlant nube</span>
@@ -8590,6 +8893,703 @@
     }, delayMs == null ? 0 : delayMs);
   }
 
+  var NP_FX_REFRESH_MS = 5 * 60 * 1000;
+  var NP_FX_CURRENCIES = [
+    { code: 'USD', label: 'USD · Dólar USA' },
+    { code: 'MXN', label: 'MXN · Peso mexicano' },
+    { code: 'EUR', label: 'EUR · Euro' },
+    { code: 'CAD', label: 'CAD · Dólar canadiense' },
+    { code: 'GBP', label: 'GBP · Libra' },
+    { code: 'JPY', label: 'JPY · Yen' },
+    { code: 'CNY', label: 'CNY · Yuan' },
+    { code: 'BRL', label: 'BRL · Real' },
+    { code: 'COP', label: 'COP · Peso colombiano' },
+    { code: 'ARS', label: 'ARS · Peso argentino' },
+    { code: 'CLP', label: 'CLP · Peso chileno' }
+  ];
+  var planProFxTimer = null;
+  var planProFxLoading = false;
+  var planProFxState = { from: 'USD', to: 'MXN', rate: null, updatedAt: null, source: '' };
+
+  function planProFxStorageKey() {
+    return 'np_plan_pro_fx_pair_v1';
+  }
+
+  function planProFxCurrencyLabel(code) {
+    var hit = NP_FX_CURRENCIES.filter(function (c) {
+      return c.code === code;
+    })[0];
+    return hit ? hit.code : code;
+  }
+
+  function planProFxFormatRate(n) {
+    var x = Number(n);
+    if (!isFinite(x)) return '—';
+    if (x >= 1000) return x.toFixed(2);
+    if (x >= 100) return x.toFixed(2);
+    if (x >= 10) return x.toFixed(2);
+    if (x >= 1) return x.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+    return x.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+  }
+
+  function planProFxPairLabel(from, to, rate) {
+    var f = planProFxCurrencyLabel(from);
+    var t = planProFxCurrencyLabel(to);
+    if (from === to) return '1 ' + f + ' = 1 ' + t;
+    return '1 ' + f + ' → ' + planProFxFormatRate(rate) + ' ' + t;
+  }
+
+  function planProFxGoogleUrl(from, to) {
+    return (
+      'https://www.google.com/search?q=' +
+      encodeURIComponent('1 ' + from + ' to ' + to)
+    );
+  }
+
+  function planProLoadFxPrefs() {
+    try {
+      var raw = localStorage.getItem(planProFxStorageKey());
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      if (o && o.from) planProFxState.from = String(o.from).toUpperCase();
+      if (o && o.to) planProFxState.to = String(o.to).toUpperCase();
+    } catch (e) {}
+  }
+
+  function planProSaveFxPrefs() {
+    try {
+      localStorage.setItem(
+        planProFxStorageKey(),
+        JSON.stringify({ from: planProFxState.from, to: planProFxState.to })
+      );
+    } catch (e) {}
+  }
+
+  function planProFxSyncSelects() {
+    var fromSel = $('npFxRateFrom');
+    var toSel = $('npFxRateTo');
+    if (fromSel) fromSel.value = planProFxState.from;
+    if (toSel) toSel.value = planProFxState.to;
+    var link = $('npFxRateGoogleLink');
+    if (link) link.href = planProFxGoogleUrl(planProFxState.from, planProFxState.to);
+  }
+
+  function planProFxRenderUi(opts) {
+    opts = opts || {};
+    var btn = $('npFxRateBtn');
+    var num = $('npFxRateNum');
+    var sub = $('npFxRateSub');
+    var live = $('npFxRatePopLive');
+    var meta = $('npFxRatePopMeta');
+    var pairSub = planProFxState.from + ' → ' + planProFxState.to;
+    if (sub) sub.textContent = pairSub;
+    if (opts.loading) {
+      if (btn) btn.setAttribute('data-state', 'loading');
+      if (num) num.textContent = 'TC …';
+      if (live) live.textContent = 'Actualizando…';
+      return;
+    }
+    if (opts.error) {
+      if (btn) btn.setAttribute('data-state', 'error');
+      if (num) num.textContent = 'TC —';
+      if (live) live.textContent = 'No disponible';
+      if (meta) meta.textContent = opts.error;
+      return;
+    }
+    if (btn) btn.setAttribute('data-state', 'ok');
+    var label = planProFxPairLabel(planProFxState.from, planProFxState.to, planProFxState.rate);
+    if (num) num.textContent = label;
+    if (live) live.textContent = label;
+    if (meta) {
+      var when = planProFxState.updatedAt
+        ? new Date(planProFxState.updatedAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })
+        : '—';
+      meta.textContent =
+        'Referencia orientativa (mercado libre) · actualizado ' +
+        when +
+        (planProFxState.source ? ' · ' + planProFxState.source : '') +
+        ' · cada 5 min';
+    }
+    if (btn) {
+      btn.title =
+        label + ' · referencia · toca para cambiar monedas o ver en Google';
+    }
+  }
+
+  async function planProFetchFxRate(from, to) {
+    var f = String(from || 'USD').toUpperCase();
+    var t = String(to || 'MXN').toUpperCase();
+    if (f === t) return { rate: 1, updatedAt: Date.now(), source: 'misma moneda' };
+    var url = 'https://open.er-api.com/v6/latest/' + encodeURIComponent(f);
+    var res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error('No se pudo consultar el tipo de cambio.');
+    var data = await res.json();
+    if (!data || data.result !== 'success' || !data.conversion_rates || data.conversion_rates[t] == null) {
+      throw new Error('Par de monedas no disponible.');
+    }
+    var updatedAt = Date.now();
+    if (data.time_last_update_unix) updatedAt = data.time_last_update_unix * 1000;
+    return { rate: Number(data.conversion_rates[t]), updatedAt: updatedAt, source: 'open.er-api' };
+  }
+
+  async function refreshPlanProFxRate(force) {
+    if (planProFxLoading && !force) return;
+    planProFxLoading = true;
+    planProFxRenderUi({ loading: true });
+    try {
+      var hit = await planProFetchFxRate(planProFxState.from, planProFxState.to);
+      planProFxState.rate = hit.rate;
+      planProFxState.updatedAt = hit.updatedAt;
+      planProFxState.source = hit.source || '';
+      planProFxRenderUi({});
+    } catch (err) {
+      planProFxRenderUi({ error: (err && err.message) || 'TC no disponible' });
+    } finally {
+      planProFxLoading = false;
+    }
+  }
+
+  function positionPlanProFxPopover() {
+    var btn = $('npFxRateBtn');
+    var pop = $('npFxRatePopover');
+    if (!btn || !pop || pop.classList.contains('np-hide')) return;
+    var rect = btn.getBoundingClientRect();
+    var margin = 8;
+    var width = Math.min(300, window.innerWidth - 16);
+    var left = rect.left + rect.width / 2 - width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+    var top = rect.bottom + margin;
+    if (top + 220 > window.innerHeight - margin) {
+      top = rect.top - margin;
+      pop.style.transform = 'translateY(-100%)';
+    } else {
+      pop.style.transform = '';
+    }
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.top = Math.round(top) + 'px';
+    pop.style.width = Math.round(width) + 'px';
+  }
+
+  function closePlanProFxPopover() {
+    var btn = $('npFxRateBtn');
+    var pop = $('npFxRatePopover');
+    if (btn) {
+      btn.classList.remove('np-fx-rate-pill--open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    if (pop) {
+      pop.classList.add('np-hide');
+      pop.setAttribute('aria-hidden', 'true');
+      pop.style.transform = '';
+    }
+  }
+
+  function openPlanProFxPopover() {
+    var btn = $('npFxRateBtn');
+    var pop = $('npFxRatePopover');
+    if (!btn || !pop) return;
+    planProFxSyncSelects();
+    planProFxRenderUi({});
+    btn.classList.add('np-fx-rate-pill--open');
+    btn.setAttribute('aria-expanded', 'true');
+    pop.classList.remove('np-hide');
+    pop.setAttribute('aria-hidden', 'false');
+    positionPlanProFxPopover();
+  }
+
+  function togglePlanProFxPopover() {
+    var pop = $('npFxRatePopover');
+    if (pop && !pop.classList.contains('np-hide')) closePlanProFxPopover();
+    else openPlanProFxPopover();
+  }
+
+  function planProInitFxRateWidget() {
+    var btn = $('npFxRateBtn');
+    if (!btn || btn.dataset.npWired === '1') return;
+    btn.dataset.npWired = '1';
+    planProLoadFxPrefs();
+    var fromSel = $('npFxRateFrom');
+    var toSel = $('npFxRateTo');
+    NP_FX_CURRENCIES.forEach(function (c) {
+      if (fromSel) {
+        var o1 = document.createElement('option');
+        o1.value = c.code;
+        o1.textContent = c.label;
+        fromSel.appendChild(o1);
+      }
+      if (toSel) {
+        var o2 = document.createElement('option');
+        o2.value = c.code;
+        o2.textContent = c.label;
+        toSel.appendChild(o2);
+      }
+    });
+    planProFxSyncSelects();
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      togglePlanProFxPopover();
+    });
+    if (fromSel) {
+      fromSel.addEventListener('change', function () {
+        planProFxState.from = this.value || 'USD';
+        planProSaveFxPrefs();
+        planProFxSyncSelects();
+        refreshPlanProFxRate(true);
+      });
+    }
+    if (toSel) {
+      toSel.addEventListener('change', function () {
+        planProFxState.to = this.value || 'MXN';
+        planProSaveFxPrefs();
+        planProFxSyncSelects();
+        refreshPlanProFxRate(true);
+      });
+    }
+    var refreshBtn = $('npFxRateRefreshBtn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        refreshPlanProFxRate(true);
+      });
+    }
+    document.addEventListener('click', function (e) {
+      var pop = $('npFxRatePopover');
+      if (!pop || pop.classList.contains('np-hide')) return;
+      if (e.target.closest('#npFxRateBtn') || e.target.closest('#npFxRatePopover')) return;
+      closePlanProFxPopover();
+    });
+    window.addEventListener('resize', function () {
+      positionPlanProFxPopover();
+    });
+    refreshPlanProFxRate(true);
+    if (planProFxTimer) clearInterval(planProFxTimer);
+    planProFxTimer = setInterval(function () {
+      refreshPlanProFxRate(false);
+    }, NP_FX_REFRESH_MS);
+  }
+
+  var NP_WEATHER_REFRESH_MS = 5 * 60 * 1000;
+  var planProWeatherTimer = null;
+  var planProWeatherLoading = false;
+  var planProWeatherLocLoading = false;
+  var planProWeatherState = {
+    lat: null,
+    lng: null,
+    placeName: '',
+    temp: null,
+    humidity: null,
+    uv: null,
+    cloudCover: null,
+    weatherCode: null,
+    conditionShort: '',
+    conditionLong: '',
+    updatedAt: null
+  };
+
+  function planProWeatherStorageKey() {
+    return 'np_plan_pro_weather_loc_v1';
+  }
+
+  function planProWeatherLoadCachedLoc() {
+    try {
+      var raw = localStorage.getItem(planProWeatherStorageKey());
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      if (o && isFinite(Number(o.lat)) && isFinite(Number(o.lng))) {
+        planProWeatherState.lat = Number(o.lat);
+        planProWeatherState.lng = Number(o.lng);
+        if (o.placeName) planProWeatherState.placeName = String(o.placeName);
+      }
+    } catch (e) {}
+  }
+
+  function planProWeatherSaveCachedLoc() {
+    if (!isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng)) return;
+    try {
+      localStorage.setItem(
+        planProWeatherStorageKey(),
+        JSON.stringify({
+          lat: planProWeatherState.lat,
+          lng: planProWeatherState.lng,
+          placeName: planProWeatherState.placeName || ''
+        })
+      );
+    } catch (e) {}
+  }
+
+  function planProWeatherWmo(code) {
+    var n = Number(code);
+    if (!Number.isFinite(n)) {
+      return { short: '—', long: 'Sin dato', emoji: '🌡️' };
+    }
+    if (n === 0) return { short: 'Soleado', long: 'Despejado / soleado', emoji: '☀️' };
+    if (n === 1 || n === 2) return { short: 'Parcial', long: 'Parcialmente nublado', emoji: '⛅' };
+    if (n === 3) return { short: 'Nublado', long: 'Nublado', emoji: '☁️' };
+    if (n === 45 || n === 48) return { short: 'Niebla', long: 'Niebla', emoji: '🌫️' };
+    if (n >= 51 && n <= 57) return { short: 'Llovizna', long: 'Llovizna', emoji: '🌦️' };
+    if (n >= 61 && n <= 67) return { short: 'Lluvia', long: 'Lluvia', emoji: '🌧️' };
+    if (n >= 71 && n <= 77) return { short: 'Nieve', long: 'Nieve', emoji: '❄️' };
+    if (n >= 80 && n <= 82) return { short: 'Chubascos', long: 'Chubascos / lluvia', emoji: '🌧️' };
+    if (n >= 85 && n <= 86) return { short: 'Nieve', long: 'Chubascos de nieve', emoji: '❄️' };
+    if (n >= 95 && n <= 99) return { short: 'Tormenta', long: 'Tormenta eléctrica', emoji: '⛈️' };
+    return { short: 'Variable', long: 'Condición variable', emoji: '🌤️' };
+  }
+
+  function planProWeatherFmtTemp(v) {
+    var x = Number(v);
+    if (!Number.isFinite(x)) return '—';
+    return (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, '') + '°C';
+  }
+
+  function planProWeatherFmtPct(v) {
+    var x = Number(v);
+    if (!Number.isFinite(x)) return '—';
+    return Math.round(x) + '%';
+  }
+
+  function planProWeatherFmtUv(v) {
+    var x = Number(v);
+    if (!Number.isFinite(x)) return '—';
+    if (x >= 10) return x.toFixed(1);
+    return (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, '');
+  }
+
+  function planProWeatherShortPlace(name) {
+    var s = String(name || '').trim();
+    if (!s) return 'Mi ubicación';
+    if (s.length <= 22) return s;
+    return s.slice(0, 20) + '…';
+  }
+
+  function planProWeatherGoogleUrl() {
+    var q = planProWeatherState.placeName
+      ? 'clima ' + planProWeatherState.placeName
+      : 'clima';
+    if (isFinite(planProWeatherState.lat) && isFinite(planProWeatherState.lng)) {
+      q += ' ' + planProWeatherState.lat.toFixed(4) + ',' + planProWeatherState.lng.toFixed(4);
+    }
+    return 'https://www.google.com/search?q=' + encodeURIComponent(q);
+  }
+
+  function planProWeatherSyncGoogleLink() {
+    var link = $('npWeatherGoogleLink');
+    if (link) link.href = planProWeatherGoogleUrl();
+  }
+
+  function planProWeatherRenderUi(opts) {
+    opts = opts || {};
+    var btn = $('npWeatherBtn');
+    var num = $('npWeatherNum');
+    var sub = $('npWeatherSub');
+    var live = $('npWeatherPopLive');
+    var hum = $('npWeatherPopHum');
+    var uvEl = $('npWeatherPopUv');
+    var cond = $('npWeatherPopCond');
+    var cloud = $('npWeatherPopCloud');
+    var place = $('npWeatherPopPlace');
+    var meta = $('npWeatherPopMeta');
+    planProWeatherSyncGoogleLink();
+    if (opts.loading) {
+      if (btn) btn.setAttribute('data-state', 'loading');
+      if (num) num.textContent = opts.locating ? 'GPS …' : 'Clima …';
+      if (sub) sub.textContent = opts.locating ? 'ubicación' : planProWeatherShortPlace(planProWeatherState.placeName);
+      if (live) live.textContent = 'Actualizando…';
+      return;
+    }
+    if (opts.error) {
+      if (btn) btn.setAttribute('data-state', 'error');
+      if (num) num.textContent = 'Clima —';
+      if (sub) sub.textContent = opts.errorShort || 'sin datos';
+      if (live) live.textContent = 'No disponible';
+      if (meta) meta.textContent = opts.error;
+      return;
+    }
+    if (btn) btn.setAttribute('data-state', 'ok');
+    var wmo = planProWeatherWmo(planProWeatherState.weatherCode);
+    var main =
+      planProWeatherFmtTemp(planProWeatherState.temp) +
+      ' · ' +
+      planProWeatherFmtPct(planProWeatherState.humidity) +
+      ' · UV ' +
+      planProWeatherFmtUv(planProWeatherState.uv);
+    var subLine =
+      (planProWeatherState.conditionShort || wmo.short) +
+      ' · ' +
+      planProWeatherShortPlace(planProWeatherState.placeName);
+    if (num) num.textContent = main;
+    if (sub) sub.textContent = subLine;
+    if (live) {
+      live.textContent =
+        wmo.emoji +
+        ' ' +
+        planProWeatherFmtTemp(planProWeatherState.temp) +
+        ' · ' +
+        (planProWeatherState.conditionLong || wmo.long);
+    }
+    if (hum) hum.textContent = planProWeatherFmtPct(planProWeatherState.humidity);
+    if (uvEl) uvEl.textContent = planProWeatherFmtUv(planProWeatherState.uv);
+    if (cond) cond.textContent = planProWeatherState.conditionLong || wmo.long;
+    if (cloud) {
+      cloud.textContent =
+        planProWeatherState.cloudCover == null
+          ? '—'
+          : Math.round(Number(planProWeatherState.cloudCover)) + '%';
+    }
+    if (place) {
+      var coords =
+        isFinite(planProWeatherState.lat) && isFinite(planProWeatherState.lng)
+          ? planProWeatherState.lat.toFixed(4) + ', ' + planProWeatherState.lng.toFixed(4)
+          : '';
+      place.textContent =
+        (planProWeatherState.placeName || 'Ubicación del dispositivo') +
+        (coords ? ' · ' + coords : '');
+    }
+    if (meta) {
+      var when = planProWeatherState.updatedAt
+        ? new Date(planProWeatherState.updatedAt).toLocaleString('es-MX', {
+            dateStyle: 'short',
+            timeStyle: 'short'
+          })
+        : '—';
+      meta.textContent =
+        'Open-Meteo (misma fuente que VPD) · referencia orientativa · actualizado ' +
+        when +
+        ' · cada 5 min';
+    }
+    if (btn) {
+      btn.title = main + ' · ' + subLine + ' · toca para detalle';
+    }
+  }
+
+  function planProWeatherCoordsChanged(lat, lng) {
+    if (!isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng)) return true;
+    return Math.abs(planProWeatherState.lat - lat) > 0.015 || Math.abs(planProWeatherState.lng - lng) > 0.015;
+  }
+
+  async function planProReverseGeocodeWeather(lat, lng) {
+    var url =
+      'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' +
+      encodeURIComponent(lat) +
+      '&lon=' +
+      encodeURIComponent(lng) +
+      '&zoom=10&addressdetails=1';
+    var res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('No se pudo leer el nombre del lugar.');
+    var data = await res.json();
+    var addr = data && data.address ? data.address : {};
+    var parts = [
+      addr.city || addr.town || addr.village || addr.municipality || addr.county,
+      addr.state || addr.region
+    ].filter(Boolean);
+    if (parts.length) return parts.join(', ');
+    if (data && data.display_name) {
+      var dn = String(data.display_name);
+      return dn.length > 48 ? dn.slice(0, 46) + '…' : dn;
+    }
+    return lat.toFixed(3) + ', ' + lng.toFixed(3);
+  }
+
+  function planProWeatherRequestLocation(forceFresh) {
+    return new Promise(function (resolve, reject) {
+      if (!navigator.geolocation) {
+        reject(new Error('Este navegador no permite ubicación.'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          resolve({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          });
+        },
+        function (err) {
+          reject(new Error((err && err.message) || 'No se pudo leer tu ubicación.'));
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 12000,
+          maximumAge: forceFresh ? 0 : NP_WEATHER_REFRESH_MS
+        }
+      );
+    });
+  }
+
+  async function planProFetchWeatherReading(lat, lng) {
+    var url =
+      'https://api.open-meteo.com/v1/forecast?latitude=' +
+      encodeURIComponent(lat) +
+      '&longitude=' +
+      encodeURIComponent(lng) +
+      '&current=temperature_2m,relative_humidity_2m,uv_index,weather_code,cloud_cover&timezone=auto';
+    var res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error('No se pudo consultar el clima.');
+    var data = await res.json();
+    var cur = data && data.current;
+    if (!cur) throw new Error('Sin lectura meteorológica.');
+    var wmo = planProWeatherWmo(cur.weather_code);
+    return {
+      temp: cur.temperature_2m,
+      humidity: cur.relative_humidity_2m,
+      uv: cur.uv_index,
+      cloudCover: cur.cloud_cover,
+      weatherCode: cur.weather_code,
+      conditionShort: wmo.short,
+      conditionLong: wmo.long,
+      updatedAt: Date.now()
+    };
+  }
+
+  async function refreshPlanProWeather(opts) {
+    opts = opts || {};
+    if (planProWeatherLoading && !opts.force) return;
+    planProWeatherLoading = true;
+    var needLoc = opts.requestLocation || !isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng);
+    planProWeatherRenderUi({ loading: true, locating: !!needLoc });
+    try {
+      if (needLoc) {
+        if (planProWeatherLocLoading && !opts.force) {
+          planProWeatherLoading = false;
+          return;
+        }
+        planProWeatherLocLoading = true;
+        try {
+          var loc = await planProWeatherRequestLocation(!!opts.forceLocation);
+          var moved = planProWeatherCoordsChanged(loc.lat, loc.lng);
+          planProWeatherState.lat = loc.lat;
+          planProWeatherState.lng = loc.lng;
+          if (moved || !planProWeatherState.placeName) {
+            try {
+              planProWeatherState.placeName = await planProReverseGeocodeWeather(loc.lat, loc.lng);
+            } catch (geoErr) {
+              planProWeatherState.placeName = loc.lat.toFixed(3) + ', ' + loc.lng.toFixed(3);
+            }
+          }
+          planProWeatherSaveCachedLoc();
+        } catch (locErr) {
+          if (!isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng)) {
+            throw locErr;
+          }
+        } finally {
+          planProWeatherLocLoading = false;
+        }
+      }
+      if (!isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng)) {
+        throw new Error('Permite ubicación o pulsa «Mi ubicación».');
+      }
+      var hit = await planProFetchWeatherReading(planProWeatherState.lat, planProWeatherState.lng);
+      planProWeatherState.temp = hit.temp;
+      planProWeatherState.humidity = hit.humidity;
+      planProWeatherState.uv = hit.uv;
+      planProWeatherState.cloudCover = hit.cloudCover;
+      planProWeatherState.weatherCode = hit.weatherCode;
+      planProWeatherState.conditionShort = hit.conditionShort;
+      planProWeatherState.conditionLong = hit.conditionLong;
+      planProWeatherState.updatedAt = hit.updatedAt;
+      planProWeatherRenderUi({});
+    } catch (err) {
+      planProWeatherRenderUi({
+        error: (err && err.message) || 'Clima no disponible',
+        errorShort: needLoc ? 'sin GPS' : 'sin datos'
+      });
+    } finally {
+      planProWeatherLoading = false;
+    }
+  }
+
+  function positionPlanProWeatherPopover() {
+    var btn = $('npWeatherBtn');
+    var pop = $('npWeatherPopover');
+    if (!btn || !pop || pop.classList.contains('np-hide')) return;
+    var rect = btn.getBoundingClientRect();
+    var margin = 8;
+    var width = Math.min(300, window.innerWidth - 16);
+    var left = rect.left + rect.width / 2 - width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+    var top = rect.bottom + margin;
+    if (top + 260 > window.innerHeight - margin) {
+      top = rect.top - margin;
+      pop.style.transform = 'translateY(-100%)';
+    } else {
+      pop.style.transform = '';
+    }
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.top = Math.round(top) + 'px';
+    pop.style.width = Math.round(width) + 'px';
+  }
+
+  function closePlanProWeatherPopover() {
+    var btn = $('npWeatherBtn');
+    var pop = $('npWeatherPopover');
+    if (btn) {
+      btn.classList.remove('np-weather-pill--open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    if (pop) {
+      pop.classList.add('np-hide');
+      pop.setAttribute('aria-hidden', 'true');
+      pop.style.transform = '';
+    }
+  }
+
+  function openPlanProWeatherPopover() {
+    var btn = $('npWeatherBtn');
+    var pop = $('npWeatherPopover');
+    if (!btn || !pop) return;
+    planProWeatherRenderUi({});
+    btn.classList.add('np-weather-pill--open');
+    btn.setAttribute('aria-expanded', 'true');
+    pop.classList.remove('np-hide');
+    pop.setAttribute('aria-hidden', 'false');
+    positionPlanProWeatherPopover();
+  }
+
+  function togglePlanProWeatherPopover() {
+    var pop = $('npWeatherPopover');
+    if (pop && !pop.classList.contains('np-hide')) closePlanProWeatherPopover();
+    else openPlanProWeatherPopover();
+  }
+
+  function planProInitWeatherWidget() {
+    var btn = $('npWeatherBtn');
+    if (!btn || btn.dataset.npWired === '1') return;
+    btn.dataset.npWired = '1';
+    planProWeatherLoadCachedLoc();
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      togglePlanProWeatherPopover();
+    });
+    var locBtn = $('npWeatherLocBtn');
+    if (locBtn) {
+      locBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        refreshPlanProWeather({ force: true, requestLocation: true, forceLocation: true });
+      });
+    }
+    var refreshBtn = $('npWeatherRefreshBtn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        refreshPlanProWeather({ force: true, requestLocation: false });
+      });
+    }
+    document.addEventListener('click', function (e) {
+      var pop = $('npWeatherPopover');
+      if (!pop || pop.classList.contains('np-hide')) return;
+      if (e.target.closest('#npWeatherBtn') || e.target.closest('#npWeatherPopover')) return;
+      closePlanProWeatherPopover();
+    });
+    window.addEventListener('resize', function () {
+      positionPlanProWeatherPopover();
+    });
+    refreshPlanProWeather({ force: true, requestLocation: true });
+    if (planProWeatherTimer) clearInterval(planProWeatherTimer);
+    planProWeatherTimer = setInterval(function () {
+      refreshPlanProWeather({ requestLocation: true });
+    }, NP_WEATHER_REFRESH_MS);
+  }
+
   async function refreshPlanProStorageUsage(opts) {
     opts = opts || {};
     if (!state || !state.client || !state.userId) return;
@@ -9199,6 +10199,8 @@
       closeAllLedgerTemplateMenus();
       closeCatColorFlyout();
       closePillarTabFlyout();
+      closePlanProFxPopover();
+      closePlanProWeatherPopover();
     }
   });
 
@@ -20928,6 +21930,10 @@
       closeRichDuePicker();
       return;
     }
+    if ($('npFxRatePopover') && !$('npFxRatePopover').classList.contains('np-hide')) {
+      closePlanProFxPopover();
+      return;
+    }
     if ($('npCrossLinkPicker') && $('npCrossLinkPicker').classList.contains('np-modal-open')) {
       closeCrossLinkPicker();
       return;
@@ -21941,6 +22947,14 @@
     return created.id;
   }
 
+  /** Meta objetivo del ítem: fecha YYYY-MM-DD + hora en attachments (sin bug UTC). */
+  function fmtItemObjectiveMetaLabel(row) {
+    if (!row || row.due_at == null || row.due_at === '') return '';
+    var dk = parseDueDateKey(row.due_at);
+    if (!dk) return '';
+    return formatRichDueLabel(dk, getPlanProItemDueTime(row));
+  }
+
   function buildApuntePdfDocument(row, genDate) {
     var root = document.createElement('div');
     root.className = 'np-apunte-pdf-root';
@@ -21953,9 +22967,8 @@
     var prio = fmtItemPriorityShort(row.priority);
     if (prio && prio !== '—') pathParts.push('Objetivo ' + prio);
     if (row.due_at) {
-      try {
-        pathParts.push('Meta ' + fmtDate(row.due_at));
-      } catch (eDue) {}
+      var metaDue = fmtItemObjectiveMetaLabel(row);
+      if (metaDue) pathParts.push('Meta ' + metaDue);
     }
 
     var head = document.createElement('div');
@@ -24645,6 +25658,8 @@
     npCloudSync.sessionReady = true;
     npCloudSyncRender();
     refreshPlanProStorageUsage();
+    planProInitFxRateWidget();
+    planProInitWeatherWidget();
     npCloudOfflineFlushQueue();
     wireCreateFichaPill();
     wireNutriProVault();
