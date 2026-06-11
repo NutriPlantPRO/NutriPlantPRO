@@ -776,10 +776,10 @@
     @media (max-width: 720px) {
       header.np-plan-header.np-mac-bar {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, min(46vw, 220px));
+        grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
         grid-template-rows: auto auto;
         align-items: center;
-        gap: 6px 8px;
+        gap: 6px 10px;
         padding: 10px 12px;
         margin-bottom: 12px;
         flex-direction: unset;
@@ -834,6 +834,13 @@
         min-width: 0;
         overflow: visible;
       }
+      #npFxRatePopover,
+      #npWeatherPopover {
+        position: fixed;
+        grid-column: unset;
+        grid-row: unset;
+        margin: 0;
+      }
       #npFxRateBtn {
         grid-column: 1;
         grid-row: 1;
@@ -870,6 +877,10 @@
         height: 38px;
         padding: 3px 5px;
         border-radius: 10px;
+        box-sizing: border-box;
+        justify-self: stretch;
+        align-self: center;
+        overflow: hidden;
       }
       .np-fx-rate-sub,
       .np-weather-sub,
@@ -3779,7 +3790,7 @@
     @media (max-width: 720px) {
       header.np-plan-header.np-mac-bar {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, min(46vw, 220px));
+        grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
         align-items: center;
         padding: 10px 12px;
         margin-bottom: 12px;
@@ -3851,6 +3862,10 @@
     }
     .np-tree-row.np-dnd-drop-after {
       box-shadow: inset 0 -3px 0 var(--np-tree-accent, #2563eb);
+    }
+    .np-tree-row.np-dnd-drop-onto {
+      background: color-mix(in srgb, var(--np-tree-accent, #2563eb) 14%, rgba(255, 255, 255, 0.96));
+      box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--np-tree-accent, #2563eb) 55%, rgba(255, 255, 255, 0.35));
     }
     .np-sidebar-tools {
       display: grid;
@@ -5064,6 +5079,10 @@
     .np-pillar-tab-wrap.np-dnd-drop-after {
       box-shadow: 4px 0 0 #2563eb, 0 8px 22px rgba(37, 99, 235, 0.14);
     }
+    .np-pillar-tab-wrap.np-dnd-drop-onto {
+      box-shadow: inset 0 0 0 2px #2563eb, 0 8px 22px rgba(37, 99, 235, 0.18);
+      background: color-mix(in srgb, #2563eb 10%, rgba(255, 255, 255, 0.98));
+    }
     .np-pillar-tab-wrap-active {
       background: linear-gradient(175deg, rgba(236, 253, 245, 0.95) 0%, rgba(255, 255, 255, 0.98) 70%);
       border-color: rgba(134, 239, 172, 0.85);
@@ -6213,6 +6232,11 @@
       border-color: rgba(100, 116, 139, 0.45);
       color: #0f172a;
     }
+    button.np-sheet-chip.np-dnd-drop-onto {
+      box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--np-sheet-accent, #059669) 62%, rgba(255, 255, 255, 0.4));
+      background: color-mix(in srgb, var(--np-sheet-accent, #059669) 12%, #fff);
+      transform: none;
+    }
     .np-sheet-nav-empty {
       margin: 0;
       font-size: 13px;
@@ -6757,8 +6781,8 @@
     .np-cal-overlay-plant-filter {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
-      margin: 0;
+      gap: 6px;
+      margin: 0 0 6px;
       align-items: center;
     }
     .np-cal-overlay-plant-filter-label {
@@ -6842,7 +6866,7 @@
       align-items: center;
       justify-content: center;
       gap: 8px 12px;
-      padding: 2px 6px 3px;
+      padding: 6px 6px 7px;
       margin: 0;
       border-top: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 8%, rgba(148, 163, 184, 0.22));
       border-bottom: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 12%, rgba(148, 163, 184, 0.32));
@@ -6865,16 +6889,16 @@
       letter-spacing: 0.01em;
     }
     .np-cal-overlay-panel .np-modal-head {
-      padding: 8px 12px 6px;
+      padding: 10px 14px 8px;
       border-bottom: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 10%, rgba(148, 163, 184, 0.28));
-      gap: 8px;
+      gap: 10px;
     }
     .np-cal-overlay-summary-wrap {
       position: relative;
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      margin: 4px 0 0;
+      margin: 8px 0 0;
       flex: 0 0 auto;
       flex-shrink: 0;
       min-width: 0;
@@ -6883,14 +6907,14 @@
     .np-cal-overlay-summary {
       display: flex;
       flex-direction: column;
-      gap: 0;
+      gap: 6px;
       font-size: 11px;
       color: #64748b;
       width: 100%;
       max-width: 100%;
       min-width: 0;
       box-sizing: border-box;
-      padding: 2px 6px 3px;
+      padding: 8px 10px 9px;
       border-radius: 8px;
       border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, rgba(148, 163, 184, 0.35));
       background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 5%, rgba(255, 255, 255, 0.88));
@@ -6907,9 +6931,9 @@
       width: 100%;
       justify-content: center;
       box-sizing: border-box;
-      padding: 2px 6px;
-      font-size: 11px;
-      line-height: 1.2;
+      padding: 4px 8px;
+      font-size: 12px;
+      line-height: 1.35;
       border: 0;
       background: transparent;
       border-radius: 6px;
@@ -6917,7 +6941,7 @@
     .np-cal-overlay-summary-cols {
       display: flex;
       flex-direction: column;
-      gap: 0;
+      gap: 4px;
       width: 100%;
       max-width: 100%;
       min-width: 0;
@@ -6925,7 +6949,7 @@
     .np-cal-overlay-summary-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 3px 6px;
+      gap: 5px 8px;
       align-items: flex-start;
       align-content: flex-start;
       width: 100%;
@@ -6935,7 +6959,7 @@
       flex: 0 0 auto;
     }
     .np-cal-overlay-summary-row--detail {
-      padding: 0 0 1px;
+      padding: 4px 0 0;
       margin: 0;
       border: 0;
       border-top: 1px solid rgba(148, 163, 184, 0.2);
@@ -6943,13 +6967,13 @@
       background: transparent;
       align-items: flex-start;
       flex-direction: column;
-      gap: 1px;
+      gap: 5px;
       flex: 0 0 auto;
     }
     .np-cal-overlay-summary-chip-strip {
       display: flex;
       flex-wrap: wrap;
-      gap: 3px;
+      gap: 6px;
       width: 100%;
       max-width: 100%;
       min-width: 0;
@@ -6974,7 +6998,8 @@
       margin: 0;
       flex: 0 0 100%;
       width: 100%;
-      line-height: 1.1;
+      line-height: 1.2;
+      padding-bottom: 1px;
     }
     .np-cal-overlay-summary-more-btn {
       display: inline-flex;
@@ -7009,24 +7034,24 @@
       display: inline-flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 5px;
+      gap: 6px;
       width: auto;
       max-width: 100%;
       flex: 0 1 auto;
       min-width: 0;
       box-sizing: border-box;
-      padding: 3px 7px;
+      padding: 5px 10px;
       border-radius: 999px;
       border: 1px solid rgba(148, 163, 184, 0.35);
       background: rgba(255, 255, 255, 0.92);
       font-weight: 650;
-      font-size: 10px;
+      font-size: 11px;
       font-family: inherit;
       color: #334155;
       cursor: pointer;
       white-space: normal;
       text-align: left;
-      line-height: 1.25;
+      line-height: 1.3;
       overflow-wrap: anywhere;
       transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
     }
@@ -7195,17 +7220,17 @@
       min-height: 0;
       min-width: 0;
       overflow: auto;
-      padding: 0 12px 6px !important;
+      padding: 4px 12px 8px !important;
       display: flex;
       flex-direction: column;
-      gap: 0;
+      gap: 4px;
       white-space: normal;
       line-height: 1.25;
     }
     .np-cal-overlay-grid {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 6px;
+      gap: 8px;
       min-height: 0;
       margin-top: 0;
     }
@@ -7218,11 +7243,11 @@
     }
     .np-cal-overlay-day {
       box-sizing: border-box;
-      min-height: 118px;
-      max-height: 168px;
+      min-height: 122px;
+      max-height: 172px;
       display: flex;
       flex-direction: column;
-      padding: 5px 5px 4px;
+      padding: 6px 6px 5px;
       border-radius: 10px;
       border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, rgba(226, 232, 240, 0.95));
       background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 4%, rgba(255, 255, 255, 0.9));
@@ -7250,14 +7275,14 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 4px;
-      margin-bottom: 3px;
+      gap: 5px;
+      margin-bottom: 5px;
       flex-shrink: 0;
     }
     .np-cal-overlay-day-head-left {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       min-width: 0;
     }
     .np-cal-overlay-day-add-btn {
@@ -7302,8 +7327,8 @@
     .np-cal-overlay-prio-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 3px 5px;
-      margin-bottom: 4px;
+      gap: 4px 6px;
+      margin-bottom: 5px;
       flex-shrink: 0;
     }
     .np-cal-overlay-prio-count {
@@ -7324,15 +7349,15 @@
       -webkit-overflow-scrolling: touch;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 5px;
       padding-right: 1px;
     }
     .np-cal-overlay-entry {
       display: flex;
       align-items: flex-start;
-      gap: 5px;
+      gap: 6px;
       width: 100%;
-      padding: 4px 5px;
+      padding: 5px 7px;
       border: 0;
       border-radius: 7px;
       background: rgba(248, 250, 252, 0.92);
@@ -7362,19 +7387,20 @@
     }
     .np-cal-overlay-entry-title {
       display: block;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 650;
       color: #0f172a;
-      line-height: 1.25;
+      line-height: 1.3;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
     .np-cal-overlay-entry-sub {
       display: block;
-      font-size: 9px;
+      margin-top: 2px;
+      font-size: 10px;
       color: #64748b;
-      line-height: 1.2;
+      line-height: 1.25;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -7461,19 +7487,19 @@
         padding: 6px 6px 10px;
       }
       .np-cal-overlay-panel .np-modal-head {
-        padding: 6px 8px 4px;
-        gap: 6px;
+        padding: 8px 10px 6px;
+        gap: 8px;
       }
       .np-cal-overlay-summary-wrap {
-        margin: 3px 0 0;
+        margin: 6px 0 0;
       }
       .np-cal-overlay-body {
         padding: 0 6px 6px !important;
         gap: 0;
       }
       .np-cal-overlay-summary {
-        padding: 2px 5px 2px;
-        gap: 0;
+        padding: 6px 8px 7px;
+        gap: 4px;
       }
       .np-cal-overlay-month-bar {
         padding: 1px 4px 2px;
@@ -7483,7 +7509,7 @@
         font-size: 0.98rem;
       }
       .np-cal-overlay-grid {
-        gap: 3px;
+        gap: 4px;
       }
       .np-cal-overlay-dow {
         font-size: 8px;
@@ -7518,11 +7544,11 @@
         display: none;
       }
       .np-cal-overlay-day-scroll {
-        gap: 2px;
+        gap: 3px;
       }
       .np-cal-overlay-entry {
-        gap: 3px;
-        padding: 2px 3px;
+        gap: 4px;
+        padding: 3px 4px;
         border-radius: 5px;
       }
       .np-cal-overlay-entry-dot {
@@ -7531,11 +7557,13 @@
         margin-top: 2px;
       }
       .np-cal-overlay-entry-title {
-        font-size: 8px;
-        line-height: 1.2;
+        font-size: 9px;
+        line-height: 1.25;
       }
       .np-cal-overlay-entry-sub {
-        display: none;
+        display: block;
+        font-size: 8px;
+        margin-top: 1px;
       }
     }
     @media (max-width: 520px) {
@@ -19471,6 +19499,129 @@
     return max + 10;
   }
 
+  async function planProNextItemSortOrderRemote(categoryId) {
+    if (!categoryId || !state.client || !state.userId) return planProNextItemSortOrder(categoryId);
+    try {
+      var res = await state.client
+        .from('plan_pro_items')
+        .select('sort_order')
+        .eq('owner_id', state.userId)
+        .eq('category_id', categoryId)
+        .order('sort_order', { ascending: false })
+        .limit(1);
+      if (res.error) return planProNextItemSortOrder(categoryId);
+      var row = res.data && res.data[0];
+      return ((row && row.sort_order) || 0) + 10;
+    } catch (e) {
+      return planProNextItemSortOrder(categoryId);
+    }
+  }
+
+  async function movePlanProItemToCategory(itemId, targetCategoryId) {
+    if (!itemId || !targetCategoryId || !state.client || !state.userId) return false;
+    var targetCat = state.categories.filter(function (c) {
+      return c.id === targetCategoryId;
+    })[0];
+    if (!targetCat || targetCat.archived_at) {
+      showToast('Rama destino no válida.', true);
+      return false;
+    }
+    var itemRec = (state.planProItemsRows || []).filter(function (r) {
+      return r && r.id === itemId;
+    })[0];
+    if (!itemRec) {
+      try {
+        var res = await state.client
+          .from('plan_pro_items')
+          .select('id,category_id,area_id,title')
+          .eq('id', itemId)
+          .eq('owner_id', state.userId)
+          .maybeSingle();
+        if (res.error || !res.data) {
+          showToast('No se encontró el apunte.', true);
+          return false;
+        }
+        itemRec = res.data;
+      } catch (err) {
+        showToast('No se encontró el apunte.', true);
+        return false;
+      }
+    }
+    if ((itemRec.category_id || null) === targetCategoryId) return false;
+    var patch = {
+      category_id: targetCategoryId,
+      area_id: targetCat.area_id,
+      sort_order: await planProNextItemSortOrderRemote(targetCategoryId)
+    };
+    var upd = await npCloudSyncTrack(function () {
+      return state.client.from('plan_pro_items').update(patch).eq('id', itemId).eq('owner_id', state.userId);
+    });
+    if (upd.error) {
+      var em = upd.error.message || '';
+      if (/sort_order|column|schema cache/i.test(em)) {
+        delete patch.sort_order;
+        upd = await npCloudSyncTrack(function () {
+          return state.client.from('plan_pro_items').update(patch).eq('id', itemId).eq('owner_id', state.userId);
+        });
+      }
+      if (upd.error) {
+        showToast(upd.error.message || 'No se pudo mover el apunte.', true);
+        return false;
+      }
+    }
+    var destLabel = getCategoryPath(targetCategoryId);
+    showToast(
+      upd.queued
+        ? 'Movimiento guardado localmente; subirá cuando vuelva la señal.'
+        : 'Apunte movido a «' + destLabel + '».'
+    );
+    if (!upd.queued) {
+      await loadItems();
+      if (state.selectedAreaId === targetCat.area_id) patchTreeMetaBadges();
+    }
+    return true;
+  }
+
+  async function movePlanProItemToArea(itemId, targetAreaId) {
+    if (!itemId || !targetAreaId) return false;
+    var roots = rootCategoriesForArea(targetAreaId);
+    if (!roots.length) {
+      showToast('Crea al menos una rama en esa planta antes de mover apuntes.', true);
+      return false;
+    }
+    return movePlanProItemToCategory(itemId, roots[0].id);
+  }
+
+  function wirePlanCategoryDropTarget(el, categoryId) {
+    if (!el || !categoryId) return;
+    el.addEventListener('dragover', function (e) {
+      var dnd = state.planProDnd;
+      if (!dnd || dnd.type !== 'item') return;
+      if (dnd.categoryId === categoryId) return;
+      e.preventDefault();
+      e.stopPropagation();
+      document.querySelectorAll('.np-dnd-drop-onto').forEach(function (dropEl) {
+        if (dropEl !== el) dropEl.classList.remove('np-dnd-drop-onto');
+      });
+      el.classList.add('np-dnd-drop-onto');
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    });
+    el.addEventListener('dragleave', function () {
+      el.classList.remove('np-dnd-drop-onto');
+    });
+    el.addEventListener('drop', async function (e) {
+      var dnd = state.planProDnd;
+      if (!dnd || dnd.type !== 'item') return;
+      e.preventDefault();
+      e.stopPropagation();
+      state.lastPlanProDndEndedAt = Date.now();
+      var dragId = dnd.id;
+      state.planProDnd = null;
+      clearPlanDndClasses(document);
+      await movePlanProItemToCategory(dragId, categoryId);
+    });
+  }
+
   async function reorderPlanItems(dragId, targetId, insertAfter) {
     if (!dragId || !targetId || dragId === targetId || !state.client) return;
     var dragR = (state.planProItemsRows || []).filter(function (r) {
@@ -19522,11 +19673,13 @@
     if (!row || !card || !itemRec || !itemRec.id) return;
     card.setAttribute('draggable', 'true');
     card.setAttribute('data-np-plan-item-id', itemRec.id);
+    card.title = (itemRec.title || 'Apunte') + ' · Arrastra a otra rama o planta';
     card.addEventListener('dragstart', function (e) {
       state.planProDnd = {
         type: 'item',
         id: itemRec.id,
-        categoryId: itemRec.category_id || null
+        categoryId: itemRec.category_id || null,
+        areaId: itemRec.area_id || null
       };
       card.classList.add('np-dnd-dragging');
       if (e.dataTransfer) {
@@ -19765,9 +19918,24 @@
     });
     row.addEventListener('dragover', function (e) {
       var dnd = state.planProDnd;
-      if (!dnd || dnd.type !== 'category' || dnd.id === node.cat.id) return;
+      if (!dnd) return;
+      if (dnd.type === 'item') {
+        if (dnd.categoryId === node.cat.id) return;
+        e.preventDefault();
+        document.querySelectorAll('.np-dnd-drop-before,.np-dnd-drop-after').forEach(function (dropEl) {
+          dropEl.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after');
+        });
+        document.querySelectorAll('.np-dnd-drop-onto').forEach(function (dropEl) {
+          if (dropEl !== row) dropEl.classList.remove('np-dnd-drop-onto');
+        });
+        row.classList.add('np-dnd-drop-onto');
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+        return;
+      }
+      if (dnd.type !== 'category' || dnd.id === node.cat.id) return;
       if (dnd.areaId !== node.cat.area_id || dnd.parentId !== normalizePlanParentId(node.cat.parent_id)) return;
       e.preventDefault();
+      row.classList.remove('np-dnd-drop-onto');
       var r = row.getBoundingClientRect();
       var after = e.clientY > r.top + r.height / 2;
       markPlanDropTarget(row, after);
@@ -19775,12 +19943,22 @@
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
     });
     row.addEventListener('dragleave', function () {
-      row.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after');
+      row.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after', 'np-dnd-drop-onto');
       delete row.dataset.npDropAfter;
     });
     row.addEventListener('drop', async function (e) {
       var dnd = state.planProDnd;
-      if (!dnd || dnd.type !== 'category') return;
+      if (!dnd) return;
+      if (dnd.type === 'item') {
+        e.preventDefault();
+        var dragItemId = dnd.id;
+        state.lastPlanProDndEndedAt = Date.now();
+        state.planProDnd = null;
+        clearPlanDndClasses(document);
+        await movePlanProItemToCategory(dragItemId, node.cat.id);
+        return;
+      }
+      if (dnd.type !== 'category') return;
       if (dnd.areaId !== node.cat.area_id || dnd.parentId !== normalizePlanParentId(node.cat.parent_id)) return;
       e.preventDefault();
       var after = row.dataset.npDropAfter === '1';
@@ -20086,6 +20264,7 @@
         btn.className = 'np-sheet-chip np-sheet-chip-sibling' + (s.id === cid ? ' np-sheet-chip-active' : '');
         btn.textContent = s.title || 'Sin título';
         btn.addEventListener('click', function () { selectCategory(s.id); });
+        wirePlanCategoryDropTarget(btn, s.id);
         sibRow.appendChild(btn);
       });
       sibBlock.appendChild(sibRow);
@@ -20102,6 +20281,7 @@
         btn.className = 'np-sheet-chip';
         btn.textContent = ch.title || 'Sin título';
         btn.addEventListener('click', function () { selectCategory(ch.id); });
+        wirePlanCategoryDropTarget(btn, ch.id);
         childRow.appendChild(btn);
       });
       childBlock.appendChild(childRow);
@@ -20203,7 +20383,7 @@
       row.setAttribute('role', 'presentation');
       row.setAttribute('data-area-id', a.id);
       row.setAttribute('draggable', 'true');
-      row.title = 'Arrastra para ordenar plantas';
+      row.title = 'Arrastra para ordenar plantas · suelta un apunte aquí para moverlo a esta planta';
       (function (aid, rowEl) {
         rowEl.addEventListener('dragstart', function (e) {
           if (e.target && e.target.closest && e.target.closest('.np-pillar-tab-more')) {
@@ -20218,8 +20398,21 @@
           }
         });
         rowEl.addEventListener('dragover', function (e) {
-          if (!state.planProDnd || state.planProDnd.type !== 'area' || state.planProDnd.id === aid) return;
+          var dnd = state.planProDnd;
+          if (!dnd) return;
+          if (dnd.type === 'item') {
+            if (dnd.areaId === aid) return;
+            e.preventDefault();
+            document.querySelectorAll('.np-dnd-drop-before,.np-dnd-drop-after,.np-dnd-drop-onto').forEach(function (el) {
+              el.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after', 'np-dnd-drop-onto');
+            });
+            rowEl.classList.add('np-dnd-drop-onto');
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+            return;
+          }
+          if (dnd.type !== 'area' || dnd.id === aid) return;
           e.preventDefault();
+          rowEl.classList.remove('np-dnd-drop-onto');
           var r = rowEl.getBoundingClientRect();
           var after = e.clientX > r.left + r.width / 2;
           markPlanDropTarget(rowEl, after);
@@ -20227,15 +20420,23 @@
           if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
         });
         rowEl.addEventListener('dragleave', function () {
-          rowEl.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after');
+          rowEl.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after', 'np-dnd-drop-onto');
           delete rowEl.dataset.npDropAfter;
         });
         rowEl.addEventListener('drop', async function (e) {
-          if (!state.planProDnd || state.planProDnd.type !== 'area') return;
+          var dnd = state.planProDnd;
+          if (!dnd) return;
           e.preventDefault();
-          var dragId = state.planProDnd.id;
-          var after = rowEl.dataset.npDropAfter === '1';
           state.lastPlanProDndEndedAt = Date.now();
+          var dragId = dnd.id;
+          if (dnd.type === 'item') {
+            state.planProDnd = null;
+            clearPlanDndClasses(document);
+            await movePlanProItemToArea(dragId, aid);
+            return;
+          }
+          if (dnd.type !== 'area') return;
+          var after = rowEl.dataset.npDropAfter === '1';
           state.planProDnd = null;
           clearPlanDndClasses(document);
           await reorderPlanAreas(dragId, aid, after);
