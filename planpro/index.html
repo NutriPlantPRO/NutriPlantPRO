@@ -6415,10 +6415,10 @@
       background: #1d4ed8;
     }
     .np-cal-overlay-head {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px 14px;
+      display: grid;
+      grid-template-columns: minmax(148px, auto) minmax(0, 1fr);
+      gap: 8px 14px;
+      align-items: start;
       margin-bottom: 10px;
     }
     .np-cal-overlay-nav {
@@ -6437,7 +6437,8 @@
     .np-cal-overlay-summary-wrap {
       position: relative;
       flex: 1;
-      min-width: 220px;
+      min-width: 0;
+      width: 100%;
     }
     .np-cal-overlay-summary {
       display: flex;
@@ -6445,6 +6446,24 @@
       gap: 6px;
       font-size: 11px;
       color: #64748b;
+      width: 100%;
+    }
+    .np-cal-overlay-summary-cols {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+    }
+    @media (min-width: 720px) {
+      .np-cal-overlay-summary-cols {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 6px 14px;
+        align-items: start;
+      }
+      .np-cal-overlay-summary-cols--single {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
     .np-cal-overlay-summary-row {
       display: flex;
@@ -6454,6 +6473,7 @@
     }
     .np-cal-overlay-summary-row--detail {
       padding-top: 2px;
+      align-items: flex-start;
     }
     .np-cal-overlay-summary-row-label {
       font-size: 9px;
@@ -6462,6 +6482,33 @@
       text-transform: uppercase;
       color: #94a3b8;
       margin-right: 2px;
+      flex: 0 0 100%;
+      width: 100%;
+    }
+    .np-cal-overlay-summary-more-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px dashed rgba(148, 163, 184, 0.55);
+      background: rgba(248, 250, 252, 0.95);
+      font-size: 10px;
+      font-weight: 700;
+      font-family: inherit;
+      color: #64748b;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+    .np-cal-overlay-summary-more-btn:hover {
+      background: #fff;
+      border-color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 35%, rgba(148, 163, 184, 0.5));
+      color: #0f172a;
+    }
+    .np-cal-overlay-root-chip--extra {
+      display: none;
+    }
+    .np-cal-overlay-summary-row--roots.np-cal-overlay-summary-row--expanded .np-cal-overlay-root-chip--extra {
+      display: inline-flex;
     }
     .np-cal-overlay-summary-chip {
       display: inline-flex;
@@ -14349,6 +14396,8 @@
     return btn;
   }
 
+  var CAL_OVERLAY_ROOT_CHIP_LIMIT = 5;
+
   function renderCalOverlaySummary() {
     var mount = $('npCalOverlaySummary');
     if (!mount) return;
@@ -14417,8 +14466,9 @@
     );
     mount.appendChild(rowMain);
     var multiPlant = (state.calOverlayAreaIds || []).length > 1;
+    var rowPlants = null;
     if (multiPlant) {
-      var rowPlants = document.createElement('div');
+      rowPlants = document.createElement('div');
       rowPlants.className = 'np-cal-overlay-summary-row np-cal-overlay-summary-row--detail';
       var plantLab = document.createElement('span');
       plantLab.className = 'np-cal-overlay-summary-row-label';
@@ -14448,24 +14498,26 @@
               accent: resolvePlantAccentHex(plant.areaId),
               label: plant.plantTitle + ' · ' + calOverlaySummaryStatsLabel(plant),
               popTitle: plant.plantTitle + ' · ' + monthLabel,
-              title: 'Ver semáforos de «' + plant.plantTitle + '»',
+              title: 'Ver semáforos de «' + (plant.plantTitle || 'Planta') + '»',
               entries: plant.entries
             })
           );
         });
-      mount.appendChild(rowPlants);
     }
     var rootKeys = Object.keys(byRoot).sort(function (a, b) {
       return byRoot[b].total - byRoot[a].total || a.localeCompare(b);
     });
+    var rowRoots = null;
     if (rootKeys.length) {
-      var rowRoots = document.createElement('div');
-      rowRoots.className = 'np-cal-overlay-summary-row np-cal-overlay-summary-row--detail';
+      rowRoots = document.createElement('div');
+      rowRoots.className = 'np-cal-overlay-summary-row np-cal-overlay-summary-row--detail np-cal-overlay-summary-row--roots';
       var rootLab = document.createElement('span');
       rootLab.className = 'np-cal-overlay-summary-row-label';
-      rootLab.textContent = 'Por rama';
+      rootLab.textContent = 'Por rama · ' + rootKeys.length;
       rowRoots.appendChild(rootLab);
-      rootKeys.slice(0, 8).forEach(function (rootName) {
+      var visibleRoots = rootKeys.slice(0, CAL_OVERLAY_ROOT_CHIP_LIMIT);
+      var hiddenRoots = rootKeys.slice(CAL_OVERLAY_ROOT_CHIP_LIMIT);
+      visibleRoots.forEach(function (rootName) {
         var c = byRoot[rootName];
         rowRoots.appendChild(
           makeCalOverlaySummaryChip({
@@ -14478,7 +14530,40 @@
           })
         );
       });
-      mount.appendChild(rowRoots);
+      hiddenRoots.forEach(function (rootName) {
+        var c = byRoot[rootName];
+        var chip = makeCalOverlaySummaryChip({
+          chipClass: 'np-cal-overlay-root-chip np-cal-overlay-root-chip--extra',
+          kind: 'root',
+          label: rootName + ' · ' + calOverlaySummaryStatsLabel(c),
+          popTitle: rootName + ' · ' + monthLabel,
+          title: 'Ver semáforos en «' + rootName + '»',
+          entries: c.entries
+        });
+        rowRoots.appendChild(chip);
+      });
+      if (hiddenRoots.length) {
+        var moreBtn = document.createElement('button');
+        moreBtn.type = 'button';
+        moreBtn.className = 'np-cal-overlay-summary-more-btn';
+        moreBtn.textContent = '+ ' + hiddenRoots.length + ' rama' + (hiddenRoots.length === 1 ? '' : 's');
+        moreBtn.title = 'Mostrar u ocultar el resto de ramas con semáforos este mes';
+        moreBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var open = rowRoots.classList.toggle('np-cal-overlay-summary-row--expanded');
+          moreBtn.textContent = open ? 'Menos ramas' : '+ ' + hiddenRoots.length + ' rama' + (hiddenRoots.length === 1 ? '' : 's');
+        });
+        rowRoots.appendChild(moreBtn);
+      }
+    }
+    if (rowPlants || rowRoots) {
+      var cols = document.createElement('div');
+      cols.className =
+        'np-cal-overlay-summary-cols' + (!rowPlants || !rowRoots ? ' np-cal-overlay-summary-cols--single' : '');
+      if (rowPlants) cols.appendChild(rowPlants);
+      if (rowRoots) cols.appendChild(rowRoots);
+      mount.appendChild(cols);
     }
   }
 
