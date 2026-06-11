@@ -773,6 +773,81 @@
         font-size: 7px;
       }
     }
+    @media (max-width: 640px) {
+      header.np-plan-header.np-mac-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+      .np-plan-header.np-mac-bar .np-plan-actions {
+        width: 100%;
+        margin-left: 0;
+        max-width: 100%;
+      }
+      .np-plan-header-actions-inline {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        width: 100%;
+        min-width: 0;
+      }
+      #npFxRateBtn {
+        grid-column: 1;
+        grid-row: 1;
+      }
+      #npWeatherBtn {
+        grid-column: 2;
+        grid-row: 1;
+      }
+      #npStorageUsageBtn {
+        grid-column: 3;
+        grid-row: 1;
+      }
+      #npCloudSyncBtn {
+        grid-column: 1;
+        grid-row: 2;
+        justify-self: center;
+      }
+      #npPlanHeaderMenuBtn {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: center;
+      }
+      #npBtnLogout {
+        grid-column: 3;
+        grid-row: 2;
+        justify-self: center;
+      }
+      .np-fx-rate-pill,
+      .np-weather-pill,
+      .np-storage-usage-pill {
+        min-width: 0;
+        max-width: none;
+        width: 100%;
+        height: 38px;
+        padding: 3px 5px;
+      }
+      .np-fx-rate-sub,
+      .np-weather-sub,
+      .np-storage-usage-sub {
+        display: none;
+      }
+      .np-fx-rate-num,
+      .np-weather-num,
+      .np-storage-usage-num {
+        font-size: 9px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
+      .np-cloud-sync-btn,
+      .np-plan-header-menu-btn,
+      .np-plan-header-logout-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px !important;
+      }
+    }
     .np-weather-pill {
       flex-shrink: 0;
       display: inline-flex;
@@ -7808,7 +7883,7 @@
                 <select id="npFxRateTo" aria-label="Moneda destino"></select>
               </div>
             </div>
-            <p id="npFxRatePopMeta" class="np-fx-rate-pop-meta">Referencia orientativa · se actualiza cada 5 min.</p>
+            <p id="npFxRatePopMeta" class="np-fx-rate-pop-meta">—</p>
             <div class="np-fx-rate-pop-actions">
               <a id="npFxRateGoogleLink" class="btn-mac-link btn-mac-link--brand-ga" href="https://www.google.com/search?q=1+USD+to+MXN" target="_blank" rel="noopener noreferrer">Ver en Google</a>
               <button type="button" class="btn-mac-link" id="npFxRateRefreshBtn">Actualizar</button>
@@ -7828,7 +7903,7 @@
               <div><strong>Nubosidad</strong><span id="npWeatherPopCloud">—</span></div>
             </div>
             <p id="npWeatherPopPlace" class="np-weather-pop-place">—</p>
-            <p id="npWeatherPopMeta" class="np-weather-pop-meta">Open-Meteo · referencia orientativa · cada 5 min.</p>
+            <p id="npWeatherPopMeta" class="np-weather-pop-meta">—</p>
             <div class="np-weather-pop-actions">
               <a id="npWeatherGoogleLink" class="btn-mac-link btn-mac-link--brand-ga" href="https://www.google.com/search?q=clima" target="_blank" rel="noopener noreferrer">Ver en Google</a>
               <button type="button" class="btn-mac-link" id="npWeatherLocBtn">Mi ubicación</button>
@@ -8893,7 +8968,51 @@
     }, delayMs == null ? 0 : delayMs);
   }
 
-  var NP_FX_REFRESH_MS = 5 * 60 * 1000;
+  var NP_FX_REFRESH_MS = 15 * 60 * 1000;
+
+  function planProHeaderCompact() {
+    return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
+  }
+
+  function planProFxPillLine(from, to, rate) {
+    if (planProHeaderCompact() && isFinite(Number(rate))) {
+      return planProFxFormatRate(rate) + ' ' + planProFxCurrencyLabel(to);
+    }
+    return planProFxPairLabel(from, to, rate);
+  }
+
+  function planProWeatherPillLine() {
+    if (planProHeaderCompact()) {
+      return (
+        planProWeatherFmtTemp(planProWeatherState.temp) +
+        ' · ' +
+        planProWeatherFmtPct(planProWeatherState.humidity)
+      );
+    }
+    return (
+      planProWeatherFmtTemp(planProWeatherState.temp) +
+      ' · ' +
+      planProWeatherFmtPct(planProWeatherState.humidity) +
+      ' · UV ' +
+      planProWeatherFmtUv(planProWeatherState.uv)
+    );
+  }
+
+  function planProStartFxTimer() {
+    if (planProFxTimer) clearInterval(planProFxTimer);
+    planProFxTimer = setInterval(function () {
+      if (document.hidden) return;
+      refreshPlanProFxRate(false);
+    }, NP_FX_REFRESH_MS);
+  }
+
+  function planProStartWeatherTimer() {
+    if (planProWeatherTimer) clearInterval(planProWeatherTimer);
+    planProWeatherTimer = setInterval(function () {
+      if (document.hidden) return;
+      refreshPlanProWeather({ requestLocation: false });
+    }, NP_WEATHER_REFRESH_MS);
+  }
   var NP_FX_CURRENCIES = [
     { code: 'USD', label: 'USD · Dólar USA' },
     { code: 'MXN', label: 'MXN · Peso mexicano' },
@@ -8998,17 +9117,14 @@
     }
     if (btn) btn.setAttribute('data-state', 'ok');
     var label = planProFxPairLabel(planProFxState.from, planProFxState.to, planProFxState.rate);
-    if (num) num.textContent = label;
+    var pillLine = planProFxPillLine(planProFxState.from, planProFxState.to, planProFxState.rate);
+    if (num) num.textContent = pillLine;
     if (live) live.textContent = label;
     if (meta) {
       var when = planProFxState.updatedAt
         ? new Date(planProFxState.updatedAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })
         : '—';
-      meta.textContent =
-        'Referencia orientativa (mercado libre) · actualizado ' +
-        when +
-        (planProFxState.source ? ' · ' + planProFxState.source : '') +
-        ' · cada 5 min';
+      meta.textContent = when;
     }
     if (btn) {
       btn.title =
@@ -9162,15 +9278,13 @@
     });
     window.addEventListener('resize', function () {
       positionPlanProFxPopover();
+      if (planProFxState.rate != null) planProFxRenderUi({});
     });
     refreshPlanProFxRate(true);
-    if (planProFxTimer) clearInterval(planProFxTimer);
-    planProFxTimer = setInterval(function () {
-      refreshPlanProFxRate(false);
-    }, NP_FX_REFRESH_MS);
+    planProStartFxTimer();
   }
 
-  var NP_WEATHER_REFRESH_MS = 5 * 60 * 1000;
+  var NP_WEATHER_REFRESH_MS = 30 * 60 * 1000;
   var planProWeatherTimer = null;
   var planProWeatherLoading = false;
   var planProWeatherLocLoading = false;
@@ -9308,12 +9422,7 @@
     }
     if (btn) btn.setAttribute('data-state', 'ok');
     var wmo = planProWeatherWmo(planProWeatherState.weatherCode);
-    var main =
-      planProWeatherFmtTemp(planProWeatherState.temp) +
-      ' · ' +
-      planProWeatherFmtPct(planProWeatherState.humidity) +
-      ' · UV ' +
-      planProWeatherFmtUv(planProWeatherState.uv);
+    var main = planProWeatherPillLine();
     var subLine =
       (planProWeatherState.conditionShort || wmo.short) +
       ' · ' +
@@ -9353,10 +9462,7 @@
             timeStyle: 'short'
           })
         : '—';
-      meta.textContent =
-        'Open-Meteo (misma fuente que VPD) · referencia orientativa · actualizado ' +
-        when +
-        ' · cada 5 min';
+      meta.textContent = when;
     }
     if (btn) {
       btn.title = main + ' · ' + subLine + ' · toca para detalle';
@@ -9441,18 +9547,26 @@
     };
   }
 
-  async function planProWeatherApplyCoords(lat, lng, geocode) {
+  function planProWeatherScheduleGeocode(lat, lng) {
+    planProReverseGeocodeWeather(lat, lng)
+      .then(function (name) {
+        if (!name) return;
+        planProWeatherState.placeName = name;
+        planProWeatherSaveCachedLoc();
+        if (!planProWeatherLoading) planProWeatherRenderUi({});
+      })
+      .catch(function () {});
+  }
+
+  function planProWeatherApplyCoords(lat, lng, geocode) {
     var moved = planProWeatherCoordsChanged(lat, lng);
     planProWeatherState.lat = lat;
     planProWeatherState.lng = lng;
-    if (geocode && (moved || !planProWeatherState.placeName)) {
-      try {
-        planProWeatherState.placeName = await planProReverseGeocodeWeather(lat, lng);
-      } catch (geoErr) {
-        planProWeatherState.placeName = lat.toFixed(3) + ', ' + lng.toFixed(3);
-      }
+    if (moved || !planProWeatherState.placeName) {
+      planProWeatherState.placeName = lat.toFixed(3) + ', ' + lng.toFixed(3);
     }
     planProWeatherSaveCachedLoc();
+    if (geocode) planProWeatherScheduleGeocode(lat, lng);
   }
 
   async function planProWeatherTryUpdateLocation(forceFresh) {
@@ -9460,7 +9574,7 @@
     planProWeatherLocLoading = true;
     try {
       var loc = await planProWeatherRequestLocation(!!forceFresh);
-      await planProWeatherApplyCoords(loc.lat, loc.lng, true);
+      planProWeatherApplyCoords(loc.lat, loc.lng, true);
       return loc;
     } catch (e) {
       return null;
@@ -9600,12 +9714,10 @@
     });
     window.addEventListener('resize', function () {
       positionPlanProWeatherPopover();
+      if (planProWeatherState.temp != null) planProWeatherRenderUi({});
     });
     refreshPlanProWeather({ force: true, requestLocation: true });
-    if (planProWeatherTimer) clearInterval(planProWeatherTimer);
-    planProWeatherTimer = setInterval(function () {
-      refreshPlanProWeather({ requestLocation: true });
-    }, NP_WEATHER_REFRESH_MS);
+    planProStartWeatherTimer();
   }
 
   async function refreshPlanProStorageUsage(opts) {
