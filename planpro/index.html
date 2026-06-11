@@ -775,63 +775,101 @@
     }
     @media (max-width: 720px) {
       header.np-plan-header.np-mac-bar {
-        flex-direction: row;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, min(46vw, 220px));
+        grid-template-rows: auto auto;
         align-items: center;
-        flex-wrap: nowrap;
-        gap: 6px;
-        padding: 8px 10px;
+        gap: 6px 8px;
+        padding: 10px 12px;
         margin-bottom: 12px;
+        flex-direction: unset;
+        flex-wrap: unset;
+        justify-content: unset;
       }
       .np-plan-brand {
-        flex: 0 1 auto;
+        grid-column: 1;
+        grid-row: 1 / 3;
+        align-self: center;
+        flex: unset;
         min-width: 0;
-        max-width: 36%;
+        max-width: none;
+        width: auto;
+        gap: 10px;
+        padding-right: 2px;
       }
       .np-plan-brand img {
-        height: 30px;
+        height: 34px;
+        flex-shrink: 0;
       }
       .np-plan-brand h1 {
-        font-size: 0.92rem;
-        line-height: 1.1;
+        font-size: 1.05rem;
+        line-height: 1.15;
+        white-space: normal;
       }
       .np-plan-brand .sub {
-        display: none;
+        display: block;
+        font-size: 11px;
+        line-height: 1.2;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
       }
       .np-plan-header.np-mac-bar .np-plan-actions {
-        flex: 1 1 auto;
+        grid-column: 2;
+        grid-row: 1 / 3;
+        align-self: center;
+        flex: unset;
         min-width: 0;
-        width: auto;
-        margin-left: auto;
+        width: 100%;
+        margin-left: 0;
         max-width: none;
-        align-items: center;
+        align-items: stretch;
       }
       .np-plan-header-actions-inline {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 4px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: auto auto;
+        gap: 6px;
         width: 100%;
         min-width: 0;
-        overflow-x: auto;
-        overscroll-behavior-x: contain;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
+        overflow: visible;
       }
-      .np-plan-header-actions-inline::-webkit-scrollbar {
-        display: none;
+      #npFxRateBtn {
+        grid-column: 1;
+        grid-row: 1;
+      }
+      #npWeatherBtn {
+        grid-column: 2;
+        grid-row: 1;
+      }
+      #npStorageUsageBtn {
+        grid-column: 3;
+        grid-row: 1;
+      }
+      #npCloudSyncBtn {
+        grid-column: 1;
+        grid-row: 2;
+        justify-self: stretch;
+      }
+      #npPlanHeaderMenuBtn {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: stretch;
+      }
+      #npBtnLogout {
+        grid-column: 3;
+        grid-row: 2;
+        justify-self: stretch;
       }
       .np-fx-rate-pill,
       .np-weather-pill,
       .np-storage-usage-pill {
-        flex: 0 0 auto;
+        width: 100%;
         min-width: 0;
         max-width: none;
-        width: auto;
-        height: 34px;
-        padding: 2px 6px;
-        border-radius: 9px;
+        height: 38px;
+        padding: 3px 5px;
+        border-radius: 10px;
       }
       .np-fx-rate-sub,
       .np-weather-sub,
@@ -841,21 +879,22 @@
       .np-fx-rate-num,
       .np-weather-num,
       .np-storage-usage-num {
-        font-size: 8px;
+        font-size: 9px;
         line-height: 1.1;
         white-space: nowrap;
-        overflow: visible;
-        text-overflow: clip;
-        max-width: none;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
       }
       .np-cloud-sync-btn,
       .np-plan-header-menu-btn,
       .np-plan-header-logout-btn {
-        flex: 0 0 auto;
-        width: 34px;
-        height: 34px;
-        min-width: 34px !important;
-        border-radius: 9px;
+        width: 100%;
+        max-width: 44px;
+        height: 40px;
+        min-width: 0 !important;
+        margin-inline: auto;
+        border-radius: 10px;
       }
       .np-cloud-sync-btn .np-cloud-sync-icon {
         width: 18px;
@@ -1546,6 +1585,7 @@
       word-break: break-word;
       display: -webkit-box;
       -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -1556,6 +1596,7 @@
       line-height: 1.35;
       display: -webkit-box;
       -webkit-line-clamp: 1;
+      line-clamp: 1;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -3734,6 +3775,21 @@
         background: rgba(255, 255, 255, 0.98);
       }
     }
+    /* Header móvil ≤720px: marca izquierda (2 filas) + widgets/botones derecha (3+3). */
+    @media (max-width: 720px) {
+      header.np-plan-header.np-mac-bar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, min(46vw, 220px));
+        align-items: center;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+      }
+      .np-plan-header.np-mac-bar .np-plan-actions {
+        width: 100%;
+        margin-left: 0;
+        align-items: stretch;
+      }
+    }
     @media (max-width: 480px) {
       #npMain .panel {
         padding: 12px 12px 14px;
@@ -5898,7 +5954,6 @@
       display: block;
       margin: 0.55em 0;
       box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
-      vertical-align: middle;
       touch-action: manipulation;
     }
     /* Arrastra desde la esquina inferior derecha para cambiar tamaño (apuntes). */
@@ -6348,6 +6403,7 @@
       line-height: 1.45;
       display: -webkit-box;
       -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -6675,7 +6731,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin: 0 0 2px;
+      margin: 0 0 1px;
       font-size: 1.05rem;
       color: #0f172a;
     }
@@ -6711,7 +6767,7 @@
       letter-spacing: 0.05em;
       text-transform: uppercase;
       color: #64748b;
-      margin-right: 4px;
+      margin-right: 2px;
     }
     .np-cal-overlay-plant-quick {
       display: inline-flex;
@@ -6786,8 +6842,9 @@
       align-items: center;
       justify-content: center;
       gap: 8px 12px;
-      padding: 1px 6px 2px;
+      padding: 2px 6px 3px;
       margin: 0;
+      border-top: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 8%, rgba(148, 163, 184, 0.22));
       border-bottom: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 12%, rgba(148, 163, 184, 0.32));
       position: sticky;
       top: 0;
@@ -6808,49 +6865,59 @@
       letter-spacing: 0.01em;
     }
     .np-cal-overlay-panel .np-modal-head {
-      padding: 10px 14px 4px;
+      padding: 8px 12px 6px;
+      border-bottom: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 10%, rgba(148, 163, 184, 0.28));
+      gap: 8px;
     }
     .np-cal-overlay-summary-wrap {
       position: relative;
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      margin: 0;
+      margin: 4px 0 0;
+      flex: 0 0 auto;
       flex-shrink: 0;
       min-width: 0;
+      align-self: stretch;
     }
     .np-cal-overlay-summary {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 0;
       font-size: 11px;
       color: #64748b;
       width: 100%;
       max-width: 100%;
       min-width: 0;
       box-sizing: border-box;
-      padding: 3px 6px;
-      border-radius: 9px;
+      padding: 2px 6px 3px;
+      border-radius: 8px;
       border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, rgba(148, 163, 184, 0.35));
       background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 5%, rgba(255, 255, 255, 0.88));
       overflow: hidden;
+      height: auto;
+      flex: 0 0 auto;
     }
     .np-cal-overlay-summary-row--total {
       width: 100%;
+      margin: 0;
     }
     .np-cal-overlay-summary-row--total .np-cal-overlay-total-chip {
       flex: 1 1 100%;
       width: 100%;
       justify-content: center;
       box-sizing: border-box;
-      padding: 3px 6px;
+      padding: 2px 6px;
       font-size: 11px;
       line-height: 1.2;
+      border: 0;
+      background: transparent;
+      border-radius: 6px;
     }
     .np-cal-overlay-summary-cols {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 0;
       width: 100%;
       max-width: 100%;
       min-width: 0;
@@ -6859,34 +6926,38 @@
       display: flex;
       flex-wrap: wrap;
       gap: 3px 6px;
-      align-items: center;
+      align-items: flex-start;
+      align-content: flex-start;
       width: 100%;
       max-width: 100%;
       min-width: 0;
       box-sizing: border-box;
+      flex: 0 0 auto;
     }
     .np-cal-overlay-summary-row--detail {
-      padding: 2px 5px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.52);
-      border: 1px solid rgba(148, 163, 184, 0.24);
-      align-items: stretch;
+      padding: 0 0 1px;
+      margin: 0;
+      border: 0;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 0;
+      background: transparent;
+      align-items: flex-start;
       flex-direction: column;
       gap: 1px;
+      flex: 0 0 auto;
     }
     .np-cal-overlay-summary-chip-strip {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 148px), 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 3px;
       width: 100%;
       max-width: 100%;
       min-width: 0;
       box-sizing: border-box;
+      align-content: flex-start;
+      align-items: flex-start;
     }
     @media (max-width: 719px) {
-      .np-cal-overlay-summary-chip-strip {
-        grid-template-columns: repeat(auto-fill, minmax(min(100%, 132px), 1fr));
-      }
       .np-cal-overlay-total-chip {
         max-width: 100%;
         white-space: normal;
@@ -6903,7 +6974,7 @@
       margin: 0;
       flex: 0 0 100%;
       width: 100%;
-      line-height: 1.2;
+      line-height: 1.1;
     }
     .np-cal-overlay-summary-more-btn {
       display: inline-flex;
@@ -6939,11 +7010,12 @@
       align-items: center;
       justify-content: flex-start;
       gap: 5px;
-      width: 100%;
+      width: auto;
       max-width: 100%;
+      flex: 0 1 auto;
       min-width: 0;
       box-sizing: border-box;
-      padding: 4px 8px;
+      padding: 3px 7px;
       border-radius: 999px;
       border: 1px solid rgba(148, 163, 184, 0.35);
       background: rgba(255, 255, 255, 0.92);
@@ -7126,13 +7198,16 @@
       padding: 0 12px 6px !important;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 0;
+      white-space: normal;
+      line-height: 1.25;
     }
     .np-cal-overlay-grid {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 6px;
       min-height: 0;
+      margin-top: 0;
     }
     .np-cal-overlay-dow {
       text-align: center;
@@ -7386,22 +7461,22 @@
         padding: 6px 6px 10px;
       }
       .np-cal-overlay-panel .np-modal-head {
-        padding: 8px 10px 2px;
+        padding: 6px 8px 4px;
         gap: 6px;
+      }
+      .np-cal-overlay-summary-wrap {
+        margin: 3px 0 0;
       }
       .np-cal-overlay-body {
         padding: 0 6px 6px !important;
-        gap: 1px;
-      }
-      .np-cal-overlay-summary-wrap {
-        margin: 0;
+        gap: 0;
       }
       .np-cal-overlay-summary {
-        padding: 2px 5px;
-        gap: 1px;
+        padding: 2px 5px 2px;
+        gap: 0;
       }
       .np-cal-overlay-month-bar {
-        padding: 0 4px 2px;
+        padding: 1px 4px 2px;
         margin: 0;
       }
       .np-cal-overlay-month-label {
@@ -8706,14 +8781,13 @@
             <span>Calendario de semáforos</span>
           </h3>
           <div id="npCalOverlayPlantFilter" class="np-cal-overlay-plant-filter" aria-label="Plantas visibles"></div>
+          <div class="np-cal-overlay-summary-wrap">
+            <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
+          </div>
         </div>
         <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayClose" style="flex-shrink:0;">Cerrar</button>
       </div>
       <div id="npCalOverlayBody" class="np-modal-body np-cal-overlay-body">
-        <div class="np-cal-overlay-summary-wrap">
-          <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
-          <div id="npCalOverlaySummaryPop" class="np-cal-overlay-summary-pop np-hide" role="dialog" aria-hidden="true" aria-label="Detalle de semáforos"></div>
-        </div>
         <div class="np-cal-overlay-month-bar" aria-label="Mes del calendario">
           <div class="np-cal-overlay-nav">
             <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayPrev" aria-label="Mes anterior">◀</button>
@@ -8723,6 +8797,7 @@
         </div>
         <div id="npCalOverlayGrid" class="np-cal-overlay-grid" role="grid" aria-label="Mes con semáforos"></div>
       </div>
+      <div id="npCalOverlaySummaryPop" class="np-cal-overlay-summary-pop np-hide" role="dialog" aria-hidden="true" aria-label="Detalle de semáforos"></div>
       <div class="np-modal-foot" style="padding:10px 16px 14px;border-top:1px solid rgba(148,163,184,0.35);">
         <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayDownloadBtn">
           Descargar agenda del mes (.ics)
@@ -9355,7 +9430,7 @@
       if (o && Number.isFinite(Number(o.lat)) && Number.isFinite(Number(o.lng))) {
         planProWeatherState.lat = Number(o.lat);
         planProWeatherState.lng = Number(o.lng);
-        if (o.placeName) planProWeatherState.placeName = String(o.placeName);
+        if (o.placeName) planProWeatherState.placeName = planProWeatherNormalizePlaceName(String(o.placeName));
       }
     } catch (e) {}
   }
@@ -9422,13 +9497,38 @@
     return s.slice(0, 20) + '…';
   }
 
+  function planProWeatherFormatCountryName(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return '';
+    if (/^(méxico|mexico)$/i.test(s)) return 'Mexico';
+    if (/^(estados unidos|united states|usa|u\.?s\.?a\.?)$/i.test(s)) return 'United States';
+    if (/^(españa|spain)$/i.test(s)) return 'España';
+    if (/^(reino unido|united kingdom|uk)$/i.test(s)) return 'United Kingdom';
+    return s.replace(/(^|[\s\-'])([a-zà-ÿ])/g, function (_m, sep, ch) {
+      return sep + ch.toUpperCase();
+    });
+  }
+
+  function planProWeatherNormalizePlaceName(name) {
+    var parts = String(name || '')
+      .split(',')
+      .map(function (p) {
+        return p.trim();
+      })
+      .filter(Boolean);
+    if (parts.length >= 3) {
+      parts[parts.length - 1] = planProWeatherFormatCountryName(parts[parts.length - 1]);
+    } else if (parts.length === 2 && /^(méxico|mexico)$/i.test(parts[1])) {
+      parts[1] = 'Mexico';
+    }
+    return parts.join(', ');
+  }
+
   function planProWeatherFormatPlaceFromAddress(addr) {
     if (!addr) return '';
     var city = addr.city || addr.town || addr.village || addr.municipality || addr.county;
     var state = addr.state || addr.region;
-    var country = String(addr.country || '').trim();
-    if (/^méxico$/i.test(country) || /^mexico$/i.test(country)) country = 'mexico';
-    else if (country) country = country.toLowerCase();
+    var country = planProWeatherFormatCountryName(addr.country || '');
     var parts = [city, state, country].filter(Boolean);
     return parts.join(', ');
   }
@@ -9438,7 +9538,7 @@
   }
 
   function planProWeatherGoogleUrl() {
-    var place = String(planProWeatherState.placeName || '').trim();
+    var place = planProWeatherNormalizePlaceName(planProWeatherState.placeName || '');
     if (!place || planProWeatherPlaceLooksLikeCoords(place)) place = '';
     if (place) {
       var commaParts = place.split(',').map(function (p) {
@@ -9448,7 +9548,7 @@
         var la = planProWeatherState.lat;
         var lo = planProWeatherState.lng;
         if (la >= 14 && la <= 33 && lo >= -118 && lo <= -86) {
-          place = place + ', mexico';
+          place = place + ', Mexico';
         }
       }
     }
@@ -9618,7 +9718,7 @@
     planProReverseGeocodeWeather(lat, lng)
       .then(function (name) {
         if (!name) return;
-        planProWeatherState.placeName = name;
+        planProWeatherState.placeName = planProWeatherNormalizePlaceName(name);
         planProWeatherSaveCachedLoc();
         if (!planProWeatherLoading) planProWeatherRenderUi({});
       })
