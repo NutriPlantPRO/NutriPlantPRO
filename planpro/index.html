@@ -6314,7 +6314,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin: 0 0 6px;
+      margin: 0 0 4px;
       font-size: 1.05rem;
       color: #0f172a;
     }
@@ -6341,7 +6341,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin-bottom: 10px;
+      margin-bottom: 0;
       align-items: center;
     }
     .np-cal-overlay-plant-filter-label {
@@ -6425,8 +6425,8 @@
       align-items: center;
       justify-content: center;
       gap: 8px 12px;
-      padding: 8px 6px 10px;
-      margin-bottom: 4px;
+      padding: 4px 6px 6px;
+      margin-bottom: 2px;
       border-bottom: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 12%, rgba(148, 163, 184, 0.32));
       position: sticky;
       top: 0;
@@ -6446,27 +6446,30 @@
       color: #0f172a;
       letter-spacing: 0.01em;
     }
+    .np-cal-overlay-panel .np-modal-head {
+      padding-bottom: 8px;
+    }
     .np-cal-overlay-summary-wrap {
       position: relative;
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      margin: 0 0 10px;
+      margin: 0 0 4px;
       flex-shrink: 0;
       min-width: 0;
     }
     .np-cal-overlay-summary {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 4px;
       font-size: 11px;
       color: #64748b;
       width: 100%;
       max-width: 100%;
       min-width: 0;
       box-sizing: border-box;
-      padding: 10px 12px;
-      border-radius: 11px;
+      padding: 6px 10px;
+      border-radius: 10px;
       border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, rgba(148, 163, 184, 0.35));
       background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 5%, rgba(255, 255, 255, 0.88));
       overflow: hidden;
@@ -6479,13 +6482,13 @@
       width: 100%;
       justify-content: center;
       box-sizing: border-box;
-      padding: 7px 12px;
+      padding: 5px 10px;
       font-size: 11px;
     }
     .np-cal-overlay-summary-cols {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 4px;
       width: 100%;
       max-width: 100%;
       min-width: 0;
@@ -6501,18 +6504,18 @@
       box-sizing: border-box;
     }
     .np-cal-overlay-summary-row--detail {
-      padding: 8px 10px;
-      border-radius: 9px;
+      padding: 5px 8px;
+      border-radius: 8px;
       background: rgba(255, 255, 255, 0.52);
       border: 1px solid rgba(148, 163, 184, 0.24);
       align-items: stretch;
       flex-direction: column;
-      gap: 6px;
+      gap: 3px;
     }
     .np-cal-overlay-summary-chip-strip {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr));
-      gap: 6px;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 148px), 1fr));
+      gap: 4px;
       width: 100%;
       max-width: 100%;
       min-width: 0;
@@ -6520,7 +6523,7 @@
     }
     @media (max-width: 719px) {
       .np-cal-overlay-summary-chip-strip {
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 132px), 1fr));
       }
       .np-cal-overlay-total-chip {
         max-width: 100%;
@@ -6535,9 +6538,10 @@
       letter-spacing: 0.05em;
       text-transform: uppercase;
       color: #94a3b8;
-      margin-right: 2px;
+      margin: 0;
       flex: 0 0 100%;
       width: 100%;
+      line-height: 1.2;
     }
     .np-cal-overlay-summary-more-btn {
       display: inline-flex;
@@ -6577,7 +6581,7 @@
       max-width: 100%;
       min-width: 0;
       box-sizing: border-box;
-      padding: 6px 10px;
+      padding: 4px 8px;
       border-radius: 999px;
       border: 1px solid rgba(148, 163, 184, 0.35);
       background: rgba(255, 255, 255, 0.92);
@@ -6588,7 +6592,7 @@
       cursor: pointer;
       white-space: normal;
       text-align: left;
-      line-height: 1.3;
+      line-height: 1.25;
       overflow-wrap: anywhere;
       transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
     }
@@ -6718,7 +6722,7 @@
       min-height: 0;
       min-width: 0;
       overflow: auto;
-      padding: 10px 12px 6px;
+      padding: 4px 12px 6px;
       display: flex;
       flex-direction: column;
     }
@@ -6805,6 +6809,9 @@
       font-weight: 700;
       color: #0f172a;
       line-height: 1;
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
     }
     .np-cal-overlay-day-total {
       font-size: 9px;
@@ -6981,27 +6988,105 @@
         gap: 8px;
       }
       .np-cal-overlay-body {
-        padding: 8px 10px 6px;
+        padding: 4px 6px 6px;
       }
       .np-cal-overlay-summary-wrap {
-        margin-bottom: 8px;
+        margin-bottom: 3px;
       }
       .np-cal-overlay-summary {
-        padding: 8px 10px;
-        gap: 6px;
+        padding: 5px 8px;
+        gap: 3px;
       }
       .np-cal-overlay-month-bar {
-        padding: 6px 4px 8px;
+        padding: 3px 4px 5px;
         margin-bottom: 2px;
       }
       .np-cal-overlay-month-label {
         font-size: 0.98rem;
       }
-      .np-cal-overlay-day {
-        min-height: 92px;
-        max-height: 132px;
+      .np-cal-overlay-grid {
+        gap: 3px;
       }
-      .np-cal-overlay-entry-title { font-size: 9px; }
+      .np-cal-overlay-dow {
+        font-size: 8px;
+        padding: 2px 0;
+        letter-spacing: -0.02em;
+      }
+      .np-cal-overlay-day {
+        min-height: 78px;
+        max-height: 118px;
+        padding: 3px 3px 2px;
+        border-radius: 8px;
+      }
+      .np-cal-overlay-day-head {
+        gap: 2px;
+        margin-bottom: 2px;
+      }
+      .np-cal-overlay-day-head-left {
+        gap: 2px;
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+      .np-cal-overlay-day-add-btn {
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        font-size: 13px;
+      }
+      .np-cal-overlay-day-total {
+        display: none;
+      }
+      .np-cal-overlay-prio-row {
+        display: none;
+      }
+      .np-cal-overlay-day-scroll {
+        gap: 2px;
+      }
+      .np-cal-overlay-entry {
+        gap: 3px;
+        padding: 2px 3px;
+        border-radius: 5px;
+      }
+      .np-cal-overlay-entry-dot {
+        width: 6px;
+        height: 6px;
+        margin-top: 2px;
+      }
+      .np-cal-overlay-entry-title {
+        font-size: 8px;
+        line-height: 1.2;
+      }
+      .np-cal-overlay-entry-sub {
+        display: none;
+      }
+    }
+    @media (max-width: 520px) {
+      .np-cal-overlay-body {
+        padding: 4px 4px 6px;
+      }
+      .np-cal-overlay-grid {
+        gap: 2px;
+      }
+      .np-cal-overlay-dow {
+        font-size: 7px;
+      }
+      .np-cal-overlay-day {
+        min-height: 70px;
+        max-height: 108px;
+        padding: 2px 2px 2px;
+      }
+      .np-cal-overlay-day-num {
+        font-size: 11px;
+      }
+      .np-cal-overlay-day-add-btn {
+        width: 16px;
+        height: 16px;
+        font-size: 12px;
+        border-radius: 4px;
+      }
+      .np-cal-overlay-entry-title {
+        font-size: 7px;
+      }
     }
     .np-prio-list-body {
       max-height: min(58vh, 520px);
