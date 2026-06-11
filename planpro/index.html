@@ -6449,9 +6449,11 @@
     .np-cal-overlay-summary-wrap {
       position: relative;
       width: 100%;
+      max-width: 100%;
       box-sizing: border-box;
       margin: 0 0 10px;
       flex-shrink: 0;
+      min-width: 0;
     }
     .np-cal-overlay-summary {
       display: flex;
@@ -6460,11 +6462,14 @@
       font-size: 11px;
       color: #64748b;
       width: 100%;
+      max-width: 100%;
+      min-width: 0;
       box-sizing: border-box;
       padding: 10px 12px;
       border-radius: 11px;
       border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, rgba(148, 163, 184, 0.35));
       background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 5%, rgba(255, 255, 255, 0.88));
+      overflow: hidden;
     }
     .np-cal-overlay-summary-row--total {
       width: 100%;
@@ -6480,59 +6485,42 @@
     .np-cal-overlay-summary-cols {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       width: 100%;
-    }
-    @media (min-width: 720px) {
-      .np-cal-overlay-summary-cols {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 8px 16px;
-        align-items: stretch;
-        width: 100%;
-      }
-      .np-cal-overlay-summary-cols--single {
-        grid-template-columns: minmax(0, 1fr);
-      }
-      .np-cal-overlay-summary-row--detail {
-        min-height: 100%;
-      }
-      .np-cal-overlay-summary-chip-strip {
-        flex: 1 1 auto;
-      }
+      max-width: 100%;
+      min-width: 0;
     }
     .np-cal-overlay-summary-row {
       display: flex;
       flex-wrap: wrap;
       gap: 6px 8px;
       align-items: center;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
     }
     .np-cal-overlay-summary-row--detail {
-      padding-top: 0;
+      padding: 8px 10px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.52);
+      border: 1px solid rgba(148, 163, 184, 0.24);
       align-items: stretch;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
     }
     .np-cal-overlay-summary-chip-strip {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr));
       gap: 6px;
-      align-items: center;
       width: 100%;
+      max-width: 100%;
       min-width: 0;
+      box-sizing: border-box;
     }
     @media (max-width: 719px) {
       .np-cal-overlay-summary-chip-strip {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        overscroll-behavior-x: contain;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 2px;
-        scrollbar-width: thin;
-      }
-      .np-cal-overlay-summary-chip-strip .np-cal-overlay-summary-chip,
-      .np-cal-overlay-summary-chip-strip .np-cal-overlay-summary-more-btn {
-        flex-shrink: 0;
+        grid-template-columns: minmax(0, 1fr);
       }
       .np-cal-overlay-total-chip {
         max-width: 100%;
@@ -6554,7 +6542,11 @@
     .np-cal-overlay-summary-more-btn {
       display: inline-flex;
       align-items: center;
-      padding: 3px 9px;
+      justify-content: center;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: 6px 9px;
       border-radius: 999px;
       border: 1px dashed rgba(148, 163, 184, 0.55);
       background: rgba(248, 250, 252, 0.95);
@@ -6579,8 +6571,13 @@
     .np-cal-overlay-summary-chip {
       display: inline-flex;
       align-items: center;
+      justify-content: flex-start;
       gap: 5px;
-      padding: 4px 10px;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      padding: 6px 10px;
       border-radius: 999px;
       border: 1px solid rgba(148, 163, 184, 0.35);
       background: rgba(255, 255, 255, 0.92);
@@ -6589,6 +6586,10 @@
       font-family: inherit;
       color: #334155;
       cursor: pointer;
+      white-space: normal;
+      text-align: left;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
       transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
     }
     .np-cal-overlay-summary-chip:hover {
@@ -6715,6 +6716,7 @@
     .np-cal-overlay-body {
       flex: 1;
       min-height: 0;
+      min-width: 0;
       overflow: auto;
       padding: 10px 12px 6px;
       display: flex;
