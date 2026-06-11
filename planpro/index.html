@@ -873,6 +873,26 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .np-nutri-folder-meta {
+      flex-shrink: 0;
+      margin-left: auto;
+      padding-left: 4px;
+      font-size: 9px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: #94a3b8;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      opacity: 0.52;
+      line-height: 1.2;
+      transition: opacity 0.12s ease;
+    }
+    .np-nutri-folder-row:hover .np-nutri-folder-meta {
+      opacity: 0.76;
+    }
+    .np-nutri-folder-row--active .np-nutri-folder-meta {
+      opacity: 0.82;
+    }
     .np-nutri-folder-add-hint {
       margin: 8px 0 0;
       font-size: 11px;
@@ -1259,6 +1279,40 @@
       color: #64748b;
       line-height: 1.4;
     }
+    /* Nutri PRO archivos: 2 columnas en pantalla ancha (PC / tablet horizontal) */
+    @media (min-width: 901px) {
+      #npViewNutriPro .np-nutri-file-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        align-items: start;
+      }
+      #npViewNutriPro .np-nutri-file-row {
+        min-width: 0;
+      }
+      #npViewNutriPro .np-nutri-file-row-main {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      #npViewNutriPro .np-nutri-file-meta {
+        min-width: 0;
+        width: 100%;
+      }
+      #npViewNutriPro .np-nutri-file-btns {
+        width: 100%;
+        margin-top: 2px;
+      }
+      #npViewNutriPro .np-nutri-file-btns .btn {
+        flex: 1 1 calc(33% - 6px);
+        min-width: 0;
+        justify-content: center;
+        font-size: 11px;
+        padding: 6px 8px;
+      }
+      #npViewNutriPro .np-nutri-file-desc {
+        max-height: 56px;
+      }
+    }
     .np-nutri-folder-nav-blocks {
       margin-bottom: 14px;
       display: flex;
@@ -1393,6 +1447,136 @@
     }
     .np-nutri-file-search {
       margin-bottom: 10px;
+    }
+    /* Nutri PRO — móvil vertical: menos aire muerto y archivos más legibles */
+    @media (max-width: 820px) and (orientation: portrait), (max-width: 480px) {
+      #npViewNutriPro .np-layout {
+        gap: 8px;
+      }
+      #npViewNutriPro .np-nutri-folders-sidebar.panel,
+      #npViewNutriPro .np-main-col > .panel {
+        padding: 10px 8px 10px;
+      }
+      #npViewNutriPro .np-nutri-folder-tree {
+        max-height: min(28vh, 190px);
+        margin-bottom: 6px;
+      }
+      #npViewNutriPro .np-nutri-folder-row {
+        padding: 6px 8px 6px 12px;
+        margin-bottom: 2px;
+        font-size: 12px;
+      }
+      #npViewNutriPro .np-nutri-sort-row,
+      #npViewNutriPro .np-nutri-file-search {
+        margin-bottom: 8px;
+      }
+      #npViewNutriPro .np-nutri-folder-add-section {
+        margin-top: 6px;
+      }
+      #npViewNutriPro .np-nutri-folder-add-section--sub {
+        margin-top: 8px;
+        padding-top: 8px;
+      }
+      #npViewNutriPro .np-nutri-folder-add-label {
+        margin-bottom: 4px;
+        font-size: 10px;
+      }
+      #npViewNutriPro .np-nutri-folder-add input {
+        font-size: 12px;
+        padding: 7px 8px;
+      }
+      #npViewNutriPro .np-nutri-folder-add .btn {
+        padding: 7px 10px;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+      /* Ya hay árbol de carpetas arriba: evita bloque duplicado y scroll horizontal */
+      #npViewNutriPro #npNutriFolderNavBlocks {
+        display: none !important;
+      }
+      #npViewNutriPro .np-nutri-subtabs {
+        margin-bottom: 8px;
+        gap: 6px;
+      }
+      #npViewNutriPro .np-nutri-subtab {
+        flex: 1 1 calc(50% - 3px);
+        padding: 7px 10px;
+        font-size: 12px;
+        text-align: center;
+      }
+      #npViewNutriPro .np-nutri-files-head {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      #npViewNutriPro .np-nutri-content-folder-title h2 {
+        font-size: 0.95rem;
+      }
+      #npViewNutriPro .np-nutri-files-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        width: 100%;
+      }
+      #npViewNutriPro .np-nutri-files-actions .np-nutri-sort-select {
+        grid-column: 1 / -1;
+        width: 100%;
+      }
+      #npViewNutriPro .np-nutri-files-actions .btn {
+        justify-content: center;
+        padding: 8px 8px;
+        font-size: 12px;
+      }
+      #npViewNutriPro .np-nutri-files-body {
+        padding: 8px 8px 10px 12px;
+        margin-top: 0;
+        border-radius: 12px;
+      }
+      #npViewNutriPro .np-nutri-files-body::before {
+        top: 8px;
+        bottom: 8px;
+        width: 5px;
+      }
+      #npViewNutriPro #npNutriFilesEmpty {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      #npViewNutriPro .np-nutri-file-card {
+        padding: 10px;
+        border-radius: 12px;
+        gap: 8px;
+      }
+      #npViewNutriPro .np-nutri-file-meta {
+        min-width: 0;
+        flex: 1 1 calc(100% - 52px);
+      }
+      #npViewNutriPro .np-nutri-file-btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      #npViewNutriPro .np-nutri-file-btns .btn {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: 6px 8px;
+        font-size: 11px;
+      }
+    }
+    @media (max-width: 900px) {
+      #npViewNutriPro .np-layout-scroll {
+        overflow-x: hidden;
+        width: 100% !important;
+        max-width: 100%;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+      #npViewNutriPro .np-nutri-folder-nav-blocks,
+      #npViewNutriPro .np-nutri-folder-chip-row {
+        max-width: 100%;
+        overflow-x: hidden;
+      }
     }
     .np-flow-search-result--clickable {
       cursor: pointer;
@@ -1645,25 +1829,6 @@
       text-transform: uppercase;
       color: #475569;
     }
-    .np-plan-header-menu-close {
-      border: 0;
-      background: rgba(241, 245, 249, 0.9);
-      color: #64748b;
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
-      font-size: 22px;
-      line-height: 1;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s ease, color 0.15s ease;
-    }
-    .np-plan-header-menu-close:hover {
-      background: rgba(254, 226, 226, 0.85);
-      color: #b91c1c;
-    }
     .np-plan-header-menu-body {
       padding: 14px 16px 18px;
       overflow-y: auto;
@@ -1817,6 +1982,19 @@
     }
     body.np-plan-header-menu-lock .np-plan-header-actions-inline {
       z-index: 1103;
+    }
+    /* Móvil: el panel Accesos empieza debajo del header (evita solapar nube/menú/cerrar sesión) */
+    @media (max-width: 900px) {
+      .np-plan-header-menu-panel {
+        top: var(--np-plan-menu-top, calc(env(safe-area-inset-top) + 100px));
+        left: max(8px, env(safe-area-inset-left));
+        right: max(8px, env(safe-area-inset-right));
+        width: auto;
+        max-height: calc(
+          100dvh - var(--np-plan-menu-top, calc(env(safe-area-inset-top) + 100px)) -
+            max(8px, env(safe-area-inset-bottom)) - 8px
+        );
+      }
     }
     /* Redes + accesos rápidos (NutriPlant, admin…) en una sola franja superior */
     .np-plan-actions-top {
@@ -2617,6 +2795,48 @@
       transform: none;
     }
     .np-modal-meta-foot { font-size: 10px; color: var(--muted); margin-top: 4px; opacity: 0.88; }
+    .np-detail-head-actions {
+      display: flex;
+      flex-shrink: 0;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .np-apunte-pdf-root {
+      box-sizing: border-box;
+      width: 190mm;
+      max-width: 100%;
+      padding: 0 2mm;
+      color: #0f172a;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      line-height: 1.45;
+      background: #fff;
+    }
+    .np-apunte-pdf-head h1 {
+      margin: 0 0 6px;
+      font-size: 1.35rem;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+    .np-apunte-pdf-path {
+      margin: 0 0 4px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .np-apunte-pdf-gen {
+      margin: 0 0 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    .np-apunte-pdf-note {
+      margin-bottom: 12px;
+    }
+    .np-apunte-pdf-blocks .np-ms-block {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
     #npFormCreate .np-create-item-meta { margin-bottom: 10px; width: 100%; }
     #npFormCreate .np-create-meta-hint {
       font-size: 10px;
@@ -4294,6 +4514,37 @@
       display: block;
       filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.12));
     }
+    .np-cal-quick-btn {
+      margin-left: auto;
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      background: rgba(255, 255, 255, 0.92);
+      font-size: 17px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease;
+    }
+    .np-cal-quick-btn:hover {
+      background: #fff;
+      border-color: rgba(34, 197, 94, 0.45);
+      transform: translateY(-1px);
+    }
+    .np-cal-quick-btn:active {
+      transform: translateY(0);
+    }
+    .np-cal-quick-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
     .np-pillar-tabs-row {
       display: flex;
       flex-wrap: wrap;
@@ -5504,6 +5755,7 @@
       justify-content: space-between;
       gap: 10px;
       margin-bottom: 10px;
+      scroll-margin-top: 12px;
     }
     .np-sheet-items-head h2 {
       margin: 0;
@@ -5539,11 +5791,59 @@
       font-size: 1rem;
       font-weight: 700;
       color: #334155;
+      scroll-margin-top: 12px;
+    }
+    .np-sheet-jump-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed color-mix(in srgb, var(--np-sheet-accent) 28%, #cbd5e1);
+    }
+    .np-sheet-jump-btn {
+      flex: 1 1 calc(50% - 4px);
+      min-width: min(100%, 148px);
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 650;
+      padding: 8px 10px;
     }
     .np-sheet-items-mount {
       display: flex;
       flex-direction: column;
       gap: 10px;
+    }
+    .np-nutri-files-loading {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .np-nutri-files-mount--loading {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+    .np-sheet-items-more-wrap {
+      margin-top: 2px;
+      display: flex;
+      justify-content: center;
+    }
+    button.np-sheet-items-more-btn {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px dashed color-mix(in srgb, var(--np-sheet-accent) 38%, rgba(148, 163, 184, 0.42));
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 650;
+      font-family: inherit;
+      cursor: pointer;
+      color: color-mix(in srgb, var(--np-sheet-accent) 58%, #334155);
+      background: color-mix(in srgb, var(--np-sheet-accent) 7%, #fff);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    button.np-sheet-items-more-btn:hover {
+      background: color-mix(in srgb, var(--np-sheet-accent) 12%, #fff);
+      border-color: color-mix(in srgb, var(--np-sheet-accent) 48%, rgba(148, 163, 184, 0.45));
     }
     button.np-sheet-item-card {
       display: block;
@@ -5885,6 +6185,358 @@
       text-align: center;
       font-weight: 600;
       padding-top: 1px;
+    }
+    #npCalOverlayModal.np-modal-overlay {
+      z-index: 15800;
+      padding: 8px 10px 12px;
+      background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 12%, rgba(15, 23, 42, 0.46));
+    }
+    #npCalDayModal.np-modal-overlay {
+      z-index: 16100;
+    }
+    #npDetailModal.np-modal-overlay.np-modal-overlay--above-cal {
+      z-index: 16350;
+    }
+    #npCrossLinkPicker.np-modal-overlay {
+      z-index: 16850;
+    }
+    .np-cal-overlay-panel {
+      --np-cal-overlay-accent: #2563eb;
+      max-width: min(98vw, 1420px);
+      width: 100%;
+      max-height: min(96vh, 920px);
+      border: 1.5px solid color-mix(in srgb, var(--np-cal-overlay-accent) 52%, rgba(255, 255, 255, 0.55));
+      background: radial-gradient(
+        ellipse 120% 90% at 50% -8%,
+        color-mix(in srgb, var(--np-cal-overlay-accent) 42%, #fff) 0%,
+        color-mix(in srgb, var(--np-cal-overlay-accent) 18%, #fff) 38%,
+        rgba(255, 255, 255, 0.97) 72%
+      );
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--np-cal-overlay-accent) 18%, transparent),
+        0 16px 48px color-mix(in srgb, var(--np-cal-overlay-accent) 22%, rgba(15, 23, 42, 0.14));
+    }
+    .np-cal-overlay-panel--multi {
+      --np-cal-overlay-accent: #38bdf8;
+    }
+    .np-cal-overlay-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 6px;
+      font-size: 1.05rem;
+      color: #0f172a;
+    }
+    .np-cal-overlay-logo {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      flex-shrink: 0;
+      filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.12));
+    }
+    .np-cal-overlay-logo--lit {
+      display: none;
+    }
+    .np-cal-overlay-panel:not(.np-cal-overlay-panel--multi) .np-cal-overlay-logo--muted {
+      display: block;
+    }
+    .np-cal-overlay-panel--multi .np-cal-overlay-logo--muted {
+      display: none;
+    }
+    .np-cal-overlay-panel--multi .np-cal-overlay-logo--lit {
+      display: block;
+    }
+    .np-cal-overlay-plant-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    .np-cal-overlay-plant-filter-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-right: 4px;
+    }
+    .np-cal-overlay-plant-quick {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: rgba(248, 250, 252, 0.95);
+      font-size: 10px;
+      font-weight: 700;
+      font-family: inherit;
+      color: #475569;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+    .np-cal-overlay-plant-quick:hover {
+      background: #fff;
+      border-color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 35%, rgba(148, 163, 184, 0.5));
+      color: #0f172a;
+    }
+    .np-cal-overlay-plant-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(148, 163, 184, 0.38);
+      background: rgba(255, 255, 255, 0.88);
+      font-size: 11px;
+      font-weight: 650;
+      font-family: inherit;
+      color: #475569;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+    }
+    .np-cal-overlay-plant-chip::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--np-plant-chip-accent, #2563eb);
+      flex-shrink: 0;
+    }
+    .np-cal-overlay-plant-chip--on {
+      color: #fff;
+      text-shadow: 0 1px 1px rgba(15, 23, 42, 0.12);
+      border-color: color-mix(in srgb, var(--np-plant-chip-accent, #2563eb) 55%, rgba(255, 255, 255, 0.5));
+      background: radial-gradient(
+        ellipse 105% 185% at 50% 38%,
+        color-mix(in srgb, var(--np-plant-chip-accent, #2563eb) 58%, #fff) 0%,
+        color-mix(in srgb, var(--np-plant-chip-accent, #2563eb) 36%, #fff) 34%,
+        color-mix(in srgb, var(--np-plant-chip-accent, #2563eb) 14%, #fff) 62%,
+        rgba(255, 255, 255, 0.98) 100%
+      );
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--np-plant-chip-accent, #2563eb) 20%, transparent);
+    }
+    .np-cal-overlay-panel--multi .np-cal-overlay-plant-chip--on {
+      border-color: color-mix(in srgb, #38bdf8 58%, rgba(255, 255, 255, 0.5));
+      background: radial-gradient(
+        ellipse 105% 185% at 50% 38%,
+        color-mix(in srgb, #38bdf8 58%, #fff) 0%,
+        color-mix(in srgb, #38bdf8 32%, #fff) 40%,
+        rgba(255, 255, 255, 0.98) 100%
+      );
+      box-shadow: 0 0 0 1px color-mix(in srgb, #38bdf8 22%, transparent);
+    }
+    .np-cal-overlay-panel--multi .np-cal-overlay-plant-chip--on::before {
+      background: #0ea5e9;
+    }
+    .np-cal-overlay-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
+      margin-bottom: 10px;
+    }
+    .np-cal-overlay-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .np-cal-overlay-month-label {
+      min-width: 140px;
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .np-cal-overlay-summary {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      align-items: center;
+      font-size: 11px;
+      color: #64748b;
+    }
+    .np-cal-overlay-total-chip {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(248, 250, 252, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #334155;
+    }
+    .np-cal-overlay-root-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      font-weight: 600;
+      font-size: 10px;
+    }
+    .np-cal-overlay-body {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 2px 2px 6px;
+    }
+    .np-cal-overlay-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+      min-height: 0;
+    }
+    .np-cal-overlay-dow {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      padding: 4px 0;
+    }
+    .np-cal-overlay-day {
+      box-sizing: border-box;
+      min-height: 118px;
+      max-height: 168px;
+      display: flex;
+      flex-direction: column;
+      padding: 5px 5px 4px;
+      border-radius: 10px;
+      border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, rgba(226, 232, 240, 0.95));
+      background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 4%, rgba(255, 255, 255, 0.9));
+      overflow: hidden;
+    }
+    .np-cal-overlay-day--muted {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .np-cal-overlay-day--today {
+      border-color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 55%, rgba(37, 99, 235, 0.45));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 22%, transparent);
+    }
+    .np-cal-overlay-day--focus {
+      border-color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 68%, rgba(255, 255, 255, 0.35));
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 38%, transparent),
+        0 4px 14px color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 16%, rgba(15, 23, 42, 0.08));
+      background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 11%, rgba(255, 255, 255, 0.94));
+    }
+    .np-cal-overlay-day--focus .np-cal-overlay-day-num {
+      color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 78%, #0f172a);
+    }
+    .np-cal-overlay-day-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      margin-bottom: 3px;
+      flex-shrink: 0;
+    }
+    .np-cal-overlay-day-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1;
+    }
+    .np-cal-overlay-day-total {
+      font-size: 9px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: rgba(241, 245, 249, 0.95);
+      color: #475569;
+    }
+    .np-cal-overlay-prio-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px 5px;
+      margin-bottom: 4px;
+      flex-shrink: 0;
+    }
+    .np-cal-overlay-prio-count {
+      font-size: 9px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+    .np-cal-overlay-prio-count--baja { color: #16a34a; }
+    .np-cal-overlay-prio-count--media { color: #ca8a04; }
+    .np-cal-overlay-prio-count--alta { color: #dc2626; }
+    .np-cal-overlay-prio-count--none { color: #94a3b8; }
+    .np-cal-overlay-day-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding-right: 1px;
+    }
+    .np-cal-overlay-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+      width: 100%;
+      padding: 4px 5px;
+      border: 0;
+      border-radius: 7px;
+      background: rgba(248, 250, 252, 0.92);
+      text-align: left;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.1s ease, box-shadow 0.1s ease;
+    }
+    .np-cal-overlay-entry:hover {
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+    }
+    .np-cal-overlay-entry-dot {
+      flex-shrink: 0;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-top: 3px;
+    }
+    .np-cal-overlay-entry-dot--baja { background: #22c55e; }
+    .np-cal-overlay-entry-dot--media { background: #eab308; }
+    .np-cal-overlay-entry-dot--alta { background: #ef4444; }
+    .np-cal-overlay-entry-dot--none { background: #cbd5e1; }
+    .np-cal-overlay-entry-text {
+      min-width: 0;
+      flex: 1;
+    }
+    .np-cal-overlay-entry-title {
+      display: block;
+      font-size: 10px;
+      font-weight: 650;
+      color: #0f172a;
+      line-height: 1.25;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .np-cal-overlay-entry-sub {
+      display: block;
+      font-size: 9px;
+      color: #64748b;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    @media (max-width: 900px) {
+      .np-cal-overlay-day {
+        min-height: 92px;
+        max-height: 132px;
+      }
+      .np-cal-overlay-entry-title { font-size: 9px; }
     }
     .np-prio-list-body {
       max-height: min(58vh, 520px);
@@ -6317,7 +6969,6 @@
         <div id="npPlanHeaderMenuPanel" class="np-plan-header-menu-panel" role="dialog" aria-modal="true" aria-labelledby="npPlanHeaderMenuTitle" aria-hidden="true">
           <div class="np-plan-header-menu-head">
             <span id="npPlanHeaderMenuTitle" class="np-plan-header-menu-title">Accesos</span>
-            <button type="button" class="np-plan-header-menu-close" id="npPlanHeaderMenuClose" aria-label="Cerrar menú">×</button>
           </div>
           <div class="np-plan-header-menu-body">
             <div class="np-plan-menu-block np-plan-menu-block--social" aria-label="Redes NutriPlant PRO">
@@ -6486,6 +7137,15 @@
         <h2 class="np-pillar-panel-title">
           <img src="../assets/N_Hoja_Azul.png" alt="" class="np-pillar-panel-logo" width="22" height="22" decoding="async" aria-hidden="true" />
           Plantas
+          <button
+            type="button"
+            id="npCalOverlayOpenBtn"
+            class="np-cal-quick-btn"
+            aria-label="Calendario de semáforos"
+            title="Calendario mensual detallado · semáforos por día"
+          >
+            📅
+          </button>
         </h2>
         <div class="np-pillar-tabs-row">
           <div id="npPillarTabs" class="np-pillar-tabs" role="tablist" aria-label="Plantas"></div>
@@ -6577,10 +7237,18 @@
                   </button>
                 </div>
                 <div id="npSheetNavBlocks" class="np-sheet-nav-blocks np-hide"></div>
+                <div id="npSheetJumpRow" class="np-sheet-jump-row np-hide" aria-label="Ir a sección de la hoja">
+                  <button type="button" class="btn btn-ghost btn-ghost-green np-sheet-jump-btn" id="npSheetJumpApuntesBtn" title="Bajar a la lista de apuntes de esta rama">
+                    ↓ Ir a apuntes
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-ghost-blue np-sheet-jump-btn" id="npSheetJumpNewBtn" title="Bajar al formulario para crear apunte">
+                    ✏ Nuevo apunte
+                  </button>
+                </div>
               </div>
               <div class="np-sheet-inner">
                 <div id="npSheetItemsWrap" class="np-sheet-items-wrap np-hide">
-                  <div class="np-sheet-items-head">
+                  <div id="npSheetApuntesAnchor" class="np-sheet-items-head">
                     <h2>Apuntes</h2>
                     <select id="npPlanItemSort" class="np-nutri-sort-select" aria-label="Orden de apuntes" title="Orden de apuntes">
                       <option value="manual">Mi orden</option>
@@ -6591,7 +7259,7 @@
                   <div id="npSheetItemsMount" class="np-sheet-items-mount"></div>
                   <p id="npSheetItemsEmpty" class="np-muted np-hide" style="margin:8px 0 0;font-size:13px;">Sin apuntes.</p>
                 </div>
-                <h2 class="np-sheet-new-title">Nuevo apunte</h2>
+                <h2 id="npSheetNewNoteAnchor" class="np-sheet-new-title">Nuevo apunte</h2>
                 <div id="npNoAreas" class="np-msg warn np-hide" style="margin-bottom:12px;">
                   No hay plantas (áreas). Ejecuta el seed de Plan PRO en Supabase o crea filas en <code>plan_pro_areas</code> con tu <code>owner_id</code>.
                 </div>
@@ -6800,6 +7468,7 @@
                       Arrastra un archivo a una <strong>carpeta del panel izquierdo</strong> para moverlo · arrastra aquí entre archivos para cambiar el orden.
                     </p>
                     <div id="npNutriFilesMount" class="np-nutri-file-list"></div>
+                    <p id="npNutriFilesLoading" class="np-muted np-nutri-files-loading np-hide" aria-live="polite">Cargando archivos…</p>
                     <p id="npNutriFilesEmpty" class="np-muted">Sin archivos en esta carpeta. PDF, Office, imágenes (PNG, JPG, WebP…) y más.</p>
                   </div>
                 </div>
@@ -7027,6 +7696,38 @@
     </div>
   </div>
 
+  <div id="npCalOverlayModal" class="np-modal-overlay" aria-hidden="true">
+    <div class="np-modal-panel np-cal-overlay-panel" role="dialog" aria-labelledby="npCalOverlayTitle">
+      <div class="np-modal-head" style="align-items:flex-start;">
+        <div style="min-width:0;flex:1;">
+          <h3 id="npCalOverlayTitle" class="np-cal-overlay-title">
+            <img src="../assets/N_Hoja_Azul.png" alt="" class="np-cal-overlay-logo np-cal-overlay-logo--muted" width="22" height="22" decoding="async" aria-hidden="true" />
+            <img src="../assets/N_Hoja_Blanca.png" alt="" class="np-cal-overlay-logo np-cal-overlay-logo--lit" width="22" height="22" decoding="async" aria-hidden="true" />
+            <span>Calendario de semáforos</span>
+          </h3>
+          <div id="npCalOverlayPlantFilter" class="np-cal-overlay-plant-filter" aria-label="Plantas visibles"></div>
+          <div class="np-cal-overlay-head">
+            <div class="np-cal-overlay-nav">
+              <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayPrev" aria-label="Mes anterior">◀</button>
+              <span id="npCalOverlayMonthLabel" class="np-cal-overlay-month-label"></span>
+              <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayNext" aria-label="Mes siguiente">▶</button>
+            </div>
+            <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayClose" style="flex-shrink:0;">Cerrar</button>
+      </div>
+      <div id="npCalOverlayBody" class="np-modal-body np-cal-overlay-body">
+        <div id="npCalOverlayGrid" class="np-cal-overlay-grid" role="grid" aria-label="Mes con semáforos"></div>
+      </div>
+      <div class="np-modal-foot" style="padding:10px 16px 14px;border-top:1px solid rgba(148,163,184,0.35);">
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayDownloadBtn">
+          Descargar agenda del mes (.ics)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="npDetailModal" class="np-modal-overlay" aria-hidden="true">
     <div class="np-modal-panel" role="dialog" aria-labelledby="npDetailTitle">
       <div class="np-modal-head">
@@ -7034,7 +7735,17 @@
           <h3 id="npDetailTitle">—</h3>
           <div id="npDetailMeta" class="np-modal-meta np-modal-meta-wrap"></div>
         </div>
-        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npDetailClose" style="flex-shrink:0;">Cerrar</button>
+        <div class="np-detail-head-actions">
+          <button
+            type="button"
+            class="btn btn-ghost btn-ghost-green"
+            id="npDetailExportPdfBtn"
+            title="Generar PDF de este apunte y guardarlo en Nutri PRO › Apuntes PDF"
+          >
+            PDF → Nutri PRO
+          </button>
+          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npDetailClose">Cerrar</button>
+        </div>
       </div>
       <div id="npDetailBody" class="np-modal-body"></div>
     </div>
@@ -7223,13 +7934,15 @@
     var fetchedAt = meta.fetchedAt || planProStorageLastFetchAt || 0;
     var fromCache = !!meta.fromCache;
     num.textContent = formatPlanProStorageGbLine(total, quotaGb);
-    sub.textContent = fromCache ? 'NutriPlant · caché' : 'NutriPlant nube';
+    sub.textContent = 'NutriPlant nube';
     btn.setAttribute('data-state', pct >= 92 ? 'warn' : fromCache ? 'cached' : 'idle');
     var lines = [
       'NutriPlant PRO · almacenamiento total en Supabase (Plan Pro $25)',
       'Usado: ' + formatPlanProStorageSize(total) + ' · Disponible: ~' + formatPlanProStorageSize(freeBytes),
       'Cuota incluida: ' + quotaGb + ' GB de archivos',
-      'Lectura ' + planProStorageAgeLabel(fetchedAt) + ' · se actualiza sola cada ~10 min',
+      fromCache
+        ? 'Última lectura en vivo ' + planProStorageAgeLabel(fetchedAt) + ' · toca para actualizar ahora'
+        : 'Lectura en vivo · se refresca sola cada ~10 min',
       'Toca para forzar actualización (máx. 1 vez cada 45 s).'
     ];
     var buckets = data.buckets;
@@ -7698,6 +8411,8 @@
     { id: 'otro', label: 'Otro' }
   ];
   var NP_NUTRI_LINK_CATS_STORAGE_KEY = 'nutriplant_nutri_pro_link_cats_v1';
+  var NP_NUTRI_APUNTES_PDF_FOLDER_TITLE = 'Apuntes PDF';
+  var npHtml2PdfLoadPromise = null;
   var planProRichImageTargetEditor = null;
   var npMapsPickerState = {
     inputEl: null,
@@ -8986,6 +9701,86 @@
       });
     }
     return chunks.filter(Boolean).join(' ');
+  }
+
+  function apuntePlainTextForNutriIndex(row) {
+    if (!row) return '';
+    var parts = [];
+    parts.push(String(row.title || 'Apunte').trim());
+    var path = getPlanFlowPath(row.area_id, row.category_id, null);
+    if (path) parts.push(path);
+    var liveEd = $('npModalBodyRich');
+    var notePlain =
+      liveEd && state.detailItemId === row.id
+        ? stripHtml(liveEd.innerHTML || '')
+        : noteFullText(row) || stripHtml(row.body_html || '');
+    if (String(notePlain || '').trim()) parts.push(String(notePlain).trim());
+    var blocks =
+      state.detailItemId === row.id && state.detailBlocksWorking
+        ? state.detailBlocksWorking
+        : row.body_blocks;
+    if (blocks && blocks.length) {
+      blocks.forEach(function (blk) {
+        if (!blk) return;
+        if (blk.type === 'note_section' && blk.html) {
+          var nt = stripHtml(blk.html);
+          if (nt.trim()) parts.push(nt.trim());
+          return;
+        }
+        if (blk.type === 'mini_sheet') {
+          var hdr = (blk.headers || [])
+            .map(function (h) {
+              return String(h || '').trim();
+            })
+            .filter(Boolean)
+            .join(' | ');
+          if (hdr) parts.push(hdr);
+          (blk.rows || []).forEach(function (rowCells) {
+            var cells = Array.isArray(rowCells) ? rowCells : rowCells && rowCells.cells ? rowCells.cells : [];
+            var line = cells
+              .map(function (c) {
+                return String(c != null ? c : '').trim();
+              })
+              .join(' | ');
+            if (line.replace(/\s*\|\s*/g, '').trim()) parts.push(line);
+          });
+        }
+      });
+    }
+    return parts.filter(Boolean).join('\n\n');
+  }
+
+  async function nutriProIndexApuntePdfExtract(fileId, row, genLabel) {
+    if (!fileId || !row || !state.client || !state.userId) return;
+    var text = apuntePlainTextForNutriIndex(row);
+    if (!String(text || '').trim()) return;
+    var max = 500000;
+    var truncated = text.length > max;
+    var plain = truncated ? text.slice(0, max) : text;
+    var res = await npCloudSyncTrack(function () {
+      return state.client.from('plan_pro_nutri_file_extracts').upsert(
+        {
+          file_id: fileId,
+          owner_id: state.userId,
+          status: 'done',
+          format_kind: 'apunte_pdf',
+          text_plain: plain,
+          meta_json: {
+            char_count: plain.length,
+            truncated: truncated,
+            source: 'notebook_apunte_pdf',
+            apunte_id: row.id,
+            generated_at: genLabel
+          },
+          error_message: null,
+          extracted_at: new Date().toISOString()
+        },
+        { onConflict: 'file_id' }
+      );
+    });
+    if (res.error && !/plan_pro_nutri_file_extracts|does not exist|schema cache/i.test(res.error.message || '')) {
+      console.warn('nutriProIndexApuntePdfExtract', res.error);
+    }
   }
 
   function extractNutriRefsFromHtml(html) {
@@ -10910,6 +11705,11 @@
     mountDetailBlocksMountAndToolbar(bd, row.id, accentOpen);
     if (state.detailBlocksWorking.length) bd.classList.add('np-modal-has-blocks');
     updateDetailBlocksHint();
+    var detailModal = $('npDetailModal');
+    if (detailModal) {
+      if (state.calOverlayKeepOpen) detailModal.classList.add('np-modal-overlay--above-cal');
+      else detailModal.classList.remove('np-modal-overlay--above-cal');
+    }
     $('npDetailModal').classList.add('np-modal-open');
     $('npDetailModal').setAttribute('aria-hidden', 'false');
   }
@@ -10941,11 +11741,14 @@
     state.detailItemMetaPending = null;
     state.detailBlocksWorking = null;
     state.detailModalAreaId = null;
+    state.calOverlayKeepOpen = false;
     var modalPanel = $('npDetailModal').querySelector('.np-modal-panel');
     if (modalPanel) {
       modalPanel.style.borderTop = '';
       delete modalPanel.dataset.areaAccent;
     }
+    var detailModal = $('npDetailModal');
+    if (detailModal) detailModal.classList.remove('np-modal-overlay--above-cal');
     $('npDetailModal').classList.remove('np-modal-open');
     $('npDetailModal').setAttribute('aria-hidden', 'true');
     await loadItems();
@@ -10980,9 +11783,17 @@
     sidebarCalMonth: null,
     /** Entradas con fecha para puntos / modal del día (vista actual). */
     calendarEntriesCache: [],
+    calOverlayKeepOpen: false,
+    calOverlayAreaIds: [],
+    calOverlayFocusDateKey: null,
+    calOverlayItemsCache: [],
+    calOverlayEntriesCache: [],
     locationFavorites: [],
     locationFavoritesReady: true,
     treeCollapsed: {},
+    planProUiPrefsReady: true,
+    planProTreeCollapsedSaveTimer: null,
+    planProCalOverlaySaveTimer: null,
     categoryItemCounts: {},
     /** Si la BD no tiene body_html aún, las queries omiten esa columna (migración: supabase-plan-pro-body-html.sql). */
     planProBodyHtmlColumn: true,
@@ -10991,6 +11802,8 @@
     lastPlanProDndEndedAt: 0,
     planProItemSortMode: 'date',
     planProItemsRows: [],
+    /** Lista Apuntes en la hoja: false = solo primeros N; true = todos visibles. */
+    sheetItemsListExpanded: false,
     flowSearchTimer: null,
     flowSearchGen: 0,
     /** Nutri PRO: carpetas/archivos técnicos en Storage. */
@@ -11008,6 +11821,10 @@
     nutriProFocusRename: false,
     nutriProFolderEditingId: null,
     nutriProCollapsedFolderIds: {},
+    nutriProFolderFilesCache: {},
+    nutriProFilesLoadGen: 0,
+    nutriProFileCountByFolder: {},
+    nutriProLinkCountByFolder: {},
     nutriProFolderSortMode: 'title',
     nutriProFileSortMode: 'title',
     nutriProDnd: null,
@@ -12814,6 +13631,10 @@
       state.sidebarCalYear -= 1;
     }
     renderSidebarCalendarGrid();
+    if ($('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open')) {
+      renderCalOverlaySummary();
+      renderCalOverlayGrid();
+    }
   }
 
   function renderSidebarCalendar(rows) {
@@ -12828,6 +13649,24 @@
     state.calendarEntriesCache = collectCalendarEntries(rows || []);
     ensureSidebarCalMonth();
     renderSidebarCalendarGrid();
+    if ($('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open')) {
+      refreshCalOverlayEntriesIfOpen();
+    }
+  }
+
+  async function refreshCalOverlayEntriesIfOpen() {
+    var modal = $('npCalOverlayModal');
+    if (!modal || !modal.classList.contains('np-modal-open')) return;
+    if (!state.client || !state.userId) return;
+    try {
+      var rows = await loadCalOverlayAllEntries();
+      state.calOverlayItemsCache = rows;
+      state.calOverlayEntriesCache = collectCalendarEntries(rows);
+      renderCalOverlaySummary();
+      renderCalOverlayGrid();
+    } catch (eRefresh) {
+      /* mantener vista anterior si falla la recarga */
+    }
   }
 
   function renderSidebarCalendarGrid() {
@@ -12911,6 +13750,481 @@
       pad2.innerHTML = '<span class="np-cal-day-num"></span>';
       grid.appendChild(pad2);
     }
+  }
+
+  function buildCalendarDayBuckets(entries) {
+    var map = {};
+    (entries || []).forEach(function (e) {
+      if (!e || !e.dateKey) return;
+      if (!map[e.dateKey]) {
+        map[e.dateKey] = { baja: 0, media: 0, alta: 0, none: 0, entries: [] };
+      }
+      var b = map[e.dateKey];
+      b.entries.push(e);
+      if (e.level === 'baja') b.baja += 1;
+      else if (e.level === 'media') b.media += 1;
+      else if (e.level === 'alta') b.alta += 1;
+      else b.none += 1;
+    });
+    Object.keys(map).forEach(function (dk) {
+      map[dk].entries.sort(function (a, b) {
+        var o = calLevelSortKey(a.level) - calLevelSortKey(b.level);
+        if (o !== 0) return o;
+        return calEntryDisplayTitle(a).localeCompare(calEntryDisplayTitle(b));
+      });
+    });
+    return map;
+  }
+
+  function calEntryDisplayTitle(ent) {
+    var rt = String(ent.rowTitle || '').trim();
+    if (rt && rt !== '—' && rt !== 'Objetivo del apunte') return rt;
+    return String(ent.itemTitle || 'Apunte').trim();
+  }
+
+  function calEntryBranchRoot(ent) {
+    var path = String(ent.catPath || '').trim();
+    if (!path || path === '—') return '';
+    return path.split(' › ')[0].trim();
+  }
+
+  function calEntrySubtitle(ent) {
+    var parts = [];
+    if ((state.calOverlayAreaIds || []).length > 1 && ent.plantTitle) parts.push(ent.plantTitle);
+    var root = calEntryBranchRoot(ent);
+    if (root) parts.push(root);
+    if (ent.kind === 'table_row' && ent.blockTitle) parts.push(ent.blockTitle);
+    else if (ent.kind === 'note_due') parts.push('Nota');
+    else if (ent.kind === 'item_due') parts.push('Objetivo');
+    return parts.join(' · ');
+  }
+
+  async function loadCalOverlayAllEntries() {
+    if (!state.client || !state.userId) return [];
+    var areas = getActivePlanAreas();
+    if (!areas.length) return [];
+    var areaIds = areas.map(function (a) {
+      return a.id;
+    });
+    var selectCols = state.planProBodyHtmlColumn
+      ? 'id,title,area_id,category_id,status,priority,sort_order,updated_at,body_plain,body_html,due_at,body_blocks,attachments'
+      : 'id,title,area_id,category_id,status,priority,sort_order,updated_at,body_plain,due_at,body_blocks,attachments';
+    var res = await state.client
+      .from('plan_pro_items')
+      .select(selectCols)
+      .eq('owner_id', state.userId)
+      .in('area_id', areaIds)
+      .order('updated_at', { ascending: false });
+    if (res.error) {
+      if (/sort_order|column|schema cache/i.test(res.error.message || '')) {
+        selectCols = state.planProBodyHtmlColumn
+          ? 'id,title,area_id,category_id,status,priority,updated_at,body_plain,body_html,due_at,body_blocks,attachments'
+          : 'id,title,area_id,category_id,status,priority,updated_at,body_plain,due_at,body_blocks,attachments';
+        res = await state.client
+          .from('plan_pro_items')
+          .select(selectCols)
+          .eq('owner_id', state.userId)
+          .in('area_id', areaIds)
+          .order('updated_at', { ascending: false });
+      }
+      if (res.error) throw res.error;
+    }
+    return res.data || [];
+  }
+
+  function getCalOverlayFilteredEntries() {
+    var list = state.calOverlayEntriesCache || [];
+    var ids = state.calOverlayAreaIds || [];
+    if (!ids.length) return list;
+    var set = {};
+    ids.forEach(function (id) {
+      if (id) set[id] = true;
+    });
+    return list.filter(function (e) {
+      return e && e.areaId && set[e.areaId];
+    });
+  }
+
+  function filterCalOverlayMonthEntries() {
+    ensureSidebarCalMonth();
+    var prefix = state.sidebarCalYear + '-' + String(state.sidebarCalMonth + 1).padStart(2, '0') + '-';
+    return getCalOverlayFilteredEntries().filter(function (e) {
+      return e && e.dateKey && String(e.dateKey).indexOf(prefix) === 0;
+    });
+  }
+
+  function syncCalOverlayPlantAccent() {
+    var modal = $('npCalOverlayModal');
+    var panel = modal && modal.querySelector('.np-cal-overlay-panel');
+    if (!panel) return;
+    var ids = (state.calOverlayAreaIds || []).filter(Boolean);
+    var multi = ids.length > 1;
+    panel.classList.toggle('np-cal-overlay-panel--multi', multi);
+    var accent;
+    if (multi) accent = '#38bdf8';
+    else if (ids.length === 1) accent = resolvePlantAccentHex(ids[0]);
+    else accent = resolvePlantAccentHex(state.selectedAreaId);
+    panel.style.setProperty('--np-cal-overlay-accent', accent);
+    if (modal) modal.style.setProperty('--np-cal-overlay-accent', accent);
+  }
+
+  function toggleCalOverlayPlant(areaId) {
+    if (!areaId) return;
+    var ids = (state.calOverlayAreaIds || []).slice();
+    var i = ids.indexOf(areaId);
+    if (i >= 0) {
+      if (ids.length <= 1) {
+        showToast('Deja al menos una planta seleccionada.', true);
+        return;
+      }
+      ids.splice(i, 1);
+    } else {
+      ids.push(areaId);
+    }
+    state.calOverlayAreaIds = ids;
+    syncCalOverlayPlantAccent();
+    renderCalOverlayPlantFilter();
+    renderCalOverlaySummary();
+    renderCalOverlayGrid();
+    planProScheduleCalOverlayAreaIdsSave();
+  }
+
+  function calOverlaySelectAllPlants() {
+    var areas = getActivePlanAreas();
+    if (!areas.length) return;
+    state.calOverlayAreaIds = areas
+      .map(function (a) {
+        return a && a.id;
+      })
+      .filter(Boolean);
+    syncCalOverlayPlantAccent();
+    renderCalOverlayPlantFilter();
+    renderCalOverlaySummary();
+    renderCalOverlayGrid();
+    planProScheduleCalOverlayAreaIdsSave();
+  }
+
+  function calOverlaySelectOnlyCurrentPlant() {
+    if (!state.selectedAreaId) {
+      showToast('Selecciona una planta activa.', true);
+      return;
+    }
+    state.calOverlayAreaIds = [state.selectedAreaId];
+    syncCalOverlayPlantAccent();
+    renderCalOverlayPlantFilter();
+    renderCalOverlaySummary();
+    renderCalOverlayGrid();
+    planProScheduleCalOverlayAreaIdsSave();
+  }
+
+  function renderCalOverlayPlantFilter() {
+    var mount = $('npCalOverlayPlantFilter');
+    if (!mount) return;
+    mount.innerHTML = '';
+    var lab = document.createElement('span');
+    lab.className = 'np-cal-overlay-plant-filter-label';
+    lab.textContent = 'Plantas';
+    mount.appendChild(lab);
+    var btnAll = document.createElement('button');
+    btnAll.type = 'button';
+    btnAll.className = 'np-cal-overlay-plant-quick';
+    btnAll.textContent = 'Todas';
+    btnAll.title = 'Mostrar semáforos de todas las plantas';
+    btnAll.addEventListener('click', calOverlaySelectAllPlants);
+    mount.appendChild(btnAll);
+    var btnOne = document.createElement('button');
+    btnOne.type = 'button';
+    btnOne.className = 'np-cal-overlay-plant-quick';
+    btnOne.textContent = 'Solo actual';
+    btnOne.title = 'Quitar el resto y dejar solo la planta activa en la pestaña';
+    btnOne.addEventListener('click', calOverlaySelectOnlyCurrentPlant);
+    mount.appendChild(btnOne);
+    getActivePlanAreas().forEach(function (area) {
+      if (!area || !area.id) return;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className =
+        'np-cal-overlay-plant-chip' +
+        ((state.calOverlayAreaIds || []).indexOf(area.id) >= 0 ? ' np-cal-overlay-plant-chip--on' : '');
+      btn.style.setProperty('--np-plant-chip-accent', resolvePlantAccentHex(area.id));
+      btn.textContent = area.title || area.slug || 'Planta';
+      btn.title = 'Mostrar u ocultar semáforos de «' + (area.title || 'Planta') + '»';
+      (function (aid) {
+        btn.addEventListener('click', function () {
+          toggleCalOverlayPlant(aid);
+        });
+      })(area.id);
+      mount.appendChild(btn);
+    });
+  }
+
+  async function openCalendarApunteFromEntry(ent) {
+    if (!ent || !ent.itemId) return;
+    var full = (state.calOverlayItemsCache || [])
+      .concat(state.prioSummaryRowsCache || [])
+      .filter(function (x) {
+        return x && x.id === ent.itemId;
+      })[0];
+    if (!full && state.client) {
+      full = await fetchPlanProItemForDetail(ent.itemId);
+    }
+    if (!full) {
+      showToast('No se encontró el apunte.', true);
+      return;
+    }
+    state.calOverlayKeepOpen = !!(
+      $('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open')
+    );
+    if (full.area_id && full.area_id !== state.selectedAreaId) {
+      state.selectedAreaId = full.area_id;
+      renderPillarTabs();
+    }
+    await openItemDetail(full);
+  }
+
+  function renderCalOverlaySummary() {
+    var mount = $('npCalOverlaySummary');
+    if (!mount) return;
+    ensureSidebarCalMonth();
+    var monthEntries = filterCalOverlayMonthEntries();
+    var totals = { baja: 0, media: 0, alta: 0, none: 0, total: monthEntries.length };
+    var byRoot = {};
+    monthEntries.forEach(function (e) {
+      if (e.level === 'baja') totals.baja += 1;
+      else if (e.level === 'media') totals.media += 1;
+      else if (e.level === 'alta') totals.alta += 1;
+      else totals.none += 1;
+      var root = calEntryBranchRoot(e) || 'Sin rama';
+      if (!byRoot[root]) byRoot[root] = { baja: 0, media: 0, alta: 0, total: 0 };
+      byRoot[root].total += 1;
+      if (e.level === 'baja') byRoot[root].baja += 1;
+      else if (e.level === 'media') byRoot[root].media += 1;
+      else if (e.level === 'alta') byRoot[root].alta += 1;
+    });
+    mount.innerHTML = '';
+    var totalChip = document.createElement('span');
+    totalChip.className = 'np-cal-overlay-total-chip';
+    totalChip.textContent =
+      totals.total +
+      ' semáforo' +
+      (totals.total === 1 ? '' : 's') +
+      ' · 🟢' +
+      totals.baja +
+      ' 🟡' +
+      totals.media +
+      ' 🔴' +
+      totals.alta +
+      (totals.none ? ' · ○' + totals.none : '');
+    mount.appendChild(totalChip);
+    Object.keys(byRoot)
+      .sort(function (a, b) {
+        return byRoot[b].total - byRoot[a].total || a.localeCompare(b);
+      })
+      .slice(0, 8)
+      .forEach(function (rootName) {
+        var c = byRoot[rootName];
+        var chip = document.createElement('span');
+        chip.className = 'np-cal-overlay-root-chip';
+        chip.textContent = rootName + ' · ' + c.total + ' (🟢' + c.baja + ' 🟡' + c.media + ' 🔴' + c.alta + ')';
+        mount.appendChild(chip);
+      });
+  }
+
+  function renderCalOverlayGrid() {
+    var grid = $('npCalOverlayGrid');
+    var lab = $('npCalOverlayMonthLabel');
+    if (!grid || !lab) return;
+    ensureSidebarCalMonth();
+    var y = state.sidebarCalYear;
+    var m = state.sidebarCalMonth;
+    lab.textContent = NP_CAL_MONTH_NAMES[m] + ' ' + y;
+    var monthEntries = filterCalOverlayMonthEntries();
+    var bucketMap = buildCalendarDayBuckets(monthEntries);
+    var first = new Date(y, m, 1);
+    var startDow = first.getDay();
+    var mondayBased = (startDow + 6) % 7;
+    var lastDay = new Date(y, m + 1, 0).getDate();
+    var todayKey =
+      new Date().getFullYear() +
+      '-' +
+      String(new Date().getMonth() + 1).padStart(2, '0') +
+      '-' +
+      String(new Date().getDate()).padStart(2, '0');
+    grid.innerHTML = '';
+    var dowLbl = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    dowLbl.forEach(function (L) {
+      var h = document.createElement('div');
+      h.className = 'np-cal-overlay-dow';
+      h.textContent = L;
+      grid.appendChild(h);
+    });
+    var totalCells = mondayBased + lastDay;
+    var padEnd = (7 - (totalCells % 7)) % 7;
+    var i;
+    for (i = 0; i < mondayBased; i++) {
+      var pad = document.createElement('div');
+      pad.className = 'np-cal-overlay-day np-cal-overlay-day--muted';
+      grid.appendChild(pad);
+    }
+    for (var day = 1; day <= lastDay; day++) {
+      (function (d) {
+        var dateKey =
+          String(y) +
+          '-' +
+          String(m + 1).padStart(2, '0') +
+          '-' +
+          String(d).padStart(2, '0');
+        var bucket = bucketMap[dateKey] || { baja: 0, media: 0, alta: 0, none: 0, entries: [] };
+        var total = bucket.entries.length;
+        var cell = document.createElement('div');
+        var focusDay = state.calOverlayFocusDateKey && dateKey === state.calOverlayFocusDateKey;
+        cell.className =
+          'np-cal-overlay-day' +
+          (dateKey === todayKey ? ' np-cal-overlay-day--today' : '') +
+          (focusDay ? ' np-cal-overlay-day--focus' : '');
+        cell.setAttribute('data-cal-date', dateKey);
+        var head = document.createElement('div');
+        head.className = 'np-cal-overlay-day-head';
+        var num = document.createElement('span');
+        num.className = 'np-cal-overlay-day-num';
+        num.textContent = String(d);
+        head.appendChild(num);
+        if (total) {
+          var tot = document.createElement('span');
+          tot.className = 'np-cal-overlay-day-total';
+          tot.textContent = String(total);
+          tot.title = total + ' semáforo' + (total === 1 ? '' : 's') + ' este día';
+          head.appendChild(tot);
+        }
+        cell.appendChild(head);
+        if (total) {
+          var prioRow = document.createElement('div');
+          prioRow.className = 'np-cal-overlay-prio-row';
+          [
+            { key: 'baja', label: '🟢', cls: 'baja' },
+            { key: 'media', label: '🟡', cls: 'media' },
+            { key: 'alta', label: '🔴', cls: 'alta' },
+            { key: 'none', label: '○', cls: 'none' }
+          ].forEach(function (def) {
+            if (!bucket[def.key]) return;
+            var sp = document.createElement('span');
+            sp.className = 'np-cal-overlay-prio-count np-cal-overlay-prio-count--' + def.cls;
+            sp.textContent = def.label + bucket[def.key];
+            sp.title = calLevelPlainLabel(def.key === 'none' ? '' : def.key) + ': ' + bucket[def.key];
+            prioRow.appendChild(sp);
+          });
+          cell.appendChild(prioRow);
+          var scroll = document.createElement('div');
+          scroll.className = 'np-cal-overlay-day-scroll';
+          bucket.entries.forEach(function (ent) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'np-cal-overlay-entry';
+            btn.title = calEntryDisplayTitle(ent) + ' · ' + (ent.catPath || '');
+            var dot = document.createElement('span');
+            dot.className =
+              'np-cal-overlay-entry-dot np-cal-overlay-entry-dot--' + (ent.level || 'none');
+            var txt = document.createElement('span');
+            txt.className = 'np-cal-overlay-entry-text';
+            var t1 = document.createElement('span');
+            t1.className = 'np-cal-overlay-entry-title';
+            t1.textContent = calEntryDisplayTitle(ent);
+            txt.appendChild(t1);
+            var sub = calEntrySubtitle(ent);
+            if (sub) {
+              var t2 = document.createElement('span');
+              t2.className = 'np-cal-overlay-entry-sub';
+              t2.textContent = sub;
+              txt.appendChild(t2);
+            }
+            btn.appendChild(dot);
+            btn.appendChild(txt);
+            (function (entry) {
+              btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openCalendarApunteFromEntry(entry);
+              });
+            })(ent);
+            scroll.appendChild(btn);
+          });
+          cell.appendChild(scroll);
+        }
+        grid.appendChild(cell);
+      })(day);
+    }
+    for (i = 0; i < padEnd; i++) {
+      var pad2 = document.createElement('div');
+      pad2.className = 'np-cal-overlay-day np-cal-overlay-day--muted';
+      grid.appendChild(pad2);
+    }
+    if (state.calOverlayFocusDateKey) {
+      requestAnimationFrame(function () {
+        var focusEl = grid.querySelector('[data-cal-date="' + state.calOverlayFocusDateKey + '"]');
+        if (focusEl) focusEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+    }
+  }
+
+  async function openCalOverlayModal(focusDateKey) {
+    var areas = getActivePlanAreas();
+    if (!areas.length) {
+      showToast('Añade al menos una planta para ver el calendario.', true);
+      return;
+    }
+    if (!state.selectedAreaId) state.selectedAreaId = areas[0].id;
+    var savedIds = planProReadCalOverlayAreaIdsLocal();
+    if (savedIds && savedIds.length) {
+      state.calOverlayAreaIds = savedIds;
+    }
+    if (!state.calOverlayAreaIds || !state.calOverlayAreaIds.length) {
+      state.calOverlayAreaIds = state.selectedAreaId ? [state.selectedAreaId] : [areas[0].id];
+    } else {
+      var activeSet = {};
+      areas.forEach(function (a) {
+        if (a && a.id) activeSet[a.id] = true;
+      });
+      state.calOverlayAreaIds = state.calOverlayAreaIds.filter(function (id) {
+        return id && activeSet[id];
+      });
+      if (!state.calOverlayAreaIds.length) {
+        state.calOverlayAreaIds = state.selectedAreaId ? [state.selectedAreaId] : [areas[0].id];
+      }
+    }
+    state.calOverlayAreaIds = planProSanitizeCalOverlayAreaIds(state.calOverlayAreaIds);
+    if (focusDateKey && /^\d{4}-\d{2}-\d{2}$/.test(String(focusDateKey))) {
+      var fp = String(focusDateKey).split('-').map(Number);
+      state.sidebarCalYear = fp[0];
+      state.sidebarCalMonth = fp[1] - 1;
+      state.calOverlayFocusDateKey = focusDateKey;
+    } else {
+      state.calOverlayFocusDateKey = null;
+    }
+    ensureSidebarCalMonth();
+    var modal = $('npCalOverlayModal');
+    if (!modal) return;
+    modal.classList.add('np-modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+    try {
+      var rows = await loadCalOverlayAllEntries();
+      state.calOverlayItemsCache = rows;
+      state.calOverlayEntriesCache = collectCalendarEntries(rows);
+    } catch (eLoad) {
+      showToast((eLoad && eLoad.message) || 'No se pudo cargar el calendario.', true);
+      closeCalOverlayModal();
+      return;
+    }
+    syncCalOverlayPlantAccent();
+    renderCalOverlayPlantFilter();
+    renderCalOverlaySummary();
+    renderCalOverlayGrid();
+  }
+
+  function closeCalOverlayModal() {
+    var modal = $('npCalOverlayModal');
+    if (!modal) return;
+    modal.classList.remove('np-modal-open');
+    modal.setAttribute('aria-hidden', 'true');
   }
 
 
@@ -13146,7 +14460,16 @@
 
 
   function downloadCalendarIcs(scope, dateKey, statusEl) {
-    var filtered = filterCalendarEntriesByScope(scope, dateKey);
+    var filtered;
+    if (
+      scope === 'month' &&
+      $('npCalOverlayModal') &&
+      $('npCalOverlayModal').classList.contains('np-modal-open')
+    ) {
+      filtered = filterCalOverlayMonthEntries();
+    } else {
+      filtered = filterCalendarEntriesByScope(scope, dateKey);
+    }
     filtered = filtered.slice().sort(function (a, b) {
       var o = npCompareDateKeys(a.dateKey, b.dateKey);
       if (o !== 0) return o;
@@ -13185,7 +14508,10 @@
   }
 
   function setCalSendStatus(el, message, isError) {
-    if (!el) return;
+    if (!el) {
+      if (message) showToast(message, !!isError);
+      return;
+    }
     el.classList.remove('np-hide', 'np-msg', 'ok', 'err');
     if (!message) {
       el.classList.add('np-hide');
@@ -13259,17 +14585,12 @@
         btn.type = 'button';
         btn.className = 'btn btn-ghost btn-ghost-blue';
         btn.textContent = 'Abrir apunte';
-        (function (itemId) {
+        (function (entry) {
           btn.addEventListener('click', function () {
-            var full = (state.prioSummaryRowsCache || []).filter(function (x) {
-              return x.id === itemId;
-            })[0];
-            if (full) {
-              closeCalDayModal();
-              openItemDetail(full);
-            }
+            openCalendarApunteFromEntry(entry);
+            if (!state.calOverlayKeepOpen) closeCalDayModal();
           });
-        })(ent.itemId);
+        })(ent);
         row.appendChild(h);
         row.appendChild(meta);
         row.appendChild(btn);
@@ -15201,14 +16522,187 @@
     if (!catId) return;
     var pid = catId;
     var guard = 0;
+    var changed = false;
     while (pid && guard++ < 60) {
       var cat = state.categories.filter(function (c) {
         return c && c.id === pid;
       })[0];
       if (!cat || !cat.parent_id) break;
-      delete state.treeCollapsed[cat.parent_id];
+      if (state.treeCollapsed[cat.parent_id]) {
+        delete state.treeCollapsed[cat.parent_id];
+        changed = true;
+      }
       pid = cat.parent_id;
     }
+    if (changed) planProScheduleTreeCollapsedSave();
+  }
+
+  function planProTreeCollapsedStorageKey() {
+    return 'np_plan_pro_tree_collapsed_v1_' + (state.userId || 'anon');
+  }
+
+  function planProCalOverlayAreaIdsStorageKey() {
+    return 'np_plan_pro_cal_overlay_areas_v1_' + (state.userId || 'anon');
+  }
+
+  function planProSanitizeCalOverlayAreaIds(raw) {
+    var out = [];
+    var seen = {};
+    var valid = {};
+    getActivePlanAreas().forEach(function (a) {
+      if (a && a.id) valid[a.id] = true;
+    });
+    (raw || []).forEach(function (id) {
+      if (!id || !valid[id] || seen[id]) return;
+      seen[id] = true;
+      out.push(id);
+    });
+    return out;
+  }
+
+  function planProReadCalOverlayAreaIdsLocal() {
+    try {
+      var raw = localStorage.getItem(planProCalOverlayAreaIdsStorageKey());
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return null;
+      return planProSanitizeCalOverlayAreaIds(parsed);
+    } catch (eLocalCal) {
+      return null;
+    }
+  }
+
+  function planProWriteCalOverlayAreaIdsLocal(ids) {
+    try {
+      localStorage.setItem(planProCalOverlayAreaIdsStorageKey(), JSON.stringify(ids || []));
+    } catch (eWriteCal) {}
+  }
+
+  function planProApplyCalOverlayAreaIds(ids) {
+    var sanitized = planProSanitizeCalOverlayAreaIds(ids || []);
+    if (sanitized.length) state.calOverlayAreaIds = sanitized;
+  }
+
+  function planProMergedUiPrefsJson() {
+    return {
+      tree_collapsed: planProSanitizeTreeCollapsed(state.treeCollapsed || {}),
+      cal_overlay_area_ids: planProSanitizeCalOverlayAreaIds(state.calOverlayAreaIds || [])
+    };
+  }
+
+  function planProScheduleCalOverlayAreaIdsSave() {
+    var stored = planProSanitizeCalOverlayAreaIds(state.calOverlayAreaIds || []);
+    state.calOverlayAreaIds = stored;
+    planProWriteCalOverlayAreaIdsLocal(stored);
+    if (state.planProCalOverlaySaveTimer) clearTimeout(state.planProCalOverlaySaveTimer);
+    state.planProCalOverlaySaveTimer = window.setTimeout(function () {
+      state.planProCalOverlaySaveTimer = null;
+      planProSaveUiPrefsCloud();
+    }, 650);
+  }
+
+  function planProSanitizeTreeCollapsed(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    var valid = {};
+    (state.categories || []).forEach(function (c) {
+      if (c && c.id) valid[c.id] = true;
+    });
+    Object.keys(raw).forEach(function (id) {
+      if (valid[id] && raw[id]) out[id] = true;
+    });
+    return out;
+  }
+
+  function planProReadTreeCollapsedLocal() {
+    try {
+      var raw = localStorage.getItem(planProTreeCollapsedStorageKey());
+      if (!raw) return null;
+      return planProSanitizeTreeCollapsed(JSON.parse(raw));
+    } catch (eLocal) {
+      return null;
+    }
+  }
+
+  function planProWriteTreeCollapsedLocal(map) {
+    try {
+      localStorage.setItem(planProTreeCollapsedStorageKey(), JSON.stringify(map || {}));
+    } catch (eWrite) {}
+  }
+
+  function planProApplyTreeCollapsed(map) {
+    state.treeCollapsed = planProSanitizeTreeCollapsed(map || {});
+  }
+
+  async function planProLoadTreeCollapsedPrefs() {
+    var local = planProReadTreeCollapsedLocal();
+    if (local) planProApplyTreeCollapsed(local);
+    var localCal = planProReadCalOverlayAreaIdsLocal();
+    if (localCal && localCal.length) planProApplyCalOverlayAreaIds(localCal);
+    if (!state.client || !state.userId) return;
+    try {
+      var res = await state.client
+        .from('plan_pro_ui_prefs')
+        .select('prefs_json')
+        .eq('owner_id', state.userId)
+        .maybeSingle();
+      if (res.error) {
+        if (/plan_pro_ui_prefs|does not exist|schema cache/i.test(res.error.message || '')) {
+          state.planProUiPrefsReady = false;
+        }
+        return;
+      }
+      state.planProUiPrefsReady = true;
+      if (!res.data || !res.data.prefs_json) return;
+      var cloud = res.data.prefs_json.tree_collapsed;
+      if (cloud && typeof cloud === 'object') {
+        var sanitized = planProSanitizeTreeCollapsed(cloud);
+        planProApplyTreeCollapsed(sanitized);
+        planProWriteTreeCollapsedLocal(sanitized);
+      }
+      var cloudCal = res.data.prefs_json.cal_overlay_area_ids;
+      if (Array.isArray(cloudCal) && cloudCal.length) {
+        var sanitizedCal = planProSanitizeCalOverlayAreaIds(cloudCal);
+        if (sanitizedCal.length) {
+          planProApplyCalOverlayAreaIds(sanitizedCal);
+          planProWriteCalOverlayAreaIdsLocal(sanitizedCal);
+        }
+      }
+    } catch (eLoad) {}
+  }
+
+  function planProScheduleTreeCollapsedSave() {
+    var stored = planProSanitizeTreeCollapsed(state.treeCollapsed);
+    state.treeCollapsed = stored;
+    planProWriteTreeCollapsedLocal(stored);
+    if (state.planProTreeCollapsedSaveTimer) {
+      clearTimeout(state.planProTreeCollapsedSaveTimer);
+    }
+    state.planProTreeCollapsedSaveTimer = window.setTimeout(function () {
+      state.planProTreeCollapsedSaveTimer = null;
+      planProSaveUiPrefsCloud();
+    }, 650);
+  }
+
+  async function planProSaveUiPrefsCloud() {
+    if (!state.client || !state.userId || !state.planProUiPrefsReady) return;
+    var payload = {
+      owner_id: state.userId,
+      prefs_json: planProMergedUiPrefsJson()
+    };
+    try {
+      var res = await npCloudSyncTrack(function () {
+        return state.client.from('plan_pro_ui_prefs').upsert(payload, { onConflict: 'owner_id' });
+      });
+      if (res.error && /plan_pro_ui_prefs|does not exist|schema cache/i.test(res.error.message || '')) {
+        state.planProUiPrefsReady = false;
+      }
+    } catch (eSave) {}
+  }
+
+  async function planProSaveTreeCollapsedPrefsCloud(map) {
+    planProApplyTreeCollapsed(map || {});
+    await planProSaveUiPrefsCloud();
   }
 
   function planProClearFlowSearchUi() {
@@ -15476,6 +16970,21 @@
       await loadLookups();
     }
   }
+
+  function scrollPlanProSheetSection(section) {
+    var targetId = section === 'new' ? 'npSheetNewNoteAnchor' : 'npSheetApuntesAnchor';
+    var el = $(targetId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (section === 'new') {
+      window.setTimeout(function () {
+        var titleInp = $('npTitle');
+        if (titleInp) titleInp.focus({ preventScroll: true });
+      }, 420);
+    }
+  }
+
+  var PLAN_SHEET_ITEMS_PREVIEW_LIMIT = 10;
 
   function planProInitItemSortPrefs() {
     try {
@@ -15894,13 +17403,18 @@
       toggle.innerHTML = chevronSvg;
       toggle.addEventListener('click', function (e) {
         e.stopPropagation();
-        state.treeCollapsed[node.cat.id] = !state.treeCollapsed[node.cat.id];
+        if (state.treeCollapsed[node.cat.id]) {
+          delete state.treeCollapsed[node.cat.id];
+        } else {
+          state.treeCollapsed[node.cat.id] = true;
+        }
         var collapsed = !!state.treeCollapsed[node.cat.id];
         toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
         toggle.setAttribute('aria-label', collapsed ? 'Expandir hojas' : 'Contraer hojas');
         toggle.title = collapsed ? 'Expandir' : 'Contraer';
         toggle.classList.toggle('np-tree-toggle--collapsed', collapsed);
         childBox.classList.toggle('np-tree-children-open', !collapsed);
+        planProScheduleTreeCollapsedSave();
       });
       rowLead.appendChild(toggle);
     } else {
@@ -16084,6 +17598,7 @@
   function selectCategory(catId) {
     if (catId !== state.selectedCategoryId) {
       resetCreateFormPendingBlocks();
+      state.sheetItemsListExpanded = false;
     }
     state.selectedCategoryId = catId;
     syncTreeActiveHighlight();
@@ -16188,10 +17703,14 @@
         nav.classList.add('np-hide');
         nav.innerHTML = '';
       }
+      var jumpRow = $('npSheetJumpRow');
+      if (jumpRow) jumpRow.classList.add('np-hide');
       return;
     }
     ph.classList.add('np-hide');
     sp.classList.remove('np-hide');
+    var jumpRowOpen = $('npSheetJumpRow');
+    if (jumpRowOpen) jumpRowOpen.classList.remove('np-hide');
     applySheetCategoryAccent(sp);
     syncPlanProCategoryColorBar();
     if (title) title.textContent = getCategoryPath(state.selectedCategoryId);
@@ -16199,6 +17718,8 @@
   }
 
   function updateSelectionUI() {
+    var calBtn = $('npCalOverlayOpenBtn');
+    if (calBtn) calBtn.disabled = !state.selectedAreaId;
     var pathEl = $('npSelectedPath');
     if (!state.selectedAreaId) {
       if (pathEl) pathEl.classList.add('np-hide');
@@ -16681,6 +18202,7 @@
     state.categories.forEach(function (x) { state.catMap[x.id] = x.title; });
 
     await refreshCategoryItemCounts();
+    await planProLoadTreeCollapsedPrefs();
     renderPillarTabs();
     renderTree();
     updateSelectionUI();
@@ -17716,8 +19238,14 @@
       return;
     }
     emptyEl.classList.add('np-hide');
+    var expanded = !!state.sheetItemsListExpanded;
+    var total = displayRows.length;
+    var overLimit = total > PLAN_SHEET_ITEMS_PREVIEW_LIMIT;
+    var visibleRows =
+      !overLimit || expanded ? displayRows : displayRows.slice(0, PLAN_SHEET_ITEMS_PREVIEW_LIMIT);
+    var hiddenCount = overLimit ? total - PLAN_SHEET_ITEMS_PREVIEW_LIMIT : 0;
     var fragM = document.createDocumentFragment();
-    displayRows.forEach(function (r) {
+    visibleRows.forEach(function (r) {
       var row = document.createElement('div');
       row.className = 'np-sheet-item-row';
       var card = document.createElement('button');
@@ -17752,6 +19280,32 @@
       wirePlanSheetItemCardDnd(row, card, r);
       fragM.appendChild(row);
     });
+    if (overLimit) {
+      var moreWrap = document.createElement('div');
+      moreWrap.className = 'np-sheet-items-more-wrap';
+      var moreBtn = document.createElement('button');
+      moreBtn.type = 'button';
+      moreBtn.className = 'np-sheet-items-more-btn';
+      moreBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      if (expanded) {
+        moreBtn.textContent = 'Ver menos apuntes';
+      } else {
+        moreBtn.textContent =
+          'Ver ' +
+          hiddenCount +
+          ' apunte' +
+          (hiddenCount === 1 ? '' : 's') +
+          ' más (' +
+          total +
+          ' en total)';
+      }
+      moreBtn.addEventListener('click', function () {
+        state.sheetItemsListExpanded = !state.sheetItemsListExpanded;
+        syncSheetItemsList(state.planProItemsRows);
+      });
+      moreWrap.appendChild(moreBtn);
+      fragM.appendChild(moreWrap);
+    }
     mount.replaceChildren(fragM);
   }
 
@@ -17920,6 +19474,20 @@
   }
 
   planProInitItemSortPrefs();
+  var npSheetJumpApuntesBtn = $('npSheetJumpApuntesBtn');
+  if (npSheetJumpApuntesBtn && npSheetJumpApuntesBtn.dataset.npWired !== '1') {
+    npSheetJumpApuntesBtn.dataset.npWired = '1';
+    npSheetJumpApuntesBtn.addEventListener('click', function () {
+      scrollPlanProSheetSection('apuntes');
+    });
+  }
+  var npSheetJumpNewBtn = $('npSheetJumpNewBtn');
+  if (npSheetJumpNewBtn && npSheetJumpNewBtn.dataset.npWired !== '1') {
+    npSheetJumpNewBtn.dataset.npWired = '1';
+    npSheetJumpNewBtn.addEventListener('click', function () {
+      scrollPlanProSheetSection('new');
+    });
+  }
   var npPlanItemSort = $('npPlanItemSort');
   if (npPlanItemSort && npPlanItemSort.dataset.npWired !== '1') {
     npPlanItemSort.dataset.npWired = '1';
@@ -18020,6 +19588,15 @@
   $('npDetailClose').addEventListener('click', async function () {
     await closeItemDetail();
   });
+  var npDetailExportPdfBtn = $('npDetailExportPdfBtn');
+  if (npDetailExportPdfBtn && npDetailExportPdfBtn.dataset.npWired !== '1') {
+    npDetailExportPdfBtn.dataset.npWired = '1';
+    npDetailExportPdfBtn.addEventListener('click', async function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      await exportApuntePdfToNutriPro();
+    });
+  }
   $('npDetailModal').addEventListener('click', async function (e) {
     if (e.target === $('npDetailModal')) await closeItemDetail();
   });
@@ -18117,8 +19694,47 @@
       if (!cell) return;
       var dk = cell.getAttribute('data-cal-date');
       if (!dk || cell.classList.contains('np-cal-day--muted')) return;
+      openCalOverlayModal(dk);
+    });
+    npCalGridEl.addEventListener('dblclick', function (e) {
+      var cell = e.target.closest('[data-cal-date]');
+      if (!cell) return;
+      var dk = cell.getAttribute('data-cal-date');
+      if (!dk || cell.classList.contains('np-cal-day--muted')) return;
       openCalDayModal(dk);
     });
+  }
+
+  var npCalOverlayOpenBtn = $('npCalOverlayOpenBtn');
+  if (npCalOverlayOpenBtn && npCalOverlayOpenBtn.dataset.npWired !== '1') {
+    npCalOverlayOpenBtn.dataset.npWired = '1';
+    npCalOverlayOpenBtn.addEventListener('click', function () {
+      openCalOverlayModal(null);
+    });
+  }
+  var npCalOverlayClose = $('npCalOverlayClose');
+  if (npCalOverlayClose) npCalOverlayClose.addEventListener('click', closeCalOverlayModal);
+  var npCalOverlayPrev = $('npCalOverlayPrev');
+  if (npCalOverlayPrev) npCalOverlayPrev.addEventListener('click', function () { shiftSidebarCalMonth(-1); });
+  var npCalOverlayNext = $('npCalOverlayNext');
+  if (npCalOverlayNext) npCalOverlayNext.addEventListener('click', function () { shiftSidebarCalMonth(1); });
+  var npCalOverlayDownloadBtn = $('npCalOverlayDownloadBtn');
+  if (npCalOverlayDownloadBtn) {
+    npCalOverlayDownloadBtn.addEventListener('click', function () {
+      downloadCalendarIcs('month', null, null);
+    });
+  }
+  var npCalOverlayModalEl = $('npCalOverlayModal');
+  if (npCalOverlayModalEl) {
+    npCalOverlayModalEl.addEventListener('click', function (e) {
+      if (e.target === npCalOverlayModalEl) closeCalOverlayModal();
+    });
+    var npCalOverlayPanel = npCalOverlayModalEl.querySelector('.np-cal-overlay-panel');
+    if (npCalOverlayPanel) {
+      npCalOverlayPanel.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+    }
   }
 
   document.addEventListener('keydown', async function (e) {
@@ -18139,12 +19755,24 @@
       closeRichDuePicker();
       return;
     }
+    if ($('npCrossLinkPicker') && $('npCrossLinkPicker').classList.contains('np-modal-open')) {
+      closeCrossLinkPicker();
+      return;
+    }
     if ($('npPrioListModal') && $('npPrioListModal').classList.contains('np-modal-open')) {
       closePrioListModal();
       return;
     }
     if ($('npCalDayModal') && $('npCalDayModal').classList.contains('np-modal-open')) {
       closeCalDayModal();
+      return;
+    }
+    if ($('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open')) {
+      if ($('npDetailModal').classList.contains('np-modal-open')) {
+        await closeItemDetail();
+        return;
+      }
+      closeCalOverlayModal();
       return;
     }
     if ($('npDetailModal').classList.contains('np-modal-open')) {
@@ -18294,8 +19922,14 @@
     var menuBtn = $('npPlanHeaderMenuBtn');
     var menuPanel = $('npPlanHeaderMenuPanel');
     var menuBackdrop = $('npPlanHeaderMenuBackdrop');
-    var menuClose = $('npPlanHeaderMenuClose');
     if (!menuBtn || !menuPanel || !menuBackdrop) return;
+
+    function syncPlanHeaderMenuLayout() {
+      var header = document.querySelector('header.np-plan-header.np-mac-bar');
+      if (!header) return;
+      var bottom = Math.ceil(header.getBoundingClientRect().bottom);
+      document.documentElement.style.setProperty('--np-plan-menu-top', bottom + 8 + 'px');
+    }
 
     function setHeaderMenuOpen(open) {
       if (open && typeof closeCatColorFlyout === 'function') closeCatColorFlyout();
@@ -18304,6 +19938,7 @@
       menuPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
       menuBackdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
       if (open) {
+        syncPlanHeaderMenuLayout();
         menuPanel.classList.add('np-plan-header-menu-open');
         menuBackdrop.classList.add('np-plan-header-menu-open');
         document.body.classList.add('np-plan-header-menu-lock');
@@ -18318,8 +19953,14 @@
       e.preventDefault();
       setHeaderMenuOpen(menuBtn.getAttribute('aria-expanded') !== 'true');
     });
-    if (menuClose) menuClose.addEventListener('click', function () { setHeaderMenuOpen(false); });
     menuBackdrop.addEventListener('click', function () { setHeaderMenuOpen(false); });
+    window.addEventListener('resize', function () {
+      if (menuBtn.getAttribute('aria-expanded') === 'true') syncPlanHeaderMenuLayout();
+    });
+    window.addEventListener('orientationchange', function () {
+      if (menuBtn.getAttribute('aria-expanded') !== 'true') return;
+      window.setTimeout(syncPlanHeaderMenuLayout, 120);
+    });
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
       if (menuBtn.getAttribute('aria-expanded') !== 'true') return;
@@ -18361,6 +20002,31 @@
 
   function nutriProExtractIsTruncated(ex) {
     return !!(ex && ex.meta_json && ex.meta_json.truncated);
+  }
+
+  function nutriProFilePreviewLine(file) {
+    var desc = String((file && file.description) || '').trim();
+    var orig = String((file && file.original_name) || '').trim();
+    var title = String((file && file.title) || orig || '').trim();
+    if (desc) {
+      return { hidden: true, text: '', empty: true };
+    }
+    if (orig && orig !== title) {
+      return { hidden: false, text: orig, empty: false };
+    }
+    return {
+      hidden: false,
+      text: 'Sin nota breve · añádela abajo para Socio y el buscador',
+      empty: true
+    };
+  }
+
+  function nutriProApplyFilePreviewEl(prevEl, file) {
+    if (!prevEl) return;
+    var pv = nutriProFilePreviewLine(file);
+    prevEl.classList.toggle('np-hide', !!pv.hidden);
+    prevEl.classList.toggle('np-nutri-file-preview--empty', !!pv.empty && !pv.hidden);
+    if (!pv.hidden) prevEl.textContent = pv.text;
   }
 
   function nutriProExtractStatusLabel(ex) {
@@ -18944,12 +20610,349 @@
     return nutriProFolderSortedKids(parentId);
   }
 
+  function nutriProFolderCountKey(folderId) {
+    return folderId || '__root__';
+  }
+
+  function nutriProFolderDirectFileCount(folderId) {
+    return state.nutriProFileCountByFolder[nutriProFolderCountKey(folderId)] || 0;
+  }
+
+  function nutriProFolderDirectLinkCount(folderId) {
+    return state.nutriProLinkCountByFolder[nutriProFolderCountKey(folderId)] || 0;
+  }
+
+  function nutriProFolderMetaLabel(folderId) {
+    var fc = nutriProFolderDirectFileCount(folderId);
+    var lc = nutriProFolderDirectLinkCount(folderId);
+    var short;
+    if (fc > 0 && lc > 0) short = fc + '·' + lc;
+    else if (fc > 0) short = fc + ' arch';
+    else if (lc > 0) short = lc + ' enl';
+    else short = '0';
+    var full =
+      fc +
+      ' archivo' +
+      (fc === 1 ? '' : 's') +
+      ' · ' +
+      lc +
+      ' enlace' +
+      (lc === 1 ? '' : 's');
+    return { short: short, full: full };
+  }
+
+  function patchNutriProFolderTreeMeta() {
+    var mount = $('npNutriFolderTree');
+    if (!mount) return;
+    mount.querySelectorAll('.np-nutri-folder-row[data-np-nutri-folder-id]').forEach(function (btn) {
+      var fid = btn.getAttribute('data-np-nutri-folder-id');
+      var meta = btn.querySelector('.np-nutri-folder-meta');
+      if (!meta || !fid) return;
+      var m = nutriProFolderMetaLabel(fid);
+      meta.textContent = m.short;
+      meta.title = m.full;
+      meta.setAttribute('aria-label', m.full);
+    });
+  }
+
+  async function refreshNutriProFolderCounts() {
+    if (!state.client) return;
+    var fileMap = {};
+    var linkMap = {};
+    if (state.nutriProReady) {
+      var fr = await state.client.from('plan_pro_nutri_files').select('folder_id');
+      if (!fr.error) {
+        (fr.data || []).forEach(function (row) {
+          if (!row) return;
+          var k = nutriProFolderCountKey(row.folder_id);
+          fileMap[k] = (fileMap[k] || 0) + 1;
+        });
+      }
+    }
+    if (state.nutriProLinksReady) {
+      var lr = await state.client.from('plan_pro_nutri_links').select('folder_id');
+      if (!lr.error) {
+        (lr.data || []).forEach(function (row) {
+          if (!row) return;
+          var k = nutriProFolderCountKey(row.folder_id);
+          linkMap[k] = (linkMap[k] || 0) + 1;
+        });
+      }
+    }
+    state.nutriProFileCountByFolder = fileMap;
+    state.nutriProLinkCountByFolder = linkMap;
+  }
+
+  async function nutriProSyncFolderCountsUi() {
+    await refreshNutriProFolderCounts();
+    patchNutriProFolderTreeMeta();
+  }
+
+  function ensureHtml2PdfLoaded() {
+    if (typeof html2pdf !== 'undefined') return Promise.resolve();
+    if (npHtml2PdfLoadPromise) return npHtml2PdfLoadPromise;
+    npHtml2PdfLoadPromise = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js';
+      s.async = true;
+      s.onload = function () {
+        if (typeof html2pdf !== 'undefined') resolve();
+        else reject(new Error('html2pdf no disponible'));
+      };
+      s.onerror = function () {
+        reject(new Error('No se pudo cargar el generador PDF'));
+      };
+      document.head.appendChild(s);
+    });
+    return npHtml2PdfLoadPromise;
+  }
+
+  function nutriProApuntePdfTimestamp(d) {
+    var pad = function (n) {
+      return n < 10 ? '0' + n : String(n);
+    };
+    return (
+      d.getFullYear() +
+      '-' +
+      pad(d.getMonth() + 1) +
+      '-' +
+      pad(d.getDate()) +
+      '_' +
+      pad(d.getHours()) +
+      pad(d.getMinutes()) +
+      pad(d.getSeconds())
+    );
+  }
+
+  function nutriProApuntePdfFilename(title, genDate) {
+    var slug = String(title || 'apunte')
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 52);
+    if (!slug) slug = 'apunte';
+    return slug + '_' + nutriProApuntePdfTimestamp(genDate) + '.pdf';
+  }
+
+  async function ensureNutriProApuntesPdfFolder() {
+    if (!state.client || !state.userId || !state.nutriProReady) return null;
+    if (!(state.nutriProFolders || []).length) {
+      try {
+        await loadNutriProFolders();
+      } catch (eFold) {}
+    }
+    var target = String(NP_NUTRI_APUNTES_PDF_FOLDER_TITLE || '')
+      .trim()
+      .toLowerCase();
+    var found = (state.nutriProFolders || []).filter(function (f) {
+      return f && !f.parent_id && String(f.title || '').trim().toLowerCase() === target;
+    })[0];
+    if (found && found.id) return found.id;
+    var created = await insertNutriProFolder(NP_NUTRI_APUNTES_PDF_FOLDER_TITLE, null);
+    if (!created || !created.id) return null;
+    await loadNutriProFolders();
+    renderNutriProFolderTree();
+    await nutriProSyncFolderCountsUi();
+    return created.id;
+  }
+
+  function buildApuntePdfDocument(row, genDate) {
+    var root = document.createElement('div');
+    root.className = 'np-apunte-pdf-root';
+    var genLabel = genDate.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+    var pathParts = [
+      state.areaMap[row.area_id] || '—',
+      row.category_id ? getCategoryPath(row.category_id) : '—'
+    ];
+    if (row.status) pathParts.push(row.status);
+    var prio = fmtItemPriorityShort(row.priority);
+    if (prio && prio !== '—') pathParts.push('Objetivo ' + prio);
+    if (row.due_at) {
+      try {
+        pathParts.push('Meta ' + fmtDate(row.due_at));
+      } catch (eDue) {}
+    }
+
+    var head = document.createElement('div');
+    head.className = 'np-apunte-pdf-head';
+    var h1 = document.createElement('h1');
+    h1.textContent = row.title || 'Apunte';
+    head.appendChild(h1);
+    var pathEl = document.createElement('p');
+    pathEl.className = 'np-apunte-pdf-path';
+    pathEl.textContent = pathParts.join(' · ');
+    head.appendChild(pathEl);
+    var genEl = document.createElement('p');
+    genEl.className = 'np-apunte-pdf-gen';
+    genEl.textContent = 'PDF generado · ' + genLabel;
+    head.appendChild(genEl);
+    root.appendChild(head);
+
+    var noteEl = document.createElement('div');
+    noteEl.className = 'np-apunte-pdf-note np-modal-note-rich';
+    var liveEd = $('npModalBodyRich');
+    var noteHtml =
+      liveEd && state.detailItemId === row.id ? liveEd.innerHTML : resolveModalNoteHtml(row);
+    noteEl.innerHTML = sanitizeRich(noteHtml);
+    root.appendChild(noteEl);
+
+    var blocks =
+      state.detailItemId === row.id && state.detailBlocksWorking
+        ? deepCloneBlocks(state.detailBlocksWorking)
+        : deepCloneBlocks(row.body_blocks);
+    if (blocks && blocks.length) {
+      var blocksWrap = document.createElement('div');
+      blocksWrap.className = 'np-apunte-pdf-blocks np-detail-blocks-mount';
+      blocksWrap.appendChild(
+        renderBodyBlocks(blocks, {
+          editable: false,
+          sheetAccent: getAreaAccentHex(row.area_id)
+        })
+      );
+      root.appendChild(blocksWrap);
+    }
+    return root;
+  }
+
+  async function exportApuntePdfToNutriPro() {
+    if (!state.client || !state.userId) {
+      showToast('Inicia sesión para guardar en Nutri PRO.', true);
+      return;
+    }
+    if (!state.nutriProReady) {
+      showToast('Nutri PRO no está listo. Ejecuta el SQL de Nutri PRO en Supabase.', true);
+      return;
+    }
+    var row = state.detailItemRecord;
+    if (!row || !row.id) return;
+    var btn = $('npDetailExportPdfBtn');
+    if (btn && btn.disabled) return;
+
+    syncDetailBlocksInputsFromDOM();
+    await flushDetailMainNote();
+    await flushDetailItemMeta();
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Generando PDF…';
+    }
+    var host = null;
+    try {
+      await ensureHtml2PdfLoaded();
+      var folderId = await ensureNutriProApuntesPdfFolder();
+      if (!folderId) {
+        showToast('No se pudo crear la carpeta «Apuntes PDF».', true);
+        return;
+      }
+      var genDate = new Date();
+      var pdfRoot = buildApuntePdfDocument(row, genDate);
+      host = document.createElement('div');
+      host.setAttribute('aria-hidden', 'true');
+      host.style.cssText = 'position:fixed;left:-12000px;top:0;z-index:-1;pointer-events:none;opacity:0;';
+      host.appendChild(pdfRoot);
+      document.body.appendChild(host);
+
+      var safeName = nutriProApuntePdfFilename(row.title, genDate);
+      var genLabel = genDate.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+      var pdfBlob = await html2pdf()
+        .set({
+          margin: [10, 10, 12, 10],
+          filename: safeName,
+          image: { type: 'jpeg', quality: 0.92 },
+          html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'] }
+        })
+        .from(pdfRoot)
+        .output('blob');
+
+      var pdfFile = new File([pdfBlob], safeName, { type: 'application/pdf' });
+      var desc =
+        'Apunte Notebook PRO · generado ' +
+        genLabel +
+        (row.title ? ' · «' + String(row.title).trim().slice(0, 80) + '»' : '');
+      var res = await uploadNutriProSingleFile(folderId, pdfFile, {
+        filename: safeName,
+        description: desc
+      });
+      if (!res.ok) {
+        showToast(res.error || 'No se pudo guardar el PDF en Nutri PRO.', true);
+        return;
+      }
+      await nutriProIndexApuntePdfExtract(res.fileId, row, genLabel);
+      if (state.nutriProSelectedFolderId === folderId) {
+        await loadNutriProFiles(folderId);
+      }
+      showToast('PDF guardado en Nutri PRO › Apuntes PDF · ' + (res.safeName || safeName));
+    } catch (ePdf) {
+      console.error(ePdf);
+      showToast((ePdf && ePdf.message) || 'Error al generar el PDF.', true);
+    } finally {
+      if (host && host.parentNode) host.parentNode.removeChild(host);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'PDF → Nutri PRO';
+      }
+    }
+  }
+
+  function nutriProFolderCacheKey(folderId) {
+    return folderId || '__root__';
+  }
+
+  function nutriProSameFolder(a, b) {
+    return (a || null) === (b || null);
+  }
+
+  function nutriProCloneFileRows(rows) {
+    return (rows || []).map(function (f) {
+      if (!f) return f;
+      var c = Object.assign({}, f);
+      if (f._extract) c._extract = Object.assign({}, f._extract);
+      return c;
+    });
+  }
+
+  function nutriProPatchFolderTreeSelection() {
+    var mount = $('npNutriFolderTree');
+    if (!mount) return;
+    mount.querySelectorAll('.np-nutri-folder-row--active').forEach(function (el) {
+      el.classList.remove('np-nutri-folder-row--active');
+    });
+    if (!state.nutriProSelectedFolderId) return;
+    var sel = mount.querySelector(
+      '.np-nutri-folder-row[data-np-nutri-folder-id="' + state.nutriProSelectedFolderId + '"]'
+    );
+    if (sel) sel.classList.add('np-nutri-folder-row--active');
+  }
+
+  function nutriProShowFilesLoading(show) {
+    var loadingEl = $('npNutriFilesLoading');
+    var mount = $('npNutriFilesMount');
+    if (loadingEl) loadingEl.classList.toggle('np-hide', !show);
+    if (mount) mount.classList.toggle('np-nutri-files-mount--loading', !!show);
+  }
+
   function nutriProSelectFolder(folderId) {
     state.nutriProSelectedFolderId = folderId || null;
     state.nutriProFolderEditingId = null;
-    if (folderId) nutriProExpandFolderAncestors(folderId);
-    renderNutriProFolderTree();
+    var treeNeedsRender = false;
+    if (folderId) treeNeedsRender = !!nutriProExpandFolderAncestors(folderId);
+    if (treeNeedsRender) renderNutriProFolderTree();
+    else nutriProPatchFolderTreeSelection();
     syncNutriProFolderContext();
+    var cacheKey = nutriProFolderCacheKey(folderId);
+    if (Object.prototype.hasOwnProperty.call(state.nutriProFolderFilesCache, cacheKey)) {
+      state.nutriProFiles = nutriProCloneFileRows(state.nutriProFolderFilesCache[cacheKey]);
+      nutriProShowFilesLoading(false);
+      renderNutriProFilesList();
+    } else {
+      state.nutriProFiles = [];
+      renderNutriProFilesList();
+      nutriProShowFilesLoading(true);
+    }
     loadNutriProFiles(folderId);
     if (state.nutriProPanel === 'links') loadNutriProLinks();
   }
@@ -19085,12 +21088,17 @@
   }
 
   function nutriProExpandFolderAncestors(folderId) {
-    if (!folderId) return;
+    if (!folderId) return false;
+    var changed = false;
     var f = nutriProGetFolderById(folderId);
     while (f && f.parent_id) {
-      delete state.nutriProCollapsedFolderIds[f.parent_id];
+      if (state.nutriProCollapsedFolderIds[f.parent_id]) {
+        delete state.nutriProCollapsedFolderIds[f.parent_id];
+        changed = true;
+      }
       f = nutriProGetFolderById(f.parent_id);
     }
+    return changed;
   }
 
   function toggleNutriProFolderCollapse(folderId) {
@@ -19415,7 +21423,10 @@
     }
     showToast('Archivo movido a «' + nutriProFolderLabel(dstFolder) + '».');
     schedulePlanProStorageUsageRefresh(5000, true);
+    delete state.nutriProFolderFilesCache[nutriProFolderCacheKey(srcFolder)];
+    delete state.nutriProFolderFilesCache[nutriProFolderCacheKey(dstFolder)];
     await loadNutriProFiles(state.nutriProSelectedFolderId);
+    await nutriProSyncFolderCountsUi();
   }
 
   function wireNutriProFolderRowDnd(btn, folderRec) {
@@ -19596,6 +21607,14 @@
     lbl.textContent = f.title || '(Sin nombre)';
     btn.appendChild(sw);
     btn.appendChild(lbl);
+    var meta = document.createElement('span');
+    meta.className = 'np-nutri-folder-meta';
+    meta.setAttribute('aria-hidden', 'true');
+    var metaInfo = nutriProFolderMetaLabel(f.id);
+    meta.textContent = metaInfo.short;
+    meta.title = metaInfo.full;
+    meta.setAttribute('aria-label', metaInfo.full);
+    btn.appendChild(meta);
     wireNutriProFolderRowDnd(btn, f);
     (function (fid) {
       btn.addEventListener('click', function () {
@@ -19733,6 +21752,7 @@
     syncNutriProFolderContext();
     await loadNutriProFiles(state.nutriProSelectedFolderId);
     if (state.nutriProPanel === 'links') await loadNutriProLinks();
+    await nutriProSyncFolderCountsUi();
   }
 
   async function saveNutriProFileDescription(fileRec, nextDesc) {
@@ -19756,15 +21776,7 @@
     }
     fileRec.description = trimmed || null;
     var prevEl = $('npNutriFilesMount') && $('npNutriFilesMount').querySelector('[data-np-file-preview="' + fileRec.id + '"]');
-    if (prevEl) {
-      if (trimmed) {
-        prevEl.classList.remove('np-nutri-file-preview--empty');
-        prevEl.textContent = trimmed;
-      } else {
-        prevEl.classList.add('np-nutri-file-preview--empty');
-        prevEl.textContent = fileRec.original_name || 'Sin nota breve · añádela abajo para Socio y el buscador';
-      }
-    }
+    nutriProApplyFilePreviewEl(prevEl, fileRec);
     showToast(trimmed ? 'Nota del archivo guardada.' : 'Nota eliminada.');
   }
 
@@ -19772,8 +21784,6 @@
     var mount = $('npNutriFilesMount');
     var empty = $('npNutriFilesEmpty');
     var hint = $('npNutriFilesDndHint');
-    var titleEl = $('npNutriFolderTitle');
-    if (titleEl) titleEl.textContent = nutriProFolderLabel(state.nutriProSelectedFolderId);
     renderNutriProFolderNavBlocks();
     if (!mount) return;
     mount.innerHTML = '';
@@ -19802,13 +21812,7 @@
       var preview = document.createElement('div');
       preview.className = 'np-nutri-file-preview';
       preview.setAttribute('data-np-file-preview', file.id);
-      var descPreview = String(file.description || '').trim();
-      if (descPreview) {
-        preview.textContent = descPreview;
-      } else {
-        preview.className += ' np-nutri-file-preview--empty';
-        preview.textContent = file.original_name || 'Sin nota breve · añádela abajo para Socio y el buscador';
-      }
+      nutriProApplyFilePreviewEl(preview, file);
       var sub = document.createElement('div');
       sub.className = 'np-nutri-file-sub';
       var subStrong = document.createElement('span');
@@ -19829,18 +21833,22 @@
       meta.appendChild(sub);
       var btns = document.createElement('div');
       btns.className = 'np-nutri-file-btns np-nutri-file-ignore';
-      var isImg = nutriProFileIsImage(file.original_name || file.title, file.mime_type);
-      if (isImg) {
-        var view = document.createElement('button');
-        view.type = 'button';
-        view.className = 'btn btn-ghost btn-ghost-green';
-        view.textContent = 'Ver';
+      var viewerMode = nutriProFileViewerMode(file);
+      if (viewerMode) {
+        var openBtn = document.createElement('button');
+        openBtn.type = 'button';
+        openBtn.className = 'btn btn-ghost btn-ghost-green';
+        openBtn.textContent = 'Abrir';
+        openBtn.title =
+          viewerMode === 'office'
+            ? 'Ver en el navegador (visor Office en línea; no descarga al equipo)'
+            : 'Abrir en una pestaña del navegador';
         (function (rec) {
-          view.addEventListener('click', function () {
+          openBtn.addEventListener('click', function () {
             openNutriProFile(rec, false);
           });
         })(file);
-        btns.appendChild(view);
+        btns.appendChild(openBtn);
       }
       var linkAp = document.createElement('button');
       linkAp.type = 'button';
@@ -19937,6 +21945,8 @@
 
   async function loadNutriProFiles(folderId) {
     if (!state.client || !state.nutriProReady) return [];
+    var gen = ++state.nutriProFilesLoadGen;
+    var cacheKey = nutriProFolderCacheKey(folderId);
     var q = state.client
       .from('plan_pro_nutri_files')
       .select('id,folder_id,title,original_name,description,sort_order,storage_path,mime_type,size_bytes,created_at,updated_at')
@@ -19944,6 +21954,7 @@
     if (folderId) q = q.eq('folder_id', folderId);
     else q = q.is('folder_id', null);
     var res = await q;
+    if (gen !== state.nutriProFilesLoadGen) return [];
     if (res.error) {
       if (/sort_order|column|schema cache/i.test(res.error.message || '')) {
         var q2 = state.client
@@ -19953,40 +21964,64 @@
         if (folderId) q2 = q2.eq('folder_id', folderId);
         else q2 = q2.is('folder_id', null);
         var res2 = await q2;
+        if (gen !== state.nutriProFilesLoadGen) return [];
         if (res2.error) throw res2.error;
         var filesLegacy = res2.data || [];
+        state.nutriProFolderFilesCache[cacheKey] = nutriProCloneFileRows(filesLegacy);
+        if (nutriProSameFolder(folderId, state.nutriProSelectedFolderId)) {
+          state.nutriProFiles = nutriProCloneFileRows(filesLegacy);
+          nutriProShowFilesLoading(false);
+          renderNutriProFilesList();
+        }
         var idsLegacy = filesLegacy.map(function (f) { return f && f.id; }).filter(Boolean);
         var extractMapLegacy = await loadNutriProFileExtracts(idsLegacy);
+        if (gen !== state.nutriProFilesLoadGen) return [];
         filesLegacy.forEach(function (f) {
           if (f && f.id && extractMapLegacy[f.id]) f._extract = extractMapLegacy[f.id];
         });
-        state.nutriProFiles = filesLegacy;
-        renderNutriProFilesList();
-        return state.nutriProFiles;
+        state.nutriProFolderFilesCache[cacheKey] = nutriProCloneFileRows(filesLegacy);
+        if (nutriProSameFolder(folderId, state.nutriProSelectedFolderId)) {
+          state.nutriProFiles = nutriProCloneFileRows(filesLegacy);
+          renderNutriProFilesList();
+        }
+        return filesLegacy;
       }
       if (/plan_pro_nutri|does not exist|schema cache/i.test(res.error.message || '')) {
         state.nutriProReady = false;
         setNutriProSetupVisible(true);
       }
+      if (nutriProSameFolder(folderId, state.nutriProSelectedFolderId)) nutriProShowFilesLoading(false);
       throw res.error;
     }
     var files = res.data || [];
+    state.nutriProFolderFilesCache[cacheKey] = nutriProCloneFileRows(files);
+    if (nutriProSameFolder(folderId, state.nutriProSelectedFolderId)) {
+      state.nutriProFiles = nutriProCloneFileRows(files);
+      nutriProShowFilesLoading(false);
+      renderNutriProFilesList();
+    }
     var ids = files.map(function (f) {
       return f && f.id;
     }).filter(Boolean);
+    if (!ids.length) return files;
     var extractMap = await loadNutriProFileExtracts(ids);
+    if (gen !== state.nutriProFilesLoadGen) return files;
     files.forEach(function (f) {
       if (f && f.id && extractMap[f.id]) f._extract = extractMap[f.id];
     });
-    state.nutriProFiles = files;
-    renderNutriProFilesList();
-    return state.nutriProFiles;
+    state.nutriProFolderFilesCache[cacheKey] = nutriProCloneFileRows(files);
+    if (nutriProSameFolder(folderId, state.nutriProSelectedFolderId)) {
+      state.nutriProFiles = nutriProCloneFileRows(files);
+      renderNutriProFilesList();
+    }
+    return files;
   }
 
   async function loadNutriProVault() {
     if (!state.client || !state.userId) return;
     try {
       await loadNutriProFolders();
+      await refreshNutriProFolderCounts();
       ensureNutriProFolderSelection();
       renderNutriProFolderTree();
       syncNutriProFolderContext();
@@ -19995,6 +22030,7 @@
         renderNutriProLinkFilters();
         await loadNutriProLinks();
       }
+      patchNutriProFolderTreeMeta();
     } catch (e) {
       if (!state.nutriProReady && !state.nutriProLinksReady) return;
       showToast((e && e.message) || 'No se pudo cargar Nutri PRO.', true);
@@ -20353,12 +22389,21 @@
       } catch (eRm) {}
       return { ok: false, error: ins.error.message || 'Error al registrar el archivo.' };
     }
+    if (options.description) {
+      await npCloudSyncTrack(function () {
+        return state.client
+          .from('plan_pro_nutri_files')
+          .update({ description: String(options.description).trim().slice(0, 2000) || null })
+          .eq('id', fileId);
+      });
+    }
     requestNutriProFileExtract(fileId, false);
     scheduleNutriProExtractRefresh([3000, 10000, 25000]);
     schedulePlanProStorageUsageRefresh(5000, true);
     if (state.nutriProSelectedFolderId === folderId || (!state.nutriProSelectedFolderId && !folderId)) {
       await loadNutriProFiles(folderId);
     }
+    await nutriProSyncFolderCountsUi();
     return {
       ok: true,
       fileId: fileId,
@@ -20528,6 +22573,7 @@
       });
       scheduleNutriProExtractRefresh([3000, 10000, 25000]);
       await loadNutriProFiles(folderId);
+      await nutriProSyncFolderCountsUi();
     } else if (fail) {
       var finalMsg = lastErr || 'No se pudieron subir los archivos.';
       showToast(finalMsg, true);
@@ -20541,6 +22587,22 @@
     }
     updateNutriProUploadUi();
     }
+  }
+
+  function nutriProFileViewerMode(fileRec) {
+    if (!fileRec) return null;
+    var n = String(fileRec.original_name || fileRec.title || '').toLowerCase();
+    var mt = String(fileRec.mime_type || '').toLowerCase();
+    if (nutriProFileIsImage(n, mt)) return 'browser';
+    if (/\.pdf$/.test(n) || mt.indexOf('pdf') >= 0) return 'browser';
+    if (/\.(txt|csv|md|svg)$/.test(n) || mt === 'text/plain' || mt === 'text/csv') return 'browser';
+    if (
+      /\.(xlsx|xls|docx|doc|pptx|ppt|odt|ods|odp|rtf)$/.test(n) ||
+      /word|spreadsheet|presentation|msword|officedocument|opendocument|rtf/.test(mt)
+    ) {
+      return 'office';
+    }
+    return null;
   }
 
   async function nutriProFileSignedUrl(fileRec) {
@@ -20567,6 +22629,13 @@
       a.remove();
       return;
     }
+    var mode = nutriProFileViewerMode(fileRec);
+    if (mode === 'office') {
+      var viewerUrl =
+        'https://view.officeapps.live.com/op/view.aspx?src=' + encodeURIComponent(url);
+      window.open(viewerUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
@@ -20590,6 +22659,7 @@
     showToast('Archivo eliminado.');
     schedulePlanProStorageUsageRefresh(5000, true);
     await loadNutriProFiles(state.nutriProSelectedFolderId);
+    await nutriProSyncFolderCountsUi();
   }
 
   function nutriProLinkCatBuiltinMap() {
@@ -20810,10 +22880,14 @@
   function syncNutriProFolderContext() {
     var hint = $('npNutriLinkFolderHint');
     var linksTitle = $('npNutriLinksTitle');
+    var filesTitle = $('npNutriFolderTitle');
     var newInp = $('npNutriNewFolder');
     var innerLabel = $('npNutriFolderAddInnerLabel');
     var folderLabel = nutriProFolderLabel(state.nutriProSelectedFolderId);
     var folderTitle = state.nutriProSelectedFolderId ? folderLabel : '';
+    if (filesTitle) {
+      filesTitle.textContent = state.nutriProSelectedFolderId ? folderLabel : 'Nutri PRO';
+    }
     if (innerLabel) {
       innerLabel.textContent = folderTitle
         ? 'Dentro de «' + folderTitle + '»'
@@ -21119,6 +23193,7 @@
     showToast(editId ? 'Enlace actualizado.' : 'Enlace guardado.');
     resetNutriProLinkForm();
     await loadNutriProLinks();
+    await nutriProSyncFolderCountsUi();
   }
 
   async function deleteNutriProLink(linkRec) {
@@ -21133,6 +23208,7 @@
     }
     showToast('Enlace eliminado.');
     await loadNutriProLinks();
+    await nutriProSyncFolderCountsUi();
   }
 
   function wireNutriProVault() {
