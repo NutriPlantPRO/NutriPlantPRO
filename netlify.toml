@@ -103,3 +103,9 @@
   to = "/.netlify/functions/nutri-pro-upload"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/plan-pro-fx-rate"
+  to = "/.netlify/functions/plan-pro-fx-rate"
+  status = 200
+  force = true
