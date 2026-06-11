@@ -1839,10 +1839,14 @@
       display: none;
       position: fixed;
       z-index: 1101;
-      top: max(12px, env(safe-area-inset-top));
+      top: var(--np-plan-menu-top, calc(env(safe-area-inset-top) + 88px));
       right: max(12px, env(safe-area-inset-right));
+      left: auto;
       width: min(480px, calc(100vw - 24px));
-      max-height: min(90vh, 820px);
+      max-height: calc(
+        100dvh - var(--np-plan-menu-top, calc(env(safe-area-inset-top) + 88px)) -
+          max(12px, env(safe-area-inset-bottom)) - 12px
+      );
       flex-direction: column;
       box-sizing: border-box;
       border-radius: 16px;
@@ -2041,10 +2045,9 @@
     body.np-plan-header-menu-lock .np-plan-header-actions-inline {
       z-index: 1103;
     }
-    /* Móvil: el panel Accesos empieza debajo del header (evita solapar nube/menú/cerrar sesión) */
+    /* Panel Accesos: siempre debajo del header (nube, almacenaje y menú visibles arriba) */
     @media (max-width: 900px) {
       .np-plan-header-menu-panel {
-        top: var(--np-plan-menu-top, calc(env(safe-area-inset-top) + 100px));
         left: max(8px, env(safe-area-inset-left));
         right: max(8px, env(safe-area-inset-right));
         width: auto;
@@ -6279,6 +6282,9 @@
     #npCalDayModal.np-modal-overlay {
       z-index: 16100;
     }
+    #npCalCreateModal.np-modal-overlay {
+      z-index: 16200;
+    }
     #npDetailModal.np-modal-overlay.np-modal-overlay--above-cal {
       z-index: 16350;
     }
@@ -6414,39 +6420,48 @@
     .np-cal-overlay-panel--multi .np-cal-overlay-plant-chip--on::before {
       background: #1d4ed8;
     }
-    .np-cal-overlay-head {
-      display: grid;
-      grid-template-columns: minmax(148px, auto) minmax(0, 1fr);
-      gap: 8px 14px;
-      align-items: start;
-      margin-bottom: 10px;
-    }
-    .np-cal-overlay-nav {
+    .np-cal-overlay-month-bar {
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
+      justify-content: center;
+      gap: 8px 12px;
+      padding: 8px 6px 10px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 12%, rgba(148, 163, 184, 0.32));
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 6%, rgba(255, 255, 255, 0.94));
+      backdrop-filter: blur(6px);
+    }
+    .np-cal-overlay-nav {
+      display: contents;
     }
     .np-cal-overlay-month-label {
-      min-width: 140px;
+      min-width: 0;
+      flex: 0 1 auto;
       text-align: center;
-      font-size: 1.05rem;
+      font-size: 1.02rem;
       font-weight: 700;
       color: #0f172a;
+      letter-spacing: 0.01em;
     }
     .np-cal-overlay-summary-wrap {
       position: relative;
-      flex: 1;
-      min-width: 0;
       width: 100%;
+      margin-top: 8px;
     }
     .np-cal-overlay-summary {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       font-size: 11px;
       color: #64748b;
       width: 100%;
+      padding: 8px 10px;
+      border-radius: 11px;
+      border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, rgba(148, 163, 184, 0.35));
+      background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 5%, rgba(255, 255, 255, 0.88));
     }
     .np-cal-overlay-summary-cols {
       display: flex;
@@ -6472,8 +6487,38 @@
       align-items: center;
     }
     .np-cal-overlay-summary-row--detail {
-      padding-top: 2px;
-      align-items: flex-start;
+      padding-top: 0;
+      align-items: stretch;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .np-cal-overlay-summary-chip-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+    }
+    @media (max-width: 719px) {
+      .np-cal-overlay-summary-chip-strip {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 2px;
+        scrollbar-width: thin;
+      }
+      .np-cal-overlay-summary-chip-strip .np-cal-overlay-summary-chip,
+      .np-cal-overlay-summary-chip-strip .np-cal-overlay-summary-more-btn {
+        flex-shrink: 0;
+      }
+      .np-cal-overlay-total-chip {
+        max-width: 100%;
+        white-space: normal;
+        text-align: left;
+        line-height: 1.35;
+      }
     }
     .np-cal-overlay-summary-row-label {
       font-size: 9px;
@@ -6650,7 +6695,7 @@
       flex: 1;
       min-height: 0;
       overflow: auto;
-      padding: 2px 2px 6px;
+      padding: 4px 2px 6px;
     }
     .np-cal-overlay-grid {
       display: grid;
@@ -6702,6 +6747,33 @@
       gap: 4px;
       margin-bottom: 3px;
       flex-shrink: 0;
+    }
+    .np-cal-overlay-day-head-left {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+    }
+    .np-cal-overlay-day-add-btn {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 38%, rgba(148, 163, 184, 0.42));
+      background: rgba(255, 255, 255, 0.96);
+      color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 72%, #0f172a);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+    }
+    .np-cal-overlay-day-add-btn:hover {
+      background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, #fff);
+      border-color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 52%, rgba(148, 163, 184, 0.45));
+      transform: scale(1.04);
     }
     .np-cal-overlay-day-num {
       font-size: 12px;
@@ -6798,7 +6870,102 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .np-cal-create-panel {
+      max-width: min(96vw, 440px);
+      border: 1.5px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 32%, rgba(148, 163, 184, 0.4));
+    }
+    .np-cal-create-body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .np-cal-create-body label,
+    .np-cal-create-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .np-cal-create-date {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .np-cal-create-body select {
+      width: 100%;
+      margin: 0;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: #fff;
+      font-size: 13px;
+      font-family: inherit;
+      color: #334155;
+    }
+    .np-cal-create-prio-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .np-cal-create-prio-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .np-cal-create-prio-btn {
+      flex: 1 1 calc(33% - 4px);
+      min-width: 72px;
+      padding: 7px 8px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(148, 163, 184, 0.38);
+      background: rgba(255, 255, 255, 0.94);
+      font-size: 11px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+    .np-cal-create-prio-btn--on.np-cal-create-prio-btn--baja {
+      border-color: rgba(34, 197, 94, 0.55);
+      background: rgba(220, 252, 231, 0.95);
+      color: #166534;
+    }
+    .np-cal-create-prio-btn--on.np-cal-create-prio-btn--media {
+      border-color: rgba(234, 179, 8, 0.55);
+      background: rgba(254, 249, 195, 0.95);
+      color: #854d0e;
+    }
+    .np-cal-create-prio-btn--on.np-cal-create-prio-btn--alta {
+      border-color: rgba(239, 68, 68, 0.55);
+      background: rgba(254, 226, 226, 0.95);
+      color: #991b1b;
+    }
+    .np-cal-create-hint {
+      margin: 0;
+      font-size: 11px;
+      line-height: 1.4;
+    }
     @media (max-width: 900px) {
+      #npCalOverlayModal.np-modal-overlay {
+        padding: 6px 6px 10px;
+      }
+      .np-cal-overlay-panel .np-modal-head {
+        padding: 10px 12px 8px;
+        gap: 8px;
+      }
+      .np-cal-overlay-summary {
+        padding: 7px 8px;
+        gap: 6px;
+      }
+      .np-cal-overlay-month-bar {
+        padding: 6px 4px 8px;
+        margin-bottom: 2px;
+      }
+      .np-cal-overlay-month-label {
+        font-size: 0.98rem;
+      }
       .np-cal-overlay-day {
         min-height: 92px;
         max-height: 132px;
@@ -7974,27 +8141,55 @@
             <span>Calendario de semáforos</span>
           </h3>
           <div id="npCalOverlayPlantFilter" class="np-cal-overlay-plant-filter" aria-label="Plantas visibles"></div>
-          <div class="np-cal-overlay-head">
-            <div class="np-cal-overlay-nav">
-              <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayPrev" aria-label="Mes anterior">◀</button>
-              <span id="npCalOverlayMonthLabel" class="np-cal-overlay-month-label"></span>
-              <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayNext" aria-label="Mes siguiente">▶</button>
-            </div>
-            <div class="np-cal-overlay-summary-wrap">
-              <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
-              <div id="npCalOverlaySummaryPop" class="np-cal-overlay-summary-pop np-hide" role="dialog" aria-hidden="true" aria-label="Detalle de semáforos"></div>
-            </div>
+          <div class="np-cal-overlay-summary-wrap">
+            <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
+            <div id="npCalOverlaySummaryPop" class="np-cal-overlay-summary-pop np-hide" role="dialog" aria-hidden="true" aria-label="Detalle de semáforos"></div>
           </div>
         </div>
         <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayClose" style="flex-shrink:0;">Cerrar</button>
       </div>
       <div id="npCalOverlayBody" class="np-modal-body np-cal-overlay-body">
+        <div class="np-cal-overlay-month-bar" aria-label="Mes del calendario">
+          <div class="np-cal-overlay-nav">
+            <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayPrev" aria-label="Mes anterior">◀</button>
+            <span id="npCalOverlayMonthLabel" class="np-cal-overlay-month-label"></span>
+            <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayNext" aria-label="Mes siguiente">▶</button>
+          </div>
+        </div>
         <div id="npCalOverlayGrid" class="np-cal-overlay-grid" role="grid" aria-label="Mes con semáforos"></div>
       </div>
       <div class="np-modal-foot" style="padding:10px 16px 14px;border-top:1px solid rgba(148,163,184,0.35);">
         <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayDownloadBtn">
           Descargar agenda del mes (.ics)
         </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="npCalCreateModal" class="np-modal-overlay" aria-hidden="true">
+    <div class="np-modal-panel np-cal-create-panel" role="dialog" aria-labelledby="npCalCreateTitle">
+      <div class="np-modal-head">
+        <h3 id="npCalCreateTitle" style="margin:0;font-size:1rem;">Nuevo apunte desde calendario</h3>
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalCreateClose" style="flex-shrink:0;">Cerrar</button>
+      </div>
+      <div class="np-modal-body np-cal-create-body">
+        <p id="npCalCreateDateLab" class="np-cal-create-date">—</p>
+        <label for="npCalCreatePlant">Planta</label>
+        <select id="npCalCreatePlant" aria-label="Planta del apunte"></select>
+        <label for="npCalCreateCategory">Rama · subrama · hoja</label>
+        <select id="npCalCreateCategory" aria-label="Rama donde guardar el apunte"></select>
+        <div class="np-cal-create-prio-row">
+          <span class="np-cal-create-label">Semáforo objetivo</span>
+          <div id="npCalCreatePrio" class="np-cal-create-prio-btns" role="group" aria-label="Prioridad del objetivo">
+            <button type="button" class="np-cal-create-prio-btn np-cal-create-prio-btn--baja" data-lv="baja">🟢 Baja</button>
+            <button type="button" class="np-cal-create-prio-btn np-cal-create-prio-btn--media" data-lv="media">🟡 Media</button>
+            <button type="button" class="np-cal-create-prio-btn np-cal-create-prio-btn--alta" data-lv="alta">🔴 Alta</button>
+          </div>
+        </div>
+        <p class="np-muted np-cal-create-hint">Abriremos «Nuevo apunte» con la fecha de este día en Objetivo. Ahí puedes poner título, hora y la libreta.</p>
+      </div>
+      <div class="np-modal-foot" style="padding:12px 16px 16px;border-top:1px solid rgba(148,163,184,0.35);">
+        <button type="button" class="btn btn-primary" id="npCalCreateGo" style="width:100%;">Abrir formulario</button>
       </div>
     </div>
   </div>
@@ -8658,6 +8853,9 @@
   var createFormDueKey = '';
   var createFormDueTime = '';
   var createFormDueEndTime = '';
+  /** Día elegido en «Nuevo apunte desde calendario». */
+  var calCreateDateKey = '';
+  var calCreatePriorityLevel = 'media';
   var npTreeMenuLayoutListener = null;
   var npRichImgResizeScrollFn = null;
   var npRichImgResizeUI = { overlay: null, editorEl: null, img: null };
@@ -14474,6 +14672,8 @@
       plantLab.className = 'np-cal-overlay-summary-row-label';
       plantLab.textContent = 'Por planta';
       rowPlants.appendChild(plantLab);
+      var plantStrip = document.createElement('div');
+      plantStrip.className = 'np-cal-overlay-summary-chip-strip';
       (state.calOverlayAreaIds || [])
         .map(function (id) {
           return byPlant[id] || {
@@ -14491,7 +14691,7 @@
           return b.total - a.total || String(a.plantTitle).localeCompare(String(b.plantTitle));
         })
         .forEach(function (plant) {
-          rowPlants.appendChild(
+          plantStrip.appendChild(
             makeCalOverlaySummaryChip({
               chipClass: 'np-cal-overlay-summary-chip--plant',
               kind: 'plant',
@@ -14503,6 +14703,7 @@
             })
           );
         });
+      rowPlants.appendChild(plantStrip);
     }
     var rootKeys = Object.keys(byRoot).sort(function (a, b) {
       return byRoot[b].total - byRoot[a].total || a.localeCompare(b);
@@ -14515,11 +14716,13 @@
       rootLab.className = 'np-cal-overlay-summary-row-label';
       rootLab.textContent = 'Por rama · ' + rootKeys.length;
       rowRoots.appendChild(rootLab);
+      var rootStrip = document.createElement('div');
+      rootStrip.className = 'np-cal-overlay-summary-chip-strip';
       var visibleRoots = rootKeys.slice(0, CAL_OVERLAY_ROOT_CHIP_LIMIT);
       var hiddenRoots = rootKeys.slice(CAL_OVERLAY_ROOT_CHIP_LIMIT);
       visibleRoots.forEach(function (rootName) {
         var c = byRoot[rootName];
-        rowRoots.appendChild(
+        rootStrip.appendChild(
           makeCalOverlaySummaryChip({
             chipClass: 'np-cal-overlay-root-chip',
             kind: 'root',
@@ -14540,7 +14743,7 @@
           title: 'Ver semáforos en «' + rootName + '»',
           entries: c.entries
         });
-        rowRoots.appendChild(chip);
+        rootStrip.appendChild(chip);
       });
       if (hiddenRoots.length) {
         var moreBtn = document.createElement('button');
@@ -14554,8 +14757,9 @@
           var open = rowRoots.classList.toggle('np-cal-overlay-summary-row--expanded');
           moreBtn.textContent = open ? 'Menos ramas' : '+ ' + hiddenRoots.length + ' rama' + (hiddenRoots.length === 1 ? '' : 's');
         });
-        rowRoots.appendChild(moreBtn);
+        rootStrip.appendChild(moreBtn);
       }
+      rowRoots.appendChild(rootStrip);
     }
     if (rowPlants || rowRoots) {
       var cols = document.createElement('div');
@@ -14622,17 +14826,34 @@
         cell.setAttribute('data-cal-date', dateKey);
         var head = document.createElement('div');
         head.className = 'np-cal-overlay-day-head';
+        var headLeft = document.createElement('div');
+        headLeft.className = 'np-cal-overlay-day-head-left';
         var num = document.createElement('span');
         num.className = 'np-cal-overlay-day-num';
         num.textContent = String(d);
-        head.appendChild(num);
+        headLeft.appendChild(num);
         if (total) {
           var tot = document.createElement('span');
           tot.className = 'np-cal-overlay-day-total';
           tot.textContent = String(total);
           tot.title = total + ' semáforo' + (total === 1 ? '' : 's') + ' este día';
-          head.appendChild(tot);
+          headLeft.appendChild(tot);
         }
+        var addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'np-cal-overlay-day-add-btn';
+        addBtn.textContent = '+';
+        addBtn.title = 'Nuevo apunte este día';
+        addBtn.setAttribute('aria-label', 'Nuevo apunte el ' + d + ' de ' + NP_CAL_MONTH_NAMES[m]);
+        (function (dk) {
+          addBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openCalCreateApunteModal(dk);
+          });
+        })(dateKey);
+        head.appendChild(headLeft);
+        head.appendChild(addBtn);
         cell.appendChild(head);
         if (total) {
           var prioRow = document.createElement('div');
@@ -14759,10 +14980,195 @@
 
   function closeCalOverlayModal() {
     closeCalOverlaySummaryPop();
+    closeCalCreateApunteModal();
     var modal = $('npCalOverlayModal');
     if (!modal) return;
     modal.classList.remove('np-modal-open');
     modal.setAttribute('aria-hidden', 'true');
+  }
+
+  function formatCalCreateDateLabel(dateKey) {
+    var p = String(dateKey || '').split('-').map(Number);
+    if (p.length !== 3 || !p[0]) return String(dateKey || '—');
+    var mon = NP_CAL_MONTH_NAMES[p[1] - 1] || '';
+    return String(p[2]) + ' ' + mon + ' ' + p[0];
+  }
+
+  function getCalCreatePlantOptions() {
+    var areas = getActivePlanAreas();
+    var ids = (state.calOverlayAreaIds || []).filter(Boolean);
+    if (!ids.length) return areas;
+    var set = {};
+    ids.forEach(function (id) {
+      set[id] = true;
+    });
+    var filtered = areas.filter(function (a) {
+      return a && a.id && set[a.id];
+    });
+    return filtered.length ? filtered : areas;
+  }
+
+  function planProPickDefaultCategoryForArea(areaId) {
+    if (state.selectedCategoryId) {
+      var cur = state.categories.filter(function (c) {
+        return c && c.id === state.selectedCategoryId;
+      })[0];
+      if (cur && cur.area_id === areaId && !cur.archived_at) return state.selectedCategoryId;
+    }
+    var roots = state.categories
+      .filter(function (c) {
+        return c && c.area_id === areaId && !c.archived_at && !c.parent_id;
+      })
+      .sort(function (a, b) {
+        return (a.sort_order || 0) - (b.sort_order || 0) || (a.title || '').localeCompare(b.title || '');
+      });
+    return roots[0] && roots[0].id;
+  }
+
+  function appendCalCreateCategoryOptions(parentId, areaId, depth, selectEl, selectedId) {
+    var children = state.categories
+      .filter(function (c) {
+        if (!c || c.area_id !== areaId || c.archived_at) return false;
+        if (parentId == null) return !c.parent_id;
+        return c.parent_id === parentId;
+      })
+      .sort(function (a, b) {
+        return (a.sort_order || 0) - (b.sort_order || 0) || (a.title || '').localeCompare(b.title || '');
+      });
+    children.forEach(function (c) {
+      var opt = document.createElement('option');
+      opt.value = c.id;
+      var indent = depth > 0 ? '\u00A0\u00A0'.repeat(depth) + '\u203A ' : '';
+      opt.textContent = indent + (c.title || 'Sin título');
+      if (c.id === selectedId) opt.selected = true;
+      selectEl.appendChild(opt);
+      appendCalCreateCategoryOptions(c.id, areaId, depth + 1, selectEl, selectedId);
+    });
+  }
+
+  function syncCalCreateCategorySelect(areaId, preferCatId) {
+    var sel = $('npCalCreateCategory');
+    if (!sel) return '';
+    sel.innerHTML = '';
+    var picked = preferCatId;
+    if (picked) {
+      var hit = state.categories.filter(function (c) {
+        return c && c.id === picked && c.area_id === areaId && !c.archived_at;
+      })[0];
+      if (!hit) picked = '';
+    }
+    if (!picked) picked = planProPickDefaultCategoryForArea(areaId);
+    appendCalCreateCategoryOptions(null, areaId, 0, sel, picked);
+    if (!sel.options.length) {
+      var empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = 'Sin ramas — crea una en el árbol';
+      sel.appendChild(empty);
+    }
+    return sel.value || picked || '';
+  }
+
+  function syncCalCreatePlantSelect(preferAreaId) {
+    var sel = $('npCalCreatePlant');
+    if (!sel) return '';
+    var areas = getCalCreatePlantOptions();
+    sel.innerHTML = '';
+    var picked = preferAreaId;
+    if (picked && !areas.some(function (a) { return a && a.id === picked; })) picked = '';
+    if (!picked) {
+      if (state.selectedAreaId && areas.some(function (a) { return a && a.id === state.selectedAreaId; })) {
+        picked = state.selectedAreaId;
+      } else if (areas[0]) {
+        picked = areas[0].id;
+      }
+    }
+    areas.forEach(function (a) {
+      var opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.title || a.slug || 'Planta';
+      if (a.id === picked) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    return picked || sel.value || '';
+  }
+
+  function syncCalCreatePrioButtons(level) {
+    var wrap = $('npCalCreatePrio');
+    if (!wrap) return;
+    var lv = level || 'media';
+    wrap.querySelectorAll('.np-cal-create-prio-btn').forEach(function (btn) {
+      var on = btn.getAttribute('data-lv') === lv;
+      btn.classList.toggle('np-cal-create-prio-btn--on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  function openCalCreateApunteModal(dateKey) {
+    if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey))) return;
+    var modal = $('npCalCreateModal');
+    if (!modal) return;
+    calCreateDateKey = dateKey;
+    calCreatePriorityLevel = 'media';
+    var lab = $('npCalCreateDateLab');
+    if (lab) lab.textContent = formatCalCreateDateLabel(dateKey);
+    var areaId = syncCalCreatePlantSelect(state.selectedAreaId);
+    syncCalCreateCategorySelect(areaId);
+    syncCalCreatePrioButtons(calCreatePriorityLevel);
+    modal.classList.add('np-modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeCalCreateApunteModal() {
+    var modal = $('npCalCreateModal');
+    if (!modal) return;
+    modal.classList.remove('np-modal-open');
+    modal.setAttribute('aria-hidden', 'true');
+    calCreateDateKey = '';
+  }
+
+  function confirmCalCreateApunte() {
+    var plantSel = $('npCalCreatePlant');
+    var catSel = $('npCalCreateCategory');
+    var areaId = plantSel && plantSel.value;
+    var catId = catSel && catSel.value;
+    var dateKey = calCreateDateKey;
+    if (!areaId) {
+      showToast('Elige una planta.', true);
+      return;
+    }
+    if (!catId) {
+      showToast('Elige una rama del árbol.', true);
+      return;
+    }
+    if (!dateKey) {
+      showToast('Falta la fecha del día.', true);
+      return;
+    }
+    var lv = calCreatePriorityLevel || 'media';
+    closeCalCreateApunteModal();
+    state.calOverlayKeepOpen = !!(
+      $('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open')
+    );
+    setPlanProAppMode('apuntes');
+    if (areaId !== state.selectedAreaId) {
+      resetCreateFormPendingBlocks();
+      state.selectedAreaId = areaId;
+      state.selectedCategoryId = null;
+      renderPillarTabs();
+      renderTree();
+    }
+    selectCategory(catId);
+    planProExpandCategoryAncestors(catId);
+    renderTree();
+    createFormDueKey = dateKey;
+    createFormPriorityLevel = lv;
+    createFormDueTime = '';
+    createFormDueEndTime = '';
+    wireCreateFichaPill();
+    updateFichaDuePillEl($('npCreateFichaPill'), dateKey, storePriorityFromLevel(lv), '');
+    var titleInp = $('npTitle');
+    if (titleInp) titleInp.value = '';
+    scrollPlanProSheetSection('new');
   }
 
 
@@ -20270,6 +20676,35 @@
   }
   var npCalOverlayClose = $('npCalOverlayClose');
   if (npCalOverlayClose) npCalOverlayClose.addEventListener('click', closeCalOverlayModal);
+  var npCalCreateClose = $('npCalCreateClose');
+  if (npCalCreateClose) npCalCreateClose.addEventListener('click', closeCalCreateApunteModal);
+  var npCalCreateGo = $('npCalCreateGo');
+  if (npCalCreateGo) npCalCreateGo.addEventListener('click', confirmCalCreateApunte);
+  var npCalCreatePlant = $('npCalCreatePlant');
+  if (npCalCreatePlant && npCalCreatePlant.dataset.npWired !== '1') {
+    npCalCreatePlant.dataset.npWired = '1';
+    npCalCreatePlant.addEventListener('change', function () {
+      syncCalCreateCategorySelect(this.value);
+    });
+  }
+  var npCalCreatePrio = $('npCalCreatePrio');
+  if (npCalCreatePrio && npCalCreatePrio.dataset.npWired !== '1') {
+    npCalCreatePrio.dataset.npWired = '1';
+    npCalCreatePrio.addEventListener('click', function (e) {
+      var btn = e.target.closest('.np-cal-create-prio-btn[data-lv]');
+      if (!btn) return;
+      e.preventDefault();
+      calCreatePriorityLevel = btn.getAttribute('data-lv') || 'media';
+      syncCalCreatePrioButtons(calCreatePriorityLevel);
+    });
+  }
+  var npCalCreateModalEl = $('npCalCreateModal');
+  if (npCalCreateModalEl && npCalCreateModalEl.dataset.npWired !== '1') {
+    npCalCreateModalEl.dataset.npWired = '1';
+    npCalCreateModalEl.addEventListener('click', function (e) {
+      if (e.target === npCalCreateModalEl) closeCalCreateApunteModal();
+    });
+  }
   var npCalOverlayPrev = $('npCalOverlayPrev');
   if (npCalOverlayPrev) npCalOverlayPrev.addEventListener('click', function () { shiftSidebarCalMonth(-1); });
   var npCalOverlayNext = $('npCalOverlayNext');
@@ -20325,6 +20760,10 @@
     }
     if ($('npCalDayModal') && $('npCalDayModal').classList.contains('np-modal-open')) {
       closeCalDayModal();
+      return;
+    }
+    if ($('npCalCreateModal') && $('npCalCreateModal').classList.contains('np-modal-open')) {
+      closeCalCreateApunteModal();
       return;
     }
     if ($('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open')) {
@@ -20504,6 +20943,7 @@
       menuBackdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
       if (open) {
         syncPlanHeaderMenuLayout();
+        requestAnimationFrame(syncPlanHeaderMenuLayout);
         menuPanel.classList.add('np-plan-header-menu-open');
         menuBackdrop.classList.add('np-plan-header-menu-open');
         document.body.classList.add('np-plan-header-menu-lock');
