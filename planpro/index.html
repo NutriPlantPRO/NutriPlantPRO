@@ -5268,6 +5268,12 @@
       line-height: 1.45;
       color: #64748b;
     }
+    .np-plant-list-count {
+      margin: 0 0 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+    }
     @media (max-width: 640px) {
       .np-pillar-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
       .np-pillar-tab-wrap { flex-shrink: 0; }
@@ -8309,6 +8315,7 @@
 
           <section id="npPlantListSection" class="panel np-section-accent np-section-accent-plant">
             <h2>Lista de la planta</h2>
+            <p id="npPlantListCount" class="np-plant-list-count np-muted">—</p>
             <p class="np-lista-help">Eliminar en esta tabla borra el apunte en Supabase (no es archivar).</p>
             <div class="np-pillar-list-scroll">
               <table class="np-pillar-list-table">
@@ -9311,7 +9318,7 @@
       var raw = localStorage.getItem(planProWeatherStorageKey());
       if (!raw) return;
       var o = JSON.parse(raw);
-      if (o && isFinite(Number(o.lat)) && isFinite(Number(o.lng))) {
+      if (o && Number.isFinite(Number(o.lat)) && Number.isFinite(Number(o.lng))) {
         planProWeatherState.lat = Number(o.lat);
         planProWeatherState.lng = Number(o.lng);
         if (o.placeName) planProWeatherState.placeName = String(o.placeName);
@@ -9319,8 +9326,12 @@
     } catch (e) {}
   }
 
+  function planProWeatherHasCoords() {
+    return Number.isFinite(planProWeatherState.lat) && Number.isFinite(planProWeatherState.lng);
+  }
+
   function planProWeatherSaveCachedLoc() {
-    if (!isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng)) return;
+    if (!planProWeatherHasCoords()) return;
     try {
       localStorage.setItem(
         planProWeatherStorageKey(),
@@ -9381,7 +9392,7 @@
     var q = planProWeatherState.placeName
       ? 'clima ' + planProWeatherState.placeName
       : 'clima';
-    if (isFinite(planProWeatherState.lat) && isFinite(planProWeatherState.lng)) {
+    if (planProWeatherHasCoords()) {
       q += ' ' + planProWeatherState.lat.toFixed(4) + ',' + planProWeatherState.lng.toFixed(4);
     }
     return 'https://www.google.com/search?q=' + encodeURIComponent(q);
@@ -9404,12 +9415,12 @@
     var cloud = $('npWeatherPopCloud');
     var place = $('npWeatherPopPlace');
     var meta = $('npWeatherPopMeta');
-    planProWeatherSyncGoogleLink();
     if (opts.loading) {
       if (btn) btn.setAttribute('data-state', 'loading');
       if (num) num.textContent = opts.locating ? 'GPS …' : 'Clima …';
       if (sub) sub.textContent = opts.locating ? 'ubicación' : planProWeatherShortPlace(planProWeatherState.placeName);
       if (live) live.textContent = 'Actualizando…';
+      planProWeatherSyncGoogleLink();
       return;
     }
     if (opts.error) {
@@ -9418,6 +9429,7 @@
       if (sub) sub.textContent = opts.errorShort || 'sin datos';
       if (live) live.textContent = 'No disponible';
       if (meta) meta.textContent = opts.error;
+      planProWeatherSyncGoogleLink();
       return;
     }
     if (btn) btn.setAttribute('data-state', 'ok');
@@ -9447,10 +9459,9 @@
           : Math.round(Number(planProWeatherState.cloudCover)) + '%';
     }
     if (place) {
-      var coords =
-        isFinite(planProWeatherState.lat) && isFinite(planProWeatherState.lng)
-          ? planProWeatherState.lat.toFixed(4) + ', ' + planProWeatherState.lng.toFixed(4)
-          : '';
+      var coords = planProWeatherHasCoords()
+        ? planProWeatherState.lat.toFixed(4) + ', ' + planProWeatherState.lng.toFixed(4)
+        : '';
       place.textContent =
         (planProWeatherState.placeName || 'Ubicación del dispositivo') +
         (coords ? ' · ' + coords : '');
@@ -9467,10 +9478,11 @@
     if (btn) {
       btn.title = main + ' · ' + subLine + ' · toca para detalle';
     }
+    planProWeatherSyncGoogleLink();
   }
 
   function planProWeatherCoordsChanged(lat, lng) {
-    if (!isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng)) return true;
+    if (!planProWeatherHasCoords()) return true;
     return Math.abs(planProWeatherState.lat - lat) > 0.015 || Math.abs(planProWeatherState.lng - lng) > 0.015;
   }
 
@@ -9584,7 +9596,7 @@
   }
 
   async function planProWeatherFetchAndRender() {
-    if (!isFinite(planProWeatherState.lat) || !isFinite(planProWeatherState.lng)) {
+    if (!planProWeatherHasCoords()) {
       throw new Error('Permite ubicación o pulsa «Mi ubicación».');
     }
     var hit = await planProFetchWeatherReading(planProWeatherState.lat, planProWeatherState.lng);
@@ -9603,7 +9615,7 @@
     opts = opts || {};
     if (planProWeatherLoading && !opts.force) return;
     planProWeatherLoading = true;
-    var hasCoords = isFinite(planProWeatherState.lat) && isFinite(planProWeatherState.lng);
+    var hasCoords = planProWeatherHasCoords();
     var mustLocate = !hasCoords || !!opts.forceLocation;
     planProWeatherRenderUi({ loading: true, locating: mustLocate && !hasCoords });
     try {
@@ -20794,7 +20806,7 @@
         lines.push(
           'Rama seleccionada: ' + getCategoryPath(state.selectedCategoryId) + ' [' + state.selectedCategoryId + ']'
         );
-      } else lines.push('Rama seleccionada: ninguna (lista = apuntes de toda la planta o filtro general)');
+      } else lines.push('Rama seleccionada: ninguna (lista de la planta = todos los apuntes del pilar)');
       lines.push('');
       lines.push('--- Ramas (categorías) en la planta activa (máx. 80) ---');
       var cats = (state.categories || []).filter(function (c) {
@@ -20841,7 +20853,7 @@
         lines.push(state.locationFavoritesReady === false ? 'No disponibles (falta tabla o permisos).' : 'Sin favoritos guardados.');
       }
       lines.push('');
-      lines.push('--- Apuntes en la lista actual (máx. 100; mismo filtro que la tabla) ---');
+      lines.push('--- Apuntes en la lista de la planta (máx. 100; todos los del pilar activo) ---');
       (state.planProItemsSnapshot || []).forEach(function (it) {
         lines.push(
           '- ' +
@@ -21288,6 +21300,8 @@
       state.planProItemsRows = [];
       $('npTableBody').innerHTML = '';
       $('npEmpty').classList.remove('np-hide');
+      var plc = $('npPlantListCount');
+      if (plc) plc.textContent = '—';
       var siw = $('npSheetItemsWrap');
       if (siw) siw.classList.add('np-hide');
       var ps = $('npPrioSummary');
@@ -21357,7 +21371,10 @@
       }
     }
 
-    var rowsForSidebar = resFiltered.data || [];
+    var rowsBranch = resFiltered.data || [];
+    var rowsForSidebar = rowsBranch;
+    var rowsPlantAll = rowsBranch;
+
     if (state.selectedCategoryId) {
       var resAreaAll = await qAreaAll.order('updated_at', { ascending: false });
       if (gen !== npLoadItemsGen) return;
@@ -21370,11 +21387,11 @@
         throw resAreaAll.error;
       }
       rowsForSidebar = resAreaAll.data || [];
+      rowsPlantAll = rowsForSidebar;
     }
 
-    var rows = resFiltered.data || [];
-    state.planProItemsRows = rows;
-    state.planProItemsSnapshot = (rows || []).slice(0, 100).map(function (r) {
+    state.planProItemsRows = rowsBranch;
+    state.planProItemsSnapshot = (rowsPlantAll || []).slice(0, 100).map(function (r) {
       var itemRefs = extractPlanProRefsFromItem(r);
       return {
         id: r.id,
@@ -21390,8 +21407,21 @@
         apunte_refs: itemRefs.apunte
       };
     });
+    var rows = rowsPlantAll;
     var tb = $('npTableBody');
     $('npEmpty').classList.toggle('np-hide', rows.length > 0);
+    var countEl = $('npPlantListCount');
+    if (countEl) {
+      var totalN = rows.length;
+      countEl.textContent =
+        totalN +
+        ' apunte' +
+        (totalN === 1 ? '' : 's') +
+        ' en esta planta' +
+        (state.selectedCategoryId
+          ? ' · rama «' + getCategoryPath(state.selectedCategoryId) + '»: ' + rowsBranch.length
+          : '');
+    }
 
     var frag = document.createDocumentFragment();
     rows.forEach(function (r) {
@@ -21466,7 +21496,7 @@
       });
     });
 
-    syncSheetItemsList(rows);
+    syncSheetItemsList(rowsBranch);
     renderSidebarPrioSummary(rowsForSidebar);
     renderSidebarCalendar(rowsForSidebar);
     applyCategoryItemCountsFromRows(rowsForSidebar);
