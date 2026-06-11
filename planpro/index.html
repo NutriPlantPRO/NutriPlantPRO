@@ -588,7 +588,7 @@
       padding: 4px 10px;
       border-radius: 12px;
       border: 1px solid rgba(148, 163, 184, 0.38);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+      background: linear-gradient(180deg, rgba(247, 254, 251, 0.96) 0%, rgba(236, 253, 245, 0.9) 100%);
       color: #334155;
       cursor: pointer;
       box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
@@ -598,7 +598,7 @@
     }
     .np-storage-usage-pill:hover,
     .np-storage-usage-pill:focus-visible {
-      background: rgba(255, 255, 255, 0.98);
+      background: linear-gradient(180deg, rgba(250, 255, 252, 0.99) 0%, rgba(240, 253, 248, 0.95) 100%);
       border-color: color-mix(in srgb, var(--np-plant-accent, #22c55e) 35%, rgba(148, 163, 184, 0.38));
       transform: translateY(-1px);
       outline: none;
@@ -639,7 +639,7 @@
       padding: 4px 9px;
       border-radius: 12px;
       border: 1px solid rgba(148, 163, 184, 0.38);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+      background: linear-gradient(180deg, rgba(247, 251, 255, 0.96) 0%, rgba(239, 246, 255, 0.9) 100%);
       color: #334155;
       cursor: pointer;
       box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
@@ -650,7 +650,7 @@
     .np-fx-rate-pill:hover,
     .np-fx-rate-pill:focus-visible,
     .np-fx-rate-pill.np-fx-rate-pill--open {
-      background: rgba(255, 255, 255, 0.98);
+      background: linear-gradient(180deg, rgba(250, 252, 255, 0.99) 0%, rgba(241, 248, 255, 0.95) 100%);
       border-color: color-mix(in srgb, #2563eb 32%, rgba(148, 163, 184, 0.38));
       transform: translateY(-1px);
       outline: none;
@@ -773,59 +773,65 @@
         font-size: 7px;
       }
     }
-    @media (max-width: 640px) {
+    @media (max-width: 720px) {
       header.np-plan-header.np-mac-bar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 6px;
+        padding: 8px 10px;
+        margin-bottom: 12px;
+      }
+      .np-plan-brand {
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 36%;
+      }
+      .np-plan-brand img {
+        height: 30px;
+      }
+      .np-plan-brand h1 {
+        font-size: 0.92rem;
+        line-height: 1.1;
+      }
+      .np-plan-brand .sub {
+        display: none;
       }
       .np-plan-header.np-mac-bar .np-plan-actions {
-        width: 100%;
-        margin-left: 0;
-        max-width: 100%;
+        flex: 1 1 auto;
+        min-width: 0;
+        width: auto;
+        margin-left: auto;
+        max-width: none;
+        align-items: center;
       }
       .np-plan-header-actions-inline {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 6px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 4px;
         width: 100%;
         min-width: 0;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
       }
-      #npFxRateBtn {
-        grid-column: 1;
-        grid-row: 1;
-      }
-      #npWeatherBtn {
-        grid-column: 2;
-        grid-row: 1;
-      }
-      #npStorageUsageBtn {
-        grid-column: 3;
-        grid-row: 1;
-      }
-      #npCloudSyncBtn {
-        grid-column: 1;
-        grid-row: 2;
-        justify-self: center;
-      }
-      #npPlanHeaderMenuBtn {
-        grid-column: 2;
-        grid-row: 2;
-        justify-self: center;
-      }
-      #npBtnLogout {
-        grid-column: 3;
-        grid-row: 2;
-        justify-self: center;
+      .np-plan-header-actions-inline::-webkit-scrollbar {
+        display: none;
       }
       .np-fx-rate-pill,
       .np-weather-pill,
       .np-storage-usage-pill {
+        flex: 0 0 auto;
         min-width: 0;
         max-width: none;
-        width: 100%;
-        height: 38px;
-        padding: 3px 5px;
+        width: auto;
+        height: 34px;
+        padding: 2px 6px;
+        border-radius: 9px;
       }
       .np-fx-rate-sub,
       .np-weather-sub,
@@ -835,17 +841,33 @@
       .np-fx-rate-num,
       .np-weather-num,
       .np-storage-usage-num {
-        font-size: 9px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
+        font-size: 8px;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: clip;
+        max-width: none;
       }
       .np-cloud-sync-btn,
       .np-plan-header-menu-btn,
       .np-plan-header-logout-btn {
-        width: 40px;
-        height: 40px;
-        min-width: 40px !important;
+        flex: 0 0 auto;
+        width: 34px;
+        height: 34px;
+        min-width: 34px !important;
+        border-radius: 9px;
+      }
+      .np-cloud-sync-btn .np-cloud-sync-icon {
+        width: 18px;
+        height: 18px;
+      }
+      .np-plan-header-menu-icon {
+        width: 18px;
+        height: 14px;
+      }
+      .np-plan-header-logout-btn svg {
+        width: 16px;
+        height: 16px;
       }
     }
     .np-weather-pill {
@@ -871,7 +893,7 @@
     .np-weather-pill:hover,
     .np-weather-pill:focus-visible,
     .np-weather-pill.np-weather-pill--open {
-      background: rgba(255, 253, 247, 0.99);
+      background: linear-gradient(180deg, rgba(255, 254, 248, 0.99) 0%, rgba(255, 251, 235, 0.95) 100%);
       border-color: color-mix(in srgb, #d97706 32%, rgba(148, 163, 184, 0.38));
       transform: translateY(-1px);
       outline: none;
@@ -6653,7 +6675,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin: 0 0 4px;
+      margin: 0 0 2px;
       font-size: 1.05rem;
       color: #0f172a;
     }
@@ -6679,8 +6701,8 @@
     .np-cal-overlay-plant-filter {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 0;
+      gap: 4px;
+      margin: 0;
       align-items: center;
     }
     .np-cal-overlay-plant-filter-label {
@@ -6764,8 +6786,8 @@
       align-items: center;
       justify-content: center;
       gap: 8px 12px;
-      padding: 2px 6px 4px;
-      margin-bottom: 2px;
+      padding: 1px 6px 2px;
+      margin: 0;
       border-bottom: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 12%, rgba(148, 163, 184, 0.32));
       position: sticky;
       top: 0;
@@ -6786,28 +6808,28 @@
       letter-spacing: 0.01em;
     }
     .np-cal-overlay-panel .np-modal-head {
-      padding-bottom: 6px;
+      padding: 10px 14px 4px;
     }
     .np-cal-overlay-summary-wrap {
       position: relative;
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      margin: 0 0 2px;
+      margin: 0;
       flex-shrink: 0;
       min-width: 0;
     }
     .np-cal-overlay-summary {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
       font-size: 11px;
       color: #64748b;
       width: 100%;
       max-width: 100%;
       min-width: 0;
       box-sizing: border-box;
-      padding: 4px 8px;
+      padding: 3px 6px;
       border-radius: 9px;
       border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, rgba(148, 163, 184, 0.35));
       background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 5%, rgba(255, 255, 255, 0.88));
@@ -6821,14 +6843,14 @@
       width: 100%;
       justify-content: center;
       box-sizing: border-box;
-      padding: 4px 8px;
+      padding: 3px 6px;
       font-size: 11px;
-      line-height: 1.25;
+      line-height: 1.2;
     }
     .np-cal-overlay-summary-cols {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
       width: 100%;
       max-width: 100%;
       min-width: 0;
@@ -6844,13 +6866,13 @@
       box-sizing: border-box;
     }
     .np-cal-overlay-summary-row--detail {
-      padding: 3px 6px;
-      border-radius: 7px;
+      padding: 2px 5px;
+      border-radius: 6px;
       background: rgba(255, 255, 255, 0.52);
       border: 1px solid rgba(148, 163, 184, 0.24);
       align-items: stretch;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
     }
     .np-cal-overlay-summary-chip-strip {
       display: grid;
@@ -7101,9 +7123,10 @@
       min-height: 0;
       min-width: 0;
       overflow: auto;
-      padding: 2px 12px 6px;
+      padding: 0 12px 6px !important;
       display: flex;
       flex-direction: column;
+      gap: 2px;
     }
     .np-cal-overlay-grid {
       display: grid;
@@ -7363,22 +7386,23 @@
         padding: 6px 6px 10px;
       }
       .np-cal-overlay-panel .np-modal-head {
-        padding: 10px 12px 8px;
-        gap: 8px;
+        padding: 8px 10px 2px;
+        gap: 6px;
       }
       .np-cal-overlay-body {
-        padding: 2px 6px 6px;
+        padding: 0 6px 6px !important;
+        gap: 1px;
       }
       .np-cal-overlay-summary-wrap {
-        margin-bottom: 2px;
+        margin: 0;
       }
       .np-cal-overlay-summary {
-        padding: 3px 6px;
-        gap: 2px;
+        padding: 2px 5px;
+        gap: 1px;
       }
       .np-cal-overlay-month-bar {
-        padding: 2px 4px 3px;
-        margin-bottom: 1px;
+        padding: 0 4px 2px;
+        margin: 0;
       }
       .np-cal-overlay-month-label {
         font-size: 0.98rem;
@@ -7441,7 +7465,8 @@
     }
     @media (max-width: 520px) {
       .np-cal-overlay-body {
-        padding: 4px 4px 6px;
+        padding: 0 4px 6px !important;
+        gap: 1px;
       }
       .np-cal-overlay-grid {
         gap: 2px;
@@ -8872,11 +8897,16 @@
     return (n / 1073741824).toFixed(2) + ' GB';
   }
 
-  function formatPlanProStorageGbLine(bytes, quotaGb) {
+  function formatPlanProStorageGbLine(bytes, quotaGb, compact) {
     var n = Number(bytes) || 0;
     var gb = n / 1073741824;
     var usedStr = gb < 0.01 && gb > 0 ? gb.toFixed(3) : gb < 1 ? gb.toFixed(2) : gb.toFixed(2);
+    if (compact) return usedStr + ' GB';
     return usedStr + ' / ' + (quotaGb || NP_STORAGE_QUOTA_GB) + ' GB';
+  }
+
+  function planProStoragePillLine(bytes, quotaGb) {
+    return formatPlanProStorageGbLine(bytes, quotaGb, planProHeaderCompact());
   }
 
   function planProStorageCacheKey() {
@@ -8939,7 +8969,7 @@
     var pct = quotaGb > 0 ? (total / quotaBytes) * 100 : 0;
     var fetchedAt = meta.fetchedAt || planProStorageLastFetchAt || 0;
     var fromCache = !!meta.fromCache;
-    num.textContent = formatPlanProStorageGbLine(total, quotaGb);
+    num.textContent = planProStoragePillLine(total, quotaGb);
     sub.textContent = 'NutriPlant nube';
     btn.setAttribute('data-state', pct >= 92 ? 'warn' : fromCache ? 'cached' : 'idle');
     var lines = [
@@ -8978,7 +9008,7 @@
   var NP_FX_REFRESH_MS = 15 * 60 * 1000;
 
   function planProHeaderCompact() {
-    return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
+    return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 720px)').matches;
   }
 
   function planProFxPillLine(from, to, rate) {
@@ -9286,6 +9316,10 @@
     window.addEventListener('resize', function () {
       positionPlanProFxPopover();
       if (planProFxState.rate != null) planProFxRenderUi({});
+      var cached = planProStorageCacheRead();
+      if (cached && cached.data) {
+        renderPlanProStorageUsage(cached.data, null, { fetchedAt: cached.fetchedAt, fromCache: true });
+      }
     });
     refreshPlanProFxRate(true);
     planProStartFxTimer();
@@ -9388,13 +9422,37 @@
     return s.slice(0, 20) + '…';
   }
 
+  function planProWeatherFormatPlaceFromAddress(addr) {
+    if (!addr) return '';
+    var city = addr.city || addr.town || addr.village || addr.municipality || addr.county;
+    var state = addr.state || addr.region;
+    var country = String(addr.country || '').trim();
+    if (/^méxico$/i.test(country) || /^mexico$/i.test(country)) country = 'mexico';
+    else if (country) country = country.toLowerCase();
+    var parts = [city, state, country].filter(Boolean);
+    return parts.join(', ');
+  }
+
+  function planProWeatherPlaceLooksLikeCoords(name) {
+    return /^-?\d+\.\d+\s*,\s*-?\d+\.\d+$/.test(String(name || '').trim());
+  }
+
   function planProWeatherGoogleUrl() {
-    var q = planProWeatherState.placeName
-      ? 'clima ' + planProWeatherState.placeName
-      : 'clima';
-    if (planProWeatherHasCoords()) {
-      q += ' ' + planProWeatherState.lat.toFixed(4) + ',' + planProWeatherState.lng.toFixed(4);
+    var place = String(planProWeatherState.placeName || '').trim();
+    if (!place || planProWeatherPlaceLooksLikeCoords(place)) place = '';
+    if (place) {
+      var commaParts = place.split(',').map(function (p) {
+        return p.trim();
+      }).filter(Boolean);
+      if (commaParts.length <= 2 && planProWeatherHasCoords()) {
+        var la = planProWeatherState.lat;
+        var lo = planProWeatherState.lng;
+        if (la >= 14 && la <= 33 && lo >= -118 && lo <= -86) {
+          place = place + ', mexico';
+        }
+      }
     }
+    var q = place ? 'clima ' + place : 'clima';
     return 'https://www.google.com/search?q=' + encodeURIComponent(q);
   }
 
@@ -9497,14 +9555,11 @@
     if (!res.ok) throw new Error('No se pudo leer el nombre del lugar.');
     var data = await res.json();
     var addr = data && data.address ? data.address : {};
-    var parts = [
-      addr.city || addr.town || addr.village || addr.municipality || addr.county,
-      addr.state || addr.region
-    ].filter(Boolean);
-    if (parts.length) return parts.join(', ');
+    var formatted = planProWeatherFormatPlaceFromAddress(addr);
+    if (formatted) return formatted;
     if (data && data.display_name) {
       var dn = String(data.display_name);
-      return dn.length > 48 ? dn.slice(0, 46) + '…' : dn;
+      return dn.length > 64 ? dn.slice(0, 62) + '…' : dn;
     }
     return lat.toFixed(3) + ', ' + lng.toFixed(3);
   }
