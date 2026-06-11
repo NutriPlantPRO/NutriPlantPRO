@@ -1288,25 +1288,36 @@
       opacity: 0.82;
     }
     .np-nutri-folder-add-hint {
-      margin: 8px 0 0;
-      font-size: 11px;
-      line-height: 1.4;
+      margin: 6px 0 0;
+      font-size: 10px;
+      line-height: 1.35;
+      color: #94a3b8;
+    }
+    .np-nutri-folder-add-foot {
+      margin-top: 8px;
+      padding: 8px 6px 4px;
+      border-top: 1px dashed rgba(148, 163, 184, 0.28);
+      background: rgba(248, 250, 252, 0.42);
+      border-radius: 0 0 10px 10px;
     }
     .np-nutri-folder-add-section {
-      margin-top: 10px;
+      margin-top: 0;
+    }
+    .np-nutri-folder-add-section + .np-nutri-folder-add-section {
+      margin-top: 6px;
     }
     .np-nutri-folder-add-section--sub {
-      margin-top: 14px;
-      padding-top: 12px;
-      border-top: 1px dashed rgba(148, 163, 184, 0.35);
+      margin-top: 6px;
+      padding-top: 0;
+      border-top: 0;
     }
     .np-nutri-folder-add-label {
       display: block;
-      margin-bottom: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      color: #64748b;
-      letter-spacing: 0.04em;
+      margin-bottom: 3px;
+      font-size: 9px;
+      font-weight: 650;
+      color: #94a3b8;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
     }
     .np-nutri-folders-sidebar .np-color-edit-bar {
@@ -1399,13 +1410,39 @@
     }
     .np-nutri-folder-add {
       display: flex;
-      gap: 8px;
+      gap: 5px;
       align-items: center;
     }
     .np-nutri-folder-add input {
       margin-bottom: 0;
       flex: 1;
-      font-size: 13px;
+      min-width: 0;
+      min-height: 30px;
+      padding: 5px 8px;
+      font-size: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: rgba(255, 255, 255, 0.88);
+      color: #334155;
+    }
+    .np-nutri-folder-add input::placeholder {
+      color: #94a3b8;
+      font-size: 11px;
+    }
+    .np-nutri-folder-add input:focus {
+      outline: none;
+      border-color: rgba(34, 197, 94, 0.4);
+      background: #fff;
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.1);
+    }
+    .np-nutri-folder-add .btn {
+      flex-shrink: 0;
+      min-height: 30px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-weight: 650;
+      line-height: 1.2;
+      border-radius: 8px;
     }
     .np-nutri-files-head {
       display: flex;
@@ -1679,6 +1716,29 @@
       color: #64748b;
       line-height: 1.4;
     }
+    .np-nutri-files-more-wrap {
+      width: 100%;
+      margin-top: 4px;
+    }
+    button.np-nutri-files-more-btn {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px dashed rgba(148, 163, 184, 0.45);
+      background: rgba(248, 250, 252, 0.92);
+      color: #475569;
+      font-size: 12px;
+      font-weight: 650;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+    button.np-nutri-files-more-btn:hover {
+      background: #fff;
+      border-color: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 35%, rgba(148, 163, 184, 0.45));
+      color: #0f172a;
+    }
     /* Nutri PRO archivos: 2 columnas en pantalla ancha (PC / tablet horizontal) */
     @media (min-width: 901px) {
       #npViewNutriPro .np-nutri-file-list {
@@ -1686,6 +1746,9 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
         align-items: start;
+      }
+      #npViewNutriPro .np-nutri-files-more-wrap {
+        grid-column: 1 / -1;
       }
       #npViewNutriPro .np-nutri-file-row {
         min-width: 0;
@@ -1902,24 +1965,26 @@
       #npViewNutriPro .np-nutri-file-search {
         margin-bottom: 8px;
       }
-      #npViewNutriPro .np-nutri-folder-add-section {
+      #npViewNutriPro .np-nutri-folder-add-foot {
         margin-top: 6px;
+        padding: 6px 4px 2px;
       }
-      #npViewNutriPro .np-nutri-folder-add-section--sub {
-        margin-top: 8px;
-        padding-top: 8px;
+      #npViewNutriPro .np-nutri-folder-add-section + .np-nutri-folder-add-section {
+        margin-top: 5px;
       }
       #npViewNutriPro .np-nutri-folder-add-label {
-        margin-bottom: 4px;
-        font-size: 10px;
+        margin-bottom: 2px;
+        font-size: 8px;
       }
       #npViewNutriPro .np-nutri-folder-add input {
-        font-size: 12px;
-        padding: 7px 8px;
+        font-size: 11px;
+        min-height: 28px;
+        padding: 4px 7px;
       }
       #npViewNutriPro .np-nutri-folder-add .btn {
-        padding: 7px 10px;
-        font-size: 11px;
+        min-height: 28px;
+        padding: 3px 8px;
+        font-size: 10px;
         white-space: nowrap;
       }
       /* Ya hay árbol de carpetas arriba: evita bloque duplicado y scroll horizontal */
@@ -6340,6 +6405,17 @@
       opacity: 0.55;
       pointer-events: none;
     }
+    .np-sheet-items-section-head {
+      margin: 14px 0 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .np-sheet-items-section-head:first-child {
+      margin-top: 0;
+    }
     .np-sheet-items-more-wrap {
       margin-top: 2px;
       display: flex;
@@ -8346,7 +8422,7 @@
               <span class="np-filter-leaves-ui" aria-hidden="true"></span>
               <span class="np-filter-leaves-text">
                 <span class="np-filter-leaves-title">Incluir hojas</span>
-                <span class="np-filter-leaves-hint">Muestra apuntes de sub-ramas</span>
+                <span class="np-filter-leaves-hint">También lista apuntes que viven en sub-ramas</span>
               </span>
             </label>
           </div>
@@ -8588,6 +8664,7 @@
                   <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriFolderRenameSave">Guardar</button>
                 </div>
               </div>
+              <div class="np-nutri-folder-add-foot">
               <div class="np-nutri-folder-add-section">
                 <span class="np-nutri-folder-add-label">Carpeta principal</span>
                 <div class="np-nutri-folder-add">
@@ -8601,6 +8678,7 @@
                   <input type="text" id="npNutriNewFolder" autocomplete="off" placeholder="Nueva carpeta…" aria-label="Nombre de carpeta dentro de la seleccionada" />
                   <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriBtnAddFolder">Crear</button>
                 </div>
+              </div>
               </div>
             </aside>
             <div class="np-main-col">
@@ -13841,6 +13919,7 @@
     nutriProLinksReady: true,
     nutriProFocusRename: false,
     nutriProFolderEditingId: null,
+    nutriProFilesListExpanded: false,
     nutriProCollapsedFolderIds: {},
     nutriProFolderFilesCache: {},
     nutriProFilesLoadGen: 0,
@@ -19514,6 +19593,7 @@
   }
 
   var PLAN_SHEET_ITEMS_PREVIEW_LIMIT = 10;
+  var PLAN_NUTRI_FILES_PREVIEW_LIMIT = 10;
 
   function planProInitItemSortPrefs() {
     try {
@@ -19639,16 +19719,26 @@
         return false;
       }
     }
+    var sourceCatId = itemRec.category_id || null;
+    patchPlanProItemLocal(itemId, patch);
     var destLabel = getCategoryPath(targetCategoryId);
-    showToast(
-      upd.queued
-        ? 'Movimiento guardado localmente; subirá cuando vuelva la señal.'
-        : 'Apunte movido a «' + destLabel + '».'
-    );
-    if (!upd.queued) {
-      await loadItems();
-      if (state.selectedAreaId === targetCat.area_id) patchTreeMetaBadges();
+    var movedToSubBranch =
+      sourceCatId &&
+      sourceCatId !== targetCategoryId &&
+      isCategoryDescendantOf(targetCategoryId, sourceCatId);
+    var toastMsg = upd.queued
+      ? 'Movimiento guardado localmente; subirá cuando vuelva la señal.'
+      : 'Apunte movido a «' + destLabel + '».';
+    if (movedToSubBranch) {
+      toastMsg +=
+        ' Si vuelves a «' +
+        getCategoryPath(sourceCatId) +
+        '», solo lo verás con «Incluir hojas» activo.';
     }
+    showToast(toastMsg);
+    await navigatePlanProToCategory(targetCategoryId);
+    if (upd.queued) patchPlanProItemLocal(itemId, patch);
+    if (state.selectedAreaId === targetCat.area_id) patchTreeMetaBadges();
     return true;
   }
 
@@ -19847,6 +19937,48 @@
       out = out.concat(collectDescendantIds(ch.id));
     });
     return out;
+  }
+
+  function isCategoryDescendantOf(categoryId, ancestorId) {
+    if (!categoryId || !ancestorId || categoryId === ancestorId) return false;
+    var cur = state.categories.filter(function (c) {
+      return c.id === categoryId;
+    })[0];
+    var guard = 0;
+    while (cur && cur.parent_id && guard++ < 40) {
+      if (cur.parent_id === ancestorId) return true;
+      cur = state.categories.filter(function (c) {
+        return c.id === cur.parent_id;
+      })[0];
+    }
+    return false;
+  }
+
+  function patchPlanProItemLocal(itemId, patch) {
+    if (!itemId || !patch) return;
+    (state.planProItemsRows || []).forEach(function (r) {
+      if (r && r.id === itemId) {
+        Object.keys(patch).forEach(function (k) {
+          r[k] = patch[k];
+        });
+      }
+    });
+  }
+
+  async function navigatePlanProToCategory(categoryId) {
+    var cat = state.categories.filter(function (c) {
+      return c.id === categoryId;
+    })[0];
+    if (!cat || cat.archived_at) return;
+    if (state.selectedAreaId !== cat.area_id) {
+      resetCreateFormPendingBlocks();
+      state.selectedAreaId = cat.area_id;
+      renderPillarTabs();
+      renderTree();
+      updateSelectionUI();
+    }
+    planProExpandCategoryAncestors(categoryId);
+    return selectCategory(categoryId);
   }
 
   /** Todas las sub-ramas en BD (archivadas o no); para borrado en cascada y ajuste de selección. */
@@ -20282,8 +20414,8 @@
     state.selectedCategoryId = catId;
     syncTreeActiveHighlight();
     updateSelectionUI();
-    loadItems();
     scrollNpLayoutToMainColumn();
+    return loadItems();
   }
 
   function renderSheetNavBlocks() {
@@ -21939,6 +22071,42 @@
     }
   }
 
+  function buildSheetItemRow(r) {
+    var row = document.createElement('div');
+    row.className = 'np-sheet-item-row';
+    var card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'np-sheet-item-card';
+    var t = document.createElement('div');
+    t.className = 'np-sheet-item-card-title';
+    t.textContent = r.title || '(Sin título)';
+    var n = document.createElement('div');
+    n.className = 'np-sheet-item-card-note';
+    var prev = notePreviewText(r);
+    n.textContent = prev || 'Sin texto en la libreta · revisa tablas en el detalle';
+    var meta = document.createElement('div');
+    meta.className = 'np-sheet-item-card-meta';
+    var metaDue = document.createElement('div');
+    metaDue.className = 'np-sheet-item-card-meta-due';
+    metaDue.textContent = 'Objetivo: ' + fmtObjectiveDueDisplay(r.due_at);
+    var metaRest = document.createElement('div');
+    metaRest.className = 'np-sheet-item-card-meta-rest';
+    metaRest.textContent =
+      (r.category_id ? getCategoryPath(r.category_id) : '—') + ' · Act. ' + fmtUpdatedShort(r.updated_at);
+    meta.appendChild(metaDue);
+    meta.appendChild(metaRest);
+    card.appendChild(t);
+    card.appendChild(n);
+    card.appendChild(meta);
+    card.addEventListener('click', function () {
+      if (Date.now() - state.lastPlanProDndEndedAt < 250) return;
+      openItemDetail(r);
+    });
+    row.appendChild(card);
+    wirePlanSheetItemCardDnd(row, card, r);
+    return row;
+  }
+
   function syncSheetItemsList(rows) {
     var wrap = $('npSheetItemsWrap');
     var mount = $('npSheetItemsMount');
@@ -21965,41 +22133,40 @@
       !overLimit || expanded ? displayRows : displayRows.slice(0, PLAN_SHEET_ITEMS_PREVIEW_LIMIT);
     var hiddenCount = overLimit ? total - PLAN_SHEET_ITEMS_PREVIEW_LIMIT : 0;
     var fragM = document.createDocumentFragment();
-    visibleRows.forEach(function (r) {
-      var row = document.createElement('div');
-      row.className = 'np-sheet-item-row';
-      var card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'np-sheet-item-card';
-      var t = document.createElement('div');
-      t.className = 'np-sheet-item-card-title';
-      t.textContent = r.title || '(Sin título)';
-      var n = document.createElement('div');
-      n.className = 'np-sheet-item-card-note';
-      var prev = notePreviewText(r);
-      n.textContent = prev || 'Sin texto en la libreta · revisa tablas en el detalle';
-      var meta = document.createElement('div');
-      meta.className = 'np-sheet-item-card-meta';
-      var metaDue = document.createElement('div');
-      metaDue.className = 'np-sheet-item-card-meta-due';
-      metaDue.textContent = 'Objetivo: ' + fmtObjectiveDueDisplay(r.due_at);
-      var metaRest = document.createElement('div');
-      metaRest.className = 'np-sheet-item-card-meta-rest';
-      metaRest.textContent =
-        (r.category_id ? getCategoryPath(r.category_id) : '—') + ' · Act. ' + fmtUpdatedShort(r.updated_at);
-      meta.appendChild(metaDue);
-      meta.appendChild(metaRest);
-      card.appendChild(t);
-      card.appendChild(n);
-      card.appendChild(meta);
-      card.addEventListener('click', function () {
-        if (Date.now() - state.lastPlanProDndEndedAt < 250) return;
-        openItemDetail(r);
+    var selId = state.selectedCategoryId;
+    var inclDesc = $('npFilterDesc') && $('npFilterDesc').checked;
+    var useSections = !!(selId && inclDesc);
+    var directRows = [];
+    var subRows = [];
+    if (useSections) {
+      visibleRows.forEach(function (r) {
+        if ((r.category_id || null) === selId) directRows.push(r);
+        else subRows.push(r);
       });
-      row.appendChild(card);
-      wirePlanSheetItemCardDnd(row, card, r);
-      fragM.appendChild(row);
-    });
+      useSections = directRows.length > 0 && subRows.length > 0;
+    }
+    function appendSection(sectionRows, title) {
+      if (!sectionRows.length) return;
+      if (useSections && title) {
+        var head = document.createElement('div');
+        head.className = 'np-sheet-items-section-head';
+        head.textContent = title;
+        fragM.appendChild(head);
+      }
+      sectionRows.forEach(function (r) {
+        fragM.appendChild(buildSheetItemRow(r));
+      });
+    }
+    if (useSections) {
+      appendSection(directRows, 'En esta rama');
+      appendSection(subRows, 'En sub-ramas');
+    } else if (selId && inclDesc && subRows.length > 0 && !directRows.length) {
+      appendSection(subRows, 'En sub-ramas');
+    } else {
+      visibleRows.forEach(function (r) {
+        fragM.appendChild(buildSheetItemRow(r));
+      });
+    }
     if (overLimit) {
       var moreWrap = document.createElement('div');
       moreWrap.className = 'np-sheet-items-more-wrap';
@@ -23720,6 +23887,7 @@
   function nutriProSelectFolder(folderId) {
     state.nutriProSelectedFolderId = folderId || null;
     state.nutriProFolderEditingId = null;
+    state.nutriProFilesListExpanded = false;
     var treeNeedsRender = false;
     if (folderId) treeNeedsRender = !!nutriProExpandFolderAncestors(folderId);
     if (treeNeedsRender) renderNutriProFolderTree();
@@ -24572,7 +24740,13 @@
     var files = sortNutriProFilesForDisplay(state.nutriProFiles || []);
     if (empty) empty.classList.toggle('np-hide', files.length > 0);
     if (hint) hint.classList.toggle('np-hide', !files.length);
-    files.forEach(function (file) {
+    var expanded = !!state.nutriProFilesListExpanded;
+    var total = files.length;
+    var overLimit = total > PLAN_NUTRI_FILES_PREVIEW_LIMIT;
+    var visibleFiles =
+      !overLimit || expanded ? files : files.slice(0, PLAN_NUTRI_FILES_PREVIEW_LIMIT);
+    var hiddenCount = overLimit ? total - PLAN_NUTRI_FILES_PREVIEW_LIMIT : 0;
+    visibleFiles.forEach(function (file) {
       if (!file || !file.id) return;
       var row = document.createElement('div');
       row.className =
@@ -24700,6 +24874,32 @@
       row.appendChild(card);
       mount.appendChild(row);
     });
+    if (overLimit) {
+      var moreWrap = document.createElement('div');
+      moreWrap.className = 'np-nutri-files-more-wrap';
+      var moreBtn = document.createElement('button');
+      moreBtn.type = 'button';
+      moreBtn.className = 'np-nutri-files-more-btn';
+      moreBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      if (expanded) {
+        moreBtn.textContent = 'Ver menos archivos';
+      } else {
+        moreBtn.textContent =
+          'Ver ' +
+          hiddenCount +
+          ' archivo' +
+          (hiddenCount === 1 ? '' : 's') +
+          ' más (' +
+          total +
+          ' en total)';
+      }
+      moreBtn.addEventListener('click', function () {
+        state.nutriProFilesListExpanded = !state.nutriProFilesListExpanded;
+        renderNutriProFilesList();
+      });
+      moreWrap.appendChild(moreBtn);
+      mount.appendChild(moreWrap);
+    }
   }
 
   function setNutriProSetupVisible(show) {
