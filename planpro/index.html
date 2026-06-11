@@ -6771,7 +6771,8 @@
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin: 0 0 6px;
+      margin: 0;
+      width: 100%;
       align-items: center;
     }
     .np-cal-overlay-plant-filter-label {
@@ -6880,14 +6881,39 @@
     .np-cal-overlay-panel .np-modal-head {
       padding: 10px 14px 8px;
       border-bottom: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 10%, rgba(148, 163, 184, 0.28));
-      gap: 10px;
+      gap: 8px;
+    }
+    .np-cal-overlay-panel .np-modal-head.np-cal-overlay-head {
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+    }
+    .np-cal-overlay-head {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+    }
+    .np-cal-overlay-head-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      min-width: 0;
+    }
+    .np-cal-overlay-head-top .np-cal-overlay-title {
+      min-width: 0;
+      flex: 1 1 auto;
     }
     .np-cal-overlay-summary-wrap {
       position: relative;
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      margin: 8px 0 0;
+      margin: 0;
       flex: 0 0 auto;
       flex-shrink: 0;
       min-width: 0;
@@ -6954,10 +6980,11 @@
       border-top: 1px solid rgba(148, 163, 184, 0.2);
       border-radius: 0;
       background: transparent;
-      align-items: flex-start;
+      align-items: stretch;
       flex-direction: column;
       gap: 5px;
       flex: 0 0 auto;
+      width: 100%;
     }
     @media (min-width: 720px) {
       .np-cal-overlay-summary-row--detail {
@@ -6968,28 +6995,30 @@
       .np-cal-overlay-summary-row--detail .np-cal-overlay-summary-row-label {
         flex: 0 0 auto;
         width: auto;
+        max-width: 72px;
         padding-bottom: 0;
         white-space: nowrap;
       }
       .np-cal-overlay-summary-row--detail .np-cal-overlay-summary-chip-strip {
         flex: 1 1 auto;
+        min-width: 0;
       }
     }
     .np-cal-overlay-summary-chip-strip {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 128px), 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 6px;
       width: 100%;
       max-width: 100%;
       min-width: 0;
       box-sizing: border-box;
-      align-content: stretch;
       align-items: stretch;
     }
     .np-cal-overlay-summary-chip-strip .np-cal-overlay-summary-chip {
-      width: 100%;
+      flex: 1 1 calc(20% - 6px);
+      min-width: min(100%, 96px);
+      width: auto;
       max-width: none;
-      flex: unset;
       justify-content: center;
       text-align: center;
     }
@@ -8813,19 +8842,19 @@
 
   <div id="npCalOverlayModal" class="np-modal-overlay" aria-hidden="true">
     <div class="np-modal-panel np-cal-overlay-panel" role="dialog" aria-labelledby="npCalOverlayTitle">
-      <div class="np-modal-head" style="align-items:flex-start;">
-        <div style="min-width:0;flex:1;">
+      <div class="np-modal-head np-cal-overlay-head">
+        <div class="np-cal-overlay-head-top">
           <h3 id="npCalOverlayTitle" class="np-cal-overlay-title">
             <img src="../assets/N_Hoja_Azul.png" alt="" class="np-cal-overlay-logo np-cal-overlay-logo--muted" width="22" height="22" decoding="async" aria-hidden="true" />
             <img src="../assets/N_Hoja_Blanca.png" alt="" class="np-cal-overlay-logo np-cal-overlay-logo--lit" width="22" height="22" decoding="async" aria-hidden="true" />
             <span>Calendario de semáforos</span>
           </h3>
-          <div id="npCalOverlayPlantFilter" class="np-cal-overlay-plant-filter" aria-label="Plantas visibles"></div>
-          <div class="np-cal-overlay-summary-wrap">
-            <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
-          </div>
+          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayClose" style="flex-shrink:0;">Cerrar</button>
         </div>
-        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayClose" style="flex-shrink:0;">Cerrar</button>
+        <div id="npCalOverlayPlantFilter" class="np-cal-overlay-plant-filter" aria-label="Plantas visibles"></div>
+        <div class="np-cal-overlay-summary-wrap">
+          <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
+        </div>
       </div>
       <div id="npCalOverlayBody" class="np-modal-body np-cal-overlay-body">
         <div class="np-cal-overlay-month-bar" aria-label="Mes del calendario">
