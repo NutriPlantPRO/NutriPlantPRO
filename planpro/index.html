@@ -1131,10 +1131,10 @@
     .np-nutri-file-card {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       border: 1px solid color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 32%, rgba(148, 163, 184, 0.35));
-      border-radius: 14px;
-      padding: 12px 14px;
+      border-radius: 12px;
+      padding: 10px 12px;
       background: linear-gradient(
         168deg,
         rgba(255, 255, 255, 0.98) 0%,
@@ -1161,18 +1161,18 @@
       display: flex;
       flex-wrap: wrap;
       align-items: flex-start;
-      gap: 10px;
+      gap: 8px;
       width: 100%;
     }
     .np-nutri-file-icon-badge {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
+      width: 34px;
+      height: 34px;
       flex-shrink: 0;
-      border-radius: 12px;
-      font-size: 22px;
+      border-radius: 9px;
+      font-size: 18px;
       line-height: 1;
       background: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 14%, #fff);
       border: 1px solid color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 28%, rgba(148, 163, 184, 0.35));
@@ -1183,20 +1183,24 @@
       min-width: 140px;
     }
     .np-nutri-file-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 650;
       color: #0f172a;
       letter-spacing: -0.02em;
-      line-height: 1.3;
+      line-height: 1.25;
       word-break: break-word;
-    }
-    .np-nutri-file-preview {
-      margin-top: 4px;
-      font-size: 13px;
-      color: #64748b;
-      line-height: 1.45;
       display: -webkit-box;
       -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .np-nutri-file-preview {
+      margin-top: 2px;
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -1205,14 +1209,14 @@
       font-style: italic;
     }
     .np-nutri-file-sub {
-      margin-top: 8px;
-      font-size: 11px;
+      margin-top: 4px;
+      font-size: 10px;
       color: #94a3b8;
       font-weight: 500;
-      line-height: 1.35;
+      line-height: 1.3;
     }
     .np-nutri-file-sub-strong {
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 650;
       color: #475569;
       letter-spacing: -0.01em;
@@ -1224,30 +1228,30 @@
     }
     .np-nutri-file-desc-wrap {
       width: 100%;
-      padding-top: 2px;
+      padding-top: 0;
       border-top: 1px dashed color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 18%, rgba(148, 163, 184, 0.35));
     }
     .np-nutri-file-desc-label {
       display: block;
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 700;
       color: #94a3b8;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      margin: 8px 0 4px;
+      margin: 5px 0 3px;
     }
     .np-nutri-file-desc {
       width: 100%;
-      min-height: 34px;
-      max-height: 68px;
+      min-height: 28px;
+      max-height: 48px;
       resize: vertical;
-      padding: 8px 10px;
-      border-radius: 10px;
+      padding: 5px 8px;
+      border-radius: 8px;
       border: 1px solid color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 22%, rgba(148, 163, 184, 0.4));
       background: rgba(255, 255, 255, 0.88);
       color: #334155;
-      font-size: 12px;
-      line-height: 1.4;
+      font-size: 11px;
+      line-height: 1.35;
       font-family: inherit;
       box-sizing: border-box;
       transition: border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
@@ -1264,7 +1268,7 @@
     .np-nutri-file-btns {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 4px;
       align-items: flex-start;
     }
     .np-nutri-folder-row.np-dnd-drop-onto {
@@ -1284,33 +1288,65 @@
       #npViewNutriPro .np-nutri-file-list {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        gap: 10px;
         align-items: start;
       }
       #npViewNutriPro .np-nutri-file-row {
         min-width: 0;
       }
+      #npViewNutriPro .np-nutri-file-card {
+        padding: 8px 10px;
+        gap: 6px;
+      }
       #npViewNutriPro .np-nutri-file-row-main {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+        gap: 8px;
       }
       #npViewNutriPro .np-nutri-file-meta {
         min-width: 0;
-        width: 100%;
+        flex: 1 1 auto;
+        width: auto;
+      }
+      #npViewNutriPro .np-nutri-file-title {
+        font-size: 13px;
+      }
+      #npViewNutriPro .np-nutri-file-preview {
+        font-size: 11px;
+      }
+      #npViewNutriPro .np-nutri-file-preview--empty {
+        display: none;
       }
       #npViewNutriPro .np-nutri-file-btns {
-        width: 100%;
-        margin-top: 2px;
+        width: auto;
+        flex: 0 0 112px;
+        margin-top: 0;
+        align-self: flex-start;
       }
       #npViewNutriPro .np-nutri-file-btns .btn {
-        flex: 1 1 calc(33% - 6px);
+        flex: 1 1 calc(50% - 2px);
         min-width: 0;
         justify-content: center;
-        font-size: 11px;
-        padding: 6px 8px;
+        font-size: 10px;
+        padding: 4px 5px;
+        min-height: 26px;
+      }
+      #npViewNutriPro .np-nutri-file-desc-wrap {
+        display: grid;
+        grid-template-columns: minmax(58px, auto) 1fr;
+        gap: 4px 8px;
+        align-items: center;
+        padding-top: 4px;
+      }
+      #npViewNutriPro .np-nutri-file-desc-label {
+        margin: 0;
+        align-self: center;
       }
       #npViewNutriPro .np-nutri-file-desc {
-        max-height: 56px;
+        min-height: 26px;
+        max-height: 26px;
+        padding: 4px 7px;
       }
     }
     .np-nutri-folder-nav-blocks {
@@ -1571,6 +1607,28 @@
         max-width: 100%;
         margin-left: 0 !important;
         margin-right: 0 !important;
+      }
+      #npViewNutriPro .np-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100%;
+      }
+      #npViewNutriPro .np-nutri-folders-sidebar {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100%;
+        align-self: stretch !important;
+        position: static;
+        box-sizing: border-box;
+        flex: 0 0 auto;
+      }
+      #npViewNutriPro .np-main-col {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100%;
       }
       #npViewNutriPro .np-nutri-folder-nav-blocks,
       #npViewNutriPro .np-nutri-folder-chip-row {
@@ -3186,6 +3244,7 @@
         max-width: 100%;
       }
       .np-tree-sidebar,
+      .np-nutri-folders-sidebar,
       .np-main-col {
         width: 100% !important;
         min-width: 0 !important;
@@ -3193,11 +3252,13 @@
         flex: 0 0 auto;
         box-sizing: border-box;
       }
-      .np-tree-sidebar {
+      .np-tree-sidebar,
+      .np-nutri-folders-sidebar {
         position: static;
         contain: none;
         padding: 10px 8px 12px;
         overflow-x: hidden;
+        align-self: stretch !important;
       }
       .np-main-col {
         min-width: 0 !important;
@@ -5809,6 +5870,30 @@
       font-weight: 650;
       padding: 8px 10px;
     }
+    .np-sheet-jump-btn--plant-list {
+      border: 1.5px solid color-mix(in srgb, var(--np-plant-accent, #2563eb) 42%, rgba(148, 163, 184, 0.38));
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--np-plant-accent, #2563eb) 16%, #ffffff) 0%,
+        rgba(255, 255, 255, 0.94) 58%,
+        rgba(255, 255, 255, 0.98) 100%
+      );
+      color: color-mix(in srgb, var(--np-plant-accent, #2563eb) 68%, #0f172a);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--np-plant-accent, #2563eb) 10%, transparent);
+    }
+    .np-sheet-jump-btn--plant-list:hover {
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--np-plant-accent, #2563eb) 22%, #ffffff) 0%,
+        rgba(255, 255, 255, 0.98) 100%
+      );
+      border-color: color-mix(in srgb, var(--np-plant-accent, #2563eb) 55%, rgba(148, 163, 184, 0.35));
+      color: color-mix(in srgb, var(--np-plant-accent, #2563eb) 78%, #0f172a);
+    }
+    .np-plant-list-bottom-anchor {
+      height: 1px;
+      scroll-margin-bottom: 24px;
+    }
     .np-sheet-items-mount {
       display: flex;
       flex-direction: column;
@@ -6217,7 +6302,7 @@
         0 16px 48px color-mix(in srgb, var(--np-cal-overlay-accent) 22%, rgba(15, 23, 42, 0.14));
     }
     .np-cal-overlay-panel--multi {
-      --np-cal-overlay-accent: #38bdf8;
+      --np-cal-overlay-accent: #1e3a8a;
     }
     .np-cal-overlay-title {
       display: inline-flex;
@@ -6317,17 +6402,17 @@
       box-shadow: 0 0 0 1px color-mix(in srgb, var(--np-plant-chip-accent, #2563eb) 20%, transparent);
     }
     .np-cal-overlay-panel--multi .np-cal-overlay-plant-chip--on {
-      border-color: color-mix(in srgb, #38bdf8 58%, rgba(255, 255, 255, 0.5));
+      border-color: color-mix(in srgb, var(--np-cal-overlay-accent, #1e3a8a) 58%, rgba(255, 255, 255, 0.5));
       background: radial-gradient(
         ellipse 105% 185% at 50% 38%,
-        color-mix(in srgb, #38bdf8 58%, #fff) 0%,
-        color-mix(in srgb, #38bdf8 32%, #fff) 40%,
+        color-mix(in srgb, var(--np-cal-overlay-accent, #1e3a8a) 58%, #fff) 0%,
+        color-mix(in srgb, var(--np-cal-overlay-accent, #1e3a8a) 32%, #fff) 40%,
         rgba(255, 255, 255, 0.98) 100%
       );
-      box-shadow: 0 0 0 1px color-mix(in srgb, #38bdf8 22%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--np-cal-overlay-accent, #1e3a8a) 22%, transparent);
     }
     .np-cal-overlay-panel--multi .np-cal-overlay-plant-chip--on::before {
-      background: #0ea5e9;
+      background: #1d4ed8;
     }
     .np-cal-overlay-head {
       display: flex;
@@ -6349,35 +6434,170 @@
       font-weight: 700;
       color: #0f172a;
     }
-    .np-cal-overlay-summary {
+    .np-cal-overlay-summary-wrap {
+      position: relative;
       flex: 1;
-      min-width: 200px;
+      min-width: 220px;
+    }
+    .np-cal-overlay-summary {
       display: flex;
-      flex-wrap: wrap;
-      gap: 6px 10px;
-      align-items: center;
+      flex-direction: column;
+      gap: 6px;
       font-size: 11px;
       color: #64748b;
+    }
+    .np-cal-overlay-summary-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 8px;
+      align-items: center;
+    }
+    .np-cal-overlay-summary-row--detail {
+      padding-top: 2px;
+    }
+    .np-cal-overlay-summary-row-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-right: 2px;
+    }
+    .np-cal-overlay-summary-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(255, 255, 255, 0.92);
+      font-weight: 650;
+      font-size: 10px;
+      font-family: inherit;
+      color: #334155;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+    }
+    .np-cal-overlay-summary-chip:hover {
+      background: #fff;
+      border-color: color-mix(in srgb, var(--np-summary-chip-accent, var(--np-cal-overlay-accent, #2563eb)) 42%, rgba(148, 163, 184, 0.45));
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+    }
+    .np-cal-overlay-summary-chip--open {
+      border-color: color-mix(in srgb, var(--np-summary-chip-accent, var(--np-cal-overlay-accent, #2563eb)) 55%, rgba(255, 255, 255, 0.4));
+      background: color-mix(in srgb, var(--np-summary-chip-accent, var(--np-cal-overlay-accent, #2563eb)) 10%, #fff);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--np-summary-chip-accent, var(--np-cal-overlay-accent, #2563eb)) 18%, transparent);
+    }
+    .np-cal-overlay-summary-chip--plant::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--np-summary-chip-accent, #2563eb);
+      flex-shrink: 0;
     }
     .np-cal-overlay-total-chip {
       font-weight: 700;
       font-variant-numeric: tabular-nums;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(248, 250, 252, 0.95);
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      color: #334155;
     }
     .np-cal-overlay-root-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.28);
       font-weight: 600;
+    }
+    .np-cal-overlay-summary-pop {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      width: min(100%, 460px);
+      max-height: min(42vh, 320px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      z-index: 30;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 22%, rgba(148, 163, 184, 0.45));
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.8),
+        0 14px 36px rgba(15, 23, 42, 0.14);
+    }
+    .np-cal-overlay-summary-pop.np-hide {
+      display: none;
+    }
+    .np-cal-overlay-summary-pop-head {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+      font-size: 11px;
+      font-weight: 700;
+      color: #0f172a;
+      flex-shrink: 0;
+    }
+    .np-cal-overlay-summary-pop-list {
+      overflow: auto;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .np-cal-overlay-summary-pop-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      width: 100%;
+      padding: 7px 8px;
+      border: 0;
+      border-radius: 8px;
+      background: rgba(248, 250, 252, 0.95);
+      text-align: left;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.1s ease, box-shadow 0.1s ease;
+    }
+    .np-cal-overlay-summary-pop-row:hover {
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.07);
+    }
+    .np-cal-overlay-summary-pop-dot {
+      flex-shrink: 0;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 4px;
+    }
+    .np-cal-overlay-summary-pop-dot--baja { background: #22c55e; }
+    .np-cal-overlay-summary-pop-dot--media { background: #eab308; }
+    .np-cal-overlay-summary-pop-dot--alta { background: #ef4444; }
+    .np-cal-overlay-summary-pop-dot--none { background: #cbd5e1; }
+    .np-cal-overlay-summary-pop-main {
+      min-width: 0;
+      flex: 1;
+    }
+    .np-cal-overlay-summary-pop-title {
+      display: block;
+      font-size: 11px;
+      font-weight: 650;
+      color: #0f172a;
+      line-height: 1.25;
+    }
+    .np-cal-overlay-summary-pop-sub {
+      display: block;
+      margin-top: 2px;
       font-size: 10px;
+      color: #64748b;
+      line-height: 1.2;
+    }
+    .np-cal-overlay-summary-pop-date {
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #475569;
+      padding-top: 1px;
+    }
+    .np-cal-overlay-summary-pop-empty {
+      margin: 0;
+      padding: 12px;
+      font-size: 11px;
+      color: #64748b;
     }
     .np-cal-overlay-body {
       flex: 1;
@@ -7238,7 +7458,7 @@
                 </div>
                 <div id="npSheetNavBlocks" class="np-sheet-nav-blocks np-hide"></div>
                 <div id="npSheetJumpRow" class="np-sheet-jump-row np-hide" aria-label="Ir a sección de la hoja">
-                  <button type="button" class="btn btn-ghost btn-ghost-green np-sheet-jump-btn" id="npSheetJumpApuntesBtn" title="Bajar a la lista de apuntes de esta rama">
+                  <button type="button" class="btn np-sheet-jump-btn np-sheet-jump-btn--plant-list" id="npSheetJumpApuntesBtn" title="Bajar al final de la lista de apuntes de la planta">
                     ↓ Ir a apuntes
                   </button>
                   <button type="button" class="btn btn-ghost btn-ghost-blue np-sheet-jump-btn" id="npSheetJumpNewBtn" title="Bajar al formulario para crear apunte">
@@ -7340,7 +7560,7 @@
             </section>
           </div>
 
-          <section class="panel np-section-accent np-section-accent-plant">
+          <section id="npPlantListSection" class="panel np-section-accent np-section-accent-plant">
             <h2>Lista de la planta</h2>
             <p class="np-lista-help">Eliminar en esta tabla borra el apunte en Supabase (no es archivar).</p>
             <div class="np-pillar-list-scroll">
@@ -7360,6 +7580,7 @@
               </table>
             </div>
             <p id="npEmpty" class="np-muted np-hide">Sin ítems.</p>
+            <div id="npPlantListBottomAnchor" class="np-plant-list-bottom-anchor" aria-hidden="true"></div>
           </section>
         </div>
       </div>
@@ -7712,7 +7933,10 @@
               <span id="npCalOverlayMonthLabel" class="np-cal-overlay-month-label"></span>
               <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayNext" aria-label="Mes siguiente">▶</button>
             </div>
-            <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
+            <div class="np-cal-overlay-summary-wrap">
+              <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
+              <div id="npCalOverlaySummaryPop" class="np-cal-overlay-summary-pop np-hide" role="dialog" aria-hidden="true" aria-label="Detalle de semáforos"></div>
+            </div>
           </div>
         </div>
         <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayClose" style="flex-shrink:0;">Cerrar</button>
@@ -13861,7 +14085,7 @@
     var multi = ids.length > 1;
     panel.classList.toggle('np-cal-overlay-panel--multi', multi);
     var accent;
-    if (multi) accent = '#38bdf8';
+    if (multi) accent = '#1e3a8a';
     else if (ids.length === 1) accent = resolvePlantAccentHex(ids[0]);
     else accent = resolvePlantAccentHex(state.selectedAreaId);
     panel.style.setProperty('--np-cal-overlay-accent', accent);
@@ -13982,52 +14206,280 @@
     await openItemDetail(full);
   }
 
+  function calOverlayShortDateLabel(dateKey) {
+    var p = String(dateKey || '').split('-').map(Number);
+    if (p.length !== 3 || !p[0]) return String(dateKey || '');
+    var mon = NP_CAL_MONTH_NAMES[p[1] - 1] || '';
+    if (mon.length > 3) mon = mon.slice(0, 3);
+    return String(p[2]) + ' ' + mon.toLowerCase();
+  }
+
+  function calOverlaySummaryStatsLabel(stats) {
+    return (
+      stats.total +
+      ' (🟢' +
+      stats.baja +
+      ' 🟡' +
+      stats.media +
+      ' 🔴' +
+      stats.alta +
+      (stats.none ? ' ○' + stats.none : '') +
+      ')'
+    );
+  }
+
+  function calOverlayEntryPopSubtitle(ent, hidePlant) {
+    var parts = [];
+    if (!hidePlant && (state.calOverlayAreaIds || []).length > 1 && ent.plantTitle) {
+      parts.push(ent.plantTitle);
+    }
+    var root = calEntryBranchRoot(ent);
+    if (root) parts.push(root);
+    if (ent.kind === 'table_row' && ent.blockTitle) parts.push(ent.blockTitle);
+    else if (ent.kind === 'note_due') parts.push('Nota');
+    else if (ent.kind === 'item_due') parts.push('Objetivo');
+    var apunte = String(ent.itemTitle || '').trim();
+    if (apunte && apunte !== '(Sin título)') parts.push(apunte);
+    return parts.join(' · ');
+  }
+
+  function closeCalOverlaySummaryPop() {
+    var pop = $('npCalOverlaySummaryPop');
+    if (!pop) return;
+    pop.classList.add('np-hide');
+    pop.setAttribute('aria-hidden', 'true');
+    pop.innerHTML = '';
+    pop.style.left = '';
+    pop.style.width = '';
+    document.querySelectorAll('.np-cal-overlay-summary-chip--open').forEach(function (el) {
+      el.classList.remove('np-cal-overlay-summary-chip--open');
+    });
+  }
+
+  function openCalOverlaySummaryPop(anchorBtn, title, entries) {
+    var pop = $('npCalOverlaySummaryPop');
+    if (!pop || !anchorBtn) return;
+    closeCalOverlaySummaryPop();
+    anchorBtn.classList.add('np-cal-overlay-summary-chip--open');
+    var hidePlant = anchorBtn.getAttribute('data-cal-summary-kind') === 'plant';
+    var head = document.createElement('div');
+    head.className = 'np-cal-overlay-summary-pop-head';
+    head.textContent = title;
+    pop.appendChild(head);
+    var list = (entries || []).slice().sort(function (a, b) {
+      var d = npCompareDateKeys(a.dateKey, b.dateKey);
+      if (d !== 0) return d;
+      return calEntryDisplayTitle(a).localeCompare(calEntryDisplayTitle(b));
+    });
+    if (!list.length) {
+      var empty = document.createElement('p');
+      empty.className = 'np-cal-overlay-summary-pop-empty';
+      empty.textContent = 'Sin semáforos en este grupo.';
+      pop.appendChild(empty);
+    } else {
+      var mount = document.createElement('div');
+      mount.className = 'np-cal-overlay-summary-pop-list';
+      list.forEach(function (ent) {
+        var row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'np-cal-overlay-summary-pop-row';
+        row.title = calEntryDisplayTitle(ent) + ' · ' + (ent.catPath || '');
+        var dot = document.createElement('span');
+        dot.className =
+          'np-cal-overlay-summary-pop-dot np-cal-overlay-summary-pop-dot--' + (ent.level || 'none');
+        var main = document.createElement('span');
+        main.className = 'np-cal-overlay-summary-pop-main';
+        var t1 = document.createElement('span');
+        t1.className = 'np-cal-overlay-summary-pop-title';
+        t1.textContent = calEntryDisplayTitle(ent);
+        main.appendChild(t1);
+        var sub = calOverlayEntryPopSubtitle(ent, hidePlant);
+        if (sub) {
+          var t2 = document.createElement('span');
+          t2.className = 'np-cal-overlay-summary-pop-sub';
+          t2.textContent = sub;
+          main.appendChild(t2);
+        }
+        var date = document.createElement('span');
+        date.className = 'np-cal-overlay-summary-pop-date';
+        date.textContent = calOverlayShortDateLabel(ent.dateKey);
+        row.appendChild(dot);
+        row.appendChild(main);
+        row.appendChild(date);
+        (function (entry) {
+          row.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openCalendarApunteFromEntry(entry);
+          });
+        })(ent);
+        mount.appendChild(row);
+      });
+      pop.appendChild(mount);
+    }
+    var wrap = pop.parentElement;
+    if (wrap) {
+      var chipRect = anchorBtn.getBoundingClientRect();
+      var wrapRect = wrap.getBoundingClientRect();
+      var left = Math.max(0, Math.min(chipRect.left - wrapRect.left, wrapRect.width - 280));
+      pop.style.left = left + 'px';
+      pop.style.width = Math.min(460, Math.max(280, wrapRect.width - left)) + 'px';
+    }
+    pop.classList.remove('np-hide');
+    pop.setAttribute('aria-hidden', 'false');
+  }
+
+  function makeCalOverlaySummaryChip(opts) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'np-cal-overlay-summary-chip ' + (opts.chipClass || '');
+    if (opts.kind) btn.setAttribute('data-cal-summary-kind', opts.kind);
+    if (opts.accent) btn.style.setProperty('--np-summary-chip-accent', opts.accent);
+    btn.textContent = opts.label;
+    btn.title = opts.title || 'Toca para ver el detalle';
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (btn.classList.contains('np-cal-overlay-summary-chip--open')) {
+        closeCalOverlaySummaryPop();
+        return;
+      }
+      openCalOverlaySummaryPop(btn, opts.popTitle, opts.entries || []);
+    });
+    return btn;
+  }
+
   function renderCalOverlaySummary() {
     var mount = $('npCalOverlaySummary');
     if (!mount) return;
+    closeCalOverlaySummaryPop();
     ensureSidebarCalMonth();
+    var monthLabel = NP_CAL_MONTH_NAMES[state.sidebarCalMonth] + ' ' + state.sidebarCalYear;
     var monthEntries = filterCalOverlayMonthEntries();
     var totals = { baja: 0, media: 0, alta: 0, none: 0, total: monthEntries.length };
     var byRoot = {};
+    var byPlant = {};
     monthEntries.forEach(function (e) {
       if (e.level === 'baja') totals.baja += 1;
       else if (e.level === 'media') totals.media += 1;
       else if (e.level === 'alta') totals.alta += 1;
       else totals.none += 1;
       var root = calEntryBranchRoot(e) || 'Sin rama';
-      if (!byRoot[root]) byRoot[root] = { baja: 0, media: 0, alta: 0, total: 0 };
+      if (!byRoot[root]) byRoot[root] = { baja: 0, media: 0, alta: 0, none: 0, total: 0, entries: [] };
       byRoot[root].total += 1;
+      byRoot[root].entries.push(e);
       if (e.level === 'baja') byRoot[root].baja += 1;
       else if (e.level === 'media') byRoot[root].media += 1;
       else if (e.level === 'alta') byRoot[root].alta += 1;
+      else byRoot[root].none += 1;
+      var areaId = e.areaId || '';
+      if (!byPlant[areaId]) {
+        byPlant[areaId] = {
+          areaId: areaId,
+          plantTitle: e.plantTitle || getPlanAreaTitle(areaId),
+          baja: 0,
+          media: 0,
+          alta: 0,
+          none: 0,
+          total: 0,
+          entries: []
+        };
+      }
+      byPlant[areaId].total += 1;
+      byPlant[areaId].entries.push(e);
+      if (e.level === 'baja') byPlant[areaId].baja += 1;
+      else if (e.level === 'media') byPlant[areaId].media += 1;
+      else if (e.level === 'alta') byPlant[areaId].alta += 1;
+      else byPlant[areaId].none += 1;
     });
     mount.innerHTML = '';
-    var totalChip = document.createElement('span');
-    totalChip.className = 'np-cal-overlay-total-chip';
-    totalChip.textContent =
-      totals.total +
-      ' semáforo' +
-      (totals.total === 1 ? '' : 's') +
-      ' · 🟢' +
-      totals.baja +
-      ' 🟡' +
-      totals.media +
-      ' 🔴' +
-      totals.alta +
-      (totals.none ? ' · ○' + totals.none : '');
-    mount.appendChild(totalChip);
-    Object.keys(byRoot)
-      .sort(function (a, b) {
-        return byRoot[b].total - byRoot[a].total || a.localeCompare(b);
+    var rowMain = document.createElement('div');
+    rowMain.className = 'np-cal-overlay-summary-row';
+    rowMain.appendChild(
+      makeCalOverlaySummaryChip({
+        chipClass: 'np-cal-overlay-total-chip',
+        kind: 'total',
+        label:
+          totals.total +
+          ' semáforo' +
+          (totals.total === 1 ? '' : 's') +
+          ' · 🟢' +
+          totals.baja +
+          ' 🟡' +
+          totals.media +
+          ' 🔴' +
+          totals.alta +
+          (totals.none ? ' · ○' + totals.none : ''),
+        popTitle: 'Todo el mes · ' + monthLabel,
+        title: 'Ver todos los semáforos del mes',
+        entries: monthEntries
       })
-      .slice(0, 8)
-      .forEach(function (rootName) {
+    );
+    mount.appendChild(rowMain);
+    var multiPlant = (state.calOverlayAreaIds || []).length > 1;
+    if (multiPlant) {
+      var rowPlants = document.createElement('div');
+      rowPlants.className = 'np-cal-overlay-summary-row np-cal-overlay-summary-row--detail';
+      var plantLab = document.createElement('span');
+      plantLab.className = 'np-cal-overlay-summary-row-label';
+      plantLab.textContent = 'Por planta';
+      rowPlants.appendChild(plantLab);
+      (state.calOverlayAreaIds || [])
+        .map(function (id) {
+          return byPlant[id] || {
+            areaId: id,
+            plantTitle: getPlanAreaTitle(id),
+            baja: 0,
+            media: 0,
+            alta: 0,
+            none: 0,
+            total: 0,
+            entries: []
+          };
+        })
+        .sort(function (a, b) {
+          return b.total - a.total || String(a.plantTitle).localeCompare(String(b.plantTitle));
+        })
+        .forEach(function (plant) {
+          rowPlants.appendChild(
+            makeCalOverlaySummaryChip({
+              chipClass: 'np-cal-overlay-summary-chip--plant',
+              kind: 'plant',
+              accent: resolvePlantAccentHex(plant.areaId),
+              label: plant.plantTitle + ' · ' + calOverlaySummaryStatsLabel(plant),
+              popTitle: plant.plantTitle + ' · ' + monthLabel,
+              title: 'Ver semáforos de «' + plant.plantTitle + '»',
+              entries: plant.entries
+            })
+          );
+        });
+      mount.appendChild(rowPlants);
+    }
+    var rootKeys = Object.keys(byRoot).sort(function (a, b) {
+      return byRoot[b].total - byRoot[a].total || a.localeCompare(b);
+    });
+    if (rootKeys.length) {
+      var rowRoots = document.createElement('div');
+      rowRoots.className = 'np-cal-overlay-summary-row np-cal-overlay-summary-row--detail';
+      var rootLab = document.createElement('span');
+      rootLab.className = 'np-cal-overlay-summary-row-label';
+      rootLab.textContent = 'Por rama';
+      rowRoots.appendChild(rootLab);
+      rootKeys.slice(0, 8).forEach(function (rootName) {
         var c = byRoot[rootName];
-        var chip = document.createElement('span');
-        chip.className = 'np-cal-overlay-root-chip';
-        chip.textContent = rootName + ' · ' + c.total + ' (🟢' + c.baja + ' 🟡' + c.media + ' 🔴' + c.alta + ')';
-        mount.appendChild(chip);
+        rowRoots.appendChild(
+          makeCalOverlaySummaryChip({
+            chipClass: 'np-cal-overlay-root-chip',
+            kind: 'root',
+            label: rootName + ' · ' + calOverlaySummaryStatsLabel(c),
+            popTitle: rootName + ' · ' + monthLabel,
+            title: 'Ver semáforos en «' + rootName + '»',
+            entries: c.entries
+          })
+        );
       });
+      mount.appendChild(rowRoots);
+    }
   }
 
   function renderCalOverlayGrid() {
@@ -14221,6 +14673,7 @@
   }
 
   function closeCalOverlayModal() {
+    closeCalOverlaySummaryPop();
     var modal = $('npCalOverlayModal');
     if (!modal) return;
     modal.classList.remove('np-modal-open');
@@ -16984,6 +17437,24 @@
     }
   }
 
+  function scrollPlanProPlantListBottom() {
+    scrollNpLayoutToMainColumn();
+    window.setTimeout(function () {
+      var tbody = $('npTableBody');
+      if (tbody && tbody.rows && tbody.rows.length) {
+        tbody.rows[tbody.rows.length - 1].scrollIntoView({ behavior: 'smooth', block: 'end' });
+        return;
+      }
+      var anchor = $('npPlantListBottomAnchor');
+      if (anchor) {
+        anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        return;
+      }
+      var section = $('npPlantListSection');
+      if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, npLayoutIsPortraitPhone() ? 300 : 100);
+  }
+
   var PLAN_SHEET_ITEMS_PREVIEW_LIMIT = 10;
 
   function planProInitItemSortPrefs() {
@@ -19478,7 +19949,7 @@
   if (npSheetJumpApuntesBtn && npSheetJumpApuntesBtn.dataset.npWired !== '1') {
     npSheetJumpApuntesBtn.dataset.npWired = '1';
     npSheetJumpApuntesBtn.addEventListener('click', function () {
-      scrollPlanProSheetSection('apuntes');
+      scrollPlanProPlantListBottom();
     });
   }
   var npSheetJumpNewBtn = $('npSheetJumpNewBtn');
@@ -19733,6 +20204,10 @@
     if (npCalOverlayPanel) {
       npCalOverlayPanel.addEventListener('click', function (e) {
         e.stopPropagation();
+        var pop = $('npCalOverlaySummaryPop');
+        if (!pop || pop.classList.contains('np-hide')) return;
+        if (e.target.closest('.np-cal-overlay-summary-chip') || e.target.closest('.np-cal-overlay-summary-pop')) return;
+        closeCalOverlaySummaryPop();
       });
     }
   }
@@ -19770,6 +20245,11 @@
     if ($('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open')) {
       if ($('npDetailModal').classList.contains('np-modal-open')) {
         await closeItemDetail();
+        return;
+      }
+      var calSummaryPop = $('npCalOverlaySummaryPop');
+      if (calSummaryPop && !calSummaryPop.classList.contains('np-hide')) {
+        closeCalOverlaySummaryPop();
         return;
       }
       closeCalOverlayModal();
@@ -21896,7 +22376,7 @@
       var desc = document.createElement('textarea');
       desc.id = 'npNutriFileDesc-' + file.id;
       desc.className = 'np-nutri-file-desc';
-      desc.rows = 2;
+      desc.rows = 1;
       desc.maxLength = 500;
       desc.placeholder =
         'Opcional: de qué trata, temporada, cultivo… Socio y el buscador lo usan para localizar el archivo.';
