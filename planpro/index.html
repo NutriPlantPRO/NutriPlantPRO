@@ -6449,7 +6449,9 @@
     .np-cal-overlay-summary-wrap {
       position: relative;
       width: 100%;
-      margin-top: 8px;
+      box-sizing: border-box;
+      margin: 0 0 10px;
+      flex-shrink: 0;
     }
     .np-cal-overlay-summary {
       display: flex;
@@ -6458,10 +6460,22 @@
       font-size: 11px;
       color: #64748b;
       width: 100%;
-      padding: 8px 10px;
+      box-sizing: border-box;
+      padding: 10px 12px;
       border-radius: 11px;
       border: 1px solid color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 14%, rgba(148, 163, 184, 0.35));
       background: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 5%, rgba(255, 255, 255, 0.88));
+    }
+    .np-cal-overlay-summary-row--total {
+      width: 100%;
+    }
+    .np-cal-overlay-summary-row--total .np-cal-overlay-total-chip {
+      flex: 1 1 100%;
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 7px 12px;
+      font-size: 11px;
     }
     .np-cal-overlay-summary-cols {
       display: flex;
@@ -6473,11 +6487,18 @@
       .np-cal-overlay-summary-cols {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 6px 14px;
-        align-items: start;
+        gap: 8px 16px;
+        align-items: stretch;
+        width: 100%;
       }
       .np-cal-overlay-summary-cols--single {
         grid-template-columns: minmax(0, 1fr);
+      }
+      .np-cal-overlay-summary-row--detail {
+        min-height: 100%;
+      }
+      .np-cal-overlay-summary-chip-strip {
+        flex: 1 1 auto;
       }
     }
     .np-cal-overlay-summary-row {
@@ -6695,7 +6716,9 @@
       flex: 1;
       min-height: 0;
       overflow: auto;
-      padding: 4px 2px 6px;
+      padding: 10px 12px 6px;
+      display: flex;
+      flex-direction: column;
     }
     .np-cal-overlay-grid {
       display: grid;
@@ -6955,8 +6978,14 @@
         padding: 10px 12px 8px;
         gap: 8px;
       }
+      .np-cal-overlay-body {
+        padding: 8px 10px 6px;
+      }
+      .np-cal-overlay-summary-wrap {
+        margin-bottom: 8px;
+      }
       .np-cal-overlay-summary {
-        padding: 7px 8px;
+        padding: 8px 10px;
         gap: 6px;
       }
       .np-cal-overlay-month-bar {
@@ -8141,14 +8170,14 @@
             <span>Calendario de semáforos</span>
           </h3>
           <div id="npCalOverlayPlantFilter" class="np-cal-overlay-plant-filter" aria-label="Plantas visibles"></div>
-          <div class="np-cal-overlay-summary-wrap">
-            <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
-            <div id="npCalOverlaySummaryPop" class="np-cal-overlay-summary-pop np-hide" role="dialog" aria-hidden="true" aria-label="Detalle de semáforos"></div>
-          </div>
         </div>
         <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCalOverlayClose" style="flex-shrink:0;">Cerrar</button>
       </div>
       <div id="npCalOverlayBody" class="np-modal-body np-cal-overlay-body">
+        <div class="np-cal-overlay-summary-wrap">
+          <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
+          <div id="npCalOverlaySummaryPop" class="np-cal-overlay-summary-pop np-hide" role="dialog" aria-hidden="true" aria-label="Detalle de semáforos"></div>
+        </div>
         <div class="np-cal-overlay-month-bar" aria-label="Mes del calendario">
           <div class="np-cal-overlay-nav">
             <button type="button" class="btn btn-ghost btn-ghost-green" id="npCalOverlayPrev" aria-label="Mes anterior">◀</button>
@@ -14641,7 +14670,7 @@
     });
     mount.innerHTML = '';
     var rowMain = document.createElement('div');
-    rowMain.className = 'np-cal-overlay-summary-row';
+    rowMain.className = 'np-cal-overlay-summary-row np-cal-overlay-summary-row--total';
     rowMain.appendChild(
       makeCalOverlaySummaryChip({
         chipClass: 'np-cal-overlay-total-chip',
