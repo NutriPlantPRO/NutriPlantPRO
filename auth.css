@@ -782,3 +782,39 @@
 }
 .login-public-footer-links a:hover { text-decoration: underline; }
 .login-public-footer-links .sep { color: #94a3b8; user-select: none; }
+
+/* Accesos discretos (Plan PRO / admin): iconos casi imperceptibles hasta hover */
+.login-discreet-access {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding-bottom: 2px;
+}
+.login-discreet-access a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  color: #e2e8f0;
+  background: transparent;
+  border: none;
+  text-decoration: none;
+  opacity: 0.38;
+  transition: color 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+}
+.login-discreet-access a:hover,
+.login-discreet-access a:focus-visible {
+  color: #94a3b8;
+  opacity: 0.72;
+  background: rgba(241, 245, 249, 0.55);
+  outline: none;
+}
+.login-discreet-access svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 1.45;
+}
