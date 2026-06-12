@@ -15,6 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
     <script src="../auth-supabase.js?v=1762793900"></script>
+    <script src="../nutriplant-access-pin.js"></script>
     <style>
         .admin-container {
             max-width: 1200px;
@@ -578,6 +579,31 @@
                 </div>
                 
                 <button type="submit" class="btn-admin">Iniciar Sesión</button>
+            </form>
+        </div>
+
+        <div id="adminPinPanel" class="login-form" style="display: none;">
+            <h2 class="login-title">🔢 Código de acceso</h2>
+            <p style="text-align: center; color: #64748b; font-size: 14px; line-height: 1.45; margin: 0 0 16px;">
+                Cuatro dígitos adicionales para el panel admin en este dispositivo.
+            </p>
+            <div id="adminPinErrorMessage" class="error-message" style="display: none;"></div>
+            <form id="adminPinSubmitForm">
+                <div class="form-group">
+                    <label for="adminPinInput">PIN</label>
+                    <input
+                        type="password"
+                        id="adminPinInput"
+                        maxlength="4"
+                        pattern="[0-9]{4}"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        placeholder="••••"
+                        style="font-size: 1.25rem; letter-spacing: 0.35em; text-align: center;"
+                        required
+                    />
+                </div>
+                <button type="submit" class="btn-admin">Continuar</button>
             </form>
         </div>
         
@@ -1571,9 +1597,74 @@
             return false; // Usuario admin no encontrado
         }
         
+        function showAdminPinPanel() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('adminPinPanel').style.display = 'block';
+            document.getElementById('adminDashboard').style.display = 'none';
+            var err = document.getElementById('adminPinErrorMessage');
+            if (err) err.style.display = 'none';
+            var inp = document.getElementById('adminPinInput');
+            if (inp) {
+                inp.value = '';
+                setTimeout(function () { inp.focus(); }, 80);
+            }
+        }
+
+        async function ensureAdminPinThenDashboard() {
+            var pinApi = window.nutriplantAccessPin;
+            if (!pinApi) {
+                showDashboard();
+                return;
+            }
+            var lock = pinApi.getClientLockout(pinApi.SCOPE_ADMIN);
+            if (lock.locked) {
+                showErrorMessage('PIN bloqueado en este dispositivo. Espera ' + Math.ceil(lock.remainingMs / 60000) + ' min.');
+                showAdminPinPanel();
+                return;
+            }
+            var required = await pinApi.isRequired(pinApi.SCOPE_ADMIN);
+            if (!required) {
+                showDashboard();
+                return;
+            }
+            if (await pinApi.hasValidAccess(pinApi.SCOPE_ADMIN)) {
+                showDashboard();
+                return;
+            }
+            showAdminPinPanel();
+        }
+
+        var adminPinInputEl = document.getElementById('adminPinInput');
+        if (adminPinInputEl) {
+            adminPinInputEl.addEventListener('input', function () {
+                this.value = String(this.value || '').replace(/\D/g, '').slice(0, 4);
+            });
+        }
+
+        document.getElementById('adminPinSubmitForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var pinApi = window.nutriplantAccessPin;
+            var errEl = document.getElementById('adminPinErrorMessage');
+            var pin = (document.getElementById('adminPinInput').value || '').trim();
+            if (!pinApi) {
+                showDashboard();
+                return;
+            }
+            var r = await pinApi.verifyPin(pinApi.SCOPE_ADMIN, pin);
+            if (!r.ok) {
+                if (errEl) {
+                    errEl.textContent = r.error || 'PIN incorrecto.';
+                    errEl.style.display = 'block';
+                }
+                return;
+            }
+            document.getElementById('adminPinPanel').style.display = 'none';
+            showDashboard();
+        });
+
         // Verificar si ya está logueado (con validación de sesión)
         if (validateAdminSession()) {
-            showDashboard();
+            ensureAdminPinThenDashboard();
         } else {
             // Si la sesión no es válida, limpiar
             localStorage.removeItem('admin_logged_in');
@@ -1629,7 +1720,7 @@
                         ? '✅ Acceso al panel. ☁️ Supabase no aceptó esta contraseña: para ver datos de la nube usa la misma clave que en login o entra primero en login.html con admin@nutriplantpro.com.'
                         : (supaOk ? '✅ Acceso autorizado · sesión con Supabase lista' : '✅ Acceso autorizado')
                 );
-                setTimeout(showDashboard, 1000);
+                setTimeout(ensureAdminPinThenDashboard, 800);
             } else {
                 var attempts = parseInt(localStorage.getItem(ADMIN_ATTEMPTS_KEY) || '0', 10) + 1;
                 localStorage.setItem(ADMIN_ATTEMPTS_KEY, String(attempts));
@@ -1647,19 +1738,30 @@
             }
         });
         
-        function showDashboard() {
+        async function showDashboard() {
             // 🔒 VALIDAR SESIÓN antes de mostrar dashboard
             if (!validateAdminSession()) {
                 showErrorMessage('❌ Sesión inválida. Por favor, inicia sesión nuevamente.');
                 document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('adminPinPanel').style.display = 'none';
                 document.getElementById('adminDashboard').style.display = 'none';
                 localStorage.removeItem('admin_logged_in');
                 localStorage.removeItem('admin_username');
                 localStorage.removeItem('admin_session_timestamp');
                 return;
             }
+
+            var pinApi = window.nutriplantAccessPin;
+            if (pinApi) {
+                var required = await pinApi.isRequired(pinApi.SCOPE_ADMIN);
+                if (required && !(await pinApi.hasValidAccess(pinApi.SCOPE_ADMIN))) {
+                    showAdminPinPanel();
+                    return;
+                }
+            }
             
             document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('adminPinPanel').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'block';
             updateAdminRefreshButtonState();
             if (typeof window.initAdminChat === 'function') window.initAdminChat();
@@ -1727,10 +1829,14 @@
         
         function logout() {
             // 🔒 LIMPIAR TODA LA INFORMACIÓN DE SESIÓN
+            if (window.nutriplantAccessPin) {
+                window.nutriplantAccessPin.clearAccess(window.nutriplantAccessPin.SCOPE_ADMIN);
+            }
             localStorage.removeItem('admin_logged_in');
             localStorage.removeItem('admin_username');
             localStorage.removeItem('admin_session_timestamp');
             document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('adminPinPanel').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'none';
             document.getElementById('adminLoginForm').reset();
             var lockout = getAdminLockout();

@@ -115,3 +115,9 @@
   to = "/.netlify/functions/plan-pro-calendar-feed"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/nutriplant-access-pin"
+  to = "/.netlify/functions/nutriplant-access-pin"
+  status = 200
+  force = true

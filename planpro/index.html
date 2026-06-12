@@ -3239,6 +3239,12 @@
     .np-muted { color: var(--muted); font-size: 12px; }
     .np-login-card { max-width: 420px; margin: 24px auto 0; }
     .np-login-card h2 { margin-top: 0; }
+    .np-pin-input {
+      font-size: 1.35rem;
+      letter-spacing: 0.35em;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
     .np-note-preview {
       max-width: 220px;
       font-size: 12px;
@@ -8495,6 +8501,28 @@
         </form>
       </div>
       <div id="npDenied" class="np-msg err np-hide"></div>
+      <div id="npPinPanel" class="panel np-login-card np-section-accent np-section-accent-blue np-hide">
+        <h2>Código de acceso</h2>
+        <p class="np-muted" style="margin-top:0;line-height:1.45;">
+          Cuatro dígitos adicionales para entrar a Plan PRO en este dispositivo.
+        </p>
+        <div id="npPinErr" class="np-msg err np-hide" style="margin-bottom:12px;"></div>
+        <form id="npPinForm">
+          <label for="npPinInput">PIN</label>
+          <input
+            type="password"
+            id="npPinInput"
+            class="np-pin-input"
+            maxlength="4"
+            pattern="[0-9]{4}"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            placeholder="••••"
+            required
+          />
+          <button type="submit" class="btn btn-primary" id="npPinSubmit">Continuar</button>
+        </form>
+      </div>
     </div>
 
     <main id="npMain" class="np-hide">
@@ -9235,6 +9263,7 @@
   <script src="../supabase-config.js"></script>
   <script src="../app-config.js"></script>
   <script src="../auth-supabase.js"></script>
+  <script src="../nutriplant-access-pin.js"></script>
   <script>
 (function () {
   'use strict';
@@ -23277,6 +23306,9 @@
   })();
 
   $('npBtnLogout').addEventListener('click', async function () {
+    if (window.nutriplantAccessPin) {
+      window.nutriplantAccessPin.clearAccess(window.nutriplantAccessPin.SCOPE_PLAN_PRO);
+    }
     if (window.nutriplantSupabaseAuth && typeof window.nutriplantSupabaseAuth.signOut === 'function') {
       await window.nutriplantSupabaseAuth.signOut();
     }
@@ -26966,9 +26998,82 @@
     }
   }
 
+  function showNpPinPanel() {
+    $('npPinPanel').classList.remove('np-hide');
+    $('npPinErr').classList.add('np-hide');
+    var inp = $('npPinInput');
+    if (inp) {
+      inp.value = '';
+      window.setTimeout(function () {
+        inp.focus();
+      }, 80);
+    }
+  }
+
+  async function planProPassPinGate() {
+    var pinApi = window.nutriplantAccessPin;
+    if (!pinApi) return true;
+    var lock = pinApi.getClientLockout(pinApi.SCOPE_PLAN_PRO);
+    if (lock.locked) {
+      $('npLoading').classList.add('np-hide');
+      $('npLoginPanel').classList.add('np-hide');
+      $('npDenied').textContent =
+        'PIN bloqueado en este dispositivo. Espera ' + Math.ceil(lock.remainingMs / 60000) + ' min.';
+      $('npDenied').classList.remove('np-hide');
+      return false;
+    }
+    var required = await pinApi.isRequired(pinApi.SCOPE_PLAN_PRO);
+    if (!required) return true;
+    if (await pinApi.hasValidAccess(pinApi.SCOPE_PLAN_PRO)) return true;
+    $('npLoading').classList.add('np-hide');
+    $('npLoginPanel').classList.add('np-hide');
+    showNpPinPanel();
+    return false;
+  }
+
+  async function loadPlanProApp() {
+    try {
+      await loadLookups();
+      await loadItems();
+      await loadPlanProLocationFavorites();
+    } catch (err) {
+      $('npLoading').classList.add('np-hide');
+      $('npPinPanel').classList.add('np-hide');
+      $('npDenied').textContent = 'Error cargando datos: ' + (err && err.message ? err.message : err);
+      $('npDenied').classList.remove('np-hide');
+      return;
+    }
+
+    $('npLoading').classList.add('np-hide');
+    $('npPinPanel').classList.add('np-hide');
+    $('npGate').classList.add('np-hide');
+    $('npMain').classList.remove('np-hide');
+    $('npHeaderLogged').classList.remove('np-hide');
+    npCloudSync.sessionReady = true;
+    npCloudSyncRender();
+    refreshPlanProStorageUsage();
+    planProInitFxRateWidget();
+    planProInitWeatherWidget();
+    npCloudOfflineFlushQueue();
+    wireCreateFichaPill();
+    wireNutriProVault();
+    clearRichEditor();
+    if (typeof window.initPlanProAssistant === 'function') window.initPlanProAssistant();
+
+    if (!state.authListenerAttached) {
+      state.authListenerAttached = true;
+      state.client.auth.onAuthStateChange(function (event, sess) {
+        if (event === 'SIGNED_OUT' || !sess) {
+          window.location.reload();
+        }
+      });
+    }
+  }
+
   async function tryShowMain() {
     $('npLoginErr').classList.add('np-hide');
     $('npDenied').classList.add('np-hide');
+    $('npPinPanel').classList.add('np-hide');
 
     var sessionRes = await state.client.auth.getSession();
     var session = sessionRes.data && sessionRes.data.session;
@@ -26998,40 +27103,8 @@
       return;
     }
 
-    try {
-      await loadLookups();
-      await loadItems();
-      await loadPlanProLocationFavorites();
-    } catch (err) {
-      $('npLoading').classList.add('np-hide');
-      $('npDenied').textContent = 'Error cargando datos: ' + (err && err.message ? err.message : err);
-      $('npDenied').classList.remove('np-hide');
-      return;
-    }
-
-    $('npLoading').classList.add('np-hide');
-    $('npGate').classList.add('np-hide');
-    $('npMain').classList.remove('np-hide');
-    $('npHeaderLogged').classList.remove('np-hide');
-    npCloudSync.sessionReady = true;
-    npCloudSyncRender();
-    refreshPlanProStorageUsage();
-    planProInitFxRateWidget();
-    planProInitWeatherWidget();
-    npCloudOfflineFlushQueue();
-    wireCreateFichaPill();
-    wireNutriProVault();
-    clearRichEditor();
-    if (typeof window.initPlanProAssistant === 'function') window.initPlanProAssistant();
-
-    if (!state.authListenerAttached) {
-      state.authListenerAttached = true;
-      state.client.auth.onAuthStateChange(function (event, sess) {
-        if (event === 'SIGNED_OUT' || !sess) {
-          window.location.reload();
-        }
-      });
-    }
+    if (!(await planProPassPinGate())) return;
+    await loadPlanProApp();
   }
 
   $('npLoginForm').addEventListener('submit', async function (e) {
@@ -27059,6 +27132,37 @@
     $('npLoading').textContent = 'Cargando Plan PRO…';
     await tryShowMain();
   });
+
+  $('npPinForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    $('npPinErr').classList.add('np-hide');
+    var pinApi = window.nutriplantAccessPin;
+    if (!pinApi) {
+      await loadPlanProApp();
+      return;
+    }
+    var btn = $('npPinSubmit');
+    var pin = ($('npPinInput').value || '').trim();
+    btn.disabled = true;
+    var r = await pinApi.verifyPin(pinApi.SCOPE_PLAN_PRO, pin);
+    btn.disabled = false;
+    if (!r.ok) {
+      $('npPinErr').textContent = r.error || 'PIN incorrecto.';
+      $('npPinErr').classList.remove('np-hide');
+      return;
+    }
+    $('npPinPanel').classList.add('np-hide');
+    $('npLoading').classList.remove('np-hide');
+    $('npLoading').textContent = 'Cargando Plan PRO…';
+    await loadPlanProApp();
+  });
+
+  var npPinInputEl = $('npPinInput');
+  if (npPinInputEl) {
+    npPinInputEl.addEventListener('input', function () {
+      this.value = String(this.value || '').replace(/\D/g, '').slice(0, 4);
+    });
+  }
 
   async function boot() {
     $('npLoading').textContent = 'Comprobando sesión…';
