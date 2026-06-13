@@ -186,7 +186,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 | Persistencia | `climateAnalysis.irrigationQuickCalc` + `rolling` en JSON proyecto (sin SQL) |
 | Límite | No almacenamiento suelo, escurrimiento, drenaje ni lixiviación; validar en campo |
 
-**API admin:** `project_climate` mode=saved devuelve `irrigation_quick_calc` y `rolling_windows`.
+**API admin:** `project_climate` mode=saved (snapshot) | live | rainfall_refresh | rolling | **all** (recomendado «actualizado»). Campos live: `rolling_windows_ahora`, `irrigation_quick_calc_live`. Solo lectura; no altera al suscriptor.
 
 ### 4.12 Dureza, acidificación y solubilidad (agua)
 

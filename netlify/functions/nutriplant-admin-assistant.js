@@ -1352,6 +1352,65 @@ async function fetchYearDailyClimate(lat, lng, year, endDateOverride) {
   return await fetchOpenMeteoDailyClimate(lat, lng, start, end, shouldUseOpenMeteoArchiveClimate(start));
 }
 
+function addDaysIsoClimate(isoDate, days) {
+  const parts = String(isoDate || '').split('-').map((p) => parseInt(p, 10));
+  if (parts.length !== 3 || parts.some((p) => !Number.isFinite(p))) return isoDate;
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  if (Number.isNaN(d.getTime())) return isoDate;
+  d.setDate(d.getDate() + days);
+  return (
+    d.getFullYear() +
+    '-' +
+    String(d.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(d.getDate()).padStart(2, '0')
+  );
+}
+
+function computeRollingWindowsFromDaily(daily) {
+  const times = (daily && daily.time) || [];
+  const rain = (daily && daily.precipitation_sum) || [];
+  const et0 = (daily && daily.et0_fao_evapotranspiration) || [];
+  function sumLast(n, values) {
+    const start = Math.max(0, values.length - n);
+    let s = 0;
+    let has = false;
+    for (let i = start; i < values.length; i++) {
+      const v = Number(values[i]);
+      if (Number.isFinite(v)) {
+        s += v;
+        has = true;
+      }
+    }
+    return has ? roundClimate1(s) : null;
+  }
+  function lastVal(values) {
+    if (!values.length) return null;
+    const v = Number(values[values.length - 1]);
+    return Number.isFinite(v) ? roundClimate1(v) : null;
+  }
+  return {
+    fetchedAt: new Date().toISOString(),
+    dateEnd: times.length ? String(times[times.length - 1]) : climateTodayKey(),
+    et0Today: lastVal(et0),
+    rainToday: lastVal(rain),
+    et0_1d: sumLast(1, et0),
+    rain_1d: sumLast(1, rain),
+    et0_7d: sumLast(7, et0),
+    rain_7d: sumLast(7, rain),
+    et0_30d: sumLast(30, et0),
+    rain_30d: sumLast(30, rain),
+    source: 'open_meteo_live_query'
+  };
+}
+
+async function fetchRollingClimateWindowsLive(lat, lng) {
+  const today = climateTodayKey();
+  const start30 = addDaysIsoClimate(today, -29);
+  const daily = await fetchOpenMeteoDailyClimate(lat, lng, start30, today, false);
+  return computeRollingWindowsFromDaily(daily);
+}
+
 async function fetchRainfallEt0FromOpenMeteo(lat, lng) {
   const now = new Date();
   const currYear = now.getFullYear();
@@ -1470,6 +1529,16 @@ async function handleProjectClimate(supabase, params) {
     mode === 'rainfall' ||
     params.refresh_rainfall === true ||
     params.refresh_rainfall === 'true';
+  const wantRolling =
+    mode === 'rolling' ||
+    mode === 'all' ||
+    wantLive ||
+    wantRainRefresh ||
+    params.rolling === true ||
+    params.rolling === 'true';
+
+  out.gpt_climate_note =
+    'Clima en vivo SIN alterar datos del suscriptor. project_climate params.mode: saved (default, snapshot nube) | live (tiempo actual Open-Meteo) | rainfall_refresh (tablas mensuales lluvia/ET₀ en vivo) | rolling (ventanas 1/7/30 d) | all (todo junto). VPD ahora: project_vpd_live. Radar NDVI/NDMI: radar_project. Si piden «actualizado» o «ahora», usa mode=all o el modo concreto; NO digas que no tienes acceso.';
 
   if (wantSaved) {
     out.climate_saved = summarizeClimateAnalysis(data.climateAnalysis);
@@ -1503,9 +1572,34 @@ async function handleProjectClimate(supabase, params) {
     }
   }
 
-  if (!wantSaved && !wantLive && !wantRainRefresh) {
+  if (wantRolling) {
+    if (!loc) {
+      out.rolling_windows_ahora = { has_data: false, message: 'Sin polígono.' };
+    } else {
+      try {
+        const rollLive = await fetchRollingClimateWindowsLive(loc.lat, loc.lng);
+        out.rolling_windows_ahora = {
+          ...summarizeClimateRolling(rollLive),
+          source: 'open_meteo_live_query',
+          note: 'Ventanas 1/7/30 d en vivo. No modifica el proyecto del suscriptor.'
+        };
+        const iqc = data.climateAnalysis && data.climateAnalysis.irrigationQuickCalc;
+        if (iqc && out.rolling_windows_ahora.has_data) {
+          out.irrigation_quick_calc_live = {
+            ...summarizeIrrigationQuickCalc(iqc, rollLive),
+            note:
+              'Kc, riego y áreas del guardado del usuario; ETo/lluvia satélite en vivo (rolling_windows_ahora). Solo lectura admin.'
+          };
+        }
+      } catch (e) {
+        out.rolling_windows_ahora = { has_data: false, error: e.message };
+      }
+    }
+  }
+
+  if (!wantSaved && !wantLive && !wantRainRefresh && !wantRolling) {
     out.hint =
-      'params.mode: saved (default), live, rainfall_refresh, o all. Ej: {"action":"project_climate","params":{"project_name":"X","mode":"all"}}';
+      'params.mode: saved (default), live, rainfall_refresh, rolling, o all. Ej: {"action":"project_climate","params":{"project_name":"X","mode":"all"}}';
   }
 
   return out;
@@ -5128,7 +5222,9 @@ async function handleDescribeApi() {
       nutrition: ['nutrition_catalogs']
     },
     usage:
-      'Reportes laboratorio (nube): project_analyses. Plan PRO personal (Jesús): plan_pro_day/week/search/item/locations (leer), plan_pro_create/plan_pro_update (escribir). plan_pro_item incluye nutri_refs (enlaces 📎 a Nutri PRO). Nutri PRO: nutri_pro_ask, nutri_pro_search, nutri_pro_file_text, nutri_pro_save (texto generado), nutri_pro_upload_link + nutri_pro_upload_status (PDF/Excel ORIGINAL vía enlace móvil). plan_pro_locations devuelve favoritos y apuntes con ubicación Maps. Semáforo EN LA NOTA (chip 🚦): en note/append_note usa token [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. Objetivo del APUNTE entero: priority + due_at (ficha). plan_pro_catalog = pilares/ramas. Manual: manual_tecnico_catalog. Catálogos fertilizantes/cultivos: nutrition_catalogs.',
+      'Reportes laboratorio (nube): project_analyses. Clima en vivo (Open-Meteo, solo lectura): project_climate mode=saved|live|rainfall_refresh|rolling|all; project_vpd_live. Radar: radar_project. Plan PRO: plan_pro_*.',
+    climate_gpt:
+      'project_climate NO altera al suscriptor. mode=saved → climate_saved (snapshot). mode=live → tiempo_actual_ahora. mode=rainfall_refresh → lluvia_et0_ahora (tablas mensuales). mode=rolling o all → rolling_windows_ahora (1/7/30 d) + irrigation_quick_calc_live si hay calculadora guardada. Si piden «actualizado», usa mode=all.',
     nutri_pro_gpt:
       'Texto generado: nutri_pro_save. Adjunto binario real: nutri_pro_upload_link → usuario abre upload_url → nutri_pro_upload_status. Preguntas: nutri_pro_ask. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
     plan_pro_nota_semaforo:
@@ -5178,7 +5274,7 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.8.0',
+      version: '2.8.1',
       description:
         'NutriPlant + Plan PRO + Nutri PRO (nutri_pro_save, nutri_pro_upload_link para archivos reales). Plan PRO escritura. Análisis, Clima, Radar.'
     },
@@ -5233,7 +5329,7 @@ function getOpenApiSpec() {
                 },
                 mode: {
                   type: 'string',
-                  description: 'project_climate: saved|live|rainfall_refresh|all'
+                  description: 'project_climate: saved|live|rainfall_refresh|rolling|all'
                 }
               },
               additionalProperties: true
