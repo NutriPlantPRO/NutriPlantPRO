@@ -5,9 +5,9 @@
 const BASE = 'https://nutriplantpro.com/manual-tecnico';
 
 module.exports = {
-  version: '2026-06-06',
+  version: '2026-06-12',
   scope:
-    'Biblioteca HTML pública, sin cuenta. 22 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO.',
+    'Biblioteca HTML pública, sin cuenta. 23 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO.',
   publicUrls: {
     index: `${BASE}/`,
     llms: `${BASE}/llms.txt`,
@@ -116,6 +116,16 @@ module.exports = {
       url: `${BASE}/capitulos/vpd-deficit-presion-vapor.html`,
       pillar: 'E — Agua y clima',
       summary: 'VPD kPa (Tetens/simple/avanzada); NDVI vigor y NDMI humedad (lectura satelital); créditos Radar por ha (≤30=1, >30=2, >100=3; tope 20/mes); proyecto + calculadora gratis. No sustituye campo.',
+      status: 'published'
+    },
+    {
+      id: 'balance_hidrico_riego_clima',
+      slug: 'balance-hidrico-riego-clima',
+      title: 'Balance hídrico y cálculo rápido de riego',
+      url: `${BASE}/capitulos/balance-hidrico-riego-clima.html`,
+      pillar: 'E — Agua y clima',
+      summary:
+        'Clima → Lluvia y ET₀: calculadora balance hídrico 1/7/30 d. ETc=ETo×Kc; déficit climático/cultivo; riego mm/m³; área cultivo vs franja regada; % suelo explorado; Kc manual + tabla FAO consulta. Estimación rápida, validar en campo.',
       status: 'published'
     },
     {

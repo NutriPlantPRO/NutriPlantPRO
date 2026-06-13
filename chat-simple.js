@@ -1195,7 +1195,9 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Calculadora Ambiental Simple: Temperatura del Aire (°C) y Humedad Relativa (%). El usuario puede (1) pulsar "Obtener del Clima" (trae temp y humedad desde la ubicación del predio) o (2) ingresar los valores manualmente. Luego "Calcular VPD"; resultados VPD (kPa) y HD (g/m³). Los valores guardados (temp, humedad, VPD) son los que el usuario usó o obtuvo; el chat debe interpretar esos datos cuando estén en contexto.
 - Serie VPD por Rango: el usuario elige vista por día, semana o mes (granularidad), fecha inicio y fin, y descarga una tabla de valores VPD para ese rango en la ubicación del predio. Esas tablas se pueden guardar (series guardadas); el chat debe entender si el contexto indica "por día", "por semana" o "por mes" y los valores VPD y fechas de cada serie guardada.
 - Calculadora Avanzada: además de Temperatura del Aire (°C) y Humedad Relativa (%), usa uno de dos modos: (1) Temperatura de Hoja: el usuario ingresa la temperatura de la hoja (°C) directamente; o (2) Radiación Solar: el usuario ingresa la radiación solar (W/m²) y la plataforma calcula la temperatura de la hoja a partir de ella. Con temp aire, humedad y temp hoja se calcula el VPD. El chat debe entender esta lógica para explicar al usuario o responder consultas sobre la calculadora avanzada.
-- Historial: se guardan cálculos ambientales y avanzados (fecha, VPD kPa, HD, etc.). Interpreta los datos guardados y las series de rangos cuando el usuario consulte.`,
+- Historial: se guardan cálculos ambientales y avanzados (fecha, VPD kPa, HD, etc.). Interpreta los datos guardados y las series de rangos cuando el usuario consulte.
+- Subpestaña Lluvia y ET₀: tablas mensuales de precipitación y ET₀ FAO (Open-Meteo en el centro del polígono; botón «Actualizar»). Incluye la **Calculadora de balance hídrico** (cálculo rápido para riego).
+- Calculadora de balance hídrico (Clima → Lluvia y ET₀): estimación rápida de déficit y balance para 1, 7 o 30 días. Fórmulas: ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; balance = ETc − lluvia − riego (mm). Conversión: 1 mm = 10 m³/ha sobre el área del cultivo. Si superficie regada (ha) &lt; superficie cultivo (ha), los mm se concentran en la franja regada (sub-línea «↳ en franja regada»); el m³ total se calcula sobre el área del cultivo, no se divide. Riego acumulado del periodo en mm o m³ (m³ requiere superficie regada). ETo y lluvia: referencia satélite (ventanas rodantes 1/7/30 d) o manual; macrotúnel = lluvia 0. Kc lo ingresa el usuario (tabla FAO-56 solo consulta). % suelo explorado por raíces: mismo criterio NutriPlant que Enmiendas/Fertilidad; sugiere franja regada, no altera m³. Datos en climateAnalysis.irrigationQuickCalc. Nota: no considera almacenamiento en suelo, escurrimiento, drenaje ni lixiviación; validar en campo.`,
       ubicacion: `
 - Ubicación: el usuario define el predio dibujando puntos en el mapa (polígono). El asistente recibe en contexto: número de vértices del polígono, superficie/área (ha o m²), perímetro (m) y coordenadas (centro del polígono o referencia). Si no hay polígono aún, se indica "sin polígono definido" y se puede guiar al usuario a ir a la pestaña Ubicación y dibujar los puntos en el mapa. Necesario para la calculadora ambiental de VPD ("Obtener del Clima" usa el centro del polígono), Radar NDVI y reportes PDF.
 - Radar del cultivo (NDVI/NDMI): usa el polígono del predio para generar imágenes Sentinel-2/Earth Engine. NDVI = vigor relativo; NDMI = condición hídrica relativa del dosel/canopia (no humedad exacta del suelo). Si el contexto trae última imagen/fecha/créditos, puedes explicar si hay Radar disponible, cuándo se generó y cómo interpretarlo. No diagnosticar causa única solo con índices: cruzar con riego, suelo, foliar, plagas, drenaje, VPD y recorrido en campo.`,
@@ -2585,6 +2587,93 @@ ESTILO DE RESPUESTA:
     return out;
   }
 
+  buildClimateAnalysisContext(project) {
+    if (!project || !project.climateAnalysis || typeof project.climateAnalysis !== 'object') return '';
+    const ca = project.climateAnalysis;
+    let block = '--- CLIMA: LLUVIA, ET₀ Y BALANCE HÍDRICO ---\n';
+    block += 'Pestaña Clima con subpestañas: VPD, Lluvia y ET₀, Tiempo actual. Coordenadas = centro del polígono en Ubicación.\n';
+    if (ca.lastTab) {
+      const tabLabel =
+        ca.lastTab === 'climate-rainfall'
+          ? 'Lluvia y ET₀'
+          : ca.lastTab === 'climate-live'
+            ? 'Tiempo actual'
+            : 'VPD';
+      block += `Última subpestaña usada: ${tabLabel}\n`;
+    }
+    const rolling = ca.rolling;
+    if (rolling && typeof rolling === 'object') {
+      block += 'Ventanas satélite (mm acumulados, Open-Meteo): ';
+      const parts = [];
+      if (rolling.et0_1d != null || rolling.rain_1d != null) {
+        parts.push(`1d ETo ${rolling.et0_1d ?? '—'} / lluvia ${rolling.rain_1d ?? '—'}`);
+      }
+      if (rolling.et0_7d != null || rolling.rain_7d != null) {
+        parts.push(`7d ETo ${rolling.et0_7d ?? '—'} / lluvia ${rolling.rain_7d ?? '—'}`);
+      }
+      if (rolling.et0_30d != null || rolling.rain_30d != null) {
+        parts.push(`30d ETo ${rolling.et0_30d ?? '—'} / lluvia ${rolling.rain_30d ?? '—'}`);
+      }
+      if (rolling.fetchedAt) parts.push(`actualizado ${rolling.fetchedAt}`);
+      block += parts.join('; ') + '\n';
+    }
+    const irr = ca.irrigationQuickCalc;
+    if (irr && typeof irr === 'object') {
+      let summary = null;
+      try {
+        if (typeof window.getClimateIrrigationQuickCalcSummary === 'function') {
+          summary = window.getClimateIrrigationQuickCalcSummary();
+        }
+      } catch (e) {}
+      const st = summary && summary.state ? summary.state : irr;
+      const res = summary && summary.results ? summary.results : null;
+      const period = st.periodDays === 1 || st.periodDays === 30 ? st.periodDays : 7;
+      block += `Calculadora balance hídrico (periodo ${period} d): `;
+      if (st.cropName) block += `cultivo «${st.cropName}»; `;
+      if (st.kc != null) block += `Kc ${st.kc}; `;
+      if (res) {
+        block += `ETo ${res.et0 ?? '—'} mm (${res.et0Source || '—'}); lluvia ${res.rain ?? '—'} mm (${res.rainSource || '—'}); `;
+        if (res.etc != null) block += `ETc ${res.etc} mm; `;
+        if (res.deficitClimate != null) block += `déficit climático ${res.deficitClimate} mm; `;
+        if (res.deficitCrop != null) block += `déficit cultivo ${res.deficitCrop} mm; `;
+        if (res.irrigationMm != null) block += `riego ${res.irrigationMm} mm; `;
+        if (res.balance != null) block += `balance ${res.balance} mm; `;
+        if (res.cropHa != null) block += `área cultivo ${res.cropHa} ha; `;
+        if (res.irrigatedHa != null && res.hasSplitArea) {
+          block += `franja regada ${res.irrigatedHa} ha; `;
+          if (res.deficitCropVol && res.deficitCropVol.wettedMm != null) {
+            block += `déficit cultivo en franja ${res.deficitCropVol.wettedMm} mm; `;
+          }
+          if (res.balanceVol && res.balanceVol.wettedMm != null) {
+            block += `balance en franja ${res.balanceVol.wettedMm} mm; `;
+          }
+        }
+        if (res.balanceVol && res.balanceVol.total != null) {
+          block += `m³ total balance ${res.balanceVol.total}; `;
+        }
+      } else {
+        if (st.useManualEt0 && st.manualEt0 != null) block += `ETo manual ${st.manualEt0} mm; `;
+        if (st.macroTunnelNoRain) block += 'lluvia 0 (macrotúnel); ';
+        else if (st.useManualRain && st.manualRain != null) block += `lluvia manual ${st.manualRain} mm; `;
+        if (st.irrigationValue != null) {
+          block += `riego ${st.irrigationValue} ${st.irrigationUnit === 'm3' ? 'm³' : 'mm'}; `;
+        }
+      }
+      if (st.rootReachPct != null) block += `% suelo explorado ${st.rootReachPct}%; `;
+      block += 'Kc manual (tabla FAO solo referencia). Estimación rápida: no incluye almacenamiento en suelo, escurrimiento ni drenaje.\n';
+    } else {
+      block += 'Calculadora balance hídrico: sin datos guardados aún.\n';
+    }
+    if (ca.lastReading && ca.lastReading.fetchedAt) {
+      const lr = ca.lastReading;
+      block += `Tiempo actual guardado: T ${lr.temperature ?? '—'} °C, HR ${lr.humidity ?? '—'}%`;
+      if (lr.windSpeedKmh != null) block += `, viento ${lr.windSpeedKmh} km/h`;
+      block += ` (${lr.fetchedAt})\n`;
+    }
+    block += '\n';
+    return block;
+  }
+
   getProjectContext() {
     let context = '=== DATOS DEL PROYECTO ACTUAL (lo que el usuario tiene en NutriPlant PRO) ===\n';
     context += 'ÚNICO PROYECTO DEL QUE TIENES DATOS EN ESTE CONTEXTO. No uses ni mezcles información de otros proyectos.\n';
@@ -3124,7 +3213,7 @@ ESTILO DE RESPUESTA:
       // --- VPD (pestaña actual: Déficit de Presión de Vapor) ---
       if (snapshot.module === 'vpd' || snapshot.module === 'clima') {
         context += '--- VPD (pestaña actual) ---\n';
-        context += 'El usuario está en la pestaña Clima (subpestaña VPD, lluvia o tiempo actual). Los datos de clima ("Obtener del Clima" y Serie VPD por rango) provienen de la ubicación del predio (centro del polígono en Ubicación). Dos calculadoras: Ambiental Simple (temp. aire, humedad; manual o "Obtener del Clima"; "Calcular VPD") y Avanzada (temp. aire, humedad + Temperatura de Hoja °C o Radiación Solar W/m²; "Calcular VPD"). Serie por rango: vista diaria/semanal/mensual y fechas; tablas guardadas por el usuario.\n';
+        context += 'El usuario está en la pestaña Clima (subpestañas VPD, Lluvia y ET₀, Tiempo actual). Los datos de clima ("Obtener del Clima" y Serie VPD por rango) provienen de la ubicación del predio (centro del polígono en Ubicación). Dos calculadoras VPD: Ambiental Simple (temp. aire, humedad; manual o "Obtener del Clima"; "Calcular VPD") y Avanzada (temp. aire, humedad + Temperatura de Hoja °C o Radiación Solar W/m²). En Lluvia y ET₀: tablas mensuales + **Calculadora de balance hídrico** (periodo 1/7/30 d, Kc manual, déficit climático/cultivo, riego mm o m³, área cultivo vs franja regada, % suelo explorado). Serie por rango VPD: vista diaria/semanal/mensual; tablas guardadas.\n';
         const liveVPD = this.getLiveVPDBlocks();
         if (liveVPD.visible) {
           if (!liveVPD.hasLocation) {
@@ -3183,6 +3272,10 @@ ESTILO DE RESPUESTA:
           if (calc.recommendation) context += `Recomendación: ${calc.recommendation}\n`;
         }
         context += '\n';
+      }
+
+      if (project.climateAnalysis) {
+        context += this.buildClimateAnalysisContext(project);
       }
 
       // --- Análisis guardados (reportes suelo, solución nutritiva, extracto pasta, agua, foliar, fruta) ---

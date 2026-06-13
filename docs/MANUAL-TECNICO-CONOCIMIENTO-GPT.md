@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.05.7 · **22 capítulos** publicados (pilar **1** + pilares A–G).  
+**Versión manual web:** v2026.06.1 · **23 capítulos** publicados (pilar **1** + pilares A–G).  
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-05-23 · **v2026.05.6**
+**Versión Knowledge:** 2026-06-12 · **v2026.06.1**
 
 ---
 
@@ -58,6 +58,7 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | `hidroponia-solucion-por-etapa` | Hidroponía: solución nutritiva por etapa | D |
 | `diseno-solucion-nutritiva-didactica` | Solución didáctica (gratis) | D |
 | `vpd-deficit-presion-vapor` | VPD, NDVI y NDMI | E |
+| `balance-hidrico-riego-clima` | Balance hídrico y riego rápido (Clima) | E |
 | `agua-dureza-acidificacion-solubilidad` | Dureza, ácido HCO₃, solubilidad/IS | E |
 | `n-mineralizable-agua-disponible-suelo` | N mineralizable, CC−PMP, textura | B |
 | `interacciones-mulder-compatibilidad` | Mulder, matriz C/R/I ferti | F |
@@ -169,6 +170,24 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **Créditos Radar (NDVI+NDMI juntos, una generación):** superficie del polígono trazado en Ubicación → ≤30 ha = **1** · >30 ha = **2** · >100 ha = **3**. Tope mensual base **20** créditos/cuenta (+ bonus admin). Ver historial / «Ver en mapa» no gasta. Regenerar en el mismo mes sí consume de nuevo según ha. Sincronizar predio a nube para que el área sea correcta.
 
+### 4.11b Balance hídrico y cálculo rápido de riego (Clima)
+
+**URL:** …/balance-hidrico-riego-clima.html · **Dashboard PRO → Clima → Lluvia y ET₀** → calculadora de balance hídrico.
+
+| Concepto | Detalle |
+|----------|---------|
+| Periodo | 1, 7 o 30 días (acumulados) |
+| ETo / lluvia | Satélite (ventanas rodantes Open-Meteo) o manual; macrotúnel = lluvia 0 |
+| Kc | Usuario lo ingresa; tabla FAO-56 solo consulta |
+| Fórmulas | ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; balance = ETc − lluvia − riego (mm) |
+| Volumen | 1 mm = 10 m³/ha sobre **área cultivo**; riego en m³ → mm = m³ ÷ (ha regada × 10) |
+| Franja regada | Si ha regada < ha cultivo, mm se concentran en franja (factor = cultivo/regada); m³ total **no** se divide |
+| % alcance raíces | Mismo criterio Enmiendas/Fertilidad; sugiere franja, no altera m³ |
+| Persistencia | `climateAnalysis.irrigationQuickCalc` + `rolling` en JSON proyecto (sin SQL) |
+| Límite | No almacenamiento suelo, escurrimiento, drenaje ni lixiviación; validar en campo |
+
+**API admin:** `project_climate` mode=saved devuelve `irrigation_quick_calc` y `rolling_windows`.
+
 ### 4.12 Dureza, acidificación y solubilidad (agua)
 
 **URL:** …/agua-dureza-acidificacion-solubilidad.html  
@@ -240,10 +259,10 @@ Canales oficiales; tono técnico; mapa capítulo→post; plantilla LinkedIn. **P
 
 ## 6. Mantenimiento manual
 
-**Versión web v2026.05.6:** 22 capítulos · capítulo extracción ampliado (herramienta 📊, biblioteca, flujo técnico, PDF) · Pilar H flujo · granular ampliado · buscador índice.
+**Versión web v2026.06.1:** 23 capítulos · nuevo capítulo balance hídrico riego (Clima) · calculadora Lluvia y ET₀ · Pilar H flujo · buscador índice.
 
 Plan histórico: `docs/MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
-*Alineado con manual-tecnico/ v2026.05.7 en repo*
+*Alineado con manual-tecnico/ v2026.06.1 en repo*

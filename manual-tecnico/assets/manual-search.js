@@ -139,6 +139,13 @@
       keywords: 'VPD déficit presión vapor invernadero clima estrés hídrico NDVI NDMI satélite índice vegetación humedad créditos Radar hectáreas'
     },
     {
+      href: 'capitulos/balance-hidrico-riego-clima.html',
+      icon: '💧',
+      pillar: 'E · Agua y clima',
+      title: 'Balance hídrico y cálculo rápido de riego',
+      keywords: 'balance hídrico riego ETo ETc Kc déficit lluvia franja regada macrotúnel pluviómetro satélite Open-Meteo clima'
+    },
+    {
       href: 'capitulos/agua-dureza-acidificacion-solubilidad.html',
       icon: '💧',
       pillar: 'E · Agua y clima',

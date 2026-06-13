@@ -1132,6 +1132,108 @@ function summarizeClimateLiveReading(r) {
   };
 }
 
+function summarizeClimateRolling(rolling) {
+  if (!rolling || typeof rolling !== 'object') {
+    return { has_data: false, message: 'Sin ventanas rodantes 1/7/30 d. Actualizar en Clima → Lluvia y ET₀.' };
+  }
+  return {
+    has_data: true,
+    fetched_at: rolling.fetchedAt || null,
+    et0_1d_mm: asNum(rolling.et0_1d != null ? rolling.et0_1d : rolling.et0Today),
+    rain_1d_mm: asNum(rolling.rain_1d != null ? rolling.rain_1d : rolling.rainToday),
+    et0_7d_mm: asNum(rolling.et0_7d),
+    rain_7d_mm: asNum(rolling.rain_7d),
+    et0_30d_mm: asNum(rolling.et0_30d),
+    rain_30d_mm: asNum(rolling.rain_30d),
+    note: 'Sumas acumuladas Open-Meteo para calculadora de balance hídrico (referencia satélite).'
+  };
+}
+
+function summarizeIrrigationQuickCalc(iqc, rolling) {
+  if (!iqc || typeof iqc !== 'object') {
+    return {
+      has_data: false,
+      message: 'Sin calculadora de balance hídrico guardada. El usuario configura en Clima → Lluvia y ET₀.'
+    };
+  }
+  const periodDays = iqc.periodDays === 1 || iqc.periodDays === 30 ? iqc.periodDays : 7;
+  const kc = asNum(iqc.kc);
+  let et0 = null;
+  let rain = null;
+  let et0Source = null;
+  let rainSource = null;
+  const roll = rolling && typeof rolling === 'object' ? rolling : null;
+  if (iqc.useManualEt0 && iqc.manualEt0 != null) {
+    et0 = roundClimate1(Number(iqc.manualEt0));
+    et0Source = 'campo';
+  } else if (roll) {
+    if (periodDays === 1) et0 = asNum(roll.et0_1d != null ? roll.et0_1d : roll.et0Today);
+    else if (periodDays === 30) et0 = asNum(roll.et0_30d);
+    else et0 = asNum(roll.et0_7d);
+    if (et0 != null) et0Source = 'satélite';
+  }
+  if (iqc.macroTunnelNoRain) {
+    rain = 0;
+    rainSource = 'macrotúnel';
+  } else if (iqc.useManualRain && iqc.manualRain != null) {
+    rain = roundClimate1(Number(iqc.manualRain));
+    rainSource = 'campo';
+  } else if (roll) {
+    if (periodDays === 1) rain = asNum(roll.rain_1d != null ? roll.rain_1d : roll.rainToday);
+    else if (periodDays === 30) rain = asNum(roll.rain_30d);
+    else rain = asNum(roll.rain_7d);
+    if (rain != null) rainSource = 'satélite';
+  }
+  const etc = et0 != null && kc != null ? roundClimate1(et0 * kc) : null;
+  let irrigationMm = null;
+  const irrVal = asNum(iqc.irrigationValue);
+  const irrUnit = iqc.irrigationUnit === 'm3' ? 'm3' : 'mm';
+  const irrigatedHa = asNum(iqc.irrigatedAreaHa);
+  const cropHa = asNum(iqc.cropAreaHa);
+  if (irrVal != null && irrVal >= 0) {
+    if (irrUnit === 'm3') {
+      if (irrigatedHa != null && irrigatedHa > 0) irrigationMm = roundClimate1(irrVal / (irrigatedHa * 10));
+    } else {
+      irrigationMm = roundClimate1(irrVal);
+    }
+  }
+  const deficitClimate = et0 != null && rain != null ? roundClimate1(et0 - rain) : null;
+  const deficitCrop = etc != null && rain != null ? roundClimate1(etc - rain) : null;
+  const balance =
+    etc != null && rain != null ? roundClimate1(etc - rain - (irrigationMm != null ? irrigationMm : 0)) : null;
+  const hasSplit =
+    cropHa != null && irrigatedHa != null && irrigatedHa > 0 && Math.abs(cropHa - irrigatedHa) > 0.001;
+  const stripFactor = hasSplit ? cropHa / irrigatedHa : null;
+  return {
+    has_data: true,
+    crop_name: iqc.cropName || null,
+    period_days: periodDays,
+    kc,
+    etc_mm: etc,
+    et0_mm: et0,
+    et0_source: et0Source,
+    rain_mm: rain,
+    rain_source: rainSource,
+    deficit_climate_mm: deficitClimate,
+    deficit_crop_mm: deficitCrop,
+    irrigation_mm: irrigationMm,
+    irrigation_input: irrVal,
+    irrigation_unit: irrUnit,
+    balance_mm: balance,
+    crop_area_ha: cropHa,
+    irrigated_area_ha: irrigatedHa,
+    root_reach_pct: asNum(iqc.rootReachPct),
+    has_split_area: hasSplit,
+    strip_factor: stripFactor != null ? roundClimate1(stripFactor) : null,
+    deficit_crop_wetted_mm:
+      deficitCrop != null && stripFactor != null ? roundClimate1(deficitCrop * stripFactor) : null,
+    balance_wetted_mm: balance != null && stripFactor != null ? roundClimate1(balance * stripFactor) : null,
+    m3_per_ha_factor: 10,
+    note:
+      'Calculadora balance hídrico (Clima → Lluvia y ET₀). Estimación rápida; no incluye almacenamiento en suelo, escurrimiento ni drenaje. Manual: balance-hidrico-riego-clima.'
+  };
+}
+
 function summarizeClimateAnalysis(ca) {
   if (!ca || typeof ca !== 'object') {
     return {
@@ -1143,12 +1245,16 @@ function summarizeClimateAnalysis(ca) {
   const hasRain = !!(ca.rainfall && ca.rainfall.monthsPrev);
   const hasEt0 = !!(ca.et0 && ca.et0.monthsPrev);
   const hasLive = !!(ca.lastReading && ca.lastReading.fetchedAt);
+  const hasIrr = !!(ca.irrigationQuickCalc && typeof ca.irrigationQuickCalc === 'object');
+  const hasRolling = !!(ca.rolling && typeof ca.rolling === 'object');
   return {
-    has_data: hasRain || hasEt0 || hasLive,
+    has_data: hasRain || hasEt0 || hasLive || hasIrr || hasRolling,
     last_updated: ca.lastUpdated || null,
     last_tab: ca.lastTab || null,
     rainfall: summarizeRainfallOrEt0(ca.rainfall, 'precipitation'),
     et0: summarizeRainfallOrEt0(ca.et0, 'et0_fao'),
+    rolling_windows: summarizeClimateRolling(ca.rolling),
+    irrigation_quick_calc: summarizeIrrigationQuickCalc(ca.irrigationQuickCalc, ca.rolling),
     tiempo_actual_guardado: summarizeClimateLiveReading(ca.lastReading)
   };
 }

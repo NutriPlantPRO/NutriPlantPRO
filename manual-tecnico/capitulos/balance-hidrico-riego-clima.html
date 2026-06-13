@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Balance hídrico y cálculo rápido de riego — Manual NutriPlant PRO</title>
+  <meta name="description" content="Calculadora de balance hídrico en Clima → Lluvia y ET₀: déficit climático y de cultivo, riego mm/m³, franja regada y % suelo explorado por raíces.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/balance-hidrico-riego-clima.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Balance hídrico y cálculo rápido de riego",
+  "description": "Calculadora de balance hídrico en Clima → Lluvia y ET₀: déficit climático y de cultivo, riego mm/m³, franja regada y % suelo explorado por raíces.",
+  "url": "https://nutriplantpro.com/manual-tecnico/capitulos/balance-hidrico-riego-clima.html",
+  "inLanguage": "es",
+  "datePublished": "2026-06-12",
+  "dateModified": "2026-06-12",
+  "author": {
+    "@type": "Person",
+    "name": "Jesús Avila Mendoza",
+    "url": "https://nutriplantpro.com/manual-tecnico/autoria.html"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "NutriPlant PRO",
+    "url": "https://nutriplantpro.com",
+    "logo": "https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png"
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Manual Técnico NutriPlant PRO",
+    "url": "https://nutriplantpro.com/manual-tecnico/index.html"
+  }
+}
+  </script>
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Clima</p>
+    <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-06</span>
+    <h1>Balance hídrico y cálculo rápido de riego</h1>
+    <h2>Resumen</h2>
+    <p>
+      En la pestaña <strong>Clima → Lluvia y ET₀</strong>, NutriPlant incluye una
+      <strong>calculadora de balance hídrico</strong> para estimar déficits y balance de agua en periodos de
+      <strong>1, 7 o 30 días</strong>. Combina ETo (referencia satélite o valor de campo), lluvia (satélite,
+      pluviómetro o macrotúnel sin lluvia), coeficiente de cultivo <strong>Kc</strong> (manual) y riego
+      acumulado del periodo. Complementa <a href="vpd-deficit-presion-vapor.html">VPD y Radar</a>; no sustituye
+      tensiómetros, sensores de suelo ni el programa de fertirriego.
+    </p>
+
+    <h2>Dónde está en la app</h2>
+    <ul>
+      <li><strong>Dashboard PRO</strong> → pestaña <strong>Clima</strong> → subpestaña <strong>Lluvia y ET₀</strong>.</li>
+      <li>Bloque <strong>«Calculadora de balance hídrico»</strong>, debajo de las tablas mensuales de lluvia y ET₀.</li>
+      <li>Requisito para datos satélite: polígono guardado en <strong>Ubicación</strong> (centro del predio).</li>
+      <li>Persistencia en nube: <code>projects.data.climateAnalysis.irrigationQuickCalc</code> (sin migración SQL).</li>
+    </ul>
+
+    <h2>Periodo y fuentes de ETo / lluvia</h2>
+    <table class="mt-table">
+      <thead><tr><th>Entrada</th><th>Opciones</th></tr></thead>
+      <tbody>
+        <tr><td>Periodo</td><td>1, 7 o 30 días (acumulados)</td></tr>
+        <tr><td>ETo</td><td>Satélite (ventanas rodantes Open-Meteo) o <strong>manual</strong> (mm del periodo)</td></tr>
+        <tr><td>Lluvia</td><td>Satélite, <strong>manual</strong> (pluviómetro) o <strong>macrotúnel</strong> (lluvia = 0)</td></tr>
+        <tr><td>Kc</td><td>El usuario lo ingresa; tabla FAO-56 en la app es <strong>solo consulta</strong></td></tr>
+        <tr><td>Riego</td><td>Acumulado del periodo en <strong>mm</strong> o <strong>m³</strong> (m³ requiere superficie regada)</td></tr>
+      </tbody>
+    </table>
+    <p>Las estimaciones satélite son referencia del punto del predio; pueden diferir del microclima o del campo.</p>
+
+    <h2>Fórmulas (misma lógica que la app)</h2>
+    <div class="mt-formula">
+      ETc = ETo × Kc<br>
+      Déficit climático = ETo − lluvia<br>
+      Déficit cultivo = ETc − lluvia<br>
+      Balance = ETc − lluvia − riego (mm)
+    </div>
+    <p>Conversión de volumen sobre el <strong>área del cultivo</strong>:</p>
+    <div class="mt-formula">1 mm = 10 m³/ha · m³ total = mm × 10 × superficie cultivo (ha)</div>
+    <p>Si introduces riego en m³:</p>
+    <div class="mt-formula">riego (mm) = m³ ÷ (superficie regada ha × 10)</div>
+
+    <h2>Área del cultivo vs franja regada</h2>
+    <p>
+      <strong>Superficie del cultivo (ha):</strong> área donde está el cultivo; define la demanda ETc y el
+      <strong>m³ total</strong> del balance.
+    </p>
+    <p>
+      <strong>Superficie regada (ha):</strong> zona humedecida (goteo, cinta, macrotúnel). Si es menor que el
+      área del cultivo, los <strong>mm se concentran</strong> en la franja regada (la app muestra sub-líneas
+      «↳ en franja regada»). El <strong>m³ total no se divide</strong>: sigue referido al área del cultivo.
+    </p>
+    <div class="mt-formula">
+      factor franja = superficie cultivo ÷ superficie regada<br>
+      mm en franja = mm sobre cultivo × factor franja
+    </div>
+    <p>Ejemplo: 1 ha de cultivo, 0,4 ha regados (40 % alcance) → déficit 2,6 mm en cultivo ≈ 6,5 mm en franja.</p>
+
+    <h2>% suelo explorado por raíces</h2>
+    <p>
+      Mismo criterio NutriPlant que en <a href="enmiendas-balance-cic.html">Enmiendas</a> y
+      <a href="analisis-suelo-fertilidad-kgha.html">Análisis de suelo → Fertilidad</a>
+      (<code>fertility.reachPct</code>). En esta calculadora <strong>solo ayuda a sugerir la franja regada</strong>
+      (botones «Sugerir franja regada» y «Usar % del análisis de suelo»); no modifica profundidad ni divide m³.
+    </p>
+    <div class="mt-formula">franja sugerida (ha) = superficie cultivo × (% alcance / 100)</div>
+
+    <h2>Tabla Kc FAO-56</h2>
+    <p>
+      La app incluye una tabla de referencia (~50 cultivos × etapas) consultable y buscable. El usuario debe
+      elegir e ingresar el <strong>Kc de su situación</strong>; la tabla no precarga el valor automáticamente.
+    </p>
+
+    <h2>Limitaciones (nota de la app)</h2>
+    <div class="mt-warn">
+      <p>El balance hídrico es una <strong>estimación rápida</strong>. No considera:</p>
+      <ul>
+        <li>Almacenamiento de agua en el suelo</li>
+        <li>Escurrimiento superficial</li>
+        <li>Drenaje profundo</li>
+        <li>Lixiviación de nutrientes</li>
+      </ul>
+      <p><strong>Validar siempre en campo.</strong> Cruza con VPD, NDMI, análisis de suelo, programa de riego y observación directa.</p>
+    </div>
+
+    <h2>Relación con otras herramientas</h2>
+    <ul>
+      <li><a href="vpd-deficit-presion-vapor.html">VPD</a> — estrés de vapor y timing de riego.</li>
+      <li><a href="programa-fertirriego-etapas.html">Fertirriego</a> — lámina y programa por etapa (distinto de este balance rápido).</li>
+      <li><a href="n-mineralizable-agua-disponible-suelo.html">Agua en suelo</a> — CC−PMP y textura (capacidad de almacenamiento).</li>
+    </ul>
+
+    <nav class="mt-chapter-nav"><a href="../index.html">Índice</a> · <a href="vpd-deficit-presion-vapor.html">VPD y Radar</a></nav>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+  <script src="../assets/manual-nav.js"></script>
+</body>
+</html>

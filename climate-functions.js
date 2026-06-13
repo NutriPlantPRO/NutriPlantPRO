@@ -1487,4 +1487,15 @@
   window.createClimateRainfallTabHTML = createClimateRainfallTabHTML;
   window.createClimateLiveTabHTML = createClimateLiveTabHTML;
   window.persistClimateAnalysis = persistClimateAnalysis;
+
+  function getClimateIrrigationQuickCalcSummary() {
+    ensureClimateAnalysisStructures();
+    var p = getProject();
+    if (!p || !p.climateAnalysis) return null;
+    var st = getIrrigationQuickCalcState();
+    var rolling = p.climateAnalysis.rolling || null;
+    var res = computeIrrigationQuickResults(st, rolling);
+    return { state: st, results: res, rolling: rolling };
+  }
+  window.getClimateIrrigationQuickCalcSummary = getClimateIrrigationQuickCalcSummary;
 })();
