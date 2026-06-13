@@ -24,6 +24,153 @@
             background: #f8fafc;
             min-height: 100vh;
         }
+
+        /* Acceso privado admin — mismo ritmo visual que Plan PRO */
+        body.admin-body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+            color: #1d1d1f;
+            min-height: 100vh;
+            letter-spacing: -0.015em;
+            background:
+                radial-gradient(ellipse 110% 55% at 70% -15%, rgba(147, 197, 253, 0.24) 0%, transparent 58%),
+                linear-gradient(175deg, #e8ecf2 0%, #eef1f6 45%, #e9edf4 100%);
+        }
+        .admin-access-gate {
+            box-sizing: border-box;
+            width: 100%;
+            max-width: min(1920px, 100%);
+            margin: 0 auto;
+            padding: 14px 12px 26px;
+            padding-left: max(12px, env(safe-area-inset-left));
+            padding-right: max(12px, env(safe-area-inset-right));
+        }
+        .admin-access-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            padding: 14px 20px;
+            margin-bottom: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow:
+                0 6px 22px rgba(15, 23, 42, 0.06),
+                0 1px 0 rgba(255, 255, 255, 0.95) inset;
+        }
+        .admin-access-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+        .admin-access-brand img {
+            height: 38px;
+            width: auto;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.06));
+        }
+        .admin-access-brand h1 {
+            margin: 0;
+            font-size: 1.17rem;
+            font-weight: 650;
+            letter-spacing: -0.03em;
+            color: #1d4ed8;
+        }
+        @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+            .admin-access-brand h1 {
+                background: linear-gradient(118deg, #1d4ed8 0%, #0d9488 42%, #16a34a 100%);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+            }
+        }
+        .admin-login-card {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            border-left: 4px solid #2563eb;
+            background: linear-gradient(
+                135deg,
+                rgba(239, 246, 255, 0.55) 0%,
+                rgba(255, 255, 255, 0.82) 42%,
+                rgba(255, 255, 255, 0.9) 100%
+            );
+            box-shadow:
+                0 12px 40px rgba(37, 99, 235, 0.06),
+                0 1px 0 rgba(255, 255, 255, 0.88) inset;
+        }
+        .admin-login-card h2 {
+            margin: 0 0 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1d4ed8;
+        }
+        .admin-login-card .form-group {
+            margin-bottom: 0;
+        }
+        .admin-login-card .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+        .admin-login-card .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(15, 23, 42, 0.1);
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) inset;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            box-sizing: border-box;
+        }
+        .admin-login-card .form-group input:focus {
+            outline: none;
+            border-color: rgba(34, 197, 94, 0.45);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+        }
+        .admin-login-card .admin-pin-input {
+            font-size: 1.35rem;
+            letter-spacing: 0.35em;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        .btn-admin-login {
+            background: linear-gradient(180deg, #34d399 0%, #22c55e 100%);
+            color: #fff;
+            border: none;
+            box-shadow: 0 2px 10px rgba(34, 197, 94, 0.35);
+            border-radius: 980px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: filter 0.15s ease, transform 0.15s ease;
+            width: auto;
+            margin-bottom: 0;
+        }
+        .btn-admin-login:hover {
+            filter: brightness(1.03);
+            transform: translateY(-1px);
+        }
+        .admin-login-card .error-message {
+            margin-bottom: 12px;
+            text-align: left;
+            font-size: 13px;
+            padding: 10px 12px;
+            border-radius: 8px;
+        }
+        .admin-login-card .success-message {
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
         
         .admin-header {
             background: linear-gradient(135deg, #60a5fa, #3b82f6);
@@ -359,47 +506,6 @@
             background: #4b5563;
         }
         
-        .login-form {
-            max-width: 400px;
-            margin: 100px auto;
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #374151;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #60a5fa;
-        }
-        
-        .login-title {
-            text-align: center;
-            color: #1f2937;
-            margin-bottom: 30px;
-            font-size: 1.8em;
-        }
-        
         .error-message {
             background: #fef2f2;
             color: #dc2626;
@@ -555,11 +661,18 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../config-no-traducir-terminos.js"></script>
 </head>
-<body>
-    <div class="admin-container">
-        <!-- Login Form -->
-        <div id="loginForm" class="login-form">
-            <h2 class="login-title">Acceso privado</h2>
+<body class="admin-body">
+    <div id="adminAccessGate" class="admin-access-gate">
+        <header class="admin-access-header">
+            <div class="admin-access-brand">
+                <img src="../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO" />
+                <div>
+                    <h1>Acceso privado</h1>
+                </div>
+            </div>
+        </header>
+        <div id="loginForm" class="admin-login-card">
+            <h2>Acceso privado</h2>
             <div id="errorMessage" class="error-message" style="display: none;"></div>
             <div id="successMessage" class="success-message" style="display: none;"></div>
             <div id="adminLockoutMessage" class="error-message" style="display: none; margin-top: 12px; padding: 16px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca;">
@@ -578,12 +691,12 @@
                     <input type="password" id="password" name="password" required>
                 </div>
                 
-                <button type="submit" class="btn-admin">Entrar</button>
+                <button type="submit" class="btn-admin-login">Entrar</button>
             </form>
         </div>
 
-        <div id="adminPinPanel" class="login-form" style="display: none;">
-            <h2 class="login-title">Acceso privado</h2>
+        <div id="adminPinPanel" class="admin-login-card" style="display: none; margin-top: 16px;">
+            <h2>Acceso privado</h2>
             <div id="adminPinErrorMessage" class="error-message" style="display: none;"></div>
             <form id="adminPinSubmitForm">
                 <div class="form-group">
@@ -591,21 +704,23 @@
                     <input
                         type="password"
                         id="adminPinInput"
+                        class="admin-pin-input"
                         maxlength="4"
                         pattern="[0-9]{4}"
                         inputmode="numeric"
                         autocomplete="one-time-code"
                         placeholder=""
-                        style="font-size: 1.25rem; letter-spacing: 0.35em; text-align: center;"
                         required
                     />
                 </div>
-                <button type="submit" class="btn-admin">Continuar</button>
+                <button type="submit" class="btn-admin-login">Continuar</button>
             </form>
         </div>
-        
+    </div>
+
+    <div id="adminAppShell" class="admin-container" style="display: none;">
         <!-- Admin Dashboard -->
-        <div id="adminDashboard" style="display: none;">
+        <div id="adminDashboard">
             <div class="admin-header">
                 <img src="../assets/NutriPlant_PRO_white.png" alt="NutriPlant PRO" style="height: 70px; max-width: 350px; object-fit: contain; margin-bottom: 12px;">
                 <h1>Panel de Administración</h1>
@@ -1594,10 +1709,17 @@
             return false; // Usuario admin no encontrado
         }
         
+        function setAdminAppShellVisible(visible) {
+            var gate = document.getElementById('adminAccessGate');
+            var shell = document.getElementById('adminAppShell');
+            if (gate) gate.style.display = visible ? 'none' : 'block';
+            if (shell) shell.style.display = visible ? 'block' : 'none';
+        }
+
         function showAdminPinPanel() {
+            setAdminAppShellVisible(false);
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('adminPinPanel').style.display = 'block';
-            document.getElementById('adminDashboard').style.display = 'none';
             var err = document.getElementById('adminPinErrorMessage');
             if (err) err.style.display = 'none';
             var inp = document.getElementById('adminPinInput');
@@ -1739,9 +1861,9 @@
             // 🔒 VALIDAR SESIÓN antes de mostrar dashboard
             if (!validateAdminSession()) {
                 showErrorMessage('❌ Sesión inválida. Por favor, inicia sesión nuevamente.');
+                setAdminAppShellVisible(false);
                 document.getElementById('loginForm').style.display = 'block';
                 document.getElementById('adminPinPanel').style.display = 'none';
-                document.getElementById('adminDashboard').style.display = 'none';
                 localStorage.removeItem('admin_logged_in');
                 localStorage.removeItem('admin_username');
                 localStorage.removeItem('admin_session_timestamp');
@@ -1759,7 +1881,7 @@
             
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('adminPinPanel').style.display = 'none';
-            document.getElementById('adminDashboard').style.display = 'block';
+            setAdminAppShellVisible(true);
             updateAdminRefreshButtonState();
             if (typeof window.initAdminChat === 'function') window.initAdminChat();
             // 🟢 Si la nube está activa, cargar datos de ahí primero; luego pintar estadísticas
@@ -1834,7 +1956,7 @@
             localStorage.removeItem('admin_session_timestamp');
             document.getElementById('loginForm').style.display = 'block';
             document.getElementById('adminPinPanel').style.display = 'none';
-            document.getElementById('adminDashboard').style.display = 'none';
+            setAdminAppShellVisible(false);
             document.getElementById('adminLoginForm').reset();
             var lockout = getAdminLockout();
             applyAdminLockoutUI(lockout.locked, lockout.remainingMs);
@@ -1843,7 +1965,7 @@
         
         // 🔒 PROTECCIÓN: Validar sesión periódicamente (cada 5 minutos)
         setInterval(function() {
-            if (document.getElementById('adminDashboard').style.display !== 'none') {
+            if (document.getElementById('adminAppShell') && document.getElementById('adminAppShell').style.display !== 'none') {
                 if (!validateAdminSession()) {
                     alert('🔒 Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.');
                     logout();
@@ -2396,8 +2518,8 @@
         };
         // Si la página cargó con sesión ya iniciada, el dashboard se mostró antes de que initAdminChat existiera; inicializar el chat ahora.
         setTimeout(function() {
-            var dash = document.getElementById('adminDashboard');
-            if (dash && dash.style.display === 'block' && document.getElementById('adminChatBubble') && document.getElementById('adminChatBubble').style.display !== 'flex') {
+            var shell = document.getElementById('adminAppShell');
+            if (shell && shell.style.display !== 'none' && document.getElementById('adminChatBubble') && document.getElementById('adminChatBubble').style.display !== 'flex') {
                 window.initAdminChat();
             }
         }, 0);
