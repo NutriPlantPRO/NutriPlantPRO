@@ -3299,7 +3299,18 @@
       align-items: center;
       justify-content: center;
     }
+    #npCreateModal.np-modal-overlay {
+      padding: 10px 12px 12px;
+      align-items: center;
+      justify-content: center;
+      z-index: 16300;
+    }
     #npDetailModal .np-modal-panel {
+      max-width: min(99vw, 1580px);
+      max-height: min(97vh, 1180px);
+      width: min(99vw, 1580px);
+    }
+    #npCreateModal .np-modal-panel {
       max-width: min(99vw, 1580px);
       max-height: min(97vh, 1180px);
       width: min(99vw, 1580px);
@@ -3307,6 +3318,12 @@
     #npDetailModal .np-modal-body {
       flex: 1;
       min-height: 0;
+    }
+    #npCreateModal .np-modal-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 14px 16px 18px;
     }
     @media (prefers-reduced-transparency: reduce) {
       header.np-plan-header.np-mac-bar {
@@ -3331,7 +3348,15 @@
       #npDetailModal.np-modal-overlay {
         padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
       }
+      #npCreateModal.np-modal-overlay {
+        padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+      }
       #npDetailModal .np-modal-panel {
+        max-width: 100%;
+        width: 100%;
+        max-height: min(96vh, 1180px);
+      }
+      #npCreateModal .np-modal-panel {
         max-width: 100%;
         width: 100%;
         max-height: min(96vh, 1180px);
@@ -5234,6 +5259,7 @@
     .np-pillar-tab-wrap {
       display: inline-flex;
       align-items: stretch;
+      position: relative;
       border-radius: 14px;
       border: 1px solid rgba(15, 23, 42, 0.08);
       background: rgba(255, 255, 255, 0.88);
@@ -5275,35 +5301,49 @@
       border-bottom: 3px solid transparent;
       flex: 1 1 auto;
       min-width: 0;
-      padding: 11px 12px 11px 16px;
+      padding: 11px 26px 11px 16px;
     }
     .np-pillar-tab-wrap-active .np-pillar-tab {
       color: #14532d;
     }
     .np-pillar-tab-more {
+      position: absolute;
+      right: 3px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
       flex: 0 0 auto;
-      width: 26px;
-      min-width: 26px;
+      width: 22px;
+      min-width: 22px;
+      height: 22px;
       margin: 0;
       padding: 0;
       border: none;
-      border-left: 1px solid rgba(148, 163, 184, 0.28);
       background: transparent;
       color: #94a3b8;
-      font-size: 15px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
       line-height: 1;
       letter-spacing: 0;
       cursor: pointer;
-      border-radius: 0;
+      border-radius: 8px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.15s ease, color 0.15s ease;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.16s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .np-pillar-tab-wrap:hover .np-pillar-tab-more,
+    .np-pillar-tab-wrap:focus-within .np-pillar-tab-more,
+    .np-pillar-tab-more[aria-expanded='true'] {
+      opacity: 0.72;
+      pointer-events: auto;
     }
     .np-pillar-tab-more:hover {
-      background: rgba(241, 245, 249, 0.85);
+      background: rgba(241, 245, 249, 0.92);
       color: #0f172a;
+      opacity: 1;
     }
     .np-pillar-tab-wrap-active .np-pillar-tab-more {
       color: #15803d;
@@ -5311,6 +5351,21 @@
     .np-pillar-tab-more[aria-expanded='true'] {
       background: rgba(224, 231, 255, 0.95);
       color: var(--np-blue-d);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    @media (hover: none) {
+      .np-pillar-tab-more {
+        opacity: 0.38;
+        pointer-events: auto;
+      }
+      .np-pillar-tab-wrap:hover .np-pillar-tab-more,
+      .np-pillar-tab-wrap:focus-within .np-pillar-tab-more {
+        opacity: 0.65;
+      }
+      .np-pillar-tab-more[aria-expanded='true'] {
+        opacity: 1;
+      }
     }
     .np-pillar-tab {
       border: 1px solid rgba(15, 23, 42, 0.08);
@@ -6514,6 +6569,42 @@
       border-color: color-mix(in srgb, var(--np-plant-accent, #2563eb) 55%, rgba(148, 163, 184, 0.35));
       color: color-mix(in srgb, var(--np-plant-accent, #2563eb) 78%, #0f172a);
     }
+    .np-sheet-jump-btn-inner {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-width: 0;
+    }
+    .np-sheet-jump-btn--new-note {
+      border: 1.5px solid color-mix(in srgb, var(--np-sheet-accent, #2563eb) 48%, rgba(148, 163, 184, 0.38));
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--np-sheet-accent, #2563eb) 24%, rgba(255, 255, 255, 0.92)) 0%,
+        color-mix(in srgb, var(--np-sheet-accent, #2563eb) 10%, rgba(255, 255, 255, 0.96)) 52%,
+        rgba(255, 255, 255, 0.94) 100%
+      );
+      color: color-mix(in srgb, var(--np-sheet-accent, #2563eb) 82%, #0f172a);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--np-sheet-accent, #2563eb) 12%, transparent),
+        0 8px 22px color-mix(in srgb, var(--np-sheet-accent, #2563eb) 14%, rgba(15, 23, 42, 0.05));
+      font-weight: 700;
+    }
+    .np-sheet-jump-btn--new-note:hover {
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--np-sheet-accent, #2563eb) 32%, rgba(255, 255, 255, 0.94)) 0%,
+        color-mix(in srgb, var(--np-sheet-accent, #2563eb) 14%, rgba(255, 255, 255, 0.98)) 100%
+      );
+      border-color: color-mix(in srgb, var(--np-sheet-accent, #2563eb) 58%, rgba(148, 163, 184, 0.35));
+      color: color-mix(in srgb, var(--np-sheet-accent, #2563eb) 90%, #0f172a);
+    }
+    .np-sheet-new-icon {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
     .np-plant-list-bottom-anchor {
       height: 1px;
       scroll-margin-bottom: 24px;
@@ -6928,6 +7019,9 @@
       z-index: 16200;
     }
     #npDetailModal.np-modal-overlay.np-modal-overlay--above-cal {
+      z-index: 16350;
+    }
+    #npCreateModal.np-modal-overlay.np-modal-overlay--above-cal {
       z-index: 16350;
     }
     #npCrossLinkPicker.np-modal-overlay {
@@ -8283,8 +8377,8 @@
       <div class="np-plan-brand">
         <img src="../assets/NutriPlant_PRO_blue.png" alt="" />
         <div>
-          <h1>Plan PRO</h1>
-          <div class="sub">Cerebro Digital</div>
+          <h1 id="npPlanBrandTitle">Acceso privado</h1>
+          <div class="sub np-hide" id="npPlanBrandSub">Cerebro Digital</div>
         </div>
       </div>
       <div class="np-plan-actions np-hide" id="npHeaderLogged">
@@ -8490,26 +8584,25 @@
     <div id="npGate">
       <p class="np-loading" id="npLoading">Comprobando sesión…</p>
       <div id="npLoginPanel" class="panel np-login-card np-section-accent np-section-accent-blue np-hide">
-        <h2>Entrar a Plan PRO</h2>
-        <p class="np-muted" style="margin-top:0;line-height:1.45;">Correo y contraseña de administrador.</p>
+        <h2>Acceso privado</h2>
         <div id="npLoginErr" class="np-msg err np-hide" style="margin-bottom:12px;"></div>
         <form id="npLoginForm">
-          <label for="npLoginEmail">Correo</label>
-          <input type="email" id="npLoginEmail" name="email" autocomplete="username" required placeholder="tu@correo.com" />
-          <label for="npLoginPass">Contraseña</label>
+          <label for="npLoginEmail">Acceso 1</label>
+          <input type="email" id="npLoginEmail" name="email" autocomplete="username" required />
+          <label for="npLoginPass">Acceso 2</label>
           <input type="password" id="npLoginPass" name="password" autocomplete="current-password" required />
           <button type="submit" class="btn btn-primary" id="npBtnLogin">Entrar</button>
         </form>
       </div>
       <div id="npDenied" class="np-msg err np-hide"></div>
       <div id="npPinPanel" class="panel np-login-card np-section-accent np-section-accent-blue np-hide">
-        <h2>Código de acceso</h2>
+        <h2>Acceso privado</h2>
         <p class="np-muted" style="margin-top:0;line-height:1.45;">
-          Cuatro dígitos adicionales para entrar a Plan PRO en este dispositivo.
+          Cuatro dígitos adicionales en este dispositivo.
         </p>
         <div id="npPinErr" class="np-msg err np-hide" style="margin-bottom:12px;"></div>
         <form id="npPinForm">
-          <label for="npPinInput">PIN</label>
+          <label for="npPinInput">Acceso 3</label>
           <input
             type="password"
             id="npPinInput"
@@ -8518,7 +8611,7 @@
             pattern="[0-9]{4}"
             inputmode="numeric"
             autocomplete="one-time-code"
-            placeholder="••••"
+            placeholder=""
             required
           />
           <button type="submit" class="btn btn-primary" id="npPinSubmit">Continuar</button>
@@ -8596,7 +8689,7 @@
           <div id="npTreeMount" class="np-tree-mount" role="tree" aria-label="Ramas de la planta"></div>
           <div style="margin-top:12px;">
             <div style="display:flex;gap:8px;margin-top:0;align-items:center;">
-              <input type="text" id="npNewRootCat" aria-label="Nombre de la nueva rama" autocomplete="off" placeholder="Nueva rama…" style="margin-bottom:0;flex:1;" />
+              <input type="text" id="npNewRootCat" aria-label="Nombre de la nueva rama" autocomplete="off" style="margin-bottom:0;flex:1;" />
               <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnAddRootCat" style="margin-bottom:0;">Añadir</button>
             </div>
           </div>
@@ -8644,8 +8737,8 @@
                 <div id="npSheetTitle" class="np-sheet-title">—</div>
                 <div class="np-sheet-branch-row">
                   <div class="np-sheet-branch">
-                    <input type="text" id="npBranchName" maxlength="120" placeholder="Nueva hoja…" autocomplete="off" />
-                    <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnBranchHere">Crear rama aquí</button>
+                    <input type="text" id="npBranchName" maxlength="120" aria-label="Nombre de la subrama" autocomplete="off" />
+                    <button type="button" class="btn btn-ghost btn-ghost-green" id="npBtnBranchHere">Crear rama</button>
                   </div>
                   <button
                     type="button"
@@ -8665,8 +8758,11 @@
                   <button type="button" class="btn np-sheet-jump-btn np-sheet-jump-btn--plant-list" id="npSheetJumpApuntesBtn" title="Bajar al final de la lista de apuntes de la planta">
                     ↓ Ir a apuntes
                   </button>
-                  <button type="button" class="btn btn-ghost btn-ghost-blue np-sheet-jump-btn" id="npSheetJumpNewBtn" title="Bajar al formulario para crear apunte">
-                    ✏ Nuevo apunte
+                  <button type="button" class="btn np-sheet-jump-btn np-sheet-jump-btn--new-note" id="npSheetJumpNewBtn" title="Crear apunte en ventana superpuesta">
+                    <span class="np-sheet-jump-btn-inner">
+                      <img src="../assets/N_Hoja_Azul.png" alt="" class="np-sheet-new-icon" width="18" height="18" decoding="async" aria-hidden="true" />
+                      <span>Nuevo apunte</span>
+                    </span>
                   </button>
                 </div>
               </div>
@@ -8683,83 +8779,9 @@
                   <div id="npSheetItemsMount" class="np-sheet-items-mount"></div>
                   <p id="npSheetItemsEmpty" class="np-muted np-hide" style="margin:8px 0 0;font-size:13px;">Sin apuntes.</p>
                 </div>
-                <h2 id="npSheetNewNoteAnchor" class="np-sheet-new-title">Nuevo apunte</h2>
                 <div id="npNoAreas" class="np-msg warn np-hide" style="margin-bottom:12px;">
                   No hay plantas (áreas). Ejecuta el seed de Plan PRO en Supabase o crea filas en <code>plan_pro_areas</code> con tu <code>owner_id</code>.
                 </div>
-                <div id="npNeedCategory" class="np-msg warn np-hide" style="margin-bottom:12px;">Selecciona una rama en el árbol para guardar.</div>
-                <form id="npFormCreate">
-                  <label for="npTitle" class="np-compact-label">Resumen / título</label>
-                  <input id="npTitle" class="np-title-compact" name="title" required maxlength="500" placeholder="Título" />
-                  <div class="np-create-item-meta np-detail-item-meta-edit np-ficha-meta-row" id="npCreateItemMeta">
-                    <span class="np-detail-meta-label">Objetivo</span>
-                    <button type="button" id="npCreateFichaPill" class="np-ficha-due-pill np-ficha-due-pill--empty" aria-label="Semáforo y fecha del apunte (opcional)">Semáforo y fecha</button>
-                    <span class="np-create-meta-hint np-muted">Opcional · en la libreta usa 🚦 por línea</span>
-                  </div>
-                  <div class="np-create-maps-row">
-                    <label for="npCreateMapsUrl" class="np-detail-meta-label">Ubicación / Maps</label>
-                    <input id="npCreateMapsUrl" type="url" inputmode="url" autocomplete="off" placeholder="Pega aquí link de Google Maps (opcional)" />
-                    <button type="button" class="np-detail-maps-action" id="npCreateMapsPickBtn">Elegir en mapa</button>
-                  </div>
-                  <label class="np-compact-label">Hoja en blanco</label>
-                  <div id="npRichToolbar" class="np-rich-toolbar">
-                    <span class="np-rich-grp">
-                      <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="bold" title="Negrita"><strong>B</strong></button>
-                      <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="italic" title="Cursiva"><em>I</em></button>
-                      <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="underline" title="Subrayado"><u>U</u></button>
-                      <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="strikeThrough" title="Tachado"><s>S</s></button>
-                    </span>
-                    <span class="np-rich-grp" title="Color de texto">
-                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#2563eb" title="Azul" aria-label="Color de texto azul" style="background:#2563eb;border-color:rgba(30,64,175,0.35);"></button>
-                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#16a34a" title="Verde" aria-label="Color de texto verde" style="background:#16a34a;border-color:rgba(21,128,61,0.35);"></button>
-                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#dc2626" title="Rojo" aria-label="Color de texto rojo" style="background:#dc2626;border-color:rgba(153,27,27,0.35);"></button>
-                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#0f172a" title="Negro" aria-label="Color de texto negro" style="background:#0f172a;border-color:rgba(15,23,42,0.45);"></button>
-                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#64748b" title="Gris" aria-label="Color de texto gris" style="background:#64748b;border-color:rgba(51,65,85,0.35);"></button>
-                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#b45309" title="Amarillo (oscuro, legible)" aria-label="Color de texto amarillo oscuro" style="background:#fbbf24;border-color:rgba(180,83,9,0.45);"></button>
-                      <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#7c3aed" title="Morado" aria-label="Color de texto morado" style="background:#7c3aed;border-color:rgba(91,33,182,0.35);"></button>
-                    </span>
-                    <span class="np-rich-grp">
-                      <button type="button" class="np-rich-tbtn" data-rich="fmt" data-v="h2" title="Título">Título</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="fmt" data-v="h3" title="Subtítulo">Sub</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="fmt" data-v="p" title="Párrafo">Párrafo</button>
-                    </span>
-                    <span class="np-rich-grp">
-                      <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="insertUnorderedList" title="Lista con viñetas">• Lista</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="insertOrderedList" title="Lista numerada">1. Lista</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="listdiag" title="Lista tipo diagrama (ramas ├ └)">Diagrama</button>
-                    </span>
-                    <span class="np-rich-grp">
-                      <button type="button" class="np-rich-tbtn" data-rich="wrap" data-v="np-rich-fs-sm" title="Texto pequeño">Peq</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="wrap" data-v="np-rich-fs-md" title="Normal">Md</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="wrap" data-v="np-rich-fs-lg" title="Grande">L</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="wrap" data-v="np-rich-fs-xl" title="Muy grande">XL</button>
-                    </span>
-                    <span class="np-rich-grp">
-                      <button type="button" class="np-rich-tbtn np-rich-tbtn-due" data-rich="duedate" title="Semáforo y fecha en esta línea (calendario)">🚦</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="warn" title="Marcar importancia">⚠︎</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="star" title="Destacar">★</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="separator" title="Insertar línea separadora">—</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="image" title="Insertar imagen (se comprime y sube a la nube)">🖼</button>
-                      <button type="button" class="np-rich-tbtn" data-rich="nutri-link" title="Enlace corto a archivo Nutri PRO">📎</button>
-                    </span>
-                  </div>
-                  <div class="np-notebook-wrap">
-                    <div class="np-notebook-page np-notebook-rich">
-                      <div id="npBodyRich" class="np-rich-editor np-rich-empty" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true"></div>
-                    </div>
-                  </div>
-                  <label class="np-compact-label" style="margin-top:14px;">Tablas y bloques extra</label>
-                  <div class="np-tools-row">
-                    <button type="button" class="btn btn-ghost btn-ghost-np-note" id="npBtnAddNoteBlock">＋ Bloque de texto</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-smart" id="npBtnAddSmartTable">＋ Tabla seguimiento PRO</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-tasks" id="npBtnAddTaskTable">＋ Tabla de tareas</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-free" id="npBtnAddMiniSheet">＋ Tabla libre</button>
-                    <button type="button" class="btn btn-ghost btn-ghost-np-ledger" id="npBtnAddLedgerSheet">＋ Tabla de montos</button>
-                    <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
-                  </div>
-                  <div id="npMiniSheetPreview" class="np-hide"></div>
-                  <button type="submit" class="btn btn-primary" id="npBtnCreate">Guardar apunte</button>
-                </form>
               </div>
             </section>
           </div>
@@ -9226,10 +9248,97 @@
             <button type="button" class="np-cal-create-prio-btn np-cal-create-prio-btn--alta" data-lv="alta">🔴 Alta</button>
           </div>
         </div>
-        <p class="np-muted np-cal-create-hint">Abriremos «Nuevo apunte» con la fecha de este día en Objetivo. Ahí puedes poner título, hora y la libreta.</p>
+        <p class="np-muted np-cal-create-hint">Abriremos el formulario en ventana superpuesta con la fecha de este día en Objetivo.</p>
       </div>
       <div class="np-modal-foot" style="padding:12px 16px 16px;border-top:1px solid rgba(148,163,184,0.35);">
-        <button type="button" class="btn btn-primary" id="npCalCreateGo" style="width:100%;">Abrir formulario</button>
+        <button type="button" class="btn btn-primary" id="npCalCreateGo" style="width:100%;">Crear apunte</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="npCreateModal" class="np-modal-overlay" aria-hidden="true">
+    <div class="np-modal-panel" role="dialog" aria-labelledby="npCreateModalTitle">
+      <div class="np-modal-head">
+        <div style="min-width:0;">
+          <h3 id="npCreateModalTitle">Nuevo apunte</h3>
+          <div id="npCreateModalPath" class="np-modal-meta np-modal-meta-wrap"></div>
+        </div>
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npCreateModalClose">Cerrar</button>
+      </div>
+      <div class="np-modal-body">
+        <div id="npNeedCategory" class="np-msg warn np-hide" style="margin-bottom:12px;">Selecciona una rama en el árbol para guardar.</div>
+        <form id="npFormCreate">
+          <label for="npTitle" class="np-compact-label">Resumen / título</label>
+          <input id="npTitle" class="np-title-compact" name="title" required maxlength="500" placeholder="Título" />
+          <div class="np-create-item-meta np-detail-item-meta-edit np-ficha-meta-row" id="npCreateItemMeta">
+            <span class="np-detail-meta-label">Objetivo</span>
+            <button type="button" id="npCreateFichaPill" class="np-ficha-due-pill np-ficha-due-pill--empty" aria-label="Semáforo y fecha del apunte (opcional)">Semáforo y fecha</button>
+            <span class="np-create-meta-hint np-muted">Opcional · en la libreta usa 🚦 por línea</span>
+          </div>
+          <div class="np-create-maps-row">
+            <label for="npCreateMapsUrl" class="np-detail-meta-label">Ubicación / Maps</label>
+            <input id="npCreateMapsUrl" type="url" inputmode="url" autocomplete="off" placeholder="Pega aquí link de Google Maps (opcional)" />
+            <button type="button" class="np-detail-maps-action" id="npCreateMapsPickBtn">Elegir en mapa</button>
+          </div>
+          <label class="np-compact-label">Hoja en blanco</label>
+          <div id="npRichToolbar" class="np-rich-toolbar">
+            <span class="np-rich-grp">
+              <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="bold" title="Negrita"><strong>B</strong></button>
+              <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="italic" title="Cursiva"><em>I</em></button>
+              <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="underline" title="Subrayado"><u>U</u></button>
+              <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="strikeThrough" title="Tachado"><s>S</s></button>
+            </span>
+            <span class="np-rich-grp" title="Color de texto">
+              <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#2563eb" title="Azul" aria-label="Color de texto azul" style="background:#2563eb;border-color:rgba(30,64,175,0.35);"></button>
+              <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#16a34a" title="Verde" aria-label="Color de texto verde" style="background:#16a34a;border-color:rgba(21,128,61,0.35);"></button>
+              <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#dc2626" title="Rojo" aria-label="Color de texto rojo" style="background:#dc2626;border-color:rgba(153,27,27,0.35);"></button>
+              <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#0f172a" title="Negro" aria-label="Color de texto negro" style="background:#0f172a;border-color:rgba(15,23,42,0.45);"></button>
+              <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#64748b" title="Gris" aria-label="Color de texto gris" style="background:#64748b;border-color:rgba(51,65,85,0.35);"></button>
+              <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#b45309" title="Amarillo (oscuro, legible)" aria-label="Color de texto amarillo oscuro" style="background:#fbbf24;border-color:rgba(180,83,9,0.45);"></button>
+              <button type="button" class="np-rich-tbtn np-rich-tbtn-color" data-rich="color" data-hex="#7c3aed" title="Morado" aria-label="Color de texto morado" style="background:#7c3aed;border-color:rgba(91,33,182,0.35);"></button>
+            </span>
+            <span class="np-rich-grp">
+              <button type="button" class="np-rich-tbtn" data-rich="fmt" data-v="h2" title="Título">Título</button>
+              <button type="button" class="np-rich-tbtn" data-rich="fmt" data-v="h3" title="Subtítulo">Sub</button>
+              <button type="button" class="np-rich-tbtn" data-rich="fmt" data-v="p" title="Párrafo">Párrafo</button>
+            </span>
+            <span class="np-rich-grp">
+              <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="insertUnorderedList" title="Lista con viñetas">• Lista</button>
+              <button type="button" class="np-rich-tbtn" data-rich="cmd" data-v="insertOrderedList" title="Lista numerada">1. Lista</button>
+              <button type="button" class="np-rich-tbtn" data-rich="listdiag" title="Lista tipo diagrama (ramas ├ └)">Diagrama</button>
+            </span>
+            <span class="np-rich-grp">
+              <button type="button" class="np-rich-tbtn" data-rich="wrap" data-v="np-rich-fs-sm" title="Texto pequeño">Peq</button>
+              <button type="button" class="np-rich-tbtn" data-rich="wrap" data-v="np-rich-fs-md" title="Normal">Md</button>
+              <button type="button" class="np-rich-tbtn" data-rich="wrap" data-v="np-rich-fs-lg" title="Grande">L</button>
+              <button type="button" class="np-rich-tbtn" data-rich="wrap" data-v="np-rich-fs-xl" title="Muy grande">XL</button>
+            </span>
+            <span class="np-rich-grp">
+              <button type="button" class="np-rich-tbtn np-rich-tbtn-due" data-rich="duedate" title="Semáforo y fecha en esta línea (calendario)">🚦</button>
+              <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="warn" title="Marcar importancia">⚠︎</button>
+              <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="star" title="Destacar">★</button>
+              <button type="button" class="np-rich-tbtn" data-rich="snippet" data-snippet="separator" title="Insertar línea separadora">—</button>
+              <button type="button" class="np-rich-tbtn" data-rich="image" title="Insertar imagen (se comprime y sube a la nube)">🖼</button>
+              <button type="button" class="np-rich-tbtn" data-rich="nutri-link" title="Enlace corto a archivo Nutri PRO">📎</button>
+            </span>
+          </div>
+          <div class="np-notebook-wrap">
+            <div class="np-notebook-page np-notebook-rich">
+              <div id="npBodyRich" class="np-rich-editor np-rich-empty" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true"></div>
+            </div>
+          </div>
+          <label class="np-compact-label" style="margin-top:14px;">Tablas y bloques extra</label>
+          <div class="np-tools-row">
+            <button type="button" class="btn btn-ghost btn-ghost-np-note" id="npBtnAddNoteBlock">＋ Bloque de texto</button>
+            <button type="button" class="btn btn-ghost btn-ghost-np-smart" id="npBtnAddSmartTable">＋ Tabla seguimiento PRO</button>
+            <button type="button" class="btn btn-ghost btn-ghost-np-tasks" id="npBtnAddTaskTable">＋ Tabla de tareas</button>
+            <button type="button" class="btn btn-ghost btn-ghost-np-free" id="npBtnAddMiniSheet">＋ Tabla libre</button>
+            <button type="button" class="btn btn-ghost btn-ghost-np-ledger" id="npBtnAddLedgerSheet">＋ Tabla de montos</button>
+            <span id="npPendingBlocksHint" class="np-muted" style="font-size:12px;"></span>
+          </div>
+          <div id="npMiniSheetPreview" class="np-hide"></div>
+          <button type="submit" class="btn btn-primary" id="npBtnCreate">Guardar apunte</button>
+        </form>
       </div>
     </div>
   </div>
@@ -14023,6 +14132,7 @@
   }
 
   async function openItemDetail(r) {
+    closeCreateApunteModal();
     if (detailBlocksSaveTimer) {
       clearTimeout(detailBlocksSaveTimer);
       detailBlocksSaveTimer = null;
@@ -19913,16 +20023,67 @@
   }
 
   function scrollPlanProSheetSection(section) {
-    var targetId = section === 'new' ? 'npSheetNewNoteAnchor' : 'npSheetApuntesAnchor';
-    var el = $(targetId);
+    if (section === 'new') {
+      openCreateApunteModal({ keepForm: true });
+      return;
+    }
+    var el = $('npSheetApuntesAnchor');
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (section === 'new') {
-      window.setTimeout(function () {
-        var titleInp = $('npTitle');
-        if (titleInp) titleInp.focus({ preventScroll: true });
-      }, 420);
+  }
+
+  function isCreateApunteModalOpen() {
+    var modal = $('npCreateModal');
+    return !!(modal && modal.classList.contains('np-modal-open'));
+  }
+
+  function closeCreateApunteModal() {
+    var modal = $('npCreateModal');
+    if (!modal || !modal.classList.contains('np-modal-open')) return;
+    modal.classList.remove('np-modal-open', 'np-modal-overlay--above-cal');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  function openCreateApunteModal(opts) {
+    opts = opts || {};
+    if (!state.selectedCategoryId) {
+      showToast('Selecciona una rama en el árbol (izquierda).', true);
+      return;
     }
+    if (!opts.keepForm) {
+      var titleInpReset = $('npTitle');
+      if (titleInpReset) titleInpReset.value = '';
+      resetCreateFormMeta();
+      clearRichEditor();
+      resetCreateFormPendingBlocks();
+    }
+    wireCreateFichaPill();
+    var pathEl = $('npCreateModalPath');
+    if (pathEl) pathEl.textContent = getCategoryPath(state.selectedCategoryId);
+    var modal = $('npCreateModal');
+    if (!modal) return;
+    var panel = modal.querySelector('.np-modal-panel');
+    var accent = sheetAccentHexForSelection();
+    if (panel) {
+      if (accent) panel.style.borderTop = '4px solid ' + accent;
+      else panel.style.borderTop = '';
+    }
+    if (
+      state.calOverlayKeepOpen ||
+      ($('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open'))
+    ) {
+      modal.classList.add('np-modal-overlay--above-cal');
+    } else {
+      modal.classList.remove('np-modal-overlay--above-cal');
+    }
+    modal.classList.add('np-modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+    var needCat = $('npNeedCategory');
+    if (needCat) needCat.classList.add('np-hide');
+    window.setTimeout(function () {
+      var titleInp = $('npTitle');
+      if (titleInp) titleInp.focus({ preventScroll: true });
+    }, 120);
   }
 
   function scrollPlanProPlantListBottom() {
@@ -20608,13 +20769,13 @@
     var btnSub = document.createElement('button');
     btnSub.type = 'button';
     btnSub.className = 'np-tree-btn-sub np-tree-ignore';
-    btnSub.setAttribute('aria-label', 'Nueva hoja aquí');
-    btnSub.title = 'Nueva hoja';
+    btnSub.setAttribute('aria-label', 'Nueva subrama');
+    btnSub.title = 'Nueva subrama';
     btnSub.textContent = '+';
     btnSub.addEventListener('click', function (e) {
       e.stopPropagation();
       closeAllTreeMenus();
-      var name = window.prompt('Nombre de la hoja (debajo de «' + node.cat.title + '»):', '');
+      var name = window.prompt('Nombre de la subrama (debajo de «' + node.cat.title + '»):', '');
       if (!name || !String(name).trim()) return;
       addCategoryUnder(node.cat.id, String(name).trim());
     });
@@ -20758,6 +20919,7 @@
   }
 
   function selectCategory(catId) {
+    if (isCreateApunteModalOpen()) closeCreateApunteModal();
     if (catId !== state.selectedCategoryId) {
       resetCreateFormPendingBlocks();
       state.sheetItemsListExpanded = false;
@@ -21016,7 +21178,8 @@
       more.type = 'button';
       more.className = 'np-pillar-tab-more np-tree-ignore';
       more.setAttribute('data-area-id', a.id);
-      more.setAttribute('aria-label', 'Opciones de planta: color y nombre');
+      more.setAttribute('aria-label', 'Editar planta');
+      more.setAttribute('title', 'Editar planta');
       more.setAttribute('aria-expanded', 'false');
       more.setAttribute('aria-haspopup', 'dialog');
       more.textContent = '\u22EE';
@@ -21093,7 +21256,7 @@
     renderTree();
     updateSelectionUI();
     loadItems();
-    showToast('Rama creada — la hoja sigue abierta en la nueva rama.');
+    showToast('Rama creada.');
   }
 
   async function addRootCategory(title) {
@@ -22723,8 +22886,26 @@
   if (npSheetJumpNewBtn && npSheetJumpNewBtn.dataset.npWired !== '1') {
     npSheetJumpNewBtn.dataset.npWired = '1';
     npSheetJumpNewBtn.addEventListener('click', function () {
-      scrollPlanProSheetSection('new');
+      openCreateApunteModal();
     });
+  }
+  var npCreateModalClose = $('npCreateModalClose');
+  if (npCreateModalClose && npCreateModalClose.dataset.npWired !== '1') {
+    npCreateModalClose.dataset.npWired = '1';
+    npCreateModalClose.addEventListener('click', closeCreateApunteModal);
+  }
+  var npCreateModalEl = $('npCreateModal');
+  if (npCreateModalEl && npCreateModalEl.dataset.npWired !== '1') {
+    npCreateModalEl.dataset.npWired = '1';
+    npCreateModalEl.addEventListener('click', function (e) {
+      if (e.target === npCreateModalEl) closeCreateApunteModal();
+    });
+    var npCreatePanel = npCreateModalEl.querySelector('.np-modal-panel');
+    if (npCreatePanel) {
+      npCreatePanel.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+    }
   }
   var npPlanItemSort = $('npPlanItemSort');
   if (npPlanItemSort && npPlanItemSort.dataset.npWired !== '1') {
@@ -23098,6 +23279,10 @@
       closeCalCreateApunteModal();
       return;
     }
+    if (isCreateApunteModalOpen()) {
+      closeCreateApunteModal();
+      return;
+    }
     if ($('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open')) {
       if ($('npDetailModal').classList.contains('np-modal-open')) {
         await closeItemDetail();
@@ -23250,6 +23435,7 @@
     clearRichEditor();
     state.pendingBlocks = [];
     flushPendingPreviewRefresh();
+    closeCreateApunteModal();
     if (res.queued) return;
     await loadItems();
   });
@@ -27028,8 +27214,22 @@
     if (await pinApi.hasValidAccess(pinApi.SCOPE_PLAN_PRO)) return true;
     $('npLoading').classList.add('np-hide');
     $('npLoginPanel').classList.add('np-hide');
+    setPlanProHeaderBrandLoggedIn(false);
     showNpPinPanel();
     return false;
+  }
+
+  function setPlanProHeaderBrandLoggedIn(loggedIn) {
+    var titleEl = $('npPlanBrandTitle');
+    var subEl = $('npPlanBrandSub');
+    if (!titleEl) return;
+    if (loggedIn) {
+      titleEl.textContent = 'Plan PRO';
+      if (subEl) subEl.classList.remove('np-hide');
+    } else {
+      titleEl.textContent = 'Acceso privado';
+      if (subEl) subEl.classList.add('np-hide');
+    }
   }
 
   async function loadPlanProApp() {
@@ -27050,6 +27250,7 @@
     $('npGate').classList.add('np-hide');
     $('npMain').classList.remove('np-hide');
     $('npHeaderLogged').classList.remove('np-hide');
+    setPlanProHeaderBrandLoggedIn(true);
     npCloudSync.sessionReady = true;
     npCloudSyncRender();
     refreshPlanProStorageUsage();
@@ -27079,6 +27280,7 @@
     var sessionRes = await state.client.auth.getSession();
     var session = sessionRes.data && sessionRes.data.session;
     if (!session || !session.user) {
+      setPlanProHeaderBrandLoggedIn(false);
       $('npLoading').classList.add('np-hide');
       $('npLoginPanel').classList.remove('np-hide');
       return;
@@ -27124,7 +27326,7 @@
     var r = await auth.signIn(email, pass);
     btn.disabled = false;
     if (!r.ok) {
-      $('npLoginErr').textContent = r.error || 'Correo o contraseña incorrectos.';
+      $('npLoginErr').textContent = r.error || 'Acceso incorrecto.';
       $('npLoginErr').classList.remove('np-hide');
       return;
     }

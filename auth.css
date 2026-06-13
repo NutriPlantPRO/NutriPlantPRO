@@ -766,22 +766,38 @@
   white-space: nowrap;
 }
 
+/* Enlaces del pie (Manual / Privacidad / Términos): mismo espacio en cel, tablet y laptop */
 .login-public-footer-links {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 8px 12px;
-  margin-top: 16px;
+  gap: 4px 22px;
+  margin-top: 14px;
   font-size: 13px;
+  padding: 0 12px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .login-public-footer-links a {
   color: #2563eb;
   font-weight: 600;
   text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 6px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
 }
 .login-public-footer-links a:hover { text-decoration: underline; }
-.login-public-footer-links .sep { color: #94a3b8; user-select: none; }
+.login-public-footer-links a:active {
+  background: rgba(37, 99, 235, 0.07);
+}
+.login-public-footer-links .sep {
+  display: none;
+}
 
 /* Accesos discretos (Plan PRO / admin): iconos casi imperceptibles hasta hover */
 .login-discreet-access {
@@ -789,7 +805,7 @@
   justify-content: center;
   align-items: center;
   gap: 12px;
-  margin-top: 8px;
+  margin-top: 4px;
   padding-bottom: 2px;
 }
 .login-discreet-access a {

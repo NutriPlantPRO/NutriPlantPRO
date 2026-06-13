@@ -559,7 +559,7 @@
     <div class="admin-container">
         <!-- Login Form -->
         <div id="loginForm" class="login-form">
-            <h2 class="login-title">🔐 Panel de Administración</h2>
+            <h2 class="login-title">Acceso privado</h2>
             <div id="errorMessage" class="error-message" style="display: none;"></div>
             <div id="successMessage" class="success-message" style="display: none;"></div>
             <div id="adminLockoutMessage" class="error-message" style="display: none; margin-top: 12px; padding: 16px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca;">
@@ -569,28 +569,28 @@
             
             <form id="adminLoginForm">
                 <div class="form-group">
-                    <label for="username">Usuario:</label>
-                    <input type="email" id="username" name="username" placeholder="Ingrese su correo electrónico" required>
+                    <label for="username">Acceso 1</label>
+                    <input type="email" id="username" name="username" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password">Contraseña:</label>
+                    <label for="password">Acceso 2</label>
                     <input type="password" id="password" name="password" required>
                 </div>
                 
-                <button type="submit" class="btn-admin">Iniciar Sesión</button>
+                <button type="submit" class="btn-admin">Entrar</button>
             </form>
         </div>
 
         <div id="adminPinPanel" class="login-form" style="display: none;">
-            <h2 class="login-title">🔢 Código de acceso</h2>
+            <h2 class="login-title">Acceso privado</h2>
             <p style="text-align: center; color: #64748b; font-size: 14px; line-height: 1.45; margin: 0 0 16px;">
-                Cuatro dígitos adicionales para el panel admin en este dispositivo.
+                Cuatro dígitos adicionales en este dispositivo.
             </p>
             <div id="adminPinErrorMessage" class="error-message" style="display: none;"></div>
             <form id="adminPinSubmitForm">
                 <div class="form-group">
-                    <label for="adminPinInput">PIN</label>
+                    <label for="adminPinInput">Acceso 3</label>
                     <input
                         type="password"
                         id="adminPinInput"
@@ -598,7 +598,7 @@
                         pattern="[0-9]{4}"
                         inputmode="numeric"
                         autocomplete="one-time-code"
-                        placeholder="••••"
+                        placeholder=""
                         style="font-size: 1.25rem; letter-spacing: 0.35em; text-align: center;"
                         required
                     />
@@ -1732,7 +1732,7 @@
                     showErrorMessage('❌ Límite de intentos alcanzado. Este dispositivo queda bloqueado ' + ADMIN_LOCKOUT_MINUTES + ' minutos. Tu acceso desde otro equipo no se afecta.');
                 } else {
                     var left = ADMIN_MAX_ATTEMPTS - attempts;
-                    showErrorMessage('❌ Usuario o contraseña incorrectos. Te quedan ' + left + ' intento(s) en este dispositivo.');
+                    showErrorMessage('❌ Acceso incorrecto. Te quedan ' + left + ' intento(s) en este dispositivo.');
                 }
                 document.getElementById('password').value = '';
             }
