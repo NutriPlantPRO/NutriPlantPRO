@@ -41,7 +41,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 ## Paso C — Actions (OpenAPI)
 
 1. **Actions** → elimina schema anterior si da conflicto.
-2. Importa `docs/openapi-nutriplant-admin.json` **v2.8.1** (clima en vivo: mode rolling|all).
+2. Importa `docs/openapi-nutriplant-admin.json` **v2.9.0** (clima en vivo + `my_program_*` personal admin).
 3. Auth sin cambios: `Authorization: Bearer <NUTRIPLANT_ADMIN_GPT_TOKEN>`.
 
 ---
@@ -65,8 +65,11 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 8. **“¿Cómo calcula NutriPlant el balance hídrico de riego?”** → `manual_tecnico_catalog` chapter `balance_hidrico_riego_clima` o Knowledge MANUAL §4.11b
 9. **“¿Qué balance hídrico tiene el proyecto [nombre]?”** → `project_climate` mode=saved (`irrigation_quick_calc`)
 10. **“Dame el clima actualizado del proyecto [nombre]”** → `project_climate` mode=**all** (`rolling_windows_ahora`, `irrigation_quick_calc_live`)
-11. **“Redacta un post LinkedIn sobre % meq que no suman 100”** → PUBLICACIONES-REDES + capítulo FAQ + URL manual
-12. **“¿Qué capítulos tenemos para publicar esta semana?”** → `manual_tecnico_catalog` + pilar G `publicaciones_redes_sociales`
+11. **“Crea un proyecto personal GPT para programa limón 45 t/ha”** → `my_program_project_create`
+12. **“Guarda este borrador de programa en ese proyecto”** → `my_program_project_update` section=draft
+13. **“Lista mis programas GPT personales”** → `my_program_project_list`
+14. **“Redacta un post LinkedIn sobre % meq que no suman 100”** → PUBLICACIONES-REDES + capítulo FAQ + URL manual
+15. **“¿Qué capítulos tenemos para publicar esta semana?”** → `manual_tecnico_catalog` + pilar G `publicaciones_redes_sociales`
 
 **Redes en el día a día:** cuando publiques algo nuevo, pega el link al Socio en ChatGPT y redactáis juntos (ver flujo en `PUBLICACIONES-REDES` intro y en Instructions § fuente 5). Para que lo recuerde en futuros chats: añade la fila en §8 y re-sube el Knowledge #4 (o actualiza en Cursor y vuelve a subir).
 
@@ -82,6 +85,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 | `lab_analyses_catalog` | Flujo, criterios, claves JSON |
 | `free_tools_catalog` | Calculadoras gratis (sin nube) |
 | `manual_tecnico_catalog` | **Manual web público** — capítulos, URLs, reglas GEO |
+| `my_program_project_create/list/get/update` | Laboratorio personal: crea/edita solo proyectos GPT del usuario admin |
 
 ## URLs que el GPT debe citar (manual público)
 

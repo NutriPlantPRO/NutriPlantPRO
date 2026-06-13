@@ -1,5 +1,6 @@
 /**
- * NutriPlant PRO — API de consulta para Custom GPT (solo administrador, solo lectura).
+ * NutriPlant PRO — API para Custom GPT (admin).
+ * Casi todo es solo lectura; my_program_* escribe solo en proyectos personales GPT del admin.
  *
  * Variables Netlify:
  *   SUPABASE_URL
@@ -146,6 +147,30 @@ function normalizeParams(body) {
     const v = src[key];
     if (v != null && v !== '' && params[key] == null) params[key] = v;
   });
+  const myProgramKeys = [
+    'section',
+    'program_section',
+    'program_type',
+    'program_status',
+    'program_data',
+    'draft',
+    'program',
+    'data',
+    'merge',
+    'notes',
+    'variedad',
+    'variety',
+    'target_yield',
+    'yield',
+    'yield_unit',
+    'unidadRendimiento',
+    'campoOsector',
+    'sector'
+  ];
+  myProgramKeys.forEach((key) => {
+    const v = src[key];
+    if (v != null && v !== '' && params[key] == null) params[key] = v;
+  });
   const analysisKeys = ['type', 'analysis_type'];
   analysisKeys.forEach((key) => {
     const v = src[key];
@@ -172,6 +197,18 @@ function isSoftDeletedProject(row) {
 function getProjectCrop(data) {
   if (!data || typeof data !== 'object') return '';
   return String(data.crop_type || data.cultivo || data.cropType || '').trim();
+}
+
+function parseMaybeJsonObject(value, fallback) {
+  if (value == null || value === '') return fallback == null ? null : fallback;
+  if (typeof value === 'object' && !Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    } catch {}
+  }
+  return fallback == null ? null : fallback;
 }
 
 /** Misma lógica que getActiveUsers() en admin/index.html */
@@ -1703,6 +1740,316 @@ async function resolveProject(supabase, params) {
       name: p.name || p.title,
       crop: getProjectCrop(p.data)
     }))
+  };
+}
+
+async function getMyProgramOwnerProfile(supabase) {
+  const targetEmail = String(process.env.NUTRIPLANT_GPT_PERSONAL_EMAIL || ADMIN_EMAIL_LC)
+    .trim()
+    .toLowerCase();
+  const profiles = await fetchProfiles(supabase);
+  return profiles.find((p) => String(p.email || '').trim().toLowerCase() === targetEmail) || null;
+}
+
+function isMyProgramProject(row, ownerId) {
+  if (!row || row.user_id !== ownerId) return false;
+  const data = row.data && typeof row.data === 'object' ? row.data : {};
+  return data.gptPersonalProgram === true && data.created_by_gpt === true;
+}
+
+function newMyProgramProjectId() {
+  return 'np_gpt_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
+}
+
+function buildMyProgramProjectData(projectId, owner, params) {
+  const now = new Date().toISOString();
+  const name = String(params.title || params.project_name || params.name || 'Programa GPT personal').trim();
+  const crop = String(params.crop || params.cultivo || '').trim();
+  const variety = String(params.variedad || params.variety || '').trim();
+  const expectedYield = params.rendimientoEsperado ?? params.target_yield ?? params.yield ?? null;
+  const draft = parseMaybeJsonObject(params.program_data || params.draft || params.program || null, {});
+  return {
+    id: projectId,
+    code: projectId,
+    name,
+    title: name,
+    user_id: owner.id,
+    userId: owner.id,
+    user_name: owner.name || '',
+    user_email: owner.email || '',
+    cultivo: crop || null,
+    crop_type: crop || null,
+    variedad: variety || null,
+    campoOsector: params.campoOsector || params.sector || 'GPT personal',
+    rendimientoEsperado: expectedYield,
+    unidadRendimiento: params.unidadRendimiento || params.yield_unit || 't/ha',
+    location: {
+      projectId,
+      coordinates: '',
+      surface: '',
+      perimeter: '',
+      polygon: null,
+      city: '',
+      state: '',
+      country: '',
+      center: null,
+      area: null,
+      areaHectares: null,
+      areaAcres: null
+    },
+    amendments: {
+      selected: [],
+      results: { type: '', amount: '', caContribution: '', naRemoval: '', detailedHTML: '', isVisible: false },
+      lastUpdated: null
+    },
+    soilAnalysis: {
+      initial: { k: 0, ca: 0, mg: 0, h: 0, na: 0, al: 0, cic: 0 },
+      properties: { ph: 0, density: 0, depth: 0 },
+      adjustments: { k: 0, ca: 0, mg: 0, h: 0, na: 0, al: 0 },
+      lastUpdated: null
+    },
+    granular: null,
+    fertirriego: null,
+    hydroponics: null,
+    vpdAnalysis: {
+      environmental: { temperature: null, humidity: null, vpd: null, hd: null, calculatedAt: null, location: { lat: null, lng: null }, source: null },
+      advanced: { airTemperature: null, airHumidity: null, mode: null, leafTemperature: null, solarRadiation: null, calculatedLeafTemp: null, vpd: null, hd: null, calculatedAt: null },
+      history: [],
+      rangeState: { granularity: 'daily', startDate: '', endDate: '' },
+      currentRangeTable: null,
+      rangeTables: [],
+      lastUpdated: null
+    },
+    climateAnalysis: null,
+    calculations: {},
+    documents: [],
+    chat_history: [],
+    gptPersonalProgram: true,
+    created_by_gpt: true,
+    admin_personal_draft: true,
+    program_status: params.program_status || 'draft',
+    gptProgramDraft: {
+      title: name,
+      type: params.program_type || params.type || 'nutricion',
+      crop: crop || null,
+      created_at: now,
+      updated_at: now,
+      notes: params.notes || params.note || '',
+      data: draft || {}
+    },
+    status: 'active',
+    version: '1.0',
+    created_at: now,
+    createdAt: now,
+    updated_at: now,
+    updatedAt: now
+  };
+}
+
+function summarizeMyProgramProject(row) {
+  const data = row.data || {};
+  return {
+    id: row.id,
+    name: row.name || row.title || data.name || data.title || 'Sin nombre',
+    crop: getProjectCrop(data),
+    updated_at: row.updated_at,
+    program_status: data.program_status || 'draft',
+    has_fertirriego: !!data.fertirriego,
+    has_granular: !!data.granular,
+    draft_title: data.gptProgramDraft && data.gptProgramDraft.title ? data.gptProgramDraft.title : null
+  };
+}
+
+async function fetchMyProgramProjects(supabase, ownerId) {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('id, user_id, name, title, data, created_at, updated_at')
+    .eq('user_id', ownerId)
+    .order('updated_at', { ascending: false })
+    .limit(200);
+  if (error) throw new Error('my_program_project_list: ' + error.message);
+  return (data || []).filter((p) => !isSoftDeletedProject(p) && isMyProgramProject(p, ownerId));
+}
+
+async function resolveMyProgramProject(supabase, ownerId, params) {
+  const resolved = await resolveProject(supabase, params);
+  if (!resolved.found) return resolved;
+  if (!isMyProgramProject(resolved.project, ownerId)) {
+    return {
+      found: false,
+      blocked: true,
+      message:
+        'Bloqueado por seguridad: esta action solo puede operar proyectos GPT personales del usuario admin configurado.'
+    };
+  }
+  return resolved;
+}
+
+async function handleMyProgramProjectCreate(supabase, params) {
+  const owner = await getMyProgramOwnerProfile(supabase);
+  if (!owner) return { ok: false, domain: 'my_programs', error: 'No se encontró el usuario personal admin.' };
+  const projectId = newMyProgramProjectId();
+  const projectData = buildMyProgramProjectData(projectId, owner, params || {});
+  const row = {
+    id: projectId,
+    user_id: owner.id,
+    name: projectData.name,
+    title: projectData.title,
+    data: projectData,
+    updated_at: projectData.updated_at
+  };
+  const { data, error } = await supabase.from('projects').insert(row).select('id, user_id, name, title, data, created_at, updated_at').single();
+  if (error) throw new Error('my_program_project_create: ' + error.message);
+  return {
+    ok: true,
+    domain: 'my_programs',
+    created: true,
+    message: 'Proyecto/programa personal creado. Se verá en el dashboard al entrar con el usuario admin.',
+    owner: { id: owner.id, email: owner.email, name: owner.name },
+    project: summarizeMyProgramProject(data),
+    safety:
+      'Solo se creó en el usuario personal admin; ninguna action my_program_* escribe en proyectos de suscriptores.'
+  };
+}
+
+async function handleMyProgramProjectList(supabase, params) {
+  const owner = await getMyProgramOwnerProfile(supabase);
+  if (!owner) return { ok: false, domain: 'my_programs', error: 'No se encontró el usuario personal admin.' };
+  const rows = await fetchMyProgramProjects(supabase, owner.id);
+  const q = String((params && (params.q || params.search || params.project_name)) || '').trim().toLowerCase();
+  const filtered = q
+    ? rows.filter((p) => {
+        const data = p.data || {};
+        return (
+          String(p.name || p.title || '').toLowerCase().includes(q) ||
+          getProjectCrop(data).toLowerCase().includes(q) ||
+          String(p.id || '').toLowerCase().includes(q)
+        );
+      })
+    : rows;
+  const limit = Math.min(Math.max(parseInt(params.limit, 10) || 50, 1), 100);
+  return {
+    ok: true,
+    domain: 'my_programs',
+    owner: { id: owner.id, email: owner.email, name: owner.name },
+    count: filtered.length,
+    projects: filtered.slice(0, limit).map(summarizeMyProgramProject)
+  };
+}
+
+async function handleMyProgramProjectGet(supabase, params) {
+  const owner = await getMyProgramOwnerProfile(supabase);
+  if (!owner) return { ok: false, domain: 'my_programs', error: 'No se encontró el usuario personal admin.' };
+  const resolved = await resolveMyProgramProject(supabase, owner.id, params);
+  if (!resolved.found) return { ok: true, domain: 'my_programs', ...resolved };
+  const row = resolved.project;
+  return {
+    ok: true,
+    domain: 'my_programs',
+    project: summarizeMyProgramProject(row),
+    data: row.data || {},
+    sections: {
+      fertirriego: summarizeFertirriego(getFertirriegoProgram(row.data || {}), params.fertirriego_stage_index ?? params.stage_index),
+      granular: summarizeGranular(row.data || {})
+    }
+  };
+}
+
+async function handleMyProgramProjectUpdate(supabase, params) {
+  const owner = await getMyProgramOwnerProfile(supabase);
+  if (!owner) return { ok: false, domain: 'my_programs', error: 'No se encontró el usuario personal admin.' };
+  const resolved = await resolveMyProgramProject(supabase, owner.id, params);
+  if (!resolved.found) return { ok: true, domain: 'my_programs', ...resolved };
+  const row = resolved.project;
+  const current = row.data && typeof row.data === 'object' ? row.data : {};
+  const now = new Date().toISOString();
+  const next = { ...current, updated_at: now, updatedAt: now };
+  const changed = [];
+
+  if (params.title != null || params.name != null) {
+    const label = String(params.title || params.name || '').trim();
+    if (label) {
+      next.name = label;
+      next.title = label;
+      changed.push('name/title');
+    }
+  }
+  if (params.crop != null || params.cultivo != null) {
+    const crop = String(params.crop || params.cultivo || '').trim();
+    next.cultivo = crop || null;
+    next.crop_type = crop || null;
+    changed.push('crop');
+  }
+  if (params.program_status != null) {
+    next.program_status = String(params.program_status || '').trim() || 'draft';
+    changed.push('program_status');
+  }
+
+  const section = String(params.section || params.program_section || 'draft').trim().toLowerCase();
+  const incoming = parseMaybeJsonObject(params.program_data || params.data || params.draft || params.program || null, null);
+  const merge = params.merge === true || params.merge === 'true';
+  if (incoming) {
+    if (section === 'fertirriego') {
+      next.fertirriego = merge && next.fertirriego && typeof next.fertirriego === 'object' ? { ...next.fertirriego, ...incoming } : incoming;
+      changed.push('fertirriego');
+    } else if (section === 'granular') {
+      next.granular = merge && next.granular && typeof next.granular === 'object' ? { ...next.granular, ...incoming } : incoming;
+      changed.push('granular');
+    } else if (section === 'calculators') {
+      next.calculations = merge && next.calculations && typeof next.calculations === 'object' ? { ...next.calculations, ...incoming } : incoming;
+      changed.push('calculations');
+    } else {
+      const prevDraft = next.gptProgramDraft && typeof next.gptProgramDraft === 'object' ? next.gptProgramDraft : {};
+      next.gptProgramDraft = {
+        ...prevDraft,
+        title: next.title || next.name || prevDraft.title || 'Programa GPT personal',
+        type: params.program_type || params.type || prevDraft.type || 'nutricion',
+        updated_at: now,
+        notes: params.notes != null || params.note != null ? String(params.notes || params.note || '') : prevDraft.notes || '',
+        data: merge && prevDraft.data && typeof prevDraft.data === 'object' ? { ...prevDraft.data, ...incoming } : incoming
+      };
+      changed.push('gptProgramDraft');
+    }
+  } else if (params.notes != null || params.note != null) {
+    const prevDraft = next.gptProgramDraft && typeof next.gptProgramDraft === 'object' ? next.gptProgramDraft : {};
+    next.gptProgramDraft = { ...prevDraft, updated_at: now, notes: String(params.notes || params.note || '') };
+    changed.push('gptProgramDraft.notes');
+  }
+
+  if (!changed.length) {
+    return {
+      ok: true,
+      domain: 'my_programs',
+      updated: false,
+      message:
+        'Nada que actualizar. Usa title, crop/cultivo, program_status, notes o program_data con section=draft|fertirriego|granular|calculators.'
+    };
+  }
+
+  next.gptPersonalProgram = true;
+  next.created_by_gpt = true;
+  next.admin_personal_draft = true;
+  const patch = {
+    name: next.name || next.title || row.name || row.title || 'Programa GPT personal',
+    title: next.title || next.name || row.title || row.name || '',
+    data: next,
+    updated_at: now
+  };
+  const { data, error } = await supabase
+    .from('projects')
+    .update(patch)
+    .eq('id', row.id)
+    .eq('user_id', owner.id)
+    .select('id, user_id, name, title, data, created_at, updated_at')
+    .single();
+  if (error) throw new Error('my_program_project_update: ' + error.message);
+  return {
+    ok: true,
+    domain: 'my_programs',
+    updated: true,
+    fields_changed: changed,
+    project: summarizeMyProgramProject(data),
+    safety: 'Actualización permitida solo porque el proyecto pertenece al admin personal y está marcado como GPT personal.'
   };
 }
 
@@ -5196,6 +5543,12 @@ async function handleDescribeApi() {
         'project_vpd_live',
         'project_climate'
       ],
+      my_programs: [
+        'my_program_project_create',
+        'my_program_project_list',
+        'my_program_project_get',
+        'my_program_project_update'
+      ],
       plan_pro: [
         'plan_pro_catalog',
         'plan_pro_day',
@@ -5223,6 +5576,8 @@ async function handleDescribeApi() {
     },
     usage:
       'Reportes laboratorio (nube): project_analyses. Clima en vivo (Open-Meteo, solo lectura): project_climate mode=saved|live|rainfall_refresh|rolling|all; project_vpd_live. Radar: radar_project. Plan PRO: plan_pro_*.',
+    my_programs_gpt:
+      'Escritura limitada y segura para laboratorio personal de Jesús: my_program_project_create/list/get/update. Solo opera proyectos del email admin configurado (default admin@nutriplantpro.com) marcados gptPersonalProgram=true y created_by_gpt=true. Nunca edita proyectos de suscriptores.',
     climate_gpt:
       'project_climate NO altera al suscriptor. mode=saved → climate_saved (snapshot). mode=live → tiempo_actual_ahora. mode=rainfall_refresh → lluvia_et0_ahora (tablas mensuales). mode=rolling o all → rolling_windows_ahora (1/7/30 d) + irrigation_quick_calc_live si hay calculadora guardada. Si piden «actualizado», usa mode=all.',
     nutri_pro_gpt:
@@ -5243,6 +5598,10 @@ const HANDLERS = {
   project_analyses: (sb, p) => handleProjectAnalyses(sb, p),
   project_vpd_live: (sb, p) => handleProjectVpdLive(sb, p),
   project_climate: (sb, p) => handleProjectClimate(sb, p),
+  my_program_project_create: (sb, p) => handleMyProgramProjectCreate(sb, p),
+  my_program_project_list: (sb, p) => handleMyProgramProjectList(sb, p || {}),
+  my_program_project_get: (sb, p) => handleMyProgramProjectGet(sb, p || {}),
+  my_program_project_update: (sb, p) => handleMyProgramProjectUpdate(sb, p || {}),
   plan_pro_catalog: (sb) => handlePlanProCatalog(sb),
   plan_pro_day: (sb, p) => handlePlanProDay(sb, p),
   plan_pro_week: (sb, p) => handlePlanProWeek(sb, p),
@@ -5274,9 +5633,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.8.1',
+      version: '2.9.0',
       description:
-        'NutriPlant + Plan PRO + Nutri PRO (nutri_pro_save, nutri_pro_upload_link para archivos reales). Plan PRO escritura. Análisis, Clima, Radar.'
+        'NutriPlant + Plan PRO + Nutri PRO. Escritura segura: Plan PRO y my_program_* solo en laboratorio personal admin. Análisis, Clima, Radar.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -5330,6 +5689,18 @@ function getOpenApiSpec() {
                 mode: {
                   type: 'string',
                   description: 'project_climate: saved|live|rainfall_refresh|rolling|all'
+                },
+                section: {
+                  type: 'string',
+                  description: 'my_program_project_update: draft|fertirriego|granular|calculators'
+                },
+                program_data: {
+                  type: 'object',
+                  description: 'my_program_*: borrador o estructura de programa a guardar en proyecto personal GPT.'
+                },
+                program_status: {
+                  type: 'string',
+                  description: 'my_program_*: draft|review|final u otro estado libre.'
                 }
               },
               additionalProperties: true

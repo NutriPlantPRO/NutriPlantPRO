@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.8.1",
-    "description": "Plan PRO + Nutri PRO. Clima en vivo: project_climate mode=saved|live|rainfall_refresh|rolling|all (Open-Meteo, solo lectura)."
+    "version": "2.9.0",
+    "description": "Plan PRO + Nutri PRO. Clima en vivo. my_program_* crea/edita solo proyectos personales GPT del admin (no suscriptores)."
   },
   "servers": [
     {
@@ -52,6 +52,10 @@
               "project_analyses",
               "project_vpd_live",
               "project_climate",
+              "my_program_project_create",
+              "my_program_project_list",
+              "my_program_project_get",
+              "my_program_project_update",
               "plan_pro_catalog",
               "plan_pro_day",
               "plan_pro_week",
@@ -164,7 +168,39 @@
               },
               "material_id": { "type": "string", "description": "nutrition_catalogs: id o nombre de fertilizante" },
               "crop_id": { "type": "string", "description": "nutrition_catalogs: id de cultivo" },
-              "name": { "type": "string", "description": "nutrition_catalogs: buscar por nombre exacto" }
+              "name": { "type": "string", "description": "nutrition_catalogs: buscar por nombre exacto" },
+              "section": {
+                "type": "string",
+                "description": "my_program_project_update: draft|fertirriego|granular|calculators"
+              },
+              "program_type": {
+                "type": "string",
+                "description": "my_program_*: nutricion|fertirriego|granular|hidroponia u otro tipo libre"
+              },
+              "program_status": {
+                "type": "string",
+                "description": "my_program_*: draft|review|final u otro estado libre"
+              },
+              "program_data": {
+                "type": "object",
+                "description": "my_program_*: borrador o estructura JSON de programa. Solo se guarda en proyectos personales GPT del admin."
+              },
+              "draft": {
+                "type": "object",
+                "description": "Alias de program_data para my_program_*"
+              },
+              "merge": {
+                "type": "boolean",
+                "description": "my_program_project_update: fusionar con sección existente cuando sea posible"
+              },
+              "notes": {
+                "type": "string",
+                "description": "my_program_*: notas del borrador personal"
+              },
+              "target_yield": {
+                "type": "string",
+                "description": "my_program_project_create: rendimiento objetivo"
+              }
             },
             "additionalProperties": true
           }
