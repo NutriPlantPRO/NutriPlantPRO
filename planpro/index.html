@@ -13200,10 +13200,40 @@
     );
   }
 
-  function insertRichHtmlSnippet(html, editorEl, onAfter) {
+  function getRichEditorSelectionRange(editorEl) {
+    if (!editorEl) return null;
+    var sel = window.getSelection && window.getSelection();
+    if (!sel || sel.rangeCount === 0) return null;
+    var range = sel.getRangeAt(0);
+    if (!editorEl.contains(range.commonAncestorContainer)) return null;
+    return range.cloneRange();
+  }
+
+  function rememberRichEditorSelection(editorEl) {
+    var range = getRichEditorSelectionRange(editorEl);
+    if (range) editorEl._npSavedRange = range;
+    return range;
+  }
+
+  function restoreRichEditorSelectionRange(editorEl, savedRange) {
+    if (!editorEl || !savedRange) return false;
+    try {
+      if (!editorEl.contains(savedRange.commonAncestorContainer)) return false;
+      var sel = window.getSelection && window.getSelection();
+      if (!sel) return false;
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function insertRichHtmlSnippet(html, editorEl, onAfter, savedRange) {
     if (!html || !editorEl) return;
     var target = editorEl;
     target.focus();
+    if (savedRange) restoreRichEditorSelectionRange(target, savedRange);
     var sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     var range = sel.getRangeAt(0).cloneRange();
@@ -13466,6 +13496,11 @@
     crossLinkPickerState = {
       mode: opts.mode === 'apunte' ? 'apunte' : 'nutri',
       editorEl: opts.editorEl || null,
+      savedRange:
+        opts.savedRange ||
+        rememberRichEditorSelection(opts.editorEl) ||
+        (opts.editorEl && opts.editorEl._npSavedRange) ||
+        null,
       onPick: opts.onPick || null
     };
     if (titleEl) {
@@ -13505,7 +13540,7 @@
         insertRichHtmlSnippet(html, editorEl, function () {
           bindRichRefMarkers(editorEl, onAfter);
           if (onAfter) onAfter();
-        });
+        }, crossLinkPickerState && crossLinkPickerState.savedRange);
       }
     });
   }
@@ -23399,9 +23434,27 @@
 
   document.addEventListener('selectionchange', function () {
     var ed = $('npBodyRich');
-    if (ed && document.activeElement === ed) scheduleRichToolbarSync(ed);
+    if (ed && document.activeElement === ed) {
+      rememberRichEditorSelection(ed);
+      scheduleRichToolbarSync(ed);
+    }
     var ed2 = $('npModalBodyRich');
-    if (ed2 && document.activeElement === ed2) scheduleRichToolbarSync(ed2);
+    if (ed2 && document.activeElement === ed2) {
+      rememberRichEditorSelection(ed2);
+      scheduleRichToolbarSync(ed2);
+    }
+    var active = document.activeElement;
+    if (
+      active &&
+      active !== ed &&
+      active !== ed2 &&
+      active.getAttribute &&
+      active.getAttribute('contenteditable') === 'true' &&
+      active.classList &&
+      active.classList.contains('np-note-section-editor')
+    ) {
+      rememberRichEditorSelection(active);
+    }
   });
 
   $('npFormCreate').addEventListener('submit', async function (e) {
