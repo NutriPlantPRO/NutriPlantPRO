@@ -823,7 +823,10 @@
         '<p style="margin:6px 0 0;font-size:12px;color:#166534;">Mismo concepto que en <strong>Enmiendas</strong> y <strong>Análisis de suelo → Fertilidad</strong>. Aquí ayuda a estimar la <strong>superficie regada</strong>, no la profundidad del suelo.</p></div>' +
         '<p id="climate-irr-area-note" style="margin:0 0 16px 0;padding:10px 12px;font-size:12px;line-height:1.45;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;"></p>' +
         '<div id="climate-irr-summary" style="background:linear-gradient(135deg,#f0f9ff 0%,#ecfeff 100%);border:1px solid #7dd3fc;border-radius:10px;padding:16px;margin-bottom:16px;"></div>' +
-        '<p style="margin:0 0 12px 0;font-size:12px;line-height:1.45;color:#64748b;">Balance hídrico rápido. Vinculado al <strong>% suelo explorado por raíces</strong> de NutriPlant para estimar franja regada. No modela almacenamiento en suelo.</p>' +
+        '<p style="margin:0 0 8px 0;padding:10px 12px;font-size:12px;line-height:1.5;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">' +
+        '<strong>Nota:</strong> El balance hídrico es una <strong>estimación rápida</strong> basada en ETo, lluvia y riego (satélite o valores de campo). ' +
+        'No considera almacenamiento de agua en el suelo, escurrimiento superficial, drenaje profundo ni lixiviación de nutrientes. ' +
+        'El % suelo explorado por raíces (criterio NutriPlant) solo ayuda a estimar la franja regada. <strong>Validar siempre en campo.</strong></p>' +
         '<details id="climate-fao-kc-details" style="border:1px solid #e2e8f0;border-radius:8px;padding:0;background:#fff;">' +
         '<summary style="padding:12px 14px;cursor:pointer;font-weight:600;color:#0f172a;font-size:14px;">📋 Tabla de referencia Kc (FAO-56)</summary>' +
         '<div style="padding:0 14px 14px;">' +
