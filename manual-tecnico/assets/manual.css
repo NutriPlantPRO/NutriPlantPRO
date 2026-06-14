@@ -105,14 +105,37 @@ body {
   text-decoration: none;
   font-size: 14px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
   margin-left: 16px;
+  border: 1px solid transparent;
+  border-radius: 999px;
   white-space: nowrap;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
-.mt-nav a[href$="index.html"] { color: #0369a1; }
-.mt-nav a[href$="login.html"] { color: #16a34a; }
-.mt-nav a[href$="index.html"]:hover { color: #075985; }
-.mt-nav a[href$="login.html"]:hover { color: #15803d; }
-.mt-nav a:hover { color: var(--mt-accent); }
+.mt-nav a[href$="index.html"] {
+  color: #0369a1;
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+}
+.mt-nav a[href$="login.html"] {
+  color: #15803d;
+  background: #dcfce7;
+  border-color: #86efac;
+}
+.mt-nav a[href$="index.html"]:hover {
+  color: #075985;
+  background: #bae6fd;
+  border-color: #38bdf8;
+}
+.mt-nav a[href$="login.html"]:hover {
+  color: #166534;
+  background: #bbf7d0;
+  border-color: #4ade80;
+}
+.mt-nav a:hover { transform: translateY(-1px); }
 .mt-brand { flex-shrink: 0; }
 
 .mt-autoria-btn {
