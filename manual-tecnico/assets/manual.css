@@ -108,6 +108,10 @@ body {
   margin-left: 16px;
   white-space: nowrap;
 }
+.mt-nav a[href$="index.html"] { color: #0369a1; }
+.mt-nav a[href$="login.html"] { color: #16a34a; }
+.mt-nav a[href$="index.html"]:hover { color: #075985; }
+.mt-nav a[href$="login.html"]:hover { color: #15803d; }
 .mt-nav a:hover { color: var(--mt-accent); }
 .mt-brand { flex-shrink: 0; }
 
