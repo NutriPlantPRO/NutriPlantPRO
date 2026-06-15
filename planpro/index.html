@@ -1783,6 +1783,8 @@
       flex-wrap: wrap;
       gap: 4px;
       align-items: flex-start;
+      justify-content: flex-end;
+      max-width: 230px;
     }
     .np-nutri-file-more {
       position: relative;
@@ -1793,7 +1795,7 @@
       align-items: center;
       justify-content: center;
       min-width: 30px;
-      min-height: 28px;
+      min-height: 30px;
       padding: 4px 8px;
       border-radius: 999px;
       border: 1px solid rgba(148, 163, 184, 0.42);
@@ -24378,7 +24380,7 @@
     );
   }
 
-  async function requestNutriProFileExtract(fileId, force) {
+  async function requestNutriProFileExtract(fileId, force, mode) {
     if (!fileId || !state.client) return null;
     var sessRes = await state.client.auth.getSession();
     var token =
@@ -24393,7 +24395,7 @@
           'Content-Type': 'application/json',
           Authorization: 'Bearer ' + token
         },
-        body: JSON.stringify({ file_id: fileId, force: !!force })
+        body: JSON.stringify({ file_id: fileId, force: !!force, mode: mode || 'text' })
       });
       return await res.json();
     } catch (eReq) {
@@ -24411,21 +24413,61 @@
 
   async function reindexNutriProFile(fileRec, mode) {
     if (!fileRec || !fileRec.id) return;
-    if (mode === 'ocr') {
-      showToast('OCR/IA aún no está conectado. Primero queda listo el reindexado de texto normal.', false);
-      return;
-    }
-    if (!window.confirm('¿Reindexar texto de «' + (fileRec.title || fileRec.original_name || 'archivo') + '»?')) return;
-    showToast('Reindexando texto…');
-    var res = await requestNutriProFileExtract(fileRec.id, true);
+    var isOcr = mode === 'ocr';
+    var label = fileRec.title || fileRec.original_name || 'archivo';
+    if (!window.confirm((isOcr ? '¿Analizar con OCR/IA «' : '¿Reindexar texto de «') + label + '»?')) return;
+    showToast(isOcr ? 'Analizando imagen con OCR/IA…' : 'Reindexando texto…');
+    var res = await requestNutriProFileExtract(fileRec.id, true, isOcr ? 'ocr' : 'text');
     if (!res || res.error || res.ok === false) {
-      showToast((res && (res.error || res.error_message)) || 'No se pudo reindexar el archivo.', true);
+      showToast((res && (res.error || res.error_message)) || (isOcr ? 'No se pudo analizar con OCR/IA.' : 'No se pudo reindexar el archivo.'), true);
       scheduleNutriProExtractRefresh([1200, 4000]);
       return;
     }
     var count = res.char_count != null ? ' (' + res.char_count + ' car.)' : '';
-    showToast(res.status === 'done' ? 'Texto reindexado' + count + '.' : 'Reindexado terminado: ' + (res.status || 'sin texto') + '.');
+    showToast(
+      res.status === 'done'
+        ? (isOcr ? 'OCR/IA indexado' : 'Texto reindexado') + count + '.'
+        : (isOcr ? 'OCR/IA terminado: ' : 'Reindexado terminado: ') + (res.status || 'sin texto') + '.'
+    );
     scheduleNutriProExtractRefresh([600, 2500]);
+  }
+
+  async function pasteManualNutriProIndexedText(fileRec) {
+    if (!fileRec || !fileRec.id || !state.client || !state.userId) return;
+    var currentHint = fileRec._extract && fileRec._extract.status === 'done'
+      ? 'Ya hay texto indexado. Si pegas uno nuevo, lo reemplaza.'
+      : 'Pega el texto extraído para indexar este archivo.';
+    var text = window.prompt(currentHint, '');
+    if (text == null) return;
+    var clean = String(text || '').trim();
+    if (!clean) {
+      showToast('No se guardó: texto vacío.', true);
+      return;
+    }
+    var max = 500000;
+    var truncated = clean.length > max;
+    var finalText = truncated ? clean.slice(0, max) : clean;
+    var row = {
+      file_id: fileRec.id,
+      owner_id: state.userId,
+      status: 'done',
+      format_kind: 'manual_text',
+      text_plain: finalText,
+      meta_json: {
+        char_count: finalText.length,
+        truncated: truncated,
+        source: 'manual_paste'
+      },
+      error_message: null,
+      extracted_at: new Date().toISOString()
+    };
+    var res = await state.client.from('plan_pro_nutri_file_extracts').upsert(row, { onConflict: 'file_id' });
+    if (res.error) {
+      showToast(res.error.message || 'No se pudo guardar el texto indexado.', true);
+      return;
+    }
+    showToast('Texto indexado manual guardado (' + finalText.length + ' car.).');
+    await loadNutriProFiles(state.nutriProSelectedFolderId);
   }
 
   async function loadNutriProFileExtracts(fileIds) {
@@ -26708,24 +26750,37 @@
           reindexNutriProFile(rec, 'ocr');
         });
       })(file, more);
+      var manualTextBtn = document.createElement('button');
+      manualTextBtn.type = 'button';
+      manualTextBtn.textContent = 'Pegar texto indexado';
+      manualTextBtn.title = 'Pegar texto extraído manualmente para este archivo';
+      (function (rec, menuEl) {
+        manualTextBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          menuEl.open = false;
+          pasteManualNutriProIndexedText(rec);
+        });
+      })(file, more);
       moreMenu.appendChild(reindexBtn);
       moreMenu.appendChild(ocrBtn);
-      more.appendChild(moreSummary);
-      more.appendChild(moreMenu);
+      moreMenu.appendChild(manualTextBtn);
       var del = document.createElement('button');
       del.type = 'button';
-      del.className = 'btn btn-ghost';
-      del.style.color = '#b91c1c';
+      del.className = 'np-nutri-file-more-danger';
       del.textContent = 'Eliminar';
-      (function (rec) {
-        del.addEventListener('click', function () {
+      (function (rec, menuEl) {
+        del.addEventListener('click', function (e) {
+          e.preventDefault();
+          menuEl.open = false;
           deleteNutriProFile(rec);
         });
-      })(file);
+      })(file, more);
+      moreMenu.appendChild(del);
+      more.appendChild(moreSummary);
+      more.appendChild(moreMenu);
       btns.appendChild(linkAp);
       btns.appendChild(dl);
       btns.appendChild(more);
-      btns.appendChild(del);
       main.appendChild(icon);
       main.appendChild(meta);
       main.appendChild(btns);
