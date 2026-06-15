@@ -3745,13 +3745,33 @@
       color: #047857;
       text-decoration: none;
     }
-    .np-apunte-pdf-root .np-rich-ref {
-      display: inline-flex;
+    .np-apunte-pdf-root .np-apunte-pdf-ref-line {
+      break-inside: avoid !important;
+      break-inside: avoid-page !important;
+      page-break-inside: avoid !important;
+      orphans: 4;
+      widows: 4;
+    }
+    .np-apunte-pdf-root .np-apunte-pdf-ref-wrap {
+      display: inline-block;
+      max-width: 100%;
+      margin: 2px 0;
+      padding: 1px 0;
+      break-inside: avoid !important;
+      break-inside: avoid-page !important;
+      page-break-inside: avoid !important;
+      vertical-align: baseline;
+    }
+    .np-apunte-pdf-root .np-rich-ref,
+    .np-apunte-pdf-root .np-apunte-pdf-ref-wrap a {
+      display: inline-block !important;
       max-width: 100%;
       margin: 2px 3px;
       white-space: normal;
-      overflow-wrap: anywhere;
+      overflow-wrap: normal;
+      word-break: normal;
       break-inside: avoid !important;
+      break-inside: avoid-page !important;
       page-break-inside: avoid !important;
       vertical-align: baseline;
     }
@@ -25511,6 +25531,29 @@
     });
   }
 
+  function guardApuntePdfLinkPageBreaks(root) {
+    if (!root) return;
+    var links = Array.prototype.slice.call(
+      root.querySelectorAll('a.np-rich-ref, a.np-rich-nutri-ref, a.np-rich-nutri-link-ref')
+    );
+    links.forEach(function (el) {
+      var wrap = el.parentNode;
+      if (!wrap || !wrap.classList || !wrap.classList.contains('np-apunte-pdf-ref-wrap')) {
+        wrap = document.createElement('span');
+        wrap.className = 'np-apunte-pdf-ref-wrap';
+        if (el.parentNode) el.parentNode.insertBefore(wrap, el);
+        wrap.appendChild(el);
+      }
+      var block = el.closest(
+        'p, li, .np-ms-cell-static, .np-apunte-pdf-field, h2, h3, blockquote, .np-apunte-pdf-maps'
+      );
+      if (block && root.contains(block)) block.classList.add('np-apunte-pdf-ref-line');
+    });
+    Array.prototype.slice.call(root.querySelectorAll('.np-apunte-pdf-maps')).forEach(function (el) {
+      el.classList.add('np-apunte-pdf-ref-line');
+    });
+  }
+
   async function buildApuntePdfDocument(row, genDate) {
     var root = document.createElement('div');
     root.className = 'np-apunte-pdf-root';
@@ -25632,6 +25675,7 @@
     }
     normalizeApuntePdfTableFields(root);
     await hydrateApuntePdfNutriLinks(root);
+    guardApuntePdfLinkPageBreaks(root);
     return root;
   }
 
@@ -25685,7 +25729,18 @@
           enableLinks: true,
           pagebreak: {
             mode: ['css', 'legacy'],
-            avoid: ['.np-apunte-pdf-block-section', '.np-ms-block', '.np-ms-sheet', '.np-ms-row', '.np-apunte-pdf-note img', '.np-apunte-pdf-note .np-rich-img']
+            avoid: [
+              '.np-apunte-pdf-ref-line',
+              '.np-apunte-pdf-ref-wrap',
+              'a.np-rich-nutri-ref',
+              'a.np-rich-nutri-link-ref',
+              '.np-apunte-pdf-block-section',
+              '.np-ms-block',
+              '.np-ms-sheet',
+              '.np-ms-row',
+              '.np-apunte-pdf-note img',
+              '.np-apunte-pdf-note .np-rich-img'
+            ]
           }
         })
         .from(pdfRoot)
