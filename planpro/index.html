@@ -1844,6 +1844,53 @@
     .np-nutri-file-more-menu .np-nutri-file-more-danger {
       color: #b91c1c;
     }
+    .np-nutri-extract-text-panel {
+      max-width: min(920px, 96vw) !important;
+      width: min(920px, 96vw);
+    }
+    .np-nutri-extract-text-meta {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .np-nutri-extract-text-counter {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+    }
+    .np-nutri-extract-text-counter--warn {
+      color: #b45309;
+      font-weight: 650;
+    }
+    .np-nutri-extract-textarea {
+      display: block;
+      width: 100%;
+      min-height: min(52vh, 420px);
+      max-height: min(68vh, 560px);
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.42);
+      background: rgba(248, 250, 252, 0.96);
+      color: #0f172a;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.45;
+      resize: vertical;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .np-nutri-extract-textarea:focus {
+      outline: none;
+      border-color: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 48%, #94a3b8);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 16%, transparent);
+    }
+    .np-nutri-extract-textarea[readonly] {
+      background: rgba(255, 255, 255, 0.98);
+      cursor: default;
+    }
     .np-nutri-folder-row.np-dnd-drop-onto {
       box-shadow:
         inset 0 0 0 2px var(--np-nutri-folder-accent, #059669),
@@ -3430,6 +3477,79 @@
       border-bottom: 1px solid var(--border);
     }
     .np-modal-head h3 { margin: 0; font-size: 1.05rem; line-height: 1.3; word-break: break-word; }
+    .np-detail-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .np-detail-title-row h3 {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .np-apunte-life-toggle {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 999px;
+      border: 1px solid rgba(37, 99, 235, 0.45);
+      background: rgba(239, 246, 255, 0.95);
+      color: #2563eb;
+      cursor: pointer;
+      transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
+    }
+    .np-apunte-life-toggle--closed {
+      border-color: rgba(100, 116, 139, 0.42);
+      background: rgba(248, 250, 252, 0.96);
+      color: #64748b;
+    }
+    .np-apunte-life-toggle-icon {
+      font-size: 15px;
+      line-height: 1;
+      font-weight: 900;
+    }
+    .np-apunte-life-toggle:hover { transform: translateY(-1px); }
+    .np-cal-entry-dots {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+    .np-apunte-life-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .np-apunte-life-dot--active { background: #2563eb; }
+    .np-apunte-life-dot--closed { background: #94a3b8; }
+    .np-cal-summary-pop-dots {
+      margin-top: 4px;
+    }
+    .np-cal-summary-pop-dots .np-apunte-life-dot,
+    .np-cal-summary-pop-dots .np-cal-overlay-summary-pop-dot {
+      margin-top: 0;
+    }
+    .np-prio-detail-item-title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      min-width: 0;
+    }
+    .np-prio-detail-item-title-row .np-prio-detail-item-title {
+      margin-bottom: 0;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .np-items-row--closed td:first-child,
+    .np-sheet-item-card--closed .np-sheet-item-card-title {
+      opacity: 0.72;
+    }
     .np-modal-meta { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
     .np-modal-meta-wrap { display: block; }
     .np-modal-meta-path { font-size: 12px; color: var(--muted); line-height: 1.45; }
@@ -8005,7 +8125,7 @@
       top: 0;
       left: 0;
       width: min(460px, calc(100vw - 16px));
-      max-height: min(42vh, 320px);
+      max-height: min(58vh, 440px);
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -8029,7 +8149,12 @@
       flex-shrink: 0;
     }
     .np-cal-overlay-summary-pop-list {
-      overflow: auto;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       padding: 6px;
       display: flex;
       flex-direction: column;
@@ -8146,6 +8271,19 @@
       gap: 4px;
       white-space: normal;
       line-height: 1.25;
+      transition: opacity 0.16s ease;
+    }
+    .np-cal-overlay-body--loading {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+    .np-cal-overlay-loading {
+      margin: 0;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 650;
+      color: #64748b;
+      text-align: center;
     }
     .np-cal-overlay-grid {
       display: grid;
@@ -9665,6 +9803,41 @@
     </div>
   </div>
 
+  <div id="npNutriExtractViewModal" class="np-modal-overlay" aria-hidden="true">
+    <div class="np-modal-panel np-nutri-extract-text-panel" role="dialog" aria-labelledby="npNutriExtractViewTitle">
+      <div class="np-modal-head">
+        <h3 id="npNutriExtractViewTitle" style="margin:0;font-size:1rem;">Texto indexado</h3>
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npNutriExtractViewClose" style="flex-shrink:0;">Cerrar</button>
+      </div>
+      <div class="np-modal-body" style="padding-top:8px;">
+        <p id="npNutriExtractViewMeta" class="np-nutri-extract-text-meta"></p>
+        <textarea id="npNutriExtractViewText" class="np-nutri-extract-textarea" readonly spellcheck="false" aria-label="Texto indexado del archivo"></textarea>
+        <div class="np-modal-foot" style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:10px 0 0;border-top:0;">
+          <button type="button" class="btn btn-ghost btn-ghost-green" id="npNutriExtractViewCopy">Copiar texto</button>
+          <button type="button" class="btn btn-primary" id="npNutriExtractViewOk">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="npNutriExtractPasteModal" class="np-modal-overlay" aria-hidden="true">
+    <div class="np-modal-panel np-nutri-extract-text-panel" role="dialog" aria-labelledby="npNutriExtractPasteTitle">
+      <div class="np-modal-head">
+        <h3 id="npNutriExtractPasteTitle" style="margin:0;font-size:1rem;">Pegar texto indexado</h3>
+        <button type="button" class="btn btn-ghost btn-ghost-blue" id="npNutriExtractPasteClose" style="flex-shrink:0;">Cerrar</button>
+      </div>
+      <div class="np-modal-body" style="padding-top:8px;">
+        <p id="npNutriExtractPasteMeta" class="np-nutri-extract-text-meta"></p>
+        <textarea id="npNutriExtractPasteText" class="np-nutri-extract-textarea" spellcheck="false" aria-label="Pegar texto indexado manualmente"></textarea>
+        <p id="npNutriExtractPasteCounter" class="np-nutri-extract-text-counter">0 / 500.000 caracteres</p>
+        <div class="np-modal-foot" style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:10px 0 0;border-top:0;">
+          <button type="button" class="btn btn-ghost" id="npNutriExtractPasteCancel">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="npNutriExtractPasteSave">Guardar indexado</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="npPrioListModal" class="np-modal-overlay" aria-hidden="true">
     <div class="np-modal-panel np-prio-list-panel" role="dialog" aria-labelledby="npPrioListTitle">
       <div class="np-modal-head">
@@ -9704,6 +9877,7 @@
         </div>
         <div id="npCalOverlayPlantFilter" class="np-cal-overlay-plant-filter" aria-label="Plantas visibles"></div>
         <div class="np-cal-overlay-summary-wrap">
+          <p id="npCalOverlayLoading" class="np-cal-overlay-loading np-hide" aria-live="polite">Cargando semáforos…</p>
           <div id="npCalOverlaySummary" class="np-cal-overlay-summary" aria-live="polite"></div>
         </div>
       </div>
@@ -9894,7 +10068,19 @@
     <div class="np-modal-panel" role="dialog" aria-labelledby="npDetailTitle">
       <div class="np-modal-head">
         <div style="min-width:0;">
-          <h3 id="npDetailTitle">—</h3>
+          <div class="np-detail-title-row">
+            <h3 id="npDetailTitle">—</h3>
+            <button
+              type="button"
+              id="npDetailLifeToggle"
+              class="np-apunte-life-toggle np-apunte-life-toggle--active"
+              aria-pressed="true"
+              aria-label="Tema activo — clic para marcar cerrado"
+              title="Activo · clic para cerrar tema"
+            >
+              <span class="np-apunte-life-toggle-icon" aria-hidden="true">●</span>
+            </button>
+          </div>
           <div id="npDetailMeta" class="np-modal-meta np-modal-meta-wrap"></div>
         </div>
         <div class="np-detail-head-actions">
@@ -14291,6 +14477,7 @@
         notePreview: meta.notePreview || '',
         noteLink: meta.noteLink || '',
         mapsUrl: meta.mapsUrl || '',
+        closedAt: meta.closedAt || null,
         rowTitle: 'Semáforo en nota · ' + label,
         blockTitle: '—',
         dueId: el.getAttribute('data-np-due-id') || ''
@@ -14437,6 +14624,106 @@
       persistItemMainBody(state.detailItemId, ed.innerHTML, { skipReload: true });
     }, 520);
     npCloudSyncTouch();
+  }
+
+  function apunteIsClosed(r) {
+    return !!(r && r.closed_at);
+  }
+
+  function apunteLifePlainLabel(closedAt) {
+    return closedAt ? 'Cerrado' : 'Activo';
+  }
+
+  function createApunteLifeDotEl(closedAt, extraClass) {
+    var dot = document.createElement('span');
+    dot.className =
+      'np-apunte-life-dot' + (closedAt ? ' np-apunte-life-dot--closed' : ' np-apunte-life-dot--active');
+    if (extraClass) dot.className += ' ' + extraClass;
+    dot.title = apunteLifePlainLabel(closedAt);
+    dot.setAttribute('aria-hidden', 'true');
+    return dot;
+  }
+
+  function createCalEntryDotsEl(ent) {
+    var wrap = document.createElement('span');
+    wrap.className = 'np-cal-entry-dots';
+    wrap.appendChild(createApunteLifeDotEl(ent && ent.closedAt));
+    var prioDot = document.createElement('span');
+    prioDot.className = 'np-cal-overlay-entry-dot np-cal-overlay-entry-dot--' + ((ent && ent.level) || 'none');
+    prioDot.setAttribute('aria-hidden', 'true');
+    wrap.appendChild(prioDot);
+    return wrap;
+  }
+
+  function createCalSummaryPopDotsEl(ent) {
+    var wrap = document.createElement('span');
+    wrap.className = 'np-cal-entry-dots np-cal-summary-pop-dots';
+    wrap.appendChild(createApunteLifeDotEl(ent && ent.closedAt, 'np-cal-overlay-summary-pop-dot'));
+    var prioDot = document.createElement('span');
+    prioDot.className =
+      'np-cal-overlay-summary-pop-dot np-cal-overlay-summary-pop-dot--' + ((ent && ent.level) || 'none');
+    prioDot.setAttribute('aria-hidden', 'true');
+    wrap.appendChild(prioDot);
+    return wrap;
+  }
+
+  function updateApunteLifeToggleEl(btn, r) {
+    if (!btn) return;
+    var closed = apunteIsClosed(r);
+    btn.classList.toggle('np-apunte-life-toggle--closed', closed);
+    btn.classList.toggle('np-apunte-life-toggle--active', !closed);
+    btn.setAttribute('aria-pressed', closed ? 'false' : 'true');
+    btn.setAttribute(
+      'aria-label',
+      closed ? 'Tema cerrado — clic para marcar activo' : 'Tema activo — clic para marcar cerrado'
+    );
+    btn.title = closed ? 'Cerrado · clic para reactivar' : 'Activo · clic para cerrar tema';
+    var icon = btn.querySelector('.np-apunte-life-toggle-icon');
+    if (icon) icon.textContent = closed ? '✓' : '●';
+  }
+
+  function wireDetailLifeToggleOnce() {
+    var btn = $('npDetailLifeToggle');
+    if (!btn || btn.dataset.npWired === '1') return;
+    btn.dataset.npWired = '1';
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleApunteLifeState();
+    });
+  }
+
+  async function toggleApunteLifeState() {
+    var r = state.detailItemRecord;
+    if (!r || !r.id || !state.client) return;
+    var wasClosed = apunteIsClosed(r);
+    var patch = {};
+    if (wasClosed) {
+      patch.closed_at = null;
+    } else {
+      patch.closed_at = new Date().toISOString();
+      if (!r.status) patch.status = 'Cerrado';
+    }
+    await persistItemMeta(r.id, patch, { skipReload: true });
+    updateApunteLifeToggleEl($('npDetailLifeToggle'), state.detailItemRecord);
+    renderDetailItemMeta(state.detailItemRecord);
+    if (state.prioSummaryRowsCache) {
+      state.prioSummaryRowsCache.forEach(function (row) {
+        if (row && row.id === r.id) row.closed_at = state.detailItemRecord.closed_at;
+      });
+    }
+    if (state.calOverlayItemsCache) {
+      state.calOverlayItemsCache.forEach(function (row) {
+        if (row && row.id === r.id) row.closed_at = state.detailItemRecord.closed_at;
+      });
+    }
+    refreshPlanProCalendarAndPrio();
+    if ($('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open')) {
+      state.calOverlayEntriesCache = collectCalendarEntries(state.calOverlayItemsCache || []);
+      renderCalOverlaySummary();
+      renderCalOverlayGrid();
+    }
+    showToast(wasClosed ? 'Apunte reactivado.' : 'Tema marcado como cerrado.');
   }
 
   function renderDetailItemMeta(r) {
@@ -14605,6 +14892,8 @@
     if (!state.client || !itemId || !state.userId || !patch) return;
     var dbPatch = {};
     if (patch.priority !== undefined) dbPatch.priority = patch.priority;
+    if (patch.status !== undefined) dbPatch.status = patch.status || null;
+    if (patch.closed_at !== undefined) dbPatch.closed_at = patch.closed_at;
     if (patch.due_at !== undefined) {
       if (patch.due_at == null || patch.due_at === '') dbPatch.due_at = null;
       else {
@@ -14631,6 +14920,8 @@
     }
     if (state.detailItemRecord && state.detailItemRecord.id === itemId) {
       if (dbPatch.priority !== undefined) state.detailItemRecord.priority = dbPatch.priority;
+      if (dbPatch.status !== undefined) state.detailItemRecord.status = dbPatch.status;
+      if (dbPatch.closed_at !== undefined) state.detailItemRecord.closed_at = dbPatch.closed_at;
       if (dbPatch.due_at !== undefined) state.detailItemRecord.due_at = dbPatch.due_at;
       if (dbPatch.attachments !== undefined) state.detailItemRecord.attachments = dbPatch.attachments;
       state.detailItemRecord.updated_at = new Date().toISOString();
@@ -14639,6 +14930,8 @@
       state.prioSummaryRowsCache.forEach(function (row) {
         if (row && row.id === itemId) {
           if (dbPatch.priority !== undefined) row.priority = dbPatch.priority;
+          if (dbPatch.status !== undefined) row.status = dbPatch.status;
+          if (dbPatch.closed_at !== undefined) row.closed_at = dbPatch.closed_at;
           if (dbPatch.due_at !== undefined) row.due_at = dbPatch.due_at;
           if (dbPatch.attachments !== undefined) row.attachments = dbPatch.attachments;
           row.updated_at = new Date().toISOString();
@@ -14757,8 +15050,8 @@
   async function fetchPlanProItemForDetail(itemId) {
     if (!state.client || !state.userId || !itemId) return null;
     var cols = state.planProBodyHtmlColumn
-      ? 'id,title,area_id,category_id,status,priority,due_at,updated_at,body_plain,body_html,body_blocks,attachments'
-      : 'id,title,area_id,category_id,status,priority,due_at,updated_at,body_plain,body_blocks,attachments';
+      ? 'id,title,area_id,category_id,status,priority,due_at,updated_at,closed_at,body_plain,body_html,body_blocks,attachments'
+      : 'id,title,area_id,category_id,status,priority,due_at,updated_at,closed_at,body_plain,body_blocks,attachments';
     var res = await state.client
       .from('plan_pro_items')
       .select(cols)
@@ -14901,6 +15194,8 @@
     $('npDetailTitle').textContent = row.title || '(Sin título)';
     state.detailItemRecord = row;
     state.detailItemNoteHadContent = recordHadNoteContent(row);
+    updateApunteLifeToggleEl($('npDetailLifeToggle'), row);
+    wireDetailLifeToggleOnce();
     renderDetailItemMeta(row);
     var bd = $('npDetailBody');
     bd.innerHTML = '';
@@ -14995,6 +15290,8 @@
     calOverlayFocusDateKey: null,
     calOverlayItemsCache: [],
     calOverlayEntriesCache: [],
+    calOverlayPrefetchInFlight: false,
+    calOverlayPrefetchAt: 0,
     locationFavorites: [],
     locationFavoritesReady: true,
     treeCollapsed: {},
@@ -16723,6 +17020,7 @@
       var itemMapsUrl = getPlanProMapsUrlFromItem(r);
       var itemDueTime = getPlanProItemDueTime(r);
       var itemDueEndTime = getPlanProItemDueEndTime(r);
+      var itemClosedAt = r.closed_at || null;
       var dkItem = parseDueDateKey(r.due_at);
       if (dkItem) {
         var lvItem = priorityLevelFromRaw(r.priority != null ? String(r.priority) : '');
@@ -16740,6 +17038,7 @@
           notePreview: itemNotePreview,
           noteLink: itemNoteLink,
           mapsUrl: itemMapsUrl,
+          closedAt: itemClosedAt,
           rowTitle: 'Objetivo del apunte',
           blockTitle: '—'
         });
@@ -16776,6 +17075,7 @@
             notePreview: itemNotePreview,
             noteLink: itemNoteLink,
             mapsUrl: itemMapsUrl,
+            closedAt: itemClosedAt,
             rowTitle: miniSheetRowTitleForDetail(b, cells) || '—',
             blockTitle: b.title || (b.variant === 'tasks' ? 'Lista / tareas' : 'Seguimiento'),
             blockIndex: blockIndex,
@@ -16791,7 +17091,8 @@
         catPath: itemCatPath,
         notePreview: itemNotePreview,
         noteLink: itemNoteLink,
-        mapsUrl: itemMapsUrl
+        mapsUrl: itemMapsUrl,
+        closedAt: itemClosedAt
       };
       if (r.body_html && String(r.body_html).trim()) {
         collectRichDueEntriesFromHtml(r.body_html, itemMeta).forEach(function (e) {
@@ -17047,8 +17348,8 @@
       return a.id;
     });
     var selectCols = state.planProBodyHtmlColumn
-      ? 'id,title,area_id,category_id,status,priority,sort_order,updated_at,body_plain,body_html,due_at,body_blocks,attachments'
-      : 'id,title,area_id,category_id,status,priority,sort_order,updated_at,body_plain,due_at,body_blocks,attachments';
+      ? 'id,title,area_id,category_id,status,priority,sort_order,updated_at,closed_at,body_plain,body_html,due_at,body_blocks,attachments'
+      : 'id,title,area_id,category_id,status,priority,sort_order,updated_at,closed_at,body_plain,due_at,body_blocks,attachments';
     var res = await state.client
       .from('plan_pro_items')
       .select(selectCols)
@@ -17058,8 +17359,8 @@
     if (res.error) {
       if (/sort_order|column|schema cache/i.test(res.error.message || '')) {
         selectCols = state.planProBodyHtmlColumn
-          ? 'id,title,area_id,category_id,status,priority,updated_at,body_plain,body_html,due_at,body_blocks,attachments'
-          : 'id,title,area_id,category_id,status,priority,updated_at,body_plain,due_at,body_blocks,attachments';
+          ? 'id,title,area_id,category_id,status,priority,updated_at,closed_at,body_plain,body_html,due_at,body_blocks,attachments'
+          : 'id,title,area_id,category_id,status,priority,updated_at,closed_at,body_plain,due_at,body_blocks,attachments';
         res = await state.client
           .from('plan_pro_items')
           .select(selectCols)
@@ -17299,9 +17600,7 @@
     row.type = 'button';
     row.className = 'np-cal-overlay-summary-pop-row';
     row.title = calEntryDisplayTitle(ent) + ' · ' + (ent.catPath || '');
-    var dot = document.createElement('span');
-    dot.className =
-      'np-cal-overlay-summary-pop-dot np-cal-overlay-summary-pop-dot--' + (ent.level || 'none');
+    var dot = createCalSummaryPopDotsEl(ent);
     var main = document.createElement('span');
     main.className = 'np-cal-overlay-summary-pop-main';
     var t1 = document.createElement('span');
@@ -17358,7 +17657,7 @@
     var popWidth = Math.min(maxW, Math.max(280, chipRect.width + 48));
     var left = chipRect.left + chipRect.width / 2 - popWidth / 2;
     left = Math.max(margin, Math.min(left, window.innerWidth - popWidth - margin));
-    var estHeight = Math.min(window.innerHeight * 0.42, 320);
+    var estHeight = Math.min(window.innerHeight * 0.58, 440);
     var top = chipRect.bottom + margin;
     var flip = top + estHeight > window.innerHeight - margin;
     if (flip) {
@@ -17671,11 +17970,7 @@
             btn.appendChild(t1);
             var meta = document.createElement('div');
             meta.className = 'np-cal-overlay-entry-meta';
-            var dot = document.createElement('span');
-            dot.className =
-              'np-cal-overlay-entry-dot np-cal-overlay-entry-dot--' + (ent.level || 'none');
-            dot.setAttribute('aria-hidden', 'true');
-            meta.appendChild(dot);
+            meta.appendChild(createCalEntryDotsEl(ent));
             var sub = calEntrySubtitle(ent);
             if (sub) {
               var t2 = document.createElement('span');
@@ -17709,6 +18004,44 @@
         if (focusEl) focusEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       });
     }
+  }
+
+  var calOverlayPrefetchGen = 0;
+
+  function setCalOverlayLoading(on) {
+    var el = $('npCalOverlayLoading');
+    var body = $('npCalOverlayBody');
+    if (el) el.classList.toggle('np-hide', !on);
+    if (body) body.classList.toggle('np-cal-overlay-body--loading', !!on);
+  }
+
+  function renderCalOverlayShell() {
+    syncCalOverlayPlantAccent();
+    renderCalOverlayPlantFilter();
+    renderCalOverlaySummary();
+    renderCalOverlayGrid();
+  }
+
+  function prefetchCalOverlayEntries() {
+    if (!state.client || !state.userId || !getActivePlanAreas().length) return;
+    if (state.calOverlayPrefetchInFlight) return;
+    state.calOverlayPrefetchInFlight = true;
+    var gen = ++calOverlayPrefetchGen;
+    loadCalOverlayAllEntries()
+      .then(function (rows) {
+        if (gen !== calOverlayPrefetchGen) return;
+        state.calOverlayItemsCache = rows;
+        state.calOverlayEntriesCache = collectCalendarEntries(rows);
+        state.calOverlayPrefetchAt = Date.now();
+        if ($('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open')) {
+          setCalOverlayLoading(false);
+          renderCalOverlayShell();
+        }
+      })
+      .catch(function () {})
+      .finally(function () {
+        if (gen === calOverlayPrefetchGen) state.calOverlayPrefetchInFlight = false;
+      });
   }
 
   async function openCalOverlayModal(focusDateKey) {
@@ -17750,19 +18083,39 @@
     if (!modal) return;
     modal.classList.add('np-modal-open');
     modal.setAttribute('aria-hidden', 'false');
+    var hasCache = !!(state.calOverlayEntriesCache && state.calOverlayEntriesCache.length);
+    if (hasCache) {
+      renderCalOverlayShell();
+      setCalOverlayLoading(false);
+      loadCalOverlayAllEntries()
+        .then(function (rows) {
+          state.calOverlayItemsCache = rows;
+          state.calOverlayEntriesCache = collectCalendarEntries(rows);
+          state.calOverlayPrefetchAt = Date.now();
+          if ($('npCalOverlayModal') && $('npCalOverlayModal').classList.contains('np-modal-open')) {
+            renderCalOverlayShell();
+          }
+        })
+        .catch(function () {});
+      return;
+    }
+    var sum = $('npCalOverlaySummary');
+    if (sum) sum.textContent = '';
+    var grid = $('npCalOverlayGrid');
+    if (grid) grid.innerHTML = '';
+    setCalOverlayLoading(true);
     try {
       var rows = await loadCalOverlayAllEntries();
       state.calOverlayItemsCache = rows;
       state.calOverlayEntriesCache = collectCalendarEntries(rows);
+      state.calOverlayPrefetchAt = Date.now();
+      setCalOverlayLoading(false);
+      renderCalOverlayShell();
     } catch (eLoad) {
+      setCalOverlayLoading(false);
       showToast((eLoad && eLoad.message) || 'No se pudo cargar el calendario.', true);
       closeCalOverlayModal();
-      return;
     }
-    syncCalOverlayPlantAccent();
-    renderCalOverlayPlantFilter();
-    renderCalOverlaySummary();
-    renderCalOverlayGrid();
   }
 
   function closeCalOverlayModal() {
@@ -18096,6 +18449,7 @@
       lines.push(rowTitle);
     }
     lines.push('🏷️ Tipo: ' + kindLine);
+    lines.push('📋 Tema: ' + apunteLifePlainLabel(ent.closedAt));
     lines.push('🚦 Semáforo: ' + calLevelPlainLabel(ent.level));
     lines.push(
       '🕒 Hora: ' +
@@ -18385,13 +18739,19 @@
       list.forEach(function (ent) {
         var row = document.createElement('div');
         row.className = 'np-prio-detail-item';
+        var titleRow = document.createElement('div');
+        titleRow.className = 'np-prio-detail-item-title-row';
+        titleRow.appendChild(createCalEntryDotsEl(ent));
         var h = document.createElement('div');
         h.className = 'np-prio-detail-item-title';
         h.textContent = ent.rowTitle;
+        titleRow.appendChild(h);
         var meta = document.createElement('div');
         meta.className = 'np-prio-detail-item-meta';
         meta.textContent =
-          'Semáforo: ' +
+          'Tema: ' +
+          apunteLifePlainLabel(ent.closedAt) +
+          ' · Semáforo: ' +
           calLevelPlainLabel(ent.level) +
           ' · Tipo: ' +
           (ent.kind === 'table_row'
@@ -18417,7 +18777,7 @@
             if (!state.calOverlayKeepOpen) closeCalDayModal();
           });
         })(ent);
-        row.appendChild(h);
+        row.appendChild(titleRow);
         row.appendChild(meta);
         row.appendChild(btn);
         body.appendChild(row);
@@ -18629,7 +18989,8 @@
       var itemMeta = {
         id: r.id,
         title: r.title || '(Sin título)',
-        catPath: getCategoryPath(r.category_id)
+        catPath: getCategoryPath(r.category_id),
+        closedAt: r.closed_at || null
       };
       if (r.body_html && String(r.body_html).trim()) {
         collectRichDueEntriesFromHtml(r.body_html, itemMeta).forEach(function (e) {
@@ -18639,7 +19000,9 @@
             itemTitle: r.title || '(Sin título)',
             catPath: getCategoryPath(r.category_id),
             blockTitle: 'Nota principal',
-            rowTitle: e.rowTitle
+            rowTitle: e.rowTitle,
+            closedAt: r.closed_at || null,
+            level: level
           });
         });
       }
@@ -18653,7 +19016,9 @@
               itemTitle: r.title || '(Sin título)',
               catPath: getCategoryPath(r.category_id),
               blockTitle: b.title || 'Sección de nota',
-              rowTitle: e.rowTitle
+              rowTitle: e.rowTitle,
+              closedAt: r.closed_at || null,
+              level: level
             });
           });
         }
@@ -18680,7 +19045,9 @@
             blockTitle:
               b.title ||
               (b.variant === 'tasks' ? 'Lista / tareas' : 'Seguimiento'),
-            rowTitle: rt || '—'
+            rowTitle: rt || '—',
+            closedAt: r.closed_at || null,
+            level: level
           });
         });
       });
@@ -18714,13 +19081,23 @@
       entries.forEach(function (ent) {
         var row = document.createElement('div');
         row.className = 'np-prio-detail-item';
+        var titleRow = document.createElement('div');
+        titleRow.className = 'np-prio-detail-item-title-row';
+        titleRow.appendChild(createApunteLifeDotEl(ent.closedAt));
+        var prioDot = document.createElement('span');
+        prioDot.className = 'np-cal-overlay-entry-dot np-cal-overlay-entry-dot--' + (level || 'none');
+        prioDot.setAttribute('aria-hidden', 'true');
+        titleRow.appendChild(prioDot);
         var h = document.createElement('div');
         h.className = 'np-prio-detail-item-title';
         h.textContent = ent.rowTitle;
+        titleRow.appendChild(h);
         var meta = document.createElement('div');
         meta.className = 'np-prio-detail-item-meta';
         meta.textContent =
-          'Apunte: ' +
+          'Tema: ' +
+          apunteLifePlainLabel(ent.closedAt) +
+          ' · Apunte: ' +
           ent.itemTitle +
           ' · ' +
           ent.catPath +
@@ -18739,7 +19116,7 @@
             openItemDetail(full);
           }
         });
-        row.appendChild(h);
+        row.appendChild(titleRow);
         row.appendChild(meta);
         row.appendChild(btn);
         body.appendChild(row);
@@ -23197,8 +23574,8 @@
     }
 
     var selectCols = state.planProBodyHtmlColumn
-      ? 'id,title,area_id,category_id,status,priority,sort_order,updated_at,body_plain,body_html,due_at,body_blocks,attachments'
-      : 'id,title,area_id,category_id,status,priority,sort_order,updated_at,body_plain,due_at,body_blocks,attachments';
+      ? 'id,title,area_id,category_id,status,priority,sort_order,updated_at,closed_at,body_plain,body_html,due_at,body_blocks,attachments'
+      : 'id,title,area_id,category_id,status,priority,sort_order,updated_at,closed_at,body_plain,due_at,body_blocks,attachments';
 
     var qFiltered = c.from('plan_pro_items')
       .select(selectCols)
@@ -23223,8 +23600,8 @@
       var em = (resFiltered.error.message || '');
       if (/sort_order|column|schema cache/i.test(em)) {
         selectCols = state.planProBodyHtmlColumn
-          ? 'id,title,area_id,category_id,status,priority,updated_at,body_plain,body_html,due_at,body_blocks,attachments'
-          : 'id,title,area_id,category_id,status,priority,updated_at,body_plain,due_at,body_blocks,attachments';
+          ? 'id,title,area_id,category_id,status,priority,updated_at,closed_at,body_plain,body_html,due_at,body_blocks,attachments'
+          : 'id,title,area_id,category_id,status,priority,updated_at,closed_at,body_plain,due_at,body_blocks,attachments';
         qFiltered = c.from('plan_pro_items').select(selectCols).eq('owner_id', uid).eq('area_id', state.selectedAreaId);
         if (state.selectedCategoryId) {
           var idsFb = $('npFilterDesc').checked
@@ -23305,7 +23682,7 @@
     var frag = document.createDocumentFragment();
     rows.forEach(function (r) {
       var tr = document.createElement('tr');
-      tr.className = 'np-items-row';
+      tr.className = 'np-items-row' + (r.closed_at ? ' np-items-row--closed' : '');
 
       var td1 = document.createElement('td');
       td1.setAttribute('data-label', 'Título');
@@ -23390,6 +23767,7 @@
     if (spReload && state.selectedCategoryId && !spReload.classList.contains('np-hide')) {
       applySheetCategoryAccent(spReload);
     }
+    prefetchCalOverlayEntries();
   }
 
   function buildSheetItemRow(r) {
@@ -23397,7 +23775,7 @@
     row.className = 'np-sheet-item-row';
     var card = document.createElement('button');
     card.type = 'button';
-    card.className = 'np-sheet-item-card';
+    card.className = 'np-sheet-item-card' + (r.closed_at ? ' np-sheet-item-card--closed' : '');
     var t = document.createElement('div');
     t.className = 'np-sheet-item-card-title';
     t.textContent = r.title || '(Sin título)';
@@ -24452,23 +24830,164 @@
     scheduleNutriProExtractRefresh([600, 2500]);
   }
 
-  async function pasteManualNutriProIndexedText(fileRec) {
+  var npNutriExtractPasteFileId = null;
+
+  function nutriProExtractCharLimit() {
+    return 500000;
+  }
+
+  function fmtNutriExtractCharCount(n) {
+    return Number(n || 0).toLocaleString('es-MX');
+  }
+
+  function updateNutriExtractPasteCounter() {
+    var ta = $('npNutriExtractPasteText');
+    var el = $('npNutriExtractPasteCounter');
+    if (!ta || !el) return;
+    var max = nutriProExtractCharLimit();
+    var n = String(ta.value || '').length;
+    el.textContent = fmtNutriExtractCharCount(n) + ' / ' + fmtNutriExtractCharCount(max) + ' caracteres';
+    el.classList.toggle('np-nutri-extract-text-counter--warn', n > max);
+    if (n > max) {
+      el.textContent += ' · al guardar se truncará al máximo';
+    }
+  }
+
+  function closeNutriProExtractViewModal() {
+    var modal = $('npNutriExtractViewModal');
+    if (!modal) return;
+    modal.classList.remove('np-modal-open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  function closeNutriProExtractPasteModal() {
+    var modal = $('npNutriExtractPasteModal');
+    if (!modal) return;
+    modal.classList.remove('np-modal-open');
+    modal.setAttribute('aria-hidden', 'true');
+    npNutriExtractPasteFileId = null;
+  }
+
+  async function fetchNutriProFileExtractPlain(fileId) {
+    if (!fileId || !state.client) return null;
+    var res = await state.client
+      .from('plan_pro_nutri_file_extracts')
+      .select('text_plain,status,format_kind,meta_json,extracted_at,error_message')
+      .eq('file_id', fileId)
+      .maybeSingle();
+    if (res.error) {
+      if (/plan_pro_nutri_file_extracts|does not exist|schema cache/i.test(res.error.message || '')) return null;
+      throw res.error;
+    }
+    return res.data || null;
+  }
+
+  function nutriProExtractMetaLine(fileRec, extractRow) {
+    var title = (fileRec && (fileRec.title || fileRec.original_name)) || 'Archivo';
+    var parts = [title];
+    if (extractRow && extractRow.meta_json && extractRow.meta_json.char_count != null) {
+      parts.push(fmtNutriExtractCharCount(extractRow.meta_json.char_count) + ' caracteres indexados');
+    }
+    if (extractRow && extractRow.format_kind) {
+      var kind =
+        extractRow.format_kind === 'manual_text'
+          ? 'pegado manual'
+          : extractRow.format_kind === 'ocr'
+            ? 'OCR / IA'
+            : extractRow.format_kind;
+      parts.push('origen: ' + kind);
+    }
+    if (extractRow && extractRow.extracted_at) {
+      parts.push('actualizado ' + fmtUpdatedShort(extractRow.extracted_at));
+    }
+    if (nutriProExtractIsTruncated(extractRow)) {
+      parts.push('⚠ indexación parcial (500k máx.)');
+    }
+    return parts.join(' · ');
+  }
+
+  async function viewNutriProIndexedText(fileRec) {
     if (!fileRec || !fileRec.id || !state.client || !state.userId) return;
-    var currentHint = fileRec._extract && fileRec._extract.status === 'done'
-      ? 'Ya hay texto indexado. Si pegas uno nuevo, lo reemplaza.'
-      : 'Pega el texto extraído para indexar este archivo.';
-    var text = window.prompt(currentHint, '');
-    if (text == null) return;
-    var clean = String(text || '').trim();
+    var modal = $('npNutriExtractViewModal');
+    var titleEl = $('npNutriExtractViewTitle');
+    var metaEl = $('npNutriExtractViewMeta');
+    var ta = $('npNutriExtractViewText');
+    if (!modal || !titleEl || !metaEl || !ta) return;
+    titleEl.textContent = 'Texto indexado';
+    metaEl.textContent = 'Cargando…';
+    ta.value = '';
+    modal.classList.add('np-modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+    try {
+      var row = await fetchNutriProFileExtractPlain(fileRec.id);
+      if (!row || row.status !== 'done' || !String(row.text_plain || '').trim()) {
+        metaEl.textContent = 'Este archivo aún no tiene texto indexado.';
+        ta.value = '';
+        return;
+      }
+      metaEl.textContent = nutriProExtractMetaLine(fileRec, row);
+      ta.value = String(row.text_plain || '');
+    } catch (err) {
+      metaEl.textContent = 'No se pudo cargar el texto indexado.';
+      showToast((err && err.message) || 'Error al cargar texto indexado.', true);
+    }
+  }
+
+  async function openNutriProExtractPasteModal(fileRec) {
+    if (!fileRec || !fileRec.id || !state.client || !state.userId) return;
+    var modal = $('npNutriExtractPasteModal');
+    var titleEl = $('npNutriExtractPasteTitle');
+    var metaEl = $('npNutriExtractPasteMeta');
+    var ta = $('npNutriExtractPasteText');
+    if (!modal || !titleEl || !metaEl || !ta) return;
+    npNutriExtractPasteFileId = fileRec.id;
+    titleEl.textContent = 'Pegar texto indexado';
+    metaEl.textContent = 'Cargando…';
+    ta.value = '';
+    updateNutriExtractPasteCounter();
+    modal.classList.add('np-modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+    window.setTimeout(function () {
+      ta.focus();
+    }, 80);
+    try {
+      var row = await fetchNutriProFileExtractPlain(fileRec.id);
+      metaEl.textContent =
+        row && row.status === 'done'
+          ? 'Ya hay texto indexado. Si guardas uno nuevo, lo reemplaza. Máximo ' +
+            fmtNutriExtractCharCount(nutriProExtractCharLimit()) +
+            ' caracteres.'
+          : 'Pega el texto extraído para indexar este archivo. Máximo ' +
+            fmtNutriExtractCharCount(nutriProExtractCharLimit()) +
+            ' caracteres.';
+      if (row && row.status === 'done' && row.text_plain) {
+        ta.value = String(row.text_plain || '');
+        updateNutriExtractPasteCounter();
+      }
+    } catch (err) {
+      metaEl.textContent =
+        'Pega el texto extraído para indexar este archivo. Máximo ' +
+        fmtNutriExtractCharCount(nutriProExtractCharLimit()) +
+        ' caracteres.';
+      showToast((err && err.message) || 'No se pudo leer el indexado previo.', true);
+    }
+  }
+
+  async function saveNutriProExtractPasteModal() {
+    var fileId = npNutriExtractPasteFileId;
+    if (!fileId || !state.client || !state.userId) return;
+    var ta = $('npNutriExtractPasteText');
+    if (!ta) return;
+    var clean = String(ta.value || '').trim();
     if (!clean) {
       showToast('No se guardó: texto vacío.', true);
       return;
     }
-    var max = 500000;
+    var max = nutriProExtractCharLimit();
     var truncated = clean.length > max;
     var finalText = truncated ? clean.slice(0, max) : clean;
     var row = {
-      file_id: fileRec.id,
+      file_id: fileId,
       owner_id: state.userId,
       status: 'done',
       format_kind: 'manual_text',
@@ -24486,8 +25005,19 @@
       showToast(res.error.message || 'No se pudo guardar el texto indexado.', true);
       return;
     }
-    showToast('Texto indexado manual guardado (' + finalText.length + ' car.).');
+    closeNutriProExtractPasteModal();
+    showToast(
+      'Texto indexado manual guardado (' +
+        fmtNutriExtractCharCount(finalText.length) +
+        ' car.' +
+        (truncated ? ' · truncado al máximo' : '') +
+        ').'
+    );
     await loadNutriProFiles(state.nutriProSelectedFolderId);
+  }
+
+  async function pasteManualNutriProIndexedText(fileRec) {
+    await openNutriProExtractPasteModal(fileRec);
   }
 
   async function loadNutriProFileExtracts(fileIds) {
@@ -26808,7 +27338,7 @@
       var manualTextBtn = document.createElement('button');
       manualTextBtn.type = 'button';
       manualTextBtn.textContent = 'Pegar texto indexado';
-      manualTextBtn.title = 'Pegar texto extraído manualmente para este archivo';
+      manualTextBtn.title = 'Pegar o editar texto indexado manualmente (hasta 500.000 caracteres)';
       (function (rec, menuEl) {
         manualTextBtn.addEventListener('click', function (e) {
           e.preventDefault();
@@ -26816,6 +27346,20 @@
           pasteManualNutriProIndexedText(rec);
         });
       })(file, more);
+      if (file._extract && file._extract.status === 'done') {
+        var viewTextBtn = document.createElement('button');
+        viewTextBtn.type = 'button';
+        viewTextBtn.textContent = 'Ver texto indexado';
+        viewTextBtn.title = 'Abrir el texto indexado de este archivo';
+        (function (rec, menuEl) {
+          viewTextBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            menuEl.open = false;
+            viewNutriProIndexedText(rec);
+          });
+        })(file, more);
+        moreMenu.appendChild(viewTextBtn);
+      }
       moreMenu.appendChild(reindexBtn);
       moreMenu.appendChild(ocrBtn);
       moreMenu.appendChild(manualTextBtn);
@@ -28444,6 +28988,81 @@
       nutriStatsModal.addEventListener('click', function (e) {
         if (e.target === nutriStatsModal) closeNutriProFolderStatsModal();
       });
+    }
+    wireNutriProExtractTextModals();
+  }
+
+  function wireNutriProExtractTextModals() {
+    var viewClose = $('npNutriExtractViewClose');
+    if (viewClose && viewClose.dataset.npWired !== '1') {
+      viewClose.dataset.npWired = '1';
+      viewClose.addEventListener('click', closeNutriProExtractViewModal);
+    }
+    var viewOk = $('npNutriExtractViewOk');
+    if (viewOk && viewOk.dataset.npWired !== '1') {
+      viewOk.dataset.npWired = '1';
+      viewOk.addEventListener('click', closeNutriProExtractViewModal);
+    }
+    var viewCopy = $('npNutriExtractViewCopy');
+    if (viewCopy && viewCopy.dataset.npWired !== '1') {
+      viewCopy.dataset.npWired = '1';
+      viewCopy.addEventListener('click', function () {
+        var ta = $('npNutriExtractViewText');
+        if (!ta || !String(ta.value || '').trim()) {
+          showToast('No hay texto para copiar.', true);
+          return;
+        }
+        navigator.clipboard
+          .writeText(ta.value)
+          .then(function () {
+            showToast('Texto indexado copiado.');
+          })
+          .catch(function () {
+            ta.focus();
+            ta.select();
+            showToast('Selecciona y copia manualmente (Cmd/Ctrl+C).', true);
+          });
+      });
+    }
+    var viewModal = $('npNutriExtractViewModal');
+    if (viewModal && viewModal.dataset.npWired !== '1') {
+      viewModal.dataset.npWired = '1';
+      viewModal.addEventListener('click', function (e) {
+        if (e.target === viewModal) closeNutriProExtractViewModal();
+      });
+      var viewPanel = viewModal.querySelector('.np-modal-panel');
+      if (viewPanel) viewPanel.addEventListener('click', function (e) { e.stopPropagation(); });
+    }
+    var pasteClose = $('npNutriExtractPasteClose');
+    if (pasteClose && pasteClose.dataset.npWired !== '1') {
+      pasteClose.dataset.npWired = '1';
+      pasteClose.addEventListener('click', closeNutriProExtractPasteModal);
+    }
+    var pasteCancel = $('npNutriExtractPasteCancel');
+    if (pasteCancel && pasteCancel.dataset.npWired !== '1') {
+      pasteCancel.dataset.npWired = '1';
+      pasteCancel.addEventListener('click', closeNutriProExtractPasteModal);
+    }
+    var pasteSave = $('npNutriExtractPasteSave');
+    if (pasteSave && pasteSave.dataset.npWired !== '1') {
+      pasteSave.dataset.npWired = '1';
+      pasteSave.addEventListener('click', function () {
+        saveNutriProExtractPasteModal();
+      });
+    }
+    var pasteText = $('npNutriExtractPasteText');
+    if (pasteText && pasteText.dataset.npWired !== '1') {
+      pasteText.dataset.npWired = '1';
+      pasteText.addEventListener('input', updateNutriExtractPasteCounter);
+    }
+    var pasteModal = $('npNutriExtractPasteModal');
+    if (pasteModal && pasteModal.dataset.npWired !== '1') {
+      pasteModal.dataset.npWired = '1';
+      pasteModal.addEventListener('click', function (e) {
+        if (e.target === pasteModal) closeNutriProExtractPasteModal();
+      });
+      var pastePanel = pasteModal.querySelector('.np-modal-panel');
+      if (pastePanel) pastePanel.addEventListener('click', function (e) { e.stopPropagation(); });
     }
   }
 
