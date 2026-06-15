@@ -3509,15 +3509,22 @@
       color: #475569;
       white-space: nowrap;
     }
+    .np-apunte-pdf-topbar__right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
     .np-apunte-pdf-author {
       display: flex;
       align-items: center;
       gap: 7px;
-      margin: 0 0 10px;
+      margin: 0;
       color: #0b1f4d;
       font-size: 12px;
       font-weight: 800;
       letter-spacing: 0.01em;
+      white-space: nowrap;
     }
     .np-apunte-pdf-author img {
       width: 18px;
@@ -3656,6 +3663,56 @@
       overflow: visible !important;
       overflow-wrap: anywhere !important;
       word-break: break-word !important;
+    }
+    .np-apunte-pdf-prio {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 3px solid #e5e7eb;
+      background: #f8fafc;
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.05);
+    }
+    .np-apunte-pdf-prio::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #94a3b8;
+    }
+    .np-apunte-pdf-prio--baja {
+      border-color: #86efac;
+      background: #dcfce7;
+    }
+    .np-apunte-pdf-prio--baja::after { background: #16a34a; }
+    .np-apunte-pdf-prio--media {
+      border-color: #facc15;
+      background: #fef3c7;
+    }
+    .np-apunte-pdf-prio--media::after { background: #ca8a04; }
+    .np-apunte-pdf-prio--alta {
+      border-color: #fca5a5;
+      background: #fee2e2;
+    }
+    .np-apunte-pdf-prio--alta::after { background: #dc2626; }
+    .np-apunte-pdf-done {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      background: #22c55e;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .np-apunte-pdf-empty {
+      display: block;
+      min-height: 1.45em;
     }
     .np-apunte-pdf-root .np-apunte-pdf-head-field {
       font-weight: 700;
@@ -16303,6 +16360,7 @@
   function queuePersistDetailBlocksWorking(expectedItemId) {
     if (!expectedItemId || !state.client) return;
     if (detailBlocksSaveTimer) clearTimeout(detailBlocksSaveTimer);
+    var delayMs = detailMiniSheetCellHasFocus() ? 1800 : 520;
     detailBlocksSaveTimer = setTimeout(function () {
       detailBlocksSaveTimer = null;
       npCloudSyncTouch();
@@ -16312,7 +16370,7 @@
         refreshDetailBlocksDOM(true);
       }
       persistItemBlocks(state.detailItemId, state.detailBlocksWorking, { skipReload: true });
-    }, 520);
+    }, delayMs);
     npCloudSyncTouch();
   }
 
@@ -19723,6 +19781,29 @@
               setDone(ri, cb.checked);
             });
             cell.appendChild(cb);
+          } else if (!editable && prioCol === c && (b.variant === 'tasks' || b.variant === 'smart')) {
+            var pvRead = priorityLevelFromRaw(raw);
+            var prioMark = document.createElement('span');
+            prioMark.className = 'np-apunte-pdf-prio' + (pvRead ? ' np-apunte-pdf-prio--' + pvRead : '');
+            prioMark.title = pvRead ? storePriorityFromLevel(pvRead) : 'Sin prioridad';
+            cell.appendChild(prioMark);
+          } else if (!editable && doneCol === c && (b.variant === 'tasks' || b.variant === 'smart')) {
+            cell.classList.add('np-ms-cell-done');
+            if (b.rowDone && b.rowDone[ri]) {
+              var doneMark = document.createElement('span');
+              doneMark.className = 'np-apunte-pdf-done';
+              doneMark.textContent = '✓';
+              cell.appendChild(doneMark);
+            } else {
+              var doneEmpty = document.createElement('span');
+              doneEmpty.className = 'np-apunte-pdf-empty';
+              cell.appendChild(doneEmpty);
+            }
+          } else if (!editable && columnLooksLikeDate(headerLabel, c, ncol, b.variant)) {
+            var dateStatic = document.createElement('div');
+            dateStatic.className = 'np-ms-cell-static';
+            dateStatic.textContent = toDateInputValue(raw) || '';
+            cell.appendChild(dateStatic);
           } else if (editable) {
             var isDate = columnLooksLikeDate(headerLabel, c, ncol, b.variant);
             var dateParsed = toDateInputValue(raw);
@@ -25246,12 +25327,6 @@
     var topbarDate = document.createElement('div');
     topbarDate.className = 'np-apunte-pdf-topbar__date';
     topbarDate.textContent = genLabel;
-    topbar.appendChild(topbarLabel);
-    topbar.appendChild(topbarDate);
-    root.appendChild(topbar);
-
-    var head = document.createElement('div');
-    head.className = 'np-apunte-pdf-head';
     var author = document.createElement('div');
     author.className = 'np-apunte-pdf-author';
     var authorIcon = document.createElement('img');
@@ -25262,7 +25337,16 @@
     authorName.textContent = 'Jesús Avila';
     author.appendChild(authorIcon);
     author.appendChild(authorName);
-    head.appendChild(author);
+    var topbarRight = document.createElement('div');
+    topbarRight.className = 'np-apunte-pdf-topbar__right';
+    topbarRight.appendChild(topbarDate);
+    topbarRight.appendChild(author);
+    topbar.appendChild(topbarLabel);
+    topbar.appendChild(topbarRight);
+    root.appendChild(topbar);
+
+    var head = document.createElement('div');
+    head.className = 'np-apunte-pdf-head';
     var h1 = document.createElement('h1');
     h1.textContent = row.title || 'Apunte';
     head.appendChild(h1);
@@ -25327,7 +25411,7 @@
     var signature = document.createElement('div');
     signature.className = 'np-apunte-pdf-signature';
     var signatureImg = document.createElement('img');
-    signatureImg.src = '../assets/marca%20JA.png';
+    signatureImg.src = encodeURI('../assets/marca JA.png');
     signatureImg.alt = 'Marca JA';
     signature.appendChild(signatureImg);
     root.appendChild(signature);
