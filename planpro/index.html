@@ -3498,10 +3498,19 @@
       color: #0b1f4d;
     }
     .np-apunte-pdf-topbar__label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
       font-size: 10px;
       font-weight: 850;
       letter-spacing: 0.09em;
       text-transform: uppercase;
+    }
+    .np-apunte-pdf-topbar__label img {
+      width: 17px;
+      height: 17px;
+      object-fit: contain;
+      flex-shrink: 0;
     }
     .np-apunte-pdf-topbar__date {
       font-size: 10px;
@@ -3527,8 +3536,8 @@
       white-space: nowrap;
     }
     .np-apunte-pdf-author img {
-      width: 18px;
-      height: 18px;
+      width: 24px;
+      height: 24px;
       object-fit: contain;
       flex-shrink: 0;
     }
@@ -3607,14 +3616,27 @@
       padding-left: 0.12em;
       line-height: 1.45;
     }
+    .np-apunte-pdf-root .np-modal-note-rich li::marker {
+      font-weight: 900;
+      color: #1e40af;
+      font-size: 1.08em;
+    }
+    .np-apunte-pdf-root .np-modal-note-rich ol li::marker {
+      font-variant-numeric: tabular-nums;
+    }
+    .np-apunte-pdf-root .np-modal-note-rich ul:not(.np-rich-list-diagram) li::marker {
+      color: #0f766e;
+    }
     .np-apunte-pdf-root a.np-rich-nutri-ref,
     .np-apunte-pdf-root a.np-rich-nutri-link-ref {
       color: #047857;
       text-decoration: none;
     }
     .np-apunte-pdf-blocks .np-ms-block {
-      break-inside: avoid;
-      page-break-inside: avoid;
+      break-inside: avoid !important;
+      break-inside: avoid-page !important;
+      page-break-inside: avoid !important;
+      margin-bottom: 14px;
     }
     .np-apunte-pdf-root .np-ms-sheet {
       display: block !important;
@@ -3622,6 +3644,9 @@
       width: 100% !important;
       max-width: 100% !important;
       min-width: 0 !important;
+      break-inside: avoid !important;
+      break-inside: avoid-page !important;
+      page-break-inside: avoid !important;
     }
     .np-apunte-pdf-root .np-ms-row {
       display: grid !important;
@@ -3631,8 +3656,9 @@
       max-width: 100% !important;
       align-items: stretch;
       grid-auto-rows: auto !important;
-      break-inside: avoid;
-      page-break-inside: avoid;
+      break-inside: avoid !important;
+      break-inside: avoid-page !important;
+      page-break-inside: avoid !important;
     }
     .np-apunte-pdf-root .np-ms-sheet--smart6 .np-ms-row {
       grid-template-columns: 0.8fr 1.55fr 0.9fr 0.62fr 1.05fr 1.9fr !important;
@@ -25323,14 +25349,21 @@
     topbar.className = 'np-apunte-pdf-topbar';
     var topbarLabel = document.createElement('div');
     topbarLabel.className = 'np-apunte-pdf-topbar__label';
-    topbarLabel.textContent = 'Plan PRO · Apunte';
+    var topbarIcon = document.createElement('img');
+    topbarIcon.src = '../assets/N_Hoja_Azul.png';
+    topbarIcon.alt = '';
+    topbarIcon.setAttribute('aria-hidden', 'true');
+    var topbarText = document.createElement('span');
+    topbarText.textContent = 'Plan PRO · Apunte';
+    topbarLabel.appendChild(topbarIcon);
+    topbarLabel.appendChild(topbarText);
     var topbarDate = document.createElement('div');
     topbarDate.className = 'np-apunte-pdf-topbar__date';
     topbarDate.textContent = genLabel;
     var author = document.createElement('div');
     author.className = 'np-apunte-pdf-author';
     var authorIcon = document.createElement('img');
-    authorIcon.src = '../assets/N_Hoja_Azul.png';
+    authorIcon.src = encodeURI('../assets/marca JA.png');
     authorIcon.alt = '';
     authorIcon.setAttribute('aria-hidden', 'true');
     var authorName = document.createElement('span');
@@ -25408,13 +25441,6 @@
     }
     normalizeApuntePdfTableFields(root);
     await hydrateApuntePdfNutriLinks(root);
-    var signature = document.createElement('div');
-    signature.className = 'np-apunte-pdf-signature';
-    var signatureImg = document.createElement('img');
-    signatureImg.src = encodeURI('../assets/marca JA.png');
-    signatureImg.alt = 'Marca JA';
-    signature.appendChild(signatureImg);
-    root.appendChild(signature);
     return root;
   }
 
@@ -25466,7 +25492,10 @@
           html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0 },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
           enableLinks: true,
-          pagebreak: { mode: ['css', 'legacy'] }
+          pagebreak: {
+            mode: ['css', 'legacy', 'avoid-all'],
+            avoid: ['.np-ms-block', '.np-ms-sheet', '.np-ms-row', '.np-apunte-pdf-note']
+          }
         })
         .from(pdfRoot)
         .output('blob');
