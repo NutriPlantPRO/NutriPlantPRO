@@ -3485,6 +3485,46 @@
       line-height: 1.45;
       background: #fff;
     }
+    .np-apunte-pdf-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 14px;
+      padding: 8px 11px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(219, 234, 254, 0.95) 0%, rgba(236, 253, 245, 0.92) 100%);
+      border: 1px solid rgba(37, 99, 235, 0.16);
+      color: #0b1f4d;
+    }
+    .np-apunte-pdf-topbar__label {
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+    .np-apunte-pdf-topbar__date {
+      font-size: 10px;
+      font-weight: 700;
+      color: #475569;
+      white-space: nowrap;
+    }
+    .np-apunte-pdf-author {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0 0 10px;
+      color: #0b1f4d;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+    .np-apunte-pdf-author img {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
     .np-apunte-pdf-head h1 {
       margin: 0 0 6px;
       font-size: 1.35rem;
@@ -3496,6 +3536,17 @@
       font-size: 12px;
       color: #64748b;
     }
+    .np-apunte-pdf-maps {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: #0f766e;
+    }
+    .np-apunte-pdf-maps a {
+      color: #047857;
+      font-weight: 700;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
     .np-apunte-pdf-gen {
       margin: 0 0 14px;
       padding-bottom: 10px;
@@ -3503,26 +3554,92 @@
       font-size: 11px;
       color: #94a3b8;
     }
+    .np-apunte-pdf-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 8px;
+      color: #0f172a;
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+    .np-apunte-pdf-section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(37, 99, 235, 0.35), rgba(20, 184, 166, 0.18), transparent);
+    }
     .np-apunte-pdf-note {
-      margin-bottom: 12px;
+      margin-bottom: 16px;
+      padding: 12px 13px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: linear-gradient(180deg, rgba(248, 250, 252, 0.76) 0%, rgba(255, 255, 255, 0.98) 100%);
+    }
+    .np-apunte-pdf-blocks {
+      margin-top: 6px;
+    }
+    .np-apunte-pdf-root .np-modal-note-rich ul,
+    .np-apunte-pdf-root .np-modal-note-rich ol {
+      display: block;
+      margin: 0.45em 0 0.75em 1.35em;
+      padding-left: 1.15em;
+      list-style-position: outside;
+    }
+    .np-apunte-pdf-root .np-modal-note-rich ul {
+      list-style-type: disc;
+    }
+    .np-apunte-pdf-root .np-modal-note-rich ol {
+      list-style-type: decimal;
+    }
+    .np-apunte-pdf-root .np-modal-note-rich li {
+      display: list-item;
+      margin: 0.22em 0;
+      padding-left: 0.12em;
+      line-height: 1.45;
+    }
+    .np-apunte-pdf-root a.np-rich-nutri-ref,
+    .np-apunte-pdf-root a.np-rich-nutri-link-ref {
+      color: #047857;
+      text-decoration: none;
     }
     .np-apunte-pdf-blocks .np-ms-block {
       break-inside: avoid;
       page-break-inside: avoid;
     }
     .np-apunte-pdf-root .np-ms-sheet {
+      display: block !important;
       overflow: visible !important;
-    }
-    .np-apunte-pdf-root .np-ms-row {
       width: 100% !important;
       max-width: 100% !important;
+      min-width: 0 !important;
+    }
+    .np-apunte-pdf-root .np-ms-row {
+      display: grid !important;
+      grid-column: auto !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
       align-items: stretch;
+      grid-auto-rows: auto !important;
       break-inside: avoid;
       page-break-inside: avoid;
+    }
+    .np-apunte-pdf-root .np-ms-sheet--smart6 .np-ms-row {
+      grid-template-columns: 0.8fr 1.55fr 0.9fr 0.62fr 1.05fr 1.9fr !important;
+    }
+    .np-apunte-pdf-root .np-ms-sheet--tasks5 .np-ms-row {
+      grid-template-columns: 1.45fr 1.85fr 0.9fr 0.62fr 1.05fr !important;
+    }
+    .np-apunte-pdf-root .np-ms-sheet--free3 .np-ms-row {
+      grid-template-columns: 1.2fr 0.85fr 1.65fr !important;
     }
     .np-apunte-pdf-root .np-ms-cell {
       align-items: flex-start !important;
       min-height: auto !important;
+      height: auto !important;
       overflow: visible !important;
       white-space: normal !important;
       overflow-wrap: anywhere !important;
@@ -3552,6 +3669,18 @@
       font-size: 1.05rem;
       line-height: 1.2;
       color: #334155;
+    }
+    .np-apunte-pdf-signature {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 18px;
+      padding-top: 10px;
+    }
+    .np-apunte-pdf-signature img {
+      width: 58px;
+      height: auto;
+      object-fit: contain;
+      opacity: 0.92;
     }
     #npFormCreate .np-create-item-meta { margin-bottom: 0; width: 100%; }
     #npFormCreate .np-create-meta-hint {
@@ -4368,6 +4497,68 @@
       font-size: 11px;
       line-height: 1.35;
       color: #64748b;
+    }
+    #npNutriFileSearchResults {
+      max-height: min(62vh, 520px);
+    }
+    .np-nutri-search-card {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 12px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
+      border: 1px solid color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 18%, rgba(226, 232, 240, 0.95));
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.055);
+    }
+    .np-nutri-search-card-head {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+    .np-nutri-search-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 10%, #fff);
+      border: 1px solid color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 24%, rgba(226, 232, 240, 0.95));
+      font-size: 15px;
+    }
+    .np-nutri-search-title {
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.25;
+      color: #0f172a;
+      overflow-wrap: anywhere;
+    }
+    .np-nutri-search-route {
+      margin-top: 2px;
+      font-size: 10.5px;
+      font-weight: 650;
+      line-height: 1.3;
+      color: #64748b;
+      overflow-wrap: anywhere;
+    }
+    .np-nutri-search-match {
+      display: inline-flex;
+      width: fit-content;
+      max-width: 100%;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 10%, #fff);
+      color: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 70%, #0f172a);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+    .np-nutri-search-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
     }
     .np-tree-row-lead {
       grid-column: 1;
@@ -10842,14 +11033,15 @@
       detailBlocksSaveTimer = null;
       didFlush = true;
       cancelQueuedDetailBlocksDOMRefresh();
+      syncDetailBlocksInputsFromDOM();
       if (
         $('npDetailModal') &&
         $('npDetailModal').classList.contains('np-modal-open') &&
-        $('npDetailBlocksMount')
+        $('npDetailBlocksMount') &&
+        !detailMiniSheetCellHasFocus()
       ) {
         refreshDetailBlocksDOM(true);
       }
-      syncDetailBlocksInputsFromDOM();
       if (state.detailItemId && state.detailBlocksWorking) {
         await persistItemBlocks(state.detailItemId, state.detailBlocksWorking, { skipReload: true });
       }
@@ -11724,7 +11916,62 @@
     var t = String(plain || '').trim();
     if (!t) return '<p><br></p>';
     var lines = t.split(/\r?\n/);
-    return '<p>' + lines.map(function (ln) { return escapeHtmlText(ln); }).join('<br>') + '</p>';
+    var out = [];
+    var paragraph = [];
+    var list = null;
+
+    function flushParagraph() {
+      if (!paragraph.length) return;
+      out.push('<p>' + paragraph.map(function (ln) { return escapeHtmlText(ln); }).join('<br>') + '</p>');
+      paragraph = [];
+    }
+
+    function flushList() {
+      if (!list || !list.items.length) return;
+      out.push('<' + list.tag + '>' + list.items.map(function (ln) {
+        return '<li>' + escapeHtmlText(ln) + '</li>';
+      }).join('') + '</' + list.tag + '>');
+      list = null;
+    }
+
+    lines.forEach(function (rawLine, idx) {
+      var ln = String(rawLine || '').trim();
+      if (!ln) {
+        flushParagraph();
+        flushList();
+        return;
+      }
+      var numbered = ln.match(/^(\d{1,2})(?:[.)]\s*|\s+)?(.+)$/);
+      var next = lines[idx + 1] != null ? String(lines[idx + 1]).trim() : '';
+      var nextNumbered = next.match(/^(\d{1,2})(?:[.)]\s*|\s+)?(.+)$/);
+      var bullet = ln.match(/^(?:[-*•])\s+(.+)$/);
+
+      if (numbered && (list && list.tag === 'ol' || nextNumbered || Number(numbered[1]) === 1)) {
+        flushParagraph();
+        if (!list || list.tag !== 'ol') {
+          flushList();
+          list = { tag: 'ol', items: [] };
+        }
+        list.items.push(numbered[2].trim());
+        return;
+      }
+
+      if (bullet) {
+        flushParagraph();
+        if (!list || list.tag !== 'ul') {
+          flushList();
+          list = { tag: 'ul', items: [] };
+        }
+        list.items.push(bullet[1].trim());
+        return;
+      }
+
+      flushList();
+      paragraph.push(ln);
+    });
+    flushParagraph();
+    flushList();
+    return out.join('') || '<p><br></p>';
   }
 
   function planProPublicNoteImageUrlPrefix() {
@@ -12230,6 +12477,7 @@
           'data-np-due-level',
           'data-np-due-label',
           'data-np-nutri-file-id',
+          'data-np-nutri-link-id',
           'data-np-apunte-id',
           'data-np-ref-label',
           'contenteditable',
@@ -12400,7 +12648,17 @@
       var fid = el.getAttribute('data-np-nutri-file-id');
       if (!fid) return;
       out.push({
+        kind: 'file',
         fileId: fid,
+        label: el.getAttribute('data-np-ref-label') || stripHtml(el.textContent || '')
+      });
+    });
+    wrap.querySelectorAll('.np-rich-nutri-link-ref[data-np-nutri-link-id]').forEach(function (el) {
+      var lid = el.getAttribute('data-np-nutri-link-id');
+      if (!lid) return;
+      out.push({
+        kind: 'link',
+        linkId: lid,
         label: el.getAttribute('data-np-ref-label') || stripHtml(el.textContent || '')
       });
     });
@@ -12427,11 +12685,18 @@
     var nutri = [];
     var apunte = [];
     var seenNutri = {};
+    var seenNutriLink = {};
     var seenApunte = {};
     function mergeNutri(list) {
       (list || []).forEach(function (x) {
-        if (!x || !x.fileId || seenNutri[x.fileId]) return;
-        seenNutri[x.fileId] = true;
+        if (!x) return;
+        if (x.kind === 'link' || x.linkId) {
+          if (!x.linkId || seenNutriLink[x.linkId]) return;
+          seenNutriLink[x.linkId] = true;
+        } else {
+          if (!x.fileId || seenNutri[x.fileId]) return;
+          seenNutri[x.fileId] = true;
+        }
         nutri.push(x);
       });
     }
@@ -12461,7 +12726,11 @@
     refs = refs || {};
     var parts = [];
     (refs.nutri || []).forEach(function (ref) {
-      parts.push('Nutri PRO: ' + (ref.label || 'archivo') + ' [nutri_file_id=' + ref.fileId + ']');
+      if (ref.kind === 'link' || ref.linkId) {
+        parts.push('Nutri PRO enlace: ' + (ref.label || 'enlace') + ' [nutri_link_id=' + ref.linkId + ']');
+      } else {
+        parts.push('Nutri PRO archivo: ' + (ref.label || 'archivo') + ' [nutri_file_id=' + ref.fileId + ']');
+      }
     });
     (refs.apunte || []).forEach(function (ref) {
       parts.push('Apunte: ' + (ref.label || 'apunte') + ' [apunte_id=' + ref.itemId + ']');
@@ -13212,6 +13481,14 @@
     return fname;
   }
 
+  function nutriProWebLinkShortLabel(linkRec) {
+    if (!linkRec) return 'Enlace';
+    var title = linkRec.title || 'Enlace';
+    var chain = nutriProFolderPathChain(linkRec.folder_id);
+    if (chain.length) return chain.join('/') + '/' + title;
+    return title;
+  }
+
   function apunteShortLabel(itemRec) {
     if (!itemRec) return 'Apunte';
     var plant = state.areaMap[itemRec.area_id] || 'Planta';
@@ -13223,14 +13500,21 @@
     if (!el) return;
     var lbl = el.getAttribute('data-np-ref-label') || '';
     if (!lbl) {
-      if (el.classList.contains('np-rich-nutri-ref')) lbl = 'Archivo Nutri PRO';
+      if (el.classList.contains('np-rich-nutri-link-ref')) lbl = 'Enlace Nutri PRO';
+      else if (el.classList.contains('np-rich-nutri-ref')) lbl = 'Archivo Nutri PRO';
       else if (el.classList.contains('np-rich-apunte-ref')) lbl = 'Apunte';
     }
-    var icon = el.classList.contains('np-rich-apunte-ref') ? '📝' : '📎';
+    var icon = el.classList.contains('np-rich-apunte-ref')
+      ? '📝'
+      : el.classList.contains('np-rich-nutri-link-ref')
+        ? '🔗'
+        : '📎';
     el.textContent = icon + ' ' + lbl;
     el.setAttribute('contenteditable', 'false');
     el.setAttribute('draggable', 'true');
-    if (el.classList.contains('np-rich-nutri-ref')) {
+    if (el.classList.contains('np-rich-nutri-link-ref')) {
+      el.setAttribute('title', 'Abrir enlace en otra ventana del navegador · arrastra para mover');
+    } else if (el.classList.contains('np-rich-nutri-ref')) {
       el.setAttribute('title', 'Abrir archivo en otra ventana del navegador · arrastra para mover');
     } else {
       el.setAttribute('title', 'Abrir apunte · arrastra para mover');
@@ -13246,6 +13530,20 @@
       '" data-np-ref-label="' +
       escapeAttrText(lbl) +
       '">📎 ' +
+      escapeHtmlText(lbl) +
+      '</span>'
+    );
+  }
+
+  function buildNutriWebLinkRefHtml(linkId, label) {
+    var lbl = String(label || 'Enlace').trim();
+    return (
+      '<span class="np-rich-ref np-rich-nutri-ref np-rich-nutri-link-ref" contenteditable="false" draggable="true" ' +
+      'data-np-nutri-link-id="' +
+      escapeAttrText(linkId) +
+      '" data-np-ref-label="' +
+      escapeAttrText(lbl) +
+      '">🔗 ' +
       escapeHtmlText(lbl) +
       '</span>'
     );
@@ -13360,13 +13658,15 @@
     var dragRef = null;
     editorEl.addEventListener('click', function (e) {
       if (dragRef) return;
-      var nutri = e.target.closest('.np-rich-nutri-ref');
+      var nutriLink = e.target.closest('.np-rich-nutri-link-ref');
+      var nutri = !nutriLink ? e.target.closest('.np-rich-nutri-ref') : null;
       var apunte = e.target.closest('.np-rich-apunte-ref');
-      var ref = nutri || apunte;
+      var ref = nutriLink || nutri || apunte;
       if (!ref || !editorEl.contains(ref)) return;
       e.preventDefault();
       e.stopPropagation();
-      if (nutri) navigateToNutriRef(nutri);
+      if (nutriLink) navigateToNutriWebLinkRef(nutriLink);
+      else if (nutri) navigateToNutriRef(nutri);
       else navigateToApunteRef(apunte);
     });
     editorEl.addEventListener('dragstart', function (e) {
@@ -13404,11 +13704,13 @@
     rootEl._npRichRefReadBound = true;
     rootEl.querySelectorAll('.np-rich-ref').forEach(applyRichRefMarkerEl);
     rootEl.addEventListener('click', function (e) {
-      var nutri = e.target.closest('.np-rich-nutri-ref');
+      var nutriLink = e.target.closest('.np-rich-nutri-link-ref');
+      var nutri = !nutriLink ? e.target.closest('.np-rich-nutri-ref') : null;
       var apunte = e.target.closest('.np-rich-apunte-ref');
-      if (!nutri && !apunte) return;
+      if (!nutriLink && !nutri && !apunte) return;
       e.preventDefault();
-      if (nutri) navigateToNutriRef(nutri);
+      if (nutriLink) navigateToNutriWebLinkRef(nutriLink);
+      else if (nutri) navigateToNutriRef(nutri);
       else navigateToApunteRef(apunte);
     });
   }
@@ -13426,6 +13728,26 @@
       return;
     }
     await openNutriProFile(res.data, false);
+  }
+
+  async function navigateToNutriWebLinkRef(el) {
+    var linkId = el && el.getAttribute ? el.getAttribute('data-np-nutri-link-id') : '';
+    if (!linkId || !state.client) return;
+    var res = await state.client
+      .from('plan_pro_nutri_links')
+      .select('id,title,url')
+      .eq('id', linkId)
+      .maybeSingle();
+    if (res.error || !res.data) {
+      showToast('Enlace no encontrado en Nutri PRO.', true);
+      return;
+    }
+    var url = normalizeNutriProLinkUrl(res.data.url);
+    if (!url) {
+      showToast('El enlace guardado no es válido.', true);
+      return;
+    }
+    planProOpenExternalUrl(url);
   }
 
   async function navigateToApunteRef(el) {
@@ -13510,11 +13832,11 @@
       .select('id,folder_id,title,original_name,description,mime_type,updated_at')
       .order('title', { ascending: true });
     if (res.error) throw res.error;
-    return (res.data || []).map(function (f) {
+    var fileRows = (res.data || []).map(function (f) {
       var short = nutriProFileShortLabel(f);
       return {
         title: short,
-        sub: nutriProFileIcon(f.original_name || f.title, f.mime_type) + ' Nutri PRO',
+        sub: nutriProFileIcon(f.original_name || f.title, f.mime_type) + ' Archivo Nutri PRO',
         search:
           short +
           ' ' +
@@ -13523,9 +13845,37 @@
           (f.title || '') +
           ' ' +
           (f.description || ''),
-        raw: f
+        raw: Object.assign({ _npRefKind: 'file' }, f)
       };
     });
+    if (!state.nutriProLinksReady) return fileRows;
+    var linksRes = await state.client
+      .from('plan_pro_nutri_links')
+      .select('id,folder_id,title,description,url,category,updated_at')
+      .order('title', { ascending: true });
+    if (linksRes.error) {
+      if (/plan_pro_nutri_links|does not exist|schema cache/i.test(linksRes.error.message || '')) return fileRows;
+      throw linksRes.error;
+    }
+    var linkRows = (linksRes.data || []).map(function (lnk) {
+      var short = nutriProWebLinkShortLabel(lnk);
+      return {
+        title: short,
+        sub: '🔗 Enlace Nutri PRO' + (lnk.category ? ' · ' + nutriProLinkCategoryLabel(lnk.category) : ''),
+        search:
+          short +
+          ' ' +
+          (lnk.title || '') +
+          ' ' +
+          (lnk.description || '') +
+          ' ' +
+          (lnk.url || '') +
+          ' ' +
+          (lnk.category || ''),
+        raw: Object.assign({ _npRefKind: 'link' }, lnk)
+      };
+    });
+    return fileRows.concat(linkRows);
   }
 
   async function loadCrossLinkPickerApunteRows() {
@@ -13572,12 +13922,12 @@
       titleEl.textContent =
         crossLinkPickerState.mode === 'apunte'
           ? 'Elegir apunte destino'
-          : 'Elegir archivo Nutri PRO';
+          : 'Elegir archivo o enlace Nutri PRO';
     }
     if (search) {
       search.value = '';
       search.placeholder =
-        crossLinkPickerState.mode === 'apunte' ? 'Buscar apunte…' : 'Buscar archivo Nutri PRO…';
+        crossLinkPickerState.mode === 'apunte' ? 'Buscar apunte…' : 'Buscar archivo o enlace Nutri PRO…';
     }
     modal.classList.add('np-modal-open');
     modal.setAttribute('aria-hidden', 'false');
@@ -13599,9 +13949,12 @@
     openCrossLinkPicker({
       mode: 'nutri',
       editorEl: editorEl,
-      onPick: function (fileRec) {
-        if (!fileRec || !fileRec.id || !editorEl) return;
-        var html = buildNutriRefHtml(fileRec.id, nutriProFileShortLabel(fileRec)) + '\u00a0';
+      onPick: function (rec) {
+        if (!rec || !rec.id || !editorEl) return;
+        var html =
+          rec._npRefKind === 'link'
+            ? buildNutriWebLinkRefHtml(rec.id, nutriProWebLinkShortLabel(rec)) + '\u00a0'
+            : buildNutriRefHtml(rec.id, nutriProFileShortLabel(rec)) + '\u00a0';
         insertRichHtmlSnippet(html, editorEl, function () {
           bindRichRefMarkers(editorEl, onAfter);
           if (onAfter) onAfter();
@@ -15955,7 +16308,7 @@
       npCloudSyncTouch();
       if (!state.detailItemId || state.detailItemId !== expectedItemId || !state.detailBlocksWorking) return;
       cancelQueuedDetailBlocksDOMRefresh();
-      if ($('npDetailModal').classList.contains('np-modal-open') && $('npDetailBlocksMount')) {
+      if ($('npDetailModal').classList.contains('np-modal-open') && $('npDetailBlocksMount') && !detailMiniSheetCellHasFocus()) {
         refreshDetailBlocksDOM(true);
       }
       persistItemBlocks(state.detailItemId, state.detailBlocksWorking, { skipReload: true });
@@ -16030,6 +16383,18 @@
 
   function syncDetailBlocksInputsFromDOM() {
     syncMiniSheetInputsFromMount($('npDetailBlocksMount'), state.detailBlocksWorking);
+  }
+
+  function detailMiniSheetCellHasFocus() {
+    var mount = $('npDetailBlocksMount');
+    var active = document.activeElement;
+    return !!(
+      mount &&
+      active &&
+      mount.contains(active) &&
+      active.matches &&
+      active.matches('.np-ms-cell-input, .np-ms-cell-input-date, .np-ms-head-input, .np-ms-title-inline')
+    );
   }
 
   function syncPendingBlocksInputsFromDOM() {
@@ -24036,37 +24401,124 @@
     }
     results.slice(0, 24).forEach(function (r) {
       var item = document.createElement('div');
-      item.className = 'np-flow-search-result np-flow-search-result--clickable';
-      item.setAttribute('role', 'button');
-      item.setAttribute('tabindex', '0');
-      item.title = r.hitType === 'link' ? 'Ir a este enlace' : 'Ir a este archivo';
-      var kind = document.createElement('span');
-      kind.className = 'np-flow-search-kind';
-      kind.textContent = r.kind || 'Archivo';
-      var path = document.createElement('div');
-      path.className = 'np-flow-search-path';
-      path.textContent = r.path || '';
-      item.appendChild(kind);
-      item.appendChild(path);
+      item.className = 'np-flow-search-result np-nutri-search-card';
+      var head = document.createElement('div');
+      head.className = 'np-nutri-search-card-head';
+      var icon = document.createElement('span');
+      icon.className = 'np-nutri-search-icon';
+      icon.textContent = r.icon || (r.hitType === 'link' ? '🔗' : '📄');
+      var meta = document.createElement('div');
+      var title = document.createElement('div');
+      title.className = 'np-nutri-search-title';
+      title.textContent = r.title || r.path || 'Resultado Nutri PRO';
+      var route = document.createElement('div');
+      route.className = 'np-nutri-search-route';
+      route.textContent = r.route || r.path || '';
+      meta.appendChild(title);
+      meta.appendChild(route);
+      head.appendChild(icon);
+      head.appendChild(meta);
+      item.appendChild(head);
+      var match = document.createElement('span');
+      match.className = 'np-nutri-search-match';
+      match.textContent = r.matchLabel || r.kind || 'Coincidencia';
+      item.appendChild(match);
       if (r.preview) {
         var prev = document.createElement('div');
         prev.className = 'np-flow-search-preview';
         prev.textContent = r.preview;
         item.appendChild(prev);
       }
+      var actions = document.createElement('div');
+      actions.className = 'np-nutri-search-actions';
+      if (r.hitType === 'link') {
+        var openLink = document.createElement('button');
+        openLink.type = 'button';
+        openLink.className = 'btn btn-ghost btn-ghost-blue';
+        openLink.textContent = 'Abrir enlace';
+        (function (hit) {
+          openLink.addEventListener('click', function () {
+            var url = normalizeNutriProLinkUrl(hit.url);
+            if (url) planProOpenExternalUrl(url);
+          });
+        })(r);
+        var copyLink = document.createElement('button');
+        copyLink.type = 'button';
+        copyLink.className = 'btn btn-ghost btn-ghost-green';
+        copyLink.textContent = 'Copiar';
+        (function (hit) {
+          copyLink.addEventListener('click', function () {
+            copyNutriProLinkUrl(hit.url);
+          });
+        })(r);
+        actions.appendChild(openLink);
+        actions.appendChild(copyLink);
+      } else {
+        var openFile = document.createElement('button');
+        openFile.type = 'button';
+        openFile.className = 'btn btn-ghost btn-ghost-green';
+        openFile.textContent = 'Abrir';
+        (function (hit) {
+          openFile.addEventListener('click', function () {
+            if (hit.raw) openNutriProFile(hit.raw, false);
+            else openNutriProFileFromSearch(hit.fileId, hit.folderId);
+          });
+        })(r);
+        var linkAp = document.createElement('button');
+        linkAp.type = 'button';
+        linkAp.className = 'btn btn-ghost btn-ghost-green';
+        linkAp.textContent = 'Enlazar apunte';
+        (function (hit) {
+          linkAp.addEventListener('click', function () {
+            if (hit.raw) openApunteLinkPickerForNutriFile(hit.raw);
+          });
+        })(r);
+        actions.appendChild(openFile);
+        actions.appendChild(linkAp);
+      }
+      var locateBtn = document.createElement('button');
+      locateBtn.type = 'button';
+      locateBtn.className = 'btn btn-ghost';
+      locateBtn.textContent = 'Ver en carpeta';
       (function (hit) {
-        function go() {
+        locateBtn.addEventListener('click', function () {
           if (hit.hitType === 'link') openNutriProLinkFromSearch(hit.linkId, hit.folderId);
           else openNutriProFileFromSearch(hit.fileId, hit.folderId);
-        }
-        item.addEventListener('click', go);
-        item.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            go();
-          }
         });
       })(r);
+      actions.appendChild(locateBtn);
+      item.appendChild(actions);
+      if (r.hitType === 'file') {
+        var descWrap = document.createElement('div');
+        descWrap.className = 'np-nutri-file-desc-wrap';
+        var descLabel = document.createElement('label');
+        descLabel.className = 'np-nutri-file-desc-label';
+        descLabel.textContent = 'Nota breve';
+        var desc = document.createElement('textarea');
+        desc.className = 'np-nutri-file-desc';
+        desc.rows = 1;
+        desc.maxLength = 500;
+        desc.placeholder = 'Descripción del archivo…';
+        desc.value = (r.raw && r.raw.description) || '';
+        if (r.raw) {
+          descLabel.setAttribute('for', 'npNutriSearchDesc-' + r.raw.id);
+          desc.id = 'npNutriSearchDesc-' + r.raw.id;
+          (function (rec, ta) {
+            ta.addEventListener('blur', function () {
+              saveNutriProFileDescription(rec, ta.value);
+            });
+            ta.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                ta.blur();
+              }
+            });
+          })(r.raw, desc);
+        }
+        descWrap.appendChild(descLabel);
+        descWrap.appendChild(desc);
+        item.appendChild(descWrap);
+      }
       box.appendChild(item);
     });
     box.classList.remove('np-hide');
@@ -24162,21 +24614,40 @@
 
         (res.data || []).forEach(function (f) {
           if (!f || !f.id) return;
-          var folderPath = nutriProFolderPathChain(f.folder_id).join(' ');
-          var hay = normalizePlanSearchText(
-            [f.title, f.original_name, f.description, folderPath, f.mime_type].filter(Boolean).join(' ')
-          );
-          var inContent = !!contentByFile[f.id];
+          var folderChain = nutriProFolderPathChain(f.folder_id);
+          var folderPath = folderChain.join(' ');
+          var titleText = [f.title, f.original_name].filter(Boolean).join(' ');
+          var titleMatch = normalizePlanSearchText(titleText).indexOf(q) >= 0;
           var descMatch = normalizePlanSearchText(f.description || '').indexOf(q) >= 0;
-          if (hay.indexOf(q) < 0 && !inContent) return;
+          var routeMatch = normalizePlanSearchText([folderPath, f.mime_type].filter(Boolean).join(' ')).indexOf(q) >= 0;
+          var inContent = !!contentByFile[f.id];
+          if (!titleMatch && !descMatch && !routeMatch && !inContent) return;
           var preview = '';
-          if (inContent) preview = nutriProExtractSearchPreview(contentByFile[f.id], q, 110);
-          else if (descMatch && f.description) preview = String(f.description).slice(0, 110);
+          var rank = 4;
+          var matchLabel = 'Coincidencia en ruta';
+          if (titleMatch) {
+            rank = 1;
+            matchLabel = 'Coincidencia en título';
+          } else if (descMatch) {
+            rank = 2;
+            matchLabel = 'Coincidencia en descripción';
+            if (f.description) preview = String(f.description).slice(0, 160);
+          } else if (inContent) {
+            rank = 3;
+            matchLabel = 'Coincidencia en texto indexado';
+            preview = nutriProExtractSearchPreview(contentByFile[f.id], q, 160);
+          }
           results.push({
             hitType: 'file',
             kind: 'Archivo',
+            icon: nutriProFileIcon(f.original_name || f.title, f.mime_type),
+            title: f.title || f.original_name || 'Archivo',
             path: getNutriProFileDisplayPath(f),
+            route: folderChain.length ? folderChain.join(' › ') : 'Carpeta principal',
+            matchLabel: matchLabel,
             preview: preview,
+            rank: rank,
+            raw: f,
             fileId: f.id,
             folderId: f.folder_id || null
           });
@@ -24193,23 +24664,40 @@
         if (!linkRes.error) {
           (linkRes.data || []).forEach(function (l) {
             if (!l || !l.id) return;
-            var folderPath = nutriProFolderPathChain(l.folder_id).join(' ');
+            var folderChain = nutriProFolderPathChain(l.folder_id);
+            var folderPath = folderChain.join(' ');
             var catLabel = nutriProLinkCategoryLabel(l.category);
-            var hay = normalizePlanSearchText(
-              [l.title, l.description, l.url, catLabel, folderPath].filter(Boolean).join(' ')
-            );
-            if (hay.indexOf(q) < 0) return;
+            var titleMatch = normalizePlanSearchText(l.title || '').indexOf(q) >= 0;
+            var descMatch = normalizePlanSearchText(l.description || '').indexOf(q) >= 0;
+            var urlMatch = normalizePlanSearchText(l.url || '').indexOf(q) >= 0;
+            var routeMatch = normalizePlanSearchText([catLabel, folderPath].filter(Boolean).join(' ')).indexOf(q) >= 0;
+            if (!titleMatch && !descMatch && !urlMatch && !routeMatch) return;
             var preview = '';
-            if (l.description && normalizePlanSearchText(l.description).indexOf(q) >= 0) {
-              preview = String(l.description).slice(0, 110);
-            } else if (l.url && normalizePlanSearchText(l.url).indexOf(q) >= 0) {
-              preview = String(l.url).slice(0, 110);
+            var rank = 4;
+            var matchLabel = 'Coincidencia en ruta/categoría';
+            if (titleMatch) {
+              rank = 1;
+              matchLabel = 'Coincidencia en título';
+            } else if (descMatch) {
+              rank = 2;
+              matchLabel = 'Coincidencia en descripción';
+              preview = String(l.description).slice(0, 160);
+            } else if (urlMatch) {
+              rank = 3;
+              matchLabel = 'Coincidencia en URL';
+              preview = String(l.url).slice(0, 160);
             }
             results.push({
               hitType: 'link',
               kind: 'Enlace',
+              icon: '🔗',
+              title: l.title || 'Enlace',
               path: getNutriProLinkDisplayPath(l),
+              route: folderChain.length ? folderChain.join(' › ') : 'Carpeta principal',
+              matchLabel: matchLabel,
               preview: preview,
+              rank: rank,
+              url: l.url || '',
               linkId: l.id,
               folderId: l.folder_id || null
             });
@@ -24218,7 +24706,7 @@
       }
 
       results.sort(function (a, b) {
-        return String(a.path).localeCompare(String(b.path)) || String(a.kind).localeCompare(String(b.kind));
+        return (a.rank || 9) - (b.rank || 9) || String(a.title || a.path).localeCompare(String(b.title || b.path));
       });
       renderNutriProFileSearchResults(
         results,
@@ -24592,15 +25080,15 @@
   }
 
   function nutriProApuntePdfFilename(title, genDate) {
-    var slug = String(title || 'apunte')
+    var base = String(title || 'apunte')
       .trim()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-zA-Z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
+      .replace(/[\\/:*?"<>|]+/g, '')
+      .replace(/\s+/g, ' ')
       .slice(0, 52);
-    if (!slug) slug = 'apunte';
-    return slug + '_' + nutriProApuntePdfTimestamp(genDate) + '.pdf';
+    if (!base) base = 'apunte';
+    return base + '_' + nutriProApuntePdfTimestamp(genDate) + '.pdf';
   }
 
   async function ensureNutriProApuntesPdfFolder() {
@@ -24650,7 +25138,91 @@
     });
   }
 
-  function buildApuntePdfDocument(row, genDate) {
+  async function hydrateApuntePdfNutriLinks(root) {
+    if (!root || !state.client || !state.userId) return;
+    var fileRefs = Array.prototype.slice.call(root.querySelectorAll('.np-rich-nutri-ref[data-np-nutri-file-id]'));
+    var linkRefs = Array.prototype.slice.call(root.querySelectorAll('.np-rich-nutri-link-ref[data-np-nutri-link-id]'));
+    if (!fileRefs.length && !linkRefs.length) return;
+
+    var ids = fileRefs.map(function (el) {
+      return el.getAttribute('data-np-nutri-file-id');
+    }).filter(Boolean);
+    ids = Array.from(new Set(ids));
+    var signedById = {};
+    if (ids.length) {
+      var res = await state.client
+        .from('plan_pro_nutri_files')
+        .select('id,title,original_name,folder_id,storage_path,mime_type')
+        .eq('owner_id', state.userId)
+        .in('id', ids);
+      if (!res.error && res.data && res.data.length) {
+        var byId = {};
+        (res.data || []).forEach(function (f) {
+          if (f && f.id) byId[f.id] = f;
+        });
+        await Promise.all(ids.map(async function (id) {
+          var fileRec = byId[id];
+          if (!fileRec || !fileRec.storage_path) return;
+          var signed = await state.client.storage
+            .from(NP_NUTRI_PRO_BUCKET)
+            .createSignedUrl(fileRec.storage_path, 60 * 60 * 24 * 365 * 10);
+          if (!signed.error && signed.data && signed.data.signedUrl) signedById[id] = signed.data.signedUrl;
+        }));
+      }
+    }
+
+    fileRefs.forEach(function (el) {
+      var id = el.getAttribute('data-np-nutri-file-id');
+      var href = signedById[id];
+      if (!href || !el.parentNode) return;
+      applyRichRefMarkerEl(el);
+      var a = document.createElement('a');
+      a.className = el.className || 'np-rich-ref np-rich-nutri-ref';
+      a.href = href;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.title = 'Abrir archivo Nutri PRO';
+      a.textContent = el.textContent || el.getAttribute('data-np-ref-label') || 'Archivo Nutri PRO';
+      a.setAttribute('data-np-nutri-file-id', id);
+      a.setAttribute('data-np-ref-label', el.getAttribute('data-np-ref-label') || a.textContent);
+      el.parentNode.replaceChild(a, el);
+    });
+
+    var linkIds = linkRefs.map(function (el) {
+      return el.getAttribute('data-np-nutri-link-id');
+    }).filter(Boolean);
+    linkIds = Array.from(new Set(linkIds));
+    if (!linkIds.length || !state.nutriProLinksReady) return;
+    var linkRes = await state.client
+      .from('plan_pro_nutri_links')
+      .select('id,title,url')
+      .eq('owner_id', state.userId)
+      .in('id', linkIds);
+    if (linkRes.error || !linkRes.data || !linkRes.data.length) return;
+    var linksById = {};
+    (linkRes.data || []).forEach(function (lnk) {
+      if (lnk && lnk.id) linksById[lnk.id] = lnk;
+    });
+    linkRefs.forEach(function (el) {
+      var id = el.getAttribute('data-np-nutri-link-id');
+      var linkRec = linksById[id];
+      var href = linkRec ? normalizeNutriProLinkUrl(linkRec.url) : '';
+      if (!href || !el.parentNode) return;
+      applyRichRefMarkerEl(el);
+      var a = document.createElement('a');
+      a.className = el.className || 'np-rich-ref np-rich-nutri-ref np-rich-nutri-link-ref';
+      a.href = href;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.title = 'Abrir enlace Nutri PRO';
+      a.textContent = el.textContent || el.getAttribute('data-np-ref-label') || 'Enlace Nutri PRO';
+      a.setAttribute('data-np-nutri-link-id', id);
+      a.setAttribute('data-np-ref-label', el.getAttribute('data-np-ref-label') || a.textContent);
+      el.parentNode.replaceChild(a, el);
+    });
+  }
+
+  async function buildApuntePdfDocument(row, genDate) {
     var root = document.createElement('div');
     root.className = 'np-apunte-pdf-root';
     var genLabel = genDate.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
@@ -24666,8 +25238,31 @@
       if (metaDue) pathParts.push('Meta ' + metaDue);
     }
 
+    var topbar = document.createElement('div');
+    topbar.className = 'np-apunte-pdf-topbar';
+    var topbarLabel = document.createElement('div');
+    topbarLabel.className = 'np-apunte-pdf-topbar__label';
+    topbarLabel.textContent = 'Plan PRO · Apunte';
+    var topbarDate = document.createElement('div');
+    topbarDate.className = 'np-apunte-pdf-topbar__date';
+    topbarDate.textContent = genLabel;
+    topbar.appendChild(topbarLabel);
+    topbar.appendChild(topbarDate);
+    root.appendChild(topbar);
+
     var head = document.createElement('div');
     head.className = 'np-apunte-pdf-head';
+    var author = document.createElement('div');
+    author.className = 'np-apunte-pdf-author';
+    var authorIcon = document.createElement('img');
+    authorIcon.src = '../assets/N_Hoja_Azul.png';
+    authorIcon.alt = '';
+    authorIcon.setAttribute('aria-hidden', 'true');
+    var authorName = document.createElement('span');
+    authorName.textContent = 'Jesús Avila';
+    author.appendChild(authorIcon);
+    author.appendChild(authorName);
+    head.appendChild(author);
     var h1 = document.createElement('h1');
     h1.textContent = row.title || 'Apunte';
     head.appendChild(h1);
@@ -24675,12 +25270,31 @@
     pathEl.className = 'np-apunte-pdf-path';
     pathEl.textContent = pathParts.join(' · ');
     head.appendChild(pathEl);
+    var mapsUrl = getPlanProMapsUrlFromItem(row);
+    if (mapsUrl) {
+      var mapsEl = document.createElement('p');
+      mapsEl.className = 'np-apunte-pdf-maps';
+      var mapsLabel = document.createElement('span');
+      mapsLabel.textContent = 'Ubicación: ';
+      var mapsLink = document.createElement('a');
+      mapsLink.href = mapsUrl;
+      mapsLink.target = '_blank';
+      mapsLink.rel = 'noopener noreferrer';
+      mapsLink.textContent = 'Abrir en Google Maps';
+      mapsEl.appendChild(mapsLabel);
+      mapsEl.appendChild(mapsLink);
+      head.appendChild(mapsEl);
+    }
     var genEl = document.createElement('p');
     genEl.className = 'np-apunte-pdf-gen';
     genEl.textContent = 'PDF generado · ' + genLabel;
     head.appendChild(genEl);
     root.appendChild(head);
 
+    var noteTitle = document.createElement('div');
+    noteTitle.className = 'np-apunte-pdf-section-title';
+    noteTitle.textContent = 'Nota principal';
+    root.appendChild(noteTitle);
     var noteEl = document.createElement('div');
     noteEl.className = 'np-apunte-pdf-note np-modal-note-rich';
     var liveEd = $('npModalBodyRich');
@@ -24694,6 +25308,10 @@
         ? deepCloneBlocks(state.detailBlocksWorking)
         : deepCloneBlocks(row.body_blocks);
     if (blocks && blocks.length) {
+      var blocksTitle = document.createElement('div');
+      blocksTitle.className = 'np-apunte-pdf-section-title';
+      blocksTitle.textContent = 'Bloques y tablas';
+      root.appendChild(blocksTitle);
       var blocksWrap = document.createElement('div');
       blocksWrap.className = 'np-apunte-pdf-blocks np-detail-blocks-mount';
       blocksWrap.appendChild(
@@ -24705,6 +25323,14 @@
       root.appendChild(blocksWrap);
     }
     normalizeApuntePdfTableFields(root);
+    await hydrateApuntePdfNutriLinks(root);
+    var signature = document.createElement('div');
+    signature.className = 'np-apunte-pdf-signature';
+    var signatureImg = document.createElement('img');
+    signatureImg.src = '../assets/marca%20JA.png';
+    signatureImg.alt = 'Marca JA';
+    signature.appendChild(signatureImg);
+    root.appendChild(signature);
     return root;
   }
 
@@ -24739,7 +25365,7 @@
         return;
       }
       var genDate = new Date();
-      var pdfRoot = buildApuntePdfDocument(row, genDate);
+      var pdfRoot = await buildApuntePdfDocument(row, genDate);
       host = document.createElement('div');
       host.setAttribute('aria-hidden', 'true');
       host.style.cssText = 'position:fixed;left:-12000px;top:0;z-index:-1;pointer-events:none;opacity:0;';
@@ -24755,6 +25381,7 @@
           image: { type: 'jpeg', quality: 0.92 },
           html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0 },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          enableLinks: true,
           pagebreak: { mode: ['css', 'legacy'] }
         })
         .from(pdfRoot)
