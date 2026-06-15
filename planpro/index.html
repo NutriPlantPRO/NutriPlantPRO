@@ -502,6 +502,76 @@
       width: 19px;
       height: 19px;
     }
+    .np-plan-header-logout-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .np-plan-header-logout-wrap > summary {
+      list-style: none;
+    }
+    .np-plan-header-logout-wrap > summary::-webkit-details-marker {
+      display: none;
+    }
+    .np-plan-header-logout-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 40;
+      min-width: 196px;
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16);
+    }
+    .np-plan-header-logout-menu button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 9px 10px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: #334155;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+    }
+    .np-plan-header-logout-menu button:hover {
+      background: rgba(248, 250, 252, 0.98);
+      color: #0f172a;
+    }
+    .np-plan-header-logout-menu button.np-plan-logout-menu-danger {
+      color: #b91c1c;
+    }
+    .np-plan-header-logout-menu button.np-plan-logout-menu-danger:hover {
+      background: rgba(254, 242, 242, 0.96);
+      color: #991b1b;
+    }
+    .np-pin-hint {
+      margin: -4px 0 12px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #64748b;
+    }
+    .np-pin-full-logout {
+      margin-top: 10px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 650;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .np-pin-full-logout:hover {
+      color: #b91c1c;
+    }
     .np-cloud-sync-btn {
       flex-shrink: 0;
       display: inline-flex;
@@ -854,7 +924,7 @@
         grid-row: 2;
         justify-self: stretch;
       }
-      #npBtnLogout {
+      #npLogoutMenu {
         grid-column: 3;
         grid-row: 2;
         justify-self: stretch;
@@ -9221,12 +9291,18 @@
               <path d="M1 1.5h22M1 9h22M1 16.5h22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
             </svg>
           </button>
-          <button type="button" class="btn-mac-nav btn-mac-logout btn-mac-logout-icon np-plan-header-logout-btn" id="npBtnLogout" aria-label="Cerrar sesión" title="Cerrar sesión">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 2v10"/>
-              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-            </svg>
-          </button>
+          <details class="np-plan-header-logout-wrap" id="npLogoutMenu">
+            <summary class="btn-mac-nav btn-mac-logout btn-mac-logout-icon np-plan-header-logout-btn" aria-label="Sesión" title="Sesión">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2v10"/>
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+              </svg>
+            </summary>
+            <div class="np-plan-header-logout-menu">
+              <button type="button" id="npBtnSuspend">🔒 Bloquear (solo PIN)</button>
+              <button type="button" id="npBtnLogoutFull" class="np-plan-logout-menu-danger">⏻ Cerrar sesión</button>
+            </div>
+          </details>
         </div>
         <div id="npPlanHeaderMenuBackdrop" class="np-plan-header-menu-backdrop" aria-hidden="true"></div>
         <div id="npPlanHeaderMenuPanel" class="np-plan-header-menu-panel" role="dialog" aria-modal="true" aria-labelledby="npPlanHeaderMenuTitle" aria-hidden="true">
@@ -9374,7 +9450,8 @@
       </div>
       <div id="npDenied" class="np-msg err np-hide"></div>
       <div id="npPinPanel" class="panel np-login-card np-section-accent np-section-accent-blue np-hide">
-        <h2>Acceso privado</h2>
+        <h2 id="npPinTitle">Acceso privado</h2>
+        <p id="npPinHint" class="np-pin-hint np-hide">Sesión activa en este equipo. Solo PIN para volver.</p>
         <div id="npPinErr" class="np-msg err np-hide" style="margin-bottom:12px;"></div>
         <form id="npPinForm">
           <label for="npPinInput">Acceso 3</label>
@@ -9391,6 +9468,7 @@
           />
           <button type="submit" class="btn btn-primary" id="npPinSubmit">Continuar</button>
         </form>
+        <button type="button" class="np-pin-full-logout np-hide" id="npPinFullLogout">Cerrar sesión completa</button>
       </div>
     </div>
 
@@ -24876,7 +24954,49 @@
     });
   })();
 
-  $('npBtnLogout').addEventListener('click', async function () {
+  function closePlanProLogoutMenu() {
+    var menu = $('npLogoutMenu');
+    if (menu) menu.open = false;
+  }
+
+  function setPlanProPinPanelMode(mode) {
+    var title = $('npPinTitle');
+    var hint = $('npPinHint');
+    var fullLogout = $('npPinFullLogout');
+    var suspended = mode === 'suspend';
+    if (title) title.textContent = suspended ? 'Plan PRO bloqueado' : 'Acceso privado';
+    if (hint) hint.classList.toggle('np-hide', !suspended);
+    if (fullLogout) fullLogout.classList.toggle('np-hide', !suspended);
+  }
+
+  async function planProSuspendSession() {
+    var pinApi = window.nutriplantAccessPin;
+    if (pinApi) {
+      var required = await pinApi.isRequired(pinApi.SCOPE_PLAN_PRO);
+      if (!required) {
+        showToast('PIN no configurado en el servidor. Usa «Cerrar sesión» para salir.', true);
+        return;
+      }
+      pinApi.clearAccess(pinApi.SCOPE_PLAN_PRO);
+    }
+    closePlanProLogoutMenu();
+    document.querySelectorAll('.np-modal-open').forEach(function (el) {
+      el.classList.remove('np-modal-open');
+    });
+    $('npMain').classList.add('np-hide');
+    $('npHeaderLogged').classList.add('np-hide');
+    $('npGate').classList.remove('np-hide');
+    $('npLoading').classList.add('np-hide');
+    $('npLoginPanel').classList.add('np-hide');
+    $('npDenied').classList.add('np-hide');
+    setPlanProHeaderBrandLoggedIn(false);
+    setPlanProPinPanelMode('suspend');
+    showNpPinPanel();
+    npCloudSync.sessionReady = false;
+  }
+
+  async function planProFullLogout() {
+    closePlanProLogoutMenu();
     if (window.nutriplantAccessPin) {
       window.nutriplantAccessPin.clearAccess(window.nutriplantAccessPin.SCOPE_PLAN_PRO);
     }
@@ -24884,7 +25004,34 @@
       await window.nutriplantSupabaseAuth.signOut();
     }
     window.location.reload();
-  });
+  }
+
+  var npLogoutMenuEl = $('npLogoutMenu');
+  if (npLogoutMenuEl) {
+    document.addEventListener('click', function (e) {
+      if (!npLogoutMenuEl.open) return;
+      if (npLogoutMenuEl.contains(e.target)) return;
+      npLogoutMenuEl.open = false;
+    });
+  }
+  var npBtnSuspend = $('npBtnSuspend');
+  if (npBtnSuspend) {
+    npBtnSuspend.addEventListener('click', function () {
+      planProSuspendSession();
+    });
+  }
+  var npBtnLogoutFull = $('npBtnLogoutFull');
+  if (npBtnLogoutFull) {
+    npBtnLogoutFull.addEventListener('click', function () {
+      planProFullLogout();
+    });
+  }
+  var npPinFullLogout = $('npPinFullLogout');
+  if (npPinFullLogout) {
+    npPinFullLogout.addEventListener('click', function () {
+      planProFullLogout();
+    });
+  }
 
   function setPlanProAppMode(mode) {
     var m = mode === 'nutri-pro' ? 'nutri-pro' : 'apuntes';
@@ -29292,7 +29439,8 @@
     }
   }
 
-  function showNpPinPanel() {
+  function showNpPinPanel(mode) {
+    setPlanProPinPanelMode(mode || 'gate');
     $('npPinPanel').classList.remove('np-hide');
     $('npPinErr').classList.add('np-hide');
     var inp = $('npPinInput');
@@ -29322,7 +29470,7 @@
     $('npLoading').classList.add('np-hide');
     $('npLoginPanel').classList.add('np-hide');
     setPlanProHeaderBrandLoggedIn(false);
-    showNpPinPanel();
+    showNpPinPanel('gate');
     return false;
   }
 
@@ -29354,6 +29502,7 @@
 
     $('npLoading').classList.add('np-hide');
     $('npPinPanel').classList.add('np-hide');
+    setPlanProPinPanelMode('gate');
     $('npGate').classList.add('np-hide');
     $('npMain').classList.remove('np-hide');
     $('npHeaderLogged').classList.remove('np-hide');
