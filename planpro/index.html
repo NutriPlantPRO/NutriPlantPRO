@@ -3536,8 +3536,9 @@
       white-space: nowrap;
     }
     .np-apunte-pdf-author img {
-      width: 24px;
+      width: auto;
       height: 24px;
+      max-width: 42px;
       object-fit: contain;
       flex-shrink: 0;
     }
@@ -3548,9 +3549,46 @@
       word-break: break-word;
     }
     .np-apunte-pdf-path {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
       margin: 0 0 4px;
       font-size: 12px;
       color: #64748b;
+    }
+    .np-apunte-pdf-priority-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 850;
+      line-height: 1.35;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+    .np-apunte-pdf-priority-badge::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+    .np-apunte-pdf-priority-badge--baja {
+      color: #15803d;
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+    .np-apunte-pdf-priority-badge--media {
+      color: #a16207;
+      background: #fef3c7;
+      border-color: #facc15;
+    }
+    .np-apunte-pdf-priority-badge--alta {
+      color: #b91c1c;
+      background: #fee2e2;
+      border-color: #fca5a5;
     }
     .np-apunte-pdf-maps {
       margin: 0 0 6px;
@@ -3593,9 +3631,24 @@
       border-radius: 14px;
       border: 1px solid rgba(148, 163, 184, 0.18);
       background: linear-gradient(180deg, rgba(248, 250, 252, 0.76) 0%, rgba(255, 255, 255, 0.98) 100%);
+      break-inside: auto !important;
+      page-break-inside: auto !important;
+    }
+    .np-apunte-pdf-note img,
+    .np-apunte-pdf-note .np-rich-img {
+      break-inside: avoid !important;
+      break-inside: avoid-page !important;
+      page-break-inside: avoid !important;
+      max-width: 100% !important;
+      height: auto !important;
     }
     .np-apunte-pdf-blocks {
       margin-top: 6px;
+    }
+    .np-apunte-pdf-block-section {
+      break-inside: avoid !important;
+      break-inside: avoid-page !important;
+      page-break-inside: avoid !important;
     }
     .np-apunte-pdf-root .np-modal-note-rich ul,
     .np-apunte-pdf-root .np-modal-note-rich ol {
@@ -25339,7 +25392,6 @@
     ];
     if (row.status) pathParts.push(row.status);
     var prio = fmtItemPriorityShort(row.priority);
-    if (prio && prio !== '—') pathParts.push('Objetivo ' + prio);
     if (row.due_at) {
       var metaDue = fmtItemObjectiveMetaLabel(row);
       if (metaDue) pathParts.push('Meta ' + metaDue);
@@ -25385,7 +25437,18 @@
     head.appendChild(h1);
     var pathEl = document.createElement('p');
     pathEl.className = 'np-apunte-pdf-path';
-    pathEl.textContent = pathParts.join(' · ');
+    pathParts.forEach(function (part, idx) {
+      if (idx > 0) pathEl.appendChild(document.createTextNode(' · '));
+      pathEl.appendChild(document.createTextNode(part));
+    });
+    if (prio && prio !== '—') {
+      if (pathParts.length) pathEl.appendChild(document.createTextNode(' · '));
+      var prioLevel = priorityLevelFromRaw(prio);
+      var prioBadge = document.createElement('span');
+      prioBadge.className = 'np-apunte-pdf-priority-badge' + (prioLevel ? ' np-apunte-pdf-priority-badge--' + prioLevel : '');
+      prioBadge.textContent = 'Objetivo ' + prio;
+      pathEl.appendChild(prioBadge);
+    }
     head.appendChild(pathEl);
     var mapsUrl = getPlanProMapsUrlFromItem(row);
     if (mapsUrl) {
@@ -25402,10 +25465,6 @@
       mapsEl.appendChild(mapsLink);
       head.appendChild(mapsEl);
     }
-    var genEl = document.createElement('p');
-    genEl.className = 'np-apunte-pdf-gen';
-    genEl.textContent = 'PDF generado · ' + genLabel;
-    head.appendChild(genEl);
     root.appendChild(head);
 
     var noteTitle = document.createElement('div');
@@ -25425,10 +25484,12 @@
         ? deepCloneBlocks(state.detailBlocksWorking)
         : deepCloneBlocks(row.body_blocks);
     if (blocks && blocks.length) {
+      var blockSection = document.createElement('div');
+      blockSection.className = 'np-apunte-pdf-block-section';
       var blocksTitle = document.createElement('div');
       blocksTitle.className = 'np-apunte-pdf-section-title';
       blocksTitle.textContent = 'Bloques y tablas';
-      root.appendChild(blocksTitle);
+      blockSection.appendChild(blocksTitle);
       var blocksWrap = document.createElement('div');
       blocksWrap.className = 'np-apunte-pdf-blocks np-detail-blocks-mount';
       blocksWrap.appendChild(
@@ -25437,7 +25498,8 @@
           sheetAccent: getAreaAccentHex(row.area_id)
         })
       );
-      root.appendChild(blocksWrap);
+      blockSection.appendChild(blocksWrap);
+      root.appendChild(blockSection);
     }
     normalizeApuntePdfTableFields(root);
     await hydrateApuntePdfNutriLinks(root);
@@ -25493,8 +25555,8 @@
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
           enableLinks: true,
           pagebreak: {
-            mode: ['css', 'legacy', 'avoid-all'],
-            avoid: ['.np-ms-block', '.np-ms-sheet', '.np-ms-row', '.np-apunte-pdf-note']
+            mode: ['css', 'legacy'],
+            avoid: ['.np-apunte-pdf-block-section', '.np-ms-block', '.np-ms-sheet', '.np-ms-row', '.np-apunte-pdf-note img', '.np-apunte-pdf-note .np-rich-img']
           }
         })
         .from(pdfRoot)
