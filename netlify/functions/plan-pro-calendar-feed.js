@@ -53,7 +53,7 @@ async function resolveOwnerId(supabase) {
 
 async function loadCalendarData(supabase, ownerId) {
   const selectCols =
-    'id,title,area_id,category_id,status,priority,sort_order,updated_at,body_plain,body_html,due_at,body_blocks,attachments';
+    'id,title,area_id,category_id,status,priority,sort_order,updated_at,closed_at,body_plain,body_html,due_at,body_blocks,attachments';
   let res = await supabase
     .from('plan_pro_items')
     .select(selectCols)
@@ -63,7 +63,7 @@ async function loadCalendarData(supabase, ownerId) {
     res = await supabase
       .from('plan_pro_items')
       .select(
-        'id,title,area_id,category_id,status,priority,updated_at,body_plain,body_html,due_at,body_blocks,attachments'
+        'id,title,area_id,category_id,status,priority,updated_at,closed_at,body_plain,body_html,due_at,body_blocks,attachments'
       )
       .eq('owner_id', ownerId)
       .order('updated_at', { ascending: false });

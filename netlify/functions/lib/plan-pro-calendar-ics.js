@@ -128,6 +128,10 @@ function calLevelPlainLabel(lv) {
   return 'Sin prioridad';
 }
 
+function apunteLifePlainLabel(closedAt) {
+  return closedAt ? 'Cerrado' : 'Activo';
+}
+
 function formatDueTimeLabel(raw) {
   const t = normalizeDueTime(raw);
   if (!t) return '';
@@ -298,6 +302,7 @@ function collectRichDueEntriesFromHtml(html, meta) {
       notePreview: meta.notePreview || '',
       noteLink: meta.noteLink || '',
       mapsUrl: meta.mapsUrl || '',
+      closedAt: meta.closedAt || null,
       rowTitle: 'Semáforo en nota · ' + (attrFromTag(tag, 'data-np-due-label') || dk),
       blockTitle: '—',
       dueId: attrFromTag(tag, 'data-np-due-id')
@@ -350,6 +355,7 @@ function eventDescription(ent) {
     lines.push(rowTitle);
   }
   lines.push(`🏷️ Tipo: ${kindLine}`);
+  lines.push(`📋 Tema: ${apunteLifePlainLabel(ent.closedAt)}`);
   lines.push(`🚦 Semáforo: ${calLevelPlainLabel(ent.level)}`);
   lines.push(
     `🕒 Hora: ${
@@ -426,7 +432,8 @@ function collectCalendarEntriesFromItems(items, areas, categories) {
       catPath: buildCategoryPath(r.category_id, categories),
       notePreview: notePreviewText(r, 250),
       noteLink: firstUrlFromText(noteFullText(r)),
-      mapsUrl: getMapsUrlFromItem(r)
+      mapsUrl: getMapsUrlFromItem(r),
+      closedAt: r.closed_at || null
     };
     const dkItem = parseDueDateKey(r.due_at);
     if (dkItem) {
@@ -444,6 +451,7 @@ function collectCalendarEntriesFromItems(items, areas, categories) {
         notePreview: meta.notePreview,
         noteLink: meta.noteLink,
         mapsUrl: meta.mapsUrl,
+        closedAt: meta.closedAt,
         rowTitle: 'Objetivo del apunte',
         blockTitle: '—'
       });
@@ -474,6 +482,7 @@ function collectCalendarEntriesFromItems(items, areas, categories) {
           notePreview: meta.notePreview,
           noteLink: meta.noteLink,
           mapsUrl: meta.mapsUrl,
+          closedAt: meta.closedAt,
           rowTitle: miniSheetRowTitleForDetail(b, cells) || '—',
           blockTitle: b.title || (b.variant === 'tasks' ? 'Lista / tareas' : 'Seguimiento'),
           blockIndex,

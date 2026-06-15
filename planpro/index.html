@@ -3478,15 +3478,25 @@
     }
     .np-modal-head h3 { margin: 0; font-size: 1.05rem; line-height: 1.3; word-break: break-word; }
     .np-detail-title-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      display: block;
       min-width: 0;
     }
     .np-detail-title-row h3 {
-      flex: 1 1 auto;
-      min-width: 0;
+      margin: 0;
     }
+    .np-detail-life-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin: 6px 0 2px;
+    }
+    .np-detail-life-label {
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .np-detail-life-label--active { color: #2563eb; }
+    .np-detail-life-label--closed { color: #64748b; }
     .np-apunte-life-toggle {
       flex: 0 0 auto;
       display: inline-flex;
@@ -3769,6 +3779,37 @@
       color: #b91c1c;
       background: #fee2e2;
       border-color: #fca5a5;
+    }
+    .np-apunte-pdf-life-row {
+      margin: 0 0 8px;
+    }
+    .np-apunte-pdf-life-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 850;
+      line-height: 1.35;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+    .np-apunte-pdf-life-badge::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+    .np-apunte-pdf-life-badge--active {
+      color: #1d4ed8;
+      background: #eff6ff;
+      border-color: #93c5fd;
+    }
+    .np-apunte-pdf-life-badge--closed {
+      color: #64748b;
+      background: #f1f5f9;
+      border-color: #cbd5e1;
     }
     .np-apunte-pdf-maps {
       margin: 0 0 6px;
@@ -8125,7 +8166,7 @@
       top: 0;
       left: 0;
       width: min(460px, calc(100vw - 16px));
-      max-height: min(58vh, 440px);
+      max-height: min(72vh, 520px);
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -8146,16 +8187,20 @@
       font-size: 11px;
       font-weight: 700;
       color: #0f172a;
+      flex: 0 0 auto;
       flex-shrink: 0;
     }
-    .np-cal-overlay-summary-pop-list {
-      flex: 1 1 auto;
+    .np-cal-overlay-summary-pop-scroll {
+      flex: 1 1 0;
       min-height: 0;
       overflow-x: hidden;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
-      padding: 6px;
+      touch-action: pan-y;
+      padding: 6px 6px 10px;
+    }
+    .np-cal-overlay-summary-pop-list {
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -8259,6 +8304,35 @@
       padding: 12px;
       font-size: 11px;
       color: #64748b;
+    }
+    .np-cal-overlay-summary-pop-more {
+      display: block;
+      width: 100%;
+      margin-top: 4px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px dashed rgba(148, 163, 184, 0.45);
+      background: rgba(248, 250, 252, 0.96);
+      color: #475569;
+      font-size: 11px;
+      font-weight: 650;
+      font-family: inherit;
+      cursor: pointer;
+      text-align: center;
+    }
+    .np-cal-overlay-summary-pop-more:hover {
+      background: #fff;
+      border-color: color-mix(in srgb, var(--np-cal-overlay-accent, #2563eb) 35%, rgba(148, 163, 184, 0.45));
+      color: #0f172a;
+    }
+    .np-cal-overlay-summary-pop-foot {
+      flex: 0 0 auto;
+      padding: 6px 10px 8px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      font-size: 10px;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.35;
     }
     .np-cal-overlay-body {
       flex: 1;
@@ -10070,16 +10144,19 @@
         <div style="min-width:0;">
           <div class="np-detail-title-row">
             <h3 id="npDetailTitle">—</h3>
-            <button
-              type="button"
-              id="npDetailLifeToggle"
-              class="np-apunte-life-toggle np-apunte-life-toggle--active"
-              aria-pressed="true"
-              aria-label="Tema activo — clic para marcar cerrado"
-              title="Activo · clic para cerrar tema"
-            >
-              <span class="np-apunte-life-toggle-icon" aria-hidden="true">●</span>
-            </button>
+            <div class="np-detail-life-row">
+              <button
+                type="button"
+                id="npDetailLifeToggle"
+                class="np-apunte-life-toggle np-apunte-life-toggle--active"
+                aria-pressed="true"
+                aria-label="Tema activo — clic para marcar cerrado"
+                title="Activo · clic para cerrar tema"
+              >
+                <span class="np-apunte-life-toggle-icon" aria-hidden="true">●</span>
+              </button>
+              <span id="npDetailLifeLabel" class="np-detail-life-label np-detail-life-label--active">Activo</span>
+            </div>
           </div>
           <div id="npDetailMeta" class="np-modal-meta np-modal-meta-wrap"></div>
         </div>
@@ -14680,6 +14757,12 @@
     btn.title = closed ? 'Cerrado · clic para reactivar' : 'Activo · clic para cerrar tema';
     var icon = btn.querySelector('.np-apunte-life-toggle-icon');
     if (icon) icon.textContent = closed ? '✓' : '●';
+    var lab = $('npDetailLifeLabel');
+    if (lab) {
+      lab.textContent = apunteLifePlainLabel(r && r.closed_at);
+      lab.className =
+        'np-detail-life-label' + (closed ? ' np-detail-life-label--closed' : ' np-detail-life-label--active');
+    }
   }
 
   function wireDetailLifeToggleOnce() {
@@ -17643,38 +17726,116 @@
     pop.style.left = '';
     pop.style.top = '';
     pop.style.width = '';
+    pop.style.maxHeight = '';
     pop.style.transform = '';
+    pop._calPopEntries = null;
+    pop._calPopOpts = null;
+    pop._calPopShown = 0;
+    pop._calPopAnchor = null;
     document.querySelectorAll('.np-cal-overlay-summary-chip--open').forEach(function (el) {
       el.classList.remove('np-cal-overlay-summary-chip--open');
     });
   }
 
+  function mountCalOverlaySummaryPopToBody() {
+    var pop = $('npCalOverlaySummaryPop');
+    if (pop && pop.parentNode !== document.body) document.body.appendChild(pop);
+  }
+
+  var CAL_OVERLAY_POP_INITIAL = 48;
+  var CAL_OVERLAY_POP_STEP = 48;
+
+  function appendCalOverlaySummaryPopLoadMore(scrollBody, pop, anchorBtn) {
+    var list = pop._calPopEntries || [];
+    var shown = pop._calPopShown || 0;
+    if (shown >= list.length) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'np-cal-overlay-summary-pop-more';
+    btn.textContent = 'Ver ' + Math.min(CAL_OVERLAY_POP_STEP, list.length - shown) + ' más (' + (list.length - shown) + ' restantes)';
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      pop._calPopShown = Math.min((pop._calPopShown || 0) + CAL_OVERLAY_POP_STEP, list.length);
+      rebuildCalOverlaySummaryPopContent(pop, anchorBtn);
+    });
+    scrollBody.appendChild(btn);
+  }
+
+  function rebuildCalOverlaySummaryPopContent(pop, anchorBtn) {
+    if (!pop || !anchorBtn) return;
+    var scrollBody = pop.querySelector('.np-cal-overlay-summary-pop-scroll');
+    if (!scrollBody) return;
+    var list = pop._calPopEntries || [];
+    var opts = pop._calPopOpts || {};
+    var hidePlant = !!pop._calPopHidePlant;
+    var limit = pop._calPopShown || CAL_OVERLAY_POP_INITIAL;
+    scrollBody.innerHTML = '';
+    var rendered = 0;
+    if (opts.groupByBranch) {
+      var groupsMount = document.createElement('div');
+      groupsMount.className = 'np-cal-overlay-summary-pop-list';
+      groupCalOverlayEntriesByBranch(list).forEach(function (group, idx) {
+        if (rendered >= limit) return;
+        var det = document.createElement('details');
+        det.className = 'np-cal-overlay-summary-pop-branch';
+        det.open = idx === 0 || list.length <= CAL_OVERLAY_POP_INITIAL;
+        var sum = document.createElement('summary');
+        sum.className = 'np-cal-overlay-summary-pop-branch-head';
+        sum.textContent = group.name + ' · ' + calOverlaySummaryStatsLabel(calOverlayStatsFromEntries(group.entries));
+        det.appendChild(sum);
+        var branchList = document.createElement('div');
+        branchList.className = 'np-cal-overlay-summary-pop-branch-list';
+        group.entries.forEach(function (ent) {
+          if (rendered >= limit) return;
+          appendCalOverlaySummaryPopRow(branchList, ent, { hidePlant: hidePlant, hideBranch: true });
+          rendered += 1;
+        });
+        if (branchList.childNodes.length) {
+          det.appendChild(branchList);
+          groupsMount.appendChild(det);
+        }
+      });
+      scrollBody.appendChild(groupsMount);
+    } else {
+      var mount = document.createElement('div');
+      mount.className = 'np-cal-overlay-summary-pop-list';
+      list.slice(0, limit).forEach(function (ent) {
+        appendCalOverlaySummaryPopRow(mount, ent, { hidePlant: hidePlant, hideBranch: false });
+      });
+      scrollBody.appendChild(mount);
+      rendered = Math.min(limit, list.length);
+    }
+    pop._calPopShown = rendered;
+    if (rendered < list.length) appendCalOverlaySummaryPopLoadMore(scrollBody, pop, anchorBtn);
+    positionCalOverlaySummaryPop(anchorBtn, pop);
+  }
+
   function positionCalOverlaySummaryPop(anchorBtn, pop) {
     if (!anchorBtn || !pop) return;
     var chipRect = anchorBtn.getBoundingClientRect();
-    var margin = 8;
-    var maxW = Math.min(460, Math.max(280, window.innerWidth - 16));
-    var popWidth = Math.min(maxW, Math.max(280, chipRect.width + 48));
+    var margin = 10;
+    var maxPopH = Math.min(window.innerHeight * 0.72, 520);
+    var popWidth = Math.min(Math.min(460, window.innerWidth - 16), Math.max(280, chipRect.width + 48));
     var left = chipRect.left + chipRect.width / 2 - popWidth / 2;
     left = Math.max(margin, Math.min(left, window.innerWidth - popWidth - margin));
-    var estHeight = Math.min(window.innerHeight * 0.58, 440);
-    var top = chipRect.bottom + margin;
-    var flip = top + estHeight > window.innerHeight - margin;
-    if (flip) {
-      top = chipRect.top - margin;
-      pop.style.transform = 'translateY(-100%)';
-    } else {
-      pop.style.transform = '';
-    }
-    top = Math.max(margin, Math.min(top, window.innerHeight - margin));
+    var spaceBelow = window.innerHeight - chipRect.bottom - margin;
+    var spaceAbove = chipRect.top - margin;
+    var flip = maxPopH > spaceBelow && spaceAbove > spaceBelow;
+    var available = Math.max(168, flip ? spaceAbove : spaceBelow);
+    var capH = Math.min(maxPopH, available);
+    var top = flip ? chipRect.top - margin : chipRect.bottom + margin;
     pop.style.position = 'fixed';
     pop.style.left = Math.round(left) + 'px';
     pop.style.top = Math.round(top) + 'px';
     pop.style.width = Math.round(popWidth) + 'px';
+    pop.style.maxHeight = Math.round(capH) + 'px';
+    pop.style.transform = flip ? 'translateY(-100%)' : '';
   }
 
   function openCalOverlaySummaryPop(anchorBtn, title, entries, opts) {
     opts = opts || {};
+    mountCalOverlaySummaryPopToBody();
     var pop = $('npCalOverlaySummaryPop');
     if (!pop || !anchorBtn) return;
     closeCalOverlaySummaryPop();
@@ -17685,44 +17846,39 @@
     head.textContent = title;
     pop.appendChild(head);
     var list = (entries || []).slice();
+    pop._calPopEntries = list;
+    pop._calPopOpts = opts;
+    pop._calPopHidePlant = hidePlant;
+    pop._calPopAnchor = anchorBtn;
+    pop._calPopShown = 0;
     if (!list.length) {
+      var scrollEmpty = document.createElement('div');
+      scrollEmpty.className = 'np-cal-overlay-summary-pop-scroll';
       var empty = document.createElement('p');
       empty.className = 'np-cal-overlay-summary-pop-empty';
       empty.textContent = 'Sin semáforos en este grupo.';
-      pop.appendChild(empty);
-    } else if (opts.groupByBranch) {
-      var groupsMount = document.createElement('div');
-      groupsMount.className = 'np-cal-overlay-summary-pop-list';
-      var groups = groupCalOverlayEntriesByBranch(list);
-      groups.forEach(function (group, idx) {
-        var det = document.createElement('details');
-        det.className = 'np-cal-overlay-summary-pop-branch';
-        det.open = idx === 0 || groups.length <= 2;
-        var sum = document.createElement('summary');
-        sum.className = 'np-cal-overlay-summary-pop-branch-head';
-        sum.textContent = group.name + ' · ' + calOverlaySummaryStatsLabel(calOverlayStatsFromEntries(group.entries));
-        det.appendChild(sum);
-        var branchList = document.createElement('div');
-        branchList.className = 'np-cal-overlay-summary-pop-branch-list';
-        group.entries.forEach(function (ent) {
-          appendCalOverlaySummaryPopRow(branchList, ent, { hidePlant: hidePlant, hideBranch: true });
-        });
-        det.appendChild(branchList);
-        groupsMount.appendChild(det);
-      });
-      pop.appendChild(groupsMount);
+      scrollEmpty.appendChild(empty);
+      pop.appendChild(scrollEmpty);
     } else {
-      list.sort(function (a, b) {
-        var d = npCompareDateKeys(a.dateKey, b.dateKey);
-        if (d !== 0) return d;
-        return calEntryDisplayTitle(a).localeCompare(calEntryDisplayTitle(b));
-      });
-      var mount = document.createElement('div');
-      mount.className = 'np-cal-overlay-summary-pop-list';
-      list.forEach(function (ent) {
-        appendCalOverlaySummaryPopRow(mount, ent, { hidePlant: hidePlant, hideBranch: false });
-      });
-      pop.appendChild(mount);
+      if (!opts.groupByBranch) {
+        list.sort(function (a, b) {
+          var d = npCompareDateKeys(a.dateKey, b.dateKey);
+          if (d !== 0) return d;
+          return calEntryDisplayTitle(a).localeCompare(calEntryDisplayTitle(b));
+        });
+        pop._calPopEntries = list;
+      }
+      pop._calPopShown = Math.min(CAL_OVERLAY_POP_INITIAL, list.length);
+      var scrollBody = document.createElement('div');
+      scrollBody.className = 'np-cal-overlay-summary-pop-scroll';
+      pop.appendChild(scrollBody);
+      rebuildCalOverlaySummaryPopContent(pop, anchorBtn);
+      if (list.length > 6) {
+        var foot = document.createElement('div');
+        foot.className = 'np-cal-overlay-summary-pop-foot';
+        foot.textContent = list.length + ' semáforos · desliza ↓ para ver todos';
+        pop.appendChild(foot);
+      }
     }
     pop.classList.remove('np-hide');
     pop.setAttribute('aria-hidden', 'false');
@@ -26137,6 +26293,15 @@
     var h1 = document.createElement('h1');
     h1.textContent = row.title || 'Apunte';
     head.appendChild(h1);
+    var lifeRow = document.createElement('p');
+    lifeRow.className = 'np-apunte-pdf-life-row';
+    var lifeBadge = document.createElement('span');
+    lifeBadge.className =
+      'np-apunte-pdf-life-badge' +
+      (row.closed_at ? ' np-apunte-pdf-life-badge--closed' : ' np-apunte-pdf-life-badge--active');
+    lifeBadge.textContent = 'Tema ' + apunteLifePlainLabel(row.closed_at);
+    lifeRow.appendChild(lifeBadge);
+    head.appendChild(lifeRow);
     var pathEl = document.createElement('p');
     pathEl.className = 'np-apunte-pdf-path';
     pathParts.forEach(function (part, idx) {
