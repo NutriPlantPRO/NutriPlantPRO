@@ -1784,6 +1784,64 @@
       gap: 4px;
       align-items: flex-start;
     }
+    .np-nutri-file-more {
+      position: relative;
+    }
+    .np-nutri-file-more summary {
+      list-style: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      min-height: 28px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.42);
+      background: rgba(255, 255, 255, 0.9);
+      color: #475569;
+      font-weight: 850;
+      cursor: pointer;
+      user-select: none;
+    }
+    .np-nutri-file-more summary::-webkit-details-marker { display: none; }
+    .np-nutri-file-more[open] summary {
+      border-color: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 42%, #94a3b8);
+      background: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 9%, #fff);
+      color: #0f172a;
+    }
+    .np-nutri-file-more-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 12;
+      min-width: 190px;
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16);
+    }
+    .np-nutri-file-more-menu button {
+      display: block;
+      width: 100%;
+      padding: 8px 9px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: #334155;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+    }
+    .np-nutri-file-more-menu button:hover {
+      background: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 9%, #f8fafc);
+      color: #0f172a;
+    }
+    .np-nutri-file-more-menu .np-nutri-file-more-danger {
+      color: #b91c1c;
+    }
     .np-nutri-folder-row.np-dnd-drop-onto {
       box-shadow:
         inset 0 0 0 2px var(--np-nutri-folder-accent, #059669),
@@ -3684,6 +3742,16 @@
     .np-apunte-pdf-root a.np-rich-nutri-link-ref {
       color: #047857;
       text-decoration: none;
+    }
+    .np-apunte-pdf-root .np-rich-ref {
+      display: inline-flex;
+      max-width: 100%;
+      margin: 2px 3px;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+      vertical-align: baseline;
     }
     .np-apunte-pdf-blocks .np-ms-block {
       break-inside: avoid !important;
@@ -24341,6 +24409,25 @@
     });
   }
 
+  async function reindexNutriProFile(fileRec, mode) {
+    if (!fileRec || !fileRec.id) return;
+    if (mode === 'ocr') {
+      showToast('OCR/IA aún no está conectado. Primero queda listo el reindexado de texto normal.', false);
+      return;
+    }
+    if (!window.confirm('¿Reindexar texto de «' + (fileRec.title || fileRec.original_name || 'archivo') + '»?')) return;
+    showToast('Reindexando texto…');
+    var res = await requestNutriProFileExtract(fileRec.id, true);
+    if (!res || res.error || res.ok === false) {
+      showToast((res && (res.error || res.error_message)) || 'No se pudo reindexar el archivo.', true);
+      scheduleNutriProExtractRefresh([1200, 4000]);
+      return;
+    }
+    var count = res.char_count != null ? ' (' + res.char_count + ' car.)' : '';
+    showToast(res.status === 'done' ? 'Texto reindexado' + count + '.' : 'Reindexado terminado: ' + (res.status || 'sin texto') + '.');
+    scheduleNutriProExtractRefresh([600, 2500]);
+  }
+
   async function loadNutriProFileExtracts(fileIds) {
     var map = {};
     if (!state.client || !fileIds || !fileIds.length) return map;
@@ -26591,6 +26678,40 @@
           downloadNutriProFile(rec);
         });
       })(file);
+      var more = document.createElement('details');
+      more.className = 'np-nutri-file-more np-nutri-file-ignore';
+      var moreSummary = document.createElement('summary');
+      moreSummary.setAttribute('aria-label', 'Más opciones de archivo');
+      moreSummary.title = 'Más opciones';
+      moreSummary.textContent = '⋯';
+      var moreMenu = document.createElement('div');
+      moreMenu.className = 'np-nutri-file-more-menu';
+      var reindexBtn = document.createElement('button');
+      reindexBtn.type = 'button';
+      reindexBtn.textContent = 'Reindexar texto';
+      reindexBtn.title = 'Extraer texto otra vez desde Supabase';
+      (function (rec, menuEl) {
+        reindexBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          menuEl.open = false;
+          reindexNutriProFile(rec, 'text');
+        });
+      })(file, more);
+      var ocrBtn = document.createElement('button');
+      ocrBtn.type = 'button';
+      ocrBtn.textContent = 'OCR / IA escaneado';
+      ocrBtn.title = 'Para PDFs escaneados o imágenes';
+      (function (rec, menuEl) {
+        ocrBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          menuEl.open = false;
+          reindexNutriProFile(rec, 'ocr');
+        });
+      })(file, more);
+      moreMenu.appendChild(reindexBtn);
+      moreMenu.appendChild(ocrBtn);
+      more.appendChild(moreSummary);
+      more.appendChild(moreMenu);
       var del = document.createElement('button');
       del.type = 'button';
       del.className = 'btn btn-ghost';
@@ -26603,6 +26724,7 @@
       })(file);
       btns.appendChild(linkAp);
       btns.appendChild(dl);
+      btns.appendChild(more);
       btns.appendChild(del);
       main.appendChild(icon);
       main.appendChild(meta);
