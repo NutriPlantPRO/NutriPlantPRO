@@ -3605,15 +3605,12 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 8px 10px;
+      gap: 6px 8px;
       margin-bottom: 2px;
     }
     .np-detail-meta-path-row .np-modal-meta-path {
-      flex: 1 1 120px;
+      flex: 1 1 0;
       min-width: 0;
-    }
-    .np-detail-meta-path-row .np-detail-life-row {
-      margin-left: auto;
     }
     .np-detail-head-main > #npDetailLifeRow {
       display: none;
@@ -14861,6 +14858,22 @@
     return closedAt ? 'Cerrado' : 'Activo';
   }
 
+  function planProStatusIsLifeDuplicate(status, closedAt) {
+    var s = String(status || '').trim().toLowerCase();
+    if (!s) return false;
+    if (s === 'cerrado' || s === 'activo' || s === 'closed' || s === 'active') return true;
+    return s === String(apunteLifePlainLabel(closedAt) || '').trim().toLowerCase();
+  }
+
+  function planProItemPathParts(r) {
+    var pathParts = [
+      state.areaMap[r.area_id] || '—',
+      r.category_id ? getCategoryPath(r.category_id) : '—'
+    ];
+    if (r.status && !planProStatusIsLifeDuplicate(r.status, r.closed_at)) pathParts.push(r.status);
+    return pathParts;
+  }
+
   function createApunteLifeDotEl(closedAt, extraClass) {
     var dot = document.createElement('span');
     dot.className =
@@ -14933,6 +14946,7 @@
     var patch = {};
     if (wasClosed) {
       patch.closed_at = null;
+      if (planProStatusIsLifeDuplicate(r.status, r.closed_at)) patch.status = null;
     } else {
       patch.closed_at = new Date().toISOString();
       if (!r.status) patch.status = 'Cerrado';
@@ -14970,14 +14984,9 @@
     pathRow.className = 'np-detail-meta-path-row';
     var path = document.createElement('div');
     path.className = 'np-modal-meta-path';
-    var pathParts = [
-      state.areaMap[r.area_id] || '—',
-      r.category_id ? getCategoryPath(r.category_id) : '—'
-    ];
-    if (r.status) pathParts.push(r.status);
-    path.textContent = pathParts.join(' · ');
-    pathRow.appendChild(path);
+    path.textContent = planProItemPathParts(r).join(' · ');
     if (lifeRow) pathRow.appendChild(lifeRow);
+    pathRow.appendChild(path);
     el.appendChild(pathRow);
 
     var edit = document.createElement('div');
@@ -26496,11 +26505,7 @@
     var root = document.createElement('div');
     root.className = 'np-apunte-pdf-root';
     var genLabel = genDate.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
-    var pathParts = [
-      state.areaMap[row.area_id] || '—',
-      row.category_id ? getCategoryPath(row.category_id) : '—'
-    ];
-    if (row.status) pathParts.push(row.status);
+    var pathParts = planProItemPathParts(row);
     var prio = fmtItemPriorityShort(row.priority);
     if (row.due_at) {
       var metaDue = fmtItemObjectiveMetaLabel(row);
