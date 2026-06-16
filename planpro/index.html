@@ -3598,7 +3598,28 @@
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      margin: 6px 0 2px;
+      margin: 0;
+      flex-shrink: 0;
+    }
+    .np-detail-meta-path-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 10px;
+      margin-bottom: 2px;
+    }
+    .np-detail-meta-path-row .np-modal-meta-path {
+      flex: 1 1 120px;
+      min-width: 0;
+    }
+    .np-detail-meta-path-row .np-detail-life-row {
+      margin-left: auto;
+    }
+    .np-detail-head-main > #npDetailLifeRow {
+      display: none;
+    }
+    .np-detail-meta-path-row > #npDetailLifeRow {
+      display: inline-flex;
     }
     .np-detail-life-label {
       font-size: 12px;
@@ -10273,21 +10294,21 @@
         <div class="np-detail-head-main">
           <div class="np-detail-title-row">
             <h3 id="npDetailTitle">—</h3>
-            <div class="np-detail-life-row">
-              <button
-                type="button"
-                id="npDetailLifeToggle"
-                class="np-apunte-life-toggle np-apunte-life-toggle--active"
-                aria-pressed="true"
-                aria-label="Tema activo — clic para marcar cerrado"
-                title="Activo · clic para cerrar tema"
-              >
-                <span class="np-apunte-life-toggle-icon" aria-hidden="true">●</span>
-              </button>
-              <span id="npDetailLifeLabel" class="np-detail-life-label np-detail-life-label--active">Activo</span>
-            </div>
           </div>
           <div id="npDetailMeta" class="np-modal-meta np-modal-meta-wrap"></div>
+          <div id="npDetailLifeRow" class="np-detail-life-row">
+            <button
+              type="button"
+              id="npDetailLifeToggle"
+              class="np-apunte-life-toggle np-apunte-life-toggle--active"
+              aria-pressed="true"
+              aria-label="Tema activo — clic para marcar cerrado"
+              title="Activo · clic para cerrar tema"
+            >
+              <span class="np-apunte-life-toggle-icon" aria-hidden="true">●</span>
+            </button>
+            <span id="npDetailLifeLabel" class="np-detail-life-label np-detail-life-label--active">Activo</span>
+          </div>
         </div>
         <div class="np-detail-head-actions">
           <button type="button" class="btn btn-ghost btn-ghost-blue" id="npDetailClose">Cerrar</button>
@@ -14941,8 +14962,12 @@
   function renderDetailItemMeta(r) {
     var el = $('npDetailMeta');
     if (!el || !r) return;
+    var lifeRow = $('npDetailLifeRow');
+    if (lifeRow && lifeRow.parentNode) lifeRow.parentNode.removeChild(lifeRow);
     el.className = 'np-modal-meta np-modal-meta-wrap';
     el.innerHTML = '';
+    var pathRow = document.createElement('div');
+    pathRow.className = 'np-detail-meta-path-row';
     var path = document.createElement('div');
     path.className = 'np-modal-meta-path';
     var pathParts = [
@@ -14951,7 +14976,9 @@
     ];
     if (r.status) pathParts.push(r.status);
     path.textContent = pathParts.join(' · ');
-    el.appendChild(path);
+    pathRow.appendChild(path);
+    if (lifeRow) pathRow.appendChild(lifeRow);
+    el.appendChild(pathRow);
 
     var edit = document.createElement('div');
     edit.className = 'np-detail-item-meta-edit np-ficha-meta-row';
