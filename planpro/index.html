@@ -4247,6 +4247,28 @@
       color: #94a3b8;
       font-weight: 600;
     }
+    #npDetailModal .np-detail-modal-title {
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      font-size: 1.05rem;
+      line-height: 1.3;
+      font-weight: 700;
+      color: #0f172a;
+      font-family: inherit;
+      box-shadow: none;
+    }
+    #npDetailModal .np-detail-modal-title:focus {
+      outline: none;
+      box-shadow: none;
+    }
+    #npDetailModal .np-detail-modal-title::placeholder {
+      color: #94a3b8;
+      font-weight: 600;
+    }
     #npCreateModal #npCreateItemMeta.np-detail-item-meta-edit {
       margin-top: 6px;
       margin-bottom: 0;
@@ -10318,7 +10340,15 @@
       <div class="np-modal-head">
         <div class="np-detail-head-main">
           <div class="np-detail-title-row">
-            <h3 id="npDetailTitle">—</h3>
+            <input
+              type="text"
+              id="npDetailTitle"
+              class="np-detail-modal-title"
+              maxlength="500"
+              autocomplete="off"
+              aria-label="Título del apunte"
+              placeholder="Título del apunte"
+            />
           </div>
           <div id="npDetailMeta" class="np-modal-meta np-modal-meta-wrap"></div>
           <div id="npDetailLifeRow" class="np-detail-life-row">
@@ -15206,6 +15236,14 @@
         dbPatch.due_at = key || patch.due_at;
       }
     }
+    if (patch.title !== undefined) {
+      var titleNext = String(patch.title || '').trim();
+      if (!titleNext) {
+        showToast('El título no puede quedar vacío.', true);
+        return;
+      }
+      dbPatch.title = titleNext.slice(0, 500);
+    }
     if ((patch.due_time !== undefined || patch.due_end_time !== undefined) && state.detailItemRecord && state.detailItemRecord.id === itemId) {
       dbPatch.attachments = buildPlanProAttachmentsWithDueTime(state.detailItemRecord, patch.due_time, patch.due_end_time);
     }
@@ -15228,6 +15266,7 @@
       if (dbPatch.status !== undefined) state.detailItemRecord.status = dbPatch.status;
       if (dbPatch.closed_at !== undefined) state.detailItemRecord.closed_at = dbPatch.closed_at;
       if (dbPatch.due_at !== undefined) state.detailItemRecord.due_at = dbPatch.due_at;
+      if (dbPatch.title !== undefined) state.detailItemRecord.title = dbPatch.title;
       if (dbPatch.attachments !== undefined) state.detailItemRecord.attachments = dbPatch.attachments;
       state.detailItemRecord.updated_at = new Date().toISOString();
     }
@@ -15238,10 +15277,22 @@
           if (dbPatch.status !== undefined) row.status = dbPatch.status;
           if (dbPatch.closed_at !== undefined) row.closed_at = dbPatch.closed_at;
           if (dbPatch.due_at !== undefined) row.due_at = dbPatch.due_at;
+          if (dbPatch.title !== undefined) row.title = dbPatch.title;
           if (dbPatch.attachments !== undefined) row.attachments = dbPatch.attachments;
           row.updated_at = new Date().toISOString();
         }
       });
+      if (dbPatch.title !== undefined && state.planProItemsRows) {
+        state.planProItemsRows.forEach(function (row) {
+          if (row && row.id === itemId) row.title = dbPatch.title;
+        });
+        syncSheetItemsList(state.planProItemsRows);
+        if (state.planProItemsSnapshot) {
+          state.planProItemsSnapshot.forEach(function (snap) {
+            if (snap && snap.id === itemId) snap.title = dbPatch.title;
+          });
+        }
+      }
       refreshPlanProCalendarAndPrio();
       var foot = $('npDetailMetaFoot');
       if (foot) foot.textContent = 'Actualizado ' + fmtDate(new Date().toISOString());
@@ -15480,6 +15531,35 @@
     wireRichDuePopoverOnce();
   }
 
+  function wireDetailTitleOnce() {
+    var inp = $('npDetailTitle');
+    if (!inp || inp.dataset.npWired === '1') return;
+    inp.dataset.npWired = '1';
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        inp.blur();
+      }
+    });
+    inp.addEventListener('blur', function () {
+      saveDetailTitleFromInput();
+    });
+  }
+
+  async function saveDetailTitleFromInput() {
+    var inp = $('npDetailTitle');
+    if (!inp || !state.detailItemId || !state.detailItemRecord) return;
+    var next = String(inp.value || '').trim();
+    if (!next) {
+      inp.value = state.detailItemRecord.title || '(Sin título)';
+      showToast('El título no puede quedar vacío.', true);
+      return;
+    }
+    var prev = String(state.detailItemRecord.title || '').trim();
+    if (next === prev) return;
+    await persistItemMeta(state.detailItemId, { title: next }, { skipReload: true });
+  }
+
   async function openItemDetail(r) {
     closeCreateApunteModal();
     if (detailBlocksSaveTimer) {
@@ -15503,7 +15583,9 @@
       delete modalPanel.dataset.areaAccent;
     }
 
-    $('npDetailTitle').textContent = row.title || '(Sin título)';
+    var titleInp = $('npDetailTitle');
+    if (titleInp) titleInp.value = row.title || '';
+    wireDetailTitleOnce();
     state.detailItemRecord = row;
     state.detailItemNoteHadContent = recordHadNoteContent(row);
     updateApunteLifeToggleEl($('npDetailLifeToggle'), row);
@@ -15544,6 +15626,7 @@
       refreshDetailBlocksDOM(true);
     }
     syncDetailBlocksInputsFromDOM();
+    await saveDetailTitleFromInput();
     await flushDetailMainNote();
     await flushDetailItemMeta();
     if (state.detailItemId && state.detailBlocksWorking && state.client) {
