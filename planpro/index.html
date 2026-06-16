@@ -3558,6 +3558,15 @@
       #npCreateModal.np-modal-overlay {
         padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
       }
+      #npDetailModal .np-modal-head {
+        padding: 12px 12px 10px;
+        gap: 10px;
+      }
+      #npDetailModal .np-detail-head-actions .btn {
+        font-size: 11px;
+        padding: 6px 9px;
+        min-height: 32px;
+      }
       #npDetailModal .np-modal-panel {
         max-width: 100%;
         width: 100%;
@@ -3759,11 +3768,23 @@
       transform: none;
     }
     .np-modal-meta-foot { font-size: 10px; color: var(--muted); margin-top: 4px; opacity: 0.88; }
+    .np-detail-head-main {
+      flex: 1;
+      min-width: 0;
+    }
     .np-detail-head-actions {
       display: flex;
+      flex-direction: column;
       flex-shrink: 0;
-      align-items: flex-start;
-      gap: 8px;
+      align-items: stretch;
+      gap: 6px;
+    }
+    .np-detail-head-actions .btn {
+      white-space: nowrap;
+      font-size: 12px;
+      padding: 7px 11px;
+      min-height: 34px;
+      justify-content: center;
     }
     .np-apunte-pdf-root {
       box-sizing: border-box;
@@ -10249,7 +10270,7 @@
   <div id="npDetailModal" class="np-modal-overlay" aria-hidden="true">
     <div class="np-modal-panel" role="dialog" aria-labelledby="npDetailTitle">
       <div class="np-modal-head">
-        <div style="min-width:0;">
+        <div class="np-detail-head-main">
           <div class="np-detail-title-row">
             <h3 id="npDetailTitle">—</h3>
             <div class="np-detail-life-row">
@@ -10269,6 +10290,7 @@
           <div id="npDetailMeta" class="np-modal-meta np-modal-meta-wrap"></div>
         </div>
         <div class="np-detail-head-actions">
+          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npDetailClose">Cerrar</button>
           <button
             type="button"
             class="btn btn-ghost btn-ghost-green"
@@ -10277,7 +10299,6 @@
           >
             PDF → Nutri PRO
           </button>
-          <button type="button" class="btn btn-ghost btn-ghost-blue" id="npDetailClose">Cerrar</button>
         </div>
       </div>
       <div id="npDetailBody" class="np-modal-body"></div>
