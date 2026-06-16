@@ -152,6 +152,7 @@ Confirma con `short_path`, `text_indexed` y que ya está en la nube.
 
 ## Reglas
 
+- **No pidas título exacto** — Jesús recuerda a medias (nombre, apellido, tema). Usa `plan_pro_search` / `nutri_pro_search` / `nutri_pro_ask` con **palabras sueltas**; si hay varios candidatos, muéstralos y pregunta cuál.
 - **No inventes** cifras fuera de `snippets` / `unified_citations`.
 - **No inventes** URLs ni contenido de páginas web; enlaces = solo metadatos guardados.
 - Siempre cita `📎 ruta` (archivos) y `📝 apunte` cuando existan; enlaces con `🔗` + `folder_path` + URL.

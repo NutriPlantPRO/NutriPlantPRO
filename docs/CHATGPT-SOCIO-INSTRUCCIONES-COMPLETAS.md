@@ -51,9 +51,9 @@ IMÁGENES: URLs ~1h; NDVI=vigor, NDMI=humedad. RADAR CRÉDITOS: ≤30 ha=1 · >3
 
 PLAN PRO — FICHA apunte: priority + due_at (objetivo entero). SEMÁFORO INTERNO en libreta (chip 🚦 fecha+color): SOLO [[sem:YYYY-MM-DD:alta|media|baja]] o append_due_marker {due_at,priority}. [[star]]=Destacado, [[warn]]=Importante: NO son semáforo. Para AÑADIR usa append_note/append_due_marker; NUNCA note/body_plain salvo reemplazo total pedido. No vacíes libreta (API bloquea). Tras update revisa semaforos_en_nota_count. plan_pro_item lee tablas (body_blocks_tables).
 
-PLAN PRO — EJEMPLOS: plan_pro_day due_on 2026-05-28. plan_pro_create/update con note: "[[warn]] **HiTec** [[sem:2026-05-28:alta]]". plan_pro_catalog si falta rama.
+PLAN PRO — EJEMPLOS: plan_pro_day due_on 2026-05-28. plan_pro_create/update con note: "[[warn]] **HiTec** [[sem:2026-05-28:alta]]". plan_pro_catalog si falta rama. Búsqueda apuntes: plan_pro_search con palabras sueltas («Juan López», «fertirriego costos»); NO pidas título exacto; si hay varios, muéstralos.
 
-NUTRI PRO — EJEMPLOS: «¿cuánto K en Excel costos?» → nutri_pro_ask → cita unified_citations.line; si link_gap_suggestions, sugiere enlazar 📎. «¿qué PDFs fertirriego?» → nutri_pro_search.
+NUTRI PRO — EJEMPLOS: «¿cuánto K en Excel costos?» → nutri_pro_ask → cita unified_citations.line; si link_gap_suggestions, sugiere enlazar 📎. «¿qué PDFs fertirriego?» → nutri_pro_search (palabras sueltas, no nombre exacto del archivo).
 
 MIS PROGRAMAS — EJEMPLOS: «crea un proyecto para programa limón 45 t/ha» → my_program_project_create. «guarda este borrador» → my_program_project_update section=draft program_data. «ponlo en fertirriego/granular» → update section=fertirriego|granular solo si el JSON tiene estructura clara. Siempre confirma que es proyecto personal GPT, no cliente.
 

@@ -416,18 +416,16 @@ async function handleSearchProjects(supabase, params) {
   }
   if (projectQ) {
     list = list.filter((p) => {
-      const n = (p.name || '').toLowerCase();
-      const t = (p.title || '').toLowerCase();
-      return n.includes(projectQ) || t.includes(projectQ) || (p.id || '').toLowerCase().includes(projectQ);
+      const hay = [p.name, p.title, p.id].filter(Boolean).join(' ');
+      return nutriContentSearch.partialTextMatches(hay, projectQ, { titleHay: p.name || p.title || '' });
     });
   }
   if (userQ) {
     list = list.filter((p) => {
       const prof = byId.get(p.user_id);
       if (!prof) return false;
-      const email = (prof.email || '').toLowerCase();
-      const name = (prof.name || '').toLowerCase();
-      return email.includes(userQ) || name.includes(userQ);
+      const hay = [prof.email, prof.name].filter(Boolean).join(' ');
+      return nutriContentSearch.partialTextMatches(hay, userQ, { titleHay: prof.name || '' });
     });
   }
 
@@ -438,6 +436,11 @@ async function handleSearchProjects(supabase, params) {
     ok: true,
     domain: 'nutriplant_projects',
     count: list.length,
+    partial_match: !!(userQ || projectQ),
+    gpt_hint:
+      userQ || projectQ
+        ? 'Búsqueda flexible: basta con parte del nombre, apellido o correo; no hace falta escribir el nombre completo exacto.'
+        : null,
     projects: list.map((p) => {
       const prof = byId.get(p.user_id);
       return {
@@ -2776,8 +2779,8 @@ async function handleNutriProSearch(supabase, params) {
     links = (linksRes.rows || [])
       .map((l) => mapNutriProLinkRow(l, foldersById))
       .filter((l) => {
-        const hay = [l.title, l.description, l.url, l.category_label, l.folder_path].filter(Boolean).join(' ').toLowerCase();
-        return hay.includes(q);
+        const hay = [l.title, l.description, l.url, l.category_label, l.folder_path].filter(Boolean).join(' ');
+        return nutriContentSearch.partialTextMatches(hay, qRaw, { titleHay: l.title || '' });
       });
   }
 
@@ -2807,7 +2810,7 @@ async function handleNutriProSearch(supabase, params) {
     search_terms: terms,
     ranked: true,
     gpt_hint:
-      'Ordenado por relevance_score. snippets (si include_snippets) o nutri_pro_ask para preguntas. Cruza apuntes con plan_pro_item / linked_apuntes en nutri_pro_ask.'
+      'Ordenado por relevance_score. snippets (si include_snippets) o nutri_pro_ask para preguntas. Cruza apuntes con plan_pro_item / linked_apuntes en nutri_pro_ask. Búsqueda flexible: palabras sueltas bastan; no pidas título exacto al usuario.'
   };
 }
 
@@ -4000,10 +4003,9 @@ function planProItemListRow(item, areasById, categories) {
   };
 }
 
-function itemMatchesSearch(item, qLc, areasById) {
-  if (!qLc) return true;
+function planProItemSearchHay(item, areasById) {
   const area = areasById[item.area_id];
-  const hay = [
+  return [
     item.title,
     item.body_plain,
     stripHtmlSimple(item.body_html),
@@ -4017,9 +4019,29 @@ function itemMatchesSearch(item, qLc, areasById) {
     ...(item.relation_tags || [])
   ]
     .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-  return hay.includes(qLc);
+    .join(' ');
+}
+
+function scorePlanProItemMatch(item, qRaw, areasById) {
+  return nutriContentSearch.scorePartialTextMatch(planProItemSearchHay(item, areasById), qRaw, {
+    titleHay: item.title || ''
+  });
+}
+
+function itemMatchesSearch(item, qLc, areasById) {
+  if (!qLc) return true;
+  return scorePlanProItemMatch(item, qLc, areasById).matched;
+}
+
+function rankPlanProItemHits(items, qRaw, areasById, limit) {
+  return (items || [])
+    .map((item) => {
+      const scoring = scorePlanProItemMatch(item, qRaw, areasById);
+      return { item, ...scoring };
+    })
+    .filter((h) => h.matched && h.score > 0)
+    .sort((a, b) => b.score - a.score || new Date(b.item.updated_at || 0) - new Date(a.item.updated_at || 0))
+    .slice(0, limit || 30);
 }
 
 async function fetchPlanProItems(supabase, ownerId, opts) {
@@ -4107,8 +4129,8 @@ async function handlePlanProSearch(supabase, params) {
     return { ok: true, domain: 'plan_pro', error: 'No se encontró usuario admin para Plan PRO.' };
   }
 
-  const q = (params.q || params.search || '').trim().toLowerCase();
-  if (!q) {
+  const qRaw = (params.q || params.search || '').trim();
+  if (!qRaw) {
     return { ok: true, domain: 'plan_pro', error: 'Indica params.q o params.search (texto a buscar).' };
   }
 
@@ -4125,7 +4147,7 @@ async function handlePlanProSearch(supabase, params) {
     area_id: areaId || undefined,
     status: params.status,
     thought_type: params.thought_type,
-    limit: params.limit || 60
+    limit: params.limit || 120
   });
   const categories = await fetchPlanProCategories(supabase);
   const tags = params.tags
@@ -4135,21 +4157,25 @@ async function handlePlanProSearch(supabase, params) {
         .filter(Boolean)
     : [];
 
-  const matches = items.filter((item) => {
-    if (!itemMatchesSearch(item, q, areasById)) return false;
-    if (tags.length) {
-      const itemTags = (item.relation_tags || []).map((t) => String(t).toLowerCase());
-      if (!tags.some((t) => itemTags.some((it) => it.includes(t)))) return false;
-    }
-    return true;
+  const ranked = rankPlanProItemHits(items, qRaw, areasById, 40).filter((hit) => {
+    if (!tags.length) return true;
+    const itemTags = (hit.item.relation_tags || []).map((t) => String(t).toLowerCase());
+    return tags.some((t) => itemTags.some((it) => it.includes(t)));
   });
 
   return {
     ok: true,
     domain: 'plan_pro',
-    query: q,
-    count: matches.length,
-    items: matches.slice(0, 30).map((item) => planProItemListRow(item, areasById, categories))
+    query: qRaw,
+    count: ranked.length,
+    partial_match: true,
+    items: ranked.slice(0, 30).map((hit) => ({
+      ...planProItemListRow(hit.item, areasById, categories),
+      relevance_score: hit.score,
+      matched_terms: hit.matched_terms || []
+    })),
+    gpt_hint:
+      'Búsqueda flexible: no hace falta el título exacto; basta con palabras sueltas que recuerde Jesús. Si hay varios resultados parecidos, muéstralos y pregunta cuál.'
   };
 }
 
@@ -4886,8 +4912,8 @@ async function handlePlanProUpdate(supabase, params) {
   }
 
   const itemId = (params.item_id || params.id || '').trim();
-  const q = (params.q || params.search || params.title || '').trim().toLowerCase();
-  if (!itemId && !q) {
+  const qRaw = (params.q || params.search || params.title || '').trim();
+  if (!itemId && !qRaw) {
     return {
       ok: true,
       domain: 'plan_pro',
@@ -4910,14 +4936,36 @@ async function handlePlanProUpdate(supabase, params) {
     if (error) throw new Error('plan_pro_update: ' + error.message);
     item = data;
   } else {
-    const items = await fetchPlanProItems(supabase, ownerId, { limit: 100 });
-    const hits = items.filter((it) => itemMatchesSearch(it, q, areasById));
-    hits.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
-    item = hits[0] || null;
+    const items = await fetchPlanProItems(supabase, ownerId, { limit: 150 });
+    const hits = rankPlanProItemHits(items, qRaw, areasById, 12);
+    if (hits.length > 1 && hits[0].score - hits[1].score < 8) {
+      return {
+        ok: true,
+        domain: 'plan_pro',
+        found: false,
+        ambiguous: true,
+        query: qRaw,
+        message:
+          'Varios apuntes coinciden con esas palabras. Muestra candidates al usuario y usa item_id del que elija.',
+        candidates: hits.slice(0, 8).map((hit) => ({
+          ...planProItemListRow(hit.item, areasById, categories),
+          relevance_score: hit.score,
+          matched_terms: hit.matched_terms || []
+        })),
+        gpt_hint: 'No pidas título exacto. Pregunta cuál de la lista es, luego plan_pro_update con item_id.'
+      };
+    }
+    item = (hits[0] && hits[0].item) || null;
   }
 
   if (!item) {
-    return { ok: true, domain: 'plan_pro', found: false, message: 'Apunte no encontrado.' };
+    return {
+      ok: true,
+      domain: 'plan_pro',
+      found: false,
+      message: 'Apunte no encontrado.',
+      gpt_hint: 'Prueba plan_pro_search con palabras sueltas (nombre, apellido, tema).'
+    };
   }
 
   const patch = {};
@@ -5048,13 +5096,14 @@ async function handlePlanProItem(supabase, params) {
   }
 
   const itemId = (params.item_id || params.id || '').trim();
-  const q = (params.q || params.search || params.title || '').trim().toLowerCase();
+  const qRaw = (params.q || params.search || params.title || '').trim();
 
   const areas = await fetchPlanProAreas(supabase, ownerId);
   const areasById = areaMapById(areas);
   const categories = await fetchPlanProCategories(supabase);
 
   let item = null;
+  let searchHits = [];
   if (itemId) {
     const { data, error } = await supabase
       .from('plan_pro_items')
@@ -5064,17 +5113,22 @@ async function handlePlanProItem(supabase, params) {
       .maybeSingle();
     if (error) throw new Error('plan_pro_item: ' + error.message);
     item = data;
-  } else if (q) {
-    const items = await fetchPlanProItems(supabase, ownerId, { limit: 100 });
-    const hits = items.filter((it) => itemMatchesSearch(it, q, areasById));
-    hits.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
-    item = hits[0] || null;
+  } else if (qRaw) {
+    const items = await fetchPlanProItems(supabase, ownerId, { limit: 150 });
+    searchHits = rankPlanProItemHits(items, qRaw, areasById, 12);
+    item = (searchHits[0] && searchHits[0].item) || null;
   } else {
     return { ok: true, domain: 'plan_pro', error: 'Indica params.item_id o params.q (título/texto).' };
   }
 
   if (!item) {
-    return { ok: true, domain: 'plan_pro', found: false, message: 'Apunte no encontrado.' };
+    return {
+      ok: true,
+      domain: 'plan_pro',
+      found: false,
+      message: 'Apunte no encontrado.',
+      gpt_hint: 'Prueba plan_pro_search con palabras sueltas (nombre, apellido, tema). No hace falta el título exacto.'
+    };
   }
 
   const images = collectPlanProImages(item);
@@ -5119,7 +5173,22 @@ async function handlePlanProItem(supabase, params) {
       body_blocks_summary: summarizeBodyBlocks(item.body_blocks),
       body_blocks_tables: expandBodyBlocksForApi(item.body_blocks),
       closed_at: item.closed_at
-    }
+    },
+    search_query: qRaw || null,
+    also_matched:
+      searchHits.length > 1
+        ? searchHits.slice(1, 6).map((hit) => ({
+            ...planProItemListRow(hit.item, areasById, categories),
+            relevance_score: hit.score,
+            matched_terms: hit.matched_terms || []
+          }))
+        : [],
+    ambiguous:
+      searchHits.length > 1 && searchHits[0].score - searchHits[1].score < 8,
+    gpt_hint:
+      searchHits.length > 1
+        ? 'Si hay varios candidatos parecidos, confirma con Jesús cuál apunte antes de editar. No pidas título exacto: usa also_matched.'
+        : 'Búsqueda flexible por palabras sueltas; no hace falta título exacto.'
   };
 }
 

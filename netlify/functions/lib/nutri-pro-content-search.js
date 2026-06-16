@@ -163,11 +163,64 @@ function rankNutriHits(hits, terms, qRaw, limit) {
     .slice(0, limit);
 }
 
+/**
+ * Coincidencia flexible: no exige la frase exacta.
+ * Con varias palabras basta ~50% de términos (p. ej. «Juan López» en «Juan Carlos Pérez López»).
+ * @param {string} hayStack — texto donde buscar (se normaliza)
+ * @param {string} qRaw — lo que recuerda el usuario
+ * @param {{ titleHay?: string }} [opts] — bonus si coincide en título
+ */
+function scorePartialTextMatch(hayStack, qRaw, opts) {
+  opts = opts || {};
+  const hay = normalizeForSearch(hayStack);
+  const qNorm = normalizeForSearch(qRaw);
+  if (!qNorm) return { matched: true, score: 0, matched_terms: [] };
+  if (hay.includes(qNorm)) {
+    return { matched: true, score: 28, matched_terms: tokenizeQuery(qRaw).length ? tokenizeQuery(qRaw) : [qNorm] };
+  }
+
+  const terms = tokenizeQuery(qRaw);
+  if (!terms.length) {
+    const ok = hay.includes(qNorm);
+    return { matched: ok, score: ok ? 10 : 0, matched_terms: ok ? [qNorm] : [] };
+  }
+
+  const titleHay = opts.titleHay ? normalizeForSearch(opts.titleHay) : '';
+  let score = 0;
+  const matchedTerms = [];
+
+  terms.forEach((t) => {
+    if (titleHay && titleHay.includes(t)) {
+      score += t.length >= 4 ? 14 : 11;
+      matchedTerms.push(t);
+    } else if (hay.includes(t)) {
+      score += t.length >= 4 ? 9 : 6;
+      matchedTerms.push(t);
+    }
+  });
+
+  if (!matchedTerms.length) return { matched: false, score: 0, matched_terms: [] };
+
+  const need =
+    terms.length === 1 ? 1 : Math.max(1, Math.ceil(terms.length * 0.5));
+  const matched = matchedTerms.length >= need;
+  if (matched && matchedTerms.length === terms.length) score += 12;
+  else if (matched && matchedTerms.length >= 2) score += 4;
+
+  return { matched, score, matched_terms: matchedTerms };
+}
+
+function partialTextMatches(hayStack, qRaw, opts) {
+  return scorePartialTextMatch(hayStack, qRaw, opts).matched;
+}
+
 module.exports = {
   tokenizeQuery,
   bestDbFilterTerm,
   extractSnippets,
   scoreNutriContentMatch,
   rankNutriHits,
-  normalizeForSearch
+  normalizeForSearch,
+  scorePartialTextMatch,
+  partialTextMatches
 };
