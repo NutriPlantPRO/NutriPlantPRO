@@ -6629,7 +6629,7 @@
       border-radius: 0 !important;
       background: transparent !important;
       font-size: 16px;
-      line-height: 1.7;
+      line-height: var(--np-rich-line-height, 1.45);
       resize: vertical;
       box-shadow: none !important;
       font-family: inherit;
@@ -6643,6 +6643,7 @@
     .np-notebook-page.np-notebook-rich {
       min-height: min(48vh, 520px);
       min-width: var(--np-note-sheet-min, 680px);
+      --np-rich-line-height: 1.45;
     }
     /* Nuevo apunte: misma libreta que escritorio; scroll horizontal en .np-notebook-wrap si hace falta. */
     #npFormCreate .np-notebook-wrap {
@@ -6729,7 +6730,7 @@
       border-radius: 0 !important;
       background: transparent !important;
       font-size: 16px;
-      line-height: 1.7;
+      line-height: var(--np-rich-line-height, 1.45);
       box-shadow: none !important;
       font-family: inherit;
       color: #292524;
@@ -6742,11 +6743,11 @@
       background-image: repeating-linear-gradient(
         to bottom,
         transparent 0,
-        transparent calc(1.7em - 1px),
-        rgba(92, 74, 55, 0.13) calc(1.7em - 1px),
-        rgba(92, 74, 55, 0.13) 1.7em
+        transparent calc(var(--np-rich-line-height, 1.45) * 1em - 1px),
+        rgba(92, 74, 55, 0.13) calc(var(--np-rich-line-height, 1.45) * 1em - 1px),
+        rgba(92, 74, 55, 0.13) calc(var(--np-rich-line-height, 1.45) * 1em)
       ) !important;
-      background-size: 100% 1.7em;
+      background-size: 100% calc(var(--np-rich-line-height, 1.45) * 1em);
       background-position: 0 24px;
       /* “local” provoca fallos de composición en WebKit: texto/tablas que “no existen” hasta hacer scroll */
       background-attachment: scroll;
@@ -9263,13 +9264,13 @@
     .np-note-section-editor {
       min-height: 100px;
       font-size: 15px;
-      line-height: 1.65;
+      line-height: 1.45;
       outline: none;
       color: #1e293b;
     }
     .np-note-section-read {
       font-size: 15px;
-      line-height: 1.65;
+      line-height: 1.45;
       color: #1e293b;
     }
   </style>
@@ -10217,7 +10218,22 @@
             aria-label="Título del apunte"
           />
           <div class="np-modal-meta np-modal-meta-wrap">
-            <div id="npCreateModalPath" class="np-modal-meta-path"></div>
+            <div class="np-detail-meta-path-row">
+              <div id="npCreateLifeRow" class="np-detail-life-row">
+                <button
+                  type="button"
+                  id="npCreateLifeToggle"
+                  class="np-apunte-life-toggle np-apunte-life-toggle--active"
+                  aria-pressed="true"
+                  aria-label="Tema activo — clic para marcar cerrado"
+                  title="Activo · clic para cerrar tema"
+                >
+                  <span class="np-apunte-life-toggle-icon" aria-hidden="true">●</span>
+                </button>
+                <span id="npCreateLifeLabel" class="np-detail-life-label np-detail-life-label--active">Activo</span>
+              </div>
+              <div id="npCreateModalPath" class="np-modal-meta-path"></div>
+            </div>
             <div class="np-detail-item-meta-edit np-ficha-meta-row" id="npCreateItemMeta">
               <span class="np-detail-meta-label">Objetivo</span>
               <button type="button" id="npCreateFichaPill" class="np-ficha-due-pill np-ficha-due-pill--empty" aria-label="Semáforo y fecha del apunte (opcional)">Semáforo y fecha</button>
@@ -11828,6 +11844,7 @@
   /** Prioridad al crear apunte: '' | baja | media | alta (vacío = sin prioridad en ficha). */
   var createFormPriorityLevel = '';
   var createFormDueKey = '';
+  var createFormIsClosed = false;
   var createFormDueTime = '';
   var createFormDueEndTime = '';
   /** Día elegido en «Nuevo apunte desde calendario». */
@@ -14919,7 +14936,7 @@
     return wrap;
   }
 
-  function updateApunteLifeToggleEl(btn, r) {
+  function updateApunteLifeToggleEl(btn, r, labelEl) {
     if (!btn) return;
     var closed = apunteIsClosed(r);
     btn.classList.toggle('np-apunte-life-toggle--closed', closed);
@@ -14932,12 +14949,40 @@
     btn.title = closed ? 'Cerrado · clic para reactivar' : 'Activo · clic para cerrar tema';
     var icon = btn.querySelector('.np-apunte-life-toggle-icon');
     if (icon) icon.textContent = closed ? '✓' : '●';
-    var lab = $('npDetailLifeLabel');
+    var lab = labelEl || $('npDetailLifeLabel');
     if (lab) {
       lab.textContent = apunteLifePlainLabel(r && r.closed_at);
       lab.className =
         'np-detail-life-label' + (closed ? ' np-detail-life-label--closed' : ' np-detail-life-label--active');
     }
+  }
+
+  function syncCreateModalPathRow() {
+    var pathEl = $('npCreateModalPath');
+    if (!pathEl) return;
+    pathEl.textContent = planProItemPathParts({
+      area_id: state.selectedAreaId,
+      category_id: state.selectedCategoryId,
+      status: null,
+      closed_at: createFormIsClosed ? '1' : null
+    }).join(' · ');
+  }
+
+  function wireCreateLifeToggleOnce() {
+    var btn = $('npCreateLifeToggle');
+    if (!btn || btn.dataset.npWired === '1') return;
+    btn.dataset.npWired = '1';
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      createFormIsClosed = !createFormIsClosed;
+      updateApunteLifeToggleEl(
+        btn,
+        { closed_at: createFormIsClosed ? '1' : null },
+        $('npCreateLifeLabel')
+      );
+      syncCreateModalPathRow();
+    });
   }
 
   function wireDetailLifeToggleOnce() {
@@ -15338,7 +15383,14 @@
     createFormDueKey = '';
     createFormDueTime = '';
     createFormDueEndTime = '';
+    createFormIsClosed = false;
     updateFichaDuePillEl($('npCreateFichaPill'), '', '');
+    updateApunteLifeToggleEl(
+      $('npCreateLifeToggle'),
+      { closed_at: null },
+      $('npCreateLifeLabel')
+    );
+    syncCreateModalPathRow();
     var maps = $('npCreateMapsUrl');
     if (maps) maps.value = '';
   }
@@ -21575,8 +21627,13 @@
       resetCreateFormPendingBlocks();
     }
     wireCreateFichaPill();
-    var pathEl = $('npCreateModalPath');
-    if (pathEl) pathEl.textContent = getCategoryPath(state.selectedCategoryId);
+    wireCreateLifeToggleOnce();
+    syncCreateModalPathRow();
+    updateApunteLifeToggleEl(
+      $('npCreateLifeToggle'),
+      { closed_at: createFormIsClosed ? '1' : null },
+      $('npCreateLifeLabel')
+    );
     var modal = $('npCreateModal');
     if (!modal) return;
     var panel = modal.querySelector('.np-modal-panel');
@@ -24929,6 +24986,10 @@
     };
     if (state.planProBodyHtmlColumn) {
       payload.body_html = plain.trim() ? rawHtml : null;
+    }
+    if (createFormIsClosed) {
+      payload.closed_at = new Date().toISOString();
+      payload.status = 'Cerrado';
     }
     var btn = $('npBtnCreate');
     btn.disabled = true;
@@ -28587,34 +28648,14 @@
     opts = opts || {};
     var u = String(url || '').trim();
     if (!u) return false;
-    if (planProIsInstalledApp() || opts.download) {
-      var a = document.createElement('a');
-      a.href = u;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      if (opts.download) a.download = String(opts.download);
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      return true;
-    }
-    var w = null;
-    try {
-      w = window.open(u, '_blank', 'noopener,noreferrer');
-      if (w) {
-        try {
-          w.opener = null;
-        } catch (e1) {}
-        return true;
-      }
-    } catch (e2) {}
-    var a2 = document.createElement('a');
-    a2.href = u;
-    a2.target = '_blank';
-    a2.rel = 'noopener noreferrer';
-    document.body.appendChild(a2);
-    a2.click();
-    a2.remove();
+    var a = document.createElement('a');
+    a.href = u;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    if (opts.download) a.download = String(opts.download);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
     return true;
   }
 
