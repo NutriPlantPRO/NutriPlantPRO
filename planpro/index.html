@@ -31,6 +31,15 @@
       --np-ms-col-min: 96px;
       --np-ms-col-min-wide: 128px;
       --np-ms-col-min-narrow: 56px;
+      /* Apunte libreta: A4 como PDF (210×297 mm; contenido ~190 mm con márgenes) */
+      --np-sheet-w: 210mm;
+      --np-sheet-page-h: 297mm;
+      --np-sheet-pad-top: 24px;
+      --np-sheet-pad-right: 20px;
+      --np-sheet-pad-bottom: 32px;
+      --np-sheet-pad-left: 48px;
+      --np-sheet-page-gap: 0px;
+      --np-sheet-margin-line: 32px;
     }
     * { box-sizing: border-box; }
     body {
@@ -3805,14 +3814,14 @@
       z-index: 16300;
     }
     #npDetailModal .np-modal-panel {
-      max-width: min(99vw, 1580px);
+      max-width: min(99vw, calc(var(--np-sheet-w) + 88px));
       max-height: min(97vh, 1180px);
-      width: min(99vw, 1580px);
+      width: min(99vw, calc(var(--np-sheet-w) + 88px));
     }
     #npCreateModal .np-modal-panel {
-      max-width: min(99vw, 1580px);
+      max-width: min(99vw, calc(var(--np-sheet-w) + 88px));
       max-height: min(97vh, 1180px);
-      width: min(99vw, 1580px);
+      width: min(99vw, calc(var(--np-sheet-w) + 88px));
     }
     #npDetailModal .np-modal-body {
       flex: 1;
@@ -6887,15 +6896,32 @@
       font-size: 15px !important;
       font-weight: 600;
     }
-    /* La hoja mantiene ancho mínimo tipo “papel”; si la ventana es más angosta, se desplaza en horizontal sin aplastar listas */
+    /* Hoja A4 centrada; fondo gris y páginas apiladas (como Word al escribir) */
     .np-notebook-wrap {
+      position: relative;
       margin-bottom: 14px;
+      padding: 14px 10px 16px;
+      background: #d8dee8;
+      border-radius: 10px;
       overflow-x: auto;
       overflow-y: visible;
       -webkit-overflow-scrolling: touch;
+      display: flex;
+      justify-content: center;
     }
-    .np-notebook-page {
-      position: relative;
+    .np-notebook-pages-bg {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: var(--np-sheet-w);
+      max-width: calc(100% - 20px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .np-notebook-page-sheet {
+      height: var(--np-sheet-page-h);
+      margin-bottom: var(--np-sheet-page-gap);
       border-radius: 3px 5px 7px 4px;
       background: linear-gradient(165deg, #fffefb 0%, #faf6ef 55%, #f5f0e8 100%);
       border: 1px solid rgba(74, 58, 42, 0.12);
@@ -6903,23 +6929,57 @@
         0 1px 0 rgba(255, 255, 255, 0.9) inset,
         0 10px 36px rgba(45, 35, 22, 0.08),
         0 2px 6px rgba(0, 0, 0, 0.05);
-      min-height: min(52vh, 560px);
-      min-width: var(--np-note-sheet-min, 680px);
-      max-width: 100%;
+      position: relative;
       box-sizing: border-box;
-      overflow-x: hidden;
-      overflow-y: visible;
     }
-    .np-notebook-page::before {
+    .np-notebook-page-sheet:last-child {
+      margin-bottom: 0;
+    }
+    .np-notebook-page-sheet::before {
       content: '';
       position: absolute;
-      left: 32px;
+      left: var(--np-sheet-margin-line);
       top: 12px;
       bottom: 12px;
       width: 1px;
       background: rgba(220, 90, 90, 0.22);
       pointer-events: none;
       border-radius: 1px;
+    }
+    .np-notebook-page-sheet:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(45, 35, 22, 0.1) 12%, rgba(45, 35, 22, 0.1) 88%, transparent);
+      pointer-events: none;
+    }
+    .np-notebook-wrap--accent .np-notebook-page-sheet {
+      border-color: color-mix(in srgb, var(--np-sheet-accent, #22c55e) 35%, rgba(74, 58, 42, 0.12));
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.92) inset,
+        0 10px 36px rgba(45, 35, 22, 0.07),
+        0 3px 14px color-mix(in srgb, var(--np-sheet-accent, #22c55e) 12%, transparent);
+    }
+    .np-notebook-page {
+      position: relative;
+      z-index: 1;
+      width: var(--np-sheet-w);
+      max-width: calc(100% - 20px);
+      margin: 0 auto;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      min-height: var(--np-sheet-page-h);
+      min-width: 0;
+      box-sizing: border-box;
+      overflow: visible;
+    }
+    .np-notebook-page::before {
+      display: none;
     }
     .np-notebook-textarea {
       display: block;
@@ -6943,18 +7003,17 @@
     }
     .np-notebook-textarea::placeholder { color: #a8a29e; }
     .np-notebook-page.np-notebook-rich {
-      min-height: min(48vh, 520px);
-      min-width: var(--np-note-sheet-min, 680px);
+      min-height: var(--np-sheet-page-h);
+      min-width: 0;
       --np-rich-line-height: 1.45;
     }
-    /* Nuevo apunte: misma libreta que escritorio; scroll horizontal en .np-notebook-wrap si hace falta. */
     #npFormCreate .np-notebook-wrap {
       max-width: 100%;
     }
     #npFormCreate #npBodyRich.np-rich-editor {
-      min-height: min(44vh, 520px);
-      max-height: min(72vh, 680px);
-      overflow-y: auto;
+      min-height: calc(var(--np-sheet-page-h) - var(--np-sheet-pad-top) - var(--np-sheet-pad-bottom));
+      max-height: none;
+      overflow-y: visible;
     }
     .np-rich-toolbar {
       display: flex;
@@ -7022,12 +7081,12 @@
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
-      min-height: min(44vh, 480px);
-      max-height: min(70vh, 720px);
-      overflow-y: auto;
+      min-height: calc(var(--np-sheet-page-h) - var(--np-sheet-pad-top) - var(--np-sheet-pad-bottom));
+      max-height: none;
+      overflow-y: visible;
       overflow-x: hidden;
       margin: 0 !important;
-      padding: 24px 20px 32px 48px;
+      padding: var(--np-sheet-pad-top) var(--np-sheet-pad-right) var(--np-sheet-pad-bottom) var(--np-sheet-pad-left);
       border: 0 !important;
       border-radius: 0 !important;
       background: transparent !important;
@@ -7050,7 +7109,7 @@
         rgba(92, 74, 55, 0.13) calc(var(--np-rich-line-height, 1.45) * 1em)
       ) !important;
       background-size: 100% calc(var(--np-rich-line-height, 1.45) * 1em);
-      background-position: 0 24px;
+      background-position: 0 var(--np-sheet-pad-top);
       /* “local” provoca fallos de composición en WebKit: texto/tablas que “no existen” hasta hacer scroll */
       background-attachment: scroll;
     }
@@ -7441,32 +7500,40 @@
       white-space: normal;
       word-break: break-word;
     }
-    /* Nota principal en el modal: misma sensación de libreta que la hoja del formulario */
+    /* Nota principal en el modal: hoja A4 centrada + barra al mismo ancho */
     .np-modal-notebook-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
       margin-bottom: 22px;
       padding-bottom: 4px;
-      overflow-x: auto;
+      overflow-x: visible;
       overflow-y: visible;
-      -webkit-overflow-scrolling: touch;
+    }
+    #npRichToolbar,
+    #npModalRichToolbar {
+      width: var(--np-sheet-w);
+      max-width: calc(100% - 20px);
+      box-sizing: border-box;
     }
     #npModalRichToolbar {
       margin-bottom: 10px;
     }
-    /* Hoja de libreta en el modal: mismo papel que el formulario + líneas tenues */
     .np-notebook-page.np-modal-notebook-page {
-      min-height: min(52vh, 600px);
-      max-height: min(76vh, 720px);
-      min-width: var(--np-note-sheet-min, 680px);
-      max-width: 100%;
+      min-height: var(--np-sheet-page-h);
+      max-height: none;
+      min-width: 0;
+      width: var(--np-sheet-w);
+      max-width: calc(100% - 20px);
       box-sizing: border-box;
-      overflow-x: hidden;
-      overflow-y: auto;
+      overflow: visible;
     }
     #npModalBodyRich.np-rich-editor {
       position: relative;
-      min-height: min(44vh, 520px);
-      max-height: min(72vh, 680px);
-      overflow-y: auto;
+      min-height: calc(var(--np-sheet-page-h) - var(--np-sheet-pad-top) - var(--np-sheet-pad-bottom));
+      max-height: none;
+      overflow-y: visible;
     }
     .np-modal-note-rich h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75em 0 0.4em; color: #0f172a; }
     .np-modal-note-rich h3 { font-size: 1.08rem; font-weight: 650; margin: 0.65em 0 0.35em; color: #334155; }
@@ -13734,6 +13801,94 @@
     el.classList.toggle('np-rich-empty', !String(t).trim() && !hasImg);
   }
 
+  var npSheetMetricsCache = null;
+  var npNotebookSheetSyncTimer = null;
+
+  function getNpSheetMetrics() {
+    if (npSheetMetricsCache) return npSheetMetricsCache;
+    var probe = document.createElement('div');
+    probe.className = 'np-notebook-page-sheet';
+    probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;top:-9999px;left:0;';
+    document.body.appendChild(probe);
+    var pageH = probe.offsetHeight || 1123;
+    var gapProbe = document.createElement('div');
+    gapProbe.style.cssText = 'position:absolute;visibility:hidden;top:-9999px;height:var(--np-sheet-page-gap);';
+    document.body.appendChild(gapProbe);
+    var gap = gapProbe.offsetHeight || 0;
+    document.body.removeChild(probe);
+    document.body.removeChild(gapProbe);
+    npSheetMetricsCache = { pageH: pageH, gap: gap };
+    return npSheetMetricsCache;
+  }
+
+  function invalidateNpSheetMetrics() {
+    npSheetMetricsCache = null;
+  }
+
+  function ensureNotebookPagesBg(wrap) {
+    var bg = wrap.querySelector('.np-notebook-pages-bg');
+    if (!bg) {
+      bg = document.createElement('div');
+      bg.className = 'np-notebook-pages-bg';
+      bg.setAttribute('aria-hidden', 'true');
+      wrap.insertBefore(bg, wrap.firstChild);
+    }
+    return bg;
+  }
+
+  function syncNotebookSheetPages(editorEl) {
+    if (!editorEl || !editorEl.closest) return;
+    var wrap = editorEl.closest('.np-notebook-wrap');
+    if (!wrap) return;
+    var pageEl = editorEl.closest('.np-notebook-page');
+    if (!pageEl) return;
+
+    var bg = ensureNotebookPagesBg(wrap);
+    var m = getNpSheetMetrics();
+    var styles = window.getComputedStyle(editorEl);
+    var padT = parseFloat(styles.paddingTop) || 24;
+    var padB = parseFloat(styles.paddingBottom) || 32;
+    var innerMin = Math.max(120, m.pageH - padT - padB);
+    var contentInner = Math.max(innerMin, editorEl.scrollHeight - padT - padB);
+    var n = Math.max(1, Math.ceil(contentInner / innerMin));
+
+    while (bg.children.length < n) {
+      bg.appendChild(document.createElement('div')).className = 'np-notebook-page-sheet';
+    }
+    while (bg.children.length > n) {
+      bg.removeChild(bg.lastChild);
+    }
+
+    var totalH = n * m.pageH + Math.max(0, n - 1) * m.gap;
+    bg.style.height = totalH + 'px';
+    pageEl.style.minHeight = totalH + 'px';
+    editorEl.style.minHeight = Math.max(innerMin, contentInner) + padT + padB + 'px';
+  }
+
+  function scheduleNotebookSheetSync(editorEl) {
+    if (!editorEl) return;
+    clearTimeout(npNotebookSheetSyncTimer);
+    npNotebookSheetSyncTimer = setTimeout(function () {
+      syncNotebookSheetPages(editorEl);
+    }, 20);
+  }
+
+  function bindNotebookSheetSync(editorEl) {
+    if (!editorEl) return;
+    syncNotebookSheetPages(editorEl);
+    scheduleNotebookSheetSync(editorEl);
+    if (typeof ResizeObserver === 'undefined') return;
+    if (editorEl._npSheetRO) {
+      try {
+        editorEl._npSheetRO.disconnect();
+      } catch (eRo) {}
+    }
+    editorEl._npSheetRO = new ResizeObserver(function () {
+      scheduleNotebookSheetSync(editorEl);
+    });
+    editorEl._npSheetRO.observe(editorEl);
+  }
+
   function selectionInsideEditor(editorEl) {
     if (!editorEl) return false;
     var sel = window.getSelection();
@@ -13959,6 +14114,7 @@
     if (!el) return;
     el.innerHTML = '<p><br></p>';
     syncRichEmptyClass();
+    scheduleNotebookSheetSync(el);
   }
 
   function getRichEditorHtml() {
@@ -15757,10 +15913,8 @@
     page.className = 'np-notebook-page np-notebook-rich np-modal-notebook-page';
 
     if (accentHex) {
-      page.style.borderColor = hexToRgba(accentHex, 0.35);
-      page.style.boxShadow =
-        '0 1px 0 rgba(255,255,255,0.92) inset, 0 10px 36px rgba(45, 35, 22, 0.07), 0 3px 14px ' +
-        hexToRgba(accentHex, 0.12);
+      nw.style.setProperty('--np-sheet-accent', accentHex);
+      nw.classList.add('np-notebook-wrap--accent');
     }
 
     var ed = document.createElement('div');
@@ -15784,9 +15938,11 @@
     });
 
     syncRichEmptyClass(ed);
+    bindNotebookSheetSync(ed);
     ed.addEventListener('input', function () {
       syncRichEmptyClass(ed);
       scheduleRichToolbarSync(ed);
+      scheduleNotebookSheetSync(ed);
       schedulePersistMainBody();
     });
     ed.addEventListener('blur', function () {
@@ -22020,6 +22176,8 @@
     window.setTimeout(function () {
       var titleInp = $('npTitle');
       if (titleInp) titleInp.focus({ preventScroll: true });
+      var richEd = $('npBodyRich');
+      if (richEd) bindNotebookSheetSync(richEd);
     }, 120);
   }
 
@@ -25245,9 +25403,11 @@
 
   var npBodyRichEl = $('npBodyRich');
   if (npBodyRichEl) {
+    bindNotebookSheetSync(npBodyRichEl);
     npBodyRichEl.addEventListener('input', function () {
       syncRichEmptyClass(npBodyRichEl);
       scheduleRichToolbarSync(npBodyRichEl);
+      scheduleNotebookSheetSync(npBodyRichEl);
     });
     npBodyRichEl.addEventListener('blur', function () {
       syncRichEmptyClass(npBodyRichEl);
@@ -25268,6 +25428,17 @@
     bindRichRefMarkers(npBodyRichEl);
     wireRichDuePopoverOnce();
     wirePlanProRichImageInput();
+  }
+
+  if (!window._npSheetResizeWired) {
+    window._npSheetResizeWired = true;
+    window.addEventListener('resize', function () {
+      invalidateNpSheetMetrics();
+      ['npBodyRich', 'npModalBodyRich'].forEach(function (id) {
+        var ed = $(id);
+        if (ed && ed.closest('.np-notebook-wrap')) scheduleNotebookSheetSync(ed);
+      });
+    });
   }
 
   document.addEventListener('selectionchange', function () {

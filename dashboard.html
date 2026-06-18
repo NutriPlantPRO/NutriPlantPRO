@@ -195,6 +195,7 @@
           <button type="button" id="btn-n-mineralizable-mo-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNMineralizableMoCalculator()" data-np-tooltip="Estimación de N mineralizable" aria-label="Estimación de N mineralizable">🌱</button>
           <button type="button" id="btn-water-hardness-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showWaterHardnessCalculator()" data-np-tooltip="Diagnóstico de agua y acondicionamiento" aria-label="Diagnóstico de agua y acondicionamiento">💦</button>
           <button type="button" id="btn-soil-water-texture-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSoilWaterTextureTool()" data-np-tooltip="Agua en suelo y textura" aria-label="Agua en suelo y textura">🪨</button>
+          <button type="button" id="btn-lamina-riego-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showLaminaRiegoTool()" data-np-tooltip="Lámina de riego y balance hídrico" aria-label="Lámina de riego y balance hídrico">🌧️</button>
           <button type="button" id="btn-fertilizer-solubility-salt-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerSolubilitySaltTool()" data-np-tooltip="Solubilidad e índice salino" aria-label="Solubilidad e índice salino">🧂</button>
           <button type="button" id="btn-extraccion-etapa-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showExtraccionEtapaCalculator()" data-np-tooltip="Distribución nutrimental por etapa (%)" aria-label="Distribución nutrimental por etapa (porcentaje)">📊</button>
           <button type="button" id="btn-periodic-table-nutrients" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showPeriodicTableNutrientsCalculator()" data-np-tooltip="Tabla Periódica (Nutrientes Esenciales)" aria-label="Tabla Periódica (Nutrientes Esenciales)">⚛️</button>
@@ -393,6 +394,7 @@
   <script src="nutricion-granular-requerimiento-functions.js?v=1760008300"></script>
   <script src="hidroponia-functions.js"></script>
   <script src="climate-kc-fao-data.js?v=202606121800"></script>
+  <script src="assets/np-irrigation-balance-core.js?v=202606181400"></script>
   <script src="climate-functions.js?v=202606122100"></script>
   <script src="analysis-report-render.js?v=1760005000"></script>
   <script src="dashboard.js?v=202605231647"></script>
@@ -474,6 +476,9 @@
       }
       if (typeof showSoilWaterTextureTool !== 'undefined') {
         window.showSoilWaterTextureTool = showSoilWaterTextureTool;
+      }
+      if (typeof showLaminaRiegoTool !== 'undefined') {
+        window.showLaminaRiegoTool = showLaminaRiegoTool;
       }
       if (typeof showFertilizerSolubilitySaltTool !== 'undefined') {
         window.showFertilizerSolubilitySaltTool = showFertilizerSolubilitySaltTool;
@@ -5080,6 +5085,21 @@ CONTRATO:
     }
     window.closeSoilWaterTextureTool = closeSoilWaterTextureTool;
 
+    function showLaminaRiegoTool() {
+      var modal = document.getElementById('laminaRiegoToolModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showLaminaRiegoTool = showLaminaRiegoTool;
+
+    function closeLaminaRiegoTool() {
+      var modal = document.getElementById('laminaRiegoToolModal');
+      var frame = document.getElementById('laminaRiegoToolFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeLaminaRiegoTool = closeLaminaRiegoTool;
+
     function showFertilizerSolubilitySaltTool() {
       var modal = document.getElementById('fertilizerSolubilitySaltModal');
       if (!modal) return;
@@ -6953,6 +6973,19 @@ CONTRATO:
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html" title="Agua en suelo y textura" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal lámina de riego / balance hídrico -->
+  <div id="laminaRiegoToolModal" class="modal-overlay" onclick="if(event.target===this) closeLaminaRiegoTool();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title">💧 Lámina de riego y balance hídrico</h2>
+        <button class="modal-close" onclick="closeLaminaRiegoTool()">×</button>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=dashboard" title="Lámina de riego y balance hídrico" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

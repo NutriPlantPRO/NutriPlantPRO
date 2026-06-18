@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <title>Lámina de riego y balance hídrico — NutriPlant PRO</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    body { margin: 0; padding: 16px; background: #f8fafc; font-family: Inter, system-ui, sans-serif; }
+    .wrap { position: relative; background: #fff; border-radius: 12px; padding: 16px; }
+    html.embed-login .title { display: none; }
+    html.embed-login body { padding: 12px 14px 16px; }
+    .title { margin: 0 0 12px; font-size: 22px; color: #0f172a; font-weight: 800; }
+    .intro { margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #64748b; }
+    #irr-free-map { height: 220px; width: 100%; border-radius: 10px; border: 1px solid #cbd5e1; z-index: 1; }
+    .coord-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    @media (max-width: 520px) { .coord-row { grid-template-columns: 1fr; } }
+    .map-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .map-actions button {
+      padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
+      font-size: 13px; font-weight: 600; cursor: pointer; color: #0f172a;
+    }
+    .map-actions button.primary { background: #0284c7; color: #fff; border-color: #0369a1; }
+    .map-actions button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .period-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .period-btn.active { border-color: #0284c7; background: #e0f2fe; color: #0369a1; }
+    .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .field-box label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+    .field-box input, .field-box select {
+      width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box;
+    }
+    .field-box--green { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px; }
+    .field-box--green label { color: #166534; }
+    .field-box--green input { border-color: #86efac; }
+    #irr-summary {
+      background: linear-gradient(135deg, #f0f9ff 0%, #ecfeff 100%);
+      border: 1px solid #7dd3fc; border-radius: 10px; padding: 16px; margin: 16px 0;
+    }
+    .metric-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .metric-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; }
+  </style>
+</head>
+<body>
+  <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+  <div class="wrap">
+    <h2 class="title">💧 Lámina de riego y balance hídrico</h2>
+    <p class="intro">
+      Elige un punto en el mapa (como en VPD). NutriPlant consulta <strong>lluvia y ETo</strong> (Open-Meteo, respaldo satelital) y calcula déficit y balance para <strong>1 o 7 días</strong>.
+      Puedes ajustar Kc, riego aplicado y superficies. Estimación rápida — <strong>validar en campo</strong>.
+    </p>
+
+    <div style="background:#fefce8;border:2px solid #eab308;border-radius:12px;padding:16px;margin-bottom:16px;">
+      <h3 style="margin:0 0 8px;color:#854d0e;font-size:16px;">🗺️ Ubicación del predio</h3>
+      <p style="margin:0 0 12px;font-size:13px;color:#713f12;line-height:1.45;">Mapa, GPS o escribe lat/lng. Luego obtén clima para cargar ETo y lluvia del periodo.</p>
+      <div class="coord-row">
+        <div><label style="font-size:12px;font-weight:600;">Latitud</label><input id="irr-free-lat" type="number" step="any" placeholder="19.4326" /></div>
+        <div><label style="font-size:12px;font-weight:600;">Longitud</label><input id="irr-free-lng" type="number" step="any" placeholder="-99.1332" /></div>
+      </div>
+      <div class="map-actions">
+        <button type="button" id="irr-btn-geo" onclick="irrFreeUseMyLocation()">📍 Mi ubicación</button>
+        <button type="button" class="primary" id="irr-btn-fetch" onclick="irrFreeFetchClimate()">🌧️ Obtener clima y calcular</button>
+      </div>
+      <p id="irr-geo-status" style="font-size:12px;color:#64748b;min-height:1.2em;margin:0 0 8px;"></p>
+      <div id="irr-free-map"></div>
+    </div>
+
+    <div style="background:#f0f9ff;border:2px solid #0ea5e9;border-radius:12px;padding:16px;margin-bottom:16px;">
+      <h3 style="margin:0 0 12px;color:#0369a1;font-size:16px;">📋 Calculadora (1 o 7 días)</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">
+        <span style="font-size:13px;font-weight:600;color:#64748b;">Periodo:</span>
+        <button type="button" class="period-btn active" data-period="1" onclick="irrFreeSetPeriod(1)">1 día</button>
+        <button type="button" class="period-btn" data-period="7" onclick="irrFreeSetPeriod(7)">7 días</button>
+      </div>
+      <p id="irr-sat-meta" style="display:none;margin:0 0 12px;font-size:12px;color:#0369a1;"></p>
+      <div class="metric-row">
+        <div class="metric-card" id="irr-metric-et0"></div>
+        <div class="metric-card" id="irr-metric-rain"></div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;">
+        <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#0f172a;">📋 Mis valores de agua (opcional)</p>
+        <p id="irr-manual-block-hint" style="margin:0 0 10px;font-size:12px;line-height:1.45;color:#64748b;">ETo, lluvia y riego corresponden al <strong>periodo seleccionado</strong>. Valores manuales = acumulado de esos mismos días.</p>
+        <div class="field-grid">
+          <div class="field-box">
+            <label><input type="checkbox" id="irr-use-manual-et0" onchange="irrFreeUpdate()" /> Usar mi ETo del periodo (mm)</label>
+            <input type="number" id="irr-et0-manual" min="0" step="0.1" placeholder="Acumulado del periodo" oninput="irrFreeUpdate()" />
+          </div>
+          <div class="field-box">
+            <label><input type="checkbox" id="irr-use-manual-rain" onchange="irrFreeUpdate()" /> Usar mi lluvia (mm)</label>
+            <input type="number" id="irr-rain-manual" min="0" step="0.1" placeholder="Acumulado del periodo" oninput="irrFreeUpdate()" />
+            <label style="margin-top:8px;font-weight:500;"><input type="checkbox" id="irr-macro-tunnel" onchange="irrFreeUpdate()" /> Macrotúnel (lluvia = 0)</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-grid" style="margin-bottom:14px;">
+        <div class="field-box"><label>Cultivo (opcional)</label><input id="irr-crop" type="text" placeholder="Ej. limón" oninput="irrFreeUpdate()" /></div>
+        <div class="field-box"><label>Kc (editable)</label><input id="irr-kc" type="number" min="0" max="2" step="0.01" placeholder="Sin precargar" oninput="irrFreeUpdate()" /><div id="irr-kc-hint-wrap"></div></div>
+        <div class="field-box">
+          <label>Riego total del periodo</label>
+          <div style="display:flex;gap:8px;">
+            <input id="irr-applied" type="number" min="0" step="0.1" placeholder="Acumulado" style="flex:1;" oninput="irrFreeUpdate()" />
+            <select id="irr-unit" onchange="irrFreeUpdate()"><option value="mm">mm</option><option value="m3">m³</option></select>
+          </div>
+        </div>
+        <div class="field-box"><label>Superficie del cultivo (ha)</label><input id="irr-crop-area" type="number" min="0" step="0.01" value="1" oninput="irrFreeUpdate()" /></div>
+        <div class="field-box field-box--green">
+          <label>Superficie regada (ha)</label>
+          <input id="irr-area" type="number" min="0" step="0.01" placeholder="Franja humedecida" oninput="irrFreeUpdate()" />
+        </div>
+        <div class="field-box field-box--green">
+          <label>Suelo explorado por raíces (%)</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <input id="irr-root-reach" type="number" min="10" max="100" step="1" placeholder="10–100" style="width:100px;" oninput="irrFreeUpdate()" />
+            <button type="button" onclick="irrFreeSuggestStrip()" style="padding:8px 12px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Sugerir franja regada</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="irr-summary"><p style="margin:0;color:#64748b;font-size:13px;">Pulsa <strong>Obtener clima y calcular</strong> o ingresa ETo/lluvia manualmente.</p></div>
+    </div>
+
+    <div id="irr-note-wrap"></div>
+    <div id="irr-kc-wrap"></div>
+  </div>
+
+  <script>
+    if (location.search.indexOf('embed=login') >= 0 || location.search.indexOf('embed=dashboard') >= 0) {
+      document.documentElement.classList.add('embed-login');
+    }
+  </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="climate-kc-fao-data.js"></script>
+  <script src="assets/np-irrigation-balance-core.js"></script>
+  <script src="assets/np-free-local-persist.js"></script>
+  <script>
+    var irrRolling = null;
+    var irrPeriodDays = 1;
+    var irrMap = null;
+    var irrMarker = null;
+
+    function irrSetStatus(msg) {
+      var el = document.getElementById('irr-geo-status');
+      if (el) el.textContent = msg || '';
+    }
+
+    function irrReadCoords() {
+      return {
+        lat: parseFloat(document.getElementById('irr-free-lat').value),
+        lng: parseFloat(document.getElementById('irr-free-lng').value)
+      };
+    }
+
+    function irrApplyCoords(lat, lng, move) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      document.getElementById('irr-free-lat').value = lat.toFixed(6);
+      document.getElementById('irr-free-lng').value = lng.toFixed(6);
+      if (move && irrMarker && irrMap) {
+        irrMarker.setLatLng([lat, lng]);
+        irrMap.setView([lat, lng], Math.max(irrMap.getZoom(), 10));
+      }
+    }
+
+    function irrInitMap() {
+      if (typeof L === 'undefined' || irrMap) return;
+      var la = 19.4326, lo = -99.1332;
+      irrMap = L.map('irr-free-map').setView([la, lo], 5);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: '© Esri'
+      }).addTo(irrMap);
+      irrMarker = L.marker([la, lo], { draggable: true }).addTo(irrMap);
+      irrMarker.on('dragend', function () {
+        var ll = irrMarker.getLatLng();
+        irrApplyCoords(ll.lat, ll.lng, false);
+      });
+      irrMap.on('click', function (e) {
+        irrMarker.setLatLng(e.latlng);
+        irrApplyCoords(e.latlng.lat, e.latlng.lng, false);
+      });
+      irrApplyCoords(la, lo, false);
+      setTimeout(function () { if (irrMap) irrMap.invalidateSize(); }, 400);
+    }
+
+    function irrFreeUseMyLocation() {
+      if (!navigator.geolocation) { alert('Tu navegador no permite ubicación.'); return; }
+      var btn = document.getElementById('irr-btn-geo');
+      if (btn) btn.disabled = true;
+      irrSetStatus('📍 Obteniendo ubicación…');
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          irrApplyCoords(pos.coords.latitude, pos.coords.longitude, true);
+          irrSetStatus('Ubicación aplicada. Ajusta el punto en el mapa si quieres.');
+          if (btn) btn.disabled = false;
+        },
+        function () {
+          irrSetStatus('No se pudo leer GPS. Elige un punto en el mapa.');
+          if (btn) btn.disabled = false;
+        },
+        { enableHighAccuracy: false, timeout: 12000 }
+      );
+    }
+
+    async function irrFreeFetchClimate() {
+      var c = irrReadCoords();
+      if (!Number.isFinite(c.lat) || !Number.isFinite(c.lng)) {
+        alert('Indica latitud y longitud o elige un punto en el mapa.');
+        return;
+      }
+      var btn = document.getElementById('irr-btn-fetch');
+      if (btn) btn.disabled = true;
+      irrSetStatus('🌧️ Consultando Open-Meteo…');
+      try {
+        irrRolling = await window.NpIrrBalance.fetchRollingOpenMeteo(c.lat, c.lng);
+        var meta = document.getElementById('irr-sat-meta');
+        if (meta) {
+          meta.textContent = 'Referencia satélite · actualizada ' + new Date(irrRolling.fetchedAt).toLocaleString('es-MX');
+          meta.style.display = 'block';
+        }
+        irrSetStatus('✅ Clima cargado. Ajusta Kc y riego si hace falta.');
+        irrFreeUpdate();
+      } catch (e) {
+        console.warn(e);
+        irrSetStatus('⚠️ No se pudo obtener clima. Revisa conexión o coordenadas.');
+        alert('No se pudo consultar Open-Meteo.');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function irrFreeSetPeriod(days) {
+      irrPeriodDays = days === 1 ? 1 : 7;
+      document.querySelectorAll('.period-btn').forEach(function (b) {
+        var on = parseInt(b.getAttribute('data-period'), 10) === irrPeriodDays;
+        b.classList.toggle('active', on);
+      });
+      irrFreeUpdate();
+    }
+
+    function irrFreeReadState() {
+      var kcEl = document.getElementById('irr-kc');
+      var kc = kcEl && kcEl.value !== '' ? parseFloat(kcEl.value) : null;
+      return {
+        cropName: (document.getElementById('irr-crop').value || '').trim(),
+        kc: Number.isFinite(kc) ? kc : null,
+        periodDays: irrPeriodDays,
+        irrigationValue: document.getElementById('irr-applied').value !== '' ? parseFloat(document.getElementById('irr-applied').value) : null,
+        irrigationUnit: document.getElementById('irr-unit').value === 'm3' ? 'm3' : 'mm',
+        cropAreaHa: document.getElementById('irr-crop-area').value !== '' ? parseFloat(document.getElementById('irr-crop-area').value) : 1,
+        irrigatedAreaHa: document.getElementById('irr-area').value !== '' ? parseFloat(document.getElementById('irr-area').value) : null,
+        rootReachPct: document.getElementById('irr-root-reach').value !== '' ? parseFloat(document.getElementById('irr-root-reach').value) : null,
+        useManualEt0: document.getElementById('irr-use-manual-et0').checked,
+        manualEt0: document.getElementById('irr-et0-manual').value !== '' ? parseFloat(document.getElementById('irr-et0-manual').value) : null,
+        useManualRain: document.getElementById('irr-use-manual-rain').checked,
+        manualRain: document.getElementById('irr-rain-manual').value !== '' ? parseFloat(document.getElementById('irr-rain-manual').value) : null,
+        macroTunnelNoRain: document.getElementById('irr-macro-tunnel').checked
+      };
+    }
+
+    function irrFreeSuggestStrip() {
+      var st = irrFreeReadState();
+      var reach = st.rootReachPct;
+      if (reach == null || reach < 10) { alert('Indica % suelo explorado (10–100).'); return; }
+      var cropHa = st.cropAreaHa || 1;
+      var suggested = Math.round(cropHa * (reach / 100) * 100) / 100;
+      document.getElementById('irr-area').value = String(suggested);
+      irrFreeUpdate();
+    }
+
+    function irrFreeUpdate() {
+      var st = irrFreeReadState();
+      var NB = window.NpIrrBalance;
+      var res = NB.computeResults(st, irrRolling);
+      var periodLabel = res.periodDays === 1 ? '1 día' : '7 días';
+      var sat = NB.getRollingForPeriod(irrRolling, res.periodDays);
+
+      document.getElementById('irr-et0-manual').disabled = !st.useManualEt0;
+      document.getElementById('irr-rain-manual').disabled = st.macroTunnelNoRain || !st.useManualRain;
+      document.getElementById('irr-use-manual-rain').disabled = st.macroTunnelNoRain;
+
+      document.getElementById('irr-metric-et0').innerHTML =
+        '<div style="font-size:12px;color:#64748b;">ETo activa (' + periodLabel + ')</div>' +
+        '<div style="font-size:18px;font-weight:700;">' + (res.et0 != null ? NB.fmtMm(res.et0) + (res.periodDays === 1 ? ' mm/día' : ' mm') : '—') +
+        NB.sourceBadge(res.et0Source) + '</div>';
+      document.getElementById('irr-metric-rain').innerHTML =
+        '<div style="font-size:12px;color:#64748b;">Lluvia activa (' + periodLabel + ')</div>' +
+        '<div style="font-size:18px;font-weight:700;">' + (res.rain != null ? NB.fmtMm(res.rain) + ' mm' : '—') +
+        NB.sourceBadge(res.rainSource) + '</div>';
+
+      var manualHint = document.getElementById('irr-manual-block-hint');
+      if (manualHint) {
+        manualHint.innerHTML =
+          'ETo, lluvia y riego de esta caja corresponden al <strong>periodo seleccionado (' +
+          periodLabel +
+          ')</strong>. Si usas valores de campo, ingresa el <strong>acumulado de esos mismos días</strong>; la referencia satélite de arriba ya usa ese periodo.';
+      }
+
+      document.getElementById('irr-summary').innerHTML = NB.buildSummaryHtml(res);
+
+      NB.renderFaoKcTable('irr-fao-kc-tbody', document.getElementById('irr-fao-kc-search') && document.getElementById('irr-fao-kc-search').value, st.cropName);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      irrInitMap();
+      document.getElementById('irr-note-wrap').innerHTML = window.NpIrrBalance.getNoteHtml();
+      document.getElementById('irr-kc-wrap').innerHTML = window.NpIrrBalance.getKcDetailsHtml({ idPrefix: 'irr' });
+      var kcHintWrap = document.getElementById('irr-kc-hint-wrap');
+      if (kcHintWrap) kcHintWrap.innerHTML = window.NpIrrBalance.getKcFieldHintHtml('irr');
+      window.NpIrrBalance.renderFaoKcTable('irr-fao-kc-tbody', '', '');
+      var searchEl = document.getElementById('irr-fao-kc-search');
+      if (searchEl) {
+        searchEl.addEventListener('input', function () {
+          window.NpIrrBalance.renderFaoKcTable('irr-fao-kc-tbody', searchEl.value, document.getElementById('irr-crop').value);
+        });
+      }
+      irrFreeUpdate();
+
+      var IDS = [
+        'irr-free-lat', 'irr-free-lng', 'irr-crop', 'irr-kc', 'irr-applied', 'irr-unit',
+        'irr-crop-area', 'irr-area', 'irr-root-reach', 'irr-et0-manual', 'irr-rain-manual',
+        'irr-use-manual-et0', 'irr-use-manual-rain', 'irr-macro-tunnel'
+      ];
+      window.NpFreePersist.bind('lamina_riego', function () {
+        var o = window.NpFreePersist.collectIds(IDS);
+        o.periodDays = irrPeriodDays;
+        return o;
+      }, function (d) {
+        if (!d) return;
+        window.NpFreePersist.applyIds(d, IDS);
+        if (d.periodDays === 1 || d.periodDays === 7) irrFreeSetPeriod(d.periodDays);
+        irrFreeUpdate();
+      });
+    });
+  </script>
+</body>
+</html>

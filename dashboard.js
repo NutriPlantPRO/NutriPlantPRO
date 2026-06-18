@@ -8422,29 +8422,49 @@ async function fetchRadarImagesDataUrlsForReport() {
   }
 }
 
-/** Combina gráficas de fertirriego, Radar, distribución por etapa, etc. para el PDF. */
+/** Combina gráficas de fertirriego, Radar, distribución por etapa, clima, etc. para el PDF. */
 function loadChartImagesForReport(selectedSections, callback) {
   const needFerti =
     selectedSections.indexOf('fertigation') >= 0 &&
     typeof window.getFertiChartsDataUrlsForReport === 'function';
   const needRadar = selectedSections.indexOf('location') >= 0;
   const needExtraccionEtapa = selectedSections.indexOf('extraccionEtapa') >= 0;
+  const needClimate =
+    selectedSections.indexOf('vpd') >= 0 &&
+    typeof window.getClimateChartsDataUrlsForReport === 'function';
 
   function finish(out) {
-    if (!needExtraccionEtapa) {
-      callback(out);
+    function done(finalOut) {
+      if (!needExtraccionEtapa) {
+        callback(finalOut);
+        return;
+      }
+      try {
+        const state = getExtraccionEtapaStateForReport();
+        getExtraccionEtapaChartsDataUrlsForReport(state, function(imgs) {
+          if (imgs && (imgs.macro || imgs.micro)) finalOut.extraccionEtapa = imgs;
+          callback(finalOut);
+        });
+      } catch (e) {
+        console.warn('loadChartImagesForReport extraccionEtapa:', e);
+        callback(finalOut);
+      }
+    }
+
+    if (needClimate) {
+      try {
+        const ca = currentProject.climateAnalysis || {};
+        window.getClimateChartsDataUrlsForReport(ca.rainfall, ca.et0, function(climate) {
+          if (climate && (climate.rain || climate.et0)) out.climate = climate;
+          done(out);
+        });
+      } catch (e) {
+        console.warn('loadChartImagesForReport climate:', e);
+        done(out);
+      }
       return;
     }
-    try {
-      const state = getExtraccionEtapaStateForReport();
-      getExtraccionEtapaChartsDataUrlsForReport(state, function(imgs) {
-        if (imgs && (imgs.macro || imgs.micro)) out.extraccionEtapa = imgs;
-        callback(out);
-      });
-    } catch (e) {
-      console.warn('loadChartImagesForReport extraccionEtapa:', e);
-      callback(out);
-    }
+    done(out);
   }
 
   function afterRadar(fertiCharts) {
@@ -14569,7 +14589,7 @@ function createSectionHTML(sectionId, chartImages, reportLanguage) {
       break;
     case 'vpd':
       html += createVPDReportSectionHTML();
-      html += createClimateReportSectionHTML();
+      html += createClimateReportSectionHTML(chartImages);
       break;
     case 'granular':
       html += createGranularSectionHTML();
@@ -16786,12 +16806,28 @@ function createVPDReportSectionHTML() {
   `;
 }
 
-function createClimateReportSectionHTML() {
+function createClimateReportSectionHTML(chartImages) {
   const ca = currentProject.climateAnalysis || {};
   const rain = ca.rainfall;
   const et0 = ca.et0;
   const live = ca.lastReading;
+  const climateCharts = chartImages && chartImages.climate ? chartImages.climate : {};
   const monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  function getClimateYearEntriesForReport(block) {
+    if (typeof window.getClimateYearEntries === 'function') return window.getClimateYearEntries(block);
+    if (!block) return [];
+    if (block.years && typeof block.years === 'object') {
+      return Object.keys(block.years).map(function (k) {
+        var y = parseInt(k, 10);
+        var entry = block.years[k] || {};
+        return { year: y, months: entry.months || {}, partial: !!entry.partial };
+      }).filter(function (e) { return Number.isFinite(e.year); }).sort(function (a, b) { return a.year - b.year; });
+    }
+    var legacy = [];
+    if (block.previousYear != null && block.monthsPrev) legacy.push({ year: block.previousYear, months: block.monthsPrev, partial: false });
+    if (block.currentYear != null && block.monthsCurr) legacy.push({ year: block.currentYear, months: block.monthsCurr, partial: true });
+    return legacy.sort(function (a, b) { return a.year - b.year; });
+  }
   function sumClimateMonthsTotal(obj, maxM) {
     if (!obj || typeof obj !== 'object') return null;
     var sum = 0;
@@ -16845,21 +16881,43 @@ function createClimateReportSectionHTML() {
     );
   }
   var maxMonth = new Date().getMonth() + 1;
+  var prevY = rain && rain.previousYear != null ? rain.previousYear : new Date().getFullYear() - 1;
+  var currY = rain && rain.currentYear != null ? rain.currentYear : new Date().getFullYear();
   var rainTable = '';
   if (rain && rain.monthsPrev) {
-    rainTable = wrapClimateMonthlyTable('rain',
-      monthRow(String(rain.previousYear), rain.monthsPrev, 12, false) +
-      monthRow(String(rain.currentYear) + ' (parcial)', rain.monthsCurr, maxMonth, false) +
-      monthRow('Diferencia', rain.diff, maxMonth, true)
-    );
+    var rainRows = getClimateYearEntriesForReport(rain).map(function (entry) {
+      var label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+      return monthRow(label, entry.months, entry.partial ? maxMonth : 12, false);
+    }).join('');
+    if (rain.diff && Object.keys(rain.diff).length) {
+      rainRows += monthRow('Diferencia (' + currY + ' − ' + prevY + ')', rain.diff, maxMonth, true);
+    }
+    rainTable = wrapClimateMonthlyTable('rain', rainRows);
   }
   var et0Table = '';
   if (et0 && et0.monthsPrev) {
-    et0Table = wrapClimateMonthlyTable('et0',
-      monthRow(String(et0.previousYear), et0.monthsPrev, 12, false) +
-      monthRow(String(et0.currentYear) + ' (parcial)', et0.monthsCurr, maxMonth, false) +
-      monthRow('Diferencia', et0.diff, maxMonth, true)
-    );
+    var et0PrevY = et0.previousYear != null ? et0.previousYear : prevY;
+    var et0CurrY = et0.currentYear != null ? et0.currentYear : currY;
+    var et0Rows = getClimateYearEntriesForReport(et0).map(function (entry) {
+      var label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+      return monthRow(label, entry.months, entry.partial ? maxMonth : 12, false);
+    }).join('');
+    if (et0.diff && Object.keys(et0.diff).length) {
+      et0Rows += monthRow('Diferencia (' + et0CurrY + ' − ' + et0PrevY + ')', et0.diff, maxMonth, true);
+    }
+    et0Table = wrapClimateMonthlyTable('et0', et0Rows);
+  }
+  var rainChartBlock = '';
+  if (climateCharts.rain) {
+    rainChartBlock =
+      '<div class="report-block"><div class="report-block-title">Gráfica — Precipitación (mm/mes)</div>' +
+      '<img src="' + climateCharts.rain + '" alt="Gráfica lluvia mensual" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>';
+  }
+  var et0ChartBlock = '';
+  if (climateCharts.et0) {
+    et0ChartBlock =
+      '<div class="report-block"><div class="report-block-title">Gráfica — ET₀ (mm/mes)</div>' +
+      '<img src="' + climateCharts.et0 + '" alt="Gráfica ET0 mensual" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>';
   }
   var liveBlock = '';
   if (live && live.temperature != null) {
@@ -16876,6 +16934,18 @@ function createClimateReportSectionHTML() {
         liveWhen = '';
       }
     }
+    var liveRain =
+      live.rainTodayMm != null
+        ? live.rainTodayMm
+        : ca.rolling && ca.rolling.rain_1d != null
+          ? ca.rolling.rain_1d
+          : null;
+    var liveEt0 =
+      live.et0TodayMm != null
+        ? live.et0TodayMm
+        : ca.rolling && ca.rolling.et0_1d != null
+          ? ca.rolling.et0_1d
+          : null;
     liveBlock =
       liveWhen +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;font-size:13px;">' +
@@ -16885,9 +16955,11 @@ function createClimateReportSectionHTML() {
       '<div><strong>UV:</strong> ' + reportNum(live.uvIndex, 1) + '</div>' +
       '<div><strong>Rocío:</strong> ' + reportNum(live.dewPoint, 1) + ' °C</div>' +
       '<div><strong>Viento:</strong> ' + reportNum(live.windSpeedKmh, 1) + ' km/h</div>' +
+      '<div><strong>Lluvia (hoy):</strong> ' + (liveRain != null ? reportNum(liveRain, 1) + ' mm' : '—') + '</div>' +
+      '<div><strong>ET₀ (hoy):</strong> ' + (liveEt0 != null ? reportNum(liveEt0, 1) + ' mm' : '—') + '</div>' +
       '</div>';
   }
-  if (!rainTable && !et0Table && !liveBlock) return '';
+  if (!rainTable && !et0Table && !rainChartBlock && !et0ChartBlock && !liveBlock) return '';
   var satNote =
     '<p style="margin:0 0 12px 0;padding:8px 10px;font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">' +
     '<strong>Nota:</strong> estimaciones basadas en información satelital en el predio; pueden diferir del clima en campo.</p>';
@@ -16896,7 +16968,9 @@ function createClimateReportSectionHTML() {
     '<h2 class="section-title" style="margin-top:24px;">🌧️ Clima — Lluvia, ET₀ y tiempo actual</h2>' +
     satNote +
     (rainTable ? '<div class="report-block"><div class="report-block-title">Precipitación (mm/mes)</div>' + rainTable + '</div>' : '') +
+    (rainChartBlock || '') +
     (et0Table ? '<div class="report-block"><div class="report-block-title">ET₀ (mm/mes, suma diaria)</div>' + et0Table + '</div>' : '') +
+    (et0ChartBlock || '') +
     (liveBlock ? '<div class="report-block"><div class="report-block-title">Última lectura</div>' + liveBlock + '</div>' : '') +
     '</div>'
   );
@@ -20423,7 +20497,7 @@ function createClimateSectionHTML() {
     satelliteNote +
     '<div class="climate-tabs hydroponia-tabs">' +
     '<button type="button" class="tab-button active" data-tab="climate-vpd"><span class="tab-icon">🌡️</span><span class="tab-text">VPD</span></button>' +
-    '<button type="button" class="tab-button" data-tab="climate-rainfall"><span class="tab-icon">🌧️</span><span class="tab-text">Lluvia y ET₀</span></button>' +
+    '<button type="button" class="tab-button" data-tab="climate-rainfall"><span class="tab-icon">🌧️</span><span class="tab-text">Lluvia/Riego</span></button>' +
     '<button type="button" class="tab-button" data-tab="climate-live"><span class="tab-icon">🌤️</span><span class="tab-text">Tiempo actual</span></button>' +
     '</div>' +
     '<div class="climate-content">' +

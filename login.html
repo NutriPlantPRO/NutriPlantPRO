@@ -116,7 +116,14 @@
           <h1 class="auth-title">Bienvenido a NutriPlant PRO</h1>
           <p style="margin: 8px 0 0; font-size: 15px; color: #475569; font-weight: 500; text-align: center;">Diseña, ajusta y nutre con criterio técnico</p>
           <div class="auth-portal-ctas" role="navigation" aria-label="Manual técnico público">
-            <a href="manual-tecnico/index.html" class="auth-portal-cta auth-portal-cta--manual" target="_blank" rel="noopener noreferrer" title="Abrir manual técnico en una pestaña nueva">📘 Manual técnico</a>
+            <a href="manual-tecnico/index.html" class="auth-portal-cta auth-portal-cta--manual" target="_blank" rel="noopener noreferrer" title="Abrir manual técnico en una pestaña nueva">
+              <img src="assets/N_Hoja_Blanca.png" alt="" class="auth-portal-cta__icon" width="18" height="18" decoding="async">
+              <span>Manual Técnico</span>
+            </a>
+            <a href="manual-tecnico/autoria.html" class="auth-portal-cta auth-portal-cta--autoria" target="_blank" rel="noopener noreferrer" title="Autoría y referente técnico del manual">
+              <img src="assets/marca JA.png" alt="" class="auth-portal-cta__icon" width="18" height="18" decoding="async">
+              <span>Autoría</span>
+            </a>
           </div>
         </div>
 
@@ -339,6 +346,11 @@
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showSoilWaterTextureTool()" style="margin-top: 12px;">
           <span class="calculator-icon">🪨</span>
           <span class="button-text">Agua en suelo y textura</span>
+        </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showLaminaRiegoTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">💧</span>
+          <span class="button-text">Lámina de riego y balance hídrico</span>
         </button>
 
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerSolubilitySaltTool()" style="margin-top: 12px;">
@@ -1533,6 +1545,16 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showLaminaRiegoTool() {
+      document.getElementById('laminaRiegoToolModal').style.display = 'flex';
+    }
+    function closeLaminaRiegoTool() {
+      const modal = document.getElementById('laminaRiegoToolModal');
+      const frame = document.getElementById('laminaRiegoToolFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     function showFertilizerSolubilitySaltTool() {
       document.getElementById('fertilizerSolubilitySaltModal').style.display = 'flex';
     }
@@ -1761,6 +1783,10 @@
       const soilWaterTextureModal = document.getElementById('soilWaterTextureToolModal');
       if (e.target === soilWaterTextureModal) {
         closeSoilWaterTextureTool();
+      }
+      const laminaRiegoModal = document.getElementById('laminaRiegoToolModal');
+      if (e.target === laminaRiegoModal) {
+        closeLaminaRiegoTool();
       }
       const fertilizerSolubilitySaltModal = document.getElementById('fertilizerSolubilitySaltModal');
       if (e.target === fertilizerSolubilitySaltModal) {
@@ -2448,6 +2474,19 @@
       </div>
       <div class="modal-body">
         <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html" title="Agua en suelo y textura"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal lámina de riego / balance hídrico -->
+  <div id="laminaRiegoToolModal" class="modal-overlay">
+    <div class="modal modal-fertilizer-composition">
+      <div class="modal-header">
+        <h2 class="modal-title">💧 Lámina de riego y balance hídrico</h2>
+        <button class="modal-close" onclick="closeLaminaRiegoTool()">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=login" title="Lámina de riego y balance hídrico"></iframe>
       </div>
     </div>
   </div>

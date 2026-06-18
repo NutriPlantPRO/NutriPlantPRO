@@ -154,6 +154,14 @@ module.exports = {
         'Pestaña agua: CC, PMP, profundidad, ha, zona radical, θ. Pestaña textura USDA: % arena/limo/arcilla, triángulo arrastrable.'
     },
     {
+      id: 'lamina_riego',
+      title: 'Lámina de riego y balance hídrico',
+      file: 'lamina-riego-free.html',
+      lsKey: 'nutriplant_free_lamina_riego_v1',
+      summary:
+        'Mapa/GPS (como VPD), Open-Meteo lluvia y ETo FAO-56, balance 1 y 7 días. Kc editable, riego, superficie cultivo/franja regada, % raíces. Tabla Kc FAO-56.'
+    },
+    {
       id: 'solubilidad_is',
       title: 'Solubilidad e índice salino',
       file: 'solubilidad-indice-salino-free.html',

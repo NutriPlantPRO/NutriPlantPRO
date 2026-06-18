@@ -711,13 +711,38 @@
 .auth-portal-cta {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 7px;
+  padding: 9px 16px;
   font-size: 13px;
   font-weight: 700;
   text-decoration: none;
   border-radius: 10px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  color: #fff;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.88) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.2) inset,
+    0 2px 4px rgba(15, 23, 42, 0.28),
+    0 6px 14px rgba(30, 64, 175, 0.24);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.auth-portal-cta__icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+}
+
+.auth-portal-cta:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.07);
+  color: #fff;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.24) inset,
+    0 4px 8px rgba(15, 23, 42, 0.3),
+    0 10px 22px rgba(37, 99, 235, 0.32);
 }
 
 .auth-portal-cta__sub {
@@ -726,15 +751,14 @@
   opacity: 0.8;
 }
 
-.auth-portal-cta--manual {
-  color: #0369a1;
-  background: #e0f2fe;
-  border: 1px solid #7dd3fc;
+.auth-portal-cta--manual,
+.auth-portal-cta--autoria {
+  /* mismo estilo azul marino 3D */
 }
 
-.auth-portal-cta--manual:hover {
-  background: #bae6fd;
-  transform: translateY(-1px);
+.auth-portal-cta--manual:hover,
+.auth-portal-cta--autoria:hover {
+  /* hereda .auth-portal-cta:hover */
 }
 
 .auth-portal-cta--home {

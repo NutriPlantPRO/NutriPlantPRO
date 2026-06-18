@@ -6995,6 +6995,150 @@
             containerEl.innerHTML = legend + svg;
         }
 
+        const ADMIN_CLIMATE_MONTH_LABELS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        const ADMIN_CLIMATE_RAIN_COLORS = ['#1e3a8a', '#2563eb', '#38bdf8', '#7dd3fc'];
+        const ADMIN_CLIMATE_ET0_COLORS = ['#991b1b', '#c2410c', '#f97316', '#fbbf24'];
+
+        function adminGetClimateYearEntries(block) {
+            if (!block) return [];
+            if (block.years && typeof block.years === 'object') {
+                return Object.keys(block.years).map(function (k) {
+                    const y = parseInt(k, 10);
+                    const entry = block.years[k] || {};
+                    return { year: y, months: entry.months || {}, partial: !!entry.partial };
+                }).filter(function (e) { return Number.isFinite(e.year); }).sort(function (a, b) { return a.year - b.year; });
+            }
+            const legacy = [];
+            if (block.previousYear != null && block.monthsPrev) legacy.push({ year: block.previousYear, months: block.monthsPrev, partial: false });
+            if (block.currentYear != null && block.monthsCurr) legacy.push({ year: block.currentYear, months: block.monthsCurr, partial: true });
+            return legacy.sort(function (a, b) { return a.year - b.year; });
+        }
+
+        function adminSumClimateMonths(obj, maxM) {
+            if (!obj || typeof obj !== 'object') return null;
+            let sum = 0;
+            let hasAny = false;
+            for (let m = 1; m <= 12; m++) {
+                if (maxM != null && m > maxM) continue;
+                const key = String(m).padStart(2, '0');
+                const v = obj[key];
+                if (v != null && !isNaN(Number(v))) {
+                    sum += Number(v);
+                    hasAny = true;
+                }
+            }
+            return hasAny ? Math.round(sum * 10) / 10 : null;
+        }
+
+        function adminClimateMonthlyRow(label, obj, maxM) {
+            const annual = adminSumClimateMonths(obj, maxM);
+            const totalCell = '<td style="padding:6px;text-align:center;font-weight:700;background:#f8fafc;">' + (annual != null ? annual.toFixed(1) : '—') + '</td>';
+            const cells = ADMIN_CLIMATE_MONTH_LABELS.map(function (_, i) {
+                const k = String(i + 1).padStart(2, '0');
+                if (maxM != null && i + 1 > maxM) return '<td style="text-align:center;color:#94a3b8;">—</td>';
+                const v = obj && obj[k];
+                return '<td style="padding:6px;text-align:center;">' + (v != null && !isNaN(Number(v)) ? Number(v).toFixed(1) : '—') + '</td>';
+            }).join('');
+            return '<tr><td style="padding:6px;font-weight:600;white-space:nowrap;">' + escapeHtml(label) + '</td>' + totalCell + cells + '</tr>';
+        }
+
+        function adminBuildClimateMonthlyTableHtml(title, titleColor, block, variant) {
+            if (!block || !block.monthsPrev) return '';
+            const maxM = new Date().getMonth() + 1;
+            const prevY = block.previousYear != null ? block.previousYear : new Date().getFullYear() - 1;
+            const currY = block.currentYear != null ? block.currentYear : new Date().getFullYear();
+            const entries = adminGetClimateYearEntries(block);
+            let rows = entries.map(function (entry) {
+                const label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+                return adminClimateMonthlyRow(label, entry.months, entry.partial ? maxM : 12);
+            }).join('');
+            if (block.diff && Object.keys(block.diff).length) {
+                rows += adminClimateMonthlyRow('Diferencia (' + currY + ' − ' + prevY + ')', block.diff, maxM);
+            }
+            const head =
+                '<thead><tr style="background:#f1f5f9;border-bottom:2px solid #cbd5e1;">' +
+                '<th style="padding:8px;text-align:left;">Año</th>' +
+                '<th style="padding:8px;text-align:center;white-space:nowrap;">Acum. anual (mm)</th>' +
+                ADMIN_CLIMATE_MONTH_LABELS.map(function (m) { return '<th style="padding:8px;text-align:center;">' + m + '</th>'; }).join('') +
+                '</tr></thead>';
+            const border = variant === 'et0' ? '#fdba74' : '#7dd3fc';
+            return (
+                '<div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;">' +
+                '<h4 style="margin:0 0 8px 0;color:' + titleColor + ';">' + title + '</h4>' +
+                '<div style="overflow-x:auto;margin-bottom:12px;"><table style="width:100%;min-width:720px;font-size:12px;border-collapse:collapse;border:1px solid ' + border + ';border-radius:8px;overflow:hidden;">' +
+                head + '<tbody>' + rows + '</tbody></table></div>' +
+                '<div id="admin-climate-' + variant + '-chart" style="margin-top:4px;"></div></div>'
+            );
+        }
+
+        function adminBuildClimateSectionHtml(ca) {
+            if (!ca) return '';
+            const rain = ca.rainfall;
+            const et0 = ca.et0;
+            const live = ca.lastReading;
+            let out = '';
+            if (rain && rain.monthsPrev) {
+                out += adminBuildClimateMonthlyTableHtml('🌧️ Precipitación acumulada (mm/mes)', '#0369a1', rain, 'rain');
+            }
+            if (et0 && et0.monthsPrev) {
+                out += adminBuildClimateMonthlyTableHtml('☀️ ET₀ — Evapotranspiración de referencia (mm/mes)', '#b45309', et0, 'et0');
+            }
+            if (live && live.temperature != null) {
+                const liveTs = live.fetchedAt || ca.lastUpdated || null;
+                const liveWhen = liveTs ? '<p style="margin:0 0 6px;font-size:12px;color:#64748b;"><strong>Lectura:</strong> ' + escapeHtml(new Date(liveTs).toLocaleString('es-MX')) + '</p>' : '';
+                const rolling = ca.rolling || null;
+                const liveRain = live.rainTodayMm != null ? live.rainTodayMm : (rolling && rolling.rain_1d != null ? rolling.rain_1d : null);
+                const liveEt0 = live.et0TodayMm != null ? live.et0TodayMm : (rolling && rolling.et0_1d != null ? rolling.et0_1d : null);
+                out += '<div style="margin-top:12px;"><h4 style="margin:0 0 8px 0;">🌤️ Última lectura</h4>' + liveWhen + '<div style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;"><div>T: ' + live.temperature + ' °C</div><div>HR: ' + live.humidity + ' %</div><div>UV: ' + (live.uvIndex != null ? live.uvIndex : '—') + '</div><div>Viento: ' + (live.windSpeedKmh != null ? live.windSpeedKmh + ' km/h' : '—') + '</div><div>Lluvia (hoy): ' + (liveRain != null ? Number(liveRain).toFixed(1) + ' mm' : '—') + '</div><div>ET₀ (hoy): ' + (liveEt0 != null ? Number(liveEt0).toFixed(1) + ' mm' : '—') + '</div></div></div>';
+            }
+            return out;
+        }
+
+        function adminMonthsToChartData(monthsObj, maxMonth) {
+            return ADMIN_CLIMATE_MONTH_LABELS.map(function (_, idx) {
+                if (maxMonth != null && idx + 1 > maxMonth) return 0;
+                const key = String(idx + 1).padStart(2, '0');
+                const v = monthsObj && monthsObj[key];
+                return v != null && !isNaN(Number(v)) ? Number(v) : 0;
+            });
+        }
+
+        function adminRenderClimateCharts(ca, rootEl) {
+            if (!ca || !rootEl) return;
+            const maxM = new Date().getMonth() + 1;
+            function renderOne(kind, block, colors) {
+                if (!block || !block.monthsPrev) return;
+                const container = rootEl.querySelector('#admin-climate-' + kind + '-chart');
+                if (!container) return;
+                const entries = adminGetClimateYearEntries(block);
+                if (!entries.length) {
+                    container.innerHTML = '<div style="color:#94a3b8;font-style:italic;">Sin datos para gráfica.</div>';
+                    return;
+                }
+                const datasets = entries.map(function (entry, idx) {
+                    const color = colors[idx] != null ? colors[idx] : colors[colors.length - 1];
+                    const label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+                    return {
+                        label: label,
+                        data: adminMonthsToChartData(entry.months, entry.partial ? maxM : 12),
+                        color: color
+                    };
+                });
+                buildAdminSvgChart(container, ADMIN_CLIMATE_MONTH_LABELS, datasets);
+            }
+            renderOne('rain', ca.rainfall, ADMIN_CLIMATE_RAIN_COLORS);
+            renderOne('et0', ca.et0, ADMIN_CLIMATE_ET0_COLORS);
+        }
+
+        function adminScheduleClimateCharts(ca, rootEl) {
+            if (!ca || !rootEl) return;
+            const tryRender = () => adminRenderClimateCharts(ca, rootEl);
+            tryRender();
+            requestAnimationFrame(tryRender);
+            setTimeout(tryRender, 50);
+            setTimeout(tryRender, 200);
+        }
+
         function renderAdminFertirriegoCharts(program, chartIds, project, chartTargets) {
             try {
                 if (!program || !Array.isArray(program.weeks)) return;
@@ -11440,32 +11584,7 @@
                             ` : ''}
                             ${(function() {
                                 const ca = project.climateAnalysis || (project.data && project.data.climateAnalysis) || null;
-                                if (!ca) return '';
-                                const rain = ca.rainfall;
-                                const live = ca.lastReading;
-                                let out = '';
-                                if (rain && rain.monthsPrev) {
-                                    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-                                    function row(label, obj, maxM) {
-                                        return '<tr><td style="padding:6px;font-weight:600;">' + escapeHtml(label) + '</td>' + months.map(function(_, i) {
-                                            const k = String(i+1).padStart(2,'0');
-                                            if (maxM != null && i+1 > maxM) return '<td style="text-align:center;color:#94a3b8;">—</td>';
-                                            const v = obj && obj[k];
-                                            return '<td style="padding:6px;text-align:center;">' + (v != null && !isNaN(Number(v)) ? Number(v).toFixed(1) : '—') + '</td>';
-                                        }).join('') + '</tr>';
-                                    }
-                                    const maxM = new Date().getMonth() + 1;
-                                    out += '<div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;"><h4 style="margin:0 0 8px 0;">🌧️ Lluvia acumulada (mm/mes)</h4><div style="overflow-x:auto;"><table style="width:100%;min-width:640px;font-size:12px;border-collapse:collapse;"><thead><tr><th>Año</th>' + months.map(function(m){return '<th>'+m+'</th>';}).join('') + '</tr></thead><tbody>' + row(String(rain.previousYear), rain.monthsPrev, 12) + row(String(rain.currentYear)+' (parcial)', rain.monthsCurr, maxM) + row('Diferencia', rain.diff, maxM) + '</tbody></table></div></div>';
-                                }
-                                if (ca.et0 && ca.et0.monthsPrev) {
-                                    out += '<p style="margin:10px 0 0;font-size:13px;color:#64748b;">☀️ ET₀ mensual guardado en el proyecto (detalle en app).</p>';
-                                }
-                                if (live && live.temperature != null) {
-                                    var liveTs = live.fetchedAt || ca.lastUpdated || null;
-                                    var liveWhen = liveTs ? '<p style="margin:0 0 6px;font-size:12px;color:#64748b;"><strong>Lectura:</strong> ' + escapeHtml(new Date(liveTs).toLocaleString('es-MX')) + '</p>' : '';
-                                    out += '<div style="margin-top:12px;"><h4 style="margin:0 0 8px 0;">🌤️ Última lectura</h4>' + liveWhen + '<div style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;"><div>T: ' + live.temperature + ' °C</div><div>HR: ' + live.humidity + ' %</div><div>UV: ' + (live.uvIndex != null ? live.uvIndex : '—') + '</div><div>Viento: ' + (live.windSpeedKmh != null ? live.windSpeedKmh + ' km/h' : '—') + '</div></div></div>';
-                                }
-                                return out;
+                                return adminBuildClimateSectionHtml(ca);
                             })()}
                         </div>`
                         : '<p style="color: #94a3b8; font-style: italic; margin: 0;">Esta sección aún no ha sido configurada en el proyecto.</p>'
@@ -11579,6 +11698,10 @@
                 }
                 if (adminUserExtLibraryBuilt && adminUserExtLibraryBuilt.chartJobs && adminUserExtLibraryBuilt.chartJobs.length) {
                     adminScheduleExtraccionLibraryCharts(adminUserExtLibraryBuilt.chartJobs, content);
+                }
+                const adminClimateData = project.climateAnalysis || (project.data && project.data.climateAnalysis) || null;
+                if (adminClimateData && (adminClimateData.rainfall || adminClimateData.et0)) {
+                    adminScheduleClimateCharts(adminClimateData, content);
                 }
             }
         }

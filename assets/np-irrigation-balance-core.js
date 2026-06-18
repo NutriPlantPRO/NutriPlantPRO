@@ -1,0 +1,409 @@
+/**
+ * NutriPlant — núcleo compartido: balance hídrico / lámina de riego (dashboard + herramienta gratis).
+ */
+(function (w) {
+  'use strict';
+
+  function round1(n) {
+    return Math.round(Number(n) * 10) / 10;
+  }
+
+  function round2(n) {
+    return Math.round(Number(n) * 100) / 100;
+  }
+
+  function fmtMm(v) {
+    if (v == null || !Number.isFinite(Number(v))) return '—';
+    return round1(v).toFixed(1);
+  }
+
+  function todayIso() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function addDaysIso(isoDate, days) {
+    var parts = String(isoDate || '').split('-').map(function (p) { return parseInt(p, 10); });
+    if (parts.length !== 3) return isoDate;
+    var dt = new Date(parts[0], parts[1] - 1, parts[2]);
+    dt.setDate(dt.getDate() + days);
+    return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+  }
+
+  function computeRollingWindows(daily) {
+    var times = (daily && daily.time) || [];
+    var rain = (daily && daily.precipitation_sum) || [];
+    var et0 = (daily && daily.et0_fao_evapotranspiration) || [];
+    function sumLast(n, values) {
+      var start = Math.max(0, values.length - n);
+      var s = 0;
+      var has = false;
+      for (var i = start; i < values.length; i++) {
+        var v = Number(values[i]);
+        if (Number.isFinite(v)) { s += v; has = true; }
+      }
+      return has ? round1(s) : null;
+    }
+    function lastVal(values) {
+      if (!values.length) return null;
+      var v = Number(values[values.length - 1]);
+      return Number.isFinite(v) ? round1(v) : null;
+    }
+    return {
+      fetchedAt: new Date().toISOString(),
+      dateEnd: times.length ? String(times[times.length - 1]) : todayIso(),
+      et0Today: lastVal(et0),
+      rainToday: lastVal(rain),
+      et0_1d: sumLast(1, et0),
+      rain_1d: sumLast(1, rain),
+      et0_7d: sumLast(7, et0),
+      rain_7d: sumLast(7, rain),
+      et0_30d: sumLast(30, et0),
+      rain_30d: sumLast(30, rain)
+    };
+  }
+
+  function getRollingForPeriod(rolling, periodDays) {
+    if (!rolling || typeof rolling !== 'object') return { et0: null, rain: null };
+    if (periodDays === 1) {
+      return {
+        et0: rolling.et0_1d != null ? rolling.et0_1d : rolling.et0Today,
+        rain: rolling.rain_1d != null ? rolling.rain_1d : rolling.rainToday
+      };
+    }
+    if (periodDays === 30) return { et0: rolling.et0_30d, rain: rolling.rain_30d };
+    return { et0: rolling.et0_7d, rain: rolling.rain_7d };
+  }
+
+  function resolveAreaContext(state) {
+    var cropHa =
+      state.cropAreaHa != null && Number.isFinite(Number(state.cropAreaHa)) && Number(state.cropAreaHa) > 0
+        ? Number(state.cropAreaHa)
+        : 1;
+    var irrigatedHa =
+      state.irrigatedAreaHa != null && Number.isFinite(Number(state.irrigatedAreaHa)) && Number(state.irrigatedAreaHa) > 0
+        ? Number(state.irrigatedAreaHa)
+        : cropHa;
+    var hasSplit = Math.abs(cropHa - irrigatedHa) > 0.001;
+    return {
+      cropHa: round2(cropHa),
+      irrigatedHa: round2(irrigatedHa),
+      hasSplit: hasSplit,
+      stripFactor: hasSplit && irrigatedHa > 0 ? cropHa / irrigatedHa : null
+    };
+  }
+
+  function irrigationMmFromInput(value, unit, areaHa) {
+    var v = Number(value);
+    if (!Number.isFinite(v) || v < 0) return null;
+    if (unit === 'm3') {
+      if (!Number.isFinite(areaHa) || areaHa <= 0) return null;
+      return round1(v / (areaHa * 10));
+    }
+    return round1(v);
+  }
+
+  function computeResults(state, rolling) {
+    var period = state.periodDays === 1 || state.periodDays === 30 ? state.periodDays : 7;
+    var sat = getRollingForPeriod(rolling, period);
+    var et0 = null;
+    var rain = null;
+    var et0Source = null;
+    var rainSource = null;
+    if (state.useManualEt0 && state.manualEt0 != null && Number.isFinite(Number(state.manualEt0))) {
+      et0 = round1(Number(state.manualEt0));
+      et0Source = 'campo';
+    } else if (sat.et0 != null) {
+      et0 = sat.et0;
+      et0Source = 'satélite';
+    }
+    if (state.macroTunnelNoRain) {
+      rain = 0;
+      rainSource = 'macrotúnel';
+    } else if (state.useManualRain && state.manualRain != null && Number.isFinite(Number(state.manualRain))) {
+      rain = round1(Number(state.manualRain));
+      rainSource = 'campo';
+    } else if (sat.rain != null) {
+      rain = sat.rain;
+      rainSource = 'satélite';
+    }
+    var kc = state.kc != null && Number.isFinite(Number(state.kc)) ? Number(state.kc) : null;
+    var areas = resolveAreaContext(state);
+    var cropHa = areas.cropHa;
+    var irrigatedHa = areas.irrigatedHa;
+    var irrMm = irrigationMmFromInput(state.irrigationValue, state.irrigationUnit || 'mm', irrigatedHa);
+    var etc = et0 != null && kc != null ? round1(et0 * kc) : null;
+    var deficitClimate = et0 != null && rain != null ? round1(et0 - rain) : null;
+    var deficitCrop = etc != null && rain != null ? round1(etc - rain) : null;
+    var balance = etc != null && rain != null ? round1(etc - rain - (irrMm != null ? irrMm : 0)) : null;
+    function volMm(mmVal) {
+      if (mmVal == null || !Number.isFinite(mmVal) || cropHa == null) {
+        return { perHa: null, total: null, wettedMm: null };
+      }
+      var perHa = round1(mmVal * 10);
+      var total = round1(perHa * cropHa);
+      var wettedMm =
+        areas.stripFactor != null && Number.isFinite(areas.stripFactor) ? round1(mmVal * areas.stripFactor) : null;
+      return { perHa: perHa, total: total, wettedMm: wettedMm };
+    }
+    return {
+      periodDays: period,
+      et0: et0,
+      rain: rain,
+      et0Source: et0Source,
+      rainSource: rainSource,
+      kc: kc,
+      etc: etc,
+      deficitClimate: deficitClimate,
+      deficitCrop: deficitCrop,
+      irrigationMm: irrMm,
+      balance: balance,
+      cropHa: cropHa,
+      irrigatedHa: irrigatedHa,
+      hasSplitArea: areas.hasSplit,
+      stripFactor: areas.stripFactor,
+      deficitClimateVol: volMm(deficitClimate),
+      deficitCropVol: volMm(deficitCrop),
+      balanceVol: volMm(balance)
+    };
+  }
+
+  function sourceBadge(source) {
+    if (!source) return '';
+    var colors = { 'satélite': '#0369a1', campo: '#0f766e', macrotúnel: '#7c3aed' };
+    var bg = { 'satélite': '#e0f2fe', campo: '#d1fae5', macrotúnel: '#ede9fe' };
+    return (
+      ' <span style="font-size:11px;font-weight:600;color:' +
+      (colors[source] || '#64748b') +
+      ';background:' +
+      (bg[source] || '#f1f5f9') +
+      ';padding:2px 6px;border-radius:4px;">' +
+      source +
+      '</span>'
+    );
+  }
+
+  async function fetchRollingOpenMeteo(lat, lng) {
+    var today = todayIso();
+    var start = addDaysIso(today, -29);
+    var url =
+      'https://api.open-meteo.com/v1/forecast?latitude=' +
+      encodeURIComponent(lat) +
+      '&longitude=' +
+      encodeURIComponent(lng) +
+      '&start_date=' +
+      encodeURIComponent(start) +
+      '&end_date=' +
+      encodeURIComponent(today) +
+      '&daily=precipitation_sum,et0_fao_evapotranspiration&timezone=auto';
+    var res = await fetch(url);
+    var data = await res.json().catch(function () { return null; });
+    if (!res.ok || !data || !data.daily) {
+      throw new Error((data && (data.reason || data.error)) || 'Open-Meteo sin datos');
+    }
+    return computeRollingWindows(data.daily);
+  }
+
+  function buildSummaryHtml(res) {
+    var periodLabel = res.periodDays === 1 ? '1 día' : res.periodDays === 30 ? '30 días' : '7 días';
+    function summaryLine(label, mmVal, vol) {
+      var mmText = mmVal != null ? fmtMm(mmVal) + ' mm' : '—';
+      var volText = vol && vol.perHa != null ? ' → ' + vol.perHa + ' m³/ha cultivo' : '';
+      var totalText = vol && vol.total != null ? ' (' + vol.total + ' m³ total)' : '';
+      return (
+        '<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:14px;">' +
+        '<span style="color:#475569;">' + label + '</span>' +
+        '<span style="font-weight:600;color:#0f172a;text-align:right;">' + mmText + volText + totalText + '</span></div>'
+      );
+    }
+    function summaryWettedStrip(label, vol) {
+      if (!res.hasSplitArea || !vol || vol.wettedMm == null) return '';
+      return (
+        '<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0 6px 12px;border-bottom:1px dashed #e2e8f0;font-size:13px;color:#0369a1;">' +
+        '<span>↳ ' + label + ' en franja regada (' + fmtMm(res.irrigatedHa) + ' ha)</span>' +
+        '<span style="font-weight:600;text-align:right;">' +
+        fmtMm(vol.wettedMm) +
+        ' mm (mismos ' +
+        (vol.total != null ? vol.total + ' m³' : 'm³') +
+        ')</span></div>'
+      );
+    }
+    var irrVol =
+      res.irrigationMm != null
+        ? {
+            perHa: round1(res.irrigationMm * 10),
+            total: res.irrigatedHa != null ? round1(res.irrigationMm * 10 * res.irrigatedHa) : null,
+            wettedMm: res.irrigationMm
+          }
+        : null;
+    return (
+      '<h4 style="margin:0 0 12px 0;color:#0369a1;font-size:15px;">💧 Estimación rápida (' +
+      periodLabel +
+      ')</h4>' +
+      (res.cropHa != null
+        ? '<p style="margin:0 0 10px 0;font-size:12px;color:#64748b;">Referencia cultivo: <strong>' +
+          fmtMm(res.cropHa) +
+          ' ha</strong>' +
+          (res.hasSplitArea ? ' · Franja regada: <strong>' + fmtMm(res.irrigatedHa) + ' ha</strong>' : '') +
+          '</p>'
+        : '') +
+      summaryLine('ETo' + (res.et0Source ? ' (' + res.et0Source + ')' : ''), res.et0, null) +
+      summaryLine('Lluvia' + (res.rainSource ? ' (' + res.rainSource + ')' : ''), res.rain, null) +
+      summaryLine('Déficit climático (ETo − lluvia)', res.deficitClimate, res.deficitClimateVol) +
+      summaryWettedStrip('Déficit climático', res.deficitClimateVol) +
+      summaryLine('ETc estimada (ETo × Kc)', res.etc, null) +
+      summaryLine('Déficit del cultivo (ETc − lluvia)', res.deficitCrop, res.deficitCropVol) +
+      summaryWettedStrip('Déficit del cultivo', res.deficitCropVol) +
+      summaryLine('Riego aplicado (mm en franja)', res.irrigationMm, irrVol) +
+      summaryLine('Balance hídrico (ETc − lluvia − riego)', res.balance, res.balanceVol) +
+      summaryWettedStrip('Balance por cubrir en riego', res.balanceVol)
+    );
+  }
+
+  var NOTE_STYLE =
+    'margin:0 0 12px 0;padding:12px 14px;font-size:12px;line-height:1.55;color:#475569;' +
+    'background:linear-gradient(135deg,rgba(254,243,199,0.42) 0%,rgba(255,251,235,0.55) 100%);' +
+    'border:1px solid rgba(251,191,36,0.55);border-radius:10px;box-shadow:0 1px 2px rgba(180,83,9,0.06);';
+
+  var KC_WRAP_STYLE =
+    'border:1px solid rgba(14,165,233,0.45);border-radius:10px;padding:0;' +
+    'background:linear-gradient(180deg,rgba(240,249,255,0.65) 0%,rgba(255,255,255,0.92) 100%);' +
+    'box-shadow:0 1px 3px rgba(2,132,199,0.08);';
+
+  var KC_HINT_STYLE =
+    'margin:8px 0 0;padding:8px 10px;font-size:11px;line-height:1.45;color:#0369a1;' +
+    'background:linear-gradient(135deg,rgba(240,249,255,0.78) 0%,rgba(255,255,255,0.96) 100%);' +
+    'border:1px solid rgba(14,165,233,0.42);border-radius:8px;';
+
+  function getKcFieldHintHtml(idPrefix) {
+    idPrefix = idPrefix || 'climate';
+    return (
+      '<button type="button" class="np-irr-kc-scroll-hint" data-kc-prefix="' +
+      idPrefix +
+      '" style="' +
+      KC_HINT_STYLE +
+      'cursor:pointer;text-align:left;width:100%;font-family:inherit;">' +
+      '📋 Puedes tomar <strong>Kc de referencia</strong> de la tabla FAO-56 abajo. ' +
+      '<span style="font-weight:700;white-space:nowrap;">↓ Ver tabla</span></button>'
+    );
+  }
+
+  function scrollToKcTable(idPrefix) {
+    idPrefix = idPrefix || 'climate';
+    var details = document.getElementById(idPrefix + '-fao-kc-details');
+    if (!details) return;
+    if (!details.open) details.open = true;
+    details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    details.style.transition = 'box-shadow 0.35s ease';
+    details.style.boxShadow = '0 0 0 3px rgba(14,165,233,0.38)';
+    setTimeout(function () {
+      details.style.boxShadow = '';
+    }, 2000);
+  }
+
+  function bindKcScrollHints() {
+    if (bindKcScrollHints._bound) return;
+    bindKcScrollHints._bound = true;
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.np-irr-kc-scroll-hint');
+      if (!btn) return;
+      e.preventDefault();
+      scrollToKcTable(btn.getAttribute('data-kc-prefix') || 'climate');
+    });
+  }
+
+  bindKcScrollHints();
+
+  function getNoteHtml(extraStyle) {
+    return (
+      '<p class="np-irr-balance-note" style="' +
+      NOTE_STYLE +
+      (extraStyle || '') +
+      '">' +
+      '<strong>Nota:</strong> El balance hídrico es una <strong>estimación rápida</strong> basada en ETo, lluvia y riego (satélite o valores de campo). ' +
+      'No considera almacenamiento de agua en el suelo, escurrimiento superficial, drenaje profundo ni lixiviación de nutrientes. ' +
+      'El % suelo explorado por raíces (criterio NutriPlant) solo ayuda a estimar la franja regada. <strong>Validar siempre en campo.</strong></p>'
+    );
+  }
+
+  function getKcDetailsHtml(opts) {
+    opts = opts || {};
+    var idPrefix = opts.idPrefix || 'climate';
+    var detailsId = idPrefix + '-fao-kc-details';
+    var searchId = idPrefix + '-fao-kc-search';
+    var tbodyId = idPrefix + '-fao-kc-tbody';
+    return (
+      '<details id="' +
+      detailsId +
+      '" class="np-irr-kc-details" style="' +
+      KC_WRAP_STYLE +
+      '">' +
+      '<summary style="padding:12px 14px;cursor:pointer;font-weight:600;color:#0369a1;font-size:14px;">📋 Tabla de referencia Kc (FAO-56)</summary>' +
+      '<div style="padding:0 14px 14px;">' +
+      '<input type="search" id="' +
+      searchId +
+      '" placeholder="Buscar cultivo…" style="width:100%;padding:8px 10px;border:1px solid #bae6fd;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;background:#fff;">' +
+      '<div style="max-height:280px;overflow:auto;border:1px solid #e0f2fe;border-radius:8px;background:#fff;">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+      '<thead><tr style="background:#f0f9ff;position:sticky;top:0;">' +
+      '<th style="padding:8px;text-align:left;">Cultivo</th>' +
+      '<th style="padding:8px;text-align:left;">Etapa</th>' +
+      '<th style="padding:8px;text-align:center;">Kc (rango FAO)</th></tr></thead>' +
+      '<tbody id="' +
+      tbodyId +
+      '"></tbody></table></div></div></details>'
+    );
+  }
+
+  function renderFaoKcTable(tbodyId, filterText, cropFilter) {
+    var body = document.getElementById(tbodyId);
+    if (!body) return;
+    var rows = w.FAO_KC_REFERENCE || [];
+    var q = String(filterText || '').trim().toLowerCase();
+    var cropQ = String(cropFilter || '').trim().toLowerCase();
+    var html = '';
+    rows.forEach(function (row) {
+      var crop = String(row.crop || '');
+      var stage = String(row.stage || '');
+      var haystack = (crop + ' ' + stage).toLowerCase();
+      if (q && haystack.indexOf(q) < 0) return;
+      var highlight = cropQ && crop.toLowerCase().indexOf(cropQ) >= 0;
+      html +=
+        '<tr style="border-bottom:1px solid #e5e7eb;' +
+        (highlight ? 'background:#ecfdf5;' : '') +
+        '">' +
+        '<td style="padding:6px 8px;">' +
+        crop +
+        '</td><td style="padding:6px 8px;color:#475569;">' +
+        stage +
+        '</td><td style="padding:6px 8px;text-align:center;font-weight:600;">' +
+        row.kcMin.toFixed(2) +
+        ' – ' +
+        row.kcMax.toFixed(2) +
+        '</td></tr>';
+    });
+    body.innerHTML =
+      html ||
+      '<tr><td colspan="3" style="padding:12px;color:#64748b;text-align:center;">Sin coincidencias en la tabla FAO.</td></tr>';
+  }
+
+  w.NpIrrBalance = {
+    round1: round1,
+    fmtMm: fmtMm,
+    computeRollingWindows: computeRollingWindows,
+    getRollingForPeriod: getRollingForPeriod,
+    resolveAreaContext: resolveAreaContext,
+    computeResults: computeResults,
+    sourceBadge: sourceBadge,
+    fetchRollingOpenMeteo: fetchRollingOpenMeteo,
+    buildSummaryHtml: buildSummaryHtml,
+    getNoteHtml: getNoteHtml,
+    getKcDetailsHtml: getKcDetailsHtml,
+    getKcFieldHintHtml: getKcFieldHintHtml,
+    scrollToKcTable: scrollToKcTable,
+    renderFaoKcTable: renderFaoKcTable,
+    NOTE_STYLE: NOTE_STYLE,
+    KC_WRAP_STYLE: KC_WRAP_STYLE,
+    KC_HINT_STYLE: KC_HINT_STYLE
+  };
+})(window);

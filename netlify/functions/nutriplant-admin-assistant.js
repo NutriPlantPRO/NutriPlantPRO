@@ -1100,6 +1100,35 @@ const CLIMATE_MONTH_LABELS = {
   '12': 'Dic'
 };
 
+const CLIMATE_HISTORY_YEARS = 4;
+
+function getClimateYearEntriesFromBlock(block) {
+  if (!block || typeof block !== 'object') return [];
+  if (block.years && typeof block.years === 'object') {
+    return Object.keys(block.years)
+      .map((k) => {
+        const y = parseInt(k, 10);
+        const entry = block.years[k] || {};
+        return {
+          year: y,
+          months: entry.months || {},
+          partial: !!entry.partial,
+          unavailable: !!entry.unavailable
+        };
+      })
+      .filter((e) => Number.isFinite(e.year))
+      .sort((a, b) => a.year - b.year);
+  }
+  const legacy = [];
+  if (block.previousYear != null && block.monthsPrev) {
+    legacy.push({ year: block.previousYear, months: block.monthsPrev, partial: false, unavailable: false });
+  }
+  if (block.currentYear != null && block.monthsCurr) {
+    legacy.push({ year: block.currentYear, months: block.monthsCurr, partial: true, unavailable: false });
+  }
+  return legacy.sort((a, b) => a.year - b.year);
+}
+
 function roundClimate1(n) {
   return Math.round(Number(n) * 10) / 10;
 }
@@ -1135,21 +1164,43 @@ function climateMonthsToRows(monthsObj, year, maxMonth) {
 
 function summarizeRainfallOrEt0(block, kind) {
   if (!block || typeof block !== 'object' || !block.monthsPrev) {
-    return { has_data: false, message: 'Sin datos guardados. El usuario debe pulsar consultar en Clima → Lluvia y ET₀.' };
+    return {
+      has_data: false,
+      message:
+        'Sin datos guardados. El usuario debe pulsar «Obtener lluvia y ET₀» en Clima → Lluvia/Riego (hasta ' +
+        CLIMATE_HISTORY_YEARS +
+        ' años mensuales).'
+    };
   }
   const maxMonth = new Date().getMonth() + 1;
+  const entries = getClimateYearEntriesFromBlock(block);
+  const years = entries.map((entry) => ({
+    year: entry.year,
+    partial: !!entry.partial,
+    unavailable: !!entry.unavailable,
+    rows_mm_by_month: climateMonthsToRows(entry.months, entry.year, entry.partial ? maxMonth : 12),
+    total_mm: sumClimateMonths(entry.months, entry.partial ? maxMonth : 12)
+  }));
   return {
     has_data: true,
     kind,
     unit: block.unit || 'mm',
     fetched_at: block.fetchedAt || null,
+    lat: block.lat != null ? block.lat : null,
+    lng: block.lng != null ? block.lng : null,
+    years_available: years.length,
+    years,
     previous_year: block.previousYear,
     current_year: block.currentYear,
     rows_previous_year: climateMonthsToRows(block.monthsPrev, block.previousYear, 12),
     rows_current_year: climateMonthsToRows(block.monthsCurr, block.currentYear, maxMonth),
-    monthly_diff_mm: block.diff || null,
+    monthly_diff_current_vs_previous_mm: block.diff || null,
     total_previous_year_mm: sumClimateMonths(block.monthsPrev, 12),
-    total_current_year_partial_mm: sumClimateMonths(block.monthsCurr, maxMonth)
+    total_current_year_partial_mm: sumClimateMonths(block.monthsCurr, maxMonth),
+    note:
+      'Histórico mensual Open-Meteo (mm/mes). La app guarda hasta ' +
+      CLIMATE_HISTORY_YEARS +
+      ' años (año en curso parcial). Tablas y gráficas en Clima → Lluvia/Riego.'
   };
 }
 
@@ -1157,6 +1208,8 @@ function summarizeClimateLiveReading(r) {
   if (!r || typeof r !== 'object') {
     return { has_data: false, message: 'Sin lectura de tiempo actual guardada.' };
   }
+  const rainToday = asNum(r.rainTodayMm != null ? r.rainTodayMm : r.rain_1d);
+  const et0Today = asNum(r.et0TodayMm != null ? r.et0TodayMm : r.et0_1d);
   return {
     has_data: true,
     fetched_at: r.fetchedAt || null,
@@ -1168,7 +1221,10 @@ function summarizeClimateLiveReading(r) {
     wind_speed_kmh: asNum(r.windSpeedKmh),
     wind_direction_deg: asNum(r.windDirection),
     cloud_cover_pct: asNum(r.cloudCover),
-    note: 'Lectura guardada en Clima → Tiempo actual (satélite Open-Meteo en el centro del polígono).'
+    rain_today_mm: rainToday,
+    et0_today_mm: et0Today,
+    note:
+      'Lectura guardada en Clima → Tiempo actual (satélite Open-Meteo en el centro del polígono). Incluye lluvia y ET₀ acumulados del día cuando se obtuvo la lectura.'
   };
 }
 
@@ -1462,21 +1518,47 @@ async function fetchRainfallEt0FromOpenMeteo(lat, lng) {
     '-' +
     String(now.getDate()).padStart(2, '0');
 
-  const [dailyPrev, dailyCurr] = await Promise.all([
-    fetchYearDailyClimate(lat, lng, prevYear, prevYear + '-12-31'),
-    fetchYearDailyClimate(lat, lng, currYear, todayKey)
-  ]);
+  const yearsToFetch = [];
+  for (let yi = CLIMATE_HISTORY_YEARS - 1; yi >= 0; yi--) yearsToFetch.push(currYear - yi);
 
-  const rainPrev = aggregateDailyByMonthClimate(dailyPrev.time, dailyPrev.precipitation_sum, prevYear);
-  const rainCurr = aggregateDailyByMonthClimate(dailyCurr.time, dailyCurr.precipitation_sum, currYear);
-  const et0Prev = aggregateDailyByMonthClimate(dailyPrev.time, dailyPrev.et0_fao_evapotranspiration, prevYear);
-  const et0Curr = aggregateDailyByMonthClimate(dailyCurr.time, dailyCurr.et0_fao_evapotranspiration, currYear);
+  const dailyByYear = await Promise.all(
+    yearsToFetch.map((y) => {
+      const end = y === currYear ? todayKey : y + '-12-31';
+      return fetchYearDailyClimate(lat, lng, y, end).catch(() => ({
+        time: [],
+        precipitation_sum: [],
+        et0_fao_evapotranspiration: []
+      }));
+    })
+  );
+
+  function buildYearsPayload(field) {
+    const years = {};
+    yearsToFetch.forEach((y, idx) => {
+      const daily = dailyByYear[idx] || {};
+      years[String(y)] = {
+        months: aggregateDailyByMonthClimate(daily.time, daily[field], y),
+        partial: y === currYear
+      };
+    });
+    return years;
+  }
+
+  const rainYears = buildYearsPayload('precipitation_sum');
+  const et0Years = buildYearsPayload('et0_fao_evapotranspiration');
+  const rainPrev = rainYears[String(prevYear)] ? rainYears[String(prevYear)].months : {};
+  const rainCurr = rainYears[String(currYear)] ? rainYears[String(currYear)].months : {};
+  const et0Prev = et0Years[String(prevYear)] ? et0Years[String(prevYear)].months : {};
+  const et0Curr = et0Years[String(currYear)] ? et0Years[String(currYear)].months : {};
 
   const fetchedAt = new Date().toISOString();
   const rainfall = {
     fetchedAt,
+    lat,
+    lng,
     previousYear: prevYear,
     currentYear: currYear,
+    years: rainYears,
     monthsPrev: rainPrev,
     monthsCurr: rainCurr,
     diff: climateMonthDiff(rainCurr, rainPrev),
@@ -1484,8 +1566,11 @@ async function fetchRainfallEt0FromOpenMeteo(lat, lng) {
   };
   const et0 = {
     fetchedAt,
+    lat,
+    lng,
     previousYear: prevYear,
     currentYear: currYear,
+    years: et0Years,
     monthsPrev: et0Prev,
     monthsCurr: et0Curr,
     diff: climateMonthDiff(et0Curr, et0Prev),
@@ -1494,7 +1579,10 @@ async function fetchRainfallEt0FromOpenMeteo(lat, lng) {
 
   return {
     source: 'open_meteo_live_query',
-    note: 'No guardado en el proyecto; consulta en vivo para admin. Para lo que guardó el usuario usa mode=saved.',
+    note:
+      'No guardado en el proyecto; consulta en vivo para admin (hasta ' +
+      CLIMATE_HISTORY_YEARS +
+      ' años). Para lo que guardó el usuario usa mode=saved.',
     rainfall: summarizeRainfallOrEt0(rainfall, 'precipitation'),
     et0: summarizeRainfallOrEt0(et0, 'et0_fao')
   };
@@ -1508,7 +1596,10 @@ async function fetchClimateLiveFull(lat, lng) {
     encodeURIComponent(lng) +
     '&current=temperature_2m,relative_humidity_2m,shortwave_radiation,uv_index,dew_point_2m,wind_speed_10m,wind_direction_10m,cloud_cover' +
     '&wind_speed_unit=kmh';
-  const res = await fetch(url);
+  const [res, rolling] = await Promise.all([
+    fetch(url),
+    fetchRollingClimateWindowsLive(lat, lng).catch(() => null)
+  ]);
   if (!res.ok) throw new Error('Open-Meteo HTTP ' + res.status);
   const data = await res.json();
   const cur = data && data.current;
@@ -1522,11 +1613,24 @@ async function fetchClimateLiveFull(lat, lng) {
     dewPoint: cur.dew_point_2m,
     windSpeedKmh: cur.wind_speed_10m,
     windDirection: cur.wind_direction_10m,
-    cloudCover: cur.cloud_cover
+    cloudCover: cur.cloud_cover,
+    rainTodayMm:
+      rolling && rolling.rain_1d != null
+        ? rolling.rain_1d
+        : rolling && rolling.rainToday != null
+          ? rolling.rainToday
+          : null,
+    et0TodayMm:
+      rolling && rolling.et0_1d != null
+        ? rolling.et0_1d
+        : rolling && rolling.et0Today != null
+          ? rolling.et0Today
+          : null
   };
   return {
     source: 'open_meteo_live_query',
     ...summarizeClimateLiveReading(reading),
+    rolling_windows_hoy: rolling ? summarizeClimateRolling(rolling) : { has_data: false },
     vpd_simple: calcVpdSimple(Number(reading.temperature), Number(reading.humidity))
   };
 }
@@ -1578,7 +1682,7 @@ async function handleProjectClimate(supabase, params) {
     params.rolling === 'true';
 
   out.gpt_climate_note =
-    'Clima en vivo SIN alterar datos del suscriptor. project_climate params.mode: saved (default, snapshot nube) | live (tiempo actual Open-Meteo) | rainfall_refresh (tablas mensuales lluvia/ET₀ en vivo) | rolling (ventanas 1/7/30 d) | all (todo junto). VPD ahora: project_vpd_live. Radar NDVI/NDMI: radar_project. Si piden «actualizado» o «ahora», usa mode=all o el modo concreto; NO digas que no tienes acceso.';
+    'Clima en vivo SIN alterar datos del suscriptor. project_climate params.mode: saved (default, snapshot: lluvia/ET₀ hasta 4 años en rainfall.years y et0.years; tiempo actual con rain_today_mm/et0_today_mm) | live (tiempo actual + lluvia/ET₀ del día) | rainfall_refresh (4 años mensuales en vivo) | rolling (1/7/30 d) | all. VPD: project_vpd_live. Radar: radar_project. Para histórico mensual usa climate_saved.rainfall.years. Si piden «actualizado», usa mode=all; NO digas que no tienes acceso.';
 
   if (wantSaved) {
     out.climate_saved = summarizeClimateAnalysis(data.climateAnalysis);
@@ -5648,7 +5752,7 @@ async function handleDescribeApi() {
     my_programs_gpt:
       'Escritura limitada y segura para laboratorio personal de Jesús: my_program_project_create/list/get/update. Solo opera proyectos del email admin configurado (default admin@nutriplantpro.com) marcados gptPersonalProgram=true y created_by_gpt=true. Nunca edita proyectos de suscriptores.',
     climate_gpt:
-      'project_climate NO altera al suscriptor. mode=saved → climate_saved (snapshot). mode=live → tiempo_actual_ahora. mode=rainfall_refresh → lluvia_et0_ahora (tablas mensuales). mode=rolling o all → rolling_windows_ahora (1/7/30 d) + irrigation_quick_calc_live si hay calculadora guardada. Si piden «actualizado», usa mode=all.',
+      'project_climate NO altera al suscriptor. mode=saved → climate_saved (snapshot con lluvia/ET₀ mensual hasta 4 años en rainfall.years y et0.years; tiempo actual con rain_today_mm y et0_today_mm; rolling 1/7/30 d; calculadora balance). mode=live → tiempo_actual_ahora + lluvia/ET₀ del día. mode=rainfall_refresh → lluvia_et0_ahora (4 años en vivo). mode=rolling o all → rolling_windows_ahora + irrigation_quick_calc_live. Si preguntan por histórico mensual o gráficas, usa climate_saved.rainfall.years / et0.years. Si piden «actualizado», usa mode=all.',
     nutri_pro_gpt:
       'Texto generado: nutri_pro_save. Adjunto binario real: nutri_pro_upload_link → usuario abre upload_url → nutri_pro_upload_status. Preguntas: nutri_pro_ask. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
     plan_pro_nota_semaforo:
@@ -5711,6 +5815,7 @@ function getOpenApiSpec() {
       '/api/admin-assistant': {
         post: {
           operationId: 'nutriplantAdminQuery',
+          'x-openai-isConsequential': false,
           summary: 'Consulta admin o proyectos de usuarios',
           description:
             'Body: action + params. Análisis: project_analyses. Clima: project_climate. Radar, Plan PRO, project_detail.',
