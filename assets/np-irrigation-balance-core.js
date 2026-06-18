@@ -322,7 +322,7 @@
       '">' +
       '<strong>Nota:</strong> El balance hídrico es una <strong>estimación rápida</strong> basada en ETo, lluvia y riego (satélite o valores de campo). ' +
       'No considera almacenamiento de agua en el suelo, escurrimiento superficial, drenaje profundo ni lixiviación de nutrientes. ' +
-      'El % suelo explorado por raíces (criterio NutriPlant) solo ayuda a estimar la franja regada. <strong>Validar siempre en campo.</strong></p>'
+      'El % raíces en superficie (criterio NutriPlant) solo ayuda a estimar la franja regada en el área, no la profundidad del suelo. <strong>Validar siempre en campo.</strong></p>'
     );
   }
 

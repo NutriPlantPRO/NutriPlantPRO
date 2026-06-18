@@ -13,6 +13,7 @@
   var climateChartYearsVisible = { rain: {}, et0: {} };
   var climateRainChart = null;
   var climateEt0Chart = null;
+  var CLIMATE_CHART_HEIGHT_PX = 560;
 
   /** Nota visible: origen satelital, sin citar proveedor. */
   function climateSatelliteNoteHtml(extraStyle) {
@@ -419,10 +420,14 @@
     var et0ManualEl = document.getElementById('climate-irr-et0-manual');
     var rainManualEl = document.getElementById('climate-irr-rain-manual');
     var useRainEl = document.getElementById('climate-irr-use-manual-rain');
+    var et0Label = document.getElementById('climate-irr-label-manual-et0');
+    var rainLabel = document.getElementById('climate-irr-label-manual-rain');
     if (et0ManualEl) et0ManualEl.disabled = !state.useManualEt0;
     var rainBlocked = state.macroTunnelNoRain;
     if (rainManualEl) rainManualEl.disabled = rainBlocked || !state.useManualRain;
     if (useRainEl) useRainEl.disabled = rainBlocked;
+    if (et0Label) et0Label.style.color = state.useManualEt0 ? '#0369a1' : '#475569';
+    if (rainLabel) rainLabel.style.color = state.useManualRain && !rainBlocked ? '#0369a1' : '#475569';
   }
 
   function resetIrrigationQuickCalcDom() {
@@ -697,7 +702,7 @@
     if (areaNote) {
       var parts = [];
       parts.push(
-        '<strong>Criterio NutriPlant:</strong> el <strong>% suelo explorado por raíces</strong> indica qué fracción del volumen de suelo explora la raíz (allí se usa con profundidad y densidad para kg/ha de nutrientes).'
+        '<strong>Criterio NutriPlant:</strong> el <strong>% raíces en superficie</strong> indica qué parte del <strong>área del cultivo</strong> tiene exploración radical activa (goteo, surco, franja).'
       );
       parts.push(
         'En <strong>riego</strong>, ese mismo % suele traducirse a <strong>superficie regada</strong>: franja ≈ ha cultivo × (% ÷ 100). Los <strong>m³ totales del déficit no se dividen</strong>; el agua se concentra en la franja (más mm, mismos m³).'
@@ -723,7 +728,7 @@
     if (soilReachHint) {
       soilReachHint.textContent =
         areas.soilReachPct != null
-          ? 'Análisis de suelo guardado: ' + areas.soilReachPct + '% explorado por raíces.'
+          ? 'Análisis de suelo guardado: ' + areas.soilReachPct + '% raíces en superficie (mismo valor que Fertilidad).'
           : 'Si tienes análisis de suelo en el proyecto, el % puede cargarse desde ahí.';
     }
     var summary = document.getElementById('climate-irr-summary');
@@ -761,11 +766,11 @@
     var cropPlaceholder = projectHa != null ? 'Vacío = ' + projectHa + ' ha (predio)' : 'Vacío = ha del predio';
     var irrPlaceholder = 'Franja humedecida (goteo)';
 
-    if (root.getAttribute('data-np-irr-version') !== '7') {
+    if (root.getAttribute('data-np-irr-version') !== '9') {
       root.removeAttribute('data-np-irr-rendered');
       root.removeAttribute('data-np-irr-bound');
       root.innerHTML = '';
-      root.setAttribute('data-np-irr-version', '7');
+      root.setAttribute('data-np-irr-version', '9');
     }
 
     if (root.getAttribute('data-np-irr-rendered') !== '1') {
@@ -787,13 +792,13 @@
         '<h4 style="margin:0 0 6px 0;font-size:14px;color:#0f172a;">📋 Mis valores de agua (calculadora)</h4>' +
         '<p id="climate-irr-manual-block-hint" style="margin:0 0 12px;font-size:12px;line-height:1.45;color:#64748b;">ETo, lluvia y riego de esta caja corresponden al <strong>periodo seleccionado arriba</strong>. Si usas valores de campo, ingresa el <strong>acumulado de esos mismos días</strong> (satélite o manual).</p>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:12px;">' +
-        '<div><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;"><input type="checkbox" id="climate-irr-use-manual-et0"> Usar mi ETo del periodo (mm)</label>' +
+        '<div><label id="climate-irr-label-manual-et0" style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;cursor:pointer;"><input type="checkbox" id="climate-irr-use-manual-et0" style="width:auto;margin:0;flex-shrink:0;accent-color:#2563eb;"> <span>Usar mi ETo del periodo (mm)</span></label>' +
         '<input type="number" id="climate-irr-et0-manual" min="0" step="0.1" placeholder="Acumulado del periodo" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box;">' +
         '<p id="climate-irr-et0-sat-hint" style="margin:6px 0 0;font-size:12px;color:#64748b;"></p></div>' +
-        '<div><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;"><input type="checkbox" id="climate-irr-use-manual-rain"> Usar mi lluvia (pluviómetro, mm)</label>' +
+        '<div><label id="climate-irr-label-manual-rain" style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;cursor:pointer;"><input type="checkbox" id="climate-irr-use-manual-rain" style="width:auto;margin:0;flex-shrink:0;accent-color:#2563eb;"> <span>Usar mi lluvia (pluviómetro, mm)</span></label>' +
         '<input type="number" id="climate-irr-rain-manual" min="0" step="0.1" placeholder="Acumulado del periodo" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box;">' +
         '<p id="climate-irr-rain-sat-hint" style="margin:6px 0 0;font-size:12px;color:#64748b;"></p>' +
-        '<label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#475569;"><input type="checkbox" id="climate-irr-macro-tunnel"> Macrotúnel / invernadero (sin lluvia → 0 mm)</label></div>' +
+        '<label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#475569;cursor:pointer;"><input type="checkbox" id="climate-irr-macro-tunnel" style="width:auto;margin:0;flex-shrink:0;accent-color:#2563eb;"> <span>Macrotúnel / invernadero (sin lluvia → 0 mm)</span></label></div>' +
         '</div></div>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px;">' +
         '<div><label style="display:block;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;">Cultivo (opcional)</label>' +
@@ -840,7 +845,8 @@
         '<p style="margin:6px 0 0;font-size:12px;color:#166534;">Zona humedecida (goteo/macrotúnel). Vacío = misma que cultivo.</p></div>' +
         '</div>' +
         '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:12px;">' +
-        '<label style="display:block;font-size:13px;color:#166534;margin-bottom:6px;font-weight:600;">Suelo explorado por raíces (%)</label>' +
+        '<label style="display:block;font-size:13px;color:#166534;margin-bottom:6px;font-weight:600;">Raíces en superficie (% del área)</label>' +
+        '<p style="margin:0 0 8px;font-size:11px;line-height:1.4;color:#15803d;">Fracción del <strong>área del cultivo</strong> con raíces activas / riego localizado. <strong>No es profundidad</strong> del suelo — aquí sirve para sugerir la franja regada.</p>' +
         '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
         '<input type="number" id="climate-irr-root-reach" min="0" max="100" step="1" placeholder="10–100 (vacío = sin usar)" value="' +
         (state.rootReachPct != null ? state.rootReachPct : '') +
@@ -849,7 +855,7 @@
         '<button type="button" id="climate-irr-use-soil-reach" style="padding:10px 14px;background:#fff;color:#166534;border:1px solid #86efac;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Usar % del análisis de suelo</button>' +
         '</div>' +
         '<p id="climate-irr-soil-reach-hint" style="margin:8px 0 0;font-size:12px;color:#15803d;"></p>' +
-        '<p style="margin:6px 0 0;font-size:12px;color:#166534;">Mismo concepto que en <strong>Enmiendas</strong> y <strong>Análisis de suelo → Fertilidad</strong>. Aquí ayuda a estimar la <strong>superficie regada</strong>, no la profundidad del suelo.</p></div>' +
+        '<p style="margin:6px 0 0;font-size:12px;color:#166534;">Mismo % que en <strong>Enmiendas</strong> y <strong>Fertilidad</strong> (allí entra profundidad y densidad). En balance hídrico solo estima <strong>superficie regada</strong>.</p></div>' +
         '<p id="climate-irr-area-note" style="margin:0 0 16px 0;padding:10px 12px;font-size:12px;line-height:1.45;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;"></p>' +
         '<div id="climate-irr-summary" style="background:linear-gradient(135deg,#f0f9ff 0%,#ecfeff 100%);border:1px solid #7dd3fc;border-radius:10px;padding:16px;margin-bottom:16px;"></div>' +
         (window.NpIrrBalance && window.NpIrrBalance.getNoteHtml
@@ -1325,7 +1331,39 @@
     };
   }
 
-  function makeClimateChartOptions(yTitle) {
+  function computeClimateYScale(datasets, kind) {
+    var vals = [];
+    (datasets || []).forEach(function (ds) {
+      (ds.data || []).forEach(function (v) {
+        if (v != null && Number.isFinite(Number(v))) vals.push(Number(v));
+      });
+    });
+    var y = {
+      title: { display: true, text: 'mm/mes' },
+      ticks: { padding: 10, maxTicksLimit: kind === 'et0' ? 8 : 10 }
+    };
+    if (!vals.length) {
+      y.beginAtZero = true;
+      return y;
+    }
+    var minV = Math.min.apply(null, vals);
+    var maxV = Math.max.apply(null, vals);
+    var span = maxV - minV;
+    if (kind === 'et0' && minV > 15 && span < maxV * 0.55) {
+      var pad = Math.max(span * 0.45, 12);
+      y.beginAtZero = false;
+      y.min = Math.max(0, Math.floor((minV - pad) / 5) * 5);
+      y.max = Math.ceil((maxV + pad) / 5) * 5;
+    } else {
+      y.beginAtZero = true;
+      if (maxV > 0) {
+        y.suggestedMax = Math.ceil((maxV * 1.12) / 10) * 10;
+      }
+    }
+    return y;
+  }
+
+  function makeClimateChartOptions(yScale) {
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -1365,7 +1403,7 @@
         }
       },
       scales: {
-        y: { beginAtZero: true, title: { display: true, text: yTitle || 'mm/mes' } },
+        y: yScale || { beginAtZero: true, title: { display: true, text: 'mm/mes' } },
         x: {
           type: 'category',
           title: { display: true, text: 'Mes' },
@@ -1414,7 +1452,9 @@
     var now = new Date();
     var maxMonthCurr = now.getMonth() + 1;
     return (
-      '<div style="margin-bottom:28px;">' +
+      '<div style="margin-bottom:' +
+      (kind === 'et0' ? '0' : '24px') +
+      ';">' +
       '<h4 style="margin:0 0 10px 0;color:' +
       meta.titleColor +
       ';">' +
@@ -1429,7 +1469,9 @@
       '</p>' +
       (block.notes ? '<p style="margin:0 0 10px 0;font-size:12px;color:#b45309;">⚠️ ' + block.notes + '</p>' : '') +
       buildClimateYearToggleHtml(meta.metricKey, entries, meta.colors) +
-      '<div style="height:300px;position:relative;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px 4px;">' +
+      '<div style="height:' +
+      CLIMATE_CHART_HEIGHT_PX +
+      'px;position:relative;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px 6px;">' +
       '<canvas id="' +
       meta.canvasId +
       '"></canvas></div></div>'
@@ -1453,8 +1495,10 @@
     destroyClimateCharts();
     ensureClimateChartYearVisibility(rain, et0);
     wrap.innerHTML =
+      '<div style="background:linear-gradient(180deg,#f8fafc 0%,#fff 100%);border:1px solid #e2e8f0;border-radius:12px;padding:16px 16px 12px;">' +
       buildClimateChartBlock('rain', rain, rain.lat, rain.lng) +
-      buildClimateChartBlock('et0', et0, et0.lat, et0.lng);
+      buildClimateChartBlock('et0', et0, et0.lat, et0.lng) +
+      '</div>';
     bindClimateChartYearToggles(wrap);
     loadClimateChartJs(function () {
       updateClimateRainChart(rain);
@@ -1486,7 +1530,7 @@
     climateRainChart = climateChartDestroyIfOrphaned(climateRainChart);
     var entries = getClimateYearEntries(rain);
     var datasets = getVisibleClimateDatasets(entries, 'rain', CLIMATE_RAIN_COLORS);
-    var opts = makeClimateChartOptions('mm/mes');
+    var opts = makeClimateChartOptions(computeClimateYScale(datasets, 'rain'));
     if (!climateRainChart) {
       try {
         climateRainChart = new Chart(ctx.getContext('2d'), {
@@ -1512,7 +1556,7 @@
     climateEt0Chart = climateChartDestroyIfOrphaned(climateEt0Chart);
     var entries = getClimateYearEntries(et0);
     var datasets = getVisibleClimateDatasets(entries, 'et0', CLIMATE_ET0_COLORS);
-    var opts = makeClimateChartOptions('mm/mes');
+    var opts = makeClimateChartOptions(computeClimateYScale(datasets, 'et0'));
     if (!climateEt0Chart) {
       try {
         climateEt0Chart = new Chart(ctx.getContext('2d'), {
@@ -2045,7 +2089,7 @@
         });
         var canvas = document.createElement('canvas');
         canvas.width = 720;
-        canvas.height = 320;
+        canvas.height = CLIMATE_CHART_HEIGHT_PX;
         canvas.style.cssText = 'position:fixed;left:-9999px;top:0;';
         document.body.appendChild(canvas);
         var chart = null;
@@ -2065,7 +2109,7 @@
                 }
               },
               scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'mm/mes' } },
+                y: computeClimateYScale(datasets, kind),
                 x: { type: 'category', title: { display: true, text: 'Mes' }, ticks: { autoSkip: false } }
               }
             }
