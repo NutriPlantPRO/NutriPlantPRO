@@ -24,6 +24,9 @@
   timeout = 60
   external_node_modules = ["pdf-parse", "xlsx", "mammoth", "jszip"]
 
+[functions."nutriplant-admin-assistant"]
+  timeout = 26
+
 # Inicio: por defecto ir a login (la mayoría de equipos)
 [[redirects]]
   from = "/"

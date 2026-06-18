@@ -234,6 +234,28 @@ async function fetchProfiles(supabase) {
   return data || [];
 }
 
+const PROFILE_STATS_SELECT = 'id, email, is_admin, subscription_status, last_login';
+
+async function fetchProfilesForAdminStats(supabase) {
+  const { data, error } = await supabase.from('profiles').select(PROFILE_STATS_SELECT);
+  if (error) throw new Error('profiles: ' + (error.message || error));
+  return data || [];
+}
+
+async function fetchRecentVisitsForActive30d(supabase) {
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from('dashboard_visits')
+    .select('user_id, visited_at')
+    .gte('visited_at', since)
+    .limit(4000);
+  if (error) {
+    console.warn('dashboard_visits (30d):', error.message);
+    return [];
+  }
+  return data || [];
+}
+
 async function fetchVisits(supabase) {
   const { data, error } = await supabase
     .from('dashboard_visits')
@@ -290,8 +312,8 @@ function latestVisitByUser(visits) {
 
 async function handleAdminStats(supabase) {
   const [profiles, visits, totalProjects] = await Promise.all([
-    fetchProfiles(supabase),
-    fetchVisits(supabase),
+    fetchProfilesForAdminStats(supabase),
+    fetchRecentVisitsForActive30d(supabase),
     fetchProjectsCount(supabase)
   ]);
   const subscribers = profiles.filter(isSubscriberProfile);
