@@ -247,6 +247,12 @@ async function fetchVisits(supabase) {
   return data || [];
 }
 
+async function fetchProjectsCount(supabase) {
+  const { count, error } = await supabase.from('projects').select('id', { count: 'exact', head: true });
+  if (error) throw new Error('projects: ' + (error.message || error));
+  return count || 0;
+}
+
 async function fetchProjects(supabase) {
   const { data, error } = await supabase
     .from('projects')
@@ -283,10 +289,10 @@ function latestVisitByUser(visits) {
 }
 
 async function handleAdminStats(supabase) {
-  const [profiles, visits, projects] = await Promise.all([
+  const [profiles, visits, totalProjects] = await Promise.all([
     fetchProfiles(supabase),
     fetchVisits(supabase),
-    fetchProjects(supabase)
+    fetchProjectsCount(supabase)
   ]);
   const subscribers = profiles.filter(isSubscriberProfile);
   const byStatus = { active: 0, pending: 0, cancelled: 0, expired: 0, inactive: 0, other: 0 };
@@ -303,7 +309,7 @@ async function handleAdminStats(supabase) {
     total_users: subscribers.length,
     active_users_last_30_days: active30,
     subscriptions: byStatus,
-    total_projects: projects.length,
+    total_projects: totalProjects,
     note:
       'Usuarios activos (30 días): último login en profiles o entrada al dashboard en dashboard_visits.'
   };
