@@ -5843,7 +5843,6 @@ function getOpenApiSpec() {
       '/api/admin-assistant': {
         post: {
           operationId: 'nutriplantAdminQuery',
-          'x-openai-isConsequential': false,
           summary: 'Consulta admin o proyectos de usuarios',
           description:
             'Body: action + params. Análisis: project_analyses. Clima: project_climate. Radar, Plan PRO, project_detail.',

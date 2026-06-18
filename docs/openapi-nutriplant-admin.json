@@ -14,7 +14,6 @@
     "/api/admin-assistant": {
       "post": {
         "operationId": "nutriplantAdminQuery",
-        "x-openai-isConsequential": false,
         "summary": "Consulta NutriPlant, Plan PRO y Nutri PRO",
         "description": "NutriPlant + Plan PRO. Nutri PRO: nutri_pro_ask, nutri_pro_save (guardar en carpeta Supabase), nutri_pro_search, nutri_pro_file_text.",
         "requestBody": {
