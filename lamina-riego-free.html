@@ -14,14 +14,40 @@
     .title { margin: 0 0 12px; font-size: 22px; color: #0f172a; font-weight: 800; }
     .intro { margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #64748b; }
     #irr-free-map { height: 220px; width: 100%; border-radius: 10px; border: 1px solid #cbd5e1; z-index: 1; }
-    .coord-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-    @media (max-width: 520px) { .coord-row { grid-template-columns: 1fr; } }
-    .map-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .irr-coord-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    @media (max-width: 520px) {
+      .irr-coord-row { grid-template-columns: 1fr; }
+    }
+    .irr-coord-row label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 4px;
+    }
+    .irr-coord-row input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .map-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
     .map-actions button {
       padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
       font-size: 13px; font-weight: 600; cursor: pointer; color: #0f172a;
     }
-    .map-actions button.primary { background: #0284c7; color: #fff; border-color: #0369a1; }
+    .map-actions button.primary {
+      background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
+      color: #fff;
+      border-color: #0369a1;
+    }
     .map-actions button:disabled { opacity: 0.55; cursor: not-allowed; }
     .period-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; font-weight: 600; cursor: pointer; font-size: 13px; }
     .period-btn.active { border-color: #0284c7; background: #e0f2fe; color: #0369a1; }
@@ -41,10 +67,34 @@
     }
     .field-box label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
     .field-box .field-hint { margin: 6px 0 0; font-size: 11px; line-height: 1.4; color: #64748b; }
-    .field-box .irr-riego-row { display: flex; gap: 8px; align-items: stretch; }
-    .field-box .irr-riego-row input { flex: 1; min-width: 0; }
-    .field-box .irr-riego-row select { width: auto; min-width: 72px; flex-shrink: 0; }
-    #irr-kc-hint-wrap { margin-top: 8px; }
+    .field-box .irr-riego-row {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+      max-width: 220px;
+    }
+    .field-box .irr-riego-row input {
+      flex: 1;
+      min-width: 0;
+      border: none !important;
+      border-radius: 0 !important;
+    }
+    .field-box .irr-riego-row select {
+      width: auto;
+      min-width: 4.25rem;
+      flex-shrink: 0;
+      border: none !important;
+      border-left: 1px solid #cbd5e1 !important;
+      border-radius: 0 !important;
+      background: #f8fafc;
+      font-weight: 700;
+      color: #0369a1;
+      padding: 10px 10px;
+    }
+    #irr-kc-hint-wrap { margin-top: 4px; }
     .field-box label.irr-manual-opt {
       display: flex;
       align-items: center;
@@ -66,9 +116,8 @@
     .irr-calc-roots .irr-root-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .irr-calc-roots .irr-root-row input { width: 110px; flex-shrink: 0; }
     .irr-calc-roots .irr-root-row button {
-      flex: 1;
-      min-width: 160px;
-      padding: 10px 12px;
+      flex: 0 0 auto;
+      padding: 8px 12px;
       background: #16a34a;
       color: #fff;
       border: none;
@@ -76,6 +125,7 @@
       font-weight: 600;
       cursor: pointer;
       font-size: 12px;
+      white-space: nowrap;
     }
     #irr-summary {
       background: linear-gradient(135deg, #f0f9ff 0%, #ecfeff 100%);
@@ -90,22 +140,28 @@
   <div class="wrap">
     <h2 class="title">💧 Lámina de riego y balance hídrico</h2>
     <p class="intro">
-      Elige un punto en el mapa (como en VPD). NutriPlant consulta <strong>lluvia y ETo</strong> (Open-Meteo, respaldo satelital) y calcula déficit y balance para <strong>1 o 7 días</strong>.
+      Elige un punto en el mapa (como en VPD). NutriPlant consulta <strong>lluvia y ETo</strong> con <strong>información meteorológica con respaldo satelital</strong> y calcula déficit y balance para <strong>1 o 7 días</strong>.
       Puedes ajustar Kc, riego aplicado y superficies. Estimación rápida — <strong>validar en campo</strong>.
     </p>
 
-    <div style="background:#fefce8;border:2px solid #eab308;border-radius:12px;padding:16px;margin-bottom:16px;">
-      <h3 style="margin:0 0 8px;color:#854d0e;font-size:16px;">🗺️ Ubicación del predio</h3>
-      <p style="margin:0 0 12px;font-size:13px;color:#713f12;line-height:1.45;">Mapa, GPS o escribe lat/lng. Luego obtén clima para cargar ETo y lluvia del periodo.</p>
-      <div class="coord-row">
-        <div><label style="font-size:12px;font-weight:600;">Latitud</label><input id="irr-free-lat" type="number" step="any" placeholder="19.4326" /></div>
-        <div><label style="font-size:12px;font-weight:600;">Longitud</label><input id="irr-free-lng" type="number" step="any" placeholder="-99.1332" /></div>
+    <div style="background:#fefce8;border:2px solid #eab308;border-radius:12px;padding:20px;margin-bottom:20px;">
+      <h3 style="margin:0 0 8px;color:#854d0e;font-size:17px;font-weight:600;">🗺️ Ubicación del predio</h3>
+      <p style="margin:0 0 14px;font-size:13px;color:#713f12;line-height:1.45;">Mapa, GPS o escribe lat/lng. Luego obtén clima para cargar ETo y lluvia del periodo.</p>
+      <div class="irr-coord-row">
+        <div>
+          <label for="irr-free-lat">Latitud</label>
+          <input id="irr-free-lat" type="number" step="any" placeholder="ej. 19.4326" />
+        </div>
+        <div>
+          <label for="irr-free-lng">Longitud</label>
+          <input id="irr-free-lng" type="number" step="any" placeholder="ej. -99.1332" />
+        </div>
       </div>
       <div class="map-actions">
         <button type="button" id="irr-btn-geo" onclick="irrFreeUseMyLocation()">📍 Mi ubicación</button>
         <button type="button" class="primary" id="irr-btn-fetch" onclick="irrFreeFetchClimate()">🌧️ Obtener clima y calcular</button>
       </div>
-      <p id="irr-geo-status" style="font-size:12px;color:#64748b;min-height:1.2em;margin:0 0 8px;"></p>
+      <p id="irr-geo-status" aria-live="polite" style="font-size:12px;color:#64748b;min-height:1.2em;margin:0 0 8px;"></p>
       <div id="irr-free-map"></div>
     </div>
 
@@ -327,7 +383,7 @@
       }
       var btn = document.getElementById('irr-btn-fetch');
       if (btn) btn.disabled = true;
-      irrSetStatus('🌧️ Consultando Open-Meteo…');
+      irrSetStatus('🌧️ Consultando clima…');
       try {
         irrRolling = await window.NpIrrBalance.fetchRollingOpenMeteo(c.lat, c.lng);
         irrRestoreClimateMeta();
@@ -337,7 +393,7 @@
       } catch (e) {
         console.warn(e);
         irrSetStatus('⚠️ No se pudo obtener clima. Revisa conexión o coordenadas.');
-        alert('No se pudo consultar Open-Meteo.');
+        alert('No se pudo obtener el clima en ese punto. Revisa la conexión o las coordenadas.');
       } finally {
         if (btn) btn.disabled = false;
       }

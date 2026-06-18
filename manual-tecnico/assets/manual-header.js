@@ -1,5 +1,5 @@
 /**
- * Manual técnico — botones Manual Técnico / Autoría (iconos + estilo portal).
+ * Manual técnico — botones Manual Técnico / Autoría (contorno discreto + iconos).
  */
 (function () {
   'use strict';
@@ -55,7 +55,7 @@
     manual.className = 'mt-portal-btn mt-portal-btn--manual';
     manual.title = 'Manual técnico NutriPlant PRO';
     if (flags.isIndex) manual.classList.add('mt-portal-btn--active');
-    manual.appendChild(iconImg(base + 'assets/N_Hoja_Blanca.png', 18));
+    manual.appendChild(iconImg(base + 'assets/N_Hoja_Azul.png', 18));
     var span = document.createElement('span');
     span.className = 'mt-portal-btn__text';
     span.textContent = 'Manual Técnico';

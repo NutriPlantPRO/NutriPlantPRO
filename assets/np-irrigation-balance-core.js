@@ -271,9 +271,35 @@
     'box-shadow:0 1px 3px rgba(2,132,199,0.08);';
 
   var KC_HINT_STYLE =
-    'margin:8px 0 0;padding:8px 10px;font-size:11px;line-height:1.45;color:#0369a1;' +
+    'margin:4px 0 0;padding:6px 8px;font-size:11px;line-height:1.4;color:#0369a1;' +
     'background:linear-gradient(135deg,rgba(240,249,255,0.78) 0%,rgba(255,255,255,0.96) 100%);' +
     'border:1px solid rgba(14,165,233,0.42);border-radius:8px;';
+
+  function ensureIrrCalcStyles() {
+    if (ensureIrrCalcStyles._done) return;
+    ensureIrrCalcStyles._done = true;
+    var css = document.createElement('style');
+    css.id = 'np-irr-calc-ui';
+    css.textContent =
+      '.np-irr-kc-field{display:flex;flex-direction:column;gap:0;align-self:start;max-width:100%;}' +
+      '.np-irr-kc-field input{margin-bottom:0;}' +
+      '.np-irr-kc-scroll-hint{margin-top:4px!important;}' +
+      '.np-irr-value-unit{display:flex;align-items:stretch;border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;background:#fff;width:100%;max-width:220px;}' +
+      '.np-irr-value-unit input{flex:1;min-width:0;border:none!important;border-radius:0!important;box-shadow:none!important;padding:10px 12px;font-size:14px;}' +
+      '.np-irr-value-unit select{width:auto;min-width:4.25rem;flex-shrink:0;border:none!important;border-left:1px solid #cbd5e1!important;border-radius:0!important;background:#f8fafc;font-weight:700;color:#0369a1;padding:10px 10px;font-size:14px;cursor:pointer;}' +
+      '.np-irr-calc-row-3{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:16px;align-items:start;}' +
+      '@media (max-width:720px){.np-irr-calc-row-3{grid-template-columns:1fr;}.np-irr-value-unit{max-width:100%;}}' +
+      '.np-irr-root-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}' +
+      '.np-irr-root-actions input{width:100px!important;flex-shrink:0;padding:10px 12px;border:1px solid #86efac;border-radius:8px;font-size:14px;}' +
+      '.np-irr-btn-suggest,.np-irr-btn-soil{flex:0 0 auto;padding:8px 12px;font-size:12px;white-space:nowrap;border-radius:8px;font-weight:600;cursor:pointer;line-height:1.25;}' +
+      '.np-irr-btn-suggest{background:#16a34a;color:#fff;border:none;}' +
+      '.np-irr-btn-suggest:hover{background:#15803d;}' +
+      '.np-irr-btn-soil{background:#fff;color:#166534;border:1px solid #86efac;}' +
+      '.np-irr-btn-soil:hover{background:#f0fdf4;}';
+    document.head.appendChild(css);
+  }
+
+  ensureIrrCalcStyles();
 
   function getKcFieldHintHtml(idPrefix) {
     idPrefix = idPrefix || 'climate';
@@ -400,6 +426,7 @@
     getNoteHtml: getNoteHtml,
     getKcDetailsHtml: getKcDetailsHtml,
     getKcFieldHintHtml: getKcFieldHintHtml,
+    ensureIrrCalcStyles: ensureIrrCalcStyles,
     scrollToKcTable: scrollToKcTable,
     renderFaoKcTable: renderFaoKcTable,
     NOTE_STYLE: NOTE_STYLE,

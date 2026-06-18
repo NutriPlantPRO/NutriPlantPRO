@@ -11,8 +11,8 @@
   var CLIMATE_ET0_COLORS = ['#991b1b', '#c2410c', '#f97316', '#fbbf24'];
   var climateRainfallViewMode = 'table';
   var climateChartYearsVisible = { rain: {}, et0: {} };
-  var climateRainChart = null;
-  var climateEt0Chart = null;
+  var climateCombinedChart = null;
+  var CLIMATE_COMBINED_CANVAS_ID = 'climate-combined-chart';
   var CLIMATE_CHART_HEIGHT_PX = 560;
 
   /** Nota visible: origen satelital, sin citar proveedor. */
@@ -766,12 +766,13 @@
     var cropPlaceholder = projectHa != null ? 'Vacío = ' + projectHa + ' ha (predio)' : 'Vacío = ha del predio';
     var irrPlaceholder = 'Franja humedecida (goteo)';
 
-    if (root.getAttribute('data-np-irr-version') !== '9') {
+    if (root.getAttribute('data-np-irr-version') !== '10') {
       root.removeAttribute('data-np-irr-rendered');
       root.removeAttribute('data-np-irr-bound');
       root.innerHTML = '';
-      root.setAttribute('data-np-irr-version', '9');
+      root.setAttribute('data-np-irr-version', '10');
     }
+    if (window.NpIrrBalance && window.NpIrrBalance.ensureIrrCalcStyles) window.NpIrrBalance.ensureIrrCalcStyles();
 
     if (root.getAttribute('data-np-irr-rendered') !== '1') {
       root.innerHTML =
@@ -806,20 +807,20 @@
         (state.cropName ? String(state.cropName).replace(/"/g, '&quot;') : '') +
         '" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box;"></div>' +
         '<div><label style="display:block;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;">Kc (editable)</label>' +
+        '<div class="np-irr-kc-field">' +
         '<input type="number" id="climate-irr-kc" min="0" max="2" step="0.01" placeholder="Sin valor precargado" value="' +
         (state.kc != null ? state.kc : '') +
         '" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box;">' +
         (window.NpIrrBalance && window.NpIrrBalance.getKcFieldHintHtml
           ? window.NpIrrBalance.getKcFieldHintHtml('climate')
-          : '<p style="margin:8px 0 0;font-size:11px;color:#0369a1;">Consulta la tabla Kc FAO-56 abajo.</p>') +
+          : '<p style="margin:4px 0 0;font-size:11px;color:#0369a1;">Consulta la tabla Kc FAO-56 abajo.</p>') +
+        '</div></div>' +
         '</div>' +
-        '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px;">' +
+        '<div class="np-irr-calc-row-3">' +
         '<div><label style="display:block;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;">Riego total del periodo</label>' +
-        '<div style="display:flex;gap:8px;"><input type="number" id="climate-irr-applied" min="0" step="0.1" placeholder="Acumulado del periodo" value="' +
+        '<div class="np-irr-value-unit"><input type="number" id="climate-irr-applied" min="0" step="0.1" placeholder="Acumulado del periodo" value="' +
         (state.irrigationValue != null ? state.irrigationValue : '') +
-        '" style="flex:1;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box;">' +
-        '<select id="climate-irr-unit" style="padding:10px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:#fff;">' +
+        '"><select id="climate-irr-unit" aria-label="Unidad de riego">' +
         '<option value="mm"' +
         (state.irrigationUnit !== 'm3' ? ' selected' : '') +
         '>mm</option>' +
@@ -847,12 +848,12 @@
         '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:12px;">' +
         '<label style="display:block;font-size:13px;color:#166534;margin-bottom:6px;font-weight:600;">Raíces en superficie (% del área)</label>' +
         '<p style="margin:0 0 8px;font-size:11px;line-height:1.4;color:#15803d;">Fracción del <strong>área del cultivo</strong> con raíces activas / riego localizado. <strong>No es profundidad</strong> del suelo — aquí sirve para sugerir la franja regada.</p>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+        '<div class="np-irr-root-actions">' +
         '<input type="number" id="climate-irr-root-reach" min="0" max="100" step="1" placeholder="10–100 (vacío = sin usar)" value="' +
         (state.rootReachPct != null ? state.rootReachPct : '') +
-        '" style="width:120px;padding:10px 12px;border:1px solid #86efac;border-radius:8px;font-size:14px;">' +
-        '<button type="button" id="climate-irr-apply-reach" style="padding:10px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Sugerir franja regada</button>' +
-        '<button type="button" id="climate-irr-use-soil-reach" style="padding:10px 14px;background:#fff;color:#166534;border:1px solid #86efac;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Usar % del análisis de suelo</button>' +
+        '">' +
+        '<button type="button" id="climate-irr-apply-reach" class="np-irr-btn-suggest">Sugerir franja regada</button>' +
+        '<button type="button" id="climate-irr-use-soil-reach" class="np-irr-btn-soil">Usar % del análisis de suelo</button>' +
         '</div>' +
         '<p id="climate-irr-soil-reach-hint" style="margin:8px 0 0;font-size:12px;color:#15803d;"></p>' +
         '<p style="margin:6px 0 0;font-size:12px;color:#166534;">Mismo % que en <strong>Enmiendas</strong> y <strong>Fertilidad</strong> (allí entra profundidad y densidad). En balance hídrico solo estima <strong>superficie regada</strong>.</p></div>' +
@@ -1313,15 +1314,15 @@
     return chart;
   }
 
-  function makeClimateLineDataset(label, data, color) {
-    return {
+  function makeClimateLineDataset(label, data, color, dashed) {
+    var ds = {
       label: label,
       data: data,
       borderColor: color,
       backgroundColor: 'transparent',
       tension: 0.3,
-      borderWidth: 2,
-      pointRadius: 2.25,
+      borderWidth: dashed ? 2.2 : 2.4,
+      pointRadius: dashed ? 2 : 2.25,
       pointHoverRadius: 4,
       pointHitRadius: 6,
       pointBorderWidth: 1.2,
@@ -1329,9 +1330,11 @@
       pointBorderColor: '#ffffff',
       spanGaps: false
     };
+    if (dashed) ds.borderDash = [7, 5];
+    return ds;
   }
 
-  function computeClimateYScale(datasets, kind) {
+  function computeClimateYScale(datasets) {
     var vals = [];
     (datasets || []).forEach(function (ds) {
       (ds.data || []).forEach(function (v) {
@@ -1340,25 +1343,13 @@
     });
     var y = {
       title: { display: true, text: 'mm/mes' },
-      ticks: { padding: 10, maxTicksLimit: kind === 'et0' ? 8 : 10 }
+      ticks: { padding: 10, maxTicksLimit: 10 },
+      beginAtZero: true
     };
-    if (!vals.length) {
-      y.beginAtZero = true;
-      return y;
-    }
-    var minV = Math.min.apply(null, vals);
+    if (!vals.length) return y;
     var maxV = Math.max.apply(null, vals);
-    var span = maxV - minV;
-    if (kind === 'et0' && minV > 15 && span < maxV * 0.55) {
-      var pad = Math.max(span * 0.45, 12);
-      y.beginAtZero = false;
-      y.min = Math.max(0, Math.floor((minV - pad) / 5) * 5);
-      y.max = Math.ceil((maxV + pad) / 5) * 5;
-    } else {
-      y.beginAtZero = true;
-      if (maxV > 0) {
-        y.suggestedMax = Math.ceil((maxV * 1.12) / 10) * 10;
-      }
+    if (maxV > 0) {
+      y.suggestedMax = Math.ceil((maxV * 1.12) / 10) * 10;
     }
     return y;
   }
@@ -1413,10 +1404,12 @@
     };
   }
 
-  function buildClimateYearToggleHtml(metricKey, entries, colors) {
+  function buildClimateYearToggleHtml(metricKey, entries, colors, marginBottom) {
     if (!entries.length) return '';
     return (
-      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px 0;">' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 ' +
+      (marginBottom != null ? marginBottom : 12) +
+      'px 0;">' +
       '<span style="font-size:13px;color:#64748b;font-weight:600;">Años visibles:</span>' +
       entries
         .map(function (entry, idx) {
@@ -1429,6 +1422,8 @@
             metricKey +
             '" data-year="' +
             yearKey +
+            '" data-color="' +
+            color +
             '" style="padding:6px 12px;border-radius:999px;border:2px solid ' +
             color +
             ';background:' +
@@ -1442,6 +1437,46 @@
         })
         .join('') +
       '</div>'
+    );
+  }
+
+  function buildClimateCombinedChartHtml(rain, et0) {
+    var rainEntries = getClimateYearEntries(rain);
+    var et0Entries = getClimateYearEntries(et0);
+    if (!rainEntries.length && !et0Entries.length) {
+      return '<p style="margin:0;color:#64748b;font-size:13px;">Sin datos para graficar.</p>';
+    }
+    var lat = rain && rain.lat != null ? rain.lat : et0 && et0.lat;
+    var lng = rain && rain.lng != null ? rain.lng : et0 && et0.lng;
+    var notesHtml = '';
+    if (rain && rain.notes) {
+      notesHtml += '<p style="margin:0 0 8px;font-size:12px;color:#b45309;">⚠️ Lluvia: ' + rain.notes + '</p>';
+    }
+    if (et0 && et0.notes) {
+      notesHtml += '<p style="margin:0 0 8px;font-size:12px;color:#b45309;">⚠️ ET₀: ' + et0.notes + '</p>';
+    }
+    return (
+      '<h4 style="margin:0 0 8px;color:#0f172a;font-size:16px;font-weight:700;">📊 Lluvia vs ET₀ (mm/mes)</h4>' +
+      '<p style="margin:0 0 14px;font-size:13px;color:#64748b;line-height:1.45;">Punto del predio: <strong>' +
+      Number(lat).toFixed(5) +
+      ', ' +
+      Number(lng).toFixed(5) +
+      '</strong>. Misma escala para comparar lo llovido frente a la evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀.</p>' +
+      notesHtml +
+      '<div style="margin-bottom:4px;">' +
+      '<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#0369a1;">🌧️ Precipitación acumulada (mm/mes)</p>' +
+      buildClimateYearToggleHtml('rain', rainEntries, CLIMATE_RAIN_COLORS, 14) +
+      '</div>' +
+      '<div style="margin-bottom:12px;">' +
+      '<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#b45309;">☀️ ET₀ — Evapotranspiración de referencia (mm/mes)</p>' +
+      buildClimateYearToggleHtml('et0', et0Entries, CLIMATE_ET0_COLORS, 0) +
+      '</div>' +
+      '<div style="height:' +
+      CLIMATE_CHART_HEIGHT_PX +
+      'px;position:relative;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px 6px;">' +
+      '<canvas id="' +
+      CLIMATE_COMBINED_CANVAS_ID +
+      '"></canvas></div>'
     );
   }
 
@@ -1479,14 +1514,71 @@
   }
 
   function destroyClimateCharts() {
-    if (climateRainChart) {
-      try { climateRainChart.destroy(); } catch (e) {}
-      climateRainChart = null;
+    if (climateCombinedChart) {
+      try { climateCombinedChart.destroy(); } catch (e) {}
+      climateCombinedChart = null;
     }
-    if (climateEt0Chart) {
-      try { climateEt0Chart.destroy(); } catch (e) {}
-      climateEt0Chart = null;
+  }
+
+  function getVisibleClimateDatasets(entries, metricKey, colors, opts) {
+    opts = opts || {};
+    var now = new Date();
+    var currYear = now.getFullYear();
+    var prefix = opts.labelPrefix || '';
+    var dashed = !!opts.dashed;
+    return entries
+      .filter(function (entry) {
+        return climateChartYearsVisible[metricKey][String(entry.year)] !== false;
+      })
+      .map(function (entry) {
+        var colorIdx = entries.findIndex(function (e) { return e.year === entry.year; });
+        var color = colors[colorIdx] != null ? colors[colorIdx] : colors[colors.length - 1];
+        var maxMonth = entry.partial || entry.year === currYear ? now.getMonth() + 1 : 12;
+        var yearLabel = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+        var label = prefix ? prefix + ' ' + yearLabel : yearLabel;
+        return makeClimateLineDataset(label, monthsToChartSeries(entry.months, maxMonth), color, dashed);
+      });
+  }
+
+  function getCombinedClimateChartDatasets(rain, et0) {
+    var rainDs = rain
+      ? getVisibleClimateDatasets(getClimateYearEntries(rain), 'rain', CLIMATE_RAIN_COLORS, {
+          labelPrefix: '🌧',
+          dashed: false
+        })
+      : [];
+    var et0Ds = et0
+      ? getVisibleClimateDatasets(getClimateYearEntries(et0), 'et0', CLIMATE_ET0_COLORS, {
+          labelPrefix: '☀ ET₀',
+          dashed: true
+        })
+      : [];
+    return rainDs.concat(et0Ds);
+  }
+
+  function updateClimateCombinedChart(rain, et0) {
+    if (!window.Chart) return;
+    var ctx = document.getElementById(CLIMATE_COMBINED_CANVAS_ID);
+    if (!ctx) return;
+    climateCombinedChart = climateChartDestroyIfOrphaned(climateCombinedChart);
+    var datasets = getCombinedClimateChartDatasets(rain, et0);
+    var opts = makeClimateChartOptions(computeClimateYScale(datasets));
+    if (!climateCombinedChart) {
+      try {
+        climateCombinedChart = new Chart(ctx.getContext('2d'), {
+          type: 'line',
+          data: { labels: MONTH_LABELS.slice(), datasets: datasets },
+          options: opts
+        });
+      } catch (e) {
+        console.warn('climate combined chart', e);
+      }
+      return;
     }
+    climateCombinedChart.data.labels = MONTH_LABELS.slice();
+    climateCombinedChart.data.datasets = datasets;
+    climateCombinedChart.options = opts;
+    climateCombinedChart.update();
   }
 
   function renderClimateRainfallCharts(rain, et0) {
@@ -1496,92 +1588,19 @@
     ensureClimateChartYearVisibility(rain, et0);
     wrap.innerHTML =
       '<div style="background:linear-gradient(180deg,#f8fafc 0%,#fff 100%);border:1px solid #e2e8f0;border-radius:12px;padding:16px 16px 12px;">' +
-      buildClimateChartBlock('rain', rain, rain.lat, rain.lng) +
-      buildClimateChartBlock('et0', et0, et0.lat, et0.lng) +
+      buildClimateCombinedChartHtml(rain, et0) +
       '</div>';
     bindClimateChartYearToggles(wrap);
     loadClimateChartJs(function () {
-      updateClimateRainChart(rain);
-      updateClimateEt0Chart(et0);
+      updateClimateCombinedChart(rain, et0);
       resizeClimateCharts();
     });
-  }
-
-  function getVisibleClimateDatasets(entries, metricKey, colors) {
-    var now = new Date();
-    var currYear = now.getFullYear();
-    return entries
-      .filter(function (entry) {
-        return climateChartYearsVisible[metricKey][String(entry.year)] !== false;
-      })
-      .map(function (entry) {
-        var colorIdx = entries.findIndex(function (e) { return e.year === entry.year; });
-        var color = colors[colorIdx] != null ? colors[colorIdx] : colors[colors.length - 1];
-        var maxMonth = entry.partial || entry.year === currYear ? now.getMonth() + 1 : 12;
-        var label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
-        return makeClimateLineDataset(label, monthsToChartSeries(entry.months, maxMonth), color);
-      });
-  }
-
-  function updateClimateRainChart(rain) {
-    if (!window.Chart) return;
-    var ctx = document.getElementById('climate-rain-chart');
-    if (!ctx || !rain) return;
-    climateRainChart = climateChartDestroyIfOrphaned(climateRainChart);
-    var entries = getClimateYearEntries(rain);
-    var datasets = getVisibleClimateDatasets(entries, 'rain', CLIMATE_RAIN_COLORS);
-    var opts = makeClimateChartOptions(computeClimateYScale(datasets, 'rain'));
-    if (!climateRainChart) {
-      try {
-        climateRainChart = new Chart(ctx.getContext('2d'), {
-          type: 'line',
-          data: { labels: MONTH_LABELS.slice(), datasets: datasets },
-          options: opts
-        });
-      } catch (e) {
-        console.warn('climate rain chart', e);
-      }
-      return;
-    }
-    climateRainChart.data.labels = MONTH_LABELS.slice();
-    climateRainChart.data.datasets = datasets;
-    climateRainChart.options = opts;
-    climateRainChart.update();
-  }
-
-  function updateClimateEt0Chart(et0) {
-    if (!window.Chart) return;
-    var ctx = document.getElementById('climate-et0-chart');
-    if (!ctx || !et0) return;
-    climateEt0Chart = climateChartDestroyIfOrphaned(climateEt0Chart);
-    var entries = getClimateYearEntries(et0);
-    var datasets = getVisibleClimateDatasets(entries, 'et0', CLIMATE_ET0_COLORS);
-    var opts = makeClimateChartOptions(computeClimateYScale(datasets, 'et0'));
-    if (!climateEt0Chart) {
-      try {
-        climateEt0Chart = new Chart(ctx.getContext('2d'), {
-          type: 'line',
-          data: { labels: MONTH_LABELS.slice(), datasets: datasets },
-          options: opts
-        });
-      } catch (e) {
-        console.warn('climate et0 chart', e);
-      }
-      return;
-    }
-    climateEt0Chart.data.labels = MONTH_LABELS.slice();
-    climateEt0Chart.data.datasets = datasets;
-    climateEt0Chart.options = opts;
-    climateEt0Chart.update();
   }
 
   function resizeClimateCharts() {
     var doResize = function () {
       try {
-        if (climateRainChart && typeof climateRainChart.resize === 'function') climateRainChart.resize();
-      } catch (e) {}
-      try {
-        if (climateEt0Chart && typeof climateEt0Chart.resize === 'function') climateEt0Chart.resize();
+        if (climateCombinedChart && typeof climateCombinedChart.resize === 'function') climateCombinedChart.resize();
       } catch (e) {}
     };
     requestAnimationFrame(function () {
@@ -1602,11 +1621,15 @@
       var year = btn.getAttribute('data-year');
       if (!metric || !year || !climateChartYearsVisible[metric]) return;
       climateChartYearsVisible[metric][year] = climateChartYearsVisible[metric][year] === false;
+      var on = climateChartYearsVisible[metric][year] !== false;
+      var color = btn.getAttribute('data-color') || '#64748b';
+      btn.style.background = on ? color : '#fff';
+      btn.style.color = on ? '#fff' : color;
       ensureClimateAnalysisStructures();
       var p = getProject();
       var rain = p && p.climateAnalysis && p.climateAnalysis.rainfall;
       var et0 = p && p.climateAnalysis && p.climateAnalysis.et0;
-      renderClimateRainfallCharts(rain, et0);
+      updateClimateCombinedChart(rain, et0);
     });
   }
 
@@ -2014,7 +2037,7 @@
       loc.lng.toFixed(5) +
       '</strong> (centro del polígono). Hasta ' +
       CLIMATE_HISTORY_YEARS +
-      ' años (Open-Meteo).</p>' +
+      ' años.</p>' +
       '<button type="button" id="climate-btn-fetch-rainfall" onclick="window.fetchClimateRainfallAndET0 && window.fetchClimateRainfallAndET0(event)" ' +
       'style="padding:12px 18px;background:#0284c7;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;margin-bottom:12px;">⬇️ Obtener lluvia y ET₀</button>' +
       '<p id="climate-rainfall-status" style="margin:0 0 16px 0;font-size:13px;color:#64748b;"></p>' +
@@ -2085,7 +2108,9 @@
           var color = meta.colors[idx] != null ? meta.colors[idx] : meta.colors[meta.colors.length - 1];
           var maxMonth = entry.partial ? maxMonthCurr : 12;
           var label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
-          return makeClimateLineDataset(label, monthsToChartSeries(entry.months, maxMonth), color);
+          if (kind === 'et0') label = '☀ ET₀ ' + label;
+          else if (kind === 'rain') label = '🌧 ' + label;
+          return makeClimateLineDataset(label, monthsToChartSeries(entry.months, maxMonth), color, kind === 'et0');
         });
         var canvas = document.createElement('canvas');
         canvas.width = 720;
@@ -2109,7 +2134,7 @@
                 }
               },
               scales: {
-                y: computeClimateYScale(datasets, kind),
+                y: computeClimateYScale(datasets),
                 x: { type: 'category', title: { display: true, text: 'Mes' }, ticks: { autoSkip: false } }
               }
             }
