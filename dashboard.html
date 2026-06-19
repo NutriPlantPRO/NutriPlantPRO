@@ -196,11 +196,13 @@
           <button type="button" id="btn-water-hardness-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showWaterHardnessCalculator()" data-np-tooltip="Diagnóstico de agua y acondicionamiento" aria-label="Diagnóstico de agua y acondicionamiento">💦</button>
           <button type="button" id="btn-soil-water-texture-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSoilWaterTextureTool()" data-np-tooltip="Agua en suelo y textura" aria-label="Agua en suelo y textura">🪨</button>
           <button type="button" id="btn-lamina-riego-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showLaminaRiegoTool()" data-np-tooltip="Lámina de riego y balance hídrico" aria-label="Lámina de riego y balance hídrico">🌧️</button>
+          <button type="button" id="btn-vpd-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showVPDCalculator()" data-np-tooltip="Estimador de déficit de presión de vapor" aria-label="Estimador de déficit de presión de vapor">🌡️</button>
           <button type="button" id="btn-fertilizer-solubility-salt-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerSolubilitySaltTool()" data-np-tooltip="Solubilidad e índice salino" aria-label="Solubilidad e índice salino">🧂</button>
           <button type="button" id="btn-extraccion-etapa-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showExtraccionEtapaCalculator()" data-np-tooltip="Distribución nutrimental por etapa (%)" aria-label="Distribución nutrimental por etapa (porcentaje)">📊</button>
           <button type="button" id="btn-periodic-table-nutrients" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showPeriodicTableNutrientsCalculator()" data-np-tooltip="Tabla Periódica (Nutrientes Esenciales)" aria-label="Tabla Periódica (Nutrientes Esenciales)">⚛️</button>
           <button type="button" id="btn-nutrient-interactions-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientInteractionsTool()" data-np-tooltip="Interacciones y movilidad nutrimental" aria-label="Interacciones y movilidad nutrimental">🔗</button>
           <button type="button" id="btn-fertilizer-compatibility-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCompatibilityCalculator()" data-np-tooltip="Compatibilidad de fertilizantes" aria-label="Compatibilidad de fertilizantes">🔺</button>
+          <button type="button" id="btn-granular-mix-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showGranularMixCalculator()" data-np-tooltip="Formulación de mezclas granulares" aria-label="Formulación de mezclas granulares">📦</button>
           <button type="button" id="btn-fertilizer-composition-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCompositionCalculator()" data-np-tooltip="Composición de fertilizantes (%)" aria-label="Composición de fertilizantes (porcentaje)">⚗️</button>
           <button type="button" id="btn-measure-units-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showMeasureUnitsCalculator()" data-np-tooltip="Conversor de magnitudes físicas" aria-label="Conversor de magnitudes físicas">📐</button>
           <button type="button" id="btn-simple-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showSimpleCalculator()" data-np-tooltip="Calculadora simple" aria-label="Calculadora simple">
@@ -465,6 +467,9 @@
       if (typeof showFertilizerCompositionCalculator !== 'undefined') {
         window.showFertilizerCompositionCalculator = showFertilizerCompositionCalculator;
       }
+      if (typeof showGranularMixCalculator !== 'undefined') {
+        window.showGranularMixCalculator = showGranularMixCalculator;
+      }
       if (typeof showFertilizerCompatibilityCalculator !== 'undefined') {
         window.showFertilizerCompatibilityCalculator = showFertilizerCompatibilityCalculator;
       }
@@ -479,6 +484,9 @@
       }
       if (typeof showLaminaRiegoTool !== 'undefined') {
         window.showLaminaRiegoTool = showLaminaRiegoTool;
+      }
+      if (typeof showVPDCalculator !== 'undefined') {
+        window.showVPDCalculator = showVPDCalculator;
       }
       if (typeof showFertilizerSolubilitySaltTool !== 'undefined') {
         window.showFertilizerSolubilitySaltTool = showFertilizerSolubilitySaltTool;
@@ -5122,6 +5130,21 @@ CONTRATO:
     }
     window.closeLaminaRiegoTool = closeLaminaRiegoTool;
 
+    function showVPDCalculator() {
+      var modal = document.getElementById('vpdCalculatorModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showVPDCalculator = showVPDCalculator;
+
+    function closeVPDCalculator() {
+      var modal = document.getElementById('vpdCalculatorModal');
+      var frame = document.getElementById('vpdCalculatorFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeVPDCalculator = closeVPDCalculator;
+
     function showFertilizerSolubilitySaltTool() {
       var modal = document.getElementById('fertilizerSolubilitySaltModal');
       if (!modal) return;
@@ -5166,6 +5189,21 @@ CONTRATO:
       if (frame) frame.src = frame.src;
     }
     window.closeFertilizerCompositionCalculator = closeFertilizerCompositionCalculator;
+
+    function showGranularMixCalculator() {
+      var modal = document.getElementById('granularMixCalculatorModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showGranularMixCalculator = showGranularMixCalculator;
+
+    function closeGranularMixCalculator() {
+      var modal = document.getElementById('granularMixCalculatorModal');
+      var frame = document.getElementById('granularMixCalculatorFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeGranularMixCalculator = closeGranularMixCalculator;
 
     // Hook de persistencia para herramienta "Extracción por etapa" (iframe)
     window.nutriplantLoadExtractionStageFromCloud = function(ctx) {
@@ -7029,6 +7067,22 @@ CONTRATO:
     </div>
   </div>
 
+  <!-- Modal estimador VPD (herramienta gratuita) -->
+  <div id="vpdCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeVPDCalculator();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title">🌡️ Estimador de déficit de presión de vapor</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeVPDCalculator()">×</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="vpdCalculatorFrame" src="vpd-free.html?embed=dashboard&v=1764880009" title="Estimador de déficit de presión de vapor" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal lámina de riego / balance hídrico -->
   <div id="laminaRiegoToolModal" class="modal-overlay" onclick="if(event.target===this) closeLaminaRiegoTool();">
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
@@ -7073,6 +7127,22 @@ CONTRATO:
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html" title="Interacciones y movilidad nutrimental" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal formulación de mezclas granulares -->
+  <div id="granularMixCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeGranularMixCalculator();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title">📦 Formulación de mezclas granulares</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeGranularMixCalculator()">×</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="granularMixCalculatorFrame" src="granular-mix-free.html?embed=dashboard" title="Formulación de mezclas granulares" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
