@@ -674,19 +674,103 @@
     function summaryLine(label, mmVal, vol) {
       var mmText = mmVal != null ? fmtMm(mmVal) + ' mm' : '—';
       var volText = vol && vol.perHa != null ? ' → ' + vol.perHa + ' m³/ha cultivo' : '';
-      var totalText = vol && vol.total != null ? ' (' + vol.total + ' m³ total)' : '';
+      var totalText = vol && vol.total != null ? ' (' + vol.total + ' m³ ref. cultivo)' : '';
       return '<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:14px;"><span style="color:#475569;">' + label + '</span><span style="font-weight:600;color:#0f172a;text-align:right;">' + mmText + volText + totalText + '</span></div>';
     }
-    function summaryWettedStrip(label, vol) {
-      if (!res.hasSplitArea || !vol || vol.wettedMm == null) return '';
+    function renderStripActionBox(res) {
+      if (!res.hasSplitArea || res.irrigatedHa == null) return '';
+      var targetVol = res.balanceVol && res.balanceVol.total != null ? res.balanceVol : res.deficitCropVol;
+      var targetMm = targetVol && targetVol.wettedMm != null ? targetVol.wettedMm : null;
+      var targetLabel =
+        res.balance != null && res.irrigationMm != null && res.irrigationMm > 0
+          ? 'Balance por cubrir en riego'
+          : 'Déficit del cultivo por cubrir';
+      if (targetMm == null) return '';
+      var mmAbs = Math.abs(targetMm);
+      var m3Abs = targetVol && targetVol.total != null ? Math.abs(targetVol.total) : round1(mmAbs * 10 * res.irrigatedHa);
+      var isDeficit = targetMm < 0;
+      var accent = isDeficit ? '#0369a1' : '#0f766e';
+      var bg = isDeficit ? 'linear-gradient(135deg,#eff6ff 0%,#e0f2fe 100%)' : 'linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%)';
+      var border = isDeficit ? '#7dd3fc' : '#6ee7b7';
+      var actionVerb = isDeficit ? 'Aplicar en franja regada' : 'Superávit hídrico en franja';
+      var coverWhat =
+        res.balance != null && res.irrigationMm != null && res.irrigationMm > 0
+          ? 'el balance pendiente'
+          : 'el déficit';
+      var periodText = res.periodDays === 1 ? 'del día' : 'del periodo de ' + res.periodDays + ' días';
+      var suggestedLine = isDeficit
+        ? 'Riego sugerido: <strong style="color:' +
+          accent +
+          ';font-size:18px;">' +
+          m3Abs +
+          ' m³</strong> para cubrir ' +
+          coverWhat +
+          ' ' +
+          periodText
+        : 'No requiere riego de reposición — superávit de <strong style="color:' +
+          accent +
+          ';">' +
+          m3Abs +
+          ' m³</strong> ' +
+          periodText;
       return (
-        '<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0 6px 12px;border-bottom:1px dashed #e2e8f0;font-size:13px;color:#0369a1;">' +
-        '<span>↳ ' + label + ' en franja regada (' + fmtMm(res.irrigatedHa) + ' ha)</span>' +
-        '<span style="font-weight:600;text-align:right;">' +
-        fmtMm(vol.wettedMm) +
-        ' mm (mismos ' +
-        (vol.total != null ? vol.total + ' m³' : 'm³') +
-        ')</span></div>'
+        '<div style="margin:16px 0 4px 0;padding:18px 20px;border:2px solid ' +
+        border +
+        ';border-radius:12px;background:' +
+        bg +
+        ';box-shadow:0 2px 8px rgba(3,105,161,0.08);">' +
+        '<p style="margin:0 0 4px 0;font-size:12px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:' +
+        accent +
+        ';">📍 Dato importante — riego en campo</p>' +
+        '<p style="margin:0 0 14px 0;padding:12px 14px;background:rgba(255,255,255,0.92);border-radius:10px;border-left:4px solid ' +
+        accent +
+        ';font-size:16px;font-weight:800;color:#0f172a;line-height:1.45;">' +
+        suggestedLine +
+        '</p>' +
+        '<p style="margin:0 0 14px 0;font-size:13px;line-height:1.5;color:#334155;">El cultivo (<strong>' +
+        fmtMm(res.cropHa) +
+        ' ha</strong>) tiene un ' +
+        (isDeficit ? 'déficit' : 'superávit') +
+        ' de referencia; en la <strong>franja regada (' +
+        fmtMm(res.irrigatedHa) +
+        ' ha)</strong> ese volumen se concentra en <strong>más mm</strong>, no en menos m³.</p>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">' +
+        '<div style="background:rgba(255,255,255,0.75);border-radius:10px;padding:12px 14px;text-align:center;">' +
+        '<div style="font-size:12px;color:#64748b;margin-bottom:4px;">Lámina en franja (' +
+        targetLabel.toLowerCase() +
+        ')</div>' +
+        '<div style="font-size:28px;font-weight:800;color:' +
+        accent +
+        ';line-height:1.1;">' +
+        fmtMm(targetMm) +
+        ' <span style="font-size:16px;font-weight:700;">mm</span></div>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.75);border-radius:10px;padding:12px 14px;text-align:center;">' +
+        '<div style="font-size:12px;color:#64748b;margin-bottom:4px;">' +
+        actionVerb +
+        '</div>' +
+        '<div style="font-size:28px;font-weight:800;color:' +
+        accent +
+        ';line-height:1.1;">' +
+        m3Abs +
+        ' <span style="font-size:16px;font-weight:700;">m³</span></div>' +
+        '<div style="font-size:11px;color:#64748b;margin-top:4px;">en ' +
+        fmtMm(res.irrigatedHa) +
+        ' ha regadas</div>' +
+        '</div></div>' +
+        '<p style="margin:0;font-size:12px;line-height:1.5;color:#475569;">Referencia cultivo: <strong>' +
+        fmtMm(isDeficit ? (res.balance != null ? res.balance : res.deficitCrop) : res.balance != null ? res.balance : res.deficitCrop) +
+        ' mm</strong> sobre ' +
+        fmtMm(res.cropHa) +
+        ' ha ≈ <strong>' +
+        m3Abs +
+        ' m³</strong> totales. <strong>En goteo/cinta aplicas esos ' +
+        m3Abs +
+        ' m³</strong> en la franja de ' +
+        fmtMm(res.irrigatedHa) +
+        ' ha (<strong>' +
+        fmtMm(targetMm) +
+        ' mm</strong> en zona humedecida).</p></div>'
       );
     }
     var irrVol =
@@ -705,7 +789,7 @@
         '<strong>Criterio NutriPlant:</strong> el <strong>% raíces en superficie</strong> indica qué parte del <strong>área del cultivo</strong> tiene exploración radical activa (goteo, surco, franja).'
       );
       parts.push(
-        'En <strong>riego</strong>, ese mismo % suele traducirse a <strong>superficie regada</strong>: franja ≈ ha cultivo × (% ÷ 100). Los <strong>m³ totales del déficit no se dividen</strong>; el agua se concentra en la franja (más mm, mismos m³).'
+        'En <strong>riego localizado</strong>, ese % suele ser la <strong>superficie regada</strong> (franja ≈ ha cultivo × % ÷ 100). El déficit del cultivo se expresa en <strong>m³ totales</strong>; en la franja esos m³ se aplican con <strong>más mm</strong> en menos hectáreas — ver recuadro destacado abajo.'
       );
       if (areas.rootReachPct != null && areas.cropHa != null && areas.suggestedIrrigatedHa != null) {
         parts.push(
@@ -747,13 +831,11 @@
         summaryLine('ETo' + (res.et0Source ? ' (' + res.et0Source + ')' : ''), res.et0, null) +
         summaryLine('Lluvia' + (res.rainSource ? ' (' + res.rainSource + ')' : ''), res.rain, null) +
         summaryLine('Déficit climático (ETo − lluvia)', res.deficitClimate, res.deficitClimateVol) +
-        summaryWettedStrip('Déficit climático', res.deficitClimateVol) +
         summaryLine('ETc estimada (ETo × Kc)', res.etc, null) +
         summaryLine('Déficit del cultivo (ETc − lluvia)', res.deficitCrop, res.deficitCropVol) +
-        summaryWettedStrip('Déficit del cultivo', res.deficitCropVol) +
         summaryLine('Riego aplicado (mm en franja)', res.irrigationMm, irrVol) +
         summaryLine('Balance hídrico (ETc − lluvia − riego)', res.balance, res.balanceVol) +
-        summaryWettedStrip('Balance por cubrir en riego', res.balanceVol);
+        renderStripActionBox(res);
     }
   }
 
@@ -766,11 +848,11 @@
     var cropPlaceholder = projectHa != null ? 'Vacío = ' + projectHa + ' ha (predio)' : 'Vacío = ha del predio';
     var irrPlaceholder = 'Franja humedecida (goteo)';
 
-    if (root.getAttribute('data-np-irr-version') !== '10') {
+    if (root.getAttribute('data-np-irr-version') !== '12') {
       root.removeAttribute('data-np-irr-rendered');
       root.removeAttribute('data-np-irr-bound');
       root.innerHTML = '';
-      root.setAttribute('data-np-irr-version', '10');
+      root.setAttribute('data-np-irr-version', '12');
     }
     if (window.NpIrrBalance && window.NpIrrBalance.ensureIrrCalcStyles) window.NpIrrBalance.ensureIrrCalcStyles();
 

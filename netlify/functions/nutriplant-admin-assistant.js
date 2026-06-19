@@ -5735,6 +5735,16 @@ async function handleNutritionCatalogs(supabase, params) {
 async function handleDescribeApi() {
   return {
     ok: true,
+    version: '2.9.1',
+    openapi_version: '2.9.1',
+    chatgpt_tool: {
+      operationId: 'nutriplantAdminQuery',
+      note:
+        'En ChatGPT solo existe esta Action. admin_stats, nutri_pro_catalog, describe_api, etc. son valores del campo body.action, no tools aparte.',
+      example_admin_stats: { action: 'admin_stats', params: {} },
+      example_nutri_pro: { action: 'nutri_pro_catalog', params: {} },
+      verify: 'Si describe_api devuelve version 2.9.1, el GPT tiene schema y token correctos.'
+    },
     domains: {
       admin: ['admin_stats', 'list_users', 'user_summary'],
       nutriplant_projects: [
@@ -5834,18 +5844,18 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.9.0',
+      version: '2.9.1',
       description:
-        'NutriPlant + Plan PRO + Nutri PRO. Escritura segura: Plan PRO y my_program_* solo en laboratorio personal admin. Análisis, Clima, Radar.'
+        'v2.9.1 — ChatGPT: una sola Action (nutriplantAdminQuery). body.action = admin_stats|nutri_pro_*|describe_api|… NutriPlant + Plan PRO + Nutri PRO + clima + my_program_* personal admin.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
       '/api/admin-assistant': {
         post: {
           operationId: 'nutriplantAdminQuery',
-          summary: 'Consulta admin o proyectos de usuarios',
+          summary: 'Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO',
           description:
-            'Body: action + params. Análisis: project_analyses. Clima: project_climate. Radar, Plan PRO, project_detail.',
+            'Invoca SIEMPRE nutriplantAdminQuery. body.action elige operación (admin_stats, nutri_pro_catalog, describe_api…). No invoques esos nombres como Actions separadas. Verifica: describe_api → version 2.9.1.',
           requestBody: {
             required: true,
             content: {

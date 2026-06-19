@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.9.0",
-    "description": "Plan PRO + Nutri PRO. Clima en vivo. my_program_* crea/edita solo proyectos personales GPT del admin (no suscriptores)."
+    "version": "2.9.1",
+    "description": "v2.9.1 — ChatGPT: una sola Action (nutriplantAdminQuery). Los nombres admin_stats, nutri_pro_catalog, etc. van en el body como campo action, no son tools separadas. Plan PRO + Nutri PRO + clima en vivo + my_program_* personal admin."
   },
   "servers": [
     {
@@ -14,8 +14,8 @@
     "/api/admin-assistant": {
       "post": {
         "operationId": "nutriplantAdminQuery",
-        "summary": "Consulta NutriPlant, Plan PRO y Nutri PRO",
-        "description": "NutriPlant + Plan PRO. Nutri PRO: nutri_pro_ask, nutri_pro_save (guardar en carpeta Supabase), nutri_pro_search, nutri_pro_file_text.",
+        "summary": "Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO",
+        "description": "IMPORTANTE ChatGPT: invoca SIEMPRE esta operación (nutriplantAdminQuery). El campo body.action elige la operación interna (admin_stats, nutri_pro_catalog, describe_api, etc.). Nunca invoques admin_stats ni nutri_pro_* como Actions separadas. Ejemplo usuarios activos: {\"action\":\"admin_stats\",\"params\":{}}. Verifica versión: {\"action\":\"describe_api\",\"params\":{}} → debe devolver version 2.9.1.",
         "requestBody": {
           "required": true,
           "content": {
@@ -43,6 +43,7 @@
         "properties": {
           "action": {
             "type": "string",
+            "description": "Operación interna dentro de nutriplantAdminQuery (NO es una Action separada en ChatGPT).",
             "enum": [
               "admin_stats",
               "list_users",

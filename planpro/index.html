@@ -40,6 +40,8 @@
       --np-sheet-pad-left: 48px;
       --np-sheet-page-gap: 0px;
       --np-sheet-margin-line: 32px;
+      /* Renglón libreta: mismo px en texto y en líneas de fondo (evita deriva al escribir) */
+      --np-notebook-line-px: 28px;
     }
     * { box-sizing: border-box; }
     body {
@@ -6963,6 +6965,31 @@
         0 10px 36px rgba(45, 35, 22, 0.07),
         0 3px 14px color-mix(in srgb, var(--np-sheet-accent, #22c55e) 12%, transparent);
     }
+    .np-notebook-page-actions {
+      position: relative;
+      z-index: 2;
+      width: var(--np-sheet-w);
+      max-width: calc(100% - 20px);
+      margin: 0 auto;
+      padding: 2px 4px 0;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .np-notebook-remove-page {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: rgba(255, 255, 255, 0.92);
+      color: #475569;
+      cursor: pointer;
+    }
+    .np-notebook-remove-page:hover {
+      border-color: #94a3b8;
+      color: #0f172a;
+      background: #fff;
+    }
     .np-notebook-page {
       position: relative;
       z-index: 1;
@@ -6991,7 +7018,7 @@
       border-radius: 0 !important;
       background: transparent !important;
       font-size: 16px;
-      line-height: var(--np-rich-line-height, 1.45);
+      line-height: var(--np-notebook-line-px, 28px);
       resize: vertical;
       box-shadow: none !important;
       font-family: inherit;
@@ -7005,7 +7032,6 @@
     .np-notebook-page.np-notebook-rich {
       min-height: var(--np-sheet-page-h);
       min-width: 0;
-      --np-rich-line-height: 1.45;
     }
     #npFormCreate .np-notebook-wrap {
       max-width: 100%;
@@ -7091,27 +7117,50 @@
       border-radius: 0 !important;
       background: transparent !important;
       font-size: 16px;
-      line-height: var(--np-rich-line-height, 1.45);
+      line-height: var(--np-notebook-line-px, 28px);
       box-shadow: none !important;
       font-family: inherit;
       color: #292524;
       outline: none;
     }
     .np-rich-editor:focus { box-shadow: none !important; }
-    /* Renglones en la libreta: en el editor (no en ::after del papel) para que no queden tapados por el stacking del contenteditable */
+    /* Renglones en la libreta: px fijos = mismo paso que el texto (contenteditable sin márgenes fantasma) */
     .np-notebook-page.np-notebook-rich > .np-rich-editor {
       background-color: transparent !important;
       background-image: repeating-linear-gradient(
         to bottom,
         transparent 0,
-        transparent calc(var(--np-rich-line-height, 1.45) * 1em - 1px),
-        rgba(92, 74, 55, 0.13) calc(var(--np-rich-line-height, 1.45) * 1em - 1px),
-        rgba(92, 74, 55, 0.13) calc(var(--np-rich-line-height, 1.45) * 1em)
+        transparent calc(var(--np-notebook-line-px, 28px) - 1px),
+        rgba(92, 74, 55, 0.13) calc(var(--np-notebook-line-px, 28px) - 1px),
+        rgba(92, 74, 55, 0.13) var(--np-notebook-line-px, 28px)
       ) !important;
-      background-size: 100% calc(var(--np-rich-line-height, 1.45) * 1em);
+      background-size: 100% var(--np-notebook-line-px, 28px);
       background-position: 0 var(--np-sheet-pad-top);
-      /* “local” provoca fallos de composición en WebKit: texto/tablas que “no existen” hasta hacer scroll */
       background-attachment: scroll;
+    }
+    .np-notebook-page.np-notebook-rich > .np-rich-editor p,
+    .np-notebook-page.np-notebook-rich > .np-rich-editor div:not(.np-rich-separator):not([class^='np-rich-']):not([class*=' np-rich-']) {
+      margin: 0 !important;
+      padding: 0 !important;
+      line-height: var(--np-notebook-line-px, 28px) !important;
+      min-height: var(--np-notebook-line-px, 28px);
+    }
+    .np-notebook-page.np-notebook-rich > .np-rich-editor ul,
+    .np-notebook-page.np-notebook-rich > .np-rich-editor ol {
+      margin: 0 !important;
+      line-height: var(--np-notebook-line-px, 28px);
+    }
+    .np-notebook-page.np-notebook-rich > .np-rich-editor li {
+      margin: 0 !important;
+      line-height: var(--np-notebook-line-px, 28px);
+    }
+    .np-notebook-page.np-notebook-rich > .np-rich-editor h2 {
+      margin: var(--np-notebook-line-px, 28px) 0 0 !important;
+      line-height: var(--np-notebook-line-px, 28px);
+    }
+    .np-notebook-page.np-notebook-rich > .np-rich-editor h3 {
+      margin: var(--np-notebook-line-px, 28px) 0 0 !important;
+      line-height: var(--np-notebook-line-px, 28px);
     }
     /* Sin leyenda fantasma encima del texto (antes: attr(data-placeholder)) */
     .np-rich-editor.np-rich-empty:before {
@@ -10952,7 +11001,7 @@
     }, delayMs == null ? 0 : delayMs);
   }
 
-  var NP_FX_REFRESH_MS = 10 * 60 * 1000;
+  var NP_FX_REFRESH_MS = 60 * 60 * 1000;
 
   function planProHeaderCompact() {
     return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 720px)').matches;
@@ -11108,7 +11157,7 @@
       var when = planProFxState.updatedAt
         ? new Date(planProFxState.updatedAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })
         : '—';
-      meta.textContent = when + ' · ' + planProFxSourceLabel(planProFxState.source);
+      meta.textContent = when + ' · ' + planProFxSourceLabel(planProFxState.source) + ' · se actualiza cada hora';
     }
     if (btn) {
       btn.title =
@@ -11313,11 +11362,18 @@
         renderPlanProStorageUsage(cached.data, null, { fetchedAt: cached.fetchedAt, fromCache: true });
       }
     });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) return;
+      var updatedAt = planProFxState.updatedAt;
+      if (!updatedAt || Date.now() - updatedAt >= NP_FX_REFRESH_MS) {
+        refreshPlanProFxRate(false);
+      }
+    });
     refreshPlanProFxRate(true);
     planProStartFxTimer();
   }
 
-  var NP_WEATHER_REFRESH_MS = 30 * 60 * 1000;
+  var NP_WEATHER_REFRESH_MS = 60 * 60 * 1000;
   var planProWeatherTimer = null;
   var planProWeatherLoading = false;
   var planProWeatherLocLoading = false;
@@ -11548,7 +11604,7 @@
             timeStyle: 'short'
           })
         : '—';
-      meta.textContent = when;
+      meta.textContent = when + ' · se actualiza cada hora';
     }
     if (btn) {
       btn.title = main + ' · ' + subLine + ' · toca para detalle';
@@ -11799,6 +11855,13 @@
     window.addEventListener('resize', function () {
       positionPlanProWeatherPopover();
       if (planProWeatherState.temp != null) planProWeatherRenderUi({});
+    });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) return;
+      var updatedAt = planProWeatherState.updatedAt;
+      if (!updatedAt || Date.now() - updatedAt >= NP_WEATHER_REFRESH_MS) {
+        refreshPlanProWeather({ requestLocation: false });
+      }
     });
     refreshPlanProWeather({ force: true, requestLocation: true });
     planProStartWeatherTimer();
@@ -13836,6 +13899,131 @@
     return bg;
   }
 
+  function normalizeNotebookEditorLineBlocks(editorEl) {
+    if (!editorEl || !editorEl.closest('.np-notebook-page.np-notebook-rich')) return;
+    var linePx =
+      (window.getComputedStyle(editorEl).getPropertyValue('--np-notebook-line-px') || '28px').trim() || '28px';
+    var nodes = editorEl.querySelectorAll('p, div');
+    nodes.forEach(function (el) {
+      if (el.classList && el.classList.contains('np-rich-separator')) return;
+      if (el.className && /\bnp-rich-/.test(String(el.className))) return;
+      if (el.querySelector && el.querySelector('img, .np-rich-due, .np-rich-ref, .np-rich-separator')) return;
+      el.style.margin = '0';
+      el.style.padding = '0';
+      el.style.lineHeight = linePx;
+      if (el.parentElement === editorEl) el.style.minHeight = linePx;
+    });
+  }
+
+  var npNotebookLineNormTimer = null;
+  function scheduleNotebookLineNormalize(editorEl) {
+    if (!editorEl) return;
+    clearTimeout(npNotebookLineNormTimer);
+    npNotebookLineNormTimer = setTimeout(function () {
+      normalizeNotebookEditorLineBlocks(editorEl);
+      syncNotebookSheetPages(editorEl);
+    }, 60);
+  }
+
+    if (!node) return true;
+    if (node.nodeType === 3) return !String(node.textContent || '').replace(/\u00a0/g, ' ').trim();
+    if (node.nodeType !== 1) return true;
+    var tag = node.tagName ? node.tagName.toLowerCase() : '';
+    if (tag === 'img') return false;
+    if (tag === 'br') return true;
+    if (node.querySelector && node.querySelector('img')) return false;
+    var html = node.innerHTML || '';
+    if (/<img[\s>]/i.test(html)) return false;
+    return !String(node.textContent || '').replace(/\u00a0/g, ' ').trim();
+  }
+
+  function trimTrailingEmptyNotebookBlocks(editorEl) {
+    if (!editorEl) return false;
+    var changed = false;
+    while (editorEl.lastChild && isEmptyNotebookEditorNode(editorEl.lastChild)) {
+      editorEl.removeChild(editorEl.lastChild);
+      changed = true;
+    }
+    return changed;
+  }
+
+  function notebookEditorFocused(editorEl) {
+    if (!editorEl) return false;
+    var active = document.activeElement;
+    return active === editorEl || (active && editorEl.contains(active));
+  }
+
+  function measureNotebookContentInner(editorEl, innerMin, padT, padB) {
+    var onePagePx = innerMin + padT + padB;
+    var savedMin = editorEl.style.minHeight;
+    editorEl.style.minHeight = onePagePx + 'px';
+    void editorEl.offsetHeight;
+    var inner = Math.max(innerMin, editorEl.scrollHeight - padT - padB);
+    editorEl.style.minHeight = savedMin;
+    return inner;
+  }
+
+  function computeNotebookPageCount(editorEl) {
+    var styles = window.getComputedStyle(editorEl);
+    var padT = parseFloat(styles.paddingTop) || 24;
+    var padB = parseFloat(styles.paddingBottom) || 32;
+    var m = getNpSheetMetrics();
+    var innerMin = Math.max(120, m.pageH - padT - padB);
+    var contentInner = measureNotebookContentInner(editorEl, innerMin, padT, padB);
+    var baseN = Math.max(1, Math.ceil(contentInner / innerMin));
+    var scratch = 0;
+    if (notebookEditorFocused(editorEl)) {
+      var lastPageFill = contentInner - innerMin * (baseN - 1);
+      if (lastPageFill > innerMin * 0.62) scratch = 1;
+    }
+    var n = baseN + scratch;
+    return {
+      n: n,
+      baseN: baseN,
+      scratch: scratch,
+      innerMin: innerMin,
+      padT: padT,
+      padB: padB,
+      contentInner: contentInner,
+      canRemoveTrailing: n > baseN
+    };
+  }
+
+  function ensureNotebookRemovePageBtn(wrap) {
+    if (!wrap || wrap.querySelector('.np-notebook-page-actions')) return wrap.querySelector('.np-notebook-page-actions');
+    var bar = document.createElement('div');
+    bar.className = 'np-notebook-page-actions np-hide';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'np-notebook-remove-page';
+    btn.textContent = 'Quitar última hoja vacía';
+    btn.title = 'Oculta la hoja en blanco del final si no la vas a usar';
+    btn.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+    });
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var ed = wrap.querySelector('.np-rich-editor');
+      if (!ed) return;
+      trimTrailingEmptyNotebookBlocks(ed);
+      ed.style.minHeight = '';
+      syncNotebookSheetPages(ed);
+      if (ed.id === 'npModalBodyRich' && typeof schedulePersistMainBody === 'function') {
+        schedulePersistMainBody();
+      }
+    });
+    bar.appendChild(btn);
+    wrap.appendChild(bar);
+    return bar;
+  }
+
+  function updateNotebookRemovePageBtn(wrap, visible) {
+    if (!wrap) return;
+    var bar = ensureNotebookRemovePageBtn(wrap);
+    if (!bar) return;
+    bar.classList.toggle('np-hide', !visible);
+  }
+
   function syncNotebookSheetPages(editorEl) {
     if (!editorEl || !editorEl.closest) return;
     var wrap = editorEl.closest('.np-notebook-wrap');
@@ -13845,12 +14033,12 @@
 
     var bg = ensureNotebookPagesBg(wrap);
     var m = getNpSheetMetrics();
-    var styles = window.getComputedStyle(editorEl);
-    var padT = parseFloat(styles.paddingTop) || 24;
-    var padB = parseFloat(styles.paddingBottom) || 32;
-    var innerMin = Math.max(120, m.pageH - padT - padB);
-    var contentInner = Math.max(innerMin, editorEl.scrollHeight - padT - padB);
-    var n = Math.max(1, Math.ceil(contentInner / innerMin));
+    var counts = computeNotebookPageCount(editorEl);
+    var n = counts.n;
+    var innerMin = counts.innerMin;
+    var padT = counts.padT;
+    var padB = counts.padB;
+    var contentInner = counts.contentInner;
 
     while (bg.children.length < n) {
       bg.appendChild(document.createElement('div')).className = 'np-notebook-page-sheet';
@@ -13863,6 +14051,7 @@
     bg.style.height = totalH + 'px';
     pageEl.style.minHeight = totalH + 'px';
     editorEl.style.minHeight = Math.max(innerMin, contentInner) + padT + padB + 'px';
+    updateNotebookRemovePageBtn(wrap, counts.canRemoveTrailing);
   }
 
   function scheduleNotebookSheetSync(editorEl) {
@@ -13875,8 +14064,24 @@
 
   function bindNotebookSheetSync(editorEl) {
     if (!editorEl) return;
+    var wrap = editorEl.closest('.np-notebook-wrap');
+    if (wrap) ensureNotebookRemovePageBtn(wrap);
+    normalizeNotebookEditorLineBlocks(editorEl);
     syncNotebookSheetPages(editorEl);
     scheduleNotebookSheetSync(editorEl);
+    if (!editorEl._npSheetBlurWired) {
+      editorEl._npSheetBlurWired = true;
+      editorEl.addEventListener('blur', function () {
+        setTimeout(function () {
+          if (notebookEditorFocused(editorEl)) return;
+          trimTrailingEmptyNotebookBlocks(editorEl);
+          syncNotebookSheetPages(editorEl);
+        }, 0);
+      });
+      editorEl.addEventListener('focus', function () {
+        scheduleNotebookSheetSync(editorEl);
+      });
+    }
     if (typeof ResizeObserver === 'undefined') return;
     if (editorEl._npSheetRO) {
       try {
@@ -15938,11 +16143,14 @@
     });
 
     syncRichEmptyClass(ed);
+    trimTrailingEmptyNotebookBlocks(ed);
+    normalizeNotebookEditorLineBlocks(ed);
     bindNotebookSheetSync(ed);
     ed.addEventListener('input', function () {
       syncRichEmptyClass(ed);
       scheduleRichToolbarSync(ed);
       scheduleNotebookSheetSync(ed);
+      scheduleNotebookLineNormalize(ed);
       schedulePersistMainBody();
     });
     ed.addEventListener('blur', function () {
@@ -16063,6 +16271,8 @@
     }
     syncDetailBlocksInputsFromDOM();
     await saveDetailTitleFromInput();
+    var modalEd = $('npModalBodyRich');
+    if (modalEd) trimTrailingEmptyNotebookBlocks(modalEd);
     await flushDetailMainNote();
     await flushDetailItemMeta();
     if (state.detailItemId && state.detailBlocksWorking && state.client) {
@@ -25408,6 +25618,7 @@
       syncRichEmptyClass(npBodyRichEl);
       scheduleRichToolbarSync(npBodyRichEl);
       scheduleNotebookSheetSync(npBodyRichEl);
+      scheduleNotebookLineNormalize(npBodyRichEl);
     });
     npBodyRichEl.addEventListener('blur', function () {
       syncRichEmptyClass(npBodyRichEl);
