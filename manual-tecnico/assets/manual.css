@@ -108,12 +108,13 @@ body {
     margin-left: 0;
     flex-wrap: wrap;
     gap: 8px;
-    justify-content: flex-start;
+    justify-content: flex-end;
     align-items: center;
   }
   .mt-nav {
     flex-wrap: wrap;
     gap: 6px;
+    justify-content: flex-end;
   }
   .mt-nav a {
     margin-left: 0;
@@ -123,7 +124,6 @@ body {
   }
   .mt-social-links {
     gap: 6px;
-    margin-left: auto;
   }
   .mt-social-links .social-btn {
     width: 28px;

@@ -17,6 +17,39 @@
     return round1(v).toFixed(1);
   }
 
+  /** Positivo = falta agua; negativo = superávit (lluvia > demanda). */
+  function waterGapKind(mmVal) {
+    if (mmVal == null || !Number.isFinite(Number(mmVal))) return 'neutral';
+    if (mmVal > 0) return 'deficit';
+    if (mmVal < 0) return 'surplus';
+    return 'equilibrio';
+  }
+
+  function fmtWaterGapMm(mmVal) {
+    if (mmVal == null || !Number.isFinite(Number(mmVal))) return '—';
+    var n = round1(mmVal);
+    if (n === 0) return '0 mm';
+    var abs = fmtMm(Math.abs(n));
+    return n > 0 ? abs + ' mm' : abs + ' mm superávit';
+  }
+
+  function fmtWaterGapVolSuffix(vol, mmVal) {
+    if (!vol) return { volText: '', totalText: '' };
+    var perHa = vol.perHa != null ? Math.abs(vol.perHa) : null;
+    var total = vol.total != null ? Math.abs(vol.total) : null;
+    var tag = waterGapKind(mmVal) === 'surplus' ? ' superávit' : '';
+    return {
+      volText: perHa != null ? ' → ' + perHa + ' m³/ha cultivo' + tag : '',
+      totalText: total != null ? ' (' + total + ' m³ total' + tag + ')' : ''
+    };
+  }
+
+  function balanceRowLabel(deficitLabel, surplusLabel, mmVal) {
+    var kind = waterGapKind(mmVal);
+    if (kind === 'surplus') return surplusLabel;
+    return deficitLabel;
+  }
+
   function todayIso() {
     var d = new Date();
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -210,8 +243,8 @@
     var targetMm = targetVol && targetVol.wettedMm != null ? targetVol.wettedMm : null;
     var targetLabel =
       res.balance != null && res.irrigationMm != null && res.irrigationMm > 0
-        ? 'Balance por cubrir en riego'
-        : 'Déficit del cultivo por cubrir';
+        ? balanceRowLabel('Balance por cubrir en riego', 'Superávit hídrico en franja', targetMm)
+        : balanceRowLabel('Déficit del cultivo por cubrir', 'Superávit en franja', targetMm);
     if (targetMm == null) return '';
     var mmAbs = Math.abs(targetMm);
     var m3Abs = targetVol && targetVol.total != null ? Math.abs(targetVol.total) : round1(mmAbs * 10 * res.irrigatedHa);
@@ -271,7 +304,8 @@
       '<div style="font-size:28px;font-weight:800;color:' +
       accent +
       ';line-height:1.1;">' +
-      fmtMm(targetMm) +
+      fmtMm(mmAbs) +
+      (isDeficit ? '' : ' <span style="font-size:14px;font-weight:700;">superávit</span>') +
       ' <span style="font-size:16px;font-weight:700;">mm</span></div>' +
       '</div>' +
       '<div style="background:rgba(255,255,255,0.75);border-radius:10px;padding:12px 14px;text-align:center;">' +
@@ -288,25 +322,29 @@
       ' ha regadas</div>' +
       '</div></div>' +
       '<p style="margin:0;font-size:12px;line-height:1.5;color:#475569;">Referencia cultivo: <strong>' +
-      fmtMm(cropRefMm) +
-      ' mm</strong> sobre ' +
+      fmtWaterGapMm(cropRefMm) +
+      '</strong> sobre ' +
       fmtMm(res.cropHa) +
       ' ha ≈ <strong>' +
       m3Abs +
-      ' m³</strong> totales. ' +
+      ' m³</strong> totales' +
+      (isDeficit ? '' : ' de superávit') +
+      '. ' +
       (isDeficit
         ? '<strong>En goteo/microaspersor aplicas esos ' +
           m3Abs +
           ' m³</strong> en la franja de ' +
           fmtMm(res.irrigatedHa) +
           ' ha (<strong>' +
-          fmtMm(targetMm) +
+          fmtMm(mmAbs) +
           ' mm</strong> en zona humedecida).'
         : 'La lluvia cubrió más que la ETc del periodo; <strong>no necesitas regar para cubrir déficit</strong> (superávit de ' +
           m3Abs +
           ' m³ en franja de ' +
           fmtMm(res.irrigatedHa) +
-          ' ha).') +
+          ' ha, <strong>' +
+          fmtMm(mmAbs) +
+          ' mm superávit</strong> en zona humedecida).') +
       '</p></div>'
     );
   }
@@ -323,16 +361,36 @@
         '<span style="font-weight:600;color:#0f172a;text-align:right;">' + mmText + volText + totalText + '</span></div>'
       );
     }
-    function summaryWettedStrip(label, vol) {
-      if (!res.hasSplitArea || !vol || vol.wettedMm == null) return '';
+    function summaryBalanceLine(deficitLabel, surplusLabel, mmVal, vol) {
+      var label = balanceRowLabel(deficitLabel, surplusLabel, mmVal);
+      var mmText = fmtWaterGapMm(mmVal);
+      var volBits = fmtWaterGapVolSuffix(vol, mmVal);
       return (
-        '<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0 6px 12px;border-bottom:1px dashed #e2e8f0;font-size:13px;color:#0369a1;">' +
+        '<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:14px;">' +
+        '<span style="color:#475569;">' + label + '</span>' +
+        '<span style="font-weight:600;color:' +
+        (waterGapKind(mmVal) === 'surplus' ? '#0f766e' : '#0f172a') +
+        ';text-align:right;">' +
+        mmText +
+        volBits.volText +
+        volBits.totalText +
+        '</span></div>'
+      );
+    }
+    function summaryWettedStrip(deficitLabel, surplusLabel, vol) {
+      if (!res.hasSplitArea || !vol || vol.wettedMm == null) return '';
+      var mmVal = vol.wettedMm;
+      var label = balanceRowLabel(deficitLabel, surplusLabel, mmVal);
+      var m3 = vol.total != null ? Math.abs(vol.total) : null;
+      return (
+        '<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0 6px 12px;border-bottom:1px dashed #e2e8f0;font-size:13px;color:' +
+        (waterGapKind(mmVal) === 'surplus' ? '#0f766e' : '#0369a1') +
+        ';">' +
         '<span>↳ ' + label + ' en franja regada (' + fmtMm(res.irrigatedHa) + ' ha)</span>' +
         '<span style="font-weight:600;text-align:right;">' +
-        fmtMm(vol.wettedMm) +
-        ' mm (mismos ' +
-        (vol.total != null ? vol.total + ' m³' : 'm³') +
-        ')</span></div>'
+        fmtWaterGapMm(mmVal) +
+        (m3 != null ? ' (mismos ' + m3 + ' m³)' : '') +
+        '</span></div>'
       );
     }
     var irrVol =
@@ -356,14 +414,14 @@
         : '') +
       summaryLine('ETo' + (res.et0Source ? ' (' + res.et0Source + ')' : ''), res.et0, null) +
       summaryLine('Lluvia' + (res.rainSource ? ' (' + res.rainSource + ')' : ''), res.rain, null) +
-      summaryLine('Déficit climático (ETo − lluvia)', res.deficitClimate, res.deficitClimateVol) +
-      summaryWettedStrip('Déficit climático', res.deficitClimateVol) +
+      summaryBalanceLine('Déficit climático (ETo − lluvia)', 'Superávit climático (lluvia − ETo)', res.deficitClimate, res.deficitClimateVol) +
+      summaryWettedStrip('Déficit climático', 'Superávit climático', res.deficitClimateVol) +
       summaryLine('ETc estimada (ETo × Kc)', res.etc, null) +
-      summaryLine('Déficit del cultivo (ETc − lluvia)', res.deficitCrop, res.deficitCropVol) +
-      summaryWettedStrip('Déficit del cultivo', res.deficitCropVol) +
+      summaryBalanceLine('Déficit del cultivo (ETc − lluvia)', 'Superávit del cultivo (lluvia − ETc)', res.deficitCrop, res.deficitCropVol) +
+      summaryWettedStrip('Déficit del cultivo', 'Superávit del cultivo', res.deficitCropVol) +
       summaryLine('Riego aplicado (mm en franja)', res.irrigationMm, irrVol) +
-      summaryLine('Balance hídrico (ETc − lluvia − riego)', res.balance, res.balanceVol) +
-      summaryWettedStrip('Balance por cubrir en riego', res.balanceVol) +
+      summaryBalanceLine('Balance hídrico (ETc − lluvia − riego)', 'Superávit hídrico (lluvia + riego − ETc)', res.balance, res.balanceVol) +
+      summaryWettedStrip('Balance por cubrir en riego', 'Superávit hídrico en riego', res.balanceVol) +
       buildStripActionBoxHtml(res)
     );
   }

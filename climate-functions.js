@@ -671,24 +671,14 @@
       btn.style.background = active ? '#e0f2fe' : '#fff';
       btn.style.color = active ? '#0369a1' : '#475569';
     });
-    function summaryLine(label, mmVal, vol) {
-      var mmText = mmVal != null ? fmtMm(mmVal) + ' mm' : '—';
-      var volText = vol && vol.perHa != null ? ' → ' + vol.perHa + ' m³/ha cultivo' : '';
-      var totalText = vol && vol.total != null ? ' (' + vol.total + ' m³ ref. cultivo)' : '';
-      return '<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:14px;"><span style="color:#475569;">' + label + '</span><span style="font-weight:600;color:#0f172a;text-align:right;">' + mmText + volText + totalText + '</span></div>';
-    }
     var stripActionBox =
       window.NpIrrBalance && typeof window.NpIrrBalance.buildStripActionBoxHtml === 'function'
         ? window.NpIrrBalance.buildStripActionBoxHtml(res)
         : '';
-    var irrVol =
-      res.irrigationMm != null
-        ? {
-            perHa: round1(res.irrigationMm * 10),
-            total: res.irrigatedHa != null ? round1(res.irrigationMm * 10 * res.irrigatedHa) : null,
-            wettedMm: res.irrigationMm
-          }
-        : null;
+    var summaryBody =
+      window.NpIrrBalance && typeof window.NpIrrBalance.buildSummaryHtml === 'function'
+        ? window.NpIrrBalance.buildSummaryHtml(res)
+        : '';
     var areaNote = document.getElementById('climate-irr-area-note');
     var areas = resolveAreaContext(state);
     if (areaNote) {
@@ -725,25 +715,7 @@
     }
     var summary = document.getElementById('climate-irr-summary');
     if (summary) {
-      summary.innerHTML =
-        '<h4 style="margin:0 0 12px 0;color:#0369a1;font-size:15px;">💧 Estimación rápida (' +
-        periodLabel +
-        ')</h4>' +
-        (res.cropHa != null
-          ? '<p style="margin:0 0 10px 0;font-size:12px;color:#64748b;">Referencia cultivo: <strong>' +
-            fmtMm(res.cropHa) +
-            ' ha</strong>' +
-            (res.hasSplitArea ? ' · Franja regada: <strong>' + fmtMm(res.irrigatedHa) + ' ha</strong>' : '') +
-            '</p>'
-          : '') +
-        summaryLine('ETo' + (res.et0Source ? ' (' + res.et0Source + ')' : ''), res.et0, null) +
-        summaryLine('Lluvia' + (res.rainSource ? ' (' + res.rainSource + ')' : ''), res.rain, null) +
-        summaryLine('Déficit climático (ETo − lluvia)', res.deficitClimate, res.deficitClimateVol) +
-        summaryLine('ETc estimada (ETo × Kc)', res.etc, null) +
-        summaryLine('Déficit del cultivo (ETc − lluvia)', res.deficitCrop, res.deficitCropVol) +
-        summaryLine('Riego aplicado (mm en franja)', res.irrigationMm, irrVol) +
-        summaryLine('Balance hídrico (ETc − lluvia − riego)', res.balance, res.balanceVol) +
-        stripActionBox;
+      summary.innerHTML = (summaryBody || '') + stripActionBox;
     }
   }
 
@@ -756,11 +728,11 @@
     var cropPlaceholder = projectHa != null ? 'Vacío = ' + projectHa + ' ha (predio)' : 'Vacío = ha del predio';
     var irrPlaceholder = 'Franja humedecida (goteo)';
 
-    if (root.getAttribute('data-np-irr-version') !== '13') {
+    if (root.getAttribute('data-np-irr-version') !== '14') {
       root.removeAttribute('data-np-irr-rendered');
       root.removeAttribute('data-np-irr-bound');
       root.innerHTML = '';
-      root.setAttribute('data-np-irr-version', '13');
+      root.setAttribute('data-np-irr-version', '14');
     }
     if (window.NpIrrBalance && window.NpIrrBalance.ensureIrrCalcStyles) window.NpIrrBalance.ensureIrrCalcStyles();
 
