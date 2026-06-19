@@ -4343,6 +4343,40 @@
     .np-apunte-pdf-root .np-modal-note-rich ul:not(.np-rich-list-diagram) li::marker {
       color: #0f766e;
     }
+    /* html2canvas no pinta ::marker bien → listas convertidas a .np-pdf-li en JS */
+    .np-apunte-pdf-root .np-pdf-list {
+      margin: 0.45em 0 0.75em 0;
+    }
+    .np-apunte-pdf-root .np-pdf-li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.28em;
+      margin: 0.22em 0;
+      line-height: 1.45;
+    }
+    .np-apunte-pdf-root .np-pdf-li-marker {
+      flex-shrink: 0;
+      font-weight: 800;
+      color: #1d4ed8;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.45;
+    }
+    .np-apunte-pdf-root .np-pdf-li--ol .np-pdf-li-marker {
+      color: #0f172a;
+      min-width: 1.5em;
+    }
+    .np-apunte-pdf-root .np-pdf-li--ul .np-pdf-li-marker {
+      font-size: 0.92em;
+      min-width: 0.85em;
+      padding-top: 0.02em;
+    }
+    .np-apunte-pdf-root .np-pdf-li-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .np-apunte-pdf-root .np-pdf-list .np-pdf-list {
+      margin: 0.2em 0 0.15em 1.1em;
+    }
     .np-apunte-pdf-root a.np-rich-nutri-ref,
     .np-apunte-pdf-root a.np-rich-nutri-link-ref {
       color: #047857;
@@ -27213,6 +27247,35 @@
     return formatRichDueLabel(dk, getPlanProItemDueTime(row));
   }
 
+  function normalizeApuntePdfLists(root) {
+    if (!root) return;
+    var lists = Array.prototype.slice.call(root.querySelectorAll('ol, ul:not(.np-rich-list-diagram)'));
+    lists.reverse().forEach(function (list) {
+      if (!list.parentNode) return;
+      var isOl = list.tagName === 'OL';
+      var wrap = document.createElement('div');
+      wrap.className = 'np-pdf-list' + (isOl ? ' np-pdf-list--ol' : ' np-pdf-list--ul');
+      var start = parseInt(list.getAttribute('start') || '1', 10);
+      if (!isFinite(start) || start < 1) start = 1;
+      Array.prototype.slice.call(list.children).forEach(function (li) {
+        if (!li || li.tagName !== 'LI') return;
+        var row = document.createElement('div');
+        row.className = 'np-pdf-li' + (isOl ? ' np-pdf-li--ol' : ' np-pdf-li--ul');
+        var marker = document.createElement('span');
+        marker.className = 'np-pdf-li-marker';
+        marker.textContent = isOl ? start + '.' : '●';
+        if (isOl) start += 1;
+        var body = document.createElement('span');
+        body.className = 'np-pdf-li-body';
+        while (li.firstChild) body.appendChild(li.firstChild);
+        row.appendChild(marker);
+        row.appendChild(body);
+        wrap.appendChild(row);
+      });
+      list.parentNode.replaceChild(wrap, list);
+    });
+  }
+
   function normalizeApuntePdfTableFields(root) {
     if (!root) return;
     root.querySelectorAll('.np-ms-cell input, .np-ms-cell textarea').forEach(function (field) {
@@ -27488,6 +27551,7 @@
       blockSection.appendChild(blocksWrap);
       root.appendChild(blockSection);
     }
+    normalizeApuntePdfLists(root);
     normalizeApuntePdfTableFields(root);
     await hydrateApuntePdfNutriLinks(root);
     guardApuntePdfLinkPageBreaks(root);
