@@ -182,6 +182,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 | Fórmulas | ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; balance = ETc − lluvia − riego (mm) |
 | Volumen | 1 mm = 10 m³/ha sobre **área cultivo**; riego en m³ → mm = m³ ÷ (ha regada × 10) |
 | Franja regada | Si ha regada < ha cultivo, mm se concentran en franja (factor = cultivo/regada); m³ total **no** se divide |
+| Recuadro «Dato importante» | Si hay franja distinta: **Riego sugerido** (m³), **Lámina en franja** (mm en zona humedecida), **Aplicar en franja regada** (m³). Mismo bloque visual en PRO y herramienta gratis `lamina_riego`. API: `balance_wetted_mm`, `balance_mm` |
 | % alcance raíces | Mismo criterio Enmiendas/Fertilidad; sugiere franja, no altera m³ |
 | Persistencia | `climateAnalysis.irrigationQuickCalc` + `rolling` en JSON proyecto (sin SQL) |
 | Límite | No almacenamiento suelo, escurrimiento, drenaje ni lixiviación; validar en campo |

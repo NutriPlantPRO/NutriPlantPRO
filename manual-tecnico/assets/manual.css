@@ -311,6 +311,21 @@ body {
 .mt-profile-card p { margin: 0 0 12px; }
 .mt-profile-card p:last-child { margin-bottom: 0; }
 
+.mt-autoria-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 16px;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  line-height: 1.25;
+}
+.mt-autoria-title__mark {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 @media (max-width: 520px) {
   .mt-autoria-btn__text,
   .mt-portal-btn__text { display: none; }
