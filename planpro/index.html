@@ -7109,6 +7109,8 @@
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
+      overflow-wrap: anywhere;
+      word-break: break-word;
       min-height: calc(var(--np-sheet-page-h) - var(--np-sheet-pad-top) - var(--np-sheet-pad-bottom));
       max-height: none;
       overflow-y: visible;
@@ -13011,6 +13013,37 @@
     return (d.textContent || '').replace(/\s+/g, ' ').trim();
   }
 
+  /** Texto plano con saltos de línea (p, br, listas) para guardar body_plain sin perder párrafos. */
+  function htmlToPlainWithBreaks(html) {
+    if (html == null || !String(html).trim()) return '';
+    var d = document.createElement('div');
+    d.innerHTML = String(html);
+    function walk(node) {
+      var out = '';
+      Array.prototype.forEach.call(node.childNodes || [], function (child) {
+        if (child.nodeType === 3) {
+          out += child.textContent || '';
+        } else if (child.nodeType === 1) {
+          var tag = child.tagName ? child.tagName.toLowerCase() : '';
+          if (tag === 'br') {
+            out += '\n';
+          } else if (tag === 'li') {
+            out += walk(child).replace(/\n+$/, '') + '\n';
+          } else if (/^(p|div|h2|h3|h4|blockquote)$/i.test(tag)) {
+            var inner = walk(child).replace(/\n+$/, '');
+            if (inner.trim()) out += inner + '\n';
+          } else if (tag === 'ul' || tag === 'ol') {
+            out += walk(child);
+          } else {
+            out += walk(child);
+          }
+        }
+      });
+      return out;
+    }
+    return walk(d).replace(/\n{3,}/g, '\n\n').trim();
+  }
+
   function escapeHtmlText(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
@@ -15948,7 +15981,7 @@
     opts = opts || {};
     if (!state.client || !itemId || !state.userId) return;
     var rawHtml = sanitizeRich(htmlRaw);
-    var plain = stripHtml(rawHtml);
+    var plain = htmlToPlainWithBreaks(rawHtml);
     var hadContent = opts.hadContent != null ? opts.hadContent : state.detailItemNoteHadContent;
     if (
       editorHtmlIsEffectivelyEmpty(rawHtml) &&
@@ -16026,7 +16059,16 @@
 
   function richHtmlHasFormattedContent(html) {
     if (!html || !String(html).trim()) return false;
-    return /np-rich-due|np-rich-flag|np-rich-separator|np-rich-ref|np-rich-fs-|<(strong|b|em|i|u|s|strike|h2|h3|ul|ol|img)\b/i.test(String(html));
+    var s = String(html);
+    if (/np-rich-due|np-rich-flag|np-rich-separator|np-rich-ref|np-rich-fs-|<(strong|b|em|i|u|s|strike|h2|h3|ul|ol|img)\b/i.test(s)) {
+      return true;
+    }
+    /* Párrafos y saltos de renglón: siempre preferir body_html al reabrir */
+    if (/<br\s*\/?>/i.test(s)) return true;
+    if (/<\/p>\s*<p/i.test(s)) return true;
+    if (/<p[\s>]/i.test(s)) return true;
+    if (/<div[\s>]/i.test(s)) return true;
+    return false;
   }
 
   /** Libreta con diseño (🚦, negritas, colores) → body_html; solo texto plano de Socio → body_plain. */
@@ -16036,7 +16078,7 @@
     if (htmlRaw && richHtmlHasFormattedContent(htmlRaw)) return sanitizeRich(r.body_html);
     if (htmlRaw && !plain) return sanitizeRich(r.body_html);
     if (plain && htmlRaw) {
-      var stripped = stripHtml(htmlRaw).trim();
+      var stripped = htmlToPlainWithBreaks(htmlRaw).trim();
       if (stripped === plain || plain.length > stripped.length + 12) {
         return plainTextToRichParagraphs(r.body_plain);
       }
@@ -25697,7 +25739,7 @@
     refreshPendingHint(true);
     syncPendingBlocksInputsFromDOM();
     var rawHtml = sanitizeRich(getRichEditorHtml());
-    var plain = stripHtml(rawHtml);
+    var plain = htmlToPlainWithBreaks(rawHtml);
     var mapsRaw = $('npCreateMapsUrl') ? $('npCreateMapsUrl').value : '';
     var mapsAttachment = makePlanProMapsAttachment(mapsRaw);
     if (String(mapsRaw || '').trim() && !mapsAttachment) {
