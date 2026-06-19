@@ -9,7 +9,7 @@
   <style>
     body { margin: 0; padding: 16px; background: #f8fafc; font-family: Inter, system-ui, sans-serif; }
     .wrap { position: relative; background: #fff; border-radius: 12px; padding: 16px; }
-    html.embed-login .title { display: none; }
+    html.embed-login .np-free-tool-head { display: none; }
     html.embed-login body { padding: 12px 14px 16px; }
     .title { margin: 0 0 12px; font-size: 22px; color: #0f172a; font-weight: 800; }
     .intro { margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #64748b; }
@@ -136,9 +136,11 @@
   </style>
 </head>
 <body>
-  <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
   <div class="wrap">
-    <h2 class="title">💧 Lámina de riego y balance hídrico</h2>
+    <div class="np-free-tool-head">
+      <h2 class="title np-free-tool-title">💧 Lámina de riego y balance hídrico</h2>
+      <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+    </div>
     <p class="intro">
       Elige un punto en el mapa (como en VPD). NutriPlant consulta <strong>lluvia y ETo</strong> con <strong>información meteorológica con respaldo satelital</strong> y calcula déficit y balance para <strong>1 o 7 días</strong>.
       Puedes ajustar Kc, riego aplicado y superficies. Estimación rápida — <strong>validar en campo</strong>.

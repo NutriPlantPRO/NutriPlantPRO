@@ -676,6 +676,28 @@
       border-radius: 8px 8px 0 0;
     }
 
+    .modal-header-trailing {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      margin-left: 12px;
+    }
+
+    .modal-free-watermark {
+      pointer-events: none;
+      line-height: 0;
+      opacity: 0.45;
+    }
+
+    .modal-free-watermark img {
+      height: 28px;
+      width: auto;
+      max-width: 82px;
+      object-fit: contain;
+      display: block;
+    }
+
     .modal-title {
       margin: 0;
       color: #1f2937;
@@ -6891,7 +6913,10 @@ CONTRATO:
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
         <h2 class="modal-title">⚛️ Tabla Periódica (Nutrientes Esenciales)</h2>
-        <button class="modal-close" onclick="closePeriodicTableNutrientsCalculator()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closePeriodicTableNutrientsCalculator()">×</button>
+        </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?v=20260523" title="Tabla Periódica (Nutrientes Esenciales)" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
@@ -6904,7 +6929,10 @@ CONTRATO:
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
         <h2 class="modal-title">📊 Distribución nutrimental por etapa (%)</h2>
-        <button class="modal-close" onclick="closeExtraccionEtapaCalculator()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeExtraccionEtapaCalculator()">×</button>
+        </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="extraccionEtapaCalculatorFrame" src="extraccion-etapa-free.html?ctx=dashboard" title="Distribución nutrimental por etapa" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
@@ -6917,7 +6945,10 @@ CONTRATO:
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
         <h2 class="modal-title">🔺 Compatibilidad de fertilizantes</h2>
-        <button class="modal-close" onclick="closeFertilizerCompatibilityCalculator()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeFertilizerCompatibilityCalculator()">×</button>
+        </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="fertilizerCompatibilityFrame" src="fertilizer-compatibility-free.html" title="Compatibilidad de fertilizantes" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
@@ -6930,7 +6961,10 @@ CONTRATO:
     <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title">💦 Diagnóstico de agua y acondicionamiento</h2>
-        <button class="modal-close" onclick="closeWaterHardnessCalculator()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeWaterHardnessCalculator()">×</button>
+        </div>
       </div>
       <div class="modal-body">
         <iframe id="waterHardnessCalculatorFrame" src="agua-dureza-free.html?embed=dashboard&v=1764880001" title="Diagnóstico de agua y acondicionamiento" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
@@ -6943,7 +6977,10 @@ CONTRATO:
     <div class="modal modal-tool-iframe-full modal-tool-iframe-fit">
       <div class="modal-header">
         <h2 class="modal-title">🌱 Estimación de N mineralizable</h2>
-        <button class="modal-close" onclick="closeNMineralizableMoCalculator()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeNMineralizableMoCalculator()">×</button>
+        </div>
       </div>
       <div class="modal-body">
         <iframe id="nMineralizableMoCalculatorFrame" src="n-mineralizable-mo-free.html?embed=dashboard" title="Estimación de N mineralizable" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
@@ -6956,7 +6993,10 @@ CONTRATO:
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
         <h2 class="modal-title">💧 Diseño de solución nutritiva</h2>
-        <button class="modal-close" onclick="closeHydroSolutionCalculator()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeHydroSolutionCalculator()">×</button>
+        </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="hydroSolutionCalculatorFrame" src="hidro-solucion-free.html?embed=dashboard&v=20260540" title="Diseño de solución nutritiva" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
@@ -6969,7 +7009,10 @@ CONTRATO:
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
         <h2 class="modal-title">🪨 Agua en suelo y textura</h2>
-        <button class="modal-close" onclick="closeSoilWaterTextureTool()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeSoilWaterTextureTool()">×</button>
+        </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="soilWaterTextureToolFrame" src="agua-disponible-textura-suelo-free.html" title="Agua en suelo y textura" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
@@ -6982,7 +7025,10 @@ CONTRATO:
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
         <h2 class="modal-title">💧 Lámina de riego y balance hídrico</h2>
-        <button class="modal-close" onclick="closeLaminaRiegoTool()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeLaminaRiegoTool()">×</button>
+        </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="laminaRiegoToolFrame" src="lamina-riego-free.html?embed=dashboard" title="Lámina de riego y balance hídrico" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
@@ -6995,7 +7041,10 @@ CONTRATO:
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
         <h2 class="modal-title">🧂 Solubilidad e índice salino</h2>
-        <button class="modal-close" onclick="closeFertilizerSolubilitySaltTool()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeFertilizerSolubilitySaltTool()">×</button>
+        </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html" title="Solubilidad e índice salino" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
@@ -7008,7 +7057,10 @@ CONTRATO:
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
         <h2 class="modal-title">🔗 Interacciones y movilidad nutrimental</h2>
-        <button class="modal-close" onclick="closeNutrientInteractionsTool()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeNutrientInteractionsTool()">×</button>
+        </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="nutrientInteractionsToolFrame" src="interacciones-absorcion-movilidad-free.html" title="Interacciones y movilidad nutrimental" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
@@ -7021,7 +7073,10 @@ CONTRATO:
     <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
       <div class="modal-header">
         <h2 class="modal-title">⚗️ Composición de fertilizantes (%)</h2>
-        <button class="modal-close" onclick="closeFertilizerCompositionCalculator()">×</button>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeFertilizerCompositionCalculator()">×</button>
+        </div>
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="fertilizerCompositionCalculatorFrame" src="fertilizer-composition-free.html?v=20260523" title="Composición de fertilizantes" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>

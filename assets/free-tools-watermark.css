@@ -1,23 +1,44 @@
-/* Pequeña marca de agua: calculadoras gratuitas desde login.html (iframes o standalone) */
+/* Marca NutriPlant en cabecera de herramientas gratuitas (standalone) */
+.np-free-tool-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.np-free-tool-head .np-free-tool-title,
+.np-free-tool-head .title,
+.np-free-tool-head .gm-title,
+.np-free-tool-head h1 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
 .np-free-watermark {
-  position: fixed;
-  top: 8px;
-  right: 10px;
-  z-index: 99998;
   pointer-events: none;
   line-height: 0;
+  flex-shrink: 0;
+  opacity: 0.45;
 }
+
 .np-free-watermark img {
   height: 28px;
   width: auto;
-  max-width: min(38vw, 96px);
+  max-width: 82px;
   object-fit: contain;
-  opacity: 0.4;
   display: block;
 }
+
 @media (min-width: 640px) {
   .np-free-watermark img {
     height: 32px;
-    opacity: 0.43;
   }
+}
+
+/* En iframe (login/dashboard) el modal padre ya lleva título + logo */
+html.embed-login .np-free-tool-head,
+html.embed-dashboard .np-free-tool-head {
+  display: none;
 }
