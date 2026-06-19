@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO",
-        "description": "IMPORTANTE ChatGPT: invoca SIEMPRE esta operación (nutriplantAdminQuery). El campo body.action elige la operación interna (admin_stats, nutri_pro_catalog, describe_api, etc.). Nunca invoques admin_stats ni nutri_pro_* como Actions separadas. Ejemplo usuarios activos: {\"action\":\"admin_stats\",\"params\":{}}. Verifica versión: {\"action\":\"describe_api\",\"params\":{}} → debe devolver version 2.9.1.",
+        "description": "Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, describe_api van en body.action, no son tools aparte. Ej: {\"action\":\"admin_stats\",\"params\":{}}. Verifica describe_api → version 2.9.1.",
         "requestBody": {
           "required": true,
           "content": {

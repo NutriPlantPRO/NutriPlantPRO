@@ -5855,7 +5855,7 @@ function getOpenApiSpec() {
           operationId: 'nutriplantAdminQuery',
           summary: 'Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO',
           description:
-            'Invoca SIEMPRE nutriplantAdminQuery. body.action elige operación (admin_stats, nutri_pro_catalog, describe_api…). No invoques esos nombres como Actions separadas. Verifica: describe_api → version 2.9.1.',
+            'Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, describe_api van en body.action, no son tools aparte. Verifica describe_api → version 2.9.1.',
           requestBody: {
             required: true,
             content: {
