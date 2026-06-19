@@ -1,40 +1,15 @@
-/**
- * Iframe embebido (login/dashboard): reporta altura real al padre en móvil.
- */
 (function () {
-  'use strict';
-
-  if (!document.documentElement.classList.contains('embed-dashboard')) return;
-
-  var root = document.querySelector('.wrap') || document.body;
-
-  function measureHeight() {
-    var rect = root.getBoundingClientRect();
-    var pad = 24;
-    return Math.ceil(Math.max(
-      document.documentElement.scrollHeight,
-      document.body.scrollHeight,
-      rect.bottom + pad
-    ));
+  var q = location.search || '';
+  var root = document.documentElement;
+  if (/[?&]embed=dashboard(?:&|$)/.test(q) || /[?&]ctx=dashboard(?:&|$)/.test(q)) {
+    root.classList.add('embed-dashboard');
+    return;
   }
-
-  function notifyParent() {
-    try {
-      window.parent.postMessage({
-        type: 'np-free-tool-resize',
-        height: measureHeight()
-      }, '*');
-    } catch (err) { /* cross-origin guard */ }
+  if (/[?&]embed=login(?:&|$)/.test(q)) {
+    root.classList.add('embed-login');
+    return;
   }
-
-  if (typeof ResizeObserver !== 'undefined') {
-    new ResizeObserver(notifyParent).observe(root);
+  if (window.self !== window.top) {
+    root.classList.add('embed-login');
   }
-
-  window.addEventListener('load', notifyParent);
-  window.addEventListener('resize', notifyParent);
-  document.querySelectorAll('details').forEach(function (el) {
-    el.addEventListener('toggle', function () { setTimeout(notifyParent, 40); });
-  });
-  setTimeout(notifyParent, 80);
 })();
