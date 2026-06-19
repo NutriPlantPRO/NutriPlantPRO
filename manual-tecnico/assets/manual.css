@@ -154,7 +154,7 @@ body {
   .mt-social-links {
     width: 100%;
     margin-left: 0;
-    justify-content: center;
+    justify-content: flex-end;
     padding-top: 6px;
     border-top: 1px solid var(--mt-border);
   }

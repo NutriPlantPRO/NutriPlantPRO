@@ -66,6 +66,8 @@ function withSharedViewChrome(reportHtml, options) {
     .np-shared-topbar .inner{height:48px;max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 16px;position:relative}
     .np-shared-topbar .brand{position:absolute;left:16px;top:50%;transform:translateY(-50%);line-height:0}
     .np-shared-topbar .brand img{height:40px;width:auto;display:block}
+    .np-shared-topbar .np-shared-pdf-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:none;border-radius:8px;background:#0284c7;color:#fff;font:600 13px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer;box-shadow:0 1px 2px rgba(2,132,199,.25)}
+    .np-shared-topbar .np-shared-pdf-btn:hover{background:#0369a1}
     .np-shared-topbar .links{display:flex;align-items:center;gap:10px}
     .np-shared-topbar .links a{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;color:#64748b;text-decoration:none;transition:all .2s ease}
     .np-shared-topbar .links a:hover{transform:translateY(-1px);background:#f8fafc}
@@ -104,12 +106,16 @@ function withSharedViewChrome(reportHtml, options) {
       .np-shared-topbar .links a{width:28px;height:28px}
       .report-watermark-corner{top:54px!important}
     }
+    @media print{
+      .np-shared-topbar,.np-shared-note{display:none!important}
+    }
   </style>`;
   const chromeHeader = `<header class="np-shared-topbar">
     <div class="inner">
       <a class="brand" href="https://nutriplantpro.com/dashboard.html" target="_blank" rel="noopener noreferrer">
         <img src="https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO">
       </a>
+      <button type="button" class="np-shared-pdf-btn" onclick="window.print()" title="Guardar como PDF">📥 Descargar PDF</button>
       <nav class="links" aria-label="Redes sociales NutriPlant PRO">
         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" data-social="facebook" title="Facebook" aria-label="Facebook">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
@@ -129,7 +135,7 @@ function withSharedViewChrome(reportHtml, options) {
       </nav>
     </div>
   </header>
-  <div class="np-shared-note">Vista compartida de reporte NutriPlant PRO. Este link permanece activo; solo deja de servir si se genera uno nuevo desde el panel.</div>`;
+  <div class="np-shared-note">Vista compartida de reporte NutriPlant PRO. Este enlace <strong>no caduca</strong>. Usa «Descargar PDF» o Imprimir → Guardar como PDF. Solo deja de abrir si eliminas el reporte o si la subida a la nube falló al compartir.</div>`;
 
   let out = String(reportHtml || '');
   const docHasBase = /<base\s/i.test(out);
@@ -186,8 +192,10 @@ exports.handler = async function(event) {
     const storedToken = String(data.shareToken || data.share_token || '').trim();
 
     if (!shareEnabled || !storedToken || storedToken !== token) {
-      return htmlResponse(403, errorPage('Acceso denegado', 'Este link no coincide con el reporte en el servidor. Suele pasar si la subida a la nube falló al compartir, o si abriste un link viejo tras volver a compartir (cada vez se genera un token nuevo). Vuelve al panel, pulsa Compartir vista una sola vez y espera el mensaje de éxito.'));
+      return htmlResponse(403, errorPage('Acceso denegado', 'Este link no coincide con el reporte en el servidor. Suele pasar si la subida a la nube falló al compartir o si el reporte fue eliminado. Vuelve al panel, pulsa «Compartir vista» una sola vez y espera el mensaje de éxito.'));
     }
+
+    // Política NutriPlant: los links compartidos no caducan (shareExpiresAt se ignora).
 
     const html = typeof data.reportHTML === 'string' ? data.reportHTML : '';
     if (!html) {

@@ -7622,6 +7622,54 @@
       max-height: none;
       overflow-y: visible;
     }
+    /*
+     * Móvil / tablet angosta: conservar hoja A4 (210×297 mm) como en laptop y PDF;
+     * deslizar horizontalmente si la pantalla es más angosta que la hoja.
+     */
+    @media (max-width: 900px) {
+      #npDetailModal .np-modal-body,
+      #npCreateModal .np-modal-body {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      #npDetailModal .np-modal-notebook-stack,
+      #npCreateModal .np-modal-notebook-stack {
+        align-items: flex-start;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        width: 100%;
+        max-width: 100%;
+      }
+      #npDetailModal .np-notebook-wrap,
+      #npCreateModal .np-notebook-wrap {
+        align-items: flex-start;
+        width: max-content;
+        min-width: 100%;
+        max-width: none;
+        overflow-x: visible;
+      }
+      #npDetailModal .np-notebook-pages-bg,
+      #npCreateModal .np-notebook-pages-bg,
+      #npDetailModal .np-notebook-page,
+      #npCreateModal .np-notebook-page,
+      #npDetailModal .np-notebook-page.np-modal-notebook-page,
+      #npCreateModal .np-notebook-page.np-modal-notebook-page,
+      #npDetailModal .np-notebook-page-actions,
+      #npCreateModal .np-notebook-page-actions,
+      #npDetailModal #npModalRichToolbar,
+      #npCreateModal #npRichToolbar {
+        width: var(--np-sheet-w);
+        max-width: none;
+        flex-shrink: 0;
+      }
+      #npDetailModal .np-notebook-page-sheet,
+      #npCreateModal .np-notebook-page-sheet {
+        width: var(--np-sheet-w);
+        max-width: none;
+      }
+    }
     .np-modal-note-rich h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75em 0 0.4em; color: #0f172a; }
     .np-modal-note-rich h3 { font-size: 1.08rem; font-weight: 650; margin: 0.65em 0 0.35em; color: #334155; }
     .np-modal-note-rich ul, .np-modal-note-rich ol { margin: 0.5em 0 0.75em 1.25em; }

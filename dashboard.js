@@ -8455,7 +8455,7 @@ function loadChartImagesForReport(selectedSections, callback) {
       try {
         const ca = currentProject.climateAnalysis || {};
         window.getClimateChartsDataUrlsForReport(ca.rainfall, ca.et0, function(climate) {
-          if (climate && (climate.rain || climate.et0)) out.climate = climate;
+          if (climate && climate.combined) out.climate = climate;
           done(out);
         });
       } catch (e) {
@@ -8570,8 +8570,8 @@ function showReportViewShareModal(url, autoCopied) {
   p.style.fontSize = '14px';
   p.style.lineHeight = '1.5';
   p.textContent = autoCopied
-    ? 'El enlace ya se copió al portapapeles: pégalo donde quieras (Cmd+V o Ctrl+V). El link no vence; solo deja de servir si vuelves a pulsar «Compartir vista» (se genera otro token).'
-    : 'Tu navegador no permitió copiar solo; selecciona el texto y cópialo (Cmd+C / Ctrl+C). El link no vence; si vuelves a compartir, el enlace cambia.';
+    ? 'El enlace ya se copió al portapapeles: pégalo donde quieras (Cmd+V o Ctrl+V). El link no caduca. Si vuelves a pulsar «Compartir vista», se actualiza el contenido pero se conserva el mismo enlace.'
+    : 'Tu navegador no permitió copiar solo; selecciona el texto y cópialo (Cmd+C / Ctrl+C). El link no caduca; puedes volver a compartir para refrescar el contenido sin cambiar la URL.';
   body.appendChild(p);
 
   var inp = document.createElement('input');
@@ -8682,8 +8682,10 @@ window.shareReportView = async function(reportId) {
       return;
     }
 
-    // Al compartir nuevamente: regenerar token (el link anterior deja de servir).
-    var token = generateReportShareToken();
+    // Reutilizar token existente para que el link no «caduque» al volver a compartir.
+    var existingToken = String(report.shareToken || '').trim();
+    var token =
+      existingToken && report.shareEnabled !== false ? existingToken : generateReportShareToken();
     var nowIso = new Date().toISOString();
     var htmlSnapshot = await buildReportHtmlSnapshotForShare(report);
     if (!htmlSnapshot) {
@@ -9635,7 +9637,7 @@ function updateReportsList() {
     reportsList.innerHTML = `
       <div class="no-reports" style="text-align: center; padding: 40px; color: #666;">
         <p>📋 No hay reportes generados aún</p>
-        <p style="font-size: 14px; margin-top: 10px;">Pulsa «Generar Nuevo Reporte PDF» arriba. La lista se guarda en este navegador y, con cuenta en la nube, también en Supabase. Descargar regenera el PDF al momento (no ocupa caché pesada).</p>
+        <p style="font-size: 14px; margin-top: 10px;">Pulsa «Generar Nuevo Reporte PDF» arriba. La lista se guarda en este navegador y, con cuenta en la nube, también en Supabase. «Descargar» regenera el PDF al momento. El link compartido no caduca.</p>
       </div>
     `;
     return;
@@ -9652,6 +9654,9 @@ function updateReportsList() {
           <p style="margin: 0; color: #666; font-size: 12px;">
             ${createReportMetaText(report)}
           </p>
+          ${report.shareToken && report.shareEnabled !== false
+            ? '<p style="margin:4px 0 0;font-size:11px;color:#059669;">🔗 Link compartido activo (sin caducidad)</p>'
+            : ''}
         </div>
         <div>
           <button onclick="downloadReport('${report.id}')" class="btn btn-secondary" style="margin-right: 10px;">
@@ -9738,6 +9743,30 @@ window.deleteReport = function(reportId) {
   }
 };
 
+function mergeReportShareFields(preferred, fallback) {
+  if (!preferred || typeof preferred !== 'object') return fallback || preferred;
+  if (!fallback || typeof fallback !== 'object') return preferred;
+  var out = Object.assign({}, preferred);
+  var prefToken = String(out.shareToken || out.share_token || '').trim();
+  var fallToken = String(fallback.shareToken || fallback.share_token || '').trim();
+  if (!prefToken && fallToken) {
+    out.shareToken = fallToken;
+    if (out.shareEnabled === undefined && fallback.shareEnabled !== undefined) {
+      out.shareEnabled = fallback.shareEnabled;
+    }
+    if (!out.shareCreatedAt && fallback.shareCreatedAt) out.shareCreatedAt = fallback.shareCreatedAt;
+  }
+  if (
+    (!out.reportHTML || typeof out.reportHTML !== 'string' || !out.reportHTML.trim()) &&
+    typeof fallback.reportHTML === 'string' &&
+    fallback.reportHTML.trim()
+  ) {
+    out.reportHTML = fallback.reportHTML;
+  }
+  out.shareExpiresAt = null;
+  return out;
+}
+
 function mergeReportsLists(cloudList, localList, pendingList) {
   const byId = new Map();
   function add(report, cloudWins) {
@@ -9749,12 +9778,14 @@ function mergeReportsLists(cloudList, localList, pendingList) {
       return;
     }
     if (cloudWins) {
-      byId.set(id, report);
+      byId.set(id, mergeReportShareFields(report, existing));
       return;
     }
     const existingTs = getReportDisplayTimestamp(existing).getTime();
     const incomingTs = getReportDisplayTimestamp(report).getTime();
-    byId.set(id, incomingTs >= existingTs ? report : existing);
+    const winner = incomingTs >= existingTs ? report : existing;
+    const loser = winner === report ? existing : report;
+    byId.set(id, mergeReportShareFields(winner, loser));
   }
   (localList || []).forEach(function(r) { add(r, false); });
   (pendingList || []).forEach(function(r) { add(r, false); });
@@ -16907,17 +16938,12 @@ function createClimateReportSectionHTML(chartImages) {
     }
     et0Table = wrapClimateMonthlyTable('et0', et0Rows);
   }
-  var rainChartBlock = '';
-  if (climateCharts.rain) {
-    rainChartBlock =
-      '<div class="report-block"><div class="report-block-title">Gráfica — Precipitación (mm/mes)</div>' +
-      '<img src="' + climateCharts.rain + '" alt="Gráfica lluvia mensual" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>';
-  }
-  var et0ChartBlock = '';
-  if (climateCharts.et0) {
-    et0ChartBlock =
-      '<div class="report-block"><div class="report-block-title">Gráfica — ET₀ (mm/mes)</div>' +
-      '<img src="' + climateCharts.et0 + '" alt="Gráfica ET0 mensual" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>';
+  var combinedChartBlock = '';
+  if (climateCharts.combined) {
+    combinedChartBlock =
+      '<div class="report-block"><div class="report-block-title">📊 Lluvia vs ET₀ (mm/mes)</div>' +
+      '<p style="margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.45;">Misma escala para comparar precipitación y evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀.</p>' +
+      '<img src="' + climateCharts.combined + '" alt="Gráfica lluvia y ET0 mensual" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>';
   }
   var liveBlock = '';
   if (live && live.temperature != null) {
@@ -16959,7 +16985,11 @@ function createClimateReportSectionHTML(chartImages) {
       '<div><strong>ET₀ (hoy):</strong> ' + (liveEt0 != null ? reportNum(liveEt0, 1) + ' mm' : '—') + '</div>' +
       '</div>';
   }
-  if (!rainTable && !et0Table && !rainChartBlock && !et0ChartBlock && !liveBlock) return '';
+  var irrBlock = '';
+  if (typeof window.getClimateIrrigationQuickCalcReportHtml === 'function') {
+    irrBlock = window.getClimateIrrigationQuickCalcReportHtml(reportEscapeHtml);
+  }
+  if (!rainTable && !et0Table && !combinedChartBlock && !liveBlock && !irrBlock) return '';
   var satNote =
     '<p style="margin:0 0 12px 0;padding:8px 10px;font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">' +
     '<strong>Nota:</strong> estimaciones basadas en información satelital en el predio; pueden diferir del clima en campo.</p>';
@@ -16968,10 +16998,10 @@ function createClimateReportSectionHTML(chartImages) {
     '<h2 class="section-title" style="margin-top:24px;">🌧️ Clima — Lluvia, ET₀ y tiempo actual</h2>' +
     satNote +
     (rainTable ? '<div class="report-block"><div class="report-block-title">Precipitación (mm/mes)</div>' + rainTable + '</div>' : '') +
-    (rainChartBlock || '') +
     (et0Table ? '<div class="report-block"><div class="report-block-title">ET₀ (mm/mes, suma diaria)</div>' + et0Table + '</div>' : '') +
-    (et0ChartBlock || '') +
+    (combinedChartBlock || '') +
     (liveBlock ? '<div class="report-block"><div class="report-block-title">Última lectura</div>' + liveBlock + '</div>' : '') +
+    (irrBlock || '') +
     '</div>'
   );
 }

@@ -215,7 +215,9 @@
     if (targetMm == null) return '';
     var mmAbs = Math.abs(targetMm);
     var m3Abs = targetVol && targetVol.total != null ? Math.abs(targetVol.total) : round1(mmAbs * 10 * res.irrigatedHa);
-    var isDeficit = targetMm < 0;
+    var cropRefMm = res.balance != null ? res.balance : res.deficitCrop;
+    /* Positivo = ETc > lluvia (falta agua); negativo = superávit hídrico */
+    var isDeficit = targetMm > 0;
     var accent = isDeficit ? '#0369a1' : '#0f766e';
     var bg = isDeficit ? 'linear-gradient(135deg,#eff6ff 0%,#e0f2fe 100%)' : 'linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%)';
     var border = isDeficit ? '#7dd3fc' : '#6ee7b7';
@@ -286,18 +288,26 @@
       ' ha regadas</div>' +
       '</div></div>' +
       '<p style="margin:0;font-size:12px;line-height:1.5;color:#475569;">Referencia cultivo: <strong>' +
-      fmtMm(isDeficit ? (res.balance != null ? res.balance : res.deficitCrop) : res.balance != null ? res.balance : res.deficitCrop) +
+      fmtMm(cropRefMm) +
       ' mm</strong> sobre ' +
       fmtMm(res.cropHa) +
       ' ha ≈ <strong>' +
       m3Abs +
-      ' m³</strong> totales. <strong>En goteo/microaspersor aplicas esos ' +
-      m3Abs +
-      ' m³</strong> en la franja de ' +
-      fmtMm(res.irrigatedHa) +
-      ' ha (<strong>' +
-      fmtMm(targetMm) +
-      ' mm</strong> en zona humedecida).</p></div>'
+      ' m³</strong> totales. ' +
+      (isDeficit
+        ? '<strong>En goteo/microaspersor aplicas esos ' +
+          m3Abs +
+          ' m³</strong> en la franja de ' +
+          fmtMm(res.irrigatedHa) +
+          ' ha (<strong>' +
+          fmtMm(targetMm) +
+          ' mm</strong> en zona humedecida).'
+        : 'La lluvia cubrió más que la ETc del periodo; <strong>no necesitas regar para cubrir déficit</strong> (superávit de ' +
+          m3Abs +
+          ' m³ en franja de ' +
+          fmtMm(res.irrigatedHa) +
+          ' ha).') +
+      '</p></div>'
     );
   }
 
@@ -511,6 +521,32 @@
       '<tr><td colspan="3" style="padding:12px;color:#64748b;text-align:center;">Sin coincidencias en la tabla FAO.</td></tr>';
   }
 
+  function buildReportBlockHtml(res, meta) {
+    meta = meta || {};
+    var metaHtml = '';
+    if (meta.cropName) {
+      metaHtml +=
+        '<p style="margin:0 0 6px;font-size:13px;color:#334155;"><strong>Cultivo:</strong> ' +
+        String(meta.cropName) +
+        '</p>';
+    }
+    if (meta.kc != null && Number.isFinite(Number(meta.kc))) {
+      metaHtml +=
+        '<p style="margin:0 0 10px;font-size:13px;color:#334155;"><strong>Kc:</strong> ' +
+        fmtMm(meta.kc) +
+        '</p>';
+    }
+    return (
+      '<div class="report-block" style="border-color:#7dd3fc;background:#f0f9ff;">' +
+      '<div class="report-block-title">💧 Calculadora de balance hídrico</div>' +
+      metaHtml +
+      '<div style="padding:12px 14px;background:#fff;border-radius:8px;border:1px solid #e0f2fe;">' +
+      buildSummaryHtml(res) +
+      getNoteHtml('margin-top:12px;margin-bottom:0;') +
+      '</div></div>'
+    );
+  }
+
   w.NpIrrBalance = {
     round1: round1,
     fmtMm: fmtMm,
@@ -522,6 +558,7 @@
     fetchRollingOpenMeteo: fetchRollingOpenMeteo,
     buildSummaryHtml: buildSummaryHtml,
     buildStripActionBoxHtml: buildStripActionBoxHtml,
+    buildReportBlockHtml: buildReportBlockHtml,
     getNoteHtml: getNoteHtml,
     getKcDetailsHtml: getKcDetailsHtml,
     getKcFieldHintHtml: getKcFieldHintHtml,

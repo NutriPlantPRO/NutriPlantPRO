@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../dashboard.css?v=20260320">
     <script src="../subscription-config.js"></script>
     <script src="../analysis-report-render.js"></script>
+    <script src="../assets/np-irrigation-balance-core.js?v=202606182100"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
     <script src="../auth-supabase.js?v=1762793900"></script>
@@ -6979,7 +6980,8 @@
             });
             datasets.forEach(ds => {
                 const points = ds.data.map((v, i) => `${xAt(i)},${yAt(parseFloat(v) || 0)}`).join(' ');
-                svg += `<polyline fill="none" stroke="${ds.color}" stroke-width="2" points="${points}" />`;
+                const dashAttr = ds.dashed ? ' stroke-dasharray="7 5"' : '';
+                svg += `<polyline fill="none" stroke="${ds.color}" stroke-width="2"${dashAttr} points="${points}" />`;
                 ds.data.forEach((v, i) => {
                     const x = xAt(i);
                     const y = yAt(parseFloat(v) || 0);
@@ -6989,7 +6991,12 @@
             svg += `</svg>`;
             const legend = `
                 <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:6px;font-size:12px;color:#334155;">
-                    ${datasets.map(d => `<span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:${d.color};display:inline-block;"></span>${d.label}</span>`).join('')}
+                    ${datasets.map(d => {
+                        const swatch = d.dashed
+                            ? `<span style="width:18px;height:0;border-top:2px dashed ${d.color};display:inline-block;"></span>`
+                            : `<span style="width:10px;height:10px;border-radius:50%;background:${d.color};display:inline-block;"></span>`;
+                        return `<span style="display:flex;align-items:center;gap:6px;">${swatch}${d.label}</span>`;
+                    }).join('')}
                 </div>
             `;
             containerEl.innerHTML = legend + svg;
@@ -7066,9 +7073,58 @@
                 '<div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;">' +
                 '<h4 style="margin:0 0 8px 0;color:' + titleColor + ';">' + title + '</h4>' +
                 '<div style="overflow-x:auto;margin-bottom:12px;"><table style="width:100%;min-width:720px;font-size:12px;border-collapse:collapse;border:1px solid ' + border + ';border-radius:8px;overflow:hidden;">' +
-                head + '<tbody>' + rows + '</tbody></table></div>' +
-                '<div id="admin-climate-' + variant + '-chart" style="margin-top:4px;"></div></div>'
+                head + '<tbody>' + rows + '</tbody></table></div></div>'
             );
+        }
+
+        function adminNormalizeIrrigationQuickCalcState(iqc) {
+            if (!iqc || typeof iqc !== 'object') return null;
+            return {
+                cropName: typeof iqc.cropName === 'string' ? iqc.cropName : '',
+                kc: iqc.kc != null && !isNaN(Number(iqc.kc)) ? Number(iqc.kc) : null,
+                periodDays: iqc.periodDays === 1 || iqc.periodDays === 30 ? iqc.periodDays : 7,
+                irrigationValue:
+                    iqc.irrigationValue != null && !isNaN(Number(iqc.irrigationValue)) ? Number(iqc.irrigationValue) : null,
+                irrigationUnit: iqc.irrigationUnit === 'm3' ? 'm3' : 'mm',
+                cropAreaHa:
+                    iqc.cropAreaHa != null && !isNaN(Number(iqc.cropAreaHa)) ? Number(iqc.cropAreaHa) : null,
+                irrigatedAreaHa:
+                    iqc.irrigatedAreaHa != null && !isNaN(Number(iqc.irrigatedAreaHa)) ? Number(iqc.irrigatedAreaHa) : null,
+                rootReachPct:
+                    iqc.rootReachPct != null && !isNaN(Number(iqc.rootReachPct)) ? Number(iqc.rootReachPct) : null,
+                useManualEt0: !!iqc.useManualEt0,
+                manualEt0: iqc.manualEt0 != null && !isNaN(Number(iqc.manualEt0)) ? Number(iqc.manualEt0) : null,
+                useManualRain: !!iqc.useManualRain,
+                manualRain: iqc.manualRain != null && !isNaN(Number(iqc.manualRain)) ? Number(iqc.manualRain) : null,
+                macroTunnelNoRain: !!iqc.macroTunnelNoRain
+            };
+        }
+
+        function adminIrrigationQuickCalcHasReportData(st, res) {
+            if (!st || !res) return false;
+            return !!(
+                st.cropName ||
+                st.kc != null ||
+                st.irrigationValue != null ||
+                st.useManualEt0 ||
+                st.useManualRain ||
+                st.macroTunnelNoRain ||
+                res.et0 != null ||
+                res.rain != null
+            );
+        }
+
+        function adminBuildIrrigationQuickCalcHtml(ca) {
+            if (!ca || !ca.irrigationQuickCalc || !window.NpIrrBalance) return '';
+            var st = adminNormalizeIrrigationQuickCalcState(ca.irrigationQuickCalc);
+            if (!st || typeof window.NpIrrBalance.computeResults !== 'function') return '';
+            var res = window.NpIrrBalance.computeResults(st, ca.rolling || null);
+            if (!adminIrrigationQuickCalcHasReportData(st, res)) return '';
+            if (typeof window.NpIrrBalance.buildReportBlockHtml !== 'function') return '';
+            return window.NpIrrBalance.buildReportBlockHtml(res, {
+                cropName: st.cropName ? escapeHtml(st.cropName) : '',
+                kc: st.kc
+            });
         }
 
         function adminBuildClimateSectionHtml(ca) {
@@ -7083,6 +7139,13 @@
             if (et0 && et0.monthsPrev) {
                 out += adminBuildClimateMonthlyTableHtml('☀️ ET₀ — Evapotranspiración de referencia (mm/mes)', '#b45309', et0, 'et0');
             }
+            if ((rain && rain.monthsPrev) || (et0 && et0.monthsPrev)) {
+                out +=
+                    '<div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;">' +
+                    '<h4 style="margin:0 0 8px 0;color:#0f172a;">📊 Lluvia vs ET₀ (mm/mes)</h4>' +
+                    '<p style="margin:0 0 10px;font-size:13px;color:#64748b;line-height:1.45;">Misma escala para comparar precipitación y evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀.</p>' +
+                    '<div id="admin-climate-combined-chart"></div></div>';
+            }
             if (live && live.temperature != null) {
                 const liveTs = live.fetchedAt || ca.lastUpdated || null;
                 const liveWhen = liveTs ? '<p style="margin:0 0 6px;font-size:12px;color:#64748b;"><strong>Lectura:</strong> ' + escapeHtml(new Date(liveTs).toLocaleString('es-MX')) + '</p>' : '';
@@ -7091,6 +7154,7 @@
                 const liveEt0 = live.et0TodayMm != null ? live.et0TodayMm : (rolling && rolling.et0_1d != null ? rolling.et0_1d : null);
                 out += '<div style="margin-top:12px;"><h4 style="margin:0 0 8px 0;">🌤️ Última lectura</h4>' + liveWhen + '<div style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;"><div>T: ' + live.temperature + ' °C</div><div>HR: ' + live.humidity + ' %</div><div>UV: ' + (live.uvIndex != null ? live.uvIndex : '—') + '</div><div>Viento: ' + (live.windSpeedKmh != null ? live.windSpeedKmh + ' km/h' : '—') + '</div><div>Lluvia (hoy): ' + (liveRain != null ? Number(liveRain).toFixed(1) + ' mm' : '—') + '</div><div>ET₀ (hoy): ' + (liveEt0 != null ? Number(liveEt0).toFixed(1) + ' mm' : '—') + '</div></div></div>';
             }
+            out += adminBuildIrrigationQuickCalcHtml(ca);
             return out;
         }
 
@@ -7105,29 +7169,30 @@
 
         function adminRenderClimateCharts(ca, rootEl) {
             if (!ca || !rootEl) return;
+            const container = rootEl.querySelector('#admin-climate-combined-chart');
+            if (!container) return;
             const maxM = new Date().getMonth() + 1;
-            function renderOne(kind, block, colors) {
+            const datasets = [];
+            function pushEntries(block, colors, prefix, dashed) {
                 if (!block || !block.monthsPrev) return;
-                const container = rootEl.querySelector('#admin-climate-' + kind + '-chart');
-                if (!container) return;
-                const entries = adminGetClimateYearEntries(block);
-                if (!entries.length) {
-                    container.innerHTML = '<div style="color:#94a3b8;font-style:italic;">Sin datos para gráfica.</div>';
-                    return;
-                }
-                const datasets = entries.map(function (entry, idx) {
+                adminGetClimateYearEntries(block).forEach(function (entry, idx) {
                     const color = colors[idx] != null ? colors[idx] : colors[colors.length - 1];
-                    const label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
-                    return {
+                    const label = entry.partial ? prefix + ' ' + entry.year + ' (parcial)' : prefix + ' ' + entry.year;
+                    datasets.push({
                         label: label,
                         data: adminMonthsToChartData(entry.months, entry.partial ? maxM : 12),
-                        color: color
-                    };
+                        color: color,
+                        dashed: !!dashed
+                    });
                 });
-                buildAdminSvgChart(container, ADMIN_CLIMATE_MONTH_LABELS, datasets);
             }
-            renderOne('rain', ca.rainfall, ADMIN_CLIMATE_RAIN_COLORS);
-            renderOne('et0', ca.et0, ADMIN_CLIMATE_ET0_COLORS);
+            pushEntries(ca.rainfall, ADMIN_CLIMATE_RAIN_COLORS, '🌧', false);
+            pushEntries(ca.et0, ADMIN_CLIMATE_ET0_COLORS, '☀ ET₀', true);
+            if (!datasets.length) {
+                container.innerHTML = '<div style="color:#94a3b8;font-style:italic;">Sin datos para gráfica.</div>';
+                return;
+            }
+            buildAdminSvgChart(container, ADMIN_CLIMATE_MONTH_LABELS, datasets);
         }
 
         function adminScheduleClimateCharts(ca, rootEl) {
@@ -9723,7 +9788,7 @@
                                             <div style="font-size:12px;color:#64748b;margin-top:4px;">${escapeHtml(dateText)}</div>
                                             <div style="font-size:12px;color:#334155;margin-top:6px;"><strong>Secciones:</strong> ${escapeHtml(sectionsText)}</div>
                                             ${shareEnabled
-                                                ? `<div style="font-size:11px;margin-top:4px;color:#065f46;">🔗 Link compartido: Activo (sin vencimiento)${shareCreatedText ? ` · generado: ${escapeHtml(shareCreatedText)}` : ''}</div>`
+                                                ? `<div style="font-size:11px;margin-top:4px;color:#065f46;">🔗 Link compartido: Activo (sin caducidad)${shareCreatedText ? ` · generado: ${escapeHtml(shareCreatedText)}` : ''}</div>`
                                                 : '<div style="font-size:11px;color:#64748b;margin-top:4px;">🔗 Link compartido: no generado</div>'}
                                             ${r?.reportHTML
                                                 ? '<div style="font-size:11px;color:#059669;margin-top:4px;">HTML de reporte disponible para abrir/imprimir</div>'

@@ -1157,11 +1157,39 @@
           console.warn('⚠️ Sync reporte: no hay sesión de Supabase. Cierra sesión y vuelve a iniciar sesión desde la pantalla de Login para que los reportes se guarden en la nube.');
           return false;
         }
+        var payload = Object.assign({}, reportData);
+        try {
+          const { data: existingRows, error: fetchErr } = await client
+            .from('reports')
+            .select('data')
+            .eq('id', reportId)
+            .limit(1);
+          if (!fetchErr && existingRows && existingRows[0] && existingRows[0].data && typeof existingRows[0].data === 'object') {
+            const ex = existingRows[0].data;
+            const exToken = String(ex.shareToken || ex.share_token || '').trim();
+            const inToken = String(payload.shareToken || payload.share_token || '').trim();
+            if (!inToken && exToken) {
+              payload.shareToken = exToken;
+              if (payload.shareEnabled === undefined && ex.shareEnabled !== undefined) payload.shareEnabled = ex.shareEnabled;
+              if (!payload.shareCreatedAt && ex.shareCreatedAt) payload.shareCreatedAt = ex.shareCreatedAt;
+            }
+            if (
+              (!payload.reportHTML || typeof payload.reportHTML !== 'string' || !payload.reportHTML.trim()) &&
+              typeof ex.reportHTML === 'string' &&
+              ex.reportHTML.trim()
+            ) {
+              payload.reportHTML = ex.reportHTML;
+            }
+          }
+        } catch (mergeErr) {
+          console.warn('⚠️ syncReport merge:', mergeErr);
+        }
+        payload.shareExpiresAt = null;
         const row = {
           id: reportId,
           user_id: userId,
           project_id: projectId,
-          data: reportData,
+          data: payload,
           created_at: (reportData.timestamp && new Date(reportData.timestamp).toISOString()) || new Date().toISOString()
         };
         const { error } = await client.from('reports').upsert(row, { onConflict: 'id', ignoreDuplicates: false });

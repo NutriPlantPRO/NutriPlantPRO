@@ -756,11 +756,11 @@
     var cropPlaceholder = projectHa != null ? 'Vacío = ' + projectHa + ' ha (predio)' : 'Vacío = ha del predio';
     var irrPlaceholder = 'Franja humedecida (goteo)';
 
-    if (root.getAttribute('data-np-irr-version') !== '12') {
+    if (root.getAttribute('data-np-irr-version') !== '13') {
       root.removeAttribute('data-np-irr-rendered');
       root.removeAttribute('data-np-irr-bound');
       root.innerHTML = '';
-      root.setAttribute('data-np-irr-version', '12');
+      root.setAttribute('data-np-irr-version', '13');
     }
     if (window.NpIrrBalance && window.NpIrrBalance.ensureIrrCalcStyles) window.NpIrrBalance.ensureIrrCalcStyles();
 
@@ -2074,8 +2074,33 @@
   window.createClimateLiveTabHTML = createClimateLiveTabHTML;
   window.persistClimateAnalysis = persistClimateAnalysis;
 
+  function buildReportCombinedChartDatasets(rain, et0) {
+    var now = new Date();
+    var maxMonthCurr = now.getMonth() + 1;
+    var datasets = [];
+    function pushEntries(block, colors, prefix, dashed) {
+      if (!block || !block.monthsPrev) return;
+      getClimateYearEntries(block).forEach(function (entry, idx) {
+        var color = colors[idx] != null ? colors[idx] : colors[colors.length - 1];
+        var maxMonth = entry.partial ? maxMonthCurr : 12;
+        var yearLabel = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+        datasets.push(
+          makeClimateLineDataset(
+            prefix + ' ' + yearLabel,
+            monthsToChartSeries(entry.months, maxMonth),
+            color,
+            dashed
+          )
+        );
+      });
+    }
+    pushEntries(rain, CLIMATE_RAIN_COLORS, '🌧', false);
+    pushEntries(et0, CLIMATE_ET0_COLORS, '☀ ET₀', true);
+    return datasets;
+  }
+
   function getClimateChartsDataUrlsForReport(rain, et0, callback) {
-    var result = { rain: null, et0: null };
+    var result = { combined: null };
     if (typeof callback !== 'function') return result;
     if ((!rain || !rain.monthsPrev) && (!et0 || !et0.monthsPrev)) {
       callback(result);
@@ -2086,63 +2111,69 @@
         callback(result);
         return;
       }
-      var now = new Date();
-      var maxMonthCurr = now.getMonth() + 1;
-
-      function buildReportChart(kind, block) {
-        if (!block || !block.monthsPrev) return null;
-        var meta = climateMetricMeta(kind);
-        var entries = getClimateYearEntries(block);
-        if (!entries.length) return null;
-        var datasets = entries.map(function (entry, idx) {
-          var color = meta.colors[idx] != null ? meta.colors[idx] : meta.colors[meta.colors.length - 1];
-          var maxMonth = entry.partial ? maxMonthCurr : 12;
-          var label = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
-          if (kind === 'et0') label = '☀ ET₀ ' + label;
-          else if (kind === 'rain') label = '🌧 ' + label;
-          return makeClimateLineDataset(label, monthsToChartSeries(entry.months, maxMonth), color, kind === 'et0');
-        });
-        var canvas = document.createElement('canvas');
-        canvas.width = 720;
-        canvas.height = CLIMATE_CHART_HEIGHT_PX;
-        canvas.style.cssText = 'position:fixed;left:-9999px;top:0;';
-        document.body.appendChild(canvas);
-        var chart = null;
-        try {
-          chart = new Chart(canvas.getContext('2d'), {
-            type: 'line',
-            data: { labels: MONTH_LABELS.slice(), datasets: datasets },
-            options: {
-              responsive: false,
-              maintainAspectRatio: false,
-              animation: false,
-              layout: { padding: { bottom: 8, top: 6, left: 2, right: 6 } },
-              plugins: {
-                legend: {
-                  position: 'top',
-                  labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 10, boxHeight: 10 }
-                }
-              },
-              scales: {
-                y: computeClimateYScale(datasets),
-                x: { type: 'category', title: { display: true, text: 'Mes' }, ticks: { autoSkip: false } }
-              }
-            }
-          });
-          return (chart && chart.toBase64Image) ? chart.toBase64Image() : canvas.toDataURL('image/png');
-        } catch (e) {
-          console.warn('getClimateChartsDataUrlsForReport ' + kind, e);
-          return null;
-        } finally {
-          if (chart) {
-            try { chart.destroy(); } catch (e2) {}
-          }
-          canvas.remove();
-        }
+      var datasets = buildReportCombinedChartDatasets(rain, et0);
+      if (!datasets.length) {
+        callback(result);
+        return;
       }
-
-      result.rain = buildReportChart('rain', rain);
-      result.et0 = buildReportChart('et0', et0);
+      var canvas = document.createElement('canvas');
+      canvas.width = 720;
+      canvas.height = CLIMATE_CHART_HEIGHT_PX;
+      canvas.style.cssText = 'position:fixed;left:-9999px;top:0;';
+      document.body.appendChild(canvas);
+      var chart = null;
+      try {
+        chart = new Chart(canvas.getContext('2d'), {
+          type: 'line',
+          data: { labels: MONTH_LABELS.slice(), datasets: datasets },
+          options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            animation: false,
+            layout: { padding: { bottom: 8, top: 6, left: 2, right: 6 } },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                  boxWidth: 10,
+                  boxHeight: 10,
+                  generateLabels: function (chartInst) {
+                    return chartInst.data.datasets.map(function (ds, i) {
+                      return {
+                        text: ds.label || '',
+                        fillStyle: ds.borderColor,
+                        strokeStyle: ds.borderColor,
+                        lineWidth: ds.borderWidth || 2,
+                        hidden: !chartInst.isDatasetVisible(i),
+                        datasetIndex: i,
+                        fontColor: ds.borderColor,
+                        pointStyle: 'circle'
+                      };
+                    });
+                  }
+                }
+              }
+            },
+            scales: {
+              y: computeClimateYScale(datasets),
+              x: { type: 'category', title: { display: true, text: 'Mes' }, ticks: { autoSkip: false } }
+            }
+          }
+        });
+        result.combined =
+          chart && chart.toBase64Image ? chart.toBase64Image() : canvas.toDataURL('image/png');
+      } catch (e) {
+        console.warn('getClimateChartsDataUrlsForReport combined', e);
+      } finally {
+        if (chart) {
+          try {
+            chart.destroy();
+          } catch (e2) {}
+        }
+        canvas.remove();
+      }
       callback(result);
     });
   }
@@ -2156,7 +2187,36 @@
     var res = computeIrrigationQuickResults(st, rolling);
     return { state: st, results: res, rolling: rolling };
   }
+
+  function irrigationQuickCalcHasReportData(st, res) {
+    if (!st || !res) return false;
+    return !!(
+      st.cropName ||
+      st.kc != null ||
+      st.irrigationValue != null ||
+      st.useManualEt0 ||
+      st.useManualRain ||
+      st.macroTunnelNoRain ||
+      res.et0 != null ||
+      res.rain != null
+    );
+  }
+
+  function getClimateIrrigationQuickCalcReportHtml(escapeHtmlFn) {
+    var pack = getClimateIrrigationQuickCalcSummary();
+    if (!pack || !pack.results || !window.NpIrrBalance || typeof window.NpIrrBalance.buildReportBlockHtml !== 'function') {
+      return '';
+    }
+    if (!irrigationQuickCalcHasReportData(pack.state, pack.results)) return '';
+    var cropName = pack.state.cropName || '';
+    if (escapeHtmlFn && cropName) cropName = escapeHtmlFn(cropName);
+    return window.NpIrrBalance.buildReportBlockHtml(pack.results, {
+      cropName: cropName,
+      kc: pack.state.kc
+    });
+  }
   window.getClimateIrrigationQuickCalcSummary = getClimateIrrigationQuickCalcSummary;
+  window.getClimateIrrigationQuickCalcReportHtml = getClimateIrrigationQuickCalcReportHtml;
   window.getClimateYearEntries = getClimateYearEntries;
   window.getClimateChartsDataUrlsForReport = getClimateChartsDataUrlsForReport;
   window.CLIMATE_RAIN_COLORS = CLIMATE_RAIN_COLORS;
