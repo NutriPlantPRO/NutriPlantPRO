@@ -4812,35 +4812,65 @@
     @media (max-width: 560px) {
       #npCreateModal .np-create-maps-row,
       #npDetailModal .np-detail-maps-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 6px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 5px 4px;
+        margin-top: 4px;
       }
       #npCreateModal .np-create-maps-row .np-detail-meta-label,
       #npDetailModal .np-detail-maps-row .np-detail-meta-label {
-        width: 100%;
+        flex: 0 0 auto;
+        width: auto;
+      }
+      #npDetailModal .np-detail-maps-row .np-detail-maps-link {
+        flex: 0 1 auto;
+        margin-top: 0;
+        margin-left: auto;
+        max-width: calc(100% - 72px);
+        font-size: 10px;
+        padding: 2px 7px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       #npCreateModal .np-create-maps-row #npCreateMapsUrl,
       #npDetailModal .np-detail-maps-row input[type="url"] {
-        flex: 0 0 auto;
+        flex: 1 1 100%;
         width: 100%;
         min-width: 0;
-        min-height: 36px;
-        height: 36px;
-        max-height: 36px;
-        padding: 0 12px;
+        min-height: 32px;
+        height: 32px;
+        max-height: 32px;
+        padding: 0 10px;
         border-radius: 999px;
         box-sizing: border-box;
+        font-size: 11px;
         -webkit-appearance: none;
         appearance: none;
       }
       #npCreateModal .np-create-maps-row .np-detail-maps-action,
       #npDetailModal .np-detail-maps-row .np-detail-maps-action {
-        width: 100%;
-        min-height: 36px;
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+        min-height: 28px;
+        height: 28px;
+        padding: 0 5px;
+        font-size: 10px;
+        font-weight: 650;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
         justify-content: center;
         display: inline-flex;
         align-items: center;
+      }
+      #npCreateModal .np-create-maps-row .np-detail-maps-action {
+        flex: 0 1 auto;
+        max-width: 100%;
+        padding: 0 10px;
       }
       .np-map-picker-panel {
         width: calc(100vw - 18px);

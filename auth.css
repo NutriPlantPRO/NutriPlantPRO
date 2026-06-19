@@ -103,6 +103,30 @@
   transform: translateY(-1px);
 }
 
+/* Modal Nosotros — logo N_Hoja_Azul sin recortar puntas (hoja / N) */
+.np-about-us-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  padding: 7px;
+  box-sizing: border-box;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: visible;
+}
+.np-about-us-logo img {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 0;
+}
+
 .social-btn:hover {
   color: #2563eb;
   transform: translateY(-1px);
