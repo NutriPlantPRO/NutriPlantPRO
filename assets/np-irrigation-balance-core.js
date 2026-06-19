@@ -291,7 +291,7 @@
       fmtMm(res.cropHa) +
       ' ha ≈ <strong>' +
       m3Abs +
-      ' m³</strong> totales. <strong>En goteo/cinta aplicas esos ' +
+      ' m³</strong> totales. <strong>En goteo/microaspersor aplicas esos ' +
       m3Abs +
       ' m³</strong> en la franja de ' +
       fmtMm(res.irrigatedHa) +

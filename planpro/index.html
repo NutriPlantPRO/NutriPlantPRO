@@ -13925,6 +13925,7 @@
     }, 60);
   }
 
+  function isEmptyNotebookEditorNode(node) {
     if (!node) return true;
     if (node.nodeType === 3) return !String(node.textContent || '').replace(/\u00a0/g, ' ').trim();
     if (node.nodeType !== 1) return true;

@@ -176,7 +176,7 @@ N_min (kg N/ha/año) = 10 000 × (P/100) × DA × 1 000 × (R/100) × (MO/100) �
   - **Riego sugerido** (m³ totales para cubrir balance pendiente o déficit del periodo).
   - **Lámina en franja** (mm en zona humedecida; = balance o déficit × factor cultivo/regada).
   - **Aplicar en franja regada** (m³ en esas ha).
-  - Explica que el m³ total no cambia: en goteo/cinta se concentran en menos ha → más mm en franja.
+  - Explica que el m³ total no cambia: en goteo/microaspersor se concentran en menos ha → más mm en franja.
   - **API PRO:** `balance_wetted_mm` = lámina en franja; `balance_mm` = balance sobre ha cultivo.
 - **Nota** (recuadro ámbar translúcido): estimación rápida; no considera almacenamiento en suelo, escurrimiento, drenaje profundo ni lixiviación; validar en campo.
 - **Tabla Kc FAO-56** (recuadro azul translúcido, colapsable): buscar cultivo; rangos por etapa fenológica.
