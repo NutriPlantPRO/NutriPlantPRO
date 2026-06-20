@@ -680,31 +680,15 @@
       window.NpIrrBalance && typeof window.NpIrrBalance.buildSummaryHtml === 'function'
         ? window.NpIrrBalance.buildSummaryHtml(res)
         : '';
-    var areaNote = document.getElementById('climate-irr-area-note');
     var areas = resolveAreaContext(state);
+    var areaNote = document.getElementById('climate-irr-area-note');
     if (areaNote) {
-      var parts = [];
-      parts.push(
-        '<strong>Criterio NutriPlant:</strong> el <strong>% raíces en superficie</strong> indica qué parte del <strong>área del cultivo</strong> tiene exploración radical activa (goteo, surco, franja).'
-      );
-      parts.push(
-        'En <strong>riego localizado</strong>, ese % suele ser la <strong>superficie regada</strong> (franja ≈ ha cultivo × % ÷ 100). El déficit del cultivo se expresa en <strong>m³ totales</strong>; en la franja esos m³ se aplican con <strong>más mm</strong> en menos hectáreas — ver recuadro destacado abajo.'
-      );
-      if (areas.rootReachPct != null && areas.cropHa != null && areas.suggestedIrrigatedHa != null) {
-        parts.push(
-          'Con <strong>' +
-          areas.rootReachPct +
-          '%</strong> y <strong>' +
-          fmtMm(areas.cropHa) +
-          ' ha</strong> cultivo → franja sugerida: <strong>' +
-          fmtMm(areas.suggestedIrrigatedHa) +
-          ' ha</strong>.'
-        );
-      }
-      if (areas.soilReachPct != null && areas.rootReachPct == null) {
-        parts.push('Análisis de suelo del proyecto: <strong>' + areas.soilReachPct + '%</strong> (puedes usarlo abajo).');
-      }
-      areaNote.innerHTML = parts.join(' ');
+      areaNote.innerHTML =
+        window.NpIrrBalance && typeof window.NpIrrBalance.buildAreaCriterionNoteHtml === 'function'
+          ? window.NpIrrBalance.buildAreaCriterionNoteHtml(state, {
+              soilReachPct: areas.soilReachPct != null && areas.rootReachPct == null ? areas.soilReachPct : null
+            })
+          : '';
       areaNote.style.display = 'block';
     }
     var soilReachHint = document.getElementById('climate-irr-soil-reach-hint');
@@ -729,11 +713,11 @@
     var cropPlaceholder = projectHa != null ? 'Vacío = ' + projectHa + ' ha (predio)' : 'Vacío = ha del predio';
     var irrPlaceholder = 'Franja humedecida (goteo)';
 
-    if (root.getAttribute('data-np-irr-version') !== '14') {
+    if (root.getAttribute('data-np-irr-version') !== '15') {
       root.removeAttribute('data-np-irr-rendered');
       root.removeAttribute('data-np-irr-bound');
       root.innerHTML = '';
-      root.setAttribute('data-np-irr-version', '14');
+      root.setAttribute('data-np-irr-version', '15');
     }
     if (window.NpIrrBalance && window.NpIrrBalance.ensureIrrCalcStyles) window.NpIrrBalance.ensureIrrCalcStyles();
 
@@ -820,14 +804,21 @@
         '</div>' +
         '<p id="climate-irr-soil-reach-hint" style="margin:8px 0 0;font-size:12px;color:#15803d;"></p>' +
         '<p style="margin:6px 0 0;font-size:12px;color:#166534;">Mismo % que en <strong>Enmiendas</strong> y <strong>Fertilidad</strong> (allí entra profundidad y densidad). En balance hídrico solo estima <strong>superficie regada</strong>.</p></div>' +
-        '<p id="climate-irr-area-note" style="margin:0 0 16px 0;padding:10px 12px;font-size:12px;line-height:1.45;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;"></p>' +
+        '<div id="climate-irr-area-note-wrap" style="margin-bottom:16px;">' +
+        '<p id="climate-irr-area-note" style="margin:0;padding:10px 12px;font-size:12px;line-height:1.45;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;"></p>' +
+        (window.NpIrrBalance && window.NpIrrBalance.getAreaCriterionScrollHintHtml
+          ? '<div id="climate-irr-area-reach-hint">' + window.NpIrrBalance.getAreaCriterionScrollHintHtml('climate') + '</div>'
+          : '') +
+        '</div>' +
         '<div id="climate-irr-summary" style="background:linear-gradient(135deg,#f0f9ff 0%,#ecfeff 100%);border:1px solid #7dd3fc;border-radius:10px;padding:16px;margin-bottom:16px;"></div>' +
         (window.NpIrrBalance && window.NpIrrBalance.getNoteHtml
           ? window.NpIrrBalance.getNoteHtml('margin-bottom:12px;')
           : '<p style="margin:0 0 8px 0;padding:10px 12px;font-size:12px;line-height:1.5;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;"><strong>Nota:</strong> El balance hídrico es una <strong>estimación rápida</strong> basada en ETo, lluvia y riego (satélite o valores de campo). No considera almacenamiento de agua en el suelo, escurrimiento superficial, drenaje profundo ni lixiviación de nutrientes. El % suelo explorado por raíces (criterio NutriPlant) solo ayuda a estimar la franja regada. <strong>Validar siempre en campo.</strong></p>') +
-        (window.NpIrrBalance && window.NpIrrBalance.getKcDetailsHtml
-          ? window.NpIrrBalance.getKcDetailsHtml({ idPrefix: 'climate' })
-          : '<details id="climate-fao-kc-details" style="border:1px solid #e2e8f0;border-radius:8px;padding:0;background:#fff;"><summary style="padding:12px 14px;cursor:pointer;font-weight:600;color:#0f172a;font-size:14px;">📋 Tabla de referencia Kc (FAO-56)</summary><div style="padding:0 14px 14px;"><input type="search" id="climate-fao-kc-search" placeholder="Buscar cultivo…" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;"><div style="max-height:280px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f1f5f9;position:sticky;top:0;"><th style="padding:8px;text-align:left;">Cultivo</th><th style="padding:8px;text-align:left;">Etapa</th><th style="padding:8px;text-align:center;">Kc (rango FAO)</th></tr></thead><tbody id="climate-fao-kc-tbody"></tbody></table></div></div></details>');
+        (window.NpIrrBalance && window.NpIrrBalance.getReferenceTablesHtml
+          ? window.NpIrrBalance.getReferenceTablesHtml({ idPrefix: 'climate' })
+          : window.NpIrrBalance && window.NpIrrBalance.getKcDetailsHtml
+            ? window.NpIrrBalance.getKcDetailsHtml({ idPrefix: 'climate' })
+            : '<details id="climate-fao-kc-details" style="border:1px solid #e2e8f0;border-radius:8px;padding:0;background:#fff;"><summary style="padding:12px 14px;cursor:pointer;font-weight:600;color:#0f172a;font-size:14px;">📋 Tabla de referencia Kc (FAO-56)</summary><div style="padding:0 14px 14px;"><input type="search" id="climate-fao-kc-search" placeholder="Buscar cultivo…" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;"><div style="max-height:280px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f1f5f9;position:sticky;top:0;"><th style="padding:8px;text-align:left;">Cultivo</th><th style="padding:8px;text-align:left;">Etapa</th><th style="padding:8px;text-align:center;">Kc (rango FAO)</th></tr></thead><tbody id="climate-fao-kc-tbody"></tbody></table></div></div></details>');
       root.setAttribute('data-np-irr-rendered', '1');
       syncIrrigationInputsFromState();
       bindIrrigationQuickCalcEvents(root);

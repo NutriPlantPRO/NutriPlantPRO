@@ -20,9 +20,9 @@ Sube el repo (o deploy manual) para que existan en producción:
 
 En ChatGPT → tu GPT → **Configure → Knowledge → Upload**:
 
-1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← incluye 📊 biblioteca «Mis curvas guardadas» (2026-05-23)
+1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← balance hídrico m³ (2026-06-20) + conversor alcance raíz
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web **v2026.06.1** (**23 capítulos**; nuevo balance hídrico riego Clima; re-subir tras cada tanda)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web **v2026.06.1** (**23 capítulos**; balance hídrico riego Clima corregido 2026-06-20; re-subir tras cada tanda)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` ← posts LinkedIn/IG; **§8 con 24 posts empresa** (añade filas si publicas nuevos)
 
 *(Opcional: borra knowledge viejo duplicado si tenías notas sueltas.)*

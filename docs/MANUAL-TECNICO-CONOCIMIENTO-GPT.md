@@ -179,11 +179,12 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 | Periodo | 1, 7 o 30 días (acumulados) |
 | ETo / lluvia | Satélite (ventanas rodantes Open-Meteo) o manual; macrotúnel = lluvia 0 |
 | Kc | Usuario lo ingresa; tabla FAO-56 solo consulta |
-| Fórmulas | ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; balance = ETc − lluvia − riego (mm) |
-| Volumen | 1 mm = 10 m³/ha sobre **área cultivo**; riego en m³ → mm = m³ ÷ (ha regada × 10) |
-| Franja regada | Si ha regada < ha cultivo, mm se concentran en franja (factor = cultivo/regada); m³ total **no** se divide |
-| Recuadro «Dato importante» | Si hay franja distinta: **Riego sugerido** (m³), **Lámina en franja** (mm en zona humedecida), **Aplicar en franja regada** (m³). Mismo bloque visual en PRO y herramienta gratis `lamina_riego`. API: `balance_wetted_mm`, `balance_mm` |
-| % alcance raíces | Mismo criterio Enmiendas/Fertilidad; sugiere franja, no altera m³ |
+| Fórmulas | ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; **balance m³ = déficit m³ cultivo − riego m³ en franja**; balance mm ref. cultivo = balance m³ ÷ (10 × ha cultivo) |
+| Volumen | 1 mm sobre X ha = X × 10 m³; riego **mm en franja** o **m³ total en franja** → mm franja = m³ ÷ (ha regada × 10) |
+| Franja regada | Déficit en mm/m³ sobre **ha cultivo**; riego siempre en **franja humedecida**; mm en franja = mm cultivo × (ha cultivo ÷ ha regada); m³ totales del déficit **no** se dividen |
+| Recuadro «Dato importante» | Si hay franja distinta: riego sugerido (m³), lámina en franja (mm), aplicar en franja (m³). Criterio NutriPlant + enlace a tabla % suelo explorado |
+| Tablas desplegables | Kc FAO-56 (consulta) y **% suelo explorado por sistema** (aguacate, berry, hortaliza…) |
+| % alcance raíces | Sugiere franja (ha cultivo × % ÷ 100); **no altera déficit ETc**. Estimar %: **Conversor magnitudes** → alcance raíz (copa circular o cama/banda) o tabla en N mineralizable |
 | Persistencia | `climateAnalysis.irrigationQuickCalc` + `rolling` en JSON proyecto (sin SQL) |
 | Límite | No almacenamiento suelo, escurrimiento, drenaje ni lixiviación; validar en campo |
 

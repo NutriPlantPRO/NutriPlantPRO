@@ -246,6 +246,13 @@
             <button type="button" onclick="irrFreeSuggestStrip()">Sugerir franja regada</button>
           </div>
         </div>
+        <div id="irr-area-note-wrap" style="margin-bottom:16px;">
+          <p
+            id="irr-area-note"
+            style="margin:0;padding:10px 12px;font-size:12px;line-height:1.45;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;"
+          ></p>
+          <div id="irr-area-reach-hint"></div>
+        </div>
       </div>
 
       <div id="irr-summary"><p style="margin:0;color:#64748b;font-size:13px;">Pulsa <strong>Obtener clima y calcular</strong> o ingresa ETo/lluvia manualmente.</p></div>
@@ -262,7 +269,7 @@
   </script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="climate-kc-fao-data.js"></script>
-  <script src="assets/np-irrigation-balance-core.js?v=202606201200"></script>
+  <script src="assets/np-irrigation-balance-core.js?v=202606201400"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
     var irrRolling = null;
@@ -481,13 +488,21 @@
 
       document.getElementById('irr-summary').innerHTML = NB.buildSummaryHtml(res);
 
+      var areaNote = document.getElementById('irr-area-note');
+      if (areaNote && typeof NB.buildAreaCriterionNoteHtml === 'function') {
+        areaNote.innerHTML = NB.buildAreaCriterionNoteHtml(st);
+        areaNote.style.display = 'block';
+      }
+
       NB.renderFaoKcTable('irr-fao-kc-tbody', document.getElementById('irr-fao-kc-search') && document.getElementById('irr-fao-kc-search').value, st.cropName);
     }
 
     document.addEventListener('DOMContentLoaded', function () {
       irrInitMap();
       document.getElementById('irr-note-wrap').innerHTML = window.NpIrrBalance.getNoteHtml();
-      document.getElementById('irr-kc-wrap').innerHTML = window.NpIrrBalance.getKcDetailsHtml({ idPrefix: 'irr' });
+      document.getElementById('irr-kc-wrap').innerHTML = window.NpIrrBalance.getReferenceTablesHtml({ idPrefix: 'irr' });
+      var reachHint = document.getElementById('irr-area-reach-hint');
+      if (reachHint) reachHint.innerHTML = window.NpIrrBalance.getAreaCriterionScrollHintHtml('irr');
       var kcHintWrap = document.getElementById('irr-kc-hint-wrap');
       if (kcHintWrap) kcHintWrap.innerHTML = window.NpIrrBalance.getKcFieldHintHtml('irr');
       window.NpIrrBalance.renderFaoKcTable('irr-fao-kc-tbody', '', '');

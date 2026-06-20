@@ -17,7 +17,7 @@
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/balance-hidrico-riego-clima.html",
   "inLanguage": "es",
   "datePublished": "2026-06-12",
-  "dateModified": "2026-06-12",
+  "dateModified": "2026-06-20",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -64,8 +64,9 @@
     <ul>
       <li><strong>Dashboard PRO</strong> → pestaña <strong>Clima</strong> → subpestaña <strong>Lluvia y ET₀</strong>.</li>
       <li>Bloque <strong>«Calculadora de balance hídrico»</strong>, debajo de las tablas mensuales de lluvia y ET₀.</li>
-      <li>Requisito para datos satélite: polígono guardado en <strong>Ubicación</strong> (centro del predio).</li>
-      <li>Persistencia en nube: <code>projects.data.climateAnalysis.irrigationQuickCalc</code> (sin migración SQL).</li>
+      <li><strong>Herramienta gratuita</strong> en login y dashboard: <strong>Lámina de riego y balance hídrico</strong> (misma lógica).</li>
+      <li>Requisito para datos satélite (PRO): polígono guardado en <strong>Ubicación</strong> (centro del predio).</li>
+      <li>Persistencia en nube (PRO): <code>projects.data.climateAnalysis.irrigationQuickCalc</code>.</li>
     </ul>
 
     <h2>Periodo y fuentes de ETo / lluvia</h2>
@@ -76,7 +77,7 @@
         <tr><td>ETo</td><td>Satélite (ventanas rodantes Open-Meteo) o <strong>manual</strong> (mm del periodo)</td></tr>
         <tr><td>Lluvia</td><td>Satélite, <strong>manual</strong> (pluviómetro) o <strong>macrotúnel</strong> (lluvia = 0)</td></tr>
         <tr><td>Kc</td><td>El usuario lo ingresa; tabla FAO-56 en la app es <strong>solo consulta</strong></td></tr>
-        <tr><td>Riego</td><td>Acumulado del periodo en <strong>mm</strong> o <strong>m³</strong> (m³ requiere superficie regada)</td></tr>
+        <tr><td>Riego</td><td>En la <strong>franja regada</strong>: <strong>mm</strong> (lámina en zona humedecida) o <strong>m³</strong> (volumen total en esa franja; requiere superficie regada)</td></tr>
       </tbody>
     </table>
     <p>Las estimaciones satélite son referencia del punto del predio; pueden diferir del microclima o del campo.</p>
@@ -86,12 +87,14 @@
       ETc = ETo × Kc<br>
       Déficit climático = ETo − lluvia<br>
       Déficit cultivo = ETc − lluvia<br>
-      Balance = ETc − lluvia − riego (mm)
+      Balance (m³) = déficit m³ cultivo − riego m³ en franja<br>
+      Balance (mm ref. cultivo) = balance m³ ÷ (10 × ha cultivo)
     </div>
-    <p>Conversión de volumen sobre el <strong>área del cultivo</strong>:</p>
-    <div class="mt-formula">1 mm = 10 m³/ha · m³ total = mm × 10 × superficie cultivo (ha)</div>
-    <p>Si introduces riego en m³:</p>
-    <div class="mt-formula">riego (mm) = m³ ÷ (superficie regada ha × 10)</div>
+    <p>El <strong>déficit</strong> se expresa en mm sobre el <strong>área del cultivo</strong>; el <strong>riego</strong> siempre en la <strong>franja regada</strong>. El balance descuenta <strong>volumen real</strong> (m³).</p>
+    <p>Conversión de volumen:</p>
+    <div class="mt-formula">1 mm sobre X ha = X × 10 m³ · m³ total = mm × 10 × ha</div>
+    <p>Riego en m³ (franja):</p>
+    <div class="mt-formula">mm en franja = m³ ÷ (superficie regada ha × 10)</div>
 
     <h2>Área del cultivo vs franja regada</h2>
     <p>
@@ -107,21 +110,34 @@
       factor franja = superficie cultivo ÷ superficie regada<br>
       mm en franja = mm sobre cultivo × factor franja
     </div>
-    <p>Ejemplo: 1 ha de cultivo, 0,4 ha regados (40 % alcance) → déficit 2,6 mm en cultivo ≈ 6,5 mm en franja.</p>
+    <p>Ejemplo: déficit 8,9 mm en 1 ha = 89 m³. Riego 20 m³ en franja 0,5 ha (= 4 mm en franja). Balance = 89 − 20 = <strong>69 m³</strong> (6,9 mm ref. cultivo; 13,8 mm en franja).</p>
 
     <h2>% suelo explorado por raíces</h2>
     <p>
       Mismo criterio NutriPlant que en <a href="enmiendas-balance-cic.html">Enmiendas</a> y
       <a href="analisis-suelo-fertilidad-kgha.html">Análisis de suelo → Fertilidad</a>
-      (<code>fertility.reachPct</code>). En esta calculadora <strong>solo ayuda a sugerir la franja regada</strong>
-      (botones «Sugerir franja regada» y «Usar % del análisis de suelo»); no modifica profundidad ni divide m³.
+      (<code>fertility.reachPct</code>). Aquí <strong>solo sugiere la franja regada</strong>
+      (botones «Sugerir franja regada» y «Usar % del análisis de suelo» en PRO); <strong>no altera el déficit ETc</strong>.
     </p>
     <div class="mt-formula">franja sugerida (ha) = superficie cultivo × (% alcance / 100)</div>
-
-    <h2>Tabla Kc FAO-56</h2>
     <p>
-      La app incluye una tabla de referencia (~50 cultivos × etapas) consultable y buscable. El usuario debe
-      elegir e ingresar el <strong>Kc de su situación</strong>; la tabla no precarga el valor automáticamente.
+      Recuadro <strong>Criterio NutriPlant</strong>, enlace «Ver tabla» a la referencia desplegable
+      <strong>% suelo explorado por sistema</strong> (aguacate, berry, hortaliza…). La misma tabla orientativa está en
+      <a href="../../n-mineralizable-mo-free.html">N mineralizable (herramienta gratis)</a>.
+    </p>
+
+    <h2>Estimar el % alcance (Conversor de magnitudes)</h2>
+    <p>Login y dashboard → <strong>Conversor de magnitudes físicas</strong>:</p>
+    <ul>
+      <li><strong>Alcance de raíz — copa / planta:</strong> radio, diámetro de copa/raíz o separación orilla a orilla (m); plantas/ha o surco × en surco → % superficie (πr² × densidad).</li>
+      <li><strong>Alcance de raíz — cama o banda:</strong> distancia entre surcos, ancho de cama, % raíz en cama → % superficie.</li>
+    </ul>
+
+    <h2>Tablas de referencia en la app</h2>
+    <p>
+      <strong>Tabla Kc FAO-56</strong> (consulta; Kc lo ingresa el usuario) y
+      <strong>% suelo explorado por sistema</strong>. Recuadro verde <strong>«Dato importante — riego en campo»</strong>
+      si hay franja distinta: m³ sugeridos, lámina en franja (mm) y volumen en la franja regada.
     </p>
 
     <h2>Limitaciones (nota de la app)</h2>
@@ -141,6 +157,8 @@
       <li><a href="vpd-deficit-presion-vapor.html">VPD</a> — estrés de vapor y timing de riego.</li>
       <li><a href="programa-fertirriego-etapas.html">Fertirriego</a> — lámina y programa por etapa (distinto de este balance rápido).</li>
       <li><a href="n-mineralizable-agua-disponible-suelo.html">Agua en suelo</a> — CC−PMP y textura (capacidad de almacenamiento).</li>
+      <li><a href="n-mineralizable-agua-disponible-suelo.html">N mineralizable</a> — tabla orientativa % suelo explorado por sistema.</li>
+      <li>Login/dashboard — <strong>Conversor de magnitudes físicas</strong> (alcance de raíz: copa o cama).</li>
     </ul>
 
     <nav class="mt-chapter-nav"><a href="../index.html">Índice</a> · <a href="vpd-deficit-presion-vapor.html">VPD y Radar</a></nav>

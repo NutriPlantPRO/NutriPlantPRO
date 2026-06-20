@@ -125,7 +125,7 @@ module.exports = {
       url: `${BASE}/capitulos/balance-hidrico-riego-clima.html`,
       pillar: 'E — Agua y clima',
       summary:
-        'Clima → Lluvia y ET₀: calculadora balance hídrico 1/7/30 d. ETc=ETo×Kc; déficit climático/cultivo; riego mm/m³; área cultivo vs franja regada; % suelo explorado; Kc manual + tabla FAO consulta. Estimación rápida, validar en campo.',
+        'Clima → Lluvia y ET₀ + herramienta gratis lámina riego. ETc=ETo×Kc; déficit cultivo; balance m³ (déficit cultivo − riego franja); franja regada; % suelo explorado; tablas Kc y % sistema; conversor magnitudes (alcance raíz copa/cama). Validar en campo.',
       status: 'published'
     },
     {

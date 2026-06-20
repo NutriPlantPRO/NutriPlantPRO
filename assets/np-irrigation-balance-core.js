@@ -126,6 +126,47 @@
     };
   }
 
+  function normalizeRootReachPct(v) {
+    var n = Number(v);
+    if (!Number.isFinite(n) || n < 10) return null;
+    return Math.min(100, n);
+  }
+
+  function suggestedIrrigatedHaFromReach(cropHa, reachPct) {
+    if (reachPct == null || cropHa == null) return null;
+    return round2(cropHa * (reachPct / 100));
+  }
+
+  /** Texto del recuadro «Criterio NutriPlant» (contenedor externo en cada UI). */
+  function buildAreaCriterionNoteHtml(state, opts) {
+    opts = opts || {};
+    var areas = resolveAreaContext(state);
+    var reachPct = normalizeRootReachPct(state && state.rootReachPct);
+    var suggestedHa = reachPct != null ? suggestedIrrigatedHaFromReach(areas.cropHa, reachPct) : null;
+    var parts = [];
+    parts.push(
+      '<strong>Criterio NutriPlant:</strong> el <strong>% raíces en superficie</strong> indica qué parte del <strong>área del cultivo</strong> tiene exploración radical activa (goteo, surco, franja).'
+    );
+    parts.push(
+      'En <strong>riego localizado</strong>, ese % suele ser la <strong>superficie regada</strong> (franja ≈ ha cultivo × % ÷ 100). El déficit del cultivo se expresa en <strong>m³ totales</strong>; en la franja esos m³ se aplican con <strong>más mm</strong> en menos hectáreas — ver recuadro destacado abajo.'
+    );
+    if (reachPct != null && areas.cropHa != null && suggestedHa != null) {
+      parts.push(
+        'Con <strong>' +
+        reachPct +
+        '%</strong> y <strong>' +
+        fmtMm(areas.cropHa) +
+        ' ha</strong> cultivo → franja sugerida: <strong>' +
+        fmtMm(suggestedHa) +
+        ' ha</strong>.'
+      );
+    }
+    if (opts.soilReachPct != null && reachPct == null) {
+      parts.push('Análisis de suelo del proyecto: <strong>' + opts.soilReachPct + '%</strong> (puedes usarlo abajo).');
+    }
+    return parts.join(' ');
+  }
+
   function irrigationMmFromInput(value, unit, areaHa) {
     var v = Number(value);
     if (!Number.isFinite(v) || v < 0) return null;
@@ -475,6 +516,26 @@
     'background:linear-gradient(135deg,rgba(240,249,255,0.78) 0%,rgba(255,255,255,0.96) 100%);' +
     'border:1px solid rgba(14,165,233,0.42);border-radius:8px;';
 
+  var ROOT_REACH_WRAP_STYLE =
+    'border:1px solid rgba(34,197,94,0.45);border-radius:10px;padding:0;margin-top:12px;' +
+    'background:linear-gradient(180deg,rgba(240,253,244,0.65) 0%,rgba(255,255,255,0.92) 100%);' +
+    'box-shadow:0 1px 3px rgba(22,163,74,0.08);';
+
+  var ROOT_REACH_HINT_STYLE =
+    'display:block;margin-top:10px;padding:8px 10px;font-size:11px;line-height:1.45;color:#166534;' +
+    'background:linear-gradient(135deg,rgba(240,253,244,0.78) 0%,rgba(255,255,255,0.96) 100%);' +
+    'border:1px solid rgba(34,197,94,0.42);border-radius:8px;cursor:pointer;text-align:left;width:100%;font-family:inherit;';
+
+  var ROOT_REACH_REFERENCE = [
+    { system: 'Cultivo extensivo cerrado', pct: '80 – 100' },
+    { system: 'Hortaliza en cama o surco', pct: '50 – 80' },
+    { system: 'Berry en cama', pct: '40 – 70' },
+    { system: 'Aguacate joven', pct: '20 – 50' },
+    { system: 'Aguacate adulto', pct: '50 – 80' },
+    { system: 'Frutal con calles amplias', pct: '40 – 70' },
+    { system: 'Frutal con cobertura activa', pct: '60 – 90' }
+  ];
+
   function ensureIrrCalcStyles() {
     if (ensureIrrCalcStyles._done) return;
     ensureIrrCalcStyles._done = true;
@@ -495,7 +556,9 @@
       '.np-irr-btn-suggest{background:#16a34a;color:#fff;border:none;}' +
       '.np-irr-btn-suggest:hover{background:#15803d;}' +
       '.np-irr-btn-soil{background:#fff;color:#166534;border:1px solid #86efac;}' +
-      '.np-irr-btn-soil:hover{background:#f0fdf4;}';
+      '.np-irr-btn-soil:hover{background:#f0fdf4;}' +
+      '.np-irr-scroll-arrow{display:inline-block;animation:npIrrScrollBounce 1.8s ease-in-out infinite;}' +
+      '@keyframes npIrrScrollBounce{0%,100%{transform:translateY(0);opacity:0.85;}50%{transform:translateY(5px);opacity:1;}}';
     document.head.appendChild(css);
   }
 
@@ -527,14 +590,47 @@
     }, 2000);
   }
 
+  function scrollToRootReachTable(idPrefix) {
+    idPrefix = idPrefix || 'climate';
+    var details = document.getElementById(idPrefix + '-root-reach-details');
+    if (!details) return;
+    if (!details.open) details.open = true;
+    details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    details.style.transition = 'box-shadow 0.35s ease';
+    details.style.boxShadow = '0 0 0 3px rgba(34,197,94,0.38)';
+    setTimeout(function () {
+      details.style.boxShadow = '';
+    }, 2000);
+  }
+
+  function getAreaCriterionScrollHintHtml(idPrefix) {
+    idPrefix = idPrefix || 'climate';
+    return (
+      '<button type="button" class="np-irr-root-reach-scroll-hint" data-reach-prefix="' +
+      idPrefix +
+      '" style="' +
+      ROOT_REACH_HINT_STYLE +
+      '">' +
+      '📌 Tabla de referencia <strong>% suelo explorado por sistema</strong> abajo. ' +
+      '<span style="font-weight:700;white-space:nowrap;"><span class="np-irr-scroll-arrow">↓</span> Ver tabla</span></button>'
+    );
+  }
+
   function bindKcScrollHints() {
     if (bindKcScrollHints._bound) return;
     bindKcScrollHints._bound = true;
     document.addEventListener('click', function (e) {
-      var btn = e.target.closest('.np-irr-kc-scroll-hint');
-      if (!btn) return;
-      e.preventDefault();
-      scrollToKcTable(btn.getAttribute('data-kc-prefix') || 'climate');
+      var kcBtn = e.target.closest('.np-irr-kc-scroll-hint');
+      if (kcBtn) {
+        e.preventDefault();
+        scrollToKcTable(kcBtn.getAttribute('data-kc-prefix') || 'climate');
+        return;
+      }
+      var reachBtn = e.target.closest('.np-irr-root-reach-scroll-hint');
+      if (reachBtn) {
+        e.preventDefault();
+        scrollToRootReachTable(reachBtn.getAttribute('data-reach-prefix') || 'climate');
+      }
     });
   }
 
@@ -579,6 +675,47 @@
       tbodyId +
       '"></tbody></table></div></div></details>'
     );
+  }
+
+  function getRootReachDetailsHtml(opts) {
+    opts = opts || {};
+    var idPrefix = opts.idPrefix || 'climate';
+    var detailsId = idPrefix + '-root-reach-details';
+    var rows = ROOT_REACH_REFERENCE
+      .map(function (row) {
+        return (
+          '<tr style="border-bottom:1px solid #e5e7eb;">' +
+          '<td style="padding:8px;">' +
+          row.system +
+          '</td><td style="padding:8px;text-align:center;font-weight:600;color:#166534;">' +
+          row.pct +
+          '</td></tr>'
+        );
+      })
+      .join('');
+    return (
+      '<details id="' +
+      detailsId +
+      '" class="np-irr-root-reach-details" style="' +
+      ROOT_REACH_WRAP_STYLE +
+      '">' +
+      '<summary style="padding:12px 14px;cursor:pointer;font-weight:600;color:#166534;font-size:14px;">📌 Referencia: % suelo explorado por sistema</summary>' +
+      '<div style="padding:0 14px 14px;">' +
+      '<p style="margin:0 0 10px;font-size:12px;line-height:1.45;color:#475569;">Orienta el <strong>% raíces en superficie</strong> para sugerir la franja regada. Referencia ilustrativa — validar en campo.</p>' +
+      '<div style="border:1px solid #bbf7d0;border-radius:8px;background:#fff;overflow:hidden;">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+      '<thead><tr style="background:#f0fdf4;">' +
+      '<th style="padding:8px;text-align:left;color:#334155;">Sistema</th>' +
+      '<th style="padding:8px;text-align:center;color:#334155;">% sugerido</th></tr></thead>' +
+      '<tbody>' +
+      rows +
+      '</tbody></table></div></div></details>'
+    );
+  }
+
+  function getReferenceTablesHtml(opts) {
+    opts = opts || {};
+    return getKcDetailsHtml(opts) + getRootReachDetailsHtml(opts);
   }
 
   function renderFaoKcTable(tbodyId, filterText, cropFilter) {
@@ -645,6 +782,9 @@
     computeRollingWindows: computeRollingWindows,
     getRollingForPeriod: getRollingForPeriod,
     resolveAreaContext: resolveAreaContext,
+    normalizeRootReachPct: normalizeRootReachPct,
+    suggestedIrrigatedHaFromReach: suggestedIrrigatedHaFromReach,
+    buildAreaCriterionNoteHtml: buildAreaCriterionNoteHtml,
     irrigationMmFromInput: irrigationMmFromInput,
     mmToVolTotal: mmToVolTotal,
     volTotalToCropRefMm: volTotalToCropRefMm,
@@ -660,7 +800,11 @@
     getKcFieldHintHtml: getKcFieldHintHtml,
     ensureIrrCalcStyles: ensureIrrCalcStyles,
     scrollToKcTable: scrollToKcTable,
+    scrollToRootReachTable: scrollToRootReachTable,
+    getAreaCriterionScrollHintHtml: getAreaCriterionScrollHintHtml,
     renderFaoKcTable: renderFaoKcTable,
+    getRootReachDetailsHtml: getRootReachDetailsHtml,
+    getReferenceTablesHtml: getReferenceTablesHtml,
     NOTE_STYLE: NOTE_STYLE,
     KC_WRAP_STYLE: KC_WRAP_STYLE,
     KC_HINT_STYLE: KC_HINT_STYLE
