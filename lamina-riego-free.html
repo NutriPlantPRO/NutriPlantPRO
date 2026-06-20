@@ -220,12 +220,12 @@
         </div>
         <div class="irr-calc-row irr-calc-row--3">
           <div class="field-box">
-            <label>Riego total del periodo</label>
+            <label>Riego en franja regada (periodo)</label>
             <div class="irr-riego-row">
               <input id="irr-applied" type="number" min="0" step="0.1" placeholder="Acumulado" oninput="irrFreeUpdate()" />
               <select id="irr-unit" onchange="irrFreeUpdate()"><option value="mm">mm</option><option value="m3">m³</option></select>
             </div>
-            <p class="field-hint">Suma regada en el periodo (1 o 7 días).</p>
+            <p class="field-hint">Lo aplicado en la <strong>zona humedecida</strong> (1 o 7 días). <strong>m³</strong> = volumen total en la franja; <strong>mm</strong> = lámina en esa franja (usa «Superficie regada»).</p>
           </div>
           <div class="field-box">
             <label>Superficie del cultivo (ha)</label>

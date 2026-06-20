@@ -784,10 +784,10 @@
         '</div></div>' +
         '</div>' +
         '<div class="np-irr-calc-row-3">' +
-        '<div><label style="display:block;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;">Riego total del periodo</label>' +
-        '<div class="np-irr-value-unit"><input type="number" id="climate-irr-applied" min="0" step="0.1" placeholder="Acumulado del periodo" value="' +
+        '<div><label style="display:block;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;">Riego en franja regada (periodo)</label>' +
+        '<div class="np-irr-value-unit"><input type="number" id="climate-irr-applied" min="0" step="0.1" placeholder="Acumulado en franja" value="' +
         (state.irrigationValue != null ? state.irrigationValue : '') +
-        '"><select id="climate-irr-unit" aria-label="Unidad de riego">' +
+        '"><select id="climate-irr-unit" aria-label="Unidad de riego en franja">' +
         '<option value="mm"' +
         (state.irrigationUnit !== 'm3' ? ' selected' : '') +
         '>mm</option>' +
@@ -795,7 +795,7 @@
         (state.irrigationUnit === 'm3' ? ' selected' : '') +
         '>m³</option>' +
         '</select></div>' +
-        '<p style="margin:6px 0 0;font-size:12px;color:#64748b;">Suma de todo lo regado en el periodo elegido.</p></div>' +
+        '<p style="margin:6px 0 0;font-size:12px;color:#64748b;">Lo aplicado en la <strong>zona humedecida</strong> del periodo. <strong>m³</strong> = volumen total en la franja; <strong>mm</strong> = lámina en esa franja (usa «Superficie regada»).</p></div>' +
         '<div><label style="display:block;font-size:13px;color:#475569;margin-bottom:6px;font-weight:600;">Superficie del cultivo (ha)</label>' +
         '<input type="number" id="climate-irr-crop-area" min="0" step="0.01" placeholder="' +
         cropPlaceholder +
