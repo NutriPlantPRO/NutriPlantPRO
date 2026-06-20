@@ -407,48 +407,56 @@ class NutriPlantMap {
       }
     });
 
-    // Botones de control
-    const clearBtn = document.getElementById('clearPolygon');
-    const centerBtn = document.getElementById('centerOnPolygon');
-    const saveBtn = document.getElementById('saveLocation');
+    this.bindLocationControlButtons();
+  }
 
-    if (clearBtn) {
-      clearBtn.addEventListener('click', () => this.clearPolygon());
-    }
+  /**
+   * Re-vincula botones de Ubicación (el DOM se recrea al cambiar de sección).
+   * Usa onclick para evitar listeners duplicados en el mismo nodo.
+   */
+  bindLocationControlButtons() {
+    const self = this;
+    const bind = (id, handler) => {
+      const el = document.getElementById(id);
+      if (!el) return false;
+      el.onclick = (e) => {
+        if (e) e.preventDefault();
+        handler();
+      };
+      return true;
+    };
 
-    if (centerBtn) {
-      centerBtn.addEventListener('click', () => this.centerOnPolygon());
-    }
-
-    const userLocationBtn = document.getElementById('centerOnUserLocation');
-    if (userLocationBtn) {
-      userLocationBtn.addEventListener('click', () => this.centerOnUserLocation());
-    }
+    bind('clearPolygon', () => self.clearPolygon());
+    bind('centerOnPolygon', () => self.centerOnPolygon());
+    bind('centerOnUserLocation', () => self.centerOnUserLocation());
+    bind('saveLocation', () => self.saveLocation());
 
     const toggleCoordsBtn = document.getElementById('toggleCoordinateInput');
     const coordsPanel = document.getElementById('coordinateInputPanel');
     const coordsInput = document.getElementById('polygonCoordinatesInput');
     const drawFromCoordsBtn = document.getElementById('drawPolygonFromCoordinates');
     const clearCoordsInputBtn = document.getElementById('clearCoordinateInput');
+
     if (toggleCoordsBtn && coordsPanel) {
-      toggleCoordsBtn.addEventListener('click', () => {
+      toggleCoordsBtn.onclick = (e) => {
+        if (e) e.preventDefault();
         const opening = coordsPanel.style.display === 'none';
         coordsPanel.style.display = opening ? 'block' : 'none';
         if (opening && coordsInput) coordsInput.focus();
-      });
+      };
     }
     if (clearCoordsInputBtn && coordsInput) {
-      clearCoordsInputBtn.addEventListener('click', () => {
+      clearCoordsInputBtn.onclick = (e) => {
+        if (e) e.preventDefault();
         coordsInput.value = '';
         coordsInput.focus();
-      });
+      };
     }
     if (drawFromCoordsBtn && coordsInput) {
-      drawFromCoordsBtn.addEventListener('click', () => this.drawPolygonFromCoordinatesText(coordsInput.value));
-    }
-
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => this.saveLocation());
+      drawFromCoordsBtn.onclick = (e) => {
+        if (e) e.preventDefault();
+        self.drawPolygonFromCoordinatesText(coordsInput.value);
+      };
     }
   }
 
@@ -1352,6 +1360,11 @@ class NutriPlantMap {
 
   centerOnPolygon() {
     console.log('📍 Botón centrar en polígono presionado');
+
+    if (!this.map) {
+      this.showMessage('⚠️ El mapa aún se está cargando. Espera un momento e intenta de nuevo.', 'warning');
+      return;
+    }
     
     // 🚀 PRIORIDAD 1: Verificar si hay polígono visible en el mapa
     let polygonToCenter = null;
@@ -1425,6 +1438,11 @@ class NutriPlantMap {
   centerOnUserLocation() {
     // 🚀 "Mi Ubicación" SIEMPRE debe obtener la ubicación GPS del dispositivo
     // NO debe centrar en el polígono - eso lo hace el botón "Ubicación del Predio"
+
+    if (!this.map) {
+      this.showMessage('⚠️ El mapa aún se está cargando. Espera un momento e intenta de nuevo.', 'warning');
+      return;
+    }
     
     if (!navigator.geolocation) {
       this.showMessage('❌ La geolocalización no está disponible en este navegador', 'error');
@@ -1511,7 +1529,7 @@ class NutriPlantMap {
       padding: 12px 20px;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      z-index: 999;
+      z-index: 9999;
       font-weight: 500;
       animation: slideIn 0.3s ease;
     `;
@@ -3175,6 +3193,9 @@ function initLocationMap() {
       
       if (isMapDivValid && isCurrentElementValid && (mapDiv === currentMapElement || mapDiv.parentElement === currentMapElement)) {
         console.log('✅ Mapa ya existe e inicializado - recargando polígono guardado...');
+        if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
+          nutriPlantMap.bindLocationControlButtons();
+        }
         if (typeof nutriPlantMap.refreshMapView === 'function') {
           nutriPlantMap.refreshMapView('reuse');
           setTimeout(() => nutriPlantMap.refreshMapView('reuse-delayed'), 350);
@@ -3182,6 +3203,9 @@ function initLocationMap() {
         
         // Solo recargar el polígono guardado (no destruir el mapa)
         setTimeout(() => {
+          if (nutriPlantMap && typeof nutriPlantMap.bindLocationControlButtons === 'function') {
+            nutriPlantMap.bindLocationControlButtons();
+          }
           if (nutriPlantMap && typeof nutriPlantMap.loadProjectLocation === 'function') {
             nutriPlantMap.loadProjectLocation();
           }
@@ -3237,6 +3261,9 @@ function initLocationMap() {
 
   // Crear nueva instancia fresca
   nutriPlantMap = new NutriPlantMap();
+  if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
+    nutriPlantMap.bindLocationControlButtons();
+  }
 
   // 🚀 CRÍTICO: Esperar a que Google Maps termine de inicializar completamente
   // Usar un delay más largo para asegurar que el mapa esté completamente listo
@@ -3244,17 +3271,23 @@ function initLocationMap() {
   setTimeout(() => {
     if (nutriPlantMap && nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
       console.log('✅ Mapa inicializado correctamente - cargando polígono guardado...');
+      if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
+        nutriPlantMap.bindLocationControlButtons();
+      }
       if (typeof nutriPlantMap.refreshMapView === 'function') {
         nutriPlantMap.refreshMapView('after-initLocationMap');
       }
       if (typeof nutriPlantMap.loadProjectLocation === 'function') {
-      nutriPlantMap.loadProjectLocation();
-    }
+        nutriPlantMap.loadProjectLocation();
+      }
     } else {
       console.warn('⚠️ Mapa aún no está inicializado, esperando un poco más...');
       // Reintentar después de un delay adicional
       setTimeout(() => {
         if (nutriPlantMap && nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
+          if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
+            nutriPlantMap.bindLocationControlButtons();
+          }
           if (typeof nutriPlantMap.loadProjectLocation === 'function') {
             nutriPlantMap.loadProjectLocation();
           }
