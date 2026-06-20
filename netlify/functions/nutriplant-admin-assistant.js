@@ -1323,8 +1323,13 @@ function summarizeIrrigationQuickCalc(iqc, rolling) {
   }
   const deficitClimate = et0 != null && rain != null ? roundClimate1(et0 - rain) : null;
   const deficitCrop = etc != null && rain != null ? roundClimate1(etc - rain) : null;
+  const cHa = cropHa != null && cropHa > 0 ? cropHa : 1;
+  const iHa = irrigatedHa != null && irrigatedHa > 0 ? irrigatedHa : cHa;
+  const irrMmBal = irrigationMm != null ? irrigationMm : 0;
   const balance =
-    etc != null && rain != null ? roundClimate1(etc - rain - (irrigationMm != null ? irrigationMm : 0)) : null;
+    deficitCrop != null
+      ? roundClimate1((deficitCrop * 10 * cHa - irrMmBal * 10 * iHa) / (cHa * 10))
+      : null;
   const hasSplit =
     cropHa != null && irrigatedHa != null && irrigatedHa > 0 && Math.abs(cropHa - irrigatedHa) > 0.001;
   const stripFactor = hasSplit ? cropHa / irrigatedHa : null;

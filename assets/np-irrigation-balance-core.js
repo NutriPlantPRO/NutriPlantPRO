@@ -136,6 +136,35 @@
     return round1(v);
   }
 
+  /** m³ totales: mm × ha × 10 (1 mm sobre 1 ha = 10 m³). */
+  function mmToVolTotal(mm, ha) {
+    if (mm == null || !Number.isFinite(Number(mm)) || !Number.isFinite(ha) || ha <= 0) return null;
+    return round1(Number(mm) * 10 * ha);
+  }
+
+  function volTotalToCropRefMm(volTotal, cropHa) {
+    if (volTotal == null || !Number.isFinite(Number(volTotal)) || !Number.isFinite(cropHa) || cropHa <= 0) {
+      return null;
+    }
+    return round1(Number(volTotal) / (cropHa * 10));
+  }
+
+  /**
+   * Balance en mm de referencia cultivo: déficit (m³ cultivo) − riego (m³ en franja regada).
+   * El riego siempre se interpreta en la franja humedecida; el déficit ETc−lluvia es sobre el cultivo.
+   */
+  function computeBalanceMm(deficitCropMm, irrStripMm, cropHa, irrigatedHa) {
+    if (deficitCropMm == null || !Number.isFinite(Number(deficitCropMm))) return null;
+    var irr = irrStripMm != null && Number.isFinite(Number(irrStripMm)) ? Number(irrStripMm) : 0;
+    var cHa = cropHa != null && Number.isFinite(cropHa) && cropHa > 0 ? cropHa : 1;
+    var iHa =
+      irrigatedHa != null && Number.isFinite(irrigatedHa) && irrigatedHa > 0 ? irrigatedHa : cHa;
+    var deficitVol = mmToVolTotal(deficitCropMm, cHa);
+    var irrVol = mmToVolTotal(irr, iHa);
+    if (deficitVol == null || irrVol == null) return null;
+    return volTotalToCropRefMm(deficitVol - irrVol, cHa);
+  }
+
   function computeResults(state, rolling) {
     var period = state.periodDays === 1 || state.periodDays === 30 ? state.periodDays : 7;
     var sat = getRollingForPeriod(rolling, period);
@@ -168,7 +197,7 @@
     var etc = et0 != null && kc != null ? round1(et0 * kc) : null;
     var deficitClimate = et0 != null && rain != null ? round1(et0 - rain) : null;
     var deficitCrop = etc != null && rain != null ? round1(etc - rain) : null;
-    var balance = etc != null && rain != null ? round1(etc - rain - (irrMm != null ? irrMm : 0)) : null;
+    var balance = deficitCrop != null ? computeBalanceMm(deficitCrop, irrMm, cropHa, irrigatedHa) : null;
     function volMm(mmVal) {
       if (mmVal == null || !Number.isFinite(mmVal) || cropHa == null) {
         return { perHa: null, total: null, wettedMm: null };
@@ -393,11 +422,16 @@
         '</span></div>'
       );
     }
+    var irrVolTotal =
+      res.irrigationMm != null && res.irrigatedHa != null
+        ? mmToVolTotal(res.irrigationMm, res.irrigatedHa)
+        : null;
     var irrVol =
       res.irrigationMm != null
         ? {
-            perHa: round1(res.irrigationMm * 10),
-            total: res.irrigatedHa != null ? round1(res.irrigationMm * 10 * res.irrigatedHa) : null,
+            perHa:
+              irrVolTotal != null && res.cropHa > 0 ? round1(irrVolTotal / res.cropHa) : null,
+            total: irrVolTotal,
             wettedMm: res.irrigationMm
           }
         : null;
@@ -611,6 +645,10 @@
     computeRollingWindows: computeRollingWindows,
     getRollingForPeriod: getRollingForPeriod,
     resolveAreaContext: resolveAreaContext,
+    irrigationMmFromInput: irrigationMmFromInput,
+    mmToVolTotal: mmToVolTotal,
+    volTotalToCropRefMm: volTotalToCropRefMm,
+    computeBalanceMm: computeBalanceMm,
     computeResults: computeResults,
     sourceBadge: sourceBadge,
     fetchRollingOpenMeteo: fetchRollingOpenMeteo,

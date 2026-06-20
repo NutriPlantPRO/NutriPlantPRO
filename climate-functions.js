@@ -315,7 +315,12 @@
     var etc = et0 != null && kc != null ? round1(et0 * kc) : null;
     var deficitClimate = et0 != null && rain != null ? round1(et0 - rain) : null;
     var deficitCrop = etc != null && rain != null ? round1(etc - rain) : null;
-    var balance = etc != null && rain != null ? round1(etc - rain - (irrMm != null ? irrMm : 0)) : null;
+    var balance =
+      deficitCrop != null
+        ? window.NpIrrBalance && typeof window.NpIrrBalance.computeBalanceMm === 'function'
+          ? window.NpIrrBalance.computeBalanceMm(deficitCrop, irrMm, cropHa, irrigatedHa)
+          : round1(deficitCrop - (irrMm != null ? irrMm : 0))
+        : null;
     function volMm(mmVal) {
       if (mmVal == null || !Number.isFinite(mmVal) || cropHa == null) {
         return { perHa: null, total: null, wettedMm: null };
