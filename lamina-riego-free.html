@@ -269,6 +269,7 @@
   </script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="climate-kc-fao-data.js"></script>
+  <script src="assets/np-free-geolocation.js?v=202606201700"></script>
   <script src="assets/np-irrigation-balance-core.js?v=202606201400"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
@@ -367,21 +368,25 @@
     }
 
     function irrFreeUseMyLocation() {
-      if (!navigator.geolocation) { alert('Tu navegador no permite ubicación.'); return; }
       var btn = document.getElementById('irr-btn-geo');
       if (btn) btn.disabled = true;
       irrSetStatus('📍 Obteniendo ubicación…');
-      navigator.geolocation.getCurrentPosition(
+      var geo = window.NpFreeGeo;
+      if (!geo || typeof geo.requestLocation !== 'function') {
+        irrSetStatus('No se pudo leer GPS. Elige un punto en el mapa.');
+        if (btn) btn.disabled = false;
+        return;
+      }
+      geo.requestLocation({ retry: true }).then(
         function (pos) {
           irrApplyCoords(pos.coords.latitude, pos.coords.longitude, true);
           irrSetStatus('Ubicación aplicada. Ajusta el punto en el mapa si quieres.');
           if (btn) btn.disabled = false;
         },
-        function () {
-          irrSetStatus('No se pudo leer GPS. Elige un punto en el mapa.');
+        function (err) {
+          irrSetStatus(err && err.message ? err.message : 'No se pudo leer GPS. Elige un punto en el mapa.');
           if (btn) btn.disabled = false;
-        },
-        { enableHighAccuracy: false, timeout: 12000 }
+        }
       );
     }
 
@@ -515,6 +520,16 @@
       irrFreeUpdate();
 
       irrPersist = window.NpFreePersist.bind('lamina_riego', irrFreeGetPersistState, irrFreeApplyPersistState);
+
+      if (window.NpFreeGeo && window.NpFreeGeo.isEmbedded()) {
+        var st = document.getElementById('irr-geo-status');
+        if (st && st.parentNode) {
+          var link = document.createElement('p');
+          link.style.cssText = 'font-size:11px;color:#64748b;margin:0 0 8px;';
+          link.innerHTML = 'Si el GPS falla aquí: <a href="lamina-riego-free.html" target="_blank" rel="noopener" style="color:#2563eb;">abrir herramienta en página completa</a>.';
+          st.parentNode.insertBefore(link, st.nextSibling);
+        }
+      }
     });
   </script>
 </body>

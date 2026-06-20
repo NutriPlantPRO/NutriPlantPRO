@@ -274,6 +274,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="assets/np-free-geolocation.js?v=202606201700"></script>
   <script>
     if (/[?&]embed=(?:login|dashboard)(?:&|$)/.test(location.search || '')) {
       document.documentElement.classList.add('embed-login');
@@ -431,6 +432,19 @@
       vpdFreeApplyCoords(startLat, startLng, false);
       setTimeout(function () { if (vpdFreeMap) vpdFreeMap.invalidateSize(); }, 300);
       setTimeout(function () { if (vpdFreeMap) vpdFreeMap.invalidateSize(); }, 800);
+      if (window.NpFreeGeo && window.NpFreeGeo.isEmbedded()) {
+        var st = document.getElementById('vpd-geo-status');
+        if (st && st.parentNode && !st.parentNode.querySelector('.np-embed-geo-hint')) {
+          var link = document.createElement('p');
+          link.className = 'np-embed-geo-hint';
+          link.style.cssText = 'font-size:11px;color:#64748b;margin:0 0 8px;';
+          link.innerHTML = t(
+            'Si el GPS falla aquí: <a href="vpd-free.html" target="_blank" rel="noopener" style="color:#2563eb;">abrir herramienta en página completa</a>.',
+            'If GPS fails here: <a href="vpd-free.html" target="_blank" rel="noopener" style="color:#2563eb;">open tool in full page</a>.'
+          );
+          st.parentNode.insertBefore(link, st.nextSibling);
+        }
+      }
     }
 
     document.addEventListener('visibilitychange', function () {
@@ -476,27 +490,26 @@
     }
 
     function vpdFreeUseMyLocation() {
-      if (!navigator.geolocation) {
-        alert(t('Tu navegador no permite ubicación.', 'Your browser does not support geolocation.'));
-        return;
-      }
       var btn = document.getElementById('vpd-btn-geolocate');
       if (btn) btn.disabled = true;
       vpdGeoSetStatus(t('📍 Obteniendo ubicación…', '📍 Getting location…'));
-      navigator.geolocation.getCurrentPosition(
+      var geo = window.NpFreeGeo;
+      if (!geo || typeof geo.requestLocation !== 'function') {
+        vpdGeoSetStatus(t('No se pudo leer el GPS. Prueba seleccionando un punto en el mapa.', 'Could not read GPS. Pick a point on the map.'));
+        if (btn) btn.disabled = false;
+        return;
+      }
+      geo.requestLocation({ retry: true, t: t }).then(
         function (pos) {
-          var la = pos.coords.latitude;
-          var lo = pos.coords.longitude;
-          vpdFreeApplyCoords(la, lo, true);
+          vpdFreeApplyCoords(pos.coords.latitude, pos.coords.longitude, true);
           vpdGeoSetStatus(t('Ubicación aplicada. Puedes afinar el punto en el mapa.', 'Location set. Drag the marker or tap the map to refine.'));
           if (btn) btn.disabled = false;
           setTimeout(function () { if (vpdFreeMap) vpdFreeMap.invalidateSize(); }, 150);
         },
-        function () {
-          vpdGeoSetStatus(t('No se pudo leer el GPS. Prueba seleccionando un punto en el mapa.', 'Could not read GPS. Pick a point on the map.'));
+        function (err) {
+          vpdGeoSetStatus(err && err.message ? err.message : t('No se pudo leer el GPS. Prueba seleccionando un punto en el mapa.', 'Could not read GPS. Pick a point on the map.'));
           if (btn) btn.disabled = false;
-        },
-        { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 }
+        }
       );
     }
 
