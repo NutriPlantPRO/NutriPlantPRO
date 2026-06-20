@@ -676,10 +676,6 @@
       btn.style.background = active ? '#e0f2fe' : '#fff';
       btn.style.color = active ? '#0369a1' : '#475569';
     });
-    var stripActionBox =
-      window.NpIrrBalance && typeof window.NpIrrBalance.buildStripActionBoxHtml === 'function'
-        ? window.NpIrrBalance.buildStripActionBoxHtml(res)
-        : '';
     var summaryBody =
       window.NpIrrBalance && typeof window.NpIrrBalance.buildSummaryHtml === 'function'
         ? window.NpIrrBalance.buildSummaryHtml(res)
@@ -720,7 +716,7 @@
     }
     var summary = document.getElementById('climate-irr-summary');
     if (summary) {
-      summary.innerHTML = (summaryBody || '') + stripActionBox;
+      summary.innerHTML = summaryBody || '';
     }
   }
 
