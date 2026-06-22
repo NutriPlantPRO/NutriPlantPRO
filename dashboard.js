@@ -150,18 +150,54 @@ function isCompactTouchViewport() {
 
 // En touch compacto: tocar la barra minimizada la expande (iOS no usa :hover)
 var _sidebarCompactTouchExpandAt = 0;
-function handleCompactTouchSidebarInteraction(e) {
-  if (!isCompactTouchViewport()) return;
-  const sidebar = document.getElementById('sidebar');
-  if (!sidebar || !sidebar.contains(e.target)) return;
-  if (!isSidebarMinimized()) return;
+var _sidebarTouchStart = null;
 
-  const interactive = e.target.closest('a, button, [data-go], [data-section]');
+function getSidebarTouchZoneWidth() {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) {
+    const rect = sidebar.getBoundingClientRect();
+    if (rect.width > 0) return Math.ceil(rect.width) + 12;
+  }
+  return 84;
+}
+
+function recordCompactTouchSidebarStart(e) {
+  if (!isCompactTouchViewport()) return;
+  const t = e.touches && e.touches[0];
+  if (!t) return;
+  _sidebarTouchStart = { x: t.clientX, y: t.clientY };
+}
+
+function isCompactTouchSidebarTap(point, start) {
+  if (!point) return false;
+  if (point.clientY < 48) return false;
+  const zoneWidth = getSidebarTouchZoneWidth();
+  if (point.clientX > zoneWidth) return false;
+  if (start) {
+    if (Math.abs(point.clientX - start.x) > 14) return false;
+    if (Math.abs(point.clientY - start.y) > 14) return false;
+  }
+  return true;
+}
+
+function handleCompactTouchSidebarInteraction(e) {
+  if (!isCompactTouchViewport() || !isSidebarMinimized()) return;
+
+  const point = (e.changedTouches && e.changedTouches[0]) || e;
+  const sidebar = document.getElementById('sidebar');
+  const onSidebar = !!(sidebar && e.target && sidebar.contains(e.target));
+  const inLeftZone = isCompactTouchSidebarTap(point, e.type === 'touchend' ? _sidebarTouchStart : null);
+
+  if (e.type === 'touchend') _sidebarTouchStart = null;
+  if (!onSidebar && !inLeftZone) return;
+
+  const interactive = e.target && e.target.closest
+    ? e.target.closest('a, button, [data-go], [data-section]')
+    : null;
   const now = Date.now();
 
-  // touchend + click en iOS: un solo expandir por toque
   if (now - _sidebarCompactTouchExpandAt < 400) {
-    if (interactive && interactive.id !== 'sidebar-close') {
+    if (interactive && sidebar && sidebar.contains(interactive) && interactive.id !== 'sidebar-close') {
       e.preventDefault();
       e.stopImmediatePropagation();
     }
@@ -171,8 +207,10 @@ function handleCompactTouchSidebarInteraction(e) {
   expandSidebar();
   _sidebarCompactTouchExpandAt = now;
 
-  // Primer toque solo expande; evita navegar al pulsar un icono/enlace
-  if (interactive && interactive.id !== 'sidebar-close') {
+  // Evita que iOS dispare un click fantasma que vuelva a minimizar al instante
+  if (e.type === 'touchend') e.preventDefault();
+
+  if (interactive && sidebar && sidebar.contains(interactive) && interactive.id !== 'sidebar-close') {
     e.preventDefault();
     e.stopImmediatePropagation();
   }
@@ -216,9 +254,10 @@ function initializeSidebar() {
       handleSidebarTextVisibility();
     }
 
-    // Touch compacto: tocar barra minimizada expande (capture para iOS Safari)
-    sidebar.addEventListener('click', handleCompactTouchSidebarInteraction, true);
-    sidebar.addEventListener('touchend', handleCompactTouchSidebarInteraction, { capture: true, passive: false });
+    // Touch compacto: detectar toque en franja izquierda (iOS a veces no entrega el evento al sidebar)
+    document.addEventListener('touchstart', recordCompactTouchSidebarStart, { capture: true, passive: true });
+    document.addEventListener('touchend', handleCompactTouchSidebarInteraction, { capture: true, passive: false });
+    document.addEventListener('click', handleCompactTouchSidebarInteraction, true);
   }
   
   // Funcionalidad móvil
@@ -245,6 +284,7 @@ function initializeSidebar() {
   // Cerrar sidebar al cambiar de sección en móvil
   document.addEventListener('click', function(e) {
     if (window.innerWidth <= 768) {
+      if (Date.now() - _sidebarCompactTouchExpandAt < 500) return;
       const isSidebarClick = sidebar && sidebar.contains(e.target);
       const isToggleClick = sidebarToggle && sidebarToggle.contains(e.target);
       

@@ -247,6 +247,7 @@ body {
     height: auto !important; /* En móvil, anclar arriba/abajo evita que se corte */
     min-height: 0;
     transform: translateX(0) !important;
+    z-index: 60; /* Por encima del contenido: en iOS el toque no debe caer detrás */
   }
   .sidebar.open {
     width: var(--sidebar-w-expanded);
@@ -256,6 +257,19 @@ body {
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* iOS: iconos más grandes y fáciles de tocar sin hacer zoom */
+  .sidebar.open.sidebar-minimized nav a,
+  .sidebar.open.sidebar-minimized .sidebar-brand {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .sidebar.open.sidebar-minimized .sidebar-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .sidebar.open.sidebar-minimized:hover {
     width: var(--sidebar-w) !important;
