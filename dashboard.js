@@ -418,131 +418,6 @@ function initMobileViewportHeightSync() {
   }
 }
 
-function initIOSDashboardModalViewportGuard() {
-  if (!document.body.classList.contains('np-dashboard')) return;
-  if (!isIOSLikeTouchDevice()) return;
-  if (window._npIOSModalViewportGuardInitialized) return;
-  window._npIOSModalViewportGuardInitialized = true;
-
-  const adjustedOverlays = new Set();
-
-  const clearOverlayAdjustment = (overlay) => {
-    if (!overlay) return;
-    overlay.classList.remove('np-ios-modal-vv-adjusted');
-    [
-      'position',
-      'top',
-      'left',
-      'width',
-      'height',
-      'maxWidth',
-      'maxHeight',
-      'transform',
-      'padding',
-      'boxSizing',
-      'overflowX',
-      'overflowY',
-      'WebkitOverflowScrolling',
-      'justifyContent',
-      'alignItems'
-    ].forEach((prop) => {
-      overlay.style[prop] = '';
-    });
-
-    const modal = overlay.querySelector('.modal');
-    if (modal) {
-      [
-        'width',
-        'maxWidth',
-        'maxHeight',
-        'marginLeft',
-        'marginRight',
-        'boxSizing'
-      ].forEach((prop) => {
-        modal.style[prop] = '';
-      });
-    }
-  };
-
-  const applyOverlayAdjustment = () => {
-    const vv = window.visualViewport;
-    const vvWidth = vv && vv.width ? vv.width : window.innerWidth;
-    const vvHeight = vv && vv.height ? vv.height : window.innerHeight;
-    const vvTop = vv && Number.isFinite(vv.offsetTop) ? vv.offsetTop : 0;
-    const vvLeft = vv && Number.isFinite(vv.offsetLeft) ? vv.offsetLeft : 0;
-    const layoutHeight = document.documentElement.clientHeight || window.innerHeight || vvHeight;
-    const keyboardOpen = vvHeight < layoutHeight - 120;
-    const openOverlays = Array.from(document.querySelectorAll('.modal-overlay.show'));
-    const openSet = new Set(openOverlays);
-
-    adjustedOverlays.forEach((overlay) => {
-      if (!openSet.has(overlay)) {
-        clearOverlayAdjustment(overlay);
-        adjustedOverlays.delete(overlay);
-      }
-    });
-
-    openOverlays.forEach((overlay) => {
-      adjustedOverlays.add(overlay);
-      overlay.classList.add('np-ios-modal-vv-adjusted');
-      overlay.style.setProperty('position', 'fixed', 'important');
-      overlay.style.setProperty('top', '0px', 'important');
-      overlay.style.setProperty('left', '0px', 'important');
-      overlay.style.setProperty('width', vvWidth + 'px', 'important');
-      overlay.style.setProperty('height', vvHeight + 'px', 'important');
-      overlay.style.setProperty('max-width', vvWidth + 'px', 'important');
-      overlay.style.setProperty('max-height', vvHeight + 'px', 'important');
-      overlay.style.setProperty('transform', 'translate3d(' + vvLeft + 'px,' + vvTop + 'px,0)', 'important');
-      overlay.style.setProperty('padding', '14px', 'important');
-      overlay.style.setProperty('box-sizing', 'border-box', 'important');
-      overlay.style.setProperty('overflow-x', 'hidden', 'important');
-      overlay.style.setProperty('overflow-y', 'auto', 'important');
-      overlay.style.setProperty('-webkit-overflow-scrolling', 'touch');
-      overlay.style.setProperty('justify-content', 'center', 'important');
-      overlay.style.setProperty('align-items', keyboardOpen ? 'flex-start' : 'center', 'important');
-
-      const modal = overlay.querySelector('.modal');
-      if (modal) {
-        modal.style.setProperty('width', '100%', 'important');
-        modal.style.setProperty('max-width', '100%', 'important');
-        modal.style.setProperty('max-height', Math.max(260, vvHeight - 28) + 'px', 'important');
-        modal.style.setProperty('margin-left', 'auto', 'important');
-        modal.style.setProperty('margin-right', 'auto', 'important');
-        modal.style.setProperty('box-sizing', 'border-box', 'important');
-      }
-    });
-  };
-
-  const scheduleApply = () => {
-    applyOverlayAdjustment();
-    requestAnimationFrame(applyOverlayAdjustment);
-  };
-
-  const scheduleAfterKeyboard = () => {
-    scheduleApply();
-    setTimeout(scheduleApply, 120);
-    setTimeout(scheduleApply, 320);
-    setTimeout(scheduleApply, 700);
-  };
-
-  const observer = new MutationObserver(scheduleApply);
-  observer.observe(document.body, {
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['class']
-  });
-
-  window.addEventListener('resize', scheduleApply, { passive: true });
-  window.addEventListener('orientationchange', scheduleAfterKeyboard, { passive: true });
-  document.addEventListener('focusin', scheduleAfterKeyboard, true);
-  document.addEventListener('focusout', scheduleAfterKeyboard, true);
-
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', scheduleApply, { passive: true });
-    window.visualViewport.addEventListener('scroll', scheduleApply, { passive: true });
-  }
-}
-
 // Función para abrir/cerrar sidebar en móvil
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
@@ -8084,7 +7959,6 @@ function np_logDashboardVisit() {
 async function initializeDashboard() {
   console.log('🚀 INICIALIZANDO DASHBOARD COMPLETO');
   initMobileViewportHeightSync();
-  initIOSDashboardModalViewportGuard();
   
   const userId = localStorage.getItem('nutriplant_user_id');
   const isSupabaseUser = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
