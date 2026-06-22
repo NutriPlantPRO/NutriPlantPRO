@@ -232,6 +232,32 @@ body.np-dashboard.np-header-zoomed .social-links::-webkit-scrollbar {
   pointer-events: auto;
 }
 
+#np-ios-sidebar-hit-target {
+  display: none;
+}
+
+body.np-dashboard.np-ios-touch #np-ios-sidebar-hit-target {
+  position: fixed;
+  left: 0;
+  top: 48px;
+  bottom: 0;
+  width: 92px;
+  z-index: 1300;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.np-dashboard.np-ios-touch #np-ios-sidebar-hit-target.show {
+  display: block;
+  pointer-events: auto;
+}
+
 /* Botón de cerrar en sidebar */
 .sidebar-close {
   display: none;
@@ -326,6 +352,14 @@ body.np-dashboard.np-header-zoomed .social-links::-webkit-scrollbar {
     display: block;
     top: 48px;
     z-index: 55;
+  }
+
+  body.np-dashboard.np-ios-touch .sidebar {
+    z-index: 1290;
+  }
+
+  body.np-dashboard.np-ios-touch .sidebar-overlay.show {
+    z-index: 1280;
   }
 
   /* En móvil, estado minimizado controlado por clase (no por :hover) */

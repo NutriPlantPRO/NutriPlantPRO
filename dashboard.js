@@ -148,6 +148,48 @@ function isCompactTouchViewport() {
   return 'ontouchstart' in window;
 }
 
+function isIOSLikeTouchDevice() {
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  return /iPhone|iPad|iPod/.test(ua) ||
+    /iPhone|iPad|iPod/.test(platform) ||
+    (/Mac/.test(platform) && 'ontouchend' in document);
+}
+
+function ensureIOSSidebarHitTarget() {
+  if (!document.body.classList.contains('np-dashboard')) return null;
+  if (!isIOSLikeTouchDevice()) return null;
+
+  document.body.classList.add('np-ios-touch');
+
+  let hitTarget = document.getElementById('np-ios-sidebar-hit-target');
+  if (hitTarget) return hitTarget;
+
+  hitTarget = document.createElement('button');
+  hitTarget.type = 'button';
+  hitTarget.id = 'np-ios-sidebar-hit-target';
+  hitTarget.setAttribute('aria-label', 'Abrir menú lateral');
+
+  const openFromHitTarget = function(e) {
+    if (!isCompactTouchViewport() || !isSidebarMinimized()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    expandSidebar();
+  };
+
+  hitTarget.addEventListener('touchend', openFromHitTarget, { passive: false });
+  hitTarget.addEventListener('click', openFromHitTarget);
+  document.body.appendChild(hitTarget);
+  return hitTarget;
+}
+
+function syncIOSSidebarHitTarget() {
+  const hitTarget = ensureIOSSidebarHitTarget();
+  if (!hitTarget) return;
+  const shouldShow = isCompactTouchViewport() && isSidebarOpen() && isSidebarMinimized();
+  hitTarget.classList.toggle('show', !!shouldShow);
+}
+
 // En touch compacto: tocar la barra minimizada la expande (iOS no usa :hover)
 var _sidebarCompactTouchExpandAt = 0;
 var _sidebarTouchStart = null;
@@ -332,6 +374,10 @@ function initializeSidebar() {
     if (sidebarOverlay) sidebarOverlay.classList.remove('show');
     document.body.style.overflow = '';
   }
+
+  syncIOSSidebarHitTarget();
+  window.addEventListener('resize', syncIOSSidebarHitTarget, { passive: true });
+  window.addEventListener('orientationchange', syncIOSSidebarHitTarget, { passive: true });
 }
 
 // Sincroniza el alto visible real del viewport móvil para evitar "huecos"
@@ -415,6 +461,7 @@ function openSidebar() {
     if (overlay) overlay.classList.add('show');
     document.body.style.overflow = 'hidden';
   }
+  syncIOSSidebarHitTarget();
 }
 
 // Función para expandir sidebar (cuando estaba minimizado)
@@ -428,6 +475,7 @@ function expandSidebar() {
     if (overlay) overlay.classList.add('show');
     document.body.style.overflow = 'hidden';
   }
+  syncIOSSidebarHitTarget();
 }
 
 // Función para minimizar sidebar en móvil (barra estrecha, sin overlay)
@@ -435,6 +483,7 @@ function minimizeSidebar() {
   const sidebar = document.getElementById('sidebar');
   if (sidebar) sidebar.classList.add('sidebar-minimized');
   setCompactTouchSidebarOverlayVisible(false);
+  syncIOSSidebarHitTarget();
 }
 
 // Función para cerrar sidebar por completo
@@ -451,6 +500,7 @@ function closeSidebar() {
   }
   if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
+  syncIOSSidebarHitTarget();
 }
 
 // Función para verificar si el sidebar está abierto (expandido o minimizado)
