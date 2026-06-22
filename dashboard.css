@@ -45,6 +45,7 @@ body {
   border-bottom: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   height: 48px;
+  min-height: 48px;
   overflow: hidden;
 }
 
@@ -52,36 +53,55 @@ body {
   height: 48px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 0 16px;
-  position: relative;
+  gap: 6px;
+  padding: 0 10px;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* ===== NUTRIPLANT PRO LOGO SYSTEM ===== */
 .brand-logo {
-  height: var(--logo-header-height);
+  height: 34px;
   width: auto;
+  max-width: min(118px, 34vw);
   display: block;
-  transition: height 0.2s ease;
+  flex: 0 0 auto;
+  object-fit: contain;
+  object-position: left center;
   margin: 0;
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
+  position: static;
+  transform: none;
+  transition: opacity 0.2s ease;
 }
 
 .brand-logo:hover {
-  transform: translateY(-50%) scale(1.02);
+  opacity: 0.92;
+  transform: none;
 }
 
-/* Logo responsive - ELIMINADO */
+.brandline .auth-header-manual-link {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  flex: 0 0 auto;
+}
 
 /* ===== SOCIAL MEDIA ICONS ===== */
 .social-links {
   display: flex;
-  gap: 12px;
+  gap: 6px;
   align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.social-links::-webkit-scrollbar {
+  display: none;
 }
 
 .social-links a {
@@ -110,6 +130,52 @@ body {
 .social-links svg {
   width: 20px;
   height: 20px;
+}
+
+@media (max-width: 768px) {
+  .brandline {
+    gap: 4px;
+    padding: 0 8px;
+  }
+
+  .brand-logo {
+    height: 30px;
+    max-width: min(96px, 30vw);
+  }
+
+  .auth-header-manual-link {
+    padding: 0 8px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .social-links {
+    gap: 4px;
+  }
+
+  .social-links a,
+  .social-links .social-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px;
+    flex-shrink: 0;
+  }
+
+  /* Menos iconos en pantalla chica o con zoom: evita encimar logo y manual */
+  .social-links a[data-social="linkedin"],
+  .social-links a[data-social="tiktok"] {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand-logo {
+    max-width: min(82px, 28vw);
+  }
+
+  .social-links a[data-social="youtube"] {
+    display: none;
+  }
 }
 
 /* ===== LAYOUT PRINCIPAL ===== */
