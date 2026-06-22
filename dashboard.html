@@ -2,7 +2,21 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta id="np-dashboard-viewport" name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <script>
+    (function() {
+      var ua = navigator.userAgent || '';
+      var platform = navigator.platform || '';
+      var isIOS = /iPhone|iPad|iPod/.test(ua) ||
+        /iPhone|iPad|iPod/.test(platform) ||
+        (/Mac/.test(platform) && 'ontouchend' in document);
+      if (!isIOS) return;
+      var viewport = document.getElementById('np-dashboard-viewport');
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+      }
+    })();
+  </script>
   <title>Panel — NutriPlant Pro</title>
   
   <!-- ===== NUTRIPLANT PRO BRANDING ===== -->
@@ -17,7 +31,7 @@
   <link rel="apple-touch-icon" href="assets/N_Hoja_Azul.png">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=202606221800" />
+  <link rel="stylesheet" href="dashboard.css?v=202606222000" />
   <link rel="stylesheet" href="chat.css?v=1762797600" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
@@ -399,7 +413,7 @@
   <script src="assets/np-irrigation-balance-core.js?v=202606201400"></script>
   <script src="climate-functions.js?v=202606201400"></script>
   <script src="analysis-report-render.js?v=1760005000"></script>
-  <script src="dashboard.js?v=202606221800"></script>
+  <script src="dashboard.js?v=202606222000"></script>
   <script src="fertirriego-program-functions.js?v=1760007400"></script>
   <script src="ai-knowledge-expansion.js"></script>
   <script src="chat-simple.js?v=1764880101"></script>
@@ -639,6 +653,10 @@
     /* Celular: ventana flotante con margen visible (iPhone y Android igual) */
     @media (max-width: 768px) {
       .modal-overlay.show {
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100dvh;
         padding: 14px;
         padding-top: max(14px, env(safe-area-inset-top, 0px));
         padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
@@ -680,6 +698,30 @@
       .modal-tool-iframe-full .modal-body iframe,
       .modal-tool-iframe-fit .modal-body iframe {
         min-height: 260px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body.np-dashboard.np-ios-touch .modal-overlay.show {
+        top: var(--np-vv-offset-top, 0px) !important;
+        left: var(--np-vv-offset-left, 0px) !important;
+        width: var(--np-vv-width, 100vw) !important;
+        height: var(--np-vv-height, 100dvh) !important;
+        max-width: var(--np-vv-width, 100vw) !important;
+        max-height: var(--np-vv-height, 100dvh) !important;
+        box-sizing: border-box;
+      }
+
+      body.np-dashboard.np-ios-touch.np-ios-keyboard-open .modal-overlay.show {
+        align-items: flex-start !important;
+      }
+
+      body.np-dashboard.np-ios-touch .modal-overlay.show > .modal,
+      body.np-dashboard.np-ios-touch .modal-overlay.show > .modal.modal-wide {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: calc(var(--np-vv-height, 100dvh) - 28px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+        box-sizing: border-box;
       }
     }
     

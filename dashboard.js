@@ -390,8 +390,20 @@ function initMobileViewportHeightSync() {
     if (window.innerWidth > 768) return;
     const vv = window.visualViewport;
     const height = vv && vv.height ? vv.height : window.innerHeight;
+    const width = vv && vv.width ? vv.width : window.innerWidth;
+    const offsetTop = vv && Number.isFinite(vv.offsetTop) ? vv.offsetTop : 0;
+    const offsetLeft = vv && Number.isFinite(vv.offsetLeft) ? vv.offsetLeft : 0;
     if (!height || !Number.isFinite(height)) return;
     document.documentElement.style.setProperty('--app-vh', height + 'px');
+    document.documentElement.style.setProperty('--np-vv-height', height + 'px');
+    document.documentElement.style.setProperty('--np-vv-width', width + 'px');
+    document.documentElement.style.setProperty('--np-vv-offset-top', offsetTop + 'px');
+    document.documentElement.style.setProperty('--np-vv-offset-left', offsetLeft + 'px');
+
+    if (document.body && document.body.classList.contains('np-dashboard') && isIOSLikeTouchDevice()) {
+      const layoutHeight = document.documentElement.clientHeight || window.innerHeight || height;
+      document.body.classList.toggle('np-ios-keyboard-open', height < layoutHeight - 120);
+    }
   };
 
   let rafId = null;
@@ -424,6 +436,7 @@ function initDashboardHeaderZoomGuard() {
     const vv = window.visualViewport;
     const scale = vv && vv.scale ? vv.scale : 1;
     document.body.classList.toggle('np-header-zoomed', scale > 1.08);
+    syncIOSSidebarHitTarget();
   };
 
   applyZoomClass();

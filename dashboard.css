@@ -5968,6 +5968,10 @@ html.embed-login body {
   }
 
   .modal-overlay.show {
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
     padding: 14px;
     padding-top: max(14px, env(safe-area-inset-top, 0px));
     padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
@@ -5981,6 +5985,28 @@ html.embed-login body {
     width: 100% !important;
     max-width: 100% !important;
     border-radius: 12px !important;
+  }
+
+  body.np-dashboard.np-ios-touch .modal-overlay.show {
+    top: var(--np-vv-offset-top, 0px) !important;
+    left: var(--np-vv-offset-left, 0px) !important;
+    width: var(--np-vv-width, 100vw) !important;
+    height: var(--np-vv-height, 100dvh) !important;
+    max-width: var(--np-vv-width, 100vw) !important;
+    max-height: var(--np-vv-height, 100dvh) !important;
+    box-sizing: border-box;
+  }
+
+  body.np-dashboard.np-ios-touch.np-ios-keyboard-open .modal-overlay.show {
+    align-items: flex-start !important;
+  }
+
+  body.np-dashboard.np-ios-touch .modal-overlay.show > .modal,
+  body.np-dashboard.np-ios-touch .modal-overlay.show > .modal.modal-wide {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(var(--np-vv-height, 100dvh) - 28px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    box-sizing: border-box;
   }
 
   .nutrient-conversions-grid {
