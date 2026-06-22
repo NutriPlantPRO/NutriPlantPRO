@@ -180,6 +180,48 @@ function isCompactTouchSidebarTap(point, start) {
   return true;
 }
 
+function setCompactTouchSidebarOverlayVisible(visible) {
+  if (!isCompactTouchViewport()) return;
+  const overlay = document.getElementById('sidebar-overlay');
+  if (overlay) overlay.classList.toggle('show', !!visible);
+  document.body.style.overflow = visible ? 'hidden' : '';
+}
+
+function isOutsideExpandedSidebar(e) {
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  if (sidebar && e.target && sidebar.contains(e.target)) return false;
+  if (sidebarToggle && e.target && sidebarToggle.contains(e.target)) return false;
+
+  const point = (e.changedTouches && e.changedTouches[0]) || e;
+  if (sidebar && point && sidebar.getBoundingClientRect) {
+    const rect = sidebar.getBoundingClientRect();
+    if (point.clientX >= rect.left && point.clientX <= rect.right &&
+        point.clientY >= rect.top && point.clientY <= rect.bottom) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function handleCompactTouchSidebarMinimize(e) {
+  if (!isCompactTouchViewport()) return;
+  if (!isSidebarOpen() || isSidebarMinimized()) return;
+  if (Date.now() - _sidebarCompactTouchExpandAt < 350) return;
+
+  const point = (e.changedTouches && e.changedTouches[0]) || e;
+  if (e.type === 'touchend' && _sidebarTouchStart && point) {
+    if (Math.abs(point.clientX - _sidebarTouchStart.x) > 14 ||
+        Math.abs(point.clientY - _sidebarTouchStart.y) > 14) {
+      return;
+    }
+  }
+  if (e.type === 'touchend') _sidebarTouchStart = null;
+
+  if (!isOutsideExpandedSidebar(e)) return;
+  minimizeSidebar();
+}
+
 function handleCompactTouchSidebarInteraction(e) {
   if (!isCompactTouchViewport() || !isSidebarMinimized()) return;
 
@@ -188,7 +230,6 @@ function handleCompactTouchSidebarInteraction(e) {
   const onSidebar = !!(sidebar && e.target && sidebar.contains(e.target));
   const inLeftZone = isCompactTouchSidebarTap(point, e.type === 'touchend' ? _sidebarTouchStart : null);
 
-  if (e.type === 'touchend') _sidebarTouchStart = null;
   if (!onSidebar && !inLeftZone) return;
 
   const interactive = e.target && e.target.closest
@@ -208,7 +249,10 @@ function handleCompactTouchSidebarInteraction(e) {
   _sidebarCompactTouchExpandAt = now;
 
   // Evita que iOS dispare un click fantasma que vuelva a minimizar al instante
-  if (e.type === 'touchend') e.preventDefault();
+  if (e.type === 'touchend') {
+    e.preventDefault();
+    _sidebarTouchStart = null;
+  }
 
   if (interactive && sidebar && sidebar.contains(interactive) && interactive.id !== 'sidebar-close') {
     e.preventDefault();
@@ -254,10 +298,12 @@ function initializeSidebar() {
       handleSidebarTextVisibility();
     }
 
-    // Touch compacto: detectar toque en franja izquierda (iOS a veces no entrega el evento al sidebar)
+    // Touch compacto: expandir al tocar barra; minimizar al tocar fuera (iOS no dispara click bien)
     document.addEventListener('touchstart', recordCompactTouchSidebarStart, { capture: true, passive: true });
     document.addEventListener('touchend', handleCompactTouchSidebarInteraction, { capture: true, passive: false });
+    document.addEventListener('touchend', handleCompactTouchSidebarMinimize, { capture: true, passive: false });
     document.addEventListener('click', handleCompactTouchSidebarInteraction, true);
+    document.addEventListener('click', handleCompactTouchSidebarMinimize, true);
   }
   
   // Funcionalidad móvil
@@ -271,6 +317,12 @@ function initializeSidebar() {
   
   if (sidebarOverlay) {
     sidebarOverlay.addEventListener('click', closeSidebar);
+    sidebarOverlay.addEventListener('touchend', function(e) {
+      if (isCompactTouchViewport() && isSidebarOpen() && !isSidebarMinimized()) {
+        e.preventDefault();
+        minimizeSidebar();
+      }
+    }, { passive: false });
   }
 
   // En celular: sidebar siempre visible, inicia minimizado; tocar barra expande
@@ -280,19 +332,6 @@ function initializeSidebar() {
     if (sidebarOverlay) sidebarOverlay.classList.remove('show');
     document.body.style.overflow = '';
   }
-
-  // Cerrar sidebar al cambiar de sección en móvil
-  document.addEventListener('click', function(e) {
-    if (window.innerWidth <= 768) {
-      if (Date.now() - _sidebarCompactTouchExpandAt < 500) return;
-      const isSidebarClick = sidebar && sidebar.contains(e.target);
-      const isToggleClick = sidebarToggle && sidebarToggle.contains(e.target);
-      
-      if (!isSidebarClick && !isToggleClick && isSidebarOpen() && !isSidebarMinimized()) {
-        minimizeSidebar();
-      }
-    }
-  });
 }
 
 // Sincroniza el alto visible real del viewport móvil para evitar "huecos"
@@ -351,8 +390,7 @@ function openSidebar() {
     sidebar.classList.remove('sidebar-minimized');
   }
   if (window.innerWidth <= 768) {
-    if (overlay) overlay.classList.remove('show');
-    document.body.style.overflow = '';
+    setCompactTouchSidebarOverlayVisible(true);
   } else {
     if (overlay) overlay.classList.add('show');
     document.body.style.overflow = 'hidden';
@@ -365,8 +403,7 @@ function expandSidebar() {
   const overlay = document.getElementById('sidebar-overlay');
   if (sidebar) sidebar.classList.remove('sidebar-minimized');
   if (window.innerWidth <= 768) {
-    if (overlay) overlay.classList.remove('show');
-    document.body.style.overflow = '';
+    setCompactTouchSidebarOverlayVisible(true);
   } else {
     if (overlay) overlay.classList.add('show');
     document.body.style.overflow = 'hidden';
@@ -376,10 +413,8 @@ function expandSidebar() {
 // Función para minimizar sidebar en móvil (barra estrecha, sin overlay)
 function minimizeSidebar() {
   const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
   if (sidebar) sidebar.classList.add('sidebar-minimized');
-  if (overlay) overlay.classList.remove('show');
-  document.body.style.overflow = '';
+  setCompactTouchSidebarOverlayVisible(false);
 }
 
 // Función para cerrar sidebar por completo

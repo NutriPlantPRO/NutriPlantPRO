@@ -287,6 +287,13 @@ body {
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
+  /* Fondo semitransparente al expandir: tocar fuera minimiza (iPhone y Android igual) */
+  .sidebar-overlay.show {
+    display: block;
+    top: 48px;
+    z-index: 55;
+  }
+
   /* En móvil, estado minimizado controlado por clase (no por :hover) */
   .sidebar.open.sidebar-minimized .sidebar a .label,
   .sidebar.open.sidebar-minimized .sidebar a.active .label {
@@ -5886,9 +5893,26 @@ html.embed-login body {
 
 /* Responsive para móviles */
 @media (max-width: 768px) {
+  /* Ancho lo define el padding del overlay (ventana flotante, no pegada a esquinas) */
   .modal-wide {
-    max-width: 95vw;
-    width: 95vw;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .modal-overlay.show {
+    padding: 14px;
+    padding-top: max(14px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(14px, env(safe-area-inset-left, 0px));
+    padding-right: max(14px, env(safe-area-inset-right, 0px));
+    box-sizing: border-box;
+  }
+
+  .modal-overlay.show > .modal,
+  .modal-overlay.show > .modal.modal-wide {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 12px !important;
   }
 
   .nutrient-conversions-grid {
