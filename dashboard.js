@@ -461,6 +461,100 @@ function initDashboardHeaderZoomGuard() {
   }
 }
 
+var _npIOSModalScrollY = 0;
+
+function getActiveDashboardModalOverlays() {
+  return Array.from(document.querySelectorAll('.modal-overlay.show'))
+    .filter(function(overlay) {
+      return overlay && overlay.offsetParent !== null;
+    });
+}
+
+function normalizeIOSFloatingModals() {
+  if (!document.body.classList.contains('np-dashboard')) return;
+  if (!isIOSLikeTouchDevice()) return;
+
+  const activeOverlays = getActiveDashboardModalOverlays();
+  const hasOpenModal = activeOverlays.length > 0;
+
+  if (hasOpenModal && !document.body.classList.contains('np-ios-modal-open')) {
+    _npIOSModalScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.classList.add('np-ios-modal-open');
+    document.body.style.position = 'fixed';
+    document.body.style.top = '-' + _npIOSModalScrollY + 'px';
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+  } else if (!hasOpenModal && document.body.classList.contains('np-ios-modal-open')) {
+    document.body.classList.remove('np-ios-modal-open');
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    window.scrollTo(0, _npIOSModalScrollY || 0);
+  }
+
+  if (!hasOpenModal) return;
+
+  const vv = window.visualViewport;
+  const width = vv && vv.width ? vv.width : window.innerWidth;
+  const height = vv && vv.height ? vv.height : window.innerHeight;
+  const modalWidth = Math.max(280, Math.min(width, window.innerWidth || width) - 28);
+
+  document.documentElement.style.setProperty('--np-vv-height', height + 'px');
+  document.documentElement.style.setProperty('--np-ios-modal-width', modalWidth + 'px');
+
+  activeOverlays.forEach(function(overlay) {
+    overlay.scrollLeft = 0;
+    overlay.style.left = '0px';
+    overlay.style.width = '100vw';
+    overlay.style.maxWidth = '100vw';
+    overlay.style.transform = 'translate3d(0,0,0)';
+
+    const modal = overlay.querySelector('.modal');
+    if (modal) {
+      modal.scrollLeft = 0;
+      modal.style.marginLeft = 'auto';
+      modal.style.marginRight = 'auto';
+    }
+  });
+}
+
+function scheduleNormalizeIOSFloatingModals() {
+  normalizeIOSFloatingModals();
+  requestAnimationFrame(normalizeIOSFloatingModals);
+  setTimeout(normalizeIOSFloatingModals, 120);
+  setTimeout(normalizeIOSFloatingModals, 320);
+}
+
+function initIOSFloatingModalGuard() {
+  if (!document.body.classList.contains('np-dashboard')) return;
+  if (!isIOSLikeTouchDevice()) return;
+  if (window._npIOSFloatingModalGuardInitialized) return;
+  window._npIOSFloatingModalGuardInitialized = true;
+
+  const observer = new MutationObserver(scheduleNormalizeIOSFloatingModals);
+  observer.observe(document.body, {
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class', 'style']
+  });
+
+  window.addEventListener('resize', scheduleNormalizeIOSFloatingModals, { passive: true });
+  window.addEventListener('orientationchange', scheduleNormalizeIOSFloatingModals, { passive: true });
+  document.addEventListener('focusin', scheduleNormalizeIOSFloatingModals, true);
+  document.addEventListener('focusout', function() {
+    scheduleNormalizeIOSFloatingModals();
+    setTimeout(scheduleNormalizeIOSFloatingModals, 700);
+  }, true);
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', scheduleNormalizeIOSFloatingModals, { passive: true });
+    window.visualViewport.addEventListener('scroll', scheduleNormalizeIOSFloatingModals, { passive: true });
+  }
+}
+
 // Función para abrir/cerrar sidebar en móvil
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
@@ -8003,6 +8097,7 @@ async function initializeDashboard() {
   console.log('🚀 INICIALIZANDO DASHBOARD COMPLETO');
   initMobileViewportHeightSync();
   initDashboardHeaderZoomGuard();
+  initIOSFloatingModalGuard();
   
   const userId = localStorage.getItem('nutriplant_user_id');
   const isSupabaseUser = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));

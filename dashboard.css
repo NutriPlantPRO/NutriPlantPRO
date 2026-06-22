@@ -146,12 +146,88 @@ body.np-dashboard.np-header-zoomed .social-links::-webkit-scrollbar {
   display: none;
 }
 
+html.np-ios-touch body.np-dashboard .brandline,
+body.np-dashboard.np-ios-touch .brandline {
+  padding-left: 116px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+html.np-ios-touch body.np-dashboard .brandline .auth-header-manual-link,
+body.np-dashboard.np-ios-touch .brandline .auth-header-manual-link {
+  flex: 0 0 auto;
+}
+
+html.np-ios-touch body.np-dashboard .social-links,
+body.np-dashboard.np-ios-touch .social-links {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+html.np-ios-touch body.np-dashboard .social-links::-webkit-scrollbar,
+body.np-dashboard.np-ios-touch .social-links::-webkit-scrollbar {
+  display: none;
+}
+
 /* ===== LAYOUT PRINCIPAL ===== */
 .layout { 
   display: flex; 
   min-height: calc(100vh - 48px); 
   min-height: calc(var(--app-vh, 100dvh) - 48px); /* Evita huecos al cambiar barras del navegador móvil */
   padding-left: var(--sidebar-w);   /* <-- RESERVA FIJA PARA EL SIDEBAR (ajuste #1) */
+}
+
+html.np-ios-touch body.np-dashboard,
+body.np-dashboard.np-ios-touch {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+html.np-ios-touch body.np-dashboard .layout,
+body.np-dashboard.np-ios-touch .layout {
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+html.np-ios-touch body.np-dashboard .content,
+body.np-dashboard.np-ios-touch .content {
+  width: calc(100vw - var(--sidebar-w));
+  max-width: calc(100vw - var(--sidebar-w));
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+html.np-ios-touch body.np-dashboard .top,
+html.np-ios-touch body.np-dashboard .view,
+html.np-ios-touch body.np-dashboard .card,
+body.np-dashboard.np-ios-touch .top,
+body.np-dashboard.np-ios-touch .view,
+body.np-dashboard.np-ios-touch .card {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+html.np-ios-touch body.np-dashboard .header-buttons,
+body.np-dashboard.np-ios-touch .header-buttons {
+  width: 100%;
+  max-width: 100%;
+  justify-content: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+html.np-ios-touch body.np-dashboard .header-buttons::-webkit-scrollbar,
+body.np-dashboard.np-ios-touch .header-buttons::-webkit-scrollbar {
+  display: none;
 }
 
 /* ===== SIDEBAR ===== */
@@ -6021,6 +6097,21 @@ html.embed-login body {
     max-width: 100vw !important;
     max-height: var(--np-vv-height, 100dvh) !important;
     box-sizing: border-box;
+  }
+
+  html.np-ios-touch body.np-dashboard.np-ios-modal-open,
+  body.np-dashboard.np-ios-touch.np-ios-modal-open {
+    overflow: hidden !important;
+    max-width: 100vw !important;
+    overscroll-behavior: none;
+  }
+
+  html.np-ios-touch body.np-dashboard.np-ios-modal-open .modal-overlay.show,
+  body.np-dashboard.np-ios-touch.np-ios-modal-open .modal-overlay.show {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
   }
 
   body.np-dashboard.np-ios-touch.np-ios-keyboard-open .modal-overlay.show {

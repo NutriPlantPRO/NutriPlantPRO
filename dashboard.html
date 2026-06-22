@@ -11,6 +11,7 @@
         /iPhone|iPad|iPod/.test(platform) ||
         (/Mac/.test(platform) && 'ontouchend' in document);
       if (!isIOS) return;
+      document.documentElement.classList.add('np-ios-touch');
       var viewport = document.getElementById('np-dashboard-viewport');
       if (viewport) {
         viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
@@ -31,7 +32,7 @@
   <link rel="apple-touch-icon" href="assets/N_Hoja_Azul.png">
   <link rel="manifest" href="/site.webmanifest">
   
-  <link rel="stylesheet" href="dashboard.css?v=202606222200" />
+  <link rel="stylesheet" href="dashboard.css?v=202606222400" />
   <link rel="stylesheet" href="chat.css?v=1762797600" />
   <script src="app-config.js"></script>
   <script src="config-no-traducir-terminos.js"></script>
@@ -413,7 +414,7 @@
   <script src="assets/np-irrigation-balance-core.js?v=202606201400"></script>
   <script src="climate-functions.js?v=202606201400"></script>
   <script src="analysis-report-render.js?v=1760005000"></script>
-  <script src="dashboard.js?v=202606222200"></script>
+  <script src="dashboard.js?v=202606222400"></script>
   <script src="fertirriego-program-functions.js?v=1760007400"></script>
   <script src="ai-knowledge-expansion.js"></script>
   <script src="chat-simple.js?v=1764880101"></script>
@@ -710,6 +711,21 @@
         max-width: 100vw !important;
         max-height: var(--np-vv-height, 100dvh) !important;
         box-sizing: border-box;
+      }
+
+      html.np-ios-touch body.np-dashboard.np-ios-modal-open,
+      body.np-dashboard.np-ios-touch.np-ios-modal-open {
+        overflow: hidden !important;
+        max-width: 100vw !important;
+        overscroll-behavior: none;
+      }
+
+      html.np-ios-touch body.np-dashboard.np-ios-modal-open .modal-overlay.show,
+      body.np-dashboard.np-ios-touch.np-ios-modal-open .modal-overlay.show {
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
       }
 
       body.np-dashboard.np-ios-touch.np-ios-keyboard-open .modal-overlay.show {
