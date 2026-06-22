@@ -253,6 +253,9 @@ body {
   }
   .sidebar.open.sidebar-minimized {
     width: var(--sidebar-w);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0.08);
   }
   .sidebar.open.sidebar-minimized:hover {
     width: var(--sidebar-w) !important;

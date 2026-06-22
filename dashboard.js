@@ -136,8 +136,51 @@ function getCurrentSubTabForSection(sectionName) {
   return '';
 }
 
+// Vista compacta con entrada táctil (celular / touch estrecho)
+function isCompactTouchViewport() {
+  if (window.innerWidth > 768) return false;
+  try {
+    if (window.matchMedia('(pointer: coarse)').matches ||
+        window.matchMedia('(hover: none)').matches) {
+      return true;
+    }
+  } catch (e) {}
+  return 'ontouchstart' in window;
+}
+
+// En touch compacto: tocar la barra minimizada la expande (iOS no usa :hover)
+var _sidebarCompactTouchExpandAt = 0;
+function handleCompactTouchSidebarInteraction(e) {
+  if (!isCompactTouchViewport()) return;
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar || !sidebar.contains(e.target)) return;
+  if (!isSidebarMinimized()) return;
+
+  const interactive = e.target.closest('a, button, [data-go], [data-section]');
+  const now = Date.now();
+
+  // touchend + click en iOS: un solo expandir por toque
+  if (now - _sidebarCompactTouchExpandAt < 400) {
+    if (interactive && interactive.id !== 'sidebar-close') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+    return;
+  }
+
+  expandSidebar();
+  _sidebarCompactTouchExpandAt = now;
+
+  // Primer toque solo expande; evita navegar al pulsar un icono/enlace
+  if (interactive && interactive.id !== 'sidebar-close') {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+}
+
 // Función para manejar la visibilidad del texto en el sidebar
 function handleSidebarTextVisibility() {
+  if (isCompactTouchViewport()) return;
   const sidebar = document.querySelector('.sidebar');
   const labels = sidebar.querySelectorAll('.sidebar a .label');
   
@@ -167,11 +210,15 @@ function initializeSidebar() {
   
   if (sidebar) {
     // Funcionalidad desktop (hover)
-    sidebar.addEventListener('mouseenter', handleSidebarTextVisibility);
-    sidebar.addEventListener('mouseleave', handleSidebarTextVisibility);
-    
-    // Ejecutar inmediatamente al cargar la página
-    handleSidebarTextVisibility();
+    if (!isCompactTouchViewport()) {
+      sidebar.addEventListener('mouseenter', handleSidebarTextVisibility);
+      sidebar.addEventListener('mouseleave', handleSidebarTextVisibility);
+      handleSidebarTextVisibility();
+    }
+
+    // Touch compacto: tocar barra minimizada expande (capture para iOS Safari)
+    sidebar.addEventListener('click', handleCompactTouchSidebarInteraction, true);
+    sidebar.addEventListener('touchend', handleCompactTouchSidebarInteraction, { capture: true, passive: false });
   }
   
   // Funcionalidad móvil
@@ -187,10 +234,7 @@ function initializeSidebar() {
     sidebarOverlay.addEventListener('click', closeSidebar);
   }
 
-  // En celular: desactivar toggle por toque en logo/brand para evitar toques accidentales.
-  // El control del sidebar queda solo en botones/acciones explícitas.
-
-  // En celular: comportamiento como laptop (sidebar siempre visible, inicia minimizado)
+  // En celular: sidebar siempre visible, inicia minimizado; tocar barra expande
   if (window.innerWidth <= 768 && sidebar) {
     sidebar.style.transform = 'translateX(0)';
     sidebar.classList.add('open', 'sidebar-minimized');
@@ -204,7 +248,7 @@ function initializeSidebar() {
       const isSidebarClick = sidebar && sidebar.contains(e.target);
       const isToggleClick = sidebarToggle && sidebarToggle.contains(e.target);
       
-      if (!isSidebarClick && !isToggleClick && isSidebarOpen()) {
+      if (!isSidebarClick && !isToggleClick && isSidebarOpen() && !isSidebarMinimized()) {
         minimizeSidebar();
       }
     }
