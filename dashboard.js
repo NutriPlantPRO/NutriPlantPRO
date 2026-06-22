@@ -394,23 +394,8 @@ function initMobileViewportHeightSync() {
     if (window.innerWidth > 768 && !isCompactTouchViewport()) return;
     const vv = window.visualViewport;
     const height = vv && vv.height ? vv.height : window.innerHeight;
-    const width = vv && vv.width ? vv.width : window.innerWidth;
-    const offsetTop = vv && Number.isFinite(vv.offsetTop) ? vv.offsetTop : 0;
-    // En iOS, offsetLeft puede quedar desfasado tras cerrar teclado y pega modales al borde.
-    const offsetLeft = 0;
-    const modalWidth = Math.max(280, Math.min(width, window.innerWidth || width) - 28);
     if (!height || !Number.isFinite(height)) return;
     document.documentElement.style.setProperty('--app-vh', height + 'px');
-    document.documentElement.style.setProperty('--np-vv-height', height + 'px');
-    document.documentElement.style.setProperty('--np-vv-width', width + 'px');
-    document.documentElement.style.setProperty('--np-vv-offset-top', offsetTop + 'px');
-    document.documentElement.style.setProperty('--np-vv-offset-left', offsetLeft + 'px');
-    document.documentElement.style.setProperty('--np-ios-modal-width', modalWidth + 'px');
-
-    if (document.body && document.body.classList.contains('np-dashboard') && isIOSLikeTouchDevice()) {
-      const layoutHeight = document.documentElement.clientHeight || window.innerHeight || height;
-      document.body.classList.toggle('np-ios-keyboard-open', height < layoutHeight - 120);
-    }
   };
 
   let rafId = null;
@@ -426,13 +411,6 @@ function initMobileViewportHeightSync() {
   window.addEventListener('resize', scheduleApply, { passive: true });
   window.addEventListener('orientationchange', scheduleApply, { passive: true });
   window.addEventListener('scroll', scheduleApply, { passive: true });
-  document.addEventListener('focusin', scheduleApply, true);
-  document.addEventListener('focusout', () => {
-    scheduleApply();
-    setTimeout(scheduleApply, 120);
-    setTimeout(scheduleApply, 320);
-    setTimeout(scheduleApply, 700);
-  }, true);
 
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', scheduleApply, { passive: true });
@@ -440,118 +418,128 @@ function initMobileViewportHeightSync() {
   }
 }
 
-// Solo dashboard con zoom (pinch): clase en body para CSS del header; login/vista normal intactos
-function initDashboardHeaderZoomGuard() {
-  if (!document.body.classList.contains('np-dashboard')) return;
-  if (window._npHeaderZoomGuardInitialized) return;
-  window._npHeaderZoomGuardInitialized = true;
-
-  const applyZoomClass = () => {
-    const vv = window.visualViewport;
-    const scale = vv && vv.scale ? vv.scale : 1;
-    document.body.classList.toggle('np-header-zoomed', scale > 1.08);
-    syncIOSSidebarHitTarget();
-  };
-
-  applyZoomClass();
-  window.addEventListener('resize', applyZoomClass, { passive: true });
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', applyZoomClass, { passive: true });
-    window.visualViewport.addEventListener('scroll', applyZoomClass, { passive: true });
-  }
-}
-
-var _npIOSModalScrollY = 0;
-
-function getActiveDashboardModalOverlays() {
-  return Array.from(document.querySelectorAll('.modal-overlay.show'))
-    .filter(function(overlay) {
-      return overlay && overlay.offsetParent !== null;
-    });
-}
-
-function normalizeIOSFloatingModals() {
+function initIOSDashboardModalViewportGuard() {
   if (!document.body.classList.contains('np-dashboard')) return;
   if (!isIOSLikeTouchDevice()) return;
+  if (window._npIOSModalViewportGuardInitialized) return;
+  window._npIOSModalViewportGuardInitialized = true;
 
-  const activeOverlays = getActiveDashboardModalOverlays();
-  const hasOpenModal = activeOverlays.length > 0;
+  const adjustedOverlays = new Set();
 
-  if (hasOpenModal && !document.body.classList.contains('np-ios-modal-open')) {
-    _npIOSModalScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-    document.body.classList.add('np-ios-modal-open');
-    document.body.style.position = 'fixed';
-    document.body.style.top = '-' + _npIOSModalScrollY + 'px';
-    document.body.style.left = '0';
-    document.body.style.right = '0';
-    document.body.style.width = '100%';
-  } else if (!hasOpenModal && document.body.classList.contains('np-ios-modal-open')) {
-    document.body.classList.remove('np-ios-modal-open');
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    document.body.style.right = '';
-    document.body.style.width = '';
-    window.scrollTo(0, _npIOSModalScrollY || 0);
-  }
-
-  if (!hasOpenModal) return;
-
-  const vv = window.visualViewport;
-  const width = vv && vv.width ? vv.width : window.innerWidth;
-  const height = vv && vv.height ? vv.height : window.innerHeight;
-  const modalWidth = Math.max(280, Math.min(width, window.innerWidth || width) - 28);
-
-  document.documentElement.style.setProperty('--np-vv-height', height + 'px');
-  document.documentElement.style.setProperty('--np-ios-modal-width', modalWidth + 'px');
-
-  activeOverlays.forEach(function(overlay) {
-    overlay.scrollLeft = 0;
-    overlay.style.left = '0px';
-    overlay.style.width = '100vw';
-    overlay.style.maxWidth = '100vw';
-    overlay.style.transform = 'translate3d(0,0,0)';
+  const clearOverlayAdjustment = (overlay) => {
+    if (!overlay) return;
+    overlay.classList.remove('np-ios-modal-vv-adjusted');
+    [
+      'position',
+      'top',
+      'left',
+      'width',
+      'height',
+      'maxWidth',
+      'maxHeight',
+      'transform',
+      'padding',
+      'boxSizing',
+      'overflowX',
+      'overflowY',
+      'WebkitOverflowScrolling',
+      'justifyContent',
+      'alignItems'
+    ].forEach((prop) => {
+      overlay.style[prop] = '';
+    });
 
     const modal = overlay.querySelector('.modal');
     if (modal) {
-      modal.scrollLeft = 0;
-      modal.style.marginLeft = 'auto';
-      modal.style.marginRight = 'auto';
+      [
+        'width',
+        'maxWidth',
+        'maxHeight',
+        'marginLeft',
+        'marginRight',
+        'boxSizing'
+      ].forEach((prop) => {
+        modal.style[prop] = '';
+      });
     }
-  });
-}
+  };
 
-function scheduleNormalizeIOSFloatingModals() {
-  normalizeIOSFloatingModals();
-  requestAnimationFrame(normalizeIOSFloatingModals);
-  setTimeout(normalizeIOSFloatingModals, 120);
-  setTimeout(normalizeIOSFloatingModals, 320);
-}
+  const applyOverlayAdjustment = () => {
+    const vv = window.visualViewport;
+    const vvWidth = vv && vv.width ? vv.width : window.innerWidth;
+    const vvHeight = vv && vv.height ? vv.height : window.innerHeight;
+    const vvTop = vv && Number.isFinite(vv.offsetTop) ? vv.offsetTop : 0;
+    const vvLeft = vv && Number.isFinite(vv.offsetLeft) ? vv.offsetLeft : 0;
+    const layoutHeight = document.documentElement.clientHeight || window.innerHeight || vvHeight;
+    const keyboardOpen = vvHeight < layoutHeight - 120;
+    const openOverlays = Array.from(document.querySelectorAll('.modal-overlay.show'));
+    const openSet = new Set(openOverlays);
 
-function initIOSFloatingModalGuard() {
-  if (!document.body.classList.contains('np-dashboard')) return;
-  if (!isIOSLikeTouchDevice()) return;
-  if (window._npIOSFloatingModalGuardInitialized) return;
-  window._npIOSFloatingModalGuardInitialized = true;
+    adjustedOverlays.forEach((overlay) => {
+      if (!openSet.has(overlay)) {
+        clearOverlayAdjustment(overlay);
+        adjustedOverlays.delete(overlay);
+      }
+    });
 
-  const observer = new MutationObserver(scheduleNormalizeIOSFloatingModals);
+    openOverlays.forEach((overlay) => {
+      adjustedOverlays.add(overlay);
+      overlay.classList.add('np-ios-modal-vv-adjusted');
+      overlay.style.setProperty('position', 'fixed', 'important');
+      overlay.style.setProperty('top', '0px', 'important');
+      overlay.style.setProperty('left', '0px', 'important');
+      overlay.style.setProperty('width', vvWidth + 'px', 'important');
+      overlay.style.setProperty('height', vvHeight + 'px', 'important');
+      overlay.style.setProperty('max-width', vvWidth + 'px', 'important');
+      overlay.style.setProperty('max-height', vvHeight + 'px', 'important');
+      overlay.style.setProperty('transform', 'translate3d(' + vvLeft + 'px,' + vvTop + 'px,0)', 'important');
+      overlay.style.setProperty('padding', '14px', 'important');
+      overlay.style.setProperty('box-sizing', 'border-box', 'important');
+      overlay.style.setProperty('overflow-x', 'hidden', 'important');
+      overlay.style.setProperty('overflow-y', 'auto', 'important');
+      overlay.style.setProperty('-webkit-overflow-scrolling', 'touch');
+      overlay.style.setProperty('justify-content', 'center', 'important');
+      overlay.style.setProperty('align-items', keyboardOpen ? 'flex-start' : 'center', 'important');
+
+      const modal = overlay.querySelector('.modal');
+      if (modal) {
+        modal.style.setProperty('width', '100%', 'important');
+        modal.style.setProperty('max-width', '100%', 'important');
+        modal.style.setProperty('max-height', Math.max(260, vvHeight - 28) + 'px', 'important');
+        modal.style.setProperty('margin-left', 'auto', 'important');
+        modal.style.setProperty('margin-right', 'auto', 'important');
+        modal.style.setProperty('box-sizing', 'border-box', 'important');
+      }
+    });
+  };
+
+  const scheduleApply = () => {
+    applyOverlayAdjustment();
+    requestAnimationFrame(applyOverlayAdjustment);
+  };
+
+  const scheduleAfterKeyboard = () => {
+    scheduleApply();
+    setTimeout(scheduleApply, 120);
+    setTimeout(scheduleApply, 320);
+    setTimeout(scheduleApply, 700);
+  };
+
+  const observer = new MutationObserver(scheduleApply);
   observer.observe(document.body, {
     subtree: true,
     attributes: true,
-    attributeFilter: ['class', 'style']
+    attributeFilter: ['class']
   });
 
-  window.addEventListener('resize', scheduleNormalizeIOSFloatingModals, { passive: true });
-  window.addEventListener('orientationchange', scheduleNormalizeIOSFloatingModals, { passive: true });
-  document.addEventListener('focusin', scheduleNormalizeIOSFloatingModals, true);
-  document.addEventListener('focusout', function() {
-    scheduleNormalizeIOSFloatingModals();
-    setTimeout(scheduleNormalizeIOSFloatingModals, 700);
-  }, true);
+  window.addEventListener('resize', scheduleApply, { passive: true });
+  window.addEventListener('orientationchange', scheduleAfterKeyboard, { passive: true });
+  document.addEventListener('focusin', scheduleAfterKeyboard, true);
+  document.addEventListener('focusout', scheduleAfterKeyboard, true);
 
   if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', scheduleNormalizeIOSFloatingModals, { passive: true });
-    window.visualViewport.addEventListener('scroll', scheduleNormalizeIOSFloatingModals, { passive: true });
+    window.visualViewport.addEventListener('resize', scheduleApply, { passive: true });
+    window.visualViewport.addEventListener('scroll', scheduleApply, { passive: true });
   }
 }
 
@@ -8096,8 +8084,7 @@ function np_logDashboardVisit() {
 async function initializeDashboard() {
   console.log('🚀 INICIALIZANDO DASHBOARD COMPLETO');
   initMobileViewportHeightSync();
-  initDashboardHeaderZoomGuard();
-  initIOSFloatingModalGuard();
+  initIOSDashboardModalViewportGuard();
   
   const userId = localStorage.getItem('nutriplant_user_id');
   const isSupabaseUser = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
