@@ -45,7 +45,6 @@ body {
   border-bottom: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   height: 48px;
-  min-height: 48px;
   overflow: hidden;
 }
 
@@ -53,55 +52,36 @@ body {
   height: 48px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 10px;
-  min-width: 0;
-  box-sizing: border-box;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 16px;
+  position: relative;
 }
 
 /* ===== NUTRIPLANT PRO LOGO SYSTEM ===== */
 .brand-logo {
-  height: 34px;
+  height: var(--logo-header-height);
   width: auto;
-  max-width: min(118px, 34vw);
   display: block;
-  flex: 0 0 auto;
-  object-fit: contain;
-  object-position: left center;
+  transition: height 0.2s ease;
   margin: 0;
-  position: static;
-  transform: none;
-  transition: opacity 0.2s ease;
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .brand-logo:hover {
-  opacity: 0.92;
-  transform: none;
+  transform: translateY(-50%) scale(1.02);
 }
 
-.brandline .auth-header-manual-link {
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  flex: 0 0 auto;
-}
+/* Logo responsive - ELIMINADO */
 
 /* ===== SOCIAL MEDIA ICONS ===== */
 .social-links {
   display: flex;
-  gap: 6px;
+  gap: 12px;
   align-items: center;
-  flex: 1 1 auto;
-  min-width: 0;
-  justify-content: flex-end;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.social-links::-webkit-scrollbar {
-  display: none;
 }
 
 .social-links a {
@@ -132,50 +112,38 @@ body {
   height: 20px;
 }
 
-@media (max-width: 768px) {
-  .brandline {
-    gap: 4px;
-    padding: 0 8px;
-  }
-
-  .brand-logo {
-    height: 30px;
-    max-width: min(96px, 30vw);
-  }
-
-  .auth-header-manual-link {
-    padding: 0 8px;
-    height: 28px;
-    font-size: 12px;
-  }
-
-  .social-links {
-    gap: 4px;
-  }
-
-  .social-links a,
-  .social-links .social-btn {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px;
-    flex-shrink: 0;
-  }
-
-  /* Menos iconos en pantalla chica o con zoom: evita encimar logo y manual */
-  .social-links a[data-social="linkedin"],
-  .social-links a[data-social="tiktok"] {
-    display: none;
-  }
+/* Solo dashboard + zoom (pinch) en iPhone: evitar encimar logo; vista normal intacta */
+body.np-dashboard.np-header-zoomed .brandline {
+  gap: 6px;
+  padding: 0 10px;
+  min-width: 0;
 }
 
-@media (max-width: 420px) {
-  .brand-logo {
-    max-width: min(82px, 28vw);
-  }
+body.np-dashboard.np-header-zoomed .brand-logo {
+  position: static;
+  transform: none;
+  flex: 0 0 auto;
+  height: 32px;
+  max-width: 34%;
+  object-fit: contain;
+}
 
-  .social-links a[data-social="youtube"] {
-    display: none;
-  }
+body.np-dashboard.np-header-zoomed .brandline .auth-header-manual-link {
+  flex: 0 0 auto;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+body.np-dashboard.np-header-zoomed .social-links {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+body.np-dashboard.np-header-zoomed .social-links::-webkit-scrollbar {
+  display: none;
 }
 
 /* ===== LAYOUT PRINCIPAL ===== */

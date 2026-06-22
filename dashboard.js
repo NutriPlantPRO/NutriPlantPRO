@@ -368,6 +368,26 @@ function initMobileViewportHeightSync() {
   }
 }
 
+// Solo dashboard con zoom (pinch): clase en body para CSS del header; login/vista normal intactos
+function initDashboardHeaderZoomGuard() {
+  if (!document.body.classList.contains('np-dashboard')) return;
+  if (window._npHeaderZoomGuardInitialized) return;
+  window._npHeaderZoomGuardInitialized = true;
+
+  const applyZoomClass = () => {
+    const vv = window.visualViewport;
+    const scale = vv && vv.scale ? vv.scale : 1;
+    document.body.classList.toggle('np-header-zoomed', scale > 1.08);
+  };
+
+  applyZoomClass();
+  window.addEventListener('resize', applyZoomClass, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', applyZoomClass, { passive: true });
+    window.visualViewport.addEventListener('scroll', applyZoomClass, { passive: true });
+  }
+}
+
 // Función para abrir/cerrar sidebar en móvil
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
@@ -7905,6 +7925,7 @@ function np_logDashboardVisit() {
 async function initializeDashboard() {
   console.log('🚀 INICIALIZANDO DASHBOARD COMPLETO');
   initMobileViewportHeightSync();
+  initDashboardHeaderZoomGuard();
   
   const userId = localStorage.getItem('nutriplant_user_id');
   const isSupabaseUser = !!(userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId));
