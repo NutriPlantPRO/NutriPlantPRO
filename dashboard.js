@@ -138,6 +138,10 @@ function getCurrentSubTabForSection(sectionName) {
 
 // Vista compacta con entrada táctil (celular / touch estrecho)
 function isCompactTouchViewport() {
+  if (isIOSLikeTouchDevice()) {
+    const narrowIOSScreen = Math.min(screen.width || 0, screen.height || 0) <= 480;
+    if (narrowIOSScreen) return true;
+  }
   if (window.innerWidth > 768) return false;
   try {
     if (window.matchMedia('(pointer: coarse)').matches ||
@@ -368,7 +372,7 @@ function initializeSidebar() {
   }
 
   // En celular: sidebar siempre visible, inicia minimizado; tocar barra expande
-  if (window.innerWidth <= 768 && sidebar) {
+  if (isCompactTouchViewport() && sidebar) {
     sidebar.style.transform = 'translateX(0)';
     sidebar.classList.add('open', 'sidebar-minimized');
     if (sidebarOverlay) sidebarOverlay.classList.remove('show');
@@ -387,18 +391,21 @@ function initMobileViewportHeightSync() {
   window._npViewportSyncInitialized = true;
 
   const applyViewportHeight = () => {
-    if (window.innerWidth > 768) return;
+    if (window.innerWidth > 768 && !isCompactTouchViewport()) return;
     const vv = window.visualViewport;
     const height = vv && vv.height ? vv.height : window.innerHeight;
     const width = vv && vv.width ? vv.width : window.innerWidth;
     const offsetTop = vv && Number.isFinite(vv.offsetTop) ? vv.offsetTop : 0;
-    const offsetLeft = vv && Number.isFinite(vv.offsetLeft) ? vv.offsetLeft : 0;
+    // En iOS, offsetLeft puede quedar desfasado tras cerrar teclado y pega modales al borde.
+    const offsetLeft = 0;
+    const modalWidth = Math.max(280, Math.min(width, window.innerWidth || width) - 28);
     if (!height || !Number.isFinite(height)) return;
     document.documentElement.style.setProperty('--app-vh', height + 'px');
     document.documentElement.style.setProperty('--np-vv-height', height + 'px');
     document.documentElement.style.setProperty('--np-vv-width', width + 'px');
     document.documentElement.style.setProperty('--np-vv-offset-top', offsetTop + 'px');
     document.documentElement.style.setProperty('--np-vv-offset-left', offsetLeft + 'px');
+    document.documentElement.style.setProperty('--np-ios-modal-width', modalWidth + 'px');
 
     if (document.body && document.body.classList.contains('np-dashboard') && isIOSLikeTouchDevice()) {
       const layoutHeight = document.documentElement.clientHeight || window.innerHeight || height;
@@ -419,6 +426,13 @@ function initMobileViewportHeightSync() {
   window.addEventListener('resize', scheduleApply, { passive: true });
   window.addEventListener('orientationchange', scheduleApply, { passive: true });
   window.addEventListener('scroll', scheduleApply, { passive: true });
+  document.addEventListener('focusin', scheduleApply, true);
+  document.addEventListener('focusout', () => {
+    scheduleApply();
+    setTimeout(scheduleApply, 120);
+    setTimeout(scheduleApply, 320);
+    setTimeout(scheduleApply, 700);
+  }, true);
 
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', scheduleApply, { passive: true });
@@ -468,7 +482,7 @@ function openSidebar() {
     sidebar.classList.add('open');
     sidebar.classList.remove('sidebar-minimized');
   }
-  if (window.innerWidth <= 768) {
+  if (isCompactTouchViewport()) {
     setCompactTouchSidebarOverlayVisible(true);
   } else {
     if (overlay) overlay.classList.add('show');
@@ -482,7 +496,7 @@ function expandSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
   if (sidebar) sidebar.classList.remove('sidebar-minimized');
-  if (window.innerWidth <= 768) {
+  if (isCompactTouchViewport()) {
     setCompactTouchSidebarOverlayVisible(true);
   } else {
     if (overlay) overlay.classList.add('show');
@@ -501,7 +515,7 @@ function minimizeSidebar() {
 
 // Función para cerrar sidebar por completo
 function closeSidebar() {
-  if (window.innerWidth <= 768) {
+  if (isCompactTouchViewport()) {
     minimizeSidebar();
     return;
   }
