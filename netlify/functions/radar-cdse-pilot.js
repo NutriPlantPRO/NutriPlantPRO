@@ -12,8 +12,8 @@
  * POST JSON: { polygon: [[lat,lng],...], project_id?: string }
  */
 
-const { findBestSentinel2Scene } = require('./lib/radar-pilot-stac');
-const { renderNdviNdmiPngs } = require('./lib/radar-pilot-render');
+const { findSentinel2ScenesForComposite } = require('./lib/radar-pilot-stac');
+const { renderNdviNdmiCompositePngs } = require('./lib/radar-pilot-render');
 
 function corsHeaders() {
   return {
@@ -101,33 +101,48 @@ exports.handler = async (event) => {
     });
   }
 
-  const maxDim = Math.min(Math.max(Number(body.max_dim) || 1024, 256), 1536);
+  const maxDim = Math.min(Math.max(Number(body.max_dim) || 2048, 256), 2048);
 
   try {
-    const scene = await findBestSentinel2Scene(polygon, {});
-    const rendered = await renderNdviNdmiPngs(
-      { bandUrls: scene.bandUrls, bbox4326: scene.bbox, polygon },
+    const bundle = await findSentinel2ScenesForComposite(polygon, {});
+    const rendered = await renderNdviNdmiCompositePngs(
+      { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
       { maxDim }
     );
 
     const ndviDataUrl = 'data:image/png;base64,' + rendered.ndviPng.toString('base64');
     const ndmiDataUrl = 'data:image/png;base64,' + rendered.ndmiPng.toString('base64');
+    const latestScene = bundle.scenes[0] || {};
 
     return jsonResponse(200, {
       ok: true,
       pilot: true,
-      provider: scene.provider,
-      source: scene.provider === 'cdse' ? 'CDSE/sentinel-2-l2a' : 'PlanetaryComputer/sentinel-2-l2a',
-      scene: {
-        id: scene.itemId,
-        datetime: scene.datetime,
-        cloud_cover: scene.cloudCover,
-        search_tier: scene.searchTier || null,
-        lookback_days: scene.lookbackDays || null,
-        max_cloud_pct: scene.maxCloudPct || null
+      provider: bundle.provider,
+      source: bundle.provider === 'cdse' ? 'CDSE/sentinel-2-l2a' : 'PlanetaryComputer/sentinel-2-l2a',
+      composite: {
+        enabled: bundle.composite,
+        scene_count: bundle.sceneCount,
+        lookback_days: bundle.lookbackDays,
+        max_cloud_pct: bundle.maxCloudPct,
+        date_start: bundle.dateStart,
+        date_end: bundle.dateEnd,
+        scl_masked: true,
+        fallback_tier: bundle.fallbackTier || null
       },
+      scene: {
+        id: latestScene.itemId,
+        datetime: latestScene.datetime,
+        cloud_cover: latestScene.cloudCover,
+        lookback_days: bundle.lookbackDays,
+        max_cloud_pct: bundle.maxCloudPct
+      },
+      scenes: bundle.scenes.map((s) => ({
+        id: s.itemId,
+        datetime: s.datetime,
+        cloud_cover: s.cloudCover
+      })),
       dimensions: { width: rendered.width, height: rendered.height },
-      lookback_days: scene.lookbackDays || null,
+      lookback_days: bundle.lookbackDays,
       credits_charged: 0,
       images: {
         ndvi: { data_url: ndviDataUrl, label: 'NDVI' },
@@ -137,7 +152,10 @@ exports.handler = async (event) => {
       ndmi_data_url: ndmiDataUrl,
       meta: {
         pilot: true,
-        note: 'Imagen de prueba; no se guardó en Supabase ni gastó créditos Radar.',
+        composite: bundle.composite,
+        scene_count: bundle.sceneCount,
+        scl_masked: true,
+        note: 'Mediana 30 d + SCL; no guardado en Supabase ni créditos Radar.',
         vis: rendered.vis
       }
     });

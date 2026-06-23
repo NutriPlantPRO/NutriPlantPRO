@@ -1,18 +1,16 @@
 # Radar CDSE pilot (pre-venta, sin Google)
 
-## Selección de escena (pilot)
+## Procesamiento (pilot 🛰)
 
-Prioriza la foto **más reciente** con pocas nubes:
+1. **Hasta 4 escenas** Sentinel-2 L2A en los **últimos 30 días** (≤40% nubes a nivel escena)
+2. **Máscara SCL** — descarta nubes, sombras, agua y nieve píxel a píxel
+3. **Mediana por píxel** — igual concepto que Google, pero ventana corta (30 d, no 120 d)
+4. **2048 px** — misma resolución de salida que el Radar GEE
+5. Recorte al **polígono** del predio (transparente fuera)
 
-1. Últimos **7 días**, nubes **< 25%**
-2. Si no hay → **21 días**, nubes **< 25%**
-3. Si no hay → **45 días**, nubes **< 35%**
+Si no hay escenas en 30 d, cae al fallback de **1 escena reciente** (7 → 21 → 45 d).
 
-Una sola escena (no mediana como Google).
-
-## Botón pilot en Ubicación
-
-Icono **🛰** casi transparente, a la derecha de **Quitar capa** (solo uso interno / pruebas).
+Icono **🛰** a la derecha de **Quitar capa** (solo pruebas internas).
 No gasta créditos ni usa el botón **Generar / actualizar** de Google.
 
 ## Netlify (backend pilot)

@@ -1,5 +1,6 @@
 /**
  * NDVI / NDMI desde bandas Sentinel-2 + paletas NutriPlant (Radar actual).
+ * SCL (nubes/sombras) + mediana corta por píxel cuando hay varias escenas.
  */
 const sharp = require('sharp');
 const proj4 = require('proj4');
@@ -15,6 +16,9 @@ const NDMI_VIS = {
   max: 0.55,
   palette: ['7c2d12', 'ea580c', 'f59e0b', 'fde68a', 'bbf7d0', '22c55e', '0f766e', '0369a1']
 };
+
+/** SCL Sentinel-2 L2A: descartar nubes, sombras, agua, nieve, defectuosos. */
+const SCL_BAD = new Set([0, 1, 2, 3, 6, 8, 9, 10, 11]);
 
 function utmDef(lng, lat) {
   const zone = Math.floor((lng + 180) / 6) + 1;
@@ -53,7 +57,6 @@ function pixelWindowFromGeo(image, minX, minY, maxX, maxY) {
   function geoToCol(x) {
     return (x - tieX) / scaleX;
   }
-  /** Tiepoint Sentinel-2 = esquina noroeste; filas crecen hacia el sur. */
   function geoToRow(y) {
     return (tieY - y) / scaleY;
   }
@@ -102,7 +105,7 @@ function normalizeReflectance(val, noData) {
   return val;
 }
 
-async function readBandCog(url, bbox4326, outW, outH) {
+async function readBandCog(url, bbox4326, outW, outH, opts) {
   const { fromUrl } = await import('geotiff');
   const tiff = await fromUrl(url, { allowFullFile: false, rangeChunkSize: 65536 });
   const image = await tiff.getImage();
@@ -113,7 +116,7 @@ async function readBandCog(url, bbox4326, outW, outH) {
     window,
     width: outW,
     height: outH,
-    resampleMethod: 'bilinear'
+    resampleMethod: opts && opts.nearest ? 'nearest' : 'bilinear'
   });
   return { data: rasters[0], noData, width: outW, height: outH };
 }
@@ -131,6 +134,76 @@ function computeIndex(bandA, bandB, noDataA, noDataB, formula) {
     out[i] = formula(a, b);
   }
   return out;
+}
+
+function isSclBad(sclVal, noData) {
+  if (sclVal == null || !Number.isFinite(sclVal) || sclVal === noData) return true;
+  return SCL_BAD.has(Math.round(sclVal));
+}
+
+function applySclMask(indexValues, sclData, sclNoData) {
+  const n = indexValues.length;
+  for (let i = 0; i < n; i++) {
+    if (!Number.isFinite(indexValues[i])) continue;
+    if (isSclBad(sclData[i], sclNoData)) {
+      indexValues[i] = NaN;
+    }
+  }
+  return indexValues;
+}
+
+function medianPerPixel(arrays) {
+  if (!arrays.length) return new Float32Array(0);
+  const n = arrays[0].length;
+  const out = new Float32Array(n);
+  const buf = [];
+  for (let i = 0; i < n; i++) {
+    buf.length = 0;
+    for (let s = 0; s < arrays.length; s++) {
+      const v = arrays[s][i];
+      if (Number.isFinite(v)) buf.push(v);
+    }
+    if (!buf.length) {
+      out[i] = NaN;
+      continue;
+    }
+    buf.sort((a, b) => a - b);
+    const mid = Math.floor(buf.length / 2);
+    out[i] = buf.length % 2 === 0 ? (buf[mid - 1] + buf[mid]) / 2 : buf[mid];
+  }
+  return out;
+}
+
+function computeOutputSize(bbox4326, maxDim) {
+  const [west, south, east, north] = bbox4326;
+  const latSpan = Math.max(0.0001, north - south);
+  const lngSpan = Math.max(0.0001, east - west);
+  const aspect = lngSpan / latSpan;
+  let outW;
+  let outH;
+  if (aspect >= 1) {
+    outW = maxDim;
+    outH = Math.max(64, Math.round(maxDim / aspect));
+  } else {
+    outH = maxDim;
+    outW = Math.max(64, Math.round(maxDim * aspect));
+  }
+  return { outW, outH };
+}
+
+async function readSceneIndices(bandUrls, bbox4326, outW, outH) {
+  const [b04, b08, b11, scl] = await Promise.all([
+    readBandCog(bandUrls.b04, bbox4326, outW, outH),
+    readBandCog(bandUrls.b08, bbox4326, outW, outH),
+    readBandCog(bandUrls.b11, bbox4326, outW, outH),
+    readBandCog(bandUrls.scl, bbox4326, outW, outH, { nearest: true })
+  ]);
+
+  const ndvi = computeIndex(b08.data, b04.data, b08.noData, b04.noData, (nir, red) => (nir - red) / (nir + red));
+  const ndmi = computeIndex(b08.data, b11.data, b08.noData, b11.noData, (nir, swir) => (nir - swir) / (nir + swir));
+  applySclMask(ndvi, scl.data, scl.noData);
+  applySclMask(ndmi, scl.data, scl.noData);
+  return { ndvi, ndmi };
 }
 
 function pointInPolygon(lat, lng, polygon) {
@@ -189,38 +262,47 @@ async function indexToPngBuffer(indexValues, vis, width, height, polygon, bbox43
 }
 
 /**
- * @param {{ bandUrls: object, bbox4326: number[], polygon?: number[][] }} scene
- * @param {{ maxDim?: number }} opts
+ * Una escena (compatibilidad).
  */
 async function renderNdviNdmiPngs(scene, opts) {
-  const maxDim = Math.min(Math.max(Number(opts?.maxDim) || 1024, 256), 2048);
-  const polygon = scene.polygon || null;
-  const [west, south, east, north] = scene.bbox4326;
-  const latSpan = Math.max(0.0001, north - south);
-  const lngSpan = Math.max(0.0001, east - west);
-  const aspect = lngSpan / latSpan;
-  let outW;
-  let outH;
-  if (aspect >= 1) {
-    outW = maxDim;
-    outH = Math.max(64, Math.round(maxDim / aspect));
-  } else {
-    outH = maxDim;
-    outW = Math.max(64, Math.round(maxDim * aspect));
+  return renderNdviNdmiCompositePngs(
+    { scenes: [scene], bbox4326: scene.bbox4326, polygon: scene.polygon || null },
+    opts
+  );
+}
+
+/**
+ * Mediana por píxel de varias escenas (SCL ya aplicado en cada una).
+ * @param {{ scenes: object[], bbox4326: number[], polygon?: number[][] }} composite
+ */
+async function renderNdviNdmiCompositePngs(composite, opts) {
+  const maxDim = Math.min(Math.max(Number(opts?.maxDim) || 2048, 256), 2048);
+  const polygon = composite.polygon || null;
+  const bbox4326 = composite.bbox4326;
+  const scenes = composite.scenes || [];
+  if (!scenes.length) {
+    throw new Error('Sin escenas para renderizar');
   }
 
-  const [b04, b08, b11] = await Promise.all([
-    readBandCog(scene.bandUrls.b04, scene.bbox4326, outW, outH),
-    readBandCog(scene.bandUrls.b08, scene.bbox4326, outW, outH),
-    readBandCog(scene.bandUrls.b11, scene.bbox4326, outW, outH)
-  ]);
+  const { outW, outH } = computeOutputSize(bbox4326, maxDim);
+  const ndviLayers = [];
+  const ndmiLayers = [];
 
-  const ndvi = computeIndex(b08.data, b04.data, b08.noData, b04.noData, (nir, red) => (nir - red) / (nir + red));
-  const ndmi = computeIndex(b08.data, b11.data, b08.noData, b11.noData, (nir, swir) => (nir - swir) / (nir + swir));
+  for (const scene of scenes) {
+    if (!scene.bandUrls) {
+      throw new Error('Escena sin bandUrls');
+    }
+    const { ndvi, ndmi } = await readSceneIndices(scene.bandUrls, bbox4326, outW, outH);
+    ndviLayers.push(ndvi);
+    ndmiLayers.push(ndmi);
+  }
+
+  const ndvi = scenes.length === 1 ? ndviLayers[0] : medianPerPixel(ndviLayers);
+  const ndmi = scenes.length === 1 ? ndmiLayers[0] : medianPerPixel(ndmiLayers);
 
   const [ndviPng, ndmiPng] = await Promise.all([
-    indexToPngBuffer(ndvi, NDVI_VIS, outW, outH, polygon, scene.bbox4326),
-    indexToPngBuffer(ndmi, NDMI_VIS, outW, outH, polygon, scene.bbox4326)
+    indexToPngBuffer(ndvi, NDVI_VIS, outW, outH, polygon, bbox4326),
+    indexToPngBuffer(ndmi, NDMI_VIS, outW, outH, polygon, bbox4326)
   ]);
 
   return {
@@ -228,12 +310,17 @@ async function renderNdviNdmiPngs(scene, opts) {
     height: outH,
     ndviPng,
     ndmiPng,
+    sceneCount: scenes.length,
+    sclMasked: true,
+    composite: scenes.length > 1,
     vis: { ndvi: NDVI_VIS, ndmi: NDMI_VIS }
   };
 }
 
 module.exports = {
   renderNdviNdmiPngs,
+  renderNdviNdmiCompositePngs,
   NDVI_VIS,
-  NDMI_VIS
+  NDMI_VIS,
+  SCL_BAD
 };

@@ -5837,13 +5837,6 @@ function np_setCurrentProject(id, projectMeta) {
           loadProjectData();
         }, 50); // Delay mínimo solo para primera carga
       }
-      
-      // Si estamos en la sección de ubicación, recargar el mapa
-      setTimeout(() => {
-        if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap) {
-          nutriPlantMap.loadProjectLocation();
-        }
-      }, 100);
     }
   } else {
     // CRÍTICO: Si no hay proyecto, limpiar elementos de ubicación
@@ -10542,12 +10535,12 @@ function collectCurrentData() {
   
   // Datos de ubicación - SOLO si los elementos existen
   const coordsEl = document.getElementById('coordinatesDisplay');
-  const surfaceEl = document.getElementById('surfaceDisplay');
+  const surfaceEl = document.getElementById('areaDisplay');
   const perimeterEl = document.getElementById('perimeterDisplay');
   if (coordsEl || surfaceEl || perimeterEl) {
     if (coordsEl) currentProject.location.coordinates = coordsEl.textContent || '';
     if (surfaceEl) currentProject.location.surface = surfaceEl.textContent || '';
-    if (perimeterEl) currentProject.location.perimeter = perimeterEl.textContent || '';
+    if (perimeterEl) currentProject.location.perimeterDisplay = perimeterEl.textContent || '';
   }
   
   // Datos de análisis de suelo - SOLO si los elementos existen
@@ -11207,6 +11200,7 @@ function loadProjectData() {
       
       // Aplicar datos cargados a la UI
       applyProjectDataToUI();
+      np_syncMapLocationFromProject();
       
       console.log('✅ Datos del proyecto cargados y aplicados exitosamente');
     } catch (error) {
@@ -11266,113 +11260,130 @@ function loadProjectData() {
       lastUpdated: null
     };
     applyProjectDataToUI();
+    np_syncMapLocationFromProject();
+  }
+}
+
+function np_locationBelongsToProject(location, projectId) {
+  if (!location || !projectId) return false;
+  if (!location.polygon || !Array.isArray(location.polygon) || location.polygon.length < 3) return false;
+  if (location.projectId && location.projectId !== projectId) return false;
+  return true;
+}
+
+function np_normalizeLocationProjectId(location, projectId) {
+  if (!location || !projectId) return location;
+  if (!location.projectId) location.projectId = projectId;
+  return location;
+}
+
+function np_formatLocationAreaDisplay(location) {
+  if (!location) return '0.00 ha (0.00 acres)';
+  if (location.surface) {
+    const surface = String(location.surface);
+    if (location.areaAcres != null && Number.isFinite(Number(location.areaAcres)) && !surface.includes('acres')) {
+      const acres = Number(location.areaAcres);
+      const fmt =
+        typeof nutriPlantMap !== 'undefined' && nutriPlantMap && typeof nutriPlantMap.formatNumber === 'function'
+          ? nutriPlantMap.formatNumber(acres)
+          : acres.toFixed(2);
+      return surface + ' (' + fmt + ' acres)';
+    }
+    return surface;
+  }
+  if (location.areaHectares != null && Number.isFinite(Number(location.areaHectares))) {
+    const ha = Number(location.areaHectares);
+    const acres = location.areaAcres != null ? Number(location.areaAcres) : ha * 2.47105;
+    const fmt =
+      typeof nutriPlantMap !== 'undefined' && nutriPlantMap && typeof nutriPlantMap.formatNumber === 'function'
+        ? (n, d) => nutriPlantMap.formatNumber(n, d)
+        : (n, d) => Number(n).toFixed(d || 2);
+    return fmt(ha) + ' ha (' + fmt(acres) + ' acres)';
+  }
+  if (location.area != null && Number(location.area) > 0) {
+    const ha = Number(location.area) / 10000;
+    const acres = ha * 2.47105;
+    const fmt =
+      typeof nutriPlantMap !== 'undefined' && nutriPlantMap && typeof nutriPlantMap.formatNumber === 'function'
+        ? (n, d) => nutriPlantMap.formatNumber(n, d)
+        : (n, d) => Number(n).toFixed(d || 2);
+    return fmt(ha) + ' ha (' + fmt(acres) + ' acres)';
+  }
+  return '0.00 ha (0.00 acres)';
+}
+
+function np_formatLocationPerimeterDisplay(location) {
+  if (!location) return '0.00 m';
+  if (location.perimeterDisplay) return String(location.perimeterDisplay);
+  if (location.perimeter != null && Number.isFinite(Number(location.perimeter))) {
+    const p = Number(location.perimeter);
+    const fmt =
+      typeof nutriPlantMap !== 'undefined' && nutriPlantMap && typeof nutriPlantMap.formatNumber === 'function'
+        ? nutriPlantMap.formatNumber(p)
+        : p.toFixed(2);
+    return fmt + ' m';
+  }
+  return '0.00 m';
+}
+
+function np_applyLocationStatsToDOM(location) {
+  const coordinatesEl = document.getElementById('coordinatesDisplay');
+  const areaEl = document.getElementById('areaDisplay');
+  const perimeterEl = document.getElementById('perimeterDisplay');
+  const altitudeEl = document.getElementById('altitudeDisplay');
+
+  if (!location) {
+    if (typeof forceClearLocationDisplay === 'function') forceClearLocationDisplay();
+    return;
+  }
+
+  if (coordinatesEl) {
+    if (location.coordinates) {
+      coordinatesEl.textContent = location.coordinates;
+    } else if (location.center && location.center.lat != null && location.center.lng != null) {
+      coordinatesEl.textContent =
+        Number(location.center.lat).toFixed(6) + ', ' + Number(location.center.lng).toFixed(6);
+    } else {
+      coordinatesEl.textContent = 'No seleccionadas';
+    }
+  }
+  if (areaEl) areaEl.textContent = np_formatLocationAreaDisplay(location);
+  if (perimeterEl) perimeterEl.textContent = np_formatLocationPerimeterDisplay(location);
+  if (altitudeEl) {
+    const elev = Number(location.elevationM);
+    altitudeEl.textContent = Number.isFinite(elev) ? Math.round(elev) + ' msnm' : 'N/D';
+  }
+}
+
+function np_syncMapLocationFromProject() {
+  const projectId = currentProject && currentProject.id;
+  if (!projectId || typeof nutriPlantMap === 'undefined' || !nutriPlantMap) return;
+
+  if (currentProject.location && np_locationBelongsToProject(currentProject.location, projectId)) {
+    np_normalizeLocationProjectId(currentProject.location, projectId);
+    np_applyLocationStatsToDOM(currentProject.location);
+  }
+
+  const run = () => {
+    if (typeof nutriPlantMap.loadProjectLocation === 'function') {
+      nutriPlantMap.loadProjectLocation();
+    }
+  };
+  if (nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
+    requestAnimationFrame(run);
+  } else {
+    setTimeout(run, 400);
   }
 }
 
 // Aplicar datos del proyecto a la UI
 function applyProjectDataToUI() {
-  // SIMPLE: SIEMPRE limpiar primero
-  if (typeof forceClearLocationDisplay === 'function') {
-    forceClearLocationDisplay();
-  }
-  
-  // SIMPLE: Solo aplicar datos si hay polígono válido CON projectId que coincida
   const currentProjectId = currentProject.id || np_getCurrentProjectId();
-  const hasValidLocation = currentProjectId && 
-                          currentProject.location && 
-                          currentProject.location.polygon && 
-                          Array.isArray(currentProject.location.polygon) && 
-                          currentProject.location.polygon.length >= 3 &&
-                          currentProject.location.projectId === currentProjectId;
-  
-  if (hasValidLocation) {
-    const coordinatesElement = document.getElementById('coordinatesDisplay');
-    if (coordinatesElement && currentProject.location.coordinates) {
-      coordinatesElement.textContent = currentProject.location.coordinates;
+
+  if (!np_locationBelongsToProject(currentProject.location, currentProjectId)) {
+    if (typeof forceClearLocationDisplay === 'function') {
+      forceClearLocationDisplay();
     }
-    
-    const surfaceElement = document.getElementById('surfaceDisplay');
-    if (surfaceElement && currentProject.location.surface) {
-      surfaceElement.textContent = currentProject.location.surface;
-    }
-    
-    const perimeterElement = document.getElementById('perimeterDisplay');
-    if (perimeterElement && currentProject.location.perimeter) {
-      perimeterElement.textContent = currentProject.location.perimeter;
-    }
-    const altitudeElement = document.getElementById('altitudeDisplay');
-    if (altitudeElement) {
-      const elev = Number(currentProject.location.elevationM);
-      altitudeElement.textContent = Number.isFinite(elev) ? `${Math.round(elev)} msnm` : 'N/D';
-    }
-    
-    // CARGAR POLÍGONO EN EL MAPA si existe
-    if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap) {
-      // CRÍTICO: Validar una vez más que el polígono pertenece a este proyecto
-      const polygonProjectId = currentProject.location.projectId;
-      if (polygonProjectId && polygonProjectId !== currentProjectId) {
-        console.warn('⚠️ applyProjectDataToUI: Polígono pertenece a otro proyecto. NO cargando.', {
-          expected: currentProjectId,
-          found: polygonProjectId
-        });
-        // NO cargar el polígono
-        return;
-      }
-      
-      // El polígono está guardado como coordenadas - cargarlo en el mapa
-      const polygonData = {
-        coordinates: currentProject.location.polygon,
-        area: currentProject.location.area || 0,
-        perimeter: currentProject.location.perimeterValue || 0,
-        center: currentProject.location.center || null,
-        projectId: currentProjectId // CRÍTICO: Incluir projectId para validación
-      };
-      const elevSaved = Number(currentProject.location.elevationM);
-      if (Number.isFinite(elevSaved)) {
-        polygonData.elevationM = elevSaved;
-      } else if (currentProject.location.elevationM === null) {
-        polygonData.elevationM = null;
-      }
-      
-      // Pintar al instante si el mapa ya está listo (al volver a Ubicación); si no, esperar
-      const paintPolygon = () => {
-        if (nutriPlantMap && nutriPlantMap.map && polygonData.coordinates && polygonData.coordinates.length >= 3) {
-          try {
-            nutriPlantMap.loadSavedPolygon(polygonData);
-            console.log('✅ Polígono cargado en el mapa desde datos guardados');
-          } catch (e) {
-            console.error('❌ Error al cargar polígono en el mapa:', e);
-          }
-        }
-      };
-      if (nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
-        requestAnimationFrame(paintPolygon);
-      } else {
-        setTimeout(paintPolygon, 400);
-      }
-    }
-  } else {
-    // CRÍTICO: Si no hay datos válidos, limpiar los elementos del DOM
-    const coordinatesElement = document.getElementById('coordinatesDisplay');
-    if (coordinatesElement) {
-      coordinatesElement.textContent = 'No seleccionadas';
-    }
-    
-    const surfaceElement = document.getElementById('surfaceDisplay');
-    if (surfaceElement) {
-      surfaceElement.textContent = '0.00 ha (0.00 acres)';
-    }
-    
-    const perimeterElement = document.getElementById('perimeterDisplay');
-    if (perimeterElement) {
-      perimeterElement.textContent = '0.00 m';
-    }
-    const altitudeElement = document.getElementById('altitudeDisplay');
-    if (altitudeElement) {
-      altitudeElement.textContent = 'N/D';
-    }
-    
-    // CRÍTICO: Limpiar el mapa si no hay datos válidos
     if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap) {
       nutriPlantMap.clearAllPolygons();
       nutriPlantMap.polygon = null;
@@ -11383,7 +11394,12 @@ function applyProjectDataToUI() {
       nutriPlantMap.perimeter = 0;
       nutriPlantMap.updateDisplay();
     }
+  } else {
+    np_normalizeLocationProjectId(currentProject.location, currentProjectId);
+    np_applyLocationStatsToDOM(currentProject.location);
   }
+
+  // Polígono en mapa: np_syncMapLocationFromProject() tras loadProjectData (evita carreras al cambiar proyecto)
   
   // Aplicar datos de análisis inicial - SOLO si hay datos guardados REALES (no solo 0s)
   if (currentProject.soilAnalysis && currentProject.soilAnalysis.initial) {
@@ -12299,6 +12315,7 @@ function loadOnTabChange(tabName) {
       
       // Aplicar a UI inmediatamente
       applyProjectDataToUI();
+      np_syncMapLocationFromProject();
     } else {
       // Si no está en memoria, cargar una vez
       console.log('📂 Proyecto no está en memoria, cargando...');

@@ -2151,9 +2151,11 @@ class NutriPlantMap {
     // Usar valores guardados si existen, sino calcular
     if (locationData.area && locationData.area > 0) {
       this.area = locationData.area;
+    } else if (locationData.areaHectares != null && Number(locationData.areaHectares) > 0) {
+      this.area = Number(locationData.areaHectares) * 10000;
     }
-    if (locationData.perimeter && locationData.perimeter > 0) {
-      this.perimeter = locationData.perimeter;
+    if (locationData.perimeter != null && Number(locationData.perimeter) > 0) {
+      this.perimeter = Number(locationData.perimeter);
     }
     
     // SIEMPRE recalcular para asegurar que el perímetro esté correcto
@@ -3075,7 +3077,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
   }
   if (hint) {
     hint.textContent =
-      '🧪 Pilot: buscando Sentinel-2 y calculando NDVI/NDMI (sin Google, sin créditos)… puede tardar ~1 min.';
+      '🧪 Pilot: mediana 30 d + SCL, calculando NDVI/NDMI (sin Google, sin créditos)… puede tardar ~1–2 min.';
   }
   try {
     const res = await fetch(np_radarPilotApiUrl(), {
@@ -3099,6 +3101,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
       images: data.images,
       meta: data.meta,
       scene: data.scene,
+      composite: data.composite,
       provider: data.provider,
       source: data.source
     };
@@ -3107,22 +3110,24 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     if (url) {
       await np_applyRadarPilotOverlay(url, idx);
     }
-    const sceneDt = data.scene && data.scene.datetime ? String(data.scene.datetime).slice(0, 10) : '—';
-    const cloud =
-      data.scene && data.scene.cloud_cover != null ? Number(data.scene.cloud_cover).toFixed(0) + '% nubes' : '';
-    const lookback =
-      data.scene && data.scene.lookback_days != null
-        ? 'ventana ' + data.scene.lookback_days + ' d'
-        : '';
+    const comp = data.composite || {};
+    const sceneCount = comp.scene_count != null ? comp.scene_count : 1;
+    const dateRange =
+      comp.date_start && comp.date_end && comp.date_start !== comp.date_end
+        ? comp.date_start + ' – ' + comp.date_end
+        : comp.date_end || comp.date_start || '';
     if (hint) {
       hint.textContent =
-        '🧪 Pilot OK · ' +
+        '🧪 Pilot OK · mediana ' +
+        (comp.lookback_days || 30) +
+        ' d · ' +
+        sceneCount +
+        ' escena' +
+        (sceneCount === 1 ? '' : 's') +
+        ' · SCL · ' +
+        (dateRange ? 'datos ' + dateRange + ' · ' : '') +
         (data.provider || 'sentinel') +
-        ' · escena ' +
-        sceneDt +
-        (cloud ? ' · ' + cloud : '') +
-        (lookback ? ' · ' + lookback : '') +
-        ' · más reciente despejada · NO guardado · sin créditos. Cambia capa NDVI/NDMI arriba.';
+        ' · NO guardado · sin créditos. Cambia capa NDVI/NDMI arriba.';
     }
   } catch (e) {
     console.error('Radar CDSE pilot:', e);

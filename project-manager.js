@@ -128,14 +128,6 @@ class ProjectManager {
       id: projectId,
       name: projectName
     };
-    
-    // Recargar datos del proyecto cuando se cambia
-    setTimeout(() => {
-      // Si estamos en la sección de ubicación, recargar el mapa
-      if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap) {
-        nutriPlantMap.loadProjectLocation();
-      }
-    }, 100);
     this.notifyProjectChange();
   }
 

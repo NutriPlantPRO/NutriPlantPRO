@@ -97,7 +97,12 @@ async function stacSearch(url, body, headers) {
   return res.json();
 }
 
-/** Ventanas de búsqueda: reciente primero; más días solo si no hay escena limpia. */
+/** Mediana corta: hasta N escenas en los últimos 30 d (SCL + mediana por píxel). */
+const COMPOSITE_LOOKBACK_DAYS = 30;
+const COMPOSITE_MAX_SCENES = 4;
+const COMPOSITE_MAX_CLOUD = 40;
+
+/** Fallback si no hay escenas en 30 d: una sola escena reciente. */
 const SCENE_SEARCH_TIERS = [
   { days: 7, maxCloud: 25, label: '7d_25pct' },
   { days: 21, maxCloud: 25, label: '21d_25pct' },
@@ -111,7 +116,7 @@ async function searchPlanetaryComputer(bbox, lookbackDays, maxCloud) {
     datetime: isoDaysAgo(lookbackDays) + '/' + new Date().toISOString(),
     query: { 'eo:cloud_cover': { lt: maxCloud } },
     sort: [{ field: 'datetime', direction: 'desc' }],
-    limit: 12
+    limit: 20
   };
   return stacSearch(PC_STAC, body);
 }
@@ -124,7 +129,7 @@ async function searchCdse(bbox, lookbackDays, maxCloud, token) {
     filter: { op: '<', args: [{ property: 'eo:cloud_cover' }, maxCloud] },
     'filter-lang': 'cql2-json',
     sort: [{ field: 'properties.datetime', direction: 'desc' }],
-    limit: 12
+    limit: 20
   };
   return stacSearch(CDSE_STAC, body, { Authorization: 'Bearer ' + token });
 }
@@ -150,8 +155,12 @@ async function resolveSceneAssets(item, provider, cdseToken) {
   const b04 = pickAssetHref(assets, ['B04', 'b04', 'red']);
   const b08 = pickAssetHref(assets, ['B08', 'b08', 'nir']);
   const b11 = pickAssetHref(assets, ['B11', 'b11', 'swir16', 'swir']);
+  const scl = pickAssetHref(assets, ['SCL', 'scl']);
   if (!b04 || !b08 || !b11) {
     throw new Error('Escena sin bandas B04/B08/B11');
+  }
+  if (!scl) {
+    throw new Error('Escena sin banda SCL');
   }
   if (provider === 'cdse') {
     const auth = cdseToken ? { Authorization: 'Bearer ' + cdseToken } : {};
@@ -165,34 +174,52 @@ async function resolveSceneAssets(item, provider, cdseToken) {
     return {
       b04: await sign(b04),
       b08: await sign(b08),
-      b11: await sign(b11)
+      b11: await sign(b11),
+      scl: await sign(scl)
     };
   }
   return {
     b04: await signPcHref(b04),
     b08: await signPcHref(b08),
-    b11: await signPcHref(b11)
+    b11: await signPcHref(b11),
+    scl: await signPcHref(scl)
   };
 }
 
-/**
- * Escena más reciente con pocas nubes: 7 d → 21 d → 45 d (25% / 35% nubes).
- * @param {Array<[number,number]>} polygon [[lat,lng],...]
- * @param {{ provider?: string }} opts
- */
-async function findBestSentinel2Scene(polygon, opts) {
-  const bbox = bboxFromPolygon(polygon);
+function sceneFromItem(item, provider, bbox, bandUrls, extra) {
+  const props = item.properties || {};
+  return {
+    provider,
+    itemId: item.id,
+    datetime: props.datetime || null,
+    cloudCover: props['eo:cloud_cover'] ?? props.eo_cloud_cover ?? null,
+    bbox,
+    bandUrls,
+    collection: provider === 'cdse' ? 'sentinel-2-l2a' : 'planetary-sentinel-2-l2a',
+    ...(extra || {})
+  };
+}
+
+async function resolveProviderContext(opts) {
   const clientId = (process.env.CDSE_CLIENT_ID || '').trim();
   const clientSecret = (process.env.CDSE_CLIENT_SECRET || '').trim();
   let provider = String(opts?.provider || process.env.RADAR_PILOT_PROVIDER || 'planetary').toLowerCase();
   if (provider === 'cdse' && (!clientId || !clientSecret)) {
     provider = 'planetary';
   }
-
   let cdseToken = null;
   if (provider === 'cdse') {
     cdseToken = await getCdseToken(clientId, clientSecret);
   }
+  return { provider, cdseToken };
+}
+
+/**
+ * Escena más reciente con pocas nubes: 7 d → 21 d → 45 d (fallback).
+ */
+async function findBestSentinel2Scene(polygon, opts) {
+  const bbox = bboxFromPolygon(polygon);
+  const { provider, cdseToken } = await resolveProviderContext(opts);
 
   let lastErr = null;
   for (const tier of SCENE_SEARCH_TIERS) {
@@ -209,19 +236,11 @@ async function findBestSentinel2Scene(polygon, opts) {
     for (const item of features) {
       try {
         const bandUrls = await resolveSceneAssets(item, provider, cdseToken);
-        const props = item.properties || {};
-        return {
-          provider,
-          itemId: item.id,
-          datetime: props.datetime || null,
-          cloudCover: props['eo:cloud_cover'] ?? props.eo_cloud_cover ?? null,
-          bbox,
-          bandUrls,
-          collection: provider === 'cdse' ? 'sentinel-2-l2a' : 'planetary-sentinel-2-l2a',
+        return sceneFromItem(item, provider, bbox, bandUrls, {
           searchTier: tier.label,
           lookbackDays: tier.days,
           maxCloudPct: tier.maxCloud
-        };
+        });
       } catch (e) {
         lastErr = e;
       }
@@ -236,8 +255,77 @@ async function findBestSentinel2Scene(polygon, opts) {
   );
 }
 
+/**
+ * Hasta 4 escenas en 30 d para mediana + SCL (preferir recientes, ≤40% nubes escena).
+ * Si no hay ninguna en 30 d, cae al fallback de una sola escena.
+ */
+async function findSentinel2ScenesForComposite(polygon, opts) {
+  const bbox = bboxFromPolygon(polygon);
+  const { provider, cdseToken } = await resolveProviderContext(opts);
+  const maxScenes = Math.min(
+    Math.max(Number(opts?.maxScenes) || COMPOSITE_MAX_SCENES, 1),
+    COMPOSITE_MAX_SCENES
+  );
+  const lookbackDays = Number(opts?.lookbackDays) || COMPOSITE_LOOKBACK_DAYS;
+  const maxCloud = Number(opts?.maxCloud) || COMPOSITE_MAX_CLOUD;
+
+  let features = [];
+  let searchErr = null;
+  try {
+    const tier = { days: lookbackDays, maxCloud, label: lookbackDays + 'd_' + maxCloud + 'pct' };
+    const data = await searchScenesForTier(bbox, tier, provider, cdseToken);
+    features = data.features || [];
+  } catch (e) {
+    searchErr = e;
+  }
+
+  const scenes = [];
+  let lastErr = searchErr;
+  for (const item of features) {
+    if (scenes.length >= maxScenes) break;
+    try {
+      const bandUrls = await resolveSceneAssets(item, provider, cdseToken);
+      scenes.push(sceneFromItem(item, provider, bbox, bandUrls));
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  if (scenes.length) {
+    const datetimes = scenes.map((s) => s.datetime).filter(Boolean).sort();
+    return {
+      provider,
+      bbox,
+      lookbackDays,
+      maxCloudPct: maxCloud,
+      composite: scenes.length > 1,
+      sceneCount: scenes.length,
+      dateStart: datetimes[0] ? datetimes[0].slice(0, 10) : null,
+      dateEnd: datetimes.length ? datetimes[datetimes.length - 1].slice(0, 10) : null,
+      scenes
+    };
+  }
+
+  const fallback = await findBestSentinel2Scene(polygon, opts);
+  return {
+    provider: fallback.provider,
+    bbox: fallback.bbox,
+    lookbackDays: fallback.lookbackDays,
+    maxCloudPct: fallback.maxCloudPct,
+    composite: false,
+    sceneCount: 1,
+    dateStart: fallback.datetime ? String(fallback.datetime).slice(0, 10) : null,
+    dateEnd: fallback.datetime ? String(fallback.datetime).slice(0, 10) : null,
+    scenes: [fallback],
+    fallbackTier: fallback.searchTier || null
+  };
+}
+
 module.exports = {
   bboxFromPolygon,
   findBestSentinel2Scene,
-  SCENE_SEARCH_TIERS
+  findSentinel2ScenesForComposite,
+  SCENE_SEARCH_TIERS,
+  COMPOSITE_LOOKBACK_DAYS,
+  COMPOSITE_MAX_SCENES
 };

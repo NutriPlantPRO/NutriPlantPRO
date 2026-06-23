@@ -1,6 +1,6 @@
 /** Quick local test for radar pilot pipeline */
-const { findBestSentinel2Scene } = require('../../netlify/functions/lib/radar-pilot-stac');
-const { renderNdviNdmiPngs } = require('../../netlify/functions/lib/radar-pilot-render');
+const { findSentinel2ScenesForComposite } = require('../../netlify/functions/lib/radar-pilot-stac');
+const { renderNdviNdmiCompositePngs } = require('../../netlify/functions/lib/radar-pilot-render');
 
 const polygon = [
   [19.7175, -103.4343],
@@ -9,11 +9,11 @@ const polygon = [
 ];
 
 (async () => {
-  console.log('Searching scene...');
-  const scene = await findBestSentinel2Scene(polygon, { lookbackDays: 120 });
-  console.log('Scene:', scene.itemId, scene.datetime, scene.cloudCover);
-  const rendered = await renderNdviNdmiPngs(
-    { bandUrls: scene.bandUrls, bbox4326: scene.bbox, polygon },
+  console.log('Searching scenes (30d composite)...');
+  const bundle = await findSentinel2ScenesForComposite(polygon, {});
+  console.log('Scenes:', bundle.sceneCount, bundle.dateStart, '–', bundle.dateEnd);
+  const rendered = await renderNdviNdmiCompositePngs(
+    { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
     { maxDim: 512 }
   );
   console.log('OK PNG bytes NDVI:', rendered.ndviPng.length, 'NDMI:', rendered.ndmiPng.length);
