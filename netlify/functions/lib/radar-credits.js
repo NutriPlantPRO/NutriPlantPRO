@@ -60,7 +60,10 @@ function getRadarCreditPricingInfo(areaHa) {
 function sumCreditsFromRows(rows) {
   return (rows || []).reduce((acc, row) => {
     const c = row?.meta?.credits_charged;
-    return acc + (Number.isFinite(Number(c)) && Number(c) > 0 ? Math.floor(Number(c)) : 1);
+    if (c != null && Number.isFinite(Number(c))) {
+      return acc + Math.max(0, Math.floor(Number(c)));
+    }
+    return acc + 1;
   }, 0);
 }
 

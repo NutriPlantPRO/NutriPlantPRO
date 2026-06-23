@@ -1249,6 +1249,19 @@ class NutriPlantMap {
   }
 
   getCurrentLocation() {
+    const proj = this.getCurrentProject();
+    const loc = proj && proj.location;
+    const hasSavedPolygon =
+      loc &&
+      loc.polygon &&
+      Array.isArray(loc.polygon) &&
+      loc.polygon.length >= 3 &&
+      (!loc.projectId || !proj.id || loc.projectId === proj.id);
+    if (hasSavedPolygon) {
+      console.log('ℹ️ getCurrentLocation: predio guardado — omitiendo GPS automático');
+      return;
+    }
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -1358,15 +1371,64 @@ class NutriPlantMap {
     return null;
   }
 
+  fitMapToVisiblePolygon(polygonToFit) {
+    if (!polygonToFit || !this.map || typeof google === 'undefined' || !google.maps) return false;
+    try {
+      const bounds = new google.maps.LatLngBounds();
+      polygonToFit.getPath().forEach((point) => bounds.extend(point));
+      this.map.fitBounds(bounds, { padding: 50 });
+      setTimeout(() => this.refreshMapView('fit-polygon'), 200);
+      return true;
+    } catch (e) {
+      console.warn('⚠️ fitMapToVisiblePolygon:', e);
+      return false;
+    }
+  }
+
+  fitMapToCurrentProjectLocation() {
+    if (!np_isLocationMapReady()) return false;
+
+    const painted = this.savedPolygon || this.polygon;
+    if (painted && painted.getMap && painted.getMap() === this.map) {
+      return this.fitMapToVisiblePolygon(painted);
+    }
+
+    const proj = this.getCurrentProject();
+    const loc = proj && proj.location;
+    if (loc && loc.polygon && Array.isArray(loc.polygon) && loc.polygon.length >= 3) {
+      const center = this.calculatePolygonCenter(loc.polygon);
+      if (center) {
+        this.map.setCenter(center);
+        this.map.setZoom(15);
+        this.refreshMapView('fit-project-center');
+        return true;
+      }
+    }
+    if (loc && loc.center && loc.center.lat != null && loc.center.lng != null) {
+      this.map.setCenter({ lat: Number(loc.center.lat), lng: Number(loc.center.lng) });
+      this.map.setZoom(15);
+      this.refreshMapView('fit-project-center');
+      return true;
+    }
+    return false;
+  }
+
   centerOnPolygon() {
     console.log('📍 Botón centrar en polígono presionado');
 
-    if (!np_isLocationMapReady()) {
+    if (!np_isLocationMapReady() || !this.map) {
       if (typeof initLocationMap === 'function') initLocationMap();
       this.showMessage('🔄 Cargando mapa y polígono del predio…', 'info');
-      setTimeout(() => this.centerOnPolygon(), 600);
+      this._centerOnPolygonAttempts = (this._centerOnPolygonAttempts || 0) + 1;
+      if (this._centerOnPolygonAttempts <= 15) {
+        setTimeout(() => this.centerOnPolygon(), 500);
+      } else {
+        this._centerOnPolygonAttempts = 0;
+        this.showMessage('⚠️ No se pudo cargar el mapa. Vuelve a entrar a Ubicación.', 'warning');
+      }
       return;
     }
+    this._centerOnPolygonAttempts = 0;
 
     const currentProject = this.getCurrentProject();
     const currentProjectId = currentProject && currentProject.id ? String(currentProject.id) : '';
@@ -1466,10 +1528,19 @@ class NutriPlantMap {
     // 🚀 "Mi Ubicación" SIEMPRE debe obtener la ubicación GPS del dispositivo
     // NO debe centrar en el polígono - eso lo hace el botón "Ubicación del Predio"
 
-    if (!this.map) {
-      this.showMessage('⚠️ El mapa aún se está cargando. Espera un momento e intenta de nuevo.', 'warning');
+    if (!np_isLocationMapReady() || !this.map) {
+      if (typeof initLocationMap === 'function') initLocationMap();
+      this.showMessage('🔄 Cargando mapa…', 'info');
+      this._centerOnUserLocationAttempts = (this._centerOnUserLocationAttempts || 0) + 1;
+      if (this._centerOnUserLocationAttempts <= 15) {
+        setTimeout(() => this.centerOnUserLocation(), 500);
+      } else {
+        this._centerOnUserLocationAttempts = 0;
+        this.showMessage('⚠️ No se pudo cargar el mapa. Vuelve a entrar a Ubicación.', 'warning');
+      }
       return;
     }
+    this._centerOnUserLocationAttempts = 0;
     
     if (!navigator.geolocation) {
       this.showMessage('❌ La geolocalización no está disponible en este navegador', 'error');
@@ -1926,6 +1997,7 @@ class NutriPlantMap {
         
         // Cargar el polígono guardado
         this.loadSavedPolygon({ ...locationData, coordinates: polygonCoords });
+        setTimeout(() => this.fitMapToCurrentProjectLocation(), 150);
         return locationData;
       } else {
         console.warn('⚠️ Polígono válido pero projectId NO coincide. NO cargando.', {
@@ -2211,6 +2283,7 @@ class NutriPlantMap {
     // Validar una vez más que el polígono está en el mapa
     if (this.savedPolygon && this.savedPolygon.getMap() && this.savedPolygon.getMap() === this.map) {
       this.updateInstructions('✅ Predio cargado - Puedes editarlo o guardar cambios');
+      setTimeout(() => this.fitMapToVisiblePolygon(this.savedPolygon), 120);
       console.log('✅ UN solo polígono cargado y visible correctamente:', {
         points: polygonPath.length,
         projectId: locationData.projectId
@@ -2602,11 +2675,11 @@ function np_setRadarBusy(isBusy, message) {
 
   if (generateBtn) {
     if (isBusy) {
-      if (!generateBtn.dataset.originalText) generateBtn.dataset.originalText = generateBtn.textContent || 'Generar / actualizar';
-      generateBtn.textContent = '⏳ Generando Radar...';
+      if (!generateBtn.dataset.originalText) generateBtn.dataset.originalText = generateBtn.textContent || 'Generar / actualizar Pilot';
+      generateBtn.textContent = '⏳ Generando Pilot...';
       generateBtn.classList.add('radar-loading');
     } else {
-      generateBtn.textContent = generateBtn.dataset.originalText || '✨ Generar / actualizar';
+      generateBtn.textContent = generateBtn.dataset.originalText || '🛰 Generar / actualizar Pilot';
       generateBtn.classList.remove('radar-loading');
     }
   }
@@ -2620,7 +2693,7 @@ function np_setRadarBusy(isBusy, message) {
   if (isBusy && hint) {
     hint.textContent =
       message ||
-      'Generando imágenes NDVI y NDMI... puede tardar hasta ~1 minuto (primera vez o red lenta). Si termina el proceso pero no ves el mapa, pulsa «Ver última».';
+      'Generando imágenes Pilot NDVI y NDMI... puede tardar ~1–2 min. Si termina y no ves el mapa, pulsa «Ver en mapa».';
   }
 }
 
@@ -2654,11 +2727,12 @@ function np_clearRadarPilotState() {
 }
 
 function np_getPilotRadarIndex() {
-  return window.__nutriplantRadarPilotLayer === 'ndmi' ? 'ndmi' : 'ndvi';
+  return np_getSelectedRadarIndex();
 }
 
 function np_setPilotRadarIndex(index) {
   window.__nutriplantRadarPilotLayer = index === 'ndmi' ? 'ndmi' : 'ndvi';
+  np_setSelectedRadarIndex(window.__nutriplantRadarPilotLayer);
   np_updatePilotLayerButtonUi();
 }
 
@@ -2687,7 +2761,7 @@ async function np_togglePilotRadarLayer() {
   const cfg = np_getRadarIndexConfig(next);
   if (hint) {
     hint.textContent =
-      '🧪 Pilot · capa ' + cfg.label + ' · sin Google · sin créditos. Pulsa NDVI/NDMI para cambiar.';
+      '🧪 Pilot · capa ' + cfg.label + ' · sin Google · sin créditos. Cambia la capa desde el selector NDVI/NDMI.';
   }
 }
 
@@ -2710,15 +2784,17 @@ function np_formatPilotOkHint(data, layerIndex) {
     (sceneCount === 1 ? '' : 's') +
     ' · SCL' +
     (dateRange ? ' · ' + dateRange : '') +
-    ' · sin créditos. Clic NDVI/NDMI al lado de 🛰 para cambiar capa.'
+    ' · guardado · sin créditos. Cambia la capa desde el selector NDVI/NDMI.'
   );
 }
 
 function np_getRadarPilotDataUrl(index) {
   const pilot = window.__nutriplantRadarPilot;
   if (!pilot || !pilot.active) return '';
-  if (index === 'ndmi') return pilot.ndmi_data_url || pilot.images?.ndmi?.data_url || '';
-  return pilot.ndvi_data_url || pilot.images?.ndvi?.data_url || '';
+  if (index === 'ndmi') {
+    return pilot.ndmi_signed_url || pilot.images?.ndmi?.signed_url || pilot.ndmi_data_url || pilot.images?.ndmi?.data_url || '';
+  }
+  return pilot.signed_url || pilot.images?.ndvi?.signed_url || pilot.ndvi_data_url || pilot.images?.ndvi?.data_url || '';
 }
 
 function np_polygonCoordsForPilot() {
@@ -2914,7 +2990,7 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     img.onerror = () => {
       console.error('❌ La imagen Radar no pudo cargarse en el navegador:', url);
       const hint = document.getElementById('radarStatusHint');
-      if (hint) hint.textContent = 'No se pudo cargar la imagen Radar firmada. Vuelve a pulsar Ver última.';
+      if (hint) hint.textContent = 'No se pudo cargar la imagen Radar firmada. Vuelve a pulsar Ver en mapa.';
     };
     div.appendChild(img);
     this.div = div;
@@ -2996,7 +3072,8 @@ async function np_applyRadarOverlay(url, snap, index) {
   }
   np_setRadarPolygonMask(false);
   np_setSelectedRadarIndex(index || np_getSelectedRadarIndex());
-  np_showRadarOverlay(url, bounds, 0.98, { pilot: false, index: index || np_getSelectedRadarIndex() });
+  const isPilotSnapshot = !!(snap && snap.meta && snap.meta.pilot);
+  np_showRadarOverlay(url, bounds, 0.98, { pilot: isPilotSnapshot, index: index || np_getSelectedRadarIndex() });
   np_setRadarPolygonMask(
     true,
     overlayCtx.fromSnapshot ? overlayCtx.polygon : null
@@ -3016,13 +3093,13 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
   const hint = document.getElementById('radarStatusHint');
   if (!label) return;
   if (!np_isCloudSupabaseUser()) {
-    label.textContent = 'Disponibles: — (cuenta nube)';
+    label.textContent = 'Pilot: requiere cuenta nube';
     if (hint) hint.textContent = 'Inicia sesión con tu cuenta NutriPlant en la nube para usar Radar.';
     return;
   }
   const token = await np_getRadarAccessToken();
   if (!token) {
-    label.textContent = 'Disponibles: — (sin sesión)';
+    label.textContent = 'Pilot: sin sesión';
     return;
   }
   const proj =
@@ -3030,10 +3107,10 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       ? nutriPlantMap.getCurrentProject()
       : null;
   if (!proj || !proj.id) {
-    label.textContent = 'Disponibles: —';
+    label.textContent = 'Pilot Copernicus · Google standby';
     return;
   }
-  label.textContent = 'Disponibles: …';
+  label.textContent = 'Pilot: consultando imágenes…';
   try {
     const res = await fetch(np_radarApiUrl(), {
       method: 'POST',
@@ -3042,7 +3119,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      label.textContent = 'Disponibles: error';
+      label.textContent = 'Pilot: error de historial';
       if (hint) hint.textContent = data.message || data.error || 'No se pudo consultar Radar.';
       np_populateRadarSnapshotSelect([]);
       window.__nutriplantRadarNdviStatus = {
@@ -3057,14 +3134,13 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     const l = Number(data.credits?.limit) || 0;
     const disponibles = Math.max(0, l - u);
     const history = Array.isArray(data.history) ? data.history : [];
-    const pricing = data.pricing || null;
     np_populateRadarSnapshotSelect(history, np_getPreferredRadarRequestId());
     window.__nutriplantRadarNdviStatus = {
       ok: true,
       projectId: proj.id,
       updatedAt: new Date().toISOString(),
       credits: { used: u, limit: l, available: disponibles },
-      pricing,
+      pricing: data.pricing || null,
       latest: data.latest || null,
       history,
       hasLatestImage: !!data.latest?.signed_url,
@@ -3072,17 +3148,20 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       latestCreatedAt: data.latest?.created_at || null,
       meta: data.latest?.meta || null
     };
-    label.textContent = disponibles + ' disponibles de ' + l + ' este mes';
-    const costLine = np_formatRadarCreditLine(pricing);
+    label.textContent =
+      history.length +
+      ' imagen' +
+      (history.length === 1 ? '' : 'es') +
+      ' guardada' +
+      (history.length === 1 ? '' : 's') +
+      ' · Pilot sin créditos';
     if (history.length) {
       np_updateRadarStatusHintFromSelection();
     } else if (hint) {
-      hint.textContent = costLine
-        ? costLine + '. Sincroniza el predio a la nube, luego genera (máx. 1 por proyecto y mes).'
-        : 'Sincroniza el predio a la nube, luego genera la imagen (máx. 1 por proyecto y mes).';
+      hint.textContent = 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.';
     }
   } catch (e) {
-    label.textContent = 'Disponibles: sin conexión';
+    label.textContent = 'Pilot: sin conexión';
   }
 };
 
@@ -3112,26 +3191,31 @@ window.initRadarNdviUi = function initRadarNdviUi() {
 
     const idx = np_getSelectedRadarIndex();
     np_updateRadarScaleUi(idx);
+    window.__nutriplantRadarPilotLayer = idx;
 
     if (window.__nutriplantRadarOverlaySource === 'pilot' && radarGroundOverlay) {
-      window.hideRadarNdviOverlay();
+      const url = np_getRadarPilotDataUrl(idx);
+      if (url) {
+        np_applyRadarPilotOverlay(url, idx).catch((err) => console.warn('Radar Pilot: cambio de capa', err));
+        return;
+      }
     }
 
     const requestId = np_getSelectedRadarRequestId();
     if (requestId && nutriPlantMap && np_getPolygonBoundsFromMap()) {
       window.showRadarNdviOnMap().catch((err) => {
-        console.warn('Radar: cambio de capa Google', err);
+        console.warn('Radar: cambio de capa', err);
         const hint = document.getElementById('radarStatusHint');
         const cfg = np_getRadarIndexConfig(idx);
         if (hint) {
           hint.textContent =
-            'No se pudo cargar ' + cfg.label + ' de Google. Pulsa «Ver en mapa» o «Estado».';
+            'No se pudo cargar ' + cfg.label + '. Pulsa «Ver en mapa» o «Estado».';
         }
       });
       return;
     }
 
-    if (radarGroundOverlay && window.__nutriplantRadarOverlaySource === 'google' && nutriPlantMap && np_getPolygonBoundsFromMap()) {
+    if (radarGroundOverlay && nutriPlantMap && np_getPolygonBoundsFromMap()) {
       window.showRadarNdviOnMap().catch((err) => console.warn('Radar: cambio de capa', err));
       return;
     }
@@ -3144,10 +3228,7 @@ window.initRadarNdviUi = function initRadarNdviUi() {
     if (st?.ok && hasLayer) {
       np_updateRadarStatusHintFromSelection();
     } else if (window.__nutriplantRadarPilot && window.__nutriplantRadarPilot.active) {
-      hint.textContent =
-        'Capa Google: ' +
-        cfg.label +
-        '. Pulsa «Ver en mapa» o «Generar / actualizar». Pilot: botón NDVI/NDMI junto a 🛰.';
+      hint.textContent = 'Capa Pilot: ' + cfg.label + '. Pulsa «Ver en mapa» o «Generar / actualizar Pilot».';
     }
   });
   document.getElementById('radarBtnRefresh')?.addEventListener('click', () => {
@@ -3157,7 +3238,7 @@ window.initRadarNdviUi = function initRadarNdviUi() {
     window.showRadarNdviOnMap();
   });
   document.getElementById('radarBtnGenerate')?.addEventListener('click', () => {
-    window.generateRadarNdvi();
+    window.generateRadarCdsePilot();
   });
   document.getElementById('radarBtnHide')?.addEventListener('click', () => {
     window.hideRadarNdviOverlay();
@@ -3177,9 +3258,14 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     alert('Inicia sesión con tu cuenta en la nube.');
     return;
   }
+  const proj = nutriPlantMap && nutriPlantMap.getCurrentProject ? nutriPlantMap.getCurrentProject() : null;
+  if (!proj || !proj.id) {
+    alert('Selecciona un proyecto.');
+    return;
+  }
   const polygon = np_polygonCoordsForPilot();
   if (!polygon) {
-    alert('Traza y guarda un polígono del predio antes del pilot.');
+    alert('Traza y guarda un polígono del predio antes de generar Radar Pilot.');
     return;
   }
   const bounds = np_getPolygonBoundsFromMap();
@@ -3188,20 +3274,15 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     return;
   }
   const hint = document.getElementById('radarStatusHint');
-  const pilotBtn = document.getElementById('radarBtnPilotCdse');
-  if (pilotBtn) {
-    pilotBtn.disabled = true;
-    pilotBtn.textContent = '⏳';
-  }
-  if (hint) {
-    hint.textContent =
-      '🧪 Pilot: mediana 30 d + SCL, calculando NDVI/NDMI (sin Google, sin créditos)… puede tardar ~1–2 min.';
-  }
+  np_setRadarBusy(
+    true,
+    'Pilot Copernicus: mediana 30 d + SCL, calculando y guardando NDVI/NDMI (sin Google)… puede tardar ~1–2 min.'
+  );
   try {
     const res = await fetch(np_radarPilotApiUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ polygon })
+      body: JSON.stringify({ polygon, project_id: String(proj.id) })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -3214,6 +3295,8 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     }
     window.__nutriplantRadarPilot = {
       active: true,
+      signed_url: data.signed_url || data.images?.ndvi?.signed_url,
+      ndmi_signed_url: data.ndmi_signed_url || data.images?.ndmi?.signed_url,
       ndvi_data_url: data.ndvi_data_url || data.images?.ndvi?.data_url,
       ndmi_data_url: data.ndmi_data_url || data.images?.ndmi?.data_url,
       images: data.images,
@@ -3229,6 +3312,15 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     if (url) {
       await np_applyRadarPilotOverlay(url, idx);
     }
+    if (data.request?.id) {
+      np_persistRadarSnapshotSelection(data.request.id);
+    }
+    await window.refreshRadarNdviStatus();
+    const sel = document.getElementById('radarSnapshotSelect');
+    if (sel && data.request?.id) {
+      sel.value = String(data.request.id);
+      np_persistRadarSnapshotSelection(data.request.id);
+    }
     if (hint) {
       hint.textContent = np_formatPilotOkHint(data, idx);
     }
@@ -3237,10 +3329,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     alert('Error de red en pilot Radar.');
     if (hint) hint.textContent = 'Pilot: sin conexión al servidor.';
   } finally {
-    if (pilotBtn) {
-      pilotBtn.disabled = false;
-      pilotBtn.textContent = '🛰';
-    }
+    np_setRadarBusy(false);
   }
 };
 
@@ -3482,6 +3571,11 @@ function initLocationMap() {
           if (nutriPlantMap && typeof nutriPlantMap.loadProjectLocation === 'function') {
             nutriPlantMap.loadProjectLocation();
           }
+          setTimeout(() => {
+            if (nutriPlantMap && typeof nutriPlantMap.fitMapToCurrentProjectLocation === 'function') {
+              nutriPlantMap.fitMapToCurrentProjectLocation();
+            }
+          }, 250);
         }, 100); // Delay más corto porque el mapa ya está listo
         
         return; // NO crear nueva instancia
@@ -3547,6 +3641,11 @@ function initLocationMap() {
       if (typeof nutriPlantMap.loadProjectLocation === 'function') {
         nutriPlantMap.loadProjectLocation();
       }
+      setTimeout(() => {
+        if (typeof nutriPlantMap.fitMapToCurrentProjectLocation === 'function') {
+          nutriPlantMap.fitMapToCurrentProjectLocation();
+        }
+      }, 200);
     } else {
       console.warn('⚠️ Mapa aún no está inicializado, esperando un poco más...');
       // Reintentar después de un delay adicional
@@ -3558,6 +3657,11 @@ function initLocationMap() {
           if (typeof nutriPlantMap.loadProjectLocation === 'function') {
             nutriPlantMap.loadProjectLocation();
           }
+          setTimeout(() => {
+            if (typeof nutriPlantMap.fitMapToCurrentProjectLocation === 'function') {
+              nutriPlantMap.fitMapToCurrentProjectLocation();
+            }
+          }, 200);
         } else {
           console.error('❌ Error: No se pudo inicializar el mapa después de múltiples intentos');
         }
@@ -3847,3 +3951,12 @@ window.NutriPlantMap = NutriPlantMap;
 window.initLocationMap = initLocationMap;
 window.np_isLocationMapReady = np_isLocationMapReady;
 window.forceClearLocationDisplay = forceClearLocationDisplay;
+
+document.addEventListener('np:project-context-updated', () => {
+  if (!document.getElementById('map')) return;
+  setTimeout(() => {
+    if (typeof np_syncMapLocationFromProject === 'function') {
+      np_syncMapLocationFromProject();
+    }
+  }, 180);
+});

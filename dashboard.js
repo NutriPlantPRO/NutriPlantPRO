@@ -1658,10 +1658,10 @@ function sectionTemplate(name) {
               <option value="">Sin imágenes guardadas</option>
             </select>
           </label>
-          <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Disponibles: —</span>
-          <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 420px;">Sincroniza el predio a la nube, luego genera la imagen.</span>
+          <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Pilot Copernicus · Google standby</span>
+          <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 420px;">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#64748b;line-height:1.45;padding:6px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.65);border:1px dashed #86efac;">
-            <strong>Tip:</strong> elige la <strong>imagen</strong> en el listado (todas las guardadas del proyecto). Al verla en el mapa se muestra la <strong>fecha de generación</strong> y el periodo Sentinel. La generación puede tardar ~1 min. Créditos por predio según superficie trazada: ≤30 ha = 1 · &gt;30 ha = 2 · &gt;100 ha = 3 (NDVI+NDMI juntos). Tope mensual base: 20 créditos.
+            <strong>Tip:</strong> elige la <strong>imagen</strong> guardada del proyecto. El botón principal genera con <strong>Pilot Copernicus/Sentinel-2</strong> (sin Google Earth Engine y sin créditos Google). Google queda en standby como respaldo interno.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI relativa al predio</span>
@@ -1673,10 +1673,8 @@ function sectionTemplate(name) {
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
             <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>
             <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">👁 Ver en mapa</button>
-            <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;">✨ Generar / actualizar</button>
+            <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;">🛰 Generar / actualizar Pilot</button>
             <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;">🙈 Quitar capa</button>
-            <button type="button" id="radarBtnPilotLayer" class="btn radar-pilot-layer-btn" title="Pilot: capa NDVI (clic cambia NDVI ↔ NDMI)">NDVI</button>
-            <button type="button" id="radarBtnPilotCdse" class="btn radar-pilot-trigger" title="Generar pilot Copernicus (NDVI+NDMI; usa botón NDVI/NDMI para ver cada capa)" aria-label="Generar pilot Radar">🛰</button>
           </div>
         </div>
         
@@ -2331,9 +2329,10 @@ function selectSection(name, el) {
   // Inicializar mapa si es la sección de ubicación
   if (name === "Ubicación") {
     setTimeout(() => {
-      if (typeof initLocationMap === 'function') {
-        initLocationMap();
-      }
+      if (typeof initLocationMap === 'function') initLocationMap();
+      setTimeout(() => {
+        if (typeof np_syncMapLocationFromProject === 'function') np_syncMapLocationFromProject();
+      }, 750);
     }, 100);
   }
 
@@ -5855,6 +5854,11 @@ function np_setCurrentProject(id, projectMeta) {
     }
   }
   emitProjectContextUpdate({ reason: 'set-current-project' });
+  if (id && document.getElementById('map')) {
+    setTimeout(() => {
+      if (typeof np_syncMapLocationFromProject === 'function') np_syncMapLocationFromProject();
+    }, 120);
+  }
 }
 function np_getCurrentProjectId() { return np_getCurrentProjectIdSafe(); }
 
@@ -11358,33 +11362,41 @@ function np_applyLocationStatsToDOM(location) {
 
 function np_syncMapLocationFromProject() {
   const projectId = currentProject && currentProject.id;
-  if (!projectId || typeof nutriPlantMap === 'undefined' || !nutriPlantMap) return;
+  if (!projectId) return;
 
   if (currentProject.location && np_locationBelongsToProject(currentProject.location, projectId)) {
     np_normalizeLocationProjectId(currentProject.location, projectId);
     np_applyLocationStatsToDOM(currentProject.location);
   }
 
+  let attempts = 0;
+  const maxAttempts = 24;
   const run = () => {
-    if (typeof window.np_isLocationMapReady === 'function' && !window.np_isLocationMapReady()) {
+    attempts += 1;
+    if (!document.getElementById('map')) return;
+
+    if (typeof nutriPlantMap === 'undefined' || !nutriPlantMap ||
+        (typeof window.np_isLocationMapReady === 'function' && !window.np_isLocationMapReady())) {
       if (typeof initLocationMap === 'function') initLocationMap();
-      setTimeout(run, 500);
+      if (attempts < maxAttempts) setTimeout(run, 400);
       return;
     }
+
     if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
       nutriPlantMap.bindLocationControlButtons();
     }
     if (typeof nutriPlantMap.loadProjectLocation === 'function') {
       nutriPlantMap.loadProjectLocation();
     }
+    if (typeof nutriPlantMap.fitMapToCurrentProjectLocation === 'function') {
+      setTimeout(() => nutriPlantMap.fitMapToCurrentProjectLocation(), 250);
+      setTimeout(() => nutriPlantMap.fitMapToCurrentProjectLocation(), 900);
+    }
   };
 
-  if (typeof window.np_isLocationMapReady === 'function' && window.np_isLocationMapReady()) {
+  if (document.getElementById('map')) {
     requestAnimationFrame(run);
-  } else if (typeof initLocationMap === 'function' && document.getElementById('map')) {
-    initLocationMap();
-    setTimeout(run, 500);
-  } else {
+  } else if (typeof initLocationMap === 'function') {
     setTimeout(run, 400);
   }
 }
@@ -12379,6 +12391,11 @@ function loadOnTabChange(tabName) {
           nutriPlantMap.bindLocationControlButtons();
         }
         nutriPlantMap.loadProjectLocation();
+        setTimeout(() => {
+          if (typeof nutriPlantMap.fitMapToCurrentProjectLocation === 'function') {
+            nutriPlantMap.fitMapToCurrentProjectLocation();
+          }
+        }, 200);
       };
       runLocationTab(0);
       setTimeout(() => {
