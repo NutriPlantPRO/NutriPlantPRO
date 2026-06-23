@@ -3641,6 +3641,11 @@ function np_runLocationButtonAction(actionName, event, attempt = 0) {
   if (!document.getElementById('map')) return;
   np_scrollLocationMapIntoView();
 
+  if (actionName === 'user') {
+    np_centerOnUserLocationDirect(event);
+    return;
+  }
+
   const tries = Number(attempt) || 0;
   if (!nutriPlantMap || !np_isLocationMapReady()) {
     if (typeof initLocationMap === 'function') initLocationMap();
@@ -3689,10 +3694,86 @@ function np_runLocationButtonAction(actionName, event, attempt = 0) {
     };
     fitNow();
     setTimeout(fitNow, 450);
-  } else if (actionName === 'user' && typeof nutriPlantMap.centerOnUserLocation === 'function') {
-    np_scrollLocationMapIntoView();
-    nutriPlantMap.centerOnUserLocation();
   }
+}
+
+function np_showLocationMapMessage(message, type = 'info') {
+  if (nutriPlantMap && typeof nutriPlantMap.showMessage === 'function') {
+    nutriPlantMap.showMessage(message, type);
+  }
+}
+
+function np_centerMapOnUserCoords(userLocation, attempt = 0) {
+  np_scrollLocationMapIntoView();
+  const tries = Number(attempt) || 0;
+  if (!nutriPlantMap || !np_isLocationMapReady() || !nutriPlantMap.map) {
+    if (typeof initLocationMap === 'function') initLocationMap();
+    if (tries < 20) {
+      setTimeout(() => np_centerMapOnUserCoords(userLocation, tries + 1), 350);
+    } else {
+      np_showLocationMapMessage('⚠️ No se pudo cargar el mapa para centrar tu ubicación.', 'warning');
+    }
+    return;
+  }
+
+  try {
+    if (typeof nutriPlantMap.refreshMapView === 'function') {
+      nutriPlantMap.refreshMapView('gps-direct-before');
+    }
+    nutriPlantMap.map.setCenter(userLocation);
+    nutriPlantMap.map.setZoom(15);
+    if (typeof nutriPlantMap.addUserLocationMarker === 'function') {
+      nutriPlantMap.addUserLocationMarker(userLocation);
+    }
+    if (typeof nutriPlantMap.refreshMapView === 'function') {
+      setTimeout(() => nutriPlantMap.refreshMapView('gps-direct-after'), 200);
+    }
+    np_showLocationMapMessage('📍 Centrado en tu ubicación actual', 'success');
+  } catch (e) {
+    console.warn('np_centerMapOnUserCoords:', e);
+    np_showLocationMapMessage('⚠️ No se pudo centrar el mapa en tu ubicación.', 'warning');
+  }
+}
+
+function np_centerOnUserLocationDirect() {
+  np_scrollLocationMapIntoView();
+  if (!navigator.geolocation) {
+    np_showLocationMapMessage('❌ La geolocalización no está disponible en este navegador', 'error');
+    return;
+  }
+
+  // Pedir GPS inmediatamente en respuesta al click; luego se espera al mapa si hace falta.
+  np_showLocationMapMessage('🔄 Obteniendo tu ubicación...', 'info');
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const userLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+      np_centerMapOnUserCoords(userLocation);
+    },
+    (error) => {
+      let errorMessage = '❌ Error al obtener tu ubicación';
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage = '❌ Permiso de ubicación denegado. Permite acceso a ubicación en el navegador.';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = '❌ Ubicación no disponible. Verifica que tu GPS esté activo.';
+          break;
+        case error.TIMEOUT:
+          errorMessage = '❌ Tiempo de espera agotado. Intenta de nuevo.';
+          break;
+      }
+      console.error('❌ Error obteniendo ubicación GPS:', error);
+      np_showLocationMapMessage(errorMessage, 'error');
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
 }
 
 window.np_centerOnPolygonFromUi = function np_centerOnPolygonFromUi(event) {
