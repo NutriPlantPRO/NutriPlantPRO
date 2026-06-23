@@ -2501,7 +2501,7 @@ function np_setRadarPolygonMask(active, snapshotCoords) {
         clickable: false,
         editable: false,
         draggable: false,
-        zIndex: 999
+        zIndex: 10050
       });
       outline.setMap(nutriPlantMap.map);
       radarOutlinePolygons.push(outline);
@@ -2526,7 +2526,7 @@ function np_setRadarPolygonMask(active, snapshotCoords) {
         clickable: false,
         editable: false,
         draggable: false,
-        zIndex: 999
+        zIndex: 10050
       });
       outline.setMap(nutriPlantMap.map);
       radarOutlinePolygons.push(outline);
@@ -2844,6 +2844,26 @@ function np_preloadRadarImage(url) {
   });
 }
 
+async function np_applyRadarPilotOverlay(url, index) {
+  const hint = document.getElementById('radarStatusHint');
+  const cfg = np_getRadarIndexConfig(index || np_getSelectedRadarIndex());
+  const bounds = np_getPolygonBoundsFromMap();
+  if (!bounds) {
+    if (hint) hint.textContent = 'No hay polígono en el mapa para anclar el pilot.';
+    return;
+  }
+  if (hint) hint.textContent = cfg.loadingText;
+  await np_preloadRadarImage(url);
+  window.hideRadarNdviOverlay();
+  np_setSelectedRadarIndex(index || np_getSelectedRadarIndex());
+  np_showRadarOverlay(url, bounds, 0.98);
+  np_setRadarPolygonMask(true, null);
+  np_showRadarLegend(true);
+  if (nutriPlantMap && nutriPlantMap.map && bounds) {
+    nutriPlantMap.map.fitBounds(bounds, { padding: 50 });
+  }
+}
+
 async function np_applyRadarOverlay(url, snap, index) {
   const hint = document.getElementById('radarStatusHint');
   const cfg = np_getRadarIndexConfig(index || np_getSelectedRadarIndex());
@@ -2970,19 +2990,19 @@ window.initRadarNdviUi = function initRadarNdviUi() {
     np_setSelectedRadarIndex(np_getSelectedRadarIndex());
     const pilotUrl = np_getRadarPilotDataUrl(np_getSelectedRadarIndex());
     if (pilotUrl && nutriPlantMap && np_getPolygonBoundsFromMap()) {
-      const bounds = np_getPolygonBoundsFromMap();
-      np_showRadarOverlay(pilotUrl, bounds);
-      np_setRadarPolygonMask(true, nutriPlantMap.coordinates);
-      np_showRadarLegend(true);
-      const hint = document.getElementById('radarStatusHint');
-      const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
-      if (hint) {
-        hint.textContent =
-          '🧪 Pilot ' +
-          cfg.label +
-          ' (sin Google; no guardado en nube). ' +
-          (window.__nutriplantRadarPilot?.meta?.note || '');
-      }
+      np_applyRadarPilotOverlay(pilotUrl, np_getSelectedRadarIndex())
+        .then(() => {
+          const hint = document.getElementById('radarStatusHint');
+          const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
+          if (hint) {
+            hint.textContent =
+              '🧪 Pilot ' +
+              cfg.label +
+              ' (sin Google; no guardado en nube). ' +
+              (window.__nutriplantRadarPilot?.meta?.note || '');
+          }
+        })
+        .catch((err) => console.warn('Radar pilot: cambio de capa', err));
       return;
     }
     const busyGen = document.getElementById('radarBtnGenerate')?.classList.contains('radar-loading');
@@ -3082,9 +3102,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     const idx = np_getSelectedRadarIndex();
     const url = np_getRadarPilotDataUrl(idx) || data.ndvi_data_url;
     if (url) {
-      np_showRadarOverlay(url, bounds);
-      np_setRadarPolygonMask(true, nutriPlantMap.coordinates);
-      np_showRadarLegend(true);
+      await np_applyRadarPilotOverlay(url, idx);
     }
     const sceneDt = data.scene && data.scene.datetime ? String(data.scene.datetime).slice(0, 10) : '—';
     const cloud =
