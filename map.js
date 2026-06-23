@@ -3360,11 +3360,20 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      const serverMessage = data.message || data.error || 'Pilot falló';
+      console.error('Radar Pilot falló:', {
+        status: res.status,
+        statusText: res.statusText,
+        response: data,
+        projectId: proj.id,
+        polygonPoints: polygon.length
+      });
       alert(
-        (data.message || data.error || 'Pilot falló') +
-          '\n\nSi estás en local: usa netlify dev o activa RADAR_CDSE_PILOT_ENABLED=true en Netlify.'
+        'Pilot falló (' + res.status + ')\n\n' +
+          serverMessage +
+          '\n\nRevisa la consola/Network para el detalle técnico.'
       );
-      if (hint) hint.textContent = 'Pilot: error — ' + (data.message || data.error || res.status);
+      if (hint) hint.textContent = 'Pilot: error ' + res.status + ' — ' + serverMessage;
       return;
     }
     window.__nutriplantRadarPilot = {
