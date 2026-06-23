@@ -1704,6 +1704,21 @@ class NutriPlantMap {
     // Esto evita limpiar si hay un polígono válido guardado
     let locationData = null;
     const useCentralized = typeof window.projectStorage !== 'undefined' && window.projectStorage !== null;
+
+    // PRIORIDAD 0: usar la ubicación ya cargada en el proyecto actual.
+    // Al abrir/cambiar proyectos desde nube, currentProject.location puede estar correcto
+    // aunque localStorage todavía no tenga esa sección sincronizada.
+    if (
+      currentProject.location &&
+      currentProject.location.polygon &&
+      Array.isArray(currentProject.location.polygon) &&
+      currentProject.location.polygon.length >= 3 &&
+      (!currentProject.location.projectId || currentProject.location.projectId === currentProject.id)
+    ) {
+      locationData = currentProject.location;
+      if (!locationData.projectId) locationData.projectId = currentProject.id;
+      console.log('✅ Polígono cargado desde currentProject.location');
+    }
     
     // 🔍 DIAGNÓSTICO: Verificar qué hay en localStorage directamente
     const projectKey = `nutriplant_project_${currentProject.id}`;
@@ -1756,7 +1771,7 @@ class NutriPlantMap {
       }
     }
     
-    if (useCentralized) {
+    if (useCentralized && !locationData) {
       // 🚀 CRÍTICO: Cargar ANTES de limpiar para verificar si hay datos válidos
       console.log('🔍 DIAGNÓSTICO - Llamando a loadSection con projectId:', currentProject.id);
       
