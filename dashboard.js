@@ -11282,7 +11282,7 @@ function loadProjectData() {
 function np_locationBelongsToProject(location, projectId) {
   if (!location || !projectId) return false;
   if (!location.polygon || !Array.isArray(location.polygon) || location.polygon.length < 3) return false;
-  if (location.projectId && location.projectId !== projectId) return false;
+  if (location.projectId && String(location.projectId) !== String(projectId)) return false;
   return true;
 }
 

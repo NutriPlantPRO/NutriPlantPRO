@@ -1515,7 +1515,7 @@ class NutriPlantMap {
       let locationData = null;
       const memLoc = currentProject.location;
       if (memLoc && memLoc.polygon && Array.isArray(memLoc.polygon) && memLoc.polygon.length >= 3 &&
-          (!memLoc.projectId || memLoc.projectId === currentProject.id)) {
+          (!memLoc.projectId || np_projectIdsMatch(memLoc.projectId, currentProject.id))) {
         locationData = memLoc;
       }
       if (!locationData && window.projectStorage) {
@@ -1524,7 +1524,7 @@ class NutriPlantMap {
 
       if (locationData && locationData.polygon && Array.isArray(locationData.polygon) && locationData.polygon.length >= 3) {
         const belongs =
-          !locationData.projectId || locationData.projectId === currentProject.id;
+          !locationData.projectId || np_projectIdsMatch(locationData.projectId, currentProject.id);
         if (belongs) {
           if (!locationData.projectId) locationData.projectId = currentProject.id;
           try {
@@ -1716,7 +1716,7 @@ class NutriPlantMap {
       currentProject.location.polygon &&
       Array.isArray(currentProject.location.polygon) &&
       currentProject.location.polygon.length >= 3 &&
-      (!currentProject.location.projectId || currentProject.location.projectId === currentProject.id)
+      (!currentProject.location.projectId || np_projectIdsMatch(currentProject.location.projectId, currentProject.id))
     ) {
       locationData = currentProject.location;
       if (!locationData.projectId) locationData.projectId = currentProject.id;
@@ -1803,7 +1803,7 @@ class NutriPlantMap {
       if (locationData && locationData.polygon && Array.isArray(locationData.polygon) && locationData.polygon.length >= 3) {
         // Verificar projectId
         const locationProjectId = locationData.projectId;
-        if (!locationProjectId || locationProjectId === currentProject.id) {
+        if (!locationProjectId || np_projectIdsMatch(locationProjectId, currentProject.id)) {
           console.log('✅ Polígono cargado desde projectStorage.loadSection() - Datos válidos');
           // Asegurar que tiene projectId
           if (!locationData.projectId) {
@@ -1844,7 +1844,7 @@ class NutriPlantMap {
             if (directData.location && directData.location.polygon && Array.isArray(directData.location.polygon) && directData.location.polygon.length >= 3) {
               // Verificar projectId
               const locationProjectId = directData.location.projectId;
-              if (!locationProjectId || locationProjectId === currentProject.id) {
+              if (!locationProjectId || np_projectIdsMatch(locationProjectId, currentProject.id)) {
                 console.log('✅ POLÍGONO ENCONTRADO DIRECTAMENTE EN localStorage - Usando como respaldo');
                 // Usar los datos directamente
                 locationData = directData.location;
@@ -1873,13 +1873,13 @@ class NutriPlantMap {
         
         // 🚀 CRÍTICO: Validar projectId - pero ser más flexible
         // Si no tiene projectId, asumir que es del proyecto actual (datos antiguos)
-        const hasValidProjectId = !locationData.projectId || locationData.projectId === currentProject.id;
+        const hasValidProjectId = !locationData.projectId || np_projectIdsMatch(locationData.projectId, currentProject.id);
         
         console.log('🔍 DIAGNÓSTICO - Validaciones:', {
           hasValidPolygon,
           hasValidProjectId,
           polygonLength: locationData.polygon ? locationData.polygon.length : 0,
-          projectIdMatch: locationData.projectId === currentProject.id
+          projectIdMatch: np_projectIdsMatch(locationData.projectId, currentProject.id)
         });
         
         if (!hasValidPolygon) {
@@ -1970,7 +1970,7 @@ class NutriPlantMap {
             locationData = null;
           } else if (o && o.location) {
             // 🚀 VALIDACIÓN ESTRICTA: Verificar también que location.projectId coincida EXACTAMENTE
-            if (o.location.projectId && o.location.projectId !== currentProject.id) {
+            if (o.location.projectId && !np_projectIdsMatch(o.location.projectId, currentProject.id)) {
               console.warn('⚠️ Fallback: Datos de ubicación pertenecen a otro proyecto. IGNORANDO...');
               locationData = null;
             } else if (!o.location.projectId) {
@@ -2030,7 +2030,7 @@ class NutriPlantMap {
     // Validar projectId pero ser más flexible (datos antiguos pueden no tener projectId)
     if (polygonCoords && polygonCoords.length >= 3) {
       // Validar projectId - si no existe, asumir que es del proyecto actual (datos antiguos)
-      const hasValidProjectId = !locationData.projectId || locationData.projectId === currentProject.id;
+      const hasValidProjectId = !locationData.projectId || np_projectIdsMatch(locationData.projectId, currentProject.id);
       
       if (hasValidProjectId) {
         // Si no tiene projectId, agregarlo para futuras validaciones
@@ -2213,7 +2213,7 @@ class NutriPlantMap {
     
     // 🚀 CRÍTICO: Validar projectId pero ser flexible con datos antiguos
     // Si no tiene projectId, asumir que es del proyecto actual (datos antiguos)
-    if (locationData.projectId && locationData.projectId !== currentProject.id) {
+    if (locationData.projectId && !np_projectIdsMatch(locationData.projectId, currentProject.id)) {
       console.warn('⚠️ loadSavedPolygon: Datos pertenecen a otro proyecto. NO cargando.', {
         expected: currentProject.id,
         found: locationData.projectId
@@ -2341,7 +2341,11 @@ class NutriPlantMap {
     // Validar una vez más que el polígono está en el mapa
     if (this.savedPolygon && this.savedPolygon.getMap() && this.savedPolygon.getMap() === this.map) {
       this.updateInstructions('✅ Predio cargado - Puedes editarlo o guardar cambios');
-      setTimeout(() => this.fitMapToVisiblePolygon(this.savedPolygon), 120);
+      setTimeout(() => {
+        if (typeof np_shouldHoldUserLocationCenter !== 'function' || !np_shouldHoldUserLocationCenter()) {
+          this.fitMapToVisiblePolygon(this.savedPolygon);
+        }
+      }, 120);
       console.log('✅ UN solo polígono cargado y visible correctamente:', {
         points: polygonPath.length,
         projectId: locationData.projectId
@@ -2356,6 +2360,11 @@ class NutriPlantMap {
 
 // Inicializar el mapa cuando se carga la página
 let nutriPlantMap = null;
+
+function np_projectIdsMatch(a, b) {
+  if (a == null || b == null) return false;
+  return String(a) === String(b);
+}
 
 // FUNCIÓN CRÍTICA: Limpiar elementos del DOM inmediatamente
 function setLocationAltitudeDisplay(elevationM) {
