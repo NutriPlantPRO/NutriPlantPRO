@@ -1403,6 +1403,9 @@ class NutriPlantMap {
 
   fitMapToCurrentProjectLocation() {
     if (!np_isLocationMapReady()) return false;
+    if (typeof np_shouldHoldUserLocationCenter === 'function' && np_shouldHoldUserLocationCenter()) {
+      return false;
+    }
 
     const painted = this.savedPolygon || this.polygon;
     if (painted && painted.getMap && painted.getMap() === this.map) {
@@ -3642,9 +3645,11 @@ function np_runLocationButtonAction(actionName, event, attempt = 0) {
   np_scrollLocationMapIntoView();
 
   if (actionName === 'user') {
+    np_markUserLocationCenterIntent();
     np_centerOnUserLocationDirect(event);
     return;
   }
+  np_clearUserLocationCenterIntent();
 
   const tries = Number(attempt) || 0;
   if (!nutriPlantMap || !np_isLocationMapReady()) {
@@ -3703,8 +3708,25 @@ function np_showLocationMapMessage(message, type = 'info') {
   }
 }
 
+function np_markUserLocationCenterIntent() {
+  window.__npUserLocationCenterUntil = Date.now() + 12000;
+}
+
+function np_extendUserLocationCenterIntent() {
+  window.__npUserLocationCenterUntil = Date.now() + 8000;
+}
+
+function np_clearUserLocationCenterIntent() {
+  window.__npUserLocationCenterUntil = 0;
+}
+
+function np_shouldHoldUserLocationCenter() {
+  return Number(window.__npUserLocationCenterUntil || 0) > Date.now();
+}
+
 function np_centerMapOnUserCoords(userLocation, attempt = 0) {
   np_scrollLocationMapIntoView();
+  np_extendUserLocationCenterIntent();
   const tries = Number(attempt) || 0;
   if (!nutriPlantMap || !np_isLocationMapReady() || !nutriPlantMap.map) {
     if (typeof initLocationMap === 'function') initLocationMap();
