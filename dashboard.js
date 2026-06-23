@@ -1664,11 +1664,11 @@ function sectionTemplate(name) {
             <strong>Tip:</strong> elige la <strong>imagen</strong> en el listado (todas las guardadas del proyecto). Al verla en el mapa se muestra la <strong>fecha de generación</strong> y el periodo Sentinel. La generación puede tardar ~1 min. Créditos por predio según superficie trazada: ≤30 ha = 1 · &gt;30 ha = 2 · &gt;100 ha = 3 (NDVI+NDMI juntos). Tope mensual base: 20 créditos.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
-            <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI</span>
-            <span id="radarScaleLow">Bajo</span>
+            <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI relativa al predio</span>
+            <span id="radarScaleLow">Menor nivel del predio</span>
             <span id="radarScaleBar" style="width:150px;height:9px;border-radius:999px;background:linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837);display:inline-block;"></span>
-            <span id="radarScaleHigh">Alto</span>
-            <span id="radarNdviHelp" style="color:#166534;">Verde = mayor vigor relativo; rojo/naranja = menor vigor relativo.</span>
+            <span id="radarScaleHigh">Mayor nivel del predio</span>
+            <span id="radarNdviHelp" style="color:#166534;">Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.</span>
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
             <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>
@@ -2102,7 +2102,7 @@ function selectSection(name, el) {
   
   // CARGAR DATOS DEL PROYECTO cuando entramos a una sección que lo requiere
   // En Nutricion Granular la carga se maneja en selectGranularSubTab()
-  if (currentProject.id && name === 'Ubicacion') {
+  if (currentProject.id && name === 'Ubicación') {
     requestAnimationFrame(() => {
       loadProjectData();
       applyProjectDataToUI();

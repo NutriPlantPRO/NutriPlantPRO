@@ -1368,6 +1368,19 @@ class NutriPlantMap {
       return;
     }
 
+    const currentProject = this.getCurrentProject();
+    const currentProjectId = currentProject && currentProject.id ? String(currentProject.id) : '';
+
+    const polygonBelongsToCurrentProject = (polygonToCheck) => {
+      if (!polygonToCheck || !currentProjectId) return false;
+      const polygonProjectId =
+        polygonToCheck.__nutriplantProjectId ||
+        this.loadedProjectId ||
+        this.currentPolygonProjectId ||
+        '';
+      return !polygonProjectId || String(polygonProjectId) === currentProjectId;
+    };
+
     const fitVisiblePolygon = (polygonToCenter) => {
       const bounds = new google.maps.LatLngBounds();
       const path = polygonToCenter.getPath();
@@ -1379,9 +1392,19 @@ class NutriPlantMap {
     // 🚀 PRIORIDAD 1: Verificar si hay polígono visible en el mapa
     let polygonToCenter = null;
     
-    if (this.polygon && this.polygon.getMap && this.polygon.getMap() === this.map) {
+    if (
+      this.polygon &&
+      this.polygon.getMap &&
+      this.polygon.getMap() === this.map &&
+      polygonBelongsToCurrentProject(this.polygon)
+    ) {
       polygonToCenter = this.polygon;
-    } else if (this.savedPolygon && this.savedPolygon.getMap && this.savedPolygon.getMap() === this.map) {
+    } else if (
+      this.savedPolygon &&
+      this.savedPolygon.getMap &&
+      this.savedPolygon.getMap() === this.map &&
+      polygonBelongsToCurrentProject(this.savedPolygon)
+    ) {
       polygonToCenter = this.savedPolygon;
     }
     
@@ -1395,7 +1418,6 @@ class NutriPlantMap {
     }
     
     // 🚀 PRIORIDAD 2: Cargar polígono guardado y centrar
-    const currentProject = this.getCurrentProject();
     if (currentProject && currentProject.id) {
       let locationData = null;
       const memLoc = currentProject.location;
@@ -2009,6 +2031,8 @@ class NutriPlantMap {
     this.coordinates = [];
     this.area = 0;
     this.perimeter = 0;
+    this.loadedProjectId = null;
+    this.currentPolygonProjectId = null;
     this.isDrawing = false;
     
     // Limpiar también el drawingManager
@@ -2149,9 +2173,13 @@ class NutriPlantMap {
     });
 
     this.savedPolygon.setMap(this.map);
+    this.savedPolygon.__nutriplantProjectId = String(currentProject.id);
     this.polygon = this.savedPolygon; // IMPORTANTE: Asignar también a this.polygon
+    this.polygon.__nutriplantProjectId = String(currentProject.id);
     this.polygonPath = polygonPath;
     this.coordinates = polygonCoords;
+    this.loadedProjectId = String(currentProject.id);
+    this.currentPolygonProjectId = String(currentProject.id);
     
     // Usar valores guardados si existen, sino calcular
     if (locationData.area && locationData.area > 0) {
@@ -2235,10 +2263,10 @@ const RADAR_INDEX_CONFIG = {
   ndvi: {
     label: 'NDVI',
     busyLabel: 'NDVI',
-    title: 'Escala NDVI',
-    low: 'Bajo',
-    high: 'Alto',
-    help: 'Verde = mayor vigor relativo; rojo/naranja = menor vigor relativo.',
+    title: 'Escala NDVI relativa al predio',
+    low: 'Menor nivel del predio',
+    high: 'Mayor nivel del predio',
+    help: 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.',
     gradient: 'linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837)',
     shownText: 'Imagen NDVI mostrada sobre el predio.',
     loadingText: 'Cargando imagen NDVI en el mapa...'
@@ -2246,10 +2274,10 @@ const RADAR_INDEX_CONFIG = {
   ndmi: {
     label: 'NDMI',
     busyLabel: 'NDMI',
-    title: 'Escala NDMI',
+    title: 'Escala NDMI relativa al predio',
     low: 'Menor humedad relativa',
     high: 'Mayor humedad relativa',
-    help: 'NDMI = condición hídrica relativa del dosel; interpretar junto con NDVI, VPD, riego y campo.',
+    help: 'NDMI = humedad relativa dentro del mismo predio; interpretar junto con NDVI, VPD, riego y campo.',
     gradient: 'linear-gradient(90deg,#7c2d12,#ea580c,#f59e0b,#fde68a,#bbf7d0,#22c55e,#0f766e,#0369a1)',
     shownText: 'Imagen NDMI mostrada sobre el predio.',
     loadingText: 'Cargando imagen NDMI en el mapa...'
@@ -2836,13 +2864,22 @@ function np_formatRadarLocationNote(overlayCtx, snap) {
   return '';
 }
 
-function np_showRadarOverlay(url, bounds, opacity = 0.98) {
+function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
   if (typeof google === 'undefined' || !google.maps || !nutriPlantMap || !nutriPlantMap.map) return;
   if (radarGroundOverlay) {
     radarGroundOverlay.setMap(null);
     radarGroundOverlay = null;
   }
-  const isPilotLayer = !!(window.__nutriplantRadarPilot && window.__nutriplantRadarPilot.active);
+  const overlayOpts = opts || {};
+  const isPilotLayer = overlayOpts.pilot === true;
+  if (isPilotLayer) {
+    window.__nutriplantRadarOverlaySource = 'pilot';
+  } else if (overlayOpts.pilot === false) {
+    window.__nutriplantRadarOverlaySource = 'google';
+  }
+  const indexForLabel =
+    overlayOpts.index ||
+    (isPilotLayer ? np_getPilotRadarIndex() : np_getSelectedRadarIndex());
   const containerOpacity = isPilotLayer ? '1' : String(Math.min(Math.max(opacity, 0.86), 0.92));
   const visualFilter = isPilotLayer ? 'none' : 'saturate(1.35) contrast(1.15)';
   const overlay = new google.maps.OverlayView();
@@ -2861,7 +2898,7 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     div.style.borderRadius = '0';
     const img = document.createElement('img');
     img.src = url;
-    img.alt = 'Radar ' + np_getRadarIndexConfig(np_getSelectedRadarIndex()).label;
+    img.alt = 'Radar ' + np_getRadarIndexConfig(indexForLabel).label;
     img.style.width = '100%';
     img.style.height = '100%';
     img.style.display = 'block';
@@ -2919,7 +2956,8 @@ function np_preloadRadarImage(url) {
 
 async function np_applyRadarPilotOverlay(url, index) {
   const hint = document.getElementById('radarStatusHint');
-  const cfg = np_getRadarIndexConfig(index || np_getSelectedRadarIndex());
+  const idx = index === 'ndmi' || index === 'ndvi' ? index : np_getPilotRadarIndex();
+  const cfg = np_getRadarIndexConfig(idx);
   const bounds = np_getPolygonBoundsFromMap();
   if (!bounds) {
     if (hint) hint.textContent = 'No hay polígono en el mapa para anclar el pilot.';
@@ -2927,9 +2965,13 @@ async function np_applyRadarPilotOverlay(url, index) {
   }
   if (hint) hint.textContent = cfg.loadingText;
   await np_preloadRadarImage(url);
-  window.hideRadarNdviOverlay();
-  np_setSelectedRadarIndex(index || np_getSelectedRadarIndex());
-  np_showRadarOverlay(url, bounds, 0.98);
+  if (radarGroundOverlay) {
+    radarGroundOverlay.setMap(null);
+    radarGroundOverlay = null;
+  }
+  np_setRadarPolygonMask(false);
+  np_updateRadarScaleUi(idx);
+  np_showRadarOverlay(url, bounds, 0.98, { pilot: true, index: idx });
   np_setRadarPolygonMask(true, null);
   np_showRadarLegend(true);
   if (nutriPlantMap && nutriPlantMap.map && bounds) {
@@ -2948,9 +2990,13 @@ async function np_applyRadarOverlay(url, snap, index) {
   }
   if (hint) hint.textContent = cfg.loadingText;
   await np_preloadRadarImage(url);
-  window.hideRadarNdviOverlay();
+  if (radarGroundOverlay) {
+    radarGroundOverlay.setMap(null);
+    radarGroundOverlay = null;
+  }
+  np_setRadarPolygonMask(false);
   np_setSelectedRadarIndex(index || np_getSelectedRadarIndex());
-  np_showRadarOverlay(url, bounds, 0.98);
+  np_showRadarOverlay(url, bounds, 0.98, { pilot: false, index: index || np_getSelectedRadarIndex() });
   np_setRadarPolygonMask(
     true,
     overlayCtx.fromSnapshot ? overlayCtx.polygon : null
@@ -3061,38 +3107,47 @@ window.initRadarNdviUi = function initRadarNdviUi() {
   });
   document.getElementById('radarIndexSelect')?.addEventListener('change', () => {
     np_setSelectedRadarIndex(np_getSelectedRadarIndex());
-    if (window.__nutriplantRadarPilot && window.__nutriplantRadarPilot.active) {
-      const hint = document.getElementById('radarStatusHint');
-      if (hint) {
-        hint.textContent =
-          '🧪 Pilot activo — usa el botón NDVI/NDMI junto a 🛰 para cambiar capa del pilot. «Capa» arriba es para Google.';
-      }
-      return;
-    }
     const busyGen = document.getElementById('radarBtnGenerate')?.classList.contains('radar-loading');
     if (busyGen) return;
-    if (radarGroundOverlay && nutriPlantMap && np_getPolygonBoundsFromMap()) {
+
+    const idx = np_getSelectedRadarIndex();
+    np_updateRadarScaleUi(idx);
+
+    if (window.__nutriplantRadarOverlaySource === 'pilot' && radarGroundOverlay) {
+      window.hideRadarNdviOverlay();
+    }
+
+    const requestId = np_getSelectedRadarRequestId();
+    if (requestId && nutriPlantMap && np_getPolygonBoundsFromMap()) {
       window.showRadarNdviOnMap().catch((err) => {
-        console.warn('Radar: cambio de capa', err);
+        console.warn('Radar: cambio de capa Google', err);
         const hint = document.getElementById('radarStatusHint');
-        const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
+        const cfg = np_getRadarIndexConfig(idx);
         if (hint) {
           hint.textContent =
-            'No se pudo cargar ' +
-            cfg.label +
-            '. Pulsa «Ver última» o revisa «Estado».';
+            'No se pudo cargar ' + cfg.label + ' de Google. Pulsa «Ver en mapa» o «Estado».';
         }
       });
       return;
     }
+
+    if (radarGroundOverlay && window.__nutriplantRadarOverlaySource === 'google' && nutriPlantMap && np_getPolygonBoundsFromMap()) {
+      window.showRadarNdviOnMap().catch((err) => console.warn('Radar: cambio de capa', err));
+      return;
+    }
+
     const hint = document.getElementById('radarStatusHint');
     if (!hint) return;
-    const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
+    const cfg = np_getRadarIndexConfig(idx);
     const st = window.__nutriplantRadarNdviStatus;
-    const hasLayer =
-      np_getSelectedRadarIndex() === 'ndmi' ? st?.hasLatestNdmiImage : st?.hasLatestImage;
+    const hasLayer = idx === 'ndmi' ? st?.hasLatestNdmiImage : st?.hasLatestImage;
     if (st?.ok && hasLayer) {
       np_updateRadarStatusHintFromSelection();
+    } else if (window.__nutriplantRadarPilot && window.__nutriplantRadarPilot.active) {
+      hint.textContent =
+        'Capa Google: ' +
+        cfg.label +
+        '. Pulsa «Ver en mapa» o «Generar / actualizar». Pilot: botón NDVI/NDMI junto a 🛰.';
     }
   });
   document.getElementById('radarBtnRefresh')?.addEventListener('click', () => {
@@ -3194,6 +3249,7 @@ window.hideRadarNdviOverlay = function hideRadarNdviOverlay() {
     radarGroundOverlay.setMap(null);
     radarGroundOverlay = null;
   }
+  window.__nutriplantRadarOverlaySource = null;
   np_setRadarPolygonMask(false);
   np_showRadarLegend(false);
 };

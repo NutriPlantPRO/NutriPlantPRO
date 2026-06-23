@@ -99,6 +99,49 @@ function buildPaletteLUT(paletteHex, min, max) {
   return lut;
 }
 
+function percentile(sortedValues, p) {
+  if (!sortedValues.length) return NaN;
+  const pos = ((sortedValues.length - 1) * p) / 100;
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  if (lo === hi) return sortedValues[lo];
+  const frac = pos - lo;
+  return sortedValues[lo] * (1 - frac) + sortedValues[hi] * frac;
+}
+
+function computeRelativeVis(indexValues, width, height, polygon, bbox4326, fallbackVis) {
+  const values = [];
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const i = row * width + col;
+      const v = indexValues[i];
+      if (!Number.isFinite(v)) continue;
+      const [lat, lng] = pixelCenterLatLng(col, row, width, height, bbox4326);
+      if (polygon && !pointInPolygon(lat, lng, polygon)) continue;
+      values.push(v);
+    }
+  }
+  if (values.length < 20) {
+    return { ...fallbackVis, relative: false, p10: fallbackVis.min, p90: fallbackVis.max };
+  }
+  values.sort((a, b) => a - b);
+  const p10 = percentile(values, 10);
+  const p90 = percentile(values, 90);
+  const minRange = Math.max((fallbackVis.max - fallbackVis.min) * 0.08, 0.03);
+  if (!Number.isFinite(p10) || !Number.isFinite(p90) || p90 - p10 < minRange) {
+    const mid = Number.isFinite(p10) && Number.isFinite(p90) ? (p10 + p90) / 2 : (fallbackVis.min + fallbackVis.max) / 2;
+    return {
+      ...fallbackVis,
+      min: mid - minRange / 2,
+      max: mid + minRange / 2,
+      relative: true,
+      p10,
+      p90
+    };
+  }
+  return { ...fallbackVis, min: p10, max: p90, relative: true, p10, p90 };
+}
+
 function normalizeReflectance(val, noData) {
   if (val == null || !Number.isFinite(val) || val === noData) return NaN;
   if (val > 1.5) return val / 10000;
@@ -257,8 +300,10 @@ function colorizeIndex(indexValues, vis, width, height, polygon, bbox4326) {
 }
 
 async function indexToPngBuffer(indexValues, vis, width, height, polygon, bbox4326) {
-  const rgba = colorizeIndex(indexValues, vis, width, height, polygon, bbox4326);
-  return sharp(rgba, { raw: { width, height, channels: 4 } }).png().toBuffer();
+  const relativeVis = computeRelativeVis(indexValues, width, height, polygon, bbox4326, vis);
+  const rgba = colorizeIndex(indexValues, relativeVis, width, height, polygon, bbox4326);
+  const buffer = await sharp(rgba, { raw: { width, height, channels: 4 } }).png().toBuffer();
+  return { buffer, vis: relativeVis };
 }
 
 /**
@@ -300,7 +345,7 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
   const ndvi = scenes.length === 1 ? ndviLayers[0] : medianPerPixel(ndviLayers);
   const ndmi = scenes.length === 1 ? ndmiLayers[0] : medianPerPixel(ndmiLayers);
 
-  const [ndviPng, ndmiPng] = await Promise.all([
+  const [ndviRendered, ndmiRendered] = await Promise.all([
     indexToPngBuffer(ndvi, NDVI_VIS, outW, outH, polygon, bbox4326),
     indexToPngBuffer(ndmi, NDMI_VIS, outW, outH, polygon, bbox4326)
   ]);
@@ -308,12 +353,12 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
   return {
     width: outW,
     height: outH,
-    ndviPng,
-    ndmiPng,
+    ndviPng: ndviRendered.buffer,
+    ndmiPng: ndmiRendered.buffer,
     sceneCount: scenes.length,
     sclMasked: true,
     composite: scenes.length > 1,
-    vis: { ndvi: NDVI_VIS, ndmi: NDMI_VIS }
+    vis: { ndvi: ndviRendered.vis, ndmi: ndmiRendered.vis }
   };
 }
 
