@@ -2606,6 +2606,61 @@ function np_radarApiUrl() {
   return (base || '').replace(/\/$/, '') + '/api/radar-ndvi';
 }
 
+/** Pilot CDSE / Sentinel-2 gratis — UI oculta (localStorage np_radar_pilot=1 o ?radar_pilot=1). */
+function np_isRadarPilotUiEnabled() {
+  try {
+    if (localStorage.getItem('np_radar_pilot') === '1') return true;
+    if (typeof URLSearchParams !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('radar_pilot') === '1';
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  return false;
+}
+
+function np_updateRadarPilotButtonVisibility() {
+  const btn = document.getElementById('radarBtnPilotCdse');
+  if (!btn) return;
+  btn.style.display = np_isRadarPilotUiEnabled() ? 'inline-flex' : 'none';
+}
+
+function np_radarPilotApiUrl() {
+  const base =
+    typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : '';
+  return (base || '').replace(/\/$/, '') + '/api/radar-cdse-pilot';
+}
+
+function np_clearRadarPilotState() {
+  window.__nutriplantRadarPilot = null;
+}
+
+function np_getRadarPilotDataUrl(index) {
+  const pilot = window.__nutriplantRadarPilot;
+  if (!pilot || !pilot.active) return '';
+  if (index === 'ndmi') return pilot.ndmi_data_url || pilot.images?.ndmi?.data_url || '';
+  return pilot.ndvi_data_url || pilot.images?.ndvi?.data_url || '';
+}
+
+function np_polygonCoordsForPilot() {
+  if (nutriPlantMap && Array.isArray(nutriPlantMap.coordinates) && nutriPlantMap.coordinates.length >= 3) {
+    return nutriPlantMap.coordinates.map((c) => {
+      if (Array.isArray(c)) return [Number(c[0]), Number(c[1])];
+      return [Number(c.lat), Number(c.lng)];
+    });
+  }
+  const proj =
+    nutriPlantMap && typeof nutriPlantMap.getCurrentProject === 'function'
+      ? nutriPlantMap.getCurrentProject()
+      : null;
+  const poly = proj && proj.location && proj.location.polygon;
+  if (!Array.isArray(poly) || poly.length < 3) return null;
+  return poly.map((pt) => {
+    if (Array.isArray(pt)) return [Number(pt[0]), Number(pt[1])];
+    return [Number(pt.lat), Number(pt.lng)];
+  });
+}
+
 function np_formatRadarCreditLine(pricing) {
   if (!pricing) return '';
   const ha = pricing.area_hectares;
@@ -2913,9 +2968,14 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
 
 window.initRadarNdviUi = function initRadarNdviUi() {
   const panel = document.getElementById('radarNdviPanel');
-  if (!panel || panel.dataset.radarBound === '1') return;
+  if (!panel) return;
+  if (panel.dataset.radarBound === '1') {
+    np_updateRadarPilotButtonVisibility();
+    return;
+  }
   panel.dataset.radarBound = '1';
   np_setSelectedRadarIndex(radarActiveIndex);
+  np_updateRadarPilotButtonVisibility();
   document.getElementById('radarSnapshotSelect')?.addEventListener('change', () => {
     np_persistRadarSnapshotSelection(np_getSelectedRadarRequestId());
     np_updateRadarStatusHintFromSelection();
@@ -2929,6 +2989,23 @@ window.initRadarNdviUi = function initRadarNdviUi() {
   });
   document.getElementById('radarIndexSelect')?.addEventListener('change', () => {
     np_setSelectedRadarIndex(np_getSelectedRadarIndex());
+    const pilotUrl = np_getRadarPilotDataUrl(np_getSelectedRadarIndex());
+    if (pilotUrl && nutriPlantMap && np_getPolygonBoundsFromMap()) {
+      const bounds = np_getPolygonBoundsFromMap();
+      np_showRadarOverlay(pilotUrl, bounds);
+      np_setRadarPolygonMask(true, nutriPlantMap.coordinates);
+      np_showRadarLegend(true);
+      const hint = document.getElementById('radarStatusHint');
+      const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
+      if (hint) {
+        hint.textContent =
+          '🧪 Pilot ' +
+          cfg.label +
+          ' (sin Google; no guardado en nube). ' +
+          (window.__nutriplantRadarPilot?.meta?.note || '');
+      }
+      return;
+    }
     const busyGen = document.getElementById('radarBtnGenerate')?.classList.contains('radar-loading');
     if (busyGen) return;
     if (radarGroundOverlay && nutriPlantMap && np_getPolygonBoundsFromMap()) {
@@ -2967,6 +3044,92 @@ window.initRadarNdviUi = function initRadarNdviUi() {
   document.getElementById('radarBtnHide')?.addEventListener('click', () => {
     window.hideRadarNdviOverlay();
   });
+  document.getElementById('radarBtnPilotCdse')?.addEventListener('click', () => {
+    window.generateRadarCdsePilot();
+  });
+};
+
+window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
+  if (!np_isRadarPilotUiEnabled()) return;
+  const token = await np_getRadarAccessToken();
+  if (!token) {
+    alert('Inicia sesión con tu cuenta en la nube.');
+    return;
+  }
+  const polygon = np_polygonCoordsForPilot();
+  if (!polygon) {
+    alert('Traza y guarda un polígono del predio antes del pilot.');
+    return;
+  }
+  const bounds = np_getPolygonBoundsFromMap();
+  if (!bounds) {
+    alert('El polígono del mapa no es válido.');
+    return;
+  }
+  const hint = document.getElementById('radarStatusHint');
+  const pilotBtn = document.getElementById('radarBtnPilotCdse');
+  if (pilotBtn) {
+    pilotBtn.disabled = true;
+    pilotBtn.textContent = '⏳ Pilot…';
+  }
+  if (hint) {
+    hint.textContent =
+      '🧪 Pilot: buscando Sentinel-2 y calculando NDVI/NDMI (sin Google, sin créditos)… puede tardar ~1 min.';
+  }
+  try {
+    const res = await fetch(np_radarPilotApiUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ polygon })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(
+        (data.message || data.error || 'Pilot falló') +
+          '\n\nSi estás en local: usa netlify dev o activa RADAR_CDSE_PILOT_ENABLED=true en Netlify.'
+      );
+      if (hint) hint.textContent = 'Pilot: error — ' + (data.message || data.error || res.status);
+      return;
+    }
+    window.__nutriplantRadarPilot = {
+      active: true,
+      ndvi_data_url: data.ndvi_data_url || data.images?.ndvi?.data_url,
+      ndmi_data_url: data.ndmi_data_url || data.images?.ndmi?.data_url,
+      images: data.images,
+      meta: data.meta,
+      scene: data.scene,
+      provider: data.provider,
+      source: data.source
+    };
+    const idx = np_getSelectedRadarIndex();
+    const url = np_getRadarPilotDataUrl(idx) || data.ndvi_data_url;
+    if (url) {
+      np_showRadarOverlay(url, bounds);
+      np_setRadarPolygonMask(true, nutriPlantMap.coordinates);
+      np_showRadarLegend(true);
+    }
+    const sceneDt = data.scene && data.scene.datetime ? String(data.scene.datetime).slice(0, 10) : '—';
+    const cloud =
+      data.scene && data.scene.cloud_cover != null ? Number(data.scene.cloud_cover).toFixed(0) + '% nubes' : '';
+    if (hint) {
+      hint.textContent =
+        '🧪 Pilot OK · ' +
+        (data.provider || 'sentinel') +
+        ' · escena ' +
+        sceneDt +
+        (cloud ? ' · ' + cloud : '') +
+        ' · NO guardado · sin créditos. Cambia capa NDVI/NDMI arriba.';
+    }
+  } catch (e) {
+    console.error('Radar CDSE pilot:', e);
+    alert('Error de red en pilot Radar.');
+    if (hint) hint.textContent = 'Pilot: sin conexión al servidor.';
+  } finally {
+    if (pilotBtn) {
+      pilotBtn.disabled = false;
+      pilotBtn.textContent = '🧪 Pilot';
+    }
+  }
 };
 
 window.hideRadarNdviOverlay = function hideRadarNdviOverlay() {

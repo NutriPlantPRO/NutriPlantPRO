@@ -1675,6 +1675,7 @@ function sectionTemplate(name) {
             <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">👁 Ver en mapa</button>
             <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;">✨ Generar / actualizar</button>
             <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;">🙈 Quitar capa</button>
+            <button type="button" id="radarBtnPilotCdse" class="btn" title="Pilot NDVI/NDMI sin Google (solo pruebas)" style="display:none;font-size:11px;opacity:0.5;padding:3px 7px;border:1px dashed #86efac;background:#fff;color:#166534;">🧪 Pilot</button>
           </div>
         </div>
         
