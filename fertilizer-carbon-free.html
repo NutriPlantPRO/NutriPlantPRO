@@ -200,11 +200,13 @@
     .fc-table tr.fc-row-selectable { cursor: pointer; }
     .fc-table tr.row-selected td { background: transparent; }
     .fc-route-cell { font-size: 11px; color: #475569; max-width: 140px; white-space: normal; line-height: 1.3; }
-    .fc-program-block { margin-bottom: 14px; }
-    .fc-route-block {
+    .fc-program-block {
       margin-bottom: 14px;
       padding-top: 4px;
       border-top: 1px solid #e2e8f0;
+    }
+    .fc-route-block {
+      margin-bottom: 14px;
     }
     .fc-transport-estimate {
       grid-column: 1 / -1;
@@ -600,8 +602,8 @@
   </aside>
 
   <p class="fc-intro">
-    Arma <strong>Programa A</strong> y <strong>Programa B</strong>: agrega fertilizantes abajo, selecciona una fila y configura
-    <strong>su ruta</strong> (🏭 → 🚛 → ⛴️ → 🚢 → 🌾). Cada producto puede tener origen y km distintos.
+    Arma <strong>Programa A</strong> y <strong>Programa B</strong>: arriba configura la <strong>ruta</strong> del fertilizante seleccionado
+    (🏭 → 🚛 → ⛴️ → 🚢 → 🌾); abajo agrega productos y dosis. Cada fila puede tener origen y km distintos.
   </p>
 
   <div class="fc-scenario-bar">
@@ -625,38 +627,11 @@
     </table>
   </details>
 
-  <div class="fc-program-block">
-  <div class="fc-section-title" id="activeScenarioTitle">Fertilizantes — Programa A</div>
-  <div class="fc-wrap">
-    <table class="fc-table" id="rowsTable">
-      <thead>
-        <tr>
-          <th>Fertilizante</th>
-          <th title="Resumen ruta de este producto">🛣️ Ruta</th>
-          <th>Dosis</th>
-          <th>Factor fab.</th>
-          <th>Valor propio</th>
-          <th>Nota (opc.)</th>
-          <th>N %</th>
-          <th>🏭 Fab.</th>
-          <th>🚛 Transp.</th>
-          <th>🌾 Suelo</th>
-          <th>Total</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="rowsBody"></tbody>
-    </table>
-  </div>
-  <button type="button" class="btn btn-add" onclick="addRow()">+ Agregar fertilizante</button>
-  <button type="button" class="btn btn-clear" onclick="clearAll()">Limpiar</button>
-  </div>
-
   <div class="fc-route-block">
   <div class="fc-route-context" id="activeRouteContext">
     <span class="fc-route-context__label">Ruta de:</span>
     <strong id="activeRouteTitle">—</strong>
-    <p class="hint" id="activeRouteHint">Selecciona un fertilizante en la tabla ↑. Cada producto tiene su propia ruta logística.</p>
+    <p class="hint" id="activeRouteHint">Selecciona un fertilizante en la tabla ↓. Cada producto tiene su propia ruta logística.</p>
   </div>
   <div class="fc-route-track-wrap">
   <div class="fc-route-track" id="supplyChainFlow" aria-label="Cadena logística y parámetros de ruta">
@@ -755,6 +730,33 @@
       </p>
     </div>
   </div>
+  </div>
+
+  <div class="fc-program-block">
+  <div class="fc-section-title" id="activeScenarioTitle">Fertilizantes — Programa A</div>
+  <div class="fc-wrap">
+    <table class="fc-table" id="rowsTable">
+      <thead>
+        <tr>
+          <th>Fertilizante</th>
+          <th title="Resumen ruta de este producto">🛣️ Ruta</th>
+          <th>Dosis</th>
+          <th>Factor fab.</th>
+          <th>Valor propio</th>
+          <th>Nota (opc.)</th>
+          <th>N %</th>
+          <th>🏭 Fab.</th>
+          <th>🚛 Transp.</th>
+          <th>🌾 Suelo</th>
+          <th>Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rowsBody"></tbody>
+    </table>
+  </div>
+  <button type="button" class="btn btn-add" onclick="addRow()">+ Agregar fertilizante</button>
+  <button type="button" class="btn btn-clear" onclick="clearAll()">Limpiar</button>
   </div>
 
   <div class="fc-results" id="resultsPanel">
