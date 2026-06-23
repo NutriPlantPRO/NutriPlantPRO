@@ -1386,6 +1386,10 @@ class NutriPlantMap {
   fitMapToVisiblePolygon(polygonToFit) {
     if (!polygonToFit || !this.map || typeof google === 'undefined' || !google.maps) return false;
     try {
+      if (typeof np_scrollLocationMapIntoView === 'function') {
+        np_scrollLocationMapIntoView();
+      }
+      this.refreshMapView('before-fit-polygon');
       const bounds = new google.maps.LatLngBounds();
       polygonToFit.getPath().forEach((point) => bounds.extend(point));
       this.map.fitBounds(bounds, { padding: 50 });
@@ -1428,6 +1432,10 @@ class NutriPlantMap {
   centerOnPolygon() {
     console.log('📍 Botón centrar en polígono presionado');
 
+    if (typeof np_scrollLocationMapIntoView === 'function') {
+      np_scrollLocationMapIntoView();
+    }
+
     if (!np_isLocationMapReady() || !this.map) {
       if (typeof initLocationMap === 'function') initLocationMap();
       this.showMessage('🔄 Cargando mapa y polígono del predio…', 'info');
@@ -1456,10 +1464,18 @@ class NutriPlantMap {
     };
 
     const fitVisiblePolygon = (polygonToCenter) => {
+      if (typeof np_scrollLocationMapIntoView === 'function') {
+        np_scrollLocationMapIntoView();
+      }
+      this.refreshMapView('button-fit-polygon');
       const bounds = new google.maps.LatLngBounds();
       const path = polygonToCenter.getPath();
       path.forEach((point) => bounds.extend(point));
       this.map.fitBounds(bounds, { padding: 50 });
+      setTimeout(() => {
+        this.refreshMapView('button-fit-polygon-delayed');
+        this.map.fitBounds(bounds, { padding: 50 });
+      }, 300);
       this.showMessage('✅ Mapa centrado en el polígono', 'success');
     };
     
@@ -1524,6 +1540,10 @@ class NutriPlantMap {
           }
           const center = this.calculatePolygonCenter(locationData.polygon);
           if (center) {
+            if (typeof np_scrollLocationMapIntoView === 'function') {
+              np_scrollLocationMapIntoView();
+            }
+            this.refreshMapView('button-fit-project-center');
             this.map.setCenter(center);
             this.map.setZoom(15);
             this.showMessage('✅ Mapa centrado en el polígono guardado', 'success');
@@ -1539,6 +1559,10 @@ class NutriPlantMap {
   centerOnUserLocation() {
     // 🚀 "Mi Ubicación" SIEMPRE debe obtener la ubicación GPS del dispositivo
     // NO debe centrar en el polígono - eso lo hace el botón "Ubicación del Predio"
+
+    if (typeof np_scrollLocationMapIntoView === 'function') {
+      np_scrollLocationMapIntoView();
+    }
 
     if (!np_isLocationMapReady() || !this.map) {
       if (typeof initLocationMap === 'function') initLocationMap();
@@ -1572,6 +1596,10 @@ class NutriPlantMap {
         console.log('✅ Ubicación GPS obtenida:', userLocation);
         
         // Centrar el mapa en la ubicación del usuario
+        if (typeof np_scrollLocationMapIntoView === 'function') {
+          np_scrollLocationMapIntoView();
+        }
+        this.refreshMapView('before-gps-button');
         this.map.setCenter(userLocation);
         this.map.setZoom(15);
         this.refreshMapView('gps-button');
@@ -3561,6 +3589,32 @@ function np_isLocationMapReady() {
   }
 }
 
+function np_scrollLocationMapIntoView() {
+  const mapHost = document.getElementById('map');
+  const panel = document.querySelector('.map-container') || mapHost;
+  const target = panel || mapHost;
+  if (!target || typeof target.scrollIntoView !== 'function') return;
+  try {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+  } catch (e) {
+    target.scrollIntoView();
+  }
+  try {
+    const content = document.querySelector('.content') || document.querySelector('.main-content') || document.scrollingElement;
+    if (content && typeof content.scrollTo === 'function') {
+      const cRect = content === document.scrollingElement
+        ? { top: 0 }
+        : content.getBoundingClientRect();
+      const tRect = target.getBoundingClientRect();
+      const currentTop = content === document.scrollingElement
+        ? (window.scrollY || document.documentElement.scrollTop || 0)
+        : content.scrollTop;
+      const nextTop = currentTop + (tRect.top - cRect.top) - 90;
+      content.scrollTo({ top: Math.max(0, nextTop), behavior: 'smooth' });
+    }
+  } catch (e) {}
+}
+
 function np_runLocationButtonAction(actionName, event, attempt = 0) {
   if (event) {
     try {
@@ -3570,6 +3624,7 @@ function np_runLocationButtonAction(actionName, event, attempt = 0) {
   }
 
   if (!document.getElementById('map')) return;
+  np_scrollLocationMapIntoView();
 
   const tries = Number(attempt) || 0;
   if (!nutriPlantMap || !np_isLocationMapReady()) {
@@ -3584,9 +3639,43 @@ function np_runLocationButtonAction(actionName, event, attempt = 0) {
     nutriPlantMap.bindLocationControlButtons();
   }
 
-  if (actionName === 'polygon' && typeof nutriPlantMap.centerOnPolygon === 'function') {
-    nutriPlantMap.centerOnPolygon();
+  if (typeof nutriPlantMap.refreshMapView === 'function') {
+    nutriPlantMap.refreshMapView('location-button-action');
+  }
+
+  if (actionName === 'polygon') {
+    try {
+      const proj = nutriPlantMap.getCurrentProject && nutriPlantMap.getCurrentProject();
+      if (proj && proj.id && window.projectStorage && typeof window.projectStorage.loadSection === 'function') {
+        const freshLocation = window.projectStorage.loadSection('location', proj.id);
+        if (freshLocation && freshLocation.polygon && Array.isArray(freshLocation.polygon) && freshLocation.polygon.length >= 3) {
+          if (!freshLocation.projectId) freshLocation.projectId = proj.id;
+          if (typeof currentProject !== 'undefined' && currentProject && currentProject.id === proj.id) {
+            currentProject.location = freshLocation;
+          }
+        }
+      }
+      if (typeof nutriPlantMap.loadProjectLocation === 'function') {
+        nutriPlantMap.loadProjectLocation();
+      }
+    } catch (e) {
+      console.warn('np_runLocationButtonAction polygon preload:', e);
+    }
+
+    const fitNow = () => {
+      np_scrollLocationMapIntoView();
+      let fitted = false;
+      if (typeof nutriPlantMap.fitMapToCurrentProjectLocation === 'function') {
+        fitted = nutriPlantMap.fitMapToCurrentProjectLocation();
+      }
+      if (!fitted && typeof nutriPlantMap.centerOnPolygon === 'function') {
+        nutriPlantMap.centerOnPolygon();
+      }
+    };
+    fitNow();
+    setTimeout(fitNow, 450);
   } else if (actionName === 'user' && typeof nutriPlantMap.centerOnUserLocation === 'function') {
+    np_scrollLocationMapIntoView();
     nutriPlantMap.centerOnUserLocation();
   }
 }
@@ -3598,6 +3687,35 @@ window.np_centerOnPolygonFromUi = function np_centerOnPolygonFromUi(event) {
 window.np_centerOnUserLocationFromUi = function np_centerOnUserLocationFromUi(event) {
   np_runLocationButtonAction('user', event);
 };
+
+if (!window.__npLocationButtonDelegationBound) {
+  window.__npLocationButtonDelegationBound = true;
+  document.addEventListener(
+    'click',
+    function np_locationButtonDelegatedClick(event) {
+      const target = event && event.target;
+      if (!target || typeof target.closest !== 'function') return;
+      const polygonBtn = target.closest('#centerOnPolygon');
+      const userBtn = target.closest('#centerOnUserLocation');
+      if (!polygonBtn && !userBtn) return;
+
+      try {
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+          event.stopImmediatePropagation();
+        }
+      } catch (e) {}
+
+      if (polygonBtn) {
+        np_runLocationButtonAction('polygon', event);
+      } else {
+        np_runLocationButtonAction('user', event);
+      }
+    },
+    true
+  );
+}
 
 function initLocationMap() {
   const mapElement = document.getElementById('map');
