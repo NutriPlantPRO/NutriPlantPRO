@@ -239,9 +239,9 @@ exports.handler = async (event) => {
     }
   }
 
-  // Mantener Pilot dentro del tiempo de Netlify. 2048 px puede disparar 504 en predios grandes
-  // porque se procesan NDVI y NDMI desde COGs remotos.
-  const maxDim = Math.min(Math.max(Number(body.max_dim) || 1024, 256), 2048);
+  // Mantener Pilot dentro del tiempo de Netlify. Se procesan NDVI y NDMI desde COGs remotos;
+  // tamaños grandes pueden disparar 504 antes de que Netlify entregue la respuesta.
+  const maxDim = Math.min(Math.max(Number(body.max_dim) || 512, 256), 2048);
 
   try {
     const bundle = await findSentinel2ScenesForComposite(polygon, {});
@@ -250,8 +250,8 @@ exports.handler = async (event) => {
       { maxDim }
     );
 
-    const ndviDataUrl = 'data:image/png;base64,' + rendered.ndviPng.toString('base64');
-    const ndmiDataUrl = 'data:image/png;base64,' + rendered.ndmiPng.toString('base64');
+    let ndviDataUrl = null;
+    let ndmiDataUrl = null;
     const latestScene = bundle.scenes[0] || {};
     let request = null;
     let storagePath = null;
@@ -343,6 +343,8 @@ exports.handler = async (event) => {
       ndmiSignedUrl = signedNdmi.data?.signedUrl || null;
     } else {
       meta.note = 'Mediana 30 d + SCL; no guardado porque no se envió project_id.';
+      ndviDataUrl = 'data:image/png;base64,' + rendered.ndviPng.toString('base64');
+      ndmiDataUrl = 'data:image/png;base64,' + rendered.ndmiPng.toString('base64');
     }
 
     return jsonResponse(200, {
