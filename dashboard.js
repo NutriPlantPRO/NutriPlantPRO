@@ -5765,6 +5765,12 @@ function np_setCurrentProject(id, projectMeta) {
   // 🚀 CRÍTICO: Limpiar mapa completamente antes de cambiar proyecto
   if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap) {
     console.log('🧹 Limpiando mapa al cambiar proyecto...');
+    if (typeof window.hideRadarNdviOverlay === 'function') {
+      window.hideRadarNdviOverlay();
+    }
+    if (typeof window.np_clearRadarPilotState === 'function') {
+      window.np_clearRadarPilotState();
+    }
     if (typeof nutriPlantMap.forceRemoveAllPolygons === 'function') {
       nutriPlantMap.forceRemoveAllPolygons();
     }
