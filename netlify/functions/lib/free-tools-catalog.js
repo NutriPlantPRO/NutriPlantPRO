@@ -167,6 +167,14 @@ module.exports = {
       file: 'solubilidad-indice-salino-free.html',
       lsKey: 'nutriplant_free_solubilidad_is_v1',
       summary: 'Tabla solubilidad g/L e IS (NaNO₃=100); filtro y orden. Material educativo.'
+    },
+    {
+      id: 'fertilizer_carbon',
+      title: 'Huella de carbono de fertilizantes',
+      file: 'fertilizer-carbon-free.html',
+      lsKey: 'nutriplant_free_fertilizer_carbon_v2',
+      summary:
+        'Estima CO₂e por fertilizante y país de origen (sin marcas). Programa A vs B: compara listados completos (kg, orígenes, factores). Desglose fabricación + transporte + N₂O (IPCC). Factor propio opcional. Referencias públicas citadas. Estimación de referencia.'
     }
   ],
   gptRules: [

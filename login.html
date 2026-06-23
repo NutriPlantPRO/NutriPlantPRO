@@ -357,6 +357,11 @@
           <span class="calculator-icon">🧂</span>
           <span class="button-text">Solubilidad e índice salino</span>
         </button>
+
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCarbonCalculator()" style="margin-top: 12px;">
+          <span class="calculator-icon">🌍</span>
+          <span class="button-text">Huella de carbono de fertilizantes</span>
+        </button>
         
         <!-- Footer: copyright y nota técnica -->
         <div style="
@@ -1565,6 +1570,16 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showFertilizerCarbonCalculator() {
+      document.getElementById('fertilizerCarbonCalculatorModal').style.display = 'flex';
+    }
+    function closeFertilizerCarbonCalculator() {
+      const modal = document.getElementById('fertilizerCarbonCalculatorModal');
+      const frame = document.getElementById('fertilizerCarbonCalculatorFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     function clearNutrientUnitsCalculator() {
       const inputs = document.querySelectorAll('#nutrientUnitsCalculatorModal input');
       inputs.forEach(input => input.value = '');
@@ -1791,6 +1806,10 @@
       const fertilizerSolubilitySaltModal = document.getElementById('fertilizerSolubilitySaltModal');
       if (e.target === fertilizerSolubilitySaltModal) {
         closeFertilizerSolubilitySaltTool();
+      }
+      const fertilizerCarbonModal = document.getElementById('fertilizerCarbonCalculatorModal');
+      if (e.target === fertilizerCarbonModal) {
+        closeFertilizerCarbonCalculator();
       }
       const extraccionEtapaModal = document.getElementById('extraccionEtapaCalculatorModal');
       if (e.target === extraccionEtapaModal) {
@@ -2551,6 +2570,22 @@
       </div>
       <div class="modal-body">
         <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html" title="Solubilidad e índice salino"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal huella de carbono de fertilizantes -->
+  <div id="fertilizerCarbonCalculatorModal" class="modal-overlay">
+    <div class="modal modal-fertilizer-composition">
+      <div class="modal-header">
+        <h2 class="modal-title">🌍 Huella de carbono de fertilizantes</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeFertilizerCarbonCalculator()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=login&v=20260622" title="Huella de carbono de fertilizantes"></iframe>
       </div>
     </div>
   </div>

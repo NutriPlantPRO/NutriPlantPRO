@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <script src="assets/free-tools-embed.js"></script>
+  <title>Huella de carbono de fertilizantes — NutriPlant PRO</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    body { margin: 0; padding: 12px 14px 24px; background: #f8fafc; font-family: Inter, system-ui, sans-serif; font-size: 13px; color: #0f172a; }
+    html.embed-login .np-free-tool-head { display: none; }
+    .fc-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .fc-title { font-size: 1.25rem; font-weight: 800; margin: 0; }
+    .fc-tagline {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      border: 2px solid #34d399;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin: 0 0 12px;
+      text-align: center;
+    }
+    .fc-tagline__main {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      color: #047857;
+      line-height: 1.35;
+    }
+    .fc-tagline__sub {
+      margin: 6px 0 0;
+      font-size: 12px;
+      color: #065f46;
+      line-height: 1.45;
+    }
+    .fc-reduction-banner {
+      display: none;
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border: 2px solid #22c55e;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin: 0 0 12px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: #15803d;
+    }
+    .fc-reduction-banner.visible { display: block; }
+    .fc-reduction-banner.increase { border-color: #fbbf24; background: linear-gradient(135deg, #fffbeb, #fef3c7); color: #b45309; }
+    .fc-reduction-banner span { display: block; font-size: 11px; font-weight: 600; margin-top: 4px; opacity: 0.9; }
+    .fc-badge { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #14532d; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 13px; border: 1px solid #86efac; }
+    .fc-intro { margin: 0 0 14px; font-size: 12px; line-height: 1.55; color: #64748b; }
+    .fc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .fc-field label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    .fc-field input, .fc-field select { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; background: #fff; }
+    .fc-field .hint { margin-top: 4px; font-size: 11px; color: #94a3b8; line-height: 1.4; }
+    .fc-section-title { font-size: 14px; font-weight: 700; margin: 16px 0 8px; color: #1e293b; }
+    .fc-wrap { overflow-x: auto; margin-bottom: 10px; }
+    .fc-table { border-collapse: collapse; width: max-content; min-width: 100%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.08); border-radius: 8px; overflow: hidden; }
+    .fc-table th, .fc-table td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: center; white-space: nowrap; }
+    .fc-table th { background: #f1f5f9; font-weight: 600; color: #334155; font-size: 11px; }
+    .fc-table td.left { text-align: left; min-width: 180px; }
+    .fc-table input, .fc-table select { padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; }
+    .fc-table input.dose { width: 72px; text-align: center; }
+    .fc-table select.fert { max-width: 180px; }
+    .fc-table select.origin { max-width: 150px; font-size: 11px; }
+    .fc-table select.factor-mode { max-width: 118px; font-size: 11px; }
+    .fc-table input.custom-val { width: 68px; text-align: center; }
+    .fc-table input.custom-note { width: 88px; font-size: 11px; }
+    .fc-table input:disabled { background: #f1f5f9; color: #94a3b8; }
+    .fc-user-badge { display: inline-block; background: #dbeafe; color: #1e40af; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
+    .btn { border: 0; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .btn-add { background: #16a34a; color: #fff; margin-right: 8px; margin-top: 8px; }
+    .btn-add:hover { background: #15803d; }
+    .btn-clear { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; margin-top: 8px; }
+    .btn-del { background: #dc2626; color: #fff; border: 0; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    .fc-results { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-top: 16px; }
+    .fc-results h3 { margin: 0 0 10px; font-size: 15px; }
+    .fc-total { font-size: 1.4rem; font-weight: 800; color: #14532d; margin: 0 0 8px; }
+    .fc-breakdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 10px 0; }
+    .fc-breakdown div { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; }
+    .fc-breakdown span { display: block; font-size: 11px; color: #64748b; }
+    .fc-breakdown strong { font-size: 14px; color: #0f172a; }
+    .fc-efficiency {
+      margin: 14px 0 0;
+      padding: 14px;
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+      border: 1px solid #86efac;
+      border-radius: 10px;
+    }
+    .fc-efficiency h4 { margin: 0 0 8px; font-size: 14px; color: #14532d; font-weight: 800; }
+    .fc-efficiency-note { margin: 0 0 10px; font-size: 11px; color: #64748b; line-height: 1.45; }
+    .fc-efficiency-score {
+      display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; margin-bottom: 10px;
+    }
+    .fc-efficiency-score .score {
+      font-size: 1.6rem; font-weight: 900; color: #15803d; line-height: 1;
+    }
+    .fc-efficiency-score .tier { font-size: 13px; font-weight: 700; color: #166534; }
+    .fc-efficiency-gauge { margin: 10px 0 12px; }
+    .fc-efficiency-gauge-labels {
+      display: flex; justify-content: space-between; font-size: 10px; font-weight: 700;
+      color: #64748b; margin-bottom: 4px;
+    }
+    .fc-efficiency-gauge-labels .lbl-best { color: #15803d; }
+    .fc-efficiency-gauge-labels .lbl-worst { color: #b91c1c; }
+    .fc-efficiency-track {
+      position: relative; height: 14px; border-radius: 999px; overflow: visible;
+      background: linear-gradient(90deg, #22c55e 0%, #eab308 50%, #ef4444 100%);
+      border: 1px solid #cbd5e1;
+    }
+    .fc-efficiency-marker {
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; border: 3px solid #0f172a;
+      box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    }
+    .fc-efficiency-range {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 10px;
+    }
+    .fc-efficiency-range div {
+      background: #fff; border: 1px solid #bbf7d0; border-radius: 8px; padding: 8px 10px;
+    }
+    .fc-efficiency-range span { display: block; font-size: 10px; color: #64748b; font-weight: 600; }
+    .fc-efficiency-range strong { font-size: 13px; color: #0f172a; }
+    .fc-efficiency-range .is-current strong { color: #14532d; }
+    .fc-efficiency-potential {
+      background: #fff; border: 1px dashed #86efac; border-radius: 8px;
+      padding: 8px 10px; font-size: 12px; color: #166534; font-weight: 700; margin-bottom: 8px;
+    }
+    .fc-efficiency-opps { margin: 0; padding-left: 16px; font-size: 11px; color: #475569; line-height: 1.5; }
+    .fc-efficiency-opps li { margin-bottom: 4px; }
+    .fc-efficiency-disclaimer { margin: 8px 0 0; font-size: 10px; color: #94a3b8; line-height: 1.4; }
+    .fc-meta { font-size: 11px; color: #64748b; line-height: 1.5; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+    .fc-legal-notice {
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      border: 2px solid #f97316;
+      border-left: 6px solid #ea580c;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 0 0 14px;
+      box-shadow: 0 2px 8px rgba(234, 88, 12, 0.12);
+    }
+    .fc-legal-notice__title {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #9a3412;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .fc-legal-notice__lead {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #7c2d12;
+      line-height: 1.45;
+    }
+    .fc-legal-notice ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 12px;
+      color: #7c2d12;
+      line-height: 1.55;
+    }
+    .fc-legal-notice li { margin-bottom: 6px; }
+    .fc-legal-notice li:last-child { margin-bottom: 0; }
+    .fc-legal-notice strong { color: #9a3412; }
+    .fc-legal-notice__footer {
+      margin-top: 10px; padding-top: 10px; border-top: 1px dashed #fdba74;
+      font-size: 11px; color: #9a3412; line-height: 1.5;
+    }
+    .fc-legal-notice__footer a { color: #c2410c; font-weight: 700; }
+    .fc-compare { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px; margin-top: 16px; }
+    .fc-compare h3 { margin: 0 0 10px; font-size: 14px; color: #1e40af; }
+    .fc-compare-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+    .fc-compare-card { background: #fff; border-radius: 8px; padding: 10px; border: 1px solid #dbeafe; }
+    .fc-compare-card strong { display: block; font-size: 13px; margin-bottom: 4px; }
+    .fc-compare-card .val { font-size: 16px; font-weight: 800; color: #14532d; }
+    .fc-row-detail { font-size: 11px; color: #64748b; margin-top: 8px; }
+    .fc-row-detail table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    .fc-row-detail th, .fc-row-detail td { border: 1px solid #e2e8f0; padding: 4px 6px; text-align: right; font-size: 11px; }
+    .fc-row-detail th { background: #f8fafc; text-align: left; }
+    .fc-citations { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-top: 16px; }
+    .fc-citations h3 { margin: 0 0 8px; font-size: 14px; color: #1e293b; }
+    .fc-citations p { margin: 0 0 10px; font-size: 11px; color: #64748b; line-height: 1.5; }
+    .fc-citations ul { margin: 0; padding-left: 18px; font-size: 11px; color: #334155; line-height: 1.55; }
+    .fc-citations li { margin-bottom: 8px; }
+    .fc-citations a { color: #2563eb; text-decoration: none; }
+    .fc-citations a:hover { text-decoration: underline; }
+    .fc-citations-used { margin-top: 12px; padding-top: 10px; border-top: 1px dashed #cbd5e1; }
+    .fc-citations-used h4 { margin: 0 0 6px; font-size: 12px; color: #475569; }
+    .fc-scenario-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .fc-scenario-tab {
+      border: 2px solid #cbd5e1; background: #fff; color: #334155;
+      padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer;
+    }
+    .fc-scenario-tab.active { border-color: #2563eb; background: #dbeafe; color: #1e40af; }
+    .fc-scenario-tab.tab-b.active { border-color: #7c3aed; background: #ede9fe; color: #5b21b6; }
+    .btn-copy-scenario {
+      background: #6366f1; color: #fff; border: 0; padding: 8px 12px; border-radius: 8px;
+      font-weight: 600; font-size: 12px; cursor: pointer; margin-left: auto;
+    }
+    .btn-copy-scenario:hover { background: #4f46e5; }
+    .fc-compare-prog {
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+      border: 2px solid #86efac; border-radius: 10px; padding: 14px; margin-top: 16px;
+    }
+    .fc-compare-prog h3 { margin: 0 0 8px; font-size: 15px; color: #14532d; }
+    .fc-compare-prog-note { margin: 0 0 12px; font-size: 11px; color: #64748b; line-height: 1.45; }
+    .fc-prog-card-a { border-color: #93c5fd !important; }
+    .fc-prog-card-b { border-color: #c4b5fd !important; }
+    .fc-prog-summary { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 720px) { .fc-prog-summary { grid-template-columns: 1fr; } }
+    .fc-prog-summary-box {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; font-size: 11px; color: #475569;
+    }
+    .fc-prog-summary-box h4 { margin: 0 0 6px; font-size: 12px; color: #0f172a; }
+    .fc-prog-summary-box ul { margin: 0; padding-left: 16px; line-height: 1.5; }
+    .fc-charts { margin: 14px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 720px) { .fc-charts { grid-template-columns: 1fr; } }
+    .fc-chart-box {
+      background: #fff; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px;
+    }
+    .fc-chart-box h4 { margin: 0 0 10px; font-size: 13px; color: #14532d; font-weight: 700; }
+    .fc-bar-row { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .fc-bar-row:last-child { margin-bottom: 0; }
+    .fc-bar-label { font-size: 12px; font-weight: 800; color: #334155; }
+    .fc-bar-label.lbl-a { color: #1d4ed8; }
+    .fc-bar-label.lbl-b { color: #6d28d9; }
+    .fc-bar-track {
+      height: 22px; background: #f1f5f9; border-radius: 6px; overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+    .fc-bar-fill { height: 100%; border-radius: 5px; min-width: 2px; transition: width 0.35s ease; }
+    .fc-bar-fill.fill-a { background: linear-gradient(90deg, #60a5fa, #2563eb); }
+    .fc-bar-fill.fill-b { background: linear-gradient(90deg, #a78bfa, #7c3aed); }
+    .fc-bar-val { font-size: 11px; font-weight: 700; color: #0f172a; white-space: nowrap; }
+    .fc-stacked-wrap { margin-bottom: 12px; }
+    .fc-stacked-wrap:last-child { margin-bottom: 0; }
+    .fc-stacked-head { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+    .fc-stacked-head .lbl-a { color: #1d4ed8; }
+    .fc-stacked-head .lbl-b { color: #6d28d9; }
+    .fc-stacked-bar {
+      display: flex; height: 20px; border-radius: 6px; overflow: hidden;
+      border: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .fc-stacked-seg { height: 100%; min-width: 1px; transition: width 0.35s ease; }
+    .fc-seg-mfg { background: #3b82f6; }
+    .fc-seg-trans { background: #94a3b8; }
+    .fc-seg-field { background: #22c55e; }
+    .fc-chart-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; font-size: 10px; color: #64748b; }
+    .fc-chart-legend span { display: inline-flex; align-items: center; gap: 4px; }
+    .fc-chart-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <div class="fc-header">
+    <div class="np-free-tool-head" style="margin-bottom:0;flex:1;min-width:0;">
+      <h1 class="fc-title np-free-tool-title">🌍 Huella de carbono de fertilizantes</h1>
+      <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+    </div>
+    <div class="fc-badge" id="totalBadge">Total: —</div>
+  </div>
+
+  <div class="fc-tagline" id="valueTagline">
+    <p class="fc-tagline__main">Mide tu huella y estima cuánto puedes reducir emisiones de carbono en fertilización</p>
+    <p class="fc-tagline__sub">Compara tu programa actual (A) vs una alternativa (B): dosis, productos y origen de fabricación</p>
+  </div>
+
+  <div class="fc-reduction-banner" id="reductionBanner" aria-live="polite"></div>
+
+  <aside class="fc-legal-notice" id="legalNoticeBox" role="note" aria-label="Aviso legal de la herramienta">
+    <p class="fc-legal-notice__title">⚠️ Aviso legal — herramienta de referencia</p>
+    <p class="fc-legal-notice__lead">
+      Esta calculadora ofrece <strong>estimaciones de referencia</strong>, no mediciones certificadas ni declaraciones oficiales de huella de carbono.
+      <strong>Al usarla aceptas la sección 7 de los Términos y Condiciones de NutriPlant PRO.</strong>
+    </p>
+    <ul>
+      <li><strong>No es certificación:</strong> los resultados no sustituyen auditoría, LCA certificado, EPD validado ni reportes regulatorios oficiales.</li>
+      <li><strong>Validación en campo:</strong> el usuario o técnico debe confirmar y validar los datos en su contexto agronómico, comercial y legal antes de tomar decisiones.</li>
+      <li><strong>Sin marcas ni proveedores:</strong> NutriPlant PRO no representa, avala, recomienda ni compara empresas, formuladores, distribuidores ni productos comerciales.</li>
+      <li><strong>Factores propios:</strong> si ingresas un factor o emisión manual, es responsabilidad del usuario; NutriPlant PRO <strong>no verifica</strong> ese dato ni su origen documental.</li>
+      <li><strong>Comparaciones A vs B:</strong> escenarios definidos por el usuario; no constituyen ranking ni evaluación comercial de productos o proveedores.</li>
+      <li><strong>Precisión estimada:</strong> salvo dato propio documentado, la incertidumbre típica es ±30–50% según origen y metodología.</li>
+      <li><strong>Decisión final:</strong> el uso del resultado y cualquier comunicación externa (marketing, compliance, sostenibilidad) es responsabilidad exclusiva del usuario.</li>
+    </ul>
+    <p class="fc-legal-notice__footer">
+      Texto legal completo y deslinde de responsabilidad:
+      <a href="terminos-condiciones.html#huella-carbono" target="_blank" rel="noopener noreferrer">Términos y Condiciones — Sección 7 (Huella de carbono)</a>.
+      NutriPlant PRO no asume responsabilidad por reclamaciones de terceros derivadas del uso de estos resultados.
+    </p>
+  </aside>
+
+  <p class="fc-intro">
+    Arma <strong>Programa A</strong> y <strong>Programa B</strong> (listado de fertilizantes, kg y orígenes) y compáralos.
+    También puedes usar factor propio por fila si tienes ficha o EPD.
+  </p>
+
+  <div class="fc-scenario-bar">
+    <button type="button" class="fc-scenario-tab active" id="tabScenarioA" onclick="switchScenario('a')">📋 Programa A</button>
+    <button type="button" class="fc-scenario-tab tab-b" id="tabScenarioB" onclick="switchScenario('b')">📋 Programa B</button>
+    <button type="button" class="btn-copy-scenario" onclick="copyActiveToOtherScenario()" title="Copia el programa que estás editando al otro escenario">Duplicar al otro programa →</button>
+  </div>
+
+  <div class="fc-grid">
+    <div class="fc-field">
+      <label for="originCountry">Origen por defecto (filas nuevas)</label>
+      <select id="originCountry"></select>
+      <div class="hint" id="originGroupHint">Grupo regional: —</div>
+    </div>
+    <div class="fc-field">
+      <label for="areaHa">Superficie (ha)</label>
+      <input type="number" id="areaHa" min="0" step="0.1" value="1" />
+      <div class="hint">Para convertir dosis total → kg/ha</div>
+    </div>
+    <div class="fc-field">
+      <label for="transportKm">Transporte (km, opcional)</label>
+      <input type="number" id="transportKm" min="0" step="1" value="0" />
+      <div class="hint">Distancia origen → campo</div>
+    </div>
+    <div class="fc-field">
+      <label for="doseUnit">Unidad de dosis</label>
+      <select id="doseUnit">
+        <option value="kg_ha">kg/ha</option>
+        <option value="total_kg">kg total (lote)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="fc-section-title" id="activeScenarioTitle">Fertilizantes — Programa A</div>
+  <div class="fc-wrap">
+    <table class="fc-table" id="rowsTable">
+      <thead>
+        <tr>
+          <th>Fertilizante</th>
+          <th>Origen fabricación</th>
+          <th>Dosis</th>
+          <th>Factor fab.</th>
+          <th>Valor propio</th>
+          <th>Nota (opc.)</th>
+          <th>N %</th>
+          <th>Fab.</th>
+          <th>Transp.</th>
+          <th>Suelo N₂O</th>
+          <th>Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rowsBody"></tbody>
+    </table>
+  </div>
+  <button type="button" class="btn btn-add" onclick="addRow()">+ Agregar fertilizante</button>
+  <button type="button" class="btn btn-clear" onclick="clearAll()">Limpiar</button>
+
+  <div class="fc-results" id="resultsPanel">
+    <h3>Resultado de referencia (requiere validación)</h3>
+    <p class="fc-total" id="totalDisplay">—</p>
+    <div class="fc-breakdown">
+      <div><span>Fabricación</span><strong id="mfgTotal">—</strong></div>
+      <div><span>Transporte</span><strong id="transTotal">—</strong></div>
+      <div><span>Suelo (N₂O)</span><strong id="fieldTotal">—</strong></div>
+      <div><span>Por hectárea</span><strong id="perHaTotal">—</strong></div>
+    </div>
+    <div class="fc-efficiency" id="efficiencyPanel" style="display:none"></div>
+    <div class="fc-meta" id="metaBox"></div>
+    <div class="fc-row-detail" id="rowDetail"></div>
+  </div>
+
+  <div class="fc-compare-prog" id="programComparePanel">
+    <h3>⚖️ Comparar Programa A vs Programa B</h3>
+    <p class="fc-compare-prog-note">
+      Comparación de referencia entre dos listados completos (fertilizantes, dosis, orígenes y factores).
+      Escenarios definidos por el usuario — no validada ni certificada. Ver
+      <a href="terminos-condiciones.html#huella-carbono" target="_blank" rel="noopener noreferrer">T&amp;C §7</a>.
+    </p>
+    <div class="fc-compare-grid" id="programCompareResults"></div>
+    <div class="fc-charts" id="programCompareCharts"></div>
+    <div class="fc-prog-summary" id="programCompareSummary"></div>
+  </div>
+
+  <div class="fc-compare" id="comparePanel">
+    <h3>🔬 Comparar un producto, distinto origen (didáctico)</h3>
+    <p style="margin:0 0 10px;font-size:12px;color:#475569;">Elige un fertilizante y dos países de fabricación para ver la diferencia estimada (misma dosis).</p>
+    <div class="fc-grid" style="margin-bottom:10px;">
+      <div class="fc-field">
+        <label for="cmpFert">Fertilizante</label>
+        <select id="cmpFert"></select>
+      </div>
+      <div class="fc-field">
+        <label for="cmpDose">Dosis (kg/ha)</label>
+        <input type="number" id="cmpDose" min="0" step="1" value="100" />
+      </div>
+      <div class="fc-field">
+        <label for="cmpOriginA">Origen A</label>
+        <select id="cmpOriginA"></select>
+      </div>
+      <div class="fc-field">
+        <label for="cmpOriginB">Origen B</label>
+        <select id="cmpOriginB"></select>
+      </div>
+    </div>
+    <div class="fc-compare-grid" id="compareResults"></div>
+  </div>
+
+  <div class="fc-citations" id="citationsPanel">
+    <h3>📚 Referencias y fuentes públicas</h3>
+    <p>
+      Factores de referencia de fuentes públicas, reutilizables con cita. NutriPlant no usa datos de marca comercial.
+      Licencias: IPCC (cita requerida), UK Open Government Licence v3.0, US EPA (dominio público).
+    </p>
+    <ul id="citationsFullList"></ul>
+    <div class="fc-citations-used">
+      <h4>Citas aplicadas a este cálculo</h4>
+      <ul id="citationsUsedList"></ul>
+    </div>
+  </div>
+
+  <script src="assets/fertilizer-carbon-core.js?v=20260622d"></script>
+  <script>
+    var LS_KEY = 'nutriplant_free_fertilizer_carbon_v2';
+
+    function blankRow(origin) {
+      return {
+        fertilizer_id: 'urea',
+        dose: 0,
+        origin_country_iso: origin || 'GLOBAL',
+        factor_source: 'estimated',
+        custom_factor: '',
+        custom_mfg_total_kg_co2e: '',
+        custom_note: ''
+      };
+    }
+
+    function blankScenario(origin) {
+      return {
+        rows: [blankRow(origin || 'GLOBAL')],
+        area_ha: 1,
+        transport_km: 0,
+        dose_unit: 'kg_ha',
+        origin_country_iso: origin || 'GLOBAL'
+      };
+    }
+
+    var state = {
+      active_scenario: 'a',
+      scenario_a: blankScenario('GLOBAL'),
+      scenario_b: blankScenario('CN'),
+      cmp_fert: 'calcium_nitrate',
+      cmp_dose: 100,
+      cmp_origin_a: 'CN',
+      cmp_origin_b: 'DE'
+    };
+    state.scenario_a.rows[0].dose = 100;
+
+    function activeKey() { return state.active_scenario === 'b' ? 'scenario_b' : 'scenario_a'; }
+    function otherKey() { return state.active_scenario === 'b' ? 'scenario_a' : 'scenario_b'; }
+    function activeScenario() { return state[activeKey()]; }
+    function otherScenario() { return state[otherKey()]; }
+
+    function migrateState(s) {
+      if (!s || typeof s !== 'object') return null;
+      if (s.scenario_a && s.scenario_b) {
+        if (!s.active_scenario) s.active_scenario = 'a';
+        return s;
+      }
+      if (Array.isArray(s.rows)) {
+        return {
+          active_scenario: 'a',
+          scenario_a: {
+            rows: s.rows,
+            area_ha: s.area_ha != null ? s.area_ha : 1,
+            transport_km: s.transport_km != null ? s.transport_km : 0,
+            dose_unit: s.dose_unit || 'kg_ha',
+            origin_country_iso: s.origin_country_iso || 'GLOBAL'
+          },
+          scenario_b: blankScenario('CN'),
+          cmp_fert: s.cmp_fert || 'calcium_nitrate',
+          cmp_dose: s.cmp_dose != null ? s.cmp_dose : 100,
+          cmp_origin_a: s.cmp_origin_a || 'CN',
+          cmp_origin_b: s.cmp_origin_b || 'DE'
+        };
+      }
+      return null;
+    }
+
+    function defaultOrigin() {
+      var el = document.getElementById('originCountry');
+      return (el && el.value) ? el.value : (activeScenario().origin_country_iso || 'GLOBAL');
+    }
+
+    function ensureRowOrigins(rows) {
+      var def = defaultOrigin();
+      rows.forEach(function (row) {
+        if (!row.origin_country_iso) row.origin_country_iso = def;
+        if (!row.factor_source) row.factor_source = 'estimated';
+        if (row.custom_factor == null) row.custom_factor = '';
+        if (row.custom_mfg_total_kg_co2e == null) row.custom_mfg_total_kg_co2e = '';
+        if (row.custom_note == null) row.custom_note = '';
+      });
+    }
+
+    function cloneScenario(sc) {
+      return JSON.parse(JSON.stringify(sc));
+    }
+
+    function factorModeOptions(selected) {
+      var modes = [
+        { id: 'estimated', label: 'Estimado' },
+        { id: 'custom_per_kg', label: 'Propio kg/kg' },
+        { id: 'custom_total_mfg', label: 'Propio total' }
+      ];
+      return modes.map(function (m) {
+        return '<option value="' + m.id + '"' + (m.id === selected ? ' selected' : '') + '>' + m.label + '</option>';
+      }).join('');
+    }
+
+    function customValuePlaceholder(mode) {
+      if (mode === 'custom_per_kg') return 'ej. 1.2';
+      if (mode === 'custom_total_mfg') return 'kg CO₂e';
+      return '—';
+    }
+
+    function customValueForRow(row) {
+      if (row.factor_source === 'custom_per_kg') return row.custom_factor != null ? row.custom_factor : '';
+      if (row.factor_source === 'custom_total_mfg') return row.custom_mfg_total_kg_co2e != null ? row.custom_mfg_total_kg_co2e : '';
+      return '';
+    }
+
+    function saveState() {
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+
+    function loadState() {
+      try {
+        var raw = localStorage.getItem(LS_KEY) || localStorage.getItem('nutriplant_free_fertilizer_carbon_v1');
+        if (raw) {
+          var s = migrateState(JSON.parse(raw));
+          if (s) state = s;
+        }
+      } catch (e) {}
+    }
+
+    function persistForm() {
+      var sc = activeScenario();
+      sc.origin_country_iso = document.getElementById('originCountry').value;
+      sc.area_ha = Number(document.getElementById('areaHa').value) || 0;
+      sc.transport_km = Number(document.getElementById('transportKm').value) || 0;
+      sc.dose_unit = document.getElementById('doseUnit').value;
+      state.cmp_fert = document.getElementById('cmpFert').value;
+      state.cmp_dose = Number(document.getElementById('cmpDose').value) || 0;
+      state.cmp_origin_a = document.getElementById('cmpOriginA').value;
+      state.cmp_origin_b = document.getElementById('cmpOriginB').value;
+      saveState();
+    }
+
+    function restoreForm() {
+      var sc = activeScenario();
+      document.getElementById('originCountry').value = sc.origin_country_iso || 'GLOBAL';
+      document.getElementById('areaHa').value = sc.area_ha != null ? sc.area_ha : 1;
+      document.getElementById('transportKm').value = sc.transport_km != null ? sc.transport_km : 0;
+      document.getElementById('doseUnit').value = sc.dose_unit || 'kg_ha';
+      if (state.cmp_fert) document.getElementById('cmpFert').value = state.cmp_fert;
+      if (state.cmp_dose != null) document.getElementById('cmpDose').value = state.cmp_dose;
+      if (state.cmp_origin_a) document.getElementById('cmpOriginA').value = state.cmp_origin_a;
+      if (state.cmp_origin_b) document.getElementById('cmpOriginB').value = state.cmp_origin_b;
+      document.getElementById('activeScenarioTitle').textContent =
+        'Fertilizantes — Programa ' + (state.active_scenario === 'b' ? 'B' : 'A');
+      document.getElementById('tabScenarioA').classList.toggle('active', state.active_scenario === 'a');
+      document.getElementById('tabScenarioB').classList.toggle('active', state.active_scenario === 'b');
+    }
+
+    function switchScenario(which) {
+      if (state.active_scenario === which) return;
+      persistForm();
+      state.active_scenario = which === 'b' ? 'b' : 'a';
+      restoreForm();
+      ensureRowOrigins(activeScenario().rows);
+      renderRows();
+      recalc();
+    }
+
+    function copyActiveToOtherScenario() {
+      persistForm();
+      state[otherKey()] = cloneScenario(activeScenario());
+      saveState();
+      recalc();
+    }
+
+    function fertOptionsHtml(selected) {
+      return NpFertilizerCarbon.getFertilizers().map(function (f) {
+        return '<option value="' + f.id + '"' + (f.id === selected ? ' selected' : '') + '>' + f.name + '</option>';
+      }).join('');
+    }
+
+    function countryOptionsHtml(selected, excludeGlobal) {
+      return NpFertilizerCarbon.getCountries()
+        .filter(function (c) { return !excludeGlobal || c.iso !== 'GLOBAL'; })
+        .map(function (c) {
+          var label = c.iso === 'GLOBAL' ? c.name : (c.region ? c.name : c.name);
+          return '<option value="' + c.iso + '"' + (c.iso === selected ? ' selected' : '') + '>' + label + '</option>';
+        }).join('');
+    }
+
+    function countryOptionsCompact(selected) {
+      return NpFertilizerCarbon.getCountries().map(function (c) {
+        return '<option value="' + c.iso + '"' + (c.iso === selected ? ' selected' : '') + '>' + c.name + '</option>';
+      }).join('');
+    }
+
+    function updateOriginHint() {
+      var iso = document.getElementById('originCountry').value;
+      var g = NpFertilizerCarbon.originGroupForCountry(iso);
+      document.getElementById('originGroupHint').textContent = 'Grupo regional: ' + NpFertilizerCarbon.originGroupLabel(g);
+    }
+
+    function renderRows() {
+      var rows = activeScenario().rows;
+      ensureRowOrigins(rows);
+      var tbody = document.getElementById('rowsBody');
+      var doseUnit = document.getElementById('doseUnit').value;
+      var unitLabel = doseUnit === 'total_kg' ? 'kg total' : 'kg/ha';
+      tbody.innerHTML = rows.map(function (row, i) {
+        var mode = row.factor_source || 'estimated';
+        var customDisabled = mode === 'estimated' ? ' disabled' : '';
+        var customVal = customValueForRow(row);
+        return '<tr data-idx="' + i + '">' +
+          '<td class="left"><select class="fert" onchange="onRowChange(' + i + ',\'fertilizer_id\',this.value)">' +
+          fertOptionsHtml(row.fertilizer_id) + '</select></td>' +
+          '<td class="left"><select class="origin" onchange="onRowChange(' + i + ',\'origin_country_iso\',this.value)">' +
+          countryOptionsCompact(row.origin_country_iso || defaultOrigin()) + '</select></td>' +
+          '<td><input class="dose" type="number" min="0" step="1" value="' + (row.dose || 0) + '" oninput="onRowChange(' + i + ',\'dose\',this.value)" /> ' + unitLabel + '</td>' +
+          '<td><select class="factor-mode" onchange="onFactorModeChange(' + i + ',this.value)">' +
+          factorModeOptions(mode) + '</select></td>' +
+          '<td><input class="custom-val" type="number" min="0" step="0.001" value="' + customVal + '" placeholder="' + customValuePlaceholder(mode) + '"' + customDisabled +
+          ' oninput="onCustomValueChange(' + i + ',this.value)" /></td>' +
+          '<td><input class="custom-note" type="text" value="' + (row.custom_note || '').replace(/"/g, '&quot;') + '" placeholder="EPD, ficha…"' + customDisabled +
+          ' oninput="onRowChange(' + i + ',\'custom_note\',this.value)" /></td>' +
+          '<td class="row-n">—</td><td class="row-mfg">—</td><td class="row-trans">—</td><td class="row-field">—</td><td class="row-total">—</td>' +
+          '<td><button type="button" class="btn-del" onclick="removeRow(' + i + ')" title="Eliminar">×</button></td></tr>';
+      }).join('');
+    }
+
+    function onFactorModeChange(idx, mode) {
+      var rows = activeScenario().rows;
+      if (!rows[idx]) return;
+      rows[idx].factor_source = mode;
+      if (mode === 'estimated') {
+        rows[idx].custom_factor = '';
+        rows[idx].custom_mfg_total_kg_co2e = '';
+      }
+      saveState();
+      renderRows();
+      recalc();
+    }
+
+    function onCustomValueChange(idx, val) {
+      var rows = activeScenario().rows;
+      if (!rows[idx]) return;
+      var mode = rows[idx].factor_source || 'estimated';
+      if (mode === 'custom_per_kg') rows[idx].custom_factor = val;
+      else if (mode === 'custom_total_mfg') rows[idx].custom_mfg_total_kg_co2e = val;
+      saveState();
+      recalc();
+    }
+
+    function onRowChange(idx, key, val) {
+      var rows = activeScenario().rows;
+      if (!rows[idx]) return;
+      if (key === 'dose') rows[idx][key] = Number(val);
+      else rows[idx][key] = val;
+      saveState();
+      recalc();
+    }
+
+    function addRow() {
+      activeScenario().rows.push(blankRow(defaultOrigin()));
+      saveState();
+      renderRows();
+      recalc();
+    }
+
+    function removeRow(idx) {
+      var rows = activeScenario().rows;
+      if (rows.length <= 1) {
+        rows[0] = blankRow(defaultOrigin());
+      } else rows.splice(idx, 1);
+      saveState();
+      renderRows();
+      recalc();
+    }
+
+    function clearAll() {
+      var sc = activeScenario();
+      sc.rows = [blankRow('GLOBAL')];
+      sc.rows[0].dose = 100;
+      sc.area_ha = 1;
+      sc.transport_km = 0;
+      sc.origin_country_iso = 'GLOBAL';
+      document.getElementById('areaHa').value = 1;
+      document.getElementById('transportKm').value = 0;
+      document.getElementById('originCountry').value = 'GLOBAL';
+      saveState();
+      renderRows();
+      recalc();
+    }
+
+    function buildInputFromScenario(sc) {
+      return {
+        origin_country_iso: sc.origin_country_iso || 'GLOBAL',
+        area_ha: Number(sc.area_ha) || 0,
+        transport_km: Number(sc.transport_km) || 0,
+        rows: (sc.rows || []).map(function (r) {
+          return {
+            fertilizer_id: r.fertilizer_id,
+            dose: Number(r.dose) || 0,
+            dose_unit: sc.dose_unit || 'kg_ha',
+            origin_country_iso: r.origin_country_iso || sc.origin_country_iso || 'GLOBAL',
+            factor_source: r.factor_source || 'estimated',
+            custom_factor: Number(r.custom_factor) || 0,
+            custom_mfg_total_kg_co2e: Number(r.custom_mfg_total_kg_co2e) || 0,
+            custom_note: r.custom_note || ''
+          };
+        })
+      };
+    }
+
+    function programSummaryHtml(label, sc, result) {
+      if (!result || !result.ok) return '<div class="fc-prog-summary-box"><h4>' + label + '</h4><p>—</p></div>';
+      var lines = result.rows.filter(function (r) { return r.ok; }).map(function (r) {
+        var doseTxt = r.dose + (r.dose_unit === 'total_kg' ? ' kg total' : ' kg/ha');
+        return '<li><strong>' + r.fertilizer_name + '</strong> · ' + doseTxt + ' · ' + r.origin_country_name +
+          ' · ' + NpFertilizerCarbon.formatCo2e(r.total_kg_co2e) + '</li>';
+      }).join('');
+      return '<div class="fc-prog-summary-box"><h4>' + label + ' — ' +
+        NpFertilizerCarbon.formatCo2e(result.totals.total_kg_co2e) + '</h4><ul>' +
+        (lines || '<li>Sin filas</li>') + '</ul></div>';
+    }
+
+    function barWidthPct(val, max) {
+      if (!max || max <= 0) return 0;
+      return Math.max(0, Math.min(100, (Number(val) / max) * 100));
+    }
+
+    function stackedSegments(totals, maxTotal) {
+      var t = totals.total_kg_co2e || 0;
+      if (t <= 0 || maxTotal <= 0) {
+        return { mfg: 0, trans: 0, field: 0 };
+      }
+      var scale = (t / maxTotal) * 100;
+      var mfg = (totals.manufacturing_kg_co2e / t) * scale;
+      var trans = (totals.transport_kg_co2e / t) * scale;
+      var field = (totals.field_kg_co2e / t) * scale;
+      return { mfg: mfg, trans: trans, field: field };
+    }
+
+    function renderProgramCharts(rA, rB) {
+      var el = document.getElementById('programCompareCharts');
+      if (!el || !rA || !rB || !rA.ok || !rB.ok) return;
+
+      var maxTotal = Math.max(rA.totals.total_kg_co2e, rB.totals.total_kg_co2e, 0.001);
+      var segA = stackedSegments(rA.totals, maxTotal);
+      var segB = stackedSegments(rB.totals, maxTotal);
+      var wA = barWidthPct(rA.totals.total_kg_co2e, maxTotal);
+      var wB = barWidthPct(rB.totals.total_kg_co2e, maxTotal);
+
+      el.innerHTML =
+        '<div class="fc-chart-box">' +
+          '<h4>Total estimado CO₂e</h4>' +
+          '<div class="fc-bar-row">' +
+            '<span class="fc-bar-label lbl-a">A</span>' +
+            '<div class="fc-bar-track"><div class="fc-bar-fill fill-a" style="width:' + wA.toFixed(1) + '%"></div></div>' +
+            '<span class="fc-bar-val">' + NpFertilizerCarbon.formatCo2e(rA.totals.total_kg_co2e) + '</span>' +
+          '</div>' +
+          '<div class="fc-bar-row">' +
+            '<span class="fc-bar-label lbl-b">B</span>' +
+            '<div class="fc-bar-track"><div class="fc-bar-fill fill-b" style="width:' + wB.toFixed(1) + '%"></div></div>' +
+            '<span class="fc-bar-val">' + NpFertilizerCarbon.formatCo2e(rB.totals.total_kg_co2e) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="fc-chart-box">' +
+          '<h4>Desglose por componente</h4>' +
+          '<div class="fc-stacked-wrap">' +
+            '<div class="fc-stacked-head"><span class="lbl-a">Programa A</span>' +
+            '<span>' + NpFertilizerCarbon.formatCo2e(rA.totals.total_kg_co2e) + '</span></div>' +
+            '<div class="fc-stacked-bar">' +
+              '<div class="fc-stacked-seg fc-seg-mfg" style="width:' + segA.mfg.toFixed(2) + '%" title="Fabricación"></div>' +
+              '<div class="fc-stacked-seg fc-seg-trans" style="width:' + segA.trans.toFixed(2) + '%" title="Transporte"></div>' +
+              '<div class="fc-stacked-seg fc-seg-field" style="width:' + segA.field.toFixed(2) + '%" title="Suelo N₂O"></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="fc-stacked-wrap">' +
+            '<div class="fc-stacked-head"><span class="lbl-b">Programa B</span>' +
+            '<span>' + NpFertilizerCarbon.formatCo2e(rB.totals.total_kg_co2e) + '</span></div>' +
+            '<div class="fc-stacked-bar">' +
+              '<div class="fc-stacked-seg fc-seg-mfg" style="width:' + segB.mfg.toFixed(2) + '%" title="Fabricación"></div>' +
+              '<div class="fc-stacked-seg fc-seg-trans" style="width:' + segB.trans.toFixed(2) + '%" title="Transporte"></div>' +
+              '<div class="fc-stacked-seg fc-seg-field" style="width:' + segB.field.toFixed(2) + '%" title="Suelo N₂O"></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="fc-chart-legend">' +
+            '<span><i class="fc-seg-mfg"></i> Fabricación</span>' +
+            '<span><i class="fc-seg-trans"></i> Transporte</span>' +
+            '<span><i class="fc-seg-field"></i> Suelo (N₂O)</span>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function recalcProgramCompare(rA, rB) {
+      if (!rA || !rB || !rA.ok || !rB.ok) return;
+      var diff = rB.totals.total_kg_co2e - rA.totals.total_kg_co2e;
+      var pct = rA.totals.total_kg_co2e > 0 ? Math.round((diff / rA.totals.total_kg_co2e) * 100) : 0;
+      var diffHa = (rA.totals.per_ha_kg_co2e != null && rB.totals.per_ha_kg_co2e != null)
+        ? rB.totals.per_ha_kg_co2e - rA.totals.per_ha_kg_co2e : null;
+
+      document.getElementById('programCompareResults').innerHTML =
+        '<div class="fc-compare-card fc-prog-card-a"><strong>Programa A</strong><span class="val">' +
+        NpFertilizerCarbon.formatCo2e(rA.totals.total_kg_co2e) + '</span>' +
+        '<span style="font-size:11px;color:#64748b;">Fab ' + NpFertilizerCarbon.formatCo2e(rA.totals.manufacturing_kg_co2e) +
+        ' · Transp ' + NpFertilizerCarbon.formatCo2e(rA.totals.transport_kg_co2e) +
+        ' · Suelo ' + NpFertilizerCarbon.formatCo2e(rA.totals.field_kg_co2e) + '</span></div>' +
+        '<div class="fc-compare-card fc-prog-card-b"><strong>Programa B</strong><span class="val">' +
+        NpFertilizerCarbon.formatCo2e(rB.totals.total_kg_co2e) + '</span>' +
+        '<span style="font-size:11px;color:#64748b;">Fab ' + NpFertilizerCarbon.formatCo2e(rB.totals.manufacturing_kg_co2e) +
+        ' · Transp ' + NpFertilizerCarbon.formatCo2e(rB.totals.transport_kg_co2e) +
+        ' · Suelo ' + NpFertilizerCarbon.formatCo2e(rB.totals.field_kg_co2e) + '</span></div>' +
+        '<div class="fc-compare-card"><strong>B − A (diferencia)</strong><span class="val">' +
+        (diff >= 0 ? '+' : '') + NpFertilizerCarbon.formatCo2e(diff) + '</span>' +
+        '<span style="font-size:11px;color:#64748b;">' + (pct >= 0 ? '+' : '') + pct + '% vs Programa A' +
+        (diffHa != null ? ' · ' + (diffHa >= 0 ? '+' : '') + NpFertilizerCarbon.formatCo2e(diffHa) + '/ha' : '') +
+        '</span></div>';
+
+      renderProgramCharts(rA, rB);
+
+      document.getElementById('programCompareSummary').innerHTML =
+        programSummaryHtml('Detalle Programa A', state.scenario_a, rA) +
+        programSummaryHtml('Detalle Programa B', state.scenario_b, rB);
+
+      document.getElementById('totalBadge').textContent =
+        'A: ' + NpFertilizerCarbon.formatCo2e(rA.totals.total_kg_co2e) +
+        ' | B: ' + NpFertilizerCarbon.formatCo2e(rB.totals.total_kg_co2e);
+
+      var banner = document.getElementById('reductionBanner');
+      if (rA.totals.total_kg_co2e > 0 && Math.abs(diff) > 0.001) {
+        banner.classList.add('visible');
+        if (diff < 0) {
+          banner.classList.remove('increase');
+          banner.innerHTML = '↓ Reducción estimada (Programa B vs A): ' +
+            NpFertilizerCarbon.formatCo2e(Math.abs(diff)) + ' (' + Math.abs(pct) + '% menos CO₂e)' +
+            '<span>Estimación de referencia — validar antes de comunicar o decidir</span>';
+        } else {
+          banner.classList.add('increase');
+          banner.innerHTML = '↑ Programa B emitiría más: +' +
+            NpFertilizerCarbon.formatCo2e(diff) + ' (' + pct + '% vs Programa A)' +
+            '<span>Estimación de referencia — validar antes de comunicar o decidir</span>';
+        }
+      } else {
+        banner.classList.remove('visible', 'increase');
+        banner.innerHTML = '';
+      }
+    }
+
+    function renderCitationsFull() {
+      var list = NpFertilizerCarbon.getCitations();
+      document.getElementById('citationsFullList').innerHTML = list.map(function (c) {
+        return NpFertilizerCarbon.formatCitationHtml(c);
+      }).join('') || '<li>Sin referencias cargadas.</li>';
+    }
+
+    function renderCitationsUsed(result) {
+      var used = (result && result.citations) ? result.citations : [];
+      document.getElementById('citationsUsedList').innerHTML = used.map(function (c) {
+        return NpFertilizerCarbon.formatCitationHtml(c);
+      }).join('') || '<li>—</li>';
+    }
+
+    function renderOriginEfficiency(benchmark) {
+      var panel = document.getElementById('efficiencyPanel');
+      if (!panel) return;
+
+      if (!benchmark || !benchmark.ok || benchmark.adjustable_rows === 0) {
+        panel.style.display = 'none';
+        panel.innerHTML = '';
+        return;
+      }
+
+      if (benchmark.range_kg_co2e <= 0.001) {
+        panel.style.display = 'block';
+        panel.innerHTML =
+          '<h4>📊 Nivel de eficiencia por origen (referencia)</h4>' +
+          '<p class="fc-efficiency-note">Con tus productos y dosis actuales, ya estás en el <strong>mínimo estimado</strong> ' +
+          'según los orígenes de fabricación disponibles en la tabla de factores.</p>' +
+          '<p class="fc-efficiency-disclaimer">' + benchmark.disclaimer + '</p>';
+        return;
+      }
+
+      var pos = benchmark.position_pct != null ? benchmark.position_pct : 50;
+      var score = benchmark.efficiency_score != null ? benchmark.efficiency_score : '—';
+      var oppsHtml = '';
+      if (benchmark.opportunities && benchmark.opportunities.length) {
+        oppsHtml = '<ul class="fc-efficiency-opps">' + benchmark.opportunities.slice(0, 3).map(function (o) {
+          return '<li><strong>' + o.fertilizer_name + '</strong>: hasta ' +
+            NpFertilizerCarbon.formatCo2e(o.saving_kg_co2e) + ' menos en fabricación con origen ' +
+            o.best_origin_group_label + ' (estimado)</li>';
+        }).join('') + '</ul>';
+      }
+
+      var potentialHtml = '';
+      if (benchmark.potential_reduction_kg_co2e > 0.001) {
+        potentialHtml =
+          '<div class="fc-efficiency-potential">💡 Podrías reducir hasta ' +
+          NpFertilizerCarbon.formatCo2e(benchmark.potential_reduction_kg_co2e) +
+          ' (~' + benchmark.potential_reduction_pct + '%) cambiando solo el origen de fabricación (mismos productos y dosis).</div>';
+      }
+
+      var userFactorNote = benchmark.has_user_provided_factors
+        ? ' Algunas filas usan factor propio; el rango solo aplica a filas con factor estimado por origen.'
+        : '';
+
+      panel.style.display = 'block';
+      panel.innerHTML =
+        '<h4>📊 Nivel de eficiencia por origen (referencia)</h4>' +
+        '<p class="fc-efficiency-note">Posición de tu listado entre el <strong>mínimo</strong> y el <strong>máximo</strong> estimado ' +
+        'para los mismos fertilizantes y dosis, variando solo el país/región de fabricación según factores públicos.' +
+        userFactorNote + '</p>' +
+        '<div class="fc-efficiency-score">' +
+          '<span class="score">' + score + '/100</span>' +
+          '<span class="tier">' + benchmark.tier_label + '</span>' +
+        '</div>' +
+        '<div class="fc-efficiency-gauge">' +
+          '<div class="fc-efficiency-gauge-labels">' +
+            '<span class="lbl-best">Mínimo estimado</span>' +
+            '<span>Tu programa</span>' +
+            '<span class="lbl-worst">Máximo estimado</span>' +
+          '</div>' +
+          '<div class="fc-efficiency-track">' +
+            '<div class="fc-efficiency-marker" style="left:' + pos + '%" title="Tu posición estimada"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="fc-efficiency-range">' +
+          '<div><span>Mínimo (mejores orígenes)</span><strong>' +
+            NpFertilizerCarbon.formatCo2e(benchmark.best_case_total_kg_co2e) + '</strong></div>' +
+          '<div class="is-current"><span>Tu programa actual</span><strong>' +
+            NpFertilizerCarbon.formatCo2e(benchmark.current_total_kg_co2e) + '</strong></div>' +
+          '<div><span>Máximo (peores orígenes)</span><strong>' +
+            NpFertilizerCarbon.formatCo2e(benchmark.worst_case_total_kg_co2e) + '</strong></div>' +
+        '</div>' +
+        potentialHtml +
+        oppsHtml +
+        '<p class="fc-efficiency-disclaimer">' + benchmark.disclaimer +
+        ' Ver <a href="terminos-condiciones.html#huella-carbono" target="_blank" rel="noopener noreferrer">T&amp;C §7</a>.</p>';
+    }
+
+    function recalc() {
+      persistForm();
+      updateOriginHint();
+
+      var inputActive = buildInputFromScenario(activeScenario());
+      var result = NpFertilizerCarbon.calculate(inputActive);
+      if (!result.ok) return;
+
+      var rA = NpFertilizerCarbon.calculate(buildInputFromScenario(state.scenario_a));
+      var rB = NpFertilizerCarbon.calculate(buildInputFromScenario(state.scenario_b));
+      recalcProgramCompare(rA, rB);
+
+      var activeLabel = state.active_scenario === 'b' ? 'Programa B' : 'Programa A';
+      document.getElementById('totalDisplay').textContent =
+        activeLabel + ': ' + NpFertilizerCarbon.formatCo2e(result.totals.total_kg_co2e);
+      document.getElementById('mfgTotal').textContent = NpFertilizerCarbon.formatCo2e(result.totals.manufacturing_kg_co2e);
+      document.getElementById('transTotal').textContent = NpFertilizerCarbon.formatCo2e(result.totals.transport_kg_co2e);
+      document.getElementById('fieldTotal').textContent = NpFertilizerCarbon.formatCo2e(result.totals.field_kg_co2e);
+      document.getElementById('perHaTotal').textContent = result.totals.per_ha_kg_co2e != null
+        ? NpFertilizerCarbon.formatCo2e(result.totals.per_ha_kg_co2e) + '/ha'
+        : '—';
+
+      var meta = result.methodology || {};
+      var originsText = result.multiple_origins
+        ? result.origins_used.map(function (o) { return o.name; }).join(', ')
+        : result.origin_group_label;
+      var precisionLabel = result.has_user_provided_factors
+        ? 'Mixta (estimado + factor propio del usuario)'
+        : 'Estimado (±30–50%)';
+      document.getElementById('metaBox').innerHTML =
+        '<strong>Metodología:</strong> ' + (meta.manufacturing || '') + '<br>' +
+        '<strong>Suelo:</strong> ' + (meta.field || '') + '<br>' +
+        '<strong>Transporte:</strong> ' + (meta.transport || '') + '<br>' +
+        '<strong>Origen(es):</strong> ' + originsText +
+        (result.multiple_origins ? ' (' + result.origins_used.length + ' países distintos)' : '') +
+        ' · <strong>Filas:</strong> ' + result.rows.filter(function (r) { return r.ok; }).length +
+        ' · <strong>Precisión:</strong> ' + precisionLabel +
+        ' · <strong>Año factor:</strong> ' + (meta.factor_year || '—') +
+        (result.has_user_provided_factors ? '<br><em>Los factores propios los ingresa el usuario; NutriPlant no los verifica.</em>' : '');
+
+      renderCitationsUsed(result);
+
+      var benchmark = NpFertilizerCarbon.calculateOriginEfficiency(inputActive);
+      renderOriginEfficiency(benchmark);
+
+      var tbody = document.getElementById('rowsBody');
+      result.rows.forEach(function (rr, i) {
+        var tr = tbody.querySelector('tr[data-idx="' + i + '"]');
+        if (!tr || !rr.ok) return;
+        var fert = NpFertilizerCarbon.findFertilizer(rr.fertilizer_id);
+        tr.querySelector('.row-n').textContent = fert ? fert.n_total_pct + '%' : '—';
+        tr.querySelector('.row-mfg').innerHTML = NpFertilizerCarbon.formatCo2e(rr.manufacturing_kg_co2e) +
+          (rr.row_precision === 'user_provided' ? '<span class="fc-user-badge" title="' + (rr.factor_source_label || '') + '">PROPIO</span>' : '');
+        tr.querySelector('.row-trans').textContent = NpFertilizerCarbon.formatCo2e(rr.transport_kg_co2e);
+        tr.querySelector('.row-field').textContent = NpFertilizerCarbon.formatCo2e(rr.field_kg_co2e);
+        tr.querySelector('.row-total').textContent = NpFertilizerCarbon.formatCo2e(rr.total_kg_co2e);
+      });
+
+      recalcCompare();
+    }
+
+    function recalcCompare() {
+      var fertId = document.getElementById('cmpFert').value;
+      var dose = Number(document.getElementById('cmpDose').value) || 0;
+      var isoA = document.getElementById('cmpOriginA').value || 'CN';
+      var isoB = document.getElementById('cmpOriginB').value || 'EU';
+      var transportKm = Number(document.getElementById('transportKm').value) || 0;
+      var areaHa = Number(document.getElementById('areaHa').value) || 1;
+
+      function calcFor(iso) {
+        return NpFertilizerCarbon.calculate({
+          origin_country_iso: iso,
+          area_ha: areaHa,
+          transport_km: transportKm,
+          rows: [{ fertilizer_id: fertId, dose: dose, dose_unit: 'kg_ha' }]
+        });
+      }
+      var rA = calcFor(isoA);
+      var rB = calcFor(isoB);
+      if (!rA.ok || !rB.ok) return;
+
+      var cA = NpFertilizerCarbon.findCountry(isoA);
+      var cB = NpFertilizerCarbon.findCountry(isoB);
+      var diff = rB.totals.total_kg_co2e - rA.totals.total_kg_co2e;
+      var pct = rA.totals.total_kg_co2e > 0 ? Math.round((diff / rA.totals.total_kg_co2e) * 100) : 0;
+
+      document.getElementById('compareResults').innerHTML =
+        '<div class="fc-compare-card"><strong>' + (cA ? cA.name : isoA) + '</strong><span class="val">' + NpFertilizerCarbon.formatCo2e(rA.totals.total_kg_co2e) + '</span><span style="font-size:11px;color:#64748b;">' + rA.origin_group_label + '</span></div>' +
+        '<div class="fc-compare-card"><strong>' + (cB ? cB.name : isoB) + '</strong><span class="val">' + NpFertilizerCarbon.formatCo2e(rB.totals.total_kg_co2e) + '</span><span style="font-size:11px;color:#64748b;">' + rB.origin_group_label + '</span></div>' +
+        '<div class="fc-compare-card"><strong>Diferencia</strong><span class="val">' + (diff >= 0 ? '+' : '') + NpFertilizerCarbon.formatCo2e(diff) + '</span><span style="font-size:11px;color:#64748b;">' + (pct >= 0 ? '+' : '') + pct + '% vs origen A</span></div>';
+    }
+
+    function bindEvents() {
+      ['originCountry', 'areaHa', 'transportKm', 'doseUnit', 'cmpFert', 'cmpDose', 'cmpOriginA', 'cmpOriginB'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', recalc);
+        el.addEventListener('change', recalc);
+      });
+    }
+
+    function init() {
+      loadState();
+      NpFertilizerCarbon.loadFactors('assets/emission-factors-by-country.json?v=20260622b').then(function (data) {
+        renderCitationsFull();
+        document.getElementById('originCountry').innerHTML = countryOptionsHtml(state.origin_country_iso || 'GLOBAL', false);
+        document.getElementById('originCountry').addEventListener('change', function () {
+          updateOriginHint();
+        });
+        document.getElementById('cmpFert').innerHTML = fertOptionsHtml(state.cmp_fert || 'calcium_nitrate');
+        document.getElementById('cmpOriginA').innerHTML = countryOptionsHtml(state.cmp_origin_a || 'CN', true);
+        document.getElementById('cmpOriginB').innerHTML = countryOptionsHtml(state.cmp_origin_b || 'EU', true);
+        if (!state.cmp_origin_a) document.getElementById('cmpOriginA').value = 'CN';
+        if (!state.cmp_origin_b) document.getElementById('cmpOriginB').value = 'DE';
+        restoreForm();
+        ensureRowOrigins(activeScenario().rows);
+        renderRows();
+        bindEvents();
+        recalc();
+      }).catch(function (err) {
+        document.getElementById('resultsPanel').innerHTML = '<p style="color:#dc2626;">Error al cargar factores: ' + err.message + '</p>';
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>

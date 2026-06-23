@@ -198,6 +198,7 @@
           <button type="button" id="btn-lamina-riego-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showLaminaRiegoTool()" data-np-tooltip="Lámina de riego y balance hídrico" aria-label="Lámina de riego y balance hídrico">🌧️</button>
           <button type="button" id="btn-vpd-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showVPDCalculator()" data-np-tooltip="Estimador de déficit de presión de vapor" aria-label="Estimador de déficit de presión de vapor">🌡️</button>
           <button type="button" id="btn-fertilizer-solubility-salt-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerSolubilitySaltTool()" data-np-tooltip="Solubilidad e índice salino" aria-label="Solubilidad e índice salino">🧂</button>
+          <button type="button" id="btn-fertilizer-carbon-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCarbonCalculator()" data-np-tooltip="Huella de carbono de fertilizantes" aria-label="Huella de carbono de fertilizantes">🌍</button>
           <button type="button" id="btn-extraccion-etapa-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showExtraccionEtapaCalculator()" data-np-tooltip="Distribución nutrimental por etapa (%)" aria-label="Distribución nutrimental por etapa (porcentaje)">📊</button>
           <button type="button" id="btn-periodic-table-nutrients" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showPeriodicTableNutrientsCalculator()" data-np-tooltip="Tabla Periódica (Nutrientes Esenciales)" aria-label="Tabla Periódica (Nutrientes Esenciales)">⚛️</button>
           <button type="button" id="btn-nutrient-interactions-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientInteractionsTool()" data-np-tooltip="Interacciones y movilidad nutrimental" aria-label="Interacciones y movilidad nutrimental">🔗</button>
@@ -520,6 +521,12 @@
       }
       if (typeof closeFertilizerSolubilitySaltTool !== 'undefined') {
         window.closeFertilizerSolubilitySaltTool = closeFertilizerSolubilitySaltTool;
+      }
+      if (typeof showFertilizerCarbonCalculator !== 'undefined') {
+        window.showFertilizerCarbonCalculator = showFertilizerCarbonCalculator;
+      }
+      if (typeof closeFertilizerCarbonCalculator !== 'undefined') {
+        window.closeFertilizerCarbonCalculator = closeFertilizerCarbonCalculator;
       }
       if (typeof closeNutrientInteractionsTool !== 'undefined') {
         window.closeNutrientInteractionsTool = closeNutrientInteractionsTool;
@@ -5160,6 +5167,21 @@ CONTRATO:
     }
     window.closeFertilizerSolubilitySaltTool = closeFertilizerSolubilitySaltTool;
 
+    function showFertilizerCarbonCalculator() {
+      var modal = document.getElementById('fertilizerCarbonCalculatorModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showFertilizerCarbonCalculator = showFertilizerCarbonCalculator;
+
+    function closeFertilizerCarbonCalculator() {
+      var modal = document.getElementById('fertilizerCarbonCalculatorModal');
+      var frame = document.getElementById('fertilizerCarbonCalculatorFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeFertilizerCarbonCalculator = closeFertilizerCarbonCalculator;
+
     function showNutrientInteractionsTool() {
       var modal = document.getElementById('nutrientInteractionsToolModal');
       if (!modal) return;
@@ -7121,6 +7143,22 @@ CONTRATO:
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="fertilizerSolubilitySaltFrame" src="solubilidad-indice-salino-free.html" title="Solubilidad e índice salino" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal huella de carbono de fertilizantes -->
+  <div id="fertilizerCarbonCalculatorModal" class="modal-overlay" onclick="if(event.target===this) closeFertilizerCarbonCalculator();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title">🌍 Huella de carbono de fertilizantes</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeFertilizerCarbonCalculator()">×</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="fertilizerCarbonCalculatorFrame" src="fertilizer-carbon-free.html?embed=dashboard&v=20260622" title="Huella de carbono de fertilizantes" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>
