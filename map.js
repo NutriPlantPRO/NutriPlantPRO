@@ -79,7 +79,7 @@ class NutriPlantMap {
     
     // Cargar la API de Google Maps
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=drawing,geometry&callback=initNutriPlantMap`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=geometry&callback=initNutriPlantMap`;
     script.async = true;
     script.defer = true;
     script.onerror = () => {
@@ -260,7 +260,8 @@ class NutriPlantMap {
       setTimeout(() => this.refreshMapView('delayed-' + delay), delay);
     });
 
-    // Configurar el Drawing Manager
+    // DrawingManager ya no está disponible en Maps JS API 3.65+.
+    // El trazado de NutriPlant usa clics propios sobre el mapa, así que no debe bloquear la inicialización.
     this.setupDrawingManager();
 
     // Configurar eventos
@@ -299,6 +300,12 @@ class NutriPlantMap {
   }
 
   setupDrawingManager() {
+    if (!google.maps.drawing || !google.maps.drawing.DrawingManager) {
+      console.warn('⚠️ DrawingManager no disponible; usando dibujo por clics de NutriPlant.');
+      this.drawingManager = null;
+      return;
+    }
+
     const drawingManagerOptions = {
       drawingMode: null,
       drawingControl: false, // 🚀 CRÍTICO: Deshabilitar controles de dibujo (solo usar clics en mapa)
