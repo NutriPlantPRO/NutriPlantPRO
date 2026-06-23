@@ -57,6 +57,45 @@
       padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px;
       border: 1px solid #86efac; line-height: 1.45; text-align: right; max-width: 320px;
     }
+    .fc-compare-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 2px solid #3b82f6;
+      border-radius: 10px;
+      padding: 10px 10px;
+      margin: 0 0 10px;
+      box-shadow: 0 1px 4px rgba(37, 99, 235, 0.12);
+    }
+    .fc-compare-top__cell {
+      text-align: center;
+      padding: 8px 6px;
+      background: rgba(255, 255, 255, 0.72);
+      border-radius: 8px;
+      border: 1px solid #93c5fd;
+      min-width: 0;
+    }
+    .fc-compare-top__cell--a { border-left: 3px solid #2563eb; }
+    .fc-compare-top__cell--b { border-left: 3px solid #7c3aed; }
+    .fc-compare-top__lbl {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #1d4ed8;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+    }
+    .fc-compare-top__val {
+      display: block;
+      font-size: clamp(13px, 3.8vw, 16px);
+      font-weight: 800;
+      color: #1e3a8a;
+      margin-top: 4px;
+      line-height: 1.15;
+      word-break: keep-all;
+    }
     .fc-factor-info {
       background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
       padding: 10px 12px; margin: 0 0 12px; font-size: 11px; color: #1e40af; line-height: 1.5;
@@ -64,9 +103,21 @@
     .fc-factor-info strong { color: #1e3a8a; }
     .fc-route-track-wrap {
       overflow-x: auto;
+      overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
       margin: 0 0 12px;
       width: 100%;
+      max-width: 100%;
+    }
+    .fc-route-scroll-hint {
+      display: none;
+      margin: 0 0 6px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-align: center;
+      letter-spacing: 0.02em;
     }
     .fc-route-track {
       display: flex;
@@ -207,6 +258,42 @@
     }
     .fc-route-block {
       margin-bottom: 14px;
+    }
+    @media (max-width: 720px) {
+      .fc-route-scroll-hint { display: block; }
+      .fc-route-track-wrap {
+        margin-left: -4px;
+        margin-right: -4px;
+        padding-bottom: 4px;
+        scroll-snap-type: x proximity;
+      }
+      .fc-route-track-wrap::-webkit-scrollbar { height: 5px; }
+      .fc-route-track-wrap::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+      }
+      .fc-route-track {
+        width: max-content;
+        min-width: 100%;
+        padding: 10px 8px;
+        scroll-snap-align: start;
+      }
+      .fc-route-col {
+        flex: 0 0 122px;
+        min-width: 122px;
+        max-width: 122px;
+        scroll-snap-align: start;
+      }
+      .fc-route-col--port {
+        flex: 0 0 152px;
+        min-width: 152px;
+        max-width: 152px;
+      }
+      .fc-route-arrow { flex: 0 0 12px; margin: 0; font-size: 13px; }
+      .fc-flow-step { min-height: 72px; padding: 6px 4px; }
+      .fc-flow-val { font-size: 10px; min-height: 2.4em; }
+      .fc-route-col .fc-field { min-height: 96px; padding: 8px 6px; }
+      .fc-field--port { min-height: 148px; }
     }
     .fc-transport-estimate {
       grid-column: 1 / -1;
@@ -555,7 +642,17 @@
       <h1 class="fc-title np-free-tool-title">🌍 Huella de carbono de fertilizantes</h1>
       <div class="np-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
     </div>
-    <div class="fc-badge" id="totalBadge">Total: —</div>
+  </div>
+
+  <div class="fc-compare-top" id="compareTopBar" aria-live="polite">
+    <div class="fc-compare-top__cell fc-compare-top__cell--a">
+      <span class="fc-compare-top__lbl">Programa A</span>
+      <span class="fc-compare-top__val" id="compareTopA">—</span>
+    </div>
+    <div class="fc-compare-top__cell fc-compare-top__cell--b">
+      <span class="fc-compare-top__lbl">Programa B</span>
+      <span class="fc-compare-top__val" id="compareTopB">—</span>
+    </div>
   </div>
 
   <div class="fc-tagline" id="valueTagline">
@@ -633,6 +730,7 @@
     <strong id="activeRouteTitle">—</strong>
     <p class="hint" id="activeRouteHint">Selecciona un fertilizante en la tabla ↓. Cada producto tiene su propia ruta logística.</p>
   </div>
+  <p class="fc-route-scroll-hint">Desliza horizontalmente para ver toda la ruta →</p>
   <div class="fc-route-track-wrap">
   <div class="fc-route-track" id="supplyChainFlow" aria-label="Cadena logística y parámetros de ruta">
     <div class="fc-route-col fc-route-col--mfg">
@@ -1723,9 +1821,10 @@
         programSummaryHtml('Detalle Programa A', state.scenario_a, rA) +
         programSummaryHtml('Detalle Programa B', state.scenario_b, rB);
 
-      document.getElementById('totalBadge').textContent =
-        'Programa A: ' + NpFertilizerCarbon.formatCo2e(rA.totals.total_kg_co2e) +
-        ' | Programa B: ' + NpFertilizerCarbon.formatCo2e(rB.totals.total_kg_co2e);
+      var elA = document.getElementById('compareTopA');
+      var elB = document.getElementById('compareTopB');
+      if (elA) elA.textContent = NpFertilizerCarbon.formatCo2e(rA.totals.total_kg_co2e);
+      if (elB) elB.textContent = NpFertilizerCarbon.formatCo2e(rB.totals.total_kg_co2e);
 
       var banner = document.getElementById('reductionBanner');
       if (rA.totals.total_kg_co2e > 0 && Math.abs(diff) > 0.001) {
