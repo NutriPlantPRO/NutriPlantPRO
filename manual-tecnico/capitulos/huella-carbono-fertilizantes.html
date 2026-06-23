@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Huella de carbono de fertilizantes — Manual NutriPlant PRO</title>
+  <meta name="description" content="Estimación de CO₂e en fertilizantes: fabricación por región LCA, transporte en 3 tramos, N₂O de suelo (IPCC), Programa A vs B y benchmark de eficiencia por origen. Herramienta gratuita NutriPlant PRO.">
+  <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/huella-carbono-fertilizantes.html">
+  <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
+  <link rel="stylesheet" href="../assets/manual.css">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Huella de carbono de fertilizantes",
+  "description": "Estimación de CO₂e en fertilizantes: fabricación por región LCA, transporte en 3 tramos, N₂O de suelo (IPCC), Programa A vs B y benchmark de eficiencia por origen.",
+  "url": "https://nutriplantpro.com/manual-tecnico/capitulos/huella-carbono-fertilizantes.html",
+  "inLanguage": "es",
+  "datePublished": "2026-06-22",
+  "dateModified": "2026-06-22",
+  "author": {
+    "@type": "Person",
+    "name": "Jesús Avila Mendoza",
+    "url": "https://nutriplantpro.com/manual-tecnico/autoria.html"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "NutriPlant PRO",
+    "url": "https://nutriplantpro.com",
+    "logo": "https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png"
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Manual Técnico NutriPlant PRO",
+    "url": "https://nutriplantpro.com/manual-tecnico/index.html"
+  }
+}
+  </script>
+</head>
+<body>
+  <header class="mt-header"><div class="mt-header-inner">
+    <a class="mt-brand" href="../index.html"><img src="../../assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO"><span>Manual técnico</span></a>
+    <div class="mt-header-right">
+      <a href="../autoria.html" class="mt-autoria-btn"><span class="mt-autoria-btn__icon" aria-hidden="true">✍️</span><span class="mt-autoria-btn__text">Autoría</span></a>
+      <nav class="mt-nav"><a href="../index.html">Índice</a><a href="../../login.html">Plataforma</a></nav>
+    </div>
+  </div></header>
+  <main class="mt-wrap">
+    <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar F · Sostenibilidad</p>
+    <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-06</span>
+    <h1>Huella de carbono de fertilizantes</h1>
+    <h2>Resumen</h2>
+    <p>
+      NutriPlant incluye una <strong>calculadora gratuita de estimación de CO₂e</strong> asociada al uso de fertilizantes:
+      fabricación (promedios regionales LCA), transporte opcional en <strong>tres tramos</strong> y emisiones de suelo por
+      <strong>N₂O</strong> (IPCC Tier 1). Permite comparar dos programas completos (<strong>Programa A vs B</strong>),
+      revisar un benchmark de eficiencia por origen de fabricación y citar fuentes públicas. Es material
+      <strong>educativo y de referencia</strong>; no sustituye medición directa, certificación oficial ni datos de marcas
+      comerciales. Marco legal: <a href="../../terminos-condiciones.html#huella-carbono">T&amp;C §7</a>.
+    </p>
+
+    <h2>Dónde está en la app</h2>
+    <ul>
+      <li><strong>Herramienta gratuita</strong> (login y dashboard): icono <strong>🌍 Huella de carbono de fertilizantes</strong> → modal con <code>fertilizer-carbon-free.html</code>.</li>
+      <li><strong>Login:</strong> botón en la zona de calculadoras gratuitas.</li>
+      <li><strong>Dashboard:</strong> icono 🌍 en la barra lateral de calculadoras (misma lógica que login).</li>
+      <li><strong>Persistencia:</strong> <code>nutriplant_free_fertilizer_carbon_v2</code> (localStorage del navegador; no va a Supabase ni al proyecto del suscriptor).</li>
+      <li><strong>Motor compartido:</strong> <code>assets/fertilizer-carbon-core.js</code> + <code>assets/emission-factors-by-country.json</code>.</li>
+    </ul>
+
+    <h2>Qué calcula (y qué no)</h2>
+    <table class="mt-table">
+      <thead><tr><th>Componente</th><th>Incluido</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Fabricación</strong></td><td>Sí</td><td>kg CO₂e/kg por región. Productos N (urea, AN, CAN, UAN) calibrados vs <strong>Fertilizers Europe (2020)</strong> — promedios regionales validados DNV. Otros: literatura LCA. Sin marcas.</td></tr>
+        <tr><td><strong>Transporte</strong></td><td>Opcional (3 tramos)</td><td>Origen (fábrica→puerto export.), marítimo (puerto→puerto), destino (puerto→campo). Factores DESNZ/DEFRA.</td></tr>
+        <tr><td><strong>Campo — N₂O</strong></td><td>Sí (N aplicado)</td><td>IPCC 2019 Refinement Tier 1: EF1 = 0,01 kg N₂O-N / kg N; GWP N₂O = 273 (AR6).</td></tr>
+        <tr><td>CO₂ biogénico / secuestro</td><td>No</td><td>Fuera de alcance de esta estimación rápida.</td></tr>
+        <tr><td>Certificación / inventario oficial</td><td>No</td><td>Referencia ±30–50 % según datos logísticos y LCA reales del usuario.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>País destino vs región de fabricación</h2>
+    <p>
+      La lista de <strong>países</strong> en la herramienta describe dónde se <strong>aplica</strong> el fertilizante (destino del
+      campo), no necesariamente dónde se produce. La <strong>región de fabricación</strong> se elige por fila de producto o como
+      origen global del escenario. Para MX, US, BR, CO, CL, CA, AU, AR y PE hay selector de <strong>puerto o costa de llegada</strong>
+      (p. ej. Golfo vs Pacífico en México, incl. Topolobampo/Sinaloa) porque el tramo terrestre puerto→campo cambia mucho.
+    </p>
+    <p>El botón <strong>「📍 Estimar km (referencia)」</strong> rellena los tres km según región fab., país destino y puerto elegido, usando tablas de rutas comerciales típicas en el JSON — no GPS ni logística real del usuario.</p>
+
+    <h2>Disponibilidad regional de productos</h2>
+    <p>
+      El desplegable de fertilizantes se <strong>filtra por origen de fabricación</strong> de cada fila. Perfiles en
+      <code>methodology.availability_profiles</code>: productos N granulados (urea, AN, CAN, UAN), NP granulados (DAP, NPK, KCl),
+      hidrosolubles/fertirriego (MAP, nitrato calcio, MKP, etc.) y orgánicos. Niveles:
+      <code>primary</code>, <code>secondary</code>, <code>import_typical</code>, <code>not_applicable</code>.
+      Si el origen no produce localmente un producto (p. ej. hidrosoluble con origen MX o BR), <strong>no aparece en la lista</strong>.
+      Con factor propio (EPD/LCA) el usuario puede ingresar fabricación aunque el origen no sea productor referenciado.
+    </p>
+
+    <h2>Transporte en tres tramos</h2>
+    <div class="mt-formula">
+      CO₂e transporte = Σ (masa_t × km × factor_t)<br>
+      Carretera: ≈ 0,062 kg CO₂e / t·km<br>
+      Marítimo granel: ≈ 0,010 kg CO₂e / t·km
+    </div>
+    <table class="mt-table">
+      <thead><tr><th>Tramo</th><th>Qué representa</th><th>km referencia (ejemplos por región fab.)</th></tr></thead>
+      <tbody>
+        <tr><td>🚛 Origen</td><td>Planta → puerto de exportación</td><td>CN ~220 · EU ~90 · US ~110 · MX ~95 · BR ~160 · IN ~280 · MENA ~70 · GLOBAL ~120</td></tr>
+        <tr><td>⛴️ Marítimo</td><td>Puerto export. → puerto destino</td><td>Tabla <code>maritime_km</code> por par región fab. → país destino; 0 si producción y destino en la misma región/país.</td></tr>
+        <tr><td>🚛 Destino</td><td>Puerto → campo interior</td><td>Por puerto elegido (<code>road_km</code>) o promedio nacional (~150 km por defecto).</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Programa A vs Programa B</h2>
+    <p>
+      Cada escenario guarda su propio listado de fertilizantes (tipo, dosis kg/ha o kg totales, región de fabricación por fila,
+      factor opcional del usuario). El resumen compara totales de CO₂e, desglose fabricación / transporte / N₂O y diferencia
+      absoluta y porcentual entre escenarios. Sirve para evaluar cambios de producto, dosis u origen — no para declaraciones
+      regulatorias sin validación externa.
+    </p>
+
+    <h2>Benchmark de eficiencia por origen</h2>
+    <p>
+      Para filas con factor <strong>estimado</strong> (no custom), la herramienta compara el total de fabricación actual con el
+      mínimo y máximo teólico del mismo producto según los factores regionales de la tabla LCA. El <strong>score 0–100</strong>
+      indica qué tan cerca está del mínimo estimado: ≥75 eficiente; 50–74 moderado; 25–49 mejorable; &lt;25 poco eficiente.
+      El transporte y el N₂O de campo no cambian con el origen en este benchmark — solo la fabricación.
+    </p>
+
+    <h2>Fuentes públicas citadas</h2>
+    <ul>
+      <li><strong>Fertilizers Europe (2020)</strong> — referencias regionales AN, CAN, urea, UAN (validadas DNV GL); base de calibración NutriPlant para productos N.</li>
+      <li><strong>IPCC (2019) Refinement</strong> — Vol. 4 Cap. 11, N₂O en suelos gestionados (EF1 Tier 1).</li>
+      <li><strong>IPCC AR6</strong> — GWP N₂O = 273 (100 años).</li>
+      <li><strong>UK DESNZ/DEFRA</strong> — factores de transporte de carga (carretera y marítimo).</li>
+      <li><strong>US EPA AP-42 §14.1</strong> — referencia cruzada N₂O suelo.</li>
+      <li><strong>US LCI / Federal LCA Commons</strong> — inventarios de fabricación (referencia Norteamérica).</li>
+      <li><strong>Promedios regionales LCA</strong> — compilación NutriPlant desde literatura y bases públicas (sin datos de marca).</li>
+    </ul>
+    <p>En la calculadora, el panel de referencias enlaza al PDF IPCC Cap. 11 corregido (<code>19R_V4_Ch11_Soils_N2O_CO2.pdf</code>).</p>
+
+    <h2>Factor propio del usuario</h2>
+    <p>Por fila de producto puede elegirse:</p>
+    <ul>
+      <li><strong>Estimado por origen</strong> — factor regional de la tabla (predeterminado).</li>
+      <li><strong>Factor ingresado</strong> — kg CO₂e/kg producto (p. ej. de un LCA de proveedor).</li>
+      <li><strong>Total fabricación ingresado</strong> — kg CO₂e totales de fabricación para esa línea.</li>
+    </ul>
+    <p>Las filas con dato del usuario se marcan como <em>user_provided</em> y quedan fuera del benchmark min/máx por origen.</p>
+
+    <h2>Relación con otros capítulos</h2>
+    <ul>
+      <li><a href="granular-mezclas.html">Granular: mezclas y programas</a> — los kg/ha del programa pueden trasladarse manualmente a la calculadora.</li>
+      <li><a href="programa-fertirriego-etapas.html">Fertirriego por etapas</a> — misma lógica de dosis; la huella no lee el proyecto PRO automáticamente.</li>
+      <li><a href="n-mineralizable-agua-disponible-suelo.html">N mineralizable</a> — complementa la visión de N en suelo; la huella incluye N₂O por N aplicado, no N mineralizable.</li>
+      <li><a href="interacciones-mulder-compatibilidad.html">Mulder y compatibilidad</a> — elegir productos alternativos puede cambiar dosis y origen en A vs B.</li>
+    </ul>
+
+    <h2>Herramienta interactiva</h2>
+    <p>
+      <a href="../../fertilizer-carbon-free.html" target="_blank" rel="noopener noreferrer">Abrir calculadora de huella de carbono (gratis)</a>
+      — también desde login/dashboard (🌍).
+    </p>
+
+    <div class="mt-note">
+      <p><strong>Aviso:</strong> estimación metodológica con incertidumbre amplia. Validar antes de uso comercial, regulatorio o de reportes de sostenibilidad. Ver <a href="../../terminos-condiciones.html#huella-carbono">T&amp;C §7</a>.</p>
+    </div>
+
+    <nav class="mt-chapter-nav"><a href="interacciones-mulder-compatibilidad.html">← Mulder / compatibilidad</a><a href="analisis-solucion-nutritiva-lab.html">Análisis solución (lab) →</a><a href="../index.html">Índice</a></nav>
+    <p class="mt-disclaimer">Guía técnica de apoyo. No constituye asesoría de carbono certificada ni inventario de GEI oficial.</p>
+  </main>
+  <footer class="mt-footer"><p>© NutriPlant PRO · <a href="../index.html">Manual técnico</a></p></footer>
+  <script src="../assets/manual-header.js"></script>
+  <script src="../assets/manual-nav.js"></script>
+</body>
+</html>

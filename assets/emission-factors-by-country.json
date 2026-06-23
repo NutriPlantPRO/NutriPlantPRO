@@ -1,23 +1,120 @@
 {
-  "version": "2026-06-22",
+  "version": "2026-06-23c",
   "methodology": {
     "title": "Estimación de huella de carbono de fertilizantes",
     "precision": "estimated",
-    "disclaimer": "Herramienta de referencia. Estimaciones metodológicas basadas en fuentes públicas (IPCC, DESNZ, EPA, USLCI). No representa medición directa, certificación oficial ni datos de marcas comerciales. El usuario debe validar resultados antes de uso comercial, regulatorio o de sostenibilidad.",
-    "manufacturing_note": "Factores de fabricación: promedios regionales derivados de literatura LCA pública y bases gubernamentales. Unidades: kg CO₂e por kg de producto.",
+    "reference_standard": "Fertilizers Europe (2020) regional reference values for AN, CAN, urea and UAN — validated by DNV GL; field N₂O IPCC Tier 1; transport DESNZ/DEFRA.",
+    "manufacturing_scope": "Fabricación hasta producto en planta (puerta de fábrica). Urea: kg CO₂e/kg excluyendo CO₂ capturado en el producto (se libera al aplicar); alineado a columna «excl. CO₂ captured» de Fertilizers Europe.",
+    "disclaimer": "Herramienta de referencia global NutriPlant PRO. Estimaciones metodológicas basadas en fuentes públicas (Fertilizers Europe, IPCC, DESNZ, EPA). No representa PCF certificado por planta, LCA auditado ni datos de marcas comerciales. Validar antes de uso comercial, regulatorio o de sostenibilidad.",
+    "manufacturing_note": "Factores N (urea, AN, CAN, UAN): promedios regionales Fertilizers Europe (2020), kg CO₂e/kg producto. Otros productos: literatura LCA pública regional. Sin marcas ni plantas concretas.",
     "field_note": "Emisiones de suelo (N₂O): IPCC 2019 Refinement Tier 1, EF1 = 0.01 kg N₂O-N / kg N aplicado.",
-    "transport_note": "Transporte opcional: factor promedio de carga (DEFRA/DESNZ freight, kg CO₂e por t·km).",
+    "transport_note": "Transporte opcional en tres tramos: terrestre en origen (fábrica → puerto exportación, estimado por región productora), marítimo (puerto origen → puerto destino) y terrestre (puerto destino → campo). Factores DESNZ/DEFRA (kg CO₂e por t·km).",
     "gwp_n2o": 273,
     "gwp_source": "IPCC AR6 (100 años)",
     "field_ef1": 0.01,
     "field_ef1_source": "IPCC 2019 Refinement, Vol. 4 Cap. 11",
-    "factor_year": 2019,
+    "factor_year": 2020,
+    "eu_reference_checks": [
+      {
+        "product": "Urea 46-0-0",
+        "fe_eu_kg_co2e_per_kg": 0.878,
+        "nutriplant_id": "urea"
+      },
+      {
+        "product": "AN 33,5-0-0",
+        "fe_eu_kg_co2e_per_kg": 1.112,
+        "nutriplant_id": "ammonium_nitrate"
+      },
+      {
+        "product": "CAN 27-0-0",
+        "fe_eu_kg_co2e_per_kg": 0.951,
+        "nutriplant_id": "can"
+      },
+      {
+        "product": "UAN 30-0-0",
+        "fe_eu_kg_co2e_per_kg": 0.782,
+        "nutriplant_id": "uan"
+      }
+    ],
+    "positioning_note": "Referencia global abierta alineada a promedios regionales Fertilizers Europe (2020) para productos N. PCF verificados por planta (p. ej. Yara/DNV) pueden ser menores por tecnología de abatimiento N₂O en ácido nítrico.",
+    "availability_legend": {
+      "primary": "Producción regional referenciada en literatura sectorial",
+      "secondary": "Producción local limitada o mezclas — factor regional orientativo",
+      "import_typical": "Importación habitual — factor del exportador/promedio regional",
+      "not_applicable": "Sin producción local referenciada — no se calcula fabricación con este origen (use GLOBAL, región exportadora o factor propio)"
+    },
+    "availability_profiles": {
+      "fe_n_global": {
+        "EU": "primary",
+        "CN": "primary",
+        "US": "primary",
+        "IN": "primary",
+        "RU": "primary",
+        "MENA": "primary",
+        "BR": "secondary",
+        "MX": "secondary",
+        "LATAM": "import_typical",
+        "AF": "import_typical",
+        "SEA": "import_typical",
+        "EA": "import_typical",
+        "OC": "secondary",
+        "GLOBAL": "secondary"
+      },
+      "granular_np": {
+        "EU": "primary",
+        "CN": "primary",
+        "US": "primary",
+        "IN": "primary",
+        "RU": "secondary",
+        "MENA": "primary",
+        "BR": "secondary",
+        "MX": "secondary",
+        "LATAM": "import_typical",
+        "AF": "import_typical",
+        "SEA": "import_typical",
+        "EA": "import_typical",
+        "OC": "primary",
+        "GLOBAL": "secondary"
+      },
+      "soluble_fertigation": {
+        "EU": "primary",
+        "CN": "primary",
+        "US": "primary",
+        "GLOBAL": "secondary",
+        "IN": "import_typical",
+        "RU": "import_typical",
+        "BR": "not_applicable",
+        "MX": "not_applicable",
+        "LATAM": "not_applicable",
+        "MENA": "not_applicable",
+        "AF": "not_applicable",
+        "SEA": "not_applicable",
+        "EA": "not_applicable",
+        "OC": "not_applicable"
+      },
+      "organic_local": {
+        "EU": "primary",
+        "CN": "primary",
+        "US": "primary",
+        "IN": "primary",
+        "RU": "primary",
+        "MENA": "primary",
+        "BR": "primary",
+        "MX": "primary",
+        "LATAM": "primary",
+        "AF": "primary",
+        "SEA": "primary",
+        "EA": "primary",
+        "OC": "primary",
+        "GLOBAL": "primary"
+      }
+    },
     "citations": [
       {
         "id": "ipcc_2019_refinement",
         "short": "IPCC (2019) Refinement",
         "full": "IPCC (2019). 2019 Refinement to the 2006 IPCC Guidelines for National Greenhouse Gas Inventories, Vol. 4: AFOLU, Cap. 11 — N₂O y CO₂ de suelos gestionados.",
-        "url": "https://www.ipcc-nggip.iges.or.jp/public/2019rf/pdf/4_Volume4/V4_11_Ch11_N2O&CO2.pdf",
+        "url": "https://www.ipcc-nggip.iges.or.jp/public/2019rf/pdf/4_Volume4/19R_V4_Ch11_Soils_N2O_CO2.pdf",
         "license": "Uso público con cita al IPCC.",
         "used_for": "field_n2o",
         "parameter": "EF1 = 0.01 kg N₂O-N / kg N aplicado (Tier 1, fertilizantes minerales)"
@@ -47,7 +144,7 @@
         "url": "https://www.gov.uk/government/collections/government-conversion-factors-for-company-reporting",
         "license": "Open Government Licence v3.0 — reutilización libre con atribución.",
         "used_for": "transport",
-        "parameter": "≈ 0.062 kg CO₂e por t·km (promedio carga)"
+        "parameter": "≈ 0.062 kg CO₂e/t·km (carretera) · ≈ 0.010 kg CO₂e/t·km (marítimo granel, referencia DESNZ)"
       },
       {
         "id": "epa_ap42_soils",
@@ -68,273 +165,1785 @@
         "parameter": "Inventarios de ciclo de vida de insumos químicos (referencia Norteamérica)"
       },
       {
+        "id": "fertilizers_europe_2020",
+        "short": "Fertilizers Europe (2020)",
+        "full": "Fertilizers Europe. The carbon footprint of fertilizer production — Regional reference values (2020). Promedios regionales AN, CAN, urea, UAN; validados por DNV GL.",
+        "url": "https://www.fertilizerseurope.com/wp-content/uploads/2020/01/The-carbon-footprint-of-fertilizer-production_Regional-reference-values.pdf",
+        "license": "Referencia sectorial pública; cita a Fertilizers Europe.",
+        "used_for": "manufacturing",
+        "parameter": "kg CO₂e/kg producto por región (excl. CO₂ capturado en urea)"
+      },
+      {
         "id": "lca_regional_avg",
         "short": "Promedios regionales LCA (público)",
-        "full": "NutriPlant PRO (2026). Compilación de promedios regionales kg CO₂e/kg producto a partir de literatura LCA peer-reviewed, reportes FAO/IFA de acceso público y bases gubernamentales. Sin datos de marca comercial.",
-        "url": "https://www.fao.org/",
-        "license": "Metodología propia NutriPlant; factores base de fuentes públicas citadas.",
+        "full": "NutriPlant PRO (2026). Factores no-N (MAP, DAP, KCl, etc.) a partir de literatura LCA pública y bases gubernamentales. Productos N calibrados vs Fertilizers Europe (2020).",
+        "url": "https://www.fertilizerseurope.com/",
+        "license": "Metodología NutriPlant; fuentes públicas citadas.",
         "used_for": "manufacturing",
         "parameter": "kg CO₂e/kg fertilizante por grupo regional de origen"
       }
     ],
     "sources": [
-      { "id": "ipcc", "name": "IPCC Guidelines / EFDB", "url": "https://www.ipcc-nggip.iges.or.jp/EFDB/" },
-      { "id": "defra", "name": "UK DESNZ GHG Conversion Factors", "url": "https://www.gov.uk/government/collections/government-conversion-factors-for-company-reporting" },
-      { "id": "epa", "name": "US EPA AP-42 / GHG Hub", "url": "https://www.epa.gov/" },
-      { "id": "lca_literature", "name": "Promedios regionales de literatura LCA pública (sin marcas)" }
+      {
+        "id": "ipcc",
+        "name": "IPCC Guidelines / EFDB",
+        "url": "https://www.ipcc-nggip.iges.or.jp/EFDB/"
+      },
+      {
+        "id": "defra",
+        "name": "UK DESNZ GHG Conversion Factors",
+        "url": "https://www.gov.uk/government/collections/government-conversion-factors-for-company-reporting"
+      },
+      {
+        "id": "epa",
+        "name": "US EPA AP-42 / GHG Hub",
+        "url": "https://www.epa.gov/"
+      },
+      {
+        "id": "fertilizers_europe",
+        "name": "Fertilizers Europe — referencias regionales",
+        "url": "https://www.fertilizerseurope.com/"
+      },
+      {
+        "id": "lca_literature",
+        "name": "Literatura LCA pública (productos no-N)"
+      }
     ]
   },
   "origin_groups": {
-    "GLOBAL": { "label": "Promedio global", "label_en": "Global average" },
-    "EU": { "label": "Unión Europea", "label_en": "European Union" },
-    "US": { "label": "Estados Unidos / Canadá", "label_en": "United States / Canada" },
-    "CN": { "label": "China", "label_en": "China" },
-    "IN": { "label": "India", "label_en": "India" },
-    "RU": { "label": "Rusia / CEI", "label_en": "Russia / CIS" },
-    "BR": { "label": "Brasil", "label_en": "Brazil" },
-    "MX": { "label": "México", "label_en": "Mexico" },
-    "LATAM": { "label": "Latinoamérica (otros)", "label_en": "Latin America (other)" },
-    "MENA": { "label": "Medio Oriente / Norte de África", "label_en": "Middle East / North Africa" },
-    "AF": { "label": "África subsahariana", "label_en": "Sub-Saharan Africa" },
-    "SEA": { "label": "Sudeste asiático", "label_en": "Southeast Asia" },
-    "EA": { "label": "Asia Oriental (excl. CN)", "label_en": "East Asia (excl. China)" },
-    "OC": { "label": "Oceanía", "label_en": "Oceania" }
+    "GLOBAL": {
+      "label": "Promedio global",
+      "label_en": "Global average"
+    },
+    "EU": {
+      "label": "Unión Europea",
+      "label_en": "European Union"
+    },
+    "US": {
+      "label": "Estados Unidos / Canadá",
+      "label_en": "United States / Canada"
+    },
+    "CN": {
+      "label": "China",
+      "label_en": "China"
+    },
+    "IN": {
+      "label": "India",
+      "label_en": "India"
+    },
+    "RU": {
+      "label": "Rusia / CEI",
+      "label_en": "Russia / CIS"
+    },
+    "BR": {
+      "label": "Brasil",
+      "label_en": "Brazil"
+    },
+    "MX": {
+      "label": "México",
+      "label_en": "Mexico"
+    },
+    "LATAM": {
+      "label": "Latinoamérica (otros)",
+      "label_en": "Latin America (other)"
+    },
+    "MENA": {
+      "label": "Medio Oriente / Norte de África",
+      "label_en": "Middle East / North Africa"
+    },
+    "AF": {
+      "label": "África subsahariana",
+      "label_en": "Sub-Saharan Africa"
+    },
+    "SEA": {
+      "label": "Sudeste asiático",
+      "label_en": "Southeast Asia"
+    },
+    "EA": {
+      "label": "Asia Oriental (excl. CN)",
+      "label_en": "East Asia (excl. China)"
+    },
+    "OC": {
+      "label": "Oceanía",
+      "label_en": "Oceania"
+    }
   },
   "transport": {
     "kg_co2e_per_tonne_km": 0.000062,
-    "source": "UK DESNZ/DEFRA freight average",
+    "road_kg_co2e_per_tonne_km": 0.000062,
+    "sea_kg_co2e_per_tonne_km": 0.00001,
+    "source": "UK DESNZ/DEFRA freight averages",
     "citation_id": "desnz_freight",
+    "road_note": "Carretera — puerto destino → campo",
+    "origin_road_note": "Carretera — fábrica → puerto de exportación (referencia por región productora)",
+    "sea_note": "Marítimo granel — puerto exportación → puerto país destino",
     "factor_year": 2024
   },
+  "route_estimates": {
+    "disclaimer": "Distancias aproximadas de ruta comercial (referencia). No sustituyen dato logístico real del usuario.",
+    "maritime_km": {
+      "CN": {
+        "MX": 14500,
+        "CO": 15800,
+        "PE": 16800,
+        "CL": 11800,
+        "AR": 19200,
+        "BR": 17500,
+        "EC": 16200,
+        "CR": 15200,
+        "DO": 14800,
+        "GT": 15000,
+        "HN": 15100,
+        "PA": 15300,
+        "US": 11500,
+        "CA": 12000,
+        "ES": 14200,
+        "FR": 14000,
+        "DE": 13800,
+        "IT": 13600,
+        "EG": 9800,
+        "MA": 10500,
+        "IN": 4200,
+        "AU": 8900,
+        "_default": 14000
+      },
+      "EU": {
+        "MX": 8500,
+        "CO": 8200,
+        "PE": 9500,
+        "CL": 11500,
+        "AR": 11000,
+        "BR": 7800,
+        "US": 6200,
+        "CA": 5800,
+        "EG": 3200,
+        "MA": 2100,
+        "ZA": 9800,
+        "IN": 7200,
+        "CN": 14200,
+        "AU": 14500,
+        "_default": 9000
+      },
+      "US": {
+        "MX": 2800,
+        "CO": 4200,
+        "BR": 7200,
+        "CL": 8800,
+        "AR": 9200,
+        "PE": 5800,
+        "CN": 11500,
+        "JP": 8200,
+        "EU": 6200,
+        "_default": 5000
+      },
+      "RU": {
+        "MX": 11800,
+        "BR": 9800,
+        "TR": 1800,
+        "EG": 2800,
+        "IN": 5800,
+        "CN": 6500,
+        "_default": 10000
+      },
+      "IN": {
+        "MX": 16800,
+        "BR": 14200,
+        "KE": 4200,
+        "EG": 4200,
+        "CN": 4200,
+        "_default": 9000
+      },
+      "MENA": {
+        "MX": 12500,
+        "BR": 9800,
+        "IN": 3200,
+        "CN": 7200,
+        "ES": 3800,
+        "_default": 8000
+      },
+      "BR": {
+        "MX": 8200,
+        "CL": 3200,
+        "AR": 2200,
+        "CO": 4500,
+        "US": 7200,
+        "CN": 17500,
+        "_default": 6000
+      },
+      "MX": {
+        "MX": 0,
+        "US": 2800,
+        "CO": 3800,
+        "CN": 14500,
+        "_default": 5000
+      },
+      "LATAM": {
+        "MX": 8200,
+        "US": 6500,
+        "CN": 16000,
+        "EU": 9000,
+        "_default": 7000
+      },
+      "SEA": {
+        "MX": 15200,
+        "BR": 16800,
+        "CN": 2800,
+        "IN": 3200,
+        "_default": 11000
+      },
+      "EA": {
+        "MX": 14800,
+        "BR": 17200,
+        "CN": 1800,
+        "US": 9800,
+        "_default": 12000
+      },
+      "AF": {
+        "BR": 5800,
+        "EU": 5200,
+        "CN": 9800,
+        "IN": 6200,
+        "_default": 7000
+      },
+      "OC": {
+        "CN": 8900,
+        "MX": 11800,
+        "JP": 7800,
+        "US": 11800,
+        "_default": 9000
+      },
+      "GLOBAL": {
+        "_default": 10000
+      }
+    },
+    "road_port_to_field_km": {
+      "MX": 180,
+      "BR": 280,
+      "AR": 320,
+      "CO": 220,
+      "CL": 250,
+      "PE": 200,
+      "US": 220,
+      "CA": 250,
+      "CN": 200,
+      "IN": 180,
+      "AU": 300,
+      "ES": 150,
+      "DE": 140,
+      "FR": 140,
+      "EG": 160,
+      "CR": 120,
+      "GT": 150,
+      "HN": 140,
+      "_default": 150
+    },
+    "domestic_no_sea_groups": [
+      "MX",
+      "US",
+      "BR",
+      "EU",
+      "CN",
+      "IN",
+      "RU"
+    ],
+    "origin_factory_to_port_km": {
+      "_note": "Referencia: planta → puerto de exportación en la región productora (promedio logístico, suele ser poco km vs marítimo).",
+      "CN": 220,
+      "EU": 90,
+      "US": 110,
+      "MX": 95,
+      "BR": 160,
+      "IN": 280,
+      "RU": 320,
+      "MENA": 70,
+      "LATAM": 130,
+      "SEA": 140,
+      "EA": 85,
+      "AF": 180,
+      "OC": 95,
+      "GLOBAL": 120
+    },
+    "destination_entry_points": {
+      "MX": {
+        "label": "Costa / puerto de llegada (México)",
+        "hint": "México tiene Pacífico y Golfo muy separados: el puerto de llegada cambia mucho el km terrestre a tu campo.",
+        "default": "mx_gulf",
+        "options": [
+          {
+            "id": "mx_topolobampo",
+            "label": "Pacífico — Topolobampo / Los Mochis (Sinaloa)",
+            "road_km": 80,
+            "maritime_km_from": {
+              "CN": 14000,
+              "EA": 14300,
+              "SEA": 14800,
+              "EU": 16200,
+              "US": 4000,
+              "_default": 14200
+            }
+          },
+          {
+            "id": "mx_pacific",
+            "label": "Pacífico — Manzanillo / Lázaro Cárdenas",
+            "road_km": 140,
+            "maritime_km_from": {
+              "CN": 14200,
+              "EA": 14500,
+              "SEA": 15000,
+              "EU": 16500,
+              "US": 4200,
+              "_default": 14500
+            }
+          },
+          {
+            "id": "mx_gulf",
+            "label": "Golfo de México — Veracruz / Altamira / Tampico",
+            "road_km": 220,
+            "maritime_km_from": {
+              "CN": 15500,
+              "EU": 8500,
+              "US": 2800,
+              "BR": 8200,
+              "RU": 11800,
+              "_default": 9000
+            }
+          },
+          {
+            "id": "mx_caribbean",
+            "label": "Caribe — Progreso / sureste (Yucatán, QRoo)",
+            "road_km": 160,
+            "maritime_km_from": {
+              "CN": 15800,
+              "EU": 8800,
+              "US": 3200,
+              "_default": 9500
+            }
+          },
+          {
+            "id": "mx_central",
+            "label": "Centro / Bajío — interior (desde cualquier puerto)",
+            "road_km": 320,
+            "maritime_km_from": {
+              "_default": null
+            }
+          }
+        ]
+      },
+      "US": {
+        "label": "Costa / puerto de llegada (EE. UU.)",
+        "hint": "Elige la costa donde desembarca el granel (Pacífico, Golfo o Atlántico).",
+        "default": "us_gulf",
+        "options": [
+          {
+            "id": "us_west",
+            "label": "Pacífico — Los Ángeles / Long Beach / Oakland",
+            "road_km": 200,
+            "maritime_km_from": {
+              "CN": 10500,
+              "EA": 8200,
+              "SEA": 12000,
+              "EU": 14500,
+              "_default": 11000
+            }
+          },
+          {
+            "id": "us_gulf",
+            "label": "Golfo — Houston / Nueva Orleans / Mobile",
+            "road_km": 240,
+            "maritime_km_from": {
+              "CN": 13500,
+              "EU": 7200,
+              "BR": 7200,
+              "MX": 2800,
+              "_default": 8000
+            }
+          },
+          {
+            "id": "us_east",
+            "label": "Atlántico — Savannah / NY / Baltimore",
+            "road_km": 220,
+            "maritime_km_from": {
+              "CN": 12800,
+              "EU": 6200,
+              "BR": 6800,
+              "MX": 3500,
+              "_default": 7500
+            }
+          }
+        ]
+      },
+      "BR": {
+        "label": "Costa / puerto de llegada (Brasil)",
+        "hint": "Brasil importa por varios puertos atlánticos; la distancia al interior varía mucho.",
+        "default": "br_se",
+        "options": [
+          {
+            "id": "br_se",
+            "label": "Sur / Sudeste — Santos / Paranaguá / Rio",
+            "road_km": 220,
+            "maritime_km_from": {
+              "CN": 17500,
+              "EU": 7800,
+              "US": 7200,
+              "MX": 8200,
+              "_default": 9000
+            }
+          },
+          {
+            "id": "br_ne",
+            "label": "Nordeste — Suape / Salvador / Fortaleza",
+            "road_km": 340,
+            "maritime_km_from": {
+              "CN": 17800,
+              "EU": 8200,
+              "US": 7500,
+              "_default": 9200
+            }
+          },
+          {
+            "id": "br_n",
+            "label": "Norte / Amazonía — Itaqui / Belém (referencia)",
+            "road_km": 420,
+            "maritime_km_from": {
+              "CN": 18200,
+              "EU": 8500,
+              "_default": 9500
+            }
+          }
+        ]
+      },
+      "CO": {
+        "label": "Costa / puerto de llegada (Colombia)",
+        "hint": "Pacífico (Buenaventura) vs Caribe (Cartagena / Santa Marta).",
+        "default": "co_caribbean",
+        "options": [
+          {
+            "id": "co_pacific",
+            "label": "Pacífico — Buenaventura",
+            "road_km": 180,
+            "maritime_km_from": {
+              "CN": 15200,
+              "US": 4200,
+              "_default": 14000
+            }
+          },
+          {
+            "id": "co_caribbean",
+            "label": "Caribe — Cartagena / Santa Marta",
+            "road_km": 200,
+            "maritime_km_from": {
+              "CN": 15800,
+              "EU": 8200,
+              "US": 4200,
+              "_default": 9000
+            }
+          }
+        ]
+      },
+      "CL": {
+        "label": "Puerto de llegada (Chile)",
+        "hint": "Chile es costa pacífica larga: norte vs centro vs sur cambia el km al campo.",
+        "default": "cl_center",
+        "options": [
+          {
+            "id": "cl_north",
+            "label": "Norte — Antofagasta / Iquique",
+            "road_km": 120,
+            "maritime_km_from": {
+              "CN": 11200,
+              "_default": 11500
+            }
+          },
+          {
+            "id": "cl_center",
+            "label": "Centro — Valparaíso / San Antonio",
+            "road_km": 200,
+            "maritime_km_from": {
+              "CN": 11800,
+              "EU": 11500,
+              "_default": 12000
+            }
+          },
+          {
+            "id": "cl_south",
+            "label": "Sur — San Vicente / Puerto Montt",
+            "road_km": 280,
+            "maritime_km_from": {
+              "CN": 12500,
+              "_default": 12800
+            }
+          }
+        ]
+      },
+      "CA": {
+        "label": "Costa / puerto de llegada (Canadá)",
+        "hint": "Pacífico (Vancouver) vs Atlántico (Montreal / Halifax).",
+        "default": "ca_west",
+        "options": [
+          {
+            "id": "ca_west",
+            "label": "Pacífico — Vancouver / Prince Rupert",
+            "road_km": 220,
+            "maritime_km_from": {
+              "CN": 9200,
+              "EA": 7800,
+              "_default": 10000
+            }
+          },
+          {
+            "id": "ca_east",
+            "label": "Atlántico — Montreal / Halifax",
+            "road_km": 260,
+            "maritime_km_from": {
+              "CN": 12800,
+              "EU": 5800,
+              "_default": 8000
+            }
+          }
+        ]
+      },
+      "AU": {
+        "label": "Costa / puerto de llegada (Australia)",
+        "hint": "Australia tiene costas muy separadas (oeste vs este).",
+        "default": "au_west",
+        "options": [
+          {
+            "id": "au_west",
+            "label": "Oeste — Fremantle / Kwinana",
+            "road_km": 200,
+            "maritime_km_from": {
+              "CN": 6800,
+              "IN": 5200,
+              "_default": 7500
+            }
+          },
+          {
+            "id": "au_east",
+            "label": "Este — Newcastle / Brisbane / Sydney",
+            "road_km": 280,
+            "maritime_km_from": {
+              "CN": 8900,
+              "EU": 14500,
+              "_default": 11000
+            }
+          }
+        ]
+      },
+      "AR": {
+        "label": "Puerto de llegada (Argentina)",
+        "hint": "El granel entra sobre todo por Rosario/Paraná y Buenos Aires; el km al campo interior varía mucho.",
+        "default": "ar_rosario",
+        "options": [
+          {
+            "id": "ar_rosario",
+            "label": "Paraná / Up-River — Rosario / San Lorenzo / Timbúes",
+            "road_km": 180,
+            "maritime_km_from": {
+              "CN": 19200,
+              "EU": 11000,
+              "BR": 2200,
+              "US": 9200,
+              "MX": 8500,
+              "_default": 12000
+            }
+          },
+          {
+            "id": "ar_bue",
+            "label": "Buenos Aires — Dock Sud / Bahía Blanca (ref. Bs As)",
+            "road_km": 220,
+            "maritime_km_from": {
+              "CN": 19500,
+              "EU": 11200,
+              "BR": 2400,
+              "US": 9400,
+              "_default": 12200
+            }
+          },
+          {
+            "id": "ar_bahia",
+            "label": "Sur — Bahía Blanca / Necochea",
+            "road_km": 120,
+            "maritime_km_from": {
+              "CN": 19800,
+              "EU": 11500,
+              "BR": 2600,
+              "_default": 12500
+            }
+          },
+          {
+            "id": "ar_norte",
+            "label": "Norte / NOA — interior (desde Rosario, referencia)",
+            "road_km": 450,
+            "maritime_km_from": {
+              "_default": null
+            }
+          }
+        ]
+      },
+      "PE": {
+        "label": "Puerto de llegada (Perú)",
+        "hint": "Perú importa por Callao (centro) y puertos del norte y sur; elige el más cercano a tu zona agrícola.",
+        "default": "pe_callao",
+        "options": [
+          {
+            "id": "pe_callao",
+            "label": "Centro — Callao / Lima",
+            "road_km": 150,
+            "maritime_km_from": {
+              "CN": 16800,
+              "EU": 9500,
+              "US": 5800,
+              "MX": 8200,
+              "_default": 11000
+            }
+          },
+          {
+            "id": "pe_north",
+            "label": "Norte — Paita / Salaverry (Piura, Lambayeque)",
+            "road_km": 100,
+            "maritime_km_from": {
+              "CN": 17000,
+              "EU": 9800,
+              "US": 6000,
+              "_default": 11200
+            }
+          },
+          {
+            "id": "pe_matarani",
+            "label": "Sur — Matarani / Ilo (Arequipa, sur)",
+            "road_km": 200,
+            "maritime_km_from": {
+              "CN": 17200,
+              "EU": 10200,
+              "US": 6200,
+              "_default": 11500
+            }
+          },
+          {
+            "id": "pe_interior",
+            "label": "Sierra / interior — (desde Callao, referencia)",
+            "road_km": 350,
+            "maritime_km_from": {
+              "_default": null
+            }
+          }
+        ]
+      }
+    }
+  },
   "countries": [
-    { "iso": "GLOBAL", "name": "— Promedio global (sin país específico)", "origin_group": "GLOBAL", "region": "Global" },
-    { "iso": "AR", "name": "Argentina", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "AU", "name": "Australia", "origin_group": "OC", "region": "Oceanía" },
-    { "iso": "AT", "name": "Austria", "origin_group": "EU", "region": "Europa" },
-    { "iso": "BE", "name": "Bélgica", "origin_group": "EU", "region": "Europa" },
-    { "iso": "BO", "name": "Bolivia", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "BR", "name": "Brasil", "origin_group": "BR", "region": "América Latina" },
-    { "iso": "BG", "name": "Bulgaria", "origin_group": "EU", "region": "Europa" },
-    { "iso": "CA", "name": "Canadá", "origin_group": "US", "region": "América del Norte" },
-    { "iso": "CL", "name": "Chile", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "CN", "name": "China", "origin_group": "CN", "region": "Asia" },
-    { "iso": "CO", "name": "Colombia", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "CR", "name": "Costa Rica", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "HR", "name": "Croacia", "origin_group": "EU", "region": "Europa" },
-    { "iso": "CU", "name": "Cuba", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "CZ", "name": "Chequia", "origin_group": "EU", "region": "Europa" },
-    { "iso": "DK", "name": "Dinamarca", "origin_group": "EU", "region": "Europa" },
-    { "iso": "DO", "name": "República Dominicana", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "EC", "name": "Ecuador", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "EG", "name": "Egipto", "origin_group": "MENA", "region": "Medio Oriente / África" },
-    { "iso": "SV", "name": "El Salvador", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "AE", "name": "Emiratos Árabes Unidos", "origin_group": "MENA", "region": "Medio Oriente" },
-    { "iso": "ES", "name": "España", "origin_group": "EU", "region": "Europa" },
-    { "iso": "US", "name": "Estados Unidos", "origin_group": "US", "region": "América del Norte" },
-    { "iso": "ET", "name": "Etiopía", "origin_group": "AF", "region": "África" },
-    { "iso": "PH", "name": "Filipinas", "origin_group": "SEA", "region": "Asia" },
-    { "iso": "FI", "name": "Finlandia", "origin_group": "EU", "region": "Europa" },
-    { "iso": "FR", "name": "Francia", "origin_group": "EU", "region": "Europa" },
-    { "iso": "GH", "name": "Ghana", "origin_group": "AF", "region": "África" },
-    { "iso": "GR", "name": "Grecia", "origin_group": "EU", "region": "Europa" },
-    { "iso": "GT", "name": "Guatemala", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "HN", "name": "Honduras", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "HU", "name": "Hungría", "origin_group": "EU", "region": "Europa" },
-    { "iso": "IN", "name": "India", "origin_group": "IN", "region": "Asia" },
-    { "iso": "ID", "name": "Indonesia", "origin_group": "SEA", "region": "Asia" },
-    { "iso": "IE", "name": "Irlanda", "origin_group": "EU", "region": "Europa" },
-    { "iso": "IL", "name": "Israel", "origin_group": "MENA", "region": "Medio Oriente" },
-    { "iso": "IT", "name": "Italia", "origin_group": "EU", "region": "Europa" },
-    { "iso": "JP", "name": "Japón", "origin_group": "EA", "region": "Asia" },
-    { "iso": "KE", "name": "Kenia", "origin_group": "AF", "region": "África" },
-    { "iso": "MY", "name": "Malasia", "origin_group": "SEA", "region": "Asia" },
-    { "iso": "MA", "name": "Marruecos", "origin_group": "MENA", "region": "Medio Oriente / África" },
-    { "iso": "MX", "name": "México", "origin_group": "MX", "region": "América Latina" },
-    { "iso": "NI", "name": "Nicaragua", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "NG", "name": "Nigeria", "origin_group": "AF", "region": "África" },
-    { "iso": "NO", "name": "Noruega", "origin_group": "EU", "region": "Europa" },
-    { "iso": "NZ", "name": "Nueva Zelanda", "origin_group": "OC", "region": "Oceanía" },
-    { "iso": "NL", "name": "Países Bajos", "origin_group": "EU", "region": "Europa" },
-    { "iso": "PA", "name": "Panamá", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "PY", "name": "Paraguay", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "PE", "name": "Perú", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "PL", "name": "Polonia", "origin_group": "EU", "region": "Europa" },
-    { "iso": "PT", "name": "Portugal", "origin_group": "EU", "region": "Europa" },
-    { "iso": "GB", "name": "Reino Unido", "origin_group": "EU", "region": "Europa" },
-    { "iso": "RO", "name": "Rumania", "origin_group": "EU", "region": "Europa" },
-    { "iso": "RU", "name": "Rusia", "origin_group": "RU", "region": "Europa / Asia" },
-    { "iso": "SA", "name": "Arabia Saudita", "origin_group": "MENA", "region": "Medio Oriente" },
-    { "iso": "SN", "name": "Senegal", "origin_group": "AF", "region": "África" },
-    { "iso": "RS", "name": "Serbia", "origin_group": "EU", "region": "Europa" },
-    { "iso": "SG", "name": "Singapur", "origin_group": "SEA", "region": "Asia" },
-    { "iso": "ZA", "name": "Sudáfrica", "origin_group": "AF", "region": "África" },
-    { "iso": "KR", "name": "Corea del Sur", "origin_group": "EA", "region": "Asia" },
-    { "iso": "SE", "name": "Suecia", "origin_group": "EU", "region": "Europa" },
-    { "iso": "CH", "name": "Suiza", "origin_group": "EU", "region": "Europa" },
-    { "iso": "TH", "name": "Tailandia", "origin_group": "SEA", "region": "Asia" },
-    { "iso": "TR", "name": "Turquía", "origin_group": "MENA", "region": "Europa / Medio Oriente" },
-    { "iso": "UA", "name": "Ucrania", "origin_group": "RU", "region": "Europa" },
-    { "iso": "UY", "name": "Uruguay", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "VE", "name": "Venezuela", "origin_group": "LATAM", "region": "América Latina" },
-    { "iso": "VN", "name": "Vietnam", "origin_group": "SEA", "region": "Asia" },
-    { "iso": "DE", "name": "Alemania", "origin_group": "EU", "region": "Europa" }
+    {
+      "iso": "GLOBAL",
+      "name": "— Promedio global (sin país específico)",
+      "origin_group": "GLOBAL",
+      "region": "Global"
+    },
+    {
+      "iso": "AR",
+      "name": "Argentina",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "AU",
+      "name": "Australia",
+      "origin_group": "OC",
+      "region": "Oceanía"
+    },
+    {
+      "iso": "AT",
+      "name": "Austria",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "BE",
+      "name": "Bélgica",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "BO",
+      "name": "Bolivia",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "BR",
+      "name": "Brasil",
+      "origin_group": "BR",
+      "region": "América Latina"
+    },
+    {
+      "iso": "BG",
+      "name": "Bulgaria",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "CA",
+      "name": "Canadá",
+      "origin_group": "US",
+      "region": "América del Norte"
+    },
+    {
+      "iso": "CL",
+      "name": "Chile",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "CN",
+      "name": "China",
+      "origin_group": "CN",
+      "region": "Asia"
+    },
+    {
+      "iso": "CO",
+      "name": "Colombia",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "CR",
+      "name": "Costa Rica",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "HR",
+      "name": "Croacia",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "CU",
+      "name": "Cuba",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "CZ",
+      "name": "Chequia",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "DK",
+      "name": "Dinamarca",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "DO",
+      "name": "República Dominicana",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "EC",
+      "name": "Ecuador",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "EG",
+      "name": "Egipto",
+      "origin_group": "MENA",
+      "region": "Medio Oriente / África"
+    },
+    {
+      "iso": "SV",
+      "name": "El Salvador",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "AE",
+      "name": "Emiratos Árabes Unidos",
+      "origin_group": "MENA",
+      "region": "Medio Oriente"
+    },
+    {
+      "iso": "ES",
+      "name": "España",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "US",
+      "name": "Estados Unidos",
+      "origin_group": "US",
+      "region": "América del Norte"
+    },
+    {
+      "iso": "ET",
+      "name": "Etiopía",
+      "origin_group": "AF",
+      "region": "África"
+    },
+    {
+      "iso": "PH",
+      "name": "Filipinas",
+      "origin_group": "SEA",
+      "region": "Asia"
+    },
+    {
+      "iso": "FI",
+      "name": "Finlandia",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "FR",
+      "name": "Francia",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "GH",
+      "name": "Ghana",
+      "origin_group": "AF",
+      "region": "África"
+    },
+    {
+      "iso": "GR",
+      "name": "Grecia",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "GT",
+      "name": "Guatemala",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "HN",
+      "name": "Honduras",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "HU",
+      "name": "Hungría",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "IN",
+      "name": "India",
+      "origin_group": "IN",
+      "region": "Asia"
+    },
+    {
+      "iso": "ID",
+      "name": "Indonesia",
+      "origin_group": "SEA",
+      "region": "Asia"
+    },
+    {
+      "iso": "IE",
+      "name": "Irlanda",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "IL",
+      "name": "Israel",
+      "origin_group": "MENA",
+      "region": "Medio Oriente"
+    },
+    {
+      "iso": "IT",
+      "name": "Italia",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "JP",
+      "name": "Japón",
+      "origin_group": "EA",
+      "region": "Asia"
+    },
+    {
+      "iso": "KE",
+      "name": "Kenia",
+      "origin_group": "AF",
+      "region": "África"
+    },
+    {
+      "iso": "MY",
+      "name": "Malasia",
+      "origin_group": "SEA",
+      "region": "Asia"
+    },
+    {
+      "iso": "MA",
+      "name": "Marruecos",
+      "origin_group": "MENA",
+      "region": "Medio Oriente / África"
+    },
+    {
+      "iso": "MX",
+      "name": "México",
+      "origin_group": "MX",
+      "region": "América Latina"
+    },
+    {
+      "iso": "NI",
+      "name": "Nicaragua",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "NG",
+      "name": "Nigeria",
+      "origin_group": "AF",
+      "region": "África"
+    },
+    {
+      "iso": "NO",
+      "name": "Noruega",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "NZ",
+      "name": "Nueva Zelanda",
+      "origin_group": "OC",
+      "region": "Oceanía"
+    },
+    {
+      "iso": "NL",
+      "name": "Países Bajos",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "PA",
+      "name": "Panamá",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "PY",
+      "name": "Paraguay",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "PE",
+      "name": "Perú",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "PL",
+      "name": "Polonia",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "PT",
+      "name": "Portugal",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "GB",
+      "name": "Reino Unido",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "RO",
+      "name": "Rumania",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "RU",
+      "name": "Rusia",
+      "origin_group": "RU",
+      "region": "Europa / Asia"
+    },
+    {
+      "iso": "SA",
+      "name": "Arabia Saudita",
+      "origin_group": "MENA",
+      "region": "Medio Oriente"
+    },
+    {
+      "iso": "SN",
+      "name": "Senegal",
+      "origin_group": "AF",
+      "region": "África"
+    },
+    {
+      "iso": "RS",
+      "name": "Serbia",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "SG",
+      "name": "Singapur",
+      "origin_group": "SEA",
+      "region": "Asia"
+    },
+    {
+      "iso": "ZA",
+      "name": "Sudáfrica",
+      "origin_group": "AF",
+      "region": "África"
+    },
+    {
+      "iso": "KR",
+      "name": "Corea del Sur",
+      "origin_group": "EA",
+      "region": "Asia"
+    },
+    {
+      "iso": "SE",
+      "name": "Suecia",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "CH",
+      "name": "Suiza",
+      "origin_group": "EU",
+      "region": "Europa"
+    },
+    {
+      "iso": "TH",
+      "name": "Tailandia",
+      "origin_group": "SEA",
+      "region": "Asia"
+    },
+    {
+      "iso": "TR",
+      "name": "Turquía",
+      "origin_group": "MENA",
+      "region": "Europa / Medio Oriente"
+    },
+    {
+      "iso": "UA",
+      "name": "Ucrania",
+      "origin_group": "RU",
+      "region": "Europa"
+    },
+    {
+      "iso": "UY",
+      "name": "Uruguay",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "VE",
+      "name": "Venezuela",
+      "origin_group": "LATAM",
+      "region": "América Latina"
+    },
+    {
+      "iso": "VN",
+      "name": "Vietnam",
+      "origin_group": "SEA",
+      "region": "Asia"
+    },
+    {
+      "iso": "DE",
+      "name": "Alemania",
+      "origin_group": "EU",
+      "region": "Europa"
+    }
   ],
   "fertilizers": [
     {
       "id": "urea",
-      "name": "Urea",
+      "name": "Urea (46-0-0)",
+      "physical_form": "granular",
       "n_total_pct": 46,
       "p2o5_pct": 0,
       "k2o_pct": 0,
+      "fe_product_code": "urea_46",
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 1.25, "EU": 0.85, "US": 1.0, "CN": 1.9, "IN": 1.7, "RU": 1.4, "BR": 1.15, "MX": 1.2, "LATAM": 1.2, "MENA": 1.35, "AF": 1.3, "SEA": 1.55, "EA": 1.1, "OC": 1.05
+        "GLOBAL": 1.18,
+        "EU": 0.878,
+        "US": 1.006,
+        "CN": 1.72,
+        "IN": 1.274,
+        "RU": 1.105,
+        "BR": 1.013,
+        "MX": 1.01,
+        "LATAM": 1.013,
+        "MENA": 0.814,
+        "AF": 0.928,
+        "SEA": 0.934,
+        "EA": 0.906,
+        "OC": 0.751
       },
-      "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "source": "Fertilizers Europe (2020) regional reference — excl. CO₂ en producto",
+      "citation_ids": [
+        "fertilizers_europe_2020",
+        "ipcc_2019_refinement"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "fe_n_global"
     },
     {
       "id": "ammonium_nitrate",
-      "name": "Nitrato de amonio",
-      "n_total_pct": 34,
+      "name": "Nitrato de amonio AN (33,5-0-0)",
+      "physical_form": "granular",
+      "n_total_pct": 33.5,
       "p2o5_pct": 0,
       "k2o_pct": 0,
+      "fe_product_code": "an_33_5_prilled",
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 2.8, "EU": 2.0, "US": 2.3, "CN": 3.4, "IN": 3.1, "RU": 2.6, "BR": 2.4, "MX": 2.5, "LATAM": 2.5, "MENA": 2.7, "AF": 2.6, "SEA": 3.0, "EA": 2.2, "OC": 2.3
+        "GLOBAL": 2.41,
+        "EU": 1.112,
+        "US": 2.249,
+        "CN": 3.24,
+        "IN": 2.267,
+        "RU": 2.383,
+        "BR": 2.134,
+        "MX": 2.19,
+        "LATAM": 2.134,
+        "MENA": 2.396,
+        "AF": 2.061,
+        "SEA": 2.344,
+        "EA": 2.274,
+        "OC": 2.051
       },
-      "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "source": "Fertilizers Europe (2020) regional reference",
+      "citation_ids": [
+        "fertilizers_europe_2020",
+        "ipcc_2019_refinement"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "fe_n_global"
+    },
+    {
+      "id": "can",
+      "name": "CAN — Nitrato calcio amónico (27-0-0)",
+      "physical_form": "granular",
+      "n_total_pct": 27,
+      "p2o5_pct": 0,
+      "k2o_pct": 0,
+      "fe_product_code": "can_27",
+      "manufacturing_kg_co2e_per_kg": {
+        "GLOBAL": 1.93,
+        "EU": 0.951,
+        "US": 1.87,
+        "CN": 2.69,
+        "IN": 1.905,
+        "RU": 1.982,
+        "BR": 1.779,
+        "MX": 1.82,
+        "LATAM": 1.779,
+        "MENA": 1.996,
+        "AF": 1.724,
+        "SEA": 1.958,
+        "EA": 1.899,
+        "OC": 1.721
+      },
+      "source": "Fertilizers Europe (2020) regional reference",
+      "citation_ids": [
+        "fertilizers_europe_2020",
+        "ipcc_2019_refinement"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "fe_n_global"
+    },
+    {
+      "id": "uan",
+      "name": "UAN — Solución N (30-0-0)",
+      "physical_form": "liquid",
+      "n_total_pct": 30,
+      "p2o5_pct": 0,
+      "k2o_pct": 0,
+      "fe_product_code": "uan_30",
+      "manufacturing_kg_co2e_per_kg": {
+        "GLOBAL": 1.49,
+        "EU": 0.782,
+        "US": 1.332,
+        "CN": 2.02,
+        "IN": 1.438,
+        "RU": 1.427,
+        "BR": 1.287,
+        "MX": 1.31,
+        "LATAM": 1.287,
+        "MENA": 1.342,
+        "AF": 1.227,
+        "SEA": 1.359,
+        "EA": 1.318,
+        "OC": 1.168
+      },
+      "source": "Fertilizers Europe (2020) regional reference — excl. CO₂ en producto",
+      "citation_ids": [
+        "fertilizers_europe_2020",
+        "ipcc_2019_refinement"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "fe_n_global"
     },
     {
       "id": "calcium_nitrate",
-      "name": "Nitrato de calcio",
+      "name": "Nitrato de calcio (15,5-0-0)",
+      "physical_form": "soluble",
       "n_total_pct": 15.5,
       "p2o5_pct": 0,
       "k2o_pct": 0,
+      "fe_product_code": "cn_soluble_15_5",
+      "manufacturing_note": "Grado soluble fertirriego; proxy ≈ CAN regional × 1,12 (no es CAN granulado ni PCF de marca).",
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 3.2, "EU": 2.4, "US": 2.6, "CN": 3.8, "IN": 3.5, "RU": 3.0, "BR": 2.8, "MX": 2.9, "LATAM": 2.9, "MENA": 3.1, "AF": 3.0, "SEA": 3.4, "EA": 2.5, "OC": 2.6
+        "GLOBAL": 2.16,
+        "EU": 1.07,
+        "US": 2.09,
+        "CN": 3.01,
+        "IN": 2.13,
+        "RU": 2.22,
+        "BR": 1.99,
+        "MX": 2.04,
+        "LATAM": 1.99,
+        "MENA": 2.24,
+        "AF": 1.93,
+        "SEA": 2.19,
+        "EA": 2.13,
+        "OC": 1.93
       },
-      "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "source": "Proxy regional CAN × 1,12 (Fertilizers Europe 2020)",
+      "citation_ids": [
+        "fertilizers_europe_2020",
+        "lca_regional_avg"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "soluble_fertigation"
     },
     {
       "id": "map",
-      "name": "MAP (Fosfato monoamónico)",
+      "name": "MAP (12-61-0)",
+      "physical_form": "soluble",
       "n_total_pct": 12,
       "p2o5_pct": 61,
       "k2o_pct": 0,
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 1.5, "EU": 1.1, "US": 1.2, "CN": 2.0, "IN": 1.85, "RU": 1.6, "BR": 1.35, "MX": 1.4, "LATAM": 1.4, "MENA": 1.5, "AF": 1.45, "SEA": 1.7, "EA": 1.25, "OC": 1.2
+        "GLOBAL": 1.35,
+        "EU": 1.05,
+        "US": 1.22,
+        "CN": 1.85,
+        "IN": 1.7,
+        "RU": 1.55,
+        "BR": 1.3,
+        "MX": 1.32,
+        "LATAM": 1.3,
+        "MENA": 1.4,
+        "AF": 1.35,
+        "SEA": 1.55,
+        "EA": 1.25,
+        "OC": 1.2
       },
-      "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "source": "Literatura LCA pública regional (ammonia + P)",
+      "citation_ids": [
+        "lca_regional_avg",
+        "fertilizers_europe_2020"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "soluble_fertigation"
     },
     {
       "id": "dap",
-      "name": "DAP (Fosfato diamónico)",
+      "name": "DAP (18-46-0)",
+      "physical_form": "granular",
       "n_total_pct": 18,
       "p2o5_pct": 46,
       "k2o_pct": 0,
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 1.6, "EU": 1.2, "US": 1.3, "CN": 2.1, "IN": 1.95, "RU": 1.7, "BR": 1.45, "MX": 1.5, "LATAM": 1.5, "MENA": 1.6, "AF": 1.55, "SEA": 1.8, "EA": 1.35, "OC": 1.3
+        "GLOBAL": 1.45,
+        "EU": 1.15,
+        "US": 1.28,
+        "CN": 1.95,
+        "IN": 1.8,
+        "RU": 1.65,
+        "BR": 1.4,
+        "MX": 1.42,
+        "LATAM": 1.4,
+        "MENA": 1.5,
+        "AF": 1.45,
+        "SEA": 1.65,
+        "EA": 1.32,
+        "OC": 1.28
       },
-      "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "source": "Literatura LCA pública regional (ammonia + P)",
+      "citation_ids": [
+        "lca_regional_avg",
+        "fertilizers_europe_2020"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "granular_np"
     },
     {
       "id": "ammonium_sulfate",
-      "name": "Sulfato de amonio",
+      "name": "Sulfato de amonio (21-0-0)",
+      "physical_form": "granular",
       "n_total_pct": 21,
       "p2o5_pct": 0,
       "k2o_pct": 0,
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 1.0, "EU": 0.75, "US": 0.85, "CN": 1.4, "IN": 1.25, "RU": 1.1, "BR": 0.95, "MX": 1.0, "LATAM": 1.0, "MENA": 1.05, "AF": 1.0, "SEA": 1.15, "EA": 0.9, "OC": 0.88
+        "GLOBAL": 0.95,
+        "EU": 0.72,
+        "US": 0.82,
+        "CN": 1.35,
+        "IN": 1.2,
+        "RU": 1.05,
+        "BR": 0.92,
+        "MX": 0.94,
+        "LATAM": 0.92,
+        "MENA": 0.98,
+        "AF": 0.94,
+        "SEA": 1.08,
+        "EA": 0.86,
+        "OC": 0.84
       },
-      "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "source": "Literatura LCA pública regional",
+      "citation_ids": [
+        "lca_regional_avg",
+        "fertilizers_europe_2020"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "granular_np"
     },
     {
       "id": "mkp",
-      "name": "MKP (Fosfato monopotásico)",
+      "name": "MKP (0-52-34)",
+      "physical_form": "soluble",
       "n_total_pct": 0,
       "p2o5_pct": 52,
       "k2o_pct": 34,
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 1.35, "EU": 1.0, "US": 1.1, "CN": 1.75, "IN": 1.6, "RU": 1.45, "BR": 1.25, "MX": 1.3, "LATAM": 1.3, "MENA": 1.4, "AF": 1.35, "SEA": 1.55, "EA": 1.15, "OC": 1.1
+        "GLOBAL": 1.35,
+        "EU": 1,
+        "US": 1.1,
+        "CN": 1.75,
+        "IN": 1.6,
+        "RU": 1.45,
+        "BR": 1.25,
+        "MX": 1.3,
+        "LATAM": 1.3,
+        "MENA": 1.4,
+        "AF": 1.35,
+        "SEA": 1.55,
+        "EA": 1.15,
+        "OC": 1.1
       },
       "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "citation_ids": [
+        "lca_regional_avg",
+        "ipcc_2019_refinement"
+      ],
+      "factor_year": 2019,
+      "availability_profile": "soluble_fertigation"
     },
     {
       "id": "sop",
-      "name": "SOP (Sulfato de potasio)",
+      "name": "SOP (0-0-50)",
+      "physical_form": "soluble",
       "n_total_pct": 0,
       "p2o5_pct": 0,
       "k2o_pct": 50,
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 0.55, "EU": 0.45, "US": 0.48, "CN": 0.65, "IN": 0.6, "RU": 0.58, "BR": 0.52, "MX": 0.53, "LATAM": 0.53, "MENA": 0.56, "AF": 0.54, "SEA": 0.6, "EA": 0.5, "OC": 0.48
+        "GLOBAL": 0.55,
+        "EU": 0.45,
+        "US": 0.48,
+        "CN": 0.65,
+        "IN": 0.6,
+        "RU": 0.58,
+        "BR": 0.52,
+        "MX": 0.53,
+        "LATAM": 0.53,
+        "MENA": 0.56,
+        "AF": 0.54,
+        "SEA": 0.6,
+        "EA": 0.5,
+        "OC": 0.48
       },
       "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "citation_ids": [
+        "lca_regional_avg",
+        "ipcc_2019_refinement"
+      ],
+      "factor_year": 2019,
+      "availability_profile": "soluble_fertigation"
     },
     {
       "id": "kcl",
-      "name": "KCl (Cloruro de potasio)",
+      "name": "KCl (0-0-60)",
+      "physical_form": "granular",
       "n_total_pct": 0,
       "p2o5_pct": 0,
       "k2o_pct": 60,
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 0.35, "EU": 0.3, "US": 0.32, "CN": 0.45, "IN": 0.42, "RU": 0.38, "BR": 0.34, "MX": 0.35, "LATAM": 0.35, "MENA": 0.36, "AF": 0.35, "SEA": 0.4, "EA": 0.33, "OC": 0.32
+        "GLOBAL": 0.35,
+        "EU": 0.3,
+        "US": 0.32,
+        "CN": 0.45,
+        "IN": 0.42,
+        "RU": 0.38,
+        "BR": 0.34,
+        "MX": 0.35,
+        "LATAM": 0.35,
+        "MENA": 0.36,
+        "AF": 0.35,
+        "SEA": 0.4,
+        "EA": 0.33,
+        "OC": 0.32
       },
       "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "citation_ids": [
+        "lca_regional_avg",
+        "ipcc_2019_refinement"
+      ],
+      "factor_year": 2019,
+      "availability_profile": "granular_np"
     },
     {
       "id": "npk_15_15_15",
-      "name": "NPK 15-15-15 (genérico)",
+      "name": "NPK (15-15-15)",
+      "physical_form": "granular",
       "n_total_pct": 15,
       "p2o5_pct": 15,
       "k2o_pct": 15,
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 1.4, "EU": 1.0, "US": 1.15, "CN": 1.75, "IN": 1.6, "RU": 1.45, "BR": 1.25, "MX": 1.3, "LATAM": 1.3, "MENA": 1.4, "AF": 1.35, "SEA": 1.55, "EA": 1.2, "OC": 1.15
+        "GLOBAL": 1.12,
+        "EU": 0.82,
+        "US": 0.98,
+        "CN": 1.55,
+        "IN": 1.42,
+        "RU": 1.28,
+        "BR": 1.05,
+        "MX": 1.08,
+        "LATAM": 1.05,
+        "MENA": 1.15,
+        "AF": 1.1,
+        "SEA": 1.25,
+        "EA": 0.95,
+        "OC": 0.92
       },
-      "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "source": "Estimación blend N+P+K alineada a rangos sectoriales (ref. Yara/FE ~0,8 EU)",
+      "citation_ids": [
+        "fertilizers_europe_2020",
+        "lca_regional_avg"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "granular_np"
     },
     {
       "id": "fosfonitrato",
       "name": "Fosfonitrato (33-3-0)",
+      "physical_form": "soluble",
       "n_total_pct": 33,
       "p2o5_pct": 3,
       "k2o_pct": 0,
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 2.2, "EU": 1.6, "US": 1.8, "CN": 2.7, "IN": 2.5, "RU": 2.1, "BR": 1.95, "MX": 2.0, "LATAM": 2.0, "MENA": 2.15, "AF": 2.1, "SEA": 2.4, "EA": 1.85, "OC": 1.8
+        "GLOBAL": 2.2,
+        "EU": 1.6,
+        "US": 1.8,
+        "CN": 2.7,
+        "IN": 2.5,
+        "RU": 2.1,
+        "BR": 1.95,
+        "MX": 2,
+        "LATAM": 2,
+        "MENA": 2.15,
+        "AF": 2.1,
+        "SEA": 2.4,
+        "EA": 1.85,
+        "OC": 1.8
       },
       "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "citation_ids": [
+        "lca_regional_avg",
+        "ipcc_2019_refinement"
+      ],
+      "factor_year": 2019,
+      "availability_profile": "soluble_fertigation"
+    },
+    {
+      "id": "ammonium_sulfate_soluble",
+      "name": "Sulfato de amonio soluble (21-0-0)",
+      "physical_form": "soluble",
+      "n_total_pct": 21,
+      "p2o5_pct": 0,
+      "k2o_pct": 0,
+      "manufacturing_kg_co2e_per_kg": {
+        "GLOBAL": 0.95,
+        "EU": 0.72,
+        "US": 0.82,
+        "CN": 1.35,
+        "IN": 1.2,
+        "RU": 1.05,
+        "BR": 0.92,
+        "MX": 0.94,
+        "LATAM": 0.92,
+        "MENA": 0.98,
+        "AF": 0.94,
+        "SEA": 1.08,
+        "EA": 0.86,
+        "OC": 0.84
+      },
+      "source": "Mismo factor regional que sulfato de amonio granulado (Fertirriego)",
+      "citation_ids": [
+        "lca_regional_avg",
+        "fertilizers_europe_2020"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "soluble_fertigation"
+    },
+    {
+      "id": "potassium_nitrate",
+      "name": "Nitrato de potasio (13-0-46)",
+      "physical_form": "soluble",
+      "n_total_pct": 13.7,
+      "p2o5_pct": 0,
+      "k2o_pct": 46,
+      "manufacturing_kg_co2e_per_kg": {
+        "GLOBAL": 1.45,
+        "EU": 0.71,
+        "US": 1.4,
+        "CN": 2.02,
+        "IN": 1.43,
+        "RU": 1.49,
+        "BR": 1.33,
+        "MX": 1.37,
+        "LATAM": 1.33,
+        "MENA": 1.5,
+        "AF": 1.29,
+        "SEA": 1.47,
+        "EA": 1.42,
+        "OC": 1.29
+      },
+      "source": "Estimación blend nitratos + potasio (~75% CAN regional FE)",
+      "citation_ids": [
+        "fertilizers_europe_2020",
+        "lca_regional_avg"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "soluble_fertigation"
+    },
+    {
+      "id": "magnesium_nitrate",
+      "name": "Nitrato de magnesio (11-0-0 + MgO)",
+      "physical_form": "soluble",
+      "n_total_pct": 10.8,
+      "p2o5_pct": 0,
+      "k2o_pct": 0,
+      "manufacturing_kg_co2e_per_kg": {
+        "GLOBAL": 1.99,
+        "EU": 0.98,
+        "US": 1.92,
+        "CN": 2.77,
+        "IN": 1.96,
+        "RU": 2.04,
+        "BR": 1.83,
+        "MX": 1.88,
+        "LATAM": 1.83,
+        "MENA": 2.06,
+        "AF": 1.78,
+        "SEA": 2.01,
+        "EA": 1.96,
+        "OC": 1.78
+      },
+      "source": "Proxy nitrato de calcio soluble × 0,92 (Fertirriego)",
+      "citation_ids": [
+        "fertilizers_europe_2020",
+        "lca_regional_avg"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "soluble_fertigation"
+    },
+    {
+      "id": "magnesium_sulfate",
+      "name": "Sulfato de magnesio (MgO 16%)",
+      "physical_form": "soluble",
+      "n_total_pct": 0,
+      "p2o5_pct": 0,
+      "k2o_pct": 0,
+      "manufacturing_kg_co2e_per_kg": {
+        "GLOBAL": 0.55,
+        "EU": 0.45,
+        "US": 0.48,
+        "CN": 0.65,
+        "IN": 0.6,
+        "RU": 0.58,
+        "BR": 0.52,
+        "MX": 0.53,
+        "LATAM": 0.53,
+        "MENA": 0.56,
+        "AF": 0.54,
+        "SEA": 0.6,
+        "EA": 0.5,
+        "OC": 0.48
+      },
+      "source": "Referencia SOP regional (sal de Mg)",
+      "citation_ids": [
+        "lca_regional_avg"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "soluble_fertigation"
+    },
+    {
+      "id": "kcl_soluble",
+      "name": "KCl soluble (0-0-60)",
+      "physical_form": "soluble",
+      "n_total_pct": 0,
+      "p2o5_pct": 0,
+      "k2o_pct": 60,
+      "manufacturing_kg_co2e_per_kg": {
+        "GLOBAL": 0.35,
+        "EU": 0.3,
+        "US": 0.32,
+        "CN": 0.45,
+        "IN": 0.42,
+        "RU": 0.38,
+        "BR": 0.34,
+        "MX": 0.35,
+        "LATAM": 0.35,
+        "MENA": 0.36,
+        "AF": 0.35,
+        "SEA": 0.4,
+        "EA": 0.33,
+        "OC": 0.32
+      },
+      "source": "Mismo factor regional que KCl granulado",
+      "citation_ids": [
+        "lca_regional_avg"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "soluble_fertigation"
+    },
+    {
+      "id": "nks",
+      "name": "NKS (12-0-46 + S)",
+      "physical_form": "soluble",
+      "n_total_pct": 12,
+      "p2o5_pct": 0,
+      "k2o_pct": 46,
+      "manufacturing_kg_co2e_per_kg": {
+        "GLOBAL": 1.03,
+        "EU": 0.63,
+        "US": 1.15,
+        "CN": 1.55,
+        "IN": 1.12,
+        "RU": 1.18,
+        "BR": 1.05,
+        "MX": 1.08,
+        "LATAM": 1.05,
+        "MENA": 1.14,
+        "AF": 1.06,
+        "SEA": 1.16,
+        "EA": 1.02,
+        "OC": 0.98
+      },
+      "source": "Estimación blend CAN + SOP (Fertirriego)",
+      "citation_ids": [
+        "fertilizers_europe_2020",
+        "lca_regional_avg"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "soluble_fertigation"
+    },
+    {
+      "id": "nk_mg",
+      "name": "NK + Mg (13-0-46 + MgO)",
+      "physical_form": "soluble",
+      "n_total_pct": 13,
+      "p2o5_pct": 0,
+      "k2o_pct": 46,
+      "manufacturing_kg_co2e_per_kg": {
+        "GLOBAL": 1.05,
+        "EU": 0.65,
+        "US": 1.17,
+        "CN": 1.58,
+        "IN": 1.14,
+        "RU": 1.2,
+        "BR": 1.07,
+        "MX": 1.1,
+        "LATAM": 1.07,
+        "MENA": 1.16,
+        "AF": 1.08,
+        "SEA": 1.18,
+        "EA": 1.04,
+        "OC": 1
+      },
+      "source": "Estimación blend NKS + Mg (Fertirriego)",
+      "citation_ids": [
+        "lca_regional_avg",
+        "fertilizers_europe_2020"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "soluble_fertigation"
+    },
+    {
+      "id": "calcium_chloride",
+      "name": "Cloruro de calcio (CaO 38%)",
+      "physical_form": "soluble",
+      "n_total_pct": 0,
+      "p2o5_pct": 0,
+      "k2o_pct": 0,
+      "manufacturing_kg_co2e_per_kg": {
+        "GLOBAL": 0.33,
+        "EU": 0.28,
+        "US": 0.3,
+        "CN": 0.42,
+        "IN": 0.39,
+        "RU": 0.35,
+        "BR": 0.32,
+        "MX": 0.33,
+        "LATAM": 0.33,
+        "MENA": 0.34,
+        "AF": 0.33,
+        "SEA": 0.37,
+        "EA": 0.31,
+        "OC": 0.3
+      },
+      "source": "Referencia KCl regional (sal simple)",
+      "citation_ids": [
+        "lca_regional_avg"
+      ],
+      "factor_year": 2020,
+      "availability_profile": "soluble_fertigation"
     },
     {
       "id": "organic_compost",
-      "name": "Orgánico / compost (genérico)",
+      "name": "Orgánico / compost",
+      "physical_form": "organic",
       "n_total_pct": 2,
       "p2o5_pct": 1,
       "k2o_pct": 1,
       "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 0.15, "EU": 0.12, "US": 0.13, "CN": 0.18, "IN": 0.17, "RU": 0.16, "BR": 0.14, "MX": 0.14, "LATAM": 0.14, "MENA": 0.15, "AF": 0.15, "SEA": 0.16, "EA": 0.13, "OC": 0.13
+        "GLOBAL": 0.15,
+        "EU": 0.12,
+        "US": 0.13,
+        "CN": 0.18,
+        "IN": 0.17,
+        "RU": 0.16,
+        "BR": 0.14,
+        "MX": 0.14,
+        "LATAM": 0.14,
+        "MENA": 0.15,
+        "AF": 0.15,
+        "SEA": 0.16,
+        "EA": 0.13,
+        "OC": 0.13
       },
       "source": "Promedio LCA público (sin marca)",
-      "citation_ids": ["lca_regional_avg", "ipcc_2019_refinement"],
-      "factor_year": 2019
+      "citation_ids": [
+        "lca_regional_avg",
+        "ipcc_2019_refinement"
+      ],
+      "factor_year": 2019,
+      "availability_profile": "organic_local"
     }
   ]
 }

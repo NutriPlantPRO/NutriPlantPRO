@@ -4,7 +4,7 @@
  * Mantener alineado con docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md
  */
 module.exports = {
-  version: '2026-06-06',
+  version: '2026-06-23',
   scope:
     'Herramientas HTML en iframe/modal sin cuenta. Persistencia solo localStorage del navegador (no Supabase). Misma lógica en login.html y dashboard (iconos barra).',
   persistence: {
@@ -173,8 +173,29 @@ module.exports = {
       title: 'Huella de carbono de fertilizantes',
       file: 'fertilizer-carbon-free.html',
       lsKey: 'nutriplant_free_fertilizer_carbon_v2',
+      manualChapter: 'huella_carbono_fertilizantes',
       summary:
-        'Estima CO₂e por fertilizante y país de origen (sin marcas). Programa A vs B: compara listados completos (kg, orígenes, factores). Desglose fabricación + transporte + N₂O (IPCC). Factor propio opcional. Referencias públicas citadas. Estimación de referencia.'
+        'Referencia global abierta: fabricación calibrada Fertilizers Europe (2020) regional DNV (urea, AN, CAN, UAN) + transporte 3 tramos DESNZ + N₂O IPCC Tier 1. Programa A vs B; CAN/UAN nuevos; panel calibración FE en UI. Sin marcas. T&C §7.',
+      methodology: {
+        reference_standard: 'Fertilizers Europe (2020) regional reference values (DNV) for urea, AN, CAN, UAN; IPCC field N₂O; DESNZ transport',
+        manufacturing: 'Productos N: kg CO₂e/kg = FE(2020) por región (EU urea 0,878 · AN 1,112 · CAN 0,951 · UAN 0,782). Urea/UAN excl. CO₂ en producto. Otros: LCA pública.',
+        fe_calibration_panel: 'UI table FE EU vs NutriPlant — delta 0 en productos N',
+        transport_legs: [
+          'Origen (carretera): planta → puerto exportación — km ref. por región fab.',
+          'Marítimo: puerto export. → puerto destino — route_estimates',
+          'Destino (carretera): puerto → campo — entry_point o ~150 km'
+        ],
+        transport_factors: 'DESNZ: carretera ≈ 0,062; marítimo ≈ 0,010 kg CO₂e/t·km',
+        field_n2o: 'IPCC Tier 1 EF1=0,01; GWP 273',
+        compare: 'scenario_a vs scenario_b',
+        efficiency_benchmark: 'score 0–100 vs min/máx regional (filas estimadas)',
+        precision: '±25–40% fabricación; ±30–50% con transporte/campo genérico',
+        legal: 'terminos-condiciones.html#huella-carbono'
+      },
+      lsFields: [
+        'scenario_a', 'scenario_b', 'application_country_iso', 'entry_point_id',
+        'transport_origin_km', 'transport_sea_km', 'transport_km'
+      ]
     }
   ],
   gptRules: [

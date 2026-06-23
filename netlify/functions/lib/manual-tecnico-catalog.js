@@ -240,8 +240,17 @@ module.exports = {
       url: `${BASE}/capitulos/interacciones-mulder-compatibilidad.html`,
       pillar: 'F — Interacciones',
       summary:
-      summary:
         'interacciones-absorcion-movilidad-free: Mulder antagonismo/sinergia focal (Cu↔Mn rojo bidireccional), movilidad, pH; fertilizer-compatibility-free: matriz C/R/I solubles.',
+      status: 'published'
+    },
+    {
+      id: 'huella_carbono_fertilizantes',
+      slug: 'huella-carbono-fertilizantes',
+      title: 'Huella de carbono de fertilizantes',
+      url: `${BASE}/capitulos/huella-carbono-fertilizantes.html`,
+      pillar: 'F — Sostenibilidad',
+      summary:
+        'fertilizer-carbon-free: CO₂e FE(2020) regional DNV urea/AN/CAN/UAN + transporte 3 tramos + N₂O IPCC; Programa A vs B; panel calibración FE; referencia global abierta; T&C §7.',
       status: 'published'
     },
     {

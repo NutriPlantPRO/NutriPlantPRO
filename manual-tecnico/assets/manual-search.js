@@ -160,6 +160,13 @@
       keywords: 'Mulder interacciones antagonismo sinergia Cu Mn cobre manganeso compatibilidad fertilizantes mezcla tanque movilidad pH'
     },
     {
+      href: 'capitulos/huella-carbono-fertilizantes.html',
+      icon: '🌍',
+      pillar: 'F · Sostenibilidad',
+      title: 'Huella de carbono de fertilizantes',
+      keywords: 'huella carbono CO2 CO₂e fertilizantes emisiones N2O IPCC LCA transporte marítimo Programa A B sostenibilidad GEI greenhouse'
+    },
+    {
       href: 'capitulos/publicaciones-redes-sociales.html',
       icon: '📣',
       pillar: 'G · Redes y comunicación',

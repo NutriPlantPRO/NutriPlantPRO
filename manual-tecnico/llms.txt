@@ -1,7 +1,7 @@
 # NutriPlant PRO — Manual Técnico (para crawlers e IA)
 
 > Biblioteca pública de metodología agronómica alineada con la plataforma NutriPlant PRO.
-> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza. Versión v2026.06.1 · 23 capítulos.
+> Español. Autor: NutriPlant PRO / Jesús Avila Mendoza. Versión v2026.06.2 · 24 capítulos.
 
 ## Sitio
 
@@ -29,6 +29,7 @@
 - https://nutriplantpro.com/manual-tecnico/capitulos/agua-dureza-acidificacion-solubilidad.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/n-mineralizable-agua-disponible-suelo.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/interacciones-mulder-compatibilidad.html
+- https://nutriplantpro.com/manual-tecnico/capitulos/huella-carbono-fertilizantes.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/analisis-solucion-nutritiva-lab.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/analisis-extracto-pasta.html
 - https://nutriplantpro.com/manual-tecnico/capitulos/analisis-agua-ras-sar.html
@@ -44,6 +45,7 @@
 - Triángulos: aniones NO₃+P+SO₄ y cationes K+Ca+Mg suman 100 % cada uno; Cl y NH₄ aparte
 - N mineralizable y agua útil en suelo: ver capítulo n-mineralizable-agua-disponible-suelo
 - Mulder y compatibilidad C/R/I: ver capítulo interacciones-mulder-compatibilidad
+- Huella de carbono fertilizantes (CO₂e estimado, A vs B, 3 tramos transporte): ver capítulo huella-carbono-fertilizantes
 - Balance hídrico (Clima): ETc=ETo×Kc; déficit climático/cultivo; riego mm/m³; franja regada; ver capítulo balance-hidrico-riego-clima
 
-Actualizado: 2026-06-12
+Actualizado: 2026-06-22

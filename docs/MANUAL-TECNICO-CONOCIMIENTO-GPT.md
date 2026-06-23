@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.06.1 · **23 capítulos** publicados (pilar **1** + pilares A–G).  
+**Versión manual web:** v2026.06.2 · **24 capítulos** publicados (pilar **1** + pilares A–G).  
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-06-12 · **v2026.06.1**
+**Versión Knowledge:** 2026-06-22 · **v2026.06.2**
 
 ---
 
@@ -62,6 +62,7 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | `agua-dureza-acidificacion-solubilidad` | Dureza, ácido HCO₃, solubilidad/IS | E |
 | `n-mineralizable-agua-disponible-suelo` | N mineralizable, CC−PMP, textura | B |
 | `interacciones-mulder-compatibilidad` | Mulder, matriz C/R/I ferti | F |
+| `huella-carbono-fertilizantes` | Huella CO₂e fertilizantes (estimación) | F |
 | `analisis-solucion-nutritiva-lab` | Solución lab (licor/drenaje) | C |
 | `analisis-extracto-pasta` | Extracto de pasta saturada (laboratorio) | C |
 | `analisis-agua-ras-sar` | Agua CE, pH, RAS | C |
@@ -211,31 +212,39 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 - **Agua:** vol m³ = ha×10000×(prof_cm/100); útil % = CC−PMP; vol útil = vol×(CC−PMP)/100×(zona_radical/100). Con θ actual: déficit = max(0,CC−θ); lámina mm = déficit/100×prof×10.  
 - **Textura:** triángulo USDA; rangos típicos CC/PMP ilustrativos por clase. Herramientas: `n_mineralizable`, `agua_textura`.
 
-### 4.15 Solución nutritiva (lab)
+### 4.15 Huella de carbono de fertilizantes (Pilar F — sostenibilidad)
+
+**URL:** …/huella-carbono-fertilizantes.html  
+- **Posicionamiento:** referencia **global abierta** NutriPlant; calibración **Fertilizers Europe (2020)** en urea, AN, CAN, UAN (promedios regionales DNV). No PCF por planta.  
+- **Fabricación EU (kg CO₂e/kg, FE 2020 = NutriPlant):** urea 0,878 · AN 1,112 · CAN 0,951 · UAN 0,782 (excl. CO₂ en producto urea/UAN).  
+- **Transporte (3 tramos):** DESNZ. **Campo N₂O:** IPCC Tier 1. Programa A vs B. CAN/UAN en catálogo desde v2026-06-23.  
+- **Herramienta:** `fertilizer_carbon`; LS `nutriplant_free_fertilizer_carbon_v2`. Panel calibración FE en UI.
+
+### 4.16 Solución nutritiva (lab)
 
 **URL:** …/analisis-solucion-nutritiva-lab.html · `solucionNutritivaAnalyses[]`. CE, pH, RAS manual. Cationes/aniones meq↔ppm (pesos eq. Ca 20,04, K 39,1, NO₃ 14…). Rangos SN_REF_DEFAULT; ideal editable; diff = lab − ideal. ≠ extracto pasta ≠ diseño didáctico gratis.
 
-### 4.16 Extracto de pasta
+### 4.17 Extracto de pasta
 
 **URL:** …/analisis-extracto-pasta.html · Misma estructura iónica que solución nutritiva; interpretación = disponibilidad en rizósfera (pasta saturada), no licor de fertirriego. ≠ solución nutritiva lab.
 
-### 4.17 Agua RAS
+### 4.18 Agua RAS
 
 **URL:** …/analisis-agua-ras-sar.html · CE, pH, cationes, aniones, residual ácido. **RAS en app = campo manual.** Fórmula referencia: RAS = Na ÷ √((Ca+Mg)/2) en meq/L. Guías: &lt;3 bajo, 3–6 mod, &gt;6–8 alto riesgo sodio.
 
-### 4.18 Foliar DOP
+### 4.19 Foliar DOP
 
 **URL:** …/analisis-foliar-dop.html · DOP % = ((nivel−óptimo)/óptimo)×100.
 
-### 4.19 Fruta ICC
+### 4.20 Fruta ICC
 
 **URL:** …/analisis-fruta-icc.html · ICC % misma fórmula que DOP. Semáforo |ICC|: ≤10 verde, 10–25 amarillo, 25–50 naranja, &gt;50 rojo. Calidad °Brix, firmeza; Ca total/soluble/ligado.
 
-### 4.20 FAQ % meq (hidroponía y fertirriego)
+### 4.21 FAQ % meq (hidroponía y fertirriego)
 
 **URL:** …/faq-porcentajes-no-suman-100.html · Título web: «% meq en hidroponía y fertirriego: por qué no todo suma 100 %». Triángulos N-P-S y K-Ca-Mg suman 100 % cada uno; Cl y NH₄ aparte. ≠ % saturación CIC suelo (§4.2).
 
-### 4.21 Publicaciones en redes (pilar G)
+### 4.22 Publicaciones en redes (pilar G)
 
 **URL:** …/publicaciones-redes-sociales.html  
 Canales oficiales; tono técnico; mapa capítulo→post; plantilla LinkedIn. **Posts con URL:** Knowledge `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` §8 (**24 posts** LinkedIn empresa NutriPlant PRO; IDs `li_*`). Para redactar o «como el post de P-Zn»: ese doc §8b + capítulo citado.
@@ -261,7 +270,7 @@ Canales oficiales; tono técnico; mapa capítulo→post; plantilla LinkedIn. **P
 
 ## 6. Mantenimiento manual
 
-**Versión web v2026.06.1:** 23 capítulos · nuevo capítulo balance hídrico riego (Clima) · calculadora Lluvia y ET₀ · Pilar H flujo · buscador índice.
+**Versión web v2026.06.2:** 24 capítulos · nuevo capítulo huella de carbono fertilizantes · calculadora 🌍 (3 tramos transporte, A vs B) · Pilar 1 flujo · buscador índice.
 
 Plan histórico: `docs/MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 

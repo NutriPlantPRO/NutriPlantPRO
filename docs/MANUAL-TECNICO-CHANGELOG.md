@@ -5,6 +5,32 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-06-23 — Calibración Fertilizers Europe (huella carbono)
+
+### Actualizado
+
+- `emission-factors-by-country.json` v2026-06-23 — factores N alineados a Fertilizers Europe (2020) regional DNV; nuevos productos CAN y UAN; NPK EU 0,82
+- `fertilizer-carbon-free.html` — panel calibración FE en UI; aviso referencia global
+- Manual, HERRAMIENTAS, Chat IA, free-tools-catalog
+
+---
+
+## 2026-06-22 — v2026.06.2 (Huella de carbono fertilizantes)
+
+### Publicado
+
+- `huella-carbono-fertilizantes.html` — estimación CO₂e: fabricación LCA regional, transporte 3 tramos, N₂O IPCC, Programa A vs B, puertos destino, benchmark eficiencia; enlace a `fertilizer-carbon-free.html` y T&amp;C §7
+
+### Actualizado
+
+- `manual-tecnico-catalog.js`, `index.html`, `llms.txt`, `sitemap.xml`, `manual-search.js`
+- `free-tools-catalog.js` — entrada `fertilizer_carbon` ampliada (metodología 3 tramos, regiones, puertos)
+- `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` — sección 🌍 huella de carbono
+- `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` — §4.15
+- `chat-simple.js` — conocimiento Chat IA (`getNutriPlantCalculatorsManual`)
+
+---
+
 ## 2026-05-23 — v2026.05.7 (Pilar flujo = 1, no H)
 
 ### Actualizado
