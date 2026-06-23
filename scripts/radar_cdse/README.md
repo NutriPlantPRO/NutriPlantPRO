@@ -1,17 +1,9 @@
 # Radar CDSE pilot (pre-venta, sin Google)
 
-## Activar botón oculto en Ubicación
+## Botón pilot en Ubicación
 
-En el navegador (consola) o con URL:
-
-```js
-localStorage.setItem('np_radar_pilot', '1');
-location.reload();
-```
-
-O abre el dashboard con: `?radar_pilot=1`
-
-Verás un botón pequeño **🧪 Pilot** junto a Radar del cultivo. No afecta créditos ni el botón **Generar / actualizar** actual.
+Icono **🛰** casi transparente, a la derecha de **Quitar capa** (solo uso interno / pruebas).
+No gasta créditos ni usa el botón **Generar / actualizar** de Google.
 
 ## Netlify (backend pilot)
 

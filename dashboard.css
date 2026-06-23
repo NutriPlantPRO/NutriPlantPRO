@@ -7907,3 +7907,37 @@ html.embed-login body {
     0 2px 6px rgba(37, 99, 235, 0.25);
 }
 
+/* Pilot Radar (Copernicus) — icono casi invisible junto a «Quitar capa» */
+.radar-ndvi-panel .radar-pilot-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin-left: 2px;
+  font-size: 14px;
+  line-height: 1;
+  border: none;
+  background: transparent;
+  color: #166534;
+  opacity: 0.22;
+  cursor: pointer;
+  box-shadow: none;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.radar-ndvi-panel .radar-pilot-trigger:hover {
+  opacity: 0.75;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+}
+.radar-ndvi-panel .radar-pilot-trigger:active {
+  opacity: 1;
+  transform: scale(0.94);
+}
+.radar-ndvi-panel .radar-pilot-trigger:disabled {
+  opacity: 0.35;
+  cursor: wait;
+}
+

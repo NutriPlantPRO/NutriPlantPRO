@@ -2606,25 +2606,6 @@ function np_radarApiUrl() {
   return (base || '').replace(/\/$/, '') + '/api/radar-ndvi';
 }
 
-/** Pilot CDSE / Sentinel-2 gratis — UI oculta (localStorage np_radar_pilot=1 o ?radar_pilot=1). */
-function np_isRadarPilotUiEnabled() {
-  try {
-    if (localStorage.getItem('np_radar_pilot') === '1') return true;
-    if (typeof URLSearchParams !== 'undefined') {
-      return new URLSearchParams(window.location.search).get('radar_pilot') === '1';
-    }
-  } catch (e) {
-    /* ignore */
-  }
-  return false;
-}
-
-function np_updateRadarPilotButtonVisibility() {
-  const btn = document.getElementById('radarBtnPilotCdse');
-  if (!btn) return;
-  btn.style.display = np_isRadarPilotUiEnabled() ? 'inline-flex' : 'none';
-}
-
 function np_radarPilotApiUrl() {
   const base =
     typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : '';
@@ -2970,12 +2951,10 @@ window.initRadarNdviUi = function initRadarNdviUi() {
   const panel = document.getElementById('radarNdviPanel');
   if (!panel) return;
   if (panel.dataset.radarBound === '1') {
-    np_updateRadarPilotButtonVisibility();
     return;
   }
   panel.dataset.radarBound = '1';
   np_setSelectedRadarIndex(radarActiveIndex);
-  np_updateRadarPilotButtonVisibility();
   document.getElementById('radarSnapshotSelect')?.addEventListener('change', () => {
     np_persistRadarSnapshotSelection(np_getSelectedRadarRequestId());
     np_updateRadarStatusHintFromSelection();
@@ -3050,7 +3029,6 @@ window.initRadarNdviUi = function initRadarNdviUi() {
 };
 
 window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
-  if (!np_isRadarPilotUiEnabled()) return;
   const token = await np_getRadarAccessToken();
   if (!token) {
     alert('Inicia sesión con tu cuenta en la nube.');
@@ -3070,7 +3048,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
   const pilotBtn = document.getElementById('radarBtnPilotCdse');
   if (pilotBtn) {
     pilotBtn.disabled = true;
-    pilotBtn.textContent = '⏳ Pilot…';
+    pilotBtn.textContent = '⏳';
   }
   if (hint) {
     hint.textContent =
@@ -3127,7 +3105,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
   } finally {
     if (pilotBtn) {
       pilotBtn.disabled = false;
-      pilotBtn.textContent = '🧪 Pilot';
+      pilotBtn.textContent = '🛰';
     }
   }
 };
