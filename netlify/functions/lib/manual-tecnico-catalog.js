@@ -250,7 +250,7 @@ module.exports = {
       url: `${BASE}/capitulos/huella-carbono-fertilizantes.html`,
       pillar: 'F — Sostenibilidad',
       summary:
-        'fertilizer-carbon-free: CO₂e FE(2020) regional DNV urea/AN/CAN/UAN + transporte 3 tramos + N₂O IPCC; Programa A vs B; panel calibración FE; referencia global abierta; T&C §7.',
+        'fertilizer-carbon-free: CO₂e FE(2020) regional DNV urea/AN/CAN/UAN + transporte 3 tramos + N₂O IPCC; Programa A vs B; filtro disponibilidad regional por origen fab.; panel calibración FE; referencia global abierta; T&C §7.',
       status: 'published'
     },
     {

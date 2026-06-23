@@ -5,6 +5,17 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-06-23b — Disponibilidad regional (huella carbono)
+
+### Actualizado
+
+- `emission-factors-by-country.json` — `availability_profiles` + `availability_profile` por fertilizante (22 productos)
+- `fertilizer-carbon-core.js` / `fertilizer-carbon-free.html` — filtro desplegable por origen fab.; reset al cambiar origen
+- `huella-carbono-fertilizantes.html` — sección disponibilidad regional
+- `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`, `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md`, `chat-simple.js`, `free-tools-catalog.js`, `manual-tecnico-catalog.js`, `manual-tecnico/llms.txt`
+
+---
+
 ## 2026-06-23 — Calibración Fertilizers Europe (huella carbono)
 
 ### Actualizado

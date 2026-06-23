@@ -218,6 +218,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 - **Posicionamiento:** referencia **global abierta** NutriPlant; calibración **Fertilizers Europe (2020)** en urea, AN, CAN, UAN (promedios regionales DNV). No PCF por planta.  
 - **Fabricación EU (kg CO₂e/kg, FE 2020 = NutriPlant):** urea 0,878 · AN 1,112 · CAN 0,951 · UAN 0,782 (excl. CO₂ en producto urea/UAN).  
 - **Transporte (3 tramos):** DESNZ. **Campo N₂O:** IPCC Tier 1. Programa A vs B. CAN/UAN en catálogo desde v2026-06-23.  
+- **Disponibilidad regional:** listado filtrado por origen fab. (`availability_profiles`); hidrosolubles no disponibles con origen MX/BR/LATAM (`not_applicable`); factor propio permite EPD de importación.  
 - **Herramienta:** `fertilizer_carbon`; LS `nutriplant_free_fertilizer_carbon_v2`. Panel calibración FE en UI.
 
 ### 4.16 Solución nutritiva (lab)

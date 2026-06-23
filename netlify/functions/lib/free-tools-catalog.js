@@ -175,10 +175,12 @@ module.exports = {
       lsKey: 'nutriplant_free_fertilizer_carbon_v2',
       manualChapter: 'huella_carbono_fertilizantes',
       summary:
-        'Referencia global abierta: fabricación calibrada Fertilizers Europe (2020) regional DNV (urea, AN, CAN, UAN) + transporte 3 tramos DESNZ + N₂O IPCC Tier 1. Programa A vs B; CAN/UAN nuevos; panel calibración FE en UI. Sin marcas. T&C §7.',
+        'Referencia global abierta: fabricación calibrada Fertilizers Europe (2020) regional DNV (urea, AN, CAN, UAN) + transporte 3 tramos DESNZ + N₂O IPCC Tier 1. Programa A vs B; 22 productos; filtro disponibilidad regional por origen fab. (hidrosolubles no MX/BR/LATAM); panel calibración FE. Sin marcas. T&C §7.',
       methodology: {
         reference_standard: 'Fertilizers Europe (2020) regional reference values (DNV) for urea, AN, CAN, UAN; IPCC field N₂O; DESNZ transport',
         manufacturing: 'Productos N: kg CO₂e/kg = FE(2020) por región (EU urea 0,878 · AN 1,112 · CAN 0,951 · UAN 0,782). Urea/UAN excl. CO₂ en producto. Otros: LCA pública.',
+        regional_availability:
+          'availability_profiles en JSON: fe_n_global, granular_np, soluble_fertigation, organic_local. not_applicable oculta producto y bloquea fab. estimada; import_typical con badge; factor propio permite EPD importación.',
         fe_calibration_panel: 'UI table FE EU vs NutriPlant — delta 0 en productos N',
         transport_legs: [
           'Origen (carretera): planta → puerto exportación — km ref. por región fab.',

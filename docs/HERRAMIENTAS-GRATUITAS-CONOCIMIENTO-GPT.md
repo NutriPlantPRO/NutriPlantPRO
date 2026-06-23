@@ -217,6 +217,16 @@ Lista agrupada en UI: **Granulados · Hidrosolubles · Líquidos · Orgánicos**
 
 Panel en UI: **「Calibración vs Fertilizers Europe (EU)」** — tabla FE vs NutriPlant (Δ debe ser 0 en productos N EU).
 
+#### Disponibilidad regional de productos (v2026-06-23)
+
+- El desplegable de fertilizantes se **filtra por origen de fabricación** de cada fila (`methodology.availability_profiles` en JSON).
+- Perfiles: `fe_n_global` (urea, AN, CAN, UAN), `granular_np` (DAP, NPK, KCl…), `soluble_fertigation` (MAP, nitrato calcio, MKP, solubles…), `organic_local` (compost).
+- Niveles por región: `primary`, `secondary`, `import_typical`, **`not_applicable`**.
+- Si el origen **no produce** el producto (p. ej. hidrosoluble con origen **MX, BR o LATAM**), **no aparece en la lista** ni se calcula fabricación estimada.
+- **`import_typical`:** sí calcula con factor regional exportador; badge `↗ imp.` en UI.
+- **Factor propio** (EPD/LCA por fila): el usuario puede ingresar fabricación aunque el origen no sea productor referenciado.
+- Comparador rápido A vs B: solo productos válidos para **ambos** orígenes elegidos.
+
 #### Transporte en 3 tramos
 
 1. **Origen (carretera):** fábrica → puerto de exportación en región productora. km referencia por región fab. (ej. CN 220, EU 90, US 110, MX 95, BR 160, IN 280, MENA 70, GLOBAL 120).
@@ -249,6 +259,7 @@ IPCC 2019 Refinement Cap. 11 (N₂O suelo), IPCC AR6 (GWP), DESNZ/DEFRA (transpo
 | Tratar resultado como certificado | Siempre decir «estimación de referencia»; T&amp;C §7 |
 | Inventar totales CO₂e del usuario | Pedir valores o explicar fórmulas; no asumir localStorage |
 | Un solo km de transporte | Son **3 tramos** independientes |
+| Elegir hidrosoluble con origen MX/BR como productor local | No aplica — filtrado por `not_applicable`; usar origen EU/CN/US o factor propio |
 | Mezclar con datos del proyecto PRO | La calculadora **no lee** granular/fertirriego guardado en Supabase |
 
 - **API Socio:** `free_tools_catalog` con `tool_id: "fertilizer_carbon"`.

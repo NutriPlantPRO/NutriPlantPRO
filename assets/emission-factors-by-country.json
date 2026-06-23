@@ -279,6 +279,16 @@
     "sea_note": "Marítimo granel — puerto exportación → puerto país destino",
     "factor_year": 2024
   },
+  "equivalencies": {
+    "pickup_medium_6cyl": {
+      "label": "Pick-up mediana 6 cil. (gasolina)",
+      "label_short": "Pick-up mediana 6 cil.",
+      "kg_co2e_per_km": 0.254,
+      "source": "UK DESNZ/DEFRA 2024 — large car / 4×4 petrol (referencia agrícola)",
+      "citation_id": "desnz_freight",
+      "disclaimer": "Equivalencia ilustrativa: km teóricos si el CO₂e total del programa se comparara con emitir lo mismo conduciendo esa pick-up. No incluye carga, terreno ni eficiencia real del vehículo."
+    }
+  },
   "route_estimates": {
     "disclaimer": "Distancias aproximadas de ruta comercial (referencia). No sustituyen dato logístico real del usuario.",
     "maritime_km": {

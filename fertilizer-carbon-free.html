@@ -62,27 +62,51 @@
       padding: 10px 12px; margin: 0 0 12px; font-size: 11px; color: #1e40af; line-height: 1.5;
     }
     .fc-factor-info strong { color: #1e3a8a; }
-    .fc-supply-chain {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: stretch;
-      justify-content: center;
-      gap: 6px 4px;
+    .fc-route-track-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
       margin: 0 0 12px;
+    }
+    .fc-route-track {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 0;
+      min-width: 660px;
       padding: 10px 12px;
       background: #fff;
       border: 1px solid #cbd5e1;
       border-radius: 10px;
       box-shadow: 0 1px 3px rgba(0,0,0,.06);
     }
+    .fc-route-col {
+      flex: 1 1 0;
+      min-width: 118px;
+      max-width: 172px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .fc-route-col--port { min-width: 132px; max-width: 188px; }
+    .fc-route-arrow {
+      flex: 0 0 18px;
+      align-self: center;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 800;
+      color: #94a3b8;
+      line-height: 1;
+      user-select: none;
+    }
     .fc-flow-step {
-      flex: 1 1 100px;
-      min-width: 90px;
+      flex: 0 0 auto;
+      min-height: 76px;
       text-align: center;
       padding: 8px 6px;
       border-radius: 8px;
       background: #f8fafc;
       border: 1px solid #e2e8f0;
+      box-sizing: border-box;
     }
     .fc-flow-step--mfg { background: #eff6ff; border-color: #bfdbfe; }
     .fc-flow-step--origin { background: #faf5ff; border-color: #d8b4fe; }
@@ -105,19 +129,68 @@
       color: #0f172a;
       margin-top: 3px;
       line-height: 1.25;
+      min-height: 2.6em;
       word-break: break-word;
+      overflow: hidden;
     }
-    .fc-flow-arrow {
-      align-self: center;
-      font-size: 16px;
-      font-weight: 800;
-      color: #94a3b8;
-      padding: 0 2px;
+    .fc-route-col .fc-field {
+      flex: 1 1 auto;
+      min-height: 108px;
+      margin: 0;
+      padding: 10px 8px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
     }
-    @media (max-width: 520px) {
-      .fc-flow-arrow { flex-basis: 100%; text-align: center; transform: rotate(90deg); padding: 2px 0; }
+    .fc-route-col .fc-field label {
+      min-height: 2.6em;
+      line-height: 1.25;
     }
+    .fc-route-col .fc-field select,
+    .fc-route-col .fc-field input[type="number"] {
+      flex: 0 0 auto;
+    }
+    .fc-route-col .fc-field .hint {
+      flex: 0 0 auto;
+      min-height: 2.4em;
+    }
+    .fc-field--mfg { background: #eff6ff; border-color: #bfdbfe; }
+    .fc-field--origin { background: #faf5ff; border-color: #d8b4fe; }
+    .fc-field--sea { background: #ecfeff; border-color: #67e8f9; }
+    .fc-field--port { background: #f0fdf4; border-color: #bbf7d0; min-height: 168px; }
+    .fc-field--field { background: #fefce8; border-color: #fde047; }
+    .fc-field-entry {
+      margin-top: 6px;
+      min-height: 62px;
+      flex: 0 0 auto;
+    }
+    .fc-field-entry.is-hidden {
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .fc-field-entry label { min-height: auto; font-size: 11px; }
     .fc-field label .fc-lbl-icon { margin-right: 3px; }
+    .fc-route-context {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px 10px;
+      margin: 0 0 8px;
+      padding: 8px 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .fc-route-context__label { color: #64748b; font-weight: 600; }
+    #activeRouteTitle { color: #0f172a; font-size: 13px; }
+    #activeRouteHint { color: #94a3b8; font-size: 11px; width: 100%; margin: 0; }
+    .fc-table tr.row-selected { background: #eff6ff !important; box-shadow: inset 0 0 0 2px #3b82f6; }
+    .fc-table tr.fc-row-selectable { cursor: pointer; }
+    .fc-table tr.row-selected td { background: transparent; }
+    .fc-route-cell { font-size: 11px; color: #475569; max-width: 120px; white-space: normal; line-height: 1.3; }
     .fc-transport-estimate {
       grid-column: 1 / -1;
       display: flex;
@@ -355,6 +428,64 @@
     }
     .fc-compare-prog h3 { margin: 0 0 8px; font-size: 15px; color: #14532d; }
     .fc-compare-prog-note { margin: 0 0 12px; font-size: 11px; color: #64748b; line-height: 1.45; }
+    .fc-pickup-equiv {
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 1px solid #fcd34d;
+      border-radius: 10px;
+    }
+    .fc-pickup-equiv h4 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #92400e;
+    }
+    .fc-pickup-equiv .fc-pickup-intro {
+      margin: 0 0 10px;
+      font-size: 11px;
+      color: #78716c;
+      line-height: 1.45;
+    }
+    .fc-pickup-equiv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .fc-pickup-equiv-card {
+      background: #fff;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .fc-pickup-equiv-card strong {
+      display: block;
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .fc-pickup-equiv-card .km-val {
+      display: block;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #b45309;
+      line-height: 1.2;
+    }
+    .fc-pickup-equiv-card .km-sub {
+      display: block;
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    .fc-pickup-equiv-card.is-diff { border-color: #86efac; background: #f0fdf4; }
+    .fc-pickup-equiv-card.is-diff .km-val { color: #15803d; }
+    .fc-pickup-equiv-foot {
+      margin: 10px 0 0;
+      font-size: 10px;
+      color: #a8a29e;
+      line-height: 1.4;
+    }
     .fc-prog-card-a { border-color: #93c5fd !important; }
     .fc-prog-card-b { border-color: #c4b5fd !important; }
     .fc-prog-summary { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -454,8 +585,9 @@
   </aside>
 
   <p class="fc-intro">
-    Arma <strong>Programa A</strong> y <strong>Programa B</strong> (listado de fertilizantes, kg y orígenes) y compáralos.
-    Solo verás productos que el origen de fabricación de cada fila puede producir (referencia sectorial); usa factor propio si tienes ficha o EPD de importación.
+    Arma <strong>Programa A</strong> y <strong>Programa B</strong>. Cada fertilizante tiene <strong>su propia ruta</strong>
+    (🏭 fabricación → 🚛 → ⛴️ → 🚢 → 🌾): haz clic en una fila de la tabla y edítala arriba.
+    Productos filtrados por origen de fabricación; factor propio (EPD) si importas.
   </p>
 
   <div class="fc-scenario-bar">
@@ -479,82 +611,90 @@
     </table>
   </details>
 
-  <div class="fc-supply-chain" id="supplyChainFlow" aria-label="Cadena logística estimada">
-    <div class="fc-flow-step fc-flow-step--mfg">
-      <span class="fc-flow-icon" aria-hidden="true">🏭</span>
-      <span class="fc-flow-label">Fabricación</span>
-      <span class="fc-flow-val" id="flowMfgLabel">—</span>
+  <div class="fc-route-context" id="activeRouteContext">
+    <span class="fc-route-context__label">Ruta de:</span>
+    <strong id="activeRouteTitle">—</strong>
+    <p class="hint" id="activeRouteHint">Haz clic en un fertilizante de la tabla para editar su ruta 🏭 → 🌾. Cada producto puede tener origen y km distintos.</p>
+  </div>
+  <div class="fc-route-track-wrap">
+  <div class="fc-route-track" id="supplyChainFlow" aria-label="Cadena logística y parámetros de ruta">
+    <div class="fc-route-col fc-route-col--mfg">
+      <div class="fc-flow-step fc-flow-step--mfg">
+        <span class="fc-flow-icon" aria-hidden="true">🏭</span>
+        <span class="fc-flow-label">Fabricación</span>
+        <span class="fc-flow-val" id="flowMfgLabel">—</span>
+      </div>
+      <div class="fc-field fc-field--mfg">
+        <label for="originCountry"><span class="fc-lbl-icon">🏭</span> Fabricación</label>
+        <select id="originCountry"></select>
+        <div class="hint" id="originGroupHint">Región LCA de fabricación de este producto</div>
+      </div>
     </div>
-    <span class="fc-flow-arrow" aria-hidden="true">→</span>
-    <div class="fc-flow-step fc-flow-step--origin">
-      <span class="fc-flow-icon" aria-hidden="true">🚛</span>
-      <span class="fc-flow-label">Origen</span>
-      <span class="fc-flow-val" id="flowOriginLabel">—</span>
+    <span class="fc-route-arrow" aria-hidden="true">→</span>
+    <div class="fc-route-col fc-route-col--origin">
+      <div class="fc-flow-step fc-flow-step--origin">
+        <span class="fc-flow-icon" aria-hidden="true">🚛</span>
+        <span class="fc-flow-label">Origen</span>
+        <span class="fc-flow-val" id="flowOriginLabel">—</span>
+      </div>
+      <div class="fc-field fc-field--origin">
+        <label for="transportOriginKm"><span class="fc-lbl-icon">🚛</span> Origen (km)</label>
+        <input type="number" id="transportOriginKm" min="0" step="1" value="0" />
+        <div class="hint" id="transportOriginHint">Fábrica → puerto exportación</div>
+      </div>
     </div>
-    <span class="fc-flow-arrow" aria-hidden="true">→</span>
-    <div class="fc-flow-step fc-flow-step--sea">
-      <span class="fc-flow-icon" aria-hidden="true">⛴️</span>
-      <span class="fc-flow-label">Marítimo</span>
-      <span class="fc-flow-val" id="flowSeaLabel">—</span>
+    <span class="fc-route-arrow" aria-hidden="true">→</span>
+    <div class="fc-route-col fc-route-col--sea">
+      <div class="fc-flow-step fc-flow-step--sea">
+        <span class="fc-flow-icon" aria-hidden="true">⛴️</span>
+        <span class="fc-flow-label">Marítimo</span>
+        <span class="fc-flow-val" id="flowSeaLabel">—</span>
+      </div>
+      <div class="fc-field fc-field--sea">
+        <label for="transportSeaKm"><span class="fc-lbl-icon">⛴️</span> Marítimo (km)</label>
+        <input type="number" id="transportSeaKm" min="0" step="1" value="0" />
+        <div class="hint">Puerto export. → puerto destino</div>
+      </div>
     </div>
-    <span class="fc-flow-arrow" aria-hidden="true">→</span>
-    <div class="fc-flow-step fc-flow-step--port">
-      <span class="fc-flow-icon" aria-hidden="true">🚢</span>
-      <span class="fc-flow-label">Puerto / país destino</span>
-      <span class="fc-flow-val" id="flowPortLabel">—</span>
+    <span class="fc-route-arrow" aria-hidden="true">→</span>
+    <div class="fc-route-col fc-route-col--port">
+      <div class="fc-flow-step fc-flow-step--port">
+        <span class="fc-flow-icon" aria-hidden="true">🚢</span>
+        <span class="fc-flow-label">Puerto / país destino</span>
+        <span class="fc-flow-val" id="flowPortLabel">—</span>
+      </div>
+      <div class="fc-field fc-field--port">
+        <label for="applicationCountry"><span class="fc-lbl-icon">🚢</span> Puerto / país destino</label>
+        <select id="applicationCountry"></select>
+        <div class="hint">País donde entra el fertilizante</div>
+        <div id="entryPointField" class="fc-field-entry is-hidden" aria-hidden="true">
+          <label for="entryPointSelect"><span class="fc-lbl-icon">⚓</span> <span id="entryPointLabel">Costa / puerto</span></label>
+          <select id="entryPointSelect"></select>
+          <div class="hint" id="entryPointHint">Litoral o puerto más cercano</div>
+        </div>
+      </div>
     </div>
-    <span class="fc-flow-arrow" aria-hidden="true">→</span>
-    <div class="fc-flow-step fc-flow-step--field">
-      <span class="fc-flow-icon" aria-hidden="true">🌾</span>
-      <span class="fc-flow-label">Campo</span>
-      <span class="fc-flow-val" id="flowFieldLabel">—</span>
+    <span class="fc-route-arrow" aria-hidden="true">→</span>
+    <div class="fc-route-col fc-route-col--field">
+      <div class="fc-flow-step fc-flow-step--field">
+        <span class="fc-flow-icon" aria-hidden="true">🌾</span>
+        <span class="fc-flow-label">Campo</span>
+        <span class="fc-flow-val" id="flowFieldLabel">—</span>
+      </div>
+      <div class="fc-field fc-field--field">
+        <label for="transportKm"><span class="fc-lbl-icon">🌾</span> Campo (km)</label>
+        <input type="number" id="transportKm" min="0" step="1" value="0" />
+        <div class="hint">Puerto destino → tu campo</div>
+      </div>
     </div>
   </div>
+  </div>
 
-  <div class="fc-grid">
-    <div class="fc-field">
-      <label for="applicationCountry"><span class="fc-lbl-icon">🚢</span> Puerto / país destino</label>
-      <select id="applicationCountry"></select>
-      <div class="hint">País donde desembarca o entra el fertilizante importado</div>
-    </div>
-    <div class="fc-field" id="entryPointField" style="display:none;">
-      <label for="entryPointSelect"><span class="fc-lbl-icon">⚓</span> <span id="entryPointLabel">Costa / puerto de llegada</span></label>
-      <select id="entryPointSelect"></select>
-      <div class="hint" id="entryPointHint">Elige el litoral o puerto más cercano a tu logística</div>
-    </div>
-    <div class="fc-field">
-      <label for="originCountry"><span class="fc-lbl-icon">🏭</span> Región de fabricación (filas nuevas)</label>
-      <select id="originCountry"></select>
-      <div class="hint" id="originGroupHint">Factor LCA regional: —</div>
-    </div>
+  <div class="fc-grid fc-grid--aux">
     <div class="fc-field">
       <label for="areaHa"><span class="fc-lbl-icon">📐</span> Superficie (ha)</label>
       <input type="number" id="areaHa" min="0" step="0.1" value="1" />
       <div class="hint">Para convertir dosis total → kg/ha</div>
-    </div>
-    <div class="fc-field">
-      <label for="transportOriginKm"><span class="fc-lbl-icon">🚛</span> Origen (km)</label>
-      <input type="number" id="transportOriginKm" min="0" step="1" value="0" />
-      <div class="hint" id="transportOriginHint">Fábrica → puerto exportación (referencia por región productora)</div>
-    </div>
-    <div class="fc-field">
-      <label for="transportSeaKm"><span class="fc-lbl-icon">⛴️</span> Marítimo (km)</label>
-      <input type="number" id="transportSeaKm" min="0" step="1" value="0" />
-      <div class="hint">Puerto exportación → puerto del país destino</div>
-    </div>
-    <div class="fc-field">
-      <label for="transportKm"><span class="fc-lbl-icon">🚛</span> Destino (km)</label>
-      <input type="number" id="transportKm" min="0" step="1" value="0" />
-      <div class="hint">Puerto destino → tu campo</div>
-    </div>
-    <div class="fc-transport-estimate">
-      <button type="button" class="btn-estimate-km" onclick="applyTransportEstimate()" title="Rellena km de referencia según región de fabricación y país destino">
-        📍 Estimar km (referencia)
-      </button>
-      <p class="fc-transport-estimate-hint" id="transportEstimateHint">
-        ¿No sabes los km? Pulsa <strong>Estimar</strong>: usa la región de fabricación de tu listado y el país destino
-        (ej. China → Manzanillo ≈ 220 km origen + 14.200 km marítimo + 140 km a campo). Aproximado — ajústalo si conoces la ruta real.
-      </p>
     </div>
     <div class="fc-field">
       <label for="doseUnit">Unidad de dosis</label>
@@ -562,6 +702,15 @@
         <option value="kg_ha">kg/ha</option>
         <option value="total_kg">kg total (lote)</option>
       </select>
+    </div>
+    <div class="fc-transport-estimate">
+      <button type="button" class="btn-estimate-km" onclick="applyTransportEstimate()" title="Rellena km de referencia según región de fabricación y país destino">
+        📍 Estimar km (referencia)
+      </button>
+      <p class="fc-transport-estimate-hint" id="transportEstimateHint">
+        ¿No sabes los km? Pulsa <strong>Estimar</strong> para el fertilizante seleccionado
+        (ej. China → Golfo MX ≈ 220 km origen + ~9.000 km mar + km a campo). Aproximado — ajústalo si conoces la ruta real.
+      </p>
     </div>
   </div>
 
@@ -571,7 +720,7 @@
       <thead>
         <tr>
           <th>Fertilizante</th>
-          <th title="Región LCA donde se estima la fabricación">🏭 Región fab.</th>
+          <th title="Resumen ruta de este producto">🛣️ Ruta</th>
           <th>Dosis</th>
           <th>Factor fab.</th>
           <th>Valor propio</th>
@@ -612,6 +761,7 @@
       <a href="terminos-condiciones.html#huella-carbono" target="_blank" rel="noopener noreferrer">T&amp;C §7</a>.
     </p>
     <div class="fc-compare-grid" id="programCompareResults"></div>
+    <div class="fc-pickup-equiv" id="programComparePickup" aria-live="polite"></div>
     <div class="fc-charts" id="programCompareCharts"></div>
     <div class="fc-prog-summary" id="programCompareSummary"></div>
   </div>
@@ -653,34 +803,66 @@
     </div>
   </div>
 
-  <script src="assets/fertilizer-carbon-core.js?v=20260623d"></script>
+  <script src="assets/fertilizer-carbon-core.js?v=20260625"></script>
   <script>
     var LS_KEY = 'nutriplant_free_fertilizer_carbon_v2';
 
-    function blankRow(origin) {
-      return {
+    function blankRow(fromRow, sc) {
+      var base = {
         fertilizer_id: 'urea',
         dose: 0,
-        origin_country_iso: origin || 'GLOBAL',
+        origin_country_iso: 'GLOBAL',
+        application_country_iso: 'MX',
+        entry_point_id: 'mx_gulf',
+        transport_origin_km: 0,
+        transport_sea_km: 0,
+        transport_km: 0,
         factor_source: 'estimated',
         custom_factor: '',
         custom_mfg_total_kg_co2e: '',
         custom_note: ''
       };
+      if (fromRow) {
+        return {
+          fertilizer_id: 'urea',
+          dose: 0,
+          origin_country_iso: fromRow.origin_country_iso || 'GLOBAL',
+          application_country_iso: fromRow.application_country_iso || 'MX',
+          entry_point_id: fromRow.entry_point_id != null ? fromRow.entry_point_id : 'mx_gulf',
+          transport_origin_km: fromRow.transport_origin_km != null ? fromRow.transport_origin_km : 0,
+          transport_sea_km: fromRow.transport_sea_km != null ? fromRow.transport_sea_km : 0,
+          transport_km: fromRow.transport_km != null ? fromRow.transport_km : 0,
+          factor_source: 'estimated',
+          custom_factor: '',
+          custom_mfg_total_kg_co2e: '',
+          custom_note: ''
+        };
+      }
+      if (sc) {
+        base.origin_country_iso = sc.origin_country_iso || 'GLOBAL';
+        base.application_country_iso = sc.application_country_iso || 'MX';
+        base.entry_point_id = sc.entry_point_id != null ? sc.entry_point_id : 'mx_gulf';
+        base.transport_origin_km = sc.transport_origin_km != null ? sc.transport_origin_km : 0;
+        base.transport_sea_km = sc.transport_sea_km != null ? sc.transport_sea_km : 0;
+        base.transport_km = sc.transport_km != null ? sc.transport_km : 0;
+      }
+      return base;
     }
 
     function blankScenario(origin) {
-      return {
-        rows: [blankRow(origin || 'GLOBAL')],
+      var sc = {
+        rows: [blankRow(null, { origin_country_iso: origin || 'GLOBAL', application_country_iso: 'MX', entry_point_id: 'mx_gulf' })],
         area_ha: 1,
-        transport_km: 0,
-        transport_origin_km: 0,
-        transport_sea_km: 0,
         dose_unit: 'kg_ha',
+        active_row_index: 0,
         application_country_iso: 'MX',
         entry_point_id: 'mx_gulf',
-        origin_country_iso: origin || 'GLOBAL'
+        origin_country_iso: origin || 'GLOBAL',
+        transport_km: 0,
+        transport_origin_km: 0,
+        transport_sea_km: 0
       };
+      return sc;
     }
 
     var state = {
@@ -721,24 +903,27 @@
       if (s.scenario_a && s.scenario_b) {
         if (!s.active_scenario) s.active_scenario = 'a';
         ['scenario_a', 'scenario_b'].forEach(function (key) {
-          if (s[key] && !s[key].application_country_iso) {
-            s[key].application_country_iso = 'MX';
-          }
+          migrateScenarioRows(s[key]);
         });
         return s;
       }
       if (Array.isArray(s.rows)) {
+        var legacySc = {
+          rows: s.rows,
+          area_ha: s.area_ha != null ? s.area_ha : 1,
+          transport_km: s.transport_km != null ? s.transport_km : 0,
+          transport_sea_km: s.transport_sea_km != null ? s.transport_sea_km : 0,
+          transport_origin_km: s.transport_origin_km != null ? s.transport_origin_km : 0,
+          dose_unit: s.dose_unit || 'kg_ha',
+          application_country_iso: s.application_country_iso || 'MX',
+          entry_point_id: s.entry_point_id || 'mx_gulf',
+          origin_country_iso: s.origin_country_iso || 'GLOBAL',
+          active_row_index: 0
+        };
+        migrateScenarioRows(legacySc);
         return {
           active_scenario: 'a',
-          scenario_a: {
-            rows: s.rows,
-            area_ha: s.area_ha != null ? s.area_ha : 1,
-            transport_km: s.transport_km != null ? s.transport_km : 0,
-            transport_sea_km: s.transport_sea_km != null ? s.transport_sea_km : 0,
-            dose_unit: s.dose_unit || 'kg_ha',
-            application_country_iso: s.application_country_iso || 'MX',
-            origin_country_iso: s.origin_country_iso || 'GLOBAL'
-          },
+          scenario_a: legacySc,
           scenario_b: blankScenario('CN'),
           cmp_fert: s.cmp_fert || 'calcium_nitrate',
           cmp_dose: s.cmp_dose != null ? s.cmp_dose : 100,
@@ -749,14 +934,60 @@
       return null;
     }
 
-    function defaultOrigin() {
-      var el = document.getElementById('originCountry');
-      return (el && el.value) ? el.value : (activeScenario().origin_country_iso || 'GLOBAL');
+    function migrateScenarioRows(sc) {
+      if (!sc) return;
+      if (sc.active_row_index == null) sc.active_row_index = 0;
+      if (!sc.application_country_iso) sc.application_country_iso = 'MX';
+      (sc.rows || []).forEach(function (row) {
+        if (row.application_country_iso == null) row.application_country_iso = sc.application_country_iso || 'MX';
+        if (row.entry_point_id == null && sc.entry_point_id) row.entry_point_id = sc.entry_point_id;
+        if (row.transport_origin_km == null) row.transport_origin_km = sc.transport_origin_km != null ? sc.transport_origin_km : 0;
+        if (row.transport_sea_km == null) row.transport_sea_km = sc.transport_sea_km != null ? sc.transport_sea_km : 0;
+        if (row.transport_km == null) row.transport_km = sc.transport_km != null ? sc.transport_km : 0;
+        if (!row.origin_country_iso) row.origin_country_iso = sc.origin_country_iso || 'GLOBAL';
+      });
+    }
+
+    function getActiveRowIndex() {
+      var sc = activeScenario();
+      var idx = sc.active_row_index != null ? sc.active_row_index : 0;
+      if (!sc.rows || !sc.rows.length) return 0;
+      if (idx < 0) idx = 0;
+      if (idx >= sc.rows.length) idx = sc.rows.length - 1;
+      sc.active_row_index = idx;
+      return idx;
+    }
+
+    function activeRow() {
+      var sc = activeScenario();
+      if (!sc.rows || !sc.rows.length) return null;
+      return sc.rows[getActiveRowIndex()];
+    }
+
+    function routeSummaryShort(row) {
+      if (!row) return '—';
+      var mfg = NpFertilizerCarbon.originGroupLabel(normalizeManufacturingGroup(row.origin_country_iso || 'GLOBAL'));
+      var dest = applicationCountryName(row.application_country_iso || 'MX');
+      var km = (Number(row.transport_sea_km) || 0) + (Number(row.transport_km) || 0) + (Number(row.transport_origin_km) || 0);
+      return mfg + ' → ' + dest + (km > 0 ? ' · ' + km.toLocaleString('es') + ' km' : '');
+    }
+
+    function updateActiveRouteTitle() {
+      var el = document.getElementById('activeRouteTitle');
+      if (!el) return;
+      var row = activeRow();
+      if (!row) {
+        el.textContent = '—';
+        return;
+      }
+      var fert = NpFertilizerCarbon.findFertilizer(row.fertilizer_id);
+      el.textContent = (fert ? fert.name : row.fertilizer_id) +
+        ' · fila ' + (getActiveRowIndex() + 1) + ' de ' + activeScenario().rows.length;
     }
 
     function fixRowFertilizerForOrigin(row) {
       if (!row || !NpFertilizerCarbon.getFactors()) return;
-      var origin = normalizeManufacturingGroup(row.origin_country_iso || defaultOrigin());
+      var origin = normalizeManufacturingGroup(row.origin_country_iso || 'GLOBAL');
       row.origin_country_iso = origin;
       var valid = NpFertilizerCarbon.getFertilizersForOrigin(origin);
       if (!valid.length) return;
@@ -764,16 +995,70 @@
       if (!ok) row.fertilizer_id = valid[0].id;
     }
 
-    function ensureRowOrigins(rows) {
-      var def = defaultOrigin();
+    function ensureRowRoutes(rows, sc) {
+      migrateScenarioRows(sc || activeScenario());
       rows.forEach(function (row) {
-        if (!row.origin_country_iso) row.origin_country_iso = def;
         if (!row.factor_source) row.factor_source = 'estimated';
         if (row.custom_factor == null) row.custom_factor = '';
         if (row.custom_mfg_total_kg_co2e == null) row.custom_mfg_total_kg_co2e = '';
         if (row.custom_note == null) row.custom_note = '';
         fixRowFertilizerForOrigin(row);
       });
+    }
+
+    function persistRouteFromForm() {
+      var row = activeRow();
+      if (!row) return;
+      row.origin_country_iso = normalizeManufacturingGroup(document.getElementById('originCountry').value);
+      row.application_country_iso = document.getElementById('applicationCountry').value;
+      var entryEl = document.getElementById('entryPointSelect');
+      row.entry_point_id = (entryPointFieldActive() && entryEl)
+        ? entryEl.value : (row.entry_point_id || null);
+      row.transport_origin_km = Number(document.getElementById('transportOriginKm').value) || 0;
+      row.transport_sea_km = Number(document.getElementById('transportSeaKm').value) || 0;
+      row.transport_km = Number(document.getElementById('transportKm').value) || 0;
+      fixRowFertilizerForOrigin(row);
+    }
+
+    function loadRouteToForm(row) {
+      if (!row) return;
+      document.getElementById('originCountry').value = normalizeManufacturingGroup(row.origin_country_iso || 'GLOBAL');
+      document.getElementById('applicationCountry').value = row.application_country_iso || 'MX';
+      syncEntryPointField(row.application_country_iso || 'MX', row.entry_point_id);
+      document.getElementById('transportOriginKm').value = row.transport_origin_km != null ? row.transport_origin_km : 0;
+      document.getElementById('transportSeaKm').value = row.transport_sea_km != null ? row.transport_sea_km : 0;
+      document.getElementById('transportKm').value = row.transport_km != null ? row.transport_km : 0;
+      updateActiveRouteTitle();
+    }
+
+    function selectRow(idx) {
+      var sc = activeScenario();
+      if (!sc.rows || !sc.rows[idx]) return;
+      persistRouteFromForm();
+      sc.active_row_index = idx;
+      loadRouteToForm(sc.rows[idx]);
+      renderRows();
+      updateOriginHint();
+      updateSupplyChainFlow();
+      updateTransportEstimateHint();
+      saveState();
+      recalc();
+    }
+
+    function onRouteFieldChange() {
+      var row = activeRow();
+      if (!row) return;
+      var appIso = document.getElementById('applicationCountry').value;
+      if (document.activeElement && document.activeElement.id === 'applicationCountry') {
+        syncEntryPointField(appIso, null);
+      }
+      persistRouteFromForm();
+      saveState();
+      renderRows();
+      updateOriginHint();
+      updateSupplyChainFlow();
+      updateTransportEstimateHint();
+      recalc(true);
     }
 
     function cloneScenario(sc) {
@@ -817,18 +1102,15 @@
       } catch (e) {}
     }
 
+    function entryPointFieldActive() {
+      var wrap = document.getElementById('entryPointField');
+      return wrap && !wrap.classList.contains('is-hidden');
+    }
+
     function persistForm() {
+      persistRouteFromForm();
       var sc = activeScenario();
-      sc.application_country_iso = document.getElementById('applicationCountry').value;
-      var entryWrap = document.getElementById('entryPointField');
-      var entryEl = document.getElementById('entryPointSelect');
-      sc.entry_point_id = (entryWrap && entryWrap.style.display !== 'none' && entryEl)
-        ? entryEl.value : (sc.entry_point_id || null);
-      sc.origin_country_iso = document.getElementById('originCountry').value;
       sc.area_ha = Number(document.getElementById('areaHa').value) || 0;
-      sc.transport_origin_km = Number(document.getElementById('transportOriginKm').value) || 0;
-      sc.transport_km = Number(document.getElementById('transportKm').value) || 0;
-      sc.transport_sea_km = Number(document.getElementById('transportSeaKm').value) || 0;
       sc.dose_unit = document.getElementById('doseUnit').value;
       state.cmp_fert = document.getElementById('cmpFert').value;
       state.cmp_dose = Number(document.getElementById('cmpDose').value) || 0;
@@ -839,13 +1121,9 @@
 
     function restoreForm() {
       var sc = activeScenario();
-      document.getElementById('applicationCountry').value = sc.application_country_iso || 'MX';
-      syncEntryPointField(sc.application_country_iso || 'MX', sc.entry_point_id);
-      document.getElementById('originCountry').value = sc.origin_country_iso || 'GLOBAL';
+      migrateScenarioRows(sc);
+      loadRouteToForm(activeRow());
       document.getElementById('areaHa').value = sc.area_ha != null ? sc.area_ha : 1;
-      document.getElementById('transportOriginKm').value = sc.transport_origin_km != null ? sc.transport_origin_km : 0;
-      document.getElementById('transportKm').value = sc.transport_km != null ? sc.transport_km : 0;
-      document.getElementById('transportSeaKm').value = sc.transport_sea_km != null ? sc.transport_sea_km : 0;
       document.getElementById('doseUnit').value = sc.dose_unit || 'kg_ha';
       if (state.cmp_fert) document.getElementById('cmpFert').value = state.cmp_fert;
       if (state.cmp_dose != null) document.getElementById('cmpDose').value = state.cmp_dose;
@@ -862,9 +1140,9 @@
       persistForm();
       state.active_scenario = which === 'b' ? 'b' : 'a';
       restoreForm();
-      ensureRowOrigins(activeScenario().rows);
+      ensureRowRoutes(activeScenario().rows);
       renderRows();
-      recalc();
+      recalc(true);
     }
 
     function copyActiveToOtherScenario() {
@@ -940,11 +1218,13 @@
       if (!wrap || !sel) return;
       var cfg = NpFertilizerCarbon.getDestinationEntryConfig(countryIso);
       if (!cfg || !cfg.options || !cfg.options.length) {
-        wrap.style.display = 'none';
+        wrap.classList.add('is-hidden');
+        wrap.setAttribute('aria-hidden', 'true');
         sel.innerHTML = '';
         return;
       }
-      wrap.style.display = '';
+      wrap.classList.remove('is-hidden');
+      wrap.setAttribute('aria-hidden', 'false');
       if (lbl) lbl.textContent = cfg.label || 'Costa / puerto de llegada';
       if (hint) hint.textContent = cfg.hint || 'Elige el litoral o puerto más cercano a tu campo.';
       var pick = selectedId || cfg.default || cfg.options[0].id;
@@ -952,30 +1232,30 @@
         return '<option value="' + o.id + '"' + (o.id === pick ? ' selected' : '') + '>' + o.label + '</option>';
       }).join('');
       if (!selectedId) {
-        var sc = activeScenario();
-        if (sc) sc.entry_point_id = pick;
+        var row = activeRow();
+        if (row) row.entry_point_id = pick;
       }
     }
 
-    function buildEstimateInputFromScenario(sc) {
+    function buildEstimateInputFromRow(row) {
+      if (!row) row = activeRow();
+      if (!row) return null;
       return {
-        origin_country_iso: sc.origin_country_iso || 'GLOBAL',
-        application_country_iso: sc.application_country_iso || 'MX',
-        entry_point_id: sc.entry_point_id || (document.getElementById('entryPointSelect') && document.getElementById('entryPointSelect').value) || null,
-        rows: (sc.rows || []).map(function (r) {
-          return {
-            dose: Number(r.dose) || 0,
-            origin_country_iso: normalizeManufacturingGroup(r.origin_country_iso || sc.origin_country_iso)
-          };
-        })
+        origin_country_iso: row.origin_country_iso || 'GLOBAL',
+        application_country_iso: row.application_country_iso || 'MX',
+        entry_point_id: row.entry_point_id || (document.getElementById('entryPointSelect') && document.getElementById('entryPointSelect').value) || null,
+        rows: [{
+          dose: Math.max(1, Number(row.dose) || 0),
+          origin_country_iso: normalizeManufacturingGroup(row.origin_country_iso || 'GLOBAL')
+        }]
       };
     }
 
     function updateTransportEstimateHint() {
       var hint = document.getElementById('transportEstimateHint');
       if (!hint || !NpFertilizerCarbon.getFactors()) return;
-      var sc = activeScenario();
-      var est = NpFertilizerCarbon.estimateTransportRoute(buildEstimateInputFromScenario(sc));
+      var row = activeRow();
+      var est = NpFertilizerCarbon.estimateTransportRoute(buildEstimateInputFromRow(row));
       if (!est || !est.ok) return;
       if (est.maritime_km == null && est.road_km == null && est.origin_km == null) return;
       var originTxt = est.origin_km != null ? est.origin_km.toLocaleString('es') + ' km 🚛 origen' : '—';
@@ -990,21 +1270,22 @@
     }
 
     function applyTransportEstimate() {
-      persistForm();
-      var sc = activeScenario();
-      var est = NpFertilizerCarbon.estimateTransportRoute(buildEstimateInputFromScenario(sc));
+      persistRouteFromForm();
+      var row = activeRow();
+      if (!row) return;
+      var est = NpFertilizerCarbon.estimateTransportRoute(buildEstimateInputFromRow(row));
       if (!est || !est.ok) return;
       if (est.origin_km != null) {
         document.getElementById('transportOriginKm').value = est.origin_km;
-        sc.transport_origin_km = est.origin_km;
+        row.transport_origin_km = est.origin_km;
       }
       if (est.maritime_km != null) {
         document.getElementById('transportSeaKm').value = est.maritime_km;
-        sc.transport_sea_km = est.maritime_km;
+        row.transport_sea_km = est.maritime_km;
       }
       if (est.road_km != null) {
         document.getElementById('transportKm').value = est.road_km;
-        sc.transport_km = est.road_km;
+        row.transport_km = est.road_km;
       }
       saveState();
       updateSupplyChainFlow();
@@ -1029,23 +1310,26 @@
       var fieldEl = document.getElementById('flowFieldLabel');
       if (!mfgEl || !portEl || !fieldEl) return;
 
-      var sc = activeScenario();
+      var row = activeRow();
       var mfgGroup = normalizeManufacturingGroup(
-        document.getElementById('originCountry') ? document.getElementById('originCountry').value : sc.origin_country_iso
+        document.getElementById('originCountry') ? document.getElementById('originCountry').value : (row && row.origin_country_iso)
       );
       var appIso = document.getElementById('applicationCountry')
         ? document.getElementById('applicationCountry').value
-        : (sc.application_country_iso || 'MX');
+        : (row && row.application_country_iso) || 'MX';
+      var entryId = (entryPointFieldActive() && document.getElementById('entryPointSelect'))
+        ? document.getElementById('entryPointSelect').value
+        : (row && row.entry_point_id);
       var originEl = document.getElementById('flowOriginLabel');
       var originKm = document.getElementById('transportOriginKm')
         ? Number(document.getElementById('transportOriginKm').value) || 0
-        : (Number(sc.transport_origin_km) || 0);
+        : ((row && Number(row.transport_origin_km)) || 0);
       var seaKm = document.getElementById('transportSeaKm')
         ? Number(document.getElementById('transportSeaKm').value) || 0
-        : (Number(sc.transport_sea_km) || 0);
+        : ((row && Number(row.transport_sea_km)) || 0);
       var roadKm = document.getElementById('transportKm')
         ? Number(document.getElementById('transportKm').value) || 0
-        : (Number(sc.transport_km) || 0);
+        : ((row && Number(row.transport_km)) || 0);
 
       mfgEl.textContent = NpFertilizerCarbon.originGroupLabel(mfgGroup);
       if (originEl) {
@@ -1056,7 +1340,7 @@
             : 'Sin km origen');
       }
       portEl.textContent = (function () {
-        var entry = NpFertilizerCarbon.findDestinationEntryPoint(appIso, sc.entry_point_id);
+        var entry = NpFertilizerCarbon.findDestinationEntryPoint(appIso, entryId);
         return entry ? entry.label : applicationCountryName(appIso);
       })();
       var seaEl = document.getElementById('flowSeaLabel');
@@ -1091,30 +1375,33 @@
     }
 
     function renderRows() {
-      var rows = activeScenario().rows;
-      ensureRowOrigins(rows);
+      var sc = activeScenario();
+      var rows = sc.rows;
+      ensureRowRoutes(rows, sc);
       var tbody = document.getElementById('rowsBody');
       var doseUnit = document.getElementById('doseUnit').value;
       var unitLabel = doseUnit === 'total_kg' ? 'kg total' : 'kg/ha';
+      var selIdx = getActiveRowIndex();
       tbody.innerHTML = rows.map(function (row, i) {
         var mode = row.factor_source || 'estimated';
         var customDisabled = mode === 'estimated' ? ' disabled' : '';
         var customVal = customValueForRow(row);
-        return '<tr data-idx="' + i + '">' +
-          '<td class="left"><select class="fert" onchange="onRowChange(' + i + ',\'fertilizer_id\',this.value)">' +
-          fertOptionsHtml(row.fertilizer_id, row.origin_country_iso || defaultOrigin()) + '</select></td>' +
-          '<td class="left"><select class="origin" onchange="onRowChange(' + i + ',\'origin_country_iso\',this.value)">' +
-          countryOptionsCompact(row.origin_country_iso || defaultOrigin()) + '</select></td>' +
-          '<td><input class="dose" type="number" min="0" step="1" value="' + (row.dose || 0) + '" oninput="onRowChange(' + i + ',\'dose\',this.value)" /> ' + unitLabel + '</td>' +
-          '<td><select class="factor-mode" onchange="onFactorModeChange(' + i + ',this.value)">' +
+        var selectedClass = i === selIdx ? ' row-selected' : '';
+        return '<tr class="fc-row-selectable' + selectedClass + '" data-idx="' + i + '" onclick="selectRow(' + i + ')">' +
+          '<td class="left" onclick="event.stopPropagation()"><select class="fert" onchange="onRowChange(' + i + ',\'fertilizer_id\',this.value)">' +
+          fertOptionsHtml(row.fertilizer_id, row.origin_country_iso) + '</select></td>' +
+          '<td class="left fc-route-cell">' + routeSummaryShort(row) + '</td>' +
+          '<td onclick="event.stopPropagation()"><input class="dose" type="number" min="0" step="1" value="' + (row.dose || 0) + '" oninput="onRowChange(' + i + ',\'dose\',this.value)" /> ' + unitLabel + '</td>' +
+          '<td onclick="event.stopPropagation()"><select class="factor-mode" onchange="onFactorModeChange(' + i + ',this.value)">' +
           factorModeOptions(mode) + '</select></td>' +
-          '<td><input class="custom-val" type="number" min="0" step="0.001" value="' + customVal + '" placeholder="' + customValuePlaceholder(mode) + '"' + customDisabled +
+          '<td onclick="event.stopPropagation()"><input class="custom-val" type="number" min="0" step="0.001" value="' + customVal + '" placeholder="' + customValuePlaceholder(mode) + '"' + customDisabled +
           ' oninput="onCustomValueChange(' + i + ',this.value)" /></td>' +
-          '<td><input class="custom-note" type="text" value="' + (row.custom_note || '').replace(/"/g, '&quot;') + '" placeholder="EPD, ficha…"' + customDisabled +
+          '<td onclick="event.stopPropagation()"><input class="custom-note" type="text" value="' + (row.custom_note || '').replace(/"/g, '&quot;') + '" placeholder="EPD, ficha…"' + customDisabled +
           ' oninput="onRowChange(' + i + ',\'custom_note\',this.value)" /></td>' +
           '<td class="row-n">—</td><td class="row-mfg">—</td><td class="row-trans">—</td><td class="row-field">—</td><td class="row-total">—</td>' +
-          '<td><button type="button" class="btn-del" onclick="removeRow(' + i + ')" title="Eliminar">×</button></td></tr>';
+          '<td onclick="event.stopPropagation()"><button type="button" class="btn-del" onclick="removeRow(' + i + ')" title="Eliminar">×</button></td></tr>';
       }).join('');
+      updateActiveRouteTitle();
     }
 
     function onFactorModeChange(idx, mode) {
@@ -1145,67 +1432,78 @@
       if (!rows[idx]) return;
       if (key === 'dose') rows[idx][key] = Number(val);
       else rows[idx][key] = val;
-      if (key === 'origin_country_iso') {
-        rows[idx].origin_country_iso = normalizeManufacturingGroup(val);
+      if (key === 'fertilizer_id') {
         fixRowFertilizerForOrigin(rows[idx]);
-        saveState();
-        renderRows();
-        recalc();
-        return;
+        if (getActiveRowIndex() === idx) updateActiveRouteTitle();
       }
       saveState();
+      if (getActiveRowIndex() === idx) {
+        renderRows();
+      }
       recalc();
     }
 
     function addRow() {
-      activeScenario().rows.push(blankRow(defaultOrigin()));
+      persistRouteFromForm();
+      var sc = activeScenario();
+      var newRow = blankRow(activeRow(), sc);
+      sc.rows.push(newRow);
+      sc.active_row_index = sc.rows.length - 1;
+      loadRouteToForm(newRow);
       saveState();
       renderRows();
       recalc();
     }
 
     function removeRow(idx) {
-      var rows = activeScenario().rows;
+      persistRouteFromForm();
+      var sc = activeScenario();
+      var rows = sc.rows;
       if (rows.length <= 1) {
-        rows[0] = blankRow(defaultOrigin());
-      } else rows.splice(idx, 1);
+        rows[0] = blankRow(null, sc);
+        rows[0].dose = 0;
+        sc.active_row_index = 0;
+      } else {
+        rows.splice(idx, 1);
+        if (sc.active_row_index >= rows.length) sc.active_row_index = rows.length - 1;
+        if (sc.active_row_index > idx) sc.active_row_index -= 1;
+      }
+      loadRouteToForm(activeRow());
       saveState();
       renderRows();
       recalc();
     }
 
     function clearAll() {
+      persistRouteFromForm();
       var sc = activeScenario();
-      sc.rows = [blankRow('GLOBAL')];
+      sc.rows = [blankRow(null, { origin_country_iso: 'GLOBAL', application_country_iso: 'MX', entry_point_id: 'mx_gulf' })];
       sc.rows[0].dose = 100;
+      sc.active_row_index = 0;
       sc.area_ha = 1;
-      sc.transport_km = 0;
-      sc.transport_origin_km = 0;
-      sc.transport_sea_km = 0;
-      sc.origin_country_iso = 'GLOBAL';
       document.getElementById('areaHa').value = 1;
-      document.getElementById('transportOriginKm').value = 0;
-      document.getElementById('transportKm').value = 0;
-      document.getElementById('transportSeaKm').value = 0;
-      document.getElementById('originCountry').value = 'GLOBAL';
+      loadRouteToForm(sc.rows[0]);
       saveState();
       renderRows();
       recalc();
     }
 
     function buildInputFromScenario(sc) {
+      migrateScenarioRows(sc);
       return {
-        origin_country_iso: sc.origin_country_iso || 'GLOBAL',
+        origin_country_iso: 'GLOBAL',
         area_ha: Number(sc.area_ha) || 0,
-        transport_km: Number(sc.transport_km) || 0,
-        transport_origin_km: Number(sc.transport_origin_km) || 0,
-        transport_sea_km: Number(sc.transport_sea_km) || 0,
         rows: (sc.rows || []).map(function (r) {
           return {
             fertilizer_id: r.fertilizer_id,
             dose: Number(r.dose) || 0,
             dose_unit: sc.dose_unit || 'kg_ha',
-            origin_country_iso: r.origin_country_iso || sc.origin_country_iso || 'GLOBAL',
+            origin_country_iso: r.origin_country_iso || 'GLOBAL',
+            application_country_iso: r.application_country_iso || 'MX',
+            entry_point_id: r.entry_point_id,
+            transport_origin_km: Number(r.transport_origin_km) || 0,
+            transport_sea_km: Number(r.transport_sea_km) || 0,
+            transport_km: Number(r.transport_km) || 0,
             factor_source: r.factor_source || 'estimated',
             custom_factor: Number(r.custom_factor) || 0,
             custom_mfg_total_kg_co2e: Number(r.custom_mfg_total_kg_co2e) || 0,
@@ -1220,12 +1518,12 @@
       var lines = result.rows.filter(function (r) { return r.ok; }).map(function (r) {
         var doseTxt = r.dose + (r.dose_unit === 'total_kg' ? ' kg total' : ' kg/ha');
         return '<li><strong>' + r.fertilizer_name + '</strong> · ' + doseTxt + ' · ' + r.origin_group_label +
+          ' → ' + applicationCountryName(r.application_country_iso || 'MX') +
           ' · ' + NpFertilizerCarbon.formatCo2e(r.total_kg_co2e) + '</li>';
       }).join('');
-      var appName = applicationCountryName(sc.application_country_iso || 'MX');
       return '<div class="fc-prog-summary-box"><h4>' + label + ' — ' +
         NpFertilizerCarbon.formatCo2e(result.totals.total_kg_co2e) + '</h4>' +
-        '<p style="margin:0 0 6px;font-size:10px;color:#64748b;">🚢 Destino: ' + appName + '</p><ul>' +
+        '<p style="margin:0 0 6px;font-size:10px;color:#64748b;">🛣️ Cada producto con su ruta</p><ul>' +
         (lines || '<li>Sin filas</li>') + '</ul></div>';
     }
 
@@ -1298,6 +1596,37 @@
         '</div>';
     }
 
+    function renderPickupEquivalence(rA, rB, diff) {
+      var el = document.getElementById('programComparePickup');
+      if (!el || !NpFertilizerCarbon.getPickupEquivalence) return;
+      var eq = NpFertilizerCarbon.getPickupEquivalence();
+      var kmA = NpFertilizerCarbon.co2eToPickupKm(rA.totals.total_kg_co2e);
+      var kmB = NpFertilizerCarbon.co2eToPickupKm(rB.totals.total_kg_co2e);
+      var kmDiff = kmB - kmA;
+      var factor = eq.kg_co2e_per_km || 0.254;
+      var diffClass = kmDiff < -0.5 ? ' is-diff' : '';
+      var diffLabel = kmDiff < -0.5
+        ? 'Menos km equivalentes'
+        : (kmDiff > 0.5 ? 'Más km equivalentes' : 'Misma equivalencia');
+      var diffSign = kmDiff >= 0 ? '+' : '';
+      el.innerHTML =
+        '<h4>🛻 Equivalencia ilustrativa — ' + (eq.label_short || eq.label) + '</h4>' +
+        '<p class="fc-pickup-intro">Si todo el CO₂e del programa fuera comparable a la contaminación de esa pick-up recorriendo carretera, sería como conducir aproximadamente:</p>' +
+        '<div class="fc-pickup-equiv-grid">' +
+          '<div class="fc-pickup-equiv-card fc-prog-card-a"><strong>Programa A</strong>' +
+            '<span class="km-val">' + NpFertilizerCarbon.formatPickupKm(kmA) + '</span>' +
+            '<span class="km-sub">' + NpFertilizerCarbon.formatCo2e(rA.totals.total_kg_co2e) + '</span></div>' +
+          '<div class="fc-pickup-equiv-card fc-prog-card-b"><strong>Programa B</strong>' +
+            '<span class="km-val">' + NpFertilizerCarbon.formatPickupKm(kmB) + '</span>' +
+            '<span class="km-sub">' + NpFertilizerCarbon.formatCo2e(rB.totals.total_kg_co2e) + '</span></div>' +
+          '<div class="fc-pickup-equiv-card' + diffClass + '"><strong>B − A (' + diffLabel + ')</strong>' +
+            '<span class="km-val">' + diffSign + NpFertilizerCarbon.formatPickupKm(Math.abs(kmDiff)).replace('~', '') + '</span>' +
+            '<span class="km-sub">' + (diff >= 0 ? '+' : '') + NpFertilizerCarbon.formatCo2e(diff) + '</span></div>' +
+        '</div>' +
+        '<p class="fc-pickup-equiv-foot">Factor referencia: ' + factor + ' kg CO₂e/km (' + (eq.source || 'DESNZ/DEFRA') + '). ' +
+        (eq.disclaimer || 'Ilustración didáctica — no compensación de carbono.') + '</p>';
+    }
+
     function recalcProgramCompare(rA, rB) {
       if (!rA || !rB || !rA.ok || !rB.ok) return;
       var diff = rB.totals.total_kg_co2e - rA.totals.total_kg_co2e;
@@ -1322,6 +1651,7 @@
         (diffHa != null ? ' · ' + (diffHa >= 0 ? '+' : '') + NpFertilizerCarbon.formatCo2e(diffHa) + '/ha' : '') +
         '</span></div>';
 
+      renderPickupEquivalence(rA, rB, diff);
       renderProgramCharts(rA, rB);
 
       document.getElementById('programCompareSummary').innerHTML =
@@ -1337,13 +1667,17 @@
         banner.classList.add('visible');
         if (diff < 0) {
           banner.classList.remove('increase');
+          var kmSaved = NpFertilizerCarbon.co2eToPickupKm(Math.abs(diff));
           banner.innerHTML = '↓ Reducción estimada (Programa B vs A): ' +
             NpFertilizerCarbon.formatCo2e(Math.abs(diff)) + ' (' + Math.abs(pct) + '% menos CO₂e)' +
+            (kmSaved > 0.5 ? ' · ≈ ' + NpFertilizerCarbon.formatPickupKm(kmSaved).replace('~', '') + ' menos en pick-up 6 cil.' : '') +
             '<span>Estimación de referencia — validar antes de comunicar o decidir</span>';
         } else {
           banner.classList.add('increase');
+          var kmMore = NpFertilizerCarbon.co2eToPickupKm(diff);
           banner.innerHTML = '↑ Programa B emitiría más: +' +
             NpFertilizerCarbon.formatCo2e(diff) + ' (' + pct + '% vs Programa A)' +
+            (kmMore > 0.5 ? ' · ≈ ' + NpFertilizerCarbon.formatPickupKm(kmMore).replace('~', '') + ' más en pick-up 6 cil.' : '') +
             '<span>Estimación de referencia — validar antes de comunicar o decidir</span>';
         }
       } else {
@@ -1465,8 +1799,8 @@
         ' Ver <a href="terminos-condiciones.html#huella-carbono" target="_blank" rel="noopener noreferrer">T&amp;C §7</a>.</p>';
     }
 
-    function recalc() {
-      persistForm();
+    function recalc(skipPersist) {
+      if (!skipPersist) persistForm();
       updateOriginHint();
       updateSupplyChainFlow();
       updateTransportEstimateHint();
@@ -1502,17 +1836,24 @@
       var precisionLabel = result.has_user_provided_factors
         ? 'Mixta (estimado + factor propio del usuario)'
         : 'Estimado (±30–50%)';
-      var appIso = activeScenario().application_country_iso || 'MX';
-      var transportOriginKm = Number(activeScenario().transport_origin_km) || 0;
-      var transportKm = Number(activeScenario().transport_km) || 0;
-      var transportSeaKm = Number(activeScenario().transport_sea_km) || 0;
-      var entry = NpFertilizerCarbon.findDestinationEntryPoint(appIso, activeScenario().entry_point_id);
+      var routeCount = (function () {
+        var seen = {};
+        (activeScenario().rows || []).forEach(function (r) {
+          seen[(r.origin_country_iso || '') + '|' + (r.application_country_iso || '') + '|' +
+            (r.transport_origin_km || 0) + '|' + (r.transport_sea_km || 0) + '|' + (r.transport_km || 0)] = true;
+        });
+        return Object.keys(seen).length;
+      })();
+      var activeRowResult = result.rows[getActiveRowIndex()];
       document.getElementById('metaBox').innerHTML =
-        '<strong>🚢 Puerto / país destino:</strong> ' + applicationCountryName(appIso) +
-        (entry ? ' · <em>' + entry.label + '</em>' : '') + '<br>' +
-        '<strong>🚛 Origen (fábrica → puerto exp.):</strong> ' + (transportOriginKm > 0 ? transportOriginKm + ' km' : '—') + '<br>' +
-        '<strong>⛴️ Marítimo:</strong> ' + (transportSeaKm > 0 ? transportSeaKm + ' km (puerto origen → puerto destino)' : '—') + '<br>' +
-        '<strong>🚛 Destino (puerto → campo):</strong> ' + (transportKm > 0 ? transportKm + ' km' : '—') + '<br>' +
+        '<strong>🛣️ Rutas:</strong> ' + routeCount + ' distinta(s) — una por fertilizante<br>' +
+        (activeRowResult && activeRowResult.ok
+          ? '<strong>Seleccionado:</strong> ' + activeRowResult.fertilizer_name + ' · ' +
+            activeRowResult.origin_group_label + ' → ' +
+            applicationCountryName(activeRowResult.application_country_iso || 'MX') +
+            ' · 🚛 ' + (activeRowResult.transport_origin_km || 0) + ' + ⛴️ ' +
+            (activeRowResult.transport_sea_km || 0) + ' + 🌾 ' + (activeRowResult.transport_km || 0) + ' km<br>'
+          : '') +
         '<strong>Metodología:</strong> ' + (meta.manufacturing || '') + '<br>' +
         '<strong>Suelo:</strong> ' + (meta.field || '') + '<br>' +
         '<strong>🏭 Fabricación (regiones):</strong> ' + originsText +
@@ -1542,6 +1883,10 @@
         tr.querySelector('.row-trans').textContent = NpFertilizerCarbon.formatCo2e(rr.transport_kg_co2e);
         tr.querySelector('.row-field').textContent = NpFertilizerCarbon.formatCo2e(rr.field_kg_co2e);
         tr.querySelector('.row-total').textContent = NpFertilizerCarbon.formatCo2e(rr.total_kg_co2e);
+        var routeCell = tr.querySelector('.fc-route-cell');
+        if (routeCell && activeScenario().rows[i]) {
+          routeCell.textContent = routeSummaryShort(activeScenario().rows[i]);
+        }
       });
 
       recalcCompare();
@@ -1584,11 +1929,17 @@
     }
 
     function bindEvents() {
-      ['applicationCountry', 'entryPointSelect', 'originCountry', 'areaHa', 'transportOriginKm', 'transportSeaKm', 'transportKm', 'doseUnit', 'cmpFert', 'cmpDose', 'cmpOriginA', 'cmpOriginB'].forEach(function (id) {
+      ['areaHa', 'doseUnit', 'cmpFert', 'cmpDose', 'cmpOriginA', 'cmpOriginB'].forEach(function (id) {
         var el = document.getElementById(id);
         if (!el) return;
         el.addEventListener('input', recalc);
         el.addEventListener('change', recalc);
+      });
+      ['applicationCountry', 'entryPointSelect', 'originCountry', 'transportOriginKm', 'transportSeaKm', 'transportKm'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', onRouteFieldChange);
+        el.addEventListener('change', onRouteFieldChange);
       });
     }
 
@@ -1606,30 +1957,13 @@
 
     function init() {
       loadState();
-      NpFertilizerCarbon.loadFactors('assets/emission-factors-by-country.json?v=20260623d').then(function (data) {
+      NpFertilizerCarbon.loadFactors('assets/emission-factors-by-country.json?v=20260625').then(function (data) {
         renderCitationsFull();
         renderFeReferenceTable();
         document.getElementById('applicationCountry').innerHTML =
-          countryOptionsHtml(activeScenario().application_country_iso || 'MX', true);
+          countryOptionsHtml('MX', true);
         document.getElementById('originCountry').innerHTML =
-          manufacturingGroupOptionsHtml(activeScenario().origin_country_iso || 'GLOBAL');
-        document.getElementById('originCountry').addEventListener('change', function () {
-          updateOriginHint();
-          updateTransportEstimateHint();
-        });
-        document.getElementById('applicationCountry').addEventListener('change', function () {
-          var iso = document.getElementById('applicationCountry').value;
-          syncEntryPointField(iso, null);
-          activeScenario().application_country_iso = iso;
-          activeScenario().entry_point_id = document.getElementById('entryPointSelect').value || null;
-          updateSupplyChainFlow();
-          updateTransportEstimateHint();
-        });
-        document.getElementById('entryPointSelect').addEventListener('change', function () {
-          activeScenario().entry_point_id = document.getElementById('entryPointSelect').value;
-          updateSupplyChainFlow();
-          updateTransportEstimateHint();
-        });
+          manufacturingGroupOptionsHtml('GLOBAL');
         refreshCompareFertOptions();
         state.cmp_origin_a = normalizeManufacturingGroup(state.cmp_origin_a || 'CN');
         state.cmp_origin_b = normalizeManufacturingGroup(state.cmp_origin_b || 'EU');
@@ -1637,11 +1971,13 @@
         document.getElementById('cmpOriginB').innerHTML = manufacturingGroupOptionsHtml(state.cmp_origin_b);
         normalizeScenarioManufacturing(state.scenario_a);
         normalizeScenarioManufacturing(state.scenario_b);
+        migrateScenarioRows(state.scenario_a);
+        migrateScenarioRows(state.scenario_b);
         restoreForm();
-        ensureRowOrigins(activeScenario().rows);
+        ensureRowRoutes(activeScenario().rows);
         renderRows();
         bindEvents();
-        recalc();
+        recalc(true);
       }).catch(function (err) {
         document.getElementById('resultsPanel').innerHTML = '<p style="color:#dc2626;">Error al cargar factores: ' + err.message + '</p>';
       });

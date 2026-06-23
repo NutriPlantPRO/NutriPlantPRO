@@ -425,8 +425,10 @@
           factorSourceLabel = 'Estimado (producción regional limitada)';
         }
       }
-      var rowOriginKm = transportOriginKm;
-      var transportLegs = transportLegsCo2e(kgProductTotal, rowOriginKm, transportSeaKm, transportRoadKm);
+      var rowOriginKm = Math.max(0, toNum(row && row.transport_origin_km, transportOriginKm));
+      var rowSeaKm = Math.max(0, toNum(row && row.transport_sea_km, transportSeaKm));
+      var rowRoadKm = Math.max(0, toNum(row && row.transport_km, transportRoadKm));
+      var transportLegs = transportLegsCo2e(kgProductTotal, rowOriginKm, rowSeaKm, rowRoadKm);
       var transport = transportLegs.total_kg_co2e;
       var kgN = kgProductTotal * (toNum(fert.n_total_pct, 0) / 100);
       var field = fieldN2oCo2e(kgN);
@@ -469,6 +471,10 @@
         row_precision: rowPrecision,
         manufacturing_availability: availStatus,
         manufacturing_blocked: mfgBlocked,
+        application_country_iso: (row && row.application_country_iso) ? row.application_country_iso : null,
+        transport_origin_km: round2(rowOriginKm),
+        transport_sea_km: round2(rowSeaKm),
+        transport_km: round2(rowRoadKm),
         custom_note: (row && row.custom_note) ? String(row.custom_note).trim() : '',
         source: rowPrecision === 'user_provided' ? 'Factor ingresado por usuario (no verificado por NutriPlant)' : fert.source,
         factor_year: fert.factor_year
@@ -591,6 +597,34 @@
     var n = Number(kg);
     if (Math.abs(n) >= 1000) return round3(n / 1000) + ' t CO₂e';
     return round2(n) + ' kg CO₂e';
+  }
+
+  function getPickupEquivalence() {
+    var eq = _data && _data.equivalencies && _data.equivalencies.pickup_medium_6cyl;
+    if (!eq) {
+      return {
+        label: 'Pick-up mediana 6 cil. (gasolina)',
+        label_short: 'Pick-up mediana 6 cil.',
+        kg_co2e_per_km: 0.254,
+        disclaimer: 'Equivalencia ilustrativa — no compensación ni certificación.'
+      };
+    }
+    return eq;
+  }
+
+  function co2eToPickupKm(kgCo2e) {
+    var eq = getPickupEquivalence();
+    var factor = toNum(eq.kg_co2e_per_km, 0.254);
+    if (factor <= 0) return null;
+    var kg = Math.max(0, toNum(kgCo2e, 0));
+    if (kg <= 0) return 0;
+    return kg / factor;
+  }
+
+  function formatPickupKm(km) {
+    if (km == null || !Number.isFinite(Number(km))) return '—';
+    var n = Math.round(Number(km));
+    return '~' + n.toLocaleString('es') + ' km';
   }
 
   function minMaxManufacturingFactor(fertilizer) {
@@ -761,6 +795,9 @@
     calculate: calculate,
     calculateOriginEfficiency: calculateOriginEfficiency,
     formatCo2e: formatCo2e,
+    getPickupEquivalence: getPickupEquivalence,
+    co2eToPickupKm: co2eToPickupKm,
+    formatPickupKm: formatPickupKm,
     getCitations: getCitations,
     findCitation: findCitation,
     getCitationsForIds: getCitationsForIds,
