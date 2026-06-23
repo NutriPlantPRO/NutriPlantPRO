@@ -244,7 +244,8 @@ exports.handler = async (event) => {
   const maxDim = Math.min(Math.max(Number(body.max_dim) || 512, 256), 2048);
 
   try {
-    const bundle = await findSentinel2ScenesForComposite(polygon, {});
+    const maxScenes = Math.min(Math.max(Number(body.max_scenes) || 1, 1), 4);
+    const bundle = await findSentinel2ScenesForComposite(polygon, { maxScenes });
     const rendered = await renderNdviNdmiCompositePngs(
       { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
       { maxDim }
