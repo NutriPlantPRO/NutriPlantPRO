@@ -2790,6 +2790,35 @@ function np_radarPilotApiUrl() {
   return (base || '').replace(/\/$/, '') + '/api/radar-cdse-pilot';
 }
 
+function np_pilotUserErrorMessage(status, data) {
+  const errorKey = String((data && (data.error || data.code)) || '').toLowerCase();
+  let code = 9000;
+  let message = 'No se pudo generar el Pilot en este momento. Intenta de nuevo en unos minutos.';
+
+  if (status === 401) {
+    code = 4011;
+    message = 'Tu sesión expiró. Vuelve a iniciar sesión e intenta generar el Pilot otra vez.';
+  } else if (status === 403) {
+    code = 4031;
+    message = 'No se pudo validar el acceso a este proyecto. Vuelve a seleccionar el proyecto e intenta de nuevo.';
+  } else if (status === 404 || errorKey.includes('project_not_found')) {
+    code = 4041;
+    message = 'No se encontró el proyecto en la nube. Sincroniza el proyecto e intenta de nuevo.';
+  } else if (status === 429 || errorKey.includes('quota')) {
+    code = 4291;
+    message = 'No hay créditos Radar suficientes para generar Pilot este mes.';
+  } else if (status === 500) {
+    code = 5001;
+  } else if (status === 502) {
+    code = 5021;
+  } else if (status === 504) {
+    code = 5041;
+    message = 'El Pilot tardó más de lo esperado. Intenta de nuevo en unos minutos.';
+  }
+
+  return message + '\n\nCódigo: ' + code;
+}
+
 function np_clearRadarPilotState() {
   window.__nutriplantRadarPilot = null;
 }
@@ -3379,11 +3408,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
         projectId: proj.id,
         polygonPoints: polygon.length
       });
-      alert(
-        'Pilot falló (' + res.status + ')\n\n' +
-          serverMessage +
-          '\n\nRevisa la consola/Network para el detalle técnico.'
-      );
+      alert(np_pilotUserErrorMessage(res.status, data));
       if (hint) hint.textContent = 'Pilot: error ' + res.status + ' — ' + serverMessage;
       return;
     }
@@ -3422,7 +3447,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     console.error('Radar CDSE pilot:', e);
     const recovered = await np_recoverRadarIfBackendSucceeded(prevRadarCreatedAt, bounds);
     if (recovered) return;
-    alert('Error de red en pilot Radar.');
+    alert('No se pudo conectar con Pilot. Revisa tu conexión e intenta de nuevo en unos minutos.\n\nCódigo: 9001');
     if (hint) hint.textContent = 'Pilot: sin conexión al servidor.';
   } finally {
     np_setRadarBusy(false);
