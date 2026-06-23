@@ -239,7 +239,9 @@ exports.handler = async (event) => {
     }
   }
 
-  const maxDim = Math.min(Math.max(Number(body.max_dim) || 2048, 256), 2048);
+  // Mantener Pilot dentro del tiempo de Netlify. 2048 px puede disparar 504 en predios grandes
+  // porque se procesan NDVI y NDMI desde COGs remotos.
+  const maxDim = Math.min(Math.max(Number(body.max_dim) || 1024, 256), 2048);
 
   try {
     const bundle = await findSentinel2ScenesForComposite(polygon, {});

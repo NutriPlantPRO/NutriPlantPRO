@@ -3352,15 +3352,26 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     true,
     'Pilot Copernicus: calculando y guardando NDVI/NDMI con Sentinel-2… puede tardar ~1–2 min.'
   );
+  let prevRadarCreatedAt = null;
   try {
+    try {
+      await window.refreshRadarNdviStatus();
+      prevRadarCreatedAt = np_getRadarLatestCreatedAtFromStatus(window.__nutriplantRadarNdviStatus);
+    } catch (e) {
+      console.warn('Pilot: no se pudo leer estado previo:', e);
+    }
     const res = await fetch(np_radarPilotApiUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ polygon, project_id: String(proj.id) })
+      body: JSON.stringify({ polygon, project_id: String(proj.id), max_dim: 1024 })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       const serverMessage = data.message || data.error || 'Pilot falló';
+      if (res.status === 504 || res.status === 502) {
+        const recovered = await np_recoverRadarIfBackendSucceeded(prevRadarCreatedAt, bounds);
+        if (recovered) return;
+      }
       console.error('Radar Pilot falló:', {
         status: res.status,
         statusText: res.statusText,
@@ -3409,6 +3420,8 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     }
   } catch (e) {
     console.error('Radar CDSE pilot:', e);
+    const recovered = await np_recoverRadarIfBackendSucceeded(prevRadarCreatedAt, bounds);
+    if (recovered) return;
     alert('Error de red en pilot Radar.');
     if (hint) hint.textContent = 'Pilot: sin conexión al servidor.';
   } finally {
