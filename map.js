@@ -2353,7 +2353,7 @@ const RADAR_INDEX_CONFIG = {
     high: 'Mayor nivel del predio',
     help: 'Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.',
     gradient: 'linear-gradient(90deg,#8b0000,#d73027,#fdae61,#ffffbf,#a6d96a,#1a9850,#006837)',
-    shownText: 'Imagen NDVI mostrada sobre el predio.',
+    shownText: 'NDVI en mapa.',
     loadingText: 'Cargando imagen NDVI en el mapa...'
   },
   ndmi: {
@@ -2364,7 +2364,7 @@ const RADAR_INDEX_CONFIG = {
     high: 'Mayor humedad relativa',
     help: 'NDMI = humedad relativa dentro del mismo predio; interpretar junto con NDVI, VPD, riego y campo.',
     gradient: 'linear-gradient(90deg,#7c2d12,#ea580c,#f59e0b,#fde68a,#bbf7d0,#22c55e,#0f766e,#0369a1)',
-    shownText: 'Imagen NDMI mostrada sobre el predio.',
+    shownText: 'NDMI en mapa.',
     loadingText: 'Cargando imagen NDMI en el mapa...'
   }
 };
@@ -2432,14 +2432,14 @@ function np_formatRadarHistoryOption(item) {
 function np_formatRadarDisplayedCaption(snap, overlayCtx) {
   if (!snap) return '';
   const parts = [];
-  if (snap.created_at) parts.push('Generada: ' + np_formatRadarDateTime(snap.created_at));
+  if (snap.created_at) parts.push('Generada ' + np_formatRadarDateTime(snap.created_at));
   const meta = snap.meta || {};
   const from = meta.date_start || snap.sentinel_period?.from;
   const to = meta.date_end || snap.sentinel_period?.to;
-  if (from && to) parts.push('datos Sentinel ' + from + ' – ' + to);
+  if (from && to) parts.push('Sentinel ' + from + ' – ' + to);
   const locNote = np_formatRadarLocationNote(overlayCtx, snap);
   if (locNote) parts.push(locNote);
-  return parts.length ? '(' + parts.join('; ') + ')' : '';
+  return parts.length ? parts.join(' · ') : '';
 }
 
 function np_getSelectedRadarRequestId() {
@@ -2773,7 +2773,7 @@ async function np_togglePilotRadarLayer() {
   const cfg = np_getRadarIndexConfig(next);
   if (hint) {
     hint.textContent =
-      '🧪 Pilot · capa ' + cfg.label + ' · sin Google. Cambia la capa desde el selector NDVI/NDMI.';
+      'Capa ' + cfg.label + ' activa. Cambia NDVI/NDMI desde el selector.';
   }
 }
 
@@ -2786,7 +2786,7 @@ function np_formatPilotOkHint(data, layerIndex) {
       : comp.date_end || comp.date_start || '';
   const cfg = np_getRadarIndexConfig(layerIndex);
   return (
-    '🧪 Pilot OK · mostrando ' +
+    'Imagen guardada · mostrando ' +
     cfg.label +
     ' · mediana ' +
     (comp.lookback_days || 30) +
@@ -2796,7 +2796,7 @@ function np_formatPilotOkHint(data, layerIndex) {
     (sceneCount === 1 ? '' : 's') +
     ' · SCL' +
     (dateRange ? ' · ' + dateRange : '') +
-    ' · guardado. Cambia la capa desde el selector NDVI/NDMI.'
+    '. Cambia NDVI/NDMI desde el selector.'
   );
 }
 
@@ -2940,14 +2940,14 @@ function np_formatRadarLocationNote(overlayCtx, snap) {
   if (overlayCtx.fromSnapshot && loc && loc.center) {
     const lat = Number(loc.center.lat).toFixed(4);
     const lng = Number(loc.center.lng).toFixed(4);
-    let note = 'Anclada al predio de generación (centro ' + lat + ', ' + lng + ')';
+    let note = 'Centro del predio ' + lat + ', ' + lng;
     if (np_radarMapDiffersFromSnapshot(overlayCtx.polygon)) {
       note += '. El polígono actual del mapa es distinto';
     }
     return note;
   }
   if (!overlayCtx.fromSnapshot) {
-    return 'Sin coordenadas guardadas en esta imagen; superpuesta al predio actual del mapa';
+  return 'Usando el predio actual del mapa';
   }
   return '';
 }
@@ -3119,7 +3119,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       ? nutriPlantMap.getCurrentProject()
       : null;
   if (!proj || !proj.id) {
-    label.textContent = 'Pilot Copernicus · Google standby';
+    label.textContent = 'Créditos Radar: —';
     return;
   }
   label.textContent = 'Pilot: consultando imágenes…';
@@ -3294,7 +3294,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
   const hint = document.getElementById('radarStatusHint');
   np_setRadarBusy(
     true,
-    'Pilot Copernicus: mediana 30 d + SCL, calculando y guardando NDVI/NDMI (sin Google)… puede tardar ~1–2 min.'
+    'Pilot Copernicus: calculando y guardando NDVI/NDMI con Sentinel-2… puede tardar ~1–2 min.'
   );
   try {
     const res = await fetch(np_radarPilotApiUrl(), {
