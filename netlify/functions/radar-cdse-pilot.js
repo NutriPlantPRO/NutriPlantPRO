@@ -101,13 +101,12 @@ exports.handler = async (event) => {
     });
   }
 
-  const lookbackDays = Math.min(Math.max(Number(body.lookback_days) || 120, 14), 365);
   const maxDim = Math.min(Math.max(Number(body.max_dim) || 1024, 256), 1536);
 
   try {
-    const scene = await findBestSentinel2Scene(polygon, { lookbackDays });
+    const scene = await findBestSentinel2Scene(polygon, {});
     const rendered = await renderNdviNdmiPngs(
-      { bandUrls: scene.bandUrls, bbox4326: scene.bbox },
+      { bandUrls: scene.bandUrls, bbox4326: scene.bbox, polygon },
       { maxDim }
     );
 
@@ -122,10 +121,13 @@ exports.handler = async (event) => {
       scene: {
         id: scene.itemId,
         datetime: scene.datetime,
-        cloud_cover: scene.cloudCover
+        cloud_cover: scene.cloudCover,
+        search_tier: scene.searchTier || null,
+        lookback_days: scene.lookbackDays || null,
+        max_cloud_pct: scene.maxCloudPct || null
       },
       dimensions: { width: rendered.width, height: rendered.height },
-      lookback_days: lookbackDays,
+      lookback_days: scene.lookbackDays || null,
       credits_charged: 0,
       images: {
         ndvi: { data_url: ndviDataUrl, label: 'NDVI' },

@@ -1,5 +1,15 @@
 # Radar CDSE pilot (pre-venta, sin Google)
 
+## Selección de escena (pilot)
+
+Prioriza la foto **más reciente** con pocas nubes:
+
+1. Últimos **7 días**, nubes **< 25%**
+2. Si no hay → **21 días**, nubes **< 25%**
+3. Si no hay → **45 días**, nubes **< 35%**
+
+Una sola escena (no mediana como Google).
+
 ## Botón pilot en Ubicación
 
 Icono **🛰** casi transparente, a la derecha de **Quitar capa** (solo uso interno / pruebas).

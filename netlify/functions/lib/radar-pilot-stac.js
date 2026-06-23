@@ -97,29 +97,43 @@ async function stacSearch(url, body, headers) {
   return res.json();
 }
 
-async function searchPlanetaryComputer(bbox, lookbackDays) {
+/** Ventanas de búsqueda: reciente primero; más días solo si no hay escena limpia. */
+const SCENE_SEARCH_TIERS = [
+  { days: 7, maxCloud: 25, label: '7d_25pct' },
+  { days: 21, maxCloud: 25, label: '21d_25pct' },
+  { days: 45, maxCloud: 35, label: '45d_35pct' }
+];
+
+async function searchPlanetaryComputer(bbox, lookbackDays, maxCloud) {
   const body = {
     collections: ['sentinel-2-l2a'],
     bbox,
     datetime: isoDaysAgo(lookbackDays) + '/' + new Date().toISOString(),
-    query: { 'eo:cloud_cover': { lt: 40 } },
-    sort: [{ field: 'eo:cloud_cover', direction: 'asc' }],
-    limit: 8
+    query: { 'eo:cloud_cover': { lt: maxCloud } },
+    sort: [{ field: 'datetime', direction: 'desc' }],
+    limit: 12
   };
   return stacSearch(PC_STAC, body);
 }
 
-async function searchCdse(bbox, lookbackDays, token) {
+async function searchCdse(bbox, lookbackDays, maxCloud, token) {
   const body = {
     collections: ['sentinel-2-l2a'],
     bbox,
     datetime: isoDaysAgo(lookbackDays) + '/' + new Date().toISOString(),
-    filter: { op: '<', args: [{ property: 'eo:cloud_cover' }, 40] },
+    filter: { op: '<', args: [{ property: 'eo:cloud_cover' }, maxCloud] },
     'filter-lang': 'cql2-json',
-    sort: [{ field: 'properties.eo:cloud_cover', direction: 'asc' }],
-    limit: 8
+    sort: [{ field: 'properties.datetime', direction: 'desc' }],
+    limit: 12
   };
   return stacSearch(CDSE_STAC, body, { Authorization: 'Bearer ' + token });
+}
+
+async function searchScenesForTier(bbox, tier, provider, cdseToken) {
+  if (provider === 'cdse') {
+    return searchCdse(bbox, tier.days, tier.maxCloud, cdseToken);
+  }
+  return searchPlanetaryComputer(bbox, tier.days, tier.maxCloud);
 }
 
 function pickAssetHref(assets, names) {
@@ -162,11 +176,11 @@ async function resolveSceneAssets(item, provider, cdseToken) {
 }
 
 /**
+ * Escena más reciente con pocas nubes: 7 d → 21 d → 45 d (25% / 35% nubes).
  * @param {Array<[number,number]>} polygon [[lat,lng],...]
- * @param {{ lookbackDays?: number, provider?: string }} opts
+ * @param {{ provider?: string }} opts
  */
 async function findBestSentinel2Scene(polygon, opts) {
-  const lookbackDays = Math.min(Math.max(Number(opts?.lookbackDays) || 120, 14), 365);
   const bbox = bboxFromPolygon(polygon);
   const clientId = (process.env.CDSE_CLIENT_ID || '').trim();
   const clientSecret = (process.env.CDSE_CLIENT_SECRET || '').trim();
@@ -175,45 +189,55 @@ async function findBestSentinel2Scene(polygon, opts) {
     provider = 'planetary';
   }
 
-  let features = [];
   let cdseToken = null;
   if (provider === 'cdse') {
     cdseToken = await getCdseToken(clientId, clientSecret);
-    const data = await searchCdse(bbox, lookbackDays, cdseToken);
-    features = data.features || [];
-  } else {
-    const data = await searchPlanetaryComputer(bbox, lookbackDays);
-    features = data.features || [];
-  }
-
-  if (!features.length) {
-    throw new Error(
-      'No hay escenas Sentinel-2 L2A con nubes <40% en los últimos ' + lookbackDays + ' días.'
-    );
   }
 
   let lastErr = null;
-  for (const item of features) {
+  for (const tier of SCENE_SEARCH_TIERS) {
+    let features = [];
     try {
-      const bandUrls = await resolveSceneAssets(item, provider, cdseToken);
-      const props = item.properties || {};
-      return {
-        provider,
-        itemId: item.id,
-        datetime: props.datetime || item.properties?.datetime || null,
-        cloudCover: props['eo:cloud_cover'] ?? props.eo_cloud_cover ?? null,
-        bbox,
-        bandUrls,
-        collection: provider === 'cdse' ? 'sentinel-2-l2a' : 'planetary-sentinel-2-l2a'
-      };
+      const data = await searchScenesForTier(bbox, tier, provider, cdseToken);
+      features = data.features || [];
     } catch (e) {
       lastErr = e;
+      continue;
+    }
+    if (!features.length) continue;
+
+    for (const item of features) {
+      try {
+        const bandUrls = await resolveSceneAssets(item, provider, cdseToken);
+        const props = item.properties || {};
+        return {
+          provider,
+          itemId: item.id,
+          datetime: props.datetime || null,
+          cloudCover: props['eo:cloud_cover'] ?? props.eo_cloud_cover ?? null,
+          bbox,
+          bandUrls,
+          collection: provider === 'cdse' ? 'sentinel-2-l2a' : 'planetary-sentinel-2-l2a',
+          searchTier: tier.label,
+          lookbackDays: tier.days,
+          maxCloudPct: tier.maxCloud
+        };
+      } catch (e) {
+        lastErr = e;
+      }
     }
   }
-  throw lastErr || new Error('No se pudieron firmar/descargar bandas de escenas candidatas');
+
+  throw (
+    lastErr ||
+    new Error(
+      'No hay escenas Sentinel-2 L2A despejadas en los últimos 45 días (probamos 7 d ≤25% nubes, 21 d ≤25%, 45 d ≤35%).'
+    )
+  );
 }
 
 module.exports = {
   bboxFromPolygon,
-  findBestSentinel2Scene
+  findBestSentinel2Scene,
+  SCENE_SEARCH_TIERS
 };

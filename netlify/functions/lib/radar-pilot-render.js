@@ -133,37 +133,68 @@ function computeIndex(bandA, bandB, noDataA, noDataB, formula) {
   return out;
 }
 
-function colorizeIndex(indexValues, vis, width, height) {
+function pointInPolygon(lat, lng, polygon) {
+  if (!polygon || polygon.length < 3) return true;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const latI = polygon[i][0];
+    const lngI = polygon[i][1];
+    const latJ = polygon[j][0];
+    const lngJ = polygon[j][1];
+    const crosses = latI > lat !== latJ > lat;
+    const lngEdge = ((lngJ - lngI) * (lat - latI)) / (latJ - latI) + lngI;
+    if (crosses && lng < lngEdge) inside = !inside;
+  }
+  return inside;
+}
+
+function pixelCenterLatLng(col, row, width, height, bbox4326) {
+  const [west, south, east, north] = bbox4326;
+  const lng = west + ((col + 0.5) / width) * (east - west);
+  const lat = north - ((row + 0.5) / height) * (north - south);
+  return [lat, lng];
+}
+
+function colorizeIndex(indexValues, vis, width, height, polygon, bbox4326) {
   const lut = buildPaletteLUT(vis.palette, vis.min, vis.max);
   const rgba = Buffer.alloc(width * height * 4);
-  for (let i = 0; i < indexValues.length; i++) {
-    const v = indexValues[i];
-    const o = i * 4;
-    if (!Number.isFinite(v)) {
-      rgba[o + 3] = 0;
-      continue;
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const i = row * width + col;
+      const o = i * 4;
+      const [lat, lng] = pixelCenterLatLng(col, row, width, height, bbox4326);
+      if (polygon && !pointInPolygon(lat, lng, polygon)) {
+        rgba[o + 3] = 0;
+        continue;
+      }
+      const v = indexValues[i];
+      if (!Number.isFinite(v)) {
+        rgba[o + 3] = 0;
+        continue;
+      }
+      const clamped = Math.min(vis.max, Math.max(vis.min, v));
+      const t = Math.round(((clamped - vis.min) / (vis.max - vis.min)) * 255);
+      rgba[o] = lut[t * 3];
+      rgba[o + 1] = lut[t * 3 + 1];
+      rgba[o + 2] = lut[t * 3 + 2];
+      rgba[o + 3] = 235;
     }
-    const clamped = Math.min(vis.max, Math.max(vis.min, v));
-    const t = Math.round(((clamped - vis.min) / (vis.max - vis.min)) * 255);
-    rgba[o] = lut[t * 3];
-    rgba[o + 1] = lut[t * 3 + 1];
-    rgba[o + 2] = lut[t * 3 + 2];
-    rgba[o + 3] = 230;
   }
   return rgba;
 }
 
-async function indexToPngBuffer(indexValues, vis, width, height) {
-  const rgba = colorizeIndex(indexValues, vis, width, height);
+async function indexToPngBuffer(indexValues, vis, width, height, polygon, bbox4326) {
+  const rgba = colorizeIndex(indexValues, vis, width, height, polygon, bbox4326);
   return sharp(rgba, { raw: { width, height, channels: 4 } }).png().toBuffer();
 }
 
 /**
- * @param {{ b04: string, b08: string, b11: string, bbox4326: number[] }} scene
+ * @param {{ bandUrls: object, bbox4326: number[], polygon?: number[][] }} scene
  * @param {{ maxDim?: number }} opts
  */
 async function renderNdviNdmiPngs(scene, opts) {
   const maxDim = Math.min(Math.max(Number(opts?.maxDim) || 1024, 256), 2048);
+  const polygon = scene.polygon || null;
   const [west, south, east, north] = scene.bbox4326;
   const latSpan = Math.max(0.0001, north - south);
   const lngSpan = Math.max(0.0001, east - west);
@@ -188,8 +219,8 @@ async function renderNdviNdmiPngs(scene, opts) {
   const ndmi = computeIndex(b08.data, b11.data, b08.noData, b11.noData, (nir, swir) => (nir - swir) / (nir + swir));
 
   const [ndviPng, ndmiPng] = await Promise.all([
-    indexToPngBuffer(ndvi, NDVI_VIS, outW, outH),
-    indexToPngBuffer(ndmi, NDMI_VIS, outW, outH)
+    indexToPngBuffer(ndvi, NDVI_VIS, outW, outH, polygon, scene.bbox4326),
+    indexToPngBuffer(ndmi, NDMI_VIS, outW, outH, polygon, scene.bbox4326)
   ]);
 
   return {

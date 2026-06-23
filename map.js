@@ -2772,15 +2772,18 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     radarGroundOverlay.setMap(null);
     radarGroundOverlay = null;
   }
+  const isPilotLayer = !!(window.__nutriplantRadarPilot && window.__nutriplantRadarPilot.active);
+  const containerOpacity = isPilotLayer ? '1' : String(Math.min(Math.max(opacity, 0.86), 0.92));
+  const visualFilter = isPilotLayer ? 'none' : 'saturate(1.35) contrast(1.15)';
   const overlay = new google.maps.OverlayView();
   overlay.onAdd = function() {
     const div = document.createElement('div');
     div.style.position = 'absolute';
     div.style.pointerEvents = 'none';
     div.style.zIndex = '9999';
-    div.style.opacity = String(Math.min(Math.max(opacity, 0.86), 0.92));
+    div.style.opacity = containerOpacity;
     div.style.mixBlendMode = 'normal';
-    div.style.filter = 'saturate(1.35) contrast(1.15)';
+    div.style.filter = 'none';
     div.style.background = 'transparent';
     div.style.border = '0';
     div.style.boxShadow = 'none';
@@ -2795,7 +2798,7 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98) {
     img.style.objectFit = 'fill';
     img.style.pointerEvents = 'none';
     img.style.opacity = '1';
-    img.style.filter = 'saturate(1.35) contrast(1.15)';
+    img.style.filter = visualFilter;
     img.style.imageRendering = 'auto';
     img.onload = () => {
       console.log('✅ Imagen Radar cargada en overlay');
@@ -3107,6 +3110,10 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     const sceneDt = data.scene && data.scene.datetime ? String(data.scene.datetime).slice(0, 10) : '—';
     const cloud =
       data.scene && data.scene.cloud_cover != null ? Number(data.scene.cloud_cover).toFixed(0) + '% nubes' : '';
+    const lookback =
+      data.scene && data.scene.lookback_days != null
+        ? 'ventana ' + data.scene.lookback_days + ' d'
+        : '';
     if (hint) {
       hint.textContent =
         '🧪 Pilot OK · ' +
@@ -3114,7 +3121,8 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
         ' · escena ' +
         sceneDt +
         (cloud ? ' · ' + cloud : '') +
-        ' · NO guardado · sin créditos. Cambia capa NDVI/NDMI arriba.';
+        (lookback ? ' · ' + lookback : '') +
+        ' · más reciente despejada · NO guardado · sin créditos. Cambia capa NDVI/NDMI arriba.';
     }
   } catch (e) {
     console.error('Radar CDSE pilot:', e);
