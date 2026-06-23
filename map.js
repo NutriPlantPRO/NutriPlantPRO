@@ -461,7 +461,13 @@ class NutriPlantMap {
         if (e) e.preventDefault();
         const opening = coordsPanel.style.display === 'none';
         coordsPanel.style.display = opening ? 'block' : 'none';
-        if (opening && coordsInput) coordsInput.focus();
+        if (opening && coordsInput) {
+          const currentCoordsText = self.getCurrentPolygonCoordinatesText();
+          if (currentCoordsText && !String(coordsInput.value || '').trim()) {
+            coordsInput.value = currentCoordsText;
+          }
+          coordsInput.focus();
+        }
       };
     }
     if (clearCoordsInputBtn && coordsInput) {
@@ -477,6 +483,36 @@ class NutriPlantMap {
         self.drawPolygonFromCoordinatesText(coordsInput.value);
       };
     }
+  }
+
+  getCurrentPolygonCoordinatesText() {
+    let coords = null;
+
+    if (Array.isArray(this.coordinates) && this.coordinates.length >= 3) {
+      coords = this.coordinates;
+    } else if (this.polygon && this.polygon.getPath) {
+      coords = this.polygon.getPath().getArray().map((point) => [point.lat(), point.lng()]);
+    } else {
+      const project = this.getCurrentProject();
+      const loc = project && project.location;
+      if (loc && Array.isArray(loc.polygon) && loc.polygon.length >= 3) {
+        coords = loc.polygon;
+      } else if (loc && Array.isArray(loc.coordinates) && loc.coordinates.length >= 3) {
+        coords = loc.coordinates;
+      }
+    }
+
+    if (!Array.isArray(coords) || coords.length < 3) return '';
+    const lines = coords
+      .map((coord) => {
+        const lat = Array.isArray(coord) ? Number(coord[0]) : Number(coord && coord.lat);
+        const lng = Array.isArray(coord) ? Number(coord[1]) : Number(coord && coord.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
+        return lat.toFixed(6) + ',' + lng.toFixed(6);
+      })
+      .filter(Boolean);
+
+    return lines.length >= 3 ? lines.join('\n') : '';
   }
 
   parseCoordinatesText(rawText) {
@@ -2456,6 +2492,17 @@ function np_updateRadarScaleUi(indexOverride) {
   if (high) high.textContent = cfg.high;
   if (bar) bar.style.background = cfg.gradient;
   if (help) help.textContent = cfg.help;
+  np_updateRadarActionLabels(idx);
+}
+
+function np_updateRadarActionLabels(indexOverride) {
+  const idx =
+    indexOverride === 'ndvi' || indexOverride === 'ndmi' ? indexOverride : np_getSelectedRadarIndex();
+  const cfg = np_getRadarIndexConfig(idx);
+  const viewBtn = document.getElementById('radarBtnView');
+  const hideBtn = document.getElementById('radarBtnHide');
+  if (viewBtn) viewBtn.textContent = '👁 Ver imagen ' + cfg.label;
+  if (hideBtn) hideBtn.textContent = '🙈 Ocultar capa';
 }
 
 function np_getRadarSignedUrl(data, index) {
@@ -2600,7 +2647,7 @@ function np_updateRadarStatusHintFromSelection() {
     hint.textContent =
       'Imagen seleccionada: ' +
       np_formatRadarHistoryOption(item) +
-      '. Pulsa «Ver en mapa» para superponerla.';
+      '. Pulsa «Ver imagen» para superponerla.';
   }
 }
 
@@ -2761,7 +2808,7 @@ function np_setRadarBusy(isBusy, message) {
   if (isBusy && hint) {
     hint.textContent =
       message ||
-      'Generando imágenes Pilot NDVI y NDMI... puede tardar ~1–2 min. Si termina y no ves el mapa, pulsa «Ver en mapa».';
+      'Generando imágenes Pilot NDVI y NDMI... puede tardar ~1–2 min. Si termina y no ves el mapa, pulsa «Ver imagen».';
   }
 }
 
@@ -3087,7 +3134,7 @@ function np_showRadarOverlay(url, bounds, opacity = 0.98, opts) {
     img.onerror = () => {
       console.error('❌ La imagen Radar no pudo cargarse en el navegador:', url);
       const hint = document.getElementById('radarStatusHint');
-      if (hint) hint.textContent = 'No se pudo cargar la imagen Radar firmada. Vuelve a pulsar Ver en mapa.';
+      if (hint) hint.textContent = 'No se pudo cargar la imagen Radar firmada. Vuelve a pulsar Ver imagen.';
     };
     div.appendChild(img);
     this.div = div;
@@ -3312,7 +3359,7 @@ window.initRadarNdviUi = function initRadarNdviUi() {
         const cfg = np_getRadarIndexConfig(idx);
         if (hint) {
           hint.textContent =
-            'No se pudo cargar ' + cfg.label + '. Pulsa «Ver en mapa» o «Estado».';
+            'No se pudo cargar ' + cfg.label + '. Pulsa «Ver imagen» o «Estado».';
         }
       });
       return;
@@ -3331,7 +3378,7 @@ window.initRadarNdviUi = function initRadarNdviUi() {
     if (st?.ok && hasLayer) {
       np_updateRadarStatusHintFromSelection();
     } else if (window.__nutriplantRadarPilot && window.__nutriplantRadarPilot.active) {
-      hint.textContent = 'Capa Pilot: ' + cfg.label + '. Pulsa «Ver en mapa» o «Generar / actualizar Pilot».';
+      hint.textContent = 'Capa Pilot: ' + cfg.label + '. Pulsa «Ver imagen» o «Generar / actualizar Pilot».';
     }
   });
   document.getElementById('radarBtnRefresh')?.addEventListener('click', () => {
@@ -3519,7 +3566,7 @@ window.showRadarNdviOnMap = async function showRadarNdviOnMap() {
     await np_applyRadarOverlay(url, snap, selectedIndex);
   } catch (e) {
     console.error('Radar NDVI view:', e);
-    alert('No se pudo cargar la imagen Radar. Intenta pulsar Estado y luego Ver en mapa.');
+    alert('No se pudo cargar la imagen Radar. Intenta pulsar Estado y luego Ver imagen.');
   }
 };
 

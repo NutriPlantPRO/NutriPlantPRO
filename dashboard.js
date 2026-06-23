@@ -1634,13 +1634,13 @@ function sectionTemplate(name) {
           </div>
         </div>
         <div id="coordinateInputPanel" style="display:none;margin:10px 0 0;padding:10px;border:1px dashed #bfdbfe;border-radius:10px;background:#f8fbff;">
-          <div style="font-weight:600;color:#1e40af;margin-bottom:6px;">Pegar coordenadas del polígono</div>
+          <div style="font-weight:600;color:#1e40af;margin-bottom:6px;">Coordenadas del polígono</div>
           <textarea id="polygonCoordinatesInput" rows="5" style="width:100%;resize:vertical;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font-family:monospace;font-size:12px;" placeholder="Formato: lat,lng (una por línea)&#10;Ejemplo:&#10;19.68090,-103.44290&#10;19.68120,-103.44180&#10;19.67990,-103.44120"></textarea>
           <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
             <button id="drawPolygonFromCoordinates" class="btn btn-primary" type="button">🗺️ Trazar polígono</button>
             <button id="clearCoordinateInput" class="btn btn-secondary" type="button">🧹 Limpiar texto</button>
           </div>
-          <div style="margin-top:6px;font-size:12px;color:#475569;">Acepta decimal y grados/min/seg (ej. 19°40'51.2&quot;N, 103°26'34.0&quot;W). Mínimo 3 puntos.</div>
+          <div style="margin-top:6px;font-size:12px;color:#475569;">Si ya hay predio guardado, aquí aparecen sus coordenadas. Puedes copiarlas, editarlas o pegar nuevas. Acepta decimal y grados/min/seg (ej. 19°40'51.2&quot;N, 103°26'34.0&quot;W). Mínimo 3 puntos.</div>
         </div>
 
         <div id="radarNdviPanel" class="radar-ndvi-panel" style="margin: 12px 0 0; padding: 12px 14px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;">
@@ -1671,10 +1671,10 @@ function sectionTemplate(name) {
             <span id="radarNdviHelp" style="color:#166534;">Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.</span>
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
-            <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>
-            <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">👁 Ver en mapa</button>
             <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;">🛰 Generar / actualizar Pilot</button>
-            <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;">🙈 Quitar capa</button>
+            <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>
+            <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">👁 Ver imagen NDVI</button>
+            <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;">🙈 Ocultar capa</button>
           </div>
         </div>
         
