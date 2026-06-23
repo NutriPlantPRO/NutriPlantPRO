@@ -3306,9 +3306,15 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     if (history.length) {
       np_updateRadarStatusHintFromSelection();
     } else if (hint) {
-      hint.textContent = costLine
-        ? costLine + '. Sincroniza el predio a la nube, luego genera la primera imagen Pilot.'
-        : 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.';
+      const lastPilotError = window.__nutriplantLastPilotError || null;
+      if (lastPilotError && lastPilotError.code === 5041) {
+        hint.textContent =
+          'El último intento de Pilot tardó demasiado y no se guardó imagen. Intenta de nuevo en unos minutos. Código: 5041';
+      } else {
+        hint.textContent = costLine
+          ? costLine + '. Sincroniza el predio a la nube, luego genera la primera imagen Pilot.'
+          : 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.';
+      }
     }
   } catch (e) {
     label.textContent = 'Pilot: sin conexión';
@@ -3448,6 +3454,11 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
         const recovered = await np_recoverRadarIfBackendSucceeded(prevRadarCreatedAt, bounds);
         if (recovered) return;
       }
+      window.__nutriplantLastPilotError = {
+        code: res.status === 504 ? 5041 : res.status === 502 ? 5021 : res.status,
+        status: res.status,
+        at: new Date().toISOString()
+      };
       console.error('Radar Pilot falló:', {
         status: res.status,
         statusText: res.statusText,
@@ -3494,6 +3505,11 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     console.error('Radar CDSE pilot:', e);
     const recovered = await np_recoverRadarIfBackendSucceeded(prevRadarCreatedAt, bounds);
     if (recovered) return;
+    window.__nutriplantLastPilotError = {
+      code: 9001,
+      status: 0,
+      at: new Date().toISOString()
+    };
     alert('No se pudo conectar con Pilot. Revisa tu conexión e intenta de nuevo en unos minutos.\n\nCódigo: 9001');
     if (hint) hint.textContent = 'Pilot: sin conexión al servidor.';
   } finally {
