@@ -1361,78 +1361,83 @@ class NutriPlantMap {
   centerOnPolygon() {
     console.log('📍 Botón centrar en polígono presionado');
 
-    if (!this.map) {
-      this.showMessage('⚠️ El mapa aún se está cargando. Espera un momento e intenta de nuevo.', 'warning');
+    if (!np_isLocationMapReady()) {
+      if (typeof initLocationMap === 'function') initLocationMap();
+      this.showMessage('🔄 Cargando mapa y polígono del predio…', 'info');
+      setTimeout(() => this.centerOnPolygon(), 600);
       return;
     }
+
+    const fitVisiblePolygon = (polygonToCenter) => {
+      const bounds = new google.maps.LatLngBounds();
+      const path = polygonToCenter.getPath();
+      path.forEach((point) => bounds.extend(point));
+      this.map.fitBounds(bounds, { padding: 50 });
+      this.showMessage('✅ Mapa centrado en el polígono', 'success');
+    };
     
     // 🚀 PRIORIDAD 1: Verificar si hay polígono visible en el mapa
     let polygonToCenter = null;
-    let center = null;
     
-    // Verificar polígono actual (si está dibujando o acaba de dibujar)
     if (this.polygon && this.polygon.getMap && this.polygon.getMap() === this.map) {
       polygonToCenter = this.polygon;
-      console.log('✅ Polígono actual encontrado en el mapa');
-    } 
-    // Verificar polígono guardado (si está cargado)
-    else if (this.savedPolygon && this.savedPolygon.getMap && this.savedPolygon.getMap() === this.map) {
+    } else if (this.savedPolygon && this.savedPolygon.getMap && this.savedPolygon.getMap() === this.map) {
       polygonToCenter = this.savedPolygon;
-      console.log('✅ Polígono guardado encontrado en el mapa');
     }
     
-    // Si hay polígono visible, centrar en él
     if (polygonToCenter) {
       try {
-        const bounds = new google.maps.LatLngBounds();
-        const path = polygonToCenter.getPath();
-        path.forEach((point) => {
-          bounds.extend(point);
-        });
-        
-        // Centrar y ajustar zoom para mostrar todo el polígono
-        this.map.fitBounds(bounds);
-        
-        // Ajustar padding para que no quede pegado a los bordes
-        this.map.fitBounds(bounds, { padding: 50 });
-        
-        this.showMessage('✅ Mapa centrado en el polígono', 'success');
-        console.log('✅ Mapa centrado en polígono visible');
+        fitVisiblePolygon(polygonToCenter);
         return;
       } catch (e) {
         console.warn('⚠️ Error centrando en polígono visible:', e);
       }
     }
     
-    // 🚀 PRIORIDAD 2: Si no hay polígono visible, intentar cargar desde localStorage
+    // 🚀 PRIORIDAD 2: Cargar polígono guardado y centrar
     const currentProject = this.getCurrentProject();
     if (currentProject && currentProject.id) {
-      // Cargar datos sin limpiar (solo para obtener el centro)
       let locationData = null;
-      if (window.projectStorage) {
+      const memLoc = currentProject.location;
+      if (memLoc && memLoc.polygon && Array.isArray(memLoc.polygon) && memLoc.polygon.length >= 3 &&
+          (!memLoc.projectId || memLoc.projectId === currentProject.id)) {
+        locationData = memLoc;
+      }
+      if (!locationData && window.projectStorage) {
         locationData = window.projectStorage.loadSection('location', currentProject.id);
       }
-      
+
       if (locationData && locationData.polygon && Array.isArray(locationData.polygon) && locationData.polygon.length >= 3) {
-        // Validar projectId
-        if (locationData.projectId === currentProject.id) {
-          // Calcular centro desde coordenadas guardadas
-          center = this.calculatePolygonCenter(locationData.polygon);
-          
+        const belongs =
+          !locationData.projectId || locationData.projectId === currentProject.id;
+        if (belongs) {
+          if (!locationData.projectId) locationData.projectId = currentProject.id;
+          try {
+            this.loadSavedPolygon({
+              ...locationData,
+              polygon: locationData.polygon,
+              coordinates: locationData.polygon
+            });
+            const painted = this.savedPolygon || this.polygon;
+            if (painted && painted.getMap && painted.getMap() === this.map) {
+              fitVisiblePolygon(painted);
+              return;
+            }
+          } catch (e) {
+            console.warn('⚠️ Error cargando polígono guardado desde botón:', e);
+          }
+          const center = this.calculatePolygonCenter(locationData.polygon);
           if (center) {
             this.map.setCenter(center);
             this.map.setZoom(15);
             this.showMessage('✅ Mapa centrado en el polígono guardado', 'success');
-            console.log('✅ Mapa centrado en polígono guardado');
             return;
           }
         }
       }
     }
     
-    // Si no hay polígono, mostrar mensaje
     this.showMessage('⚠️ No hay polígono guardado o visible para centrar', 'warning');
-    console.log('⚠️ No hay polígono para centrar');
   }
 
   centerOnUserLocation() {
@@ -2268,8 +2273,10 @@ function np_setSelectedRadarIndex(index) {
   np_updateRadarScaleUi();
 }
 
-function np_updateRadarScaleUi() {
-  const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
+function np_updateRadarScaleUi(indexOverride) {
+  const idx =
+    indexOverride === 'ndvi' || indexOverride === 'ndmi' ? indexOverride : np_getSelectedRadarIndex();
+  const cfg = np_getRadarIndexConfig(idx);
   const title = document.getElementById('radarScaleTitle');
   const low = document.getElementById('radarScaleLow');
   const high = document.getElementById('radarScaleHigh');
@@ -2616,6 +2623,67 @@ function np_radarPilotApiUrl() {
 
 function np_clearRadarPilotState() {
   window.__nutriplantRadarPilot = null;
+}
+
+function np_getPilotRadarIndex() {
+  return window.__nutriplantRadarPilotLayer === 'ndmi' ? 'ndmi' : 'ndvi';
+}
+
+function np_setPilotRadarIndex(index) {
+  window.__nutriplantRadarPilotLayer = index === 'ndmi' ? 'ndmi' : 'ndvi';
+  np_updatePilotLayerButtonUi();
+}
+
+function np_updatePilotLayerButtonUi() {
+  const btn = document.getElementById('radarBtnPilotLayer');
+  if (!btn) return;
+  const idx = np_getPilotRadarIndex();
+  btn.textContent = idx === 'ndmi' ? 'NDMI' : 'NDVI';
+  btn.title =
+    idx === 'ndmi'
+      ? 'Pilot: mostrando NDMI humedad dosel (clic → NDVI)'
+      : 'Pilot: mostrando NDVI vigor (clic → NDMI)';
+  btn.setAttribute('aria-pressed', idx === 'ndmi' ? 'true' : 'false');
+}
+
+async function np_togglePilotRadarLayer() {
+  const next = np_getPilotRadarIndex() === 'ndmi' ? 'ndvi' : 'ndmi';
+  np_setPilotRadarIndex(next);
+  const pilot = window.__nutriplantRadarPilot;
+  if (!pilot || !pilot.active) return;
+  np_updateRadarScaleUi(next);
+  const url = np_getRadarPilotDataUrl(next);
+  if (!url || !nutriPlantMap || !np_getPolygonBoundsFromMap()) return;
+  await np_applyRadarPilotOverlay(url, next);
+  const hint = document.getElementById('radarStatusHint');
+  const cfg = np_getRadarIndexConfig(next);
+  if (hint) {
+    hint.textContent =
+      '🧪 Pilot · capa ' + cfg.label + ' · sin Google · sin créditos. Pulsa NDVI/NDMI para cambiar.';
+  }
+}
+
+function np_formatPilotOkHint(data, layerIndex) {
+  const comp = data.composite || {};
+  const sceneCount = comp.scene_count != null ? comp.scene_count : 1;
+  const dateRange =
+    comp.date_start && comp.date_end && comp.date_start !== comp.date_end
+      ? comp.date_start + ' – ' + comp.date_end
+      : comp.date_end || comp.date_start || '';
+  const cfg = np_getRadarIndexConfig(layerIndex);
+  return (
+    '🧪 Pilot OK · mostrando ' +
+    cfg.label +
+    ' · mediana ' +
+    (comp.lookback_days || 30) +
+    ' d · ' +
+    sceneCount +
+    ' escena' +
+    (sceneCount === 1 ? '' : 's') +
+    ' · SCL' +
+    (dateRange ? ' · ' + dateRange : '') +
+    ' · sin créditos. Clic NDVI/NDMI al lado de 🛰 para cambiar capa.'
+  );
 }
 
 function np_getRadarPilotDataUrl(index) {
@@ -2993,21 +3061,12 @@ window.initRadarNdviUi = function initRadarNdviUi() {
   });
   document.getElementById('radarIndexSelect')?.addEventListener('change', () => {
     np_setSelectedRadarIndex(np_getSelectedRadarIndex());
-    const pilotUrl = np_getRadarPilotDataUrl(np_getSelectedRadarIndex());
-    if (pilotUrl && nutriPlantMap && np_getPolygonBoundsFromMap()) {
-      np_applyRadarPilotOverlay(pilotUrl, np_getSelectedRadarIndex())
-        .then(() => {
-          const hint = document.getElementById('radarStatusHint');
-          const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
-          if (hint) {
-            hint.textContent =
-              '🧪 Pilot ' +
-              cfg.label +
-              ' (sin Google; no guardado en nube). ' +
-              (window.__nutriplantRadarPilot?.meta?.note || '');
-          }
-        })
-        .catch((err) => console.warn('Radar pilot: cambio de capa', err));
+    if (window.__nutriplantRadarPilot && window.__nutriplantRadarPilot.active) {
+      const hint = document.getElementById('radarStatusHint');
+      if (hint) {
+        hint.textContent =
+          '🧪 Pilot activo — usa el botón NDVI/NDMI junto a 🛰 para cambiar capa del pilot. «Capa» arriba es para Google.';
+      }
       return;
     }
     const busyGen = document.getElementById('radarBtnGenerate')?.classList.contains('radar-loading');
@@ -3051,6 +3110,10 @@ window.initRadarNdviUi = function initRadarNdviUi() {
   document.getElementById('radarBtnPilotCdse')?.addEventListener('click', () => {
     window.generateRadarCdsePilot();
   });
+  document.getElementById('radarBtnPilotLayer')?.addEventListener('click', () => {
+    np_togglePilotRadarLayer().catch((err) => console.warn('Pilot capa:', err));
+  });
+  np_setPilotRadarIndex(np_getPilotRadarIndex());
 };
 
 window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
@@ -3105,29 +3168,14 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
       provider: data.provider,
       source: data.source
     };
-    const idx = np_getSelectedRadarIndex();
+    const idx = np_getPilotRadarIndex();
+    np_updateRadarScaleUi(idx);
     const url = np_getRadarPilotDataUrl(idx) || data.ndvi_data_url;
     if (url) {
       await np_applyRadarPilotOverlay(url, idx);
     }
-    const comp = data.composite || {};
-    const sceneCount = comp.scene_count != null ? comp.scene_count : 1;
-    const dateRange =
-      comp.date_start && comp.date_end && comp.date_start !== comp.date_end
-        ? comp.date_start + ' – ' + comp.date_end
-        : comp.date_end || comp.date_start || '';
     if (hint) {
-      hint.textContent =
-        '🧪 Pilot OK · mediana ' +
-        (comp.lookback_days || 30) +
-        ' d · ' +
-        sceneCount +
-        ' escena' +
-        (sceneCount === 1 ? '' : 's') +
-        ' · SCL · ' +
-        (dateRange ? 'datos ' + dateRange + ' · ' : '') +
-        (data.provider || 'sentinel') +
-        ' · NO guardado · sin créditos. Cambia capa NDVI/NDMI arriba.';
+      hint.textContent = np_formatPilotOkHint(data, idx);
     }
   } catch (e) {
     console.error('Radar CDSE pilot:', e);
@@ -3339,6 +3387,17 @@ window.generateRadarNdvi = async function generateRadarNdvi() {
   }
 };
 
+function np_isLocationMapReady() {
+  const mapHost = document.getElementById('map');
+  if (!nutriPlantMap || !nutriPlantMap.map || !mapHost) return false;
+  try {
+    const mapDiv = nutriPlantMap.map.getDiv();
+    return !!(mapDiv && (mapDiv === mapHost || mapHost.contains(mapDiv)) && document.body.contains(mapDiv));
+  } catch (e) {
+    return false;
+  }
+}
+
 function initLocationMap() {
   const mapElement = document.getElementById('map');
   if (!mapElement) {
@@ -3348,22 +3407,8 @@ function initLocationMap() {
 
   console.log('🗺️ Inicializando mapa de ubicación...');
 
-  // Limpiar indicadores del DOM (siempre mostrar valores limpios antes de cargar)
-  forceClearLocationDisplay();
-
-  // 🚀 CRÍTICO: Verificar si el mapa existe Y si el elemento DOM del mapa sigue siendo válido
-  // Si el elemento DOM fue recreado (al cambiar de pestaña), necesitamos reinicializar
-  if (nutriPlantMap && nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
-    try {
-      const mapDiv = nutriPlantMap.map.getDiv();
-      const currentMapElement = document.getElementById('map');
-      
-      // Verificar si el elemento del mapa en el DOM es el mismo que el del mapa inicializado
-      // O si el div del mapa está dentro del elemento actual
-      const isMapDivValid = mapDiv && mapDiv.parentNode && document.body.contains(mapDiv);
-      const isCurrentElementValid = currentMapElement && document.body.contains(currentMapElement);
-      
-      if (isMapDivValid && isCurrentElementValid && (mapDiv === currentMapElement || mapDiv.parentElement === currentMapElement)) {
+  // 🚀 CRÍTICO: Verificar si el mapa existe Y está acoplado al #map visible
+  if (nutriPlantMap && nutriPlantMap.map && np_isLocationMapReady()) {
         console.log('✅ Mapa ya existe e inicializado - recargando polígono guardado...');
         if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
           nutriPlantMap.bindLocationControlButtons();
@@ -3384,16 +3429,10 @@ function initLocationMap() {
         }, 100); // Delay más corto porque el mapa ya está listo
         
         return; // NO crear nueva instancia
-      } else {
-        console.log('⚠️ El elemento del mapa fue recreado o no es válido - necesitamos reinicializar el mapa');
-        // El elemento DOM fue recreado, necesitamos reinicializar
-        // Continuar con la creación de nueva instancia
-      }
-    } catch (e) {
-      console.warn('⚠️ Error verificando elemento del mapa:', e);
-      // Si hay error, asumir que necesitamos reinicializar
-      // Continuar con la creación de nueva instancia
-    }
+  }
+
+  if (nutriPlantMap && nutriPlantMap.map && !np_isLocationMapReady()) {
+    console.log('⚠️ El elemento del mapa fue recreado o no es válido - reinicializando el mapa');
   }
 
   // Si el mapa NO existe, NO está inicializado, o el elemento DOM fue recreado
@@ -3441,7 +3480,7 @@ function initLocationMap() {
   // Usar un delay más largo para asegurar que el mapa esté completamente listo
   // También verificar que el mapa esté inicializado antes de cargar el polígono
   setTimeout(() => {
-    if (nutriPlantMap && nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
+    if (nutriPlantMap && np_isLocationMapReady()) {
       console.log('✅ Mapa inicializado correctamente - cargando polígono guardado...');
       if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
         nutriPlantMap.bindLocationControlButtons();
@@ -3456,7 +3495,7 @@ function initLocationMap() {
       console.warn('⚠️ Mapa aún no está inicializado, esperando un poco más...');
       // Reintentar después de un delay adicional
       setTimeout(() => {
-        if (nutriPlantMap && nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
+        if (nutriPlantMap && np_isLocationMapReady()) {
           if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
             nutriPlantMap.bindLocationControlButtons();
           }
@@ -3750,4 +3789,5 @@ window.checkAllData = function() {
 // Exportar para uso global
 window.NutriPlantMap = NutriPlantMap;
 window.initLocationMap = initLocationMap;
+window.np_isLocationMapReady = np_isLocationMapReady;
 window.forceClearLocationDisplay = forceClearLocationDisplay;

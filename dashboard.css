@@ -7941,3 +7941,36 @@ html.embed-login body {
   cursor: wait;
 }
 
+/* Pilot: conmutador NDVI / NDMI (junto a 🛰) */
+.radar-ndvi-panel .radar-pilot-layer-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 28px;
+  padding: 0 8px;
+  margin-left: 2px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  border: 1px solid rgba(22, 101, 52, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #166534;
+  opacity: 0.45;
+  cursor: pointer;
+  box-shadow: none;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.radar-ndvi-panel .radar-pilot-layer-btn:hover {
+  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.92);
+}
+.radar-ndvi-panel .radar-pilot-layer-btn[aria-pressed='true'] {
+  opacity: 0.95;
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #14532d;
+}
+

@@ -1675,7 +1675,8 @@ function sectionTemplate(name) {
             <button type="button" id="radarBtnView" class="btn btn-secondary" style="font-size: 13px;">👁 Ver en mapa</button>
             <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;">✨ Generar / actualizar</button>
             <button type="button" id="radarBtnHide" class="btn" style="font-size: 13px;">🙈 Quitar capa</button>
-            <button type="button" id="radarBtnPilotCdse" class="btn radar-pilot-trigger" title="Pilot NDVI/NDMI (Copernicus, prueba interna)" aria-label="Pilot NDVI NDMI">🛰</button>
+            <button type="button" id="radarBtnPilotLayer" class="btn radar-pilot-layer-btn" title="Pilot: capa NDVI (clic cambia NDVI ↔ NDMI)">NDVI</button>
+            <button type="button" id="radarBtnPilotCdse" class="btn radar-pilot-trigger" title="Generar pilot Copernicus (NDVI+NDMI; usa botón NDVI/NDMI para ver cada capa)" aria-label="Generar pilot Radar">🛰</button>
           </div>
         </div>
         
@@ -11365,12 +11366,24 @@ function np_syncMapLocationFromProject() {
   }
 
   const run = () => {
+    if (typeof window.np_isLocationMapReady === 'function' && !window.np_isLocationMapReady()) {
+      if (typeof initLocationMap === 'function') initLocationMap();
+      setTimeout(run, 500);
+      return;
+    }
+    if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
+      nutriPlantMap.bindLocationControlButtons();
+    }
     if (typeof nutriPlantMap.loadProjectLocation === 'function') {
       nutriPlantMap.loadProjectLocation();
     }
   };
-  if (nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
+
+  if (typeof window.np_isLocationMapReady === 'function' && window.np_isLocationMapReady()) {
     requestAnimationFrame(run);
+  } else if (typeof initLocationMap === 'function' && document.getElementById('map')) {
+    initLocationMap();
+    setTimeout(run, 500);
   } else {
     setTimeout(run, 400);
   }
@@ -12331,32 +12344,11 @@ function loadOnTabChange(tabName) {
       updateSaveTimeIndicator();
       break;
     case 'Ubicación': {
-      // Pintar polígono al instante desde memoria (applyProjectDataToUI ya lo pinta si mapa listo)
-      const runLocationTab = () => {
+      const runLocationTab = (attempt) => {
         if (typeof nutriPlantMap === 'undefined' || !nutriPlantMap) return;
         const proj = nutriPlantMap.getCurrentProject();
-        if (proj && proj.id) {
-          const mapReady = nutriPlantMap.map && nutriPlantMap.map.getDiv();
-          if (mapReady) {
-            // Mapa listo: pintar ya desde memoria; refrescar desde localStorage en segundo plano
-            if (window.projectStorage && window.projectStorage.memoryCache &&
-                window.projectStorage.memoryCache.currentProjectId === proj.id &&
-                window.projectStorage.memoryCache.projectData) {
-              const fresh = window.projectStorage.loadSection('location', proj.id);
-              if (fresh && fresh.polygon && Array.isArray(fresh.polygon) && fresh.polygon.length >= 3) {
-                window.projectStorage.memoryCache.projectData.location = fresh;
-              }
-            }
-            nutriPlantMap.loadProjectLocation();
-          } else {
-            setTimeout(() => {
-              if (nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
-                nutriPlantMap.loadProjectLocation();
-              }
-            }, 450);
-          }
-        } else {
-          if (nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
+        if (!proj || !proj.id) {
+          if (nutriPlantMap.map && typeof nutriPlantMap.forceRemoveAllPolygons === 'function') {
             nutriPlantMap.forceRemoveAllPolygons();
           }
           if (typeof forceClearLocationDisplay === 'function') forceClearLocationDisplay();
@@ -12364,13 +12356,31 @@ function loadOnTabChange(tabName) {
           if (typeof nutriPlantMap.updateInstructions === 'function') {
             nutriPlantMap.updateInstructions('📍 Selecciona un proyecto y haz clic en el mapa para trazar tu parcela');
           }
+          return;
         }
+        if (typeof window.np_isLocationMapReady === 'function' && !window.np_isLocationMapReady()) {
+          if (typeof initLocationMap === 'function') initLocationMap();
+          if ((attempt || 0) < 10) setTimeout(() => runLocationTab((attempt || 0) + 1), 300);
+          return;
+        }
+        if (window.projectStorage && window.projectStorage.memoryCache &&
+            window.projectStorage.memoryCache.currentProjectId === proj.id &&
+            window.projectStorage.memoryCache.projectData) {
+          const fresh = window.projectStorage.loadSection('location', proj.id);
+          if (fresh && fresh.polygon && Array.isArray(fresh.polygon) && fresh.polygon.length >= 3) {
+            window.projectStorage.memoryCache.projectData.location = fresh;
+            if (typeof currentProject !== 'undefined' && currentProject && currentProject.id === proj.id) {
+              currentProject.location = fresh;
+              np_applyLocationStatsToDOM(fresh);
+            }
+          }
+        }
+        if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
+          nutriPlantMap.bindLocationControlButtons();
+        }
+        nutriPlantMap.loadProjectLocation();
       };
-      if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap && nutriPlantMap.map && nutriPlantMap.map.getDiv()) {
-        runLocationTab();
-      } else {
-        setTimeout(runLocationTab, 350);
-      }
+      runLocationTab(0);
       setTimeout(() => {
         try {
           if (typeof window.refreshRadarNdviStatus === 'function') window.refreshRadarNdviStatus();
