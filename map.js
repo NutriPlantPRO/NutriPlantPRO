@@ -2055,7 +2055,6 @@ class NutriPlantMap {
         
         // Cargar el polígono guardado
         this.loadSavedPolygon({ ...locationData, coordinates: polygonCoords });
-        setTimeout(() => this.fitMapToCurrentProjectLocation(), 150);
         return locationData;
       } else {
         console.warn('⚠️ Polígono válido pero projectId NO coincide. NO cargando.', {
@@ -2341,11 +2340,6 @@ class NutriPlantMap {
     // Validar una vez más que el polígono está en el mapa
     if (this.savedPolygon && this.savedPolygon.getMap() && this.savedPolygon.getMap() === this.map) {
       this.updateInstructions('✅ Predio cargado - Puedes editarlo o guardar cambios');
-      setTimeout(() => {
-        if (typeof np_shouldHoldUserLocationCenter !== 'function' || !np_shouldHoldUserLocationCenter()) {
-          this.fitMapToVisiblePolygon(this.savedPolygon);
-        }
-      }, 120);
       console.log('✅ UN solo polígono cargado y visible correctamente:', {
         points: polygonPath.length,
         projectId: locationData.projectId
@@ -3812,12 +3806,36 @@ function np_shouldHoldUserLocationCenter() {
   return Number(window.__npUserLocationCenterUntil || 0) > Date.now();
 }
 
+function np_forceRecreateLocationMapForButton(reason) {
+  const mapHost = document.getElementById('map');
+  if (!mapHost || typeof initLocationMap !== 'function') return;
+  console.warn('🧭 Recuperando mapa para botón de ubicación:', reason || 'unknown');
+  try {
+    if (nutriPlantMap) {
+      if (typeof window.hideRadarNdviOverlay === 'function') window.hideRadarNdviOverlay();
+      if (typeof nutriPlantMap.forceRemoveAllPolygons === 'function') nutriPlantMap.forceRemoveAllPolygons();
+    }
+  } catch (e) {
+    console.warn('np_forceRecreateLocationMapForButton cleanup:', e);
+  }
+  try {
+    nutriPlantMap = null;
+    mapHost.innerHTML = '';
+  } catch (e) {
+    console.warn('np_forceRecreateLocationMapForButton reset:', e);
+  }
+  initLocationMap();
+}
+
 function np_centerMapOnUserCoords(userLocation, attempt = 0) {
   np_scrollLocationMapIntoView();
   np_extendUserLocationCenterIntent();
   const tries = Number(attempt) || 0;
   if (!nutriPlantMap || !np_isLocationMapReady() || !nutriPlantMap.map) {
     if (typeof initLocationMap === 'function') initLocationMap();
+    if (tries === 3 || tries === 8) {
+      np_forceRecreateLocationMapForButton('gps-center retry ' + tries);
+    }
     if (tries < 20) {
       setTimeout(() => np_centerMapOnUserCoords(userLocation, tries + 1), 350);
     } else {
@@ -3951,11 +3969,6 @@ function initLocationMap() {
           if (nutriPlantMap && typeof nutriPlantMap.loadProjectLocation === 'function') {
             nutriPlantMap.loadProjectLocation();
           }
-          setTimeout(() => {
-            if (nutriPlantMap && typeof nutriPlantMap.fitMapToCurrentProjectLocation === 'function') {
-              nutriPlantMap.fitMapToCurrentProjectLocation();
-            }
-          }, 250);
         }, 100); // Delay más corto porque el mapa ya está listo
         
         return; // NO crear nueva instancia
@@ -4021,11 +4034,6 @@ function initLocationMap() {
       if (typeof nutriPlantMap.loadProjectLocation === 'function') {
         nutriPlantMap.loadProjectLocation();
       }
-      setTimeout(() => {
-        if (typeof nutriPlantMap.fitMapToCurrentProjectLocation === 'function') {
-          nutriPlantMap.fitMapToCurrentProjectLocation();
-        }
-      }, 200);
     } else {
       console.warn('⚠️ Mapa aún no está inicializado, esperando un poco más...');
       // Reintentar después de un delay adicional
@@ -4037,11 +4045,6 @@ function initLocationMap() {
           if (typeof nutriPlantMap.loadProjectLocation === 'function') {
             nutriPlantMap.loadProjectLocation();
           }
-          setTimeout(() => {
-            if (typeof nutriPlantMap.fitMapToCurrentProjectLocation === 'function') {
-              nutriPlantMap.fitMapToCurrentProjectLocation();
-            }
-          }, 200);
         } else {
           console.error('❌ Error: No se pudo inicializar el mapa después de múltiples intentos');
         }

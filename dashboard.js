@@ -11418,10 +11418,6 @@ function np_syncMapLocationFromProject() {
     if (typeof nutriPlantMap.loadProjectLocation === 'function') {
       nutriPlantMap.loadProjectLocation();
     }
-    if (typeof nutriPlantMap.fitMapToCurrentProjectLocation === 'function') {
-      setTimeout(() => nutriPlantMap.fitMapToCurrentProjectLocation(), 250);
-      setTimeout(() => nutriPlantMap.fitMapToCurrentProjectLocation(), 900);
-    }
   };
 
   if (document.getElementById('map')) {
@@ -12426,11 +12422,6 @@ function loadOnTabChange(tabName) {
           nutriPlantMap.bindLocationControlButtons();
         }
         nutriPlantMap.loadProjectLocation();
-        setTimeout(() => {
-          if (typeof nutriPlantMap.fitMapToCurrentProjectLocation === 'function') {
-            nutriPlantMap.fitMapToCurrentProjectLocation();
-          }
-        }, 200);
       };
       runLocationTab(0);
       setTimeout(() => {
