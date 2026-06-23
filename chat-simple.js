@@ -45,11 +45,12 @@ Soluciones nutritivas de referencia (para consulta cuando el usuario pida refere
 - VPD = presión de saturación a T_hoja − presión real de vapor. Afecta transpiración, absorción de Ca y estrés. Rangos típicos: 0.4–1.2 kPa óptimo según especie; <0.3 riesgo de edema; >1.5 estrés hídrico y cierre estomático. Se usa para programar riego y clima en invernadero.
 
 6B) RADAR DEL CULTIVO (NDVI / NDMI)
-- NDVI (Normalized Difference Vegetation Index) es un indicador relativo de vigor/cobertura fotosintética: valores/tonos verdes = mayor vigor relativo; amarillo/naranja/rojo = menor vigor relativo, suelo descubierto, sombra, estrés hídrico/nutricional, plagas/enfermedades, poda o diferencias de etapa.
+- NDVI (Normalized Difference Vegetation Index) es un indicador relativo de vigor/cobertura fotosintética: verde = mayor vigor relativo dentro del predio; amarillo/naranja/rojo = menor vigor relativo frente al resto del mismo lote, suelo descubierto, sombra, estrés hídrico/nutricional, plagas/enfermedades, poda o diferencias de etapa.
 - NDMI (Normalized Difference Moisture Index) usa NIR y SWIR para estimar condición hídrica relativa del dosel/canopia. No llamarlo "humedad exacta del suelo"; habla de humedad/vigor hídrico relativo de la vegetación.
-- En NutriPlant el Radar NDVI/NDMI se genera desde Sentinel-2/Earth Engine para el polígono del predio. Las imágenes se interpretan como mapas relativos dentro del lote, no como diagnóstico definitivo por sí solas.
+- En NutriPlant el Radar principal usa Pilot Copernicus/Sentinel-2 para el polígono del predio; Google Earth Engine queda como respaldo/standby. La colorimetría es RELATIVA AL PREDIO Y A LA FECHA, no una escala absoluta universal.
+- Niveles de colorimetría NutriPlant: rojo/naranja = menor nivel relativo del predio; amarillo/verde claro = nivel intermedio o transición; verde intenso (y azul verdoso en NDMI) = mayor nivel relativo del predio. No comparar dos predios solo por color; comparar con historial y datos agronómicos.
 - Buen uso agronómico: detectar zonas para recorrer en campo, cruzar NDVI (vigor) con NDMI (condición hídrica relativa), riego, suelo, textura, drenaje, fertilización, análisis foliar/suelo, plagas y VPD. No recomendar fertilizar o regar solo por color; usarlo como señal para priorizar muestreo y validar con datos.
-- Si el contexto indica última imagen, créditos o fecha, puedes responder sobre el estado del Radar del proyecto. Si no hay imagen, indicar que debe guardar/sincronizar el predio y generar/actualizar Radar.
+- Si el contexto indica última imagen, fecha o historial, puedes responder sobre el estado del Radar del proyecto. Si no hay imagen, indicar que debe guardar/sincronizar el predio y generar/actualizar Radar Pilot.
 
 7) CALCULADORAS NUTRIPLANT (ÓXIDO↔ELEMENTAL, ELEMENTAL↔IONES, ppm↔mmol↔meq) — Alineado con la app
 - **Conversor Óxido ↔ Elemental (etiquetas de fertilizante):** formas habituales en ficha técnica y programas en modo óxido: P₂O₅, K₂O, CaO, MgO, SO₃, óxidos de micros (Fe₂O₃, MnO, B₂O₃, ZnO, CuO, MoO₃, SiO₂). Factores NutriPlant: P₂O₅→P ×0.436; P→P₂O₅ ×2.291; K₂O→K ×0.830; K→K₂O ×1.205; CaO→Ca ×0.715; Ca→CaO ×1.399; MgO→Mg ×0.603; Mg→MgO ×1.658; SO₃→S ×0.400; S→SO₃ ×2.497; Fe₂O₃→Fe ×0.699; Fe→Fe₂O₃ ×1.430; MnO→Mn ×0.775; Mn→MnO ×1.291; B₂O₃→B ×0.311; B→B₂O₃ ×3.220; ZnO→Zn ×0.803; Zn→ZnO ×1.245; CuO→Cu ×0.799; Cu→CuO ×1.252; MoO₃→Mo ×0.667; Mo→MoO₃ ×1.500; SiO₂→Si ×0.467; Si→SiO₂ ×2.139. **El N en fertilizante ya va como N elemental** (no hay “óxido de N” como P₂O₅ o K₂O). Granular/fertirriego pueden alternar modo óxido (P₂O₅, K₂O…) o elemental (P, K…); hidroponía usa elemental.
@@ -196,12 +197,13 @@ E) CÓMO RESPONDER SI PREGUNTAN «cmol vs meq»
 function getRadarCultivoManual() {
   return `
 RADAR DEL CULTIVO (NDVI / NDMI) — NutriPlant PRO:
-- Qué es: imágenes satelitales Sentinel-2 (~10 m) recortadas al polígono del predio (pestaña Ubicación). Se generan con Google Earth Engine; la escala es relativa dentro del lote (Bajo → Alto), no valores absolutos universales.
-- NDVI (Normalized Difference Vegetation Index, B8 vs B4): indicador de vigor relativo / cobertura fotosintética activa. En el mapa: verde = mayor vigor relativo en ese predio; amarillo/naranja/rojo = menor vigor (suelo descubierto, sombra, estrés hídrico o nutricional, plagas/enfermedades, poda reciente, diferencias de etapa fenológica o manejo).
-- NDMI (Normalized Difference Moisture Index, B8 vs B11): condición hídrica relativa del dosel/canopia. En el mapa: verde = mayor humedad relativa del dosel; marrón/tonos secos = menor humedad relativa del dosel. No es humedad exacta del suelo ni % volumétrico de riego.
-- Cómo usarlo bien: (1) detectar zonas heterogéneas para recorrer y muestrear en campo; (2) cruzar NDVI (vigor) con NDMI (dosel), riego, textura, drenaje, suelo, foliar, plagas y VPD; (3) comparar con imágenes anteriores del mismo proyecto (historial mensual). No recomendar fertilizar o regar solo por el color del mapa.
+- Qué es: imágenes satelitales Pilot Copernicus/Sentinel-2 (~10 m) recortadas al polígono del predio (pestaña Ubicación). Google Earth Engine queda como respaldo/standby. La escala es relativa dentro del lote (Bajo → Alto), no valores absolutos universales.
+- Colorimetría NutriPlant: rojo/naranja = menor nivel relativo del predio; amarillo/verde claro = nivel intermedio o transición; verde intenso = mayor nivel relativo. En NDMI puede verse azul verdoso como mayor humedad relativa del dosel. Estos colores comparan zonas dentro del mismo predio y fecha; no comparan dos predios ni dos fechas como si fueran una escala absoluta.
+- NDVI (Normalized Difference Vegetation Index, B8 vs B4): indicador de vigor relativo / cobertura fotosintética activa. En el mapa: verde = mayor vigor relativo en ese predio; amarillo/naranja/rojo = menor vigor relativo (suelo descubierto, sombra, estrés hídrico o nutricional, plagas/enfermedades, poda reciente, diferencias de etapa fenológica o manejo).
+- NDMI (Normalized Difference Moisture Index, B8 vs B11): condición hídrica relativa del dosel/canopia. En el mapa: verde/azul verdoso = mayor humedad relativa del dosel frente al resto del lote; marrón/tonos secos = menor humedad relativa del dosel. No es humedad exacta del suelo ni % volumétrico de riego.
+- Cómo usarlo bien: (1) detectar zonas heterogéneas para recorrer y muestrear en campo; (2) cruzar NDVI (vigor) con NDMI (dosel), riego, textura, drenaje, suelo, foliar, plagas y VPD; (3) comparar con imágenes anteriores del mismo proyecto, entendiendo que la colorimetría se recalibra por predio/fecha. No recomendar fertilizar o regar solo por el color del mapa.
 - Cruces típicos: NDVI bajo + NDMI bajo → priorizar estrés hídrico, raíz, salinidad, compactación; NDVI bajo + NDMI alto → vigor bajo con dosel húmedo (enfermedad, anoxia, exceso de riego, etapa); NDVI alto + NDMI bajo → vigor alto con dosel seco (déficit hídrico incipiente, VPD alto); NDVI alto + NDMI alto → vigor y dosel favorables en esa fecha (validar en campo).
-- En la app: pestaña Ubicación → listado «Imagen»; «Ver en mapa» ancla NDVI/NDMI al polígono guardado al generar (location_snapshot en meta). Si el predio actual es distinto, avisa y muestra la imagen donde correspondía.
+- En la app: pestaña Ubicación → «Generar / actualizar Pilot», selector «Imagen» y «Ver en mapa». Cada generación guarda NDVI+NDMI y los ancla al polígono guardado al generar (location_snapshot en meta). Si el predio actual es distinto, avisa y muestra la imagen donde correspondía.
 - Límites: mapas relativos al predio; nubes pueden retrasar la fecha Sentinel; no sustituye análisis de suelo/foliar ni diagnóstico de campo.
 `;
 }
@@ -1201,7 +1203,7 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Calculadora de balance hídrico (Clima → Lluvia y ET₀): estimación rápida de déficit y balance para 1, 7 o 30 días. Fórmulas: ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; **balance m³ = déficit m³ cultivo − riego m³ en franja** (riego siempre en franja regada: mm lámina en zona humedecida o m³ total en franja). Conversión: 1 mm sobre X ha = X × 10 m³. Déficit en mm sobre ha cultivo; si ha regada &lt; ha cultivo, los mm se concentran en franja (sub-línea «↳ en franja regada»); m³ totales del déficit no se dividen. ETo/lluvia satélite o manual; macrotúnel = lluvia 0. Kc manual (tabla FAO consulta). % raíces sugiere franja, no altera déficit ETc. Tablas Kc y % suelo explorado por sistema; Criterio NutriPlant. Estimar %: Conversor magnitudes (copa circular o cama/banda). Datos en climateAnalysis.irrigationQuickCalc. Nota: no considera almacenamiento en suelo, escurrimiento, drenaje ni lixiviación; validar en campo.`,
       ubicacion: `
 - Ubicación: el usuario define el predio dibujando puntos en el mapa (polígono). El asistente recibe en contexto: número de vértices del polígono, superficie/área (ha o m²), perímetro (m) y coordenadas (centro del polígono o referencia). Si no hay polígono aún, se indica "sin polígono definido" y se puede guiar al usuario a ir a la pestaña Ubicación y dibujar los puntos en el mapa. Necesario para la calculadora ambiental de VPD ("Obtener del Clima" usa el centro del polígono), Radar NDVI y reportes PDF.
-- Radar del cultivo (NDVI/NDMI): usa el polígono del predio para generar imágenes Sentinel-2/Earth Engine. NDVI = vigor relativo; NDMI = condición hídrica relativa del dosel/canopia (no humedad exacta del suelo). Si el contexto trae última imagen/fecha/créditos, puedes explicar si hay Radar disponible, cuándo se generó y cómo interpretarlo. No diagnosticar causa única solo con índices: cruzar con riego, suelo, foliar, plagas, drenaje, VPD y recorrido en campo.`,
+- Radar del cultivo (NDVI/NDMI): usa el polígono del predio para generar imágenes Pilot Copernicus/Sentinel-2; Google queda como respaldo interno. NDVI = vigor relativo; NDMI = condición hídrica relativa del dosel/canopia (no humedad exacta del suelo). Colorimetría relativa al predio: rojo/naranja = menor nivel relativo, amarillo/verde claro = intermedio, verde intenso/azul verdoso en NDMI = mayor nivel relativo. Si el contexto trae última imagen/fecha/historial, puedes explicar si hay Radar disponible, cuándo se generó y cómo interpretarlo. No diagnosticar causa única solo con índices: cruzar con riego, suelo, foliar, plagas, drenaje, VPD y recorrido en campo.`,
       reportes: `
 - Reportes: esta pestaña sirve para generar y gestionar reportes PDF del proyecto actual. Cómo generar un reporte: (1) El usuario pulsa el botón "Generar Nuevo Reporte PDF" (en la pestaña Reportes o desde la sección de enmiendas). (2) Se abre un modal donde debe seleccionar las secciones o pestañas que quiere incluir en el reporte: Ubicación, Enmiendas, Nutrición granular, Fertirriego, Hidroponía, Clima (VPD, lluvia, ET₀). (3) El usuario marca (selecciona) las que desee y confirma; se genera el PDF con solo esas secciones. (4) El reporte aparece en la lista; cada uno tiene Descargar (PDF) y Eliminar. Los reportes se guardan en el proyecto y se sincronizan a la nube si está conectado. El chat debe entender esta lógica para explicar al usuario cómo hacerlo: ir a Reportes → "Generar Nuevo Reporte PDF" → en el modal elegir qué secciones incluir → generar.`,
       general: `
@@ -1302,7 +1304,7 @@ ARQUITECTURA NUTRIPLANT Y CONTEXTO GLOBAL DEL PROYECTO:
 - Conoces la arquitectura de NutriPlant: módulos (Inicio, Ubicación, Enmienda, Nutrición Granular, Fertirriego, Hidroponía, Análisis, VPD, Reportes), subpestañas de Análisis (Suelo, Solución Nutritiva, Extracto de Pasta, Agua, Foliar/DOP, Fruta/ICC) y cómo se relacionan (p. ej. Suelo→Enmienda, Agua→Fertirriego/Hidroponía, Foliar/Suelo/Fruta→diagnóstico integrado).
 - Los datos que te pasamos son del MISMO proyecto en su totalidad: incluyen TODAS las secciones que el usuario tenga guardadas (Enmienda, Fertirriego, Granular, Hidroponía, Análisis de Suelo, Foliar, Fruta, Agua, Solución Nutritiva, Extracto de Pasta, Extracción por etapa 📊, etc.), aunque el usuario esté en otra pestaña. Por ejemplo: si está en Fertirriego y te pregunta por su análisis foliar o por su suelo, tienes esos datos en el bloque "DATOS DEL PROYECTO" y debes usarlos para responder e interactuar con él.
 - Puedes usar la lógica y explicar el funcionamiento de cualquier módulo cuando el usuario pregunte; responde con los datos del bloque del módulo del que hablen.
-- Radar NDVI/NDMI también forma parte del contexto del proyecto cuando exista el bloque "RADAR DEL CULTIVO (NDVI/NDMI)". Si el usuario pregunta por vigor, humedad del dosel, manchas, zonas rojas/amarillas/verdes o "qué significa el NDVI/NDMI", usa ese bloque y cruza con ubicación, riego, suelo, foliar, VPD y recorrido de campo. No atribuyas causa única solo por color.
+- Radar NDVI/NDMI también forma parte del contexto del proyecto cuando exista el bloque "RADAR DEL CULTIVO (NDVI/NDMI)". Si el usuario pregunta por vigor, humedad del dosel, manchas, zonas rojas/amarillas/verdes o "qué significa el NDVI/NDMI", usa ese bloque y recuerda que la colorimetría es relativa al predio/fecha: rojo/naranja = menor nivel relativo, amarillo/verde claro = intermedio, verde/azul verdoso = mayor nivel relativo. Cruza con ubicación, riego, suelo, foliar, VPD y recorrido de campo. No atribuyas causa única solo por color.
 
 UNIDADES POR MÓDULO (NO CONFUNDIR):
 - **Hidroponía**: concentraciones y aportes de fertilizantes son SIEMPRE en forma ELEMENTAL (%, ppm por elemento). No hay modo óxido en hidroponía.
@@ -1679,8 +1681,8 @@ ESTILO DE RESPUESTA:
         const cr = st.credits;
         const cred =
           cr && cr.limit != null
-            ? `Radar: ${cr.available ?? '—'}/${cr.limit} créditos este mes.`
-            : '';
+            ? `Radar Pilot: ${cr.available ?? '—'}/${cr.limit} créditos Radar disponibles este mes.`
+            : 'Radar Pilot: usa créditos Radar internos.';
         const ndvi = st.hasLatestImage ? 'NDVI guardado' : 'sin NDVI';
         const ndmi = st.hasLatestNdmiImage ? 'NDMI guardado' : 'sin NDMI';
         const when = st.latestCreatedAt
@@ -1820,7 +1822,7 @@ ESTILO DE RESPUESTA:
     const lines = [];
     lines.push('--- RADAR DEL CULTIVO (NDVI/NDMI) ---');
     lines.push(
-      'NDVI = vigor relativo (verde alto, rojo/naranja bajo). NDMI = humedad relativa del dosel (no humedad de suelo). Mapas relativos al predio; cruzar ambos índices con riego, suelo, foliar, VPD y campo.'
+      'Radar Pilot Copernicus/Sentinel-2. NDVI = vigor relativo; NDMI = humedad relativa del dosel (no humedad de suelo). Colorimetría relativa al predio/fecha: rojo/naranja = menor nivel relativo, amarillo/verde claro = intermedio, verde/azul verdoso = mayor nivel relativo. Cruzar ambos índices con riego, suelo, foliar, VPD y campo.'
     );
     lines.push(`Polígono del predio: ${hasPolygon ? 'definido (Radar habilitado)' : 'sin polígono — ir a Ubicación, dibujar y guardar antes de generar Radar'}.`);
 
@@ -1828,12 +1830,7 @@ ESTILO DE RESPUESTA:
       if (status.ok === false) {
         lines.push(`Estado servidor: error (${status.error || 'sin detalle'}).`);
       } else {
-        const cr = status.credits || {};
-        if (cr.limit != null) {
-          lines.push(
-            `Créditos Radar (mes actual): ${cr.available ?? '—'} disponibles de ${cr.limit}; usados ${cr.used ?? '—'}.`
-          );
-        }
+        lines.push('Generación actual: Pilot guarda NDVI+NDMI en historial; usa créditos Radar internos (base 20/mes + bonus, según hectáreas). Google queda en standby.');
         const hasNdmi =
           !!status.hasLatestNdmiImage ||
           !!(status.latest?.ndmi_signed_url || status.latest?.images?.ndmi?.signed_url || status.meta?.ndmi_storage_path);
@@ -1850,7 +1847,7 @@ ESTILO DE RESPUESTA:
           );
         } else {
           lines.push(
-            'Sin imágenes Radar guardadas: sincronizar predio a la nube y pulsar Generar en Ubicación (máx. 1 por proyecto/mes).'
+            'Sin imágenes Radar guardadas: sincronizar predio a la nube y pulsar Generar / actualizar Pilot en Ubicación.'
           );
         }
         const history = Array.isArray(status.history) ? status.history : [];
@@ -1882,11 +1879,11 @@ ESTILO DE RESPUESTA:
               : '';
           const vis =
             meta.ndvi_vis && typeof meta.ndvi_vis === 'object'
-              ? `NDVI escala min ${meta.ndvi_vis.min ?? '—'} max ${meta.ndvi_vis.max ?? '—'}`
+              ? `NDVI escala ${meta.ndvi_vis.style || 'relativa al predio'}`
               : '';
           const ndmiVis =
             meta.ndmi_vis && typeof meta.ndmi_vis === 'object'
-              ? `NDMI escala min ${meta.ndmi_vis.min ?? '—'} max ${meta.ndmi_vis.max ?? '—'}`
+              ? `NDMI escala ${meta.ndmi_vis.style || 'relativa al predio'}`
               : '';
           if (range || vis || ndmiVis) {
             lines.push(`Metadatos: ${[range, vis, ndmiVis].filter(Boolean).join('; ')}.`);
@@ -1896,7 +1893,7 @@ ESTILO DE RESPUESTA:
     } else {
       const labelText = String(label?.textContent || '').trim();
       const hintText = String(hint?.textContent || '').trim();
-      if (labelText) lines.push(`Panel Ubicación (créditos): ${labelText}.`);
+      if (labelText) lines.push(`Panel Ubicación (Radar): ${labelText}.`);
       if (hintText) lines.push(`Panel Ubicación (estado): ${hintText}.`);
       if (!labelText && !hintText) {
         lines.push(

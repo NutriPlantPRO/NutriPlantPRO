@@ -115,7 +115,7 @@ module.exports = {
       title: 'VPD, NDVI y NDMI',
       url: `${BASE}/capitulos/vpd-deficit-presion-vapor.html`,
       pillar: 'E — Agua y clima',
-      summary: 'VPD kPa (Tetens/simple/avanzada); NDVI vigor y NDMI humedad (lectura satelital); créditos Radar por ha (≤30=1, >30=2, >100=3; tope 20/mes); proyecto + calculadora gratis. No sustituye campo.',
+      summary: 'VPD kPa (Tetens/simple/avanzada); Radar Pilot Copernicus NDVI/NDMI; colorimetría relativa al predio (rojo/naranja=bajo relativo, verde=alto relativo), no escala absoluta; créditos Radar internos 20/mes base + bonus por ha. No sustituye campo.',
       status: 'published'
     },
     {

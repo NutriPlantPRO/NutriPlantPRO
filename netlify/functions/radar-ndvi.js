@@ -456,10 +456,15 @@ exports.handler = async (event) => {
     const ownerUserId = projAdm.user_id;
     const histLimitAdm = Math.min(Math.max(parseInt(body.history_limit, 10) || 36, 1), 48);
     const requestIdAdm = body.request_id != null ? String(body.request_id).trim() : '';
-    const [latestAdm, historyRowsAdm] = await Promise.all([
+    const mkAdm = monthKey();
+    const [latestAdm, historyRowsAdm, usedAdm, bonusAdm] = await Promise.all([
       getLatestRadarRow(supabase, ownerUserId, projectIdAdm),
-      getRadarHistoryRows(supabase, ownerUserId, projectIdAdm, histLimitAdm)
+      getRadarHistoryRows(supabase, ownerUserId, projectIdAdm, histLimitAdm),
+      sumMonthlyCreditsUsed(supabase, ownerUserId, mkAdm),
+      getBonusCredits(supabase, ownerUserId)
     ]);
+    const baseLimitAdm = radarCredits.getMonthlyBaseLimit();
+    const limitAdm = baseLimitAdm + bonusAdm;
     const historyAdm = historyRowsAdm.map(historyItemFromRow).filter(Boolean);
 
     let viewRowAdm = latestAdm;
@@ -493,7 +498,19 @@ exports.handler = async (event) => {
       history_count: historyAdm.length,
       view_request_id: viewRowAdm ? viewRowAdm.id : null,
       is_latest:
-        !latestAdm || !viewRowAdm || String(latestAdm.id) === String(viewRowAdm.id)
+        !latestAdm || !viewRowAdm || String(latestAdm.id) === String(viewRowAdm.id),
+      credits: {
+        month_key: mkAdm,
+        used: usedAdm,
+        limit: limitAdm,
+        base: baseLimitAdm,
+        bonus: bonusAdm,
+        available: Math.max(0, limitAdm - usedAdm),
+        selected_charged:
+          viewRowAdm && viewRowAdm.meta && viewRowAdm.meta.credits_charged != null
+            ? Number(viewRowAdm.meta.credits_charged)
+            : null
+      }
     });
   }
 

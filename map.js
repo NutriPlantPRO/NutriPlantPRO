@@ -421,14 +421,26 @@ class NutriPlantMap {
       if (!el) return false;
       el.onclick = (e) => {
         if (e) e.preventDefault();
-        handler();
+        handler(e);
       };
       return true;
     };
 
     bind('clearPolygon', () => self.clearPolygon());
-    bind('centerOnPolygon', () => self.centerOnPolygon());
-    bind('centerOnUserLocation', () => self.centerOnUserLocation());
+    bind('centerOnPolygon', (e) => {
+      if (typeof window.np_centerOnPolygonFromUi === 'function') {
+        window.np_centerOnPolygonFromUi(e);
+      } else {
+        self.centerOnPolygon();
+      }
+    });
+    bind('centerOnUserLocation', (e) => {
+      if (typeof window.np_centerOnUserLocationFromUi === 'function') {
+        window.np_centerOnUserLocationFromUi(e);
+      } else {
+        self.centerOnUserLocation();
+      }
+    });
     bind('saveLocation', () => self.saveLocation());
 
     const toggleCoordsBtn = document.getElementById('toggleCoordinateInput');
@@ -2761,7 +2773,7 @@ async function np_togglePilotRadarLayer() {
   const cfg = np_getRadarIndexConfig(next);
   if (hint) {
     hint.textContent =
-      '🧪 Pilot · capa ' + cfg.label + ' · sin Google · sin créditos. Cambia la capa desde el selector NDVI/NDMI.';
+      '🧪 Pilot · capa ' + cfg.label + ' · sin Google. Cambia la capa desde el selector NDVI/NDMI.';
   }
 }
 
@@ -2784,7 +2796,7 @@ function np_formatPilotOkHint(data, layerIndex) {
     (sceneCount === 1 ? '' : 's') +
     ' · SCL' +
     (dateRange ? ' · ' + dateRange : '') +
-    ' · guardado · sin créditos. Cambia la capa desde el selector NDVI/NDMI.'
+    ' · guardado. Cambia la capa desde el selector NDVI/NDMI.'
   );
 }
 
@@ -3149,16 +3161,22 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       meta: data.latest?.meta || null
     };
     label.textContent =
+      disponibles +
+      ' disponibles de ' +
+      l +
+      ' este mes · ' +
       history.length +
       ' imagen' +
       (history.length === 1 ? '' : 'es') +
       ' guardada' +
-      (history.length === 1 ? '' : 's') +
-      ' · Pilot sin créditos';
+      (history.length === 1 ? '' : 's');
+    const costLine = np_formatRadarCreditLine(data.pricing || null);
     if (history.length) {
       np_updateRadarStatusHintFromSelection();
     } else if (hint) {
-      hint.textContent = 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.';
+      hint.textContent = costLine
+        ? costLine + '. Sincroniza el predio a la nube, luego genera la primera imagen Pilot.'
+        : 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.';
     }
   } catch (e) {
     label.textContent = 'Pilot: sin conexión';
@@ -3542,6 +3560,44 @@ function np_isLocationMapReady() {
     return false;
   }
 }
+
+function np_runLocationButtonAction(actionName, event, attempt = 0) {
+  if (event) {
+    try {
+      event.preventDefault();
+      event.stopPropagation();
+    } catch (e) {}
+  }
+
+  if (!document.getElementById('map')) return;
+
+  const tries = Number(attempt) || 0;
+  if (!nutriPlantMap || !np_isLocationMapReady()) {
+    if (typeof initLocationMap === 'function') initLocationMap();
+    if (tries < 18) {
+      setTimeout(() => np_runLocationButtonAction(actionName, null, tries + 1), 350);
+    }
+    return;
+  }
+
+  if (typeof nutriPlantMap.bindLocationControlButtons === 'function') {
+    nutriPlantMap.bindLocationControlButtons();
+  }
+
+  if (actionName === 'polygon' && typeof nutriPlantMap.centerOnPolygon === 'function') {
+    nutriPlantMap.centerOnPolygon();
+  } else if (actionName === 'user' && typeof nutriPlantMap.centerOnUserLocation === 'function') {
+    nutriPlantMap.centerOnUserLocation();
+  }
+}
+
+window.np_centerOnPolygonFromUi = function np_centerOnPolygonFromUi(event) {
+  np_runLocationButtonAction('polygon', event);
+};
+
+window.np_centerOnUserLocationFromUi = function np_centerOnUserLocationFromUi(event) {
+  np_runLocationButtonAction('user', event);
+};
 
 function initLocationMap() {
   const mapElement = document.getElementById('map');

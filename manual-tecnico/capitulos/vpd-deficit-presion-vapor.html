@@ -17,7 +17,7 @@
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
-  "dateModified": "2026-05-23",
+  "dateModified": "2026-06-23",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -120,7 +120,7 @@
 
     <h2>NDVI y NDMI — Radar del cultivo (lectura satelital)</h2>
     <p>
-      En <strong>Ubicación → Radar del cultivo</strong>, NutriPlant genera mapas sobre el
+      En <strong>Ubicación → Radar del cultivo</strong>, NutriPlant genera mapas <strong>Pilot Copernicus/Sentinel-2</strong> sobre el
       <strong>polígono del predio</strong> a partir de <strong>imágenes satelitales multiespectrales</strong>:
       sensores que miden reflectancia en bandas del visible e <strong>infrarrojo</strong> (cercano NIR y,
       para NDMI, infrarrojo de onda corta SWIR). No es una foto RGB común: cada banda responde distinto a la
@@ -134,7 +134,8 @@
     <ul>
       <li><strong>NDVI</strong> (Normalized Difference Vegetation Index) — <strong>vigor relativo</strong> y
         actividad fotosintética dentro del lote. En el mapa: tonos verdes = mayor vigor relativo; amarillo,
-        naranja o rojo = menor vigor (suelo desnudo, sombra, estrés, poda, heterogeneidad de manejo, etc.).</li>
+        naranja o rojo = menor vigor relativo dentro del mismo predio (suelo desnudo, sombra, estrés, poda,
+        heterogeneidad de manejo, etc.).</li>
       <li><strong>NDMI</strong> (Normalized Difference Moisture Index) — <strong>condición hídrica relativa
         del dosel/canopia</strong>. En el mapa: verdes = mayor humedad relativa en la vegetación; tonos secos =
         menor. <em>No</em> es humedad volumétrica del suelo ni lámina de riego medida en campo.</li>
@@ -144,37 +145,47 @@
       zonas distintas, priorizar recorridos y cruzar con riego, suelo, foliar, VPD y observación en campo.
       No sustituyen diagnóstico por una sola mancha de color.
     </p>
-    <div class="mt-warn">
-      Requisito: polígono guardado y <strong>sincronizado a la nube</strong> en
-      <strong>Ubicación</strong>. La superficie en hectáreas se calcula al trazar el contorno del predio;
-      esa área define el costo en créditos Radar. La imagen queda anclada al polígono al generarla.
-    </div>
-
-    <h2>Créditos Radar (NDVI + NDMI juntos)</h2>
+    <h3>Colorimetría NutriPlant — niveles de referencia dentro del predio</h3>
     <p>
-      Cada <strong>generación</strong> produce las dos capas (<strong>NDVI</strong> y
-      <strong>NDMI</strong>) en una sola operación. El consumo depende de la
-      <strong>superficie trazada del predio</strong>, no del número de capas que consultes después.
+      En el Radar Pilot, la barra de colores se ajusta al <strong>rango interno del predio</strong> para que
+      el mapa revele contrastes útiles dentro del lote. La colorimetría no debe leerse como una escala universal
+      tipo “rojo = malo absoluto” o “verde = óptimo absoluto”. Es una <strong>escala relativa</strong>: compara
+      las zonas entre sí en el mismo polígono y en esa fecha.
     </p>
     <table class="mt-table">
-      <thead><tr><th>Superficie del polígono</th><th>Créditos por generación</th></tr></thead>
+      <thead><tr><th>Nivel visual</th><th>Lectura técnica</th><th>Uso recomendado</th></tr></thead>
       <tbody>
-        <tr><td>Hasta 30 ha (≤ 30 ha)</td><td><strong>1</strong> crédito</td></tr>
-        <tr><td>Más de 30 ha (&gt; 30 ha)</td><td><strong>2</strong> créditos</td></tr>
-        <tr><td>Más de 100 ha (&gt; 100 ha)</td><td><strong>3</strong> créditos</td></tr>
+        <tr><td>Rojo / naranja</td><td>Menor nivel relativo del predio (vigor NDVI o humedad de dosel NDMI más baja frente al resto del lote).</td><td>Priorizar recorrido, revisar suelo descubierto/sombra, riego, drenaje, raíz, salinidad, nutrición, plagas o etapa.</td></tr>
+        <tr><td>Amarillo / verde claro</td><td>Nivel intermedio del predio; zona de transición o comportamiento promedio.</td><td>Comparar con historial, manejo y condiciones de campo antes de decidir.</td></tr>
+        <tr><td>Verde intenso / azul verdoso en NDMI</td><td>Mayor nivel relativo del predio (más vigor o mayor humedad relativa del dosel frente al resto del lote).</td><td>Usar como referencia interna y verificar si representa buen desarrollo, mayor cobertura o exceso de humedad según el contexto.</td></tr>
       </tbody>
     </table>
-    <ul>
-      <li><strong>Tope mensual base:</strong> 20 créditos por cuenta (puede aumentarse con bonus asignado por administración).</li>
-      <li><strong>Primera generación del mes</strong> por proyecto: consume créditos según la tabla anterior.</li>
-      <li><strong>Regenerar</strong> en el mismo mes (forzar una imagen nueva): consume créditos adicionales con la misma regla por superficie.</li>
-      <li><strong>Ver en mapa</strong> o consultar imágenes ya guardadas en el historial: <strong>no</strong> gasta créditos.</li>
-      <li>Si el predio aún no tiene área en la nube, el sistema asume <strong>1 crédito</strong> hasta que guardes y sincronices el polígono.</li>
-    </ul>
     <p>
-      En el panel Radar de Ubicación verás cuántos créditos cuesta <em>tu</em> predio (por ejemplo:
-      «45,20 ha → 2 créditos por generación») y cuántos te quedan disponibles ese mes.
+      Técnicamente, NutriPlant usa una normalización relativa por predio (percentiles internos, como P10–P90)
+      para que los extremos de color representen los contrastes principales del polígono. Por eso dos predios
+      distintos, o dos fechas distintas, <strong>no deben compararse solo por color</strong>; compara con historial,
+      datos agronómicos y observación de campo.
     </p>
+    <div class="mt-warn">
+      Requisito: polígono guardado y <strong>sincronizado a la nube</strong> en
+      <strong>Ubicación</strong>. La imagen queda guardada y anclada al polígono al generarla, para que el
+      historial se muestre en su ubicación original aunque después cambie el proyecto o se consulte otra fecha.
+    </div>
+
+    <h2>Generación e historial Radar (NDVI + NDMI juntos)</h2>
+    <p>
+      Cada <strong>generación Pilot</strong> produce las dos capas (<strong>NDVI</strong> y
+      <strong>NDMI</strong>) en una sola operación, las guarda en el historial del proyecto y permite volver a
+      verlas desde el selector <strong>Imagen</strong>. El flujo actual usa Copernicus/Sentinel-2 sin Google
+      Earth Engine, pero mantiene <strong>créditos Radar internos</strong> para controlar cómputo y almacenamiento.
+    </p>
+    <ul>
+      <li><strong>Generar / actualizar Pilot:</strong> calcula y guarda NDVI+NDMI para el predio.</li>
+      <li><strong>Ver en mapa:</strong> superpone la imagen guardada seleccionada; no genera una imagen nueva.</li>
+      <li><strong>Capa NDVI/NDMI:</strong> cambia qué índice se visualiza de la misma generación guardada.</li>
+      <li><strong>Límite mensual:</strong> 20 créditos Radar base por cuenta (+ bonus admin). Costo por generación: ≤30 ha = 1 · &gt;30 ha = 2 · &gt;100 ha = 3 créditos (NDVI+NDMI juntos).</li>
+      <li><strong>Google Earth Engine:</strong> queda como respaldo interno/standby; no es el mando principal visible del Radar.</li>
+    </ul>
 
     <h2>En el proyecto</h2>
     <p>

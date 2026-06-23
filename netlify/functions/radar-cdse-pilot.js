@@ -1,7 +1,7 @@
 /**
  * Radar pilot — NDVI/NDMI sin Google Earth Engine.
  *
- * Genera y guarda NDVI/NDMI sin créditos Google. También devuelve PNG en base64 para overlay inmediato.
+ * Genera y guarda NDVI/NDMI sin Google Earth Engine. Usa créditos Radar internos y devuelve PNG en base64 para overlay inmediato.
  *
  * Netlify env:
  *   RADAR_CDSE_PILOT_ENABLED=true   — obligatorio para activar
@@ -14,6 +14,7 @@
 
 const { findSentinel2ScenesForComposite } = require('./lib/radar-pilot-stac');
 const { renderNdviNdmiCompositePngs } = require('./lib/radar-pilot-render');
+const radarCredits = require('./lib/radar-credits');
 
 const BUCKET = 'radar-ndvi';
 
@@ -111,6 +112,33 @@ async function getSupabaseAdmin() {
   return createClient(url, key);
 }
 
+async function sumMonthlyCreditsUsed(supabase, userId, mk) {
+  const { data, error } = await supabase
+    .from('radar_requests')
+    .select('meta')
+    .eq('user_id', userId)
+    .eq('month_key', mk)
+    .not('image_storage_path', 'is', null);
+  if (error) {
+    console.warn('pilot sumMonthlyCreditsUsed:', error.message);
+    return 0;
+  }
+  return radarCredits.sumCreditsFromRows(data);
+}
+
+async function getBonusCredits(supabase, userId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('radar_credits_bonus')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) {
+    console.warn('pilot getBonusCredits:', error.message);
+    return 0;
+  }
+  return Math.max(0, Math.floor(Number(data?.radar_credits_bonus) || 0));
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: corsHeaders(), body: '' };
@@ -162,6 +190,13 @@ exports.handler = async (event) => {
 
   const projectId = body.project_id != null ? String(body.project_id).trim() : '';
   let projectRow = null;
+  const mk = monthKey();
+  const baseLimit = radarCredits.getMonthlyBaseLimit();
+  const bonus = await getBonusCredits(supabase, userId);
+  const limit = baseLimit + bonus;
+  const used = await sumMonthlyCreditsUsed(supabase, userId, mk);
+  let creditCost = 1;
+  let pricing = radarCredits.getRadarCreditPricingInfo(null);
   if (projectId) {
     const { data: proj, error: projErr } = await supabase
       .from('projects')
@@ -179,6 +214,29 @@ exports.handler = async (event) => {
       return jsonResponse(403, { error: 'Este proyecto no pertenece a tu cuenta.' });
     }
     projectRow = proj;
+    const areaHa = radarCredits.getAreaHectaresFromLocation(projectRow.data?.location);
+    creditCost = radarCredits.getRadarCreditCostForArea(areaHa);
+    pricing = radarCredits.getRadarCreditPricingInfo(areaHa);
+    if (limit > 0 && used + creditCost > limit) {
+      return jsonResponse(429, {
+        error: 'radar_quota_exceeded',
+        message:
+          'No tienes créditos Radar suficientes este mes. Este predio requiere ' +
+          creditCost +
+          ' crédito' +
+          (creditCost === 1 ? '' : 's') +
+          (areaHa != null ? ' (' + areaHa.toFixed(2) + ' ha).' : '.'),
+        credits: {
+          used,
+          limit,
+          base: baseLimit,
+          bonus,
+          required: creditCost,
+          available: Math.max(0, limit - used)
+        },
+        pricing
+      });
+    }
   }
 
   const maxDim = Math.min(Math.max(Number(body.max_dim) || 2048, 256), 2048);
@@ -193,7 +251,6 @@ exports.handler = async (event) => {
     const ndviDataUrl = 'data:image/png;base64,' + rendered.ndviPng.toString('base64');
     const ndmiDataUrl = 'data:image/png;base64,' + rendered.ndmiPng.toString('base64');
     const latestScene = bundle.scenes[0] || {};
-    const mk = monthKey();
     let request = null;
     let storagePath = null;
     let ndmiStoragePath = null;
@@ -215,7 +272,7 @@ exports.handler = async (event) => {
       fallback_tier: bundle.fallbackTier || null,
       location_snapshot: locationSnapshot,
       area_hectares: locationSnapshot?.area_hectares ?? null,
-      credits_charged: 0,
+      credits_charged: projectId ? creditCost : 0,
       ndvi_vis: { style: 'relative_p10_p90', scale: 'predio' },
       ndmi_vis: { style: 'relative_p10_p90', scale: 'predio' },
       vis: rendered.vis
@@ -317,7 +374,16 @@ exports.handler = async (event) => {
       })),
       dimensions: { width: rendered.width, height: rendered.height },
       lookback_days: bundle.lookbackDays,
-      credits_charged: 0,
+      credits_charged: projectId ? creditCost : 0,
+      credits: {
+        used: projectId ? used + creditCost : used,
+        limit,
+        base: baseLimit,
+        bonus,
+        charged: projectId ? creditCost : 0,
+        available: Math.max(0, limit - (projectId ? used + creditCost : used))
+      },
+      pricing,
       storage_path: storagePath,
       signed_url: signedUrl,
       ndmi_storage_path: ndmiStoragePath,

@@ -12554,6 +12554,32 @@
             var historyCount = res.j.history_count != null ? res.j.history_count : history.length;
             var latest = res.j.latest;
             var viewId = res.j.view_request_id || (latest && latest.id) || '';
+            var meta = latest && latest.meta && typeof latest.meta === 'object' ? latest.meta : {};
+            var sourceLabel = meta.pilot || meta.engine === 'cdse_pilot'
+                ? 'Pilot Copernicus/Sentinel-2'
+                : (meta.source || 'Sentinel-2 / Earth Engine');
+            var periodLabel = meta.date_start && meta.date_end
+                ? ' · Sentinel ' + esc(String(meta.date_start)) + ' – ' + esc(String(meta.date_end))
+                : '';
+            var selectedCharged = res.j.credits && res.j.credits.selected_charged != null
+                ? Number(res.j.credits.selected_charged)
+                : (meta.credits_charged != null ? Number(meta.credits_charged) : null);
+            var selectedCreditsLabel = Number.isFinite(selectedCharged)
+                ? ' · ' + selectedCharged + ' crédito' + (selectedCharged === 1 ? '' : 's') + ' Radar'
+                : '';
+            var creditsPanel = '';
+            if (res.j.credits && res.j.credits.limit != null) {
+                var c = res.j.credits;
+                creditsPanel =
+                    '<div style="margin:0 0 12px 0;padding:10px 12px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:10px;font-size:12px;color:#14532d;">' +
+                    '<strong>Créditos Radar usuario:</strong> ' +
+                    esc(String(c.available != null ? c.available : '—')) + ' disponibles de ' +
+                    esc(String(c.limit)) + ' este mes' +
+                    ' · usados ' + esc(String(c.used != null ? c.used : '—')) +
+                    ' · base ' + esc(String(c.base != null ? c.base : '—')) +
+                    ' + bonus ' + esc(String(c.bonus != null ? c.bonus : 0)) +
+                    '</div>';
+            }
             var ndvi = latest && latest.signed_url ? latest.signed_url : '';
             var ndmi = latest && (latest.ndmi_signed_url || (latest.images && latest.images.ndmi && latest.images.ndmi.signed_url))
                 ? (latest.ndmi_signed_url || latest.images.ndmi.signed_url)
@@ -12609,13 +12635,14 @@
                 '<button type="button" onclick="closeRadarAdminModal()" style="background:none;border:none;font-size:28px;color:#64748b;cursor:pointer;line-height:1;">×</button></div>' +
                 '<div style="padding:16px 18px 22px;">' +
                 selectHtml +
-                '<p style="margin:0 0 12px 0;font-size:13px;color:#64748b;">Mostrando generación del <strong>' + esc(created) + '</strong></p>' +
+                creditsPanel +
+                '<p style="margin:0 0 12px 0;font-size:13px;color:#64748b;">Mostrando generación del <strong>' + esc(created) + '</strong> · ' + esc(String(sourceLabel)) + periodLabel + selectedCreditsLabel + '</p>' +
                 '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">' +
                 blockNdvi +
                 blockNdmi +
                 '</div>' +
                 owner +
-                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">Sentinel-2 / Earth Engine. Valores relativos al polígono.</p></div></div>';
+                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">' + esc(String(sourceLabel)) + '. Valores relativos al polígono.</p></div></div>';
         }
 
         function fetchRadarAdminData(projectId, requestId) {
@@ -13018,8 +13045,20 @@
                 globalMapModal.id = 'globalMapModal';
                 globalMapModal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:56000; justify-content:center; align-items:center;';
                 globalMapModal.addEventListener('click', function(e) {
+                    const radarBtn = e.target.closest('.global-map-radar-project');
+                    if (radarBtn) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const id = radarBtn.getAttribute('data-project-id');
+                        if (id && typeof showRadarAdminModal === 'function') {
+                            showRadarAdminModal(id);
+                        }
+                        return;
+                    }
                     const btn = e.target.closest('.global-map-open-project');
                     if (btn) {
+                        e.preventDefault();
+                        e.stopPropagation();
                         const id = btn.getAttribute('data-project-id');
                         if (id) {
                             closeGlobalMapModal();
@@ -13178,7 +13217,10 @@
                             <strong style="color: #1e293b;">🌱 Cultivo:</strong> ${escapeHtml(String(crop))}${variety ? ' / ' + escapeHtml(String(variety)) : ''}<br>
                             <strong style="color: #1e293b;">📐 Área:</strong> ${escapeHtml(areaText)}<br>
                             <strong style="color: #1e293b;">🆔 ID:</strong> <code style="font-size: 11px;">${escapeHtml(projectId)}</code><br>
-                            <button type="button" class="global-map-open-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="margin-top: 8px; background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Ver detalle del proyecto</button>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+                                <button type="button" class="global-map-open-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #10b981; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;">Ver detalle del proyecto</button>
+                                <button type="button" class="global-map-radar-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #059669; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;" title="Ver imágenes NDVI/NDMI guardadas de este predio">🛰️ Radar NDVI/NDMI</button>
+                            </div>
                         </div>
                     `;
                     layer.bindPopup(popupHtml);

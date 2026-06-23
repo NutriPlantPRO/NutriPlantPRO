@@ -167,9 +167,11 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 ### 4.11 VPD, NDVI y NDMI
 
-**URL:** …/vpd-deficit-presion-vapor.html · VPD kPa (Tetens / simple / avanzada); lectura satelital multiespectral NDVI (vigor) y NDMI (humedad/canopeo); proyecto + calculadora gratis. Apoyo a decisión, no sustituye recorrido de campo.
+**URL:** …/vpd-deficit-presion-vapor.html · VPD kPa (Tetens / simple / avanzada); Radar Pilot Copernicus/Sentinel-2 con lectura satelital multiespectral NDVI (vigor) y NDMI (humedad/canopeo). Apoyo a decisión, no sustituye recorrido de campo.
 
-**Créditos Radar (NDVI+NDMI juntos, una generación):** superficie del polígono trazado en Ubicación → ≤30 ha = **1** · >30 ha = **2** · >100 ha = **3**. Tope mensual base **20** créditos/cuenta (+ bonus admin). Ver historial / «Ver en mapa» no gasta. Regenerar en el mismo mes sí consume de nuevo según ha. Sincronizar predio a nube para que el área sea correcta.
+**Colorimetría Radar Pilot:** escala **relativa al predio y a la fecha**. Rojo/naranja = menor nivel relativo dentro de ese polígono; amarillo/verde claro = nivel intermedio; verde intenso (o azul verdoso en NDMI) = mayor nivel relativo. No interpretar como escala absoluta universal ni diagnosticar solo por color. Comparar con historial, riego, suelo, foliar, VPD, plagas/drenaje y recorrido de campo.
+
+**Créditos Radar Pilot:** el flujo actual no usa créditos Google ni Earth Engine, pero sí mantiene créditos Radar internos para controlar cómputo/almacenamiento: base **20 créditos/mes** por cuenta (+ bonus admin). Cada generación Pilot guarda **NDVI+NDMI juntos** y consume según superficie del polígono: ≤30 ha = **1** · >30 ha = **2** · >100 ha = **3**. Ver historial / «Ver en mapa» no gasta.
 
 ### 4.11b Balance hídrico y cálculo rápido de riego (Clima)
 

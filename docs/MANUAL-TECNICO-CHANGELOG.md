@@ -5,6 +5,15 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-06-23 — Radar Pilot y colorimetría relativa
+
+### Actualizado
+
+- `vpd-deficit-presion-vapor.html` — Radar Pilot Copernicus/Sentinel-2; niveles de colorimetría relativa al predio (rojo/naranja bajo relativo, amarillo/verde claro intermedio, verde/azul verdoso alto relativo); créditos Radar internos base 20/mes + bonus, con costo por ha.
+- `MANUAL-TECNICO-CONOCIMIENTO-GPT.md`, `manual-tecnico-catalog.js`, `manual-search.js`, `chat-simple.js`, `nutriplant-admin-assistant.js` — reglas GPT/chat alineadas: no interpretar colores como escala absoluta ni diagnosticar causa única solo por color.
+
+---
+
 ## 2026-06-26 — NK+Mg fuera del catálogo huella carbono
 
 ### Actualizado

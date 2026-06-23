@@ -5449,12 +5449,12 @@ async function buildRadarSnapshot(supabase, row) {
       ndvi: {
         label: 'NDVI — vigor vegetativo relativo',
         signed_url: ndviUrl,
-        legend: 'Verde = mayor vigor; rojo/naranja = menor vigor en el predio.'
+        legend: 'Colorimetría relativa al predio/fecha: verde = mayor vigor relativo; rojo/naranja = menor vigor relativo dentro del mismo lote.'
       },
       ndmi: {
         label: 'NDMI — humedad del dosel',
         signed_url: ndmiUrl,
-        legend: 'Verde = mayor humedad de dosel; marrón = menor humedad relativa.'
+        legend: 'Colorimetría relativa al predio/fecha: verde/azul verdoso = mayor humedad relativa del dosel; marrón/tonos secos = menor humedad relativa dentro del mismo lote.'
       }
     },
     images_note:
@@ -5552,7 +5552,7 @@ async function handleRadarProject(supabase, params) {
     user_radar_credits_this_month: credits,
     radar_pricing: radarPricing,
     gpt_radar_note:
-      'radar_history lista imágenes (id, created_at, sentinel_period, location_center, bounds, area_ha). latest_radar incluye location_snapshot (polígono, centro, bounds) de la imagen mostrada o de request_id. Créditos mensuales: base 20 + bonus usuario; costo por generación según area_hectares del polígono: ≤30 ha = 1 · >30 ha = 2 · >100 ha = 3 (NDVI+NDMI juntos). radar_pricing indica el costo del predio actual. ChatGPT no ve píxeles: fechas, coords y enlaces NDVI/NDMI.',
+      'radar_history lista imágenes (id, created_at, sentinel_period, location_center, bounds, area_ha). latest_radar incluye location_snapshot (polígono, centro, bounds) de la imagen mostrada o de request_id. Radar principal actual: Pilot Copernicus/Sentinel-2, sin Google Earth Engine pero con créditos Radar internos: base 20/mes + bonus; costo por generación según area_hectares del polígono (≤30 ha = 1 · >30 ha = 2 · >100 ha = 3; NDVI+NDMI juntos). Colorimetría relativa al predio/fecha: rojo/naranja=bajo relativo, amarillo/verde claro=intermedio, verde/azul verdoso=alto relativo. ChatGPT no ve píxeles: fechas, coords y enlaces NDVI/NDMI.',
     related: {
       fertirriego_suelo_vpd: 'project_detail',
       vpd_ahora: 'project_vpd_live'

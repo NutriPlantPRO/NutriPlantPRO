@@ -1601,7 +1601,7 @@ function sectionTemplate(name) {
         <div class="location-header">
           <div class="header-left">
             <div class="location-title-section">
-              <button id="centerOnPolygon" class="location-title-button">
+              <button id="centerOnPolygon" class="location-title-button" type="button" onclick="if(window.np_centerOnPolygonFromUi){window.np_centerOnPolygonFromUi(event);}">
                 <span class="title-icon">📍</span>
                 <span class="title-text">Ubicación del Predio</span>
                 <span class="title-arrow">→</span>
@@ -1627,7 +1627,7 @@ function sectionTemplate(name) {
             </div>
           </div>
           <div class="location-controls">
-            <button id="centerOnUserLocation" class="btn btn-primary">📍 Mi Ubicación</button>
+            <button id="centerOnUserLocation" class="btn btn-primary" type="button" onclick="if(window.np_centerOnUserLocationFromUi){window.np_centerOnUserLocationFromUi(event);}">📍 Mi Ubicación</button>
             <button id="toggleCoordinateInput" class="btn btn-secondary">✍️ Coordenadas</button>
             <button id="clearPolygon" class="btn btn-secondary">Limpiar</button>
             <button id="saveLocation" class="btn">Guardar Predio</button>
@@ -1658,10 +1658,10 @@ function sectionTemplate(name) {
               <option value="">Sin imágenes guardadas</option>
             </select>
           </label>
-          <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Pilot Copernicus · Google standby</span>
+          <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Créditos Radar: —</span>
           <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 420px;">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#64748b;line-height:1.45;padding:6px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.65);border:1px dashed #86efac;">
-            <strong>Tip:</strong> elige la <strong>imagen</strong> guardada del proyecto. El botón principal genera con <strong>Pilot Copernicus/Sentinel-2</strong> (sin Google Earth Engine y sin créditos Google). Google queda en standby como respaldo interno.
+            <strong>Tip:</strong> elige la <strong>imagen</strong> guardada del proyecto. El botón principal genera con <strong>Pilot Copernicus/Sentinel-2</strong> (sin Google Earth Engine), pero mantiene los <strong>créditos Radar internos</strong>: base 20 al mes (+ bonus), según superficie del predio. Google queda en standby como respaldo interno.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI relativa al predio</span>
@@ -8564,7 +8564,12 @@ async function fetchRadarImagesDataUrlsForReport() {
     const ndmiUrl =
       snap.ndmi_signed_url ||
       (snap.images && snap.images.ndmi && snap.images.ndmi.signed_url);
+    const meta = snap.meta || {};
     out.generatedAt = snap.created_at || null;
+    out.source = meta.pilot || meta.engine === 'cdse_pilot' ? 'Pilot Copernicus/Sentinel-2' : (meta.source || 'Sentinel-2');
+    out.creditsCharged = meta.credits_charged != null ? Number(meta.credits_charged) : null;
+    out.sentinelPeriod =
+      meta.date_start && meta.date_end ? meta.date_start + ' – ' + meta.date_end : '';
 
     async function urlToDataUrl(url) {
       if (!url || typeof url !== 'string') return null;
@@ -12357,7 +12362,12 @@ function loadOnTabChange(tabName) {
       break;
     case 'Ubicación': {
       const runLocationTab = (attempt) => {
-        if (typeof nutriPlantMap === 'undefined' || !nutriPlantMap) return;
+        const tries = attempt || 0;
+        if (typeof nutriPlantMap === 'undefined' || !nutriPlantMap) {
+          if (typeof initLocationMap === 'function') initLocationMap();
+          if (tries < 18) setTimeout(() => runLocationTab(tries + 1), 350);
+          return;
+        }
         const proj = nutriPlantMap.getCurrentProject();
         if (!proj || !proj.id) {
           if (nutriPlantMap.map && typeof nutriPlantMap.forceRemoveAllPolygons === 'function') {
@@ -12372,7 +12382,7 @@ function loadOnTabChange(tabName) {
         }
         if (typeof window.np_isLocationMapReady === 'function' && !window.np_isLocationMapReady()) {
           if (typeof initLocationMap === 'function') initLocationMap();
-          if ((attempt || 0) < 10) setTimeout(() => runLocationTab((attempt || 0) + 1), 300);
+          if (tries < 18) setTimeout(() => runLocationTab(tries + 1), 350);
           return;
         }
         if (window.projectStorage && window.projectStorage.memoryCache &&
@@ -15128,6 +15138,16 @@ function createLocationRadarBlockHTML(radar, rt, lang) {
     'Valores relativos dentro del polígono; complementar con visita a campo, riego y otros análisis.',
     'Relative values within the polygon; complement with field visits, irrigation, and other analyses.'
   );
+  const metaParts = [];
+  if (radar.source) metaParts.push(reportEscapeHtml(String(radar.source)));
+  if (radar.sentinelPeriod) metaParts.push('Sentinel ' + reportEscapeHtml(String(radar.sentinelPeriod)));
+  if (radar.creditsCharged != null && Number.isFinite(Number(radar.creditsCharged))) {
+    const c = Number(radar.creditsCharged);
+    metaParts.push(c + ' ' + rt('crédito Radar', 'Radar credit') + (c === 1 ? '' : 's'));
+  }
+  const metaLine = metaParts.length
+    ? `<div class="report-note-inline" style="margin-top:8px;">${metaParts.join(' · ')}</div>`
+    : '';
   let dateLine = '';
   if (radar.generatedAt) {
     try {
@@ -15151,6 +15171,7 @@ function createLocationRadarBlockHTML(radar, rt, lang) {
       <div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:8px;">${title}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:start;">${cols}</div>
       ${dateLine}
+      ${metaLine}
       <div class="report-note-inline" style="margin-top:8px;">${note}</div>
     </div>
   `;

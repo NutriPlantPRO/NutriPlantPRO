@@ -136,7 +136,7 @@
       icon: '💧',
       pillar: 'E · Agua y clima',
       title: 'VPD, NDVI y NDMI',
-      keywords: 'VPD déficit presión vapor invernadero clima estrés hídrico NDVI NDMI satélite índice vegetación humedad créditos Radar hectáreas'
+      keywords: 'VPD déficit presión vapor invernadero clima estrés hídrico NDVI NDMI satélite índice vegetación humedad Radar Pilot Copernicus colorimetría relativa predio rojo naranja verde niveles'
     },
     {
       href: 'capitulos/balance-hidrico-riego-clima.html',
