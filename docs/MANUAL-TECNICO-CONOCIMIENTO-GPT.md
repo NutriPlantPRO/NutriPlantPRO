@@ -219,6 +219,9 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 - **Fabricación EU (kg CO₂e/kg, FE 2020 = NutriPlant):** urea 0,878 · AN 1,112 · CAN 0,951 · UAN 0,782 (excl. CO₂ en producto urea/UAN).  
 - **Transporte (3 tramos):** DESNZ. **Campo N₂O:** IPCC Tier 1. Programa A vs B. CAN/UAN en catálogo desde v2026-06-23.  
 - **Disponibilidad regional:** listado filtrado por origen fab. (`availability_profiles`); hidrosolubles no disponibles con origen MX/BR/LATAM (`not_applicable`); factor propio permite EPD de importación.  
+- **Mezclas comerciales:** **NK+Mg no está en catálogo** (v2026-06-26) — es blend KNO₃ + Mg sin factor LCA único por región; modelar como nitrato potasio + nitrato/sulfato Mg, o factor propio. **21 productos** en JSON.  
+- **Ruta por fertilizante:** cada fila con origen, km 3 tramos, país/puerto destino; clic en fila edita panel 🏭→🌾.  
+- **Equivalencia pick-up A vs B:** km ilustrativos en pick-up mediana 6 cil. (0,254 kg CO₂e/km DESNZ); total A, B y diferencia — no compensación.  
 - **Herramienta:** `fertilizer_carbon`; LS `nutriplant_free_fertilizer_carbon_v2`. Panel calibración FE en UI.
 
 ### 4.16 Solución nutritiva (lab)
@@ -271,10 +274,10 @@ Canales oficiales; tono técnico; mapa capítulo→post; plantilla LinkedIn. **P
 
 ## 6. Mantenimiento manual
 
-**Versión web v2026.06.2:** 24 capítulos · nuevo capítulo huella de carbono fertilizantes · calculadora 🌍 (3 tramos transporte, A vs B) · Pilar 1 flujo · buscador índice.
+**Versión web v2026.06.3:** 24 capítulos · huella carbono fertilizantes (21 productos; NK+Mg excluido como mezcla comercial) · calculadora 🌍 (ruta por fila, pick-up A vs B) · Pilar 1 flujo · buscador índice.
 
 Plan histórico: `docs/MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
-*Alineado con manual-tecnico/ v2026.06.1 en repo*
+*Alineado con manual-tecnico/ v2026.06.3 en repo*

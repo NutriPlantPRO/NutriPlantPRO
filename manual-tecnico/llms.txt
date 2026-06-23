@@ -45,7 +45,7 @@
 - Triángulos: aniones NO₃+P+SO₄ y cationes K+Ca+Mg suman 100 % cada uno; Cl y NH₄ aparte
 - N mineralizable y agua útil en suelo: ver capítulo n-mineralizable-agua-disponible-suelo
 - Mulder y compatibilidad C/R/I: ver capítulo interacciones-mulder-compatibilidad
-- Huella de carbono fertilizantes (CO₂e estimado, A vs B, 3 tramos transporte, filtro productos por origen fab.): ver capítulo huella-carbono-fertilizantes
+- Huella de carbono fertilizantes (CO₂e, ruta por fertilizante, equiv. km pick-up A vs B; NK+Mg no en catálogo — mezcla comercial): ver capítulo huella-carbono-fertilizantes
 - Balance hídrico (Clima): ETc=ETo×Kc; déficit climático/cultivo; riego mm/m³; franja regada; ver capítulo balance-hidrico-riego-clima
 
-Actualizado: 2026-06-22
+Actualizado: 2026-06-26

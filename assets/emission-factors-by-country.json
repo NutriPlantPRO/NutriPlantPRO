@@ -1864,37 +1864,6 @@
       "availability_profile": "soluble_fertigation"
     },
     {
-      "id": "nk_mg",
-      "name": "NK + Mg (13-0-46 + MgO)",
-      "physical_form": "soluble",
-      "n_total_pct": 13,
-      "p2o5_pct": 0,
-      "k2o_pct": 46,
-      "manufacturing_kg_co2e_per_kg": {
-        "GLOBAL": 1.05,
-        "EU": 0.65,
-        "US": 1.17,
-        "CN": 1.58,
-        "IN": 1.14,
-        "RU": 1.2,
-        "BR": 1.07,
-        "MX": 1.1,
-        "LATAM": 1.07,
-        "MENA": 1.16,
-        "AF": 1.08,
-        "SEA": 1.18,
-        "EA": 1.04,
-        "OC": 1
-      },
-      "source": "Estimación blend NKS + Mg (Fertirriego)",
-      "citation_ids": [
-        "lca_regional_avg",
-        "fertilizers_europe_2020"
-      ],
-      "factor_year": 2020,
-      "availability_profile": "soluble_fertigation"
-    },
-    {
       "id": "calcium_chloride",
       "name": "Cloruro de calcio (CaO 38%)",
       "physical_form": "soluble",

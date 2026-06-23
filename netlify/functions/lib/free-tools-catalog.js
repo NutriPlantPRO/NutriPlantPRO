@@ -175,12 +175,18 @@ module.exports = {
       lsKey: 'nutriplant_free_fertilizer_carbon_v2',
       manualChapter: 'huella_carbono_fertilizantes',
       summary:
-        'Referencia global abierta: fabricación calibrada Fertilizers Europe (2020) regional DNV (urea, AN, CAN, UAN) + transporte 3 tramos DESNZ + N₂O IPCC Tier 1. Programa A vs B; 22 productos; filtro disponibilidad regional por origen fab. (hidrosolubles no MX/BR/LATAM); panel calibración FE. Sin marcas. T&C §7.',
+        'Referencia global abierta: FE(2020) DNV + transporte 3 tramos por fertilizante + N₂O IPCC. Programa A vs B; equivalencia km pick-up 6 cil. (0,254 kg CO₂e/km); ruta por fila; disponibilidad regional; panel FE. T&C §7.',
       methodology: {
         reference_standard: 'Fertilizers Europe (2020) regional reference values (DNV) for urea, AN, CAN, UAN; IPCC field N₂O; DESNZ transport',
         manufacturing: 'Productos N: kg CO₂e/kg = FE(2020) por región (EU urea 0,878 · AN 1,112 · CAN 0,951 · UAN 0,782). Urea/UAN excl. CO₂ en producto. Otros: LCA pública.',
         regional_availability:
           'availability_profiles en JSON: fe_n_global, granular_np, soluble_fertigation, organic_local. not_applicable oculta producto y bloquea fab. estimada; import_typical con badge; factor propio permite EPD importación.',
+        commercial_blends:
+          'Mezclas comerciales (NK+Mg) excluidas del catálogo — sin factor LCA único por región. Modelar KNO₃ + fuente Mg por separado o factor propio. 21 productos en JSON (v2026-06-26).',
+        per_row_route:
+          'Cada fila: origin_country_iso, application_country_iso, entry_point_id, transport_origin_km, transport_sea_km, transport_km. active_row_index; clic fila edita panel ruta.',
+        pickup_equivalence:
+          'equivalencies.pickup_medium_6cyl: 0,254 kg CO₂e/km (DESNZ large car/4×4). km ≈ kg CO₂e/0,254 para A, B y diff. Ilustración — no compensación.',
         fe_calibration_panel: 'UI table FE EU vs NutriPlant — delta 0 en productos N',
         transport_legs: [
           'Origen (carretera): planta → puerto exportación — km ref. por región fab.',
@@ -195,8 +201,9 @@ module.exports = {
         legal: 'terminos-condiciones.html#huella-carbono'
       },
       lsFields: [
-        'scenario_a', 'scenario_b', 'application_country_iso', 'entry_point_id',
-        'transport_origin_km', 'transport_sea_km', 'transport_km'
+        'scenario_a', 'scenario_b', 'active_row_index',
+        'rows[].origin_country_iso', 'rows[].application_country_iso', 'rows[].entry_point_id',
+        'rows[].transport_origin_km', 'rows[].transport_sea_km', 'rows[].transport_km'
       ]
     }
   ],

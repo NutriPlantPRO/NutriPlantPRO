@@ -83,12 +83,21 @@
 
     <h2>País destino vs región de fabricación</h2>
     <p>
-      La lista de <strong>países</strong> en la herramienta describe dónde se <strong>aplica</strong> el fertilizante (destino del
-      campo), no necesariamente dónde se produce. La <strong>región de fabricación</strong> se elige por fila de producto o como
-      origen global del escenario. Para MX, US, BR, CO, CL, CA, AU, AR y PE hay selector de <strong>puerto o costa de llegada</strong>
+      La lista de <strong>países</strong> en la herramienta describe dónde <strong>desembarca o entra</strong> el fertilizante de
+      <strong>cada fila</strong> (destino del campo), no necesariamente dónde se produce. La <strong>región de fabricación</strong> también
+      es por fila. Para MX, US, BR, CO, CL, CA, AU, AR y PE hay selector de <strong>puerto o costa de llegada</strong>
       (p. ej. Golfo vs Pacífico en México, incl. Topolobampo/Sinaloa) porque el tramo terrestre puerto→campo cambia mucho.
     </p>
     <p>El botón <strong>「📍 Estimar km (referencia)」</strong> rellena los tres km según región fab., país destino y puerto elegido, usando tablas de rutas comerciales típicas en el JSON — no GPS ni logística real del usuario.</p>
+
+    <h2>Ruta logística por fertilizante</h2>
+    <p>
+      Cada fila del programa tiene <strong>su propia ruta</strong> 🏭 → 🚛 origen → ⛴️ mar → 🚢 puerto/país destino → 🌾 campo.
+      Haz clic en una fila de la tabla para seleccionarla; el panel superior edita solo ese producto. Los km de transporte y el país/puerto destino
+      se guardan en la fila (<code>transport_origin_km</code>, <code>transport_sea_km</code>, <code>transport_km</code>,
+      <code>application_country_iso</code>, <code>entry_point_id</code>). Al agregar fertilizante, se copia la ruta del seleccionado.
+      <strong>Estimar km</strong> aplica al fertilizante activo. Superficie (ha) y unidad de dosis siguen siendo del escenario completo.
+    </p>
 
     <h2>Disponibilidad regional de productos</h2>
     <p>
@@ -98,6 +107,8 @@
       <code>primary</code>, <code>secondary</code>, <code>import_typical</code>, <code>not_applicable</code>.
       Si el origen no produce localmente un producto (p. ej. hidrosoluble con origen MX o BR), <strong>no aparece en la lista</strong>.
       Con factor propio (EPD/LCA) el usuario puede ingresar fabricación aunque el origen no sea productor referenciado.
+      <strong>Mezclas comerciales</strong> (p. ej. NK+Mg) no están en el catálogo: no tienen un solo factor LCA por región;
+      modelar como <strong>nitrato de potasio + fuente de Mg</strong> por separado, o factor propio del blend.
     </p>
 
     <h2>Transporte en tres tramos</h2>
@@ -117,10 +128,19 @@
 
     <h2>Programa A vs Programa B</h2>
     <p>
-      Cada escenario guarda su propio listado de fertilizantes (tipo, dosis kg/ha o kg totales, región de fabricación por fila,
+      Cada escenario guarda su propio listado de fertilizantes (tipo, dosis kg/ha o kg totales, ruta y región de fabricación por fila,
       factor opcional del usuario). El resumen compara totales de CO₂e, desglose fabricación / transporte / N₂O y diferencia
       absoluta y porcentual entre escenarios. Sirve para evaluar cambios de producto, dosis u origen — no para declaraciones
       regulatorias sin validación externa.
+    </p>
+
+    <h2>Equivalencia ilustrativa — pick-up mediana 6 cil.</h2>
+    <p>
+      En la comparación A vs B, la UI muestra cuántos <strong>km en carretera</strong> equivaldría el CO₂e total de cada programa
+      si se comparara con una <strong>pick-up mediana 6 cil. (gasolina)</strong>. Factor de referencia en
+      <code>equivalencies.pickup_medium_6cyl</code>: <strong>0,254 kg CO₂e/km</strong> (UK DESNZ/DEFRA 2024, categoría large car / 4×4 petrol).
+      Fórmula: <code>km ≈ kg CO₂e ÷ 0,254</code>. Se muestran km para Programa A, Programa B y la diferencia B−A.
+      <strong>Ilustración didáctica</strong> — no compensación de carbono, no certificación. Ejemplo: 588 kg CO₂e ≈ 2.315 km en pick-up.
     </p>
 
     <h2>Benchmark de eficiencia por origen</h2>

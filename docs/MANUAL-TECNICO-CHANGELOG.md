@@ -5,6 +5,27 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-06-26 — NK+Mg fuera del catálogo huella carbono
+
+### Actualizado
+
+- `emission-factors-by-country.json` — eliminado `nk_mg` (mezcla comercial KNO₃ + Mg sin factor LCA regional único)
+- `fertilizer-carbon-free.html` — migración localStorage: filas `nk_mg` → `potassium_nitrate` + nota
+- `HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`, `MANUAL-TECNICO-CONOCIMIENTO-GPT.md`, `chat-simple.js`, `free-tools-catalog.js`, `manual-tecnico-catalog.js`, `llms.txt`, `huella-carbono-fertilizantes.html`
+
+---
+
+## 2026-06-25 — Ruta por fertilizante + equivalencia pick-up (huella carbono)
+
+### Actualizado
+
+- `fertilizer-carbon-free.html` — ruta 🏭→🌾 por fila (`active_row_index`); equivalencia km pick-up mediana 6 cil. en comparación A vs B
+- `fertilizer-carbon-core.js` — transporte por fila; `co2eToPickupKm`, `getPickupEquivalence`
+- `emission-factors-by-country.json` — `equivalencies.pickup_medium_6cyl` (0,254 kg CO₂e/km DESNZ)
+- `huella-carbono-fertilizantes.html`, HERRAMIENTAS/MANUAL GPT, `chat-simple.js`, `free-tools-catalog.js`, `manual-tecnico-catalog.js`, `llms.txt`
+
+---
+
 ## 2026-06-23b — Disponibilidad regional (huella carbono)
 
 ### Actualizado

@@ -211,7 +211,7 @@ Lista agrupada en UI: **Granulados · Hidrosolubles · Líquidos · Orgánicos**
 | Grupo | Productos |
 |-------|-----------|
 | **Granulados** | Urea, AN, CAN, DAP, sulfato de amonio, KCl, NPK 15-15-15 |
-| **Hidrosolubles** | Nitrato calcio, MAP, MKP, SOP, fosfonitrato, sulfato amonio soluble, nitrato potasio, nitrato magnesio, sulfato magnesio, KCl soluble, NKS, NK+Mg, cloruro calcio |
+| **Hidrosolubles** | Nitrato calcio, MAP, MKP, SOP, fosfonitrato, sulfato amonio soluble, nitrato potasio, nitrato magnesio, sulfato magnesio, KCl soluble, NKS, cloruro calcio (NK+Mg no: es mezcla comercial — usar KNO₃ + fuente Mg) |
 | **Líquidos** | UAN 30-0-0 |
 | **Orgánicos** | Compost genérico |
 
@@ -225,7 +225,16 @@ Panel en UI: **「Calibración vs Fertilizers Europe (EU)」** — tabla FE vs N
 - Si el origen **no produce** el producto (p. ej. hidrosoluble con origen **MX, BR o LATAM**), **no aparece en la lista** ni se calcula fabricación estimada.
 - **`import_typical`:** sí calcula con factor regional exportador; badge `↗ imp.` en UI.
 - **Factor propio** (EPD/LCA por fila): el usuario puede ingresar fabricación aunque el origen no sea productor referenciado.
+- **Mezclas comerciales** (NK+Mg, etc.): **no** en catálogo huella — sin factor LCA único por región; usar KNO₃ + fuente Mg por separado o factor propio del blend.
 - Comparador rápido A vs B: solo productos válidos para **ambos** orígenes elegidos.
+
+#### Ruta logística por fertilizante (v2026-06-25)
+
+- Cada fila tiene **ruta propia**: origen fab., km origen/mar/campo, país destino y puerto/costa (`application_country_iso`, `entry_point_id`, `transport_*_km` en la fila).
+- **Clic en fila** → panel superior 🏭→🌾 edita ese producto; `active_row_index` por escenario.
+- **+ Agregar fertilizante** copia la ruta del seleccionado. **Estimar km** solo al activo.
+- Columna **🛣️ Ruta** en tabla: resumen (ej. «China → México · 9.315 km»).
+- Superficie (ha) y unidad de dosis: nivel escenario (compartidos).
 
 #### Transporte en 3 tramos
 
@@ -235,12 +244,13 @@ Panel en UI: **「Calibración vs Fertilizers Europe (EU)」** — tabla FE vs N
 
 **País en lista = destino de aplicación** (donde se usa el fertilizante), no afirmación de que ese país lo produce. Selector **puerto/costa** en MX, US, BR, CO, CL, CA, AU, AR, PE (en MX incluye Golfo, Pacífico, Topolobampo/Sinaloa, etc.).
 
-Botón **「📍 Estimar km (referencia)」:** rellena los 3 km según región de fabricación dominante + país destino + puerto. Distancias de rutas comerciales típicas — **no** GPS ni logística real del usuario (±30–50 % incertidumbre global).
+Botón **「📍 Estimar km (referencia)」:** rellena los 3 km del **fertilizante seleccionado** (origen fab. + país destino + puerto). Distancias de rutas comerciales típicas — **no** GPS ni logística real del usuario (±30–50 % incertidumbre global).
 
 #### Programa A vs Programa B
 
-- Cada escenario: listado de fertilizantes (tipo, dosis kg/ha o kg totales, región fab. por fila, transporte compartido del escenario).
+- Cada escenario: listado de fertilizantes; **cada uno con su ruta y región fab.**; transporte calculado **por fila**.
 - Resumen: totales CO₂e, desglose fabricación / transporte (origen+mar+destino) / N₂O, delta absoluta y % entre A y B.
+- **Equivalencia pick-up 🛻 (ilustrativa):** km en **pick-up mediana 6 cil. gasolina** equivalentes al total de cada programa y a la diferencia B−A. Factor **0,254 kg CO₂e/km** (`equivalencies.pickup_medium_6cyl`, DESNZ/DEFRA 2024 large car/4×4). Fórmula: `km ≈ kg CO₂e ÷ 0,254`. **No es compensación ni certificación.** Ej.: 588 kg CO₂e ≈ 2.315 km.
 
 #### Benchmark de eficiencia por origen
 
@@ -261,6 +271,9 @@ IPCC 2019 Refinement Cap. 11 (N₂O suelo), IPCC AR6 (GWP), DESNZ/DEFRA (transpo
 | Un solo km de transporte | Son **3 tramos** independientes |
 | Elegir hidrosoluble con origen MX/BR como productor local | No aplica — filtrado por `not_applicable`; usar origen EU/CN/US o factor propio |
 | Mezclar con datos del proyecto PRO | La calculadora **no lee** granular/fertirriego guardado en Supabase |
+| Creer que km pick-up es compensación | Es **equivalencia ilustrativa** (DESNZ 0,254 kg CO₂e/km); no créditos de carbono |
+| Un solo km/ruta para todo el programa | Transporte y ruta son **por fertilizante** (filas distintas pueden tener rutas distintas) |
+| Buscar NK+Mg en huella de carbono | **No está** — mezcla comercial; usar nitrato potasio + nitrato/sulfato Mg (2 filas) o factor propio |
 
 - **API Socio:** `free_tools_catalog` con `tool_id: "fertilizer_carbon"`.
 - **Gratis vs PRO:** dosis del programa nutricional del suscriptor están en `projects.data`; hay que trasladarlas manualmente a la calculadora gratis si el usuario quiere huella de su programa guardado.
