@@ -24,6 +24,7 @@ const BUCKET = 'radar-ndvi';
 const LOOKBACK_DAYS_FIRST = 120;
 const LOOKBACK_DAYS_FALLBACK = 365;
 const radarCredits = require('./lib/radar-credits');
+const { sumMonthlyRadarCreditsUsed, getPendingPilotJobForStatus } = require('./lib/radar-pilot-job');
 
 function corsHeaders() {
   return {
@@ -243,17 +244,7 @@ async function getSupabaseAdmin() {
 }
 
 async function sumMonthlyCreditsUsed(supabase, userId, mk) {
-  const { data, error } = await supabase
-    .from('radar_requests')
-    .select('meta')
-    .eq('user_id', userId)
-    .eq('month_key', mk)
-    .not('image_storage_path', 'is', null);
-  if (error) {
-    console.warn('sumMonthlyCreditsUsed:', error.message);
-    return 0;
-  }
-  return radarCredits.sumCreditsFromRows(data);
+  return sumMonthlyRadarCreditsUsed(supabase, userId, mk);
 }
 
 async function getBonusCredits(supabase, userId) {
@@ -568,6 +559,7 @@ exports.handler = async (event) => {
       lastSignedUrl = signed.ndviSignedUrl;
       lastNdmiSignedUrl = signed.ndmiSignedUrl;
     }
+    const pendingJob = await getPendingPilotJobForStatus(supabase, userId, projectId);
     const areaHa = radarCredits.getAreaHectaresFromLocation(proj.data?.location);
     const pricing = radarCredits.getRadarCreditPricingInfo(areaHa);
     return jsonResponse(200, {
@@ -576,6 +568,7 @@ exports.handler = async (event) => {
       credits: { used, limit, base: baseLimit, bonus, available: Math.max(0, limit - used) },
       pricing,
       latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl),
+      pending_job: pendingJob,
       history
     });
   }

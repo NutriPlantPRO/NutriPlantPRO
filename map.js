@@ -2861,13 +2861,116 @@ function np_pilotUserErrorMessage(status, data) {
   } else if (status === 504) {
     code = 5041;
     message = 'El Pilot tardó más de lo esperado. Intenta de nuevo en unos minutos.';
+  } else if (status === 409 || errorKey.includes('pilot_job_active')) {
+    code = 4091;
+    message =
+      'Ya hay una imagen Pilot generándose para este predio. Revisa «Estado» en unos minutos; no hace falta volver a pulsar Generar.';
   }
 
   return message + '\n\nCódigo: ' + code;
 }
 
+let np_pilotPollTimer = null;
+
+function np_formatPilotPendingMessage(pendingJob) {
+  const when = pendingJob?.created_at ? np_formatRadarHistoryOption({ created_at: pendingJob.created_at }) : '';
+  return (
+    'Generando imagen satelital (Sentinel-2) en segundo plano' +
+    (when ? ' · solicitud ' + when : '') +
+    '. Por temas del proveedor satelital puede tardar unos minutos. Revisa «Estado» o vuelve más tarde; se guardará en la nube aunque cierres NutriPlant.'
+  );
+}
+
+function np_setPilotPendingUi(isPending, message) {
+  const generateBtn = document.getElementById('radarBtnGenerate');
+  const hint = document.getElementById('radarStatusHint');
+  const buttons = ['radarBtnRefresh', 'radarBtnView', 'radarBtnGenerate', 'radarBtnHide']
+    .map((id) => document.getElementById(id))
+    .filter(Boolean);
+
+  window.__nutriplantPilotPending = !!isPending;
+
+  if (generateBtn) {
+    if (isPending) {
+      if (!generateBtn.dataset.originalText) {
+        generateBtn.dataset.originalText = generateBtn.textContent || 'Generar / actualizar Pilot';
+      }
+      generateBtn.textContent = '⏳ Generando en la nube…';
+      generateBtn.classList.add('radar-loading');
+      generateBtn.disabled = true;
+    } else {
+      generateBtn.textContent = generateBtn.dataset.originalText || '🛰 Generar / actualizar Pilot';
+      generateBtn.classList.remove('radar-loading');
+      generateBtn.disabled = false;
+    }
+  }
+
+  buttons.forEach((btn) => {
+    if (!btn || btn.id === 'radarBtnGenerate') return;
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+  });
+
+  if (isPending && hint) {
+    hint.textContent = message || np_formatPilotPendingMessage(window.__nutriplantPilotPendingJob);
+  }
+}
+
+function np_stopPilotPendingPoll() {
+  if (np_pilotPollTimer) {
+    clearInterval(np_pilotPollTimer);
+    np_pilotPollTimer = null;
+  }
+}
+
+function np_startPilotPendingPoll(prevCreatedAt) {
+  np_stopPilotPendingPoll();
+  np_pilotPollTimer = setInterval(async () => {
+    try {
+      const before = prevCreatedAt || np_getRadarLatestCreatedAtFromStatus(window.__nutriplantRadarNdviStatus);
+      await window.refreshRadarNdviStatus();
+      const st = window.__nutriplantRadarNdviStatus;
+      if (st?.pending_job) return;
+      const newAt = np_getRadarLatestCreatedAtFromStatus(st);
+      if (newAt && String(newAt) !== String(before)) {
+        np_stopPilotPendingPoll();
+        np_setPilotPendingUi(false);
+        const hint = document.getElementById('radarStatusHint');
+        const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
+        if (hint) {
+          hint.textContent =
+            'Imagen Pilot lista y guardada en la nube. Pulsa «Ver imagen ' +
+            cfg.label +
+            '» para verla en el mapa.';
+        }
+      }
+    } catch (e) {
+      console.warn('Pilot poll:', e);
+    }
+  }, 25000);
+}
+
+function np_syncPilotPendingFromStatus(st) {
+  if (st?.pending_job) {
+    window.__nutriplantPilotPendingJob = st.pending_job;
+    np_setPilotPendingUi(true, np_formatPilotPendingMessage(st.pending_job));
+    np_startPilotPendingPoll(np_getRadarLatestCreatedAtFromStatus(st));
+    return true;
+  }
+  if (window.__nutriplantPilotPending) {
+    np_setPilotPendingUi(false);
+    np_stopPilotPendingPoll();
+  }
+  window.__nutriplantPilotPendingJob = null;
+  return false;
+}
+
 function np_clearRadarPilotState() {
   window.__nutriplantRadarPilot = null;
+  np_stopPilotPendingPoll();
+  window.__nutriplantPilotPending = false;
+  window.__nutriplantPilotPendingJob = null;
 }
 
 function np_getPilotRadarIndex() {
@@ -3286,6 +3389,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       credits: { used: u, limit: l, available: disponibles },
       pricing: data.pricing || null,
       latest: data.latest || null,
+      pending_job: data.pending_job || null,
       history,
       hasLatestImage: !!data.latest?.signed_url,
       hasLatestNdmiImage: !!np_getRadarSignedUrl(data, 'ndmi'),
@@ -3303,8 +3407,14 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       ' guardada' +
       (history.length === 1 ? '' : 's');
     const costLine = np_formatRadarCreditLine(data.pricing || null);
-    if (history.length) {
+    if (data.pending_job) {
+      np_syncPilotPendingFromStatus(window.__nutriplantRadarNdviStatus);
+    } else if (history.length) {
       np_updateRadarStatusHintFromSelection();
+      if (window.__nutriplantPilotPending) {
+        np_setPilotPendingUi(false);
+        np_stopPilotPendingPoll();
+      }
     } else if (hint) {
       const lastPilotError = window.__nutriplantLastPilotError || null;
       if (lastPilotError && lastPilotError.code === 5041) {
@@ -3419,6 +3529,12 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     alert('Selecciona un proyecto.');
     return;
   }
+  if (window.__nutriplantPilotPending) {
+    alert(
+      'Ya hay una imagen Pilot generándose para este predio.\n\nRevisa «Estado» en unos minutos; se guardará en la nube aunque cierres NutriPlant.\n\nCódigo: 4091'
+    );
+    return;
+  }
   const polygon = np_polygonCoordsForPilot();
   if (!polygon) {
     alert('Traza y guarda un polígono del predio antes de generar Radar Pilot.');
@@ -3430,26 +3546,54 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     return;
   }
   const hint = document.getElementById('radarStatusHint');
-  np_setRadarBusy(
-    true,
-    'Pilot Copernicus: calculando y guardando NDVI/NDMI con Sentinel-2… puede tardar ~1–2 min.'
-  );
   let prevRadarCreatedAt = null;
   try {
     try {
       await window.refreshRadarNdviStatus();
       prevRadarCreatedAt = np_getRadarLatestCreatedAtFromStatus(window.__nutriplantRadarNdviStatus);
+      if (window.__nutriplantRadarNdviStatus?.pending_job) {
+        alert(
+          'Ya hay una imagen Pilot generándose para este predio.\n\nRevisa «Estado» en unos minutos.\n\nCódigo: 4091'
+        );
+        np_syncPilotPendingFromStatus(window.__nutriplantRadarNdviStatus);
+        return;
+      }
     } catch (e) {
       console.warn('Pilot: no se pudo leer estado previo:', e);
     }
+
+    np_setPilotPendingUi(
+      true,
+      'Enviando solicitud satelital… Por temas del proveedor puede tardar unos minutos en quedar lista.'
+    );
+
     const res = await fetch(np_radarPilotApiUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ polygon, project_id: String(proj.id), max_dim: 512, max_scenes: 1 })
+      body: JSON.stringify({ polygon, project_id: String(proj.id), async: true, max_dim: 512, max_scenes: 1 })
     });
     const data = await res.json().catch(() => ({}));
+
+    if (res.status === 202 || (res.ok && data.async)) {
+      window.__nutriplantPilotPendingJob = data.request || null;
+      window.__nutriplantLastPilotError = null;
+      np_setPilotPendingUi(true, data.message || np_formatPilotPendingMessage(data.request));
+      np_startPilotPendingPoll(prevRadarCreatedAt);
+      await window.refreshRadarNdviStatus();
+      return;
+    }
+
     if (!res.ok) {
+      np_setPilotPendingUi(false);
       const serverMessage = data.message || data.error || 'Pilot falló';
+      if (res.status === 409) {
+        window.__nutriplantPilotPendingJob = data.pending_job || data.request || null;
+        np_setPilotPendingUi(true, serverMessage);
+        np_startPilotPendingPoll(prevRadarCreatedAt);
+        await window.refreshRadarNdviStatus();
+        alert(np_pilotUserErrorMessage(res.status, data));
+        return;
+      }
       if (res.status === 504 || res.status === 502) {
         const recovered = await np_recoverRadarIfBackendSucceeded(prevRadarCreatedAt, bounds);
         if (recovered) return;
@@ -3470,6 +3614,8 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
       if (hint) hint.textContent = 'Pilot: error ' + res.status + ' — ' + serverMessage;
       return;
     }
+
+    np_setPilotPendingUi(false);
     window.__nutriplantRadarPilot = {
       active: true,
       signed_url: data.signed_url || data.images?.ndvi?.signed_url,
@@ -3512,8 +3658,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     };
     alert('No se pudo conectar con Pilot. Revisa tu conexión e intenta de nuevo en unos minutos.\n\nCódigo: 9001');
     if (hint) hint.textContent = 'Pilot: sin conexión al servidor.';
-  } finally {
-    np_setRadarBusy(false);
+    np_setPilotPendingUi(false);
   }
 };
 

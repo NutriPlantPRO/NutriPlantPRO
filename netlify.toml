@@ -21,7 +21,11 @@
   timeout = 60
 
 [functions."radar-cdse-pilot"]
-  timeout = 60
+  timeout = 26
+  external_node_modules = ["geotiff", "sharp", "proj4"]
+
+[functions."radar-cdse-pilot-background"]
+  timeout = 900
   external_node_modules = ["geotiff", "sharp", "proj4"]
 
 [functions."nutri-pro-extract"]
@@ -78,6 +82,12 @@
 [[redirects]]
   from = "/api/radar-cdse-pilot"
   to = "/.netlify/functions/radar-cdse-pilot"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/radar-cdse-pilot-background"
+  to = "/.netlify/functions/radar-cdse-pilot-background"
   status = 200
   force = true
 

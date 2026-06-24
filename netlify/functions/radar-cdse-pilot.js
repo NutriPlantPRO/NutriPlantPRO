@@ -1,20 +1,25 @@
 /**
- * Radar pilot — NDVI/NDMI sin Google Earth Engine.
- *
- * Genera y guarda NDVI/NDMI sin Google Earth Engine. Usa créditos Radar internos y devuelve PNG en base64 para overlay inmediato.
+ * Radar pilot — encola NDVI/NDMI async (respuesta rápida) o modo sync legacy (async:false).
  *
  * Netlify env:
- *   RADAR_CDSE_PILOT_ENABLED=true   — obligatorio para activar
- *   RADAR_PILOT_PROVIDER=planetary|cdse  — default planetary (gratis, sin tarjeta)
- *   CDSE_CLIENT_ID / CDSE_CLIENT_SECRET — solo si provider=cdse
- *   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY — auth usuario (mismo que Radar)
+ *   RADAR_CDSE_PILOT_ENABLED=true
+ *   RADAR_PILOT_PROVIDER=planetary|cdse
  *
- * POST JSON: { polygon: [[lat,lng],...], project_id?: string }
+ * POST JSON: { polygon, project_id, async?: true, max_dim?, max_scenes? }
  */
 
+const radarCredits = require('./lib/radar-credits');
+const {
+  monthKey,
+  normalizePolygon,
+  buildLocationSnapshot,
+  sumMonthlyRadarCreditsUsed,
+  getActivePilotJob,
+  createPendingPilotJob,
+  triggerPilotBackground
+} = require('./lib/radar-pilot-job');
 const { findSentinel2ScenesForComposite } = require('./lib/radar-pilot-stac');
 const { renderNdviNdmiCompositePngs } = require('./lib/radar-pilot-render');
-const radarCredits = require('./lib/radar-credits');
 
 const BUCKET = 'radar-ndvi';
 
@@ -31,99 +36,12 @@ function jsonResponse(statusCode, body) {
   return { statusCode, headers: corsHeaders(), body: JSON.stringify(body) };
 }
 
-function monthKey(d = new Date()) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function normalizePolygon(raw) {
-  if (!Array.isArray(raw) || raw.length < 3) return null;
-  const out = [];
-  raw.forEach((pt) => {
-    if (Array.isArray(pt) && pt.length >= 2) {
-      const lat = Number(pt[0]);
-      const lng = Number(pt[1]);
-      if (Number.isFinite(lat) && Number.isFinite(lng)) out.push([lat, lng]);
-    } else if (pt && pt.lat != null && pt.lng != null) {
-      const lat = Number(pt.lat);
-      const lng = Number(pt.lng);
-      if (Number.isFinite(lat) && Number.isFinite(lng)) out.push([lat, lng]);
-    }
-  });
-  return out.length >= 3 ? out : null;
-}
-
-function buildLocationSnapshot(location, fallbackPolygon) {
-  const rawPolygon =
-    location && Array.isArray(location.polygon) && location.polygon.length >= 3
-      ? location.polygon
-      : fallbackPolygon;
-  const polygon = normalizePolygon(rawPolygon);
-  if (!polygon) return null;
-
-  let north = -90;
-  let south = 90;
-  let east = -180;
-  let west = 180;
-  let sumLat = 0;
-  let sumLng = 0;
-  polygon.forEach(([lat, lng]) => {
-    north = Math.max(north, lat);
-    south = Math.min(south, lat);
-    east = Math.max(east, lng);
-    west = Math.min(west, lng);
-    sumLat += lat;
-    sumLng += lng;
-  });
-
-  const center =
-    location &&
-    location.center &&
-    location.center.lat != null &&
-    location.center.lng != null
-      ? { lat: Number(location.center.lat), lng: Number(location.center.lng) }
-      : { lat: sumLat / polygon.length, lng: sumLng / polygon.length };
-
-  return {
-    polygon,
-    vertex_count: polygon.length,
-    center,
-    bounds: { north, south, east, west },
-    area_hectares:
-      location && location.areaHectares != null && Number.isFinite(Number(location.areaHectares))
-        ? Number(location.areaHectares)
-        : null,
-    area_m2:
-      location && location.area != null && Number.isFinite(Number(location.area))
-        ? Number(location.area)
-        : null,
-    perimeter_m:
-      location && location.perimeter != null && Number.isFinite(Number(location.perimeter))
-        ? Number(location.perimeter)
-        : null,
-    captured_at: new Date().toISOString()
-  };
-}
-
 async function getSupabaseAdmin() {
   const url = (process.env.SUPABASE_URL || '').trim();
   const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
   if (!url || !key) return null;
   const { createClient } = await import('@supabase/supabase-js');
   return createClient(url, key);
-}
-
-async function sumMonthlyCreditsUsed(supabase, userId, mk) {
-  const { data, error } = await supabase
-    .from('radar_requests')
-    .select('meta')
-    .eq('user_id', userId)
-    .eq('month_key', mk)
-    .not('image_storage_path', 'is', null);
-  if (error) {
-    console.warn('pilot sumMonthlyCreditsUsed:', error.message);
-    return 0;
-  }
-  return radarCredits.sumCreditsFromRows(data);
 }
 
 async function getBonusCredits(supabase, userId) {
@@ -189,14 +107,18 @@ exports.handler = async (event) => {
   }
 
   const projectId = body.project_id != null ? String(body.project_id).trim() : '';
-  let projectRow = null;
+  const useAsync = body.async !== false;
+  const maxDim = Math.min(Math.max(Number(body.max_dim) || 512, 256), 2048);
+  const maxScenes = Math.min(Math.max(Number(body.max_scenes) || 1, 1), 4);
   const mk = monthKey();
   const baseLimit = radarCredits.getMonthlyBaseLimit();
   const bonus = await getBonusCredits(supabase, userId);
   const limit = baseLimit + bonus;
-  const used = await sumMonthlyCreditsUsed(supabase, userId, mk);
+  const used = await sumMonthlyRadarCreditsUsed(supabase, userId, mk);
   let creditCost = 1;
   let pricing = radarCredits.getRadarCreditPricingInfo(null);
+  let projectRow = null;
+
   if (projectId) {
     const { data: proj, error: projErr } = await supabase
       .from('projects')
@@ -239,13 +161,60 @@ exports.handler = async (event) => {
     }
   }
 
-  // Mantener Pilot dentro del tiempo de Netlify. Se procesan NDVI y NDMI desde COGs remotos;
-  // tamaños grandes pueden disparar 504 antes de que Netlify entregue la respuesta.
-  const maxDim = Math.min(Math.max(Number(body.max_dim) || 512, 256), 2048);
+  if (useAsync && projectId) {
+    const active = await getActivePilotJob(supabase, userId, projectId);
+    if (active) {
+      return jsonResponse(409, {
+        error: 'pilot_job_active',
+        message:
+          'Ya hay una imagen Pilot generándose para este predio. Revisa «Estado» en unos minutos; no hace falta volver a pulsar Generar.',
+        request: { id: active.id, created_at: active.created_at },
+        pending_job: { id: active.id, created_at: active.created_at, status: active.meta?.status || 'pending' }
+      });
+    }
 
+    const queued = await createPendingPilotJob(supabase, {
+      userId,
+      projectId,
+      polygon,
+      projectRow,
+      creditCost,
+      maxDim,
+      maxScenes,
+      mk
+    });
+    if (!queued.ok) {
+      return jsonResponse(500, { error: 'queue_failed', message: queued.error || 'No se pudo encolar Pilot' });
+    }
+
+    const triggered = await triggerPilotBackground(queued.row.id, accessToken);
+    if (!triggered) {
+      console.warn('Pilot encolado pero no se pudo disparar background:', queued.row.id);
+    }
+
+    return jsonResponse(202, {
+      ok: true,
+      async: true,
+      queued: true,
+      request: { id: queued.row.id, created_at: queued.row.created_at },
+      message:
+        'Solicitud enviada. Por temas de datos satelitales la imagen puede tardar unos minutos. Revisa «Estado» o vuelve más tarde; se guardará en la nube aunque cierres NutriPlant.',
+      credits: {
+        used: used + creditCost,
+        limit,
+        base: baseLimit,
+        bonus,
+        reserved: creditCost,
+        available: Math.max(0, limit - (used + creditCost))
+      },
+      pricing
+    });
+  }
+
+  // Modo sync legacy (async:false) — conservado para pruebas locales
   try {
-    const maxScenes = Math.min(Math.max(Number(body.max_scenes) || 1, 1), 4);
-    const bundle = await findSentinel2ScenesForComposite(polygon, { maxScenes });
+    const maxScenesSync = maxScenes;
+    const bundle = await findSentinel2ScenesForComposite(polygon, { maxScenes: maxScenesSync });
     const rendered = await renderNdviNdmiCompositePngs(
       { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
       { maxDim }
@@ -263,6 +232,8 @@ exports.handler = async (event) => {
     const meta = {
       pilot: true,
       engine: 'cdse_pilot',
+      async: false,
+      status: 'done',
       provider: bundle.provider,
       source: bundle.provider === 'cdse' ? 'CDSE/sentinel-2-l2a' : 'PlanetaryComputer/sentinel-2-l2a',
       date_start: bundle.dateStart,
@@ -287,34 +258,18 @@ exports.handler = async (event) => {
       ndmiStoragePath = `${userId}/${projectId}/${mk}_${ts}_pilot_ndmi.png`;
       meta.ndmi_storage_path = ndmiStoragePath;
       meta.images = {
-        ndvi: {
-          storage_path: storagePath,
-          label: 'NDVI',
-          description: 'Pilot Copernicus · vigor relativo del predio'
-        },
-        ndmi: {
-          storage_path: ndmiStoragePath,
-          label: 'NDMI',
-          description: 'Pilot Copernicus · humedad relativa del dosel'
-        }
+        ndvi: { storage_path: storagePath, label: 'NDVI', description: 'Pilot Copernicus · vigor relativo del predio' },
+        ndmi: { storage_path: ndmiStoragePath, label: 'NDMI', description: 'Pilot Copernicus · humedad relativa del dosel' }
       };
 
       const [upNdvi, upNdmi] = await Promise.all([
-        supabase.storage.from(BUCKET).upload(storagePath, rendered.ndviPng, {
-          contentType: 'image/png',
-          upsert: true
-        }),
-        supabase.storage.from(BUCKET).upload(ndmiStoragePath, rendered.ndmiPng, {
-          contentType: 'image/png',
-          upsert: true
-        })
+        supabase.storage.from(BUCKET).upload(storagePath, rendered.ndviPng, { contentType: 'image/png', upsert: true }),
+        supabase.storage.from(BUCKET).upload(ndmiStoragePath, rendered.ndmiPng, { contentType: 'image/png', upsert: true })
       ]);
       if (upNdvi.error) {
-        console.error('pilot storage upload ndvi:', upNdvi.error);
         return jsonResponse(500, { error: 'storage_upload_failed', message: upNdvi.error.message });
       }
       if (upNdmi.error) {
-        console.error('pilot storage upload ndmi:', upNdmi.error);
         return jsonResponse(500, { error: 'storage_upload_failed', message: upNdmi.error.message });
       }
 
@@ -331,7 +286,6 @@ exports.handler = async (event) => {
         .single();
 
       if (insErr) {
-        console.error('pilot radar_requests insert:', insErr);
         return jsonResponse(500, { error: 'db_insert_failed', message: insErr.message });
       }
       request = insRow;
@@ -351,58 +305,18 @@ exports.handler = async (event) => {
     return jsonResponse(200, {
       ok: true,
       pilot: true,
+      async: false,
       request,
       month_key: mk,
       provider: bundle.provider,
-      source: bundle.provider === 'cdse' ? 'CDSE/sentinel-2-l2a' : 'PlanetaryComputer/sentinel-2-l2a',
-      composite: {
-        enabled: bundle.composite,
-        scene_count: bundle.sceneCount,
-        lookback_days: bundle.lookbackDays,
-        max_cloud_pct: bundle.maxCloudPct,
-        date_start: bundle.dateStart,
-        date_end: bundle.dateEnd,
-        scl_masked: true,
-        fallback_tier: bundle.fallbackTier || null
-      },
-      scene: {
-        id: latestScene.itemId,
-        datetime: latestScene.datetime,
-        cloud_cover: latestScene.cloudCover,
-        lookback_days: bundle.lookbackDays,
-        max_cloud_pct: bundle.maxCloudPct
-      },
-      scenes: bundle.scenes.map((s) => ({
-        id: s.itemId,
-        datetime: s.datetime,
-        cloud_cover: s.cloudCover
-      })),
-      dimensions: { width: rendered.width, height: rendered.height },
-      lookback_days: bundle.lookbackDays,
-      credits_charged: projectId ? creditCost : 0,
-      credits: {
-        used: projectId ? used + creditCost : used,
-        limit,
-        base: baseLimit,
-        bonus,
-        charged: projectId ? creditCost : 0,
-        available: Math.max(0, limit - (projectId ? used + creditCost : used))
-      },
-      pricing,
-      storage_path: storagePath,
       signed_url: signedUrl,
-      ndmi_storage_path: ndmiStoragePath,
       ndmi_signed_url: ndmiSignedUrl,
-      images: {
-        ndvi: { data_url: ndviDataUrl, storage_path: storagePath, signed_url: signedUrl, label: 'NDVI' },
-        ndmi: { data_url: ndmiDataUrl, storage_path: ndmiStoragePath, signed_url: ndmiSignedUrl, label: 'NDMI' }
-      },
       ndvi_data_url: ndviDataUrl,
       ndmi_data_url: ndmiDataUrl,
       meta
     });
   } catch (e) {
-    console.error('radar-cdse-pilot:', e);
+    console.error('radar-cdse-pilot sync:', e);
     return jsonResponse(502, {
       error: 'pilot_render_failed',
       message: e.message || 'No se pudo generar NDVI/NDMI pilot'
