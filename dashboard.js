@@ -20980,16 +20980,7 @@ function createVPDSectionHTML() {
         </div>
         <div id="vpd-range-results"></div>
 
-        ${rangeTables.length > 0 ? `
-          <div style="margin-top:16px;border-top:1px dashed #fdba74;padding-top:12px;">
-            <h4 style="margin:0 0 8px 0;color:#7c2d12;font-size:15px;">📚 Cuadros guardados (${rangeTables.length})</h4>
-            <div style="max-height:240px;overflow:auto;">
-              ${rangeTables.slice().reverse().map(function(tbl) {
-                return renderSavedVPDRangeTableHtml(tbl);
-              }).join('')}
-            </div>
-          </div>
-        ` : ''}
+        ${renderVpdSavedRangeTablesBlockHtml(rangeTables)}
       </div>
       ` : ''}
       
@@ -21881,6 +21872,46 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows, dailySummaryRows
   }
 }
 
+function renderVpdSavedRangeTablesBlockHtml(rangeTables) {
+  if (!Array.isArray(rangeTables) || rangeTables.length === 0) return '';
+  return (
+    '<div id="vpd-saved-range-tables-block" style="margin-top:16px;border-top:1px dashed #fdba74;padding-top:12px;">' +
+    '<h4 id="vpd-saved-range-tables-title" style="margin:0 0 8px 0;color:#7c2d12;font-size:15px;">📚 Cuadros guardados (' +
+    rangeTables.length +
+    ')</h4>' +
+    '<div id="vpd-saved-range-tables-list" style="max-height:240px;overflow:auto;">' +
+    rangeTables
+      .slice()
+      .reverse()
+      .map(function (tbl) {
+        return renderSavedVPDRangeTableHtml(tbl);
+      })
+      .join('') +
+    '</div></div>'
+  );
+}
+
+function refreshVpdSavedRangeTablesList() {
+  ensureVPDAnalysisStructures();
+  var tables = Array.isArray(currentProject.vpdAnalysis.rangeTables)
+    ? currentProject.vpdAnalysis.rangeTables
+    : [];
+  var anchor = document.getElementById('vpd-range-results');
+  if (!anchor) return false;
+  var block = document.getElementById('vpd-saved-range-tables-block');
+  if (!tables.length) {
+    if (block) block.remove();
+    return true;
+  }
+  var html = renderVpdSavedRangeTablesBlockHtml(tables);
+  if (block) {
+    block.outerHTML = html;
+  } else {
+    anchor.insertAdjacentHTML('afterend', html);
+  }
+  return true;
+}
+
 function renderSavedVPDRangeTableHtml(tbl) {
   var meta = (tbl && tbl.meta) ? tbl.meta : {};
   var summaryRows = Array.isArray(tbl && tbl.summaryRows) ? tbl.summaryRows : [];
@@ -22020,9 +22051,9 @@ function saveCurrentVPDRangeTable() {
     console.warn('saveCurrentVPDRangeTable:', e);
   }
   alert('✅ Cuadro VPD guardado en este proyecto (nube/local).');
-  if (typeof invalidateVpdSectionDomCache === 'function') invalidateVpdSectionDomCache();
-  if (typeof selectSection === 'function') {
-    selectSection("Análisis: Clima");
+  if (!refreshVpdSavedRangeTablesList()) {
+    if (typeof invalidateVpdSectionDomCache === 'function') invalidateVpdSectionDomCache();
+    if (typeof refreshVpdAnalysisSectionIfVisible === 'function') refreshVpdAnalysisSectionIfVisible();
   }
 }
 
@@ -22055,7 +22086,9 @@ function deleteSavedVPDRangeTable(tableId) {
     }
   } catch (e) {}
   persistVPDAnalysisAfterMutation();
-  refreshVpdAnalysisSectionIfVisible();
+  if (!refreshVpdSavedRangeTablesList()) {
+    refreshVpdAnalysisSectionIfVisible();
+  }
 }
 
 // Función para cambiar entre modo hoja/radiación

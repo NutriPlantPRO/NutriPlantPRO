@@ -9,9 +9,13 @@
   var RANGE_CHART_PDF_MAX_BARS = 31;
   /** Barras visibles en gráfica de rangos (dashboard/admin); el resto en Tabla. */
   var RANGE_CHART_DASHBOARD_MAX_BARS = 31;
-  /** Ancho útil A4 con márgenes ~2 cm — misma base dashboard + PDF. */
+  /** Ancho útil A4 con márgenes ~2 cm — solo PDF. */
   var CRITICAL_CHART_PAGE_WIDTH = 680;
-  var CRITICAL_CHART_HEIGHT = 288;
+  var CRITICAL_CHART_PAGE_HEIGHT = 288;
+  /** Dashboard: ocupa el ancho del bloque de resultados. */
+  var CRITICAL_CHART_DASHBOARD_HEIGHT = 320;
+  var CRITICAL_CHART_DASHBOARD_MIN_WIDTH = 680;
+  var CRITICAL_CHART_DASHBOARD_MAX_WIDTH = 1280;
   var CHART_BAR_PX = 20;
   var CHART_VIEWPORT_H = 228;
   var CHART_INNER_H = 200;
@@ -187,10 +191,10 @@
     innerEl.style.height = CHART_INNER_H + 'px';
   }
 
-  function computeCriticalChartLayout(barCount) {
+  function computeCriticalChartLayout(barCount, targetWidth, targetHeight) {
     barCount = Math.max(1, Number(barCount) || CRITICAL_DISPLAY_DAYS);
-    var canvasWidth = CRITICAL_CHART_PAGE_WIDTH;
-    var canvasHeight = CRITICAL_CHART_HEIGHT;
+    var canvasWidth = Math.floor(Number(targetWidth) || CRITICAL_CHART_PAGE_WIDTH);
+    var canvasHeight = Math.floor(Number(targetHeight) || CRITICAL_CHART_PAGE_HEIGHT);
     var plotPad = 52;
     var barSlotPx = (canvasWidth - plotPad) / barCount;
     return {
@@ -201,18 +205,51 @@
     };
   }
 
-  function applyCriticalChartLayout(innerEl, canvasEl, layout) {
+  function resolveCriticalChartTargetWidth(anchorEl) {
+    var w = 0;
+    var results = document.getElementById('vpd-range-results');
+    if (results && results.clientWidth > 0) {
+      w = results.clientWidth - 20;
+    }
+    if (anchorEl && anchorEl.clientWidth > 0) {
+      w = Math.max(w, anchorEl.clientWidth - 12);
+    }
+    if (!w && typeof window !== 'undefined' && window.innerWidth) {
+      w = Math.min(1100, Math.max(CRITICAL_CHART_DASHBOARD_MIN_WIDTH, window.innerWidth - 300));
+    }
+    if (!w) w = CRITICAL_CHART_DASHBOARD_MIN_WIDTH;
+    return Math.max(
+      CRITICAL_CHART_DASHBOARD_MIN_WIDTH,
+      Math.min(CRITICAL_CHART_DASHBOARD_MAX_WIDTH, Math.floor(w))
+    );
+  }
+
+  function measureDashboardCriticalChartLayout(barCount, anchorEl) {
+    return computeCriticalChartLayout(
+      barCount,
+      resolveCriticalChartTargetWidth(anchorEl),
+      CRITICAL_CHART_DASHBOARD_HEIGHT
+    );
+  }
+
+  function applyCriticalChartLayout(innerEl, canvasEl, layout, fluid) {
     if (!layout) return;
     if (innerEl) {
-      innerEl.style.width = layout.canvasWidth + 'px';
-      innerEl.style.minWidth = layout.canvasWidth + 'px';
-      innerEl.style.maxWidth = layout.canvasWidth + 'px';
+      if (fluid) {
+        innerEl.style.width = '100%';
+        innerEl.style.minWidth = '0';
+        innerEl.style.maxWidth = 'none';
+      } else {
+        innerEl.style.width = layout.canvasWidth + 'px';
+        innerEl.style.minWidth = layout.canvasWidth + 'px';
+        innerEl.style.maxWidth = layout.canvasWidth + 'px';
+      }
       innerEl.style.height = layout.canvasHeight + 'px';
     }
     if (canvasEl) {
       canvasEl.width = layout.canvasWidth;
       canvasEl.height = layout.canvasHeight;
-      canvasEl.style.width = layout.canvasWidth + 'px';
+      canvasEl.style.width = fluid ? '100%' : layout.canvasWidth + 'px';
       canvasEl.style.height = layout.canvasHeight + 'px';
     }
   }
@@ -235,24 +272,15 @@
     );
   }
 
-  function criticalChartViewportHtml(prefix, layout) {
-    layout = layout || computeCriticalChartLayout(CRITICAL_DISPLAY_DAYS);
+  function criticalChartViewportHtml(prefix) {
     return (
-      '<div class="np-vpd-critical-chart-viewport" style="width:100%;max-width:' +
-      layout.canvasWidth +
-      'px;margin:0 auto;border:1px solid #fed7aa;border-radius:8px;background:#fff;padding:4px 6px;box-sizing:border-box;">' +
-      '<div data-np-chart-inner="critical" style="width:' +
-      layout.canvasWidth +
-      'px;height:' +
-      layout.canvasHeight +
-      'px;position:relative;margin:0 auto;">' +
+      '<div class="np-vpd-critical-chart-viewport" data-np-chart-mode="dashboard" style="width:100%;border:1px solid #fed7aa;border-radius:8px;background:#fff;padding:4px 6px;box-sizing:border-box;">' +
+      '<div data-np-chart-inner="critical" style="width:100%;height:' +
+      CRITICAL_CHART_DASHBOARD_HEIGHT +
+      'px;position:relative;">' +
       '<canvas id="' +
       prefix +
-      '-critical-canvas" width="' +
-      layout.canvasWidth +
-      '" height="' +
-      layout.canvasHeight +
-      '"></canvas></div></div>'
+      '-critical-canvas"></canvas></div></div>'
     );
   }
 
@@ -794,7 +822,11 @@
     if (!agg.items.length || !agg.items.some(function (i) { return i.total > 0; })) {
       return Promise.resolve({ vpdCritical: null, criticalPrep: prep });
     }
-    var layout = computeCriticalChartLayout(agg.items.length);
+    var layout = computeCriticalChartLayout(
+      agg.items.length,
+      CRITICAL_CHART_PAGE_WIDTH,
+      CRITICAL_CHART_PAGE_HEIGHT
+    );
     return chartToDataUrl(function (canvas) {
       return createCriticalHoursChart(canvas, rows, prep, {
         responsive: false,
@@ -846,6 +878,36 @@
     );
   }
 
+  function paintCriticalChartInteractive(cfg, prep, charts) {
+    if (charts.critical) {
+      try {
+        charts.critical.destroy();
+      } catch (e) {}
+      charts.critical = null;
+    }
+    var canvas = document.getElementById(cfg.prefix + '-critical-canvas');
+    var graphPanel = document.getElementById(cfg.prefix + '-critical-graph');
+    var viewport =
+      graphPanel && graphPanel.querySelector('.np-vpd-critical-chart-viewport');
+    var inner =
+      graphPanel && graphPanel.querySelector('[data-np-chart-inner="critical"]');
+    if (!canvas || !prep.windowStart) return;
+    var days =
+      prep.windowStart && prep.windowEnd
+        ? isoDateSpanInclusiveDays(prep.windowStart, prep.windowEnd)
+        : CRITICAL_DISPLAY_DAYS;
+    var layout = measureDashboardCriticalChartLayout(days, viewport || graphPanel);
+    applyCriticalChartLayout(inner, canvas, layout, true);
+    charts.critical = createCriticalHoursChart(canvas, cfg.dailySummaryRows || [], prep, {
+      responsive: false,
+      maintainAspectRatio: false,
+      animation: true,
+      summaryRows: cfg.summaryRows,
+      granularity: (cfg.meta || {}).granularity,
+      layout: layout
+    });
+  }
+
   function initInteractiveBlock(cfg) {
     cfg = cfg || {};
     var charts = { critical: null };
@@ -860,34 +922,33 @@
       document.getElementById(cfg.prefix + '-critical-table'),
       function () {
         loadChartJs(function () {
-          if (charts.critical) {
-            try {
-              charts.critical.destroy();
-            } catch (e) {}
-          }
-          var canvas = document.getElementById(cfg.prefix + '-critical-canvas');
-          var viewport = document.getElementById(cfg.prefix + '-critical-graph');
-          var inner =
-            viewport && viewport.querySelector('[data-np-chart-inner="critical"]');
-          var days =
-            prep.windowStart && prep.windowEnd
-              ? isoDateSpanInclusiveDays(prep.windowStart, prep.windowEnd)
-              : CRITICAL_DISPLAY_DAYS;
-          var layout = computeCriticalChartLayout(days);
-          applyCriticalChartLayout(inner, canvas, layout);
-          if (canvas && prep.windowStart) {
-            charts.critical = createCriticalHoursChart(canvas, cfg.dailySummaryRows || [], prep, {
-              responsive: false,
-              maintainAspectRatio: false,
-              animation: true,
-              summaryRows: cfg.summaryRows,
-              granularity: meta.granularity,
-              layout: layout
-            });
-          }
+          paintCriticalChartInteractive(cfg, prep, charts);
         });
       }
     );
+
+    var graphPanel = document.getElementById(cfg.prefix + '-critical-graph');
+    var viewport =
+      graphPanel && graphPanel.querySelector('.np-vpd-critical-chart-viewport');
+    if (viewport && !viewport._npCriticalResizeBound) {
+      viewport._npCriticalResizeBound = true;
+      var resizeTimer = null;
+      var onResize = function () {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+          if (!graphPanel || graphPanel.style.display === 'none') return;
+          loadChartJs(function () {
+            paintCriticalChartInteractive(cfg, prep, charts);
+          });
+        }, 180);
+      };
+      if (typeof ResizeObserver !== 'undefined') {
+        var ro = new ResizeObserver(onResize);
+        ro.observe(viewport);
+        viewport._npCriticalResizeObserver = ro;
+      }
+      window.addEventListener('resize', onResize);
+    }
 
     return { prep: prep, charts: charts };
   }
@@ -912,11 +973,6 @@
       (critPrep.windowStart && critPrep.windowEnd
         ? ' · ' + critPrep.windowStart + ' a ' + critPrep.windowEnd
         : '');
-    var critDays =
-      critPrep.windowStart && critPrep.windowEnd
-        ? isoDateSpanInclusiveDays(critPrep.windowStart, critPrep.windowEnd)
-        : CRITICAL_DISPLAY_DAYS;
-    var critLayout = computeCriticalChartLayout(critDays);
     return (
       '<div style="margin-top:10px;border-top:1px dashed #fed7aa;padding-top:10px;">' +
       '<div style="margin-bottom:8px;"><strong style="color:#9a3412;font-size:13px;">Serie VPD por periodo (' +
@@ -944,7 +1000,7 @@
       '<div id="' +
       prefix +
       '-critical-graph" style="display:block;">' +
-      criticalChartViewportHtml(prefix, critLayout) +
+      criticalChartViewportHtml(prefix) +
       '</div>' +
       '<div id="' +
       prefix +
@@ -957,7 +1013,8 @@
   w.NpVpdRangeCharts = {
     CRITICAL_DISPLAY_DAYS: CRITICAL_DISPLAY_DAYS,
     CRITICAL_CHART_PAGE_WIDTH: CRITICAL_CHART_PAGE_WIDTH,
-    CRITICAL_CHART_HEIGHT: CRITICAL_CHART_HEIGHT,
+    CRITICAL_CHART_PAGE_HEIGHT: CRITICAL_CHART_PAGE_HEIGHT,
+    CRITICAL_CHART_DASHBOARD_HEIGHT: CRITICAL_CHART_DASHBOARD_HEIGHT,
     RANGE_CHART_PDF_MAX_BARS: RANGE_CHART_PDF_MAX_BARS,
     RANGE_CHART_DASHBOARD_MAX_BARS: RANGE_CHART_DASHBOARD_MAX_BARS,
     getCriticalDisplayLabel: getCriticalDisplayLabel,
