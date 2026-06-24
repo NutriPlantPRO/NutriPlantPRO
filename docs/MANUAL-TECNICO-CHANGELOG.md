@@ -5,6 +5,16 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-06-24 — Agua en suelo + balance hídrico (zona objetivo, mm/m³, almacén manual)
+
+### Actualizado
+
+- `n-mineralizable-agua-disponible-suelo.html` — zona objetivo 40–60% AU; gráfica (eje horizontal arriba, stats mm·m³); m³ vs mm; recuadro hero «no son dos riegos»; puente PDF
+- `balance-hidrico-riego-clima.html` — ajuste almacén suelo manual (déficit/exceso); total integrado; limitaciones corregidas
+- `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`, `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md`, `chat-simple.js`, `free-tools-catalog.js`, `manual-tecnico-catalog.js`, `manual-search.js`
+
+---
+
 ## 2026-06-23 — Radar Pilot y colorimetría relativa
 
 ### Actualizado

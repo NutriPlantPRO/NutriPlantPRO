@@ -914,7 +914,7 @@
         '<div id="climate-irr-summary" style="background:linear-gradient(135deg,#f0f9ff 0%,#ecfeff 100%);border:1px solid #7dd3fc;border-radius:10px;padding:16px;margin-bottom:16px;"></div>' +
         (window.NpIrrBalance && window.NpIrrBalance.getNoteHtml
           ? window.NpIrrBalance.getNoteHtml('margin-bottom:12px;')
-          : '<p style="margin:0 0 8px 0;padding:10px 12px;font-size:12px;line-height:1.5;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;"><strong>Nota:</strong> El balance hídrico es una <strong>estimación rápida</strong> basada en ETo, lluvia y riego (satélite o valores de campo). No considera almacenamiento de agua en el suelo, escurrimiento superficial, drenaje profundo ni lixiviación de nutrientes. El % suelo explorado por raíces (criterio NutriPlant) solo ayuda a estimar la franja regada. <strong>Validar siempre en campo.</strong></p>') +
+          : '<p style="margin:0 0 8px 0;padding:10px 12px;font-size:12px;line-height:1.5;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;"><strong>Nota:</strong> El balance hídrico es una <strong>estimación rápida</strong> basada en ETo, lluvia y riego (satélite o valores de campo). El <strong>riego sugerido</strong> es el resultado ETc − lluvia − riego aplicado (± ajuste 🪨 manual). No considera escurrimiento, drenaje profundo ni lixiviación. <strong>Validar siempre en campo.</strong></p>') +
         (window.NpIrrBalance && window.NpIrrBalance.getReferenceTablesHtml
           ? window.NpIrrBalance.getReferenceTablesHtml({ idPrefix: 'climate' })
           : window.NpIrrBalance && window.NpIrrBalance.getKcDetailsHtml

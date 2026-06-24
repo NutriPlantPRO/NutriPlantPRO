@@ -108,6 +108,17 @@
       white-space: nowrap;
     }
     .irr-soil-bridge-section label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin: 0; }
+    .irr-soil-bridge-section .np-soil-bridge-row select {
+      width: auto !important;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .irr-soil-bridge-section .np-soil-bridge-row .np-irr-value-unit {
+      width: auto;
+    }
+    .irr-soil-bridge-section .np-soil-bridge-row .np-irr-value-unit input {
+      width: auto;
+    }
     .irr-soil-bridge-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
     .irr-btn-soil-bridge {
       flex-shrink: 0;
@@ -304,8 +315,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="climate-kc-fao-data.js"></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
-  <script src="assets/np-irrigation-balance-core.js?v=202606241400"></script>
-  <script src="assets/np-soil-water-bridge.js?v=202606241400"></script>
+  <script src="assets/np-irrigation-balance-core.js?v=202606242000"></script>
+  <script src="assets/np-soil-water-bridge.js?v=202606241900"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
     var irrRolling = null;

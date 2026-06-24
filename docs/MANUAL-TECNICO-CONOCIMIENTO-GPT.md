@@ -185,12 +185,14 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 | Fórmulas | ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; **balance m³ = déficit m³ cultivo − riego m³ en franja**; balance mm ref. cultivo = balance m³ ÷ (10 × ha cultivo) |
 | Volumen | 1 mm sobre X ha = X × 10 m³; **riego aplicado solo en m³** en franja; mm franja = m³ ÷ (ha regada × 10) — mm solo en resultados |
 | Franja regada | Déficit en mm/m³ sobre **ha cultivo**; riego siempre en **franja humedecida (m³)**; mm en franja = mm cultivo × (ha cultivo ÷ ha regada); m³ totales **no** se dividen. Ej.: 90 m³ = 9 mm ref. 1 ha = 15 mm en 0,6 ha franja |
-| Puente 🪨 suelo | Bloque «Referencia almacén suelo» + botón Actualizar; lee `nutriplant_bridge_soil_water_v1` (m³ hasta CC desde Agua en suelo). Complementa balance; ≠ riego ya aplicado |
+| Puente 🪨 suelo | Desplegable Sin ajuste / Déficit (+ riego) / Exceso (− riego) + m³ manual; **«Sugerir desde 🪨 suelo»** prellena desde `nutriplant_bridge_soil_water_v1` (prioriza m³ hasta **objetivo 60% AU** si θ &lt; zona 40–60%; si no, hasta CC). Solo integra al **total integrado (clima ± almacén)** si hay valor; ≠ riego ya aplicado |
+| Total integrado | Balance climático ± ajuste almacén suelo manual (m³); líneas «Ajuste almacén suelo» y «Total integrado» en resumen; recuadro azul usa total integrado cuando aplica |
 | Recuadro «Dato importante» | Si hay franja distinta: riego sugerido (m³), lámina en franja (mm), aplicar en franja (m³). Criterio NutriPlant + enlace a tabla % suelo explorado |
 | Tablas desplegables | Kc FAO-56 (consulta) y **% suelo explorado por sistema** (aguacate, berry, hortaliza…) |
 | % alcance raíces | Sugiere franja (ha cultivo × % ÷ 100); **no altera déficit ETc**. Estimar %: **Conversor magnitudes** → alcance raíz (copa circular o cama/banda) o tabla en N mineralizable |
-| Persistencia | `climateAnalysis.irrigationQuickCalc` + `rolling` en JSON proyecto (sin SQL) |
-| Límite | No almacenamiento suelo, escurrimiento, drenaje ni lixiviación; validar en campo |
+| Persistencia | `climateAnalysis.irrigationQuickCalc` + `rolling` en JSON proyecto; ajuste suelo: `soilStorageMode`, `soilStorageM3` (PRO) / `irr-soil-mode`, `irr-soil-m3` (gratis) |
+| Límite | No integración automática de almacén en ETc (solo ajuste manual opcional); no escurrimiento, drenaje ni lixiviación; validar en campo |
+| PDF | Reporte Clima puede incluir balance guardado + bloque 🪨 suelo (sesión navegador) |
 
 **API admin:** `project_climate` mode=saved (snapshot) | live | rainfall_refresh | rolling | **all** (recomendado «actualizado»). Campos live: `rolling_windows_ahora`, `irrigation_quick_calc_live`. Solo lectura; no altera al suscriptor.
 
@@ -212,7 +214,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **URL:** …/n-mineralizable-agua-disponible-suelo.html  
 - **N_min (kg N/ha/año):** 10000×(P/100)×DA×1000×(R/100)×(MO/100)×(N_MO/100)×(T_min/100); P cm, DA g/cm³, T_min 1–3 %/año. Orden magnitud, no ensayo lab.  
-- **Agua:** vol m³ = ha×10000×(prof_cm/100); útil % = CC−PMP; vol útil = vol×(CC−PMP)/100×(% superficie/100). % superficie = franja regada (no profundidad). Con θ: recuadro principal m³·mm franja; déficit = max(0,CC−θ); mm perfil = déficit/100×prof×10; m³ franja = vol×déficit/100×(%/100); mm franja = mm perfil (no × %); ref. ha = m³÷(ha×10). Puente `nutriplant_bridge_soil_water_v1` → balance hídrico. Textura USDA.
+- **Agua:** vol m³ = ha×10000×(prof_cm/100); útil % = CC−PMP; vol útil = vol×(CC−PMP)/100×(% superficie/100). **Zona objetivo 40–60% AU** (entre PMP y CC): objetivo alto = PMP + 0,6×(CC−PMP); franja violeta en gráfica. **Gráfica:** título «Proporción de agua por estado · % volumétrico de referencia»; stats bajo barra con **mm · m³**. Con θ: recuadro azul (m³·mm hasta CC) + «Aplica X m³… no son dos riegos»; recuadro violeta hasta objetivo 60% AU. **m³ vs mm:** `m³ = mm × ha × 10`; aplicar m³ en franja; mm ref. ha = m³÷(ha×10). Puente `nutriplant_bridge_soil_water_v1` (m³ CC, m³ objetivo, exceso) → balance «Sugerir desde 🪨 suelo». Textura USDA.
 - Herramientas: `n_mineralizable`, `agua_textura`, `lamina_riego` (puente `nutriplant_bridge_soil_water_v1`).
 
 ### 4.15 Huella de carbono de fertilizantes (Pilar F — sostenibilidad)

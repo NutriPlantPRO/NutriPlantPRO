@@ -1330,6 +1330,26 @@ function summarizeIrrigationQuickCalc(iqc, rolling) {
     deficitCrop != null
       ? roundClimate1((deficitCrop * 10 * cHa - irrMmBal * 10 * iHa) / (cHa * 10))
       : null;
+  const soilStorageMode =
+    iqc.soilStorageMode === 'deficit' || iqc.soilStorageMode === 'surplus' ? iqc.soilStorageMode : null;
+  let soilStorageM3 = asNum(iqc.soilStorageM3);
+  if (!soilStorageMode || soilStorageM3 == null || soilStorageM3 <= 0) {
+    soilStorageM3 = null;
+  }
+  const baseBalanceM3 =
+    balance != null
+      ? roundClimate1(Math.abs(balance) * cHa * 10)
+      : deficitCrop != null
+        ? roundClimate1(Math.abs(deficitCrop) * cHa * 10)
+        : null;
+  let integratedBalanceM3 = baseBalanceM3;
+  let integratedBalanceMm = balance != null ? balance : deficitCrop;
+  if (soilStorageMode && soilStorageM3 != null && baseBalanceM3 != null) {
+    const delta = soilStorageMode === 'deficit' ? soilStorageM3 : -soilStorageM3;
+    integratedBalanceM3 = roundClimate1(baseBalanceM3 + delta);
+    integratedBalanceMm =
+      cHa > 0 ? roundClimate1(integratedBalanceM3 / (cHa * 10)) : integratedBalanceMm;
+  }
   const hasSplit =
     cropHa != null && irrigatedHa != null && irrigatedHa > 0 && Math.abs(cropHa - irrigatedHa) > 0.001;
   const stripFactor = hasSplit ? cropHa / irrigatedHa : null;
@@ -1349,6 +1369,11 @@ function summarizeIrrigationQuickCalc(iqc, rolling) {
     irrigation_input: irrVal,
     irrigation_unit: irrUnit,
     balance_mm: balance,
+    soil_storage_mode: soilStorageMode,
+    soil_storage_m3: soilStorageM3,
+    integrated_balance_mm: soilStorageMode && soilStorageM3 != null ? integratedBalanceMm : null,
+    integrated_balance_m3: soilStorageMode && soilStorageM3 != null ? integratedBalanceM3 : null,
+    uses_integrated_total: !!(soilStorageMode && soilStorageM3 != null),
     crop_area_ha: cropHa,
     irrigated_area_ha: irrigatedHa,
     root_reach_pct: asNum(iqc.rootReachPct),
@@ -1359,7 +1384,7 @@ function summarizeIrrigationQuickCalc(iqc, rolling) {
     balance_wetted_mm: balance != null && stripFactor != null ? roundClimate1(balance * stripFactor) : null,
     m3_per_ha_factor: 10,
     note:
-      'Calculadora balance hídrico (Clima → Lluvia y ET₀). Estimación rápida; no incluye almacenamiento en suelo, escurrimiento ni drenaje. Manual: balance-hidrico-riego-clima.'
+      'Calculadora balance hídrico (Clima → Lluvia y ET₀). Estimación rápida; ajuste almacén suelo (déficit/exceso m³) solo si el usuario lo guardó en irrigationQuickCalc. Manual: balance-hidrico-riego-clima.'
   };
 }
 

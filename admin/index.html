@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="../dashboard.css?v=20260320">
     <script src="../subscription-config.js"></script>
     <script src="../analysis-report-render.js"></script>
-    <script src="../assets/np-irrigation-balance-core.js?v=202606201400"></script>
+    <script src="../assets/np-irrigation-balance-core.js?v=202606242000"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../supabase-config.js"></script>
     <script src="../auth-supabase.js?v=1762793900"></script>
@@ -7096,7 +7096,13 @@
                 manualEt0: iqc.manualEt0 != null && !isNaN(Number(iqc.manualEt0)) ? Number(iqc.manualEt0) : null,
                 useManualRain: !!iqc.useManualRain,
                 manualRain: iqc.manualRain != null && !isNaN(Number(iqc.manualRain)) ? Number(iqc.manualRain) : null,
-                macroTunnelNoRain: !!iqc.macroTunnelNoRain
+                macroTunnelNoRain: !!iqc.macroTunnelNoRain,
+                soilStorageMode:
+                    iqc.soilStorageMode === 'deficit' || iqc.soilStorageMode === 'surplus' ? iqc.soilStorageMode : null,
+                soilStorageM3:
+                    iqc.soilStorageM3 != null && !isNaN(Number(iqc.soilStorageM3)) && Number(iqc.soilStorageM3) > 0
+                        ? Number(iqc.soilStorageM3)
+                        : null
             };
         }
 
@@ -7109,6 +7115,8 @@
                 st.useManualEt0 ||
                 st.useManualRain ||
                 st.macroTunnelNoRain ||
+                st.soilStorageMode ||
+                st.soilStorageM3 != null ||
                 res.et0 != null ||
                 res.rain != null
             );

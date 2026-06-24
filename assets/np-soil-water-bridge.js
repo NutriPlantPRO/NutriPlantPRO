@@ -252,12 +252,12 @@
     var m3Val = opts.m3 != null && opts.m3 !== '' ? String(opts.m3) : '';
 
     return (
-      '<div class="np-soil-bridge-panel" style="background:#f0f9ff;border:1px solid #7dd3fc;border-radius:10px;padding:12px;">' +
-      '<p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;color:#0369a1;">🪨 Almacén suelo → ajuste manual (m³)</p>' +
-      '<div class="np-soil-bridge-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">' +
+      '<div class="np-soil-bridge-panel">' +
+      '<p class="np-soil-bridge-title">🪨 Almacén suelo → ajuste manual (m³)</p>' +
+      '<div class="np-soil-bridge-row">' +
       '<select id="' +
       modeId +
-      '" style="padding:10px 12px;border:1px solid #7dd3fc;border-radius:8px;font-size:14px;font-weight:600;color:#0369a1;background:#fff;min-width:140px;">' +
+      '" class="np-soil-bridge-mode">' +
       '<option value=""' +
       (mode === '' ? ' selected' : '') +
       '>— Sin ajuste —</option>' +
@@ -268,18 +268,18 @@
       (mode === 'surplus' ? ' selected' : '') +
       '>Exceso (− riego)</option>' +
       '</select>' +
-      '<div class="np-irr-value-unit" style="max-width:160px;">' +
+      '<div class="np-irr-value-unit np-soil-bridge-m3">' +
       '<input type="number" id="' +
       m3Id +
       '" min="0" step="0.1" value="' +
       m3Val +
-      '" placeholder="m³ franja" title="Volumen en m³ en la franja regada" style="background:#fff;color:#0f172a;font-weight:700;">' +
+      '" placeholder="m³ franja" title="Volumen en m³ en la franja regada">' +
       '<span class="np-irr-unit-badge" aria-hidden="true">m³</span></div>' +
       '</div>' +
-      '<p style="margin:0 0 8px;font-size:12px;line-height:1.45;color:#334155;">Indica con <strong>tu criterio</strong> si el almacén está en déficit o exceso y cuántos m³ (franja regada). Puedes estimarlo en 🪨 <strong>Agua en suelo y textura</strong> según tu nivel objetivo (CC, depleción %, etc.). Si dejas vacío, <strong>no se considera</strong> en el riego sugerido.</p>' +
+      '<p class="np-soil-bridge-help">Indica con <strong>tu criterio</strong> si el almacén está en déficit o exceso y cuántos m³ (franja regada). Puedes estimarlo en 🪨 <strong>Agua en suelo y textura</strong> según tu nivel objetivo (CC, depleción %, etc.). Si dejas vacío, <strong>no se considera</strong> en el riego sugerido.</p>' +
       '<p id="' +
       suggestId +
-      '" style="margin:0;font-size:12px;line-height:1.45;color:#64748b;"></p>' +
+      '" class="np-soil-bridge-suggest"></p>' +
       '</div>'
     );
   }

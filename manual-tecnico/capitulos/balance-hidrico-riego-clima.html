@@ -132,8 +132,25 @@
     <ul>
       <li><strong>Complementa</strong> el balance climático (ETc − lluvia − riego) con el almacén físico del suelo (CC, PMP, θ).</li>
       <li><strong>No sustituye</strong> el campo «Riego en franja regada» — ese es el volumen <em>ya aplicado</em> en el periodo.</li>
+      <li><strong>Déficit (+ riego):</strong> suma m³ al total integrado en franja; <strong>Exceso (− riego):</strong> resta m³. Sin valor → no se considera.</li>
+      <li>El resumen muestra línea «Ajuste almacén suelo» y «Total integrado (clima ± almacén suelo)» cuando hay ajuste manual.</li>
       <li>El reporte PDF del proyecto puede incluir la referencia 🪨 suelo de la sesión del navegador (zona objetivo + m³ sugeridos).</li>
     </ul>
+
+    <h2>m³ vs mm en resultados</h2>
+    <div class="mt-formula">m³ = mm × ha × 10</div>
+    <p>
+      Priorizar <strong>m³ en franja</strong> para operar riego. Los mm del resumen son la misma agua en lámina;
+      con ha cultivo ≠ ha regada, un mismo m³ se expresa como más mm en franja y menos mm de referencia sobre ha cultivo.
+      El recuadro «Dato importante — riego en campo» usa m³ y mm en la franja regada.
+    </p>
+
+    <h2>Total integrado (clima + almacén suelo opcional)</h2>
+    <p>
+      Por defecto el balance es <strong>ETc − lluvia − riego</strong> (demanda climática del periodo).
+      Si el usuario indica ajuste manual de almacén suelo (déficit o exceso en m³), el recuadro azul y las líneas de total integrado
+      combinan balance climático ± ese m³. No es automático desde 🪨 suelo: el usuario elige y confirma el valor.
+    </p>
 
     <h2>% suelo explorado por raíces</h2>
     <p>
@@ -167,7 +184,7 @@
     <div class="mt-warn">
       <p>El balance hídrico es una <strong>estimación rápida</strong>. No considera:</p>
       <ul>
-        <li>Almacenamiento de agua en el suelo en el balance ETc (el bloque puente 🪨 muestra m³ hasta CC aparte)</li>
+        <li>Integración automática del almacén de suelo en ETc (solo ajuste manual opcional vía bloque 🪨)</li>
         <li>Escurrimiento superficial</li>
         <li>Drenaje profundo</li>
         <li>Lixiviación de nutrientes</li>

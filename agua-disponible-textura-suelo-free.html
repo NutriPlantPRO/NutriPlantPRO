@@ -1150,7 +1150,6 @@
 
     var tickMarkY2 = barY + barH + 10;
     var tickNumY = barY + barH + 22;
-    var axisLblY = barY + barH + 36;
     var objHasBand = false;
     var xObjLo = 0;
     var xObjHi = 0;
@@ -1161,10 +1160,10 @@
       xObjHi = Math.max(xGreen0, Math.min(xObjHiPx, xGreen1));
       objHasBand = xObjHi - xObjLo >= 4;
     }
-    var objBracketBot = objHasBand ? axisLblY + 10 : axisLblY;
-    var objTitleY = objHasBand ? objBracketBot + 14 : axisLblY;
-    var objPctY = objHasBand ? objTitleY + 11 : axisLblY;
-    var statsY = objHasBand ? objPctY + 22 : axisLblY + 16;
+    var objBracketBot = objHasBand ? tickNumY + 8 : tickNumY;
+    var objTitleY = objHasBand ? objBracketBot + 14 : tickNumY;
+    var objPctY = objHasBand ? objTitleY + 11 : tickNumY;
+    var statsY = objHasBand ? objPctY + 22 : tickNumY + 14;
     var nStats = hasTheta ? (objZone ? 6 : 5) : objZone ? 4 : 3;
     var legY = statsY + 12 * (nStats - 1) + 18;
     var legendH = hasTheta ? (objZone ? 96 : 80) : objZone ? 68 : 50;
@@ -1224,7 +1223,13 @@
       );
     }
 
-    parts.push('<text x="' + barX + '" y="' + (barY - 12) + '" font-size="11" font-weight="700" fill="#334155">Proporción de agua por estado (respecto a esta escala)</text>');
+    parts.push(
+      '<text x="' +
+        barX +
+        '" y="' +
+        (barY - 12) +
+        '" font-size="11" fill="#334155"><tspan font-weight="700">Proporción de agua por estado (respecto a esta escala)</tspan><tspan font-weight="600" fill="#64748b"> · % volumétrico de referencia (eje horizontal)</tspan></text>'
+    );
 
     parts.push('<g clip-path="url(#clipMainBar)">');
     parts.push('<rect x="' + barX + '" y="' + barY + '" width="' + barW + '" height="' + barH + '" fill="#f8fafc"/>');
@@ -1359,13 +1364,6 @@
       var pct = Math.round(maxScale * f);
       parts.push('<text x="' + gx + '" y="' + tickNumY + '" text-anchor="middle" font-size="10" fill="#475569">' + pct + '</text>');
     });
-    parts.push(
-      '<text x="' +
-        (barX + barW / 2) +
-        '" y="' +
-        axisLblY +
-        '" text-anchor="middle" font-size="10" font-weight="600" fill="#334155">% volumétrico de referencia (eje inferior)</text>'
-    );
 
     if (objHasBand && objZone) {
       parts.push(

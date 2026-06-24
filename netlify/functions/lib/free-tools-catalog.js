@@ -151,7 +151,7 @@ module.exports = {
       file: 'agua-disponible-textura-suelo-free.html',
       lsKey: 'nutriplant_free_agua_disponible_textura_v1',
       summary:
-        'Pestaña agua: CC, PMP, profundidad, ha, % superficie/franja, θ; zona objetivo 40–60% agua útil en gráfica; recuadro m³·mm (CC y objetivo); puente balance hídrico. Pestaña textura USDA.'
+        'Pestaña agua: CC, PMP, profundidad, ha, % superficie/franja, θ; zona objetivo 40–60% AU; gráfica mm·m³; recuadro m³·mm (CC y objetivo 60% AU); m³ vs mm; puente balance «Sugerir desde 🪨 suelo». Pestaña textura USDA.'
     },
     {
       id: 'lamina_riego',
@@ -159,7 +159,7 @@ module.exports = {
       file: 'lamina-riego-free.html',
       lsKey: 'nutriplant_free_lamina_riego_v1',
       summary:
-        'Mapa/GPS, Open-Meteo ETo/lluvia, balance 1 y 7 d. Kc editable; riego franja solo m³; puente m³ almacén suelo desde Agua en suelo; superficie cultivo/franja; % raíces; tablas Kc y % sistema.'
+        'Mapa/GPS, Open-Meteo ETo/lluvia, balance 1 y 7 d. Kc editable; riego franja solo m³; ajuste almacén suelo manual (déficit/exceso) + «Sugerir desde 🪨 suelo»; total integrado clima ± almacén; superficie cultivo/franja; tablas Kc y % sistema.'
     },
     {
       id: 'solubilidad_is',

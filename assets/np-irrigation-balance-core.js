@@ -395,6 +395,87 @@
     return computeRollingWindows(data.daily);
   }
 
+  function buildSuggestedCompositionNoteHtml(res) {
+    if (res.deficitCrop == null || !res.deficitCropVol || res.deficitCropVol.total == null) return '';
+    var hasIrr = res.irrigationMm != null && res.irrigationMm > 0;
+    var hasSoilAdj = !!(res.soilStorage && res.soilStorage.deltaM3);
+    var deficitM3 = Math.abs(res.deficitCropVol.total);
+    var irrM3 =
+      hasIrr && res.irrigatedHa != null
+        ? mmToVolTotal(res.irrigationMm, res.irrigatedHa)
+        : null;
+    if (irrM3 != null) irrM3 = Math.abs(irrM3);
+    var balanceM3 =
+      res.balanceVol && res.balanceVol.total != null ? res.balanceVol.total : null;
+    var targetVol = res.fieldTargetVol || (hasIrr && balanceM3 != null ? res.balanceVol : res.deficitCropVol);
+    var targetM3 = targetVol && targetVol.total != null ? targetVol.total : null;
+    var targetMm =
+      res.fieldTargetMm != null
+        ? res.fieldTargetMm
+        : hasIrr && res.balance != null
+          ? res.balance
+          : res.deficitCrop;
+    var isDeficit = targetMm != null ? targetMm > 0 : deficitM3 > 0;
+    var accent = isDeficit ? '#0369a1' : '#0f766e';
+    var border = isDeficit ? '#bae6fd' : '#a7f3d0';
+    var bg = isDeficit ? 'rgba(255,255,255,0.72)' : 'rgba(236,253,245,0.85)';
+    var formula = '';
+
+    if (hasSoilAdj && targetM3 != null) {
+      var climateM3 =
+        hasIrr && balanceM3 != null ? Math.abs(balanceM3) : deficitM3;
+      var adjSign = res.soilStorage.mode === 'deficit' ? '+' : '−';
+      formula =
+        (hasIrr
+          ? 'balance climático (ETc − lluvia − riego aplicado) <strong>' +
+            climateM3 +
+            ' m³</strong>'
+          : 'déficit cultivo (ETc − lluvia) <strong>' + climateM3 + ' m³</strong>') +
+        ' ' +
+        adjSign +
+        ' ajuste almacén suelo <strong>' +
+        res.soilStorage.m3 +
+        ' m³</strong> = <strong>' +
+        Math.abs(targetM3) +
+        ' m³</strong> ' +
+        (isDeficit ? 'integrados' : 'integrados (superávit)');
+    } else if (hasIrr && balanceM3 != null) {
+      formula =
+        'déficit cultivo (ETc − lluvia) <strong>' +
+        deficitM3 +
+        ' m³</strong> − riego ya aplicado en franja <strong>' +
+        round1(irrM3) +
+        ' m³</strong> = <strong>' +
+        Math.abs(balanceM3) +
+        ' m³</strong> ' +
+        (isDeficit ? 'pendientes' : 'de superávit');
+    } else {
+      formula =
+        'déficit cultivo (ETc − lluvia) <strong>' +
+        deficitM3 +
+        ' m³</strong>' +
+        (isDeficit
+          ? ' — aún no descontaste riego aplicado en el periodo'
+          : ' — superávit hídrico (lluvia cubrió la demanda ETc)');
+    }
+
+    return (
+      '<div style="margin:12px 0 0;padding:12px 14px;background:' +
+      bg +
+      ';border:1px dashed ' +
+      border +
+      ';border-radius:10px;font-size:12px;line-height:1.55;color:#334155;">' +
+      '<p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;color:' +
+      accent +
+      ';">Qué contempla el riego sugerido</p>' +
+      '<p style="margin:0 0 6px;">' +
+      formula +
+      '.</p>' +
+      '<p style="margin:0;font-size:11px;color:#64748b;">El m³ sugerido es el <strong>resultado</strong> del balance (tabla arriba); <strong>no</strong> es lo que ya ingresaste en «Riego aplicado» ni se descuenta dos veces. El ajuste 🪨 almacén suelo solo entra si lo indicas manualmente arriba.</p>' +
+      '</div>'
+    );
+  }
+
   function buildStripActionBoxHtml(res) {
     if (!res.hasSplitArea || res.irrigatedHa == null) return '';
     var targetVol =
@@ -623,6 +704,7 @@
           ) +
           summaryWettedStrip('Total integrado en franja', 'Superávit integrado en franja', res.fieldTargetVol)
         : '') +
+      buildSuggestedCompositionNoteHtml(res) +
       buildStripActionBoxHtml(res)
     );
   }
@@ -684,6 +766,15 @@
       '.np-irr-btn-suggest:hover{background:#15803d;}' +
       '.np-irr-btn-soil{background:#fff;color:#166534;border:1px solid #86efac;}' +
       '.np-irr-btn-soil:hover{background:#f0fdf4;}' +
+      '.np-soil-bridge-panel{background:#f0f9ff;border:1px solid #7dd3fc;border-radius:10px;padding:12px;}' +
+      '.np-soil-bridge-title{margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;color:#0369a1;}' +
+      '.np-soil-bridge-row{display:flex;flex-wrap:nowrap;gap:8px;align-items:stretch;margin-bottom:8px;max-width:420px;}' +
+      '.np-soil-bridge-row select.np-soil-bridge-mode{width:auto!important;flex:1 1 auto;min-width:0;max-width:none;padding:10px 12px;border:1px solid #7dd3fc;border-radius:8px;font-size:14px;font-weight:600;color:#0369a1;background:#fff;box-sizing:border-box;}' +
+      '.np-soil-bridge-row .np-soil-bridge-m3{flex:0 0 132px;width:132px;max-width:132px;}' +
+      '.np-soil-bridge-row .np-soil-bridge-m3 input{font-weight:700;color:#0f172a;background:#fff;}' +
+      '.np-soil-bridge-help{margin:0 0 8px;font-size:12px;line-height:1.45;color:#334155;}' +
+      '.np-soil-bridge-suggest{margin:0;font-size:12px;line-height:1.45;color:#64748b;}' +
+      '@media (max-width:520px){.np-soil-bridge-row{flex-wrap:wrap;max-width:100%;}.np-soil-bridge-row select.np-soil-bridge-mode{flex:1 1 100%;max-width:100%;}.np-soil-bridge-row .np-soil-bridge-m3{flex:1 1 100%;width:100%;max-width:220px;}}' +
       '.np-irr-scroll-arrow{display:inline-block;animation:npIrrScrollBounce 1.8s ease-in-out infinite;}' +
       '@keyframes npIrrScrollBounce{0%,100%{transform:translateY(0);opacity:0.85;}50%{transform:translateY(5px);opacity:1;}}';
     document.head.appendChild(css);
@@ -770,6 +861,7 @@
       (extraStyle || '') +
       '">' +
       '<strong>Nota:</strong> El balance hídrico es una <strong>estimación rápida</strong> basada en ETo, lluvia y riego (satélite o valores de campo). ' +
+      'El <strong>riego sugerido</strong> (m³ en recuadro azul) es el <strong>resultado</strong> ETc − lluvia − riego aplicado (± ajuste 🪨 si lo indicas); no es volumen ya regado. ' +
       'El ajuste opcional de <strong>almacén suelo</strong> (déficit/exceso en m³) solo se suma o resta si tú lo indicas arriba; calcúlalo con tu criterio en 🪨 Agua en suelo y textura. ' +
       'No considera escurrimiento superficial, drenaje profundo ni lixiviación de nutrientes. ' +
       'El % raíces en superficie (criterio NutriPlant) solo ayuda a estimar la franja regada en el área, no la profundidad del suelo. <strong>Validar siempre en campo.</strong></p>'

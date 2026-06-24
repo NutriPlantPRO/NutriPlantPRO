@@ -52,7 +52,7 @@
       icon: '🌱',
       pillar: 'B · Suelo y enmiendas',
       title: 'N mineralizable y agua disponible en suelo',
-      keywords: 'nitrógeno mineralizable agua disponible suelo textura CC PMP capacidad campo punto marchitez zona objetivo 40 60 agua útil'
+      keywords: 'nitrógeno mineralizable agua disponible suelo textura CC PMP capacidad campo punto marchitez zona objetivo 40 60 agua útil mm m3 gráfica no son dos riegos'
     },
     {
       href: 'capitulos/analisis-solucion-nutritiva-lab.html',
@@ -143,7 +143,7 @@
       icon: '💧',
       pillar: 'E · Agua y clima',
       title: 'Balance hídrico y cálculo rápido de riego',
-      keywords: 'balance hídrico riego ETo ETc Kc déficit lluvia franja regada m3 almacén suelo puente agua en suelo macrotúnel pluviómetro satélite Open-Meteo clima alcance raíz conversor magnitudes copa cama'
+      keywords: 'balance hídrico riego ETo ETc Kc déficit lluvia franja regada m3 almacén suelo puente agua en suelo total integrado sugerir desde suelo macrotúnel pluviómetro satélite Open-Meteo clima alcance raíz conversor magnitudes copa cama mm m3'
     },
     {
       href: 'capitulos/agua-dureza-acidificacion-solubilidad.html',

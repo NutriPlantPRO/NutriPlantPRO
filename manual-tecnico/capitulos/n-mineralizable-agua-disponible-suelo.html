@@ -125,15 +125,41 @@
       techo físico; no siempre conviene regar hasta allí.
     </p>
     <p>Si θ &gt; CC, la app advierte riesgo de encharcamiento. La lámina es una <strong>referencia de riego</strong>; validar con tensiómetros, sensores o método agronómico local.</p>
+    <h3>Gráfica de barra (CC · PMP · θ)</h3>
+    <p>
+      Barra horizontal con escala <strong>% volumétrico de referencia (eje horizontal)</strong>, indicada en el título junto a
+      «Proporción de agua por estado». Colores: azul oscuro (PMP), verde (agua útil / humedad actual / déficit hasta CC),
+      línea ámbar (θ actual), franja <strong>violeta</strong> (zona objetivo 40–60% AU) con marcas y texto «Objetivo riego» debajo del eje numérico.
+    </p>
+    <p>
+      Bajo la gráfica, cada renglón (PMP, CC, potencial útil, zona objetivo, humedad actual, lámina hasta CC/objetivo) muestra
+      <strong>mm y m³</strong> en la misma línea (<code>≈ X mm · Y m³</code>) para leer en la unidad preferida.
+    </p>
+    <h3>m³ vs mm — misma agua, distinta referencia</h3>
+    <div class="mt-formula">m³ = mm × ha × 10</div>
+    <p>
+      En campo <strong>aplica m³</strong> en la franja regada (contador, pozo, fertirriego). Los <strong>mm</strong> son la misma cantidad expresada como lámina (profundidad).
+      Con franja &lt; ha cultivo, el <strong>m³ no cambia</strong> pero los mm sí según el área de referencia:
+    </p>
+    <ul>
+      <li><strong>mm en franja</strong> = lámina física en suelo humedecido (p. ej. déficit 2% en 10 cm → 2 mm).</li>
+      <li><strong>m³ en franja</strong> = volumen a aplicar en la zona regada (p. ej. 10 m³ en 0,5 ha).</li>
+      <li><strong>mm ref. ha cultivo</strong> = mismos m³ ÷ (ha cultivo × 10) — solo comparación con balance ETc, no dosis de riego en franja.</li>
+    </ul>
+    <p>Ejemplo: 10 m³ en franja 0,5 ha = <strong>2 mm</strong> en franja; sobre 1 ha cultivo equivalen a <strong>1 mm</strong> (mismos 10 m³).</p>
     <h3>Resultado destacado en la app</h3>
     <p>
-      Con humedad actual θ, la herramienta muestra un <strong>recuadro principal</strong> (m³ · mm en franja, tipografía grande) con el volumen para reponer hasta CC en la franja regada.
-      Los demás valores (volumen de suelo, potencial útil, déficit % vol.) quedan como detalle secundario.
+      Con humedad actual θ, la herramienta muestra un <strong>recuadro principal azul</strong> (m³ · mm en franja) para reponer hasta CC,
+      con texto explícito «Aplica X m³… eso son Y mm… no son dos riegos».
+      Si aplica, un <strong>recuadro violeta</strong> adicional indica riego hasta <strong>nivel objetivo (60% agua útil)</strong>, menor que hasta CC cuando θ ya está cerca de CC.
+      Los demás valores quedan como detalle bajo el recuadro y en la gráfica.
     </p>
-    <h3>Puente hacia balance hídrico</h3>
+    <h3>Puente hacia balance hídrico y PDF</h3>
     <p>
-      Cada recálculo publica <code>nutriplant_bridge_soil_water_v1</code> (m³ hasta CC, m³ hasta objetivo 60% AU, exceso si θ &gt; CC, ha franja, mm).
-      La calculadora 🌧️ <strong>Lámina de riego y balance hídrico</strong> puede <strong>sugerir</strong> déficit/exceso manual desde 🪨 suelo (prioriza objetivo cuando θ está bajo la zona 40–60% AU).
+      Cada recálculo publica <code>nutriplant_bridge_soil_water_v1</code> (m³ hasta CC, m³ hasta objetivo 60% AU, exceso si θ &gt; CC, ha franja, mm, zona objetivo).
+      La calculadora 🌧️ <strong>Lámina de riego y balance hídrico</strong> puede <strong>sugerir</strong> déficit/exceso manual con «Sugerir desde 🪨 suelo»
+      (prioriza m³ hasta objetivo si θ está bajo la zona 40–60% AU; si no, hasta CC). El usuario confirma en desplegable + m³ antes de integrar al total.
+      El <strong>reporte PDF</strong> del proyecto (Clima) puede incluir bloque 🪨 suelo si hay datos en la sesión del navegador.
       Ver <a href="balance-hidrico-riego-clima.html">Balance hídrico y cálculo rápido de riego</a>.
     </p>
 
