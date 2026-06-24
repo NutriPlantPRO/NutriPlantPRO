@@ -8620,22 +8620,52 @@ function loadChartImagesForReport(selectedSections, callback) {
   const needClimate =
     selectedSections.indexOf('vpd') >= 0 &&
     typeof window.getClimateChartsDataUrlsForReport === 'function';
+  const needVpdCritical = selectedSections.indexOf('vpd') >= 0;
+
+  function appendVpdCharts(out, next) {
+    if (!needVpdCritical || !window.NpVpdRangeCharts) {
+      next(out);
+      return;
+    }
+    try {
+      var vpdTbl = currentProject.vpdAnalysis && currentProject.vpdAnalysis.currentRangeTable;
+      if (!vpdTbl || !Array.isArray(vpdTbl.summaryRows) || !vpdTbl.summaryRows.length) {
+        next(out);
+        return;
+      }
+      window.NpVpdRangeCharts.getReportChartUrls(
+        vpdTbl.summaryRows,
+        vpdTbl.criticalRows || [],
+        vpdTbl.meta || {}
+      ).then(function(res) {
+        if (res && res.vpdRange) out.vpdRange = res.vpdRange;
+        if (res && res.vpdCritical) out.vpdCritical = res.vpdCritical;
+        next(out);
+      }).catch(function(e) {
+        console.warn('loadChartImagesForReport vpdCharts:', e);
+        next(out);
+      });
+    } catch (e) {
+      console.warn('loadChartImagesForReport vpdCharts:', e);
+      next(out);
+    }
+  }
 
   function finish(out) {
     function done(finalOut) {
       if (!needExtraccionEtapa) {
-        callback(finalOut);
+        appendVpdCharts(finalOut, callback);
         return;
       }
       try {
         const state = getExtraccionEtapaStateForReport();
         getExtraccionEtapaChartsDataUrlsForReport(state, function(imgs) {
           if (imgs && (imgs.macro || imgs.micro)) finalOut.extraccionEtapa = imgs;
-          callback(finalOut);
+          appendVpdCharts(finalOut, callback);
         });
       } catch (e) {
         console.warn('loadChartImagesForReport extraccionEtapa:', e);
-        callback(finalOut);
+        appendVpdCharts(finalOut, callback);
       }
     }
 
@@ -14863,7 +14893,7 @@ function createSectionHTML(sectionId, chartImages, reportLanguage) {
       html += createAnalysisSectionHTML();
       break;
     case 'vpd':
-      html += createVPDReportSectionHTML();
+      html += createVPDReportSectionHTML(chartImages);
       html += createClimateReportSectionHTML(chartImages);
       break;
     case 'granular':
@@ -16881,7 +16911,7 @@ function createHidroponiaSectionHTML() {
   `;
 }
 
-function createVPDReportSectionHTML() {
+function createVPDReportSectionHTML(chartImages) {
   const vpd = currentProject.vpdAnalysis || {};
   const env = vpd.environmental || {};
   const adv = vpd.advanced || {};
@@ -16903,40 +16933,13 @@ function createVPDReportSectionHTML() {
       <td>${reportEscapeHtml(item.timestamp ? new Date(item.timestamp).toLocaleString('es-MX') : (item.date || '—'))}</td>
     </tr>
   `).join('');
-  const stressSummaryRows = currentRangeTable
-    ? currentRangeTable.summaryRows.map(function(r) {
-      return `
-        <tr>
-          <td>${reportEscapeHtml(String(r.period || '—'))}</td>
-          <td>${reportNum(r.maxVpd, 2)}</td>
-          <td>${reportEscapeHtml(String(r.maxAt || '—'))}</td>
-          <td>${reportNum(r.minVpd, 2)}</td>
-          <td>${reportEscapeHtml(String(r.minAt || '—'))}</td>
-          <td>${reportNum(r.hoursHigh, 0)}</td>
-          <td>${reportNum(r.hoursLow, 0)}</td>
-          <td>${reportNum(r.hoursOptimal, 0)}</td>
-          <td>${buildVpdStressPctCellHtml(r.stressPct)}</td>
-          <td>${Number.isFinite(Number(r.maxUv)) ? reportNum(r.maxUv, 1) + '<div style="text-align:center">' + buildUvSemaforoBadgeHtml(r.maxUv) + '</div>' : '—'}</td>
-        </tr>
-      `;
-    }).join('')
-    : '';
-  const stressCriticalRows = currentRangeTable
-    ? (Array.isArray(currentRangeTable.criticalRows) ? currentRangeTable.criticalRows : []).map(function(r) {
-      const rad = Number.isFinite(Number(r.shortwaveRadiationWm2)) ? Number(r.shortwaveRadiationWm2).toFixed(0) + ' W/m²' : '—';
-      return `
-        <tr>
-          <td>${reportEscapeHtml(String(r.at || '—'))}</td>
-          <td>${reportNum(r.vpd, 2)}</td>
-          <td>${reportNum(r.temperature, 1)}</td>
-          <td>${reportNum(r.humidity, 1)}</td>
-          <td>${reportEscapeHtml(rad)}</td>
-          <td style="text-align:center">${buildVpdTypeBadgeHtml(r.type)}</td>
-          <td>${Number.isFinite(Number(r.uvIndex)) ? reportEscapeHtml(formatUvIndexValue(r.uvIndex)) + '<div style="text-align:center">' + buildUvSemaforoBadgeHtml(r.uvIndex) + '</div>' : '—'}</td>
-        </tr>
-      `;
-    }).join('')
-    : '';
+  const criticalPrep = currentRangeTable
+    ? prepareVpdCriticalRowsForDisplay(
+        currentRangeTable.criticalRows,
+        currentRangeTable.meta && currentRangeTable.meta.endDate,
+        currentRangeTable.meta && currentRangeTable.meta.startDate
+      )
+    : { rows: [], totalAll: 0, windowStart: null, windowEnd: null, rangeTruncated: false };
   const savedRangesRows = savedRangeTables.map(function(tbl, idx) {
     var meta = tbl && tbl.meta ? tbl.meta : {};
     var rows = Array.isArray(tbl && tbl.summaryRows) ? tbl.summaryRows : [];
@@ -17015,53 +17018,25 @@ function createVPDReportSectionHTML() {
           ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.granularity) || 'diario'))}
           (${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.startDate) || '—'))} a ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.endDate) || '—'))})
           <div style="margin-top:8px;font-size:11px;color:#64748b;line-height:1.45;">
-            <strong>% estrés</strong> (colores): intensidad de horas fuera del rango óptimo.
-            <strong> UV máx</strong> (colores): severidad del índice UV, no del VPD.
-            En horas críticas, <strong>Tipo (VPD)</strong>: exceso (&gt;1.5 kPa) o déficit (&lt;0.5 kPa).
+            Gráfica: cada barra = <strong>24 h</strong> apiladas (azul &lt;0.5 · verde óptimo · tinto &gt;1.5 kPa).
+            Pie de barra: VPD máx/mín y hora. En PDF no se incluye la tabla extensa — usa <strong>Gráfica / Tabla</strong> en Clima para el detalle.
+            ${currentRangeTable.summaryRows.length > (window.NpVpdRangeCharts ? window.NpVpdRangeCharts.RANGE_CHART_PDF_MAX_BARS : 31) ? ' Gráfica de rangos: últimos ' + (window.NpVpdRangeCharts ? window.NpVpdRangeCharts.RANGE_CHART_PDF_MAX_BARS : 31) + ' periodos.' : ''}
           </div>
         </div>
-        <div class="report-vpd-table-wrap">
-        <table class="report-admin-table report-vpd-wide-table">
-          <thead>
-            <tr>
-              <th>Periodo</th>
-              <th>VPD máx</th>
-              <th>Hora máx</th>
-              <th>VPD mín</th>
-              <th>Hora mín</th>
-              <th>Horas &gt; 1.5</th>
-              <th>Horas &lt; 0.5</th>
-              <th>Horas óptimas</th>
-              <th>% estrés</th>
-              <th>UV máx</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${stressSummaryRows || '<tr><td colspan="10" style="text-align:center;color:#64748b;">Sin datos de rango.</td></tr>'}
-          </tbody>
-        </table>
-        </div>
+        ${
+          chartImages && chartImages.vpdRange
+            ? `<div style="margin-bottom:10px;"><img src="${chartImages.vpdRange}" alt="Gráfica VPD por periodo" style="width:100%;max-height:320px;object-fit:contain;border:1px solid #fcd34d;border-radius:8px;background:#fff;" /></div>`
+            : '<div class="report-note">Sin gráfica de rangos (descarga la serie VPD en Clima antes del PDF).</div>'
+        }
       </div>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">⏱️ Horas críticas (${Array.isArray(currentRangeTable.criticalRows) ? currentRangeTable.criticalRows.length : 0})</div>
-        <div class="report-vpd-table-wrap">
-        <table class="report-admin-table report-vpd-wide-table report-vpd-cols-6">
-          <thead>
-            <tr>
-              <th>Fecha/Hora</th>
-              <th>VPD</th>
-              <th>Temp (°C)</th>
-              <th>HR (%)</th>
-              <th>Radiación (W/m²)</th>
-              <th>Tipo (VPD)</th>
-              <th>Índice UV</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${stressCriticalRows || '<tr><td colspan="7" style="text-align:center;color:#64748b;">Sin horas fuera de rango.</td></tr>'}
-          </tbody>
-        </table>
-        </div>
+        <div class="report-block-title">⏱️ Horas críticas (${criticalPrep.rows.length}) · ${getVpdCriticalDisplayLabel()}</div>
+        ${criticalPrep.windowStart ? `<div class="report-note" style="margin-bottom:8px;font-size:11px;">${buildVpdCriticalHoursScopeNoteHtml(criticalPrep)}</div>` : ''}
+        ${
+          chartImages && chartImages.vpdCritical
+            ? `<div style="margin-bottom:10px;"><img src="${chartImages.vpdCritical}" alt="Gráfica horas críticas VPD" style="width:100%;max-height:280px;object-fit:contain;border:1px solid #fcd34d;border-radius:8px;background:#fff;" /></div>`
+            : '<div class="report-note">Sin horas críticas en el tramo listado o sin gráfica.</div>'
+        }
       </div>
       ` : ''}
       ${savedRangeTables.length ? `
@@ -20363,6 +20338,44 @@ function buildVpdStressPctCellHtml(pct) {
   return reportNum(n, 1) + '%<div style="text-align:center">' + buildVpdStressPctBadgeHtml(pct) + '</div>';
 }
 
+function getVpdCriticalDisplayLabel() {
+  return window.NpVpdRangeCharts
+    ? window.NpVpdRangeCharts.getCriticalDisplayLabel()
+    : '1 mes (30 días)';
+}
+
+function prepareVpdCriticalRowsForDisplay(criticalRows, rangeEndDate, rangeStartDate) {
+  if (window.NpVpdRangeCharts) {
+    return window.NpVpdRangeCharts.prepareCriticalRowsForDisplay(
+      criticalRows,
+      rangeEndDate,
+      rangeStartDate
+    );
+  }
+  return { rows: [], totalAll: 0, windowStart: null, windowEnd: null, rangeTruncated: false };
+}
+
+function buildVpdCriticalHoursScopeNoteHtml(prep) {
+  return window.NpVpdRangeCharts ? window.NpVpdRangeCharts.buildCriticalScopeNoteHtml(prep) : '';
+}
+
+var VPD_CRITICAL_DISPLAY_DAYS = 30;
+
+function getVpdCriticalValueColor(vpd) {
+  var n = Number(vpd);
+  if (!Number.isFinite(n)) return null;
+  if (n < 0.5) return '#1d4ed8';
+  if (n > 1.5) return '#7f1d1d';
+  return '#475569';
+}
+
+function buildVpdCriticalValueHtml(vpd) {
+  var n = Number(vpd);
+  if (!Number.isFinite(n)) return '—';
+  var color = getVpdCriticalValueColor(n);
+  return '<strong style="color:' + color + ';font-weight:700;">' + n.toFixed(2) + '</strong>';
+}
+
 function getVpdTypeMeta(type) {
   if (type === 'high') return { label: 'Alto', color: '#b91c1c', bg: '#fee2e2' };
   if (type === 'low') return { label: 'Bajo', color: '#1d4ed8', bg: '#dbeafe' };
@@ -20398,12 +20411,11 @@ function vpdStressSummaryRowHtml(rows) {
 function vpdCriticalEventsRowHtml(rows) {
   var td = 'padding:6px;border:1px solid #fed7aa;text-align:center;vertical-align:middle;';
   return rows.map(function(r) {
-    var cls = r.type === 'high' ? '#b91c1c' : '#1d4ed8';
     var rad = Number.isFinite(Number(r.shortwaveRadiationWm2)) ? Number(r.shortwaveRadiationWm2).toFixed(0) + ' W/m²' : '—';
     var uv = Number.isFinite(Number(r.uvIndex)) ? formatUvIndexValue(r.uvIndex) : '—';
     return '<tr>' +
       '<td style="' + td + '">' + String(r.at || '—') + '</td>' +
-      '<td style="' + td + '"><strong style="color:' + cls + ';">' + (Number.isFinite(Number(r.vpd)) ? Number(r.vpd).toFixed(2) : '—') + '</strong></td>' +
+      '<td style="' + td + '">' + buildVpdCriticalValueHtml(r.vpd) + '</td>' +
       '<td style="' + td + '">' + (Number.isFinite(Number(r.temperature)) ? Number(r.temperature).toFixed(1) : '—') + '</td>' +
       '<td style="' + td + '">' + (Number.isFinite(Number(r.humidity)) ? Number(r.humidity).toFixed(1) : '—') + '</td>' +
       '<td style="' + td + '">' + rad + '</td>' +
@@ -21770,65 +21782,82 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
   }
   wrap.setAttribute('data-np-vpd-range-key',
     String(meta.granularity || '') + '|' + String(meta.startDate || '') + '|' + String(meta.endDate || '') + '|' + String(summaryRows.length));
-  var crit = Array.isArray(criticalRows) ? criticalRows : [];
-  var critPreview = crit.slice(0, 300);
-  wrap.innerHTML = `
-    <div style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:12px;">
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
-        <strong style="color:#9a3412;">${meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')} · ${meta.startDate} a ${meta.endDate}</strong>
-        <span style="font-size:12px;color:#7c2d12;">Periodos: ${summaryRows.length} · Eventos críticos: ${crit.length}</span>
-      </div>
-      <div style="margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">
-        <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa
-        <div style="margin-top:6px;font-size:11px;color:#7c2d12;line-height:1.4;">
-          <strong>% estrés</strong> (colores): intensidad de horas fuera del rango.
-          <strong> UV máx</strong>: severidad del índice UV (no del VPD).
-          <strong> Tipo (VPD)</strong>: exceso (&gt;1.5) o déficit (&lt;0.5 kPa).
-        </div>
-      </div>
-      <div style="overflow:auto;max-height:300px;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="background:#fff7ed;">
-              <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Periodo</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">VPD máx</th>
-              <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Hora máx</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">VPD mín</th>
-              <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Hora mín</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas &gt; 1.5</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas &lt; 0.5</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas óptimas</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">% estrés</th>
-              <th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">UV máx</th>
-            </tr>
-          </thead>
-          <tbody>${vpdStressSummaryRowHtml(summaryRows)}</tbody>
-        </table>
-      </div>
-      <div style="margin-top:10px; border-top:1px dashed #fed7aa; padding-top:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-          <strong style="color:#9a3412;font-size:13px;">Horas críticas (${crit.length})</strong>
-          ${crit.length > critPreview.length ? `<span style="font-size:11px;color:#7c2d12;">Mostrando primeras ${critPreview.length}</span>` : ''}
-        </div>
-        <div style="overflow:auto;max-height:260px;margin-top:6px;">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;">
-            <thead>
-              <tr style="background:#fff7ed;">
-                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Fecha/Hora</th>
-                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">VPD</th>
-                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Temp (°C)</th>
-                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">HR (%)</th>
-                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Radiación (W/m²)</th>
-                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Tipo (VPD)</th>
-                <th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Índice UV</th>
-              </tr>
-            </thead>
-          <tbody>${critPreview.length ? vpdCriticalEventsRowHtml(critPreview) : '<tr><td colspan="7" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">Sin horas fuera de rango.</td></tr>'}</tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
+  var NPC = window.NpVpdRangeCharts;
+  var critPrep = prepareVpdCriticalRowsForDisplay(
+    criticalRows,
+    meta && meta.endDate,
+    meta && meta.startDate
+  );
+  var critShown = critPrep.rows;
+  var summaryTableHtml =
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+    '<thead><tr style="background:#fff7ed;">' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Periodo</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">VPD máx</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Hora máx</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">VPD mín</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Hora mín</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas &gt; 1.5</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas &lt; 0.5</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">Horas óptimas</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">% estrés</th>' +
+    '<th style="border:1px solid #fed7aa;border-left:3px solid #fdba74;padding:6px;text-align:center;">UV máx</th>' +
+    '</tr></thead><tbody>' +
+    vpdStressSummaryRowHtml(summaryRows) +
+    '</tbody></table>';
+  var criticalTableHtml =
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+    '<thead><tr style="background:#fff7ed;">' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Fecha/Hora</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">VPD</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Temp (°C)</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">HR (%)</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Radiación (W/m²)</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Tipo (VPD)</th>' +
+    '<th style="border:1px solid #fed7aa;padding:6px;text-align:center;">Índice UV</th>' +
+    '</tr></thead><tbody>' +
+    (critShown.length
+      ? vpdCriticalEventsRowHtml(critShown)
+      : '<tr><td colspan="7" style="border:1px solid #fed7aa;padding:8px;text-align:center;color:#7c2d12;">Sin horas fuera de rango en este tramo.</td></tr>') +
+    '</tbody></table>';
+  var blockShell = NPC
+    ? NPC.buildInteractiveBlockShell({
+        prefix: 'dash-vpd',
+        summaryCount: summaryRows.length,
+        criticalPrep: critPrep,
+        summaryTableHtml: summaryTableHtml,
+        criticalTableHtml: criticalTableHtml
+      })
+    : summaryTableHtml + criticalTableHtml;
+  wrap.innerHTML =
+    '<div style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:12px;">' +
+    '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">' +
+    '<strong style="color:#9a3412;">' +
+    (meta.granularity === 'weekly' ? 'Semanal' : meta.granularity === 'monthly' ? 'Mensual' : 'Diario') +
+    ' · ' +
+    meta.startDate +
+    ' a ' +
+    meta.endDate +
+    '</strong>' +
+    '<span style="font-size:12px;color:#7c2d12;">Periodos: ' +
+    summaryRows.length +
+    ' · Eventos críticos (listados): ' +
+    critShown.length +
+    (critPrep.rangeTruncated && critPrep.totalAll > critShown.length ? ' / ' + critPrep.totalAll + ' en rango' : '') +
+    '</span></div>' +
+    '<div style="margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">' +
+    '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · Usa <strong>Gráfica / Tabla</strong> en cada bloque.' +
+    '</div>' +
+    blockShell +
+    '</div>';
+  if (NPC) {
+    NPC.initInteractiveBlock({
+      prefix: 'dash-vpd',
+      summaryRows: summaryRows,
+      criticalRows: criticalRows,
+      meta: meta
+    });
+  }
 }
 
 function renderSavedVPDRangeTableHtml(tbl) {

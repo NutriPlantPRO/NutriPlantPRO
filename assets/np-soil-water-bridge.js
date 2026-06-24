@@ -226,6 +226,23 @@
         : '';
 
     if (data.status === 'surplus') {
+      var surM3 =
+        data.lamM3SurplusFranja != null && data.lamM3SurplusFranja > 0
+          ? data.lamM3SurplusFranja
+          : null;
+      if (surM3 != null) {
+        return {
+          mode: 'surplus',
+          m3: surM3,
+          clearFields: false,
+          message:
+            'Sugerido <strong>exceso</strong> por encima de CC' +
+            pctLabel +
+            ': <strong>' +
+            surM3 +
+            ' m³</strong> en franja (modo <strong>Exceso (− riego)</strong>). Se resta del total integrado.'
+        };
+      }
       return {
         mode: null,
         m3: null,
@@ -233,9 +250,7 @@
         message:
           'Humedad <strong>por encima de CC</strong>' +
           pctLabel +
-          '. No rellenamos m³ automáticamente. Si aplica, elige <strong>Exceso (− riego)</strong> e indica ≈ <strong>' +
-          (data.lamM3SurplusFranja != null ? data.lamM3SurplusFranja : '—') +
-          ' m³</strong> manualmente.'
+          '. Exceso muy bajo — revisa θ en 🪨 Agua en suelo o ingresa m³ manualmente.'
       };
     }
 
@@ -309,9 +324,6 @@
 
     if (data.status === 'deficit' && data.lamM3Franja != null && data.lamM3Franja > 0) {
       return { mode: 'deficit', m3: data.lamM3Franja, clearFields: false, message: data.message || '' };
-    }
-    if (data.status === 'surplus' && data.lamM3SurplusFranja != null && data.lamM3SurplusFranja > 0) {
-      return { mode: 'surplus', m3: data.lamM3SurplusFranja, clearFields: false, message: data.message || '' };
     }
     return {
       mode: null,

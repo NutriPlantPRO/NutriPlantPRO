@@ -660,6 +660,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../assets/np-vpd-range-charts.js?v=202606243000"></script>
     <script src="../config-no-traducir-terminos.js"></script>
 </head>
 <body class="admin-body">
@@ -10691,6 +10692,7 @@
             
             // SEGUNDO: Mostrar Programa
             let fertiChartIds = null;
+            let adminVpdRangeInit = null;
             if (hasFertirriegoProgram) {
                 const safeProjectId = adminSafeId(project.id);
                 const chartMacroId = `adminFertiMacroChart_${safeProjectId}`;
@@ -11506,86 +11508,58 @@
                                 const meta = currentRange.meta || {};
                                 const summaryRows = Array.isArray(currentRange.summaryRows) ? currentRange.summaryRows : [];
                                 const criticalRows = Array.isArray(currentRange.criticalRows) ? currentRange.criticalRows : [];
+                                const NPC = window.NpVpdRangeCharts;
+                                const critPrep = NPC
+                                    ? NPC.prepareCriticalRowsForDisplay(criticalRows, meta.endDate, meta.startDate)
+                                    : { rows: criticalRows, windowStart: null, windowEnd: null, totalAll: criticalRows.length, rangeTruncated: false };
+                                const critShown = critPrep.rows || [];
+                                adminVpdRangeInit = { summaryRows: summaryRows, criticalRows: criticalRows, meta: meta };
                                 const vpdTdSep = 'border-left: 3px solid #fdba74;';
-                                const summaryHtml = summaryRows.map(function(r) {
-                                    return `
-                                        <tr style="border-bottom: 1px solid #e5e7eb;">
-                                            <td style="padding: 8px;">${escapeHtml(String(r.period || '—'))}</td>
-                                            <td style="padding: 8px; text-align: right; font-weight: 600; border-left: 3px solid #fdba74;">${Number(r.maxVpd || 0).toFixed(2)}</td>
-                                            <td style="padding: 8px;">${escapeHtml(String(r.maxAt || '—'))}</td>
-                                            <td style="padding: 8px; text-align: right; font-weight: 600; border-left: 3px solid #fdba74;">${Number(r.minVpd || 0).toFixed(2)}</td>
-                                            <td style="padding: 8px;">${escapeHtml(String(r.minAt || '—'))}</td>
-                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursHigh || 0)}</td>
-                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursLow || 0)}</td>
-                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.hoursOptimal || 0)}</td>
-                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${Number(r.stressPct || 0).toFixed(1)}%</td>
-                                            <td style="padding: 8px; text-align: right; ${vpdTdSep}">${adminFormatUv(r.maxUv)} ${adminUvBadge(r.maxUv)}</td>
-                                        </tr>
-                                    `;
-                                }).join('');
-                                const criticalHtml = criticalRows.map(function(r) {
-                                    const isHigh = r.type === 'high';
-                                    const uvVal = adminFormatUv(r.uvIndex);
-                                    return `
-                                        <tr style="border-bottom: 1px solid #e5e7eb;">
-                                            <td style="padding: 8px;">${escapeHtml(String(r.at || '—'))}</td>
-                                            <td style="padding: 8px; text-align: right; font-weight: 700; color: ${isHigh ? '#b91c1c' : '#1d4ed8'};">${Number(r.vpd || 0).toFixed(2)}</td>
-                                            <td style="padding: 8px; text-align: right;">${Number(r.temperature || 0).toFixed(1)}</td>
-                                            <td style="padding: 8px; text-align: right;">${Number(r.humidity || 0).toFixed(1)}</td>
-                                            <td style="padding: 8px; color: ${isHigh ? '#b91c1c' : '#1d4ed8'}; font-weight: 600;">${isHigh ? 'Alto' : 'Bajo'}</td>
-                                            <td style="padding: 8px; text-align: right;">${uvVal} ${adminUvBadge(r.uvIndex)}</td>
-                                        </tr>
-                                    `;
-                                }).join('');
-                                return `
-                                    <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
-                                        <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">🗓️ Serie VPD por Rango (Estrés)</h4>
-                                        <div style="font-size: 13px; color: #92400e; background: #fffbeb; border: 1px dashed #fdba74; border-radius: 6px; padding: 8px; margin-bottom: 10px;">
-                                            <strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa ·
-                                            <strong>Vista:</strong> ${escapeHtml(meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario'))} ·
-                                            <strong>Periodo:</strong> ${escapeHtml(String(meta.startDate || '—'))} a ${escapeHtml(String(meta.endDate || '—'))}
-                                        </div>
-                                        <div style="max-height: 220px; overflow-y: auto; margin-bottom: 10px;">
-                                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                                                <thead>
-                                                    <tr style="background: #f3f4f6; border-bottom: 2px solid #d1d5db;">
-                                                        <th style="padding: 8px; text-align: left;">Periodo</th>
-                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">VPD máx</th>
-                                                        <th style="padding: 8px; text-align: left;">Hora máx</th>
-                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">VPD mín</th>
-                                                        <th style="padding: 8px; text-align: left;">Hora mín</th>
-                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">&gt;1.5</th>
-                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">&lt;0.5</th>
-                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">Óptimas</th>
-                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">% estrés</th>
-                                                        <th style="padding: 8px; text-align: right; border-left: 3px solid #fdba74;">UV máx</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    ${summaryHtml || '<tr><td colspan="10" style="padding:8px;color:#64748b;text-align:center;">Sin resumen de rango.</td></tr>'}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        <h5 style="margin: 0 0 8px 0; color: #1e293b; font-size: 14px;">⏱️ Horas críticas (${criticalRows.length})</h5>
-                                        <div style="max-height: 220px; overflow-y: auto;">
-                                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                                                <thead>
-                                                    <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
-                                                        <th style="padding: 8px; text-align: left;">Fecha/Hora</th>
-                                                        <th style="padding: 8px; text-align: right;">VPD</th>
-                                                        <th style="padding: 8px; text-align: right;">Temp</th>
-                                                        <th style="padding: 8px; text-align: right;">HR</th>
-                                                        <th style="padding: 8px; text-align: left;">Tipo</th>
-                                                        <th style="padding: 8px; text-align: right;">Índice UV</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    ${criticalHtml || '<tr><td colspan="6" style="padding:8px;color:#64748b;text-align:center;">Sin horas fuera de rango.</td></tr>'}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                `;
+                                const summaryTableHtml = '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f3f4f6;">' +
+                                    '<th style="padding:8px;text-align:left;">Periodo</th><th style="padding:8px;text-align:right;border-left:3px solid #fdba74;">VPD máx</th><th style="padding:8px;text-align:left;">Hora máx</th>' +
+                                    '<th style="padding:8px;text-align:right;border-left:3px solid #fdba74;">VPD mín</th><th style="padding:8px;text-align:left;">Hora mín</th>' +
+                                    '<th style="padding:8px;text-align:right;' + vpdTdSep + '">&gt;1.5</th><th style="padding:8px;text-align:right;' + vpdTdSep + '">&lt;0.5</th>' +
+                                    '<th style="padding:8px;text-align:right;' + vpdTdSep + '">Óptimas</th><th style="padding:8px;text-align:right;' + vpdTdSep + '">% estrés</th><th style="padding:8px;text-align:right;' + vpdTdSep + '">UV máx</th></tr></thead><tbody>' +
+                                    summaryRows.map(function(r) {
+                                        return '<tr style="border-bottom:1px solid #e5e7eb;"><td style="padding:8px;">' + escapeHtml(String(r.period || '—')) + '</td>' +
+                                            '<td style="padding:8px;text-align:right;font-weight:600;border-left:3px solid #fdba74;">' + Number(r.maxVpd || 0).toFixed(2) + '</td>' +
+                                            '<td style="padding:8px;">' + escapeHtml(String(r.maxAt || '—')) + '</td>' +
+                                            '<td style="padding:8px;text-align:right;font-weight:600;border-left:3px solid #fdba74;">' + Number(r.minVpd || 0).toFixed(2) + '</td>' +
+                                            '<td style="padding:8px;">' + escapeHtml(String(r.minAt || '—')) + '</td>' +
+                                            '<td style="padding:8px;text-align:right;' + vpdTdSep + '">' + Number(r.hoursHigh || 0) + '</td>' +
+                                            '<td style="padding:8px;text-align:right;' + vpdTdSep + '">' + Number(r.hoursLow || 0) + '</td>' +
+                                            '<td style="padding:8px;text-align:right;' + vpdTdSep + '">' + Number(r.hoursOptimal || 0) + '</td>' +
+                                            '<td style="padding:8px;text-align:right;' + vpdTdSep + '">' + Number(r.stressPct || 0).toFixed(1) + '%</td>' +
+                                            '<td style="padding:8px;text-align:right;' + vpdTdSep + '">' + adminFormatUv(r.maxUv) + ' ' + adminUvBadge(r.maxUv) + '</td></tr>';
+                                    }).join('') +
+                                    '</tbody></table>';
+                                const criticalTableHtml = '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f9fafb;">' +
+                                    '<th style="padding:8px;text-align:left;">Fecha/Hora</th><th style="padding:8px;text-align:right;">VPD</th><th style="padding:8px;text-align:right;">Temp</th>' +
+                                    '<th style="padding:8px;text-align:right;">HR</th><th style="padding:8px;text-align:left;">Tipo</th><th style="padding:8px;text-align:right;">Índice UV</th></tr></thead><tbody>' +
+                                    critShown.map(function(r) {
+                                        const isHigh = r.type === 'high';
+                                        return '<tr style="border-bottom:1px solid #e5e7eb;"><td style="padding:8px;">' + escapeHtml(String(r.at || '—')) + '</td>' +
+                                            '<td style="padding:8px;text-align:right;font-weight:700;color:' + (isHigh ? '#b91c1c' : '#1d4ed8') + ';">' + Number(r.vpd || 0).toFixed(2) + '</td>' +
+                                            '<td style="padding:8px;text-align:right;">' + Number(r.temperature || 0).toFixed(1) + '</td>' +
+                                            '<td style="padding:8px;text-align:right;">' + Number(r.humidity || 0).toFixed(1) + '</td>' +
+                                            '<td style="padding:8px;color:' + (isHigh ? '#b91c1c' : '#1d4ed8') + ';font-weight:600;">' + (isHigh ? 'Alto' : 'Bajo') + '</td>' +
+                                            '<td style="padding:8px;text-align:right;">' + adminFormatUv(r.uvIndex) + ' ' + adminUvBadge(r.uvIndex) + '</td></tr>';
+                                    }).join('') +
+                                    (critShown.length ? '' : '<tr><td colspan="6" style="padding:8px;color:#64748b;text-align:center;">Sin horas fuera de rango en este tramo.</td></tr>') +
+                                    '</tbody></table>';
+                                const shell = NPC ? NPC.buildInteractiveBlockShell({
+                                    prefix: 'admin-vpd',
+                                    summaryCount: summaryRows.length,
+                                    criticalPrep: critPrep,
+                                    summaryTableHtml: summaryTableHtml,
+                                    criticalTableHtml: criticalTableHtml
+                                }) : (summaryTableHtml + criticalTableHtml);
+                                return '<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #e5e7eb;">' +
+                                    '<h4 style="margin:0 0 12px 0;color:#1e293b;font-size:16px;">🗓️ Serie VPD por Rango (Estrés)</h4>' +
+                                    '<div style="font-size:13px;color:#92400e;background:#fffbeb;border:1px dashed #fdba74;border-radius:6px;padding:8px;margin-bottom:10px;">' +
+                                    '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · <strong>Vista:</strong> ' + escapeHtml(meta.granularity === 'weekly' ? 'Semanal' : (meta.granularity === 'monthly' ? 'Mensual' : 'Diario')) +
+                                    ' · <strong>Periodo:</strong> ' + escapeHtml(String(meta.startDate || '—')) + ' a ' + escapeHtml(String(meta.endDate || '—')) +
+                                    '</div>' + shell + '</div>';
                             })()}
                             ${(function() {
                                 const tables = Array.isArray(vpdAnalysis.rangeTables) ? vpdAnalysis.rangeTables : [];
@@ -11768,6 +11742,14 @@
                     requestAnimationFrame(tryRenderExt);
                     setTimeout(tryRenderExt, 50);
                     setTimeout(tryRenderExt, 200);
+                }
+                if (adminVpdRangeInit && window.NpVpdRangeCharts) {
+                    const tryVpd = () => {
+                        window.NpVpdRangeCharts.initInteractiveBlock(Object.assign({ prefix: 'admin-vpd' }, adminVpdRangeInit));
+                    };
+                    tryVpd();
+                    requestAnimationFrame(tryVpd);
+                    setTimeout(tryVpd, 80);
                 }
                 if (adminUserExtLibraryBuilt && adminUserExtLibraryBuilt.chartJobs && adminUserExtLibraryBuilt.chartJobs.length) {
                     adminScheduleExtraccionLibraryCharts(adminUserExtLibraryBuilt.chartJobs, content);
