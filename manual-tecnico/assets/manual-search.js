@@ -52,7 +52,7 @@
       icon: '🌱',
       pillar: 'B · Suelo y enmiendas',
       title: 'N mineralizable y agua disponible en suelo',
-      keywords: 'nitrógeno mineralizable agua disponible suelo textura CC PMP capacidad campo punto marchitez'
+      keywords: 'nitrógeno mineralizable agua disponible suelo textura CC PMP capacidad campo punto marchitez zona objetivo 40 60 agua útil'
     },
     {
       href: 'capitulos/analisis-solucion-nutritiva-lab.html',

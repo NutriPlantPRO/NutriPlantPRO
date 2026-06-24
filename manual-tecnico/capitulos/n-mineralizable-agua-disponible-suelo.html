@@ -58,7 +58,7 @@
       <thead><tr><th>Herramienta</th><th>Archivo</th><th>Uso</th></tr></thead>
       <tbody>
         <tr><td>Estimación de N mineralizable</td><td><code>n-mineralizable-mo-free.html</code></td><td>MO, profundidad, DA, zona radical</td></tr>
-        <tr><td>Agua en suelo y textura</td><td><code>agua-disponible-textura-suelo-free.html</code></td><td>CC, PMP, % superficie/franja, lámina m³·mm, puente balance; triángulo USDA</td></tr>
+        <tr><td>Agua en suelo y textura</td><td><code>agua-disponible-textura-suelo-free.html</code></td><td>CC, PMP, % superficie/franja, zona objetivo 40–60% AU, lámina m³·mm, puente balance; triángulo USDA</td></tr>
       </tbody>
     </table>
     <p>Persistencia: <code>nutriplant_free_n_mineralizable_mo_v1</code>, <code>nutriplant_free_agua_disponible_textura_v1</code>.</p>
@@ -108,6 +108,22 @@
       Lámina en franja (mm) = misma lámina de perfil (suelo humedecido)<br>
       Referencia ha cultivo (mm) = volumen_franja ÷ (ha_cultivo × 10)
     </div>
+    <h3>Zona objetivo de riego (40–60% agua útil)</h3>
+    <p>
+      Entre PMP y CC, NutriPlant marca una <strong>zona objetivo</strong> en la barra horizontal:
+      <strong>40% y 60% del agua útil</strong> (no del CC absoluto). En % volumétrico:
+    </p>
+    <div class="mt-formula">
+      Agua útil (AU) = CC − PMP<br>
+      Objetivo bajo = PMP + 0,40 × AU<br>
+      Objetivo alto = PMP + 0,60 × AU<br>
+      Lámina hasta objetivo = max(0, objetivo alto − θ) × profundidad × 10 / 100
+    </div>
+    <p>
+      La franja <strong>violeta</strong> en la gráfica y el recuadro «Riego hasta nivel objetivo» muestran cuánto regar
+      para llegar al <strong>60% agua útil</strong> (referencia agronómica editable en campo). Hasta CC sigue siendo el
+      techo físico; no siempre conviene regar hasta allí.
+    </p>
     <p>Si θ &gt; CC, la app advierte riesgo de encharcamiento. La lámina es una <strong>referencia de riego</strong>; validar con tensiómetros, sensores o método agronómico local.</p>
     <h3>Resultado destacado en la app</h3>
     <p>
@@ -116,8 +132,8 @@
     </p>
     <h3>Puente hacia balance hídrico</h3>
     <p>
-      Cada recálculo publica <code>nutriplant_bridge_soil_water_v1</code> (m³ en franja hasta CC, exceso si θ &gt; CC, ha franja, mm en franja).
-      La calculadora 🌧️ <strong>Lámina de riego y balance hídrico</strong> (gratis y PRO) puede leer ese puente con «Actualizar desde 🪨 suelo».
+      Cada recálculo publica <code>nutriplant_bridge_soil_water_v1</code> (m³ hasta CC, m³ hasta objetivo 60% AU, exceso si θ &gt; CC, ha franja, mm).
+      La calculadora 🌧️ <strong>Lámina de riego y balance hídrico</strong> puede <strong>sugerir</strong> déficit/exceso manual desde 🪨 suelo (prioriza objetivo cuando θ está bajo la zona 40–60% AU).
       Ver <a href="balance-hidrico-riego-clima.html">Balance hídrico y cálculo rápido de riego</a>.
     </p>
 

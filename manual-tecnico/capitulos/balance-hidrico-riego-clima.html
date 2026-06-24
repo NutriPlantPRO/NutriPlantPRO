@@ -123,15 +123,16 @@
 
     <h2>Referencia almacén suelo (puente con 🪨 Agua en suelo)</h2>
     <p>
-      Debajo de las entradas de riego, la calculadora muestra un bloque
-      <strong>«🪨 Referencia almacén suelo (Agua en suelo y textura)»</strong> con m³ hasta CC (o exceso si la humedad está por encima de CC).
-      Botón <strong>«Actualizar desde 🪨 suelo»</strong> lee la herramienta gratis del mismo navegador
-      (<code>nutriplant_bridge_soil_water_v1</code> / persistencia <code>agua_disponible_textura</code>).
+      Debajo de las entradas de riego, bloque manual <strong>«🪨 Referencia almacén suelo»</strong>:
+      desplegable <strong>Déficit (+ riego)</strong> o <strong>Exceso (− riego)</strong> + m³ en franja.
+      Solo suma o resta al riego sugerido si el usuario indica valor.
+      Botón <strong>«Sugerir desde 🪨 suelo»</strong> prellena desde
+      <code>nutriplant_bridge_soil_water_v1</code> (prioriza m³ hasta <strong>objetivo 60% agua útil</strong> si θ está bajo la zona 40–60% AU; si no, hasta CC).
     </p>
     <ul>
       <li><strong>Complementa</strong> el balance climático (ETc − lluvia − riego) con el almacén físico del suelo (CC, PMP, θ).</li>
       <li><strong>No sustituye</strong> el campo «Riego en franja regada» — ese es el volumen <em>ya aplicado</em> en el periodo.</li>
-      <li>Si hay déficit hasta CC en 🪨 suelo, puede sugerir automáticamente la <strong>superficie regada (ha)</strong> si estaba vacía.</li>
+      <li>El reporte PDF del proyecto puede incluir la referencia 🪨 suelo de la sesión del navegador (zona objetivo + m³ sugeridos).</li>
     </ul>
 
     <h2>% suelo explorado por raíces</h2>

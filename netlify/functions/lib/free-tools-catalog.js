@@ -151,7 +151,7 @@ module.exports = {
       file: 'agua-disponible-textura-suelo-free.html',
       lsKey: 'nutriplant_free_agua_disponible_textura_v1',
       summary:
-        'Pestaña agua: CC, PMP, profundidad, ha, % superficie/franja, θ; recuadro resultado m³·mm; puente balance hídrico. Pestaña textura USDA.'
+        'Pestaña agua: CC, PMP, profundidad, ha, % superficie/franja, θ; zona objetivo 40–60% agua útil en gráfica; recuadro m³·mm (CC y objetivo); puente balance hídrico. Pestaña textura USDA.'
     },
     {
       id: 'lamina_riego',

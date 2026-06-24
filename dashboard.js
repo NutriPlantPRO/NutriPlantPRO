@@ -17244,7 +17244,11 @@ function createClimateReportSectionHTML(chartImages) {
   if (typeof window.getClimateIrrigationQuickCalcReportHtml === 'function') {
     irrBlock = window.getClimateIrrigationQuickCalcReportHtml(reportEscapeHtml);
   }
-  if (!rainTable && !et0Table && !combinedChartBlock && !liveBlock && !irrBlock) return '';
+  var soilWaterBlock = '';
+  if (window.NpSoilWaterBridge && typeof window.NpSoilWaterBridge.buildReportHtml === 'function') {
+    soilWaterBlock = window.NpSoilWaterBridge.buildReportHtml(reportEscapeHtml);
+  }
+  if (!rainTable && !et0Table && !combinedChartBlock && !liveBlock && !irrBlock && !soilWaterBlock) return '';
   var satNote =
     '<p style="margin:0 0 12px 0;padding:8px 10px;font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">' +
     '<strong>Nota:</strong> estimaciones basadas en información satelital en el predio; pueden diferir del clima en campo.</p>';
@@ -17257,6 +17261,7 @@ function createClimateReportSectionHTML(chartImages) {
     (combinedChartBlock || '') +
     (liveBlock ? '<div class="report-block"><div class="report-block-title">Última lectura</div>' + liveBlock + '</div>' : '') +
     (irrBlock || '') +
+    (soilWaterBlock || '') +
     '</div>'
   );
 }

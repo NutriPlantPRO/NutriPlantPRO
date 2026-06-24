@@ -282,26 +282,81 @@
         areas.stripFactor != null && Number.isFinite(areas.stripFactor) ? round1(mmVal * areas.stripFactor) : null;
       return { perHa: perHa, total: total, wettedMm: wettedMm };
     }
-    return {
-      periodDays: period,
-      et0: et0,
-      rain: rain,
-      et0Source: et0Source,
-      rainSource: rainSource,
-      kc: kc,
-      etc: etc,
-      deficitClimate: deficitClimate,
-      deficitCrop: deficitCrop,
-      irrigationMm: irrMm,
-      balance: balance,
-      cropHa: cropHa,
-      irrigatedHa: irrigatedHa,
-      hasSplitArea: areas.hasSplit,
-      stripFactor: areas.stripFactor,
-      deficitClimateVol: volMm(deficitClimate),
-      deficitCropVol: volMm(deficitCrop),
-      balanceVol: volMm(balance)
-    };
+    return enrichWithSoilStorage(
+      {
+        periodDays: period,
+        et0: et0,
+        rain: rain,
+        et0Source: et0Source,
+        rainSource: rainSource,
+        kc: kc,
+        etc: etc,
+        deficitClimate: deficitClimate,
+        deficitCrop: deficitCrop,
+        irrigationMm: irrMm,
+        balance: balance,
+        cropHa: cropHa,
+        irrigatedHa: irrigatedHa,
+        hasSplitArea: areas.hasSplit,
+        stripFactor: areas.stripFactor,
+        deficitClimateVol: volMm(deficitClimate),
+        deficitCropVol: volMm(deficitCrop),
+        balanceVol: volMm(balance)
+      },
+      state
+    );
+  }
+
+  function parseSoilStorageAdjustment(state) {
+    var mode = state && state.soilStorageMode;
+    var m3 = Number(state && state.soilStorageM3);
+    if (mode !== 'deficit' && mode !== 'surplus') {
+      return { mode: null, m3: null, deltaM3: 0 };
+    }
+    if (!Number.isFinite(m3) || m3 <= 0) {
+      return { mode: null, m3: null, deltaM3: 0 };
+    }
+    m3 = round1(m3);
+    return { mode: mode, m3: m3, deltaM3: mode === 'deficit' ? m3 : round1(-m3) };
+  }
+
+  function volObjFromTotalM3(totalM3, cropHa, stripFactor) {
+    if (!Number.isFinite(totalM3) || !Number.isFinite(cropHa) || cropHa <= 0) return null;
+    var mmCrop = totalM3 / (cropHa * 10);
+    var wettedMm =
+      stripFactor != null && Number.isFinite(stripFactor) ? round1(mmCrop * stripFactor) : round1(mmCrop);
+    return { perHa: round1(totalM3 / cropHa), total: round1(totalM3), wettedMm: wettedMm };
+  }
+
+  function pickClimateTargetVol(res) {
+    if (
+      res.balance != null &&
+      res.balanceVol &&
+      res.balanceVol.total != null &&
+      res.irrigationMm != null &&
+      res.irrigationMm > 0
+    ) {
+      return { vol: res.balanceVol, mm: res.balance };
+    }
+    if (res.deficitCrop != null && res.deficitCropVol) {
+      return { vol: res.deficitCropVol, mm: res.deficitCrop };
+    }
+    return { vol: null, mm: null };
+  }
+
+  function enrichWithSoilStorage(res, state) {
+    var adj = parseSoilStorageAdjustment(state);
+    res.soilStorage = adj;
+    var base = pickClimateTargetVol(res);
+    if (!adj.deltaM3 || !base.vol || base.vol.total == null) {
+      res.fieldTargetVol = base.vol;
+      res.fieldTargetMm = base.mm;
+      return res;
+    }
+    var adjustedM3 = round1(Number(base.vol.total) + adj.deltaM3);
+    res.fieldTargetVol = volObjFromTotalM3(adjustedM3, res.cropHa, res.stripFactor);
+    res.fieldTargetMm = volTotalToCropRefMm(adjustedM3, res.cropHa);
+    return res;
   }
 
   function sourceBadge(source) {
@@ -342,12 +397,23 @@
 
   function buildStripActionBoxHtml(res) {
     if (!res.hasSplitArea || res.irrigatedHa == null) return '';
-    var targetVol = res.balanceVol && res.balanceVol.total != null ? res.balanceVol : res.deficitCropVol;
-    var targetMm = targetVol && targetVol.wettedMm != null ? targetVol.wettedMm : null;
+    var targetVol =
+      res.fieldTargetVol ||
+      (res.balanceVol && res.balanceVol.total != null ? res.balanceVol : res.deficitCropVol);
+    var targetMm = targetVol && targetVol.wettedMm != null ? targetVol.wettedMm : res.fieldTargetMm;
+    var hasSoilAdj = !!(res.soilStorage && res.soilStorage.deltaM3);
+    var climateBase =
+      res.balance != null && res.irrigationMm != null && res.irrigationMm > 0 ? 'balance' : 'deficit';
     var targetLabel =
-      res.balance != null && res.irrigationMm != null && res.irrigationMm > 0
-        ? balanceRowLabel('Balance por cubrir en riego', 'Superávit hídrico en franja', targetMm)
-        : balanceRowLabel('Déficit del cultivo por cubrir', 'Superávit en franja', targetMm);
+      climateBase === 'balance'
+        ? balanceRowLabel('Balance integrado en franja', 'Superávit integrado en franja', targetMm)
+        : balanceRowLabel('Déficit integrado por cubrir', 'Superávit integrado en franja', targetMm);
+    if (!hasSoilAdj) {
+      targetLabel =
+        climateBase === 'balance'
+          ? balanceRowLabel('Balance por cubrir en riego', 'Superávit hídrico en franja', targetMm)
+          : balanceRowLabel('Déficit del cultivo por cubrir', 'Superávit en franja', targetMm);
+    }
     if (targetMm == null) return '';
     var mmAbs = Math.abs(targetMm);
     var m3Abs = targetVol && targetVol.total != null ? Math.abs(targetVol.total) : round1(mmAbs * 10 * res.irrigatedHa);
@@ -362,6 +428,14 @@
       res.balance != null && res.irrigationMm != null && res.irrigationMm > 0
         ? 'el balance pendiente'
         : 'el déficit';
+    var soilAdjNote = '';
+    if (hasSoilAdj) {
+      soilAdjNote =
+        ' · ajuste almacén suelo <strong>' +
+        (res.soilStorage.mode === 'deficit' ? '+' : '−') +
+        res.soilStorage.m3 +
+        ' m³</strong>';
+    }
     var periodText = res.periodDays === 1 ? 'del día' : 'del periodo de ' + res.periodDays + ' días';
     var suggestedLine = isDeficit
       ? 'Riego sugerido: <strong style="color:' +
@@ -371,7 +445,8 @@
         ' m³</strong> para cubrir ' +
         coverWhat +
         ' ' +
-        periodText
+        periodText +
+        soilAdjNote
       : 'No requiere riego de reposición — superávit de <strong style="color:' +
         accent +
         ';">' +
@@ -530,6 +605,24 @@
       summaryLine('Riego aplicado (mm en franja)', res.irrigationMm, irrVol) +
       summaryBalanceLine('Balance hídrico (ETc − lluvia − riego)', 'Superávit hídrico (lluvia + riego − ETc)', res.balance, res.balanceVol) +
       summaryWettedStrip('Balance por cubrir en riego', 'Superávit hídrico en riego', res.balanceVol) +
+      (res.soilStorage && res.soilStorage.deltaM3
+        ? '<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:14px;">' +
+          '<span style="color:#475569;">Ajuste almacén suelo (' +
+          (res.soilStorage.mode === 'deficit' ? 'déficit +' : 'exceso −') +
+          res.soilStorage.m3 +
+          ' m³)</span>' +
+          '<span style="font-weight:600;color:#0369a1;text-align:right;">' +
+          (res.soilStorage.mode === 'deficit' ? '+' : '−') +
+          res.soilStorage.m3 +
+          ' m³ en franja</span></div>' +
+          summaryBalanceLine(
+            'Total integrado (clima ± almacén suelo)',
+            'Superávit integrado (clima ± almacén suelo)',
+            res.fieldTargetMm,
+            res.fieldTargetVol
+          ) +
+          summaryWettedStrip('Total integrado en franja', 'Superávit integrado en franja', res.fieldTargetVol)
+        : '') +
       buildStripActionBoxHtml(res)
     );
   }
@@ -677,7 +770,8 @@
       (extraStyle || '') +
       '">' +
       '<strong>Nota:</strong> El balance hídrico es una <strong>estimación rápida</strong> basada en ETo, lluvia y riego (satélite o valores de campo). ' +
-      'No considera almacenamiento de agua en el suelo, escurrimiento superficial, drenaje profundo ni lixiviación de nutrientes. ' +
+      'El ajuste opcional de <strong>almacén suelo</strong> (déficit/exceso en m³) solo se suma o resta si tú lo indicas arriba; calcúlalo con tu criterio en 🪨 Agua en suelo y textura. ' +
+      'No considera escurrimiento superficial, drenaje profundo ni lixiviación de nutrientes. ' +
       'El % raíces en superficie (criterio NutriPlant) solo ayuda a estimar la franja regada en el área, no la profundidad del suelo. <strong>Validar siempre en campo.</strong></p>'
     );
   }
@@ -826,6 +920,8 @@
     volTotalToCropRefMm: volTotalToCropRefMm,
     computeBalanceMm: computeBalanceMm,
     computeResults: computeResults,
+    parseSoilStorageAdjustment: parseSoilStorageAdjustment,
+    enrichWithSoilStorage: enrichWithSoilStorage,
     sourceBadge: sourceBadge,
     fetchRollingOpenMeteo: fetchRollingOpenMeteo,
     buildSummaryHtml: buildSummaryHtml,

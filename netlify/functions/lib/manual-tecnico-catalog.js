@@ -260,7 +260,7 @@ module.exports = {
       url: `${BASE}/capitulos/n-mineralizable-agua-disponible-suelo.html`,
       pillar: 'E — Agua y suelo',
       summary:
-        'n-mineralizable-mo-free: N_min kg/ha/año desde MO; agua-disponible-textura-suelo-free: CC-PMP, % superficie/franja, recuadro m³·mm, puente balance hídrico, textura USDA.',
+        'n-mineralizable-mo-free: N_min kg/ha/año desde MO; agua-disponible-textura-suelo-free: CC-PMP, zona objetivo 40–60% agua útil en gráfica, recuadro m³·mm (CC y objetivo), puente balance hídrico, textura USDA.',
       status: 'published'
     }
   ],
