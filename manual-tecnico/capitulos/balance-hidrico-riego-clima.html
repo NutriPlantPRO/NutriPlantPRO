@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Balance hídrico y cálculo rápido de riego — Manual NutriPlant PRO</title>
-  <meta name="description" content="Calculadora de balance hídrico en Clima → Lluvia y ET₀: déficit climático y de cultivo, riego mm/m³, franja regada y % suelo explorado por raíces.">
+  <meta name="description" content="Calculadora de balance hídrico: déficit ETc, riego en m³ en franja regada, puente con Agua en suelo, mm en resultados y % suelo explorado.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/balance-hidrico-riego-clima.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css">
@@ -13,11 +13,11 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "Balance hídrico y cálculo rápido de riego",
-  "description": "Calculadora de balance hídrico en Clima → Lluvia y ET₀: déficit climático y de cultivo, riego mm/m³, franja regada y % suelo explorado por raíces.",
+  "description": "Calculadora de balance hídrico: déficit ETc, riego en m³ en franja regada, puente con Agua en suelo, mm en resultados y % suelo explorado.",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/balance-hidrico-riego-clima.html",
   "inLanguage": "es",
   "datePublished": "2026-06-12",
-  "dateModified": "2026-06-20",
+  "dateModified": "2026-06-24",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -77,7 +77,7 @@
         <tr><td>ETo</td><td>Satélite (ventanas rodantes Open-Meteo) o <strong>manual</strong> (mm del periodo)</td></tr>
         <tr><td>Lluvia</td><td>Satélite, <strong>manual</strong> (pluviómetro) o <strong>macrotúnel</strong> (lluvia = 0)</td></tr>
         <tr><td>Kc</td><td>El usuario lo ingresa; tabla FAO-56 en la app es <strong>solo consulta</strong></td></tr>
-        <tr><td>Riego</td><td>En la <strong>franja regada</strong>: <strong>mm</strong> (lámina en zona humedecida) o <strong>m³</strong> (volumen total en esa franja; requiere superficie regada)</td></tr>
+        <tr><td>Riego</td><td>En la <strong>franja regada</strong>: <strong>m³</strong> (volumen total en esa franja; requiere superficie regada). La lámina en mm se calcula en los resultados.</td></tr>
       </tbody>
     </table>
     <p>Las estimaciones satélite son referencia del punto del predio; pueden diferir del microclima o del campo.</p>
@@ -111,6 +111,28 @@
       mm en franja = mm sobre cultivo × factor franja
     </div>
     <p>Ejemplo: déficit 8,9 mm en 1 ha = 89 m³. Riego 20 m³ en franja 0,5 ha (= 4 mm en franja). Balance = 89 − 20 = <strong>69 m³</strong> (6,9 mm ref. cultivo; 13,8 mm en franja).</p>
+    <p>Ejemplo coherente con 🪨 Agua en suelo: <strong>90 m³</strong> en franja 0,6 ha = <strong>15 mm</strong> en zona humedecida; la misma cantidad = <strong>9 mm</strong> de referencia sobre 1 ha cultivo. El <strong>m³ no cambia</strong>; solo cambia la lámina según el área de referencia.</p>
+
+    <h2>Riego aplicado: solo m³ en franja (2026-06)</h2>
+    <p>
+      La entrada <strong>«Riego en franja regada (periodo)»</strong> acepta únicamente <strong>m³</strong> (volumen total aplicado en la zona humedecida del periodo 1, 7 o 30 días).
+      Se eliminó el selector mm en la UI para evitar confusión con la lámina de resultados. Internamente la app convierte:
+    </p>
+    <div class="mt-formula">mm en franja = m³ riego ÷ (superficie regada ha × 10)</div>
+    <p>En campo suele operarse en <strong>m³</strong> (contador, pozo, fertirriego); los <strong>mm</strong> aparecen en el resumen y en el recuadro «Dato importante — riego en campo».</p>
+
+    <h2>Referencia almacén suelo (puente con 🪨 Agua en suelo)</h2>
+    <p>
+      Debajo de las entradas de riego, la calculadora muestra un bloque
+      <strong>«🪨 Referencia almacén suelo (Agua en suelo y textura)»</strong> con m³ hasta CC (o exceso si la humedad está por encima de CC).
+      Botón <strong>«Actualizar desde 🪨 suelo»</strong> lee la herramienta gratis del mismo navegador
+      (<code>nutriplant_bridge_soil_water_v1</code> / persistencia <code>agua_disponible_textura</code>).
+    </p>
+    <ul>
+      <li><strong>Complementa</strong> el balance climático (ETc − lluvia − riego) con el almacén físico del suelo (CC, PMP, θ).</li>
+      <li><strong>No sustituye</strong> el campo «Riego en franja regada» — ese es el volumen <em>ya aplicado</em> en el periodo.</li>
+      <li>Si hay déficit hasta CC en 🪨 suelo, puede sugerir automáticamente la <strong>superficie regada (ha)</strong> si estaba vacía.</li>
+    </ul>
 
     <h2>% suelo explorado por raíces</h2>
     <p>
@@ -144,7 +166,7 @@
     <div class="mt-warn">
       <p>El balance hídrico es una <strong>estimación rápida</strong>. No considera:</p>
       <ul>
-        <li>Almacenamiento de agua en el suelo</li>
+        <li>Almacenamiento de agua en el suelo en el balance ETc (el bloque puente 🪨 muestra m³ hasta CC aparte)</li>
         <li>Escurrimiento superficial</li>
         <li>Drenaje profundo</li>
         <li>Lixiviación de nutrientes</li>
@@ -156,7 +178,7 @@
     <ul>
       <li><a href="vpd-deficit-presion-vapor.html">VPD</a> — estrés de vapor y timing de riego.</li>
       <li><a href="programa-fertirriego-etapas.html">Fertirriego</a> — lámina y programa por etapa (distinto de este balance rápido).</li>
-      <li><a href="n-mineralizable-agua-disponible-suelo.html">Agua en suelo</a> — CC−PMP y textura (capacidad de almacenamiento).</li>
+      <li><a href="n-mineralizable-agua-disponible-suelo.html">Agua en suelo</a> — CC−PMP, textura y puente m³ almacén suelo (complemento, no sustituto del balance ETc).</li>
       <li><a href="n-mineralizable-agua-disponible-suelo.html">N mineralizable</a> — tabla orientativa % suelo explorado por sistema.</li>
       <li>Login/dashboard — <strong>Conversor de magnitudes físicas</strong> (alcance de raíz: copa o cama).</li>
     </ul>

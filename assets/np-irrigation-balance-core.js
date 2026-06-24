@@ -177,6 +177,39 @@
     return round1(v);
   }
 
+  /** Convierte riego guardado (legacy mm) a m³ para la UI m³-only. */
+  function migrateIrrigationValueToM3(value, unit, irrigatedHa, cropHa) {
+    var v = Number(value);
+    if (!Number.isFinite(v) || v < 0) return null;
+    if (unit === 'm3') return round1(v);
+    var iHa =
+      irrigatedHa != null && Number.isFinite(Number(irrigatedHa)) && Number(irrigatedHa) > 0
+        ? Number(irrigatedHa)
+        : cropHa != null && Number.isFinite(Number(cropHa)) && Number(cropHa) > 0
+          ? Number(cropHa)
+          : 1;
+    var vol = mmToVolTotal(v, iHa);
+    return vol != null ? vol : round1(v);
+  }
+
+  /** Fuerza unit m³ y convierte valores legacy guardados en mm. */
+  function normalizeIrrigationInputM3Only(state) {
+    if (!state) return state;
+    if (state.irrigationValue == null || !Number.isFinite(Number(state.irrigationValue))) {
+      state.irrigationUnit = 'm3';
+      return state;
+    }
+    var areas = resolveAreaContext(state);
+    state.irrigationValue = migrateIrrigationValueToM3(
+      state.irrigationValue,
+      state.irrigationUnit,
+      areas.irrigatedHa,
+      areas.cropHa
+    );
+    state.irrigationUnit = 'm3';
+    return state;
+  }
+
   /** m³ totales: mm × ha × 10 (1 mm sobre 1 ha = 10 m³). */
   function mmToVolTotal(mm, ha) {
     if (mm == null || !Number.isFinite(Number(mm)) || !Number.isFinite(ha) || ha <= 0) return null;
@@ -548,6 +581,7 @@
       '.np-irr-value-unit{display:flex;align-items:stretch;border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;background:#fff;width:100%;max-width:220px;}' +
       '.np-irr-value-unit input{flex:1;min-width:0;border:none!important;border-radius:0!important;box-shadow:none!important;padding:10px 12px;font-size:14px;}' +
       '.np-irr-value-unit select{width:auto;min-width:4.25rem;flex-shrink:0;border:none!important;border-left:1px solid #cbd5e1!important;border-radius:0!important;background:#f8fafc;font-weight:700;color:#0369a1;padding:10px 10px;font-size:14px;cursor:pointer;}' +
+      '.np-irr-value-unit .np-irr-unit-badge,.irr-riego-row .irr-unit-badge{display:flex;align-items:center;flex-shrink:0;border-left:1px solid #cbd5e1;background:#f8fafc;font-weight:700;color:#0369a1;padding:10px 12px;font-size:14px;white-space:nowrap;}' +
       '.np-irr-calc-row-3{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:16px;align-items:start;}' +
       '@media (max-width:720px){.np-irr-calc-row-3{grid-template-columns:1fr;}.np-irr-value-unit{max-width:100%;}}' +
       '.np-irr-root-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}' +
@@ -786,6 +820,8 @@
     suggestedIrrigatedHaFromReach: suggestedIrrigatedHaFromReach,
     buildAreaCriterionNoteHtml: buildAreaCriterionNoteHtml,
     irrigationMmFromInput: irrigationMmFromInput,
+    migrateIrrigationValueToM3: migrateIrrigationValueToM3,
+    normalizeIrrigationInputM3Only: normalizeIrrigationInputM3Only,
     mmToVolTotal: mmToVolTotal,
     volTotalToCropRefMm: volTotalToCropRefMm,
     computeBalanceMm: computeBalanceMm,

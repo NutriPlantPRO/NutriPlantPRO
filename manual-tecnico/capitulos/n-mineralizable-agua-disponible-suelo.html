@@ -58,7 +58,7 @@
       <thead><tr><th>Herramienta</th><th>Archivo</th><th>Uso</th></tr></thead>
       <tbody>
         <tr><td>Estimación de N mineralizable</td><td><code>n-mineralizable-mo-free.html</code></td><td>MO, profundidad, DA, zona radical</td></tr>
-        <tr><td>Agua en suelo y textura</td><td><code>agua-disponible-textura-suelo-free.html</code></td><td>CC, PMP, lámina; triángulo USDA</td></tr>
+        <tr><td>Agua en suelo y textura</td><td><code>agua-disponible-textura-suelo-free.html</code></td><td>CC, PMP, % superficie/franja, lámina m³·mm, puente balance; triángulo USDA</td></tr>
       </tbody>
     </table>
     <p>Persistencia: <code>nutriplant_free_n_mineralizable_mo_v1</code>, <code>nutriplant_free_agua_disponible_textura_v1</code>.</p>
@@ -96,16 +96,30 @@
     <div class="mt-formula">
       Agua útil (% vol.) = CC − PMP<br>
       Volumen agua útil (m³) = Volumen suelo × (CC − PMP) / 100<br>
-      Ajuste zona radical = Volumen × (zona_radical_% / 100)
+      Ajuste superficie explorada = Volumen × (% superficie / 100)
     </div>
+    <p>El <strong>% suelo explorado</strong> es la fracción del <strong>área del cultivo</strong> con raíces activas o zona humedecida (franja regada en goteo). <strong>No es profundidad</strong> — mismo criterio que balance hídrico.</p>
     <h3>Humedad actual (θ) y lámina hasta CC</h3>
     <p>Si ingresas <strong>humedad volumétrica actual θ</strong> (% vol., misma escala que CC/PMP):</p>
     <div class="mt-formula">
       Déficit hasta CC (% vol.) = max(0, CC − θ)<br>
-      Lámina (mm) = (déficit / 100) × profundidad_cm × 10<br>
-      Lámina ajustada = Lámina × (zona_radical_% / 100)
+      Lámina en perfil (mm) = (déficit / 100) × profundidad_cm × 10<br>
+      Volumen en franja (m³) = volumen total × (% superficie / 100)<br>
+      Lámina en franja (mm) = misma lámina de perfil (suelo humedecido)<br>
+      Referencia ha cultivo (mm) = volumen_franja ÷ (ha_cultivo × 10)
     </div>
     <p>Si θ &gt; CC, la app advierte riesgo de encharcamiento. La lámina es una <strong>referencia de riego</strong>; validar con tensiómetros, sensores o método agronómico local.</p>
+    <h3>Resultado destacado en la app</h3>
+    <p>
+      Con humedad actual θ, la herramienta muestra un <strong>recuadro principal</strong> (m³ · mm en franja, tipografía grande) con el volumen para reponer hasta CC en la franja regada.
+      Los demás valores (volumen de suelo, potencial útil, déficit % vol.) quedan como detalle secundario.
+    </p>
+    <h3>Puente hacia balance hídrico</h3>
+    <p>
+      Cada recálculo publica <code>nutriplant_bridge_soil_water_v1</code> (m³ en franja hasta CC, exceso si θ &gt; CC, ha franja, mm en franja).
+      La calculadora 🌧️ <strong>Lámina de riego y balance hídrico</strong> (gratis y PRO) puede leer ese puente con «Actualizar desde 🪨 suelo».
+      Ver <a href="balance-hidrico-riego-clima.html">Balance hídrico y cálculo rápido de riego</a>.
+    </p>
 
     <h2>3. Textura USDA (pestaña Textura)</h2>
     <p>Con % arena, limo y arcilla (suma ideal 100 %), el triángulo arrastrable clasifica la textura (USDA / soiltexture). La app muestra <strong>rangos típicos ilustrativos de CC y PMP</strong> por clase — útiles para cargar una vez valores de referencia en la pestaña Agua; luego puedes editarlos a mano.</p>
@@ -114,6 +128,7 @@
     <h2>Relación con otros capítulos</h2>
     <ul>
       <li><a href="analisis-suelo-fertilidad-kgha.html">Análisis de suelo (kg/ha)</a> — ajuste por nutriente vs ideal en proyecto PRO.</li>
+      <li><a href="balance-hidrico-riego-clima.html">Balance hídrico</a> — déficit climático y puente m³ desde esta herramienta.</li>
       <li><a href="vpd-deficit-presion-vapor.html">VPD</a> — demanda atmosférica del cultivo (complementa, no sustituye, agua en suelo).</li>
       <li><a href="interacciones-mulder-compatibilidad.html">Interacciones y compatibilidad</a> — fertilización cuando el suelo ya tiene agua y N disponibles limitados.</li>
     </ul>

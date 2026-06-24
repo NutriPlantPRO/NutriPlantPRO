@@ -183,8 +183,9 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 | ETo / lluvia | Satélite (ventanas rodantes Open-Meteo) o manual; macrotúnel = lluvia 0 |
 | Kc | Usuario lo ingresa; tabla FAO-56 solo consulta |
 | Fórmulas | ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; **balance m³ = déficit m³ cultivo − riego m³ en franja**; balance mm ref. cultivo = balance m³ ÷ (10 × ha cultivo) |
-| Volumen | 1 mm sobre X ha = X × 10 m³; riego **mm en franja** o **m³ total en franja** → mm franja = m³ ÷ (ha regada × 10) |
-| Franja regada | Déficit en mm/m³ sobre **ha cultivo**; riego siempre en **franja humedecida**; mm en franja = mm cultivo × (ha cultivo ÷ ha regada); m³ totales del déficit **no** se dividen |
+| Volumen | 1 mm sobre X ha = X × 10 m³; **riego aplicado solo en m³** en franja; mm franja = m³ ÷ (ha regada × 10) — mm solo en resultados |
+| Franja regada | Déficit en mm/m³ sobre **ha cultivo**; riego siempre en **franja humedecida (m³)**; mm en franja = mm cultivo × (ha cultivo ÷ ha regada); m³ totales **no** se dividen. Ej.: 90 m³ = 9 mm ref. 1 ha = 15 mm en 0,6 ha franja |
+| Puente 🪨 suelo | Bloque «Referencia almacén suelo» + botón Actualizar; lee `nutriplant_bridge_soil_water_v1` (m³ hasta CC desde Agua en suelo). Complementa balance; ≠ riego ya aplicado |
 | Recuadro «Dato importante» | Si hay franja distinta: riego sugerido (m³), lámina en franja (mm), aplicar en franja (m³). Criterio NutriPlant + enlace a tabla % suelo explorado |
 | Tablas desplegables | Kc FAO-56 (consulta) y **% suelo explorado por sistema** (aguacate, berry, hortaliza…) |
 | % alcance raíces | Sugiere franja (ha cultivo × % ÷ 100); **no altera déficit ETc**. Estimar %: **Conversor magnitudes** → alcance raíz (copa circular o cama/banda) o tabla en N mineralizable |
@@ -211,8 +212,8 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **URL:** …/n-mineralizable-agua-disponible-suelo.html  
 - **N_min (kg N/ha/año):** 10000×(P/100)×DA×1000×(R/100)×(MO/100)×(N_MO/100)×(T_min/100); P cm, DA g/cm³, T_min 1–3 %/año. Orden magnitud, no ensayo lab.  
-- **Agua:** vol m³ = ha×10000×(prof_cm/100); útil % = CC−PMP; vol útil = vol×(CC−PMP)/100×(zona_radical/100). Con θ actual: déficit = max(0,CC−θ); lámina mm = déficit/100×prof×10.  
-- **Textura:** triángulo USDA; rangos típicos CC/PMP ilustrativos por clase. Herramientas: `n_mineralizable`, `agua_textura`.
+- **Agua:** vol m³ = ha×10000×(prof_cm/100); útil % = CC−PMP; vol útil = vol×(CC−PMP)/100×(% superficie/100). % superficie = franja regada (no profundidad). Con θ: recuadro principal m³·mm franja; déficit = max(0,CC−θ); mm perfil = déficit/100×prof×10; m³ franja = vol×déficit/100×(%/100); mm franja = mm perfil (no × %); ref. ha = m³÷(ha×10). Puente `nutriplant_bridge_soil_water_v1` → balance hídrico. Textura USDA.
+- Herramientas: `n_mineralizable`, `agua_textura`, `lamina_riego` (puente `nutriplant_bridge_soil_water_v1`).
 
 ### 4.15 Huella de carbono de fertilizantes (Pilar F — sostenibilidad)
 

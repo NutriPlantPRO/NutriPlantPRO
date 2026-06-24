@@ -143,7 +143,7 @@
       icon: '💧',
       pillar: 'E · Agua y clima',
       title: 'Balance hídrico y cálculo rápido de riego',
-      keywords: 'balance hídrico riego ETo ETc Kc déficit lluvia franja regada macrotúnel pluviómetro satélite Open-Meteo clima alcance raíz conversor magnitudes copa cama'
+      keywords: 'balance hídrico riego ETo ETc Kc déficit lluvia franja regada m3 almacén suelo puente agua en suelo macrotúnel pluviómetro satélite Open-Meteo clima alcance raíz conversor magnitudes copa cama'
     },
     {
       href: 'capitulos/agua-dureza-acidificacion-solubilidad.html',

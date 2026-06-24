@@ -95,6 +95,32 @@
       color: #0369a1;
       padding: 10px 10px;
     }
+    .field-box .irr-riego-row .irr-unit-badge {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      border-left: 1px solid #cbd5e1;
+      background: #f8fafc;
+      font-weight: 700;
+      color: #0369a1;
+      padding: 10px 12px;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .irr-soil-bridge-section label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin: 0; }
+    .irr-soil-bridge-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .irr-btn-soil-bridge {
+      flex-shrink: 0;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid #7dd3fc;
+      background: #fff;
+      color: #0369a1;
+      cursor: pointer;
+    }
+    .irr-btn-soil-bridge:hover { background: #f0f9ff; }
     #irr-kc-hint-wrap { margin-top: 4px; }
     .field-box label.irr-manual-opt {
       display: flex;
@@ -222,10 +248,11 @@
           <div class="field-box">
             <label>Riego en franja regada (periodo)</label>
             <div class="irr-riego-row">
-              <input id="irr-applied" type="number" min="0" step="0.1" placeholder="Acumulado" oninput="irrFreeUpdate()" />
-              <select id="irr-unit" onchange="irrFreeUpdate()"><option value="mm">mm</option><option value="m3">m³</option></select>
+              <input id="irr-applied" type="number" min="0" step="0.1" placeholder="Volumen en franja" oninput="irrFreeUpdate()" aria-label="Riego aplicado en franja (m³)" />
+              <span class="irr-unit-badge" aria-hidden="true">m³</span>
+              <input type="hidden" id="irr-unit" value="m3" />
             </div>
-            <p class="field-hint">Lo aplicado en la <strong>zona humedecida</strong> (1 o 7 días). <strong>m³</strong> = volumen total en la franja; <strong>mm</strong> = lámina en esa franja (usa «Superficie regada»).</p>
+            <p class="field-hint">Volumen total aplicado en la <strong>zona humedecida</strong> (1 o 7 días). Indica <strong>Superficie regada</strong> para el balance; la app calcula la lámina en mm en los resultados.</p>
           </div>
           <div class="field-box">
             <label>Superficie del cultivo (ha)</label>
@@ -237,6 +264,13 @@
             <input id="irr-area" type="number" min="0" step="0.01" placeholder="Franja humedecida" oninput="irrFreeUpdate()" />
             <p class="field-hint">Zona humedecida (goteo/macrotúnel). Vacío = misma que cultivo.</p>
           </div>
+        </div>
+        <div class="field-box irr-soil-bridge-section" style="margin-bottom:12px;">
+          <div class="irr-soil-bridge-head">
+            <label>🪨 Referencia almacén suelo (Agua en suelo y textura)</label>
+            <button type="button" id="irr-btn-soil-bridge" class="irr-btn-soil-bridge">Actualizar desde 🪨 suelo</button>
+          </div>
+          <div id="irr-soil-bridge-panel"></div>
         </div>
         <div class="field-box field-box--green irr-calc-roots">
           <label>Raíces en superficie (% del área)</label>
@@ -270,7 +304,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="climate-kc-fao-data.js"></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
-  <script src="assets/np-irrigation-balance-core.js?v=202606201400"></script>
+  <script src="assets/np-irrigation-balance-core.js?v=202606241200"></script>
+  <script src="assets/np-soil-water-bridge.js"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
     var irrRolling = null;
@@ -325,9 +360,61 @@
       return o;
     }
 
+    function irrFreeRenderSoilBridge(data) {
+      var panel = document.getElementById('irr-soil-bridge-panel');
+      var SB = window.NpSoilWaterBridge;
+      if (!panel || !SB || typeof SB.buildPanelHtml !== 'function') return;
+      var d = data != null ? data : SB.refresh ? SB.refresh() : SB.read();
+      panel.innerHTML = SB.buildPanelHtml(d, { idPrefix: 'irr' });
+    }
+
+    function irrFreeRefreshSoilBridge() {
+      var SB = window.NpSoilWaterBridge;
+      if (!SB || typeof SB.refresh !== 'function') return;
+      var data = SB.refresh();
+      irrFreeRenderSoilBridge(data);
+      if (data && data.effAreaHa != null && data.status === 'deficit') {
+        var areaEl = document.getElementById('irr-area');
+        if (areaEl && (areaEl.value === '' || !Number.isFinite(parseFloat(areaEl.value)))) {
+          areaEl.value = String(data.effAreaHa);
+        }
+        var cropAreaEl = document.getElementById('irr-crop-area');
+        if (cropAreaEl && data.cropAreaHa != null && (cropAreaEl.value === '' || cropAreaEl.value === '1')) {
+          cropAreaEl.value = String(data.cropAreaHa);
+        }
+        var reachEl = document.getElementById('irr-root-reach');
+        if (reachEl && data.rootEffPct != null && reachEl.value === '') {
+          reachEl.value = String(Math.round(data.rootEffPct));
+        }
+        irrFreeUpdate();
+      }
+    }
+
+    function irrFreeMigrateLegacyIrrigationUnit() {
+      var NB = window.NpIrrBalance;
+      var appliedEl = document.getElementById('irr-applied');
+      var unitEl = document.getElementById('irr-unit');
+      if (!appliedEl || appliedEl.value === '' || !NB || !NB.migrateIrrigationValueToM3) {
+        if (unitEl) unitEl.value = 'm3';
+        return;
+      }
+      var cropHa = parseFloat(document.getElementById('irr-crop-area').value);
+      if (!Number.isFinite(cropHa) || cropHa <= 0) cropHa = 1;
+      var irrAreaEl = document.getElementById('irr-area');
+      var irrHa =
+        irrAreaEl && irrAreaEl.value !== '' && Number.isFinite(parseFloat(irrAreaEl.value))
+          ? parseFloat(irrAreaEl.value)
+          : cropHa;
+      var legacyUnit = unitEl && unitEl.value === 'mm' ? 'mm' : 'm3';
+      var m3 = NB.migrateIrrigationValueToM3(parseFloat(appliedEl.value), legacyUnit, irrHa, cropHa);
+      if (m3 != null) appliedEl.value = String(m3);
+      if (unitEl) unitEl.value = 'm3';
+    }
+
     function irrFreeApplyPersistState(d) {
       if (!d) return;
       window.NpFreePersist.applyIds(d, IRR_PERSIST_IDS);
+      irrFreeMigrateLegacyIrrigationUnit();
       if (d.rolling && typeof d.rolling === 'object') {
         irrRolling = d.rolling;
         irrRestoreClimateMeta();
@@ -343,6 +430,7 @@
       var lat = parseFloat(document.getElementById('irr-free-lat').value);
       var lng = parseFloat(document.getElementById('irr-free-lng').value);
       if (Number.isFinite(lat) && Number.isFinite(lng)) irrApplyCoords(lat, lng, true);
+      irrFreeRenderSoilBridge();
       irrFreeUpdate();
     }
 
@@ -431,7 +519,7 @@
         kc: Number.isFinite(kc) ? kc : null,
         periodDays: irrPeriodDays,
         irrigationValue: document.getElementById('irr-applied').value !== '' ? parseFloat(document.getElementById('irr-applied').value) : null,
-        irrigationUnit: document.getElementById('irr-unit').value === 'm3' ? 'm3' : 'mm',
+        irrigationUnit: 'm3',
         cropAreaHa: document.getElementById('irr-crop-area').value !== '' ? parseFloat(document.getElementById('irr-crop-area').value) : 1,
         irrigatedAreaHa: document.getElementById('irr-area').value !== '' ? parseFloat(document.getElementById('irr-area').value) : null,
         rootReachPct: document.getElementById('irr-root-reach').value !== '' ? parseFloat(document.getElementById('irr-root-reach').value) : null,
@@ -518,6 +606,17 @@
         });
       }
       irrFreeUpdate();
+      irrFreeRenderSoilBridge();
+
+      var soilBridgeBtn = document.getElementById('irr-btn-soil-bridge');
+      if (soilBridgeBtn) {
+        soilBridgeBtn.addEventListener('click', irrFreeRefreshSoilBridge);
+      }
+      if (window.NpSoilWaterBridge && window.NpSoilWaterBridge.BRIDGE_KEY) {
+        window.addEventListener('storage', function (e) {
+          if (e.key === window.NpSoilWaterBridge.BRIDGE_KEY) irrFreeRenderSoilBridge();
+        });
+      }
 
       irrPersist = window.NpFreePersist.bind('lamina_riego', irrFreeGetPersistState, irrFreeApplyPersistState);
 

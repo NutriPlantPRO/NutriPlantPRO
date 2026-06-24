@@ -125,7 +125,7 @@ module.exports = {
       url: `${BASE}/capitulos/balance-hidrico-riego-clima.html`,
       pillar: 'E — Agua y clima',
       summary:
-        'Clima → Lluvia y ET₀ + herramienta gratis lámina riego. ETc=ETo×Kc; déficit cultivo; balance m³ (déficit cultivo − riego franja); franja regada; % suelo explorado; tablas Kc y % sistema; conversor magnitudes (alcance raíz copa/cama). Validar en campo.',
+        'Clima → Lluvia y ET₀ + herramienta gratis lámina riego. ETc=ETo×Kc; déficit cultivo; balance m³ (déficit cultivo − riego franja m³); riego aplicado solo m³; puente m³ almacén suelo desde Agua en suelo; franja regada; mm en resultados; % suelo explorado; tablas Kc. Validar en campo.',
       status: 'published'
     },
     {
@@ -260,7 +260,7 @@ module.exports = {
       url: `${BASE}/capitulos/n-mineralizable-agua-disponible-suelo.html`,
       pillar: 'E — Agua y suelo',
       summary:
-        'n-mineralizable-mo-free: N_min kg/ha/año desde MO; agua-disponible-textura-suelo-free: CC-PMP, lámina, textura USDA.',
+        'n-mineralizable-mo-free: N_min kg/ha/año desde MO; agua-disponible-textura-suelo-free: CC-PMP, % superficie/franja, recuadro m³·mm, puente balance hídrico, textura USDA.',
       status: 'published'
     }
   ],
