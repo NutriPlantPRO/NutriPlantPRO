@@ -1080,21 +1080,21 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   justify-content: flex-start; 
   margin-bottom: 18px;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 12px 16px;
   overflow: visible;
 }
 
 .top h1 {
-  flex: 0 1 auto;
+  flex: 1 1 160px;
   min-width: 0;
   max-width: 100%;
   margin: 0;
 }
 
-/* Contenedor de botones del header: una sola fila; crece en la línea y alinea a la derecha (sin saltos al hacer wrap) */
+/* Título en fila propia arriba; herramientas abajo alineadas a la derecha con scroll horizontal */
 .header-buttons {
   display: flex;
-  flex: 1 1 0;
+  flex: 999 1 480px;
   flex-wrap: nowrap;
   align-items: stretch;
   justify-content: flex-end;
@@ -1102,7 +1102,6 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   overflow-x: auto;
   min-width: 0;
   max-width: 100%;
-  margin-left: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
