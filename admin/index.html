@@ -660,7 +660,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../assets/np-vpd-range-charts.js?v=202606243000"></script>
+    <script src="../assets/np-vpd-range-charts.js?v=202606243500"></script>
     <script src="../config-no-traducir-terminos.js"></script>
 </head>
 <body class="admin-body">
@@ -11513,7 +11513,12 @@
                                     ? NPC.prepareCriticalRowsForDisplay(criticalRows, meta.endDate, meta.startDate)
                                     : { rows: criticalRows, windowStart: null, windowEnd: null, totalAll: criticalRows.length, rangeTruncated: false };
                                 const critShown = critPrep.rows || [];
-                                adminVpdRangeInit = { summaryRows: summaryRows, criticalRows: criticalRows, meta: meta };
+                                adminVpdRangeInit = {
+                                    summaryRows: summaryRows,
+                                    criticalRows: criticalRows,
+                                    dailySummaryRows: currentRange.dailySummaryRows || [],
+                                    meta: meta
+                                };
                                 const vpdTdSep = 'border-left: 3px solid #fdba74;';
                                 const summaryTableHtml = '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f3f4f6;">' +
                                     '<th style="padding:8px;text-align:left;">Periodo</th><th style="padding:8px;text-align:right;border-left:3px solid #fdba74;">VPD máx</th><th style="padding:8px;text-align:left;">Hora máx</th>' +
@@ -11550,6 +11555,7 @@
                                 const shell = NPC ? NPC.buildInteractiveBlockShell({
                                     prefix: 'admin-vpd',
                                     summaryCount: summaryRows.length,
+                                    granularity: meta.granularity,
                                     criticalPrep: critPrep,
                                     summaryTableHtml: summaryTableHtml,
                                     criticalTableHtml: criticalTableHtml

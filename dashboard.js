@@ -8636,9 +8636,9 @@ function loadChartImagesForReport(selectedSections, callback) {
       window.NpVpdRangeCharts.getReportChartUrls(
         vpdTbl.summaryRows,
         vpdTbl.criticalRows || [],
-        vpdTbl.meta || {}
+        vpdTbl.meta || {},
+        vpdTbl.dailySummaryRows || []
       ).then(function(res) {
-        if (res && res.vpdRange) out.vpdRange = res.vpdRange;
         if (res && res.vpdCritical) out.vpdCritical = res.vpdCritical;
         next(out);
       }).catch(function(e) {
@@ -17018,24 +17018,38 @@ function createVPDReportSectionHTML(chartImages) {
           ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.granularity) || 'diario'))}
           (${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.startDate) || '—'))} a ${reportEscapeHtml(String((currentRangeTable.meta && currentRangeTable.meta.endDate) || '—'))})
           <div style="margin-top:8px;font-size:11px;color:#64748b;line-height:1.45;">
-            Gráfica: cada barra = <strong>24 h</strong> apiladas (azul &lt;0.5 · verde óptimo · tinto &gt;1.5 kPa).
-            Pie de barra: VPD máx/mín y hora. En PDF no se incluye la tabla extensa — usa <strong>Gráfica / Tabla</strong> en Clima para el detalle.
-            ${currentRangeTable.summaryRows.length > (window.NpVpdRangeCharts ? window.NpVpdRangeCharts.RANGE_CHART_PDF_MAX_BARS : 31) ? ' Gráfica de rangos: últimos ' + (window.NpVpdRangeCharts ? window.NpVpdRangeCharts.RANGE_CHART_PDF_MAX_BARS : 31) + ' periodos.' : ''}
+            Tabla con VPD máx/mín, horas por zona y % estrés (sin gráfica de barras 24 h).
           </div>
         </div>
-        ${
-          chartImages && chartImages.vpdRange
-            ? `<div style="margin-bottom:10px;"><img src="${chartImages.vpdRange}" alt="Gráfica VPD por periodo" style="width:100%;max-height:320px;object-fit:contain;border:1px solid #fcd34d;border-radius:8px;background:#fff;" /></div>`
-            : '<div class="report-note">Sin gráfica de rangos (descarga la serie VPD en Clima antes del PDF).</div>'
-        }
+        <div class="report-vpd-table-wrap">
+        <table class="report-admin-table report-vpd-wide-table">
+          <thead>
+            <tr>
+              <th>Periodo</th>
+              <th>VPD máx</th>
+              <th>Hora máx</th>
+              <th>VPD mín</th>
+              <th>Hora mín</th>
+              <th>Horas &gt; 1.5</th>
+              <th>Horas &lt; 0.5</th>
+              <th>Horas óptimas</th>
+              <th>% estrés</th>
+              <th>UV máx</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${vpdStressSummaryRowHtml(currentRangeTable.summaryRows) || '<tr><td colspan="10" style="text-align:center;color:#64748b;">Sin datos.</td></tr>'}
+          </tbody>
+        </table>
+        </div>
       </div>
       <div class="report-block" style="border-color:#fcd34d;background:#fffbeb;">
-        <div class="report-block-title">⏱️ Horas críticas (${criticalPrep.rows.length}) · ${getVpdCriticalDisplayLabel()}</div>
-        ${criticalPrep.windowStart ? `<div class="report-note" style="margin-bottom:8px;font-size:11px;">${buildVpdCriticalHoursScopeNoteHtml(criticalPrep)}</div>` : ''}
+        <div class="report-block-title">⏱️ Horas críticas (${criticalPrep.rows.length}) · ${getVpdCriticalDisplayLabel()}${criticalPrep.windowStart && criticalPrep.windowEnd ? ' · ' + reportEscapeHtml(criticalPrep.windowStart) + ' a ' + reportEscapeHtml(criticalPrep.windowEnd) : ''}</div>
+        ${criticalPrep.windowStart ? `<div class="report-note" style="margin-bottom:8px;font-size:11px;">${buildVpdCriticalHoursScopeNoteHtml(criticalPrep)} Gráfica: barras tenues 24 h/día · línea azul VPD mín + hora · línea tinta VPD máx + hora.</div>` : ''}
         ${
           chartImages && chartImages.vpdCritical
-            ? `<div style="margin-bottom:10px;"><img src="${chartImages.vpdCritical}" alt="Gráfica horas críticas VPD" style="width:100%;max-height:280px;object-fit:contain;border:1px solid #fcd34d;border-radius:8px;background:#fff;" /></div>`
-            : '<div class="report-note">Sin horas críticas en el tramo listado o sin gráfica.</div>'
+            ? `<div style="margin-bottom:10px;"><img src="${chartImages.vpdCritical}" alt="Gráfica horas críticas VPD" style="display:block;width:100%;max-width:${window.NpVpdRangeCharts ? window.NpVpdRangeCharts.CRITICAL_CHART_PAGE_WIDTH : 680}px;margin:0 auto;max-height:320px;object-fit:contain;border:1px solid #fcd34d;border-radius:8px;background:#fff;" /></div>`
+            : '<div class="report-note">Sin gráfica de distribución diaria (descarga la serie VPD en Clima antes del PDF).</div>'
         }
       </div>
       ` : ''}
@@ -21164,7 +21178,12 @@ function loadVPDRangeSavedResults(opts) {
     var domKey = wrap.getAttribute('data-np-vpd-range-key') || '';
     if (domKey && domKey === vpdRangeTableDomKey(table)) return;
   }
-  renderVPDRangeResults(table.meta, table.summaryRows, table.criticalRows || []);
+  renderVPDRangeResults(
+    table.meta,
+    table.summaryRows,
+    table.criticalRows || [],
+    table.dailySummaryRows || []
+  );
 }
 
 // ===================================
@@ -21772,7 +21791,7 @@ function analyzeVpdRangeSolarUsage(hourlyRows) {
   };
 }
 
-function renderVPDRangeResults(meta, summaryRows, criticalRows) {
+function renderVPDRangeResults(meta, summaryRows, criticalRows, dailySummaryRows) {
   var wrap = document.getElementById('vpd-range-results');
   if (!wrap) return;
   if (!Array.isArray(summaryRows) || summaryRows.length === 0) {
@@ -21824,6 +21843,7 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
     ? NPC.buildInteractiveBlockShell({
         prefix: 'dash-vpd',
         summaryCount: summaryRows.length,
+        granularity: meta.granularity,
         criticalPrep: critPrep,
         summaryTableHtml: summaryTableHtml,
         criticalTableHtml: criticalTableHtml
@@ -21846,7 +21866,7 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
     (critPrep.rangeTruncated && critPrep.totalAll > critShown.length ? ' / ' + critPrep.totalAll + ' en rango' : '') +
     '</span></div>' +
     '<div style="margin-bottom:8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px dashed #fdba74;border-radius:6px;padding:6px 8px;">' +
-    '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · Usa <strong>Gráfica / Tabla</strong> en cada bloque.' +
+    '<strong>Rango Óptimo:</strong> 0.5 - 1.5 kPa · Serie por periodo: solo tabla · Horas críticas: <strong>Gráfica / Tabla</strong> (30 días desde el inicio del periodo elegido).' +
     '</div>' +
     blockShell +
     '</div>';
@@ -21855,6 +21875,7 @@ function renderVPDRangeResults(meta, summaryRows, criticalRows) {
       prefix: 'dash-vpd',
       summaryRows: summaryRows,
       criticalRows: criticalRows,
+      dailySummaryRows: dailySummaryRows || [],
       meta: meta
     });
   }
@@ -21927,6 +21948,7 @@ async function fetchVPDRangeData(evt) {
       return String(a.at || '').localeCompare(String(b.at || ''));
     });
     var summaryRows = aggregateVPDStressRows(hourlyRows, granularity);
+    var dailySummaryRows = aggregateVPDStressRows(hourlyRows, 'daily');
     var criticalRows = extractVPDCriticalEvents(hourlyRows);
     var solarMeta = analyzeVpdRangeSolarUsage(hourlyRows);
     currentProject.vpdAnalysis.rangeState = { granularity: granularity, startDate: startDate, endDate: endDate };
@@ -21945,10 +21967,16 @@ async function fetchVPDRangeData(evt) {
         avgSolarWm2: solarMeta.avgSolar
       },
       summaryRows: summaryRows,
+      dailySummaryRows: dailySummaryRows,
       criticalRows: criticalRows,
       sampleHours: hourlyRows.length
     };
-    renderVPDRangeResults(currentProject.vpdAnalysis.currentRangeTable.meta, summaryRows, criticalRows);
+    renderVPDRangeResults(
+      currentProject.vpdAnalysis.currentRangeTable.meta,
+      summaryRows,
+      criticalRows,
+      dailySummaryRows
+    );
     currentProject.vpdAnalysis.lastUpdated = new Date().toISOString();
     persistVPDAnalysisAfterMutation();
   } catch (e) {
