@@ -1077,23 +1077,32 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
 .top { 
   display: flex; 
   align-items: center; 
-  justify-content: space-between; 
+  justify-content: flex-start; 
   margin-bottom: 18px;
   flex-wrap: wrap;
   gap: 12px;
   overflow: visible;
 }
 
-/* Contenedor de botones del header: una sola fila en todas las pestañas; si no cabe, scroll horizontal */
+.top h1 {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+}
+
+/* Contenedor de botones del header: una sola fila; crece en la línea y alinea a la derecha (sin saltos al hacer wrap) */
 .header-buttons {
   display: flex;
+  flex: 1 1 0;
   flex-wrap: nowrap;
   align-items: stretch;
   justify-content: flex-end;
   gap: 10px;
   overflow-x: auto;
-  /* Sin overflow-y: hidden para que los tooltips encima de los iconos no se recorten */
   min-width: 0;
+  max-width: 100%;
+  margin-left: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
@@ -1282,12 +1291,8 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   }
 }
 
-/* En ventana mediana/chica: botones calculadora compactos */
+/* En ventana mediana/chica: botones calculadora compactos (sin width:100% abrupto — flex:1 ya llena la fila al hacer wrap) */
 @media (max-width: 1280px) {
-  .header-buttons {
-    width: 100%;
-    justify-content: flex-end;
-  }
   .header-buttons .btn-calculator {
     flex: 0 0 auto;
     min-width: 0;

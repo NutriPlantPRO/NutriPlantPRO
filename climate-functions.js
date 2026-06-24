@@ -167,7 +167,7 @@
       msgEl.innerHTML =
         (sug.message || '') +
         updated +
-        (sug.mode ? ' <span style="color:#0369a1;">Revisa y confirma antes de calcular.</span>' : '');
+        (sug.mode ? ' <span style="color:#0369a1;">Se integra al total al cambiar m³ o modo abajo.</span>' : '');
     }
     if (data && data.effAreaHa != null && data.status === 'deficit') {
       var areaEl = document.getElementById('climate-irr-area');
@@ -418,7 +418,7 @@
         areas.stripFactor != null && Number.isFinite(areas.stripFactor) ? round1(mmVal * areas.stripFactor) : null;
       return { perHa: perHa, total: total, wettedMm: wettedMm };
     }
-    return {
+    var res = {
       periodDays: period,
       et0: et0,
       rain: rain,
