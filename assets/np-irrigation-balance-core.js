@@ -774,6 +774,11 @@
       '.np-soil-bridge-row .np-soil-bridge-m3 input{font-weight:700;color:#0f172a;background:#fff;}' +
       '.np-soil-bridge-help{margin:0 0 8px;font-size:12px;line-height:1.45;color:#334155;}' +
       '.np-soil-bridge-suggest{margin:0;font-size:12px;line-height:1.45;color:#64748b;}' +
+      '.np-soil-bridge-suggest-btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;}' +
+      '.np-soil-bridge-suggest-btn{flex:0 0 auto;padding:6px 10px;font-size:11px;font-weight:600;border-radius:8px;border:1px solid #7dd3fc;background:#fff;color:#0369a1;cursor:pointer;white-space:nowrap;line-height:1.25;}' +
+      '.np-soil-bridge-suggest-btn:hover{background:#f0f9ff;}' +
+      '.np-soil-bridge-suggest-btn--cc{border-color:#cbd5e1;color:#475569;}' +
+      '.np-soil-bridge-suggest-btn--cc:hover{background:#f8fafc;}' +
       '@media (max-width:520px){.np-soil-bridge-row{flex-wrap:wrap;max-width:100%;}.np-soil-bridge-row select.np-soil-bridge-mode{flex:1 1 100%;max-width:100%;}.np-soil-bridge-row .np-soil-bridge-m3{flex:1 1 100%;width:100%;max-width:220px;}}' +
       '.np-irr-scroll-arrow{display:inline-block;animation:npIrrScrollBounce 1.8s ease-in-out infinite;}' +
       '@keyframes npIrrScrollBounce{0%,100%{transform:translateY(0);opacity:0.85;}50%{transform:translateY(5px);opacity:1;}}';

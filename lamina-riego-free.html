@@ -279,7 +279,7 @@
         <div class="field-box irr-soil-bridge-section" style="margin-bottom:12px;">
           <div class="irr-soil-bridge-head">
             <label>🪨 Referencia almacén suelo (Agua en suelo y textura)</label>
-            <button type="button" id="irr-btn-soil-bridge" class="irr-btn-soil-bridge">Sugerir desde 🪨 suelo</button>
+            <div id="irr-soil-bridge-btns"></div>
           </div>
           <div id="irr-soil-bridge-panel"></div>
         </div>
@@ -315,8 +315,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="climate-kc-fao-data.js"></script>
   <script src="assets/np-free-geolocation.js?v=202606201700"></script>
-  <script src="assets/np-irrigation-balance-core.js?v=202606242000"></script>
-  <script src="assets/np-soil-water-bridge.js?v=202606241900"></script>
+  <script src="assets/np-irrigation-balance-core.js?v=202606242300"></script>
+  <script src="assets/np-soil-water-bridge.js?v=202606242300"></script>
   <script src="assets/np-free-local-persist.js"></script>
   <script>
     var irrRolling = null;
@@ -397,42 +397,10 @@
       }
     }
 
-    function irrFreeSuggestSoilFromBridge() {
+    function irrFreeSuggestSoilFromBridge(target) {
       var SB = window.NpSoilWaterBridge;
-      if (!SB || typeof SB.refresh !== 'function') return;
-      var data = SB.refresh();
-      var sug = SB.suggestFromBridge ? SB.suggestFromBridge(data) : { mode: null, m3: null, message: '' };
-      var modeEl = document.getElementById('irr-soil-mode');
-      var m3El = document.getElementById('irr-soil-m3');
-      var msgEl = document.getElementById('irr-soil-suggest-msg');
-      if (sug.mode && modeEl) modeEl.value = sug.mode;
-      if (sug.m3 != null && m3El) m3El.value = String(sug.m3);
-      if (msgEl) {
-        var updated =
-          data && data.updatedAt && SB.formatUpdatedAt
-            ? ' · sugerido ' + SB.formatUpdatedAt(data.updatedAt)
-            : '';
-        msgEl.innerHTML =
-          (sug.message || '') +
-          updated +
-          (sug.mode
-            ? ' <span style="color:#0369a1;">Se integra al total al cambiar m³ o modo abajo.</span>'
-            : '');
-      }
-      if (data && data.effAreaHa != null && data.status === 'deficit') {
-        var areaEl = document.getElementById('irr-area');
-        if (areaEl && (areaEl.value === '' || !Number.isFinite(parseFloat(areaEl.value)))) {
-          areaEl.value = String(data.effAreaHa);
-        }
-        var cropAreaEl = document.getElementById('irr-crop-area');
-        if (cropAreaEl && data.cropAreaHa != null && (cropAreaEl.value === '' || cropAreaEl.value === '1')) {
-          cropAreaEl.value = String(data.cropAreaHa);
-        }
-        var reachEl = document.getElementById('irr-root-reach');
-        if (reachEl && data.rootEffPct != null && reachEl.value === '') {
-          reachEl.value = String(Math.round(data.rootEffPct));
-        }
-      }
+      if (!SB || typeof SB.applySuggestionToDom !== 'function') return;
+      SB.applySuggestionToDom('irr', target === 'cc' ? 'cc' : 'objective60');
       irrFreeUpdate();
       if (irrPersist) irrPersist.saveNow();
     }
@@ -656,6 +624,10 @@
         });
       }
       irrFreeInitSoilPanel();
+      var soilBtnsWrap = document.getElementById('irr-soil-bridge-btns');
+      if (soilBtnsWrap && window.NpSoilWaterBridge && typeof window.NpSoilWaterBridge.buildSuggestButtonsHtml === 'function') {
+        soilBtnsWrap.innerHTML = window.NpSoilWaterBridge.buildSuggestButtonsHtml('irr');
+      }
       var soilPanel = document.getElementById('irr-soil-bridge-panel');
       if (soilPanel) {
         soilPanel.addEventListener('input', function (e) {
@@ -665,18 +637,19 @@
           if (e.target && e.target.id === 'irr-soil-mode') irrFreeUpdate();
         });
       }
-
-      var soilBridgeBtn = document.getElementById('irr-btn-soil-bridge');
-      if (soilBridgeBtn) {
-        soilBridgeBtn.addEventListener('click', irrFreeSuggestSoilFromBridge);
-      }
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.np-soil-bridge-suggest-btn[data-soil-prefix="irr"]');
+        if (!btn) return;
+        e.preventDefault();
+        irrFreeSuggestSoilFromBridge(btn.getAttribute('data-soil-target'));
+      });
       if (window.NpSoilWaterBridge && window.NpSoilWaterBridge.BRIDGE_KEY) {
         window.addEventListener('storage', function (e) {
           if (e.key === window.NpSoilWaterBridge.BRIDGE_KEY) {
             var msgEl = document.getElementById('irr-soil-suggest-msg');
             if (msgEl) {
               msgEl.innerHTML =
-                'Datos de 🪨 suelo actualizados en otra pestaña. Pulsa <strong>Sugerir desde 🪨 suelo</strong> si quieres prellenar.';
+                'Datos de 🪨 suelo actualizados en otra pestaña. Pulsa <strong>Sugerir hasta 60% AU</strong> o <strong>hasta CC</strong> si quieres prellenar.';
             }
           }
         });

@@ -41,6 +41,9 @@
       thetaVal >= zone.lowPctVol - 0.05 && thetaVal <= zone.highPctVol + 0.05;
     result.aboveObjectiveZone = thetaVal > zone.highPctVol + 0.05;
     result.belowObjectiveZone = thetaVal < zone.lowPctVol - 0.05;
+    if (zone.awPctVol > 0.05) {
+      result.pctAguaUtil = round1(((thetaVal - pmp) / zone.awPctVol) * 100);
+    }
   }
 
   function computeFromFields(fields) {
@@ -192,29 +195,109 @@
 
   /**
    * @param {object|null} data
-   * @returns {{mode:'deficit'|'surplus'|null,m3:number|null,message:string}}
+   * @param {{target?:'objective60'|'cc'}} [opts]
+   * @returns {{mode:'deficit'|'surplus'|null,m3:number|null,clearFields?:boolean,message:string}}
    */
-  function suggestFromBridge(data) {
+  function suggestFromBridge(data, opts) {
+    opts = opts || {};
+    var target = opts.target === 'cc' ? 'cc' : 'objective60';
     if (!data) {
       return {
         mode: null,
         m3: null,
-        message: 'Sin datos de 🪨 Agua en suelo. Calcula CC, PMP y humedad actual allí; luego pulsa <strong>Sugerir</strong>.'
+        clearFields: true,
+        message:
+          'Sin datos de 🪨 Agua en suelo. Calcula CC, PMP y humedad actual allí; luego pulsa <strong>Sugerir</strong>.'
       };
     }
-    if (
+    if (!data.hasTheta) {
+      return {
+        mode: null,
+        m3: null,
+        clearFields: true,
+        message: data.message || 'Indica <strong>humedad actual (% vol.)</strong> en 🪨 Agua en suelo y textura.'
+      };
+    }
+
+    var pctAu = data.pctAguaUtil != null ? data.pctAguaUtil : null;
+    var pctLabel =
+      pctAu != null
+        ? ' · <strong>' + pctAu + '% agua útil</strong> (entre PMP y CC)'
+        : '';
+
+    if (data.status === 'surplus') {
+      return {
+        mode: null,
+        m3: null,
+        clearFields: true,
+        message:
+          'Humedad <strong>por encima de CC</strong>' +
+          pctLabel +
+          '. No rellenamos m³ automáticamente. Si aplica, elige <strong>Exceso (− riego)</strong> e indica ≈ <strong>' +
+          (data.lamM3SurplusFranja != null ? data.lamM3SurplusFranja : '—') +
+          ' m³</strong> manualmente.'
+      };
+    }
+
+    if (data.status === 'at_cc') {
+      return {
+        mode: null,
+        m3: null,
+        clearFields: true,
+        message:
+          'Suelo cerca de <strong>CC</strong>' +
+          pctLabel +
+          '. Sin déficit de almacén — no se rellena m³. Déjalo vacío o ingresa valor solo si tu criterio lo pide.'
+      };
+    }
+
+    if (pctAu != null && pctAu >= 59.5) {
+      return {
+        mode: null,
+        m3: null,
+        clearFields: true,
+        message:
+          'Humedad en <strong>' +
+          pctAu +
+          '% agua útil</strong> (≥ 60% objetivo). No hace falta reponer almacén desde 🪨 — deja vacío o escribe m³ manualmente si aun así quieres sumar al total.'
+      };
+    }
+
+    if (target === 'cc') {
+      if (data.lamM3Franja != null && data.lamM3Franja > 0) {
+        return {
+          mode: 'deficit',
+          m3: data.lamM3Franja,
+          clearFields: false,
+          message:
+            'Sugerido <strong>hasta CC</strong> (' +
+            data.cc +
+            '% vol.)' +
+            pctLabel +
+            ': <strong>' +
+            data.lamM3Franja +
+            ' m³</strong> · ' +
+            (data.lamMmFranja != null ? data.lamMmFranja + ' mm' : '') +
+            ' en franja. Referencia hasta 60% AU: <strong>' +
+            (data.lamM3ObjectiveFranja != null ? data.lamM3ObjectiveFranja : '—') +
+            ' m³</strong>.'
+        };
+      }
+    } else if (
       data.lamM3ObjectiveFranja != null &&
       data.lamM3ObjectiveFranja > 0 &&
-      data.objectiveZone &&
-      !data.aboveObjectiveZone
+      data.objectiveZone
     ) {
       return {
         mode: 'deficit',
         m3: data.lamM3ObjectiveFranja,
+        clearFields: false,
         message:
-          'Hasta <strong>nivel objetivo</strong> (' +
+          'Sugerido <strong>hasta 60% agua útil</strong> (' +
           data.objectiveZone.highPctVol +
-          '% vol. · 60% agua útil): <strong>' +
+          '% vol.)' +
+          pctLabel +
+          ': <strong>' +
           data.lamM3ObjectiveFranja +
           ' m³</strong> · ' +
           (data.lamMmObjective != null ? data.lamMmObjective + ' mm' : '') +
@@ -223,19 +306,91 @@
           ' m³</strong>.'
       };
     }
+
     if (data.status === 'deficit' && data.lamM3Franja != null && data.lamM3Franja > 0) {
-      return { mode: 'deficit', m3: data.lamM3Franja, message: data.message || '' };
+      return { mode: 'deficit', m3: data.lamM3Franja, clearFields: false, message: data.message || '' };
     }
     if (data.status === 'surplus' && data.lamM3SurplusFranja != null && data.lamM3SurplusFranja > 0) {
-      return { mode: 'surplus', m3: data.lamM3SurplusFranja, message: data.message || '' };
+      return { mode: 'surplus', m3: data.lamM3SurplusFranja, clearFields: false, message: data.message || '' };
     }
     return {
       mode: null,
       m3: null,
+      clearFields: true,
       message:
         data.message ||
-        'Sin déficit ni exceso claro hasta CC. Ajusta humedad actual en 🪨 Agua en suelo y textura o ingresa el valor manualmente.'
+        'Sin déficit claro. Ajusta humedad en 🪨 Agua en suelo o ingresa m³ manualmente.'
     };
+  }
+
+  /**
+   * Aplica sugerencia al DOM del panel (gratis + PRO).
+   * @param {string} prefix ej. irr | climate
+   * @param {'objective60'|'cc'} target
+   */
+  function applySuggestionToDom(prefix, target) {
+    var data = refresh();
+    var sug = suggestFromBridge(data, { target: target });
+    var modeEl = document.getElementById(prefix + '-soil-mode');
+    var m3El = document.getElementById(prefix + '-soil-m3');
+    var msgEl = document.getElementById(prefix + '-soil-suggest-msg');
+    if (sug.clearFields) {
+      if (modeEl) modeEl.value = '';
+      if (m3El) m3El.value = '';
+    } else {
+      if (sug.mode && modeEl) modeEl.value = sug.mode;
+      if (sug.m3 != null && m3El) m3El.value = String(sug.m3);
+    }
+    if (msgEl) {
+      var updated =
+        data && data.updatedAt ? ' · ' + formatUpdatedAt(data.updatedAt) : '';
+      msgEl.innerHTML =
+        (sug.message || '') +
+        updated +
+        (sug.m3 != null
+          ? ' <span style="color:#0369a1;">Se integra al total al cambiar m³ o modo.</span>'
+          : '');
+    }
+    if (data && data.effAreaHa != null && data.status === 'deficit' && sug.m3 != null) {
+      var areaEl = document.getElementById(prefix === 'climate' ? 'climate-irr-area' : 'irr-area');
+      if (areaEl && (areaEl.value === '' || !Number.isFinite(parseFloat(areaEl.value)))) {
+        areaEl.value = String(data.effAreaHa);
+      }
+      if (prefix === 'climate') {
+        var cropAreaEl = document.getElementById('climate-irr-crop-area');
+        if (cropAreaEl && data.cropAreaHa != null && cropAreaEl.value === '') {
+          cropAreaEl.value = String(data.cropAreaHa);
+        }
+        var reachEl = document.getElementById('climate-irr-root-reach');
+        if (reachEl && data.rootEffPct != null && reachEl.value === '') {
+          reachEl.value = String(Math.round(data.rootEffPct));
+        }
+      } else {
+        var cropAreaFree = document.getElementById('irr-crop-area');
+        if (cropAreaFree && data.cropAreaHa != null && (cropAreaFree.value === '' || cropAreaFree.value === '1')) {
+          cropAreaFree.value = String(data.cropAreaHa);
+        }
+        var reachFree = document.getElementById('irr-root-reach');
+        if (reachFree && data.rootEffPct != null && reachFree.value === '') {
+          reachFree.value = String(Math.round(data.rootEffPct));
+        }
+      }
+    }
+    return sug;
+  }
+
+  function buildSuggestButtonsHtml(prefix) {
+    prefix = prefix || 'irr';
+    return (
+      '<div class="np-soil-bridge-suggest-btns">' +
+      '<button type="button" class="np-soil-bridge-suggest-btn" data-soil-prefix="' +
+      prefix +
+      '" data-soil-target="objective60" title="Prellena m³ hasta 60% agua útil (tope zona objetivo)">Sugerir hasta 60% AU</button>' +
+      '<button type="button" class="np-soil-bridge-suggest-btn np-soil-bridge-suggest-btn--cc" data-soil-prefix="' +
+      prefix +
+      '" data-soil-target="cc" title="Prellena m³ hasta capacidad de campo (CC)">Sugerir hasta CC</button>' +
+      '</div>'
+    );
   }
 
   /**
@@ -359,6 +514,8 @@
     readFromSoilToolPersist: readFromSoilToolPersist,
     refresh: refresh,
     suggestFromBridge: suggestFromBridge,
+    applySuggestionToDom: applySuggestionToDom,
+    buildSuggestButtonsHtml: buildSuggestButtonsHtml,
     buildPanelHtml: buildPanelHtml,
     buildPanelHtmlLegacy: buildPanelHtmlLegacy,
     buildReportHtml: buildReportHtml,
