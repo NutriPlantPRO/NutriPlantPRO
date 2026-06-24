@@ -2644,10 +2644,12 @@ function np_updateRadarStatusHintFromSelection() {
   const id = np_getSelectedRadarRequestId();
   const item = (st?.history || []).find((h) => String(h.id) === String(id));
   if (item) {
-    hint.textContent =
+    np_setRadarStatusHint(
       'Imagen seleccionada: ' +
-      np_formatRadarHistoryOption(item) +
-      '. Pulsa «Ver imagen» para superponerla.';
+        np_formatRadarHistoryOption(item) +
+        '. Pulsa «Ver imagen» para superponerla.',
+      { variant: 'info' }
+    );
   }
 }
 
@@ -2872,6 +2874,65 @@ function np_pilotUserErrorMessage(status, data) {
 
 let np_pilotPollTimer = null;
 
+function np_escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function np_setRadarStatusHint(content, opts) {
+  const hint = document.getElementById('radarStatusHint');
+  if (!hint) return;
+  const options = opts || {};
+  hint.classList.remove('radar-hint-pending', 'radar-hint-ready', 'radar-hint-warn', 'radar-hint-info');
+  if (options.variant) hint.classList.add('radar-hint-' + options.variant);
+  if (options.html) hint.innerHTML = content;
+  else hint.textContent = content;
+  const panel = document.getElementById('radarNdviPanel');
+  if (panel) panel.classList.toggle('radar-panel-pending', options.variant === 'pending');
+}
+
+function np_buildPilotPendingHintHtml(pendingJob) {
+  const when = pendingJob?.created_at
+    ? np_escapeHtml(np_formatRadarHistoryOption({ created_at: pendingJob.created_at }))
+    : '';
+  return (
+    '<span class="radar-hint-em">Generando imagen satelital (Sentinel-2) en segundo plano</span>' +
+    (when ? ' · solicitud ' + when : '') +
+    '. Por temas del proveedor satelital puede tardar <span class="radar-hint-em">unos minutos</span>. ' +
+    'Revisa <span class="radar-hint-action">Estado</span> o vuelve más tarde; ' +
+    '<span class="radar-hint-key">se guardará en la nube aunque cierres NutriPlant</span>.'
+  );
+}
+
+function np_buildPilotSendingHintHtml() {
+  return (
+    'Enviando solicitud satelital… Por temas del proveedor puede tardar ' +
+    '<span class="radar-hint-em">unos minutos</span> en quedar lista. ' +
+    'Puedes seguir usando la plataforma; revisa <span class="radar-hint-action">Estado</span> cuando quieras.'
+  );
+}
+
+function np_buildPilotReadyHintHtml(label) {
+  const layer = np_escapeHtml(label || 'NDVI');
+  return (
+    '<span class="radar-hint-key">Imagen Pilot lista</span> y guardada en la nube. Pulsa ' +
+    '<span class="radar-hint-action">Ver imagen ' +
+    layer +
+    '</span> para verla en el mapa.'
+  );
+}
+
+function np_buildPilotDuplicateHintHtml() {
+  return (
+    '<span class="radar-hint-em">Ya hay una imagen Pilot generándose</span> para este predio. ' +
+    'Revisa <span class="radar-hint-action">Estado</span> en unos minutos; ' +
+    '<span class="radar-hint-key">no hace falta volver a pulsar Generar</span>.'
+  );
+}
+
 function np_formatPilotPendingMessage(pendingJob) {
   const when = pendingJob?.created_at ? np_formatRadarHistoryOption({ created_at: pendingJob.created_at }) : '';
   return (
@@ -2881,9 +2942,8 @@ function np_formatPilotPendingMessage(pendingJob) {
   );
 }
 
-function np_setPilotPendingUi(isPending, message) {
+function np_setPilotPendingUi(isPending, messageKind) {
   const generateBtn = document.getElementById('radarBtnGenerate');
-  const hint = document.getElementById('radarStatusHint');
   const buttons = ['radarBtnRefresh', 'radarBtnView', 'radarBtnGenerate', 'radarBtnHide']
     .map((id) => document.getElementById(id))
     .filter(Boolean);
@@ -2912,8 +2972,14 @@ function np_setPilotPendingUi(isPending, message) {
     btn.style.cursor = '';
   });
 
-  if (isPending && hint) {
-    hint.textContent = message || np_formatPilotPendingMessage(window.__nutriplantPilotPendingJob);
+  if (isPending) {
+    let html = np_buildPilotPendingHintHtml(window.__nutriplantPilotPendingJob);
+    if (messageKind === 'sending') html = np_buildPilotSendingHintHtml();
+    else if (messageKind === 'duplicate') html = np_buildPilotDuplicateHintHtml();
+    np_setRadarStatusHint(html, { html: true, variant: 'pending' });
+  } else {
+    const panel = document.getElementById('radarNdviPanel');
+    if (panel) panel.classList.remove('radar-panel-pending');
   }
 }
 
@@ -2936,14 +3002,8 @@ function np_startPilotPendingPoll(prevCreatedAt) {
       if (newAt && String(newAt) !== String(before)) {
         np_stopPilotPendingPoll();
         np_setPilotPendingUi(false);
-        const hint = document.getElementById('radarStatusHint');
         const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
-        if (hint) {
-          hint.textContent =
-            'Imagen Pilot lista y guardada en la nube. Pulsa «Ver imagen ' +
-            cfg.label +
-            '» para verla en el mapa.';
-        }
+        np_setRadarStatusHint(np_buildPilotReadyHintHtml(cfg.label), { html: true, variant: 'ready' });
       }
     } catch (e) {
       console.warn('Pilot poll:', e);
@@ -2954,7 +3014,7 @@ function np_startPilotPendingPoll(prevCreatedAt) {
 function np_syncPilotPendingFromStatus(st) {
   if (st?.pending_job) {
     window.__nutriplantPilotPendingJob = st.pending_job;
-    np_setPilotPendingUi(true, np_formatPilotPendingMessage(st.pending_job));
+    np_setPilotPendingUi(true, 'pending');
     np_startPilotPendingPoll(np_getRadarLatestCreatedAtFromStatus(st));
     return true;
   }
@@ -3418,12 +3478,17 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     } else if (hint) {
       const lastPilotError = window.__nutriplantLastPilotError || null;
       if (lastPilotError && lastPilotError.code === 5041) {
-        hint.textContent =
-          'El último intento de Pilot tardó demasiado y no se guardó imagen. Intenta de nuevo en unos minutos. Código: 5041';
+        np_setRadarStatusHint(
+          'El último intento de Pilot tardó demasiado y no se guardó imagen. Intenta de nuevo en <span class="radar-hint-em">unos minutos</span>. Código: <span class="radar-hint-em">5041</span>',
+          { html: true, variant: 'warn' }
+        );
       } else {
-        hint.textContent = costLine
-          ? costLine + '. Sincroniza el predio a la nube, luego genera la primera imagen Pilot.'
-          : 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.';
+        np_setRadarStatusHint(
+          costLine
+            ? costLine + '. Sincroniza el predio a la nube, luego genera la primera imagen Pilot.'
+            : 'Sincroniza el predio a la nube, luego genera la primera imagen Pilot.',
+          { variant: 'info' }
+        );
       }
     }
   } catch (e) {
@@ -3562,10 +3627,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
       console.warn('Pilot: no se pudo leer estado previo:', e);
     }
 
-    np_setPilotPendingUi(
-      true,
-      'Enviando solicitud satelital… Por temas del proveedor puede tardar unos minutos en quedar lista.'
-    );
+    np_setPilotPendingUi(true, 'sending');
 
     const res = await fetch(np_radarPilotApiUrl(), {
       method: 'POST',
@@ -3577,7 +3639,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     if (res.status === 202 || (res.ok && data.async)) {
       window.__nutriplantPilotPendingJob = data.request || null;
       window.__nutriplantLastPilotError = null;
-      np_setPilotPendingUi(true, data.message || np_formatPilotPendingMessage(data.request));
+      np_setPilotPendingUi(true, 'pending');
       np_startPilotPendingPoll(prevRadarCreatedAt);
       await window.refreshRadarNdviStatus();
       return;
@@ -3588,7 +3650,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
       const serverMessage = data.message || data.error || 'Pilot falló';
       if (res.status === 409) {
         window.__nutriplantPilotPendingJob = data.pending_job || data.request || null;
-        np_setPilotPendingUi(true, serverMessage);
+        np_setPilotPendingUi(true, 'duplicate');
         np_startPilotPendingPoll(prevRadarCreatedAt);
         await window.refreshRadarNdviStatus();
         alert(np_pilotUserErrorMessage(res.status, data));

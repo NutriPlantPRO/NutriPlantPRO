@@ -7974,3 +7974,56 @@ html.embed-login body {
   color: #14532d;
 }
 
+/* Avisos Pilot — resaltar lo importante para el usuario */
+#radarStatusHint {
+  display: block;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #4b5563;
+  max-width: 100%;
+}
+
+#radarStatusHint .radar-hint-em {
+  font-weight: 800;
+  color: #b45309;
+}
+
+#radarStatusHint .radar-hint-key {
+  font-weight: 800;
+  color: #047857;
+}
+
+#radarStatusHint .radar-hint-action {
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+#radarStatusHint.radar-hint-pending {
+  color: #334155;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 251, 235, 0.95);
+  border: 1px solid #fcd34d;
+}
+
+#radarStatusHint.radar-hint-ready {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(236, 253, 245, 0.95);
+  border: 1px solid #86efac;
+  color: #14532d;
+}
+
+#radarStatusHint.radar-hint-warn {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(254, 242, 242, 0.95);
+  border: 1px solid #fca5a5;
+  color: #7f1d1d;
+}
+
+.radar-ndvi-panel.radar-panel-pending {
+  border-color: #fcd34d;
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35);
+}
+

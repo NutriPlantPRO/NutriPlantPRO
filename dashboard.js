@@ -1659,7 +1659,7 @@ function sectionTemplate(name) {
             </select>
           </label>
           <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Créditos Radar: —</span>
-          <span id="radarStatusHint" style="font-size: 12px; color: #4b5563; max-width: 420px;">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
+          <span id="radarStatusHint" class="radar-hint-info">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#64748b;line-height:1.45;padding:6px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.65);border:1px dashed #86efac;">
             <strong>Tip:</strong> elige la <strong>imagen</strong> guardada del proyecto para verla en el mapa. <strong>Generar / actualizar Pilot</strong> crea NDVI+NDMI nuevos y consume créditos Radar internos: base 20 al mes (+ bonus), según superficie del predio.
           </div>
