@@ -160,6 +160,13 @@
       keywords: 'Mulder interacciones antagonismo sinergia Cu Mn cobre manganeso compatibilidad fertilizantes mezcla tanque movilidad pH'
     },
     {
+      href: 'capitulos/atlas-aminoacidos-vegetales.html',
+      icon: '🧬',
+      pillar: 'F · Fisiología vegetal',
+      title: 'Atlas de Aminoácidos Vegetales',
+      keywords: 'atlas aminoácidos aminoacidos vegetales proteinogénicos proteinogenicos prolina triptofano glutamato glutamina arginina glicina cisteína metionina fenilalanina tirosina estrés hidrico salino termico oxidativo fenología formulación nutricional auxinas etileno poliaminas clorofila glutation lignina antioxidantes PubChem KEGG PlantCyc evidencia'
+    },
+    {
       href: 'capitulos/huella-carbono-fertilizantes.html',
       icon: '🌍',
       pillar: 'F · Sostenibilidad',

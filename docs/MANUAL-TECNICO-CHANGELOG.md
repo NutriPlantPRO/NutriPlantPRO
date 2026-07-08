@@ -5,6 +5,16 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-07-08 — Atlas de Aminoácidos Vegetales
+
+### Agregado
+
+- `manual-tecnico/capitulos/atlas-aminoacidos-vegetales.html` — capítulo público del Atlas: 20 aminoácidos proteinogénicos, filtros por estrés/fenología/formulación, evidencia y fuentes científicas.
+- `manual-tecnico/index.html`, `manual-search.js`, `manual-tecnico-catalog.js`, `llms.txt`, `manual-tecnico/llms.txt` — índice, búsqueda, catálogo para IA y crawlers.
+- `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md`, `docs/CHATGPT-SOCIO-PAQUETE-ACTUALIZACION.md`, `chat-simple.js`, `free-tools-catalog.js` — Knowledge GPT Socio y chat IA alineados.
+
+---
+
 ## 2026-06-24 — Agua en suelo + balance hídrico (zona objetivo, mm/m³, almacén manual)
 
 ### Actualizado

@@ -118,6 +118,7 @@ module.exports = {
       id: 'atlas_aminoacidos_vegetales',
       title: 'Atlas de Aminoácidos Vegetales',
       file: 'atlas-aminoacidos-vegetales-free.html',
+      manualChapter: 'atlas_aminoacidos_vegetales',
       summary:
         'Biblioteca interactiva de los 20 aminoácidos proteinogénicos: fórmula, PM, modelo 3D PubChem/3Dmol, rutas vegetales, función fisiológica, estrés, fenología, formulación nutricional, categorías funcionales, evidencia y bibliografía base.'
     },

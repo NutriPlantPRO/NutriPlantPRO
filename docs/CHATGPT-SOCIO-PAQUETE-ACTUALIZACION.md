@@ -22,7 +22,7 @@ En ChatGPT → tu GPT → **Configure → Knowledge → Upload**:
 
 1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← 🪨 zona objetivo 40–60% AU, mm/m³, gráfica; 🌧️ almacén suelo manual + total integrado (2026-06-24)
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web **v2026.06.1** (**23 capítulos**; capítulos Agua en suelo + balance hídrico alineados 2026-06-24; re-subir tras cada tanda)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web **v2026.07.1** (**25 capítulos**; incluye Atlas de Aminoácidos Vegetales 🧬; re-subir tras cada tanda)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` ← posts LinkedIn/IG; **§8 con 24 posts empresa** (añade filas si publicas nuevos)
 
 *(Opcional: borra knowledge viejo duplicado si tenías notas sueltas.)*
@@ -64,6 +64,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 6. **“¿Qué capítulos tiene el manual técnico público?”** → `manual_tecnico_catalog`
 7. **“¿Cómo calculamos kg/ha en fertilidad del suelo? Cita la URL pública”** → `manual_tecnico_catalog` chapter `analisis_suelo_fertilidad_kgha` o Knowledge MANUAL
 8. **“¿Cómo calcula NutriPlant el balance hídrico de riego?”** → `manual_tecnico_catalog` chapter `balance_hidrico_riego_clima` o Knowledge MANUAL §4.11b
+8.1. **“¿Qué aminoácidos ayudan más bajo estrés hídrico o salino?”** → `manual_tecnico_catalog` chapter `atlas_aminoacidos_vegetales` + `free_tools_catalog` tool `atlas_aminoacidos_vegetales`
 9. **“¿Qué balance hídrico tiene el proyecto [nombre]?”** → `project_climate` mode=saved (`irrigation_quick_calc`)
 10. **“Dame el clima actualizado del proyecto [nombre]”** → `project_climate` mode=**all** (`rolling_windows_ahora`, `irrigation_quick_calc_live`)
 11. **“Crea un proyecto personal GPT para programa limón 45 t/ha”** → `my_program_project_create`

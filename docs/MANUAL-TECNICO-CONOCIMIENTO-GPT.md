@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.06.2 · **24 capítulos** publicados (pilar **1** + pilares A–G).  
+**Versión manual web:** v2026.07.1 · **25 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-06-22 · **v2026.06.2**
+**Versión Knowledge:** 2026-07-08 · **v2026.07.1**
 
 ---
 
@@ -62,6 +62,7 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | `agua-dureza-acidificacion-solubilidad` | Dureza, ácido HCO₃, solubilidad/IS | E |
 | `n-mineralizable-agua-disponible-suelo` | N mineralizable, CC−PMP, textura | B |
 | `interacciones-mulder-compatibilidad` | Mulder, matriz C/R/I ferti | F |
+| `atlas-aminoacidos-vegetales` | Atlas aminoácidos vegetales | F |
 | `huella-carbono-fertilizantes` | Huella CO₂e fertilizantes (estimación) | F |
 | `analisis-solucion-nutritiva-lab` | Solución lab (licor/drenaje) | C |
 | `analisis-extracto-pasta` | Extracto de pasta saturada (laboratorio) | C |
@@ -229,6 +230,17 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 - **Equivalencia pick-up A vs B:** km ilustrativos en pick-up mediana 6 cil. (0,254 kg CO₂e/km DESNZ); total A, B y diferencia — no compensación.  
 - **Herramienta:** `fertilizer_carbon`; LS `nutriplant_free_fertilizer_carbon_v2`. Panel calibración FE en UI.
 
+### 4.15b Atlas de Aminoácidos Vegetales (Pilar F — fisiología vegetal)
+
+**URL:** …/atlas-aminoacidos-vegetales.html
+- **Herramienta gratuita:** `atlas-aminoacidos-vegetales-free.html` (login/dashboard, icono 🧬). Biblioteca interactiva de los 20 aminoácidos proteinogénicos con enfoque en nutrición, fisiología vegetal y aplicación agronómica responsable.
+- **Cada tarjeta:** nombre común, nombre L-alpha (glicina: no quiral), abreviaturas 3/1 letras, fórmula, peso molecular, familia química, rutas metabólicas, función fisiológica, beneficios agronómicos, fenología, estrés, precursores, categorías funcionales, evidencia y bibliografía base.
+- **Modelo 3D:** 3Dmol.js + PubChem SDF 3D cuando hay conexión; CPK/Jmol: C gris, H blanco, O rojo, N azul, S amarillo; rotación 360°, zoom y selección de átomos.
+- **Filtros:** estrés, fenología, formulación nutricional, categoría funcional y evidencia. Categorías: metabolismo del N, fotosíntesis, respuesta al estrés, desarrollo radicular, crecimiento vegetativo, floración, cuajado, llenado, defensa vegetal, antioxidantes, precursor hormonal y transporte de N.
+- **Ejemplos de criterio:** prolina = estrés osmótico/hídrico/salino; triptófano = precursor de rutas de auxina; glutamato/glutamina/asparagina/arginina = metabolismo y transporte de N; cisteína = glutatión/defensa antioxidante; fenilalanina = fenilpropanoides/lignina/defensa; metionina = SAM/etileno/poliaminas.
+- **Evidencia:** Alta/Media/Baja; no convertir rutas metabólicas en promesa de campo. La respuesta depende de cultivo, dosis, fuente comercial, mezcla, vía de aplicación, estado nutricional, ambiente y validación.
+- **Fuentes:** PubChem, KEGG, PlantCyc, Plant Physiology and Development, Biochemistry & Molecular Biology of Plants, Marschner y artículos científicos.
+
 ### 4.16 Solución nutritiva (lab)
 
 **URL:** …/analisis-solucion-nutritiva-lab.html · `solucionNutritivaAnalyses[]`. CE, pH, RAS manual. Cationes/aniones meq↔ppm (pesos eq. Ca 20,04, K 39,1, NO₃ 14…). Rangos SN_REF_DEFAULT; ideal editable; diff = lab − ideal. ≠ extracto pasta ≠ diseño didáctico gratis.
@@ -271,6 +283,7 @@ Canales oficiales; tono técnico; mapa capítulo→post; plantilla LinkedIn. **P
 | Redactar post LinkedIn/IG | `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` + capítulo §4 |
 | Datos proyecto suscriptor | `project_analyses` / `project_detail` |
 | Calculadora gratis | `free_tools_catalog` / HERRAMIENTAS |
+| Aminoácidos vegetales, estrés, fenología o formulación | `atlas-aminoacidos-vegetales` + HERRAMIENTAS `atlas_aminoacidos_vegetales` |
 | 6 pestañas Análisis | `lab_analyses_catalog` |
 
 **Búsqueda web (si activa):** priorizar nutriplantpro.com/manual-tecnico sobre blogs genéricos.
@@ -279,10 +292,10 @@ Canales oficiales; tono técnico; mapa capítulo→post; plantilla LinkedIn. **P
 
 ## 6. Mantenimiento manual
 
-**Versión web v2026.06.3:** 24 capítulos · huella carbono fertilizantes (21 productos; NK+Mg excluido como mezcla comercial) · calculadora 🌍 (ruta por fila, pick-up A vs B) · Pilar 1 flujo · buscador índice.
+**Versión web v2026.07.1:** 25 capítulos · Atlas de Aminoácidos Vegetales 🧬 · huella carbono fertilizantes (21 productos; NK+Mg excluido como mezcla comercial) · calculadora 🌍 (ruta por fila, pick-up A vs B) · Pilar 1 flujo · buscador índice.
 
 Plan histórico: `docs/MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
-*Alineado con manual-tecnico/ v2026.06.3 en repo*
+*Alineado con manual-tecnico/ v2026.07.1 en repo*

@@ -5,9 +5,9 @@
 const BASE = 'https://nutriplantpro.com/manual-tecnico';
 
 module.exports = {
-  version: '2026-06-12',
+  version: '2026-07-08',
   scope:
-    'Biblioteca HTML pública, sin cuenta. 23 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO.',
+    'Biblioteca HTML pública, sin cuenta. 25 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO.',
   publicUrls: {
     index: `${BASE}/`,
     llms: `${BASE}/llms.txt`,
@@ -241,6 +241,16 @@ module.exports = {
       pillar: 'F — Interacciones',
       summary:
         'interacciones-absorcion-movilidad-free: Mulder antagonismo/sinergia focal (Cu↔Mn rojo bidireccional), movilidad, pH; fertilizer-compatibility-free: matriz C/R/I solubles.',
+      status: 'published'
+    },
+    {
+      id: 'atlas_aminoacidos_vegetales',
+      slug: 'atlas-aminoacidos-vegetales',
+      title: 'Atlas de Aminoácidos Vegetales',
+      url: `${BASE}/capitulos/atlas-aminoacidos-vegetales.html`,
+      pillar: 'F — Fisiología vegetal',
+      summary:
+        'atlas-aminoacidos-vegetales-free: 20 aminoácidos proteinogénicos con fórmula, PM, 3D PubChem/3Dmol, rutas en plantas, estrés, fenología, formulación nutricional, categorías funcionales, evidencia Alta/Media/Baja y fuentes PubChem, KEGG, PlantCyc, Taiz/Zeiger, Marschner y artículos.',
       status: 'published'
     },
     {
