@@ -201,6 +201,7 @@
           <button type="button" id="btn-fertilizer-carbon-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCarbonCalculator()" data-np-tooltip="Huella de carbono de fertilizantes" aria-label="Huella de carbono de fertilizantes">🌍</button>
           <button type="button" id="btn-extraccion-etapa-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showExtraccionEtapaCalculator()" data-np-tooltip="Distribución nutrimental por etapa (%)" aria-label="Distribución nutrimental por etapa (porcentaje)">📊</button>
           <button type="button" id="btn-periodic-table-nutrients" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showPeriodicTableNutrientsCalculator()" data-np-tooltip="Tabla Periódica (Nutrientes Esenciales)" aria-label="Tabla Periódica (Nutrientes Esenciales)">⚛️</button>
+          <button type="button" id="btn-amino-acids-atlas" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showAminoAcidsAtlasTool()" data-np-tooltip="Atlas de Aminoácidos Vegetales" aria-label="Atlas de Aminoácidos Vegetales">🧬</button>
           <button type="button" id="btn-nutrient-interactions-tool" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showNutrientInteractionsTool()" data-np-tooltip="Interacciones y movilidad nutrimental" aria-label="Interacciones y movilidad nutrimental">🔗</button>
           <button type="button" id="btn-fertilizer-compatibility-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showFertilizerCompatibilityCalculator()" data-np-tooltip="Compatibilidad de fertilizantes" aria-label="Compatibilidad de fertilizantes">🔺</button>
           <button type="button" id="btn-granular-mix-calculator" class="btn btn-pill btn-calculator btn-calc-icon-only np-dash-tooltip" onclick="window.showGranularMixCalculator()" data-np-tooltip="Formulación de mezclas granulares" aria-label="Formulación de mezclas granulares">📦</button>
@@ -5015,6 +5016,21 @@ CONTRATO:
     }
     window.closePeriodicTableNutrientsCalculator = closePeriodicTableNutrientsCalculator;
 
+    function showAminoAcidsAtlasTool() {
+      var modal = document.getElementById('aminoAcidsAtlasModal');
+      if (!modal) return;
+      modal.classList.add('show');
+    }
+    window.showAminoAcidsAtlasTool = showAminoAcidsAtlasTool;
+
+    function closeAminoAcidsAtlasTool() {
+      var modal = document.getElementById('aminoAcidsAtlasModal');
+      var frame = document.getElementById('aminoAcidsAtlasFrame');
+      if (modal) modal.classList.remove('show');
+      if (frame) frame.src = frame.src;
+    }
+    window.closeAminoAcidsAtlasTool = closeAminoAcidsAtlasTool;
+
     var _npExtraccionEtapaFrameKey = '';
     function getExtraccionEtapaFrameKey() {
       var uid = localStorage.getItem('nutriplant_user_id') || 'guest';
@@ -7001,6 +7017,22 @@ CONTRATO:
       </div>
       <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
         <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?v=20260523" title="Tabla Periódica (Nutrientes Esenciales)" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Atlas de Aminoácidos Vegetales -->
+  <div id="aminoAcidsAtlasModal" class="modal-overlay" onclick="if(event.target===this) closeAminoAcidsAtlasTool();">
+    <div class="modal modal-wide" style="max-width: 1280px; width: 96%; max-height: 92vh; overflow: hidden;">
+      <div class="modal-header">
+        <h2 class="modal-title">🧬 Atlas de Aminoácidos Vegetales</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeAminoAcidsAtlasTool()">×</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:0; height: calc(92vh - 80px);">
+        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=dashboard&v=20260708" title="Atlas de Aminoácidos Vegetales" style="width:100%;height:100%;border:0;display:block;background:#f8fafc;"></iframe>
       </div>
     </div>
   </div>

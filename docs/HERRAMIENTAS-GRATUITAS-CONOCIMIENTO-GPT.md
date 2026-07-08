@@ -131,6 +131,15 @@ En **login** y **dashboard** (`measure-units-calculator.js`), NutriPlant usa **m
 
 - Referencia visual; sin estado de formulario.
 
+### 🧬 Atlas de Aminoácidos Vegetales (`atlas-aminoacidos-vegetales-free.html`)
+
+- Biblioteca interactiva de los **20 aminoácidos proteinogénicos** con enfoque en nutrición y fisiología vegetal.
+- Incluye nombre común, nombre L-alpha (glicina: no quiral), abreviaturas, fórmula molecular, peso molecular, familia química, rutas metabólicas en plantas, función fisiológica, beneficios agronómicos, fenología, estrés, precursores metabólicos, categorías funcionales, nivel de evidencia y bibliografía base.
+- **Modelo 3D:** usa **3Dmol.js + PubChem SDF 3D** cuando hay conexión; permite rotación, zoom y selección de átomos con etiqueta. Colores CPK/Jmol: C gris, H blanco, O rojo, N azul, S amarillo.
+- **Filtros principales:** estrés, fenología y formulación nutricional. Filtros secundarios: categoría funcional y nivel de evidencia.
+- **Categorías funcionales automáticas:** metabolismo del nitrógeno, fotosíntesis, respuesta al estrés, desarrollo radicular, crecimiento vegetativo, floración, cuajado, llenado de fruto, defensa vegetal, antioxidantes, precursor hormonal y transporte de nitrógeno.
+- **Fuentes criterio:** PubChem, KEGG, PlantCyc, Plant Physiology and Development, Biochemistry & Molecular Biology of Plants, Marschner y artículos científicos. No presentar beneficios como garantía de campo; dependen de cultivo, dosis, fuente, mezcla, vía de aplicación y condición ambiental.
+
 ### 🔺 Compatibilidad (`fertilizer-compatibility-free.html`)
 
 - Matriz triangular Compatible / Precaución / Incompatible; ficha por par.

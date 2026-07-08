@@ -324,6 +324,11 @@
           <span class="button-text">Tabla Periódica (Nutrientes Esenciales)</span>
         </button>
 
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAminoAcidsAtlasTool()" style="margin-top: 12px;">
+          <span class="calculator-icon">🧬</span>
+          <span class="button-text">Atlas de Aminoácidos Vegetales</span>
+        </button>
+
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompatibilityCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🔺</span>
           <span class="button-text">Compatibilidad de fertilizantes</span>
@@ -1664,6 +1669,16 @@
       if (frame) frame.src = frame.src;
     }
 
+    function showAminoAcidsAtlasTool() {
+      document.getElementById('aminoAcidsAtlasModal').style.display = 'flex';
+    }
+    function closeAminoAcidsAtlasTool() {
+      const modal = document.getElementById('aminoAcidsAtlasModal');
+      const frame = document.getElementById('aminoAcidsAtlasFrame');
+      modal.style.display = 'none';
+      if (frame) frame.src = frame.src;
+    }
+
     function showFertilizerCompatibilityCalculator() {
       document.getElementById('fertilizerCompatibilityModal').style.display = 'flex';
     }
@@ -1782,6 +1797,10 @@
       const periodicTableModal = document.getElementById('periodicTableNutrientsModal');
       if (e.target === periodicTableModal) {
         closePeriodicTableNutrientsCalculator();
+      }
+      const aminoAcidsAtlasModal = document.getElementById('aminoAcidsAtlasModal');
+      if (e.target === aminoAcidsAtlasModal) {
+        closeAminoAcidsAtlasTool();
       }
       const fertilizerCompatModal = document.getElementById('fertilizerCompatibilityModal');
       if (e.target === fertilizerCompatModal) {
@@ -2471,6 +2490,22 @@
       </div>
       <div class="modal-body">
         <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?v=20260523" title="Tabla Periódica (Nutrientes Esenciales)"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Atlas de Aminoácidos Vegetales -->
+  <div id="aminoAcidsAtlasModal" class="modal-overlay">
+    <div class="modal modal-fertilizer-composition">
+      <div class="modal-header">
+        <h2 class="modal-title">🧬 Atlas de Aminoácidos Vegetales</h2>
+        <div class="modal-header-trailing">
+          <div class="modal-free-watermark" aria-hidden="true"><img src="assets/N_Hoja_Azul.png" alt=""></div>
+          <button class="modal-close" onclick="closeAminoAcidsAtlasTool()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260708" title="Atlas de Aminoácidos Vegetales"></iframe>
       </div>
     </div>
   </div>

@@ -115,6 +115,13 @@ module.exports = {
         'Tabla visual de nutrientes + calculadora interna: peso molecular, % elemental y peso equivalente (meq) por fórmula.'
     },
     {
+      id: 'atlas_aminoacidos_vegetales',
+      title: 'Atlas de Aminoácidos Vegetales',
+      file: 'atlas-aminoacidos-vegetales-free.html',
+      summary:
+        'Biblioteca interactiva de los 20 aminoácidos proteinogénicos: fórmula, PM, modelo 3D PubChem/3Dmol, rutas vegetales, función fisiológica, estrés, fenología, formulación nutricional, categorías funcionales, evidencia y bibliografía base.'
+    },
+    {
       id: 'fertilizer_compatibility',
       title: 'Compatibilidad de fertilizantes',
       file: 'fertilizer-compatibility-free.html',

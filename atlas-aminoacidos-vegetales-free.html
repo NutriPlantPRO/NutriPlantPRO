@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atlas de Aminoácidos Vegetales - NutriPlant PRO</title>
+  <script src="assets/free-tools-embed.js"></script>
+  <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+  <style>
+    :root {
+      --np-green: #15803d;
+      --np-green-2: #16a34a;
+      --np-green-soft: #dcfce7;
+      --np-blue: #0f766e;
+      --np-ink: #0f172a;
+      --np-muted: #64748b;
+      --np-border: #dbe7df;
+      --np-bg: #f6faf7;
+      --np-card: #ffffff;
+      --np-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--np-ink);
+      background:
+        radial-gradient(circle at top left, rgba(34, 197, 94, 0.14), transparent 34%),
+        linear-gradient(180deg, #f8fffb 0%, var(--np-bg) 42%, #eef7f0 100%);
+    }
+
+    .page {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+
+    .hero-card,
+    .panel,
+    .filters,
+    .amino-card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--np-border);
+      border-radius: 22px;
+      box-shadow: var(--np-shadow);
+    }
+
+    .hero-card {
+      padding: 26px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -50px -70px auto;
+      width: 220px;
+      height: 220px;
+      border-radius: 999px;
+      background: rgba(22, 163, 74, 0.1);
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--np-green-soft);
+      color: #166534;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 16px 0 10px;
+      font-size: clamp(28px, 4vw, 48px);
+      line-height: 1;
+      letter-spacing: -0.045em;
+    }
+
+    .hero p {
+      color: var(--np-muted);
+      font-size: 15px;
+      line-height: 1.65;
+      max-width: 860px;
+      margin: 0;
+    }
+
+    .source-card {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .source-card h2,
+    .panel h2,
+    .filters h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .source-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--np-muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .source-list strong { color: var(--np-ink); }
+
+    .filters {
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .filter-grid-secondary {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    select,
+    input {
+      width: 100%;
+      border: 1px solid var(--np-border);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--np-ink);
+      padding: 12px 13px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    select:focus,
+    input:focus {
+      border-color: rgba(22, 163, 74, 0.6);
+      box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12);
+    }
+
+    .reset-btn {
+      align-self: end;
+      min-height: 43px;
+      border: 0;
+      border-radius: 14px;
+      background: #0f172a;
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 430px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .amino-card {
+      padding: 18px;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .amino-card:hover,
+    .amino-card.active {
+      transform: translateY(-2px);
+      border-color: rgba(22, 163, 74, 0.55);
+      box-shadow: 0 22px 54px rgba(15, 23, 42, 0.12);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: start;
+      margin-bottom: 12px;
+    }
+
+    .name {
+      margin: 0 0 4px;
+      font-size: 21px;
+      letter-spacing: -0.025em;
+    }
+
+    .latin {
+      color: var(--np-muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .abbr {
+      display: inline-grid;
+      place-items: center;
+      min-width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      background: #0f172a;
+      color: #fff;
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin: 12px 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 6px 9px;
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .pill.green { background: var(--np-green-soft); color: #166534; }
+    .pill.blue { background: #ccfbf1; color: #115e59; }
+    .pill.amber { background: #fef3c7; color: #92400e; }
+    .pill.red { background: #fee2e2; color: #991b1b; }
+
+    .card-summary {
+      margin: 0;
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .panel {
+      position: sticky;
+      top: 14px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 18px;
+      border-bottom: 1px solid var(--np-border);
+      background: linear-gradient(135deg, #ffffff, #ecfdf5);
+    }
+
+    .viewer {
+      height: 300px;
+      background: linear-gradient(145deg, #0f172a, #1f2937);
+      position: relative;
+    }
+
+    #molViewer {
+      position: absolute;
+      inset: 0;
+    }
+
+    .viewer-state {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.78);
+      color: #e2e8f0;
+      font-size: 12px;
+      line-height: 1.35;
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .atom-key {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--np-border);
+      background: #fff;
+    }
+
+    .atom {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.15);
+    }
+
+    .dot.c { background: #4b5563; }
+    .dot.h { background: #fff; }
+    .dot.o { background: #dc2626; }
+    .dot.n { background: #2563eb; }
+    .dot.s { background: #facc15; }
+
+    .panel-body {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .section h3 {
+      margin: 0 0 7px;
+      font-size: 13px;
+      color: #166534;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .section p,
+    .section li {
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .section p { margin: 0; }
+    .section ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .empty {
+      display: none;
+      border: 1px dashed #94a3b8;
+      border-radius: 18px;
+      padding: 22px;
+      color: var(--np-muted);
+      text-align: center;
+      background: rgba(255,255,255,0.7);
+    }
+
+    .count {
+      color: var(--np-muted);
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    a { color: #047857; font-weight: 700; }
+
+    @media (max-width: 1100px) {
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page { padding: 14px; }
+      .hero-card,
+      .source-card,
+      .filters,
+      .amino-card {
+        border-radius: 18px;
+      }
+
+      .filter-grid,
+      .filter-grid-secondary,
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .viewer { height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-card">
+        <span class="kicker">NutriPlant PRO · Herramienta gratuita</span>
+        <h1>Atlas de Aminoácidos Vegetales</h1>
+        <p>
+          Biblioteca interactiva de los 20 aminoácidos proteinogénicos con enfoque en nutrición,
+          fisiología vegetal y uso agronómico responsable. Filtra por estrés, fenología o formulación,
+          revisa evidencia científica y visualiza la estructura molecular 3D tipo bolas y varillas.
+        </p>
+      </div>
+      <aside class="source-card">
+        <h2>Fuentes base confiables</h2>
+        <ul class="source-list">
+          <li><strong>PubChem:</strong> fórmula, peso molecular y estructura 3D.</li>
+          <li><strong>KEGG / PlantCyc:</strong> rutas metabólicas y función en plantas.</li>
+          <li><strong>Taiz & Zeiger, Marschner, BMBP:</strong> interpretación fisiológica y nutricional.</li>
+          <li><strong>Artículos científicos:</strong> respaldo para estrés, crecimiento y bioestimulación.</li>
+        </ul>
+      </aside>
+    </section>
+
+    <section class="filters" aria-label="Filtros del atlas">
+      <h2>Filtros técnicos</h2>
+      <div class="filter-grid">
+        <div>
+          <label for="searchInput">Buscar</label>
+          <input id="searchInput" type="search" placeholder="Prolina, auxinas, clorofila...">
+        </div>
+        <div>
+          <label for="stressFilter">Estrés</label>
+          <select id="stressFilter"></select>
+        </div>
+        <div>
+          <label for="phenologyFilter">Fenología</label>
+          <select id="phenologyFilter"></select>
+        </div>
+        <div>
+          <label for="formulationFilter">Formulación nutricional</label>
+          <select id="formulationFilter"></select>
+        </div>
+      </div>
+      <div class="filter-grid filter-grid-secondary">
+        <div>
+          <label for="categoryFilter">Categoría funcional</label>
+          <select id="categoryFilter"></select>
+        </div>
+        <div>
+          <label for="evidenceFilter">Evidencia</label>
+          <select id="evidenceFilter">
+            <option value="">Todas</option>
+            <option value="Alta">Alta</option>
+            <option value="Media">Media</option>
+            <option value="Baja">Baja</option>
+          </select>
+        </div>
+        <button class="reset-btn" id="resetBtn" type="button">Limpiar filtros</button>
+      </div>
+      <div class="count" id="resultCount"></div>
+    </section>
+
+    <section class="layout">
+      <div>
+        <div class="empty" id="emptyState">No hay aminoácidos con esa combinación de filtros.</div>
+        <div class="cards" id="cards"></div>
+      </div>
+
+      <aside class="panel" aria-live="polite">
+        <div class="panel-header">
+          <span class="kicker" id="selectedEvidence">Evidencia</span>
+          <h2 id="selectedName" style="margin-top:12px;">Selecciona un aminoácido</h2>
+          <p id="selectedSubtitle" style="margin:7px 0 0;color:#64748b;font-size:13px;line-height:1.45;"></p>
+        </div>
+        <div class="viewer">
+          <div id="molViewer"></div>
+          <div class="viewer-state" id="viewerState">
+            Modelo 3D CPK: arrastra para rotar 360°, rueda/pinza para zoom. Selecciona un átomo para ver su nombre.
+          </div>
+        </div>
+        <div class="atom-key">
+          <span class="atom"><span class="dot c"></span>Carbono</span>
+          <span class="atom"><span class="dot h"></span>Hidrógeno</span>
+          <span class="atom"><span class="dot o"></span>Oxígeno</span>
+          <span class="atom"><span class="dot n"></span>Nitrógeno</span>
+          <span class="atom"><span class="dot s"></span>Azufre</span>
+        </div>
+        <div class="panel-body" id="detailPanel"></div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    var AMINO_ACIDS = [
+      {
+        id: 'gly', name: 'Glicina', lName: 'Glicina; no presenta quiralidad por tener dos hidrógenos en el carbono alfa.', abbr3: 'Gly', abbr1: 'G',
+        formula: 'C2H5NO2', mw: '75.07 g/mol', cid: 750, family: ['No polar', 'Alifático', 'Aminoácido no quiral'],
+        routes: ['Fotorespiración: ciclo glicina-serina', 'Metabolismo de un carbono', 'Biosíntesis de glutatión'],
+        physiology: 'Participa en fotorespiración, equilibrio C/N y síntesis de glutatión; también se relaciona con compuestos tipo glicina betaína.',
+        benefits: 'Apoyo en formulaciones antiestrés y en metabolismo fotosintético/fotorrespiratorio; su efecto agronómico depende de dosis y contexto.',
+        phenology: ['Crecimiento vegetativo', 'Post-trasplante', 'Recuperación post-estrés'],
+        stress: ['Oxidativo', 'Hídrico', 'Salino', 'Alta radiación', 'Trasplante'],
+        precursors: ['Glutatión', 'Serina', 'Unidades de un carbono'],
+        categories: ['Fotosíntesis', 'Respuesta al estrés', 'Antioxidantes', 'Metabolismo del nitrógeno'],
+        formulations: ['Antiestrés', 'Antioxidante', 'Clorofila/fotosíntesis', 'Recuperación post-estrés'],
+        evidence: 'Media',
+        references: ['PubChem CID 750', 'KEGG: glycine, serine and threonine metabolism', 'Plant Physiology and Development', 'Biochemistry & Molecular Biology of Plants']
+      },
+      {
+        id: 'ala', name: 'Alanina', lName: 'L-alpha-alanina', abbr3: 'Ala', abbr1: 'A',
+        formula: 'C3H7NO2', mw: '89.09 g/mol', cid: 5950, family: ['No polar', 'Alifático'],
+        routes: ['Metabolismo de alanina, aspartato y glutamato', 'Interconversión piruvato-alanina', 'Respuesta a hipoxia/anoxia'],
+        physiology: 'Conecta metabolismo de carbono y nitrógeno mediante transaminación con piruvato; puede acumularse bajo bajo oxígeno.',
+        benefits: 'Útil como componente nitrogenado de bajo peso molecular en formulaciones de crecimiento y recuperación.',
+        phenology: ['Germinación', 'Crecimiento vegetativo', 'Recuperación post-estrés'],
+        stress: ['Térmico', 'Trasplante', 'Oxidativo', 'Hipoxia radicular'],
+        precursors: ['Piruvato', 'Intermediarios de transaminación'],
+        categories: ['Metabolismo del nitrógeno', 'Crecimiento vegetativo', 'Respuesta al estrés'],
+        formulations: ['Crecimiento vegetativo', 'Recuperación post-estrés'],
+        evidence: 'Media',
+        references: ['PubChem CID 5950', 'KEGG: alanine, aspartate and glutamate metabolism', 'PlantCyc amino acid metabolism']
+      },
+      {
+        id: 'arg', name: 'Arginina', lName: 'L-alpha-arginina', abbr3: 'Arg', abbr1: 'R',
+        formula: 'C6H14N4O2', mw: '174.20 g/mol', cid: 6322, family: ['Básico', 'Polar', 'Rico en nitrógeno'],
+        routes: ['Ciclo de la urea/ornitina en plantas', 'Biosíntesis de poliaminas', 'Metabolismo de óxido nítrico'],
+        physiology: 'Reserva y transporte orgánico de nitrógeno; precursor de ornitina, poliaminas y señales asociadas a óxido nítrico.',
+        benefits: 'Interesante para recuperación, división celular, desarrollo radicular y estrés, especialmente en formulaciones con enfoque C/N.',
+        phenology: ['Desarrollo radicular', 'Crecimiento vegetativo', 'Floración', 'Cuajado', 'Llenado de fruto'],
+        stress: ['Hídrico', 'Salino', 'Térmico', 'Oxidativo', 'Trasplante'],
+        precursors: ['Poliaminas', 'Ornitina', 'Óxido nítrico', 'Prolina'],
+        categories: ['Metabolismo del nitrógeno', 'Transporte de nitrógeno', 'Respuesta al estrés', 'Desarrollo radicular', 'Floración', 'Cuajado'],
+        formulations: ['Enraizamiento', 'Antiestrés', 'Floración', 'Cuajado', 'Transporte de nitrógeno'],
+        evidence: 'Alta',
+        references: ['PubChem CID 6322', 'KEGG: arginine and proline metabolism', 'Marschner Mineral Nutrition of Higher Plants', 'Alcázar et al. 2010 Plant Science']
+      },
+      {
+        id: 'asn', name: 'Asparagina', lName: 'L-alpha-asparagina', abbr3: 'Asn', abbr1: 'N',
+        formula: 'C4H8N2O3', mw: '132.12 g/mol', cid: 6267, family: ['Polar', 'Amida'],
+        routes: ['Asimilación y transporte de nitrógeno', 'Metabolismo de alanina, aspartato y glutamato', 'Removilización de N'],
+        physiology: 'Molécula clave para almacenamiento y transporte de nitrógeno orgánico con relación C/N eficiente.',
+        benefits: 'Relevante para estados de alta demanda de N, recuperación vegetativa y llenado cuando hay movilización de reservas.',
+        phenology: ['Crecimiento vegetativo', 'Floración', 'Llenado de fruto', 'Recuperación post-estrés'],
+        stress: ['Hídrico', 'Salino', 'Deficiencia nutricional'],
+        precursors: ['Aspartato', 'Reservas orgánicas de nitrógeno'],
+        categories: ['Metabolismo del nitrógeno', 'Transporte de nitrógeno', 'Crecimiento vegetativo', 'Llenado de fruto'],
+        formulations: ['Crecimiento vegetativo', 'Llenado de fruto', 'Transporte de nitrógeno'],
+        evidence: 'Alta',
+        references: ['PubChem CID 6267', 'KEGG: nitrogen metabolism links', 'Lea et al. 2007 Annals of Applied Biology', 'Marschner Mineral Nutrition of Higher Plants']
+      },
+      {
+        id: 'asp', name: 'Ácido aspártico', lName: 'L-alpha-ácido aspártico', abbr3: 'Asp', abbr1: 'D',
+        formula: 'C4H7NO4', mw: '133.10 g/mol', cid: 5960, family: ['Ácido', 'Polar'],
+        routes: ['Familia del aspartato: lisina, metionina, treonina e isoleucina', 'Metabolismo de alanina, aspartato y glutamato'],
+        physiology: 'Nodo metabólico para aminoácidos esenciales de la familia aspartato y conexión con ciclo TCA vía oxaloacetato.',
+        benefits: 'Apoya metabolismo de N y síntesis proteica durante crecimiento activo y desarrollo reproductivo.',
+        phenology: ['Crecimiento vegetativo', 'Floración', 'Cuajado', 'Llenado de fruto'],
+        stress: ['Deficiencia nutricional', 'Oxidativo'],
+        precursors: ['Lisina', 'Metionina', 'Treonina', 'Isoleucina'],
+        categories: ['Metabolismo del nitrógeno', 'Crecimiento vegetativo', 'Floración', 'Llenado de fruto'],
+        formulations: ['Crecimiento vegetativo', 'Floración', 'Llenado de fruto', 'Transporte de nitrógeno'],
+        evidence: 'Alta',
+        references: ['PubChem CID 5960', 'KEGG: alanine, aspartate and glutamate metabolism', 'Biochemistry & Molecular Biology of Plants']
+      },
+      {
+        id: 'cys', name: 'Cisteína', lName: 'L-alpha-cisteína', abbr3: 'Cys', abbr1: 'C',
+        formula: 'C3H7NO2S', mw: '121.16 g/mol', cid: 5862, family: ['Azufrado', 'Polar'],
+        routes: ['Asimilación de sulfato', 'Biosíntesis de glutatión', 'Metabolismo redox'],
+        physiology: 'Primer aminoácido orgánico reducido con azufre; esencial para glutatión, proteínas con puentes disulfuro y defensa antioxidante.',
+        benefits: 'Clave en formulaciones orientadas a estrés oxidativo, defensa y metabolismo de azufre.',
+        phenology: ['Crecimiento vegetativo', 'Floración', 'Cuajado', 'Recuperación post-estrés'],
+        stress: ['Oxidativo', 'Salino', 'Térmico', 'Toxicidad por metales'],
+        precursors: ['Glutatión', 'Fitoquelatinas', 'Compuestos azufrados de defensa'],
+        categories: ['Antioxidantes', 'Defensa vegetal', 'Respuesta al estrés', 'Metabolismo del nitrógeno'],
+        formulations: ['Antioxidante', 'Defensa vegetal', 'Antiestrés'],
+        evidence: 'Alta',
+        references: ['PubChem CID 5862', 'KEGG: cysteine and methionine metabolism', 'Noctor et al. 2012 Plant Cell and Environment']
+      },
+      {
+        id: 'gln', name: 'Glutamina', lName: 'L-alpha-glutamina', abbr3: 'Gln', abbr1: 'Q',
+        formula: 'C5H10N2O3', mw: '146.15 g/mol', cid: 5961, family: ['Polar', 'Amida'],
+        routes: ['Ciclo GS/GOGAT', 'Asimilación de amonio', 'Transporte de nitrógeno orgánico'],
+        physiology: 'Transportador central de nitrógeno amídico; base para síntesis de aminoácidos, nucleótidos y proteínas.',
+        benefits: 'Muy relevante para crecimiento vegetativo, recuperación y eficiencia de N cuando la planta tiene alta demanda metabólica.',
+        phenology: ['Germinación', 'Crecimiento vegetativo', 'Floración', 'Llenado de fruto'],
+        stress: ['Deficiencia nutricional', 'Trasplante', 'Oxidativo'],
+        precursors: ['Glutamato', 'Nucleótidos', 'Aminoazúcares'],
+        categories: ['Metabolismo del nitrógeno', 'Transporte de nitrógeno', 'Crecimiento vegetativo', 'Llenado de fruto'],
+        formulations: ['Crecimiento vegetativo', 'Transporte de nitrógeno', 'Recuperación post-estrés'],
+        evidence: 'Alta',
+        references: ['PubChem CID 5961', 'KEGG: nitrogen metabolism', 'Miflin and Habash 2002 Journal of Experimental Botany']
+      },
+      {
+        id: 'glu', name: 'Ácido glutámico', lName: 'L-alpha-ácido glutámico', abbr3: 'Glu', abbr1: 'E',
+        formula: 'C5H9NO4', mw: '147.13 g/mol', cid: 33032, family: ['Ácido', 'Polar'],
+        routes: ['GS/GOGAT', 'Precursor de clorofila vía ácido aminolevulínico', 'Biosíntesis de prolina y arginina'],
+        physiology: 'Nodo maestro del metabolismo de nitrógeno; donador amino en transaminaciones y precursor de clorofila, GABA, prolina y arginina.',
+        benefits: 'Base para formulaciones de crecimiento, fotosíntesis, recuperación y transporte/uso de N.',
+        phenology: ['Crecimiento vegetativo', 'Floración', 'Cuajado', 'Llenado de fruto', 'Recuperación post-estrés'],
+        stress: ['Hídrico', 'Salino', 'Oxidativo', 'Deficiencia nutricional'],
+        precursors: ['Clorofila', 'GABA', 'Prolina', 'Arginina', 'Glutatión'],
+        categories: ['Metabolismo del nitrógeno', 'Fotosíntesis', 'Transporte de nitrógeno', 'Respuesta al estrés', 'Crecimiento vegetativo'],
+        formulations: ['Clorofila/fotosíntesis', 'Crecimiento vegetativo', 'Antiestrés', 'Transporte de nitrógeno'],
+        evidence: 'Alta',
+        references: ['PubChem CID 33032', 'KEGG: nitrogen metabolism', 'Plant Physiology and Development', 'Marschner Mineral Nutrition of Higher Plants']
+      },
+      {
+        id: 'his', name: 'Histidina', lName: 'L-alpha-histidina', abbr3: 'His', abbr1: 'H',
+        formula: 'C6H9N3O2', mw: '155.16 g/mol', cid: 6274, family: ['Básico', 'Aromático heterocíclico', 'Polar'],
+        routes: ['Biosíntesis de histidina', 'Quelación y homeostasis de metales', 'Metabolismo de nucleótidos'],
+        physiology: 'Su anillo imidazol puede participar en unión a metales y sitios activos de enzimas.',
+        benefits: 'Interés técnico en estrés por metales y actividad enzimática, con evidencia agronómica aplicada más limitada.',
+        phenology: ['Crecimiento vegetativo', 'Recuperación post-estrés'],
+        stress: ['Toxicidad por metales', 'Oxidativo', 'Deficiencia nutricional'],
+        precursors: ['Compuestos imidazólicos', 'Proteínas metal-dependientes'],
+        categories: ['Defensa vegetal', 'Respuesta al estrés', 'Metabolismo del nitrógeno'],
+        formulations: ['Defensa vegetal', 'Recuperación post-estrés'],
+        evidence: 'Media',
+        references: ['PubChem CID 6274', 'KEGG: histidine metabolism', 'Krämer et al. 1996 Nature']
+      },
+      {
+        id: 'ile', name: 'Isoleucina', lName: 'L-alpha-isoleucina', abbr3: 'Ile', abbr1: 'I',
+        formula: 'C6H13NO2', mw: '131.17 g/mol', cid: 6306, family: ['No polar', 'Alifático', 'Ramificado'],
+        routes: ['Familia del aspartato', 'Biosíntesis de aminoácidos ramificados', 'Catabolismo energético'],
+        physiology: 'Aminoácido ramificado asociado a síntesis proteica, metabolismo energético y señales de defensa derivadas.',
+        benefits: 'Aporta a crecimiento y recuperación; menos específico como bioestimulante individual.',
+        phenology: ['Germinación', 'Crecimiento vegetativo', 'Llenado de fruto'],
+        stress: ['Térmico', 'Oxidativo', 'Deficiencia nutricional'],
+        precursors: ['Proteínas', 'Intermediarios energéticos'],
+        categories: ['Crecimiento vegetativo', 'Llenado de fruto', 'Metabolismo del nitrógeno'],
+        formulations: ['Crecimiento vegetativo', 'Llenado de fruto'],
+        evidence: 'Media',
+        references: ['PubChem CID 6306', 'KEGG: valine, leucine and isoleucine biosynthesis', 'Biochemistry & Molecular Biology of Plants']
+      },
+      {
+        id: 'leu', name: 'Leucina', lName: 'L-alpha-leucina', abbr3: 'Leu', abbr1: 'L',
+        formula: 'C6H13NO2', mw: '131.17 g/mol', cid: 6106, family: ['No polar', 'Alifático', 'Ramificado'],
+        routes: ['Biosíntesis de aminoácidos ramificados', 'Catabolismo energético', 'Síntesis proteica'],
+        physiology: 'Componente estructural de proteínas y aminoácido ramificado con función en crecimiento y reserva metabólica.',
+        benefits: 'Puede aportar a formulaciones de crecimiento, aunque la evidencia de efecto aplicado específico es moderada.',
+        phenology: ['Germinación', 'Crecimiento vegetativo', 'Llenado de fruto'],
+        stress: ['Térmico', 'Deficiencia nutricional'],
+        precursors: ['Proteínas', 'Intermediarios de catabolismo energético'],
+        categories: ['Crecimiento vegetativo', 'Llenado de fruto', 'Metabolismo del nitrógeno'],
+        formulations: ['Crecimiento vegetativo', 'Llenado de fruto'],
+        evidence: 'Media',
+        references: ['PubChem CID 6106', 'KEGG: valine, leucine and isoleucine biosynthesis', 'PlantCyc branched-chain amino acid biosynthesis']
+      },
+      {
+        id: 'lys', name: 'Lisina', lName: 'L-alpha-lisina', abbr3: 'Lys', abbr1: 'K',
+        formula: 'C6H14N2O2', mw: '146.19 g/mol', cid: 5962, family: ['Básico', 'Polar'],
+        routes: ['Familia del aspartato', 'Catabolismo vía sacaropina', 'Síntesis proteica'],
+        physiology: 'Aminoácido básico esencial para proteínas, reserva de N y metabolismo de la familia aspartato.',
+        benefits: 'Interés en crecimiento y llenado por su rol en síntesis proteica; evidencia aplicada individual moderada.',
+        phenology: ['Crecimiento vegetativo', 'Floración', 'Llenado de fruto'],
+        stress: ['Deficiencia nutricional', 'Oxidativo'],
+        precursors: ['Proteínas', 'Intermediarios de catabolismo de lisina'],
+        categories: ['Metabolismo del nitrógeno', 'Crecimiento vegetativo', 'Llenado de fruto'],
+        formulations: ['Crecimiento vegetativo', 'Llenado de fruto'],
+        evidence: 'Media',
+        references: ['PubChem CID 5962', 'KEGG: lysine biosynthesis', 'Biochemistry & Molecular Biology of Plants']
+      },
+      {
+        id: 'met', name: 'Metionina', lName: 'L-alpha-metionina', abbr3: 'Met', abbr1: 'M',
+        formula: 'C5H11NO2S', mw: '149.21 g/mol', cid: 6137, family: ['Azufrado', 'No polar'],
+        routes: ['Ciclo de metionina/S-adenosilmetionina', 'Biosíntesis de etileno', 'Biosíntesis de poliaminas'],
+        physiology: 'Precursor de SAM, molécula central para metilación, etileno y poliaminas; vincula azufre con desarrollo.',
+        benefits: 'Relevante en floración, maduración, respuesta a estrés y señalización; manejar con criterio por su relación con etileno.',
+        phenology: ['Prefloración', 'Floración', 'Cuajado', 'Maduración', 'Recuperación post-estrés'],
+        stress: ['Térmico', 'Oxidativo', 'Trasplante'],
+        precursors: ['Etileno', 'S-adenosilmetionina', 'Poliaminas', 'Compuestos azufrados'],
+        categories: ['Precursor hormonal', 'Floración', 'Cuajado', 'Defensa vegetal', 'Respuesta al estrés'],
+        formulations: ['Floración', 'Cuajado', 'Defensa vegetal', 'Antiestrés'],
+        evidence: 'Alta',
+        references: ['PubChem CID 6137', 'KEGG: cysteine and methionine metabolism', 'Yang and Hoffman 1984 Annual Review of Plant Physiology']
+      },
+      {
+        id: 'phe', name: 'Fenilalanina', lName: 'L-alpha-fenilalanina', abbr3: 'Phe', abbr1: 'F',
+        formula: 'C9H11NO2', mw: '165.19 g/mol', cid: 6140, family: ['Aromático', 'No polar'],
+        routes: ['Ruta del shikimato', 'Fenilpropanoides', 'Biosíntesis de lignina y flavonoides'],
+        physiology: 'Punto de entrada a fenilpropanoides mediante fenilalanina amonio liasa; clave en lignina, defensa y compuestos fenólicos.',
+        benefits: 'Muy relevante para defensa vegetal, estructura, estrés oxidativo y calidad; útil en formulaciones orientadas a resistencia.',
+        phenology: ['Crecimiento vegetativo', 'Floración', 'Cuajado', 'Llenado de fruto'],
+        stress: ['Oxidativo', 'Alta radiación', 'Térmico', 'Toxicidad por metales'],
+        precursors: ['Lignina', 'Flavonoides', 'Ácidos fenólicos', 'Antocianinas'],
+        categories: ['Defensa vegetal', 'Antioxidantes', 'Floración', 'Llenado de fruto', 'Respuesta al estrés'],
+        formulations: ['Defensa vegetal', 'Antioxidante', 'Llenado de fruto'],
+        evidence: 'Alta',
+        references: ['PubChem CID 6140', 'KEGG: phenylalanine metabolism', 'Vogt 2010 Molecular Plant']
+      },
+      {
+        id: 'pro', name: 'Prolina', lName: 'L-alpha-prolina', abbr3: 'Pro', abbr1: 'P',
+        formula: 'C5H9NO2', mw: '115.13 g/mol', cid: 145742, family: ['No polar', 'Cíclico', 'Iminoácido'],
+        routes: ['Arginina y prolina', 'Respuesta osmótica', 'Metabolismo redox mitocondrial'],
+        physiology: 'Osmoprotector, estabilizador de membranas/proteínas y participante en balance redox bajo estrés.',
+        benefits: 'Uno de los aminoácidos más citados para tolerancia a estrés hídrico, salino, térmico y recuperación post-trasplante.',
+        phenology: ['Post-trasplante', 'Crecimiento vegetativo', 'Floración', 'Recuperación post-estrés'],
+        stress: ['Hídrico', 'Salino', 'Térmico', 'Oxidativo', 'Trasplante'],
+        precursors: ['Glutamato', 'Ornitina', 'Señales redox'],
+        categories: ['Respuesta al estrés', 'Antioxidantes', 'Crecimiento vegetativo', 'Defensa vegetal'],
+        formulations: ['Antiestrés', 'Antioxidante', 'Recuperación post-estrés'],
+        evidence: 'Alta',
+        references: ['PubChem CID 145742', 'KEGG: arginine and proline metabolism', 'Szabados and Savouré 2010 Trends in Plant Science']
+      },
+      {
+        id: 'ser', name: 'Serina', lName: 'L-alpha-serina', abbr3: 'Ser', abbr1: 'S',
+        formula: 'C3H7NO3', mw: '105.09 g/mol', cid: 5951, family: ['Polar', 'Hidroxilado'],
+        routes: ['Fotorespiración glicina-serina', 'Metabolismo de un carbono', 'Fosfolípidos y señalización'],
+        physiology: 'Nodo de fotorespiración, síntesis de glicina/cisteína y metabolismo de un carbono.',
+        benefits: 'Apoya metabolismo fotosintético/fotorrespiratorio y recuperación bajo alta radiación o estrés oxidativo.',
+        phenology: ['Crecimiento vegetativo', 'Floración', 'Recuperación post-estrés'],
+        stress: ['Oxidativo', 'Alta radiación', 'Hídrico'],
+        precursors: ['Glicina', 'Cisteína', 'Fosfolípidos', 'Unidades de un carbono'],
+        categories: ['Fotosíntesis', 'Metabolismo del nitrógeno', 'Respuesta al estrés'],
+        formulations: ['Clorofila/fotosíntesis', 'Antiestrés', 'Recuperación post-estrés'],
+        evidence: 'Alta',
+        references: ['PubChem CID 5951', 'KEGG: glycine, serine and threonine metabolism', 'Bauwe et al. 2010 Journal of Experimental Botany']
+      },
+      {
+        id: 'thr', name: 'Treonina', lName: 'L-alpha-treonina', abbr3: 'Thr', abbr1: 'T',
+        formula: 'C4H9NO3', mw: '119.12 g/mol', cid: 6288, family: ['Polar', 'Hidroxilado'],
+        routes: ['Familia del aspartato', 'Biosíntesis de isoleucina', 'Metabolismo glicina-serina-treonina'],
+        physiology: 'Participa en síntesis proteica y como precursor metabólico de isoleucina y glicina.',
+        benefits: 'Relacionado con crecimiento y llenado por síntesis de proteínas; evidencia aplicada específica moderada.',
+        phenology: ['Germinación', 'Crecimiento vegetativo', 'Llenado de fruto'],
+        stress: ['Deficiencia nutricional', 'Oxidativo'],
+        precursors: ['Isoleucina', 'Glicina', 'Proteínas'],
+        categories: ['Metabolismo del nitrógeno', 'Crecimiento vegetativo', 'Llenado de fruto'],
+        formulations: ['Crecimiento vegetativo', 'Llenado de fruto'],
+        evidence: 'Media',
+        references: ['PubChem CID 6288', 'KEGG: glycine, serine and threonine metabolism', 'PlantCyc threonine biosynthesis']
+      },
+      {
+        id: 'trp', name: 'Triptófano', lName: 'L-alpha-triptófano', abbr3: 'Trp', abbr1: 'W',
+        formula: 'C11H12N2O2', mw: '204.23 g/mol', cid: 6305, family: ['Aromático', 'Heterocíclico', 'No polar'],
+        routes: ['Ruta del shikimato', 'Biosíntesis de auxinas', 'Indol-glucosinolatos y defensa'],
+        physiology: 'Precursor central de compuestos indólicos, incluyendo rutas de auxina, defensa y metabolismo secundario.',
+        benefits: 'Muy relevante en enraizamiento, crecimiento y floración por su relación con auxinas; la respuesta aplicada depende de microbiota, dosis y cultivo.',
+        phenology: ['Desarrollo radicular', 'Crecimiento vegetativo', 'Prefloración', 'Floración', 'Cuajado'],
+        stress: ['Trasplante', 'Hídrico', 'Salino', 'Oxidativo'],
+        precursors: ['Auxinas/IAA', 'Compuestos indólicos', 'Defensas indólicas'],
+        categories: ['Precursor hormonal', 'Desarrollo radicular', 'Crecimiento vegetativo', 'Floración', 'Cuajado', 'Defensa vegetal'],
+        formulations: ['Enraizamiento', 'Crecimiento vegetativo', 'Floración', 'Cuajado'],
+        evidence: 'Alta',
+        references: ['PubChem CID 6305', 'KEGG: tryptophan metabolism', 'Zhao 2010 Annual Review of Plant Biology']
+      },
+      {
+        id: 'tyr', name: 'Tirosina', lName: 'L-alpha-tirosina', abbr3: 'Tyr', abbr1: 'Y',
+        formula: 'C9H11NO3', mw: '181.19 g/mol', cid: 6057, family: ['Aromático', 'Polar'],
+        routes: ['Ruta del shikimato', 'Tocoferoles/plastoquinona', 'Fenoles especializados'],
+        physiology: 'Precursor de metabolitos aromáticos, antioxidantes liposolubles y compuestos de defensa.',
+        benefits: 'Interés en defensa, antioxidantes y calidad de fruto; evidencia aplicada específica media.',
+        phenology: ['Crecimiento vegetativo', 'Floración', 'Llenado de fruto', 'Maduración'],
+        stress: ['Oxidativo', 'Alta radiación', 'Térmico'],
+        precursors: ['Tocoferoles', 'Plastoquinona', 'Compuestos fenólicos'],
+        categories: ['Antioxidantes', 'Defensa vegetal', 'Llenado de fruto', 'Respuesta al estrés'],
+        formulations: ['Antioxidante', 'Defensa vegetal', 'Llenado de fruto'],
+        evidence: 'Media',
+        references: ['PubChem CID 6057', 'KEGG: tyrosine metabolism', 'Maeda and Dudareva 2012 Annual Review of Plant Biology']
+      },
+      {
+        id: 'val', name: 'Valina', lName: 'L-alpha-valina', abbr3: 'Val', abbr1: 'V',
+        formula: 'C5H11NO2', mw: '117.15 g/mol', cid: 6287, family: ['No polar', 'Alifático', 'Ramificado'],
+        routes: ['Biosíntesis de aminoácidos ramificados', 'Catabolismo energético', 'Síntesis proteica'],
+        physiology: 'Aminoácido ramificado asociado a crecimiento, proteínas y metabolismo energético bajo demanda.',
+        benefits: 'Componente de formulaciones de crecimiento y llenado, con evidencia aplicada individual moderada.',
+        phenology: ['Germinación', 'Crecimiento vegetativo', 'Llenado de fruto'],
+        stress: ['Térmico', 'Deficiencia nutricional', 'Oxidativo'],
+        precursors: ['Proteínas', 'Intermediarios energéticos'],
+        categories: ['Crecimiento vegetativo', 'Llenado de fruto', 'Metabolismo del nitrógeno'],
+        formulations: ['Crecimiento vegetativo', 'Llenado de fruto'],
+        evidence: 'Media',
+        references: ['PubChem CID 6287', 'KEGG: valine, leucine and isoleucine biosynthesis', 'Biochemistry & Molecular Biology of Plants']
+      }
+    ];
+
+    var elementNames = {
+      H: 'Hidrógeno', C: 'Carbono', N: 'Nitrógeno', O: 'Oxígeno', S: 'Azufre',
+      P: 'Fósforo', Cl: 'Cloro'
+    };
+
+    var state = {
+      selected: AMINO_ACIDS[14],
+      viewer: null,
+      label: null
+    };
+
+    function uniqueFrom(field) {
+      var set = {};
+      AMINO_ACIDS.forEach(function (a) {
+        (a[field] || []).forEach(function (v) { set[v] = true; });
+      });
+      return Object.keys(set).sort();
+    }
+
+    function fillSelect(id, label, values) {
+      var select = document.getElementById(id);
+      select.innerHTML = '<option value="">Todos</option>' + values.map(function (v) {
+        return '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>';
+      }).join('');
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, function (m) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m];
+      });
+    }
+
+    function evidencePill(value) {
+      if (value === 'Alta') return 'green';
+      if (value === 'Media') return 'amber';
+      return 'red';
+    }
+
+    function matchesFilters(a) {
+      var q = document.getElementById('searchInput').value.trim().toLowerCase();
+      var stress = document.getElementById('stressFilter').value;
+      var phenology = document.getElementById('phenologyFilter').value;
+      var formulation = document.getElementById('formulationFilter').value;
+      var category = document.getElementById('categoryFilter').value;
+      var evidence = document.getElementById('evidenceFilter').value;
+      var haystack = [
+        a.name, a.lName, a.abbr3, a.abbr1, a.formula, a.family.join(' '), a.routes.join(' '),
+        a.physiology, a.benefits, a.precursors.join(' '), a.categories.join(' '), a.formulations.join(' ')
+      ].join(' ').toLowerCase();
+
+      return (!q || haystack.indexOf(q) !== -1) &&
+        (!stress || a.stress.indexOf(stress) !== -1) &&
+        (!phenology || a.phenology.indexOf(phenology) !== -1) &&
+        (!formulation || a.formulations.indexOf(formulation) !== -1) &&
+        (!category || a.categories.indexOf(category) !== -1) &&
+        (!evidence || a.evidence === evidence);
+    }
+
+    function renderCards() {
+      var cards = document.getElementById('cards');
+      var filtered = AMINO_ACIDS.filter(matchesFilters);
+      document.getElementById('emptyState').style.display = filtered.length ? 'none' : 'block';
+      document.getElementById('resultCount').textContent = filtered.length + ' de ' + AMINO_ACIDS.length + ' aminoácidos visibles';
+      cards.innerHTML = filtered.map(function (a) {
+        return '<article class="amino-card ' + (state.selected && state.selected.id === a.id ? 'active' : '') + '" data-id="' + a.id + '">' +
+          '<div class="card-top"><div><h2 class="name">' + escapeHtml(a.name) + '</h2><div class="latin">' + escapeHtml(a.lName) + '</div></div>' +
+          '<span class="abbr">' + escapeHtml(a.abbr1) + '</span></div>' +
+          '<div class="meta">' +
+          '<span class="pill green">' + escapeHtml(a.abbr3) + '</span>' +
+          '<span class="pill">' + escapeHtml(a.formula) + '</span>' +
+          '<span class="pill">' + escapeHtml(a.mw) + '</span>' +
+          '<span class="pill ' + evidencePill(a.evidence) + '">Evidencia ' + escapeHtml(a.evidence) + '</span>' +
+          '</div>' +
+          '<p class="card-summary">' + escapeHtml(a.benefits) + '</p>' +
+          '<div class="meta">' + a.categories.slice(0, 4).map(function (c) {
+            return '<span class="pill blue">' + escapeHtml(c) + '</span>';
+          }).join('') + '</div>' +
+          '</article>';
+      }).join('');
+
+      Array.prototype.forEach.call(cards.querySelectorAll('.amino-card'), function (card) {
+        card.addEventListener('click', function () {
+          var item = AMINO_ACIDS.find(function (a) { return a.id === card.getAttribute('data-id'); });
+          if (item) selectAmino(item);
+        });
+      });
+    }
+
+    function list(items) {
+      return '<ul>' + items.map(function (v) { return '<li>' + escapeHtml(v) + '</li>'; }).join('') + '</ul>';
+    }
+
+    function selectAmino(a) {
+      state.selected = a;
+      document.getElementById('selectedEvidence').textContent = 'Evidencia ' + a.evidence;
+      document.getElementById('selectedName').textContent = a.name + ' (' + a.abbr3 + ' / ' + a.abbr1 + ')';
+      document.getElementById('selectedSubtitle').textContent = a.lName + ' · ' + a.formula + ' · ' + a.mw;
+      document.getElementById('detailPanel').innerHTML =
+        '<div class="section"><h3>Familia química</h3><div class="meta">' + a.family.map(function (v) { return '<span class="pill green">' + escapeHtml(v) + '</span>'; }).join('') + '</div></div>' +
+        '<div class="section"><h3>Rutas metabólicas en plantas</h3>' + list(a.routes) + '</div>' +
+        '<div class="section"><h3>Función fisiológica</h3><p>' + escapeHtml(a.physiology) + '</p></div>' +
+        '<div class="section"><h3>Beneficios agronómicos</h3><p>' + escapeHtml(a.benefits) + '</p></div>' +
+        '<div class="section"><h3>Fenología relevante</h3>' + list(a.phenology) + '</div>' +
+        '<div class="section"><h3>Tolerancia a estrés</h3>' + list(a.stress) + '</div>' +
+        '<div class="section"><h3>Precursor de metabolitos</h3>' + list(a.precursors) + '</div>' +
+        '<div class="section"><h3>Categorías funcionales automáticas</h3><div class="meta">' + a.categories.map(function (v) { return '<span class="pill blue">' + escapeHtml(v) + '</span>'; }).join('') + '</div></div>' +
+        '<div class="section"><h3>Bibliografía científica de respaldo</h3>' + list(a.references) + '</div>' +
+        '<div class="section"><p><strong>Nota técnica:</strong> esta herramienta resume evidencia bioquímica y fisiológica; no sustituye validación por cultivo, dosis, fuente comercial, mezcla, vía de aplicación y condición de campo.</p></div>';
+      renderCards();
+      loadMolecule(a);
+    }
+
+    function loadMolecule(a) {
+      var viewerState = document.getElementById('viewerState');
+      viewerState.textContent = 'Cargando estructura 3D desde PubChem...';
+      if (!window.$3Dmol) {
+        viewerState.textContent = 'El visor 3D requiere conexión para cargar 3Dmol.js. La tarjeta científica queda disponible sin conexión.';
+        return;
+      }
+
+      var viewerEl = document.getElementById('molViewer');
+      viewerEl.innerHTML = '';
+      state.viewer = window.$3Dmol.createViewer(viewerEl, { backgroundColor: '#111827' });
+      var url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + a.cid + '/SDF?record_type=3d';
+
+      fetch(url).then(function (r) {
+        if (!r.ok) throw new Error('PubChem no devolvió estructura 3D');
+        return r.text();
+      }).then(function (sdf) {
+        state.viewer.addModel(sdf, 'sdf');
+        state.viewer.setStyle({}, {
+          stick: { radius: 0.14, colorscheme: 'Jmol' },
+          sphere: { scale: 0.28, colorscheme: 'Jmol' }
+        });
+        state.viewer.setClickable({}, true, function (atom, viewer) {
+          if (state.label) viewer.removeLabel(state.label);
+          var elem = atom.elem || atom.element || '?';
+          var label = (elementNames[elem] || elem) + ' (' + elem + ')';
+          state.label = viewer.addLabel(label, {
+            position: atom,
+            backgroundColor: 'rgba(15,23,42,0.88)',
+            fontColor: 'white',
+            borderColor: '#22c55e',
+            borderThickness: 1,
+            inFront: true,
+            fontSize: 13
+          });
+          viewer.render();
+          viewerState.textContent = 'Átomo seleccionado: ' + label + '. Arrastra para rotar, usa zoom y doble clic para recentrar.';
+        });
+        state.viewer.zoomTo();
+        state.viewer.render();
+        viewerState.textContent = 'Modelo CPK cargado. Arrastra para rotar 360°, usa zoom y selecciona un átomo para ver su nombre.';
+      }).catch(function () {
+        viewerState.innerHTML = 'No se pudo cargar el modelo 3D desde PubChem. Abre la fuente: <a href="https://pubchem.ncbi.nlm.nih.gov/compound/' + a.cid + '" target="_blank" rel="noopener noreferrer" style="color:#bbf7d0;">PubChem CID ' + a.cid + '</a>.';
+      });
+    }
+
+    function init() {
+      fillSelect('stressFilter', 'Estrés', uniqueFrom('stress'));
+      fillSelect('phenologyFilter', 'Fenología', uniqueFrom('phenology'));
+      fillSelect('formulationFilter', 'Formulación', uniqueFrom('formulations'));
+      fillSelect('categoryFilter', 'Categoría', uniqueFrom('categories'));
+
+      ['searchInput', 'stressFilter', 'phenologyFilter', 'formulationFilter', 'categoryFilter', 'evidenceFilter'].forEach(function (id) {
+        document.getElementById(id).addEventListener('input', renderCards);
+        document.getElementById(id).addEventListener('change', renderCards);
+      });
+      document.getElementById('resetBtn').addEventListener('click', function () {
+        ['searchInput', 'stressFilter', 'phenologyFilter', 'formulationFilter', 'categoryFilter', 'evidenceFilter'].forEach(function (id) {
+          document.getElementById(id).value = '';
+        });
+        renderCards();
+      });
+
+      selectAmino(state.selected);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
