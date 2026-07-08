@@ -274,7 +274,10 @@
     .panel {
       position: sticky;
       top: 14px;
-      overflow: hidden;
+      max-height: calc(100vh - 28px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
       border-color: rgba(37, 99, 235, 0.42);
       box-shadow:
         0 0 0 4px rgba(37, 99, 235, 0.08),
@@ -403,6 +406,8 @@
 
       .panel {
         position: static;
+        max-height: none;
+        overflow: visible;
       }
     }
 
