@@ -275,12 +275,19 @@
       position: sticky;
       top: 14px;
       overflow: hidden;
+      border-color: rgba(37, 99, 235, 0.42);
+      box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.08),
+        0 22px 56px rgba(15, 23, 42, 0.16);
     }
 
     .panel-header {
       padding: 18px;
-      border-bottom: 1px solid var(--np-border);
-      background: linear-gradient(135deg, #ffffff, #ecfdf5);
+      border-bottom: 1px solid rgba(37, 99, 235, 0.2);
+      background:
+        linear-gradient(135deg, rgba(239, 246, 255, 0.98), rgba(236, 253, 245, 0.96)),
+        #eff6ff;
+      box-shadow: inset 4px 0 0 #2563eb;
     }
 
     .viewer {
@@ -344,6 +351,9 @@
       padding: 18px;
       display: grid;
       gap: 14px;
+      background:
+        linear-gradient(180deg, rgba(239, 246, 255, 0.82), rgba(255, 255, 255, 0.98) 42%),
+        #ffffff;
     }
 
     .section h3 {
