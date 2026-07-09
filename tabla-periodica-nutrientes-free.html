@@ -1301,8 +1301,36 @@
     }
 
     function xyzFromAtoms(atoms, title) {
-      return String(atoms.length) + '\n' + (title || 'Modelo educativo NutriPlant') + '\n' +
-        atoms.map(function(a) { return a[0] + ' ' + a[1] + ' ' + a[2] + ' ' + a[3]; }).join('\n');
+      return {
+        format: 'xyz',
+        data: String(atoms.length) + '\n' + (title || 'Modelo educativo NutriPlant') + '\n' +
+          atoms.map(function(a) { return a[0] + ' ' + a[1] + ' ' + a[2] + ' ' + a[3]; }).join('\n')
+      };
+    }
+
+    function molFromAtomsBonds(atoms, bonds, title) {
+      function padLeft(v, n) { return String(v).padStart(n, ' '); }
+      function atomLine(a) {
+        return (
+          Number(a[1]).toFixed(4).padStart(10, ' ') +
+          Number(a[2]).toFixed(4).padStart(10, ' ') +
+          Number(a[3]).toFixed(4).padStart(10, ' ') + ' ' +
+          String(a[0]).padEnd(3, ' ') +
+          ' 0  0  0  0  0  0  0  0  0  0  0  0'
+        );
+      }
+      function bondLine(b) {
+        return padLeft(b[0], 3) + padLeft(b[1], 3) + padLeft(b[2] || 1, 3) + '  0  0  0  0';
+      }
+      return {
+        format: 'mol',
+        data: [
+          title || 'Modelo NutriPlant',
+          '  NutriPlant PRO',
+          '',
+          padLeft(atoms.length, 3) + padLeft((bonds || []).length, 3) + '  0  0  0  0            999 V2000'
+        ].concat(atoms.map(atomLine), (bonds || []).map(bondLine), ['M  END']).join('\n')
+      };
     }
 
     function simpleIonModel(symbol) {
@@ -1310,25 +1338,25 @@
     }
 
     function nitrateModel() {
-      return xyzFromAtoms([
-        ['N', 0, 0, 0], ['O', 1.18, 0, 0], ['O', -0.59, 1.02, 0], ['O', -0.59, -1.02, 0]
-      ], 'NO3');
+      return molFromAtomsBonds([
+        ['N', 0, 0, 0], ['O', 1.24, 0, 0], ['O', -0.62, 1.074, 0], ['O', -0.62, -1.074, 0]
+      ], [[1, 2, 2], [1, 3, 1], [1, 4, 1]], 'NO3 trigonal plano');
     }
 
     function ammoniumModel() {
-      return xyzFromAtoms([
+      return molFromAtomsBonds([
         ['N', 0, 0, 0], ['H', 0.63, 0.63, 0.63], ['H', -0.63, -0.63, 0.63],
         ['H', -0.63, 0.63, -0.63], ['H', 0.63, -0.63, -0.63]
-      ], 'NH4');
+      ], [[1, 2, 1], [1, 3, 1], [1, 4, 1], [1, 5, 1]], 'NH4 tetraedrico');
     }
 
     function sulfateModel(center) {
       center = center || 'S';
       const d = center === 'P' ? 0.895 : 0.855;
-      return xyzFromAtoms([
+      return molFromAtomsBonds([
         [center, 0, 0, 0], ['O', d, d, d], ['O', -d, -d, d],
         ['O', -d, d, -d], ['O', d, -d, -d]
-      ], center + 'O4');
+      ], [[1, 2, 2], [1, 3, 1], [1, 4, 1], [1, 5, 1]], center + 'O4 tetraedrico');
     }
 
     function tetraOxoAtoms(center, bondLen, hCount) {
@@ -1345,7 +1373,10 @@
     }
 
     function phosphateModel(hCount) {
-      return xyzFromAtoms(tetraOxoAtoms('P', 1.55, hCount || 0), 'phosphate');
+      const atoms = tetraOxoAtoms('P', 1.55, hCount || 0);
+      const bonds = [[1, 2, 2], [1, 3, 1], [1, 4, 1], [1, 5, 1]];
+      for (let i = 0; i < (hCount || 0); i += 1) bonds.push([2 + i, 6 + i, 1]);
+      return molFromAtomsBonds(atoms, bonds, 'fosfato tetraedrico');
     }
 
     function boricAcidModel() {
@@ -1357,7 +1388,7 @@
         const len = Math.sqrt(c[0] * c[0] + c[1] * c[1]) || 1;
         atoms.push(['H', c[0] + (c[0] / len) * 0.96, c[1] + (c[1] / len) * 0.96, c[2]]);
       });
-      return xyzFromAtoms(atoms, 'H3BO3');
+      return molFromAtomsBonds(atoms, [[1, 2, 1], [2, 3, 1], [1, 4, 1], [4, 5, 1], [1, 6, 1], [6, 7, 1]], 'H3BO3 trigonal plano');
     }
 
     function carbonateModel(cation) {
@@ -1365,12 +1396,45 @@
         ['C', 0, 0, 0], ['O', 1.2, 0, 0], ['O', -0.6, 1.04, 0], ['O', -0.6, -1.04, 0]
       ];
       if (cation) atoms.unshift([cation, 0, 0, 2.45]);
-      return xyzFromAtoms(atoms, (cation ? cation : '') + 'CO3');
+      return cation
+        ? molFromAtomsBonds(atoms, [[2, 3, 2], [2, 4, 1], [2, 5, 1]], cation + ' + CO3 trigonal plano')
+        : molFromAtomsBonds(atoms, [[1, 2, 2], [1, 3, 1], [1, 4, 1]], 'CO3 trigonal plano');
     }
 
     function waterModel(offsetX) {
       offsetX = offsetX || 0;
       return [['O', offsetX, 0, 0], ['H', offsetX + 0.76, 0.58, 0], ['H', offsetX - 0.76, 0.58, 0]];
+    }
+
+    function shiftAtoms(atoms, dx, dy, dz) {
+      return atoms.map(function(a) { return [a[0], a[1] + (dx || 0), a[2] + (dy || 0), a[3] + (dz || 0)]; });
+    }
+
+    function nitrateAtoms(dx, dy, dz) {
+      return shiftAtoms([
+        ['N', 0, 0, 0], ['O', 1.24, 0, 0], ['O', -0.62, 1.074, 0], ['O', -0.62, -1.074, 0]
+      ], dx, dy, dz);
+    }
+
+    function nitrateBonds(offset) {
+      return [[offset + 1, offset + 2, 2], [offset + 1, offset + 3, 1], [offset + 1, offset + 4, 1]];
+    }
+
+    function ammoniumAtoms(dx, dy, dz) {
+      return shiftAtoms([
+        ['N', 0, 0, 0], ['H', 0.63, 0.63, 0.63], ['H', -0.63, -0.63, 0.63],
+        ['H', -0.63, 0.63, -0.63], ['H', 0.63, -0.63, -0.63]
+      ], dx, dy, dz);
+    }
+
+    function ammoniumBonds(offset) {
+      return [[offset + 1, offset + 2, 1], [offset + 1, offset + 3, 1], [offset + 1, offset + 4, 1], [offset + 1, offset + 5, 1]];
+    }
+
+    function tetraBonds(offset, hCount) {
+      const bonds = [[offset + 1, offset + 2, 2], [offset + 1, offset + 3, 1], [offset + 1, offset + 4, 1], [offset + 1, offset + 5, 1]];
+      for (let i = 0; i < (hCount || 0); i += 1) bonds.push([offset + 2 + i, offset + 6 + i, 1]);
+      return bonds;
     }
 
     function chelateModel(metal, kind) {
@@ -1421,20 +1485,20 @@
         potassium_ion: simpleIonModel('K'),
         calcium_ion: simpleIonModel('Ca'),
         magnesium_ion: simpleIonModel('Mg'),
-        potassium_chloride: xyzFromAtoms([['K', -1.25, 0, 0], ['Cl', 1.25, 0, 0]], 'KCl par iónico'),
-        calcium_chloride: xyzFromAtoms([['Ca', 0, 0, 0], ['Cl', 1.65, 0, 0], ['Cl', -1.65, 0, 0]].concat(waterModel(0).map(function(a) { return [a[0], a[1], a[2] + 2.2, a[3]]; })), 'CaCl2 hidratado simplificado'),
-        potassium_nitrate: xyzFromAtoms([['K', 0, 0, 2.35], ['N', 0, 0, 0], ['O', 1.18, 0, 0], ['O', -0.59, 1.02, 0], ['O', -0.59, -1.02, 0]], 'KNO3 par iónico'),
-        ammonium_nitrate: xyzFromAtoms([['N', 0, 0, 2.45], ['H', 0.63, 0.63, 3.08], ['H', -0.63, -0.63, 3.08], ['H', -0.63, 0.63, 1.82], ['H', 0.63, -0.63, 1.82], ['N', 0, 0, 0], ['O', 1.18, 0, 0], ['O', -0.59, 1.02, 0], ['O', -0.59, -1.02, 0]], 'NH4NO3 simplificado'),
-        calcium_nitrate: xyzFromAtoms([['Ca', 0, 0, 2.65], ['N', -1.55, 0, 0], ['O', -0.37, 0, 0], ['O', -2.14, 1.02, 0], ['O', -2.14, -1.02, 0], ['N', 1.55, 0, 0], ['O', 2.73, 0, 0], ['O', 0.96, 1.02, 0], ['O', 0.96, -1.02, 0]], 'Ca(NO3)2 simplificado'),
-        magnesium_nitrate: xyzFromAtoms([['Mg', 0, 0, 2.65], ['N', -1.55, 0, 0], ['O', -0.37, 0, 0], ['O', -2.14, 1.02, 0], ['O', -2.14, -1.02, 0], ['N', 1.55, 0, 0], ['O', 2.73, 0, 0], ['O', 0.96, 1.02, 0], ['O', 0.96, -1.02, 0]], 'Mg(NO3)2 anhidro simplificado'),
-        mono_potassium_phosphate: xyzFromAtoms([['K', 0, 0, 2.55]].concat(tetraOxoAtoms('P', 1.55, 2)), 'KH2PO4 simplificado'),
-        mono_ammonium_phosphate: xyzFromAtoms([['N', 0, 0, 2.65], ['H', 0.63, 0.63, 3.28], ['H', -0.63, -0.63, 3.28], ['H', -0.63, 0.63, 2.02], ['H', 0.63, -0.63, 2.02]].concat(tetraOxoAtoms('P', 1.55, 2)), 'NH4H2PO4 simplificado'),
-        ammonium_sulfate: xyzFromAtoms([['N', -2.45, 0, 0], ['H', -1.82, 0.63, 0.63], ['H', -3.08, -0.63, 0.63], ['H', -3.08, 0.63, -0.63], ['H', -1.82, -0.63, -0.63], ['N', 2.45, 0, 0], ['H', 3.08, 0.63, 0.63], ['H', 1.82, -0.63, 0.63], ['H', 1.82, 0.63, -0.63], ['H', 3.08, -0.63, -0.63]].concat(tetraOxoAtoms('S', 1.48, 0)), '(NH4)2SO4 simplificado'),
-        potassium_sulfate: xyzFromAtoms([['K', -2.35, 0, 0], ['K', 2.35, 0, 0]].concat(tetraOxoAtoms('S', 1.48, 0)), 'K2SO4 simplificado'),
-        magnesium_sulfate: xyzFromAtoms([['Mg', 0, 0, 2.55]].concat(tetraOxoAtoms('S', 1.48, 0)).concat(waterModel(0).map(function(a) { return [a[0], a[1], a[2] - 2.3, a[3]]; })), 'MgSO4 hidratado simplificado'),
-        calcium_sulfate: xyzFromAtoms([['Ca', 0, 0, 2.55]].concat(tetraOxoAtoms('S', 1.48, 0)), 'CaSO4 simplificado'),
-        calcium_phosphate: xyzFromAtoms([['Ca', -2.1, 0, 1.6], ['Ca', 2.1, 0, 1.6], ['Ca', 0, 0, -2.2]].concat(tetraOxoAtoms('P', 1.55, 0)), 'Ca3(PO4)2 proxy'),
-        iron_phosphate: xyzFromAtoms([['Fe', 0, 0, 2.45]].concat(tetraOxoAtoms('P', 1.55, 0)), 'FePO4 proxy'),
+        potassium_chloride: molFromAtomsBonds([['K', -1.45, 0, 0], ['Cl', 1.45, 0, 0]], [], 'KCl unidad ionica'),
+        calcium_chloride: molFromAtomsBonds([['Ca', 0, 0, 0], ['Cl', 1.75, 0, 0], ['Cl', -1.75, 0, 0]].concat(shiftAtoms(waterModel(0), 0, 2.2, 0)), [[4, 5, 1], [4, 6, 1]], 'CaCl2 hidrato unidad ionica'),
+        potassium_nitrate: molFromAtomsBonds([['K', 0, 0, 2.45]].concat(nitrateAtoms(0, 0, 0)), nitrateBonds(1), 'KNO3 unidad ionica'),
+        ammonium_nitrate: molFromAtomsBonds(ammoniumAtoms(0, 0, 2.65).concat(nitrateAtoms(0, 0, 0)), ammoniumBonds(0).concat(nitrateBonds(5)), 'NH4NO3 unidad ionica'),
+        calcium_nitrate: molFromAtomsBonds([['Ca', 0, 0, 2.8]].concat(nitrateAtoms(-1.6, 0, 0), nitrateAtoms(1.6, 0, 0)), nitrateBonds(1).concat(nitrateBonds(5)), 'Ca(NO3)2 unidad ionica'),
+        magnesium_nitrate: molFromAtomsBonds([['Mg', 0, 0, 2.8]].concat(nitrateAtoms(-1.6, 0, 0), nitrateAtoms(1.6, 0, 0)), nitrateBonds(1).concat(nitrateBonds(5)), 'Mg(NO3)2 unidad ionica'),
+        mono_potassium_phosphate: molFromAtomsBonds([['K', 0, 0, 2.65]].concat(tetraOxoAtoms('P', 1.55, 2)), tetraBonds(1, 2), 'KH2PO4 unidad ionica'),
+        mono_ammonium_phosphate: molFromAtomsBonds(ammoniumAtoms(0, 0, 2.8).concat(tetraOxoAtoms('P', 1.55, 2)), ammoniumBonds(0).concat(tetraBonds(5, 2)), 'NH4H2PO4 unidad ionica'),
+        ammonium_sulfate: molFromAtomsBonds(ammoniumAtoms(-2.35, 0, 0).concat(ammoniumAtoms(2.35, 0, 0), tetraOxoAtoms('S', 1.48, 0)), ammoniumBonds(0).concat(ammoniumBonds(5), tetraBonds(10, 0)), '(NH4)2SO4 unidad ionica'),
+        potassium_sulfate: molFromAtomsBonds([['K', -2.35, 0, 0], ['K', 2.35, 0, 0]].concat(tetraOxoAtoms('S', 1.48, 0)), tetraBonds(2, 0), 'K2SO4 unidad ionica'),
+        magnesium_sulfate: molFromAtomsBonds([['Mg', 0, 0, 2.65]].concat(tetraOxoAtoms('S', 1.48, 0), shiftAtoms(waterModel(0), 0, 0, -2.4)), tetraBonds(1, 0).concat([[7, 8, 1], [7, 9, 1]]), 'MgSO4 hidrato unidad ionica'),
+        calcium_sulfate: molFromAtomsBonds([['Ca', 0, 0, 2.65]].concat(tetraOxoAtoms('S', 1.48, 0)), tetraBonds(1, 0), 'CaSO4 unidad mineral'),
+        calcium_phosphate: molFromAtomsBonds([['Ca', -2.2, 0, 1.7], ['Ca', 2.2, 0, 1.7], ['Ca', 0, 0, -2.45]].concat(tetraOxoAtoms('P', 1.55, 0)), tetraBonds(3, 0), 'Ca3(PO4)2 unidad mineral'),
+        iron_phosphate: molFromAtomsBonds([['Fe', 0, 0, 2.55]].concat(tetraOxoAtoms('P', 1.55, 0)), tetraBonds(1, 0), 'FePO4 unidad mineral'),
         calcium_carbonate: carbonateModel('Ca'),
         magnesium_carbonate: carbonateModel('Mg'),
         calcium_bicarbonate: xyzFromAtoms([['Ca', 0, 0, 2.6], ['C', 0, 0, 0], ['O', 1.2, 0, 0], ['O', -0.6, 1.04, 0], ['O', -0.6, -1.04, 0], ['H', -1.25, 1.62, 0]], 'Ca(HCO3)2 proxy'),
@@ -1449,16 +1513,16 @@
     }
 
     function renderSimpleFormModel(item, reason) {
-      const xyz = simpleFormXyz(item);
+      const model = simpleFormXyz(item);
       const stateEl = document.getElementById('formsViewerState');
       const viewerEl = document.getElementById('forms3dViewer');
-      if (!xyz || !window.$3Dmol) {
+      if (!model || !window.$3Dmol) {
         stateEl.textContent = reason || 'No hay modelo 3D para esta forma; revisa la ficha técnica.';
         return false;
       }
       viewerEl.innerHTML = '';
       formsViewer = window.$3Dmol.createViewer(viewerEl, { backgroundColor: '#111827' });
-      formsViewer.addModel(xyz, 'xyz');
+      formsViewer.addModel(model.data || model, model.format || 'xyz');
       formsViewer.setStyle({}, {
         stick: { radius: 0.16, colorscheme: 'Jmol' },
         sphere: { scale: 0.35, colorscheme: 'Jmol' }

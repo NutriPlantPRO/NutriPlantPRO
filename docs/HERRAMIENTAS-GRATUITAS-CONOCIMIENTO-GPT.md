@@ -131,7 +131,7 @@ En **login** y **dashboard** (`measure-units-calculator.js`), NutriPlant usa **m
 
 - Tres pestañas: **Tabla periódica** (elementos esenciales/benéficos), **Peso molecular** (fórmula → PM, % elemental y peso equivalente) y **Formas iónicas / 3D**.
 - La pestaña **Formas iónicas / 3D** resume formas absorbidas por planta (NO₃⁻, NH₄⁺, H₂PO₄⁻, HPO₄²⁻, SO₄²⁻, H₃BO₃, MoO₄²⁻, K⁺, Ca²⁺, Mg²⁺), fuentes fertilizantes (KNO₃, Ca(NO₃)₂, MKP, MAP, NH₄NO₃, K₂SO₄/SOP, (NH₄)₂SO₄, MgSO₄·7H₂O, Mg(NO₃)₂·6H₂O, CaCl₂·2H₂O, KCl), quelatos (Fe-EDTA, Fe-DTPA, Fe-EDDHA, Zn-EDTA, Mn-EDTA) y precipitados/baja solubilidad (CaSO₄, Ca₃(PO₄)₂, FePO₄, CaCO₃, MgCO₃, Ca(HCO₃)₂, Mg(HCO₃)₂).
-- Modelo 3D: usa PubChem + 3Dmol cuando la estructura está disponible; para iones simples o quelatos grandes puede quedar solo ficha técnica.
+- Modelo 3D: usa PubChem + 3Dmol cuando la estructura está disponible. Si no hay estructura usable, muestra **modelo NutriPlant con enlaces explícitos** para conservar arquitectura visual básica: trigonal plana (`NO₃⁻`, `CO₃²⁻`, `H₃BO₃`), tetraédrica (`NH₄⁺`, `SO₄²⁻`, `PO₄³⁻`, `H₂PO₄⁻`, `HPO₄²⁻`), unidad iónica representativa en sales e hidratos, unidad mineral representativa en precipitados y complejo quelatado representativo en EDTA/DTPA/EDDHA. No presentarlo como cristalografía exacta.
 
 ### 🧬 Atlas de Aminoácidos Vegetales (`atlas-aminoacidos-vegetales-free.html`)
 
