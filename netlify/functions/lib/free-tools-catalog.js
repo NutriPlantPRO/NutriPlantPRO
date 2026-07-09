@@ -116,11 +116,11 @@ module.exports = {
     },
     {
       id: 'atlas_aminoacidos_vegetales',
-      title: 'Atlas de Aminoácidos Vegetales',
+      title: 'Atlas Fisiológico Vegetal',
       file: 'atlas-aminoacidos-vegetales-free.html',
       manualChapter: 'atlas_aminoacidos_vegetales',
       summary:
-        'Biblioteca interactiva de los 20 aminoácidos proteinogénicos: fórmula, PM, modelo 3D PubChem/3Dmol, rutas vegetales, función fisiológica, estrés, fenología, formulación nutricional, categorías funcionales, evidencia y bibliografía base.'
+        'Atlas interactivo con dos secciones: 20 aminoácidos proteinogénicos (fórmula, PM, modelo 3D, rutas, estrés, fenología, evidencia) y ciclo hormonal de la planta por etapas (hormonas dominantes, eventos celulares y nutrientes cofactores).'
     },
     {
       id: 'fertilizer_compatibility',

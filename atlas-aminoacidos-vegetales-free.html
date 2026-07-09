@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Atlas de Aminoácidos Vegetales - NutriPlant PRO</title>
+  <title>Atlas Fisiológico Vegetal - NutriPlant PRO</title>
   <script src="config-no-traducir-terminos.js"></script>
   <script src="assets/free-tools-embed.js"></script>
   <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
@@ -400,6 +400,190 @@
 
     a { color: #047857; font-weight: 700; }
 
+    .tool-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .tool-tab-btn {
+      border: 1px solid var(--np-border);
+      background: #fff;
+      color: #334155;
+      border-radius: 999px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .tool-tab-btn.active {
+      background: linear-gradient(135deg, #166534, #15803d);
+      border-color: #166534;
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(22, 163, 74, 0.22);
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .hormone-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 390px;
+      gap: 18px;
+      align-items: start;
+    }
+    .hormone-board {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--np-border);
+      border-radius: 22px;
+      box-shadow: var(--np-shadow);
+      padding: 18px;
+      overflow: hidden;
+    }
+    .hormone-board h2 {
+      margin: 0 0 6px;
+      font-size: clamp(22px, 3vw, 30px);
+      letter-spacing: -0.03em;
+    }
+    .hormone-lead {
+      margin: 0 0 14px;
+      color: var(--np-muted);
+      font-size: 14px;
+      line-height: 1.55;
+      max-width: 920px;
+    }
+    .hormone-chart-wrap {
+      border: 1px solid #d1fae5;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 72%);
+      padding: 12px 10px 8px;
+      overflow-x: auto;
+    }
+    .hormone-chart {
+      min-width: 760px;
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .hormone-chart text {
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+    .hormone-stage-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .hormone-stage-card {
+      border: 1px solid #bbf7d0;
+      border-radius: 16px;
+      background: #fff;
+      padding: 12px;
+      cursor: pointer;
+      transition: transform .12s ease, border-color .15s ease, box-shadow .15s ease;
+      min-height: 100%;
+    }
+    .hormone-stage-card:hover,
+    .hormone-stage-card.active {
+      transform: translateY(-1px);
+      border-color: #16a34a;
+      box-shadow: 0 10px 24px rgba(22, 163, 74, 0.14);
+    }
+    .hormone-stage-card .stage-kicker {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #166534;
+      margin-bottom: 4px;
+    }
+    .hormone-stage-card h3 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      line-height: 1.35;
+      color: #0f172a;
+    }
+    .hormone-stage-card .event {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.4;
+    }
+    .hormone-stage-card .nutrients-label {
+      margin: 8px 0 6px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .hormone-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .hormone-legend-btn {
+      border: 1px solid #dbe7df;
+      background: #fff;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .hormone-legend-btn.active {
+      border-color: #16a34a;
+      background: #ecfdf5;
+      color: #166534;
+    }
+    .hormone-legend-btn .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .hormone-disclaimer {
+      margin-top: 12px;
+      border: 1px solid #fde68a;
+      background: #fffbeb;
+      color: #92400e;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.45;
+      font-weight: 600;
+    }
+    .hormone-panel .viewer {
+      height: 180px;
+      background: linear-gradient(145deg, #052e16, #14532d);
+    }
+    .hormone-panel .hormone-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #ecfdf5;
+      text-align: center;
+      padding: 16px;
+    }
+    .hormone-panel .hormone-visual strong {
+      display: block;
+      font-size: 28px;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+    .hormone-panel .hormone-visual span {
+      font-size: 13px;
+      line-height: 1.4;
+      opacity: 0.92;
+    }
+
     html.embed-dashboard .hero,
     html.embed-login .hero {
       display: none;
@@ -411,6 +595,70 @@
     html.embed-dashboard .panel,
     html.embed-login .panel {
       max-height: calc(100vh - 16px);
+    }
+    html.embed-dashboard body.hormones-tab-active,
+    html.embed-login body.hormones-tab-active {
+      height: 100vh;
+      overflow: hidden;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+    html.embed-dashboard body.hormones-tab-active .page,
+    html.embed-login body.hormones-tab-active .page {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    html.embed-dashboard body.hormones-tab-active .tool-tabs,
+    html.embed-login body.hormones-tab-active .tool-tabs {
+      flex-shrink: 0;
+    }
+    html.embed-dashboard body.hormones-tab-active #paneHormones.active,
+    html.embed-login body.hormones-tab-active #paneHormones.active {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    html.embed-dashboard body.hormones-tab-active .hormone-layout,
+    html.embed-login body.hormones-tab-active .hormone-layout {
+      flex: 1;
+      min-height: 0;
+      align-items: stretch;
+      overflow: hidden;
+    }
+    html.embed-dashboard body.hormones-tab-active .hormone-board,
+    html.embed-login body.hormones-tab-active .hormone-board {
+      min-height: 0;
+      overflow-y: auto;
+      align-self: stretch;
+    }
+    html.embed-dashboard body.hormones-tab-active .hormone-panel,
+    html.embed-login body.hormones-tab-active .hormone-panel {
+      position: static;
+      top: auto;
+      max-height: none;
+      min-height: 0;
+      overflow-y: auto;
+      align-self: stretch;
+    }
+
+    @media (max-width: 1100px) {
+      .hormone-layout {
+        grid-template-columns: 1fr;
+      }
+      .hormone-panel {
+        position: static;
+        max-height: none;
+        overflow: visible;
+      }
+      .hormone-stage-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 1100px) {
@@ -448,10 +696,16 @@
 </head>
 <body>
   <main class="page">
+    <div class="tool-tabs" role="tablist" aria-label="Secciones del atlas">
+      <button type="button" class="tool-tab-btn active" data-tab="amino" role="tab" aria-selected="true">Aminoácidos</button>
+      <button type="button" class="tool-tab-btn" data-tab="hormones" role="tab" aria-selected="false">Ciclo hormonal</button>
+    </div>
+
+    <div id="paneAmino" class="tab-pane active" role="tabpanel">
     <section class="hero">
       <div class="hero-card">
         <span class="kicker">NutriPlant PRO · Herramienta gratuita</span>
-        <h1>Atlas de Aminoácidos Vegetales</h1>
+        <h1>Atlas Fisiológico Vegetal</h1>
         <p>
           Biblioteca interactiva de los 20 aminoácidos proteinogénicos con enfoque en nutrición,
           fisiología vegetal y uso agronómico responsable. Filtra por estrés, fenología o formulación,
@@ -536,6 +790,96 @@
         <div class="panel-body" id="detailPanel"></div>
       </aside>
     </section>
+    </div>
+
+    <div id="paneHormones" class="tab-pane" role="tabpanel">
+      <section class="hero">
+        <div class="hero-card">
+          <span class="kicker">NutriPlant PRO · Ciclo hormonal</span>
+          <h1>Ciclo hormonal de la planta</h1>
+          <p>
+            Mapa didáctico de las etapas fenológicas, hormonas dominantes, eventos celulares y nutrientes
+            cofactores que sostienen cada fase. Conecta nutrición mineral, aminoácidos y señalización
+            hormonal para interpretar formulaciones por etapa.
+          </p>
+        </div>
+        <aside class="source-card">
+          <h2>Lectura agronómica</h2>
+          <ul class="source-list">
+            <li><strong>Taiz & Zeiger:</strong> fisiología del desarrollo y regulación hormonal.</li>
+            <li><strong>Marschner:</strong> cofactores minerales en enzimas y metabolismo.</li>
+            <li><strong>BMBP:</strong> relación C/N, aminoácidos y rutas de biosíntesis hormonal.</li>
+            <li><strong>Campo:</strong> el equilibrio hormonal depende de ambiente, cultivo y manejo.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="hormone-layout">
+        <div class="hormone-board">
+          <h2>Niveles hormonales por etapa</h2>
+          <p class="hormone-lead">Las curvas representan tendencias relativas de concentración/actividad hormonal a lo largo del ciclo. Toca una etapa o una hormona para ver la ficha técnica.</p>
+          <div class="hormone-chart-wrap">
+            <svg class="hormone-chart" viewBox="0 0 1000 300" role="img" aria-label="Ciclo hormonal de la planta por etapas">
+              <defs>
+                <linearGradient id="ckGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#86efac" stop-opacity="0.95"/><stop offset="100%" stop-color="#86efac" stop-opacity="0.08"/></linearGradient>
+                <linearGradient id="auxGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4ade80" stop-opacity="0.95"/><stop offset="100%" stop-color="#4ade80" stop-opacity="0.08"/></linearGradient>
+                <linearGradient id="gaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22c55e" stop-opacity="0.95"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0.08"/></linearGradient>
+                <linearGradient id="ethGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#16a34a" stop-opacity="0.95"/><stop offset="100%" stop-color="#16a34a" stop-opacity="0.08"/></linearGradient>
+                <linearGradient id="abaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#15803d" stop-opacity="0.95"/><stop offset="100%" stop-color="#15803d" stop-opacity="0.08"/></linearGradient>
+              </defs>
+              <rect x="0" y="0" width="1000" height="300" fill="#f8fffb"/>
+              <line x1="70" y1="40" x2="70" y2="230" stroke="#94a3b8" stroke-width="1.2"/>
+              <text x="18" y="140" transform="rotate(-90 18 140)" fill="#475569" font-size="12" font-weight="700">Niveles hormonales</text>
+              <line x1="70" y1="230" x2="980" y2="230" stroke="#cbd5e1" stroke-width="1.2"/>
+              <line x1="320" y1="40" x2="320" y2="230" stroke="#e2e8f0" stroke-dasharray="4 4"/>
+              <line x1="570" y1="40" x2="570" y2="230" stroke="#e2e8f0" stroke-dasharray="4 4"/>
+              <line x1="820" y1="40" x2="820" y2="230" stroke="#e2e8f0" stroke-dasharray="4 4"/>
+              <path d="M70,220 C130,220 170,70 250,220 C310,220 350,120 430,220" fill="url(#ckGrad)" stroke="#4ade80" stroke-width="2.2"/>
+              <path d="M70,225 C180,225 260,85 420,210 C500,150 560,95 700,220" fill="url(#auxGrad)" stroke="#22c55e" stroke-width="2.2"/>
+              <path d="M250,235 C380,235 470,80 620,95 C720,110 820,170 930,225" fill="url(#gaGrad)" stroke="#16a34a" stroke-width="2.2"/>
+              <path d="M430,235 C600,235 700,90 820,100 C900,120 960,170 980,220" fill="url(#ethGrad)" stroke="#15803d" stroke-width="2.2"/>
+              <path d="M620,240 C760,240 860,95 980,70 L980,230 L620,230 Z" fill="url(#abaGrad)" stroke="#166534" stroke-width="2.2"/>
+              <circle cx="195" cy="118" r="5" fill="#fff" stroke="#16a34a" stroke-width="2"/>
+              <circle cx="360" cy="132" r="5" fill="#fff" stroke="#16a34a" stroke-width="2"/>
+              <circle cx="545" cy="108" r="5" fill="#fff" stroke="#16a34a" stroke-width="2"/>
+              <circle cx="760" cy="112" r="5" fill="#fff" stroke="#16a34a" stroke-width="2"/>
+              <text x="195" y="252" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="800">ETAPA I</text>
+              <text x="445" y="252" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="800">ETAPA II</text>
+              <text x="695" y="252" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="800">ETAPA III</text>
+              <text x="900" y="252" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="800">ETAPA IV</text>
+              <text x="195" y="268" text-anchor="middle" fill="#64748b" font-size="10">Germinación</text>
+              <text x="445" y="268" text-anchor="middle" fill="#64748b" font-size="10">Vegetativo</text>
+              <text x="695" y="268" text-anchor="middle" fill="#64748b" font-size="10">Floración</text>
+              <text x="900" y="268" text-anchor="middle" fill="#64748b" font-size="10">Maduración</text>
+              <text x="500" y="292" text-anchor="middle" fill="#64748b" font-size="11" font-weight="700">Nutrientes claves / Co-factores / Hormonas</text>
+            </svg>
+          </div>
+
+          <div class="hormone-legend" id="hormoneLegend"></div>
+
+          <div class="hormone-stage-grid" id="hormoneStageGrid"></div>
+
+          <p class="hormone-disclaimer">Cualquier desequilibrio en estos ciclos hormonales en cualquier momento puede reducir irreversiblemente la expresión genética. La nutrición y el manejo deben sostener cada transición fenológica.</p>
+        </div>
+
+        <aside class="panel hormone-panel" aria-live="polite">
+          <div class="panel-header">
+            <span class="kicker" id="hormoneSelectedType">Fitohormona</span>
+            <h2 id="hormoneSelectedName" style="margin-top:12px;">Selecciona una etapa u hormona</h2>
+            <p id="hormoneSelectedSubtitle" style="margin:7px 0 0;color:#64748b;font-size:13px;line-height:1.45;">Consulta eventos celulares, hormonas dominantes y nutrientes cofactores.</p>
+          </div>
+          <div class="viewer">
+            <div class="hormone-visual" id="hormoneVisual">
+              <div>
+                <strong>🌱</strong>
+                <span>Mapa hormonal + nutrición por etapa fenológica</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel-body" id="hormoneDetailPanel"></div>
+        </aside>
+      </section>
+    </div>
   </main>
 
   <script>
@@ -830,8 +1174,280 @@
     var state = {
       selected: AMINO_ACIDS[14],
       viewer: null,
-      label: null
+      label: null,
+      hormoneSelected: null,
+      stageSelected: null,
+      activeTab: 'amino'
     };
+
+    var PLANT_STAGES = [
+      {
+        id: 'I',
+        title: 'ETAPA I',
+        name: 'Germinación y Establecimiento',
+        hormones: ['cytokinin', 'auxin'],
+        event: 'Iniciación celular (División celular)',
+        nutrients: ['N', 'Ca', 'P', 'Zn', 'Mg', 'K', 'Mn'],
+        physiology: 'Prioriza división celular, formación de meristemos y establecimiento radicular. La citoquinina impulsa brotación y la auxina orienta polaridad y elongación inicial.',
+        agronomy: 'Nutrición de arranque con énfasis en N, P, Ca y micronutrientes (Zn, Mn) que cofactoran enzimas de crecimiento y metabolismo energético.',
+        aminoLinks: ['Arginina', 'Glutamina', 'Triptófano (precursor de auxinas)']
+      },
+      {
+        id: 'II',
+        title: 'ETAPA II',
+        name: 'Crecimiento Vegetativo',
+        hormones: ['auxin', 'gibberellin'],
+        event: 'Crecimiento celular',
+        nutrients: ['Ca', 'Cu', 'Mg', 'B', 'Mn', 'N', 'Zn', 'NO₃'],
+        physiology: 'Expansión celular, elongación de vástago y desarrollo foliar. Auxinas y giberelinas coordinan crecimiento longitudinal y metabolismo del nitrógeno nitrico.',
+        agronomy: 'Demanda alta de N (incluido NO₃), Ca, Mg y micronutrientes estructurales (B, Cu, Mn, Zn) para paredes, clorofila y enzimas.',
+        aminoLinks: ['Glutamato', 'Glutamina', 'Leucina', 'Ácido glutámico']
+      },
+      {
+        id: 'III',
+        title: 'ETAPA III',
+        name: 'Floración y Reproducción',
+        hormones: ['gibberellin', 'ethylene'],
+        event: 'Madurez celular',
+        nutrients: ['Ca', 'B', 'Mg', 'N amínico'],
+        physiology: 'Transición reproductiva, diferenciación floral y maduración de tejidos. GA sostiene desarrollo floral; el etileno inicia señales de madurez y cuajado.',
+        agronomy: 'Ca y B son críticos en polinización y tejido reproductivo; el N amínico (orgánico) apoya metabolismo de alta demanda sin picos desbalanceados.',
+        aminoLinks: ['Metionina (precursor de etileno)', 'Prolina', 'Lisina']
+      },
+      {
+        id: 'IV',
+        title: 'ETAPA IV',
+        name: 'Maduración y senescencia',
+        hormones: ['ethylene', 'aba'],
+        event: 'Senescencia',
+        nutrients: ['B', 'Cu', 'P', 'K', 'Mo', 'Mg', 'N amínico'],
+        physiology: 'Maduración de fruto, removilización de nutrientes y senescencia controlada. Etileno y ABA coordinan cierre del ciclo y tolerancia al estrés tardío.',
+        agronomy: 'K y P apoyan calidad y removilización; Mo en metabolismo de N; Cu, B y Mg en enzimas de maduración. El manejo hormonal-nutricional define vida postcosecha.',
+        aminoLinks: ['Metionina', 'Prolina', 'Cisteína']
+      }
+    ];
+
+    var HORMONES = [
+      {
+        id: 'cytokinin',
+        name: 'Citoquinina',
+        abbr: 'CK',
+        color: '#4ade80',
+        emoji: '🌱',
+        stages: ['I'],
+        role: 'División celular y brotación',
+        physiology: 'Promueve división celular, desarrollo de brotes y retardo parcial de senescencia. Interactúa con auxinas en relación CK/Aux que define arquitectura.',
+        agronomy: 'Relevante en establecimiento, brotación y recuperación. En campo suele evaluarse vía fuentes biológicas o formulaciones que modulan balance CK/Aux.',
+        nutrients: ['Zn', 'Mn', 'N', 'P'],
+        aminoLinks: ['Adenina (núcleo CK)', 'Arginina'],
+        evidence: 'Alta',
+        references: ['Taiz & Zeiger Plant Physiology', 'Marschner Mineral Nutrition', 'BMBP hormonal regulation']
+      },
+      {
+        id: 'auxin',
+        name: 'Auxina',
+        abbr: 'IAA',
+        color: '#22c55e',
+        emoji: '🧭',
+        stages: ['I', 'II'],
+        role: 'Polaridad y elongación',
+        physiology: 'Regula elongación celular, polaridad, raíces adventicias y respuesta gravitropica/fototropica. Base del transporte polar auxínico.',
+        agronomy: 'Clave en enraizamiento, homogeneidad de vástago y respuesta a trasplante. El triptófano es precursor metabólico indirecto.',
+        nutrients: ['Zn', 'B', 'Ca', 'Mn'],
+        aminoLinks: ['Triptófano', 'Fenilalanina'],
+        evidence: 'Alta',
+        references: ['Taiz & Zeiger Plant Physiology', 'KEGG auxin biosynthesis', 'Plant Physiology and Development']
+      },
+      {
+        id: 'gibberellin',
+        name: 'Ácido giberélico',
+        abbr: 'GA',
+        color: '#16a34a',
+        emoji: '📈',
+        stages: ['II', 'III'],
+        role: 'Crecimiento y floración',
+        physiology: 'Estimula elongación del vástago, ruptura de latencia de semilla y transición floral en muchos cultivos.',
+        agronomy: 'Manejo delicado: exceso puede alargar internudos; déficit limita crecimiento y floración. Depende de genética y ambiente.',
+        nutrients: ['Mg', 'Zn', 'N', 'P'],
+        aminoLinks: ['Gibberelinas derivadas de geranilgeranil-PP (ruta isoprenoides)'],
+        evidence: 'Alta',
+        references: ['Taiz & Zeiger Plant Physiology', 'Marschner Mineral Nutrition', 'BMBP']
+      },
+      {
+        id: 'ethylene',
+        name: 'Etileno',
+        abbr: 'C₂H₄',
+        color: '#15803d',
+        emoji: '🍎',
+        stages: ['III', 'IV'],
+        role: 'Maduración y senescencia',
+        physiology: 'Hormona gaseosa que regula maduración, abscisión, respuesta a estrés y senescencia. Metionina → SAM → ACC → etileno.',
+        agronomy: 'Crítico en maduración y calidad postcosecha. El exceso puede acelerar senescencia o caída prematura de flores/frutos.',
+        nutrients: ['K', 'Mg', 'S', 'N amínico'],
+        aminoLinks: ['Metionina', 'S-adenosilmetionina'],
+        evidence: 'Alta',
+        references: ['Taiz & Zeiger Plant Physiology', 'KEGG ethylene biosynthesis', 'Marschner']
+      },
+      {
+        id: 'aba',
+        name: 'Ácido abscísico',
+        abbr: 'ABA',
+        color: '#166534',
+        emoji: '🛡️',
+        stages: ['IV'],
+        role: 'Estrés y cierre de ciclo',
+        physiology: 'Mediador central de estrés abiótico (sequía, salinidad), cierre estomático y regulación de semillas en latencia.',
+        agronomy: 'Indicador fisiológico de estrés. El manejo hídrico y nutricional modula ABA y la expresión genética tardía del cultivo.',
+        nutrients: ['K', 'Ca', 'Mg', 'B'],
+        aminoLinks: ['Derivado de ruta carotenoides (ABA)'],
+        evidence: 'Alta',
+        references: ['Taiz & Zeiger Plant Physiology', 'Plant Cell and Environment reviews', 'Marschner']
+      }
+    ];
+
+    function pills(items, cls) {
+      cls = cls || 'green';
+      return '<div class="meta">' + items.map(function (v) {
+        return '<span class="pill ' + cls + '">' + escapeHtml(v) + '</span>';
+      }).join('') + '</div>';
+    }
+
+    function syncAtlasEmbedLayout(tabId) {
+      var isEmbed = document.documentElement.classList.contains('embed-dashboard') ||
+        document.documentElement.classList.contains('embed-login');
+      document.body.classList.toggle('hormones-tab-active', isEmbed && tabId === 'hormones' && !isStackedLayout());
+    }
+
+    function switchAtlasTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('.tool-tab-btn').forEach(function (btn) {
+        var on = btn.getAttribute('data-tab') === tabId;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      document.getElementById('paneAmino').classList.toggle('active', tabId === 'amino');
+      document.getElementById('paneHormones').classList.toggle('active', tabId === 'hormones');
+      syncAtlasEmbedLayout(tabId);
+      if (tabId === 'amino') requestAnimationFrame(updateSelectedPanelMaxHeight);
+      if (tabId === 'hormones') requestAnimationFrame(updateHormonePanelMaxHeight);
+    }
+
+    function updateHormonePanelMaxHeight() {
+      var panel = document.querySelector('.hormone-panel');
+      if (!panel || isStackedLayout()) {
+        if (panel) panel.style.maxHeight = '';
+        return;
+      }
+      var isEmbed = document.documentElement.classList.contains('embed-dashboard') ||
+        document.documentElement.classList.contains('embed-login');
+      if (isEmbed && document.body.classList.contains('hormones-tab-active')) {
+        panel.style.maxHeight = '';
+        return;
+      }
+      var viewportH = window.visualViewport && window.visualViewport.height ? window.visualViewport.height : window.innerHeight;
+      panel.style.maxHeight = Math.max(420, viewportH - panel.getBoundingClientRect().top - 10) + 'px';
+    }
+
+    function renderHormoneLegend() {
+      var legend = document.getElementById('hormoneLegend');
+      legend.innerHTML = HORMONES.map(function (h) {
+        return '<button type="button" class="hormone-legend-btn ' + (state.hormoneSelected && state.hormoneSelected.id === h.id ? 'active' : '') + '" data-hormone="' + h.id + '">' +
+          '<span class="swatch" style="background:' + h.color + '"></span>' + escapeHtml(h.name) +
+          '</button>';
+      }).join('');
+      Array.prototype.forEach.call(legend.querySelectorAll('.hormone-legend-btn'), function (btn) {
+        btn.addEventListener('click', function () {
+          var item = HORMONES.find(function (h) { return h.id === btn.getAttribute('data-hormone'); });
+          if (item) selectHormone(item);
+        });
+      });
+    }
+
+    function renderHormoneStages() {
+      var grid = document.getElementById('hormoneStageGrid');
+      grid.innerHTML = PLANT_STAGES.map(function (s) {
+        var hormoneNames = s.hormones.map(function (hid) {
+          var h = HORMONES.find(function (x) { return x.id === hid; });
+          return h ? h.name : hid;
+        });
+        return '<article class="hormone-stage-card ' + (state.stageSelected && state.stageSelected.id === s.id ? 'active' : '') + '" data-stage="' + s.id + '">' +
+          '<span class="stage-kicker">' + escapeHtml(s.title) + '</span>' +
+          '<h3>' + escapeHtml(s.name) + '</h3>' +
+          '<p class="event"><strong>Evento:</strong> ' + escapeHtml(s.event) + '</p>' +
+          pills(hormoneNames, 'blue') +
+          '<div class="nutrients-label">Nutrientes clave</div>' +
+          pills(s.nutrients, 'green') +
+          '</article>';
+      }).join('');
+      Array.prototype.forEach.call(grid.querySelectorAll('.hormone-stage-card'), function (card) {
+        card.addEventListener('click', function () {
+          var item = PLANT_STAGES.find(function (s) { return s.id === card.getAttribute('data-stage'); });
+          if (item) selectStage(item);
+        });
+      });
+    }
+
+    function hormoneDetailHtml(h) {
+      return '<div class="section"><h3>Rol fisiológico</h3><p>' + escapeHtml(h.role) + ' — ' + escapeHtml(h.physiology) + '</p></div>' +
+        '<div class="section"><h3>Etapas dominantes</h3>' + pills(h.stages.map(function (sid) {
+          var st = PLANT_STAGES.find(function (s) { return s.id === sid; });
+          return st ? st.title + ' · ' + st.name : sid;
+        }), 'blue') + '</div>' +
+        '<div class="section"><h3>Interpretación agronómica</h3><p>' + escapeHtml(h.agronomy) + '</p></div>' +
+        '<div class="section"><h3>Nutrientes cofactores</h3>' + pills(h.nutrients, 'green') + '</div>' +
+        '<div class="section"><h3>Vínculo con aminoácidos</h3>' + list(h.aminoLinks) + '</div>' +
+        '<div class="section"><h3>Evidencia</h3><p><span class="pill ' + evidencePill(h.evidence) + '">Evidencia ' + escapeHtml(h.evidence) + '</span></p></div>' +
+        '<div class="section"><h3>Referencias</h3>' + list(h.references) + '</div>';
+    }
+
+    function stageDetailHtml(s) {
+      var hormoneNames = s.hormones.map(function (hid) {
+        var h = HORMONES.find(function (x) { return x.id === hid; });
+        return h ? h.name + ' (' + h.abbr + ')' : hid;
+      });
+      return '<div class="section"><h3>Evento celular</h3><p>' + escapeHtml(s.event) + '</p></div>' +
+        '<div class="section"><h3>Hormonas dominantes</h3>' + list(hormoneNames) + '</div>' +
+        '<div class="section"><h3>Fisiología de la etapa</h3><p>' + escapeHtml(s.physiology) + '</p></div>' +
+        '<div class="section"><h3>Manejo nutricional</h3><p>' + escapeHtml(s.agronomy) + '</p></div>' +
+        '<div class="section"><h3>Nutrientes clave</h3>' + pills(s.nutrients, 'green') + '</div>' +
+        '<div class="section"><h3>Aminoácidos relacionados</h3>' + list(s.aminoLinks) + '</div>';
+    }
+
+    function selectHormone(h) {
+      state.hormoneSelected = h;
+      state.stageSelected = null;
+      var panel = document.querySelector('.hormone-panel');
+      if (panel) panel.scrollTop = 0;
+      document.getElementById('hormoneSelectedType').textContent = 'Fitohormona · ' + h.abbr;
+      document.getElementById('hormoneSelectedName').textContent = h.name;
+      document.getElementById('hormoneSelectedSubtitle').textContent = h.role;
+      document.getElementById('hormoneVisual').innerHTML = '<div><strong>' + h.emoji + '</strong><span>' + escapeHtml(h.role) + '</span></div>';
+      document.getElementById('hormoneDetailPanel').innerHTML = hormoneDetailHtml(h);
+      renderHormoneLegend();
+      renderHormoneStages();
+      updateHormonePanelMaxHeight();
+    }
+
+    function selectStage(s) {
+      state.stageSelected = s;
+      state.hormoneSelected = null;
+      var panel = document.querySelector('.hormone-panel');
+      if (panel) panel.scrollTop = 0;
+      document.getElementById('hormoneSelectedType').textContent = s.title;
+      document.getElementById('hormoneSelectedName').textContent = s.name;
+      document.getElementById('hormoneSelectedSubtitle').textContent = s.event;
+      document.getElementById('hormoneVisual').innerHTML = '<div><strong>' + escapeHtml(s.title) + '</strong><span>' + escapeHtml(s.event) + '</span></div>';
+      document.getElementById('hormoneDetailPanel').innerHTML = stageDetailHtml(s);
+      renderHormoneLegend();
+      renderHormoneStages();
+      updateHormonePanelMaxHeight();
+    }
+
+    function initHormones() {
+      renderHormoneLegend();
+      renderHormoneStages();
+      selectStage(PLANT_STAGES[0]);
+    }
 
     function uniqueFrom(field) {
       var set = {};
@@ -1013,6 +1629,12 @@
     }
 
     function init() {
+      document.querySelectorAll('.tool-tab-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          switchAtlasTab(btn.getAttribute('data-tab'));
+        });
+      });
+
       fillSelect('stressFilter', 'Estrés', uniqueFrom('stress'));
       fillSelect('phenologyFilter', 'Fenología', uniqueFrom('phenology'));
       fillSelect('formulationFilter', 'Formulación', uniqueFrom('formulations'));
@@ -1029,9 +1651,13 @@
         renderCards();
       });
 
+      initHormones();
+      syncAtlasEmbedLayout('amino');
       selectAmino(state.selected);
       window.addEventListener('resize', function () {
+        syncAtlasEmbedLayout(state.activeTab);
         requestAnimationFrame(updateSelectedPanelMaxHeight);
+        requestAnimationFrame(updateHormonePanelMaxHeight);
       });
     }
 
