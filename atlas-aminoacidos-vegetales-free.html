@@ -400,6 +400,19 @@
 
     a { color: #047857; font-weight: 700; }
 
+    html.embed-dashboard .hero,
+    html.embed-login .hero {
+      display: none;
+    }
+    html.embed-dashboard .page,
+    html.embed-login .page {
+      padding: 12px 14px 14px;
+    }
+    html.embed-dashboard .panel,
+    html.embed-login .panel {
+      max-height: calc(100vh - 16px);
+    }
+
     @media (max-width: 1100px) {
       .hero,
       .layout {
@@ -919,9 +932,12 @@
         if (panel) panel.style.maxHeight = '';
         return;
       }
-      var rect = panel.getBoundingClientRect();
       var viewportH = window.visualViewport && window.visualViewport.height ? window.visualViewport.height : window.innerHeight;
-      var available = Math.max(420, viewportH - rect.top - 10);
+      var isEmbed = document.documentElement.classList.contains('embed-dashboard') ||
+        document.documentElement.classList.contains('embed-login');
+      var available = isEmbed
+        ? Math.max(420, viewportH - 16)
+        : Math.max(420, viewportH - panel.getBoundingClientRect().top - 10);
       panel.style.maxHeight = available + 'px';
     }
 

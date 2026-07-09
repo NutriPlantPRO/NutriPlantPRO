@@ -224,6 +224,15 @@
       line-height: 1.4;
     }
     .forms-model-note strong { color: #075985; }
+    html.embed-dashboard body,
+    html.embed-login body {
+      padding: 10px 12px 12px;
+    }
+    html.embed-dashboard .forms-detail,
+    html.embed-login .forms-detail {
+      max-height: calc(100vh - 16px);
+      padding-bottom: 14px;
+    }
     @media (max-width: 980px) {
       .forms-layout { grid-template-columns: 1fr; }
       .forms-detail { position: static; max-height: none; overflow: visible; }
@@ -1208,9 +1217,12 @@
         if (detailPanel) detailPanel.style.maxHeight = '';
         return;
       }
-      const rect = detailPanel.getBoundingClientRect();
       const viewportH = window.visualViewport && window.visualViewport.height ? window.visualViewport.height : window.innerHeight;
-      const available = Math.max(420, viewportH - rect.top - 10);
+      const isEmbed = document.documentElement.classList.contains('embed-dashboard') ||
+        document.documentElement.classList.contains('embed-login');
+      const available = isEmbed
+        ? Math.max(420, viewportH - 16)
+        : Math.max(420, viewportH - detailPanel.getBoundingClientRect().top - 10);
       detailPanel.style.maxHeight = available + 'px';
     }
 

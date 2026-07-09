@@ -1019,6 +1019,13 @@
       background: #f8fafc;
     }
 
+    .modal-free-tool-tall {
+      max-height: 95vh;
+    }
+    .modal-free-tool-tall .modal-body {
+      height: calc(95vh - 68px);
+    }
+
     .modal-extraccion-etapa {
       max-width: 1280px;
       width: 96%;
@@ -2481,7 +2488,7 @@
 
   <!-- Modal Tabla Periódica de Nutrientes -->
   <div id="periodicTableNutrientsModal" class="modal-overlay">
-    <div class="modal modal-fertilizer-composition">
+    <div class="modal modal-fertilizer-composition modal-free-tool-tall">
       <div class="modal-header">
         <h2 class="modal-title">⚛️ Tabla Periódica (Nutrientes Esenciales)</h2>
         <div class="modal-header-trailing">
@@ -2490,14 +2497,14 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?v=20260523" title="Tabla Periódica (Nutrientes Esenciales)"></iframe>
+        <iframe id="periodicTableNutrientsFrame" src="tabla-periodica-nutrientes-free.html?embed=login&v=20260709" title="Tabla Periódica (Nutrientes Esenciales)"></iframe>
       </div>
     </div>
   </div>
 
   <!-- Modal Atlas de Aminoácidos Vegetales -->
   <div id="aminoAcidsAtlasModal" class="modal-overlay">
-    <div class="modal modal-fertilizer-composition">
+    <div class="modal modal-fertilizer-composition modal-free-tool-tall">
       <div class="modal-header">
         <h2 class="modal-title">🧬 Atlas de Aminoácidos Vegetales</h2>
         <div class="modal-header-trailing">
@@ -2506,7 +2513,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260708" title="Atlas de Aminoácidos Vegetales"></iframe>
+        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260709" title="Atlas de Aminoácidos Vegetales"></iframe>
       </div>
     </div>
   </div>
