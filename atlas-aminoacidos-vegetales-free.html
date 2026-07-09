@@ -530,6 +530,11 @@
     .hormone-chart .hormone-event-marker {
       cursor: pointer;
     }
+    .hormone-chart .event-connector {
+      stroke: #86efac;
+      stroke-width: 1.4;
+      pointer-events: none;
+    }
     .hormone-chart .hormone-event-marker circle {
       transition: r 0.15s ease;
     }
@@ -935,26 +940,30 @@
               <text class="hormone-peak-label" data-hormone="gibberellin" fill="#059669" x="598" y="82" text-anchor="middle">Ácido giberélico</text>
               <text class="hormone-peak-label" data-hormone="ethylene" fill="#d97706" x="808" y="88" text-anchor="middle">Etileno</text>
               <text class="hormone-peak-label" data-hormone="aba" fill="#9333ea" x="948" y="66" text-anchor="middle">Ácido abscísico</text>
-              <g class="hormone-event-marker" data-stage="I" role="button" tabindex="0" aria-label="ETAPA I: Iniciación celular (División celular)">
-                <rect class="event-label-bg" x="108" y="54" width="174" height="34" rx="8"/>
-                <text class="event-label-title" x="195" y="68" text-anchor="middle">Iniciación celular</text>
-                <text class="event-label-sub" x="195" y="80" text-anchor="middle">(División celular)</text>
-                <circle cx="195" cy="126" r="6" fill="#fff" stroke="#16a34a" stroke-width="2"/>
+              <g class="hormone-event-marker" data-stage="I" data-hormone="cytokinin" role="button" tabindex="0" aria-label="ETAPA I: Iniciación celular (División celular)">
+                <rect class="event-label-bg" x="108" y="48" width="174" height="34" rx="8"/>
+                <text class="event-label-title" x="195" y="62" text-anchor="middle">Iniciación celular</text>
+                <text class="event-label-sub" x="195" y="74" text-anchor="middle">(División celular)</text>
+                <line class="event-connector" x1="195" y1="82" x2="205" y2="104"/>
+                <circle cx="205" cy="110" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
-              <g class="hormone-event-marker" data-stage="II" role="button" tabindex="0" aria-label="ETAPA II: Crecimiento celular">
-                <rect class="event-label-bg" x="286" y="88" width="148" height="22" rx="8"/>
-                <text class="event-label-title" x="360" y="103" text-anchor="middle">Crecimiento celular</text>
-                <circle cx="360" cy="140" r="6" fill="#fff" stroke="#16a34a" stroke-width="2"/>
+              <g class="hormone-event-marker" data-stage="II" data-hormone="gibberellin" role="button" tabindex="0" aria-label="ETAPA II: Crecimiento celular">
+                <rect class="event-label-bg" x="318" y="118" width="148" height="22" rx="8"/>
+                <text class="event-label-title" x="392" y="133" text-anchor="middle">Crecimiento celular</text>
+                <line class="event-connector" x1="392" y1="140" x2="392" y2="160"/>
+                <circle cx="392" cy="166" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
-              <g class="hormone-event-marker" data-stage="III" role="button" tabindex="0" aria-label="ETAPA III: Madurez celular">
-                <rect class="event-label-bg" x="472" y="58" width="146" height="22" rx="8"/>
-                <text class="event-label-title" x="545" y="73" text-anchor="middle">Madurez celular</text>
-                <circle cx="545" cy="116" r="6" fill="#fff" stroke="#16a34a" stroke-width="2"/>
+              <g class="hormone-event-marker" data-stage="III" data-hormone="gibberellin" role="button" tabindex="0" aria-label="ETAPA III: Madurez celular">
+                <rect class="event-label-bg" x="472" y="44" width="146" height="22" rx="8"/>
+                <text class="event-label-title" x="545" y="59" text-anchor="middle">Madurez celular</text>
+                <line class="event-connector" x1="545" y1="66" x2="562" y2="90"/>
+                <circle cx="565" cy="96" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
-              <g class="hormone-event-marker" data-stage="IV" role="button" tabindex="0" aria-label="ETAPA IV: Senescencia">
-                <rect class="event-label-bg" x="706" y="62" width="108" height="22" rx="8"/>
-                <text class="event-label-title" x="760" y="77" text-anchor="middle">Senescencia</text>
-                <circle cx="760" cy="120" r="6" fill="#fff" stroke="#16a34a" stroke-width="2"/>
+              <g class="hormone-event-marker" data-stage="IV" data-hormone="ethylene" role="button" tabindex="0" aria-label="ETAPA IV: Senescencia">
+                <rect class="event-label-bg" x="706" y="48" width="108" height="22" rx="8"/>
+                <text class="event-label-title" x="760" y="63" text-anchor="middle">Senescencia</text>
+                <line class="event-connector" x1="760" y1="70" x2="812" y2="100"/>
+                <circle cx="815" cy="106" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
               <text x="195" y="260" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="800">ETAPA I</text>
               <text x="445" y="260" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="800">ETAPA II</text>

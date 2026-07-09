@@ -28,7 +28,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=13" />
+  <link rel="stylesheet" href="auth.css?v=15" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -273,98 +273,98 @@
         </div>
 
         <!-- Herramientas gratuitas — sin registro -->
-        <div class="login-tools-list">
+        <div class="login-tools-scroll">
         <button class="auth-button auth-button-secondary calculator-btn" onclick="showConversionCalculator()">
           <span class="calculator-icon">🧮</span>
           <span class="button-text">Conversor Óxido ↔ Elemental</span>
         </button>
         
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientUnitsCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientUnitsCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🧪</span>
           <span class="button-text">Conversor de unidades (ppm/mmol/meq)</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showMeasureUnitsCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showMeasureUnitsCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">📐</span>
           <span class="button-text">Conversor de magnitudes físicas</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showHydroSolutionCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showHydroSolutionCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">💧</span>
           <span class="button-text">Diseño de solución nutritiva</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showWaterHardnessCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showWaterHardnessCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">💦</span>
           <span class="button-text">Diagnóstico de agua y acondicionamiento</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showVPDCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showVPDCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🌡️</span>
           <span class="button-text">Estimador de déficit de presión de vapor</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAmendmentCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAmendmentCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🚜</span>
           <span class="button-text">Balance de enmiendas por CIC</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showGranularMixCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showGranularMixCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">📦</span>
           <span class="button-text">Formulación de mezclas granulares</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompositionCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompositionCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">⚗️</span>
           <span class="button-text">Composición de fertilizantes (%)</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showExtraccionEtapaCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showExtraccionEtapaCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">📊</span>
           <span class="button-text">Distribución nutrimental por etapa (%)</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showPeriodicTableNutrientsCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showPeriodicTableNutrientsCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">⚛️</span>
           <span class="button-text">Tabla Periódica (Nutrientes Esenciales)</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAminoAcidsAtlasTool()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showAminoAcidsAtlasTool()" style="margin-top: 12px;">
           <span class="calculator-icon">🧬</span>
           <span class="button-text">Atlas Fisiológico Vegetal</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompatibilityCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCompatibilityCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🔺</span>
           <span class="button-text">Compatibilidad de fertilizantes</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientInteractionsTool()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNutrientInteractionsTool()" style="margin-top: 12px;">
           <span class="calculator-icon">🔗</span>
           <span class="button-text">Interacciones y movilidad nutrimental</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNMineralizableMoCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showNMineralizableMoCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🌱</span>
           <span class="button-text">Estimación de N mineralizable</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showSoilWaterTextureTool()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showSoilWaterTextureTool()" style="margin-top: 12px;">
           <span class="calculator-icon">🪨</span>
           <span class="button-text">Agua en suelo y textura</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showLaminaRiegoTool()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showLaminaRiegoTool()" style="margin-top: 12px;">
           <span class="calculator-icon">🌧️</span>
           <span class="button-text">Lámina de riego y balance hídrico</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerSolubilitySaltTool()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerSolubilitySaltTool()" style="margin-top: 12px;">
           <span class="calculator-icon">🧂</span>
           <span class="button-text">Solubilidad e índice salino</span>
         </button>
 
-        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCarbonCalculator()">
+        <button class="auth-button auth-button-secondary calculator-btn" onclick="showFertilizerCarbonCalculator()" style="margin-top: 12px;">
           <span class="calculator-icon">🌍</span>
           <span class="button-text">Huella de carbono de fertilizantes</span>
         </button>
@@ -405,6 +405,7 @@
             </a>
           </div>
         </div>
+      </div>
     </div>
   </main>
 
@@ -2514,7 +2515,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260713" title="Atlas Fisiológico Vegetal"></iframe>
+        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260714" title="Atlas Fisiológico Vegetal"></iframe>
       </div>
     </div>
   </div>
