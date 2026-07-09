@@ -7,6 +7,7 @@
 const FERT_SOLUBLES_DB = [
   // Nitrogenados
   { id: 'fosfonitrato_33_03_00', name: 'Fosfonitrato', N_NO3: 16.5, N_NH4: 16.5, P2O5: 3 },
+  { id: 'sulfonit_33_00_00_2s', name: 'Sulfonit 33-00-00 + 2S', N_NO3: 15.5, N_NH4: 17.5, S: 2 },
   { id: 'sulfato_amonio_soluble', name: 'Sulfato de Amonio Soluble', N_NO3: 0, N_NH4: 21, SO4: 72, S: 0 },
 
   // Fosfatos

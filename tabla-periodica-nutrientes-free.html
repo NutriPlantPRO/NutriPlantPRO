@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="assets/free-tools-watermark.css" />
+  <script src="config-no-traducir-terminos.js"></script>
   <script src="assets/free-tools-embed.js"></script>
+  <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
   <title>Tabla Periódica (Nutrientes Esenciales)</title>
   <style>
     body { margin: 0; padding: 14px 14px 22px; background: #f8fafc; font-family: Inter, system-ui, sans-serif; color: #0f172a; }
@@ -144,6 +146,43 @@
       padding: 8px 12px; font-size: 12px; color: #1e3a8a;
     }
     .mol-group-card strong { display: block; font-size: 16px; color: #0f172a; }
+
+    .forms-layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 14px; align-items: start; }
+    .forms-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+    .forms-filter {
+      border: 1px solid #cbd5e1; background: #fff; color: #334155;
+      border-radius: 999px; padding: 7px 12px; font-size: 12px; font-weight: 800; cursor: pointer;
+    }
+    .forms-filter.active { background: #0f766e; border-color: #0f766e; color: #fff; }
+    .forms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    .form-card {
+      border: 1px solid #dbeafe; border-radius: 12px; background: #fff;
+      padding: 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(15,23,42,.05);
+      transition: transform .12s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+    .form-card:hover, .form-card.active { transform: translateY(-1px); border-color: #2563eb; box-shadow: 0 8px 22px rgba(37,99,235,.12); }
+    .form-card h3 { margin: 0 0 4px; font-size: 15px; color: #0f172a; }
+    .form-formula { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #1e40af; font-weight: 800; font-size: 13px; }
+    .form-kind { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
+    .form-kind span { border-radius: 999px; padding: 4px 8px; background: #ccfbf1; color: #115e59; font-size: 11px; font-weight: 800; }
+    .form-note { margin: 8px 0 0; color: #475569; font-size: 12px; line-height: 1.4; }
+    .forms-detail { position: sticky; top: 10px; overflow: hidden; }
+    .forms-viewer { height: 260px; background: #111827; border-radius: 12px; overflow: hidden; position: relative; margin: 10px 0; }
+    #forms3dViewer { position: absolute; inset: 0; }
+    .forms-viewer-state {
+      position: absolute; left: 10px; right: 10px; bottom: 10px;
+      background: rgba(15,23,42,.78); color: #e2e8f0; border-radius: 10px; padding: 8px 10px;
+      font-size: 11px; line-height: 1.35; pointer-events: none;
+    }
+    .forms-detail h2 { margin: 0; font-size: 17px; color: #0f172a; }
+    .forms-detail .meta { margin-bottom: 8px; }
+    .forms-detail-section { border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 10px; }
+    .forms-detail-section h3 { margin: 0 0 5px; font-size: 12px; color: #0f766e; text-transform: uppercase; letter-spacing: .04em; }
+    .forms-detail-section p { margin: 0; font-size: 13px; color: #334155; line-height: 1.45; }
+    @media (max-width: 980px) {
+      .forms-layout { grid-template-columns: 1fr; }
+      .forms-detail { position: static; }
+    }
   </style>
 </head>
 <body>
@@ -155,6 +194,7 @@
   <div class="tabs" role="tablist">
     <button type="button" class="tab-btn active" data-tab="table" role="tab" aria-selected="true">Tabla periódica</button>
     <button type="button" class="tab-btn" data-tab="mol" role="tab" aria-selected="false">Peso molecular</button>
+    <button type="button" class="tab-btn" data-tab="forms" role="tab" aria-selected="false">Formas iónicas / 3D</button>
   </div>
 
   <div id="paneTable" class="tab-pane active" role="tabpanel">
@@ -224,6 +264,23 @@
     </div>
   </div>
 
+  <div id="paneForms" class="tab-pane" role="tabpanel">
+    <p class="lead">Consulta formas químicas que la planta absorbe, fuentes fertilizantes, quelatos y precipitados frecuentes. El visor 3D usa PubChem + 3Dmol cuando hay estructura disponible; en iones simples o complejos grandes puede mostrarse solo la ficha.</p>
+    <div class="forms-toolbar" id="formsFilters"></div>
+    <div class="forms-layout">
+      <div class="forms-grid" id="formsGrid"></div>
+      <aside class="panel forms-detail">
+        <h2 id="formsTitle">Selecciona una forma química</h2>
+        <div id="formsMeta" class="meta">Iones, sales, quelatos y precipitados relevantes en nutrición vegetal.</div>
+        <div class="forms-viewer">
+          <div id="forms3dViewer"></div>
+          <div class="forms-viewer-state" id="formsViewerState">Selecciona una molécula o forma iónica para cargar el modelo 3D si PubChem lo tiene disponible.</div>
+        </div>
+        <div id="formsDetailBody"></div>
+      </aside>
+    </div>
+  </div>
+
   <script>
     const ESSENTIAL = new Set(['N','P','K','Ca','Mg','S','Fe','Mn','Zn','Cu','B','Mo','Cl','Ni']);
     const BENEFICIAL = new Set(['Si','Na','Ti','Al','Co','Se','V']);
@@ -260,6 +317,372 @@
       { label: 'MgSO₄', formula: 'MgSO4' },
       { label: 'H₃BO₃', formula: 'H3BO3' },
       { label: 'ZnSO₄', formula: 'ZnSO4' }
+    ];
+
+    const CHEMICAL_FORMS = [
+      {
+        id: 'nitrate',
+        group: 'Absorción vegetal',
+        name: 'Nitrato',
+        formula: 'NO₃⁻',
+        pubchem: 'nitrate',
+        tags: ['N', 'Anión'],
+        plant: 'Forma principal de absorción de N en muchas condiciones; entra por transportadores NRT y se reduce a NH₄⁺ dentro de la planta.',
+        source: 'Nitrato de potasio, nitrato de calcio, nitrato de magnesio, ácido nítrico y agua de riego.',
+        caution: 'Aporta alcalinidad fisiológica relativa; compite con Cl⁻ en algunos contextos salinos.'
+      },
+      {
+        id: 'ammonium',
+        group: 'Absorción vegetal',
+        name: 'Amonio',
+        formula: 'NH₄⁺',
+        pubchem: 'ammonium',
+        tags: ['N', 'Catión'],
+        plant: 'Forma reducida de N; se asimila rápido vía GS/GOGAT, pero en exceso puede inducir toxicidad o acidificación rizosférica.',
+        source: 'Sulfato de amonio, MAP, fosfonitrato, Sulfonit y nitrato de amonio.',
+        caution: 'Cuidar proporción NO₃⁻/NH₄⁺, oxigenación radicular, pH y sensibilidad del cultivo.'
+      },
+      {
+        id: 'dihydrogen_phosphate',
+        group: 'Absorción vegetal',
+        name: 'Dihidrogenofosfato',
+        formula: 'H₂PO₄⁻',
+        pubchem: 'dihydrogen phosphate',
+        tags: ['P', 'Anión'],
+        plant: 'Forma dominante de absorción de P en pH ácido a ligeramente ácido.',
+        source: 'MAP, MKP y ácido fosfórico.',
+        caution: 'Puede precipitar con Ca²⁺, Fe³⁺ o Al³⁺ según pH y concentración.'
+      },
+      {
+        id: 'hydrogen_phosphate',
+        group: 'Absorción vegetal',
+        name: 'Hidrogenofosfato',
+        formula: 'HPO₄²⁻',
+        pubchem: 'hydrogen phosphate',
+        tags: ['P', 'Anión'],
+        plant: 'Forma de P más relevante conforme sube el pH de la solución.',
+        source: 'Equilibrio ácido-base del fosfato en solución nutritiva y suelo.',
+        caution: 'En pH alto aumenta el riesgo de precipitados cálcicos de fosfato.'
+      },
+      {
+        id: 'sulfate',
+        group: 'Absorción vegetal',
+        name: 'Sulfato',
+        formula: 'SO₄²⁻',
+        pubchem: 'sulfate',
+        tags: ['S', 'Anión'],
+        plant: 'Forma principal de absorción de azufre; base para cisteína, metionina, glutatión y defensa vegetal.',
+        source: 'SOP, sulfato de magnesio, sulfato de amonio, sulfatos de micros y ácido sulfúrico.',
+        caution: 'Puede competir con molibdato; con Ca²⁺ concentrado puede formar yeso.'
+      },
+      {
+        id: 'boric_acid',
+        group: 'Absorción vegetal',
+        name: 'Ácido bórico',
+        formula: 'H₃BO₃',
+        pubchem: 'boric acid',
+        tags: ['B', 'Molécula neutra'],
+        plant: 'Forma molecular neutra importante para absorción de B; participa en pared celular, floración y crecimiento de meristemos.',
+        source: 'Ácido bórico y boratos solubles.',
+        caution: 'Rango entre suficiencia y toxicidad es estrecho; validar dosis y calidad de agua.'
+      },
+      {
+        id: 'molybdate',
+        group: 'Absorción vegetal',
+        name: 'Molibdato',
+        formula: 'MoO₄²⁻',
+        pubchem: 'molybdate',
+        tags: ['Mo', 'Anión'],
+        plant: 'Forma usual de absorción de Mo; clave para nitrato reductasa y metabolismo de N.',
+        source: 'Molibdato de sodio o amonio.',
+        caution: 'Sulfato alto puede reducir su absorción relativa.'
+      },
+      {
+        id: 'potassium_ion',
+        group: 'Absorción vegetal',
+        name: 'Potasio',
+        formula: 'K⁺',
+        pubchem: 'potassium ion',
+        tags: ['K', 'Catión'],
+        plant: 'Catión esencial para osmorregulación, apertura estomática, transporte de azúcares y calidad de fruto.',
+        source: 'KNO₃, MKP, SOP, KCl y NKS.',
+        caution: 'Exceso relativo puede antagonizar Ca²⁺ y Mg²⁺.'
+      },
+      {
+        id: 'calcium_ion',
+        group: 'Absorción vegetal',
+        name: 'Calcio',
+        formula: 'Ca²⁺',
+        pubchem: 'calcium ion',
+        tags: ['Ca', 'Catión'],
+        plant: 'Catión estructural y señalizador; clave en pared celular, membranas y calidad de fruta.',
+        source: 'Nitrato de calcio, cloruro de calcio, yeso y agua de riego.',
+        caution: 'Precipita con fosfatos y sulfatos en soluciones madre concentradas.'
+      },
+      {
+        id: 'magnesium_ion',
+        group: 'Absorción vegetal',
+        name: 'Magnesio',
+        formula: 'Mg²⁺',
+        pubchem: 'magnesium ion',
+        tags: ['Mg', 'Catión'],
+        plant: 'Centro de la clorofila y cofactor enzimático; móvil en planta.',
+        source: 'Sulfato de magnesio, nitrato de magnesio, NK+Mg y dolomita.',
+        caution: 'Competencia relativa con K⁺, Ca²⁺ y NH₄⁺.'
+      },
+      {
+        id: 'iron_edta',
+        group: 'Quelatos',
+        name: 'Hierro EDTA',
+        formula: 'Fe-EDTA',
+        pubchem: 'ferric edta',
+        tags: ['Fe', 'Quelato'],
+        plant: 'Fuente quelatada de Fe útil en pH moderado; mantiene Fe más soluble que sales simples.',
+        source: 'Fertilizantes Fe-EDTA.',
+        caution: 'Menos estable que DTPA/EDDHA en pH alcalino o aguas bicarbonatadas.'
+      },
+      {
+        id: 'iron_dtpa',
+        group: 'Quelatos',
+        name: 'Hierro DTPA',
+        formula: 'Fe-DTPA',
+        pubchem: 'ferric dtpa',
+        tags: ['Fe', 'Quelato'],
+        plant: 'Quelato de Fe con estabilidad intermedia, útil en fertirriego con pH moderadamente alto.',
+        source: 'Fertilizantes Fe-DTPA.',
+        caution: 'Revisar pH, bicarbonatos y compatibilidad con fosfatos.'
+      },
+      {
+        id: 'iron_eddha',
+        group: 'Quelatos',
+        name: 'Hierro EDDHA',
+        formula: 'Fe-EDDHA',
+        pubchem: 'ferric EDDHA',
+        tags: ['Fe', 'Quelato'],
+        plant: 'Quelato de Fe más estable para condiciones alcalinas/calizas; frecuente contra clorosis férrica.',
+        source: 'Fertilizantes Fe-EDDHA.',
+        caution: 'La eficacia depende de isómeros o-o, dosis, pH y carbonatos.'
+      },
+      {
+        id: 'zinc_edta',
+        group: 'Quelatos',
+        name: 'Zinc EDTA',
+        formula: 'Zn-EDTA',
+        pubchem: 'zinc edta',
+        tags: ['Zn', 'Quelato'],
+        plant: 'Fuente quelatada de Zn para crecimiento, auxinas y actividad enzimática.',
+        source: 'Fertilizantes Zn-EDTA.',
+        caution: 'Evitar mezclar concentrado con fosfatos sin prueba previa.'
+      },
+      {
+        id: 'manganese_edta',
+        group: 'Quelatos',
+        name: 'Manganeso EDTA',
+        formula: 'Mn-EDTA',
+        pubchem: 'manganese edta',
+        tags: ['Mn', 'Quelato'],
+        plant: 'Fuente quelatada de Mn vinculada a fotosíntesis, enzimas y manejo de clorosis por Mn.',
+        source: 'Fertilizantes Mn-EDTA.',
+        caution: 'Disponibilidad influida por pH, redox y competencia con Fe/Cu/Zn.'
+      },
+      {
+        id: 'potassium_nitrate',
+        group: 'Sales fertilizantes',
+        name: 'Nitrato de potasio',
+        formula: 'KNO₃',
+        pubchem: 'potassium nitrate',
+        tags: ['K', 'N-NO₃'],
+        plant: 'Fuente soluble de K⁺ y NO₃⁻, muy usada en fertirriego y llenado de fruto.',
+        source: 'KNO₃.',
+        caution: 'Índice salino y CE dependen de dosis y agua disponible.'
+      },
+      {
+        id: 'calcium_nitrate',
+        group: 'Sales fertilizantes',
+        name: 'Nitrato de calcio',
+        formula: 'Ca(NO₃)₂',
+        pubchem: 'calcium nitrate',
+        tags: ['Ca', 'N-NO₃'],
+        plant: 'Fuente soluble de Ca²⁺ y NO₃⁻.',
+        source: 'Nitrato de calcio granular/cristal.',
+        caution: 'Separar de fosfatos y sulfatos en solución madre concentrada.'
+      },
+      {
+        id: 'mono_potassium_phosphate',
+        group: 'Sales fertilizantes',
+        name: 'MKP',
+        formula: 'KH₂PO₄',
+        pubchem: 'potassium dihydrogen phosphate',
+        tags: ['K', 'P'],
+        plant: 'Fuente soluble de K⁺ y H₂PO₄⁻.',
+        source: 'Fosfato monopotásico.',
+        caution: 'Evitar mezcla concentrada con calcio.'
+      },
+      {
+        id: 'mono_ammonium_phosphate',
+        group: 'Sales fertilizantes',
+        name: 'MAP',
+        formula: 'NH₄H₂PO₄',
+        pubchem: 'monoammonium phosphate',
+        tags: ['N-NH₄', 'P'],
+        plant: 'Fuente soluble de NH₄⁺ y H₂PO₄⁻, usada para aporte de P con efecto acidificante relativo.',
+        source: 'Fosfato monoamónico.',
+        caution: 'Evitar mezcla concentrada con calcio; vigilar proporción NH₄⁺/NO₃⁻.'
+      },
+      {
+        id: 'ammonium_sulfate',
+        group: 'Sales fertilizantes',
+        name: 'Sulfato de amonio',
+        formula: '(NH₄)₂SO₄',
+        pubchem: 'ammonium sulfate',
+        tags: ['N-NH₄', 'S'],
+        plant: 'Fuente de NH₄⁺ y SO₄²⁻ con efecto acidificante.',
+        source: 'Sulfato de amonio soluble.',
+        caution: 'Cuidar proporción NH₄⁺ y compatibilidad con calcio.'
+      },
+      {
+        id: 'ammonium_nitrate',
+        group: 'Sales fertilizantes',
+        name: 'Nitrato de amonio',
+        formula: 'NH₄NO₃',
+        pubchem: 'ammonium nitrate',
+        tags: ['N-NO₃', 'N-NH₄'],
+        plant: 'Fuente de N mixta: NO₃⁻ + NH₄⁺.',
+        source: 'Nitrato de amonio y mezclas nitrogenadas.',
+        caution: 'Manejo regulado en muchos países; cuidar proporción amoniacal, CE y seguridad.'
+      },
+      {
+        id: 'potassium_sulfate',
+        group: 'Sales fertilizantes',
+        name: 'SOP / sulfato de potasio',
+        formula: 'K₂SO₄',
+        pubchem: 'potassium sulfate',
+        tags: ['K', 'S'],
+        plant: 'Fuente soluble de K⁺ y SO₄²⁻ sin cloro.',
+        source: 'Sulfato de potasio.',
+        caution: 'Solubilidad menor que nitratos; evitar concentración alta con calcio.'
+      },
+      {
+        id: 'magnesium_sulfate',
+        group: 'Sales fertilizantes',
+        name: 'Sulfato de magnesio',
+        formula: 'MgSO₄·7H₂O',
+        pubchem: 'magnesium sulfate heptahydrate',
+        tags: ['Mg', 'S'],
+        plant: 'Fuente soluble de Mg²⁺ y SO₄²⁻; útil para clorofila y metabolismo de S.',
+        source: 'Sulfato de magnesio heptahidratado.',
+        caution: 'Separar de calcio en solución madre concentrada.'
+      },
+      {
+        id: 'magnesium_nitrate',
+        group: 'Sales fertilizantes',
+        name: 'Nitrato de magnesio',
+        formula: 'Mg(NO₃)₂·6H₂O',
+        pubchem: 'magnesium nitrate hexahydrate',
+        tags: ['Mg', 'N-NO₃'],
+        plant: 'Fuente soluble de Mg²⁺ y NO₃⁻.',
+        source: 'Nitrato de magnesio.',
+        caution: 'Aporta CE; revisar balance K-Ca-Mg y N total.'
+      },
+      {
+        id: 'calcium_chloride',
+        group: 'Sales fertilizantes',
+        name: 'Cloruro de calcio',
+        formula: 'CaCl₂·2H₂O',
+        pubchem: 'calcium chloride dihydrate',
+        tags: ['Ca', 'Cl'],
+        plant: 'Fuente soluble de Ca²⁺; útil donde el Cl⁻ no sea limitante.',
+        source: 'Cloruro de calcio dihidratado.',
+        caution: 'Cuidar aporte de Cl⁻, salinidad y compatibilidad con sulfatos/fosfatos.'
+      },
+      {
+        id: 'potassium_chloride',
+        group: 'Sales fertilizantes',
+        name: 'Cloruro de potasio',
+        formula: 'KCl',
+        pubchem: 'potassium chloride',
+        tags: ['K', 'Cl'],
+        plant: 'Fuente de K⁺ con Cl⁻; puede ser útil si el cultivo tolera cloruro.',
+        source: 'KCl soluble.',
+        caution: 'Evitar en cultivos o etapas sensibles a Cl⁻ y salinidad.'
+      },
+      {
+        id: 'calcium_sulfate',
+        group: 'Precipitados / baja solubilidad',
+        name: 'Sulfato de calcio',
+        formula: 'CaSO₄',
+        pubchem: 'calcium sulfate',
+        tags: ['Ca', 'S', 'Precipitado'],
+        plant: 'Yeso: fuente de Ca y S en suelo, pero de solubilidad limitada.',
+        source: 'Reacción Ca²⁺ + SO₄²⁻ o yeso agrícola.',
+        caution: 'Riesgo de precipitado/obstrucción si Ca y sulfato se concentran juntos.'
+      },
+      {
+        id: 'calcium_phosphate',
+        group: 'Precipitados / baja solubilidad',
+        name: 'Fosfato de calcio',
+        formula: 'Ca₃(PO₄)₂',
+        pubchem: 'calcium phosphate',
+        tags: ['Ca', 'P', 'Precipitado'],
+        plant: 'Representa fijación/precipitación de P con Ca en pH alto.',
+        source: 'Interacción Ca²⁺ + fosfatos.',
+        caution: 'Reduce disponibilidad de P y puede causar precipitado en tanques.'
+      },
+      {
+        id: 'iron_phosphate',
+        group: 'Precipitados / baja solubilidad',
+        name: 'Fosfato férrico',
+        formula: 'FePO₄',
+        pubchem: 'iron phosphate',
+        tags: ['Fe', 'P', 'Precipitado'],
+        plant: 'Ejemplo de fijación de P con Fe en condiciones ácidas o con Fe libre.',
+        source: 'Interacción Fe³⁺ + fosfato.',
+        caution: 'Baja disponibilidad de P y Fe si precipita.'
+      },
+      {
+        id: 'calcium_carbonate',
+        group: 'Precipitados / baja solubilidad',
+        name: 'Carbonato de calcio',
+        formula: 'CaCO₃',
+        pubchem: 'calcium carbonate',
+        tags: ['Ca', 'Carbonato', 'Precipitado'],
+        plant: 'Material calcáreo/enmienda; en agua o suelo alcalino puede representar Ca poco soluble.',
+        source: 'Reacción Ca²⁺ + CO₃²⁻ o cal agrícola.',
+        caution: 'Puede elevar pH y reducir disponibilidad de P, Fe, Zn, Mn y Cu.'
+      },
+      {
+        id: 'magnesium_carbonate',
+        group: 'Precipitados / baja solubilidad',
+        name: 'Carbonato de magnesio',
+        formula: 'MgCO₃',
+        pubchem: 'magnesium carbonate',
+        tags: ['Mg', 'Carbonato', 'Precipitado'],
+        plant: 'Forma carbonatada de Mg de baja solubilidad relativa.',
+        source: 'Dolomita, carbonatos en agua/suelo o reacción Mg²⁺ + CO₃²⁻.',
+        caution: 'Disponibilidad depende de pH, acidez y granulometría de la fuente.'
+      },
+      {
+        id: 'calcium_bicarbonate',
+        group: 'Precipitados / baja solubilidad',
+        name: 'Bicarbonato de calcio',
+        formula: 'Ca(HCO₃)₂',
+        pubchem: 'calcium bicarbonate',
+        tags: ['Ca', 'Bicarbonato', 'Alcalinidad'],
+        plant: 'Forma asociada a dureza temporal y alcalinidad del agua; puede dejar carbonato de calcio al perder CO₂.',
+        source: 'Agua con bicarbonatos y Ca disuelto.',
+        caution: 'Aumenta alcalinidad; puede favorecer precipitados y subir pH de sustrato/solución.'
+      },
+      {
+        id: 'magnesium_bicarbonate',
+        group: 'Precipitados / baja solubilidad',
+        name: 'Bicarbonato de magnesio',
+        formula: 'Mg(HCO₃)₂',
+        pubchem: 'magnesium bicarbonate',
+        tags: ['Mg', 'Bicarbonato', 'Alcalinidad'],
+        plant: 'Forma asociada a dureza temporal de Mg en agua.',
+        source: 'Agua con bicarbonatos y Mg disuelto.',
+        caution: 'Contribuye a alcalinidad; requiere manejo de ácido cuando HCO₃⁻ es alto.'
+      }
     ];
 
     const DEFAULT_VALENCE = {
@@ -326,6 +749,10 @@
     const molFormula = document.getElementById('molFormula');
     let selectedBtn = null;
     let lastClickedSymbol = '';
+    let selectedFormId = CHEMICAL_FORMS[0] && CHEMICAL_FORMS[0].id;
+    let activeFormsGroup = 'Todos';
+    let formsViewer = null;
+    let formsAtomLabel = null;
 
     function fmtNum(n, digits) {
       if (!Number.isFinite(n)) return '—';
@@ -609,6 +1036,111 @@
       }
     }
 
+    function escapeHtml(value) {
+      const div = document.createElement('div');
+      div.textContent = String(value == null ? '' : value);
+      return div.innerHTML;
+    }
+
+    function renderFormsFilters() {
+      const mount = document.getElementById('formsFilters');
+      const groups = ['Todos'].concat(Array.from(new Set(CHEMICAL_FORMS.map(function(x) { return x.group; }))));
+      mount.innerHTML = groups.map(function(g) {
+        return '<button type="button" class="forms-filter ' + (g === activeFormsGroup ? 'active' : '') + '" data-group="' + escapeHtml(g) + '">' + escapeHtml(g) + '</button>';
+      }).join('');
+      mount.querySelectorAll('.forms-filter').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          activeFormsGroup = btn.getAttribute('data-group') || 'Todos';
+          renderForms();
+        });
+      });
+    }
+
+    function renderForms() {
+      renderFormsFilters();
+      const grid = document.getElementById('formsGrid');
+      const list = CHEMICAL_FORMS.filter(function(item) {
+        return activeFormsGroup === 'Todos' || item.group === activeFormsGroup;
+      });
+      grid.innerHTML = list.map(function(item) {
+        return '<article class="form-card ' + (item.id === selectedFormId ? 'active' : '') + '" data-id="' + escapeHtml(item.id) + '">' +
+          '<h3>' + escapeHtml(item.name) + '</h3>' +
+          '<div class="form-formula notranslate" translate="no">' + escapeHtml(item.formula) + '</div>' +
+          '<div class="form-kind">' + item.tags.map(function(t) { return '<span>' + escapeHtml(t) + '</span>'; }).join('') + '</div>' +
+          '<p class="form-note">' + escapeHtml(item.plant) + '</p>' +
+          '</article>';
+      }).join('');
+      grid.querySelectorAll('.form-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+          selectChemicalForm(card.getAttribute('data-id'));
+        });
+      });
+    }
+
+    function selectChemicalForm(id) {
+      const item = CHEMICAL_FORMS.find(function(x) { return x.id === id; }) || CHEMICAL_FORMS[0];
+      if (!item) return;
+      selectedFormId = item.id;
+      document.getElementById('formsTitle').textContent = item.name;
+      document.getElementById('formsMeta').innerHTML =
+        '<span class="notranslate" translate="no">' + escapeHtml(item.formula) + '</span> · ' + escapeHtml(item.group);
+      document.getElementById('formsDetailBody').innerHTML =
+        '<div class="forms-detail-section"><h3>Función / absorción</h3><p>' + escapeHtml(item.plant) + '</p></div>' +
+        '<div class="forms-detail-section"><h3>Fuente o formación</h3><p>' + escapeHtml(item.source) + '</p></div>' +
+        '<div class="forms-detail-section"><h3>Cuidado agronómico</h3><p>' + escapeHtml(item.caution) + '</p></div>';
+      renderForms();
+      loadForm3d(item);
+    }
+
+    function loadForm3d(item) {
+      const stateEl = document.getElementById('formsViewerState');
+      const viewerEl = document.getElementById('forms3dViewer');
+      viewerEl.innerHTML = '';
+      formsViewer = null;
+      formsAtomLabel = null;
+      if (!window.$3Dmol) {
+        stateEl.textContent = 'El visor 3D requiere conexión para cargar 3Dmol.js. La ficha técnica queda disponible.';
+        return;
+      }
+      if (!item.pubchem) {
+        stateEl.textContent = 'Esta forma química no tiene modelo 3D directo configurado; revisa la ficha técnica.';
+        return;
+      }
+      stateEl.textContent = 'Cargando modelo 3D desde PubChem...';
+      formsViewer = window.$3Dmol.createViewer(viewerEl, { backgroundColor: '#111827' });
+      const url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + encodeURIComponent(item.pubchem) + '/SDF?record_type=3d';
+      fetch(url).then(function(r) {
+        if (!r.ok) throw new Error('PubChem no devolvió estructura 3D');
+        return r.text();
+      }).then(function(sdf) {
+        formsViewer.addModel(sdf, 'sdf');
+        formsViewer.setStyle({}, {
+          stick: { radius: 0.14, colorscheme: 'Jmol' },
+          sphere: { scale: 0.28, colorscheme: 'Jmol' }
+        });
+        formsViewer.setClickable({}, true, function(atom, viewer) {
+          if (formsAtomLabel) viewer.removeLabel(formsAtomLabel);
+          const elem = atom.elem || atom.element || '?';
+          formsAtomLabel = viewer.addLabel(elem + ' · ' + elementName(elem), {
+            position: atom,
+            backgroundColor: 'rgba(15,23,42,.88)',
+            fontColor: 'white',
+            borderColor: '#22c55e',
+            borderThickness: 1,
+            inFront: true,
+            fontSize: 13
+          });
+          viewer.render();
+          stateEl.textContent = 'Átomo seleccionado: ' + elem + ' · ' + elementName(elem) + '.';
+        });
+        formsViewer.zoomTo();
+        formsViewer.render();
+        stateEl.textContent = 'Modelo 3D cargado. Arrastra para rotar, usa zoom y toca átomos para identificarlos.';
+      }).catch(function() {
+        stateEl.textContent = 'PubChem no devolvió estructura 3D para esta forma. La ficha técnica sigue disponible.';
+      });
+    }
+
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(function(btn) {
         const on = btn.getAttribute('data-tab') === tabId;
@@ -617,6 +1149,7 @@
       });
       document.getElementById('paneTable').classList.toggle('active', tabId === 'table');
       document.getElementById('paneMol').classList.toggle('active', tabId === 'mol');
+      document.getElementById('paneForms').classList.toggle('active', tabId === 'forms');
     }
 
     document.querySelectorAll('.tab-btn').forEach(function(btn) {
@@ -647,6 +1180,9 @@
       });
       examplesEl.appendChild(chip);
     });
+
+    renderForms();
+    selectChemicalForm(selectedFormId);
 
     window.npPeriodicAppendSymbol = function(symbol) {
       lastClickedSymbol = symbol;
@@ -716,5 +1252,6 @@
     });
     if (first) first.click();
   </script>
+  <script src="apply-no-traducir.js"></script>
 </body>
 </html>

@@ -50,6 +50,20 @@
     return false;
   }
 
+  function ancestorIsEditable(el) {
+    var p = el;
+    while (p) {
+      if (p.nodeType === 1) {
+        var tag = p.nodeName && p.nodeName.toUpperCase();
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+        if (p.isContentEditable) return true;
+        if (p.getAttribute && p.getAttribute('contenteditable') === 'true') return true;
+      }
+      p = p.parentNode;
+    }
+    return false;
+  }
+
   // Evita manipular nodos dentro de SVG: insertar <span> en <text> rompe etiquetas como K⁺ / NO₃⁻.
   function ancestorIsSvg(el) {
     var p = el;
@@ -70,6 +84,7 @@
     if (!parent) return false;
     var tag = parent.nodeName && parent.nodeName.toUpperCase();
     if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA') return false;
+    if (ancestorIsEditable(parent)) return false;
     if (ancestorHasNoTranslate(parent) || ancestorIsSvg(parent)) return false;
 
     var html = text;
@@ -99,6 +114,7 @@
     if (!parent) return false;
     var tag = parent.nodeName && parent.nodeName.toUpperCase();
     if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA') return false;
+    if (ancestorIsEditable(parent)) return false;
     if (ancestorHasNoTranslate(parent) || ancestorIsSvg(parent)) return false;
 
     var html = text.replace(regexSimbolos, function (m) {

@@ -112,7 +112,7 @@ module.exports = {
       title: 'Tabla Periódica (Nutrientes Esenciales)',
       file: 'tabla-periodica-nutrientes-free.html',
       summary:
-        'Tabla visual de nutrientes + calculadora interna: peso molecular, % elemental y peso equivalente (meq) por fórmula.'
+        'Tabla visual de nutrientes + calculadora interna: peso molecular, % elemental y peso equivalente (meq) por fórmula. Incluye pestaña de formas iónicas/moléculas 3D: absorción vegetal, sales fertilizantes, quelatos EDTA/DTPA/EDDHA y precipitados frecuentes.'
     },
     {
       id: 'atlas_aminoacidos_vegetales',

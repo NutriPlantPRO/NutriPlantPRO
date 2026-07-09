@@ -58,6 +58,7 @@ const CATALOGS = {
 const GPT_RULES = [
   'Catálogos precargados NutriPlant + personalizados por usuario (profiles Supabase) y opcionalmente por proyecto.',
   'Fertirriego solubles: composición en % masa (N_NO3, N_NH4, P2O5, K2O, CaO, MgO, SO4, micros). Algunos en L con density.',
+  'Sulfonit 33-00-00 + 2S está en fertirriego_materials como N_NO3 15.5%, N_NH4 17.5%, S 2%.',
   'Granular: composición en % masa por nombre de producto (N, P2O5, K2O, CaO, MgO, SO4, micros).',
   'Cultivos: extracción kg nutriente / tonelada de producto (óxido salvo modo elemental del usuario).',
   'Personalizados del usuario: custom_ferti_materials.items, custom_granular_materials, custom_ferti_crops, custom_granular_crops en profiles.',

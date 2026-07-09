@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>Plan PRO · Cerebro Digital</title>
   <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png" />
+  <script src="../config-no-traducir-terminos.js"></script>
   <style>
     :root {
       --bg: #eceff3;
@@ -14140,11 +14141,9 @@
     var innerMin = Math.max(120, m.pageH - padT - padB);
     var contentInner = measureNotebookContentInner(editorEl, innerMin, padT, padB);
     var baseN = Math.max(1, Math.ceil(contentInner / innerMin));
+    // No crear una hoja "de borrador" solo por enfocar/tocar el apunte:
+    // en móvil eso hacía aparecer una segunda hoja vacía al editar apuntes de una sola página.
     var scratch = 0;
-    if (notebookEditorFocused(editorEl)) {
-      var lastPageFill = contentInner - innerMin * (baseN - 1);
-      if (lastPageFill > innerMin * 0.62) scratch = 1;
-    }
     var n = baseN + scratch;
     return {
       n: n,
@@ -30717,5 +30716,6 @@
   }
 })();
   </script>
+  <script src="../apply-no-traducir.js"></script>
 </body>
 </html>

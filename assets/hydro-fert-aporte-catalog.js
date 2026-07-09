@@ -83,12 +83,14 @@
     };
     if (row.id === 'nks') entry.blend = estimateNksBlend(row.SO4);
     if (row.id === 'fosfonitrato_33_03_00') entry.blend = fosfonitratoMeta(comp);
+    if (row.id === 'sulfonit_33_00_00_2s') entry.blend = { note: 'Etiqueta 33-00-00 + 2S: N 33,0% (NO₃ 15,5 + NH₄ 17,5) y S elemental 2,0%.' };
     if (row.id === 'nk_mg') entry.blend = { note: 'Mezcla comercial NK+Mg (KNO₃ + fuente Mg); % según catálogo NutriPlant — editable abajo.' };
     return entry;
   }
 
   var RAW_FERTI = [
     { id: 'fosfonitrato_33_03_00', name: 'Fosfonitrato', formula: '33-3-0 (+ otros)', kind: 'blend', N_NO3: 16.5, N_NH4: 16.5, P2O5: 3 },
+    { id: 'sulfonit_33_00_00_2s', name: 'Sulfonit 33-00-00 + 2S', formula: '33-0-0 + 2S', kind: 'blend', N_NO3: 15.5, N_NH4: 17.5, S: 2 },
     { id: 'sulfato_amonio_soluble', name: 'Sulfato de amonio soluble', formula: '(NH₄)₂SO₄', N_NO3: 0, N_NH4: 21, SO4: 72 },
     { id: 'map', name: 'MAP', formula: 'NH₄H₂PO₄', N_NO3: 0, N_NH4: 12, P2O5: 61 },
     { id: 'mkp', name: 'MKP', formula: 'KH₂PO₄', N_NO3: 0, N_NH4: 0, P2O5: 52, K2O: 34 },

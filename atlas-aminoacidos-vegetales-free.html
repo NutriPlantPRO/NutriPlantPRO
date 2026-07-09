@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Atlas de Aminoácidos Vegetales - NutriPlant PRO</title>
+  <script src="config-no-traducir-terminos.js"></script>
   <script src="assets/free-tools-embed.js"></script>
   <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
   <style>
@@ -278,6 +279,7 @@
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-gutter: stable;
+      scroll-margin-top: 16px;
       border-color: rgba(37, 99, 235, 0.42);
       box-shadow:
         0 0 0 4px rgba(37, 99, 235, 0.08),
@@ -413,6 +415,7 @@
 
     @media (max-width: 760px) {
       .page { padding: 14px; }
+      .panel { scroll-margin-top: 10px; }
       .hero-card,
       .source-card,
       .filters,
@@ -889,7 +892,7 @@
       Array.prototype.forEach.call(cards.querySelectorAll('.amino-card'), function (card) {
         card.addEventListener('click', function () {
           var item = AMINO_ACIDS.find(function (a) { return a.id === card.getAttribute('data-id'); });
-          if (item) selectAmino(item);
+          if (item) selectAmino(item, { scrollToDetail: true });
         });
       });
     }
@@ -898,8 +901,23 @@
       return '<ul>' + items.map(function (v) { return '<li>' + escapeHtml(v) + '</li>'; }).join('') + '</ul>';
     }
 
-    function selectAmino(a) {
+    function isStackedLayout() {
+      return window.matchMedia && window.matchMedia('(max-width: 1100px)').matches;
+    }
+
+    function scrollToSelectedPanel() {
+      var panel = document.querySelector('.panel');
+      if (!panel || !isStackedLayout()) return;
+      requestAnimationFrame(function () {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+
+    function selectAmino(a, options) {
+      options = options || {};
       state.selected = a;
+      var panel = document.querySelector('.panel');
+      if (panel) panel.scrollTop = 0;
       document.getElementById('selectedEvidence').textContent = 'Evidencia ' + a.evidence;
       document.getElementById('selectedName').textContent = a.name + ' (' + a.abbr3 + ' / ' + a.abbr1 + ')';
       document.getElementById('selectedSubtitle').textContent = a.lName + ' · ' + a.formula + ' · ' + a.mw;
@@ -916,6 +934,7 @@
         '<div class="section"><p><strong>Nota técnica:</strong> esta herramienta resume evidencia bioquímica y fisiológica; no sustituye validación por cultivo, dosis, fuente comercial, mezcla, vía de aplicación y condición de campo.</p></div>';
       renderCards();
       loadMolecule(a);
+      if (options.scrollToDetail) scrollToSelectedPanel();
     }
 
     function loadMolecule(a) {
@@ -986,5 +1005,6 @@
 
     document.addEventListener('DOMContentLoaded', init);
   </script>
+  <script src="apply-no-traducir.js"></script>
 </body>
 </html>
