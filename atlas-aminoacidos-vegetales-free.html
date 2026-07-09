@@ -494,15 +494,6 @@
       font-size: 9px;
       font-weight: 600;
     }
-    .hormone-chart .hormone-peak-label {
-      font-size: 9.5px;
-      font-weight: 800;
-      paint-order: stroke;
-      stroke: rgba(255, 255, 255, 0.92);
-      stroke-width: 3px;
-      stroke-linejoin: round;
-      transition: opacity 0.22s ease, fill 0.22s ease;
-    }
     .hormone-chart .hormone-curve {
       cursor: pointer;
       transition: opacity 0.22s ease;
@@ -519,13 +510,6 @@
     .hormone-chart.has-selection .hormone-curve.is-active path {
       stroke-width: 3.6;
       filter: drop-shadow(0 3px 8px rgba(15, 23, 42, 0.18));
-    }
-    .hormone-chart.has-selection .hormone-peak-label {
-      opacity: 0.28;
-    }
-    .hormone-chart.has-selection .hormone-peak-label.is-active {
-      opacity: 1;
-      font-size: 10.5px;
     }
     .hormone-chart .hormone-event-marker {
       cursor: pointer;
@@ -935,11 +919,6 @@
               <g class="hormone-curve" data-hormone="aba" role="button" tabindex="0" aria-label="Ácido abscísico">
                 <path d="M620,248 C760,248 860,103 980,78 L980,238 L620,238 Z" fill="url(#abaGrad)" stroke="#a855f7" stroke-width="2.4"/>
               </g>
-              <text class="hormone-peak-label" data-hormone="cytokinin" fill="#0891b2" x="178" y="72" text-anchor="middle">Citoquinina</text>
-              <text class="hormone-peak-label" data-hormone="auxin" fill="#2563eb" x="268" y="98" text-anchor="middle">Auxina</text>
-              <text class="hormone-peak-label" data-hormone="gibberellin" fill="#059669" x="598" y="82" text-anchor="middle">Ácido giberélico</text>
-              <text class="hormone-peak-label" data-hormone="ethylene" fill="#d97706" x="808" y="88" text-anchor="middle">Etileno</text>
-              <text class="hormone-peak-label" data-hormone="aba" fill="#9333ea" x="948" y="66" text-anchor="middle">Ácido abscísico</text>
               <g class="hormone-event-marker" data-stage="I" data-hormone="cytokinin" role="button" tabindex="0" aria-label="ETAPA I: Iniciación celular (División celular)">
                 <rect class="event-label-bg" x="108" y="48" width="174" height="34" rx="8"/>
                 <text class="event-label-title" x="195" y="62" text-anchor="middle">Iniciación celular</text>
@@ -1546,9 +1525,6 @@
       chart.classList.toggle('has-selection', activeIds.length > 0);
       Array.prototype.forEach.call(chart.querySelectorAll('.hormone-curve'), function (group) {
         group.classList.toggle('is-active', activeIds.indexOf(group.getAttribute('data-hormone')) !== -1);
-      });
-      Array.prototype.forEach.call(chart.querySelectorAll('.hormone-peak-label'), function (label) {
-        label.classList.toggle('is-active', activeIds.indexOf(label.getAttribute('data-hormone')) !== -1);
       });
     }
 
