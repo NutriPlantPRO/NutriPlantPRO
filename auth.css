@@ -183,6 +183,12 @@
   gap: 20px;
 }
 
+.login-tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .login-split__login .auth-header-content {
   margin-bottom: 28px;
 }
@@ -193,63 +199,117 @@
 
 .auth-page-footer {
   width: 100%;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
 }
 
 @media (min-width: 1024px) {
-  .auth-main {
-    align-items: flex-start;
-    justify-content: center;
-    padding: 28px 28px 36px;
-    margin-top: 80px;
+  .auth-page .auth-main {
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 12px 28px 16px;
+    margin-top: 56px;
+    min-height: calc(100vh - 56px);
   }
 
-  .auth-container {
-    max-width: 1320px;
+  .auth-page .auth-container {
+    max-width: 1180px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 56px - 16px);
   }
 
   .login-split {
     display: grid;
-    grid-template-columns: minmax(380px, 430px) minmax(560px, 1fr);
-    gap: 24px;
-    align-items: start;
+    grid-template-columns: minmax(360px, 400px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .login-split__login,
+  .login-split__tools {
+    padding: 24px 26px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .login-split__login {
-    position: sticky;
-    top: 96px;
-    padding: 36px 32px;
+    position: static;
+    top: auto;
+    justify-content: center;
+  }
+
+  .login-split__login .auth-header-content {
+    margin-bottom: 18px;
+  }
+
+  .login-split__login .auth-logo-container {
+    margin-bottom: 14px;
+  }
+
+  .login-split__login .auth-card-logo {
+    height: 64px;
+  }
+
+  .login-split__login .auth-title {
+    font-size: 26px;
+    margin-bottom: 8px;
   }
 
   .login-split__tools {
-    padding: 28px 32px 32px;
-    max-height: calc(100vh - 112px);
+    padding: 20px 22px 22px;
+    overflow: hidden;
+  }
+
+  .login-split__tools .login-free-tools-banner {
+    margin-top: 0;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+  }
+
+  .login-split__tools .login-tools-list {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    align-content: start;
+    padding-right: 4px;
   }
 
   .login-split__divider {
     display: none !important;
   }
 
-  .login-split__tools .login-free-tools-banner {
-    margin-top: 0;
+  .login-split .auth-card:hover {
+    transform: none;
   }
 
   .auth-page-footer {
-    margin-top: 28px !important;
-    padding-top: 20px !important;
+    margin-top: 16px !important;
+    padding-top: 14px !important;
+    padding-bottom: 4px;
+    flex-shrink: 0;
   }
 }
 
 @media (min-width: 1280px) {
-  .auth-container {
-    max-width: 1380px;
+  .auth-page .auth-container {
+    max-width: 1240px;
   }
 
   .login-split {
-    grid-template-columns: 440px minmax(620px, 1fr);
-    gap: 28px;
+    grid-template-columns: 400px minmax(0, 1fr);
+    gap: 24px;
   }
 }
 
