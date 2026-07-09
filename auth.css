@@ -207,83 +207,104 @@
 
 @media (min-width: 1024px) {
   .auth-page .auth-main {
-    align-items: stretch;
+    align-items: center;
     justify-content: flex-start;
-    padding: 12px 28px 16px;
+    padding: 14px 24px 18px;
     margin-top: 56px;
-    min-height: calc(100vh - 56px);
+    min-height: 0;
   }
 
   .auth-page .auth-container {
-    max-width: 1180px;
+    max-width: 1220px;
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    min-height: calc(100vh - 56px - 16px);
+    display: block;
+    min-height: 0;
   }
 
   .login-split {
     display: grid;
-    grid-template-columns: minmax(360px, 400px) minmax(0, 1fr);
-    gap: 20px;
-    align-items: stretch;
-    flex: 1;
-    min-height: 0;
+    grid-template-columns: 400px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
   }
 
   .login-split__login,
   .login-split__tools {
-    padding: 24px 26px;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+    padding: 22px 24px;
   }
 
   .login-split__login {
     position: static;
     top: auto;
-    justify-content: center;
+    justify-content: flex-start;
+    height: auto;
+    align-self: start;
   }
 
   .login-split__login .auth-header-content {
-    margin-bottom: 18px;
-  }
-
-  .login-split__login .auth-logo-container {
     margin-bottom: 14px;
   }
 
+  .login-split__login .auth-logo-container {
+    margin-bottom: 10px;
+  }
+
   .login-split__login .auth-card-logo {
-    height: 64px;
+    height: 58px;
   }
 
   .login-split__login .auth-title {
-    font-size: 26px;
-    margin-bottom: 8px;
+    font-size: 24px;
+    margin-bottom: 6px;
   }
 
   .login-split__tools {
-    padding: 20px 22px 22px;
+    padding: 18px 20px 20px;
+    max-height: calc(100vh - 72px);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
   }
 
   .login-split__tools .login-free-tools-banner {
     margin-top: 0;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     flex-shrink: 0;
   }
 
   .login-split__tools .login-tools-list {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
     align-content: start;
-    padding-right: 4px;
+    padding-right: 2px;
+  }
+
+  .login-split__tools .calculator-btn {
+    padding: 9px 10px;
+    min-height: 42px;
+    width: 100%;
+  }
+
+  .login-split__tools .calculator-btn .button-text {
+    white-space: normal;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .login-split__tools .calculator-btn .calculator-icon {
+    width: 20px;
+    min-width: 20px;
+    max-width: 20px;
+    height: 20px;
+    font-size: 15px;
   }
 
   .login-split__divider {
@@ -292,24 +313,28 @@
 
   .login-split .auth-card:hover {
     transform: none;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
   }
 
   .auth-page-footer {
-    margin-top: 16px !important;
-    padding-top: 14px !important;
-    padding-bottom: 4px;
-    flex-shrink: 0;
+    margin-top: 14px !important;
+    padding-top: 12px !important;
+    padding-bottom: 2px;
   }
 }
 
 @media (min-width: 1280px) {
   .auth-page .auth-container {
-    max-width: 1240px;
+    max-width: 1280px;
   }
 
   .login-split {
-    grid-template-columns: 400px minmax(0, 1fr);
-    gap: 24px;
+    grid-template-columns: 420px minmax(0, 1fr);
+    gap: 22px;
+  }
+
+  .login-split__tools .calculator-btn .button-text {
+    font-size: 12.5px;
   }
 }
 
