@@ -275,9 +275,9 @@
     .panel {
       position: sticky;
       top: 14px;
-      max-height: calc(100dvh - 180px);
+      max-height: calc(100dvh - 96px);
       overflow-y: auto;
-      overscroll-behavior: contain;
+      overscroll-behavior: auto;
       scrollbar-gutter: stable;
       scroll-margin-top: 16px;
       border-color: rgba(37, 99, 235, 0.42);
@@ -920,7 +920,8 @@
         return;
       }
       var rect = panel.getBoundingClientRect();
-      var available = Math.max(320, window.innerHeight - rect.top - 16);
+      var viewportH = window.visualViewport && window.visualViewport.height ? window.visualViewport.height : window.innerHeight;
+      var available = Math.max(420, viewportH - rect.top - 10);
       panel.style.maxHeight = available + 'px';
     }
 
