@@ -28,7 +28,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=17" />
+  <link rel="stylesheet" href="auth.css?v=18" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -49,6 +49,7 @@
   </script>
 </head>
 <body class="auth-page">
+  <div id="fb-root"></div>
   <!-- Header consistente con el dashboard -->
   <header class="site-header auth-header">
     <div class="brandline">
@@ -110,6 +111,7 @@
   <main class="auth-main">
     <div class="auth-container">
       <div class="login-split">
+      <div class="login-split__left">
       <div class="auth-card login-split__login">
         <div class="auth-header-content">
           <div class="auth-logo-container">
@@ -247,6 +249,104 @@
           <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0;">Suscripción: $49 USD cada 5 meses. Cancela cuando quieras desde PayPal.</p>
           <p style="color: #64748b; font-size: 13px; margin: 10px 0 0 0; line-height: 1.45;">Activa la suscripción para comenzar tu <span style="font-weight: 700; color: #166534; background: #ecfdf5; padding: 2px 6px; border-radius: 4px;">prueba gratuita de 10 días</span>.<br>Puedes cancelar en cualquier momento antes de que termine el periodo y no se realizará ningún cargo.</p>
         </div>
+      </div>
+
+      <aside class="login-social-panel auth-card" aria-label="Redes sociales NutriPlant PRO">
+        <h2 class="login-social-panel__title">Síguenos en redes</h2>
+        <p class="login-social-panel__subtitle">Contenido técnico, novedades y comunidad agronómica.</p>
+        <div class="login-social-tabs" role="tablist" aria-label="Seleccionar red social">
+          <button type="button" class="login-social-tab active" role="tab" id="social-tab-facebook" aria-selected="true" aria-controls="social-panel-facebook" data-social-tab="facebook" title="Facebook">
+            <svg class="login-social-tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            <span>Facebook</span>
+          </button>
+          <button type="button" class="login-social-tab" role="tab" id="social-tab-instagram" aria-selected="false" aria-controls="social-panel-instagram" data-social-tab="instagram" title="Instagram">
+            <svg class="login-social-tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            <span>Instagram</span>
+          </button>
+          <button type="button" class="login-social-tab" role="tab" id="social-tab-youtube" aria-selected="false" aria-controls="social-panel-youtube" data-social-tab="youtube" title="YouTube">
+            <svg class="login-social-tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.94C18.88 4 12 4 12 4s-6.88 0-8.6.48a2.78 2.78 0 0 0-1.94 1.94A29 29 0 0 0 1 11.75a29 29 0 0 0 .48 5.33A2.78 2.78 0 0 0 3.4 19c1.72.48 8.6.48 8.6.48s6.88 0 8.6-.48a2.78 2.78 0 0 0 1.94-1.94 29 29 0 0 0 .48-5.33 29 29 0 0 0-.48-5.33z"/><polygon points="9.75,15.02 15.5,11.75 9.75,8.48"/></svg>
+            <span>YouTube</span>
+          </button>
+          <button type="button" class="login-social-tab" role="tab" id="social-tab-linkedin" aria-selected="false" aria-controls="social-panel-linkedin" data-social-tab="linkedin" title="LinkedIn">
+            <svg class="login-social-tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            <span>LinkedIn</span>
+          </button>
+          <button type="button" class="login-social-tab" role="tab" id="social-tab-tiktok" aria-selected="false" aria-controls="social-panel-tiktok" data-social-tab="tiktok" title="TikTok">
+            <svg class="login-social-tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+            <span>TikTok</span>
+          </button>
+        </div>
+
+        <div class="login-social-panels">
+          <div class="login-social-pane active" role="tabpanel" id="social-panel-facebook" aria-labelledby="social-tab-facebook" data-social-panel="facebook">
+            <div class="login-social-pane__embed login-social-pane__embed--facebook">
+              <div class="fb-page"
+                data-href="https://www.facebook.com/share/16tGD4XMM9/"
+                data-tabs="timeline"
+                data-width="380"
+                data-height="320"
+                data-small-header="true"
+                data-adapt-container-width="true"
+                data-hide-cover="false"
+                data-show-facepile="true">
+              </div>
+            </div>
+          </div>
+
+          <div class="login-social-pane" role="tabpanel" id="social-panel-instagram" aria-labelledby="social-tab-instagram" data-social-panel="instagram" hidden>
+            <div class="login-social-card login-social-card--instagram">
+              <div class="login-social-card__header">
+                <img src="assets/N_Hoja_Azul.png" alt="" width="52" height="52" decoding="async" />
+                <div>
+                  <strong>NutriPlant PRO</strong>
+                  <span>@nutriplantpro</span>
+                </div>
+              </div>
+              <p>Fotos, reels y tips de nutrición vegetal para el campo.</p>
+              <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--instagram">Ver perfil en Instagram</a>
+            </div>
+          </div>
+
+          <div class="login-social-pane" role="tabpanel" id="social-panel-youtube" aria-labelledby="social-tab-youtube" data-social-panel="youtube" hidden>
+            <div class="login-social-card login-social-card--youtube">
+              <div class="login-social-card__header">
+                <img src="assets/N_Hoja_Azul.png" alt="" width="52" height="52" decoding="async" />
+                <div>
+                  <strong>NutriPlant PRO</strong>
+                  <span>@nutriplantpro</span>
+                </div>
+              </div>
+              <p>Videos técnicos, tutoriales y criterio agronómico en formato audiovisual.</p>
+              <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--youtube">Ver canal en YouTube</a>
+            </div>
+          </div>
+
+          <div class="login-social-pane" role="tabpanel" id="social-panel-linkedin" aria-labelledby="social-tab-linkedin" data-social-panel="linkedin" hidden>
+            <div class="login-social-card login-social-card--linkedin">
+              <div class="login-social-card__header">
+                <img src="assets/N_Hoja_Azul.png" alt="" width="52" height="52" decoding="async" />
+                <div>
+                  <strong>NutriPlant PRO</strong>
+                  <span>Empresa · Nutrición vegetal</span>
+                </div>
+              </div>
+              <p>Artículos, actualizaciones de plataforma y red profesional agronómica.</p>
+              <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--linkedin">Ver página en LinkedIn</a>
+            </div>
+          </div>
+
+          <div class="login-social-pane" role="tabpanel" id="social-panel-tiktok" aria-labelledby="social-tab-tiktok" data-social-panel="tiktok" hidden>
+            <div class="login-social-pane__embed login-social-pane__embed--tiktok">
+              <blockquote class="tiktok-embed" cite="https://www.tiktok.com/@nutriplantpro" data-unique-id="nutriplantpro" data-embed-type="creator" data-embed-from="embed_page" data-title="NutriPlant PRO" style="max-width:100%;min-width:0;">
+                <section>
+                  <a target="_blank" rel="noopener noreferrer" href="https://www.tiktok.com/@nutriplantpro?refer=creator_embed">@nutriplantpro</a>
+                </section>
+              </blockquote>
+            </div>
+            <a href="https://www.tiktok.com/@nutriplantpro?_t=Z8-8zhq7GhZnmvY&_r=1" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--tiktok">Abrir perfil en TikTok</a>
+          </div>
+        </div>
+      </aside>
       </div>
 
       <div class="auth-card login-split__tools">
@@ -2515,7 +2615,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260716" title="Atlas Fisiológico Vegetal"></iframe>
+        <iframe id="aminoAcidsAtlasFrame" src="atlas-aminoacidos-vegetales-free.html?embed=login&v=20260717" title="Atlas Fisiológico Vegetal"></iframe>
       </div>
     </div>
   </div>
@@ -4031,5 +4131,61 @@
   </script>
   <script src="assets/free-tools-modal-parent.js"></script>
   <script src="apply-no-traducir.js"></script>
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_ES/sdk.js#xfbml=1&version=v21.0"></script>
+  <script>
+    (function initLoginSocialPanel() {
+      var root = document.querySelector('.login-social-panel');
+      if (!root) return;
+
+      var tabs = root.querySelectorAll('[data-social-tab]');
+      var panes = root.querySelectorAll('[data-social-panel]');
+      var tiktokScriptLoaded = false;
+
+      function parseFacebookPane() {
+        var pane = root.querySelector('[data-social-panel="facebook"]');
+        if (!pane || !window.FB || !window.FB.XFBML) return;
+        window.FB.XFBML.parse(pane);
+      }
+
+      function loadTikTokEmbed() {
+        if (tiktokScriptLoaded) return;
+        tiktokScriptLoaded = true;
+        var script = document.createElement('script');
+        script.src = 'https://www.tiktok.com/embed.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }
+
+      function showSocialTab(id) {
+        tabs.forEach(function (tab) {
+          var active = tab.getAttribute('data-social-tab') === id;
+          tab.classList.toggle('active', active);
+          tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        panes.forEach(function (pane) {
+          var active = pane.getAttribute('data-social-panel') === id;
+          pane.classList.toggle('active', active);
+          pane.hidden = !active;
+        });
+        if (id === 'facebook') {
+          if (window.FB && window.FB.XFBML) parseFacebookPane();
+          else window.setTimeout(parseFacebookPane, 800);
+        }
+        if (id === 'tiktok') loadTikTokEmbed();
+      }
+
+      window.fbAsyncInit = function () {
+        parseFacebookPane();
+      };
+
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          showSocialTab(tab.getAttribute('data-social-tab'));
+        });
+      });
+
+      showSocialTab('facebook');
+    })();
+  </script>
 </body>
 </html>
