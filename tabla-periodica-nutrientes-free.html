@@ -199,6 +199,20 @@
     .forms-detail-section { border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 10px; }
     .forms-detail-section h3 { margin: 0 0 5px; font-size: 12px; color: #0f766e; text-transform: uppercase; letter-spacing: .04em; }
     .forms-detail-section p { margin: 0; font-size: 13px; color: #334155; line-height: 1.45; }
+    .forms-model-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #dbeafe;
+      color: #1e40af;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
     .forms-model-note {
       margin: 8px 0 10px;
       border: 1px solid #bae6fd;
@@ -792,6 +806,14 @@
     let formsViewer = null;
     let formsAtomLabel = null;
 
+    const FORM_GROUP_ORDER = [
+      '1. Aniones / moléculas absorbidas',
+      '2. Cationes absorbidos',
+      '3. Quelatos',
+      '4. Sales fertilizantes',
+      '5. Precipitados / baja solubilidad'
+    ];
+
     function fmtNum(n, digits) {
       if (!Number.isFinite(n)) return '—';
       return n.toLocaleString('es-MX', { minimumFractionDigits: digits, maximumFractionDigits: digits });
@@ -1082,7 +1104,8 @@
 
     function renderFormsFilters() {
       const mount = document.getElementById('formsFilters');
-      const groups = ['Todos'].concat(Array.from(new Set(CHEMICAL_FORMS.map(function(x) { return x.group; }))));
+      const present = new Set(CHEMICAL_FORMS.map(formDisplayGroup));
+      const groups = ['Todos'].concat(FORM_GROUP_ORDER.filter(function(g) { return present.has(g); }));
       mount.innerHTML = groups.map(function(g) {
         return '<button type="button" class="forms-filter ' + (g === activeFormsGroup ? 'active' : '') + '" data-group="' + escapeHtml(g) + '">' + escapeHtml(g) + '</button>';
       }).join('');
@@ -1094,11 +1117,31 @@
       });
     }
 
+    function formDisplayGroup(item) {
+      if (!item) return '5. Precipitados / baja solubilidad';
+      const tags = (item.tags || []).join(' ');
+      if (item.group === 'Absorción vegetal') {
+        if (/Catión/i.test(tags)) return '2. Cationes absorbidos';
+        return '1. Aniones / moléculas absorbidas';
+      }
+      if (item.group === 'Quelatos') return '3. Quelatos';
+      if (item.group === 'Sales fertilizantes') return '4. Sales fertilizantes';
+      if (item.group === 'Precipitados / baja solubilidad') return '5. Precipitados / baja solubilidad';
+      return item.group;
+    }
+
+    function formGroupRank(item) {
+      const i = FORM_GROUP_ORDER.indexOf(formDisplayGroup(item));
+      return i >= 0 ? i : 99;
+    }
+
     function renderForms() {
       renderFormsFilters();
       const grid = document.getElementById('formsGrid');
       const list = CHEMICAL_FORMS.filter(function(item) {
-        return activeFormsGroup === 'Todos' || item.group === activeFormsGroup;
+        return activeFormsGroup === 'Todos' || formDisplayGroup(item) === activeFormsGroup;
+      }).slice().sort(function(a, b) {
+        return formGroupRank(a) - formGroupRank(b);
       });
       grid.innerHTML = list.map(function(item) {
         return '<article class="form-card ' + (item.id === selectedFormId ? 'active' : '') + '" data-id="' + escapeHtml(item.id) + '">' +
@@ -1113,6 +1156,38 @@
           selectChemicalForm(card.getAttribute('data-id'), { scrollToDetail: true });
         });
       });
+    }
+
+    function modelClassForItem(item) {
+      if (!item) return { label: 'Modelo', detail: 'Representación visual de apoyo.' };
+      if (/-EDTA|-DTPA|-EDDHA/i.test(item.formula || '')) {
+        return {
+          label: 'Complejo quelatado representativo',
+          detail: 'Metal central coordinado por donadores N/O del ligando; la forma comercial exacta depende de isómero, sal, hidratación y pH.'
+        };
+      }
+      if (item.group === 'Precipitados / baja solubilidad') {
+        return {
+          label: 'Unidad mineral representativa',
+          detail: 'Conserva el anión definido y cationes asociados; el sólido real es una red cristalina, no una molécula aislada.'
+        };
+      }
+      if (item.group === 'Sales fertilizantes') {
+        return {
+          label: 'Unidad iónica representativa',
+          detail: 'Muestra el anión real y los cationes asociados; en hidratos el agua se representa como agua de cristalización.'
+        };
+      }
+      if (simpleIonSymbol(item.formula)) {
+        return {
+          label: 'Ion simple',
+          detail: 'El átomo/ion se representa como esfera; sus datos químicos vienen de la tabla periódica.'
+        };
+      }
+      return {
+        label: 'Ion o molécula definida',
+        detail: 'Geometría molecular de referencia cuando PubChem está disponible, o unidad NutriPlant ajustada a la geometría esperada.'
+      };
     }
 
     function formsIsStackedLayout() {
@@ -1212,8 +1287,10 @@
       if (detailPanel) detailPanel.scrollTop = 0;
       document.getElementById('formsTitle').textContent = item.name;
       document.getElementById('formsMeta').innerHTML =
-        '<span class="notranslate" translate="no">' + escapeHtml(item.formula) + '</span> · ' + escapeHtml(item.group);
+        '<span class="notranslate" translate="no">' + escapeHtml(item.formula) + '</span> · ' + escapeHtml(formDisplayGroup(item));
+      const modelClass = modelClassForItem(item);
       document.getElementById('formsDetailBody').innerHTML =
+        '<div class="forms-detail-section"><h3>Tipo de visualización</h3><span class="forms-model-badge">' + escapeHtml(modelClass.label) + '</span><p style="margin-top:8px;">' + escapeHtml(modelClass.detail) + '</p></div>' +
         formChemistryHtml(item) +
         '<div class="forms-detail-section"><h3>Función / absorción</h3><p>' + escapeHtml(item.plant) + '</p></div>' +
         '<div class="forms-detail-section"><h3>Fuente o formación</h3><p>' + escapeHtml(item.source) + '</p></div>' +
@@ -1296,6 +1373,41 @@
       return [['O', offsetX, 0, 0], ['H', offsetX + 0.76, 0.58, 0], ['H', offsetX - 0.76, 0.58, 0]];
     }
 
+    function chelateModel(metal, kind) {
+      metal = metal || 'Fe';
+      kind = kind || 'EDTA';
+      const atoms = [[metal, 0, 0, 0]];
+      // Donadores alrededor del metal: representación educativa de enlaces de coordinación.
+      if (kind === 'DTPA') {
+        atoms.push(
+          ['N', 1.05, 0, 0], ['N', -1.05, 0, 0], ['N', 0, 1.05, 0],
+          ['O', 0, -1.05, 0], ['O', 0, 0, 1.05], ['O', 0, 0, -1.05],
+          ['O', 1.0, 1.0, 0.75], ['O', -1.0, -1.0, -0.75]
+        );
+      } else if (kind === 'EDDHA') {
+        atoms.push(
+          ['N', 1.05, 0, 0], ['N', -1.05, 0, 0],
+          ['O', 0, 1.05, 0], ['O', 0, -1.05, 0],
+          ['O', 0, 0, 1.05], ['O', 0, 0, -1.05],
+          ['C', 2.15, 0.6, 0], ['C', 2.75, 1.55, 0], ['C', 3.85, 1.45, 0], ['C', 4.35, 0.45, 0], ['C', 3.75, -0.5, 0], ['C', 2.65, -0.4, 0],
+          ['C', -2.15, -0.6, 0], ['C', -2.75, -1.55, 0], ['C', -3.85, -1.45, 0], ['C', -4.35, -0.45, 0], ['C', -3.75, 0.5, 0], ['C', -2.65, 0.4, 0]
+        );
+      } else {
+        atoms.push(
+          ['N', 1.05, 0, 0], ['N', -1.05, 0, 0],
+          ['O', 0, 1.05, 0], ['O', 0, -1.05, 0], ['O', 0, 0, 1.05], ['O', 0, 0, -1.05]
+        );
+      }
+      // Esqueleto orgánico simplificado para que el quelato no parezca solo un ion metálico.
+      atoms.push(
+        ['C', 1.8, 0.45, 0.45], ['C', 1.8, -0.45, -0.45],
+        ['C', -1.8, 0.45, -0.45], ['C', -1.8, -0.45, 0.45],
+        ['C', 0.45, 1.8, 0.45], ['C', -0.45, -1.8, -0.45],
+        ['H', 2.55, 0.8, 0.8], ['H', -2.55, -0.8, 0.8]
+      );
+      return xyzFromAtoms(atoms, metal + '-' + kind + ' quelato representativo');
+    }
+
     function simpleFormXyz(item) {
       const id = item && item.id;
       const models = {
@@ -1326,7 +1438,12 @@
         calcium_carbonate: carbonateModel('Ca'),
         magnesium_carbonate: carbonateModel('Mg'),
         calcium_bicarbonate: xyzFromAtoms([['Ca', 0, 0, 2.6], ['C', 0, 0, 0], ['O', 1.2, 0, 0], ['O', -0.6, 1.04, 0], ['O', -0.6, -1.04, 0], ['H', -1.25, 1.62, 0]], 'Ca(HCO3)2 proxy'),
-        magnesium_bicarbonate: xyzFromAtoms([['Mg', 0, 0, 2.6], ['C', 0, 0, 0], ['O', 1.2, 0, 0], ['O', -0.6, 1.04, 0], ['O', -0.6, -1.04, 0], ['H', -1.25, 1.62, 0]], 'Mg(HCO3)2 proxy')
+        magnesium_bicarbonate: xyzFromAtoms([['Mg', 0, 0, 2.6], ['C', 0, 0, 0], ['O', 1.2, 0, 0], ['O', -0.6, 1.04, 0], ['O', -0.6, -1.04, 0], ['H', -1.25, 1.62, 0]], 'Mg(HCO3)2 proxy'),
+        iron_edta: chelateModel('Fe', 'EDTA'),
+        iron_dtpa: chelateModel('Fe', 'DTPA'),
+        iron_eddha: chelateModel('Fe', 'EDDHA'),
+        zinc_edta: chelateModel('Zn', 'EDTA'),
+        manganese_edta: chelateModel('Mn', 'EDTA')
       };
       return models[id] || null;
     }
@@ -1348,7 +1465,8 @@
       });
       formsViewer.zoomTo();
       formsViewer.render();
-      stateEl.textContent = 'Modelo educativo simplificado NutriPlant. Representa iones/sal/hidrato de forma didáctica; no es estructura cristalina exacta.';
+      const cls = modelClassForItem(item);
+      stateEl.textContent = cls.label + ' NutriPlant. ' + cls.detail;
       return true;
     }
 
