@@ -28,7 +28,7 @@
   
   <!-- Estilos (?v=3 misma vista que laptop en móvil) -->
   <link rel="stylesheet" href="dashboard.css?v=4" />
-  <link rel="stylesheet" href="auth.css?v=10" />
+  <link rel="stylesheet" href="auth.css?v=11" />
   <script src="app-config.js"></script>
   <script src="subscription-config.js"></script>
   <!-- Google Analytics 4: se activa si en app-config.js pones googleAnalyticsMeasurementId (ej. G-XXXXXXXXXX) -->
@@ -109,7 +109,8 @@
   <!-- Contenido principal de autenticación -->
   <main class="auth-main">
     <div class="auth-container">
-      <div class="auth-card">
+      <div class="login-split">
+      <div class="auth-card login-split__login">
         <div class="auth-header-content">
           <div class="auth-logo-container">
             <img src="assets/NutriPlant_PRO_blue.png" alt="NutriPlant Pro" class="auth-card-logo" />
@@ -246,8 +247,10 @@
           <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0;">Suscripción: $49 USD cada 5 meses. Cancela cuando quieras desde PayPal.</p>
           <p style="color: #64748b; font-size: 13px; margin: 10px 0 0 0; line-height: 1.45;">Activa la suscripción para comenzar tu <span style="font-weight: 700; color: #166534; background: #ecfdf5; padding: 2px 6px; border-radius: 4px;">prueba gratuita de 10 días</span>.<br>Puedes cancelar en cualquier momento antes de que termine el periodo y no se realizará ningún cargo.</p>
         </div>
+      </div>
 
-        <div id="loginExtra" class="auth-divider" style="margin-top: 24px; margin-bottom: 16px;">
+      <div class="auth-card login-split__tools">
+        <div id="loginExtra" class="auth-divider login-split__divider" style="margin-top: 0; margin-bottom: 16px;">
           <span>O</span>
         </div>
 
@@ -364,9 +367,11 @@
           <span class="calculator-icon">🌍</span>
           <span class="button-text">Huella de carbono de fertilizantes</span>
         </button>
-        
+      </div>
+      </div>
+
         <!-- Footer: copyright y nota técnica -->
-        <div style="
+        <div class="auth-page-footer" style="
           margin-top: 40px;
           padding-top: 24px;
           border-top: 1px solid #e5e7eb;
@@ -403,7 +408,6 @@
             </a>
           </div>
         </div>
-      </div>
     </div>
   </main>
 
