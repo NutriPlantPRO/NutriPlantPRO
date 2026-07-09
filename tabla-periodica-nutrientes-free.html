@@ -199,6 +199,17 @@
     .forms-detail-section { border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 10px; }
     .forms-detail-section h3 { margin: 0 0 5px; font-size: 12px; color: #0f766e; text-transform: uppercase; letter-spacing: .04em; }
     .forms-detail-section p { margin: 0; font-size: 13px; color: #334155; line-height: 1.45; }
+    .forms-model-note {
+      margin: 8px 0 10px;
+      border: 1px solid #bae6fd;
+      background: linear-gradient(135deg, #f0f9ff, #f8fafc);
+      border-radius: 10px;
+      padding: 9px 10px;
+      color: #334155;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .forms-model-note strong { color: #075985; }
     @media (max-width: 980px) {
       .forms-layout { grid-template-columns: 1fr; }
       .forms-detail { position: static; max-height: none; overflow: visible; }
@@ -298,6 +309,11 @@
           <div id="forms3dViewer"></div>
           <div class="forms-viewer-state" id="formsViewerState">Selecciona una molécula o forma iónica para cargar el modelo 3D si PubChem lo tiene disponible.</div>
         </div>
+        <p class="forms-model-note">
+          <strong>Lectura del modelo:</strong> PubChem = estructura 3D de referencia cuando está disponible.
+          Modelo NutriPlant = representación didáctica que conserva composición y geometría general del ion/sal;
+          en sales, hidratos y precipitados no sustituye una estructura cristalográfica exacta.
+        </p>
         <div id="formsDetailBody"></div>
       </aside>
     </div>
@@ -599,12 +615,12 @@
         id: 'magnesium_nitrate',
         group: 'Sales fertilizantes',
         name: 'Nitrato de magnesio',
-        formula: 'Mg(NO₃)₂·6H₂O',
-        pubchem: 'magnesium nitrate hexahydrate',
-        tags: ['Mg', 'N-NO₃', 'Hidrato'],
+        formula: 'Mg(NO₃)₂',
+        pubchem: 'magnesium nitrate',
+        tags: ['Mg', 'N-NO₃'],
         plant: 'Fuente soluble de Mg²⁺ y NO₃⁻.',
-        source: 'Nitrato de magnesio.',
-        caution: 'Es una sal hidratada: el “·6H₂O” es agua de cristalización. Aporta CE; revisar balance K-Ca-Mg y N total.'
+        source: 'Nitrato de magnesio; comercialmente puede venir como hexahidrato Mg(NO₃)₂·6H₂O.',
+        caution: 'El modelo muestra la sal anhidra para claridad molecular; si el producto es hidratado, el agua es de cristalización. Aporta CE; revisar balance K-Ca-Mg y N total.'
       },
       {
         id: 'calcium_chloride',
@@ -1111,6 +1127,82 @@
       });
     }
 
+    function formulaForComputation(formula) {
+      return String(formula || '')
+        // Quita cargas iónicas Unicode: SO₄²⁻ → SO₄, Ca²⁺ → Ca, NH₄⁺ → NH₄.
+        .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]*[⁺⁻]/g, '')
+        // Quita cargas ASCII al final de bloque: NO3-, NH4+, SO4-2.
+        .replace(/([A-Za-z0-9)])(?:[+-]\d*|\d+[+-])$/g, '$1');
+    }
+
+    function simpleIonSymbol(formula) {
+      var cleaned = formulaForComputation(formula);
+      return /^[A-Z][a-z]?$/.test(cleaned) && Object.prototype.hasOwnProperty.call(ATOMIC_WEIGHTS, cleaned)
+        ? cleaned
+        : '';
+    }
+
+    function atomFactsHtml(symbol) {
+      const d = DETAILS[symbol] || {};
+      return '<div class="mol-summary">' +
+        '<div class="card"><div class="k">Peso atómico</div><div class="v">' + escapeHtml(d.aw || String(ATOMIC_WEIGHTS[symbol] || '—')) + ' g/mol</div></div>' +
+        '<div class="card"><div class="k">Valencia(s)</div><div class="v">' + escapeHtml(d.val || '—') + '</div></div>' +
+        '<div class="card"><div class="k">Radio atómico</div><div class="v">' + escapeHtml(d.rad || '—') + '</div></div>' +
+        '<div class="card"><div class="k">Electronegatividad</div><div class="v">' + escapeHtml(d.en || '—') + '</div></div>' +
+      '</div>';
+    }
+
+    function compositionHtmlFromParsed(parsed) {
+      const symbols = Object.keys(parsed.atomCounts).sort(function(a, b) {
+        return parsed.atomCounts[b] * ATOMIC_WEIGHTS[b] - parsed.atomCounts[a] * ATOMIC_WEIGHTS[a];
+      });
+      const rows = symbols.map(function(sym) {
+        const atoms = parsed.atomCounts[sym];
+        const partial = atoms * ATOMIC_WEIGHTS[sym];
+        const pct = (partial / parsed.mw) * 100;
+        const d = DETAILS[sym] || {};
+        return '<tr>' +
+          '<td><strong class="notranslate" translate="no">' + escapeHtml(sym) + '</strong> <span style="color:#64748b;">' + escapeHtml(elementName(sym)) + '</span></td>' +
+          '<td class="num">' + fmtNum(atoms, atoms % 1 ? 2 : 0) + '</td>' +
+          '<td class="num">' + fmtNum(ATOMIC_WEIGHTS[sym], 3) + '</td>' +
+          '<td class="num">' + escapeHtml(d.val || '—') + '</td>' +
+          '<td class="num">' + escapeHtml(d.rad || '—') + '</td>' +
+          '<td class="num">' + fmtNum(partial, 3) + '</td>' +
+          '<td class="num">' + fmtNum(pct, 2) + '%</td>' +
+        '</tr>';
+      }).join('');
+      return '<div class="mol-summary">' +
+        '<div class="card"><div class="k">Peso molecular</div><div class="v">' + fmtNum(parsed.mw, 3) + ' g/mol</div></div>' +
+        '<div class="card"><div class="k">Fórmula calculada</div><div class="v notranslate" translate="no">' + escapeHtml(formatNormalizedDisplay(parsed.normalized)) + '</div></div>' +
+      '</div>' +
+      '<div class="mol-table-wrap">' +
+        '<table class="mol-table"><thead><tr><th>Elemento</th><th>Átomos</th><th>Peso atómico</th><th>Valencia(s)</th><th>Radio</th><th>Masa parcial</th><th>% PM</th></tr></thead><tbody>' +
+        rows +
+        '</tbody></table>' +
+      '</div>';
+    }
+
+    function formChemistryHtml(item) {
+      const formula = item && item.formula ? item.formula : '';
+      const ion = simpleIonSymbol(formula);
+      if (ion) {
+        return '<div class="forms-detail-section"><h3>Datos atómicos</h3>' + atomFactsHtml(ion) + '</div>';
+      }
+      if (/-EDTA|-DTPA|-EDDHA/i.test(formula)) {
+        const metal = (formula.match(/^([A-Z][a-z]?)-/) || [])[1];
+        return '<div class="forms-detail-section"><h3>Datos químicos</h3>' +
+          (metal ? atomFactsHtml(metal) : '') +
+          '<p style="margin-top:8px;">Quelato comercial: la fórmula exacta depende del isómero, sal acompañante y grado del proveedor. Se muestra el metal central; para % exacto usar etiqueta garantizada del producto.</p>' +
+        '</div>';
+      }
+      try {
+        const parsed = parseCompound(formulaForComputation(formula));
+        return '<div class="forms-detail-section"><h3>Peso molecular y composición</h3>' + compositionHtmlFromParsed(parsed) + '</div>';
+      } catch (e) {
+        return '<div class="forms-detail-section"><h3>Datos químicos</h3><p>No se pudo calcular PM para esta forma. Usa la pestaña Peso molecular con una fórmula exacta si deseas revisar una fuente específica.</p></div>';
+      }
+    }
+
     function selectChemicalForm(id, options) {
       options = options || {};
       const item = CHEMICAL_FORMS.find(function(x) { return x.id === id; }) || CHEMICAL_FORMS[0];
@@ -1122,6 +1214,7 @@
       document.getElementById('formsMeta').innerHTML =
         '<span class="notranslate" translate="no">' + escapeHtml(item.formula) + '</span> · ' + escapeHtml(item.group);
       document.getElementById('formsDetailBody').innerHTML =
+        formChemistryHtml(item) +
         '<div class="forms-detail-section"><h3>Función / absorción</h3><p>' + escapeHtml(item.plant) + '</p></div>' +
         '<div class="forms-detail-section"><h3>Fuente o formación</h3><p>' + escapeHtml(item.source) + '</p></div>' +
         '<div class="forms-detail-section"><h3>Cuidado agronómico</h3><p>' + escapeHtml(item.caution) + '</p></div>';
@@ -1154,14 +1247,40 @@
 
     function sulfateModel(center) {
       center = center || 'S';
+      const d = center === 'P' ? 0.895 : 0.855;
       return xyzFromAtoms([
-        [center, 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25],
-        ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]
+        [center, 0, 0, 0], ['O', d, d, d], ['O', -d, -d, d],
+        ['O', -d, d, -d], ['O', d, -d, -d]
       ], center + 'O4');
     }
 
-    function phosphateModel() {
-      return sulfateModel('P');
+    function tetraOxoAtoms(center, bondLen, hCount) {
+      const d = bondLen / Math.sqrt(3);
+      const coords = [[d, d, d], [-d, -d, d], [-d, d, -d], [d, -d, -d]];
+      const atoms = [[center, 0, 0, 0]];
+      coords.forEach(function(c) { atoms.push(['O', c[0], c[1], c[2]]); });
+      for (let i = 0; i < (hCount || 0); i += 1) {
+        const c = coords[i];
+        const len = Math.sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]) || 1;
+        atoms.push(['H', c[0] + (c[0] / len) * 0.96, c[1] + (c[1] / len) * 0.96, c[2] + (c[2] / len) * 0.96]);
+      }
+      return atoms;
+    }
+
+    function phosphateModel(hCount) {
+      return xyzFromAtoms(tetraOxoAtoms('P', 1.55, hCount || 0), 'phosphate');
+    }
+
+    function boricAcidModel() {
+      const r = 1.36;
+      const coords = [[r, 0, 0], [-r / 2, r * 0.866, 0], [-r / 2, -r * 0.866, 0]];
+      const atoms = [['B', 0, 0, 0]];
+      coords.forEach(function(c) {
+        atoms.push(['O', c[0], c[1], c[2]]);
+        const len = Math.sqrt(c[0] * c[0] + c[1] * c[1]) || 1;
+        atoms.push(['H', c[0] + (c[0] / len) * 0.96, c[1] + (c[1] / len) * 0.96, c[2]]);
+      });
+      return xyzFromAtoms(atoms, 'H3BO3');
     }
 
     function carbonateModel(cation) {
@@ -1184,8 +1303,9 @@
         ammonium: ammoniumModel(),
         sulfate: sulfateModel('S'),
         molybdate: sulfateModel('Mo'),
-        dihydrogen_phosphate: phosphateModel(),
-        hydrogen_phosphate: phosphateModel(),
+        boric_acid: boricAcidModel(),
+        dihydrogen_phosphate: phosphateModel(2),
+        hydrogen_phosphate: phosphateModel(1),
         potassium_ion: simpleIonModel('K'),
         calcium_ion: simpleIonModel('Ca'),
         magnesium_ion: simpleIonModel('Mg'),
@@ -1194,12 +1314,15 @@
         potassium_nitrate: xyzFromAtoms([['K', 0, 0, 2.35], ['N', 0, 0, 0], ['O', 1.18, 0, 0], ['O', -0.59, 1.02, 0], ['O', -0.59, -1.02, 0]], 'KNO3 par iónico'),
         ammonium_nitrate: xyzFromAtoms([['N', 0, 0, 2.45], ['H', 0.63, 0.63, 3.08], ['H', -0.63, -0.63, 3.08], ['H', -0.63, 0.63, 1.82], ['H', 0.63, -0.63, 1.82], ['N', 0, 0, 0], ['O', 1.18, 0, 0], ['O', -0.59, 1.02, 0], ['O', -0.59, -1.02, 0]], 'NH4NO3 simplificado'),
         calcium_nitrate: xyzFromAtoms([['Ca', 0, 0, 2.65], ['N', -1.55, 0, 0], ['O', -0.37, 0, 0], ['O', -2.14, 1.02, 0], ['O', -2.14, -1.02, 0], ['N', 1.55, 0, 0], ['O', 2.73, 0, 0], ['O', 0.96, 1.02, 0], ['O', 0.96, -1.02, 0]], 'Ca(NO3)2 simplificado'),
-        magnesium_nitrate: xyzFromAtoms([['Mg', 0, 0, 2.65], ['N', -1.55, 0, 0], ['O', -0.37, 0, 0], ['O', -2.14, 1.02, 0], ['O', -2.14, -1.02, 0], ['N', 1.55, 0, 0], ['O', 2.73, 0, 0], ['O', 0.96, 1.02, 0], ['O', 0.96, -1.02, 0]].concat(waterModel(0).map(function(a) { return [a[0], a[1], a[2] - 2.2, a[3]]; })), 'Mg(NO3)2 hidratado simplificado'),
-        potassium_sulfate: xyzFromAtoms([['K', -2.35, 0, 0], ['K', 2.35, 0, 0], ['S', 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25], ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]], 'K2SO4 simplificado'),
-        magnesium_sulfate: xyzFromAtoms([['Mg', 0, 0, 2.55], ['S', 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25], ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]].concat(waterModel(0).map(function(a) { return [a[0], a[1], a[2] - 2.3, a[3]]; })), 'MgSO4 hidratado simplificado'),
-        calcium_sulfate: xyzFromAtoms([['Ca', 0, 0, 2.55], ['S', 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25], ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]], 'CaSO4 simplificado'),
-        calcium_phosphate: xyzFromAtoms([['Ca', -2.1, 0, 1.6], ['Ca', 2.1, 0, 1.6], ['Ca', 0, 0, -2.2], ['P', 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25], ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]], 'Ca3(PO4)2 proxy'),
-        iron_phosphate: xyzFromAtoms([['Fe', 0, 0, 2.45], ['P', 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25], ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]], 'FePO4 proxy'),
+        magnesium_nitrate: xyzFromAtoms([['Mg', 0, 0, 2.65], ['N', -1.55, 0, 0], ['O', -0.37, 0, 0], ['O', -2.14, 1.02, 0], ['O', -2.14, -1.02, 0], ['N', 1.55, 0, 0], ['O', 2.73, 0, 0], ['O', 0.96, 1.02, 0], ['O', 0.96, -1.02, 0]], 'Mg(NO3)2 anhidro simplificado'),
+        mono_potassium_phosphate: xyzFromAtoms([['K', 0, 0, 2.55]].concat(tetraOxoAtoms('P', 1.55, 2)), 'KH2PO4 simplificado'),
+        mono_ammonium_phosphate: xyzFromAtoms([['N', 0, 0, 2.65], ['H', 0.63, 0.63, 3.28], ['H', -0.63, -0.63, 3.28], ['H', -0.63, 0.63, 2.02], ['H', 0.63, -0.63, 2.02]].concat(tetraOxoAtoms('P', 1.55, 2)), 'NH4H2PO4 simplificado'),
+        ammonium_sulfate: xyzFromAtoms([['N', -2.45, 0, 0], ['H', -1.82, 0.63, 0.63], ['H', -3.08, -0.63, 0.63], ['H', -3.08, 0.63, -0.63], ['H', -1.82, -0.63, -0.63], ['N', 2.45, 0, 0], ['H', 3.08, 0.63, 0.63], ['H', 1.82, -0.63, 0.63], ['H', 1.82, 0.63, -0.63], ['H', 3.08, -0.63, -0.63]].concat(tetraOxoAtoms('S', 1.48, 0)), '(NH4)2SO4 simplificado'),
+        potassium_sulfate: xyzFromAtoms([['K', -2.35, 0, 0], ['K', 2.35, 0, 0]].concat(tetraOxoAtoms('S', 1.48, 0)), 'K2SO4 simplificado'),
+        magnesium_sulfate: xyzFromAtoms([['Mg', 0, 0, 2.55]].concat(tetraOxoAtoms('S', 1.48, 0)).concat(waterModel(0).map(function(a) { return [a[0], a[1], a[2] - 2.3, a[3]]; })), 'MgSO4 hidratado simplificado'),
+        calcium_sulfate: xyzFromAtoms([['Ca', 0, 0, 2.55]].concat(tetraOxoAtoms('S', 1.48, 0)), 'CaSO4 simplificado'),
+        calcium_phosphate: xyzFromAtoms([['Ca', -2.1, 0, 1.6], ['Ca', 2.1, 0, 1.6], ['Ca', 0, 0, -2.2]].concat(tetraOxoAtoms('P', 1.55, 0)), 'Ca3(PO4)2 proxy'),
+        iron_phosphate: xyzFromAtoms([['Fe', 0, 0, 2.45]].concat(tetraOxoAtoms('P', 1.55, 0)), 'FePO4 proxy'),
         calcium_carbonate: carbonateModel('Ca'),
         magnesium_carbonate: carbonateModel('Mg'),
         calcium_bicarbonate: xyzFromAtoms([['Ca', 0, 0, 2.6], ['C', 0, 0, 0], ['O', 1.2, 0, 0], ['O', -0.6, 1.04, 0], ['O', -0.6, -1.04, 0], ['H', -1.25, 1.62, 0]], 'Ca(HCO3)2 proxy'),
