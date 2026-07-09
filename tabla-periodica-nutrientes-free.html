@@ -170,7 +170,7 @@
       position: sticky;
       top: 10px;
       overflow-y: auto;
-      max-height: calc(100vh - 20px);
+      max-height: calc(100dvh - 180px);
       overscroll-behavior: contain;
       scrollbar-gutter: stable;
       border-color: rgba(37, 99, 235, 0.42);
@@ -1202,6 +1202,17 @@
       });
     }
 
+    function updateFormsDetailMaxHeight() {
+      const detailPanel = document.querySelector('.forms-detail');
+      if (!detailPanel || formsIsStackedLayout()) {
+        if (detailPanel) detailPanel.style.maxHeight = '';
+        return;
+      }
+      const rect = detailPanel.getBoundingClientRect();
+      const available = Math.max(320, window.innerHeight - rect.top - 16);
+      detailPanel.style.maxHeight = available + 'px';
+    }
+
     function formulaForComputation(formula) {
       return String(formula || '')
         // Quita cargas iónicas Unicode: SO₄²⁻ → SO₄, Ca²⁺ → Ca, NH₄⁺ → NH₄.
@@ -1296,6 +1307,7 @@
         '<div class="forms-detail-section"><h3>Fuente o formación</h3><p>' + escapeHtml(item.source) + '</p></div>' +
         '<div class="forms-detail-section"><h3>Cuidado agronómico</h3><p>' + escapeHtml(item.caution) + '</p></div>';
       renderForms();
+      updateFormsDetailMaxHeight();
       loadForm3d(item);
       if (options.scrollToDetail) scrollToFormsDetail();
     }
@@ -1600,6 +1612,7 @@
       document.getElementById('paneTable').classList.toggle('active', tabId === 'table');
       document.getElementById('paneMol').classList.toggle('active', tabId === 'mol');
       document.getElementById('paneForms').classList.toggle('active', tabId === 'forms');
+      if (tabId === 'forms') requestAnimationFrame(updateFormsDetailMaxHeight);
     }
 
     document.querySelectorAll('.tab-btn').forEach(function(btn) {
@@ -1633,6 +1646,9 @@
 
     renderForms();
     selectChemicalForm(selectedFormId);
+    window.addEventListener('resize', function() {
+      requestAnimationFrame(updateFormsDetailMaxHeight);
+    });
 
     window.npPeriodicAppendSymbol = function(symbol) {
       lastClickedSymbol = symbol;

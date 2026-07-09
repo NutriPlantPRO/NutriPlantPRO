@@ -275,7 +275,7 @@
     .panel {
       position: sticky;
       top: 14px;
-      max-height: calc(100vh - 28px);
+      max-height: calc(100dvh - 180px);
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-gutter: stable;
@@ -913,6 +913,17 @@
       });
     }
 
+    function updateSelectedPanelMaxHeight() {
+      var panel = document.querySelector('.panel');
+      if (!panel || isStackedLayout()) {
+        if (panel) panel.style.maxHeight = '';
+        return;
+      }
+      var rect = panel.getBoundingClientRect();
+      var available = Math.max(320, window.innerHeight - rect.top - 16);
+      panel.style.maxHeight = available + 'px';
+    }
+
     function selectAmino(a, options) {
       options = options || {};
       state.selected = a;
@@ -933,6 +944,7 @@
         '<div class="section"><h3>Bibliografía científica de respaldo</h3>' + list(a.references) + '</div>' +
         '<div class="section"><p><strong>Nota técnica:</strong> esta herramienta resume evidencia bioquímica y fisiológica; no sustituye validación por cultivo, dosis, fuente comercial, mezcla, vía de aplicación y condición de campo.</p></div>';
       renderCards();
+      updateSelectedPanelMaxHeight();
       loadMolecule(a);
       if (options.scrollToDetail) scrollToSelectedPanel();
     }
@@ -1001,6 +1013,9 @@
       });
 
       selectAmino(state.selected);
+      window.addEventListener('resize', function () {
+        requestAnimationFrame(updateSelectedPanelMaxHeight);
+      });
     }
 
     document.addEventListener('DOMContentLoaded', init);
