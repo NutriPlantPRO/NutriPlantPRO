@@ -108,14 +108,76 @@ function withSharedViewChrome(reportHtml, options) {
     }
     @media print{
       .np-shared-topbar,.np-shared-note{display:none!important}
+      html,body{
+        overflow:visible!important;
+        height:auto!important;
+        max-height:none!important;
+        position:static!important;
+      }
+      .report-main,.section,.project-info,.header,.footer{
+        overflow:visible!important;
+        max-height:none!important;
+      }
     }
   </style>`;
+  const chromeScript = `<script>
+function npSharedReportPrint(){
+  var pw=window.open('about:blank','_blank');
+  if(!pw){
+    alert('Tu navegador bloqueó la ventana emergente. Habilita pop-ups para descargar el PDF completo.');
+    return;
+  }
+  var parts=[];
+  var wm=document.querySelector('.report-watermark-corner');
+  if(wm)parts.push(wm.outerHTML);
+  var main=document.querySelector('.report-main');
+  if(main){
+    parts.push(main.outerHTML);
+  }else{
+    Array.prototype.forEach.call(document.body.children,function(el){
+      if(!el||!el.classList)return;
+      if(el.classList.contains('np-shared-topbar')||el.classList.contains('np-shared-note'))return;
+      parts.push(el.outerHTML);
+    });
+  }
+  if(!parts.length){
+    alert('No se encontró el contenido del reporte para imprimir.');
+    try{pw.close();}catch(e){}
+    return;
+  }
+  var headNodes=document.head.cloneNode(true).childNodes;
+  var headHtml='';
+  for(var i=0;i<headNodes.length;i++){
+    var node=headNodes[i];
+    if(!node||node.id==='np-shared-view-style')continue;
+    if(node.outerHTML)headHtml+=node.outerHTML;
+    else if(node.nodeType===3&&node.textContent.trim())headHtml+=node.textContent;
+  }
+  var lang=document.documentElement.getAttribute('lang')||'es';
+  var html='<!DOCTYPE html><html lang="'+lang+'" class="notranslate" translate="no"><head>'+headHtml+
+    '<title>NutriPlant PRO - Reporte</title></head><body class="notranslate" translate="no">'+parts.join('')+'</body></html>';
+  pw.document.open();
+  pw.document.write(html);
+  pw.document.close();
+  var fired=false;
+  function doPrint(){
+    if(fired)return;
+    fired=true;
+    try{pw.focus();pw.print();}catch(e){}
+  }
+  try{
+    if(pw.document&&pw.document.readyState==='complete'){setTimeout(doPrint,400);return;}
+    pw.addEventListener('load',function(){setTimeout(doPrint,400);});
+    setTimeout(doPrint,1200);
+  }catch(e){setTimeout(doPrint,500);}
+}
+</script>`;
   const chromeHeader = `<header class="np-shared-topbar">
     <div class="inner">
       <a class="brand" href="https://nutriplantpro.com/dashboard.html" target="_blank" rel="noopener noreferrer">
         <img src="https://nutriplantpro.com/assets/NutriPlant_PRO_blue.png" alt="NutriPlant PRO">
       </a>
-      <button type="button" class="np-shared-pdf-btn" onclick="window.print()" title="Guardar como PDF">📥 Descargar PDF</button>
+      <button type="button" class="np-shared-pdf-btn" onclick="npSharedReportPrint()" title="Guardar como PDF">📥 Descargar PDF</button>
       <nav class="links" aria-label="Redes sociales NutriPlant PRO">
         <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" data-social="facebook" title="Facebook" aria-label="Facebook">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
@@ -148,6 +210,8 @@ function withSharedViewChrome(reportHtml, options) {
   }
   if (/<body[^>]*>/i.test(out)) out = out.replace(/<body[^>]*>/i, function(m) { return m + chromeHeader; });
   else out = '<body>' + chromeHeader + out + '</body>';
+  if (/<\/body>/i.test(out)) out = out.replace(/<\/body>/i, chromeScript + '</body>');
+  else out = out + chromeScript;
   return out;
 }
 
