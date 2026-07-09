@@ -166,7 +166,27 @@
     .form-kind { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
     .form-kind span { border-radius: 999px; padding: 4px 8px; background: #ccfbf1; color: #115e59; font-size: 11px; font-weight: 800; }
     .form-note { margin: 8px 0 0; color: #475569; font-size: 12px; line-height: 1.4; }
-    .forms-detail { position: sticky; top: 10px; overflow: hidden; }
+    .forms-detail {
+      position: sticky;
+      top: 10px;
+      overflow-y: auto;
+      max-height: calc(100vh - 20px);
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      border-color: rgba(37, 99, 235, 0.42);
+      box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.08),
+        0 18px 44px rgba(15, 23, 42, 0.14);
+    }
+    .forms-detail-head {
+      margin: -12px -12px 10px;
+      padding: 14px 16px 12px;
+      background:
+        linear-gradient(135deg, rgba(239,246,255,.98), rgba(236,253,245,.95)),
+        #eff6ff;
+      border-bottom: 1px solid rgba(37,99,235,.2);
+      box-shadow: inset 4px 0 0 #2563eb;
+    }
     .forms-viewer { height: 260px; background: #111827; border-radius: 12px; overflow: hidden; position: relative; margin: 10px 0; }
     #forms3dViewer { position: absolute; inset: 0; }
     .forms-viewer-state {
@@ -181,7 +201,7 @@
     .forms-detail-section p { margin: 0; font-size: 13px; color: #334155; line-height: 1.45; }
     @media (max-width: 980px) {
       .forms-layout { grid-template-columns: 1fr; }
-      .forms-detail { position: static; }
+      .forms-detail { position: static; max-height: none; overflow: visible; }
     }
   </style>
 </head>
@@ -270,8 +290,10 @@
     <div class="forms-layout">
       <div class="forms-grid" id="formsGrid"></div>
       <aside class="panel forms-detail">
-        <h2 id="formsTitle">Selecciona una forma química</h2>
-        <div id="formsMeta" class="meta">Iones, sales, quelatos y precipitados relevantes en nutrición vegetal.</div>
+        <div class="forms-detail-head">
+          <h2 id="formsTitle">Selecciona una forma química</h2>
+          <div id="formsMeta" class="meta">Iones, sales, quelatos y precipitados relevantes en nutrición vegetal.</div>
+        </div>
         <div class="forms-viewer">
           <div id="forms3dViewer"></div>
           <div class="forms-viewer-state" id="formsViewerState">Selecciona una molécula o forma iónica para cargar el modelo 3D si PubChem lo tiene disponible.</div>
@@ -568,10 +590,10 @@
         name: 'Sulfato de magnesio',
         formula: 'MgSO₄·7H₂O',
         pubchem: 'magnesium sulfate heptahydrate',
-        tags: ['Mg', 'S'],
+        tags: ['Mg', 'S', 'Hidrato'],
         plant: 'Fuente soluble de Mg²⁺ y SO₄²⁻; útil para clorofila y metabolismo de S.',
         source: 'Sulfato de magnesio heptahidratado.',
-        caution: 'Separar de calcio en solución madre concentrada.'
+        caution: 'Es una sal hidratada: el “·7H₂O” es agua de cristalización, no nutriente adicional. Separar de calcio en solución madre concentrada.'
       },
       {
         id: 'magnesium_nitrate',
@@ -579,10 +601,10 @@
         name: 'Nitrato de magnesio',
         formula: 'Mg(NO₃)₂·6H₂O',
         pubchem: 'magnesium nitrate hexahydrate',
-        tags: ['Mg', 'N-NO₃'],
+        tags: ['Mg', 'N-NO₃', 'Hidrato'],
         plant: 'Fuente soluble de Mg²⁺ y NO₃⁻.',
         source: 'Nitrato de magnesio.',
-        caution: 'Aporta CE; revisar balance K-Ca-Mg y N total.'
+        caution: 'Es una sal hidratada: el “·6H₂O” es agua de cristalización. Aporta CE; revisar balance K-Ca-Mg y N total.'
       },
       {
         id: 'calcium_chloride',
@@ -590,10 +612,10 @@
         name: 'Cloruro de calcio',
         formula: 'CaCl₂·2H₂O',
         pubchem: 'calcium chloride dihydrate',
-        tags: ['Ca', 'Cl'],
+        tags: ['Ca', 'Cl', 'Hidrato'],
         plant: 'Fuente soluble de Ca²⁺; útil donde el Cl⁻ no sea limitante.',
         source: 'Cloruro de calcio dihidratado.',
-        caution: 'Cuidar aporte de Cl⁻, salinidad y compatibilidad con sulfatos/fosfatos.'
+        caution: 'Es una sal hidratada: el “·2H₂O” es agua de cristalización. Cuidar aporte de Cl⁻, salinidad y compatibilidad con sulfatos/fosfatos.'
       },
       {
         id: 'potassium_chloride',
@@ -1072,15 +1094,30 @@
       }).join('');
       grid.querySelectorAll('.form-card').forEach(function(card) {
         card.addEventListener('click', function() {
-          selectChemicalForm(card.getAttribute('data-id'));
+          selectChemicalForm(card.getAttribute('data-id'), { scrollToDetail: true });
         });
       });
     }
 
-    function selectChemicalForm(id) {
+    function formsIsStackedLayout() {
+      return window.matchMedia && window.matchMedia('(max-width: 980px)').matches;
+    }
+
+    function scrollToFormsDetail() {
+      const detailPanel = document.querySelector('.forms-detail');
+      if (!detailPanel || !formsIsStackedLayout()) return;
+      requestAnimationFrame(function() {
+        detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+
+    function selectChemicalForm(id, options) {
+      options = options || {};
       const item = CHEMICAL_FORMS.find(function(x) { return x.id === id; }) || CHEMICAL_FORMS[0];
       if (!item) return;
       selectedFormId = item.id;
+      const detailPanel = document.querySelector('.forms-detail');
+      if (detailPanel) detailPanel.scrollTop = 0;
       document.getElementById('formsTitle').textContent = item.name;
       document.getElementById('formsMeta').innerHTML =
         '<span class="notranslate" translate="no">' + escapeHtml(item.formula) + '</span> · ' + escapeHtml(item.group);
@@ -1090,6 +1127,110 @@
         '<div class="forms-detail-section"><h3>Cuidado agronómico</h3><p>' + escapeHtml(item.caution) + '</p></div>';
       renderForms();
       loadForm3d(item);
+      if (options.scrollToDetail) scrollToFormsDetail();
+    }
+
+    function xyzFromAtoms(atoms, title) {
+      return String(atoms.length) + '\n' + (title || 'Modelo educativo NutriPlant') + '\n' +
+        atoms.map(function(a) { return a[0] + ' ' + a[1] + ' ' + a[2] + ' ' + a[3]; }).join('\n');
+    }
+
+    function simpleIonModel(symbol) {
+      return xyzFromAtoms([[symbol, 0, 0, 0]], symbol + ' ion');
+    }
+
+    function nitrateModel() {
+      return xyzFromAtoms([
+        ['N', 0, 0, 0], ['O', 1.18, 0, 0], ['O', -0.59, 1.02, 0], ['O', -0.59, -1.02, 0]
+      ], 'NO3');
+    }
+
+    function ammoniumModel() {
+      return xyzFromAtoms([
+        ['N', 0, 0, 0], ['H', 0.63, 0.63, 0.63], ['H', -0.63, -0.63, 0.63],
+        ['H', -0.63, 0.63, -0.63], ['H', 0.63, -0.63, -0.63]
+      ], 'NH4');
+    }
+
+    function sulfateModel(center) {
+      center = center || 'S';
+      return xyzFromAtoms([
+        [center, 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25],
+        ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]
+      ], center + 'O4');
+    }
+
+    function phosphateModel() {
+      return sulfateModel('P');
+    }
+
+    function carbonateModel(cation) {
+      const atoms = [
+        ['C', 0, 0, 0], ['O', 1.2, 0, 0], ['O', -0.6, 1.04, 0], ['O', -0.6, -1.04, 0]
+      ];
+      if (cation) atoms.unshift([cation, 0, 0, 2.45]);
+      return xyzFromAtoms(atoms, (cation ? cation : '') + 'CO3');
+    }
+
+    function waterModel(offsetX) {
+      offsetX = offsetX || 0;
+      return [['O', offsetX, 0, 0], ['H', offsetX + 0.76, 0.58, 0], ['H', offsetX - 0.76, 0.58, 0]];
+    }
+
+    function simpleFormXyz(item) {
+      const id = item && item.id;
+      const models = {
+        nitrate: nitrateModel(),
+        ammonium: ammoniumModel(),
+        sulfate: sulfateModel('S'),
+        molybdate: sulfateModel('Mo'),
+        dihydrogen_phosphate: phosphateModel(),
+        hydrogen_phosphate: phosphateModel(),
+        potassium_ion: simpleIonModel('K'),
+        calcium_ion: simpleIonModel('Ca'),
+        magnesium_ion: simpleIonModel('Mg'),
+        potassium_chloride: xyzFromAtoms([['K', -1.25, 0, 0], ['Cl', 1.25, 0, 0]], 'KCl par iónico'),
+        calcium_chloride: xyzFromAtoms([['Ca', 0, 0, 0], ['Cl', 1.65, 0, 0], ['Cl', -1.65, 0, 0]].concat(waterModel(0).map(function(a) { return [a[0], a[1], a[2] + 2.2, a[3]]; })), 'CaCl2 hidratado simplificado'),
+        potassium_nitrate: xyzFromAtoms([['K', 0, 0, 2.35], ['N', 0, 0, 0], ['O', 1.18, 0, 0], ['O', -0.59, 1.02, 0], ['O', -0.59, -1.02, 0]], 'KNO3 par iónico'),
+        ammonium_nitrate: xyzFromAtoms([['N', 0, 0, 2.45], ['H', 0.63, 0.63, 3.08], ['H', -0.63, -0.63, 3.08], ['H', -0.63, 0.63, 1.82], ['H', 0.63, -0.63, 1.82], ['N', 0, 0, 0], ['O', 1.18, 0, 0], ['O', -0.59, 1.02, 0], ['O', -0.59, -1.02, 0]], 'NH4NO3 simplificado'),
+        calcium_nitrate: xyzFromAtoms([['Ca', 0, 0, 2.65], ['N', -1.55, 0, 0], ['O', -0.37, 0, 0], ['O', -2.14, 1.02, 0], ['O', -2.14, -1.02, 0], ['N', 1.55, 0, 0], ['O', 2.73, 0, 0], ['O', 0.96, 1.02, 0], ['O', 0.96, -1.02, 0]], 'Ca(NO3)2 simplificado'),
+        magnesium_nitrate: xyzFromAtoms([['Mg', 0, 0, 2.65], ['N', -1.55, 0, 0], ['O', -0.37, 0, 0], ['O', -2.14, 1.02, 0], ['O', -2.14, -1.02, 0], ['N', 1.55, 0, 0], ['O', 2.73, 0, 0], ['O', 0.96, 1.02, 0], ['O', 0.96, -1.02, 0]].concat(waterModel(0).map(function(a) { return [a[0], a[1], a[2] - 2.2, a[3]]; })), 'Mg(NO3)2 hidratado simplificado'),
+        potassium_sulfate: xyzFromAtoms([['K', -2.35, 0, 0], ['K', 2.35, 0, 0], ['S', 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25], ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]], 'K2SO4 simplificado'),
+        magnesium_sulfate: xyzFromAtoms([['Mg', 0, 0, 2.55], ['S', 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25], ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]].concat(waterModel(0).map(function(a) { return [a[0], a[1], a[2] - 2.3, a[3]]; })), 'MgSO4 hidratado simplificado'),
+        calcium_sulfate: xyzFromAtoms([['Ca', 0, 0, 2.55], ['S', 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25], ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]], 'CaSO4 simplificado'),
+        calcium_phosphate: xyzFromAtoms([['Ca', -2.1, 0, 1.6], ['Ca', 2.1, 0, 1.6], ['Ca', 0, 0, -2.2], ['P', 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25], ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]], 'Ca3(PO4)2 proxy'),
+        iron_phosphate: xyzFromAtoms([['Fe', 0, 0, 2.45], ['P', 0, 0, 0], ['O', 1.25, 1.25, 1.25], ['O', -1.25, -1.25, 1.25], ['O', -1.25, 1.25, -1.25], ['O', 1.25, -1.25, -1.25]], 'FePO4 proxy'),
+        calcium_carbonate: carbonateModel('Ca'),
+        magnesium_carbonate: carbonateModel('Mg'),
+        calcium_bicarbonate: xyzFromAtoms([['Ca', 0, 0, 2.6], ['C', 0, 0, 0], ['O', 1.2, 0, 0], ['O', -0.6, 1.04, 0], ['O', -0.6, -1.04, 0], ['H', -1.25, 1.62, 0]], 'Ca(HCO3)2 proxy'),
+        magnesium_bicarbonate: xyzFromAtoms([['Mg', 0, 0, 2.6], ['C', 0, 0, 0], ['O', 1.2, 0, 0], ['O', -0.6, 1.04, 0], ['O', -0.6, -1.04, 0], ['H', -1.25, 1.62, 0]], 'Mg(HCO3)2 proxy')
+      };
+      return models[id] || null;
+    }
+
+    function renderSimpleFormModel(item, reason) {
+      const xyz = simpleFormXyz(item);
+      const stateEl = document.getElementById('formsViewerState');
+      const viewerEl = document.getElementById('forms3dViewer');
+      if (!xyz || !window.$3Dmol) {
+        stateEl.textContent = reason || 'No hay modelo 3D para esta forma; revisa la ficha técnica.';
+        return false;
+      }
+      viewerEl.innerHTML = '';
+      formsViewer = window.$3Dmol.createViewer(viewerEl, { backgroundColor: '#111827' });
+      formsViewer.addModel(xyz, 'xyz');
+      formsViewer.setStyle({}, {
+        stick: { radius: 0.16, colorscheme: 'Jmol' },
+        sphere: { scale: 0.35, colorscheme: 'Jmol' }
+      });
+      formsViewer.zoomTo();
+      formsViewer.render();
+      stateEl.textContent = 'Modelo educativo simplificado NutriPlant. Representa iones/sal/hidrato de forma didáctica; no es estructura cristalina exacta.';
+      return true;
+    }
+
+    function formIsSaltLike(item) {
+      return !!(item && (/Hidrato|Precipitado|Carbonato|Bicarbonato|Alcalinidad|Cl|N-NO₃|N-NH₄|S|P|Ca|Mg|K/.test((item.tags || []).join(' ')) || /·/.test(item.formula || '')));
     }
 
     function loadForm3d(item) {
@@ -1103,7 +1244,11 @@
         return;
       }
       if (!item.pubchem) {
-        stateEl.textContent = 'Esta forma química no tiene modelo 3D directo configurado; revisa la ficha técnica.';
+        renderSimpleFormModel(item, 'Esta forma química no tiene modelo 3D directo configurado; revisa la ficha técnica.');
+        return;
+      }
+      if (formIsSaltLike(item) && simpleFormXyz(item)) {
+        renderSimpleFormModel(item);
         return;
       }
       stateEl.textContent = 'Cargando modelo 3D desde PubChem...';
@@ -1137,7 +1282,7 @@
         formsViewer.render();
         stateEl.textContent = 'Modelo 3D cargado. Arrastra para rotar, usa zoom y toca átomos para identificarlos.';
       }).catch(function() {
-        stateEl.textContent = 'PubChem no devolvió estructura 3D para esta forma. La ficha técnica sigue disponible.';
+        renderSimpleFormModel(item, 'PubChem no devolvió estructura 3D para esta forma. La ficha técnica sigue disponible.');
       });
     }
 
