@@ -62,7 +62,7 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | `agua-dureza-acidificacion-solubilidad` | Dureza, ácido HCO₃, solubilidad/IS | E |
 | `n-mineralizable-agua-disponible-suelo` | N mineralizable, CC−PMP, textura | B |
 | `interacciones-mulder-compatibilidad` | Mulder, matriz C/R/I ferti | F |
-| `atlas-aminoacidos-vegetales` | Atlas aminoácidos vegetales | F |
+| `atlas-aminoacidos-vegetales` | Atlas fisiológico vegetal (aminoácidos + ciclo hormonal) | F |
 | `huella-carbono-fertilizantes` | Huella CO₂e fertilizantes (estimación) | F |
 | `analisis-solucion-nutritiva-lab` | Solución lab (licor/drenaje) | C |
 | `analisis-extracto-pasta` | Extracto de pasta saturada (laboratorio) | C |
@@ -230,16 +230,33 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 - **Equivalencia pick-up A vs B:** km ilustrativos en pick-up mediana 6 cil. (0,254 kg CO₂e/km DESNZ); total A, B y diferencia — no compensación.  
 - **Herramienta:** `fertilizer_carbon`; LS `nutriplant_free_fertilizer_carbon_v2`. Panel calibración FE en UI.
 
-### 4.15b Atlas de Aminoácidos Vegetales (Pilar F — fisiología vegetal)
+### 4.15b Atlas Fisiológico Vegetal (Pilar F — fisiología vegetal)
 
 **URL:** …/atlas-aminoacidos-vegetales.html
-- **Herramienta gratuita:** `atlas-aminoacidos-vegetales-free.html` (login/dashboard, icono 🧬). Biblioteca interactiva de los 20 aminoácidos proteinogénicos con enfoque en nutrición, fisiología vegetal y aplicación agronómica responsable.
+- **Herramienta gratuita:** `atlas-aminoacidos-vegetales-free.html` (login/dashboard, icono 🧬). Dos pestañas: **Aminoácidos** y **Ciclo hormonal**.
+
+#### Aminoácidos (pestaña 1)
+- Biblioteca interactiva de los 20 aminoácidos proteinogénicos con enfoque en nutrición, fisiología vegetal y aplicación agronómica responsable.
 - **Cada tarjeta:** nombre común, nombre L-alpha (glicina: no quiral), abreviaturas 3/1 letras, fórmula, peso molecular, familia química, rutas metabólicas, función fisiológica, beneficios agronómicos, fenología, estrés, precursores, categorías funcionales, evidencia y bibliografía base.
 - **Modelo 3D:** 3Dmol.js + PubChem SDF 3D cuando hay conexión; CPK/Jmol: C gris, H blanco, O rojo, N azul, S amarillo; rotación 360°, zoom y selección de átomos.
 - **Filtros:** estrés, fenología, formulación nutricional, categoría funcional y evidencia. Categorías: metabolismo del N, fotosíntesis, respuesta al estrés, desarrollo radicular, crecimiento vegetativo, floración, cuajado, llenado, defensa vegetal, antioxidantes, precursor hormonal y transporte de N.
 - **Ejemplos de criterio:** prolina = estrés osmótico/hídrico/salino; triptófano = precursor de rutas de auxina; glutamato/glutamina/asparagina/arginina = metabolismo y transporte de N; cisteína = glutatión/defensa antioxidante; fenilalanina = fenilpropanoides/lignina/defensa; metionina = SAM/etileno/poliaminas.
 - **Evidencia:** Alta/Media/Baja; no convertir rutas metabólicas en promesa de campo. La respuesta depende de cultivo, dosis, fuente comercial, mezcla, vía de aplicación, estado nutricional, ambiente y validación.
 - **Fuentes:** PubChem, KEGG, PlantCyc, Plant Physiology and Development, Biochemistry & Molecular Biology of Plants, Marschner y artículos científicos.
+
+#### Ciclo hormonal (pestaña 2)
+- **Mapa visual didáctico** de tendencias relativas de actividad hormonal (no valores de laboratorio). Curvas suaves + puntos de transición donde una fitohormona cede a la siguiente.
+- **Secuencia:** Citoquinina → Auxina → Giberelinas → Etileno → ABA.
+- **Etapas y eventos:**
+  - **I Germinación y Establecimiento** — Iniciación celular (división); CK + Auxina; N, Ca, P, Zn, Mg, K, Mn.
+  - **II Crecimiento Vegetativo** — Crecimiento celular · Madurez celular; Auxina + GA; Ca, Cu, Mg, B, Mn, N, Zn, NO₃.
+  - **III Floración y Reproducción** — Senescencia (transición reproductiva); GA + Etileno; Ca, B, Mg, N amínico.
+  - **IV Maduración y senescencia** — Cierre del ciclo fisiológico; Etileno + ABA; B, Cu, P, K, Mo, Mg, N amínico.
+- **Transiciones gráfico:** Iniciación (CK→Auxina), Crecimiento (Auxina→GA), Madurez (GA→Etileno), Senescencia (Etileno→ABA).
+- **Rol por hormona:** CK = división/brotación; Auxina = polaridad/elongación; GA = crecimiento/floración; Etileno = maduración/senescencia (Metionina→SAM→etileno); ABA = estrés/cierre (carotenoides).
+- **Criterio agronómico:** marco general para mayoría de cultivos; timing y balance hormonal varían por especie, genética, ambiente y manejo. Cruce con programa de fertirriego, análisis y fenología real del cultivo.
+- **Aviso:** desequilibrio hormonal-nutricional en transición puede reducir irreversiblemente expresión genética.
+- **Fuentes:** Taiz & Zeiger, Marschner, BMBP, KEGG biosíntesis hormonal.
 
 ### 4.16 Solución nutritiva (lab)
 
@@ -284,6 +301,7 @@ Canales oficiales; tono técnico; mapa capítulo→post; plantilla LinkedIn. **P
 | Datos proyecto suscriptor | `project_analyses` / `project_detail` |
 | Calculadora gratis | `free_tools_catalog` / HERRAMIENTAS |
 | Aminoácidos vegetales, estrés, fenología o formulación | `atlas-aminoacidos-vegetales` + HERRAMIENTAS `atlas_aminoacidos_vegetales` |
+| Ciclo hormonal, fitohormonas, etapas fenológicas o nutrición por etapa | `atlas-aminoacidos-vegetales` §7 + HERRAMIENTAS `atlas_aminoacidos_vegetales` pestaña Ciclo hormonal |
 | 6 pestañas Análisis | `lab_analyses_catalog` |
 
 **Búsqueda web (si activa):** priorizar nutriplantpro.com/manual-tecnico sobre blogs genéricos.

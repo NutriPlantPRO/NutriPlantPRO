@@ -106,6 +106,7 @@ body {
 .social-links a[data-social="tiktok"]:hover { color: #000000; }
 .social-links a[data-social="youtube"]:hover { color: #ff0000; }
 .social-links a[data-social="linkedin"]:hover { color: #0077b5; }
+.social-links a[data-social="whatsapp"]:hover { color: #25d366; }
 
 .social-links svg {
   width: 20px;

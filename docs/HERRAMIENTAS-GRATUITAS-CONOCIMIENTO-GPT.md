@@ -133,14 +133,31 @@ En **login** y **dashboard** (`measure-units-calculator.js`), NutriPlant usa **m
 - La pestaña **Formas iónicas / 3D** resume formas absorbidas por planta (NO₃⁻, NH₄⁺, H₂PO₄⁻, HPO₄²⁻, SO₄²⁻, H₃BO₃, MoO₄²⁻, K⁺, Ca²⁺, Mg²⁺), fuentes fertilizantes (KNO₃, Ca(NO₃)₂, MKP, MAP, NH₄NO₃, K₂SO₄/SOP, (NH₄)₂SO₄, MgSO₄·7H₂O, Mg(NO₃)₂·6H₂O, CaCl₂·2H₂O, KCl), quelatos (Fe-EDTA, Fe-DTPA, Fe-EDDHA, Zn-EDTA, Mn-EDTA) y precipitados/baja solubilidad (CaSO₄, Ca₃(PO₄)₂, FePO₄, CaCO₃, MgCO₃, Ca(HCO₃)₂, Mg(HCO₃)₂).
 - Modelo 3D: usa PubChem + 3Dmol cuando la estructura está disponible. Si no hay estructura usable, muestra **modelo NutriPlant con enlaces explícitos** para conservar arquitectura visual básica: trigonal plana (`NO₃⁻`, `CO₃²⁻`, `H₃BO₃`), tetraédrica (`NH₄⁺`, `SO₄²⁻`, `PO₄³⁻`, `H₂PO₄⁻`, `HPO₄²⁻`), unidad iónica representativa en sales e hidratos, unidad mineral representativa en precipitados y complejo quelatado representativo en EDTA/DTPA/EDDHA. No presentarlo como cristalografía exacta.
 
-### 🧬 Atlas de Aminoácidos Vegetales (`atlas-aminoacidos-vegetales-free.html`)
+### 🧬 Atlas Fisiológico Vegetal (`atlas-aminoacidos-vegetales-free.html`)
 
+Dos pestañas en la misma herramienta (login/dashboard, icono 🧬):
+
+#### Pestaña Aminoácidos
 - Biblioteca interactiva de los **20 aminoácidos proteinogénicos** con enfoque en nutrición y fisiología vegetal.
 - Incluye nombre común, nombre L-alpha (glicina: no quiral), abreviaturas, fórmula molecular, peso molecular, familia química, rutas metabólicas en plantas, función fisiológica, beneficios agronómicos, fenología, estrés, precursores metabólicos, categorías funcionales, nivel de evidencia y bibliografía base.
 - **Modelo 3D:** usa **3Dmol.js + PubChem SDF 3D** cuando hay conexión; permite rotación, zoom y selección de átomos con etiqueta. Colores CPK/Jmol: C gris, H blanco, O rojo, N azul, S amarillo.
 - **Filtros principales:** estrés, fenología y formulación nutricional. Filtros secundarios: categoría funcional y nivel de evidencia.
 - **Categorías funcionales automáticas:** metabolismo del nitrógeno, fotosíntesis, respuesta al estrés, desarrollo radicular, crecimiento vegetativo, floración, cuajado, llenado de fruto, defensa vegetal, antioxidantes, precursor hormonal y transporte de nitrógeno.
 - **Fuentes criterio:** PubChem, KEGG, PlantCyc, Plant Physiology and Development, Biochemistry & Molecular Biology of Plants, Marschner y artículos científicos. No presentar beneficios como garantía de campo; dependen de cultivo, dosis, fuente, mezcla, vía de aplicación y condición ambiental.
+
+#### Pestaña Ciclo hormonal
+- **Mapa visual didáctico** (no valores de laboratorio): curvas suaves de tendencia relativa de 5 fitohormonas en 4 etapas fenológicas.
+- **Secuencia de transición:** Citoquinina → Auxina → Giberelinas → Etileno → ABA. Los puntos blancos marcan el **cambio de mando** hormonal (cruce entre curvas).
+- **Etapas:**
+  - **I — Germinación y Establecimiento:** evento *Iniciación celular (División celular)*; hormonas CK + Auxina; nutrientes N, Ca, P, Zn, Mg, K, Mn.
+  - **II — Crecimiento Vegetativo:** evento *Crecimiento celular · Madurez celular*; hormonas Auxina + GA; nutrientes Ca, Cu, Mg, B, Mn, N, Zn, NO₃.
+  - **III — Floración y Reproducción:** evento *Senescencia* (transición reproductiva); hormonas GA + Etileno; nutrientes Ca, B, Mg, N amínico.
+  - **IV — Maduración y senescencia:** evento *Cierre del ciclo fisiológico*; hormonas Etileno + ABA; nutrientes B, Cu, P, K, Mo, Mg, N amínico.
+- **Transiciones en el gráfico:** Iniciación (CK→Auxina), Crecimiento (Auxina→GA), Madurez (GA→Etileno), Senescencia (Etileno→ABA).
+- **Fichas por hormona/etapa:** rol fisiológico, interpretación agronómica, nutrientes cofactores y aminoácidos vinculados (p. ej. triptófano→auxinas, metionina→etileno).
+- **Criterio GPT:** modelo general válido para la mayoría de cultivos; el timing varía por especie, variedad, clima y manejo. No es curva de laboratorio ni protocolo único por cultivo.
+- **Aviso:** cualquier desequilibrio hormonal-nutricional en una transición puede reducir irreversiblemente la expresión genética.
+- **Fuentes:** Taiz & Zeiger, Marschner, BMBP, KEGG (biosíntesis hormonal).
 
 ### 🔺 Compatibilidad (`fertilizer-compatibility-free.html`)
 

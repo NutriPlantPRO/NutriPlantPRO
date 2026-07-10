@@ -246,11 +246,11 @@ module.exports = {
     {
       id: 'atlas_aminoacidos_vegetales',
       slug: 'atlas-aminoacidos-vegetales',
-      title: 'Atlas de Aminoácidos Vegetales',
+      title: 'Atlas Fisiológico Vegetal',
       url: `${BASE}/capitulos/atlas-aminoacidos-vegetales.html`,
       pillar: 'F — Fisiología vegetal',
       summary:
-        'atlas-aminoacidos-vegetales-free: 20 aminoácidos proteinogénicos con fórmula, PM, 3D PubChem/3Dmol, rutas en plantas, estrés, fenología, formulación nutricional, categorías funcionales, evidencia Alta/Media/Baja y fuentes PubChem, KEGG, PlantCyc, Taiz/Zeiger, Marschner y artículos.',
+        'atlas-aminoacidos-vegetales-free: dos pestañas — (1) 20 aminoácidos proteinogénicos con fórmula, PM, 3D PubChem/3Dmol, rutas, estrés, fenología, formulación, evidencia; (2) ciclo hormonal por 4 etapas (CK→Auxina→GA→Etileno→ABA), mapa visual didáctico, eventos celulares, nutrientes cofactores, fichas por hormona/etapa y vínculo con aminoácidos. Fuentes Taiz/Zeiger, Marschner, BMBP, KEGG.',
       status: 'published'
     },
     {

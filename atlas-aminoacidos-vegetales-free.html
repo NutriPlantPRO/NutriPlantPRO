@@ -453,9 +453,9 @@
       max-width: 920px;
     }
     .hormone-chart-wrap {
-      border: 1px solid #d1fae5;
+      border: 1px solid #e2e8f0;
       border-radius: 18px;
-      background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 72%);
+      background: linear-gradient(180deg, #fafbfc 0%, #ffffff 100%);
       padding: 12px 10px 8px;
       overflow-x: auto;
     }
@@ -526,10 +526,16 @@
       cursor: pointer;
       transition: opacity 0.22s ease;
     }
-    .hormone-chart .hormone-curve path {
-      transition: stroke-width 0.22s ease, opacity 0.22s ease, filter 0.22s ease;
-      stroke-linejoin: round;
-      stroke-linecap: round;
+    .hormone-chart .hormone-curve path.hormone-fill {
+      stroke: none;
+    }
+    .hormone-chart .hormone-curve path.hormone-line {
+      fill: none;
+      stroke-width: 2.2;
+      opacity: 0.9;
+    }
+    .hormone-chart.has-selection .hormone-curve.is-active path.hormone-line {
+      stroke-width: 3.2;
     }
     .hormone-chart.has-selection .hormone-curve {
       opacity: 0.2;
@@ -538,16 +544,21 @@
       opacity: 1;
     }
     .hormone-chart.has-selection .hormone-curve.is-active path {
-      stroke-width: 3.6;
-      filter: drop-shadow(0 3px 8px rgba(15, 23, 42, 0.18));
+      filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.12));
+    }
+    .hormone-chart .hormone-curve path {
+      transition: stroke-width 0.22s ease, opacity 0.22s ease, filter 0.22s ease;
+      stroke-linejoin: round;
+      stroke-linecap: round;
     }
     .hormone-chart .hormone-event-marker {
       cursor: pointer;
     }
     .hormone-chart .event-connector {
       stroke: #86efac;
-      stroke-width: 1.4;
+      stroke-width: 1.2;
       pointer-events: none;
+      opacity: 0.95;
     }
     .hormone-chart .hormone-event-marker circle {
       transition: r 0.15s ease;
@@ -926,15 +937,15 @@
           <h2>Niveles hormonales por etapa</h2>
           <p class="hormone-lead"><strong>Referencia visual didáctica</strong> — no son valores de laboratorio. Las curvas suaves muestran cómo, entre etapas, el mando hormonal va pasando de una fitohormona a la siguiente. Los puntos blancos marcan ese <strong>cambio de nivel</strong> (Citoquinina → Auxina → Giberelinas → Etileno → ABA).</p>
           <div class="hormone-chart-wrap">
-            <svg class="hormone-chart" viewBox="0 0 1000 350" role="img" aria-label="Ciclo hormonal de la planta por etapas">
+            <svg class="hormone-chart" viewBox="0 0 1000 380" role="img" aria-label="Ciclo hormonal de la planta por etapas">
               <defs>
-                <linearGradient id="ckGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22d3ee" stop-opacity="0.88"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0.05"/></linearGradient>
-                <linearGradient id="auxGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#60a5fa" stop-opacity="0.88"/><stop offset="100%" stop-color="#60a5fa" stop-opacity="0.05"/></linearGradient>
-                <linearGradient id="gaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#34d399" stop-opacity="0.88"/><stop offset="100%" stop-color="#34d399" stop-opacity="0.05"/></linearGradient>
-                <linearGradient id="ethGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fbbf24" stop-opacity="0.88"/><stop offset="100%" stop-color="#fbbf24" stop-opacity="0.05"/></linearGradient>
-                <linearGradient id="abaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c084fc" stop-opacity="0.88"/><stop offset="100%" stop-color="#c084fc" stop-opacity="0.05"/></linearGradient>
+                <linearGradient id="ckGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22d3ee" stop-opacity="0.42"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0.03"/></linearGradient>
+                <linearGradient id="auxGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#60a5fa" stop-opacity="0.42"/><stop offset="100%" stop-color="#60a5fa" stop-opacity="0.03"/></linearGradient>
+                <linearGradient id="gaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#34d399" stop-opacity="0.42"/><stop offset="100%" stop-color="#34d399" stop-opacity="0.03"/></linearGradient>
+                <linearGradient id="ethGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fbbf24" stop-opacity="0.42"/><stop offset="100%" stop-color="#fbbf24" stop-opacity="0.03"/></linearGradient>
+                <linearGradient id="abaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c084fc" stop-opacity="0.42"/><stop offset="100%" stop-color="#c084fc" stop-opacity="0.03"/></linearGradient>
               </defs>
-              <rect x="0" y="0" width="1000" height="350" fill="#f8fffb"/>
+              <rect x="0" y="0" width="1000" height="380" fill="#f8fffb"/>
               <g class="stage-headers" aria-hidden="true">
                 <g class="stage-header">
                   <rect x="70" y="8" width="228" height="34" rx="8" fill="#bfdbfe" fill-opacity="0.95"/>
@@ -971,52 +982,9 @@
                 <line class="stage-divider" x1="525" y1="48" x2="525" y2="252"/>
                 <line class="stage-divider" x1="752" y1="48" x2="752" y2="252"/>
               </g>
-              <g class="hormone-curve" data-hormone="cytokinin" role="button" tabindex="0" aria-label="Citoquinina">
-                <path d="M70,248 C115,248 155,244 172,198 C186,158 192,122 208,115 C224,108 238,148 238,148 C258,182 278,225 298,248 Z" fill="url(#ckGrad)" stroke="#06b6d4" stroke-width="2"/>
-                <text class="hormone-curve-label" x="188" y="132" text-anchor="middle">Citoquinina</text>
-              </g>
-              <g class="hormone-curve" data-hormone="auxin" role="button" tabindex="0" aria-label="Auxina">
-                <path d="M70,248 C130,248 180,240 210,202 C225,178 238,148 238,148 C255,132 275,108 292,98 C308,88 325,102 338,128 C348,152 348,152 368,178 C395,215 420,242 450,248 Z" fill="url(#auxGrad)" stroke="#3b82f6" stroke-width="2"/>
-                <text class="hormone-curve-label" x="292" y="108" text-anchor="middle">Auxina</text>
-              </g>
-              <g class="hormone-curve" data-hormone="gibberellin" role="button" tabindex="0" aria-label="Ácido giberélico">
-                <path d="M298,248 C322,248 338,228 348,192 C348,152 348,152 372,122 C402,88 432,78 462,82 C492,88 515,118 535,148 C552,172 572,208 598,238 C628,248 655,248 680,248 Z" fill="url(#gaGrad)" stroke="#10b981" stroke-width="2"/>
-                <text class="hormone-curve-label" x="432" y="95" text-anchor="middle">Ácido giberélico</text>
-              </g>
-              <g class="hormone-curve" data-hormone="ethylene" role="button" tabindex="0" aria-label="Etileno">
-                <path d="M525,248 C555,248 575,238 592,215 C610,188 628,165 655,142 C682,118 710,102 735,95 C748,92 752,115 752,142 C762,168 785,200 812,228 C840,248 865,248 885,248 Z" fill="url(#ethGrad)" stroke="#f59e0b" stroke-width="2"/>
-                <text class="hormone-curve-label" x="655" y="118" text-anchor="middle">Etileno</text>
-              </g>
-              <g class="hormone-curve" data-hormone="aba" role="button" tabindex="0" aria-label="Ácido abscísico">
-                <path d="M752,142 C772,125 802,98 838,82 C872,68 908,85 942,128 C968,172 978,215 980,248 L752,248 Z" fill="url(#abaGrad)" stroke="#a855f7" stroke-width="2"/>
-                <text class="hormone-curve-label" x="878" y="98" text-anchor="middle">Ácido abscísico</text>
-              </g>
-              <g class="hormone-event-marker" data-stage="I" data-hormone="cytokinin" role="button" tabindex="0" aria-label="ETAPA I: Iniciación celular (División celular)">
-                <rect class="event-label-bg" x="142" y="56" width="174" height="34" rx="8"/>
-                <text class="event-label-title" x="229" y="70" text-anchor="middle">Iniciación celular</text>
-                <text class="event-label-sub" x="229" y="82" text-anchor="middle">(División celular)</text>
-                <line class="event-connector" x1="229" y1="90" x2="238" y2="136"/>
-                <circle cx="238" cy="148" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
-              </g>
-              <g class="hormone-event-marker" data-stage="II" data-hormone="auxin" role="button" tabindex="0" aria-label="ETAPA II: Crecimiento celular">
-                <rect class="event-label-bg" x="254" y="168" width="148" height="22" rx="8"/>
-                <text class="event-label-title" x="328" y="183" text-anchor="middle">Crecimiento celular</text>
-                <line class="event-connector" x1="328" y1="168" x2="348" y2="159"/>
-                <circle cx="348" cy="152" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
-              </g>
-              <g class="hormone-event-marker" data-stage="II" data-hormone="gibberellin" role="button" tabindex="0" aria-label="ETAPA II: Madurez celular">
-                <rect class="event-label-bg" x="441" y="56" width="146" height="22" rx="8"/>
-                <text class="event-label-title" x="514" y="71" text-anchor="middle">Madurez celular</text>
-                <line class="event-connector" x1="514" y1="78" x2="535" y2="136"/>
-                <circle cx="535" cy="148" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
-              </g>
-              <g class="hormone-event-marker" data-stage="III" data-hormone="ethylene" role="button" tabindex="0" aria-label="ETAPA III: Senescencia">
-                <rect class="event-label-bg" x="658" y="56" width="108" height="22" rx="8"/>
-                <text class="event-label-title" x="712" y="71" text-anchor="middle">Senescencia</text>
-                <line class="event-connector" x1="712" y1="78" x2="752" y2="130"/>
-                <circle cx="752" cy="142" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
-              </g>
-              <text x="500" y="332" text-anchor="middle" fill="#64748b" font-size="11" font-weight="700">Nutrientes claves / Co-factores / Hormonas</text>
+              <g id="hormoneCurvesMount"></g>
+              <g id="hormoneMarkersMount"></g>
+              <text x="500" y="362" text-anchor="middle" fill="#64748b" font-size="11" font-weight="700">Nutrientes claves / Co-factores / Hormonas</text>
             </svg>
           </div>
 
@@ -1660,6 +1628,118 @@
       updateHormonePanelMaxHeight();
     }
 
+    var HORMONE_CHART_GEOM = { x0: 70, x1: 980, baseY: 248, step: 2.5 };
+    var HORMONE_CHART_CURVES = [
+      { id: 'cytokinin', grad: 'ckGrad', mu: 188, sigma: 52, amp: 148 },
+      { id: 'auxin', grad: 'auxGrad', mu: 282, sigma: 60, amp: 158 },
+      { id: 'gibberellin', grad: 'gaGrad', mu: 422, sigma: 66, amp: 170 },
+      { id: 'ethylene', grad: 'ethGrad', mu: 642, sigma: 72, amp: 154 },
+      { id: 'aba', grad: 'abaGrad', mu: 872, sigma: 60, amp: 162 }
+    ];
+    var HORMONE_TRANSITIONS = [
+      { stage: 'I', hormone: 'cytokinin', title: 'Iniciación celular', sub: '(División celular)', pair: [0, 1] },
+      { stage: 'II', hormone: 'auxin', title: 'Crecimiento celular', sub: '', pair: [1, 2] },
+      { stage: 'II', hormone: 'gibberellin', title: 'Madurez celular', sub: '', pair: [2, 3] },
+      { stage: 'III', hormone: 'ethylene', title: 'Senescencia', sub: '', pair: [3, 4] }
+    ];
+
+    function hormoneChartLevel(cfg, x) {
+      return HORMONE_CHART_GEOM.baseY - cfg.amp * Math.exp(-0.5 * Math.pow((x - cfg.mu) / cfg.sigma, 2));
+    }
+
+    function hormoneChartCrossover(cfgA, cfgB) {
+      var start = Math.min(cfgA.mu, cfgB.mu);
+      var end = Math.max(cfgA.mu, cfgB.mu);
+      var bestX = (start + end) * 0.5;
+      var bestDiff = Infinity;
+      for (var x = start; x <= end; x += 0.4) {
+        var diff = Math.abs(hormoneChartLevel(cfgA, x) - hormoneChartLevel(cfgB, x));
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestX = x;
+        }
+      }
+      var y = (hormoneChartLevel(cfgA, bestX) + hormoneChartLevel(cfgB, bestX)) * 0.5;
+      return { x: Math.round(bestX * 10) / 10, y: Math.round(y * 10) / 10 };
+    }
+
+    function hormoneChartAreaPath(cfg) {
+      var g = HORMONE_CHART_GEOM;
+      var pts = [];
+      var x;
+      for (x = g.x0; x <= g.x1; x += g.step) {
+        var y = hormoneChartLevel(cfg, x);
+        if (y <= g.baseY - 0.8) pts.push({ x: x, y: y });
+      }
+      if (pts.length < 2) return '';
+      var d = 'M' + pts[0].x + ',' + g.baseY + ' L' + pts[0].x + ',' + pts[0].y;
+      for (var i = 1; i < pts.length; i++) d += ' L' + pts[i].x + ',' + pts[i].y;
+      d += ' L' + pts[pts.length - 1].x + ',' + g.baseY + ' Z';
+      return d;
+    }
+
+    function hormoneChartLinePath(cfg) {
+      var g = HORMONE_CHART_GEOM;
+      var pts = [];
+      var x;
+      for (x = g.x0; x <= g.x1; x += g.step) {
+        var y = hormoneChartLevel(cfg, x);
+        if (y <= g.baseY - 0.8) pts.push({ x: x, y: y });
+      }
+      if (pts.length < 2) return '';
+      var d = 'M' + pts[0].x + ',' + pts[0].y;
+      for (var i = 1; i < pts.length; i++) d += ' L' + pts[i].x + ',' + pts[i].y;
+      return d;
+    }
+
+    function hormoneChartClamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function hormoneChartMarkerHtml(transition, point) {
+      var titleW = transition.sub ? 168 : 138;
+      var titleH = transition.sub ? 32 : 22;
+      var labelBottom = 318;
+      var labelY = labelBottom - titleH;
+      var sideOffset = point.x < 520 ? 32 : -32;
+      var labelX = hormoneChartClamp(point.x + sideOffset, 78 + titleW * 0.5, 982 - titleW * 0.5);
+      var rectX = labelX - titleW * 0.5;
+      var aria = 'ETAPA ' + transition.stage + ': ' + transition.title + (transition.sub ? ' ' + transition.sub : '');
+      var subHtml = transition.sub
+        ? '<text class="event-label-sub" x="' + labelX + '" y="' + (labelY + 25) + '" text-anchor="middle">' + escapeHtml(transition.sub) + '</text>'
+        : '';
+      var titleY = transition.sub ? labelY + 13 : labelY + 14;
+      return '<g class="hormone-event-marker" data-stage="' + transition.stage + '" data-hormone="' + transition.hormone + '" role="button" tabindex="0" aria-label="' + escapeHtml(aria) + '">' +
+        '<line class="event-connector" x1="' + labelX + '" y1="' + labelY + '" x2="' + point.x + '" y2="' + (point.y + 7) + '"/>' +
+        '<circle cx="' + point.x + '" cy="' + point.y + '" r="6.5" fill="#fff" stroke="#16a34a" stroke-width="2.2"/>' +
+        '<rect class="event-label-bg" x="' + rectX + '" y="' + labelY + '" width="' + titleW + '" height="' + titleH + '" rx="8"/>' +
+        '<text class="event-label-title" x="' + labelX + '" y="' + titleY + '" text-anchor="middle">' + escapeHtml(transition.title) + '</text>' +
+        subHtml +
+        '</g>';
+    }
+
+    function renderHormoneChart() {
+      var curvesMount = document.getElementById('hormoneCurvesMount');
+      var markersMount = document.getElementById('hormoneMarkersMount');
+      if (!curvesMount || !markersMount) return;
+
+      curvesMount.innerHTML = HORMONE_CHART_CURVES.map(function (cfg) {
+        var meta = HORMONES.find(function (h) { return h.id === cfg.id; });
+        var color = meta ? meta.color : '#16a34a';
+        var name = meta ? meta.name : cfg.id;
+        return '<g class="hormone-curve" data-hormone="' + cfg.id + '" role="button" tabindex="0" aria-label="' + escapeHtml(name) + '">' +
+          '<path class="hormone-fill" d="' + hormoneChartAreaPath(cfg) + '" fill="url(#' + cfg.grad + ')"/>' +
+          '<path class="hormone-line" d="' + hormoneChartLinePath(cfg) + '" stroke="' + color + '"/>' +
+          '</g>';
+      }).join('');
+
+      markersMount.innerHTML = HORMONE_TRANSITIONS.map(function (transition) {
+        var a = HORMONE_CHART_CURVES[transition.pair[0]];
+        var b = HORMONE_CHART_CURVES[transition.pair[1]];
+        return hormoneChartMarkerHtml(transition, hormoneChartCrossover(a, b));
+      }).join('');
+    }
+
     function bindHormoneChartMarkers() {
       Array.prototype.forEach.call(document.querySelectorAll('.hormone-event-marker'), function (marker) {
         function activate() {
@@ -1677,6 +1757,7 @@
     }
 
     function initHormones() {
+      renderHormoneChart();
       renderHormoneLegend();
       renderHormoneStages();
       bindHormoneChartMarkers();

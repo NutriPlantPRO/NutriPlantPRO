@@ -120,7 +120,7 @@ module.exports = {
       file: 'atlas-aminoacidos-vegetales-free.html',
       manualChapter: 'atlas_aminoacidos_vegetales',
       summary:
-        'Atlas interactivo con dos secciones: 20 aminoácidos proteinogénicos (fórmula, PM, modelo 3D, rutas, estrés, fenología, evidencia) y ciclo hormonal de la planta por etapas (hormonas dominantes, eventos celulares y nutrientes cofactores).'
+        'Atlas interactivo con dos pestañas: (1) 20 aminoácidos proteinogénicos — fórmula, PM, 3D, rutas, estrés, fenología, evidencia; (2) ciclo hormonal — mapa visual didáctico CK→Auxina→GA→Etileno→ABA en 4 etapas (germinación, vegetativo, floración, maduración), eventos celulares (iniciación, crecimiento, madurez, senescencia), nutrientes cofactores por etapa, fichas por hormona y vínculo con aminoácidos. No es curva de laboratorio; modelo general por cultivo. Fuentes Taiz/Zeiger, Marschner, BMBP, KEGG.'
     },
     {
       id: 'fertilizer_compatibility',

@@ -65,6 +65,7 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 7. **“¿Cómo calculamos kg/ha en fertilidad del suelo? Cita la URL pública”** → `manual_tecnico_catalog` chapter `analisis_suelo_fertilidad_kgha` o Knowledge MANUAL
 8. **“¿Cómo calcula NutriPlant el balance hídrico de riego?”** → `manual_tecnico_catalog` chapter `balance_hidrico_riego_clima` o Knowledge MANUAL §4.11b
 8.1. **“¿Qué aminoácidos ayudan más bajo estrés hídrico o salino?”** → `manual_tecnico_catalog` chapter `atlas_aminoacidos_vegetales` + `free_tools_catalog` tool `atlas_aminoacidos_vegetales`
+8.2. **“¿Qué hormona manda en floración / qué nutrientes en etapa vegetativa?”** → `manual_tecnico_catalog` chapter `atlas_aminoacidos_vegetales` (§ ciclo hormonal) + `free_tools_catalog` tool `atlas_aminoacidos_vegetales` pestaña Ciclo hormonal
 9. **“¿Qué balance hídrico tiene el proyecto [nombre]?”** → `project_climate` mode=saved (`irrigation_quick_calc`)
 10. **“Dame el clima actualizado del proyecto [nombre]”** → `project_climate` mode=**all** (`rolling_windows_ahora`, `irrigation_quick_calc_live`)
 11. **“Crea un proyecto personal GPT para programa limón 45 t/ha”** → `my_program_project_create`

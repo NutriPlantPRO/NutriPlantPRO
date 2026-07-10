@@ -163,8 +163,8 @@
       href: 'capitulos/atlas-aminoacidos-vegetales.html',
       icon: '🧬',
       pillar: 'F · Fisiología vegetal',
-      title: 'Atlas de Aminoácidos Vegetales',
-      keywords: 'atlas aminoácidos aminoacidos vegetales proteinogénicos proteinogenicos prolina triptofano glutamato glutamina arginina glicina cisteína metionina fenilalanina tirosina estrés hidrico salino termico oxidativo fenología formulación nutricional auxinas etileno poliaminas clorofila glutation lignina antioxidantes PubChem KEGG PlantCyc evidencia'
+      title: 'Atlas Fisiológico Vegetal',
+      keywords: 'atlas aminoácidos aminoacidos vegetales proteinogénicos ciclo hormonal fitohormonas citoquinina auxina giberelinas etileno ABA ácido abscísico etapas fenológicas germinación vegetativo floración maduración senescencia prolina triptofano glutamato glutamina metionina estrés fenología formulación nutricional auxinas etileno poliaminas PubChem KEGG PlantCyc Taiz Zeiger Marschner evidencia'
     },
     {
       href: 'capitulos/huella-carbono-fertilizantes.html',
