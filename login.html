@@ -279,64 +279,28 @@
         <div class="login-social-panels">
           <div class="login-social-pane active" role="tabpanel" id="social-panel-facebook" aria-labelledby="social-tab-facebook" data-social-panel="facebook">
             <div class="login-social-pane__body">
-              <div class="login-social-card login-social-card--facebook">
-                <div class="login-social-card__header">
-                  <img src="assets/N_Hoja_Azul.png" alt="" width="52" height="52" decoding="async" />
-                  <div>
-                    <strong>NutriPlant PRO</strong>
-                    <span>Comunidad en Facebook</span>
-                  </div>
-                </div>
-                <p>Publicaciones técnicas, novedades de la plataforma y comunidad agronómica.</p>
-              </div>
+              <div class="login-social-pane__embed login-social-pane__embed--facebook" data-social-embed="facebook"></div>
             </div>
             <a href="https://www.facebook.com/share/16tGD4XMM9/" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--facebook">Ver página en Facebook</a>
           </div>
 
           <div class="login-social-pane" role="tabpanel" id="social-panel-instagram" aria-labelledby="social-tab-instagram" data-social-panel="instagram" hidden>
             <div class="login-social-pane__body">
-              <div class="login-social-card login-social-card--instagram">
-                <div class="login-social-card__header">
-                  <img src="assets/N_Hoja_Azul.png" alt="" width="52" height="52" decoding="async" />
-                  <div>
-                    <strong>NutriPlant PRO</strong>
-                    <span>@nutriplantpro</span>
-                  </div>
-                </div>
-                <p>Fotos, reels y tips de nutrición vegetal para el campo.</p>
-              </div>
+              <div class="login-social-pane__embed login-social-pane__embed--instagram" data-social-embed="instagram"></div>
             </div>
             <a href="https://www.instagram.com/nutriplantpro?utm_source=qr&igsh=MWx3dTZeamw1dD12gw==" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--instagram">Ver perfil en Instagram</a>
           </div>
 
           <div class="login-social-pane" role="tabpanel" id="social-panel-youtube" aria-labelledby="social-tab-youtube" data-social-panel="youtube" hidden>
             <div class="login-social-pane__body">
-              <div class="login-social-card login-social-card--youtube">
-                <div class="login-social-card__header">
-                  <img src="assets/N_Hoja_Azul.png" alt="" width="52" height="52" decoding="async" />
-                  <div>
-                    <strong>NutriPlant PRO</strong>
-                    <span>@nutriplantpro</span>
-                  </div>
-                </div>
-                <p>Videos técnicos, tutoriales y criterio agronómico en formato audiovisual.</p>
-              </div>
+              <div class="login-social-pane__embed login-social-pane__embed--youtube" data-social-embed="youtube"></div>
             </div>
             <a href="https://youtube.com/@nutriplantpro?si=3W90eDXRAgyZxd" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--youtube">Ver canal en YouTube</a>
           </div>
 
           <div class="login-social-pane" role="tabpanel" id="social-panel-linkedin" aria-labelledby="social-tab-linkedin" data-social-panel="linkedin" hidden>
             <div class="login-social-pane__body">
-              <div class="login-social-card login-social-card--linkedin">
-                <div class="login-social-card__header">
-                  <img src="assets/N_Hoja_Azul.png" alt="" width="52" height="52" decoding="async" />
-                  <div>
-                    <strong>NutriPlant PRO</strong>
-                    <span>Empresa · Nutrición vegetal</span>
-                  </div>
-                </div>
-                <p>Artículos, actualizaciones de plataforma y red profesional agronómica.</p>
-              </div>
+              <div class="login-social-pane__embed login-social-pane__embed--linkedin" data-social-embed="linkedin"></div>
             </div>
             <a href="https://www.linkedin.com/company/nutriplant-pro/" target="_blank" rel="noopener noreferrer" class="login-social-card__cta login-social-card__cta--linkedin">Ver página en LinkedIn</a>
           </div>
@@ -4142,6 +4106,25 @@
       var tabs = root.querySelectorAll('[data-social-tab]');
       var panes = root.querySelectorAll('[data-social-panel]');
       var tiktokScriptLoaded = false;
+      var linkedinScriptLoaded = false;
+      var SOCIAL_EMBED = {
+        facebookPage: 'https://www.facebook.com/profile.php?id=61580040483626',
+        instagramUser: 'nutriplantpro',
+        youtubeUploadsList: 'UUr9sFXc3chT8HyQfDd9mpXQ',
+        linkedinCompanyId: '108457533'
+      };
+
+      function createSocialIframe(src, title, options) {
+        var iframe = document.createElement('iframe');
+        iframe.src = src;
+        iframe.title = title;
+        iframe.loading = 'lazy';
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('allowfullscreen', 'true');
+        if (options && options.allow) iframe.setAttribute('allow', options.allow);
+        if (options && options.scrolling) iframe.setAttribute('scrolling', options.scrolling);
+        return iframe;
+      }
 
       function loadTikTokEmbed() {
         if (tiktokScriptLoaded) return;
@@ -4150,6 +4133,78 @@
         script.src = 'https://www.tiktok.com/embed.js';
         script.async = true;
         document.body.appendChild(script);
+      }
+
+      function loadLinkedInScript(onReady) {
+        if (window.IN && typeof window.IN.parse === 'function') {
+          onReady();
+          return;
+        }
+        if (linkedinScriptLoaded) {
+          window.setTimeout(onReady, 300);
+          return;
+        }
+        linkedinScriptLoaded = true;
+        var script = document.createElement('script');
+        script.src = 'https://platform.linkedin.com/in.js';
+        script.type = 'text/javascript';
+        script.appendChild(document.createTextNode('lang: es_ES'));
+        script.onload = onReady;
+        document.body.appendChild(script);
+      }
+
+      function loadSocialEmbed(id) {
+        if (id === 'tiktok') {
+          loadTikTokEmbed();
+          return;
+        }
+
+        var pane = root.querySelector('[data-social-panel="' + id + '"]');
+        if (!pane) return;
+        var container = pane.querySelector('[data-social-embed]');
+        if (!container || container.dataset.loaded === '1') return;
+        container.dataset.loaded = '1';
+
+        if (id === 'facebook') {
+          var fbHref = encodeURIComponent(SOCIAL_EMBED.facebookPage);
+          container.appendChild(createSocialIframe(
+            'https://www.facebook.com/plugins/page.php?href=' + fbHref + '&tabs=timeline&width=500&height=500&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=true',
+            'NutriPlant PRO en Facebook',
+            { scrolling: 'no', allow: 'autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share' }
+          ));
+          return;
+        }
+
+        if (id === 'instagram') {
+          container.appendChild(createSocialIframe(
+            'https://www.instagram.com/' + SOCIAL_EMBED.instagramUser + '/embed/',
+            'NutriPlant PRO en Instagram'
+          ));
+          return;
+        }
+
+        if (id === 'youtube') {
+          container.appendChild(createSocialIframe(
+            'https://www.youtube.com/embed/videoseries?list=' + SOCIAL_EMBED.youtubeUploadsList + '&rel=0',
+            'Canal NutriPlant PRO en YouTube',
+            { allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share' }
+          ));
+          return;
+        }
+
+        if (id === 'linkedin') {
+          loadLinkedInScript(function () {
+            var widget = document.createElement('script');
+            widget.type = 'IN/CompanyProfile';
+            widget.setAttribute('data-id', SOCIAL_EMBED.linkedinCompanyId);
+            widget.setAttribute('data-format', 'inline');
+            widget.setAttribute('data-related', 'false');
+            container.appendChild(widget);
+            if (window.IN && typeof window.IN.parse === 'function') {
+              window.IN.parse(container);
+            }
+          });
+        }
       }
 
       function syncSocialPanelHeight() {
@@ -4180,8 +4235,9 @@
           pane.classList.toggle('active', active);
           pane.hidden = !active;
         });
-        if (id === 'tiktok') loadTikTokEmbed();
+        loadSocialEmbed(id);
         window.requestAnimationFrame(syncSocialPanelHeight);
+        window.setTimeout(syncSocialPanelHeight, 600);
       }
 
       tabs.forEach(function (tab) {

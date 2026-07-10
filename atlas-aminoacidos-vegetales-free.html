@@ -471,12 +471,40 @@
     .hormone-chart .stage-zone {
       pointer-events: none;
     }
+    .hormone-chart .stage-header {
+      pointer-events: none;
+    }
+    .hormone-chart .stage-header-title {
+      fill: #0f172a;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .hormone-chart .stage-header-name {
+      fill: #334155;
+      font-size: 8.5px;
+      font-weight: 600;
+    }
+    .hormone-chart .hormone-curve-label {
+      fill: #0f172a;
+      font-size: 9px;
+      font-weight: 800;
+      pointer-events: none;
+      paint-order: stroke;
+      stroke: rgba(255, 255, 255, 0.82);
+      stroke-width: 3px;
+      stroke-linejoin: round;
+    }
     .hormone-chart .stage-divider {
-      stroke: #5eead4;
-      stroke-width: 1.6;
-      stroke-dasharray: 2 7;
+      stroke: #7dd3fc;
+      stroke-width: 1.4;
+      stroke-dasharray: 3 6;
       stroke-linecap: round;
-      opacity: 0.9;
+      opacity: 0.85;
+      pointer-events: none;
+    }
+    .hormone-chart .chart-axis {
+      stroke: #cbd5e1;
+      stroke-width: 1;
       pointer-events: none;
     }
     .hormone-chart .event-label-bg {
@@ -879,80 +907,99 @@
       <section class="hormone-layout">
         <div class="hormone-board">
           <h2>Niveles hormonales por etapa</h2>
-          <p class="hormone-lead">Las curvas representan tendencias relativas de concentración/actividad hormonal a lo largo del ciclo. Toca una etapa o una hormona para ver la ficha técnica.</p>
+          <p class="hormone-lead">Las curvas representan tendencias relativas de concentración/actividad hormonal. Los puntos blancos marcan el <strong>cambio de mando</strong>: donde una hormona cede y la siguiente toma el control (Citoquinina → Auxina → Giberelinas → Etileno → ABA). Toca una etapa o una hormona para ver la ficha técnica.</p>
           <div class="hormone-chart-wrap">
-            <svg class="hormone-chart" viewBox="0 0 1000 330" role="img" aria-label="Ciclo hormonal de la planta por etapas">
+            <svg class="hormone-chart" viewBox="0 0 1000 350" role="img" aria-label="Ciclo hormonal de la planta por etapas">
               <defs>
-                <linearGradient id="ckGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22d3ee" stop-opacity="0.92"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0.06"/></linearGradient>
-                <linearGradient id="auxGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#60a5fa" stop-opacity="0.92"/><stop offset="100%" stop-color="#60a5fa" stop-opacity="0.06"/></linearGradient>
-                <linearGradient id="gaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#34d399" stop-opacity="0.92"/><stop offset="100%" stop-color="#34d399" stop-opacity="0.06"/></linearGradient>
-                <linearGradient id="ethGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fbbf24" stop-opacity="0.92"/><stop offset="100%" stop-color="#fbbf24" stop-opacity="0.06"/></linearGradient>
-                <linearGradient id="abaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c084fc" stop-opacity="0.92"/><stop offset="100%" stop-color="#c084fc" stop-opacity="0.06"/></linearGradient>
+                <linearGradient id="ckGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22d3ee" stop-opacity="0.88"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0.05"/></linearGradient>
+                <linearGradient id="auxGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#60a5fa" stop-opacity="0.88"/><stop offset="100%" stop-color="#60a5fa" stop-opacity="0.05"/></linearGradient>
+                <linearGradient id="gaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#34d399" stop-opacity="0.88"/><stop offset="100%" stop-color="#34d399" stop-opacity="0.05"/></linearGradient>
+                <linearGradient id="ethGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fbbf24" stop-opacity="0.88"/><stop offset="100%" stop-color="#fbbf24" stop-opacity="0.05"/></linearGradient>
+                <linearGradient id="abaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c084fc" stop-opacity="0.88"/><stop offset="100%" stop-color="#c084fc" stop-opacity="0.05"/></linearGradient>
               </defs>
-              <rect x="0" y="0" width="1000" height="330" fill="#f8fffb"/>
-              <g class="stage-zones" aria-hidden="true">
-                <rect class="stage-zone" x="70" y="48" width="250" height="198" fill="#d1fae5" fill-opacity="0.28"/>
-                <rect class="stage-zone" x="320" y="48" width="250" height="198" fill="#ecfdf5" fill-opacity="0.42"/>
-                <rect class="stage-zone" x="570" y="48" width="250" height="198" fill="#d1fae5" fill-opacity="0.24"/>
-                <rect class="stage-zone" x="820" y="48" width="160" height="198" fill="#ecfdf5" fill-opacity="0.36"/>
+              <rect x="0" y="0" width="1000" height="350" fill="#f8fffb"/>
+              <g class="stage-headers" aria-hidden="true">
+                <g class="stage-header">
+                  <rect x="70" y="8" width="228" height="34" rx="8" fill="#bfdbfe" fill-opacity="0.95"/>
+                  <text class="stage-header-title" x="184" y="22" text-anchor="middle">ETAPA I</text>
+                  <text class="stage-header-name" x="184" y="34" text-anchor="middle">Germinación y Establecimiento</text>
+                </g>
+                <g class="stage-header">
+                  <rect x="298" y="8" width="227" height="34" rx="8" fill="#bbf7d0" fill-opacity="0.95"/>
+                  <text class="stage-header-title" x="411" y="22" text-anchor="middle">ETAPA II</text>
+                  <text class="stage-header-name" x="411" y="34" text-anchor="middle">Crecimiento Vegetativo</text>
+                </g>
+                <g class="stage-header">
+                  <rect x="525" y="8" width="227" height="34" rx="8" fill="#fbcfe8" fill-opacity="0.95"/>
+                  <text class="stage-header-title" x="638" y="22" text-anchor="middle">ETAPA III</text>
+                  <text class="stage-header-name" x="638" y="34" text-anchor="middle">Floración y Reproducción</text>
+                </g>
+                <g class="stage-header">
+                  <rect x="752" y="8" width="228" height="34" rx="8" fill="#fed7aa" fill-opacity="0.95"/>
+                  <text class="stage-header-title" x="866" y="22" text-anchor="middle">ETAPA IV</text>
+                  <text class="stage-header-name" x="866" y="34" text-anchor="middle">Maduración y senescencia</text>
+                </g>
               </g>
-              <line x1="70" y1="48" x2="70" y2="238" stroke="#94a3b8" stroke-width="1.2"/>
-              <text x="18" y="148" transform="rotate(-90 18 148)" fill="#475569" font-size="12" font-weight="700">Niveles hormonales</text>
-              <line x1="70" y1="238" x2="980" y2="238" stroke="#cbd5e1" stroke-width="1.2"/>
+              <g class="stage-zones" aria-hidden="true">
+                <rect class="stage-zone" x="70" y="52" width="228" height="196" fill="#dbeafe" fill-opacity="0.18"/>
+                <rect class="stage-zone" x="298" y="52" width="227" height="196" fill="#dcfce7" fill-opacity="0.22"/>
+                <rect class="stage-zone" x="525" y="52" width="227" height="196" fill="#fce7f3" fill-opacity="0.18"/>
+                <rect class="stage-zone" x="752" y="52" width="228" height="196" fill="#ffedd5" fill-opacity="0.2"/>
+              </g>
+              <line class="chart-axis" x1="70" y1="52" x2="70" y2="248"/>
+              <text x="18" y="154" transform="rotate(-90 18 154)" fill="#475569" font-size="12" font-weight="700">Niveles hormonales</text>
+              <line class="chart-axis" x1="70" y1="248" x2="980" y2="248"/>
               <g class="stage-dividers" aria-hidden="true">
-                <line class="stage-divider" x1="320" y1="42" x2="320" y2="246"/>
-                <line class="stage-divider" x1="570" y1="42" x2="570" y2="246"/>
-                <line class="stage-divider" x1="820" y1="42" x2="820" y2="246"/>
+                <line class="stage-divider" x1="298" y1="48" x2="298" y2="252"/>
+                <line class="stage-divider" x1="525" y1="48" x2="525" y2="252"/>
+                <line class="stage-divider" x1="752" y1="48" x2="752" y2="252"/>
               </g>
               <g class="hormone-curve" data-hormone="cytokinin" role="button" tabindex="0" aria-label="Citoquinina">
-                <path d="M70,228 C130,228 170,78 250,228 C310,228 350,128 430,228" fill="url(#ckGrad)" stroke="#06b6d4" stroke-width="2.4"/>
+                <path d="M70,248 C115,248 155,248 172,168 C188,82 202,98 218,125 C232,138 242,138 242,138 C262,168 280,218 298,248 Z" fill="url(#ckGrad)" stroke="#06b6d4" stroke-width="2.2"/>
+                <text class="hormone-curve-label" x="188" y="108" text-anchor="middle">Citoquinina</text>
               </g>
               <g class="hormone-curve" data-hormone="auxin" role="button" tabindex="0" aria-label="Auxina">
-                <path d="M70,233 C180,233 260,93 420,218 C500,158 560,103 700,228" fill="url(#auxGrad)" stroke="#3b82f6" stroke-width="2.4"/>
+                <path d="M70,248 C135,248 195,238 220,198 C235,168 242,138 242,138 C256,115 275,82 298,72 C320,58 340,78 355,112 C362,148 362,148 378,178 C400,218 425,248 455,248 Z" fill="url(#auxGrad)" stroke="#3b82f6" stroke-width="2.2"/>
+                <text class="hormone-curve-label" x="298" y="92" text-anchor="middle">Auxina</text>
               </g>
               <g class="hormone-curve" data-hormone="gibberellin" role="button" tabindex="0" aria-label="Ácido giberélico">
-                <path d="M250,243 C380,243 470,88 620,103 C720,118 820,178 930,233" fill="url(#gaGrad)" stroke="#10b981" stroke-width="2.4"/>
+                <path d="M298,248 C325,248 345,218 358,178 C362,148 362,148 378,122 C408,75 448,58 482,62 C512,68 538,102 552,142 C566,162 578,188 598,222 C630,248 655,248 680,248 Z" fill="url(#gaGrad)" stroke="#10b981" stroke-width="2.2"/>
+                <text class="hormone-curve-label" x="448" y="78" text-anchor="middle">Ácido giberélico</text>
               </g>
               <g class="hormone-curve" data-hormone="ethylene" role="button" tabindex="0" aria-label="Etileno">
-                <path d="M430,243 C600,243 700,98 820,108 C900,128 960,178 980,228" fill="url(#ethGrad)" stroke="#f59e0b" stroke-width="2.4"/>
+                <path d="M525,248 C538,248 548,210 552,142 C562,115 592,82 620,76 C638,72 662,82 688,108 C715,132 738,138 752,138 C768,138 790,165 812,208 C840,242 860,248 885,248 Z" fill="url(#ethGrad)" stroke="#f59e0b" stroke-width="2.2"/>
+                <text class="hormone-curve-label" x="638" y="98" text-anchor="middle">Etileno</text>
               </g>
               <g class="hormone-curve" data-hormone="aba" role="button" tabindex="0" aria-label="Ácido abscísico">
-                <path d="M620,248 C760,248 860,103 980,78 L980,238 L620,238 Z" fill="url(#abaGrad)" stroke="#a855f7" stroke-width="2.4"/>
+                <path d="M752,138 C780,105 818,72 858,60 C888,52 918,68 948,112 C968,158 978,205 980,248 L752,248 Z" fill="url(#abaGrad)" stroke="#a855f7" stroke-width="2.2"/>
+                <text class="hormone-curve-label" x="878" y="82" text-anchor="middle">Ácido abscísico</text>
               </g>
               <g class="hormone-event-marker" data-stage="I" data-hormone="cytokinin" role="button" tabindex="0" aria-label="ETAPA I: Iniciación celular (División celular)">
-                <rect class="event-label-bg" x="121" y="48" width="174" height="34" rx="8"/>
-                <text class="event-label-title" x="208" y="62" text-anchor="middle">Iniciación celular</text>
-                <text class="event-label-sub" x="208" y="74" text-anchor="middle">(División celular)</text>
-                <line class="event-connector" x1="208" y1="82" x2="218" y2="170"/>
-                <circle cx="218" cy="181" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
+                <rect class="event-label-bg" x="145" y="56" width="174" height="34" rx="8"/>
+                <text class="event-label-title" x="232" y="70" text-anchor="middle">Iniciación celular</text>
+                <text class="event-label-sub" x="232" y="82" text-anchor="middle">(División celular)</text>
+                <line class="event-connector" x1="232" y1="90" x2="242" y2="126"/>
+                <circle cx="242" cy="138" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
-              <g class="hormone-event-marker" data-stage="II" data-hormone="gibberellin" role="button" tabindex="0" aria-label="ETAPA II: Crecimiento celular">
-                <rect class="event-label-bg" x="301" y="158" width="148" height="22" rx="8"/>
-                <text class="event-label-title" x="375" y="173" text-anchor="middle">Crecimiento celular</text>
-                <line class="event-connector" x1="375" y1="180" x2="375" y2="192"/>
-                <circle cx="375" cy="201" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
+              <g class="hormone-event-marker" data-stage="II" data-hormone="auxin" role="button" tabindex="0" aria-label="ETAPA II: Crecimiento celular">
+                <rect class="event-label-bg" x="268" y="168" width="148" height="22" rx="8"/>
+                <text class="event-label-title" x="342" y="183" text-anchor="middle">Crecimiento celular</text>
+                <line class="event-connector" x1="342" y1="168" x2="362" y2="155"/>
+                <circle cx="362" cy="148" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
-              <g class="hormone-event-marker" data-stage="III" data-hormone="gibberellin" role="button" tabindex="0" aria-label="ETAPA III: Madurez celular">
-                <rect class="event-label-bg" x="527" y="44" width="146" height="22" rx="8"/>
-                <text class="event-label-title" x="600" y="59" text-anchor="middle">Madurez celular</text>
-                <line class="event-connector" x1="600" y1="66" x2="600" y2="94"/>
-                <circle cx="600" cy="102" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
+              <g class="hormone-event-marker" data-stage="II" data-hormone="gibberellin" role="button" tabindex="0" aria-label="ETAPA II: Madurez celular">
+                <rect class="event-label-bg" x="458" y="56" width="146" height="22" rx="8"/>
+                <text class="event-label-title" x="531" y="71" text-anchor="middle">Madurez celular</text>
+                <line class="event-connector" x1="531" y1="78" x2="552" y2="130"/>
+                <circle cx="552" cy="142" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
-              <g class="hormone-event-marker" data-stage="IV" data-hormone="ethylene" role="button" tabindex="0" aria-label="ETAPA IV: Senescencia">
-                <rect class="event-label-bg" x="754" y="48" width="108" height="22" rx="8"/>
-                <text class="event-label-title" x="808" y="63" text-anchor="middle">Senescencia</text>
-                <line class="event-connector" x1="808" y1="70" x2="808" y2="97"/>
-                <circle cx="808" cy="108" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
+              <g class="hormone-event-marker" data-stage="III" data-hormone="ethylene" role="button" tabindex="0" aria-label="ETAPA III: Senescencia">
+                <rect class="event-label-bg" x="658" y="56" width="108" height="22" rx="8"/>
+                <text class="event-label-title" x="712" y="71" text-anchor="middle">Senescencia</text>
+                <line class="event-connector" x1="712" y1="78" x2="752" y2="126"/>
+                <circle cx="752" cy="138" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
-              <text x="195" y="260" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="800">ETAPA I</text>
-              <text x="445" y="260" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="800">ETAPA II</text>
-              <text x="695" y="260" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="800">ETAPA III</text>
-              <text x="900" y="260" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="800">ETAPA IV</text>
-              <text x="195" y="276" text-anchor="middle" fill="#64748b" font-size="10">Germinación</text>
-              <text x="445" y="276" text-anchor="middle" fill="#64748b" font-size="10">Vegetativo</text>
-              <text x="695" y="276" text-anchor="middle" fill="#64748b" font-size="10">Floración</text>
-              <text x="900" y="276" text-anchor="middle" fill="#64748b" font-size="10">Maduración</text>
-              <text x="500" y="312" text-anchor="middle" fill="#64748b" font-size="11" font-weight="700">Nutrientes claves / Co-factores / Hormonas</text>
+              <text x="500" y="332" text-anchor="middle" fill="#64748b" font-size="11" font-weight="700">Nutrientes claves / Co-factores / Hormonas</text>
             </svg>
           </div>
 
@@ -1298,9 +1345,9 @@
         title: 'ETAPA II',
         name: 'Crecimiento Vegetativo',
         hormones: ['auxin', 'gibberellin'],
-        event: 'Crecimiento celular',
+        event: 'Crecimiento celular · Madurez celular',
         nutrients: ['Ca', 'Cu', 'Mg', 'B', 'Mn', 'N', 'Zn', 'NO₃'],
-        physiology: 'Expansión celular, elongación de vástago y desarrollo foliar. Auxinas y giberelinas coordinan crecimiento longitudinal y metabolismo del nitrógeno nitrico.',
+        physiology: 'Expansión celular, elongación de vástago y desarrollo foliar. Las auxinas impulsan el crecimiento celular; las giberelinas consolidan la madurez celular del tejido vegetativo.',
         agronomy: 'Demanda alta de N (incluido NO₃), Ca, Mg y micronutrientes estructurales (B, Cu, Mn, Zn) para paredes, clorofila y enzimas.',
         aminoLinks: ['Glutamato', 'Glutamina', 'Leucina', 'Ácido glutámico']
       },
@@ -1309,9 +1356,9 @@
         title: 'ETAPA III',
         name: 'Floración y Reproducción',
         hormones: ['gibberellin', 'ethylene'],
-        event: 'Madurez celular',
+        event: 'Senescencia',
         nutrients: ['Ca', 'B', 'Mg', 'N amínico'],
-        physiology: 'Transición reproductiva, diferenciación floral y maduración de tejidos. GA sostiene desarrollo floral; el etileno inicia señales de madurez y cuajado.',
+        physiology: 'Transición reproductiva, diferenciación floral y señales de madurez. El etileno inicia senescencia controlada de tejidos y coordina cuajado, llenado y calidad del fruto.',
         agronomy: 'Ca y B son críticos en polinización y tejido reproductivo; el N amínico (orgánico) apoya metabolismo de alta demanda sin picos desbalanceados.',
         aminoLinks: ['Metionina (precursor de etileno)', 'Prolina', 'Lisina']
       },
@@ -1320,9 +1367,9 @@
         title: 'ETAPA IV',
         name: 'Maduración y senescencia',
         hormones: ['ethylene', 'aba'],
-        event: 'Senescencia',
+        event: 'Cierre del ciclo fisiológico',
         nutrients: ['B', 'Cu', 'P', 'K', 'Mo', 'Mg', 'N amínico'],
-        physiology: 'Maduración de fruto, removilización de nutrientes y senescencia controlada. Etileno y ABA coordinan cierre del ciclo y tolerancia al estrés tardío.',
+        physiology: 'Maduración final, removilización de nutrientes y cierre del ciclo. El ABA domina la respuesta al estrés tardío y el etileno completa la senescencia y la vida postcosecha.',
         agronomy: 'K y P apoyan calidad y removilización; Mo en metabolismo de N; Cu, B y Mg en enzimas de maduración. El manejo hormonal-nutricional define vida postcosecha.',
         aminoLinks: ['Metionina', 'Prolina', 'Cisteína']
       }

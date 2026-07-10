@@ -356,6 +356,32 @@
     overflow: hidden;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
+    min-height: 280px;
+  }
+
+  .login-social-pane__embed iframe {
+    display: block;
+    width: 100%;
+    border: 0;
+    background: #fff;
+  }
+
+  .login-social-pane__embed--facebook iframe {
+    min-height: 420px;
+  }
+
+  .login-social-pane__embed--instagram iframe {
+    min-height: 460px;
+  }
+
+  .login-social-pane__embed--youtube iframe {
+    aspect-ratio: 16 / 9;
+    min-height: 220px;
+  }
+
+  .login-social-pane__embed--linkedin {
+    padding: 8px;
+    min-height: 320px;
   }
 
   .login-social-pane__embed--tiktok {
