@@ -1696,26 +1696,46 @@
       return Math.max(min, Math.min(max, value));
     }
 
-    function hormoneChartMarkerHtml(transition, point) {
+    var HORMONE_LABEL_SLOTS = [168, 392, 616, 840];
+
+    function hormoneChartMarkerHtml(transition, point, labelX) {
       var titleW = transition.sub ? 168 : 138;
       var titleH = transition.sub ? 32 : 22;
       var labelBottom = 318;
       var labelY = labelBottom - titleH;
-      var sideOffset = point.x < 520 ? 32 : -32;
-      var labelX = hormoneChartClamp(point.x + sideOffset, 78 + titleW * 0.5, 982 - titleW * 0.5);
       var rectX = labelX - titleW * 0.5;
+      var connectorX = labelX;
+      var connectorY = labelY;
       var aria = 'ETAPA ' + transition.stage + ': ' + transition.title + (transition.sub ? ' ' + transition.sub : '');
       var subHtml = transition.sub
         ? '<text class="event-label-sub" x="' + labelX + '" y="' + (labelY + 25) + '" text-anchor="middle">' + escapeHtml(transition.sub) + '</text>'
         : '';
       var titleY = transition.sub ? labelY + 13 : labelY + 14;
       return '<g class="hormone-event-marker" data-stage="' + transition.stage + '" data-hormone="' + transition.hormone + '" role="button" tabindex="0" aria-label="' + escapeHtml(aria) + '">' +
-        '<line class="event-connector" x1="' + labelX + '" y1="' + labelY + '" x2="' + point.x + '" y2="' + (point.y + 7) + '"/>' +
+        '<line class="event-connector" x1="' + connectorX + '" y1="' + connectorY + '" x2="' + point.x + '" y2="' + (point.y + 7) + '"/>' +
         '<circle cx="' + point.x + '" cy="' + point.y + '" r="6.5" fill="#fff" stroke="#16a34a" stroke-width="2.2"/>' +
         '<rect class="event-label-bg" x="' + rectX + '" y="' + labelY + '" width="' + titleW + '" height="' + titleH + '" rx="8"/>' +
         '<text class="event-label-title" x="' + labelX + '" y="' + titleY + '" text-anchor="middle">' + escapeHtml(transition.title) + '</text>' +
         subHtml +
         '</g>';
+    }
+
+    function hormoneChartResolveLabelSlots(points) {
+      var slots = HORMONE_LABEL_SLOTS.slice();
+      var minGap = 148;
+      var i;
+      for (i = 1; i < slots.length; i++) {
+        if (slots[i] - slots[i - 1] < minGap) slots[i] = slots[i - 1] + minGap;
+      }
+      if (slots[slots.length - 1] > 930) {
+        var shift = slots[slots.length - 1] - 930;
+        for (i = 0; i < slots.length; i++) slots[i] -= shift;
+      }
+      if (slots[0] < 95) {
+        shift = 95 - slots[0];
+        for (i = 0; i < slots.length; i++) slots[i] += shift;
+      }
+      return slots;
     }
 
     function renderHormoneChart() {
@@ -1733,11 +1753,17 @@
           '</g>';
       }).join('');
 
-      markersMount.innerHTML = HORMONE_TRANSITIONS.map(function (transition) {
-        var a = HORMONE_CHART_CURVES[transition.pair[0]];
-        var b = HORMONE_CHART_CURVES[transition.pair[1]];
-        return hormoneChartMarkerHtml(transition, hormoneChartCrossover(a, b));
-      }).join('');
+      markersMount.innerHTML = (function () {
+        var points = HORMONE_TRANSITIONS.map(function (transition) {
+          var a = HORMONE_CHART_CURVES[transition.pair[0]];
+          var b = HORMONE_CHART_CURVES[transition.pair[1]];
+          return hormoneChartCrossover(a, b);
+        });
+        var slots = hormoneChartResolveLabelSlots(points);
+        return HORMONE_TRANSITIONS.map(function (transition, index) {
+          return hormoneChartMarkerHtml(transition, points[index], slots[index]);
+        }).join('');
+      })();
     }
 
     function bindHormoneChartMarkers() {

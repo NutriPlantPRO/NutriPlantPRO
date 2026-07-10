@@ -2030,10 +2030,21 @@ body.np-dashboard.np-ios-touch .sidebar-overlay.show {
   object-fit: contain;
   flex-shrink: 0;
 }
-@media (max-width: 520px) {
-  .auth-header-manual-link span.auth-header-manual-link__label-long { display: none; }
+@media (max-width: 640px) {
+  .auth-header-manual-link span.auth-header-manual-link__label-long,
+  .auth-header-manual-link span.auth-header-manual-link__label-short {
+    display: none;
+  }
+  .auth-header-manual-link {
+    padding: 0;
+    width: 30px;
+    justify-content: center;
+    gap: 0;
+    margin-right: 4px !important;
+    flex-shrink: 0;
+  }
 }
-@media (min-width: 521px) {
+@media (min-width: 641px) {
   .auth-header-manual-link span.auth-header-manual-link__label-short { display: none; }
 }
 
