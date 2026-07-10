@@ -7,6 +7,15 @@
   <title>Plan PRO · Cerebro Digital</title>
   <link rel="icon" type="image/png" href="../assets/N_Hoja_Azul.png" />
   <script src="../config-no-traducir-terminos.js"></script>
+  <script>
+    (function () {
+      var PLANPRO_ACCESS_KEY = 'np_planpro_key_4a7f2e9b1c6d';
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('k') !== PLANPRO_ACCESS_KEY) {
+        window.location.replace('../login.html');
+      }
+    })();
+  </script>
   <style>
     :root {
       --bg: #eceff3;

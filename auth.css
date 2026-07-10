@@ -137,6 +137,7 @@
 .social-btn[data-social="tiktok"]:hover { color: #000000; }
 .social-btn[data-social="youtube"]:hover { color: #ff0000; }
 .social-btn[data-social="linkedin"]:hover { color: #0077b5; }
+.social-btn[data-social="whatsapp"]:hover { color: #25d366; }
 
 .social-icon {
   width: 20px;
@@ -200,13 +201,319 @@
   margin-top: 12px;
 }
 
-/* Panel redes sociales — solo desktop, columna izquierda bajo login */
-.login-social-panel {
-  display: none;
+/* Panel redes sociales — móvil al final; desktop columna izquierda bajo login */
+.login-split__left {
+  min-width: 0;
 }
 
-.login-split__left {
-  display: contents;
+.login-social-panel.auth-card {
+  display: flex;
+  flex-direction: column;
+  padding: 22px 20px 18px;
+  margin-top: 0;
+  overflow: visible;
+}
+
+.login-social-panel__title {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  text-align: center;
+}
+
+.login-social-panel__subtitle {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.login-social-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.login-social-tab {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 2px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.1;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+
+.login-social-tab:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+.login-social-tab.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+}
+
+.login-social-tab__icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.login-social-tab__icon--filled {
+  transform: scale(0.92);
+}
+
+.login-social-tab span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.login-social-tab.active[data-social-tab="facebook"] { border-color: #1877f2; background: #eff6ff; color: #1877f2; }
+.login-social-tab.active[data-social-tab="instagram"] { border-color: #e4405f; background: #fdf2f8; color: #db2777; }
+.login-social-tab.active[data-social-tab="youtube"] { border-color: #ff0000; background: #fef2f2; color: #dc2626; }
+.login-social-tab.active[data-social-tab="linkedin"] { border-color: #0077b5; background: #eff6ff; color: #0077b5; }
+.login-social-tab.active[data-social-tab="tiktok"] { border-color: #0f172a; background: #f8fafc; color: #0f172a; }
+.login-social-tab.active[data-social-tab="whatsapp"] { border-color: #25d366; background: #ecfdf5; color: #128c7e; }
+
+.login-social-panels {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 340px;
+  overflow: hidden;
+}
+
+.login-social-pane {
+  display: none;
+  position: absolute;
+  inset: 0;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.login-social-pane.active {
+  display: flex !important;
+}
+
+.login-social-pane__body {
+  flex: 1 1 auto;
+  min-height: 120px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 2px;
+}
+
+.login-social-pane__embed {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  min-height: 280px;
+}
+
+.login-social-pane__embed iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.login-social-pane__embed--facebook iframe {
+  min-height: 420px;
+}
+
+.login-social-pane__embed--instagram iframe {
+  min-height: 460px;
+}
+
+.login-social-pane__embed--youtube iframe {
+  aspect-ratio: 16 / 9;
+  min-height: 220px;
+}
+
+.login-social-pane__embed--linkedin {
+  padding: 0;
+  min-height: 360px;
+  margin-top: 10px;
+}
+
+.login-social-pane__embed--linkedin iframe {
+  min-height: 360px;
+}
+
+.login-social-linkedin-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.login-social-linkedin-head img {
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 119, 181, 0.15);
+  flex-shrink: 0;
+}
+
+.login-social-linkedin-head strong {
+  display: block;
+  font-size: 15px;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.login-social-linkedin-head span {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.login-social-pane__embed--tiktok {
+  padding: 4px;
+  min-height: 0;
+}
+
+.login-social-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #fff;
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.login-social-card__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.14);
+}
+
+.login-social-card__cta--instagram { background: linear-gradient(135deg, #f56040, #c13584, #833ab4); }
+.login-social-card__cta--facebook { background: #1877f2; }
+.login-social-card__cta--youtube { background: #ff0000; }
+.login-social-card__cta--linkedin { background: #0077b5; }
+.login-social-card__cta--tiktok { background: #0f172a; }
+.login-social-card__cta--whatsapp { background: #25d366; }
+
+.login-social-whatsapp-card {
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  padding: 18px 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-social-whatsapp-card__hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.login-social-whatsapp-card__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #25d366;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 8px 18px rgba(37, 211, 102, 0.28);
+}
+
+.login-social-whatsapp-card__icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.login-social-whatsapp-card__hero strong {
+  display: block;
+  font-size: 16px;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.login-social-whatsapp-card__hero span {
+  display: block;
+  font-size: 12px;
+  color: #128c7e;
+  margin-top: 2px;
+  font-weight: 600;
+}
+
+.login-social-whatsapp-card__tagline {
+  margin: 0;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.login-social-whatsapp-card__list {
+  margin: 0;
+  padding: 0 0 0 18px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.55;
+  display: grid;
+  gap: 8px;
+}
+
+.login-social-whatsapp-card__meta {
+  margin: auto 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  padding-top: 4px;
+}
+
+.login-social-pane > .login-social-card__cta {
+  flex-shrink: 0;
+  margin-top: 10px;
+}
+
+@media (max-width: 1023px) {
+  .login-social-panel.auth-card {
+    padding: 24px 20px 20px;
+  }
+
+  .login-social-tab {
+    font-size: 9px;
+    padding: 8px 3px;
+  }
+
+  .login-social-panels {
+    min-height: 360px;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -228,17 +535,16 @@
   .login-split {
     display: grid;
     grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
     gap: 20px;
     align-items: stretch;
   }
 
   .login-split__left {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    grid-column: 1;
+    grid-row: 1;
+    display: block;
     min-width: 0;
-    min-height: 0;
-    height: 100%;
   }
 
   .login-split__login {
@@ -246,221 +552,21 @@
   }
 
   .login-social-panel.auth-card {
-    display: flex;
-    flex-direction: column;
+    grid-column: 1;
+    grid-row: 2;
     flex: 1 1 auto;
     min-height: 260px;
     padding: 22px 22px 18px;
-    margin-top: 0;
     overflow: hidden;
   }
 
-  .login-social-panel__title {
-    margin: 0 0 4px;
-    font-size: 17px;
-    font-weight: 800;
-    color: #0f172a;
-    text-align: center;
+  .login-split__tools {
+    grid-column: 2;
+    grid-row: 1 / -1;
   }
-
-  .login-social-panel__subtitle {
-    margin: 0 0 14px;
-    font-size: 12px;
-    color: #64748b;
-    text-align: center;
-    line-height: 1.4;
-  }
-
-  .login-social-tabs {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 12px;
-    flex-shrink: 0;
-  }
-
-  .login-social-tab {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    padding: 7px 4px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    background: #f8fafc;
-    color: #64748b;
-    font-size: 9px;
-    font-weight: 700;
-    line-height: 1.1;
-    cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.12s ease;
-  }
-
-  .login-social-tab:hover {
-    border-color: #cbd5e1;
-    background: #f1f5f9;
-  }
-
-  .login-social-tab.active {
-    border-color: #2563eb;
-    background: #eff6ff;
-    color: #1d4ed8;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
-  }
-
-  .login-social-tab__icon {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-  }
-
-  .login-social-tab.active[data-social-tab="facebook"] { border-color: #1877f2; background: #eff6ff; color: #1877f2; }
-  .login-social-tab.active[data-social-tab="instagram"] { border-color: #e4405f; background: #fdf2f8; color: #db2777; }
-  .login-social-tab.active[data-social-tab="youtube"] { border-color: #ff0000; background: #fef2f2; color: #dc2626; }
-  .login-social-tab.active[data-social-tab="linkedin"] { border-color: #0077b5; background: #eff6ff; color: #0077b5; }
-  .login-social-tab.active[data-social-tab="tiktok"] { border-color: #0f172a; background: #f8fafc; color: #0f172a; }
 
   .login-social-panels {
-    position: relative;
-    flex: 1 1 auto;
     min-height: 260px;
-    overflow: hidden;
-  }
-
-  .login-social-pane {
-    display: none;
-    position: absolute;
-    inset: 0;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .login-social-pane.active {
-    display: flex !important;
-  }
-
-  .login-social-pane__body {
-    flex: 1 1 auto;
-    min-height: 120px;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-    padding-right: 2px;
-  }
-
-  .login-social-pane__embed {
-    border-radius: 12px;
-    overflow: hidden;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    min-height: 280px;
-  }
-
-  .login-social-pane__embed iframe {
-    display: block;
-    width: 100%;
-    border: 0;
-    background: #fff;
-  }
-
-  .login-social-pane__embed--facebook iframe {
-    min-height: 420px;
-  }
-
-  .login-social-pane__embed--instagram iframe {
-    min-height: 460px;
-  }
-
-  .login-social-pane__embed--youtube iframe {
-    aspect-ratio: 16 / 9;
-    min-height: 220px;
-  }
-
-  .login-social-pane__embed--linkedin {
-    padding: 8px;
-    min-height: 320px;
-  }
-
-  .login-social-pane__embed--tiktok {
-    padding: 4px;
-    min-height: 0;
-  }
-
-  .login-social-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 16px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    min-height: 160px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .login-social-card__header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .login-social-card__header img {
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
-  }
-
-  .login-social-card__header strong {
-    display: block;
-    font-size: 15px;
-    color: #0f172a;
-    line-height: 1.25;
-  }
-
-  .login-social-card__header span {
-    display: block;
-    font-size: 12px;
-    color: #64748b;
-    margin-top: 2px;
-  }
-
-  .login-social-card p {
-    margin: 0;
-    font-size: 13px;
-    color: #475569;
-    line-height: 1.5;
-    flex: 1;
-  }
-
-  .login-social-card__cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 11px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-    color: #fff;
-    transition: transform 0.12s ease, box-shadow 0.15s ease;
-  }
-
-  .login-social-card__cta:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.14);
-  }
-
-  .login-social-card__cta--instagram { background: linear-gradient(135deg, #f56040, #c13584, #833ab4); }
-  .login-social-card__cta--facebook { background: #1877f2; }
-  .login-social-card__cta--youtube { background: #ff0000; }
-  .login-social-card__cta--linkedin { background: #0077b5; }
-  .login-social-card__cta--tiktok { background: #0f172a; }
-
-  .login-social-pane > .login-social-card__cta {
-    flex-shrink: 0;
-    margin-top: 10px;
   }
 
   .login-split__login,
@@ -1187,40 +1293,4 @@
 }
 .login-public-footer-links .sep {
   display: none;
-}
-
-/* Accesos discretos (Plan PRO / admin): iconos casi imperceptibles hasta hover */
-.login-discreet-access {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  margin-top: 4px;
-  padding-bottom: 2px;
-}
-.login-discreet-access a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 5px;
-  color: #e2e8f0;
-  background: transparent;
-  border: none;
-  text-decoration: none;
-  opacity: 0.38;
-  transition: color 0.15s ease, opacity 0.15s ease, background 0.15s ease;
-}
-.login-discreet-access a:hover,
-.login-discreet-access a:focus-visible {
-  color: #94a3b8;
-  opacity: 0.72;
-  background: rgba(241, 245, 249, 0.55);
-  outline: none;
-}
-.login-discreet-access svg {
-  width: 13px;
-  height: 13px;
-  stroke-width: 1.45;
 }

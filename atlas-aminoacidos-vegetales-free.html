@@ -528,6 +528,8 @@
     }
     .hormone-chart .hormone-curve path {
       transition: stroke-width 0.22s ease, opacity 0.22s ease, filter 0.22s ease;
+      stroke-linejoin: round;
+      stroke-linecap: round;
     }
     .hormone-chart.has-selection .hormone-curve {
       opacity: 0.2;
@@ -608,23 +610,29 @@
       color: #64748b;
     }
     .hormone-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
       margin-top: 12px;
+      width: 100%;
     }
     .hormone-legend-btn {
       border: 1px solid #dbe7df;
       background: #fff;
       border-radius: 999px;
-      padding: 7px 12px;
-      font-size: 12px;
+      padding: 8px 10px;
+      font-size: 11px;
       font-weight: 800;
       color: #334155;
       cursor: pointer;
-      display: inline-flex;
+      display: flex;
       align-items: center;
+      justify-content: center;
       gap: 7px;
+      width: 100%;
+      min-width: 0;
+      text-align: center;
+      line-height: 1.2;
     }
     .hormone-legend-btn.active {
       border-color: var(--hormone-color, #16a34a);
@@ -747,6 +755,15 @@
         overflow: visible;
       }
       .hormone-stage-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .hormone-legend {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .hormone-legend {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
@@ -907,7 +924,7 @@
       <section class="hormone-layout">
         <div class="hormone-board">
           <h2>Niveles hormonales por etapa</h2>
-          <p class="hormone-lead">Las curvas representan tendencias relativas de concentración/actividad hormonal. Los puntos blancos marcan el <strong>cambio de mando</strong>: donde una hormona cede y la siguiente toma el control (Citoquinina → Auxina → Giberelinas → Etileno → ABA). Toca una etapa o una hormona para ver la ficha técnica.</p>
+          <p class="hormone-lead"><strong>Referencia visual didáctica</strong> — no son valores de laboratorio. Las curvas suaves muestran cómo, entre etapas, el mando hormonal va pasando de una fitohormona a la siguiente. Los puntos blancos marcan ese <strong>cambio de nivel</strong> (Citoquinina → Auxina → Giberelinas → Etileno → ABA).</p>
           <div class="hormone-chart-wrap">
             <svg class="hormone-chart" viewBox="0 0 1000 350" role="img" aria-label="Ciclo hormonal de la planta por etapas">
               <defs>
@@ -955,49 +972,49 @@
                 <line class="stage-divider" x1="752" y1="48" x2="752" y2="252"/>
               </g>
               <g class="hormone-curve" data-hormone="cytokinin" role="button" tabindex="0" aria-label="Citoquinina">
-                <path d="M70,248 C115,248 155,248 172,168 C188,82 202,98 218,125 C232,138 242,138 242,138 C262,168 280,218 298,248 Z" fill="url(#ckGrad)" stroke="#06b6d4" stroke-width="2.2"/>
-                <text class="hormone-curve-label" x="188" y="108" text-anchor="middle">Citoquinina</text>
+                <path d="M70,248 C115,248 155,244 172,198 C186,158 192,122 208,115 C224,108 238,148 238,148 C258,182 278,225 298,248 Z" fill="url(#ckGrad)" stroke="#06b6d4" stroke-width="2"/>
+                <text class="hormone-curve-label" x="188" y="132" text-anchor="middle">Citoquinina</text>
               </g>
               <g class="hormone-curve" data-hormone="auxin" role="button" tabindex="0" aria-label="Auxina">
-                <path d="M70,248 C135,248 195,238 220,198 C235,168 242,138 242,138 C256,115 275,82 298,72 C320,58 340,78 355,112 C362,148 362,148 378,178 C400,218 425,248 455,248 Z" fill="url(#auxGrad)" stroke="#3b82f6" stroke-width="2.2"/>
-                <text class="hormone-curve-label" x="298" y="92" text-anchor="middle">Auxina</text>
+                <path d="M70,248 C130,248 180,240 210,202 C225,178 238,148 238,148 C255,132 275,108 292,98 C308,88 325,102 338,128 C348,152 348,152 368,178 C395,215 420,242 450,248 Z" fill="url(#auxGrad)" stroke="#3b82f6" stroke-width="2"/>
+                <text class="hormone-curve-label" x="292" y="108" text-anchor="middle">Auxina</text>
               </g>
               <g class="hormone-curve" data-hormone="gibberellin" role="button" tabindex="0" aria-label="Ácido giberélico">
-                <path d="M298,248 C325,248 345,218 358,178 C362,148 362,148 378,122 C408,75 448,58 482,62 C512,68 538,102 552,142 C566,162 578,188 598,222 C630,248 655,248 680,248 Z" fill="url(#gaGrad)" stroke="#10b981" stroke-width="2.2"/>
-                <text class="hormone-curve-label" x="448" y="78" text-anchor="middle">Ácido giberélico</text>
+                <path d="M298,248 C322,248 338,228 348,192 C348,152 348,152 372,122 C402,88 432,78 462,82 C492,88 515,118 535,148 C552,172 572,208 598,238 C628,248 655,248 680,248 Z" fill="url(#gaGrad)" stroke="#10b981" stroke-width="2"/>
+                <text class="hormone-curve-label" x="432" y="95" text-anchor="middle">Ácido giberélico</text>
               </g>
               <g class="hormone-curve" data-hormone="ethylene" role="button" tabindex="0" aria-label="Etileno">
-                <path d="M525,248 C538,248 548,210 552,142 C562,115 592,82 620,76 C638,72 662,82 688,108 C715,132 738,138 752,138 C768,138 790,165 812,208 C840,242 860,248 885,248 Z" fill="url(#ethGrad)" stroke="#f59e0b" stroke-width="2.2"/>
-                <text class="hormone-curve-label" x="638" y="98" text-anchor="middle">Etileno</text>
+                <path d="M525,248 C555,248 575,238 592,215 C610,188 628,165 655,142 C682,118 710,102 735,95 C748,92 752,115 752,142 C762,168 785,200 812,228 C840,248 865,248 885,248 Z" fill="url(#ethGrad)" stroke="#f59e0b" stroke-width="2"/>
+                <text class="hormone-curve-label" x="655" y="118" text-anchor="middle">Etileno</text>
               </g>
               <g class="hormone-curve" data-hormone="aba" role="button" tabindex="0" aria-label="Ácido abscísico">
-                <path d="M752,138 C780,105 818,72 858,60 C888,52 918,68 948,112 C968,158 978,205 980,248 L752,248 Z" fill="url(#abaGrad)" stroke="#a855f7" stroke-width="2.2"/>
-                <text class="hormone-curve-label" x="878" y="82" text-anchor="middle">Ácido abscísico</text>
+                <path d="M752,142 C772,125 802,98 838,82 C872,68 908,85 942,128 C968,172 978,215 980,248 L752,248 Z" fill="url(#abaGrad)" stroke="#a855f7" stroke-width="2"/>
+                <text class="hormone-curve-label" x="878" y="98" text-anchor="middle">Ácido abscísico</text>
               </g>
               <g class="hormone-event-marker" data-stage="I" data-hormone="cytokinin" role="button" tabindex="0" aria-label="ETAPA I: Iniciación celular (División celular)">
-                <rect class="event-label-bg" x="145" y="56" width="174" height="34" rx="8"/>
-                <text class="event-label-title" x="232" y="70" text-anchor="middle">Iniciación celular</text>
-                <text class="event-label-sub" x="232" y="82" text-anchor="middle">(División celular)</text>
-                <line class="event-connector" x1="232" y1="90" x2="242" y2="126"/>
-                <circle cx="242" cy="138" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
+                <rect class="event-label-bg" x="142" y="56" width="174" height="34" rx="8"/>
+                <text class="event-label-title" x="229" y="70" text-anchor="middle">Iniciación celular</text>
+                <text class="event-label-sub" x="229" y="82" text-anchor="middle">(División celular)</text>
+                <line class="event-connector" x1="229" y1="90" x2="238" y2="136"/>
+                <circle cx="238" cy="148" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
               <g class="hormone-event-marker" data-stage="II" data-hormone="auxin" role="button" tabindex="0" aria-label="ETAPA II: Crecimiento celular">
-                <rect class="event-label-bg" x="268" y="168" width="148" height="22" rx="8"/>
-                <text class="event-label-title" x="342" y="183" text-anchor="middle">Crecimiento celular</text>
-                <line class="event-connector" x1="342" y1="168" x2="362" y2="155"/>
-                <circle cx="362" cy="148" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
+                <rect class="event-label-bg" x="254" y="168" width="148" height="22" rx="8"/>
+                <text class="event-label-title" x="328" y="183" text-anchor="middle">Crecimiento celular</text>
+                <line class="event-connector" x1="328" y1="168" x2="348" y2="159"/>
+                <circle cx="348" cy="152" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
               <g class="hormone-event-marker" data-stage="II" data-hormone="gibberellin" role="button" tabindex="0" aria-label="ETAPA II: Madurez celular">
-                <rect class="event-label-bg" x="458" y="56" width="146" height="22" rx="8"/>
-                <text class="event-label-title" x="531" y="71" text-anchor="middle">Madurez celular</text>
-                <line class="event-connector" x1="531" y1="78" x2="552" y2="130"/>
-                <circle cx="552" cy="142" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
+                <rect class="event-label-bg" x="441" y="56" width="146" height="22" rx="8"/>
+                <text class="event-label-title" x="514" y="71" text-anchor="middle">Madurez celular</text>
+                <line class="event-connector" x1="514" y1="78" x2="535" y2="136"/>
+                <circle cx="535" cy="148" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
               <g class="hormone-event-marker" data-stage="III" data-hormone="ethylene" role="button" tabindex="0" aria-label="ETAPA III: Senescencia">
                 <rect class="event-label-bg" x="658" y="56" width="108" height="22" rx="8"/>
                 <text class="event-label-title" x="712" y="71" text-anchor="middle">Senescencia</text>
-                <line class="event-connector" x1="712" y1="78" x2="752" y2="126"/>
-                <circle cx="752" cy="138" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
+                <line class="event-connector" x1="712" y1="78" x2="752" y2="130"/>
+                <circle cx="752" cy="142" r="7" fill="#fff" stroke="#16a34a" stroke-width="2.5"/>
               </g>
               <text x="500" y="332" text-anchor="middle" fill="#64748b" font-size="11" font-weight="700">Nutrientes claves / Co-factores / Hormonas</text>
             </svg>
