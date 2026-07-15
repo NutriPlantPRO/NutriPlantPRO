@@ -74,6 +74,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/nutri-pro-file-open"
+  to = "/.netlify/functions/nutri-pro-file-open"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/radar-ndvi"
   to = "/.netlify/functions/radar-ndvi"
   status = 200

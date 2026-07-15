@@ -1,19 +1,11 @@
 'use strict';
 
-const MAX_EXTRACT_CHARS = 500000;
-
 const LEGACY_OFFICE = new Set(['doc', 'ppt']);
 const IMAGE_EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tif', 'tiff', 'heic', 'heif', 'svg']);
 
 function extOf(name) {
   const m = String(name || '').toLowerCase().match(/\.([a-z0-9]+)$/i);
   return m ? m[1].toLowerCase() : '';
-}
-
-function truncateText(text, max = MAX_EXTRACT_CHARS) {
-  const s = String(text || '');
-  if (s.length <= max) return { text: s, truncated: false };
-  return { text: s.slice(0, max), truncated: true };
 }
 
 function stripRtfBasic(rtf) {
@@ -160,8 +152,8 @@ async function extractNutriProText(buffer, fileName, mimeType) {
       };
     }
 
-    const trimmed = truncateText(result.text);
-    const charCount = trimmed.text.length;
+    const plain = String(result.text || '');
+    const charCount = plain.length;
     if (!charCount) {
       return {
         status: 'skipped',
@@ -174,8 +166,8 @@ async function extractNutriProText(buffer, fileName, mimeType) {
     return {
       status: 'done',
       format_kind: result.format_kind,
-      text_plain: trimmed.text,
-      meta_json: { ...result.meta, char_count: charCount, truncated: trimmed.truncated }
+      text_plain: plain,
+      meta_json: { ...result.meta, char_count: charCount, truncated: false }
     };
   } catch (err) {
     return {
@@ -186,4 +178,4 @@ async function extractNutriProText(buffer, fileName, mimeType) {
   }
 }
 
-module.exports = { extractNutriProText, extOf, MAX_EXTRACT_CHARS };
+module.exports = { extractNutriProText, extOf };

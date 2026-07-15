@@ -14,7 +14,6 @@ const { extractNutriProText } = require('./lib/nutri-pro-text-extract');
 
 const NUTRI_BUCKET = 'plan-pro-nutri-pro';
 const OCR_IMAGE_EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif']);
-const MAX_OCR_CHARS = 500000;
 
 function corsHeaders() {
   return {
@@ -49,12 +48,6 @@ async function verifyAdmin(supabase, accessToken) {
 function extOf(name) {
   const m = String(name || '').toLowerCase().match(/\.([a-z0-9]+)$/i);
   return m ? m[1].toLowerCase() : '';
-}
-
-function truncateOcrText(text) {
-  const s = String(text || '');
-  if (s.length <= MAX_OCR_CHARS) return { text: s, truncated: false };
-  return { text: s.slice(0, MAX_OCR_CHARS), truncated: true };
 }
 
 function outputTextFromResponses(data) {
@@ -139,14 +132,14 @@ async function extractPdfTextWithOpenAI(buffer, fileRec) {
       error_message: 'OCR/IA no encontró texto legible en el PDF.'
     };
   }
-  const trimmed = truncateOcrText(text);
+  const plain = String(text || '');
   return {
     status: 'done',
     format_kind: 'ocr_pdf',
-    text_plain: trimmed.text,
+    text_plain: plain,
     meta_json: {
-      char_count: trimmed.text.length,
-      truncated: trimmed.truncated,
+      char_count: plain.length,
+      truncated: false,
       model
     },
     error_message: null
@@ -240,14 +233,14 @@ async function extractImageTextWithOpenAI(buffer, fileRec) {
       error_message: 'OCR/IA no encontró texto legible en la imagen.'
     };
   }
-  const trimmed = truncateOcrText(text);
+  const plain = String(text || '');
   return {
     status: 'done',
     format_kind: 'ocr_image',
-    text_plain: trimmed.text,
+    text_plain: plain,
     meta_json: {
-      char_count: trimmed.text.length,
-      truncated: trimmed.truncated,
+      char_count: plain.length,
+      truncated: false,
       model: payload.model
     },
     error_message: null

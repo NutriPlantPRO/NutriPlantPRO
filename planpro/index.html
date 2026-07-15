@@ -10628,7 +10628,7 @@
       <div class="np-modal-body" style="padding-top:8px;">
         <p id="npNutriExtractPasteMeta" class="np-nutri-extract-text-meta"></p>
         <textarea id="npNutriExtractPasteText" class="np-nutri-extract-textarea" spellcheck="false" aria-label="Pegar texto indexado manualmente"></textarea>
-        <p id="npNutriExtractPasteCounter" class="np-nutri-extract-text-counter">0 / 500.000 caracteres</p>
+        <p id="npNutriExtractPasteCounter" class="np-nutri-extract-text-counter">0 caracteres</p>
         <div class="np-modal-foot" style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:10px 0 0;border-top:0;">
           <button type="button" class="btn btn-ghost" id="npNutriExtractPasteCancel">Cancelar</button>
           <button type="button" class="btn btn-primary" id="npNutriExtractPasteSave">Guardar indexado</button>
@@ -13893,9 +13893,7 @@
     if (!fileId || !row || !state.client || !state.userId) return;
     var text = apuntePlainTextForNutriIndex(row);
     if (!String(text || '').trim()) return;
-    var max = 500000;
-    var truncated = text.length > max;
-    var plain = truncated ? text.slice(0, max) : text;
+    var plain = String(text || '');
     var res = await npCloudSyncTrack(function () {
       return state.client.from('plan_pro_nutri_file_extracts').upsert(
         {
@@ -13906,7 +13904,7 @@
           text_plain: plain,
           meta_json: {
             char_count: plain.length,
-            truncated: truncated,
+            truncated: false,
             source: 'notebook_apunte_pdf',
             apunte_id: row.id,
             generated_at: genLabel
@@ -26226,10 +26224,6 @@
 
   var npNutriExtractPasteFileId = null;
 
-  function nutriProExtractCharLimit() {
-    return 500000;
-  }
-
   function fmtNutriExtractCharCount(n) {
     return Number(n || 0).toLocaleString('es-MX');
   }
@@ -26238,13 +26232,9 @@
     var ta = $('npNutriExtractPasteText');
     var el = $('npNutriExtractPasteCounter');
     if (!ta || !el) return;
-    var max = nutriProExtractCharLimit();
     var n = String(ta.value || '').length;
-    el.textContent = fmtNutriExtractCharCount(n) + ' / ' + fmtNutriExtractCharCount(max) + ' caracteres';
-    el.classList.toggle('np-nutri-extract-text-counter--warn', n > max);
-    if (n > max) {
-      el.textContent += ' · al guardar se truncará al máximo';
-    }
+    el.textContent = fmtNutriExtractCharCount(n) + ' caracteres';
+    el.classList.remove('np-nutri-extract-text-counter--warn');
   }
 
   function closeNutriProExtractViewModal() {
@@ -26295,7 +26285,7 @@
       parts.push('actualizado ' + fmtUpdatedShort(extractRow.extracted_at));
     }
     if (nutriProExtractIsTruncated(extractRow)) {
-      parts.push('⚠ indexación parcial (500k máx.)');
+      parts.push('⚠ indexación parcial (reindexa para texto completo)');
     }
     return parts.join(' · ');
   }
@@ -26348,21 +26338,14 @@
       var row = await fetchNutriProFileExtractPlain(fileRec.id);
       metaEl.textContent =
         row && row.status === 'done'
-          ? 'Ya hay texto indexado. Si guardas uno nuevo, lo reemplaza. Máximo ' +
-            fmtNutriExtractCharCount(nutriProExtractCharLimit()) +
-            ' caracteres.'
-          : 'Pega el texto extraído para indexar este archivo. Máximo ' +
-            fmtNutriExtractCharCount(nutriProExtractCharLimit()) +
-            ' caracteres.';
+          ? 'Ya hay texto indexado. Si guardas uno nuevo, lo reemplaza.'
+          : 'Pega el texto extraído para indexar este archivo.';
       if (row && row.status === 'done' && row.text_plain) {
         ta.value = String(row.text_plain || '');
         updateNutriExtractPasteCounter();
       }
     } catch (err) {
-      metaEl.textContent =
-        'Pega el texto extraído para indexar este archivo. Máximo ' +
-        fmtNutriExtractCharCount(nutriProExtractCharLimit()) +
-        ' caracteres.';
+      metaEl.textContent = 'Pega el texto extraído para indexar este archivo.';
       showToast((err && err.message) || 'No se pudo leer el indexado previo.', true);
     }
   }
@@ -26377,9 +26360,7 @@
       showToast('No se guardó: texto vacío.', true);
       return;
     }
-    var max = nutriProExtractCharLimit();
-    var truncated = clean.length > max;
-    var finalText = truncated ? clean.slice(0, max) : clean;
+    var finalText = clean;
     var row = {
       file_id: fileId,
       owner_id: state.userId,
@@ -26388,7 +26369,7 @@
       text_plain: finalText,
       meta_json: {
         char_count: finalText.length,
-        truncated: truncated,
+        truncated: false,
         source: 'manual_paste'
       },
       error_message: null,
@@ -26403,9 +26384,7 @@
     showToast(
       'Texto indexado manual guardado (' +
         fmtNutriExtractCharCount(finalText.length) +
-        ' car.' +
-        (truncated ? ' · truncado al máximo' : '') +
-        ').'
+        ' car.).'
     );
     await loadNutriProFiles(state.nutriProSelectedFolderId);
   }
@@ -27400,6 +27379,31 @@
     });
   }
 
+  async function fetchNutriProPermanentFileLinks(fileIds) {
+    if (!fileIds || !fileIds.length || !state.client) return {};
+    var sessRes = await state.client.auth.getSession();
+    var accessToken =
+      sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.access_token
+        ? sessRes.data.session.access_token
+        : '';
+    if (!accessToken) return {};
+    try {
+      var res = await fetch(nutriProApiBase() + '/api/nutri-pro-file-open', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + accessToken
+        },
+        body: JSON.stringify({ file_ids: fileIds })
+      });
+      var json = await res.json();
+      if (json && json.links && typeof json.links === 'object') return json.links;
+    } catch (eLinks) {
+      console.warn('fetchNutriProPermanentFileLinks', eLinks);
+    }
+    return {};
+  }
+
   async function hydrateApuntePdfNutriLinks(root) {
     if (!root || !state.client || !state.userId) return;
     var fileRefs = Array.prototype.slice.call(root.querySelectorAll('.np-rich-nutri-ref[data-np-nutri-file-id]'));
@@ -27410,28 +27414,7 @@
       return el.getAttribute('data-np-nutri-file-id');
     }).filter(Boolean);
     ids = Array.from(new Set(ids));
-    var signedById = {};
-    if (ids.length) {
-      var res = await state.client
-        .from('plan_pro_nutri_files')
-        .select('id,title,original_name,folder_id,storage_path,mime_type')
-        .eq('owner_id', state.userId)
-        .in('id', ids);
-      if (!res.error && res.data && res.data.length) {
-        var byId = {};
-        (res.data || []).forEach(function (f) {
-          if (f && f.id) byId[f.id] = f;
-        });
-        await Promise.all(ids.map(async function (id) {
-          var fileRec = byId[id];
-          if (!fileRec || !fileRec.storage_path) return;
-          var signed = await state.client.storage
-            .from(NP_NUTRI_PRO_BUCKET)
-            .createSignedUrl(fileRec.storage_path, 60 * 60 * 24 * 365 * 10);
-          if (!signed.error && signed.data && signed.data.signedUrl) signedById[id] = signed.data.signedUrl;
-        }));
-      }
-    }
+    var signedById = ids.length ? await fetchNutriProPermanentFileLinks(ids) : {};
 
     fileRefs.forEach(function (el) {
       var id = el.getAttribute('data-np-nutri-file-id');
@@ -28727,9 +28710,9 @@
       if (nutriProExtractIsTruncated(file._extract)) {
         var truncWarn = document.createElement('span');
         truncWarn.className = 'np-nutri-file-truncated-warn';
-        truncWarn.textContent = ' · ⚠ indexación parcial (500k máx.)';
+        truncWarn.textContent = ' · ⚠ indexación parcial (reindexa para texto completo)';
         truncWarn.title =
-          'El archivo tiene más texto del que se indexó. Socio y el buscador solo ven los primeros 500.000 caracteres; abre el archivo original para el resto.';
+          'Este archivo se indexó con un límite anterior. Reindexa para cargar todo el texto en Socio y el buscador.';
         sub.appendChild(truncWarn);
       }
       sub.appendChild(document.createTextNode(' · Act. ' + fmtUpdatedShort(file.updated_at)));
@@ -28805,7 +28788,7 @@
       var manualTextBtn = document.createElement('button');
       manualTextBtn.type = 'button';
       manualTextBtn.textContent = 'Pegar texto indexado';
-      manualTextBtn.title = 'Pegar o editar texto indexado manualmente (hasta 500.000 caracteres)';
+      manualTextBtn.title = 'Pegar o editar texto indexado manualmente';
       (function (rec, menuEl) {
         manualTextBtn.addEventListener('click', function (e) {
           e.preventDefault();
