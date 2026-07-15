@@ -82,7 +82,7 @@
   }
 
   function resolveGaPageTitle(flags) {
-    if (flags.isAutoria) return 'Autoría';
+    if (flags.isAutoria) return 'Manual técnico — Autoría';
     if (flags.isIndex) return 'Manual técnico';
     if (flags.inCapitulos) {
       var h1 = document.querySelector('main.mt-wrap > h1, main > h1');
