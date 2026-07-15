@@ -81,9 +81,57 @@
     h1.insertBefore(logo, h1.firstChild);
   }
 
+  function resolveGaPageTitle(flags) {
+    if (flags.isAutoria) return 'Autoría';
+    if (flags.isIndex) return 'Manual técnico';
+    if (flags.inCapitulos) {
+      var h1 = document.querySelector('main.mt-wrap > h1, main > h1');
+      if (h1 && h1.textContent) return 'Manual técnico — ' + h1.textContent.trim();
+      return 'Manual técnico — Capítulo';
+    }
+    return 'Manual técnico';
+  }
+
+  function loadGoogleAnalytics(base, flags) {
+    if (window.__npGaInit) return;
+
+    function boot() {
+      var id = (window.NUTRIPLANT_APP && window.NUTRIPLANT_APP.googleAnalyticsMeasurementId) || '';
+      if (!id) return;
+      window.__npGaInit = true;
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ window.dataLayer.push(arguments); }
+      window.gtag = window.gtag || gtag;
+      gtag('js', new Date());
+      gtag('config', id, {
+        page_title: resolveGaPageTitle(flags),
+        page_location: window.location.href
+      });
+      if (!document.querySelector('script[data-np-ga]')) {
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+        s.setAttribute('data-np-ga', '1');
+        document.head.appendChild(s);
+      }
+    }
+
+    if (window.NUTRIPLANT_APP) {
+      boot();
+      return;
+    }
+
+    var configScript = document.createElement('script');
+    configScript.src = base + 'app-config.js';
+    configScript.onload = boot;
+    configScript.onerror = boot;
+    document.head.appendChild(configScript);
+  }
+
   function init() {
     var base = assetBase();
     var flags = pageFlags();
+    loadGoogleAnalytics(base, flags);
     upgradeAutoriaBtn(base, flags);
     insertManualBtn(base, flags);
     hideBrandSubtitle();
