@@ -806,11 +806,26 @@
     var el = document.getElementById('lecturaGallery');
     if (!el) return;
     if (!state || !state.rows || !state.rows.length) { el.innerHTML = ''; return; }
-    var rows = state.rows.slice().sort(function (a, b) { return a.index - b.index; });
-    var any = rows.some(function (r) { return r.signed_url || r.ndmi_signed_url; });
-    if (!any) { el.innerHTML = ''; return; }
+    // Solo periodos con al menos una imagen útil: si hubo nubes, no se muestra hueco vacío.
+    var rows = state.rows
+      .slice()
+      .sort(function (a, b) { return a.index - b.index; })
+      .filter(function (r) { return !!(r.signed_url || r.ndmi_signed_url); });
+    if (!rows.length) {
+      var skipped = (state.rows || []).filter(function (r) {
+        return r.status === 'error' || r.error_code === 'radar_low_coverage';
+      }).length;
+      el.innerHTML = skipped
+        ? '<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:12.5px;line-height:1.45;">' +
+            'Sin imágenes para mostrar: ' + skipped + ' periodo(s) quedaron sin mapa por nubosidad. Los datos de clima y riego siguen en la tabla.' +
+          '</div>'
+        : '';
+      return;
+    }
     var count = Math.max(1, rows.length);
     var gridStyle = 'display:grid;grid-template-columns:repeat(' + count + ',minmax(0,1fr));gap:8px;align-items:stretch;';
+    var allCount = (state.rows || []).length;
+    var skippedCount = allCount - rows.length;
     function scaleLegend(kind) {
       var isNdvi = kind === 'ndvi';
       var title = isNdvi ? 'Escala NDVI relativa al predio' : 'Escala NDMI relativa al predio';
@@ -858,7 +873,11 @@
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
           rows.map(function (r) { return miniCard(r, 'ndmi', 'NDMI', '#0369a1'); }).join('') +
         '</div>' +
-        '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">* 30 d = quincena ampliada por nubosidad. El color compara zonas dentro del mismo predio/periodo; el valor numérico promedio está en la tabla. Toca cualquier imagen para verla en grande.</div>' +
+        '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">* 30 d = quincena ampliada por nubosidad. El color compara zonas dentro del mismo predio/periodo; el valor numérico promedio está en la tabla. Toca cualquier imagen para verla en grande.' +
+          (skippedCount
+            ? ' · ' + skippedCount + ' periodo(s) sin imagen por nubes no se muestran aquí (sí quedan en la tabla).'
+            : '') +
+        '</div>' +
       '</div>';
     el.innerHTML = html;
     el.querySelectorAll('img[data-lectura-zoom]').forEach(function (img) {
@@ -983,10 +1002,31 @@
     state.updatedAt = new Date().toISOString();
     saveState(state);
     renderAll(state);
-    var errores = state.rows.filter(function (r) { return r.status === 'error'; }).length;
-    setStatus(errores
-      ? '✔ Histórico listo. ' + errores + ' periodo(s) sin imagen por nubosidad; el resto se generó correctamente.'
-      : '✔ Histórico completo. Edita el riego en m³ o mm (con % de franja arriba) para completar la correlación.');
+    var errores = state.rows.filter(function (r) {
+      return r.status === 'error' || (!r.signed_url && !r.ndmi_signed_url && r.status === 'done' && r.error_code === 'radar_low_coverage');
+    });
+    var okImg = state.rows.filter(function (r) { return !!(r.signed_url || r.ndmi_signed_url); }).length;
+    var nErr = errores.length;
+    if (!nErr) {
+      setStatus('✔ Histórico completo. Edita el riego en m³ o mm (con % de franja arriba) para completar la correlación.');
+    } else if (okImg > 0) {
+      var labels = errores
+        .map(function (r) { return r.label || ('#' + (r.index + 1)); })
+        .slice(0, 3)
+        .join(', ');
+      var more = nErr > 3 ? '…' : '';
+      setStatus(
+        '✔ Histórico listo (' + okImg + ' con imagen). ' +
+        nErr + ' periodo' + (nErr === 1 ? '' : 's') +
+        ' sin mapa por nubosidad' +
+        (labels ? ' (' + labels + more + ')' : '') +
+        ': solo se omitió esa imagen; clima y riego siguen en la tabla.'
+      );
+    } else {
+      setStatus(
+        '✔ Histórico listo, pero ninguna imagen salió útil por nubosidad. Los datos de clima y riego sí quedaron en la tabla.'
+      );
+    }
   }
 
   // ---------- generar ----------
