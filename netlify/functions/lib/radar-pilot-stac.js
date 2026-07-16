@@ -84,7 +84,42 @@ async function getCdseToken(clientId, clientSecret) {
   return data.access_token;
 }
 
-async function stacSearch(url, body, headers) {
+function isTransientStacHttp(status) {
+  const s = Number(status);
+  return s === 429 || s === 502 || s === 503 || s === 504;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function sortFeaturesByCloud(features) {
+  return (features || []).slice().sort((a, b) => {
+    const ca = Number((a.properties || {})['eo:cloud_cover'] ?? (a.properties || {}).eo_cloud_cover);
+    const cb = Number((b.properties || {})['eo:cloud_cover'] ?? (b.properties || {}).eo_cloud_cover);
+    const na = Number.isFinite(ca) ? ca : 999;
+    const nb = Number.isFinite(cb) ? cb : 999;
+    if (na !== nb) return na - nb;
+    const da = (a.properties || {}).datetime || '';
+    const db = (b.properties || {}).datetime || '';
+    return String(db).localeCompare(String(da));
+  });
+}
+
+function sortScenesByCloud(scenes) {
+  return (scenes || []).slice().sort((a, b) => {
+    const ca = Number.isFinite(Number(a.cloudCover)) ? Number(a.cloudCover) : 999;
+    const cb = Number.isFinite(Number(b.cloudCover)) ? Number(b.cloudCover) : 999;
+    if (ca !== cb) return ca - cb;
+    const da = a.datetime ? String(a.datetime) : '';
+    const db = b.datetime ? String(b.datetime) : '';
+    return db.localeCompare(da);
+  });
+}
+
+async function stacSearch(url, body, headers, attempt) {
+  const maxAttempts = 3;
+  const a = Number(attempt) || 1;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(headers || {}) },
@@ -92,25 +127,31 @@ async function stacSearch(url, body, headers) {
   });
   if (!res.ok) {
     const txt = await res.text().catch(() => '');
+    if (isTransientStacHttp(res.status) && a < maxAttempts) {
+      await sleep(700 * a);
+      return stacSearch(url, body, headers, a + 1);
+    }
     throw new Error('STAC search HTTP ' + res.status + ': ' + txt.slice(0, 300));
   }
   return res.json();
 }
 
-/** Mediana corta: hasta N escenas en los últimos 30 d (SCL + mediana por píxel). */
-const COMPOSITE_LOOKBACK_DAYS = 30;
-const COMPOSITE_MAX_SCENES = 4;
-const COMPOSITE_MAX_CLOUD = 40;
+/** Mediana corta: hasta N escenas; Pilot busca primero ≤14 d, luego 21, luego 30. */
+const COMPOSITE_LOOKBACK_DAYS = 14;
+const COMPOSITE_MAX_SCENES = 3;
+const COMPOSITE_MAX_CLOUD = 30;
 /** Tope duro: no buscar más atrás de 30 días (datos demasiado viejos para el cultivo). */
 const MAX_LOOKBACK_DAYS = 30;
 
-/** Fallback si el composite 30 d no arma escenas: una sola escena, siempre ≤30 d. */
-const SCENE_SEARCH_TIERS = [
-  { days: 7, maxCloud: 25, label: '7d_25pct' },
+/** Pilot sección 1: ventanas cortas primero (14 → 21 → 30 d). */
+const PILOT_COMPOSITE_TIERS = [
   { days: 14, maxCloud: 30, label: '14d_30pct' },
   { days: 21, maxCloud: 35, label: '21d_35pct' },
   { days: 30, maxCloud: 40, label: '30d_40pct' }
 ];
+
+/** Fallback una sola escena (mismas ventanas, nunca más de 30 d). */
+const SCENE_SEARCH_TIERS = PILOT_COMPOSITE_TIERS;
 
 function clampLookbackDays(days) {
   const n = Number(days);
@@ -173,16 +214,58 @@ async function searchCdseRange(bbox, startIso, endIso, maxCloud, token) {
 
 async function searchScenesForRange(bbox, startIso, endIso, maxCloud, provider, cdseToken) {
   if (provider === 'cdse') {
-    return searchCdseRange(bbox, startIso, endIso, maxCloud, cdseToken);
+    return {
+      data: await searchCdseRange(bbox, startIso, endIso, maxCloud, cdseToken),
+      provider: 'cdse',
+      cdseToken
+    };
   }
-  return searchPlanetaryComputerRange(bbox, startIso, endIso, maxCloud);
+  try {
+    return {
+      data: await searchPlanetaryComputerRange(bbox, startIso, endIso, maxCloud),
+      provider: 'planetary',
+      cdseToken: null
+    };
+  } catch (e) {
+    const msg = String((e && e.message) || '');
+    const clientId = (process.env.CDSE_CLIENT_ID || '').trim();
+    const clientSecret = (process.env.CDSE_CLIENT_SECRET || '').trim();
+    if (!/STAC search HTTP (429|502|503|504)/.test(msg) || !clientId || !clientSecret) throw e;
+    const token = await getCdseToken(clientId, clientSecret);
+    return {
+      data: await searchCdseRange(bbox, startIso, endIso, maxCloud, token),
+      provider: 'cdse',
+      cdseToken: token
+    };
+  }
 }
 
 async function searchScenesForTier(bbox, tier, provider, cdseToken) {
   if (provider === 'cdse') {
-    return searchCdse(bbox, tier.days, tier.maxCloud, cdseToken);
+    return {
+      data: await searchCdse(bbox, tier.days, tier.maxCloud, cdseToken),
+      provider: 'cdse',
+      cdseToken
+    };
   }
-  return searchPlanetaryComputer(bbox, tier.days, tier.maxCloud);
+  try {
+    return {
+      data: await searchPlanetaryComputer(bbox, tier.days, tier.maxCloud),
+      provider: 'planetary',
+      cdseToken: null
+    };
+  } catch (e) {
+    const msg = String((e && e.message) || '');
+    const clientId = (process.env.CDSE_CLIENT_ID || '').trim();
+    const clientSecret = (process.env.CDSE_CLIENT_SECRET || '').trim();
+    if (!/STAC search HTTP (429|502|503|504)/.test(msg) || !clientId || !clientSecret) throw e;
+    const token = await getCdseToken(clientId, clientSecret);
+    return {
+      data: await searchCdse(bbox, tier.days, tier.maxCloud, token),
+      provider: 'cdse',
+      cdseToken: token
+    };
+  }
 }
 
 function pickAssetHref(assets, names) {
@@ -259,28 +342,36 @@ async function resolveProviderContext(opts) {
 }
 
 /**
- * Escena más reciente con pocas nubes: 7 → 14 → 21 → 30 d (nunca más de 30).
+ * Escena más clara en ventana corta: 14 → 21 → 30 d (nunca más de 30).
  */
 async function findBestSentinel2Scene(polygon, opts) {
   const bbox = bboxFromPolygon(polygon);
   const { provider, cdseToken } = await resolveProviderContext(opts);
+  const maxLb =
+    opts?.maxLookbackDays != null ? clampLookbackDays(opts.maxLookbackDays) : MAX_LOOKBACK_DAYS;
+  const tiers = SCENE_SEARCH_TIERS.filter((t) => t.days <= maxLb);
 
   let lastErr = null;
-  for (const tier of SCENE_SEARCH_TIERS) {
+  for (const tier of tiers) {
     let features = [];
+    let activeProvider = provider;
+    let activeToken = cdseToken;
     try {
-      const data = await searchScenesForTier(bbox, tier, provider, cdseToken);
-      features = data.features || [];
+      const result = await searchScenesForTier(bbox, tier, provider, cdseToken);
+      features = result.data.features || [];
+      activeProvider = result.provider;
+      activeToken = result.cdseToken;
     } catch (e) {
       lastErr = e;
       continue;
     }
     if (!features.length) continue;
+    const ordered = sortFeaturesByCloud(features);
 
-    for (const item of features) {
+    for (const item of ordered) {
       try {
-        const bandUrls = await resolveSceneAssets(item, provider, cdseToken);
-        return sceneFromItem(item, provider, bbox, bandUrls, {
+        const bandUrls = await resolveSceneAssets(item, activeProvider, activeToken);
+        return sceneFromItem(item, activeProvider, bbox, bandUrls, {
           searchTier: tier.label,
           lookbackDays: tier.days,
           maxCloudPct: tier.maxCloud
@@ -294,14 +385,16 @@ async function findBestSentinel2Scene(polygon, opts) {
   throw (
     lastErr ||
     new Error(
-      'No hay escenas Sentinel-2 L2A despejadas en los últimos 30 días (probamos 7 d ≤25% nubes, 14 d ≤30%, 21 d ≤35%, 30 d ≤40%).'
+      'No hay escenas Sentinel-2 L2A despejadas en los últimos ' +
+        maxLb +
+        ' días (probamos 14 d ≤30% nubes, 21 d ≤35%, 30 d ≤40%).'
     )
   );
 }
 
 /**
- * Hasta 4 escenas en ≤30 d para mediana + SCL (preferir recientes, ≤40% nubes escena).
- * Si no hay ninguna en esa ventana, cae al fallback de una sola escena (también ≤30 d).
+ * Hasta 3 escenas en ventana corta para mediana + SCL (prefiere menos nubes).
+ * Si no hay ninguna, cae al fallback de una sola escena (≤ maxLookbackDays).
  */
 async function findSentinel2ScenesForComposite(polygon, opts) {
   const bbox = bboxFromPolygon(polygon);
@@ -310,30 +403,41 @@ async function findSentinel2ScenesForComposite(polygon, opts) {
     Math.max(Number(opts?.maxScenes) || COMPOSITE_MAX_SCENES, 1),
     COMPOSITE_MAX_SCENES
   );
+  const maxLookbackDays =
+    opts?.maxLookbackDays != null
+      ? clampLookbackDays(opts.maxLookbackDays)
+      : opts?.lookbackDays != null
+        ? clampLookbackDays(opts.lookbackDays)
+        : MAX_LOOKBACK_DAYS;
   const lookbackDays = clampLookbackDays(opts?.lookbackDays || COMPOSITE_LOOKBACK_DAYS);
   const maxCloud = Number(opts?.maxCloud) || COMPOSITE_MAX_CLOUD;
+  const candidateLimit = Math.min(Math.max(Number(opts?.candidateLimit) || 20, maxScenes), 40);
 
   let features = [];
   let searchErr = null;
+  let activeProvider = provider;
+  let activeToken = cdseToken;
   try {
     const tier = { days: lookbackDays, maxCloud, label: lookbackDays + 'd_' + maxCloud + 'pct' };
-    const data = await searchScenesForTier(bbox, tier, provider, cdseToken);
-    features = data.features || [];
+    const result = await searchScenesForTier(bbox, tier, provider, cdseToken);
+    features = sortFeaturesByCloud(result.data.features || []);
+    activeProvider = result.provider;
+    activeToken = result.cdseToken;
   } catch (e) {
     searchErr = e;
   }
 
-  const scenes = [];
+  const resolved = [];
   let lastErr = searchErr;
-  for (const item of features) {
-    if (scenes.length >= maxScenes) break;
+  for (const item of features.slice(0, candidateLimit)) {
     try {
-      const bandUrls = await resolveSceneAssets(item, provider, cdseToken);
-      scenes.push(sceneFromItem(item, provider, bbox, bandUrls));
+      const bandUrls = await resolveSceneAssets(item, activeProvider, activeToken);
+      resolved.push(sceneFromItem(item, activeProvider, bbox, bandUrls));
     } catch (e) {
       lastErr = e;
     }
   }
+  const scenes = sortScenesByCloud(resolved).slice(0, maxScenes);
 
   if (scenes.length) {
     const datetimes = scenes.map((s) => s.datetime).filter(Boolean).sort();
@@ -344,7 +448,7 @@ async function findSentinel2ScenesForComposite(polygon, opts) {
       .map((s) => (s.datetime ? String(s.datetime).slice(0, 10) : null))
       .filter(Boolean);
     return {
-      provider,
+      provider: activeProvider,
       bbox,
       lookbackDays,
       maxCloudPct: maxCloud,
@@ -362,7 +466,7 @@ async function findSentinel2ScenesForComposite(polygon, opts) {
     };
   }
 
-  const fallback = await findBestSentinel2Scene(polygon, opts);
+  const fallback = await findBestSentinel2Scene(polygon, { ...opts, maxLookbackDays });
   const fbCloud =
     fallback.cloudCover != null && Number.isFinite(Number(fallback.cloudCover))
       ? Number(fallback.cloudCover)
@@ -387,6 +491,8 @@ async function findSentinel2ScenesForComposite(polygon, opts) {
 /**
  * Escenas dentro de un rango de fechas FIJO (Lectura Satelital por periodo).
  * No usa "últimos N días desde hoy"; respeta dateStart/dateEnd del periodo.
+ * Prefiere las escenas con menos nubes (no solo las más recientes), para que
+ * mensual encuentre lo mismo que pudo ver quincenal en ese mismo mes.
  */
 async function findSentinel2ScenesForRange(polygon, opts) {
   const bbox = bboxFromPolygon(polygon);
@@ -398,37 +504,65 @@ async function findSentinel2ScenesForRange(polygon, opts) {
   }
   const maxScenes = Math.min(Math.max(Number(opts?.maxScenes) || COMPOSITE_MAX_SCENES, 1), COMPOSITE_MAX_SCENES);
   const maxCloud = Number(opts?.maxCloud) || COMPOSITE_MAX_CLOUD;
+  const candidateLimit = Math.min(Math.max(Number(opts?.candidateLimit) || 20, maxScenes), 40);
 
-  let features = [];
-  let searchErr = null;
-  try {
-    const data = await searchScenesForRange(bbox, dateStart, dateEnd, maxCloud, provider, cdseToken);
-    features = data.features || [];
-  } catch (e) {
-    searchErr = e;
-  }
-
-  const scenes = [];
-  let lastErr = searchErr;
-  for (const item of features) {
-    if (scenes.length >= maxScenes) break;
+  async function collectScenes(cloudLimit) {
+    let features = [];
+    let searchErr = null;
+    let activeProvider = provider;
+    let activeToken = cdseToken;
     try {
-      const bandUrls = await resolveSceneAssets(item, provider, cdseToken);
-      scenes.push(sceneFromItem(item, provider, bbox, bandUrls));
+      const result = await searchScenesForRange(bbox, dateStart, dateEnd, cloudLimit, provider, cdseToken);
+      features = result.data.features || [];
+      activeProvider = result.provider;
+      activeToken = result.cdseToken;
     } catch (e) {
-      lastErr = e;
+      searchErr = e;
     }
+    const resolved = [];
+    let lastErr = searchErr;
+    for (const item of features.slice(0, candidateLimit)) {
+      try {
+        const bandUrls = await resolveSceneAssets(item, activeProvider, activeToken);
+        resolved.push(sceneFromItem(item, activeProvider, bbox, bandUrls));
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    // Preferir menor nubosidad; empate → más reciente.
+    resolved.sort((a, b) => {
+      const ca = Number.isFinite(Number(a.cloudCover)) ? Number(a.cloudCover) : 999;
+      const cb = Number.isFinite(Number(b.cloudCover)) ? Number(b.cloudCover) : 999;
+      if (ca !== cb) return ca - cb;
+      const da = a.datetime ? String(a.datetime) : '';
+      const db = b.datetime ? String(b.datetime) : '';
+      return db.localeCompare(da);
+    });
+    return { scenes: resolved.slice(0, maxScenes), allResolved: resolved, lastErr };
   }
 
-  if (!scenes.length) {
+  let picked = await collectScenes(maxCloud);
+  // Si no hay escenas con el umbral normal, reintenta con umbral más amplio dentro del MISMO rango.
+  if (!picked.scenes.length && maxCloud < 60) {
+    picked = await collectScenes(60);
+  }
+
+  if (!picked.scenes.length) {
     throw (
-      lastErr ||
+      picked.lastErr ||
       new Error(
-        'No hay escenas Sentinel-2 L2A con ≤' + maxCloud + '% de nubes entre ' + dateStart + ' y ' + dateEnd + '.'
+        'No hay escenas Sentinel-2 L2A con ≤' +
+          Math.max(maxCloud, 60) +
+          '% de nubes entre ' +
+          dateStart +
+          ' y ' +
+          dateEnd +
+          '.'
       )
     );
   }
 
+  const scenes = picked.scenes;
   const datetimes = scenes.map((s) => s.datetime).filter(Boolean).sort();
   const cloudCovers = scenes
     .map((s) => (s.cloudCover != null ? Number(s.cloudCover) : null))
@@ -451,7 +585,8 @@ async function findSentinel2ScenesForRange(polygon, opts) {
       cloudCovers.length > 0
         ? Math.round((cloudCovers.reduce((a, b) => a + b, 0) / cloudCovers.length) * 10) / 10
         : null,
-    scenes
+    scenes,
+    candidatesResolved: picked.allResolved.length
   };
 }
 

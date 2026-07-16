@@ -660,6 +660,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../assets/np-lectura-satelital.js?v=202607161800"></script>
     <script src="../assets/np-vpd-range-charts.js?v=202606243700"></script>
     <script src="../config-no-traducir-terminos.js"></script>
 </head>
@@ -12551,6 +12552,54 @@
         }
         window.closeRadarAdminModal = closeRadarAdminModal;
 
+        /** Visor grande para miniaturas NDVI/NDMI del admin (Lectura / Radar). */
+        function openAdminRadarLightbox(url, title, subtitle) {
+            if (!url) return;
+            var overlay = document.getElementById('adminRadarLightbox');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'adminRadarLightbox';
+                overlay.style.cssText =
+                    'position:fixed;inset:0;z-index:100050;background:rgba(15,23,42,0.88);display:flex;align-items:center;justify-content:center;padding:26px;';
+                overlay.innerHTML =
+                    '<button type="button" id="adminRadarLightboxClose" ' +
+                    'style="position:absolute;top:14px;right:14px;z-index:2;display:inline-flex;align-items:center;gap:6px;' +
+                    'background:#2563eb;color:#fff;border:none;border-radius:999px;padding:9px 16px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.35);">' +
+                    '✕ Cerrar</button>' +
+                    '<figure style="margin:0;max-width:min(94vw,960px);max-height:90vh;display:flex;flex-direction:column;gap:8px;align-items:center;">' +
+                    '<figcaption id="adminRadarLightboxTitle" style="color:#fff;font-size:15px;font-weight:800;text-align:center;"></figcaption>' +
+                    '<img id="adminRadarLightboxImg" alt="" style="max-width:100%;max-height:76vh;border-radius:12px;background:#f1f5f9;box-shadow:0 10px 40px rgba(0,0,0,0.5);">' +
+                    '<div id="adminRadarLightboxSub" style="color:#cbd5e1;font-size:12px;text-align:center;"></div>' +
+                    '</figure>';
+                document.body.appendChild(overlay);
+                function closeLb() { overlay.style.display = 'none'; }
+                overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeLb(); });
+                var closeBtn = overlay.querySelector('#adminRadarLightboxClose');
+                if (closeBtn) closeBtn.addEventListener('click', closeLb);
+                document.addEventListener('keydown', function (ev) {
+                    if (ev.key === 'Escape' && overlay.style.display !== 'none') closeLb();
+                });
+            }
+            var img = overlay.querySelector('#adminRadarLightboxImg');
+            var t = overlay.querySelector('#adminRadarLightboxTitle');
+            var s = overlay.querySelector('#adminRadarLightboxSub');
+            if (img) { img.src = url; img.alt = title || ''; }
+            if (t) t.textContent = title || '';
+            if (s) s.textContent = subtitle || '';
+            overlay.style.display = 'flex';
+        }
+        window.openAdminRadarLightbox = openAdminRadarLightbox;
+
+        function openAdminRadarLightboxFromEl(el) {
+            if (!el) return;
+            openAdminRadarLightbox(
+                el.getAttribute('data-full-src') || el.src || '',
+                el.getAttribute('data-zoom-title') || '',
+                el.getAttribute('data-zoom-sub') || ''
+            );
+        }
+        window.openAdminRadarLightboxFromEl = openAdminRadarLightboxFromEl;
+
         function escRadarAdminHtml(t) {
             return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
@@ -12676,12 +12725,12 @@
             var blockNdvi = ndvi
                 ? '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#166534;margin-bottom:6px;font-size:13px;">NDVI — vigor</div><img src="' +
                   ndvi.replace(/"/g, '&quot;') +
-                  '" alt="NDVI" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;" /></div>'
+                  '" alt="NDVI" data-full-src="' + ndvi.replace(/"/g, '&quot;') + '" data-zoom-title="NDVI — vigor" data-zoom-sub="Radar del cultivo · clic en ✕ o fuera para cerrar" onclick="openAdminRadarLightboxFromEl(this)" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;cursor:zoom-in;" title="Clic para ver grande" /></div>'
                 : '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#166534;margin-bottom:6px;font-size:13px;">NDVI — vigor</div><p style="color:#94a3b8;font-size:13px;margin:0;">Sin imagen NDVI en esta generación.</p></div>';
             var blockNdmi = ndmi
                 ? '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#0f766e;margin-bottom:6px;font-size:13px;">NDMI — dosel</div><img src="' +
                   ndmi.replace(/"/g, '&quot;') +
-                  '" alt="NDMI" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;" /></div>'
+                  '" alt="NDMI" data-full-src="' + ndmi.replace(/"/g, '&quot;') + '" data-zoom-title="NDMI — humedad del dosel" data-zoom-sub="Radar del cultivo · clic en ✕ o fuera para cerrar" onclick="openAdminRadarLightboxFromEl(this)" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;cursor:zoom-in;" title="Clic para ver grande" /></div>'
                 : '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#0f766e;margin-bottom:6px;font-size:13px;">NDMI — dosel</div><p style="color:#94a3b8;font-size:13px;margin:0;">Sin imagen NDMI en esta generación.</p></div>';
 
             modal.innerHTML =
@@ -12848,44 +12897,65 @@
                     '<td style="padding:6px 8px;text-align:center;">' + esc(st) + '</td></tr>';
             }).join('');
 
-            var gallery = '';
+            var chartHtml = '';
+            if (typeof window.buildLecturaChartDataUrlForReport === 'function' && rows.length) {
+                var chartUrl = window.buildLecturaChartDataUrlForReport(rows, {
+                    franja_pct: lecturaState && lecturaState.franja_pct != null ? lecturaState.franja_pct : null
+                });
+                if (chartUrl) {
+                    chartHtml =
+                        '<div style="margin-top:12px;">' +
+                        '<div style="font-weight:700;color:#14532d;font-size:14px;margin-bottom:6px;">Gráfica por periodo</div>' +
+                        '<img src="' + chartUrl.replace(/"/g, '&quot;') + '" alt="Gráfica Lectura Satelital" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #e2e8f0;border-radius:10px;background:#fff;" />' +
+                        '</div>';
+                }
+            }
+
+            var withImg = [];
             rows.forEach(function (r) {
                 var it = r.request_id ? byId[String(r.request_id)] : null;
                 var ndviUrl = (it && it.signed_url) || r.signed_url || '';
                 var ndmiUrl = (it && it.ndmi_signed_url) || r.ndmi_signed_url || '';
                 if (!ndviUrl && !ndmiUrl) return;
-                var dateRange = '';
-                var ds = (it && it.date_start) || r.date_start || '';
-                var de = (it && it.date_end) || r.date_end || '';
-                if (ds && de) dateRange = ds + ' → ' + de;
-                else if (ds || de) dateRange = ds || de;
-                var periodTitle = r.label
-                    ? ('Periodo del predio: ' + String(r.label))
-                    : (dateRange ? ('Periodo del predio: ' + dateRange) : 'Periodo del predio');
-                if (r.label && dateRange && String(r.label).indexOf(String(ds).slice(0, 4)) < 0) {
-                    periodTitle += ' (' + dateRange + ')';
-                }
-                gallery +=
-                    '<div style="margin-top:12px;border:1px solid #bbf7d0;border-radius:10px;padding:10px;background:#f8fafc;">' +
-                    '<div style="font-weight:700;color:#14532d;font-size:13px;margin-bottom:4px;">📅 ' + esc(periodTitle) +
-                    ((it && it.lookback_expanded) || r.lookback_expanded ? ' · <span style="color:#b45309;">ampliada a 30 d</span>' : '') +
-                    '</div>' +
-                    (dateRange
-                        ? '<div style="font-size:11px;color:#64748b;margin-bottom:8px;">Ventana satelital: ' + esc(dateRange) + '</div>'
-                        : '') +
-                    '<div style="display:flex;flex-wrap:wrap;gap:12px;">' +
-                    '<div style="flex:1;min-width:200px;">' +
-                    (ndviUrl
-                        ? '<img src="' + ndviUrl.replace(/"/g, '&quot;') + '" alt="NDVI periodo" style="width:100%;max-height:280px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#fff;" />'
-                        : '<p style="color:#94a3b8;font-size:12px;">Sin NDVI</p>') +
-                    '<div style="font-size:12px;font-weight:700;color:#166534;margin-top:4px;">NDVI · ' + esc(r.label || dateRange || 'periodo') + '</div></div>' +
-                    '<div style="flex:1;min-width:200px;">' +
-                    (ndmiUrl
-                        ? '<img src="' + ndmiUrl.replace(/"/g, '&quot;') + '" alt="NDMI periodo" style="width:100%;max-height:280px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#fff;" />'
-                        : '<p style="color:#94a3b8;font-size:12px;">Sin NDMI</p>') +
-                    '<div style="font-size:12px;font-weight:700;color:#0f766e;margin-top:4px;">NDMI · ' + esc(r.label || dateRange || 'periodo') + '</div></div>' +
-                    '</div></div>';
+                withImg.push({
+                    r: r,
+                    it: it,
+                    ndviUrl: ndviUrl,
+                    ndmiUrl: ndmiUrl,
+                    expanded: !!(it && it.lookback_expanded) || !!r.lookback_expanded
+                });
             });
+            var gallery = '';
+            if (withImg.length) {
+                var cols = Math.min(withImg.length, 6);
+                var grid = 'display:grid;grid-template-columns:repeat(' + cols + ',minmax(0,1fr));gap:8px;align-items:start;';
+                function miniCard(item, url, kind, color) {
+                    var label = item.r.label || 'periodo';
+                    if (!url) {
+                        return '<div style="min-width:0;border:1px dashed #cbd5e1;border-radius:8px;padding:12px 4px;text-align:center;font-size:11px;color:#94a3b8;background:#f8fafc;">—</div>';
+                    }
+                    var title = kind + ' · ' + label;
+                    var sub = item.expanded ? 'Periodo ampliado a 30 días por nubosidad' : 'Clic en ✕ o fuera para cerrar';
+                    return '<div style="min-width:0;">' +
+                        '<img src="' + url.replace(/"/g, '&quot;') + '" alt="' + esc(title) + '" ' +
+                        'data-full-src="' + url.replace(/"/g, '&quot;') + '" ' +
+                        'data-zoom-title="' + esc(title).replace(/"/g, '&quot;') + '" ' +
+                        'data-zoom-sub="' + esc(sub).replace(/"/g, '&quot;') + '" ' +
+                        'onclick="openAdminRadarLightboxFromEl(this)" ' +
+                        'style="width:100%;max-height:140px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:zoom-in;" title="Clic para ver grande" />' +
+                        '<div style="text-align:center;font-size:11px;font-weight:700;color:' + color + ';margin-top:4px;line-height:1.25;">' +
+                        esc(label) + (item.expanded ? ' *' : '') + '</div></div>';
+                }
+                var ndviRow = withImg.map(function (item) { return miniCard(item, item.ndviUrl, 'NDVI', '#166534'); }).join('');
+                var ndmiRow = withImg.map(function (item) { return miniCard(item, item.ndmiUrl, 'NDMI', '#0f766e'); }).join('');
+                gallery =
+                    '<div style="margin-top:14px;font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — miniaturas NDVI / NDMI</div>' +
+                    '<p style="margin:4px 0 8px;font-size:11px;color:#64748b;">Clic en una miniatura para verla grande. * periodo ampliado a 30 días por nubosidad.</p>' +
+                    '<div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:6px;">NDVI</div>' +
+                    '<div style="' + grid + '">' + ndviRow + '</div>' +
+                    '<div style="font-size:12px;font-weight:700;color:#0f766e;margin:12px 0 6px;">NDMI</div>' +
+                    '<div style="' + grid + '">' + ndmiRow + '</div>';
+            }
 
             var apiWarn = '';
             if (apiRes && (!apiRes.ok || (apiRes.j && apiRes.j.ok === false))) {
@@ -12908,10 +12978,11 @@
                 '<th style="padding:6px 8px;text-align:center;">VPD</th><th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th><th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>' +
                 '<th style="padding:6px 8px;text-align:center;">Riego m³</th><th style="padding:6px 8px;text-align:center;">Riego mm</th><th style="padding:6px 8px;text-align:center;">Estado</th>' +
                 '</tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
+                chartHtml +
                 (gallery
-                    ? '<div style="margin-top:14px;font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — NDVI | NDMI por periodo (con fechas)</div>' + gallery
+                    ? gallery
                     : '<p style="margin-top:12px;font-size:12px;color:#94a3b8;">Sin imágenes firmadas disponibles (el usuario debe haber generado el histórico).</p>') +
-                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">Cada bloque es un periodo del mismo predio (no una imagen Pilot suelta). * quincena ampliada a 30 días por nubosidad.</p>' +
+                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">Cada miniatura es un periodo del mismo predio. * ampliada a 30 días por nubosidad.</p>' +
                 '</div></div>';
         }
 

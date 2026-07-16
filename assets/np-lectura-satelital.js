@@ -279,13 +279,10 @@
           '<div style="font-size:12px;color:#334155;line-height:1.5;margin-bottom:10px;">' +
             'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ mm con % de franja).' +
           '</div>' +
-          '<div style="font-size:11px;color:#334155;line-height:1.5;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
+          '<div style="font-size:11px;color:#334155;line-height:1.45;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
             '<strong style="color:#14532d;">Cómo se arma:</strong> ' +
-            'Sentinel-2 ~cada 5 días; se combinan hasta <strong>3 pasadas</strong> (mediana) y se quitan nubes. ' +
-            '<strong>Quincenal:</strong> 15 días → si hay nubes, amplía a 30 (*). ' +
-            '<strong>Mensual:</strong> mes fijo (~30 días). ' +
-            'Sin imagen útil = sin mapa. Clima de Open-Meteo; riego lo pones tú. ' +
-            '<strong>Costo:</strong> 3 créditos por consulta (4 si el predio es &gt;30 ha).' +
+            'hasta 3 pasadas Sentinel (mediana). Quincenal/mensual: si hay nubes, reintenta y puede ampliar a 30 d (*). ' +
+            '<strong>Costo:</strong> 3 créditos (4 si predio &gt;30 ha) por toda la consulta.' +
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;">' +
             '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;">Frecuencia' +
@@ -306,7 +303,8 @@
             '<button type="button" id="lecturaBtnGenerate" class="btn btn-primary" style="font-size:13px;">🛰 Generar histórico</button>' +
             '<button type="button" id="lecturaBtnRefresh" class="btn btn-secondary" style="font-size:13px;" title="Revisa si terminaron los periodos pendientes, trae imágenes/NDVI/NDMI guardados y completa clima si falta.">🔄 Actualizar</button>' +
           '</div>' +
-          '<div id="lecturaCostHint" style="font-size:12px;color:#166534;margin-top:10px;font-weight:600;"></div>' +
+          '<div id="lecturaCreditsLabel" style="font-size:13px;color:#166534;margin-top:10px;font-weight:600;"></div>' +
+          '<div id="lecturaCostHint" style="font-size:12px;color:#166534;margin-top:4px;font-weight:600;"></div>' +
           '<div id="lecturaStatusHint" style="font-size:12px;color:#475569;margin-top:6px;line-height:1.5;"></div>' +
         '</div>' +
         '<div id="lecturaTableWrap" style="margin-top:14px;overflow-x:auto;"></div>' +
@@ -340,12 +338,34 @@
   }
   function updateCostHint() {
     var hint = document.getElementById('lecturaCostHint');
-    if (!hint) return;
+    var credEl = document.getElementById('lecturaCreditsLabel');
     var total = lecturaCost();
-    hint.textContent = 'Costo: ' + total + ' créditos Radar por toda la consulta' +
-      (total === 4 ? ' (predio >30 ha)' : '') +
-      ', sin importar cuántos periodos elijas.';
+    var st = window.__nutriplantRadarNdviStatus;
+    var avail = st && st.credits && Number.isFinite(Number(st.credits.available))
+      ? Number(st.credits.available)
+      : null;
+    var limit = st && st.credits && Number.isFinite(Number(st.credits.limit))
+      ? Number(st.credits.limit)
+      : null;
+
+    if (credEl) {
+      if (avail != null && limit != null) {
+        credEl.textContent = avail + ' disponibles de ' + limit + ' este mes';
+      } else {
+        credEl.textContent = 'Créditos Radar: —';
+      }
+    }
+    if (hint) {
+      hint.textContent =
+        'Costo de esta consulta: ' +
+        total +
+        ' créditos' +
+        (total === 4 ? ' (predio >30 ha)' : '') +
+        (avail != null ? ' · tras generar te quedarían ' + Math.max(0, avail - total) : '') +
+        '.';
+    }
   }
+  window.updateLecturaCreditsHint = updateCostHint;
 
   // ---------- riego m³ ↔ mm (franja regada) ----------
   // Misma regla que balance hídrico: 1 mm sobre 1 ha = 10 m³.
@@ -1002,29 +1022,49 @@
     state.updatedAt = new Date().toISOString();
     saveState(state);
     renderAll(state);
-    var errores = state.rows.filter(function (r) {
-      return r.status === 'error' || (!r.signed_url && !r.ndmi_signed_url && r.status === 'done' && r.error_code === 'radar_low_coverage');
+    var cloudFails = state.rows.filter(function (r) {
+      return (
+        r.error_code === 'radar_low_coverage' ||
+        /nubes|nubosidad|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
+          String(r.error_message || '') + ' ' + String(r.error_code || '')
+        )
+      );
+    });
+    var otherFails = state.rows.filter(function (r) {
+      return r.status === 'error' && cloudFails.indexOf(r) < 0;
     });
     var okImg = state.rows.filter(function (r) { return !!(r.signed_url || r.ndmi_signed_url); }).length;
-    var nErr = errores.length;
-    if (!nErr) {
+    var nCloud = cloudFails.length;
+    var nOther = otherFails.length;
+
+    if (!nCloud && !nOther) {
       setStatus('✔ Histórico completo. Edita el riego en m³ o mm (con % de franja arriba) para completar la correlación.');
-    } else if (okImg > 0) {
-      var labels = errores
+    } else if (okImg > 0 && nCloud && !nOther) {
+      var labels = cloudFails
         .map(function (r) { return r.label || ('#' + (r.index + 1)); })
         .slice(0, 3)
         .join(', ');
-      var more = nErr > 3 ? '…' : '';
+      var more = nCloud > 3 ? '…' : '';
       setStatus(
         '✔ Histórico listo (' + okImg + ' con imagen). ' +
-        nErr + ' periodo' + (nErr === 1 ? '' : 's') +
+        nCloud + ' periodo' + (nCloud === 1 ? '' : 's') +
         ' sin mapa por nubosidad' +
         (labels ? ' (' + labels + more + ')' : '') +
         ': solo se omitió esa imagen; clima y riego siguen en la tabla.'
       );
-    } else {
+    } else if (okImg > 0 && nOther) {
+      setStatus(
+        '✔ Histórico listo (' + okImg + ' con imagen). ' +
+        nOther + ' periodo' + (nOther === 1 ? '' : 's') +
+        ' no se pudo generar (error técnico, no necesariamente nubes). Revisa «Actualizar» o vuelve a generar.'
+      );
+    } else if (nCloud && !nOther) {
       setStatus(
         '✔ Histórico listo, pero ninguna imagen salió útil por nubosidad. Los datos de clima y riego sí quedaron en la tabla.'
+      );
+    } else {
+      setStatus(
+        '⚠ Histórico con errores técnicos al generar imágenes (no necesariamente nubosidad). Clima y riego pueden estar en la tabla. Prueba «Actualizar» o vuelve a generar.'
       );
     }
   }
@@ -1201,4 +1241,191 @@
     if (freqSel) freqSel.addEventListener('change', updateCostHint);
   }
   window.initLecturaSatelital = initLecturaSatelital;
+
+  /** Exporta la gráfica de Lectura como PNG (PDF / admin). */
+  function buildLecturaChartDataUrlForReport(rows, opts) {
+    opts = opts || {};
+    if (typeof Chart === 'undefined' || !rows || !rows.length) return null;
+    var sorted = rows.slice().sort(function (a, b) {
+      return (Number(a.index) || 0) - (Number(b.index) || 0);
+    }).reverse();
+    if (!sorted.length) return null;
+
+    var franjaPct = opts.franja_pct != null ? Number(opts.franja_pct) : 100;
+    var areaHa = opts.area_ha != null ? Number(opts.area_ha) : null;
+    var iHa = areaHa && franjaPct > 0 ? areaHa * (franjaPct / 100) : null;
+
+    var labels = sorted.map(function (r) { return r.label || ''; });
+    var hoursMax = 24;
+    sorted.forEach(function (r) {
+      var exp = r.vpd_hours_expected != null
+        ? Number(r.vpd_hours_expected)
+        : periodHoursExpected(r.date_start, r.date_end);
+      var sumH = (Number(r.vpd_hours_low) || 0) + (Number(r.vpd_hours_opt) || 0) + (Number(r.vpd_hours_high) || 0);
+      hoursMax = Math.max(hoursMax, exp || 0, sumH);
+    });
+
+    var canvas = document.createElement('canvas');
+    canvas.width = opts.width || 1100;
+    canvas.height = opts.height || 300;
+    var chart = null;
+    try {
+      chart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Horas VPD <0.5',
+              yAxisID: 'yHours',
+              data: sorted.map(function (r) { return r.vpd_hours_low; }),
+              backgroundColor: 'rgba(29, 78, 216, 0.26)',
+              borderColor: 'rgba(29, 78, 216, 0.42)',
+              borderWidth: 1,
+              stack: 'vpdHours',
+              order: 3
+            },
+            {
+              type: 'bar',
+              label: 'Horas VPD 0.5–1.5',
+              yAxisID: 'yHours',
+              data: sorted.map(function (r) { return r.vpd_hours_opt; }),
+              backgroundColor: 'rgba(22, 163, 74, 0.18)',
+              borderColor: 'rgba(22, 163, 74, 0.35)',
+              borderWidth: 1,
+              stack: 'vpdHours',
+              order: 3
+            },
+            {
+              type: 'bar',
+              label: 'Horas VPD >1.5',
+              yAxisID: 'yHours',
+              data: sorted.map(function (r) { return r.vpd_hours_high; }),
+              backgroundColor: 'rgba(127, 29, 29, 0.26)',
+              borderColor: 'rgba(127, 29, 29, 0.44)',
+              borderWidth: 1,
+              stack: 'vpdHours',
+              order: 3
+            },
+            {
+              type: 'line',
+              label: 'NDVI',
+              yAxisID: 'yIdx',
+              data: sorted.map(function (r) { return r.ndvi_mean; }),
+              borderColor: '#16a34a',
+              backgroundColor: '#16a34a',
+              tension: 0.3,
+              spanGaps: true,
+              pointRadius: 3,
+              borderWidth: 2.5,
+              order: 1
+            },
+            {
+              type: 'line',
+              label: 'NDMI',
+              yAxisID: 'yIdx',
+              data: sorted.map(function (r) { return r.ndmi_mean; }),
+              borderColor: '#0369a1',
+              backgroundColor: '#0369a1',
+              tension: 0.3,
+              spanGaps: true,
+              pointRadius: 3,
+              borderWidth: 2.5,
+              order: 1
+            },
+            {
+              type: 'line',
+              label: 'ET₀ acum (mm)',
+              yAxisID: 'yMm',
+              data: sorted.map(function (r) { return r.et0_sum; }),
+              borderColor: '#a16207',
+              borderDash: [4, 3],
+              tension: 0.3,
+              spanGaps: true,
+              pointRadius: 2,
+              borderWidth: 2,
+              order: 1
+            },
+            {
+              type: 'line',
+              label: 'Lluvia acum (mm)',
+              yAxisID: 'yMm',
+              data: sorted.map(function (r) { return r.rain_sum; }),
+              borderColor: '#2563eb',
+              borderDash: [2, 3],
+              tension: 0.3,
+              spanGaps: true,
+              pointRadius: 2,
+              borderWidth: 2,
+              order: 1
+            },
+            {
+              type: 'line',
+              label: 'Riego (mm)',
+              yAxisID: 'yMm',
+              data: sorted.map(function (r) {
+                return r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
+              }),
+              borderColor: '#7c3aed',
+              borderDash: [6, 3],
+              tension: 0.3,
+              spanGaps: true,
+              pointRadius: 2,
+              borderWidth: 2,
+              order: 1
+            }
+          ]
+        },
+        options: {
+          responsive: false,
+          animation: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: { boxWidth: 10, font: { size: 9 }, padding: 8 }
+            }
+          },
+          scales: {
+            x: { stacked: true, ticks: { maxRotation: 35, font: { size: 9 } } },
+            yIdx: {
+              type: 'linear',
+              position: 'left',
+              min: 0,
+              max: 1,
+              title: { display: true, text: 'NDVI / NDMI', font: { size: 10 } },
+              ticks: { font: { size: 9 } }
+            },
+            yMm: {
+              type: 'linear',
+              position: 'right',
+              min: 0,
+              title: { display: true, text: 'mm', font: { size: 10 } },
+              grid: { drawOnChartArea: false },
+              ticks: { font: { size: 9 } }
+            },
+            yHours: {
+              type: 'linear',
+              position: 'right',
+              display: false,
+              min: 0,
+              max: hoursMax,
+              stacked: true,
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+      return canvas.toDataURL('image/png');
+    } catch (e) {
+      console.warn('buildLecturaChartDataUrlForReport:', e);
+      return null;
+    } finally {
+      if (chart) {
+        try { chart.destroy(); } catch (e2) {}
+      }
+    }
+  }
+  window.buildLecturaChartDataUrlForReport = buildLecturaChartDataUrlForReport;
 })();

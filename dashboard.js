@@ -1677,11 +1677,9 @@ function sectionTemplate(name) {
           </label>
           <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Créditos Radar: —</span>
           <span id="radarStatusHint" class="radar-hint-info">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
-          <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.5;padding:8px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
-            <strong style="color:#14532d;">Cómo se arma la imagen:</strong>
-            Sentinel-2 pasa ~cada 5 días. Al generar, NutriPlant busca hasta <strong>3 pasadas</strong> de los últimos <strong>30 días</strong> (nunca más atrás) y las combina con <strong>mediana por píxel</strong> (no es promedio de todos los días del mes).
-            Si tu predio sale demasiado nublado, <strong>no se guarda</strong> una imagen vacía.
-            Abajo, al ver una imagen, verás las fechas, nubosidad y % útil del predio.
+          <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
+            <strong style="color:#14532d;">Cómo se arma:</strong>
+            hasta 3 pasadas Sentinel en <strong>14 días</strong> (mediana). Si hay nubes → 21 o 30 d. Abajo verás la <strong>fecha</strong> de los datos.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI relativa al predio</span>
@@ -8742,6 +8740,10 @@ async function fetchLecturaSatelitalForReport() {
         ndvi_mean: (it && it.ndvi_mean != null) ? it.ndvi_mean : r.ndvi_mean,
         ndmi_mean: (it && it.ndmi_mean != null) ? it.ndmi_mean : r.ndmi_mean,
         vpd_mean: r.vpd_mean,
+        vpd_hours_low: r.vpd_hours_low,
+        vpd_hours_opt: r.vpd_hours_opt,
+        vpd_hours_high: r.vpd_hours_high,
+        vpd_hours_expected: r.vpd_hours_expected,
         et0_sum: r.et0_sum,
         rain_sum: r.rain_sum,
         riego_m3: r.riego_m3,
@@ -8859,10 +8861,35 @@ function loadChartImagesForReport(selectedSections, callback) {
         if (radar && typeof radar === 'object' && (radar.ndviDataUrl || radar.ndmiDataUrl)) {
           out.radar = radar;
         }
-        if (lectura && Array.isArray(lectura.rows) && lectura.rows.length) {
-          out.lecturaSatelital = lectura;
+        function attachLecturaAndFinish() {
+          if (lectura && Array.isArray(lectura.rows) && lectura.rows.length) {
+            if (typeof window.buildLecturaChartDataUrlForReport === 'function') {
+              const areaHa =
+                currentProject &&
+                currentProject.location &&
+                currentProject.location.areaHectares != null
+                  ? Number(currentProject.location.areaHectares)
+                  : null;
+              lectura.chartDataUrl = window.buildLecturaChartDataUrlForReport(lectura.rows, {
+                franja_pct: lectura.franja_pct,
+                area_ha: areaHa
+              });
+            }
+            out.lecturaSatelital = lectura;
+          }
+          finish(out);
         }
-        finish(out);
+        if (
+          lectura &&
+          Array.isArray(lectura.rows) &&
+          lectura.rows.length &&
+          !window.Chart &&
+          typeof loadChartJsForReport === 'function'
+        ) {
+          loadChartJsForReport(attachLecturaAndFinish);
+          return;
+        }
+        attachLecturaAndFinish();
       })
       .catch(function (e) {
         console.warn('loadChartImagesForReport radar/lectura:', e);
@@ -15485,43 +15512,74 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     tableRows +
     '</tbody></table>';
 
+  let chartBlock = '';
+  if (lectura.chartDataUrl) {
+    chartBlock =
+      '<div style="margin-top:10px;">' +
+      '<div style="font-size:12px;font-weight:700;color:#14532d;margin-bottom:6px;">' +
+      rtSafe('Gráfica por periodo', 'Chart by period') +
+      '</div>' +
+      '<img src="' +
+      lectura.chartDataUrl +
+      '" alt="' +
+      rtSafe('Gráfica Lectura Satelital', 'Satellite Reading chart') +
+      '" style="width:100%;max-height:280px;object-fit:contain;border:1px solid #cbd5e1;border-radius:8px;background:#fff;" />' +
+      '</div>';
+  }
+
   let gallery = '';
   const withImg = rows.filter(function (r) {
     return r.ndviDataUrl || r.ndmiDataUrl;
   });
   if (withImg.length) {
-    gallery =
-      '<div style="margin-top:12px;font-size:12px;font-weight:700;color:#14532d;">' +
-      rtSafe('Imágenes por periodo (NDVI | NDMI)', 'Images by period (NDVI | NDMI)') +
-      '</div>';
-    withImg.forEach(function (r) {
-      gallery +=
-        '<div style="margin-top:8px;border:1px solid #bbf7d0;border-radius:8px;padding:8px;page-break-inside:avoid;">' +
-        '<div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:6px;">' +
+    const cols = Math.min(withImg.length, 6);
+    const grid =
+      'display:grid;grid-template-columns:repeat(' +
+      cols +
+      ',minmax(0,1fr));gap:6px;align-items:start;';
+    function miniThumb(r, dataUrl, label, color) {
+      if (!dataUrl) {
+        return (
+          '<div style="min-width:0;border:1px dashed #cbd5e1;border-radius:6px;padding:8px 4px;text-align:center;font-size:9px;color:#94a3b8;background:#f8fafc;">—</div>'
+        );
+      }
+      return (
+        '<div style="min-width:0;page-break-inside:avoid;">' +
+        '<img src="' +
+        dataUrl +
+        '" alt="' +
+        label +
+        '" style="width:100%;max-height:110px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />' +
+        '<div style="text-align:center;font-size:9px;font-weight:700;color:' +
+        color +
+        ';margin-top:2px;line-height:1.2;">' +
         reportEscapeHtml(String(r.label || '')) +
-        (r.lookback_expanded
-          ? ' · <span style="color:#b45309;">' +
-            rtSafe('ampliada a 30 d', 'expanded to 30 d') +
-            '</span>'
-          : '') +
-        '</div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
-        '<div>' +
-        (r.ndviDataUrl
-          ? '<img src="' +
-            r.ndviDataUrl +
-            '" alt="NDVI" style="width:100%;max-height:220px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />'
-          : '<div style="padding:16px;text-align:center;color:#94a3b8;background:#f1f5f9;border-radius:6px;font-size:11px;">Sin NDVI</div>') +
-        '<div style="text-align:center;font-size:10px;color:#166534;font-weight:700;margin-top:3px;">NDVI</div></div>' +
-        '<div>' +
-        (r.ndmiDataUrl
-          ? '<img src="' +
-            r.ndmiDataUrl +
-            '" alt="NDMI" style="width:100%;max-height:220px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />'
-          : '<div style="padding:16px;text-align:center;color:#94a3b8;background:#f1f5f9;border-radius:6px;font-size:11px;">Sin NDMI</div>') +
-        '<div style="text-align:center;font-size:10px;color:#0f766e;font-weight:700;margin-top:3px;">NDMI</div></div>' +
-        '</div></div>';
-    });
+        (r.lookback_expanded ? '*' : '') +
+        '</div></div>'
+      );
+    }
+    const ndviRow = withImg.map(function (r) {
+      return miniThumb(r, r.ndviDataUrl, 'NDVI', '#166534');
+    }).join('');
+    const ndmiRow = withImg.map(function (r) {
+      return miniThumb(r, r.ndmiDataUrl, 'NDMI', '#0f766e');
+    }).join('');
+    gallery =
+      '<div style="margin-top:10px;font-size:12px;font-weight:700;color:#14532d;">' +
+      rtSafe('Imágenes por periodo (miniaturas)', 'Images by period (thumbnails)') +
+      '</div>' +
+      '<div style="margin-top:6px;font-size:10px;font-weight:700;color:#166534;">NDVI</div>' +
+      '<div style="' +
+      grid +
+      '">' +
+      ndviRow +
+      '</div>' +
+      '<div style="margin-top:8px;font-size:10px;font-weight:700;color:#0f766e;">NDMI</div>' +
+      '<div style="' +
+      grid +
+      '">' +
+      ndmiRow +
+      '</div>';
   }
 
   const note = rtSafe(
@@ -15538,6 +15596,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     paramsLine +
     '</div>' +
     table +
+    chartBlock +
     gallery +
     '<div class="report-note-inline" style="margin-top:8px;">' +
     note +

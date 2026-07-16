@@ -13,6 +13,45 @@ function addDaysIso(isoDate, days) {
   return d.toISOString().slice(0, 10);
 }
 
+const PILOT_LOOKBACK_TIERS = [
+  { days: 14, maxCloud: 30 },
+  { days: 21, maxCloud: 35 },
+  { days: 30, maxCloud: 40 }
+];
+
+function isPilotCoverageFail(err) {
+  return /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
+    String((err && err.message) || '')
+  );
+}
+
+async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierMessage) {
+  let lastErr = null;
+  for (let i = 0; i < PILOT_LOOKBACK_TIERS.length; i++) {
+    const tier = PILOT_LOOKBACK_TIERS[i];
+    try {
+      if (i > 0 && typeof onTierMessage === 'function') {
+        await onTierMessage(tier.days);
+      }
+      const bundle = await findSentinel2ScenesForComposite(polygon, {
+        maxScenes,
+        lookbackDays: tier.days,
+        maxCloud: tier.maxCloud,
+        maxLookbackDays: tier.days
+      });
+      const rendered = await renderNdviNdmiCompositePngs(
+        { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
+        { maxDim }
+      );
+      return { bundle, rendered, lookbackExpanded: i > 0 };
+    } catch (e) {
+      lastErr = e;
+      if (!isPilotCoverageFail(e) || i === PILOT_LOOKBACK_TIERS.length - 1) throw e;
+    }
+  }
+  throw lastErr || new Error('Pilot composite failed');
+}
+
 const BUCKET = 'radar-ndvi';
 const ACTIVE_STATUSES = new Set(['pending', 'processing']);
 const JOB_STALE_MS = 45 * 60 * 1000;
@@ -389,11 +428,16 @@ async function processPilotJob(supabase, requestId, userId) {
     if (isLectura) {
       const dateStart = String(job.meta.date_start).slice(0, 10);
       const dateEnd = String(job.meta.date_end).slice(0, 10);
-      const renderRange = async (startIso) => {
+      const isCoverageFail = (err) =>
+        /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
+          String((err && err.message) || '')
+        );
+      const renderRange = async (startIso, extraOpts) => {
         const b = await findSentinel2ScenesForRange(polygon, {
           dateStart: startIso,
           dateEnd,
-          maxScenes
+          maxScenes,
+          ...(extraOpts || {})
         });
         const r = await renderNdviNdmiCompositePngs(
           { scenes: b.scenes, bbox4326: b.bbox, polygon },
@@ -406,29 +450,64 @@ async function processPilotJob(supabase, requestId, userId) {
         bundle = out.b;
         rendered = out.r;
       } catch (firstErr) {
-        // Quincenal con baja cobertura o sin escenas: ampliar automáticamente a ventana de 30 días.
-        const expandable =
-          frequency === 'quincenal' &&
-          /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
-            String(firstErr.message || '')
+        if (!isCoverageFail(firstErr)) throw firstErr;
+
+        // 1) Reintento en el MISMO rango: más candidatos / umbral de nubes más amplio
+        //    (mensual y quincenal). Así no falla si las 3 más recientes eran malas.
+        try {
+          await patchJobMeta(supabase, requestId, userId, {
+            status: 'processing',
+            status_message:
+              frequency === 'mensual'
+                ? 'Mes con poca cobertura: reintentando con las escenas más claras del periodo…'
+                : 'Quincena nublada: reintentando con escenas más claras…'
+          });
+          const retrySame = await renderRange(dateStart, { maxCloud: 60, candidateLimit: 30 });
+          bundle = retrySame.b;
+          rendered = retrySame.r;
+        } catch (secondErr) {
+          // 2) Ampliar a 30 días (quincenal siempre; mensual si el mes está incompleto o sigue fallando).
+          //    Misma lógica de rescate: si en quincenal hubo imagen, mensual también debe poder.
+          const daysSpan = Math.max(
+            1,
+            Math.round(
+              (new Date(dateEnd + 'T12:00:00Z').getTime() - new Date(dateStart + 'T12:00:00Z').getTime()) /
+                86400000
+            ) + 1
           );
-        if (!expandable) throw firstErr;
-        await patchJobMeta(supabase, requestId, userId, {
-          status: 'processing',
-          status_message: 'Quincena nublada: ampliando a 30 días…'
-        });
-        const start30 = addDaysIso(dateEnd, -29);
-        const out = await renderRange(start30);
-        bundle = out.b;
-        rendered = out.r;
-        lookbackExpanded = true;
+          const canExpand =
+            frequency === 'quincenal' ||
+            frequency === 'mensual' ||
+            daysSpan < 28;
+          if (!canExpand || !isCoverageFail(secondErr)) throw secondErr;
+
+          await patchJobMeta(supabase, requestId, userId, {
+            status: 'processing',
+            status_message:
+              frequency === 'mensual'
+                ? 'Mes sin imagen útil: ampliando a 30 días (igual que quincenal)…'
+                : 'Quincena nublada: ampliando a 30 días…'
+          });
+          const start30 = addDaysIso(dateEnd, -29);
+          const out = await renderRange(start30, { maxCloud: 60, candidateLimit: 30 });
+          bundle = out.b;
+          rendered = out.r;
+          lookbackExpanded = true;
+        }
       }
     } else {
-      bundle = await findSentinel2ScenesForComposite(polygon, { maxScenes });
-      rendered = await renderNdviNdmiCompositePngs(
-        { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
-        { maxDim }
-      );
+      const pilotOut = await renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, async (days) => {
+        await patchJobMeta(supabase, requestId, userId, {
+          status: 'processing',
+          status_message:
+            days >= 30
+              ? 'Poca cobertura: ampliando ventana a 30 días (último recurso)…'
+              : 'Poca cobertura en ventana corta: ampliando a ' + days + ' días…'
+        });
+      });
+      bundle = pilotOut.bundle;
+      rendered = pilotOut.rendered;
+      lookbackExpanded = pilotOut.lookbackExpanded;
     }
 
     const latestScene = bundle.scenes[0] || {};
