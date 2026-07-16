@@ -144,6 +144,13 @@ async function extractNutriProText(buffer, fileName, mimeType) {
       result = await extractOdf(buffer, ext);
     } else if (ext === 'txt' || ext === 'rtf' || ext === 'md') {
       result = await extractPlain(buffer, ext === 'md' ? 'md' : ext);
+    } else if (ext === 'xml' || (mimeType && /(^|\/)(xml|.*\+xml)$/i.test(mimeType))) {
+      const raw = buffer.toString('utf8');
+      result = {
+        format_kind: 'xml',
+        text: xmlTextOnly(raw) || raw.trim(),
+        meta: { source: 'xml' }
+      };
     } else {
       return {
         status: 'skipped',

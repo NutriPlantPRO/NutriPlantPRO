@@ -19,10 +19,34 @@ const ADMIN_EMAIL_LC = 'admin@nutriplantpro.com';
 const crypto = require('crypto');
 const nutriContentSearch = require('./lib/nutri-pro-content-search');
 const { extractNutriProText, extOf } = require('./lib/nutri-pro-text-extract');
+const { nutriProFileOpenUrl } = require('./lib/nutri-pro-file-share');
+const { extractOneFile } = require('./nutri-pro-extract');
 const {
   createNutriProUploadTicket,
   readNutriProUploadTicketState
 } = require('./nutri-pro-upload');
+
+function nutriProPublicBaseUrl() {
+  return (process.env.NUTRIPLANT_PUBLIC_URL || 'https://nutriplantpro.com').replace(/\/$/, '');
+}
+
+/** Acepta nutri_file_id, file_id o URL permanente /api/nutri-pro-file-open?fid=… */
+function resolveNutriProFileId(params) {
+  params = params || {};
+  let id = String(params.nutri_file_id || params.file_id || '').trim();
+  if (id) return id;
+  const urlish = String(params.open_url || params.url || params.file_url || params.link || '').trim();
+  if (!urlish) return '';
+  try {
+    const u = new URL(urlish);
+    id = (u.searchParams.get('fid') || u.searchParams.get('file_id') || '').trim();
+    if (id) return id;
+  } catch (_e) {
+    /* ignore */
+  }
+  const m = urlish.match(/[?&]fid=([0-9a-f-]{36})/i) || urlish.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+  return m ? m[1] : '';
+}
 
 function corsHeaders() {
   return {
@@ -2621,6 +2645,7 @@ async function fetchNutriProLinks(supabase, ownerId, opts) {
 
 function mapNutriProFileRow(file, foldersById, extractByFileId) {
   const ex = extractByFileId && file && file.id ? extractByFileId[file.id] : null;
+  const openUrl = nutriProFileOpenUrl(file.id, nutriProPublicBaseUrl());
   const row = {
     id: file.id,
     nutri_file_id: file.id,
@@ -2632,6 +2657,7 @@ function mapNutriProFileRow(file, foldersById, extractByFileId) {
     mime_type: file.mime_type || null,
     size_bytes: file.size_bytes || 0,
     storage_bucket: NUTRI_PRO_STORAGE_BUCKET,
+    open_url: openUrl || null,
     updated_at: file.updated_at
   };
   if (ex) {
@@ -2644,6 +2670,10 @@ function mapNutriProFileRow(file, foldersById, extractByFileId) {
   } else {
     row.extract_status = null;
     row.text_indexed = false;
+  }
+  if (!row.text_indexed) {
+    row.reindex_hint =
+      'Sin texto útil indexado. Usa nutri_pro_reindex con nutri_file_id (mode=text o mode=ocr para PDF escaneado/imagen). Luego nutri_pro_file_text o nutri_pro_ask.';
   }
   return row;
 }
@@ -2822,7 +2852,7 @@ async function handleNutriProCatalog(supabase, params) {
     files,
     links,
     gpt_usage:
-      'Lista tu bóveda Nutri PRO. nutri_pro_ask responde preguntas con fragmentos citados. nutri_pro_search busca con ranking. nutri_pro_file_text lee texto completo por trozos. nutri_pro_save guarda content en folder_path (carpeta).',
+      'Lista tu bóveda Nutri PRO. Cada archivo trae open_url (link permanente). nutri_pro_ask responde con fragmentos. nutri_pro_file_text lee texto. nutri_pro_reindex reindexa/OCR. nutri_pro_save guarda content en folder_path.',
     lectura_archivos:
       'Formatos indexados: PDF, .docx, .xlsx/.xls/.csv, .pptx, .txt/.rtf, OpenDocument (.odt/.ods/.odp). Imágenes y .doc/.ppt antiguos: sin texto aún. Preguntas: nutri_pro_ask.'
   };
@@ -3069,6 +3099,7 @@ async function handleNutriProAsk(supabase, params) {
       title: hit.title,
       description: hit.description || null,
       short_path: hit.short_path,
+      open_url: hit.open_url || null,
       format: hit.extract_format || null,
       text_indexed: hit.text_indexed,
       relevance_score: hit.score,
@@ -3079,7 +3110,7 @@ async function handleNutriProAsk(supabase, params) {
         !hit.text_indexed && hit.extract_note
           ? hit.extract_note
           : !hit.text_indexed
-            ? 'Sin texto indexado en este archivo.'
+            ? 'Sin texto indexado en este archivo. Ofrece nutri_pro_reindex (mode=text|ocr).'
             : null
     };
   });
@@ -3098,7 +3129,9 @@ async function handleNutriProAsk(supabase, params) {
   if (!sources.length) {
     suggestions.push('No hay fragmentos con esa pregunta. Prueba otra palabra o sube/indexa el archivo en Nutri PRO.');
   } else if (!sources.some((s) => s.text_indexed)) {
-    suggestions.push('Hay archivos por nombre pero sin texto indexado. Convierte a docx/xlsx/pptx o espera la indexación.');
+    suggestions.push(
+      'Hay archivos por nombre pero sin texto indexado. Usa nutri_pro_reindex (mode=text o mode=ocr) y luego vuelve a preguntar.'
+    );
   }
 
   const topPaths = sources
@@ -3178,9 +3211,13 @@ async function handleNutriProFileText(supabase, params) {
     return { ok: true, domain: 'nutri_pro', error: 'No se encontró usuario admin para Nutri PRO.' };
   }
 
-  const fileId = String(params.nutri_file_id || params.file_id || '').trim();
+  const fileId = resolveNutriProFileId(params);
   if (!fileId) {
-    return { ok: true, domain: 'nutri_pro', error: 'Indica params.nutri_file_id o params.file_id.' };
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      error: 'Indica params.nutri_file_id, params.file_id o params.open_url (link permanente del archivo).'
+    };
   }
 
   const foldersRes = await fetchNutriProFolders(supabase, ownerId);
@@ -3213,12 +3250,13 @@ async function handleNutriProFileText(supabase, params) {
   const offset = Math.max(parseInt(params.offset, 10) || 0, 0);
   const fullText = (extract && extract.text_plain) || '';
   const preview = fullText.slice(offset, offset + maxChars);
+  const mapped = mapNutriProFileRow(fileRec, foldersById, extract ? { [fileId]: extract } : {});
 
   return {
     ok: true,
     domain: 'nutri_pro',
     found: true,
-    file: mapNutriProFileRow(fileRec, foldersById, extract ? { [fileId]: extract } : {}),
+    file: mapped,
     extract: extract
       ? {
           status: extract.status,
@@ -3236,10 +3274,71 @@ async function handleNutriProFileText(supabase, params) {
       : {
           status: 'missing',
           message:
-            'Sin extracción aún. Tras subir el archivo en Plan PRO → Nutri PRO se indexa en segundo plano; vuelve a intentar en unos segundos.'
+            'Sin extracción aún. Usa nutri_pro_reindex con este nutri_file_id (mode=text o mode=ocr) y vuelve a leer.'
         },
     gpt_usage:
-      'Responde citando short_path del archivo. Si status no es done, explica por qué (imagen, .doc antiguo, PDF escaneado, etc.).'
+      'Cita short_path y comparte open_url si Jesús quiere abrir el archivo. Si status no es done o el texto es pobre: nutri_pro_reindex (ocr para escaneados/imágenes), luego relee con nutri_pro_file_text.'
+  };
+}
+
+async function handleNutriProReindex(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'nutri_pro', error: 'No se encontró usuario admin para Nutri PRO.' };
+  }
+
+  const fileId = resolveNutriProFileId(params);
+  if (!fileId) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      error: 'Indica params.nutri_file_id, params.file_id o params.open_url.'
+    };
+  }
+
+  const modeRaw = String(params.mode || params.extract_mode || 'text').trim().toLowerCase();
+  const mode = modeRaw === 'ocr' || modeRaw === 'ia' || modeRaw === 'vision' ? 'ocr' : 'text';
+  const force = params.force === false || params.force === 'false' ? false : true;
+
+  const { data: fileRec, error: fileErr } = await supabase
+    .from('plan_pro_nutri_files')
+    .select('id,folder_id,title,original_name,description,mime_type,size_bytes,updated_at')
+    .eq('owner_id', ownerId)
+    .eq('id', fileId)
+    .maybeSingle();
+  if (fileErr) throw new Error('nutri_pro_reindex file: ' + fileErr.message);
+  if (!fileRec) {
+    return { ok: true, domain: 'nutri_pro', found: false, message: 'Archivo no encontrado o no es del admin.' };
+  }
+
+  const result = await extractOneFile(supabase, fileId, force, mode);
+  const foldersRes = await fetchNutriProFolders(supabase, ownerId);
+  const foldersById = foldersRes.ok ? nutriFolderMapById(foldersRes.rows) : {};
+  const extractMap = await fetchNutriProExtractsMap(supabase, ownerId, [fileId]);
+
+  return {
+    ok: !!(result && result.ok),
+    domain: 'nutri_pro',
+    action: 'nutri_pro_reindex',
+    found: true,
+    mode,
+    force,
+    result: {
+      file_id: fileId,
+      skipped: !!(result && result.skipped),
+      status: (result && result.status) || null,
+      format_kind: (result && result.format_kind) || null,
+      char_count: (result && result.char_count) || null,
+      error_message: (result && (result.error_message || result.error)) || null,
+      message: (result && result.message) || null
+    },
+    file: mapNutriProFileRow(fileRec, foldersById, extractMap),
+    gpt_next:
+      result && result.ok && result.status === 'done'
+        ? 'Indexación OK. Usa nutri_pro_file_text o nutri_pro_ask para responder con el texto nuevo.'
+        : result && result.skipped
+          ? 'Ya estaba indexado. Si el texto está mal, vuelve a llamar con force:true (default) y mode=ocr si es escaneado.'
+          : 'Si falló o quedó vacío, prueba mode=ocr (PDF escaneado / imagen) o revisa extract_note.'
   };
 }
 
@@ -5765,15 +5864,19 @@ async function handleNutritionCatalogs(supabase, params) {
 async function handleDescribeApi() {
   return {
     ok: true,
-    version: '2.9.1',
-    openapi_version: '2.9.1',
+    version: '2.10.0',
+    openapi_version: '2.10.0',
     chatgpt_tool: {
       operationId: 'nutriplantAdminQuery',
       note:
         'En ChatGPT solo existe esta Action. admin_stats, nutri_pro_catalog, describe_api, etc. son valores del campo body.action, no tools aparte.',
       example_admin_stats: { action: 'admin_stats', params: {} },
       example_nutri_pro: { action: 'nutri_pro_catalog', params: {} },
-      verify: 'Si describe_api devuelve version 2.9.1, el GPT tiene schema y token correctos.'
+      example_nutri_pro_reindex: {
+        action: 'nutri_pro_reindex',
+        params: { nutri_file_id: 'UUID', mode: 'ocr' }
+      },
+      verify: 'Si describe_api devuelve version 2.10.0, el GPT tiene schema y token correctos.'
     },
     domains: {
       admin: ['admin_stats', 'list_users', 'user_summary'],
@@ -5805,6 +5908,7 @@ async function handleDescribeApi() {
         'nutri_pro_search',
         'nutri_pro_ask',
         'nutri_pro_file_text',
+        'nutri_pro_reindex',
         'nutri_pro_save',
         'nutri_pro_upload_link',
         'nutri_pro_upload_status'
@@ -5822,7 +5926,7 @@ async function handleDescribeApi() {
     climate_gpt:
       'project_climate NO altera al suscriptor. mode=saved → climate_saved (snapshot con lluvia/ET₀ mensual hasta 4 años en rainfall.years y et0.years; tiempo actual con rain_today_mm y et0_today_mm; rolling 1/7/30 d; calculadora balance). mode=live → tiempo_actual_ahora + lluvia/ET₀ del día. mode=rainfall_refresh → lluvia_et0_ahora (4 años en vivo). mode=rolling o all → rolling_windows_ahora + irrigation_quick_calc_live. Si preguntan por histórico mensual o gráficas, usa climate_saved.rainfall.years / et0.years. Si piden «actualizado», usa mode=all.',
     nutri_pro_gpt:
-      'Texto generado: nutri_pro_save. Adjunto binario real: nutri_pro_upload_link → usuario abre upload_url → nutri_pro_upload_status. Preguntas: nutri_pro_ask. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
+      'Archivos traen open_url (link permanente). Preguntas: nutri_pro_ask. Leer texto: nutri_pro_file_text (acepta open_url). Mal indexado: nutri_pro_reindex mode=text|ocr. Texto generado: nutri_pro_save. Binario real: nutri_pro_upload_link. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
     plan_pro_nota_semaforo:
       'Chip en libreta: [[sem:2026-05-26:media]] o append_due_marker. Ficha apunte: priority + due_at.',
     plan_pro_nota_herramientas:
@@ -5855,6 +5959,7 @@ const HANDLERS = {
   nutri_pro_search: (sb, p) => handleNutriProSearch(sb, p),
   nutri_pro_ask: (sb, p) => handleNutriProAsk(sb, p),
   nutri_pro_file_text: (sb, p) => handleNutriProFileText(sb, p),
+  nutri_pro_reindex: (sb, p) => handleNutriProReindex(sb, p),
   nutri_pro_save: (sb, p) => handleNutriProSave(sb, p),
   nutri_pro_upload_link: (sb, p) => handleNutriProUploadLink(sb, p),
   nutri_pro_upload_status: (sb, p) => handleNutriProUploadStatus(sb, p),
@@ -5874,9 +5979,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.9.1',
+      version: '2.10.0',
       description:
-        'v2.9.1 — ChatGPT: una sola Action (nutriplantAdminQuery). body.action = admin_stats|nutri_pro_*|describe_api|… NutriPlant + Plan PRO + Nutri PRO + clima + my_program_* personal admin.'
+        'v2.10.0 — ChatGPT: una sola Action (nutriplantAdminQuery). body.action = admin_stats|nutri_pro_*|nutri_pro_reindex|describe_api|… Archivos Nutri PRO incluyen open_url permanente.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -5885,7 +5990,7 @@ function getOpenApiSpec() {
           operationId: 'nutriplantAdminQuery',
           summary: 'Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO',
           description:
-            'Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, describe_api van en body.action, no son tools aparte. Verifica describe_api → version 2.9.1.',
+            'Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, nutri_pro_reindex, describe_api van en body.action, no son tools aparte. Verifica describe_api → version 2.10.0.',
           requestBody: {
             required: true,
             content: {
@@ -5929,7 +6034,18 @@ function getOpenApiSpec() {
                 },
                 mode: {
                   type: 'string',
-                  description: 'project_climate: saved|live|rainfall_refresh|rolling|all'
+                  description:
+                    'project_climate: saved|live|rainfall_refresh|rolling|all · nutri_pro_reindex: text|ocr'
+                },
+                nutri_file_id: { type: 'string', description: 'UUID archivo Nutri PRO' },
+                file_id: { type: 'string', description: 'Alias de nutri_file_id' },
+                open_url: {
+                  type: 'string',
+                  description: 'Link permanente /api/nutri-pro-file-open?fid=… (alternativa a nutri_file_id)'
+                },
+                force: {
+                  type: 'boolean',
+                  description: 'nutri_pro_reindex: forzar reextracción (default true)'
                 },
                 section: {
                   type: 'string',

@@ -19,6 +19,9 @@
  *   --dry-run            Solo lista; no sube
  *   --resume             Continuar usando .nutri-pro-upload-state.json en la carpeta
  *   --skip-existing      Omitir si original_name ya está en esa carpeta Nutri PRO
+ *   --index              Tras subir, extraer texto e indexar en Supabase (default)
+ *   --no-index           Solo subir archivos, sin indexar
+ *   --index-only         No subir: indexar archivos ya en Nutri PRO que coincidan con --dir
  *
  * Credenciales: NUTRI_PRO_BULK_EMAIL + NUTRI_PRO_BULK_PASSWORD
  * Supabase URL/key: variables NUTRIPLANT_SUPABASE_URL / NUTRIPLANT_SUPABASE_ANON_KEY
@@ -35,11 +38,15 @@ import {
 } from 'fs';
 import { join, basename, relative, extname } from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 import { randomUUID } from 'crypto';
+
+const require = createRequire(import.meta.url);
+const { extractNutriProText } = require('../netlify/functions/lib/nutri-pro-text-extract.js');
 
 const NP_BUCKET = 'plan-pro-nutri-pro';
 const FILE_EXT_OK =
-  /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|rtf|odt|ods|odp|png|jpe?g|webp|gif|bmp|tiff?|heic|heif|svg)$/i;
+  /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|xml|rtf|odt|ods|odp|png|jpe?g|webp|gif|bmp|tiff?|heic|heif|svg)$/i;
 const SKIP_NAMES = /^(\.DS_Store|\._.*|\.nutri-pro-upload-state\.json|Thumbs\.db|desktop\.ini)$/i;
 const MIME_BY_EXT = {
   pdf: 'application/pdf',
@@ -51,6 +58,7 @@ const MIME_BY_EXT = {
   pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   txt: 'text/plain',
   csv: 'text/csv',
+  xml: 'application/xml',
   rtf: 'application/rtf',
   odt: 'application/vnd.oasis.opendocument.text',
   ods: 'application/vnd.oasis.opendocument.spreadsheet',
@@ -82,7 +90,9 @@ function parseArgs(argv) {
     concurrency: 3,
     dryRun: false,
     resume: false,
-    skipExisting: true
+    skipExisting: true,
+    index: true,
+    indexOnly: false
   };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -97,6 +107,12 @@ function parseArgs(argv) {
     else if (a === '--resume') out.resume = true;
     else if (a === '--skip-existing') out.skipExisting = true;
     else if (a === '--no-skip-existing') out.skipExisting = false;
+    else if (a === '--index') out.index = true;
+    else if (a === '--no-index') out.index = false;
+    else if (a === '--index-only') {
+      out.indexOnly = true;
+      out.index = true;
+    }
     else if (a === '--help' || a === '-h') {
       console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(0, 28).join('\n'));
       process.exit(0);
@@ -334,7 +350,43 @@ async function uploadOneFile(supabase, userId, folderId, fileRec, sortOrder) {
     await supabase.storage.from(NP_BUCKET).remove([path]).catch(() => {});
     throw new Error(insErr.message || 'DB insert failed');
   }
-  return { fileId, safeName, rawName };
+  return { fileId, safeName, rawName, buffer };
+}
+
+async function indexFileExtract(supabase, userId, fileId, buffer, fileName, mimeType) {
+  const extracted = await extractNutriProText(buffer, fileName, mimeType);
+  const row = {
+    file_id: fileId,
+    owner_id: userId,
+    status: extracted.status || 'error',
+    format_kind: extracted.format_kind || null,
+    text_plain: extracted.text_plain || null,
+    meta_json: extracted.meta_json || {},
+    error_message: extracted.error_message || null,
+    extracted_at: new Date().toISOString()
+  };
+  const { error } = await supabase.from('plan_pro_nutri_file_extracts').upsert(row, {
+    onConflict: 'file_id'
+  });
+  if (error) throw new Error('index: ' + (error.message || 'upsert failed'));
+  return {
+    status: row.status,
+    chars: (extracted.meta_json && extracted.meta_json.char_count) || (extracted.text_plain || '').length,
+    note: extracted.error_message || null
+  };
+}
+
+async function findNutriFileByOriginalName(supabase, folderId, originalName) {
+  let q = supabase
+    .from('plan_pro_nutri_files')
+    .select('id,original_name,mime_type,storage_path')
+    .eq('original_name', originalName)
+    .limit(5);
+  if (folderId) q = q.eq('folder_id', folderId);
+  else q = q.is('folder_id', null);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data && data[0]) || null;
 }
 
 async function runPool(items, concurrency, worker) {
@@ -387,11 +439,51 @@ async function uploadFolderTree(supabase, userId, folders, localDir, nutriFolder
     const myOrder = order;
     order += 10;
     try {
+      if (opts.indexOnly) {
+        const existingFile = await findNutriFileByOriginalName(supabase, nutriFolderId, file.name);
+        if (!existingFile) {
+          console.log('  ↷ no está en nube:', file.name);
+          return null;
+        }
+        const buffer = readFileSync(file.absPath);
+        const ix = await indexFileExtract(
+          supabase,
+          userId,
+          existingFile.id,
+          buffer,
+          file.name,
+          existingFile.mime_type || mimeFor(file.name)
+        );
+        ok += 1;
+        if (ix.status === 'done') console.log('  ✓ indexado', file.name, '(' + ix.chars + ' car.)');
+        else console.log('  ·', file.name, '→', ix.status, ix.note ? '— ' + ix.note : '');
+        return { fileId: existingFile.id, indexed: ix };
+      }
+
       const res = await uploadOneFile(supabase, userId, nutriFolderId, file, myOrder);
       state.uploaded[file.relPath] = { fileId: res.fileId, at: new Date().toISOString() };
       saveState(opts.dir, state);
       ok += 1;
-      console.log('  ✓', file.name);
+      let indexNote = '';
+      if (opts.index) {
+        try {
+          const ix = await indexFileExtract(
+            supabase,
+            userId,
+            res.fileId,
+            res.buffer,
+            file.name,
+            mimeFor(file.name)
+          );
+          state.uploaded[file.relPath].indexed = ix.status;
+          saveState(opts.dir, state);
+          if (ix.status === 'done') indexNote = ' · indexado ' + ix.chars + ' car.';
+          else indexNote = ' · ' + ix.status + (ix.note ? ' (' + ix.note + ')' : '');
+        } catch (eIx) {
+          indexNote = ' · index error: ' + (eIx.message || eIx);
+        }
+      }
+      console.log('  ✓', file.name + indexNote);
       return res;
     } catch (e) {
       fail += 1;
@@ -440,6 +532,9 @@ async function main() {
   console.log('  Local:', localDir);
   console.log('  Título Nutri PRO:', folderTitle);
   if (opts.dryRun) console.log('  Modo: dry-run (no sube nada)');
+  if (opts.indexOnly) console.log('  Modo: index-only (no sube; indexa lo ya subido)');
+  else if (opts.index) console.log('  Indexar texto: sí (tras subir)');
+  else console.log('  Indexar texto: no');
 
   const userId = await signIn(supabase);
   await assertAdmin(supabase, userId);
@@ -450,6 +545,11 @@ async function main() {
   if (parentId) {
     const p = folders.find((f) => f.id === parentId);
     console.log('  Carpeta padre:', p ? p.title : parentId);
+  }
+
+  if (opts.indexOnly) {
+    opts.reuseFolder = true;
+    opts.skipExisting = false;
   }
 
   const state = opts.resume ? loadState(localDir) : { uploaded: {}, folderId: null };
@@ -464,7 +564,7 @@ async function main() {
       folders,
       folderTitle,
       parentId,
-      opts.reuseFolder
+      opts.reuseFolder || opts.indexOnly
     );
     state.folderId = rootNutriId;
     if (!opts.dryRun) saveState(localDir, state);
@@ -501,9 +601,17 @@ async function main() {
   } else {
     let nutriFolderId = state.folderId;
     if (!nutriFolderId) {
-      if (opts.reuseFolder) {
+      if (opts.reuseFolder || opts.indexOnly) {
         const existing = findFolderByTitle(folders, folderTitle, parentId);
         if (existing) nutriFolderId = existing.id;
+      }
+      if (!nutriFolderId && opts.indexOnly) {
+        console.error(
+          'No encontré la carpeta Nutri PRO «' +
+            folderTitle +
+            '». Usa el mismo --title o --dir que al subir, o --reuse-folder.'
+        );
+        process.exit(1);
       }
       if (!nutriFolderId && !opts.dryRun) {
         nutriFolderId = await ensureNutriFolder(
@@ -537,8 +645,15 @@ async function main() {
 
   if (!opts.dryRun) saveState(localDir, state);
 
-  console.log('\nListo:', totalOk, 'subido(s),', totalFail, 'error(es).');
-  console.log('Revisa Plan PRO → Nutri PRO. Indexación: usa «Reindexar texto» / «OCR» en la app cuando quieras.');
+  console.log('\nListo:', totalOk, opts.indexOnly ? 'indexado(s),' : 'subido(s),', totalFail, 'error(es).');
+  if (opts.indexOnly) {
+    console.log('Revisa Plan PRO → Nutri PRO: deberías ver «✓ texto indexado» junto al tamaño.');
+  } else if (opts.index) {
+    console.log('Revisa Plan PRO → Nutri PRO. Los archivos nuevos ya vienen indexados cuando el texto es extraíble.');
+    console.log('Si algún PDF es solo imagen/escaneado, usa «OCR / IA escaneado» en la app.');
+  } else {
+    console.log('Revisa Plan PRO → Nutri PRO. Indexación: usa «Reindexar texto» / «OCR» en la app cuando quieras.');
+  }
   if (totalFail) process.exit(1);
 }
 

@@ -84,16 +84,17 @@
   function resolveGaPageTitle(flags) {
     if (flags.isAutoria) return 'Manual técnico — Autoría';
     if (flags.isIndex) return 'Manual técnico';
-    if (flags.inCapitulos) {
-      var h1 = document.querySelector('main.mt-wrap > h1, main > h1');
-      if (h1 && h1.textContent) return 'Manual técnico — ' + h1.textContent.trim();
-      return 'Manual técnico — Capítulo';
-    }
     return 'Manual técnico';
+  }
+
+  /** Solo índice + Autoría. Capítulos no se miden (login/dashboard siguen en sus HTML). */
+  function shouldTrackManualPage(flags) {
+    return flags.isIndex || flags.isAutoria;
   }
 
   function loadGoogleAnalytics(base, flags) {
     if (window.__npGaInit) return;
+    if (!shouldTrackManualPage(flags)) return;
 
     function boot() {
       var id = (window.NUTRIPLANT_APP && window.NUTRIPLANT_APP.googleAnalyticsMeasurementId) || '';

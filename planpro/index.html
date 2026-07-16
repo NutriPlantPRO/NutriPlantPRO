@@ -1876,7 +1876,7 @@
       flex-wrap: nowrap;
       gap: 4px;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: center;
       flex-shrink: 0;
     }
     button.np-nutri-file-icon-btn {
@@ -2099,6 +2099,7 @@
         flex: 0 0 auto;
         margin-top: 0;
         align-self: flex-start;
+        justify-content: center;
       }
       #npViewNutriPro .np-nutri-file-desc-wrap {
         display: grid;
@@ -2152,7 +2153,7 @@
         grid-column: 1 / -1;
         grid-row: 2;
         width: 100%;
-        justify-content: flex-start;
+        justify-content: center;
         flex-wrap: wrap;
         gap: 3px;
         margin-top: 0;
@@ -10463,7 +10464,7 @@
                         <option value="title">Nombre A–Z</option>
                         <option value="date">Más reciente</option>
                       </select>
-                      <input type="file" id="npNutriFileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.odt,.ods,.odp,.png,.jpg,.jpeg,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.svg,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv" aria-hidden="true" tabindex="-1" />
+                      <input type="file" id="npNutriFileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.xml,.rtf,.odt,.ods,.odp,.png,.jpg,.jpeg,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.svg,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,application/xml,text/xml" aria-hidden="true" tabindex="-1" />
                       <button type="button" class="btn btn-ghost btn-ghost-blue" id="npNutriBtnPickFiles">Elegir archivos</button>
                       <button type="button" class="btn btn-primary" id="npNutriBtnUpload" disabled>Subir</button>
                     </div>
@@ -12534,7 +12535,7 @@
   var NP_NOTE_IMAGE_BUCKET = 'plan-pro-note-images';
   var NP_NUTRI_PRO_BUCKET = 'plan-pro-nutri-pro';
   var NP_NUTRI_FILE_EXT_OK =
-    /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|rtf|odt|ods|odp|png|jpe?g|webp|gif|bmp|tiff?|heic|heif|svg)$/i;
+    /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|xml|rtf|odt|ods|odp|png|jpe?g|webp|gif|bmp|tiff?|heic|heif|svg)$/i;
   var NP_NUTRI_LINK_CAT_NEW = '__new__';
   var NP_NUTRI_LINK_CATS_BUILTIN = [
     { id: 'nutricion_vegetal', label: 'Nutrición vegetal' },
@@ -26305,11 +26306,20 @@
       return;
     }
     var count = res.char_count != null ? ' (' + res.char_count + ' car.)' : '';
-    showToast(
-      res.status === 'done'
-        ? (isOcr ? 'OCR/IA indexado' : 'Texto reindexado') + count + '.'
-        : (isOcr ? 'OCR/IA terminado: ' : 'Reindexado terminado: ') + (res.status || 'sin texto') + '.'
-    );
+    if (res.status === 'done') {
+      showToast((isOcr ? 'OCR/IA indexado' : 'Texto reindexado') + count + '.');
+    } else if (res.status === 'skipped') {
+      showToast(
+        (res.error_message || 'Sin texto extraíble con este modo.') +
+          (isOcr ? '' : ' Prueba «OCR / IA escaneado».'),
+        true
+      );
+    } else {
+      showToast(
+        (isOcr ? 'OCR/IA terminado: ' : 'Reindexado terminado: ') + (res.status || 'sin texto') + '.',
+        res.status === 'error'
+      );
+    }
     scheduleNutriProExtractRefresh([600, 2500]);
   }
 
@@ -28269,6 +28279,114 @@
     }
   }
 
+  function nutriProFolderIsUnder(folderId, ancestorId) {
+    if (!folderId || !ancestorId || folderId === ancestorId) return folderId === ancestorId;
+    var f = nutriProGetFolderById(folderId);
+    var guard = 0;
+    while (f && f.parent_id && guard++ < 50) {
+      if (f.parent_id === ancestorId) return true;
+      f = nutriProGetFolderById(f.parent_id);
+    }
+    return false;
+  }
+
+  async function nutriProNextFolderSortOrderRemote(parentId) {
+    if (!state.client || !state.userId) return 10;
+    try {
+      var q = state.client.from('plan_pro_nutri_folders').select('sort_order').eq('owner_id', state.userId);
+      if (parentId) q = q.eq('parent_id', parentId);
+      else q = q.is('parent_id', null);
+      var res = await q.order('sort_order', { ascending: false }).limit(1);
+      if (res.error) return nutriProNextFolderSortOrder(parentId || null);
+      var row = res.data && res.data[0];
+      return ((row && row.sort_order) || 0) + 10;
+    } catch (e) {
+      return nutriProNextFolderSortOrder(parentId || null);
+    }
+  }
+
+  /** Mueve carpeta dentro de otra (o a raíz si newParentId=null). */
+  async function moveNutriProFolderToParent(dragId, newParentId, opts) {
+    opts = opts || {};
+    if (!dragId || !state.client || !state.userId) return false;
+    var dragF = nutriProGetFolderById(dragId);
+    if (!dragF) return false;
+    var dstParent = newParentId || null;
+    if ((dragF.parent_id || null) === dstParent) return false;
+    if (dstParent && (dstParent === dragId || nutriProFolderIsUnder(dstParent, dragId))) {
+      showToast('No puedes meter una carpeta dentro de sí misma o de una subcarpeta suya.', true);
+      return false;
+    }
+    if (dstParent && !nutriProGetFolderById(dstParent)) {
+      showToast('Carpeta destino no encontrada.', true);
+      return false;
+    }
+    var nextSort = await nutriProNextFolderSortOrderRemote(dstParent);
+    var upd = await npCloudSyncTrack(function () {
+      return state.client
+        .from('plan_pro_nutri_folders')
+        .update({ parent_id: dstParent, sort_order: nextSort })
+        .eq('id', dragId)
+        .eq('owner_id', state.userId);
+    });
+    if (upd.error) {
+      showToast(upd.error.message || 'No se pudo mover la carpeta.', true);
+      return false;
+    }
+    dragF.parent_id = dstParent;
+    dragF.sort_order = nextSort;
+    if (dstParent) {
+      try {
+        state.nutriProFolderCollapsed = state.nutriProFolderCollapsed || {};
+        delete state.nutriProFolderCollapsed[dstParent];
+      } catch (eCol) {}
+    }
+    state.nutriProFolderSortMode = 'manual';
+    try {
+      localStorage.setItem('np_nutri_pro_folder_sort', 'manual');
+    } catch (eLs) {}
+    syncNutriProSortSelects();
+    await loadNutriProFolders();
+    renderNutriProFolderTree();
+    await nutriProSyncFolderCountsUi();
+    if (!opts.silent) {
+      var where = dstParent ? 'dentro de «' + nutriProFolderLabel(dstParent) + '»' : 'en la raíz (sin padre)';
+      showToast('Carpeta movida ' + where + '.');
+    }
+    return true;
+  }
+
+  /**
+   * Arrastre de carpeta:
+   * - into: meter dentro de la carpeta destino
+   * - before/after: dejarla al mismo nivel que el destino (sacar o subir de nivel) y ordenar
+   */
+  async function applyNutriProFolderDrop(dragId, targetId, zone) {
+    if (!dragId || !targetId || dragId === targetId) return;
+    var dragF = nutriProGetFolderById(dragId);
+    var targetF = nutriProGetFolderById(targetId);
+    if (!dragF || !targetF) return;
+    var z = zone === 'into' || zone === 'before' || zone === 'after' ? zone : 'after';
+
+    if (z === 'into') {
+      await moveNutriProFolderToParent(dragId, targetId);
+      return;
+    }
+
+    var wantParent = targetF.parent_id || null;
+    if ((dragF.parent_id || null) !== wantParent) {
+      var moved = await moveNutriProFolderToParent(dragId, wantParent, { silent: true });
+      dragF = nutriProGetFolderById(dragId);
+      if (!moved || !dragF || (dragF.parent_id || null) !== wantParent) return;
+      showToast(
+        wantParent
+          ? 'Carpeta movida al nivel de «' + nutriProFolderLabel(targetId) + '».'
+          : 'Carpeta sacada a la raíz.'
+      );
+    }
+    await reorderNutriProFolders(dragId, targetId, z === 'after');
+  }
+
   async function reorderNutriProFiles(dragId, targetId, insertAfter) {
     if (!dragId || !targetId || dragId === targetId || !state.client) return;
     var dragF = (state.nutriProFiles || []).filter(function (f) {
@@ -28392,6 +28510,7 @@
     if (!btn || !folderRec || !folderRec.id) return;
     btn.setAttribute('draggable', 'true');
     btn.setAttribute('data-np-nutri-folder-id', folderRec.id);
+    btn.title = 'Arrastra: centro = meter dentro · borde = mismo nivel (sacar/ordenar)';
     btn.addEventListener('dragstart', function (e) {
       if (e.target && e.target.closest && e.target.closest('.np-nutri-folder-ignore')) {
         e.preventDefault();
@@ -28422,17 +28541,29 @@
         return;
       }
       if (dnd.type !== 'nutri-folder' || dnd.id === folderRec.id) return;
-      if ((dnd.parentId || null) !== (folderRec.parent_id || null)) return;
+      if (nutriProFolderIsUnder(folderRec.id, dnd.id)) return;
       e.preventDefault();
-      btn.classList.remove('np-dnd-drop-onto');
       var r = btn.getBoundingClientRect();
-      var after = e.clientY > r.top + r.height / 2;
-      markPlanDropTarget(btn, after);
-      btn.dataset.npDropAfter = after ? '1' : '0';
+      var y = e.clientY - r.top;
+      var h = Math.max(r.height, 1);
+      var zone = 'into';
+      if (y < h * 0.28) zone = 'before';
+      else if (y > h * 0.72) zone = 'after';
+      btn.dataset.npDropZone = zone;
+      document.querySelectorAll('.np-dnd-drop-before,.np-dnd-drop-after,.np-dnd-drop-onto').forEach(function (el) {
+        if (el !== btn) el.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after', 'np-dnd-drop-onto');
+      });
+      btn.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after', 'np-dnd-drop-onto');
+      if (zone === 'into') {
+        btn.classList.add('np-dnd-drop-onto');
+      } else {
+        markPlanDropTarget(btn, zone === 'after');
+      }
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
     });
     btn.addEventListener('dragleave', function () {
       btn.classList.remove('np-dnd-drop-before', 'np-dnd-drop-after', 'np-dnd-drop-onto');
+      delete btn.dataset.npDropZone;
       delete btn.dataset.npDropAfter;
     });
     btn.addEventListener('drop', async function (e) {
@@ -28449,10 +28580,11 @@
         return;
       }
       if (dnd.type !== 'nutri-folder') return;
-      var after = btn.dataset.npDropAfter === '1';
+      var zone = btn.dataset.npDropZone || 'into';
       state.nutriProDnd = null;
       clearPlanDndClasses();
-      await reorderNutriProFolders(dragId, folderRec.id, after);
+      delete btn.dataset.npDropZone;
+      await applyNutriProFolderDrop(dragId, folderRec.id, zone);
     });
     btn.addEventListener('dragend', function () {
       state.lastNutriProDndEndedAt = Date.now();
@@ -29680,7 +29812,7 @@
     var mt = String(fileRec.mime_type || '').toLowerCase();
     if (nutriProFileIsImage(n, mt)) return 'browser';
     if (/\.pdf$/.test(n) || mt.indexOf('pdf') >= 0) return 'browser';
-    if (/\.(txt|csv|md|svg)$/.test(n) || mt === 'text/plain' || mt === 'text/csv') return 'browser';
+    if (/\.(txt|csv|md|svg|xml)$/.test(n) || mt === 'text/plain' || mt === 'text/csv' || mt === 'application/xml' || mt === 'text/xml') return 'browser';
     if (
       /\.(xlsx|xls|docx|doc|pptx|ppt|odt|ods|odp|rtf)$/.test(n) ||
       /word|spreadsheet|presentation|msword|officedocument|opendocument|rtf/.test(mt)

@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.9.1",
-    "description": "v2.9.1 — ChatGPT: una sola Action (nutriplantAdminQuery). Los nombres admin_stats, nutri_pro_catalog, etc. van en el body como campo action, no son tools separadas. Plan PRO + Nutri PRO + clima en vivo + my_program_* personal admin."
+    "version": "2.10.0",
+    "description": "v2.10.0 — ChatGPT: una sola Action (nutriplantAdminQuery). Archivos Nutri PRO incluyen open_url permanente; nutri_pro_reindex para reindexar/OCR. Los nombres admin_stats, nutri_pro_catalog, etc. van en el body como campo action, no son tools separadas."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO",
-        "description": "Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, describe_api van en body.action, no son tools aparte. Ej: {\"action\":\"admin_stats\",\"params\":{}}. Verifica describe_api → version 2.9.1.",
+        "description": "Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, nutri_pro_reindex, describe_api van en body.action, no son tools aparte. Ej: {\"action\":\"admin_stats\",\"params\":{}}. Verifica describe_api → version 2.10.0.",
         "requestBody": {
           "required": true,
           "content": {
@@ -69,6 +69,7 @@
               "nutri_pro_search",
               "nutri_pro_ask",
               "nutri_pro_file_text",
+              "nutri_pro_reindex",
               "nutri_pro_save",
               "nutri_pro_upload_link",
               "nutri_pro_upload_status",
@@ -94,7 +95,7 @@
               },
               "mode": {
                 "type": "string",
-                "description": "project_climate: saved (snapshot nube) | live (tiempo actual) | rainfall_refresh (lluvia/ET₀ mensual vivo) | rolling (ventanas 1/7/30 d) | all (todo en vivo + guardado). Default saved."
+                "description": "project_climate: saved|live|rainfall_refresh|rolling|all · nutri_pro_reindex: text|ocr"
               },
               "email": { "type": "string" },
               "crop": { "type": "string" },
@@ -105,6 +106,14 @@
               "item_id": { "type": "string", "description": "UUID apunte Plan PRO" },
               "nutri_file_id": { "type": "string", "description": "UUID archivo Nutri PRO" },
               "file_id": { "type": "string", "description": "Alias de nutri_file_id" },
+              "open_url": {
+                "type": "string",
+                "description": "Link permanente /api/nutri-pro-file-open?fid=… (alternativa a nutri_file_id para file_text/reindex)"
+              },
+              "force": {
+                "type": "boolean",
+                "description": "nutri_pro_reindex: forzar reextracción (default true)"
+              },
               "folder_id": { "type": "string", "description": "UUID carpeta Nutri PRO (filtro o nutri_pro_save)" },
               "folder_path": { "type": "string", "description": "nutri_pro_save: ruta carpeta ej. work / Personal" },
               "folder_title": { "type": "string", "description": "nutri_pro_save: nombre carpeta ej. work" },

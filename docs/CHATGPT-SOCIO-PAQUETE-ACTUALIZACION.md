@@ -41,9 +41,9 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 ## Paso C — Actions (OpenAPI)
 
 1. **Actions** → elimina schema anterior si da conflicto.
-2. Importa `docs/openapi-nutriplant-admin.json` **v2.9.1** (fix: una sola Action `nutriplantAdminQuery`; `admin_stats` etc. van en body.action).
+2. Importa `docs/openapi-nutriplant-admin.json` **v2.10.0** (fix: una sola Action `nutriplantAdminQuery`; `admin_stats` etc. van en body.action).
 3. Auth sin cambios: `Authorization: Bearer <NUTRIPLANT_ADMIN_GPT_TOKEN>`.
-4. **Verificar versión:** chat nuevo → *«Socio, consulta describe_api y dime la version»*. Debe decir **2.9.1** y mostrar *Talking to nutriplantpro.com*. Si dice «action no disponible», reimporta schema o revisa token.
+4. **Verificar versión:** chat nuevo → *«Socio, consulta describe_api y dime la version»*. Debe decir **2.10.0** y mostrar *Talking to nutriplantpro.com*. Si dice «action no disponible», reimporta schema o revisa token.
 
 ---
 

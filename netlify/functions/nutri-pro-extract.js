@@ -337,6 +337,8 @@ async function extractOneFile(supabase, fileId, force, mode) {
   };
 }
 
+exports.extractOneFile = extractOneFile;
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(), body: '' };
