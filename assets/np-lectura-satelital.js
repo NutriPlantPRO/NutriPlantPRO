@@ -12,7 +12,6 @@
   var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   var lecturaChart = null;
   var lecturaPollTimer = null;
-  var lecturaChartOpen = true;
   var lecturaSeriesVis = {
     ndvi: true,
     ndmi: true,
@@ -310,8 +309,8 @@
           '<div id="lecturaCostHint" style="font-size:12px;color:#166534;margin-top:10px;font-weight:600;"></div>' +
           '<div id="lecturaStatusHint" style="font-size:12px;color:#475569;margin-top:6px;line-height:1.5;"></div>' +
         '</div>' +
-        '<div id="lecturaViewBar" style="display:none;margin-top:12px;align-items:center;gap:8px;flex-wrap:wrap;"></div>' +
-        '<div id="lecturaChartWrap" style="margin-top:10px;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;">' +
+        '<div id="lecturaTableWrap" style="margin-top:14px;overflow-x:auto;"></div>' +
+        '<div id="lecturaChartWrap" style="margin-top:14px;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;">' +
           '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">' +
             '<div style="font-weight:700;color:#0f172a;font-size:14px;">Gráfica por periodo</div>' +
             '<div id="lecturaChartToggles" style="display:flex;flex-wrap:wrap;gap:6px;"></div>' +
@@ -323,7 +322,6 @@
             'Izquierda: NDVI / NDMI. Derecha: mm (ET₀, lluvia, riego). Barras tenues: horas VPD del periodo (&lt;0.5 azul, 0.5–1.5 verde, &gt;1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).' +
           '</div>' +
         '</div>' +
-        '<div id="lecturaTableWrap" style="margin-top:14px;overflow-x:auto;"></div>' +
         '<div id="lecturaGallery" style="margin-top:14px;"></div>' +
       '</div>';
   }
@@ -569,35 +567,11 @@
       });
     });
   }
-  function renderViewBar(state) {
-    var bar = document.getElementById('lecturaViewBar');
-    if (!bar) return;
-    if (!state || !state.rows || !state.rows.length) {
-      bar.style.display = 'none';
-      bar.innerHTML = '';
-      return;
-    }
-    bar.style.display = 'flex';
-    bar.innerHTML =
-      '<button type="button" id="lecturaBtnToggleChart" class="btn btn-secondary" style="font-size:13px;">' +
-        (lecturaChartOpen ? '🙈 Ocultar gráfica' : '📊 Ver gráfica') +
-      '</button>' +
-      '<span style="font-size:12px;color:#64748b;">Líneas NDVI/NDMI + mm · barras tenues de horas VPD (como en Clima).</span>';
-    var btn = document.getElementById('lecturaBtnToggleChart');
-    if (btn) {
-      btn.addEventListener('click', function () {
-        lecturaChartOpen = !lecturaChartOpen;
-        renderChart(state);
-        renderViewBar(state);
-      });
-    }
-  }
   function renderChart(state) {
     var wrap = document.getElementById('lecturaChartWrap');
     var canvas = document.getElementById('lecturaChart');
-    renderViewBar(state);
     if (!wrap || !canvas || typeof Chart === 'undefined') return;
-    if (!state || !state.rows || !state.rows.length || !lecturaChartOpen) {
+    if (!state || !state.rows || !state.rows.length) {
       wrap.style.display = 'none';
       if (lecturaChart) { try { lecturaChart.destroy(); } catch (e) {} lecturaChart = null; }
       return;
@@ -791,6 +765,43 @@
     });
   }
 
+  // ---------- visor grande (lightbox) ----------
+  function openLecturaLightbox(url, title, subtitle) {
+    var overlay = document.getElementById('lecturaLightbox');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'lecturaLightbox';
+      overlay.style.cssText =
+        'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,0.86);display:flex;align-items:center;justify-content:center;padding:26px;';
+      overlay.innerHTML =
+        '<button type="button" id="lecturaLightboxClose" ' +
+          'style="position:absolute;top:14px;right:14px;z-index:2;display:inline-flex;align-items:center;gap:6px;' +
+          'background:#2563eb;color:#fff;border:none;border-radius:999px;padding:9px 16px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.35);">' +
+          '✕ Cerrar' +
+        '</button>' +
+        '<figure style="margin:0;max-width:min(92vw,900px);max-height:88vh;display:flex;flex-direction:column;gap:8px;align-items:center;">' +
+          '<figcaption id="lecturaLightboxTitle" style="color:#fff;font-size:15px;font-weight:800;text-align:center;"></figcaption>' +
+          '<img id="lecturaLightboxImg" alt="" style="max-width:100%;max-height:74vh;border-radius:12px;background:#f1f5f9;box-shadow:0 10px 40px rgba(0,0,0,0.5);">' +
+          '<div id="lecturaLightboxSub" style="color:#cbd5e1;font-size:12px;text-align:center;"></div>' +
+        '</figure>';
+      document.body.appendChild(overlay);
+      function closeLb() { overlay.style.display = 'none'; }
+      overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeLb(); });
+      var closeBtn = overlay.querySelector('#lecturaLightboxClose');
+      if (closeBtn) closeBtn.addEventListener('click', closeLb);
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape' && overlay.style.display !== 'none') closeLb();
+      });
+    }
+    var img = overlay.querySelector('#lecturaLightboxImg');
+    var t = overlay.querySelector('#lecturaLightboxTitle');
+    var s = overlay.querySelector('#lecturaLightboxSub');
+    if (img) { img.src = url; img.alt = title || ''; }
+    if (t) t.textContent = title || '';
+    if (s) s.textContent = subtitle || '';
+    overlay.style.display = 'flex';
+  }
+
   function renderGallery(state) {
     var el = document.getElementById('lecturaGallery');
     if (!el) return;
@@ -829,7 +840,7 @@
           esc(r.label || '') +
         '</figcaption>' +
         (url
-          ? '<img src="' + esc(url) + '" alt="' + label + ' ' + esc(r.label) + '" style="width:100%;height:142px;object-fit:contain;border-radius:7px;display:block;background:#f1f5f9;">'
+          ? '<img src="' + esc(url) + '" alt="' + label + ' ' + esc(r.label) + '" data-lectura-zoom="1" data-zoom-title="' + esc(label + ' · ' + (r.label || '')) + '" data-zoom-sub="' + esc(meta) + '" style="width:100%;height:142px;object-fit:contain;border-radius:7px;display:block;background:#f1f5f9;cursor:zoom-in;" title="Toca para ver en grande">'
           : '<div style="height:142px;display:flex;align-items:center;justify-content:center;text-align:center;color:#94a3b8;background:#f1f5f9;border-radius:7px;font-size:11px;">Sin ' + label + '</div>') +
         '<div style="font-size:9.5px;color:#64748b;text-align:center;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + esc(meta) + '">' + (meta || '&nbsp;') + '</div>' +
       '</figure>';
@@ -847,9 +858,14 @@
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
           rows.map(function (r) { return miniCard(r, 'ndmi', 'NDMI', '#0369a1'); }).join('') +
         '</div>' +
-        '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">* 30 d = quincena ampliada por nubosidad. El color compara zonas dentro del mismo predio/periodo; el valor numérico promedio está en la tabla.</div>' +
+        '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">* 30 d = quincena ampliada por nubosidad. El color compara zonas dentro del mismo predio/periodo; el valor numérico promedio está en la tabla. Toca cualquier imagen para verla en grande.</div>' +
       '</div>';
     el.innerHTML = html;
+    el.querySelectorAll('img[data-lectura-zoom]').forEach(function (img) {
+      img.addEventListener('click', function () {
+        openLecturaLightbox(img.src, img.getAttribute('data-zoom-title') || '', img.getAttribute('data-zoom-sub') || '');
+      });
+    });
   }
 
   function renderAll(state) {
@@ -860,7 +876,17 @@
 
   function setStatus(msg) {
     var el = document.getElementById('lecturaStatusHint');
-    if (el) el.innerHTML = msg || '';
+    if (!el) return;
+    var text = msg || '';
+    var isBusy = /⏳|Generando|Enviando|Actualizando|Obteniendo/.test(text);
+    if (isBusy) {
+      el.innerHTML =
+        '<span style="display:inline-block;background:#fef3c7;border:1px solid #f59e0b;color:#92400e;font-weight:800;font-size:13px;padding:7px 12px;border-radius:8px;line-height:1.45;">' +
+        text +
+        '</span>';
+    } else {
+      el.innerHTML = text;
+    }
   }
 
   // ---------- polling de estado ----------
