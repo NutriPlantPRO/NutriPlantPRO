@@ -12,6 +12,15 @@
   var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   var lecturaChart = null;
   var lecturaPollTimer = null;
+  var lecturaChartOpen = true;
+  var lecturaSeriesVis = {
+    ndvi: true,
+    ndmi: true,
+    vpd: true,
+    et0: true,
+    rain: true,
+    riego: true
+  };
 
   // ---------- utilidades de fecha ----------
   function todayIso() {
@@ -178,32 +187,72 @@
       return a + (Number.isFinite(n) ? n : 0);
     }, 0);
   }
-  function computeVpdMean(hourly) {
+  /** Horas teóricas del periodo (inclusive): quincena 15 d = 360 h. */
+  function periodHoursExpected(startIso, endIso) {
+    var s = parseIso(startIso);
+    var e = parseIso(endIso);
+    if (!s || !e) return null;
+    var days = Math.floor((e.getTime() - s.getTime()) / 86400000) + 1;
+    if (days < 1) days = 1;
+    return days * 24;
+  }
+  function hourVpdValue(temp, hum, rad) {
+    var r;
+    if (Number.isFinite(rad) && typeof calculateVPDAdvanced === 'function' && typeof calculateLeafTempFromRadiation === 'function') {
+      var leaf = calculateLeafTempFromRadiation(temp, rad);
+      r = calculateVPDAdvanced(temp, hum, leaf);
+    } else if (typeof calculateVPDSimple === 'function') {
+      r = calculateVPDSimple(temp, hum);
+    } else {
+      var es = 0.6108 * Math.exp((17.27 * temp) / (temp + 237.3));
+      r = { vpd: es - es * (hum / 100) };
+    }
+    return r && Number.isFinite(Number(r.vpd)) ? Number(r.vpd) : null;
+  }
+  /** Promedio + horas por rango (igual criterio que Clima: <0.5 / 0.5–1.5 / >1.5). */
+  function computeVpdStats(hourly, startIso, endIso) {
     var t = hourly.temperature_2m || [];
     var rh = hourly.relative_humidity_2m || [];
     var rad = hourly.shortwave_radiation || [];
     var vals = [];
+    var low = 0;
+    var opt = 0;
+    var high = 0;
     for (var i = 0; i < t.length; i++) {
       var temp = Number(t[i]);
       var hum = Number(rh[i]);
       if (!Number.isFinite(temp) || !Number.isFinite(hum)) continue;
-      var r;
-      if (Number.isFinite(Number(rad[i])) && typeof calculateVPDAdvanced === 'function' && typeof calculateLeafTempFromRadiation === 'function') {
-        var leaf = calculateLeafTempFromRadiation(temp, Number(rad[i]));
-        r = calculateVPDAdvanced(temp, hum, leaf);
-      } else if (typeof calculateVPDSimple === 'function') {
-        r = calculateVPDSimple(temp, hum);
-      } else {
-        var es = 0.6108 * Math.exp((17.27 * temp) / (temp + 237.3));
-        r = { vpd: es - es * (hum / 100) };
-      }
-      if (r && Number.isFinite(Number(r.vpd))) vals.push(Number(r.vpd));
+      var v = hourVpdValue(temp, hum, Number(rad[i]));
+      if (v == null) continue;
+      vals.push(v);
+      if (v < 0.5) low++;
+      else if (v <= 1.5) opt++;
+      else high++;
     }
-    if (!vals.length) return null;
-    return Math.round((vals.reduce(function (a, b) { return a + b; }, 0) / vals.length) * 100) / 100;
+    var expected = periodHoursExpected(startIso, endIso);
+    var counted = low + opt + high;
+    return {
+      vpd_mean: vals.length
+        ? Math.round((vals.reduce(function (a, b) { return a + b; }, 0) / vals.length) * 100) / 100
+        : null,
+      vpd_hours_low: low,
+      vpd_hours_opt: opt,
+      vpd_hours_high: high,
+      vpd_hours_total: counted || expected,
+      vpd_hours_expected: expected
+    };
   }
   async function fetchClimateForPeriod(center, period) {
-    var out = { vpd_mean: null, et0_sum: null, rain_sum: null };
+    var out = {
+      vpd_mean: null,
+      et0_sum: null,
+      rain_sum: null,
+      vpd_hours_low: null,
+      vpd_hours_opt: null,
+      vpd_hours_high: null,
+      vpd_hours_total: null,
+      vpd_hours_expected: periodHoursExpected(period.date_start, period.date_end)
+    };
     try {
       var daily = await fetchDaily(center.lat, center.lng, period.date_start, period.date_end);
       out.rain_sum = Math.round(sum(daily.precipitation_sum) * 10) / 10;
@@ -211,7 +260,13 @@
     } catch (e) { console.warn('Lectura clima daily:', e); }
     try {
       var hourly = await fetchHourly(center.lat, center.lng, period.date_start, period.date_end);
-      out.vpd_mean = computeVpdMean(hourly);
+      var st = computeVpdStats(hourly, period.date_start, period.date_end);
+      out.vpd_mean = st.vpd_mean;
+      out.vpd_hours_low = st.vpd_hours_low;
+      out.vpd_hours_opt = st.vpd_hours_opt;
+      out.vpd_hours_high = st.vpd_hours_high;
+      out.vpd_hours_total = st.vpd_hours_total;
+      out.vpd_hours_expected = st.vpd_hours_expected;
     } catch (e) { console.warn('Lectura clima hourly:', e); }
     return out;
   }
@@ -223,7 +278,7 @@
         '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:12px;padding:14px;">' +
           '<div style="font-weight:700;color:#14532d;font-size:15px;margin-bottom:4px;">📈 Lectura Satelital — histórico del predio</div>' +
           '<div style="font-size:12px;color:#334155;line-height:1.5;margin-bottom:10px;">' +
-            'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³).' +
+            'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ mm con % de franja).' +
           '</div>' +
           '<div style="font-size:11px;color:#334155;line-height:1.5;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
             '<strong style="color:#14532d;">Cómo se arma:</strong> ' +
@@ -250,16 +305,25 @@
               '<input type="date" id="lecturaEndDate" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;">' +
             '</label>' +
             '<button type="button" id="lecturaBtnGenerate" class="btn btn-primary" style="font-size:13px;">🛰 Generar histórico</button>' +
-            '<button type="button" id="lecturaBtnRefresh" class="btn btn-secondary" style="font-size:13px;">🔄 Actualizar</button>' +
+            '<button type="button" id="lecturaBtnRefresh" class="btn btn-secondary" style="font-size:13px;" title="Revisa si terminaron los periodos pendientes, trae imágenes/NDVI/NDMI guardados y completa clima si falta.">🔄 Actualizar</button>' +
           '</div>' +
           '<div id="lecturaCostHint" style="font-size:12px;color:#166534;margin-top:10px;font-weight:600;"></div>' +
           '<div id="lecturaStatusHint" style="font-size:12px;color:#475569;margin-top:6px;line-height:1.5;"></div>' +
         '</div>' +
-        '<div id="lecturaTableWrap" style="margin-top:14px;overflow-x:auto;"></div>' +
-        '<div id="lecturaChartWrap" style="margin-top:14px;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;">' +
-          '<div style="font-weight:700;color:#0f172a;font-size:14px;margin-bottom:8px;">Evolución por periodo</div>' +
-          '<canvas id="lecturaChart" height="120"></canvas>' +
+        '<div id="lecturaViewBar" style="display:none;margin-top:12px;align-items:center;gap:8px;flex-wrap:wrap;"></div>' +
+        '<div id="lecturaChartWrap" style="margin-top:10px;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;">' +
+          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">' +
+            '<div style="font-weight:700;color:#0f172a;font-size:14px;">Gráfica por periodo</div>' +
+            '<div id="lecturaChartToggles" style="display:flex;flex-wrap:wrap;gap:6px;"></div>' +
+          '</div>' +
+          '<div style="position:relative;width:100%;height:240px;">' +
+            '<canvas id="lecturaChart"></canvas>' +
+          '</div>' +
+          '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">' +
+            'Izquierda: NDVI / NDMI. Derecha: mm (ET₀, lluvia, riego). Barras tenues: horas VPD del periodo (&lt;0.5 azul, 0.5–1.5 verde, &gt;1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).' +
+          '</div>' +
         '</div>' +
+        '<div id="lecturaTableWrap" style="margin-top:14px;overflow-x:auto;"></div>' +
         '<div id="lecturaGallery" style="margin-top:14px;"></div>' +
       '</div>';
   }
@@ -285,6 +349,62 @@
       ', sin importar cuántos periodos elijas.';
   }
 
+  // ---------- riego m³ ↔ mm (franja regada) ----------
+  // Misma regla que balance hídrico: 1 mm sobre 1 ha = 10 m³.
+  function round1(v) {
+    return Math.round(Number(v) * 10) / 10;
+  }
+  function getLocationData() {
+    var proj = getProject();
+    if (!proj || !proj.id) return {};
+    if (window.projectStorage && window.projectStorage.loadSection) {
+      return window.projectStorage.loadSection('location', proj.id) || {};
+    }
+    return (proj.location) || {};
+  }
+  function getCropHa() {
+    var loc = getLocationData();
+    var ha = loc.areaHectares != null ? Number(loc.areaHectares) : NaN;
+    return Number.isFinite(ha) && ha > 0 ? ha : null;
+  }
+  function suggestFranjaPct() {
+    try {
+      var proj = getProject();
+      if (!proj || !proj.id) return 100;
+      var soil = null;
+      if (window.projectStorage && window.projectStorage.loadSection) {
+        soil = window.projectStorage.loadSection('soil', proj.id);
+      }
+      var reach = soil && soil.fertility && Number(soil.fertility.reachPct);
+      if (Number.isFinite(reach) && reach > 0 && reach <= 100) return Math.round(reach);
+    } catch (e) { /* ignore */ }
+    return 100;
+  }
+  function getFranjaPct(state) {
+    var p = state && state.franja_pct != null ? Number(state.franja_pct) : NaN;
+    if (!Number.isFinite(p) || p <= 0) p = suggestFranjaPct();
+    return Math.min(100, Math.max(1, Math.round(p)));
+  }
+  function irrigatedHa(state) {
+    var crop = getCropHa();
+    if (crop == null) return null;
+    return crop * (getFranjaPct(state) / 100);
+  }
+  function m3ToMm(m3, iHa) {
+    if (m3 == null || !Number.isFinite(Number(m3)) || iHa == null || !(iHa > 0)) return null;
+    return round1(Number(m3) / (iHa * 10));
+  }
+  function mmToM3(mm, iHa) {
+    if (mm == null || !Number.isFinite(Number(mm)) || iHa == null || !(iHa > 0)) return null;
+    return round1(Number(mm) * iHa * 10);
+  }
+  function syncRiegoMmFromM3(state) {
+    var iHa = irrigatedHa(state);
+    (state.rows || []).forEach(function (r) {
+      r.riego_mm = m3ToMm(r.riego_m3, iHa);
+    });
+  }
+
   // ---------- render tabla / gráfica / galería ----------
   function fmtNum(v, dec) {
     if (v == null || !Number.isFinite(Number(v))) return '—';
@@ -303,73 +423,369 @@
     var wrap = document.getElementById('lecturaTableWrap');
     if (!wrap) return;
     if (!state || !state.rows || !state.rows.length) { wrap.innerHTML = ''; return; }
+    if (state.franja_pct == null) state.franja_pct = suggestFranjaPct();
+    syncRiegoMmFromM3(state);
     var rows = state.rows.slice().sort(function (a, b) { return a.index - b.index; });
-    var html = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">' +
+    var cropHa = getCropHa();
+    var pct = getFranjaPct(state);
+    var iHa = irrigatedHa(state);
+    var inpStyle = 'width:72px;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;text-align:right;';
+
+    var html = '<div style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin:0 0 10px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#334155;">' +
+      '<label style="display:flex;align-items:center;gap:6px;font-weight:700;color:#14532d;">' +
+        '% franja regada' +
+        '<input type="number" id="lecturaFranjaPct" min="1" max="100" step="1" value="' + pct + '" style="width:64px;border:1px solid #86efac;border-radius:6px;padding:4px 6px;font-size:13px;font-weight:700;color:#14532d;text-align:right;">' +
+        '%' +
+      '</label>' +
+      '<span>Predio: <strong>' + (cropHa != null ? fmtNum(cropHa, 2) + ' ha' : '—') + '</strong></span>' +
+      '<span>Franja: <strong>' + (iHa != null ? fmtNum(iHa, 2) + ' ha' : '—') + '</strong></span>' +
+      '<span style="color:#64748b;font-size:11px;">1 mm en franja = 10 m³ × ha franja · edita m³ o mm y se convierte solo</span>' +
+    '</div>';
+
+    var headers = [
+      ['Periodo', 'Rango de fechas del periodo analizado.'],
+      ['NDVI prom', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.'],
+      ['NDMI prom', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.'],
+      ['VPD prom (kPa)', 'VPD promedio horario del periodo.'],
+      ['h VPD <0.5', 'Horas del periodo con VPD bajo (<0.5 kPa).'],
+      ['h VPD 0.5–1.5', 'Horas del periodo con VPD óptimo (0.5–1.5 kPa).'],
+      ['h VPD >1.5', 'Horas del periodo con VPD alto (>1.5 kPa).'],
+      ['ET₀ acum (mm)', 'ET₀ acumulada durante todo el periodo.'],
+      ['Lluvia acum (mm)', 'Lluvia acumulada durante todo el periodo.'],
+      ['Riego (m³)', 'Volumen total aplicado en la franja regada.'],
+      ['Riego (mm)', 'Lámina equivalente en la franja regada según el % de franja.'],
+      ['Estado', 'Estado de la imagen satelital del periodo.']
+    ];
+    html += '<table style="width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">' +
       '<thead><tr style="background:#f1f5f9;color:#0f172a;">' +
-      ['Periodo', 'NDVI prom', 'NDMI prom', 'VPD prom (kPa)', 'ET₀ (mm)', 'Lluvia (mm)', 'Riego (m³)', 'Estado']
-        .map(function (h) { return '<th style="padding:8px 10px;text-align:center;white-space:nowrap;">' + h + '</th>'; }).join('') +
+      headers.map(function (h) {
+        return '<th title="' + esc(h[1]) + '" style="padding:8px 10px;text-align:center;white-space:nowrap;">' + esc(h[0]) + '</th>';
+      }).join('') +
       '</tr></thead><tbody>';
     rows.forEach(function (r) {
+      var mmVal = r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
       html += '<tr style="border-top:1px solid #e2e8f0;">' +
         '<td style="padding:8px 10px;font-weight:700;color:#14532d;white-space:nowrap;">' + esc(r.label || '') +
           (r.lookback_expanded ? ' <span title="Quincena nublada: ampliada a 30 días" style="color:#b45309;">*</span>' : '') + '</td>' +
         '<td style="padding:8px 10px;text-align:center;">' + fmtNum(r.ndvi_mean, 3) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;">' + fmtNum(r.ndmi_mean, 3) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;">' + fmtNum(r.vpd_mean, 2) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;color:#1d4ed8;" title="Horas VPD bajo">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;color:#16a34a;" title="Horas VPD óptimo">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;color:#7f1d1d;" title="Horas VPD alto">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;">' + fmtNum(r.et0_sum, 1) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;">' + fmtNum(r.rain_sum, 1) + '</td>' +
         '<td style="padding:6px 8px;text-align:center;">' +
           '<input type="number" min="0" step="0.1" value="' + (r.riego_m3 != null ? esc(r.riego_m3) : '') +
-          '" data-riego-index="' + r.index + '" style="width:80px;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;text-align:right;" placeholder="0">' +
+          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Volumen total en franja">' +
+        '</td>' +
+        '<td style="padding:6px 8px;text-align:center;">' +
+          '<input type="number" min="0" step="0.1" value="' + (mmVal != null ? esc(mmVal) : '') +
+          '" data-riego-mm-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Lámina en franja regada"' +
+          (iHa == null ? ' disabled' : '') + '>' +
         '</td>' +
         '<td style="padding:8px 10px;text-align:center;">' + statusBadge(r) + '</td>' +
       '</tr>';
     });
     html += '</tbody></table>';
-    html += '<div style="font-size:11px;color:#64748b;margin-top:6px;">NDVI/NDMI = promedio de píxeles válidos dentro del predio. ET₀ y lluvia = acumulado del periodo. VPD = promedio horario. <span style="color:#b45309;">*</span> quincena ampliada a 30 días por nubosidad.</div>';
+    html += '<div style="font-size:11px;color:#64748b;margin-top:6px;">NDVI y NDMI no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). Riego mm = lámina en la franja (% arriba). <span style="color:#b45309;">*</span> quincena ampliada a 30 días por nubosidad.' +
+      (cropHa == null ? ' <span style="color:#b45309;">Guarda el polígono con área (ha) para convertir m³ ↔ mm.</span>' : '') +
+      '</div>';
     wrap.innerHTML = html;
 
-    wrap.querySelectorAll('input[data-riego-index]').forEach(function (inp) {
+    var franjaInp = document.getElementById('lecturaFranjaPct');
+    if (franjaInp) {
+      franjaInp.addEventListener('change', function () {
+        var v = parseFloat(franjaInp.value);
+        state.franja_pct = Number.isFinite(v) ? Math.min(100, Math.max(1, Math.round(v))) : 100;
+        syncRiegoMmFromM3(state);
+        saveState(state);
+        renderTable(state);
+        renderChart(state);
+      });
+    }
+    wrap.querySelectorAll('input[data-riego-m3-index]').forEach(function (inp) {
       inp.addEventListener('change', function () {
-        var idx = parseInt(inp.getAttribute('data-riego-index'), 10);
+        var idx = parseInt(inp.getAttribute('data-riego-m3-index'), 10);
         var row = (state.rows || []).find(function (x) { return x.index === idx; });
-        if (row) {
-          var v = parseFloat(inp.value);
-          row.riego_m3 = Number.isFinite(v) ? v : null;
-          saveState(state);
-          renderChart(state);
+        if (!row) return;
+        var v = parseFloat(inp.value);
+        row.riego_m3 = Number.isFinite(v) ? round1(v) : null;
+        row.riego_mm = m3ToMm(row.riego_m3, irrigatedHa(state));
+        saveState(state);
+        var mmInp = wrap.querySelector('input[data-riego-mm-index="' + idx + '"]');
+        if (mmInp) mmInp.value = row.riego_mm != null ? row.riego_mm : '';
+        renderChart(state);
+      });
+    });
+    wrap.querySelectorAll('input[data-riego-mm-index]').forEach(function (inp) {
+      inp.addEventListener('change', function () {
+        var idx = parseInt(inp.getAttribute('data-riego-mm-index'), 10);
+        var row = (state.rows || []).find(function (x) { return x.index === idx; });
+        if (!row) return;
+        var v = parseFloat(inp.value);
+        var iHaNow = irrigatedHa(state);
+        if (iHaNow == null) {
+          alert('Guarda el polígono del predio (con área en ha) para convertir mm ↔ m³.');
+          return;
         }
+        row.riego_mm = Number.isFinite(v) ? round1(v) : null;
+        row.riego_m3 = mmToM3(row.riego_mm, iHaNow);
+        saveState(state);
+        var m3Inp = wrap.querySelector('input[data-riego-m3-index="' + idx + '"]');
+        if (m3Inp) m3Inp.value = row.riego_m3 != null ? row.riego_m3 : '';
+        renderChart(state);
       });
     });
   }
 
+  function chipStyle(on, color) {
+    return 'border:1px solid ' + (on ? color : '#cbd5e1') +
+      ';background:' + (on ? color : '#fff') +
+      ';color:' + (on ? '#fff' : '#475569') +
+      ';border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;';
+  }
+  function renderChartToggles(state) {
+    var box = document.getElementById('lecturaChartToggles');
+    if (!box) return;
+    var chips = [
+      { key: 'ndvi', label: 'NDVI', color: '#16a34a' },
+      { key: 'ndmi', label: 'NDMI', color: '#0369a1' },
+      { key: 'vpd', label: 'VPD horas', color: '#7f1d1d' },
+      { key: 'et0', label: 'ET₀', color: '#a16207' },
+      { key: 'rain', label: 'Lluvia', color: '#2563eb' },
+      { key: 'riego', label: 'Riego mm', color: '#7c3aed' }
+    ];
+    box.innerHTML = chips.map(function (c) {
+      return '<button type="button" data-lectura-series="' + c.key + '" style="' +
+        chipStyle(!!lecturaSeriesVis[c.key], c.color) + '" title="Mostrar / ocultar ' + c.label + '">' +
+        c.label + '</button>';
+    }).join('');
+    box.querySelectorAll('[data-lectura-series]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var key = btn.getAttribute('data-lectura-series');
+        lecturaSeriesVis[key] = !lecturaSeriesVis[key];
+        renderChart(state);
+      });
+    });
+  }
+  function renderViewBar(state) {
+    var bar = document.getElementById('lecturaViewBar');
+    if (!bar) return;
+    if (!state || !state.rows || !state.rows.length) {
+      bar.style.display = 'none';
+      bar.innerHTML = '';
+      return;
+    }
+    bar.style.display = 'flex';
+    bar.innerHTML =
+      '<button type="button" id="lecturaBtnToggleChart" class="btn btn-secondary" style="font-size:13px;">' +
+        (lecturaChartOpen ? '🙈 Ocultar gráfica' : '📊 Ver gráfica') +
+      '</button>' +
+      '<span style="font-size:12px;color:#64748b;">Líneas NDVI/NDMI + mm · barras tenues de horas VPD (como en Clima).</span>';
+    var btn = document.getElementById('lecturaBtnToggleChart');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        lecturaChartOpen = !lecturaChartOpen;
+        renderChart(state);
+        renderViewBar(state);
+      });
+    }
+  }
   function renderChart(state) {
     var wrap = document.getElementById('lecturaChartWrap');
     var canvas = document.getElementById('lecturaChart');
+    renderViewBar(state);
     if (!wrap || !canvas || typeof Chart === 'undefined') return;
-    if (!state || !state.rows || !state.rows.length) { wrap.style.display = 'none'; return; }
+    if (!state || !state.rows || !state.rows.length || !lecturaChartOpen) {
+      wrap.style.display = 'none';
+      if (lecturaChart) { try { lecturaChart.destroy(); } catch (e) {} lecturaChart = null; }
+      return;
+    }
+    renderChartToggles(state);
     var rows = state.rows.slice().sort(function (a, b) { return a.index - b.index; }).reverse(); // cronológico
     var labels = rows.map(function (r) { return r.label; });
+    var iHa = irrigatedHa(state);
+    var hoursMax = 24;
+    rows.forEach(function (r) {
+      var exp = r.vpd_hours_expected != null
+        ? Number(r.vpd_hours_expected)
+        : periodHoursExpected(r.date_start, r.date_end);
+      var sumH = (Number(r.vpd_hours_low) || 0) + (Number(r.vpd_hours_opt) || 0) + (Number(r.vpd_hours_high) || 0);
+      hoursMax = Math.max(hoursMax, exp || 0, sumH);
+    });
     var ds = [
-      { label: 'NDVI', yAxisID: 'yIdx', data: rows.map(function (r) { return r.ndvi_mean; }), borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,.15)', tension: .3, spanGaps: true },
-      { label: 'NDMI', yAxisID: 'yIdx', data: rows.map(function (r) { return r.ndmi_mean; }), borderColor: '#0369a1', backgroundColor: 'rgba(3,105,161,.15)', tension: .3, spanGaps: true },
-      { label: 'VPD (kPa)', yAxisID: 'yEnv', data: rows.map(function (r) { return r.vpd_mean; }), borderColor: '#ea580c', borderDash: [5, 4], tension: .3, spanGaps: true },
-      { label: 'ET₀ (mm)', yAxisID: 'yEnv', data: rows.map(function (r) { return r.et0_sum; }), borderColor: '#a16207', borderDash: [2, 3], tension: .3, spanGaps: true, hidden: true },
-      { label: 'Lluvia (mm)', yAxisID: 'yEnv', data: rows.map(function (r) { return r.rain_sum; }), borderColor: '#2563eb', borderDash: [2, 3], tension: .3, spanGaps: true, hidden: true },
-      { label: 'Riego (m³)', yAxisID: 'yEnv', data: rows.map(function (r) { return r.riego_m3; }), borderColor: '#7c3aed', borderDash: [6, 3], tension: .3, spanGaps: true, hidden: true }
+      {
+        type: 'bar',
+        label: 'Horas VPD <0.5',
+        yAxisID: 'yHours',
+        data: rows.map(function (r) { return r.vpd_hours_low; }),
+        backgroundColor: 'rgba(29, 78, 216, 0.26)',
+        borderColor: 'rgba(29, 78, 216, 0.42)',
+        borderWidth: 1,
+        stack: 'vpdHours',
+        order: 3,
+        barPercentage: 0.72,
+        categoryPercentage: 0.78,
+        hidden: !lecturaSeriesVis.vpd
+      },
+      {
+        type: 'bar',
+        label: 'Horas VPD 0.5–1.5',
+        yAxisID: 'yHours',
+        data: rows.map(function (r) { return r.vpd_hours_opt; }),
+        backgroundColor: 'rgba(22, 163, 74, 0.18)',
+        borderColor: 'rgba(22, 163, 74, 0.35)',
+        borderWidth: 1,
+        stack: 'vpdHours',
+        order: 3,
+        barPercentage: 0.72,
+        categoryPercentage: 0.78,
+        hidden: !lecturaSeriesVis.vpd
+      },
+      {
+        type: 'bar',
+        label: 'Horas VPD >1.5',
+        yAxisID: 'yHours',
+        data: rows.map(function (r) { return r.vpd_hours_high; }),
+        backgroundColor: 'rgba(127, 29, 29, 0.26)',
+        borderColor: 'rgba(127, 29, 29, 0.44)',
+        borderWidth: 1,
+        stack: 'vpdHours',
+        order: 3,
+        barPercentage: 0.72,
+        categoryPercentage: 0.78,
+        hidden: !lecturaSeriesVis.vpd
+      },
+      {
+        type: 'line',
+        label: 'NDVI',
+        yAxisID: 'yIdx',
+        data: rows.map(function (r) { return r.ndvi_mean; }),
+        borderColor: '#16a34a',
+        backgroundColor: '#16a34a',
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: 3,
+        borderWidth: 2.5,
+        order: 1,
+        hidden: !lecturaSeriesVis.ndvi
+      },
+      {
+        type: 'line',
+        label: 'NDMI',
+        yAxisID: 'yIdx',
+        data: rows.map(function (r) { return r.ndmi_mean; }),
+        borderColor: '#0369a1',
+        backgroundColor: '#0369a1',
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: 3,
+        borderWidth: 2.5,
+        order: 1,
+        hidden: !lecturaSeriesVis.ndmi
+      },
+      {
+        type: 'line',
+        label: 'ET₀ acum (mm)',
+        yAxisID: 'yMm',
+        data: rows.map(function (r) { return r.et0_sum; }),
+        borderColor: '#a16207',
+        backgroundColor: '#a16207',
+        borderDash: [4, 3],
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: 3,
+        borderWidth: 2,
+        order: 1,
+        hidden: !lecturaSeriesVis.et0
+      },
+      {
+        type: 'line',
+        label: 'Lluvia acum (mm)',
+        yAxisID: 'yMm',
+        data: rows.map(function (r) { return r.rain_sum; }),
+        borderColor: '#2563eb',
+        backgroundColor: '#2563eb',
+        borderDash: [2, 3],
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: 3,
+        borderWidth: 2,
+        order: 1,
+        hidden: !lecturaSeriesVis.rain
+      },
+      {
+        type: 'line',
+        label: 'Riego (mm)',
+        yAxisID: 'yMm',
+        data: rows.map(function (r) {
+          return r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
+        }),
+        borderColor: '#7c3aed',
+        backgroundColor: '#7c3aed',
+        borderDash: [6, 3],
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: 3,
+        borderWidth: 2,
+        order: 1,
+        hidden: !lecturaSeriesVis.riego
+      }
     ];
     wrap.style.display = 'block';
     if (lecturaChart) { try { lecturaChart.destroy(); } catch (e) {} lecturaChart = null; }
     lecturaChart = new Chart(canvas.getContext('2d'), {
-      type: 'line',
+      type: 'bar',
       data: { labels: labels, datasets: ds },
       options: {
-        responsive: true, maintainAspectRatio: false,
+        responsive: true,
+        maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              footer: function (items) {
+                if (!items || !items.length) return '';
+                var i = items[0].dataIndex;
+                var r = rows[i];
+                if (!r) return '';
+                var tot = (Number(r.vpd_hours_low) || 0) + (Number(r.vpd_hours_opt) || 0) + (Number(r.vpd_hours_high) || 0);
+                var exp = r.vpd_hours_expected != null ? r.vpd_hours_expected : periodHoursExpected(r.date_start, r.date_end);
+                return 'Horas VPD: ' + tot + (exp != null ? ' / ' + exp + ' h del periodo' : ' h');
+              }
+            }
+          }
+        },
         scales: {
-          yIdx: { type: 'linear', position: 'left', min: 0, max: 1, title: { display: true, text: 'NDVI / NDMI' } },
-          yEnv: { type: 'linear', position: 'right', title: { display: true, text: 'VPD / ET₀ / lluvia / riego' }, grid: { drawOnChartArea: false } }
+          x: { stacked: true, ticks: { maxRotation: 40, font: { size: 10 } } },
+          yIdx: {
+            type: 'linear',
+            position: 'left',
+            min: 0,
+            max: 1,
+            title: { display: true, text: 'NDVI / NDMI', font: { size: 11 } },
+            grid: { color: 'rgba(148,163,184,0.25)' },
+            ticks: { font: { size: 10 } }
+          },
+          yMm: {
+            type: 'linear',
+            position: 'right',
+            min: 0,
+            title: { display: true, text: 'mm (ET₀ / lluvia / riego)', font: { size: 11 } },
+            grid: { drawOnChartArea: false },
+            ticks: { font: { size: 10 } }
+          },
+          yHours: {
+            type: 'linear',
+            position: 'right',
+            display: false,
+            min: 0,
+            max: hoursMax,
+            stacked: true,
+            grid: { drawOnChartArea: false }
+          }
         }
       }
     });
@@ -382,26 +798,57 @@
     var rows = state.rows.slice().sort(function (a, b) { return a.index - b.index; });
     var any = rows.some(function (r) { return r.signed_url || r.ndmi_signed_url; });
     if (!any) { el.innerHTML = ''; return; }
-    var html = '<div style="font-weight:700;color:#0f172a;font-size:14px;margin:4px 0 10px;">Imágenes por periodo (NDVI vs NDMI)</div>';
-    rows.forEach(function (r) {
-      if (!r.signed_url && !r.ndmi_signed_url) return;
-      html += '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;margin-bottom:12px;background:#fff;">' +
-        '<div style="font-weight:700;color:#14532d;font-size:13px;margin-bottom:8px;">' + esc(r.label || '') +
-          (r.avg_cloud_cover != null ? ' · nubes ~' + esc(r.avg_cloud_cover) + '%' : '') +
-          (r.valid_pct != null ? ' · útil ' + esc(r.valid_pct) + '%' : '') +
-          (r.lookback_expanded ? ' · <span style="color:#b45309;">ampliada a 30 d</span>' : '') + '</div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
-          '<figure style="margin:0;">' +
-            (r.signed_url ? '<img src="' + esc(r.signed_url) + '" alt="NDVI ' + esc(r.label) + '" style="width:100%;border-radius:8px;display:block;background:#f1f5f9;">' : '<div style="padding:20px;text-align:center;color:#94a3b8;background:#f1f5f9;border-radius:8px;">Sin NDVI</div>') +
-            '<figcaption style="text-align:center;font-size:11px;color:#166534;font-weight:700;margin-top:4px;">NDVI vigor</figcaption>' +
-          '</figure>' +
-          '<figure style="margin:0;">' +
-            (r.ndmi_signed_url ? '<img src="' + esc(r.ndmi_signed_url) + '" alt="NDMI ' + esc(r.label) + '" style="width:100%;border-radius:8px;display:block;background:#f1f5f9;">' : '<div style="padding:20px;text-align:center;color:#94a3b8;background:#f1f5f9;border-radius:8px;">Sin NDMI</div>') +
-            '<figcaption style="text-align:center;font-size:11px;color:#0369a1;font-weight:700;margin-top:4px;">NDMI humedad</figcaption>' +
-          '</figure>' +
-        '</div>' +
+    var count = Math.max(1, rows.length);
+    var gridStyle = 'display:grid;grid-template-columns:repeat(' + count + ',minmax(0,1fr));gap:8px;align-items:stretch;';
+    function scaleLegend(kind) {
+      var isNdvi = kind === 'ndvi';
+      var title = isNdvi ? 'Escala NDVI relativa al predio' : 'Escala NDMI relativa al predio';
+      var bar = isNdvi
+        ? 'linear-gradient(90deg,#7f1d1d,#b91c1c,#ea580c,#f59e0b,#fde68a,#bef264,#65a30d,#15803d,#064e3b)'
+        : 'linear-gradient(90deg,#7c2d12,#ea580c,#f59e0b,#fde68a,#bbf7d0,#22c55e,#0f766e,#0369a1)';
+      var tip = isNdvi
+        ? 'Verde = mayor vigor dentro de ese predio/periodo; rojo = menor. No es escala absoluta universal.'
+        : 'Azul/verde = mayor humedad relativa del dosel dentro de ese predio/periodo; naranja/café = menor.';
+      return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;font-size:11px;color:#475569;">' +
+        '<span style="font-weight:700;color:' + (isNdvi ? '#166534' : '#0369a1') + ';">' + title + '</span>' +
+        '<span>Menor</span>' +
+        '<span style="width:140px;height:8px;border-radius:999px;background:' + bar + ';display:inline-block;" title="' + tip + '"></span>' +
+        '<span>Mayor</span>' +
+        '<span style="color:#64748b;line-height:1.35;">' +
+          'Color según los niveles de <strong>ese predio y periodo</strong> (píxeles válidos dentro del polígono), no un valor fijo absoluto.' +
+        '</span>' +
       '</div>';
-    });
+    }
+    function miniCard(r, key, label, color) {
+      var url = key === 'ndvi' ? r.signed_url : r.ndmi_signed_url;
+      var meta = (r.avg_cloud_cover != null ? 'nubes ~' + esc(r.avg_cloud_cover) + '%' : '') +
+        (r.valid_pct != null ? (r.avg_cloud_cover != null ? ' · ' : '') + 'útil ' + esc(r.valid_pct) + '%' : '') +
+        (r.lookback_expanded ? ' · 30 d*' : '');
+      return '<figure style="margin:0;min-width:0;border:1px solid #e2e8f0;border-radius:10px;background:#fff;padding:6px;">' +
+        '<figcaption style="font-size:10.5px;line-height:1.25;font-weight:800;color:' + color + ';margin:0 0 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + esc(r.label || '') + '">' +
+          esc(r.label || '') +
+        '</figcaption>' +
+        (url
+          ? '<img src="' + esc(url) + '" alt="' + label + ' ' + esc(r.label) + '" style="width:100%;height:142px;object-fit:contain;border-radius:7px;display:block;background:#f1f5f9;">'
+          : '<div style="height:142px;display:flex;align-items:center;justify-content:center;text-align:center;color:#94a3b8;background:#f1f5f9;border-radius:7px;font-size:11px;">Sin ' + label + '</div>') +
+        '<div style="font-size:9.5px;color:#64748b;text-align:center;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + esc(meta) + '">' + (meta || '&nbsp;') + '</div>' +
+      '</figure>';
+    }
+    var html =
+      '<div style="font-weight:700;color:#0f172a;font-size:14px;margin:4px 0 8px;">Imágenes comparativas por periodo</div>' +
+      '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;overflow-x:auto;">' +
+        '<div style="font-size:12px;font-weight:800;color:#166534;margin:0 0 4px;">NDVI — vigor vegetativo</div>' +
+        scaleLegend('ndvi') +
+        '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
+          rows.map(function (r) { return miniCard(r, 'ndvi', 'NDVI', '#166534'); }).join('') +
+        '</div>' +
+        '<div style="font-size:12px;font-weight:800;color:#0369a1;margin:14px 0 4px;">NDMI — humedad del dosel</div>' +
+        scaleLegend('ndmi') +
+        '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
+          rows.map(function (r) { return miniCard(r, 'ndmi', 'NDMI', '#0369a1'); }).join('') +
+        '</div>' +
+        '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">* 30 d = quincena ampliada por nubosidad. El color compara zonas dentro del mismo predio/periodo; el valor numérico promedio está en la tabla.</div>' +
+      '</div>';
     el.innerHTML = html;
   }
 
@@ -485,12 +932,25 @@
     if (center) {
       for (var i = 0; i < state.rows.length; i++) {
         var row = state.rows[i];
-        if (row.vpd_mean != null && row.et0_sum != null && row.rain_sum != null) continue;
+        var needsClimate =
+          row.vpd_mean == null ||
+          row.et0_sum == null ||
+          row.rain_sum == null ||
+          row.vpd_hours_low == null;
+        if (!needsClimate) continue;
         try {
           var clim = await fetchClimateForPeriod(center, { date_start: row.date_start, date_end: row.date_end });
-          row.vpd_mean = clim.vpd_mean;
-          row.et0_sum = clim.et0_sum;
-          row.rain_sum = clim.rain_sum;
+          if (row.vpd_mean == null) row.vpd_mean = clim.vpd_mean;
+          if (row.et0_sum == null) row.et0_sum = clim.et0_sum;
+          if (row.rain_sum == null) row.rain_sum = clim.rain_sum;
+          if (clim.vpd_hours_low != null) {
+            row.vpd_hours_low = clim.vpd_hours_low;
+            row.vpd_hours_opt = clim.vpd_hours_opt;
+            row.vpd_hours_high = clim.vpd_hours_high;
+            row.vpd_hours_total = clim.vpd_hours_total;
+            row.vpd_hours_expected = clim.vpd_hours_expected;
+            if (row.vpd_mean == null) row.vpd_mean = clim.vpd_mean;
+          }
         } catch (e) { console.warn('Lectura clima:', e); }
       }
     }
@@ -500,7 +960,7 @@
     var errores = state.rows.filter(function (r) { return r.status === 'error'; }).length;
     setStatus(errores
       ? '✔ Histórico listo. ' + errores + ' periodo(s) sin imagen por nubosidad; el resto se generó correctamente.'
-      : '✔ Histórico completo. Edita el riego (m³) por periodo para completar la correlación.');
+      : '✔ Histórico completo. Edita el riego en m³ o mm (con % de franja arriba) para completar la correlación.');
   }
 
   // ---------- generar ----------
@@ -544,13 +1004,18 @@
         return;
       }
       var created = data.periods || [];
+      var prev = loadState() || {};
       var state = {
         frequency: freq,
         periods: count,
         endDate: endDate,
+        franja_pct: prev.franja_pct != null ? prev.franja_pct : suggestFranjaPct(),
         updatedAt: new Date().toISOString(),
         rows: periods.map(function (p) {
           var match = created.find(function (c) { return Number(c.period_index) === Number(p.index); }) || {};
+          var prevRow = (prev.rows || []).find(function (x) {
+            return x && x.date_start === p.date_start && x.date_end === p.date_end;
+          });
           return {
             index: p.index,
             label: p.label,
@@ -561,11 +1026,16 @@
             status: 'pending',
             ndvi_mean: null, ndmi_mean: null,
             vpd_mean: null, et0_sum: null, rain_sum: null,
-            riego_m3: null,
+            vpd_hours_low: null, vpd_hours_opt: null, vpd_hours_high: null,
+            vpd_hours_total: null,
+            vpd_hours_expected: periodHoursExpected(p.date_start, p.date_end),
+            riego_m3: prevRow && prevRow.riego_m3 != null ? prevRow.riego_m3 : null,
+            riego_mm: null,
             signed_url: null, ndmi_signed_url: null
           };
         })
       };
+      syncRiegoMmFromM3(state);
       saveState(state);
       renderAll(state);
       setStatus('⏳ Solicitud enviada. Generando imágenes… no cierres hasta que termine (o vuelve y pulsa «Actualizar»).');
@@ -647,7 +1117,11 @@
       if (e && state.endDate) e.value = state.endDate;
     }
     updateCostHint();
-    if (state) renderAll(state);
+    if (state) {
+      renderAll(state);
+      var needsHours = (state.rows || []).some(function (r) { return r.vpd_hours_low == null; });
+      if (needsHours) enrichClimateAndFinish(state);
+    }
 
     if (panel.dataset.lecturaBound === '1') return;
     panel.dataset.lecturaBound = '1';

@@ -9893,6 +9893,7 @@
                                         ${lecturaState.frequency === 'mensual' ? 'Mensual' : (lecturaState.frequency === 'quincenal' ? 'Quincenal' : (lecturaState.frequency || '—'))}
                                         · ${lecturaRows.length} periodo(s)
                                         ${lecturaState.endDate ? ' · fecha final ' + String(lecturaState.endDate) : ''}
+                                        ${lecturaState.franja_pct != null ? ' · franja ' + String(lecturaState.franja_pct) + '%' : ''}
                                       </div>
                                       <div style="overflow-x:auto;">
                                         <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -9901,9 +9902,10 @@
                                             <th style="padding:6px 8px;text-align:center;">NDVI</th>
                                             <th style="padding:6px 8px;text-align:center;">NDMI</th>
                                             <th style="padding:6px 8px;text-align:center;">VPD</th>
-                                            <th style="padding:6px 8px;text-align:center;">ET₀</th>
-                                            <th style="padding:6px 8px;text-align:center;">Lluvia</th>
+                                            <th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th>
+                                            <th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>
                                             <th style="padding:6px 8px;text-align:center;">Riego m³</th>
+                                            <th style="padding:6px 8px;text-align:center;">Riego mm</th>
                                             <th style="padding:6px 8px;text-align:center;">Estado</th>
                                           </tr></thead>
                                           <tbody>
@@ -9917,6 +9919,7 @@
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.et0_sum,1)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.rain_sum,1)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.riego_m3,1)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;">'+n(r.riego_mm,1)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+String(r.status||'—')+'</td>'+
                                               '</tr>';
                                             }).join('')}
@@ -12824,7 +12827,8 @@
                     (lecturaState && lecturaState.frequency === 'quincenal' ? 'Quincenal' :
                         (lecturaState && lecturaState.frequency) || '—')) +
                 ' · ' + rows.length + ' periodo(s)' +
-                (lecturaState && lecturaState.endDate ? ' · fecha final ' + esc(String(lecturaState.endDate)) : '');
+                (lecturaState && lecturaState.endDate ? ' · fecha final ' + esc(String(lecturaState.endDate)) : '') +
+                (lecturaState && lecturaState.franja_pct != null ? ' · franja ' + esc(String(lecturaState.franja_pct)) + '%' : '');
 
             var tableRows = rows.map(function (r) {
                 var it = r.request_id ? byId[String(r.request_id)] : null;
@@ -12840,6 +12844,7 @@
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.et0_sum, 1) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.rain_sum, 1) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.riego_m3, 1) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;">' + fmt(r.riego_mm, 1) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + esc(st) + '</td></tr>';
             }).join('');
 
@@ -12900,8 +12905,8 @@
                 '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">' +
                 '<thead><tr style="background:#ecfdf5;color:#14532d;">' +
                 '<th style="padding:6px 8px;text-align:left;">Periodo</th><th style="padding:6px 8px;text-align:center;">NDVI</th><th style="padding:6px 8px;text-align:center;">NDMI</th>' +
-                '<th style="padding:6px 8px;text-align:center;">VPD</th><th style="padding:6px 8px;text-align:center;">ET₀</th><th style="padding:6px 8px;text-align:center;">Lluvia</th>' +
-                '<th style="padding:6px 8px;text-align:center;">Riego m³</th><th style="padding:6px 8px;text-align:center;">Estado</th>' +
+                '<th style="padding:6px 8px;text-align:center;">VPD</th><th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th><th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>' +
+                '<th style="padding:6px 8px;text-align:center;">Riego m³</th><th style="padding:6px 8px;text-align:center;">Riego mm</th><th style="padding:6px 8px;text-align:center;">Estado</th>' +
                 '</tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
                 (gallery
                     ? '<div style="margin-top:14px;font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — NDVI | NDMI por periodo (con fechas)</div>' + gallery

@@ -8639,7 +8639,7 @@ async function fetchRadarImagesDataUrlsForReport() {
 
 /** Lectura Satelital persistida → filas + imágenes data URL para el PDF. */
 async function fetchLecturaSatelitalForReport() {
-  const out = { rows: [], frequency: null, periods: null, endDate: null, error: null };
+  const out = { rows: [], frequency: null, periods: null, endDate: null, franja_pct: null, error: null };
   try {
     if (!currentProject || !currentProject.id) {
       out.error = 'no_project';
@@ -8654,6 +8654,7 @@ async function fetchLecturaSatelitalForReport() {
     out.frequency = state.frequency || null;
     out.periods = state.periods != null ? state.periods : state.rows.length;
     out.endDate = state.endDate || null;
+    out.franja_pct = state.franja_pct != null ? state.franja_pct : null;
 
     async function urlToDataUrl(url) {
       if (!url || typeof url !== 'string') return null;
@@ -8744,6 +8745,7 @@ async function fetchLecturaSatelitalForReport() {
         et0_sum: r.et0_sum,
         rain_sum: r.rain_sum,
         riego_m3: r.riego_m3,
+        riego_mm: r.riego_mm,
         lookback_expanded: !!(it && it.lookback_expanded) || !!r.lookback_expanded,
         ndviDataUrl: null,
         ndmiDataUrl: null
@@ -15415,6 +15417,9 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     (lectura.periods != null ? lectura.periods : lectura.rows.length) +
     (lectura.endDate
       ? ' · ' + rtSafe('Fecha final:', 'End date:') + ' ' + reportEscapeHtml(String(lectura.endDate))
+      : '') +
+    (lectura.franja_pct != null && Number.isFinite(Number(lectura.franja_pct))
+      ? ' · ' + rtSafe('Franja regada:', 'Irrigated strip:') + ' ' + Number(lectura.franja_pct) + '%'
       : '');
 
   function fmt(v, dec) {
@@ -15453,6 +15458,9 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       '<td style="padding:6px 8px;text-align:center;">' +
       fmt(r.riego_m3, 1) +
       '</td>' +
+      '<td style="padding:6px 8px;text-align:center;">' +
+      fmt(r.riego_mm, 1) +
+      '</td>' +
       '</tr>';
   });
 
@@ -15464,9 +15472,10 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       'NDVI',
       'NDMI',
       'VPD',
-      'ET₀ mm',
-      rtSafe('Lluvia mm', 'Rain mm'),
-      rtSafe('Riego m³', 'Irrigation m³')
+      rtSafe('ET₀ acum mm', 'ET₀ sum mm'),
+      rtSafe('Lluvia acum mm', 'Rain sum mm'),
+      rtSafe('Riego m³', 'Irrigation m³'),
+      rtSafe('Riego mm', 'Irrigation mm')
     ]
       .map(function (h) {
         return '<th style="padding:6px 8px;text-align:center;white-space:nowrap;">' + h + '</th>';
