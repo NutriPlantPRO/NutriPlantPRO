@@ -182,21 +182,18 @@ exports.handler = async (event) => {
       });
     }
 
-    const lecturaCostPer = creditCost * 2;
-    const totalCost = lecturaCostPer * periods.length;
+    // Costo FIJO por consulta completa (no por periodo):
+    // predio normal (≤30 ha) = 3 créditos; predio >30 ha = 4 créditos.
+    const totalCost = creditCost >= 2 ? 4 : 3;
     if (limit > 0 && used + totalCost > limit) {
       return jsonResponse(429, {
         error: 'radar_quota_exceeded',
         message:
-          'No tienes créditos Radar suficientes este mes. La Lectura Satelital de ' +
-          periods.length +
-          ' periodos requiere ' +
+          'No tienes créditos Radar suficientes este mes. La Lectura Satelital requiere ' +
           totalCost +
           ' crédito' +
           (totalCost === 1 ? '' : 's') +
-          ' (' +
-          lecturaCostPer +
-          ' por periodo).',
+          ' por toda la consulta.',
         credits: {
           used,
           limit,
@@ -210,13 +207,16 @@ exports.handler = async (event) => {
     }
 
     const created = [];
-    for (const period of periods) {
+    for (let i = 0; i < periods.length; i++) {
+      const period = periods[i];
+      // Todo el costo fijo se carga en el primer periodo; los demás no cobran.
+      const jobCost = i === 0 ? totalCost : 0;
       const queued = await createPendingLecturaJob(supabase, {
         userId,
         projectId,
         polygon,
         projectRow,
-        creditCost: lecturaCostPer,
+        creditCost: jobCost,
         maxDim,
         maxScenes,
         mk,
@@ -256,7 +256,7 @@ exports.handler = async (event) => {
         base: baseLimit,
         bonus,
         reserved: totalCost,
-        cost_per_period: lecturaCostPer,
+        flat_cost: totalCost,
         available: Math.max(0, limit - (used + totalCost))
       },
       pricing

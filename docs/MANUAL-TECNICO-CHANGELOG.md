@@ -9,7 +9,7 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ### Actualizado
 
-- `vpd-deficit-presion-vapor.html` — módulo renombrado a **Radar Satelital**; pestañas **Polígono / NDVI y NDMI** (Pilot: mediana ≤30 d, 3 escenas, sin imagen vacía) y **Lectura Satelital** (2–6 periodos quincenal/mensual; NDVI/NDMI prom + VPD/ET₀/lluvia + riego m³; expand 15→30; créditos 2× base/periodo; gráfica y galería).
+- `vpd-deficit-presion-vapor.html` — módulo renombrado a **Radar Satelital**; pestañas **Polígono / NDVI y NDMI** (Pilot: mediana ≤30 d, 3 escenas, sin imagen vacía) y **Lectura Satelital** (2–6 periodos quincenal/mensual; NDVI/NDMI prom + VPD/ET₀/lluvia + riego m³; expand 15→30; **costo fijo por consulta: 3 créditos si el predio ≤30 ha, 4 si el predio >30 ha**; gráfica y galería).
 - `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` §4.11, `manual-tecnico-catalog.js`, `manual-search.js`, `chat-simple.js` — Knowledge GPT Socio y chat IA alineados.
 
 ---

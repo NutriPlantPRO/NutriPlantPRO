@@ -225,14 +225,13 @@
           '<div style="font-size:12px;color:#334155;line-height:1.5;margin-bottom:10px;">' +
             'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³).' +
           '</div>' +
-          '<div style="font-size:11px;color:#334155;line-height:1.55;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
-            '<strong style="color:#14532d;">Cómo se arma cada periodo:</strong> ' +
-            'Sentinel-2 pasa ~cada <strong>5 días</strong>, pero a veces la pasada va nublada y no sirve para el predio. ' +
-            'Por eso NutriPlant combina hasta <strong>3 pasadas</strong> dentro de la ventana del periodo (mediana por píxel) y descarta nubes/sombra. ' +
-            'Si eliges <strong>quincenal</strong>, busca primero en esos <strong>15 días</strong>; si la cobertura útil es baja por nubosidad, <strong>amplía sola a 30 días</strong> anclados a ese periodo (se marca con *) — no más atrás. ' +
-            'Si eliges <strong>mensual</strong>, usa el <strong>mes calendario</strong> (ventana fija de ~30 días, sin ampliar más). ' +
-            'Si aun así no hay imagen útil, ese periodo queda sin mapa (no se guarda vacío). ' +
-            'El clima (VPD, ET₀, lluvia) sale de Open-Meteo del mismo rango de fechas; el riego lo capturas tú.' +
+          '<div style="font-size:11px;color:#334155;line-height:1.5;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
+            '<strong style="color:#14532d;">Cómo se arma:</strong> ' +
+            'Sentinel-2 ~cada 5 días; se combinan hasta <strong>3 pasadas</strong> (mediana) y se quitan nubes. ' +
+            '<strong>Quincenal:</strong> 15 días → si hay nubes, amplía a 30 (*). ' +
+            '<strong>Mensual:</strong> mes fijo (~30 días). ' +
+            'Sin imagen útil = sin mapa. Clima de Open-Meteo; riego lo pones tú. ' +
+            '<strong>Costo:</strong> 3 créditos por consulta (4 si el predio es &gt;30 ha).' +
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;">' +
             '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;">Frecuencia' +
@@ -273,13 +272,17 @@
     var c = pricing && Number(pricing.credits_charged);
     return Number.isFinite(c) && c > 0 ? Math.floor(c) : 1;
   }
+  /** Costo FIJO por toda la consulta: 3 normal, 4 si el predio es >30 ha. */
+  function lecturaCost() {
+    return creditBase() >= 2 ? 4 : 3;
+  }
   function updateCostHint() {
     var hint = document.getElementById('lecturaCostHint');
     if (!hint) return;
-    var count = parseInt((document.getElementById('lecturaCount') || {}).value, 10) || 6;
-    var per = creditBase() * 2;
-    hint.textContent = 'Costo: ' + count + ' periodos × ' + per + ' crédito' + (per === 1 ? '' : 's') +
-      ' = ' + (count * per) + ' créditos Radar (el doble que una imagen normal, porque baja NDVI + NDMI por periodo).';
+    var total = lecturaCost();
+    hint.textContent = 'Costo: ' + total + ' créditos Radar por toda la consulta' +
+      (total === 4 ? ' (predio >30 ha)' : '') +
+      ', sin importar cuántos periodos elijas.';
   }
 
   // ---------- render tabla / gráfica / galería ----------
@@ -514,8 +517,8 @@
     var endDate = (document.getElementById('lecturaEndDate') || {}).value || todayIso();
     var periods = buildPeriods(freq, count, endDate);
 
-    var per = creditBase() * 2;
-    if (!confirm('Se generará la Lectura Satelital de ' + periods.length + ' periodos (' + freq + ').\n\nCosto: ' + (periods.length * per) + ' créditos Radar (' + per + ' por periodo).\n\n¿Continuar?')) return;
+    var total = lecturaCost();
+    if (!confirm('Se generará la Lectura Satelital de ' + periods.length + ' periodos (' + freq + ').\n\nCosto: ' + total + ' créditos Radar por toda la consulta (no por periodo).\n\n¿Continuar?')) return;
 
     var btn = document.getElementById('lecturaBtnGenerate');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Enviando…'; }
