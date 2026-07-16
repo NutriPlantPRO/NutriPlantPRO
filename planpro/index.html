@@ -2053,7 +2053,7 @@
       border-color: color-mix(in srgb, var(--np-nutri-folder-accent, #059669) 35%, rgba(148, 163, 184, 0.45));
       color: #0f172a;
     }
-    /* Nutri PRO archivos: 2 columnas en pantalla ancha (PC / tablet horizontal) */
+    /* Nutri PRO archivos: grid responsivo (1 → 2 → 4 columnas) */
     @media (min-width: 901px) {
       #npViewNutriPro .np-nutri-file-list {
         display: grid;
@@ -2115,6 +2115,97 @@
         min-height: 26px;
         max-height: 26px;
         padding: 4px 7px;
+      }
+    }
+    @media (min-width: 1200px) {
+      #npViewNutriPro .np-nutri-file-list {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+      #npViewNutriPro .np-nutri-file-card {
+        padding: 7px 8px;
+        gap: 5px;
+        border-radius: 10px;
+      }
+      #npViewNutriPro .np-nutri-file-row-main {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        gap: 4px 6px;
+        align-items: start;
+      }
+      #npViewNutriPro .np-nutri-file-icon-badge {
+        grid-column: 1;
+        grid-row: 1;
+        width: 28px;
+        height: 28px;
+        font-size: 15px;
+        border-radius: 7px;
+      }
+      #npViewNutriPro .np-nutri-file-meta {
+        grid-column: 2;
+        grid-row: 1;
+        width: 100%;
+        flex: none;
+      }
+      #npViewNutriPro .np-nutri-file-btns {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 3px;
+        margin-top: 0;
+      }
+      #npViewNutriPro .np-nutri-file-title {
+        font-size: 12px;
+        min-height: 0;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+      }
+      #npViewNutriPro .np-nutri-file-preview {
+        font-size: 10px;
+        -webkit-line-clamp: 1;
+        line-clamp: 1;
+      }
+      #npViewNutriPro .np-nutri-file-sub {
+        margin-top: 2px;
+        font-size: 9px;
+        line-height: 1.25;
+      }
+      #npViewNutriPro .np-nutri-file-sub-strong {
+        font-size: 9px;
+      }
+      #npViewNutriPro .np-nutri-file-truncated-warn {
+        display: block;
+        font-size: 8px;
+        line-height: 1.2;
+        margin-top: 2px;
+      }
+      #npViewNutriPro button.np-nutri-file-icon-btn,
+      #npViewNutriPro .np-nutri-file-more summary {
+        width: 26px;
+        height: 26px;
+        min-width: 26px;
+        min-height: 26px;
+        font-size: 12px;
+      }
+      #npViewNutriPro .np-nutri-file-desc-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding-top: 3px;
+        border-top-width: 1px;
+      }
+      #npViewNutriPro .np-nutri-file-desc-label {
+        margin: 0;
+        font-size: 8px;
+      }
+      #npViewNutriPro .np-nutri-file-desc {
+        min-height: 24px;
+        max-height: 36px;
+        padding: 3px 6px;
+        font-size: 10px;
       }
     }
     .np-nutri-folder-nav-blocks {

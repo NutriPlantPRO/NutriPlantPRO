@@ -5,7 +5,8 @@
   "scripts": {
     "build": "echo \"NutriPlant: sitio estático, sin paso de build\"",
     "start": "npx http-server -p 8000 -c-1 --cors",
-    "dev": "npx http-server -p 8000 -c-1 --cors -o"
+    "dev": "npx http-server -p 8000 -c-1 --cors -o",
+    "nutri-pro:upload": "node scripts/nutri-pro-bulk-upload.mjs"
   },
   "dependencies": {
     "@google/earthengine": "^1.7.25",
