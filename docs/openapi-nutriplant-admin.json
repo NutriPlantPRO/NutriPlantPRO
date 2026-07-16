@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.10.0",
-    "description": "v2.10.0 — ChatGPT: una sola Action (nutriplantAdminQuery). Archivos Nutri PRO incluyen open_url permanente; nutri_pro_reindex para reindexar/OCR. Los nombres admin_stats, nutri_pro_catalog, etc. van en el body como campo action, no son tools separadas."
+    "version": "2.10.1",
+    "description": "v2.10.1 — ChatGPT: una sola Action (nutriplantAdminQuery). open_url permanente; nutri_pro_reindex; nutri_pro_set_text corrige texto del mismo archivo. Los nombres admin_stats, nutri_pro_catalog, etc. van en el body como campo action, no son tools separadas."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO",
-        "description": "Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, nutri_pro_reindex, describe_api van en body.action, no son tools aparte. Ej: {\"action\":\"admin_stats\",\"params\":{}}. Verifica describe_api → version 2.10.0.",
+        "description": "Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, nutri_pro_reindex, nutri_pro_set_text, describe_api van en body.action, no son tools aparte. Ej: {\"action\":\"admin_stats\",\"params\":{}}. Verifica describe_api → version 2.10.1.",
         "requestBody": {
           "required": true,
           "content": {
@@ -70,6 +70,7 @@
               "nutri_pro_ask",
               "nutri_pro_file_text",
               "nutri_pro_reindex",
+              "nutri_pro_set_text",
               "nutri_pro_save",
               "nutri_pro_upload_link",
               "nutri_pro_upload_status",

@@ -65,6 +65,23 @@ Cuando `text_indexed=false`, el texto está vacío/pobre, o es PDF escaneado/ima
 
 Luego: `nutri_pro_file_text` o `nutri_pro_ask` con la misma pregunta.
 
+## Corregir texto del MISMO archivo: `nutri_pro_set_text`
+
+Si el OCR/indexado tiene errores y Jesús te da el texto corregido (o lo corriges en el chat):
+
+```json
+{
+  "action": "nutri_pro_set_text",
+  "params": {
+    "nutri_file_id": "UUID-del-JPG-o-PDF-original",
+    "content": "texto corregido completo…"
+  }
+}
+```
+
+**PROHIBIDO** usar `nutri_pro_save` para “corregir” OCR: eso crea **otro** archivo.  
+`nutri_pro_set_text` actualiza el indexado del archivo original (como «Pegar texto indexado» en Plan PRO).
+
 ## Enlaces guardados (🔗 pestaña Enlaces)
 
 Además de archivos, Nutri PRO guarda **links** con título, **descripción**, URL, categoría y carpeta.
@@ -79,6 +96,7 @@ Además de archivos, Nutri PRO guarda **links** con título, **descripción**, U
 | Solo enlaces (sin archivos) | `nutri_pro_search` con `kind: "links"` |
 | «¿Qué dice el PDF / Excel?» | `nutri_pro_ask` (archivos indexados, **no** links web) |
 | «Reindexa / OCR este archivo» | `nutri_pro_reindex` |
+| «Corrige el texto indexado de ESTE archivo» | `nutri_pro_set_text` (mismo `nutri_file_id`, NO `nutri_pro_save`) |
 
 ### Campos de cada enlace (`links[]`)
 
@@ -181,7 +199,8 @@ Confirma con `short_path`, `text_indexed` y que ya está en la nube.
 | `nutri_pro_catalog` | Inventario: carpetas, archivos (`description` = nota breve) y `links[]` |
 | `nutri_pro_file_text` | Más texto de archivo (`offset` para paginar; acepta `open_url`) |
 | `nutri_pro_reindex` | Reindexar / OCR (`mode`: `text`\|`ocr`) |
-| `nutri_pro_save` | **Guardar** texto generado (content) en carpeta |
+| `nutri_pro_set_text` | **Corregir** texto indexado del mismo archivo (`content`) — no crea otro doc |
+| `nutri_pro_save` | **Guardar** texto generado NUEVO (content) en carpeta |
 | `nutri_pro_upload_link` | **Enlace móvil** para subir PDF/Excel real |
 | `nutri_pro_upload_status` | Comprobar si ya subió (`upload_id`) |
 | `plan_pro_item` | Detalle apunte + `nutri_refs` |
@@ -197,4 +216,4 @@ Confirma con `short_path`, `text_indexed` y que ya está en la nube.
 
 ## Deploy
 
-OpenAPI **v2.10.0** + este archivo en Knowledge. Reimporta Actions en ChatGPT tras deploy.
+OpenAPI **v2.10.1** + este archivo en Knowledge. Reimporta Actions en ChatGPT tras deploy.

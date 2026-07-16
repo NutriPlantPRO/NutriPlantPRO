@@ -3342,6 +3342,90 @@ async function handleNutriProReindex(supabase, params) {
   };
 }
 
+/**
+ * Corrige/reemplaza el texto indexado de un archivo YA existente (sin crear otro documento).
+ * Equivale a «Pegar texto indexado» en Plan PRO.
+ */
+async function handleNutriProSetText(supabase, params) {
+  const ownerId = await getPlanProOwnerId(supabase);
+  if (!ownerId) {
+    return { ok: true, domain: 'nutri_pro', error: 'No se encontró usuario admin para Nutri PRO.' };
+  }
+
+  const fileId = resolveNutriProFileId(params);
+  const content = String(params.content || params.text || params.text_plain || '').trim();
+  if (!fileId) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      error: 'Indica params.nutri_file_id (o open_url) del archivo ORIGINAL a corregir.'
+    };
+  }
+  if (!content) {
+    return {
+      ok: true,
+      domain: 'nutri_pro',
+      error: 'Indica params.content con el texto corregido completo.'
+    };
+  }
+
+  const { data: fileRec, error: fileErr } = await supabase
+    .from('plan_pro_nutri_files')
+    .select('id,folder_id,title,original_name,description,mime_type,size_bytes,updated_at')
+    .eq('owner_id', ownerId)
+    .eq('id', fileId)
+    .maybeSingle();
+  if (fileErr) throw new Error('nutri_pro_set_text file: ' + fileErr.message);
+  if (!fileRec) {
+    return { ok: true, domain: 'nutri_pro', found: false, message: 'Archivo no encontrado.' };
+  }
+
+  const row = {
+    file_id: fileId,
+    owner_id: ownerId,
+    status: 'done',
+    format_kind: 'manual_text',
+    text_plain: content,
+    meta_json: {
+      char_count: content.length,
+      truncated: false,
+      source: 'nutri_pro_set_text',
+      corrected_by: 'gpt_socio'
+    },
+    error_message: null,
+    extracted_at: new Date().toISOString()
+  };
+  const { error: upsertErr } = await supabase.from('plan_pro_nutri_file_extracts').upsert(row, {
+    onConflict: 'file_id'
+  });
+  if (upsertErr) {
+    if (/plan_pro_nutri_file_extracts|does not exist|schema/i.test(upsertErr.message || '')) {
+      return {
+        ok: false,
+        domain: 'nutri_pro',
+        error: 'Tabla de extracción no instalada. Ejecuta supabase-plan-pro-nutri-pro-extracts.sql.'
+      };
+    }
+    throw new Error('nutri_pro_set_text upsert: ' + upsertErr.message);
+  }
+
+  const foldersRes = await fetchNutriProFolders(supabase, ownerId);
+  const foldersById = foldersRes.ok ? nutriFolderMapById(foldersRes.rows) : {};
+  const extractMap = await fetchNutriProExtractsMap(supabase, ownerId, [fileId]);
+
+  return {
+    ok: true,
+    domain: 'nutri_pro',
+    action: 'nutri_pro_set_text',
+    found: true,
+    created_new_file: false,
+    file: mapNutriProFileRow(fileRec, foldersById, extractMap),
+    text_char_count: content.length,
+    gpt_usage:
+      'Texto indexado ACTUALIZADO en el mismo archivo (no creaste otro). NO uses nutri_pro_save para corregir OCR. Para corregir: nutri_pro_set_text + nutri_file_id del original + content. Luego nutri_pro_ask / nutri_pro_file_text.'
+  };
+}
+
 function sanitizeNutriProFilename(name) {
   let base = String(name || 'socio-reporte.txt').trim() || 'socio-reporte.txt';
   base = base.replace(/[/\\?%*:|"<>]/g, '_');
@@ -5864,8 +5948,8 @@ async function handleNutritionCatalogs(supabase, params) {
 async function handleDescribeApi() {
   return {
     ok: true,
-    version: '2.10.0',
-    openapi_version: '2.10.0',
+    version: '2.10.1',
+    openapi_version: '2.10.1',
     chatgpt_tool: {
       operationId: 'nutriplantAdminQuery',
       note:
@@ -5876,7 +5960,11 @@ async function handleDescribeApi() {
         action: 'nutri_pro_reindex',
         params: { nutri_file_id: 'UUID', mode: 'ocr' }
       },
-      verify: 'Si describe_api devuelve version 2.10.0, el GPT tiene schema y token correctos.'
+      example_nutri_pro_set_text: {
+        action: 'nutri_pro_set_text',
+        params: { nutri_file_id: 'UUID', content: 'texto corregido…' }
+      },
+      verify: 'Si describe_api devuelve version 2.10.1, el GPT tiene schema y token correctos.'
     },
     domains: {
       admin: ['admin_stats', 'list_users', 'user_summary'],
@@ -5909,6 +5997,7 @@ async function handleDescribeApi() {
         'nutri_pro_ask',
         'nutri_pro_file_text',
         'nutri_pro_reindex',
+        'nutri_pro_set_text',
         'nutri_pro_save',
         'nutri_pro_upload_link',
         'nutri_pro_upload_status'
@@ -5926,7 +6015,7 @@ async function handleDescribeApi() {
     climate_gpt:
       'project_climate NO altera al suscriptor. mode=saved → climate_saved (snapshot con lluvia/ET₀ mensual hasta 4 años en rainfall.years y et0.years; tiempo actual con rain_today_mm y et0_today_mm; rolling 1/7/30 d; calculadora balance). mode=live → tiempo_actual_ahora + lluvia/ET₀ del día. mode=rainfall_refresh → lluvia_et0_ahora (4 años en vivo). mode=rolling o all → rolling_windows_ahora + irrigation_quick_calc_live. Si preguntan por histórico mensual o gráficas, usa climate_saved.rainfall.years / et0.years. Si piden «actualizado», usa mode=all.',
     nutri_pro_gpt:
-      'Archivos traen open_url (link permanente). Preguntas: nutri_pro_ask. Leer texto: nutri_pro_file_text (acepta open_url). Mal indexado: nutri_pro_reindex mode=text|ocr. Texto generado: nutri_pro_save. Binario real: nutri_pro_upload_link. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
+      'Archivos traen open_url. Preguntas: nutri_pro_ask. Leer: nutri_pro_file_text. OCR automático: nutri_pro_reindex mode=ocr. Corregir texto del MISMO archivo (sin crear otro): nutri_pro_set_text + nutri_file_id + content. Texto NUEVO: nutri_pro_save. Binario: nutri_pro_upload_link. Ver docs/NUTRI-PRO-CONOCIMIENTO-GPT.md.',
     plan_pro_nota_semaforo:
       'Chip en libreta: [[sem:2026-05-26:media]] o append_due_marker. Ficha apunte: priority + due_at.',
     plan_pro_nota_herramientas:
@@ -5960,6 +6049,7 @@ const HANDLERS = {
   nutri_pro_ask: (sb, p) => handleNutriProAsk(sb, p),
   nutri_pro_file_text: (sb, p) => handleNutriProFileText(sb, p),
   nutri_pro_reindex: (sb, p) => handleNutriProReindex(sb, p),
+  nutri_pro_set_text: (sb, p) => handleNutriProSetText(sb, p),
   nutri_pro_save: (sb, p) => handleNutriProSave(sb, p),
   nutri_pro_upload_link: (sb, p) => handleNutriProUploadLink(sb, p),
   nutri_pro_upload_status: (sb, p) => handleNutriProUploadStatus(sb, p),
@@ -5979,9 +6069,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.10.0',
+      version: '2.10.1',
       description:
-        'v2.10.0 — ChatGPT: una sola Action (nutriplantAdminQuery). body.action = admin_stats|nutri_pro_*|nutri_pro_reindex|describe_api|… Archivos Nutri PRO incluyen open_url permanente.'
+        'v2.10.1 — ChatGPT: una sola Action (nutriplantAdminQuery). body.action = admin_stats|nutri_pro_*|nutri_pro_reindex|nutri_pro_set_text|describe_api|… open_url + corregir texto del mismo archivo.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -5990,7 +6080,7 @@ function getOpenApiSpec() {
           operationId: 'nutriplantAdminQuery',
           summary: 'Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO',
           description:
-            'Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, nutri_pro_reindex, describe_api van en body.action, no son tools aparte. Verifica describe_api → version 2.10.0.',
+            'Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, nutri_pro_reindex, nutri_pro_set_text, describe_api van en body.action, no son tools aparte. Verifica describe_api → version 2.10.1.',
           requestBody: {
             required: true,
             content: {
