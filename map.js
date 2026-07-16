@@ -2532,6 +2532,92 @@ function np_formatRadarHistoryOption(item) {
   return gen;
 }
 
+function np_formatRadarSceneMetaHtml(snap) {
+  if (!snap) return '';
+  const meta = snap.meta || {};
+  const parts = [];
+  const from = meta.date_start || snap.sentinel_period?.from;
+  const to = meta.date_end || snap.sentinel_period?.to;
+  const sceneDates = Array.isArray(meta.scene_dates)
+    ? meta.scene_dates.map((d) => String(d).slice(0, 10)).filter(Boolean)
+    : [];
+
+  parts.push(
+    '<strong>Cómo se tomó:</strong> hasta 3 pasadas Sentinel en ≤30 días, combinadas por mediana (no promedio diario)'
+  );
+
+  if (sceneDates.length) {
+    parts.push('<strong>Fechas usadas:</strong> ' + np_escapeHtml(sceneDates.join(', ')));
+  } else if (from && to) {
+    parts.push(
+      from === to
+        ? '<strong>Escena:</strong> ' + np_escapeHtml(from)
+        : '<strong>Periodo:</strong> ' + np_escapeHtml(from) + ' – ' + np_escapeHtml(to)
+    );
+  }
+
+  const lookback = meta.lookback_days != null ? Number(meta.lookback_days) : null;
+  if (Number.isFinite(lookback)) {
+    parts.push('<strong>Ventana:</strong> últimos ' + lookback + ' d');
+  }
+  const scenes = meta.scene_count != null ? Number(meta.scene_count) : null;
+  if (Number.isFinite(scenes) && scenes > 0) {
+    parts.push(
+      '<strong>Escenas:</strong> ' +
+        scenes +
+        (meta.composite || scenes > 1 ? ' (mediana)' : ' (una sola)')
+    );
+  }
+  const avgCloud = meta.avg_cloud_cover != null ? Number(meta.avg_cloud_cover) : null;
+  const maxCloud = meta.max_cloud_pct != null ? Number(meta.max_cloud_pct) : null;
+  if (Number.isFinite(avgCloud)) {
+    parts.push(
+      '<strong>Nubosidad escena:</strong> ' +
+        avgCloud +
+        '%' +
+        (Number.isFinite(maxCloud) ? ' (filtro ≤' + maxCloud + '%)' : '')
+    );
+  } else if (Number.isFinite(maxCloud)) {
+    parts.push('<strong>Filtro nubes:</strong> ≤' + maxCloud + '%');
+  }
+  const validPct =
+    meta.valid_pct != null
+      ? Number(meta.valid_pct)
+      : meta.coverage && meta.coverage.valid_pct != null
+        ? Number(meta.coverage.valid_pct)
+        : null;
+  if (Number.isFinite(validPct)) {
+    const warn = validPct < 40;
+    parts.push(
+      '<strong>Píxeles útiles en predio:</strong> ' +
+        (warn ? '<span style="color:#b45309">' : '') +
+        validPct +
+        '%' +
+        (warn ? '</span>' : '') +
+        (meta.scl_masked ? ' tras filtro SCL' : '')
+    );
+  } else if (meta.scl_masked) {
+    parts.push('<strong>Filtro:</strong> SCL (nubes/sombra)');
+  }
+  if (meta.fallback_tier) {
+    parts.push('<strong>Búsqueda:</strong> ' + np_escapeHtml(String(meta.fallback_tier)));
+  }
+  return parts.join('<br>');
+}
+
+function np_updateRadarSceneMeta(snap) {
+  const el = document.getElementById('radarSceneMeta');
+  if (!el) return;
+  const html = np_formatRadarSceneMetaHtml(snap);
+  if (!html) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+
 function np_formatRadarDisplayedCaption(snap, overlayCtx) {
   if (!snap) return '';
   const parts = [];
@@ -2841,6 +2927,7 @@ function np_radarPilotApiUrl() {
 
 function np_pilotUserErrorMessage(status, data) {
   const errorKey = String((data && (data.error || data.code)) || '').toLowerCase();
+  const serverMsg = String((data && data.message) || '');
   let code = 9000;
   let message = 'No se pudo generar el Pilot en este momento. Intenta de nuevo en unos minutos.';
 
@@ -2856,10 +2943,24 @@ function np_pilotUserErrorMessage(status, data) {
   } else if (status === 429 || errorKey.includes('quota')) {
     code = 4291;
     message = 'No hay créditos Radar suficientes para generar Pilot este mes.';
+  } else if (
+    errorKey.includes('radar_low_coverage') ||
+    /cobertura satelital útil|píxeles válidos|radar_low_coverage/i.test(serverMsg)
+  ) {
+    code = 5022;
+    message =
+      'En los últimos 30 días no hubo pasada Sentinel lo bastante despejada sobre este predio. ' +
+      'La imagen habría salido casi vacía, así que no se guardó. Prueba de nuevo tras la próxima pasada (~5 días).';
   } else if (status === 500) {
     code = 5001;
   } else if (status === 502) {
     code = 5021;
+    if (/cobertura satelital útil|píxeles válidos|radar_low_coverage|30 días/i.test(serverMsg)) {
+      code = 5022;
+      message =
+        'En los últimos 30 días no hubo pasada Sentinel lo bastante despejada sobre este predio. ' +
+        'La imagen habría salido casi vacía, así que no se guardó. Prueba de nuevo tras la próxima pasada (~5 días).';
+    }
   } else if (status === 504) {
     code = 5041;
     message = 'El Pilot tardó más de lo esperado. Intenta de nuevo en unos minutos.';
@@ -3004,6 +3105,12 @@ function np_startPilotPendingPoll(prevCreatedAt) {
         np_setPilotPendingUi(false);
         const cfg = np_getRadarIndexConfig(np_getSelectedRadarIndex());
         np_setRadarStatusHint(np_buildPilotReadyHintHtml(cfg.label), { html: true, variant: 'ready' });
+        if (st.latest) np_updateRadarSceneMeta(st.latest);
+        return;
+      }
+      if (st?.last_failed_job) {
+        np_stopPilotPendingPoll();
+        np_setPilotPendingUi(false);
       }
     } catch (e) {
       console.warn('Pilot poll:', e);
@@ -3074,25 +3181,39 @@ async function np_togglePilotRadarLayer() {
 
 function np_formatPilotOkHint(data, layerIndex) {
   const comp = data.composite || {};
-  const sceneCount = comp.scene_count != null ? comp.scene_count : 1;
+  const meta = data.meta || {};
+  const sceneCount =
+    meta.scene_count != null
+      ? meta.scene_count
+      : comp.scene_count != null
+        ? comp.scene_count
+        : 1;
   const dateRange =
-    comp.date_start && comp.date_end && comp.date_start !== comp.date_end
+    (meta.date_start && meta.date_end && meta.date_start !== meta.date_end
+      ? meta.date_start + ' – ' + meta.date_end
+      : meta.date_end || meta.date_start) ||
+    (comp.date_start && comp.date_end && comp.date_start !== comp.date_end
       ? comp.date_start + ' – ' + comp.date_end
-      : comp.date_end || comp.date_start || '';
+      : comp.date_end || comp.date_start || '');
+  const lookback = meta.lookback_days || comp.lookback_days || 30;
+  const validPct = meta.valid_pct != null ? meta.valid_pct : meta.coverage?.valid_pct;
+  const avgCloud = meta.avg_cloud_cover;
   const cfg = np_getRadarIndexConfig(layerIndex);
-  return (
+  let hint =
     'Imagen guardada · mostrando ' +
     cfg.label +
-    ' · mediana ' +
-    (comp.lookback_days || 30) +
+    ' · ventana ' +
+    lookback +
     ' d · ' +
     sceneCount +
     ' escena' +
     (sceneCount === 1 ? '' : 's') +
-    ' · SCL' +
-    (dateRange ? ' · ' + dateRange : '') +
-    '. Cambia NDVI/NDMI desde el selector.'
-  );
+    ' · SCL';
+  if (Number.isFinite(Number(avgCloud))) hint += ' · nubes ~' + avgCloud + '%';
+  if (Number.isFinite(Number(validPct))) hint += ' · útiles ' + validPct + '%';
+  if (dateRange) hint += ' · ' + dateRange;
+  hint += '. Cambia NDVI/NDMI desde el selector.';
+  return hint;
 }
 
 function np_getRadarPilotDataUrl(index) {
@@ -3393,6 +3514,7 @@ async function np_applyRadarOverlay(url, snap, index) {
     const cap = np_formatRadarDisplayedCaption(snap, overlayCtx);
     hint.textContent = cfg.shownText + (cap ? ' ' + cap : '');
   }
+  np_updateRadarSceneMeta(snap);
 }
 
 window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
@@ -3450,6 +3572,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       pricing: data.pricing || null,
       latest: data.latest || null,
       pending_job: data.pending_job || null,
+      last_failed_job: data.last_failed_job || null,
       history,
       hasLatestImage: !!data.latest?.signed_url,
       hasLatestNdmiImage: !!np_getRadarSignedUrl(data, 'ndmi'),
@@ -3469,15 +3592,35 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     const costLine = np_formatRadarCreditLine(data.pricing || null);
     if (data.pending_job) {
       np_syncPilotPendingFromStatus(window.__nutriplantRadarNdviStatus);
+    } else if (data.last_failed_job && window.__nutriplantPilotPending) {
+      np_setPilotPendingUi(false);
+      np_stopPilotPendingPoll();
+      const failed = data.last_failed_job;
+      const lowCoverage = failed.error_code === 'radar_low_coverage';
+      np_setRadarStatusHint(
+        lowCoverage
+          ? 'En los últimos <span class="radar-hint-em">30 días</span> no hubo pasada Sentinel lo bastante despejada sobre este predio. No se guardó imagen vacía. Prueba tras la próxima pasada (~5 días). Código: <span class="radar-hint-em">5022</span>'
+          : 'El Pilot no pudo generar la imagen. ' +
+              np_escapeHtml(failed.error_message || 'Error desconocido') +
+              '. Revisa Estado e intenta de nuevo.',
+        { html: true, variant: 'warn' }
+      );
     } else if (history.length) {
       np_updateRadarStatusHintFromSelection();
       if (window.__nutriplantPilotPending) {
         np_setPilotPendingUi(false);
         np_stopPilotPendingPoll();
       }
+      if (data.latest) np_updateRadarSceneMeta(data.latest);
     } else if (hint) {
       const lastPilotError = window.__nutriplantLastPilotError || null;
-      if (lastPilotError && lastPilotError.code === 5041) {
+      const failed = data.last_failed_job;
+      if (failed && failed.error_code === 'radar_low_coverage') {
+        np_setRadarStatusHint(
+          'En los últimos <span class="radar-hint-em">30 días</span> no hubo pasada Sentinel lo bastante despejada sobre este predio. No se guardó imagen vacía. Prueba tras la próxima pasada (~5 días). Código: <span class="radar-hint-em">5022</span>',
+          { html: true, variant: 'warn' }
+        );
+      } else if (lastPilotError && lastPilotError.code === 5041) {
         np_setRadarStatusHint(
           'El último intento de Pilot tardó demasiado y no se guardó imagen. Intenta de nuevo en <span class="radar-hint-em">unos minutos</span>. Código: <span class="radar-hint-em">5041</span>',
           { html: true, variant: 'warn' }
@@ -3632,7 +3775,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     const res = await fetch(np_radarPilotApiUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ polygon, project_id: String(proj.id), async: true, max_dim: 512, max_scenes: 1 })
+      body: JSON.stringify({ polygon, project_id: String(proj.id), async: true, max_dim: 512, max_scenes: 3 })
     });
     const data = await res.json().catch(() => ({}));
 
@@ -3709,6 +3852,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     if (hint) {
       hint.textContent = np_formatPilotOkHint(data, idx);
     }
+    np_updateRadarSceneMeta({ meta: data.meta || {}, created_at: data.request?.created_at || null });
   } catch (e) {
     console.error('Radar CDSE pilot:', e);
     const recovered = await np_recoverRadarIfBackendSucceeded(prevRadarCreatedAt, bounds);
@@ -3732,6 +3876,7 @@ window.hideRadarNdviOverlay = function hideRadarNdviOverlay() {
   window.__nutriplantRadarOverlaySource = null;
   np_setRadarPolygonMask(false);
   np_showRadarLegend(false);
+  np_updateRadarSceneMeta(null);
 };
 
 window.showRadarNdviOnMap = async function showRadarNdviOnMap() {

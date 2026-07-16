@@ -5,9 +5,9 @@
 const BASE = 'https://nutriplantpro.com/manual-tecnico';
 
 module.exports = {
-  version: '2026-07-08',
+  version: '2026-07-16',
   scope:
-    'Biblioteca HTML pública, sin cuenta. 25 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO.',
+    'Biblioteca HTML pública, sin cuenta. 25 capítulos (pilar 1 + pilares A–G). Indexable (SEO/GEO). Metodología alineada con la app NutriPlant PRO (incluye Radar Satelital / Lectura Satelital).',
   publicUrls: {
     index: `${BASE}/`,
     llms: `${BASE}/llms.txt`,
@@ -115,7 +115,7 @@ module.exports = {
       title: 'VPD, NDVI y NDMI',
       url: `${BASE}/capitulos/vpd-deficit-presion-vapor.html`,
       pillar: 'E — Agua y clima',
-      summary: 'VPD kPa (Tetens/simple/avanzada); Radar Pilot Copernicus NDVI/NDMI; colorimetría relativa al predio (rojo/naranja=bajo relativo, verde=alto relativo), no escala absoluta; créditos Radar internos 20/mes base + bonus por ha. No sustituye campo.',
+      summary: 'VPD kPa (Tetens/simple/avanzada); Radar Satelital: Pilot NDVI/NDMI (mediana ≤30 d, 3 escenas, sin imagen vacía) + Lectura Satelital (2–6 periodos quincenal/mensual: NDVI/NDMI prom, VPD, ET₀, lluvia, riego m³; costo 2× base/periodo; expand 15→30 en quincenal). Colorimetría relativa al predio. No sustituye campo.',
       status: 'published'
     },
     {

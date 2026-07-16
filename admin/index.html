@@ -5514,8 +5514,8 @@
                 <div class="report-sections" style="display:grid;gap:10px;margin-bottom:16px;">
                     <div class="report-section-item admin-report-section-item selected" onclick="toggleAdminReportSection('location')" data-section="location">
                         <div class="report-section-info">
-                            <div class="report-section-title">📍 Ubicación y Mapa</div>
-                            <div class="report-section-description">Polígono, área, Radar NDVI/NDMI</div>
+                            <div class="report-section-title">🛰️ Radar Satelital</div>
+                            <div class="report-section-description">Predio, polígono, Radar Pilot NDVI/NDMI y Lectura Satelital</div>
                         </div>
                     </div>
                     <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('amendments')" data-section="amendments">
@@ -9779,7 +9779,7 @@
                             const shareCreatedText = shareCreatedAt ? new Date(shareCreatedAt).toLocaleString('es-MX') : '';
                             const sections = Array.isArray(r?.selectedSections) ? r.selectedSections : [];
                             const sectionLabelMap = {
-                                location: 'Ubicación',
+                                location: 'Radar Satelital',
                                 amendments: 'Enmiendas',
                                 granular: 'Nutrición Granular',
                                 fertigation: 'Fertirriego',
@@ -9827,15 +9827,20 @@
                 </div>
             `;
             
-            // Sección: UBICACIÓN (SIEMPRE mostrar)
+            // Sección: RADAR SATELITAL / UBICACIÓN (SIEMPRE mostrar)
             const location = project.location || project.sections?.ubicacion || null;
             const hasLocationData = location && typeof location === 'object' && (location.polygon || location.coordinates);
             const hasPolygon = hasLocationData && location.polygon && Array.isArray(location.polygon) && location.polygon.length >= 3;
+            const lecturaState = location && location.lecturaSatelital && typeof location.lecturaSatelital === 'object'
+                ? location.lecturaSatelital
+                : null;
+            const lecturaRows = lecturaState && Array.isArray(lecturaState.rows) ? lecturaState.rows : [];
+            const hasLectura = lecturaRows.length > 0;
             
                 html += `
                     <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
                     <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px;">
-                        📍 Ubicación
+                        🛰️ Radar Satelital
                         ${!hasLocationData ? '<span style="color: #64748b; font-size: 14px; font-weight: normal; margin-left: 8px;">(Sin datos)</span>' : ''}
                     </h3>
                     ${hasLocationData 
@@ -9873,7 +9878,56 @@
                                             onmouseout="this.style.background='#059669'; this.style.transform='translateY(0)';">
                                         🛰️ Radar NDVI/NDMI
                                     </button>
+                                    <button type="button" onclick="showLecturaAdminModal('${String(project.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')"
+                                            title="Ver Lectura Satelital (histórico por periodos) de este proyecto"
+                                            style="background: #0f766e; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;"
+                                            onmouseover="this.style.background='#0d9488'; this.style.transform='translateY(-1px)';"
+                                            onmouseout="this.style.background='#0f766e'; this.style.transform='translateY(0)';">
+                                        📈 Lectura Satelital
+                                    </button>
                                     </div>
+                                    ${hasLectura ? `
+                                    <div style="margin-top:16px;padding:12px;border:1px solid #bbf7d0;border-radius:8px;background:#f8fafc;">
+                                      <div style="font-weight:700;color:#14532d;margin-bottom:8px;font-size:14px;">📈 Lectura Satelital guardada</div>
+                                      <div style="font-size:12px;color:#475569;margin-bottom:8px;">
+                                        ${lecturaState.frequency === 'mensual' ? 'Mensual' : (lecturaState.frequency === 'quincenal' ? 'Quincenal' : (lecturaState.frequency || '—'))}
+                                        · ${lecturaRows.length} periodo(s)
+                                        ${lecturaState.endDate ? ' · fecha final ' + String(lecturaState.endDate) : ''}
+                                      </div>
+                                      <div style="overflow-x:auto;">
+                                        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                                          <thead><tr style="background:#ecfdf5;color:#14532d;">
+                                            <th style="padding:6px 8px;text-align:left;">Periodo</th>
+                                            <th style="padding:6px 8px;text-align:center;">NDVI</th>
+                                            <th style="padding:6px 8px;text-align:center;">NDMI</th>
+                                            <th style="padding:6px 8px;text-align:center;">VPD</th>
+                                            <th style="padding:6px 8px;text-align:center;">ET₀</th>
+                                            <th style="padding:6px 8px;text-align:center;">Lluvia</th>
+                                            <th style="padding:6px 8px;text-align:center;">Riego m³</th>
+                                            <th style="padding:6px 8px;text-align:center;">Estado</th>
+                                          </tr></thead>
+                                          <tbody>
+                                            ${lecturaRows.slice().sort(function(a,b){return (a.index||0)-(b.index||0);}).map(function(r){
+                                              function n(v,d){ return (v==null||!Number.isFinite(Number(v)))?'—':Number(v).toFixed(d); }
+                                              return '<tr style="border-top:1px solid #e2e8f0;">'+
+                                                '<td style="padding:6px 8px;font-weight:600;color:#14532d;">'+String(r.label||'')+(r.lookback_expanded?' *':'')+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;">'+n(r.ndvi_mean,3)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;">'+n(r.ndmi_mean,3)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;">'+n(r.vpd_mean,2)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;">'+n(r.et0_sum,1)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;">'+n(r.rain_sum,1)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;">'+n(r.riego_m3,1)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;">'+String(r.status||'—')+'</td>'+
+                                              '</tr>';
+                                            }).join('')}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                      <div style="font-size:11px;color:#64748b;margin-top:6px;">* quincena ampliada a 30 días por nubosidad. Pulsa «Lectura Satelital» para ver imágenes NDVI/NDMI.</div>
+                                    </div>
+                                    ` : `
+                                    <div style="margin-top:12px;font-size:12px;color:#94a3b8;font-style:italic;">Sin Lectura Satelital guardada aún en este proyecto.</div>
+                                    `}
                                 </div>
                             `
                             : `<pre style="background: white; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; max-height: 300px; overflow-y: auto;">${JSON.stringify(location, null, 2)}</pre>`
@@ -11915,7 +11969,9 @@
                 selectedSections: sections,
                 reportLanguage: lang,
                 adminMode: true,
-                adminAuthorName: 'Consulta Admin NutriPlant PRO'
+                adminAuthorName: 'Consulta Admin NutriPlant PRO',
+                adminKey: (typeof getAdminPanelAccessKey === 'function' ? getAdminPanelAccessKey() : '') || undefined,
+                radarAdminSecret: (typeof getRadarAdminPanelSecret === 'function' ? getRadarAdminPanelSecret() : '') || undefined
             };
             try {
                 sessionStorage.setItem('nutriplant_admin_report_job', JSON.stringify(job));
@@ -12701,6 +12757,193 @@
                 });
         }
         window.showRadarAdminModal = showRadarAdminModal;
+
+        function getAdminProjectLocation(projectId) {
+            try {
+                var list = typeof getAllProjects === 'function' ? getAllProjects() : [];
+                var p = (list || []).find(function (x) { return String(x.id) === String(projectId); });
+                var loc = null;
+                if (p) {
+                    loc = p.location || (p.sections && p.sections.ubicacion) || null;
+                    if (p._fullProjectForMap) {
+                        loc = p._fullProjectForMap.location ||
+                            (p._fullProjectForMap.sections && p._fullProjectForMap.sections.ubicacion) ||
+                            loc;
+                    }
+                }
+                if ((!loc || !loc.lecturaSatelital) && projectId) {
+                    try {
+                        var raw = localStorage.getItem('nutriplant_project_' + projectId);
+                        if (raw) {
+                            var full = JSON.parse(raw);
+                            loc = (full && (full.location || (full.sections && full.sections.ubicacion))) || loc;
+                        }
+                    } catch (e2) { /* ignore */ }
+                }
+                return loc;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function fetchLecturaAdminData(projectId, requestIds) {
+            var adminKey = getAdminPanelAccessKey();
+            var secret = getRadarAdminPanelSecret();
+            var fetchHeaders = { 'Content-Type': 'application/json' };
+            if (secret) fetchHeaders['X-Radar-Admin-Secret'] = secret;
+            return fetch(getNutriPlantRadarApiUrlForAdmin(), {
+                method: 'POST',
+                headers: fetchHeaders,
+                body: JSON.stringify({
+                    action: 'admin_lectura_status',
+                    project_id: String(projectId || '').trim(),
+                    admin_key: adminKey || undefined,
+                    request_ids: Array.isArray(requestIds) ? requestIds : []
+                })
+            }).then(function (r) {
+                return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; });
+            });
+        }
+
+        function renderLecturaAdminModalContent(modal, projectId, lecturaState, apiRes) {
+            var esc = escRadarAdminHtml;
+            var rows = (lecturaState && Array.isArray(lecturaState.rows) ? lecturaState.rows : []).slice()
+                .sort(function (a, b) { return (Number(a.index) || 0) - (Number(b.index) || 0); });
+            var byId = {};
+            if (apiRes && apiRes.ok && apiRes.j && Array.isArray(apiRes.j.items)) {
+                apiRes.j.items.forEach(function (it) { byId[String(it.id)] = it; });
+            }
+
+            function fmt(v, d) {
+                if (v == null || !Number.isFinite(Number(v))) return '—';
+                return Number(v).toFixed(d);
+            }
+
+            var params =
+                (lecturaState && lecturaState.frequency === 'mensual' ? 'Mensual' :
+                    (lecturaState && lecturaState.frequency === 'quincenal' ? 'Quincenal' :
+                        (lecturaState && lecturaState.frequency) || '—')) +
+                ' · ' + rows.length + ' periodo(s)' +
+                (lecturaState && lecturaState.endDate ? ' · fecha final ' + esc(String(lecturaState.endDate)) : '');
+
+            var tableRows = rows.map(function (r) {
+                var it = r.request_id ? byId[String(r.request_id)] : null;
+                var ndvi = (it && it.ndvi_mean != null) ? it.ndvi_mean : r.ndvi_mean;
+                var ndmi = (it && it.ndmi_mean != null) ? it.ndmi_mean : r.ndmi_mean;
+                var expanded = !!(it && it.lookback_expanded) || !!r.lookback_expanded;
+                var st = (it && it.status) || r.status || '—';
+                return '<tr style="border-top:1px solid #e2e8f0;">' +
+                    '<td style="padding:6px 8px;font-weight:600;color:#14532d;">' + esc(r.label || '') + (expanded ? ' *' : '') + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;">' + fmt(ndvi, 3) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;">' + fmt(ndmi, 3) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;">' + fmt(r.vpd_mean, 2) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;">' + fmt(r.et0_sum, 1) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;">' + fmt(r.rain_sum, 1) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;">' + fmt(r.riego_m3, 1) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;">' + esc(st) + '</td></tr>';
+            }).join('');
+
+            var gallery = '';
+            rows.forEach(function (r) {
+                var it = r.request_id ? byId[String(r.request_id)] : null;
+                var ndviUrl = (it && it.signed_url) || r.signed_url || '';
+                var ndmiUrl = (it && it.ndmi_signed_url) || r.ndmi_signed_url || '';
+                if (!ndviUrl && !ndmiUrl) return;
+                var dateRange = '';
+                var ds = (it && it.date_start) || r.date_start || '';
+                var de = (it && it.date_end) || r.date_end || '';
+                if (ds && de) dateRange = ds + ' → ' + de;
+                else if (ds || de) dateRange = ds || de;
+                var periodTitle = r.label
+                    ? ('Periodo del predio: ' + String(r.label))
+                    : (dateRange ? ('Periodo del predio: ' + dateRange) : 'Periodo del predio');
+                if (r.label && dateRange && String(r.label).indexOf(String(ds).slice(0, 4)) < 0) {
+                    periodTitle += ' (' + dateRange + ')';
+                }
+                gallery +=
+                    '<div style="margin-top:12px;border:1px solid #bbf7d0;border-radius:10px;padding:10px;background:#f8fafc;">' +
+                    '<div style="font-weight:700;color:#14532d;font-size:13px;margin-bottom:4px;">📅 ' + esc(periodTitle) +
+                    ((it && it.lookback_expanded) || r.lookback_expanded ? ' · <span style="color:#b45309;">ampliada a 30 d</span>' : '') +
+                    '</div>' +
+                    (dateRange
+                        ? '<div style="font-size:11px;color:#64748b;margin-bottom:8px;">Ventana satelital: ' + esc(dateRange) + '</div>'
+                        : '') +
+                    '<div style="display:flex;flex-wrap:wrap;gap:12px;">' +
+                    '<div style="flex:1;min-width:200px;">' +
+                    (ndviUrl
+                        ? '<img src="' + ndviUrl.replace(/"/g, '&quot;') + '" alt="NDVI periodo" style="width:100%;max-height:280px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#fff;" />'
+                        : '<p style="color:#94a3b8;font-size:12px;">Sin NDVI</p>') +
+                    '<div style="font-size:12px;font-weight:700;color:#166534;margin-top:4px;">NDVI · ' + esc(r.label || dateRange || 'periodo') + '</div></div>' +
+                    '<div style="flex:1;min-width:200px;">' +
+                    (ndmiUrl
+                        ? '<img src="' + ndmiUrl.replace(/"/g, '&quot;') + '" alt="NDMI periodo" style="width:100%;max-height:280px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#fff;" />'
+                        : '<p style="color:#94a3b8;font-size:12px;">Sin NDMI</p>') +
+                    '<div style="font-size:12px;font-weight:700;color:#0f766e;margin-top:4px;">NDMI · ' + esc(r.label || dateRange || 'periodo') + '</div></div>' +
+                    '</div></div>';
+            });
+
+            var apiWarn = '';
+            if (apiRes && (!apiRes.ok || (apiRes.j && apiRes.j.ok === false))) {
+                var msg = (apiRes.j && (apiRes.j.message || apiRes.j.error)) || ('HTTP ' + apiRes.status);
+                apiWarn = '<div style="margin:0 0 12px;padding:10px;border-radius:8px;background:#fef3c7;color:#92400e;font-size:12px;">No se pudieron firmar imágenes desde la nube: ' + esc(msg) + '. Se muestra la tabla guardada en el proyecto.</div>';
+            }
+
+            modal.style.display = 'flex';
+            modal.innerHTML =
+                '<div style="background:#fff;border-radius:12px;width:100%;max-width:960px;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:#fff;z-index:1;">' +
+                '<h2 style="margin:0;font-size:18px;color:#1e293b;">📈 Lectura Satelital</h2>' +
+                '<button type="button" onclick="closeRadarAdminModal()" style="background:none;border:none;font-size:28px;color:#64748b;cursor:pointer;line-height:1;">×</button></div>' +
+                '<div style="padding:16px 18px 22px;">' +
+                apiWarn +
+                '<p style="margin:0 0 10px;font-size:13px;color:#475569;">' + esc(params) + '</p>' +
+                '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">' +
+                '<thead><tr style="background:#ecfdf5;color:#14532d;">' +
+                '<th style="padding:6px 8px;text-align:left;">Periodo</th><th style="padding:6px 8px;text-align:center;">NDVI</th><th style="padding:6px 8px;text-align:center;">NDMI</th>' +
+                '<th style="padding:6px 8px;text-align:center;">VPD</th><th style="padding:6px 8px;text-align:center;">ET₀</th><th style="padding:6px 8px;text-align:center;">Lluvia</th>' +
+                '<th style="padding:6px 8px;text-align:center;">Riego m³</th><th style="padding:6px 8px;text-align:center;">Estado</th>' +
+                '</tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
+                (gallery
+                    ? '<div style="margin-top:14px;font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — NDVI | NDMI por periodo (con fechas)</div>' + gallery
+                    : '<p style="margin-top:12px;font-size:12px;color:#94a3b8;">Sin imágenes firmadas disponibles (el usuario debe haber generado el histórico).</p>') +
+                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">Cada bloque es un periodo del mismo predio (no una imagen Pilot suelta). * quincena ampliada a 30 días por nubosidad.</p>' +
+                '</div></div>';
+        }
+
+        function showLecturaAdminModal(projectId) {
+            var adminKey = getAdminPanelAccessKey();
+            var secret = getRadarAdminPanelSecret();
+            if (!adminKey && !secret) {
+                alert('No se encontró la clave del panel admin (parámetro ?k= en la URL). Abre el panel con el enlace completo que incluye ?k=...');
+                return;
+            }
+            var pid = String(projectId || '').trim();
+            if (!pid) {
+                alert('ID de proyecto no válido.');
+                return;
+            }
+            var loc = getAdminProjectLocation(pid);
+            var lectura = loc && loc.lecturaSatelital ? loc.lecturaSatelital : null;
+            var rows = lectura && Array.isArray(lectura.rows) ? lectura.rows : [];
+            var modal = ensureRadarAdminModal();
+            if (!rows.length) {
+                modal.style.display = 'flex';
+                modal.innerHTML =
+                    '<div style="background:#fff;border-radius:12px;padding:24px;max-width:520px;">' +
+                    '<p style="color:#475569;margin:0;">No hay Lectura Satelital guardada en este proyecto. El usuario la genera en Radar Satelital → Lectura Satelital.</p>' +
+                    '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:16px;padding:8px 16px;border-radius:6px;border:none;background:#0f766e;color:#fff;font-weight:600;cursor:pointer;">Cerrar</button></div>';
+                return;
+            }
+            showRadarAdminLoading(modal, 'Cargando Lectura Satelital…');
+            var ids = rows.map(function (r) { return r.request_id; }).filter(Boolean);
+            fetchLecturaAdminData(pid, ids)
+                .then(function (res) { renderLecturaAdminModalContent(modal, pid, lectura, res); })
+                .catch(function (err) {
+                    console.error('Lectura admin modal:', err);
+                    renderLecturaAdminModalContent(modal, pid, lectura, { ok: false, status: 0, j: { message: 'Error de red' } });
+                });
+        }
+        window.showLecturaAdminModal = showLecturaAdminModal;
         
         // Función para mostrar el mapa con polígono (carga Leaflet dinámicamente)
         function showMapModal(projectId, locationData) {
@@ -13052,6 +13295,16 @@
                         }
                         return;
                     }
+                    const lecturaBtn = e.target.closest('.global-map-lectura-project');
+                    if (lecturaBtn) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const id = lecturaBtn.getAttribute('data-project-id');
+                        if (id && typeof showLecturaAdminModal === 'function') {
+                            showLecturaAdminModal(id);
+                        }
+                        return;
+                    }
                     const btn = e.target.closest('.global-map-open-project');
                     if (btn) {
                         e.preventDefault();
@@ -13216,7 +13469,8 @@
                             <strong style="color: #1e293b;">🆔 ID:</strong> <code style="font-size: 11px;">${escapeHtml(projectId)}</code><br>
                             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
                                 <button type="button" class="global-map-open-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #10b981; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;">Ver detalle del proyecto</button>
-                                <button type="button" class="global-map-radar-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #059669; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;" title="Ver imágenes NDVI/NDMI guardadas de este predio">🛰️ Radar NDVI/NDMI</button>
+                                <button type="button" class="global-map-radar-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #059669; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;" title="Ver imágenes NDVI/NDMI (Pilot) de este predio">🛰️ Radar NDVI/NDMI</button>
+                                <button type="button" class="global-map-lectura-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #0f766e; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;" title="Ver serie Lectura Satelital (periodos con fechas) de este predio">📈 Lectura Satelital</button>
                             </div>
                         </div>
                     `;

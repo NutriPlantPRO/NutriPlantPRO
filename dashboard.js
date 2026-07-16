@@ -24,7 +24,7 @@ const ICONS = {
   "Hidroponia": "💧",
   "Reporte": "📄",
   // vistas auxiliares (no aparecen en menú)
-  "Ubicación": "📍",
+  "Ubicación": "🛰️",
   "Enmienda": "🚜",
   "Nutricion Granular": "⚪",
   "Análisis: Suelo": "🌱🟫",
@@ -43,6 +43,18 @@ const LEGACY_CLIMATE_SECTION = 'Análisis: Déficit de Presión de Vapor';
 function normalizeClimateSectionName(name) {
   if (name === LEGACY_CLIMATE_SECTION) return CLIMATE_SECTION;
   return name;
+}
+
+/** Nombre visible en UI (el id interno puede seguir siendo «Ubicación»). */
+function getSectionDisplayName(name) {
+  if (name === 'Ubicación') return 'Radar Satelital';
+  return name;
+}
+
+/** Si el título visible es el display name, devolver el id interno de sección. */
+function getSectionInternalName(displayOrInternal) {
+  if (displayOrInternal === 'Radar Satelital') return 'Ubicación';
+  return displayOrInternal;
 }
 
 // Referencias al DOM del panel
@@ -1597,13 +1609,18 @@ function sectionTemplate(name) {
 
   if (name === "Ubicación") {
     return `
-      <div class="location-container">
+      <div class="location-container radar-satelital-container">
+        <div class="radar-tabs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;">
+          <button type="button" class="radar-tab-button active" data-radartab="poligono" style="display:flex;align-items:center;gap:6px;border:1px solid #bbf7d0;background:#dcfce7;color:#14532d;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer;">🗺️ Polígono / NDVI y NDMI</button>
+          <button type="button" class="radar-tab-button" data-radartab="lectura" style="display:flex;align-items:center;gap:6px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer;">📈 Lectura Satelital</button>
+        </div>
+        <div class="radar-tab-content active" id="radarTabPoligono">
         <div class="location-header">
           <div class="header-left">
             <div class="location-title-section">
               <button id="centerOnPolygon" class="location-title-button" type="button" onclick="if(window.np_centerOnPolygonFromUi){window.np_centerOnPolygonFromUi(event);}">
-                <span class="title-icon">📍</span>
-                <span class="title-text">Ubicación del Predio</span>
+                <span class="title-icon">🛰️</span>
+                <span class="title-text">Radar Satelital</span>
                 <span class="title-arrow">→</span>
               </button>
             </div>
@@ -1660,8 +1677,11 @@ function sectionTemplate(name) {
           </label>
           <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Créditos Radar: —</span>
           <span id="radarStatusHint" class="radar-hint-info">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
-          <div style="width:100%;flex-basis:100%;font-size:11px;color:#64748b;line-height:1.45;padding:6px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.65);border:1px dashed #86efac;">
-            <strong>Tip:</strong> elige la <strong>imagen</strong> guardada del proyecto para verla en el mapa. <strong>Generar / actualizar Pilot</strong> crea NDVI+NDMI nuevos y consume créditos Radar internos: base 20 al mes (+ bonus), según superficie del predio.
+          <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.5;padding:8px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
+            <strong style="color:#14532d;">Cómo se arma la imagen:</strong>
+            Sentinel-2 pasa ~cada 5 días. Al generar, NutriPlant busca hasta <strong>3 pasadas</strong> de los últimos <strong>30 días</strong> (nunca más atrás) y las combina con <strong>mediana por píxel</strong> (no es promedio de todos los días del mes).
+            Si tu predio sale demasiado nublado, <strong>no se guarda</strong> una imagen vacía.
+            Abajo, al ver una imagen, verás las fechas, nubosidad y % útil del predio.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI relativa al predio</span>
@@ -1670,6 +1690,7 @@ function sectionTemplate(name) {
             <span id="radarScaleHigh">Mayor nivel del predio</span>
             <span id="radarNdviHelp" style="color:#166534;">Verde = mayor vigor dentro del mismo predio; rojo/naranja = menor vigor relativo.</span>
           </div>
+          <div id="radarSceneMeta" style="display:none;width:100%;flex-basis:100%;font-size:11px;color:#14532d;line-height:1.5;padding:7px 10px;margin:0;border-radius:8px;background:rgba(255,255,255,0.8);border:1px solid #86efac;"></div>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
             <button type="button" id="radarBtnGenerate" class="btn btn-primary" style="font-size: 13px;">🛰 Generar / actualizar Pilot</button>
             <button type="button" id="radarBtnRefresh" class="btn btn-secondary" style="font-size: 13px;">🔄 Estado</button>
@@ -1686,6 +1707,10 @@ function sectionTemplate(name) {
               <p>🔄 Haz doble clic para cerrar el polígono</p>
             </div>
           </div>
+        </div>
+        </div>
+        <div class="radar-tab-content" id="radarTabLectura" style="display:none;">
+          ${typeof window.createLecturaSatelitalHTML === 'function' ? window.createLecturaSatelitalHTML() : '<div class="card"><p>Cargando Lectura Satelital…</p></div>'}
         </div>
       </div>
     `;
@@ -1755,7 +1780,9 @@ function emitProjectContextUpdate(detail = {}) {
   try {
     const payload = {
       projectId: typeof np_getCurrentProjectId === 'function' ? np_getCurrentProjectId() : (localStorage.getItem('nutriplant-current-project') || ''),
-      section: (typeof title !== 'undefined' && title && title.textContent) ? title.textContent.trim() : 'Inicio',
+      section: (typeof title !== 'undefined' && title && title.textContent)
+        ? getSectionInternalName(title.textContent.trim())
+        : 'Inicio',
       ...detail,
       at: new Date().toISOString()
     };
@@ -1773,7 +1800,7 @@ function selectSection(name, el) {
   } catch {}
   
   // Preservar posición de scroll de la sección actual antes de cambiar (para restaurar al regresar)
-  var previousSection = title ? title.textContent.trim() : '';
+  var previousSection = title ? getSectionInternalName(title.textContent.trim()) : '';
   if (previousSection) {
     var subTab = getCurrentSubTabForSection(previousSection);
     var scrollKey = subTab ? previousSection + '|' + subTab : previousSection;
@@ -1963,7 +1990,7 @@ function selectSection(name, el) {
     }
   }
 
-  if (title) title.textContent = name;
+  if (title) title.textContent = getSectionDisplayName(name);
   var reusedCachedDom = false;
   if (view) {
     var currentCacheKey = getSectionCacheKey(name);
@@ -2463,7 +2490,7 @@ function renderProjectCards(p) {
       </div>
     </div>
     <div class="sb-chiprow">
-      <button class="sb-chip" data-section="ubicacion">📍 <span class="text">Ubicación</span></button>
+      <button class="sb-chip" data-section="ubicacion">🛰️ <span class="text">Radar Satelital</span></button>
       <button class="sb-chip" data-section="enmienda">🚜 <span class="text">Enmienda</span></button>
       <button class="sb-chip" data-section="nutricion-granular">⚪ <span class="text">Nutrición Granular</span></button>
       <button class="sb-chip" data-section="fertirriego">📈 <span class="text">Fertirriego</span></button>
@@ -8610,6 +8637,135 @@ async function fetchRadarImagesDataUrlsForReport() {
   }
 }
 
+/** Lectura Satelital persistida → filas + imágenes data URL para el PDF. */
+async function fetchLecturaSatelitalForReport() {
+  const out = { rows: [], frequency: null, periods: null, endDate: null, error: null };
+  try {
+    if (!currentProject || !currentProject.id) {
+      out.error = 'no_project';
+      return out;
+    }
+    const loc = currentProject.location || {};
+    const state = loc.lecturaSatelital;
+    if (!state || !Array.isArray(state.rows) || !state.rows.length) {
+      out.error = 'no_lectura';
+      return out;
+    }
+    out.frequency = state.frequency || null;
+    out.periods = state.periods != null ? state.periods : state.rows.length;
+    out.endDate = state.endDate || null;
+
+    async function urlToDataUrl(url) {
+      if (!url || typeof url !== 'string') return null;
+      try {
+        const r = await fetch(url);
+        if (!r.ok) return null;
+        const blob = await r.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch (e) {
+        return null;
+      }
+    }
+
+    const baseRows = state.rows.slice().sort(function (a, b) {
+      return (Number(a.index) || 0) - (Number(b.index) || 0);
+    });
+    const ids = baseRows.map(function (r) { return r.request_id; }).filter(Boolean);
+    let statusById = {};
+    if (ids.length) {
+      const token = await getRadarAccessTokenForReport();
+      if (token) {
+        try {
+          const res = await fetch(getRadarApiUrlForReport(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+            body: JSON.stringify({
+              action: 'lectura_status',
+              project_id: String(currentProject.id),
+              request_ids: ids
+            })
+          });
+          const data = await res.json().catch(function () { return {}; });
+          if (res.ok && Array.isArray(data.items)) {
+            data.items.forEach(function (it) {
+              statusById[String(it.id)] = it;
+            });
+          }
+        } catch (e) {
+          console.warn('fetchLecturaSatelitalForReport status:', e);
+        }
+      }
+      // Reporte admin: firmar con clave del panel si no hay sesión del usuario
+      if (!Object.keys(statusById).length && window._nutriplantAdminReadOnlyReport) {
+        try {
+          const auth = window._nutriplantAdminReportAuth || {};
+          const headers = { 'Content-Type': 'application/json' };
+          if (auth.radarAdminSecret) headers['X-Radar-Admin-Secret'] = auth.radarAdminSecret;
+          const resAdm = await fetch(getRadarApiUrlForReport(), {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+              action: 'admin_lectura_status',
+              project_id: String(currentProject.id),
+              admin_key: auth.adminKey || undefined,
+              request_ids: ids
+            })
+          });
+          const dataAdm = await resAdm.json().catch(function () { return {}; });
+          if (resAdm.ok && Array.isArray(dataAdm.items)) {
+            dataAdm.items.forEach(function (it) {
+              statusById[String(it.id)] = it;
+            });
+          }
+        } catch (e2) {
+          console.warn('fetchLecturaSatelitalForReport admin status:', e2);
+        }
+      }
+    }
+
+    const enriched = [];
+    for (let i = 0; i < baseRows.length; i++) {
+      const r = baseRows[i];
+      const it = r.request_id ? statusById[String(r.request_id)] : null;
+      const row = {
+        index: r.index,
+        label: r.label || '',
+        date_start: r.date_start || null,
+        date_end: r.date_end || null,
+        status: (it && it.status) || r.status || null,
+        ndvi_mean: (it && it.ndvi_mean != null) ? it.ndvi_mean : r.ndvi_mean,
+        ndmi_mean: (it && it.ndmi_mean != null) ? it.ndmi_mean : r.ndmi_mean,
+        vpd_mean: r.vpd_mean,
+        et0_sum: r.et0_sum,
+        rain_sum: r.rain_sum,
+        riego_m3: r.riego_m3,
+        lookback_expanded: !!(it && it.lookback_expanded) || !!r.lookback_expanded,
+        ndviDataUrl: null,
+        ndmiDataUrl: null
+      };
+      const ndviUrl = (it && it.signed_url) || r.signed_url || null;
+      const ndmiUrl = (it && it.ndmi_signed_url) || r.ndmi_signed_url || null;
+      if (ndviUrl || ndmiUrl) {
+        const [ndvi, ndmi] = await Promise.all([urlToDataUrl(ndviUrl), urlToDataUrl(ndmiUrl)]);
+        row.ndviDataUrl = ndvi;
+        row.ndmiDataUrl = ndmi;
+      }
+      enriched.push(row);
+    }
+    out.rows = enriched;
+    return out;
+  } catch (e) {
+    console.warn('fetchLecturaSatelitalForReport:', e);
+    out.error = e && e.message ? e.message : 'fetch_failed';
+    return out;
+  }
+}
+
 /** Combina gráficas de fertirriego, Radar, distribución por etapa, clima, etc. para el PDF. */
 function loadChartImagesForReport(selectedSections, callback) {
   const needFerti =
@@ -8691,15 +8847,23 @@ function loadChartImagesForReport(selectedSections, callback) {
       finish(out);
       return;
     }
-    fetchRadarImagesDataUrlsForReport()
-      .then((radar) => {
+    Promise.all([
+      fetchRadarImagesDataUrlsForReport(),
+      fetchLecturaSatelitalForReport()
+    ])
+      .then(function (pair) {
+        const radar = pair[0];
+        const lectura = pair[1];
         if (radar && typeof radar === 'object' && (radar.ndviDataUrl || radar.ndmiDataUrl)) {
           out.radar = radar;
         }
+        if (lectura && Array.isArray(lectura.rows) && lectura.rows.length) {
+          out.lecturaSatelital = lectura;
+        }
         finish(out);
       })
-      .catch((e) => {
-        console.warn('loadChartImagesForReport radar:', e);
+      .catch(function (e) {
+        console.warn('loadChartImagesForReport radar/lectura:', e);
         finish(out);
       });
   }
@@ -12458,6 +12622,8 @@ function loadOnTabChange(tabName) {
         try {
           if (typeof window.refreshRadarNdviStatus === 'function') window.refreshRadarNdviStatus();
           if (typeof window.initRadarNdviUi === 'function') window.initRadarNdviUi();
+          if (typeof window.initRadarSatelitalTabs === 'function') window.initRadarSatelitalTabs();
+          if (typeof window.initLecturaSatelital === 'function') window.initLecturaSatelital();
         } catch (e) {
           console.warn('Radar NDVI UI:', e);
         }
@@ -13403,6 +13569,10 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
   const prevProject = (typeof currentProject !== 'undefined') ? currentProject : null;
   window._nutriplantAdminReadOnlyReport = true;
   window._nutriplantAdminReadOnlyReportAuthor = job.adminAuthorName || 'Consulta Admin NutriPlant PRO';
+  window._nutriplantAdminReportAuth = {
+    adminKey: job.adminKey || '',
+    radarAdminSecret: job.radarAdminSecret || ''
+  };
   currentProject = job.project;
   if (job.userId && currentProject && typeof currentProject === 'object') {
     currentProject.user_id = job.userId;
@@ -13410,10 +13580,11 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
   }
 
   const printWindow = window.open('about:blank', '_blank');
-  if (!printWindow) {
+    if (!printWindow) {
     alert('Tu navegador bloqueó la ventana de impresión. Habilita pop-ups e inténtalo de nuevo.');
     window._nutriplantAdminReadOnlyReport = false;
     window._nutriplantAdminReadOnlyReportAuthor = '';
+    window._nutriplantAdminReportAuth = null;
     currentProject = prevProject;
     try { window.close(); } catch (e) {}
     return;
@@ -13427,6 +13598,7 @@ window.runAdminReadOnlyReportFromJob = function(job, statusCallback) {
   function cleanup() {
     window._nutriplantAdminReadOnlyReport = false;
     window._nutriplantAdminReadOnlyReportAuthor = '';
+    window._nutriplantAdminReportAuth = null;
     currentProject = prevProject;
     setTimeout(function() {
       try { window.close(); } catch (e) {}
@@ -15223,6 +15395,147 @@ function createLocationRadarBlockHTML(radar, rt, lang) {
   `;
 }
 
+function createLocationLecturaBlockHTML(lectura, rt, lang) {
+  if (!lectura || !Array.isArray(lectura.rows) || !lectura.rows.length) return '';
+  const rtSafe = typeof rt === 'function' ? rt : function (es) { return es; };
+  const title = rtSafe('Lectura Satelital — histórico', 'Satellite Reading — history');
+  const freqLabel =
+    lectura.frequency === 'mensual'
+      ? rtSafe('Mensual', 'Monthly')
+      : lectura.frequency === 'quincenal'
+        ? rtSafe('Quincenal', 'Fortnightly')
+        : (lectura.frequency || '—');
+  const paramsLine =
+    rtSafe('Frecuencia:', 'Frequency:') +
+    ' ' +
+    freqLabel +
+    ' · ' +
+    rtSafe('Periodos:', 'Periods:') +
+    ' ' +
+    (lectura.periods != null ? lectura.periods : lectura.rows.length) +
+    (lectura.endDate
+      ? ' · ' + rtSafe('Fecha final:', 'End date:') + ' ' + reportEscapeHtml(String(lectura.endDate))
+      : '');
+
+  function fmt(v, dec) {
+    if (v == null || !Number.isFinite(Number(v))) return '—';
+    return Number(v).toFixed(dec == null ? 2 : dec);
+  }
+
+  const rows = lectura.rows.slice().sort(function (a, b) {
+    return (Number(a.index) || 0) - (Number(b.index) || 0);
+  });
+
+  let tableRows = '';
+  rows.forEach(function (r) {
+    const star = r.lookback_expanded ? ' *' : '';
+    tableRows +=
+      '<tr style="border-top:1px solid #e2e8f0;">' +
+      '<td style="padding:6px 8px;font-weight:700;color:#14532d;white-space:nowrap;">' +
+      reportEscapeHtml(String(r.label || '')) +
+      star +
+      '</td>' +
+      '<td style="padding:6px 8px;text-align:center;">' +
+      fmt(r.ndvi_mean, 3) +
+      '</td>' +
+      '<td style="padding:6px 8px;text-align:center;">' +
+      fmt(r.ndmi_mean, 3) +
+      '</td>' +
+      '<td style="padding:6px 8px;text-align:center;">' +
+      fmt(r.vpd_mean, 2) +
+      '</td>' +
+      '<td style="padding:6px 8px;text-align:center;">' +
+      fmt(r.et0_sum, 1) +
+      '</td>' +
+      '<td style="padding:6px 8px;text-align:center;">' +
+      fmt(r.rain_sum, 1) +
+      '</td>' +
+      '<td style="padding:6px 8px;text-align:center;">' +
+      fmt(r.riego_m3, 1) +
+      '</td>' +
+      '</tr>';
+  });
+
+  const table =
+    '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">' +
+    '<thead><tr style="background:#ecfdf5;color:#14532d;">' +
+    [
+      rtSafe('Periodo', 'Period'),
+      'NDVI',
+      'NDMI',
+      'VPD',
+      'ET₀ mm',
+      rtSafe('Lluvia mm', 'Rain mm'),
+      rtSafe('Riego m³', 'Irrigation m³')
+    ]
+      .map(function (h) {
+        return '<th style="padding:6px 8px;text-align:center;white-space:nowrap;">' + h + '</th>';
+      })
+      .join('') +
+    '</tr></thead><tbody>' +
+    tableRows +
+    '</tbody></table>';
+
+  let gallery = '';
+  const withImg = rows.filter(function (r) {
+    return r.ndviDataUrl || r.ndmiDataUrl;
+  });
+  if (withImg.length) {
+    gallery =
+      '<div style="margin-top:12px;font-size:12px;font-weight:700;color:#14532d;">' +
+      rtSafe('Imágenes por periodo (NDVI | NDMI)', 'Images by period (NDVI | NDMI)') +
+      '</div>';
+    withImg.forEach(function (r) {
+      gallery +=
+        '<div style="margin-top:8px;border:1px solid #bbf7d0;border-radius:8px;padding:8px;page-break-inside:avoid;">' +
+        '<div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:6px;">' +
+        reportEscapeHtml(String(r.label || '')) +
+        (r.lookback_expanded
+          ? ' · <span style="color:#b45309;">' +
+            rtSafe('ampliada a 30 d', 'expanded to 30 d') +
+            '</span>'
+          : '') +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+        '<div>' +
+        (r.ndviDataUrl
+          ? '<img src="' +
+            r.ndviDataUrl +
+            '" alt="NDVI" style="width:100%;max-height:220px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />'
+          : '<div style="padding:16px;text-align:center;color:#94a3b8;background:#f1f5f9;border-radius:6px;font-size:11px;">Sin NDVI</div>') +
+        '<div style="text-align:center;font-size:10px;color:#166534;font-weight:700;margin-top:3px;">NDVI</div></div>' +
+        '<div>' +
+        (r.ndmiDataUrl
+          ? '<img src="' +
+            r.ndmiDataUrl +
+            '" alt="NDMI" style="width:100%;max-height:220px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />'
+          : '<div style="padding:16px;text-align:center;color:#94a3b8;background:#f1f5f9;border-radius:6px;font-size:11px;">Sin NDMI</div>') +
+        '<div style="text-align:center;font-size:10px;color:#0f766e;font-weight:700;margin-top:3px;">NDMI</div></div>' +
+        '</div></div>';
+    });
+  }
+
+  const note = rtSafe(
+    'NDVI/NDMI = promedio de píxeles válidos del predio. ET₀ y lluvia = acumulado. VPD = promedio horario. * quincena ampliada a 30 días por nubosidad. Complementar con campo y riego.',
+    'NDVI/NDMI = mean of valid pixels in the field. ET₀ and rain = period sum. VPD = hourly mean. * fortnight expanded to 30 days due to clouds. Complement with field checks and irrigation.'
+  );
+
+  return (
+    '<div style="margin-top:14px;border:1px solid #86efac;background:#f0fdf4;border-radius:8px;padding:10px;">' +
+    '<div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:4px;">📈 ' +
+    title +
+    '</div>' +
+    '<div class="report-note-inline" style="margin-bottom:4px;">' +
+    paramsLine +
+    '</div>' +
+    table +
+    gallery +
+    '<div class="report-note-inline" style="margin-top:8px;">' +
+    note +
+    '</div></div>'
+  );
+}
+
 function createLocationSectionHTML(chartImages, rt, lang) {
   const rtSafe = typeof rt === 'function' ? rt : function(es) {
     return es;
@@ -15246,12 +15559,17 @@ function createLocationSectionHTML(chartImages, rt, lang) {
       }).filter(Boolean).join('')
     : '';
   const radarBlock = createLocationRadarBlockHTML(chartImages && chartImages.radar, rtSafe, langSafe);
+  const lecturaBlock = createLocationLecturaBlockHTML(
+    chartImages && chartImages.lecturaSatelital,
+    rtSafe,
+    langSafe
+  );
 
   return `
     <div class="section">
-      <h2 class="section-title">📍 Ubicación</h2>
+      <h2 class="section-title">🛰️ Radar Satelital</h2>
       <div class="report-block" style="border-color:#86efac;background:#f0fdf4;">
-        <div class="report-block-title">🗺️ Ubicación del Proyecto</div>
+        <div class="report-block-title">🗺️ Predio y polígono</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
           <div><strong>Área:</strong><br><span style="color:#059669;font-weight:700;">${reportEscapeHtml(areaValue)}</span></div>
           <div><strong>Perímetro:</strong><br><span>${reportEscapeHtml(perimeterValue)}</span></div>
@@ -15268,6 +15586,7 @@ function createLocationSectionHTML(chartImages, rt, lang) {
         </div>
         ${hasPolygon ? createLocationPolygonSVG(polygon) : ''}
         ${radarBlock}
+        ${lecturaBlock}
       </div>
     </div>
   `;

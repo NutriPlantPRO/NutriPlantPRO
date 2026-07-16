@@ -414,6 +414,7 @@
   <script src="chat-simple.js?v=202606242300"></script>
   <!-- <script src="chat.js?v=1758332516"></script> -->
   <script src="map.js?v=202606231625"></script>
+  <script src="assets/np-lectura-satelital.js?v=202607161500"></script>
   
   <!-- Verificación de carga de scripts -->
   <script>
@@ -4198,7 +4199,7 @@ PREGUNTA DEL USUARIO: "${message}"`;
       const userInfo = conversationContext.userInfo;
       const currentSection = detectCurrentSection();
       const project = getProjectDataForChat();
-      const sectionNames = { enmienda: 'Enmienda (CIC / cálculo de enmiendas)', fertirriego: 'Fertirriego', hidroponia: 'Hidroponía', analisis: 'Análisis', extracto: 'Extracto de pasta', ubicacion: 'Ubicación', reportes: 'Reportes', configuracion: 'Configuración' };
+      const sectionNames = { enmienda: 'Enmienda (CIC / cálculo de enmiendas)', fertirriego: 'Fertirriego', hidroponia: 'Hidroponía', analisis: 'Análisis', extracto: 'Extracto de pasta', ubicacion: 'Radar Satelital', reportes: 'Reportes', configuracion: 'Configuración' };
 
       let context = `Eres NutriPlant Assistant, un experto en nutrición vegetal y análisis de suelos especializado en la plataforma NutriPlant PRO.
 
@@ -6079,8 +6080,8 @@ CONTRATO:
       <div class="report-sections">
         <div class="report-section-item" onclick="toggleReportSection('location')" data-section="location">
           <div class="report-section-info">
-            <div class="report-section-title">📍 Ubicación y Mapa</div>
-            <div class="report-section-description">Información de ubicación, coordenadas y polígono del terreno</div>
+            <div class="report-section-title">🛰️ Radar Satelital</div>
+            <div class="report-section-description">Predio, polígono, Radar Pilot (NDVI/NDMI) y Lectura Satelital (histórico por periodos)</div>
           </div>
         </div>
         

@@ -24,7 +24,7 @@ const BUCKET = 'radar-ndvi';
 const LOOKBACK_DAYS_FIRST = 120;
 const LOOKBACK_DAYS_FALLBACK = 365;
 const radarCredits = require('./lib/radar-credits');
-const { sumMonthlyRadarCreditsUsed, getPendingPilotJobForStatus } = require('./lib/radar-pilot-job');
+const { sumMonthlyRadarCreditsUsed, getPendingPilotJobForStatus, getLatestFailedPilotJob, getRadarRowsByIds } = require('./lib/radar-pilot-job');
 
 function corsHeaders() {
   return {
@@ -505,6 +505,85 @@ exports.handler = async (event) => {
     });
   }
 
+  if (bodyActionEarly === 'admin_lectura_status') {
+    if (!isAdminRadarAuthorized(event, body)) {
+      return jsonResponse(403, {
+        error: 'admin_unauthorized',
+        message: 'Acceso admin denegado. Abre el panel con ?k= válido o usa X-Radar-Admin-Secret.'
+      });
+    }
+    const projectIdLect = body.project_id != null ? String(body.project_id).trim() : '';
+    if (!projectIdLect) {
+      return jsonResponse(400, { error: 'project_id es obligatorio' });
+    }
+    const { data: projLect, error: projLectErr } = await supabase
+      .from('projects')
+      .select('id, user_id, data')
+      .eq('id', projectIdLect)
+      .maybeSingle();
+    if (projLectErr || !projLect) {
+      return jsonResponse(404, {
+        error: 'project_not_found',
+        message: 'Proyecto no encontrado en la nube.'
+      });
+    }
+    const ownerLect = projLect.user_id;
+    const idsLect = Array.isArray(body.request_ids) ? body.request_ids : [];
+    const rowsLect = await getRadarRowsByIds(supabase, ownerLect, projectIdLect, idsLect);
+    const byIdLect = {};
+    rowsLect.forEach((r) => { byIdLect[String(r.id)] = r; });
+    const itemsLect = [];
+    for (const rawId of idsLect) {
+      const id = String(rawId);
+      const row = byIdLect[id];
+      if (!row) {
+        itemsLect.push({ id, status: 'not_found' });
+        continue;
+      }
+      const meta = row.meta || {};
+      const status = row.image_storage_path
+        ? 'done'
+        : String(meta.status || 'pending').toLowerCase();
+      let signedUrl = null;
+      let ndmiSignedUrl = null;
+      if (row.image_storage_path) {
+        const signed = await signRadarRow(supabase, row);
+        signedUrl = signed.ndviSignedUrl;
+        ndmiSignedUrl = signed.ndmiSignedUrl;
+      }
+      itemsLect.push({
+        id,
+        status,
+        created_at: row.created_at,
+        period_index: meta.period_index != null ? meta.period_index : null,
+        period_label: meta.period_label || null,
+        frequency: meta.frequency || null,
+        date_start: meta.period_date_start || meta.date_start || null,
+        date_end: meta.period_date_end || meta.date_end || null,
+        ndvi_mean: meta.ndvi_mean != null ? meta.ndvi_mean : null,
+        ndmi_mean: meta.ndmi_mean != null ? meta.ndmi_mean : null,
+        valid_pct: meta.valid_pct != null ? meta.valid_pct : null,
+        avg_cloud_cover: meta.avg_cloud_cover != null ? meta.avg_cloud_cover : null,
+        lookback_expanded: !!meta.lookback_expanded,
+        error_message: status === 'error' ? (meta.error_message || 'Error') : null,
+        signed_url: signedUrl,
+        ndmi_signed_url: ndmiSignedUrl
+      });
+    }
+    const locSnap =
+      (projLect.data && projLect.data.location && projLect.data.location.lecturaSatelital) ||
+      null;
+    return jsonResponse(200, {
+      ok: true,
+      admin: true,
+      lectura: true,
+      project_id: projectIdLect,
+      owner_user_id: ownerLect,
+      items: itemsLect,
+      lectura_saved: locSnap
+    });
+  }
+
   const authHeader = (event.headers && (event.headers.Authorization || event.headers.authorization)) || '';
   const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
   const accessToken = (body.access_token && String(body.access_token).trim()) || bearer;
@@ -560,6 +639,9 @@ exports.handler = async (event) => {
       lastNdmiSignedUrl = signed.ndmiSignedUrl;
     }
     const pendingJob = await getPendingPilotJobForStatus(supabase, userId, projectId);
+    const lastFailedJob = pendingJob
+      ? null
+      : await getLatestFailedPilotJob(supabase, userId, projectId);
     const areaHa = radarCredits.getAreaHectaresFromLocation(proj.data?.location);
     const pricing = radarCredits.getRadarCreditPricingInfo(areaHa);
     return jsonResponse(200, {
@@ -569,6 +651,7 @@ exports.handler = async (event) => {
       pricing,
       latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl),
       pending_job: pendingJob,
+      last_failed_job: lastFailedJob,
       history
     });
   }
@@ -598,8 +681,60 @@ exports.handler = async (event) => {
     });
   }
 
+  if (action === 'lectura_status') {
+    const ids = Array.isArray(body.request_ids) ? body.request_ids : [];
+    const rows = await getRadarRowsByIds(supabase, userId, projectId, ids);
+    const byId = {};
+    rows.forEach((r) => { byId[String(r.id)] = r; });
+    const items = [];
+    for (const rawId of ids) {
+      const id = String(rawId);
+      const row = byId[id];
+      if (!row) {
+        items.push({ id, status: 'not_found' });
+        continue;
+      }
+      const meta = row.meta || {};
+      const status = row.image_storage_path
+        ? 'done'
+        : String(meta.status || 'pending').toLowerCase();
+      let signedUrl = null;
+      let ndmiSignedUrl = null;
+      if (row.image_storage_path) {
+        const signed = await signRadarRow(supabase, row);
+        signedUrl = signed.ndviSignedUrl;
+        ndmiSignedUrl = signed.ndmiSignedUrl;
+      }
+      const lowCoverage = /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
+        String(meta.error_message || '')
+      );
+      items.push({
+        id,
+        status,
+        created_at: row.created_at,
+        period_index: meta.period_index != null ? meta.period_index : null,
+        period_label: meta.period_label || null,
+        frequency: meta.frequency || null,
+        date_start: meta.period_date_start || meta.date_start || null,
+        date_end: meta.period_date_end || meta.date_end || null,
+        scene_dates: meta.scene_dates || null,
+        ndvi_mean: meta.ndvi_mean != null ? meta.ndvi_mean : null,
+        ndmi_mean: meta.ndmi_mean != null ? meta.ndmi_mean : null,
+        valid_pct: meta.valid_pct != null ? meta.valid_pct : null,
+        avg_cloud_cover: meta.avg_cloud_cover != null ? meta.avg_cloud_cover : null,
+        scene_count: meta.scene_count != null ? meta.scene_count : null,
+        lookback_expanded: !!meta.lookback_expanded,
+        error_message: status === 'error' ? (meta.error_message || 'Error') : null,
+        error_code: status === 'error' && lowCoverage ? 'radar_low_coverage' : null,
+        signed_url: signedUrl,
+        ndmi_signed_url: ndmiSignedUrl
+      });
+    }
+    return jsonResponse(200, { ok: true, items });
+  }
+
   if (action !== 'generate') {
-    return jsonResponse(400, { error: 'action debe ser status, view o generate' });
+    return jsonResponse(400, { error: 'action debe ser status, view, generate o lectura_status' });
   }
 
   let lastSignedUrl = null;

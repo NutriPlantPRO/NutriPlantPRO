@@ -16,6 +16,7 @@ const {
   sumMonthlyRadarCreditsUsed,
   getActivePilotJob,
   createPendingPilotJob,
+  createPendingLecturaJob,
   triggerPilotBackground
 } = require('./lib/radar-pilot-job');
 const { findSentinel2ScenesForComposite } = require('./lib/radar-pilot-stac');
@@ -161,6 +162,107 @@ exports.handler = async (event) => {
     }
   }
 
+  // ===== Lectura Satelital (histórico por periodos) =====
+  if (body.lectura && projectId) {
+    const rawPeriods = Array.isArray(body.periods) ? body.periods : [];
+    const periods = rawPeriods
+      .map((p, i) => ({
+        index: Number.isFinite(Number(p.index)) ? Number(p.index) : i,
+        label: String(p.label || '').slice(0, 60),
+        frequency: p.frequency === 'mensual' ? 'mensual' : 'quincenal',
+        date_start: String(p.date_start || '').slice(0, 10),
+        date_end: String(p.date_end || '').slice(0, 10)
+      }))
+      .filter((p) => p.date_start && p.date_end);
+
+    if (periods.length < 2 || periods.length > 6) {
+      return jsonResponse(400, {
+        error: 'lectura_invalid_periods',
+        message: 'Selecciona entre 2 y 6 periodos válidos para la Lectura Satelital.'
+      });
+    }
+
+    const lecturaCostPer = creditCost * 2;
+    const totalCost = lecturaCostPer * periods.length;
+    if (limit > 0 && used + totalCost > limit) {
+      return jsonResponse(429, {
+        error: 'radar_quota_exceeded',
+        message:
+          'No tienes créditos Radar suficientes este mes. La Lectura Satelital de ' +
+          periods.length +
+          ' periodos requiere ' +
+          totalCost +
+          ' crédito' +
+          (totalCost === 1 ? '' : 's') +
+          ' (' +
+          lecturaCostPer +
+          ' por periodo).',
+        credits: {
+          used,
+          limit,
+          base: baseLimit,
+          bonus,
+          required: totalCost,
+          available: Math.max(0, limit - used)
+        },
+        pricing
+      });
+    }
+
+    const created = [];
+    for (const period of periods) {
+      const queued = await createPendingLecturaJob(supabase, {
+        userId,
+        projectId,
+        polygon,
+        projectRow,
+        creditCost: lecturaCostPer,
+        maxDim,
+        maxScenes,
+        mk,
+        period
+      });
+      if (!queued.ok) {
+        return jsonResponse(500, {
+          error: 'queue_failed',
+          message: queued.error || 'No se pudo encolar la Lectura Satelital',
+          created
+        });
+      }
+      created.push({
+        id: queued.row.id,
+        created_at: queued.row.created_at,
+        period_index: period.index,
+        period_label: period.label,
+        date_start: period.date_start,
+        date_end: period.date_end,
+        frequency: period.frequency
+      });
+    }
+
+    for (const item of created) {
+      const triggered = await triggerPilotBackground(item.id, accessToken);
+      if (!triggered) console.warn('Lectura encolada pero no se pudo disparar background:', item.id);
+    }
+
+    return jsonResponse(202, {
+      ok: true,
+      async: true,
+      lectura: true,
+      periods: created,
+      credits: {
+        used: used + totalCost,
+        limit,
+        base: baseLimit,
+        bonus,
+        reserved: totalCost,
+        cost_per_period: lecturaCostPer,
+        available: Math.max(0, limit - (used + totalCost))
+      },
+      pricing
+    });
+  }
+
   if (useAsync && projectId) {
     const active = await getActivePilotJob(supabase, userId, projectId);
     if (active) {
@@ -242,6 +344,11 @@ exports.handler = async (event) => {
       scene_count: bundle.sceneCount,
       lookback_days: bundle.lookbackDays,
       max_cloud_pct: bundle.maxCloudPct,
+      cloud_covers: bundle.cloudCovers || null,
+      avg_cloud_cover: bundle.avgCloudCover != null ? bundle.avgCloudCover : null,
+      scene_dates: bundle.sceneDates || null,
+      coverage: rendered.coverage || null,
+      valid_pct: rendered.coverage?.valid_pct != null ? rendered.coverage.valid_pct : null,
       scl_masked: true,
       fallback_tier: bundle.fallbackTier || null,
       location_snapshot: locationSnapshot,

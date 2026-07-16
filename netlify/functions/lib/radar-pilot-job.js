@@ -2,9 +2,16 @@
  * Cola async Pilot: pending → processing → done | error
  * Créditos reservados mientras pending/processing (sin image_storage_path).
  */
-const { findSentinel2ScenesForComposite } = require('./radar-pilot-stac');
+const { findSentinel2ScenesForComposite, findSentinel2ScenesForRange } = require('./radar-pilot-stac');
 const { renderNdviNdmiCompositePngs } = require('./radar-pilot-render');
 const radarCredits = require('./radar-credits');
+
+function addDaysIso(isoDate, days) {
+  const d = new Date(String(isoDate) + 'T00:00:00Z');
+  if (isNaN(d.getTime())) return isoDate;
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 const BUCKET = 'radar-ndvi';
 const ACTIVE_STATUSES = new Set(['pending', 'processing']);
@@ -146,6 +153,34 @@ async function getPendingPilotJobForStatus(supabase, userId, projectId) {
   };
 }
 
+async function getLatestFailedPilotJob(supabase, userId, projectId) {
+  const { data, error } = await supabase
+    .from('radar_requests')
+    .select('id, created_at, meta')
+    .eq('user_id', userId)
+    .eq('project_id', projectId)
+    .is('image_storage_path', null)
+    .order('created_at', { ascending: false })
+    .limit(5);
+  if (error) {
+    console.warn('getLatestFailedPilotJob:', error.message);
+    return null;
+  }
+  const failed = (data || []).find((row) => jobStatus(row.meta) === 'error');
+  if (!failed) return null;
+  return {
+    id: failed.id,
+    created_at: failed.created_at,
+    status: 'error',
+    error_message: failed.meta?.error_message || 'No se pudo generar Pilot',
+    error_code: /radar_low_coverage|cobertura satelital útil|píxeles válidos/i.test(
+      String(failed.meta?.error_message || '')
+    )
+      ? 'radar_low_coverage'
+      : 'pilot_error'
+  };
+}
+
 async function patchJobMeta(supabase, requestId, userId, patch) {
   const { data: row, error: loadErr } = await supabase
     .from('radar_requests')
@@ -201,6 +236,72 @@ async function createPendingPilotJob(supabase, opts) {
 
   if (error) return { ok: false, error: error.message };
   return { ok: true, row: data };
+}
+
+async function createPendingLecturaJob(supabase, opts) {
+  const {
+    userId,
+    projectId,
+    polygon,
+    projectRow,
+    creditCost,
+    maxDim,
+    maxScenes,
+    mk,
+    period
+  } = opts;
+  const locationSnapshot = buildLocationSnapshot(projectRow?.data?.location, polygon);
+  const meta = {
+    pilot: true,
+    engine: 'cdse_pilot',
+    async: true,
+    lectura: true,
+    status: 'pending',
+    status_message: 'Solicitud de Lectura Satelital recibida. Preparando datos…',
+    polygon,
+    max_dim: maxDim,
+    max_scenes: maxScenes,
+    frequency: period.frequency,
+    period_index: period.index,
+    period_label: period.label,
+    date_start: period.date_start,
+    date_end: period.date_end,
+    location_snapshot: locationSnapshot,
+    area_hectares: locationSnapshot?.area_hectares ?? null,
+    credits_charged: creditCost,
+    queued_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabase
+    .from('radar_requests')
+    .insert({
+      user_id: userId,
+      project_id: projectId,
+      month_key: mk || monthKey(),
+      image_storage_path: null,
+      meta
+    })
+    .select('id, created_at, meta')
+    .single();
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, row: data };
+}
+
+async function getRadarRowsByIds(supabase, userId, projectId, ids) {
+  const list = (Array.isArray(ids) ? ids : []).map((x) => String(x)).filter(Boolean);
+  if (!list.length) return [];
+  const { data, error } = await supabase
+    .from('radar_requests')
+    .select('id, created_at, month_key, image_storage_path, meta')
+    .eq('user_id', userId)
+    .eq('project_id', projectId)
+    .in('id', list);
+  if (error) {
+    console.warn('getRadarRowsByIds:', error.message);
+    return [];
+  }
+  return data || [];
 }
 
 async function triggerPilotBackground(requestId, accessToken) {
@@ -277,12 +378,58 @@ async function processPilotJob(supabase, requestId, userId) {
     projectRow = proj;
   }
 
+  const isLectura = !!(job.meta && job.meta.lectura && job.meta.date_start && job.meta.date_end);
+  const frequency = job.meta?.frequency || null;
+
   try {
-    const bundle = await findSentinel2ScenesForComposite(polygon, { maxScenes });
-    const rendered = await renderNdviNdmiCompositePngs(
-      { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
-      { maxDim }
-    );
+    let bundle;
+    let rendered;
+    let lookbackExpanded = false;
+
+    if (isLectura) {
+      const dateStart = String(job.meta.date_start).slice(0, 10);
+      const dateEnd = String(job.meta.date_end).slice(0, 10);
+      const renderRange = async (startIso) => {
+        const b = await findSentinel2ScenesForRange(polygon, {
+          dateStart: startIso,
+          dateEnd,
+          maxScenes
+        });
+        const r = await renderNdviNdmiCompositePngs(
+          { scenes: b.scenes, bbox4326: b.bbox, polygon },
+          { maxDim }
+        );
+        return { b, r };
+      };
+      try {
+        const out = await renderRange(dateStart);
+        bundle = out.b;
+        rendered = out.r;
+      } catch (firstErr) {
+        // Quincenal con baja cobertura o sin escenas: ampliar automáticamente a ventana de 30 días.
+        const expandable =
+          frequency === 'quincenal' &&
+          /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
+            String(firstErr.message || '')
+          );
+        if (!expandable) throw firstErr;
+        await patchJobMeta(supabase, requestId, userId, {
+          status: 'processing',
+          status_message: 'Quincena nublada: ampliando a 30 días…'
+        });
+        const start30 = addDaysIso(dateEnd, -29);
+        const out = await renderRange(start30);
+        bundle = out.b;
+        rendered = out.r;
+        lookbackExpanded = true;
+      }
+    } else {
+      bundle = await findSentinel2ScenesForComposite(polygon, { maxScenes });
+      rendered = await renderNdviNdmiCompositePngs(
+        { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
+        { maxDim }
+      );
+    }
 
     const latestScene = bundle.scenes[0] || {};
     const locationSnapshot =
@@ -306,6 +453,16 @@ async function processPilotJob(supabase, requestId, userId) {
       scene_count: bundle.sceneCount,
       lookback_days: bundle.lookbackDays,
       max_cloud_pct: bundle.maxCloudPct,
+      cloud_covers: bundle.cloudCovers || null,
+      avg_cloud_cover: bundle.avgCloudCover != null ? bundle.avgCloudCover : null,
+      scene_dates: bundle.sceneDates || null,
+      coverage: rendered.coverage || null,
+      valid_pct: rendered.coverage?.valid_pct != null ? rendered.coverage.valid_pct : null,
+      ndvi_mean: rendered.ndviMean != null ? rendered.ndviMean : null,
+      ndmi_mean: rendered.ndmiMean != null ? rendered.ndmiMean : null,
+      lookback_expanded: lookbackExpanded,
+      period_date_start: isLectura ? String(job.meta.date_start).slice(0, 10) : null,
+      period_date_end: isLectura ? String(job.meta.date_end).slice(0, 10) : null,
       scl_masked: true,
       fallback_tier: bundle.fallbackTier || null,
       location_snapshot: locationSnapshot,
@@ -393,7 +550,11 @@ module.exports = {
   sumMonthlyRadarCreditsUsed,
   getActivePilotJob,
   getPendingPilotJobForStatus,
+  getLatestFailedPilotJob,
   createPendingPilotJob,
+  createPendingLecturaJob,
+  getRadarRowsByIds,
+  addDaysIso,
   triggerPilotBackground,
   processPilotJob,
   isActiveJobRow,

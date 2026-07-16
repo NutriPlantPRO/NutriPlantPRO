@@ -109,6 +109,65 @@ function percentile(sortedValues, p) {
   return sortedValues[lo] * (1 - frac) + sortedValues[hi] * frac;
 }
 
+/** Mínimo de cobertura útil dentro del predio tras SCL (nubes/sombra). */
+const MIN_VALID_FRACTION = 0.15;
+const MIN_VALID_PIXELS = 20;
+
+function measurePolygonCoverage(indexValues, width, height, polygon, bbox4326) {
+  let polygonPixels = 0;
+  let validPixels = 0;
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const i = row * width + col;
+      const [lat, lng] = pixelCenterLatLng(col, row, width, height, bbox4326);
+      if (polygon && !pointInPolygon(lat, lng, polygon)) continue;
+      polygonPixels += 1;
+      if (Number.isFinite(indexValues[i])) validPixels += 1;
+    }
+  }
+  const validFraction = polygonPixels > 0 ? validPixels / polygonPixels : 0;
+  return {
+    polygon_pixels: polygonPixels,
+    valid_pixels: validPixels,
+    valid_fraction: validFraction,
+    valid_pct: Math.round(validFraction * 1000) / 10
+  };
+}
+
+function meanPolygonValid(indexValues, width, height, polygon, bbox4326) {
+  let sum = 0;
+  let count = 0;
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const i = row * width + col;
+      const v = indexValues[i];
+      if (!Number.isFinite(v)) continue;
+      const [lat, lng] = pixelCenterLatLng(col, row, width, height, bbox4326);
+      if (polygon && !pointInPolygon(lat, lng, polygon)) continue;
+      sum += v;
+      count += 1;
+    }
+  }
+  if (!count) return null;
+  return Math.round((sum / count) * 1000) / 1000;
+}
+
+function assertEnoughValidCoverage(coverage, label) {
+  const ok =
+    coverage.valid_pixels >= MIN_VALID_PIXELS && coverage.valid_fraction >= MIN_VALID_FRACTION;
+  if (ok) return;
+  const pct = coverage.valid_pct != null ? coverage.valid_pct : 0;
+  throw new Error(
+    'Sin cobertura satelital útil en el predio' +
+      (label ? ' (' + label + ')' : '') +
+      ': solo ' +
+      pct +
+      '% de píxeles válidos tras filtrar nubes/sombra (mínimo ' +
+      Math.round(MIN_VALID_FRACTION * 100) +
+      '%). En los últimos 30 días no hubo pasada Sentinel despejada sobre este lote. Código: radar_low_coverage'
+  );
+}
+
 function computeRelativeVis(indexValues, width, height, polygon, bbox4326, fallbackVis) {
   const values = [];
   for (let row = 0; row < height; row++) {
@@ -299,11 +358,15 @@ function colorizeIndex(indexValues, vis, width, height, polygon, bbox4326) {
   return rgba;
 }
 
-async function indexToPngBuffer(indexValues, vis, width, height, polygon, bbox4326) {
+async function indexToPngBuffer(indexValues, vis, width, height, polygon, bbox4326, opts) {
+  const coverage = measurePolygonCoverage(indexValues, width, height, polygon, bbox4326);
+  if (!opts || opts.requireCoverage !== false) {
+    assertEnoughValidCoverage(coverage, (opts && opts.label) || null);
+  }
   const relativeVis = computeRelativeVis(indexValues, width, height, polygon, bbox4326, vis);
   const rgba = colorizeIndex(indexValues, relativeVis, width, height, polygon, bbox4326);
   const buffer = await sharp(rgba, { raw: { width, height, channels: 4 } }).png().toBuffer();
-  return { buffer, vis: relativeVis };
+  return { buffer, vis: relativeVis, coverage };
 }
 
 /**
@@ -345,10 +408,18 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
   const ndvi = scenes.length === 1 ? ndviLayers[0] : medianPerPixel(ndviLayers);
   const ndmi = scenes.length === 1 ? ndmiLayers[0] : medianPerPixel(ndmiLayers);
 
-  const [ndviRendered, ndmiRendered] = await Promise.all([
-    indexToPngBuffer(ndvi, NDVI_VIS, outW, outH, polygon, bbox4326),
-    indexToPngBuffer(ndmi, NDMI_VIS, outW, outH, polygon, bbox4326)
-  ]);
+  // Validar cobertura con NDVI (misma máscara SCL aplica a NDMI).
+  const ndviRendered = await indexToPngBuffer(ndvi, NDVI_VIS, outW, outH, polygon, bbox4326, {
+    requireCoverage: true,
+    label: 'NDVI'
+  });
+  const ndmiRendered = await indexToPngBuffer(ndmi, NDMI_VIS, outW, outH, polygon, bbox4326, {
+    requireCoverage: false,
+    label: 'NDMI'
+  });
+
+  const ndviMean = meanPolygonValid(ndvi, outW, outH, polygon, bbox4326);
+  const ndmiMean = meanPolygonValid(ndmi, outW, outH, polygon, bbox4326);
 
   return {
     width: outW,
@@ -358,6 +429,9 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
     sceneCount: scenes.length,
     sclMasked: true,
     composite: scenes.length > 1,
+    coverage: ndviRendered.coverage,
+    ndviMean,
+    ndmiMean,
     vis: { ndvi: ndviRendered.vis, ndmi: ndmiRendered.vis }
   };
 }
@@ -365,6 +439,10 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
 module.exports = {
   renderNdviNdmiPngs,
   renderNdviNdmiCompositePngs,
+  measurePolygonCoverage,
+  meanPolygonValid,
+  MIN_VALID_FRACTION,
+  MIN_VALID_PIXELS,
   NDVI_VIS,
   NDMI_VIS,
   SCL_BAD

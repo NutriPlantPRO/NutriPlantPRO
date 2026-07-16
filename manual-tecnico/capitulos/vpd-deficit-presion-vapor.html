@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VPD, NDVI y NDMI — Manual NutriPlant PRO</title>
-  <meta name="description" content="VPD (cálculo kPa), Radar del cultivo NDVI/NDMI por lectura satelital multiespectral, rangos de manejo y uso en NutriPlant PRO.">
+  <meta name="description" content="VPD (cálculo kPa), Radar Satelital NDVI/NDMI (Pilot y Lectura Satelital histórica), rangos de manejo y uso en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css">
@@ -13,11 +13,11 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "VPD, NDVI y NDMI",
-  "description": "VPD (cálculo kPa), Radar del cultivo NDVI/NDMI por lectura satelital multiespectral, rangos de manejo y uso en NutriPlant PRO.",
+  "description": "VPD (cálculo kPa), Radar Satelital NDVI/NDMI (Pilot y Lectura Satelital histórica), rangos de manejo y uso en NutriPlant PRO.",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
-  "dateModified": "2026-06-23",
+  "dateModified": "2026-07-16",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -56,25 +56,27 @@
   <main class="mt-wrap">
     <p class="mt-breadcrumb"><a href="../index.html">Manual técnico</a> · Pilar E · Clima</p>
     <p class="mt-toolbar"><button type="button" class="mt-back-btn" data-mt-back data-mt-back-fallback="../index.html" aria-label="Volver a la página anterior">← Volver</button></p>
-    <span class="mt-badge">Metodología NutriPlant PRO · 2026-05</span>
+    <span class="mt-badge">Metodología NutriPlant PRO · 2026-07</span>
     <h1>VPD, NDVI y NDMI</h1>
     <h2>Resumen</h2>
     <p>
       El <strong>VPD</strong> (déficit de presión de vapor) mide la “capacidad de secado” del aire a partir de
-      <strong>temperatura y humedad</strong> (clima de estación o valores manuales). El <strong>Radar del
-      cultivo</strong> (pestaña <strong>Ubicación</strong>) muestra mapas <strong>NDVI</strong> y
+      <strong>temperatura y humedad</strong> (clima de estación o valores manuales). El módulo
+      <strong>Radar Satelital</strong> (antes «Ubicación») muestra mapas <strong>NDVI</strong> y
       <strong>NDMI</strong> obtenidos por <strong>lectura satelital multiespectral</strong> sobre el polígono
-      del predio. Son herramientas complementarias: VPD = clima; NDVI/NDMI = vigor y condición hídrica relativa
-      del dosel vistos desde arriba.
+      del predio, con dos pestañas internas: <strong>Polígono / NDVI y NDMI</strong> (imagen puntual Pilot) y
+      <strong>Lectura Satelital</strong> (histórico por periodos con clima y riego). Son herramientas
+      complementarias: VPD = clima; NDVI/NDMI = vigor y condición hídrica relativa del dosel vistos desde arriba.
     </p>
 
     <h2>VPD — qué es y de dónde salen los datos</h2>
     <p>
-      NutriPlant calcula VPD en la pestaña <strong>VPD</strong> del proyecto y en la herramienta gratuita del
-      login (<code>vpd-free.html</code>). Con polígono en <strong>Ubicación</strong>, «Obtener del Clima» y la
+      NutriPlant calcula VPD en la pestaña <strong>Clima → VPD</strong> del proyecto y en la herramienta gratuita del
+      login (<code>vpd-free.html</code>). Con polígono en <strong>Radar Satelital</strong>, «Obtener del Clima» y la
       <strong>Serie VPD por rango</strong> usan las coordenadas del centro del predio para traer temperatura y
       humedad actuales o históricas desde un <strong>servicio meteorológico</strong> (no satelital). También
-      puedes capturar T y HR manualmente.
+      puedes capturar T y HR manualmente. En <strong>Lectura Satelital</strong> el VPD promedio del periodo se
+      calcula igual (Open-Meteo horario → fórmula avanzada/simple) y se muestra en la tabla histórica.
     </p>
 
     <h2>VPD — cálculo (kPa)</h2>
@@ -119,13 +121,13 @@
     </table>
     <p>Depende de cultivo, fase y radiación. Validar en campo.</p>
 
-    <h2>NDVI y NDMI — Radar del cultivo (lectura satelital)</h2>
+    <h2>NDVI y NDMI — Radar Satelital</h2>
     <p>
-      En <strong>Ubicación → Radar del cultivo</strong>, NutriPlant genera mapas <strong>Pilot Copernicus/Sentinel-2</strong> sobre el
-      <strong>polígono del predio</strong> a partir de <strong>imágenes satelitales multiespectrales</strong>:
-      sensores que miden reflectancia en bandas del visible e <strong>infrarrojo</strong> (cercano NIR y,
-      para NDMI, infrarrojo de onda corta SWIR). No es una foto RGB común: cada banda responde distinto a la
-      vegetación y al agua en el dosel.
+      En <strong>Radar Satelital → Polígono / NDVI y NDMI</strong>, NutriPlant genera mapas
+      <strong>Pilot Copernicus/Sentinel-2</strong> sobre el <strong>polígono del predio</strong> a partir de
+      <strong>imágenes satelitales multiespectrales</strong>: sensores que miden reflectancia en bandas del
+      visible e <strong>infrarrojo</strong> (cercano NIR y, para NDMI, infrarrojo de onda corta SWIR). No es una
+      foto RGB común: cada banda responde distinto a la vegetación y al agua en el dosel.
     </p>
     <p>De esas bandas se calculan <strong>índices normalizados</strong> (diferencia normalizada entre dos bandas):</p>
     <div class="mt-formula">
@@ -169,33 +171,89 @@
     </p>
     <div class="mt-warn">
       Requisito: polígono guardado y <strong>sincronizado a la nube</strong> en
-      <strong>Ubicación</strong>. La imagen queda guardada y anclada al polígono al generarla, para que el
+      <strong>Radar Satelital</strong>. La imagen queda guardada y anclada al polígono al generarla, para que el
       historial se muestre en su ubicación original aunque después cambie el proyecto o se consulte otra fecha.
     </div>
 
-    <h2>Generación e historial Radar (NDVI + NDMI juntos)</h2>
+    <h2>Generación e historial Radar Pilot (NDVI + NDMI juntos)</h2>
     <p>
-      Cada <strong>generación Pilot</strong> produce las dos capas (<strong>NDVI</strong> y
-      <strong>NDMI</strong>) en una sola operación, las guarda en el historial del proyecto y permite volver a
-      verlas desde el selector <strong>Imagen</strong>. El flujo actual usa Copernicus/Sentinel-2 sin Google
-      Earth Engine, pero mantiene <strong>créditos Radar internos</strong> para controlar cómputo y almacenamiento.
+      Cada <strong>generación Pilot</strong> (pestaña <strong>Polígono / NDVI y NDMI</strong>) produce las dos
+      capas (<strong>NDVI</strong> y <strong>NDMI</strong>) en una sola operación, las guarda en el historial del
+      proyecto y permite volver a verlas desde el selector <strong>Imagen</strong>. El flujo actual usa
+      Copernicus/Sentinel-2 sin Google Earth Engine, pero mantiene <strong>créditos Radar internos</strong> para
+      controlar cómputo y almacenamiento.
     </p>
     <ul>
+      <li><strong>Cómo se arma la imagen:</strong> Sentinel-2 pasa ~cada 5 días. NutriPlant busca hasta
+        <strong>3 pasadas</strong> de los últimos <strong>30 días</strong> (nunca más atrás) y las combina con
+        <strong>mediana por píxel</strong> (no es el promedio de todos los días del mes). Tras filtrar nubes/sombra
+        (SCL), si el predio queda sin cobertura útil (&lt;~15&nbsp;% de píxeles válidos), <strong>no se guarda</strong>
+        una imagen vacía.</li>
       <li><strong>Generar / actualizar Pilot:</strong> calcula y guarda NDVI+NDMI para el predio.</li>
       <li><strong>Ver en mapa:</strong> superpone la imagen guardada seleccionada; no genera una imagen nueva.</li>
       <li><strong>Capa NDVI/NDMI:</strong> cambia qué índice se visualiza de la misma generación guardada.</li>
-      <li><strong>Límite mensual:</strong> 20 créditos Radar base por cuenta (+ bonus admin). Costo por generación: ≤30 ha = 1 · &gt;30 ha = 2 · &gt;100 ha = 3 créditos (NDVI+NDMI juntos).</li>
+      <li><strong>Límite mensual:</strong> 20 créditos Radar base por cuenta (+ bonus admin). Costo por generación Pilot: ≤30 ha = 1 · &gt;30 ha = 2 · &gt;100 ha = 3 créditos (NDVI+NDMI juntos).</li>
       <li><strong>Google Earth Engine:</strong> queda como respaldo interno/standby; no es el mando principal visible del Radar.</li>
     </ul>
+
+    <h2>Lectura Satelital (histórico por periodos)</h2>
+    <p>
+      La pestaña <strong>Radar Satelital → Lectura Satelital</strong> arma un histórico del <strong>mismo
+      predio</strong> con <strong>2 a 6 periodos</strong> hacia atrás desde una fecha final, en frecuencia
+      <strong>quincenal</strong> (15 días) o <strong>mensual</strong> (mes calendario). Cada periodo aporta un
+      factor numérico (NDVI/NDMI promedio de píxeles válidos) correlacionable con clima y riego.
+    </p>
+    <h3>Controles</h3>
+    <ul>
+      <li><strong>Frecuencia:</strong> quincenal o mensual.</li>
+      <li><strong>Nº de periodos:</strong> 2, 3, 4, 5 o 6.</li>
+      <li><strong>Fecha final</strong> del análisis.</li>
+      <li>Etiquetas con <strong>fechas reales</strong> hacia atrás (ej. «1–15 jul», «16–30 jun»), no Q1/Q2.</li>
+    </ul>
+    <h3>Tabla por periodo</h3>
+    <table class="mt-table">
+      <thead><tr><th>Columna</th><th>Origen</th></tr></thead>
+      <tbody>
+        <tr><td>Periodo (fechas)</td><td>Calculado en la app hacia atrás desde la fecha final</td></tr>
+        <tr><td>NDVI / NDMI promedio</td><td>Media de píxeles válidos dentro del polígono (meta <code>ndvi_mean</code> / <code>ndmi_mean</code>)</td></tr>
+        <tr><td>VPD promedio (kPa)</td><td>Open-Meteo horario → misma lógica VPD del Clima → promedio del periodo</td></tr>
+        <tr><td>ET₀ (mm)</td><td>Open-Meteo diario <code>et0_fao_evapotranspiration</code> → <strong>suma</strong></td></tr>
+        <tr><td>Lluvia (mm)</td><td>Open-Meteo diario <code>precipitation_sum</code> → <strong>suma</strong></td></tr>
+        <tr><td>Riego (m³)</td><td>Input <strong>manual</strong> editable por fila; se persiste en el proyecto</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Debajo: <strong>gráfica de líneas</strong> (NDVI/NDMI + series opcionales VPD/ET₀/lluvia/riego) y
+      <strong>galería NDVI | NDMI</strong> por periodo, una fila tras otra, para comparar visualmente.
+    </p>
+    <h3>Satélite por periodo (distinto al Pilot de la pestaña 1)</h3>
+    <ul>
+      <li><strong>Quincenal:</strong> busca escenas en la ventana de <strong>15 días</strong> del periodo. Si la
+        cobertura útil es baja (misma regla ~15&nbsp;% que Pilot), <strong>amplía automáticamente a 30 días</strong>
+        anclados al periodo y marca <code>lookback_expanded: true</code> (asterisco en la tabla).</li>
+      <li><strong>Mensual:</strong> ventana fija del mes calendario (sin ir más atrás de ese mes).</li>
+      <li>Cada periodo tiene su propio <code>date_start</code> / <code>date_end</code>; no reutiliza “últimos 30 días desde hoy”.</li>
+    </ul>
+    <h3>Créditos Lectura Satelital</h3>
+    <p>
+      Costo por periodo = <strong>2 ×</strong> el costo normal del predio en Pilot. Ejemplo: predio ≤30 ha → Pilot = 1
+      crédito; Lectura = <strong>2 por periodo</strong>. Predio que cobra 2 → Lectura = <strong>4 por periodo</strong>.
+      Total al generar: <code>periodos × 2 × crédito_base</code>. Se valida el cupo <strong>antes</strong> de encolar;
+      si un periodo falla (p. ej. nubosidad), no se cobra como imagen guardada (mismo modelo pending/done).
+    </p>
+    <div class="mt-warn">
+      Lectura Satelital correlaciona índices satelitales con clima y riego registrado; <strong>no sustituye</strong>
+      recorrido de campo, análisis de suelo/foliar ni diagnóstico de causa única.
+    </div>
 
     <h2>En el proyecto</h2>
     <p>
       <strong>VPD:</strong> calculadoras simple y avanzada, historial de cálculos y series por día/semana/mes
       (máximos por fecha). <strong>Lluvia y ET₀:</strong> tablas mensuales y
       <a href="balance-hidrico-riego-clima.html">calculadora de balance hídrico</a> (déficit y riego rápido).
-      <strong>Radar:</strong> capas NDVI y NDMI, «Ver en mapa» y listado de imágenes
-      generadas. Cruce recomendado: riego, textura/drenaje, análisis foliar/suelo, VPD y recorrido de zonas
-      contrastantes en el mapa.
+      <strong>Radar Satelital:</strong> (1) Polígono / NDVI-NDMI con capas, «Ver en mapa» e historial Pilot;
+      (2) Lectura Satelital con tabla, gráfica y galería por periodos. Cruce recomendado: riego, textura/drenaje,
+      análisis foliar/suelo, VPD y recorrido de zonas contrastantes en el mapa.
     </p>
     <nav class="mt-chapter-nav"><a href="../index.html">Índice</a></nav>
   </main>
