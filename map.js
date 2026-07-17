@@ -2917,9 +2917,8 @@ function np_pilotFriendlyErrorMessage(rawMsg) {
   const msg = String(rawMsg || '');
   if (/STAC search HTTP (429|502|503|504)/i.test(msg)) {
     return (
-      'El catálogo satelital (Planetary Computer) tardó demasiado en responder. ' +
-      'No es nubosidad ni un fallo de GitHub: es un timeout temporal del proveedor. ' +
-      'Intenta de nuevo en 1–2 minutos.'
+      'El servicio satelital tardó demasiado en responder. ' +
+      'No es por nubosidad del predio: es un retraso temporal. Intenta de nuevo en 1–2 minutos.'
     );
   }
   if (/maximum allowed time|gateway timeout/i.test(msg)) {
