@@ -13,11 +13,39 @@ function addDaysIso(isoDate, days) {
   return d.toISOString().slice(0, 10);
 }
 
+function todayIsoUtc() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Ventana del mes calendario que cubre el periodo (día 1 del mes de dateStart
+ * → último día del mes de dateEnd), sin pasar de hoy.
+ * Solo se usa para ampliar UNA quincena incompleta; el resto de periodos no cambian.
+ */
+function calendarMonthWindowForPeriod(dateStart, dateEnd) {
+  const today = todayIsoUtc();
+  const s = new Date(String(dateStart).slice(0, 10) + 'T12:00:00Z');
+  const e = new Date(String(dateEnd).slice(0, 10) + 'T12:00:00Z');
+  if (isNaN(s.getTime()) || isNaN(e.getTime())) {
+    return { startIso: String(dateStart).slice(0, 10), endIso: String(dateEnd).slice(0, 10) };
+  }
+  const start = new Date(Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), 1));
+  const end = new Date(Date.UTC(e.getUTCFullYear(), e.getUTCMonth() + 1, 0));
+  let startIso = start.toISOString().slice(0, 10);
+  let endIso = end.toISOString().slice(0, 10);
+  if (endIso > today) endIso = today;
+  if (startIso > endIso) startIso = endIso;
+  return { startIso, endIso };
+}
+
 const PILOT_LOOKBACK_TIERS = [
   { days: 14, maxCloud: 35 },
   { days: 21, maxCloud: 40 },
   { days: 30, maxCloud: 50 }
 ];
+
+/** Meta suave: si en 14 d el predio queda muy a medias, probar ventana más amplia (2–3 pasadas). */
+const PILOT_TARGET_VALID_FRACTION = 0.65;
 
 function isPilotCoverageFail(err) {
   return /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
@@ -25,8 +53,25 @@ function isPilotCoverageFail(err) {
   );
 }
 
+function pilotCoverageScore(rendered) {
+  const frac = Number(rendered?.coverage?.valid_fraction);
+  if (Number.isFinite(frac)) return frac;
+  const pct = Number(rendered?.coverage?.valid_pct);
+  if (Number.isFinite(pct)) return pct / 100;
+  return 0;
+}
+
+/**
+ * Busca 14 → 21 → 30 d. Si ya llega a ~65% útiles, se queda (no fuerza 30 d).
+ * Si no, prueba el siguiente nivel y al final guarda la MEJOR imagen (nunca deja vacío
+ * si alguna ventana alcanzó el mínimo ~15%).
+ */
 async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierMessage) {
   let lastErr = null;
+  let best = null;
+  let bestScore = -1;
+  let bestTierIndex = -1;
+
   for (let i = 0; i < PILOT_LOOKBACK_TIERS.length; i++) {
     const tier = PILOT_LOOKBACK_TIERS[i];
     try {
@@ -43,11 +88,28 @@ async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierM
         { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
         { maxDim }
       );
-      return { bundle, rendered, lookbackExpanded: i > 0 };
+      const score = pilotCoverageScore(rendered);
+      if (score > bestScore) {
+        best = { bundle, rendered, lookbackExpanded: i > 0 };
+        bestScore = score;
+        bestTierIndex = i;
+      }
+      // Cobertura buena en ventana corta → no alargar a 30 d.
+      if (score >= PILOT_TARGET_VALID_FRACTION) {
+        return { bundle, rendered, lookbackExpanded: i > 0 };
+      }
     } catch (e) {
       lastErr = e;
-      if (!isPilotCoverageFail(e) || i === PILOT_LOOKBACK_TIERS.length - 1) throw e;
+      if (!isPilotCoverageFail(e)) throw e;
+      // Cobertura insuficiente en este nivel: probar el siguiente (si hay).
     }
+  }
+
+  if (best) {
+    return {
+      ...best,
+      lookbackExpanded: bestTierIndex > 0
+    };
   }
   throw lastErr || new Error('Pilot composite failed');
 }
@@ -406,7 +468,8 @@ async function processPilotJob(supabase, requestId, userId) {
   }
 
   const maxDim = Math.min(Math.max(Number(job.meta?.max_dim) || 512, 256), 2048);
-  const maxScenes = Math.min(Math.max(Number(job.meta?.max_scenes) || 1, 1), 4);
+  // Hasta 3 pasadas (mediana por píxel) para rellenar huecos de nubes/sombra.
+  const maxScenes = Math.min(Math.max(Number(job.meta?.max_scenes) || 3, 1), 4);
   const creditCost = creditsForRow(job);
   const mk = job.month_key || monthKey();
 
@@ -435,10 +498,10 @@ async function processPilotJob(supabase, requestId, userId) {
         /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
           String((err && err.message) || '')
         );
-      const renderRange = async (startIso, extraOpts) => {
+      const renderRange = async (startIso, endIso, extraOpts) => {
         const b = await findSentinel2ScenesForRange(polygon, {
           dateStart: startIso,
-          dateEnd,
+          dateEnd: endIso,
           maxScenes,
           ...(extraOpts || {})
         });
@@ -448,64 +511,123 @@ async function processPilotJob(supabase, requestId, userId) {
         );
         return { b, r };
       };
-      try {
-        const out = await renderRange(dateStart);
-        bundle = out.b;
-        rendered = out.r;
-      } catch (firstErr) {
-        if (!isCoverageFail(firstErr)) throw firstErr;
 
-        // 1) Reintento en el MISMO rango: más candidatos / umbral de nubes más amplio
-        //    (mensual y quincenal). Así no falla si las 3 más recientes eran malas.
+      // Igual espíritu que Pilot: meta ~65%, juntar hasta 3 pasadas, siempre guardar la mejor.
+      // Quincenal incompleta → solo ESE periodo amplía al mes calendario (clima sigue en 15 d).
+      let best = null;
+      let bestScore = -1;
+      let lastErr = null;
+      let bestExpanded = false;
+      let bestSearchStart = dateStart;
+      let bestSearchEnd = dateEnd;
+
+      const consider = (out, expanded, searchStart, searchEnd) => {
+        const score = pilotCoverageScore(out.r);
+        if (score > bestScore) {
+          best = out;
+          bestScore = score;
+          bestExpanded = !!expanded;
+          bestSearchStart = searchStart;
+          bestSearchEnd = searchEnd;
+        }
+        return score;
+      };
+
+      const attempts = [
+        {
+          start: dateStart,
+          end: dateEnd,
+          extra: null,
+          expanded: false,
+          message: null
+        },
+        {
+          start: dateStart,
+          end: dateEnd,
+          extra: { maxCloud: 60, candidateLimit: 30 },
+          expanded: false,
+          message:
+            frequency === 'mensual'
+              ? 'Mes con poca cobertura: reintentando con las escenas más claras del periodo…'
+              : 'Quincena incompleta: reintentando con escenas más claras del periodo…'
+        }
+      ];
+
+      const monthWin = calendarMonthWindowForPeriod(dateStart, dateEnd);
+      const alreadyFullMonth =
+        monthWin.startIso === dateStart && monthWin.endIso === dateEnd;
+      const canExpandToMonth =
+        !alreadyFullMonth &&
+        (frequency === 'quincenal' ||
+          Math.round(
+            (new Date(dateEnd + 'T12:00:00Z').getTime() -
+              new Date(dateStart + 'T12:00:00Z').getTime()) /
+              86400000
+          ) +
+            1 <
+            28);
+
+      if (canExpandToMonth) {
+        attempts.push({
+          start: monthWin.startIso,
+          end: monthWin.endIso,
+          extra: { maxCloud: 60, candidateLimit: 30 },
+          expanded: true,
+          message:
+            'Quincena incompleta: ampliando SOLO este periodo al mes calendario ' +
+            monthWin.startIso +
+            ' → ' +
+            monthWin.endIso +
+            ' (clima/riego siguen en ' +
+            dateStart +
+            ' – ' +
+            dateEnd +
+            ')…'
+        });
+      }
+
+      for (let ai = 0; ai < attempts.length; ai++) {
+        const att = attempts[ai];
+        // Si ya tenemos buena cobertura en el periodo, no ampliar al mes.
+        if (att.expanded && bestScore >= PILOT_TARGET_VALID_FRACTION) break;
+        // El 2º intento (mismas fechas, más nubes) solo si el 1º no llegó a la meta.
+        if (ai === 1 && bestScore >= PILOT_TARGET_VALID_FRACTION) continue;
         try {
-          await patchJobMeta(supabase, requestId, userId, {
-            status: 'processing',
-            status_message:
-              frequency === 'mensual'
-                ? 'Mes con poca cobertura: reintentando con las escenas más claras del periodo…'
-                : 'Quincena nublada: reintentando con escenas más claras…'
-          });
-          const retrySame = await renderRange(dateStart, { maxCloud: 60, candidateLimit: 30 });
-          bundle = retrySame.b;
-          rendered = retrySame.r;
-        } catch (secondErr) {
-          // 2) Ampliar a 30 días (quincenal siempre; mensual si el mes está incompleto o sigue fallando).
-          //    Misma lógica de rescate: si en quincenal hubo imagen, mensual también debe poder.
-          const daysSpan = Math.max(
-            1,
-            Math.round(
-              (new Date(dateEnd + 'T12:00:00Z').getTime() - new Date(dateStart + 'T12:00:00Z').getTime()) /
-                86400000
-            ) + 1
-          );
-          const canExpand =
-            frequency === 'quincenal' ||
-            frequency === 'mensual' ||
-            daysSpan < 28;
-          if (!canExpand || !isCoverageFail(secondErr)) throw secondErr;
-
-          await patchJobMeta(supabase, requestId, userId, {
-            status: 'processing',
-            status_message:
-              frequency === 'mensual'
-                ? 'Mes sin imagen útil: ampliando a 30 días (igual que quincenal)…'
-                : 'Quincena nublada: ampliando a 30 días…'
-          });
-          const start30 = addDaysIso(dateEnd, -29);
-          const out = await renderRange(start30, { maxCloud: 60, candidateLimit: 30 });
-          bundle = out.b;
-          rendered = out.r;
-          lookbackExpanded = true;
+          if (att.message) {
+            await patchJobMeta(supabase, requestId, userId, {
+              status: 'processing',
+              status_message: att.message
+            });
+          }
+          const out = await renderRange(att.start, att.end, att.extra);
+          const score = consider(out, att.expanded, att.start, att.end);
+          if (!att.expanded && score >= PILOT_TARGET_VALID_FRACTION) break;
+        } catch (e) {
+          lastErr = e;
+          if (!isCoverageFail(e)) throw e;
         }
       }
+
+      if (!best) throw lastErr || new Error('Lectura satelital: sin cobertura útil');
+      bundle = best.b;
+      rendered = best.r;
+      lookbackExpanded = bestExpanded;
+      // Fechas de búsqueda reales (periodo o mes ampliado) para meta clara.
+      bundle = {
+        ...bundle,
+        searchDateStart: bestSearchStart,
+        searchDateEnd: bestSearchEnd
+      };
     } else {
       const pilotOut = await renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, async (days) => {
         await patchJobMeta(supabase, requestId, userId, {
           status: 'processing',
           status_message:
             days >= 30
-              ? 'Poca cobertura: ampliando ventana a 30 días (último recurso)…'
-              : 'Poca cobertura en ventana corta: ampliando a ' + days + ' días…'
+              ? 'Predio incompleto: ampliando a 30 días y juntando hasta 3 pasadas…'
+              : 'Predio incompleto en ventana corta: ampliando a ' +
+                days +
+                ' días y juntando hasta 3 pasadas…'
         });
       });
       bundle = pilotOut.bundle;
@@ -520,13 +642,39 @@ async function processPilotJob(supabase, requestId, userId) {
     const storagePath = `${userId}/${job.project_id}/${mk}_${ts}_pilot_ndvi.png`;
     const ndmiStoragePath = `${userId}/${job.project_id}/${mk}_${ts}_pilot_ndmi.png`;
 
+    const periodStartMeta = isLectura ? String(job.meta.date_start).slice(0, 10) : null;
+    const periodEndMeta = isLectura ? String(job.meta.date_end).slice(0, 10) : null;
+    const searchStartMeta = isLectura
+      ? bundle.searchDateStart || periodStartMeta
+      : null;
+    const searchEndMeta = isLectura ? bundle.searchDateEnd || periodEndMeta : null;
+    const sceneDatesLabel = Array.isArray(bundle.sceneDates) && bundle.sceneDates.length
+      ? bundle.sceneDates.join(', ')
+      : null;
+
     const meta = {
       ...(job.meta || {}),
       pilot: true,
       engine: 'cdse_pilot',
       async: true,
       status: 'done',
-      status_message: 'Imagen Pilot guardada en la nube.',
+      status_message: isLectura
+        ? lookbackExpanded
+          ? 'Imagen Lectura guardada. Periodo (clima/riego): ' +
+            periodStartMeta +
+            ' – ' +
+            periodEndMeta +
+            ' · Búsqueda imagen: mes ' +
+            searchStartMeta +
+            ' → ' +
+            searchEndMeta +
+            (sceneDatesLabel ? ' · Sentinel: ' + sceneDatesLabel : '')
+          : 'Imagen Lectura guardada. Periodo: ' +
+            periodStartMeta +
+            ' – ' +
+            periodEndMeta +
+            (sceneDatesLabel ? ' · Sentinel: ' + sceneDatesLabel : '')
+        : 'Imagen Pilot guardada en la nube.',
       provider: bundle.provider,
       source: bundle.provider === 'cdse' ? 'CDSE/sentinel-2-l2a' : 'PlanetaryComputer/sentinel-2-l2a',
       date_start: bundle.dateStart,
@@ -543,8 +691,11 @@ async function processPilotJob(supabase, requestId, userId) {
       ndvi_mean: rendered.ndviMean != null ? rendered.ndviMean : null,
       ndmi_mean: rendered.ndmiMean != null ? rendered.ndmiMean : null,
       lookback_expanded: lookbackExpanded,
-      period_date_start: isLectura ? String(job.meta.date_start).slice(0, 10) : null,
-      period_date_end: isLectura ? String(job.meta.date_end).slice(0, 10) : null,
+      expanded_to: isLectura && lookbackExpanded ? 'mensual' : null,
+      search_date_start: searchStartMeta,
+      search_date_end: searchEndMeta,
+      period_date_start: periodStartMeta,
+      period_date_end: periodEndMeta,
       scl_masked: true,
       fallback_tier: bundle.fallbackTier || null,
       location_snapshot: locationSnapshot,

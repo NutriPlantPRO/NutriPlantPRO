@@ -5788,19 +5788,132 @@
             var slice = state.data.slice(start, start + pageSize);
             var tbody = document.getElementById('dataTableBody');
             var paginationEl = document.getElementById('dataViewerPagination');
-            if (!tbody || !paginationEl) return;
+            if (!tbody) return;
             var config = state.config;
             var rowsHtml = slice.map(function(item, i) { return buildDataViewerRow(item, start + i, config); }).join('');
             tbody.innerHTML = rowsHtml;
-            var end = Math.min(start + pageSize, total);
-            paginationEl.innerHTML = 'Mostrando ' + (start + 1) + '-' + end + ' de ' + total +
-                ' &nbsp;|&nbsp; <button type="button" onclick="goToDataViewerPage(1)"' + (page === 1 ? ' disabled' : '') + ' style="margin:0 4px;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;">Primera</button>' +
-                ' <button type="button" onclick="goToDataViewerPage(' + (page - 1) + ')"' + (page === 1 ? ' disabled' : '') + ' style="margin:0 4px;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;">Anterior</button>' +
-                ' <span style="margin:0 8px;">Página ' + page + ' de ' + totalPages + '</span>' +
-                ' <button type="button" onclick="goToDataViewerPage(' + (page + 1) + ')"' + (page === totalPages ? ' disabled' : '') + ' style="margin:0 4px;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;">Siguiente</button>' +
-                ' <button type="button" onclick="goToDataViewerPage(' + totalPages + ')"' + (page === totalPages ? ' disabled' : '') + ' style="margin:0 4px;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;">Última</button>';
+            if (paginationEl) {
+                var end = Math.min(start + pageSize, total);
+                paginationEl.innerHTML = 'Mostrando ' + (start + 1) + '-' + end + ' de ' + total +
+                    ' &nbsp;|&nbsp; <button type="button" onclick="goToDataViewerPage(1)"' + (page === 1 ? ' disabled' : '') + ' style="margin:0 4px;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;">Primera</button>' +
+                    ' <button type="button" onclick="goToDataViewerPage(' + (page - 1) + ')"' + (page === 1 ? ' disabled' : '') + ' style="margin:0 4px;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;">Anterior</button>' +
+                    ' <span style="margin:0 8px;">Página ' + page + ' de ' + totalPages + '</span>' +
+                    ' <button type="button" onclick="goToDataViewerPage(' + (page + 1) + ')"' + (page === totalPages ? ' disabled' : '') + ' style="margin:0 4px;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;">Siguiente</button>' +
+                    ' <button type="button" onclick="goToDataViewerPage(' + totalPages + ')"' + (page === totalPages ? ' disabled' : '') + ' style="margin:0 4px;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;">Última</button>';
+            }
             updateDeletedProjectsBulkUi();
         }
+
+        /** Valor comparable para ordenar una columna del visor admin (texto, fecha, número, etc.). */
+        function getDataViewerSortValue(item, col) {
+            if (!item || !col) return null;
+            var value = item[col.key];
+            var format = col.format || 'text';
+            var key = col.key || '';
+
+            if (format === 'date') {
+                if (value == null || value === '') return null;
+                var t = new Date(value).getTime();
+                return isNaN(t) ? null : t;
+            }
+            if (format === 'currency') {
+                var amount = parseFloat(value);
+                return isNaN(amount) ? 0 : amount;
+            }
+            if (format === 'bool_revenue') {
+                return (value === true || value === 'true') ? 1 : 0;
+            }
+            if (format === 'location') {
+                if (typeof value === 'string' && value.trim()) return value.trim().toLowerCase();
+                if (value && typeof value === 'object') {
+                    var locParts = [value.city, value.state, value.country].filter(Boolean);
+                    if (locParts.length === 0) locParts = [value.locality, value.state_province, value.country].filter(Boolean);
+                    if (locParts.length === 0 && value.postal) locParts.push(value.postal);
+                    return locParts.length ? locParts.join(', ').toLowerCase() : null;
+                }
+                return null;
+            }
+            if (format === 'array') {
+                if (!Array.isArray(value) || value.length === 0) return null;
+                return value.filter(Boolean).join(', ').toLowerCase();
+            }
+            if (format === 'status') {
+                return value == null || value === '' ? null : String(value).toLowerCase();
+            }
+            if (typeof value === 'number' && !isNaN(value)) return value;
+            if (Array.isArray(value)) {
+                return value.filter(Boolean).join(', ').toLowerCase();
+            }
+            if (value && typeof value === 'object') {
+                try { return JSON.stringify(value).toLowerCase(); } catch (e) { return null; }
+            }
+            if (value == null || value === '') return null;
+
+            var str = String(value).trim();
+            var looksNumericKey = /(_count|_credits|_usd|_amount|limit_|used_|remaining_|week_count|month_count|year_count|active_sections)/i.test(key);
+            if (looksNumericKey || format === 'number') {
+                var num = parseFloat(String(str).replace(/[^0-9.\-]/g, ''));
+                return isNaN(num) ? 0 : num;
+            }
+            return str.toLowerCase();
+        }
+
+        function updateDataViewerSortHeaders() {
+            var state = window._dataViewerState;
+            var indicators = document.querySelectorAll('#dataTable .sort-indicator');
+            indicators.forEach(function(el) {
+                var key = el.getAttribute('data-sort-key');
+                if (state && state.sortKey === key) {
+                    el.textContent = state.sortDir === 'asc' ? '▲' : '▼';
+                    el.style.color = '#2563eb';
+                } else {
+                    el.textContent = '⇅';
+                    el.style.color = '#94a3b8';
+                }
+            });
+            var headers = document.querySelectorAll('#dataTable th[data-sortable-key]');
+            headers.forEach(function(th) {
+                var key = th.getAttribute('data-sortable-key');
+                th.style.color = (state && state.sortKey === key) ? '#1d4ed8' : '#1e293b';
+            });
+        }
+
+        /** Ordena toda la tabla por una columna (fila completa se reordena). Clic alterna ▲ asc / ▼ desc. */
+        function sortDataViewerByColumn(columnKey) {
+            var state = window._dataViewerState;
+            if (!state || !Array.isArray(state.data) || !state.config || !Array.isArray(state.config.columns)) return;
+            var col = null;
+            for (var i = 0; i < state.config.columns.length; i++) {
+                if (state.config.columns[i].key === columnKey) {
+                    col = state.config.columns[i];
+                    break;
+                }
+            }
+            if (!col) return;
+
+            var newDir = (state.sortKey === columnKey && state.sortDir === 'asc') ? 'desc' : 'asc';
+            state.sortKey = columnKey;
+            state.sortDir = newDir;
+            var dir = newDir === 'asc' ? 1 : -1;
+
+            state.data = state.data.slice().sort(function(a, b) {
+                var va = getDataViewerSortValue(a, col);
+                var vb = getDataViewerSortValue(b, col);
+                var aEmpty = va == null || va === '';
+                var bEmpty = vb == null || vb === '';
+                if (aEmpty && bEmpty) return 0;
+                if (aEmpty) return 1;
+                if (bEmpty) return -1;
+                if (typeof va === 'number' && typeof vb === 'number') {
+                    return (va - vb) * dir;
+                }
+                return String(va).localeCompare(String(vb), 'es', { numeric: true, sensitivity: 'base' }) * dir;
+            });
+
+            updateDataViewerSortHeaders();
+            goToDataViewerPage(1);
+        }
+        window.sortDataViewerByColumn = sortDataViewerByColumn;
         function buildDataViewerRow(item, index, config) {
             var expiredDeletedRow = isDeletedProjectsBulkMode(config) && isDeletedProjectExpired(item);
             var rowStyle = expiredDeletedRow
@@ -5945,6 +6058,8 @@
                 config: config,
                 page: 1,
                 pageSize: DATA_VIEWER_PAGE_SIZE,
+                sortKey: null,
+                sortDir: null,
                 selectedDeletedProjectIds: isDeletedProjectsBulkMode(config) ? new Set() : null
             };
             var dataToShow = usePagination ? config.data.slice(0, DATA_VIEWER_PAGE_SIZE) : config.data;
@@ -6012,7 +6127,8 @@
                 html += `<th style="padding: 12px; text-align: center; font-weight: 600; color: #1e293b; font-size: 14px; width: 56px;"><input type="checkbox" id="select-all-visible-deleted-projects" onchange="toggleSelectAllVisibleDeletedProjects(this)" title="Seleccionar visibles"></th>`;
             }
             config.columns.forEach(col => {
-                html += `<th style="padding: 12px; text-align: left; font-weight: 600; color: #1e293b; font-size: 14px;">${col.label}</th>`;
+                var safeKey = String(col.key || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                html += `<th data-sortable-key="${col.key}" onclick="sortDataViewerByColumn('${safeKey}')" title="Clic para ordenar (▲ A-Z / menor → ▼ Z-A / mayor)" style="padding: 12px; text-align: left; font-weight: 600; color: #1e293b; font-size: 14px; cursor: pointer; user-select: none; white-space: nowrap;">${col.label} <span class="sort-indicator" data-sort-key="${col.key}" style="color:#94a3b8;font-size:11px;margin-left:2px;">⇅</span></th>`;
             });
             
             if (config.actions && (config.actions.edit || config.actions.delete)) {
@@ -9872,6 +9988,13 @@
                                             onmouseout="this.style.background='#10b981'; this.style.transform='translateY(0)';">
                                         🗺️ Ver en Mapa
                                     </button>
+                                    <button type="button" onclick="showPolygonCoordinatesModal('${String(project.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')"
+                                            title="Ver todas las coordenadas (vértices) del polígono"
+                                            style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;"
+                                            onmouseover="this.style.background='#1d4ed8'; this.style.transform='translateY(-1px)';"
+                                            onmouseout="this.style.background='#2563eb'; this.style.transform='translateY(0)';">
+                                        📍 Ver coordenadas (${location.polygon.length})
+                                    </button>
                                     <button type="button" onclick="showRadarAdminModal('${String(project.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')"
                                             title="Ver historial de imágenes Radar NDVI/NDMI guardadas en la nube para este proyecto"
                                             style="background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;"
@@ -9927,7 +10050,7 @@
                                           </tbody>
                                         </table>
                                       </div>
-                                      <div style="font-size:11px;color:#64748b;margin-top:6px;">* quincena ampliada a 30 días por nubosidad. Pulsa «Lectura Satelital» para ver imágenes NDVI/NDMI.</div>
+                                      <div style="font-size:11px;color:#64748b;margin-top:6px;">* quincena ampliada al mes calendario solo para la imagen (clima/riego siguen en 15 d). Pulsa «Lectura Satelital» para ver imágenes NDVI/NDMI.</div>
                                     </div>
                                     ` : `
                                     <div style="margin-top:12px;font-size:12px;color:#94a3b8;font-style:italic;">Sin Lectura Satelital guardada aún en este proyecto.</div>
@@ -12514,6 +12637,121 @@
         }
         window.showMapModalForProject = showMapModalForProject;
 
+        /** Normaliza vértices del polígono a [lat, lng] (acepta array u objeto). */
+        function normalizeAdminPolygonVertices(polygonRaw) {
+            var polygon = polygonRaw;
+            if (typeof polygon === 'string') {
+                try { polygon = JSON.parse(polygon); } catch (e) { return []; }
+            }
+            if (!Array.isArray(polygon)) return [];
+            return polygon.map(function(coord) {
+                if (Array.isArray(coord) && coord.length >= 2) {
+                    var lat = Number(coord[0]);
+                    var lng = Number(coord[1]);
+                    return (Number.isFinite(lat) && Number.isFinite(lng)) ? [lat, lng] : null;
+                }
+                if (coord && typeof coord === 'object') {
+                    var lat2 = Number(coord.lat != null ? coord.lat : coord.latitude);
+                    var lng2 = Number(coord.lng != null ? coord.lng : (coord.lon != null ? coord.lon : coord.longitude));
+                    return (Number.isFinite(lat2) && Number.isFinite(lng2)) ? [lat2, lng2] : null;
+                }
+                return null;
+            }).filter(Boolean);
+        }
+
+        /** Modal admin: lista todas las coordenadas del polígono (útil con muchos vértices, ej. 40). */
+        function showPolygonCoordinatesModal(projectId) {
+            var projectData = null;
+            try {
+                var projectRecord = findProjectById(projectId);
+                if (projectRecord && projectRecord.project) projectData = projectRecord.project;
+            } catch (e) {
+                console.error('showPolygonCoordinatesModal:', e);
+            }
+            if (!projectData) {
+                alert('No se encontraron datos del proyecto');
+                return;
+            }
+            var sourceProject = (projectData.data && typeof projectData.data === 'object')
+                ? Object.assign({}, projectData.data, {
+                    id: projectData.id || projectData.data.id,
+                    title: projectData.title || projectData.data.title,
+                    name: projectData.name || projectData.data.name
+                })
+                : projectData;
+            var locationData = sourceProject.location || sourceProject.sections?.ubicacion || sourceProject.sections?.location || null;
+            if (!locationData) {
+                alert('El proyecto no tiene datos de ubicación');
+                return;
+            }
+            var vertices = normalizeAdminPolygonVertices(locationData.polygon);
+            if (vertices.length === 0) {
+                alert('Este proyecto no tiene coordenadas de polígono guardadas');
+                return;
+            }
+
+            var existing = document.getElementById('polygonCoordsModalOverlay');
+            if (existing) existing.remove();
+
+            var projectName = sourceProject.name || sourceProject.title || projectId;
+            var plainText = vertices.map(function(v) {
+                return v[0].toFixed(6) + ', ' + v[1].toFixed(6);
+            }).join('\n');
+            var rowsHtml = vertices.map(function(v, i) {
+                return '<tr style="border-bottom:1px solid #e2e8f0;">' +
+                    '<td style="padding:8px 10px;color:#64748b;font-weight:600;width:56px;text-align:right;">' + (i + 1) + '</td>' +
+                    '<td style="padding:8px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#0f172a;">' +
+                    v[0].toFixed(6) + '</td>' +
+                    '<td style="padding:8px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#0f172a;">' +
+                    v[1].toFixed(6) + '</td></tr>';
+            }).join('');
+
+            var overlay = document.createElement('div');
+            overlay.id = 'polygonCoordsModalOverlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:56000;display:flex;align-items:center;justify-content:center;padding:20px;';
+            overlay.innerHTML =
+                '<div style="background:#fff;border-radius:12px;max-width:560px;width:100%;max-height:85vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.25);display:flex;flex-direction:column;">' +
+                '<div style="padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">' +
+                '<div><h3 style="margin:0;font-size:18px;color:#1e293b;">📍 Coordenadas del polígono</h3>' +
+                '<div style="margin-top:4px;font-size:13px;color:#64748b;">' + String(projectName).replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                ' · <strong style="color:#2563eb;">' + vertices.length + '</strong> puntos</div></div>' +
+                '<button type="button" onclick="document.getElementById(\'polygonCoordsModalOverlay\').remove()" style="background:none;border:none;font-size:24px;color:#64748b;cursor:pointer;padding:0 8px;line-height:1;">×</button></div>' +
+                '<div style="padding:0 20px;overflow-y:auto;flex:1;">' +
+                '<table style="width:100%;border-collapse:collapse;margin:12px 0;">' +
+                '<thead><tr style="background:#f8fafc;position:sticky;top:0;">' +
+                '<th style="padding:8px 10px;text-align:right;font-size:12px;color:#64748b;font-weight:600;">#</th>' +
+                '<th style="padding:8px 10px;text-align:left;font-size:12px;color:#64748b;font-weight:600;">Latitud</th>' +
+                '<th style="padding:8px 10px;text-align:left;font-size:12px;color:#64748b;font-weight:600;">Longitud</th>' +
+                '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
+                '<div style="padding:12px 20px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
+                '<button type="button" id="polygonCoordsCopyBtn" style="padding:8px 16px;background:#2563eb;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">📋 Copiar todas</button>' +
+                '<button type="button" onclick="document.getElementById(\'polygonCoordsModalOverlay\').remove()" style="padding:8px 20px;background:#f1f5f9;color:#334155;border:none;border-radius:8px;cursor:pointer;font-weight:500;">Cerrar</button>' +
+                '</div></div>';
+
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) overlay.remove();
+            });
+            document.body.appendChild(overlay);
+
+            var copyBtn = document.getElementById('polygonCoordsCopyBtn');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', function() {
+                    var done = function() {
+                        copyBtn.textContent = '✅ Copiado';
+                        setTimeout(function() { copyBtn.textContent = '📋 Copiar todas'; }, 1800);
+                    };
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(plainText).then(done).catch(function() {
+                            window.prompt('Copia las coordenadas:', plainText);
+                        });
+                    } else {
+                        window.prompt('Copia las coordenadas:', plainText);
+                    }
+                });
+            }
+        }
+        window.showPolygonCoordinatesModal = showPolygonCoordinatesModal;
+
         function getNutriPlantRadarApiUrlForAdmin() {
             var b = (typeof window.getNutriPlantApiBase === 'function' ? window.getNutriPlantApiBase() : null) ||
                 (window.location && window.location.origin) || '';
@@ -12935,7 +13173,7 @@
                         return '<div style="min-width:0;border:1px dashed #cbd5e1;border-radius:8px;padding:12px 4px;text-align:center;font-size:11px;color:#94a3b8;background:#f8fafc;">—</div>';
                     }
                     var title = kind + ' · ' + label;
-                    var sub = item.expanded ? 'Periodo ampliado a 30 días por nubosidad' : 'Clic en ✕ o fuera para cerrar';
+                    var sub = item.expanded ? 'Imagen ampliada al mes calendario (clima/riego = periodo 15 d)' : 'Clic en ✕ o fuera para cerrar';
                     return '<div style="min-width:0;">' +
                         '<img src="' + url.replace(/"/g, '&quot;') + '" alt="' + esc(title) + '" ' +
                         'data-full-src="' + url.replace(/"/g, '&quot;') + '" ' +
@@ -12950,7 +13188,7 @@
                 var ndmiRow = withImg.map(function (item) { return miniCard(item, item.ndmiUrl, 'NDMI', '#0f766e'); }).join('');
                 gallery =
                     '<div style="margin-top:14px;font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — miniaturas NDVI / NDMI</div>' +
-                    '<p style="margin:4px 0 8px;font-size:11px;color:#64748b;">Clic en una miniatura para verla grande. * periodo ampliado a 30 días por nubosidad.</p>' +
+                    '<p style="margin:4px 0 8px;font-size:11px;color:#64748b;">Clic en una miniatura para verla grande. * quincena ampliada al mes calendario solo para la imagen.</p>' +
                     '<div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:6px;">NDVI</div>' +
                     '<div style="' + grid + '">' + ndviRow + '</div>' +
                     '<div style="font-size:12px;font-weight:700;color:#0f766e;margin:12px 0 6px;">NDMI</div>' +
@@ -12982,7 +13220,7 @@
                 (gallery
                     ? gallery
                     : '<p style="margin-top:12px;font-size:12px;color:#94a3b8;">Sin imágenes firmadas disponibles (el usuario debe haber generado el histórico).</p>') +
-                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">Cada miniatura es un periodo del mismo predio. * ampliada a 30 días por nubosidad.</p>' +
+                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">Cada miniatura es un periodo del mismo predio. * ampliada al mes calendario solo para la imagen.</p>' +
                 '</div></div>';
         }
 

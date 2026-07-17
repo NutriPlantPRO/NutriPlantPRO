@@ -340,7 +340,7 @@
           '</div>' +
           '<div style="font-size:11px;color:#334155;line-height:1.45;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
             '<strong style="color:#14532d;">Cómo se arma:</strong> ' +
-            'hasta 3 pasadas Sentinel (mediana). Quincenal/mensual: si hay nubes, reintenta y puede ampliar a 30 d (*). ' +
+            'hasta 3 pasadas Sentinel (mediana). Si una <strong>quincena</strong> queda incompleta, solo ese periodo amplía al <strong>mes calendario</strong> (*); clima/riego siguen en los 15 días. ' +
             '<strong>Costo:</strong> 3 créditos (4 si predio &gt;30 ha) por toda la consulta.' +
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;">' +
@@ -551,12 +551,37 @@
         return '<th title="' + esc(h[1]) + '" style="' + thStyle + '">' + (h[2] ? h[0] : esc(h[0])) + '</th>';
       }).join('') +
       '</tr></thead><tbody>';
+    function expandedTip(r) {
+      if (!r || !r.lookback_expanded) return '';
+      var search =
+        r.search_date_start && r.search_date_end
+          ? ' Imagen buscada en mes ' + r.search_date_start + ' → ' + r.search_date_end + '.'
+          : '';
+      var scenes =
+        Array.isArray(r.scene_dates) && r.scene_dates.length
+          ? ' Sentinel: ' + r.scene_dates.join(', ') + '.'
+          : '';
+      return (
+        'Quincena incompleta: imagen ampliada al mes calendario de este periodo.' +
+        ' Clima/riego siguen en ' +
+        (r.date_start || '') +
+        ' – ' +
+        (r.date_end || '') +
+        '.' +
+        search +
+        scenes
+      );
+    }
+
     rows.forEach(function (r, rowIdx) {
       var mmVal = r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
       var rowBg = rowIdx % 2 === 0 ? '#ffffff' : '#f8fbff';
+      var tip = expandedTip(r);
       html += '<tr style="background:' + rowBg + ';">' +
         '<td style="padding:8px 10px;font-weight:700;color:#14532d;white-space:nowrap;border-top:1px solid #dbeafe;">' + esc(r.label || '') +
-          (r.lookback_expanded ? ' <span title="Quincena nublada: ampliada a 30 días" style="color:#b45309;">*</span>' : '') + '</td>' +
+          (r.lookback_expanded
+            ? ' <span title="' + esc(tip) + '" style="color:#b45309;cursor:help;">*</span>'
+            : '') + '</td>' +
         '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndvi_mean, 3) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndmi_mean, 3) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.vpd_mean, 2) + '</td>' +
@@ -578,7 +603,7 @@
       '</tr>';
     });
     html += '</tbody></table>';
-    html += '<div style="font-size:11px;color:#64748b;margin-top:6px;">NDVI y NDMI no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). Riego mm = lámina en la franja (% arriba). <span style="color:#b45309;">*</span> quincena ampliada a 30 días por nubosidad.' +
+    html += '<div style="font-size:11px;color:#64748b;margin-top:6px;">NDVI y NDMI no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). Riego mm = lámina en la franja (% arriba). <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).' +
       (cropHa == null ? ' <span style="color:#b45309;">Guarda el polígono con área (ha) para convertir m³ ↔ mm.</span>' : '') +
       '</div>';
     wrap.innerHTML = html;
@@ -975,17 +1000,32 @@
     }
     function miniCard(r, key, label, color) {
       var url = key === 'ndvi' ? r.signed_url : r.ndmi_signed_url;
-      var meta = (r.avg_cloud_cover != null ? 'nubes ~' + esc(r.avg_cloud_cover) + '%' : '') +
-        (r.valid_pct != null ? (r.avg_cloud_cover != null ? ' · ' : '') + 'útil ' + esc(r.valid_pct) + '%' : '') +
-        (r.lookback_expanded ? ' · 30 d*' : '');
+      var metaParts = [];
+      if (r.avg_cloud_cover != null) metaParts.push('nubes ~' + esc(r.avg_cloud_cover) + '%');
+      if (r.valid_pct != null) metaParts.push('útil ' + esc(r.valid_pct) + '%');
+      if (r.lookback_expanded) {
+        if (r.search_date_start && r.search_date_end) {
+          metaParts.push('mes ' + esc(r.search_date_start) + '→' + esc(r.search_date_end) + '*');
+        } else {
+          metaParts.push('mes*');
+        }
+      }
+      if (Array.isArray(r.scene_dates) && r.scene_dates.length) {
+        metaParts.push('Sentinel ' + esc(r.scene_dates.join(', ')));
+      }
+      var meta = metaParts.join(' · ');
+      var tip =
+        (r.lookback_expanded
+          ? 'Periodo clima: ' + (r.date_start || '') + ' – ' + (r.date_end || '') + '. '
+          : '') + meta;
       return '<figure style="margin:0;min-width:0;border:1px solid #e2e8f0;border-radius:10px;background:#fff;padding:6px;">' +
         '<figcaption style="font-size:10.5px;line-height:1.25;font-weight:800;color:' + color + ';margin:0 0 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + esc(r.label || '') + '">' +
           esc(r.label || '') +
         '</figcaption>' +
         (url
-          ? '<img src="' + esc(url) + '" alt="' + label + ' ' + esc(r.label) + '" data-lectura-zoom="1" data-zoom-title="' + esc(label + ' · ' + (r.label || '')) + '" data-zoom-sub="' + esc(meta) + '" style="width:100%;height:142px;object-fit:contain;border-radius:7px;display:block;background:#f1f5f9;cursor:zoom-in;" title="Toca para ver en grande">'
+          ? '<img src="' + esc(url) + '" alt="' + label + ' ' + esc(r.label) + '" data-lectura-zoom="1" data-zoom-title="' + esc(label + ' · ' + (r.label || '')) + '" data-zoom-sub="' + esc(tip) + '" style="width:100%;height:142px;object-fit:contain;border-radius:7px;display:block;background:#f1f5f9;cursor:zoom-in;" title="Toca para ver en grande">'
           : '<div style="height:142px;display:flex;align-items:center;justify-content:center;text-align:center;color:#94a3b8;background:#f1f5f9;border-radius:7px;font-size:11px;">Sin ' + label + '</div>') +
-        '<div style="font-size:9.5px;color:#64748b;text-align:center;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + esc(meta) + '">' + (meta || '&nbsp;') + '</div>' +
+        '<div style="font-size:9.5px;color:#64748b;text-align:center;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + esc(tip) + '">' + (meta || '&nbsp;') + '</div>' +
       '</figure>';
     }
     var html =
@@ -1001,7 +1041,7 @@
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
           rows.map(function (r) { return miniCard(r, 'ndmi', 'NDMI', '#0369a1'); }).join('') +
         '</div>' +
-        '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">* 30 d = quincena ampliada por nubosidad. El color compara zonas dentro del mismo predio/periodo; el valor numérico promedio está en la tabla. Toca cualquier imagen para verla en grande.' +
+        '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">* mes = quincena ampliada al mes calendario solo para la imagen (clima/riego = periodo de 15 d). El color compara zonas dentro del mismo predio/periodo; el valor numérico promedio está en la tabla. Toca cualquier imagen para verla en grande.' +
           (skippedCount
             ? ' · ' + skippedCount + ' periodo(s) sin imagen por nubes no se muestran aquí (sí quedan en la tabla).'
             : '') +
@@ -1064,6 +1104,10 @@
       if (it.avg_cloud_cover != null) row.avg_cloud_cover = it.avg_cloud_cover;
       if (it.scene_count != null) row.scene_count = it.scene_count;
       row.lookback_expanded = !!it.lookback_expanded;
+      if (it.expanded_to) row.expanded_to = it.expanded_to;
+      if (it.search_date_start) row.search_date_start = it.search_date_start;
+      if (it.search_date_end) row.search_date_end = it.search_date_end;
+      if (Array.isArray(it.scene_dates) && it.scene_dates.length) row.scene_dates = it.scene_dates;
       if (it.signed_url) row.signed_url = it.signed_url;
       if (it.ndmi_signed_url) row.ndmi_signed_url = it.ndmi_signed_url;
       if (it.error_message) row.error_message = it.error_message;

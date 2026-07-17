@@ -15596,7 +15596,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
   }
 
   const note = rtSafe(
-    'NDVI/NDMI = promedio de píxeles válidos del predio. ET₀ y lluvia = acumulado. VPD = promedio horario. * quincena ampliada a 30 días por nubosidad. Complementar con campo y riego.',
+    'NDVI/NDMI = promedio de píxeles válidos del predio. ET₀ y lluvia = acumulado. VPD = promedio horario. * quincena ampliada al mes calendario solo para la imagen (clima/riego = 15 d). Complementar con campo y riego.',
     'NDVI/NDMI = mean of valid pixels in the field. ET₀ and rain = period sum. VPD = hourly mean. * fortnight expanded to 30 days due to clouds. Complement with field checks and irrigation.'
   );
 

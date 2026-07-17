@@ -110,7 +110,7 @@ exports.handler = async (event) => {
   const projectId = body.project_id != null ? String(body.project_id).trim() : '';
   const useAsync = body.async !== false;
   const maxDim = Math.min(Math.max(Number(body.max_dim) || 512, 256), 2048);
-  const maxScenes = Math.min(Math.max(Number(body.max_scenes) || 1, 1), 4);
+  const maxScenes = Math.min(Math.max(Number(body.max_scenes) || 3, 1), 4);
   const mk = monthKey();
   const baseLimit = radarCredits.getMonthlyBaseLimit();
   const bonus = await getBonusCredits(supabase, userId);
