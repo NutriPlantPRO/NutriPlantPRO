@@ -2526,6 +2526,12 @@ function np_formatRadarDateTime(iso) {
 function np_formatRadarHistoryOption(item) {
   if (!item) return 'Imagen Radar';
   const gen = np_formatRadarDateTime(item.created_at);
+  const sceneDates = Array.isArray(item.scene_dates)
+    ? item.scene_dates.map((d) => String(d).slice(0, 10)).filter(Boolean)
+    : [];
+  if (sceneDates.length) {
+    return gen + ' · Datos ' + sceneDates.join(', ');
+  }
   const sp = item.sentinel_period || {};
   if (sp.from && sp.to) return gen + ' · Sentinel ' + sp.from + ' – ' + sp.to;
   if (item.month_key) return gen + ' · ' + item.month_key;
@@ -2675,13 +2681,14 @@ function np_persistRadarSnapshotSelection(requestId) {
 function np_populateRadarSnapshotSelect(history, preferredId) {
   const sel = document.getElementById('radarSnapshotSelect');
   if (!sel) return;
-  const list = Array.isArray(history) ? history : [];
+  // Solo Pilot (pestaña 1). Las de Lectura Satelital van en su propia galería.
+  const list = (Array.isArray(history) ? history : []).filter((h) => !h || !h.lectura);
   const prev = preferredId || np_getSelectedRadarRequestId();
   sel.innerHTML = '';
   if (!list.length) {
     const opt = document.createElement('option');
     opt.value = '';
-    opt.textContent = 'Sin imágenes guardadas';
+    opt.textContent = 'Sin imágenes Pilot guardadas';
     sel.appendChild(opt);
     sel.disabled = true;
     return;

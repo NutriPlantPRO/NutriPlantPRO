@@ -15491,9 +15491,22 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       '</tr>';
   });
 
+  const areaHa =
+    typeof currentProject !== 'undefined' &&
+    currentProject &&
+    currentProject.location &&
+    currentProject.location.areaHectares != null &&
+    Number.isFinite(Number(currentProject.location.areaHectares))
+      ? Number(currentProject.location.areaHectares)
+      : null;
+  const riegoM3Header =
+    areaHa != null
+      ? rtSafe('Riego m³ / ' + areaHa.toFixed(2) + ' ha', 'Irrigation m³ / ' + areaHa.toFixed(2) + ' ha')
+      : rtSafe('Riego m³', 'Irrigation m³');
+
   const table =
-    '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">' +
-    '<thead><tr style="background:#ecfdf5;color:#14532d;">' +
+    '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;background:#fff;border:1px solid #93c5fd;border-radius:8px;overflow:hidden;">' +
+    '<thead><tr style="background:#dbeafe;color:#1e3a8a;">' +
     [
       rtSafe('Periodo', 'Period'),
       'NDVI',
@@ -15501,11 +15514,11 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       'VPD',
       rtSafe('ET₀ acum mm', 'ET₀ sum mm'),
       rtSafe('Lluvia acum mm', 'Rain sum mm'),
-      rtSafe('Riego m³', 'Irrigation m³'),
+      riegoM3Header,
       rtSafe('Riego mm', 'Irrigation mm')
     ]
       .map(function (h) {
-        return '<th style="padding:6px 8px;text-align:center;white-space:nowrap;">' + h + '</th>';
+        return '<th style="padding:6px 8px;text-align:center;white-space:nowrap;border:1px solid #93c5fd;">' + h + '</th>';
       })
       .join('') +
     '</tr></thead><tbody>' +

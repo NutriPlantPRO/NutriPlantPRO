@@ -174,12 +174,13 @@ async function getActivePilotJob(supabase, userId, projectId) {
     .eq('project_id', projectId)
     .is('image_storage_path', null)
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(10);
   if (error) {
     console.warn('getActivePilotJob:', error.message);
     return null;
   }
-  return (data || []).find(isActiveJobRow) || null;
+  // No mezclar cola de Lectura Satelital con estado del Pilot (pestaña 1).
+  return (data || []).find((row) => isActiveJobRow(row) && !(row.meta && row.meta.lectura)) || null;
 }
 
 async function getPendingPilotJobForStatus(supabase, userId, projectId) {
@@ -200,12 +201,14 @@ async function getLatestFailedPilotJob(supabase, userId, projectId) {
     .eq('project_id', projectId)
     .is('image_storage_path', null)
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(10);
   if (error) {
     console.warn('getLatestFailedPilotJob:', error.message);
     return null;
   }
-  const failed = (data || []).find((row) => jobStatus(row.meta) === 'error');
+  const failed = (data || []).find(
+    (row) => jobStatus(row.meta) === 'error' && !(row.meta && row.meta.lectura)
+  );
   if (!failed) return null;
   return {
     id: failed.id,

@@ -12,6 +12,8 @@
   var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   var lecturaChart = null;
   var lecturaPollTimer = null;
+  var lecturaRefreshInFlight = false;
+  var lecturaLastAutoRefreshAt = 0;
   var lecturaSeriesVis = {
     ndvi: true,
     ndmi: true,
@@ -301,7 +303,7 @@
               '<input type="date" id="lecturaEndDate" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;">' +
             '</label>' +
             '<button type="button" id="lecturaBtnGenerate" class="btn btn-primary" style="font-size:13px;">🛰 Generar histórico</button>' +
-            '<button type="button" id="lecturaBtnRefresh" class="btn btn-secondary" style="font-size:13px;" title="Revisa si terminaron los periodos pendientes, trae imágenes/NDVI/NDMI guardados y completa clima si falta.">🔄 Actualizar</button>' +
+            '<button type="button" id="lecturaBtnRefresh" class="btn btn-secondary" style="font-size:13px;" title="Trae y muestra las imágenes NDVI/NDMI guardadas, revisa periodos pendientes y completa clima si falta.">👁 Mostrar NDVI/NDMI</button>' +
           '</div>' +
           '<div id="lecturaCreditsLabel" style="font-size:13px;color:#166534;margin-top:10px;font-weight:600;"></div>' +
           '<div id="lecturaCostHint" style="font-size:12px;color:#166534;margin-top:4px;font-weight:600;"></div>' +
@@ -460,49 +462,62 @@
       '<span style="color:#64748b;font-size:11px;">1 mm en franja = 10 m³ × ha franja · edita m³ o mm y se convierte solo</span>' +
     '</div>';
 
+    var unitBox =
+      'display:inline-block;padding:1px 6px;margin:0 1px;border:1px solid #2563eb;border-radius:5px;' +
+      'background:#eff6ff;color:#1d4ed8;font-weight:800;font-size:11px;line-height:1.35;';
+    var haLabel = cropHa != null ? fmtNum(cropHa, 2) + ' ha' : '— ha';
+    var riegoM3Header =
+      'Riego <span style="' + unitBox + '">m³</span> / ' + haLabel;
+    var riegoMmHeader =
+      'Riego <span style="' + unitBox + '">mm</span>';
+
     var headers = [
-      ['Periodo', 'Rango de fechas del periodo analizado.'],
-      ['NDVI prom', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.'],
-      ['NDMI prom', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.'],
-      ['VPD prom (kPa)', 'VPD promedio horario del periodo.'],
-      ['h VPD <0.5', 'Horas del periodo con VPD bajo (<0.5 kPa).'],
-      ['h VPD 0.5–1.5', 'Horas del periodo con VPD óptimo (0.5–1.5 kPa).'],
-      ['h VPD >1.5', 'Horas del periodo con VPD alto (>1.5 kPa).'],
-      ['ET₀ acum (mm)', 'ET₀ acumulada durante todo el periodo.'],
-      ['Lluvia acum (mm)', 'Lluvia acumulada durante todo el periodo.'],
-      ['Riego (m³)', 'Volumen total aplicado en la franja regada.'],
-      ['Riego (mm)', 'Lámina equivalente en la franja regada según el % de franja.'],
-      ['Estado', 'Estado de la imagen satelital del periodo.']
+      ['Periodo', 'Rango de fechas del periodo analizado.', false],
+      ['NDVI prom', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.', false],
+      ['NDMI prom', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.', false],
+      ['VPD prom (kPa)', 'VPD promedio horario del periodo.', false],
+      ['h VPD <0.5', 'Horas del periodo con VPD bajo (<0.5 kPa).', false],
+      ['h VPD 0.5–1.5', 'Horas del periodo con VPD óptimo (0.5–1.5 kPa).', false],
+      ['h VPD >1.5', 'Horas del periodo con VPD alto (>1.5 kPa).', false],
+      ['ET₀ acum (mm)', 'ET₀ acumulada durante todo el periodo.', false],
+      ['Lluvia acum (mm)', 'Lluvia acumulada durante todo el periodo.', false],
+      [riegoM3Header, 'Volumen total de riego referido a la superficie del polígono (' + haLabel + ').', true],
+      [riegoMmHeader, 'Lámina equivalente en la franja regada según el % de franja.', true],
+      ['Estado', 'Estado de la imagen satelital del periodo.', false]
     ];
-    html += '<table style="width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">' +
-      '<thead><tr style="background:#f1f5f9;color:#0f172a;">' +
+    var thStyle =
+      'padding:9px 10px;text-align:center;white-space:nowrap;background:#dbeafe;color:#1e3a8a;' +
+      'border:1px solid #93c5fd;font-weight:800;font-size:12px;';
+    html += '<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;background:#fff;border:1px solid #93c5fd;border-radius:10px;overflow:hidden;">' +
+      '<thead><tr>' +
       headers.map(function (h) {
-        return '<th title="' + esc(h[1]) + '" style="padding:8px 10px;text-align:center;white-space:nowrap;">' + esc(h[0]) + '</th>';
+        return '<th title="' + esc(h[1]) + '" style="' + thStyle + '">' + (h[2] ? h[0] : esc(h[0])) + '</th>';
       }).join('') +
       '</tr></thead><tbody>';
-    rows.forEach(function (r) {
+    rows.forEach(function (r, rowIdx) {
       var mmVal = r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
-      html += '<tr style="border-top:1px solid #e2e8f0;">' +
-        '<td style="padding:8px 10px;font-weight:700;color:#14532d;white-space:nowrap;">' + esc(r.label || '') +
+      var rowBg = rowIdx % 2 === 0 ? '#ffffff' : '#f8fbff';
+      html += '<tr style="background:' + rowBg + ';">' +
+        '<td style="padding:8px 10px;font-weight:700;color:#14532d;white-space:nowrap;border-top:1px solid #dbeafe;">' + esc(r.label || '') +
           (r.lookback_expanded ? ' <span title="Quincena nublada: ampliada a 30 días" style="color:#b45309;">*</span>' : '') + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;">' + fmtNum(r.ndvi_mean, 3) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;">' + fmtNum(r.ndmi_mean, 3) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;">' + fmtNum(r.vpd_mean, 2) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;color:#1d4ed8;" title="Horas VPD bajo">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;color:#16a34a;" title="Horas VPD óptimo">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;color:#7f1d1d;" title="Horas VPD alto">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;">' + fmtNum(r.et0_sum, 1) + '</td>' +
-        '<td style="padding:8px 10px;text-align:center;">' + fmtNum(r.rain_sum, 1) + '</td>' +
-        '<td style="padding:6px 8px;text-align:center;">' +
+        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndvi_mean, 3) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndmi_mean, 3) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.vpd_mean, 2) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;color:#1d4ed8;border-top:1px solid #dbeafe;" title="Horas VPD bajo">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;color:#16a34a;border-top:1px solid #dbeafe;" title="Horas VPD óptimo">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;color:#7f1d1d;border-top:1px solid #dbeafe;" title="Horas VPD alto">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.et0_sum, 1) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.rain_sum, 1) + '</td>' +
+        '<td style="padding:6px 8px;text-align:center;border-top:1px solid #dbeafe;">' +
           '<input type="number" min="0" step="0.1" value="' + (r.riego_m3 != null ? esc(r.riego_m3) : '') +
-          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Volumen total en franja">' +
+          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Volumen total referido al polígono (' + haLabel + ')">' +
         '</td>' +
-        '<td style="padding:6px 8px;text-align:center;">' +
+        '<td style="padding:6px 8px;text-align:center;border-top:1px solid #dbeafe;">' +
           '<input type="number" min="0" step="0.1" value="' + (mmVal != null ? esc(mmVal) : '') +
           '" data-riego-mm-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Lámina en franja regada"' +
           (iHa == null ? ' disabled' : '') + '>' +
         '</td>' +
-        '<td style="padding:8px 10px;text-align:center;">' + statusBadge(r) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + statusBadge(r) + '</td>' +
       '</tr>';
     });
     html += '</tbody></table>';
@@ -587,13 +602,49 @@
       });
     });
   }
+  function ensureChartJs(callback) {
+    if (typeof Chart !== 'undefined') {
+      if (typeof callback === 'function') callback();
+      return;
+    }
+    if (typeof window.loadChartJs === 'function') {
+      window.loadChartJs(function () {
+        if (typeof callback === 'function') callback();
+      });
+      return;
+    }
+    if (window.__lecturaChartJsLoading) {
+      window.__lecturaChartJsLoading.push(callback);
+      return;
+    }
+    window.__lecturaChartJsLoading = [callback];
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+    s.onload = function () {
+      var cbs = window.__lecturaChartJsLoading || [];
+      window.__lecturaChartJsLoading = null;
+      cbs.forEach(function (cb) {
+        try { if (typeof cb === 'function') cb(); } catch (e) {}
+      });
+    };
+    s.onerror = function () {
+      window.__lecturaChartJsLoading = null;
+      console.warn('Lectura Satelital: no se pudo cargar Chart.js');
+    };
+    document.head.appendChild(s);
+  }
+
   function renderChart(state) {
     var wrap = document.getElementById('lecturaChartWrap');
     var canvas = document.getElementById('lecturaChart');
-    if (!wrap || !canvas || typeof Chart === 'undefined') return;
+    if (!wrap || !canvas) return;
     if (!state || !state.rows || !state.rows.length) {
       wrap.style.display = 'none';
       if (lecturaChart) { try { lecturaChart.destroy(); } catch (e) {} lecturaChart = null; }
+      return;
+    }
+    if (typeof Chart === 'undefined') {
+      ensureChartJs(function () { renderChart(state); });
       return;
     }
     renderChartToggles(state);
@@ -986,7 +1037,7 @@
       } catch (e) {
         console.warn('Lectura poll:', e);
       }
-      if (attempts > 60) { stopPoll(); setStatus('El proceso está tardando más de lo normal. Pulsa «Actualizar» en unos minutos.'); }
+      if (attempts > 60) { stopPoll(); setStatus('El proceso está tardando más de lo normal. Pulsa «Mostrar NDVI/NDMI» en unos minutos.'); }
     }, 20000);
   }
 
@@ -1056,7 +1107,7 @@
       setStatus(
         '✔ Histórico listo (' + okImg + ' con imagen). ' +
         nOther + ' periodo' + (nOther === 1 ? '' : 's') +
-        ' no se pudo generar (error técnico, no necesariamente nubes). Revisa «Actualizar» o vuelve a generar.'
+        ' no se pudo generar (error técnico, no necesariamente nubes). Pulsa «Mostrar NDVI/NDMI» o vuelve a generar.'
       );
     } else if (nCloud && !nOther) {
       setStatus(
@@ -1064,7 +1115,7 @@
       );
     } else {
       setStatus(
-        '⚠ Histórico con errores técnicos al generar imágenes (no necesariamente nubosidad). Clima y riego pueden estar en la tabla. Prueba «Actualizar» o vuelve a generar.'
+        '⚠ Histórico con errores técnicos al generar imágenes (no necesariamente nubosidad). Clima y riego pueden estar en la tabla. Prueba «Mostrar NDVI/NDMI» o vuelve a generar.'
       );
     }
   }
@@ -1144,7 +1195,7 @@
       syncRiegoMmFromM3(state);
       saveState(state);
       renderAll(state);
-      setStatus('⏳ Solicitud enviada. Generando imágenes… no cierres hasta que termine (o vuelve y pulsa «Actualizar»).');
+      setStatus('⏳ Solicitud enviada. Generando imágenes… no cierres hasta que termine (o vuelve y pulsa «Mostrar NDVI/NDMI»).');
       pollUntilDone(state);
     } catch (e) {
       console.error('Lectura generar:', e);
@@ -1156,12 +1207,14 @@
   }
 
   async function refreshLectura() {
+    if (lecturaRefreshInFlight) return;
     var state = loadState();
     if (!state || !state.rows || !state.rows.length) { setStatus('Aún no hay histórico. Configura y pulsa «Generar histórico».'); return; }
     renderAll(state);
     var ids = state.rows.map(function (r) { return r.request_id; }).filter(Boolean);
     if (!ids.length) return;
-    setStatus('🔄 Actualizando estado e imágenes…');
+    lecturaRefreshInFlight = true;
+    setStatus('🔄 Trayendo imágenes NDVI/NDMI…');
     try {
       var items = await fetchLecturaStatus(ids);
       mergeStatusIntoState(state, items);
@@ -1172,8 +1225,22 @@
       else { await enrichClimateAndFinish(state); }
     } catch (e) {
       console.warn('Lectura refresh:', e);
-      setStatus('No se pudo actualizar. Intenta de nuevo en unos minutos.');
+      setStatus('No se pudieron traer las imágenes. Intenta de nuevo en unos minutos.');
+    } finally {
+      lecturaRefreshInFlight = false;
     }
+  }
+
+  /** Al entrar a Lectura: muestra caché y sincroniza estado/URLs sin obligar a pulsar el botón. */
+  function autoShowLecturaImages() {
+    var state = loadState();
+    if (!state || !state.rows || !state.rows.length) return;
+    var ids = state.rows.map(function (r) { return r.request_id; }).filter(Boolean);
+    if (!ids.length) return;
+    var now = Date.now();
+    if (now - lecturaLastAutoRefreshAt < 5000) return;
+    lecturaLastAutoRefreshAt = now;
+    refreshLectura();
   }
 
   // ---------- init ----------
@@ -1199,6 +1266,7 @@
           updateCostHint();
           var st = loadState();
           if (st) renderAll(st);
+          autoShowLecturaImages();
         } else if (typeof nutriPlantMap !== 'undefined' && nutriPlantMap && nutriPlantMap.map && typeof google !== 'undefined') {
           setTimeout(function () { try { google.maps.event.trigger(nutriPlantMap.map, 'resize'); } catch (e) {} }, 60);
         }
@@ -1227,6 +1295,7 @@
       renderAll(state);
       var needsHours = (state.rows || []).some(function (r) { return r.vpd_hours_low == null; });
       if (needsHours) enrichClimateAndFinish(state);
+      autoShowLecturaImages();
     }
 
     if (panel.dataset.lecturaBound === '1') return;

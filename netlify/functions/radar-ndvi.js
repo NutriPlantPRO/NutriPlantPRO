@@ -260,7 +260,16 @@ async function getBonusCredits(supabase, userId) {
   return Math.max(0, Math.floor(Number(data?.radar_credits_bonus) || 0));
 }
 
+function isLecturaRadarRow(row) {
+  return !!(row && row.meta && row.meta.lectura);
+}
+
+function isPilotRadarRow(row) {
+  return !!row && !isLecturaRadarRow(row);
+}
+
 async function getLatestRadarRow(supabase, userId, projectId) {
+  // Trae varias para saltar jobs de Lectura Satelital (histórico por periodos).
   const { data, error } = await supabase
     .from('radar_requests')
     .select('id, created_at, month_key, image_storage_path, meta')
@@ -268,16 +277,17 @@ async function getLatestRadarRow(supabase, userId, projectId) {
     .eq('project_id', projectId)
     .not('image_storage_path', 'is', null)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(40);
   if (error) {
     console.warn('getLatestRadarRow:', error.message);
     return null;
   }
-  return data;
+  return (data || []).find(isPilotRadarRow) || null;
 }
 
 async function getRadarHistoryRows(supabase, userId, projectId, limit) {
+  const want = Math.min(Math.max(Number(limit) || 24, 1), 36);
+  // Pide de más porque Lectura Satelital comparte la misma tabla y no debe salir en el selector Pilot.
   const { data, error } = await supabase
     .from('radar_requests')
     .select('id, created_at, month_key, image_storage_path, meta')
@@ -285,12 +295,12 @@ async function getRadarHistoryRows(supabase, userId, projectId, limit) {
     .eq('project_id', projectId)
     .not('image_storage_path', 'is', null)
     .order('created_at', { ascending: false })
-    .limit(limit);
+    .limit(Math.min(want * 4, 80));
   if (error) {
     console.warn('getRadarHistoryRows:', error.message);
     return [];
   }
-  return data || [];
+  return (data || []).filter(isPilotRadarRow).slice(0, want);
 }
 
 async function getRadarRowById(supabase, userId, projectId, requestId) {
@@ -314,14 +324,19 @@ function historyItemFromRow(row) {
   const meta = row.meta || {};
   const ndmiPath = meta.ndmi_storage_path || meta.images?.ndmi?.storage_path || null;
   const loc = meta.location_snapshot || null;
+  const sceneDates = Array.isArray(meta.scene_dates)
+    ? meta.scene_dates.map((d) => String(d).slice(0, 10)).filter(Boolean)
+    : [];
   return {
     id: row.id,
     created_at: row.created_at,
     month_key: row.month_key,
+    lectura: !!meta.lectura,
     sentinel_period: {
       from: meta.date_start || null,
       to: meta.date_end || null
     },
+    scene_dates: sceneDates.length ? sceneDates : null,
     has_ndmi: !!ndmiPath,
     has_location_snapshot: !!(loc && Array.isArray(loc.polygon) && loc.polygon.length >= 3),
     location_center: loc && loc.center ? loc.center : null,
