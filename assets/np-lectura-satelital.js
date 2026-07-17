@@ -122,7 +122,98 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // ---------- persistencia ----------
+  // ---------- persistencia (bloques / runs) ----------
+  var MAX_LECTURA_RUNS = 8;
+
+  function newRunId() {
+    return 'run_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+  }
+
+  function runLabel(run) {
+    if (!run) return 'Bloque';
+    var freq = run.frequency === 'mensual' ? 'Mensual' : 'Quincenal';
+    var n = (run.rows && run.rows.length) || run.periods || 0;
+    var end = run.endDate ? String(run.endDate) : '—';
+    var range = '';
+    if (run.rows && run.rows.length) {
+      var sorted = run.rows.slice().sort(function (a, b) {
+        return String(a.date_start || '').localeCompare(String(b.date_start || ''));
+      });
+      var first = sorted[0];
+      var last = sorted[sorted.length - 1];
+      if (first && last && first.date_start && last.date_end) {
+        range = ' · ' + first.date_start + ' → ' + last.date_end;
+      }
+    }
+    var when = run.createdAt ? String(run.createdAt).slice(0, 10) : '';
+    return (when ? when + ' · ' : '') + freq + ' · ' + n + ' per. · fin ' + end + range;
+  }
+
+  function snapshotRunFromState(state, id, createdAt) {
+    return {
+      id: id || newRunId(),
+      createdAt: createdAt || state.updatedAt || new Date().toISOString(),
+      frequency: state.frequency || 'quincenal',
+      periods: state.periods != null ? state.periods : (state.rows ? state.rows.length : 0),
+      endDate: state.endDate || null,
+      updatedAt: state.updatedAt || new Date().toISOString(),
+      rows: Array.isArray(state.rows) ? state.rows : []
+    };
+  }
+
+  /** Migra estado viejo (solo rows) a runs[] y refleja el bloque activo arriba. */
+  function ensureRuns(state) {
+    if (!state || typeof state !== 'object') return null;
+    if (!Array.isArray(state.runs) || !state.runs.length) {
+      if (Array.isArray(state.rows) && state.rows.length) {
+        var legacyId = 'run_legacy_' + String(state.updatedAt || Date.now()).replace(/\W/g, '');
+        state.runs = [snapshotRunFromState(state, legacyId, state.updatedAt)];
+        state.activeRunId = legacyId;
+      } else {
+        state.runs = [];
+      }
+    }
+    if (!state.activeRunId && state.runs.length) state.activeRunId = state.runs[0].id;
+    return applyActiveToTop(state);
+  }
+
+  function getActiveRun(state) {
+    if (!state || !Array.isArray(state.runs) || !state.runs.length) return null;
+    var run = null;
+    for (var i = 0; i < state.runs.length; i++) {
+      if (state.runs[i] && state.runs[i].id === state.activeRunId) {
+        run = state.runs[i];
+        break;
+      }
+    }
+    return run || state.runs[0];
+  }
+
+  function applyActiveToTop(state) {
+    var run = getActiveRun(state);
+    if (!run) return state;
+    state.activeRunId = run.id;
+    state.frequency = run.frequency;
+    state.periods = run.periods;
+    state.endDate = run.endDate;
+    state.updatedAt = run.updatedAt;
+    state.rows = run.rows;
+    return state;
+  }
+
+  /** Tras mutar state.rows / metas, escribe de vuelta al run activo. */
+  function persistActiveFromTop(state) {
+    if (!state || !Array.isArray(state.runs)) return state;
+    var run = getActiveRun(state);
+    if (!run) return state;
+    run.frequency = state.frequency;
+    run.periods = state.periods;
+    run.endDate = state.endDate;
+    run.updatedAt = state.updatedAt || new Date().toISOString();
+    run.rows = state.rows;
+    return state;
+  }
+
   function loadState() {
     var proj = getProject();
     if (!proj || !proj.id) return null;
@@ -132,11 +223,13 @@
     } else {
       loc = (proj.location) || {};
     }
-    return loc.lecturaSatelital || null;
+    return ensureRuns(loc.lecturaSatelital || null);
   }
   function saveState(state) {
     var proj = getProject();
     if (!proj || !proj.id) return;
+    persistActiveFromTop(state);
+    applyActiveToTop(state);
     var loc;
     if (window.projectStorage && window.projectStorage.loadSection) {
       loc = window.projectStorage.loadSection('location', proj.id) || {};
@@ -340,7 +433,7 @@
           '</div>' +
           '<div style="font-size:11px;color:#334155;line-height:1.45;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
             '<strong style="color:#14532d;">Cómo se arma:</strong> ' +
-            'hasta 3 pasadas Sentinel (mediana). Si una <strong>quincena</strong> queda incompleta, solo ese periodo amplía al <strong>mes calendario</strong> (*); clima/riego siguen en los 15 días. ' +
+            'hasta <strong>6 pasadas</strong> Sentinel (mediana), meta ~85% útiles. Si una <strong>quincena</strong> queda incompleta, solo ese periodo amplía al <strong>mes calendario</strong> (*); clima/riego siguen en los 15 días. ' +
             '<strong>Costo:</strong> 3 créditos (4 si predio &gt;30 ha) por toda la consulta.' +
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;">' +
@@ -364,6 +457,13 @@
           '</div>' +
           '<div id="lecturaCreditsLabel" style="font-size:13px;color:#166534;margin-top:10px;font-weight:600;"></div>' +
           '<div id="lecturaCostHint" style="font-size:12px;color:#166534;margin-top:4px;font-weight:600;"></div>' +
+          '<div id="lecturaRunsWrap" style="margin-top:10px;display:none;">' +
+            '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">' +
+              'Bloques guardados (lecturas / imágenes pasadas)' +
+              '<select id="lecturaRunSelect" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;max-width:100%;"></select>' +
+            '</label>' +
+            '<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.4;">Si generas otro bloque de periodos, el anterior queda aquí para seguir viendo su tabla e imágenes.</div>' +
+          '</div>' +
           '<div id="lecturaStatusHint" style="font-size:12px;color:#475569;margin-top:6px;line-height:1.5;"></div>' +
         '</div>' +
         '<div id="lecturaTableWrap" style="margin-top:14px;overflow-x:auto;"></div>' +
@@ -496,6 +596,20 @@
     if (row.status === 'not_found') return '<span style="color:#94a3b8;">—</span>';
     return '<span style="color:#0369a1;font-weight:700;">⏳ Generando…</span>';
   }
+  function periodIdLabel(r) {
+    var idx = Number(r && r.index);
+    if (!Number.isFinite(idx) || idx < 0) return '—';
+    return 'P' + (idx + 1);
+  }
+  function periodDaysCount(r) {
+    if (!r || !r.date_start || !r.date_end) return null;
+    var a = parseIso(String(r.date_start).slice(0, 10));
+    var b = parseIso(String(r.date_end).slice(0, 10));
+    if (!a || !b) return null;
+    var days = Math.round((b.getTime() - a.getTime()) / 86400000) + 1;
+    return days > 0 ? days : null;
+  }
+
   function renderTable(state) {
     var wrap = document.getElementById('lecturaTableWrap');
     if (!wrap) return;
@@ -529,6 +643,8 @@
       'Riego <span style="' + unitBox + '">mm</span>';
 
     var headers = [
+      ['ID', 'Identificador del periodo (P1, P2…).', false],
+      ['Días', 'Cantidad de días del periodo (fecha inicio → fin, inclusive).', false],
       ['Periodo', 'Rango de fechas del periodo analizado.', false],
       ['NDVI prom', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.', false],
       ['NDMI prom', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.', false],
@@ -577,7 +693,16 @@
       var mmVal = r.riego_mm != null ? r.riego_mm : m3ToMm(r.riego_m3, iHa);
       var rowBg = rowIdx % 2 === 0 ? '#ffffff' : '#f8fbff';
       var tip = expandedTip(r);
+      var days = periodDaysCount(r);
       html += '<tr style="background:' + rowBg + ';">' +
+        '<td style="padding:8px 10px;text-align:center;font-weight:800;color:#1e3a8a;border-top:1px solid #dbeafe;" title="ID del periodo">' +
+          esc(periodIdLabel(r)) +
+        '</td>' +
+        '<td style="padding:8px 10px;text-align:center;font-weight:700;color:#334155;border-top:1px solid #dbeafe;" title="' +
+          esc((r.date_start || '') + ' → ' + (r.date_end || '')) +
+        '">' +
+          (days != null ? days : '—') +
+        '</td>' +
         '<td style="padding:8px 10px;font-weight:700;color:#14532d;white-space:nowrap;border-top:1px solid #dbeafe;">' + esc(r.label || '') +
           (r.lookback_expanded
             ? ' <span title="' + esc(tip) + '" style="color:#b45309;cursor:help;">*</span>'
@@ -603,7 +728,7 @@
       '</tr>';
     });
     html += '</tbody></table>';
-    html += '<div style="font-size:11px;color:#64748b;margin-top:6px;">NDVI y NDMI no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). Riego mm = lámina en la franja (% arriba). <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).' +
+    html += '<div style="font-size:11px;color:#64748b;margin-top:6px;">ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI y NDMI no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). Riego mm = lámina en la franja (% arriba). <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).' +
       (cropHa == null ? ' <span style="color:#b45309;">Guarda el polígono con área (ha) para convertir m³ ↔ mm.</span>' : '') +
       '</div>';
     wrap.innerHTML = html;
@@ -1055,7 +1180,57 @@
     });
   }
 
+  function renderRunSelector(state) {
+    var wrap = document.getElementById('lecturaRunsWrap');
+    var sel = document.getElementById('lecturaRunSelect');
+    if (!wrap || !sel) return;
+    var runs = state && Array.isArray(state.runs) ? state.runs : [];
+    if (runs.length < 2) {
+      wrap.style.display = 'none';
+      sel.innerHTML = '';
+      return;
+    }
+    wrap.style.display = 'block';
+    sel.disabled = false;
+    sel.innerHTML = runs
+      .map(function (run, idx) {
+        var tag = run.id === state.activeRunId ? ' (viendo)' : idx === 0 ? '' : '';
+        return (
+          '<option value="' +
+          esc(run.id) +
+          '"' +
+          (run.id === state.activeRunId ? ' selected' : '') +
+          '>' +
+          esc(runLabel(run) + tag) +
+          '</option>'
+        );
+      })
+      .join('');
+  }
+
+  function switchLecturaRun(runId) {
+    var state = loadState();
+    if (!state || !runId) return;
+    var found = (state.runs || []).some(function (r) {
+      return r && r.id === runId;
+    });
+    if (!found) return;
+    state.activeRunId = runId;
+    applyActiveToTop(state);
+    saveState(state);
+    var f = document.getElementById('lecturaFreq');
+    var c = document.getElementById('lecturaCount');
+    var e = document.getElementById('lecturaEndDate');
+    if (f && state.frequency) f.value = state.frequency;
+    if (c && state.periods) c.value = String(state.periods);
+    if (e && state.endDate) e.value = state.endDate;
+    renderAll(state);
+    setStatus('Mostrando bloque: ' + runLabel(getActiveRun(state)));
+    refreshLectura();
+  }
+
   function renderAll(state) {
+    renderRunSelector(state);
     renderTable(state);
     renderChart(state);
     renderGallery(state);
@@ -1263,7 +1438,7 @@
           polygon: coords,
           periods: periods,
           max_dim: 512,
-          max_scenes: 3
+          max_scenes: 6
         })
       });
       var data = await res.json().catch(function () { return {}; });
@@ -1273,36 +1448,78 @@
         return;
       }
       var created = data.periods || [];
-      var prev = loadState() || {};
-      var state = {
+      var prev = ensureRuns(loadState() || {}) || {
+        franja_pct: suggestFranjaPct(),
+        runs: [],
+        activeRunId: null
+      };
+      var franjaKeep = prev.franja_pct != null ? prev.franja_pct : suggestFranjaPct();
+      // Reutilizar riego de periodos con mismas fechas (en cualquier bloque previo).
+      var riegoByKey = {};
+      (prev.runs || []).forEach(function (run) {
+        (run.rows || []).forEach(function (x) {
+          if (!x || !x.date_start || !x.date_end || x.riego_m3 == null) return;
+          riegoByKey[x.date_start + '|' + x.date_end] = x.riego_m3;
+        });
+      });
+      (prev.rows || []).forEach(function (x) {
+        if (!x || !x.date_start || !x.date_end || x.riego_m3 == null) return;
+        riegoByKey[x.date_start + '|' + x.date_end] = x.riego_m3;
+      });
+
+      var newId = newRunId();
+      var nowIso = new Date().toISOString();
+      var newRows = periods.map(function (p) {
+        var match = created.find(function (c) { return Number(c.period_index) === Number(p.index); }) || {};
+        var riegoPrev = riegoByKey[p.date_start + '|' + p.date_end];
+        return {
+          index: p.index,
+          label: p.label,
+          date_start: p.date_start,
+          date_end: p.date_end,
+          frequency: p.frequency,
+          request_id: match.id || null,
+          status: 'pending',
+          ndvi_mean: null, ndmi_mean: null,
+          vpd_mean: null, et0_sum: null, rain_sum: null,
+          vpd_hours_low: null, vpd_hours_opt: null, vpd_hours_high: null,
+          vpd_hours_total: null,
+          vpd_hours_expected: periodHoursExpected(p.date_start, p.date_end),
+          riego_m3: riegoPrev != null ? riegoPrev : null,
+          riego_mm: null,
+          signed_url: null, ndmi_signed_url: null
+        };
+      });
+      var newRun = {
+        id: newId,
+        createdAt: nowIso,
         frequency: freq,
         periods: count,
         endDate: endDate,
-        franja_pct: prev.franja_pct != null ? prev.franja_pct : suggestFranjaPct(),
-        updatedAt: new Date().toISOString(),
-        rows: periods.map(function (p) {
-          var match = created.find(function (c) { return Number(c.period_index) === Number(p.index); }) || {};
-          var prevRow = (prev.rows || []).find(function (x) {
-            return x && x.date_start === p.date_start && x.date_end === p.date_end;
-          });
-          return {
-            index: p.index,
-            label: p.label,
-            date_start: p.date_start,
-            date_end: p.date_end,
-            frequency: p.frequency,
-            request_id: match.id || null,
-            status: 'pending',
-            ndvi_mean: null, ndmi_mean: null,
-            vpd_mean: null, et0_sum: null, rain_sum: null,
-            vpd_hours_low: null, vpd_hours_opt: null, vpd_hours_high: null,
-            vpd_hours_total: null,
-            vpd_hours_expected: periodHoursExpected(p.date_start, p.date_end),
-            riego_m3: prevRow && prevRow.riego_m3 != null ? prevRow.riego_m3 : null,
-            riego_mm: null,
-            signed_url: null, ndmi_signed_url: null
-          };
-        })
+        updatedAt: nowIso,
+        rows: newRows
+      };
+      var runs = Array.isArray(prev.runs) ? prev.runs.slice() : [];
+      // Evitar duplicar si el activo aún no tiene request_ids (reintento vacío).
+      runs = runs.filter(function (r) {
+        if (!r || r.id === newId) return false;
+        var hasData = (r.rows || []).some(function (row) {
+          return row && (row.request_id || row.signed_url || row.ndvi_mean != null);
+        });
+        return hasData;
+      });
+      runs.unshift(newRun);
+      if (runs.length > MAX_LECTURA_RUNS) runs = runs.slice(0, MAX_LECTURA_RUNS);
+
+      var state = {
+        franja_pct: franjaKeep,
+        activeRunId: newId,
+        runs: runs,
+        frequency: freq,
+        periods: count,
+        endDate: endDate,
+        updatedAt: nowIso,
+        rows: newRows
       };
       syncRiegoMmFromM3(state);
       saveState(state);
@@ -1420,6 +1637,12 @@
     if (refBtn) refBtn.addEventListener('click', refreshLectura);
     if (countSel) countSel.addEventListener('change', updateCostHint);
     if (freqSel) freqSel.addEventListener('change', updateCostHint);
+    var runSel = document.getElementById('lecturaRunSelect');
+    if (runSel) {
+      runSel.addEventListener('change', function () {
+        switchLecturaRun(runSel.value);
+      });
+    }
   }
   window.initLecturaSatelital = initLecturaSatelital;
 

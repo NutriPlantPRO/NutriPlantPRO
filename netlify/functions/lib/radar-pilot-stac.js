@@ -138,7 +138,8 @@ async function stacSearch(url, body, headers, attempt) {
 
 /** Mediana corta: hasta N escenas; Pilot busca primero ≤14 d, luego 21, luego 30. */
 const COMPOSITE_LOOKBACK_DAYS = 14;
-const COMPOSITE_MAX_SCENES = 3;
+/** Tope de pasadas por mediana (Sentinel ~cada 5 d → ~6 en 30 d). */
+const COMPOSITE_MAX_SCENES = 6;
 const COMPOSITE_MAX_CLOUD = 35;
 /** Tope duro: no buscar más atrás de 30 días (datos demasiado viejos para el cultivo). */
 const MAX_LOOKBACK_DAYS = 30;
@@ -393,7 +394,7 @@ async function findBestSentinel2Scene(polygon, opts) {
 }
 
 /**
- * Hasta 3 escenas en ventana corta para mediana + SCL (prefiere menos nubes).
+ * Hasta N escenas en ventana corta para mediana + SCL (prefiere menos nubes).
  * Si no hay ninguna, cae al fallback de una sola escena (≤ maxLookbackDays).
  */
 async function findSentinel2ScenesForComposite(polygon, opts) {

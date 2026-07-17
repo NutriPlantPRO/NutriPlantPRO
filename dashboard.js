@@ -1679,7 +1679,7 @@ function sectionTemplate(name) {
           <span id="radarStatusHint" class="radar-hint-info">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
             <strong style="color:#14532d;">Cómo se arma:</strong>
-            hasta 3 pasadas Sentinel en <strong>14 días</strong> (mediana). Si hay nubes → 21 o 30 d. Abajo verás la <strong>fecha</strong> de los datos.
+            hasta <strong>6 pasadas</strong> Sentinel (mediana) en <strong>14 días</strong>. Si el predio queda incompleto (&lt;~85% útiles) → 21 o 30 d. Abajo verás la <strong>fecha</strong> de los datos.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI relativa al predio</span>
@@ -15461,8 +15461,25 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
   let tableRows = '';
   rows.forEach(function (r) {
     const star = r.lookback_expanded ? ' *' : '';
+    const pid =
+      Number.isFinite(Number(r.index)) && Number(r.index) >= 0 ? 'P' + (Number(r.index) + 1) : '—';
+    let days = '—';
+    if (r.date_start && r.date_end) {
+      const a = new Date(String(r.date_start).slice(0, 10) + 'T12:00:00Z');
+      const b = new Date(String(r.date_end).slice(0, 10) + 'T12:00:00Z');
+      if (!isNaN(a.getTime()) && !isNaN(b.getTime())) {
+        const n = Math.round((b.getTime() - a.getTime()) / 86400000) + 1;
+        if (n > 0) days = String(n);
+      }
+    }
     tableRows +=
       '<tr style="border-top:1px solid #e2e8f0;">' +
+      '<td style="padding:6px 8px;text-align:center;font-weight:800;color:#1e3a8a;">' +
+      reportEscapeHtml(pid) +
+      '</td>' +
+      '<td style="padding:6px 8px;text-align:center;font-weight:700;">' +
+      days +
+      '</td>' +
       '<td style="padding:6px 8px;font-weight:700;color:#14532d;white-space:nowrap;">' +
       reportEscapeHtml(String(r.label || '')) +
       star +
@@ -15508,6 +15525,8 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;background:#fff;border:1px solid #93c5fd;border-radius:8px;overflow:hidden;">' +
     '<thead><tr style="background:#dbeafe;color:#1e3a8a;">' +
     [
+      'ID',
+      rtSafe('Días', 'Days'),
       rtSafe('Periodo', 'Period'),
       'NDVI',
       'NDMI',

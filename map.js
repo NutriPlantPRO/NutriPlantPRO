@@ -3797,7 +3797,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     const res = await fetch(np_radarPilotApiUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ polygon, project_id: String(proj.id), async: true, max_dim: 512, max_scenes: 3 })
+      body: JSON.stringify({ polygon, project_id: String(proj.id), async: true, max_dim: 512, max_scenes: 6 })
     });
     const data = await res.json().catch(() => ({}));
 

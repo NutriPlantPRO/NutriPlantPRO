@@ -10022,6 +10022,8 @@
                                       <div style="overflow-x:auto;">
                                         <table style="width:100%;border-collapse:collapse;font-size:12px;">
                                           <thead><tr style="background:#ecfdf5;color:#14532d;">
+                                            <th style="padding:6px 8px;text-align:center;">ID</th>
+                                            <th style="padding:6px 8px;text-align:center;">Días</th>
                                             <th style="padding:6px 8px;text-align:left;">Periodo</th>
                                             <th style="padding:6px 8px;text-align:center;">NDVI</th>
                                             <th style="padding:6px 8px;text-align:center;">NDMI</th>
@@ -10035,7 +10037,19 @@
                                           <tbody>
                                             ${lecturaRows.slice().sort(function(a,b){return (a.index||0)-(b.index||0);}).map(function(r){
                                               function n(v,d){ return (v==null||!Number.isFinite(Number(v)))?'—':Number(v).toFixed(d); }
+                                              var pid = (r.index!=null&&Number.isFinite(Number(r.index))&&Number(r.index)>=0) ? ('P'+(Number(r.index)+1)) : '—';
+                                              var days = '—';
+                                              if (r.date_start && r.date_end) {
+                                                var da = new Date(String(r.date_start).slice(0,10)+'T12:00:00Z');
+                                                var db = new Date(String(r.date_end).slice(0,10)+'T12:00:00Z');
+                                                if (!isNaN(da.getTime()) && !isNaN(db.getTime())) {
+                                                  var dn = Math.round((db.getTime()-da.getTime())/86400000)+1;
+                                                  if (dn > 0) days = String(dn);
+                                                }
+                                              }
                                               return '<tr style="border-top:1px solid #e2e8f0;">'+
+                                                '<td style="padding:6px 8px;text-align:center;font-weight:800;color:#1e3a8a;">'+pid+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;font-weight:700;">'+days+'</td>'+
                                                 '<td style="padding:6px 8px;font-weight:600;color:#14532d;">'+String(r.label||'')+(r.lookback_expanded?' *':'')+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.ndvi_mean,3)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.ndmi_mean,3)+'</td>'+
