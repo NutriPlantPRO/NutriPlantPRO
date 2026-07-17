@@ -139,15 +139,15 @@ async function stacSearch(url, body, headers, attempt) {
 /** Mediana corta: hasta N escenas; Pilot busca primero ≤14 d, luego 21, luego 30. */
 const COMPOSITE_LOOKBACK_DAYS = 14;
 const COMPOSITE_MAX_SCENES = 3;
-const COMPOSITE_MAX_CLOUD = 30;
+const COMPOSITE_MAX_CLOUD = 35;
 /** Tope duro: no buscar más atrás de 30 días (datos demasiado viejos para el cultivo). */
 const MAX_LOOKBACK_DAYS = 30;
 
 /** Pilot sección 1: ventanas cortas primero (14 → 21 → 30 d). */
 const PILOT_COMPOSITE_TIERS = [
-  { days: 14, maxCloud: 30, label: '14d_30pct' },
-  { days: 21, maxCloud: 35, label: '21d_35pct' },
-  { days: 30, maxCloud: 40, label: '30d_40pct' }
+  { days: 14, maxCloud: 35, label: '14d_35pct' },
+  { days: 21, maxCloud: 40, label: '21d_40pct' },
+  { days: 30, maxCloud: 50, label: '30d_50pct' }
 ];
 
 /** Fallback una sola escena (mismas ventanas, nunca más de 30 d). */
@@ -387,7 +387,7 @@ async function findBestSentinel2Scene(polygon, opts) {
     new Error(
       'No hay escenas Sentinel-2 L2A despejadas en los últimos ' +
         maxLb +
-        ' días (probamos 14 d ≤30% nubes, 21 d ≤35%, 30 d ≤40%).'
+        ' días (probamos 14 d ≤35% nubes, 21 d ≤40%, 30 d ≤50%).'
     )
   );
 }

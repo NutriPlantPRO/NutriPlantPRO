@@ -14,9 +14,9 @@ function addDaysIso(isoDate, days) {
 }
 
 const PILOT_LOOKBACK_TIERS = [
-  { days: 14, maxCloud: 30 },
-  { days: 21, maxCloud: 35 },
-  { days: 30, maxCloud: 40 }
+  { days: 14, maxCloud: 35 },
+  { days: 21, maxCloud: 40 },
+  { days: 30, maxCloud: 50 }
 ];
 
 function isPilotCoverageFail(err) {

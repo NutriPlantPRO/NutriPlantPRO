@@ -185,8 +185,8 @@
     </p>
     <ul>
       <li><strong>Cómo se arma la imagen:</strong> Sentinel-2 pasa ~cada 5 días. NutriPlant busca primero en los últimos
-        <strong>14 días</strong> hasta <strong>3 pasadas</strong> claras (con <strong>1 o 2 ya genera</strong>); si no hay
-        cobertura útil amplía a <strong>21</strong> y luego <strong>30 días</strong> (nunca más atrás). Combina con
+        <strong>14 días</strong> (nubes ≤35%) hasta <strong>3 pasadas</strong> claras (con <strong>1 o 2 ya genera</strong>); si no hay
+        cobertura útil amplía a <strong>21</strong> (≤40%) y luego <strong>30 días</strong> (≤50%; nunca más atrás). Combina con
         <strong>mediana por píxel</strong> cuando hay varias escenas. Tras filtrar nubes/sombra (SCL), si el predio queda
         sin cobertura útil (&lt;~15&nbsp;% de píxeles válidos), <strong>no se guarda</strong> una imagen vacía. La meta
         muestra las <strong>fechas satelitales</strong> usadas.</li>
