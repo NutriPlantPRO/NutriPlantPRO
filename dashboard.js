@@ -1634,7 +1634,7 @@ function sectionTemplate(name) {
                 <span class="stat-value" id="perimeterDisplay">0.00 m</span>
               </div>
               <div class="stat-item coordinates">
-                <span class="stat-label">Coordenadas:</span>
+                <span class="stat-label">Centro:</span>
                 <span class="stat-value" id="coordinatesDisplay">No seleccionadas</span>
               </div>
               <div class="stat-item">
@@ -1679,7 +1679,7 @@ function sectionTemplate(name) {
           <span id="radarStatusHint" class="radar-hint-info">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
             <strong style="color:#14532d;">Cómo se arma:</strong>
-            hasta <strong>6 pasadas</strong> Sentinel (mediana) en <strong>14 días</strong>. Si el predio queda incompleto (&lt;~85% útiles) → 21 o 30 d. Abajo verás la <strong>fecha</strong> de los datos.
+            junta hasta <strong>6 pasadas</strong> Sentinel (mediana) para pintar lo máximo posible. Solo para si llega ~100% útiles; si no → 21 o 30 d y guarda lo mejor. Abajo verás la <strong>fecha</strong> de los datos.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI relativa al predio</span>
@@ -11582,11 +11582,25 @@ function np_applyLocationStatsToDOM(location) {
   }
 
   if (coordinatesEl) {
-    if (location.coordinates) {
-      coordinatesEl.textContent = location.coordinates;
-    } else if (location.center && location.center.lat != null && location.center.lng != null) {
+    if (location.center && location.center.lat != null && location.center.lng != null) {
       coordinatesEl.textContent =
         Number(location.center.lat).toFixed(6) + ', ' + Number(location.center.lng).toFixed(6);
+    } else if (Array.isArray(location.polygon) && location.polygon.length >= 3) {
+      let sLat = 0;
+      let sLng = 0;
+      let n = 0;
+      location.polygon.forEach(function (pt) {
+        const lat = Array.isArray(pt) ? Number(pt[0]) : Number(pt && pt.lat);
+        const lng = Array.isArray(pt) ? Number(pt[1]) : Number(pt && pt.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        sLat += lat;
+        sLng += lng;
+        n += 1;
+      });
+      coordinatesEl.textContent =
+        n > 0 ? (sLat / n).toFixed(6) + ', ' + (sLng / n).toFixed(6) : 'No seleccionadas';
+    } else if (typeof location.coordinates === 'string' && location.coordinates.trim()) {
+      coordinatesEl.textContent = location.coordinates;
     } else {
       coordinatesEl.textContent = 'No seleccionadas';
     }
@@ -15499,11 +15513,11 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       '<td style="padding:6px 8px;text-align:center;">' +
       fmt(r.rain_sum, 1) +
       '</td>' +
-      '<td style="padding:6px 8px;text-align:center;">' +
-      fmt(r.riego_m3, 1) +
-      '</td>' +
-      '<td style="padding:6px 8px;text-align:center;">' +
+      '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-left:3px solid #0d9488;">' +
       fmt(r.riego_mm, 1) +
+      '</td>' +
+      '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-right:3px solid #0d9488;">' +
+      fmt(r.riego_m3, 1) +
       '</td>' +
       '</tr>';
   });
@@ -15516,6 +15530,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     Number.isFinite(Number(currentProject.location.areaHectares))
       ? Number(currentProject.location.areaHectares)
       : null;
+  const riegoMmHeader = rtSafe('Riego mm', 'Irrigation mm');
   const riegoM3Header =
     areaHa != null
       ? rtSafe('Riego m³ / ' + areaHa.toFixed(2) + ' ha', 'Irrigation m³ / ' + areaHa.toFixed(2) + ' ha')
@@ -15525,19 +15540,31 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;background:#fff;border:1px solid #93c5fd;border-radius:8px;overflow:hidden;">' +
     '<thead><tr style="background:#dbeafe;color:#1e3a8a;">' +
     [
-      'ID',
-      rtSafe('Días', 'Days'),
-      rtSafe('Periodo', 'Period'),
-      'NDVI',
-      'NDMI',
-      'VPD',
-      rtSafe('ET₀ acum mm', 'ET₀ sum mm'),
-      rtSafe('Lluvia acum mm', 'Rain sum mm'),
-      riegoM3Header,
-      rtSafe('Riego mm', 'Irrigation mm')
+      { h: 'ID', st: '' },
+      { h: rtSafe('Días', 'Days'), st: '' },
+      { h: rtSafe('Periodo', 'Period'), st: '' },
+      { h: 'NDVI', st: '' },
+      { h: 'NDMI', st: '' },
+      { h: 'VPD', st: '' },
+      { h: rtSafe('ET₀ acum mm', 'ET₀ sum mm'), st: '' },
+      { h: rtSafe('Lluvia acum mm', 'Rain sum mm'), st: '' },
+      {
+        h: riegoMmHeader,
+        st: 'background:#ecfdf5;color:#115e59;border-left:3px solid #0d9488;'
+      },
+      {
+        h: riegoM3Header,
+        st: 'background:#ecfdf5;color:#115e59;border-right:3px solid #0d9488;'
+      }
     ]
-      .map(function (h) {
-        return '<th style="padding:6px 8px;text-align:center;white-space:nowrap;border:1px solid #93c5fd;">' + h + '</th>';
+      .map(function (item) {
+        return (
+          '<th style="padding:6px 8px;text-align:center;white-space:nowrap;border:1px solid #93c5fd;' +
+          item.st +
+          '">' +
+          item.h +
+          '</th>'
+        );
       })
       .join('') +
     '</tr></thead><tbody>' +
@@ -15647,9 +15674,24 @@ function createLocationSectionHTML(chartImages, rt, lang) {
   const areaValue = location.areaHectares != null ? `${reportNum(location.areaHectares, 2)} ha` : (location.surface || 'No disponible');
   const perimeterValue = location.perimeterDisplay || (location.perimeter != null ? `${reportNum(location.perimeter, 2)} m` : 'No disponible');
   const altitudeValue = Number.isFinite(Number(location.elevationM)) ? `${Math.round(Number(location.elevationM))} msnm` : 'No disponible';
-  const center = location.center && Number.isFinite(location.center.lat) && Number.isFinite(location.center.lng)
-    ? `${reportNum(location.center.lat, 6)}, ${reportNum(location.center.lng, 6)}`
-    : 'No disponible';
+  const center =
+    location.center && Number.isFinite(location.center.lat) && Number.isFinite(location.center.lng)
+      ? `${reportNum(location.center.lat, 6)}, ${reportNum(location.center.lng, 6)}`
+      : (function () {
+          if (!hasPolygon) return 'No disponible';
+          let sLat = 0;
+          let sLng = 0;
+          let n = 0;
+          polygon.forEach(function (coord) {
+            const lat = Array.isArray(coord) ? Number(coord[0]) : null;
+            const lng = Array.isArray(coord) && coord.length > 1 ? Number(coord[1]) : null;
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+            sLat += lat;
+            sLng += lng;
+            n += 1;
+          });
+          return n > 0 ? `${reportNum(sLat / n, 6)}, ${reportNum(sLng / n, 6)}` : 'No disponible';
+        })();
   const compactCoordinates = hasPolygon
     ? polygon.slice(0, 6).map((coord, idx) => {
         const lat = Array.isArray(coord) && coord.length > 0 ? Number(coord[0]) : null;

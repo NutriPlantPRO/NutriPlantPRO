@@ -727,6 +727,11 @@ exports.handler = async (event) => {
       const lowCoverage = /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
         String(meta.error_message || '')
       );
+      const incomplete = !!(
+        meta.image_incomplete ||
+        meta.error_code === 'radar_incomplete_coverage'
+      );
+      const omitted = !!(meta.image_omitted && !row.image_storage_path);
       items.push({
         id,
         status,
@@ -746,8 +751,29 @@ exports.handler = async (event) => {
         scene_count: meta.scene_count != null ? meta.scene_count : null,
         lookback_expanded: !!meta.lookback_expanded,
         expanded_to: meta.expanded_to || null,
-        error_message: status === 'error' ? (meta.error_message || 'Error') : null,
-        error_code: status === 'error' && lowCoverage ? 'radar_low_coverage' : null,
+        image_omitted: omitted,
+        image_incomplete: incomplete && !omitted,
+        incomplete_reason:
+          meta.incomplete_reason ||
+          (incomplete ? meta.status_message : null) ||
+          null,
+        omit_reason: omitted ? meta.omit_reason || meta.status_message || null : null,
+        error_message:
+          status === 'error'
+            ? meta.error_message || 'Error'
+            : omitted
+              ? meta.omit_reason || meta.status_message || null
+              : incomplete
+                ? meta.incomplete_reason || meta.status_message || null
+                : null,
+        error_code:
+          status === 'error' && lowCoverage
+            ? 'radar_low_coverage'
+            : omitted
+              ? 'radar_incomplete_coverage'
+              : incomplete
+                ? 'radar_incomplete_coverage'
+                : null,
         signed_url: signedUrl,
         ndmi_signed_url: ndmiSignedUrl
       });

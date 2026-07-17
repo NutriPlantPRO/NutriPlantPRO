@@ -9977,9 +9977,21 @@
                                         ${location.polygon && location.polygon.length 
                                             ? `<div><strong style="color: #1e293b;">Vértices:</strong><br><span style="color: #64748b; font-size: 14px;">${location.polygon.length} puntos</span></div>` 
                                             : ''}
-                                        ${location.center && location.center.lat && location.center.lng 
-                                            ? `<div><strong style="color: #1e293b;">Centro:</strong><br><span style="color: #64748b; font-size: 12px; font-family: monospace;">${location.center.lat.toFixed(6)}, ${location.center.lng.toFixed(6)}</span></div>` 
-                                            : ''}
+                                        ${location.center && location.center.lat != null && location.center.lng != null && Number.isFinite(Number(location.center.lat)) && Number.isFinite(Number(location.center.lng))
+                                            ? `<div><strong style="color: #1e293b;">Centro:</strong><br><span style="color: #64748b; font-size: 12px; font-family: monospace;">${Number(location.center.lat).toFixed(6)}, ${Number(location.center.lng).toFixed(6)}</span></div>`
+                                            : (hasPolygon ? (function () {
+                                                var sLat = 0, sLng = 0, n = 0;
+                                                location.polygon.forEach(function (pt) {
+                                                    var lat = Array.isArray(pt) ? Number(pt[0]) : Number(pt && pt.lat);
+                                                    var lng = Array.isArray(pt) ? Number(pt[1]) : Number(pt && pt.lng);
+                                                    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+                                                    sLat += lat; sLng += lng; n += 1;
+                                                });
+                                                if (!n) return '';
+                                                return '<div><strong style="color: #1e293b;">Centro:</strong><br><span style="color: #64748b; font-size: 12px; font-family: monospace;">' +
+                                                    (sLat / n).toFixed(6) + ', ' + (sLng / n).toFixed(6) + '</span></div>';
+                                            })() : '')
+                                        }
                     </div>
                                     <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
                                     <button onclick="showMapModalForProject('${project.id}')" 
@@ -10030,8 +10042,8 @@
                                             <th style="padding:6px 8px;text-align:center;">VPD</th>
                                             <th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th>
                                             <th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>
-                                            <th style="padding:6px 8px;text-align:center;">Riego m³</th>
-                                            <th style="padding:6px 8px;text-align:center;">Riego mm</th>
+                                            <th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-left:3px solid #0d9488;" title="Mismo riego que m³">Riego mm</th>
+                                            <th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-right:3px solid #0d9488;" title="Mismo riego que mm">Riego m³</th>
                                             <th style="padding:6px 8px;text-align:center;">Estado</th>
                                           </tr></thead>
                                           <tbody>
@@ -10056,8 +10068,8 @@
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.vpd_mean,2)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.et0_sum,1)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.rain_sum,1)+'</td>'+
-                                                '<td style="padding:6px 8px;text-align:center;">'+n(r.riego_m3,1)+'</td>'+
-                                                '<td style="padding:6px 8px;text-align:center;">'+n(r.riego_mm,1)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-left:3px solid #0d9488;">'+n(r.riego_mm,1)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-right:3px solid #0d9488;">'+n(r.riego_m3,1)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+String(r.status||'—')+'</td>'+
                                               '</tr>';
                                             }).join('')}
@@ -12534,15 +12546,29 @@
                 `;
                 
                 userProjects.forEach((project, index) => {
-                    // 📍 OBTENER COORDENADAS DEL POLÍGONO: Del primer punto del polígono si existe
+                    // Centro del polígono (mismo criterio que Radar / Lectura / clima).
                     let locationText = 'No especificado';
                     if (project.location && typeof project.location === 'object') {
-                        if (project.location.polygon && Array.isArray(project.location.polygon) && project.location.polygon.length > 0) {
-                            const firstPoint = project.location.polygon[0];
-                            if (Array.isArray(firstPoint) && firstPoint.length >= 2) {
-                                // Formato: lat, lng (coordenadas del polígono)
-                                locationText = `${firstPoint[0].toFixed(6)}, ${firstPoint[1].toFixed(6)}`;
+                        const loc = project.location;
+                        if (loc.center && loc.center.lat != null && loc.center.lng != null) {
+                            const clat = Number(loc.center.lat);
+                            const clng = Number(loc.center.lng);
+                            if (Number.isFinite(clat) && Number.isFinite(clng)) {
+                                locationText = clat.toFixed(6) + ', ' + clng.toFixed(6);
                             }
+                        } else if (loc.polygon && Array.isArray(loc.polygon) && loc.polygon.length > 0) {
+                            let sLat = 0;
+                            let sLng = 0;
+                            let n = 0;
+                            loc.polygon.forEach(function (pt) {
+                                const lat = Array.isArray(pt) ? Number(pt[0]) : Number(pt && pt.lat);
+                                const lng = Array.isArray(pt) ? Number(pt[1]) : Number(pt && pt.lng);
+                                if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+                                sLat += lat;
+                                sLng += lng;
+                                n += 1;
+                            });
+                            if (n > 0) locationText = (sLat / n).toFixed(6) + ', ' + (sLng / n).toFixed(6);
                         }
                     }
                     
@@ -12553,7 +12579,7 @@
                                     <h4 style="margin: 0 0 8px 0; color: #1e293b; font-size: 16px;">${escapeHtml(project.name || 'Sin nombre')}</h4>
                                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 8px; font-size: 13px; color: #64748b;">
                                         <div><strong>Cultivo:</strong> ${escapeHtml(project.crop_type || 'N/A')}</div>
-                                        <div><strong>Ubicación:</strong> <span style="font-family: monospace; font-size: 12px;">${escapeHtml(locationText)}</span></div>
+                                        <div><strong>Centro:</strong> <span style="font-family: monospace; font-size: 12px;">${escapeHtml(locationText)}</span></div>
                                         <div><strong>Mensajes Chat:</strong> ${project.chat_messages || 0}</div>
                                         <div><strong>Creado:</strong> ${project.created_at ? new Date(project.created_at).toLocaleDateString('es-MX') : 'N/A'}</div>
                                         <div><strong>Actualizado:</strong> ${project.updated_at ? new Date(project.updated_at).toLocaleDateString('es-MX') : 'N/A'}</div>
@@ -13144,8 +13170,8 @@
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.vpd_mean, 2) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.et0_sum, 1) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.rain_sum, 1) + '</td>' +
-                    '<td style="padding:6px 8px;text-align:center;">' + fmt(r.riego_m3, 1) + '</td>' +
-                    '<td style="padding:6px 8px;text-align:center;">' + fmt(r.riego_mm, 1) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-left:3px solid #0d9488;">' + fmt(r.riego_mm, 1) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;background:#f0fdfa;border-right:3px solid #0d9488;">' + fmt(r.riego_m3, 1) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + esc(st) + '</td></tr>';
             }).join('');
 
@@ -13228,7 +13254,9 @@
                 '<thead><tr style="background:#ecfdf5;color:#14532d;">' +
                 '<th style="padding:6px 8px;text-align:left;">Periodo</th><th style="padding:6px 8px;text-align:center;">NDVI</th><th style="padding:6px 8px;text-align:center;">NDMI</th>' +
                 '<th style="padding:6px 8px;text-align:center;">VPD</th><th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th><th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>' +
-                '<th style="padding:6px 8px;text-align:center;">Riego m³</th><th style="padding:6px 8px;text-align:center;">Riego mm</th><th style="padding:6px 8px;text-align:center;">Estado</th>' +
+                '<th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-left:3px solid #0d9488;" title="Mismo riego que m³">Riego mm</th>' +
+                '<th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-right:3px solid #0d9488;" title="Mismo riego que mm">Riego m³</th>' +
+                '<th style="padding:6px 8px;text-align:center;">Estado</th>' +
                 '</tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
                 chartHtml +
                 (gallery

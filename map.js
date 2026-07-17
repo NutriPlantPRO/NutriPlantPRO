@@ -896,9 +896,25 @@ class NutriPlantMap {
 
     if (coordinatesDisplay) {
       if (shouldShowData && belongsToCurrentProject && this.coordinates && this.coordinates.length > 0) {
-        // Mostrar solo el primer punto para términos prácticos
-        const firstCoord = `${this.coordinates[0][0].toFixed(4)}, ${this.coordinates[0][1].toFixed(4)}`;
-        coordinatesDisplay.textContent = firstCoord;
+        // Mostrar centro del polígono (mismo punto que clima / Lectura / altitud).
+        let center = this.getPolygonCenter();
+        if (!center && this.coordinates.length >= 1) {
+          let sLat = 0;
+          let sLng = 0;
+          let n = 0;
+          this.coordinates.forEach((c) => {
+            const lat = Number(Array.isArray(c) ? c[0] : c && c.lat);
+            const lng = Number(Array.isArray(c) ? c[1] : c && c.lng);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+            sLat += lat;
+            sLng += lng;
+            n += 1;
+          });
+          if (n > 0) center = { lat: sLat / n, lng: sLng / n };
+        }
+        coordinatesDisplay.textContent = center
+          ? `${Number(center.lat).toFixed(6)}, ${Number(center.lng).toFixed(6)}`
+          : 'No seleccionadas';
       } else {
         coordinatesDisplay.textContent = 'No seleccionadas';
       }

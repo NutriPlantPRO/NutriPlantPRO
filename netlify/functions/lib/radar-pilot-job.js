@@ -44,8 +44,11 @@ const PILOT_LOOKBACK_TIERS = [
   { days: 30, maxCloud: 50 }
 ];
 
-/** Meta: ampliar ventana / usar más pasadas hasta ~85% útiles (o lo mejor en ≤30 d). */
-const PILOT_TARGET_VALID_FRACTION = 0.85;
+/**
+ * Solo se corta antes si el predio quedó prácticamente completo (~100%).
+ * Si no, sigue juntando hasta 6 pasadas y ampliando 14→21→30 d; al final guarda lo mejor.
+ */
+const PILOT_TARGET_VALID_FRACTION = 0.995;
 
 function isPilotCoverageFail(err) {
   return /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
@@ -61,47 +64,75 @@ function pilotCoverageScore(rendered) {
   return 0;
 }
 
+function pilotSceneCount(bundle) {
+  if (bundle && Number.isFinite(Number(bundle.sceneCount))) return Number(bundle.sceneCount);
+  if (bundle && Array.isArray(bundle.scenes)) return bundle.scenes.length;
+  return 0;
+}
+
 /**
- * Por ventana (14 → 21 → 30 d) junta hasta 6 pasadas (mediana) para rellenar huecos.
- * Si ya llega a ~85% útiles, se queda. Si no, prueba el siguiente nivel.
- * Al final guarda la MEJOR imagen (nunca vacío si ≥~15%).
+ * Maximiza cobertura: hasta 6 pasadas por ventana (14 → 21 → 30 d).
+ * Solo para si llega ~100%. Si no, prueba más nubes/pasadas y la siguiente ventana.
+ * Al final guarda la MEJOR (ej. 89%), nunca vacío si ≥~15%.
  */
 async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierMessage) {
   let lastErr = null;
   let best = null;
   let bestScore = -1;
   let bestTierIndex = -1;
+  let bestScenes = -1;
   const sceneCap = Math.min(Math.max(Number(maxScenes) || 6, 1), 6);
+
+  const consider = (bundle, rendered, tierIndex) => {
+    const score = pilotCoverageScore(rendered);
+    const scenes = pilotSceneCount(bundle);
+    const better =
+      score > bestScore + 0.0005 ||
+      (Math.abs(score - bestScore) <= 0.0005 && scenes > bestScenes);
+    if (better) {
+      best = { bundle, rendered, lookbackExpanded: tierIndex > 0 };
+      bestScore = score;
+      bestTierIndex = tierIndex;
+      bestScenes = scenes;
+    }
+    return score;
+  };
 
   for (let i = 0; i < PILOT_LOOKBACK_TIERS.length; i++) {
     const tier = PILOT_LOOKBACK_TIERS[i];
-    try {
-      if (typeof onTierMessage === 'function') {
-        await onTierMessage(tier.days, sceneCap);
+    const cloudAttempts = [
+      { maxCloud: tier.maxCloud, candidateLimit: Math.max(20, sceneCap * 3) },
+      // Si con el umbral estricto solo salieron 1–2 pasadas, abrir nubes para juntar hasta 6.
+      { maxCloud: 60, candidateLimit: Math.max(30, sceneCap * 5) }
+    ];
+
+    for (let ci = 0; ci < cloudAttempts.length; ci++) {
+      const cloudOpts = cloudAttempts[ci];
+      try {
+        if (typeof onTierMessage === 'function') {
+          await onTierMessage(tier.days, sceneCap, ci > 0);
+        }
+        const bundle = await findSentinel2ScenesForComposite(polygon, {
+          maxScenes: sceneCap,
+          lookbackDays: tier.days,
+          maxCloud: cloudOpts.maxCloud,
+          maxLookbackDays: tier.days,
+          candidateLimit: cloudOpts.candidateLimit
+        });
+        const rendered = await renderNdviNdmiCompositePngs(
+          { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
+          { maxDim }
+        );
+        const score = consider(bundle, rendered, i);
+        if (score >= PILOT_TARGET_VALID_FRACTION) {
+          return { bundle, rendered, lookbackExpanded: i > 0 };
+        }
+        // Ya tenemos casi el tope de pasadas en esta ventana → pasar a 21/30 d.
+        if (pilotSceneCount(bundle) >= sceneCap) break;
+      } catch (e) {
+        lastErr = e;
+        if (!isPilotCoverageFail(e)) throw e;
       }
-      const bundle = await findSentinel2ScenesForComposite(polygon, {
-        maxScenes: sceneCap,
-        lookbackDays: tier.days,
-        maxCloud: tier.maxCloud,
-        maxLookbackDays: tier.days,
-        candidateLimit: Math.max(20, sceneCap * 3)
-      });
-      const rendered = await renderNdviNdmiCompositePngs(
-        { scenes: bundle.scenes, bbox4326: bundle.bbox, polygon },
-        { maxDim }
-      );
-      const score = pilotCoverageScore(rendered);
-      if (score > bestScore) {
-        best = { bundle, rendered, lookbackExpanded: i > 0 };
-        bestScore = score;
-        bestTierIndex = i;
-      }
-      if (score >= PILOT_TARGET_VALID_FRACTION) {
-        return { bundle, rendered, lookbackExpanded: i > 0 };
-      }
-    } catch (e) {
-      lastErr = e;
-      if (!isPilotCoverageFail(e)) throw e;
     }
   }
 
@@ -512,10 +543,11 @@ async function processPilotJob(supabase, requestId, userId) {
         return { b, r };
       };
 
-      // Igual que Pilot: meta ~85%, juntar hasta 6 pasadas, siempre guardar la mejor.
+      // Igual que Pilot: juntar hasta 6 pasadas, meta ~100%; si no, ampliar y guardar lo mejor.
       // Quincenal incompleta → solo ESE periodo amplía al mes calendario (clima sigue en 15 d).
       let best = null;
       let bestScore = -1;
+      let bestScenes = -1;
       let lastErr = null;
       let bestExpanded = false;
       let bestSearchStart = dateStart;
@@ -523,9 +555,14 @@ async function processPilotJob(supabase, requestId, userId) {
 
       const consider = (out, expanded, searchStart, searchEnd) => {
         const score = pilotCoverageScore(out.r);
-        if (score > bestScore) {
+        const scenes = pilotSceneCount(out.b);
+        const better =
+          score > bestScore + 0.0005 ||
+          (Math.abs(score - bestScore) <= 0.0005 && scenes > bestScenes);
+        if (better) {
           best = out;
           bestScore = score;
+          bestScenes = scenes;
           bestExpanded = !!expanded;
           bestSearchStart = searchStart;
           bestSearchEnd = searchEnd;
@@ -533,7 +570,7 @@ async function processPilotJob(supabase, requestId, userId) {
         return score;
       };
 
-      const looseExtra = { maxCloud: 60, candidateLimit: Math.max(30, maxScenes * 4) };
+      const looseExtra = { maxCloud: 60, candidateLimit: Math.max(30, maxScenes * 5) };
       const attempts = [
         {
           start: dateStart,
@@ -556,8 +593,8 @@ async function processPilotJob(supabase, requestId, userId) {
           expanded: false,
           message:
             frequency === 'mensual'
-              ? 'Mes incompleto: reintentando con hasta ' + maxScenes + ' escenas más claras…'
-              : 'Quincena incompleta: reintentando con hasta ' + maxScenes + ' escenas más claras…'
+              ? 'Buscando más pasadas (hasta ' + maxScenes + ') con umbral de nubes más amplio…'
+              : 'Quincena: buscando más pasadas (hasta ' + maxScenes + ') para completar el predio…'
         }
       ];
 
@@ -582,7 +619,7 @@ async function processPilotJob(supabase, requestId, userId) {
           extra: looseExtra,
           expanded: true,
           message:
-            'Quincena incompleta (<~85% útiles): ampliando SOLO este periodo al mes ' +
+            'Predio incompleto: ampliando SOLO este periodo al mes ' +
             monthWin.startIso +
             ' → ' +
             monthWin.endIso +
@@ -598,9 +635,8 @@ async function processPilotJob(supabase, requestId, userId) {
 
       for (let ai = 0; ai < attempts.length; ai++) {
         const att = attempts[ai];
-        // Si ya tenemos buena cobertura en el periodo, no ampliar al mes.
+        // Solo deja de ampliar si ya está ~100% completo.
         if (att.expanded && bestScore >= PILOT_TARGET_VALID_FRACTION) break;
-        // El 2º intento (mismas fechas, más nubes) solo si el 1º no llegó a la meta.
         if (ai === 1 && bestScore >= PILOT_TARGET_VALID_FRACTION) continue;
         try {
           if (att.message) {
@@ -611,7 +647,7 @@ async function processPilotJob(supabase, requestId, userId) {
           }
           const out = await renderRange(att.start, att.end, att.extra);
           const score = consider(out, att.expanded, att.start, att.end);
-          if (!att.expanded && score >= PILOT_TARGET_VALID_FRACTION) break;
+          if (score >= PILOT_TARGET_VALID_FRACTION) break;
         } catch (e) {
           lastErr = e;
           if (!isCoverageFail(e)) throw e;
@@ -629,20 +665,30 @@ async function processPilotJob(supabase, requestId, userId) {
         searchDateEnd: bestSearchEnd
       };
     } else {
-      const pilotOut = await renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, async (days, sceneCap) => {
-        const n = sceneCap != null ? sceneCap : 6;
-        await patchJobMeta(supabase, requestId, userId, {
-          status: 'processing',
-          status_message:
-            days <= 14
-              ? 'Juntando hasta ' + n + ' pasadas en ' + days + ' días para completar el predio…'
-              : 'Predio incompleto: ampliando a ' +
-                days +
-                ' días y juntando hasta ' +
+      const pilotOut = await renderPilotCompositeWithTiers(
+        polygon,
+        maxScenes,
+        maxDim,
+        async (days, sceneCap, looseCloud) => {
+          const n = sceneCap != null ? sceneCap : 6;
+          await patchJobMeta(supabase, requestId, userId, {
+            status: 'processing',
+            status_message: looseCloud
+              ? 'Buscando más pasadas (hasta ' +
                 n +
-                ' pasadas…'
-        });
-      });
+                ') en ' +
+                days +
+                ' d con umbral de nubes más amplio…'
+              : days <= 14
+                ? 'Juntando hasta ' + n + ' pasadas en ' + days + ' días para maximizar cobertura…'
+                : 'Predio incompleto: ampliando a ' +
+                  days +
+                  ' días y juntando hasta ' +
+                  n +
+                  ' pasadas…'
+          });
+        }
+      );
       bundle = pilotOut.bundle;
       rendered = pilotOut.rendered;
       lookbackExpanded = pilotOut.lookbackExpanded;
@@ -665,29 +711,48 @@ async function processPilotJob(supabase, requestId, userId) {
       ? bundle.sceneDates.join(', ')
       : null;
 
+    const validPct =
+      rendered.coverage?.valid_pct != null ? Number(rendered.coverage.valid_pct) : null;
+    const sceneCount = Number(bundle.sceneCount) || (Array.isArray(bundle.scenes) ? bundle.scenes.length : 0);
+    const coverageScore = pilotCoverageScore(rendered);
+    // Lectura: si no está ~completa, igual publica la imagen (mejor esfuerzo) y explica el porqué.
+    const lecturaIncomplete =
+      isLectura && coverageScore < PILOT_TARGET_VALID_FRACTION;
+    const incompleteReason = lecturaIncomplete
+      ? 'Imagen incompleta por nubosidad — útiles ' +
+        (Number.isFinite(validPct) ? validPct : Math.round(coverageScore * 1000) / 10) +
+        '% con ' +
+        sceneCount +
+        ' pasada' +
+        (sceneCount === 1 ? '' : 's') +
+        ' Sentinel (meta ~100% del predio con dato válido).'
+      : null;
+
     const meta = {
       ...(job.meta || {}),
       pilot: true,
       engine: 'cdse_pilot',
       async: true,
       status: 'done',
-      status_message: isLectura
-        ? lookbackExpanded
-          ? 'Imagen Lectura guardada. Periodo (clima/riego): ' +
-            periodStartMeta +
-            ' – ' +
-            periodEndMeta +
-            ' · Búsqueda imagen: mes ' +
-            searchStartMeta +
-            ' → ' +
-            searchEndMeta +
-            (sceneDatesLabel ? ' · Sentinel: ' + sceneDatesLabel : '')
-          : 'Imagen Lectura guardada. Periodo: ' +
-            periodStartMeta +
-            ' – ' +
-            periodEndMeta +
-            (sceneDatesLabel ? ' · Sentinel: ' + sceneDatesLabel : '')
-        : 'Imagen Pilot guardada en la nube.',
+      status_message: lecturaIncomplete
+        ? incompleteReason
+        : isLectura
+          ? lookbackExpanded
+            ? 'Imagen Lectura guardada. Periodo (clima/riego): ' +
+              periodStartMeta +
+              ' – ' +
+              periodEndMeta +
+              ' · Búsqueda imagen: mes ' +
+              searchStartMeta +
+              ' → ' +
+              searchEndMeta +
+              (sceneDatesLabel ? ' · Sentinel: ' + sceneDatesLabel : '')
+            : 'Imagen Lectura guardada. Periodo: ' +
+              periodStartMeta +
+              ' – ' +
+              periodEndMeta +
+              (sceneDatesLabel ? ' · Sentinel: ' + sceneDatesLabel : '')
+          : 'Imagen Pilot guardada en la nube.',
       provider: bundle.provider,
       source: bundle.provider === 'cdse' ? 'CDSE/sentinel-2-l2a' : 'PlanetaryComputer/sentinel-2-l2a',
       date_start: bundle.dateStart,
@@ -700,7 +765,7 @@ async function processPilotJob(supabase, requestId, userId) {
       avg_cloud_cover: bundle.avgCloudCover != null ? bundle.avgCloudCover : null,
       scene_dates: bundle.sceneDates || null,
       coverage: rendered.coverage || null,
-      valid_pct: rendered.coverage?.valid_pct != null ? rendered.coverage.valid_pct : null,
+      valid_pct: validPct,
       ndvi_mean: rendered.ndviMean != null ? rendered.ndviMean : null,
       ndmi_mean: rendered.ndmiMean != null ? rendered.ndmiMean : null,
       lookback_expanded: lookbackExpanded,
@@ -717,6 +782,11 @@ async function processPilotJob(supabase, requestId, userId) {
       ndvi_vis: { style: 'relative_p10_p90', scale: 'predio' },
       ndmi_vis: { style: 'relative_p10_p90', scale: 'predio' },
       vis: rendered.vis,
+      image_omitted: false,
+      image_incomplete: !!lecturaIncomplete,
+      incomplete_reason: incompleteReason,
+      omit_reason: null,
+      error_code: null,
       ndmi_storage_path: ndmiStoragePath,
       completed_at: new Date().toISOString(),
       images: {

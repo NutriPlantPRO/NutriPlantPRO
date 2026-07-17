@@ -433,7 +433,8 @@
           '</div>' +
           '<div style="font-size:11px;color:#334155;line-height:1.45;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
             '<strong style="color:#14532d;">Cómo se arma:</strong> ' +
-            'hasta <strong>6 pasadas</strong> Sentinel (mediana), meta ~85% útiles. Si una <strong>quincena</strong> queda incompleta, solo ese periodo amplía al <strong>mes calendario</strong> (*); clima/riego siguen en los 15 días. ' +
+            'junta hasta <strong>6 pasadas</strong> Sentinel (mediana). Si el periodo queda incompleto (&lt;~100% útiles) <strong>igual muestra la imagen</strong> y explica nubosidad + % + pasadas; solo si no hay cobertura mínima (&lt;~15%) no hay imagen y solo el motivo. Clima/riego sí quedan. ' +
+            'Las imágenes se generan <strong>en la nube en segundo plano</strong> (igual que Pilot): puedes cerrar y luego pulsar «Mostrar NDVI/NDMI». ' +
             '<strong>Costo:</strong> 3 créditos (4 si predio &gt;30 ha) por toda la consulta.' +
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;">' +
@@ -588,13 +589,58 @@
     return Number(v).toFixed(dec == null ? 2 : dec);
   }
   function statusBadge(row) {
-    if (row.status === 'done') return '<span style="color:#166534;font-weight:700;">✔ Lista</span>';
+    var hasImg = !!(row.signed_url || row.ndmi_signed_url);
+    // Sin cobertura mínima: no hay imagen, solo motivo.
+    if (row.image_omitted || (row.status === 'error' && row.error_code === 'radar_low_coverage' && !hasImg)) {
+      var whyOnly =
+        row.omit_reason ||
+        row.error_message ||
+        'Sin imagen por cobertura insuficiente (nubosidad).';
+      return (
+        '<span style="color:#b45309;font-weight:700;cursor:help;" title="' +
+        esc(whyOnly) +
+        '">⚠ Sin imagen</span>'
+      );
+    }
     if (row.status === 'error') {
       return '<span style="color:#b45309;font-weight:700;" title="' + esc(row.error_message || '') + '">⚠ ' +
         (row.error_code === 'radar_low_coverage' ? 'Nublado' : 'Error') + '</span>';
     }
+    // Imagen publicada aunque incompleta: se muestra + porqué.
+    if (hasImg && (row.image_incomplete || row.error_code === 'radar_incomplete_coverage')) {
+      var whyInc =
+        row.incomplete_reason ||
+        row.error_message ||
+        'Imagen incompleta por nubosidad.';
+      return (
+        '<span style="color:#166534;font-weight:700;">✔ Lista</span>' +
+        ' <span style="color:#b45309;font-weight:700;cursor:help;" title="' +
+        esc(whyInc) +
+        '">· incompleta</span>'
+      );
+    }
+    if (row.status === 'done') return '<span style="color:#166534;font-weight:700;">✔ Lista</span>';
     if (row.status === 'not_found') return '<span style="color:#94a3b8;">—</span>';
     return '<span style="color:#0369a1;font-weight:700;">⏳ Generando…</span>';
+  }
+  function incompleteImageReason(r) {
+    if (r && (r.incomplete_reason || r.omit_reason || r.error_message)) {
+      return r.incomplete_reason || r.omit_reason || r.error_message;
+    }
+    if (!r) return '';
+    var pct = r.valid_pct != null ? r.valid_pct : null;
+    var n = r.scene_count != null ? r.scene_count : null;
+    return (
+      'Imagen incompleta por nubosidad — útiles ' +
+      (pct != null ? pct + '%' : '—') +
+      (n != null ? ' con ' + n + ' pasada' + (n === 1 ? '' : 's') + ' Sentinel' : '') +
+      '.'
+    );
+  }
+  function omitImageReason(r) {
+    if (r && r.omit_reason) return r.omit_reason;
+    if (r && r.error_message && r.image_omitted) return r.error_message;
+    return incompleteImageReason(r).replace(/^Imagen incompleta/, 'Sin imagen');
   }
   function periodIdLabel(r) {
     var idx = Number(r && r.index);
@@ -634,29 +680,43 @@
     '</div>';
 
     var unitBox =
-      'display:inline-block;padding:1px 6px;margin:0 1px;border:1px solid #2563eb;border-radius:5px;' +
-      'background:#eff6ff;color:#1d4ed8;font-weight:800;font-size:11px;line-height:1.35;';
+      'display:inline-block;padding:1px 6px;margin:0 1px;border:1px solid #0f766e;border-radius:5px;' +
+      'background:#ccfbf1;color:#115e59;font-weight:800;font-size:11px;line-height:1.35;';
     var haLabel = cropHa != null ? fmtNum(cropHa, 2) + ' ha' : '— ha';
-    var riegoM3Header =
-      'Riego <span style="' + unitBox + '">m³</span> / ' + haLabel;
     var riegoMmHeader =
       'Riego <span style="' + unitBox + '">mm</span>';
+    var riegoM3Header =
+      'Riego <span style="' + unitBox + '">m³</span> / ' + haLabel;
+
+    // mm primero (junto a ET₀/lluvia); m³ después — mismo riego, dos unidades.
+    var riegoThL =
+      'padding:9px 10px;text-align:center;white-space:nowrap;background:#ecfdf5;color:#115e59;' +
+      'border:1px solid #5eead4;border-left:3px solid #0d9488;font-weight:800;font-size:12px;';
+    var riegoThR =
+      'padding:9px 10px;text-align:center;white-space:nowrap;background:#ecfdf5;color:#115e59;' +
+      'border:1px solid #5eead4;border-right:3px solid #0d9488;font-weight:800;font-size:12px;';
+    var riegoTdL =
+      'padding:6px 8px;text-align:center;border-top:1px solid #dbeafe;background:#f0fdfa;' +
+      'border-left:3px solid #0d9488;';
+    var riegoTdR =
+      'padding:6px 8px;text-align:center;border-top:1px solid #dbeafe;background:#f0fdfa;' +
+      'border-right:3px solid #0d9488;';
 
     var headers = [
-      ['ID', 'Identificador del periodo (P1, P2…).', false],
-      ['Días', 'Cantidad de días del periodo (fecha inicio → fin, inclusive).', false],
-      ['Periodo', 'Rango de fechas del periodo analizado.', false],
-      ['NDVI prom', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.', false],
-      ['NDMI prom', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.', false],
-      ['VPD prom (kPa)', 'VPD promedio horario del periodo.', false],
-      ['h VPD <0.5', 'Horas del periodo con VPD bajo (<0.5 kPa).', false],
-      ['h VPD 0.5–1.5', 'Horas del periodo con VPD óptimo (0.5–1.5 kPa).', false],
-      ['h VPD >1.5', 'Horas del periodo con VPD alto (>1.5 kPa).', false],
-      ['ET₀ acum (mm)', 'ET₀ acumulada durante todo el periodo.', false],
-      ['Lluvia acum (mm)', 'Lluvia acumulada durante todo el periodo.', false],
-      [riegoM3Header, 'Volumen total de riego referido a la superficie del polígono (' + haLabel + ').', true],
-      [riegoMmHeader, 'Lámina equivalente en la franja regada según el % de franja.', true],
-      ['Estado', 'Estado de la imagen satelital del periodo.', false]
+      ['ID', 'Identificador del periodo (P1, P2…).', false, null],
+      ['Días', 'Cantidad de días del periodo (fecha inicio → fin, inclusive).', false, null],
+      ['Periodo', 'Rango de fechas del periodo analizado.', false, null],
+      ['NDVI prom', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.', false, null],
+      ['NDMI prom', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.', false, null],
+      ['VPD prom (kPa)', 'VPD promedio horario del periodo.', false, null],
+      ['h VPD <0.5', 'Horas del periodo con VPD bajo (<0.5 kPa).', false, null],
+      ['h VPD 0.5–1.5', 'Horas del periodo con VPD óptimo (0.5–1.5 kPa).', false, null],
+      ['h VPD >1.5', 'Horas del periodo con VPD alto (>1.5 kPa).', false, null],
+      ['ET₀ acum (mm)', 'ET₀ acumulada durante todo el periodo.', false, null],
+      ['Lluvia acum (mm)', 'Lluvia acumulada durante todo el periodo.', false, null],
+      [riegoMmHeader, 'Lámina de riego en la franja (mm). Mismo dato que m³; se convierte solo.', true, 'riegoL'],
+      [riegoM3Header, 'Volumen de riego en m³ sobre el polígono (' + haLabel + '). Mismo dato que mm.', true, 'riegoR'],
+      ['Estado', 'Estado de la imagen satelital del periodo.', false, null]
     ];
     var thStyle =
       'padding:9px 10px;text-align:center;white-space:nowrap;background:#dbeafe;color:#1e3a8a;' +
@@ -664,7 +724,8 @@
     html += '<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;background:#fff;border:1px solid #93c5fd;border-radius:10px;overflow:hidden;">' +
       '<thead><tr>' +
       headers.map(function (h) {
-        return '<th title="' + esc(h[1]) + '" style="' + thStyle + '">' + (h[2] ? h[0] : esc(h[0])) + '</th>';
+        var st = h[3] === 'riegoL' ? riegoThL : h[3] === 'riegoR' ? riegoThR : thStyle;
+        return '<th title="' + esc(h[1]) + '" style="' + st + '">' + (h[2] ? h[0] : esc(h[0])) + '</th>';
       }).join('') +
       '</tr></thead><tbody>';
     function expandedTip(r) {
@@ -715,20 +776,20 @@
         '<td style="padding:8px 10px;text-align:center;color:#7f1d1d;border-top:1px solid #dbeafe;" title="Horas VPD alto">' + fmtNum(r.vpd_hours_high, 0) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.et0_sum, 1) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.rain_sum, 1) + '</td>' +
-        '<td style="padding:6px 8px;text-align:center;border-top:1px solid #dbeafe;">' +
-          '<input type="number" min="0" step="0.1" value="' + (r.riego_m3 != null ? esc(r.riego_m3) : '') +
-          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Volumen total referido al polígono (' + haLabel + ')">' +
-        '</td>' +
-        '<td style="padding:6px 8px;text-align:center;border-top:1px solid #dbeafe;">' +
+        '<td style="' + riegoTdL + '" title="Mismo riego que m³ (lámina en franja)">' +
           '<input type="number" min="0" step="0.1" value="' + (mmVal != null ? esc(mmVal) : '') +
-          '" data-riego-mm-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Lámina en franja regada"' +
+          '" data-riego-mm-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Lámina en franja regada (mismo riego que m³)"' +
           (iHa == null ? ' disabled' : '') + '>' +
+        '</td>' +
+        '<td style="' + riegoTdR + '" title="Mismo riego que mm (volumen del polígono)">' +
+          '<input type="number" min="0" step="0.1" value="' + (r.riego_m3 != null ? esc(r.riego_m3) : '') +
+          '" data-riego-m3-index="' + r.index + '" style="' + inpStyle + '" placeholder="0" title="Volumen total referido al polígono (' + haLabel + ') — mismo riego que mm">' +
         '</td>' +
         '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + statusBadge(r) + '</td>' +
       '</tr>';
     });
     html += '</tbody></table>';
-    html += '<div style="font-size:11px;color:#64748b;margin-top:6px;">ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI y NDMI no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). Riego mm = lámina en la franja (% arriba). <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).' +
+    html += '<div style="font-size:11px;color:#64748b;margin-top:6px;">ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI y NDMI no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). <span style="color:#0f766e;font-weight:700;">Riego mm y m³</span> son el <strong>mismo riego</strong> (contorno verde): editas uno y se convierte el otro. <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).' +
       (cropHa == null ? ' <span style="color:#b45309;">Guarda el polígono con área (ha) para convertir m³ ↔ mm.</span>' : '') +
       '</div>';
     wrap.innerHTML = html;
@@ -1124,10 +1185,18 @@
       '</div>';
     }
     function miniCard(r, key, label, color) {
-      var url = key === 'ndvi' ? r.signed_url : r.ndmi_signed_url;
+      var omitted = !!r.image_omitted && !(r.signed_url || r.ndmi_signed_url);
+      var incomplete = !omitted && !!(r.image_incomplete || r.error_code === 'radar_incomplete_coverage');
+      var url = omitted ? null : key === 'ndvi' ? r.signed_url : r.ndmi_signed_url;
       var metaParts = [];
       if (r.avg_cloud_cover != null) metaParts.push('nubes ~' + esc(r.avg_cloud_cover) + '%');
       if (r.valid_pct != null) metaParts.push('útil ' + esc(r.valid_pct) + '%');
+      if (r.scene_count != null) {
+        metaParts.push(
+          r.scene_count + ' pasada' + (Number(r.scene_count) === 1 ? '' : 's')
+        );
+      }
+      if (incomplete) metaParts.push('incompleta');
       if (r.lookback_expanded) {
         if (r.search_date_start && r.search_date_end) {
           metaParts.push('mes ' + esc(r.search_date_start) + '→' + esc(r.search_date_end) + '*');
@@ -1139,18 +1208,32 @@
         metaParts.push('Sentinel ' + esc(r.scene_dates.join(', ')));
       }
       var meta = metaParts.join(' · ');
+      var why = omitted ? omitImageReason(r) : incomplete ? incompleteImageReason(r) : '';
       var tip =
+        (why ? why + ' ' : '') +
         (r.lookback_expanded
           ? 'Periodo clima: ' + (r.date_start || '') + ' – ' + (r.date_end || '') + '. '
-          : '') + meta;
+          : '') +
+        meta;
       return '<figure style="margin:0;min-width:0;border:1px solid #e2e8f0;border-radius:10px;background:#fff;padding:6px;">' +
         '<figcaption style="font-size:10.5px;line-height:1.25;font-weight:800;color:' + color + ';margin:0 0 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + esc(r.label || '') + '">' +
           esc(r.label || '') +
+          (incomplete ? ' <span style="color:#b45309;">*</span>' : '') +
         '</figcaption>' +
         (url
-          ? '<img src="' + esc(url) + '" alt="' + label + ' ' + esc(r.label) + '" data-lectura-zoom="1" data-zoom-title="' + esc(label + ' · ' + (r.label || '')) + '" data-zoom-sub="' + esc(tip) + '" style="width:100%;height:142px;object-fit:contain;border-radius:7px;display:block;background:#f1f5f9;cursor:zoom-in;" title="Toca para ver en grande">'
-          : '<div style="height:142px;display:flex;align-items:center;justify-content:center;text-align:center;color:#94a3b8;background:#f1f5f9;border-radius:7px;font-size:11px;">Sin ' + label + '</div>') +
-        '<div style="font-size:9.5px;color:#64748b;text-align:center;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + esc(tip) + '">' + (meta || '&nbsp;') + '</div>' +
+          ? '<img src="' + esc(url) + '" alt="' + label + ' ' + esc(r.label) + '" data-lectura-zoom="1" data-zoom-title="' + esc(label + ' · ' + (r.label || '')) + '" data-zoom-sub="' + esc(tip) + '" style="width:100%;height:142px;object-fit:contain;border-radius:7px;display:block;background:#f1f5f9;cursor:zoom-in;' +
+            (incomplete ? 'outline:2px solid #f59e0b;' : '') +
+            '" title="' + esc(incomplete ? why : 'Toca para ver en grande') + '">'
+          : '<div style="height:142px;display:flex;align-items:center;justify-content:center;text-align:center;color:#92400e;background:#fffbeb;border:1px dashed #f59e0b;border-radius:7px;font-size:10.5px;line-height:1.35;padding:8px;" title="' +
+            esc(why || tip) +
+            '">' +
+            esc(why || 'Sin ' + label) +
+            '</div>') +
+        '<div style="font-size:9.5px;color:' + (incomplete || omitted ? '#b45309' : '#64748b') + ';text-align:center;margin-top:4px;line-height:1.3;' +
+          (omitted || incomplete ? '' : 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') +
+          '" title="' + esc(tip) + '">' +
+          esc(why || meta || '\u00a0') +
+        '</div>' +
       '</figure>';
     }
     var html =
@@ -1283,8 +1366,16 @@
       if (it.search_date_start) row.search_date_start = it.search_date_start;
       if (it.search_date_end) row.search_date_end = it.search_date_end;
       if (Array.isArray(it.scene_dates) && it.scene_dates.length) row.scene_dates = it.scene_dates;
+      row.image_omitted = !!it.image_omitted;
+      row.image_incomplete = !!it.image_incomplete;
+      if (it.omit_reason) row.omit_reason = it.omit_reason;
+      if (it.incomplete_reason) row.incomplete_reason = it.incomplete_reason;
       if (it.signed_url) row.signed_url = it.signed_url;
       if (it.ndmi_signed_url) row.ndmi_signed_url = it.ndmi_signed_url;
+      if (row.image_omitted) {
+        row.signed_url = null;
+        row.ndmi_signed_url = null;
+      }
       if (it.error_message) row.error_message = it.error_message;
       if (it.error_code) row.error_code = it.error_code;
     });
@@ -1422,7 +1513,16 @@
     var periods = buildPeriods(freq, count, endDate);
 
     var total = lecturaCost();
-    if (!confirm('Se generará la Lectura Satelital de ' + periods.length + ' periodos (' + freq + ').\n\nCosto: ' + total + ' créditos Radar por toda la consulta (no por periodo).\n\n¿Continuar?')) return;
+    if (!confirm(
+      'Se generará la Lectura Satelital de ' +
+        periods.length +
+        ' periodos (' +
+        freq +
+        ').\n\nCosto: ' +
+        total +
+        ' créditos Radar por toda la consulta (no por periodo).\n\nLas imágenes se procesan en la nube en segundo plano (puedes cerrar NutriPlant). Luego pulsa «Mostrar NDVI/NDMI».\n\n¿Continuar?'
+    ))
+      return;
 
     var btn = document.getElementById('lecturaBtnGenerate');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Enviando…'; }
@@ -1524,7 +1624,12 @@
       syncRiegoMmFromM3(state);
       saveState(state);
       renderAll(state);
-      setStatus('⏳ Solicitud enviada. Generando imágenes… no cierres hasta que termine (o vuelve y pulsa «Mostrar NDVI/NDMI»).');
+      setStatus(
+        '⏳ Histórico encolado en la nube (Sentinel-2 en segundo plano). ' +
+        'Por el proveedor satelital puede tardar unos minutos. ' +
+        '<strong>Se guardará aunque cierres NutriPlant</strong>. ' +
+        'Vuelve y pulsa «Mostrar NDVI/NDMI» para ver tablas e imágenes; el clima (VPD/ET₀/lluvia) se completa al refrescar.'
+      );
       pollUntilDone(state);
     } catch (e) {
       console.error('Lectura generar:', e);
