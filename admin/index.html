@@ -812,6 +812,7 @@
                     <button class="btn-admin secondary" onclick="showDeletedProjects()">♻️ Proyectos eliminados</button>
                     <button class="btn-admin secondary" onclick="searchProjects()">Buscar Proyectos</button>
                     <button class="btn-admin secondary" onclick="exportProjects()">Exportar Proyectos</button>
+                    <button class="btn-admin secondary" onclick="showRadarImagesAdmin()">🛰️ Imágenes Radar NDVI/NDMI</button>
                     <button class="btn-admin secondary" onclick="sanitizeLocalCacheConsistency(true)">🧹 Limpiar caché inconsistente</button>
                 </div>
                 
@@ -12878,6 +12879,365 @@
         }
         window.openAdminRadarLightboxFromEl = openAdminRadarLightboxFromEl;
 
+        // ---------- Gestión global de imágenes Radar (Pilot / Lectura) ----------
+        var __radarImagesAdminState = {
+            page: 1,
+            pageSize: 24,
+            type: 'all',
+            userQ: '',
+            projectQ: '',
+            dateFrom: '',
+            dateTo: '',
+            loading: false
+        };
+
+        function closeRadarImagesAdminModal() {
+            var el = document.getElementById('radarImagesAdminModal');
+            if (el) {
+                el.style.display = 'none';
+                el.innerHTML = '';
+            }
+        }
+        window.closeRadarImagesAdminModal = closeRadarImagesAdminModal;
+
+        function ensureRadarImagesAdminModal() {
+            var modal = document.getElementById('radarImagesAdminModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'radarImagesAdminModal';
+                modal.style.cssText =
+                    'display:none;position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:57500;justify-content:center;align-items:flex-start;padding:16px;box-sizing:border-box;overflow:auto;';
+                document.body.appendChild(modal);
+            }
+            return modal;
+        }
+
+        function postRadarAdminApi(bodyObj) {
+            var url = getNutriPlantRadarApiUrlForAdmin();
+            var adminKey = getAdminPanelAccessKey();
+            var radarSecret = getRadarAdminPanelSecret();
+            var headers = { 'Content-Type': 'application/json' };
+            if (radarSecret) headers['X-Radar-Admin-Secret'] = radarSecret;
+            var payload = Object.assign({}, bodyObj || {});
+            if (adminKey) payload.admin_key = adminKey;
+            return fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload)
+            }).then(function (r) {
+                return r.json().then(function (j) {
+                    return { ok: r.ok, status: r.status, j: j };
+                });
+            });
+        }
+
+        function showRadarImagesAdmin() {
+            __radarImagesAdminState.page = 1;
+            var modal = ensureRadarImagesAdminModal();
+            modal.style.display = 'flex';
+            renderRadarImagesAdminShell(modal);
+            loadRadarImagesAdminPage();
+        }
+        window.showRadarImagesAdmin = showRadarImagesAdmin;
+
+        function renderRadarImagesAdminShell(modal) {
+            var st = __radarImagesAdminState;
+            modal.innerHTML =
+                '<div style="background:#fff;border-radius:14px;width:min(1180px,100%);margin:12px auto 40px;box-shadow:0 20px 50px rgba(0,0,0,.35);overflow:hidden;">' +
+                '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid #e2e8f0;background:#f8fafc;">' +
+                '<div>' +
+                '<h2 style="margin:0;font-size:18px;color:#0f172a;">🛰️ Imágenes Radar NDVI / NDMI</h2>' +
+                '<p style="margin:6px 0 0;font-size:12.5px;color:#64748b;line-height:1.4;">Pilot y Lectura Satelital · filtrar por usuario o proyecto · eliminar borra archivo y registro</p>' +
+                '</div>' +
+                '<button type="button" onclick="closeRadarImagesAdminModal()" style="background:#e2e8f0;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;color:#334155;">✕ Cerrar</button>' +
+                '</div>' +
+                '<div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:grid;gap:10px;">' +
+                '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+                '<span style="font-size:12px;font-weight:700;color:#475569;">Tipo:</span>' +
+                typeChipHtml('all', 'Todas') +
+                typeChipHtml('pilot', 'Pilot') +
+                typeChipHtml('lectura', 'Lectura') +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">' +
+                '<label style="font-size:11px;font-weight:700;color:#64748b;display:grid;gap:4px;">Usuario (email / nombre)' +
+                '<input id="radarImgAdminUserQ" type="text" value="' + escRadarAdminHtml(st.userQ) + '" placeholder="ej. juan@…" ' +
+                'style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;" /></label>' +
+                '<label style="font-size:11px;font-weight:700;color:#64748b;display:grid;gap:4px;">Proyecto (nombre / id)' +
+                '<input id="radarImgAdminProjectQ" type="text" value="' + escRadarAdminHtml(st.projectQ) + '" placeholder="nombre o UUID" ' +
+                'style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;" /></label>' +
+                '<label style="font-size:11px;font-weight:700;color:#64748b;display:grid;gap:4px;">Desde' +
+                '<input id="radarImgAdminDateFrom" type="date" value="' + escRadarAdminHtml(st.dateFrom) + '" ' +
+                'style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;" /></label>' +
+                '<label style="font-size:11px;font-weight:700;color:#64748b;display:grid;gap:4px;">Hasta' +
+                '<input id="radarImgAdminDateTo" type="date" value="' + escRadarAdminHtml(st.dateTo) + '" ' +
+                'style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;" /></label>' +
+                '</div>' +
+                '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+                '<button type="button" onclick="applyRadarImagesAdminFilters()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer;font-size:13px;">Buscar</button>' +
+                '<button type="button" onclick="resetRadarImagesAdminFilters()" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;font-size:13px;">Limpiar</button>' +
+                '</div>' +
+                '</div>' +
+                '<div id="radarImagesAdminBody" style="padding:16px 18px;min-height:220px;">' +
+                '<p style="color:#64748b;margin:0;">Cargando…</p>' +
+                '</div>' +
+                '</div>';
+
+            function typeChipHtml(key, label) {
+                var active = st.type === key;
+                return (
+                    '<button type="button" data-radar-img-type="' + key + '" onclick="setRadarImagesAdminType(\'' + key + '\')" ' +
+                    'style="border:1px solid ' + (active ? '#2563eb' : '#cbd5e1') + ';background:' + (active ? '#2563eb' : '#fff') +
+                    ';color:' + (active ? '#fff' : '#334155') + ';border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">' +
+                    label + '</button>'
+                );
+            }
+        }
+
+        function syncRadarImagesAdminFiltersFromDom() {
+            var u = document.getElementById('radarImgAdminUserQ');
+            var p = document.getElementById('radarImgAdminProjectQ');
+            var df = document.getElementById('radarImgAdminDateFrom');
+            var dt = document.getElementById('radarImgAdminDateTo');
+            if (u) __radarImagesAdminState.userQ = String(u.value || '').trim();
+            if (p) __radarImagesAdminState.projectQ = String(p.value || '').trim();
+            if (df) __radarImagesAdminState.dateFrom = String(df.value || '').trim();
+            if (dt) __radarImagesAdminState.dateTo = String(dt.value || '').trim();
+        }
+
+        function setRadarImagesAdminType(type) {
+            __radarImagesAdminState.type = type === 'pilot' || type === 'lectura' ? type : 'all';
+            __radarImagesAdminState.page = 1;
+            syncRadarImagesAdminFiltersFromDom();
+            var modal = ensureRadarImagesAdminModal();
+            renderRadarImagesAdminShell(modal);
+            loadRadarImagesAdminPage();
+        }
+        window.setRadarImagesAdminType = setRadarImagesAdminType;
+
+        function applyRadarImagesAdminFilters() {
+            syncRadarImagesAdminFiltersFromDom();
+            __radarImagesAdminState.page = 1;
+            loadRadarImagesAdminPage();
+        }
+        window.applyRadarImagesAdminFilters = applyRadarImagesAdminFilters;
+
+        function resetRadarImagesAdminFilters() {
+            __radarImagesAdminState.type = 'all';
+            __radarImagesAdminState.userQ = '';
+            __radarImagesAdminState.projectQ = '';
+            __radarImagesAdminState.dateFrom = '';
+            __radarImagesAdminState.dateTo = '';
+            __radarImagesAdminState.page = 1;
+            var modal = ensureRadarImagesAdminModal();
+            renderRadarImagesAdminShell(modal);
+            loadRadarImagesAdminPage();
+        }
+        window.resetRadarImagesAdminFilters = resetRadarImagesAdminFilters;
+
+        function radarImagesAdminGoPage(delta) {
+            syncRadarImagesAdminFiltersFromDom();
+            __radarImagesAdminState.page = Math.max(1, (__radarImagesAdminState.page || 1) + delta);
+            loadRadarImagesAdminPage();
+        }
+        window.radarImagesAdminGoPage = radarImagesAdminGoPage;
+
+        function loadRadarImagesAdminPage() {
+            var body = document.getElementById('radarImagesAdminBody');
+            if (!body) return;
+            if (__radarImagesAdminState.loading) return;
+            __radarImagesAdminState.loading = true;
+            body.innerHTML = '<p style="color:#64748b;margin:0;">Cargando imágenes…</p>';
+
+            var st = __radarImagesAdminState;
+            postRadarAdminApi({
+                action: 'admin_list',
+                page: st.page,
+                page_size: st.pageSize,
+                type: st.type,
+                user_q: st.userQ || undefined,
+                project_q: st.projectQ || undefined,
+                date_from: st.dateFrom || undefined,
+                date_to: st.dateTo || undefined
+            })
+                .then(function (res) {
+                    __radarImagesAdminState.loading = false;
+                    if (!res.ok || !res.j || !res.j.ok) {
+                        var msg =
+                            (res.j && (res.j.message || res.j.error)) ||
+                            ('Error HTTP ' + res.status);
+                        body.innerHTML =
+                            '<div style="padding:14px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:13px;">' +
+                            escRadarAdminHtml(String(msg)) +
+                            '</div>';
+                        return;
+                    }
+                    renderRadarImagesAdminGrid(body, res.j);
+                })
+                .catch(function (err) {
+                    __radarImagesAdminState.loading = false;
+                    body.innerHTML =
+                        '<div style="padding:14px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:13px;">' +
+                        escRadarAdminHtml((err && err.message) || 'Error de red') +
+                        '</div>';
+                });
+        }
+
+        function renderRadarImagesAdminGrid(body, api) {
+            var items = Array.isArray(api.items) ? api.items : [];
+            var page = api.page || 1;
+            var hasMore = !!api.has_more;
+            var total = api.total != null ? api.total : items.length;
+
+            if (!items.length) {
+                body.innerHTML =
+                    '<div style="padding:18px;text-align:center;color:#64748b;font-size:13px;border:1px dashed #cbd5e1;border-radius:12px;">' +
+                    'No hay imágenes con estos filtros.' +
+                    '</div>';
+                return;
+            }
+
+            var cards = items
+                .map(function (it) {
+                    var isLectura = it.kind === 'lectura';
+                    var badgeBg = isLectura ? '#0f766e' : '#166534';
+                    var badge = isLectura ? 'Lectura' : 'Pilot';
+                    var userLine = it.user_email || it.user_name || it.user_id || '—';
+                    var projLine = it.project_name || it.project_id || '—';
+                    var when = formatRadarAdminDate(it.created_at);
+                    var metaBits = [];
+                    if (it.period_label) metaBits.push(String(it.period_label));
+                    if (it.valid_pct != null && Number.isFinite(Number(it.valid_pct))) {
+                        metaBits.push(Number(it.valid_pct).toFixed(1) + '% útiles');
+                    }
+                    if (it.ndvi_mean != null && Number.isFinite(Number(it.ndvi_mean))) {
+                        metaBits.push('NDVI ' + Number(it.ndvi_mean).toFixed(3));
+                    }
+                    if (it.scene_count != null) metaBits.push(it.scene_count + ' pasadas');
+                    var metaLine = metaBits.join(' · ');
+                    var ndviUrl = it.signed_url || '';
+                    var ndmiUrl = it.ndmi_signed_url || '';
+                    var thumb =
+                        ndviUrl
+                            ? '<img src="' +
+                              ndviUrl.replace(/"/g, '&quot;') +
+                              '" alt="NDVI" data-full-src="' +
+                              ndviUrl.replace(/"/g, '&quot;') +
+                              '" data-zoom-title="NDVI · ' +
+                              escRadarAdminHtml(badge) +
+                              '" data-zoom-sub="' +
+                              escRadarAdminHtml(projLine) +
+                              '" onclick="openAdminRadarLightboxFromEl(this)" ' +
+                              'style="width:100%;height:140px;object-fit:cover;border-radius:8px;background:#f1f5f9;cursor:zoom-in;border:1px solid #e2e8f0;" title="Ver grande" />'
+                            : '<div style="height:140px;border-radius:8px;background:#f8fafc;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;">Sin NDVI</div>';
+                    var ndmiBtn = ndmiUrl
+                        ? '<button type="button" onclick="openAdminRadarLightbox(' +
+                          JSON.stringify(ndmiUrl) +
+                          ', ' +
+                          JSON.stringify('NDMI · ' + badge) +
+                          ', ' +
+                          JSON.stringify(String(projLine)) +
+                          ')" style="font-size:11px;padding:5px 8px;border-radius:6px;border:1px solid #bae6fd;background:#f0f9ff;color:#0369a1;cursor:pointer;font-weight:700;">NDMI</button>'
+                        : '';
+
+                    return (
+                        '<article style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;display:flex;flex-direction:column;gap:8px;min-width:0;">' +
+                        '<div style="display:flex;justify-content:space-between;gap:6px;align-items:center;">' +
+                        '<span style="background:' +
+                        badgeBg +
+                        ';color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;letter-spacing:.02em;">' +
+                        badge +
+                        '</span>' +
+                        '<span style="font-size:10px;color:#94a3b8;">' +
+                        escRadarAdminHtml(when) +
+                        '</span>' +
+                        '</div>' +
+                        thumb +
+                        '<div style="font-size:12px;font-weight:700;color:#0f172a;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' +
+                        escRadarAdminHtml(projLine) +
+                        '">' +
+                        escRadarAdminHtml(projLine) +
+                        '</div>' +
+                        '<div style="font-size:11px;color:#64748b;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' +
+                        escRadarAdminHtml(userLine) +
+                        '">' +
+                        escRadarAdminHtml(userLine) +
+                        '</div>' +
+                        (metaLine
+                            ? '<div style="font-size:10.5px;color:#475569;line-height:1.35;">' +
+                              escRadarAdminHtml(metaLine) +
+                              '</div>'
+                            : '') +
+                        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;">' +
+                        ndmiBtn +
+                        '<button type="button" onclick="deleteRadarImageAdmin(' +
+                        JSON.stringify(String(it.id)) +
+                        ', ' +
+                        JSON.stringify(badge) +
+                        ')" style="font-size:11px;padding:5px 8px;border-radius:6px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;cursor:pointer;font-weight:700;">Eliminar</button>' +
+                        '</div>' +
+                        '</article>'
+                    );
+                })
+                .join('');
+
+            body.innerHTML =
+                '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">' +
+                '<div style="font-size:12.5px;color:#64748b;">Página <strong style="color:#0f172a;">' +
+                page +
+                '</strong> · ' +
+                items.length +
+                ' en esta página' +
+                (total != null ? ' · ~' + total + ' filtradas en lote' : '') +
+                '</div>' +
+                '<div style="display:flex;gap:8px;">' +
+                '<button type="button" ' +
+                (page <= 1 ? 'disabled ' : '') +
+                'onclick="radarImagesAdminGoPage(-1)" style="padding:7px 12px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;font-weight:600;font-size:12px;' +
+                (page <= 1 ? 'opacity:.45;cursor:not-allowed;' : '') +
+                '">← Anterior</button>' +
+                '<button type="button" ' +
+                (!hasMore ? 'disabled ' : '') +
+                'onclick="radarImagesAdminGoPage(1)" style="padding:7px 12px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;font-weight:600;font-size:12px;' +
+                (!hasMore ? 'opacity:.45;cursor:not-allowed;' : '') +
+                '">Siguiente →</button>' +
+                '</div>' +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">' +
+                cards +
+                '</div>';
+        }
+
+        function deleteRadarImageAdmin(requestId, kindLabel) {
+            if (!requestId) return;
+            var ok = window.confirm(
+                '¿Eliminar esta imagen ' +
+                    (kindLabel || 'Radar') +
+                    '?\n\nSe borrará el archivo (NDVI/NDMI), el registro y las referencias en el proyecto. El usuario dejará de verla.\n\nEsta acción no se puede deshacer.'
+            );
+            if (!ok) return;
+            var body = document.getElementById('radarImagesAdminBody');
+            if (body) {
+                body.innerHTML = '<p style="color:#64748b;margin:0;">Eliminando…</p>';
+            }
+            postRadarAdminApi({ action: 'admin_delete', request_id: String(requestId) })
+                .then(function (res) {
+                    if (!res.ok || !res.j || !res.j.ok) {
+                        var msg =
+                            (res.j && (res.j.message || res.j.error)) ||
+                            ('Error HTTP ' + res.status);
+                        alert('No se pudo eliminar: ' + msg);
+                        loadRadarImagesAdminPage();
+                        return;
+                    }
+                    loadRadarImagesAdminPage();
+                })
+                .catch(function (err) {
+                    alert('Error de red al eliminar: ' + ((err && err.message) || err));
+                    loadRadarImagesAdminPage();
+                });
+        }
+        window.deleteRadarImageAdmin = deleteRadarImageAdmin;
+
         function escRadarAdminHtml(t) {
             return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
@@ -13090,14 +13450,33 @@
 
         function getAdminProjectLocation(projectId) {
             try {
+                var pid = String(projectId || '').trim();
+                // 1) Proyecto abierto en detalle (fresco de Supabase, aplanado).
+                try {
+                    var ctx = window._adminViewProjectContext;
+                    if (ctx && String(ctx.projectId) === pid && ctx.project) {
+                        var ctxLoc = ctx.project.location ||
+                            (ctx.project.sections && ctx.project.sections.ubicacion) ||
+                            (ctx.project.data && ctx.project.data.location) ||
+                            null;
+                        if (ctxLoc) return ctxLoc;
+                    }
+                } catch (eCtx) { /* ignore */ }
+
                 var list = typeof getAllProjects === 'function' ? getAllProjects() : [];
                 var p = (list || []).find(function (x) { return String(x.id) === String(projectId); });
                 var loc = null;
                 if (p) {
-                    loc = p.location || (p.sections && p.sections.ubicacion) || null;
+                    // En caché cloud la ubicación está en p.data.location (no en p.location).
+                    loc = p.location ||
+                        (p.data && p.data.location) ||
+                        (p.sections && p.sections.ubicacion) ||
+                        (p.data && p.data.sections && p.data.sections.ubicacion) ||
+                        null;
                     if (p._fullProjectForMap) {
                         loc = p._fullProjectForMap.location ||
                             (p._fullProjectForMap.sections && p._fullProjectForMap.sections.ubicacion) ||
+                            (p._fullProjectForMap.data && p._fullProjectForMap.data.location) ||
                             loc;
                     }
                 }
@@ -13106,7 +13485,8 @@
                         var raw = localStorage.getItem('nutriplant_project_' + projectId);
                         if (raw) {
                             var full = JSON.parse(raw);
-                            loc = (full && (full.location || (full.sections && full.sections.ubicacion))) || loc;
+                            loc = (full && (full.location || (full.sections && full.sections.ubicacion) ||
+                                (full.data && full.data.location))) || loc;
                         }
                     } catch (e2) { /* ignore */ }
                 }
@@ -13114,6 +13494,87 @@
             } catch (e) {
                 return null;
             }
+        }
+
+        /** Normaliza Lectura (rows / runs) para el modal admin. */
+        function normalizeAdminLecturaState(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+            var state;
+            try {
+                state = JSON.parse(JSON.stringify(raw));
+            } catch (e) {
+                return null;
+            }
+            if (!Array.isArray(state.runs) || !state.runs.length) {
+                if (Array.isArray(state.rows) && state.rows.length) {
+                    var legacyId = 'run_legacy_' + String(state.updatedAt || Date.now()).replace(/\W/g, '');
+                    state.runs = [{
+                        id: legacyId,
+                        frequency: state.frequency,
+                        periods: state.periods,
+                        endDate: state.endDate,
+                        updatedAt: state.updatedAt,
+                        franja_pct: state.franja_pct,
+                        rows: state.rows.slice()
+                    }];
+                    state.activeRunId = legacyId;
+                } else {
+                    return null;
+                }
+            }
+            var run = null;
+            for (var i = 0; i < state.runs.length; i++) {
+                if (state.runs[i] && String(state.runs[i].id) === String(state.activeRunId)) {
+                    run = state.runs[i];
+                    break;
+                }
+            }
+            if (!run) run = state.runs[0];
+            if (!run || !Array.isArray(run.rows) || !run.rows.length) return null;
+            state.activeRunId = run.id;
+            state.rows = run.rows;
+            state.frequency = run.frequency != null ? run.frequency : state.frequency;
+            state.periods = run.periods != null ? run.periods : state.periods;
+            state.endDate = run.endDate != null ? run.endDate : state.endDate;
+            if (run.franja_pct != null) state.franja_pct = run.franja_pct;
+            state.updatedAt = run.updatedAt || state.updatedAt;
+            return state;
+        }
+
+        function adminLecturaRunLabel(run, idx) {
+            if (!run) return 'Bloque ' + (idx + 1);
+            var freq = run.frequency === 'mensual' ? 'Mensual' : (run.frequency === 'quincenal' ? 'Quincenal' : (run.frequency || '—'));
+            var n = Array.isArray(run.rows) ? run.rows.length : (run.periods || 0);
+            var end = run.endDate ? String(run.endDate) : '';
+            var when = '';
+            if (run.updatedAt) {
+                try {
+                    when = new Date(run.updatedAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+                } catch (e) {
+                    when = String(run.updatedAt).slice(0, 16);
+                }
+            }
+            return freq + ' · ' + n + ' periodo(s)' + (end ? ' · fin ' + end : '') + (when ? ' · ' + when : '');
+        }
+
+        function collectAdminLecturaRequestIds(lectura) {
+            var ids = [];
+            var seen = {};
+            function addFromRows(rows) {
+                (rows || []).forEach(function (r) {
+                    if (!r || !r.request_id) return;
+                    var id = String(r.request_id);
+                    if (seen[id]) return;
+                    seen[id] = true;
+                    ids.push(id);
+                });
+            }
+            if (!lectura) return ids;
+            addFromRows(lectura.rows);
+            (lectura.runs || []).forEach(function (run) {
+                if (run) addFromRows(run.rows);
+            });
+            return ids;
         }
 
         function fetchLecturaAdminData(projectId, requestIds) {
@@ -13137,7 +13598,21 @@
 
         function renderLecturaAdminModalContent(modal, projectId, lecturaState, apiRes) {
             var esc = escRadarAdminHtml;
-            var rows = (lecturaState && Array.isArray(lecturaState.rows) ? lecturaState.rows : []).slice()
+            lecturaState = normalizeAdminLecturaState(lecturaState);
+            if (!lecturaState) {
+                modal.style.display = 'flex';
+                modal.innerHTML =
+                    '<div style="background:#fff;border-radius:12px;padding:24px;max-width:520px;">' +
+                    '<p style="color:#475569;margin:0;">No hay Lectura Satelital guardada en este proyecto. El usuario la genera en Radar Satelital → Lectura Satelital.</p>' +
+                    '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:16px;padding:8px 16px;border-radius:6px;border:none;background:#0f766e;color:#fff;font-weight:600;cursor:pointer;">Cerrar</button></div>';
+                return;
+            }
+            window.__adminLecturaModalState = {
+                projectId: String(projectId),
+                lectura: lecturaState,
+                apiRes: apiRes || null
+            };
+            var rows = (lecturaState.rows || []).slice()
                 .sort(function (a, b) { return (Number(a.index) || 0) - (Number(b.index) || 0); });
             var byId = {};
             if (apiRes && apiRes.ok && apiRes.j && Array.isArray(apiRes.j.items)) {
@@ -13147,6 +13622,24 @@
             function fmt(v, d) {
                 if (v == null || !Number.isFinite(Number(v))) return '—';
                 return Number(v).toFixed(d);
+            }
+
+            var runs = Array.isArray(lecturaState.runs) ? lecturaState.runs : [];
+            var runSelectHtml = '';
+            if (runs.length > 1) {
+                runSelectHtml =
+                    '<div style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+                    '<label style="font-size:12px;font-weight:700;color:#0f766e;">Bloque guardado</label>' +
+                    '<select id="adminLecturaRunSelect" onchange="switchAdminLecturaRun(this.value)" ' +
+                    'style="flex:1;min-width:220px;padding:8px 10px;border:1px solid #99f6e4;border-radius:8px;font-size:13px;background:#fff;">' +
+                    runs.map(function (run, idx) {
+                        return '<option value="' + esc(String(run.id)) + '"' +
+                            (String(run.id) === String(lecturaState.activeRunId) ? ' selected' : '') +
+                            '>' + esc(adminLecturaRunLabel(run, idx)) + '</option>';
+                    }).join('') +
+                    '</select>' +
+                    '<span style="font-size:11px;color:#64748b;">' + runs.length + ' bloques</span>' +
+                    '</div>';
             }
 
             var params =
@@ -13249,6 +13742,7 @@
                 '<button type="button" onclick="closeRadarAdminModal()" style="background:none;border:none;font-size:28px;color:#64748b;cursor:pointer;line-height:1;">×</button></div>' +
                 '<div style="padding:16px 18px 22px;">' +
                 apiWarn +
+                runSelectHtml +
                 '<p style="margin:0 0 10px;font-size:13px;color:#475569;">' + esc(params) + '</p>' +
                 '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">' +
                 '<thead><tr style="background:#ecfdf5;color:#14532d;">' +
@@ -13262,9 +13756,29 @@
                 (gallery
                     ? gallery
                     : '<p style="margin-top:12px;font-size:12px;color:#94a3b8;">Sin imágenes firmadas disponibles (el usuario debe haber generado el histórico).</p>') +
-                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">Cada miniatura es un periodo del mismo predio. * ampliada al mes calendario solo para la imagen.</p>' +
+                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">Cada miniatura es un periodo del mismo predio. * ampliada al mes calendario solo para la imagen. Si hay varios bloques, elige arriba cuál ver.</p>' +
                 '</div></div>';
         }
+
+        function switchAdminLecturaRun(runId) {
+            var st = window.__adminLecturaModalState;
+            if (!st || !st.lectura || !runId) return;
+            st.lectura.activeRunId = String(runId);
+            var normalized = normalizeAdminLecturaState(st.lectura);
+            if (!normalized) return;
+            st.lectura = normalized;
+            var modal = ensureRadarAdminModal();
+            showRadarAdminLoading(modal, 'Cargando bloque…');
+            var ids = collectAdminLecturaRequestIds(normalized);
+            fetchLecturaAdminData(st.projectId, ids)
+                .then(function (res) {
+                    renderLecturaAdminModalContent(modal, st.projectId, normalized, res);
+                })
+                .catch(function () {
+                    renderLecturaAdminModalContent(modal, st.projectId, normalized, st.apiRes || { ok: false });
+                });
+        }
+        window.switchAdminLecturaRun = switchAdminLecturaRun;
 
         function showLecturaAdminModal(projectId) {
             var adminKey = getAdminPanelAccessKey();
@@ -13278,25 +13792,54 @@
                 alert('ID de proyecto no válido.');
                 return;
             }
-            var loc = getAdminProjectLocation(pid);
-            var lectura = loc && loc.lecturaSatelital ? loc.lecturaSatelital : null;
-            var rows = lectura && Array.isArray(lectura.rows) ? lectura.rows : [];
             var modal = ensureRadarAdminModal();
-            if (!rows.length) {
-                modal.style.display = 'flex';
-                modal.innerHTML =
-                    '<div style="background:#fff;border-radius:12px;padding:24px;max-width:520px;">' +
-                    '<p style="color:#475569;margin:0;">No hay Lectura Satelital guardada en este proyecto. El usuario la genera en Radar Satelital → Lectura Satelital.</p>' +
-                    '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:16px;padding:8px 16px;border-radius:6px;border:none;background:#0f766e;color:#fff;font-weight:600;cursor:pointer;">Cerrar</button></div>';
-                return;
-            }
             showRadarAdminLoading(modal, 'Cargando Lectura Satelital…');
-            var ids = rows.map(function (r) { return r.request_id; }).filter(Boolean);
+
+            var loc = getAdminProjectLocation(pid);
+            var lecturaLocal = normalizeAdminLecturaState(loc && loc.lecturaSatelital ? loc.lecturaSatelital : null);
+            var ids = collectAdminLecturaRequestIds(lecturaLocal);
+
             fetchLecturaAdminData(pid, ids)
-                .then(function (res) { renderLecturaAdminModalContent(modal, pid, lectura, res); })
+                .then(function (res) {
+                    var cloudLectura = null;
+                    if (res && res.ok && res.j && res.j.lectura_saved) {
+                        cloudLectura = normalizeAdminLecturaState(res.j.lectura_saved);
+                    }
+                    var lectura = cloudLectura || lecturaLocal;
+                    if (!lectura || !Array.isArray(lectura.rows) || !lectura.rows.length) {
+                        modal.style.display = 'flex';
+                        modal.innerHTML =
+                            '<div style="background:#fff;border-radius:12px;padding:24px;max-width:520px;">' +
+                            '<p style="color:#475569;margin:0;">No hay Lectura Satelital guardada en este proyecto. El usuario la genera en Radar Satelital → Lectura Satelital.</p>' +
+                            '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:16px;padding:8px 16px;border-radius:6px;border:none;background:#0f766e;color:#fff;font-weight:600;cursor:pointer;">Cerrar</button></div>';
+                        return;
+                    }
+                    var allIds = collectAdminLecturaRequestIds(lectura);
+                    var needRefetch = allIds.length && allIds.some(function (id) {
+                        return ids.indexOf(id) < 0;
+                    });
+                    if (needRefetch) {
+                        return fetchLecturaAdminData(pid, allIds).then(function (res2) {
+                            renderLecturaAdminModalContent(modal, pid, lectura, res2);
+                        });
+                    }
+                    renderLecturaAdminModalContent(modal, pid, lectura, res);
+                })
                 .catch(function (err) {
                     console.error('Lectura admin modal:', err);
-                    renderLecturaAdminModalContent(modal, pid, lectura, { ok: false, status: 0, j: { message: 'Error de red' } });
+                    if (lecturaLocal && lecturaLocal.rows && lecturaLocal.rows.length) {
+                        renderLecturaAdminModalContent(modal, pid, lecturaLocal, {
+                            ok: false,
+                            status: 0,
+                            j: { message: 'Error de red' }
+                        });
+                        return;
+                    }
+                    modal.style.display = 'flex';
+                    modal.innerHTML =
+                        '<div style="background:#fff;border-radius:12px;padding:24px;max-width:520px;">' +
+                        '<p style="color:#b91c1c;margin:0;">Error de red al cargar Lectura Satelital.</p>' +
+                        '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:16px;padding:8px 16px;border-radius:6px;border:none;background:#0f766e;color:#fff;font-weight:600;cursor:pointer;">Cerrar</button></div>';
                 });
         }
         window.showLecturaAdminModal = showLecturaAdminModal;

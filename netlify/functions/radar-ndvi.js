@@ -14,7 +14,7 @@
  *   NUTRIPLANT_ADMIN_KEY                  — opcional; admin_key en body (misma clave ?k= del panel admin)
  *
  * Body JSON:
- *   action: "status" | "generate" | "admin_status"
+ *   action: "status" | "generate" | "admin_status" | "admin_lectura_status" | "admin_list" | "admin_delete"
  *   project_id: string
  *   access_token: string (JWT usuario; también se acepta Authorization: Bearer)
  */
@@ -377,6 +377,118 @@ function isAdminRadarAuthorized(event, body) {
   return !!(expectedAdminKey && bodyAdminKey === expectedAdminKey);
 }
 
+function sanitizeSearchTerm(raw) {
+  return String(raw || '')
+    .trim()
+    .replace(/[%_,]/g, ' ')
+    .slice(0, 80);
+}
+
+async function resolveProfileIdsByQuery(supabase, userQ) {
+  const q = sanitizeSearchTerm(userQ);
+  if (!q) return null;
+  const term = '"%' + q.replace(/"/g, '') + '%"';
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .or('email.ilike.' + term + ',name.ilike.' + term)
+    .limit(120);
+  if (error) {
+    console.warn('resolveProfileIdsByQuery:', error.message);
+    return [];
+  }
+  return (data || []).map((r) => r.id).filter(Boolean);
+}
+
+async function resolveProjectIdsByQuery(supabase, projectQ) {
+  const q = sanitizeSearchTerm(projectQ);
+  if (!q) return null;
+  const ids = new Set();
+  const { data: byId } = await supabase.from('projects').select('id').eq('id', q).limit(5);
+  (byId || []).forEach((r) => {
+    if (r && r.id) ids.add(String(r.id));
+  });
+  const term = '"%' + q.replace(/"/g, '') + '%"';
+  const { data: byName, error } = await supabase
+    .from('projects')
+    .select('id')
+    .or('name.ilike.' + term + ',title.ilike.' + term)
+    .limit(120);
+  if (error) console.warn('resolveProjectIdsByQuery:', error.message);
+  (byName || []).forEach((r) => {
+    if (r && r.id) ids.add(String(r.id));
+  });
+  return Array.from(ids);
+}
+
+/**
+ * Quita request_id / URLs de Lectura y radarSelectedRequestId de Pilot
+ * cuando el admin borra una imagen.
+ */
+function scrubRequestIdFromProjectData(projectData, requestId) {
+  const id = String(requestId || '').trim();
+  if (!id || !projectData || typeof projectData !== 'object') {
+    return { changed: false, data: projectData };
+  }
+  const data = JSON.parse(JSON.stringify(projectData));
+  const loc = data.location;
+  if (!loc || typeof loc !== 'object') {
+    return { changed: false, data: projectData };
+  }
+  let changed = false;
+
+  if (String(loc.radarSelectedRequestId || '') === id) {
+    delete loc.radarSelectedRequestId;
+    changed = true;
+  }
+
+  function scrubRows(rows) {
+    if (!Array.isArray(rows)) return rows;
+    return rows.map((row) => {
+      if (!row || String(row.request_id || '') !== id) return row;
+      changed = true;
+      const next = Object.assign({}, row);
+      delete next.request_id;
+      delete next.signed_url;
+      delete next.ndmi_signed_url;
+      next.status = 'deleted';
+      next.error_code = 'admin_deleted';
+      next.error_message = 'Imagen eliminada por administrador';
+      return next;
+    });
+  }
+
+  if (loc.lecturaSatelital && typeof loc.lecturaSatelital === 'object') {
+    const ls = loc.lecturaSatelital;
+    if (Array.isArray(ls.rows)) ls.rows = scrubRows(ls.rows);
+    if (Array.isArray(ls.runs)) {
+      ls.runs = ls.runs.map((run) => {
+        if (!run || typeof run !== 'object') return run;
+        const r = Object.assign({}, run);
+        if (Array.isArray(r.rows)) r.rows = scrubRows(r.rows);
+        return r;
+      });
+    }
+  }
+
+  return { changed, data };
+}
+
+async function deleteRadarStorageFiles(supabase, row) {
+  const paths = [];
+  if (row && row.image_storage_path) paths.push(String(row.image_storage_path));
+  const meta = (row && row.meta) || {};
+  const ndmiPath = meta.ndmi_storage_path || (meta.images && meta.images.ndmi && meta.images.ndmi.storage_path) || null;
+  if (ndmiPath) paths.push(String(ndmiPath));
+  if (!paths.length) return { ok: true, removed: [] };
+  const { error } = await supabase.storage.from(BUCKET).remove(paths);
+  if (error) {
+    console.warn('deleteRadarStorageFiles:', error.message);
+    return { ok: false, error: error.message, removed: paths };
+  }
+  return { ok: true, removed: paths };
+}
+
 function latestResponse(latest, ndviSignedUrl, ndmiSignedUrl) {
   if (!latest) return null;
   const meta = latest.meta || {};
@@ -600,6 +712,235 @@ exports.handler = async (event) => {
       owner_user_id: ownerLect,
       items: itemsLect,
       lectura_saved: locSnap
+    });
+  }
+
+  if (bodyActionEarly === 'admin_list') {
+    if (!isAdminRadarAuthorized(event, body)) {
+      return jsonResponse(403, {
+        error: 'admin_unauthorized',
+        message: 'Acceso admin denegado. Abre el panel con ?k= válido o usa X-Radar-Admin-Secret.'
+      });
+    }
+
+    const page = Math.max(1, parseInt(body.page, 10) || 1);
+    const pageSize = Math.min(Math.max(parseInt(body.page_size, 10) || 24, 1), 48);
+    const typeRaw = String(body.type || body.kind || 'all').toLowerCase();
+    const type = typeRaw === 'pilot' || typeRaw === 'lectura' ? typeRaw : 'all';
+    const dateFrom = body.date_from ? String(body.date_from).slice(0, 10) : '';
+    const dateTo = body.date_to ? String(body.date_to).slice(0, 10) : '';
+
+    const userIdsFilter = await resolveProfileIdsByQuery(supabase, body.user_q || body.user_query || '');
+    const projectIdsFilter = await resolveProjectIdsByQuery(
+      supabase,
+      body.project_q || body.project_query || ''
+    );
+
+    if (userIdsFilter && !userIdsFilter.length) {
+      return jsonResponse(200, {
+        ok: true,
+        admin: true,
+        items: [],
+        page,
+        page_size: pageSize,
+        total: 0,
+        has_more: false,
+        type
+      });
+    }
+    if (projectIdsFilter && !projectIdsFilter.length) {
+      return jsonResponse(200, {
+        ok: true,
+        admin: true,
+        items: [],
+        page,
+        page_size: pageSize,
+        total: 0,
+        has_more: false,
+        type
+      });
+    }
+
+    // Pedimos de más y filtramos Pilot/Lectura en JS (meta.lectura no siempre está indexado).
+    const fetchMul = type === 'all' ? 1 : 3;
+    const fetchLimit = Math.min(page * pageSize * fetchMul + pageSize * fetchMul, 400);
+    let q = supabase
+      .from('radar_requests')
+      .select('id, created_at, month_key, image_storage_path, meta, user_id, project_id')
+      .not('image_storage_path', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(fetchLimit);
+
+    if (userIdsFilter) q = q.in('user_id', userIdsFilter);
+    if (projectIdsFilter) q = q.in('project_id', projectIdsFilter);
+    if (dateFrom) q = q.gte('created_at', dateFrom + 'T00:00:00.000Z');
+    if (dateTo) q = q.lte('created_at', dateTo + 'T23:59:59.999Z');
+
+    const { data: rawRows, error: listErr } = await q;
+    if (listErr) {
+      console.error('admin_list:', listErr.message);
+      return jsonResponse(500, { error: 'admin_list_failed', message: listErr.message });
+    }
+
+    let filtered = (rawRows || []).filter((row) => {
+      if (type === 'lectura') return isLecturaRadarRow(row);
+      if (type === 'pilot') return isPilotRadarRow(row);
+      return true;
+    });
+
+    const totalApprox = filtered.length;
+    const start = (page - 1) * pageSize;
+    const pageRows = filtered.slice(start, start + pageSize);
+    const hasMore = filtered.length > start + pageSize || (rawRows || []).length >= fetchLimit;
+
+    const userIds = [...new Set(pageRows.map((r) => r.user_id).filter(Boolean))];
+    const projectIds = [...new Set(pageRows.map((r) => r.project_id).filter(Boolean))];
+
+    const [profilesRes, projectsRes] = await Promise.all([
+      userIds.length
+        ? supabase.from('profiles').select('id, email, name').in('id', userIds)
+        : Promise.resolve({ data: [] }),
+      projectIds.length
+        ? supabase.from('projects').select('id, user_id, name, title').in('id', projectIds)
+        : Promise.resolve({ data: [] })
+    ]);
+
+    const profileById = {};
+    (profilesRes.data || []).forEach((p) => {
+      profileById[String(p.id)] = p;
+    });
+    const projectById = {};
+    (projectsRes.data || []).forEach((p) => {
+      projectById[String(p.id)] = p;
+    });
+
+    const items = [];
+    for (const row of pageRows) {
+      const meta = row.meta || {};
+      const signed = await signRadarRow(supabase, row);
+      const prof = profileById[String(row.user_id)] || null;
+      const proj = projectById[String(row.project_id)] || null;
+      const sceneDates = Array.isArray(meta.scene_dates)
+        ? meta.scene_dates.map((d) => String(d).slice(0, 10)).filter(Boolean)
+        : [];
+      items.push({
+        id: row.id,
+        created_at: row.created_at,
+        month_key: row.month_key,
+        user_id: row.user_id,
+        project_id: row.project_id,
+        kind: isLecturaRadarRow(row) ? 'lectura' : 'pilot',
+        user_email: prof && prof.email ? prof.email : null,
+        user_name: prof && prof.name ? prof.name : null,
+        project_name: (proj && (proj.name || proj.title)) || null,
+        period_label: meta.period_label || null,
+        period_index: meta.period_index != null ? meta.period_index : null,
+        frequency: meta.frequency || null,
+        date_start: meta.period_date_start || meta.date_start || null,
+        date_end: meta.period_date_end || meta.date_end || null,
+        scene_dates: sceneDates.length ? sceneDates : null,
+        ndvi_mean: meta.ndvi_mean != null ? meta.ndvi_mean : null,
+        ndmi_mean: meta.ndmi_mean != null ? meta.ndmi_mean : null,
+        valid_pct: meta.valid_pct != null ? meta.valid_pct : null,
+        avg_cloud_cover: meta.avg_cloud_cover != null ? meta.avg_cloud_cover : null,
+        lookback_expanded: !!meta.lookback_expanded,
+        scene_count: meta.scene_count != null ? meta.scene_count : (sceneDates.length || null),
+        credits_charged: meta.credits_charged != null ? Number(meta.credits_charged) : null,
+        signed_url: signed.ndviSignedUrl,
+        ndmi_signed_url: signed.ndmiSignedUrl,
+        has_ndmi: !!(meta.ndmi_storage_path || (meta.images && meta.images.ndmi && meta.images.ndmi.storage_path))
+      });
+    }
+
+    return jsonResponse(200, {
+      ok: true,
+      admin: true,
+      items,
+      page,
+      page_size: pageSize,
+      total: totalApprox,
+      has_more: hasMore,
+      type
+    });
+  }
+
+  if (bodyActionEarly === 'admin_delete') {
+    if (!isAdminRadarAuthorized(event, body)) {
+      return jsonResponse(403, {
+        error: 'admin_unauthorized',
+        message: 'Acceso admin denegado. Abre el panel con ?k= válido o usa X-Radar-Admin-Secret.'
+      });
+    }
+
+    const requestIdDel = body.request_id != null ? String(body.request_id).trim() : '';
+    if (!requestIdDel) {
+      return jsonResponse(400, { error: 'request_id es obligatorio' });
+    }
+
+    const { data: rowDel, error: rowDelErr } = await supabase
+      .from('radar_requests')
+      .select('id, created_at, month_key, image_storage_path, meta, user_id, project_id')
+      .eq('id', requestIdDel)
+      .maybeSingle();
+
+    if (rowDelErr) {
+      console.error('admin_delete select:', rowDelErr.message);
+      return jsonResponse(500, { error: 'admin_delete_failed', message: rowDelErr.message });
+    }
+    if (!rowDel) {
+      return jsonResponse(404, {
+        error: 'radar_not_found',
+        message: 'No se encontró esa imagen Radar.'
+      });
+    }
+
+    const kind = isLecturaRadarRow(rowDel) ? 'lectura' : 'pilot';
+    const storageResult = await deleteRadarStorageFiles(supabase, rowDel);
+
+    const { error: delErr } = await supabase.from('radar_requests').delete().eq('id', requestIdDel);
+    if (delErr) {
+      console.error('admin_delete row:', delErr.message);
+      return jsonResponse(500, {
+        error: 'admin_delete_row_failed',
+        message: delErr.message,
+        storage: storageResult
+      });
+    }
+
+    let projectScrubbed = false;
+    const projectIdDel = rowDel.project_id != null ? String(rowDel.project_id) : '';
+    if (projectIdDel) {
+      const { data: projDel, error: projDelErr } = await supabase
+        .from('projects')
+        .select('id, data')
+        .eq('id', projectIdDel)
+        .maybeSingle();
+      if (!projDelErr && projDel) {
+        const scrub = scrubRequestIdFromProjectData(projDel.data || {}, requestIdDel);
+        if (scrub.changed) {
+          const { error: updErr } = await supabase
+            .from('projects')
+            .update({ data: scrub.data, updated_at: new Date().toISOString() })
+            .eq('id', projectIdDel);
+          if (updErr) {
+            console.warn('admin_delete scrub project:', updErr.message);
+          } else {
+            projectScrubbed = true;
+          }
+        }
+      }
+    }
+
+    return jsonResponse(200, {
+      ok: true,
+      admin: true,
+      deleted: true,
+      request_id: requestIdDel,
+      kind,
+      project_id: projectIdDel || null,
+      user_id: rowDel.user_id || null,
+      storage: storageResult,
+      project_scrubbed: projectScrubbed
     });
   }
 
