@@ -5,6 +5,14 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-07-16 — Pilot ventana corta + Lectura/PDF alineados
+
+### Actualizado
+
+- Pilot (pestaña 1): búsqueda **14 → 21 → 30 d**; con **1–2 escenas** ya genera; muestra fechas satelitales; meta en un renglón.
+- Lectura Satelital: mensual también reintenta/expande como quincenal; créditos restantes en UI; gráfica + miniaturas en PDF y admin (lightbox).
+- `chat-simple.js`, `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` §4.11 (**v2026.07.2**), `manual-tecnico-catalog.js`, `vpd-deficit-presion-vapor.html`.
+
 ## 2026-07-16 — Lectura Satelital en Radar Satelital
 
 ### Actualizado

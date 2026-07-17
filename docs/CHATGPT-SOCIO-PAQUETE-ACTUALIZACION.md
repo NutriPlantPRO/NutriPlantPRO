@@ -22,7 +22,7 @@ En ChatGPT → tu GPT → **Configure → Knowledge → Upload**:
 
 1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← 🪨 zona objetivo 40–60% AU, mm/m³, gráfica; 🌧️ almacén suelo manual + total integrado (2026-06-24)
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web **v2026.07.1** (**25 capítulos**; §4.11 **Radar Satelital + Lectura Satelital** 2026-07-16; re-subir tras cada tanda)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web **v2026.07.2** (**25 capítulos**; §4.11 **Radar Satelital**: Pilot 14→21→30 + Lectura quincenal/mensual con expand; re-subir tras cada tanda)
 4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` ← posts LinkedIn/IG; **§8 con 24 posts empresa** (añade filas si publicas nuevos)
 
 *(Opcional: borra knowledge viejo duplicado si tenías notas sueltas.)*

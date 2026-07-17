@@ -184,11 +184,12 @@
       controlar cómputo y almacenamiento.
     </p>
     <ul>
-      <li><strong>Cómo se arma la imagen:</strong> Sentinel-2 pasa ~cada 5 días. NutriPlant busca hasta
-        <strong>3 pasadas</strong> de los últimos <strong>30 días</strong> (nunca más atrás) y las combina con
-        <strong>mediana por píxel</strong> (no es el promedio de todos los días del mes). Tras filtrar nubes/sombra
-        (SCL), si el predio queda sin cobertura útil (&lt;~15&nbsp;% de píxeles válidos), <strong>no se guarda</strong>
-        una imagen vacía.</li>
+      <li><strong>Cómo se arma la imagen:</strong> Sentinel-2 pasa ~cada 5 días. NutriPlant busca primero en los últimos
+        <strong>14 días</strong> hasta <strong>3 pasadas</strong> claras (con <strong>1 o 2 ya genera</strong>); si no hay
+        cobertura útil amplía a <strong>21</strong> y luego <strong>30 días</strong> (nunca más atrás). Combina con
+        <strong>mediana por píxel</strong> cuando hay varias escenas. Tras filtrar nubes/sombra (SCL), si el predio queda
+        sin cobertura útil (&lt;~15&nbsp;% de píxeles válidos), <strong>no se guarda</strong> una imagen vacía. La meta
+        muestra las <strong>fechas satelitales</strong> usadas.</li>
       <li><strong>Generar / actualizar Pilot:</strong> calcula y guarda NDVI+NDMI para el predio.</li>
       <li><strong>Ver en mapa:</strong> superpone la imagen guardada seleccionada; no genera una imagen nueva.</li>
       <li><strong>Capa NDVI/NDMI:</strong> cambia qué índice se visualiza de la misma generación guardada.</li>
@@ -219,19 +220,21 @@
         <tr><td>VPD promedio (kPa)</td><td>Open-Meteo horario → misma lógica VPD del Clima → promedio del periodo</td></tr>
         <tr><td>ET₀ (mm)</td><td>Open-Meteo diario <code>et0_fao_evapotranspiration</code> → <strong>suma</strong></td></tr>
         <tr><td>Lluvia (mm)</td><td>Open-Meteo diario <code>precipitation_sum</code> → <strong>suma</strong></td></tr>
-        <tr><td>Riego (m³)</td><td>Input <strong>manual</strong> editable por fila; se persiste en el proyecto</td></tr>
+        <tr><td>Riego (m³ / mm)</td><td>Input manual; conversión m³↔mm con % de franja regada</td></tr>
+        <tr><td>Horas VPD</td><td>Horas del periodo con VPD &lt;0.5 / 0.5–1.5 / &gt;1.5 kPa (Open-Meteo)</td></tr>
       </tbody>
     </table>
     <p>
-      Debajo: <strong>gráfica de líneas</strong> (NDVI/NDMI + series opcionales VPD/ET₀/lluvia/riego) y
-      <strong>galería NDVI | NDMI</strong> por periodo, una fila tras otra, para comparar visualmente.
+      Debajo: <strong>gráfica</strong> (líneas NDVI/NDMI/ET₀/lluvia/riego + barras de horas VPD) y
+      <strong>miniaturas NDVI | NDMI</strong> por periodo (clic para ver grande). También en PDF y panel admin.
     </p>
     <h3>Satélite por periodo (distinto al Pilot de la pestaña 1)</h3>
     <ul>
-      <li><strong>Quincenal:</strong> busca escenas en la ventana de <strong>15 días</strong> del periodo. Si la
-        cobertura útil es baja (misma regla ~15&nbsp;% que Pilot), <strong>amplía automáticamente a 30 días</strong>
-        anclados al periodo y marca <code>lookback_expanded: true</code> (asterisco en la tabla).</li>
-      <li><strong>Mensual:</strong> ventana fija del mes calendario (sin ir más atrás de ese mes).</li>
+      <li><strong>Quincenal y mensual:</strong> buscan escenas en la ventana del periodo (15 d o mes calendario).
+        Prefieren las más claras (no solo las más recientes). Si la cobertura útil es baja (~15&nbsp;% como Pilot),
+        reintentan con umbral de nubes más amplio y pueden <strong>ampliar a 30 días</strong> anclados al periodo
+        (<code>lookback_expanded: true</code>, asterisco en la tabla).</li>
+      <li>Con <strong>1 o 2 escenas buenas</strong> ya generan imagen; “hasta 3” es el máximo, no el mínimo.</li>
       <li>Cada periodo tiene su propio <code>date_start</code> / <code>date_end</code>; no reutiliza “últimos 30 días desde hoy”.</li>
     </ul>
     <h3>Créditos Lectura Satelital</h3>

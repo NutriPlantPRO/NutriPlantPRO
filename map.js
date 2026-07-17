@@ -2580,7 +2580,7 @@ function np_formatRadarSceneMetaHtml(snap) {
   }
   if (detail.length) bits.push(detail.join(' · '));
 
-  return bits.join('<br>');
+  return bits.join(' · ');
 }
 
 function np_updateRadarSceneMeta(snap) {

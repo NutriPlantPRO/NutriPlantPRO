@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.07.1 · **25 capítulos** publicados (pilar **1** + pilares A–G).
+**Versión manual web:** v2026.07.2 · **25 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-07-16 · **v2026.07.1** (+ Lectura Satelital en §4.11)
+**Versión Knowledge:** 2026-07-16 · **v2026.07.2** (+ Pilot 14→21→30 d; Lectura mensual con expand; gráfica PDF/admin)
 
 ---
 
@@ -172,9 +172,9 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **Colorimetría Radar Pilot:** escala **relativa al predio y a la fecha**. Rojo/naranja = menor nivel relativo dentro de ese polígono; amarillo/verde claro = nivel intermedio; verde intenso (o azul verdoso en NDMI) = mayor nivel relativo. No interpretar como escala absoluta universal ni diagnosticar solo por color. Comparar con historial, riego, suelo, foliar, VPD, plagas/drenaje y recorrido de campo.
 
-**Pilot (pestaña Polígono / NDVI y NDMI):** hasta **3 escenas** en los últimos **≤30 días**, mediana por píxel + máscara SCL; si cobertura útil &lt;~15&nbsp;% no guarda imagen vacía. Créditos internos: base **20/mes** (+ bonus). Costo por generación: ≤30 ha = **1** · >30 ha = **2** · >100 ha = **3**. Ver historial / «Ver en mapa» no gasta.
+**Pilot (pestaña Polígono / NDVI y NDMI):** busca primero en los últimos **14 días** (hasta **3** pasadas claras; con **1 o 2 ya genera** la imagen), si no hay cobertura útil → **21 d**, último recurso → **30 d**. Mediana por píxel + máscara SCL; si cobertura útil &lt;~15&nbsp;% no guarda imagen vacía. Muestra las **fechas satelitales** de las escenas usadas. Créditos internos: base **20/mes** (+ bonus). Costo por generación: ≤30 ha = **1** · >30 ha = **2** · >100 ha = **3**. Ver historial / «Ver en mapa» no gasta.
 
-**Lectura Satelital (pestaña 2 del mismo módulo):** histórico del **mismo predio** con **2–6 periodos** hacia atrás (fecha final elegida), frecuencia **quincenal (15 d)** o **mensual (mes calendario)**, etiquetas con fechas reales (no Q1/Q2). Por periodo: NDVI/NDMI promedio (píxeles válidos), VPD promedio (Open-Meteo horario, misma fórmula), ET₀ y lluvia **acumulados**, riego m³ **manual**. Gráfica de líneas + galería NDVI|NDMI. Quincenal: si baja cobertura → **amplía auto a 30 d** (`lookback_expanded`). Costo **fijo por toda la consulta** (no por periodo): **3 créditos Radar** predio ≤30 ha, **4 créditos** predio >30 ha, sin importar el nº de periodos. Persistencia en `location.lecturaSatelital`.
+**Lectura Satelital (pestaña 2 del mismo módulo):** histórico del **mismo predio** con **2–6 periodos** hacia atrás (fecha final elegida), frecuencia **quincenal (15 d)** o **mensual (mes calendario)**, etiquetas con fechas reales (no Q1/Q2). Por periodo: NDVI/NDMI promedio (píxeles válidos), VPD promedio + horas VPD por banda (Open-Meteo), ET₀ y lluvia **acumulados**, riego m³↔mm con % franja. Tabla + gráfica + miniaturas NDVI|NDMI. Quincenal y mensual: si baja cobertura → reintenta escenas más claras y puede **ampliar a 30 d** (`lookback_expanded`). Costo **fijo por toda la consulta** (no por periodo): **3 créditos Radar** predio ≤30 ha, **4 créditos** predio >30 ha. Persistencia en `location.lecturaSatelital`. PDF y panel admin incluyen tabla, gráfica e imágenes.
 
 ### 4.11b Balance hídrico y cálculo rápido de riego (Clima)
 
