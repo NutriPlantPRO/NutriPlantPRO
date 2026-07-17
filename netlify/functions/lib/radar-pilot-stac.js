@@ -136,22 +136,23 @@ async function stacSearch(url, body, headers, attempt) {
   return res.json();
 }
 
-/** Mediana corta: hasta N escenas; Pilot busca primero ≤14 d, luego 21, luego 30. */
+/** Mediana corta: hasta N escenas; Pilot busca primero ≤14 d, luego 21, 30, 45. */
 const COMPOSITE_LOOKBACK_DAYS = 14;
-/** Tope de pasadas por mediana (Sentinel ~cada 5 d → ~6 en 30 d). */
-const COMPOSITE_MAX_SCENES = 6;
+/** Tope de pasadas por mediana (Sentinel ~cada 5 d → ~8–9 en 45 d). */
+const COMPOSITE_MAX_SCENES = 8;
 const COMPOSITE_MAX_CLOUD = 35;
-/** Tope duro: no buscar más atrás de 30 días (datos demasiado viejos para el cultivo). */
-const MAX_LOOKBACK_DAYS = 30;
+/** Tope duro: no buscar más atrás de 45 días. */
+const MAX_LOOKBACK_DAYS = 45;
 
-/** Pilot sección 1: ventanas cortas primero (14 → 21 → 30 d). */
+/** Pilot sección 1: ventanas cortas primero (14 → 21 → 30 → 45 d). */
 const PILOT_COMPOSITE_TIERS = [
   { days: 14, maxCloud: 35, label: '14d_35pct' },
   { days: 21, maxCloud: 40, label: '21d_40pct' },
-  { days: 30, maxCloud: 50, label: '30d_50pct' }
+  { days: 30, maxCloud: 50, label: '30d_50pct' },
+  { days: 45, maxCloud: 55, label: '45d_55pct' }
 ];
 
-/** Fallback una sola escena (mismas ventanas, nunca más de 30 d). */
+/** Fallback una sola escena (mismas ventanas, nunca más de 45 d). */
 const SCENE_SEARCH_TIERS = PILOT_COMPOSITE_TIERS;
 
 function clampLookbackDays(days) {
@@ -343,7 +344,7 @@ async function resolveProviderContext(opts) {
 }
 
 /**
- * Escena más clara en ventana corta: 14 → 21 → 30 d (nunca más de 30).
+ * Escena más clara en ventana corta: 14 → 21 → 30 → 45 d (nunca más de 45).
  */
 async function findBestSentinel2Scene(polygon, opts) {
   const bbox = bboxFromPolygon(polygon);
@@ -388,7 +389,7 @@ async function findBestSentinel2Scene(polygon, opts) {
     new Error(
       'No hay escenas Sentinel-2 L2A despejadas en los últimos ' +
         maxLb +
-        ' días (probamos 14 d ≤35% nubes, 21 d ≤40%, 30 d ≤50%).'
+        ' días (probamos 14 d ≤35% nubes, 21 d ≤40%, 30 d ≤50%, 45 d ≤55%).'
     )
   );
 }

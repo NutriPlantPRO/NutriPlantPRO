@@ -110,7 +110,7 @@ exports.handler = async (event) => {
   const projectId = body.project_id != null ? String(body.project_id).trim() : '';
   const useAsync = body.async !== false;
   const maxDim = Math.min(Math.max(Number(body.max_dim) || 512, 256), 2048);
-  const maxScenes = Math.min(Math.max(Number(body.max_scenes) || 6, 1), 6);
+  const maxScenes = Math.min(Math.max(Number(body.max_scenes) || 8, 1), 8);
   const mk = monthKey();
   const baseLimit = radarCredits.getMonthlyBaseLimit();
   const bonus = await getBonusCredits(supabase, userId);
@@ -404,7 +404,7 @@ exports.handler = async (event) => {
       signedUrl = signedNdvi.data?.signedUrl || null;
       ndmiSignedUrl = signedNdmi.data?.signedUrl || null;
     } else {
-      meta.note = 'Mediana 30 d + SCL; no guardado porque no se envió project_id.';
+      meta.note = 'Mediana 45 d + SCL; no guardado porque no se envió project_id.';
       ndviDataUrl = 'data:image/png;base64,' + rendered.ndviPng.toString('base64');
       ndmiDataUrl = 'data:image/png;base64,' + rendered.ndmiPng.toString('base64');
     }

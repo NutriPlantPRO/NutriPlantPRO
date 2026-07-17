@@ -164,7 +164,7 @@ function assertEnoughValidCoverage(coverage, label) {
       pct +
       '% de píxeles válidos tras filtrar nubes/sombra (mínimo ' +
       Math.round(MIN_VALID_FRACTION * 100) +
-      '%). En los últimos 30 días no hubo pasada Sentinel despejada sobre este lote. Código: radar_low_coverage'
+      '%). En los últimos 45 días no hubo pasada Sentinel despejada sobre este lote. Código: radar_low_coverage'
   );
 }
 

@@ -2974,16 +2974,16 @@ function np_pilotUserErrorMessage(status, data) {
   ) {
     code = 5022;
     message =
-      'En los últimos 14–30 días no hubo pasada Sentinel lo bastante despejada sobre este predio. ' +
+      'En los últimos 14–45 días no hubo pasada Sentinel lo bastante despejada sobre este predio. ' +
       'La imagen habría salido casi vacía, así que no se guardó. Prueba de nuevo tras la próxima pasada (~5 días).';
   } else if (status === 500) {
     code = 5001;
   } else if (status === 502) {
     code = 5021;
-    if (/cobertura satelital útil|píxeles válidos|radar_low_coverage|30 días/i.test(serverMsg)) {
+    if (/cobertura satelital útil|píxeles válidos|radar_low_coverage|45 días|30 días/i.test(serverMsg)) {
       code = 5022;
       message =
-        'En los últimos 14–30 días no hubo pasada Sentinel lo bastante despejada sobre este predio. ' +
+        'En los últimos 14–45 días no hubo pasada Sentinel lo bastante despejada sobre este predio. ' +
         'La imagen habría salido casi vacía, así que no se guardó. Prueba de nuevo tras la próxima pasada (~5 días).';
     }
   } else if (status === 504) {
@@ -3632,7 +3632,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       const lowCoverage = failed.error_code === 'radar_low_coverage';
       np_setRadarStatusHint(
         lowCoverage
-          ? 'En los últimos <span class="radar-hint-em">14–30 días</span> no hubo pasada Sentinel lo bastante despejada sobre este predio. No se guardó imagen vacía. Prueba tras la próxima pasada (~5 días). Código: <span class="radar-hint-em">5022</span>'
+          ? 'En los últimos <span class="radar-hint-em">14–45 días</span> no hubo pasada Sentinel lo bastante despejada sobre este predio. No se guardó imagen vacía. Prueba tras la próxima pasada (~5 días). Código: <span class="radar-hint-em">5022</span>'
           : 'El Pilot no pudo generar la imagen. ' +
               np_escapeHtml(np_pilotFriendlyErrorMessage(failed.error_message)) +
               ' Revisa Estado e intenta de nuevo.',
@@ -3650,7 +3650,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       const failed = data.last_failed_job;
       if (failed && failed.error_code === 'radar_low_coverage') {
         np_setRadarStatusHint(
-          'En los últimos <span class="radar-hint-em">14–30 días</span> no hubo pasada Sentinel lo bastante despejada sobre este predio. No se guardó imagen vacía. Prueba tras la próxima pasada (~5 días). Código: <span class="radar-hint-em">5022</span>',
+          'En los últimos <span class="radar-hint-em">14–45 días</span> no hubo pasada Sentinel lo bastante despejada sobre este predio. No se guardó imagen vacía. Prueba tras la próxima pasada (~5 días). Código: <span class="radar-hint-em">5022</span>',
           { html: true, variant: 'warn' }
         );
       } else if (lastPilotError && lastPilotError.code === 5041) {
@@ -3813,7 +3813,7 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
     const res = await fetch(np_radarPilotApiUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ polygon, project_id: String(proj.id), async: true, max_dim: 512, max_scenes: 6 })
+      body: JSON.stringify({ polygon, project_id: String(proj.id), async: true, max_dim: 512, max_scenes: 8 })
     });
     const data = await res.json().catch(() => ({}));
 

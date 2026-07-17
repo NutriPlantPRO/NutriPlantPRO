@@ -41,12 +41,13 @@ function calendarMonthWindowForPeriod(dateStart, dateEnd) {
 const PILOT_LOOKBACK_TIERS = [
   { days: 14, maxCloud: 35 },
   { days: 21, maxCloud: 40 },
-  { days: 30, maxCloud: 50 }
+  { days: 30, maxCloud: 50 },
+  { days: 45, maxCloud: 55 }
 ];
 
 /**
  * Solo se corta antes si el predio quedó prácticamente completo (~100%).
- * Si no, sigue juntando hasta 6 pasadas y ampliando 14→21→30 d; al final guarda lo mejor.
+ * Si no, sigue juntando hasta 8 pasadas y ampliando 14→21→30→45 d; al final guarda lo mejor.
  */
 const PILOT_TARGET_VALID_FRACTION = 0.995;
 
@@ -71,7 +72,7 @@ function pilotSceneCount(bundle) {
 }
 
 /**
- * Maximiza cobertura: hasta 6 pasadas por ventana (14 → 21 → 30 d).
+ * Maximiza cobertura: hasta 8 pasadas por ventana (14 → 21 → 30 → 45 d).
  * Solo para si llega ~100%. Si no, prueba más nubes/pasadas y la siguiente ventana.
  * Al final guarda la MEJOR (ej. 89%), nunca vacío si ≥~15%.
  */
@@ -81,7 +82,7 @@ async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierM
   let bestScore = -1;
   let bestTierIndex = -1;
   let bestScenes = -1;
-  const sceneCap = Math.min(Math.max(Number(maxScenes) || 6, 1), 6);
+  const sceneCap = Math.min(Math.max(Number(maxScenes) || 8, 1), 8);
 
   const consider = (bundle, rendered, tierIndex) => {
     const score = pilotCoverageScore(rendered);
@@ -102,7 +103,7 @@ async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierM
     const tier = PILOT_LOOKBACK_TIERS[i];
     const cloudAttempts = [
       { maxCloud: tier.maxCloud, candidateLimit: Math.max(20, sceneCap * 3) },
-      // Si con el umbral estricto solo salieron 1–2 pasadas, abrir nubes para juntar hasta 6.
+      // Si con el umbral estricto solo salieron 1–2 pasadas, abrir nubes para juntar hasta 8.
       { maxCloud: 60, candidateLimit: Math.max(30, sceneCap * 5) }
     ];
 
@@ -127,7 +128,7 @@ async function renderPilotCompositeWithTiers(polygon, maxScenes, maxDim, onTierM
         if (score >= PILOT_TARGET_VALID_FRACTION) {
           return { bundle, rendered, lookbackExpanded: i > 0 };
         }
-        // Ya tenemos casi el tope de pasadas en esta ventana → pasar a 21/30 d.
+        // Ya tenemos casi el tope de pasadas en esta ventana → pasar a 21/30/45 d.
         if (pilotSceneCount(bundle) >= sceneCap) break;
       } catch (e) {
         lastErr = e;
@@ -499,8 +500,8 @@ async function processPilotJob(supabase, requestId, userId) {
   }
 
   const maxDim = Math.min(Math.max(Number(job.meta?.max_dim) || 512, 256), 2048);
-  // Hasta 6 pasadas (mediana por píxel) para rellenar huecos de nubes/sombra.
-  const maxScenes = Math.min(Math.max(Number(job.meta?.max_scenes) || 6, 1), 6);
+  // Hasta 8 pasadas en Pilot (Lectura suele pedir 6 vía meta.max_scenes).
+  const maxScenes = Math.min(Math.max(Number(job.meta?.max_scenes) || 8, 1), 8);
   const creditCost = creditsForRow(job);
   const mk = job.month_key || monthKey();
 
@@ -670,7 +671,7 @@ async function processPilotJob(supabase, requestId, userId) {
         maxScenes,
         maxDim,
         async (days, sceneCap, looseCloud) => {
-          const n = sceneCap != null ? sceneCap : 6;
+          const n = sceneCap != null ? sceneCap : 8;
           await patchJobMeta(supabase, requestId, userId, {
             status: 'processing',
             status_message: looseCloud

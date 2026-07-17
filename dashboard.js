@@ -1679,7 +1679,7 @@ function sectionTemplate(name) {
           <span id="radarStatusHint" class="radar-hint-info">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
             <strong style="color:#14532d;">Cómo se arma:</strong>
-            junta hasta <strong>6 pasadas</strong> Sentinel (mediana) para pintar lo máximo posible. Solo para si llega ~100% útiles; si no → 21 o 30 d y guarda lo mejor. Abajo verás la <strong>fecha</strong> de los datos.
+            junta hasta <strong>8 pasadas</strong> Sentinel (mediana) para pintar lo máximo posible. Solo para si llega ~100% útiles; si no → 21, 30 o 45 d y guarda lo mejor. Abajo verás la <strong>fecha</strong> de los datos.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI relativa al predio</span>

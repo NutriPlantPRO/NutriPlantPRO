@@ -916,7 +916,8 @@
       return;
     }
     renderChartToggles(state);
-    var rows = state.rows.slice().sort(function (a, b) { return a.index - b.index; }).reverse(); // cronológico
+    // Mismo orden que las miniaturas: más reciente a la izquierda.
+    var rows = state.rows.slice().sort(function (a, b) { return a.index - b.index; });
     var labels = rows.map(function (r) { return r.label; });
     var iHa = irrigatedHa(state);
     var hoursMax = 24;
@@ -1755,9 +1756,10 @@
   function buildLecturaChartDataUrlForReport(rows, opts) {
     opts = opts || {};
     if (typeof Chart === 'undefined' || !rows || !rows.length) return null;
+    // Mismo orden que miniaturas / gráfica UI: más reciente a la izquierda.
     var sorted = rows.slice().sort(function (a, b) {
       return (Number(a.index) || 0) - (Number(b.index) || 0);
-    }).reverse();
+    });
     if (!sorted.length) return null;
 
     var franjaPct = opts.franja_pct != null ? Number(opts.franja_pct) : 100;
