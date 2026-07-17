@@ -153,17 +153,23 @@
   }
 
   // ---------- clima Open-Meteo por periodo ----------
-  var ARCHIVE_THRESHOLD_DAYS = 92;
+  // Forecast API cubre ~92 d hacia atrás pero en el borde (>60 d) llega a devolver
+  // series vacías; el archivo (ERA5) es confiable para todo lo que tenga >7 días.
+  var ARCHIVE_THRESHOLD_DAYS = 60;
   function daysAgo(startIso) {
     var t = parseIso(todayIso());
     var s = parseIso(startIso);
     if (!t || !s) return 0;
     return Math.floor((t.getTime() - s.getTime()) / 86400000);
   }
-  async function fetchDaily(lat, lng, startIso, endIso) {
-    var useArchive = daysAgo(startIso) > ARCHIVE_THRESHOLD_DAYS;
-    var base = useArchive ? 'https://archive-api.open-meteo.com/v1/archive' : 'https://api.open-meteo.com/v1/forecast';
-    var url = base + '?latitude=' + encodeURIComponent(lat) + '&longitude=' + encodeURIComponent(lng) +
+  function omBase(useArchive) {
+    return useArchive ? 'https://archive-api.open-meteo.com/v1/archive' : 'https://api.open-meteo.com/v1/forecast';
+  }
+  function hasFiniteValues(arr) {
+    return (arr || []).some(function (v) { return Number.isFinite(Number(v)); });
+  }
+  async function fetchDailyFrom(useArchive, lat, lng, startIso, endIso) {
+    var url = omBase(useArchive) + '?latitude=' + encodeURIComponent(lat) + '&longitude=' + encodeURIComponent(lng) +
       '&start_date=' + startIso + '&end_date=' + endIso +
       '&daily=precipitation_sum,et0_fao_evapotranspiration&timezone=auto';
     var res = await fetch(url);
@@ -171,10 +177,26 @@
     if (!res.ok || !data || !data.daily) throw new Error('Open-Meteo daily no disponible');
     return data.daily;
   }
-  async function fetchHourly(lat, lng, startIso, endIso) {
-    var useArchive = daysAgo(startIso) > ARCHIVE_THRESHOLD_DAYS;
-    var base = useArchive ? 'https://archive-api.open-meteo.com/v1/archive' : 'https://api.open-meteo.com/v1/forecast';
-    var url = base + '?latitude=' + encodeURIComponent(lat) + '&longitude=' + encodeURIComponent(lng) +
+  async function fetchDaily(lat, lng, startIso, endIso) {
+    var preferArchive = daysAgo(startIso) > ARCHIVE_THRESHOLD_DAYS;
+    var daily = null;
+    try {
+      daily = await fetchDailyFrom(preferArchive, lat, lng, startIso, endIso);
+    } catch (e) {
+      daily = null;
+    }
+    // Si la fuente preferida vino vacía (pasa en el borde del forecast), probar la otra.
+    if (!daily || !hasFiniteValues(daily.et0_fao_evapotranspiration)) {
+      try {
+        var alt = await fetchDailyFrom(!preferArchive, lat, lng, startIso, endIso);
+        if (alt && hasFiniteValues(alt.et0_fao_evapotranspiration)) daily = alt;
+      } catch (e2) { /* conservar lo que haya */ }
+    }
+    if (!daily) throw new Error('Open-Meteo daily no disponible');
+    return daily;
+  }
+  async function fetchHourlyFrom(useArchive, lat, lng, startIso, endIso) {
+    var url = omBase(useArchive) + '?latitude=' + encodeURIComponent(lat) + '&longitude=' + encodeURIComponent(lng) +
       '&start_date=' + startIso + '&end_date=' + endIso +
       '&hourly=temperature_2m,relative_humidity_2m,shortwave_radiation&timezone=auto';
     var res = await fetch(url);
@@ -182,11 +204,33 @@
     if (!res.ok || !data || !data.hourly) throw new Error('Open-Meteo hourly no disponible');
     return data.hourly;
   }
+  async function fetchHourly(lat, lng, startIso, endIso) {
+    var preferArchive = daysAgo(startIso) > ARCHIVE_THRESHOLD_DAYS;
+    var hourly = null;
+    try {
+      hourly = await fetchHourlyFrom(preferArchive, lat, lng, startIso, endIso);
+    } catch (e) {
+      hourly = null;
+    }
+    if (!hourly || !hasFiniteValues(hourly.temperature_2m)) {
+      try {
+        var alt = await fetchHourlyFrom(!preferArchive, lat, lng, startIso, endIso);
+        if (alt && hasFiniteValues(alt.temperature_2m)) hourly = alt;
+      } catch (e2) { /* conservar lo que haya */ }
+    }
+    if (!hourly) throw new Error('Open-Meteo hourly no disponible');
+    return hourly;
+  }
   function sum(arr) {
     return (arr || []).reduce(function (a, b) {
       var n = Number(b);
       return a + (Number.isFinite(n) ? n : 0);
     }, 0);
+  }
+  /** Suma solo si hay datos reales; si toda la serie viene nula → null (no 0 falso). */
+  function sumOrNull(arr) {
+    if (!hasFiniteValues(arr)) return null;
+    return sum(arr);
   }
   /** Horas teóricas del periodo (inclusive): quincena 15 d = 360 h. */
   function periodHoursExpected(startIso, endIso) {
@@ -232,6 +276,17 @@
     }
     var expected = periodHoursExpected(startIso, endIso);
     var counted = low + opt + high;
+    if (!counted) {
+      // Serie horaria vacía: no inventar 0/0/0, dejar nulos para reintentar.
+      return {
+        vpd_mean: null,
+        vpd_hours_low: null,
+        vpd_hours_opt: null,
+        vpd_hours_high: null,
+        vpd_hours_total: null,
+        vpd_hours_expected: expected
+      };
+    }
     return {
       vpd_mean: vals.length
         ? Math.round((vals.reduce(function (a, b) { return a + b; }, 0) / vals.length) * 100) / 100
@@ -239,7 +294,7 @@
       vpd_hours_low: low,
       vpd_hours_opt: opt,
       vpd_hours_high: high,
-      vpd_hours_total: counted || expected,
+      vpd_hours_total: counted,
       vpd_hours_expected: expected
     };
   }
@@ -256,8 +311,10 @@
     };
     try {
       var daily = await fetchDaily(center.lat, center.lng, period.date_start, period.date_end);
-      out.rain_sum = Math.round(sum(daily.precipitation_sum) * 10) / 10;
-      out.et0_sum = Math.round(sum(daily.et0_fao_evapotranspiration) * 10) / 10;
+      var rain = sumOrNull(daily.precipitation_sum);
+      var et0 = sumOrNull(daily.et0_fao_evapotranspiration);
+      out.rain_sum = rain != null ? Math.round(rain * 10) / 10 : null;
+      out.et0_sum = et0 != null ? Math.round(et0 * 10) / 10 : null;
     } catch (e) { console.warn('Lectura clima daily:', e); }
     try {
       var hourly = await fetchHourly(center.lat, center.lng, period.date_start, period.date_end);
@@ -1048,17 +1105,28 @@
     if (center) {
       for (var i = 0; i < state.rows.length; i++) {
         var row = state.rows[i];
+        // ET₀ = 0 en un periodo de 15 días es físicamente imposible: es un cero
+        // falso de una respuesta vacía de Open-Meteo. Igual el patrón de horas
+        // 0 / total / 0 (sin ninguna hora baja ni alta). En esos casos se vuelve
+        // a pedir el clima y se sobreescribe.
+        var suspectEt0 = Number(row.et0_sum) === 0;
+        var suspectHours =
+          row.vpd_hours_low != null &&
+          Number(row.vpd_hours_low) === 0 &&
+          Number(row.vpd_hours_high) === 0;
         var needsClimate =
           row.vpd_mean == null ||
           row.et0_sum == null ||
           row.rain_sum == null ||
-          row.vpd_hours_low == null;
+          row.vpd_hours_low == null ||
+          suspectEt0 ||
+          suspectHours;
         if (!needsClimate) continue;
         try {
           var clim = await fetchClimateForPeriod(center, { date_start: row.date_start, date_end: row.date_end });
-          if (row.vpd_mean == null) row.vpd_mean = clim.vpd_mean;
-          if (row.et0_sum == null) row.et0_sum = clim.et0_sum;
-          if (row.rain_sum == null) row.rain_sum = clim.rain_sum;
+          if (clim.vpd_mean != null) row.vpd_mean = clim.vpd_mean;
+          if (clim.et0_sum != null) row.et0_sum = clim.et0_sum;
+          if (clim.rain_sum != null) row.rain_sum = clim.rain_sum;
           if (clim.vpd_hours_low != null) {
             row.vpd_hours_low = clim.vpd_hours_low;
             row.vpd_hours_opt = clim.vpd_hours_opt;
