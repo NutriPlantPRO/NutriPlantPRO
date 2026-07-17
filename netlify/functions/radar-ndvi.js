@@ -14,7 +14,7 @@
  *   NUTRIPLANT_ADMIN_KEY                  — opcional; admin_key en body (misma clave ?k= del panel admin)
  *
  * Body JSON:
- *   action: "status" | "generate" | "admin_status" | "admin_lectura_status" | "admin_list" | "admin_delete"
+ *   action: "status" | "generate" | "admin_status" | "admin_lectura_status" | "admin_user_credits" | "admin_list" | "admin_delete"
  *   project_id: string
  *   access_token: string (JWT usuario; también se acepta Authorization: Bearer)
  */
@@ -712,6 +712,39 @@ exports.handler = async (event) => {
       owner_user_id: ownerLect,
       items: itemsLect,
       lectura_saved: locSnap
+    });
+  }
+
+  if (bodyActionEarly === 'admin_user_credits') {
+    if (!isAdminRadarAuthorized(event, body)) {
+      return jsonResponse(403, {
+        error: 'admin_unauthorized',
+        message: 'Acceso admin denegado. Abre el panel con ?k= válido o usa X-Radar-Admin-Secret.'
+      });
+    }
+    const userIdCred = body.user_id != null ? String(body.user_id).trim() : '';
+    if (!userIdCred) {
+      return jsonResponse(400, { error: 'user_id es obligatorio' });
+    }
+    const mkCred = monthKey();
+    const baseCred = radarCredits.getMonthlyBaseLimit();
+    const [usedCred, bonusCred] = await Promise.all([
+      sumMonthlyCreditsUsed(supabase, userIdCred, mkCred),
+      getBonusCredits(supabase, userIdCred)
+    ]);
+    const limitCred = baseCred + bonusCred;
+    return jsonResponse(200, {
+      ok: true,
+      admin: true,
+      user_id: userIdCred,
+      month_key: mkCred,
+      credits: {
+        used: usedCred,
+        base: baseCred,
+        bonus: bonusCred,
+        limit: limitCred,
+        available: Math.max(0, limitCred - usedCred)
+      }
     });
   }
 
