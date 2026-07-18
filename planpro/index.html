@@ -1377,7 +1377,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 46%;
+      max-width: 34%;
       opacity: 0.52;
       line-height: 1.2;
       transition: opacity 0.12s ease;
@@ -1501,39 +1501,17 @@
       min-width: 0;
       margin-bottom: 0;
     }
-    .np-nutri-folder-action {
-      flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
-      padding: 0;
-      border: 0;
-      border-radius: 8px;
-      background: transparent;
-      color: #94a3b8;
-      font-size: 14px;
-      line-height: 1;
-      cursor: pointer;
-      opacity: 0.55;
-      transition: background 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+    .np-nutri-folder-wrap .np-tree-menu-wrap {
+      opacity: 0.72;
+      transition: opacity 0.12s ease;
     }
-    .np-nutri-folder-wrap:hover .np-nutri-folder-action,
-    .np-nutri-folder-action:focus-visible {
+    .np-nutri-folder-wrap:hover .np-tree-menu-wrap,
+    .np-nutri-folder-wrap .np-tree-menu-wrap:focus-within {
       opacity: 1;
     }
-    .np-nutri-folder-rename:hover,
-    .np-nutri-folder-rename--active {
+    .np-nutri-folder-wrap .np-tree-btn-more.np-nutri-folder-rename--active {
       background: rgba(219, 234, 254, 0.9);
       color: #1d4ed8;
-      opacity: 1;
-    }
-    .np-nutri-folder-stats:hover,
-    .np-nutri-folder-stats--active {
-      background: rgba(236, 253, 245, 0.95);
-      color: #047857;
-      opacity: 1;
     }
     .np-nutri-folder-collapse {
       flex-shrink: 0;
@@ -1559,10 +1537,6 @@
     .np-nutri-folder-collapse--empty {
       opacity: 0.3;
       cursor: default;
-    }
-    .np-nutri-folder-del:hover {
-      background: rgba(254, 226, 226, 0.85);
-      color: #b91c1c;
     }
     .np-nutri-folder-rename-row {
       display: flex;
@@ -12620,6 +12594,8 @@
       window.removeEventListener('resize', npTreeMenuLayoutListener);
       var mountScroll = $('npTreeMount');
       if (mountScroll) mountScroll.removeEventListener('scroll', npTreeMenuLayoutListener, true);
+      var nutriTreeScroll = $('npNutriFolderTree');
+      if (nutriTreeScroll) nutriTreeScroll.removeEventListener('scroll', npTreeMenuLayoutListener, true);
       npTreeMenuLayoutListener = null;
     }
     document.querySelectorAll('.np-tree-menu[data-np-tree-branch-menu]').forEach(function (el) {
@@ -12632,12 +12608,9 @@
         host.appendChild(el);
       }
     });
-    var m = $('npTreeMount');
-    if (m) {
-      m.querySelectorAll('.np-tree-btn-more').forEach(function (btn) {
-        btn.setAttribute('aria-expanded', 'false');
-      });
-    }
+    document.querySelectorAll('.np-tree-btn-more').forEach(function (btn) {
+      btn.setAttribute('aria-expanded', 'false');
+    });
   }
 
   /** Menú ⋯ del árbol: fijo en viewport; el DOM se mueve a body al abrir (evita bug de fixed dentro del sidebar). */
@@ -12673,6 +12646,8 @@
       window.removeEventListener('resize', npTreeMenuLayoutListener);
       var prevMount = $('npTreeMount');
       if (prevMount) prevMount.removeEventListener('scroll', npTreeMenuLayoutListener, true);
+      var prevNutri = $('npNutriFolderTree');
+      if (prevNutri) prevNutri.removeEventListener('scroll', npTreeMenuLayoutListener, true);
     }
     npTreeMenuLayoutListener = function () {
       positionTreeMenuFixed(menuEl, wrapEl);
@@ -12681,6 +12656,8 @@
     window.addEventListener('resize', npTreeMenuLayoutListener);
     var mount = $('npTreeMount');
     if (mount) mount.addEventListener('scroll', npTreeMenuLayoutListener, true);
+    var nutriTree = $('npNutriFolderTree');
+    if (nutriTree) nutriTree.addEventListener('scroll', npTreeMenuLayoutListener, true);
   }
 
   function closeAllLedgerTemplateMenus() {
@@ -22686,7 +22663,7 @@
   }
 
   var PLAN_SHEET_ITEMS_PREVIEW_LIMIT = 10;
-  var PLAN_NUTRI_FILES_PREVIEW_LIMIT = 10;
+  var PLAN_NUTRI_FILES_PREVIEW_LIMIT = 12;
 
   function planProInitItemSortPrefs() {
     try {
@@ -27254,9 +27231,6 @@
     if (!modal) return;
     modal.classList.remove('np-modal-open');
     modal.setAttribute('aria-hidden', 'true');
-    document.querySelectorAll('.np-nutri-folder-stats--active').forEach(function (btn) {
-      btn.classList.remove('np-nutri-folder-stats--active');
-    });
   }
 
   function nutriProFolderStatsBlockHtml(title, stats) {
@@ -27990,24 +27964,7 @@
     var parentKey = cur.parent_id || null;
     var siblings = nutriProFolderSiblings(parentKey);
     var blocks = [];
-    if (siblings.length > 1) {
-      var sibBlock = document.createElement('div');
-      sibBlock.className = 'np-nutri-folder-nav-block np-nutri-folder-nav-block--siblings';
-      var sibLabel = document.createElement('div');
-      sibLabel.className = 'np-nutri-folder-nav-label';
-      sibLabel.textContent = parentKey ? 'Al mismo nivel' : 'Carpetas principales';
-      var sibRow = document.createElement('div');
-      sibRow.className = 'np-nutri-folder-chip-row';
-      siblings.forEach(function (s) {
-        if (!s || !s.id) return;
-        sibRow.appendChild(
-          nutriProMakeFolderChip(s, { sibling: true, active: s.id === fid })
-        );
-      });
-      sibBlock.appendChild(sibLabel);
-      sibBlock.appendChild(sibRow);
-      blocks.push(sibBlock);
-    }
+    /* Subir a carpeta padre primero (ej. ↑ Personal), luego hermanos y subcarpetas */
     if (cur.parent_id) {
       var parent = nutriProGetFolderById(cur.parent_id);
       if (parent) {
@@ -28026,6 +27983,24 @@
         upBlock.appendChild(upRow);
         blocks.push(upBlock);
       }
+    }
+    if (siblings.length > 1) {
+      var sibBlock = document.createElement('div');
+      sibBlock.className = 'np-nutri-folder-nav-block np-nutri-folder-nav-block--siblings';
+      var sibLabel = document.createElement('div');
+      sibLabel.className = 'np-nutri-folder-nav-label';
+      sibLabel.textContent = parentKey ? 'Al mismo nivel' : 'Carpetas principales';
+      var sibRow = document.createElement('div');
+      sibRow.className = 'np-nutri-folder-chip-row';
+      siblings.forEach(function (s) {
+        if (!s || !s.id) return;
+        sibRow.appendChild(
+          nutriProMakeFolderChip(s, { sibling: true, active: s.id === fid })
+        );
+      });
+      sibBlock.appendChild(sibLabel);
+      sibBlock.appendChild(sibRow);
+      blocks.push(sibBlock);
     }
     if (children.length) {
       var childBlock = document.createElement('div');
@@ -28720,51 +28695,86 @@
         nutriProSelectFolder(fid);
       });
     })(f.id);
-    var ren = document.createElement('button');
-    ren.type = 'button';
-    ren.className =
-      'np-nutri-folder-action np-nutri-folder-rename np-nutri-folder-ignore' +
+    var menuWrap = document.createElement('div');
+    menuWrap.className = 'np-tree-menu-wrap np-nutri-folder-ignore';
+    var btnMore = document.createElement('button');
+    btnMore.type = 'button';
+    btnMore.className =
+      'np-tree-btn-more np-nutri-folder-ignore' +
       (state.nutriProFolderEditingId === f.id ? ' np-nutri-folder-rename--active' : '');
-    ren.title = state.nutriProFolderEditingId === f.id ? 'Cerrar edición' : 'Editar nombre y color';
-    ren.setAttribute('aria-label', 'Editar carpeta ' + (f.title || ''));
-    ren.textContent = '✎';
+    btnMore.setAttribute('aria-label', 'Más acciones de carpeta');
+    btnMore.setAttribute('aria-haspopup', 'true');
+    btnMore.setAttribute('aria-expanded', 'false');
+    btnMore.title = 'Más acciones';
+    btnMore.textContent = '\u22EE';
+    var menu = document.createElement('div');
+    menu.className = 'np-tree-menu np-hide';
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('data-np-tree-branch-menu', '1');
+    var btnInfo = document.createElement('button');
+    btnInfo.type = 'button';
+    btnInfo.className = 'np-tree-menu-item np-nutri-folder-ignore';
+    btnInfo.setAttribute('role', 'menuitem');
+    btnInfo.textContent = 'Ver totales';
+    var btnRename = document.createElement('button');
+    btnRename.type = 'button';
+    btnRename.className = 'np-tree-menu-item np-nutri-folder-ignore';
+    btnRename.setAttribute('role', 'menuitem');
+    btnRename.textContent =
+      state.nutriProFolderEditingId === f.id ? 'Cerrar edición' : 'Editar nombre y color…';
+    var btnDel = document.createElement('button');
+    btnDel.type = 'button';
+    btnDel.className = 'np-tree-menu-item np-tree-menu-item-danger np-nutri-folder-ignore';
+    btnDel.setAttribute('role', 'menuitem');
+    btnDel.textContent = 'Eliminar carpeta…';
     (function (folderRec) {
-      ren.addEventListener('click', function (e) {
+      btnInfo.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        toggleNutriProFolderEdit(folderRec);
-      });
-    })(f);
-    var info = document.createElement('button');
-    info.type = 'button';
-    info.className = 'np-nutri-folder-action np-nutri-folder-stats np-nutri-folder-ignore';
-    info.title = 'Ver totales de archivos, enlaces y peso';
-    info.setAttribute('aria-label', 'Ver totales de ' + (f.title || 'carpeta'));
-    info.textContent = 'ⓘ';
-    (function (folderRec) {
-      info.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
+        closeAllTreeMenus();
         openNutriProFolderStatsModal(folderRec.id);
       });
-    })(f);
-    var del = document.createElement('button');
-    del.type = 'button';
-    del.className = 'np-nutri-folder-action np-nutri-folder-del np-nutri-folder-ignore';
-    del.title = 'Eliminar carpeta';
-    del.setAttribute('aria-label', 'Eliminar carpeta ' + (f.title || ''));
-    del.textContent = '×';
-    (function (folderRec) {
-      del.addEventListener('click', function (e) {
+      btnRename.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
+        closeAllTreeMenus();
+        toggleNutriProFolderEdit(folderRec);
+      });
+      btnDel.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllTreeMenus();
         deleteNutriProFolder(folderRec);
       });
     })(f);
+    btnMore.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var wasHidden = menu.classList.contains('np-hide');
+      closeAllTreeMenus();
+      if (wasHidden) {
+        menu.classList.remove('np-hide');
+        btnMore.setAttribute('aria-expanded', 'true');
+        document.body.appendChild(menu);
+        positionTreeMenuFixed(menu, menuWrap);
+        bindTreeMenuLayoutWatch(menu, menuWrap);
+        requestAnimationFrame(function () {
+          positionTreeMenuFixed(menu, menuWrap);
+          requestAnimationFrame(function () {
+            positionTreeMenuFixed(menu, menuWrap);
+          });
+        });
+      }
+    });
+    menu.appendChild(btnInfo);
+    menu.appendChild(btnRename);
+    menu.appendChild(btnDel);
+    menuWrap.appendChild(btnMore);
+    menuWrap.appendChild(menu);
+    menu._npTreeMenuAnchorBtn = btnMore;
+    menu._npTreeMenuWrapHost = menuWrap;
     wrap.appendChild(btn);
-    wrap.appendChild(info);
-    wrap.appendChild(ren);
-    wrap.appendChild(del);
+    wrap.appendChild(menuWrap);
     mount.appendChild(wrap);
     if (hasKids && !state.nutriProCollapsedFolderIds[f.id]) {
       var branch = document.createElement('div');
