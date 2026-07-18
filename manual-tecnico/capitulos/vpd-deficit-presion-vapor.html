@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VPD, NDVI y NDMI — Manual NutriPlant PRO</title>
-  <meta name="description" content="VPD (cálculo kPa), Radar Satelital NDVI/NDMI (Pilot y Lectura Satelital histórica), rangos de manejo y uso en NutriPlant PRO.">
+  <meta name="description" content="VPD (cálculo kPa), Radar Satelital NDVI/NDMI/NDRE/RGB (Pilot y Lectura Satelital histórica, máx. 250 ha), rangos de manejo y uso en NutriPlant PRO.">
   <link rel="canonical" href="https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html">
   <link rel="icon" type="image/png" href="../../assets/N_Hoja_Azul.png">
   <link rel="stylesheet" href="../assets/manual.css">
@@ -13,7 +13,7 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "VPD, NDVI y NDMI",
-  "description": "VPD (cálculo kPa), Radar Satelital NDVI/NDMI (Pilot y Lectura Satelital histórica), rangos de manejo y uso en NutriPlant PRO.",
+  "description": "VPD (cálculo kPa), Radar Satelital NDVI/NDMI/NDRE/RGB (Pilot y Lectura Satelital histórica, máx. 250 ha), rangos de manejo y uso en NutriPlant PRO.",
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/vpd-deficit-presion-vapor.html",
   "inLanguage": "es",
   "datePublished": "2026-05-01",
@@ -62,11 +62,12 @@
     <p>
       El <strong>VPD</strong> (déficit de presión de vapor) mide la “capacidad de secado” del aire a partir de
       <strong>temperatura y humedad</strong> (clima de estación o valores manuales). El módulo
-      <strong>Radar Satelital</strong> (antes «Ubicación») muestra mapas <strong>NDVI</strong> y
-      <strong>NDMI</strong> obtenidos por <strong>lectura satelital multiespectral</strong> sobre el polígono
-      del predio, con dos pestañas internas: <strong>Polígono / NDVI y NDMI</strong> (imagen puntual Pilot) y
+      <strong>Radar Satelital</strong> (antes «Ubicación») muestra mapas <strong>NDVI</strong>,
+      <strong>NDMI</strong>, <strong>NDRE</strong> y <strong>RGB</strong> obtenidos por
+      <strong>lectura satelital multiespectral</strong> sobre el polígono
+      del predio (máx. <strong>250 ha</strong>), con dos pestañas internas: <strong>Polígono / NDVI y NDMI</strong> (imagen puntual Pilot) y
       <strong>Lectura Satelital</strong> (histórico por periodos con clima y riego). Son herramientas
-      complementarias: VPD = clima; NDVI/NDMI = vigor y condición hídrica relativa del dosel vistos desde arriba.
+      complementarias: VPD = clima; índices satelitales = vigor, dosel y vista natural desde arriba.
     </p>
 
     <h2>VPD — qué es y de dónde salen los datos</h2>
@@ -121,88 +122,78 @@
     </table>
     <p>Depende de cultivo, fase y radiación. Validar en campo.</p>
 
-    <h2>NDVI y NDMI — Radar Satelital</h2>
+    <h2>NDVI, NDMI, NDRE y RGB — Radar Satelital</h2>
     <p>
       En <strong>Radar Satelital → Polígono / NDVI y NDMI</strong>, NutriPlant genera mapas
       <strong>Pilot Copernicus/Sentinel-2</strong> sobre el <strong>polígono del predio</strong> a partir de
       <strong>imágenes satelitales multiespectrales</strong>: sensores que miden reflectancia en bandas del
-      visible e <strong>infrarrojo</strong> (cercano NIR y, para NDMI, infrarrojo de onda corta SWIR). No es una
-      foto RGB común: cada banda responde distinto a la vegetación y al agua en el dosel.
+      visible e <strong>infrarrojo</strong> (cercano NIR, red edge y, para NDMI, infrarrojo de onda corta SWIR).
     </p>
-    <p>De esas bandas se calculan <strong>índices normalizados</strong> (diferencia normalizada entre dos bandas):</p>
+    <p>De esas bandas se calculan <strong>índices normalizados</strong> y una vista natural:</p>
     <div class="mt-formula">
       NDVI ≈ (NIR − Rojo) ÷ (NIR + Rojo)<br>
-      NDMI ≈ (NIR − SWIR) ÷ (NIR + SWIR)
+      NDMI ≈ (NIR − SWIR) ÷ (NIR + SWIR)<br>
+      NDRE ≈ (NIR − Red Edge) ÷ (NIR + Red Edge)<br>
+      RGB = composición color natural (azul + verde + rojo)
     </div>
     <ul>
-      <li><strong>NDVI</strong> (Normalized Difference Vegetation Index) — <strong>vigor relativo</strong> y
-        actividad fotosintética dentro del lote. En el mapa: tonos verdes = mayor vigor relativo; amarillo,
-        naranja o rojo = menor vigor relativo dentro del mismo predio (suelo desnudo, sombra, estrés, poda,
-        heterogeneidad de manejo, etc.).</li>
-      <li><strong>NDMI</strong> (Normalized Difference Moisture Index) — <strong>condición hídrica relativa
-        del dosel/canopia</strong>. En el mapa: verdes = mayor humedad relativa en la vegetación; tonos secos =
-        menor. <em>No</em> es humedad volumétrica del suelo ni lámina de riego medida en campo.</li>
+      <li><strong>NDVI</strong> — <strong>vigor relativo</strong> y actividad fotosintética dentro del lote.</li>
+      <li><strong>NDMI</strong> — <strong>condición hídrica relativa del dosel/canopia</strong> (no es humedad volumétrica del suelo).</li>
+      <li><strong>NDRE</strong> — <strong>clorofila / estado del dosel</strong> (banda red edge B05 + NIR).</li>
+      <li><strong>RGB</strong> — <strong>vista natural</strong> del predio (mismas pasadas Sentinel; útil para ubicar y contrastar con índices).</li>
     </ul>
     <p>
-      Los valores son <strong>relativos al predio y a la fecha</strong> de la imagen: sirven para detectar
-      zonas distintas, priorizar recorridos y cruzar con riego, suelo, foliar, VPD y observación en campo.
+      Las cuatro capas salen de la <strong>misma generación</strong> y las <strong>mismas pasadas</strong> (mediana por píxel + máscara SCL de nubes/sombra).
+      Orden en pantalla: NDVI → NDMI → NDRE → <strong>RGB</strong> (última).
+      Los índices son <strong>relativos al predio y a la fecha</strong>; RGB es color natural.
       No sustituyen diagnóstico por una sola mancha de color.
     </p>
     <h3>Colorimetría NutriPlant — niveles de referencia dentro del predio</h3>
     <p>
-      En el Radar Pilot, la barra de colores se ajusta al <strong>rango interno del predio</strong> para que
-      el mapa revele contrastes útiles dentro del lote. La colorimetría no debe leerse como una escala universal
-      tipo “rojo = malo absoluto” o “verde = óptimo absoluto”. Es una <strong>escala relativa</strong>: compara
-      las zonas entre sí en el mismo polígono y en esa fecha.
+      En NDVI/NDMI/NDRE, la barra de colores se ajusta al <strong>rango interno del predio</strong> (percentiles P10–P90)
+      para revelar contrastes útiles dentro del lote. No es una escala universal: no compares dos predios solo por color.
     </p>
     <table class="mt-table">
       <thead><tr><th>Nivel visual</th><th>Lectura técnica</th><th>Uso recomendado</th></tr></thead>
       <tbody>
-        <tr><td>Rojo / naranja</td><td>Menor nivel relativo del predio (vigor NDVI o humedad de dosel NDMI más baja frente al resto del lote).</td><td>Priorizar recorrido, revisar suelo descubierto/sombra, riego, drenaje, raíz, salinidad, nutrición, plagas o etapa.</td></tr>
+        <tr><td>Rojo / naranja</td><td>Menor nivel relativo del predio (vigor, humedad de dosel o clorofila más baja frente al resto del lote).</td><td>Priorizar recorrido, revisar suelo descubierto/sombra, riego, drenaje, raíz, salinidad, nutrición, plagas o etapa.</td></tr>
         <tr><td>Amarillo / verde claro</td><td>Nivel intermedio del predio; zona de transición o comportamiento promedio.</td><td>Comparar con historial, manejo y condiciones de campo antes de decidir.</td></tr>
-        <tr><td>Verde intenso / azul verdoso en NDMI</td><td>Mayor nivel relativo del predio (más vigor o mayor humedad relativa del dosel frente al resto del lote).</td><td>Usar como referencia interna y verificar si representa buen desarrollo, mayor cobertura o exceso de humedad según el contexto.</td></tr>
+        <tr><td>Verde intenso / teal / azul verdoso</td><td>Mayor nivel relativo (más vigor, humedad de dosel o clorofila frente al resto del lote).</td><td>Usar como referencia interna y validar en campo.</td></tr>
+        <tr><td>RGB</td><td>Colores naturales del predio (no escala Menor/Mayor).</td><td>Ubicar el lote y contrastar visualmente con los índices.</td></tr>
       </tbody>
     </table>
-    <p>
-      Técnicamente, NutriPlant usa una normalización relativa por predio (percentiles internos, como P10–P90)
-      para que los extremos de color representen los contrastes principales del polígono. Por eso dos predios
-      distintos, o dos fechas distintas, <strong>no deben compararse solo por color</strong>; compara con historial,
-      datos agronómicos y observación de campo.
-    </p>
     <div class="mt-warn">
-      Requisito: polígono guardado y <strong>sincronizado a la nube</strong> en
-      <strong>Radar Satelital</strong>. La imagen queda guardada y anclada al polígono al generarla, para que el
-      historial se muestre en su ubicación original aunque después cambie el proyecto o se consulte otra fecha.
+      Requisito: polígono guardado y <strong>sincronizado a la nube</strong>.
+      <strong>Tope de superficie:</strong> Radar admite predios de hasta <strong>250 ha</strong>. Si el polígono es mayor,
+      el mensaje es: <em>«Radar máximo 250 ha; divide el polígono»</em> (no gasta crédito). Para ranchos grandes, traza lotes por separado.
     </div>
 
-    <h2>Generación e historial Radar Pilot (NDVI + NDMI juntos)</h2>
+    <h2>Generación e historial Radar Pilot (NDVI + NDMI + NDRE + RGB)</h2>
     <p>
-      Cada <strong>generación Pilot</strong> (pestaña <strong>Polígono / NDVI y NDMI</strong>) produce las dos
-      capas (<strong>NDVI</strong> y <strong>NDMI</strong>) en una sola operación, las guarda en el historial del
-      proyecto y permite volver a verlas desde el selector <strong>Imagen</strong>. El flujo actual usa
-      Copernicus/Sentinel-2 sin Google Earth Engine, pero mantiene <strong>créditos Radar internos</strong> para
-      controlar cómputo y almacenamiento.
+      Cada <strong>generación Pilot</strong> produce las <strong>cuatro capas</strong> en una sola operación, las guarda en el historial
+      y permite cambiarlas con el selector <strong>Capa</strong>. Flujo actual: Copernicus/Sentinel-2 (sin Google Earth Engine como mando principal),
+      con <strong>créditos Radar internos</strong>.
     </p>
     <ul>
-      <li><strong>Cómo se arma la imagen:</strong> Sentinel-2 pasa ~cada 5 días. NutriPlant busca primero en los últimos
-        <strong>14 días</strong> (nubes ≤35%) hasta <strong>3 pasadas</strong> claras (con <strong>1 o 2 ya genera</strong>); si no hay
-        cobertura útil amplía a <strong>21</strong> (≤40%) y luego <strong>30 días</strong> (≤50%; nunca más atrás). Combina con
-        <strong>mediana por píxel</strong> cuando hay varias escenas. Tras filtrar nubes/sombra (SCL), si el predio queda
-        sin cobertura útil (&lt;~15&nbsp;% de píxeles válidos), <strong>no se guarda</strong> una imagen vacía. La meta
-        muestra las <strong>fechas satelitales</strong> usadas.</li>
-      <li><strong>Generar / actualizar Pilot:</strong> calcula y guarda NDVI+NDMI para el predio.</li>
+      <li><strong>Cómo se arma la imagen:</strong> junta hasta <strong>8 pasadas</strong> Sentinel (mediana por píxel) en ventanas
+        <strong>14 → 21 → 30 → 45 días</strong> para maximizar cobertura. Solo corta antes si llega ~<strong>100&nbsp;%</strong> de píxeles útiles;
+        si no, sigue buscando y al final <strong>guarda lo mejor</strong> (ej. 89&nbsp;%). Tras filtrar nubes/sombra (SCL), si el predio queda
+        sin cobertura útil (&lt;~15&nbsp;%), <strong>no se guarda</strong> una imagen vacía. La meta muestra fechas satelitales y % útil.</li>
+      <li><strong>Generar / actualizar Pilot:</strong> calcula y guarda NDVI+NDMI+NDRE+RGB.</li>
       <li><strong>Ver en mapa:</strong> superpone la imagen guardada seleccionada; no genera una imagen nueva.</li>
-      <li><strong>Capa NDVI/NDMI:</strong> cambia qué índice se visualiza de la misma generación guardada.</li>
-      <li><strong>Límite mensual:</strong> 20 créditos Radar base por cuenta (+ bonus admin). Costo por generación Pilot: ≤30 ha = 1 · &gt;30 ha = 2 · &gt;100 ha = 3 créditos (NDVI+NDMI juntos).</li>
-      <li><strong>Google Earth Engine:</strong> queda como respaldo interno/standby; no es el mando principal visible del Radar.</li>
+      <li><strong>Capa:</strong> NDVI → NDMI → NDRE → RGB (misma generación).</li>
+      <li><strong>Límite de área:</strong> máximo <strong>250 ha</strong> por generación.</li>
+      <li><strong>Límite mensual:</strong> 20 créditos Radar base por cuenta (+ bonus admin). Costo Pilot: ≤30 ha = 1 · &gt;30 ha = 2 · &gt;100 ha = 3 créditos (las cuatro capas juntas).</li>
+      <li><strong>Google Earth Engine:</strong> respaldo interno/standby; no es el mando principal visible.</li>
     </ul>
 
     <h2>Lectura Satelital (histórico por periodos)</h2>
     <p>
       La pestaña <strong>Radar Satelital → Lectura Satelital</strong> arma un histórico del <strong>mismo
       predio</strong> con <strong>2 a 6 periodos</strong> hacia atrás desde una fecha final, en frecuencia
-      <strong>quincenal</strong> (15 días) o <strong>mensual</strong> (mes calendario). Cada periodo aporta un
-      factor numérico (NDVI/NDMI promedio de píxeles válidos) correlacionable con clima y riego.
+      <strong>quincenal</strong> (15 días) o <strong>mensual</strong> (mes calendario). Cada periodo aporta
+      NDVI/NDMI/NDRE promedio, miniaturas (incl. RGB), VPD, ET₀, lluvia y riego.
+      Mismo tope: <strong>máximo 250 ha</strong>.
     </p>
     <h3>Controles</h3>
     <ul>
@@ -216,7 +207,7 @@
       <thead><tr><th>Columna</th><th>Origen</th></tr></thead>
       <tbody>
         <tr><td>Periodo (fechas)</td><td>Calculado en la app hacia atrás desde la fecha final</td></tr>
-        <tr><td>NDVI / NDMI promedio</td><td>Media de píxeles válidos dentro del polígono (meta <code>ndvi_mean</code> / <code>ndmi_mean</code>)</td></tr>
+        <tr><td>NDVI / NDMI / NDRE promedio</td><td>Media de píxeles válidos dentro del polígono</td></tr>
         <tr><td>VPD promedio (kPa)</td><td>Open-Meteo horario → misma lógica VPD del Clima → promedio del periodo</td></tr>
         <tr><td>ET₀ (mm)</td><td>Open-Meteo diario <code>et0_fao_evapotranspiration</code> → <strong>suma</strong></td></tr>
         <tr><td>Lluvia (mm)</td><td>Open-Meteo diario <code>precipitation_sum</code> → <strong>suma</strong></td></tr>
@@ -225,23 +216,23 @@
       </tbody>
     </table>
     <p>
-      Debajo: <strong>gráfica</strong> (líneas NDVI/NDMI/ET₀/lluvia/riego + barras de horas VPD) y
-      <strong>miniaturas NDVI | NDMI</strong> por periodo (clic para ver grande). También en PDF y panel admin.
+      Debajo: <strong>gráfica</strong> (líneas NDVI/NDMI/NDRE/ET₀/lluvia/riego + barras de horas VPD) y
+      <strong>miniaturas NDVI | NDMI | NDRE | RGB</strong> por periodo (clic para ver grande). También en PDF y panel admin.
     </p>
     <h3>Satélite por periodo (distinto al Pilot de la pestaña 1)</h3>
     <ul>
-      <li><strong>Quincenal y mensual:</strong> buscan escenas en la ventana del periodo (15 d o mes calendario).
-        Prefieren las más claras (no solo las más recientes). Si la cobertura útil es baja (~15&nbsp;% como Pilot),
-        reintentan con umbral de nubes más amplio y pueden <strong>ampliar a 30 días</strong> anclados al periodo
-        (<code>lookback_expanded: true</code>, asterisco en la tabla).</li>
-      <li>Con <strong>1 o 2 escenas buenas</strong> ya generan imagen; “hasta 3” es el máximo, no el mínimo.</li>
-      <li>Cada periodo tiene su propio <code>date_start</code> / <code>date_end</code>; no reutiliza “últimos 30 días desde hoy”.</li>
+      <li>Hasta <strong>6 pasadas</strong> por periodo (mediana + SCL) para maximizar cobertura; solo para si ~100&nbsp;% útiles;
+        si no, guarda lo mejor. Quincena incompleta puede ampliar <strong>ese periodo</strong> al mes calendario
+        (<code>lookback_expanded</code>, asterisco); clima/riego siguen en los 15 días.</li>
+      <li>Misma lógica de capas que Pilot: NDVI, NDMI, NDRE y RGB de las mismas pasadas.</li>
+      <li>Cada periodo tiene su propio <code>date_start</code> / <code>date_end</code>; no reutiliza “últimos 45 días desde hoy”.</li>
     </ul>
     <h3>Créditos Lectura Satelital</h3>
     <p>
       Costo <strong>fijo por toda la consulta</strong> (no por periodo): <strong>3 créditos Radar</strong> para un predio
       normal (≤30 ha) y <strong>4 créditos</strong> para un predio &gt;30 ha, sin importar si eliges 2 o 6 periodos.
       Se valida el cupo <strong>antes</strong> de encolar; el costo se reserva una sola vez al iniciar la consulta.
+      Si el predio supera <strong>250 ha</strong>, no se encola: <em>«Radar máximo 250 ha; divide el polígono»</em>.
     </p>
     <div class="mt-warn">
       Lectura Satelital correlaciona índices satelitales con clima y riego registrado; <strong>no sustituye</strong>
@@ -253,9 +244,9 @@
       <strong>VPD:</strong> calculadoras simple y avanzada, historial de cálculos y series por día/semana/mes
       (máximos por fecha). <strong>Lluvia y ET₀:</strong> tablas mensuales y
       <a href="balance-hidrico-riego-clima.html">calculadora de balance hídrico</a> (déficit y riego rápido).
-      <strong>Radar Satelital:</strong> (1) Polígono / NDVI-NDMI con capas, «Ver en mapa» e historial Pilot;
-      (2) Lectura Satelital con tabla, gráfica y galería por periodos. Cruce recomendado: riego, textura/drenaje,
-      análisis foliar/suelo, VPD y recorrido de zonas contrastantes en el mapa.
+      <strong>Radar Satelital:</strong> (1) Polígono / capas NDVI-NDMI-NDRE-RGB, «Ver en mapa» e historial Pilot
+      (máx. 250 ha); (2) Lectura Satelital con tabla, gráfica y galería por periodos. Cruce recomendado: riego,
+      textura/drenaje, análisis foliar/suelo, VPD y recorrido de zonas contrastantes en el mapa.
     </p>
     <nav class="mt-chapter-nav"><a href="../index.html">Índice</a></nav>
   </main>

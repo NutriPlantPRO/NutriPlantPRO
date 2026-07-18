@@ -281,12 +281,22 @@ function pickAssetHref(assets, names) {
 
 async function resolveSceneAssets(item, provider, cdseToken) {
   const assets = item.assets || {};
+  // NDVI: B04+B08 · NDMI: B08+B11 · NDRE: B08+B05 · RGB: B04+B03+B02 · máscara: SCL
+  const b02 = pickAssetHref(assets, ['B02', 'b02', 'blue']);
+  const b03 = pickAssetHref(assets, ['B03', 'b03', 'green']);
   const b04 = pickAssetHref(assets, ['B04', 'b04', 'red']);
+  const b05 = pickAssetHref(assets, ['B05', 'b05', 'rededge1', 'rededge']);
   const b08 = pickAssetHref(assets, ['B08', 'b08', 'nir']);
   const b11 = pickAssetHref(assets, ['B11', 'b11', 'swir16', 'swir']);
   const scl = pickAssetHref(assets, ['SCL', 'scl']);
   if (!b04 || !b08 || !b11) {
     throw new Error('Escena sin bandas B04/B08/B11');
+  }
+  if (!b05) {
+    throw new Error('Escena sin banda B05 (necesaria para NDRE)');
+  }
+  if (!b02 || !b03) {
+    throw new Error('Escena sin bandas B02/B03 (necesarias para RGB)');
   }
   if (!scl) {
     throw new Error('Escena sin banda SCL');
@@ -301,14 +311,20 @@ async function resolveSceneAssets(item, provider, cdseToken) {
       return href;
     };
     return {
+      b02: await sign(b02),
+      b03: await sign(b03),
       b04: await sign(b04),
+      b05: await sign(b05),
       b08: await sign(b08),
       b11: await sign(b11),
       scl: await sign(scl)
     };
   }
   return {
+    b02: await signPcHref(b02),
+    b03: await signPcHref(b03),
     b04: await signPcHref(b04),
+    b05: await signPcHref(b05),
     b08: await signPcHref(b08),
     b11: await signPcHref(b11),
     scl: await signPcHref(scl)

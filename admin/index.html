@@ -812,7 +812,7 @@
                     <button class="btn-admin secondary" onclick="showDeletedProjects()">♻️ Proyectos eliminados</button>
                     <button class="btn-admin secondary" onclick="searchProjects()">Buscar Proyectos</button>
                     <button class="btn-admin secondary" onclick="exportProjects()">Exportar Proyectos</button>
-                    <button class="btn-admin secondary" onclick="showRadarImagesAdmin()">🛰️ Imágenes Radar NDVI/NDMI</button>
+                    <button class="btn-admin secondary" onclick="showRadarImagesAdmin()">🛰️ Imágenes Radar NDVI/NDMI/NDRE/RGB</button>
                     <button class="btn-admin secondary" onclick="sanitizeLocalCacheConsistency(true)">🧹 Limpiar caché inconsistente</button>
                 </div>
                 
@@ -5517,7 +5517,7 @@
                     <div class="report-section-item admin-report-section-item selected" onclick="toggleAdminReportSection('location')" data-section="location">
                         <div class="report-section-info">
                             <div class="report-section-title">🛰️ Radar Satelital</div>
-                            <div class="report-section-description">Predio, polígono, Radar Pilot NDVI/NDMI y Lectura Satelital</div>
+                            <div class="report-section-description">Predio, polígono, Radar Pilot NDVI/NDMI/NDRE/RGB y Lectura Satelital</div>
                         </div>
                     </div>
                     <div class="report-section-item admin-report-section-item" onclick="toggleAdminReportSection('amendments')" data-section="amendments">
@@ -10009,11 +10009,11 @@
                                         📍 Ver coordenadas (${location.polygon.length})
                                     </button>
                                     <button type="button" onclick="showRadarAdminModal('${String(project.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')"
-                                            title="Ver historial de imágenes Radar NDVI/NDMI guardadas en la nube para este proyecto"
+                                            title="Ver historial de imágenes Radar NDVI/NDMI/NDRE/RGB guardadas en la nube para este proyecto"
                                             style="background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;"
                                             onmouseover="this.style.background='#047857'; this.style.transform='translateY(-1px)';"
                                             onmouseout="this.style.background='#059669'; this.style.transform='translateY(0)';">
-                                        🛰️ Radar NDVI/NDMI
+                                        🛰️ Radar NDVI/NDMI/NDRE/RGB
                                     </button>
                                     <button type="button" onclick="showLecturaAdminModal('${String(project.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')"
                                             title="Ver Lectura Satelital (histórico por periodos) de este proyecto"
@@ -10040,6 +10040,7 @@
                                             <th style="padding:6px 8px;text-align:left;">Periodo</th>
                                             <th style="padding:6px 8px;text-align:center;">NDVI</th>
                                             <th style="padding:6px 8px;text-align:center;">NDMI</th>
+                                            <th style="padding:6px 8px;text-align:center;">NDRE</th>
                                             <th style="padding:6px 8px;text-align:center;">VPD</th>
                                             <th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th>
                                             <th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>
@@ -10066,6 +10067,7 @@
                                                 '<td style="padding:6px 8px;font-weight:600;color:#14532d;">'+String(r.label||'')+(r.lookback_expanded?' *':'')+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.ndvi_mean,3)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.ndmi_mean,3)+'</td>'+
+                                                '<td style="padding:6px 8px;text-align:center;">'+n(r.ndre_mean,3)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.vpd_mean,2)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.et0_sum,1)+'</td>'+
                                                 '<td style="padding:6px 8px;text-align:center;">'+n(r.rain_sum,1)+'</td>'+
@@ -10077,7 +10079,7 @@
                                           </tbody>
                                         </table>
                                       </div>
-                                      <div style="font-size:11px;color:#64748b;margin-top:6px;">* quincena ampliada al mes calendario solo para la imagen (clima/riego siguen en 15 d). Pulsa «Lectura Satelital» para ver imágenes NDVI/NDMI.</div>
+                                      <div style="font-size:11px;color:#64748b;margin-top:6px;">* quincena ampliada al mes calendario solo para la imagen (clima/riego siguen en 15 d). Pulsa «Lectura Satelital» para ver imágenes NDVI/NDMI/NDRE/RGB.</div>
                                     </div>
                                     ` : `
                                     <div style="margin-top:12px;font-size:12px;color:#94a3b8;font-style:italic;">Sin Lectura Satelital guardada aún en este proyecto.</div>
@@ -13173,6 +13175,8 @@
                     var metaLine = metaBits.join(' · ');
                     var ndviUrl = it.signed_url || '';
                     var ndmiUrl = it.ndmi_signed_url || '';
+                    var ndreUrl = it.ndre_signed_url || '';
+                    var rgbUrl = it.rgb_signed_url || '';
                     var thumb =
                         ndviUrl
                             ? '<img src="' +
@@ -13186,15 +13190,30 @@
                               '" onclick="openAdminRadarLightboxFromEl(this)" ' +
                               'style="width:100%;height:140px;object-fit:cover;border-radius:8px;background:#f1f5f9;cursor:zoom-in;border:1px solid #e2e8f0;" title="Ver grande" />'
                             : '<div style="height:140px;border-radius:8px;background:#f8fafc;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;">Sin NDVI</div>';
-                    var ndmiBtn = ndmiUrl
-                        ? '<button type="button" onclick="openAdminRadarLightbox(' +
-                          JSON.stringify(ndmiUrl) +
-                          ', ' +
-                          JSON.stringify('NDMI · ' + badge) +
-                          ', ' +
-                          JSON.stringify(String(projLine)) +
-                          ')" style="font-size:11px;padding:5px 8px;border-radius:6px;border:1px solid #bae6fd;background:#f0f9ff;color:#0369a1;cursor:pointer;font-weight:700;">NDMI</button>'
-                        : '';
+                    function layerBtn(url, label, border, bg, color) {
+                        if (!url) return '';
+                        return (
+                            '<button type="button" onclick="openAdminRadarLightbox(' +
+                            JSON.stringify(url) +
+                            ', ' +
+                            JSON.stringify(label + ' · ' + badge) +
+                            ', ' +
+                            JSON.stringify(String(projLine)) +
+                            ')" style="font-size:11px;padding:5px 8px;border-radius:6px;border:1px solid ' +
+                            border +
+                            ';background:' +
+                            bg +
+                            ';color:' +
+                            color +
+                            ';cursor:pointer;font-weight:700;">' +
+                            label +
+                            '</button>'
+                        );
+                    }
+                    var layerBtns =
+                        layerBtn(ndmiUrl, 'NDMI', '#bae6fd', '#f0f9ff', '#0369a1') +
+                        layerBtn(ndreUrl, 'NDRE', '#99f6e4', '#f0fdfa', '#0f766e') +
+                        layerBtn(rgbUrl, 'RGB', '#cbd5e1', '#f8fafc', '#334155');
 
                     return (
                         '<article style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;display:flex;flex-direction:column;gap:8px;min-width:0;">' +
@@ -13225,7 +13244,7 @@
                               '</div>'
                             : '') +
                         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;">' +
-                        ndmiBtn +
+                        layerBtns +
                         '<button type="button" onclick="deleteRadarImageAdmin(' +
                         JSON.stringify(String(it.id)) +
                         ', ' +
@@ -13267,9 +13286,9 @@
         function deleteRadarImageAdmin(requestId, kindLabel) {
             if (!requestId) return;
             var ok = window.confirm(
-                '¿Eliminar esta imagen ' +
+                    '¿Eliminar esta imagen ' +
                     (kindLabel || 'Radar') +
-                    '?\n\nSe borrará el archivo (NDVI/NDMI), el registro y las referencias en el proyecto. El usuario dejará de verla.\n\nEsta acción no se puede deshacer.'
+                    '?\n\nSe borrará el archivo (NDVI/NDMI/NDRE/RGB), el registro y las referencias en el proyecto. El usuario dejará de verla.\n\nEsta acción no se puede deshacer.'
             );
             if (!ok) return;
             var body = document.getElementById('radarImagesAdminBody');
@@ -13384,8 +13403,14 @@
             var ndmi = latest && (latest.ndmi_signed_url || (latest.images && latest.images.ndmi && latest.images.ndmi.signed_url))
                 ? (latest.ndmi_signed_url || latest.images.ndmi.signed_url)
                 : '';
+            var ndre = latest && (latest.ndre_signed_url || (latest.images && latest.images.ndre && latest.images.ndre.signed_url))
+                ? (latest.ndre_signed_url || latest.images.ndre.signed_url)
+                : '';
+            var rgb = latest && (latest.rgb_signed_url || (latest.images && latest.images.rgb && latest.images.rgb.signed_url))
+                ? (latest.rgb_signed_url || latest.images.rgb.signed_url)
+                : '';
 
-            if (!history.length && !ndvi && !ndmi) {
+            if (!history.length && !ndvi && !ndmi && !ndre && !rgb) {
                 modal.innerHTML =
                     '<div style="background:#fff;border-radius:12px;padding:24px;max-width:520px;"><p style="color:#475569;margin:0;">No hay Radar guardado para este proyecto en la nube (el usuario debe generarlo desde Ubicación).</p>' +
                     '<button type="button" onclick="closeRadarAdminModal()" style="margin-top:16px;padding:8px 16px;border-radius:6px;border:none;background:#10b981;color:#fff;font-weight:600;cursor:pointer;">Cerrar</button></div>';
@@ -13427,11 +13452,21 @@
                   ndmi.replace(/"/g, '&quot;') +
                   '" alt="NDMI" data-full-src="' + ndmi.replace(/"/g, '&quot;') + '" data-zoom-title="NDMI — humedad del dosel" data-zoom-sub="Radar del cultivo · clic en ✕ o fuera para cerrar" onclick="openAdminRadarLightboxFromEl(this)" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;cursor:zoom-in;" title="Clic para ver grande" /></div>'
                 : '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#0f766e;margin-bottom:6px;font-size:13px;">NDMI — dosel</div><p style="color:#94a3b8;font-size:13px;margin:0;">Sin imagen NDMI en esta generación.</p></div>';
+            var blockNdre = ndre
+                ? '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#0f766e;margin-bottom:6px;font-size:13px;">NDRE — clorofila</div><img src="' +
+                  ndre.replace(/"/g, '&quot;') +
+                  '" alt="NDRE" data-full-src="' + ndre.replace(/"/g, '&quot;') + '" data-zoom-title="NDRE — clorofila y dosel" data-zoom-sub="Radar del cultivo · clic en ✕ o fuera para cerrar" onclick="openAdminRadarLightboxFromEl(this)" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;cursor:zoom-in;" title="Clic para ver grande" /></div>'
+                : '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#0f766e;margin-bottom:6px;font-size:13px;">NDRE — clorofila</div><p style="color:#94a3b8;font-size:13px;margin:0;">Sin imagen NDRE (regenere Pilot para capas nuevas).</p></div>';
+            var blockRgb = rgb
+                ? '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#334155;margin-bottom:6px;font-size:13px;">RGB — natural</div><img src="' +
+                  rgb.replace(/"/g, '&quot;') +
+                  '" alt="RGB" data-full-src="' + rgb.replace(/"/g, '&quot;') + '" data-zoom-title="RGB — vista natural" data-zoom-sub="Radar del cultivo · clic en ✕ o fuera para cerrar" onclick="openAdminRadarLightboxFromEl(this)" style="width:100%;max-height:380px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;cursor:zoom-in;" title="Clic para ver grande" /></div>'
+                : '<div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#334155;margin-bottom:6px;font-size:13px;">RGB — natural</div><p style="color:#94a3b8;font-size:13px;margin:0;">Sin imagen RGB (regenere Pilot para capas nuevas).</p></div>';
 
             modal.innerHTML =
                 '<div style="background:#fff;border-radius:12px;width:100%;max-width:960px;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);">' +
                 '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:#fff;z-index:1;">' +
-                '<h2 style="margin:0;font-size:18px;color:#1e293b;">🛰️ Radar del cultivo (NDVI / NDMI)</h2>' +
+                '<h2 style="margin:0;font-size:18px;color:#1e293b;">🛰️ Radar del cultivo (NDVI / NDMI / NDRE / RGB)</h2>' +
                 '<button type="button" onclick="closeRadarAdminModal()" style="background:none;border:none;font-size:28px;color:#64748b;cursor:pointer;line-height:1;">×</button></div>' +
                 '<div style="padding:16px 18px 22px;">' +
                 selectHtml +
@@ -13440,9 +13475,11 @@
                 '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">' +
                 blockNdvi +
                 blockNdmi +
+                blockNdre +
+                blockRgb +
                 '</div>' +
                 owner +
-                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">' + esc(String(sourceLabel)) + '. Valores relativos al polígono.</p></div></div>';
+                '<p style="font-size:11px;color:#94a3b8;margin-top:14px;margin-bottom:0;">' + esc(String(sourceLabel)) + '. Valores relativos al polígono (RGB = color natural).</p></div></div>';
         }
 
         function fetchRadarAdminData(projectId, requestId) {
@@ -13711,12 +13748,14 @@
                 var it = r.request_id ? byId[String(r.request_id)] : null;
                 var ndvi = (it && it.ndvi_mean != null) ? it.ndvi_mean : r.ndvi_mean;
                 var ndmi = (it && it.ndmi_mean != null) ? it.ndmi_mean : r.ndmi_mean;
+                var ndre = (it && it.ndre_mean != null) ? it.ndre_mean : r.ndre_mean;
                 var expanded = !!(it && it.lookback_expanded) || !!r.lookback_expanded;
                 var st = (it && it.status) || r.status || '—';
                 return '<tr style="border-top:1px solid #e2e8f0;">' +
                     '<td style="padding:6px 8px;font-weight:600;color:#14532d;">' + esc(r.label || '') + (expanded ? ' *' : '') + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(ndvi, 3) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(ndmi, 3) + '</td>' +
+                    '<td style="padding:6px 8px;text-align:center;">' + fmt(ndre, 3) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.vpd_mean, 2) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.et0_sum, 1) + '</td>' +
                     '<td style="padding:6px 8px;text-align:center;">' + fmt(r.rain_sum, 1) + '</td>' +
@@ -13744,12 +13783,16 @@
                 var it = r.request_id ? byId[String(r.request_id)] : null;
                 var ndviUrl = (it && it.signed_url) || r.signed_url || '';
                 var ndmiUrl = (it && it.ndmi_signed_url) || r.ndmi_signed_url || '';
-                if (!ndviUrl && !ndmiUrl) return;
+                var ndreUrl = (it && it.ndre_signed_url) || r.ndre_signed_url || '';
+                var rgbUrl = (it && it.rgb_signed_url) || r.rgb_signed_url || '';
+                if (!ndviUrl && !ndmiUrl && !ndreUrl && !rgbUrl) return;
                 withImg.push({
                     r: r,
                     it: it,
                     ndviUrl: ndviUrl,
                     ndmiUrl: ndmiUrl,
+                    ndreUrl: ndreUrl,
+                    rgbUrl: rgbUrl,
                     expanded: !!(it && it.lookback_expanded) || !!r.lookback_expanded
                 });
             });
@@ -13776,13 +13819,19 @@
                 }
                 var ndviRow = withImg.map(function (item) { return miniCard(item, item.ndviUrl, 'NDVI', '#166534'); }).join('');
                 var ndmiRow = withImg.map(function (item) { return miniCard(item, item.ndmiUrl, 'NDMI', '#0f766e'); }).join('');
+                var ndreRow = withImg.map(function (item) { return miniCard(item, item.ndreUrl, 'NDRE', '#0f766e'); }).join('');
+                var rgbRow = withImg.map(function (item) { return miniCard(item, item.rgbUrl, 'RGB', '#334155'); }).join('');
                 gallery =
-                    '<div style="margin-top:14px;font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — miniaturas NDVI / NDMI</div>' +
+                    '<div style="margin-top:14px;font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — miniaturas NDVI / NDMI / NDRE / RGB</div>' +
                     '<p style="margin:4px 0 8px;font-size:11px;color:#64748b;">Clic en una miniatura para verla grande. * quincena ampliada al mes calendario solo para la imagen.</p>' +
                     '<div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:6px;">NDVI</div>' +
                     '<div style="' + grid + '">' + ndviRow + '</div>' +
                     '<div style="font-size:12px;font-weight:700;color:#0f766e;margin:12px 0 6px;">NDMI</div>' +
-                    '<div style="' + grid + '">' + ndmiRow + '</div>';
+                    '<div style="' + grid + '">' + ndmiRow + '</div>' +
+                    '<div style="font-size:12px;font-weight:700;color:#0f766e;margin:12px 0 6px;">NDRE</div>' +
+                    '<div style="' + grid + '">' + ndreRow + '</div>' +
+                    '<div style="font-size:12px;font-weight:700;color:#334155;margin:12px 0 6px;">RGB</div>' +
+                    '<div style="' + grid + '">' + rgbRow + '</div>';
             }
 
             var apiWarn = '';
@@ -13803,7 +13852,7 @@
                 '<p style="margin:0 0 10px;font-size:13px;color:#475569;">' + esc(params) + '</p>' +
                 '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">' +
                 '<thead><tr style="background:#ecfdf5;color:#14532d;">' +
-                '<th style="padding:6px 8px;text-align:left;">Periodo</th><th style="padding:6px 8px;text-align:center;">NDVI</th><th style="padding:6px 8px;text-align:center;">NDMI</th>' +
+                '<th style="padding:6px 8px;text-align:left;">Periodo</th><th style="padding:6px 8px;text-align:center;">NDVI</th><th style="padding:6px 8px;text-align:center;">NDMI</th><th style="padding:6px 8px;text-align:center;">NDRE</th>' +
                 '<th style="padding:6px 8px;text-align:center;">VPD</th><th style="padding:6px 8px;text-align:center;" title="ET₀ acumulada del periodo">ET₀ acum</th><th style="padding:6px 8px;text-align:center;" title="Lluvia acumulada del periodo">Lluvia acum</th>' +
                 '<th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-left:3px solid #0d9488;" title="Mismo riego que m³">Riego mm</th>' +
                 '<th style="padding:6px 8px;text-align:center;background:#ecfdf5;color:#115e59;border-right:3px solid #0d9488;" title="Mismo riego que mm">Riego m³</th>' +
@@ -14425,7 +14474,7 @@
                             <strong style="color: #1e293b;">🆔 ID:</strong> <code style="font-size: 11px;">${escapeHtml(projectId)}</code><br>
                             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
                                 <button type="button" class="global-map-open-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #10b981; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;">Ver detalle del proyecto</button>
-                                <button type="button" class="global-map-radar-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #059669; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;" title="Ver imágenes NDVI/NDMI (Pilot) de este predio">🛰️ Radar NDVI/NDMI</button>
+                                <button type="button" class="global-map-radar-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #059669; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;" title="Ver imágenes NDVI/NDMI/NDRE/RGB (Pilot) de este predio">🛰️ Radar</button>
                                 <button type="button" class="global-map-lectura-project" data-project-id="${escapeHtml(projectId).replace(/"/g, '&quot;')}" style="background: #0f766e; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;font-weight:600;" title="Ver serie Lectura Satelital (periodos con fechas) de este predio">📈 Lectura Satelital</button>
                             </div>
                         </div>

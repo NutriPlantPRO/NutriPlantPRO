@@ -345,14 +345,18 @@ function historyItemFromRow(row) {
 }
 
 async function signRadarRow(supabase, row) {
-  if (!row?.image_storage_path) return { ndvi: null, ndmi: null };
+  if (!row?.image_storage_path) return { ndvi: null, ndmi: null, ndre: null, rgb: null };
   const meta = row.meta || {};
   const ndmiPath = meta.ndmi_storage_path || meta.images?.ndmi?.storage_path || null;
-  const [ndviSignedUrl, ndmiSignedUrl] = await Promise.all([
+  const ndrePath = meta.ndre_storage_path || meta.images?.ndre?.storage_path || null;
+  const rgbPath = meta.rgb_storage_path || meta.images?.rgb?.storage_path || null;
+  const [ndviSignedUrl, ndmiSignedUrl, ndreSignedUrl, rgbSignedUrl] = await Promise.all([
     signedUrlForPath(supabase, row.image_storage_path),
-    signedUrlForPath(supabase, ndmiPath)
+    signedUrlForPath(supabase, ndmiPath),
+    signedUrlForPath(supabase, ndrePath),
+    signedUrlForPath(supabase, rgbPath)
   ]);
-  return { ndviSignedUrl, ndmiSignedUrl };
+  return { ndviSignedUrl, ndmiSignedUrl, ndreSignedUrl, rgbSignedUrl };
 }
 
 async function signedUrlForPath(supabase, path, ttlSec = 3600) {
@@ -451,6 +455,8 @@ function scrubRequestIdFromProjectData(projectData, requestId) {
       delete next.request_id;
       delete next.signed_url;
       delete next.ndmi_signed_url;
+      delete next.ndre_signed_url;
+      delete next.rgb_signed_url;
       next.status = 'deleted';
       next.error_code = 'admin_deleted';
       next.error_message = 'Imagen eliminada por administrador';
@@ -479,7 +485,11 @@ async function deleteRadarStorageFiles(supabase, row) {
   if (row && row.image_storage_path) paths.push(String(row.image_storage_path));
   const meta = (row && row.meta) || {};
   const ndmiPath = meta.ndmi_storage_path || (meta.images && meta.images.ndmi && meta.images.ndmi.storage_path) || null;
+  const ndrePath = meta.ndre_storage_path || (meta.images && meta.images.ndre && meta.images.ndre.storage_path) || null;
+  const rgbPath = meta.rgb_storage_path || (meta.images && meta.images.rgb && meta.images.rgb.storage_path) || null;
   if (ndmiPath) paths.push(String(ndmiPath));
+  if (ndrePath) paths.push(String(ndrePath));
+  if (rgbPath) paths.push(String(rgbPath));
   if (!paths.length) return { ok: true, removed: [] };
   const { error } = await supabase.storage.from(BUCKET).remove(paths);
   if (error) {
@@ -489,19 +499,25 @@ async function deleteRadarStorageFiles(supabase, row) {
   return { ok: true, removed: paths };
 }
 
-function latestResponse(latest, ndviSignedUrl, ndmiSignedUrl) {
+function latestResponse(latest, ndviSignedUrl, ndmiSignedUrl, ndreSignedUrl, rgbSignedUrl) {
   if (!latest) return null;
   const meta = latest.meta || {};
   const ndmiPath = meta.ndmi_storage_path || meta.images?.ndmi?.storage_path || null;
+  const ndrePath = meta.ndre_storage_path || meta.images?.ndre?.storage_path || null;
+  const rgbPath = meta.rgb_storage_path || meta.images?.rgb?.storage_path || null;
   return {
     id: latest.id,
     created_at: latest.created_at,
     month_key: latest.month_key,
     image_storage_path: latest.image_storage_path,
     ndmi_storage_path: ndmiPath,
+    ndre_storage_path: ndrePath,
+    rgb_storage_path: rgbPath,
     meta,
     signed_url: ndviSignedUrl,
     ndmi_signed_url: ndmiSignedUrl,
+    ndre_signed_url: ndreSignedUrl || null,
+    rgb_signed_url: rgbSignedUrl || null,
     images: {
       ndvi: {
         storage_path: latest.image_storage_path,
@@ -510,6 +526,14 @@ function latestResponse(latest, ndviSignedUrl, ndmiSignedUrl) {
       ndmi: {
         storage_path: ndmiPath,
         signed_url: ndmiSignedUrl
+      },
+      ndre: {
+        storage_path: ndrePath,
+        signed_url: ndreSignedUrl || null
+      },
+      rgb: {
+        storage_path: rgbPath,
+        signed_url: rgbSignedUrl || null
       }
     }
   };
@@ -600,10 +624,14 @@ exports.handler = async (event) => {
 
     let sigNdvi = null;
     let sigNdmi = null;
+    let sigNdre = null;
+    let sigRgb = null;
     if (viewRowAdm?.image_storage_path) {
       const signed = await signRadarRow(supabase, viewRowAdm);
       sigNdvi = signed.ndviSignedUrl;
       sigNdmi = signed.ndmiSignedUrl;
+      sigNdre = signed.ndreSignedUrl;
+      sigRgb = signed.rgbSignedUrl;
     }
 
     return jsonResponse(200, {
@@ -611,7 +639,7 @@ exports.handler = async (event) => {
       admin: true,
       project_id: projectIdAdm,
       owner_user_id: ownerUserId,
-      latest: latestResponse(viewRowAdm, sigNdvi, sigNdmi),
+      latest: latestResponse(viewRowAdm, sigNdvi, sigNdmi, sigNdre, sigRgb),
       history: historyAdm,
       history_count: historyAdm.length,
       view_request_id: viewRowAdm ? viewRowAdm.id : null,
@@ -673,10 +701,14 @@ exports.handler = async (event) => {
         : String(meta.status || 'pending').toLowerCase();
       let signedUrl = null;
       let ndmiSignedUrl = null;
+      let ndreSignedUrl = null;
+      let rgbSignedUrl = null;
       if (row.image_storage_path) {
         const signed = await signRadarRow(supabase, row);
         signedUrl = signed.ndviSignedUrl;
         ndmiSignedUrl = signed.ndmiSignedUrl;
+        ndreSignedUrl = signed.ndreSignedUrl;
+        rgbSignedUrl = signed.rgbSignedUrl;
       }
       itemsLect.push({
         id,
@@ -692,13 +724,16 @@ exports.handler = async (event) => {
         scene_dates: meta.scene_dates || null,
         ndvi_mean: meta.ndvi_mean != null ? meta.ndvi_mean : null,
         ndmi_mean: meta.ndmi_mean != null ? meta.ndmi_mean : null,
+        ndre_mean: meta.ndre_mean != null ? meta.ndre_mean : null,
         valid_pct: meta.valid_pct != null ? meta.valid_pct : null,
         avg_cloud_cover: meta.avg_cloud_cover != null ? meta.avg_cloud_cover : null,
         lookback_expanded: !!meta.lookback_expanded,
         expanded_to: meta.expanded_to || null,
         error_message: status === 'error' ? (meta.error_message || 'Error') : null,
         signed_url: signedUrl,
-        ndmi_signed_url: ndmiSignedUrl
+        ndmi_signed_url: ndmiSignedUrl,
+        ndre_signed_url: ndreSignedUrl,
+        rgb_signed_url: rgbSignedUrl
       });
     }
     const locSnap =
@@ -874,6 +909,7 @@ exports.handler = async (event) => {
         scene_dates: sceneDates.length ? sceneDates : null,
         ndvi_mean: meta.ndvi_mean != null ? meta.ndvi_mean : null,
         ndmi_mean: meta.ndmi_mean != null ? meta.ndmi_mean : null,
+        ndre_mean: meta.ndre_mean != null ? meta.ndre_mean : null,
         valid_pct: meta.valid_pct != null ? meta.valid_pct : null,
         avg_cloud_cover: meta.avg_cloud_cover != null ? meta.avg_cloud_cover : null,
         lookback_expanded: !!meta.lookback_expanded,
@@ -881,7 +917,11 @@ exports.handler = async (event) => {
         credits_charged: meta.credits_charged != null ? Number(meta.credits_charged) : null,
         signed_url: signed.ndviSignedUrl,
         ndmi_signed_url: signed.ndmiSignedUrl,
-        has_ndmi: !!(meta.ndmi_storage_path || (meta.images && meta.images.ndmi && meta.images.ndmi.storage_path))
+        ndre_signed_url: signed.ndreSignedUrl,
+        rgb_signed_url: signed.rgbSignedUrl,
+        has_ndmi: !!(meta.ndmi_storage_path || (meta.images && meta.images.ndmi && meta.images.ndmi.storage_path)),
+        has_ndre: !!(meta.ndre_storage_path || (meta.images && meta.images.ndre && meta.images.ndre.storage_path)),
+        has_rgb: !!(meta.rgb_storage_path || (meta.images && meta.images.rgb && meta.images.rgb.storage_path))
       });
     }
 
@@ -1026,10 +1066,14 @@ exports.handler = async (event) => {
   if (action === 'status') {
     let lastSignedUrl = null;
     let lastNdmiSignedUrl = null;
+    let lastNdreSignedUrl = null;
+    let lastRgbSignedUrl = null;
     if (latest?.image_storage_path) {
       const signed = await signRadarRow(supabase, latest);
       lastSignedUrl = signed.ndviSignedUrl;
       lastNdmiSignedUrl = signed.ndmiSignedUrl;
+      lastNdreSignedUrl = signed.ndreSignedUrl;
+      lastRgbSignedUrl = signed.rgbSignedUrl;
     }
     const pendingJob = await getPendingPilotJobForStatus(supabase, userId, projectId);
     const lastFailedJob = pendingJob
@@ -1042,7 +1086,7 @@ exports.handler = async (event) => {
       month_key: mk,
       credits: { used, limit, base: baseLimit, bonus, available: Math.max(0, limit - used) },
       pricing,
-      latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl),
+      latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl, lastNdreSignedUrl, lastRgbSignedUrl),
       pending_job: pendingJob,
       last_failed_job: lastFailedJob,
       history
@@ -1070,7 +1114,13 @@ exports.handler = async (event) => {
     const signed = await signRadarRow(supabase, row);
     return jsonResponse(200, {
       ok: true,
-      snapshot: latestResponse(row, signed.ndviSignedUrl, signed.ndmiSignedUrl)
+      snapshot: latestResponse(
+        row,
+        signed.ndviSignedUrl,
+        signed.ndmiSignedUrl,
+        signed.ndreSignedUrl,
+        signed.rgbSignedUrl
+      )
     });
   }
 
@@ -1093,10 +1143,14 @@ exports.handler = async (event) => {
         : String(meta.status || 'pending').toLowerCase();
       let signedUrl = null;
       let ndmiSignedUrl = null;
+      let ndreSignedUrl = null;
+      let rgbSignedUrl = null;
       if (row.image_storage_path) {
         const signed = await signRadarRow(supabase, row);
         signedUrl = signed.ndviSignedUrl;
         ndmiSignedUrl = signed.ndmiSignedUrl;
+        ndreSignedUrl = signed.ndreSignedUrl;
+        rgbSignedUrl = signed.rgbSignedUrl;
       }
       const lowCoverage = /radar_low_coverage|cobertura satelital útil|píxeles válidos|No hay escenas/i.test(
         String(meta.error_message || '')
@@ -1120,6 +1174,7 @@ exports.handler = async (event) => {
         scene_dates: meta.scene_dates || null,
         ndvi_mean: meta.ndvi_mean != null ? meta.ndvi_mean : null,
         ndmi_mean: meta.ndmi_mean != null ? meta.ndmi_mean : null,
+        ndre_mean: meta.ndre_mean != null ? meta.ndre_mean : null,
         valid_pct: meta.valid_pct != null ? meta.valid_pct : null,
         avg_cloud_cover: meta.avg_cloud_cover != null ? meta.avg_cloud_cover : null,
         scene_count: meta.scene_count != null ? meta.scene_count : null,
@@ -1149,7 +1204,9 @@ exports.handler = async (event) => {
                 ? 'radar_incomplete_coverage'
                 : null,
         signed_url: signedUrl,
-        ndmi_signed_url: ndmiSignedUrl
+        ndmi_signed_url: ndmiSignedUrl,
+        ndre_signed_url: ndreSignedUrl,
+        rgb_signed_url: rgbSignedUrl
       });
     }
     return jsonResponse(200, { ok: true, items });
@@ -1161,10 +1218,14 @@ exports.handler = async (event) => {
 
   let lastSignedUrl = null;
   let lastNdmiSignedUrl = null;
+  let lastNdreSignedUrl = null;
+  let lastRgbSignedUrl = null;
   if (latest?.image_storage_path) {
     const signedLatest = await signRadarRow(supabase, latest);
     lastSignedUrl = signedLatest.ndviSignedUrl;
     lastNdmiSignedUrl = signedLatest.ndmiSignedUrl;
+    lastNdreSignedUrl = signedLatest.ndreSignedUrl;
+    lastRgbSignedUrl = signedLatest.rgbSignedUrl;
   }
 
   const polygon = proj.data?.location?.polygon;
@@ -1179,6 +1240,14 @@ exports.handler = async (event) => {
   const areaHa = radarCredits.getAreaHectaresFromLocation(proj.data?.location);
   const creditCost = radarCredits.getRadarCreditCostForArea(areaHa);
   const pricing = radarCredits.getRadarCreditPricingInfo(areaHa);
+  const areaLimitErr = radarCredits.getRadarAreaLimitError(areaHa);
+  if (areaLimitErr) {
+    return jsonResponse(400, {
+      ...areaLimitErr,
+      credits: { used, limit, base: baseLimit, bonus, available: Math.max(0, limit - used) },
+      pricing
+    });
+  }
 
   if (limit > 0 && used + creditCost > limit) {
     return jsonResponse(429, {
@@ -1211,7 +1280,13 @@ exports.handler = async (event) => {
       error: 'already_generated_this_month',
       message: 'Este mes ya hay un Radar para este proyecto. Usa «Ver última» o reintenta con force si debes regenerar.',
       pricing,
-      latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl) || { signed_url: lastSignedUrl, ndmi_signed_url: lastNdmiSignedUrl, month_key: mk }
+      latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl, lastNdreSignedUrl, lastRgbSignedUrl) || {
+        signed_url: lastSignedUrl,
+        ndmi_signed_url: lastNdmiSignedUrl,
+        ndre_signed_url: lastNdreSignedUrl,
+        rgb_signed_url: lastRgbSignedUrl,
+        month_key: mk
+      }
     });
   }
 

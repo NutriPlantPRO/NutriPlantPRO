@@ -701,6 +701,8 @@ async function processPilotJob(supabase, requestId, userId) {
     const ts = Date.now();
     const storagePath = `${userId}/${job.project_id}/${mk}_${ts}_pilot_ndvi.png`;
     const ndmiStoragePath = `${userId}/${job.project_id}/${mk}_${ts}_pilot_ndmi.png`;
+    const ndreStoragePath = `${userId}/${job.project_id}/${mk}_${ts}_pilot_ndre.png`;
+    const rgbStoragePath = `${userId}/${job.project_id}/${mk}_${ts}_pilot_rgb.png`;
 
     const periodStartMeta = isLectura ? String(job.meta.date_start).slice(0, 10) : null;
     const periodEndMeta = isLectura ? String(job.meta.date_end).slice(0, 10) : null;
@@ -769,6 +771,7 @@ async function processPilotJob(supabase, requestId, userId) {
       valid_pct: validPct,
       ndvi_mean: rendered.ndviMean != null ? rendered.ndviMean : null,
       ndmi_mean: rendered.ndmiMean != null ? rendered.ndmiMean : null,
+      ndre_mean: rendered.ndreMean != null ? rendered.ndreMean : null,
       lookback_expanded: lookbackExpanded,
       expanded_to: isLectura && lookbackExpanded ? 'mensual' : null,
       search_date_start: searchStartMeta,
@@ -782,6 +785,8 @@ async function processPilotJob(supabase, requestId, userId) {
       credits_charged: creditCost,
       ndvi_vis: { style: 'relative_p10_p90', scale: 'predio' },
       ndmi_vis: { style: 'relative_p10_p90', scale: 'predio' },
+      ndre_vis: { style: 'relative_p10_p90', scale: 'predio' },
+      rgb_vis: { style: 'true_color_p2_p98', scale: 'predio' },
       vis: rendered.vis,
       image_omitted: false,
       image_incomplete: !!lecturaIncomplete,
@@ -789,6 +794,8 @@ async function processPilotJob(supabase, requestId, userId) {
       omit_reason: null,
       error_code: null,
       ndmi_storage_path: ndmiStoragePath,
+      ndre_storage_path: ndreStoragePath,
+      rgb_storage_path: rgbStoragePath,
       completed_at: new Date().toISOString(),
       images: {
         ndvi: {
@@ -800,11 +807,21 @@ async function processPilotJob(supabase, requestId, userId) {
           storage_path: ndmiStoragePath,
           label: 'NDMI',
           description: 'Pilot Copernicus · humedad relativa del dosel'
+        },
+        ndre: {
+          storage_path: ndreStoragePath,
+          label: 'NDRE',
+          description: 'Pilot Copernicus · clorofila y estado del dosel'
+        },
+        rgb: {
+          storage_path: rgbStoragePath,
+          label: 'RGB',
+          description: 'Pilot Copernicus · vista natural del predio'
         }
       }
     };
 
-    const [upNdvi, upNdmi] = await Promise.all([
+    const [upNdvi, upNdmi, upNdre, upRgb] = await Promise.all([
       supabase.storage.from(BUCKET).upload(storagePath, rendered.ndviPng, {
         contentType: 'image/png',
         upsert: true
@@ -812,10 +829,20 @@ async function processPilotJob(supabase, requestId, userId) {
       supabase.storage.from(BUCKET).upload(ndmiStoragePath, rendered.ndmiPng, {
         contentType: 'image/png',
         upsert: true
+      }),
+      supabase.storage.from(BUCKET).upload(ndreStoragePath, rendered.ndrePng, {
+        contentType: 'image/png',
+        upsert: true
+      }),
+      supabase.storage.from(BUCKET).upload(rgbStoragePath, rendered.rgbPng, {
+        contentType: 'image/png',
+        upsert: true
       })
     ]);
     if (upNdvi.error) throw new Error(upNdvi.error.message || 'storage_upload_failed');
     if (upNdmi.error) throw new Error(upNdmi.error.message || 'storage_upload_failed');
+    if (upNdre.error) throw new Error(upNdre.error.message || 'storage_upload_failed');
+    if (upRgb.error) throw new Error(upRgb.error.message || 'storage_upload_failed');
 
     const { error: updErr } = await supabase
       .from('radar_requests')

@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.10.1",
-    "description": "v2.10.1 — ChatGPT: una sola Action (nutriplantAdminQuery). open_url permanente; nutri_pro_reindex; nutri_pro_set_text corrige texto del mismo archivo. Los nombres admin_stats, nutri_pro_catalog, etc. van en el body como campo action, no son tools separadas."
+    "version": "2.11.0",
+    "description": "v2.11.0 — ChatGPT: una sola Action (nutriplantAdminQuery). plan_pro_item incluye relations_out/in + hops 1|2 (grafo tipado de apuntes). Los nombres admin_stats, nutri_pro_catalog, etc. van en el body como campo action, no son tools separadas."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO",
-        "description": "Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, nutri_pro_reindex, nutri_pro_set_text, describe_api van en body.action, no son tools aparte. Ej: {\"action\":\"admin_stats\",\"params\":{}}. Verifica describe_api → version 2.10.1.",
+        "description": "Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, plan_pro_item (relations + hops), nutri_pro_reindex, nutri_pro_set_text, describe_api van en body.action, no son tools aparte. Ej: {\"action\":\"admin_stats\",\"params\":{}}. Verifica describe_api → version 2.11.0.",
         "requestBody": {
           "required": true,
           "content": {
@@ -105,6 +105,10 @@
               "include_snippets": { "type": "boolean", "description": "nutri_pro_search: devolver fragmentos de texto" },
               "snippet_chars": { "type": "integer", "description": "nutri_pro_ask: longitud máx. por fragmento (default 320)" },
               "item_id": { "type": "string", "description": "UUID apunte Plan PRO" },
+              "hops": {
+                "type": "integer",
+                "description": "plan_pro_item: profundidad del grafo de relaciones tipadas (1 default, 2 = multi-salto ligero)"
+              },
               "nutri_file_id": { "type": "string", "description": "UUID archivo Nutri PRO" },
               "file_id": { "type": "string", "description": "Alias de nutri_file_id" },
               "open_url": {

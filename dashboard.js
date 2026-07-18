@@ -1667,6 +1667,8 @@ function sectionTemplate(name) {
             <select id="radarIndexSelect" style="border:1px solid #86efac;border-radius:8px;padding:5px 8px;background:#fff;color:#14532d;font-size:12px;font-weight:700;">
               <option value="ndvi" selected>NDVI vigor</option>
               <option value="ndmi">NDMI humedad del dosel</option>
+              <option value="ndre">NDRE clorofila / dosel</option>
+              <option value="rgb">RGB vista natural</option>
             </select>
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">
@@ -1679,7 +1681,7 @@ function sectionTemplate(name) {
           <span id="radarStatusHint" class="radar-hint-info">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
             <strong style="color:#14532d;">Cómo se arma:</strong>
-            junta hasta <strong>8 pasadas</strong> Sentinel (mediana) para pintar lo máximo posible. Solo para si llega ~100% útiles; si no → 21, 30 o 45 d y guarda lo mejor. Abajo verás la <strong>fecha</strong> de los datos.
+            junta hasta <strong>8 pasadas</strong> Sentinel (mediana) para pintar lo máximo posible. Solo para si llega ~100% útiles; si no → 21, 30 o 45 d y guarda lo mejor. Capas: NDVI, NDMI, NDRE y RGB. <strong>Máximo 250 ha</strong> por predio.
           </div>
           <div id="radarNdviScale" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:#374151;">
             <span id="radarScaleTitle" style="font-weight:600;color:#166534;">Escala NDVI relativa al predio</span>
@@ -8556,7 +8558,7 @@ function getRadarRequestIdForReport() {
 
 /** Descarga NDVI/NDMI firmados y los pasa a data URL para incrustar en PDF (evita fallos de impresión por dominios externos). */
 async function fetchRadarImagesDataUrlsForReport() {
-  const out = { ndviDataUrl: null, ndmiDataUrl: null, generatedAt: null, error: null };
+  const out = { ndviDataUrl: null, ndmiDataUrl: null, ndreDataUrl: null, rgbDataUrl: null, generatedAt: null, error: null };
   try {
     if (!currentProject || !currentProject.id) {
       out.error = 'no_project';
@@ -8600,6 +8602,12 @@ async function fetchRadarImagesDataUrlsForReport() {
     const ndmiUrl =
       snap.ndmi_signed_url ||
       (snap.images && snap.images.ndmi && snap.images.ndmi.signed_url);
+    const ndreUrl =
+      snap.ndre_signed_url ||
+      (snap.images && snap.images.ndre && snap.images.ndre.signed_url);
+    const rgbUrl =
+      snap.rgb_signed_url ||
+      (snap.images && snap.images.rgb && snap.images.rgb.signed_url);
     const meta = snap.meta || {};
     out.generatedAt = snap.created_at || null;
     out.source = meta.pilot || meta.engine === 'cdse_pilot' ? 'Pilot Copernicus/Sentinel-2' : (meta.source || 'Sentinel-2');
@@ -8624,9 +8632,16 @@ async function fetchRadarImagesDataUrlsForReport() {
       }
     }
 
-    const [ndvi, ndmi] = await Promise.all([urlToDataUrl(ndviUrl), urlToDataUrl(ndmiUrl)]);
+    const [ndvi, ndmi, ndre, rgb] = await Promise.all([
+      urlToDataUrl(ndviUrl),
+      urlToDataUrl(ndmiUrl),
+      urlToDataUrl(ndreUrl),
+      urlToDataUrl(rgbUrl)
+    ]);
     out.ndviDataUrl = ndvi;
     out.ndmiDataUrl = ndmi;
+    out.ndreDataUrl = ndre;
+    out.rgbDataUrl = rgb;
     return out;
   } catch (e) {
     console.warn('fetchRadarImagesDataUrlsForReport:', e);
@@ -8739,6 +8754,7 @@ async function fetchLecturaSatelitalForReport() {
         status: (it && it.status) || r.status || null,
         ndvi_mean: (it && it.ndvi_mean != null) ? it.ndvi_mean : r.ndvi_mean,
         ndmi_mean: (it && it.ndmi_mean != null) ? it.ndmi_mean : r.ndmi_mean,
+        ndre_mean: (it && it.ndre_mean != null) ? it.ndre_mean : r.ndre_mean,
         vpd_mean: r.vpd_mean,
         vpd_hours_low: r.vpd_hours_low,
         vpd_hours_opt: r.vpd_hours_opt,
@@ -8750,14 +8766,25 @@ async function fetchLecturaSatelitalForReport() {
         riego_mm: r.riego_mm,
         lookback_expanded: !!(it && it.lookback_expanded) || !!r.lookback_expanded,
         ndviDataUrl: null,
-        ndmiDataUrl: null
+        ndmiDataUrl: null,
+        ndreDataUrl: null,
+        rgbDataUrl: null
       };
       const ndviUrl = (it && it.signed_url) || r.signed_url || null;
       const ndmiUrl = (it && it.ndmi_signed_url) || r.ndmi_signed_url || null;
-      if (ndviUrl || ndmiUrl) {
-        const [ndvi, ndmi] = await Promise.all([urlToDataUrl(ndviUrl), urlToDataUrl(ndmiUrl)]);
+      const ndreUrl = (it && it.ndre_signed_url) || r.ndre_signed_url || null;
+      const rgbUrl = (it && it.rgb_signed_url) || r.rgb_signed_url || null;
+      if (ndviUrl || ndmiUrl || ndreUrl || rgbUrl) {
+        const [ndvi, ndmi, ndre, rgb] = await Promise.all([
+          urlToDataUrl(ndviUrl),
+          urlToDataUrl(ndmiUrl),
+          urlToDataUrl(ndreUrl),
+          urlToDataUrl(rgbUrl)
+        ]);
         row.ndviDataUrl = ndvi;
         row.ndmiDataUrl = ndmi;
+        row.ndreDataUrl = ndre;
+        row.rgbDataUrl = rgb;
       }
       enriched.push(row);
     }
@@ -8858,7 +8885,7 @@ function loadChartImagesForReport(selectedSections, callback) {
       .then(function (pair) {
         const radar = pair[0];
         const lectura = pair[1];
-        if (radar && typeof radar === 'object' && (radar.ndviDataUrl || radar.ndmiDataUrl)) {
+        if (radar && typeof radar === 'object' && (radar.ndviDataUrl || radar.ndmiDataUrl || radar.ndreDataUrl || radar.rgbDataUrl)) {
           out.radar = radar;
         }
         function attachLecturaAndFinish() {
@@ -15389,15 +15416,17 @@ function createRadarPdfRelativeScaleHTML(rt) {
 }
 
 function createLocationRadarBlockHTML(radar, rt, lang) {
-  if (!radar || (!radar.ndviDataUrl && !radar.ndmiDataUrl)) return '';
+  if (!radar || (!radar.ndviDataUrl && !radar.ndmiDataUrl && !radar.ndreDataUrl && !radar.rgbDataUrl)) return '';
   const locale = lang === 'en' ? 'en-US' : 'es-MX';
   const title = rt('Radar del cultivo (Sentinel-2)', 'Crop Radar (Sentinel-2)');
   const ndviCap = rt('NDVI — vigor vegetativo relativo', 'NDVI — relative vegetation vigor');
   const ndmiCap = rt('NDMI — humedad relativa del dosel', 'NDMI — relative canopy moisture');
+  const ndreCap = rt('NDRE — clorofila y estado del dosel', 'NDRE — chlorophyll / canopy status');
+  const rgbCap = rt('RGB — vista natural del predio', 'RGB — natural color view');
   const scaleHtml = createRadarPdfRelativeScaleHTML(rt);
   const note = rt(
-    'Valores relativos dentro del polígono; complementar con visita a campo, riego y otros análisis.',
-    'Relative values within the polygon; complement with field visits, irrigation, and other analyses.'
+    'Valores relativos dentro del polígono (NDVI/NDMI/NDRE); RGB = color natural. Complementar con visita a campo, riego y otros análisis.',
+    'Relative values within the polygon (NDVI/NDMI/NDRE); RGB = natural color. Complement with field visits, irrigation, and other analyses.'
   );
   const metaParts = [];
   if (radar.source) metaParts.push(reportEscapeHtml(String(radar.source)));
@@ -15426,6 +15455,12 @@ function createLocationRadarBlockHTML(radar, rt, lang) {
   }
   if (radar.ndmiDataUrl) {
     cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#0f766e;margin-bottom:4px;">${ndmiCap}</div><img src="${radar.ndmiDataUrl}" alt="NDMI" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />${scaleHtml}</div>`;
+  }
+  if (radar.ndreDataUrl) {
+    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#0f766e;margin-bottom:4px;">${ndreCap}</div><img src="${radar.ndreDataUrl}" alt="NDRE" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />${scaleHtml}</div>`;
+  }
+  if (radar.rgbDataUrl) {
+    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#334155;margin-bottom:4px;">${rgbCap}</div><img src="${radar.rgbDataUrl}" alt="RGB" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" /></div>`;
   }
   return `
     <div style="margin-top:12px;border:1px solid #86efac;background:#f8fafc;border-radius:8px;padding:10px;page-break-inside:avoid;">
@@ -15505,6 +15540,9 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       fmt(r.ndmi_mean, 3) +
       '</td>' +
       '<td style="padding:6px 8px;text-align:center;">' +
+      fmt(r.ndre_mean, 3) +
+      '</td>' +
+      '<td style="padding:6px 8px;text-align:center;">' +
       fmt(r.vpd_mean, 2) +
       '</td>' +
       '<td style="padding:6px 8px;text-align:center;">' +
@@ -15545,6 +15583,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       { h: rtSafe('Periodo', 'Period'), st: '' },
       { h: 'NDVI', st: '' },
       { h: 'NDMI', st: '' },
+      { h: 'NDRE', st: '' },
       { h: 'VPD', st: '' },
       { h: rtSafe('ET₀ acum mm', 'ET₀ sum mm'), st: '' },
       { h: rtSafe('Lluvia acum mm', 'Rain sum mm'), st: '' },
@@ -15588,7 +15627,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
 
   let gallery = '';
   const withImg = rows.filter(function (r) {
-    return r.ndviDataUrl || r.ndmiDataUrl;
+    return r.ndviDataUrl || r.ndmiDataUrl || r.ndreDataUrl || r.rgbDataUrl;
   });
   if (withImg.length) {
     const cols = Math.min(withImg.length, 6);
@@ -15623,6 +15662,12 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     const ndmiRow = withImg.map(function (r) {
       return miniThumb(r, r.ndmiDataUrl, 'NDMI', '#0f766e');
     }).join('');
+    const ndreRow = withImg.map(function (r) {
+      return miniThumb(r, r.ndreDataUrl, 'NDRE', '#0f766e');
+    }).join('');
+    const rgbRow = withImg.map(function (r) {
+      return miniThumb(r, r.rgbDataUrl, 'RGB', '#334155');
+    }).join('');
     gallery =
       '<div style="margin-top:10px;font-size:12px;font-weight:700;color:#14532d;">' +
       rtSafe('Imágenes por periodo (miniaturas)', 'Images by period (thumbnails)') +
@@ -15638,12 +15683,24 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       grid +
       '">' +
       ndmiRow +
+      '</div>' +
+      '<div style="margin-top:8px;font-size:10px;font-weight:700;color:#0f766e;">NDRE</div>' +
+      '<div style="' +
+      grid +
+      '">' +
+      ndreRow +
+      '</div>' +
+      '<div style="margin-top:8px;font-size:10px;font-weight:700;color:#334155;">RGB</div>' +
+      '<div style="' +
+      grid +
+      '">' +
+      rgbRow +
       '</div>';
   }
 
   const note = rtSafe(
-    'NDVI/NDMI = promedio de píxeles válidos del predio. ET₀ y lluvia = acumulado. VPD = promedio horario. * quincena ampliada al mes calendario solo para la imagen (clima/riego = 15 d). Complementar con campo y riego.',
-    'NDVI/NDMI = mean of valid pixels in the field. ET₀ and rain = period sum. VPD = hourly mean. * fortnight expanded to 30 days due to clouds. Complement with field checks and irrigation.'
+    'NDVI/NDMI/NDRE = promedio de píxeles válidos del predio. RGB = vista natural. ET₀ y lluvia = acumulado. VPD = promedio horario. * quincena ampliada al mes calendario solo para la imagen (clima/riego = 15 d). Complementar con campo y riego.',
+    'NDVI/NDMI/NDRE = mean of valid pixels in the field. RGB = natural color. ET₀ and rain = period sum. VPD = hourly mean. * fortnight expanded to calendar month for imagery only. Complement with field checks and irrigation.'
   );
 
   return (

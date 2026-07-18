@@ -1,5 +1,5 @@
 /**
- * NDVI / NDMI desde bandas Sentinel-2 + paletas NutriPlant (Radar actual).
+ * NDVI / NDMI / NDRE / RGB desde bandas Sentinel-2 + paletas NutriPlant.
  * SCL (nubes/sombras) + mediana corta por píxel cuando hay varias escenas.
  */
 const sharp = require('sharp');
@@ -15,6 +15,13 @@ const NDMI_VIS = {
   min: -0.25,
   max: 0.55,
   palette: ['7c2d12', 'ea580c', 'f59e0b', 'fde68a', 'bbf7d0', '22c55e', '0f766e', '0369a1']
+};
+
+/** NDRE — clorofila / estado del dosel (relativo al predio). */
+const NDRE_VIS = {
+  min: 0.05,
+  max: 0.55,
+  palette: ['7f1d1d', 'c2410c', 'ca8a04', 'eab308', 'a3e635', '22c55e', '0d9488', '0f766e', '134e4a']
 };
 
 /** SCL Sentinel-2 L2A: descartar nubes, sombras, agua, nieve, defectuosos. */
@@ -293,9 +300,25 @@ function computeOutputSize(bbox4326, maxDim) {
   return { outW, outH };
 }
 
+function reflectanceLayer(band, sclData, sclNoData) {
+  const n = band.data.length;
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    if (isSclBad(sclData[i], sclNoData)) {
+      out[i] = NaN;
+      continue;
+    }
+    out[i] = normalizeReflectance(band.data[i], band.noData);
+  }
+  return out;
+}
+
 async function readSceneIndices(bandUrls, bbox4326, outW, outH) {
-  const [b04, b08, b11, scl] = await Promise.all([
+  const [b02, b03, b04, b05, b08, b11, scl] = await Promise.all([
+    readBandCog(bandUrls.b02, bbox4326, outW, outH),
+    readBandCog(bandUrls.b03, bbox4326, outW, outH),
     readBandCog(bandUrls.b04, bbox4326, outW, outH),
+    readBandCog(bandUrls.b05, bbox4326, outW, outH),
     readBandCog(bandUrls.b08, bbox4326, outW, outH),
     readBandCog(bandUrls.b11, bbox4326, outW, outH),
     readBandCog(bandUrls.scl, bbox4326, outW, outH, { nearest: true })
@@ -303,9 +326,90 @@ async function readSceneIndices(bandUrls, bbox4326, outW, outH) {
 
   const ndvi = computeIndex(b08.data, b04.data, b08.noData, b04.noData, (nir, red) => (nir - red) / (nir + red));
   const ndmi = computeIndex(b08.data, b11.data, b08.noData, b11.noData, (nir, swir) => (nir - swir) / (nir + swir));
+  const ndre = computeIndex(b08.data, b05.data, b08.noData, b05.noData, (nir, re) => (nir - re) / (nir + re));
   applySclMask(ndvi, scl.data, scl.noData);
   applySclMask(ndmi, scl.data, scl.noData);
-  return { ndvi, ndmi };
+  applySclMask(ndre, scl.data, scl.noData);
+
+  const rgb = {
+    r: reflectanceLayer(b04, scl.data, scl.noData),
+    g: reflectanceLayer(b03, scl.data, scl.noData),
+    b: reflectanceLayer(b02, scl.data, scl.noData)
+  };
+  return { ndvi, ndmi, ndre, rgb };
+}
+
+function stretchChannelToByte(values, width, height, polygon, bbox4326) {
+  const sample = [];
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const i = row * width + col;
+      const v = values[i];
+      if (!Number.isFinite(v)) continue;
+      const [lat, lng] = pixelCenterLatLng(col, row, width, height, bbox4326);
+      if (polygon && !pointInPolygon(lat, lng, polygon)) continue;
+      sample.push(v);
+    }
+  }
+  let lo = 0.02;
+  let hi = 0.35;
+  if (sample.length >= 20) {
+    sample.sort((a, b) => a - b);
+    lo = percentile(sample, 2);
+    hi = percentile(sample, 98);
+    if (!Number.isFinite(lo) || !Number.isFinite(hi) || hi - lo < 0.01) {
+      lo = sample[0];
+      hi = sample[sample.length - 1];
+    }
+  }
+  if (hi - lo < 0.01) {
+    hi = lo + 0.01;
+  }
+  const out = new Uint8Array(values.length);
+  const span = hi - lo;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (!Number.isFinite(v)) {
+      out[i] = 0;
+      continue;
+    }
+    const t = Math.min(1, Math.max(0, (v - lo) / span));
+    // Ligera curva gamma para naturalidad en vegetación.
+    out[i] = Math.round(Math.pow(t, 0.85) * 255);
+  }
+  return out;
+}
+
+async function rgbToPngBuffer(rLayer, gLayer, bLayer, width, height, polygon, bbox4326, opts) {
+  const coverage = measurePolygonCoverage(rLayer, width, height, polygon, bbox4326);
+  if (!opts || opts.requireCoverage !== false) {
+    assertEnoughValidCoverage(coverage, (opts && opts.label) || 'RGB');
+  }
+  const rByte = stretchChannelToByte(rLayer, width, height, polygon, bbox4326);
+  const gByte = stretchChannelToByte(gLayer, width, height, polygon, bbox4326);
+  const bByte = stretchChannelToByte(bLayer, width, height, polygon, bbox4326);
+  const rgba = Buffer.alloc(width * height * 4);
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const i = row * width + col;
+      const o = i * 4;
+      const [lat, lng] = pixelCenterLatLng(col, row, width, height, bbox4326);
+      if (polygon && !pointInPolygon(lat, lng, polygon)) {
+        rgba[o + 3] = 0;
+        continue;
+      }
+      if (!Number.isFinite(rLayer[i]) || !Number.isFinite(gLayer[i]) || !Number.isFinite(bLayer[i])) {
+        rgba[o + 3] = 0;
+        continue;
+      }
+      rgba[o] = rByte[i];
+      rgba[o + 1] = gByte[i];
+      rgba[o + 2] = bByte[i];
+      rgba[o + 3] = 235;
+    }
+  }
+  const buffer = await sharp(rgba, { raw: { width, height, channels: 4 } }).png().toBuffer();
+  return { buffer, coverage, vis: { style: 'true_color_p2_p98', scale: 'predio' } };
 }
 
 function pointInPolygon(lat, lng, polygon) {
@@ -395,20 +499,32 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
   const { outW, outH } = computeOutputSize(bbox4326, maxDim);
   const ndviLayers = [];
   const ndmiLayers = [];
+  const ndreLayers = [];
+  const rgbRLayers = [];
+  const rgbGLayers = [];
+  const rgbBLayers = [];
 
   for (const scene of scenes) {
     if (!scene.bandUrls) {
       throw new Error('Escena sin bandUrls');
     }
-    const { ndvi, ndmi } = await readSceneIndices(scene.bandUrls, bbox4326, outW, outH);
+    const { ndvi, ndmi, ndre, rgb } = await readSceneIndices(scene.bandUrls, bbox4326, outW, outH);
     ndviLayers.push(ndvi);
     ndmiLayers.push(ndmi);
+    ndreLayers.push(ndre);
+    rgbRLayers.push(rgb.r);
+    rgbGLayers.push(rgb.g);
+    rgbBLayers.push(rgb.b);
   }
 
   const ndvi = scenes.length === 1 ? ndviLayers[0] : medianPerPixel(ndviLayers);
   const ndmi = scenes.length === 1 ? ndmiLayers[0] : medianPerPixel(ndmiLayers);
+  const ndre = scenes.length === 1 ? ndreLayers[0] : medianPerPixel(ndreLayers);
+  const rgbR = scenes.length === 1 ? rgbRLayers[0] : medianPerPixel(rgbRLayers);
+  const rgbG = scenes.length === 1 ? rgbGLayers[0] : medianPerPixel(rgbGLayers);
+  const rgbB = scenes.length === 1 ? rgbBLayers[0] : medianPerPixel(rgbBLayers);
 
-  // Validar cobertura con NDVI (misma máscara SCL aplica a NDMI).
+  // Validar cobertura con NDVI (misma máscara SCL aplica a NDMI/NDRE/RGB).
   const ndviRendered = await indexToPngBuffer(ndvi, NDVI_VIS, outW, outH, polygon, bbox4326, {
     requireCoverage: true,
     label: 'NDVI'
@@ -417,22 +533,39 @@ async function renderNdviNdmiCompositePngs(composite, opts) {
     requireCoverage: false,
     label: 'NDMI'
   });
+  const ndreRendered = await indexToPngBuffer(ndre, NDRE_VIS, outW, outH, polygon, bbox4326, {
+    requireCoverage: false,
+    label: 'NDRE'
+  });
+  const rgbRendered = await rgbToPngBuffer(rgbR, rgbG, rgbB, outW, outH, polygon, bbox4326, {
+    requireCoverage: false,
+    label: 'RGB'
+  });
 
   const ndviMean = meanPolygonValid(ndvi, outW, outH, polygon, bbox4326);
   const ndmiMean = meanPolygonValid(ndmi, outW, outH, polygon, bbox4326);
+  const ndreMean = meanPolygonValid(ndre, outW, outH, polygon, bbox4326);
 
   return {
     width: outW,
     height: outH,
     ndviPng: ndviRendered.buffer,
     ndmiPng: ndmiRendered.buffer,
+    ndrePng: ndreRendered.buffer,
+    rgbPng: rgbRendered.buffer,
     sceneCount: scenes.length,
     sclMasked: true,
     composite: scenes.length > 1,
     coverage: ndviRendered.coverage,
     ndviMean,
     ndmiMean,
-    vis: { ndvi: ndviRendered.vis, ndmi: ndmiRendered.vis }
+    ndreMean,
+    vis: {
+      ndvi: ndviRendered.vis,
+      ndmi: ndmiRendered.vis,
+      ndre: ndreRendered.vis,
+      rgb: rgbRendered.vis
+    }
   };
 }
 
@@ -445,5 +578,6 @@ module.exports = {
   MIN_VALID_PIXELS,
   NDVI_VIS,
   NDMI_VIS,
+  NDRE_VIS,
   SCL_BAD
 };

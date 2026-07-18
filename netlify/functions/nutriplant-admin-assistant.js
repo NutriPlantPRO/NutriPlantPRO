@@ -2591,6 +2591,190 @@ function collectApunteRefsFromItem(item) {
   return out;
 }
 
+const PLAN_PRO_RELATION_TYPE_LABELS = {
+  relacionado_con: { out: 'Relacionado con', in: 'Relacionado con' },
+  depende_de: { out: 'Depende de', in: 'Es requerido por' },
+  respalda: { out: 'Respalda', in: 'Respaldado por' },
+  continua: { out: 'Continúa', in: 'Continuado por' },
+  actualiza: { out: 'Actualiza', in: 'Actualizado por' },
+  genera: { out: 'Genera', in: 'Generado por' }
+};
+
+function planProRelationLabel(type, incoming) {
+  const t = PLAN_PRO_RELATION_TYPE_LABELS[type];
+  if (!t) return type || 'relación';
+  return incoming ? t.in : t.out;
+}
+
+function planProRelationsSchemaMissing(error) {
+  const msg = String((error && error.message) || error || '').toLowerCase();
+  return (
+    msg.includes('plan_pro_relations') ||
+    msg.includes('does not exist') ||
+    msg.includes('schema cache') ||
+    (error && (error.code === '42P01' || error.code === 'PGRST205'))
+  );
+}
+
+async function fetchPlanProRelationEdges(supabase, ownerId, itemIds) {
+  const ids = Array.from(new Set((itemIds || []).filter(Boolean)));
+  if (!ids.length) return { ok: true, rows: [] };
+  const { data: outRows, error: outErr } = await supabase
+    .from('plan_pro_relations')
+    .select('id,from_item_id,to_item_id,relation_type,created_at')
+    .eq('owner_id', ownerId)
+    .in('from_item_id', ids);
+  if (outErr) {
+    if (planProRelationsSchemaMissing(outErr)) {
+      return { ok: false, rows: [], setup: 'supabase-plan-pro-relations.sql' };
+    }
+    throw new Error('plan_pro_relations: ' + outErr.message);
+  }
+  const { data: inRows, error: inErr } = await supabase
+    .from('plan_pro_relations')
+    .select('id,from_item_id,to_item_id,relation_type,created_at')
+    .eq('owner_id', ownerId)
+    .in('to_item_id', ids);
+  if (inErr) {
+    if (planProRelationsSchemaMissing(inErr)) {
+      return { ok: false, rows: [], setup: 'supabase-plan-pro-relations.sql' };
+    }
+    throw new Error('plan_pro_relations: ' + inErr.message);
+  }
+  const seen = new Set();
+  const rows = [];
+  [].concat(outRows || [], inRows || []).forEach((r) => {
+    if (!r || !r.id || seen.has(r.id)) return;
+    seen.add(r.id);
+    rows.push(r);
+  });
+  return { ok: true, rows };
+}
+
+async function enrichPlanProRelationPeers(supabase, ownerId, peerIds, areasById, categories) {
+  const ids = Array.from(new Set((peerIds || []).filter(Boolean)));
+  if (!ids.length) return {};
+  const { data, error } = await supabase
+    .from('plan_pro_items')
+    .select(PLAN_PRO_ITEM_SELECT)
+    .eq('owner_id', ownerId)
+    .in('id', ids);
+  if (error) throw new Error('plan_pro_relations peers: ' + error.message);
+  const byId = {};
+  (data || []).forEach((it) => {
+    byId[it.id] = planProItemListRow(it, areasById, categories);
+  });
+  return byId;
+}
+
+async function buildPlanProItemRelationsGraph(supabase, ownerId, rootItemId, areasById, categories, hops) {
+  const hopCount = hops === 2 ? 2 : 1;
+  const edgesPack = await fetchPlanProRelationEdges(supabase, ownerId, [rootItemId]);
+  if (!edgesPack.ok) {
+    return {
+      ok: false,
+      setup: edgesPack.setup,
+      relations_out: [],
+      relations_in: [],
+      relations_hops: hopCount,
+      hop2_neighbors: []
+    };
+  }
+  const edges = edgesPack.rows || [];
+  const peerIds = [];
+  edges.forEach((e) => {
+    if (e.from_item_id === rootItemId && e.to_item_id) peerIds.push(e.to_item_id);
+    if (e.to_item_id === rootItemId && e.from_item_id) peerIds.push(e.from_item_id);
+  });
+  const peersById = await enrichPlanProRelationPeers(supabase, ownerId, peerIds, areasById, categories);
+  const relations_out = edges
+    .filter((e) => e.from_item_id === rootItemId)
+    .map((e) => ({
+      relation_id: e.id,
+      relation_type: e.relation_type,
+      relation_label: planProRelationLabel(e.relation_type, false),
+      direction: 'out',
+      peer: peersById[e.to_item_id] || { id: e.to_item_id, found: false }
+    }));
+  const relations_in = edges
+    .filter((e) => e.to_item_id === rootItemId)
+    .map((e) => ({
+      relation_id: e.id,
+      relation_type: e.relation_type,
+      relation_label: planProRelationLabel(e.relation_type, true),
+      direction: 'in',
+      peer: peersById[e.from_item_id] || { id: e.from_item_id, found: false }
+    }));
+
+  let hop2_neighbors = [];
+  if (hopCount === 2 && peerIds.length) {
+    const hop2Pack = await fetchPlanProRelationEdges(supabase, ownerId, peerIds);
+    if (hop2Pack.ok) {
+      const hop2PeerIds = [];
+      (hop2Pack.rows || []).forEach((e) => {
+        if (e.from_item_id && e.from_item_id !== rootItemId && peerIds.indexOf(e.from_item_id) === -1) {
+          hop2PeerIds.push(e.from_item_id);
+        }
+        if (e.to_item_id && e.to_item_id !== rootItemId && peerIds.indexOf(e.to_item_id) === -1) {
+          hop2PeerIds.push(e.to_item_id);
+        }
+      });
+      const hop2ById = await enrichPlanProRelationPeers(
+        supabase,
+        ownerId,
+        hop2PeerIds,
+        areasById,
+        categories
+      );
+      const seenHop2 = new Set();
+      (hop2Pack.rows || []).forEach((e) => {
+        const viaOut = peerIds.indexOf(e.from_item_id) !== -1;
+        const viaIn = peerIds.indexOf(e.to_item_id) !== -1;
+        if (viaOut && e.to_item_id && e.to_item_id !== rootItemId) {
+          const key = e.from_item_id + '>' + e.relation_type + '>' + e.to_item_id;
+          if (!seenHop2.has(key)) {
+            seenHop2.add(key);
+            hop2_neighbors.push({
+              via_item_id: e.from_item_id,
+              via_title: (peersById[e.from_item_id] && peersById[e.from_item_id].title) || null,
+              relation_type: e.relation_type,
+              relation_label: planProRelationLabel(e.relation_type, false),
+              peer: hop2ById[e.to_item_id] || peersById[e.to_item_id] || { id: e.to_item_id, found: false }
+            });
+          }
+        }
+        if (viaIn && e.from_item_id && e.from_item_id !== rootItemId) {
+          const key = e.to_item_id + '<' + e.relation_type + '<' + e.from_item_id;
+          if (!seenHop2.has(key)) {
+            seenHop2.add(key);
+            hop2_neighbors.push({
+              via_item_id: e.to_item_id,
+              via_title: (peersById[e.to_item_id] && peersById[e.to_item_id].title) || null,
+              relation_type: e.relation_type,
+              relation_label: planProRelationLabel(e.relation_type, true),
+              peer: hop2ById[e.from_item_id] || peersById[e.from_item_id] || { id: e.from_item_id, found: false }
+            });
+          }
+        }
+      });
+      hop2_neighbors = hop2_neighbors.slice(0, 40);
+    }
+  }
+
+  return {
+    ok: true,
+    relations_out,
+    relations_in,
+    relations_out_count: relations_out.length,
+    relations_in_count: relations_in.length,
+    relations_hops: hopCount,
+    hop2_neighbors,
+    hop2_neighbors_count: hop2_neighbors.length,
+    relations_note:
+      'Grafo tipado (plan_pro_relations). Usa relations_out/in y hops=2 para contexto multi-salto. Tipos: relacionado_con, depende_de, respalda, continua, actualiza, genera.'
+  };
+}
+
 async function fetchNutriProFolders(supabase, ownerId) {
   const { data, error } = await supabase
     .from('plan_pro_nutri_folders')
@@ -5487,6 +5671,16 @@ async function handlePlanProItem(supabase, params) {
     : nutriRefsRaw.map((r) => ({ ...r, file_found: null, aviso: 'Nutri PRO no disponible en Supabase.' }));
 
   const plainLines = bodyPlainAsLines(item.body_plain);
+  const hopsRaw = parseInt(params.hops, 10);
+  const hops = hopsRaw === 2 ? 2 : 1;
+  const relationsGraph = await buildPlanProItemRelationsGraph(
+    supabase,
+    ownerId,
+    item.id,
+    areasById,
+    categories,
+    hops
+  );
 
   return {
     ok: true,
@@ -5509,6 +5703,15 @@ async function handlePlanProItem(supabase, params) {
           : null,
       apunte_refs: apunteRefs,
       apunte_refs_count: apunteRefs.length,
+      relations_out: relationsGraph.relations_out,
+      relations_in: relationsGraph.relations_in,
+      relations_out_count: relationsGraph.relations_out_count || 0,
+      relations_in_count: relationsGraph.relations_in_count || 0,
+      relations_hops: relationsGraph.relations_hops,
+      hop2_neighbors: relationsGraph.hop2_neighbors || [],
+      hop2_neighbors_count: relationsGraph.hop2_neighbors_count || 0,
+      relations_note: relationsGraph.relations_note || null,
+      relations_setup: relationsGraph.ok === false ? relationsGraph.setup : null,
       images,
       images_count: images.length,
       images_note:
@@ -5532,8 +5735,8 @@ async function handlePlanProItem(supabase, params) {
       searchHits.length > 1 && searchHits[0].score - searchHits[1].score < 8,
     gpt_hint:
       searchHits.length > 1
-        ? 'Si hay varios candidatos parecidos, confirma con Jesús cuál apunte antes de editar. No pidas título exacto: usa also_matched.'
-        : 'Búsqueda flexible por palabras sueltas; no hace falta título exacto.'
+        ? 'Si hay varios candidatos parecidos, confirma con Jesús cuál apunte antes de editar. No pidas título exacto: usa also_matched. Para contexto conectado usa relations_out/in (hops=2).'
+        : 'Búsqueda flexible por palabras sueltas; no hace falta título exacto. Para red de apuntes usa relations_out/in; params.hops=2 para un salto más.'
   };
 }
 
@@ -5760,7 +5963,7 @@ async function handleRadarProject(supabase, params) {
     user_radar_credits_this_month: credits,
     radar_pricing: radarPricing,
     gpt_radar_note:
-      'radar_history lista imágenes (id, created_at, sentinel_period, location_center, bounds, area_ha). latest_radar incluye location_snapshot (polígono, centro, bounds) de la imagen mostrada o de request_id. Radar principal actual: Pilot Copernicus/Sentinel-2, sin Google Earth Engine pero con créditos Radar internos: base 20/mes + bonus; costo por generación según area_hectares del polígono (≤30 ha = 1 · >30 ha = 2 · >100 ha = 3; NDVI+NDMI juntos). Colorimetría relativa al predio/fecha: rojo/naranja=bajo relativo, amarillo/verde claro=intermedio, verde/azul verdoso=alto relativo. ChatGPT no ve píxeles: fechas, coords y enlaces NDVI/NDMI.',
+      'radar_history lista imágenes (id, created_at, sentinel_period, location_center, bounds, area_ha). latest_radar incluye location_snapshot (polígono, centro, bounds) de la imagen mostrada o de request_id. Radar principal actual: Pilot Copernicus/Sentinel-2, sin Google Earth Engine pero con créditos Radar internos: base 20/mes + bonus; costo por generación según area_hectares del polígono (≤30 ha = 1 · >30 ha = 2 · >100 ha = 3; NDVI+NDMI+NDRE+RGB juntos). **Tope duro: máximo 250 ha** (error radar_area_too_large: «Radar máximo 250 ha; divide el polígono»). Capas: NDVI vigor, NDMI dosel, NDRE clorofila, RGB natural (mismas pasadas, mediana+SCL, 14→45 d hasta 8 escenas). Colorimetría relativa al predio/fecha en índices. ChatGPT no ve píxeles: fechas, coords y enlaces firmados.',
     related: {
       fertirriego_suelo_vpd: 'project_detail',
       vpd_ahora: 'project_vpd_live'
@@ -5948,14 +6151,18 @@ async function handleNutritionCatalogs(supabase, params) {
 async function handleDescribeApi() {
   return {
     ok: true,
-    version: '2.10.1',
-    openapi_version: '2.10.1',
+    version: '2.11.0',
+    openapi_version: '2.11.0',
     chatgpt_tool: {
       operationId: 'nutriplantAdminQuery',
       note:
         'En ChatGPT solo existe esta Action. admin_stats, nutri_pro_catalog, describe_api, etc. son valores del campo body.action, no tools aparte.',
       example_admin_stats: { action: 'admin_stats', params: {} },
       example_nutri_pro: { action: 'nutri_pro_catalog', params: {} },
+      example_plan_pro_item_relations: {
+        action: 'plan_pro_item',
+        params: { q: 'calcio limón', hops: 2 }
+      },
       example_nutri_pro_reindex: {
         action: 'nutri_pro_reindex',
         params: { nutri_file_id: 'UUID', mode: 'ocr' }
@@ -5964,7 +6171,7 @@ async function handleDescribeApi() {
         action: 'nutri_pro_set_text',
         params: { nutri_file_id: 'UUID', content: 'texto corregido…' }
       },
-      verify: 'Si describe_api devuelve version 2.10.1, el GPT tiene schema y token correctos.'
+      verify: 'Si describe_api devuelve version 2.11.0, el GPT tiene schema y token correctos.'
     },
     domains: {
       admin: ['admin_stats', 'list_users', 'user_summary'],
@@ -6069,9 +6276,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.10.1',
+      version: '2.11.0',
       description:
-        'v2.10.1 — ChatGPT: una sola Action (nutriplantAdminQuery). body.action = admin_stats|nutri_pro_*|nutri_pro_reindex|nutri_pro_set_text|describe_api|… open_url + corregir texto del mismo archivo.'
+        'v2.11.0 — ChatGPT: una sola Action (nutriplantAdminQuery). plan_pro_item incluye relations_out/in + hops 1|2 (grafo de apuntes).'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {
@@ -6080,7 +6287,7 @@ function getOpenApiSpec() {
           operationId: 'nutriplantAdminQuery',
           summary: 'Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO',
           description:
-            'Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, nutri_pro_reindex, nutri_pro_set_text, describe_api van en body.action, no son tools aparte. Verifica describe_api → version 2.10.1.',
+            'Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, plan_pro_item (relations + hops), nutri_pro_reindex, nutri_pro_set_text, describe_api. Verifica describe_api → version 2.11.0.',
           requestBody: {
             required: true,
             content: {
@@ -6112,6 +6319,11 @@ function getOpenApiSpec() {
                 project_name: { type: 'string' },
                 item_id: { type: 'string' },
                 q: { type: 'string' },
+                hops: {
+                  type: 'integer',
+                  description:
+                    'plan_pro_item: profundidad del grafo de relaciones (1 default, 2 = vecinos del vecino sin cuerpos completos)'
+                },
                 area_slug: { type: 'string' },
                 days_ahead: { type: 'integer' },
                 email: { type: 'string' },

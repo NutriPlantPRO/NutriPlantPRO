@@ -2474,29 +2474,56 @@ const RADAR_INDEX_CONFIG = {
     gradient: 'linear-gradient(90deg,#7c2d12,#ea580c,#f59e0b,#fde68a,#bbf7d0,#22c55e,#0f766e,#0369a1)',
     shownText: 'NDMI en mapa.',
     loadingText: 'Cargando imagen NDMI en el mapa...'
+  },
+  ndre: {
+    label: 'NDRE',
+    busyLabel: 'NDRE',
+    title: 'Escala NDRE relativa al predio',
+    low: 'Menor clorofila / dosel',
+    high: 'Mayor clorofila / dosel',
+    help: 'NDRE = clorofila y estado del dosel (red edge). Verde/teal = mayor; rojo/ámbar = menor dentro del mismo predio.',
+    gradient: 'linear-gradient(90deg,#7f1d1d,#c2410c,#ca8a04,#eab308,#a3e635,#22c55e,#0d9488,#0f766e,#134e4a)',
+    shownText: 'NDRE en mapa.',
+    loadingText: 'Cargando imagen NDRE en el mapa...'
+  },
+  rgb: {
+    label: 'RGB',
+    busyLabel: 'RGB',
+    title: 'Vista natural RGB del predio',
+    low: 'Colores naturales',
+    high: 'Sentinel-2',
+    help: 'RGB = vista natural (bandas azul/verde/rojo). Útil para ubicar el predio y contrastar con índices.',
+    gradient: 'linear-gradient(90deg,#1e3a8a,#2563eb,#22c55e,#eab308,#ea580c,#b91c1c)',
+    shownText: 'RGB en mapa.',
+    loadingText: 'Cargando imagen RGB en el mapa...'
   }
 };
 
+function np_normalizeRadarIndex(value) {
+  const v = String(value || '').toLowerCase();
+  if (v === 'ndmi' || v === 'ndre' || v === 'rgb') return v;
+  return 'ndvi';
+}
+
 function np_getRadarIndexConfig(index) {
-  return RADAR_INDEX_CONFIG[index] || RADAR_INDEX_CONFIG.ndvi;
+  return RADAR_INDEX_CONFIG[np_normalizeRadarIndex(index)] || RADAR_INDEX_CONFIG.ndvi;
 }
 
 function np_getSelectedRadarIndex() {
   const select = document.getElementById('radarIndexSelect');
   const value = select ? String(select.value || '').toLowerCase() : radarActiveIndex;
-  return value === 'ndmi' ? 'ndmi' : 'ndvi';
+  return np_normalizeRadarIndex(value || radarActiveIndex);
 }
 
 function np_setSelectedRadarIndex(index) {
-  radarActiveIndex = index === 'ndmi' ? 'ndmi' : 'ndvi';
+  radarActiveIndex = np_normalizeRadarIndex(index);
   const select = document.getElementById('radarIndexSelect');
   if (select) select.value = radarActiveIndex;
   np_updateRadarScaleUi();
 }
 
 function np_updateRadarScaleUi(indexOverride) {
-  const idx =
-    indexOverride === 'ndvi' || indexOverride === 'ndmi' ? indexOverride : np_getSelectedRadarIndex();
+  const idx = indexOverride != null ? np_normalizeRadarIndex(indexOverride) : np_getSelectedRadarIndex();
   const cfg = np_getRadarIndexConfig(idx);
   const title = document.getElementById('radarScaleTitle');
   const low = document.getElementById('radarScaleLow');
@@ -2512,8 +2539,7 @@ function np_updateRadarScaleUi(indexOverride) {
 }
 
 function np_updateRadarActionLabels(indexOverride) {
-  const idx =
-    indexOverride === 'ndvi' || indexOverride === 'ndmi' ? indexOverride : np_getSelectedRadarIndex();
+  const idx = indexOverride != null ? np_normalizeRadarIndex(indexOverride) : np_getSelectedRadarIndex();
   const cfg = np_getRadarIndexConfig(idx);
   const viewBtn = document.getElementById('radarBtnView');
   const hideBtn = document.getElementById('radarBtnHide');
@@ -2524,8 +2550,15 @@ function np_updateRadarActionLabels(indexOverride) {
 function np_getRadarSignedUrl(data, index) {
   const snap = data && (data.snapshot || data.latest) ? data.snapshot || data.latest : data;
   if (!snap) return '';
-  if (index === 'ndmi') {
+  const idx = np_normalizeRadarIndex(index);
+  if (idx === 'ndmi') {
     return snap.ndmi_signed_url || snap.images?.ndmi?.signed_url || '';
+  }
+  if (idx === 'ndre') {
+    return snap.ndre_signed_url || snap.images?.ndre?.signed_url || '';
+  }
+  if (idx === 'rgb') {
+    return snap.rgb_signed_url || snap.images?.rgb?.signed_url || '';
   }
   return snap.signed_url || snap.images?.ndvi?.signed_url || '';
 }
@@ -2968,6 +3001,11 @@ function np_pilotUserErrorMessage(status, data) {
   } else if (status === 429 || errorKey.includes('quota')) {
     code = 4291;
     message = 'No hay créditos Radar suficientes para generar Pilot este mes.';
+  } else if (errorKey.includes('radar_area_too_large') || /Radar máximo\s+\d+\s*ha/i.test(serverMsg)) {
+    code = 4002;
+    message =
+      serverMsg ||
+      'Radar máximo 250 ha; divide el polígono en lotes más chicos para generar la imagen.';
   } else if (
     errorKey.includes('radar_low_coverage') ||
     /cobertura satelital útil|píxeles válidos|radar_low_coverage/i.test(serverMsg)
@@ -3172,7 +3210,7 @@ function np_getPilotRadarIndex() {
 }
 
 function np_setPilotRadarIndex(index) {
-  window.__nutriplantRadarPilotLayer = index === 'ndmi' ? 'ndmi' : 'ndvi';
+  window.__nutriplantRadarPilotLayer = np_normalizeRadarIndex(index);
   np_setSelectedRadarIndex(window.__nutriplantRadarPilotLayer);
   np_updatePilotLayerButtonUi();
 }
@@ -3181,16 +3219,16 @@ function np_updatePilotLayerButtonUi() {
   const btn = document.getElementById('radarBtnPilotLayer');
   if (!btn) return;
   const idx = np_getPilotRadarIndex();
-  btn.textContent = idx === 'ndmi' ? 'NDMI' : 'NDVI';
-  btn.title =
-    idx === 'ndmi'
-      ? 'Pilot: mostrando NDMI humedad dosel (clic → NDVI)'
-      : 'Pilot: mostrando NDVI vigor (clic → NDMI)';
-  btn.setAttribute('aria-pressed', idx === 'ndmi' ? 'true' : 'false');
+  const cfg = np_getRadarIndexConfig(idx);
+  btn.textContent = cfg.label;
+  btn.title = 'Pilot: mostrando ' + cfg.label + ' (clic para ciclar NDVI → NDMI → NDRE → RGB)';
+  btn.setAttribute('aria-pressed', idx !== 'ndvi' ? 'true' : 'false');
 }
 
 async function np_togglePilotRadarLayer() {
-  const next = np_getPilotRadarIndex() === 'ndmi' ? 'ndvi' : 'ndmi';
+  const order = ['ndvi', 'ndmi', 'ndre', 'rgb'];
+  const cur = np_getPilotRadarIndex();
+  const next = order[(order.indexOf(cur) + 1) % order.length];
   np_setPilotRadarIndex(next);
   const pilot = window.__nutriplantRadarPilot;
   if (!pilot || !pilot.active) return;
@@ -3202,7 +3240,7 @@ async function np_togglePilotRadarLayer() {
   const cfg = np_getRadarIndexConfig(next);
   if (hint) {
     hint.textContent =
-      'Capa ' + cfg.label + ' activa. Cambia NDVI/NDMI desde el selector.';
+      'Capa ' + cfg.label + ' activa. Cambia NDVI/NDMI/NDRE/RGB desde el selector.';
   }
 }
 
@@ -3245,15 +3283,22 @@ function np_formatPilotOkHint(data, layerIndex) {
     ' · SCL';
   if (Number.isFinite(Number(avgCloud))) hint += ' · nubes ~' + avgCloud + '%';
   if (Number.isFinite(Number(validPct))) hint += ' · útiles ' + validPct + '%';
-  hint += '. Cambia NDVI/NDMI desde el selector.';
+  hint += '. Cambia NDVI/NDMI/NDRE/RGB desde el selector.';
   return hint;
 }
 
 function np_getRadarPilotDataUrl(index) {
   const pilot = window.__nutriplantRadarPilot;
   if (!pilot || !pilot.active) return '';
-  if (index === 'ndmi') {
+  const idx = np_normalizeRadarIndex(index);
+  if (idx === 'ndmi') {
     return pilot.ndmi_signed_url || pilot.images?.ndmi?.signed_url || pilot.ndmi_data_url || pilot.images?.ndmi?.data_url || '';
+  }
+  if (idx === 'ndre') {
+    return pilot.ndre_signed_url || pilot.images?.ndre?.signed_url || pilot.ndre_data_url || pilot.images?.ndre?.data_url || '';
+  }
+  if (idx === 'rgb') {
+    return pilot.rgb_signed_url || pilot.images?.rgb?.signed_url || pilot.rgb_data_url || pilot.images?.rgb?.data_url || '';
   }
   return pilot.signed_url || pilot.images?.ndvi?.signed_url || pilot.ndvi_data_url || pilot.images?.ndvi?.data_url || '';
 }
@@ -3281,6 +3326,15 @@ function np_formatRadarCreditLine(pricing) {
   if (!pricing) return '';
   const ha = pricing.area_hectares;
   const cost = Number(pricing.credits_charged) || 1;
+  const maxHa = Number(pricing.max_area_ha || pricing.pricing?.max_area_ha) || 250;
+  if (ha != null && Number.isFinite(Number(ha)) && Number(ha) > maxHa) {
+    return (
+      Number(ha).toFixed(2) +
+      ' ha — Radar máximo ' +
+      maxHa +
+      ' ha; divide el polígono'
+    );
+  }
   if (ha != null && Number.isFinite(Number(ha))) {
     return (
       Number(ha).toFixed(2) +
@@ -3288,10 +3342,39 @@ function np_formatRadarCreditLine(pricing) {
       cost +
       ' crédito' +
       (cost === 1 ? '' : 's') +
-      ' por generación (NDVI+NDMI)'
+      ' por generación (NDVI+NDMI+NDRE+RGB · máx. ' +
+      maxHa +
+      ' ha)'
     );
   }
-  return cost + ' crédito' + (cost === 1 ? '' : 's') + ' por generación (NDVI+NDMI)';
+  return (
+    cost +
+    ' crédito' +
+    (cost === 1 ? '' : 's') +
+    ' por generación (NDVI+NDMI+NDRE+RGB · máx. ' +
+    maxHa +
+    ' ha)'
+  );
+}
+
+function np_getRadarAreaLimitFromStatus() {
+  const st = window.__nutriplantRadarNdviStatus;
+  const pricing = st && st.pricing;
+  if (!pricing) return null;
+  const ha = Number(pricing.area_hectares);
+  const maxHa = Number(pricing.max_area_ha || pricing.pricing?.max_area_ha) || 250;
+  if (!Number.isFinite(ha) || ha <= 0) return null;
+  if (ha <= maxHa) return null;
+  return {
+    ha: ha,
+    maxHa: maxHa,
+    message:
+      'Radar máximo ' +
+      maxHa +
+      ' ha; divide el polígono. Este predio tiene ' +
+      (Math.round(ha * 100) / 100) +
+      ' ha.'
+  };
 }
 
 function np_getRadarGenerationCreditCost() {
@@ -3493,7 +3576,7 @@ function np_preloadRadarImage(url) {
 
 async function np_applyRadarPilotOverlay(url, index) {
   const hint = document.getElementById('radarStatusHint');
-  const idx = index === 'ndmi' || index === 'ndvi' ? index : np_getPilotRadarIndex();
+  const idx = index != null ? np_normalizeRadarIndex(index) : np_getPilotRadarIndex();
   const cfg = np_getRadarIndexConfig(idx);
   const bounds = np_getPolygonBoundsFromMap();
   if (!bounds) {
@@ -3609,6 +3692,8 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       history,
       hasLatestImage: !!data.latest?.signed_url,
       hasLatestNdmiImage: !!np_getRadarSignedUrl(data, 'ndmi'),
+      hasLatestNdreImage: !!np_getRadarSignedUrl(data, 'ndre'),
+      hasLatestRgbImage: !!np_getRadarSignedUrl(data, 'rgb'),
       latestCreatedAt: data.latest?.created_at || null,
       meta: data.latest?.meta || null
     };
@@ -3736,7 +3821,14 @@ window.initRadarNdviUi = function initRadarNdviUi() {
     if (!hint) return;
     const cfg = np_getRadarIndexConfig(idx);
     const st = window.__nutriplantRadarNdviStatus;
-    const hasLayer = idx === 'ndmi' ? st?.hasLatestNdmiImage : st?.hasLatestImage;
+    const hasLayer =
+      idx === 'ndmi'
+        ? st?.hasLatestNdmiImage
+        : idx === 'ndre'
+          ? st?.hasLatestNdreImage
+          : idx === 'rgb'
+            ? st?.hasLatestRgbImage
+            : st?.hasLatestImage;
     if (st?.ok && hasLayer) {
       np_updateRadarStatusHintFromSelection();
     } else if (window.__nutriplantRadarPilot && window.__nutriplantRadarPilot.active) {
@@ -3789,6 +3881,30 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
   const bounds = np_getPolygonBoundsFromMap();
   if (!bounds) {
     alert('El polígono del mapa no es válido.');
+    return;
+  }
+  const areaLimit = np_getRadarAreaLimitFromStatus();
+  if (areaLimit) {
+    alert(areaLimit.message);
+    const hintBlock = document.getElementById('radarStatusHint');
+    if (hintBlock) hintBlock.textContent = areaLimit.message;
+    return;
+  }
+  // Fallback: área local del mapa si aún no llegó pricing del status
+  const localHa =
+    nutriPlantMap && nutriPlantMap.area != null && Number.isFinite(Number(nutriPlantMap.area))
+      ? Number(nutriPlantMap.area) / 10000
+      : proj.location && proj.location.areaHectares != null
+        ? Number(proj.location.areaHectares)
+        : null;
+  if (localHa != null && Number.isFinite(localHa) && localHa > 250) {
+    const msg =
+      'Radar máximo 250 ha; divide el polígono. Este predio tiene ' +
+      (Math.round(localHa * 100) / 100) +
+      ' ha.';
+    alert(msg);
+    const hintBlock = document.getElementById('radarStatusHint');
+    if (hintBlock) hintBlock.textContent = msg;
     return;
   }
   const hint = document.getElementById('radarStatusHint');
@@ -3863,8 +3979,12 @@ window.generateRadarCdsePilot = async function generateRadarCdsePilot() {
       active: true,
       signed_url: data.signed_url || data.images?.ndvi?.signed_url,
       ndmi_signed_url: data.ndmi_signed_url || data.images?.ndmi?.signed_url,
+      ndre_signed_url: data.ndre_signed_url || data.images?.ndre?.signed_url,
+      rgb_signed_url: data.rgb_signed_url || data.images?.rgb?.signed_url,
       ndvi_data_url: data.ndvi_data_url || data.images?.ndvi?.data_url,
       ndmi_data_url: data.ndmi_data_url || data.images?.ndmi?.data_url,
+      ndre_data_url: data.ndre_data_url || data.images?.ndre?.data_url,
+      rgb_data_url: data.rgb_data_url || data.images?.rgb?.data_url,
       images: data.images,
       meta: data.meta,
       scene: data.scene,

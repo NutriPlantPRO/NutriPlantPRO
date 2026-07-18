@@ -1,6 +1,6 @@
 /**
  * Lectura Satelital — histórico por periodos (quincenal/mensual) del predio.
- * Combina NDVI/NDMI (Pilot Sentinel-2 por rango de fechas) con clima (Open-Meteo:
+ * Combina NDVI/NDMI/NDRE/RGB (Pilot Sentinel-2 por rango de fechas) con clima (Open-Meteo:
  * VPD promedio, ET₀ acumulada, lluvia acumulada) y riego manual por periodo.
  *
  * Reutiliza helpers globales de map.js (np_getRadarAccessToken, np_polygonCoordsForPilot,
@@ -17,6 +17,7 @@
   var lecturaSeriesVis = {
     ndvi: true,
     ndmi: true,
+    ndre: true,
     vpd: true,
     et0: true,
     rain: true,
@@ -429,7 +430,7 @@
         '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:12px;padding:14px;">' +
           '<div style="font-weight:700;color:#14532d;font-size:15px;margin-bottom:4px;">📈 Lectura Satelital — histórico del predio</div>' +
           '<div style="font-size:12px;color:#334155;line-height:1.5;margin-bottom:10px;">' +
-            'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ mm con % de franja).' +
+            'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ mm con % de franja). Máximo <strong>250 ha</strong> por predio.' +
           '</div>' +
           '<div style="font-size:11px;color:#334155;line-height:1.45;padding:8px 10px;margin:0 0 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">' +
             '<strong style="color:#14532d;">Cómo se arma:</strong> ' +
@@ -454,7 +455,7 @@
               '<input type="date" id="lecturaEndDate" style="border:1px solid #86efac;border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600;color:#14532d;background:#fff;">' +
             '</label>' +
             '<button type="button" id="lecturaBtnGenerate" class="btn btn-primary" style="font-size:13px;">🛰 Generar histórico</button>' +
-            '<button type="button" id="lecturaBtnRefresh" class="btn btn-secondary" style="font-size:13px;" title="Trae y muestra las imágenes NDVI/NDMI guardadas, revisa periodos pendientes y completa clima si falta.">👁 Mostrar NDVI/NDMI</button>' +
+            '<button type="button" id="lecturaBtnRefresh" class="btn btn-secondary" style="font-size:13px;" title="Trae y muestra las imágenes NDVI/NDMI/NDRE/RGB guardadas, revisa periodos pendientes y completa clima si falta.">👁 Mostrar imágenes</button>' +
           '</div>' +
           '<div id="lecturaCreditsLabel" style="font-size:13px;color:#166534;margin-top:10px;font-weight:600;"></div>' +
           '<div id="lecturaCostHint" style="font-size:12px;color:#166534;margin-top:4px;font-weight:600;"></div>' +
@@ -477,7 +478,7 @@
             '<canvas id="lecturaChart"></canvas>' +
           '</div>' +
           '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">' +
-            'Izquierda: NDVI / NDMI. Derecha: mm (ET₀, lluvia, riego). Barras tenues: horas VPD del periodo (&lt;0.5 azul, 0.5–1.5 verde, &gt;1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).' +
+            'Izquierda: NDVI / NDMI / NDRE. Derecha: mm (ET₀, lluvia, riego). Barras tenues: horas VPD del periodo (&lt;0.5 azul, 0.5–1.5 verde, &gt;1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).' +
           '</div>' +
         '</div>' +
         '<div id="lecturaGallery" style="margin-top:14px;"></div>' +
@@ -516,13 +517,27 @@
       }
     }
     if (hint) {
-      hint.textContent =
-        'Costo de esta consulta: ' +
-        total +
-        ' créditos' +
-        (total === 4 ? ' (predio >30 ha)' : '') +
-        (avail != null ? ' · tras generar te quedarían ' + Math.max(0, avail - total) : '') +
-        '.';
+      var pricing = st && st.pricing;
+      var ha = pricing && pricing.area_hectares != null ? Number(pricing.area_hectares) : null;
+      var maxHa = Number((pricing && (pricing.max_area_ha || (pricing.pricing && pricing.pricing.max_area_ha))) || 250) || 250;
+      if (ha != null && Number.isFinite(ha) && ha > maxHa) {
+        hint.textContent =
+          'Radar máximo ' +
+          maxHa +
+          ' ha; divide el polígono. Este predio tiene ' +
+          (Math.round(ha * 100) / 100) +
+          ' ha.';
+      } else {
+        hint.textContent =
+          'Costo de esta consulta: ' +
+          total +
+          ' créditos' +
+          (total === 4 ? ' (predio >30 ha)' : '') +
+          (avail != null ? ' · tras generar te quedarían ' + Math.max(0, avail - total) : '') +
+          ' · máx. ' +
+          maxHa +
+          ' ha.';
+      }
     }
   }
   window.updateLecturaCreditsHint = updateCostHint;
@@ -589,7 +604,7 @@
     return Number(v).toFixed(dec == null ? 2 : dec);
   }
   function statusBadge(row) {
-    var hasImg = !!(row.signed_url || row.ndmi_signed_url);
+    var hasImg = !!(row.signed_url || row.ndmi_signed_url || row.ndre_signed_url || row.rgb_signed_url);
     // Sin cobertura mínima: no hay imagen, solo motivo.
     if (row.image_omitted || (row.status === 'error' && row.error_code === 'radar_low_coverage' && !hasImg)) {
       var whyOnly =
@@ -708,6 +723,7 @@
       ['Periodo', 'Rango de fechas del periodo analizado.', false, null],
       ['NDVI prom', 'NDVI = vigor vegetativo. Promedio de píxeles válidos dentro del predio.', false, null],
       ['NDMI prom', 'NDMI = humedad relativa del dosel. Promedio de píxeles válidos dentro del predio.', false, null],
+      ['NDRE prom', 'NDRE = clorofila y estado del dosel (red edge). Promedio de píxeles válidos dentro del predio.', false, null],
       ['VPD prom (kPa)', 'VPD promedio horario del periodo.', false, null],
       ['h VPD <0.5', 'Horas del periodo con VPD bajo (<0.5 kPa).', false, null],
       ['h VPD 0.5–1.5', 'Horas del periodo con VPD óptimo (0.5–1.5 kPa).', false, null],
@@ -770,6 +786,7 @@
             : '') + '</td>' +
         '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndvi_mean, 3) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndmi_mean, 3) + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.ndre_mean, 3) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;border-top:1px solid #dbeafe;">' + fmtNum(r.vpd_mean, 2) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;color:#1d4ed8;border-top:1px solid #dbeafe;" title="Horas VPD bajo">' + fmtNum(r.vpd_hours_low, 0) + '</td>' +
         '<td style="padding:8px 10px;text-align:center;color:#16a34a;border-top:1px solid #dbeafe;" title="Horas VPD óptimo">' + fmtNum(r.vpd_hours_opt, 0) + '</td>' +
@@ -789,7 +806,7 @@
       '</tr>';
     });
     html += '</tbody></table>';
-    html += '<div style="font-size:11px;color:#64748b;margin-top:6px;">ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI y NDMI no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). <span style="color:#0f766e;font-weight:700;">Riego mm y m³</span> son el <strong>mismo riego</strong> (contorno verde): editas uno y se convierte el otro. <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).' +
+    html += '<div style="font-size:11px;color:#64748b;margin-top:6px;">ID = identificador del periodo (P1…). Días = duración del periodo (inicio→fin inclusive). NDVI, NDMI y NDRE no se traducen: son índices satelitales. ET₀ y lluvia son acumulados del periodo; VPD prom = promedio horario. Horas VPD: bajo &lt;0.5 · óptimo 0.5–1.5 · alto &gt;1.5 (total ≈ horas del periodo; 15 d = 360 h). <span style="color:#0f766e;font-weight:700;">Riego mm y m³</span> son el <strong>mismo riego</strong> (contorno verde): editas uno y se convierte el otro. <span style="color:#b45309;">*</span> quincena ampliada al <strong>mes calendario</strong> solo para la imagen (clima/riego siguen en los 15 días).' +
       (cropHa == null ? ' <span style="color:#b45309;">Guarda el polígono con área (ha) para convertir m³ ↔ mm.</span>' : '') +
       '</div>';
     wrap.innerHTML = html;
@@ -852,6 +869,7 @@
     var chips = [
       { key: 'ndvi', label: 'NDVI', color: '#16a34a' },
       { key: 'ndmi', label: 'NDMI', color: '#0369a1' },
+      { key: 'ndre', label: 'NDRE', color: '#0f766e' },
       { key: 'vpd', label: 'VPD horas', color: '#7f1d1d' },
       { key: 'et0', label: 'ET₀', color: '#a16207' },
       { key: 'rain', label: 'Lluvia', color: '#2563eb' },
@@ -1001,6 +1019,20 @@
       },
       {
         type: 'line',
+        label: 'NDRE',
+        yAxisID: 'yIdx',
+        data: rows.map(function (r) { return r.ndre_mean; }),
+        borderColor: '#0f766e',
+        backgroundColor: '#0f766e',
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: 3,
+        borderWidth: 2.5,
+        order: 1,
+        hidden: !lecturaSeriesVis.ndre
+      },
+      {
+        type: 'line',
         label: 'ET₀ acum (mm)',
         yAxisID: 'yMm',
         data: rows.map(function (r) { return r.et0_sum; }),
@@ -1079,7 +1111,7 @@
             position: 'left',
             min: 0,
             max: 1,
-            title: { display: true, text: 'NDVI / NDMI', font: { size: 11 } },
+            title: { display: true, text: 'NDVI / NDMI / NDRE', font: { size: 11 } },
             grid: { color: 'rgba(148,163,184,0.25)' },
             ticks: { font: { size: 10 } }
           },
@@ -1150,7 +1182,7 @@
     var rows = state.rows
       .slice()
       .sort(function (a, b) { return a.index - b.index; })
-      .filter(function (r) { return !!(r.signed_url || r.ndmi_signed_url); });
+      .filter(function (r) { return !!(r.signed_url || r.ndmi_signed_url || r.ndre_signed_url || r.rgb_signed_url); });
     if (!rows.length) {
       var skipped = (state.rows || []).filter(function (r) {
         return r.status === 'error' || r.error_code === 'radar_low_coverage';
@@ -1167,28 +1199,56 @@
     var allCount = (state.rows || []).length;
     var skippedCount = allCount - rows.length;
     function scaleLegend(kind) {
-      var isNdvi = kind === 'ndvi';
-      var title = isNdvi ? 'Escala NDVI relativa al predio' : 'Escala NDMI relativa al predio';
-      var bar = isNdvi
-        ? 'linear-gradient(90deg,#7f1d1d,#b91c1c,#ea580c,#f59e0b,#fde68a,#bef264,#65a30d,#15803d,#064e3b)'
-        : 'linear-gradient(90deg,#7c2d12,#ea580c,#f59e0b,#fde68a,#bbf7d0,#22c55e,#0f766e,#0369a1)';
-      var tip = isNdvi
-        ? 'Verde = mayor vigor dentro de ese predio/periodo; rojo = menor. No es escala absoluta universal.'
-        : 'Azul/verde = mayor humedad relativa del dosel dentro de ese predio/periodo; naranja/café = menor.';
+      var cfg = {
+        ndvi: {
+          title: 'Escala NDVI relativa al predio',
+          color: '#166534',
+          bar: 'linear-gradient(90deg,#7f1d1d,#b91c1c,#ea580c,#f59e0b,#fde68a,#bef264,#65a30d,#15803d,#064e3b)',
+          tip: 'Verde = mayor vigor dentro de ese predio/periodo; rojo = menor. No es escala absoluta universal.'
+        },
+        ndmi: {
+          title: 'Escala NDMI relativa al predio',
+          color: '#0369a1',
+          bar: 'linear-gradient(90deg,#7c2d12,#ea580c,#f59e0b,#fde68a,#bbf7d0,#22c55e,#0f766e,#0369a1)',
+          tip: 'Azul/verde = mayor humedad relativa del dosel dentro de ese predio/periodo; naranja/café = menor.'
+        },
+        ndre: {
+          title: 'Escala NDRE relativa al predio',
+          color: '#0f766e',
+          bar: 'linear-gradient(90deg,#7f1d1d,#c2410c,#ca8a04,#eab308,#a3e635,#22c55e,#0d9488,#0f766e,#134e4a)',
+          tip: 'Teal/verde = mayor clorofila / dosel dentro de ese predio/periodo; rojo/ámbar = menor.'
+        },
+        rgb: {
+          title: 'Vista natural RGB',
+          color: '#334155',
+          bar: 'linear-gradient(90deg,#1e3a8a,#2563eb,#22c55e,#eab308,#ea580c,#b91c1c)',
+          tip: 'Colores naturales del predio (bandas azul/verde/rojo de Sentinel-2).'
+        }
+      };
+      var c = cfg[kind] || cfg.ndvi;
       return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;font-size:11px;color:#475569;">' +
-        '<span style="font-weight:700;color:' + (isNdvi ? '#166534' : '#0369a1') + ';">' + title + '</span>' +
-        '<span>Menor</span>' +
-        '<span style="width:140px;height:8px;border-radius:999px;background:' + bar + ';display:inline-block;" title="' + tip + '"></span>' +
-        '<span>Mayor</span>' +
+        '<span style="font-weight:700;color:' + c.color + ';">' + c.title + '</span>' +
+        (kind === 'rgb' ? '' : '<span>Menor</span>') +
+        '<span style="width:140px;height:8px;border-radius:999px;background:' + c.bar + ';display:inline-block;" title="' + c.tip + '"></span>' +
+        (kind === 'rgb' ? '' : '<span>Mayor</span>') +
         '<span style="color:#64748b;line-height:1.35;">' +
-          'Color según los niveles de <strong>ese predio y periodo</strong> (píxeles válidos dentro del polígono), no un valor fijo absoluto.' +
+          (kind === 'rgb'
+            ? 'Imagen en color natural del mismo predio/periodo (píxeles válidos dentro del polígono).'
+            : 'Color según los niveles de <strong>ese predio y periodo</strong> (píxeles válidos dentro del polígono), no un valor fijo absoluto.') +
         '</span>' +
       '</div>';
     }
+    function miniCardUrl(r, key) {
+      if (key === 'ndvi') return r.signed_url || null;
+      if (key === 'ndmi') return r.ndmi_signed_url || null;
+      if (key === 'ndre') return r.ndre_signed_url || null;
+      if (key === 'rgb') return r.rgb_signed_url || null;
+      return null;
+    }
     function miniCard(r, key, label, color) {
-      var omitted = !!r.image_omitted && !(r.signed_url || r.ndmi_signed_url);
+      var omitted = !!r.image_omitted && !(r.signed_url || r.ndmi_signed_url || r.ndre_signed_url || r.rgb_signed_url);
       var incomplete = !omitted && !!(r.image_incomplete || r.error_code === 'radar_incomplete_coverage');
-      var url = omitted ? null : key === 'ndvi' ? r.signed_url : r.ndmi_signed_url;
+      var url = omitted ? null : miniCardUrl(r, key);
       var metaParts = [];
       if (r.avg_cloud_cover != null) metaParts.push('nubes ~' + esc(r.avg_cloud_cover) + '%');
       if (r.valid_pct != null) metaParts.push('útil ' + esc(r.valid_pct) + '%');
@@ -1249,6 +1309,16 @@
         scaleLegend('ndmi') +
         '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
           rows.map(function (r) { return miniCard(r, 'ndmi', 'NDMI', '#0369a1'); }).join('') +
+        '</div>' +
+        '<div style="font-size:12px;font-weight:800;color:#0f766e;margin:14px 0 4px;">NDRE — clorofila y estado del dosel</div>' +
+        scaleLegend('ndre') +
+        '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
+          rows.map(function (r) { return miniCard(r, 'ndre', 'NDRE', '#0f766e'); }).join('') +
+        '</div>' +
+        '<div style="font-size:12px;font-weight:800;color:#334155;margin:14px 0 4px;">RGB — vista natural del predio</div>' +
+        scaleLegend('rgb') +
+        '<div style="' + gridStyle + 'min-width:' + (count * 118) + 'px;">' +
+          rows.map(function (r) { return miniCard(r, 'rgb', 'RGB', '#334155'); }).join('') +
         '</div>' +
         '<div style="font-size:10.5px;color:#64748b;margin-top:8px;">* mes = quincena ampliada al mes calendario solo para la imagen (clima/riego = periodo de 15 d). El color compara zonas dentro del mismo predio/periodo; el valor numérico promedio está en la tabla. Toca cualquier imagen para verla en grande.' +
           (skippedCount
@@ -1359,6 +1429,7 @@
       row.status = it.status;
       if (it.ndvi_mean != null) row.ndvi_mean = it.ndvi_mean;
       if (it.ndmi_mean != null) row.ndmi_mean = it.ndmi_mean;
+      if (it.ndre_mean != null) row.ndre_mean = it.ndre_mean;
       if (it.valid_pct != null) row.valid_pct = it.valid_pct;
       if (it.avg_cloud_cover != null) row.avg_cloud_cover = it.avg_cloud_cover;
       if (it.scene_count != null) row.scene_count = it.scene_count;
@@ -1373,9 +1444,13 @@
       if (it.incomplete_reason) row.incomplete_reason = it.incomplete_reason;
       if (it.signed_url) row.signed_url = it.signed_url;
       if (it.ndmi_signed_url) row.ndmi_signed_url = it.ndmi_signed_url;
+      if (it.ndre_signed_url) row.ndre_signed_url = it.ndre_signed_url;
+      if (it.rgb_signed_url) row.rgb_signed_url = it.rgb_signed_url;
       if (row.image_omitted) {
         row.signed_url = null;
         row.ndmi_signed_url = null;
+        row.ndre_signed_url = null;
+        row.rgb_signed_url = null;
       }
       if (it.error_message) row.error_message = it.error_message;
       if (it.error_code) row.error_code = it.error_code;
@@ -1463,7 +1538,7 @@
     var otherFails = state.rows.filter(function (r) {
       return r.status === 'error' && cloudFails.indexOf(r) < 0;
     });
-    var okImg = state.rows.filter(function (r) { return !!(r.signed_url || r.ndmi_signed_url); }).length;
+    var okImg = state.rows.filter(function (r) { return !!(r.signed_url || r.ndmi_signed_url || r.ndre_signed_url || r.rgb_signed_url); }).length;
     var nCloud = cloudFails.length;
     var nOther = otherFails.length;
 
@@ -1507,6 +1582,35 @@
     if (!proj || !proj.id) { alert('Selecciona un proyecto.'); return; }
     var coords = getPolygonCoords();
     if (!coords || coords.length < 3) { alert('Traza y guarda el polígono del predio en la pestaña «Polígono / NDVI y NDMI».'); return; }
+
+    var localHa = null;
+    try {
+      var st = window.__nutriplantRadarNdviStatus;
+      if (st && st.pricing && st.pricing.area_hectares != null) localHa = Number(st.pricing.area_hectares);
+      if (localHa == null && proj.location && proj.location.areaHectares != null) {
+        localHa = Number(proj.location.areaHectares);
+      }
+      if (localHa == null && nutriPlantMap && nutriPlantMap.area != null) {
+        localHa = Number(nutriPlantMap.area) / 10000;
+      }
+    } catch (eHa) {}
+    var maxHa = 250;
+    try {
+      var stMax = window.__nutriplantRadarNdviStatus;
+      if (stMax && stMax.pricing) {
+        maxHa = Number(stMax.pricing.max_area_ha || (stMax.pricing.pricing && stMax.pricing.pricing.max_area_ha) || 250) || 250;
+      }
+    } catch (eMax) {}
+    if (localHa != null && Number.isFinite(localHa) && localHa > maxHa) {
+      alert(
+        'Radar máximo ' +
+          maxHa +
+          ' ha; divide el polígono. Este predio tiene ' +
+          (Math.round(localHa * 100) / 100) +
+          ' ha.'
+      );
+      return;
+    }
 
     var freq = (document.getElementById('lecturaFreq') || {}).value === 'mensual' ? 'mensual' : 'quincenal';
     var count = parseInt((document.getElementById('lecturaCount') || {}).value, 10) || 6;
@@ -1581,14 +1685,14 @@
           frequency: p.frequency,
           request_id: match.id || null,
           status: 'pending',
-          ndvi_mean: null, ndmi_mean: null,
+          ndvi_mean: null, ndmi_mean: null, ndre_mean: null,
           vpd_mean: null, et0_sum: null, rain_sum: null,
           vpd_hours_low: null, vpd_hours_opt: null, vpd_hours_high: null,
           vpd_hours_total: null,
           vpd_hours_expected: periodHoursExpected(p.date_start, p.date_end),
           riego_m3: riegoPrev != null ? riegoPrev : null,
           riego_mm: null,
-          signed_url: null, ndmi_signed_url: null
+          signed_url: null, ndmi_signed_url: null, ndre_signed_url: null, rgb_signed_url: null
         };
       });
       var newRun = {
@@ -1847,6 +1951,19 @@
             },
             {
               type: 'line',
+              label: 'NDRE',
+              yAxisID: 'yIdx',
+              data: sorted.map(function (r) { return r.ndre_mean; }),
+              borderColor: '#0f766e',
+              backgroundColor: '#0f766e',
+              tension: 0.3,
+              spanGaps: true,
+              pointRadius: 3,
+              borderWidth: 2.5,
+              order: 1
+            },
+            {
+              type: 'line',
               label: 'ET₀ acum (mm)',
               yAxisID: 'yMm',
               data: sorted.map(function (r) { return r.et0_sum; }),
@@ -1905,7 +2022,7 @@
               position: 'left',
               min: 0,
               max: 1,
-              title: { display: true, text: 'NDVI / NDMI', font: { size: 10 } },
+              title: { display: true, text: 'NDVI / NDMI / NDRE', font: { size: 10 } },
               ticks: { font: { size: 9 } }
             },
             yMm: {

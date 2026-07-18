@@ -140,6 +140,20 @@ exports.handler = async (event) => {
     const areaHa = radarCredits.getAreaHectaresFromLocation(projectRow.data?.location);
     creditCost = radarCredits.getRadarCreditCostForArea(areaHa);
     pricing = radarCredits.getRadarCreditPricingInfo(areaHa);
+    const areaLimitErr = radarCredits.getRadarAreaLimitError(areaHa);
+    if (areaLimitErr) {
+      return jsonResponse(400, {
+        ...areaLimitErr,
+        credits: {
+          used,
+          limit,
+          base: baseLimit,
+          bonus,
+          available: Math.max(0, limit - used)
+        },
+        pricing
+      });
+    }
     if (limit > 0 && used + creditCost > limit) {
       return jsonResponse(429, {
         error: 'radar_quota_exceeded',
@@ -324,12 +338,18 @@ exports.handler = async (event) => {
 
     let ndviDataUrl = null;
     let ndmiDataUrl = null;
+    let ndreDataUrl = null;
+    let rgbDataUrl = null;
     const latestScene = bundle.scenes[0] || {};
     let request = null;
     let storagePath = null;
     let ndmiStoragePath = null;
+    let ndreStoragePath = null;
+    let rgbStoragePath = null;
     let signedUrl = null;
     let ndmiSignedUrl = null;
+    let ndreSignedUrl = null;
+    let rgbSignedUrl = null;
     const locationSnapshot = buildLocationSnapshot(projectRow?.data?.location, polygon);
     const meta = {
       pilot: true,
@@ -349,6 +369,9 @@ exports.handler = async (event) => {
       scene_dates: bundle.sceneDates || null,
       coverage: rendered.coverage || null,
       valid_pct: rendered.coverage?.valid_pct != null ? rendered.coverage.valid_pct : null,
+      ndvi_mean: rendered.ndviMean != null ? rendered.ndviMean : null,
+      ndmi_mean: rendered.ndmiMean != null ? rendered.ndmiMean : null,
+      ndre_mean: rendered.ndreMean != null ? rendered.ndreMean : null,
       scl_masked: true,
       fallback_tier: bundle.fallbackTier || null,
       location_snapshot: locationSnapshot,
@@ -356,6 +379,8 @@ exports.handler = async (event) => {
       credits_charged: projectId ? creditCost : 0,
       ndvi_vis: { style: 'relative_p10_p90', scale: 'predio' },
       ndmi_vis: { style: 'relative_p10_p90', scale: 'predio' },
+      ndre_vis: { style: 'relative_p10_p90', scale: 'predio' },
+      rgb_vis: { style: 'true_color_p2_p98', scale: 'predio' },
       vis: rendered.vis
     };
 
@@ -363,21 +388,35 @@ exports.handler = async (event) => {
       const ts = Date.now();
       storagePath = `${userId}/${projectId}/${mk}_${ts}_pilot_ndvi.png`;
       ndmiStoragePath = `${userId}/${projectId}/${mk}_${ts}_pilot_ndmi.png`;
+      ndreStoragePath = `${userId}/${projectId}/${mk}_${ts}_pilot_ndre.png`;
+      rgbStoragePath = `${userId}/${projectId}/${mk}_${ts}_pilot_rgb.png`;
       meta.ndmi_storage_path = ndmiStoragePath;
+      meta.ndre_storage_path = ndreStoragePath;
+      meta.rgb_storage_path = rgbStoragePath;
       meta.images = {
         ndvi: { storage_path: storagePath, label: 'NDVI', description: 'Pilot Copernicus · vigor relativo del predio' },
-        ndmi: { storage_path: ndmiStoragePath, label: 'NDMI', description: 'Pilot Copernicus · humedad relativa del dosel' }
+        ndmi: { storage_path: ndmiStoragePath, label: 'NDMI', description: 'Pilot Copernicus · humedad relativa del dosel' },
+        ndre: { storage_path: ndreStoragePath, label: 'NDRE', description: 'Pilot Copernicus · clorofila y estado del dosel' },
+        rgb: { storage_path: rgbStoragePath, label: 'RGB', description: 'Pilot Copernicus · vista natural del predio' }
       };
 
-      const [upNdvi, upNdmi] = await Promise.all([
+      const [upNdvi, upNdmi, upNdre, upRgb] = await Promise.all([
         supabase.storage.from(BUCKET).upload(storagePath, rendered.ndviPng, { contentType: 'image/png', upsert: true }),
-        supabase.storage.from(BUCKET).upload(ndmiStoragePath, rendered.ndmiPng, { contentType: 'image/png', upsert: true })
+        supabase.storage.from(BUCKET).upload(ndmiStoragePath, rendered.ndmiPng, { contentType: 'image/png', upsert: true }),
+        supabase.storage.from(BUCKET).upload(ndreStoragePath, rendered.ndrePng, { contentType: 'image/png', upsert: true }),
+        supabase.storage.from(BUCKET).upload(rgbStoragePath, rendered.rgbPng, { contentType: 'image/png', upsert: true })
       ]);
       if (upNdvi.error) {
         return jsonResponse(500, { error: 'storage_upload_failed', message: upNdvi.error.message });
       }
       if (upNdmi.error) {
         return jsonResponse(500, { error: 'storage_upload_failed', message: upNdmi.error.message });
+      }
+      if (upNdre.error) {
+        return jsonResponse(500, { error: 'storage_upload_failed', message: upNdre.error.message });
+      }
+      if (upRgb.error) {
+        return jsonResponse(500, { error: 'storage_upload_failed', message: upRgb.error.message });
       }
 
       const { data: insRow, error: insErr } = await supabase
@@ -397,16 +436,22 @@ exports.handler = async (event) => {
       }
       request = insRow;
 
-      const [signedNdvi, signedNdmi] = await Promise.all([
+      const [signedNdvi, signedNdmi, signedNdre, signedRgb] = await Promise.all([
         supabase.storage.from(BUCKET).createSignedUrl(storagePath, 3600),
-        supabase.storage.from(BUCKET).createSignedUrl(ndmiStoragePath, 3600)
+        supabase.storage.from(BUCKET).createSignedUrl(ndmiStoragePath, 3600),
+        supabase.storage.from(BUCKET).createSignedUrl(ndreStoragePath, 3600),
+        supabase.storage.from(BUCKET).createSignedUrl(rgbStoragePath, 3600)
       ]);
       signedUrl = signedNdvi.data?.signedUrl || null;
       ndmiSignedUrl = signedNdmi.data?.signedUrl || null;
+      ndreSignedUrl = signedNdre.data?.signedUrl || null;
+      rgbSignedUrl = signedRgb.data?.signedUrl || null;
     } else {
       meta.note = 'Mediana 45 d + SCL; no guardado porque no se envió project_id.';
       ndviDataUrl = 'data:image/png;base64,' + rendered.ndviPng.toString('base64');
       ndmiDataUrl = 'data:image/png;base64,' + rendered.ndmiPng.toString('base64');
+      ndreDataUrl = 'data:image/png;base64,' + rendered.ndrePng.toString('base64');
+      rgbDataUrl = 'data:image/png;base64,' + rendered.rgbPng.toString('base64');
     }
 
     return jsonResponse(200, {
@@ -418,15 +463,19 @@ exports.handler = async (event) => {
       provider: bundle.provider,
       signed_url: signedUrl,
       ndmi_signed_url: ndmiSignedUrl,
+      ndre_signed_url: ndreSignedUrl,
+      rgb_signed_url: rgbSignedUrl,
       ndvi_data_url: ndviDataUrl,
       ndmi_data_url: ndmiDataUrl,
+      ndre_data_url: ndreDataUrl,
+      rgb_data_url: rgbDataUrl,
       meta
     });
   } catch (e) {
     console.error('radar-cdse-pilot sync:', e);
     return jsonResponse(502, {
       error: 'pilot_render_failed',
-      message: e.message || 'No se pudo generar NDVI/NDMI pilot'
+      message: e.message || 'No se pudo generar imágenes Pilot (NDVI/NDMI/NDRE/RGB)'
     });
   }
 };

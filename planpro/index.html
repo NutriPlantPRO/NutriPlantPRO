@@ -4790,6 +4790,257 @@
       color: #b91c1c;
       border-color: rgba(185, 28, 28, 0.24);
     }
+    .np-detail-relations {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(148, 163, 184, 0.22);
+      width: 100%;
+    }
+    .np-detail-relations-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .np-detail-relations-head .np-detail-meta-label {
+      flex: 0 0 auto;
+    }
+    .np-detail-relations-add {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .np-detail-relations-add select {
+      flex: 0 1 160px;
+      min-height: 30px;
+      margin: 0;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.36);
+      font: inherit;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.92);
+    }
+    .np-detail-relations-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .np-detail-relation-chip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 10px;
+      background: rgba(241, 245, 249, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .np-detail-relation-chip--in {
+      background: rgba(238, 242, 255, 0.9);
+      border-color: rgba(99, 102, 241, 0.22);
+    }
+    .np-detail-relation-type {
+      font-weight: 700;
+      color: #334155;
+      flex: 0 0 auto;
+    }
+    .np-detail-relation-title {
+      flex: 1 1 120px;
+      min-width: 0;
+      color: #0f172a;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      font: inherit;
+      font-size: 12px;
+    }
+    .np-detail-relation-title:hover {
+      text-decoration: underline;
+      color: #0369a1;
+    }
+    .np-detail-relation-del {
+      flex: 0 0 auto;
+      border: 0;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 2px 4px;
+    }
+    .np-detail-relation-del:hover {
+      color: #b91c1c;
+    }
+    .np-detail-relations-empty {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .np-detail-relations-setup {
+      margin: 6px 0 0;
+      font-size: 11px;
+      color: #b45309;
+      line-height: 1.4;
+    }
+    .np-app-mode-btn--mapa:hover:not(.np-app-mode-btn--active) {
+      border-color: color-mix(in srgb, #6366f1 30%, rgba(148, 163, 184, 0.35));
+    }
+    .np-app-mode-btn--mapa.np-app-mode-btn--active {
+      border-color: color-mix(in srgb, #6366f1 58%, rgba(255, 255, 255, 0.5));
+      background: radial-gradient(
+        ellipse 105% 185% at 50% 38%,
+        color-mix(in srgb, #6366f1 58%, #fff) 0%,
+        color-mix(in srgb, #6366f1 36%, #fff) 34%,
+        color-mix(in srgb, #6366f1 14%, #fff) 62%,
+        rgba(255, 255, 255, 0.98) 100%
+      );
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, #6366f1 22%, transparent),
+        0 8px 22px color-mix(in srgb, #6366f1 32%, rgba(15, 23, 42, 0.1));
+    }
+    #npViewMapa {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
+    }
+    .np-mapa-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+    }
+    .np-mapa-toolbar label {
+      font-size: 12px;
+      font-weight: 650;
+      color: #475569;
+    }
+    .np-mapa-toolbar select {
+      min-height: 32px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.36);
+      font: inherit;
+      font-size: 13px;
+      background: #fff;
+    }
+    .np-mapa-toolbar .np-mapa-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      user-select: none;
+    }
+    .np-mapa-canvas-wrap {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: min(62vh, 640px);
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 20%, rgba(99, 102, 241, 0.06), transparent 55%),
+        radial-gradient(ellipse 70% 50% at 80% 70%, rgba(34, 197, 94, 0.06), transparent 50%),
+        rgba(248, 250, 252, 0.95);
+      overflow: hidden;
+      touch-action: none;
+    }
+    .np-mapa-svg {
+      width: 100%;
+      height: 100%;
+      min-height: min(62vh, 640px);
+      display: block;
+      cursor: grab;
+    }
+    .np-mapa-svg.np-mapa-panning {
+      cursor: grabbing;
+    }
+    .np-mapa-node {
+      cursor: pointer;
+    }
+    .np-mapa-node text {
+      font-family: inherit;
+      pointer-events: none;
+      user-select: none;
+    }
+    .np-mapa-edge-sem {
+      stroke-width: 1.75;
+      fill: none;
+      opacity: 0.85;
+    }
+    .np-mapa-edge-hier {
+      stroke: rgba(148, 163, 184, 0.45);
+      stroke-width: 1.25;
+      fill: none;
+      stroke-dasharray: 4 3;
+    }
+    .np-mapa-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      font-size: 11px;
+      color: #64748b;
+      padding: 0 4px;
+    }
+    .np-mapa-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .np-mapa-legend i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .np-mapa-empty,
+    .np-mapa-setup {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      font-size: 14px;
+      color: #64748b;
+      pointer-events: none;
+    }
+    .np-mapa-tip {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      max-width: min(420px, calc(100% - 24px));
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.82);
+      color: #f8fafc;
+      font-size: 12px;
+      line-height: 1.4;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 2;
+    }
+    .np-mapa-tip.np-mapa-tip--on {
+      opacity: 1;
+    }
     .np-map-picker-panel {
       width: min(760px, calc(100vw - 28px));
       max-height: min(86vh, 760px);
@@ -10184,6 +10435,13 @@
             <span class="np-app-mode-btn-label">Nutri PRO</span>
           </span>
         </button>
+        <button type="button" class="np-app-mode-btn np-app-mode-btn--mapa" id="npModeBtnMapa">
+          <span class="np-app-mode-btn-content">
+            <img src="../assets/N_Hoja_Azul.png" alt="" class="np-app-mode-btn-logo np-app-mode-btn-logo--muted" width="20" height="20" decoding="async" aria-hidden="true" />
+            <img src="../assets/N_Hoja_Blanca.png" alt="" class="np-app-mode-btn-logo np-app-mode-btn-logo--lit" width="20" height="20" decoding="async" aria-hidden="true" />
+            <span class="np-app-mode-btn-label">Mapa</span>
+          </span>
+        </button>
       </nav>
 
       <div id="npViewApuntes">
@@ -10514,6 +10772,48 @@
               </section>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div id="npViewMapa" class="np-hide">
+        <div id="npMapaSetupMsg" class="np-msg warn np-hide" style="margin-bottom:12px;">
+          Ejecuta en Supabase SQL Editor: <code>supabase-plan-pro-relations.sql</code>
+        </div>
+        <section class="panel np-section-accent" style="--np-section-accent:#6366f1;">
+          <h2 class="np-pillar-panel-title">
+            <img src="../assets/N_Hoja_Azul.png" alt="" class="np-pillar-panel-logo" width="22" height="22" decoding="async" aria-hidden="true" />
+            Mapa conceptual
+          </h2>
+          <p class="np-muted" style="margin:0 0 10px;font-size:13px;line-height:1.45;">
+            Red de Plantas, Ramas y relaciones tipadas entre apuntes. Arrastra para mover; rueda o pellizco para zoom; clic en un apunte para abrirlo.
+          </p>
+          <div class="np-mapa-toolbar" aria-label="Controles del mapa">
+            <label for="npMapaFilterArea">Planta</label>
+            <select id="npMapaFilterArea" aria-label="Filtrar por planta">
+              <option value="">Todas</option>
+            </select>
+            <label class="np-mapa-check">
+              <input type="checkbox" id="npMapaOnlyLinked" checked />
+              Solo apuntes con relaciones
+            </label>
+            <label class="np-mapa-check">
+              <input type="checkbox" id="npMapaIncludeOrphanRamas" />
+              Incluir ramas sin links
+            </label>
+            <button type="button" class="btn btn-ghost btn-ghost-blue" id="npMapaRefreshBtn">Actualizar</button>
+            <button type="button" class="btn btn-ghost" id="npMapaResetViewBtn">Centrar</button>
+          </div>
+          <div class="np-mapa-legend" aria-hidden="true">
+            <span><i style="background:#22c55e;"></i> Planta</span>
+            <span><i style="background:#64748b;"></i> Rama</span>
+            <span><i style="background:#6366f1;"></i> Apunte</span>
+            <span>Línea discontinua = jerarquía · Línea continua = relación</span>
+          </div>
+        </section>
+        <div class="np-mapa-canvas-wrap" id="npMapaCanvasWrap">
+          <svg id="npMapaSvg" class="np-mapa-svg" role="img" aria-label="Mapa de conexiones Plan PRO"></svg>
+          <div id="npMapaEmpty" class="np-mapa-empty np-hide">Aún no hay relaciones. Abre un apunte y usa el bloque Relaciones para vincular.</div>
+          <div id="npMapaTip" class="np-mapa-tip" aria-live="polite"></div>
         </div>
       </div>
 
@@ -15149,6 +15449,317 @@
     );
   }
 
+  var PLAN_PRO_RELATION_TYPES = [
+    { id: 'relacionado_con', label: 'Relacionado con', inverse: 'Relacionado con' },
+    { id: 'depende_de', label: 'Depende de', inverse: 'Es requerido por' },
+    { id: 'respalda', label: 'Respalda', inverse: 'Respaldado por' },
+    { id: 'continua', label: 'Continúa', inverse: 'Continuado por' },
+    { id: 'actualiza', label: 'Actualiza', inverse: 'Actualizado por' },
+    { id: 'genera', label: 'Genera', inverse: 'Generado por' }
+  ];
+  var PLAN_PRO_RELATION_TYPE_MAP = {};
+  PLAN_PRO_RELATION_TYPES.forEach(function (t) {
+    PLAN_PRO_RELATION_TYPE_MAP[t.id] = t;
+  });
+  var planProRelationsReady = true;
+  var planProRelationsWarnShown = false;
+
+  function planProRelationTypeLabel(typeId, inverse) {
+    var t = PLAN_PRO_RELATION_TYPE_MAP[typeId];
+    if (!t) return typeId || 'Relación';
+    return inverse ? t.inverse : t.label;
+  }
+
+  function isPlanProRelationsMissingError(err) {
+    var msg = String((err && err.message) || err || '').toLowerCase();
+    return (
+      msg.indexOf('plan_pro_relations') !== -1 ||
+      msg.indexOf('does not exist') !== -1 ||
+      msg.indexOf('schema cache') !== -1 ||
+      (err && (err.code === '42P01' || err.code === 'PGRST205'))
+    );
+  }
+
+  function markPlanProRelationsMissing() {
+    planProRelationsReady = false;
+    if (!planProRelationsWarnShown) {
+      planProRelationsWarnShown = true;
+      showToast('Falta ejecutar supabase-plan-pro-relations.sql en Supabase.', true);
+    }
+    var setup = $('npMapaSetupMsg');
+    if (setup) setup.classList.remove('np-hide');
+  }
+
+  async function fetchPlanProRelationsForItem(itemId) {
+    if (!state.client || !state.userId || !itemId || !planProRelationsReady) {
+      return { out: [], in: [], ok: planProRelationsReady };
+    }
+    var outRes = await state.client
+      .from('plan_pro_relations')
+      .select('id,from_item_id,to_item_id,relation_type,created_at')
+      .eq('owner_id', state.userId)
+      .eq('from_item_id', itemId)
+      .order('created_at', { ascending: true });
+    if (outRes.error) {
+      if (isPlanProRelationsMissingError(outRes.error)) {
+        markPlanProRelationsMissing();
+        return { out: [], in: [], ok: false };
+      }
+      throw outRes.error;
+    }
+    var inRes = await state.client
+      .from('plan_pro_relations')
+      .select('id,from_item_id,to_item_id,relation_type,created_at')
+      .eq('owner_id', state.userId)
+      .eq('to_item_id', itemId)
+      .order('created_at', { ascending: true });
+    if (inRes.error) {
+      if (isPlanProRelationsMissingError(inRes.error)) {
+        markPlanProRelationsMissing();
+        return { out: [], in: [], ok: false };
+      }
+      throw inRes.error;
+    }
+    return { out: outRes.data || [], in: inRes.data || [], ok: true };
+  }
+
+  async function enrichPlanProRelationRows(rows, peerKey) {
+    rows = rows || [];
+    if (!rows.length || !state.client) return [];
+    var ids = [];
+    var seen = {};
+    rows.forEach(function (r) {
+      var id = r[peerKey];
+      if (id && !seen[id]) {
+        seen[id] = true;
+        ids.push(id);
+      }
+    });
+    var titleById = {};
+    if (ids.length) {
+      var res = await state.client
+        .from('plan_pro_items')
+        .select('id,title,area_id,category_id')
+        .in('id', ids);
+      if (!res.error) {
+        (res.data || []).forEach(function (it) {
+          titleById[it.id] = it;
+        });
+      }
+    }
+    return rows.map(function (r) {
+      var peer = titleById[r[peerKey]] || null;
+      return {
+        id: r.id,
+        relation_type: r.relation_type,
+        from_item_id: r.from_item_id,
+        to_item_id: r.to_item_id,
+        peer_id: r[peerKey],
+        peer_title: (peer && peer.title) || '(Apunte)',
+        peer_item: peer
+      };
+    });
+  }
+
+  async function createPlanProRelation(fromId, toId, relationType) {
+    if (!state.client || !state.userId) throw new Error('Sin sesión');
+    if (!fromId || !toId || fromId === toId) throw new Error('Elige otro apunte.');
+    var type = PLAN_PRO_RELATION_TYPE_MAP[relationType] ? relationType : 'relacionado_con';
+    var res = await state.client
+      .from('plan_pro_relations')
+      .insert({
+        owner_id: state.userId,
+        from_item_id: fromId,
+        to_item_id: toId,
+        relation_type: type
+      })
+      .select('id,from_item_id,to_item_id,relation_type')
+      .maybeSingle();
+    if (res.error) {
+      if (isPlanProRelationsMissingError(res.error)) {
+        markPlanProRelationsMissing();
+        throw new Error('Ejecuta supabase-plan-pro-relations.sql en Supabase.');
+      }
+      if (res.error.code === '23505') throw new Error('Esa relación ya existe.');
+      throw res.error;
+    }
+    return res.data;
+  }
+
+  async function deletePlanProRelation(relationId) {
+    if (!state.client || !state.userId || !relationId) return;
+    var res = await state.client
+      .from('plan_pro_relations')
+      .delete()
+      .eq('id', relationId)
+      .eq('owner_id', state.userId);
+    if (res.error) {
+      if (isPlanProRelationsMissingError(res.error)) {
+        markPlanProRelationsMissing();
+        throw new Error('Ejecuta supabase-plan-pro-relations.sql en Supabase.');
+      }
+      throw res.error;
+    }
+  }
+
+  function appendApunteRefChipToDetailEditor(peerId, peerTitle) {
+    var editor = $('npModalBodyRich');
+    if (!editor || !peerId) return;
+    var html = buildApunteRefHtml(peerId, peerTitle || 'Apunte') + '\u00a0';
+    try {
+      insertRichHtmlSnippet(html, editor, function () {
+        bindRichRefMarkers(editor, null);
+      });
+    } catch (e) {
+      /* chip opcional; la tabla es la fuente de verdad */
+    }
+  }
+
+  async function mountDetailRelationsPanel(hostEl, itemId) {
+    if (!hostEl || !itemId) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'np-detail-relations';
+    wrap.id = 'npDetailRelations';
+
+    var head = document.createElement('div');
+    head.className = 'np-detail-relations-head';
+    var lab = document.createElement('span');
+    lab.className = 'np-detail-meta-label';
+    lab.textContent = 'Relaciones';
+    head.appendChild(lab);
+    wrap.appendChild(head);
+
+    var addRow = document.createElement('div');
+    addRow.className = 'np-detail-relations-add';
+
+    var typeSel = document.createElement('select');
+    typeSel.id = 'npDetailRelationType';
+    typeSel.setAttribute('aria-label', 'Tipo de relación');
+    PLAN_PRO_RELATION_TYPES.forEach(function (t) {
+      var opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.label;
+      typeSel.appendChild(opt);
+    });
+    addRow.appendChild(typeSel);
+
+    var pickBtn = document.createElement('button');
+    pickBtn.type = 'button';
+    pickBtn.className = 'np-detail-maps-action';
+    pickBtn.textContent = 'Buscar apunte…';
+    pickBtn.addEventListener('click', function () {
+      openCrossLinkPicker({
+        mode: 'apunte',
+        excludeItemId: itemId,
+        onPick: async function (rec) {
+          if (!rec || !rec.id) return;
+          try {
+            npCloudSyncTouch();
+            await createPlanProRelation(itemId, rec.id, typeSel.value);
+            appendApunteRefChipToDetailEditor(rec.id, rec.title || 'Apunte');
+            showToast('Relación vinculada.');
+            await refreshDetailRelationsList(listMount, emptyEl, setupEl, itemId);
+            if (state.nutriProAppMode === 'mapa') scheduleRenderPlanProMapa();
+          } catch (e) {
+            showToast((e && e.message) || 'No se pudo vincular.', true);
+          }
+        }
+      });
+    });
+    addRow.appendChild(pickBtn);
+    wrap.appendChild(addRow);
+
+    var setupEl = document.createElement('p');
+    setupEl.className = 'np-detail-relations-setup np-hide';
+    setupEl.textContent = 'Ejecuta supabase-plan-pro-relations.sql en Supabase para activar el grafo.';
+    wrap.appendChild(setupEl);
+
+    var emptyEl = document.createElement('p');
+    emptyEl.className = 'np-detail-relations-empty';
+    emptyEl.textContent = 'Sin relaciones aún.';
+    wrap.appendChild(emptyEl);
+
+    var listMount = document.createElement('div');
+    listMount.className = 'np-detail-relations-list';
+    listMount.id = 'npDetailRelationsList';
+    wrap.appendChild(listMount);
+
+    hostEl.appendChild(wrap);
+    await refreshDetailRelationsList(listMount, emptyEl, setupEl, itemId);
+  }
+
+  async function refreshDetailRelationsList(listMount, emptyEl, setupEl, itemId) {
+    if (!listMount || !itemId) return;
+    listMount.innerHTML = '';
+    try {
+      var pack = await fetchPlanProRelationsForItem(itemId);
+      if (!pack.ok) {
+        if (emptyEl) emptyEl.classList.add('np-hide');
+        if (setupEl) setupEl.classList.remove('np-hide');
+        return;
+      }
+      if (setupEl) setupEl.classList.add('np-hide');
+      var outEnriched = await enrichPlanProRelationRows(pack.out, 'to_item_id');
+      var inEnriched = await enrichPlanProRelationRows(pack.in, 'from_item_id');
+      var total = outEnriched.length + inEnriched.length;
+      if (emptyEl) emptyEl.classList.toggle('np-hide', total > 0);
+
+      function addChip(row, isIncoming) {
+        var chip = document.createElement('div');
+        chip.className = 'np-detail-relation-chip' + (isIncoming ? ' np-detail-relation-chip--in' : '');
+        var typ = document.createElement('span');
+        typ.className = 'np-detail-relation-type';
+        typ.textContent = planProRelationTypeLabel(row.relation_type, isIncoming);
+        chip.appendChild(typ);
+        var sep = document.createElement('span');
+        sep.textContent = '·';
+        sep.style.color = '#94a3b8';
+        chip.appendChild(sep);
+        var titleBtn = document.createElement('button');
+        titleBtn.type = 'button';
+        titleBtn.className = 'np-detail-relation-title';
+        titleBtn.textContent = row.peer_title || '(Apunte)';
+        titleBtn.title = 'Abrir apunte';
+        titleBtn.addEventListener('click', function () {
+          if (row.peer_id) navigateToApunteRef(row.peer_id);
+        });
+        chip.appendChild(titleBtn);
+        if (!isIncoming) {
+          var del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'np-detail-relation-del';
+          del.setAttribute('aria-label', 'Quitar relación');
+          del.textContent = '×';
+          del.addEventListener('click', async function () {
+            try {
+              npCloudSyncTouch();
+              await deletePlanProRelation(row.id);
+              showToast('Relación eliminada.');
+              await refreshDetailRelationsList(listMount, emptyEl, setupEl, itemId);
+              if (state.nutriProAppMode === 'mapa') scheduleRenderPlanProMapa();
+            } catch (e) {
+              showToast((e && e.message) || 'No se pudo eliminar.', true);
+            }
+          });
+          chip.appendChild(del);
+        }
+        listMount.appendChild(chip);
+      }
+
+      outEnriched.forEach(function (r) {
+        addChip(r, false);
+      });
+      inEnriched.forEach(function (r) {
+        addChip(r, true);
+      });
+    } catch (e) {
+      if (emptyEl) {
+        emptyEl.classList.remove('np-hide');
+        emptyEl.textContent = (e && e.message) || 'No se pudieron cargar relaciones.';
+      }
+    }
+  }
+
   function getRichEditorSelectionRange(editorEl) {
     if (!editorEl) return null;
     var sel = window.getSelection && window.getSelection();
@@ -15336,8 +15947,13 @@
     planProOpenExternalUrl(url);
   }
 
-  async function navigateToApunteRef(el) {
-    var itemId = el && el.getAttribute ? el.getAttribute('data-np-apunte-id') : '';
+  async function navigateToApunteRef(elOrId) {
+    var itemId =
+      typeof elOrId === 'string'
+        ? elOrId
+        : elOrId && elOrId.getAttribute
+          ? elOrId.getAttribute('data-np-apunte-id')
+          : '';
     if (!itemId || !state.client) return;
     var row = await fetchPlanProItemForDetail(itemId);
     if (!row) {
@@ -15473,15 +16089,21 @@
       .order('updated_at', { ascending: false })
       .limit(400);
     if (res.error) throw res.error;
-    return (res.data || []).map(function (r) {
-      var short = apunteShortLabel(r);
-      return {
-        title: r.title || '(Sin título)',
-        sub: short,
-        search: short + ' ' + (r.title || ''),
-        raw: r
-      };
-    });
+    var excludeId =
+      (crossLinkPickerState && crossLinkPickerState.excludeItemId) || null;
+    return (res.data || [])
+      .filter(function (r) {
+        return !excludeId || r.id !== excludeId;
+      })
+      .map(function (r) {
+        var short = apunteShortLabel(r);
+        return {
+          title: r.title || '(Sin título)',
+          sub: short,
+          search: short + ' ' + (r.title || ''),
+          raw: r
+        };
+      });
   }
 
   async function openCrossLinkPicker(opts) {
@@ -15497,6 +16119,7 @@
     crossLinkPickerState = {
       mode: opts.mode === 'apunte' ? 'apunte' : 'nutri',
       editorEl: opts.editorEl || null,
+      excludeItemId: opts.excludeItemId || null,
       savedRange:
         opts.savedRange ||
         rememberRichEditorSelection(opts.editorEl) ||
@@ -16049,6 +16672,11 @@
     }
 
     el.appendChild(mapsRow);
+
+    var relHost = document.createElement('div');
+    relHost.id = 'npDetailRelationsHost';
+    el.appendChild(relHost);
+    mountDetailRelationsPanel(relHost, r.id);
 
     var foot = document.createElement('div');
     foot.className = 'np-modal-meta-foot';
@@ -26173,19 +26801,511 @@
   }
 
   function setPlanProAppMode(mode) {
-    var m = mode === 'nutri-pro' ? 'nutri-pro' : 'apuntes';
+    var m =
+      mode === 'nutri-pro' ? 'nutri-pro' : mode === 'mapa' ? 'mapa' : 'apuntes';
     state.nutriProAppMode = m;
     var vAp = $('npViewApuntes');
     var vNu = $('npViewNutriPro');
+    var vMa = $('npViewMapa');
     var bAp = $('npModeBtnApuntes');
     var bNu = $('npModeBtnNutriPro');
+    var bMa = $('npModeBtnMapa');
     if (vAp) vAp.classList.toggle('np-hide', m !== 'apuntes');
     if (vNu) vNu.classList.toggle('np-hide', m !== 'nutri-pro');
+    if (vMa) vMa.classList.toggle('np-hide', m !== 'mapa');
     if (bAp) bAp.classList.toggle('np-app-mode-btn--active', m === 'apuntes');
     if (bNu) bNu.classList.toggle('np-app-mode-btn--active', m === 'nutri-pro');
+    if (bMa) bMa.classList.toggle('np-app-mode-btn--active', m === 'mapa');
     if (m === 'nutri-pro') {
       syncNutriProContentPanelAccent();
       loadNutriProVault();
+    }
+    if (m === 'mapa') {
+      fillMapaAreaFilter();
+      scheduleRenderPlanProMapa();
+    }
+  }
+
+  var planProMapaRenderTimer = null;
+  var planProMapaView = { x: 0, y: 0, scale: 1 };
+  var planProMapaPan = null;
+  var planProMapaWired = false;
+  var planProMapaDataCache = null;
+
+  function scheduleRenderPlanProMapa() {
+    if (planProMapaRenderTimer) clearTimeout(planProMapaRenderTimer);
+    planProMapaRenderTimer = setTimeout(function () {
+      planProMapaRenderTimer = null;
+      renderPlanProMapa();
+    }, 40);
+  }
+
+  function fillMapaAreaFilter() {
+    var sel = $('npMapaFilterArea');
+    if (!sel) return;
+    var cur = sel.value || '';
+    sel.innerHTML = '';
+    var all = document.createElement('option');
+    all.value = '';
+    all.textContent = 'Todas';
+    sel.appendChild(all);
+    (state.areas || []).forEach(function (a) {
+      if (!a || a.archived_at) return;
+      var opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.title || a.slug || 'Planta';
+      sel.appendChild(opt);
+    });
+    if (cur) sel.value = cur;
+  }
+
+  function planProMapaRelationStroke(typeId) {
+    var map = {
+      relacionado_con: '#64748b',
+      depende_de: '#dc2626',
+      respalda: '#059669',
+      continua: '#2563eb',
+      actualiza: '#d97706',
+      genera: '#7c3aed'
+    };
+    return map[typeId] || '#6366f1';
+  }
+
+  async function loadPlanProMapaGraphData() {
+    if (!state.client || !state.userId) {
+      return { relations: [], itemsById: {}, ok: false };
+    }
+    if (!planProRelationsReady) {
+      return { relations: [], itemsById: {}, ok: false };
+    }
+    var relRes = await state.client
+      .from('plan_pro_relations')
+      .select('id,from_item_id,to_item_id,relation_type')
+      .eq('owner_id', state.userId)
+      .limit(2000);
+    if (relRes.error) {
+      if (isPlanProRelationsMissingError(relRes.error)) {
+        markPlanProRelationsMissing();
+        return { relations: [], itemsById: {}, ok: false };
+      }
+      throw relRes.error;
+    }
+    var relations = relRes.data || [];
+    var idSet = {};
+    relations.forEach(function (r) {
+      if (r.from_item_id) idSet[r.from_item_id] = true;
+      if (r.to_item_id) idSet[r.to_item_id] = true;
+    });
+    var onlyLinked = !($('npMapaOnlyLinked') && !$('npMapaOnlyLinked').checked);
+    var areaFilter = ($('npMapaFilterArea') && $('npMapaFilterArea').value) || '';
+    var itemsById = {};
+    var itemIds = Object.keys(idSet);
+    if (!onlyLinked) {
+      var extraQ = state.client
+        .from('plan_pro_items')
+        .select('id,title,area_id,category_id')
+        .eq('owner_id', state.userId)
+        .limit(400);
+      if (areaFilter) extraQ = extraQ.eq('area_id', areaFilter);
+      var extraRes = await extraQ;
+      if (!extraRes.error) {
+        (extraRes.data || []).forEach(function (it) {
+          idSet[it.id] = true;
+        });
+      }
+      itemIds = Object.keys(idSet);
+    }
+    if (itemIds.length) {
+      for (var i = 0; i < itemIds.length; i += 80) {
+        var chunk = itemIds.slice(i, i + 80);
+        var itRes = await state.client
+          .from('plan_pro_items')
+          .select('id,title,area_id,category_id')
+          .in('id', chunk);
+        if (!itRes.error) {
+          (itRes.data || []).forEach(function (it) {
+            itemsById[it.id] = it;
+          });
+        }
+      }
+    }
+    if (areaFilter) {
+      relations = relations.filter(function (r) {
+        var a = itemsById[r.from_item_id];
+        var b = itemsById[r.to_item_id];
+        return (a && a.area_id === areaFilter) || (b && b.area_id === areaFilter);
+      });
+      Object.keys(itemsById).forEach(function (id) {
+        if (itemsById[id].area_id !== areaFilter) delete itemsById[id];
+      });
+      relations.forEach(function (r) {
+        /* keep both ends if either matched area — re-fetch missing peers */
+      });
+      var need = {};
+      relations.forEach(function (r) {
+        if (!itemsById[r.from_item_id]) need[r.from_item_id] = true;
+        if (!itemsById[r.to_item_id]) need[r.to_item_id] = true;
+      });
+      var needIds = Object.keys(need);
+      if (needIds.length) {
+        var needRes = await state.client
+          .from('plan_pro_items')
+          .select('id,title,area_id,category_id')
+          .in('id', needIds);
+        if (!needRes.error) {
+          (needRes.data || []).forEach(function (it) {
+            itemsById[it.id] = it;
+          });
+        }
+      }
+    }
+    return { relations: relations, itemsById: itemsById, ok: true };
+  }
+
+  function layoutPlanProMapaNodes(areas, categories, itemsById, relations, includeOrphanRamas) {
+    var linkedItemIds = {};
+    relations.forEach(function (r) {
+      linkedItemIds[r.from_item_id] = true;
+      linkedItemIds[r.to_item_id] = true;
+    });
+    var areaIdsUsed = {};
+    var catIdsUsed = {};
+    Object.keys(itemsById).forEach(function (id) {
+      var it = itemsById[id];
+      if (!it) return;
+      if (it.area_id) areaIdsUsed[it.area_id] = true;
+      if (it.category_id) catIdsUsed[it.category_id] = true;
+    });
+    if (includeOrphanRamas) {
+      (categories || []).forEach(function (c) {
+        if (c && c.area_id && areaIdsUsed[c.area_id]) catIdsUsed[c.id] = true;
+      });
+    }
+    var activeAreas = (areas || []).filter(function (a) {
+      return a && !a.archived_at && areaIdsUsed[a.id];
+    });
+    if (!activeAreas.length) {
+      activeAreas = (areas || []).filter(function (a) {
+        return a && !a.archived_at;
+      });
+    }
+    var nodes = [];
+    var byId = {};
+    var cx = 520;
+    var cy = 360;
+    var nA = Math.max(activeAreas.length, 1);
+    activeAreas.forEach(function (a, ai) {
+      var ang = (ai / nA) * Math.PI * 2 - Math.PI / 2;
+      var r = 220 + Math.min(nA, 6) * 18;
+      var node = {
+        id: 'area:' + a.id,
+        kind: 'area',
+        refId: a.id,
+        label: a.title || a.slug || 'Planta',
+        color: a.color_hex || '#22c55e',
+        x: cx + Math.cos(ang) * r,
+        y: cy + Math.sin(ang) * r,
+        r: 22
+      };
+      nodes.push(node);
+      byId[node.id] = node;
+      var cats = (categories || []).filter(function (c) {
+        return c && c.area_id === a.id && catIdsUsed[c.id];
+      });
+      cats.forEach(function (c, ci) {
+        var cAng = ang + ((ci - (cats.length - 1) / 2) * 0.35) / Math.max(cats.length, 1);
+        var cR = r - 95;
+        var cNode = {
+          id: 'cat:' + c.id,
+          kind: 'cat',
+          refId: c.id,
+          parentAreaId: a.id,
+          label: c.title || 'Rama',
+          color: c.color_hex || '#64748b',
+          x: cx + Math.cos(cAng) * cR,
+          y: cy + Math.sin(cAng) * cR,
+          r: 14
+        };
+        nodes.push(cNode);
+        byId[cNode.id] = cNode;
+      });
+    });
+    Object.keys(itemsById).forEach(function (id) {
+      var it = itemsById[id];
+      if (!it) return;
+      var parent =
+        (it.category_id && byId['cat:' + it.category_id]) ||
+        (it.area_id && byId['area:' + it.area_id]) ||
+        null;
+      var px = parent ? parent.x : cx;
+      var py = parent ? parent.y : cy;
+      var jitter = (hashStr(id) % 100) / 100;
+      var j2 = ((hashStr(id + 'y') % 100) / 100);
+      var node = {
+        id: 'item:' + id,
+        kind: 'item',
+        refId: id,
+        label: it.title || '(Sin título)',
+        color: '#6366f1',
+        x: px + (jitter - 0.5) * 120,
+        y: py + (j2 - 0.5) * 90 + 48,
+        r: 10
+      };
+      nodes.push(node);
+      byId[node.id] = node;
+    });
+    var hierEdges = [];
+    nodes.forEach(function (n) {
+      if (n.kind === 'cat' && n.parentAreaId && byId['area:' + n.parentAreaId]) {
+        hierEdges.push({ from: 'area:' + n.parentAreaId, to: n.id, kind: 'hier' });
+      }
+      if (n.kind === 'item') {
+        var it = itemsById[n.refId];
+        var pId =
+          it && it.category_id && byId['cat:' + it.category_id]
+            ? 'cat:' + it.category_id
+            : it && it.area_id
+              ? 'area:' + it.area_id
+              : null;
+        if (pId && byId[pId]) hierEdges.push({ from: pId, to: n.id, kind: 'hier' });
+      }
+    });
+    var semEdges = relations
+      .filter(function (r) {
+        return byId['item:' + r.from_item_id] && byId['item:' + r.to_item_id];
+      })
+      .map(function (r) {
+        return {
+          from: 'item:' + r.from_item_id,
+          to: 'item:' + r.to_item_id,
+          kind: 'sem',
+          relation_type: r.relation_type,
+          label: planProRelationTypeLabel(r.relation_type, false)
+        };
+      });
+    return { nodes: nodes, byId: byId, hierEdges: hierEdges, semEdges: semEdges };
+  }
+
+  function hashStr(s) {
+    var h = 0;
+    var str = String(s || '');
+    for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  }
+
+  function applyPlanProMapaTransform() {
+    var g = $('npMapaWorld');
+    if (!g) return;
+    g.setAttribute(
+      'transform',
+      'translate(' + planProMapaView.x + ',' + planProMapaView.y + ') scale(' + planProMapaView.scale + ')'
+    );
+  }
+
+  function resetPlanProMapaView() {
+    planProMapaView = { x: 0, y: 0, scale: 1 };
+    applyPlanProMapaTransform();
+  }
+
+  function wirePlanProMapaInteractions(svg) {
+    if (!svg || planProMapaWired) return;
+    planProMapaWired = true;
+    svg.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      var rect = svg.getBoundingClientRect();
+      var mx = e.clientX - rect.left;
+      var my = e.clientY - rect.top;
+      var before = planProMapaView.scale;
+      var next = Math.min(2.8, Math.max(0.35, before * (e.deltaY < 0 ? 1.12 : 0.9)));
+      var wx = (mx - planProMapaView.x) / before;
+      var wy = (my - planProMapaView.y) / before;
+      planProMapaView.scale = next;
+      planProMapaView.x = mx - wx * next;
+      planProMapaView.y = my - wy * next;
+      applyPlanProMapaTransform();
+    }, { passive: false });
+    svg.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      if (e.target && e.target.closest && e.target.closest('.np-mapa-node')) return;
+      planProMapaPan = {
+        px: e.clientX,
+        py: e.clientY,
+        ox: planProMapaView.x,
+        oy: planProMapaView.y,
+        id: e.pointerId
+      };
+      try {
+        svg.setPointerCapture(e.pointerId);
+      } catch (err) {}
+      svg.classList.add('np-mapa-panning');
+    });
+    svg.addEventListener('pointermove', function (e) {
+      if (!planProMapaPan || planProMapaPan.id !== e.pointerId) return;
+      planProMapaView.x = planProMapaPan.ox + (e.clientX - planProMapaPan.px);
+      planProMapaView.y = planProMapaPan.oy + (e.clientY - planProMapaPan.py);
+      applyPlanProMapaTransform();
+    });
+    function endPan(e) {
+      if (!planProMapaPan || (e && planProMapaPan.id !== e.pointerId)) return;
+      planProMapaPan = null;
+      svg.classList.remove('np-mapa-panning');
+    }
+    svg.addEventListener('pointerup', endPan);
+    svg.addEventListener('pointercancel', endPan);
+  }
+
+  function showMapaTip(text) {
+    var tip = $('npMapaTip');
+    if (!tip) return;
+    if (!text) {
+      tip.classList.remove('np-mapa-tip--on');
+      tip.textContent = '';
+      return;
+    }
+    tip.textContent = text;
+    tip.classList.add('np-mapa-tip--on');
+  }
+
+  async function renderPlanProMapa() {
+    var svg = $('npMapaSvg');
+    var empty = $('npMapaEmpty');
+    if (!svg) return;
+    wirePlanProMapaInteractions(svg);
+    try {
+      var data = await loadPlanProMapaGraphData();
+      planProMapaDataCache = data;
+      if (!data.ok) {
+        svg.innerHTML = '';
+        if (empty) {
+          empty.classList.remove('np-hide');
+          empty.textContent = 'Ejecuta supabase-plan-pro-relations.sql para ver el mapa.';
+        }
+        return;
+      }
+      var includeOrphan =
+        !!( $('npMapaIncludeOrphanRamas') && $('npMapaIncludeOrphanRamas').checked );
+      var layout = layoutPlanProMapaNodes(
+        state.areas,
+        state.categories,
+        data.itemsById,
+        data.relations,
+        includeOrphan
+      );
+      var hasSem = layout.semEdges.length > 0;
+      var hasNodes = layout.nodes.some(function (n) {
+        return n.kind === 'item';
+      });
+      if (empty) {
+        empty.classList.toggle('np-hide', hasSem || hasNodes);
+        if (!hasSem && !hasNodes) {
+          empty.textContent =
+            'Aún no hay relaciones. Abre un apunte y usa el bloque Relaciones para vincular.';
+        }
+      }
+      var ns = 'http://www.w3.org/2000/svg';
+      svg.setAttribute('viewBox', '0 0 1040 720');
+      svg.innerHTML = '';
+      var world = document.createElementNS(ns, 'g');
+      world.setAttribute('id', 'npMapaWorld');
+      svg.appendChild(world);
+
+      layout.hierEdges.forEach(function (e) {
+        var a = layout.byId[e.from];
+        var b = layout.byId[e.to];
+        if (!a || !b) return;
+        var line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', a.x);
+        line.setAttribute('y1', a.y);
+        line.setAttribute('x2', b.x);
+        line.setAttribute('y2', b.y);
+        line.setAttribute('class', 'np-mapa-edge-hier');
+        world.appendChild(line);
+      });
+      layout.semEdges.forEach(function (e) {
+        var a = layout.byId[e.from];
+        var b = layout.byId[e.to];
+        if (!a || !b) return;
+        var path = document.createElementNS(ns, 'path');
+        var mx = (a.x + b.x) / 2;
+        var my = (a.y + b.y) / 2 - 18;
+        path.setAttribute(
+          'd',
+          'M ' + a.x + ' ' + a.y + ' Q ' + mx + ' ' + my + ' ' + b.x + ' ' + b.y
+        );
+        path.setAttribute('class', 'np-mapa-edge-sem');
+        path.setAttribute('stroke', planProMapaRelationStroke(e.relation_type));
+        path.setAttribute('marker-end', 'url(#npMapaArrow)');
+        path.addEventListener('pointerenter', function () {
+          showMapaTip(e.label + ': ' + (layout.byId[e.from].label || '') + ' → ' + (layout.byId[e.to].label || ''));
+        });
+        path.addEventListener('pointerleave', function () {
+          showMapaTip('');
+        });
+        world.appendChild(path);
+      });
+
+      var defs = document.createElementNS(ns, 'defs');
+      var marker = document.createElementNS(ns, 'marker');
+      marker.setAttribute('id', 'npMapaArrow');
+      marker.setAttribute('viewBox', '0 0 10 10');
+      marker.setAttribute('refX', '8');
+      marker.setAttribute('refY', '5');
+      marker.setAttribute('markerWidth', '6');
+      marker.setAttribute('markerHeight', '6');
+      marker.setAttribute('orient', 'auto-start-reverse');
+      var mPath = document.createElementNS(ns, 'path');
+      mPath.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
+      mPath.setAttribute('fill', '#6366f1');
+      marker.appendChild(mPath);
+      defs.appendChild(marker);
+      svg.insertBefore(defs, world);
+
+      layout.nodes.forEach(function (n) {
+        var g = document.createElementNS(ns, 'g');
+        g.setAttribute('class', 'np-mapa-node');
+        g.setAttribute('data-kind', n.kind);
+        g.setAttribute('data-ref', n.refId);
+        var circle = document.createElementNS(ns, 'circle');
+        circle.setAttribute('cx', n.x);
+        circle.setAttribute('cy', n.y);
+        circle.setAttribute('r', n.r);
+        circle.setAttribute('fill', n.color || '#64748b');
+        circle.setAttribute('stroke', '#fff');
+        circle.setAttribute('stroke-width', n.kind === 'area' ? 3 : 2);
+        g.appendChild(circle);
+        var text = document.createElementNS(ns, 'text');
+        text.setAttribute('x', n.x);
+        text.setAttribute('y', n.y + n.r + (n.kind === 'area' ? 16 : 14));
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('font-size', n.kind === 'area' ? '13' : n.kind === 'cat' ? '11' : '10');
+        text.setAttribute('font-weight', n.kind === 'area' ? '700' : '600');
+        text.setAttribute('fill', '#0f172a');
+        var lbl = String(n.label || '');
+        if (lbl.length > 28) lbl = lbl.slice(0, 26) + '…';
+        text.textContent = lbl;
+        g.appendChild(text);
+        g.addEventListener('pointerenter', function () {
+          var kindLab = n.kind === 'area' ? 'Planta' : n.kind === 'cat' ? 'Rama' : 'Apunte';
+          showMapaTip(kindLab + ': ' + n.label);
+        });
+        g.addEventListener('pointerleave', function () {
+          showMapaTip('');
+        });
+        if (n.kind === 'item') {
+          g.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            navigateToApunteRef(n.refId);
+          });
+        }
+        world.appendChild(g);
+      });
+      applyPlanProMapaTransform();
+    } catch (e) {
+      if (empty) {
+        empty.classList.remove('np-hide');
+        empty.textContent = (e && e.message) || 'No se pudo cargar el mapa.';
+      }
     }
   }
 
@@ -30540,6 +31660,7 @@
     }
     var modeAp = $('npModeBtnApuntes');
     var modeNu = $('npModeBtnNutriPro');
+    var modeMa = $('npModeBtnMapa');
     if (modeAp && modeAp.dataset.npWired !== '1') {
       modeAp.dataset.npWired = '1';
       modeAp.addEventListener('click', function () {
@@ -30550,6 +31671,47 @@
       modeNu.dataset.npWired = '1';
       modeNu.addEventListener('click', function () {
         setPlanProAppMode('nutri-pro');
+      });
+    }
+    if (modeMa && modeMa.dataset.npWired !== '1') {
+      modeMa.dataset.npWired = '1';
+      modeMa.addEventListener('click', function () {
+        setPlanProAppMode('mapa');
+      });
+    }
+    var mapaRefresh = $('npMapaRefreshBtn');
+    if (mapaRefresh && mapaRefresh.dataset.npWired !== '1') {
+      mapaRefresh.dataset.npWired = '1';
+      mapaRefresh.addEventListener('click', function () {
+        scheduleRenderPlanProMapa();
+      });
+    }
+    var mapaReset = $('npMapaResetViewBtn');
+    if (mapaReset && mapaReset.dataset.npWired !== '1') {
+      mapaReset.dataset.npWired = '1';
+      mapaReset.addEventListener('click', function () {
+        resetPlanProMapaView();
+      });
+    }
+    var mapaArea = $('npMapaFilterArea');
+    if (mapaArea && mapaArea.dataset.npWired !== '1') {
+      mapaArea.dataset.npWired = '1';
+      mapaArea.addEventListener('change', function () {
+        scheduleRenderPlanProMapa();
+      });
+    }
+    var mapaOnly = $('npMapaOnlyLinked');
+    if (mapaOnly && mapaOnly.dataset.npWired !== '1') {
+      mapaOnly.dataset.npWired = '1';
+      mapaOnly.addEventListener('change', function () {
+        scheduleRenderPlanProMapa();
+      });
+    }
+    var mapaOrphan = $('npMapaIncludeOrphanRamas');
+    if (mapaOrphan && mapaOrphan.dataset.npWired !== '1') {
+      mapaOrphan.dataset.npWired = '1';
+      mapaOrphan.addEventListener('change', function () {
+        scheduleRenderPlanProMapa();
       });
     }
     var nutriSearchInp = $('npNutriFileSearchInput');
