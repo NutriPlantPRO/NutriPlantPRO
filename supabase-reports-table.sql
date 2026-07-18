@@ -34,9 +34,11 @@ CREATE POLICY "Users can delete own reports"
   USING (user_id = auth.uid());
 
 -- Permitir update por si se quiere actualizar data (mismo usuario)
+DROP POLICY IF EXISTS "Users can update own reports" ON public.reports;
 CREATE POLICY "Users can update own reports"
   ON public.reports FOR UPDATE
-  USING (user_id = auth.uid());
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
 
 -- Admin puede ver todos los reportes (para el panel de admin)
 DROP POLICY IF EXISTS "Admins can view all reports" ON public.reports;

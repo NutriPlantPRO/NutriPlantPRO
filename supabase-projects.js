@@ -1152,12 +1152,33 @@
         return false;
       }
       try {
-        const { data: sessionData } = await client.auth.getSession();
-        if (!sessionData || !sessionData.session) {
+        // Esperar hidratación de sesión (mismo criterio que fetchUserReports).
+        let hasSession = false;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          try {
+            const sessionRes = await client.auth.getSession();
+            hasSession = !!(sessionRes && sessionRes.data && sessionRes.data.session);
+          } catch (sessionErr) {
+            hasSession = false;
+          }
+          if (hasSession) break;
+          if (attempt < 3) {
+            await new Promise(function(r) { setTimeout(r, 350); });
+          }
+        }
+        if (!hasSession) {
           console.warn('⚠️ Sync reporte: no hay sesión de Supabase. Cierra sesión y vuelve a iniciar sesión desde la pantalla de Login para que los reportes se guarden en la nube.');
           return false;
         }
         var payload = Object.assign({}, reportData);
+        // Historial entre equipos: metadatos + selectedSections. HTML solo si se está compartiendo
+        // (shareToken + reportHTML) o si el payload es pequeño. Evita fallos por Radar/base64 enormes.
+        var htmlLen = typeof payload.reportHTML === 'string' ? payload.reportHTML.length : 0;
+        var sharingWithHtml = !!(payload.shareToken && payload.shareEnabled !== false && htmlLen > 0);
+        if (htmlLen > 400000 && !sharingWithHtml) {
+          delete payload.reportHTML;
+          htmlLen = 0;
+        }
         try {
           const { data: existingRows, error: fetchErr } = await client
             .from('reports')
@@ -1173,6 +1194,7 @@
               if (payload.shareEnabled === undefined && ex.shareEnabled !== undefined) payload.shareEnabled = ex.shareEnabled;
               if (!payload.shareCreatedAt && ex.shareCreatedAt) payload.shareCreatedAt = ex.shareCreatedAt;
             }
+            // Conservar HTML de share ya subido si este sync es solo metadatos.
             if (
               (!payload.reportHTML || typeof payload.reportHTML !== 'string' || !payload.reportHTML.trim()) &&
               typeof ex.reportHTML === 'string' &&
@@ -1188,11 +1210,22 @@
         const row = {
           id: reportId,
           user_id: userId,
-          project_id: projectId,
+          project_id: String(projectId),
           data: payload,
           created_at: (reportData.timestamp && new Date(reportData.timestamp).toISOString()) || new Date().toISOString()
         };
-        const { error } = await client.from('reports').upsert(row, { onConflict: 'id', ignoreDuplicates: false });
+        let { error } = await client.from('reports').upsert(row, { onConflict: 'id', ignoreDuplicates: false });
+        // Reintento sin HTML si el payload fue demasiado grande.
+        if (error && payload.reportHTML) {
+          const msg = String(error.message || error.code || '');
+          if (/too large|payload|bytes|request entity|413|540|statement timeout|json/i.test(msg) || htmlLen > 200000) {
+            console.warn('⚠️ Sync reporte: reintentando sin reportHTML por tamaño:', msg);
+            delete payload.reportHTML;
+            row.data = payload;
+            const retry = await client.from('reports').upsert(row, { onConflict: 'id', ignoreDuplicates: false });
+            error = retry.error;
+          }
+        }
         if (error) {
           console.error('⚠️ Supabase sync report falló:', error.code || error.message, error.message);
           return false;

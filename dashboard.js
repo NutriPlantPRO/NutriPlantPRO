@@ -8466,7 +8466,10 @@ function queuePendingReportSync(scope, reportData) {
   const list = readPendingReportSyncList(scope);
   const rid = String(reportData.id);
   const next = list.filter(function(r) { return !(r && String(r.id) === rid); });
-  next.push({ ...reportData, userId: scope.userId, projectId: scope.projectId });
+  // Cola ligera: sin HTML (evita fallar localStorage y el upsert por tamaño).
+  const light = { ...reportData, userId: scope.userId, projectId: scope.projectId };
+  delete light.reportHTML;
+  next.push(light);
   writePendingReportSyncList(scope, next);
 }
 
@@ -9995,11 +9998,13 @@ function saveReportToList(reportData) {
   if (!cloudReport.id) cloudReport.id = 'report_' + Date.now();
   const cleanReport = { ...cloudReport };
 
-  // Evitar reventar cuota: cuando hay selectedSections, el PDF se regenera en descarga,
-  // así que no necesitamos persistir HTML gigante en localStorage.
+  // Evitar reventar cuota local y el tope de JSONB en Supabase:
+  // con selectedSections el PDF se regenera al descargar; no subir HTML gigante (Radar base64, etc.).
+  // El HTML completo solo se sube al pulsar «Compartir vista».
   if (Array.isArray(cleanReport.selectedSections) && cleanReport.selectedSections.length > 0) {
     delete cleanReport.reportHTML;
   }
+  delete cloudReport.reportHTML;
 
   generatedReports.unshift(cleanReport);
   updateReportsList();
@@ -10021,6 +10026,10 @@ function saveReportToList(reportData) {
   }
 
   // Sincronizar a la nube (Supabase) si está disponible
+  if (!isCloudReportScope(scope)) {
+    console.warn('⚠️ Reportes: scope sin UUID de nube; el historial queda solo en este navegador.');
+    return;
+  }
   if (typeof window.nutriplantSyncReportToCloud === 'function') {
     try {
       console.log('☁️ Intentando sincronizar reporte a la nube...');
@@ -10028,13 +10037,22 @@ function saveReportToList(reportData) {
         .then(function(ok) {
           if (ok) {
             removePendingReportSync(scope, cloudReport.id);
+            if (typeof showMessage === 'function') {
+              showMessage('☁️ Reporte guardado en la nube (visible en otros equipos).', 'success');
+            }
           } else {
             queuePendingReportSync(scope, cloudReport);
             console.warn('⚠️ Reporte en cola para reintento de sincronización:', cloudReport.id);
+            if (typeof showMessage === 'function') {
+              showMessage('⚠️ El reporte quedó en este equipo; no se pudo subir a la nube aún. Se reintentará.', 'warning');
+            }
           }
         })
         .catch(function() {
           queuePendingReportSync(scope, cloudReport);
+          if (typeof showMessage === 'function') {
+            showMessage('⚠️ El reporte quedó en este equipo; error al subir a la nube. Se reintentará.', 'warning');
+          }
         });
     } catch (cloudErr) {
       console.warn('⚠️ Error sincronizando reporte a la nube:', cloudErr && cloudErr.message ? cloudErr.message : cloudErr);
@@ -10287,6 +10305,7 @@ function loadSavedReports() {
             var retryLocal = readLocalReports();
             var retryPending = readPendingReportSyncList(currentScope);
             applyReports(mergeReportsLists(retryCloudReports, retryLocal, retryPending));
+            pushLocalReportsMissingInCloud(currentScope, retryCloudReports, retryLocal);
           }).catch(function() {});
         }, 900);
         return;
@@ -10295,6 +10314,7 @@ function loadSavedReports() {
       var pending = readPendingReportSyncList(scope);
       applyReports(mergeReportsLists(cloudReports, local, pending));
       flushPendingReportSync(scope, { silent: true });
+      pushLocalReportsMissingInCloud(scope, cloudReports, local);
     }).catch(function() {
       var local = readLocalReports();
       var pending = readPendingReportSyncList(scope);
@@ -10304,6 +10324,25 @@ function loadSavedReports() {
   }
 
   applyReports(mergeReportsLists([], readLocalReports(), readPendingReportSyncList(scope)));
+}
+
+/** Sube a nube reportes que solo están en este navegador (p. ej. sync vieja fallida por HTML grande). */
+function pushLocalReportsMissingInCloud(scope, cloudList, localList) {
+  if (!isCloudReportScope(scope) || typeof window.nutriplantSyncReportToCloud !== 'function') return;
+  var cloud = Array.isArray(cloudList) ? cloudList : [];
+  var local = Array.isArray(localList) ? localList : [];
+  var cloudIds = {};
+  cloud.forEach(function(r) {
+    if (r && r.id) cloudIds[String(r.id)] = true;
+  });
+  local.forEach(function(r) {
+    if (!r || !r.id || cloudIds[String(r.id)]) return;
+    if (!Array.isArray(r.selectedSections) || !r.selectedSections.length) return;
+    var light = Object.assign({}, r, { userId: scope.userId, projectId: scope.projectId });
+    delete light.reportHTML;
+    queuePendingReportSync(scope, light);
+  });
+  flushPendingReportSync(scope, { silent: true });
 }
 
 // Inicializar sistema de reportes
