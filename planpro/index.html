@@ -1518,25 +1518,31 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 22px;
+      width: 24px;
       height: 28px;
       padding: 0;
       border: 0;
       border-radius: 6px;
       background: transparent;
-      color: #64748b;
-      font-size: 11px;
+      color: #0f172a;
+      font-size: 14px;
+      font-weight: 800;
       line-height: 1;
       cursor: pointer;
-      transition: background 0.12s ease, color 0.12s ease;
+      transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
     }
     .np-nutri-folder-collapse:hover:not(:disabled) {
-      background: rgba(226, 232, 240, 0.75);
-      color: #334155;
+      background: rgba(148, 163, 184, 0.28);
+      color: #020617;
+      transform: scale(1.08);
     }
     .np-nutri-folder-collapse--empty {
-      opacity: 0.3;
+      opacity: 0.22;
+      color: #94a3b8;
+      font-weight: 500;
+      font-size: 11px;
       cursor: default;
+      transform: none;
     }
     .np-nutri-folder-rename-row {
       display: flex;
@@ -27312,11 +27318,7 @@
         meta.title = m.full;
         meta.setAttribute('aria-label', m.full);
         var folder = nutriProGetFolderById(fid);
-        btn.title =
-          ((folder && folder.title) || 'Carpeta') +
-          ' · ' +
-          m.full +
-          ' · Arrastra: centro = meter dentro · borde = mismo nivel';
+        btn.title = ((folder && folder.title) || 'Carpeta') + ' · ' + m.full;
       });
     }
     var nav = $('npNutriFolderNavBlocks');
@@ -28541,11 +28543,7 @@
     btn.setAttribute('draggable', 'true');
     btn.setAttribute('data-np-nutri-folder-id', folderRec.id);
     var meta = nutriProFolderMetaLabel(folderRec.id);
-    btn.title =
-      (folderRec.title || 'Carpeta') +
-      ' · ' +
-      meta.full +
-      ' · Arrastra: centro = meter dentro · borde = mismo nivel';
+    btn.title = (folderRec.title || 'Carpeta') + ' · ' + meta.full;
     btn.addEventListener('dragstart', function (e) {
       if (e.target && e.target.closest && e.target.closest('.np-nutri-folder-ignore')) {
         e.preventDefault();
