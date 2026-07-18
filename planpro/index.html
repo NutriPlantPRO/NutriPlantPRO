@@ -27302,15 +27302,33 @@
 
   function patchNutriProFolderTreeMeta() {
     var mount = $('npNutriFolderTree');
-    if (!mount) return;
-    mount.querySelectorAll('.np-nutri-folder-row[data-np-nutri-folder-id]').forEach(function (btn) {
-      var fid = btn.getAttribute('data-np-nutri-folder-id');
-      var meta = btn.querySelector('.np-nutri-folder-meta');
-      if (!meta || !fid) return;
+    if (mount) {
+      mount.querySelectorAll('.np-nutri-folder-row[data-np-nutri-folder-id]').forEach(function (btn) {
+        var fid = btn.getAttribute('data-np-nutri-folder-id');
+        var meta = btn.querySelector('.np-nutri-folder-meta');
+        if (!meta || !fid) return;
+        var m = nutriProFolderMetaLabel(fid);
+        meta.textContent = m.short;
+        meta.title = m.full;
+        meta.setAttribute('aria-label', m.full);
+        var folder = nutriProGetFolderById(fid);
+        btn.title =
+          ((folder && folder.title) || 'Carpeta') +
+          ' · ' +
+          m.full +
+          ' · Arrastra: centro = meter dentro · borde = mismo nivel';
+      });
+    }
+    var nav = $('npNutriFolderNavBlocks');
+    if (!nav) return;
+    nav.querySelectorAll('.np-nutri-folder-chip[data-np-nutri-folder-id]').forEach(function (chip) {
+      var fid = chip.getAttribute('data-np-nutri-folder-id');
+      if (!fid) return;
+      var folder = nutriProGetFolderById(fid);
       var m = nutriProFolderMetaLabel(fid);
-      meta.textContent = m.short;
-      meta.title = m.full;
-      meta.setAttribute('aria-label', m.full);
+      var name = (folder && folder.title) || chip.textContent.replace(/^[↑📂\s]+/, '').trim() || 'Carpeta';
+      chip.title = name + ' · ' + m.full;
+      chip.setAttribute('aria-label', name + '. ' + m.full);
     });
   }
 
@@ -27909,6 +27927,7 @@
       (opts.sibling ? ' np-nutri-folder-chip--sibling' : '') +
       (opts.active ? ' np-nutri-folder-chip--active' : '');
     applyNutriProFolderRowAccent(btn, folderRec.id);
+    btn.setAttribute('data-np-nutri-folder-id', folderRec.id);
     if (!opts.sibling) {
       var sw = document.createElement('span');
       sw.className = 'np-nutri-folder-chip-swatch';
@@ -27919,6 +27938,9 @@
     var lbl = document.createElement('span');
     lbl.textContent = (opts.sibling ? '' : '📂 ') + (folderRec.title || 'Carpeta');
     btn.appendChild(lbl);
+    var meta = nutriProFolderMetaLabel(folderRec.id);
+    btn.title = (folderRec.title || 'Carpeta') + ' · ' + meta.full;
+    btn.setAttribute('aria-label', (folderRec.title || 'Carpeta') + '. ' + meta.full);
     (function (fid) {
       btn.addEventListener('click', function () {
         nutriProSelectFolder(fid);
@@ -27975,7 +27997,14 @@
         var upBtn = document.createElement('button');
         upBtn.type = 'button';
         upBtn.className = 'np-nutri-folder-chip np-nutri-folder-chip--sibling';
+        upBtn.setAttribute('data-np-nutri-folder-id', parent.id);
         upBtn.textContent = '↑ ' + (parent.title || 'Carpeta padre');
+        var upMeta = nutriProFolderMetaLabel(parent.id);
+        upBtn.title = (parent.title || 'Carpeta padre') + ' · ' + upMeta.full;
+        upBtn.setAttribute(
+          'aria-label',
+          'Subir a ' + (parent.title || 'carpeta padre') + '. ' + upMeta.full
+        );
         upBtn.addEventListener('click', function () {
           nutriProSelectFolder(parent.id);
         });
@@ -28511,7 +28540,12 @@
     if (!btn || !folderRec || !folderRec.id) return;
     btn.setAttribute('draggable', 'true');
     btn.setAttribute('data-np-nutri-folder-id', folderRec.id);
-    btn.title = 'Arrastra: centro = meter dentro · borde = mismo nivel (sacar/ordenar)';
+    var meta = nutriProFolderMetaLabel(folderRec.id);
+    btn.title =
+      (folderRec.title || 'Carpeta') +
+      ' · ' +
+      meta.full +
+      ' · Arrastra: centro = meter dentro · borde = mismo nivel';
     btn.addEventListener('dragstart', function (e) {
       if (e.target && e.target.closest && e.target.closest('.np-nutri-folder-ignore')) {
         e.preventDefault();
