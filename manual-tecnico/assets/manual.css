@@ -612,9 +612,10 @@ body {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
+  width: min(100%, 420px);
   max-width: 100%;
-  padding: 12px 16px;
+  padding: 14px 18px;
   border-radius: 12px;
   text-decoration: none;
   color: #0c4a6e;
@@ -631,10 +632,19 @@ body {
   transform: translateY(-1px);
 }
 .mt-autoria-btn--cta__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 15px;
   font-weight: 800;
   line-height: 1.25;
   white-space: normal;
+}
+.mt-autoria-btn--cta__label img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 .mt-autoria-btn--cta__author {
   display: inline-flex;

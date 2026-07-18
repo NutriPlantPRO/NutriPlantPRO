@@ -3357,7 +3357,7 @@ function np_formatRadarCreditLine(pricing) {
   );
 }
 
-/** Actualiza el badge visible de créditos en Pilot (y deja texto legible en #radarCreditsLabel). */
+/** Actualiza el texto de créditos en Pilot (tinta, sin caja). */
 function np_setRadarCreditsBadge(opts) {
   const o = opts || {};
   const label = document.getElementById('radarCreditsLabel');
@@ -3365,14 +3365,12 @@ function np_setRadarCreditsBadge(opts) {
   const badge = document.getElementById('radarCreditsBadge');
   if (!label) return;
 
-  const valueText = o.value != null ? String(o.value) : '—';
-  label.textContent = valueText;
-
-  if (costEl) {
-    costEl.textContent = o.cost != null ? String(o.cost) : '';
-  }
+  label.textContent = o.value != null ? String(o.value) : '—';
+  if (costEl) costEl.textContent = '';
   if (!badge) return;
 
+  const tip = [o.cost, o.value].filter(Boolean).join(' · ');
+  if (tip) badge.title = tip;
   badge.classList.remove('is-low', 'is-warn');
   const tone = o.tone || 'ok';
   if (tone === 'low') badge.classList.add('is-low');
@@ -3756,7 +3754,7 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     else if (disponibles < pilotCost) tone = 'low';
     else if (disponibles <= 3) tone = 'warn';
     np_setRadarCreditsBadge({
-      value: disponibles + ' / ' + l + ' este mes',
+      value: disponibles + '/' + l + ' créditos',
       cost:
         (costLine || 'Costo Pilot según hectáreas') +
         (history.length

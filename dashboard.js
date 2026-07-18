@@ -1663,9 +1663,9 @@ function sectionTemplate(name) {
         <div id="radarNdviPanel" class="radar-ndvi-panel" style="margin: 12px 0 0; padding: 12px 14px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;">
           <div style="font-weight: 600; color: #14532d;">🛰️ Radar del cultivo</div>
           <div id="radarCreditsBadge" class="radar-credits-badge" title="Créditos Radar del mes (Pilot y Lectura Satelital)">
-            <span class="radar-credits-badge__kicker">Créditos Radar</span>
+            <span class="radar-credits-badge__kicker">Créditos Radar:</span>
             <span id="radarCreditsLabel" class="radar-credits-badge__value">—</span>
-            <span id="radarCreditsCost" class="radar-credits-badge__cost">Consulta Estado para ver saldo</span>
+            <span id="radarCreditsCost" class="radar-credits-badge__cost"></span>
           </div>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#14532d;font-weight:700;">
             Capa

@@ -431,9 +431,9 @@
           '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">' +
             '<div style="font-weight:700;color:#14532d;font-size:15px;">📈 Lectura Satelital — histórico del predio</div>' +
             '<div id="lecturaCreditsBadge" class="radar-credits-badge" title="Mismo saldo de créditos Radar que Pilot">' +
-              '<span class="radar-credits-badge__kicker">Créditos Radar</span>' +
+              '<span class="radar-credits-badge__kicker">Créditos Radar:</span>' +
               '<span id="lecturaCreditsLabel" class="radar-credits-badge__value">—</span>' +
-              '<span id="lecturaCreditsCost" class="radar-credits-badge__cost">Abre Pilot o pulsa Mostrar imágenes</span>' +
+              '<span id="lecturaCreditsCost" class="radar-credits-badge__cost"></span>' +
             '</div>' +
           '</div>' +
           '<div style="font-size:12px;color:#334155;line-height:1.5;margin-bottom:10px;">' +
@@ -527,17 +527,21 @@
 
     if (credEl) {
       if (avail != null && limit != null) {
-        credEl.textContent = avail + ' / ' + limit + ' este mes';
+        credEl.textContent = avail + '/' + limit + ' créditos';
       } else {
         credEl.textContent = '—';
       }
     }
-    if (costEl) {
+    if (costEl) costEl.textContent = '';
+    if (badge) {
+      badge.classList.remove('is-low', 'is-warn');
+      if (tone === 'low') badge.classList.add('is-low');
+      else if (tone === 'warn') badge.classList.add('is-warn');
       if (overArea) {
-        costEl.textContent =
+        badge.title =
           'Máx. ' + maxHa + ' ha · este predio ' + (Math.round(ha * 100) / 100) + ' ha';
       } else if (avail != null) {
-        costEl.textContent =
+        badge.title =
           'Esta consulta: ' +
           total +
           ' créd.' +
@@ -545,14 +549,9 @@
           ' · quedarían ' +
           Math.max(0, avail - total);
       } else {
-        costEl.textContent =
+        badge.title =
           'Esta consulta: ' + total + ' créditos' + (total === 4 ? ' (>30 ha)' : '');
       }
-    }
-    if (badge) {
-      badge.classList.remove('is-low', 'is-warn');
-      if (tone === 'low') badge.classList.add('is-low');
-      else if (tone === 'warn') badge.classList.add('is-warn');
     }
     if (hint) {
       if (overArea) {
@@ -1127,6 +1126,32 @@
           legend: { display: false },
           tooltip: {
             callbacks: {
+              label: function (ctx) {
+                var label = (ctx.dataset && ctx.dataset.label) || '';
+                var raw = ctx.parsed && ctx.parsed.y != null ? ctx.parsed.y : ctx.raw;
+                if (raw == null || !Number.isFinite(Number(raw))) {
+                  return label ? label + ': —' : '—';
+                }
+                var v = Number(raw);
+                var text = label ? label + ': ' + v : String(v);
+                if (!/Horas VPD/i.test(label)) return text;
+                var i = ctx.dataIndex;
+                var r = rows[i];
+                if (!r) return text;
+                var den =
+                  r.vpd_hours_expected != null && Number(r.vpd_hours_expected) > 0
+                    ? Number(r.vpd_hours_expected)
+                    : periodHoursExpected(r.date_start, r.date_end);
+                if (!(den > 0)) {
+                  den =
+                    (Number(r.vpd_hours_low) || 0) +
+                    (Number(r.vpd_hours_opt) || 0) +
+                    (Number(r.vpd_hours_high) || 0);
+                }
+                if (!(den > 0)) return text;
+                var pct = Math.round((v / den) * 1000) / 10;
+                return text + ' (' + pct + '%)';
+              },
               footer: function (items) {
                 if (!items || !items.length) return '';
                 var i = items[0].dataIndex;
