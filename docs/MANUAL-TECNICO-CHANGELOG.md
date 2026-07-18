@@ -5,6 +5,15 @@ Plan maestro: `MANUAL-TECNICO-NUTRIPLANT-PLAN.md`
 
 ---
 
+## 2026-07-18 — Radar NDRE/RGB + Knowledge GPT v2026.07.3
+
+### Actualizado
+
+- Capas **NDRE** y **RGB** (mismas pasadas que NDVI/NDMI); Pilot **14→21→30→45 d**, hasta **8** pasadas; tope **250 ha**.
+- Lectura: miniaturas NDRE/RGB; tooltip VPD con **horas + %** del periodo.
+- RGB: verde≈planta, rojo/café≈suelo (no escala Menor/Mayor).
+- `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` §4.11 (**v2026.07.3**), `CHATGPT-SOCIO-PAQUETE-ACTUALIZACION.md`, `INTEGRACION-CHATGPT-ADMIN.md`, `chat-simple.js`, `manual-tecnico-catalog.js`, `vpd-deficit-presion-vapor.html`.
+
 ## 2026-07-16 — Pilot ventana corta + Lectura/PDF alineados
 
 ### Actualizado

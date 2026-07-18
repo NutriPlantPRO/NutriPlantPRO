@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "NutriPlant Admin Assistant",
-    "version": "2.11.0",
-    "description": "v2.11.0 — ChatGPT: una sola Action (nutriplantAdminQuery). plan_pro_item incluye relations_out/in + hops 1|2 (grafo tipado de apuntes). Los nombres admin_stats, nutri_pro_catalog, etc. van en el body como campo action, no son tools separadas."
+    "version": "2.12.0",
+    "description": "v2.12.0 — ChatGPT: plan_pro_item trae relations_* (apuntes) + nutri_graph_* (archivo/link). nutri_pro_file_text trae relations_* Nutri. Una sola Action nutriplantAdminQuery."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
       "post": {
         "operationId": "nutriplantAdminQuery",
         "summary": "Única Action ChatGPT — consulta NutriPlant, Plan PRO y Nutri PRO",
-        "description": "Única Action ChatGPT. Body: action + params. admin_stats, nutri_pro_catalog, plan_pro_item (relations + hops), nutri_pro_reindex, nutri_pro_set_text, describe_api van en body.action, no son tools aparte. Ej: {\"action\":\"admin_stats\",\"params\":{}}. Verifica describe_api → version 2.11.0.",
+        "description": "Única Action ChatGPT. Body: action + params. plan_pro_item (relations + nutri_graph + hops), nutri_pro_file_text (relations Nutri), describe_api. Verifica describe_api → version 2.12.0.",
         "requestBody": {
           "required": true,
           "content": {

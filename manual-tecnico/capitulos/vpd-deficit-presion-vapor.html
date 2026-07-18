@@ -140,12 +140,14 @@
       <li><strong>NDVI</strong> — <strong>vigor relativo</strong> y actividad fotosintética dentro del lote.</li>
       <li><strong>NDMI</strong> — <strong>condición hídrica relativa del dosel/canopia</strong> (no es humedad volumétrica del suelo).</li>
       <li><strong>NDRE</strong> — <strong>clorofila / estado del dosel</strong> (banda red edge B05 + NIR).</li>
-      <li><strong>RGB</strong> — <strong>vista natural</strong> del predio (mismas pasadas Sentinel; útil para ubicar y contrastar con índices).</li>
+      <li><strong>RGB</strong> — <strong>vista natural</strong> del predio (mismas pasadas Sentinel; útil para ubicar y contrastar con índices).
+        En RGB <strong>no</strong> aplica la escala Menor/Mayor de los índices: el <strong>verde</strong> suele ser planta viva;
+        el <strong>rojo / café / rosado</strong> suele ser suelo desnudo o rastrojo (color natural de la tierra), no “bajo vigor”.</li>
     </ul>
     <p>
       Las cuatro capas salen de la <strong>misma generación</strong> y las <strong>mismas pasadas</strong> (mediana por píxel + máscara SCL de nubes/sombra).
       Orden en pantalla: NDVI → NDMI → NDRE → <strong>RGB</strong> (última).
-      Los índices son <strong>relativos al predio y a la fecha</strong>; RGB es color natural.
+      Los índices son <strong>relativos al predio y a la fecha</strong>; RGB es color natural (~10&nbsp;m por píxel en bandas visibles/NIR).
       No sustituyen diagnóstico por una sola mancha de color.
     </p>
     <h3>Colorimetría NutriPlant — niveles de referencia dentro del predio</h3>
@@ -159,7 +161,7 @@
         <tr><td>Rojo / naranja</td><td>Menor nivel relativo del predio (vigor, humedad de dosel o clorofila más baja frente al resto del lote).</td><td>Priorizar recorrido, revisar suelo descubierto/sombra, riego, drenaje, raíz, salinidad, nutrición, plagas o etapa.</td></tr>
         <tr><td>Amarillo / verde claro</td><td>Nivel intermedio del predio; zona de transición o comportamiento promedio.</td><td>Comparar con historial, manejo y condiciones de campo antes de decidir.</td></tr>
         <tr><td>Verde intenso / teal / azul verdoso</td><td>Mayor nivel relativo (más vigor, humedad de dosel o clorofila frente al resto del lote).</td><td>Usar como referencia interna y validar en campo.</td></tr>
-        <tr><td>RGB</td><td>Colores naturales del predio (no escala Menor/Mayor).</td><td>Ubicar el lote y contrastar visualmente con los índices.</td></tr>
+        <tr><td>RGB</td><td>Colores naturales: verde ≈ vegetación; rojo/café ≈ suelo o residuo seco (no es “malo” por sí solo).</td><td>Ubicar el lote y contrastar visualmente con los índices.</td></tr>
       </tbody>
     </table>
     <div class="mt-warn">
@@ -212,7 +214,7 @@
         <tr><td>ET₀ (mm)</td><td>Open-Meteo diario <code>et0_fao_evapotranspiration</code> → <strong>suma</strong></td></tr>
         <tr><td>Lluvia (mm)</td><td>Open-Meteo diario <code>precipitation_sum</code> → <strong>suma</strong></td></tr>
         <tr><td>Riego (m³ / mm)</td><td>Input manual; conversión m³↔mm con % de franja regada</td></tr>
-        <tr><td>Horas VPD</td><td>Horas del periodo con VPD &lt;0.5 / 0.5–1.5 / &gt;1.5 kPa (Open-Meteo)</td></tr>
+        <tr><td>Horas VPD</td><td>Horas del periodo con VPD &lt;0.5 / 0.5–1.5 / &gt;1.5 kPa (Open-Meteo). En la gráfica, al pasar el cursor, cada rango muestra <strong>horas y % del total de horas del periodo</strong> (p. ej. 15 d ≈ 360 h).</td></tr>
       </tbody>
     </table>
     <p>

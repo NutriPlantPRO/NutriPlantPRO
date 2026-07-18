@@ -82,7 +82,7 @@
   }
 
   function resolveGaPageTitle(flags) {
-    if (flags.isAutoria) return 'Manual técnico — Autoría';
+    if (flags.isAutoria) return 'Manual técnico — Autoría NutriPlant PRO';
     if (flags.isIndex) return 'Manual técnico';
     return 'Manual técnico';
   }

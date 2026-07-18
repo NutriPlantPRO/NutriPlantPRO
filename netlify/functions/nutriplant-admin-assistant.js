@@ -2775,6 +2775,129 @@ async function buildPlanProItemRelationsGraph(supabase, ownerId, rootItemId, are
   };
 }
 
+function nutriCrossRelationsSchemaMissing(error) {
+  const msg = String((error && error.message) || error || '').toLowerCase();
+  return (
+    msg.includes('plan_pro_nutri_relations') ||
+    msg.includes('does not exist') ||
+    msg.includes('schema cache') ||
+    (error && (error.code === '42P01' || error.code === 'PGRST205'))
+  );
+}
+
+async function resolveNutriCrossPeerLabel(supabase, ownerId, kind, id) {
+  if (!id) return { id, kind, title: null, found: false };
+  if (kind === 'apunte') {
+    const { data } = await supabase
+      .from('plan_pro_items')
+      .select('id,title,area_id,category_id')
+      .eq('owner_id', ownerId)
+      .eq('id', id)
+      .maybeSingle();
+    return data
+      ? { id: data.id, kind, title: data.title || '(Sin título)', area_id: data.area_id, found: true }
+      : { id, kind, title: null, found: false };
+  }
+  if (kind === 'nutri_link') {
+    const { data } = await supabase
+      .from('plan_pro_nutri_links')
+      .select('id,title,url,category')
+      .eq('owner_id', ownerId)
+      .eq('id', id)
+      .maybeSingle();
+    return data
+      ? { id: data.id, kind, title: data.title || 'Link', url: data.url, category: data.category, found: true }
+      : { id, kind, title: null, found: false };
+  }
+  const { data } = await supabase
+    .from('plan_pro_nutri_files')
+    .select('id,title,original_name')
+    .eq('owner_id', ownerId)
+    .eq('id', id)
+    .maybeSingle();
+  return data
+    ? {
+        id: data.id,
+        kind: 'nutri_file',
+        title: data.title || data.original_name || 'Archivo',
+        found: true
+      }
+    : { id, kind: 'nutri_file', title: null, found: false };
+}
+
+async function buildNutriCrossRelationsForNode(supabase, ownerId, kind, nodeId) {
+  if (!nodeId || !kind) {
+    return { ok: true, relations_out: [], relations_in: [], relations_out_count: 0, relations_in_count: 0 };
+  }
+  const { data: outRows, error: outErr } = await supabase
+    .from('plan_pro_nutri_relations')
+    .select('id,from_kind,from_id,to_kind,to_id,relation_type')
+    .eq('owner_id', ownerId)
+    .eq('from_kind', kind)
+    .eq('from_id', nodeId);
+  if (outErr) {
+    if (nutriCrossRelationsSchemaMissing(outErr)) {
+      return {
+        ok: false,
+        setup: 'supabase-plan-pro-nutri-relations.sql',
+        relations_out: [],
+        relations_in: [],
+        relations_out_count: 0,
+        relations_in_count: 0
+      };
+    }
+    throw new Error('plan_pro_nutri_relations: ' + outErr.message);
+  }
+  const { data: inRows, error: inErr } = await supabase
+    .from('plan_pro_nutri_relations')
+    .select('id,from_kind,from_id,to_kind,to_id,relation_type')
+    .eq('owner_id', ownerId)
+    .eq('to_kind', kind)
+    .eq('to_id', nodeId);
+  if (inErr) {
+    if (nutriCrossRelationsSchemaMissing(inErr)) {
+      return {
+        ok: false,
+        setup: 'supabase-plan-pro-nutri-relations.sql',
+        relations_out: [],
+        relations_in: [],
+        relations_out_count: 0,
+        relations_in_count: 0
+      };
+    }
+    throw new Error('plan_pro_nutri_relations: ' + inErr.message);
+  }
+  const relations_out = [];
+  for (const e of outRows || []) {
+    relations_out.push({
+      relation_id: e.id,
+      relation_type: e.relation_type,
+      relation_label: planProRelationLabel(e.relation_type, false),
+      direction: 'out',
+      peer: await resolveNutriCrossPeerLabel(supabase, ownerId, e.to_kind, e.to_id)
+    });
+  }
+  const relations_in = [];
+  for (const e of inRows || []) {
+    relations_in.push({
+      relation_id: e.id,
+      relation_type: e.relation_type,
+      relation_label: planProRelationLabel(e.relation_type, true),
+      direction: 'in',
+      peer: await resolveNutriCrossPeerLabel(supabase, ownerId, e.from_kind, e.from_id)
+    });
+  }
+  return {
+    ok: true,
+    relations_out,
+    relations_in,
+    relations_out_count: relations_out.length,
+    relations_in_count: relations_in.length,
+    relations_note:
+      'Grafo Nutri (plan_pro_nutri_relations): archivo/link/apunte. Combínalo con plan_pro_item.relations_* y plan_pro_catalog (plantas/ramas).'
+  };
+}
+
 async function fetchNutriProFolders(supabase, ownerId) {
   const { data, error } = await supabase
     .from('plan_pro_nutri_folders')
@@ -3435,12 +3558,19 @@ async function handleNutriProFileText(supabase, params) {
   const fullText = (extract && extract.text_plain) || '';
   const preview = fullText.slice(offset, offset + maxChars);
   const mapped = mapNutriProFileRow(fileRec, foldersById, extract ? { [fileId]: extract } : {});
+  const nutriCross = await buildNutriCrossRelationsForNode(supabase, ownerId, 'nutri_file', fileId);
 
   return {
     ok: true,
     domain: 'nutri_pro',
     found: true,
     file: mapped,
+    relations_out: nutriCross.relations_out || [],
+    relations_in: nutriCross.relations_in || [],
+    relations_out_count: nutriCross.relations_out_count || 0,
+    relations_in_count: nutriCross.relations_in_count || 0,
+    relations_note: nutriCross.relations_note || null,
+    relations_setup: nutriCross.ok === false ? nutriCross.setup : null,
     extract: extract
       ? {
           status: extract.status,
@@ -3461,7 +3591,7 @@ async function handleNutriProFileText(supabase, params) {
             'Sin extracción aún. Usa nutri_pro_reindex con este nutri_file_id (mode=text o mode=ocr) y vuelve a leer.'
         },
     gpt_usage:
-      'Cita short_path y comparte open_url si Jesús quiere abrir el archivo. Si status no es done o el texto es pobre: nutri_pro_reindex (ocr para escaneados/imágenes), luego relee con nutri_pro_file_text.'
+      'Cita short_path y comparte open_url si Jesús quiere abrir el archivo. Mira relations_out/in (apunte/archivo/link). Si status no es done: nutri_pro_reindex, luego relee.'
   };
 }
 
@@ -5681,6 +5811,7 @@ async function handlePlanProItem(supabase, params) {
     categories,
     hops
   );
+  const nutriCross = await buildNutriCrossRelationsForNode(supabase, ownerId, 'apunte', item.id);
 
   return {
     ok: true,
@@ -5712,6 +5843,12 @@ async function handlePlanProItem(supabase, params) {
       hop2_neighbors_count: relationsGraph.hop2_neighbors_count || 0,
       relations_note: relationsGraph.relations_note || null,
       relations_setup: relationsGraph.ok === false ? relationsGraph.setup : null,
+      nutri_graph_out: nutriCross.relations_out || [],
+      nutri_graph_in: nutriCross.relations_in || [],
+      nutri_graph_out_count: nutriCross.relations_out_count || 0,
+      nutri_graph_in_count: nutriCross.relations_in_count || 0,
+      nutri_graph_note: nutriCross.relations_note || null,
+      nutri_graph_setup: nutriCross.ok === false ? nutriCross.setup : null,
       images,
       images_count: images.length,
       images_note:
@@ -5963,7 +6100,7 @@ async function handleRadarProject(supabase, params) {
     user_radar_credits_this_month: credits,
     radar_pricing: radarPricing,
     gpt_radar_note:
-      'radar_history lista imágenes (id, created_at, sentinel_period, location_center, bounds, area_ha). latest_radar incluye location_snapshot (polígono, centro, bounds) de la imagen mostrada o de request_id. Radar principal actual: Pilot Copernicus/Sentinel-2, sin Google Earth Engine pero con créditos Radar internos: base 20/mes + bonus; costo por generación según area_hectares del polígono (≤30 ha = 1 · >30 ha = 2 · >100 ha = 3; NDVI+NDMI+NDRE+RGB juntos). **Tope duro: máximo 250 ha** (error radar_area_too_large: «Radar máximo 250 ha; divide el polígono»). Capas: NDVI vigor, NDMI dosel, NDRE clorofila, RGB natural (mismas pasadas, mediana+SCL, 14→45 d hasta 8 escenas). Colorimetría relativa al predio/fecha en índices. ChatGPT no ve píxeles: fechas, coords y enlaces firmados.',
+      'radar_history lista imágenes (id, created_at, sentinel_period, location_center, bounds, area_ha). latest_radar incluye location_snapshot (polígono, centro, bounds) de la imagen mostrada o de request_id. Radar principal actual: Pilot Copernicus/Sentinel-2, sin Google Earth Engine pero con créditos Radar internos: base 20/mes + bonus; costo por generación según area_hectares del polígono (≤30 ha = 1 · >30 ha = 2 · >100 ha = 3; NDVI+NDMI+NDRE+RGB juntos). **Tope duro: máximo 250 ha** (error radar_area_too_large: «Radar máximo 250 ha; divide el polígono»). Capas: NDVI vigor, NDMI dosel, NDRE clorofila, RGB natural (mismas pasadas, mediana+SCL, 14→45 d hasta 8 escenas). RGB: verde≈planta, rojo/café≈suelo (no escala Menor/Mayor). Colorimetría relativa al predio/fecha en índices. Lectura: tooltip VPD con horas y % del periodo. ChatGPT no ve píxeles: fechas, coords y enlaces firmados.',
     related: {
       fertirriego_suelo_vpd: 'project_detail',
       vpd_ahora: 'project_vpd_live'
@@ -6151,8 +6288,8 @@ async function handleNutritionCatalogs(supabase, params) {
 async function handleDescribeApi() {
   return {
     ok: true,
-    version: '2.11.0',
-    openapi_version: '2.11.0',
+    version: '2.12.0',
+    openapi_version: '2.12.0',
     chatgpt_tool: {
       operationId: 'nutriplantAdminQuery',
       note:
@@ -6171,7 +6308,7 @@ async function handleDescribeApi() {
         action: 'nutri_pro_set_text',
         params: { nutri_file_id: 'UUID', content: 'texto corregido…' }
       },
-      verify: 'Si describe_api devuelve version 2.11.0, el GPT tiene schema y token correctos.'
+      verify: 'Si describe_api devuelve version 2.12.0, el GPT tiene schema y token correctos.'
     },
     domains: {
       admin: ['admin_stats', 'list_users', 'user_summary'],
@@ -6276,9 +6413,9 @@ function getOpenApiSpec() {
     openapi: '3.1.0',
     info: {
       title: 'NutriPlant Admin Assistant',
-      version: '2.11.0',
+      version: '2.12.0',
       description:
-        'v2.11.0 — ChatGPT: una sola Action (nutriplantAdminQuery). plan_pro_item incluye relations_out/in + hops 1|2 (grafo de apuntes).'
+        'v2.12.0 — ChatGPT: plan_pro_item trae relations_* (apuntes) + nutri_graph_* (archivo/link). nutri_pro_file_text trae relations_* Nutri.'
     },
     servers: [{ url: 'https://nutriplantpro.com' }],
     paths: {

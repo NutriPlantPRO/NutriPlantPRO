@@ -115,7 +115,7 @@ module.exports = {
       title: 'VPD, NDVI y NDMI',
       url: `${BASE}/capitulos/vpd-deficit-presion-vapor.html`,
       pillar: 'E — Agua y clima',
-      summary: 'VPD kPa (Tetens/simple/avanzada); Radar Satelital: Pilot NDVI/NDMI/NDRE/RGB (14→21→30→45 d, hasta 8 pasadas mediana+SCL, guarda lo mejor ≥~15%; máx. 250 ha) + Lectura Satelital (2–6 periodos: NDVI/NDMI/NDRE/RGB, VPD/horas, ET₀, lluvia, riego; costo fijo 3 créditos ≤30 ha / 4 si >30 ha; quincena incompleta → mes). Colorimetría relativa al predio. PDF/admin con tabla+gráfica+miniaturas. No sustituye campo.',
+      summary: 'VPD kPa (Tetens/simple/avanzada); Radar Satelital: Pilot NDVI/NDMI/NDRE/RGB (14→21→30→45 d, hasta 8 pasadas mediana+SCL, guarda lo mejor ≥~15%; máx. 250 ha) + Lectura Satelital (2–6 periodos: NDVI/NDMI/NDRE/RGB, VPD/horas+% del periodo, ET₀, lluvia, riego; costo fijo 3 créditos ≤30 ha / 4 si >30 ha; quincena incompleta → mes). RGB natural: verde≈planta, rojo/café≈suelo. Colorimetría relativa al predio en índices. PDF/admin con tabla+gráfica+miniaturas. No sustituye campo.',
       status: 'published'
     },
     {

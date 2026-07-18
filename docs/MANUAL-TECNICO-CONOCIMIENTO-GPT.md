@@ -1,10 +1,10 @@
 # Manual Técnico NutriPlant PRO — Knowledge para GPT Socio (fuente pública)
 
 **Uso en ChatGPT:** subir en **Configure → Knowledge** (junto con HERRAMIENTAS, ANALISIS-LABORATORIO y opcional `PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`).  
-**Versión manual web:** v2026.07.2 · **25 capítulos** publicados (pilar **1** + pilares A–G).
+**Versión manual web:** v2026.07.3 · **25 capítulos** publicados (pilar **1** + pilares A–G).
 **Fuente web:** https://nutriplantpro.com/manual-tecnico/index.html  
 **API:** `manual_tecnico_catalog` · OpenAPI v2.2.0  
-**Versión Knowledge:** 2026-07-16 · **v2026.07.2** (+ Pilot 14→21→30 d; Lectura mensual con expand; gráfica PDF/admin)
+**Versión Knowledge:** 2026-07-18 · **v2026.07.3** (+ NDRE/RGB; Pilot 14→45 d hasta 8 pasadas; máx. 250 ha; Lectura tooltip VPD horas+%)
 
 ---
 
@@ -57,7 +57,7 @@ Biblioteca HTML **abierta, sin cuenta**: metodología alineada con la app NutriP
 | `granular-mezclas` | Granular: requerimiento, programa y mezclas | D |
 | `hidroponia-solucion-por-etapa` | Hidroponía: solución nutritiva por etapa | D |
 | `diseno-solucion-nutritiva-didactica` | Solución didáctica (gratis) | D |
-| `vpd-deficit-presion-vapor` | VPD, NDVI y NDMI | E |
+| `vpd-deficit-presion-vapor` | VPD, Radar NDVI/NDMI/NDRE/RGB | E |
 | `balance-hidrico-riego-clima` | Balance hídrico y riego rápido (Clima) | E |
 | `agua-dureza-acidificacion-solubilidad` | Dureza, ácido HCO₃, solubilidad/IS | E |
 | `n-mineralizable-agua-disponible-suelo` | N mineralizable, CC−PMP, textura | B |
@@ -166,16 +166,21 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **URL:** …/diseno-solucion-nutritiva-didactica.html · login localStorage; triángulos, CE, Cl, NH₄.
 
-### 4.11 VPD, NDVI y NDMI
+### 4.11 VPD y Radar Satelital (NDVI / NDMI / NDRE / RGB)
 
-**URL:** …/vpd-deficit-presion-vapor.html · VPD kPa (Tetens / simple / avanzada); módulo **Radar Satelital** (antes Ubicación) con Pilot Copernicus/Sentinel-2 NDVI (vigor) y NDMI (humedad/canopeo). Apoyo a decisión, no sustituye recorrido de campo.
+**URL:** …/vpd-deficit-presion-vapor.html · VPD kPa (Tetens / simple / avanzada); módulo **Radar Satelital** (antes Ubicación) con Pilot Copernicus/Sentinel-2: **NDVI** (vigor), **NDMI** (humedad relativa del dosel), **NDRE** (clorofila / estado del dosel, red edge), **RGB** (vista natural). Apoyo a decisión, no sustituye recorrido de campo.
 
-**Colorimetría Radar Pilot:** escala **relativa al predio y a la fecha**. Rojo/naranja = menor nivel relativo dentro de ese polígono; amarillo/verde claro = nivel intermedio; verde intenso (o azul verdoso en NDMI) = mayor nivel relativo. No interpretar como escala absoluta universal ni diagnosticar solo por color. Comparar con historial, riego, suelo, foliar, VPD, plagas/drenaje y recorrido de campo.
+**Cómo se arma la imagen (Pilot y Lectura):** mismas pasadas Sentinel-2 → **mediana por píxel** + máscara **SCL** (nubes/sombra). Las **cuatro capas** salen juntas de la misma generación. Resolución típica ~**10 m**/píxel (NDRE/NDMI usan bandas nativas ~20 m remuestreadas).
 
-**Pilot (pestaña Polígono / NDVI y NDMI):** busca primero en los últimos **14 días** (hasta **3** pasadas claras; con **1 o 2 ya genera**; nubes ≤**35%**), si no hay cobertura útil → **21 d** (≤**40%**), último recurso → **30 d** (≤**50%**). Mediana por píxel + máscara SCL; si cobertura útil &lt;~15&nbsp;% no guarda imagen vacía. Muestra las **fechas satelitales** de las escenas usadas. Créditos internos: base **20/mes** (+ bonus). Costo por generación: ≤30 ha = **1** · >30 ha = **2** · >100 ha = **3**. Ver historial / «Ver en mapa» no gasta.
+**Colorimetría índices (NDVI/NDMI/NDRE):** escala **relativa al predio y a la fecha** (P10–P90). Rojo/naranja = menor nivel relativo; amarillo/verde claro = intermedio; verde intenso (o azul verdoso en NDMI) = mayor nivel relativo. No es escala absoluta ni diagnóstico solo por color.
 
-**Lectura Satelital (pestaña 2 del mismo módulo):** histórico del **mismo predio** con **2–6 periodos** hacia atrás (fecha final elegida), frecuencia **quincenal (15 d)** o **mensual (mes calendario)**, etiquetas con fechas reales (no Q1/Q2). Por periodo: NDVI/NDMI promedio (píxeles válidos), VPD promedio + horas VPD por banda (Open-Meteo), ET₀ y lluvia **acumulados**, riego m³↔mm con % franja. Tabla + gráfica + miniaturas NDVI|NDMI. Quincenal y mensual: si baja cobertura → reintenta escenas más claras y puede **ampliar a 30 d** (`lookback_expanded`). Costo **fijo por toda la consulta** (no por periodo): **3 créditos Radar** predio ≤30 ha, **4 créditos** predio >30 ha. Persistencia en `location.lecturaSatelital`. PDF y panel admin incluyen tabla, gráfica e imágenes.
+**RGB (vista natural):** no usa Menor/Mayor. **Verde** ≈ planta viva; **rojo/café/rosado** ≈ suelo desnudo o rastrojo (color natural de la tierra, no “bajo vigor”). Útil para ubicar el predio y contrastar con índices.
 
+**Tope de área:** máximo **250 ha**. Si el polígono es mayor: mensaje «Radar máximo 250 ha; divide el polígono» (no gasta crédito). Ranchos grandes → lotes separados.
+
+**Pilot (pestaña Polígono / NDVI y NDMI):** ventanas **14 → 21 → 30 → 45 d**; hasta **8 pasadas** (mediana + SCL). Solo corta si ~**100%** útiles; si no, guarda lo mejor (≥~15% cobertura útil). Si &lt;~15% no guarda imagen vacía. Muestra fechas satelitales y % útil. Capas: NDVI → NDMI → NDRE → RGB. Créditos internos: base **20/mes** (+ bonus). Costo por generación: ≤30 ha = **1** · >30 ha = **2** · >100 ha = **3** (las cuatro capas juntas). Ver historial / «Ver en mapa» no gasta.
+
+**Lectura Satelital (pestaña 2):** histórico del **mismo predio** con **2–6 periodos** (fecha final elegida), **quincenal (15 d)** o **mensual**. Por periodo: NDVI/NDMI/NDRE promedio, miniaturas NDVI|NDMI|NDRE|RGB, VPD promedio + horas VPD por banda (Open-Meteo), ET₀ y lluvia acumulados, riego m³↔mm. En la gráfica, el tooltip de horas VPD muestra **horas y %** de cada rango (&lt;0.5 / 0.5–1.5 / &gt;1.5) respecto al total de horas del periodo (p. ej. 15 d ≈ 360 h). Hasta **6 pasadas**/periodo; quincena incompleta puede ampliar al mes (`lookback_expanded`, *). Costo **fijo por consulta**: **3 créditos** ≤30 ha, **4** si >30 ha. Persistencia `location.lecturaSatelital`. PDF/admin: tabla, gráfica, miniaturas.
 ### 4.11b Balance hídrico y cálculo rápido de riego (Clima)
 
 **URL:** …/balance-hidrico-riego-clima.html · **Dashboard PRO → Clima → Lluvia y ET₀** → calculadora de balance hídrico.

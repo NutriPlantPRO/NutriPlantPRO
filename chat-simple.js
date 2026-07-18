@@ -48,9 +48,11 @@ Soluciones nutritivas de referencia (para consulta cuando el usuario pida refere
 - El módulo del dashboard se llama **Radar Satelital** (interno: Ubicación). Tiene 2 pestañas: (1) Polígono / NDVI y NDMI; (2) Lectura Satelital.
 - NDVI = vigor relativo; NDMI = condición hídrica relativa del dosel; NDRE = clorofila/estado del dosel (red edge); RGB = vista natural. Orden de capas: NDVI → NDMI → NDRE → RGB.
 - En NutriPlant el Radar principal usa Pilot Copernicus/Sentinel-2; Google Earth Engine queda como respaldo/standby. Colorimetría RELATIVA AL PREDIO Y A LA FECHA (NDVI/NDMI/NDRE); RGB es color natural.
+- En RGB: verde ≈ planta viva; rojo/café/rosado ≈ suelo desnudo o rastrojo (no es “bajo vigor” como en NDVI). Resolución típica ~10 m/píxel.
 - **Tope de área: máximo 250 ha** por generación. Si el predio es mayor: mensaje «Radar máximo 250 ha; divide el polígono» (no gasta crédito). Ranchos grandes → lotes separados.
 - Pilot (pestaña 1): junta hasta **8 pasadas** (mediana) en **14 → 21 → 30 → 45 d**. Solo corta si ~**100%** útiles; si no, guarda lo mejor (≥~15%). SCL. Genera las 4 capas juntas. Costo: ≤30 ha=1, >30 ha=2, >100 ha=3 créditos.
 - Lectura Satelital (pestaña 2): histórico 2–6 periodos (quincenal/mensual), NDVI/NDMI/NDRE promedio, VPD, ET₀, lluvia, riego; miniaturas NDVI|NDMI|NDRE|RGB. Hasta **6 pasadas**/periodo; quincena incompleta puede ampliar al mes (*). Costo fijo: 3 créditos (4 si >30 ha). Mismo tope 250 ha. También en PDF/admin.
+- En la gráfica de Lectura, el tooltip de horas VPD muestra **horas y %** de cada rango (&lt;0.5 / 0.5–1.5 / &gt;1.5) respecto al total de horas del periodo (p. ej. 15 d = 360 h).
 - Buen uso: cruzar NDVI/NDMI/NDRE/RGB con riego, suelo, foliar, VPD y campo. No fertilizar/regar solo por color.
 
 7) CALCULADORAS NUTRIPLANT (ÓXIDO↔ELEMENTAL, ELEMENTAL↔IONES, ppm↔mmol↔meq) — Alineado con la app
@@ -202,11 +204,12 @@ function getRadarCultivoManual() {
 RADAR SATELITAL (NDVI / NDMI / NDRE / RGB + Lectura Satelital) — NutriPlant PRO:
 - Módulo del dashboard: **Radar Satelital** (interno Ubicación). Dos pestañas: (1) Polígono / NDVI y NDMI; (2) Lectura Satelital.
 - Qué es: imágenes satelitales Pilot Copernicus/Sentinel-2 (~10 m) recortadas al polígono. Capas: NDVI (vigor), NDMI (dosel hídrico), NDRE (clorofila/dosel, red edge), RGB (vista natural). Orden: NDVI → NDMI → NDRE → RGB. Las cuatro salen de las **mismas pasadas** (mediana + SCL).
-- Colorimetría índices: relativa al predio/fecha (P10–P90). RGB = color natural (no Menor/Mayor).
+- Colorimetría índices: relativa al predio/fecha (P10–P90). RGB = color natural (no Menor/Mayor): verde ≈ planta; rojo/café ≈ suelo o rastrojo (no “bajo vigor”).
 - **Tope: máximo 250 ha**. Si excede: «Radar máximo 250 ha; divide el polígono» (sin gastar crédito).
 - Pilot: hasta **8 pasadas** en **14 → 21 → 30 → 45 d**; ~100% útiles o guarda lo mejor (≥~15%). Costo ≤30 ha=1 · >30=2 · >100=3.
 - Lectura Satelital: 2–6 periodos; NDVI/NDMI/NDRE + miniaturas RGB; VPD/ET₀/lluvia/riego; hasta 6 pasadas/periodo; quincena incompleta → mes (*). Costo fijo 3 (4 si >30 ha). Persistido en location.lecturaSatelital. PDF/admin incluidos.
-- Uso: cruzar índices con riego, suelo, foliar, VPD y campo. No causa única por color.
+- Tooltip gráfica Lectura: horas VPD por rango (<0.5 / 0.5–1.5 / >1.5) con **horas y % del total de horas del periodo**.
+- Uso: cruzar índices/RGB con riego, suelo, foliar, VPD y campo. No causa única por color.
 - Límites: mapas relativos al predio; nubes pueden retrasar la fecha Sentinel; no sustituye análisis de suelo/foliar ni diagnóstico de campo.
 `;
 }
@@ -1206,8 +1209,8 @@ Ejemplo: **"dame la solución Steiner"** o **"Hoagland en meq y ppm"**.`;
 - Calculadora de balance hídrico (Clima → Lluvia y ET₀): estimación rápida de déficit y balance para 1, 7 o 30 días. Fórmulas: ETc = ETo × Kc; déficit climático = ETo − lluvia; déficit cultivo = ETc − lluvia; **balance m³ = déficit m³ cultivo − riego m³ en franja** (entrada de riego **solo m³** en franja regada; mm de lámina en resultados). Conversión: 1 mm sobre X ha = X × 10 m³. Déficit en mm sobre ha cultivo; si ha regada &lt; ha cultivo, los mm se concentran en franja (sub-línea «↳ en franja regada»); m³ totales no se dividen (ej. 90 m³ = 9 mm ref. cultivo 1 ha = 15 mm en franja 0,6 ha). Bloque **🪨 Referencia almacén suelo** lee m³ hasta CC desde herramienta Agua en suelo (`nutriplant_bridge_soil_water_v1`) — complementa, no sustituye riego aplicado. ETo/lluvia satélite o manual; macrotúnel = lluvia 0. Kc manual (tabla FAO consulta). % raíces sugiere franja, no altera déficit ETc. Tablas Kc y % suelo explorado por sistema; Criterio NutriPlant. Estimar %: Conversor magnitudes (copa circular o cama/banda). Datos en climateAnalysis.irrigationQuickCalc. Nota: no considera almacenamiento en suelo en el balance ETc (salvo bloque puente 🪨), escurrimiento, drenaje ni lixiviación; validar en campo.`,
       ubicacion: `
 - Radar Satelital (interno Ubicación): el usuario define el predio dibujando puntos en el mapa (polígono). El asistente recibe en contexto: número de vértices del polígono, superficie/área (ha o m²), perímetro (m) y coordenadas (centro del polígono o referencia). Si no hay polígono aún, se indica "sin polígono definido" y se puede guiar al usuario a ir a Radar Satelital y dibujar los puntos en el mapa. Necesario para la calculadora ambiental de VPD ("Obtener del Clima" usa el centro del polígono), Radar NDVI y reportes PDF.
-- Pestaña 1 — Polígono / NDVI y NDMI (Pilot): Sentinel-2. Ventana **14 → 21 → 30 → 45 d**; hasta **8 escenas** (mediana + SCL); ~100% o guarda lo mejor. Capas: NDVI, NDMI, NDRE, RGB (misma generación). **Máx. 250 ha**.
-- Pestaña 2 — Lectura Satelital: histórico 2–6 periodos con NDVI/NDMI/NDRE/RGB, VPD, ET₀, lluvia y riego. Costo fijo 3 (4 si >30 ha). Mismo tope 250 ha.
+- Pestaña 1 — Polígono / NDVI y NDMI (Pilot): Sentinel-2. Ventana **14 → 21 → 30 → 45 d**; hasta **8 escenas** (mediana + SCL); ~100% o guarda lo mejor. Capas: NDVI, NDMI, NDRE, RGB (misma generación). RGB: verde≈planta, rojo/café≈suelo. **Máx. 250 ha**.
+- Pestaña 2 — Lectura Satelital: histórico 2–6 periodos con NDVI/NDMI/NDRE/RGB, VPD, ET₀, lluvia y riego. Tooltip VPD: horas + % del periodo. Costo fijo 3 (4 si >30 ha). Mismo tope 250 ha.
 - Si el contexto trae última imagen/fecha/historial o Lectura, puedes explicar el estado Radar. No diagnosticar causa única solo con índices: cruzar con riego, suelo, foliar, plagas, drenaje, VPD y recorrido en campo.`,
       reportes: `
 - Reportes: esta pestaña sirve para generar y gestionar reportes PDF del proyecto actual. Cómo generar un reporte: (1) El usuario pulsa el botón "Generar Nuevo Reporte PDF" (en la pestaña Reportes o desde la sección de enmiendas). (2) Se abre un modal donde debe seleccionar las secciones o pestañas que quiere incluir en el reporte: Ubicación, Enmiendas, Nutrición granular, Fertirriego, Hidroponía, Clima (VPD, lluvia, ET₀). (3) El usuario marca (selecciona) las que desee y confirma; se genera el PDF con solo esas secciones. (4) El reporte aparece en la lista; cada uno tiene Descargar (PDF) y Eliminar. Los reportes se guardan en el proyecto y se sincronizan a la nube si está conectado. El chat debe entender esta lógica para explicar al usuario cómo hacerlo: ir a Reportes → "Generar Nuevo Reporte PDF" → en el modal elegir qué secciones incluir → generar.`,
