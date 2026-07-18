@@ -28031,6 +28031,29 @@
     });
   }
 
+  function nutriProPersistCollapsedFolders() {
+    try {
+      var ids = Object.keys(state.nutriProCollapsedFolderIds || {}).filter(function (id) {
+        return !!state.nutriProCollapsedFolderIds[id];
+      });
+      localStorage.setItem('np_nutri_pro_collapsed_folders', JSON.stringify(ids));
+    } catch (e) {}
+  }
+
+  function nutriProLoadCollapsedFolders() {
+    try {
+      var raw = localStorage.getItem('np_nutri_pro_collapsed_folders');
+      if (!raw) return;
+      var ids = JSON.parse(raw);
+      if (!Array.isArray(ids)) return;
+      var map = {};
+      ids.forEach(function (id) {
+        if (id) map[String(id)] = true;
+      });
+      state.nutriProCollapsedFolderIds = map;
+    } catch (e) {}
+  }
+
   function nutriProExpandFolderAncestors(folderId) {
     if (!folderId) return false;
     var changed = false;
@@ -28042,6 +28065,7 @@
       }
       f = nutriProGetFolderById(f.parent_id);
     }
+    if (changed) nutriProPersistCollapsedFolders();
     return changed;
   }
 
@@ -28052,6 +28076,7 @@
     } else {
       state.nutriProCollapsedFolderIds[folderId] = true;
     }
+    nutriProPersistCollapsedFolders();
     renderNutriProFolderTree();
   }
 
@@ -28134,6 +28159,7 @@
       if (fs === 'manual' || fs === 'title' || fs === 'date') state.nutriProFolderSortMode = fs;
       if (fis === 'manual' || fis === 'title' || fis === 'date') state.nutriProFileSortMode = fis;
     } catch (e) {}
+    nutriProLoadCollapsedFolders();
     syncNutriProSortSelects();
   }
 
@@ -28867,6 +28893,10 @@
       state.nutriProSelectedFolderId = null;
       state.nutriProFolderEditingId = null;
     }
+    if (state.nutriProCollapsedFolderIds[folderRec.id]) {
+      delete state.nutriProCollapsedFolderIds[folderRec.id];
+      nutriProPersistCollapsedFolders();
+    }
     showToast('Carpeta eliminada.');
     await loadNutriProFolders();
     ensureNutriProFolderSelection();
@@ -29317,6 +29347,7 @@
     showToast('Subcarpeta creada en «' + parentTitle + '».');
     await loadNutriProFolders();
     delete state.nutriProCollapsedFolderIds[parentId];
+    nutriProPersistCollapsedFolders();
     state.nutriProSelectedFolderId = created.id;
     state.nutriProFolderEditingId = null;
     renderNutriProFolderTree();
