@@ -15030,29 +15030,19 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table thead th {
             font-size: 7.2px;
           }
-          /* Radar / Lectura: bloques que no deben partirse a mitad de hoja */
+          /* Radar / Lectura: no partir un bloque a la mitad; sin saltos forzados (flujo corrido) */
           .report-keep-together {
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
-          }
-          .report-page-start {
-            break-before: page !important;
-            page-break-before: always !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
           }
           .footer {
-            break-before: page !important;
-            page-break-before: always !important;
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
-            margin-top: 0;
+            break-inside: avoid;
+            page-break-inside: avoid;
           }
-          .footer-content {
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
-          }
+          .footer-content,
           .footer-qr-block {
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
           }
         }
       </style>
@@ -15389,7 +15379,7 @@ function createLocationPolygonSVG(polygon) {
   const northY = 24;
 
   return `
-    <div class="report-page-start report-keep-together" style="margin-top:10px;border:1px solid #bae6fd;background:#fff;border-radius:8px;padding:8px;">
+    <div class="report-keep-together" style="margin-top:10px;border:1px solid #bae6fd;background:#fff;border-radius:8px;padding:8px;">
       <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:6px;">Polígono del predio</div>
       <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" style="display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
         <rect x="${pad}" y="${pad}" width="${drawW}" height="${drawH}" fill="#f1f5f9" stroke="#cbd5e1" stroke-dasharray="3 3" />
@@ -15495,7 +15485,7 @@ function createLocationRadarBlockHTML(radar, rt, lang) {
     cell(ndreCap, radar.ndreDataUrl, 'NDRE', true, '#0f766e') +
     cell(rgbCap, radar.rgbDataUrl, 'RGB', false, '#334155');
   return `
-    <div class="report-page-start report-keep-together" style="margin-top:12px;border:1px solid #86efac;background:#f8fafc;border-radius:8px;padding:10px;">
+    <div style="margin-top:12px;border:1px solid #86efac;background:#f8fafc;border-radius:8px;padding:10px;">
       <div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:8px;">${title}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 12px;align-items:start;">${cols}</div>
       ${dateLine}
@@ -15645,7 +15635,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
   let chartBlock = '';
   if (lectura.chartDataUrl) {
     chartBlock =
-      '<div class="report-page-start report-keep-together" style="margin-top:10px;">' +
+      '<div class="report-keep-together" style="margin-top:10px;">' +
       '<div style="font-size:12px;font-weight:700;color:#14532d;margin-bottom:6px;">' +
       rtSafe('Gráfica por periodo', 'Chart by period') +
       '</div>' +
@@ -15716,8 +15706,8 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       );
     }
     gallery =
-      '<div class="report-page-start" style="margin-top:10px;">' +
-      '<div class="report-keep-together" style="font-size:12px;font-weight:700;color:#14532d;margin-bottom:2px;">' +
+      '<div style="margin-top:10px;">' +
+      '<div style="font-size:12px;font-weight:700;color:#14532d;margin-bottom:2px;">' +
       rtSafe('Imágenes por periodo (miniaturas)', 'Images by period (thumbnails)') +
       '</div>' +
       layerBlock('NDVI', '#166534', ndviRow) +
@@ -15734,7 +15724,6 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
 
   return (
     '<div style="margin-top:14px;border:1px solid #86efac;background:#f0fdf4;border-radius:8px;padding:10px;">' +
-    '<div class="report-page-start report-keep-together">' +
     '<div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:4px;">📈 ' +
     title +
     '</div>' +
@@ -15742,10 +15731,9 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     paramsLine +
     '</div>' +
     table +
-    '</div>' +
     chartBlock +
     gallery +
-    '<div class="report-keep-together report-note-inline" style="margin-top:8px;">' +
+    '<div class="report-note-inline" style="margin-top:8px;">' +
     note +
     '</div></div>'
   );
