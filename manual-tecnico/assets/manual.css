@@ -396,10 +396,10 @@ body {
 }
 
 @media (max-width: 520px) {
-  .mt-autoria-btn__text,
-  .mt-portal-btn__text { display: none; }
-  .mt-autoria-btn { padding: 0 10px; }
-  .mt-portal-btn { padding: 0 11px; }
+  .mt-header .mt-autoria-btn__text,
+  .mt-header .mt-portal-btn__text { display: none; }
+  .mt-header .mt-autoria-btn { padding: 0 10px; }
+  .mt-header .mt-portal-btn { padding: 0 11px; }
 }
 
 .mt-wrap {
@@ -609,44 +609,54 @@ body {
   justify-content: flex-start;
 }
 .mt-autoria-btn--cta {
-  height: auto;
-  min-height: 40px;
-  padding: 10px 18px;
-  font-size: 15px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
+  max-width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-decoration: none;
   color: #0c4a6e;
   background: #fff;
   border: 1px solid #7dd3fc;
-  box-shadow: 0 1px 2px rgba(14, 165, 233, 0.12);
+  box-shadow: 0 1px 3px rgba(14, 165, 233, 0.1);
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 .mt-autoria-btn--cta:hover {
-  background: #e0f2fe;
+  background: #f0f9ff;
   border-color: #38bdf8;
   color: #075985;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.14);
+  transform: translateY(-1px);
 }
-.mt-autoria-btn--cta.mt-portal-btn,
-.mt-autoria-btn--cta.mt-portal-btn--autoria {
-  color: #0c4a6e !important;
-  background: #fff;
-  border: 1px solid #7dd3fc;
-  height: auto;
-  min-height: 40px;
-  padding: 10px 18px;
+.mt-autoria-btn--cta__label {
   font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: normal;
 }
-.mt-autoria-btn--cta.mt-portal-btn:hover,
-.mt-autoria-btn--cta.mt-portal-btn--autoria:hover {
-  color: #075985 !important;
-  background: #e0f2fe;
-  border-color: #38bdf8;
+.mt-autoria-btn--cta__author {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
-.mt-autoria-btn--cta .mt-autoria-btn__icon {
-  width: 24px;
-  height: 24px;
+.mt-autoria-btn--cta__author img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
-.mt-autoria-btn--cta .mt-portal-btn__icon-img {
-  width: 22px;
-  height: 22px;
+.mt-autoria-btn--cta__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0c4a6e;
+  line-height: 1.2;
+  white-space: normal;
+}
+.mt-autoria-btn--cta:hover .mt-autoria-btn--cta__name {
+  color: #075985;
 }
 .mt-hero__aside {
   margin: 14px 0 0;

@@ -3357,6 +3357,29 @@ function np_formatRadarCreditLine(pricing) {
   );
 }
 
+/** Actualiza el badge visible de créditos en Pilot (y deja texto legible en #radarCreditsLabel). */
+function np_setRadarCreditsBadge(opts) {
+  const o = opts || {};
+  const label = document.getElementById('radarCreditsLabel');
+  const costEl = document.getElementById('radarCreditsCost');
+  const badge = document.getElementById('radarCreditsBadge');
+  if (!label) return;
+
+  const valueText = o.value != null ? String(o.value) : '—';
+  label.textContent = valueText;
+
+  if (costEl) {
+    costEl.textContent = o.cost != null ? String(o.cost) : '';
+  }
+  if (!badge) return;
+
+  badge.classList.remove('is-low', 'is-warn');
+  const tone = o.tone || 'ok';
+  if (tone === 'low') badge.classList.add('is-low');
+  else if (tone === 'warn') badge.classList.add('is-warn');
+}
+window.np_setRadarCreditsBadge = np_setRadarCreditsBadge;
+
 function np_getRadarAreaLimitFromStatus() {
   const st = window.__nutriplantRadarNdviStatus;
   const pricing = st && st.pricing;
@@ -3638,13 +3661,21 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
   const hint = document.getElementById('radarStatusHint');
   if (!label) return;
   if (!np_isCloudSupabaseUser()) {
-    label.textContent = 'Pilot: requiere cuenta nube';
+    np_setRadarCreditsBadge({
+      value: 'Cuenta nube',
+      cost: 'Inicia sesión para ver créditos Radar',
+      tone: 'warn'
+    });
     if (hint) hint.textContent = 'Inicia sesión con tu cuenta NutriPlant en la nube para usar Radar.';
     return;
   }
   const token = await np_getRadarAccessToken();
   if (!token) {
-    label.textContent = 'Pilot: sin sesión';
+    np_setRadarCreditsBadge({
+      value: 'Sin sesión',
+      cost: 'Vuelve a iniciar sesión',
+      tone: 'warn'
+    });
     return;
   }
   const proj =
@@ -3652,10 +3683,18 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       ? nutriPlantMap.getCurrentProject()
       : null;
   if (!proj || !proj.id) {
-    label.textContent = 'Créditos Radar: —';
+    np_setRadarCreditsBadge({
+      value: '—',
+      cost: 'Elige o guarda un proyecto',
+      tone: 'warn'
+    });
     return;
   }
-  label.textContent = 'Pilot: consultando imágenes…';
+  np_setRadarCreditsBadge({
+    value: 'Consultando…',
+    cost: 'Saldo del mes',
+    tone: 'ok'
+  });
   try {
     const res = await fetch(np_radarApiUrl(), {
       method: 'POST',
@@ -3664,14 +3703,27 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      label.textContent = 'Pilot: error de historial';
-      if (hint) hint.textContent = data.message || data.error || 'No se pudo consultar Radar.';
-      np_populateRadarSnapshotSelect([]);
+      // No tumbar el estado “Generando…” por un fallo transitorio de consulta.
+      const keepPending = !!(window.__nutriplantPilotPending || window.__nutriplantPilotPendingJob);
+      np_setRadarCreditsBadge({
+        value: keepPending ? 'Generando…' : 'Error saldo',
+        cost: keepPending ? 'Consulta en curso' : 'Pulsa «Estado» de nuevo',
+        tone: 'warn'
+      });
+      if (hint && !keepPending) {
+        hint.textContent = data.message || data.error || 'No se pudo consultar Radar. Pulsa «Estado» de nuevo.';
+      } else if (hint && keepPending) {
+        // Dejar el hint de generación; el poll reintentará.
+      }
+      if (!keepPending) {
+        np_populateRadarSnapshotSelect([]);
+      }
       window.__nutriplantRadarNdviStatus = {
         ok: false,
         projectId: proj.id,
         updatedAt: new Date().toISOString(),
-        error: data.message || data.error || 'No se pudo consultar Radar.'
+        error: data.message || data.error || 'No se pudo consultar Radar.',
+        pending_job: keepPending ? window.__nutriplantPilotPendingJob || { status: 'processing' } : null
       };
       return;
     }
@@ -3697,17 +3749,21 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       latestCreatedAt: data.latest?.created_at || null,
       meta: data.latest?.meta || null
     };
-    label.textContent =
-      disponibles +
-      ' disponibles de ' +
-      l +
-      ' este mes · ' +
-      history.length +
-      ' imagen' +
-      (history.length === 1 ? '' : 'es') +
-      ' guardada' +
-      (history.length === 1 ? '' : 's');
     const costLine = np_formatRadarCreditLine(data.pricing || null);
+    const pilotCost = Number(data.pricing?.credits_charged) || 1;
+    let tone = 'ok';
+    if (disponibles <= 0) tone = 'low';
+    else if (disponibles < pilotCost) tone = 'low';
+    else if (disponibles <= 3) tone = 'warn';
+    np_setRadarCreditsBadge({
+      value: disponibles + ' / ' + l + ' este mes',
+      cost:
+        (costLine || 'Costo Pilot según hectáreas') +
+        (history.length
+          ? ' · ' + history.length + ' imagen' + (history.length === 1 ? '' : 'es')
+          : ''),
+      tone
+    });
     if (data.pending_job) {
       np_syncPilotPendingFromStatus(window.__nutriplantRadarNdviStatus);
     } else if (data.last_failed_job && window.__nutriplantPilotPending) {
@@ -3758,7 +3814,11 @@ window.refreshRadarNdviStatus = async function refreshRadarNdviStatus() {
       } catch (eLecturaCred) {}
     }
   } catch (e) {
-    label.textContent = 'Pilot: sin conexión';
+    np_setRadarCreditsBadge({
+      value: 'Sin conexión',
+      cost: 'No se pudo leer el saldo Radar',
+      tone: 'warn'
+    });
   }
 };
 

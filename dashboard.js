@@ -1662,6 +1662,11 @@ function sectionTemplate(name) {
 
         <div id="radarNdviPanel" class="radar-ndvi-panel" style="margin: 12px 0 0; padding: 12px 14px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;">
           <div style="font-weight: 600; color: #14532d;">🛰️ Radar del cultivo</div>
+          <div id="radarCreditsBadge" class="radar-credits-badge" title="Créditos Radar del mes (Pilot y Lectura Satelital)">
+            <span class="radar-credits-badge__kicker">Créditos Radar</span>
+            <span id="radarCreditsLabel" class="radar-credits-badge__value">—</span>
+            <span id="radarCreditsCost" class="radar-credits-badge__cost">Consulta Estado para ver saldo</span>
+          </div>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#14532d;font-weight:700;">
             Capa
             <select id="radarIndexSelect" style="border:1px solid #86efac;border-radius:8px;padding:5px 8px;background:#fff;color:#14532d;font-size:12px;font-weight:700;">
@@ -1677,7 +1682,6 @@ function sectionTemplate(name) {
               <option value="">Sin imágenes guardadas</option>
             </select>
           </label>
-          <span id="radarCreditsLabel" style="font-size: 13px; color: #166534;">Créditos Radar: —</span>
           <span id="radarStatusHint" class="radar-hint-info">Sincroniza el predio a la nube, luego genera la imagen Pilot.</span>
           <div style="width:100%;flex-basis:100%;font-size:11px;color:#334155;line-height:1.45;padding:7px 10px;margin:2px 0 0;border-radius:8px;background:rgba(255,255,255,0.75);border:1px dashed #86efac;">
             <strong style="color:#14532d;">Cómo se arma:</strong>
@@ -15026,6 +15030,30 @@ function createReportHTML(selectedSections, chartImages, reportLanguage) {
           .report-vpd-table-wrap .report-admin-table.report-vpd-saved-table thead th {
             font-size: 7.2px;
           }
+          /* Radar / Lectura: bloques que no deben partirse a mitad de hoja */
+          .report-keep-together {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .report-page-start {
+            break-before: page !important;
+            page-break-before: always !important;
+          }
+          .footer {
+            break-before: page !important;
+            page-break-before: always !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+            margin-top: 0;
+          }
+          .footer-content {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .footer-qr-block {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
         }
       </style>
     </head>
@@ -15361,7 +15389,7 @@ function createLocationPolygonSVG(polygon) {
   const northY = 24;
 
   return `
-    <div style="margin-top:10px;border:1px solid #bae6fd;background:#fff;border-radius:8px;padding:8px;">
+    <div class="report-page-start report-keep-together" style="margin-top:10px;border:1px solid #bae6fd;background:#fff;border-radius:8px;padding:8px;">
       <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:6px;">Polígono del predio</div>
       <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" style="display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
         <rect x="${pad}" y="${pad}" width="${drawW}" height="${drawH}" fill="#f1f5f9" stroke="#cbd5e1" stroke-dasharray="3 3" />
@@ -15394,7 +15422,7 @@ function stripAmendmentWatermark(html) {
   }
 }
 
-/** Leyenda tonal Bajo–Alto para NDVI/NDMI en PDF (misma lectura relativa que el mapa). */
+/** Leyenda tonal Bajo–Alto para NDVI/NDMI/NDRE en PDF (misma lectura relativa que el mapa). */
 function createRadarPdfRelativeScaleHTML(rt) {
   const low = rt('Bajo', 'Low');
   const high = rt('Alto', 'High');
@@ -15404,13 +15432,13 @@ function createRadarPdfRelativeScaleHTML(rt) {
   );
   const grad = 'linear-gradient(90deg,#a52a2a 0%,#ea580c 16%,#facc15 42%,#86efac 70%,#2e5a31 100%)';
   return `
-    <div style="margin-top:8px;padding:8px 10px;background:#f8faf8;border-radius:8px;border:1px solid #e5ebe5;">
-      <div style="display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;color:#333e48;">
+    <div style="margin-top:5px;padding:5px 7px;background:#f8faf8;border-radius:6px;border:1px solid #e5ebe5;">
+      <div style="display:flex;align-items:center;gap:8px;font-size:10px;font-weight:600;color:#333e48;">
         <span style="flex-shrink:0;">${low}</span>
-        <div style="flex:1;height:14px;min-width:40px;border-radius:999px;background:${grad};box-shadow:inset 0 1px 2px rgba(0,0,0,.08);"></div>
+        <div style="flex:1;height:11px;min-width:40px;border-radius:999px;background:${grad};box-shadow:inset 0 1px 2px rgba(0,0,0,.08);"></div>
         <span style="flex-shrink:0;">${high}</span>
       </div>
-      <div style="margin-top:5px;font-size:9px;color:#64748b;line-height:1.35;text-align:center;">${sub}</div>
+      <div style="margin-top:3px;font-size:8px;color:#64748b;line-height:1.3;text-align:center;">${sub}</div>
     </div>
   `;
 }
@@ -15449,23 +15477,27 @@ function createLocationRadarBlockHTML(radar, rt, lang) {
       /* ignore */
     }
   }
-  let cols = '';
-  if (radar.ndviDataUrl) {
-    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:4px;">${ndviCap}</div><img src="${radar.ndviDataUrl}" alt="NDVI" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />${scaleHtml}</div>`;
-  }
-  if (radar.ndmiDataUrl) {
-    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#0f766e;margin-bottom:4px;">${ndmiCap}</div><img src="${radar.ndmiDataUrl}" alt="NDMI" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />${scaleHtml}</div>`;
-  }
-  if (radar.ndreDataUrl) {
-    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#0f766e;margin-bottom:4px;">${ndreCap}</div><img src="${radar.ndreDataUrl}" alt="NDRE" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />${scaleHtml}</div>`;
-  }
-  if (radar.rgbDataUrl) {
-    cols += `<div style="min-width:0;"><div style="font-size:11px;font-weight:700;color:#334155;margin-bottom:4px;">${rgbCap}</div><img src="${radar.rgbDataUrl}" alt="RGB" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" /></div>`;
-  }
+  const imgStyle =
+    'width:100%;max-height:270px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;';
+  const cell = function (cap, dataUrl, alt, withScale, color) {
+    if (!dataUrl) return '';
+    return (
+      `<div class="report-keep-together" style="min-width:0;">` +
+      `<div style="font-size:11px;font-weight:700;color:${color};margin-bottom:4px;">${cap}</div>` +
+      `<img src="${dataUrl}" alt="${alt}" style="${imgStyle}" />` +
+      (withScale ? scaleHtml : '') +
+      `</div>`
+    );
+  };
+  const cols =
+    cell(ndviCap, radar.ndviDataUrl, 'NDVI', true, '#166534') +
+    cell(ndmiCap, radar.ndmiDataUrl, 'NDMI', true, '#0f766e') +
+    cell(ndreCap, radar.ndreDataUrl, 'NDRE', true, '#0f766e') +
+    cell(rgbCap, radar.rgbDataUrl, 'RGB', false, '#334155');
   return `
-    <div style="margin-top:12px;border:1px solid #86efac;background:#f8fafc;border-radius:8px;padding:10px;page-break-inside:avoid;">
+    <div class="report-page-start report-keep-together" style="margin-top:12px;border:1px solid #86efac;background:#f8fafc;border-radius:8px;padding:10px;">
       <div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:8px;">${title}</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:start;">${cols}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 12px;align-items:start;">${cols}</div>
       ${dateLine}
       ${metaLine}
       <div class="report-note-inline" style="margin-top:8px;">${note}</div>
@@ -15613,7 +15645,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
   let chartBlock = '';
   if (lectura.chartDataUrl) {
     chartBlock =
-      '<div style="margin-top:10px;">' +
+      '<div class="report-page-start report-keep-together" style="margin-top:10px;">' +
       '<div style="font-size:12px;font-weight:700;color:#14532d;margin-bottom:6px;">' +
       rtSafe('Gráfica por periodo', 'Chart by period') +
       '</div>' +
@@ -15621,7 +15653,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       lectura.chartDataUrl +
       '" alt="' +
       rtSafe('Gráfica Lectura Satelital', 'Satellite Reading chart') +
-      '" style="width:100%;max-height:280px;object-fit:contain;border:1px solid #cbd5e1;border-radius:8px;background:#fff;" />' +
+      '" style="width:100%;max-height:300px;object-fit:contain;border:1px solid #cbd5e1;border-radius:8px;background:#fff;" />' +
       '</div>';
   }
 
@@ -15642,12 +15674,12 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
         );
       }
       return (
-        '<div style="min-width:0;page-break-inside:avoid;">' +
+        '<div style="min-width:0;">' +
         '<img src="' +
         dataUrl +
         '" alt="' +
         label +
-        '" style="width:100%;max-height:110px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />' +
+        '" style="width:100%;max-height:120px;object-fit:contain;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;" />' +
         '<div style="text-align:center;font-size:9px;font-weight:700;color:' +
         color +
         ';margin-top:2px;line-height:1.2;">' +
@@ -15668,33 +15700,30 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     const rgbRow = withImg.map(function (r) {
       return miniThumb(r, r.rgbDataUrl, 'RGB', '#334155');
     }).join('');
+    function layerBlock(titleHtml, color, rowHtml) {
+      return (
+        '<div class="report-keep-together" style="margin-top:8px;">' +
+        '<div style="font-size:10px;font-weight:700;color:' +
+        color +
+        ';">' +
+        titleHtml +
+        '</div>' +
+        '<div style="' +
+        grid +
+        'margin-top:4px;">' +
+        rowHtml +
+        '</div></div>'
+      );
+    }
     gallery =
-      '<div style="margin-top:10px;font-size:12px;font-weight:700;color:#14532d;">' +
+      '<div class="report-page-start" style="margin-top:10px;">' +
+      '<div class="report-keep-together" style="font-size:12px;font-weight:700;color:#14532d;margin-bottom:2px;">' +
       rtSafe('Imágenes por periodo (miniaturas)', 'Images by period (thumbnails)') +
       '</div>' +
-      '<div style="margin-top:6px;font-size:10px;font-weight:700;color:#166534;">NDVI</div>' +
-      '<div style="' +
-      grid +
-      '">' +
-      ndviRow +
-      '</div>' +
-      '<div style="margin-top:8px;font-size:10px;font-weight:700;color:#0f766e;">NDMI</div>' +
-      '<div style="' +
-      grid +
-      '">' +
-      ndmiRow +
-      '</div>' +
-      '<div style="margin-top:8px;font-size:10px;font-weight:700;color:#0f766e;">NDRE</div>' +
-      '<div style="' +
-      grid +
-      '">' +
-      ndreRow +
-      '</div>' +
-      '<div style="margin-top:8px;font-size:10px;font-weight:700;color:#334155;">RGB</div>' +
-      '<div style="' +
-      grid +
-      '">' +
-      rgbRow +
+      layerBlock('NDVI', '#166534', ndviRow) +
+      layerBlock('NDMI', '#0f766e', ndmiRow) +
+      layerBlock('NDRE', '#0f766e', ndreRow) +
+      layerBlock('RGB', '#334155', rgbRow) +
       '</div>';
   }
 
@@ -15705,6 +15734,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
 
   return (
     '<div style="margin-top:14px;border:1px solid #86efac;background:#f0fdf4;border-radius:8px;padding:10px;">' +
+    '<div class="report-page-start report-keep-together">' +
     '<div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:4px;">📈 ' +
     title +
     '</div>' +
@@ -15712,9 +15742,10 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     paramsLine +
     '</div>' +
     table +
+    '</div>' +
     chartBlock +
     gallery +
-    '<div class="report-note-inline" style="margin-top:8px;">' +
+    '<div class="report-keep-together report-note-inline" style="margin-top:8px;">' +
     note +
     '</div></div>'
   );

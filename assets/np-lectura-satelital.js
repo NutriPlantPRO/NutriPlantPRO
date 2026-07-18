@@ -428,7 +428,14 @@
     return '' +
       '<div class="lectura-satelital-panel" style="padding:4px 2px;">' +
         '<div style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:12px;padding:14px;">' +
-          '<div style="font-weight:700;color:#14532d;font-size:15px;margin-bottom:4px;">📈 Lectura Satelital — histórico del predio</div>' +
+          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">' +
+            '<div style="font-weight:700;color:#14532d;font-size:15px;">📈 Lectura Satelital — histórico del predio</div>' +
+            '<div id="lecturaCreditsBadge" class="radar-credits-badge" title="Mismo saldo de créditos Radar que Pilot">' +
+              '<span class="radar-credits-badge__kicker">Créditos Radar</span>' +
+              '<span id="lecturaCreditsLabel" class="radar-credits-badge__value">—</span>' +
+              '<span id="lecturaCreditsCost" class="radar-credits-badge__cost">Abre Pilot o pulsa Mostrar imágenes</span>' +
+            '</div>' +
+          '</div>' +
           '<div style="font-size:12px;color:#334155;line-height:1.5;margin-bottom:10px;">' +
             'Arma un histórico del <strong>mismo predio</strong> (2 a 6 periodos hacia atrás) con <strong>NDVI</strong>, <strong>NDMI</strong>, <strong>NDRE</strong>, <strong>RGB</strong>, <strong>VPD</strong>, <strong>ET₀</strong>, <strong>lluvia</strong> y tu <strong>riego</strong> (m³ ↔ mm con % de franja). Máximo <strong>250 ha</strong> por predio.' +
           '</div>' +
@@ -457,8 +464,7 @@
             '<button type="button" id="lecturaBtnGenerate" class="btn btn-primary" style="font-size:13px;">🛰 Generar histórico</button>' +
             '<button type="button" id="lecturaBtnRefresh" class="btn btn-secondary" style="font-size:13px;" title="Trae y muestra las imágenes NDVI/NDMI/NDRE/RGB guardadas, revisa periodos pendientes y completa clima si falta.">👁 Mostrar imágenes</button>' +
           '</div>' +
-          '<div id="lecturaCreditsLabel" style="font-size:13px;color:#166534;margin-top:10px;font-weight:600;"></div>' +
-          '<div id="lecturaCostHint" style="font-size:12px;color:#166534;margin-top:4px;font-weight:600;"></div>' +
+          '<div id="lecturaCostHint" style="font-size:12px;color:#166534;margin-top:10px;font-weight:600;"></div>' +
           '<div id="lecturaRunsWrap" style="margin-top:10px;display:none;">' +
             '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#14532d;font-weight:700;max-width:100%;">' +
               'Bloques guardados (lecturas / imágenes pasadas)' +
@@ -500,6 +506,8 @@
   function updateCostHint() {
     var hint = document.getElementById('lecturaCostHint');
     var credEl = document.getElementById('lecturaCreditsLabel');
+    var costEl = document.getElementById('lecturaCreditsCost');
+    var badge = document.getElementById('lecturaCreditsBadge');
     var total = lecturaCost();
     var st = window.__nutriplantRadarNdviStatus;
     var avail = st && st.credits && Number.isFinite(Number(st.credits.available))
@@ -508,19 +516,46 @@
     var limit = st && st.credits && Number.isFinite(Number(st.credits.limit))
       ? Number(st.credits.limit)
       : null;
+    var pricing = st && st.pricing;
+    var ha = pricing && pricing.area_hectares != null ? Number(pricing.area_hectares) : null;
+    var maxHa = Number((pricing && (pricing.max_area_ha || (pricing.pricing && pricing.pricing.max_area_ha))) || 250) || 250;
+    var overArea = ha != null && Number.isFinite(ha) && ha > maxHa;
+    var tone = 'ok';
+    if (avail != null && (avail <= 0 || avail < total)) tone = 'low';
+    else if (avail != null && avail <= total + 2) tone = 'warn';
+    else if (overArea) tone = 'warn';
 
     if (credEl) {
       if (avail != null && limit != null) {
-        credEl.textContent = avail + ' disponibles de ' + limit + ' este mes';
+        credEl.textContent = avail + ' / ' + limit + ' este mes';
       } else {
-        credEl.textContent = 'Créditos Radar: —';
+        credEl.textContent = '—';
       }
     }
+    if (costEl) {
+      if (overArea) {
+        costEl.textContent =
+          'Máx. ' + maxHa + ' ha · este predio ' + (Math.round(ha * 100) / 100) + ' ha';
+      } else if (avail != null) {
+        costEl.textContent =
+          'Esta consulta: ' +
+          total +
+          ' créd.' +
+          (total === 4 ? ' (>30 ha)' : '') +
+          ' · quedarían ' +
+          Math.max(0, avail - total);
+      } else {
+        costEl.textContent =
+          'Esta consulta: ' + total + ' créditos' + (total === 4 ? ' (>30 ha)' : '');
+      }
+    }
+    if (badge) {
+      badge.classList.remove('is-low', 'is-warn');
+      if (tone === 'low') badge.classList.add('is-low');
+      else if (tone === 'warn') badge.classList.add('is-warn');
+    }
     if (hint) {
-      var pricing = st && st.pricing;
-      var ha = pricing && pricing.area_hectares != null ? Number(pricing.area_hectares) : null;
-      var maxHa = Number((pricing && (pricing.max_area_ha || (pricing.pricing && pricing.pricing.max_area_ha))) || 250) || 250;
-      if (ha != null && Number.isFinite(ha) && ha > maxHa) {
+      if (overArea) {
         hint.textContent =
           'Radar máximo ' +
           maxHa +
@@ -536,7 +571,7 @@
           (avail != null ? ' · tras generar te quedarían ' + Math.max(0, avail - total) : '') +
           ' · máx. ' +
           maxHa +
-          ' ha.';
+          ' ha. Mismo saldo que Pilot.';
       }
     }
   }

@@ -345,7 +345,9 @@ function historyItemFromRow(row) {
 }
 
 async function signRadarRow(supabase, row) {
-  if (!row?.image_storage_path) return { ndvi: null, ndmi: null, ndre: null, rgb: null };
+  if (!row?.image_storage_path) {
+    return { ndviSignedUrl: null, ndmiSignedUrl: null, ndreSignedUrl: null, rgbSignedUrl: null };
+  }
   const meta = row.meta || {};
   const ndmiPath = meta.ndmi_storage_path || meta.images?.ndmi?.storage_path || null;
   const ndrePath = meta.ndre_storage_path || meta.images?.ndre?.storage_path || null;
@@ -360,9 +362,15 @@ async function signRadarRow(supabase, row) {
 }
 
 async function signedUrlForPath(supabase, path, ttlSec = 3600) {
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, ttlSec);
-  if (error || !data?.signedUrl) return null;
-  return data.signedUrl;
+  if (!path || typeof path !== 'string' || !String(path).trim()) return null;
+  try {
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(String(path).trim(), ttlSec);
+    if (error || !data?.signedUrl) return null;
+    return data.signedUrl;
+  } catch (e) {
+    console.warn('signedUrlForPath:', e && e.message ? e.message : e);
+    return null;
+  }
 }
 
 function isAdminRadarAuthorized(event, body) {

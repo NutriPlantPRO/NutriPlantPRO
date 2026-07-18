@@ -8045,3 +8045,65 @@ html.embed-login body {
   box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35);
 }
 
+/* Badge de créditos Radar (Pilot + Lectura) — bien visible */
+.radar-credits-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-width: 168px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #14532d 0%, #166534 55%, #15803d 100%);
+  border: 1px solid #166534;
+  color: #ecfdf5;
+  box-shadow: 0 2px 8px rgba(20, 83, 45, 0.28);
+  line-height: 1.25;
+  flex-shrink: 0;
+}
+.radar-credits-badge__kicker {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #bbf7d0;
+}
+.radar-credits-badge__value {
+  font-size: 17px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.radar-credits-badge__cost {
+  font-size: 11px;
+  font-weight: 600;
+  color: #dcfce7;
+  max-width: 260px;
+}
+.radar-credits-badge.is-low {
+  background: linear-gradient(145deg, #7f1d1d 0%, #991b1b 60%, #b91c1c 100%);
+  border-color: #991b1b;
+  box-shadow: 0 2px 8px rgba(127, 29, 29, 0.28);
+}
+.radar-credits-badge.is-low .radar-credits-badge__kicker {
+  color: #fecaca;
+}
+.radar-credits-badge.is-low .radar-credits-badge__cost {
+  color: #fee2e2;
+}
+.radar-credits-badge.is-warn {
+  background: linear-gradient(145deg, #78350f 0%, #92400e 60%, #b45309 100%);
+  border-color: #92400e;
+  box-shadow: 0 2px 8px rgba(120, 53, 15, 0.28);
+}
+.radar-credits-badge.is-warn .radar-credits-badge__kicker {
+  color: #fde68a;
+}
+.radar-credits-badge.is-warn .radar-credits-badge__cost {
+  color: #fef3c7;
+}
+.lectura-satelital-panel .radar-credits-badge {
+  min-width: 180px;
+}
+
