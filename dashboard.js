@@ -15472,6 +15472,62 @@ function createRadarPdfRelativeScaleHTML(rt) {
   `;
 }
 
+/** Barras Menor→Mayor por capa en miniaturas Lectura (PDF), alineadas a la UI de Lectura Satelital. */
+function createLecturaPdfLayerScaleHTML(kind, rt) {
+  const rtSafe = typeof rt === 'function' ? rt : function (es) { return es; };
+  const cfg = {
+    ndvi: {
+      color: '#166534',
+      bar: 'linear-gradient(90deg,#7f1d1d,#b91c1c,#ea580c,#f59e0b,#fde68a,#bef264,#65a30d,#15803d,#064e3b)',
+      tip: rtSafe(
+        'Verde = mayor vigor en ese predio/periodo; rojo = menor. Relativa, no absoluta.',
+        'Green = higher vigor in that field/period; red = lower. Relative, not absolute.'
+      )
+    },
+    ndmi: {
+      color: '#0369a1',
+      bar: 'linear-gradient(90deg,#7c2d12,#ea580c,#f59e0b,#fde68a,#bbf7d0,#22c55e,#0f766e,#0369a1)',
+      tip: rtSafe(
+        'Azul/verde = mayor humedad del dosel; naranja/café = menor. Relativa al predio/periodo.',
+        'Blue/green = higher canopy moisture; orange/brown = lower. Relative to field/period.'
+      )
+    },
+    ndre: {
+      color: '#0f766e',
+      bar: 'linear-gradient(90deg,#7f1d1d,#c2410c,#ca8a04,#eab308,#a3e635,#22c55e,#0d9488,#0f766e,#134e4a)',
+      tip: rtSafe(
+        'Teal/verde = mayor clorofila/dosel; rojo/ámbar = menor. Relativa al predio/periodo.',
+        'Teal/green = higher chlorophyll/canopy; red/amber = lower. Relative to field/period.'
+      )
+    },
+    rgb: {
+      color: '#334155',
+      bar: 'linear-gradient(90deg,#1e3a8a,#2563eb,#22c55e,#eab308,#ea580c,#b91c1c)',
+      tip: rtSafe(
+        'Vista natural: verde ≈ planta; rojo/café ≈ suelo o rastrojo (no escala Menor/Mayor).',
+        'Natural color: green ≈ plants; red/brown ≈ soil or residue (not Low/High scale).'
+      )
+    }
+  };
+  const c = cfg[kind] || cfg.ndvi;
+  const isRgb = kind === 'rgb';
+  const low = rtSafe('Menor', 'Low');
+  const high = rtSafe('Mayor', 'High');
+  return (
+    '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:2px 0 5px;font-size:9px;color:#64748b;line-height:1.3;">' +
+    (isRgb
+      ? ''
+      : '<span style="font-weight:700;color:' + c.color + ';">' + low + '</span>') +
+    '<span style="width:120px;height:7px;border-radius:999px;background:' +
+    c.bar +
+    ';display:inline-block;flex-shrink:0;"></span>' +
+    (isRgb ? '' : '<span style="font-weight:700;color:' + c.color + ';">' + high + '</span>') +
+    '<span style="color:#64748b;">' +
+    c.tip +
+    '</span></div>'
+  );
+}
+
 function createLocationRadarBlockHTML(radar, rt, lang) {
   if (!radar || (!radar.ndviDataUrl && !radar.ndmiDataUrl && !radar.ndreDataUrl && !radar.rgbDataUrl)) return '';
   const locale = lang === 'en' ? 'en-US' : 'es-MX';
@@ -15729,7 +15785,7 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
     const rgbRow = withImg.map(function (r) {
       return miniThumb(r, r.rgbDataUrl, 'RGB', '#334155');
     }).join('');
-    function layerBlock(titleHtml, color, rowHtml) {
+    function layerBlock(titleHtml, color, rowHtml, scaleKind) {
       return (
         '<div class="report-keep-together" style="margin-top:8px;">' +
         '<div style="font-size:10px;font-weight:700;color:' +
@@ -15737,9 +15793,10 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
         ';">' +
         titleHtml +
         '</div>' +
+        createLecturaPdfLayerScaleHTML(scaleKind, rtSafe) +
         '<div style="' +
         grid +
-        'margin-top:4px;">' +
+        'margin-top:2px;">' +
         rowHtml +
         '</div></div>'
       );
@@ -15749,10 +15806,10 @@ function createLocationLecturaBlockHTML(lectura, rt, lang) {
       '<div style="font-size:12px;font-weight:700;color:#14532d;margin-bottom:2px;">' +
       rtSafe('Imágenes por periodo (miniaturas)', 'Images by period (thumbnails)') +
       '</div>' +
-      layerBlock('NDVI', '#166534', ndviRow) +
-      layerBlock('NDMI', '#0f766e', ndmiRow) +
-      layerBlock('NDRE', '#0f766e', ndreRow) +
-      layerBlock('RGB', '#334155', rgbRow) +
+      layerBlock('NDVI', '#166534', ndviRow, 'ndvi') +
+      layerBlock('NDMI', '#0369a1', ndmiRow, 'ndmi') +
+      layerBlock('NDRE', '#0f766e', ndreRow, 'ndre') +
+      layerBlock('RGB', '#334155', rgbRow, 'rgb') +
       '</div>';
   }
 

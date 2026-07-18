@@ -9917,10 +9917,12 @@
                                             <div style="font-size:12px;color:#334155;margin-top:6px;"><strong>Secciones:</strong> ${escapeHtml(sectionsText)}</div>
                                             ${shareEnabled
                                                 ? `<div style="font-size:11px;margin-top:4px;color:#065f46;">🔗 Link compartido: Activo (sin caducidad)${shareCreatedText ? ` · generado: ${escapeHtml(shareCreatedText)}` : ''}</div>`
-                                                : '<div style="font-size:11px;color:#64748b;margin-top:4px;">🔗 Link compartido: no generado</div>'}
+                                                : '<div style="font-size:11px;color:#64748b;margin-top:4px;">🔗 Link compartido: no generado (el usuario debe pulsar «Compartir vista»)</div>'}
                                             ${r?.reportHTML
-                                                ? '<div style="font-size:11px;color:#059669;margin-top:4px;">HTML de reporte disponible para abrir/imprimir</div>'
-                                                : '<div style="font-size:11px;color:#b45309;margin-top:4px;">Reporte antiguo (sin HTML guardado)</div>'}
+                                                ? '<div style="font-size:11px;color:#059669;margin-top:4px;">Snapshot HTML disponible (Abrir/Imprimir o link)</div>'
+                                                : (Array.isArray(r?.selectedSections) && r.selectedSections.length
+                                                    ? '<div style="font-size:11px;color:#64748b;margin-top:4px;">Historial en nube (metadatos). Sin snapshot HTML hasta «Compartir vista». Usa el botón verde de reporte personalizado o pide al usuario el link.</div>'
+                                                    : '<div style="font-size:11px;color:#b45309;margin-top:4px;">Reporte antiguo (sin secciones ni HTML)</div>')}
                                         </div>
                                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                             <button onclick="openProjectSavedReport('${encodeURIComponent(reportOwnerUserId || '')}', '${encodeURIComponent(projectId)}', '${encodeURIComponent(String(r?.id || ''))}')"
@@ -12016,7 +12018,11 @@
 
             const reportHTML = typeof report.reportHTML === 'string' ? report.reportHTML.trim() : '';
             if (!reportHTML) {
-                alert('⚠️ Este reporte fue generado antes de guardar HTML en historial. Genera nuevamente el reporte desde el panel de usuario para abrirlo/imprimirlo desde admin.');
+                alert(
+                    'Este reporte está en la nube como historial (secciones/fecha), pero sin snapshot HTML.\n\n' +
+                    '• En el panel del usuario: «Compartir vista» genera el link y guarda el HTML.\n' +
+                    '• O usa aquí «Generar reporte personalizado (solo lectura)» para armar un PDF ahora.'
+                );
                 return;
             }
 
@@ -13818,19 +13824,54 @@
                         esc(label) + (item.expanded ? ' *' : '') + '</div></div>';
                 }
                 var ndviRow = withImg.map(function (item) { return miniCard(item, item.ndviUrl, 'NDVI', '#166534'); }).join('');
-                var ndmiRow = withImg.map(function (item) { return miniCard(item, item.ndmiUrl, 'NDMI', '#0f766e'); }).join('');
+                var ndmiRow = withImg.map(function (item) { return miniCard(item, item.ndmiUrl, 'NDMI', '#0369a1'); }).join('');
                 var ndreRow = withImg.map(function (item) { return miniCard(item, item.ndreUrl, 'NDRE', '#0f766e'); }).join('');
                 var rgbRow = withImg.map(function (item) { return miniCard(item, item.rgbUrl, 'RGB', '#334155'); }).join('');
+                function adminScaleLegend(kind) {
+                    var cfg = {
+                        ndvi: {
+                            color: '#166534',
+                            bar: 'linear-gradient(90deg,#7f1d1d,#b91c1c,#ea580c,#f59e0b,#fde68a,#bef264,#65a30d,#15803d,#064e3b)',
+                            tip: 'Verde = mayor vigor en ese predio/periodo; rojo = menor. Relativa, no absoluta.'
+                        },
+                        ndmi: {
+                            color: '#0369a1',
+                            bar: 'linear-gradient(90deg,#7c2d12,#ea580c,#f59e0b,#fde68a,#bbf7d0,#22c55e,#0f766e,#0369a1)',
+                            tip: 'Azul/verde = mayor humedad del dosel; naranja/café = menor. Relativa al predio/periodo.'
+                        },
+                        ndre: {
+                            color: '#0f766e',
+                            bar: 'linear-gradient(90deg,#7f1d1d,#c2410c,#ca8a04,#eab308,#a3e635,#22c55e,#0d9488,#0f766e,#134e4a)',
+                            tip: 'Teal/verde = mayor clorofila/dosel; rojo/ámbar = menor. Relativa al predio/periodo.'
+                        },
+                        rgb: {
+                            color: '#334155',
+                            bar: 'linear-gradient(90deg,#1e3a8a,#2563eb,#22c55e,#eab308,#ea580c,#b91c1c)',
+                            tip: 'Vista natural: verde ≈ planta; rojo/café ≈ suelo o rastrojo (no escala Menor/Mayor).'
+                        }
+                    };
+                    var c = cfg[kind] || cfg.ndvi;
+                    var isRgb = kind === 'rgb';
+                    return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;font-size:11px;color:#475569;">' +
+                        (isRgb ? '' : '<span style="font-weight:700;color:' + c.color + ';">Menor</span>') +
+                        '<span style="width:140px;height:8px;border-radius:999px;background:' + c.bar + ';display:inline-block;"></span>' +
+                        (isRgb ? '' : '<span style="font-weight:700;color:' + c.color + ';">Mayor</span>') +
+                        '<span style="color:#64748b;line-height:1.35;">' + c.tip + '</span></div>';
+                }
                 gallery =
                     '<div style="margin-top:14px;font-weight:700;color:#0f172a;font-size:14px;">Serie del predio — miniaturas NDVI / NDMI / NDRE / RGB</div>' +
                     '<p style="margin:4px 0 8px;font-size:11px;color:#64748b;">Clic en una miniatura para verla grande. * quincena ampliada al mes calendario solo para la imagen.</p>' +
-                    '<div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:6px;">NDVI</div>' +
+                    '<div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:4px;">NDVI — vigor vegetativo</div>' +
+                    adminScaleLegend('ndvi') +
                     '<div style="' + grid + '">' + ndviRow + '</div>' +
-                    '<div style="font-size:12px;font-weight:700;color:#0f766e;margin:12px 0 6px;">NDMI</div>' +
+                    '<div style="font-size:12px;font-weight:700;color:#0369a1;margin:12px 0 4px;">NDMI — humedad del dosel</div>' +
+                    adminScaleLegend('ndmi') +
                     '<div style="' + grid + '">' + ndmiRow + '</div>' +
-                    '<div style="font-size:12px;font-weight:700;color:#0f766e;margin:12px 0 6px;">NDRE</div>' +
+                    '<div style="font-size:12px;font-weight:700;color:#0f766e;margin:12px 0 4px;">NDRE — clorofila / dosel</div>' +
+                    adminScaleLegend('ndre') +
                     '<div style="' + grid + '">' + ndreRow + '</div>' +
-                    '<div style="font-size:12px;font-weight:700;color:#334155;margin:12px 0 6px;">RGB</div>' +
+                    '<div style="font-size:12px;font-weight:700;color:#334155;margin:12px 0 4px;">RGB — vista natural</div>' +
+                    adminScaleLegend('rgb') +
                     '<div style="' + grid + '">' + rgbRow + '</div>';
             }
 
