@@ -1,4 +1,4 @@
-# Nutri PRO — Conocimiento ChatGPT Socio (OpenAPI v2.10)
+# Nutri PRO — Conocimiento ChatGPT Socio (OpenAPI v2.12)
 
 ## Acción principal: `nutri_pro_ask`
 
@@ -32,6 +32,25 @@ Ejemplo de tono:
 
 > En 📎 Fertirriego/costos.xlsx aparece: «Potasio K2O 120 ppm…». Tu apunte «Costos temporada» ya lo enlaza.  
 > *(o)* El apunte «Fertirriego sandía» habla del tema pero no tiene archivo 📎; hay 2 Excel en Nutri PRO que podrías enlazar.
+
+## Red neuronal / grafo (v2.12)
+
+Además de chips 📎 en el cuerpo del apunte, existe grafo tipado en BD:
+
+| Origen API | Campos | Qué conecta |
+|------------|--------|-------------|
+| `plan_pro_item` | `relations_out` / `relations_in` (+ `hops: 2`) | Apunte ↔ apunte |
+| `plan_pro_item` | `nutri_graph_out` / `nutri_graph_in` | Apunte ↔ archivo / link Nutri |
+| `nutri_pro_file_text` | `relations_out` / `relations_in` | Archivo ↔ apunte / archivo / link |
+| `plan_pro_catalog` | áreas + categorías | Plantas → ramas (jerarquía) |
+
+Tipos: `relacionado_con`, `depende_de`, `respalda`, `continua`, `actualiza`, `genera`.
+
+Cuando Jesús pregunte por contexto, investigación o “qué está relacionado con…”, usa `plan_pro_item` con `hops: 2` y/o `nutri_pro_file_text` y **sigue** `relations_*` / `nutri_graph_*` antes de inventar conexiones.
+
+```json
+{ "action": "plan_pro_item", "params": { "q": "ajuste calcio limón", "hops": 2 } }
+```
 
 ## Links de archivos (`open_url`)
 
@@ -203,7 +222,7 @@ Confirma con `short_path`, `text_indexed` y que ya está en la nube.
 | `nutri_pro_save` | **Guardar** texto generado NUEVO (content) en carpeta |
 | `nutri_pro_upload_link` | **Enlace móvil** para subir PDF/Excel real |
 | `nutri_pro_upload_status` | Comprobar si ya subió (`upload_id`) |
-| `plan_pro_item` | Detalle apunte + `nutri_refs` |
+| `plan_pro_item` | Detalle apunte + `nutri_refs` + `relations_*` (apuntes) + `nutri_graph_*` (archivo/link) |
 
 ## Reglas
 
@@ -213,7 +232,8 @@ Confirma con `short_path`, `text_indexed` y que ya está en la nube.
 - Si `text_indexed=false` o el texto es pobre → ofrece `nutri_pro_reindex` (ocr si es escaneado).
 - Siempre cita `📎 ruta` (archivos) y `📝 apunte` cuando existan; enlaces con `🔗` + `folder_path` + URL.
 - Propón enlazar apunte↔archivo cuando `link_gap_suggestions` lo indique.
+- Para contexto de red / investigación: sigue `relations_*` y `nutri_graph_*` (no solo búsqueda de texto).
 
 ## Deploy
 
-OpenAPI **v2.10.1** + este archivo en Knowledge. Reimporta Actions en ChatGPT tras deploy.
+OpenAPI **v2.12.0** + este archivo en Knowledge. Reimporta Actions en ChatGPT tras deploy. Import URL: `https://nutriplantpro.com/api/admin-assistant/openapi.json`.

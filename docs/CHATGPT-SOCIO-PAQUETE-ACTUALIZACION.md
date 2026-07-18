@@ -16,14 +16,17 @@ Sube el repo (o deploy manual) para que existan en producción:
 
 ---
 
-## Paso B — Knowledge (4 archivos)
+## Paso B — Knowledge (5 archivos)
 
-En ChatGPT → tu GPT → **Configure → Knowledge → Upload**:
+En ChatGPT → tu GPT → **Configure → Knowledge → Upload** (reemplaza versiones viejas):
 
-1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md` ← 🪨 zona objetivo 40–60% AU, mm/m³, gráfica; 🌧️ almacén suelo manual + total integrado (2026-06-24)
+1. `docs/HERRAMIENTAS-GRATUITAS-CONOCIMIENTO-GPT.md`
 2. `docs/ANALISIS-LABORATORIO-CONOCIMIENTO-GPT.md`
-3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md` ← manual web **v2026.07.3** (**25 capítulos**; §4.11 **Radar**: NDVI/NDMI/NDRE/RGB, Pilot 14→45 d / 8 pasadas, máx. 250 ha, Lectura + VPD horas%; re-subir tras cada tanda)
-4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md` ← posts LinkedIn/IG; **§8 con 24 posts empresa** (añade filas si publicas nuevos)
+3. `docs/MANUAL-TECNICO-CONOCIMIENTO-GPT.md`
+4. `docs/PUBLICACIONES-REDES-CONOCIMIENTO-GPT.md`
+5. `docs/NUTRI-PRO-CONOCIMIENTO-GPT.md` ← **re-subir** (v2.12: grafo relaciones apunte↔archivo/link)
+
+También pega de nuevo el bloque Instructions de `docs/CHATGPT-SOCIO-INSTRUCCIONES-COMPLETAS.md` (pide describe_api → **2.12.0**).
 
 *(Opcional: borra knowledge viejo duplicado si tenías notas sueltas.)*
 
@@ -41,9 +44,9 @@ Aunque no actives web, con el Knowledge #3 + action `manual_tecnico_catalog` ya 
 ## Paso C — Actions (OpenAPI)
 
 1. **Actions** → elimina schema anterior si da conflicto.
-2. Importa `docs/openapi-nutriplant-admin.json` **v2.10.0** (fix: una sola Action `nutriplantAdminQuery`; `admin_stats` etc. van en body.action).
+2. Preferible Import URL `https://nutriplantpro.com/api/admin-assistant/openapi.json` (o sube `docs/openapi-nutriplant-admin.json` **v2.12.0**). Una sola Action `nutriplantAdminQuery`.
 3. Auth sin cambios: `Authorization: Bearer <NUTRIPLANT_ADMIN_GPT_TOKEN>`.
-4. **Verificar versión:** chat nuevo → *«Socio, consulta describe_api y dime la version»*. Debe decir **2.10.0** y mostrar *Talking to nutriplantpro.com*. Si dice «action no disponible», reimporta schema o revisa token.
+4. **Verificar versión:** chat nuevo → *«Socio, consulta describe_api y dime la version»*. Debe decir **2.12.0**. Si dice «action no disponible», reimporta schema o revisa token.
 
 ---
 

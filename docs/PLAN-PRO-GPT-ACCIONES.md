@@ -1,6 +1,6 @@
 # Plan PRO — Acciones GPT (asistente personal)
 
-OpenAPI **v2.11.0** · Misma función `nutriplantAdminQuery` · Solo usuario admin (RLS). Nutri PRO: `nutri_pro_catalog`, `nutri_pro_search`; `plan_pro_item` incluye `nutri_refs` y grafo `relations_out` / `relations_in` (`hops` 1|2). Requiere `supabase-plan-pro-relations.sql`.
+OpenAPI **v2.12.0** · Misma función `nutriplantAdminQuery` · Solo usuario admin (RLS). Nutri PRO: `nutri_pro_catalog`, `nutri_pro_search`; `plan_pro_item` incluye `nutri_refs`, grafo `relations_out` / `relations_in` (`hops` 1|2) y `nutri_graph_*` (archivo/link). Requiere `supabase-plan-pro-relations.sql` + `supabase-plan-pro-nutri-relations.sql`.
 
 ## Dos semáforos
 
