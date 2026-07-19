@@ -53,7 +53,9 @@
     'meq', 'mmol', 'ppm', 'mg/L', 'meq/L', 'mmol/L',
     'meq/100g', 'kg/ha', 'g/L', 'mL', 'L/ha',
     'µS/cm', 'mS/cm', 'dS/m', 'EC',
-    'CIC', 'pH', 'VPD', 'kPa', '°C', '%'
+    'CIC', 'pH', 'VPD', 'kPa', '°C', '%',
+    /* Balance hídrico FAO-56: iguales en ES/EN */
+    'ET₀', 'ETo', 'ET0', 'ETc', 'Kc'
   ];
 
   // —— Fertilizantes y quelatos (siglas en inglés de uso internacional; no traducir)
