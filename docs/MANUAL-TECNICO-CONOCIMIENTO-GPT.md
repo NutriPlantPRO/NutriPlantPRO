@@ -180,7 +180,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 
 **Pilot (pestaña Polígono / NDVI y NDMI):** ventanas **14 → 21 → 30 → 45 d**; hasta **8 pasadas** (mediana + SCL). Solo corta si ~**100%** útiles; si no, guarda lo mejor (≥~15% cobertura útil). Si &lt;~15% no guarda imagen vacía. Muestra fechas satelitales y % útil. Capas: NDVI → NDMI → NDRE → RGB. Créditos internos: base **20/mes** (+ bonus). Costo por generación: ≤30 ha = **1** · >30 ha = **2** · >100 ha = **3** (las cuatro capas juntas). Ver historial / «Ver en mapa» no gasta.
 
-**Lectura Satelital (pestaña 2):** histórico del **mismo predio** con **2–6 periodos** (fecha final elegida), **quincenal (15 d)** o **mensual**. Por periodo: NDVI/NDMI/NDRE promedio, miniaturas NDVI|NDMI|NDRE|RGB, VPD promedio + horas VPD por banda (Open-Meteo), ET₀ y lluvia acumulados, riego m³↔mm. En la gráfica, el tooltip de horas VPD muestra **horas y %** de cada rango (&lt;0.5 / 0.5–1.5 / &gt;1.5) respecto al total de horas del periodo (p. ej. 15 d ≈ 360 h). Hasta **6 pasadas**/periodo; quincena incompleta puede ampliar al mes (`lookback_expanded`, *). Costo **fijo por consulta**: **3 créditos** ≤30 ha, **4** si >30 ha. Persistencia `location.lecturaSatelital`. PDF/admin: tabla, gráfica, miniaturas.
+**Lectura Satelital (pestaña 2):** histórico del **mismo predio** con **2–6 periodos** (fecha final elegida), **quincenal (15 d)** o **mensual**. Por periodo: NDVI/NDMI/NDRE promedio, miniaturas NDVI|NDMI|NDRE|RGB, VPD promedio + horas VPD por banda (Open-Meteo), ET₀ y lluvia acumulados, riego m³↔mm. En la gráfica, el tooltip de horas VPD muestra **horas y %** de cada rango (&lt;0.5 / 0.5–1.5 / &gt;1.5) respecto al total de horas del periodo (p. ej. 15 d ≈ 360 h). Si hay **Kc** en Clima (`irrigationQuickCalc.kc`), la gráfica añade **ETc = ET₀ × Kc** por periodo (eje mm; Kc constante). Hasta **6 pasadas**/periodo; quincena incompleta puede ampliar al mes (`lookback_expanded`, *). Costo **fijo por consulta**: **3 créditos** ≤30 ha, **4** si >30 ha. Persistencia `location.lecturaSatelital`. PDF/admin: tabla, gráfica, miniaturas.
 ### 4.11b Balance hídrico y cálculo rápido de riego (Clima)
 
 **URL:** …/balance-hidrico-riego-clima.html · **Dashboard PRO → Clima → Lluvia y ET₀** → calculadora de balance hídrico.
@@ -199,6 +199,7 @@ Los % por etapa son decisión del técnico; la app no impone curva universal fij
 | Tablas desplegables | Kc FAO-56 (consulta) y **% suelo explorado por sistema** (aguacate, berry, hortaliza…) |
 | % alcance raíces | Sugiere franja (ha cultivo × % ÷ 100); **no altera déficit ETc**. Estimar %: **Conversor magnitudes** → alcance raíz (copa circular o cama/banda) o tabla en N mineralizable |
 | Persistencia | `climateAnalysis.irrigationQuickCalc` + `rolling` en JSON proyecto; ajuste suelo: `soilStorageMode`, `soilStorageM3` (PRO) / `irr-soil-mode`, `irr-soil-m3` (gratis) |
+| Gráfica Clima | Vista Gráficas: lluvia + ET₀ por año; con Kc → línea **ETc = ET₀ × Kc** del año en curso (Kc constante). Misma lógica en PDF/Admin |
 | Límite | No integración automática de almacén en ETc (solo ajuste manual opcional); no escurrimiento, drenaje ni lixiviación; validar en campo |
 | PDF | Reporte Clima puede incluir balance guardado + bloque 🪨 suelo (sesión navegador) |
 

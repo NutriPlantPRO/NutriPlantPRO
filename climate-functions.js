@@ -9,6 +9,8 @@
   var CLIMATE_HISTORY_YEARS = 4;
   var CLIMATE_RAIN_COLORS = ['#1e3a8a', '#2563eb', '#38bdf8', '#7dd3fc'];
   var CLIMATE_ET0_COLORS = ['#991b1b', '#c2410c', '#f97316', '#fbbf24'];
+  /** ETc año en curso: tono apagado (no compite con lluvia/ET₀). */
+  var CLIMATE_ETC_COLOR = '#5f7a86';
   var climateRainfallViewMode = 'table';
   var climateChartYearsVisible = { rain: {}, et0: {} };
   var climateCombinedChart = null;
@@ -914,6 +916,12 @@
       persistTimer = setTimeout(function () {
         syncIrrigationQuickCalcFromDOM();
         updateIrrigationQuickCalcDisplay();
+        var chartKc = document.getElementById('climate-chart-kc');
+        var kc = getClimateChartKc();
+        if (chartKc && document.activeElement !== chartKc) {
+          chartKc.value = kc != null ? String(kc) : '';
+        }
+        refreshClimateCombinedChartIfVisible();
       }, 250);
     }
     root.addEventListener('click', function (e) {
@@ -1351,24 +1359,115 @@
     return chart;
   }
 
-  function makeClimateLineDataset(label, data, color, dashed) {
+  function makeClimateLineDataset(label, data, color, dashed, styleOpts) {
+    styleOpts = styleOpts || {};
     var ds = {
       label: label,
       data: data,
       borderColor: color,
       backgroundColor: 'transparent',
       tension: 0.3,
-      borderWidth: dashed ? 2.2 : 2.4,
-      pointRadius: dashed ? 2 : 2.25,
-      pointHoverRadius: 4,
+      borderWidth:
+        styleOpts.borderWidth != null ? styleOpts.borderWidth : dashed ? 2.2 : 2.4,
+      pointRadius:
+        styleOpts.pointRadius != null ? styleOpts.pointRadius : dashed ? 2 : 2.25,
+      pointHoverRadius: styleOpts.pointHoverRadius != null ? styleOpts.pointHoverRadius : 4,
       pointHitRadius: 6,
       pointBorderWidth: 1.2,
       pointBackgroundColor: color,
       pointBorderColor: '#ffffff',
       spanGaps: false
     };
-    if (dashed) ds.borderDash = [7, 5];
+    if (styleOpts.borderDash) ds.borderDash = styleOpts.borderDash;
+    else if (dashed) ds.borderDash = [7, 5];
     return ds;
+  }
+
+  function getClimateChartKc() {
+    ensureClimateAnalysisStructures();
+    var st = getIrrigationQuickCalcState();
+    if (!st || st.kc == null) return null;
+    var kc = Number(st.kc);
+    return Number.isFinite(kc) && kc >= 0 ? kc : null;
+  }
+
+  function setClimateChartKc(kc) {
+    ensureClimateAnalysisStructures();
+    var st = getProject().climateAnalysis.irrigationQuickCalc;
+    migrateIrrigationQuickCalcState(st);
+    if (kc != null && Number.isFinite(kc) && kc >= 0) st.kc = kc;
+    else st.kc = null;
+    var irrKc = document.getElementById('climate-irr-kc');
+    if (irrKc) irrKc.value = st.kc != null ? String(st.kc) : '';
+    var chartKc = document.getElementById('climate-chart-kc');
+    if (chartKc && document.activeElement !== chartKc) {
+      chartKc.value = st.kc != null ? String(st.kc) : '';
+    }
+    persistClimateAnalysis();
+  }
+
+  function findClimateCurrentYearEt0Entry(et0) {
+    var entries = getClimateYearEntries(et0);
+    if (!entries.length) return null;
+    var currYear = new Date().getFullYear();
+    var match = null;
+    entries.forEach(function (e) {
+      if (e.year === currYear) match = e;
+    });
+    if (match) return match;
+    for (var i = entries.length - 1; i >= 0; i--) {
+      if (entries[i].partial) return entries[i];
+    }
+    return entries[entries.length - 1];
+  }
+
+  function getEtcCurrentYearDataset(et0, kc) {
+    if (kc == null || !Number.isFinite(kc) || kc < 0) return null;
+    var entry = findClimateCurrentYearEt0Entry(et0);
+    if (!entry || !entry.months) return null;
+    if (climateChartYearsVisible.et0[String(entry.year)] === false) return null;
+    var now = new Date();
+    var currYear = now.getFullYear();
+    var maxMonth = entry.partial || entry.year === currYear ? now.getMonth() + 1 : 12;
+    var et0Series = monthsToChartSeries(entry.months, maxMonth);
+    var etcSeries = et0Series.map(function (v) {
+      return v != null && Number.isFinite(v) ? round1(Number(v) * kc) : null;
+    });
+    var yearLabel = entry.partial ? String(entry.year) + ' (parcial)' : String(entry.year);
+    var kcLabel = Math.round(kc * 100) / 100;
+    return makeClimateLineDataset(
+      'ETc (Kc=' + kcLabel + ') · ' + yearLabel,
+      etcSeries,
+      CLIMATE_ETC_COLOR,
+      true,
+      { borderDash: [3, 5], borderWidth: 1.75, pointRadius: 1.5, pointHoverRadius: 3.5 }
+    );
+  }
+
+  function syncClimateChartKcHint(kc) {
+    var hint = document.getElementById('climate-chart-etc-hint');
+    if (!hint) return;
+    if (kc == null) {
+      hint.innerHTML =
+        'Sin Kc: solo se muestran lluvia y ET₀. Al indicar Kc aparece <strong>ETc = ET₀ × Kc</strong> del año en curso (Kc constante).';
+      return;
+    }
+    var kcLabel = Math.round(kc * 100) / 100;
+    hint.innerHTML =
+      'Línea gris-azul punteada: <strong>ETc</strong> del año en curso con <strong>Kc = ' +
+      kcLabel +
+      '</strong> (constante). Mismo Kc que la calculadora de balance hídrico.';
+  }
+
+  function refreshClimateCombinedChartIfVisible() {
+    if (climateRainfallViewMode !== 'charts') return;
+    var canvas = document.getElementById(CLIMATE_COMBINED_CANVAS_ID);
+    if (!canvas) return;
+    var p = getProject();
+    var rain = p && p.climateAnalysis && p.climateAnalysis.rainfall;
+    var et0 = p && p.climateAnalysis && p.climateAnalysis.et0;
+    syncClimateChartKcHint(getClimateChartKc());
+    updateClimateCombinedChart(rain, et0);
   }
 
   function computeClimateYScale(datasets) {
@@ -1492,13 +1591,15 @@
     if (et0 && et0.notes) {
       notesHtml += '<p style="margin:0 0 8px;font-size:12px;color:#b45309;">⚠️ ET₀: ' + et0.notes + '</p>';
     }
+    var kc = getClimateChartKc();
+    var kcVal = kc != null ? String(kc) : '';
     return (
       '<h4 style="margin:0 0 8px;color:#0f172a;font-size:16px;font-weight:700;">📊 Lluvia vs ET₀ (mm/mes)</h4>' +
       '<p style="margin:0 0 14px;font-size:13px;color:#64748b;line-height:1.45;">Punto del predio: <strong>' +
       Number(lat).toFixed(5) +
       ', ' +
       Number(lng).toFixed(5) +
-      '</strong>. Misma escala para comparar lo llovido frente a la evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀.</p>' +
+      '</strong>. Misma escala para comparar lo llovido frente a la evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀; <strong>punteada gris-azul</strong> = ETc del año en curso (si hay Kc).</p>' +
       notesHtml +
       '<div style="margin-bottom:4px;">' +
       '<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#0369a1;">🌧️ Precipitación acumulada (mm/mes)</p>' +
@@ -1507,6 +1608,15 @@
       '<div style="margin-bottom:12px;">' +
       '<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#b45309;">☀️ ET₀ — Evapotranspiración de referencia (mm/mes)</p>' +
       buildClimateYearToggleHtml('et0', et0Entries, CLIMATE_ET0_COLORS, 0) +
+      '</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;margin:0 0 12px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">' +
+      '<div style="min-width:140px;">' +
+      '<label for="climate-chart-kc" style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:4px;">Kc (año en curso → ETc)</label>' +
+      '<input id="climate-chart-kc" type="number" min="0" max="2" step="0.01" placeholder="Ej. 0.85" value="' +
+      kcVal +
+      '" style="width:110px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;color:#0f172a;background:#fff;" />' +
+      '</div>' +
+      '<p id="climate-chart-etc-hint" style="margin:0;flex:1;min-width:200px;font-size:12px;line-height:1.45;color:#64748b;"></p>' +
       '</div>' +
       '<div style="height:' +
       CLIMATE_CHART_HEIGHT_PX +
@@ -1590,7 +1700,10 @@
           dashed: true
         })
       : [];
-    return rainDs.concat(et0Ds);
+    var datasets = rainDs.concat(et0Ds);
+    var etcDs = getEtcCurrentYearDataset(et0, getClimateChartKc());
+    if (etcDs) datasets.push(etcDs);
+    return datasets;
   }
 
   function updateClimateCombinedChart(rain, et0) {
@@ -1628,6 +1741,8 @@
       buildClimateCombinedChartHtml(rain, et0) +
       '</div>';
     bindClimateChartYearToggles(wrap);
+    bindClimateChartKcInput(wrap);
+    syncClimateChartKcHint(getClimateChartKc());
     loadClimateChartJs(function () {
       updateClimateCombinedChart(rain, et0);
       resizeClimateCharts();
@@ -1667,6 +1782,40 @@
       var rain = p && p.climateAnalysis && p.climateAnalysis.rainfall;
       var et0 = p && p.climateAnalysis && p.climateAnalysis.et0;
       updateClimateCombinedChart(rain, et0);
+    });
+  }
+
+  function bindClimateChartKcInput(wrap) {
+    if (!wrap || wrap.getAttribute('data-np-chart-kc-bound') === '1') return;
+    wrap.setAttribute('data-np-chart-kc-bound', '1');
+    var applyKc = function () {
+      var el = document.getElementById('climate-chart-kc');
+      if (!el) return;
+      var raw = String(el.value || '').trim();
+      if (raw === '') {
+        setClimateChartKc(null);
+      } else {
+        var kc = parseFloat(raw);
+        setClimateChartKc(Number.isFinite(kc) ? kc : null);
+      }
+      syncClimateChartKcHint(getClimateChartKc());
+      var p = getProject();
+      var rain = p && p.climateAnalysis && p.climateAnalysis.rainfall;
+      var et0 = p && p.climateAnalysis && p.climateAnalysis.et0;
+      updateClimateCombinedChart(rain, et0);
+      if (typeof updateIrrigationQuickCalcDisplay === 'function') {
+        try {
+          updateIrrigationQuickCalcDisplay();
+        } catch (err) {}
+      }
+    };
+    wrap.addEventListener('input', function (e) {
+      if (!e.target || e.target.id !== 'climate-chart-kc') return;
+      applyKc();
+    });
+    wrap.addEventListener('change', function (e) {
+      if (!e.target || e.target.id !== 'climate-chart-kc') return;
+      applyKc();
     });
   }
 
@@ -2143,6 +2292,8 @@
     }
     pushEntries(rain, CLIMATE_RAIN_COLORS, '🌧', false);
     pushEntries(et0, CLIMATE_ET0_COLORS, '☀ ET₀', true);
+    var etcDs = getEtcCurrentYearDataset(et0, getClimateChartKc());
+    if (etcDs) datasets.push(etcDs);
     return datasets;
   }
 

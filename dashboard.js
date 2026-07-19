@@ -8906,7 +8906,14 @@ function loadChartImagesForReport(selectedSections, callback) {
                   : null;
               lectura.chartDataUrl = window.buildLecturaChartDataUrlForReport(lectura.rows, {
                 franja_pct: lectura.franja_pct,
-                area_ha: areaHa
+                area_ha: areaHa,
+                kc:
+                  currentProject &&
+                  currentProject.climateAnalysis &&
+                  currentProject.climateAnalysis.irrigationQuickCalc &&
+                  currentProject.climateAnalysis.irrigationQuickCalc.kc != null
+                    ? Number(currentProject.climateAnalysis.irrigationQuickCalc.kc)
+                    : null
               });
             }
             out.lecturaSatelital = lectura;
@@ -17819,7 +17826,7 @@ function createClimateReportSectionHTML(chartImages) {
   if (climateCharts.combined) {
     combinedChartBlock =
       '<div class="report-block"><div class="report-block-title">📊 Lluvia vs ET₀ (mm/mes)</div>' +
-      '<p style="margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.45;">Misma escala para comparar precipitación y evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀.</p>' +
+      '<p style="margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.45;">Misma escala para comparar precipitación y evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀; si hay Kc, <strong>punteada</strong> = ETc del año en curso (ET₀ × Kc constante).</p>' +
       '<img src="' + climateCharts.combined + '" alt="Gráfica lluvia y ET0 mensual" style="max-width:100%;height:auto;display:block;border-radius:8px;" /></div>';
   }
   var liveBlock = '';

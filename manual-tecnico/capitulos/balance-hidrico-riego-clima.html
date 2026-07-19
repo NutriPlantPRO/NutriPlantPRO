@@ -17,7 +17,7 @@
   "url": "https://nutriplantpro.com/manual-tecnico/capitulos/balance-hidrico-riego-clima.html",
   "inLanguage": "es",
   "datePublished": "2026-06-12",
-  "dateModified": "2026-06-24",
+  "dateModified": "2026-07-19",
   "author": {
     "@type": "Person",
     "name": "Jesús Avila Mendoza",
@@ -68,6 +68,14 @@
       <li>Requisito para datos satélite (PRO): polígono guardado en <strong>Ubicación</strong> (centro del predio).</li>
       <li>Persistencia en nube (PRO): <code>projects.data.climateAnalysis.irrigationQuickCalc</code>.</li>
     </ul>
+
+    <h2>Gráfica Lluvia vs ET₀ (y ETc)</h2>
+    <p>
+      En la vista <strong>Gráficas · Lluvia y ET₀</strong>, NutriPlant muestra lluvia y ET₀ por año en la misma escala (mm/mes).
+      Si el usuario indica un <strong>Kc</strong> (mismo valor que la calculadora de balance), aparece una línea adicional del
+      <strong>año en curso</strong>: <strong>ETc = ET₀ × Kc</strong> (Kc constante). No es curva por etapa fenológica;
+      sirve como referencia visual de demanda del cultivo frente a ET₀ y lluvia. También se incluye en PDF y panel Admin cuando hay Kc guardado.
+    </p>
 
     <h2>Periodo y fuentes de ETo / lluvia</h2>
     <table class="mt-table">

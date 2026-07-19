@@ -7100,19 +7100,24 @@
             });
             datasets.forEach(ds => {
                 const points = ds.data.map((v, i) => `${xAt(i)},${yAt(parseFloat(v) || 0)}`).join(' ');
-                const dashAttr = ds.dashed ? ' stroke-dasharray="7 5"' : '';
-                svg += `<polyline fill="none" stroke="${ds.color}" stroke-width="2"${dashAttr} points="${points}" />`;
+                const dashAttr = ds.strokeDasharray
+                    ? ` stroke-dasharray="${String(ds.strokeDasharray).replace(/"/g, '')}"`
+                    : (ds.dashed ? ' stroke-dasharray="7 5"' : '');
+                const strokeW = ds.strokeWidth != null ? ds.strokeWidth : 2;
+                svg += `<polyline fill="none" stroke="${ds.color}" stroke-width="${strokeW}"${dashAttr} points="${points}" />`;
+                const cr = ds.pointRadius != null ? ds.pointRadius : 2.5;
                 ds.data.forEach((v, i) => {
                     const x = xAt(i);
                     const y = yAt(parseFloat(v) || 0);
-                    svg += `<circle cx="${x}" cy="${y}" r="2.5" fill="${ds.color}" />`;
+                    svg += `<circle cx="${x}" cy="${y}" r="${cr}" fill="${ds.color}" />`;
                 });
             });
             svg += `</svg>`;
             const legend = `
                 <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:6px;font-size:12px;color:#334155;">
                     ${datasets.map(d => {
-                        const swatch = d.dashed
+                        const isDashed = !!(d.dashed || d.strokeDasharray);
+                        const swatch = isDashed
                             ? `<span style="width:18px;height:0;border-top:2px dashed ${d.color};display:inline-block;"></span>`
                             : `<span style="width:10px;height:10px;border-radius:50%;background:${d.color};display:inline-block;"></span>`;
                         return `<span style="display:flex;align-items:center;gap:6px;">${swatch}${d.label}</span>`;
@@ -7271,7 +7276,7 @@
                 out +=
                     '<div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;">' +
                     '<h4 style="margin:0 0 8px 0;color:#0f172a;">📊 Lluvia vs ET₀ (mm/mes)</h4>' +
-                    '<p style="margin:0 0 10px;font-size:13px;color:#64748b;line-height:1.45;">Misma escala para comparar precipitación y evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀.</p>' +
+                    '<p style="margin:0 0 10px;font-size:13px;color:#64748b;line-height:1.45;">Misma escala para comparar precipitación y evapotranspiración de referencia. Líneas <strong>continuas</strong> = lluvia; <strong>discontinuas</strong> = ET₀; si hay Kc, <strong>punteada</strong> = ETc del año en curso (ET₀ × Kc).</p>' +
                     '<div id="admin-climate-combined-chart"></div></div>';
             }
             if (live && live.temperature != null) {
@@ -7316,6 +7321,45 @@
             }
             pushEntries(ca.rainfall, ADMIN_CLIMATE_RAIN_COLORS, '🌧', false);
             pushEntries(ca.et0, ADMIN_CLIMATE_ET0_COLORS, '☀ ET₀', true);
+            var adminKc =
+                ca.irrigationQuickCalc && ca.irrigationQuickCalc.kc != null
+                    ? Number(ca.irrigationQuickCalc.kc)
+                    : null;
+            if (Number.isFinite(adminKc) && adminKc >= 0 && ca.et0) {
+                var et0Entries = adminGetClimateYearEntries(ca.et0);
+                var currY = new Date().getFullYear();
+                var etcEntry = null;
+                et0Entries.forEach(function (e) {
+                    if (e.year === currY) etcEntry = e;
+                });
+                if (!etcEntry) {
+                    for (var ei = et0Entries.length - 1; ei >= 0; ei--) {
+                        if (et0Entries[ei].partial) {
+                            etcEntry = et0Entries[ei];
+                            break;
+                        }
+                    }
+                }
+                if (!etcEntry && et0Entries.length) etcEntry = et0Entries[et0Entries.length - 1];
+                if (etcEntry && etcEntry.months) {
+                    var etcMaxM = etcEntry.partial ? maxM : 12;
+                    var etcData = adminMonthsToChartData(etcEntry.months, etcMaxM).map(function (v) {
+                        return Math.round(Number(v) * adminKc * 10) / 10;
+                    });
+                    var etcYearLabel = etcEntry.partial
+                        ? String(etcEntry.year) + ' (parcial)'
+                        : String(etcEntry.year);
+                    var etcKcLabel = Math.round(adminKc * 100) / 100;
+                    datasets.push({
+                        label: 'ETc (Kc=' + etcKcLabel + ') · ' + etcYearLabel,
+                        data: etcData,
+                        color: '#5f7a86',
+                        strokeDasharray: '3 5',
+                        strokeWidth: 1.75,
+                        pointRadius: 2
+                    });
+                }
+            }
             if (!datasets.length) {
                 container.innerHTML = '<div style="color:#94a3b8;font-style:italic;">Sin datos para gráfica.</div>';
                 return;
@@ -13772,8 +13816,23 @@
 
             var chartHtml = '';
             if (typeof window.buildLecturaChartDataUrlForReport === 'function' && rows.length) {
+                var adminLecturaKc = null;
+                try {
+                    var ctxP = window._adminViewProjectContext;
+                    if (ctxP && String(ctxP.projectId) === String(projectId) && ctxP.project) {
+                        var caAdmin =
+                            ctxP.project.climateAnalysis ||
+                            (ctxP.project.data && ctxP.project.data.climateAnalysis) ||
+                            null;
+                        if (caAdmin && caAdmin.irrigationQuickCalc && caAdmin.irrigationQuickCalc.kc != null) {
+                            var kNum = Number(caAdmin.irrigationQuickCalc.kc);
+                            if (Number.isFinite(kNum) && kNum >= 0) adminLecturaKc = kNum;
+                        }
+                    }
+                } catch (eKc) { /* ignore */ }
                 var chartUrl = window.buildLecturaChartDataUrlForReport(rows, {
-                    franja_pct: lecturaState && lecturaState.franja_pct != null ? lecturaState.franja_pct : null
+                    franja_pct: lecturaState && lecturaState.franja_pct != null ? lecturaState.franja_pct : null,
+                    kc: adminLecturaKc
                 });
                 if (chartUrl) {
                     chartHtml =

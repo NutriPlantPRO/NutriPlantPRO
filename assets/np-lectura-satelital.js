@@ -20,9 +20,33 @@
     ndre: true,
     vpd: true,
     et0: true,
+    etc: true,
     rain: true,
     riego: true
   };
+
+  /** Kc desde Clima (balance) o override (PDF/admin). ETc = ET₀ × Kc. */
+  function getClimateKcForLectura(overrideKc) {
+    if (overrideKc != null && Number.isFinite(Number(overrideKc))) {
+      var ok = Number(overrideKc);
+      return ok >= 0 ? ok : null;
+    }
+    var proj = getProject();
+    if (!proj || !proj.climateAnalysis || typeof proj.climateAnalysis !== 'object') return null;
+    var iqc = proj.climateAnalysis.irrigationQuickCalc;
+    if (!iqc || iqc.kc == null) return null;
+    var kc = Number(iqc.kc);
+    return Number.isFinite(kc) && kc >= 0 ? kc : null;
+  }
+
+  function etcSeriesFromRows(rows, kc) {
+    if (kc == null || !Number.isFinite(kc) || kc < 0) return null;
+    return (rows || []).map(function (r) {
+      var et0 = r && r.et0_sum != null ? Number(r.et0_sum) : NaN;
+      if (!Number.isFinite(et0)) return null;
+      return Math.round(et0 * kc * 10) / 10;
+    });
+  }
 
   // ---------- utilidades de fecha ----------
   function todayIso() {
@@ -484,7 +508,7 @@
             '<canvas id="lecturaChart"></canvas>' +
           '</div>' +
           '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">' +
-            'Izquierda: NDVI / NDMI / NDRE. Derecha: mm (ET₀, lluvia, riego). Barras tenues: horas VPD del periodo (&lt;0.5 azul, 0.5–1.5 verde, &gt;1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).' +
+            'Izquierda: NDVI / NDMI / NDRE. Derecha: mm (ET₀, ETc si hay Kc en Clima, lluvia, riego). Barras tenues: horas VPD del periodo (&lt;0.5 azul, 0.5–1.5 verde, &gt;1.5 tinto). Total ≈ horas del periodo (15 d = 360 h).' +
           '</div>' +
         '</div>' +
         '<div id="lecturaGallery" style="margin-top:14px;"></div>' +
@@ -900,15 +924,22 @@
   function renderChartToggles(state) {
     var box = document.getElementById('lecturaChartToggles');
     if (!box) return;
+    var kc = getClimateKcForLectura();
     var chips = [
       { key: 'ndvi', label: 'NDVI', color: '#16a34a' },
       { key: 'ndmi', label: 'NDMI', color: '#0369a1' },
       { key: 'ndre', label: 'NDRE', color: '#0f766e' },
       { key: 'vpd', label: 'VPD horas', color: '#7f1d1d' },
-      { key: 'et0', label: 'ET₀', color: '#a16207' },
+      { key: 'et0', label: 'ET₀', color: '#a16207' }
+    ];
+    if (kc != null) {
+      var kcLabel = Math.round(kc * 100) / 100;
+      chips.push({ key: 'etc', label: 'ETc (Kc=' + kcLabel + ')', color: '#5f7a86' });
+    }
+    chips.push(
       { key: 'rain', label: 'Lluvia', color: '#2563eb' },
       { key: 'riego', label: 'Riego mm', color: '#7c3aed' }
-    ];
+    );
     box.innerHTML = chips.map(function (c) {
       return '<button type="button" data-lectura-series="' + c.key + '" style="' +
         chipStyle(!!lecturaSeriesVis[c.key], c.color) + '" title="Mostrar / ocultar ' + c.label + '">' +
@@ -1113,6 +1144,26 @@
         hidden: !lecturaSeriesVis.riego
       }
     ];
+    var kc = getClimateKcForLectura();
+    var etcData = etcSeriesFromRows(rows, kc);
+    if (etcData) {
+      var kcLabel = Math.round(kc * 100) / 100;
+      ds.splice(7, 0, {
+        type: 'line',
+        label: 'ETc (Kc=' + kcLabel + ') mm',
+        yAxisID: 'yMm',
+        data: etcData,
+        borderColor: '#5f7a86',
+        backgroundColor: '#5f7a86',
+        borderDash: [3, 5],
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: 2,
+        borderWidth: 1.75,
+        order: 1,
+        hidden: !lecturaSeriesVis.etc
+      });
+    }
     wrap.style.display = 'block';
     if (lecturaChart) { try { lecturaChart.destroy(); } catch (e) {} lecturaChart = null; }
     lecturaChart = new Chart(canvas.getContext('2d'), {
@@ -1125,6 +1176,20 @@
         plugins: {
           legend: { display: false },
           tooltip: {
+            itemSort: function (a, b) {
+              // Orden visual del stack: tinto arriba → verde → azul abajo
+              function vpdRank(label) {
+                var s = String(label || '');
+                if (/Horas VPD\s*>\s*1\.5/i.test(s)) return 1;
+                if (/Horas VPD\s*0\.5/i.test(s)) return 2;
+                if (/Horas VPD\s*<\s*0\.5/i.test(s)) return 3;
+                return null;
+              }
+              var ra = vpdRank(a.dataset && a.dataset.label);
+              var rb = vpdRank(b.dataset && b.dataset.label);
+              if (ra != null && rb != null) return ra - rb;
+              return (a.datasetIndex || 0) - (b.datasetIndex || 0);
+            },
             callbacks: {
               label: function (ctx) {
                 var label = (ctx.dataset && ctx.dataset.label) || '';
@@ -1179,7 +1244,7 @@
             type: 'linear',
             position: 'right',
             min: 0,
-            title: { display: true, text: 'mm (ET₀ / lluvia / riego)', font: { size: 11 } },
+            title: { display: true, text: 'mm (ET₀ / ETc / lluvia / riego)', font: { size: 11 } },
             grid: { drawOnChartArea: false },
             ticks: { font: { size: 10 } }
           },
@@ -1940,16 +2005,7 @@
       hoursMax = Math.max(hoursMax, exp || 0, sumH);
     });
 
-    var canvas = document.createElement('canvas');
-    canvas.width = opts.width || 1100;
-    canvas.height = opts.height || 300;
-    var chart = null;
-    try {
-      chart = new Chart(canvas.getContext('2d'), {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
+    var reportDatasets = [
             {
               type: 'bar',
               label: 'Horas VPD <0.5',
@@ -2063,7 +2119,36 @@
               borderWidth: 2,
               order: 1
             }
-          ]
+    ];
+    var reportKc = getClimateKcForLectura(opts.kc);
+    var reportEtc = etcSeriesFromRows(sorted, reportKc);
+    if (reportEtc) {
+      var reportKcLabel = Math.round(reportKc * 100) / 100;
+      reportDatasets.splice(7, 0, {
+        type: 'line',
+        label: 'ETc (Kc=' + reportKcLabel + ') mm',
+        yAxisID: 'yMm',
+        data: reportEtc,
+        borderColor: '#5f7a86',
+        borderDash: [3, 5],
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: 2,
+        borderWidth: 1.75,
+        order: 1
+      });
+    }
+
+    var canvas = document.createElement('canvas');
+    canvas.width = opts.width || 1100;
+    canvas.height = opts.height || 300;
+    var chart = null;
+    try {
+      chart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: reportDatasets
         },
         options: {
           responsive: false,
