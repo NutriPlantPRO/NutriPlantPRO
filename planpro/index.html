@@ -29309,7 +29309,13 @@
       var mx = e.clientX - rect.left;
       var my = e.clientY - rect.top;
       var before = planProMapaView.scale;
-      var next = Math.min(4.5, Math.max(0.12, before * (e.deltaY < 0 ? 1.14 : 0.88)));
+      /* Zoom suave: el trackpad manda muchos deltas chicos; antes 1.14/0.88 era demasiado brusco. */
+      var dy = e.deltaY;
+      if (e.deltaMode === 1) dy *= 16;
+      else if (e.deltaMode === 2) dy *= Math.max(rect.height, 400);
+      var factor = Math.exp(-dy * 0.00155);
+      factor = Math.min(1.08, Math.max(0.926, factor));
+      var next = Math.min(4.5, Math.max(0.12, before * factor));
       var wx = (mx - planProMapaView.x) / before;
       var wy = (my - planProMapaView.y) / before;
       planProMapaView.scale = next;
@@ -29446,42 +29452,31 @@
       orbitNodes.forEach(function (n) {
         var col = n.color || '#94a3b8';
         var depth = n.kind === 'area' ? -1 : n.depth || 0;
-        var layers;
         var cls = 'np-mapa-orbit';
+        /* Una sola sombra por nivel (sin anillos internos). */
+        var opacity = 0.07;
         if (n.kind === 'area') {
           cls += ' np-mapa-orbit--plant';
-          layers = [
-            { scale: 1, opacity: 0.05 },
-            { scale: 0.82, opacity: 0.035 },
-            { scale: 0.58, opacity: 0.025 }
-          ];
+          opacity = 0.055;
         } else if (depth <= 0) {
           cls += ' np-mapa-orbit--rama';
-          layers = [
-            { scale: 1, opacity: 0.08 },
-            { scale: 0.7, opacity: 0.05 }
-          ];
+          opacity = 0.075;
         } else if (depth === 1) {
           cls += ' np-mapa-orbit--sub';
-          layers = [
-            { scale: 1, opacity: 0.11 },
-            { scale: 0.68, opacity: 0.06 }
-          ];
+          opacity = 0.09;
         } else {
           cls += ' np-mapa-orbit--sub2';
-          layers = [{ scale: 1, opacity: 0.13 }];
+          opacity = 0.1;
         }
-        layers.forEach(function (layer) {
-          var orb = document.createElementNS(ns, 'circle');
-          orb.setAttribute('class', cls);
-          orb.setAttribute('cx', n.x);
-          orb.setAttribute('cy', n.y);
-          orb.setAttribute('r', Math.max(n.r + 8, n.orbitReach * layer.scale));
-          orb.setAttribute('fill', col);
-          orb.setAttribute('fill-opacity', String(layer.opacity));
-          orb.setAttribute('stroke', 'none');
-          world.appendChild(orb);
-        });
+        var orb = document.createElementNS(ns, 'circle');
+        orb.setAttribute('class', cls);
+        orb.setAttribute('cx', n.x);
+        orb.setAttribute('cy', n.y);
+        orb.setAttribute('r', Math.max(n.r + 8, n.orbitReach));
+        orb.setAttribute('fill', col);
+        orb.setAttribute('fill-opacity', String(opacity));
+        orb.setAttribute('stroke', 'none');
+        world.appendChild(orb);
       });
 
       layout.hierEdges.forEach(function (e) {
