@@ -5963,7 +5963,6 @@ async function getUserRadarCredits(supabase, userId) {
     .eq('id', userId)
     .maybeSingle();
   const bonus = Math.max(0, Math.floor(Number(prof?.radar_credits_bonus) || 0));
-  const limit = base + bonus;
   const { data, error } = await supabase
     .from('radar_requests')
     .select('meta')
@@ -5972,7 +5971,17 @@ async function getUserRadarCredits(supabase, userId) {
     .not('image_storage_path', 'is', null);
   if (error) throw new Error('radar credits: ' + error.message);
   const used = radarCreditsLib.sumCreditsFromRows(data);
-  return { month_key: mk, used, limit, base, bonus, remaining: Math.max(0, limit - used) };
+  const view = radarCreditsLib.buildRadarCreditsView(base, bonus, used);
+  return {
+    month_key: mk,
+    used: view.used,
+    limit: view.limit,
+    base: view.base,
+    bonus: view.bonus,
+    remaining: view.available,
+    available: view.available,
+    base_remaining: view.base_remaining
+  };
 }
 
 async function buildRadarSnapshot(supabase, row) {
@@ -6100,7 +6109,7 @@ async function handleRadarProject(supabase, params) {
     user_radar_credits_this_month: credits,
     radar_pricing: radarPricing,
     gpt_radar_note:
-      'radar_history lista imágenes (id, created_at, sentinel_period, location_center, bounds, area_ha). latest_radar incluye location_snapshot (polígono, centro, bounds) de la imagen mostrada o de request_id. Radar principal actual: Pilot Copernicus/Sentinel-2, sin Google Earth Engine pero con créditos Radar internos: base 20/mes + bonus; costo por generación según area_hectares del polígono (≤30 ha = 1 · >30 ha = 2 · >100 ha = 3; NDVI+NDMI+NDRE+RGB juntos). **Tope duro: máximo 250 ha** (error radar_area_too_large: «Radar máximo 250 ha; divide el polígono»). Capas: NDVI vigor, NDMI dosel, NDRE clorofila, RGB natural (mismas pasadas, mediana+SCL, 14→45 d hasta 8 escenas). RGB: verde≈planta, rojo/café≈suelo (no escala Menor/Mayor). Colorimetría relativa al predio/fecha en índices. Lectura: tooltip VPD con horas y % del periodo. ChatGPT no ve píxeles: fechas, coords y enlaces firmados.',
+      'radar_history lista imágenes (id, created_at, sentinel_period, location_center, bounds, area_ha). latest_radar incluye location_snapshot (polígono, centro, bounds) de la imagen mostrada o de request_id. Radar principal actual: Pilot Copernicus/Sentinel-2, sin Google Earth Engine pero con créditos Radar internos: base 20/mes + bonus admin (el bonus suma disponibles extra; no hace falta que el tope cubra lo ya usado). Costo por generación según area_hectares del polígono (≤30 ha = 1 · >30 ha = 2 · >100 ha = 3; NDVI+NDMI+NDRE+RGB juntos). **Tope duro: máximo 250 ha** (error radar_area_too_large: «Radar máximo 250 ha; divide el polígono»). Capas: NDVI vigor, NDMI dosel, NDRE clorofila, RGB natural (mismas pasadas, mediana+SCL, 14→45 d hasta 8 escenas). RGB: verde≈planta, rojo/café≈suelo (no escala Menor/Mayor). Colorimetría relativa al predio/fecha en índices. Lectura: tooltip VPD con horas y % del periodo. ChatGPT no ve píxeles: fechas, coords y enlaces firmados.',
     related: {
       fertirriego_suelo_vpd: 'project_detail',
       vpd_ahora: 'project_vpd_live'

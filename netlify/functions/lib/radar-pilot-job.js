@@ -338,11 +338,13 @@ async function createPendingPilotJob(supabase, opts) {
     polygon,
     projectRow,
     creditCost,
+    creditsFromBonus,
     maxDim,
     maxScenes,
     mk
   } = opts;
   const locationSnapshot = buildLocationSnapshot(projectRow?.data?.location, polygon);
+  const fromBonus = Math.max(0, Math.floor(Number(creditsFromBonus) || 0));
   const meta = {
     pilot: true,
     engine: 'cdse_pilot',
@@ -355,6 +357,7 @@ async function createPendingPilotJob(supabase, opts) {
     location_snapshot: locationSnapshot,
     area_hectares: locationSnapshot?.area_hectares ?? null,
     credits_charged: creditCost,
+    credits_from_bonus: fromBonus,
     queued_at: new Date().toISOString()
   };
 
@@ -381,12 +384,14 @@ async function createPendingLecturaJob(supabase, opts) {
     polygon,
     projectRow,
     creditCost,
+    creditsFromBonus,
     maxDim,
     maxScenes,
     mk,
     period
   } = opts;
   const locationSnapshot = buildLocationSnapshot(projectRow?.data?.location, polygon);
+  const fromBonus = Math.max(0, Math.floor(Number(creditsFromBonus) || 0));
   const meta = {
     pilot: true,
     engine: 'cdse_pilot',
@@ -405,6 +410,7 @@ async function createPendingLecturaJob(supabase, opts) {
     location_snapshot: locationSnapshot,
     area_hectares: locationSnapshot?.area_hectares ?? null,
     credits_charged: creditCost,
+    credits_from_bonus: fromBonus,
     queued_at: new Date().toISOString()
   };
 
@@ -875,10 +881,23 @@ async function processPilotJob(supabase, requestId, userId) {
       meta
     };
   } catch (e) {
+    const alreadyRestored = !!(job?.meta?.credits_from_bonus_restored);
+    const fromBonus = alreadyRestored
+      ? 0
+      : Math.max(0, Math.floor(Number(job?.meta?.credits_from_bonus) || 0));
+    if (fromBonus > 0) {
+      try {
+        await radarCredits.restoreRadarBonusCredits(supabase, userId, fromBonus);
+      } catch (restoreErr) {
+        console.warn('restoreRadarBonusCredits:', restoreErr?.message || restoreErr);
+      }
+    }
     await patchJobMeta(supabase, requestId, userId, {
       status: 'error',
       error_message: e.message || 'No se pudo generar Pilot',
-      failed_at: new Date().toISOString()
+      failed_at: new Date().toISOString(),
+      credits_from_bonus: 0,
+      credits_from_bonus_restored: alreadyRestored || fromBonus > 0
     });
     throw e;
   }

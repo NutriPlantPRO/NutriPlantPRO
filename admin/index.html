@@ -6566,15 +6566,15 @@
                         <div style="padding: 12px; background: #ecfdf5; border: 1px solid #86efac; border-radius: 8px;">
                             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #14532d;">🛰️ Radar NDVI / NDMI / NDRE / RGB (créditos)</label>
                             <p style="margin: 0 0 10px 0; font-size: 13px; color: #475569; line-height: 1.45;">
-                                <strong>Tope del mes</strong> = base (20) + este bonus.<br>
-                                <strong>Disponibles</strong> = tope − ya usados este mes. Si ya gastó más que el tope, Disponibles sigue en <strong>0</strong> hasta que el bonus suba el tope por encima de lo usado.
+                                <strong>Disponibles</strong> = lo que quede de la base (20) + este bonus.<br>
+                                El bonus es cupo <strong>extra</strong>: si pones 10, suma ~10 disponibles (aunque ya haya gastado la base). Se va descontando al generar.
                             </p>
-                            <label style="display: block; margin-bottom: 4px; font-weight: 500; color: #374151;">Bonus mensual (+N créditos Radar)</label>
+                            <label style="display: block; margin-bottom: 4px; font-weight: 500; color: #374151;">Bonus mensual (+N créditos Radar disponibles)</label>
                             <input type="number" id="edit-user-radar-credits-bonus" min="0" step="1"
                                    value="${Math.max(0, Math.floor(Number(user.radar_credits_bonus != null ? user.radar_credits_bonus : 0)))}"
                                    style="width: 140px; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
                             <small style="display: block; color: #64748b; font-size: 12px; margin-top: 8px; line-height: 1.4;">
-                                Ej. si usó <strong>50</strong> y la base es 20, pon bonus <strong>≥ 30</strong> (tope 50) o más para que vuelva a tener disponibles. Pilot ≤30 ha=1 · &gt;30=2 · &gt;100=3; Lectura 3 o 4.
+                                Ej. si ya usó la base y pones bonus <strong>10</strong>, tendrá ~10 disponibles para seguir generando. Pilot ≤30 ha=1 · &gt;30=2 · &gt;100=3; Lectura 3 o 4.
                             </small>
                         </div>
                     </div>
@@ -8507,9 +8507,7 @@
                                             cloudSyncMessage +=
                                                 '\n\n🛰️ Bonus Radar confirmado en nube: ' +
                                                 sb +
-                                                ' (tope mes ≈ ' +
-                                                (20 + sb) +
-                                                '). El usuario debe pulsar «Estado» en Radar o recargar.';
+                                                ' créditos extra disponibles. El usuario debe pulsar «Estado» en Radar o recargar.';
                                         }
                                     }
                                 } else if (matched === 0) {
@@ -8693,12 +8691,11 @@
                 window._adminPasswordUpdateFailed = false;
             }
             var radarBonusSaved = Math.max(0, Math.floor(Number(updatedUser.radar_credits_bonus != null ? updatedUser.radar_credits_bonus : 0)));
-            var radarTopeSaved = 20 + radarBonusSaved;
             alert('✅ Usuario actualizado exitosamente.\n\n' + 
                   (newPassword ? '🔒 Nueva contraseña guardada. El usuario deberá iniciar sesión nuevamente.\n\n' : '') +
                   (existingUser.email !== updatedUser.email ? `📧 Email actualizado: ${existingUser.email} → ${updatedUser.email}\n\n` : '') +
-                  '🛰️ Bonus Radar: ' + radarBonusSaved + ' → tope del mes ≈ ' + radarTopeSaved + ' (base 20 + bonus).\n' +
-                  'Disponibles = tope − usados del mes. Si ya gastó más que el tope, siguen en 0 hasta subir el bonus.\n\n' +
+                  '🛰️ Bonus Radar: ' + radarBonusSaved + ' créditos extra (Disponibles ≈ lo que quede de base 20 + este bonus).\n' +
+                  'Si ya gastó la base, el bonus suma cupo de inmediato para seguir generando.\n\n' +
                   'Los cambios son efectivos inmediatamente.' + cloudSyncMessage);
             
             closeEditUserModal();
@@ -12531,6 +12528,9 @@
             var radarCreditsUsed = 0;
             var radarCreditsLoaded = false;
             var radarCreditsError = '';
+            var radarCreditsAvailableFromApi = null;
+            var radarCreditsBaseRemainingFromApi = null;
+            var radarCreditsLimitFromApi = null;
             try {
                 var radarUid = String(viewCanonicalId || user.id || '');
                 var radarIsUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(radarUid);
@@ -12545,6 +12545,9 @@
                         radarCreditsUsed = Math.max(0, Math.floor(Number(c.used) || 0));
                         radarCreditsBase = Math.max(0, Math.floor(Number(c.base) || 20));
                         radarCreditsBonus = Math.max(0, Math.floor(Number(c.bonus) || 0));
+                        if (c.available != null) radarCreditsAvailableFromApi = Math.max(0, Math.floor(Number(c.available) || 0));
+                        if (c.base_remaining != null) radarCreditsBaseRemainingFromApi = Math.max(0, Math.floor(Number(c.base_remaining) || 0));
+                        if (c.limit != null) radarCreditsLimitFromApi = Math.max(0, Math.floor(Number(c.limit) || 0));
                         if (radarCredRes.j.month_key) radarMonthKey = String(radarCredRes.j.month_key);
                     } else {
                         radarCreditsError =
@@ -12558,13 +12561,16 @@
                 console.warn('viewUserDetails: créditos Radar', radarCredErr);
                 radarCreditsError = (radarCredErr && radarCredErr.message) || 'Error al consultar créditos';
             }
-            var radarCreditsLimit = radarCreditsBase + radarCreditsBonus;
-            var radarCreditsAvailable = Math.max(0, radarCreditsLimit - radarCreditsUsed);
-            var radarDeficit = Math.max(0, radarCreditsUsed - radarCreditsLimit);
-            var radarBonusMinForOne =
-                radarCreditsUsed > radarCreditsLimit
-                    ? Math.max(0, radarCreditsUsed - radarCreditsBase + 1)
-                    : null;
+            var radarCreditsLimit = radarCreditsLimitFromApi != null
+                ? radarCreditsLimitFromApi
+                : (radarCreditsBase + radarCreditsBonus);
+            var radarCreditsBaseRemaining = radarCreditsBaseRemainingFromApi != null
+                ? radarCreditsBaseRemainingFromApi
+                : Math.max(0, radarCreditsBase - radarCreditsUsed);
+            var radarCreditsAvailable = radarCreditsAvailableFromApi != null
+                ? radarCreditsAvailableFromApi
+                : (radarCreditsBaseRemaining + radarCreditsBonus);
+            var radarOverBase = Math.max(0, radarCreditsUsed - radarCreditsBase);
 
             let adminUserExtLibraryBuilt = { html: '', chartJobs: [] };
             try {
@@ -12653,20 +12659,18 @@
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 12px;">
                                 <div><strong style="color: #14532d;">Disponibles:</strong><br><span style="color: ${radarCreditsAvailable > 0 ? '#059669' : '#b91c1c'}; font-size: 22px; font-weight: 800;">${radarCreditsAvailable}</span></div>
                                 <div><strong style="color: #14532d;">Usados:</strong><br><span style="color: #166534; font-size: 16px; font-weight: 700;">${radarCreditsUsed}</span></div>
-                                <div><strong style="color: #14532d;">Tope del mes:</strong><br><span style="color: #166534; font-size: 16px; font-weight: 700;">${radarCreditsLimit}</span></div>
+                                <div><strong style="color: #14532d;">Base restante:</strong><br><span style="color: #166534; font-size: 16px; font-weight: 700;">${radarCreditsBaseRemaining}</span></div>
                                 <div><strong style="color: #14532d;">Base:</strong><br><span style="color: #64748b; font-size: 15px; font-weight: 600;">${radarCreditsBase}</span></div>
                                 <div><strong style="color: #14532d;">Bonus admin:</strong><br><span style="color: #64748b; font-size: 15px; font-weight: 600;">${radarCreditsBonus}</span></div>
                             </div>
-                            ${radarDeficit > 0
+                            ${radarOverBase > 0 && radarCreditsBonus === 0
                                 ? `<p style="color:#b45309;font-size:13px;margin:12px 0 0;line-height:1.45;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px;">
-                                    Ya usó <strong>${radarCreditsUsed}</strong> y el tope es solo <strong>${radarCreditsLimit}</strong> (déficit ${radarDeficit}).
-                                    Por eso <strong>Disponibles = 0</strong>. En «Editar usuario» pon bonus ≥ <strong>${radarBonusMinForOne}</strong>
-                                    (tope ${radarCreditsBase}+${radarBonusMinForOne}=${radarCreditsBase + radarBonusMinForOne}) para que vuelva a tener cupo.
+                                    Ya gastó la base del mes (usados ${radarCreditsUsed}). Pon un <strong>bonus</strong> en «Editar usuario» (ej. 10) para darle cupo extra de inmediato — no hace falta igualar lo ya usado.
                                    </p>`
                                 : ''}
-                            <p style="color: #64748b; font-size: 12px; margin: 12px 0 0 0; line-height: 1.45;">Tope = base (${radarCreditsBase}) + bonus. Disponibles = tope − usados. Pilot y Lectura Satelital consumen del mismo cupo. El bonus se edita en «Editar usuario».</p>
+                            <p style="color: #64748b; font-size: 12px; margin: 12px 0 0 0; line-height: 1.45;">Disponibles = base restante (${radarCreditsBaseRemaining}) + bonus (${radarCreditsBonus}). El bonus es cupo extra y se descuenta al generar. Pilot y Lectura Satelital consumen del mismo cupo.</p>
                             ` : `
-                            <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.45;">No se pudieron cargar los créditos usados este mes.${radarCreditsError ? ' (' + escapeHtml(radarCreditsError) + ')' : ''} Bonus en perfil: <strong>${radarCreditsBonus}</strong>. Tope estimado: <strong>${radarCreditsLimit}</strong>.</p>
+                            <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.45;">No se pudieron cargar los créditos usados este mes.${radarCreditsError ? ' (' + escapeHtml(radarCreditsError) + ')' : ''} Bonus en perfil: <strong>${radarCreditsBonus}</strong>. Disponibles estimados: <strong>${radarCreditsAvailable}</strong>.</p>
                             `}
                         </div>
                         

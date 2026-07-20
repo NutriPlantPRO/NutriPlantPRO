@@ -614,7 +614,7 @@ exports.handler = async (event) => {
       getBonusCredits(supabase, ownerUserId)
     ]);
     const baseLimitAdm = radarCredits.getMonthlyBaseLimit();
-    const limitAdm = baseLimitAdm + bonusAdm;
+    const creditsAdm = radarCredits.buildRadarCreditsView(baseLimitAdm, bonusAdm, usedAdm);
     const historyAdm = historyRowsAdm.map(historyItemFromRow).filter(Boolean);
 
     let viewRowAdm = latestAdm;
@@ -653,18 +653,13 @@ exports.handler = async (event) => {
       view_request_id: viewRowAdm ? viewRowAdm.id : null,
       is_latest:
         !latestAdm || !viewRowAdm || String(latestAdm.id) === String(viewRowAdm.id),
-      credits: {
+      credits: radarCredits.creditsApiPayload(creditsAdm, {
         month_key: mkAdm,
-        used: usedAdm,
-        limit: limitAdm,
-        base: baseLimitAdm,
-        bonus: bonusAdm,
-        available: Math.max(0, limitAdm - usedAdm),
         selected_charged:
           viewRowAdm && viewRowAdm.meta && viewRowAdm.meta.credits_charged != null
             ? Number(viewRowAdm.meta.credits_charged)
             : null
-      }
+      })
     });
   }
 
@@ -775,19 +770,13 @@ exports.handler = async (event) => {
       sumMonthlyCreditsUsed(supabase, userIdCred, mkCred),
       getBonusCredits(supabase, userIdCred)
     ]);
-    const limitCred = baseCred + bonusCred;
+    const creditsCred = radarCredits.buildRadarCreditsView(baseCred, bonusCred, usedCred);
     return jsonResponse(200, {
       ok: true,
       admin: true,
       user_id: userIdCred,
       month_key: mkCred,
-      credits: {
-        used: usedCred,
-        base: baseCred,
-        bonus: bonusCred,
-        limit: limitCred,
-        available: Math.max(0, limitCred - usedCred)
-      }
+      credits: radarCredits.creditsApiPayload(creditsCred)
     });
   }
 
@@ -1047,8 +1036,8 @@ exports.handler = async (event) => {
   const mk = monthKey();
   const baseLimit = radarCredits.getMonthlyBaseLimit();
   const bonus = await getBonusCredits(supabase, userId);
-  const limit = baseLimit + bonus;
   const used = await sumMonthlyCreditsUsed(supabase, userId, mk);
+  let creditsView = radarCredits.buildRadarCreditsView(baseLimit, bonus, used);
 
   const { data: proj, error: projErr } = await supabase
     .from('projects')
@@ -1092,7 +1081,7 @@ exports.handler = async (event) => {
     return jsonResponse(200, {
       ok: true,
       month_key: mk,
-      credits: { used, limit, base: baseLimit, bonus, available: Math.max(0, limit - used) },
+      credits: radarCredits.creditsApiPayload(creditsView),
       pricing,
       latest: latestResponse(latest, lastSignedUrl, lastNdmiSignedUrl, lastNdreSignedUrl, lastRgbSignedUrl),
       pending_job: pendingJob,
@@ -1252,12 +1241,12 @@ exports.handler = async (event) => {
   if (areaLimitErr) {
     return jsonResponse(400, {
       ...areaLimitErr,
-      credits: { used, limit, base: baseLimit, bonus, available: Math.max(0, limit - used) },
+      credits: radarCredits.creditsApiPayload(creditsView),
       pricing
     });
   }
 
-  if (limit > 0 && used + creditCost > limit) {
+  if (!radarCredits.canAffordRadarCredits(creditsView, creditCost)) {
     return jsonResponse(429, {
       error: 'radar_quota_exceeded',
       message:
@@ -1266,7 +1255,7 @@ exports.handler = async (event) => {
         ' crédito' +
         (creditCost === 1 ? '' : 's') +
         (areaHa != null ? ' (' + areaHa.toFixed(2) + ' ha).' : '.'),
-      credits: { used, limit, base: baseLimit, bonus, required: creditCost, available: Math.max(0, limit - used) },
+      credits: radarCredits.creditsApiPayload(creditsView, { required: creditCost }),
       pricing
     });
   }
@@ -1403,16 +1392,28 @@ exports.handler = async (event) => {
     return jsonResponse(500, { error: 'db_insert_failed', message: insErr.message });
   }
 
+  const charged = await radarCredits.applyRadarCreditCharge(
+    supabase,
+    userId,
+    baseLimit,
+    bonus,
+    used,
+    creditCost
+  );
+  creditsView = charged.ok ? charged.credits : radarCredits.buildRadarCreditsView(baseLimit, bonus, used + creditCost);
+
   const [signed, ndmiSigned] = await Promise.all([
     signedUrlForPath(supabase, storagePath),
     signedUrlForPath(supabase, ndmiStoragePath)
   ]);
-  const newUsed = used + creditCost;
 
   return jsonResponse(200, {
     ok: true,
     request: insRow,
-    credits: { used: newUsed, limit, base: baseLimit, bonus, charged: creditCost, available: Math.max(0, limit - newUsed) },
+    credits: radarCredits.creditsApiPayload(creditsView, {
+      charged: creditCost,
+      from_bonus: charged.ok ? charged.fromBonus : 0
+    }),
     pricing,
     storage_path: storagePath,
     signed_url: signed,

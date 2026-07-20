@@ -114,8 +114,8 @@ exports.handler = async (event) => {
   const mk = monthKey();
   const baseLimit = radarCredits.getMonthlyBaseLimit();
   const bonus = await getBonusCredits(supabase, userId);
-  const limit = baseLimit + bonus;
   const used = await sumMonthlyRadarCreditsUsed(supabase, userId, mk);
+  let creditsView = radarCredits.buildRadarCreditsView(baseLimit, bonus, used);
   let creditCost = 1;
   let pricing = radarCredits.getRadarCreditPricingInfo(null);
   let projectRow = null;
@@ -144,17 +144,11 @@ exports.handler = async (event) => {
     if (areaLimitErr) {
       return jsonResponse(400, {
         ...areaLimitErr,
-        credits: {
-          used,
-          limit,
-          base: baseLimit,
-          bonus,
-          available: Math.max(0, limit - used)
-        },
+        credits: radarCredits.creditsApiPayload(creditsView),
         pricing
       });
     }
-    if (limit > 0 && used + creditCost > limit) {
+    if (!radarCredits.canAffordRadarCredits(creditsView, creditCost)) {
       return jsonResponse(429, {
         error: 'radar_quota_exceeded',
         message:
@@ -163,14 +157,7 @@ exports.handler = async (event) => {
           ' crédito' +
           (creditCost === 1 ? '' : 's') +
           (areaHa != null ? ' (' + areaHa.toFixed(2) + ' ha).' : '.'),
-        credits: {
-          used,
-          limit,
-          base: baseLimit,
-          bonus,
-          required: creditCost,
-          available: Math.max(0, limit - used)
-        },
+        credits: radarCredits.creditsApiPayload(creditsView, { required: creditCost }),
         pricing
       });
     }
@@ -199,7 +186,7 @@ exports.handler = async (event) => {
     // Costo FIJO por consulta completa (no por periodo):
     // predio normal (≤30 ha) = 3 créditos; predio >30 ha = 4 créditos.
     const totalCost = creditCost >= 2 ? 4 : 3;
-    if (limit > 0 && used + totalCost > limit) {
+    if (!radarCredits.canAffordRadarCredits(creditsView, totalCost)) {
       return jsonResponse(429, {
         error: 'radar_quota_exceeded',
         message:
@@ -208,17 +195,28 @@ exports.handler = async (event) => {
           ' crédito' +
           (totalCost === 1 ? '' : 's') +
           ' por toda la consulta.',
-        credits: {
-          used,
-          limit,
-          base: baseLimit,
-          bonus,
-          required: totalCost,
-          available: Math.max(0, limit - used)
-        },
+        credits: radarCredits.creditsApiPayload(creditsView, { required: totalCost }),
         pricing
       });
     }
+
+    const charged = await radarCredits.applyRadarCreditCharge(
+      supabase,
+      userId,
+      baseLimit,
+      bonus,
+      used,
+      totalCost
+    );
+    if (!charged.ok) {
+      return jsonResponse(429, {
+        error: 'radar_quota_exceeded',
+        message: 'No tienes créditos Radar suficientes este mes.',
+        credits: radarCredits.creditsApiPayload(creditsView, { required: totalCost }),
+        pricing
+      });
+    }
+    creditsView = charged.credits;
 
     const created = [];
     for (let i = 0; i < periods.length; i++) {
@@ -231,12 +229,16 @@ exports.handler = async (event) => {
         polygon,
         projectRow,
         creditCost: jobCost,
+        creditsFromBonus: i === 0 ? charged.fromBonus : 0,
         maxDim,
         maxScenes,
         mk,
         period
       });
       if (!queued.ok) {
+        if (i === 0 && charged.fromBonus > 0) {
+          await radarCredits.restoreRadarBonusCredits(supabase, userId, charged.fromBonus);
+        }
         return jsonResponse(500, {
           error: 'queue_failed',
           message: queued.error || 'No se pudo encolar la Lectura Satelital',
@@ -264,15 +266,11 @@ exports.handler = async (event) => {
       async: true,
       lectura: true,
       periods: created,
-      credits: {
-        used: used + totalCost,
-        limit,
-        base: baseLimit,
-        bonus,
+      credits: radarCredits.creditsApiPayload(creditsView, {
         reserved: totalCost,
         flat_cost: totalCost,
-        available: Math.max(0, limit - (used + totalCost))
-      },
+        from_bonus: charged.fromBonus
+      }),
       pricing
     });
   }
@@ -289,17 +287,39 @@ exports.handler = async (event) => {
       });
     }
 
+    const charged = await radarCredits.applyRadarCreditCharge(
+      supabase,
+      userId,
+      baseLimit,
+      bonus,
+      used,
+      creditCost
+    );
+    if (!charged.ok) {
+      return jsonResponse(429, {
+        error: 'radar_quota_exceeded',
+        message: 'No tienes créditos Radar suficientes este mes.',
+        credits: radarCredits.creditsApiPayload(creditsView, { required: creditCost }),
+        pricing
+      });
+    }
+    creditsView = charged.credits;
+
     const queued = await createPendingPilotJob(supabase, {
       userId,
       projectId,
       polygon,
       projectRow,
       creditCost,
+      creditsFromBonus: charged.fromBonus,
       maxDim,
       maxScenes,
       mk
     });
     if (!queued.ok) {
+      if (charged.fromBonus > 0) {
+        await radarCredits.restoreRadarBonusCredits(supabase, userId, charged.fromBonus);
+      }
       return jsonResponse(500, { error: 'queue_failed', message: queued.error || 'No se pudo encolar Pilot' });
     }
 
@@ -315,14 +335,10 @@ exports.handler = async (event) => {
       request: { id: queued.row.id, created_at: queued.row.created_at },
       message:
         'Solicitud enviada. Por temas de datos satelitales la imagen puede tardar unos minutos. Revisa «Estado» o vuelve más tarde; se guardará en la nube aunque cierres NutriPlant.',
-      credits: {
-        used: used + creditCost,
-        limit,
-        base: baseLimit,
-        bonus,
+      credits: radarCredits.creditsApiPayload(creditsView, {
         reserved: creditCost,
-        available: Math.max(0, limit - (used + creditCost))
-      },
+        from_bonus: charged.fromBonus
+      }),
       pricing
     });
   }
@@ -436,6 +452,19 @@ exports.handler = async (event) => {
       }
       request = insRow;
 
+      const chargedSync = await radarCredits.applyRadarCreditCharge(
+        supabase,
+        userId,
+        baseLimit,
+        bonus,
+        used,
+        creditCost
+      );
+      if (chargedSync.ok) {
+        creditsView = chargedSync.credits;
+        meta.credits_from_bonus = chargedSync.fromBonus;
+      }
+
       const [signedNdvi, signedNdmi, signedNdre, signedRgb] = await Promise.all([
         supabase.storage.from(BUCKET).createSignedUrl(storagePath, 3600),
         supabase.storage.from(BUCKET).createSignedUrl(ndmiStoragePath, 3600),
@@ -461,6 +490,9 @@ exports.handler = async (event) => {
       request,
       month_key: mk,
       provider: bundle.provider,
+      credits: radarCredits.creditsApiPayload(creditsView, {
+        charged: projectId ? creditCost : 0
+      }),
       signed_url: signedUrl,
       ndmi_signed_url: ndmiSignedUrl,
       ndre_signed_url: ndreSignedUrl,

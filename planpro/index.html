@@ -5254,41 +5254,70 @@
       align-items: center;
       gap: 6px;
       flex: 0 0 auto;
+      height: 30px;
     }
     .np-mapa-toolbar label {
+      display: inline-flex;
+      align-items: center;
+      margin: 0;
+      padding: 0;
       font-size: 12px;
       font-weight: 650;
+      line-height: 1;
       color: #475569;
       white-space: nowrap;
     }
     .np-mapa-toolbar select {
+      box-sizing: border-box;
+      height: 30px;
       min-height: 30px;
       min-width: 110px;
       max-width: 160px;
-      padding: 3px 10px;
+      margin: 0;
+      padding: 0 28px 0 10px;
       border-radius: 999px;
       border: 1px solid rgba(148, 163, 184, 0.36);
       font: inherit;
       font-size: 13px;
+      line-height: 28px;
       background: #fff;
+      vertical-align: middle;
+      appearance: none;
+      -webkit-appearance: none;
     }
     .np-mapa-toolbar .np-mapa-check {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       flex: 0 0 auto;
+      height: 30px;
+      margin: 0;
       font-size: 12px;
       font-weight: 600;
+      line-height: 1;
       color: #475569;
       cursor: pointer;
       user-select: none;
       white-space: nowrap;
     }
+    .np-mapa-toolbar .np-mapa-check input {
+      margin: 0;
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+    }
     .np-mapa-toolbar .btn {
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       flex: 0 0 auto;
       white-space: nowrap;
-      padding: 5px 12px;
+      margin: 0;
+      padding: 0 12px;
+      height: 30px;
       min-height: 30px;
+      line-height: 1;
     }
     .np-mapa-canvas-wrap {
       position: relative;
@@ -28831,9 +28860,7 @@
           n.orbitReach = 0;
           return;
         }
-        /* Mueve el ícono de la planta al centro real del contenido. */
-        n.x = fit.cx;
-        n.y = fit.cy;
+        /* Halo centrado en el contenido; el ícono de planta no se mueve (evita perder el encuadre). */
         n.orbitCx = fit.cx;
         n.orbitCy = fit.cy;
         n.orbitReach = fit.reach;
@@ -28978,22 +29005,28 @@
     var maxX = -Infinity;
     var maxY = -Infinity;
     (nodes || []).forEach(function (n) {
-      var pad = (n.r || 10) + 56;
-      minX = Math.min(minX, n.x - pad);
-      minY = Math.min(minY, n.y - pad);
-      maxX = Math.max(maxX, n.x + pad);
-      maxY = Math.max(maxY, n.y + pad);
+      if (!n) return;
+      var ox = n.orbitCx != null ? n.orbitCx : n.x;
+      var oy = n.orbitCy != null ? n.orbitCy : n.y;
+      var reach = n.orbitReach > 0 ? n.orbitReach : 0;
+      var pad = Math.max((n.r || 10) + 48, reach + 12);
+      minX = Math.min(minX, n.x - pad, ox - pad);
+      minY = Math.min(minY, n.y - pad, oy - pad);
+      maxX = Math.max(maxX, n.x + pad, ox + pad);
+      maxY = Math.max(maxY, n.y + pad, oy + pad);
     });
     if (!isFinite(minX)) {
       return { minX: 0, minY: 0, maxX: 1040, maxY: 720, w: 1040, h: 720 };
     }
+    var w = Math.max(120, maxX - minX);
+    var h = Math.max(120, maxY - minY);
     return {
       minX: minX,
       minY: minY,
       maxX: maxX,
       maxY: maxY,
-      w: Math.max(800, maxX - minX),
-      h: Math.max(600, maxY - minY)
+      w: w,
+      h: h
     };
   }
 
@@ -29236,10 +29269,13 @@
     var maxScale = opts.maxScale != null ? opts.maxScale : 1.15;
     var scale = Math.min((vw - pad * 2) / bounds.w, (vh - pad * 2) / bounds.h);
     scale = Math.max(minScale, Math.min(maxScale, scale));
+    /* Centrar el contenido real (min/max), no un box inflado. */
+    var contentW = Math.max(1, (bounds.maxX != null ? bounds.maxX : bounds.minX + bounds.w) - bounds.minX);
+    var contentH = Math.max(1, (bounds.maxY != null ? bounds.maxY : bounds.minY + bounds.h) - bounds.minY);
     var view = {
       scale: scale,
-      x: (vw - bounds.w * scale) / 2 - bounds.minX * scale,
-      y: (vh - bounds.h * scale) / 2 - bounds.minY * scale
+      x: (vw - contentW * scale) / 2 - bounds.minX * scale,
+      y: (vh - contentH * scale) / 2 - bounds.minY * scale
     };
     if (opts.animate) {
       animatePlanProMapaTo(view, opts.duration || 560);
@@ -29604,7 +29640,7 @@
       /* Órbitas de atrás → adelante: planta, rama, sub-rama, sub² (cajas rusas). */
       var orbitNodes = layout.nodes
         .filter(function (n) {
-          return (n.kind === 'area' || n.kind === 'cat') && n.orbitReach && n.orbitReach > (n.r || 10) + 18;
+          return (n.kind === 'area' || n.kind === 'cat') && n.orbitReach && n.orbitReach > (n.r || 10) + 6;
         })
         .slice()
         .sort(function (a, b) {
