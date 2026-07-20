@@ -29355,12 +29355,15 @@
         });
         if (selfHit && otherApunte) bestAnchor = otherApunte;
       });
-      var perRing = 16;
+      var perRing = bestAnchor ? 12 : 18;
       var ring = Math.floor(oi / perRing);
       var slot = oi % perRing;
-      var ang = (slot / perRing) * Math.PI * 2 - Math.PI / 2;
-      var rad = bestAnchor ? 90 + ring * 55 : 160 + ring * 72;
-      var bx = bestAnchor ? bestAnchor.x : cx + 420;
+      var ang = (slot / perRing) * Math.PI * 2 - Math.PI / 2 + ring * 0.08;
+      var rad = bestAnchor ? 90 + ring * 55 : 150 + ring * 64;
+      /* Pool Nutri a la izquierda de las plantas, no encima de sus órbitas. */
+      var poolRings = Math.ceil(orphanNutri.length / 18);
+      var poolReach = 150 + poolRings * 64;
+      var bx = bestAnchor ? bestAnchor.x : cx - plantR - poolReach - 320;
       var by = bestAnchor ? bestAnchor.y : cy;
       var nNode = {
         id: key,
@@ -29373,11 +29376,55 @@
         y: by + Math.sin(ang) * rad,
         r: 9,
         labelSide: slot % 2 === 0 ? 1 : -1,
-        clusterAreaId: bestAnchor ? bestAnchor.clusterAreaId || null : null
+        clusterAreaId: bestAnchor ? bestAnchor.clusterAreaId || null : '_nutri',
+        _nutriPool: !bestAnchor
       };
       nodes.push(nNode);
       byId[nNode.id] = nNode;
     });
+
+    /* Órbita propia del pool Nutri (archivos/links sin ancla), lejos de las plantas. */
+    (function seedNutriPoolOrbit() {
+      var pool = nodes.filter(function (n) {
+        return n && n._nutriPool;
+      });
+      if (!pool.length) return;
+      var minX = Infinity;
+      var minY = Infinity;
+      var maxX = -Infinity;
+      var maxY = -Infinity;
+      pool.forEach(function (n) {
+        minX = Math.min(minX, n.x - 12);
+        maxX = Math.max(maxX, n.x + 12);
+        minY = Math.min(minY, n.y - 12);
+        maxY = Math.max(maxY, n.y + 12);
+      });
+      var fcx = (minX + maxX) / 2;
+      var fcy = (minY + maxY) / 2;
+      var reach = 48;
+      pool.forEach(function (n) {
+        var d = Math.sqrt((n.x - fcx) * (n.x - fcx) + (n.y - fcy) * (n.y - fcy)) + 14;
+        if (d > reach) reach = d;
+      });
+      var shell = {
+        id: 'area:_nutri',
+        kind: 'area',
+        refId: '_nutri',
+        label: '',
+        color: '#ea580c',
+        x: fcx,
+        y: fcy,
+        r: 1,
+        orbitCx: fcx,
+        orbitCy: fcy,
+        orbitReach: reach + 18,
+        clusterAreaId: '_nutri',
+        _orbitShell: true,
+        _nutriPool: true
+      };
+      nodes.push(shell);
+      byId[shell.id] = shell;
+    })();
 
     separateMapaNodes(nodes, Math.min(100, 55 + Math.floor(nodes.length / 8)));
     nestOrbitsHierarchically();
@@ -29389,6 +29436,9 @@
     nestOrbitsHierarchically();
     separatePlantOrbitClusters(nodes, 24);
     nestOrbitsHierarchically();
+    separateNutriPoolFromPlants(nodes, 48);
+    nestOrbitsHierarchically();
+    separateNutriPoolFromPlants(nodes, 28);
 
     /* Red de seguridad: nodos sin planta → órbita flotante; fuera del halo → ampliar planta. */
     (function ensureNoNodeLeftWithoutOrbit() {
@@ -29417,6 +29467,7 @@
       });
       var floating = nodes.filter(function (n) {
         if (!n) return false;
+        if (n._nutriPool) return false;
         if (n.kind !== 'item' && n.kind !== 'nutri_file' && n.kind !== 'nutri_link' && n.kind !== 'cat') {
           return false;
         }
@@ -29462,6 +29513,7 @@
         n.clusterAreaId = '_floating';
       });
     })();
+    separateNutriPoolFromPlants(nodes, 36);
 
     /* Si algún nodo quedó con coords inválidas, recentrar. */
     nodes.forEach(function (n) {
@@ -29705,6 +29757,49 @@
     });
   }
 
+  /** Empuja el pool Nutri (archivos/links sin ancla) lejos de las órbitas de planta. */
+  function separateNutriPoolFromPlants(nodes, iterations) {
+    iterations = iterations || 40;
+    var pools = (nodes || []).filter(function (n) {
+      return n && n._orbitShell && n._nutriPool && n.orbitReach > 0;
+    });
+    var plants = (nodes || []).filter(function (n) {
+      return n && n.kind === 'area' && n.orbitReach > 0 && !n._orbitShell;
+    });
+    if (!pools.length || !plants.length) return;
+    var gap = 100;
+    var iter;
+    var i;
+    var j;
+    for (iter = 0; iter < iterations; iter++) {
+      for (i = 0; i < pools.length; i++) {
+        var shell = pools[i];
+        var sx = shell.orbitCx != null ? shell.orbitCx : shell.x;
+        var sy = shell.orbitCy != null ? shell.orbitCy : shell.y;
+        for (j = 0; j < plants.length; j++) {
+          var p = plants[j];
+          var px = p.orbitCx != null ? p.orbitCx : p.x;
+          var py = p.orbitCy != null ? p.orbitCy : p.y;
+          var need = (shell.orbitReach || 0) + (p.orbitReach || 0) + gap;
+          var dx = sx - px;
+          var dy = sy - py;
+          var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+          if (dist >= need) continue;
+          var push = Math.min(need - dist, 90);
+          var ux = dx / dist;
+          var uy = dy / dist;
+          /* Preferir apartar el pool a la izquierda / afuera, sin mover plantas. */
+          if (Math.abs(ux) < 0.25) ux = sx <= px ? -1 : 1;
+          var mx = ux * push;
+          var my = uy * push * 0.4;
+          translateMapaCluster(nodes, shell.refId, mx, my);
+          sx += mx;
+          sy += my;
+        }
+      }
+    }
+  }
+
   function separatePlantOrbitClusters(nodes, iterations) {
     iterations = iterations || 36;
     var plants = (nodes || []).filter(function (n) {
@@ -29760,6 +29855,8 @@
           ) {
             continue;
           }
+          /* Pool Nutri vs planta/apuntes: no mezclar; se separa por órbitas. */
+          if (!!a._nutriPool !== !!b._nutriPool) continue;
           var dx = b.x - a.x;
           var dy = b.y - a.y;
           var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
