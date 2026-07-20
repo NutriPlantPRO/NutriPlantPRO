@@ -5507,6 +5507,122 @@
     .np-mapa-tip.np-mapa-tip--on {
       opacity: 1;
     }
+    .np-mapa-edge-detail {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      z-index: 5;
+      width: min(320px, calc(100% - 24px));
+      max-height: min(70%, 420px);
+      overflow: auto;
+      padding: 12px 12px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+      color: #0f172a;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .np-mapa-edge-detail-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .np-mapa-edge-detail-head strong {
+      font-size: 13px;
+      font-weight: 750;
+      color: #0f172a;
+    }
+    .np-mapa-edge-detail-close {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: rgba(148, 163, 184, 0.18);
+      color: #334155;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .np-mapa-edge-detail-close:hover {
+      background: rgba(148, 163, 184, 0.28);
+    }
+    .np-mapa-edge-detail-type {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 10px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(241, 245, 249, 0.95);
+      font-weight: 650;
+      font-size: 11px;
+      color: #334155;
+    }
+    .np-mapa-edge-detail-type i {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .np-mapa-edge-detail-end {
+      padding: 8px 9px;
+      border-radius: 10px;
+      background: rgba(248, 250, 252, 0.95);
+      border: 1px solid rgba(226, 232, 240, 0.95);
+    }
+    .np-mapa-edge-detail-end + .np-mapa-edge-detail-end {
+      margin-top: 8px;
+    }
+    .np-mapa-edge-detail-role {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+    .np-mapa-edge-detail-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      word-break: break-word;
+    }
+    .np-mapa-edge-detail-meta {
+      margin-top: 2px;
+      color: #64748b;
+      font-size: 11px;
+    }
+    .np-mapa-edge-detail-path {
+      margin-top: 4px;
+      color: #475569;
+      font-size: 11px;
+      word-break: break-word;
+    }
+    .np-mapa-edge-detail-actions {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .np-mapa-edge-detail-actions .btn {
+      min-height: 28px;
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+    .np-mapa-edge-detail-arrow {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: 700;
+      margin: 4px 0;
+    }
     .np-mapa-filter-chip {
       position: absolute;
       left: 12px;
@@ -11293,7 +11409,7 @@
             Neuron PRO
           </h2>
           <p class="np-muted np-mapa-lead" style="margin:0 0 8px;font-size:12px;line-height:1.4;">
-            Planta ○ · rama ▢ · sub-rama ◇ · apunte ○ · archivo ▭ · link ◇. Sombras = alcance. Toca una línea tipada para ver extremos.
+            Planta ○ · rama ▢ · sub-rama ◇ · apunte ○ · archivo ▭ · link ◇. Sombras = alcance. Toca una línea tipada para ver el detalle.
           </p>
           <div class="np-mapa-controls">
           <div class="np-mapa-toolbar" aria-label="Controles del mapa">
@@ -11339,6 +11455,13 @@
             <svg id="npMapaSvg" class="np-mapa-svg" role="img" aria-label="Neuron PRO — mapa de conexiones"></svg>
             <div id="npMapaEmpty" class="np-mapa-empty np-hide">Aún no hay relaciones. Abre un apunte y usa el bloque Relaciones para vincular.</div>
             <div id="npMapaTip" class="np-mapa-tip" aria-live="polite"></div>
+            <div id="npMapaEdgeDetail" class="np-mapa-edge-detail np-hide" role="dialog" aria-label="Detalle de conexión" aria-hidden="true">
+              <div class="np-mapa-edge-detail-head">
+                <strong>Conexión</strong>
+                <button type="button" class="np-mapa-edge-detail-close" id="npMapaEdgeDetailClose" aria-label="Cerrar">×</button>
+              </div>
+              <div id="npMapaEdgeDetailBody" class="np-mapa-edge-detail-body"></div>
+            </div>
             <button type="button" id="npMapaFilterChip" class="np-mapa-filter-chip np-hide" aria-label="Quitar filtro y ver todas">
               <span id="npMapaFilterChipText"></span>
               <span class="np-mapa-filter-chip-x" aria-hidden="true">×</span>
@@ -28170,8 +28293,13 @@
   }
 
   function setPlanProAppMode(mode) {
+    var prev = state.nutriProAppMode;
     var m =
       mode === 'nutri-pro' ? 'nutri-pro' : mode === 'mapa' ? 'mapa' : 'apuntes';
+    if (prev === 'mapa' && m !== 'mapa') {
+      snapshotPlanProMapaView();
+      planProMapaPendingRestore = true;
+    }
     state.nutriProAppMode = m;
     var vAp = $('npViewApuntes');
     var vNu = $('npViewNutriPro');
@@ -28197,6 +28325,10 @@
 
   var planProMapaRenderTimer = null;
   var planProMapaView = { x: 0, y: 0, scale: 1 };
+  var planProMapaViewSnapshot = null;
+  var planProMapaPendingRestore = false;
+  var planProMapaForceFit = false;
+  var planProMapaHasUserView = false;
   var planProMapaPan = null;
   var planProMapaWired = false;
   var planProMapaDataCache = null;
@@ -28208,6 +28340,32 @@
     type: 'relacionado_con',
     typePills: null
   };
+
+  function snapshotPlanProMapaView() {
+    if (!(planProMapaView && isFinite(planProMapaView.scale) && planProMapaView.scale > 0)) return;
+    planProMapaViewSnapshot = {
+      x: planProMapaView.x,
+      y: planProMapaView.y,
+      scale: planProMapaView.scale
+    };
+  }
+
+  function clearPlanProMapaViewSnapshot() {
+    planProMapaViewSnapshot = null;
+    planProMapaPendingRestore = false;
+  }
+
+  /** Abre apunte desde Neuron PRO sin salir del mapa (al cerrar sigues donde estabas). */
+  async function openMapaApunteKeepView(itemId) {
+    if (!itemId) return;
+    snapshotPlanProMapaView();
+    var row = await fetchPlanProItemForDetail(itemId);
+    if (!row) {
+      showToast('Apunte no encontrado.', true);
+      return;
+    }
+    await openItemDetail(row);
+  }
 
   function scheduleRenderPlanProMapa() {
     if (planProMapaRenderTimer) clearTimeout(planProMapaRenderTimer);
@@ -28254,7 +28412,7 @@
 
   async function handleMapaApunteTap(itemId, label) {
     if (!planProMapaLinkState.active) {
-      navigateToApunteRef(itemId);
+      await openMapaApunteKeepView(itemId);
       return;
     }
     if (!itemId) return;
@@ -28290,6 +28448,7 @@
 
   async function openMapaNutriNode(node) {
     if (!node || !node.refId) return;
+    snapshotPlanProMapaView();
     if (node.kind === 'nutri_link') {
       var lnk = (state.nutriProLinks || []).find(function (x) {
         return x && x.id === node.refId;
@@ -28326,6 +28485,8 @@
     opts = opts || {};
     var sel = $('npMapaFilterArea');
     if (sel) sel.value = '';
+    clearPlanProMapaViewSnapshot();
+    planProMapaForceFit = true;
     updateMapaFilterChip();
     scheduleRenderPlanProMapa();
     if (opts.toast !== false) showToast('Viendo todas las plantas.');
@@ -28743,12 +28904,25 @@
     });
 
     /**
-     * Órbita = círculo mínimo que cubre los discos hijos (sin hueco de más a un lado).
+     * Órbita = círculo que cubre el contenido (sin dejar ramas/apuntes fuera).
      * Guarda orbitCx/orbitCy (centro del halo) aparte del ícono si hace falta.
      */
     function nestOrbitsHierarchically() {
       function dist(ax, ay, bx, by) {
         return Math.sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by));
+      }
+      /** Radio visual del ícono (cuadrado/diamante son más grandes que n.r). */
+      function nodeVisualR(n) {
+        var r = n.r || 8;
+        if (n.kind === 'area') return r + 6;
+        if (n.kind === 'cat') {
+          var d = n.depth || 0;
+          if (d === 0) return r * 1.3;
+          if (d === 1) return r * 1.5;
+          return r * 1.2;
+        }
+        if (n.kind === 'nutri_file' || n.kind === 'nutri_link') return r * 1.35;
+        return r + 4;
       }
       function fitOrbitToDiscs(discs, pad) {
         if (!discs || !discs.length) return null;
@@ -28771,6 +28945,29 @@
           if (need > reach) reach = need;
         });
         return { cx: cx, cy: cy, reach: reach + (pad || 0) };
+      }
+      function catUnderAncestor(catNode, ancestorId) {
+        var cur = catNode;
+        var guard = 0;
+        while (cur && guard++ < 10) {
+          if (cur.parentCatId === ancestorId) return true;
+          if (!cur.parentCatId) return false;
+          cur = byId['cat:' + cur.parentCatId];
+        }
+        return false;
+      }
+      function itemUnderCat(itemNode, catId) {
+        var it = itemsById[itemNode.refId];
+        if (!it || !it.category_id) return false;
+        if (it.category_id === catId) return true;
+        var cur = byId['cat:' + it.category_id];
+        var guard = 0;
+        while (cur && guard++ < 10) {
+          if (cur.refId === catId) return true;
+          if (!cur.parentCatId) return false;
+          cur = byId['cat:' + cur.parentCatId];
+        }
+        return false;
       }
 
       nodes.forEach(function (n) {
@@ -28796,14 +28993,14 @@
             discs.push({
               x: ch.orbitCx != null ? ch.orbitCx : ch.x,
               y: ch.orbitCy != null ? ch.orbitCy : ch.y,
-              r: ch.orbitReach > 0 ? ch.orbitReach : ch.r || 8
+              r: ch.orbitReach > 0 ? ch.orbitReach : nodeVisualR(ch)
             });
             return;
           }
           if (ch.kind === 'item') {
             var it = itemsById[ch.refId];
             if (it && it.category_id === n.refId) {
-              discs.push({ x: ch.x, y: ch.y, r: (ch.r || 8) + 2 });
+              discs.push({ x: ch.x, y: ch.y, r: nodeVisualR(ch) });
             }
           }
         });
@@ -28816,11 +29013,21 @@
             if (!it2 || it2.category_id !== n.refId) return;
             if (dist(ch.x, ch.y, itn.x, itn.y) < 100) near = true;
           });
-          if (near) discs.push({ x: ch.x, y: ch.y, r: (ch.r || 8) + 2 });
+          if (near) discs.push({ x: ch.x, y: ch.y, r: nodeVisualR(ch) });
         });
-        var fit = fitOrbitToDiscs(discs, 4);
+        /* Red de seguridad: cualquier descendiente que se haya salido del cálculo directo. */
+        nodes.forEach(function (ch) {
+          if (ch.id === n.id) return;
+          if (ch.kind === 'cat' && catUnderAncestor(ch, n.refId)) {
+            discs.push({ x: ch.x, y: ch.y, r: nodeVisualR(ch) });
+          }
+          if (ch.kind === 'item' && itemUnderCat(ch, n.refId)) {
+            discs.push({ x: ch.x, y: ch.y, r: nodeVisualR(ch) });
+          }
+        });
+        var fit = fitOrbitToDiscs(discs, 8);
         if (!fit) return;
-        n.orbitReach = Math.max((n.r || 10) + 16, fit.reach);
+        n.orbitReach = Math.max((n.r || 10) + 18, fit.reach);
         n.orbitCx = fit.cx;
         n.orbitCy = fit.cy;
       });
@@ -28828,28 +29035,27 @@
       nodes.forEach(function (n) {
         if (n.kind !== 'area') return;
         var discs = [];
+        /* Toda la planta: cada nodo del cluster + órbitas de ramas (nada fuera del halo). */
         nodes.forEach(function (ch) {
-          if (ch.kind === 'cat' && ch.parentAreaId === n.refId && !(ch.depth > 0)) {
+          if (ch.id === n.id) return;
+          if (ch.clusterAreaId !== n.refId && !(ch.kind === 'cat' && ch.parentAreaId === n.refId)) {
+            return;
+          }
+          if (ch.kind === 'area') return;
+          discs.push({ x: ch.x, y: ch.y, r: nodeVisualR(ch) });
+          if (ch.kind === 'cat' && ch.orbitReach > 0) {
             discs.push({
               x: ch.orbitCx != null ? ch.orbitCx : ch.x,
               y: ch.orbitCy != null ? ch.orbitCy : ch.y,
-              r: ch.orbitReach > 0 ? ch.orbitReach : ch.r || 8
+              r: ch.orbitReach
             });
-            return;
-          }
-          if (ch.kind === 'item') {
-            var itA = itemsById[ch.refId];
-            if (itA && itA.area_id === n.refId && !itA.category_id) {
-              discs.push({ x: ch.x, y: ch.y, r: (ch.r || 8) + 2 });
-            }
           }
         });
-        var fit = fitOrbitToDiscs(discs, 5);
+        var fit = fitOrbitToDiscs(discs, 10);
         if (!fit) {
           n.orbitReach = 0;
           return;
         }
-        /* Halo centrado en el contenido; el ícono de planta no se mueve (evita perder el encuadre). */
         n.orbitCx = fit.cx;
         n.orbitCy = fit.cy;
         n.orbitReach = fit.reach;
@@ -29442,7 +29648,184 @@
     });
   }
 
-  function focusPlanProMapaRelation(fromNode, toNode, pathEl, tipText) {
+  function closeMapaEdgeDetail() {
+    var panel = $('npMapaEdgeDetail');
+    if (!panel) return;
+    panel.classList.add('np-hide');
+    panel.setAttribute('aria-hidden', 'true');
+    var body = $('npMapaEdgeDetailBody');
+    if (body) body.innerHTML = '';
+  }
+
+  function mapaEndpointKindLabel(node) {
+    if (!node) return 'Nodo';
+    if (node.kind === 'item') return 'Apunte';
+    if (node.kind === 'nutri_file') return 'Archivo';
+    if (node.kind === 'nutri_link') return 'Link';
+    if (node.kind === 'cat') return 'Rama';
+    if (node.kind === 'area') return 'Planta';
+    return 'Nodo';
+  }
+
+  function resolveMapaEndpointDetail(node) {
+    var out = {
+      kindLabel: mapaEndpointKindLabel(node),
+      title: (node && node.label) || '—',
+      path: '',
+      extra: '',
+      nodeKind: node && node.kind,
+      refId: node && node.refId,
+      openable: false,
+      url: ''
+    };
+    if (!node) return out;
+    var cache = planProMapaDataCache || {};
+    var itemsById = cache.itemsById || {};
+    if (node.kind === 'item') {
+      var it = itemsById[node.refId] || {};
+      out.title = node.label || it.title || 'Apunte';
+      out.path = getPlanFlowPath(it.area_id || node.clusterAreaId, it.category_id, null) || '—';
+      out.openable = true;
+      return out;
+    }
+    if (node.kind === 'nutri_file') {
+      var f =
+        (state.nutriProFiles || []).find(function (x) {
+          return x && x.id === node.refId;
+        }) ||
+        (cache.nutriByKey && cache.nutriByKey[node.id]) ||
+        null;
+      out.title = (f && (f.title || f.original_name)) || node.label || 'Archivo';
+      out.path = f ? getNutriProFileDisplayPath(f).replace(/^📁\s*/, '') : 'Nutri PRO';
+      if (f && f.mime_type) out.extra = f.mime_type;
+      out.openable = true;
+      return out;
+    }
+    if (node.kind === 'nutri_link') {
+      var lnk =
+        (state.nutriProLinks || []).find(function (x) {
+          return x && x.id === node.refId;
+        }) ||
+        (cache.nutriByKey && cache.nutriByKey[node.id]) ||
+        null;
+      out.title = (lnk && lnk.title) || node.label || 'Link';
+      out.path = lnk ? getNutriProLinkDisplayPath(lnk) : 'Nutri PRO';
+      out.url = (lnk && lnk.url) || node.url || '';
+      if (out.url) out.extra = out.url;
+      out.openable = true;
+      return out;
+    }
+    if (node.kind === 'cat') {
+      out.path = getPlanFlowPath(node.parentAreaId || node.clusterAreaId, node.refId, null) || '—';
+    } else if (node.kind === 'area') {
+      out.path = getPlanAreaTitle(node.refId) || '—';
+    }
+    return out;
+  }
+
+  function buildMapaEdgeEndCard(role, detail) {
+    var box = document.createElement('div');
+    box.className = 'np-mapa-edge-detail-end';
+    var roleEl = document.createElement('div');
+    roleEl.className = 'np-mapa-edge-detail-role';
+    roleEl.textContent = role;
+    box.appendChild(roleEl);
+    var title = document.createElement('div');
+    title.className = 'np-mapa-edge-detail-title';
+    title.textContent = detail.title || '—';
+    box.appendChild(title);
+    var meta = document.createElement('div');
+    meta.className = 'np-mapa-edge-detail-meta';
+    meta.textContent = detail.kindLabel || '';
+    box.appendChild(meta);
+    if (detail.path) {
+      var path = document.createElement('div');
+      path.className = 'np-mapa-edge-detail-path';
+      path.textContent = 'Ruta: ' + detail.path;
+      box.appendChild(path);
+    }
+    if (detail.extra && detail.extra !== detail.path) {
+      var extra = document.createElement('div');
+      extra.className = 'np-mapa-edge-detail-path';
+      extra.textContent =
+        detail.nodeKind === 'nutri_link' ? 'URL: ' + detail.extra : detail.extra;
+      box.appendChild(extra);
+    }
+    if (detail.openable && detail.refId) {
+      var actions = document.createElement('div');
+      actions.className = 'np-mapa-edge-detail-actions';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-ghost btn-ghost-blue';
+      btn.textContent =
+        detail.nodeKind === 'item'
+          ? 'Abrir apunte'
+          : detail.nodeKind === 'nutri_file'
+            ? 'Abrir archivo'
+            : detail.nodeKind === 'nutri_link'
+              ? 'Abrir link'
+              : 'Abrir';
+      btn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        openMapaEndpointFromDetail(detail);
+      });
+      actions.appendChild(btn);
+      box.appendChild(actions);
+    }
+    return box;
+  }
+
+  async function openMapaEndpointFromDetail(detail) {
+    if (!detail || !detail.refId) return;
+    try {
+      if (detail.nodeKind === 'item') {
+        await openMapaApunteKeepView(detail.refId);
+        return;
+      }
+      if (detail.nodeKind === 'nutri_file' || detail.nodeKind === 'nutri_link') {
+        await openMapaNutriNode({
+          kind: detail.nodeKind,
+          refId: detail.refId,
+          label: detail.title,
+          url: detail.url || ''
+        });
+      }
+    } catch (e) {
+      showToast((e && e.message) || 'No se pudo abrir.', true);
+    }
+  }
+
+  function showMapaEdgeDetail(fromNode, toNode, edgeMeta) {
+    var panel = $('npMapaEdgeDetail');
+    var body = $('npMapaEdgeDetailBody');
+    if (!panel || !body) return;
+    edgeMeta = edgeMeta || {};
+    var typeId = edgeMeta.relation_type || 'relacionado_con';
+    var typeLab =
+      edgeMeta.label || planProRelationTypeLabel(typeId, false) || 'Relación';
+    var color = planProMapaRelationStroke(typeId);
+    body.innerHTML = '';
+    var typeRow = document.createElement('div');
+    typeRow.className = 'np-mapa-edge-detail-type';
+    typeRow.style.color = color;
+    var dot = document.createElement('i');
+    typeRow.appendChild(dot);
+    typeRow.appendChild(document.createTextNode(typeLab));
+    body.appendChild(typeRow);
+    var fromDetail = resolveMapaEndpointDetail(fromNode);
+    var toDetail = resolveMapaEndpointDetail(toNode);
+    body.appendChild(buildMapaEdgeEndCard('Origen', fromDetail));
+    var arrow = document.createElement('div');
+    arrow.className = 'np-mapa-edge-detail-arrow';
+    arrow.textContent = '↓';
+    body.appendChild(arrow);
+    body.appendChild(buildMapaEdgeEndCard('Destino', toDetail));
+    panel.classList.remove('np-hide');
+    panel.setAttribute('aria-hidden', 'false');
+  }
+
+  function focusPlanProMapaRelation(fromNode, toNode, pathEl, tipText, edgeMeta) {
     if (!fromNode || !toNode) return;
     var svg = $('npMapaSvg');
     clearMapaEdgeFocus();
@@ -29474,13 +29857,10 @@
       svg,
       { animate: true, duration: 620, pad: 36, minScale: 0.08, maxScale: 1.35 }
     );
-    showMapaTip(
-      tipText ||
-        (fromNode.label || '') + ' ↔ ' + (toNode.label || '')
-    );
+    showMapaTip('');
+    showMapaEdgeDetail(fromNode, toNode, edgeMeta || {});
     planProMapaFocusTimer = setTimeout(function () {
       clearMapaEdgeFocus();
-      showMapaTip('');
     }, 5200);
   }
 
@@ -29494,12 +29874,17 @@
   }
 
   function resetPlanProMapaView() {
+    clearPlanProMapaViewSnapshot();
+    planProMapaForceFit = true;
     if (planProMapaDataCache && planProMapaDataCache._layoutBounds) {
       fitPlanProMapaToBounds(planProMapaDataCache._layoutBounds, $('npMapaSvg'));
+      planProMapaHasUserView = true;
+      planProMapaForceFit = false;
       return;
     }
     planProMapaView = { x: 0, y: 0, scale: 1 };
     applyPlanProMapaTransform();
+    planProMapaForceFit = false;
   }
 
   function wirePlanProMapaInteractions(svg) {
@@ -29532,6 +29917,7 @@
         if (e.target.closest('.np-mapa-edge-sem') || e.target.closest('.np-mapa-edge-hit')) return;
       }
       clearMapaEdgeFocus();
+      closeMapaEdgeDetail();
       planProMapaPan = {
         px: e.clientX,
         py: e.clientY,
@@ -29591,6 +29977,31 @@
       }
       var includeOrphan =
         !!( $('npMapaIncludeOrphanRamas') && $('npMapaIncludeOrphanRamas').checked );
+      var keepView = null;
+      if (
+        planProMapaPendingRestore &&
+        planProMapaViewSnapshot &&
+        isFinite(planProMapaViewSnapshot.scale) &&
+        planProMapaViewSnapshot.scale > 0
+      ) {
+        keepView = {
+          x: planProMapaViewSnapshot.x,
+          y: planProMapaViewSnapshot.y,
+          scale: planProMapaViewSnapshot.scale
+        };
+        planProMapaPendingRestore = false;
+      } else if (
+        !planProMapaForceFit &&
+        planProMapaHasUserView &&
+        isFinite(planProMapaView.scale) &&
+        planProMapaView.scale > 0
+      ) {
+        keepView = {
+          x: planProMapaView.x,
+          y: planProMapaView.y,
+          scale: planProMapaView.scale
+        };
+      }
       var layout = layoutPlanProMapaNodes(
         state.areas,
         state.categories,
@@ -29742,7 +30153,7 @@
         function onEdgeClick(ev) {
           ev.preventDefault();
           ev.stopPropagation();
-          focusPlanProMapaRelation(a, b, path, tip);
+          focusPlanProMapaRelation(a, b, path, tip, e);
         }
         path.addEventListener('pointerenter', onEdgeEnter);
         path.addEventListener('pointerleave', onEdgeLeave);
@@ -29830,14 +30241,24 @@
             }
             sel.value = n.refId;
             updateMapaFilterChip();
+            clearPlanProMapaViewSnapshot();
+            planProMapaForceFit = true;
             scheduleRenderPlanProMapa();
             showToast('Filtro: ' + (n.label || 'Planta') + ' · «Ver todas» para salir');
           });
         }
         world.appendChild(g);
       });
-      fitPlanProMapaToBounds(layout.bounds, svg);
       if (planProMapaDataCache) planProMapaDataCache._layoutBounds = layout.bounds;
+      if (keepView) {
+        planProMapaView = keepView;
+        applyPlanProMapaTransform();
+        planProMapaHasUserView = true;
+      } else {
+        fitPlanProMapaToBounds(layout.bounds, svg);
+        planProMapaHasUserView = true;
+      }
+      planProMapaForceFit = false;
       updateMapaFilterChip();
     } catch (e) {
       if (empty) {
@@ -34290,6 +34711,7 @@
     if (mapaRefresh && mapaRefresh.dataset.npWired !== '1') {
       mapaRefresh.dataset.npWired = '1';
       mapaRefresh.addEventListener('click', function () {
+        closeMapaEdgeDetail();
         scheduleRenderPlanProMapa();
       });
     }
@@ -34298,6 +34720,17 @@
       mapaReset.dataset.npWired = '1';
       mapaReset.addEventListener('click', function () {
         resetPlanProMapaView();
+      });
+    }
+    var mapaEdgeClose = $('npMapaEdgeDetailClose');
+    if (mapaEdgeClose && mapaEdgeClose.dataset.npWired !== '1') {
+      mapaEdgeClose.dataset.npWired = '1';
+      mapaEdgeClose.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeMapaEdgeDetail();
+        clearMapaEdgeFocus();
+        showMapaTip('');
       });
     }
     var mapaShowAll = $('npMapaShowAllBtn');
@@ -34318,6 +34751,8 @@
     if (mapaArea && mapaArea.dataset.npWired !== '1') {
       mapaArea.dataset.npWired = '1';
       mapaArea.addEventListener('change', function () {
+        clearPlanProMapaViewSnapshot();
+        planProMapaForceFit = true;
         updateMapaFilterChip();
         scheduleRenderPlanProMapa();
       });
