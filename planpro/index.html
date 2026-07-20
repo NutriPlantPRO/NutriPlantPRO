@@ -5301,6 +5301,13 @@
     .np-mapa-node[data-kind="item"] text {
       font-size: 11px;
     }
+    .np-mapa-orbit {
+      pointer-events: none;
+      stroke: none;
+    }
+    .np-mapa-svg.is-edge-focus .np-mapa-orbit {
+      opacity: 0.2;
+    }
     .np-mapa-edge-sem {
       stroke-width: 2.35;
       fill: none;
@@ -11181,7 +11188,7 @@
             Neuron PRO
           </h2>
           <p class="np-muted" style="margin:0 0 10px;font-size:13px;line-height:1.45;">
-            Red de Plantas, Ramas, apuntes y archivos/links Nutri relacionados. Cada tipo de relación tiene su color. Toca una línea de relación para alejarse suave y ver ambos extremos resaltados. Usa <strong>Relacionar</strong> para vincular dos apuntes; filtra por planta si se llena. Arrastra y zoom en el lienzo; franjas laterales (↕) para scroll.
+            Red de Plantas → Ramas → sub-ramas (hasta 3 niveles) → apuntes, más archivos/links Nutri. Cada tipo de relación tipada tiene su color. Toca una línea de relación para alejarse suave y ver ambos extremos. Usa <strong>Relacionar</strong> para vincular dos apuntes; filtra por planta si se llena.
           </p>
           <div class="np-mapa-toolbar" aria-label="Controles del mapa">
             <label for="npMapaFilterArea">Planta</label>
@@ -11200,11 +11207,14 @@
             <button type="button" class="btn btn-ghost" id="npMapaResetViewBtn">Centrar</button>
           </div>
           <div class="np-mapa-legend" aria-hidden="true" id="npMapaLegend">
-            <span><i style="background:#22c55e;"></i> Planta</span>
-            <span><i style="background:#64748b;"></i> Rama</span>
-            <span><i style="background:#6366f1;"></i> Apunte</span>
+            <span><i style="background:#22c55e;width:14px;height:14px;"></i> Planta</span>
+            <span><i style="background:#475569;width:12px;height:12px;"></i> Rama</span>
+            <span><i style="background:#64748b;width:10px;height:10px;"></i> Sub-rama</span>
+            <span><i style="background:#94a3b8;width:8px;height:8px;border:1.5px dashed #64748b;box-sizing:border-box;"></i> Sub²</span>
+            <span><i style="background:#4f46e5;"></i> Apunte</span>
             <span><i style="background:#ea580c;"></i> Archivo</span>
             <span><i style="background:#0891b2;"></i> Link</span>
+            <span><i style="width:14px;height:14px;border-radius:50%;background:rgba(34,197,94,0.22);border:0;box-sizing:border-box;"></i> Alcance</span>
             <span><i class="np-mapa-legend-line np-mapa-legend-line--hier"></i> Jerarquía</span>
           </div>
           <div class="np-mapa-link-bar" id="npMapaLinkBar" aria-label="Relacionar desde el mapa">
@@ -28427,6 +28437,23 @@
         if (c && c.area_id && areaIdsUsed[c.area_id]) catIdsUsed[c.id] = true;
       });
     }
+    var catById = {};
+    (categories || []).forEach(function (c) {
+      if (c && c.id) catById[c.id] = c;
+    });
+    var addedAnc = true;
+    var guardAnc = 0;
+    while (addedAnc && guardAnc < 12) {
+      addedAnc = false;
+      guardAnc += 1;
+      Object.keys(catIdsUsed).forEach(function (cid) {
+        var c = catById[cid];
+        if (c && c.parent_id && !catIdsUsed[c.parent_id]) {
+          catIdsUsed[c.parent_id] = true;
+          addedAnc = true;
+        }
+      });
+    }
     var activeAreas = (areas || []).filter(function (a) {
       return a && !a.archived_at && areaIdsUsed[a.id];
     });
@@ -28441,11 +28468,71 @@
     var cy = 820;
     var nA = Math.max(activeAreas.length, 1);
     var totalItemsHint = Object.keys(itemsById).length;
-    /* Radio planta crece con #plantas y con cantidad de apuntes (zoom cubre el resto). */
     var plantR =
       460 +
       Math.max(0, nA - 1) * 130 +
       Math.min(220, totalItemsHint * 3.2);
+
+    var CAT_DEPTH_STYLE = [
+      { r: 18, color: '#475569' },
+      { r: 14, color: '#64748b' },
+      { r: 11, color: '#94a3b8' }
+    ];
+
+    function mapaCatChildren(areaId, parentCatId) {
+      return (categories || [])
+        .filter(function (c) {
+          if (!c || c.archived_at || c.area_id !== areaId || !catIdsUsed[c.id]) return false;
+          if (parentCatId) return c.parent_id === parentCatId;
+          return !c.parent_id;
+        })
+        .sort(function (a, b) {
+          return (a.sort_order || 0) - (b.sort_order || 0) || (a.title || '').localeCompare(b.title || '');
+        });
+    }
+
+    function placeCatTree(areaId, parentCatId, parentNode, depth) {
+      if (depth > 2) return;
+      var kids = mapaCatChildren(areaId, parentCatId);
+      if (!kids.length) return;
+      var orbit =
+        depth === 0
+          ? 250 + Math.max(0, kids.length - 1) * 48
+          : depth === 1
+            ? 145 + Math.max(0, kids.length - 1) * 28
+            : 110 + Math.max(0, kids.length - 1) * 22;
+      var style = CAT_DEPTH_STYLE[Math.min(depth, 2)];
+      kids.forEach(function (c, ci) {
+        var cAng =
+          kids.length === 1
+            ? parentNode._baseAng != null
+              ? parentNode._baseAng
+              : -Math.PI / 2
+            : (ci / kids.length) * Math.PI * 2 - Math.PI / 2;
+        var ringExtra = Math.floor(ci / 9) * (depth === 0 ? 75 : 55);
+        var cNode = {
+          id: 'cat:' + c.id,
+          kind: 'cat',
+          refId: c.id,
+          parentAreaId: areaId,
+          parentCatId: parentCatId || null,
+          depth: depth,
+          label: c.title || 'Rama',
+          color: c.color_hex || parentNode.color || style.color,
+          x: parentNode.x + Math.cos(cAng) * (orbit + ringExtra),
+          y: parentNode.y + Math.sin(cAng) * (orbit + ringExtra),
+          r: style.r,
+          _baseAng: cAng,
+          _placeOrbit: orbit + ringExtra
+        };
+        nodes.push(cNode);
+        byId[cNode.id] = cNode;
+        placeCatTree(areaId, c.id, cNode, depth + 1);
+      });
+      if (!parentNode.orbitReach || orbit + 40 > parentNode.orbitReach) {
+        parentNode.orbitReach = orbit + Math.max(40, kids.length > 8 ? 70 : 40);
+      }
+    }
 
     activeAreas.forEach(function (a, ai) {
       var ang = (ai / nA) * Math.PI * 2 - Math.PI / 2;
@@ -28457,41 +28544,12 @@
         color: a.color_hex || '#22c55e',
         x: cx + Math.cos(ang) * plantR,
         y: cy + Math.sin(ang) * plantR,
-        r: 28
+        r: 34,
+        _baseAng: ang
       };
       nodes.push(node);
       byId[node.id] = node;
-
-      var cats = (categories || []).filter(function (c) {
-        return c && c.area_id === a.id && catIdsUsed[c.id];
-      });
-      var itemsInPlant = 0;
-      Object.keys(itemsById).forEach(function (id) {
-        if (itemsById[id] && itemsById[id].area_id === a.id) itemsInPlant += 1;
-      });
-      var catOrbit =
-        240 + Math.max(0, cats.length - 1) * 52 + Math.min(160, itemsInPlant * 2.5);
-      cats.forEach(function (c, ci) {
-        /* Ramas alrededor de la planta (círculo completo), no en abanico estrecho. */
-        var cAng =
-          cats.length === 1
-            ? ang
-            : (ci / cats.length) * Math.PI * 2 - Math.PI / 2 + ang * 0.08;
-        var ringExtra = Math.floor(ci / 8) * 70;
-        var cNode = {
-          id: 'cat:' + c.id,
-          kind: 'cat',
-          refId: c.id,
-          parentAreaId: a.id,
-          label: c.title || 'Rama',
-          color: c.color_hex || '#64748b',
-          x: node.x + Math.cos(cAng) * (catOrbit + ringExtra),
-          y: node.y + Math.sin(cAng) * (catOrbit + ringExtra),
-          r: 16
-        };
-        nodes.push(cNode);
-        byId[cNode.id] = cNode;
-      });
+      placeCatTree(a.id, null, node, 0);
     });
 
     var itemsByParent = {};
@@ -28515,29 +28573,70 @@
       var py = parent ? parent.y : cy;
       var n = list.length;
       var perRing = n > 18 ? 12 : 10;
-      var baseOrbit = 155 + Math.min(n, 24) * 16;
-      var ringGap = 100;
+      var parentIsDeepCat = parent && parent.kind === 'cat' && (parent.depth || 0) >= 1;
+      var baseOrbit = (parentIsDeepCat ? 120 : 155) + Math.min(n, 24) * 16;
+      var ringGap = parentIsDeepCat ? 88 : 100;
       list.forEach(function (it, ii) {
         var ring = Math.floor(ii / perRing);
         var slot = ii % perRing;
         var onRing = Math.min(perRing, n - ring * perRing);
         var ang = (slot / Math.max(onRing, 1)) * Math.PI * 2 - Math.PI / 2 + ring * 0.12;
         var orbit = baseOrbit + ring * ringGap;
+        if (parent) {
+          var reach = orbit + 14;
+          if (!parent.orbitReach || reach > parent.orbitReach) parent.orbitReach = reach;
+        }
         var node = {
           id: 'item:' + it.id,
           kind: 'item',
           refId: it.id,
           label: it.title || '(Sin título)',
-          color: '#6366f1',
+          color: '#4f46e5',
           x: px + Math.cos(ang) * orbit,
           y: py + Math.sin(ang) * orbit,
-          r: 11,
+          r: 9,
           labelSide: slot % 2 === 0 ? 1 : -1
         };
         nodes.push(node);
         byId[node.id] = node;
       });
     });
+
+    function refreshOrbitReachFromChildren() {
+      nodes.forEach(function (n) {
+        if (n.kind !== 'area' && n.kind !== 'cat') return;
+        var maxD = (n.r || 10) + 36;
+        nodes.forEach(function (ch) {
+          var ok = false;
+          if (n.kind === 'area') {
+            if (ch.kind === 'cat' && ch.parentAreaId === n.refId && !ch.parentCatId) ok = true;
+            if (ch.kind === 'item') {
+              var itA = itemsById[ch.refId];
+              if (
+                itA &&
+                itA.area_id === n.refId &&
+                !(itA.category_id && byId['cat:' + itA.category_id])
+              ) {
+                ok = true;
+              }
+            }
+          } else if (n.kind === 'cat') {
+            if (ch.kind === 'cat' && ch.parentCatId === n.refId) ok = true;
+            if (ch.kind === 'item') {
+              var itC = itemsById[ch.refId];
+              if (itC && itC.category_id === n.refId) ok = true;
+            }
+          }
+          if (!ok) return;
+          var d =
+            Math.sqrt((ch.x - n.x) * (ch.x - n.x) + (ch.y - n.y) * (ch.y - n.y)) +
+            (ch.r || 8) +
+            12;
+          if (d > maxD) maxD = d;
+        });
+        n.orbitReach = Math.max(n.orbitReach || 0, maxD);
+      });
+    }
 
     var nutriAnchors = {};
     nutriRelations.forEach(function (r) {
@@ -28606,11 +28705,16 @@
     });
 
     separateMapaNodes(nodes, Math.min(100, 55 + Math.floor(nodes.length / 8)));
+    refreshOrbitReachFromChildren();
 
     var hierEdges = [];
     nodes.forEach(function (n) {
-      if (n.kind === 'cat' && n.parentAreaId && byId['area:' + n.parentAreaId]) {
-        hierEdges.push({ from: 'area:' + n.parentAreaId, to: n.id, kind: 'hier' });
+      if (n.kind === 'cat') {
+        if (n.parentCatId && byId['cat:' + n.parentCatId]) {
+          hierEdges.push({ from: 'cat:' + n.parentCatId, to: n.id, kind: 'hier', depth: n.depth || 1 });
+        } else if (n.parentAreaId && byId['area:' + n.parentAreaId]) {
+          hierEdges.push({ from: 'area:' + n.parentAreaId, to: n.id, kind: 'hier', depth: 0 });
+        }
       }
       if (n.kind === 'item') {
         var it = itemsById[n.refId];
@@ -28998,6 +29102,47 @@
       });
       svg.insertBefore(defs, world);
 
+      var orbitNodes = layout.nodes
+        .filter(function (n) {
+          return (n.kind === 'area' || n.kind === 'cat') && n.orbitReach && n.orbitReach > (n.r || 10) + 20;
+        })
+        .slice()
+        .sort(function (a, b) {
+          return (b.orbitReach || 0) - (a.orbitReach || 0);
+        });
+      orbitNodes.forEach(function (n) {
+        var col = n.color || '#94a3b8';
+        /* Sombra suave en capas (sin línea de órbita). */
+        var layers =
+          n.kind === 'area'
+            ? [
+                { scale: 1, opacity: 0.035 },
+                { scale: 0.72, opacity: 0.05 },
+                { scale: 0.42, opacity: 0.07 }
+              ]
+            : n.depth
+              ? [
+                  { scale: 1, opacity: 0.04 },
+                  { scale: 0.65, opacity: 0.055 }
+                ]
+              : [
+                  { scale: 1, opacity: 0.045 },
+                  { scale: 0.7, opacity: 0.06 },
+                  { scale: 0.4, opacity: 0.075 }
+                ];
+        layers.forEach(function (layer) {
+          var orb = document.createElementNS(ns, 'circle');
+          orb.setAttribute('class', 'np-mapa-orbit');
+          orb.setAttribute('cx', n.x);
+          orb.setAttribute('cy', n.y);
+          orb.setAttribute('r', Math.max(n.r + 8, n.orbitReach * layer.scale));
+          orb.setAttribute('fill', col);
+          orb.setAttribute('fill-opacity', String(layer.opacity));
+          orb.setAttribute('stroke', 'none');
+          world.appendChild(orb);
+        });
+      });
+
       layout.hierEdges.forEach(function (e) {
         var a = layout.byId[e.from];
         var b = layout.byId[e.to];
@@ -29008,6 +29153,9 @@
         line.setAttribute('x2', b.x);
         line.setAttribute('y2', b.y);
         line.setAttribute('class', 'np-mapa-edge-hier');
+        if (e.depth === 1) line.setAttribute('stroke-dasharray', '5 4');
+        if (e.depth >= 2) line.setAttribute('stroke-dasharray', '2 3');
+        if (e.depth >= 1) line.setAttribute('opacity', '0.7');
         world.appendChild(line);
       });
       layout.semEdges.forEach(function (e) {
@@ -29077,28 +29225,75 @@
         if (n.kind === 'item' && planProMapaLinkState.fromId === n.refId) {
           g.classList.add('is-link-from');
         }
+        if (n.kind === 'area') {
+          var halo = document.createElementNS(ns, 'circle');
+          halo.setAttribute('cx', n.x);
+          halo.setAttribute('cy', n.y);
+          halo.setAttribute('r', n.r + 8);
+          halo.setAttribute('fill', 'none');
+          halo.setAttribute('stroke', n.color || '#22c55e');
+          halo.setAttribute('stroke-width', '3');
+          halo.setAttribute('opacity', '0.35');
+          g.appendChild(halo);
+          var halo2 = document.createElementNS(ns, 'circle');
+          halo2.setAttribute('cx', n.x);
+          halo2.setAttribute('cy', n.y);
+          halo2.setAttribute('r', n.r + 14);
+          halo2.setAttribute('fill', 'none');
+          halo2.setAttribute('stroke', n.color || '#22c55e');
+          halo2.setAttribute('stroke-width', '1.5');
+          halo2.setAttribute('opacity', '0.2');
+          g.appendChild(halo2);
+        } else if (n.kind === 'cat' && (n.depth || 0) >= 1) {
+          var ring = document.createElementNS(ns, 'circle');
+          ring.setAttribute('cx', n.x);
+          ring.setAttribute('cy', n.y);
+          ring.setAttribute('r', n.r + 4);
+          ring.setAttribute('fill', 'none');
+          ring.setAttribute('stroke', n.color || '#64748b');
+          ring.setAttribute('stroke-width', (n.depth || 0) >= 2 ? '1.25' : '1.75');
+          ring.setAttribute('stroke-dasharray', (n.depth || 0) >= 2 ? '2 2' : '4 3');
+          ring.setAttribute('opacity', '0.85');
+          g.appendChild(ring);
+        }
         var circle = document.createElementNS(ns, 'circle');
         circle.setAttribute('cx', n.x);
         circle.setAttribute('cy', n.y);
         circle.setAttribute('r', n.r);
         circle.setAttribute('fill', n.color || '#64748b');
-        circle.setAttribute('stroke', '#fff');
-        circle.setAttribute('stroke-width', n.kind === 'area' ? 3 : 2);
+        if (n.kind === 'item') {
+          circle.setAttribute('stroke', '#312e81');
+          circle.setAttribute('stroke-width', '1.75');
+        } else if (n.kind === 'nutri_file' || n.kind === 'nutri_link') {
+          circle.setAttribute('stroke', '#fff');
+          circle.setAttribute('stroke-width', '2');
+        } else if (n.kind === 'cat') {
+          circle.setAttribute('stroke', '#fff');
+          circle.setAttribute('stroke-width', (n.depth || 0) === 0 ? '2.75' : '2');
+        } else {
+          circle.setAttribute('stroke', '#fff');
+          circle.setAttribute('stroke-width', '4');
+        }
         g.appendChild(circle);
         var text = document.createElementNS(ns, 'text');
         text.setAttribute('x', n.x);
         var side = n.labelSide === -1 ? -1 : 1;
-        var yOff = n.kind === 'area' ? 20 : n.kind === 'cat' ? 18 : 16;
+        var yOff =
+          n.kind === 'area' ? 24 : n.kind === 'cat' ? 18 + Math.min(n.depth || 0, 2) : 15;
         text.setAttribute('y', n.y + (side > 0 ? n.r + yOff : -(n.r + 8)));
         text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('font-size', n.kind === 'area' ? '14' : n.kind === 'cat' ? '12' : '11');
-        text.setAttribute('font-weight', n.kind === 'area' ? '700' : '600');
-        text.setAttribute('fill', '#0f172a');
+        text.setAttribute(
+          'font-size',
+          n.kind === 'area' ? '15' : n.kind === 'cat' ? (n.depth ? '11' : '12.5') : '10.5'
+        );
+        text.setAttribute('font-weight', n.kind === 'area' ? '800' : n.kind === 'cat' && !(n.depth) ? '700' : '600');
+        text.setAttribute('fill', n.kind === 'item' ? '#312e81' : '#0f172a');
         text.setAttribute('stroke', 'rgba(255,255,255,0.92)');
         text.setAttribute('stroke-width', '3.5');
         text.setAttribute('paint-order', 'stroke');
         var lbl = String(n.label || '');
-        var maxLen = n.kind === 'area' ? 22 : n.kind === 'cat' ? 18 : 16;
+        var maxLen =
+          n.kind === 'area' ? 22 : n.kind === 'cat' ? (n.depth ? 14 : 18) : 16;
         if (lbl.length > maxLen) lbl = lbl.slice(0, maxLen - 1) + '…';
         text.textContent = lbl;
         g.appendChild(text);
@@ -29107,7 +29302,11 @@
             n.kind === 'area'
               ? 'Planta'
               : n.kind === 'cat'
-                ? 'Rama'
+                ? n.depth === 1
+                  ? 'Sub-rama'
+                  : n.depth >= 2
+                    ? 'Sub²'
+                    : 'Rama'
                 : n.kind === 'nutri_file'
                   ? 'Archivo'
                   : n.kind === 'nutri_link'
