@@ -5205,7 +5205,7 @@
       max-width: 40px;
       min-width: 18px;
       align-self: stretch;
-      min-height: min(62vh, 640px);
+      min-height: min(78vh, 820px);
       border-radius: 12px;
       background: linear-gradient(
         180deg,
@@ -5268,7 +5268,8 @@
       position: relative;
       flex: 1 1 auto;
       min-width: 0;
-      min-height: min(62vh, 640px);
+      min-height: min(78vh, 820px);
+      height: min(78vh, 820px);
       border-radius: 16px;
       border: 1px solid rgba(148, 163, 184, 0.28);
       background:
@@ -5282,7 +5283,7 @@
     .np-mapa-svg {
       width: 100%;
       height: 100%;
-      min-height: min(62vh, 640px);
+      min-height: min(78vh, 820px);
       display: block;
       cursor: grab;
       touch-action: none;
@@ -5447,6 +5448,48 @@
     }
     .np-mapa-tip.np-mapa-tip--on {
       opacity: 1;
+    }
+    .np-mapa-filter-chip {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      max-width: min(420px, calc(100% - 24px));
+      margin: 0;
+      padding: 8px 10px 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      background: rgba(15, 23, 42, 0.88);
+      color: #f8fafc;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 1.3;
+      cursor: pointer;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.22);
+      pointer-events: auto;
+    }
+    .np-mapa-filter-chip:hover {
+      background: rgba(15, 23, 42, 0.95);
+      border-color: rgba(74, 222, 128, 0.55);
+    }
+    .np-mapa-filter-chip-x {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: rgba(248, 250, 252, 0.14);
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .np-mapa-tip.np-mapa-tip--on ~ .np-mapa-filter-chip:not(.np-hide) {
+      bottom: 52px;
     }
     .np-map-picker-panel {
       width: min(760px, calc(100vw - 28px));
@@ -11209,6 +11252,7 @@
             </label>
             <button type="button" class="btn btn-ghost btn-ghost-blue" id="npMapaRefreshBtn">Actualizar</button>
             <button type="button" class="btn btn-ghost" id="npMapaResetViewBtn">Centrar</button>
+            <button type="button" class="btn btn-ghost btn-ghost-green np-hide" id="npMapaShowAllBtn" title="Quitar filtro y ver todas las plantas">Ver todas</button>
           </div>
           <div class="np-mapa-legend" aria-hidden="true" id="npMapaLegend">
             <span><i style="background:#22c55e;width:14px;height:14px;border-radius:50%;"></i> Planta</span>
@@ -11234,6 +11278,10 @@
             <svg id="npMapaSvg" class="np-mapa-svg" role="img" aria-label="Neuron PRO — mapa de conexiones"></svg>
             <div id="npMapaEmpty" class="np-mapa-empty np-hide">Aún no hay relaciones. Abre un apunte y usa el bloque Relaciones para vincular.</div>
             <div id="npMapaTip" class="np-mapa-tip" aria-live="polite"></div>
+            <button type="button" id="npMapaFilterChip" class="np-mapa-filter-chip np-hide" aria-label="Quitar filtro y ver todas">
+              <span id="npMapaFilterChipText"></span>
+              <span class="np-mapa-filter-chip-x" aria-hidden="true">×</span>
+            </button>
           </div>
           <div class="np-mapa-scroll-gutter" aria-hidden="true" title="Desliza aquí para subir o bajar"></div>
         </div>
@@ -28217,6 +28265,32 @@
     }
   }
 
+  function clearPlanProMapaPlantFilter(opts) {
+    opts = opts || {};
+    var sel = $('npMapaFilterArea');
+    if (sel) sel.value = '';
+    updateMapaFilterChip();
+    scheduleRenderPlanProMapa();
+    if (opts.toast !== false) showToast('Viendo todas las plantas.');
+  }
+
+  function updateMapaFilterChip() {
+    var sel = $('npMapaFilterArea');
+    var chip = $('npMapaFilterChip');
+    var chipText = $('npMapaFilterChipText');
+    var showAllBtn = $('npMapaShowAllBtn');
+    var areaId = (sel && sel.value) || '';
+    var on = !!areaId;
+    if (chip) chip.classList.toggle('np-hide', !on);
+    if (showAllBtn) showAllBtn.classList.toggle('np-hide', !on);
+    if (!on || !chipText) return;
+    var title = 'Planta';
+    if (sel && sel.selectedOptions && sel.selectedOptions[0]) {
+      title = sel.selectedOptions[0].textContent || title;
+    }
+    chipText.textContent = 'Planta: ' + title + ' · toca para ver todas';
+  }
+
   function fillMapaAreaFilter() {
     var sel = $('npMapaFilterArea');
     if (!sel) return;
@@ -28234,6 +28308,7 @@
       sel.appendChild(opt);
     });
     if (cur) sel.value = cur;
+    updateMapaFilterChip();
   }
 
   function planProMapaRelationStroke(typeId) {
@@ -28474,9 +28549,9 @@
     var nA = Math.max(activeAreas.length, 1);
     var totalItemsHint = Object.keys(itemsById).length;
     var plantR =
-      460 +
-      Math.max(0, nA - 1) * 130 +
-      Math.min(220, totalItemsHint * 3.2);
+      560 +
+      Math.max(0, nA - 1) * 160 +
+      Math.min(280, totalItemsHint * 3.8);
 
     var CAT_DEPTH_STYLE = [
       { r: 18, color: '#475569' },
@@ -28528,7 +28603,8 @@
           y: parentNode.y + Math.sin(cAng) * (orbit + ringExtra),
           r: style.r,
           _baseAng: cAng,
-          _placeOrbit: orbit + ringExtra
+          _placeOrbit: orbit + ringExtra,
+          clusterAreaId: areaId
         };
         nodes.push(cNode);
         byId[cNode.id] = cNode;
@@ -28550,7 +28626,8 @@
         x: cx + Math.cos(ang) * plantR,
         y: cy + Math.sin(ang) * plantR,
         r: 34,
-        _baseAng: ang
+        _baseAng: ang,
+        clusterAreaId: a.id
       };
       nodes.push(node);
       byId[node.id] = node;
@@ -28600,14 +28677,24 @@
           x: px + Math.cos(ang) * orbit,
           y: py + Math.sin(ang) * orbit,
           r: 9,
-          labelSide: slot % 2 === 0 ? 1 : -1
+          labelSide: slot % 2 === 0 ? 1 : -1,
+          clusterAreaId: it.area_id || null
         };
         nodes.push(node);
         byId[node.id] = node;
       });
     });
 
-    function refreshOrbitReachFromChildren() {
+    /**
+     * Órbitas en cascada (cajas rusas):
+     * planta ⊃ rama ⊃ sub-rama ⊃ apuntes.
+     * Cada órbita cubre a sus hijos; la del padre se amplía hasta contener
+     * la órbita completa del hijo (no solo el ícono).
+     */
+    function nestOrbitsHierarchically() {
+      function dist(a, b) {
+        return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+      }
       function catUnderAncestor(catNode, ancestorId) {
         var cur = catNode;
         var guard = 0;
@@ -28633,43 +28720,88 @@
         }
         return false;
       }
+      function nutriNearCat(nutriNode, catId) {
+        /* Archivo/link anclado a un apunte de esta rama (o descendiente). */
+        if (nutriNode.kind !== 'nutri_file' && nutriNode.kind !== 'nutri_link') return false;
+        var best = null;
+        var bestD = Infinity;
+        nodes.forEach(function (itn) {
+          if (itn.kind !== 'item' || !itemUnderCat(itn, catId)) return;
+          var d = dist(nutriNode, itn);
+          if (d < bestD) {
+            bestD = d;
+            best = itn;
+          }
+        });
+        return !!(best && bestD < 110);
+      }
+
       nodes.forEach(function (n) {
         n.orbitReach = 0;
-        if (n.kind === 'area') {
-          var maxD = (n.r || 10) + 48;
-          nodes.forEach(function (ch) {
-            var ok = false;
-            if (ch.kind === 'cat' && ch.parentAreaId === n.refId) ok = true;
-            if (ch.kind === 'item') {
-              var itA = itemsById[ch.refId];
-              if (itA && itA.area_id === n.refId) ok = true;
+      });
+
+      /* 1) Alcance base de cada rama/sub-rama (cualquier profundidad) por contenido. */
+      var cats = nodes
+        .filter(function (n) {
+          return n.kind === 'cat';
+        })
+        .slice()
+        .sort(function (a, b) {
+          return (b.depth || 0) - (a.depth || 0);
+        });
+
+      cats.forEach(function (n) {
+        var maxR = 0;
+        nodes.forEach(function (ch) {
+          if (ch.id === n.id) return;
+          var ok = false;
+          if (ch.kind === 'cat' && catUnderAncestor(ch, n.refId)) ok = true;
+          if (ch.kind === 'item' && itemUnderCat(ch, n.refId)) ok = true;
+          if ((ch.kind === 'nutri_file' || ch.kind === 'nutri_link') && nutriNearCat(ch, n.refId)) ok = true;
+          if (!ok) return;
+          var d = dist(n, ch) + (ch.r || 8) + 14;
+          if (d > maxR) maxR = d;
+        });
+        if (maxR > 0) n.orbitReach = Math.max((n.r || 10) + 28, maxR);
+      });
+
+      /* 2) Ampliar padres hasta que la órbita del hijo quede DENTRO. */
+      var guard = 0;
+      var changed = true;
+      while (changed && guard++ < 12) {
+        changed = false;
+        cats.forEach(function (ch) {
+          if (!(ch.orbitReach > 0) || !ch.parentCatId) return;
+          var parent = byId['cat:' + ch.parentCatId];
+          if (!parent) return;
+          var need = dist(parent, ch) + ch.orbitReach + 12;
+          if (need > (parent.orbitReach || 0) + 0.5) {
+            parent.orbitReach = need;
+            changed = true;
+          }
+        });
+      }
+
+      /* 3) Planta: cubre ramas raíz (con su órbita completa) y apuntes sueltos. */
+      nodes.forEach(function (n) {
+        if (n.kind !== 'area') return;
+        var maxD = (n.r || 10) + 48;
+        nodes.forEach(function (ch) {
+          if (ch.kind === 'cat' && ch.parentAreaId === n.refId && !(ch.depth > 0)) {
+            var childOrbit = ch.orbitReach > 0 ? ch.orbitReach : ch.r || 8;
+            var need = dist(n, ch) + childOrbit + 16;
+            if (need > maxD) maxD = need;
+            return;
+          }
+          if (ch.kind === 'item') {
+            var itA = itemsById[ch.refId];
+            if (itA && itA.area_id === n.refId) {
+              var dItem = dist(n, ch) + (ch.r || 8) + 20;
+              if (dItem > maxD) maxD = dItem;
             }
-            if (!ok) return;
-            var d =
-              Math.sqrt((ch.x - n.x) * (ch.x - n.x) + (ch.y - n.y) * (ch.y - n.y)) +
-              (ch.r || 8) +
-              20;
-            if (d > maxD) maxD = d;
-          });
-          n.orbitReach = maxD;
-          return;
-        }
-        /* Solo rama raíz: alcance propio (tono distinto) dentro de la planta. */
-        if (n.kind === 'cat' && !(n.depth > 0)) {
-          var maxR = (n.r || 10) + 36;
-          nodes.forEach(function (ch) {
-            var ok = false;
-            if (ch.kind === 'cat' && ch.id !== n.id && catUnderAncestor(ch, n.refId)) ok = true;
-            if (ch.kind === 'item' && itemUnderCat(ch, n.refId)) ok = true;
-            if (!ok) return;
-            var d2 =
-              Math.sqrt((ch.x - n.x) * (ch.x - n.x) + (ch.y - n.y) * (ch.y - n.y)) +
-              (ch.r || 8) +
-              14;
-            if (d2 > maxR) maxR = d2;
-          });
-          n.orbitReach = maxR;
-        }
+          }
+        });
+        n.orbitReach = maxD;
       });
     }
 
@@ -28714,7 +28846,8 @@
         x: anchor.x + Math.cos(ang) * orbit,
         y: anchor.y + Math.sin(ang) * orbit,
         r: 9,
-        labelSide: slot % 2 === 0 ? 1 : -1
+        labelSide: slot % 2 === 0 ? 1 : -1,
+        clusterAreaId: anchor.clusterAreaId || null
       };
       nodes.push(nNode);
       byId[nNode.id] = nNode;
@@ -28733,14 +28866,17 @@
         x: cx + Math.cos(ang) * 120,
         y: cy + Math.sin(ang) * 120,
         r: 9,
-        labelSide: oi % 2 === 0 ? 1 : -1
+        labelSide: oi % 2 === 0 ? 1 : -1,
+        clusterAreaId: null
       };
       nodes.push(nNode);
       byId[nNode.id] = nNode;
     });
 
     separateMapaNodes(nodes, Math.min(100, 55 + Math.floor(nodes.length / 8)));
-    refreshOrbitReachFromChildren();
+    nestOrbitsHierarchically();
+    separatePlantOrbitClusters(nodes, 48);
+    nestOrbitsHierarchically();
 
     var hierEdges = [];
     nodes.forEach(function (n) {
@@ -28823,6 +28959,47 @@
     };
   }
 
+  function translateMapaCluster(nodes, areaId, dx, dy) {
+    if (!areaId || (!dx && !dy)) return;
+    (nodes || []).forEach(function (n) {
+      if (!n) return;
+      if (n.clusterAreaId === areaId || (n.kind === 'area' && n.refId === areaId)) {
+        n.x += dx;
+        n.y += dy;
+      }
+    });
+  }
+
+  function separatePlantOrbitClusters(nodes, iterations) {
+    iterations = iterations || 40;
+    var plants = (nodes || []).filter(function (n) {
+      return n && n.kind === 'area' && n.orbitReach > 0;
+    });
+    if (plants.length < 2) return;
+    var pad = 64;
+    var iter;
+    var i;
+    var j;
+    for (iter = 0; iter < iterations; iter++) {
+      for (i = 0; i < plants.length; i++) {
+        for (j = i + 1; j < plants.length; j++) {
+          var a = plants[i];
+          var b = plants[j];
+          var need = (a.orbitReach || 100) + (b.orbitReach || 100) + pad;
+          var dx = b.x - a.x;
+          var dy = b.y - a.y;
+          var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+          if (dist >= need) continue;
+          var push = ((need - dist) / 2) * (0.75 + (1 - iter / iterations) * 0.4);
+          var ux = dx / dist;
+          var uy = dy / dist;
+          translateMapaCluster(nodes, a.refId, -ux * push, -uy * push);
+          translateMapaCluster(nodes, b.refId, ux * push, uy * push);
+        }
+      }
+    }
+  }
+
   function separateMapaNodes(nodes, iterations) {
     iterations = iterations || 55;
     var i;
@@ -28833,13 +29010,23 @@
         for (j = i + 1; j < nodes.length; j++) {
           var a = nodes[i];
           var b = nodes[j];
+          /* No empujar nodos de distinta planta entre sí aquí: eso lo hace separatePlantOrbitClusters. */
+          if (
+            a.clusterAreaId &&
+            b.clusterAreaId &&
+            a.clusterAreaId !== b.clusterAreaId &&
+            a.kind !== 'area' &&
+            b.kind !== 'area'
+          ) {
+            continue;
+          }
           var dx = b.x - a.x;
           var dy = b.y - a.y;
           var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
           var labelPad =
             Math.min(64, Math.max(String(a.label || '').length, String(b.label || '').length) * 2.6);
           var kindGap = 68;
-          if (a.kind === 'area' && b.kind === 'area') kindGap = 300;
+          if (a.kind === 'area' && b.kind === 'area') kindGap = 380;
           else if (a.kind === 'area' || b.kind === 'area') kindGap = 130;
           else if (a.kind === 'cat' && b.kind === 'cat') kindGap = 110;
           else if (a.kind === 'cat' || b.kind === 'cat') kindGap = 88;
@@ -28854,7 +29041,6 @@
           var push = ((need - dist) / 2) * (0.62 + (1 - iter / iterations) * 0.5);
           var ux = dx / dist;
           var uy = dy / dist;
-          /* plantas más “pesadas”: se mueven menos; apuntes/archivos ceden más */
           var aw =
             a.kind === 'area' ? 0.22 : a.kind === 'cat' ? 0.4 : a.kind === 'item' ? 1 : 1.15;
           var bw =
@@ -29245,39 +29431,52 @@
       });
       svg.insertBefore(defs, world);
 
+      /* Órbitas de atrás → adelante: planta, rama, sub-rama, sub² (cajas rusas). */
       var orbitNodes = layout.nodes
         .filter(function (n) {
-          return (
-            (n.kind === 'area' || (n.kind === 'cat' && !(n.depth > 0))) &&
-            n.orbitReach &&
-            n.orbitReach > (n.r || 10) + 24
-          );
+          return (n.kind === 'area' || n.kind === 'cat') && n.orbitReach && n.orbitReach > (n.r || 10) + 18;
         })
         .slice()
         .sort(function (a, b) {
-          /* Planta primero (atrás), luego ramas. */
-          if (a.kind !== b.kind) return a.kind === 'area' ? -1 : 1;
+          var da = a.kind === 'area' ? -1 : a.depth || 0;
+          var db = b.kind === 'area' ? -1 : b.depth || 0;
+          if (da !== db) return da - db;
           return (b.orbitReach || 0) - (a.orbitReach || 0);
         });
       orbitNodes.forEach(function (n) {
         var col = n.color || '#94a3b8';
-        var layers =
-          n.kind === 'area'
-            ? [
-                { scale: 1, opacity: 0.055 },
-                { scale: 0.78, opacity: 0.04 },
-                { scale: 0.52, opacity: 0.03 }
-              ]
-            : [
-                { scale: 1, opacity: 0.07 },
-                { scale: 0.62, opacity: 0.045 }
-              ];
+        var depth = n.kind === 'area' ? -1 : n.depth || 0;
+        var layers;
+        var cls = 'np-mapa-orbit';
+        if (n.kind === 'area') {
+          cls += ' np-mapa-orbit--plant';
+          layers = [
+            { scale: 1, opacity: 0.05 },
+            { scale: 0.82, opacity: 0.035 },
+            { scale: 0.58, opacity: 0.025 }
+          ];
+        } else if (depth <= 0) {
+          cls += ' np-mapa-orbit--rama';
+          layers = [
+            { scale: 1, opacity: 0.08 },
+            { scale: 0.7, opacity: 0.05 }
+          ];
+        } else if (depth === 1) {
+          cls += ' np-mapa-orbit--sub';
+          layers = [
+            { scale: 1, opacity: 0.11 },
+            { scale: 0.68, opacity: 0.06 }
+          ];
+        } else {
+          cls += ' np-mapa-orbit--sub2';
+          layers = [{ scale: 1, opacity: 0.13 }];
+        }
         layers.forEach(function (layer) {
           var orb = document.createElementNS(ns, 'circle');
-          orb.setAttribute('class', 'np-mapa-orbit' + (n.kind === 'area' ? ' np-mapa-orbit--plant' : ' np-mapa-orbit--rama'));
+          orb.setAttribute('class', cls);
           orb.setAttribute('cx', n.x);
           orb.setAttribute('cy', n.y);
-          orb.setAttribute('r', Math.max(n.r + 10, n.orbitReach * layer.scale));
+          orb.setAttribute('r', Math.max(n.r + 8, n.orbitReach * layer.scale));
           orb.setAttribute('fill', col);
           orb.setAttribute('fill-opacity', String(layer.opacity));
           orb.setAttribute('stroke', 'none');
@@ -29367,26 +29566,6 @@
         if (n.kind === 'item' && planProMapaLinkState.fromId === n.refId) {
           g.classList.add('is-link-from');
         }
-        if (n.kind === 'area') {
-          var halo = document.createElementNS(ns, 'circle');
-          halo.setAttribute('cx', n.x);
-          halo.setAttribute('cy', n.y);
-          halo.setAttribute('r', n.r + 8);
-          halo.setAttribute('fill', 'none');
-          halo.setAttribute('stroke', n.color || '#22c55e');
-          halo.setAttribute('stroke-width', '3');
-          halo.setAttribute('opacity', '0.35');
-          g.appendChild(halo);
-          var halo2 = document.createElementNS(ns, 'circle');
-          halo2.setAttribute('cx', n.x);
-          halo2.setAttribute('cy', n.y);
-          halo2.setAttribute('r', n.r + 14);
-          halo2.setAttribute('fill', 'none');
-          halo2.setAttribute('stroke', n.color || '#22c55e');
-          halo2.setAttribute('stroke-width', '1.5');
-          halo2.setAttribute('opacity', '0.2');
-          g.appendChild(halo2);
-        }
         appendMapaNodeBody(ns, g, n);
         var text = document.createElementNS(ns, 'text');
         text.setAttribute('x', n.x);
@@ -29447,17 +29626,22 @@
             ev.preventDefault();
             ev.stopPropagation();
             var sel = $('npMapaFilterArea');
-            if (sel) {
-              sel.value = n.refId;
-              scheduleRenderPlanProMapa();
-              showToast('Filtro: ' + (n.label || 'Planta'));
+            if (!sel) return;
+            if (sel.value === n.refId) {
+              clearPlanProMapaPlantFilter();
+              return;
             }
+            sel.value = n.refId;
+            updateMapaFilterChip();
+            scheduleRenderPlanProMapa();
+            showToast('Filtro: ' + (n.label || 'Planta') + ' · «Ver todas» para salir');
           });
         }
         world.appendChild(g);
       });
       fitPlanProMapaToBounds(layout.bounds, svg);
       if (planProMapaDataCache) planProMapaDataCache._layoutBounds = layout.bounds;
+      updateMapaFilterChip();
     } catch (e) {
       if (empty) {
         empty.classList.remove('np-hide');
@@ -33919,10 +34103,25 @@
         resetPlanProMapaView();
       });
     }
+    var mapaShowAll = $('npMapaShowAllBtn');
+    if (mapaShowAll && mapaShowAll.dataset.npWired !== '1') {
+      mapaShowAll.dataset.npWired = '1';
+      mapaShowAll.addEventListener('click', function () {
+        clearPlanProMapaPlantFilter();
+      });
+    }
+    var mapaFilterChip = $('npMapaFilterChip');
+    if (mapaFilterChip && mapaFilterChip.dataset.npWired !== '1') {
+      mapaFilterChip.dataset.npWired = '1';
+      mapaFilterChip.addEventListener('click', function () {
+        clearPlanProMapaPlantFilter();
+      });
+    }
     var mapaArea = $('npMapaFilterArea');
     if (mapaArea && mapaArea.dataset.npWired !== '1') {
       mapaArea.dataset.npWired = '1';
       mapaArea.addEventListener('change', function () {
+        updateMapaFilterChip();
         scheduleRenderPlanProMapa();
       });
     }
